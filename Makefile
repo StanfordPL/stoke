@@ -39,14 +39,13 @@ profile:
 ##### EXTERNAL TARGETS
 
 external: src/ext/cpputil src/ext/x64asm
-	make -C src/x64asm $(EXT_OPT)
+	make -C src/ext/x64asm $(EXT_OPT) 
 
 src/ext/cpputil:
 	git clone git://github.com/eschkufz/cpputil.git src/ext/cpputil
 
 src/ext/x64asm:
 	git clone git://github.com/eschkufz/x64asm.git src/ext/x64asm
-	make -C src/ext/x64asm $(EXT_OPT) 
 
 ##### BINARY TARGETS
 
