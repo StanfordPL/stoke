@@ -24,8 +24,9 @@ auto& out_dir = ValueArg<string>::create("out")
   .default_val("bins");
 
 bool exists(const string& file) {
-	ifstream temp(file);
-	return temp.is_open();
+	Terminal term;
+	term << "ls " << file << endl;
+	return term.result() == 0;
 }
 
 bool symdump(const string& file) {
