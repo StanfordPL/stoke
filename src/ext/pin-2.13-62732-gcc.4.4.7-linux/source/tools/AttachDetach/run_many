@@ -1,0 +1,12 @@
+#! /bin/sh
+
+for ((  i = 0 ;  i <= 145;  i++  ))
+do
+  echo "Welcome $i times"
+  echo "Line to run $1"
+  $1
+  if [ $? -ne 0 ]
+  then
+  exit 1
+  fi
+done

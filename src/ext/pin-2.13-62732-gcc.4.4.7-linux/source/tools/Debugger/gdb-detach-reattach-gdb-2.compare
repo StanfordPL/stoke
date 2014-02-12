@@ -1,0 +1,3 @@
+\#0.*(main|Breakpoint).*at\s*reattach-loop.cpp:(17|18|19|20|21|27|28|29|30)
+Breakpoint 1,\s*main.*at\s*reattach-loop.cpp:23
+(Program exited normally.|\[Inferior 1 \(Remote target\) exited normally\])

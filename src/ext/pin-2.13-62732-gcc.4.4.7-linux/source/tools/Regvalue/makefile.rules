@@ -1,0 +1,197 @@
+##############################################################
+#
+# This file includes all the test targets as well as all the
+# non-default build rules and test recipes.
+#
+##############################################################
+
+
+##############################################################
+#
+# Test targets
+#
+##############################################################
+
+###### Place all generic definitions here ######
+
+# This defines tests which run tools of the same name.  This is simply for convenience to avoid
+# defining the test name twice (once in TOOL_ROOTS and again in TEST_ROOTS).
+# Tests defined here should not be defined in TOOL_ROOTS and TEST_ROOTS.
+TEST_TOOL_ROOTS := context_regvalue change_context_regvalue emu_context_regvalue iarg_reg_reference
+
+# This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
+TEST_ROOTS := const_context_regvalue partial_context_regvalue change_partial_context_regvalue iarg_reg_const_reference
+
+# This defines a list of tests that should run in the "short" sanity. Tests in this list must also
+# appear either in the TEST_TOOL_ROOTS or the TEST_ROOTS list.
+# If the entire directory should be tested in sanity, assign TEST_TOOL_ROOTS and TEST_ROOTS to the
+# SANITY_SUBSET variable in the tests section below (see example in makefile.rules.tmpl).
+SANITY_SUBSET :=
+
+# This defines the tools which will be run during the the tests, and were not already defined in
+# TEST_TOOL_ROOTS.
+TOOL_ROOTS :=
+
+# This defines the static analysis tools which will be run during the the tests. They should not
+# be defined in TEST_TOOL_ROOTS. If a test with the same name exists, it should be defined in
+# TEST_ROOTS.
+# Note: Static analysis tools are in fact executables linked with the Pin Static Analysis Library.
+# This library provides a subset of the Pin APIs which allows the tool to perform static analysis
+# of an application or dll. Pin itself is not used when this tool runs.
+SA_TOOL_ROOTS :=
+
+# This defines all the applications that will be run during the tests.
+APP_ROOTS := regvalue_app
+
+# This defines any additional object files that need to be compiled.
+OBJECT_ROOTS := regvalues changeRegs regvalue_test_utils context_utils register_modification_utils
+
+# This defines any additional dlls (shared objects), other than the pintools, that need to be compiled.
+DLL_ROOTS :=
+
+# This defines any static libraries (archives), that need to be built.
+LIB_ROOTS :=
+
+###### Handle exceptions here ######
+
+# First, see if the specified targets require avx support. "clean" for example does not,
+# so there is no need for making that check.
+ifeq ($(MAKECMDGOALS),) # If no target was specified, "all" is assumed.
+    AVX_DEPENDENTS := all
+else
+    AVX_DEPENDENTS := $(filter test sanity install all objects libs dlls apps tools %.test %.wrap $(OBJDIR)%, \
+                               $(MAKECMDGOALS))
+endif
+
+# Disable OS X
+ifeq ($(TARGET_OS),mac)
+    AVX_DEPENDENTS :=
+    TEST_TOOL_ROOTS :=
+    TEST_ROOTS :=
+    SANITY_SUBSET :=
+    TOOL_ROOTS :=
+    SA_TOOL_ROOTS :=
+    APP_ROOTS :=
+    OBJECT_ROOTS :=
+    DLL_ROOTS :=
+    LIB_ROOTS :=
+endif
+
+# Now, if there are avx-dependent targets, make sure that the avx_check program exists.
+ifneq ($(AVX_DEPENDENTS),)
+    ifeq ($(wildcard $(CHECKAVX)),)
+        $(error Unable to proceed. Run "make avxcheck", then try again)
+    else
+        MACHINE_SUPPORTS_AVX_INSTRUCTIONS := $(shell $(CHECKAVX) | $(GREP) Yes)
+    endif
+endif
+
+
+##############################################################
+#
+# Test recipes
+#
+##############################################################
+
+###### Finalize sanity here ######
+
+SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
+
+# This section contains recipes for tests other than the default.
+# See makefile.default.rules for the default test rules.
+# All tests in this section should adhere to the naming convention: <testname>.test
+
+context_regvalue.test: $(OBJDIR)context_regvalue$(PINTOOL_SUFFIX) $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(PIN) -t $< -o $(OBJDIR)$(@:%.test=%.out) -- $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)$(@:%.test=%.out)
+
+const_context_regvalue.test: $(OBJDIR)context_regvalue$(PINTOOL_SUFFIX) $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(PIN) -t $< -testcontext const -o $(OBJDIR)$(@:%.test=%.out) -- $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)$(@:%.test=%.out)
+
+partial_context_regvalue.test: $(OBJDIR)context_regvalue$(PINTOOL_SUFFIX) $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(PIN) -t $< -testcontext partial -o $(OBJDIR)$(@:%.test=%.out) -- $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)$(@:%.test=%.out)
+
+change_context_regvalue.test: $(OBJDIR)change_context_regvalue$(PINTOOL_SUFFIX) $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(PIN) -t $< -test_partial 0 -o $(OBJDIR)$(@:%.test=%.out) -- $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)$(@:%.test=%.out)
+
+change_partial_context_regvalue.test: $(OBJDIR)change_context_regvalue$(PINTOOL_SUFFIX) $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(PIN) -t $< -testcontext partial -test_partial 0 -o $(OBJDIR)$(@:%.test=%.out) -- $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)$(@:%.test=%.out)
+
+emu_context_regvalue.test: $(OBJDIR)emu_context_regvalue$(PINTOOL_SUFFIX) $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(PIN) -t $< -test_partial 0 -o $(OBJDIR)$(@:%.test=%.out) -- $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)$(@:%.test=%.out)
+
+iarg_reg_reference.test: $(OBJDIR)iarg_reg_reference$(PINTOOL_SUFFIX) $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(PIN) -t $< -test_st 0 -test_partial 0 -o $(OBJDIR)$(@:%.test=%.out) -- $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)$(@:%.test=%.out)
+
+iarg_reg_const_reference.test: $(OBJDIR)iarg_reg_reference$(PINTOOL_SUFFIX) $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(PIN) -t $< -testreference const -test_st 0 -test_partial 0 -o $(OBJDIR)$(@:%.test=%.out) \
+	  -- $(OBJDIR)regvalue_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)$(@:%.test=%.out)
+
+
+##############################################################
+#
+# Build rules
+#
+##############################################################
+
+# This section contains the build rules for all binaries that have special build rules.
+# See makefile.default.rules for the default build rules.
+
+ifeq ($(MACHINE_SUPPORTS_AVX_INSTRUCTIONS),Yes)
+    ifeq ($(TARGET_OS),windows)
+        DEFINE_USING_AVX := /DCONTEXT_USING_AVX
+    else
+        DEFINE_USING_AVX := -DCONTEXT_USING_AVX
+    endif
+endif
+
+ifeq ($(TARGET_OS),windows)
+    REGVALUE_APP_EXPORTS := /EXPORT:ChangeRegs /EXPORT:ExecuteAt /EXPORT:SaveRegsToMem
+endif
+
+###### Special tools' build rules ######
+
+$(OBJDIR)context_regvalue$(PINTOOL_SUFFIX): $(OBJDIR)context_regvalue$(OBJ_SUFFIX) $(OBJDIR)regvalues$(OBJ_SUFFIX) $(OBJDIR)regvalue_test_utils$(OBJ_SUFFIX) $(OBJDIR)context_utils$(OBJ_SUFFIX) $(REGVALLIB)
+	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
+
+$(OBJDIR)change_context_regvalue$(PINTOOL_SUFFIX): $(OBJDIR)change_context_regvalue$(OBJ_SUFFIX) $(OBJDIR)regvalues$(OBJ_SUFFIX) $(OBJDIR)regvalue_test_utils$(OBJ_SUFFIX) $(OBJDIR)context_utils$(OBJ_SUFFIX) $(OBJDIR)register_modification_utils$(OBJ_SUFFIX) $(REGVALLIB)
+	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
+
+$(OBJDIR)emu_context_regvalue$(PINTOOL_SUFFIX): $(OBJDIR)emu_context_regvalue$(OBJ_SUFFIX) $(OBJDIR)regvalues$(OBJ_SUFFIX) $(OBJDIR)regvalue_test_utils$(OBJ_SUFFIX) $(OBJDIR)context_utils$(OBJ_SUFFIX) $(REGVALLIB)
+	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
+
+$(OBJDIR)iarg_reg_reference$(PINTOOL_SUFFIX): $(OBJDIR)iarg_reg_reference$(OBJ_SUFFIX) $(OBJDIR)regvalues$(OBJ_SUFFIX) $(OBJDIR)regvalue_test_utils$(OBJ_SUFFIX) $(OBJDIR)context_utils$(OBJ_SUFFIX) $(OBJDIR)register_modification_utils$(OBJ_SUFFIX) $(REGVALLIB)
+	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
+
+###### Special applications' build rules ######
+
+$(OBJDIR)regvalue_app$(EXE_SUFFIX): regvalue_app.cpp $(OBJDIR)changeRegs$(OBJ_SUFFIX) $(OBJDIR)regvalues$(OBJ_SUFFIX)
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT) $(REGVALUE_APP_EXPORTS) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
+
+###### Special objects' build rules ######
+
+$(OBJDIR)regvalues$(OBJ_SUFFIX): regvalues.h
+
+$(OBJDIR)regvalue_test_utils$(OBJ_SUFFIX): regvalue_test_utils.h regvalues.h
+
+$(OBJDIR)context_utils$(OBJ_SUFFIX): context_utils.h
+
+$(OBJDIR)register_modification_utils$(OBJ_SUFFIX): register_modification_utils.h
+
+$(OBJDIR)context_regvalue$(OBJ_SUFFIX): context_utils.h
+
+$(OBJDIR)change_context_regvalue$(OBJ_SUFFIX): context_utils.h register_modification_utils.h
+
+$(OBJDIR)emu_context_regvalue$(OBJ_SUFFIX): context_utils.h
+
+$(OBJDIR)iarg_reg_reference$(OBJ_SUFFIX): register_modification_utils.h
+
+$(OBJDIR)changeRegs$(OBJ_SUFFIX): changeRegs_$(TARGET)$(ASM_SUFFIX)
+	$(ASMBLR) $(ASM_FLAGS) $(DEFINE_USING_AVX) $(COMP_OBJ)$@ $<

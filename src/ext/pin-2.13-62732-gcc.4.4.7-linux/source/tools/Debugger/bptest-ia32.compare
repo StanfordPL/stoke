@@ -1,0 +1,6 @@
+Breakpoint 1,\s*foo.*at\s*bptest-asm-ia32.s:6
+Breakpoint 2,\s*foo.*at\s*bptest-asm-ia32.s:7
+Breakpoint 4,\s*sub.*at\s*bptest-asm-ia32.s:16
+Breakpoint 4,\s*sub.*at\s*bptest-asm-ia32.s:16
+Breakpoint 3,\s*foo.*at\s*bptest-asm-ia32.s:11
+(Program exited normally.$|\[Inferior 1 \(Remote target\) exited normally\])

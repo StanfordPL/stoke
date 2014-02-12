@@ -1,0 +1,229 @@
+##############################################################
+#
+# This file includes all the test targets as well as all the
+# non-default build rules and test recipes.
+#
+##############################################################
+
+
+##############################################################
+#
+# Test targets
+#
+##############################################################
+
+###### Place all generic definitions here ######
+
+# This defines tests which run tools of the same name.  This is simply for convenience to avoid
+# defining the test name twice (once in TOOL_ROOTS and again in TEST_ROOTS).
+# Tests defined here should not be defined in TOOL_ROOTS and TEST_ROOTS.
+TEST_TOOL_ROOTS := bb_test cache_simulator watch_fragmentation trace_insertions enter_exit link_unlink \
+                   event_trace insertDelete deleteTrace orig_address br_test mem_usage cache_flusher \
+                   cache_stats flush_leaks flush_at_if
+
+# This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
+TEST_ROOTS := cache_block high_water flush_at_if_no_inline_bridge
+
+# This defines a list of tests that should run in the "short" sanity. Tests in this list must also
+# appear either in the TEST_TOOL_ROOTS or the TEST_ROOTS list.
+# If the entire directory should be tested in sanity, assign TEST_TOOL_ROOTS and TEST_ROOTS to the
+# SANITY_SUBSET variable in the tests section below (see example in makefile.rules.tmpl).
+SANITY_SUBSET :=
+
+# This defines the tools which will be run during the the tests, and were not already defined in
+# TEST_TOOL_ROOTS.
+TOOL_ROOTS :=
+
+# This defines the static analysis tools which will be run during the the tests. They should not
+# be defined in TEST_TOOL_ROOTS. If a test with the same name exists, it should be defined in
+# TEST_ROOTS.
+# Note: Static analysis tools are in fact executables linked with the Pin Static Analysis Library.
+# This library provides a subset of the Pin APIs which allows the tool to perform static analysis
+# of an application or dll. Pin itself is not used when this tool runs.
+SA_TOOL_ROOTS :=
+
+# This defines all the applications that will be run during the tests.
+APP_ROOTS := bigBinary bigRegion manyIndirects
+
+# This defines any additional object files that need to be compiled.
+OBJECT_ROOTS :=
+
+# This defines any additional dlls (shared objects), other than the pintools, that need to be compiled.
+DLL_ROOTS :=
+
+# This defines any static libraries (archives), that need to be built.
+LIB_ROOTS :=
+
+###### Place architecture-specific definitions here ######
+
+# Place ia32-specific definitions here if they apply to all supported operating systems.
+ifeq ($(TARGET),ia32)
+    # Pin for the Intel(R) 64 architecture does not support variable size caches
+    TEST_TOOL_ROOTS += cache_doubler
+endif
+
+# Place intel64-specific definitions here if they apply to all supported operating systems.
+ifeq ($(TARGET),intel64)
+    TEST_ROOTS += big_region_intel64
+endif
+
+###### Place OS-specific definitions here ######
+
+# Linux
+ifeq ($(TARGET_OS),linux)
+    TEST_TOOL_ROOTS += mtFlush
+    APP_ROOTS += threadWait
+    ifeq ($(TARGET),intel64)
+        TEST_TOOL_ROOTS += action_pending_cachefull
+        APP_ROOTS += action_pending_cachefull_app
+    endif 
+endif
+
+# Windows
+ifeq ($(TARGET_OS),windows)
+    ifeq ($(TARGET),intel64)
+        TEST_TOOL_ROOTS += action_pending_cachefull
+        APP_ROOTS += action_pending_cachefull_app
+    endif 
+endif
+
+###### Handle exceptions here ######
+
+# TODO: The following test hangs. See Mantis 2235.
+ifeq ($(TARGET_OS),linux)
+    TEST_TOOL_ROOTS := $(filter-out action_pending_cachefull, $(TEST_TOOL_ROOTS))
+endif
+
+# TODO: The following tests fail on Android - fix and remove the following:
+# see mantis 3107
+ifeq ($(TARGET_OS),android)
+    TEST_TOOL_ROOTS := $(filter-out flush_leaks, $(TEST_TOOL_ROOTS))
+endif
+
+# TODO: These tests fail on Mac - fix and remove the following:
+ifeq ($(TARGET_OS),mac)
+    TEST_TOOL_ROOTS := $(filter-out bb_test br_test cache_flusher flush_leaks orig_address cache_doubler, \
+                                    $(TEST_TOOL_ROOTS))
+    TEST_ROOTS := $(filter-out big_region_intel64 cache_block high_water, $(TEST_ROOTS))
+endif
+
+
+##############################################################
+#
+# Test recipes
+#
+##############################################################
+
+# This section contains recipes for tests other than the default.
+# See makefile.default.rules for the default test rules.
+# All tests in this section should adhere to the naming convention: <testname>.test
+
+CACHELIMIT_FOR_ACTION_PENDING := 10485760
+
+action_pending_cachefull.test: $(OBJDIR)action_pending_cachefull$(PINTOOL_SUFFIX) $(OBJDIR)action_pending_cachefull_app$(EXE_SUFFIX)
+	$(PIN) -xyzzy -high_water_mark 25 -limit_code_cache $(CACHELIMIT_FOR_ACTION_PENDING) \
+	  -t $(OBJDIR)action_pending_cachefull$(PINTOOL_SUFFIX) -- $(OBJDIR)action_pending_cachefull_app$(EXE_SUFFIX)
+
+cache_flusher.test: $(OBJDIR)cache_flusher$(PINTOOL_SUFFIX) $(OBJDIR)bigBinary$(EXE_SUFFIX)
+	$(PIN) -limit_code_cache 262144 -cache_block_size 65536 \
+	  -t $(OBJDIR)cache_flusher$(PINTOOL_SUFFIX) -o $(OBJDIR)cache_flusher.out -- $(OBJDIR)bigBinary$(EXE_SUFFIX)
+	$(QGREP) SWOOSH $(OBJDIR)cache_flusher.out
+	$(QGREP) eof $(OBJDIR)cache_flusher.out
+	$(RM) $(OBJDIR)cache_flusher.out
+
+cache_doubler.test: $(OBJDIR)cache_doubler$(PINTOOL_SUFFIX) $(OBJDIR)bigBinary$(EXE_SUFFIX)
+	$(PIN) -limit_code_cache 262144 -cache_block_size 65536 \
+	  -t $(OBJDIR)cache_doubler$(PINTOOL_SUFFIX) -o $(OBJDIR)cache_doubler.out -- $(OBJDIR)bigBinary$(EXE_SUFFIX) 
+	$(QGREP) STRETCH $(OBJDIR)cache_doubler.out
+	$(QGREP) eof $(OBJDIR)cache_doubler.out
+	$(RM) $(OBJDIR)cache_doubler.out
+
+flushAndInsert.test: $(OBJDIR)flushAndInsert$(PINTOOL_SUFFIX) $(OBJDIR)bigBinary$(EXE_SUFFIX)
+	$(PIN) -limit_code_cache 262144 -cache_block_size 65536 \
+	  -t $(OBJDIR)flushAndInsert$(PINTOOL_SUFFIX) -o $(OBJDIR)flushAndInsert.out -- $(OBJDIR)bigBinary$(EXE_SUFFIX) 
+	$(QGREP) SWOOSH $(OBJDIR)flushAndInsert.out
+	$(QGREP) insertion $(OBJDIR)flushAndInsert.out
+	$(RM) $(OBJDIR)flushAndInsert.out
+
+cache_block.test: $(OBJDIR)bigBinary$(EXE_SUFFIX)
+	$(PIN) -cache_block_size 131072 -- $(OBJDIR)bigBinary$(EXE_SUFFIX)
+
+high_water.test: $(OBJDIR)bigBinary$(EXE_SUFFIX)
+	$(PIN) -xyzzy -high_water_mark 75 -- $(OBJDIR)bigBinary$(EXE_SUFFIX)
+
+bb_test.test: $(OBJDIR)bb_test$(PINTOOL_SUFFIX) $(OBJDIR)bigBinary$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)bb_test$(PINTOOL_SUFFIX) -b 10 -o $(OBJDIR)bb_test.out -- $(OBJDIR)bigBinary$(EXE_SUFFIX)
+	$(QGREP) "Final trace count" $(OBJDIR)bb_test.out
+	$(QGREP) -v "Final trace count: 0" $(OBJDIR)bb_test.out
+	$(QGREP) -v "Final cache size: 0" $(OBJDIR)bb_test.out
+	$(RM) $(OBJDIR)bb_test.out
+
+
+mtFlush.test: $(OBJDIR)mtFlush$(PINTOOL_SUFFIX) $(OBJDIR)threadWait$(EXE_SUFFIX)
+	$(PIN)  -t $(OBJDIR)mtFlush$(PINTOOL_SUFFIX) -- $(OBJDIR)threadWait$(EXE_SUFFIX) 
+	$(QGREP) SWOOSH mtFlush.out
+	$(RM) mtFlush.out
+
+flush_leaks.test: $(OBJDIR)flush_leaks$(PINTOOL_SUFFIX) $(OBJDIR)manyIndirects$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)flush_leaks$(PINTOOL_SUFFIX) -- $(OBJDIR)manyIndirects$(EXE_SUFFIX)
+
+orig_address.test: $(OBJDIR)orig_address$(PINTOOL_SUFFIX) $(OBJDIR)bigBinary$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)orig_address$(PINTOOL_SUFFIX) -o $(OBJDIR)orig_address.out -- $(OBJDIR)bigBinary$(EXE_SUFFIX) 
+	$(QGREP) "Success" $(OBJDIR)orig_address.out
+	$(QGREP) -v "Failure" $(OBJDIR)orig_address.out
+	$(QGREP) "eof" $(OBJDIR)orig_address.out
+	$(RM) $(OBJDIR)orig_address.out
+
+# The br_test tool tests how pin handles big regions.
+br_test.test: $(OBJDIR)br_test$(PINTOOL_SUFFIX) $(OBJDIR)bigRegion$(EXE_SUFFIX)
+	$(PIN) -xyzzy -inline_maxlen 1 -cache_block_size 65536 -region-max-inss 5000 \
+	  -t $(OBJDIR)br_test$(PINTOOL_SUFFIX) -o $(OBJDIR)br_test.out -- $(OBJDIR)bigRegion$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)br_test.out
+
+# The big_region_intel64 test tests how pin handles big regions. This is a problem
+# only in intel64 because it uses contiguous cache and it has hard a limit of 64K
+# on the size of code cache block.
+big_region_intel64.test: $(OBJDIR)br_test$(PINTOOL_SUFFIX) $(OBJDIR)bigRegion$(EXE_SUFFIX)
+	$(PIN) -xyzzy -inline_maxlen 100 -cache_block_size 65536 -region-max-inss 5000 -mesgon warning \
+	  -logfile $(OBJDIR)big_region_intel64.log -t $(OBJDIR)br_test$(PINTOOL_SUFFIX) -o $(OBJDIR)big_region_intel64.out \
+	    -- $(OBJDIR)bigRegion$(EXE_SUFFIX)
+	$(QGREP) "Attempting to insert" $(OBJDIR)big_region_intel64.log
+	$(RM) -f $(OBJDIR)big_region_intel64.out $(OBJDIR)big_region_intel64.log
+
+flush_at_if_no_inline_bridge.test: $(OBJDIR)flush_at_if$(PINTOOL_SUFFIX)
+	$(PIN) -xyzzy -inline_bridge 0 -t $(OBJDIR)flush_at_if$(PINTOOL_SUFFIX) \
+	  -- $(TESTAPP) makefile $(OBJDIR)flush_at_if_no_inline_bridge.makefile.copy
+	$(CMP) makefile $(OBJDIR)flush_at_if_no_inline_bridge.makefile.copy
+	$(RM) $(OBJDIR)flush_at_if_no_inline_bridge.makefile.copy
+
+
+##############################################################
+#
+# Build rules
+#
+##############################################################
+
+# This section contains the build rules for all binaries that have special build rules.
+# See makefile.default.rules for the default build rules.
+
+###### Special tools' build rules ######
+
+# The common practice in this section is to place the explicit build rules for any tool that
+# requires a special build. However, in this directory all the tools are built in the exact
+# same way, but different from the default. So we make an exception here and instead, pack
+# all the tools in the ALL_TOOLS variable and override the default rule once with a wildcard.
+ALL_TOOLS := $(TEST_TOOL_ROOTS:%=$(OBJDIR)%$(PINTOOL_SUFFIX))
+
+$(ALL_TOOLS): $(OBJDIR)%$(PINTOOL_SUFFIX): $(OBJDIR)%$(OBJ_SUFFIX) $(OBJDIR)utils$(OBJ_SUFFIX)
+	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
+
+###### Special applications' build rules ######
+
+$(OBJDIR)bigRegion$(EXE_SUFFIX): bigRegion.c
+	$(APP_CC) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS)
+
+$(OBJDIR)action_pending_cachefull_app$(EXE_SUFFIX): action_pending_cachefull_app.c $(THREADLIB)
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT) $(APP_LIBS)
+
+$(OBJDIR)bigBinary$(EXE_SUFFIX): bigBinary.c
+	$(APP_CC) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS)

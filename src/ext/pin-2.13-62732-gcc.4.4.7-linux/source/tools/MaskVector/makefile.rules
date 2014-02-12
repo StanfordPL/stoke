@@ -1,0 +1,131 @@
+##############################################################
+#
+# This file includes all the test targets as well as all the
+# non-default build rules and test recipes.
+#
+##############################################################
+
+
+##############################################################
+#
+# Test targets
+#
+##############################################################
+
+###### Place all generic definitions here ######
+
+# This defines tests which run tools of the same name.  This is simply for convenience to avoid
+# defining the test name twice (once in TOOL_ROOTS and again in TEST_ROOTS).
+# Tests defined here should not be defined in TOOL_ROOTS and TEST_ROOTS.
+TEST_TOOL_ROOTS :=
+
+# This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
+TEST_ROOTS :=
+
+# This defines a list of tests that should run in the "short" sanity. Tests in this list must also
+# appear either in the TEST_TOOL_ROOTS or the TEST_ROOTS list.
+# If the entire directory should be tested in sanity, assign TEST_TOOL_ROOTS and TEST_ROOTS to the
+# SANITY_SUBSET variable in the tests section below (see example in makefile.rules.tmpl).
+SANITY_SUBSET :=
+
+# This defines the tools which will be run during the the tests, and were not already defined in
+# TEST_TOOL_ROOTS.
+TOOL_ROOTS :=
+
+# This defines all the applications that will be run during the tests.
+APP_ROOTS :=
+
+# This defines any additional object files that need to be compiled.
+OBJECT_ROOTS :=
+
+# This defines any additional dlls (shared objects), other than the pintools, that need to be compiled.
+DLL_ROOTS :=
+
+# This defines any static libraries (archives), that need to be built.
+LIB_ROOTS :=
+
+###### Place architecture-specific definitions here ######
+
+# Place MIC-specific definitions here if they apply to all supported operating systems.
+ifeq ($(TARGET),mic)
+    TEST_TOOL_ROOTS += vcount iarg_reg_mask vectorUtilization maskedBranchTaken
+    TEST_ROOTS += maskedJump iarg_reg_modify_mask
+    SANITY += maskedJump
+    APP_ROOTS += maskedJump_app memoryVector_app
+    OBJECT_ROOTS += maskedJump_asm memoryVector_asm vectorValues vectorUtilizationTypes
+endif
+
+
+##############################################################
+#
+# Test recipes
+#
+##############################################################
+
+# This section contains recipes for tests other than the default.
+# See makefile.default.rules for the default test rules.
+# All tests in this section should adhere to the naming convention: <testname>.test
+
+maskedJump.test: $(OBJDIR)maskedJump_app$(EXE_SUFFIX)
+	$(PIN) -- $(OBJDIR)maskedJump_app$(EXE_SUFFIX) > $(OBJDIR)maskedJump.out 2>&1
+	$(RM) $(OBJDIR)maskedJump.out
+
+maskedBranchTaken.test: $(OBJDIR)maskedBranchTaken$(PINTOOL_SUFFIX) $(OBJDIR)maskedJump_app$(EXE_SUFFIX)
+	$(PIN) -t $< -o $(OBJDIR)maskedBranchTaken.out -- $(OBJDIR)maskedJump_app$(EXE_SUFFIX)
+	$(QGREP) "SUCCESS" $(OBJDIR)maskedBranchTaken.out
+	$(RM) $(OBJDIR)maskedBranchTaken.out
+
+vcount.test: $(OBJDIR)vcount$(PINTOOL_SUFFIX) $(OBJDIR)memoryVector_app$(EXE_SUFFIX)
+	$(PIN) -t $< -o $(OBJDIR)vcount.out -- $(OBJDIR)memoryVector_app$(EXE_SUFFIX)
+	$(QGREP) "Vector Instructions: 18" $(OBJDIR)vcount.out
+	$(RM) $(OBJDIR)vcount.out
+
+iarg_reg_mask.test: $(OBJDIR)iarg_reg_mask$(PINTOOL_SUFFIX) $(OBJDIR)memoryVector_app$(EXE_SUFFIX)
+	$(PIN) -t $< -o $(OBJDIR)iarg_reg_mask.out -- $(OBJDIR)memoryVector_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)iarg_reg_mask.out
+
+iarg_reg_modify_mask.test: $(OBJDIR)iarg_reg_mask$(PINTOOL_SUFFIX) $(OBJDIR)memoryVector_app$(EXE_SUFFIX)
+	$(PIN) -t $< -o $(OBJDIR)iarg_reg_modify_mask.out -testmode modify -- $(OBJDIR)memoryVector_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)iarg_reg_modify_mask.out
+
+vectorUtilization.test: $(OBJDIR)vectorUtilization$(PINTOOL_SUFFIX) $(OBJDIR)memoryVector_app$(EXE_SUFFIX)
+	$(PIN) -t $< -o $(OBJDIR)vectorUtilization.out -- $(OBJDIR)memoryVector_app$(EXE_SUFFIX)
+	$(QGREP) "Percentage of double-precision vector instructions: 89%, utilization: 91%" $(OBJDIR)vectorUtilization.out
+	$(QGREP) "Percentage of single-precision vector instructions: 11%, utilization: 12%" $(OBJDIR)vectorUtilization.out
+	$(RM) $(OBJDIR)vectorUtilization.out
+
+
+##############################################################
+#
+# Build rules
+#
+##############################################################
+
+# This section contains the build rules for all binaries that have special build rules.
+# See makefile.default.rules for the default build rules.
+
+###### Special tools' build rules ######
+
+$(OBJDIR)iarg_reg_mask$(PINTOOL_SUFFIX): $(OBJDIR)iarg_reg_mask$(OBJ_SUFFIX) $(OBJDIR)vectorvalues$(OBJ_SUFFIX) $(REGVALLIB)
+	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
+
+$(OBJDIR)vectorUtilization$(PINTOOL_SUFFIX): $(OBJDIR)vectorUtilization$(OBJ_SUFFIX) $(OBJDIR)vectorUtilizationTypes$(OBJ_SUFFIX)
+	$(LINKER) $(TOOL_LDFLAGS) $(LINK_EXE)$@ $^ $(TOOL_LPATHS) $(TOOL_LIBS)
+
+###### Special applications' build rules ######
+
+$(OBJDIR)maskedJump_app$(EXE_SUFFIX): maskedJump_app.cpp $(OBJDIR)maskedJump_asm$(OBJ_SUFFIX)
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT) $(APP_LIBS)
+
+$(OBJDIR)memoryVector_app$(EXE_SUFFIX): memoryVector_app.cpp $(OBJDIR)memoryVector_asm$(OBJ_SUFFIX) $(OBJDIR)vectorvalues$(OBJ_SUFFIX)
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT) $(APP_LIBS)
+
+###### Special objects' build rules ######
+
+$(OBJDIR)vectorvalues$(OBJ_SUFFIX): vectorvalues.h
+
+$(OBJDIR)iarg_reg_mask$(OBJ_SUFFIX): vectorvalues.h 
+
+$(OBJDIR)vectorUtilizationTypes$(OBJ_SUFFIX): vectorUtilizationTypes.h
+
+$(OBJDIR)vectorUtilization$(OBJ_SUFFIX): vectorUtilizationTypes.h

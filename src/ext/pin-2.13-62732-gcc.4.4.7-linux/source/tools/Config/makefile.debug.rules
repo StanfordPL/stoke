@@ -1,0 +1,74 @@
+##############################################################
+#
+# This file is an extension to the testing framework specific
+# to the Debugger tests directory.
+# It contains additional variables used only by the Debugger tests.
+# Below is a detailed list of the variables made available by this
+# file:
+#
+# GDB						- Path to gdb. Available on Unix platforms only.
+# BARE_PIN					- Path to the Pin launcher without any additional
+#							  flags.
+# PINDB						- Path to the pindb test-debugger program.
+# PINDB_LIBPATH				- Defines the locations of the necessary shared
+#							  libraries when running the pindb program.
+#							  Relevant on Unix platforms only. On Windows this
+#							  variable is empty.
+# PINDB_WITH_LIBPATH		- Path to the pindb test-debugger program, preceeded
+#							  by the library locations set in LD_LIBRARY_PATH.
+#							  Relevant on Unix platforms only. On Windows this
+#							  variable is identical to PINDB.
+# PINDB_USERFLAGS			- Use this to add flags to the pindb program when
+#							  running the tests.
+#							  Usage: make PINDB_USERFLAGS=<extra flags> ...
+# PINFLAGS_DEBUG			- Enable application debugging and stop in the
+#							  debugger as soon as the application is launched.
+# PINFLAGS_DEBUG_RUNFREE	- Enable application debugging bu do not stop in the
+#							  debugger. Allows the user to attach a debugger at
+#							  a later time.
+# COMPARE_EXT				- Compare file extension depending on compiler used.
+#
+##############################################################
+
+# We only support gdb on Unix platforms.
+ifneq ($(OS),Windows_NT)
+    GDB := /usr/bin/gdb
+endif
+
+# These variables depend on whether we're running from a kit or source.
+ifeq ($(KIT),1)
+    BARE_PIN := $(PIN_ROOT)/pin$(EXE_SUFFIX)
+    PINDB := $(PIN_ROOT)/$(TARGET)/bin/pindb$(EXE_SUFFIX)
+    ifeq ($(OS),Windows_NT)
+        # On Windows LD_LIBRARY_PATH is not available
+        PINDB_LIBPATH :=
+        PINDB_WITH_LIBPATH := $(PINDB)
+    else
+        ifeq ($(REQUIRES_PIN_CPP_RUNTIME),1)
+            PINDB_LIBPATH := $(PIN_ROOT)/$(TARGET)/runtime:$(PIN_ROOT)/$(TARGET)/runtime/cpplibs
+        else
+            PINDB_LIBPATH := $(PIN_ROOT)/$(TARGET)/runtime
+        endif
+        PINDB_WITH_LIBPATH := LD_LIBRARY_PATH=$(PINDB_LIBPATH):$$LD_LIBRARY_PATH $(PINDB)
+    endif
+else
+    ifeq ($(TARGET_OS),linux)
+        BARE_PIN := $(PIN_ROOT)/Source/pin/pin-runner-linux-$(TARGET).sh
+    else
+        BARE_PIN := $(PIN_ROOT)/build/Source/pin/pin-$(TARGET_OS)-$(TARGET)/pin$(EXE_SUFFIX)
+    endif
+    PINDB := $(PIN_ROOT)/build/Source/pindb/export-$(TARGET_OS)-$(TARGET)/pindb
+    PINDB_LIBPATH :=
+    PINDB_WITH_LIBPATH := $(PINDB)
+endif
+
+# These are the Pin flags needed to enable application debugging.
+PINFLAGS_DEBUG := -appdebug
+PINFLAGS_DEBUG_RUNFREE := -appdebug_enable
+
+# Compare file extensions.
+ifeq ($(ICC),1)
+    COMPARE_EXT := compareICC
+else
+    COMPARE_EXT := compare
+endif

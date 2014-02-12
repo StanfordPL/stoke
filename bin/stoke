@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# http://stackoverflow.com/questions/4774054/
+#   reliable-way-for-a-bash-script-to-get-the-full-path-to-itself
+
+pushd `dirname $0` > /dev/null
+HERE=`pwd`
+popd > /dev/null
+
+if [ ! -f $HERE/stoke_extract ] || [ ! -f $HERE/stoke_testcase ] || [ ! -f $HERE/stoke_search ]
+then
+	echo "Fatal Error: Failed to locate one or more STOKE components!"
+	exit 1
+fi
+
+if [ $# -eq 0 ] 
+then
+	echo "Type 'stoke --help' for usage."
+	exit 1
+fi
+
+SCMD=$1
+shift
+
+if [ "$SCMD" == "--help" ] || [ "$SCMD" == "-h" ]
+then
+	echo "Usage: stoke <subcommand> [options]"
+	echo "Type 'stoke <subcommand> --help' for help on a specific subcommand."
+	echo ""
+	echo "  extract    extract the contents of a binary file"
+	echo "  search     run STOKE search"
+	echo "  testcase   generate a STOKE testcase file"
+	echo ""
+	exit 0
+elif [ "$SCMD" == "extract" ]
+then
+	$DIR/stoke_extract $@
+elif [ "$SCMD" == "search" ]
+then
+	$DIR/stoke_search $@
+elif [ "$SCMD" == "testcase" ]
+then
+	$DIR/stoke_testcase $@
+else
+	echo "Unknown command: '"$SCMD"'"
+	echo "Type 'stoke --help' for usage."
+	exit 1
+fi
+

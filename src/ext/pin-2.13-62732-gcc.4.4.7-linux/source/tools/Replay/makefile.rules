@@ -1,0 +1,126 @@
+##############################################################
+#
+# This file includes all the test targets as well as all the
+# non-default build rules and test recipes.
+#
+##############################################################
+
+
+##############################################################
+#
+# Test targets
+#
+##############################################################
+
+###### Place all generic definitions here ######
+
+# This defines tests which run tools of the same name.  This is simply for convenience to avoid
+# defining the test name twice (once in TOOL_ROOTS and again in TEST_ROOTS).
+# Tests defined here should not be defined in TOOL_ROOTS and TEST_ROOTS.
+TEST_TOOL_ROOTS := replay_syscall
+
+# This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
+TEST_ROOTS :=
+
+# This defines a list of tests that should run in the "short" sanity. Tests in this list must also
+# appear either in the TEST_TOOL_ROOTS or the TEST_ROOTS list.
+# If the entire directory should be tested in sanity, assign TEST_TOOL_ROOTS and TEST_ROOTS to the
+# SANITY_SUBSET variable in the tests section below (see example in makefile.rules.tmpl).
+SANITY_SUBSET :=
+
+# This defines the tools which will be run during the the tests, and were not already defined in
+# TEST_TOOL_ROOTS.
+TOOL_ROOTS :=
+
+# This defines the static analysis tools which will be run during the the tests. They should not
+# be defined in TEST_TOOL_ROOTS. If a test with the same name exists, it should be defined in
+# TEST_ROOTS.
+# Note: Static analysis tools are in fact executables linked with the Pin Static Analysis Library.
+# This library provides a subset of the Pin APIs which allows the tool to perform static analysis
+# of an application or dll. Pin itself is not used when this tool runs.
+SA_TOOL_ROOTS :=
+
+# This defines all the applications that will be run during the tests.
+APP_ROOTS :=
+
+# This defines any additional object files that need to be compiled.
+OBJECT_ROOTS :=
+
+# This defines any additional dlls (shared objects), other than the pintools, that need to be compiled.
+DLL_ROOTS :=
+
+# This defines any static libraries (archives), that need to be built.
+LIB_ROOTS :=
+
+###### Place OS-specific definitions here ######
+
+# Linux
+ifeq ($(TARGET_OS),linux)
+    TEST_TOOL_ROOTS += record_imageload
+endif
+
+# Windows
+ifeq ($(TARGET_OS),windows)
+    TEST_TOOL_ROOTS += win_replay_exception
+    APP_ROOTS += win_exception
+endif
+
+###### Handle exceptions here ######
+
+# Disable some tests that fail on Windows 8. See Mantis 3062.
+ifeq ($(TARGET_OS),windows)
+    ifeq ($(TARGET),ia32)
+        TEST_TOOL_ROOTS := $(filter-out win_replay_exception, $(TEST_TOOL_ROOTS))
+    endif
+endif
+
+
+##############################################################
+#
+# Test recipes
+#
+##############################################################
+
+###### Finalize sanity here ######
+
+SANITY_SUBSET := $(TEST_TOOL_ROOTS) $(TEST_ROOTS)
+
+# This section contains recipes for tests other than the default.
+# See makefile.default.rules for the default test rules.
+# All tests in this section should adhere to the naming convention: <testname>.test
+
+# Test replaying the same exception (Windows only)
+win_replay_exception.test: $(OBJDIR)win_replay_exception$(PINTOOL_SUFFIX) $(OBJDIR)win_exception$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)win_replay_exception$(PINTOOL_SUFFIX) -- $(OBJDIR)win_exception$(EXE_SUFFIX)
+	$(RM) win_replay_exception.out 
+
+# Test replaying the same system call
+replay_syscall.test: $(OBJDIR)replay_syscall$(PINTOOL_SUFFIX) $(TESTAPP)
+	$(PIN) -t $(OBJDIR)replay_syscall$(PINTOOL_SUFFIX) -- $(TESTAPP) makefile $(OBJDIR)replay_syscall.makefile.copy
+	$(RM) replay_syscall.out
+	$(RM) -f $(OBJDIR)replay_syscall.makefile.copy # this might not be generated so we use the -f flag 
+
+# Test record and replay of image load/unload events
+record_imageload.test: $(OBJDIR)record_imageload$(PINTOOL_SUFFIX) $(TESTAPP)
+	# Record the image load/unload information
+	$(PIN) -t $(OBJDIR)record_imageload$(PINTOOL_SUFFIX) -- $(TESTAPP) makefile $(OBJDIR)record_imageload.makefile.copy
+	# Replay it
+	$(PIN) -t $(OBJDIR)record_imageload$(PINTOOL_SUFFIX) -r -- $(TESTAPP) makefile $(OBJDIR)record_imageload.makefile.copy
+	# The output log should be the same at record and replay time
+	$(DIFF) record_imageload_rec.out record_imageload_play.out
+	$(RM) record_imageload_rec.out record_imageload_play.out $(OBJDIR)record_imageload.makefile.copy
+
+
+##############################################################
+#
+# Build rules
+#
+##############################################################
+
+# This section contains the build rules for all binaries that have special build rules.
+# See makefile.default.rules for the default build rules.
+
+###### Special applications' build rules ######
+
+$(OBJDIR)win_exception$(EXE_SUFFIX): win_exception.c
+	$(APP_CC) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS)

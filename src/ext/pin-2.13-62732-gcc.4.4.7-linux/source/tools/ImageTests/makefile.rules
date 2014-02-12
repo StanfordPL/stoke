@@ -1,0 +1,319 @@
+##############################################################
+#
+# This file includes all the test targets as well as all the
+# non-default build rules and test recipes.
+#
+##############################################################
+
+
+##############################################################
+#
+# Test targets
+#
+##############################################################
+
+###### Place all generic definitions here ######
+
+# This defines tests which run tools of the same name.  This is simply for convenience to avoid
+# defining the test name twice (once in TOOL_ROOTS and again in TEST_ROOTS).
+# Tests defined here should not be defined in TOOL_ROOTS and TEST_ROOTS.
+TEST_TOOL_ROOTS := img_find_by_addr
+
+# This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
+TEST_ROOTS := badmunmap
+
+# This defines a list of tests that should run in the "short" sanity. Tests in this list must also
+# appear either in the TEST_TOOL_ROOTS or the TEST_ROOTS list.
+# If the entire directory should be tested in sanity, assign TEST_TOOL_ROOTS and TEST_ROOTS to the
+# SANITY_SUBSET variable in the tests section below (see example in makefile.rules.tmpl).
+SANITY_SUBSET :=
+
+# This defines the tools which will be run during the the tests, and were not already defined in
+# TEST_TOOL_ROOTS.
+TOOL_ROOTS := badmunmap_tool
+
+# This defines the static analysis tools which will be run during the the tests. They should not
+# be defined in TEST_TOOL_ROOTS. If a test with the same name exists, it should be defined in
+# TEST_ROOTS.
+# Note: Static analysis tools are in fact executables linked with the Pin Static Analysis Library.
+# This library provides a subset of the Pin APIs which allows the tool to perform static analysis
+# of an application or dll. Pin itself is not used when this tool runs.
+SA_TOOL_ROOTS :=
+
+# This defines all the applications that will be run during the tests.
+APP_ROOTS := badmunmap_app
+
+# This defines any additional object files that need to be compiled.
+OBJECT_ROOTS :=
+
+# This defines any additional dlls (shared objects), other than the pintools, that need to be compiled.
+DLL_ROOTS :=
+
+# This defines any static libraries (archives), that need to be built.
+LIB_ROOTS :=
+
+###### Place OS-specific definitions here ######
+
+#Android
+ifeq ($(TARGET_OS),android)
+    TEST_TOOL_ROOTS +=imageUnload_tool
+    TEST_ROOTS += jitImageUnload
+    APP_ROOTS += imageUnload_app
+    DLL_ROOTS += one two my_dll my_dll_1 
+    ifeq ($(PROBE),1)
+        TEST_ROOTS += probeImageUnload l_imageLoad launchReattachImageLoadCallbacks attachReattachImageLoadCallbacks
+        TOOL_ROOTS += imageLoad_tool reattachImageLoadCallback_tool 
+        APP_ROOTS += l_imageLoad_app launchReattachImageLoadCallbacks_app attachReattachImageLoadCallbacks_app mt_fork_app
+    endif
+endif
+
+# Linux
+ifeq ($(TARGET_OS),linux)
+    TEST_TOOL_ROOTS += imageUnload_tool
+    TEST_ROOTS += jitImageUnload
+    APP_ROOTS += imageUnload_app
+    DLL_ROOTS += one two my_dll my_dll_1 
+    ifeq ($(PROBE),1)
+        TEST_ROOTS += full_path probeImageUnload l_imageLoad launchReattachImageLoadCallbacks attachReattachImageLoadCallbacks \
+                      reattach_probed_sigtrap_block
+        TOOL_ROOTS += full_path_tool imageLoad_tool reattachImageLoadCallback_tool 
+        APP_ROOTS  += full_path_app l_imageLoad_app launchReattachImageLoadCallbacks_app attachReattachImageLoadCallbacks_app mt_fork_app
+    endif
+endif
+
+# Windows
+ifeq ($(TARGET_OS),windows)
+    TEST_TOOL_ROOTS += img_open_win load_dummy_dll_tool
+    TEST_ROOTS += w_imageLoad win_load_dbghelp dbghelp_version load_dummy_dll load_dummy_dll_probe win_load_ntdll win_load_ntdll_probe
+    TOOL_ROOTS += imageLoad_tool image_load
+    APP_ROOTS += w_imageLoad_app rebase_dll load_dummy_dll win_load_ntdll w_app_launcher
+    DLL_ROOTS += dummy_dll2 dummy_dll my_dll my_dll_1 
+    ifeq ($(TARGET),intel64)
+        TEST_ROOTS += x86dll
+        APP_ROOTS  += test_ip_access_app x86dll_app 
+        DLL_ROOTS  += x86dll
+    endif
+endif
+
+###### Handle exceptions here ######
+
+# TODO: These tests fail - fix and remove the following:
+# verify_fpstate_app - has compilation issues.
+# attach_denied is disabled because it causes the Android device to crash and reboot. 
+# reattach tests are disabled - see mantis 2946.  
+# See Mantis 2907 for: l_imageLoad probeImageUnload
+ifeq ($(TARGET_OS),android)
+    TEST_ROOTS := $(filter-out launchReattachImageLoadCallbacks attachReattachImageLoadCallbacks probeImageUnload \
+                               l_imageLoad reattach_probed_sigtrap_block, $(TEST_ROOTS))
+    TOOL_ROOTS := $(filter-out reattachImageLoadCallback_tool, $(TOOL_ROOTS))
+    APP_ROOTS := $(filter-out launchReattachImageLoadCallbacks_app attachReattachImageLoadCallbacks_app, $(APP_ROOTS))
+endif
+
+# TODO: These tests fail - fix and remove the following:
+ifeq ($(TARGET_OS),windows)
+    TEST_ROOTS := $(filter-out dbghelp_version, $(TEST_ROOTS))
+endif
+
+
+##############################################################
+#
+# Test recipes
+#
+##############################################################
+
+full_path.test: $(OBJDIR)full_path_tool$(PINTOOL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)full_path_app$(EXE_SUFFIX)
+	$(PIN) -probe -t $(OBJDIR)full_path_tool$(PINTOOL_SUFFIX) -o $(OBJDIR)full_path.out \
+	  -- $(OBJDIR)full_path_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX)
+	$(GREP) "my_dll" $(OBJDIR)full_path.out | $(GREP) ^/
+	$(RM) $(OBJDIR)full_path.out
+
+l_imageLoad.test: $(OBJDIR)imageLoad_tool$(PINTOOL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) $(OBJDIR)l_imageLoad_app$(EXE_SUFFIX)
+	$(SET_DLL_PATH) $(OBJDIR)l_imageLoad_app$(EXE_SUFFIX) $(DLL_PREFIX)my_dll$(DLL_SUFFIX) \
+	  $(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) $(PIN) -probe $(OBJDIR)imageLoad_tool$(PINTOOL_SUFFIX) \
+	  -o $(OBJDIR)l_imageLoad.out
+	$(GREP) "in image callback of image:" $(OBJDIR)l_imageLoad.out | $(QGREP) "$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX)"
+	$(RM) $(OBJDIR)l_imageLoad.out
+
+launchReattachImageLoadCallbacks.test: $(OBJDIR)launchReattachImageLoadCallbacks_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) $(OBJDIR)reattachImageLoadCallback_tool$(PINTOOL_SUFFIX)
+	$(SET_DLL_PATH) $(PIN) -t $(OBJDIR)reattachImageLoadCallback_tool$(PINTOOL_SUFFIX) \
+	  -o $(OBJDIR)launchReattachImageLoadCallbacks.out -- $(OBJDIR)launchReattachImageLoadCallbacks_app$(EXE_SUFFIX) \
+	    $(OBJDIR)$(DLL_PREFIX)my_dll$(PINTOOL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(PINTOOL_SUFFIX)
+	$(QGREP) "$(DLL_PREFIX)my_dll$(DLL_SUFFIX) in iteration2" $(OBJDIR)launchReattachImageLoadCallbacks.out
+	$(QGREP) "$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) in iteration2" $(OBJDIR)launchReattachImageLoadCallbacks.out
+	$(RM) $(OBJDIR)launchReattachImageLoadCallbacks.out
+
+attachReattachImageLoadCallbacks.test: $(OBJDIR)attachReattachImageLoadCallbacks_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) $(OBJDIR)reattachImageLoadCallback_tool$(PINTOOL_SUFFIX)
+	$(SET_DLL_PATH) $(OBJDIR)attachReattachImageLoadCallbacks_app$(EXE_SUFFIX) \
+	  $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) $(PIN) -probe \
+	  $(OBJDIR)reattachImageLoadCallback_tool$(PINTOOL_SUFFIX) $(OBJDIR)attachReattachImageLoadCallbacks.out 0
+	$(QGREP) "$(DLL_PREFIX)my_dll$(DLL_SUFFIX) in iteration2" $(OBJDIR)attachReattachImageLoadCallbacks.out
+	$(QGREP) "$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) in iteration2" $(OBJDIR)attachReattachImageLoadCallbacks.out
+	$(RM) $(OBJDIR)attachReattachImageLoadCallbacks.out
+
+reattach_probed_sigtrap_block.test: $(OBJDIR)attachReattachImageLoadCallbacks_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) $(OBJDIR)reattachImageLoadCallback_tool$(PINTOOL_SUFFIX)
+	$(SET_DLL_PATH) $(OBJDIR)attachReattachImageLoadCallbacks_app$(EXE_SUFFIX) \
+	  $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) $(PIN) -probe \
+	  $(OBJDIR)reattachImageLoadCallback_tool$(PINTOOL_SUFFIX) $(OBJDIR)reattach_probed_sigtrap_block.out 1
+	$(QGREP) "$(DLL_PREFIX)my_dll$(DLL_SUFFIX) in iteration2" $(OBJDIR)reattach_probed_sigtrap_block.out
+	$(QGREP) "$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) in iteration2" $(OBJDIR)reattach_probed_sigtrap_block.out
+	$(RM) $(OBJDIR)reattach_probed_sigtrap_block.out
+
+jitImageUnload.test: $(OBJDIR)imageUnload_tool$(PINTOOL_SUFFIX) $(OBJDIR)imageUnload_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)two$(DLL_SUFFIX)
+	export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:.; $(PIN) -t $(OBJDIR)imageUnload_tool$(PINTOOL_SUFFIX) \
+	  -- $(OBJDIR)imageUnload_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX) > $(OBJDIR)jitImageUnload.out
+	$(QGREP) "one.so is mapped in the memory" $(OBJDIR)jitImageUnload.out
+	$(RM) $(OBJDIR)jitImageUnload.out
+
+probeImageUnload.test: $(OBJDIR)imageUnload_tool$(PINTOOL_SUFFIX) $(OBJDIR)imageUnload_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)two$(DLL_SUFFIX)
+	export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:.; $(PIN) -probe -t $(OBJDIR)imageUnload_tool$(PINTOOL_SUFFIX) \
+	  -- $(OBJDIR)imageUnload_app$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX) > $(OBJDIR)probeImageUnload.out
+	$(QGREP) "one.so is mapped in the memory" $(OBJDIR)probeImageUnload.out
+	$(RM) $(OBJDIR)probeImageUnload.out
+
+# Tests delivery of dll load / unload events for dynamically loaded images in JIT mode
+load_dummy_dll.test: $(OBJDIR)load_dummy_dll_tool$(PINTOOL_SUFFIX) $(OBJDIR)load_dummy_dll$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)load_dummy_dll_tool$(PINTOOL_SUFFIX) -o $(OBJDIR)load_dummy_dll.out -- $(OBJDIR)load_dummy_dll$(EXE_SUFFIX)
+	$(CGREP) -i "dummy_dll.dll loaded" $(OBJDIR)load_dummy_dll.out | $(QGREP) "2"
+	$(CGREP) -i "dummy_dll.dll unloaded" $(OBJDIR)load_dummy_dll.out | $(QGREP) "2"
+	$(RM) $(OBJDIR)load_dummy_dll.out
+
+# Tests delivery of dll load / unload events for dynamically loaded images in probe mode
+load_dummy_dll_probe.test: $(OBJDIR)load_dummy_dll_tool$(PINTOOL_SUFFIX) $(OBJDIR)load_dummy_dll$(EXE_SUFFIX)
+	$(PIN) -probe -t $(OBJDIR)load_dummy_dll_tool$(PINTOOL_SUFFIX) -o $(OBJDIR)load_dummy_dll_probe.out -- $(OBJDIR)load_dummy_dll$(EXE_SUFFIX)
+	$(CGREP) -i "dummy_dll.dll loaded" $(OBJDIR)load_dummy_dll_probe.out | $(QGREP) "2"
+	$(CGREP) -i "dummy_dll.dll unloaded" $(OBJDIR)load_dummy_dll_probe.out | $(QGREP) "2"
+	$(RM) $(OBJDIR)load_dummy_dll_probe.out
+
+w_imageLoad.test: $(OBJDIR)imageLoad_tool$(PINTOOL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX) $(OBJDIR)w_imageLoad_app$(EXE_SUFFIX) $(OBJDIR)w_app_launcher$(EXE_SUFFIX)
+	$(RM) -f $(OBJDIR)pid_w_imageLoad_app.log
+	$(OBJDIR)w_app_launcher$(EXE_SUFFIX) $(OBJDIR)w_imageLoad_app$(EXE_SUFFIX) > $(OBJDIR)pid_w_imageLoad_app.log
+	$(PIN) -probe -pid `cat $(OBJDIR)pid_w_imageLoad_app.log` -t $(OBJDIR)imageLoad_tool$(PINTOOL_SUFFIX) -o $(OBJDIR)w_imageLoad.out
+	$(QGREP) "$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX)" $(OBJDIR)w_imageLoad.out
+	$(RM) -f $(OBJDIR)pid_w_imageLoad_app.log $(OBJDIR)w_imageLoad.out
+
+# Tests proper loading of ntdll.dll on Windows in JIT mode
+win_load_ntdll.test: $(OBJDIR)image_load$(PINTOOL_SUFFIX) $(OBJDIR)win_load_ntdll$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)image_load$(PINTOOL_SUFFIX) \
+	  -- $(OBJDIR)win_load_ntdll$(EXE_SUFFIX) > $(OBJDIR)win_load_ntdll.out 2>&1
+	$(QGREP) "Success" $(OBJDIR)win_load_ntdll.out
+	$(RM) $(OBJDIR)win_load_ntdll.out
+
+# Tests proper loading of ntdll.dll on Windows in probe mode
+win_load_ntdll_probe.test: $(OBJDIR)image_load$(PINTOOL_SUFFIX) $(OBJDIR)win_load_ntdll$(EXE_SUFFIX)
+	$(PIN) -probe -t $(OBJDIR)image_load$(PINTOOL_SUFFIX) \
+	  -- $(OBJDIR)win_load_ntdll$(EXE_SUFFIX) > $(OBJDIR)win_load_ntdll_probe.out 2>&1
+	$(QGREP) "Success" $(OBJDIR)win_load_ntdll_probe.out
+	$(RM) $(OBJDIR)win_load_ntdll_probe.out
+
+# Tests proper loading of dbghelp.dll and version.dll on Windows
+win_load_dbghelp.test: $(OBJDIR)image_load$(PINTOOL_SUFFIX) $(OBJDIR)win_load_ntdll$(EXE_SUFFIX)
+	$(PIN) -probe -logfile $(OBJDIR)win_load_dbghelp.log -t $(OBJDIR)image_load$(PINTOOL_SUFFIX) \
+	  -logfile $(OBJDIR)win_load_dbghelp.log -- $(OBJDIR)win_load_ntdll$(EXE_SUFFIX) > $(OBJDIR)win_load_dbghelp.out 2>&1
+	# Successful run. dbghelp.dll and version.dll are loaded. Log file is not created.
+	$(BASHTEST) ! -f $(OBJDIR)win_load_dbghelp.log.*
+	mv $(dir $(PINBIN))dbghelp.dll $(dir $(PINBIN))dbghelp.tmp
+	-$(PIN) -probe -logfile $(OBJDIR)win_load_dbghelp.log -t $(OBJDIR)image_load$(PINTOOL_SUFFIX) \
+	  -logfile $(OBJDIR)win_load_dbghelp.log -- $(OBJDIR)win_load_ntdll$(EXE_SUFFIX) > $(OBJDIR)win_load_dbghelp.out 2>&1
+	mv $(dir $(PINBIN))dbghelp.tmp $(dir $(PINBIN))dbghelp.dll
+	# dbghelp.dll should not be loaded, thus log file is created.
+	$(BASHTEST) -f $(OBJDIR)win_load_dbghelp.log.*
+	$(RM) $(OBJDIR)win_load_dbghelp.out $(OBJDIR)win_load_dbghelp.log.*
+
+# Tests IMG_Open on Windows
+img_open_win.test: $(OBJDIR)img_open_win$(PINTOOL_SUFFIX) $(OBJDIR)rebase_dll$(EXE_SUFFIX) $(OBJDIR)$(DLL_PREFIX)dummy_dll$(DLL_SUFFIX) $(OBJDIR)$(DLL_PREFIX)dummy_dll2$(DLL_SUFFIX)
+	$(PIN) -probe -t $(OBJDIR)img_open_win$(PINTOOL_SUFFIX) -o $(OBJDIR)img_open_win.out -- $(OBJDIR)rebase_dll$(EXE_SUFFIX)
+	$(CGREP) -i "nothing" $(OBJDIR)img_open_win.out | $(QGREP) "3"
+	$(RM) $(OBJDIR)img_open_win.out
+
+# Tests dbghelp.dll version checking
+dbghelp_version.test: $(OBJDIR)load_dummy_dll_tool$(PINTOOL_SUFFIX) $(OBJDIR)load_dummy_dll$(EXE_SUFFIX)
+	mkdir -p pintempdir
+	# Copy pin binaries and dbghelp.dll to temp directory, run pin from the directory
+	cp -r $(dir $(PINBIN))/*.exe pintempdir
+	cp -r $(dir $(PINBIN))/*.dll pintempdir
+	# First run with proper dbghelp.dll
+	pintempdir/pin -probe -xyzzy -log_server 1 -logfile $(OBJDIR)dbghelp_version.log \
+	  -t $(OBJDIR)load_dummy_dll_tool$(PINTOOL_SUFFIX)  -o $(OBJDIR)dbghelp_version.out -xyzzy -log_server 1 -logfile $(OBJDIR)dbghelp_version.log \
+	    -- $(OBJDIR)load_dummy_dll$(EXE_SUFFIX)
+	$(CGREP) -i "dbghelp.dll version mismatch" $(OBJDIR)dbghelp_version.log* | $(QGREP) "0"
+	# Second run with unsupported system dbghelp.dll
+	$(RM) -f pintempdir/dbghelp.dll $(OBJDIR)dbghelp_version.log* $(OBJDIR)dbghelp_version.out
+	# Copy dbghelp.dll from Windows system directory
+ifeq ($(TARGET),$(HOST_ARCH))
+	# target matches the host. Native dbghelp.dll is located in $(NTDLL)/system32
+	NTDLL=`which ntdll.dll` ; cp `dirname $$NTDLL`/../system32/dbghelp.dll pintempdir
+else
+	# target is IA-32 and host is Intel(R) 64. 32-bit dbghelp.dll is located in $(NTDLL)/syswow64
+	NTDLL=`which ntdll.dll` ; cp `dirname $$NTDLL`/../syswow64/dbghelp.dll pintempdir
+endif
+	pintempdir/pin -probe -xyzzy -log_server 1 -logfile $(OBJDIR)dbghelp_version.log \
+	  -t $(OBJDIR)load_dummy_dll_tool$(PINTOOL_SUFFIX) -o $(OBJDIR)dbghelp_version.out -xyzzy -log_server 1 -logfile $(OBJDIR)dbghelp_version.log \
+	    -- $(OBJDIR)load_dummy_dll$(EXE_SUFFIX)
+	$(QGREP) -i "dbghelp.dll version mismatch" $(OBJDIR)dbghelp_version.log*
+	$(RM) -rf pintempdir $(OBJDIR)dbghelp_version.log* $(OBJDIR)dbghelp_version.out
+
+# Tests proper processing of IA-32 dll loaded in Intel(R) 64 process on Windows
+x86dll.test: $(OBJDIR)load_dummy_dll_tool$(PINTOOL_SUFFIX) $(OBJDIR)x86dll_app$(EXE_SUFFIX) 
+	$(PIN) -t $(OBJDIR)load_dummy_dll_tool$(PINTOOL_SUFFIX) -o $(OBJDIR)x86dll.out -- $(OBJDIR)x86dll_app$(EXE_SUFFIX)
+	$(RM) $(OBJDIR)x86dll.out
+
+badmunmap.test: $(OBJDIR)badmunmap_tool$(PINTOOL_SUFFIX) $(OBJDIR)badmunmap_app$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)badmunmap_tool$(PINTOOL_SUFFIX) -- $(OBJDIR)badmunmap_app$(EXE_SUFFIX) > $(OBJDIR)badmunmap.log 2>&1
+	$(QGREP) "TOOL: SUCCESS" $(OBJDIR)badmunmap.log
+	$(RM) $(OBJDIR)badmunmap.log
+
+##############################################################
+#
+# Build rules
+#
+##############################################################
+
+# This section contains the build rules for all binaries that have special build rules.
+# See makefile.default.rules for the default build rules.
+
+###### Special applications' build rules ######
+
+$(OBJDIR)rebase_dll2$(EXE_SUFFIX): rebase_dll.c dummy_dll.c
+	$(APP_CC) $(APP_CXXFLAGS) $(COMP_EXE)$@ $^ $(APP_LDFLAGS) /FIXED:NO /BASE:0 $(APP_LIBS)
+
+$(OBJDIR)imageUnload_app$(EXE_SUFFIX): imageUnload_app.c
+	$(APP_CC) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS)
+
+$(OBJDIR)w_imageLoad_app$(EXE_SUFFIX): w_imageLoad_app.cpp
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS)
+
+$(OBJDIR)launchReattachImageLoadCallbacks_app$(EXE_SUFFIX): launchReattachImageLoadCallbacks_app.cpp
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
+
+$(OBJDIR)attachReattachImageLoadCallbacks_app$(EXE_SUFFIX): attachReattachImageLoadCallbacks_app.cpp
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
+
+$(OBJDIR)l_imageLoad_app$(EXE_SUFFIX): l_imageLoad_app.cpp
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
+
+$(OBJDIR)badmunmap_app$(EXE_SUFFIX): badmunmap_app.cpp
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(APP_LIBS) $(CXX_LPATHS) $(CXX_LIBS)
+
+###### Special dlls' build rules ######
+
+$(OBJDIR)$(DLL_PREFIX)dummy_dll$(DLL_SUFFIX): dummy_dll.c
+	$(APP_CC) $(APP_CXXFLAGS) $(DLL_CXXFLAGS) $(COMP_EXE)$@ $< $(APP_LDFLAGS) $(DLL_LDFLAGS) /NOENTRY /BASE:0x10000000 $(APP_LIBS)
+
+$(OBJDIR)$(DLL_PREFIX)dummy_dll2$(DLL_SUFFIX): $(OBJDIR)$(DLL_PREFIX)dummy_dll$(DLL_SUFFIX)
+	cp $< $@
+
+$(OBJDIR)$(DLL_PREFIX)x86dll$(DLL_SUFFIX):
+	touch $(OBJDIR)x86dll.def
+	$(LINKER) $(LINK_EXE)$@ /MACHINE:X86 /DEF:$(OBJDIR)x86dll.def /NOLOGO /NOENTRY /MANIFEST:NO $(DLL_LDFLAGS)
+
+$(OBJDIR)$(DLL_PREFIX)one$(DLL_SUFFIX): one.c
+	$(APP_CC) $(APP_CXXFLAGS) $(DLL_CXXFLAGS) $(COMP_EXE)$@ $< $(APP_LDFLAGS) $(DLL_LDFLAGS) $(APP_LIBS)
+
+$(OBJDIR)$(DLL_PREFIX)two$(DLL_SUFFIX): two.c
+	$(APP_CC) $(APP_CXXFLAGS) $(DLL_CXXFLAGS) $(COMP_EXE)$@ $< $(APP_LDFLAGS) $(DLL_LDFLAGS) $(APP_LIBS)
+
+$(OBJDIR)$(DLL_PREFIX)my_dll$(DLL_SUFFIX): my_dll.c
+	$(APP_CC) $(APP_CXXFLAGS) $(DLL_CXXFLAGS) $(COMP_EXE)$@ $< $(APP_LDFLAGS) $(DLL_LDFLAGS) $(APP_LIBS)
+
+$(OBJDIR)$(DLL_PREFIX)my_dll_1$(DLL_SUFFIX): my_dll.c
+	$(APP_CC) $(APP_CXXFLAGS) $(DLL_CXXFLAGS) $(COMP_EXE)$@ $< $(APP_LDFLAGS) $(DLL_LDFLAGS) $(APP_LIBS)

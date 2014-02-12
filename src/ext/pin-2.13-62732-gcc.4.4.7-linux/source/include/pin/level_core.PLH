@@ -1,0 +1,61 @@
+//
+// @ORIGINAL_AUTHOR: Robert Muth
+//
+/*! @file
+ *
+ * Creates the namespace for LEVEL_CORE and includes all necessary header
+ * files. This should only be included by pin.H
+ */
+
+#ifdef LEVEL_CORE_H
+#error duplicate inclusion
+#else
+#define LEVEL_CORE_H
+#if defined(TARGET_IA32) || defined(TARGET_IA32E) || defined(TARGET_MIC)
+
+// This forward declaration allows the INS_XedDec() 
+extern "C" {
+#include "xed-types.h"
+struct xed_decoded_inst_s;
+typedef struct xed_decoded_inst_s xed_decoded_inst_t;
+}
+
+#endif
+
+namespace LEVEL_CORE
+{
+
+using namespace LEVEL_BASE;
+    
+#include "types_core.TLH"
+#include "val.PH"
+#include "sec.PH"
+#include "img.PH"
+#include "bbl.PH"
+#include "edg.PH"
+#include "ins.PH"
+#include "regset.PH"
+
+#if defined(TARGET_IA32) || defined(TARGET_IA32E) || defined(TARGET_MIC)
+# include "ins_ia32.PH"
+# include "regset_ia32.PH"
+
+# if defined(TARGET_LINUX) || defined(TARGET_MAC) || defined(TARGET_BSD)
+#  include "ins_syscall_ia32_unix.PH"
+# elif defined(TARGET_WINDOWS)
+#  include "ins_syscall_ia32_windows.PH"
+# else
+#  error "No target os"
+# endif
+
+# include "ins_api_xed_ia32.PH"
+# include "ins_xed_ia32.PH"
+# include "operand_ia32.PH"
+
+#else
+# error "no target arch defined"
+#endif
+
+} // namespace LEVEL_CORE
+
+#endif // LEVEL_CORE_H

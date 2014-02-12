@@ -1,0 +1,137 @@
+##############################################################
+#
+# This file includes all the test targets as well as all the
+# non-default build rules and test recipes.
+#
+##############################################################
+
+
+##############################################################
+#
+# Test targets
+#
+##############################################################
+
+###### Place all generic definitions here ######
+
+# This defines tests which run tools of the same name.  This is simply for convenience to avoid
+# defining the test name twice (once in TOOL_ROOTS and again in TEST_ROOTS).
+# Tests defined here should not be defined in TOOL_ROOTS and TEST_ROOTS.
+TEST_TOOL_ROOTS := memtrace memtrace_simple
+
+# This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
+TEST_ROOTS := memtracemt memtrace_simple_mt
+
+# This defines a list of tests that should run in the "short" sanity. Tests in this list must also
+# appear either in the TEST_TOOL_ROOTS or the TEST_ROOTS list.
+# If the entire directory should be tested in sanity, assign TEST_TOOL_ROOTS and TEST_ROOTS to the
+# SANITY_SUBSET variable in the tests section below (see example in makefile.rules.tmpl).
+SANITY_SUBSET :=
+
+# This defines the tools which will be run during the the tests, and were not already defined in
+# TEST_TOOL_ROOTS.
+TOOL_ROOTS :=
+
+# This defines the static analysis tools which will be run during the the tests. They should not
+# be defined in TEST_TOOL_ROOTS. If a test with the same name exists, it should be defined in
+# TEST_ROOTS.
+# Note: Static analysis tools are in fact executables linked with the Pin Static Analysis Library.
+# This library provides a subset of the Pin APIs which allows the tool to perform static analysis
+# of an application or dll. Pin itself is not used when this tool runs.
+SA_TOOL_ROOTS :=
+
+# This defines all the applications that will be run during the tests.
+APP_ROOTS := thread
+
+# This defines any additional object files that need to be compiled.
+OBJECT_ROOTS :=
+
+# This defines any additional dlls (shared objects), other than the pintools, that need to be compiled.
+DLL_ROOTS :=
+
+# This defines any static libraries (archives), that need to be built.
+LIB_ROOTS :=
+
+###### Place OS-specific definitions here ######
+
+# Linux
+ifeq ($(TARGET_OS),linux)
+    TEST_TOOL_ROOTS += membuffer membuffer_simple membuffer_simple_tid
+    TEST_ROOTS += membuffermt membuffer_simple_mt
+    APP_ROOTS += thread2
+    OBJECT_ROOTS += atomic_increment_$(TARGET)
+endif
+
+# Windows
+ifeq ($(TARGET_OS),windows)
+    TEST_TOOL_ROOTS += membuffer membuffer_simple membuffer_simple_tid membuffer_threadpool memtrace_threadpool
+    TEST_ROOTS += membuffer_threadpool_mt memtrace_threadpool_mt
+    APP_ROOTS += thread2
+    OBJECT_ROOTS += atomic_increment_$(TARGET)
+endif
+
+###### Handle exceptions here ######
+
+# TODO: These tests fail - fix and remove the following:
+# See Mantis 2963
+ifeq ($(TARGET),mic)
+    TEST_TOOL_ROOTS := $(filter-out membuffer_simple_tid membuffer membuffer_simple membuffermt membuffer_simple_mt, \
+                                    $(TEST_TOOL_ROOTS))
+    TEST_ROOTS := $(filter-out membuffermt membuffer_simple_mt, $(TEST_ROOTS))
+    APP_ROOTS := $(filter-out thread2, $(APP_ROOTS))
+endif
+
+# TODO: These tests fail - fix and remove the following:
+ifeq ($(TARGET_OS),mac)
+    TEST_ROOTS := $(filter-out memtrace_simple_mt memtracemt, $(TEST_ROOTS))
+endif
+
+
+##############################################################
+#
+# Test recipes
+#
+##############################################################
+
+# This section contains recipes for tests other than the default.
+# See makefile.default.rules for the default test rules.
+# All tests in this section should adhere to the naming convention: <testname>.test
+
+memtracemt.test: $(OBJDIR)memtrace$(PINTOOL_SUFFIX) $(OBJDIR)thread$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)memtrace$(PINTOOL_SUFFIX) -emit 0 -- $(OBJDIR)thread$(EXE_SUFFIX)
+
+membuffermt.test: $(OBJDIR)membuffer$(PINTOOL_SUFFIX) $(OBJDIR)thread$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)membuffer$(PINTOOL_SUFFIX) -emit 0 -- $(OBJDIR)thread$(EXE_SUFFIX)
+
+membuffer_simple_mt.test: $(OBJDIR)membuffer_simple$(PINTOOL_SUFFIX) $(OBJDIR)thread$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)membuffer_simple$(PINTOOL_SUFFIX) -- $(OBJDIR)thread$(EXE_SUFFIX)
+
+membuffer_simple_tid.test: $(OBJDIR)membuffer_simple_tid$(PINTOOL_SUFFIX) $(OBJDIR)thread2$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)membuffer_simple_tid$(PINTOOL_SUFFIX) -- $(OBJDIR)thread2$(EXE_SUFFIX)
+
+memtrace_simple_mt.test: $(OBJDIR)memtrace_simple$(PINTOOL_SUFFIX) $(OBJDIR)thread$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)memtrace_simple$(PINTOOL_SUFFIX) -- $(OBJDIR)thread$(EXE_SUFFIX)
+
+membuffer_threadpool_mt.test: $(OBJDIR)membuffer_threadpool$(PINTOOL_SUFFIX) $(OBJDIR)thread$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)membuffer_threadpool$(PINTOOL_SUFFIX) -- $(OBJDIR)thread$(EXE_SUFFIX)
+
+memtrace_threadpool_mt.test: $(OBJDIR)memtrace_threadpool$(PINTOOL_SUFFIX) $(OBJDIR)thread$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)memtrace_threadpool$(PINTOOL_SUFFIX) -- $(OBJDIR)thread$(EXE_SUFFIX)
+
+
+##############################################################
+#
+# Build rules
+#
+##############################################################
+
+# This section contains the build rules for all binaries that have special build rules.
+# See makefile.default.rules for the default build rules.
+
+###### Special applications' build rules ######
+
+$(OBJDIR)thread$(EXE_SUFFIX): thread.c $(THREADLIB)
+	$(APP_CC) $(APP_CXXFLAGS) $(COMP_EXE)$@ $^ $(APP_LDFLAGS) $(APP_LIBS)
+
+$(OBJDIR)thread2$(EXE_SUFFIX): thread2.cpp $(THREADLIB) $(OBJDIR)atomic_increment_$(TARGET)$(OBJ_SUFFIX)
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $^ $(APP_LDFLAGS_NOOPT) $(APP_LIBS)

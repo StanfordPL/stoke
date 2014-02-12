@@ -1,0 +1,166 @@
+/*BEGIN_LEGAL 
+Intel Open Source License 
+
+Copyright (c) 2002-2013 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
+/*
+**
+** @ORIGINAL_AUTHOR: Robert Muth
+*/
+
+/*! @file
+ *
+ * this headerfile contains defines the types that are the foundation of
+ * other code
+ *
+ */
+
+#ifndef TYPES_FOUNDATION_H
+#define TYPES_FOUNDATION_H
+
+#ifdef  __cplusplus
+typedef bool BOOL;
+#else
+typedef unsigned char BOOL;
+#endif
+
+#if !defined(TRUE)
+#   define TRUE 1
+#endif
+#if !defined(FALSE)
+#   define FALSE 0
+#endif
+
+#if !defined(VOID)
+typedef void VOID; 
+#endif
+
+typedef char            CHAR;
+typedef unsigned int    UINT;
+typedef int             INT;
+typedef double          FLT64;
+typedef float           FLT32;
+typedef unsigned int    USIZE;
+typedef signed int      SIZE;
+
+/*
+ * Generic type for three-state logic.
+ */
+enum TRI
+{
+    TRI_YES,
+    TRI_NO,
+    TRI_MAYBE
+};
+
+#if defined(_MSC_VER)
+typedef unsigned __int8 UINT8 ;
+typedef unsigned __int16 UINT16;
+typedef unsigned __int32 UINT32;
+typedef unsigned __int64 UINT64;
+typedef __int8 INT8;
+typedef __int16 INT16;
+typedef __int32 INT32;
+typedef __int64 INT64;
+
+#else
+
+typedef uint8_t  UINT8;
+typedef uint16_t UINT16;
+typedef uint32_t UINT32;
+typedef uint64_t UINT64;
+typedef int8_t  INT8;
+typedef int16_t INT16;
+typedef int32_t INT32;
+typedef int64_t INT64;
+# endif
+
+
+/*
+ * Unsigned integer of the same size as a pointer on the TARGET architecture.
+ * This quantity can be converted to and from an OADDR/IADDR
+ *
+ * There is an option of overflow and underflow when using ADDRDELTA.
+ * For example, let's look at a 32 bit address. 
+ * 32 bit address is 32 bit unsigned int number. 
+ * This means that the maximum delta between two addresses is (2^32 - 1), which means that the ADDRDELTA which is signed may overflow.
+ */
+#if defined(TARGET_IA32)
+typedef UINT32 ADDRINT;
+typedef INT32 ADDRDELTA;
+
+#elif (defined(TARGET_IA32E) || defined(TARGET_MIC))
+typedef UINT64 ADDRINT;
+typedef INT64 ADDRDELTA;
+
+#elif defined(TARGET_DOXYGEN)
+typedef xxx ADDRINT;
+typedef xxx ADDRDELTA;
+
+#else
+#error "Unsupported target architecture"
+#endif
+
+#if defined(HOST_IA32)
+typedef UINT32 VOIDINT;
+#elif defined(HOST_IA32E) || defined(HOST_MIC)
+typedef UINT64 VOIDINT;
+#else
+typedef ADDRINT VOIDINT;
+#endif
+
+typedef UINT64 REG_CLASS_BITS;
+typedef UINT32 REG_SUBCLASS_BITS;
+
+/*
+ * Generic macro definitions
+ */
+
+#ifndef MAX
+#define MAX(a, b) (((a)>(b))?(a) : (b))
+#endif
+
+#ifndef MIN
+#define MIN(a, b) (((a)<(b))?(a) : (b))
+#endif
+
+#if defined(_MSC_VER)
+
+#define STRTOUINT64 _strtoui64
+#define STRTOINT64  _strtoi64
+#define ALIGNMENT_OF(t) __alignof(t)
+
+#else
+
+#define STRTOUINT64 strtoull
+#define STRTOINT64  strtoll
+#define ALIGNMENT_OF(t) __alignof__(t)
+
+#endif
+
+#endif

@@ -1,0 +1,31 @@
+//
+// @ORIGINAL_AUTHOR: Robert Cohn
+//
+/*! @file
+ *
+ * This is included in pin.H. It creates the subset of LEVEL_VM that is
+ * part of the pintool api.
+ *
+ * If libpin.a needs to access types, but they are not part of the
+ * api, then put that in level_vmclient.H
+ *
+ */
+
+#ifdef LEVEL_VMCLIENT_H
+#error duplicate inclusion
+#else
+#define LEVEL_VMCLIENT_H
+
+#include <stdarg.h>
+#include <vector>
+
+namespace LEVEL_VM
+{
+
+using namespace LEVEL_CORE;
+
+#include "types_vmapi.TLH"
+
+}
+
+#endif

@@ -1,0 +1,3 @@
+Breakpoint 1,\s*main.*at\s*checkpoint-app.c:(13|16)
+Breakpoint 2,\s*Done.*at\s*checkpoint-app.c:(27|28)
+Breakpoint 2,\s*Done.*at\s*checkpoint-app.c:(27|28)

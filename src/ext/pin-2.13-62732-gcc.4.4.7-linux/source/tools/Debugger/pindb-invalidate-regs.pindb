@@ -1,0 +1,4 @@
+monitor clear-sp
+invalidate-regs
+p $sp
+q

@@ -1,0 +1,4 @@
+#! /bin/bash
+if [ -f $1 ]; then \
+if [[ `$1 --version | egrep -o "[1-9]{1}\.[1-9]{1}(\.[0-9]*)?" | head -1` < $2 ]]; then echo 1; else echo 0; fi \
+else echo 0; fi

@@ -1,0 +1,3 @@
+Breakpoint 1,\s*main.*at\s*reattach-loop.cpp:(11|12|13)
+Breakpoint 2,\s*Breakpoint.*at\s*reattach-loop.cpp:(27|30)
+.*= 89

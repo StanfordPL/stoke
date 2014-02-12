@@ -1,0 +1,138 @@
+##############################################################
+#
+# This file includes all the test targets as well as all the
+# non-default build rules and test recipes.
+#
+##############################################################
+
+
+##############################################################
+#
+# Test targets
+#
+##############################################################
+
+###### Place all generic definitions here ######
+
+# This defines tests which run tools of the same name.  This is simply for convenience to avoid
+# defining the test name twice (once in TOOL_ROOTS and again in TEST_ROOTS).
+# Tests defined here should not be defined in TOOL_ROOTS and TEST_ROOTS.
+TEST_TOOL_ROOTS := icache dcache allcache dcache_xscale_config footprint
+
+# This defines the tests to be run that were not already defined in TEST_TOOL_ROOTS.
+TEST_ROOTS := memory_allocation_access_protection new_delete
+
+# This defines a list of tests that should run in the "short" sanity. Tests in this list must also
+# appear either in the TEST_TOOL_ROOTS or the TEST_ROOTS list.
+# If the entire directory should be tested in sanity, assign TEST_TOOL_ROOTS and TEST_ROOTS to the
+# SANITY_SUBSET variable in the tests section below (see example in makefile.rules.tmpl).
+SANITY_SUBSET := memory_allocation_access_protection
+
+# This defines the tools which will be run during the the tests, and were not already defined in
+# TEST_TOOL_ROOTS.
+TOOL_ROOTS := memory_allocation_from_app_access_protection_tool memory_allocation_from_tool_access_protection_tool new_delete_tool
+
+# This defines all the applications that will be run during the tests.
+APP_ROOTS := access_protection_app new_delete_app
+
+# This defines any additional object files that need to be compiled.
+OBJECT_ROOTS :=
+
+# This defines any additional dlls (shared objects), other than the pintools, that need to be compiled.
+DLL_ROOTS :=
+
+# This defines any static libraries (archives), that need to be built.
+LIB_ROOTS :=
+
+###### Place architecture-specific definitions here ######
+
+# Place intel64-specific definitions here if they apply to all supported operating systems.
+ifeq ($(TARGET),intel64)
+    TEST_TOOL_ROOTS += big_malloc
+endif
+
+###### Place OS-specific definitions here ######
+
+# Linux
+ifeq ($(TARGET_OS),linux)
+    TEST_TOOL_ROOTS += memalloc memalloc2
+endif
+
+# Windows
+ifeq ($(TARGET_OS),windows)
+    TEST_TOOL_ROOTS += memalloc memalloc2
+endif
+
+# TODO: These tests fail on Mac - fix and remove the following:
+ifeq ($(TARGET_OS),mac)
+    TEST_TOOL_ROOTS := $(TEST_TOOL_ROOTS:big_malloc=)
+    TEST_ROOTS := $(TEST_ROOTS:new_delete=)
+endif
+
+
+##############################################################
+#
+# Test recipes
+#
+##############################################################
+
+# This section contains recipes for tests other than the default.
+# See makefile.default.rules for the default test rules.
+# All tests in this section should adhere to the naming convention: <testname>.test
+
+# Checks the correctness of the APIs: PIN_CheckReadAccess and PIN_CheckWriteAccess.
+memory_allocation_access_protection.test: $(OBJDIR)memory_allocation_from_tool_access_protection_tool$(PINTOOL_SUFFIX) $(OBJDIR)memory_allocation_from_app_access_protection_tool$(PINTOOL_SUFFIX) $(OBJDIR)access_protection_app$(EXE_SUFFIX)
+	$(PIN) -t $(OBJDIR)memory_allocation_from_tool_access_protection_tool$(PINTOOL_SUFFIX) \
+	  -o $(OBJDIR)memory_allocation_from_tool_access_protection.out -- $(OBJDIR)access_protection_app$(EXE_SUFFIX) 2
+	$(QGREP) "0011" $(OBJDIR)memory_allocation_from_tool_access_protection.out
+	$(PIN) -t $(OBJDIR)memory_allocation_from_app_access_protection_tool$(PINTOOL_SUFFIX) \
+	  -o $(OBJDIR)memory_allocation_from_app_access_protection.out -- $(OBJDIR)access_protection_app$(EXE_SUFFIX) 1
+	$(QGREP) "00" $(OBJDIR)memory_allocation_from_app_access_protection.out
+	$(QGREP) "11" $(OBJDIR)memory_allocation_from_app_access_protection.out
+	$(RM) $(OBJDIR)memory_allocation_from_app_access_protection.out
+	$(RM) $(OBJDIR)memory_allocation_from_tool_access_protection.out
+
+# In this test the tool does repeated mallocs in it's Fini function until it gets a NULL return value
+# It tests that PIN's malloc supplied to the tool correctly returns NULL when out of memory
+# A separate test is still needed to get PIN to internally exhaust memory and see that PIN
+# outputs the "Out of memory" message to the pin logfile before exiting.
+memalloc.test: $(OBJDIR)memalloc$(PINTOOL_SUFFIX) $(TESTAPP)
+	$(RM) -f $(OBJDIR)memalloc.out
+	$(PIN) -t $(OBJDIR)memalloc$(PINTOOL_SUFFIX) -o $(OBJDIR)memalloc.out -- $(TESTAPP) makefile $(OBJDIR)memalloc.makefile.copy
+	$(QGREP) NULL $(OBJDIR)memalloc.out
+	$(RM) $(OBJDIR)memalloc.out $(OBJDIR)memalloc.makefile.copy
+
+memalloc2.test: $(OBJDIR)memalloc2$(PINTOOL_SUFFIX) $(TESTAPP)
+	$(RM) -f $(OBJDIR)memalloc2.out
+	$(PIN) -t $(OBJDIR)memalloc2$(PINTOOL_SUFFIX) -o $(OBJDIR)memalloc2.out -- $(TESTAPP) makefile $(OBJDIR)memalloc2.makefile.copy
+	$(QGREP) OutOfMem $(OBJDIR)memalloc2.out
+	$(RM) $(OBJDIR)memalloc2.out $(OBJDIR)memalloc2.makefile.copy
+
+new_delete.test: $(OBJDIR)new_delete_tool$(PINTOOL_SUFFIX) $(OBJDIR)new_delete_app$(EXE_SUFFIX)
+	$(PIN) -xyzzy -statistic -logfile $(OBJDIR)new_delete.log -t $(OBJDIR)new_delete_tool$(PINTOOL_SUFFIX) \
+	  -- $(OBJDIR)new_delete_app$(EXE_SUFFIX)
+	numToolBytes=`$(GREP) 'mem::bytes::RawMmap/tool ' ./$(OBJDIR)new_delete.log | $(SED) -e 's/.*norm: *[0-9\.]*//' | $(SED) -e 's/\/.*//' | $(SED) -e 's/,//g'`; \
+	  $(BASHTEST) `$(EXPR) $$numToolBytes \< 1000000` -eq "1"
+	$(RM) $(OBJDIR)new_delete.log
+
+
+##############################################################
+#
+# Build rules
+#
+##############################################################
+
+# This section contains the build rules for all binaries that have special build rules.
+# See makefile.default.rules for the default build rules.
+
+ifeq ($(TARGET_OS),windows)
+    ACCESS_PROTECTION_APP_EXPORTS := /EXPORT:NotifyPinAfterMmap
+endif
+
+###### Special applications' build rules ######
+
+$(OBJDIR)access_protection_app$(EXE_SUFFIX): access_protection_app.cpp
+	$(APP_CXX) $(APP_CXXFLAGS_NOOPT) $(COMP_EXE)$@ $< $(APP_LDFLAGS_NOOPT) $(ACCESS_PROTECTION_APP_EXPORTS) $(APP_LIBS)
+
+$(OBJDIR)new_delete_app$(EXE_SUFFIX): new_delete_app.cpp $(THREADLIB)
+	$(APP_CXX) $(COMPONENT_INCLUDES) $(APP_CXXFLAGS) $(COMP_EXE)$@ $^ $(APP_LDFLAGS) $(APP_LPATHS) $(APP_LIBS) $(APP_LIB_ATOMIC) $(CXX_LPATHS) $(CXX_LIBS)

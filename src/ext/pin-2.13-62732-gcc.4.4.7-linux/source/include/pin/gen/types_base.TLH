@@ -1,0 +1,260 @@
+/*BEGIN_LEGAL 
+Intel Open Source License 
+
+Copyright (c) 2002-2013 Intel Corporation. All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.  Redistributions
+in binary form must reproduce the above copyright notice, this list of
+conditions and the following disclaimer in the documentation and/or
+other materials provided with the distribution.  Neither the name of
+the Intel Corporation nor the names of its contributors may be used to
+endorse or promote products derived from this software without
+specific prior written permission.
+ 
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE INTEL OR
+ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+END_LEGAL */
+/*
+**
+** @ORIGINAL_AUTHOR: Robert Muth
+*/
+
+/*! @file
+  this headerfile contains defines the (additional) types needed by @ref LEVEL_BASE
+ */
+
+#ifndef TYPES_BASE_H
+#define TYPES_BASE_H
+
+#define B_VERBOSE 1
+#define B_BRIEF 0  
+
+typedef VOID (*AFUNPTR)();
+typedef VOID *(*THREAD_STARTROUTINE)(void *);
+typedef VOID (*DESTRUCTFUN)(void*);
+
+static inline USIZE USIZE_INVALID() {return ~(0L);}
+
+/*
+** this hack allows for better utilization of the base ins stripe.
+*/
+
+typedef UINT16 OPCODE;
+
+static inline  OPCODE OPCODE_INVALID() {return  0;}
+static inline BOOL OPCODE_valid(OPCODE opc){ return opc != 0;}
+
+#if defined(TARGET_LINUX) || defined(TARGET_MAC) || defined(TARGET_BSD)
+#define KNOB_ONLY_ON_UNIX "1"
+#else
+#define KNOB_ONLY_ON_UNIX "0"
+#endif
+
+#if defined(TARGET_LINUX) || defined(TARGET_WINDOWS)
+#define KNOB_ONLY_ON_WINDOWS_AND_LINUX "1"
+#else
+#define KNOB_ONLY_ON_WINDOWS_AND_LINUX "0"
+#endif
+
+#if defined(TARGET_LINUX) || defined(TARGET_BSD)
+#define KNOB_ONLY_ON_LINUX_AND_BSD "1"
+#else
+#define KNOB_ONLY_ON_LINUX_AND_BSD "0"
+#endif
+
+#if defined(TARGET_LINUX) || defined(TARGET_BSD) || defined(TARGET_WINDOWS)
+#define KNOB_ONLY_ON_WINDOWS_LINUX_AND_BSD "1"
+#else
+#define KNOB_ONLY_ON_WINDOWS_LINUX_AND_BSD "0"
+#endif
+
+#if defined(TARGET_LINUX)
+#define KNOB_ONLY_ON_LINUX "1"
+#else
+#define KNOB_ONLY_ON_LINUX "0"
+#endif
+
+#if defined(TARGET_MAC)
+#define KNOB_ONLY_ON_MAC "1"
+#else
+#define KNOB_ONLY_ON_MAC "0"
+#endif
+
+#if defined(TARGET_WINDOWS)
+#define KNOB_ONLY_ON_WINDOWS "1"
+#else
+#define KNOB_ONLY_ON_WINDOWS "0"
+#endif
+
+#if defined(TARGET_IA32E)
+#define KNOB_ONLY_ON_IA32E "1"
+#else
+#define KNOB_ONLY_ON_IA32E "0"
+#endif
+
+#if defined(TARGET_IA32) || defined(TARGET_IA32E)
+#define KNOB_ONLY_ON_IA32_IA32E "1"
+#else
+#define KNOB_ONLY_ON_IA32_IA32E "0"
+#endif
+
+#if defined(TARGET_MIC)
+#define KNOB_ONLY_ON_MIC "1"
+#define KNOB_ONLY_OFF_MIC "0"
+#else
+#define KNOB_ONLY_ON_MIC "0"
+#define KNOB_ONLY_OFF_MIC "1"
+#endif
+
+#if defined(TARGET_IA32E) || defined(TARGET_MIC)
+#define KNOB_ONLY_ON_IA32E_MIC "1"
+#else
+#define KNOB_ONLY_ON_IA32E_MIC "0"
+#endif
+
+#if defined(TARGET_IA32) || defined(TARGET_IA32E) || defined(TARGET_MIC)
+#define KNOB_ONLY_ON_X86 "1"
+#else
+#define KNOB_ONLY_ON_X86 "0"
+#endif
+
+#if (defined(TARGET_IA32) || defined(TARGET_IA32E)) && defined(TARGET_LINUX)
+#define KNOB_ONLY_ON_IA32_IA32E_LINUX "1"
+#else
+#define KNOB_ONLY_ON_IA32_IA32E_LINUX "0"
+#endif
+
+#define HEX(val) 0x##val
+
+#if defined(TARGET_MAC)
+// on mac the section name must start with '__'
+#define CHARM_VERSION_SECNAME "__charmversion"
+#define PIN_CLIENTINT_SECNAME "__pinclientint"
+#else
+#define CHARM_VERSION_SECNAME ".charmversion"
+#define PIN_CLIENTINT_SECNAME ".pinclientint"
+#endif
+
+class STAT;
+class STAT_NORM;
+
+/*! @ingroup PTRACE
+  x
+*/
+
+#if defined(TARGET_MAC)
+
+// For Mach-O
+typedef struct 
+{
+    // Name of the dynamic loader
+    const CHAR *_loaderFname;
+    
+    VOID *_pinclientint;
+    CHAR *_charmversion;
+
+    // preferred virtual address of the first segment mapped (not including the Pagezero segment)
+    ADDRINT _preferredStartAddr;
+
+    // This is the location that the miniloader will store the actualLoadAddr
+    ADDRINT _actualStartAddrIndex;
+    
+    // actual virtual address of the first segment mapped
+    ADDRINT _actualStartAddr;
+    
+    // preferred virtual address of the very first instruction executed
+    ADDRINT _preferredEntryAddr;
+
+    // preferred address of the location where the header of this image is mapped to
+    ADDRINT _preferredMhAddr;
+    
+    // This is an index to the byte location that the miniloader will store the load offset.
+    // This does not seem to be used.
+    ADDRINT _loadOffsetIndex;
+
+    // Load offset will be copied from LoadOffsetLoc to here
+    // We need to copy because miniloader may not run in same address space
+    ADDRINT _loadOffset;
+
+    // Base address at which the tool so is loaded
+    ADDRINT _toolBaseAddress;
+
+    // the "handle" whan loading shared object.
+    VOID *_dlHandle;
+
+    // the tool "main" function
+    ADDRINT _entry;
+
+    // Full name of the tool's file name
+    CHAR *_toolFname;
+} ImageLoaderInfo;
+
+#else
+
+// For ElF
+typedef struct 
+{
+    ADDRINT _brk;
+    ADDRINT _phdr;
+    ADDRINT _entry;
+    UINT32 _phnum;
+    const CHAR *_loaderFname;
+    VOID *_pinclientint;
+    CHAR *_charmversion;
+    VOID *_fpWaitForReady;
+
+    // This is an index to the byte location that the miniloader will store the load offset
+    ADDRINT _loadOffsetIndex;
+
+    // Load offset will be copied from LoadOffsetLoc to here
+    // We need to copy because miniloader may not run in same address space
+    ADDRINT _loadOffset;
+
+    // Keep the "handle" whan loading shared object.
+    VOID *_dlHandle;
+
+    // Base address at which the tool so is loaded
+    ADDRINT _toolBaseAddress;
+
+    // Address of the text section in the tool.
+    ADDRINT _textAddress;
+
+    // Address of the data section in the tool.
+    ADDRINT _dataAddress;
+
+    // Address of the bss section in the tool.
+    ADDRINT _bssAddress;
+
+    // Full name of the tool's file name
+    CHAR *_toolFname;
+} ImageLoaderInfo;
+#endif
+
+#define SYSCALL syscall
+
+
+/*! @ingroup MISC_BASIC
+ *  Timeout interval that never elapses.
+ */
+GLOBALCONST UINT32 PIN_INFINITE_TIMEOUT = static_cast<UINT32>(-1);
+
+/*! @ingroup PIN_THREAD_PRIVATE
+ * Maximum number of threads supported by PIN.
+ */
+GLOBALCONST UINT32 PIN_MAX_THREADS = 2048;
+
+#endif

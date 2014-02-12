@@ -1,0 +1,149 @@
+//
+// @ORIGINAL_AUTHOR: Robert Muth
+//
+/*! @file
+  
+ */
+
+#ifdef LEVEL_BASE_H
+#error duplicate inclusion
+#else
+#define LEVEL_BASE_H
+
+// Define macros used by the "extras/components" headers.
+#if defined(TARGET_LINUX) && !defined(TARGET_ANDROID)
+#define FUND_TC_HOSTOS      FUND_OS_LINUX
+#define FUND_TC_TARGETOS    FUND_OS_LINUX
+#endif
+#if defined(TARGET_ANDROID)
+#define FUND_TC_HOSTOS      FUND_OS_ANDROID
+#define FUND_TC_TARGETOS    FUND_OS_ANDROID
+#endif
+#if defined(TARGET_WINDOWS)
+#define FUND_TC_HOSTOS      FUND_OS_WINDOWS
+#define FUND_TC_TARGETOS    FUND_OS_WINDOWS
+#endif
+#if defined(TARGET_MAC)
+#define FUND_TC_HOSTOS      FUND_OS_MAC
+#define FUND_TC_TARGETOS    FUND_OS_MAC
+#endif
+#if defined(HOST_IA32)
+#define FUND_TC_HOSTCPU     FUND_CPU_IA32
+#endif
+#if defined(TARGET_IA32)
+#define FUND_TC_TARGETCPU   FUND_CPU_IA32
+#endif
+#if defined(HOST_IA32E)
+#define FUND_TC_HOSTCPU     FUND_CPU_INTEL64
+#endif
+#if defined(TARGET_IA32E)
+#define FUND_TC_TARGETCPU   FUND_CPU_INTEL64
+#endif
+#if defined(HOST_MIC)
+#define FUND_TC_HOSTCPU     FUND_CPU_MIC
+#endif
+#if defined(TARGET_MIC)
+#define FUND_TC_TARGETCPU   FUND_CPU_MIC
+#endif
+
+
+// Component headers should use the Pin ASSERT macro.  Disable slow asserts
+// in the component headers.
+//
+#if !defined(ATOMIC_ASSERT)
+#   define ATOMIC_ASSERT   ASSERTX
+#endif
+#if !defined(SYNC_ASSERT)
+#   define SYNC_ASSERT     ASSERTX
+#endif
+#if !defined(ATOMIC_NO_ASSERTSLOW)
+#   define ATOMIC_NO_ASSERTSLOW
+#endif
+
+
+#include <string>
+#include <stdarg.h>
+#include "foundation.PLH"
+#include "pin-errtype.h"
+
+// We need the ASSERT macros to be defined early.
+namespace LEVEL_BASE
+{
+    using namespace std;
+#   include "types_base.TLH"
+#   include "message.PH"
+}
+
+#include "util/intel-fp.hpp"
+#include "pinsync.hpp"
+#include "pin_api_version.TLH"
+
+#if defined(TARGET_IA32) || defined(TARGET_IA32E) || defined(TARGET_MIC)
+extern "C" {
+#include "xed-iclass-enum.h"
+#include "xed-category-enum.h"
+}
+#endif
+
+namespace LEVEL_BASE
+{
+#include "util.PH"
+
+#include "knob.PH"
+#include "lock.PH"
+
+#if defined(TARGET_IA32) || defined(TARGET_IA32E) || defined(TARGET_MIC)
+
+#if defined(TARGET_IA32)
+#include "fpstate_ia32.PH"
+#endif
+#if defined(TARGET_IA32E)
+#include "fpstate_ia32e.PH"
+#endif
+#if defined(TARGET_MIC)
+#include "fpstate_mic.PH"
+#endif
+
+#include "reginfo_ia32.PH"
+#include "reg_ia32.PH"
+#include "reg_partial_ia32.PH"
+#include "base_ia32.PH"
+GLOBALTYPE typedef xed_category_enum_t CATEGORY;
+GLOBALTYPE typedef PREDICATE_IA32 PREDICATE;
+
+#elif defined(TARGET_DOXYGEN)
+
+/*! @ingroup TYPES_BASE
+  Categorization of instructions, can be @ref CATEGORY_IA32, @ref CATEGORY_ARM, or @ref CATEGORY_IPF
+*/
+GLOBALTYPE typedef XXX CATEGORY;
+
+/*! @ingroup TYPES_BASE
+  Can be @ref PREDICATE_IA32, @ref PREDICATE_ARM, or @ref PREDICATE_IPF
+*/
+GLOBALTYPE typedef XXX PREDICATE;
+
+#else
+#error "no target arch defined"
+#endif
+
+#include "tls.PH"
+#include "exception.PH"
+
+#include "child_process.PH"
+
+#if defined(TARGET_WINDOWS)
+#   include "os_info_win.PH"
+#   include "sysfuncs_windows.PH"
+#elif defined(TARGET_LINUX)
+#   include "sysfuncs_linux.PH"
+#elif defined(TARGET_MAC)
+#   include "sysfuncs_mac.PH"
+#elif defined(TARGET_BSD)
+#   include "sysfuncs_bsd.PH"
+#else
+#   error "no target OS defined"
+#endif
+
+}
+#endif
