@@ -6,7 +6,10 @@ UARCH=-DSTOKE_HASWELL
 
 TARGET=-mavx -mavx2
 
-INC=
+INC=\
+	-I./ \
+	-I./src/ext/cpputil/ \
+	-I./src/ext/x64asm
 
 LIB=
 

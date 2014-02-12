@@ -36,16 +36,16 @@ then
 	exit 0
 elif [ "$SCMD" == "cfg" ]
 then
-	$DIR/stoke_cfg $@
+	$HERE/stoke_cfg $@
 elif [ "$SCMD" == "cost" ]
 then
-	$DIR/stoke_cost $@
+	$HERE/stoke_cost $@
 elif [ "$SCMD" == "simulate" ]
 then
-	$DIR/stoke_simulate $@
+	$HERE/stoke_simulate $@
 elif [ "$SCMD" == "validate" ]
 then
-	$DIR/stoke_validate $@
+	$HERE/stoke_validate $@
 else
 	echo "Unknown command: '"$SCMD"'"
 	echo "Type 'stoke_debug --help' for usage."

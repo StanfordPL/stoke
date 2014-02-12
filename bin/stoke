@@ -34,13 +34,13 @@ then
 	exit 0
 elif [ "$SCMD" == "extract" ]
 then
-	$DIR/stoke_extract $@
+	$HERE/stoke_extract $@
 elif [ "$SCMD" == "search" ]
 then
-	$DIR/stoke_search $@
+	$HERE/stoke_search $@
 elif [ "$SCMD" == "testcase" ]
 then
-	$DIR/stoke_testcase $@
+	$HERE/stoke_testcase $@
 else
 	echo "Unknown command: '"$SCMD"'"
 	echo "Type 'stoke --help' for usage."
