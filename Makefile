@@ -38,7 +38,7 @@ profile:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/cpputil src/x64asm
+external: src/ext/cpputil src/ext/x64asm
 	make -C src/x64asm $(EXT_OPT)
 
 src/ext/cpputil:
@@ -46,7 +46,7 @@ src/ext/cpputil:
 
 src/ext/x64asm:
 	git clone git://github.com/eschkufz/x64asm.git src/ext/x64asm
-	make -C src/x64asm $(EXT_OPT) 
+	make -C src/ext/x64asm $(EXT_OPT) 
 
 ##### BINARY TARGETS
 
@@ -61,7 +61,7 @@ bin/%: tools/%.cc $(OBJ)
 
 clean:
 	make -C src/ext/x64asm clean	
-	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux clean
+	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
 	rm -rf $(OBJ) $(BIN)
 
 dist_clean: clean
