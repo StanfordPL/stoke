@@ -1,6 +1,5 @@
 PIN_INC= \
 	-I../../../../.. \
-	-I../../../../../src/x64asm \
 	-I../../../source/include/pin \
 	-I../../../source/include/pin/gen \
 	-I../../../extras/components/include \

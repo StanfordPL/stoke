@@ -56,12 +56,10 @@ int main(int argc, char** argv) {
 	Terminal term;
   term << pin_path << "pin -injection child -t " << so_path << "testcase.so ";
 
-  term << "-n " << max_tc.value() << " ";
   term << "-f " << fxn.value() << " ";
-  //term << "-s " << CpuState(uarch).quads_per_sse() << " ";
+  term << "-o " << out.value() << " ";
+  term << "-n " << max_tc.value() << " ";
   term << "-x " << max_stack.value() << " ";
-  if ( out.value() != "" )
-    term << "-o " << out.value() << " ";
   
 	term << " -- " << bin.value() << " " << args.value() << endl;
 
