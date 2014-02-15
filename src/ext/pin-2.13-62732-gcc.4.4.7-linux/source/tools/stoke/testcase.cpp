@@ -191,13 +191,13 @@ VOID end_tc() {
   }
     
   tc.stack.set_base(stack_valid.empty() ? 0 : stack_min);
-  tc.stack.set_size(stack_valid.empty() ? 0 : stack_max-stack_min);
+  tc.stack.resize(stack_valid.empty() ? 0 : stack_max-stack_min);
 
   for ( const auto addr : stack_valid )
     tc.stack.set_valid(addr, true);
   for ( const auto& def : stack_def ) {
     tc.stack.set_defined(def.first, true);
-    tc.stack.get_fixed_byte(def.first) = def.second;
+    tc.stack[def.first] = def.second;
   }
 
   uint64_t heap_min = 0xffffffffffffffff;
@@ -208,13 +208,13 @@ VOID end_tc() {
   }
 
   tc.heap.set_base(heap_valid.empty() ? 0 : heap_min);
-  tc.heap.set_size(heap_valid.empty() ? 0 : heap_max-heap_min);
+  tc.heap.resize(heap_valid.empty() ? 0 : heap_max-heap_min);
     
   for ( const auto addr : heap_valid )
     tc.heap.set_valid(addr, true);
   for ( const auto& def : heap_def ) {
     tc.heap.set_defined(def.first, true);
-    tc.heap.get_fixed_byte(def.first) = def.second;
+    tc.heap[def.first] = def.second;
   }
 
   static size_t id = 0;

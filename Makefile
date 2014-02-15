@@ -42,6 +42,7 @@ profile:
 ##### EXTERNAL TARGETS
 
 external: src/ext/cpputil src/ext/x64asm
+	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
 	make -C src/ext/x64asm $(EXT_OPT) 
 
 src/ext/cpputil:

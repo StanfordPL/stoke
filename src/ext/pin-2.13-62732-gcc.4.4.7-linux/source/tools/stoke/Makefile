@@ -1,5 +1,6 @@
 PIN_INC= \
-	-I../../../../.. \
+	-I../../../../../.. \
+	-I../../../../../../src/ext/cpputil \
 	-I../../../source/include/pin \
 	-I../../../source/include/pin/gen \
 	-I../../../extras/components/include \
@@ -13,7 +14,7 @@ PIN_DEF= \
 	-DHOST_IA32E \
 	-DTARGET_LINUX  
 
-PIN_CC=g++ -std=c++11
+PIN_CC=g++ -std=c++11 -fPIC
 
 PIN_OPT=-O3
 
@@ -28,11 +29,6 @@ PIN_OBJ=\
 	-L../../../intel64/runtime/glibc \
 	-L../../../extras/xed2-intel64/lib \
 	obj-intel64/testcase.o \
-	../../../../../src/state/cpu_state.o \
-	../../../../../src/state/memory.o \
-	../../../../../src/state/bit_array.o \
-	../../../../../src/rand/random.o \
-	../../../../../src/x64asm/src/constants.o \
 	-lpin -lxed -ldwarf -lelf -ldl
 
 all:

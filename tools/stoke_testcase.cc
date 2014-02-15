@@ -57,7 +57,9 @@ int main(int argc, char** argv) {
   term << pin_path << "pin -injection child -t " << so_path << "testcase.so ";
 
   term << "-f " << fxn.value() << " ";
-  term << "-o " << out.value() << " ";
+	if (out.value() != "") {
+		term << "-o " << out.value() << " ";
+	}
   term << "-n " << max_tc.value() << " ";
   term << "-x " << max_stack.value() << " ";
   

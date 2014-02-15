@@ -1,11 +1,8 @@
 #ifndef STOKE_STATE_CPU_STATE_H
 #define STOKE_STATE_CPU_STATE_H
 
-#include <tuple>
-
 #include "src/state/error_code.h"
-#include "src/state/gp.h"
-#include "src/state/sse.h"
+#include "src/state/regs.h"
 #include "src/state/memory.h"
 
 namespace stoke {
@@ -14,126 +11,91 @@ namespace stoke {
 struct CpuState {
 	/** Returns a new CpuState. */
 	CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) {
-		stack.set_base(0).set_size(stack_size);
-		stack.set_back(base).set_size(heap_size);
+		stack.set_base(0).resize(stack_size);
+		stack.set_base(base).resize(heap_size);
 	}
 
 	/** Comparison based on components. */
 	bool operator==(const CpuState& rhs) const {
-		return std::tie(code, gp, sse, stack, heap) == 
-			std::tie(rhs.code, rhs.gp, rhs.sse, rhs.stack, rhs.heap);
-		/** Comparison based on components. */
-		bool operator!=(const CpuState& rhs) const {
-			return std::tie(code, gp, sse, stack, heap) != 
-				std::tie(rhs.code, rhs.gp, rhs.sse, rhs.stack, rhs.heap);
-		}
-		/** Comparison based on components. */
-		bool operator<(const CpuState& rhs) const {
-			return std::tie(code, gp, sse, stack, heap) <
-				std::tie(rhs.code, rhs.gp, rhs.sse, rhs.stack, rhs.heap);
-		}
+		return code == rhs.code && gp == rhs.gp && sse == rhs.sse && 
+				stack == rhs.stack && heap == rhs.heap;
+	}
+	/** Comparison based on components. */
+	bool operator!=(const CpuState& rhs) const {
+		return !(*this == rhs);
+	}
 
-		/** Bit-wise operation in terms of components. */
-		CpuState& operator&=(const CpuState& rhs) {
-			gp &= rhs.gp;
-			sse &= rhs.sse;
-			stack &= rhs.stack;
-			heap &= rhs.stack;
-		}
-		/** Bit-wise operation in terms of components. */
-		CpuState& operator|=(const CpuState& rhs) {
-			gp |= rhs.gp;
-			sse |= rhs.sse;
-			stack |= rhs.stack;
-			heap |= rhs.stack;
-		}
-		/** Bit-wise operation in terms of components. */
-		CpuState& operator^=(const CpuState& rhs) {
-			gp ^= rhs.gp;
-			sse ^= rhs.sse;
-			stack ^= rhs.stack;
-			heap ^= rhs.stack;
-		}
+	/** Bit-wise operation in terms of components. */
+	CpuState& operator^=(const CpuState& rhs) {
+		gp ^= rhs.gp;
+		sse ^= rhs.sse;
+		stack ^= rhs.stack;
+		heap ^= rhs.stack;
 
-		/** Bit-wise operation in terms of components. */
-		CpuState operator&(const CpuState& rhs) const {
-			auto ret = *this;
-			return ret &= rhs;
-		}
-		/** Bit-wise operation in terms of components. */
-		CpuState operator|(const CpuState& rhs) const {
-			auto ret = *this;
-			return ret |= rhs;
-		}
-		/** Bit-wise operation in terms of components. */
-		CpuState operator^(const CpuState& rhs) const {
-			auto ret = *this;
-			return ret ^= rhs;
-		}
-		/** Bit-wise operation in terms of components. */
-		CpuState operator~() const {
-			auto ret = *this;
-			ret.gp = ~gp;
-			ret.sse = ~sse;
-			ret.stack = ~stack;
-			ret.heap = ~heap;
+		return *this;
+	}
 
-			return ret;
-		}
+	/** Bit-wise operation in terms of components. */
+	CpuState operator^(const CpuState& rhs) const {
+		auto ret = *this;
+		return ret ^= rhs;
+	}
 
-		/** STL-compliant swap. */
-		void swap(CpuState& rhs) {
-			std::swap(code, rhs.code);
-			std::swap(gp, rhs.gp);
-			std::swap(sse, rhs.sse);
-			std::swap(stack, rhs.stack);
-			std::swap(heap, rhs.heap);
-		}
+	/** I/O. */
+	std::istream& read(std::istream& is) {
+		code = ErrorCode::NORMAL;
+		gp.read(is);
+		sse.read(is);
+		stack.read(is);
+		heap.read(is);
 
-		/** I/O. */
-		std::istream& read(std::istream& is) {
-			code = ErrorCode::NORMAL;
-			is >> gp >> sse >> stack >> heap;
+		return is;
+	}
 
-			return is;
-		}
+	/** I/O. */ 
+	std::ostream& write(std::ostream& os) const {
+		const char* gps[] = {
+			"%rax","%rcx","%rdx","%rbx","%rsp","%rbp","%rsi","%rdi",
+			"%r8","%r9","%r10","%r11","%r12","%r13","%r14","%r15"
+		};
+		const char* sses[] = {
+			"%ymm0","%ymm1","%ymm2","%ymm3","%ymm4","%ymm5","%ymm6","%ymm7",
+			"%ymm8","%ymm9","%ymm10","%ymm11","%ymm12","%ymm13","%ymm14","%ymm15"
+		};
+		gp.write(os, gps, 5);
+		os << std::endl;
+		sse.write(os, sses, 3);
+		os << std::endl;
+		stack.write(os);
+		os << std::endl << std::endl;
+		heap.write(os);
+		os << std::endl << std::endl;
 
-		/** I/O. */ 
-		std::ostream& write(std::ostream& os) const {
-			os << gp << std::endl << std::endl;
-			os << sse << std::endl << std::endl;
-			os << stack << std::endl << std::endl;
-			os << heap;
+		return os;
+	}
 
-			return os;
-		}
-
-		/** The error code associated with this state. */
-		ErrorCode code;
-		/** General purpose register buffer. */
-		Gp gp;
-		/** SSE register buffer. */
-		Sse sse;
-		/** Stack. */
-		Memory stack;
-		/** Heap. */
-		Memory heap;
+	/** The error code associated with this state. */
+	ErrorCode code;
+	/** General purpose register buffer. */
+	Regs<16, 8> gp;
+	/** SSE register buffer. */
+	Regs<16, 32> sse;
+	/** Stack. */
+	Memory stack;
+	/** Heap. */
+	Memory heap;
 };
 
 } // namespace stoke
 
 namespace std {
 
-void swap(CpuState& lhs, CpuState& rhs) {
-	lhs.swap(rhs);
+std::istream& operator>>(std::istream& is, stoke::CpuState& cs) {
+	return cs.read(is);
 }
 
-std::istream& operator>>(std::istream& is, CpuState& cs) {
-	return (is >> cs);
-}
-
-std::ostream& operator<<(std::ostream& os, const CpuState& cs) {
-	return (os << cs);
+std::ostream& operator<<(std::ostream& os, const stoke::CpuState& cs) {
+	return cs.write(os);
 }
 
 } // namespace std
