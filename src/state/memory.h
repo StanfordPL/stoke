@@ -109,14 +109,14 @@ class Memory {
 
     /** I/O */
     std::istream& read(std::istream& is) {
+			read_summary(is);
+			read_contents(is);
 			return is;
 		}
     /** I/O */
     std::ostream& write(std::ostream& os) const {
 			write_summary(os);
-			os << std::endl << std::endl;
 			write_contents(os);
-
 			return os;
 		}
 
@@ -157,6 +157,47 @@ class Memory {
 			return count;
 		}
 
+		/** Reads summary information */
+		void read_summary(std::istream& is) {
+			uint64_t upper = 0, lower = 0;
+			is.seekg(2);
+			cpputil::HexReader<uint64_t, 8>()(is, upper);
+			is.seekg(3);
+			cpputil::HexReader<uint64_t, 8>()(is, lower);
+			is.seekg(3);
+
+			set_base(lower);
+			resize(upper-lower-0x20);
+		}
+		/** Read a row from contents */
+		void read_row(std::istream& is) {
+			uint64_t addr = 0;
+			cpputil::HexReader<uint64_t, 8>()(is, addr);
+			for ( int j = 7; j >= 0; --j) {
+				is >> contents_.get_fixed_byte(addr-base_+j);
+			}
+			for ( int j = 7; j >= 0; --j) {
+				std::string bit;
+				is >> bit;
+				set_valid(addr-base_+j, bit == "v" || bit == "d");
+				set_defined(addr-base_+j, bit == "d");
+			}
+		}
+		/** Read contents */
+		void read_contents(std::istream& is) {
+			std::string ignore;
+			size_t rows = 0;
+
+			getline(is, ignore, '[');
+			is >> rows;
+			getline(is, ignore);
+			getline(is, ignore);
+			for ( size_t i = 0; i < rows; ++i ) {
+				read_row(is);
+				getline(is, ignore);
+			}
+		}
+
 		/** Writes summary information */
 		void write_summary(std::ostream& os) const {
 			os << "[ ";
@@ -164,7 +205,6 @@ class Memory {
 			os << " - ";
 			cpputil::HexWriter<uint64_t, 8>()(os, lower_bound());
 			os << " ]" << std::endl;
-			os << "[ " << valid_count() << " valid rows shown ]";
 		}
 		/** Write a row from contents */
 		void write_row(std::ostream& os, uint64_t i) const {
@@ -178,6 +218,7 @@ class Memory {
 		}
 		/** Write contents */
 		void write_contents(std::ostream& os) const {
+			os << "[ " << valid_count() << " valid rows shown ]" << std::endl << std::endl;
 			for ( uint64_t i = upper_bound(), ie = lower_bound(); i > ie; i-= 8) {
 				if ( !any_valid(i-8, i) ) {
 					continue;
