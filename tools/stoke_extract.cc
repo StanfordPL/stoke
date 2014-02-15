@@ -12,16 +12,17 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("I/O options:");
 
-auto& binary = ValueArg<string>::create("object")
+auto& in = ValueArg<string>::create("i")
+	.alternate("in")
 	.usage("<path/to/bin>")
-	.description("Object file to scrape code from")
+	.description("Binary file to extract code from")
 	.default_val("./a.out");
 
-auto& out_dir = ValueArg<string>::create("out")
-  .alternate("o")
+auto& out = ValueArg<string>::create("o")
+  .alternate("out")
 	.usage("<path/to/dir>")
   .description("Directory to write results to")
-  .default_val("bins");
+  .default_val("out");
 
 bool exists(const string& file) {
 	Terminal term;
@@ -49,24 +50,24 @@ bool objdump(const string& file) {
 
 bool mkdir() {
 	Terminal term;
-  term << "mkdir -p " << out_dir.value() << endl;
+  term << "mkdir -p " << out.value() << endl;
   return term.result() == 0;
 }
 
 int main(int argc, char** argv) {
 	CommandLineConfig::strict_with_convenience(argc, argv);
 
-	if ( !exists(binary) ) {
-		cout << "Unable to read binary file " << binary.value() << "!" << endl;
+	if ( !exists(in) ) {
+		cout << "Unable to read binary file " << in.value() << "!" << endl;
 		return 1;
-	} else if ( !symdump(binary) ) {
-		cout << "Unable to extract symbols from binary file " << binary.value() << "!" << endl;
+	} else if ( !symdump(in) ) {
+		cout << "Unable to extract symbols from binary file " << in.value() << "!" << endl;
 		return 1;
-	} else if ( !objdump(binary) ) {
-		cout << "Unable to extract object code from binary file " << binary.value() << "!" << endl;
+	} else if ( !objdump(in) ) {
+		cout << "Unable to extract object code from binary file " << in.value() << "!" << endl;
     return 1;
 	} else if ( !mkdir() ) {
-    cout << "Unable to create output directory " << out_dir.value() << "!" << endl;
+    cout << "Unable to create output directory " << out.value() << "!" << endl;
     return 1;
   }
 
