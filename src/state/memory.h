@@ -159,10 +159,11 @@ class Memory {
 
   /** Reads summary information */
   void read_summary(std::istream& is) {
-    uint64_t upper = 0, lower = 0;
     is.seekg(2);
+    uint64_t upper = 0;
     cpputil::HexReader<uint64_t, 8>()(is, upper);
     is.seekg(3);
+    uint64_t lower = 0;
     cpputil::HexReader<uint64_t, 8>()(is, lower);
     is.seekg(3);
 
@@ -172,29 +173,29 @@ class Memory {
   /** Read a row from contents */
   void read_row(std::istream& is) {
     uint64_t addr = 0;
+    std::string s;
     cpputil::HexReader<uint64_t, 8>()(is, addr);
     for (int j = 7; j >= 0; --j) {
       is >> contents_.get_fixed_byte(addr - base_ + j);
     }
     for (int j = 7; j >= 0; --j) {
-      std::string bit;
-      is >> bit;
-      set_valid(addr - base_ + j, bit == "v" || bit == "d");
-      set_defined(addr - base_ + j, bit == "d");
+      is >> s;
+      set_valid(addr - base_ + j, s == "v" || s == "d");
+      set_defined(addr - base_ + j, s == "d");
     }
+    getline(is, s);
   }
   /** Read contents */
   void read_contents(std::istream& is) {
-    std::string ignore;
+    std::string s;
     size_t rows = 0;
 
-    getline(is, ignore, '[');
+    getline(is, s, '[');
     is >> rows;
-    getline(is, ignore);
-    getline(is, ignore);
+    getline(is, s);
+    getline(is, s);
     for (size_t i = 0; i < rows; ++i) {
       read_row(is);
-      getline(is, ignore);
     }
   }
 
