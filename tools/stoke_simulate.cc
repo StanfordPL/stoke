@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "src/args/code.h"
+#include "src/args/reg_set.h"
+#include "src/args/testcases.h"
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"

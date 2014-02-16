@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "src/ext/cpputil/include/serialize/text_reader.h"
+#include "src/ext/cpputil/include/serialize/text_writer.h"
 #include "src/state/cpu_state.h"
 
 namespace cpputil {
