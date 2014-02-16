@@ -5,10 +5,10 @@ namespace stoke {
 
 /** Hardware signal states. */
 enum class ErrorCode {
-	NORMAL = 0,
-	SIGFPE_ = 8,
-	SIGKILL_ = 9,
-	SIGSEGV_ = 11
+  NORMAL = 0,
+  SIGFPE_ = 8,
+  SIGKILL_ = 9,
+  SIGSEGV_ = 11
 };
 
 } // namespace stoke
