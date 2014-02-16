@@ -1,5 +1,5 @@
-#ifndef STOKE_SRC_ARGS_ARGS_H
-#define STOKE_SRC_ARGS_ARGS_H
+#ifndef STOKE_SRC_ARGS_CODE_H
+#define STOKE_SRC_ARGS_CODE_H
 
 #include "src/ext/cpputil/include/serialize/text_reader.h"
 #include "src/ext/cpputil/include/serialize/text_writer.h"
