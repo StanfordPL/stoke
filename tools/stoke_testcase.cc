@@ -7,7 +7,6 @@
 
 using namespace cpputil;
 using namespace std;
-using namespace x64asm;
 
 auto& h1 = Heading::create("I/O options:");
 

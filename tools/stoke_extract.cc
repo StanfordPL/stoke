@@ -4,11 +4,9 @@
 #include "src/args/args.h"
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/system/terminal.h"
-#include "src/ext/x64asm/include/x64asm.h"
 
 using namespace cpputil;
 using namespace std;
-using namespace x64asm;
 
 auto& h1 = Heading::create("I/O options:");
 
