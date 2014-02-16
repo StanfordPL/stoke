@@ -10,23 +10,23 @@
 namespace cpputil {
 
 template <typename Style>
-struct TextReader<std::vector<CpuState>, Style> {
-	void operator()(std::istream& is, std::vector<CpuState>& ts) {
+struct TextReader<std::vector<stoke::CpuState>, Style> {
+	void operator()(std::istream& is, std::vector<stoke::CpuState>& ts) {
 		ts.clear();
 		for ( std::string s; !((is >> s).eof()); ) {
-			CpuState t;
+			stoke::CpuState t;
 			is >> s >> t;
 			ts.emplace_back(t);
 		}
 		if ( is.eof() ) {
-			is.clear(ios::eofbit);
+			is.clear(std::ios::eofbit);
 		}	
 	}
 };
 
 template <typename Style>
-struct TextWriter<std::vector<CpuState>, Style> {
-	void operator()(std::ostream& os, const std::vector<CpuState>& ts) {
+struct TextWriter<std::vector<stoke::CpuState>, Style> {
+	void operator()(std::ostream& os, const std::vector<stoke::CpuState>& ts) {
 		for ( size_t i = 0, ie = ts.size(); i < ie; ++i ) {
 			os << "Testcase " << i << ":" << std::endl << std::endl;
 			os << ts[i] << std::endl << std::endl;
