@@ -21,6 +21,7 @@ OBJ=\
 	src/cfg/cfg.o \
 	\
 	src/sandbox/cpu_io.o \
+	src/sandbox/sandbox.o \
 	src/sandbox/stack_snapshot.o \
 	\
 	src/state/cpu_state.o \
