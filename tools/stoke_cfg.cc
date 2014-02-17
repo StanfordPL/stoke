@@ -2,12 +2,13 @@
 #include <iostream>
 #include <string>
 
-#include "src/args/code.h"
-#include "src/args/reg_set.h"
-#include "src/cfg/cfg.h"
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/system/terminal.h"
 #include "src/ext/x64asm/include/x64asm.h"
+
+#include "src/args/code.h"
+#include "src/args/reg_set.h"
+#include "src/cfg/cfg.h"
 
 using namespace cpputil;
 using namespace std;

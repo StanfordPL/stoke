@@ -1,17 +1,21 @@
-#include <algorithm>
 #include <cstdlib>
+
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <string>
 #include <vector>
 
-#include "src/args/code.h"
-#include "src/args/reg_set.h"
-#include "src/args/testcases.h"
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
+
+#include "src/args/code.h"
+#include "src/args/reg_set.h"
+#include "src/args/testcases.h"
 #include "src/state/cpu_state.h"
+#include "src/sandbox/sandbox.h"
+#include "src/sandbox/state_callback.h"
 
 using namespace cpputil;
 using namespace std;
@@ -66,17 +70,17 @@ auto& breakpoint = ValueArg<int>::create("breakpoint")
   .description("Set breakpoint")
   .default_val(-1);
 
-void callback(size_t line, const CpuState* cs, void* arg) {
+void callback(const StateCallbackData& data, void* arg) {
   auto stepping = (bool*) arg;
 
   cout << "Error Code: " << (int)cs->code << endl;
   cout << endl;
-  cout << *cs << endl;
+  cout << cs << endl;
   cout << endl;
-  cout << target.value()[line] << endl;
+  cout << target.value()[data.line] << endl;
   cout << endl;
 
-  if (line != breakpoint && *stepping == false) {
+  if (data.line != breakpoint && *stepping == false) {
     return;
   }
 
@@ -89,7 +93,7 @@ void callback(size_t line, const CpuState* cs, void* arg) {
     switch (key) {
       case 'l':
         for (size_t i = 0, ie = target.value().size(); i < ie; ++i) {
-          cout << (i == line ? "-> " : "   ") << target.value()[i] << endl;
+          cout << (i == data.line ? "-> " : "   ") << target.value()[i] << endl;
         }
         cout << endl;
         break;
