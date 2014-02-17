@@ -9,6 +9,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/sandbox/stack_snapshot.h"
+#include "src/sandbox/state_callback.h"
 #include "src/state/cpu_state.h"
 
 namespace stoke {
@@ -65,9 +66,6 @@ class Sandbox {
 				}
         output_iterator() = delete;
     };
-
-    /** Convenience typedef for callbacks. */
-		typedef void (*callback)(size_t, const CpuState*, void*);
 
     /** Creates a sandbox. */
 		Sandbox();
@@ -143,12 +141,12 @@ class Sandbox {
 			return *this;
 		}
     /** Insert a callback to be invoked prior to exeucting a line. */
-		Sandbox& insert_before(size_t line, callback cb, void* arg) {
+		Sandbox& insert_before(size_t line, StateCallback cb, void* arg) {
 			before_[line].push_back(std::make_pair(cb, arg));
 			return *this;
 		}
     /** Insert a callback to be invoked after executing a line. */
-		Sandbox& insert_after(size_t line, callback cb, void* arg) {
+		Sandbox& insert_after(size_t line, StateCallback cb, void* arg) {
 			after_[line].push_back(std::make_pair(cb, arg));
 			return *this;
 		}
@@ -213,9 +211,9 @@ class Sandbox {
     StackSnapshot snapshot_;
 
     /** Callbacks to invoke before a line is executed. */
-		std::unordered_map<size_t, std::vector<std::pair<callback, void*>>> before_;
+		std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> before_;
     /** Callbacks to invokes after a line is exeucted. */
-		std::unordered_map<size_t, std::vector<std::pair<callback, void*>>> after_;
+		std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> after_;
 
     /** The maximum number of jumps to take before exiting. */
     size_t max_jumps_;

@@ -29,13 +29,13 @@ void sigfpe_handler(int signum, siginfo_t* si, void* data) {
 	siglongjmp(buf_, 1);
 }
 
-void callback_wrapper(bool stack_mask, bool heap_mask, Sandbox::callback cb, 
+void callback_wrapper(bool stack_mask, bool heap_mask, StateCallback cb, 
     size_t line, CpuState* current, void* arg) {
   if ( stack_mask )
     current->stack.commit_defined();
   if ( heap_mask )
     current->heap.commit_defined();
-  cb(line, current, arg);
+  cb({line, *current}, arg);
 }
 
 } // namespace
