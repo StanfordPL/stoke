@@ -23,6 +23,11 @@ class Regs {
     assert(i < N);
     return contents_[i];
   }
+  /** Element access. */
+  const cpputil::BitArray<W>& operator[](size_t i) const {
+    assert(i < N);
+    return contents_[i];
+  }
 
   /** Comparison. */
   bool operator==(const Regs& rhs) const {

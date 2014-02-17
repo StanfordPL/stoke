@@ -20,6 +20,9 @@ OBJ=\
 	\
 	src/cfg/cfg.o \
 	\
+	src/sandbox/cpu_io.o \
+	src/sandbox/stack_snapshot.o \
+	\
 	src/state/cpu_state.o \
 	src/state/memory.o
 
@@ -64,6 +67,8 @@ src/ext/x64asm:
 src/args/%.o: src/args/%.cc src/args/%.h
 	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
 src/cfg/%.o: src/cfg/%.cc src/cfg/%.h
+	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
 	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
