@@ -1,72 +1,59 @@
 #ifndef STOKE_SRC_ARGS_REG_SET_H
 #define STOKE_SRC_ARGS_REG_SET_H
 
+#include <array>
+#include <vector>
+#include <string>
+#include <utility>
+
+#include "src/args/generic.h"
 #include "src/ext/cpputil/include/serialize/text_reader.h"
 #include "src/ext/cpputil/include/serialize/text_writer.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 namespace cpputil {
 
+constexpr std::array<std::pair<std::string, x64asm::R64>,16> gps {{
+	{"rax", x64asm::rax}, {"rcx", x64asm::rcx}, {"rdx", x64asm::rdx}, {"rbx", x64asm::rbx},
+	{"rsp", x64asm::rsp}, {"rbp", x64asm::rbp}, {"rsi", x64asm::rsi}, {"rbx", x64asm::rdi},
+	{"r8", x64asm::r8}, {"r9", x64asm::r9}, {"r10", x64asm::r10}, {"r11", x64asm::r11},
+	{"r12", x64asm::r12}, {"r13", x64asm::r13}, {"r14", x64asm::r14}, {"r15", x64asm::r15}
+}};
+
+constexpr std::array<std::pair<std::string, x64asm::Xmm>,16> xmms {{
+	{"xmm0", x64asm::xmm0}, {"xmm1", x64asm::xmm1}, {"xmm2", x64asm::xmm2}, {"xmm3", x64asm::xmm3},
+	{"xmm4", x64asm::xmm4}, {"xmm5", x64asm::xmm5}, {"xmm6", x64asm::xmm6}, {"xmm7", x64asm::xmm7},
+	{"xmm8", x64asm::xmm8}, {"xmm9", x64asm::xmm9}, {"xmm10", x64asm::xmm10}, {"xmm11", x64asm::xmm11},
+	{"xmm12", x64asm::xmm12}, {"xmm13", x64asm::xmm13}, {"xmm14", x64asm::xmm14}, {"xmm15", x64asm::xmm15}
+}};
+
+constexpr std::array<std::pair<std::string, x64asm::Ymm>,16> ymms {{
+	{"ymm0", x64asm::ymm0}, {"ymm1", x64asm::ymm1}, {"ymm2", x64asm::ymm2}, {"ymm3", x64asm::ymm3},
+	{"ymm4", x64asm::ymm4}, {"ymm5", x64asm::ymm5}, {"ymm6", x64asm::ymm6}, {"ymm7", x64asm::ymm7},
+	{"ymm8", x64asm::ymm8}, {"ymm9", x64asm::ymm9}, {"ymm10", x64asm::ymm10}, {"ymm11", x64asm::ymm11},
+	{"ymm12", x64asm::ymm12}, {"ymm13", x64asm::ymm13}, {"ymm14", x64asm::ymm14}, {"ymm15", x64asm::ymm15}
+}};
+
 template <typename Style>
 struct TextReader<x64asm::RegSet, Style> {
 	void operator()(std::istream& is, x64asm::RegSet& r) {
-		r = x64asm::RegSet::empty();
-		for ( std::string temp; is >> temp; temp != "}"; ) {
-			if ( temp == "{" )        continue;
-			else if ( temp == "rax" ) r += x64asm::rax;
-			else if ( temp == "rcx" ) r += x64asm::rcx;
-			else if ( temp == "rdx" ) r += x64asm::rdx;
-			else if ( temp == "rbx" ) r += x64asm::rbx;
-			else if ( temp == "rsp" ) r += x64asm::rsp;
-			else if ( temp == "rbp" ) r += x64asm::rbp;
-			else if ( temp == "rsi" ) r += x64asm::rsi;
-			else if ( temp == "rdi" ) r += x64asm::rdi;
-			else if ( temp == "r8" )  r += x64asm::r8;
-			else if ( temp == "r9" )  r += x64asm::r9;
-			else if ( temp == "r10" ) r += x64asm::r10;
-			else if ( temp == "r11" ) r += x64asm::r11;
-			else if ( temp == "r12" ) r += x64asm::r12;
-			else if ( temp == "r13" ) r += x64asm::r13;
-			else if ( temp == "r14" ) r += x64asm::r14;
-			else if ( temp == "r15" ) r += x64asm::r15;
+		std::vector<std::string> args;
+		TextReader<std::vector<std::string>, Style>()(is, args);
 
-			else if ( temp == "xmm0" )  r += x64asm::xmm0;
-			else if ( temp == "xmm1" )  r += x64asm::xmm1;
-			else if ( temp == "xmm2" )  r += x64asm::xmm2;
-			else if ( temp == "xmm3" )  r += x64asm::xmm3;
-			else if ( temp == "xmm4" )  r += x64asm::xmm4;
-			else if ( temp == "xmm5" )  r += x64asm::xmm5;
-			else if ( temp == "xmm6" )  r += x64asm::xmm6;
-			else if ( temp == "xmm7" )  r += x64asm::xmm7;
-			else if ( temp == "xmm8" )  r += x64asm::xmm8;
-			else if ( temp == "xmm9" )  r += x64asm::xmm9;
-			else if ( temp == "xmm10" ) r += x64asm::xmm10;
-			else if ( temp == "xmm11" ) r += x64asm::xmm11;
-			else if ( temp == "xmm12" ) r += x64asm::xmm12;
-			else if ( temp == "xmm13" ) r += x64asm::xmm13;
-			else if ( temp == "xmm14" ) r += x64asm::xmm14;
-			else if ( temp == "xmm15" ) r += x64asm::xmm15;
+		for ( const auto& a : args ) {
+			x64asm::R64 r64;
+			x64asm::Xmm xmm;
+			x64asm::Ymm ymm;
 
-			else if ( temp == "ymm0" )  r += x64asm::ymm0;
-			else if ( temp == "ymm1" )  r += x64asm::ymm1;
-			else if ( temp == "ymm2" )  r += x64asm::ymm2;
-			else if ( temp == "ymm3" )  r += x64asm::ymm3;
-			else if ( temp == "ymm4" )  r += x64asm::ymm4;
-			else if ( temp == "ymm5" )  r += x64asm::ymm5;
-			else if ( temp == "ymm6" )  r += x64asm::ymm6;
-			else if ( temp == "ymm7" )  r += x64asm::ymm7;
-			else if ( temp == "ymm8" )  r += x64asm::ymm8;
-			else if ( temp == "ymm9" )  r += x64asm::ymm9;
-			else if ( temp == "ymm10" ) r += x64asm::ymm10;
-			else if ( temp == "ymm11" ) r += x64asm::ymm11;
-			else if ( temp == "ymm12" ) r += x64asm::ymm12;
-			else if ( temp == "ymm13" ) r += x64asm::ymm13;
-			else if ( temp == "ymm14" ) r += x64asm::ymm14;
-			else if ( temp == "ymm15" ) r += x64asm::ymm15;
-
-			else  {
+			if ( generic_read(gps,a,r64) ) {
+				r += r64;
+			} else if ( generic_read(xmms, a, xmm) {
+				r += xmm;
+			} else if ( generic_read(ymms, a, ymm) {
+				r += ymm;
+			} else {
 				is.setstate(std::ios::failbit);
-				break;
+				return;
 			}
 		}
 	}

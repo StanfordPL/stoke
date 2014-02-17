@@ -1,4 +1,81 @@
-int main() {
+#include <fstream>
+#include <iostream>
+#include <string>
+
+#include "src/args/code.h"
+#include "src/args/reg_set.h"
+#include "src/cfg/cfg.h"
+#include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/system/terminal.h"
+#include "src/ext/x64asm/include/x64asm.h"
+
+using namespace cpputil;
+using namespace std;
+using namespace stoke;
+using namespace x64asm;
+
+auto& h1 = Heading::create("Input program:");
+
+auto& target = FileArg<Code>::create("target")
+	.usage("<path/to/file>")
+	.description("Target code")
+	.default_val({{RET}});
+
+auto& def_in = ValueArg<RegSet>::create("def_in")
+	.usage("{ rax rsp ... }")
+	.description("Registers defined on entry")
+	.default_val(RegSet::linux_caller_save());
+
+auto& live_out = ValueArg<RegSet>::create("live_out")
+	.usage("{ rax rsp ... }")
+	.description("Registers live on exit")
+	.default_val(RegSet::empty()+rax);
+
+auto& h1 = Heading::create("I/O options:");
+
+auto& out = ValueArg<string>::create("o")
+  .alternate("out")
+	.usage("<path/to/file>")
+  .description("Path to write cfg to")
+  .default_val("./cfg.pdf");
+
+auto& view = FlagArg::create("view")
+  .alternate("v")
+  .description("View cfg immediately");
+
+bool to_dot() {
+  ofstream ofs("/tmp/stoke.dot");
+	Cfg cfg{target, def_in, live_out};
+  ofs << cfg << endl;
+	ofs.close();
+}
+
+bool to_pdf() {
+	Terminal term;
+  term << "cat /tmp/stoke.dot | dot -Tpdf > " << out.value() << endl;
+  return term.result() == 0;
+}
+
+bool view_pdf() {
+	Terminal term;
+  term << "evince " << out.value() << endl;
+	return term.result() == 0;
+}
+
+int main(int argc, char** argv) {
+	CommandLineConfig::strict_with_convenience(argc, argv);
+
+	if ( !to_dot() ) {
+		cout << "Unable to write dot file!" << endl;
+		return 1;
+	} else if ( !to_pdf() ) {
+    cout << "Unable to save file!" << endl;
+    return 1;
+  } else if ( view && !view_pdf() ) {
+    cout << "Unable to open file for viewing!" << endl;
+    return 1;
+  }
+
 	return 0;
 }
 

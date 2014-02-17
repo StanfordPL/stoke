@@ -26,7 +26,7 @@ auto& target = FileArg<Code>::create("target")
 	.default_val({{RET}});
 
 auto& def_in = ValueArg<RegSet>::create("def_in")
-	.usage("(ex: rax rsp ...)")
+	.usage("{ rax rsp ... }")
 	.description("Registers defined on entry")
 	.default_val(RegSet::linux_caller_save());
 
