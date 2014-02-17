@@ -73,15 +73,15 @@ struct CpuState {
 
 namespace std {
 
-	inline std::istream& operator>>(std::istream& is, stoke::CpuState& cs) {
-		cs.read(is);
-		return is;
-	}
+inline std::istream& operator>>(std::istream& is, stoke::CpuState& cs) {
+  cs.read(is);
+  return is;
+}
 
-	inline std::ostream& operator<<(std::ostream& os, const stoke::CpuState& cs) {
-		cs.write(os);
-		return os;
-	}
+inline std::ostream& operator<<(std::ostream& os, const stoke::CpuState& cs) {
+  cs.write(os);
+  return os;
+}
 
 } // namespace std
 

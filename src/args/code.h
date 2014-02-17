@@ -8,15 +8,15 @@
 namespace stoke {
 
 struct CodeReader {
-	void operator()(std::istream& is, x64asm::Code& c) {
-		is >> c;
-	}
+  void operator()(std::istream& is, x64asm::Code& c) {
+    is >> c;
+  }
 };
 
 struct CodeWriter {
-	void operator()(std::ostream& os, const x64asm::Code& c) {
-		os << c;
-	}
+  void operator()(std::ostream& os, const x64asm::Code& c) {
+    os << c;
+  }
 };
 
 } // namespace stoke
