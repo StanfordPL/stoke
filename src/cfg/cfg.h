@@ -1,21 +1,19 @@
 #ifndef STOKE_SRC_CFG_CFG_H
 #define STOKE_SRC_CFG_CFG_H
 
-#include <bitset>
 #include <cassert>
+
+#include <bitset>
 #include <iostream>
 #include <map>
 #include <stdint.h>
 #include <unordered_set>
 #include <vector>
 
-#include "src/x64asm/include/x64asm.h"
+#include "src/ext/x64asm/include/x64asm.h"
 
 namespace stoke {
 
-class CostFunction;
-
-/** A Control Flow Graph. */
 class Cfg {
 	public:
 		typedef size_t id_type;
@@ -30,7 +28,8 @@ class Cfg {
 		typedef loop_type::const_iterator loop_iterator;
 		typedef std::unordered_set<id_type>::const_iterator reachable_iterator;
 
-		Cfg(const x64asm::Code& code, const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs) {
+		Cfg(const x64asm::Code& code, const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs) :
+				code_(code), fxn_def_ins_(def_ins), fxn_live_outs_(live_outs) {
 			recompute();
 		}
 
@@ -69,15 +68,7 @@ class Cfg {
 			assert(loc.second < num_instrs(loc.first));
 			return blocks_[loc.first] + loc.second;
 		}
-	  loc_type get_loc(size_t idx) const {
-			assert(idx < code_.size());
-			for ( int i = num_blocks()-1; i >= 0; --i )
-				if ( idx >= blocks_[i] )
-					return std::make_pair(i, idx - blocks_[i]);
-
-			assert(false);
-			return std::make_pair(0,0);
-		}
+	  loc_type get_loc(size_t idx) const;
 
 		id_type get_entry() const {
 			return 0;
@@ -155,7 +146,7 @@ class Cfg {
 		}
 
 		x64asm::RegSet def_ins() const {
-			return def_ins_;	
+			return fxn_def_ins_;	
 		}
 		x64asm::RegSet def_ins(id_type id) const {
 			assert(id < num_blocks());
@@ -177,19 +168,19 @@ class Cfg {
 		}
 
 		x64asm::RegSet live_outs() const {
-			return live_outs_;
+			return fxn_live_outs_;
 		}
 		x64asm::RegSet live_outs(id_type id) const {
 			assert(id < num_blocks());
 			assert(!is_entry(id));
 			assert(!is_exit(id));
-			return live_ins_[blocks_[id]];
+			return live_outs_[blocks_[id]];
 		}
 		x64asm::RegSet live_outs(const loc_type& loc) const {
 			assert(loc.first < num_blocks());
 			assert(!is_entry(loc.first));
 			assert(!is_exit(loc.first));
-			return live_ins_[get_index(loc)];
+			return live_outs_[get_index(loc)];
 		}
 
 		back_edge_iterator back_edge_begin() const {
@@ -215,52 +206,35 @@ class Cfg {
 			return nesting_depth_[id];
 		}
 
-		/** Reachable basic blocks (does not include entry or exit) */
 		reachable_iterator reachable_begin() const {
 			return reachable_.begin();
 		}
-		/** Reachable basic blocks (does not include entry or exit) */
 		reachable_iterator reachable_end() const {
 			return reachable_.end();
 		}
 
-		/** Reachable basic blocks (does not include entry or exit) */
 		bool is_reachable(id_type id) const {
 			assert(id < num_blocks());
 			assert(!is_entry(id));
 			assert(!is_exit(id));
 			return reachable_.find(id) != reachable_.end();
 		}
-		size_t num_reachable() const {
-			return reachable_.size();
-		}
 
 		bool is_sound() const {
 			return !performs_undef_read();
 		}
 		bool performs_undef_read() const;
-			for ( auto i = reachable_begin(), ie = reachable_end(); i !+ ie; ++i ) {
-				for ( auto j = 0, je = num_instrs(*i); j < je; ++j ) {
-					const auto idx = get_index(loc_type(*i,j));
-					const auto r = code_[idx].maybe_read_set();
-					if ( (r & def_ins(idx)) != r ) {
-						return true;
-					}
-				}
-			}
-			return false;
-		}
 
 		Cfg& remove_unreachable();
 		Cfg& remove_nop();
-		Cfg& remove_unused(CostFunction* fxn);
 
-		void write_dot(std::ostream& os) const;
+		void write(std::ostream& os, bool dib, bool dii, bool lob, bool loi) const;
 
 	private:
+		// User inputs
 		x64asm::Code code_;
-		x64asm::RegSet def_ins_;
-		x64asm::Regset live_outs_;
+		x64asm::RegSet fxn_def_ins_;
+		x64asm::RegSet fxn_live_outs_;
 
 		// Graph structure
 		std::vector<size_t> blocks_;
@@ -276,44 +250,26 @@ class Cfg {
 		std::vector<x64asm::RegSet> def_ins_;
 		std::vector<x64asm::RegSet> def_outs_;
 		std::vector<x64asm::RegSet> live_ins_;
+		std::vector<x64asm::RegSet> live_outs_;
 		std::vector<x64asm::RegSet> gen_;
 		std::vector<x64asm::RegSet> kill_;
 
-		void write_dot(std::ostream& os, const x64asm::RegSet& rs) const;
+		void write_entry(std::ostream& os, bool dib, bool lob) const;
+		void write_exit(std::ostream& os, bool dib, bool lob) const;
+		void write_blocks(std::ostream& os, bool dib, bool dii, bool lob, bool loi) const;
+		void write_edges(std::ostream& os) const;
+		void write_reg_set(std::ostream& os, const x64asm::RegSet& rs) const;
 };
-
-inline Cfg& Cfg::remove_unreachable() {
-	x64asm::Code temp;
-	for ( auto b = reachable_begin(), be = reachable_end(); b != be; ++b )
-		for ( auto i = instr_begin(*b), ie = instr_end(*b); i != ie; ++i )
-			temp.push_back(*i);
-
-	code_ = temp;
-	recompute();
-
-	return *this;
-}
-
-inline Cfg& Cfg::remove_nop() {
-	x64asm::Code temp;
-	for ( Cfg::id_type b = get_entry(), be = get_exit(); b != be; ++b )
-		for ( auto i = instr_begin(b), ie = instr_end(b); i != ie; ++i )
-			if ( !i->is_nop() )
-				temp.push_back(*i);
-
-	code_ = temp;
-	recompute();
-
-	return *this;
-}
 
 } // namespace x64
 
-std::ostream& operator<<(std::ostream& os, const stoke::Cfg& cfg);
+namespace std {
 
 inline std::ostream& operator<<(std::ostream& os, const stoke::Cfg& cfg) {
-	cfg.write_dot(os);
+	cfg.write(os, false, false, false, false);
 	return os;
 }
+
+} // namespace std 
 
 #endif

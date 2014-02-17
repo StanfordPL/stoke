@@ -11,9 +11,17 @@ INC=\
 	-I./src/ext/cpputil/ \
 	-I./src/ext/x64asm
 
-LIB=
+LIB=\
+	src/ext/x64asm/lib/libx64asm.a
 
-OBJ=
+OBJ=\
+	src/args/reg_set.o \
+	src/args/testcases.o \
+	\
+	src/cfg/cfg.o \
+	\
+	src/state/cpu_state.o \
+	src/state/memory.o
 
 BIN= \
 	bin/stoke_cfg \
@@ -51,10 +59,19 @@ src/ext/cpputil:
 src/ext/x64asm:
 	git clone git://github.com/eschkufz/x64asm.git src/ext/x64asm
 
+##### BUILD TARGETS
+
+src/args/%.o: src/args/%.cc src/args/%.h
+	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+src/cfg/%.o: src/cfg/%.cc src/cfg/%.h
+	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+src/state/%.o: src/state/%.cc src/state/%.h
+	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+
 ##### BINARY TARGETS
 
 bin/%: tools/%.cc $(OBJ) 
-	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) $(OBJ) $(LIB) $< -o $@
+	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  
 
 ##### MISC
 

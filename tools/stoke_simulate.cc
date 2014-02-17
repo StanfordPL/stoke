@@ -20,19 +20,19 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("Input program:");
 
-auto& target = FileArg<Code>::create("target")
+auto& target = FileArg<Code, CodeReader, CodeWriter>::create("target")
 	.usage("<path/to/file>")
 	.description("Target code")
 	.default_val({{RET}});
 
-auto& def_in = ValueArg<RegSet>::create("def_in")
+auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
 	.usage("{ rax rsp ... }")
 	.description("Registers defined on entry")
 	.default_val(RegSet::linux_caller_save());
 
 auto& h2 = Heading::create("Input state:");
 
-auto& testcases = FileArg<vector<CpuState>>::create("testcases")
+auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
 	.usage("<path/to/file>")
 	.description("Testcases")
 	.default_val({CpuState()});

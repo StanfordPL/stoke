@@ -1,8 +1,9 @@
 #ifndef STOKE_STATE_REGS_H
 #define STOKE_STATE_REGS_H
 
-#include <array>
 #include <cassert>
+
+#include <array>
 #include <iostream>
 #include <string>
 

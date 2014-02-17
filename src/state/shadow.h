@@ -1,8 +1,9 @@
 #ifndef STOKE_SRC_STATE_SHADOW_H
 #define STOKE_SRC_STATE_SHADOW_H
 
-#include <algorithm>
 #include <cassert>
+
+#include <algorithm>
 #include <stdint.h>
 #include <vector>
 

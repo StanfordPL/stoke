@@ -1,6 +1,8 @@
 #ifndef STOKE_STATE_CPU_STATE_H
 #define STOKE_STATE_CPU_STATE_H
 
+#include <iostream>
+
 #include "src/state/error_code.h"
 #include "src/state/regs.h"
 #include "src/state/memory.h"
@@ -53,26 +55,7 @@ struct CpuState {
   }
 
   /** I/O. */
-  std::ostream& write(std::ostream& os) const {
-    const char* gps[] = {
-      "%rax", "%rcx", "%rdx", "%rbx", "%rsp", "%rbp", "%rsi", "%rdi",
-      "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15"
-    };
-    const char* sses[] = {
-      "%ymm0", "%ymm1", "%ymm2", "%ymm3", "%ymm4", "%ymm5", "%ymm6", "%ymm7",
-      "%ymm8", "%ymm9", "%ymm10", "%ymm11", "%ymm12", "%ymm13", "%ymm14", "%ymm15"
-    };
-    gp.write(os, gps, 5);
-    os << std::endl;
-    sse.write(os, sses, 3);
-    os << std::endl;
-    stack.write(os);
-    os << std::endl << std::endl;
-    heap.write(os);
-    os << std::endl << std::endl;
-
-    return os;
-  }
+  std::ostream& write(std::ostream& os) const;
 
   /** The error code associated with this state. */
   ErrorCode code;
@@ -90,13 +73,15 @@ struct CpuState {
 
 namespace std {
 
-std::istream& operator>>(std::istream& is, stoke::CpuState& cs) {
-  return cs.read(is);
-}
+	inline std::istream& operator>>(std::istream& is, stoke::CpuState& cs) {
+		cs.read(is);
+		return is;
+	}
 
-std::ostream& operator<<(std::ostream& os, const stoke::CpuState& cs) {
-  return cs.write(os);
-}
+	inline std::ostream& operator<<(std::ostream& os, const stoke::CpuState& cs) {
+		cs.write(os);
+		return os;
+	}
 
 } // namespace std
 

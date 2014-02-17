@@ -7,8 +7,6 @@
 #include <string>
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
-#include "src/ext/cpputil/include/serialize/hex_reader.h"
-#include "src/ext/cpputil/include/serialize/hex_writer.h"
 #include "src/state/shadow.h"
 
 namespace stoke {
@@ -140,96 +138,23 @@ class Memory {
   }
 
   /** Returns true if any address in this range is valid */
-  bool any_valid(uint64_t begin, uint64_t end) const {
-    for (; begin < end; ++begin) {
-      if (is_valid(begin)) {
-        return true;
-      }
-    }
-    return false;
-  }
+  bool any_valid(uint64_t begin, uint64_t end) const;
   /** Counts the number of valid rows */
-  size_t valid_count() const {
-    size_t count = 0;
-    for (size_t i = lower_bound(), ie = upper_bound(); i < ie; i += 8) {
-      count += any_valid(i, i + 8) ? 1 : 0;
-    }
-    return count;
-  }
+  size_t valid_count() const;
 
   /** Reads summary information */
-  void read_summary(std::istream& is) {
-    is.seekg(2);
-    uint64_t upper = 0;
-    cpputil::HexReader<uint64_t, 8>()(is, upper);
-    is.seekg(3);
-    uint64_t lower = 0;
-    cpputil::HexReader<uint64_t, 8>()(is, lower);
-    is.seekg(3);
-
-    set_base(lower);
-    resize(upper - lower - 0x20);
-  }
+  void read_summary(std::istream& is);
   /** Read a row from contents */
-  void read_row(std::istream& is) {
-    uint64_t addr = 0;
-    std::string s;
-    cpputil::HexReader<uint64_t, 8>()(is, addr);
-    for (int j = 7; j >= 0; --j) {
-      is >> contents_.get_fixed_byte(addr - base_ + j);
-    }
-    for (int j = 7; j >= 0; --j) {
-      is >> s;
-      set_valid(addr - base_ + j, s == "v" || s == "d");
-      set_defined(addr - base_ + j, s == "d");
-    }
-    getline(is, s);
-  }
+  void read_row(std::istream& is);
   /** Read contents */
-  void read_contents(std::istream& is) {
-    std::string s;
-    size_t rows = 0;
-
-    getline(is, s, '[');
-    is >> rows;
-    getline(is, s);
-    getline(is, s);
-    for (size_t i = 0; i < rows; ++i) {
-      read_row(is);
-    }
-  }
+  void read_contents(std::istream& is);
 
   /** Writes summary information */
-  void write_summary(std::ostream& os) const {
-    os << "[ ";
-    cpputil::HexWriter<uint64_t, 8>()(os, upper_bound());
-    os << " - ";
-    cpputil::HexWriter<uint64_t, 8>()(os, lower_bound());
-    os << " ]" << std::endl;
-  }
+  void write_summary(std::ostream& os) const;
   /** Write a row from contents */
-  void write_row(std::ostream& os, uint64_t i) const {
-    cpputil::HexWriter<uint64_t, 8>()(os, i);
-    os << "   ";
-    cpputil::HexWriter<uint64_t, 2>()(os, contents_.get_fixed_quad((i - base_) / 8));
-    os << "   ";
-    for (size_t j = 0; j < 8; ++j) {
-      os << (is_defined(i + j) ? "d " : is_valid(i + j) ? "v " : ". ");
-    }
-  }
+  void write_row(std::ostream& os, uint64_t i) const;
   /** Write contents */
-  void write_contents(std::ostream& os) const {
-    os << "[ " << valid_count() << " valid rows shown ]" << std::endl << std::endl;
-    for (uint64_t i = upper_bound(), ie = lower_bound(); i > ie; i -= 8) {
-      if (!any_valid(i - 8, i)) {
-        continue;
-      }
-      write_row(os, i - 8);
-      if (i - 8 != ie) {
-        os << std::endl;
-      }
-    }
-  }
+  void write_contents(std::ostream& os) const;
 };
 
 } // namespace stoke
