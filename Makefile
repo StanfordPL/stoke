@@ -25,7 +25,9 @@ OBJ=\
 	src/sandbox/stack_snapshot.o \
 	\
 	src/state/cpu_state.o \
-	src/state/memory.o
+	src/state/memory.o \
+	\
+	src/verifier/verifier.o
 
 BIN= \
 	bin/stoke_cfg \
@@ -72,6 +74,8 @@ src/cfg/%.o: src/cfg/%.cc src/cfg/%.h
 src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
 	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc src/state/%.h
+	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
 
 ##### BINARY TARGETS

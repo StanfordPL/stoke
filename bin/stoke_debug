@@ -8,7 +8,7 @@ HERE=`pwd`
 popd > /dev/null
 
 if [ ! -f $HERE/stoke_cfg ] || [ ! -f $HERE/stoke_cost ] || 
-   [ ! -f $HERE/stoke_simulate ] || [ ! -f $HERE/stoke_validate ]
+   [ ! -f $HERE/stoke_simulate ] || [ ! -f $HERE/stoke_verify ]
 then
 	echo "Fatal Error: Failed to locate one or more STOKE components!"
 	exit 1
@@ -30,8 +30,8 @@ then
 	echo ""
 	echo "  cfg        generate the control flow graph for a function"
 	echo "  cost       evaluate a function using a STOKE cost function"
-	echo "  simulate   run a function"
-	echo "  validate   formally check the equivalence of two functions"
+	echo "  simulate   execute a function"
+	echo "  verify     check the equivalence of two functions"
 	echo ""
 	exit 0
 elif [ "$SCMD" == "cfg" ]
@@ -43,9 +43,9 @@ then
 elif [ "$SCMD" == "simulate" ]
 then
 	$HERE/stoke_simulate $@
-elif [ "$SCMD" == "validate" ]
+elif [ "$SCMD" == "verify" ]
 then
-	$HERE/stoke_validate $@
+	$HERE/stoke_verify $@
 else
 	echo "Unknown command: '"$SCMD"'"
 	echo "Type 'stoke_debug --help' for usage."
