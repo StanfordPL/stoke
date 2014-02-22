@@ -13,7 +13,7 @@ namespace stoke {
 struct CpuState {
   /** Returns a new CpuState. */
   CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) :
-			gp(16,64), sse(16,256) {
+    gp(16, 64), sse(16, 256) {
     stack.set_base(0).resize(stack_size);
     heap.set_base(base).resize(heap_size);
   }

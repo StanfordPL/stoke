@@ -13,54 +13,54 @@ namespace stoke {
 
 /** Records user-/stoke-facing stack frames prior to sandbox execution. */
 class StackSnapshot {
-  public:
-    /** Compiles internal functions. */
-    void init() {
-			save_user_callee_save_ = CpuIo::read(user_callee_save_, 
-					x64asm::RegSet::linux_callee_save(), {{x64asm::rsp, (uint64_t*)get_user_rsp()}});
-			save_stoke_callee_save_ = CpuIo::read(stoke_callee_save_, 
-					x64asm::RegSet::linux_callee_save(), {{x64asm::rsp, (uint64_t*)get_stoke_rsp()}});
-			restore_stoke_callee_save_ = CpuIo::write(stoke_callee_save_, 
-					x64asm::RegSet::linux_callee_save()-(x64asm::RegSet::empty()+x64asm::rsp));
-		}
+ public:
+  /** Compiles internal functions. */
+  void init() {
+    save_user_callee_save_ = CpuIo::read(user_callee_save_,
+    x64asm::RegSet::linux_callee_save(), {{x64asm::rsp, (uint64_t*)get_user_rsp()}});
+    save_stoke_callee_save_ = CpuIo::read(stoke_callee_save_,
+    x64asm::RegSet::linux_callee_save(), {{x64asm::rsp, (uint64_t*)get_stoke_rsp()}});
+    restore_stoke_callee_save_ = CpuIo::write(stoke_callee_save_,
+                                 x64asm::RegSet::linux_callee_save() - (x64asm::RegSet::empty() + x64asm::rsp));
+  }
 
-    /** Returns the address of the memory that holds the user rsp. */
-    void* get_user_rsp() {
-  		return (void*)user_callee_save_.gp[x64asm::rsp].data();
-		}
-    /** Returns the address of the memory that holds the stoke rsp. */
-    void* get_stoke_rsp() {
-			return (void*)stoke_callee_save_.gp[x64asm::rsp].data();
-		}
+  /** Returns the address of the memory that holds the user rsp. */
+  void* get_user_rsp() {
+    return (void*)user_callee_save_.gp[x64asm::rsp].data();
+  }
+  /** Returns the address of the memory that holds the stoke rsp. */
+  void* get_stoke_rsp() {
+    return (void*)stoke_callee_save_.gp[x64asm::rsp].data();
+  }
 
-    /** Returns the address of the function that saves user callee-save. */
-    void* get_save_user_callee_save() {
-			return (void*)save_user_callee_save_.get_entrypoint();
-		}
-    /** Returns the address of the function that saves stoke callee-save. */
-    void* get_save_stoke_callee_save() {
-  		return (void*)save_stoke_callee_save_.get_entrypoint();
-		}
-    /** Returns the address of the function that restores stoke callee-save. */
-    void* get_restore_stoke_callee_save() {
-  		return (void*)restore_stoke_callee_save_.get_entrypoint();
-		}
+  /** Returns the address of the function that saves user callee-save. */
+  void* get_save_user_callee_save() {
+    return (void*)save_user_callee_save_.get_entrypoint();
+  }
+  /** Returns the address of the function that saves stoke callee-save. */
+  void* get_save_stoke_callee_save() {
+    return (void*)save_stoke_callee_save_.get_entrypoint();
+  }
+  /** Returns the address of the function that restores stoke callee-save. */
+  void* get_restore_stoke_callee_save() {
+    return (void*)restore_stoke_callee_save_.get_entrypoint();
+  }
 
-    /** Checks whether a state agrees with user-facing callee-save regs. */
-    bool check_abi(const CpuState& cs) const;
+  /** Checks whether a state agrees with user-facing callee-save regs. */
+  bool check_abi(const CpuState& cs) const;
 
-  private:
-    /** User-facing callee-save registers. */
-    CpuState user_callee_save_;
-    /** A function which records user-facing callee save registers. */
-    x64asm::Function save_user_callee_save_;
+ private:
+  /** User-facing callee-save registers. */
+  CpuState user_callee_save_;
+  /** A function which records user-facing callee save registers. */
+  x64asm::Function save_user_callee_save_;
 
-    /** Stoke-facing callee-save registers. */
-    CpuState stoke_callee_save_;
-    /** A function which records stoke-facing callee save registers. */
-    x64asm::Function save_stoke_callee_save_;
-    /** A function which restores stoke-facing callee save registers. */
-    x64asm::Function restore_stoke_callee_save_;
+  /** Stoke-facing callee-save registers. */
+  CpuState stoke_callee_save_;
+  /** A function which records stoke-facing callee save registers. */
+  x64asm::Function save_stoke_callee_save_;
+  /** A function which restores stoke-facing callee save registers. */
+  x64asm::Function restore_stoke_callee_save_;
 };
 
 } // namespace stoke

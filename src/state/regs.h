@@ -12,15 +12,15 @@ namespace stoke {
 
 class Regs {
  public:
-	/** Create a bank of n registers of w bits. */
-	Regs(size_t n, size_t w) {
-		contents_.resize(n, cpputil::BitVector(w));
-	}
+  /** Create a bank of n registers of w bits. */
+  Regs(size_t n, size_t w) {
+    contents_.resize(n, cpputil::BitVector(w));
+  }
 
-	/** Number of elements. */
-	size_t size() const {
-		return contents_.size();
-	}
+  /** Number of elements. */
+  size_t size() const {
+    return contents_.size();
+  }
 
   /** Element access. */
   cpputil::BitVector& operator[](size_t i) {

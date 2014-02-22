@@ -7,8 +7,8 @@ namespace stoke {
 
 /** POD-datatype passed to callbacks by sandbox */
 struct StateCallbackData {
-	const size_t line;
-	const CpuState& state;
+  const size_t line;
+  const CpuState& state;
 };
 
 /** Callback signature */

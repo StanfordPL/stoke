@@ -12,11 +12,11 @@ namespace stoke {
 
 class Memory {
  public:
-	/** Creates an empty memory. */
-	Memory() {
-		set_base(0);
-		resize(0);
-	}
+  /** Creates an empty memory. */
+  Memory() {
+    set_base(0);
+    resize(0);
+  }
 
   /** Sets the virtual address base. Rounds down to 256-bit align. */
   Memory& set_base(uint64_t base) {
@@ -34,10 +34,10 @@ class Memory {
     return *this;
   }
 
-	/** Logical memory size. */
-	size_t size() const {
-		return contents_.num_fixed_bytes() - 32;
-	}
+  /** Logical memory size. */
+  size_t size() const {
+    return contents_.num_fixed_bytes() - 32;
+  }
   /** Lower bound on valid addresses */
   uint64_t lower_bound() const {
     return base_;
@@ -51,32 +51,32 @@ class Memory {
     return addr >= lower_bound() && addr < upper_bound();
   }
 
-	/** Copy defined state from another memory. */
-	void copy_defined(const Memory& rhs);
+  /** Copy defined state from another memory. */
+  void copy_defined(const Memory& rhs);
 
   /** Element access */
   uint8_t& operator[](size_t i) {
     assert(in_range(i));
     return contents_.get_fixed_byte(i - base_);
   }
-	/** Element access */
-	const uint8_t operator[](size_t i) const {
+  /** Element access */
+  const uint8_t operator[](size_t i) const {
     assert(in_range(i));
     return contents_.get_fixed_byte(i - base_);
   }
 
-	/** Pointer to underlying data. */
-	void* data() {
-		return contents_.data();
-	}
-	/** Pointer to the valid bit mask. */
-	void* valid_mask() {
-		return valid_.data();
-	}
-	/** Pointer to the defined bit mask. */
-	void* defined_mask() {
-		return def_.data();
-	}
+  /** Pointer to underlying data. */
+  void* data() {
+    return contents_.data();
+  }
+  /** Pointer to the valid bit mask. */
+  void* valid_mask() {
+    return valid_.data();
+  }
+  /** Pointer to the defined bit mask. */
+  void* defined_mask() {
+    return def_.data();
+  }
 
   /** Returns true if a byte is valid. */
   bool is_valid(uint64_t addr) const {
@@ -85,7 +85,7 @@ class Memory {
   /** Sets this byte as valid. */
   Memory& set_valid(uint64_t addr, bool v) {
     assert(in_range(addr));
-		valid_[addr - base_] = v;
+    valid_[addr - base_] = v;
     return *this;
   }
   /** Returns true if a byte is defined. */
@@ -133,14 +133,14 @@ class Memory {
   }
 
  private:
-	/** Virtual base address. */
+  /** Virtual base address. */
   uint64_t base_;
-	/** Virtual memory sandbox. */
+  /** Virtual memory sandbox. */
   cpputil::BitVector contents_;
-	/** Shadow bit vector for tracking valid bytes. */
-	cpputil::BitVector valid_;
-	/** Shadow bit vector for tracking defined bytes. */
-	cpputil::BitVector def_;
+  /** Shadow bit vector for tracking valid bytes. */
+  cpputil::BitVector valid_;
+  /** Shadow bit vector for tracking defined bytes. */
+  cpputil::BitVector def_;
 
   /** Returns true if any address in this range is valid */
   bool any_valid(uint64_t begin, uint64_t end) const;

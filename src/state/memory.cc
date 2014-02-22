@@ -8,16 +8,17 @@ using namespace std;
 namespace stoke {
 
 void Memory::copy_defined(const Memory& rhs) {
-	// We only need to worry about bytes that are valid. We'll iterate in the largest
-	// atomic step size that we can since it doesn't hurt to copy more than we need to.
-	for ( auto i = rhs.valid_.set_quad_index_begin(), ie = rhs.valid_.set_quad_index_end(); i != ie; ++i ) {
-		def_.get_fixed_quad(*i) = rhs.def_.get_fixed_quad(*i);	
-	}
+  // We only need to worry about bytes that are valid. We'll iterate in the largest
+  // atomic step size that we can since it doesn't hurt to copy more than we need to.
+  for (auto i = rhs.valid_.set_quad_index_begin(), ie = rhs.valid_.set_quad_index_end(); i != ie;
+       ++i) {
+    def_.get_fixed_quad(*i) = rhs.def_.get_fixed_quad(*i);
+  }
 
-	// Now we'll copy the actual bytes. One byte of mask corresponds to one quad of data.
-	for ( auto i = def_.set_byte_index_begin(), ie = def_.set_byte_index_end(); i != ie; ++i ) {
-		contents_.get_fixed_quad(*i) = rhs.contents_.get_fixed_quad(*i);
-	}
+  // Now we'll copy the actual bytes. One byte of mask corresponds to one quad of data.
+  for (auto i = def_.set_byte_index_begin(), ie = def_.set_byte_index_end(); i != ie; ++i) {
+    contents_.get_fixed_quad(*i) = rhs.contents_.get_fixed_quad(*i);
+  }
 }
 
 bool Memory::any_valid(uint64_t begin, uint64_t end) const {
