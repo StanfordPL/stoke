@@ -7,91 +7,96 @@
 #include <string>
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
-#include "src/state/shadow.h"
 
 namespace stoke {
 
 class Memory {
  public:
+	/** Creates an empty memory. */
+	Memory() {
+		set_base(0);
+		resize(0);
+	}
+
   /** Sets the virtual address base. Rounds down to 256-bit align. */
   Memory& set_base(uint64_t base) {
-    base_ = (base / 0x20) * 0x20;
+    base_ = (base / 32) * 32;
     return *this;
   }
   /** Sets the virtual address size in bytes. Pads with with 256-bits headroom, rounds to 256-bit align. */
   Memory& resize(size_t size) {
-    const auto padded_size = ((size + 0x5f) / 0x20) * 0x20;
+    const auto padded_size = ((size + 0x5f) / 32) * 32;
 
     contents_.resize_for_fixed_bytes(padded_size);
-    valid_.resize(padded_size);
-    defined_.resize(padded_size);
+    valid_.resize_for_bits(padded_size);
+    def_.resize_for_bits(padded_size);
 
     return *this;
   }
+
+	/** Logical memory size. */
+	size_t size() const {
+		return contents_.num_fixed_bytes() - 32;
+	}
+  /** Lower bound on valid addresses */
+  uint64_t lower_bound() const {
+    return base_;
+  }
+  /** Upper bound on valid addresses */
+  uint64_t upper_bound() const {
+    return base_ + size();
+  }
+  /** Returns true if a virtual address is contained in this memory. */
+  bool in_range(uint64_t addr) const {
+    return addr >= lower_bound() && addr < upper_bound();
+  }
+
+	/** Copy defined state from another memory. */
+	void copy_defined(const Memory& rhs);
 
   /** Element access */
   uint8_t& operator[](size_t i) {
     assert(in_range(i));
     return contents_.get_fixed_byte(i - base_);
   }
+	/** Element access */
+	const uint8_t operator[](size_t i) const {
+    assert(in_range(i));
+    return contents_.get_fixed_byte(i - base_);
+  }
 
-  /** Returns true if an address is valid. */
+	/** Pointer to underlying data. */
+	void* data() {
+		return contents_.data();
+	}
+	/** Pointer to the valid bit mask. */
+	void* valid_mask() {
+		return valid_.data();
+	}
+	/** Pointer to the defined bit mask. */
+	void* defined_mask() {
+		return def_.data();
+	}
+
+  /** Returns true if a byte is valid. */
   bool is_valid(uint64_t addr) const {
-    return valid_.is_set(addr - base_);
+    return valid_[addr - base_];
   }
   /** Sets this byte as valid. */
   Memory& set_valid(uint64_t addr, bool v) {
     assert(in_range(addr));
-    valid_.set(addr - base_, v);
-
+		valid_[addr - base_] = v;
     return *this;
   }
-
-  /** Returns true if an address is defined. */
+  /** Returns true if a byte is defined. */
   bool is_defined(uint64_t addr) const {
-    return defined_.is_set(addr - base_);
+    return def_[addr - base_];
   }
   /** Sets this byte as defined. Does NOT set valid bit! */
   Memory& set_defined(uint64_t addr, bool d) {
     assert(in_range(addr));
-    defined_.set(addr - base_, d);
-
+    def_[addr - base_] = d;
     return *this;
-  }
-
-  /** Returns a pointer to the valid bit mask. */
-  void* begin_valid() {
-    return valid_.begin();
-  }
-  /** Commits direct changes made to the valid mask. */
-  void commit_valid() {
-    valid_.commit();
-  }
-  /** Aborts direct changes made to the valid mask. */
-  void abort_valid() {
-    valid_.abort();
-  }
-
-  /** Returns a pointer to the defined bit mask. */
-  void* begin_defined() {
-    return defined_.begin();
-  }
-  /** Commits direct changes made to the defined mask. Only examines valid bits. */
-  void commit_defined() {
-    defined_.commit();
-  }
-  /** Aborts direct changes made to the defined mask. Only examines valid bits. */
-  void abort_defined() {
-    defined_.abort();
-  }
-
-  /** Comparison based on components; ignores shadows. */
-  bool operator==(const Memory& rhs) const {
-    return base_ == rhs.base_ && contents_ == rhs.contents_;
-  }
-  /** Comparison based on components; ignores shadows. */
-  bool operator!=(const Memory& rhs) const {
-    return !(*this == rhs);
   }
 
   /** Bit-wise xor; ignores shadows. */
@@ -103,6 +108,15 @@ class Memory {
   Memory operator^(const Memory& rhs) {
     auto ret = *this;
     return ret ^= rhs;
+  }
+
+  /** Comparison based on components; ignores shadows. */
+  bool operator==(const Memory& rhs) const {
+    return base_ == rhs.base_ && contents_ == rhs.contents_;
+  }
+  /** Comparison based on components; ignores shadows. */
+  bool operator!=(const Memory& rhs) const {
+    return base_ != rhs.base_ || contents_ != rhs.contents_;
   }
 
   /** I/O */
@@ -119,23 +133,14 @@ class Memory {
   }
 
  private:
+	/** Virtual base address. */
   uint64_t base_;
+	/** Virtual memory sandbox. */
   cpputil::BitVector contents_;
-  Shadow valid_;
-  Shadow defined_;
-
-  /** Lower bound on valid addresses */
-  uint64_t lower_bound() const {
-    return base_;
-  }
-  /** Upper bound on valid addresses */
-  uint64_t upper_bound() const {
-    return base_ + contents_.num_fixed_bytes() - 0x20;
-  }
-  /** Returns true if a virtual address is contained in this memory. */
-  bool in_range(uint64_t addr) const {
-    return addr >= lower_bound() && addr < upper_bound();
-  }
+	/** Shadow bit vector for tracking valid bytes. */
+	cpputil::BitVector valid_;
+	/** Shadow bit vector for tracking defined bytes. */
+	cpputil::BitVector def_;
 
   /** Returns true if any address in this range is valid */
   bool any_valid(uint64_t begin, uint64_t end) const;

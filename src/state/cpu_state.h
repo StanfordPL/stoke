@@ -12,19 +12,10 @@ namespace stoke {
 /** A datastructure representation of a hardware CPU state. */
 struct CpuState {
   /** Returns a new CpuState. */
-  CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) {
+  CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) :
+			gp(16,64), sse(16,256) {
     stack.set_base(0).resize(stack_size);
-    stack.set_base(base).resize(heap_size);
-  }
-
-  /** Comparison based on components. */
-  bool operator==(const CpuState& rhs) const {
-    return code == rhs.code && gp == rhs.gp && sse == rhs.sse &&
-           stack == rhs.stack && heap == rhs.heap;
-  }
-  /** Comparison based on components. */
-  bool operator!=(const CpuState& rhs) const {
-    return !(*this == rhs);
+    heap.set_base(base).resize(heap_size);
   }
 
   /** Bit-wise operation in terms of components. */
@@ -41,6 +32,16 @@ struct CpuState {
   CpuState operator^(const CpuState& rhs) const {
     auto ret = *this;
     return ret ^= rhs;
+  }
+
+  /** Comparison based on components. */
+  bool operator==(const CpuState& rhs) const {
+    return code == rhs.code && gp == rhs.gp && sse == rhs.sse &&
+           stack == rhs.stack && heap == rhs.heap;
+  }
+  /** Comparison based on components. */
+  bool operator!=(const CpuState& rhs) const {
+    return !(*this == rhs);
   }
 
   /** I/O. */
@@ -60,9 +61,9 @@ struct CpuState {
   /** The error code associated with this state. */
   ErrorCode code;
   /** General purpose register buffer. */
-  Regs<16, 8> gp;
+  Regs gp;
   /** SSE register buffer. */
-  Regs<16, 32> sse;
+  Regs sse;
   /** Stack. */
   Memory stack;
   /** Heap. */

@@ -1,6 +1,6 @@
 ##### CONSTANT DEFINITIONS
 
-CXX=ccache g++ -std=c++11 -Werror
+CXX=ccache g++ -std=c++11 -Werror -Wfatal-errors
 
 UARCH=-DSTOKE_HASWELL
 
@@ -26,6 +26,7 @@ OBJ=\
 	\
 	src/state/cpu_state.o \
 	src/state/memory.o \
+	src/state/regs.o \
 	\
 	src/verifier/verifier.o
 
@@ -33,7 +34,7 @@ BIN= \
 	bin/stoke_cfg \
 	bin/stoke_cost \
 	bin/stoke_simulate \
-	bin/stoke_validate \
+	bin/stoke_verify \
 	\
 	bin/stoke_extract \
 	bin/stoke_search \

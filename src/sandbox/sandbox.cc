@@ -1,7 +1,6 @@
 #include "src/sandbox/sandbox.h"
 
 #include <cassert>
-#include <cstring>
 #include <setjmp.h>
 #include <signal.h>
 
@@ -13,28 +12,13 @@ using namespace x64asm;
 
 namespace {
 
-#ifndef NDEBUG
-  #define DEBUG_BEGIN(x) cout << endl << "vvvvv " << x << endl
-  #define DEBUG_END() cout << "^^^^^ " << endl << endl
-  #define DEBUG_HERE(r,x) assm_.mov(r, Imm32(x))
-#else
-  #define DEBUG_BEGIN(x) 
-  #define DEBUG_END()
-  #define DEBUG_HERE(r,x)
-#endif
-
 sigjmp_buf buf_;
 
 void sigfpe_handler(int signum, siginfo_t* si, void* data) {
 	siglongjmp(buf_, 1);
 }
 
-void callback_wrapper(bool stack_mask, bool heap_mask, StateCallback cb, 
-    size_t line, CpuState* current, void* arg) {
-  if ( stack_mask )
-    current->stack.commit_defined();
-  if ( heap_mask )
-    current->heap.commit_defined();
+void callback_wrapper(StateCallback cb, size_t line, CpuState* current, void* arg) {
   cb({line, *current}, arg);
 }
 
@@ -43,34 +27,14 @@ void callback_wrapper(bool stack_mask, bool heap_mask, StateCallback cb,
 namespace stoke {
 
 Sandbox::Sandbox() : fxn_(32*1024) {
-	set_sandbox_loops(false);
-  set_max_jumps(1024);
-	set_sandbox_abi(false);
-
 	clear_inputs();
-
-  set_input_reg_mask(RegSet::linux_caller_save());
-  set_input_stack_mask(true);
-  set_input_heap_mask(true);
-
-  set_output_reg_mask(RegSet::universe());
-  set_output_stack_mask(true);
-  set_output_heap_mask(true);
-
-  set_read_only_mem(false);
-
 	clear_callbacks();
 
-  DEBUG_BEGIN("STACK SNAPSHOT");
+  set_max_jumps(1024);
+  set_read_only_mem(false);
+
   snapshot_.init();
-  DEBUG_END();
-
-  // Map segv_buffer_base_ to a 256-bit aligned boundary
-  segv_buffer_base_ = (uint64_t)&segv_buffer_[32];
-  segv_buffer_base_ &= 0xffffffffffffffe0;
-
-  // Initialize the segv buffer to all zeros
-  memset((void*)segv_buffer_base_, 0, 32);
+	segv_buffer_.fill(0);
 
 	static bool once = false;
 	if ( !once ) {
@@ -87,58 +51,30 @@ Sandbox::Sandbox() : fxn_(32*1024) {
 }
 
 Sandbox& Sandbox::clear_inputs() {
+	for ( auto io : io_pairs_ ) {
+		delete io;
+	}
   io_pairs_.clear();
 	return *this;
 }
 
 Sandbox& Sandbox::insert_input(const CpuState& input) {
-  // Create an i/o state using this input as both input AND output
-  io_pairs_.push_back(IoPair());
-  io_pairs_.back().in_ = input;
-  io_pairs_.back().out_ = input;
+  io_pairs_.push_back(new IoPair());
+	auto io = io_pairs_.back();
 
-  // Invalidate stack/heap for the new pair based on input masks. This
-  // should correspond to not having any memory. Output masks are used later 
-  // when we decide whether to commit changes prior to presenting states.
-  if ( !input_stack_mask_ ) {
-    io_pairs_.back().in_.stack.clear();
-    io_pairs_.back().out_.stack.clear();
-  } 
-  if ( !input_heap_mask_ ) {
-    io_pairs_.back().in_.heap.clear();
-    io_pairs_.back().out_.heap.clear();
-  }
-
-  // This is OVERKILL, but it should work. We might have just triggered a vector
-  // reallocation, in which case we're going to have to recompile everything. 
-  // To be safe, just recompile everything for every insertion. Yes. This is O(n^2).
+  // Use this input as both input AND output
+  io->in_ = input;
+  io->out_ = input;
 
   // Note that we never copy rsp TO the cpu. This has nasty function
   // call return implications, which we have to handle at call point.
   // We handle rsp separately as part of the user's callee-saved state.
 
-  for ( auto& io : io_pairs_ ) {
-    // Assemble the function we'll use to write the cpu. This isn't a bug, we 
-    // can't guarantee perfect dataflow for xmm registers; we hard define everything.
-    DEBUG_BEGIN("COPY INPUT TO CPU");
-    io.in2cpu_ = CpuIo::write(io.in_, (RegSet::all_gps() | RegSet::all_xmms()) - (RegSet::empty()+rsp));
-    DEBUG_END();
-
-    // Assemble the function we'll use to restore the output to the cpu.
-    DEBUG_BEGIN("COPY OUTPUT TO CPU");
-    io.out2cpu_ = CpuIo::write(io.out_, RegSet::universe() - (RegSet::empty()+rax+rsp));
-    DEBUG_END();
-
-    // Assemble the function we'll use to read the output from the cpu.
-    DEBUG_BEGIN("COPY CPU TO OUTPUT");
-    io.cpu2out_ = CpuIo::read(io.out_, output_reg_mask_, {{rax,&scratch_[rax]}, {rsp,&scratch_[rsp]}});
-    DEBUG_END();
-
-    // Assemble the function that we'll use to sandbox memory accesses
-    DEBUG_BEGIN("MAP ADDR");
-    io.map_addr_ = assemble_map_addr(io.out_);
-    DEBUG_END();
-  }
+	// Assemble helper functions for this io pair.
+	io->in2cpu_ = CpuIo::write(io->in_, RegSet::universe() - (RegSet::empty()+rsp));
+	io->out2cpu_ = CpuIo::write(io->out_, RegSet::universe() - (RegSet::empty()+rax+rsp));
+	io->cpu2out_ = CpuIo::read(io->out_, RegSet::universe(), {{rax,&scratch_[rax]}, {rsp,&scratch_[rsp]}});
+	io->map_addr_ = assemble_map_addr(io->out_);
 
 	return *this;
 }
@@ -149,63 +85,35 @@ void Sandbox::compile(const Cfg& cfg) {
   const auto& code = cfg.get_code();
 	assm_.start(fxn_);
 
-  DEBUG_BEGIN("SAVE STOKE-FACING CALLEE SAVE REGISTERS");
   emit_save_stoke_callee_save();
-  DEBUG_END();
-
-  DEBUG_BEGIN("LOAD INPUTS");
 	assm_.call(rdi);
-  if ( input_reg_mask_.contains(rsp) ) {
-    assm_.mov(rsp, Imm64{&current_frame_});
-    assm_.mov(rsp, M64{rsp});
-  }
-  DEBUG_END();
-
-  DEBUG_BEGIN("SAVE USER-FACING CALLEE SAVE REGISTERS");
+  assm_.mov(rsp, Imm64{&current_frame_});
+  assm_.mov(rsp, M64{rsp});
   emit_save_user_callee_save();
-  DEBUG_END();
 
 	// Assemble reachable blocks
-	for ( size_t b = cfg.get_entry()+1, be = cfg.get_exit(); b < be; ++b ) {
-		if ( !cfg.is_reachable(b) )
-			continue;
-
-		const auto first = cfg.get_index(Cfg::location_type(b,0));
-		for ( size_t i = first, ie = first + cfg.num_instrs(b); i < ie; ++i ) {
+	for ( auto b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b ) {
+		const auto begin = cfg.get_index(Cfg::loc_type(*b,0));
+		for ( size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i ) {
 			const auto& instr = code[i];
 
 			if ( !before_.empty() ) {
-        DEBUG_BEGIN("EMIT BEFORE CALLBACK");
         emit_callbacks(i, true);
-        DEBUG_END();
       }
-      if ( sandbox_loops_ && instr.is_jump() ) {
-        DEBUG_BEGIN("EMIT PRE JUMP");
+      if ( instr.is_jump() ) {
         emit_pre_jump();        
-        DEBUG_END();
       }
 			if ( instr.is_return() ) {
-        DEBUG_BEGIN("EMIT PRE RETURN");
         emit_pre_return();
-        DEBUG_END();
       }
-
-      DEBUG_BEGIN("EMIT INSTRUCTION");
       emit_instruction(instr);
-      DEBUG_END();
-
 			if ( !after_.empty() )  {
-        DEBUG_BEGIN("EMIT AFTER CALLBACK");
         emit_callbacks(i, false); 
-        DEBUG_END();
       }
 		}
 	}
-  if ( sandbox_loops_ ) {
-    DEBUG_BEGIN("INFINITE LOOP RETURN");
-    emit_infinite_loop_return();
-    DEBUG_END();
-  }
+  emit_infinite_loop_return();
+
 	assm_.finish();
 }
 
@@ -216,67 +124,41 @@ void Sandbox::run_all() {
 
 void Sandbox::run_one(size_t index) {
   assert(index < size());
-  auto& io = io_pairs_[index];
+  auto io = io_pairs_[index];
 
   // Reset infinite loop and segfault state
   jumps_ = max_jumps_;
   segv_ = 0;
 
-  // Set the value of the stack pointer for this input
-  current_frame_ = io.in_.gp[rsp].get_fixed_quad(0);
-  // Set a pointer to the current io_pair
-  current_state_ = (uint64_t)&io.out_;
-  // Set the function which will restore the current output to the cpu
-  current_c2o_ = (uint64_t)(io.cpu2out_.get_entrypoint());
-  // Set the function which will read the current output from the cpu
-  current_o2c_ = (uint64_t)(io.out2cpu_.get_entrypoint());
-  // Set the function which will sandbox memory accesses
-  current_map_addr_ = (uint64_t)(io.map_addr_.get_entrypoint());
+  // Set the global variables for this input
+  current_frame_ = io->in_.gp[rsp].get_fixed_quad(0);
+  current_state_ = (uint64_t)&io->out_;
+  current_c2o_ = (uint64_t)(io->cpu2out_.get_entrypoint());
+  current_o2c_ = (uint64_t)(io->out2cpu_.get_entrypoint());
+  current_map_addr_ = (uint64_t)(io->map_addr_.get_entrypoint());
 
-  // In read only mem mode, we don't need to do this since; mem will never change
+  // In read only mem mode, we don't need to do this; mem will never change
   if ( !read_only_mem_ ) {
-    // Reset defined memory bits for this testcase. Recall that if input masks
-    // are false, we'll have removed memory when we inserted this input and these
-    // loops will be nops. Also, recopy defined bytes.
-    for ( auto i = io.in_.stack.valid_begin(), ie = io.in_.stack.valid_end(); i != ie; ++i ) {
-      io.out_.stack.set_defined(*i, io.in_.stack.is_defined(*i));
-      if ( io.in_.stack.is_defined(*i) )
-        io.out_.stack.get_fixed_byte(*i) = io.in_.stack.get_fixed_byte(*i);
-    }
-    for ( auto i = io.in_.heap.valid_begin(), ie = io.in_.heap.valid_end(); i != ie; ++i ) {
-      io.out_.heap.set_defined(*i, io.in_.heap.is_defined(*i));
-      if ( io.out_.heap.is_defined(*i) )
-        io.out_.heap.get_fixed_byte(*i) = io.out_.heap.get_fixed_byte(*i);
-    }
-
-    // Clear the segfault memory buffer
-    memset((void*)segv_buffer_base_, 0, 32);
+		io->out_.stack.copy_defined(io->in_.stack);
+		io->out_.heap.copy_defined(io->in_.heap);
+		segv_buffer_.fill(0);
   }
 
-  // Run the code
-  if ( !sigsetjmp(sigfpe_, 1) ) {
-    fxn_.call<void,void*>(io.in2cpu_.get_entrypoint());
+ 	// Run the code and set signal flags
+  if ( !sigsetjmp(buf_, 1) ) {
+    fxn_.call<void,void*>(io->in2cpu_.get_entrypoint());
 
-    // If we succeeded, output cpu state was copied, now copy memory
-    // If we're read-only-mode, this supposedly never changed
-    if ( output_stack_mask_ && !read_only_mem_ )
-      io.out_.stack.commit_defined();
-    if ( output_heap_mask_ && !read_only_mem_ )
-      io.out_.heap.commit_defined();
-    // We don't need to abort, we'll clobber the next run anyway
-
-    // Assign error signals as necessary
-    if ( sandbox_loops_ && jumps_ == 0 ) {
-      io.out_.ec = ErrorCode::SIGKILL_;
-    } else if ( sandbox_abi_ && !snapshot_.check_abi(io.out_) ) {
-      io.out_.ec = ErrorCode::SIGSEGV_;
+    if ( jumps_ == 0 ) {
+      io->out_.code = ErrorCode::SIGKILL_;
+    } else if ( !snapshot_.check_abi(io->out_) ) {
+      io->out_.code = ErrorCode::SIGSEGV_;
     } else if ( segv_ != 0 ) {
-      io.out_.ec = ErrorCode::SIGSEGV_;
+      io->out_.code = ErrorCode::SIGSEGV_;
     } else {
-      io.out_.ec = ErrorCode::NORMAL;
+      io->out_.code = ErrorCode::NORMAL;
     }
   } else {
-    io.out_.ec = ErrorCode::SIGFPE_;
+    io->out_.code = ErrorCode::SIGFPE_;
   }
 }
 
@@ -327,16 +209,12 @@ void Sandbox::emit_callbacks(size_t line, bool before) {
     // Copy machine state (called from valid rsp, with user rax and rsp saved)
     assm_.mov(rax, Moffs64{&current_c2o_});
     assm_.call(rax);
-    // Invoke the callback through the callback wrapper which will sync memory
-    assm_.mov(rax, Moffs64{&output_stack_mask_});
-    assm_.mov(rdi, rax);
-    assm_.mov(rax, Moffs64{&output_heap_mask_});
-    assm_.mov(rsi, rax);
-    assm_.mov((R64)rdx, Imm64{cb.first});
-    assm_.mov(rcx, Imm64{line});
+    // Invoke the callback through the callback wrapper 
+    assm_.mov((R64)rdi, Imm64{cb.first});
+    assm_.mov(rsi, Imm64{line});
     assm_.mov(rax, Moffs64{&current_state_});
-    assm_.mov(r8, rax);
-    assm_.mov(r9, Imm64{cb.second});
+    assm_.mov(rdx, rax);
+    assm_.mov(rcx, Imm64{cb.second});
     assm_.mov((R64)rax, Imm64{&callback_wrapper});
     assm_.call(rax);
     // Restore machine state (called from valid rsp, ignores user rax and rsp)
@@ -596,7 +474,7 @@ Function Sandbox::assemble_map_addr(CpuState& cs) {
   assm_.bind(Label{"fail"});
   assm_.mov((R64)rax, Imm64{&segv_});
   assm_.inc(M64{rax});
-  assm_.mov((R64)rax, Imm64{segv_buffer_base_});
+  assm_.mov((R64)rax, Imm64{segv_buffer_.data()});
   assm_.mov(rdi, rax);
 
   // Done; get out of here

@@ -1,46 +1,50 @@
-#ifndef STOKE_STATE_REGS_H
-#define STOKE_STATE_REGS_H
+#ifndef STOKE_SRC_STATE_REGS_H
+#define STOKE_SRC_STATE_REGS_H
 
 #include <cassert>
 
-#include <array>
 #include <iostream>
-#include <string>
+#include <vector>
 
-#include "src/ext/cpputil/include/container/bit_array.h"
-#include "src/ext/cpputil/include/io/column.h"
-#include "src/ext/cpputil/include/io/filterstream.h"
-#include "src/ext/cpputil/include/serialize/hex_reader.h"
-#include "src/ext/cpputil/include/serialize/hex_writer.h"
+#include "src/ext/cpputil/include/container/bit_vector.h"
 
 namespace stoke {
 
-template <size_t N, size_t W>
 class Regs {
  public:
+	/** Create a bank of n registers of w bits. */
+	Regs(size_t n, size_t w) {
+		contents_.resize(n, cpputil::BitVector(w));
+	}
+
+	/** Number of elements. */
+	size_t size() const {
+		return contents_.size();
+	}
+
   /** Element access. */
-  cpputil::BitArray<W>& operator[](size_t i) {
-    assert(i < N);
+  cpputil::BitVector& operator[](size_t i) {
+    assert(i < size());
     return contents_[i];
   }
   /** Element access. */
-  const cpputil::BitArray<W>& operator[](size_t i) const {
-    assert(i < N);
+  const cpputil::BitVector& operator[](size_t i) const {
+    assert(i < size());
     return contents_[i];
   }
 
-  /** Comparison. */
+  /** Equality. */
   bool operator==(const Regs& rhs) const {
     return contents_ == rhs.contents_;
   }
-  /** Comparison. */
+  /** Inequality. */
   bool operator!=(const Regs& rhs) const {
-    return !(*this == rhs);
+    return contents_ != rhs.contents_;
   }
 
   /** Bit-wise xor */
   Regs& operator^=(const Regs& rhs) {
-    for (size_t i = 0; i < N; ++i) {
+    for (size_t i = 0, ie = size(); i < ie; ++i) {
       contents_[i] ^= rhs.contents_[i];
     }
     return *this;
@@ -52,56 +56,17 @@ class Regs {
   }
 
   /** I/O. */
-  std::istream& read(std::istream& is) {
-    for (size_t i = 0; i < N; ++i) {
-      std::string ignore;
-      is >> ignore;
-      for (size_t j = 0; j < W; ++j) {
-        cpputil::HexReader<uint64_t, 2>()(is, contents_[i].get_fixed_quad(j));
-      }
-    }
-
-    return is;
-  }
+  std::istream& read(std::istream& is);
   /** I/O. */
-  template <typename InItr>
-  std::ostream& write(std::ostream& os, InItr names, size_t padding) const {
-    cpputil::ofilterstream<cpputil::Column> fs(os);
-    fs.filter().padding(padding);
-
-    write_regs(fs, names);
-    fs.filter().next();
-    write_vals(fs);
-    fs.filter().done();
-
-    return os;
-  }
+  std::ostream& write(std::ostream& os, const char** names, size_t padding) const;
 
  private:
-  std::array<cpputil::BitArray<W>, N> contents_;
+  std::vector<cpputil::BitVector> contents_;
 
   /** Write register names */
-  template <typename InItr>
-  void write_regs(std::ostream& os, InItr names) const {
-    for (size_t i = 0; i < N; ++i) {
-      os << *(names + i);
-      if (i != N - 1) {
-        os << std::endl;
-      }
-    }
-  }
+  void write_regs(std::ostream& os, const char** names) const;
   /** Write register values */
-  void write_vals(std::ostream& os) const {
-    for (size_t i = 0; i < N; ++i) {
-      for (size_t j = 0; j < W / 8; ++j) {
-        cpputil::HexWriter<uint64_t, 2>()(os, contents_[i].get_fixed_quad(j));
-        os << " ";
-      }
-      if (i != N - 1) {
-        os << std::endl;
-      }
-    }
-  }
+  void write_vals(std::ostream& os) const;
 };
 
 } // namespace stoke

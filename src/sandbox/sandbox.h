@@ -40,10 +40,10 @@ class Sandbox {
 
       public:
         const CpuState& operator*() const {
-					return itr_->out_;
+					return (*itr_)->out_;
 				}
         const CpuState* operator->() const {
-  				return &(itr_->out_);
+  				return &((*itr_)->out_);
 				}
 
         output_iterator& operator++() {
@@ -59,30 +59,24 @@ class Sandbox {
 				}
 
       private:
-        std::vector<IoPair>::const_iterator itr_;
-
-        output_iterator(std::vector<IoPair>::const_iterator itr) {
+        output_iterator(std::vector<IoPair*>::const_iterator itr) {
   				itr_ = itr;
 				}
-        output_iterator() = delete;
+
+        std::vector<IoPair*>::const_iterator itr_;
     };
 
     /** Creates a sandbox. */
 		Sandbox();
 
-    /** Protects against code with infinite loops. */
-		Sandbox& set_sandbox_loops(bool val) {
-			sandbox_loops_ = val;
-			return *this;
+		/** Deletes a sandbox. */
+		~Sandbox() {
+			clear_inputs();
 		}
+
     /** Sets the maximum number of jumps taken before premature exit. */
     Sandbox& set_max_jumps(size_t jumps) {
 			max_jumps_ = jumps;
-			return *this;
-		}
-    /** Protects against code which derefences invalid mem. */
-		Sandbox& set_sandbox_abi(bool val) {
-			sandbox_abi_ = val;
 			return *this;
 		}
 
@@ -90,42 +84,10 @@ class Sandbox {
 		Sandbox& clear_inputs();
     /** Add a new input. */
 		Sandbox& insert_input(const CpuState& input);
+
     /** Returns the number of inputs installed so far. */
 		size_t size() const {
 			return io_pairs_.size();
-		}
-
-    /** Sets which registers to copy into hardware before executing. */
-    Sandbox& set_input_reg_mask(const x64asm::RegSet& mask) {
-			input_reg_mask_ = mask;
-			return *this;
-		}
-
-    /** Sets whether to copy stack to hardware before executing. */
-    Sandbox& set_input_stack_mask(bool mask) {
-			input_stack_mask_ = mask;
-			return *this;
-		}
-    /** Sets whether to copy heap to hardware before executing. */
-    Sandbox& set_input_heap_mask(bool mask) {
-			input_heap_mask_ = mask;
-			return *this;
-		}
-
-    /** Sets which registers to copy from hardware after executing. */
-    Sandbox& set_output_reg_mask(const x64asm::RegSet& mask) {
-			output_reg_mask_ = mask;
-			return *this;
-		}
-    /** Sets whether to copy stack from hardware after executing. */
-    Sandbox& set_output_stack_mask(bool mask) {
-			output_stack_mask_ = mask;
-			return *this;
-		}
-    /** Sets whether to copy heap from hardware after executing. */
-    Sandbox& set_output_heap_mask(bool mask) {
-			output_heap_mask_ = mask;
-			return *this;
 		}
 
     /** Sets the assumption that memory is read only, no copies necessary. */
@@ -183,30 +145,8 @@ class Sandbox {
     /** Function buffer for jit assembling codes. */
 		x64asm::Function fxn_;
 
-    /** Sandbox flag. */
-		bool sandbox_loops_;
-    /** Sandbox flag. */
-		bool sandbox_abi_;
-
-    /** Input mask. */
-    x64asm::RegSet input_reg_mask_;
-    /** Input mask. */
-    bool input_stack_mask_;
-    /** Input mask. */
-    bool input_heap_mask_;
-
-    /** Output mask. */
-    x64asm::RegSet output_reg_mask_;
-    /** Output mask. */
-    bool output_stack_mask_;
-    /** Output mask. */
-    bool output_heap_mask_;
-
-    /** Is memory read only? */
-    bool read_only_mem_;
-
-    /** I/O pairs. Note that relocation is a possibility here. */
-		std::vector<IoPair> io_pairs_;
+    /** I/O pairs. These are pointers to simplify vector reallocations. */
+		std::vector<IoPair*> io_pairs_;
     /** Stack snapshot for restoring valid stack state as necessary. */
     StackSnapshot snapshot_;
 
@@ -215,6 +155,8 @@ class Sandbox {
     /** Callbacks to invokes after a line is exeucted. */
 		std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> after_;
 
+    /** Is memory read only? */
+    bool read_only_mem_;
     /** The maximum number of jumps to take before exiting. */
     size_t max_jumps_;
     /** How many jumps have been taken during this execution. */
@@ -222,20 +164,19 @@ class Sandbox {
     /** Has a segfault occurred during this execution? */
     size_t segv_;
     /** A safe buffer we can point segfaulting addresses to. */
-    std::array<uint8_t, 64> segv_buffer_;
-    uint64_t segv_buffer_base_;
+    alignas(32) std::array<uint8_t, 32> segv_buffer_;
 
     /** Scratch space used here and there by sandboxing code. */
 		uint64_t scratch_[16];
-    /** Set prior to testcase execution, the value of the user-provided stack pointer. */
+    /** Set prior to execution, the value of the user-provided stack pointer. */
     uint64_t current_frame_;
-    /** Set prior to testcase execution, pointer to current state. */
+    /** Set prior to execution, pointer to current state. */
     uint64_t current_state_;
-    /** Set prior to testcase execution, function for copying hardware state. */
+    /** Set prior to execution, function for copying hardware state. */
     uint64_t current_c2o_;
-    /** Set prior to testcase execution, function for restoring hardware state. */
+    /** Set prior to execution, function for restoring hardware state. */
     uint64_t current_o2c_;
-    /** Set prior to testcase execution, function for sandboxing memory references. */
+    /** Set prior to execution, function for sandboxing memory references. */
     uint64_t current_map_addr_;
 
     /** Emits code to save the true callee saved registers. */

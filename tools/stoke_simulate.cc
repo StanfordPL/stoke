@@ -11,7 +11,6 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/args/code.h"
-#include "src/args/reg_set.h"
 #include "src/args/testcases.h"
 #include "src/state/cpu_state.h"
 #include "src/sandbox/sandbox.h"
@@ -29,11 +28,6 @@ auto& target = FileArg<Code, CodeReader, CodeWriter>::create("target")
   .description("Target code")
   .default_val({{RET}});
 
-auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
-  .usage("{ rax rsp ... }")
-  .description("Registers defined on entry")
-  .default_val(RegSet::linux_caller_save());
-
 auto& h2 = Heading::create("Input state:");
 
 auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
@@ -48,16 +42,13 @@ auto& idx = ValueArg<size_t>::create("index")
 
 auto& h3 = Heading::create("Sandboxing options:");
 
-auto& sandbox_loops = FlagArg::create("sandbox_loops")
-  .description("Report code with infinite loops");
-
 auto& max_jumps = ValueArg<size_t>::create("max_jumps")
   .usage("<int>")
   .description("Maximum jumps before exit due to infinite loop")
   .default_val(1024);
 
-auto& sandbox_abi = FlagArg::create("sandbox_abi")
-  .description("Report x64 abi violations");
+auto& rom = FlagArg::create("rom")
+	.description("Assume that memory is read only");
 
 auto& h4 = Heading::create("Debugging options:");
 
@@ -73,9 +64,9 @@ auto& breakpoint = ValueArg<int>::create("breakpoint")
 void callback(const StateCallbackData& data, void* arg) {
   auto stepping = (bool*) arg;
 
-  cout << "Error Code: " << (int)cs->code << endl;
+  cout << "Error Code: " << (int)data.state.code << endl;
   cout << endl;
-  cout << cs << endl;
+  cout << data.state << endl;
   cout << endl;
   cout << target.value()[data.line] << endl;
   cout << endl;
@@ -120,25 +111,24 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-  Sandbox sb;
-  sb.set_sandbox_loops(sandbox_loops)
-  .set_sandbox_abi(sandbox_abi)
-  .set_max_jumps(max_jumps)
-  .set_input_reg_mask(def_in)
-  .set_input_stack_mask(true)
-  .set_input_heap_mask(true)
-  .set_read_only_mem(false)
-  .insert_input(testcases.value()[min(testcases.value().size() - 1, idx.value())]);
-
   if (debug) {
     breakpoint.value() = 0;
   }
+
+  Sandbox sb;
+  sb.set_max_jumps(max_jumps)
+		.set_read_only_mem(rom);
+
+	const auto index = min(testcases.value().size()-1, idx.value());
+	const auto input = testcases.value()[index];
+  sb.insert_input(input);
+
   auto stepping = false;
   for (size_t i = 0, ie = target.value().size(); i < ie; ++i) {
     sb.insert_before(i, callback, &stepping);
   }
 
-  sb.run({target, def_in, RegSet::empty()});
+  sb.run({target, RegSet::empty(), RegSet::empty()});
 
   const auto result = *(sb.result_begin());
   if (result.code != ErrorCode::NORMAL) {
