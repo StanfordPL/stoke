@@ -99,6 +99,8 @@ class Memory {
     return *this;
   }
 
+	/** TODO... we need to make an iterator over defined bytes. */
+
   /** Bit-wise xor; ignores shadows. */
   Memory& operator^=(const Memory& rhs) {
     contents_ ^= rhs.contents_;

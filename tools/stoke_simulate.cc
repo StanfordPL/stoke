@@ -28,7 +28,7 @@ auto& target = FileArg<Code, CodeReader, CodeWriter>::create("target")
   .description("Target code")
   .default_val({{RET}});
 
-auto& h2 = Heading::create("Input state:");
+auto& h2 = Heading::create("Input options:");
 
 auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
   .usage("<path/to/file>")

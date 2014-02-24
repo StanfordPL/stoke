@@ -20,6 +20,8 @@ OBJ=\
 	\
 	src/cfg/cfg.o \
 	\
+	src/cost/cost_function.o \
+	\
 	src/sandbox/cpu_io.o \
 	src/sandbox/sandbox.o \
 	src/sandbox/stack_snapshot.o \
@@ -71,6 +73,8 @@ src/ext/x64asm:
 src/args/%.o: src/args/%.cc src/args/%.h
 	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
 src/cfg/%.o: src/cfg/%.cc src/cfg/%.h
+	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+src/cost/%.o: src/cost/%.cc src/cost/%.h
 	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
 src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
 	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
