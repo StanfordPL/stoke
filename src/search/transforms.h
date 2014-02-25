@@ -2,13 +2,19 @@
 #define STOKE_SRC_SEARCH_TRANSFORMS_H
 
 #include "src/cfg/cfg.h"
+#include "src/search/move.h"
 
 namespace stoke {
 
 class Transforms {
 	public:
 
-		void undo(Cfg& cfg);
+		bool modify(Cfg& cfg, Move type) {
+			return true;
+		}
+		void undo(Cfg& cfg, Move type) {
+
+		}
 
 	private:
 

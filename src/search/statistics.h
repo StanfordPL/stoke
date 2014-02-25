@@ -4,12 +4,11 @@
 namespace stoke {
 
 struct Statistics {
-	Statistics() : mass(0), num_proposed(0), num_succeeded(0), num_accepted(0) { }
+	Statistics() : num_proposed(0), num_succeeded(0), num_accepted(0) { }
 
 	Statistics operator+(const Statistics& rhs) const {
 		auto ret = *this;
 
-		ret.mass += rhs.mass;
 		ret.num_proposed += rhs.num_proposed;
 		ret.num_succeeded += rhs.num_succeeded;
 		ret.num_accepted += rhs.num_accepted;
@@ -17,7 +16,6 @@ struct Statistics {
 		return *this;
 	}
 
-	size_t mass;
 	size_t num_proposed;
 	size_t num_succeeded;
 	size_t num_accepted;

@@ -2,9 +2,7 @@
 
 CXX=ccache g++ -std=c++11 -Werror -Wfatal-errors
 
-UARCH=-DSTOKE_HASWELL
-
-TARGET=-mavx -mavx2
+TARGET=-mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 
 INC=\
 	-I./ \
@@ -25,6 +23,8 @@ OBJ=\
 	src/sandbox/cpu_io.o \
 	src/sandbox/sandbox.o \
 	src/sandbox/stack_snapshot.o \
+	\
+	src/search/search.o \
 	\
 	src/state/cpu_state.o \
 	src/state/memory.o \
@@ -71,22 +71,24 @@ src/ext/x64asm:
 ##### BUILD TARGETS
 
 src/args/%.o: src/args/%.cc src/args/%.h
-	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/cfg/%.o: src/cfg/%.cc src/cfg/%.h
-	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/cost/%.o: src/cost/%.cc src/cost/%.h
-	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
-	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/search/%.o: src/search/%.cc src/search/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc src/state/%.h
-	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
-	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
 ##### BINARY TARGETS
 
 bin/%: tools/%.cc $(OBJ) 
-	$(CXX) $(TARGET) $(UARCH) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  
 
 ##### MISC
 

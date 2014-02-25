@@ -10,9 +10,9 @@ namespace stoke {
 
 /** POD-datatype passed to callbacks by search */
 struct StatisticsCallbackData {
-	const size_t iterations;
-	const time_t elapsed; // @todo what should this be?
 	const std::vector<Statistics>& move_statistics;
+	const size_t iterations;
+	const std::chrono::duration<double> elapsed; 
 };
 
 /** Callback signature */

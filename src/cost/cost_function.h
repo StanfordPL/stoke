@@ -1,6 +1,7 @@
 #ifndef STOKE_SRC_COST_COST_FUNCTION_H
 #define STOKE_SRC_COST_COST_FUNCTION_H
 
+#include <cassert>
 #include <stdint.h>
 
 #include <vector>
@@ -20,13 +21,12 @@
 namespace stoke {
 
 class CostFunction {
-	private:
-		static constexpr auto max_cost_ = (Cost)(0x1ul << 62);
-		static constexpr auto max_error_cost_ = (Cost)(0x1ul << 32);
-		static constexpr auto max_testcase_cost_ = (Cost)(0x1l << 42);
-
 	public:
 		typedef std::pair<bool, Cost> result_type;
+
+		static constexpr auto max_cost = (Cost)(0x1ul << 62);
+		static constexpr auto max_error_cost = (Cost)(0x1ul << 32);
+		static constexpr auto max_testcase_cost = (Cost)(0x1l << 42);
 
 		CostFunction(Sandbox* sb) : sandbox_(sb) { 
 			set_distance(Distance::HAMMING);
@@ -113,14 +113,15 @@ class CostFunction {
 			return *this;
 		}
 
-		/** This must return a value in the range [0, MAX_COST]. */
-		result_type operator()(const Cfg& cfg, Cost max = max_cost_) {
+		result_type operator()(const Cfg& cfg, Cost max = max_cost) {
 			auto cost = evaluate_correctness(cfg, max);
 			const auto correct = cost == 0;
 
 			if ( cost < max && pterm_ != PerformanceTerm::NONE ) {
 				cost += evaluate_performance(cfg, max);
 			}
+
+			assert(cost <= max_cost);
 			return result_type(correct, cost);
 		}
 

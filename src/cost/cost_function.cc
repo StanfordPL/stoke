@@ -1,4 +1,3 @@
-#include <cassert>
 #include <cmath>
 
 #include <algorithm>
@@ -71,7 +70,7 @@ Cost CostFunction::correctness_max(const Cfg& cfg, Cost max) {
 		const auto r = sandbox_->result(i);
 
 		res = std::max(res, error(*t, *r));
-		assert(res <= max_testcase_cost_);
+		assert(res <= max_testcase_cost);
 	}
 
 	return res;
@@ -87,7 +86,7 @@ Cost CostFunction::correctness_sum(const Cfg& cfg, Cost max) {
 		const auto r = sandbox_->result(i);
 
 		res += error(*t, *r);
-		assert(res <= max_testcase_cost_);
+		assert(res <= max_testcase_cost);
 	}
 
 	return res;
@@ -115,7 +114,7 @@ Cost CostFunction::gp_error(const Regs& t, const Regs& r) const {
 	Cost cost = 0;
 
 	for ( const auto& r_t : target_gp_out_ ) {
-		auto delta = max_error_cost_;
+		auto delta = max_error_cost;
 		const auto val_t = t[r_t].get_fixed_quad(0);	
 
 		for ( const auto& r_r : rewrite_gp_out_ ) {
@@ -139,7 +138,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
 
 	for ( size_t i = 0; i < sse_count_; ++i ) {
 		for ( const auto& s_t : target_sse_out_ ) {
-			auto delta = max_error_cost_;
+			auto delta = max_error_cost;
 			auto val_t = 0;
 			switch ( sse_width_ ) {
 				case 1: val_t = t[s_t].get_fixed_byte(i);
@@ -188,7 +187,7 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
 	/* todo...
 	for ( auto i = t.defined_begin(), ie = t.defined_end(); i != ie; ++i ) {
 		if ( relax_mem_ ) {
-			Cost delta = max_error_cost_;
+			Cost delta = max_error_cost;
 			for ( auto j = r.defined_begin(), je = r.defined_end(); j != je; ++j ) {
 				delta = min(delta, distance(t.get_byte(*i), r.get_byte(*j)));
 			}
@@ -196,7 +195,7 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
 		} else if ( r.is_defined(*i) ) {
 			cost += distance(t.get_byte(*i), r.get_byte(*i));
 		} else {
-			cost += max_error_cost_;
+			cost += max_error_cost;
 		}
 	}
 	*/
@@ -216,7 +215,7 @@ Cost CostFunction::distance(uint64_t x, uint64_t y) const {
 
 		uint64_t ulp = t >= r ? t - r : r - t;
 		ulp = ulp < min_ulp_ ? 0 : ulp - min_ulp_;
-		ulp = ulp > max_error_cost_ ? max_error_cost_ : ulp;
+		ulp = ulp > max_error_cost ? max_error_cost : ulp;
 	}
 }
 

@@ -1,16 +1,16 @@
 #include <cassert>
+#include <cmath>
+#include <csignal>
+#include <unistd.h>
+
+#include <chrono>
 
 #include "src/search/search.h"
 
 using namespace cpputil;
 using namespace std;
+using namespace std::chrono;
 using namespace x64asm;
-
-#ifndef NDEBUG
-  #define FOR_ASSERT(x) x
-#else
-  #define FOR_ASSERT(x) 
-#endif
 
 namespace {
 
@@ -29,6 +29,7 @@ Search::Search() {
 	set_beta(1.0);
 	set_progress_callback(nullptr, nullptr);
 	set_statistics_callback(nullptr, nullptr);
+	set_statistics_interval(100000);
 
 	static bool once = false;
 	if ( !once ) {
@@ -44,7 +45,23 @@ Search::Search() {
 	}
 }
 
-void Search::run(const Cfg& target, const Cfg& rewrite, const CostFunction& fxn) {
+Search& Search::set_mass(Move move, size_t mass) {
+	vector<Move> new_moves;
+	for ( auto m : moves_ ) {
+		if ( m != move ) {
+			new_moves.push_back(m);
+		}
+	}
+	for ( size_t i = 0; i < mass; ++i ) {
+		new_moves.push_back(move);
+	}
+	moves_ = new_moves;
+	int_ = decltype(int_)(0, moves_.size()-1);
+	
+	return *this;
+}
+
+Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunction& fxn) {
 	// Make sure target is correct with respect to itself
 	assert((*cost_fxn_)(target_).first);
 	// Make sure target and rewrite are sound to begin with
@@ -52,88 +69,80 @@ void Search::run(const Cfg& target, const Cfg& rewrite, const CostFunction& fxn)
 	assert(rewrite_.is_sound());
 
 	// Progress callback variables
-	auto current = rewrite_;
-	auto current_cost = fxn(current, CostFunction::max_cost - 1);
+	auto current = rewrite;
+	auto current_cost = fxn(current, CostFunction::max_cost - 1).second;
 	auto best_yet = current;
 	auto best_yet_cost = current_cost;
 	auto best_correct = target;
-	auto best_correct_cost = fxn(target, CostFunction::max_cost - 1);
+	auto best_correct_cost = fxn(target, CostFunction::max_cost - 1).second;
 	auto success = false;
 
-	auto start = time(0);
-	if ( !moves_.empty() )
-		for ( size_t itr = 0; itr < timeout_ && !give_up_now && best_cost > 0; ++itr ) {
-      // Inter-iteration cost function check
-      FOR_ASSERT(const auto cost_check_1 = ((*cost_fxn_)(rewrite_, max+1)).second);
-      assert(cost == cost_check_1 && "Cost function changes between iterations!");
+	// Statistics callback variables
+	vector<Statistics> statistics((size_t) Move::NUM_MOVES);
+	size_t iterations = 0;
+	const auto start = chrono::steady_clock::now();
 
-			auto move_idx = Random::get() % moves_.size();
-			auto move = moves_[move_idx];
-      DBG(cout << "MOVE TYPE: " << move->type() << endl);
+	if ( !moves_.empty() ) {
+		for ( ; (iterations < timeout_) && !give_up_now && (current_cost > 0); ++iterations ) {
+      // Check cost function hasn't changed across iterations
 
-			const auto changed = move->modify(rewrite_);
-			assert(rewrite_.is_sound());
-			assert(rewrite_.get_code().check());
+			const auto move_type = moves_[int_(gen_)];
+			statistics[(size_t) move_type].num_proposed++;
 
-			if ( !changed ) {
-        DBG(cout << "UNCHANGED" << endl << rewrite_.get_code() << endl << endl);
+			if ( !transforms_.modify(current, move_type) ) {
 				continue;
-      } else {
-        DBG(cout << "NEW CODE" << endl << rewrite_.get_code() << endl << endl);
       }
+			statistics[(size_t) move_type].num_succeeded++;
 
-			const auto p = (double) Random::get() / RAND_MAX;
-			max = cost - (log(p) / beta_);
+			const auto p = prob_(gen_);
+			const auto max = current_cost - (log(p) / beta_);
 
-			const auto new_res = (*cost_fxn_)(rewrite_, max+1);
+			const auto new_res = fxn(current, max+1);
+			const auto is_correct = new_res.first;
 			const auto new_cost = new_res.second;
 
-      // Intra-iteration cost function check
-      FOR_ASSERT(const auto cost_check_2 = ((*cost_fxn_)(rewrite_, max+1)).second);
-      assert(new_cost == cost_check_2 && "Cost function changes within an iteration!");
+      // Check that cost function hasnt' changed within an iteration
 
 			if ( new_cost > max ) {
-        DBG(cout << dec << "REJECTING (cost = " << new_cost << ")" << endl);
-        DBG(cout << dec << "          (max  = " << max << ")" << endl);
-
-				move->undo(rewrite_);
-				assert(rewrite_.is_sound());
-				assert(rewrite_.get_code().check());
-
+				transforms_.undo(current, move_type);
 				continue;
-			} else {
-        DBG(cout << dec << "ACCEPTING (cost = " << new_cost << ")" << endl);
-        DBG(cout << dec << "          (max  = " << max << ")" << endl);
-      }
+			} 
+			statistics[(size_t) move_type].num_accepted++;
+			current_cost = new_cost;
 
-			cost = new_cost;
-			const auto new_best = new_res.first && (cost < best_cost);
-			const auto new_best_yet = cost < best_yet;
-
-			if ( new_best ) {
-				best_cost = cost;
-				best_rewrite_ = rewrite_;
-				success_ = true;
+			const auto new_best_yet = new_cost < best_yet_cost;
+			const auto new_best_correct_yet = is_correct && (new_cost < best_correct_cost);
+			if ( new_best_yet ) {
+				best_yet = current;
+				best_yet_cost = new_cost;
 			}
-			if ( new_best_yet )
-				best_yet = cost;
-			if ( (progress_cb_ != 0) && (new_best || new_best_yet) ) 
-				progress_cb_({target_, rewrite_, cost_fxn_, moves_, 
-						cost, best_cost, best_yet, success_,
-						time(0)-start, itr}, progress_cb_arg_);
+			if ( new_best_correct_yet ) {
+				success = true;
+				best_correct = current;
+				best_correct_cost = new_cost;
+			}
+			if ( (progress_cb_ != nullptr) && (new_best_yet || new_best_correct_yet) ) {
+				progress_cb_({current, current_cost, best_yet, best_yet_cost, best_correct, 
+						best_correct_cost, success}, progress_cb_arg_);
+			}
+			if ( (statistics_cb_ != nullptr) && (iterations % interval_ == 0) ) {
+				const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
+				statistics_cb_({statistics, iterations, dur}, statistics_cb_arg_);
+			}
 		}
+	}
 
-	rewrite_ = best_rewrite_;
-	if ( finished_cb_ != 0 )
-		finished_cb_({target_, rewrite_, cost_fxn_, moves_, 
-				cost, best_cost, best_yet, success_,
-				time(0)-start, timeout_}, finished_cb_arg_);
+	current = best_correct;
+	if ( progress_cb_ != nullptr ) {
+		progress_cb_({current, current_cost, best_yet, best_yet_cost, best_correct, 
+				best_correct_cost, success}, progress_cb_arg_);
+	}
+	if ( statistics_cb_ != nullptr)  {
+		const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
+		statistics_cb_({statistics, iterations, dur}, statistics_cb_arg_);
+	}
 
-	rewrite_.remove_unreachable()
-			.remove_nop()
-			.remove_unused(cost_fxn_);
-	assert(rewrite_.is_sound());
-	assert(rewrite_.get_code().check());
+	return result_type(current, success);
 }
 
 } // namespace stoke
