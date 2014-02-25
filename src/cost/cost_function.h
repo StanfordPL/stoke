@@ -14,12 +14,10 @@
 #include "src/cost/reduction.h"
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
-#include "src/state/mem.h"
+#include "src/state/memory.h"
 #include "src/state/regs.h"
 
 namespace stoke {
-
-class Cfg;
 
 class CostFunction {
 	private:
@@ -32,7 +30,7 @@ class CostFunction {
 
 		CostFunction(Sandbox* sb) : sandbox_(sb) { 
 			set_distance(Distance::HAMMING);
-			set_target({{x64asm::RET}});
+			set_target({{{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 			set_sse_width(1);
 			set_sse_count(1);
 			set_live_out(x64asm::RegSet::empty());
@@ -41,7 +39,7 @@ class CostFunction {
 			set_relax_reg(false);
 			set_relax_mem(false);
 			set_misalign_penalty(1);
-			set_min_ulp_(0);
+			set_min_ulp(0);
 			set_reduction(Reduction::SUM);
 
 			set_performance_term(PerformanceTerm::NONE);
@@ -53,7 +51,7 @@ class CostFunction {
 			return *this;
 		}
 
-		CostFunction& CostFunction::set_target(const Cfg& target);
+		CostFunction& set_target(const Cfg& target);
 
 		CostFunction& set_sse_width(size_t bytes) {
 			sse_width_ = bytes;
@@ -111,12 +109,12 @@ class CostFunction {
 		}
 
 		CostFunction& set_nesting_weight(Cost nw) {
-			nesting_weight_ = new;
+			nesting_weight_ = nw;
 			return *this;
 		}
 
 		/** This must return a value in the range [0, MAX_COST]. */
-		result_type operator()(const Cfg& cfg, Cost max = MAX_COST) {
+		result_type operator()(const Cfg& cfg, Cost max = max_cost_) {
 			auto cost = evaluate_correctness(cfg, max);
 			const auto correct = cost == 0;
 
@@ -158,7 +156,7 @@ class CostFunction {
 		Cost error(const CpuState& t, const CpuState& r) const;
 		Cost gp_error(const Regs& t, const Regs& r) const;
 		Cost sse_error(const Regs& t, const Regs& r) const;
-		Cost mem_error(const Mem& t, const Mem& r) const;
+		Cost mem_error(const Memory& t, const Memory& r) const;
 		Cost distance(uint64_t t, uint64_t r) const;
 
 		Cost evaluate_performance(const Cfg& cfg, Cost max);

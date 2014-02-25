@@ -5,6 +5,7 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/column.h"
+#include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
@@ -60,7 +61,7 @@ auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::c
   .description("Testcases")
   .default_val({CpuState()});
 
-auto& indices = ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 1, 1e6>>>::create("indices")
+auto& indices = ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 1, 1024*1024>>>::create("indices")
   .usage("{ 0 1 ... 9 }")
   .description("Subset of testcase indices to use")
   .default_val({0});
@@ -151,7 +152,7 @@ int main(int argc, char** argv) {
 	}
 
  	CostFunction fxn(&sb);
-	fxn.set_distance(distance)
+	fxn.set_distance(::distance)
 		.set_target(cfg_t)
 		.set_sse_width(sse_width)
 		.set_sse_count(sse_count)

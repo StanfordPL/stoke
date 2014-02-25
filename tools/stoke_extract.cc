@@ -1,3 +1,6 @@
+#include <cstdlib>
+
+#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -27,18 +30,6 @@ bool exists(const string& file) {
   return term.result() == 0;
 }
 
-bool symdump(const string& file) {
-  Terminal term1;
-  term1 << "nm -a " << file
-        << " | grep \" [WTti] \" | sed \"s/.* [WTti] //\" > /tmp/stoke.$USER.symdump" << endl;
-
-  Terminal term2;
-  term2 << "nm -D " << file
-        << " | grep \" [WTti] \" | sed \"s/.* [WTti] //\" >> /tmp/stoke.$USER.symdump" << endl;
-
-  return term1.result() == 0 || term2.result() == 0;
-}
-
 bool objdump(const string& file) {
   Terminal term;
   term << "objdump -d -Msuffix " << file << " > /tmp/stoke.$USER.objdump" << endl;
@@ -57,16 +48,17 @@ int main(int argc, char** argv) {
   if (!exists(in)) {
     cout << "Unable to read binary file " << in.value() << "!" << endl;
     return 1;
-  } else if (!symdump(in)) {
-    cout << "Unable to extract symbols from binary file " << in.value() << "!" << endl;
+  } else if (!mkdir()) {
+    cout << "Unable to create output directory " << out.value() << "!" << endl;
     return 1;
   } else if (!objdump(in)) {
     cout << "Unable to extract object code from binary file " << in.value() << "!" << endl;
     return 1;
-  } else if (!mkdir()) {
-    cout << "Unable to create output directory " << out.value() << "!" << endl;
-    return 1;
   }
+
+	ifstream ifs(string("/tmp/stoke.") + string(getenv("USER")) + string(".objdump"));
+	cout << ifs.rdbuf() << endl;
+
 
   return 0;
 }
