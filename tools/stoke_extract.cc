@@ -35,19 +35,19 @@ typedef unordered_map<string, size_t> label_map;
 
 bool exists(const string& file) {
   Terminal term;
-  term << "ls " << file << endl;
+  term << "ls " << file << " >> /dev/null" << endl;
   return term.result() == 0;
 }
 
 bool objdump(const string& file) {
   Terminal term;
-  term << "objdump -d -Msuffix " << file << " > /tmp/stoke.$USER.objdump" << endl;
+  term << "objdump -d -Msuffix " << file << " > /tmp/stoke.$USER.objdump >> /dev/null" << endl;
   return term.result() == 0;
 }
 
 bool mkdir() {
   Terminal term;
-  term << "mkdir -p " << out.value() << endl;
+  term << "mkdir -p " << out.value() << " >> /dev/null" << endl;
   return term.result() == 0;
 }
 
@@ -122,6 +122,9 @@ label_map replace_label_uses(line_map& lines) {
 
 		// Opcodes are followed by at least one space; ignore instructions with no operands
 		auto ops_begin = instr.find_first_of(' ');
+		if ( ops_begin == string::npos ) {
+			continue;
+		}
 		for ( ; isspace(instr[ops_begin]); ops_begin++ );
 		if ( ops_begin == instr.length() ) {
 			continue;
