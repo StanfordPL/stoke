@@ -60,7 +60,7 @@ class Memory {
     return contents_.get_fixed_byte(i - base_);
   }
   /** Element access */
-  const uint8_t operator[](size_t i) const {
+  uint8_t operator[](size_t i) const {
     assert(in_range(i));
     return contents_.get_fixed_byte(i - base_);
   }

@@ -271,7 +271,7 @@ void Cfg::recompute_liveness() {
 
   // Compute live outs
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-    for (size_t j = num_instrs(*i) - 2; j >= 0; --j) {
+    for (int j = num_instrs(*i) - 2; j >= 0; --j) {
       const auto idx = get_index(loc_type(*i, j));
       const auto& instr = code_[idx + 1];
       def_ins_[idx] = def_ins_[idx + 1];
