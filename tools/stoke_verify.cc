@@ -4,10 +4,13 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/column.h"
+#include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/args/code.h"
+#include "src/args/reg_set.h"
+#include "src/args/strategy.h"
 #include "src/args/testcases.h"
 #include "src/cfg/cfg.h"
 #include "src/sandbox/sandbox.h"
@@ -62,7 +65,7 @@ auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::c
   .description("Testcases")
   .default_val({CpuState()});
 
-auto& indices = ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 1, 1e6>>>::create("indices")
+auto& indices = ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 1, 1000000>>>::create("indices")
   .usage("{ 0 1 ... 9 }")
   .description("Subset of testcase indices to use")
   .default_val({0});
@@ -111,7 +114,7 @@ int main(int argc, char** argv) {
 	os << rewrite.value() << endl;
 	os.filter().done();
 
-	const auto res = verifier.verify(target, rewrite);
+	const auto res = verifier.verify(cfg_t, cfg_r);
 	
 	cout << "Equivalent: " << (res ? "yes" : "no") << endl;
 

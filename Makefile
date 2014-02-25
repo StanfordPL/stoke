@@ -13,7 +13,11 @@ LIB=\
 	src/ext/x64asm/lib/libx64asm.a
 
 OBJ=\
+	src/args/distance.o \
+	src/args/reduction.o \
 	src/args/reg_set.o \
+	src/args/performance_term.o \
+	src/args/strategy.o \
 	src/args/testcases.o \
 	\
 	src/cfg/cfg.o \

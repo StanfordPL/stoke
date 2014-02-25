@@ -10,6 +10,9 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/args/code.h"
+#include "src/args/distance.h"
+#include "src/args/performance_term.h"
+#include "src/args/reduction.h"
 #include "src/args/reg_set.h"
 #include "src/args/testcases.h"
 #include "src/cfg/cfg.h"
@@ -75,12 +78,12 @@ auto& max_cost = ValueArg<Cost>::create("max_cost")
 
 auto& h4 = Heading::create("Correctness options:");
 
-auto& distance = ValueArg<Distance>::create("distance")
+auto& distance = ValueArg<Distance, DistanceReader, DistanceWriter>::create("distance")
 	.usage("(hamming|ulp)")
 	.description("Metric for measuring distance between states")
 	.default_val(Distance::HAMMING);
 
-auto& reduction = ValueArg<Reduction>::create("reduction")
+auto& reduction = ValueArg<Reduction, ReductionReader, ReductionWriter>::create("reduction")
 	.usage("(max|sum)")
 	.description("Reduction method")
 	.default_val(Reduction::SUM);
@@ -113,7 +116,7 @@ auto& min_ulp = ValueArg<Cost>::create("min_ulp")
 
 auto& h5 = Heading::create("Performance options:");
 
-auto& perf = ValueArg<PerformanceTerm>::create("perf")
+auto& perf = ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
 	.usage("(none|size|latency)")
 	.description("Performance definition")
 	.default_val(PerformanceTerm::NONE);
