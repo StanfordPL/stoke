@@ -1,6 +1,6 @@
 ##### CONSTANT DEFINITIONS
 
-CXX=ccache g++ -std=c++11 -Werror -Wfatal-errors
+CXX=ccache g++ -std=c++11 -Werror -Wextra --pedantic
 
 TARGET=-mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 
