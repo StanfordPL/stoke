@@ -5,8 +5,6 @@
 #include <array>
 #include <fstream>
 #include <iostream>
-#include <map>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 
@@ -32,8 +30,7 @@ auto& out = ValueArg<string>::create("o")
   .description("Directory to write results to")
   .default_val("out");
 
-typedef map<string, string> line_map;
-typedef unordered_map<string, size_t> label_map;
+typedef map<string, pair<bool, string>> line_map;
 
 bool exists(const string& file) {
   Terminal term;
@@ -102,63 +99,6 @@ bool get_instr(const string& s, string& instr) {
 	
 	instr = s.substr(begin, len);
 	return true;
-}
-
-line_map index_lines(ifstream& ifs, string& s) {
-	line_map lines;
-
-	// Functions are terminated by empty lines
-	while ( getline(ifs, s) ) {
-		if ( s.empty() ) {
-			break;
-		} 
-		string instr;
-		if ( get_instr(s, instr) ) {
-			lines[get_addr(s)] = instr;
-		}
-	}
-
-	return lines;
-}
-
-label_map replace_label_uses(line_map& lines) {
-	label_map labels;
-
-	for ( auto& l : lines ) {
-		const auto& instr = l.second;
-
-		// Opcodes are followed by at least one space; ignore instructions with no operands
-		auto ops_begin = instr.find_first_of(' ');
-		if ( ops_begin == string::npos ) {
-			continue;
-		}
-		for ( ; isspace(instr[ops_begin]); ops_begin++ );
-		if ( ops_begin == instr.length() ) {
-			continue;
-		}
-
-		// Operands are terminated by whitespace
-		const auto ops_end = instr.find_first_of(' ', ops_begin+1);
-		const auto ops_len = (ops_end == string::npos ? instr.length() : ops_end) - ops_begin;
-		const auto ops = instr.substr(ops_begin, ops_len);
-
-		// Replace any argument which is strictly hex digits
-		auto skip = false;
-		for ( auto c : ops ) {
-			if ( !isxdigit(c) ) {
-				skip = true;
-			}
-		}
-		if ( !skip ) {	
-			const auto itr = labels.insert(make_pair(ops, labels.size())).first;
-
-			ostringstream oss;
-			oss << instr.substr(0, ops_begin) << ".LABEL_" << itr->second;
-			l.second = oss.str();
-		}
-	}
-
-	return labels;
 }
 
 string fix_line(const string& line) {
@@ -254,7 +194,56 @@ string fix_line(const string& line) {
 	return line;
 }
 
-void emit(const string& fxn, const line_map& lines, const label_map& labels) {
+line_map index_lines(ifstream& ifs, string& s) {
+	line_map lines;
+	while ( getline(ifs, s) ) {
+		// Functions are terminated by empty lines
+		if ( s.empty() ) {
+			break;
+		} 
+		string instr;
+		if ( get_instr(s, instr) ) {
+			lines[get_addr(s)] = make_pair(false, fix_line(instr));
+		}
+	}
+
+	return lines;
+}
+
+bool is_addr(const string& s) {
+	for ( auto c : s ) {
+		if ( !isxdigit(c) ) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void fix_label_uses(line_map& lines) {
+	for ( auto& l : lines ) {
+		auto& instr = l.second.second;
+
+		// Opcodes are followed by at least one space; ignore instructions with no operands
+		auto ops_begin = instr.find_first_of(' ');
+		for ( ; ops_begin != string::npos && isspace(instr[ops_begin]); ops_begin++ );
+		if ( ops_begin == instr.length() || ops_begin == string::npos ) {
+			continue;
+		}
+
+		// Operands are terminated by whitespace
+		const auto ops_end = instr.find_first_of(' ', ops_begin+1);
+		const auto ops_len = (ops_end == string::npos ? instr.length() : ops_end) - ops_begin;
+		const auto ops = instr.substr(ops_begin, ops_len);
+
+		// Arguments that are strictly hex digits become labels
+		if ( is_addr(ops) ) {	
+			lines[l.first].first = true;
+			instr = instr.substr(0, ops_begin) + ".L_" + ops;
+		}
+	}
+}
+
+void emit(const string& fxn, const line_map& lines) {
 	ofstream ofs(out.value() + "/" + fxn + ".s");
 	ofilterstream<Indent> os(ofs);
 
@@ -268,16 +257,32 @@ void emit(const string& fxn, const line_map& lines, const label_map& labels) {
 
 	os.filter().indent();
 	for ( const auto& l : lines ) {
-		const auto itr = labels.find(l.first);
-		if ( itr != labels.end() ) {
+		if ( l.second.first ) {
 			os.filter().unindent();
-			os << ".LABEL_" << itr->second << ":" << endl;
+			os << ".L_" << l.first << ":" << endl;
 			os.filter().indent();
 		}
-		os << fix_line(l.second) << endl;
+		os << l.second.second << endl;
 	}
 
 	os << ".size " << fxn << ", .-" << fxn << endl;
+}
+
+void extract() {
+	ifstream ifs(string("/tmp/stoke.") + getenv("USER") + ".objdump");
+	string s;
+
+	strip_prolog(ifs);
+	while ( getline(ifs, s) ) {
+		if ( ignore_header(ifs, s) ) {
+			continue;
+		}
+
+		const auto fxn = get_name(ifs, s);
+		auto lines = index_lines(ifs, s);
+		fix_label_uses(lines);
+		emit(fxn, lines);
+	}
 }
 
 int main(int argc, char** argv) {
@@ -292,23 +297,9 @@ int main(int argc, char** argv) {
   } else if (!objdump(in)) {
     cout << "Unable to extract object code from binary file " << in.value() << "!" << endl;
     return 1;
-  }
-
-	ifstream ifs(string("/tmp/stoke.") + getenv("USER") + ".objdump");
-	string s;
-
-	strip_prolog(ifs);
-	while ( getline(ifs, s) ) {
-		if ( ignore_header(ifs, s) ) {
-			continue;
-		}
-	
-		const auto fxn = get_name(ifs, s);
-		auto lines = index_lines(ifs, s);
-		const auto labels = replace_label_uses(lines);
-		emit(fxn, lines, labels);
+  } else {
+		extract();
+		return 0;
 	}
-
-  return 0;
 }
 
