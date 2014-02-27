@@ -96,10 +96,8 @@ bool get_instr(const string& s, string& instr) {
 	// Instruction are terminated by eol, # or <
 	auto comment = s.find_last_of('#');
 	comment = comment == string::npos ? s.length() : comment;
-
 	auto annot = s.find_last_of('<');
 	annot = annot == string::npos ? s.length() : annot;
-
 	const auto len = min(comment, annot) - begin;
 	
 	instr = s.substr(begin, len);
@@ -256,7 +254,7 @@ string fix_line(const string& line) {
 	return line;
 }
 
-void emit_fxn(const string& fxn, const line_map& lines, const label_map& labels) {
+void emit(const string& fxn, const line_map& lines, const label_map& labels) {
 	ofstream ofs(out.value() + "/" + fxn + ".s");
 	ofilterstream<Indent> os(ofs);
 
@@ -308,7 +306,7 @@ int main(int argc, char** argv) {
 		const auto fxn = get_name(ifs, s);
 		auto lines = index_lines(ifs, s);
 		const auto labels = replace_label_uses(lines);
-		emit_fxn(fxn, lines, labels);
+		emit(fxn, lines, labels);
 	}
 
   return 0;
