@@ -56,10 +56,10 @@ auto& debug = FlagArg::create("debug")
   .alternate("d")
   .description("Debug mode, equivalent to --breakpoint 0");
 
-auto& breakpoint = ValueArg<int>::create("breakpoint")
+auto& breakpoint = ValueArg<size_t>::create("breakpoint")
   .usage("<line>")
   .description("Set breakpoint")
-  .default_val(-1);
+  .default_val(numeric_limits<size_t>::max());
 
 void callback(const StateCallbackData& data, void* arg) {
   auto stepping = (bool*) arg;
@@ -95,7 +95,7 @@ void callback(const StateCallbackData& data, void* arg) {
         *stepping = true;
         break;
       case 'd':
-        breakpoint.value() = numeric_limits<uint64_t>::max();
+        breakpoint.value() = numeric_limits<size_t>::max();
         *stepping = false;
         break;
       case 'q':
