@@ -42,14 +42,17 @@ int main(int argc, char** argv) {
 
 	Cfg cfg(target, def_in, live_out);
 
+	cout << "Recomputing dataflow values for cfg..." << endl;
+
 	const auto start = steady_clock::now();
 	for ( size_t i = 0; i < itr; ++i ) {
 		cfg.recompute();
 	}
 	const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
-
 	const auto rps = itr / dur.count();
-	cout << "Completed " << itr << " recomputations in " << dur.count() << " seconds (" << rps << "/s)" << endl;
+
+	cout << "Runtime:    " << dur.count() << " seconds" << endl;
+	cout << "Throughput: " << rps << " / second" << endl;
 
   return 0;
 }
