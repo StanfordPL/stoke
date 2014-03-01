@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 
 	Cfg cfg(target, def_in, live_out);
 
-	cout << "Recomputing dataflow values for cfg..." << endl;
+	cout << "Cfg::recompute()..." << endl;
 
 	const auto start = steady_clock::now();
 	for ( size_t i = 0; i < itr; ++i ) {

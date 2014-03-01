@@ -1,9 +1,9 @@
 #include <algorithm>
 #include <set>
-#include <stack>
 
 #include "src/cfg/cfg.h"
 
+using namespace cpputil;
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
@@ -11,57 +11,75 @@ using namespace x64asm;
 namespace stoke {
 
 void Cfg::recompute_blocks() {
-  // Rebuild blocks (this includes sentinels at either end for entry/exit)
-  set<size_t> boundaries {0, code_.size()};
+	boundaries_.resize_for_bits(code_.size()+1);
+	boundaries_.reset();
+	boundaries_[0] = true;
+	boundaries_[code_.size()] = true;
+
   for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
     const auto& instr = code_[i];
     if (instr.is_label_defn()) {
-      boundaries.insert(i);
+      boundaries_[i] = true;
     } else if (instr.is_jump() || instr.is_return()) {
-      boundaries.insert(i + 1);
+      boundaries_[i + 1] = true;
     }
   }
-  blocks_.assign(boundaries.begin(), boundaries.end());
+
+	blocks_.clear();
+	for ( auto i = boundaries_.set_bit_index_begin(), ie = boundaries_.set_bit_index_end(); i != ie; ++i ) {
+		blocks_.push_back(*i);
+	}
 }
 
-void Cfg::recompute_edges() {
-  // Index label locations
-  map<Label, size_t> labels;
+void Cfg::recompute_labels() {
+	labels_.clear();
   for (auto i = get_entry() + 1, ie = get_exit(); i < ie; ++i) {
     if (num_instrs(i) > 0) {
       const auto& instr = code_[blocks_[i]];
       if (instr.is_label_defn()) {
-        labels[instr.get_operand<Label>(0)] = i;
+        labels_[instr.get_operand<Label>(0)] = i;
       }
     }
   }
+}
 
-  // Successors
-  // 1. Empty blocks point forward (this handles ENTRY)
-  // 2. Unconditional jumps have non-trivial fallthrough targets.
-  // 3. Returns point to exit
-  // 4. Everything else has a fallthrough and a possible conditional target.
-  succs_.assign(num_blocks(), vector<id_type>());
+void Cfg::recompute_succs() {
+	succs_.resize(num_blocks());
+	for ( auto& s : succs_ ) {
+		s.clear();
+	}
+
   for (auto i = get_entry(), ie = get_exit(); i < ie; ++i) {
-    const auto& instr = code_[blocks_[i + 1] - 1];
     if (num_instrs(i) == 0) {
       succs_[i].push_back(i + 1);
-    } else if (instr.is_uncond_jump()) {
-			const auto itr = labels.find(instr.get_operand<Label>(0));
-      succs_[i].push_back(itr == labels.end() ? get_exit() : itr->second);
-    } else if (instr.is_return()) {
+			continue;
+    } 
+		
+    const auto& instr = code_[blocks_[i + 1] - 1];
+		if (instr.is_return()) {
       succs_[i].push_back(get_exit());
+			continue;
+		}
+
+		const auto itr = labels_.find(instr.get_operand<Label>(0));
+		const auto dest = itr == labels_.end() ? get_exit() : itr->second;
+		if (instr.is_uncond_jump()) {
+      succs_[i].push_back(dest);
     } else {
       succs_[i].push_back(i + 1);
       if (instr.is_cond_jump()) {
-				const auto itr = labels.find(instr.get_operand<Label>(0));
-        succs_[i].push_back(itr == labels.end() ? get_exit() : itr->second);
+				succs_[i].push_back(dest);
       }
     }
   }
+}
 
-  // Predecessors (this is easy now that we've done successors)
-	preds_.assign(num_blocks(),vector<id_type>());
+void Cfg::recompute_preds() {
+	preds_.resize(num_blocks());
+	for ( auto& p : preds_ ) {
+		p.clear();
+	}
+
   for (auto i = get_entry(), ie = get_exit(); i < ie; ++i) {
     for (auto s = succ_begin(i), se = succ_end(i); s != se; ++s) {
       preds_[*s].push_back(i);
@@ -71,38 +89,42 @@ void Cfg::recompute_edges() {
 
 // This produces a set which is defined over blocks, not entry or exit
 void Cfg::recompute_reachable() {
-  reachable_.clear();
+	reachable_.resize_for_bits(code_.size()+1);
+  reachable_.reset();
 
-  stack<id_type> r;
-  for (r.push(get_entry()); !r.empty();) {
-    const auto m = r.top();
-    r.pop();
+  for (reachable_stack_.push(get_entry()); !reachable_stack_.empty();) {
+    const auto m = reachable_stack_.top();
+    reachable_stack_.pop();
     for (auto s = succ_begin(m), se = succ_end(m); s != se; ++s) {
-      if (reachable_.insert(*s).second) {
-        r.push(*s);
-      }
+			if (!reachable_[*s]) {
+				reachable_[*s] = true;
+				reachable_stack_.push(*s);
+			}
     }
   }
 
-	reachable_.erase(get_exit());
+	reachable_[get_exit()] = false;
 }
 
 // This produces a function (dom()), which is defined over reachable blocks and entry/exit
 void Cfg::recompute_dominators() {
-  assert(num_blocks() < 256);
-
-	// Contants
-  bitset<256> universe;
+	// Constants
+  BitVector universe(num_blocks());
 	universe.set();
-	universe.reset(get_exit());
+	universe[get_exit()] = false;
 
-  // Initial conditions
-	doms_.assign(num_blocks(), universe);
+	doms_.resize(num_blocks());
 
   // Bounary conditions
+	doms_[get_entry()].resize_for_bits(num_blocks());
   doms_[get_entry()].reset();
-	doms_[get_entry()].set(get_entry());
-	doms_[get_exit()].set();
+	doms_[get_entry()][get_entry()] = true;
+
+  // Initial conditions (note that we're assigning everything here)
+	for ( size_t i = get_entry() + 1, ie = get_exit(); i < ie; ++i ) {
+		doms_[i].resize_for_bits(num_blocks());
+		doms_[i] = universe;
+	}
 
   // Iterate until fixed point
   for (auto changed = true; changed;) {
@@ -111,14 +133,12 @@ void Cfg::recompute_dominators() {
 		for ( auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i ) {
       auto new_out = universe;
 
-      // Meet operator
+      // Meet operator (it's okay that this touches unreachable, since they're universe)
       for (auto p = pred_begin(*i), pe = pred_end(*i); p != pe; ++p) {
-				if ( is_reachable(*p) ) {
-					new_out &= doms_[*p];
-				}
+				new_out &= doms_[*p];
       }
       // Transfer function
-      new_out.set(*i);
+      new_out[*i] = true;
 
       changed |= (doms_[*i] != new_out);
       doms_[*i] = new_out;
@@ -126,43 +146,42 @@ void Cfg::recompute_dominators() {
   }
 }
 
-void Cfg::recompute_loops() {
-  back_edges_.clear();
+void Cfg::recompute_back_edges() {
+  loops_.clear();
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i ) {
     for (auto s = succ_begin(*i), se = succ_end(*i); s != se; ++s) {
       if (dom(*s, *i)) {
-        back_edges_.push_back(make_pair(*i, *s));
+        loops_[edge_type(*i, *s)] = BitVector(num_blocks());
       }
     }
   }
+}
 
-  loops_.clear();
+void Cfg::recompute_loops() {
   nesting_depth_.assign(num_blocks(), 0);
 
-  for (const auto& e : back_edges_) {
-    if (e.first == e.second) {
-      loops_[e].insert(e.first);
-      nesting_depth_[e.first]++;
-      continue;
-    }
+  for (auto& loop : loops_) {
+		const auto& e = loop.first;
+		auto& l = loop.second;
 
-    loop_type& l = loops_[e];
-    l.insert(e.second);
-    l.insert(e.first);
+		l[e.first] = true;
+		l[e.second] = true;
 
-    stack<id_type> s;
-    for (s.push(e.first); !s.empty();) {
-      const auto m = s.top();
-      s.pop();
-      for (auto p = pred_begin(m), pe = pred_end(m); p != pe; ++p) {
-        if (is_reachable(*p) && *p != e.second && l.insert(*p).second) {
-          s.push(*p);
-        }
-      }
-    }
+		if (e.first != e.second) {
+			for (loops_stack_.push(e.first); !loops_stack_.empty();) {
+				const auto m = loops_stack_.top();
+				loops_stack_.pop();
+				for (auto p = pred_begin(m), pe = pred_end(m); p != pe; ++p) {
+					if (is_reachable(*p) && !l[*p] ) {
+						l[*p] = true;
+						loops_stack_.push(*p);
+					}
+				}
+			}
+		}
 
-    for (const auto bb : l) {
-      nesting_depth_[bb]++;
+    for (auto i = l.set_bit_index_begin(), ie = l.set_bit_index_end(); i != ie; ++i) {
+      nesting_depth_[*i]++;
     }
   }
 }
@@ -447,13 +466,13 @@ void Cfg::write_edges(ostream& os) const {
     for (auto s = succ_begin(i), se = succ_end(i); s != se; ++s) {
       os << "bb" << i << "->bb" << *s << " [";
       os << "style=";
-      if (has_fallthrough_target(i) && get_fallthrough_target(i) == *s) {
+      if (has_fallthrough_target(i) && fallthrough_target(i) == *s) {
         os << "bold";
       } else {
         os << "dashed";
       }
       os << " color=";
-      if (find(back_edge_begin(), back_edge_end(), edge_type(i, *s)) != back_edge_end()) {
+      if (is_back_edge(edge_type(i, *s))) {
         os << "red";
       } else if (is_reachable(i) || is_entry(i)) {
         os << "black";

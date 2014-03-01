@@ -2,14 +2,16 @@
 #define STOKE_SRC_CFG_CFG_H
 
 #include <cassert>
+#include <stdint.h>
 
-#include <bitset>
 #include <iostream>
 #include <map>
-#include <stdint.h>
-#include <unordered_set>
+#include <stack>
+#include <unordered_map>
 #include <vector>
 
+#include "src/ext/cpputil/include/container/bit_vector.h"
+#include "src/ext/cpputil/include/container/maputil.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 namespace stoke {
@@ -23,10 +25,10 @@ class Cfg {
   typedef std::vector<id_type>::const_iterator pred_iterator;
   typedef std::vector<id_type>::const_iterator succ_iterator;
   typedef std::pair<id_type, id_type> edge_type;
-  typedef std::unordered_set<id_type> loop_type;
-  typedef std::vector<edge_type>::const_iterator back_edge_iterator;
-  typedef loop_type::const_iterator loop_iterator;
-  typedef std::unordered_set<id_type>::const_iterator reachable_iterator;
+  typedef cpputil::BitVector loop_type;
+  typedef loop_type::const_set_bit_index_iterator loop_iterator;
+  typedef cpputil::CppUtilMap<std::map<edge_type, loop_type>>::const_key_iterator back_edge_iterator;
+  typedef cpputil::BitVector::const_set_bit_index_iterator reachable_iterator;
 
   Cfg(const x64asm::Code& code, const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs) :
     code_(code), fxn_def_ins_(def_ins), fxn_live_outs_(live_outs) {
@@ -35,17 +37,23 @@ class Cfg {
 
   void recompute() {
     recompute_blocks();
-		recompute_edges();
+		recompute_labels();
+		recompute_succs();
+		recompute_preds();
     recompute_reachable();
     recompute_dominators();
+		recompute_back_edges();
     recompute_loops();
     recompute_defs();
     recompute_liveness();
   }
   void recompute_blocks();
-	void recompute_edges();
+	void recompute_labels();
+	void recompute_succs();
+	void recompute_preds();
   void recompute_reachable();
   void recompute_dominators();
+	void recompute_back_edges();
   void recompute_loops();
   void recompute_defs();
   void recompute_liveness();
@@ -133,7 +141,7 @@ class Cfg {
     assert(id < num_blocks());
     return !succs_[id].empty();
   }
-  id_type get_fallthrough_target(id_type id) const {
+  id_type fallthrough_target(id_type id) const {
     assert(has_fallthrough_target(id));
     return succs_[id][0];
   }
@@ -142,7 +150,7 @@ class Cfg {
     assert(id < num_blocks());
     return succs_[id].size() == 2;
   }
-  id_type get_conditional_target(id_type id) const {
+  id_type conditional_target(id_type id) const {
     assert(has_conditional_target(id));
     return succs_[id][1];
   }
@@ -186,21 +194,25 @@ class Cfg {
   }
 
   back_edge_iterator back_edge_begin() const {
-    return back_edges_.begin();
+    return loops_.key_begin();
   }
   back_edge_iterator back_edge_end() const {
-    return back_edges_.end();
+    return loops_.key_end();
   }
+
+	bool is_back_edge(const edge_type& e) const {
+		return loops_.find(e) != loops_.end();
+	}
 
   loop_iterator loop_begin(const edge_type& be) const {
     const auto itr = loops_.find(be);
     assert(itr != loops_.end());
-    return itr->second.begin();
+    return itr->second.set_bit_index_begin();
   }
   loop_iterator loop_end(const edge_type& be) const {
     const auto itr = loops_.find(be);
     assert(itr != loops_.end());
-    return itr->second.end();
+    return itr->second.set_bit_index_end();
   }
 
   size_t nesting_depth(id_type id) const {
@@ -209,15 +221,15 @@ class Cfg {
   }
 
   reachable_iterator reachable_begin() const {
-    return reachable_.begin();
+    return reachable_.set_bit_index_begin();
   }
   reachable_iterator reachable_end() const {
-    return reachable_.end();
+    return reachable_.set_bit_index_end();
   }
 
   bool is_reachable(id_type id) const {
     assert(id < num_blocks());
-    return reachable_.find(id) != reachable_.end();
+    return reachable_[id];
   }
 
   bool is_sound() const {
@@ -237,13 +249,16 @@ class Cfg {
   x64asm::RegSet fxn_live_outs_;
 
   // Graph structure
+	cpputil::BitVector boundaries_;
   std::vector<size_t> blocks_;
+	std::unordered_map<x64asm::Label, size_t> labels_;
   std::vector<std::vector<id_type>> preds_;
   std::vector<std::vector<id_type>> succs_;
-  std::vector<std::bitset<256>> doms_;
-  std::unordered_set<id_type> reachable_;
-  std::vector<edge_type> back_edges_;
-  std::map<edge_type, loop_type> loops_;
+	std::stack<size_t, std::vector<size_t>> reachable_stack_;
+	cpputil::BitVector reachable_;
+  std::vector<cpputil::BitVector> doms_;
+	std::stack<size_t, std::vector<size_t>> loops_stack_;
+	cpputil::CppUtilMap<std::map<edge_type, loop_type>> loops_;
   std::vector<size_t> nesting_depth_;
 
   // Dataflow
