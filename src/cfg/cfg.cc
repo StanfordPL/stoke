@@ -1,6 +1,6 @@
 #include <algorithm>
+#include <set>
 #include <stack>
-#include <unordered_set>
 
 #include "src/cfg/cfg.h"
 
@@ -11,8 +11,8 @@ using namespace x64asm;
 namespace stoke {
 
 void Cfg::recompute_blocks() {
-  // Record block boundaries
-  unordered_set<size_t> boundaries {0, code_.size()};
+  // Rebuild blocks (this includes sentinels at either end for entry/exit)
+  set<size_t> boundaries {0, code_.size()};
   for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
     const auto& instr = code_[i];
     if (instr.is_label_defn()) {
@@ -21,13 +21,10 @@ void Cfg::recompute_blocks() {
       boundaries.insert(i + 1);
     }
   }
+  blocks_.assign(boundaries.begin(), boundaries.end());
+}
 
-  // Rebuild blocks (this includes sentinels at either end for entry/exit)
-  blocks_.clear();
-  blocks_.push_back(0);
-  blocks_.insert(blocks_.end(), boundaries.begin(), boundaries.end());
-  blocks_.push_back(code_.size());
-
+void Cfg::recompute_edges() {
   // Index label locations
   map<Label, size_t> labels;
   for (auto i = get_entry() + 1, ie = get_exit(); i < ie; ++i) {
@@ -44,69 +41,35 @@ void Cfg::recompute_blocks() {
   // 2. Unconditional jumps have non-trivial fallthrough targets.
   // 3. Returns point to exit
   // 4. Everything else has a fallthrough and a possible conditional target.
-  succs_.resize(num_blocks());
+  succs_.assign(num_blocks(), vector<id_type>());
   for (auto i = get_entry(), ie = get_exit(); i < ie; ++i) {
-    succs_[i].clear();
-
     const auto& instr = code_[blocks_[i + 1] - 1];
     if (num_instrs(i) == 0) {
       succs_[i].push_back(i + 1);
     } else if (instr.is_uncond_jump()) {
-      succs_[i].push_back(labels[instr.get_operand<Label>(0)]);
+			const auto itr = labels.find(instr.get_operand<Label>(0));
+      succs_[i].push_back(itr == labels.end() ? get_exit() : itr->second);
     } else if (instr.is_return()) {
       succs_[i].push_back(get_exit());
     } else {
       succs_[i].push_back(i + 1);
       if (instr.is_cond_jump()) {
-        succs_[i].push_back(labels[instr.get_operand<Label>(0)]);
+				const auto itr = labels.find(instr.get_operand<Label>(0));
+        succs_[i].push_back(itr == labels.end() ? get_exit() : itr->second);
       }
     }
   }
 
   // Predecessors (this is easy now that we've done successors)
-  preds_.resize(num_blocks());
+	preds_.assign(num_blocks(),vector<id_type>());
   for (auto i = get_entry(), ie = get_exit(); i < ie; ++i) {
-    preds_[i].clear();
     for (auto s = succ_begin(i), se = succ_end(i); s != se; ++s) {
       preds_[*s].push_back(i);
     }
   }
 }
 
-void Cfg::recompute_dominators() {
-  assert(num_blocks() < 256);
-  doms_.resize(num_blocks());
-
-  // Bounary conditions
-  doms_[get_entry()].reset();
-  doms_[get_entry()].set(get_entry());
-
-  // Initial conditions
-  for (auto i = get_entry() + 1, ie = get_exit(); i <= ie; ++i) {
-    doms_[i].set();
-  }
-
-  // Iterate until fixed point
-  for (auto changed = true; changed;) {
-    changed = false;
-
-    for (auto i = get_entry() + 1, ie = get_exit(); i <= ie; ++i) {
-      bitset<256> new_out;
-      new_out.set();
-
-      // Meet operator
-      for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p) {
-        new_out &= doms_[*p];
-      }
-      // Transfer function
-      new_out.set(i);
-
-      changed |= doms_[i] != new_out;
-      doms_[i] = new_out;
-    }
-  }
-}
-
+// This produces a set which is defined over blocks, not entry or exit
 void Cfg::recompute_reachable() {
   reachable_.clear();
 
@@ -115,16 +78,57 @@ void Cfg::recompute_reachable() {
     const auto m = r.top();
     r.pop();
     for (auto s = succ_begin(m), se = succ_end(m); s != se; ++s) {
-      if (!is_exit(*s) && reachable_.insert(*s).second) {
+      if (reachable_.insert(*s).second) {
         r.push(*s);
       }
+    }
+  }
+
+	reachable_.erase(get_exit());
+}
+
+// This produces a function (dom()), which is defined over reachable blocks and entry/exit
+void Cfg::recompute_dominators() {
+  assert(num_blocks() < 256);
+
+	// Contants
+  bitset<256> universe;
+	universe.set();
+	universe.reset(get_exit());
+
+  // Initial conditions
+	doms_.assign(num_blocks(), universe);
+
+  // Bounary conditions
+  doms_[get_entry()].reset();
+	doms_[get_entry()].set(get_entry());
+	doms_[get_exit()].set();
+
+  // Iterate until fixed point
+  for (auto changed = true; changed;) {
+    changed = false;
+
+		for ( auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i ) {
+      auto new_out = universe;
+
+      // Meet operator
+      for (auto p = pred_begin(*i), pe = pred_end(*i); p != pe; ++p) {
+				if ( is_reachable(*p) ) {
+					new_out &= doms_[*p];
+				}
+      }
+      // Transfer function
+      new_out.set(*i);
+
+      changed |= (doms_[*i] != new_out);
+      doms_[*i] = new_out;
     }
   }
 }
 
 void Cfg::recompute_loops() {
   back_edges_.clear();
-  for (auto i = reachable_.begin(), ie = reachable_.end(); i != ie; ++i) {
+  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i ) {
     for (auto s = succ_begin(*i), se = succ_end(*i); s != se; ++s) {
       if (dom(*s, *i)) {
         back_edges_.push_back(make_pair(*i, *s));
@@ -133,7 +137,6 @@ void Cfg::recompute_loops() {
   }
 
   loops_.clear();
-  nesting_depth_.resize(num_blocks());
   nesting_depth_.assign(num_blocks(), 0);
 
   for (const auto& e : back_edges_) {
@@ -336,19 +339,19 @@ Cfg& Cfg::remove_nop() {
   return *this;
 }
 
-void Cfg::write(std::ostream& os, bool dib, bool dii, bool lob, bool loi) const {
+void Cfg::write(std::ostream& os, bool dib, bool dii, bool lob, bool loi, bool dom) const {
   os << "digraph g {" << endl;
   os << "colorscheme = blues6" << endl;
 
   write_entry(os, dib, lob);
   write_exit(os, dib, lob);
-  write_blocks(os, dib, dii, lob, loi);
+  write_blocks(os, dib, dii, lob, loi, dom);
   write_edges(os);
 
   os << "}";
 }
 
-void Cfg::write_blocks(ostream& os, bool dib, bool dii, bool lob, bool loi) const {
+void Cfg::write_blocks(ostream& os, bool dib, bool dii, bool lob, bool loi, bool dom) const {
   map<size_t, vector<id_type>> nestings;
   for (size_t i = get_entry() + 1, ie = get_exit(); i < ie; ++i) {
     nestings[nesting_depth(i)].push_back(i);
@@ -367,16 +370,19 @@ void Cfg::write_blocks(ostream& os, bool dib, bool dii, bool lob, bool loi) cons
       }
       os << "label=\"{";
       os << "#" << bb;
-      if (dib) {
-        os << "|def-in:";
+			if (dom && is_reachable(bb)) {
+				os << "|dominates: ";
+				write_dominators(os, bb);
+			}
+      if (dib && is_reachable(bb)) {
+        os << "|def-in: ";
         write_reg_set(os, def_ins(bb));
       }
-      os << "|";
       for (size_t j = 0, je = num_instrs(bb); j < je; ++j) {
         auto loc = loc_type {bb, j};
 
-        if (dii) {
-          os << "|def-in:";
+        if (dii && is_reachable(bb)) {
+          os << "|def-in: ";
           write_reg_set(os, def_ins(loc));
         }
 
@@ -384,13 +390,13 @@ void Cfg::write_blocks(ostream& os, bool dib, bool dii, bool lob, bool loi) cons
         os << get_instr(loc);
         os << "\\l";
 
-        if (loi) {
-          os << "|live-out:";
+        if (loi && is_reachable(bb)) {
+          os << "|live-out: ";
           write_reg_set(os, live_outs(loc));
         }
       }
-      if (lob) {
-        os << "|live-out:";
+      if (lob && is_reachable(bb)) {
+        os << "|live-out: ";
         write_reg_set(os, live_outs(bb));
       }
       os << "}\"];" << endl;
@@ -399,6 +405,19 @@ void Cfg::write_blocks(ostream& os, bool dib, bool dii, bool lob, bool loi) cons
   for (size_t i = 0, ie = nestings.size(); i < ie; ++i) {
     os << "}" << endl;
   }
+}
+
+void Cfg::write_dominators(ostream& os, id_type bb) const {
+	os << "\\{";
+	for ( auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i ) {
+		if (dom(bb, *i) ) {
+			os << " #" << *i;
+		}
+	}
+	if (dom(bb, get_exit())) {
+		os << " EXIT";
+	}
+	os << " \\}";
 }
 
 void Cfg::write_entry(ostream& os, bool dib, bool lob) const {

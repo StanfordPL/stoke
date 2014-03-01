@@ -5,6 +5,7 @@
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -30,7 +31,8 @@ auto& out = ValueArg<string>::create("o")
   .description("Directory to write results to")
   .default_val("out");
 
-typedef map<string, pair<bool, string>> line_map;
+typedef map<string, string> line_map;
+typedef set<string> label_set;
 
 bool exists(const string& file) {
   Terminal term;
@@ -38,9 +40,9 @@ bool exists(const string& file) {
   return term.result() == 0;
 }
 
-bool objdump(const string& file) {
+bool objdump() {
   Terminal term;
-  term << "objdump -d -Msuffix " << file << " > /tmp/stoke.$USER.objdump" << endl;
+  term << "objdump -d -Msuffix " << in.value() << " > /tmp/stoke.$USER.objdump" << endl;
   return term.result() == 0;
 }
 
@@ -121,7 +123,7 @@ string fix_line(const string& line) {
 		const auto missing = line.find_first_of(',') == string::npos;
 		if ( in_list && missing) {
 			const auto split = line.find_first_of(' ');
-			return line.substr(0, split) + "$0x1," + line.substr(split+1);
+			return line.substr(0, split) + " $0x1," + line.substr(split+1);
 		} 
 	}
 
@@ -203,7 +205,7 @@ line_map index_lines(ifstream& ifs, string& s) {
 		} 
 		string instr;
 		if ( get_instr(s, instr) ) {
-			lines[get_addr(s)] = make_pair(false, fix_line(instr));
+			lines[get_addr(s)] = fix_line(instr);
 		}
 	}
 
@@ -219,9 +221,11 @@ bool is_addr(const string& s) {
 	return true;
 }
 
-void fix_label_uses(line_map& lines) {
+label_set fix_label_uses(line_map& lines) {
+	label_set labels;
+
 	for ( auto& l : lines ) {
-		auto& instr = l.second.second;
+		auto& instr = l.second;
 
 		// Opcodes are followed by at least one space; ignore instructions with no operands
 		auto ops_begin = instr.find_first_of(' ');
@@ -237,13 +241,15 @@ void fix_label_uses(line_map& lines) {
 
 		// Arguments that are strictly hex digits become labels
 		if ( is_addr(ops) ) {	
-			lines[l.first].first = true;
+			labels.insert(ops);
 			instr = instr.substr(0, ops_begin) + ".L_" + ops;
 		}
 	}
+
+	return labels;
 }
 
-void emit(const string& fxn, const line_map& lines) {
+void emit(const string& fxn, const line_map& lines, const label_set& labels) {
 	ofstream ofs(out.value() + "/" + fxn + ".s");
 	ofilterstream<Indent> os(ofs);
 
@@ -257,12 +263,13 @@ void emit(const string& fxn, const line_map& lines) {
 
 	os.filter().indent();
 	for ( const auto& l : lines ) {
-		if ( l.second.first ) {
+		const auto itr = labels.find(l.first);
+		if ( itr != labels.end() ) {
 			os.filter().unindent();
 			os << ".L_" << l.first << ":" << endl;
 			os.filter().indent();
-		}
-		os << l.second.second << endl;
+		} 
+		os << l.second << endl;
 	}
 
 	os << ".size " << fxn << ", .-" << fxn << endl;
@@ -280,8 +287,8 @@ void extract() {
 
 		const auto fxn = get_name(ifs, s);
 		auto lines = index_lines(ifs, s);
-		fix_label_uses(lines);
-		emit(fxn, lines);
+		const auto labels = fix_label_uses(lines);
+		emit(fxn, lines, labels);
 	}
 }
 
@@ -294,7 +301,7 @@ int main(int argc, char** argv) {
   } else if (!mkdir()) {
     cout << "Unable to create output directory " << out.value() << "!" << endl;
     return 1;
-  } else if (!objdump(in)) {
+  } else if (!objdump()) {
     cout << "Unable to extract object code from binary file " << in.value() << "!" << endl;
     return 1;
   } else {

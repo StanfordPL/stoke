@@ -27,11 +27,50 @@ then
 	echo "Usage: stoke <subcommand> [options]"
 	echo "Type 'stoke <subcommand> --help' for help on a specific subcommand."
 	echo ""
-	echo "  extract    extract the contents of a binary file"
-	echo "  search     run STOKE search"
-	echo "  testcase   generate a STOKE testcase file"
+	echo "  extract         extract the contents of a binary file"
+	echo "  search          run STOKE search"
+	echo "  testcase        generate a STOKE testcase file"
 	echo ""
+	echo "  debug cfg       generate the control flow graph for a function"
+	echo "  debug cost      evaluate a function using a STOKE cost function"
+	echo "  debug sandbox   execute a function"
+	echo "  debug verify    check the equivalence of two functions"
+	echo ""
+	echo "  benchmark cfg   benchmark cfg kernel"
 	exit 0
+elif [ "$SCMD" == "debug" ]
+then
+	SCMD=$1
+	shift
+	if [ "$SCMD" == "cfg" ]
+	then
+		$HERE/stoke_debug_cfg $@
+	elif [ "$SCMD" == "cost" ]
+	then
+		$HERE/stoke_debug_cost $@
+	elif [ "$SCMD" == "simulate" ]
+	then
+		$HERE/stoke_debug_simulate $@
+	elif [ "$SCMD" == "verify" ]
+	then
+		$HERE/stoke_debug_verify $@
+	else
+		echo "Unknown command: '"$SCMD"'"
+		echo "Type 'stoke_debug --help' for usage."
+		exit 1
+	fi
+elif [ "$SCMD" == "benchmark" ]
+then
+  SCMD=$1
+  shift
+  if [ "$SCMD" == "cfg" ]
+  then
+ 	  $HERE/stoke_benchmark_cfg $@
+  else
+ 	  echo "Unknown command: '"$SCMD"'"
+    echo "Type 'stoke_debug --help' for usage."
+    exit 1
+  fi
 elif [ "$SCMD" == "extract" ]
 then
 	$HERE/stoke_extract $@
@@ -46,4 +85,3 @@ else
 	echo "Type 'stoke --help' for usage."
 	exit 1
 fi
-

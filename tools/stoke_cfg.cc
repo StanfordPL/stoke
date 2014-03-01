@@ -1,3 +1,5 @@
+#include <cstdlib>
+
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -50,6 +52,10 @@ auto& loi = FlagArg::create("loi")
   .alternate("live_out_instr")
   .description("Display live out values for instructions");
 
+auto& dom = FlagArg::create("dom")
+  .alternate("dominators")
+  .description("Display dominators");
+
 auto& h3 = Heading::create("I/O options:");
 
 auto& out = ValueArg<string>::create("o")
@@ -62,16 +68,15 @@ auto& view = FlagArg::create("view")
   .alternate("v")
   .description("View cfg immediately");
 
-bool to_dot() {
-  ofstream ofs("/tmp/stoke.dot");
+void to_dot() {
+  ofstream ofs(string("/tmp/stoke.") + getenv("USER") + ".dot");
   Cfg cfg {target, def_in, live_out};
-  cfg.write(ofs, dib, dii, lob, loi);
-  ofs.close();
+  cfg.write(ofs, dib, dii, lob, loi, dom);
 }
 
 bool to_pdf() {
   Terminal term;
-  term << "cat /tmp/stoke.dot | dot -Tpdf > " << out.value() << endl;
+  term << "cat /tmp/stoke.$USER.dot | dot -Tpdf > " << out.value() << endl;
   return term.result() == 0;
 }
 
@@ -81,19 +86,26 @@ bool view_pdf() {
   return term.result() == 0;
 }
 
+bool rm_pdf() {
+	Terminal term;
+	term << "rm -f " << out.value() << endl;
+	return term.result() == 0;
+}
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-  if (!to_dot()) {
-    cout << "Unable to write dot file!" << endl;
-    return 1;
-  } else if (!to_pdf()) {
+  to_dot();
+  if (!to_pdf()) {
     cout << "Unable to save file!" << endl;
     return 1;
   } else if (view && !view_pdf()) {
     cout << "Unable to open file for viewing!" << endl;
     return 1;
-  }
+  } else if (view && !rm_pdf()) {
+		cout << "Unable to remove file!" << endl;
+		return 1;
+	}
 
   return 0;
 }

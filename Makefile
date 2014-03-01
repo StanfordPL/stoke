@@ -13,6 +13,7 @@ LIB=\
 	src/ext/x64asm/lib/libx64asm.a
 
 OBJ=\
+	src/args/code.o \
 	src/args/distance.o \
 	src/args/reduction.o \
 	src/args/reg_set.o \
@@ -37,6 +38,8 @@ OBJ=\
 	src/verifier/verifier.o
 
 BIN= \
+	bin/stoke_benchmark_cfg \
+	\
 	bin/stoke_cfg \
 	bin/stoke_cost \
 	bin/stoke_simulate \

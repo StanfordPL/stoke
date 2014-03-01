@@ -35,15 +35,17 @@ class Cfg {
 
   void recompute() {
     recompute_blocks();
-    recompute_dominators();
+		recompute_edges();
     recompute_reachable();
+    recompute_dominators();
     recompute_loops();
     recompute_defs();
     recompute_liveness();
   }
   void recompute_blocks();
-  void recompute_dominators();
+	void recompute_edges();
   void recompute_reachable();
+  void recompute_dominators();
   void recompute_loops();
   void recompute_defs();
   void recompute_liveness();
@@ -215,8 +217,6 @@ class Cfg {
 
   bool is_reachable(id_type id) const {
     assert(id < num_blocks());
-    assert(!is_entry(id));
-    assert(!is_exit(id));
     return reachable_.find(id) != reachable_.end();
   }
 
@@ -228,7 +228,7 @@ class Cfg {
   Cfg& remove_unreachable();
   Cfg& remove_nop();
 
-  void write(std::ostream& os, bool dib, bool dii, bool lob, bool loi) const;
+  void write(std::ostream& os, bool dib, bool dii, bool lob, bool loi, bool dom) const;
 
  private:
   // User inputs
@@ -256,7 +256,8 @@ class Cfg {
 
   void write_entry(std::ostream& os, bool dib, bool lob) const;
   void write_exit(std::ostream& os, bool dib, bool lob) const;
-  void write_blocks(std::ostream& os, bool dib, bool dii, bool lob, bool loi) const;
+  void write_blocks(std::ostream& os, bool dib, bool dii, bool lob, bool loi, bool dom) const;
+	void write_dominators(std::ostream& os, id_type id) const;
   void write_edges(std::ostream& os) const;
   void write_reg_set(std::ostream& os, const x64asm::RegSet& rs) const;
 };
@@ -266,7 +267,7 @@ class Cfg {
 namespace std {
 
 inline std::ostream& operator<<(std::ostream& os, const stoke::Cfg& cfg) {
-  cfg.write(os, false, false, false, false);
+  cfg.write(os, false, false, false, false, false);
   return os;
 }
 

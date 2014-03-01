@@ -63,10 +63,10 @@ Search& Search::set_mass(Move move, size_t mass) {
 
 Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunction& fxn) {
 	// Make sure target is correct with respect to itself
-	assert((*cost_fxn_)(target_).first);
+	assert(fxn(target).first);
 	// Make sure target and rewrite are sound to begin with
-	assert(target_.is_sound());
-	assert(rewrite_.is_sound());
+	assert(target.is_sound());
+	assert(rewrite.is_sound());
 
 	// Progress callback variables
 	auto current = rewrite;
