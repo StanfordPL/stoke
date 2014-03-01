@@ -119,7 +119,6 @@ void Cfg::recompute_dominators() {
 	doms_[get_entry()].resize_for_bits(num_blocks());
   doms_[get_entry()].reset();
 	doms_[get_entry()][get_entry()] = true;
-
   // Initial conditions (note that we're assigning everything here)
 	for ( size_t i = get_entry() + 1, ie = get_exit(); i < ie; ++i ) {
 		doms_[i].resize_for_bits(num_blocks());
@@ -187,12 +186,10 @@ void Cfg::recompute_loops() {
 }
 
 void Cfg::recompute_defs() {
-  def_ins_.resize(code_.size(), RegSet::empty());
-  def_outs_.resize(num_blocks(), RegSet::empty());
-  gen_.resize(num_blocks(), RegSet::empty());
-  kill_.resize(num_blocks(), RegSet::empty());
+  // Compute gen and kill sets for blocks
+  gen_.assign(num_blocks(), RegSet::empty());
+  kill_.assign(num_blocks(), RegSet::empty());
 
-  // Compute gen sets for blocks
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
       gen_[*i] |= j->must_write_set();
@@ -201,6 +198,9 @@ void Cfg::recompute_defs() {
       kill_[*i] -= j->maybe_write_set();
     }
   }
+
+  def_ins_.resize(code_.size(), RegSet::empty());
+  def_outs_.resize(num_blocks(), RegSet::empty());
 
   // Boundary conditions -- MXCSR[rc] is always live in (this controls sse rounding)
   def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
@@ -223,15 +223,13 @@ void Cfg::recompute_defs() {
         }
       }
       // Transfer function
-      auto new_out = def_ins_[blocks_[*i]] - kill_[*i];
-      new_out |= gen_[*i];
+      const auto new_out = (def_ins_[blocks_[*i]] - kill_[*i]) | gen_[*i];
 
       changed |= def_outs_[*i] != new_out;
       def_outs_[*i] = new_out;
     }
   }
 
-  // Compute def ins
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 1, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index(loc_type(*i, j));
