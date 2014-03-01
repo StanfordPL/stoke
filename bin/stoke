@@ -48,9 +48,9 @@ then
 	elif [ "$SCMD" == "cost" ]
 	then
 		$HERE/stoke_debug_cost $@
-	elif [ "$SCMD" == "simulate" ]
+	elif [ "$SCMD" == "sandbox" ]
 	then
-		$HERE/stoke_debug_simulate $@
+		$HERE/stoke_debug_sandbox $@
 	elif [ "$SCMD" == "verify" ]
 	then
 		$HERE/stoke_debug_verify $@

@@ -40,10 +40,10 @@ OBJ=\
 BIN= \
 	bin/stoke_benchmark_cfg \
 	\
-	bin/stoke_cfg \
-	bin/stoke_cost \
-	bin/stoke_simulate \
-	bin/stoke_verify \
+	bin/stoke_debug_cfg \
+	bin/stoke_debug_cost \
+	bin/stoke_debug_sandbox \
+	bin/stoke_debug_verify \
 	\
 	bin/stoke_extract \
 	bin/stoke_search \
