@@ -1,6 +1,3 @@
-#include <algorithm>
-#include <set>
-
 #include "src/cfg/cfg.h"
 
 using namespace cpputil;
@@ -10,12 +7,107 @@ using namespace x64asm;
 
 namespace stoke {
 
+Cfg::loc_type Cfg::get_loc(size_t idx) const {
+  assert(idx < code_.size());
+  for (int i = num_blocks() - 1; i >= 0; --i)
+    if (idx >= blocks_[i]) {
+      return loc_type(i, idx - blocks_[i]);
+    }
+
+  assert(false);
+  return loc_type(0, 0);
+}
+
+bool Cfg::performs_undef_read() const {
+  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+    for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
+      const auto idx = get_index(loc_type(*i, j));
+      const auto r = code_[idx].maybe_read_set();
+      const auto di = def_ins_[idx];
+
+      if ((r & di) != r) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+Cfg& Cfg::remove_unreachable() {
+  x64asm::Code temp;
+  for (auto b = reachable_begin(), be = reachable_end(); b != be; ++b) {
+    for (auto i = instr_begin(*b), ie = instr_end(*b); i != ie; ++i) {
+      temp.push_back(*i);
+    }
+  }
+  code_ = temp;
+  recompute();
+
+  return *this;
+}
+
+Cfg& Cfg::remove_nop() {
+  x64asm::Code temp;
+  for (auto b = get_entry(), be = get_exit(); b != be; ++b) {
+    for (auto i = instr_begin(b), ie = instr_end(b); i != ie; ++i) {
+      if (!i->is_nop()) {
+        temp.push_back(*i);
+      }
+    }
+  }
+  code_ = temp;
+  recompute();
+
+  return *this;
+}
+
+void Cfg::forward_topo_sort() {
+	block_sort_.clear();
+	visited_.resize_for_bits(num_blocks());
+	visited_.reset();
+
+	// No need to check for reachable in this loop; it's implicit in a forward traversal.
+	block_sort_.push_back(get_entry());
+	for ( size_t i = 0; i < block_sort_.size(); ++i ) {
+		const auto next = block_sort_[i];
+		visited_[next] = true;
+		for ( auto s = succ_begin(next), se = succ_end(next); s != se; ++s ) {
+			if ( !visited_[*s] ) {
+				block_sort_.push_back(next);
+			}
+		}
+	}
+}
+
+void Cfg::backward_topo_sort() {
+	block_sort_.clear();
+	visited_.resize_for_bits(num_blocks());
+	visited_.reset();
+
+	// Going backwards, we need to stay away from unreachable blocks.
+	block_sort_.push_back(get_exit());
+	for ( size_t i = 0; i < block_sort_.size(); ++i ) {
+		const auto next = block_sort_[i];
+		visited_[next] = true;
+		for ( auto p = pred_begin(next), pe = pred_end(next); p != pe; ++p ) {
+			if ( !visited_[*p] && is_reachable(*p) ) {
+				block_sort_.push_back(next);
+			}		
+		}
+	}
+	// Checking for is_reachable() means we didn't add the entry block 
+	block_sort_.push_back(get_entry());
+}
+
 void Cfg::recompute_blocks() {
 	boundaries_.resize_for_bits(code_.size()+1);
 	boundaries_.reset();
+
+	// We know a-priori that these are boundaries
 	boundaries_[0] = true;
 	boundaries_[code_.size()] = true;
 
+	// Labels define the beginning of blocks; jumps and returns define the ends. */
   for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
     const auto& instr = code_[i];
     if (instr.is_label_defn()) {
@@ -50,17 +142,18 @@ void Cfg::recompute_succs() {
 	}
 
   for (auto i = get_entry(), ie = get_exit(); i < ie; ++i) {
+		// Control passes from empty blocks to the next. 
     if (num_instrs(i) == 0) {
       succs_[i].push_back(i + 1);
 			continue;
     } 
-		
+		// Control passes from return statements to the exit.
     const auto& instr = code_[blocks_[i + 1] - 1];
 		if (instr.is_return()) {
       succs_[i].push_back(get_exit());
 			continue;
 		}
-
+		// Conditional jump targets are always listed second in succs_.
 		const auto itr = labels_.find(instr.get_operand<Label>(0));
 		const auto dest = itr == labels_.end() ? get_exit() : itr->second;
 		if (instr.is_uncond_jump()) {
@@ -87,41 +180,36 @@ void Cfg::recompute_preds() {
   }
 }
 
-// This produces a set which is defined over blocks, not entry or exit
 void Cfg::recompute_reachable() {
-	reachable_.resize_for_bits(code_.size()+1);
+	reachable_.resize_for_bits(blocks_.size());
   reachable_.reset();
 
-  for (reachable_stack_.push(get_entry()); !reachable_stack_.empty();) {
-    const auto m = reachable_stack_.top();
-    reachable_stack_.pop();
+  for (block_stack_.push(get_entry()); !block_stack_.empty();) {
+    const auto m = block_stack_.top();
+    block_stack_.pop();
     for (auto s = succ_begin(m), se = succ_end(m); s != se; ++s) {
 			if (!reachable_[*s]) {
 				reachable_[*s] = true;
-				reachable_stack_.push(*s);
+				block_stack_.push(*s);
 			}
     }
   }
-
+	// Checking for is_reachable means we didn't catch the exit block.
 	reachable_[get_exit()] = false;
 }
 
-// This produces a function (dom()), which is defined over reachable blocks and entry/exit
 void Cfg::recompute_dominators() {
+	doms_.resize(num_blocks());
+
 	// Constants
   BitVector universe(num_blocks());
 	universe.set();
-	universe[get_exit()] = false;
-
-	doms_.resize(num_blocks());
 
   // Bounary conditions
 	doms_[get_entry()].resize_for_bits(num_blocks());
   doms_[get_entry()].reset();
-	doms_[get_entry()][get_entry()] = true;
-  // Initial conditions (note that we're assigning everything here)
+  // Initial conditions 
 	for ( size_t i = get_entry() + 1, ie = get_exit(); i < ie; ++i ) {
-		doms_[i].resize_for_bits(num_blocks());
 		doms_[i] = universe;
 	}
 
@@ -132,7 +220,7 @@ void Cfg::recompute_dominators() {
 		for ( auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i ) {
       auto new_out = universe;
 
-      // Meet operator (it's okay that this touches unreachable, since they're universe)
+      // Meet operator; okay to reach unreachable blocks which are fixed to universe
       for (auto p = pred_begin(*i), pe = pred_end(*i); p != pe; ++p) {
 				new_out &= doms_[*p];
       }
@@ -149,7 +237,7 @@ void Cfg::recompute_back_edges() {
   loops_.clear();
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i ) {
     for (auto s = succ_begin(*i), se = succ_end(*i); s != se; ++s) {
-      if (dom(*s, *i)) {
+      if (!is_exit(*s) && dom(*s, *i)) {
         loops_[edge_type(*i, *s)] = BitVector(num_blocks());
       }
     }
@@ -157,8 +245,6 @@ void Cfg::recompute_back_edges() {
 }
 
 void Cfg::recompute_loops() {
-  nesting_depth_.assign(num_blocks(), 0);
-
   for (auto& loop : loops_) {
 		const auto& e = loop.first;
 		auto& l = loop.second;
@@ -167,26 +253,30 @@ void Cfg::recompute_loops() {
 		l[e.second] = true;
 
 		if (e.first != e.second) {
-			for (loops_stack_.push(e.first); !loops_stack_.empty();) {
-				const auto m = loops_stack_.top();
-				loops_stack_.pop();
+			for (block_stack_.push(e.first); !block_stack_.empty();) {
+				const auto m = block_stack_.top();
+				block_stack_.pop();
 				for (auto p = pred_begin(m), pe = pred_end(m); p != pe; ++p) {
 					if (is_reachable(*p) && !l[*p] ) {
 						l[*p] = true;
-						loops_stack_.push(*p);
+						block_stack_.push(*p);
 					}
 				}
 			}
 		}
-
-    for (auto i = l.set_bit_index_begin(), ie = l.set_bit_index_end(); i != ie; ++i) {
-      nesting_depth_[*i]++;
-    }
   }
 }
 
-void Cfg::recompute_defs() {
-  // Compute gen and kill sets for blocks
+void Cfg::recompute_nesting_depth() {
+	nesting_depth_.assign(num_blocks(), 0);
+	for ( auto e = back_edge_begin(), ee = back_edge_end(); e != ee; ++e ) {
+		for ( auto i = loop_begin(*e), ie = loop_end(*e); i != ie; ++i ) {
+			nesting_depth_[*i]++;
+		}
+	}
+}
+
+void Cfg::recompute_defs_gen_kill() {
   gen_.assign(num_blocks(), RegSet::empty());
   kill_.assign(num_blocks(), RegSet::empty());
 
@@ -194,15 +284,19 @@ void Cfg::recompute_defs() {
     for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
       gen_[*i] |= j->must_write_set();
       gen_[*i] -= j->maybe_undef_set();
+
       kill_[*i] |= j->maybe_undef_set();
       kill_[*i] -= j->maybe_write_set();
     }
   }
+}
+void Cfg::recompute_defs_loops() {
+	recompute_defs_gen_kill();
 
   def_ins_.resize(code_.size(), RegSet::empty());
   def_outs_.resize(num_blocks(), RegSet::empty());
 
-  // Boundary conditions -- MXCSR[rc] is always live in (this controls sse rounding)
+  // Boundary conditions; MXCSR[rc] is always defined
   def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
   // Initial conditions
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
@@ -241,24 +335,69 @@ void Cfg::recompute_defs() {
   }
 }
 
-void Cfg::recompute_liveness() {
-  live_outs_.resize(code_.size(), RegSet::empty());
-  live_ins_.resize(num_blocks(), RegSet::empty());
+void Cfg::recompute_defs_loop_free() {
+  def_ins_.resize(code_.size(), RegSet::empty());
+  def_outs_.resize(num_blocks(), RegSet::empty());
+
+  // Boundary conditions ; MXCSR[rc] is always defined
+  def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
+
+	// Iterate only once in topological order
+	forward_topo_sort();
+	for ( auto i : block_sort_ ) {
+		// Initial conditions
+		def_ins_[blocks_[i]] = RegSet::universe();
+
+		// Meet operator
+		for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p) {
+			if (is_reachable(*p) || is_entry(*p)) {
+				def_ins_[blocks_[i]] &= def_outs_[*p];
+			}
+		}
+		// Transfer function
+    for (size_t j = 1, je = num_instrs(i); j < je; ++j) {
+      const auto idx = get_index(loc_type(i, j));
+      const auto& instr = code_[idx - 1];
+      def_ins_[idx] = def_ins_[idx - 1];
+      def_ins_[idx] |= instr.must_write_set();
+      def_ins_[idx] -= instr.maybe_undef_set();
+    }
+
+		// Summarize block
+		const auto idx = num_instrs(i) - 1;
+		const auto& instr = code_[idx];
+		def_outs_[i] = def_ins_[idx];
+		def_outs_[i] |= instr.must_write_set();
+		def_outs_[i] -= instr.maybe_undef_set();
+	}
+}
+
+void Cfg::recompute_liveness_gen_kill() {
   gen_.resize(num_blocks(), RegSet::empty());
   kill_.resize(num_blocks(), RegSet::empty());
 
-  // Compute gen/kill sets for blocks
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-    for (auto j = instr_rbegin(*i), je = instr_rend(*i); j != je; ++j) {
-      const auto use = j->maybe_read_set();
-      const auto def = j->maybe_write_set() | j->maybe_undef_set();
+    for (int j = num_instrs(*i) - 1; j >= 0; --j) {
+      const auto idx = get_index(loc_type(*i, j));
+      const auto& instr = code_[idx + 1];
+
+      const auto use = instr.maybe_read_set();
+      const auto def = instr.maybe_write_set() | instr.maybe_undef_set();
 
       kill_[*i] |= def;
       kill_[*i] -= use;
+
       gen_[*i] -= def;
       gen_[*i] |= use;
     }
   }
+}
+
+void Cfg::recompute_liveness_loops() {
+	recompute_liveness_gen_kill();
+
+  live_outs_.resize(code_.size(), RegSet::empty());
+  live_ins_.resize(num_blocks(), RegSet::empty());
 
   // Boundary conditions
   live_ins_[get_exit()] = fxn_live_outs_;
@@ -276,13 +415,10 @@ void Cfg::recompute_liveness() {
 
       // Meet operator
       for (auto s = succ_begin(*i), se = succ_end(*i); s != se; ++s) {
-        if (is_reachable(*s)) {
-          live_outs_[blocks_[*i]] |= live_ins_[*s];
-        }
+        live_outs_[blocks_[*i]] |= live_ins_[*s];
       }
       // Transfer function
-      auto new_in = live_outs_[blocks_[*i]] - kill_[*i];
-      new_in |= gen_[*i];
+      const auto new_in = (live_outs_[blocks_[*i]] - kill_[*i]) | gen_[*i];
 
       changed |= live_ins_[*i] != new_in;
       live_ins_[*i] = new_in;
@@ -294,66 +430,49 @@ void Cfg::recompute_liveness() {
     for (int j = num_instrs(*i) - 2; j >= 0; --j) {
       const auto idx = get_index(loc_type(*i, j));
       const auto& instr = code_[idx + 1];
-      def_ins_[idx] = def_ins_[idx + 1];
-      def_ins_[idx] -= instr.maybe_write_set();
-      def_ins_[idx] -= instr.maybe_undef_set();
-      def_ins_[idx] |= instr.maybe_read_set();
+      live_outs_[idx] = live_outs_[idx + 1];
+      live_outs_[idx] -= instr.maybe_write_set();
+      live_outs_[idx] -= instr.maybe_undef_set();
+      live_outs_[idx] |= instr.maybe_read_set();
     }
   }
 }
 
-Cfg::loc_type Cfg::get_loc(size_t idx) const {
-  assert(idx < code_.size());
-  for (int i = num_blocks() - 1; i >= 0; --i)
-    if (idx >= blocks_[i]) {
-      return loc_type(i, idx - blocks_[i]);
+void Cfg::recompute_liveness_loop_free() {
+  live_outs_.resize(code_.size(), RegSet::empty());
+  live_ins_.resize(num_blocks(), RegSet::empty());
+
+  // Boundary conditions
+  live_ins_[get_exit()] = fxn_live_outs_;
+
+	// Iterate only once in topological order
+	backward_topo_sort();
+	for ( auto i : block_sort_ ) {
+		// Initial conditions
+		live_outs_[blocks_[i]] = RegSet::empty();
+
+		// Meet operator
+		for (auto s = succ_begin(i), se = succ_end(i); s != se; ++s) {
+			live_outs_[blocks_[i]] |= live_ins_[*s];
+		}
+		// Transfer function
+    for (int j = num_instrs(i) - 2; j >= 0; --j) {
+      const auto idx = get_index(loc_type(i, j));
+      const auto& instr = code_[idx + 1];
+      live_outs_[idx] = live_outs_[idx + 1];
+      live_outs_[idx] -= instr.maybe_write_set();
+      live_outs_[idx] -= instr.maybe_undef_set();
+      live_outs_[idx] |= instr.maybe_read_set();
     }
 
-  assert(false);
-  return loc_type(0, 0);
-}
-
-bool Cfg::performs_undef_read() const {
-  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-    for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
-      const auto idx = get_index(loc_type(*i, j));
-      const auto r = code_[idx].maybe_read_set();
-      const auto di = def_ins(idx);
-
-      if ((r & di) != r) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-Cfg& Cfg::remove_unreachable() {
-  x64asm::Code temp;
-  for (auto b = reachable_begin(), be = reachable_end(); b != be; ++b) {
-    for (auto i = instr_begin(*b), ie = instr_end(*b); i != ie; ++i) {
-      temp.push_back(*i);
-    }
-  }
-  code_ = temp;
-  recompute();
-
-  return *this;
-}
-
-Cfg& Cfg::remove_nop() {
-  x64asm::Code temp;
-  for (auto b = get_entry(), be = get_exit(); b != be; ++b) {
-    for (auto i = instr_begin(b), ie = instr_end(b); i != ie; ++i) {
-      if (!i->is_nop()) {
-        temp.push_back(*i);
-      }
-    }
-  }
-  code_ = temp;
-  recompute();
-
-  return *this;
+		// Summarize block
+		const auto idx = blocks_[i];
+		const auto& instr = code_[idx];
+		live_ins_[i] = live_outs_[idx];
+    live_ins_[idx] -= instr.maybe_write_set();
+    live_ins_[idx] -= instr.maybe_undef_set();
+    live_ins_[idx] |= instr.maybe_read_set();
+	}
 }
 
 void Cfg::write(std::ostream& os, bool dib, bool dii, bool lob, bool loi, bool dom) const {
@@ -430,9 +549,6 @@ void Cfg::write_dominators(ostream& os, id_type bb) const {
 		if (dom(bb, *i) ) {
 			os << " #" << *i;
 		}
-	}
-	if (dom(bb, get_exit())) {
-		os << " EXIT";
 	}
 	os << " \\}";
 }
