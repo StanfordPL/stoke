@@ -7,7 +7,7 @@ pushd `dirname $0` > /dev/null
 HERE=`pwd`
 popd > /dev/null
 
-if [ ! -f $HERE/stoke_extract ] || [ ! -f $HERE/stoke_testcase ] || [ ! -f $HERE/stoke_search ]
+if [ `ls -1 | wc -l` -ne 14 ]
 then
 	echo "Fatal Error: Failed to locate one or more STOKE components!"
 	exit 1

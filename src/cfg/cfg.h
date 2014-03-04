@@ -249,6 +249,11 @@ class Cfg {
     return nesting_depth_[id];
   }
 
+	/** Returns the number of reachable blocks; entry and exit blocks are not considered reachable. */
+	size_t num_reachable() const {
+		return 0; // todo...
+	}
+
   /** Returns an iterator that points to the beginning of this graph's reachable block list;
    the entry and exit blocks are not considered reachable. */
   reachable_iterator reachable_begin() const {
