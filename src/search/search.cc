@@ -24,7 +24,8 @@ void handler(int sig, siginfo_t *siginfo, void *context) {
 
 namespace stoke {
 
-Search::Search() : old_instr_{RET}, old_opcode_{RET}, old_operand_{rax} {
+Search::Search() {
+	set_seed(0);
 	set_timeout(0);
 	set_beta(1.0);
 	set_progress_callback(nullptr, nullptr);
@@ -89,7 +90,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 			const auto move_type = moves_[int_(gen_)];
 			statistics[(size_t) move_type].num_proposed++;
 
-			if ( !modify(current, move_type) ) {
+			if ( !transforms_.modify(current, move_type) ) {
 				continue;
       }
 			statistics[(size_t) move_type].num_succeeded++;
@@ -104,7 +105,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
       // Check that cost function hasnt' changed within an iteration
 
 			if ( new_cost > max ) {
-				undo(current, move_type);
+				transforms_.undo(current, move_type);
 				continue;
 			} 
 			statistics[(size_t) move_type].num_accepted++;
@@ -143,82 +144,6 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 	}
 
 	return result_type(current, success);
-}
-
-bool Search::modify(Cfg& cfg, Move type) {
-	switch ( type ) {
-		case Move::INSTRUCTION:
-			return instruction_move(cfg);
-		case Move::OPCODE:
-			return opcode_move(cfg);
-		case Move::OPERAND:
-			return operand_move(cfg);
-		case Move::RESIZE:
-			return resize_move(cfg);
-		case Move::LOCAL_SWAP:
-			return local_swap_move(cfg);
-		case Move::GLOBAL_SWAP:
-			return global_swap_move(cfg);
-		default:
-			assert(false);
-			return false;
-	}
-}
-
-bool Search::instruction_move(Cfg& cfg) {
-	return false;
-}
-
-bool Search::opcode_move(Cfg& cfg) {
-	return false;
-}
-
-bool Search::operand_move(Cfg& cfg) {
-	return false;
-}
-
-bool Search::resize_move(Cfg& cfg) {
-	return false;
-}
-
-bool Search::local_swap_move(Cfg& cfg) {
-	return false;
-}
-
-bool Search::global_swap_move(Cfg& cfg) {
-	return false;
-}
-
-void Search::move(Code& code, size_t i, size_t j) const {
-
-}
-
-void Search::undo(Cfg& cfg, Move type) {
-	switch ( type ) {
-		case Move::INSTRUCTION:
-			cfg.get_code()[instr_index_] = old_instr_;
-			cfg.recompute_defs();
-			break;
-		case Move::OPCODE:
-			cfg.get_code()[instr_index_].set_opcode(old_opcode_);
-			cfg.recompute_defs();
-			break;
-		case Move::OPERAND:
-			cfg.get_code()[instr_index_].set_operand(operand_index_, old_operand_);
-			cfg.recompute_defs();
-			break;
-		case Move::RESIZE:
-			move(cfg.get_code(), move_i_, move_j_);
-			cfg.recompute();
-			break;
-		case Move::LOCAL_SWAP:
-		case Move::GLOBAL_SWAP:
-			swap(cfg.get_code()[move_i_], cfg.get_code()[move_j_]);
-			cfg.recompute_defs();
-			break;
-		default:
-			assert(false);
-	}
 }
 
 } // namespace stoke

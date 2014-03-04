@@ -1,6 +1,6 @@
 ##### CONSTANT DEFINITIONS
 
-CXX=ccache g++ -std=c++11 -Werror -Wextra
+CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors
 
 TARGET=-mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 
@@ -30,6 +30,7 @@ OBJ=\
 	src/sandbox/stack_snapshot.o \
 	\
 	src/search/search.o \
+	src/search/transforms.o \
 	\
 	src/state/cpu_state.o \
 	src/state/memory.o \
