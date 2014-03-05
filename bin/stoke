@@ -7,7 +7,7 @@ pushd `dirname $0` > /dev/null
 HERE=`pwd`
 popd > /dev/null
 
-if [ `ls -1 | wc -l` -ne "14" ]
+if [ `ls -1 $HERE | wc -l` -ne "14" ]
 then
 	echo "Fatal Error: Failed to locate one or more STOKE components!"
 	exit 1
@@ -27,16 +27,21 @@ then
 	echo "Usage: stoke <subcommand> [options]"
 	echo "Type 'stoke <subcommand> --help' for help on a specific subcommand."
 	echo ""
-	echo "  extract         extract the contents of a binary file"
-	echo "  search          run STOKE search"
-	echo "  testcase        generate a STOKE testcase file"
+	echo "  extract             extract the contents of a binary file"
+	echo "  search              run STOKE search"
+	echo "  testcase            generate a STOKE testcase file"
 	echo ""
-	echo "  debug cfg       generate the control flow graph for a function"
-	echo "  debug cost      evaluate a function using a STOKE cost function"
-	echo "  debug sandbox   execute a function"
-	echo "  debug verify    check the equivalence of two functions"
+	echo "  debug cfg           generate the control flow graph for a function"
+	echo "  debug cost          evaluate a function using a STOKE cost function"
+	echo "  debug sandbox       execute a function"
+	echo "  debug search        perform a transformation"
+	echo "  debug verify        check the equivalence of two functions"
 	echo ""
-	echo "  benchmark cfg   benchmark cfg kernel"
+	echo "  benchmark cfg       benchmark cfg kernel"
+	echo "  benchmark cost      benchmark cfg kernel"
+	echo "  benchmark sandbox   benchmark cfg kernel"
+	echo "  benchmark search    benchmark cfg kernel"
+	echo "  benchmark verify    benchmark cfg kernel"
 	exit 0
 elif [ "$SCMD" == "debug" ]
 then

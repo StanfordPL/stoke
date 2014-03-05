@@ -47,9 +47,6 @@ auto& max_jumps = ValueArg<size_t>::create("max_jumps")
   .description("Maximum jumps before exit due to infinite loop")
   .default_val(1024);
 
-auto& rom = FlagArg::create("rom")
-	.description("Assume that memory is read only");
-
 auto& h4 = Heading::create("Debugging options:");
 
 auto& debug = FlagArg::create("debug")
@@ -116,8 +113,7 @@ int main(int argc, char** argv) {
   }
 
   Sandbox sb;
-  sb.set_max_jumps(max_jumps)
-		.set_read_only_mem(rom);
+  sb.set_max_jumps(max_jumps);
 
 	const auto index = min(testcases.value().size()-1, idx.value());
 	const auto input = testcases.value()[index];

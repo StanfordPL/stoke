@@ -77,9 +77,6 @@ auto& max_jumps = ValueArg<size_t>::create("max_jumps")
   .description("Maximum jumps before exit due to infinite loop")
   .default_val(1024);
 
-auto& rom = FlagArg::create("rom")
-	.description("Assume that memory is read only");
-
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
@@ -89,8 +86,7 @@ int main(int argc, char** argv) {
 	Cfg cfg_r(rewrite, def_in, live_out);
 
 	Sandbox sb;
-	sb.set_max_jumps(max_jumps)
-		.set_read_only_mem(rom);
+	sb.set_max_jumps(max_jumps);
 
 	for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i ) {
 		if (indices.value().find(i) != indices.value().end()) {

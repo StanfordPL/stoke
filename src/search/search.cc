@@ -24,7 +24,7 @@ void handler(int sig, siginfo_t *siginfo, void *context) {
 
 namespace stoke {
 
-Search::Search() {
+Search::Search(Transforms* transforms) : transforms_(transforms) {
 	set_seed(0);
 	set_timeout(0);
 	set_beta(1.0);
@@ -90,7 +90,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 			const auto move_type = moves_[int_(gen_)];
 			statistics[(size_t) move_type].num_proposed++;
 
-			if ( !transforms_.modify(current, move_type) ) {
+			if ( !transforms_->modify(current, move_type) ) {
 				continue;
       }
 			statistics[(size_t) move_type].num_succeeded++;
@@ -105,7 +105,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
       // Check that cost function hasnt' changed within an iteration
 
 			if ( new_cost > max ) {
-				transforms_.undo(current, move_type);
+				transforms_->undo(current, move_type);
 				continue;
 			} 
 			statistics[(size_t) move_type].num_accepted++;

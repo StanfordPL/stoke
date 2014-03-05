@@ -90,12 +90,6 @@ class Sandbox {
     return io_pairs_.size();
   }
 
-  /** Sets the assumption that memory is read only, no copies necessary. */
-  Sandbox& set_read_only_mem(bool ro) {
-    read_only_mem_ = ro;
-    return *this;
-  }
-
   /** Clears the set of callbacks to invoke during execution. */
   Sandbox& clear_callbacks() {
     before_.clear();
@@ -155,8 +149,6 @@ class Sandbox {
   /** Callbacks to invokes after a line is exeucted. */
   std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> after_;
 
-  /** Is memory read only? */
-  bool read_only_mem_;
   /** The maximum number of jumps to take before exiting. */
   size_t max_jumps_;
   /** How many jumps have been taken during this execution. */
@@ -168,6 +160,8 @@ class Sandbox {
 
   /** Scratch space used here and there by sandboxing code. */
   uint64_t scratch_[16];
+  /** Set prior to execution, is memory read only? */
+  bool read_only_mem_;
   /** Set prior to execution, the value of the user-provided stack pointer. */
   uint64_t current_frame_;
   /** Set prior to execution, pointer to current state. */

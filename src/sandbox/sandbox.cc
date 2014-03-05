@@ -31,7 +31,6 @@ Sandbox::Sandbox() : fxn_(32 * 1024) {
   clear_callbacks();
 
   set_max_jumps(1024);
-  set_read_only_mem(false);
 
   snapshot_.init();
   segv_buffer_.fill(0);
@@ -84,6 +83,8 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
   assume that globally visible current_xxx vars will be defined appropriately. */
 void Sandbox::compile(const Cfg& cfg) {
   const auto& code = cfg.get_code();
+	read_only_mem_ = true;
+
   assm_.start(fxn_);
 
   emit_save_stoke_callee_save();
@@ -97,6 +98,8 @@ void Sandbox::compile(const Cfg& cfg) {
     const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
       const auto& instr = code[i];
+			const auto mi = instr.mem_index();
+			read_only_mem_ &= (mi != -1 && (instr.maybe_write(mi) || instr.maybe_undef(mi)));
 
       if (!before_.empty()) {
         emit_callbacks(i, true);

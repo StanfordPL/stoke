@@ -16,11 +16,10 @@ class Search {
 	public:
 		typedef std::pair<Cfg, bool> result_type;
 
-		Search(); 
+		Search(Transforms* transforms); 
 			
 		Search& set_seed(std::default_random_engine::result_type seed) {
 			gen_.seed(seed);
-			transforms_.set_seed(seed);
 			return *this;
 		}
 		Search& set_timeout(size_t timeout) {
@@ -62,7 +61,7 @@ class Search {
 		std::vector<Move> moves_;
 
 		/** Transformation helper class. */
-		Transforms transforms_;
+		Transforms* transforms_;
 
 		/** How many iterations should search run for? */
 		size_t timeout_;

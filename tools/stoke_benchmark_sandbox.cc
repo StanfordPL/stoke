@@ -37,9 +37,6 @@ auto& max_jumps = ValueArg<size_t>::create("max_jumps")
   .description("Maximum jumps before exit due to infinite loop")
   .default_val(1024);
 
-auto& rom = FlagArg::create("rom")
-	.description("Assume that memory is read only");
-
 auto& h4 = Heading::create("Measurement options:");
 
 auto& itr = ValueArg<size_t>::create("iterations")
@@ -52,8 +49,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   Sandbox sb;
-  sb.set_max_jumps(max_jumps)
-		.set_read_only_mem(rom);
+  sb.set_max_jumps(max_jumps);
 	for ( const auto& tc : testcases.value() ) {
 		sb.insert_input(tc);
 	}
