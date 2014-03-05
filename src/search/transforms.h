@@ -15,12 +15,19 @@ namespace stoke {
 
 class Transforms {
 	public:
-		Transforms() : old_instr_{x64asm::RET}, old_opcode_{x64asm::RET}, old_operand_{x64asm::rax} { }
+		Transforms() : old_instr_{x64asm::RET}, old_opcode_{x64asm::RET}, old_operand_{x64asm::rax} { 
+			set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true);
+			set_operand_pool({x64asm::RET}, false);
+		}
 
 		Transforms& set_seed(std::default_random_engine::result_type seed) {
 			gen_.seed(seed);
 			return *this;
 		}
+
+		Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t nop_percent, bool use_mem_read, 
+				bool use_mem_write);
+		Transforms& set_operand_pool(const x64asm::Code& target, bool use_callee_save);
 
 		bool modify(Cfg& cfg, Move type);
 		bool instruction_move(Cfg& cfg);
@@ -63,6 +70,9 @@ class Transforms {
 		x64asm::Type type(x64asm::Opcode o, size_t index) const {
 			return x64asm::Instruction(o).type(index);
 		}
+		bool is_lea_opcode(x64asm::Opcode o) const {
+			return o >= x64asm::LEA_R16_M16 && o <= x64asm::LEA_R64_M64; 
+		}
 		bool is_mem_opcode(x64asm::Opcode o) const {
   		return x64asm::Instruction(o).derefs_mem();
 		}
@@ -76,7 +86,8 @@ class Transforms {
 			return x64asm::Instruction{o}.is_jump() || x64asm::Instruction{o}.is_label_defn() || 
 				x64asm::Instruction{o}.is_return();
 		}
-		bool is_enabled(x64asm::Opcode o, x64asm::FlagSet fs) const {
+		bool is_unsupported(x64asm::Opcode o) const;
+		bool is_enabled(x64asm::Opcode o, const x64asm::FlagSet& fs) const {
 			return x64asm::Instruction{o}.enabled(fs);
 		}
 		bool is_type_equiv(x64asm::Opcode o1, x64asm::Opcode o2) const;
@@ -117,10 +128,65 @@ class Transforms {
 			return equiv.empty() ? o : equiv[gen_() % equiv.size()];
 		}
 
+		template <typename T>
+		bool get(const std::vector<T>& pool, const x64asm::RegSet& rs, x64asm::Operand& o) {
+			std::vector<T> ts;
+			for ( const auto& t : pool ) {
+				if ( rs.contains(t) ) {
+					ts.push_back(t);
+				}
+			}
+			if ( ts.empty() ) {
+				return false;
+			}
+			o = ts[gen_() % ts.size()];
+			return true;
+		}
+		bool get_rl(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::Rl>(rl_pool_, rs, o);
+		}
+		bool get_rh(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::Rh>(rh_pool_, rs, o);
+		}
+		bool get_rb(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::Rb>(rb_pool_, rs, o);
+		}
+		bool get_r16(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::R16>(r16_pool_, rs, o);
+		}
+		bool get_r32(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::R32>(r32_pool_, rs, o);
+		}
+		bool get_r64(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::R64>(r64_pool_, rs, o);
+		}
+		bool get_mm(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::Mm>(mm_pool_, rs, o);
+		}
+		bool get_sreg(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::Sreg>(sreg_pool_, rs, o);
+		}
+		bool get_st(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::St>(st_pool_, rs, o);
+		}
+		bool get_xmm(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::Xmm>(xmm_pool_, rs, o);
+		}
+		bool get_ymm(const x64asm::RegSet& rs, x64asm::Operand& o) {
+			return get<x64asm::Ymm>(ymm_pool_, rs, o);
+		}
+		void get_imm(x64asm::Operand& o) {
+			assert(!imm_pool_.empty());
+			o = imm_pool_[gen_() % imm_pool_.size()];
+		}
+		bool get_base(const x64asm::RegSet& rs, x64asm::M& m);
+		bool get_index(const x64asm::RegSet& rs, x64asm::M& m);
+		bool get_m(const x64asm::RegSet& rs, x64asm::Opcode c, x64asm::Operand& o);		
+
 		bool get_write_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs, 
-				x64asm::Operand& op) const;
+				x64asm::Operand& op);
 		bool get_read_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs, 
-				x64asm::Operand& op) const;
+				x64asm::Operand& op);
 
 		void move(x64asm::Code& code, size_t i, size_t j) const;
 

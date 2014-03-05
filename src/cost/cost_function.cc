@@ -15,7 +15,7 @@ using namespace x64asm;
 namespace {
 
 array<stoke::Cost, 3976> latencies_ {{
-	#include "src/cost/haswell_latency.h"
+	#include "src/cost/tables/haswell_latency.h"
 }};
 
 } // namespace

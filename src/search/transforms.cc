@@ -1,9 +1,121 @@
+#include <set>
+
 #include "src/search/transforms.h"
 
 using namespace std;
 using namespace x64asm;
 
+namespace {
+
+set<Opcode> unsupported_ {{
+	#include "src/search/tables/sigfpe.h"
+	#include "src/search/tables/bugs.h"
+	#include "src/search/tables/cant_model.h"
+}};
+
+} // namespace
+
 namespace stoke {
+
+Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent, bool use_mem_read, 
+		bool use_mem_write) {
+	control_free_.clear();
+	for ( auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i ) {
+		auto op = (Opcode)i;
+		if ( is_control_opcode(op) || is_unsupported(op) || !is_enabled(op, flags) ) {
+      continue;
+		} else if ( !use_mem_read && !use_mem_write && is_mem_opcode(op) ) {
+      continue;
+		} else if ( use_mem_read && is_mem_opcode(op) && !is_mem_read_only_opcode(op) ) {
+      continue;
+		} else {
+			control_free_.push_back(op);
+		}
+	}
+
+	control_free_or_nop_ = control_free_;
+	for ( size_t i = 0, ie = (nop_percent / 100) * control_free_.size(); i < ie; ++i ) {
+		control_free_or_nop_.push_back(NOP);
+	}
+
+	control_free_type_equiv_.clear();
+	control_free_type_equiv_.resize((int)XSAVEOPT64_M64 + 1);
+	for ( const auto i : control_free_ ) {
+		for ( const auto j : control_free_ ) {
+			if ( is_type_equiv(i, j) ) {
+				control_free_type_equiv_[i].push_back(j);
+			}
+		}
+	}
+
+	return *this;
+}
+
+Transforms& Transforms::set_operand_pool(const Code& target, bool use_callee_save) {
+	rl_pool_.clear();
+	for ( const auto& r : rls ) {
+		if ( use_callee_save || !is_callee_save(r) ) {
+			rl_pool_.push_back(r);
+		}
+	}
+	rh_pool_.clear();
+	for ( const auto& r : rhs ) {
+		if ( use_callee_save || !is_callee_save(r) ) {
+			rh_pool_.push_back(r);
+		}
+	}
+	rb_pool_.clear();
+	for ( const auto& r : rbs ) {
+		if ( use_callee_save || !is_callee_save(r) ) {
+			rb_pool_.push_back(r);
+		}
+	}
+	r16_pool_.clear();
+	for ( const auto& r : r16s ) {
+		if ( use_callee_save || !is_callee_save(r) ) {
+			r16_pool_.push_back(r);
+		}
+	}
+	r32_pool_.clear();
+	for ( const auto& r : r32s ) {
+		if ( use_callee_save || !is_callee_save(r) ) {
+			r32_pool_.push_back(r);
+		}
+	}
+	r64_pool_.clear();
+	for ( const auto& r : r64s ) {
+		if ( use_callee_save || !is_callee_save(r) ) {
+			r64_pool_.push_back(r);
+		}
+	}
+	mm_pool_.assign(mms.begin(), mms.end());
+	sreg_pool_.assign(sregs.begin(), sregs.end());
+	st_pool_.assign(sts.begin(), sts.end());
+	xmm_pool_.assign(xmms.begin(),xmms.end());
+	ymm_pool_.assign(ymms.begin(),ymms.end());
+
+	imm_pool_.assign({
+	  0ul,1ul,-1ul,2ul,-2ul,3ul,-3ul,4ul,-4ul,5ul,-5ul,6ul,-6ul,7ul,-7ul,8ul,-8ul,
+		16ul,-16ul,32ul,-32ul,64ul,-64ul,128ul,-128ul
+	});
+
+  m_pool_.clear();
+  for ( const auto& instr : target ) {
+    if ( instr.derefs_mem() ) {
+      const auto& ref = instr.get_operand<M8>(instr.mem_index());
+      if ( !use_callee_save && ref.contains_base() && is_callee_save(ref.get_base()) ) {
+        continue;
+			} else if ( !use_callee_save && ref.contains_index() && is_callee_save(ref.get_index()) ) {
+        continue;
+			} else if ( find(m_pool_.begin(), m_pool_.end(), ref) != m_pool_.end() ) {
+        continue;
+			}
+      m_pool_.push_back(ref);
+    }
+	}
+
+	return *this;
+}
 
 bool Transforms::modify(Cfg& cfg, Move type) {
 	switch ( type ) {
@@ -263,7 +375,7 @@ void Transforms::undo(Cfg& cfg, Move type) {
 	}
 }
 
-bool Transforms::is_rh_opcode(x64asm::Opcode o) const {
+bool Transforms::is_rh_opcode(Opcode o) const {
   for ( size_t i = 0, ie = arity(o); i < ie; ++i ) {
     if ( type(o, i) == Type::RH ) {
       return true;
@@ -272,7 +384,7 @@ bool Transforms::is_rh_opcode(x64asm::Opcode o) const {
   return false;
 }
 
-bool Transforms::is_type_equiv(x64asm::Opcode o1, x64asm::Opcode o2) const {
+bool Transforms::is_type_equiv(Opcode o1, Opcode o2) const {
 	if ( arity(o1) != arity(o2) ) {
 		return false;
 	}
@@ -284,17 +396,219 @@ bool Transforms::is_type_equiv(x64asm::Opcode o1, x64asm::Opcode o2) const {
 	return true;
 }
 
-bool Transforms::get_write_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs, 
-		x64asm::Operand& op) const {
-	return false;
+bool Transforms::is_unsupported(Opcode o) const {
+	if ( is_rh_opcode(o) ) {
+		return true;
+	}
+	return unsupported_.find(o) != unsupported_.end();
+};
+
+bool Transforms::get_base(const RegSet& rs, M& m) {
+  if ( gen_() % 2 ) {
+    m.clear_base();
+	} else {
+    auto r = rax;
+    if ( get_r64(rs, r) ) {
+      m.set_base(r);
+		} else {
+      return false;
+		}
+  }
+  return true;
 }
 
-bool Transforms::get_read_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs, 
-		x64asm::Operand& op) const {
-	return false;
+bool Transforms::get_index(const RegSet& rs, M& m) {
+  if ( gen_() % 2 ) {
+		m.clear_index();
+	} else {
+		auto r = rax;
+		if ( get_r64(rs, r) ) {
+			m.set_index(r);
+			return m.get_index() != rsp;
+		} else {
+			return false;
+		}
+	}
+	return true;
 }
 
-void Transforms::move(x64asm::Code& code, size_t i, size_t j) const {
+bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
+	if ( is_lea_opcode(c) ) {
+		auto m = *((M8*)(&o));
+		m.set_rip_offset(false);
+		m.clear_seg();
+		m.set_scale((Scale)(gen_() % 4));
+		m.set_disp((Imm32)(imm_pool_[gen_() % imm_pool_.size()]));
+
+		if ( !get_base(rs, m) ) {
+			return false;
+		}
+		if ( !get_index(rs, m) ) {
+			return false;
+		}
+		o = m;
+		return true;
+	} else {
+    if ( m_pool_.empty() ) {
+      return false;
+		}
+    const auto& m = m_pool_[gen_() % m_pool_.size()];
+    if ( m.contains_base() && !rs.contains(m.get_base()) ) {
+      return false;
+		} 
+		if ( m.contains_index() && !rs.contains(m.get_index()) ) {
+      return false;
+		}
+    o = m;
+    return true;
+	}
+}
+
+bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, 
+		Operand& op) {
+	switch ( type(o, idx) ) {
+		case Type::M_8:
+		case Type::M_16:
+		case Type::M_32:
+		case Type::M_64:
+		case Type::M_128:
+		case Type::M_256:
+		case Type::M_16_INT:
+		case Type::M_32_INT:
+		case Type::M_64_INT:
+		case Type::M_32_FP:
+		case Type::M_64_FP:
+		case Type::M_80_FP:
+		case Type::M_80_BCD:
+		case Type::M_2_BYTE:
+		case Type::M_28_BYTE:
+		case Type::M_108_BYTE:
+		case Type::M_512_BYTE:
+		case Type::FAR_PTR_16_16:
+		case Type::FAR_PTR_16_32:
+		case Type::FAR_PTR_16_64: return get_m(rs, o, op);
+
+		case Type::MM: op = mm_pool_[gen_() % mm_pool_.size()]; return true;
+
+		case Type::MOFFS_8:
+		case Type::MOFFS_16:
+		case Type::MOFFS_32:
+		case Type::MOFFS_64: return false;
+
+		case Type::RL: op = rl_pool_[gen_() % rl_pool_.size()]; return true;
+		case Type::RH: op = rh_pool_[gen_() % rh_pool_.size()]; return true;
+		case Type::RB: op = rb_pool_[gen_() % rb_pool_.size()]; return true;
+		case Type::AL: op = al; return true;
+		case Type::CL: op = cl; return true;
+		case Type::R_16: op = r16_pool_[gen_() % r16_pool_.size()]; return true;
+		case Type::AX: op = ax; return true;
+		case Type::DX: op = dx; return true;
+		case Type::R_32: op = r32_pool_[gen_() % r32_pool_.size()]; return true;
+		case Type::EAX: op = eax; return true;
+		case Type::R_64: op = r64_pool_[gen_() % r64_pool_.size()]; return true;
+		case Type::RAX: op = rax; return true;
+
+		case Type::REL_8:
+		case Type::REL_32: return false;
+
+		case Type::SREG: op = sreg_pool_[gen_() % sreg_pool_.size()]; return true;
+		case Type::FS: op = fs; return true;
+		case Type::GS: op = gs; return true;
+
+		case Type::ST: op = st_pool_[gen_() % st_pool_.size()]; return true;
+		case Type::ST_0: op = st0; return true;
+
+		case Type::XMM: op = xmm_pool_[gen_() % xmm_pool_.size()]; return true;
+		case Type::XMM_0: op = xmm0; return true;
+
+		case Type::YMM: op = ymm_pool_[gen_() % ymm_pool_.size()]; return true;
+
+		default:
+			assert(false); return false;;
+	}
+}
+
+bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, 
+		Operand& op) {
+	switch ( type(o, idx) ) {
+		case Type::HINT: op = gen_() % 2 ? taken : not_taken; return true;
+
+		case Type::IMM_8: get_imm(op); return true;
+		case Type::IMM_16: get_imm(op); return true;
+		case Type::IMM_32: get_imm(op); return true;
+		case Type::IMM_64: get_imm(op); return true;
+		case Type::ZERO: op = zero; return true;
+		case Type::ONE: op = one; return true;
+		case Type::THREE: op = three; return true;
+
+		case Type::LABEL: return false;
+
+		case Type::M_8:
+		case Type::M_16:
+		case Type::M_32:
+		case Type::M_64:
+		case Type::M_128:
+		case Type::M_256:
+		case Type::M_16_INT:
+		case Type::M_32_INT:
+		case Type::M_64_INT:
+		case Type::M_32_FP:
+		case Type::M_64_FP:
+		case Type::M_80_FP:
+		case Type::M_80_BCD:
+		case Type::M_2_BYTE:
+		case Type::M_28_BYTE:
+		case Type::M_108_BYTE:
+		case Type::M_512_BYTE:
+		case Type::FAR_PTR_16_16:
+		case Type::FAR_PTR_16_32:
+		case Type::FAR_PTR_16_64: return get_m(rs, o, op);
+
+		case Type::MM: return get_mm(rs, op);
+
+		case Type::PREF_66: op = pref_66; return true;
+		case Type::PREF_REX_W: op = pref_rex_w; return true;
+		case Type::FAR: op = far; return true;
+
+		case Type::MOFFS_8:
+		case Type::MOFFS_16:
+		case Type::MOFFS_32:
+		case Type::MOFFS_64: return false;
+
+		case Type::RL: return get_rl(rs, op);
+		case Type::RH: return get_rh(rs, op);
+		case Type::RB: return get_rb(rs, op);
+		case Type::AL: op = al; return rs.contains(al);
+		case Type::CL: op = cl; return rs.contains(cl);
+		case Type::R_16: return get_r16(rs, op);
+		case Type::AX: op = ax; return rs.contains(ax);
+		case Type::DX: op = dx; return rs.contains(dx);
+		case Type::R_32: return get_r32(rs, op);
+		case Type::EAX: op = eax; return rs.contains(eax);
+		case Type::R_64: return get_r64(rs, op);
+		case Type::RAX: op = rax; return rs.contains(rax);
+
+		case Type::REL_8:
+		case Type::REL_32: return false;
+
+		case Type::SREG: return get_sreg(rs, op);
+		case Type::FS: op = fs; return rs.contains(fs);
+		case Type::GS: op = gs; return rs.contains(gs);
+
+		case Type::ST: return get_st(rs, op);
+		case Type::ST_0: op = st0; return rs.contains(st0);
+
+		case Type::XMM: return get_xmm(rs, op);
+		case Type::XMM_0: op = xmm0; return rs.contains(xmm0);
+
+		case Type::YMM: return get_ymm(rs, op);
+
+		default:
+			assert(false); return false;;
+	}
+}
+
+void Transforms::move(Code& code, size_t i, size_t j) const {
 	const auto temp = code[i];
 	if ( i < j ) {
 		for(size_t k = i; k < j; ++k) {

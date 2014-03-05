@@ -1,0 +1,23 @@
+// Instructions that case raise SIGFPE 
+
+  DIV_M16
+, DIV_M32
+, DIV_M64
+, DIV_M8 
+, DIV_R16
+, DIV_R32
+, DIV_R64
+, DIV_RB
+, DIV_RH
+, DIV_RL
+, IDIV_M16 
+, IDIV_M32 
+, IDIV_M64 
+, IDIV_M8 
+, IDIV_R16 
+, IDIV_R32 
+, IDIV_R64 
+, IDIV_RB 
+, IDIV_RH 
+, IDIV_RL 
+,
