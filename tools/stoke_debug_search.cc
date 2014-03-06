@@ -76,9 +76,27 @@ int main(int argc, char** argv) {
 		.set_opcode_pool(flags, nop_percent, mem_read, mem_write)
 		.set_operand_pool(target, callee_save);
 
+	ofilterstream<Column> os(cout);
+	os.filter().padding(3);
+	
+	os << "Original Code:" << endl;
+	os << endl;
+	os << cfg.get_code() << endl;
+	os.filter().next();
+
 	transforms.modify(cfg, ::move);
 
+	os << "After Transform:" << endl;
+	os << endl;
+	os << cfg.get_code() << endl;
+	os.filter().next();
+
 	transforms.undo(cfg, ::move);
+
+	os << "After Undo:" << endl;
+	os << endl;
+	os << cfg.get_code() << endl;
+	os.filter().done();
 
 	return 0;
 }
