@@ -56,12 +56,15 @@ then
 	elif [ "$SCMD" == "sandbox" ]
 	then
 		$HERE/stoke_debug_sandbox $@
+	elif [ "$SCMD" == "search" ]
+	then
+		$HERE/stoke_debug_search $@
 	elif [ "$SCMD" == "verify" ]
 	then
 		$HERE/stoke_debug_verify $@
 	else
 		echo "Unknown command: '"$SCMD"'"
-		echo "Type 'stoke_debug --help' for usage."
+		echo "Type 'stoke --help' for usage."
 		exit 1
 	fi
 elif [ "$SCMD" == "benchmark" ]
@@ -71,9 +74,21 @@ then
   if [ "$SCMD" == "cfg" ]
   then
  	  $HERE/stoke_benchmark_cfg $@
+	elif [ "$SCMD" == "cost" ]
+	then
+		$HERE/stoke_benchmark_cost $@
+	elif [ "$SCMD" == "sandbox" ]
+	then
+		$HERE/stoke_benchmark_sandbox $@
+	elif [ "$SCMD" == "search" ]
+	then
+		$HERE/stoke_benchmark_search $@
+	elif [ "$SCMD" == "verify" ]
+	then
+		$HERE/stoke_benchmark_verify $@
   else
  	  echo "Unknown command: '"$SCMD"'"
-    echo "Type 'stoke_debug --help' for usage."
+    echo "Type 'stoke --help' for usage."
     exit 1
   fi
 elif [ "$SCMD" == "extract" ]

@@ -15,6 +15,8 @@ LIB=\
 OBJ=\
 	src/args/code.o \
 	src/args/distance.o \
+	src/args/flag_set.o \
+	src/args/move.o \
 	src/args/reduction.o \
 	src/args/reg_set.o \
 	src/args/performance_term.o \

@@ -143,7 +143,6 @@ int main(int argc, char** argv) {
 
 	Sandbox sb;
 	sb.set_max_jumps(max_jumps);
-
 	for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i ) {
 		if (indices.value().find(i) != indices.value().end()) {
 			sb.insert_input(testcases.value()[i]);
