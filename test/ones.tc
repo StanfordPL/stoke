@@ -1,0 +1,41 @@
+Testcase 0:
+
+%rax     ff ff ff ff ff ff ff ff      
+%rcx     ff ff ff ff ff ff ff ff      
+%rdx     ff ff ff ff ff ff ff ff      
+%rbx     ff ff ff ff ff ff ff ff      
+%rsp     ff ff ff ff ff ff ff ff      
+%rbp     ff ff ff ff ff ff ff ff      
+%rsi     ff ff ff ff ff ff ff ff      
+%rdi     ff ff ff ff ff ff ff ff      
+%r8      ff ff ff ff ff ff ff ff      
+%r9      ff ff ff ff ff ff ff ff      
+%r10     ff ff ff ff ff ff ff ff      
+%r11     ff ff ff ff ff ff ff ff      
+%r12     ff ff ff ff ff ff ff ff      
+%r13     ff ff ff ff ff ff ff ff      
+%r14     ff ff ff ff ff ff ff ff      
+%r15     ff ff ff ff ff ff ff ff      
+
+%ymm0    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm1    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm2    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm3    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm4    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm5    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm6    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm7    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm8    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm9    ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm10   ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm11   ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm12   ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm13   ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm14   ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+%ymm15   ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff    
+
+[ 00000000 00000000 - 00000000 00000000 ]
+[ 0 valid rows shown ]
+
+[ 00000000 00000000 - 00000000 00000000 ]
+[ 0 valid rows shown ]
