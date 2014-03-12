@@ -45,6 +45,7 @@ BIN= \
 	bin/stoke_benchmark_cost \
 	bin/stoke_benchmark_sandbox \
 	bin/stoke_benchmark_search \
+	bin/stoke_benchmark_state \
 	bin/stoke_benchmark_verify \
 	\
 	bin/stoke_debug_cfg \
