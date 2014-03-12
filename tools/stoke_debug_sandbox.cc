@@ -127,16 +127,10 @@ int main(int argc, char** argv) {
   sb.run({target, RegSet::empty(), RegSet::empty()});
 
   const auto result = *(sb.result_begin());
-  if (result.code != ErrorCode::NORMAL) {
-    cout << "Function exited abnormally with error code: ";
-    cout << (int)result.code << endl;
-  } else {
-    cout << "Function exited normally with Final CPU State: " << endl;
-    cout << endl;
-    cout << result;
-    cout << endl;
-  }
-  cout << endl;
+	cout << "Error Code: " << (int)result.code << endl;
+	cout << endl;
+	cout << result << endl;
+	cout << endl;
 
   return 0;
 }
