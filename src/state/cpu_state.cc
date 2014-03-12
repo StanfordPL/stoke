@@ -19,10 +19,6 @@ istream& CpuState::read(istream& is) {
 	getline(is, ignore);
 	getline(is, ignore);
 
-	if ( !is.good() ) {
-		cout << "trouble reading regs!" << endl;
-	}
-
 	stack.read(is);
 	getline(is, ignore);
 	getline(is, ignore);

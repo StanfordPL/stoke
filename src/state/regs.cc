@@ -18,7 +18,6 @@ istream& Regs::read(istream& is) {
   for (auto& r : contents_) {
  		string name;
     is >> name;
-
 		while ( isspace(is.peek()) ) {
 			is.get();
 		}

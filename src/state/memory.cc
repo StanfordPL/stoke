@@ -8,12 +8,14 @@ using namespace std;
 namespace stoke {
 
 void Memory::copy_defined(const Memory& rhs) {
-  // We only need to worry about bytes that are valid. We'll iterate in the largest
-  // atomic step size that we can since it doesn't hurt to copy more than we need to.
+	assert(base_ == rhs.base_);
+	assert(size() == rhs.size());
+
+	// Copying invalid bits doesn't hurt so we'll use the largest atomic copy we can.
+	// We don't have to worry about non-valid bytes since we never touch them.
   for (auto i = rhs.valid_.set_quad_index_begin(), ie = rhs.valid_.set_quad_index_end(); i != ie; ++i) {
     def_.get_fixed_quad(*i) = rhs.def_.get_fixed_quad(*i);
   }
-
   // Now we'll copy the actual bytes. One byte of mask corresponds to one quad of data.
   for (auto i = def_.set_byte_index_begin(), ie = def_.set_byte_index_end(); i != ie; ++i) {
     contents_.get_fixed_quad(*i) = rhs.contents_.get_fixed_quad(*i);
@@ -54,7 +56,8 @@ void Memory::read_row(istream& is) {
   	HexReader<uint8_t, 2>()(is, val);
 		is.get();
 
-    (*this)[addr + j] = val;
+		// Memory isn't flagged valid yet, have to set this directly
+		contents_.get_fixed_byte(addr-base_+j) = val;
   }
 
 	is.get();
@@ -62,6 +65,7 @@ void Memory::read_row(istream& is) {
 
   for (int j = 7; j >= 0; --j) {
     is >> s;
+
     set_valid(addr + j, s == "v" || s == "d");
     set_defined(addr + j, s == "d");
   }

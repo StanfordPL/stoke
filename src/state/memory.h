@@ -56,15 +56,15 @@ class Memory {
   /** Copy defined state from another memory. */
   void copy_defined(const Memory& rhs);
 
-  /** Element access */
-  uint8_t& operator[](size_t i) {
-    assert(in_range(i));
-    return contents_.get_fixed_byte(i - base_);
+  /** Element access; undefined for invalid bytes */
+  uint8_t& operator[](size_t addr) {
+    assert(is_valid(addr));
+    return contents_.get_fixed_byte(addr - base_);
   }
-  /** Element access */
-  uint8_t operator[](size_t i) const {
-    assert(in_range(i));
-    return contents_.get_fixed_byte(i - base_);
+  /** Element access; undefined for invalid bytes */
+  uint8_t operator[](size_t addr) const {
+    assert(is_valid(addr));
+    return contents_.get_fixed_byte(addr - base_);
   }
 
   /** Pointer to underlying data. */
@@ -82,6 +82,7 @@ class Memory {
 
   /** Returns true if a byte is valid. */
   bool is_valid(uint64_t addr) const {
+		assert(in_range(addr));
     return valid_[addr - base_];
   }
   /** Sets this byte as valid. */
@@ -90,13 +91,14 @@ class Memory {
     valid_[addr - base_] = v;
     return *this;
   }
-  /** Returns true if a byte is defined. */
+  /** Returns true if a byte is defined; undefined for invalid bytes */
   bool is_defined(uint64_t addr) const {
+		assert(is_valid(addr));
     return def_[addr - base_];
   }
-  /** Sets this byte as defined. Does NOT set valid bit! */
+  /** Sets this byte as defined; undefined for invalid bytes */
   Memory& set_defined(uint64_t addr, bool d) {
-    assert(in_range(addr));
+    assert(is_valid(addr));
     def_[addr - base_] = d;
     return *this;
   }

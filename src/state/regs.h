@@ -61,6 +61,7 @@ class Regs {
   std::ostream& write(std::ostream& os, const char** names, size_t padding) const;
 
  private:
+	/** Register contents. */
   std::vector<cpputil::BitVector> contents_;
 
   /** Write register names */

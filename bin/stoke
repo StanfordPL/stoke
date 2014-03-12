@@ -7,7 +7,7 @@ pushd `dirname $0` > /dev/null
 HERE=`pwd`
 popd > /dev/null
 
-if [ `ls -1 $HERE | wc -l` -ne "14" ]
+if [ `ls -1 $HERE | wc -l` -ne "15" ]
 then
 	echo "Fatal Error: Failed to locate one or more STOKE components!"
 	exit 1
@@ -35,6 +35,7 @@ then
 	echo "  debug cost          evaluate a function using a STOKE cost function"
 	echo "  debug sandbox       execute a function"
 	echo "  debug search        perform a transformation"
+	echo "  debug state         check bit operations"
 	echo "  debug verify        check the equivalence of two functions"
 	echo ""
 	echo "  benchmark cfg       benchmark cfg kernel"
@@ -56,6 +57,9 @@ then
 	elif [ "$SCMD" == "sandbox" ]
 	then
 		$HERE/stoke_debug_sandbox $@
+	elif [ "$SCMD" == "state" ]
+	then
+		$HERE/stoke_debug_state $@
 	elif [ "$SCMD" == "search" ]
 	then
 		$HERE/stoke_debug_search $@

@@ -51,6 +51,7 @@ BIN= \
 	bin/stoke_debug_cost \
 	bin/stoke_debug_sandbox \
 	bin/stoke_debug_search \
+	bin/stoke_debug_state \
 	bin/stoke_debug_verify \
 	\
 	bin/stoke_extract \
