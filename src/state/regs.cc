@@ -1,3 +1,5 @@
+#include <cctype>
+
 #include <string>
 
 #include "src/ext/cpputil/include/io/column.h"
@@ -14,10 +16,16 @@ namespace stoke {
 
 istream& Regs::read(istream& is) {
   for (auto& r : contents_) {
-    string ignore;
-    is >> ignore;
+ 		string name;
+    is >> name;
+
+		while ( isspace(is.peek()) ) {
+			is.get();
+		}
+
     for (auto i = r.fixed_quad_begin(), ie = r.fixed_quad_end(); i != ie; ++i) {
       HexReader<uint64_t, 2>()(is, *i);
+			is.get();
     }
   }
 
@@ -30,6 +38,7 @@ ostream& Regs::write(ostream& os, const char** names, size_t padding) const {
 
   write_regs(fs, names);
   fs.filter().next();
+
   write_vals(fs);
   fs.filter().done();
 
@@ -39,15 +48,22 @@ ostream& Regs::write(ostream& os, const char** names, size_t padding) const {
 void Regs::write_regs(std::ostream& os, const char** names) const {
   for (size_t i = 0, ie = size(); i < ie; ++i) {
     os << *(names + i);
+	 	if ( i+1 != ie ) {
+			os << endl;
+		}
   }
 }
 
 void Regs::write_vals(std::ostream& os) const {
-  for (const auto& r : contents_) {
-    for (auto i = r.fixed_quad_begin(), ie = r.fixed_quad_end(); i != ie; ++i) {
-      cpputil::HexWriter<uint64_t, 2>()(os, *i);
+	for ( size_t i = 0, ie = contents_.size(); i < ie; ++i ) {
+		const auto& r = contents_[i];
+    for (auto j = r.fixed_quad_begin(), je = r.fixed_quad_end(); j != je; ++j) {
+      cpputil::HexWriter<uint64_t, 2>()(os, *j);
       os << " ";
     }
+		if ( i+1 != ie ) {
+			os << endl;
+		}
   }
 }
 

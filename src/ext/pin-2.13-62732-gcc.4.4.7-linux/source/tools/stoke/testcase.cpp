@@ -195,8 +195,9 @@ VOID end_tc() {
     stack_max = max(stack_max, addr);
   }
 
-  tc.stack.set_base(stack_valid.empty() ? 0 : stack_min);
-  tc.stack.resize(stack_valid.empty() ? 0 : stack_max - stack_min);
+	const auto stack_base = stack_valid.empty() ? 0 : stack_min;
+	const auto stack_size = stack_valid.empty() ? 0 : stack_max - stack_min + 1;
+	tc.stack.resize(stack_base, stack_size);
 
   for (const auto addr : stack_valid) {
     tc.stack.set_valid(addr, true);
@@ -213,8 +214,9 @@ VOID end_tc() {
     heap_max = max(heap_max, addr);
   }
 
-  tc.heap.set_base(heap_valid.empty() ? 0 : heap_min);
-  tc.heap.resize(heap_valid.empty() ? 0 : heap_max - heap_min);
+	const auto heap_base = heap_valid.empty() ? 0 : heap_min;
+	const auto heap_size = heap_valid.empty() ? 0 : heap_max - heap_min + 1;
+	tc.heap.resize(heap_base, heap_size);
 
   for (const auto addr : heap_valid) {
     tc.heap.set_valid(addr, true);
@@ -226,9 +228,12 @@ VOID end_tc() {
 
   static size_t id = 0;
   (*os_) << "Testcase " << id++ << ":" << endl;
-  (*os_) << endl;
-  (*os_) << tc << endl;
-  (*os_) << endl;
+ 	(*os_) << endl;
+ 	(*os_) << tc;
+	if ( tc_remaining_ != 1 ) {
+		(*os_) << endl;
+		(*os_) << endl;
+	}
 
   tcs_.pop();
   heap_valids_.pop();

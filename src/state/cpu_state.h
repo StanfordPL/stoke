@@ -9,16 +9,15 @@
 
 namespace stoke {
 
-/** A datastructure representation of a hardware CPU state. */
 struct CpuState {
   /** Returns a new CpuState. */
   CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) :
     gp(16, 64), sse(16, 256) {
-    stack.set_base(0).resize(stack_size);
-    heap.set_base(base).resize(heap_size);
+    stack.resize(0, stack_size);
+    heap.resize(base, heap_size);
   }
 
-  /** Bit-wise operation in terms of components. */
+  /** Bit-wise xor; ignores error code. */
   CpuState& operator^=(const CpuState& rhs) {
     gp ^= rhs.gp;
     sse ^= rhs.sse;
@@ -27,34 +26,24 @@ struct CpuState {
 
     return *this;
   }
-
-  /** Bit-wise operation in terms of components. */
+  /** Bit-wise xor; ignores error code. */
   CpuState operator^(const CpuState& rhs) const {
     auto ret = *this;
     return ret ^= rhs;
   }
 
-  /** Comparison based on components. */
+  /** Equality. */
   bool operator==(const CpuState& rhs) const {
     return code == rhs.code && gp == rhs.gp && sse == rhs.sse &&
            stack == rhs.stack && heap == rhs.heap;
   }
-  /** Comparison based on components. */
+  /** Inequality. */
   bool operator!=(const CpuState& rhs) const {
     return !(*this == rhs);
   }
 
   /** I/O. */
-  std::istream& read(std::istream& is) {
-    code = ErrorCode::NORMAL;
-    gp.read(is);
-    sse.read(is);
-    stack.read(is);
-    heap.read(is);
-
-    return is;
-  }
-
+  std::istream& read(std::istream& is);
   /** I/O. */
   std::ostream& write(std::ostream& os) const;
 

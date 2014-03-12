@@ -33,15 +33,6 @@ class Regs {
     return contents_[i];
   }
 
-  /** Equality. */
-  bool operator==(const Regs& rhs) const {
-    return contents_ == rhs.contents_;
-  }
-  /** Inequality. */
-  bool operator!=(const Regs& rhs) const {
-    return contents_ != rhs.contents_;
-  }
-
   /** Bit-wise xor */
   Regs& operator^=(const Regs& rhs) {
     for (size_t i = 0, ie = size(); i < ie; ++i) {
@@ -53,6 +44,15 @@ class Regs {
   Regs operator^(const Regs& rhs) {
     auto ret = *this;
     return ret ^= rhs;
+  }
+
+  /** Equality. */
+  bool operator==(const Regs& rhs) const {
+    return contents_ == rhs.contents_;
+  }
+  /** Inequality. */
+  bool operator!=(const Regs& rhs) const {
+    return contents_ != rhs.contents_;
   }
 
   /** I/O. */

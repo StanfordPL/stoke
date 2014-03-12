@@ -10,8 +10,7 @@ namespace stoke {
 void Memory::copy_defined(const Memory& rhs) {
   // We only need to worry about bytes that are valid. We'll iterate in the largest
   // atomic step size that we can since it doesn't hurt to copy more than we need to.
-  for (auto i = rhs.valid_.set_quad_index_begin(), ie = rhs.valid_.set_quad_index_end(); i != ie;
-       ++i) {
+  for (auto i = rhs.valid_.set_quad_index_begin(), ie = rhs.valid_.set_quad_index_end(); i != ie; ++i) {
     def_.get_fixed_quad(*i) = rhs.def_.get_fixed_quad(*i);
   }
 
@@ -21,60 +20,67 @@ void Memory::copy_defined(const Memory& rhs) {
   }
 }
 
-bool Memory::any_valid(uint64_t begin, uint64_t end) const {
-  for (; begin < end; ++begin) {
-    if (is_valid(begin)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-size_t Memory::valid_count() const {
-  size_t count = 0;
-  for (size_t i = lower_bound(), ie = upper_bound(); i < ie; i += 8) {
-    count += any_valid(i, i + 8) ? 1 : 0;
-  }
-  return count;
-}
-
 void Memory::read_summary(istream& is) {
-  is.seekg(2);
+  is.get();
+	is.get();
+
   uint64_t upper = 0;
   HexReader<uint64_t, 8>()(is, upper);
-  is.seekg(3);
+
+  is.get();
+	is.get();
+	is.get();
+
   uint64_t lower = 0;
   HexReader<uint64_t, 8>()(is, lower);
-  is.seekg(3);
 
-  set_base(lower);
-  resize(upper - lower - 0x20);
+	is.get();
+	is.get();
+
+  resize(lower, upper-lower);
 }
 
 void Memory::read_row(istream& is) {
-  uint64_t addr = 0;
   string s;
+  uint64_t addr = 0;
   HexReader<uint64_t, 8>()(is, addr);
+
+	is.get();
+	is.get();
+	is.get();
+
   for (int j = 7; j >= 0; --j) {
-    is >> contents_.get_fixed_byte(addr - base_ + j);
+		uint8_t val = 0;
+  	HexReader<uint8_t, 2>()(is, val);
+		is.get();
+
+    (*this)[addr + j] = val;
   }
+
+	is.get();
+	is.get();
+
   for (int j = 7; j >= 0; --j) {
     is >> s;
-    set_valid(addr - base_ + j, s == "v" || s == "d");
-    set_defined(addr - base_ + j, s == "d");
+    set_valid(addr + j, s == "v" || s == "d");
+    set_defined(addr + j, s == "d");
   }
-  getline(is, s);
 }
 
 void Memory::read_contents(istream& is) {
   string s;
-  size_t rows = 0;
-
   getline(is, s, '[');
+
+  size_t rows = 0;
   is >> rows;
-  getline(is, s);
-  getline(is, s);
-  for (size_t i = 0; i < rows; ++i) {
+
+	getline(is, s, ']');
+
+	if ( rows != 0 ) {
+		getline(is, s);
+	}
+	for (size_t i = 0; i < rows; ++i) {
+  	getline(is, s);
     read_row(is);
   }
 }
@@ -84,7 +90,7 @@ void Memory::write_summary(ostream& os) const {
   HexWriter<uint64_t, 8>()(os, upper_bound());
   os << " - ";
   HexWriter<uint64_t, 8>()(os, lower_bound());
-  os << " ]" << endl;
+  os << " ]";
 }
 
 void Memory::write_row(ostream& os, uint64_t i) const {
@@ -98,15 +104,18 @@ void Memory::write_row(ostream& os, uint64_t i) const {
 }
 
 void Memory::write_contents(ostream& os) const {
-  os << "[ " << valid_count() << " valid rows shown ]" << endl << endl;
+	const auto vc = valid_count();
+
+  os << "[ " << vc << " valid rows shown ]";
+	if ( vc != 0 ) {
+		os << endl;
+	}
   for (uint64_t i = upper_bound(), ie = lower_bound(); i > ie; i -= 8) {
-    if (!any_valid(i - 8, i)) {
+    if (!valid_row(i - 8)) {
       continue;
     }
+		os << endl;
     write_row(os, i - 8);
-    if (i - 8 != ie) {
-      os << endl;
-    }
   }
 }
 

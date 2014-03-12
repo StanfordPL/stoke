@@ -1,39 +1,47 @@
-PIN_INC= \
+PIN_INC=\
 	-I../../../../../.. \
-	-I../../../../../../src/ext/cpputil \
+	-I../../../../../ext/cpputil \
 	-I../../../source/include/pin \
 	-I../../../source/include/pin/gen \
 	-I../../../extras/components/include \
 	-I../../../extras/xed2-intel64/include \
 	-I../../../source/tools/InstLib 
 	
-PIN_DEF= \
+PIN_DEF=\
 	-DBIGARRAY_MULTIPLIER=1 \
 	-DUSING_XED \
 	-DTARGET_IA32E \
 	-DHOST_IA32E \
 	-DTARGET_LINUX  
 
-PIN_CC=g++ -std=c++11 -fPIC -mavx -mavx2
+PIN_CC=g++ -std=c++11 -fPIC -mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 
 PIN_OPT=-O3
 
-PIN_WARN= \
+PIN_WARN=\
 	-Wall \
 	-Werror \
 	-Wno-unknown-pragmas 
+
+PIN_COMPILE=$(PIN_CC) $(PIN_WARN) $(PIN_OPT) $(PIN_DEF) $(PIN_INC)
 
 PIN_OBJ=\
  	-L../../../intel64/lib \
 	-L../../../intel64/lib-ext \
 	-L../../../intel64/runtime/glibc \
 	-L../../../extras/xed2-intel64/lib \
+	obj-intel64/cpu_state.o \
+	obj-intel64/memory.o \
+	obj-intel64/regs.o \
 	obj-intel64/testcase.o \
 	-lpin -lxed -ldwarf -lelf -ldl
 
 all:
 	mkdir -p obj-intel64 && \
-	$(PIN_CC) $(PIN_WARN) $(PIN_OPT) $(PIN_DEF) $(PIN_INC) -c testcase.cpp -o obj-intel64/testcase.o && \
+	$(PIN_COMPILE) -c testcase.cpp -o obj-intel64/testcase.o && \
+	$(PIN_COMPILE) -c ../../../../../state/cpu_state.cc -o obj-intel64/cpu_state.o && \
+	$(PIN_COMPILE) -c ../../../../../state/memory.cc -o obj-intel64/memory.o && \
+	$(PIN_COMPILE) -c ../../../../../state/regs.cc -o obj-intel64/regs.o && \
 	$(PIN_CC) -shared -Wl,--hash-style=sysv -Wl,-Bsymbolic -Wl,--version-script=../../../source/include/pin/pintool.ver -o obj-intel64/testcase.so $(PIN_OBJ)
 	
 clean:

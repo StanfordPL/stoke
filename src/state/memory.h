@@ -14,39 +14,41 @@ class Memory {
  public:
   /** Creates an empty memory. */
   Memory() {
-    set_base(0);
-    resize(0);
+    resize(0, 0);
   }
 
-  /** Sets the virtual address base. Rounds down to 256-bit align. */
-  Memory& set_base(uint64_t base) {
-    base_ = (base / 32) * 32;
-    return *this;
-  }
-  /** Sets the virtual address size in bytes. Pads with with 256-bits headroom, rounds to 256-bit align. */
-  Memory& resize(size_t size) {
-    const auto padded_size = ((size + 0x5f) / 32) * 32;
-
-    contents_.resize_for_fixed_bytes(padded_size);
-    valid_.resize_for_bits(padded_size);
-    def_.resize_for_bits(padded_size);
+  /** Sets the virtual address base and size. Rounds down to 256-bit align. Pads with headroom. */
+  Memory& resize(uint64_t base, size_t size) {
+    base_ = base & 0xffffffffffffffe0;
+		
+		size += (base % 32) + 32; 
+		contents_.resize_for_fixed_bytes(size);
+		valid_.resize_for_bits(size);
+		def_.resize_for_bits(size);
 
     return *this;
   }
 
-  /** Logical memory size. */
+	/** Zeros memory and resets valid and defined bits. */
+	void clear() {
+		contents_.reset();
+		valid_.reset();
+		def_.reset();
+	}
+
+  /** Logical memory size; doesn't include headroom. */
   size_t size() const {
     return contents_.num_fixed_bytes() - 32;
   }
-  /** Lower bound on valid addresses */
+  /** Lower bound on valid addresses; returns aligned value. */
   uint64_t lower_bound() const {
     return base_;
   }
-  /** Upper bound on valid addresses */
+  /** Upper bound on valid addresses; doesn't include headroom. */
   uint64_t upper_bound() const {
     return base_ + size();
   }
-  /** Returns true if a virtual address is contained in this memory. */
+  /** Returns true if a virtual address is contained in this memory; does not include headroom. */
   bool in_range(uint64_t addr) const {
     return addr >= lower_bound() && addr < upper_bound();
   }
@@ -124,12 +126,15 @@ class Memory {
   /** I/O */
   std::istream& read(std::istream& is) {
     read_summary(is);
+		std::string ignore;
+		getline(is, ignore);
     read_contents(is);
     return is;
   }
   /** I/O */
   std::ostream& write(std::ostream& os) const {
     write_summary(os);
+		os << std::endl;
     write_contents(os);
     return os;
   }
@@ -144,10 +149,15 @@ class Memory {
   /** Shadow bit vector for tracking defined bytes. */
   cpputil::BitVector def_;
 
-  /** Returns true if any address in this range is valid */
-  bool any_valid(uint64_t begin, uint64_t end) const;
+  /** Returns true if the quad at this address contains a valid bit */
+  bool valid_row(uint64_t addr) const {
+		assert(addr % 8 == 0);
+		return valid_.get_fixed_byte((addr - base_)/8) != 0;
+	}
   /** Counts the number of valid rows */
-  size_t valid_count() const;
+  size_t valid_count() const {
+		return valid_.num_set_bytes();
+	}
 
   /** Reads summary information */
   void read_summary(std::istream& is);
