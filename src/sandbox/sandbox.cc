@@ -87,10 +87,13 @@ void Sandbox::compile(const Cfg& cfg) {
 
   assm_.start(fxn_);
 
+	// Save callee-saved register state
   emit_save_stoke_callee_save();
+	// Load user registers (we handle rsp separately since it's stored somewhere else)
   assm_.call(rdi);
   assm_.mov(rsp, Imm64 {&current_frame_});
   assm_.mov(rsp, M64 {rsp});
+	// Now save the user's callee-save state (which includes the rsp we just set)
   emit_save_user_callee_save();
 
   // Assemble reachable blocks

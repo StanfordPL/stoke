@@ -51,7 +51,7 @@ void CodeWriter::operator()(ostream& os, const Code& c) {
   ofs.filter().indent();
   ofs << c << endl;
 
-  ofs << ".size fxn, .-fxn" << endl;
+  ofs << ".size fxn, .-fxn";
 }
 
 } // namespace stoke
