@@ -167,6 +167,211 @@ void Sandbox::run_one(size_t index) {
   }
 }
 
+void Sandbox::emit_instruction(const Instruction& instr) {
+	// Some instructions implicitly dereference memory or otherwise require some form of special 
+	// handling. Best effort happens here, but there's more that we're not doing.
+	switch ( instr.get_opcode() ) {
+		case PUSH_R64:
+			emit_push(instr);
+			return;
+		case POP_R64:
+			emit_pop(instr);
+			return;
+		case DIV_M16:
+		case DIV_M32:
+		case DIV_M64:
+		case DIV_M8:
+		case DIV_R16:
+		case DIV_R32:
+		case DIV_R64:
+		case DIV_RB:
+		case DIV_RH:
+		case DIV_RL:
+		case IDIV_M16:
+		case IDIV_M32:
+		case IDIV_M64:
+		case IDIV_M8:
+		case IDIV_R16:
+		case IDIV_R32:
+		case IDIV_R64:
+		case IDIV_RB:
+		case IDIV_RH:
+		case IDIV_RL:
+			emit_div(instr);
+			return;
+
+		default:
+			break;
+	}
+
+	// Heavy lifting if this instruction dereferences memory, otherwise just emit
+  if (instr.derefs_mem()) {
+		emit_memory_instr(instr);
+  } else {
+   	assm_.assemble(instr);
+	}
+}
+
+void Sandbox::emit_memory_instr(const Instruction& instr) {
+	const auto rs = instr.maybe_read_set();
+	const auto ws = instr.maybe_write_set();
+
+	// No sense in making a copy if we can promise to be const
+	const auto mi = instr.mem_index();
+	auto* temp = const_cast<Instruction*>(&instr);
+	const auto old_op = temp->get_operand<M64>(mi);
+
+	// Backup the value of rax
+	assm_.mov(Moffs64 {&scratch_[rax]}, rax);
+	// Quickly now, before we touch ANYTHING, save the effective address
+	assm_.lea(rax, old_op);
+	assm_.mov(Moffs64 {&scratch_[rdi]}, rax);
+	// Backup the value of rsp
+	assm_.mov(rax, rsp);
+	assm_.mov(Moffs64 {&scratch_[rsp]}, rax);
+	// Reload the real stack pointer
+	assm_.mov(rax, Moffs64 {snapshot_.get_stoke_rsp()});
+	assm_.mov(rsp, rax);
+	// Save rcx, rdx, rdi, rsi, and rflags
+	assm_.push(rcx);
+	assm_.push(rdx);
+	assm_.push(rdi);
+	assm_.push(rsi);
+	assm_.pushfq();
+
+	// Load the mapping function into rax, the address to map into rdi,
+	// the alignment mask into rsi, and the read/write mask into rdx/rcx
+	// The result will replace rdi.
+	assm_.mov(rax, Moffs64 {&current_map_addr_});
+	switch (instr.type(mi)) {
+		case Type::M_256:
+			assm_.mov(rsi, Imm64 {0xffffffffffffffe0});
+			assm_.mov(rdx, Imm64 {0x00000000ffffffff});
+			break;
+		case Type::M_128:
+			assm_.mov(rsi, Imm64 {0xfffffffffffffff0});
+			assm_.mov(rdx, Imm64 {0x000000000000ffff});
+			break;
+		case Type::M_64:
+			assm_.mov(rsi, Imm64 {0xffffffffffffffff});
+			assm_.mov(rdx, Imm64 {0x00000000000000ff});
+			break;
+		case Type::M_32:
+			assm_.mov(rsi, Imm64 {0xffffffffffffffff});
+			assm_.mov(rdx, Imm64 {0x000000000000000f});
+			break;
+		case Type::M_16:
+			assm_.mov(rsi, Imm64 {0xffffffffffffffff});
+			assm_.mov(rdx, Imm64 {0x0000000000000003});
+			break;
+		case Type::M_8:
+			assm_.mov(rsi, Imm64 {0xffffffffffffffff});
+			assm_.mov(rdx, Imm64 {0x0000000000000001});
+			break;
+		default:
+			assert(false);
+			break;
+	}
+	if (instr.maybe_write(mi)) {
+		assm_.mov(rcx, rdx);
+	} else
+		assm_.mov(rcx, Imm64 {0});
+	if (!instr.maybe_read(mi))
+		assm_.mov(rdx, Imm64 {0});
+
+	assm_.mov(rdi, Imm64 {&scratch_[rdi]});
+	assm_.mov(rdi, M64 {rdi});
+	assm_.call(rax);
+
+	// If this call set the segv_ flag, jump to the signal return. We can use rax here since we
+	// just used it to hold a function pointer. No need to worry about rflags either. It was backed
+	// up earlier.
+	assm_.mov(rax, Moffs64{&segv_});
+	assm_.cmp(rax, Imm32{0});
+	assm_.jne(Label{"sig"});
+
+	// Find a free register to hold the sandboxed address
+	size_t idx;
+	for (idx = 8; idx < 16 && rs.contains(r64s[idx]); ++idx);
+	assert(idx < 16);
+	const auto rx = r64s[idx];
+	// Save rx if necessary
+	if (!ws.contains(rx)) {
+		assm_.mov(rax, rx);
+		assm_.mov(Moffs64 {&scratch_[rx]}, rax);
+	}
+	// Put the result into rx
+	assm_.mov(rx, rdi);
+
+	// Restore rflags, rsi, rdi, rdx, and rcx
+	assm_.popfq();
+	assm_.pop(rsi);
+	assm_.pop(rdi);
+	assm_.pop(rdx);
+	assm_.pop(rcx);
+	// Restore rsp and rax
+	assm_.mov(rax, Moffs64 {&scratch_[rsp]});
+	assm_.mov(rsp, rax);
+	assm_.mov(rax, Moffs64 {&scratch_[rax]});
+
+	// Assemble the instruction
+	temp->set_operand(mi, M8 {rx});
+	assm_.assemble(*temp);
+	temp->set_operand(mi, old_op);
+	// Restore rx if necessary
+	if (!ws.contains(rx)) {
+		assm_.mov(rx, Imm64 {&scratch_[rx]});
+		assm_.mov(rx, M64 {rx});
+	}
+}
+
+void Sandbox::emit_push(const Instruction& instr) {
+	// The moral equivalent of push using explicit operands
+  emit_instruction({LEA_R64_M64, {rsp, M64{rsp, Imm32{(uint32_t) - 8}}}});
+  emit_instruction({MOV_M64_R64, {M64{rsp}, instr.get_operand<R64>(0)}});
+}
+
+void Sandbox::emit_pop(const Instruction& instr) {
+	// The moral equivalent of pop using explicit operands
+  emit_instruction({MOV_R64_M64, {instr.get_operand<R64>(0), M64{rsp}}});
+  emit_instruction({LEA_R64_M64, {rsp, M64{rsp, Imm32{8}}}});
+}
+
+void Sandbox::emit_div(const Instruction& instr) {
+	// First check whether this instruction is trying to read from some part of rsp
+	auto rsp_op = false;
+	switch ( instr.type(0) ) {
+		case Type::RL:
+		case Type::RH:
+		case Type::RB:
+		case Type::R_16:
+		case Type::R_32:
+		case Type::R_64:
+			rsp_op = true;
+			break;
+		default:
+			break;
+	}
+
+	// For now, let's not worry about whether this is actually the case
+	assert(!rsp_op);
+
+	// Restore rsp and leave rax in a valid state (div implicitly reads/writes rax)
+  assm_.mov(Moffs64 {&scratch_[rax]}, rax);
+  assm_.mov(rax, rsp);
+  assm_.mov(Moffs64 {snapshot_.get_user_rsp()}, rax);
+  assm_.mov(rax, Moffs64 {snapshot_.get_stoke_rsp()});
+  assm_.mov(rsp, rax);
+	assm_.mov(rax, Moffs64{&scratch_[rax]});
+
+	// Emit the instruction
+	assm_.assemble(instr);
+
+	// Restore rsp
+	assm_.mov(rsp, Imm64{snapshot_.get_user_rsp()});
+	assm_.mov(rsp, M64{rsp});
+}
+
 void Sandbox::emit_save_stoke_callee_save() {
   // This method is invoked prior to any user code, so rsp is sound.
   // Also invoked prior to loading user input, so no need to save rax
@@ -274,142 +479,6 @@ void Sandbox::emit_pre_return() {
   // (called from valid state and lets us keep real rsp which we just set)
   assm_.mov((R64)rax, Imm64 {snapshot_.get_restore_stoke_callee_save()});
   assm_.call(rax);
-}
-
-void Sandbox::emit_instruction(const Instruction& instr) {
-  const auto rs = instr.maybe_read_set();
-  const auto ws = instr.maybe_write_set();
-
-  // Heavy lifting if this instruction dereferences memory
-  if (instr.derefs_mem()) {
-    // No sense in making a copy if we can promise to be const
-    const auto mi = instr.mem_index();
-    auto* temp = const_cast<Instruction*>(&instr);
-    const auto old_op = temp->get_operand<M64>(mi);
-
-    // Backup the value of rax
-    assm_.mov(Moffs64 {&scratch_[rax]}, rax);
-    // Quickly now, before we touch ANYTHING, save the effective address
-    assm_.lea(rax, old_op);
-    assm_.mov(Moffs64 {&scratch_[rdi]}, rax);
-    // Backup the value of rsp
-    assm_.mov(rax, rsp);
-    assm_.mov(Moffs64 {&scratch_[rsp]}, rax);
-    // Reload the real stack pointer
-    assm_.mov(rax, Moffs64 {snapshot_.get_stoke_rsp()});
-    assm_.mov(rsp, rax);
-    // Save rcx, rdx, rdi, rsi, and rflags
-    assm_.push(rcx);
-    assm_.push(rdx);
-    assm_.push(rdi);
-    assm_.push(rsi);
-    assm_.pushfq();
-
-    // Load the mapping function into rax, the address to map into rdi,
-    // the alignment mask into rsi, and the read/write mask into rdx/rcx
-    // The result will replace rdi.
-    assm_.mov(rax, Moffs64 {&current_map_addr_});
-    switch (instr.type(mi)) {
-      case Type::M_256:
-        assm_.mov(rsi, Imm64 {0xffffffffffffffe0});
-        assm_.mov(rdx, Imm64 {0x00000000ffffffff});
-        break;
-      case Type::M_128:
-        assm_.mov(rsi, Imm64 {0xfffffffffffffff0});
-        assm_.mov(rdx, Imm64 {0x000000000000ffff});
-        break;
-      case Type::M_64:
-        assm_.mov(rsi, Imm64 {0xffffffffffffffff});
-        assm_.mov(rdx, Imm64 {0x00000000000000ff});
-        break;
-      case Type::M_32:
-        assm_.mov(rsi, Imm64 {0xffffffffffffffff});
-        assm_.mov(rdx, Imm64 {0x000000000000000f});
-        break;
-      case Type::M_16:
-        assm_.mov(rsi, Imm64 {0xffffffffffffffff});
-        assm_.mov(rdx, Imm64 {0x0000000000000003});
-        break;
-      case Type::M_8:
-        assm_.mov(rsi, Imm64 {0xffffffffffffffff});
-        assm_.mov(rdx, Imm64 {0x0000000000000001});
-        break;
-      default:
-        assert(false);
-        break;
-    }
-    if (instr.maybe_write(mi)) {
-      assm_.mov(rcx, rdx);
-    } else
-      assm_.mov(rcx, Imm64 {0});
-    if (!instr.maybe_read(mi))
-      assm_.mov(rdx, Imm64 {0});
-
-    assm_.mov(rdi, Imm64 {&scratch_[rdi]});
-    assm_.mov(rdi, M64 {rdi});
-    assm_.call(rax);
-
-		// If this call set the segv_ flag, jump to the signal return. We can use rax here since we
-		// just used it to hold a function pointer. No need to worry about rflags either. It was backed
-		// up earlier.
-  	assm_.mov(rax, Moffs64{&segv_});
-		assm_.cmp(rax, Imm32{0});
-		assm_.jne(Label{"sig"});
-
-    // Find a free register to hold the sandboxed address
-    size_t idx;
-    for (idx = 8; idx < 16 && rs.contains(r64s[idx]); ++idx);
-    assert(idx < 16);
-    const auto rx = r64s[idx];
-    // Save rx if necessary
-    if (!ws.contains(rx)) {
-      assm_.mov(rax, rx);
-      assm_.mov(Moffs64 {&scratch_[rx]}, rax);
-    }
-    // Put the result into rx
-    assm_.mov(rx, rdi);
-
-    // Restore rflags, rsi, rdi, rdx, and rcx
-    assm_.popfq();
-    assm_.pop(rsi);
-    assm_.pop(rdi);
-    assm_.pop(rdx);
-    assm_.pop(rcx);
-    // Restore rsp and rax
-    assm_.mov(rax, Moffs64 {&scratch_[rsp]});
-    assm_.mov(rsp, rax);
-    assm_.mov(rax, Moffs64 {&scratch_[rax]});
-
-    // Assemble the instruction
-    temp->set_operand(mi, M8 {rx});
-    assm_.assemble(*temp);
-    temp->set_operand(mi, old_op);
-    // Restore rx if necessary
-    if (!ws.contains(rx)) {
-      assm_.mov(rx, Imm64 {&scratch_[rx]});
-      assm_.mov(rx, M64 {rx});
-    }
-
-    return;
-  }
-
-  // @todo: We should find an elegant way to handle instructions with
-  // implicit memory operands. For now, we just replace special cases
-  // with their moral equivalents and otherwise emit the raw instruction
-
-  switch (instr.get_opcode()) {
-    case PUSH_R64:
-      emit_instruction(Instruction {LEA_R64_M64, {rsp, M64{rsp, Imm32{(uint32_t) - 8}}}});
-      emit_instruction(Instruction {MOV_M64_R64, {M64{rsp}, instr.get_operand<R64>(0)}});
-      break;
-    case POP_R64:
-      emit_instruction(Instruction {MOV_R64_M64, {instr.get_operand<R64>(0), M64{rsp}}});
-      emit_instruction(Instruction {LEA_R64_M64, {rsp, M64{rsp, Imm32{8}}}});
-      break;
-
-    default:
-      assm_.assemble(instr);
-  }
 }
 
 void Sandbox::emit_sig_return() {

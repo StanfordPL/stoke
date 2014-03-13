@@ -171,6 +171,17 @@ class Sandbox {
   /** Set prior to execution, function for sandboxing memory references. */
   uint64_t current_map_addr_;
 
+  /** Emit an instruction (and possibly sandbox memory). */
+  void emit_instruction(const x64asm::Instruction& instr);
+	/** Emit a memory instruction. */
+	void emit_memory_instr(const x64asm::Instruction& instr);
+	/** Special case for emitting push. */
+	void emit_push(const x64asm::Instruction& instr);
+	/** Special case for emitting pop. */
+	void emit_pop(const x64asm::Instruction& instr);
+	/** Special case for emitting the div family of instructions. */
+	void emit_div(const x64asm::Instruction& instr);
+
   /** Emits code to save the true callee saved registers. */
   void emit_save_stoke_callee_save();
   /** Emits code to save the user callee saved registers. */
@@ -181,8 +192,6 @@ class Sandbox {
   void emit_pre_jump();
   /** Emit sandboxing code prior to a return. */
   void emit_pre_return();
-  /** Emit an instruction (and possibly sandbox memory). */
-  void emit_instruction(const x64asm::Instruction& instr);
   /** Emit a special exit for code that signals. */
   void emit_sig_return();
 
