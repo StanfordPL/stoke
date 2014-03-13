@@ -8,6 +8,8 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/cfg/cfg.h"
+#include "src/sandbox/io_pair.h"
+#include "src/sandbox/output_iterator.h"
 #include "src/sandbox/stack_snapshot.h"
 #include "src/sandbox/state_callback.h"
 #include "src/state/cpu_state.h"
@@ -15,57 +17,7 @@
 namespace stoke {
 
 class Sandbox {
- private:
-  /** POD struct for holding state related to input/output state pairs. */
-  struct IoPair {
-    /** Input state (this never changes). */
-    CpuState in_;
-    /** Copies input state to cpu. */
-    x64asm::Function in2cpu_;
-
-    /** Output state (this is modified as code executes). */
-    CpuState out_;
-    /** Copies output state to cpu. */
-    x64asm::Function out2cpu_;
-    /** Reads output state from cpu. */
-    x64asm::Function cpu2out_;
-    /** Sandboxes memory accesses for this output state. */
-    x64asm::Function map_addr_;
-  };
-
  public:
-  /** Simple input iterator for exposing output states. */
-  class output_iterator {
-    friend class Sandbox;
-
-   public:
-    const CpuState& operator*() const {
-      return (*itr_)->out_;
-    }
-    const CpuState* operator->() const {
-      return &((*itr_)->out_);
-    }
-
-    output_iterator& operator++() {
-      itr_++;
-      return *this;
-    }
-
-    bool operator==(const output_iterator& rhs) const {
-      return itr_ == rhs.itr_;
-    }
-    bool operator!=(const output_iterator& rhs) const {
-      return itr_ != rhs.itr_;
-    }
-
-   private:
-    output_iterator(std::vector<IoPair*>::const_iterator itr) {
-      itr_ = itr;
-    }
-
-    std::vector<IoPair*>::const_iterator itr_;
-  };
-
   /** Creates a sandbox. */
   Sandbox();
 

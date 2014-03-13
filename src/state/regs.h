@@ -3,7 +3,6 @@
 
 #include <cassert>
 
-#include <iostream>
 #include <vector>
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
@@ -55,19 +54,9 @@ class Regs {
     return contents_ != rhs.contents_;
   }
 
-  /** I/O. */
-  std::istream& read(std::istream& is);
-  /** I/O. */
-  std::ostream& write(std::ostream& os, const char** names, size_t padding) const;
-
  private:
 	/** Register contents. */
   std::vector<cpputil::BitVector> contents_;
-
-  /** Write register names */
-  void write_regs(std::ostream& os, const char** names) const;
-  /** Write register values */
-  void write_vals(std::ostream& os) const;
 };
 
 } // namespace stoke

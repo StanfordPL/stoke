@@ -13,6 +13,7 @@
 #include "src/args/code.h"
 #include "src/args/testcases.h"
 #include "src/state/cpu_state.h"
+#include "src/state/state_writer.h"
 #include "src/sandbox/sandbox.h"
 #include "src/sandbox/state_callback.h"
 

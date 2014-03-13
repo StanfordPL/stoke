@@ -109,6 +109,11 @@ auto& misalign_penalty = ValueArg<Cost>::create("misalign_penalty")
 	.description("Penalty for correct values in incorrect locations")
 	.default_val(0);
 
+auto& sig_penalty = ValueArg<Cost>::create("sig_penalty")	
+	.usage("<int>")
+	.description("Penalty for incorrect signal behavior")
+	.default_val(0);
+
 auto& min_ulp = ValueArg<Cost>::create("min_ulp")
 	.usage("<int>")
 	.description("minimum ULP value to record")
@@ -121,7 +126,7 @@ auto& perf = ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWri
 	.description("Performance definition")
 	.default_val(PerformanceTerm::NONE);
 
-auto& nesting_weight = ValueArg<Cost>::create("nesting_weight")	
+auto& nesting_penalty = ValueArg<Cost>::create("nesting_penalty")	
 	.usage("<int>")
 	.description("Latency multiplier for nested code")
 	.default_val(1);
@@ -151,17 +156,13 @@ int main(int argc, char** argv) {
 
  	CostFunction fxn(&sb);
 	fxn.set_distance(::distance)
-		.set_target(cfg_t)
-		.set_sse_width(sse_width)
-		.set_sse_count(sse_count)
-		.set_live_out(live_out)
-		.set_stack_out(stack_out)
-		.set_heap_out(heap_out)
-		.set_relax_reg(relax_reg)
-		.set_relax_mem(relax_mem)
-		.set_misalign_penalty(misalign_penalty)
+		.set_target(cfg_t, stack_out, heap_out)
+		.set_sse(sse_width, sse_count)
+		.set_relax(relax_reg, relax_mem)
+		.set_penalty(misalign_penalty, sig_penalty, nesting_penalty)
 		.set_min_ulp(min_ulp)
-		.set_reduction(reduction);
+		.set_reduction(reduction)
+		.set_performance_term(perf);
 
 	ofilterstream<Column> os(cout);
 	os.filter().padding(3);
@@ -175,6 +176,8 @@ int main(int argc, char** argv) {
 	os << endl;
 	os << rewrite.value() << endl;
 	os.filter().done();
+
+	cout << endl;
 
 	const auto res = fxn(cfg_r, max_cost.value());
 

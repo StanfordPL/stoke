@@ -2,11 +2,11 @@
 #define STOKE_SRC_STATE_MEMORY_H
 
 #include <cassert>
-#include <iostream>
 #include <stdint.h>
-#include <string>
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
+
+#include "src/state/addr_iterator.h"
 
 namespace stoke {
 
@@ -91,6 +91,15 @@ class Memory {
     valid_[addr - base_] = v;
     return *this;
   }
+	/** Returns a pointer to the beginning of the valid byte addrs in this memory. */
+	addr_iterator valid_begin() const {
+		return addr_iterator(valid_.set_bit_index_begin(), base_);
+	}
+	/** Returns a pointer to the end of the valid byte addrs in this memory. */
+	addr_iterator valid_end() const {
+		return addr_iterator(valid_.set_bit_index_end(), base_);
+	}
+
   /** Returns true if a byte is defined; undefined for invalid bytes */
   bool is_defined(uint64_t addr) const {
 		assert(is_valid(addr));
@@ -102,8 +111,14 @@ class Memory {
     def_[addr - base_] = d;
     return *this;
   }
-
-	/** TODO... we need to make an iterator over defined bytes. */
+	/** Returns a pointer to the beginning of the defined byte addrs in this memory. */
+	addr_iterator defined_begin() const {
+		return addr_iterator(def_.set_bit_index_begin(), base_);
+	}
+	/** Returns a pointer to the end of the defined byte addrs in this memory. */
+	addr_iterator defined_end() const {
+		return addr_iterator(def_.set_bit_index_end(), base_);
+	}
 
   /** Bit-wise xor; ignores shadows. */
   Memory& operator^=(const Memory& rhs) {
@@ -125,22 +140,6 @@ class Memory {
     return base_ != rhs.base_ || contents_ != rhs.contents_;
   }
 
-  /** I/O */
-  std::istream& read(std::istream& is) {
-    read_summary(is);
-		std::string ignore;
-		getline(is, ignore);
-    read_contents(is);
-    return is;
-  }
-  /** I/O */
-  std::ostream& write(std::ostream& os) const {
-    write_summary(os);
-		os << std::endl;
-    write_contents(os);
-    return os;
-  }
-
  private:
   /** Virtual base address. */
   uint64_t base_;
@@ -151,29 +150,12 @@ class Memory {
   /** Shadow bit vector for tracking defined bytes. */
   cpputil::BitVector def_;
 
-  /** Returns true if the quad at this address contains a valid bit */
-  bool valid_row(uint64_t addr) const {
-		assert(addr % 8 == 0);
-		return valid_.get_fixed_byte((addr - base_)/8) != 0;
-	}
-  /** Counts the number of valid rows */
-  size_t valid_count() const {
-		return valid_.num_set_bytes();
-	}
-
   /** Reads summary information */
   void read_summary(std::istream& is);
   /** Read a row from contents */
   void read_row(std::istream& is);
   /** Read contents */
   void read_contents(std::istream& is);
-
-  /** Writes summary information */
-  void write_summary(std::ostream& os) const;
-  /** Write a row from contents */
-  void write_row(std::ostream& os, uint64_t i) const;
-  /** Write contents */
-  void write_contents(std::ostream& os) const;
 };
 
 } // namespace stoke

@@ -1,8 +1,6 @@
 #ifndef STOKE_STATE_CPU_STATE_H
 #define STOKE_STATE_CPU_STATE_H
 
-#include <iostream>
-
 #include "src/state/error_code.h"
 #include "src/state/regs.h"
 #include "src/state/memory.h"
@@ -42,11 +40,6 @@ struct CpuState {
     return !(*this == rhs);
   }
 
-  /** I/O. */
-  std::istream& read(std::istream& is);
-  /** I/O. */
-  std::ostream& write(std::ostream& os) const;
-
   /** The error code associated with this state. */
   ErrorCode code;
   /** General purpose register buffer. */
@@ -60,19 +53,5 @@ struct CpuState {
 };
 
 } // namespace stoke
-
-namespace std {
-
-inline std::istream& operator>>(std::istream& is, stoke::CpuState& cs) {
-  cs.read(is);
-  return is;
-}
-
-inline std::ostream& operator<<(std::ostream& os, const stoke::CpuState& cs) {
-  cs.write(os);
-  return os;
-}
-
-} // namespace std
 
 #endif

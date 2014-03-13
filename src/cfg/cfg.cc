@@ -33,34 +33,6 @@ bool Cfg::performs_undef_read() const {
   return false;
 }
 
-Cfg& Cfg::remove_unreachable() {
-  x64asm::Code temp;
-  for (auto b = reachable_begin(), be = reachable_end(); b != be; ++b) {
-    for (auto i = instr_begin(*b), ie = instr_end(*b); i != ie; ++i) {
-      temp.push_back(*i);
-    }
-  }
-  code_ = temp;
-  recompute();
-
-  return *this;
-}
-
-Cfg& Cfg::remove_nop() {
-  x64asm::Code temp;
-  for (auto b = get_entry(), be = get_exit(); b != be; ++b) {
-    for (auto i = instr_begin(b), ie = instr_end(b); i != ie; ++i) {
-      if (!i->is_nop()) {
-        temp.push_back(*i);
-      }
-    }
-  }
-  code_ = temp;
-  recompute();
-
-  return *this;
-}
-
 void Cfg::forward_topo_sort() {
   block_sort_.clear();
   visited_.resize_for_bits(num_blocks());
@@ -281,7 +253,7 @@ void Cfg::recompute_back_edges() {
   }
 }
 
-void Cfg::recompute_loops() {
+void Cfg::recompute_loop_blocks() {
   for (auto& loop : loops_) {
     const auto& e = loop.first;
     auto& l = loop.second;
@@ -521,158 +493,6 @@ void Cfg::recompute_liveness_loop_free() {
     live_ins_[idx] -= instr.maybe_undef_set();
     live_ins_[idx] |= instr.maybe_read_set();
   }
-}
-
-void Cfg::write(std::ostream& os, bool dib, bool dii, bool lob, bool loi, bool dom) const {
-  os << "digraph g {" << endl;
-  os << "colorscheme = blues6" << endl;
-
-  write_entry(os, dib, lob);
-  write_exit(os, dib, lob);
-  write_blocks(os, dib, dii, lob, loi, dom);
-  write_edges(os);
-
-  os << "}";
-}
-
-void Cfg::write_blocks(ostream& os, bool dib, bool dii, bool lob, bool loi, bool dom) const {
-  map<size_t, vector<id_type>> nestings;
-  for (size_t i = get_entry() + 1, ie = get_exit(); i < ie; ++i) {
-    nestings[nesting_depth(i)].push_back(i);
-  }
-
-  for (const auto& n : nestings) {
-    os << "subgraph cluster_" << n.first << " {" << endl;
-    os << "style = filled" << endl;
-    os << "color = " << (n.first + 1) << endl;
-
-    for (const auto bb : n.second) {
-      os << "bb" << bb << "[";
-      os << "shape=record, style=filled, fillcolor=white, ";
-      if (!is_reachable(bb)) {
-        os << "color = grey, ";
-      }
-      os << "label=\"{";
-      os << "#" << bb;
-      if (dom && is_reachable(bb)) {
-        os << "|dominates: ";
-        write_dominators(os, bb);
-      }
-      if (dib && is_reachable(bb)) {
-        os << "|def-in: ";
-        write_reg_set(os, def_ins(bb));
-      }
-      for (size_t j = 0, je = num_instrs(bb); j < je; ++j) {
-        auto loc = loc_type {bb, j};
-
-        if (dii && is_reachable(bb)) {
-          os << "|def-in: ";
-          write_reg_set(os, def_ins(loc));
-        }
-
-        os << "|";
-        os << get_instr(loc);
-        os << "\\l";
-
-        if (loi && is_reachable(bb)) {
-          os << "|live-out: ";
-          write_reg_set(os, live_outs(loc));
-        }
-      }
-      if (lob && is_reachable(bb)) {
-        os << "|live-out: ";
-        write_reg_set(os, live_outs(bb));
-      }
-      os << "}\"];" << endl;
-    }
-  }
-  for (size_t i = 0, ie = nestings.size(); i < ie; ++i) {
-    os << "}" << endl;
-  }
-}
-
-void Cfg::write_dominators(ostream& os, id_type bb) const {
-  os << "\\{";
-  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-    if (dom(bb, *i)) {
-      os << " #" << *i;
-    }
-  }
-  os << " \\}";
-}
-
-void Cfg::write_entry(ostream& os, bool dib, bool lob) const {
-  os << "bb" << get_entry() << " [";
-  os << "shape=record  ";
-  os << "label=\"{ENTRY";
-  if (dib) {
-    os << "|def-in: ";
-    write_reg_set(os, fxn_def_ins_);
-  }
-  os << "}\"];" << endl;
-}
-
-void Cfg::write_exit(ostream& os, bool dib, bool lob) const {
-  os << "bb" << get_exit()  << " [";
-  os << "shape=record ";
-  os << "label=\"{EXIT";
-  if (lob) {
-    os << "|live-out: ";
-    write_reg_set(os, fxn_live_outs_);
-  }
-  os << "}\"];" << endl;
-}
-
-void Cfg::write_edges(ostream& os) const {
-  for (size_t i = get_entry(), ie = get_exit(); i < ie; ++i)
-    for (auto s = succ_begin(i), se = succ_end(i); s != se; ++s) {
-      os << "bb" << i << "->bb" << *s << " [";
-      os << "style=";
-      if (has_fallthrough_target(i) && fallthrough_target(i) == *s) {
-        os << "bold";
-      } else {
-        os << "dashed";
-      }
-      os << " color=";
-      if (is_back_edge(edge_type(i, *s))) {
-        os << "red";
-      } else if (is_reachable(i) || is_entry(i)) {
-        os << "black";
-      } else {
-        os << "grey";
-      }
-      os << "];" << endl;
-    }
-}
-
-void Cfg::write_reg_set(ostream& os, const RegSet& rs) const {
-  os << "\\{";
-  for (auto i = 0; i < 16; ++i) {
-    if (rs.contains(r64s[i])) {
-      os << " " << r64s[i];
-    } else if (rs.contains(r32s[i])) {
-      os << " " << r32s[i];
-    } else if (rs.contains(r16s[i])) {
-      os << " " << r16s[i];
-    } else if (i < 4) {
-      if (rs.contains(rls[i])) {
-        os << " " << rls[i];
-      } else if (rs.contains(rhs[i])) {
-        os << " " << rhs[i];
-      }
-    } else if (rs.contains(rbs[i - 4])) {
-      os << " " << rbs[i - 4];
-    }
-  }
-
-  for (auto i = 0; i < 16; ++i)
-    if (rs.contains(ymms[i])) {
-      os << " " << ymms[i];
-    } else if (rs.contains(xmms[i])) {
-      os << " " << xmms[i];
-    }
-
-  os << " \\}";
 }
 
 } // namespace x64

@@ -4,7 +4,6 @@
 #include <cassert>
 #include <stdint.h>
 
-#include <iostream>
 #include <map>
 #include <stack>
 #include <unordered_map>
@@ -48,25 +47,35 @@ class Cfg {
 
   /** Recompute internal state; recomputes basic block structure and data flow values. */
   void recompute() {
-    recompute_structure();
+		recompute_structure();
+		recompute_loops();
     recompute_defs();
     recompute_liveness();
   }
-  /** Recomputes basic block structure; modifying a control flow instruction will invalidate
-  	this graph's basic block structure, calling this method will restore it. */
-  void recompute_structure() {
+	/** Recompute graph structure; modifying control flow will invalidate this information, calling this
+		method will restore it. */
+	void recompute_structure() {
     recompute_blocks();
     recompute_labels();
     recompute_succs();
     recompute_preds();
     recompute_reachable();
-    recompute_dominators();
+	}
+	/** Recompute loops; modifying control flow will invalidate this information, calling this method
+		will restore it. This method is undefined if graph structure is not up to date. */
+	void recompute_loops() {
+		if ( !is_loop_free() ) {
+			recompute_dominators_loops();
+		} else {
+			recompute_dominators_loop_free();
+		}
     recompute_back_edges();
-    recompute_loops();
+    recompute_loop_blocks();
     recompute_nesting_depth();
-  }
+	}
   /** Recomputes the defined-in relation for instructions; modifying an instruction will invalidate
-  	this relation, calling this method will restore it. */
+  	this relation, calling this method will restore it. This method is undefined if graph structure
+	 	is not up to date. */
   void recompute_defs() {
     if (!is_loop_free()) {
       recompute_defs_loops();
@@ -75,7 +84,8 @@ class Cfg {
     }
   }
   /** Recomputes the live-out relation for instructions; modifying an instruction will invalidate
-  	this relation, calling this method will restore it. */
+  	this relation, calling this method will restore it. This method is undefined if graph structure
+	 	is not up to date. */
   void recompute_liveness() {
     if (!is_loop_free()) {
       recompute_liveness_loops();
@@ -307,16 +317,6 @@ class Cfg {
   /** Returns true if an instruction performs a read from a register with an undefined value. */
   bool performs_undef_read() const;
 
-  /** Modifies the underlying code such that all unreachable basic blocks are removed. */
-  Cfg& remove_unreachable();
-  /** Modifies the underlying code such that all nops are removed. */
-  Cfg& remove_nop();
-
-  /** Write this control flow graph in .dot format to an ostream. Trailing arguments control
-  	whether to print defined-in values for blocks or instructions, live-out values for blocks
-  	or instructions, and dominator values for blocks. */
-  void write(std::ostream& os, bool dib, bool dii, bool lob, bool loi, bool dom) const;
-
  private:
   /** User-specified underlying code. */
   x64asm::Code code_;
@@ -381,14 +381,6 @@ class Cfg {
 	/** Recompute the contents of reachable_; assumes blocks_ and succs_ are up to date. */
   void recompute_reachable();
 
-  /** Recompute dom_; assumes blocks_ preds_ and reachable_ are up to date. */
-  void recompute_dominators() {
-		if ( !is_loop_free() ) {
-			recompute_dominators_loops();
-		} else {
-			recompute_dominators_loop_free();
-		}
-	}
 	/** Recomputes dominators using the generic least fixed point dataflow algorithm. */
 	void recompute_dominators_loops();
 	/** Faster recomputation of dominators; valid only for loop-free graphs. */
@@ -397,7 +389,7 @@ class Cfg {
 	/** Recompute the keys in loops_; assumes blocks_ succs_ and reachable_ are up to date. */
   void recompute_back_edges();
   /** Recompute the values in loops_; assumes blocks_ preds_ and reachable_ are up to date. */
-  void recompute_loops();
+  void recompute_loop_blocks();
   /** Recompute nesting_depth_; assumes loops_ is up to date. */
   void recompute_nesting_depth();
 
@@ -414,31 +406,8 @@ class Cfg {
   void recompute_liveness_loops();
   /** Faster recomputation of live_outs_; valid only for loop-free graphs. */
   void recompute_liveness_loop_free();
-
-  /** Write the entry block for this graph. */
-  void write_entry(std::ostream& os, bool dib, bool lob) const;
-  /** Write the exit block for this graph. */
-  void write_exit(std::ostream& os, bool dib, bool lob) const;
-  /** Write the basic blocks in this graph. */
-  void write_blocks(std::ostream& os, bool dib, bool dii, bool lob, bool loi, bool dom) const;
-  /** Write the set of blocks that this block dominates. */
-  void write_dominators(std::ostream& os, id_type id) const;
-  /** Write the edges in this graph. */
-  void write_edges(std::ostream& os) const;
-  /** Write the contents of a register set. */
-  void write_reg_set(std::ostream& os, const x64asm::RegSet& rs) const;
 };
 
-} // namespace x64
-
-namespace std {
-
-/** Convenience overload for ostreams; supresses debugging output. */
-inline std::ostream& operator<<(std::ostream& os, const stoke::Cfg& cfg) {
-  cfg.write(os, false, false, false, false, false);
-  return os;
-}
-
-} // namespace std
+} // namespace stoke
 
 #endif

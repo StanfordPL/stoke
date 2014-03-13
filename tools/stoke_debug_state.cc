@@ -6,6 +6,7 @@
 
 #include "src/args/testcases.h"
 #include "src/state/cpu_state.h"
+#include "src/state/state_writer.h"
 
 using namespace cpputil;
 using namespace std;

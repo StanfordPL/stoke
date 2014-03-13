@@ -15,6 +15,7 @@
 #include "src/cfg/cfg.h"
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
+#include "src/state/state_writer.h"
 #include "src/verifier/strategy.h"
 #include "src/verifier/verifier.h"
 

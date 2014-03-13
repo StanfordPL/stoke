@@ -11,6 +11,7 @@
 #include "src/args/code.h"
 #include "src/args/reg_set.h"
 #include "src/cfg/cfg.h"
+#include "src/cfg/dot_writer.h"
 
 using namespace cpputil;
 using namespace std;
@@ -70,8 +71,13 @@ auto& view = FlagArg::create("view")
 
 void to_dot() {
   ofstream ofs(string("/tmp/stoke.") + getenv("USER") + ".dot");
-  Cfg cfg {target, def_in, live_out};
-  cfg.write(ofs, dib, dii, lob, loi, dom);
+
+	DotWriter dw;
+	dw.set_def_in(dib, dii)
+		.set_live_out(lob, loi)
+		.set_dom(dom);
+
+  dw(ofs, {target, def_in, live_out});
 }
 
 bool to_pdf() {

@@ -22,6 +22,23 @@ array<stoke::Cost, 3976> latencies_ {{
 
 namespace stoke {
 
+CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool heap_out) {
+	assert(sandbox_ != nullptr);
+
+	live_out_ = target.live_outs();
+	stack_out_ = stack_out;
+	heap_out_ = heap_out;
+
+	reference_out_.clear();
+	recompute_defs(target.live_outs(), target_gp_out_, target_sse_out_);
+
+	sandbox_->run(target);
+	for ( auto i = sandbox_->result_begin(), ie = sandbox_->result_end(); i != ie; ++i ) {
+		reference_out_.push_back(*i);
+	}
+	return *this;
+}
+
 void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gp_out, vector<Xmm>& sse_out) {
 	gp_out.clear();
 	for ( const auto& r : r64s )
@@ -32,19 +49,6 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gp_out, vector<
 	for ( const auto& s : xmms )
 		if ( rs.contains(s) )
 			sse_out.push_back(s);
-}
-
-CostFunction& CostFunction::set_target(const Cfg& target) {
-	assert(sandbox_ != nullptr);
-
-	reference_out_.clear();
-	recompute_defs(target.live_outs(), target_gp_out_, target_sse_out_);
-
-	sandbox_->run(target);
-	for ( auto i = sandbox_->result_begin(), ie = sandbox_->result_end(); i != ie; ++i ) {
-		reference_out_.push_back(*i);
-	}
-	return *this;
 }
 
 Cost CostFunction::evaluate_correctness(const Cfg& cfg, Cost max) {
@@ -85,8 +89,10 @@ Cost CostFunction::correctness_sum(const Cfg& cfg, Cost max) {
 		sandbox_->run_one(i);
 		const auto r = sandbox_->result(i);
 
-		res += error(*t, *r);
-		assert(res <= max_testcase_cost);
+		const auto err = error(*t, *r);
+		assert(err <= max_testcase_cost);
+
+		res += err;
 	}
 
 	return res;
@@ -94,7 +100,7 @@ Cost CostFunction::correctness_sum(const Cfg& cfg, Cost max) {
 
 Cost CostFunction::error(const CpuState& t, const CpuState& r) const {
 	if ( t.code != r.code ) {
-		return 1;//sig_weight_;
+		return sig_penalty_;
 	}
 
 	Cost cost = 0;
@@ -184,21 +190,19 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
 Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
 	Cost cost = 0;
 
-	/* todo...
 	for ( auto i = t.defined_begin(), ie = t.defined_end(); i != ie; ++i ) {
 		if ( relax_mem_ ) {
 			Cost delta = max_error_cost;
 			for ( auto j = r.defined_begin(), je = r.defined_end(); j != je; ++j ) {
-				delta = min(delta, distance(t.get_byte(*i), r.get_byte(*j)));
+				delta = min(delta, distance(t[*i], r[*j]));
 			}
 			cost += delta;
 		} else if ( r.is_defined(*i) ) {
-			cost += distance(t.get_byte(*i), r.get_byte(*i));
+			cost += distance(t[*i], r[*i]);
 		} else {
 			cost += max_error_cost;
 		}
 	}
-	*/
 
 	return cost;
 }
@@ -259,7 +263,7 @@ Cost CostFunction::latency(const Cfg& cfg) const {
 			block_latency += latencies_[code[i].get_opcode()];
     }
 
-		latency += block_latency * pow(nesting_weight_, cfg.nesting_depth(*b));
+		latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
 	}
 
 	return latency;

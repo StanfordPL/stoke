@@ -12,6 +12,7 @@
 #include <unordered_set>
 
 #include "src/state/cpu_state.h"
+#include "src/state/state_writer.h"
 
 using namespace std;
 using namespace stoke;

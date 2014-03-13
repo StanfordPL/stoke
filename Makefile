@@ -24,6 +24,8 @@ OBJ=\
 	src/args/testcases.o \
 	\
 	src/cfg/cfg.o \
+	src/cfg/cfg_transforms.o \
+	src/cfg/dot_writer.o \
 	\
 	src/cost/cost_function.o \
 	\
@@ -34,9 +36,9 @@ OBJ=\
 	src/search/search.o \
 	src/search/transforms.o \
 	\
-	src/state/cpu_state.o \
 	src/state/memory.o \
-	src/state/regs.o \
+	src/state/state_reader.o \
+	src/state/state_writer.o \
 	\
 	src/verifier/verifier.o
 
