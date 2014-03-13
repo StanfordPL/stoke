@@ -413,6 +413,10 @@ void Sandbox::emit_instruction(const Instruction& instr) {
 }
 
 void Sandbox::emit_sig_return() {
+	// If control falls through to here, we want to set the segv_ flag
+  assm_.mov((R64)rax, Imm64{&segv_});
+  assm_.inc(M64 {rax});
+
   assm_.bind(Label{"sig"});
 
   // This is basically a stripped down version of emit_pre_return. All we care about 
