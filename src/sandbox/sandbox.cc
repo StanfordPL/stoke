@@ -347,29 +347,46 @@ void Sandbox::emit_div(const Instruction& instr) {
 		case Type::R_16:
 		case Type::R_32:
 		case Type::R_64:
-			rsp_op = true;
+			rsp_op = instr.get_operand<R64>(0) == rsp;
 			break;
 		default:
 			break;
 	}
 
-	// For now, let's not worry about whether this is actually the case
-	assert(!rsp_op);
-
-	// Restore rsp and leave rax in a valid state (div implicitly reads/writes rax)
+	// Backup rax and save the user's current rsp
   assm_.mov(Moffs64 {&scratch_[rax]}, rax);
   assm_.mov(rax, rsp);
   assm_.mov(Moffs64 {snapshot_.get_user_rsp()}, rax);
-  assm_.mov(rax, Moffs64 {snapshot_.get_stoke_rsp()});
-  assm_.mov(rsp, rax);
-	assm_.mov(rax, Moffs64{&scratch_[rax]});
 
-	// Emit the instruction
-	assm_.assemble(instr);
-
-	// Restore rsp
-	assm_.mov(rsp, Imm64{snapshot_.get_user_rsp()});
-	assm_.mov(rsp, M64{rsp});
+	if (rsp_op) {
+		// If the user's rsp is an operand, we'll need to move it somewhere the div won't touch
+		// div implicitly reads/writes rax, so we'll need to use rdi instead. 
+		assm_.mov(rax, rdi);
+		assm_.mov(Moffs64{&scratch_[rdi]}, rax);
+		assm_.mov(rdi, Imm64{snapshot_.get_user_rsp()});
+		assm_.mov(rdi, M64{rdi});
+		// Restore stoke rsp and rax
+		assm_.mov(rax, Moffs64 {snapshot_.get_stoke_rsp()});
+		assm_.mov(rsp, rax);
+		assm_.mov(rax, Moffs64{&scratch_[rax]});
+		// Emit the instruction (with rdi substituted for rsp)
+		assm_.assemble({instr.get_opcode(), {rdi}});
+		// Restore rdi and user rsp. Don't touch rax, the instruction wrote it
+		assm_.mov(rsp, Imm64{snapshot_.get_user_rsp()});
+		assm_.mov(rsp, M64{rsp});
+		assm_.mov(rdi, Imm64{&scratch_[rdi]});
+		assm_.mov(rdi, M64{rdi});
+	} else {
+		// This is the easier case; restore stokes rsp and rax 
+		assm_.mov(rax, Moffs64 {snapshot_.get_stoke_rsp()});
+		assm_.mov(rsp, rax);
+		assm_.mov(rax, Moffs64{&scratch_[rax]});
+		// Emit the instruction
+		assm_.assemble(instr);
+		// Restore user rsp
+		assm_.mov(rsp, Imm64{snapshot_.get_user_rsp()});
+		assm_.mov(rsp, M64{rsp});
+	}
 }
 
 void Sandbox::emit_save_stoke_callee_save() {
