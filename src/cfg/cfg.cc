@@ -21,7 +21,7 @@ Cfg::loc_type Cfg::get_loc(size_t idx) const {
 bool Cfg::performs_undef_read() const {
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
-      const auto idx = get_index(loc_type(*i, j));
+      const auto idx = get_index({*i, j});
       const auto r = code_[idx].maybe_read_set();
       const auto di = def_ins_[idx];
 
@@ -66,14 +66,18 @@ void Cfg::forward_topo_sort() {
   visited_.resize_for_bits(num_blocks());
   visited_.reset();
 
-  // No need to check for reachable in this loop; it's implicit in a forward traversal.
-  block_sort_.push_back(get_entry());
+  // No need to check for reachability here; it's implicit in a forward traversal.
+	for ( auto s = succ_begin(get_entry()), se = succ_end(get_entry()); s != se; ++s ) {
+		if ( !is_exit(*s) ) {
+			block_sort_.push_back(*s);
+		}
+	}
   for (size_t i = 0; i < block_sort_.size(); ++i) {
     const auto next = block_sort_[i];
     visited_[next] = true;
     for (auto s = succ_begin(next), se = succ_end(next); s != se; ++s) {
-      if (!visited_[*s]) {
-        block_sort_.push_back(next);
+      if (!visited_[*s] && !is_exit(*s)) {
+        block_sort_.push_back(*s);
       }
     }
   }
@@ -85,21 +89,25 @@ void Cfg::backward_topo_sort() {
   visited_.reset();
 
   // Going backwards, we need to stay away from unreachable blocks.
-  block_sort_.push_back(get_exit());
+	for (auto p = pred_begin(get_exit()), pe = pred_end(get_exit()); p != pe; ++p) {
+		if (is_reachable(*p)) {
+			block_sort_.push_back(*p);
+		}
+	}
   for (size_t i = 0; i < block_sort_.size(); ++i) {
     const auto next = block_sort_[i];
     visited_[next] = true;
     for (auto p = pred_begin(next), pe = pred_end(next); p != pe; ++p) {
       if (!visited_[*p] && is_reachable(*p)) {
-        block_sort_.push_back(next);
+        block_sort_.push_back(*p);
       }
     }
   }
-  // Checking for is_reachable() means we didn't add the entry block
-  block_sort_.push_back(get_entry());
 }
 
 void Cfg::recompute_blocks() {
+  blocks_.clear();
+
   boundaries_.resize_for_bits(code_.size() + 1);
   boundaries_.reset();
 
@@ -117,18 +125,19 @@ void Cfg::recompute_blocks() {
     }
   }
 
-  blocks_.clear();
-  for (auto i = boundaries_.set_bit_index_begin(), ie = boundaries_.set_bit_index_end(); i != ie;
-       ++i) {
+	// Add sentinels for entry and exit blocks along with boundaries
+	blocks_.push_back(0);
+  for (auto i = boundaries_.set_bit_index_begin(), ie = boundaries_.set_bit_index_end(); i != ie; ++i) {
     blocks_.push_back(*i);
   }
+	blocks_.push_back(code_.size());
 }
 
 void Cfg::recompute_labels() {
   labels_.clear();
   for (auto i = get_entry() + 1, ie = get_exit(); i < ie; ++i) {
     if (num_instrs(i) > 0) {
-      const auto& instr = code_[blocks_[i]];
+      const auto& instr = code_[get_index({i,0})];
       if (instr.is_label_defn()) {
         labels_[instr.get_operand<Label>(0)] = i;
       }
@@ -149,7 +158,7 @@ void Cfg::recompute_succs() {
       continue;
     }
     // Control passes from return statements to the exit.
-    const auto& instr = code_[blocks_[i + 1] - 1];
+    const auto& instr = code_[get_index({i,num_instrs(i)-1})];
     if (instr.is_return()) {
       succs_[i].push_back(get_exit());
       continue;
@@ -182,9 +191,10 @@ void Cfg::recompute_preds() {
 }
 
 void Cfg::recompute_reachable() {
-  reachable_.resize_for_bits(blocks_.size());
+  reachable_.resize_for_bits(num_blocks());
   reachable_.reset();
 
+	assert(block_stack_.empty());
   for (block_stack_.push(get_entry()); !block_stack_.empty();) {
     const auto m = block_stack_.top();
     block_stack_.pop();
@@ -254,6 +264,7 @@ void Cfg::recompute_loops() {
     l[e.second] = true;
 
     if (e.first != e.second) {
+			assert(block_stack_.empty());
       for (block_stack_.push(e.first); !block_stack_.empty();) {
         const auto m = block_stack_.top();
         block_stack_.pop();
@@ -309,16 +320,16 @@ void Cfg::recompute_defs_loops() {
     changed = false;
 
     for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-      def_ins_[blocks_[*i]] = RegSet::universe();
+      def_ins_[get_index({*i,0})] = RegSet::universe();
 
       // Meet operator
       for (auto p = pred_begin(*i), pe = pred_end(*i); p != pe; ++p) {
-        if (is_reachable(*p)) {
-          def_ins_[blocks_[*i]] &= def_outs_[*p];
+        if (is_reachable(*p) || is_entry(*p)) {
+          def_ins_[get_index({*i,0})] &= def_outs_[*p];
         }
       }
       // Transfer function
-      const auto new_out = (def_ins_[blocks_[*i]] - kill_[*i]) | gen_[*i];
+      const auto new_out = (def_ins_[get_index({*i,0})] - kill_[*i]) | gen_[*i];
 
       changed |= def_outs_[*i] != new_out;
       def_outs_[*i] = new_out;
@@ -327,9 +338,10 @@ void Cfg::recompute_defs_loops() {
 
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 1, je = num_instrs(*i); j < je; ++j) {
-      const auto idx = get_index(loc_type(*i, j));
-      const auto& instr = code_[idx - 1];
+      const auto idx = get_index({*i, j});
       def_ins_[idx] = def_ins_[idx - 1];
+
+      const auto& instr = code_[idx - 1];
       def_ins_[idx] |= instr.must_write_set();
       def_ins_[idx] -= instr.maybe_undef_set();
     }
@@ -347,41 +359,42 @@ void Cfg::recompute_defs_loop_free() {
   forward_topo_sort();
   for (auto i : block_sort_) {
     // Initial conditions
-    def_ins_[blocks_[i]] = RegSet::universe();
+    def_ins_[get_index({i,0})] = RegSet::universe();
 
     // Meet operator
     for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p) {
       if (is_reachable(*p) || is_entry(*p)) {
-        def_ins_[blocks_[i]] &= def_outs_[*p];
+        def_ins_[get_index({i,0})] &= def_outs_[*p];
       }
     }
     // Transfer function
     for (size_t j = 1, je = num_instrs(i); j < je; ++j) {
-      const auto idx = get_index(loc_type(i, j));
-      const auto& instr = code_[idx - 1];
+    	const auto idx = get_index({i,j});
       def_ins_[idx] = def_ins_[idx - 1];
+
+      const auto& instr = code_[idx - 1];
       def_ins_[idx] |= instr.must_write_set();
       def_ins_[idx] -= instr.maybe_undef_set();
     }
 
     // Summarize block
-    const auto idx = num_instrs(i) - 1;
-    const auto& instr = code_[idx];
+		const auto idx = get_index({i,num_instrs(i)-1});
     def_outs_[i] = def_ins_[idx];
+
+    const auto& instr = code_[idx];
     def_outs_[i] |= instr.must_write_set();
     def_outs_[i] -= instr.maybe_undef_set();
   }
 }
 
 void Cfg::recompute_liveness_gen_kill() {
-  gen_.resize(num_blocks(), RegSet::empty());
-  kill_.resize(num_blocks(), RegSet::empty());
+  gen_.assign(num_blocks(), RegSet::empty());
+  kill_.assign(num_blocks(), RegSet::empty());
 
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-    for (int j = num_instrs(*i) - 1; j >= 0; --j) {
-      const auto idx = get_index(loc_type(*i, j));
-      const auto& instr = code_[idx + 1];
-
+    for (int j = num_instrs(*i)-1; j >= 0; --j) {
+      const auto idx = get_index({*i, j});
+      const auto& instr = code_[idx];
       const auto use = instr.maybe_read_set();
       const auto def = instr.maybe_write_set() | instr.maybe_undef_set();
 
@@ -412,14 +425,14 @@ void Cfg::recompute_liveness_loops() {
     changed = false;
 
     for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-      live_outs_[blocks_[*i]] = RegSet::empty();
+      live_outs_[get_index({*i,num_instrs(*i)-1})] = RegSet::empty();
 
-      // Meet operator
+      // Meet operator (reachability is implicit here)
       for (auto s = succ_begin(*i), se = succ_end(*i); s != se; ++s) {
-        live_outs_[blocks_[*i]] |= live_ins_[*s];
+        live_outs_[get_index({*i,num_instrs(*i)-1})] |= live_ins_[*s];
       }
       // Transfer function
-      const auto new_in = (live_outs_[blocks_[*i]] - kill_[*i]) | gen_[*i];
+      const auto new_in = (live_outs_[get_index({*i,num_instrs(*i)-1})] - kill_[*i]) | gen_[*i];
 
       changed |= live_ins_[*i] != new_in;
       live_ins_[*i] = new_in;
@@ -429,9 +442,10 @@ void Cfg::recompute_liveness_loops() {
   // Compute live outs
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (int j = num_instrs(*i) - 2; j >= 0; --j) {
-      const auto idx = get_index(loc_type(*i, j));
-      const auto& instr = code_[idx + 1];
+      const auto idx = get_index({*i, j});
       live_outs_[idx] = live_outs_[idx + 1];
+
+      const auto& instr = code_[idx + 1];
       live_outs_[idx] -= instr.maybe_write_set();
       live_outs_[idx] -= instr.maybe_undef_set();
       live_outs_[idx] |= instr.maybe_read_set();
@@ -450,26 +464,28 @@ void Cfg::recompute_liveness_loop_free() {
   backward_topo_sort();
   for (auto i : block_sort_) {
     // Initial conditions
-    live_outs_[blocks_[i]] = RegSet::empty();
+    live_outs_[get_index({i, num_instrs(i)-1})] = RegSet::empty();
 
-    // Meet operator
+    // Meet operator (reachability is implicit here)
     for (auto s = succ_begin(i), se = succ_end(i); s != se; ++s) {
-      live_outs_[blocks_[i]] |= live_ins_[*s];
+      live_outs_[get_index({i,num_instrs(i)-1})] |= live_ins_[*s];
     }
     // Transfer function
-    for (int j = num_instrs(i) - 2; j >= 0; --j) {
-      const auto idx = get_index(loc_type(i, j));
-      const auto& instr = code_[idx + 1];
+    for (int j = num_instrs(i) - 1; j >= 0; --j) {
+      const auto idx = get_index({i, j});
       live_outs_[idx] = live_outs_[idx + 1];
+
+      const auto& instr = code_[idx + 1];
       live_outs_[idx] -= instr.maybe_write_set();
       live_outs_[idx] -= instr.maybe_undef_set();
       live_outs_[idx] |= instr.maybe_read_set();
     }
 
     // Summarize block
-    const auto idx = blocks_[i];
-    const auto& instr = code_[idx];
+    const auto idx = get_index({i,0});
     live_ins_[i] = live_outs_[idx];
+
+    const auto& instr = code_[idx];
     live_ins_[idx] -= instr.maybe_write_set();
     live_ins_[idx] -= instr.maybe_undef_set();
     live_ins_[idx] |= instr.maybe_read_set();

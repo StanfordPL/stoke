@@ -33,7 +33,6 @@ Sandbox::Sandbox() : fxn_(32 * 1024) {
   set_max_jumps(1024);
 
   snapshot_.init();
-  segv_buffer_.fill(0);
 
   static bool once = false;
   if (!once) {
@@ -119,7 +118,7 @@ void Sandbox::compile(const Cfg& cfg) {
       }
     }
   }
-  emit_infinite_loop_return();
+  emit_sig_return();
 
   assm_.finish();
 }
@@ -149,22 +148,20 @@ void Sandbox::run_one(size_t index) {
   if (!read_only_mem_) {
     io->out_.stack.copy_defined(io->in_.stack);
     io->out_.heap.copy_defined(io->in_.heap);
-    segv_buffer_.fill(0);
   }
 
   // Run the code and set signal flags
   if (!sigsetjmp(buf_, 1)) {
+    io->out_.code = ErrorCode::NORMAL;
     fxn_.call<void, void*>(io->in2cpu_.get_entrypoint());
 
-    if (jumps_ == 0) {
-      io->out_.code = ErrorCode::SIGKILL_;
-    } else if (!snapshot_.check_abi(io->out_)) {
-      io->out_.code = ErrorCode::SIGSEGV_;
-    } else if (segv_ != 0) {
-      io->out_.code = ErrorCode::SIGSEGV_;
-    } else {
-      io->out_.code = ErrorCode::NORMAL;
-    }
+		if ( jumps_ == 0 ) {
+			io->out_.code = ErrorCode::SIGKILL_;
+		} else if ( segv_ != 0 ) {
+			io->out_.code = ErrorCode::SIGSEGV_;
+		} else if (!snapshot_.check_abi(io->out_)) {
+			io->out_.code = ErrorCode::SIGSEGV_;
+		}
   } else {
     io->out_.code = ErrorCode::SIGFPE_;
   }
@@ -251,8 +248,8 @@ void Sandbox::emit_pre_jump() {
   // Decrement the jump counter
   assm_.mov((R64)rax, Imm64 {&jumps_});
   assm_.dec(M64 {rax});
-  // If we've hit zero, control continues in emit_inifinte_loop_return()
-  assm_.je(Label {"infinite_loop"});
+  // If we've hit zero, jump to the signal exit
+  assm_.je(Label{"sig"});
 
   // Restore rflags
   assm_.popfq();
@@ -351,6 +348,14 @@ void Sandbox::emit_instruction(const Instruction& instr) {
     assm_.mov(rdi, Imm64 {&scratch_[rdi]});
     assm_.mov(rdi, M64 {rdi});
     assm_.call(rax);
+
+		// If this call set the segv_ flag, jump to the signal return. We can use rax here since we
+		// just used it to hold a function pointer. No need to worry about rflags either. It was backed
+		// up earlier.
+  	assm_.mov(rax, Moffs64{&segv_});
+		assm_.cmp(rax, Imm32{0});
+		assm_.jne(Label{"sig"});
+
     // Find a free register to hold the sandboxed address
     size_t idx;
     for (idx = 8; idx < 16 && rs.contains(r64s[idx]); ++idx);
@@ -407,21 +412,22 @@ void Sandbox::emit_instruction(const Instruction& instr) {
   }
 }
 
-void Sandbox::emit_infinite_loop_return() {
-  // Control reaches here from emit_pre_jump().
-  assm_.bind(Label {"infinite_loop"});
+void Sandbox::emit_sig_return() {
+  assm_.bind(Label{"sig"});
 
-  // This is identical to the cleanup half of emit_pre_jump
+  // This is basically a stripped down version of emit_pre_return. All we care about 
+	// doing here is restoring the bare minimum state necessary to get back to stoke code
+	// without trashing the stack.
 
-  // Restore rflags
-  assm_.popfq();
-  // Restore rsp and rax
-  assm_.mov(rax, Moffs64 {&scratch_[rsp]});
+  // Reload the real stack pointer
+  assm_.mov(rax, Moffs64 {snapshot_.get_stoke_rsp()});
   assm_.mov(rsp, rax);
-  assm_.mov(rax, Moffs64 {&scratch_[rax]});
+  // Restore real callee saved registers
+  // (called from valid state and lets us keep real rsp which we just set)
+  assm_.mov((R64)rax, Imm64 {snapshot_.get_restore_stoke_callee_save()});
+  assm_.call(rax);
 
-  emit_pre_return();
-  assm_.ret();
+	assm_.ret();
 }
 
 Function Sandbox::assemble_map_addr(CpuState& cs) {
@@ -477,13 +483,12 @@ Function Sandbox::assemble_map_addr(CpuState& cs) {
   // of the two labels below
   // ...
 
-  // Failure; set the segv flag and return a valid address
-  // This address should be invisible to the user
-  assm_.bind(Label {"fail"});
-  assm_.mov((R64)rax, Imm64 {&segv_});
+  // Failure; set the segv flag. We can't jump directly to the sig exit
+	// since we're inside of a function call, so just fall through to return
+	// We'll check for segv_ up one level.
+  assm_.bind(Label{"fail"});
+  assm_.mov((R64)rax, Imm64{&segv_});
   assm_.inc(M64 {rax});
-  assm_.mov((R64)rax, Imm64 {segv_buffer_.data()});
-  assm_.mov(rdi, rax);
 
   // Done; get out of here
   assm_.bind(Label {"done"});

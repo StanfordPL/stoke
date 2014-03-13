@@ -61,11 +61,9 @@ auto& breakpoint = ValueArg<size_t>::create("breakpoint")
 void callback(const StateCallbackData& data, void* arg) {
   auto stepping = (bool*) arg;
 
-  cout << "Error Code: " << (int)data.state.code << endl;
-  cout << endl;
   cout << data.state << endl;
   cout << endl;
-  cout << target.value()[data.line] << endl;
+  cout << "Current Instruction: " << target.value()[data.line] << endl;
   cout << endl;
 
   if (data.line != breakpoint && *stepping == false) {
@@ -127,9 +125,13 @@ int main(int argc, char** argv) {
   sb.run({target, RegSet::empty(), RegSet::empty()});
 
   const auto result = *(sb.result_begin());
-	cout << "Error Code: " << (int)result.code << endl;
-	cout << endl;
-	cout << result << endl;
+	if ( result.code != ErrorCode::NORMAL ) {
+		cout << "Control returned abnormally with signal " << dec << (int)result.code << endl;
+	} else {
+		cout << "Control returned normally with state: " << endl;
+		cout << endl;
+		cout << result << endl;
+	}
 	cout << endl;
 
   return 0;

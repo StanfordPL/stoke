@@ -155,8 +155,6 @@ class Sandbox {
   size_t jumps_;
   /** Has a segfault occurred during this execution? */
   size_t segv_;
-  /** A safe buffer we can point segfaulting addresses to. */
-  alignas(32) std::array<uint8_t, 32> segv_buffer_;
 
   /** Scratch space used here and there by sandboxing code. */
   uint64_t scratch_[16];
@@ -185,8 +183,8 @@ class Sandbox {
   void emit_pre_return();
   /** Emit an instruction (and possibly sandbox memory). */
   void emit_instruction(const x64asm::Instruction& instr);
-  /** Emit a special exit for infinite loops. */
-  void emit_infinite_loop_return();
+  /** Emit a special exit for code that signals. */
+  void emit_sig_return();
 
   /** Returns a function which maps rdi into the heap sandbox. */
   x64asm::Function assemble_map_addr(CpuState& cs);

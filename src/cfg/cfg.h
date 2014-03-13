@@ -282,7 +282,7 @@ class Cfg {
     assert(id < num_blocks());
     assert(!is_entry(id));
     assert(!is_exit(id));
-    return def_ins_[blocks_[id]];
+    return def_ins_[get_index({id,0})];
   }
   /** Returns the set of registers that are defined on entry to an instruction; undefined for the
   	entry and exit blocks which have no instructions. */
@@ -303,7 +303,7 @@ class Cfg {
     assert(id < num_blocks());
     assert(!is_entry(id));
     assert(!is_exit(id));
-    return live_outs_[blocks_[id]];
+    return live_outs_[get_index({id,num_instrs(id)-1})];
   }
   /** Returns the set of registers that are live on exit from this instruction; undefined for the
   	entry and exit blocks which contain no instructions. */
@@ -378,11 +378,9 @@ class Cfg {
   /** The kill set for each basic block. */
   std::vector<x64asm::RegSet> kill_;
 
-  /** Performs a forward topological sort and places the result in block_sort_; contains entry
-  	and exit blocks. */
+  /** Performs a forward topological sort of reachable blocks and places the result in block_sort_ */
   void forward_topo_sort();
-  /** Performs a backward topological sort and places the result in block_sort_; contains entry
-  	and exit blocks. */
+  /** Performs a backward topological sort of reachable blocks and places the result in block_sort_ */
   void backward_topo_sort();
 
   /** Recompute the indices in blocks_. */
