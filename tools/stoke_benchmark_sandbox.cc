@@ -54,11 +54,13 @@ int main(int argc, char** argv) {
 		sb.insert_input(tc);
 	}
 
+	Cfg cfg{target, RegSet::empty(), RegSet::empty()};
+
 	cout << "Sandbox::run()..." << endl;
 
 	const auto start = steady_clock::now();
 	for ( size_t i = 0; i < itr; ++i ) {
-		sb.run({target, RegSet::empty(), RegSet::empty()});
+		sb.run(cfg);
 	}
 	const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
 	const auto rps = itr / dur.count();
