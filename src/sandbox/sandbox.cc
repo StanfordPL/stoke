@@ -13,7 +13,6 @@ using namespace x64asm;
 namespace {
 
 sigjmp_buf buf_;
-
 void sigfpe_handler(int signum, siginfo_t* si, void* data) {
   siglongjmp(buf_, 1);
 }
@@ -29,7 +28,6 @@ namespace stoke {
 Sandbox::Sandbox() : fxn_(32 * 1024) {
   clear_inputs();
   clear_callbacks();
-
   set_max_jumps(1024);
 
   snapshot_.init();
@@ -65,7 +63,7 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
   io->in_ = input;
   io->out_ = input;
 
-  // Note that we never copy rsp TO the cpu. This has nasty function
+  // Note that we never copy rsp to the cpu. This has nasty function
   // call return implications, which we have to handle at call point.
   // We handle rsp separately as part of the user's callee-saved state.
 
@@ -86,13 +84,9 @@ void Sandbox::compile(const Cfg& cfg) {
 
   assm_.start(fxn_);
 
-	// Save callee-saved register state
+	// Emit instrumentation prolog
   emit_save_stoke_callee_save();
-	// Load user registers (we handle rsp separately since it's stored somewhere else)
-  assm_.call(rdi);
-  assm_.mov(rsp, Imm64 {&current_frame_});
-  assm_.mov(rsp, M64 {rsp});
-	// Now save the user's callee-save state (which includes the rsp we just set)
+	emit_write_user_state();
   emit_save_user_callee_save();
 
   // Assemble reachable blocks
@@ -118,6 +112,7 @@ void Sandbox::compile(const Cfg& cfg) {
       }
     }
   }
+	// Emit catch-all prolog
   emit_sig_return();
 
   assm_.finish();
@@ -399,6 +394,12 @@ void Sandbox::emit_save_stoke_callee_save() {
   // Called from a valid rsp context
   assm_.mov((R64)rax, Imm64 {snapshot_.get_save_stoke_callee_save()});
   assm_.call(rax);
+}
+
+void Sandbox::emit_write_user_state() {
+  assm_.call(rdi);
+  assm_.mov(rsp, Imm64 {&current_frame_});
+  assm_.mov(rsp, M64 {rsp});
 }
 
 void Sandbox::emit_save_user_callee_save() {

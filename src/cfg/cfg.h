@@ -22,16 +22,17 @@ class Cfg {
   typedef size_t id_type;
   /** Location type; block followed by index within block. */
   typedef std::pair<id_type, size_t> loc_type;
+  /** Edge type; points from first basic block to second. */
+  typedef std::pair<id_type, id_type> edge_type;
+  /** Loop type: a set of basic blocks. */
+  typedef cpputil::BitVector loop_type;
+
   /** Iterator over a basic block's instructions. */
   typedef x64asm::Code::const_iterator instr_iterator;
   /** Iterator over a basic block's successors. */
   typedef std::vector<id_type>::const_iterator pred_iterator;
   /** Iterator over a basic block's predecssors. */
   typedef std::vector<id_type>::const_iterator succ_iterator;
-  /** Edge type; points from first basic block to second. */
-  typedef std::pair<id_type, id_type> edge_type;
-  /** Loop type: a set of basic blocks. */
-  typedef cpputil::BitVector loop_type;
   /** Iterator over the basic blocks in a loop. */
   typedef loop_type::const_set_bit_index_iterator loop_iterator;
   /** Iterator over this graph's back edges. */
@@ -203,9 +204,7 @@ class Cfg {
   	blocks, including the entry and exit blocks. */
   bool dom(id_type x, id_type y) const {
     assert(is_reachable(x));
-    assert(x < num_blocks());
     assert(is_reachable(y));
-    assert(y < num_blocks());
     return doms_[y][x];
   }
 
@@ -224,14 +223,14 @@ class Cfg {
   }
 
   /** Returns an iterator that points to the beginning of the list of basic blocks in this
-  	back edge's loop. */
+  	back edge's loop; undefined if this isn't a back edge. */
   loop_iterator loop_begin(const edge_type& be) const {
     const auto itr = loops_.find(be);
     assert(itr != loops_.end());
     return itr->second.set_bit_index_begin();
   }
   /** Returns an iterator that points to the end of the list of basic blocks in this
-  	back edge's loop. */
+  	back edge's loop; undefined if this isn't a backedge. */
   loop_iterator loop_end(const edge_type& be) const {
     const auto itr = loops_.find(be);
     assert(itr != loops_.end());
@@ -248,11 +247,6 @@ class Cfg {
     assert(id < num_blocks());
     return nesting_depth_[id];
   }
-
-	/** Returns the number of reachable blocks; entry and exit blocks are not considered reachable. */
-	size_t num_reachable() const {
-		return 0; // todo...
-	}
 
   /** Returns an iterator that points to the beginning of this graph's reachable block list;
    the entry and exit blocks are not considered reachable. */
@@ -276,20 +270,16 @@ class Cfg {
   x64asm::RegSet def_ins() const {
     return fxn_def_ins_;
   }
-  /** Returns the set of registers that are defined on entry to a basic block; undefined for the
-  	entry and exit blocks. */
+  /** Returns the set of registers that are defined on entry to a basic block; undefined for unreachable 
+  	blocks. */
   x64asm::RegSet def_ins(id_type id) const {
-    assert(id < num_blocks());
-    assert(!is_entry(id));
-    assert(!is_exit(id));
+    assert(is_reachable(id));
     return def_ins_[get_index({id,0})];
   }
-  /** Returns the set of registers that are defined on entry to an instruction; undefined for the
-  	entry and exit blocks which have no instructions. */
+  /** Returns the set of registers that are defined on entry to an instruction; undefined for unreachable
+		blocks. */
   x64asm::RegSet def_ins(const loc_type& loc) const {
-    assert(loc.first < num_blocks());
-    assert(!is_entry(loc.first));
-    assert(!is_exit(loc.first));
+    assert(is_reachable(loc.first));
     return def_ins_[get_index(loc)];
   }
 
@@ -297,20 +287,16 @@ class Cfg {
   x64asm::RegSet live_outs() const {
     return fxn_live_outs_;
   }
-  /** Returns the set of registers that are live on exit from this block; undefined for the entry
-  	and exit blocks. */
+  /** Returns the set of registers that are live on exit from this block; undefined for unreachable
+		blocks. */
   x64asm::RegSet live_outs(id_type id) const {
-    assert(id < num_blocks());
-    assert(!is_entry(id));
-    assert(!is_exit(id));
+    assert(is_reachable(id));
     return live_outs_[get_index({id,num_instrs(id)-1})];
   }
-  /** Returns the set of registers that are live on exit from this instruction; undefined for the
-  	entry and exit blocks which contain no instructions. */
+  /** Returns the set of registers that are live on exit from this instruction; undefined for 
+		unreachable blocks. */
   x64asm::RegSet live_outs(const loc_type& loc) const {
-    assert(loc.first < num_blocks());
-    assert(!is_entry(loc.first));
-    assert(!is_exit(loc.first));
+    assert(is_reachable(loc.first));
     return live_outs_[get_index(loc)];
   }
 
@@ -385,17 +371,30 @@ class Cfg {
 
   /** Recompute the indices in blocks_. */
   void recompute_blocks();
+
   /** Recompute the label-index pairs in labels_; assumes blocks_ is up to date. */
   void recompute_labels();
   /** Recompute the contents of succs_; assumes blocks_ and labels_ are up to date. */
   void recompute_succs();
   /** Recompute the contents of preds_; assumes blocks_ and succs_ are up to date. */
   void recompute_preds();
-  /** Recompute the contents of reachable_; assumes blocks_ and succs_ are up to date. */
+	/** Recompute the contents of reachable_; assumes blocks_ and succs_ are up to date. */
   void recompute_reachable();
+
   /** Recompute dom_; assumes blocks_ preds_ and reachable_ are up to date. */
-  void recompute_dominators();
-  /** Recompute the keys in loops_; assumes blocks_ succs_ and reachable_ are up to date. */
+  void recompute_dominators() {
+		if ( !is_loop_free() ) {
+			recompute_dominators_loops();
+		} else {
+			recompute_dominators_loop_free();
+		}
+	}
+	/** Recomputes dominators using the generic least fixed point dataflow algorithm. */
+	void recompute_dominators_loops();
+	/** Faster recomputation of dominators; valid only for loop-free graphs. */
+	void recompute_dominators_loop_free();
+  
+	/** Recompute the keys in loops_; assumes blocks_ succs_ and reachable_ are up to date. */
   void recompute_back_edges();
   /** Recompute the values in loops_; assumes blocks_ preds_ and reachable_ are up to date. */
   void recompute_loops();

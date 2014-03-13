@@ -27,7 +27,7 @@ namespace stoke {
 void MoveReader::operator()(std::istream& is, Move m) {
   string s;
   is >> s;
-  if (is.fail() || !generic_read(moves, s, m)) {
+  if (!generic_read(moves, s, m)) {
     is.setstate(ios::failbit);
   }
 }

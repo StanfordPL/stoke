@@ -23,7 +23,7 @@ namespace stoke {
 void DistanceReader::operator()(std::istream& is, Distance pt) {
   string s;
   is >> s;
-  if (is.fail() || !generic_read(pts, s, pt)) {
+  if (!generic_read(pts, s, pt)) {
     is.setstate(ios::failbit);
   }
 }

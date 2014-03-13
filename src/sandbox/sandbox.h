@@ -184,6 +184,8 @@ class Sandbox {
 
   /** Emits code to save the true callee saved registers. */
   void emit_save_stoke_callee_save();
+	/** Emits code to load user-specified register values to cpu. */
+	void emit_write_user_state();
   /** Emits code to save the user callee saved registers. */
   void emit_save_user_callee_save();
   /** Emit a callback (before or after) a line. */

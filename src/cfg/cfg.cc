@@ -9,7 +9,7 @@ namespace stoke {
 
 Cfg::loc_type Cfg::get_loc(size_t idx) const {
   assert(idx < code_.size());
-  for (int i = num_blocks() - 1; i >= 0; --i)
+  for (auto i = get_exit() - 1; i > get_entry(); --i)
     if (idx >= blocks_[i]) {
       return loc_type(i, idx - blocks_[i]);
     }
@@ -68,16 +68,17 @@ void Cfg::forward_topo_sort() {
 
   // No need to check for reachability here; it's implicit in a forward traversal.
 	for ( auto s = succ_begin(get_entry()), se = succ_end(get_entry()); s != se; ++s ) {
-		if ( !is_exit(*s) ) {
+		if ( !visited_[*s] && !is_exit(*s) ) {
 			block_sort_.push_back(*s);
+			visited_[*s] = true;
 		}
 	}
   for (size_t i = 0; i < block_sort_.size(); ++i) {
     const auto next = block_sort_[i];
-    visited_[next] = true;
     for (auto s = succ_begin(next), se = succ_end(next); s != se; ++s) {
       if (!visited_[*s] && !is_exit(*s)) {
         block_sort_.push_back(*s);
+				visited_[*s] = true;
       }
     }
   }
@@ -90,16 +91,17 @@ void Cfg::backward_topo_sort() {
 
   // Going backwards, we need to stay away from unreachable blocks.
 	for (auto p = pred_begin(get_exit()), pe = pred_end(get_exit()); p != pe; ++p) {
-		if (is_reachable(*p)) {
+		if ( !visited_[*p] && is_reachable(*p)) {
 			block_sort_.push_back(*p);
+			visited_[*p] = true;
 		}
 	}
   for (size_t i = 0; i < block_sort_.size(); ++i) {
     const auto next = block_sort_[i];
-    visited_[next] = true;
     for (auto p = pred_begin(next), pe = pred_end(next); p != pe; ++p) {
       if (!visited_[*p] && is_reachable(*p)) {
         block_sort_.push_back(*p);
+    		visited_[*p] = true;
       }
     }
   }
@@ -194,22 +196,13 @@ void Cfg::recompute_reachable() {
   reachable_.resize_for_bits(num_blocks());
   reachable_.reset();
 
-	assert(block_stack_.empty());
-  for (block_stack_.push(get_entry()); !block_stack_.empty();) {
-    const auto m = block_stack_.top();
-    block_stack_.pop();
-    for (auto s = succ_begin(m), se = succ_end(m); s != se; ++s) {
-      if (!reachable_[*s]) {
-        reachable_[*s] = true;
-        block_stack_.push(*s);
-      }
-    }
-  }
-  // Checking for is_reachable means we didn't catch the exit block.
-  reachable_[get_exit()] = false;
+	forward_topo_sort();
+	for ( const auto i : block_sort_ ) {
+		reachable_[i] = true;
+	}
 }
 
-void Cfg::recompute_dominators() {
+void Cfg::recompute_dominators_loops() {
   doms_.resize(num_blocks());
 
   // Constants
@@ -219,6 +212,8 @@ void Cfg::recompute_dominators() {
   // Bounary conditions
   doms_[get_entry()].resize_for_bits(num_blocks());
   doms_[get_entry()].reset();
+	doms_[get_entry()][get_entry()] = true;
+
   // Initial conditions
   for (size_t i = get_entry() + 1, ie = get_exit(); i < ie; ++i) {
     doms_[i] = universe;
@@ -229,18 +224,49 @@ void Cfg::recompute_dominators() {
     changed = false;
 
     for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+      // Meet operator; okay to read unreachable blocks which are fixed to universe
       auto new_out = universe;
-
-      // Meet operator; okay to reach unreachable blocks which are fixed to universe
       for (auto p = pred_begin(*i), pe = pred_end(*i); p != pe; ++p) {
         new_out &= doms_[*p];
       }
+
       // Transfer function
       new_out[*i] = true;
 
+			// Check for fixed point
       changed |= (doms_[*i] != new_out);
       doms_[*i] = new_out;
     }
+  }
+}
+
+void Cfg::recompute_dominators_loop_free() {
+  doms_.resize(num_blocks());
+
+  // Constants
+  BitVector universe(num_blocks());
+  universe.set();
+
+  // Bounary conditions
+  doms_[get_entry()].resize_for_bits(num_blocks());
+  doms_[get_entry()].reset();
+	doms_[get_entry()][get_entry()] = true;
+
+  // Iterate only once in topological order
+	forward_topo_sort();
+  for (auto i : block_sort_) {
+    // Initial conditions
+    doms_[i] = universe;
+
+    // Meet operator (here, we have to check for unreachable since we haven't set everything)
+    for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p) {
+      if (is_reachable(*p) || is_entry(*p)) {
+        doms_[i] &= doms_[*p];
+      }
+    }
+
+    // Transfer function
+		doms_[i][i] = true;
   }
 }
 
@@ -310,6 +336,7 @@ void Cfg::recompute_defs_loops() {
 
   // Boundary conditions; MXCSR[rc] is always defined
   def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
+
   // Initial conditions
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     def_outs_[*i] = RegSet::universe();
@@ -320,9 +347,8 @@ void Cfg::recompute_defs_loops() {
     changed = false;
 
     for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-      def_ins_[get_index({*i,0})] = RegSet::universe();
-
       // Meet operator
+      def_ins_[get_index({*i,0})] = RegSet::universe();
       for (auto p = pred_begin(*i), pe = pred_end(*i); p != pe; ++p) {
         if (is_reachable(*p) || is_entry(*p)) {
           def_ins_[get_index({*i,0})] &= def_outs_[*p];
@@ -331,11 +357,13 @@ void Cfg::recompute_defs_loops() {
       // Transfer function
       const auto new_out = (def_ins_[get_index({*i,0})] - kill_[*i]) | gen_[*i];
 
+			// Check for fixed point
       changed |= def_outs_[*i] != new_out;
       def_outs_[*i] = new_out;
     }
   }
 
+	// Compute dataflow values for each instruction
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 1, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
@@ -367,6 +395,7 @@ void Cfg::recompute_defs_loop_free() {
         def_ins_[get_index({i,0})] &= def_outs_[*p];
       }
     }
+
     // Transfer function
     for (size_t j = 1, je = num_instrs(i); j < je; ++j) {
     	const auto idx = get_index({i,j});
@@ -415,6 +444,7 @@ void Cfg::recompute_liveness_loops() {
 
   // Boundary conditions
   live_ins_[get_exit()] = fxn_live_outs_;
+
   // Initial conditions
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     live_ins_[*i] = RegSet::empty();
@@ -425,21 +455,22 @@ void Cfg::recompute_liveness_loops() {
     changed = false;
 
     for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-      live_outs_[get_index({*i,num_instrs(*i)-1})] = RegSet::empty();
-
       // Meet operator (reachability is implicit here)
+      live_outs_[get_index({*i,num_instrs(*i)-1})] = RegSet::empty();
       for (auto s = succ_begin(*i), se = succ_end(*i); s != se; ++s) {
         live_outs_[get_index({*i,num_instrs(*i)-1})] |= live_ins_[*s];
       }
+
       // Transfer function
       const auto new_in = (live_outs_[get_index({*i,num_instrs(*i)-1})] - kill_[*i]) | gen_[*i];
 
+			// Check for fixed point
       changed |= live_ins_[*i] != new_in;
       live_ins_[*i] = new_in;
     }
   }
 
-  // Compute live outs
+  // Compute dataflow values for each instruction
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (int j = num_instrs(*i) - 2; j >= 0; --j) {
       const auto idx = get_index({*i, j});

@@ -24,7 +24,7 @@ namespace stoke {
 void PerformanceTermReader::operator()(std::istream& is, PerformanceTerm pt) {
   string s;
   is >> s;
-  if (is.fail() || !generic_read(pts, s, pt)) {
+  if (!generic_read(pts, s, pt)) {
     is.setstate(ios::failbit);
   }
 }
