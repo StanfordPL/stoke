@@ -471,7 +471,7 @@ void Cfg::recompute_liveness_loop_free() {
       live_outs_[get_index({i,num_instrs(i)-1})] |= live_ins_[*s];
     }
     // Transfer function
-    for (int j = num_instrs(i) - 1; j >= 0; --j) {
+    for (int j = num_instrs(i) - 2; j >= 0; --j) {
       const auto idx = get_index({i, j});
       live_outs_[idx] = live_outs_[idx + 1];
 
