@@ -7,9 +7,9 @@
 #include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/code.h"
 #include "src/args/flag_set.h"
 #include "src/args/move.h"
+#include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
 #include "src/search/move.h"
 #include "src/search/transforms.h"
@@ -22,10 +22,10 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("Input programs:");
 
-auto& target = FileArg<Code, CodeReader, CodeWriter>::create("target")
+auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
   .usage("<path/to/file>")
   .description("Target")
-  .default_val({{RET}});
+  .default_val({"anon",{{RET}}});
 
 auto& h2 = Heading::create("Transform options:");
 
@@ -69,12 +69,12 @@ int main(int argc, char** argv) {
 		seed.value() = gen();
 	}
 
-	Cfg cfg(target, RegSet::empty(), RegSet::empty());
+	Cfg cfg(target.value().code, RegSet::empty(), RegSet::empty());
 
 	Transforms transforms;
 	transforms.set_seed(seed)
 		.set_opcode_pool(flags, nop_percent, mem_read, mem_write)
-		.set_operand_pool(target, callee_save);
+		.set_operand_pool(target.value().code, callee_save);
 
 	ofilterstream<Column> os(cout);
 	os.filter().padding(3);

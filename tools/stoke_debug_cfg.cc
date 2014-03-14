@@ -8,8 +8,8 @@
 #include "src/ext/cpputil/include/system/terminal.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/code.h"
 #include "src/args/reg_set.h"
+#include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
 #include "src/cfg/dot_writer.h"
 
@@ -20,10 +20,10 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("Input program:");
 
-auto& target = FileArg<Code, CodeReader, CodeWriter>::create("target")
+auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
   .usage("<path/to/file>")
   .description("Target code")
-  .default_val({{RET}});
+  .default_val({"anon",{{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
   .usage("{ rax rsp ... }")
@@ -77,7 +77,7 @@ void to_dot() {
 		.set_live_out(lob, loi)
 		.set_dom(dom);
 
-  dw(ofs, {target, def_in, live_out});
+  dw(ofs, {target.value().code, def_in, live_out});
 }
 
 bool to_pdf() {

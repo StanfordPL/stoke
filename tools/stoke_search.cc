@@ -1,3 +1,4 @@
+#include <chrono>
 #include <iostream>
 #include <random>
 #include <set>
@@ -10,13 +11,13 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/code.h"
 #include "src/args/distance.h"
 #include "src/args/flag_set.h"
 #include "src/args/performance_term.h"
 #include "src/args/reduction.h"
 #include "src/args/reg_set.h"
 #include "src/args/testcases.h"
+#include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
 #include "src/cost/cost.h"
 #include "src/cost/cost_function.h"
@@ -33,20 +34,21 @@
 
 using namespace cpputil;
 using namespace std;
+using namespace std::chrono;
 using namespace stoke;
 using namespace x64asm;
 
 auto& h1 = Heading::create("Input programs:");
 
-auto& target = FileArg<Code, CodeReader, CodeWriter>::create("target")
+auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
   .usage("<path/to/file>")
   .description("Target")
-  .default_val({{RET}});
+  .default_val({"anon",{{RET}}});
 
-auto& rewrite = FileArg<Code, CodeReader, CodeWriter>::create("rewrite")
+auto& rewrite = FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
   .usage("<path/to/file>")
   .description("Rewrite")
-  .default_val({{RET}});
+  .default_val({"anon",{{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
   .usage("{ rax rsp ... }")
@@ -64,7 +66,7 @@ auto& stack_out = FlagArg::create("stack_out")
 auto& heap_out = FlagArg::create("heap_out")
   .description("Is heap defined on exit?");
 
-auot& h2 = Heading::create("Output options:");
+auto& h2 = Heading::create("Output options:");
 
 auto& out = ValueArg<string>::create("out")
 	.alternate("o")
@@ -244,8 +246,8 @@ int main(int argc, char** argv) {
 		seed.value() = gen();
 	}
 
-	Cfg cfg_t(target, def_in, live_out);
-	Cfg cfg_r(rewrite, def_in, live_out);
+	Cfg cfg_t(target.value().code, def_in, live_out);
+	Cfg cfg_r(rewrite.value().code, def_in, live_out);
 
 	Sandbox sb;
 	sb.set_max_jumps(max_jumps);
@@ -268,7 +270,7 @@ int main(int argc, char** argv) {
 	Transforms transforms;
 	transforms.set_seed(seed)
 		.set_opcode_pool(flags, nop_percent, mem_read, mem_write)
-		.set_operand_pool(target, callee_save);
+		.set_operand_pool(target.value().code, callee_save);
 
 	Search search(&transforms);
 	search.set_seed(seed)

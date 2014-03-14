@@ -10,8 +10,8 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/code.h"
 #include "src/args/testcases.h"
+#include "src/args/tunit.h"
 #include "src/state/cpu_state.h"
 #include "src/state/state_writer.h"
 #include "src/sandbox/sandbox.h"
@@ -24,10 +24,10 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("Input program:");
 
-auto& target = FileArg<Code, CodeReader, CodeWriter>::create("target")
+auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
   .usage("<path/to/file>")
   .description("Target code")
-  .default_val({{RET}});
+  .default_val({"anon",{{RET}}});
 
 auto& h2 = Heading::create("Testcases:");
 
@@ -64,7 +64,7 @@ void callback(const StateCallbackData& data, void* arg) {
 
   cout << data.state << endl;
   cout << endl;
-  cout << "Current Instruction: " << target.value()[data.line] << endl;
+  cout << "Current Instruction: " << target.value().code[data.line] << endl;
   cout << endl;
 
   if (data.line != breakpoint && *stepping == false) {
@@ -79,8 +79,8 @@ void callback(const StateCallbackData& data, void* arg) {
 
     switch (key) {
       case 'l':
-        for (size_t i = 0, ie = target.value().size(); i < ie; ++i) {
-          cout << (i == data.line ? "-> " : "   ") << target.value()[i] << endl;
+        for (size_t i = 0, ie = target.value().code.size(); i < ie; ++i) {
+          cout << (i == data.line ? "-> " : "   ") << target.value().code[i] << endl;
         }
         cout << endl;
         break;
@@ -119,11 +119,11 @@ int main(int argc, char** argv) {
   sb.insert_input(input);
 
   auto stepping = false;
-  for (size_t i = 0, ie = target.value().size(); i < ie; ++i) {
+  for (size_t i = 0, ie = target.value().code.size(); i < ie; ++i) {
     sb.insert_before(i, callback, &stepping);
   }
 
-  sb.run({target, RegSet::empty(), RegSet::empty()});
+  sb.run({target.value().code, RegSet::empty(), RegSet::empty()});
 
   const auto result = *(sb.result_begin());
 	if ( result.code != ErrorCode::NORMAL ) {

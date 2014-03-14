@@ -5,8 +5,8 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/code.h"
 #include "src/args/testcases.h"
+#include "src/args/tunit.h"
 #include "src/state/cpu_state.h"
 #include "src/sandbox/sandbox.h"
 
@@ -18,10 +18,10 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("Input program:");
 
-auto& target = FileArg<Code, CodeReader, CodeWriter>::create("target")
+auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
   .usage("<path/to/file>")
   .description("Target code")
-  .default_val({{RET}});
+  .default_val({"auto", {{RET}}});
 
 auto& h2 = Heading::create("Testcases:");
 
@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
 		sb.insert_input(tc);
 	}
 
-	Cfg cfg{target, RegSet::empty(), RegSet::empty()};
+	Cfg cfg{target.value().code, RegSet::empty(), RegSet::empty()};
 
 	cout << "Sandbox::run()..." << endl;
 

@@ -13,7 +13,6 @@ LIB=\
 	src/ext/x64asm/lib/libx64asm.a
 
 OBJ=\
-	src/args/code.o \
 	src/args/distance.o \
 	src/args/flag_set.o \
 	src/args/move.o \
@@ -22,6 +21,7 @@ OBJ=\
 	src/args/performance_term.o \
 	src/args/strategy.o \
 	src/args/testcases.o \
+	src/args/tunit.o \
 	\
 	src/cfg/cfg.o \
 	src/cfg/cfg_transforms.o \
@@ -42,13 +42,10 @@ OBJ=\
 	\
 	src/verifier/verifier.o
 
-BIN= \
-	bin/stoke_benchmark_cfg \
-	bin/stoke_benchmark_cost \
-	bin/stoke_benchmark_sandbox \
-	bin/stoke_benchmark_search \
-	bin/stoke_benchmark_state \
-	bin/stoke_benchmark_verify \
+BIN=\
+	bin/stoke_extract \
+	bin/stoke_search \
+	bin/stoke_testcase \
 	\
 	bin/stoke_debug_cfg \
 	bin/stoke_debug_cost \
@@ -57,9 +54,12 @@ BIN= \
 	bin/stoke_debug_state \
 	bin/stoke_debug_verify \
 	\
-	bin/stoke_extract \
-	bin/stoke_search \
-	bin/stoke_testcase
+	bin/stoke_benchmark_cfg \
+	bin/stoke_benchmark_cost \
+	bin/stoke_benchmark_sandbox \
+	bin/stoke_benchmark_search \
+	bin/stoke_benchmark_state \
+	bin/stoke_benchmark_verify 
 
 ##### TOP LEVEL TARGETS (release is default)
 

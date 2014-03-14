@@ -5,7 +5,7 @@
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/indent.h"
 
-#include "src/args/code.h"
+#include "src/args/tunit.h"
 
 using namespace cpputil;
 using namespace std;
@@ -13,45 +13,47 @@ using namespace x64asm;
 
 namespace stoke {
 
-void CodeReader::operator()(istream& is, Code& c) {
-  vector<string> lines;
-  string line;
+void TUnitReader::operator()(istream& is, TUnit& t) {
+  string s;
 
-  for (size_t i = 0; getline(is, line); ++i) {
-    if (i > 3) {
-      lines.push_back(line);
-    }
+	getline(is, s);
+	is >> s >> t.name;
+	getline(is, s);
+	getline(is, s);
+
+  vector<string> lines;
+  for (size_t i = 0; getline(is, s); ++i) {
+    lines.push_back(s);
   }
   lines.pop_back();
-
   is.clear(ios::eofbit);
 
   stringstream ss;
   for (const auto& l : lines) {
     ss << l << endl;
   }
+  ss >> t.code;
 
-  ss >> c;
   if (ss.fail()) {
     is.setstate(ios::failbit);
   }
 }
 
-void CodeWriter::operator()(ostream& os, const Code& c) {
+void TUnitWriter::operator()(ostream& os, const TUnit& t) {
   ofilterstream<Indent> ofs(os);
 
   ofs.filter().indent();
   ofs << ".text" << endl;
-  ofs << ".globl fxn" << endl;
-  ofs << ".type fxn @function" << endl;
+  ofs << ".globl " << t.name << endl;
+  ofs << ".type " << t.name << " @function" << endl;
 
   ofs.filter().unindent();
-  ofs << "fxn:" << endl;
+  ofs << t.name << ":" << endl;
 
   ofs.filter().indent();
-  ofs << c << endl;
+  ofs << t.code << endl;
 
-  ofs << ".size fxn, .-fxn";
+  ofs << ".size " << t.name << ", .-" << t.name;
 }
 
 } // namespace stoke

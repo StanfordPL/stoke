@@ -4,8 +4,8 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/code.h"
 #include "src/args/reg_set.h"
+#include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
 
 using namespace cpputil;
@@ -16,10 +16,10 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("Input program:");
 
-auto& target = FileArg<Code, CodeReader, CodeWriter>::create("target")
+auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
   .usage("<path/to/file>")
   .description("Target code")
-  .default_val({{RET}});
+  .default_val({"anon",{{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
   .usage("{ rax rsp ... }")
@@ -40,7 +40,7 @@ auto& itr = ValueArg<size_t>::create("iterations")
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-	Cfg cfg(target, def_in, live_out);
+	Cfg cfg(target.value().code, def_in, live_out);
 
 	cout << "Cfg::recompute()..." << endl;
 
