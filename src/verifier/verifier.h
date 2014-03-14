@@ -11,7 +11,7 @@ namespace stoke {
 class Verifier {
 	public:
 		Verifier(Sandbox* sb) : sandbox_(sb) {
-			set_strategy(Strategy::REGRESSION);
+			set_strategy(Strategy::NONE);
 		}
 
 		Verifier& set_strategy(Strategy s) {

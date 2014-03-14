@@ -8,9 +8,7 @@ using namespace x64asm;
 namespace {
 
 set<Opcode> unsupported_ {{
-	#include "src/search/tables/sigfpe.h"
-	#include "src/search/tables/bugs.h"
-	#include "src/search/tables/cant_model.h"
+	#include "src/search/tables/unsupported.h"
 }};
 
 } // namespace

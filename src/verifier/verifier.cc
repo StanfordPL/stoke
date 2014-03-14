@@ -7,9 +7,9 @@ using namespace std;
 namespace stoke {
 
 bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
-	auto ret = false;
-
 	switch ( strategy_ ) {
+		case Strategy::NONE:
+			return true;
 		case Strategy::REGRESSION:
 			return regression(target, rewrite);
 		case Strategy::FORMAL:

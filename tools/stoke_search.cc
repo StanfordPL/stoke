@@ -1,4 +1,3 @@
-#include <chrono>
 #include <iostream>
 #include <random>
 #include <set>
@@ -34,7 +33,6 @@
 
 using namespace cpputil;
 using namespace std;
-using namespace std::chrono;
 using namespace stoke;
 using namespace x64asm;
 
@@ -66,7 +64,15 @@ auto& stack_out = FlagArg::create("stack_out")
 auto& heap_out = FlagArg::create("heap_out")
   .description("Is heap defined on exit?");
 
-auto& h2 = Heading::create("Testcase options:");
+auot& h2 = Heading::create("Output options:");
+
+auto& out = ValueArg<string>::create("out")
+	.alternate("o")
+	.usage("<path/to/file.s>")
+	.description("File to write successful results to")
+	.default_val("result.s");
+
+auto& h3 = Heading::create("Testcase options:");
 
 auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
   .usage("<path/to/file>")
@@ -78,7 +84,7 @@ auto& indices = ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 1, 1
   .description("Subset of testcase indices to use")
   .default_val({0});
 
-auto& h3 = Heading::create("Correctness options:");
+auto& h4 = Heading::create("Correctness options:");
 
 auto& distance = ValueArg<Distance, DistanceReader, DistanceWriter>::create("distance")
 	.usage("(hamming|ulp)")
@@ -121,7 +127,7 @@ auto& min_ulp = ValueArg<Cost>::create("min_ulp")
 	.description("minimum ULP value to record")
 	.default_val(0);
 
-auto& h4 = Heading::create("Performance options:");
+auto& h5 = Heading::create("Performance options:");
 
 auto& perf = ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
 	.usage("(none|size|latency)")
@@ -133,14 +139,14 @@ auto& nesting_penalty = ValueArg<Cost>::create("nesting_penalty")
 	.description("Latency multiplier for nested code")
 	.default_val(1);
 
-auto& h5 = Heading::create("Sandbox options:");
+auto& h6 = Heading::create("Sandbox options:");
 
 auto& max_jumps = ValueArg<size_t>::create("max_jumps")
   .usage("<int>")
   .description("Maximum jumps before exit due to infinite loop")
   .default_val(1024);
 
-auto& h6 = Heading::create("Transform options:");
+auto& h7 = Heading::create("Transform options:");
 
 auto& flags = ValueArg<FlagSet, FlagSetReader, FlagSetWriter>::create("cpu_flags")
 	.usage("{ flag1 flag2 ... flagn }")
@@ -161,7 +167,7 @@ auto& mem_write = FlagArg::create("mem_write")
 auto& callee_save = FlagArg::create("callee_save")
 	.description("Propose instruction and operand moves that use callee save registers?");
 
-auto& h7 = Heading::create("Proposal distribution options:");
+auto& h8 = Heading::create("Proposal distribution options:");
 
 auto& instruction_mass = ValueArg<size_t>::create("instruction_mass")
 	.usage("<int>")
@@ -193,19 +199,24 @@ auto& resize_mass = ValueArg<size_t>::create("resize_mass")
 	.description("Resize move proposal mass")
 	.default_val(1);
 
-auto& h8 = Heading::create("Search options");
+auto& h9 = Heading::create("Search options");
 
 auto& timeout = ValueArg<size_t>::create("timeout")
 	.usage("<int>")
 	.description("Number of proposals to execute before giving up")
 	.default_val(1000000);
 
+auto& stat_int = ValueArg<size_t>::create("statistics_interval")
+	.usage("<int>")
+	.description("Number of iterations between statistics updates")
+	.default_val(100000);
+
 auto& beta = ValueArg<double>::create("beta")
 	.usage("<double>")
 	.description("Annealing constant")
 	.default_val(1.0);
 
-auto& h9 = Heading::create("Random number generator options");
+auto& h10 = Heading::create("Random number generator options");
 
 auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
 	.usage("<int>")
@@ -270,7 +281,10 @@ int main(int argc, char** argv) {
 		.set_mass(Move::GLOBAL_SWAP, global_swap_mass)
 		.set_mass(Move::RESIZE, resize_mass)
 		.set_progress_callback(pcb, &cout)
-		.set_statistics_callback(scb, &cout);
+		.set_statistics_callback(scb, &cout)
+		.set_statistics_interval(stat_int);
 		
+	search.run(cfg_t, cfg_r, fxn);
+
 	return 0;
 }

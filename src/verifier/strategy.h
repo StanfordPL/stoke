@@ -4,6 +4,7 @@
 namespace stoke {
 
 enum class Strategy {
+	NONE,
 	REGRESSION,
 	FORMAL,
 	RANDOM

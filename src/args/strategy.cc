@@ -10,7 +10,8 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Strategy>, 3> pts {{
+array<pair<string, Strategy>, 4> pts {{
+    {"none", Strategy::NONE},
     {"regression", Strategy::REGRESSION},
     {"formal", Strategy::FORMAL},
     {"random", Strategy::RANDOM}
