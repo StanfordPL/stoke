@@ -82,7 +82,7 @@ auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::c
   .description("Testcases")
   .default_val({CpuState()});
 
-auto& indices = ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 1, 1024*1024>>>::create("indices")
+auto& indices = ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024*1024>>>::create("indices")
   .usage("{ 0 1 ... 9 }")
   .description("Subset of testcase indices to use")
   .default_val({0});
@@ -234,12 +234,34 @@ auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
 	.description("Seed for random number generator; set to zero for random")
 	.default_val(0);
 
+void sep(ostream& os) {
+	for ( size_t i = 0; i < 80; ++i ) {
+		os << "*";
+	}
+	os << endl << endl;
+}
+
 void pcb(const ProgressCallbackData& data, void* arg) {
 	ostream& os = *((ostream*)arg);
 
-	os << "Cost: " << data.current_cost << endl;
-	os << data.current.get_code() << endl;
+	os << "Progress Update: " << endl;
+	os << endl;
+
+	ofilterstream<Column> ofs(os);
+	ofs.filter().padding(5);
+	
+	ofs << "Best Unverified (" << data.best_yet_cost << ")" << endl;
+	ofs << endl;
+	ofs << data.best_yet.get_code();
+	ofs.filter().next();
+
+	ofs << "Best Verified (" << data.best_correct_cost << ")" << endl;
+	ofs << endl;
+	ofs << data.best_correct.get_code();
+	ofs.filter().done();
+
 	os << endl << endl;
+	sep(os);
 }
 
 void scb(const StatisticsCallbackData& data, void* arg) {
@@ -253,7 +275,7 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 	os << endl;
 
 	ofilterstream<Column> ofs(os);
-	ofs.filter().padding(3);
+	ofs.filter().padding(5);
 	
 	Statistics total;
 	for ( size_t i = 0; i < 6; ++i ) {
@@ -269,7 +291,7 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 	ofs << "Local Swap" << endl;
 	ofs << "Global Swap" << endl;
 	ofs << endl;
-	ofs << "Total" << endl;
+	ofs << "Total";
 	ofs.filter().next();
 
 	ofs << "Proposed" << endl;
@@ -278,7 +300,7 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 		ofs << 100 * (double)data.move_statistics[i].num_proposed / data.iterations << "%" << endl;
 	}
 	ofs << endl;
-	ofs << 100 * (double)total.num_proposed / data.iterations << "%" << endl;
+	ofs << 100 * (double)total.num_proposed / data.iterations << "%";
 	ofs.filter().next();
 
 	ofs << "Succeeded" << endl;
@@ -287,7 +309,7 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 		ofs << 100 * (double)data.move_statistics[i].num_succeeded / data.iterations << "%" << endl;
 	}
 	ofs << endl;
-	ofs << 100 * (double)total.num_succeeded / data.iterations << "%" << endl;
+	ofs << 100 * (double)total.num_succeeded / data.iterations << "%";
 	ofs.filter().next();
 
 	ofs << "Accepted" << endl;
@@ -296,10 +318,11 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 		ofs << 100 * (double)data.move_statistics[i].num_accepted / data.iterations << "%" << endl;
 	}
 	ofs << endl;
-	ofs << 100 * (double)total.num_accepted / data.iterations << "%" << endl;
+	ofs << 100 * (double)total.num_accepted / data.iterations << "%";
 	ofs.filter().done();
 
 	os << endl << endl;
+	sep(os);
 }
 
 int main(int argc, char** argv) {
@@ -365,6 +388,13 @@ int main(int argc, char** argv) {
 		.set_statistics_interval(stat_int);
 		
 	const auto ret = search.run(cfg_t, cfg_r, fxn);
+	if ( ret.second ) {
+		cout << "Search terminated successfully!" << endl;
+	} else {
+		cout << "Search terminated unsuccessfully..." << endl;
+	}
+	ofstream ofs(out.value());
+	TUnitWriter()(ofs, {rewrite.value().name, ret.first.get_code()});
 
 	return 0;
 }

@@ -85,7 +85,12 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 
 	if ( !moves_.empty() ) {
 		for ( ; (iterations < timeout_) && (current_cost > 0) && !give_up_now; ++iterations ) {
-      // Check cost function hasn't changed across iterations
+			if ( (statistics_cb_ != nullptr) && (iterations % interval_ == 0) && iterations > 0) {
+				const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
+				statistics_cb_({statistics, iterations, dur}, statistics_cb_arg_);
+			}
+
+      // @todo Check cost function hasn't changed across iterations
 
 			const auto move_type = moves_[int_(gen_)];
 			statistics[(size_t) move_type].num_proposed++;
@@ -102,7 +107,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 			const auto is_correct = new_res.first;
 			const auto new_cost = new_res.second;
 
-      // Check that cost function hasnt' changed within an iteration
+      // @todo Check that cost function hasnt' changed within an iteration
 
 			if ( new_cost > max ) {
 				transforms_->undo(current, move_type);
@@ -125,10 +130,6 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 			if ( (progress_cb_ != nullptr) && (new_best_yet || new_best_correct_yet) ) {
 				progress_cb_({current, current_cost, best_yet, best_yet_cost, best_correct, 
 						best_correct_cost, success}, progress_cb_arg_);
-			}
-			if ( (statistics_cb_ != nullptr) && (iterations % interval_ == 0) ) {
-				const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
-				statistics_cb_({statistics, iterations, dur}, statistics_cb_arg_);
 			}
 		}
 	}

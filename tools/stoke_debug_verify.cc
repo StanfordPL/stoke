@@ -66,7 +66,7 @@ auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::c
   .description("Testcases")
   .default_val({CpuState()});
 
-auto& indices = ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 1, 1000000>>>::create("indices")
+auto& indices = ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024*1024>>>::create("indices")
   .usage("{ 0 1 ... 9 }")
   .description("Subset of testcase indices to use")
   .default_val({0});
