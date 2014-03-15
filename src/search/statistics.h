@@ -6,13 +6,10 @@ namespace stoke {
 struct Statistics {
 	Statistics() : num_proposed(0), num_succeeded(0), num_accepted(0) { }
 
-	Statistics operator+(const Statistics& rhs) const {
-		auto ret = *this;
-
-		ret.num_proposed += rhs.num_proposed;
-		ret.num_succeeded += rhs.num_succeeded;
-		ret.num_accepted += rhs.num_accepted;
-
+	Statistics& operator+=(const Statistics& rhs) {
+		num_proposed += rhs.num_proposed;
+		num_succeeded += rhs.num_succeeded;
+		num_accepted += rhs.num_accepted;
 		return *this;
 	}
 

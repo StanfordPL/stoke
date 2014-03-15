@@ -1,4 +1,5 @@
 #include <chrono>
+#include <iomanip>
 #include <iostream>
 #include <random>
 #include <set>
@@ -240,7 +241,62 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 
 void scb(const StatisticsCallbackData& data, void* arg) {
 	ostream& os = *((ostream*)arg);
-	os << "Hello, statistics!" << endl;
+
+	os << "Statistics Update: " << endl;
+	os << endl;
+	os << "Iterations:   " << data.iterations << endl;
+	os << "Elapsed Time: " << data.elapsed.count() << "s" << endl;
+	os << "Iterations/s: " << (data.iterations / data.elapsed.count()) << endl;
+	os << endl;
+
+	ofilterstream<Column> ofs(os);
+	ofs.filter().padding(3);
+	
+	Statistics total;
+	for ( size_t i = 0; i < 6; ++i ) {
+		total += data.move_statistics[i];
+	}
+
+	ofs << "Move Type" << endl;
+	ofs << endl;
+	ofs << "Instruction" << endl;
+	ofs << "Opcode" << endl;
+	ofs << "Operand" << endl;
+	ofs << "Resize" << endl;
+	ofs << "Local Swap" << endl;
+	ofs << "Global Swap" << endl;
+	ofs << endl;
+	ofs << "Total" << endl;
+	ofs.filter().next();
+
+	ofs << "Proposed" << endl;
+	ofs << endl;
+	for ( size_t i = 0; i < 6; ++i ) {
+		ofs << 100 * (double)data.move_statistics[i].num_proposed / data.iterations << "%" << endl;
+	}
+	ofs << endl;
+	ofs << 100 * (double)total.num_proposed / data.iterations << "%" << endl;
+	ofs.filter().next();
+
+	ofs << "Succeeded" << endl;
+	ofs << endl;
+	for ( size_t i = 0; i < 6; ++i ) {
+		ofs << 100 * (double)data.move_statistics[i].num_succeeded / data.iterations << "%" << endl;
+	}
+	ofs << endl;
+	ofs << 100 * (double)total.num_succeeded / data.iterations << "%" << endl;
+	ofs.filter().next();
+
+	ofs << "Accepted" << endl;
+	ofs << endl;
+	for ( size_t i = 0; i < 6; ++i ) {
+		ofs << 100 * (double)data.move_statistics[i].num_accepted / data.iterations << "%" << endl;
+	}
+	ofs << endl;
+	ofs << 100 * (double)total.num_accepted / data.iterations << "%" << endl;
+	ofs.filter().done();
+
+	os << endl << endl;
 }
 
 int main(int argc, char** argv) {
