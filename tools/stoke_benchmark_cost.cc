@@ -74,7 +74,7 @@ auto& h3 = Heading::create("Optimization options:");
 auto& max_cost = ValueArg<Cost>::create("max_cost")
   .usage("<int>")
   .description("Give up once cost exceeds this value")
-  .default_val(0);
+  .default_val(CostFunction::max_cost - 1);
 
 auto& h4 = Heading::create("Correctness options:");
 

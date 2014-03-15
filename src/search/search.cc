@@ -84,7 +84,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 	const auto start = chrono::steady_clock::now();
 
 	if ( !moves_.empty() ) {
-		for ( ; (iterations < timeout_) && !give_up_now && (current_cost > 0); ++iterations ) {
+		for ( ; (iterations < timeout_) && (current_cost > 0) && !give_up_now; ++iterations ) {
       // Check cost function hasn't changed across iterations
 
 			const auto move_type = moves_[int_(gen_)];

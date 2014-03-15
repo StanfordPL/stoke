@@ -88,7 +88,6 @@ void RegSetReader::operator()(istream& is, RegSet& r) {
     auto ymm = ymm0;
 
     if (generic_read(gps, a, gp)) {
-			gp = rdi;
       r += gp;
     } else if (generic_read(xs, a, xmm)) {
       r += xmm;

@@ -118,11 +118,8 @@ class CostFunction {
 		std::vector<CpuState> reference_out_;
 		std::vector<x64asm::R64> target_gp_out_;
 		std::vector<x64asm::Xmm> target_sse_out_;
-		std::vector<x64asm::R64> rewrite_gp_out_;
-		std::vector<x64asm::Xmm> rewrite_sse_out_;
 
-		void recompute_defs(const x64asm::RegSet& rs, std::vector<x64asm::R64>& gp_out,
-				std::vector<x64asm::Xmm>& sse_out);
+		void recompute_defs(const x64asm::RegSet& rs);
 
 		Cost evaluate_correctness(const Cfg& cfg, Cost max);
 		Cost correctness_max(const Cfg& cfg, Cost max);

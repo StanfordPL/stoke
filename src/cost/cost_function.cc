@@ -30,7 +30,7 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
 	heap_out_ = heap_out;
 
 	reference_out_.clear();
-	recompute_defs(target.live_outs(), target_gp_out_, target_sse_out_);
+	recompute_defs(target.live_outs());
 
 	sandbox_->run(target);
 	for ( auto i = sandbox_->result_begin(), ie = sandbox_->result_end(); i != ie; ++i ) {
@@ -39,20 +39,19 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
 	return *this;
 }
 
-void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gp_out, vector<Xmm>& sse_out) {
-	gp_out.clear();
+void CostFunction::recompute_defs(const RegSet& rs) {
+	target_gp_out_.clear();
 	for ( const auto& r : r64s )
 		if ( rs.contains(r) )
-			gp_out.push_back(r);
+			target_gp_out_.push_back(r);
 
-	sse_out.clear();
+	target_sse_out_.clear();
 	for ( const auto& s : xmms )
 		if ( rs.contains(s) )
-			sse_out.push_back(s);
+			target_sse_out_.push_back(s);
 }
 
 Cost CostFunction::evaluate_correctness(const Cfg& cfg, Cost max) {
-	recompute_defs(cfg.live_outs(), rewrite_gp_out_, rewrite_sse_out_);
 	switch ( reduction_ ) {
 		case Reduction::MAX:
 			return correctness_max(cfg, max);
@@ -123,13 +122,13 @@ Cost CostFunction::gp_error(const Regs& t, const Regs& r) const {
 		auto delta = max_error_cost;
 		const auto val_t = t[r_t].get_fixed_quad(0);	
 
-		for ( const auto& r_r : rewrite_gp_out_ ) {
+		for ( const auto& r_r : target_gp_out_ ) {
 			if ( r_t != r_r && !relax_reg_ ) {
 				continue;
 			}
 			
 			const auto val_r = r[r_r].get_fixed_quad(0);
-			const auto eval = distance(val_t, val_r) + (r_t == r_r) ? 0 : misalign_penalty_;
+			const auto eval = distance(val_t, val_r) + ((r_t == r_r) ? 0 : misalign_penalty_);
 
 			delta = min(delta, eval);
 		}
@@ -159,7 +158,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
 								 break;
 			}
 
-			for ( const auto& s_r : rewrite_sse_out_ ) {
+			for ( const auto& s_r : target_sse_out_ ) {
 				if ( s_t != s_r && !relax_reg_ ) {
 					continue;
 				}
@@ -177,7 +176,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
 					default: assert(false);
 									 break;
 				}
-				const auto eval = distance(val_t, val_r) + (s_t == s_r) ? 0 : misalign_penalty_;
+				const auto eval = distance(val_t, val_r) + ((s_t == s_r) ? 0 : misalign_penalty_);
 				delta = min(delta, eval);
 			}
 			cost += delta;
@@ -193,14 +192,12 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
 	for ( auto i = t.defined_begin(), ie = t.defined_end(); i != ie; ++i ) {
 		if ( relax_mem_ ) {
 			Cost delta = max_error_cost;
-			for ( auto j = r.defined_begin(), je = r.defined_end(); j != je; ++j ) {
+			for ( auto j = t.defined_begin(), je = t.defined_end(); j != je; ++j ) {
 				delta = min(delta, distance(t[*i], r[*j]));
 			}
 			cost += delta;
-		} else if ( r.is_defined(*i) ) {
-			cost += distance(t[*i], r[*i]);
 		} else {
-			cost += max_error_cost;
+			cost += distance(t[*i], r[*i]);
 		}
 	}
 
