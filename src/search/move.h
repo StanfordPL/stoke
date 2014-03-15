@@ -9,7 +9,9 @@ enum class Move {
 	OPERAND,
 	RESIZE,
 	LOCAL_SWAP,
-	GLOBAL_SWAP
+	GLOBAL_SWAP,
+
+	NUM_MOVES
 };
 
 } // namespace stoke

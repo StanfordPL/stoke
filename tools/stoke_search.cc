@@ -236,7 +236,10 @@ auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
 
 void pcb(const ProgressCallbackData& data, void* arg) {
 	ostream& os = *((ostream*)arg);
-	os << "Hello, progress!" << endl;
+
+	os << "Cost: " << data.current_cost << endl;
+	os << data.current.get_code() << endl;
+	os << endl << endl;
 }
 
 void scb(const StatisticsCallbackData& data, void* arg) {
@@ -361,7 +364,7 @@ int main(int argc, char** argv) {
 		.set_statistics_callback(scb, &cout)
 		.set_statistics_interval(stat_int);
 		
-	search.run(cfg_t, cfg_r, fxn);
+	const auto ret = search.run(cfg_t, cfg_r, fxn);
 
 	return 0;
 }
