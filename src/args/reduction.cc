@@ -10,7 +10,7 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Reduction>, 2> pts {{
+array<pair<string, Reduction>, 2> rs {{
     {"sum", Reduction::SUM},
     {"max", Reduction::MAX}
   }
@@ -20,19 +20,17 @@ array<pair<string, Reduction>, 2> pts {{
 
 namespace stoke {
 
-void ReductionReader::operator()(std::istream& is, Reduction pt) {
+void ReductionReader::operator()(std::istream& is, Reduction& r) {
   string s;
   is >> s;
-  if (!generic_read(pts, s, pt)) {
+  if (!generic_read(rs, s, r)) {
     is.setstate(ios::failbit);
   }
 }
 
-void ReductionWriter::operator()(std::ostream& os, const Reduction pt) {
+void ReductionWriter::operator()(std::ostream& os, const Reduction r) {
   string s;
-  if (generic_write(pts, s, pt)) {
-    os.setstate(ios::failbit);
-  }
+  generic_write(rs, s, r);
   os << s;
 }
 

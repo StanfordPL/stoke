@@ -10,7 +10,7 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Distance>, 2> pts {{
+array<pair<string, Distance>, 2> ds {{
     {"hamming", Distance::HAMMING},
     {"ulp", Distance::ULP}
   }
@@ -20,19 +20,17 @@ array<pair<string, Distance>, 2> pts {{
 
 namespace stoke {
 
-void DistanceReader::operator()(std::istream& is, Distance pt) {
+void DistanceReader::operator()(std::istream& is, Distance& d) {
   string s;
   is >> s;
-  if (!generic_read(pts, s, pt)) {
+  if (!generic_read(ds, s, d)) {
     is.setstate(ios::failbit);
   }
 }
 
-void DistanceWriter::operator()(std::ostream& os, const Distance pt) {
+void DistanceWriter::operator()(std::ostream& os, const Distance d) {
   string s;
-  if (generic_write(pts, s, pt)) {
-    os.setstate(ios::failbit);
-  }
+  generic_write(ds, s, d);
   os << s;
 }
 

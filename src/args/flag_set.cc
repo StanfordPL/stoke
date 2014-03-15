@@ -63,8 +63,6 @@ array<pair<string, Flag>, 41> flags {{
 namespace stoke {
 
 void FlagSetReader::operator()(istream& is, FlagSet& fs) {
-	fs = FlagSet::empty();
-
   vector<string> args;
   TextReader<vector<string>>()(is, args);
 
@@ -81,15 +79,11 @@ void FlagSetReader::operator()(istream& is, FlagSet& fs) {
 
 void FlagSetWriter::operator()(ostream& os, const FlagSet& fs) {
   os << "{";
-	for ( size_t i = 0; i < 64; ++i ) {
-		Flag f = (Flag) (0x1ul << i);
-
-		string s;
-		if ( generic_write(flags, s, f) ) {
+	for ( size_t i = (size_t)Flag::FPU; i <= (size_t)Flag::RTM ; i <<= 1 ) {
+		if ( fs.contains((Flag)i) ) {
+			string s;
+			generic_write(flags, s, (Flag)i);
 			os << " " << s;
-		} else {
-			os.setstate(ios::failbit);
-			return;
 		}
 	}
 	os << " }";

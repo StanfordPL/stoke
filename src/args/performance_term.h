@@ -8,7 +8,7 @@
 namespace stoke {
 
 struct PerformanceTermReader {
-  void operator()(std::istream& is, PerformanceTerm pt);
+  void operator()(std::istream& is, PerformanceTerm& pt);
 };
 
 struct PerformanceTermWriter {

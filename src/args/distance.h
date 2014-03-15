@@ -8,11 +8,11 @@
 namespace stoke {
 
 struct DistanceReader {
-  void operator()(std::istream& is, Distance pt);
+  void operator()(std::istream& is, Distance& d);
 };
 
 struct DistanceWriter {
-  void operator()(std::ostream& os, const Distance pt);
+  void operator()(std::ostream& os, const Distance d);
 };
 
 } // namespace stoke

@@ -218,6 +218,14 @@ auto& beta = ValueArg<double>::create("beta")
 	.description("Annealing constant")
 	.default_val(1.0);
 
+auto& max_instrs = ValueArg<size_t>::create("max_instrs")
+	.usage("<int>")
+	.description("The maximum number of instructions allowed in a rewrite")
+	.default_val(16);
+
+auto& empty_init = FlagArg::create("empty_init")
+	.description("Remove all but control instructions from rewrite before running search");
+
 auto& h10 = Heading::create("Random number generator options");
 
 auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
@@ -244,6 +252,17 @@ int main(int argc, char** argv) {
 		const auto time = system_clock::now().time_since_epoch().count();
 		default_random_engine gen(time);
 		seed.value() = gen();
+	}
+
+	if ( empty_init ) {
+		for ( auto& instr : rewrite.value().code ) {
+			if ( !instr.is_label_defn() && !instr.is_jump() && !instr.is_return() ) {
+				instr.set_opcode(NOP);
+			}
+		}
+	}
+	while ( rewrite.value().code.size() < max_instrs ) {
+		rewrite.value().code.push_back({NOP});
 	}
 
 	Cfg cfg_t(target.value().code, def_in, live_out);

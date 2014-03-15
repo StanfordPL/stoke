@@ -24,7 +24,7 @@ array<pair<string, Move>, 6> moves {{
 
 namespace stoke {
 
-void MoveReader::operator()(std::istream& is, Move m) {
+void MoveReader::operator()(std::istream& is, Move& m) {
   string s;
   is >> s;
   if (!generic_read(moves, s, m)) {
@@ -34,9 +34,7 @@ void MoveReader::operator()(std::istream& is, Move m) {
 
 void MoveWriter::operator()(std::ostream& os, const Move m) {
   string s;
-  if (generic_write(moves, s, m)) {
-    os.setstate(ios::failbit);
-  }
+  generic_write(moves, s, m);
   os << s;
 }
 

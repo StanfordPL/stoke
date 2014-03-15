@@ -21,7 +21,7 @@ array<pair<string, PerformanceTerm>, 3> pts {{
 
 namespace stoke {
 
-void PerformanceTermReader::operator()(std::istream& is, PerformanceTerm pt) {
+void PerformanceTermReader::operator()(std::istream& is, PerformanceTerm& pt) {
   string s;
   is >> s;
   if (!generic_read(pts, s, pt)) {
@@ -31,9 +31,7 @@ void PerformanceTermReader::operator()(std::istream& is, PerformanceTerm pt) {
 
 void PerformanceTermWriter::operator()(std::ostream& os, const PerformanceTerm pt) {
   string s;
-  if (generic_write(pts, s, pt)) {
-    os.setstate(ios::failbit);
-  }
+  generic_write(pts, s, pt);
   os << s;
 }
 

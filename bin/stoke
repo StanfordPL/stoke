@@ -51,22 +51,22 @@ then
 	shift
 	if [ "$SCMD" == "cfg" ]
 	then
-		$HERE/stoke_debug_cfg $@
+		$HERE/stoke_debug_cfg "$@"
 	elif [ "$SCMD" == "cost" ]
 	then
-		$HERE/stoke_debug_cost $@
+		$HERE/stoke_debug_cost "$@"
 	elif [ "$SCMD" == "sandbox" ]
 	then
-		$HERE/stoke_debug_sandbox $@
+		$HERE/stoke_debug_sandbox "$@"
 	elif [ "$SCMD" == "state" ]
 	then
-		$HERE/stoke_debug_state $@
+		$HERE/stoke_debug_state "$@"
 	elif [ "$SCMD" == "search" ]
 	then
-		$HERE/stoke_debug_search $@
+		$HERE/stoke_debug_search "$@"
 	elif [ "$SCMD" == "verify" ]
 	then
-		$HERE/stoke_debug_verify $@
+		$HERE/stoke_debug_verify "$@"
 	else
 		echo "Unknown command: '"$SCMD"'"
 		echo "Type 'stoke --help' for usage."
@@ -78,22 +78,22 @@ then
   shift
   if [ "$SCMD" == "cfg" ]
   then
- 	  $HERE/stoke_benchmark_cfg $@
+ 	  $HERE/stoke_benchmark_cfg "$@"
 	elif [ "$SCMD" == "cost" ]
 	then
-		$HERE/stoke_benchmark_cost $@
+		$HERE/stoke_benchmark_cost "$@"
 	elif [ "$SCMD" == "sandbox" ]
 	then
-		$HERE/stoke_benchmark_sandbox $@
+		$HERE/stoke_benchmark_sandbox "$@"
 	elif [ "$SCMD" == "search" ]
 	then
-		$HERE/stoke_benchmark_search $@
+		$HERE/stoke_benchmark_search "$@"
 	elif [ "$SCMD" == "state" ]
 	then
-		$HERE/stoke_benchmark_state $@
+		$HERE/stoke_benchmark_state "$@"
 	elif [ "$SCMD" == "verify" ]
 	then
-		$HERE/stoke_benchmark_verify $@
+		$HERE/stoke_benchmark_verify "$@"
   else
  	  echo "Unknown command: '"$SCMD"'"
     echo "Type 'stoke --help' for usage."
@@ -101,13 +101,13 @@ then
   fi
 elif [ "$SCMD" == "extract" ]
 then
-	$HERE/stoke_extract $@
+	$HERE/stoke_extract "$@"
 elif [ "$SCMD" == "search" ]
 then
-	$HERE/stoke_search $@
+	$HERE/stoke_search "$@"
 elif [ "$SCMD" == "testcase" ]
 then
-	$HERE/stoke_testcase $@
+	$HERE/stoke_testcase "$@"
 else
 	echo "Unknown command: '"$SCMD"'"
 	echo "Type 'stoke --help' for usage."

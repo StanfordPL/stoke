@@ -22,7 +22,7 @@ array<pair<string, Strategy>, 4> pts {{
 
 namespace stoke {
 
-void StrategyReader::operator()(std::istream& is, Strategy pt) {
+void StrategyReader::operator()(std::istream& is, Strategy& pt) {
   string s;
   is >> s;
   if (!generic_read(pts, s, pt)) {
@@ -32,9 +32,7 @@ void StrategyReader::operator()(std::istream& is, Strategy pt) {
 
 void StrategyWriter::operator()(std::ostream& os, const Strategy pt) {
   string s;
-  if (generic_write(pts, s, pt)) {
-    os.setstate(ios::failbit);
-  }
+  generic_write(pts, s, pt);
   os << s;
 }
 

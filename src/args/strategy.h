@@ -8,7 +8,7 @@
 namespace stoke {
 
 struct StrategyReader {
-  void operator()(std::istream& is, Strategy pt);
+  void operator()(std::istream& is, Strategy& pt);
 };
 
 struct StrategyWriter {
