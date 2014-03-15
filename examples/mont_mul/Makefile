@@ -1,7 +1,7 @@
 all: mont_mul bins mont_mul.tc 
 
 clean: 
-	rm -rf mont_mul.o mont_mul bins  mont_mul.tc result.s
+	rm -rf mont_mul.o mont_mul bins mont_mul.tc result.s
 
 mont_mul.o: mont_mul.s
 	g++ -std=c++11 -c mont_mul.s

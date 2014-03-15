@@ -20,6 +20,7 @@
 #include "src/args/testcases.h"
 #include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
+#include "src/cfg/cfg_transforms.h"
 #include "src/cost/cost.h"
 #include "src/cost/cost_function.h"
 #include "src/cost/distance.h"
@@ -387,12 +388,16 @@ int main(int argc, char** argv) {
 		.set_statistics_callback(scb, &cout)
 		.set_statistics_interval(stat_int);
 		
-	const auto ret = search.run(cfg_t, cfg_r, fxn);
+	auto ret = search.run(cfg_t, cfg_r, fxn);
 	if ( ret.second ) {
 		cout << "Search terminated successfully!" << endl;
+		CfgTransforms tforms;
+		tforms.remove_unreachable(ret.first);
+		tforms.remove_nop(ret.first);
 	} else {
 		cout << "Search terminated unsuccessfully..." << endl;
 	}
+
 	ofstream ofs(out.value());
 	TUnitWriter()(ofs, {rewrite.value().name, ret.first.get_code()});
 
