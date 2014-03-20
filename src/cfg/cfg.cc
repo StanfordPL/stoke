@@ -101,8 +101,7 @@ void Cfg::recompute_blocks() {
 
   // Add sentinels for entry and exit blocks along with boundaries
   blocks_.push_back(0);
-  for (auto i = boundaries_.set_bit_index_begin(), ie = boundaries_.set_bit_index_end(); i != ie;
-       ++i) {
+  for (auto i = boundaries_.set_bit_index_begin(), ie = boundaries_.set_bit_index_end(); i != ie; ++i) {
     blocks_.push_back(*i);
   }
   blocks_.push_back(code_.size());

@@ -17,7 +17,7 @@ set<Opcode> unsupported_ {{
 namespace stoke {
 
 Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent, bool use_mem_read,
-                                        bool use_mem_write) {
+    bool use_mem_write) {
   control_free_.clear();
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     auto op = (Opcode)i;

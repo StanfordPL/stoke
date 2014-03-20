@@ -25,39 +25,39 @@ using namespace x64asm;
 auto& h1 = Heading::create("Input program:");
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-  .usage("<path/to/file>")
-  .description("Target code")
-  .default_val({"anon",{{RET}}});
+    .usage("<path/to/file>")
+    .description("Target code")
+    .default_val({"anon", {{RET}}});
 
 auto& h2 = Heading::create("Testcases:");
 
 auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
-  .usage("<path/to/file>")
-  .description("Testcases")
-  .default_val({CpuState()});
+    .usage("<path/to/file>")
+    .description("Testcases")
+    .default_val({CpuState()});
 
 auto& idx = ValueArg<size_t>::create("index")
-  .usage("<int>")
-  .description("Testcase index")
-  .default_val(numeric_limits<size_t>::max());
+    .usage("<int>")
+    .description("Testcase index")
+    .default_val(numeric_limits<size_t>::max());
 
 auto& h3 = Heading::create("Sandboxing options:");
 
 auto& max_jumps = ValueArg<size_t>::create("max_jumps")
-  .usage("<int>")
-  .description("Maximum jumps before exit due to infinite loop")
-  .default_val(1024);
+    .usage("<int>")
+    .description("Maximum jumps before exit due to infinite loop")
+    .default_val(1024);
 
 auto& h4 = Heading::create("Debugging options:");
 
 auto& debug = FlagArg::create("debug")
-  .alternate("d")
-  .description("Debug mode, equivalent to --breakpoint 0");
+    .alternate("d")
+    .description("Debug mode, equivalent to --breakpoint 0");
 
 auto& breakpoint = ValueArg<size_t>::create("breakpoint")
-  .usage("<line>")
-  .description("Set breakpoint")
-  .default_val(numeric_limits<size_t>::max());
+    .usage("<line>")
+    .description("Set breakpoint")
+    .default_val(numeric_limits<size_t>::max());
 
 void callback(const StateCallbackData& data, void* arg) {
   auto stepping = (bool*) arg;
@@ -114,8 +114,8 @@ int main(int argc, char** argv) {
   Sandbox sb;
   sb.set_max_jumps(max_jumps);
 
-	const auto index = min(testcases.value().size()-1, idx.value());
-	const auto input = testcases.value()[index];
+  const auto index = min(testcases.value().size() - 1, idx.value());
+  const auto input = testcases.value()[index];
   sb.insert_input(input);
 
   auto stepping = false;
@@ -126,14 +126,14 @@ int main(int argc, char** argv) {
   sb.run({target.value().code, RegSet::empty(), RegSet::empty()});
 
   const auto result = *(sb.result_begin());
-	if ( result.code != ErrorCode::NORMAL ) {
-		cout << "Control returned abnormally with signal " << dec << (int)result.code << endl;
-	} else {
-		cout << "Control returned normally with state: " << endl;
-		cout << endl;
-		cout << result << endl;
-	}
-	cout << endl;
+  if (result.code != ErrorCode::NORMAL) {
+    cout << "Control returned abnormally with signal " << dec << (int)result.code << endl;
+  } else {
+    cout << "Control returned normally with state: " << endl;
+    cout << endl;
+    cout << result << endl;
+  }
+  cout << endl;
 
   return 0;
 }

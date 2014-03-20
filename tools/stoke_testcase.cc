@@ -10,37 +10,37 @@ using namespace std;
 auto& h1 = Heading::create("I/O options:");
 
 auto& bin = ValueArg<string>::create("bin")
-  .usage("<path/to/bin>")
-  .description("Executable binary containing function to generate testcases for")
-  .default_val("./a.out");
+    .usage("<path/to/bin>")
+    .description("Executable binary containing function to generate testcases for")
+    .default_val("./a.out");
 
 auto& args = ValueArg<string>::create("args")
-  .usage("<arg1 arg2 ... argn>")
-  .description("Optional command line arguments to pass to binary")
-  .default_val("");
+    .usage("<arg1 arg2 ... argn>")
+    .description("Optional command line arguments to pass to binary")
+    .default_val("");
 
 auto& out = ValueArg<string>::create("o")
-  .alternate("out")
-  .usage("<path/to/file>")
-  .description("File to write testcases to (defaults to console if unspecified)")
-  .default_val("");
+    .alternate("out")
+    .usage("<path/to/file>")
+    .description("File to write testcases to (defaults to console if unspecified)")
+    .default_val("");
 
 auto& h2 = Heading::create("Trace options:");
 
 auto& fxn = ValueArg<string>::create("fxn")
-  .usage("<string>")
-  .description("Function to generate testcases for")
-  .default_val("main");
+    .usage("<string>")
+    .description("Function to generate testcases for")
+    .default_val("main");
 
 auto& max_stack = ValueArg<uint64_t>::create("max_stack")
-  .usage("<bytes>")
-  .description("The maximum number of bytes to assume could be stack")
-  .default_val(1024);
+    .usage("<bytes>")
+    .description("The maximum number of bytes to assume could be stack")
+    .default_val(1024);
 
 auto& max_tc = ValueArg<size_t>::create("max_testcases")
-  .usage("<int>")
-  .description("The maximum number of testcases to generate")
-  .default_val(16);
+    .usage("<int>")
+    .description("The maximum number of testcases to generate")
+    .default_val(16);
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);

@@ -129,8 +129,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
       }
       if ((progress_cb_ != nullptr) && (new_best_yet || new_best_correct_yet)) {
         progress_cb_({current, current_cost, best_yet, best_yet_cost, best_correct,
-                      best_correct_cost, success
-                     }, progress_cb_arg_);
+            best_correct_cost, success}, progress_cb_arg_);
       }
     }
   }
@@ -138,8 +137,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
   current = best_correct;
   if (progress_cb_ != nullptr) {
     progress_cb_({current, current_cost, best_yet, best_yet_cost, best_correct,
-                  best_correct_cost, success
-                 }, progress_cb_arg_);
+        best_correct_cost, success}, progress_cb_arg_);
   }
   if (statistics_cb_ != nullptr)  {
     const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);

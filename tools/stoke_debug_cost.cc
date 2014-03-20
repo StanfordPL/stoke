@@ -32,158 +32,159 @@ using namespace x64asm;
 auto& h1 = Heading::create("Input programs:");
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-  .usage("<path/to/file>")
-  .description("Target")
-  .default_val({"anon",{{RET}}});
+    .usage("<path/to/file>")
+    .description("Target")
+    .default_val({"anon", {{RET}}});
 
 auto& rewrite = FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
-  .usage("<path/to/file>")
-  .description("Rewrite")
-  .default_val({"anon",{{RET}}});
+    .usage("<path/to/file>")
+    .description("Rewrite")
+    .default_val({"anon", {{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
-  .usage("{ rax rsp ... }")
-  .description("Registers defined on entry")
-  .default_val(RegSet::linux_caller_save());
+    .usage("{ rax rsp ... }")
+    .description("Registers defined on entry")
+    .default_val(RegSet::linux_caller_save());
 
 auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
-  .usage("{ rax rsp ... }")
-  .description("Registers live on exit")
-  .default_val(RegSet::empty() + rax);
+    .usage("{ rax rsp ... }")
+    .description("Registers live on exit")
+    .default_val(RegSet::empty() + rax);
 
 auto& stack_out = FlagArg::create("stack_out")
-  .description("Is stack defined on exit?");
+    .description("Is stack defined on exit?");
 
 auto& heap_out = FlagArg::create("heap_out")
-  .description("Is heap defined on exit?");
+    .description("Is heap defined on exit?");
 
 auto& h2 = Heading::create("Input options:");
 
 auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
-  .usage("<path/to/file>")
-  .description("Testcases")
-  .default_val({CpuState()});
+    .usage("<path/to/file>")
+    .description("Testcases")
+    .default_val({CpuState()});
 
-auto& indices = ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024*1024>>>::create("indices")
-  .usage("{ 0 1 ... 9 }")
-  .description("Subset of testcase indices to use")
-  .default_val({0});
+auto& indices =
+  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("indices")
+      .usage("{ 0 1 ... 9 }")
+      .description("Subset of testcase indices to use")
+      .default_val({0});
 
 auto& h3 = Heading::create("Optimization options:");
 
 auto& max_cost = ValueArg<Cost>::create("max_cost")
-  .usage("<int>")
-  .description("Give up once cost exceeds this value")
-  .default_val(CostFunction::max_cost - 1);
+    .usage("<int>")
+    .description("Give up once cost exceeds this value")
+    .default_val(CostFunction::max_cost - 1);
 
 auto& h4 = Heading::create("Correctness options:");
 
 auto& distance = ValueArg<Distance, DistanceReader, DistanceWriter>::create("distance")
-	.usage("(hamming|ulp)")
-	.description("Metric for measuring distance between states")
-	.default_val(Distance::HAMMING);
+    .usage("(hamming|ulp)")
+    .description("Metric for measuring distance between states")
+    .default_val(Distance::HAMMING);
 
 auto& reduction = ValueArg<Reduction, ReductionReader, ReductionWriter>::create("reduction")
-	.usage("(max|sum)")
-	.description("Reduction method")
-	.default_val(Reduction::SUM);
+    .usage("(max|sum)")
+    .description("Reduction method")
+    .default_val(Reduction::SUM);
 
 auto& sse_width = ValueArg<size_t>::create("sse_width")
-	.usage("(1|2|4|8)")
-	.description("Number of bytes in sse elements")
-	.default_val(8);
+    .usage("(1|2|4|8)")
+    .description("Number of bytes in sse elements")
+    .default_val(8);
 
 auto& sse_count = ValueArg<size_t>::create("sse_count")
-	.usage("<int>")
-	.description("Number of values in sse registers")
-	.default_val(1);
+    .usage("<int>")
+    .description("Number of values in sse registers")
+    .default_val(1);
 
 auto& relax_reg = FlagArg::create("relax_reg")
-	.description("Allow correct values in incorrect register locations");
+    .description("Allow correct values in incorrect register locations");
 
 auto& relax_mem = FlagArg::create("relax_mem")
-	.description("Allow correct values in incorrect memory locations");
+    .description("Allow correct values in incorrect memory locations");
 
-auto& misalign_penalty = ValueArg<Cost>::create("misalign_penalty")	
-	.usage("<int>")
-	.description("Penalty for correct values in incorrect locations")
-	.default_val(0);
+auto& misalign_penalty = ValueArg<Cost>::create("misalign_penalty")
+    .usage("<int>")
+    .description("Penalty for correct values in incorrect locations")
+    .default_val(0);
 
-auto& sig_penalty = ValueArg<Cost>::create("sig_penalty")	
-	.usage("<int>")
-	.description("Penalty for incorrect signal behavior")
-	.default_val(0);
+auto& sig_penalty = ValueArg<Cost>::create("sig_penalty")
+    .usage("<int>")
+    .description("Penalty for incorrect signal behavior")
+    .default_val(0);
 
 auto& min_ulp = ValueArg<Cost>::create("min_ulp")
-	.usage("<int>")
-	.description("minimum ULP value to record")
-	.default_val(0);
+    .usage("<int>")
+    .description("minimum ULP value to record")
+    .default_val(0);
 
 auto& h5 = Heading::create("Performance options:");
 
 auto& perf = ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
-	.usage("(none|size|latency)")
-	.description("Performance definition")
-	.default_val(PerformanceTerm::NONE);
+    .usage("(none|size|latency)")
+    .description("Performance definition")
+    .default_val(PerformanceTerm::NONE);
 
-auto& nesting_penalty = ValueArg<Cost>::create("nesting_penalty")	
-	.usage("<int>")
-	.description("Latency multiplier for nested code")
-	.default_val(1);
+auto& nesting_penalty = ValueArg<Cost>::create("nesting_penalty")
+    .usage("<int>")
+    .description("Latency multiplier for nested code")
+    .default_val(1);
 
 auto& h6 = Heading::create("Sandbox options:");
 
 auto& max_jumps = ValueArg<size_t>::create("max_jumps")
-  .usage("<int>")
-  .description("Maximum jumps before exit due to infinite loop")
-  .default_val(1024);
+    .usage("<int>")
+    .description("Maximum jumps before exit due to infinite loop")
+    .default_val(1024);
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	Cfg cfg_t(target.value().code, def_in, live_out);
-	Cfg cfg_r(rewrite.value().code, def_in, live_out);
+  Cfg cfg_t(target.value().code, def_in, live_out);
+  Cfg cfg_r(rewrite.value().code, def_in, live_out);
 
-	Sandbox sb;
-	sb.set_max_jumps(max_jumps);
-	for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i ) {
-		if (indices.value().find(i) != indices.value().end()) {
-			sb.insert_input(testcases.value()[i]);
-		}
-	}
+  Sandbox sb;
+  sb.set_max_jumps(max_jumps);
+  for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i) {
+    if (indices.value().find(i) != indices.value().end()) {
+      sb.insert_input(testcases.value()[i]);
+    }
+  }
 
- 	CostFunction fxn(&sb);
-	fxn.set_distance(::distance)
-		.set_target(cfg_t, stack_out, heap_out)
-		.set_sse(sse_width, sse_count)
-		.set_relax(relax_reg, relax_mem)
-		.set_penalty(misalign_penalty, sig_penalty, nesting_penalty)
-		.set_min_ulp(min_ulp)
-		.set_reduction(reduction)
-		.set_performance_term(perf);
+  CostFunction fxn(&sb);
+  fxn.set_distance(::distance)
+  .set_target(cfg_t, stack_out, heap_out)
+  .set_sse(sse_width, sse_count)
+  .set_relax(relax_reg, relax_mem)
+  .set_penalty(misalign_penalty, sig_penalty, nesting_penalty)
+  .set_min_ulp(min_ulp)
+  .set_reduction(reduction)
+  .set_performance_term(perf);
 
-	ofilterstream<Column> os(cout);
-	os.filter().padding(3);
+  ofilterstream<Column> os(cout);
+  os.filter().padding(3);
 
-	os << "Target" << endl;
-	os << endl;
-	os << target.value().code << endl;
-	os.filter().next();
+  os << "Target" << endl;
+  os << endl;
+  os << target.value().code << endl;
+  os.filter().next();
 
-	os << "Rewrite" << endl;
-	os << endl;
-	os << rewrite.value().code << endl;
-	os.filter().done();
+  os << "Rewrite" << endl;
+  os << endl;
+  os << rewrite.value().code << endl;
+  os.filter().done();
 
-	cout << endl;
+  cout << endl;
 
-	const auto res = fxn(cfg_r, max_cost.value());
+  const auto res = fxn(cfg_r, max_cost.value());
 
-	cout << "Correct: " << (res.first ? "yes" : "no") << endl;
-	cout << "Cost: " << res.second << endl;
-	cout << endl;
+  cout << "Correct: " << (res.first ? "yes" : "no") << endl;
+  cout << "Cost: " << res.second << endl;
+  cout << endl;
 
-	return 0;
+  return 0;
 }

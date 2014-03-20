@@ -23,80 +23,80 @@ using namespace x64asm;
 auto& h1 = Heading::create("Input programs:");
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-  .usage("<path/to/file>")
-  .description("Target")
-  .default_val({"anon",{{RET}}});
+    .usage("<path/to/file>")
+    .description("Target")
+    .default_val({"anon", {{RET}}});
 
 auto& h2 = Heading::create("Transform options:");
 
 auto& flags = ValueArg<FlagSet, FlagSetReader, FlagSetWriter>::create("cpu_flags")
-	.usage("{ flag1 flag2 ... flagn }")
-	.description("Propose instruction and opcode moves that use this CPU ID flag set")
-	.default_val(FlagSet::empty());
+    .usage("{ flag1 flag2 ... flagn }")
+    .description("Propose instruction and opcode moves that use this CPU ID flag set")
+    .default_val(FlagSet::empty());
 
 auto& nop_percent = ValueArg<size_t>::create("nop_percent")
-	.usage("<percent>")
-	.description("Percent of instruction moves that produce nops")
-	.default_val(0);
+    .usage("<percent>")
+    .description("Percent of instruction moves that produce nops")
+    .default_val(0);
 
 auto& mem_read = FlagArg::create("mem_read")
-	.description("Propose instruction and opcode moves that read memory?");
+    .description("Propose instruction and opcode moves that read memory?");
 
 auto& mem_write = FlagArg::create("mem_write")
-	.description("Propose instruction and opcode moves that write memory?");
+    .description("Propose instruction and opcode moves that write memory?");
 
 auto& callee_save = FlagArg::create("callee_save")
-	.description("Propose instruction and operand moves that use callee save registers?");
+    .description("Propose instruction and operand moves that use callee save registers?");
 
 auto& move = ValueArg<Move, MoveReader, MoveWriter>::create("move")
-	.usage("<move_type>")
-	.description("Move type to use")
-	.default_val(Move::INSTRUCTION);
+    .usage("<move_type>")
+    .description("Move type to use")
+    .default_val(Move::INSTRUCTION);
 
 auto& h3 = Heading::create("Random number generator options");
 
 auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
-	.usage("<int>")
-	.description("Seed for random number generator; set to zero for random")
-	.default_val(0);
+    .usage("<int>")
+    .description("Seed for random number generator; set to zero for random")
+    .default_val(0);
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-	if ( seed == 0 ) {
-		const auto time = system_clock::now().time_since_epoch().count();
-		default_random_engine gen(time);
-		seed.value() = gen();
-	}
+  if (seed == 0) {
+    const auto time = system_clock::now().time_since_epoch().count();
+    default_random_engine gen(time);
+    seed.value() = gen();
+  }
 
-	Cfg cfg(target.value().code, RegSet::empty(), RegSet::empty());
+  Cfg cfg(target.value().code, RegSet::empty(), RegSet::empty());
 
-	Transforms transforms;
-	transforms.set_seed(seed)
-		.set_opcode_pool(flags, nop_percent, mem_read, mem_write)
-		.set_operand_pool(target.value().code, callee_save);
+  Transforms transforms;
+  transforms.set_seed(seed)
+  .set_opcode_pool(flags, nop_percent, mem_read, mem_write)
+  .set_operand_pool(target.value().code, callee_save);
 
-	ofilterstream<Column> os(cout);
-	os.filter().padding(3);
-	
-	os << "Original Code:" << endl;
-	os << endl;
-	os << cfg.get_code() << endl;
-	os.filter().next();
+  ofilterstream<Column> os(cout);
+  os.filter().padding(3);
 
-	transforms.modify(cfg, ::move);
+  os << "Original Code:" << endl;
+  os << endl;
+  os << cfg.get_code() << endl;
+  os.filter().next();
 
-	os << "After Transform:" << endl;
-	os << endl;
-	os << cfg.get_code() << endl;
-	os.filter().next();
+  transforms.modify(cfg, ::move);
 
-	transforms.undo(cfg, ::move);
+  os << "After Transform:" << endl;
+  os << endl;
+  os << cfg.get_code() << endl;
+  os.filter().next();
 
-	os << "After Undo:" << endl;
-	os << endl;
-	os << cfg.get_code() << endl;
-	os.filter().done();
+  transforms.undo(cfg, ::move);
 
-	return 0;
+  os << "After Undo:" << endl;
+  os << endl;
+  os << cfg.get_code() << endl;
+  os.filter().done();
+
+  return 0;
 }
