@@ -18,5 +18,3 @@ struct DistanceWriter {
 } // namespace stoke
 
 #endif
-
-

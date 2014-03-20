@@ -10,35 +10,35 @@ namespace stoke {
 
 /** Simple input iterator for exposing output states. */
 class output_iterator {
-	/** Needs access to constructor. */
-	friend class Sandbox;
+  /** Needs access to constructor. */
+  friend class Sandbox;
 
-	public:
-		const CpuState& operator*() const {
-			return (*itr_)->out_;
-		}
-		const CpuState* operator->() const {
-			return &((*itr_)->out_);
-		}
+ public:
+  const CpuState& operator*() const {
+    return (*itr_)->out_;
+  }
+  const CpuState* operator->() const {
+    return &((*itr_)->out_);
+  }
 
-		output_iterator& operator++() {
-			itr_++;
-			return *this;
-		}
+  output_iterator& operator++() {
+    itr_++;
+    return *this;
+  }
 
-		bool operator==(const output_iterator& rhs) const {
-			return itr_ == rhs.itr_;
-		}
-		bool operator!=(const output_iterator& rhs) const {
-			return itr_ != rhs.itr_;
-		}
+  bool operator==(const output_iterator& rhs) const {
+    return itr_ == rhs.itr_;
+  }
+  bool operator!=(const output_iterator& rhs) const {
+    return itr_ != rhs.itr_;
+  }
 
-	private:
-		output_iterator(std::vector<IoPair*>::const_iterator itr) {
-			itr_ = itr;
-		}
+ private:
+  output_iterator(std::vector<IoPair*>::const_iterator itr) {
+    itr_ = itr;
+  }
 
-		std::vector<IoPair*>::const_iterator itr_;
+  std::vector<IoPair*>::const_iterator itr_;
 };
 
 } // namespace stoke

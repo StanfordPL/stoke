@@ -17,11 +17,11 @@ class StackSnapshot {
   /** Compiles internal functions. */
   void init() {
     save_user_callee_save_ = CpuIo::read(user_callee_save_,
-	    x64asm::RegSet::linux_callee_save(), {{x64asm::rsp, (uint64_t*)get_user_rsp()}});
+    x64asm::RegSet::linux_callee_save(), {{x64asm::rsp, (uint64_t*)get_user_rsp()}});
     save_stoke_callee_save_ = CpuIo::read(stoke_callee_save_,
-  	  x64asm::RegSet::linux_callee_save(), {{x64asm::rsp, (uint64_t*)get_stoke_rsp()}});
+    x64asm::RegSet::linux_callee_save(), {{x64asm::rsp, (uint64_t*)get_stoke_rsp()}});
     restore_stoke_callee_save_ = CpuIo::write(stoke_callee_save_,
-      x64asm::RegSet::linux_callee_save() - (x64asm::RegSet::empty() + x64asm::rsp));
+                                 x64asm::RegSet::linux_callee_save() - (x64asm::RegSet::empty() + x64asm::rsp));
   }
 
   /** Returns the address of the memory that holds the user rsp. */

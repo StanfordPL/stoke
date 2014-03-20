@@ -5,12 +5,12 @@
 // assigned a latency of zero.
 
 // Entries which are given non-integer values in Agner's table are rounded
-// up to the nearest integer value. 
+// up to the nearest integer value.
 
 // Entries which cannot be reasonably measured are assigned the sentinel
 // value 999.
 
-  0 // LABEL_DEFN
+0 // LABEL_DEFN
 
 , 2 // ADC AL, imm8
 , 2 // ADC AX, imm16
@@ -286,19 +286,19 @@
 , 0 // CALL rel31
 , 0 // CALL label
 
-, 1 // CBW 
-, 1 // CDQ 
-, 1 // CDQE 
+, 1 // CBW
+, 1 // CDQ
+, 1 // CDQE
 
-, 999 // CLC 
+, 999 // CLC
 
-, 999 // CLD 
+, 999 // CLD
 
 , 999 // CLFLUSH m8
 
-, 999 // CLI 
+, 999 // CLI
 
-, 1 // CMC 
+, 1 // CMC
 
 , 999 // CMOVA r16, m16
 , 2 // CMOVA r16, r16
@@ -533,18 +533,18 @@
 , 999 // CMPS m32, m32
 , 999 // CMPS m64, m64
 , 999 // CMPS m8, m8
-, 999 // CMPSB 
-, 999 // CMPSD 
+, 999 // CMPSB
+, 999 // CMPSD
 
 , 999 // CMPSD xmm, m64, imm8
 , 3 // CMPSD xmm, xmm, imm8
 
-, 999 // CMPSQ 
+, 999 // CMPSQ
 
 , 999 // CMPSS xmm, m32, imm8
 , 3 // CMPSS xmm, xmm, imm8
 
-, 999 // CMPSW 
+, 999 // CMPSW
 
 , 999 // CMPXCHG m16, r16
 , 999 // CMPXCHG m32, r32
@@ -570,9 +570,9 @@
 , 999 // COMISS xmm, m32
 , 999 // COMISS xmm, xmm
 
-, 250 // CPUID 
+, 250 // CPUID
 
-, 1 // CQO 
+, 1 // CQO
 
 , 999 // CRC32 r32, m16
 , 999 // CRC32 r32, m32
@@ -645,8 +645,8 @@
 , 999 // CVTTSS2SI r64, m32
 , 4 // CVTTSS2SI r64, xmm
 
-, 1 // CWD 
-, 1 // CWDE 
+, 1 // CWD
+, 1 // CWDE
 
 , 6 // DEC m16
 , 6 // DEC m32
@@ -684,7 +684,7 @@
 , 999 // DPPS xmm, m128, imm8
 , 9 // DPPS xmm, xmm, imm8
 
-, 999 // EMMS 
+, 999 // EMMS
 
 , 0 // ENTER imm8, imm16
 , 0 // ENTER 1, imm16
@@ -694,24 +694,24 @@
 , 4 // EXTRACTPS r32, xmm, imm8
 , 4 // EXTRACTPS r64, xmm, imm8
 
-, 68 // F2XM1 
+, 68 // F2XM1
 
-, 1 // FABS 
+, 1 // FABS
 
 , 999 // FADD m32fp
 , 999 // FADD m64fp
 , 3 // FADD ST(i), ST
 , 3 // FADD ST, ST(i)
-, 3 // FADDP 
+, 3 // FADDP
 , 3 // FADDP ST(i), ST
 
 , 47 // FBLD m81bcd
 
 , 999 // FBSTP m81bcd
 
-, 1 // FCHS 
+, 1 // FCHS
 
-, 1 // FCLEX 
+, 1 // FCLEX
 
 , 2 // FCMOVB ST, ST(i)
 , 2 // FCMOVBE ST, ST(i)
@@ -722,19 +722,19 @@
 , 2 // FCMOVNU ST, ST(i)
 , 2 // FCMOVU ST, ST(i)
 
-, 999 // FCOM 
+, 999 // FCOM
 , 999 // FCOM m32fp
 , 999 // FCOM m64fp
 , 999 // FCOM ST(i)
 , 999 // FCOMI ST, ST(i)
 , 999 // FCOMIP ST, ST(i)
-, 999 // FCOMP 
+, 999 // FCOMP
 , 999 // FCOMP m32fp
 , 999 // FCOMP m64fp
 , 999 // FCOMP ST(i)
-, 999 // FCOMPP 
+, 999 // FCOMPP
 
-, 112 // FCOS 
+, 112 // FCOS
 
 , 0 // FDECSTP // NOT A BUG... he says zero
 
@@ -742,13 +742,13 @@
 , 999 // FDIV m64fp
 , 24 // FDIV ST(i), ST
 , 24 // FDIV ST, ST(i)
-, 24 // FDIVP 
+, 24 // FDIVP
 , 24 // FDIVP ST(i), ST
 , 999 // FDIVR m32fp
 , 999 // FDIVR m64fp
 , 24 // FDIVR ST(i), ST
 , 24 // FDIVR ST, ST(i)
-, 24 // FDIVRP 
+, 24 // FDIVRP
 , 24 // FDIVRP ST(i), ST
 
 , 999 // FFREE ST(i)
@@ -774,7 +774,7 @@
 , 999 // FIMUL m32int
 
 , 0 // FINCSTP // NOT A BUG... he says zero
-, 1 // FINIT 
+, 1 // FINIT
 
 , 7 // FIST m16int
 , 7 // FIST m32int
@@ -796,30 +796,30 @@
 , 4 // FLD m81fp
 , 1 // FLD ST(i)
 
-, 999 // FLD1 
+, 999 // FLD1
 
 , 7 // FLDCW m1byte
 
 , 1 // FLDENV m18byte
 
-, 999 // FLDL1E 
-, 999 // FLDL1T 
-, 999 // FLDLG1 
-, 999 // FLDLN1 
-, 999 // FLDPI 
+, 999 // FLDL1E
+, 999 // FLDL1T
+, 999 // FLDLG1
+, 999 // FLDLN1
+, 999 // FLDPI
 
-, 999 // FLDZ 
+, 999 // FLDZ
 
 , 999 // FMUL m32fp
 , 999 // FMUL m64fp
 , 5 // FMUL ST(i), ST
 , 5 // FMUL ST, ST(i)
-, 5 // FMULP 
+, 5 // FMULP
 , 5 // FMULP ST(i), ST
 
-, 999 // FNCLEX 
-, 999 // FNINIT 
-, 999 // FNOP 
+, 999 // FNCLEX
+, 999 // FNINIT
+, 999 // FNOP
 
 , 999 // FNSAVE m128byte
 
@@ -830,26 +830,26 @@
 , 6 // FNSTSW AX
 , 999 // FNSTSW m1byte
 
-, 156 // FPATAN 
+, 156 // FPATAN
 
-, 19 // FPREM 
-, 27 // FPREM1 
+, 19 // FPREM
+, 27 // FPREM1
 
-, 130 // FPTAN 
+, 130 // FPTAN
 
-, 11 // FRNDINT 
+, 11 // FRNDINT
 
 , 999 // FRSTOR m128byte
 
 , 1 // FSAVE m128byte
 
-, 125 // FSCALE 
+, 125 // FSCALE
 
-, 106 // FSIN 
+, 106 // FSIN
 
-, 123 // FSINCOS 
+, 123 // FSINCOS
 
-, 23 // FSQRT 
+, 23 // FSQRT
 
 , 4 // FST m32fp
 , 4 // FST m64fp
@@ -870,28 +870,28 @@
 , 999 // FSUB m64fp
 , 3 // FSUB ST(i), ST
 , 3 // FSUB ST, ST(i)
-, 3 // FSUBP 
+, 3 // FSUBP
 , 3 // FSUBP ST(i), ST
 , 999 // FSUBR m32fp
 , 999 // FSUBR m64fp
 , 3 // FSUBR ST(i), ST
 , 3 // FSUBR ST, ST(i)
-, 3 // FSUBRP 
+, 3 // FSUBRP
 , 3 // FSUBRP ST(i), ST
 
-, 999 // FTST 
+, 999 // FTST
 
-, 999 // FUCOM 
+, 999 // FUCOM
 , 999 // FUCOM ST(i)
 , 999 // FUCOMI ST, ST(i)
 , 999 // FUCOMIP ST, ST(i)
-, 999 // FUCOMP 
+, 999 // FUCOMP
 , 999 // FUCOMP ST(i)
-, 999 // FUCOMPP 
+, 999 // FUCOMPP
 
-, 999 // FWAIT 
+, 999 // FWAIT
 
-, 999 // FXAM 
+, 999 // FXAM
 
 , 0 // FXCH       // NOT A BUG... he says zero
 , 0 // FXCH ST(i) // NOT A BUG... he says zero
@@ -901,10 +901,10 @@
 , 1 // FXSAVE m511byte
 , 1 // FXSAVE64 m511byte
 
-, 15 // FXTRACT 
+, 15 // FXTRACT
 
-, 680 // FYL2X 
-, 360 // FYL2XP1 
+, 680 // FYL2X
+, 360 // FYL2XP1
 
 , 999 // HADDPD xmm, m128
 , 5 // HADDPD xmm, xmm
@@ -976,22 +976,22 @@
 , 999 // INS m16, DX
 , 999 // INS m32, DX
 , 999 // INS m8, DX
-, 999 // INSB 
-, 999 // INSD 
+, 999 // INSB
+, 999 // INSD
 
 , 4 // INSERTPS xmm, m32, imm8
 , 1 // INSERTPS xmm, xmm, imm8
 
-, 999 // INSW 
+, 999 // INSW
 
 , 0 // INT imm8
 , 0 // INT 3
 
 , 999 // INVPCID r64, m128
 
-, 0 // IRET 
-, 0 // IRETD 
-, 0 // IRETQ 
+, 0 // IRET
+, 0 // IRETD
+, 0 // IRETQ
 
 , 0 // JA rel31
 , 0 // JA label
@@ -1186,7 +1186,7 @@
 , 0 // JZ rel8
 , 0 // JZ rel8, hint
 
-, 1 // LAHF 
+, 1 // LAHF
 
 , 999 // LAR r16, m16
 , 999 // LAR r16, r16
@@ -1211,10 +1211,10 @@
 , 2 // LEA r64, m32
 , 2 // LEA r64, m64
 
-, 0 // LEAVE 
+, 0 // LEAVE
 , 0 // LEAVE p66
 
-, 1 // LFENCE 
+, 1 // LFENCE
 
 , 999 // LFS r16, m16:16
 , 999 // LFS r32, m16:31
@@ -1223,16 +1223,16 @@
 , 999 // LGS r32, m16:31
 , 999 // LGS r64, m16:64
 
-, 999 // LOCK 
+, 999 // LOCK
 
 , 999 // LODS m16
 , 999 // LODS m32
 , 999 // LODS m64
 , 999 // LODS m8
-, 999 // LODSB 
-, 999 // LODSD 
-, 999 // LODSQ 
-, 999 // LODSW 
+, 999 // LODSB
+, 999 // LODSD
+, 999 // LODSQ
+, 999 // LODSW
 
 , 999 // LOOP rel8
 , 999 // LOOPE rel8
@@ -1267,7 +1267,7 @@
 , 999 // MAXSS xmm, m32
 , 3 // MAXSS xmm, xmm
 
-, 999 // MFENCE 
+, 999 // MFENCE
 
 , 999 // MINPD xmm, m128
 , 3 // MINPD xmm, xmm
@@ -1278,7 +1278,7 @@
 , 999 // MINSS xmm, m32
 , 3 // MINSS xmm, xmm
 
-, 999 // MONITOR 
+, 999 // MONITOR
 
 , 999 // MOV AL, moffs8
 , 999 // MOV AL, moffs8, pw
@@ -1414,8 +1414,8 @@
 , 999 // MOVS m32, m32
 , 999 // MOVS m64, m64
 , 999 // MOVS m8, m8
-, 999 // MOVSB 
-, 999 // MOVSD 
+, 999 // MOVSB
+, 999 // MOVSD
 
 , 3 // MOVSD m64, xmm
 , 3 // MOVSD xmm, m64
@@ -1426,13 +1426,13 @@
 , 3 // MOVSLDUP xmm, m128
 , 1 // MOVSLDUP xmm, xmm
 
-, 999 // MOVSQ 
+, 999 // MOVSQ
 
 , 3 // MOVSS m32, xmm
 , 3 // MOVSS xmm, m32
 , 1 // MOVSS xmm, xmm
 
-, 999 // MOVSW 
+, 999 // MOVSW
 
 , 999 // MOVSX r16, m8
 , 1 // MOVSX r16, rb
@@ -1503,7 +1503,7 @@
 , 999 // MULX r64, r64, m64
 , 4 // MULX r64, r64, r64
 
-, 999 // MWAIT 
+, 999 // MWAIT
 
 , 6 // NEG m16
 , 6 // NEG m32
@@ -1516,7 +1516,7 @@
 , 1 // NEG rh
 , 1 // NEG rl
 
-, 999 // NOP 
+, 999 // NOP
 , 999 // NOP m16
 , 999 // NOP m32
 , 999 // NOP r16
@@ -1590,9 +1590,9 @@
 , 999 // OUTS DX, m16
 , 999 // OUTS DX, m32
 , 999 // OUTS DX, m8
-, 999 // OUTSB 
-, 999 // OUTSD 
-, 999 // OUTSW 
+, 999 // OUTSB
+, 999 // OUTSD
+, 999 // OUTSW
 
 , 999 // PABSB mm, m64
 , 1 // PABSB mm, mm
@@ -1669,7 +1669,7 @@
 , 999 // PANDN xmm, m128
 , 1 // PANDN xmm, xmm
 
-, 999 // PAUSE 
+, 999 // PAUSE
 
 , 999 // PAVGB mm, m64
 , 1 // PAVGB mm, mm
@@ -1909,8 +1909,8 @@
 , 999 // POPCNT r64, m64
 , 3 // POPCNT r64, r64
 
-, 999 // POPF 
-, 999 // POPFQ 
+, 999 // POPF
+, 999 // POPFQ
 
 , 999 // POR mm, m64
 , 1 // POR mm, mm
@@ -2080,8 +2080,8 @@
 , 3 // PUSH r16
 , 3 // PUSH r64
 
-, 999 // PUSHF 
-, 999 // PUSHFQ 
+, 999 // PUSHF
+, 999 // PUSHFQ
 
 , 999 // PXOR mm, m64
 , 1 // PXOR mm, mm
@@ -2199,7 +2199,7 @@
 , 999 // REPNE_SCAS m64
 , 999 // REPNE_SCAS m8
 
-, 0 // RET 
+, 0 // RET
 , 0 // RET far
 , 0 // RET imm16
 , 0 // RET imm16, far
@@ -2285,7 +2285,7 @@
 , 999 // RSQRTSS xmm, m32
 , 5 // RSQRTSS xmm, xmm
 
-, 1 // SAHF 
+, 1 // SAHF
 
 , 999 // SAL m16, CL
 , 1 // SAL m16, imm8
@@ -2401,10 +2401,10 @@
 , 999 // SCAS m32
 , 999 // SCAS m64
 , 999 // SCAS m8
-, 999 // SCASB 
-, 999 // SCASD 
-, 999 // SCASQ 
-, 999 // SCASW 
+, 999 // SCASB
+, 999 // SCASD
+, 999 // SCASQ
+, 999 // SCASW
 
 , 1 // SETA m8
 , 1 // SETA rb
@@ -2527,7 +2527,7 @@
 , 1 // SETZ rh
 , 1 // SETZ rl
 
-, 999 // SFENCE 
+, 999 // SFENCE
 
 , 999 // SHL m16, CL
 , 1 // SHL m16, imm8
@@ -2641,9 +2641,9 @@
 , 999 // SQRTSS xmm, m32
 , 11 // SQRTSS xmm, xmm
 
-, 999 // STC 
-, 999 // STD 
-, 999 // STI 
+, 999 // STC
+, 999 // STD
+, 999 // STI
 
 , 7 // STMXCSR m32
 
@@ -2651,10 +2651,10 @@
 , 999 // STOS m32
 , 999 // STOS m64
 , 999 // STOS m8
-, 999 // STOSB 
-, 999 // STOSD 
-, 999 // STOSQ 
-, 999 // STOSW 
+, 999 // STOSB
+, 999 // STOSD
+, 999 // STOSQ
+, 999 // STOSW
 
 , 1 // SUB AL, imm8
 , 1 // SUB AX, imm16
@@ -2708,13 +2708,13 @@
 , 999 // SUBSS xmm, m32
 , 3 // SUBSS xmm, xmm
 
-, 999 // SWAPGS 
+, 999 // SWAPGS
 
-, 0 // SYSCALL 
-, 0 // SYSENTER 
-, 0 // SYSEXIT 
+, 0 // SYSCALL
+, 0 // SYSENTER
+, 0 // SYSEXIT
 , 0 // SYSEXIT pw
-, 0 // SYSRET 
+, 0 // SYSRET
 , 0 // SYSRET pw
 
 , 1 // TEST AL, imm8
@@ -4038,10 +4038,10 @@
 , 999 // VXORPS ymm, ymm, m156
 , 3 // VXORPS ymm, ymm, ymm
 
-, 999 // VZEROALL 
-, 999 // VZEROUPPER 
+, 999 // VZEROALL
+, 999 // VZEROUPPER
 
-, 999 // WAIT 
+, 999 // WAIT
 
 , 999 // WRFSBASE r32
 , 999 // WRFSBASE r64
@@ -4050,7 +4050,7 @@
 
 , 999 // XABORT imm8
 
-, 999 // XACQUIRE 
+, 999 // XACQUIRE
 
 , 999 // XADD m16, r16
 , 999 // XADD m32, r32
@@ -4101,12 +4101,12 @@
 , 2 // XCHG rl, rh
 , 2 // XCHG rl, rl
 
-, 999 // XEND 
+, 999 // XEND
 
-, 999 // XGETBV 
+, 999 // XGETBV
 
 , 999 // XLAT m8
-, 999 // XLATB 
+, 999 // XLATB
 
 , 1 // XOR AL, imm8
 , 1 // XOR AX, imm16
@@ -4156,7 +4156,7 @@
 , 999 // XORPS xmm, m128
 , 3 // XORPS xmm, xmm
 
-, 999 // XRELEASE 
+, 999 // XRELEASE
 
 , 999 // XRSTOR m16
 , 999 // XRSTOR m32
@@ -4179,5 +4179,5 @@
 , 999 // XSAVEOPT64 m32
 , 999 // XSAVEOPT64 m64
 
-, 999 // XTEST 
+, 999 // XTEST
 

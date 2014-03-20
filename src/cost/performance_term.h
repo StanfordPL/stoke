@@ -4,9 +4,9 @@
 namespace stoke {
 
 enum class PerformanceTerm {
-	NONE,
-	SIZE,
-	LATENCY
+  NONE,
+  SIZE,
+  LATENCY
 };
 
 } // namespace stoke

@@ -12,19 +12,19 @@
 namespace stoke {
 
 class StateWriter {
-	public:
-		void operator()(std::ostream& os, const CpuState& cs) const;
+ public:
+  void operator()(std::ostream& os, const CpuState& cs) const;
 
-	private:
-		void write_regs(std::ostream& os, const Regs& regs, const char** names, size_t padding) const;
+ private:
+  void write_regs(std::ostream& os, const Regs& regs, const char** names, size_t padding) const;
 
-		void write_mem(std::ostream& os, const Memory& mem) const;
-		void write_summary(std::ostream& os, const Memory& mem) const;
-		void write_row(std::ostream& os, const Memory& mem, uint64_t addr) const;
-		void write_contents(std::ostream& os, const Memory& mem) const;
+  void write_mem(std::ostream& os, const Memory& mem) const;
+  void write_summary(std::ostream& os, const Memory& mem) const;
+  void write_row(std::ostream& os, const Memory& mem, uint64_t addr) const;
+  void write_contents(std::ostream& os, const Memory& mem) const;
 
-		bool valid_row(const Memory& mem, uint64_t addr) const;
-		size_t valid_count(const Memory& mem) const;
+  bool valid_row(const Memory& mem, uint64_t addr) const;
+  size_t valid_count(const Memory& mem) const;
 };
 
 } // namespace stoke
@@ -32,8 +32,8 @@ class StateWriter {
 namespace std {
 
 inline std::ostream& operator<<(std::ostream& os, const stoke::CpuState& cs) {
-	stoke::StateWriter()(os, cs);
-	return os;
+  stoke::StateWriter()(os, cs);
+  return os;
 }
 
 } // namespace std

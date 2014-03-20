@@ -11,12 +11,12 @@ using namespace stoke;
 namespace {
 
 array<pair<string, Move>, 6> moves {{
-		{"instruction", Move::INSTRUCTION},
-		{"opcode", Move::OPCODE},
-		{"operand", Move::OPERAND},
-		{"local_swap", Move::LOCAL_SWAP},
-		{"global_swap", Move::GLOBAL_SWAP},
-		{"resize", Move::RESIZE},
+    {"instruction", Move::INSTRUCTION},
+    {"opcode", Move::OPCODE},
+    {"operand", Move::OPERAND},
+    {"local_swap", Move::LOCAL_SWAP},
+    {"global_swap", Move::GLOBAL_SWAP},
+    {"resize", Move::RESIZE},
   }
 };
 

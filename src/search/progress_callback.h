@@ -8,16 +8,16 @@ namespace stoke {
 
 /** POD-datatype passed to callbacks by search */
 struct ProgressCallbackData {
-	const Cfg& current;
-	const Cost current_cost;
+  const Cfg& current;
+  const Cost current_cost;
 
-	const Cfg& best_yet;
-	const Cost best_yet_cost;
+  const Cfg& best_yet;
+  const Cost best_yet_cost;
 
-	const Cfg& best_correct;
-	const Cost best_correct_cost;
+  const Cfg& best_correct;
+  const Cost best_correct_cost;
 
-	const bool success;
+  const bool success;
 };
 
 /** Callback signature */

@@ -9,31 +9,31 @@
 namespace stoke {
 
 class Verifier {
-	public:
-		Verifier(Sandbox* sb) : sandbox_(sb) {
-			set_strategy(Strategy::NONE);
-		}
+ public:
+  Verifier(Sandbox* sb) : sandbox_(sb) {
+    set_strategy(Strategy::NONE);
+  }
 
-		Verifier& set_strategy(Strategy s) {
-			strategy_ = s;
-			return *this;
-		}
+  Verifier& set_strategy(Strategy s) {
+    strategy_ = s;
+    return *this;
+  }
 
-		bool verify(const Cfg& target, const Cfg& rewrite);
-		
-		const CpuState& get_counter_example() const {
-			return counter_example_;
-		}
+  bool verify(const Cfg& target, const Cfg& rewrite);
 
-	private:
-		Strategy strategy_;
-		CpuState counter_example_;
+  const CpuState& get_counter_example() const {
+    return counter_example_;
+  }
 
-		Sandbox* sandbox_;
+ private:
+  Strategy strategy_;
+  CpuState counter_example_;
 
-		bool regression(const Cfg& target, const Cfg& rewrite);
-		bool formal(const Cfg& target, const Cfg& rewrite);
-		bool random(const Cfg& target, const Cfg& rewrite);
+  Sandbox* sandbox_;
+
+  bool regression(const Cfg& target, const Cfg& rewrite);
+  bool formal(const Cfg& target, const Cfg& rewrite);
+  bool random(const Cfg& target, const Cfg& rewrite);
 };
 
 } // namespace stoke

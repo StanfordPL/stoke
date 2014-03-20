@@ -22,49 +22,50 @@ void StateWriter::operator()(ostream& os, const CpuState& cs) const {
   };
 
   write_regs(os, cs.gp, gps, 5);
-	os << endl;
-	os << endl;
-  
-	write_regs(os, cs.sse, sses, 3);
-	os << endl;
-	os << endl;
-  
-	write_mem(os, cs.stack);
-	os << endl;
-	os << endl;
-  
-	write_mem(os, cs.heap);
+  os << endl;
+  os << endl;
+
+  write_regs(os, cs.sse, sses, 3);
+  os << endl;
+  os << endl;
+
+  write_mem(os, cs.stack);
+  os << endl;
+  os << endl;
+
+  write_mem(os, cs.heap);
 }
 
-void StateWriter::write_regs(ostream& os, const Regs& regs, const char** names, size_t padding) const {
+void StateWriter::write_regs(ostream& os, const Regs& regs, const char** names,
+                             size_t padding) const {
   ofilterstream<Column> fs(os);
   fs.filter().padding(padding);
 
   for (size_t i = 0, ie = regs.size(); i < ie; ++i) {
     fs << *(names + i);
-	 	if ( i+1 != ie ) {
-			fs << endl;
-		}
+    if (i + 1 != ie) {
+      fs << endl;
+    }
   }
   fs.filter().next();
 
-	for ( size_t i = 0, ie = regs.size(); i < ie; ++i ) {
-		const auto& r = regs[i];
+  for (size_t i = 0, ie = regs.size(); i < ie; ++i) {
+    const auto& r = regs[i];
     for (auto j = r.fixed_quad_begin(), je = r.fixed_quad_end(); j != je; ++j) {
       HexWriter<uint64_t, 2>()(fs, *j);
       fs << " ";
     }
-		if ( i+1 != ie ) {
-			fs << endl;
-		}
+    if (i + 1 != ie) {
+      fs << endl;
+    }
   }
   fs.filter().done();
 }
 
 void StateWriter::write_mem(ostream& os, const Memory& mem) const {
-	write_summary(os, mem);
-	os << endl;
-	write_contents(os, mem);
+  write_summary(os, mem);
+  os << endl;
+  write_contents(os, mem);
 }
 
 void StateWriter::write_summary(ostream& os, const Memory& mem) const {
@@ -80,49 +81,49 @@ void StateWriter::write_row(ostream& os, const Memory& mem, uint64_t addr) const
   os << "   ";
   for (size_t i = 0; i < 8; ++i) {
     os << (mem.is_defined(addr + i) ? "d" : mem.is_valid(addr + i) ? "v" : ".");
-		os << " ";
+    os << " ";
   }
   os << "  ";
-	for ( size_t i = 0; i < 8; ++i ) {
-		HexWriter<uint8_t, 2>()(os, mem[addr+i]);
-		os << " ";
-	}
+  for (size_t i = 0; i < 8; ++i) {
+    HexWriter<uint8_t, 2>()(os, mem[addr + i]);
+    os << " ";
+  }
 }
 
 void StateWriter::write_contents(ostream& os, const Memory& mem) const {
-	const auto vc = valid_count(mem);
+  const auto vc = valid_count(mem);
 
   os << "[ " << vc << " valid rows shown ]";
-	if ( vc != 0 ) {
-		os << endl;
-	}
+  if (vc != 0) {
+    os << endl;
+  }
   for (uint64_t i = mem.upper_bound(), ie = mem.lower_bound(); i > ie; i -= 8) {
-    if (!valid_row(mem, i-8)) {
+    if (!valid_row(mem, i - 8)) {
       continue;
     }
-		os << endl;
-    write_row(os, mem, i-8);
+    os << endl;
+    write_row(os, mem, i - 8);
   }
 }
 
 bool StateWriter::valid_row(const Memory& mem, uint64_t addr) const {
-	assert(addr % 8 == 0);
-	for ( size_t i = 0; i < 8; ++i ) {
-		if ( mem.is_valid(addr+i) ) {
-			return true;
-		}
-	}
-	return false;
+  assert(addr % 8 == 0);
+  for (size_t i = 0; i < 8; ++i) {
+    if (mem.is_valid(addr + i)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 size_t StateWriter::valid_count(const Memory& mem) const {
-	size_t res = 0;
-	for ( size_t i = mem.lower_bound(), ie = mem.upper_bound(); i < ie; i += 8 ) {
-		if ( valid_row(mem, i) ) {
-			res++;
-		}
-	}
-	return res;
+  size_t res = 0;
+  for (size_t i = mem.lower_bound(), ie = mem.upper_bound(); i < ie; i += 8) {
+    if (valid_row(mem, i)) {
+      res++;
+    }
+  }
+  return res;
 }
 
 } // namespace stoke

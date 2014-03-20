@@ -10,16 +10,16 @@
 namespace stoke {
 
 class StateReader {
-	public:
-		void operator()(std::istream& is, CpuState& cs) const;
+ public:
+  void operator()(std::istream& is, CpuState& cs) const;
 
-	private:
-		void read_regs(std::istream& is, Regs& regs) const;
+ private:
+  void read_regs(std::istream& is, Regs& regs) const;
 
-		void read_mem(std::istream& is, Memory& mem) const;
-		void read_summary(std::istream& is, Memory& mem) const;
-		void read_row(std::istream& is, Memory& mem) const;
-		void read_contents(std::istream& is, Memory& mem) const;
+  void read_mem(std::istream& is, Memory& mem) const;
+  void read_summary(std::istream& is, Memory& mem) const;
+  void read_row(std::istream& is, Memory& mem) const;
+  void read_contents(std::istream& is, Memory& mem) const;
 };
 
 } // namespace stoke
@@ -27,8 +27,8 @@ class StateReader {
 namespace std {
 
 inline std::istream& operator>>(std::istream& is, stoke::CpuState& cs) {
-	stoke::StateReader()(is, cs);
-	return is;
+  stoke::StateReader()(is, cs);
+  return is;
 }
 
 } // namespace std

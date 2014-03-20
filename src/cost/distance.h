@@ -4,8 +4,8 @@
 namespace stoke {
 
 enum class Distance {
-	HAMMING,
-	ULP
+  HAMMING,
+  ULP
 };
 
 } // namespace stoke

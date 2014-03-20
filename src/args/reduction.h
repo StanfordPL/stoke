@@ -8,11 +8,11 @@
 namespace stoke {
 
 struct ReductionReader {
-  void operator()(std::istream& is, Reduction& pt);
+  void operator()(std::istream& is, Reduction& r);
 };
 
 struct ReductionWriter {
-  void operator()(std::ostream& os, const Reduction pt);
+  void operator()(std::ostream& os, const Reduction r);
 };
 
 } // namespace stoke

@@ -4,10 +4,10 @@
 namespace stoke {
 
 enum class Strategy {
-	NONE,
-	REGRESSION,
-	FORMAL,
-	RANDOM
+  NONE,
+  REGRESSION,
+  FORMAL,
+  RANDOM
 };
 
 } // namespace stoke

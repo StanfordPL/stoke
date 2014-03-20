@@ -55,7 +55,7 @@ class Regs {
   }
 
  private:
-	/** Register contents. */
+  /** Register contents. */
   std::vector<cpputil::BitVector> contents_;
 };
 

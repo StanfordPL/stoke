@@ -16,11 +16,11 @@ namespace stoke {
 void TUnitReader::operator()(istream& is, TUnit& t) {
   string s;
 
-	getline(is, s);
-	is >> s >> t.name;
-	getline(is, s);
-	getline(is, s);
-	getline(is, s);
+  getline(is, s);
+  is >> s >> t.name;
+  getline(is, s);
+  getline(is, s);
+  getline(is, s);
 
   vector<string> lines;
   for (size_t i = 0; getline(is, s); ++i) {

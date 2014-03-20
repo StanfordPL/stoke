@@ -12,8 +12,8 @@ void TestcasesReader::operator()(istream& is, vector<CpuState>& ts) {
     CpuState t;
     is >> t;
 
-		getline(is, s);
-		getline(is, s);
+    getline(is, s);
+    getline(is, s);
 
     ts.emplace_back(t);
   }
@@ -25,12 +25,12 @@ void TestcasesReader::operator()(istream& is, vector<CpuState>& ts) {
 void TestcasesWriter::operator()(ostream& os, const vector<CpuState>& ts) {
   for (size_t i = 0, ie = ts.size(); i < ie; ++i) {
     os << "Testcase " << i << ":" << endl;
-	 	os << endl;
+    os << endl;
     os << ts[i];
-		if ( i+1 != ie ) {
-			os << endl;
-			os << endl;
-		}
+    if (i + 1 != ie) {
+      os << endl;
+      os << endl;
+    }
   }
 }
 

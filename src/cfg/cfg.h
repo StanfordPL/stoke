@@ -47,35 +47,35 @@ class Cfg {
 
   /** Recompute internal state; recomputes basic block structure and data flow values. */
   void recompute() {
-		recompute_structure();
-		recompute_loops();
+    recompute_structure();
+    recompute_loops();
     recompute_defs();
     recompute_liveness();
   }
-	/** Recompute graph structure; modifying control flow will invalidate this information, calling this
-		method will restore it. */
-	void recompute_structure() {
+  /** Recompute graph structure; modifying control flow will invalidate this information, calling this
+    method will restore it. */
+  void recompute_structure() {
     recompute_blocks();
     recompute_labels();
     recompute_succs();
     recompute_preds();
     recompute_reachable();
-	}
-	/** Recompute loops; modifying control flow will invalidate this information, calling this method
-		will restore it. This method is undefined if graph structure is not up to date. */
-	void recompute_loops() {
-		if ( !is_loop_free() ) {
-			recompute_dominators_loops();
-		} else {
-			recompute_dominators_loop_free();
-		}
+  }
+  /** Recompute loops; modifying control flow will invalidate this information, calling this method
+    will restore it. This method is undefined if graph structure is not up to date. */
+  void recompute_loops() {
+    if (!is_loop_free()) {
+      recompute_dominators_loops();
+    } else {
+      recompute_dominators_loop_free();
+    }
     recompute_back_edges();
     recompute_loop_blocks();
     recompute_nesting_depth();
-	}
+  }
   /** Recomputes the defined-in relation for instructions; modifying an instruction will invalidate
-  	this relation, calling this method will restore it. This method is undefined if graph structure
-	 	is not up to date. */
+    this relation, calling this method will restore it. This method is undefined if graph structure
+    is not up to date. */
   void recompute_defs() {
     if (!is_loop_free()) {
       recompute_defs_loops();
@@ -84,8 +84,8 @@ class Cfg {
     }
   }
   /** Recomputes the live-out relation for instructions; modifying an instruction will invalidate
-  	this relation, calling this method will restore it. This method is undefined if graph structure
-	 	is not up to date. */
+    this relation, calling this method will restore it. This method is undefined if graph structure
+    is not up to date. */
   void recompute_liveness() {
     if (!is_loop_free()) {
       recompute_liveness_loops();
@@ -185,14 +185,14 @@ class Cfg {
   }
 
   /** Returns true if control can pass from this basic block to another either because it is
-  	not terminated by a jump instruction or it is terminated by a conditional jump instruction
-  	that can fail. */
+    not terminated by a jump instruction or it is terminated by a conditional jump instruction
+    that can fail. */
   bool has_fallthrough_target(id_type id) const {
     assert(id < num_blocks());
     return !succs_[id].empty();
   }
   /** Returns the fallthrough target for this basic block; undefined if has_fallthrough_target()
-  	is false. */
+    is false. */
   id_type fallthrough_target(id_type id) const {
     assert(has_fallthrough_target(id));
     return succs_[id][0];
@@ -204,14 +204,14 @@ class Cfg {
     return succs_[id].size() == 2;
   }
   /** Returns the id of the basic block that a successful conditional jump will proceed to;
-  	undefined if has_conditional_target() is false. */
+    undefined if has_conditional_target() is false. */
   id_type conditional_target(id_type id) const {
     assert(has_conditional_target(id));
     return succs_[id][1];
   }
 
   /** Returns true if the first basic block dominates the second; undefined for unreachable
-  	blocks, including the entry and exit blocks. */
+    blocks, including the entry and exit blocks. */
   bool dom(id_type x, id_type y) const {
     assert(is_reachable(x));
     assert(is_reachable(y));
@@ -233,14 +233,14 @@ class Cfg {
   }
 
   /** Returns an iterator that points to the beginning of the list of basic blocks in this
-  	back edge's loop; undefined if this isn't a back edge. */
+    back edge's loop; undefined if this isn't a back edge. */
   loop_iterator loop_begin(const edge_type& be) const {
     const auto itr = loops_.find(be);
     assert(itr != loops_.end());
     return itr->second.set_bit_index_begin();
   }
   /** Returns an iterator that points to the end of the list of basic blocks in this
-  	back edge's loop; undefined if this isn't a backedge. */
+    back edge's loop; undefined if this isn't a backedge. */
   loop_iterator loop_end(const edge_type& be) const {
     const auto itr = loops_.find(be);
     assert(itr != loops_.end());
@@ -280,14 +280,14 @@ class Cfg {
   x64asm::RegSet def_ins() const {
     return fxn_def_ins_;
   }
-  /** Returns the set of registers that are defined on entry to a basic block; undefined for unreachable 
-  	blocks. */
+  /** Returns the set of registers that are defined on entry to a basic block; undefined for unreachable
+    blocks. */
   x64asm::RegSet def_ins(id_type id) const {
     assert(is_reachable(id));
-    return def_ins_[get_index({id,0})];
+    return def_ins_[get_index({id, 0})];
   }
   /** Returns the set of registers that are defined on entry to an instruction; undefined for unreachable
-		blocks. */
+    blocks. */
   x64asm::RegSet def_ins(const loc_type& loc) const {
     assert(is_reachable(loc.first));
     return def_ins_[get_index(loc)];
@@ -298,13 +298,13 @@ class Cfg {
     return fxn_live_outs_;
   }
   /** Returns the set of registers that are live on exit from this block; undefined for unreachable
-		blocks. */
+    blocks. */
   x64asm::RegSet live_outs(id_type id) const {
     assert(is_reachable(id));
-    return live_outs_[get_index({id,num_instrs(id)-1})];
+    return live_outs_[get_index({id, num_instrs(id) - 1})];
   }
-  /** Returns the set of registers that are live on exit from this instruction; undefined for 
-		unreachable blocks. */
+  /** Returns the set of registers that are live on exit from this instruction; undefined for
+    unreachable blocks. */
   x64asm::RegSet live_outs(const loc_type& loc) const {
     assert(is_reachable(loc.first));
     return live_outs_[get_index(loc)];
@@ -378,15 +378,15 @@ class Cfg {
   void recompute_succs();
   /** Recompute the contents of preds_; assumes blocks_ and succs_ are up to date. */
   void recompute_preds();
-	/** Recompute the contents of reachable_; assumes blocks_ and succs_ are up to date. */
+  /** Recompute the contents of reachable_; assumes blocks_ and succs_ are up to date. */
   void recompute_reachable();
 
-	/** Recomputes dominators using the generic least fixed point dataflow algorithm. */
-	void recompute_dominators_loops();
-	/** Faster recomputation of dominators; valid only for loop-free graphs. */
-	void recompute_dominators_loop_free();
-  
-	/** Recompute the keys in loops_; assumes blocks_ succs_ and reachable_ are up to date. */
+  /** Recomputes dominators using the generic least fixed point dataflow algorithm. */
+  void recompute_dominators_loops();
+  /** Faster recomputation of dominators; valid only for loop-free graphs. */
+  void recompute_dominators_loop_free();
+
+  /** Recompute the keys in loops_; assumes blocks_ succs_ and reachable_ are up to date. */
   void recompute_back_edges();
   /** Recompute the values in loops_; assumes blocks_ preds_ and reachable_ are up to date. */
   void recompute_loop_blocks();
@@ -411,3 +411,5 @@ class Cfg {
 } // namespace stoke
 
 #endif
+
+

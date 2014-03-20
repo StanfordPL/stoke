@@ -4,8 +4,8 @@
 namespace stoke {
 
 enum class Reduction {
-	SUM,
-	MAX
+  SUM,
+  MAX
 };
 
 } // namespace stoke

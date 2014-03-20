@@ -20,21 +20,21 @@ class Memory {
   /** Sets the virtual address base and size. Rounds down to 256-bit align. Pads with headroom. */
   Memory& resize(uint64_t base, size_t size) {
     base_ = base & 0xffffffffffffffe0;
-		
-		size += (base % 32) + 32; 
-		contents_.resize_for_fixed_bytes(size);
-		valid_.resize_for_bits(size);
-		def_.resize_for_bits(size);
+
+    size += (base % 32) + 32;
+    contents_.resize_for_fixed_bytes(size);
+    valid_.resize_for_bits(size);
+    def_.resize_for_bits(size);
 
     return *this;
   }
 
-	/** Zeros memory and resets valid and defined bits. */
-	void clear() {
-		contents_.reset();
-		valid_.reset();
-		def_.reset();
-	}
+  /** Zeros memory and resets valid and defined bits. */
+  void clear() {
+    contents_.reset();
+    valid_.reset();
+    def_.reset();
+  }
 
   /** Logical memory size; doesn't include headroom. */
   size_t size() const {
@@ -82,7 +82,7 @@ class Memory {
 
   /** Returns true if a byte is valid. */
   bool is_valid(uint64_t addr) const {
-		assert(in_range(addr));
+    assert(in_range(addr));
     return valid_[addr - base_];
   }
   /** Sets this byte as valid. */
@@ -91,18 +91,18 @@ class Memory {
     valid_[addr - base_] = v;
     return *this;
   }
-	/** Returns a pointer to the beginning of the valid byte addrs in this memory. */
-	addr_iterator valid_begin() const {
-		return addr_iterator(valid_.set_bit_index_begin(), base_);
-	}
-	/** Returns a pointer to the end of the valid byte addrs in this memory. */
-	addr_iterator valid_end() const {
-		return addr_iterator(valid_.set_bit_index_end(), base_);
-	}
+  /** Returns a pointer to the beginning of the valid byte addrs in this memory. */
+  addr_iterator valid_begin() const {
+    return addr_iterator(valid_.set_bit_index_begin(), base_);
+  }
+  /** Returns a pointer to the end of the valid byte addrs in this memory. */
+  addr_iterator valid_end() const {
+    return addr_iterator(valid_.set_bit_index_end(), base_);
+  }
 
   /** Returns true if a byte is defined; undefined for invalid bytes */
   bool is_defined(uint64_t addr) const {
-		assert(is_valid(addr));
+    assert(is_valid(addr));
     return def_[addr - base_];
   }
   /** Sets this byte as defined; undefined for invalid bytes */
@@ -111,14 +111,14 @@ class Memory {
     def_[addr - base_] = d;
     return *this;
   }
-	/** Returns a pointer to the beginning of the defined byte addrs in this memory. */
-	addr_iterator defined_begin() const {
-		return addr_iterator(def_.set_bit_index_begin(), base_);
-	}
-	/** Returns a pointer to the end of the defined byte addrs in this memory. */
-	addr_iterator defined_end() const {
-		return addr_iterator(def_.set_bit_index_end(), base_);
-	}
+  /** Returns a pointer to the beginning of the defined byte addrs in this memory. */
+  addr_iterator defined_begin() const {
+    return addr_iterator(def_.set_bit_index_begin(), base_);
+  }
+  /** Returns a pointer to the end of the defined byte addrs in this memory. */
+  addr_iterator defined_end() const {
+    return addr_iterator(def_.set_bit_index_end(), base_);
+  }
 
   /** Bit-wise xor; ignores shadows. */
   Memory& operator^=(const Memory& rhs) {

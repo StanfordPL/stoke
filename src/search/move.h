@@ -4,14 +4,14 @@
 namespace stoke {
 
 enum class Move {
-	INSTRUCTION = 0,
-	OPCODE,
-	OPERAND,
-	RESIZE,
-	LOCAL_SWAP,
-	GLOBAL_SWAP,
+  INSTRUCTION = 0,
+  OPCODE,
+  OPERAND,
+  RESIZE,
+  LOCAL_SWAP,
+  GLOBAL_SWAP,
 
-	NUM_MOVES
+  NUM_MOVES
 };
 
 } // namespace stoke

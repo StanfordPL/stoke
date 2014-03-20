@@ -28,41 +28,41 @@ void DotWriter::write_exit(ostream& os, const Cfg& cfg) const {
 }
 
 void DotWriter::write_block(ostream& os, const Cfg& cfg, Cfg::id_type id) const {
-	os << "bb" << id << "[";
-	os << "shape=record, style=filled, fillcolor=white, ";
-	if (!cfg.is_reachable(id)) {
-		os << "color = grey, ";
-	}
-	os << "label=\"{";
-	os << "#" << id;
-	if (dom_ && cfg.is_reachable(id)) {
-		os << "|dominates: ";
-		write_dominators(os, cfg, id);
-	}
-	if (def_in_block_ && cfg.is_reachable(id)) {
-		os << "|def-in: ";
-		write_reg_set(os, cfg.def_ins(id));
-	}
-	for (size_t j = 0, je = cfg.num_instrs(id); j < je; ++j) {
-		if (def_in_instr_ && cfg.is_reachable(id)) {
-			os << "|def-in: ";
-			write_reg_set(os, cfg.def_ins({id,j}));
-		}
+  os << "bb" << id << "[";
+  os << "shape=record, style=filled, fillcolor=white, ";
+  if (!cfg.is_reachable(id)) {
+    os << "color = grey, ";
+  }
+  os << "label=\"{";
+  os << "#" << id;
+  if (dom_ && cfg.is_reachable(id)) {
+    os << "|dominates: ";
+    write_dominators(os, cfg, id);
+  }
+  if (def_in_block_ && cfg.is_reachable(id)) {
+    os << "|def-in: ";
+    write_reg_set(os, cfg.def_ins(id));
+  }
+  for (size_t j = 0, je = cfg.num_instrs(id); j < je; ++j) {
+    if (def_in_instr_ && cfg.is_reachable(id)) {
+      os << "|def-in: ";
+      write_reg_set(os, cfg.def_ins({id, j}));
+    }
 
-		os << "|";
-		os << cfg.get_instr({id,j});
-		os << "\\l";
+    os << "|";
+    os << cfg.get_instr({id, j});
+    os << "\\l";
 
-		if (live_out_instr_ && cfg.is_reachable(id)) {
-			os << "|live-out: ";
-			write_reg_set(os, cfg.live_outs({id,j}));
-		}
-	}
-	if (live_out_block_ && cfg.is_reachable(id)) {
-		os << "|live-out: ";
-		write_reg_set(os, cfg.live_outs(id));
-	}
-	os << "}\"];" << endl;
+    if (live_out_instr_ && cfg.is_reachable(id)) {
+      os << "|live-out: ";
+      write_reg_set(os, cfg.live_outs({id, j}));
+    }
+  }
+  if (live_out_block_ && cfg.is_reachable(id)) {
+    os << "|live-out: ";
+    write_reg_set(os, cfg.live_outs(id));
+  }
+  os << "}\"];" << endl;
 }
 
 void DotWriter::write_blocks(ostream& os, const Cfg& cfg) const {
@@ -77,7 +77,7 @@ void DotWriter::write_blocks(ostream& os, const Cfg& cfg) const {
     os << "color = " << (n.first + 1) << endl;
 
     for (const auto id : n.second) {
-			write_block(os, cfg, id);
+      write_block(os, cfg, id);
     }
   }
 

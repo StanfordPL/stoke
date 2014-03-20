@@ -26,7 +26,7 @@ void generic_write(const std::array<std::pair<T1, T2>, N>& elems, T1& key, const
       key = elem.first;
     }
   }
-	assert(false);
+  assert(false);
 }
 
 } // namespace stoke

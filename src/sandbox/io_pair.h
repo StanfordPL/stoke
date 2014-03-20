@@ -8,10 +8,10 @@
 namespace stoke {
 
 class IoPair {
-	/** This class is for use by the sandbox only. */
-	friend class Sandbox;
-	/** This iterator exposes output states. */
-	friend class output_iterator;
+  /** This class is for use by the sandbox only. */
+  friend class Sandbox;
+  /** This iterator exposes output states. */
+  friend class output_iterator;
 
   /** Input state (this never changes). */
   CpuState in_;

@@ -111,6 +111,15 @@ bin/%: tools/%.cc $(OBJ)
 
 ##### MISC
 
+astyle:
+	astyle "src/args/*.h" && astyle "src/args/*.cc"
+	astyle "src/cfg/*.h" && astyle "src/cfg/*.cc"
+	astyle "src/cost/*.h" && astyle "src/cost/*.cc"
+	astyle "src/sandbox/*.h" && astyle "src/sandbox/*.cc"
+	astyle "src/search/*.h" && astyle "src/search/*.cc"
+	astyle "src/state/*.h" && astyle "src/state/*.cc"
+	astyle "src/verifier/*.h" && astyle "src/verifier/*.cc"
+
 .SECONDARY: $(OBJ)
 
 ##### CLEAN TARGETS

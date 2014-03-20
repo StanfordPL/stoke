@@ -4,18 +4,18 @@
 namespace stoke {
 
 struct Statistics {
-	Statistics() : num_proposed(0), num_succeeded(0), num_accepted(0) { }
+  Statistics() : num_proposed(0), num_succeeded(0), num_accepted(0) { }
 
-	Statistics& operator+=(const Statistics& rhs) {
-		num_proposed += rhs.num_proposed;
-		num_succeeded += rhs.num_succeeded;
-		num_accepted += rhs.num_accepted;
-		return *this;
-	}
+  Statistics& operator+=(const Statistics& rhs) {
+    num_proposed += rhs.num_proposed;
+    num_succeeded += rhs.num_succeeded;
+    num_accepted += rhs.num_accepted;
+    return *this;
+  }
 
-	size_t num_proposed;
-	size_t num_succeeded;
-	size_t num_accepted;
+  size_t num_proposed;
+  size_t num_succeeded;
+  size_t num_accepted;
 };
 
 } // namespace stoke
