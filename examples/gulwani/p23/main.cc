@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-int32_t p23(int32_t x) { 
+int32_t p23(int32_t x) {
   int32_t o1 = x >> 1;
   int32_t o2 = o1 & 0x55555555;
   int32_t o3 = x - o2;
@@ -19,8 +19,9 @@ int32_t p23(int32_t x) {
 }
 
 int main() {
-  for ( size_t i = 0; i < 1024; ++i )
+  for (size_t i = 0; i < 1024; ++i) {
     p23(i);
+  }
 
   return 0;
 }

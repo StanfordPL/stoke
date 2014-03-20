@@ -94,12 +94,16 @@ void StateWriter::write_row(ostream& os, const Memory& mem, uint64_t addr) const
   HexWriter<uint64_t, 8>()(os, addr);
   os << "   ";
   for (size_t i = 0; i < 8; ++i) {
-    os << (mem.is_defined(addr + i) ? "d" : mem.is_valid(addr + i) ? "v" : ".");
+    if (mem.is_valid(addr + i)) {
+      os << (mem.is_defined(addr + i) ? "d" : "v");
+    } else {
+      os << ".";
+    }
     os << " ";
   }
   os << "  ";
   for (size_t i = 0; i < 8; ++i) {
-    HexWriter<uint8_t, 2>()(os, mem[addr + i]);
+    HexWriter<uint8_t, 2>()(os, mem.is_valid(addr+i) ? mem[addr + i] : 0);
     os << " ";
   }
 }
@@ -141,3 +145,4 @@ size_t StateWriter::valid_count(const Memory& mem) const {
 }
 
 } // namespace stoke
+

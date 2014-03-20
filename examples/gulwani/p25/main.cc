@@ -1,6 +1,6 @@
 #include <stdint.h>
 
-int32_t p25(int32_t x, int32_t y) { 
+int32_t p25(int32_t x, int32_t y) {
   uint32_t o1 = x & 0x0000ffff;
   int32_t o2 = x >> 16;
   uint32_t o3 = y & 0x0000ffff;
@@ -20,8 +20,9 @@ int32_t p25(int32_t x, int32_t y) {
 }
 
 int main() {
-  for ( size_t i = 0; i < 1024; ++i )
+  for (size_t i = 0; i < 1024; ++i) {
     p25(i, i);
+  }
 
   return 0;
 }

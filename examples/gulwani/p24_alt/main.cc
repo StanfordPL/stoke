@@ -9,14 +9,15 @@ uint32_t p24_alt(uint32_t x) {
   x |= x >> 16;
   x++;
 
-  x += (x==0);
+  x += (x == 0);
 
   return x;
 }
 
 int main() {
-  for ( size_t i = 0; i < 1024; ++i )
+  for (size_t i = 0; i < 1024; ++i) {
     p24_alt(i);
+  }
 
   return 0;
 }

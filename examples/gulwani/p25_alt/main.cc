@@ -7,8 +7,9 @@ int32_t p25_alt(int32_t x, int32_t y) {
 }
 
 int main() {
-  for ( size_t i = 0; i < 1024; ++i )
+  for (size_t i = 0; i < 1024; ++i) {
     p25_alt(i, i);
+  }
 
   return 0;
 }
