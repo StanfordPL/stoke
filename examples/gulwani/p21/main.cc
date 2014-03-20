@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 
 int32_t p21(int32_t x, int32_t a, int32_t b, int32_t c) {
@@ -13,7 +14,7 @@ int32_t p21(int32_t x, int32_t a, int32_t b, int32_t c) {
 
 int main() {
   for (size_t i = 0; i < 1024; ++i) {
-    p21(i, i, i, i);
+    p21(i, i+1, i+2, i+3);
   }
 
   return 0;

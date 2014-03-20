@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 
 int32_t p20(int32_t x) {
@@ -12,7 +13,7 @@ int32_t p20(int32_t x) {
 
 int main() {
   for (size_t i = 0; i < 1024; ++i) {
-    p20(i);
+    p20(i+1);
   }
 
   return 0;

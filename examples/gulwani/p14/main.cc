@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 
 int32_t p14(int32_t x, int32_t y) {
@@ -9,7 +10,7 @@ int32_t p14(int32_t x, int32_t y) {
 
 int main() {
   for (size_t i = 0; i < 1024; ++i) {
-    p14(i, i);
+    p14(i, 16 * i);
   }
 
   return 0;

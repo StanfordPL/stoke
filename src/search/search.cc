@@ -131,16 +131,17 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
       current_cost = new_cost;
 
       const auto new_best_yet = new_cost < best_yet_cost;
-      const auto new_best_correct_yet = is_correct && (new_cost < best_correct_cost);
       if (new_best_yet) {
         best_yet = current;
         best_yet_cost = new_cost;
       }
+      const auto new_best_correct_yet = is_correct && ((new_cost == 0) || (new_cost < best_correct_cost));
       if (new_best_correct_yet) {
         success = true;
         best_correct = current;
         best_correct_cost = new_cost;
       }
+
       if ((progress_cb_ != nullptr) && (new_best_yet || new_best_correct_yet)) {
         progress_cb_({current, current_cost, best_yet, best_yet_cost, best_correct,
             best_correct_cost, success}, progress_cb_arg_);

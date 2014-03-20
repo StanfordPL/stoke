@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 
 uint32_t p24_alt(uint32_t x) {

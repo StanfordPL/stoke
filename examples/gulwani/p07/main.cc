@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdint.h>
 
 int32_t p07(int32_t x) {
