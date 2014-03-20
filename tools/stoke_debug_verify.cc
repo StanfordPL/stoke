@@ -55,9 +55,9 @@ auto& heap_out = FlagArg::create("heap_out")
 auto& h2 = Heading::create("Verification options:");
 
 auto& strategy = ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
-	.usage("(regression|formal|random)")
+	.usage("(none|regression|formal|random)")
 	.description("Verification strategy")
-	.default_val(Strategy::REGRESSION);
+	.default_val(Strategy::NONE);
 
 auto& h3 = Heading::create("Regression options:");
 
