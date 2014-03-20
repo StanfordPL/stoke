@@ -98,7 +98,7 @@ void StateReader::read_row(istream& is, Memory& mem) const {
   is.get();
   is.get();
 
-  for (int j = 7; j >= 0; --j) {
+  for (size_t j = 0; j < 8; ++j) {
     is >> s;
 
     mem.set_valid(addr + j, s == "v" || s == "d");
@@ -108,7 +108,7 @@ void StateReader::read_row(istream& is, Memory& mem) const {
   is.get();
   is.get();
 
-  for (int j = 7; j >= 0; --j) {
+  for (size_t j = 0; j < 8; ++j) {
     is.get();
 
     uint8_t val = 0;
