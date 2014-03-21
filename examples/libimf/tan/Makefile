@@ -4,7 +4,7 @@ clean:
 	rm -rf tan tan.o bins tan.tc result.s
 
 tan: main.cc tan.o
-	g++ -O0 main.cc -o tan tan.o
+	g++ -O3 main.cc -o tan tan.o
 
 tan.o: tan.s
 	g++ -c tan.s

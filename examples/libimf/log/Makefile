@@ -4,7 +4,7 @@ clean:
 	rm -rf log log.o bins log.tc result.s
 
 log: main.cc log.o
-	g++ -O0 main.cc -o log log.o
+	g++ -O3 main.cc -o log log.o
 
 log.o: log.s
 	g++ -c log.s

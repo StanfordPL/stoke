@@ -4,7 +4,7 @@ clean:
 	rm -rf exp exp.o bins exp.tc result.s
 
 exp: main.cc exp.o
-	g++ -O0 main.cc -o exp exp.o
+	g++ -O3 main.cc -o exp exp.o
 
 exp.o: exp.s
 	g++ -c exp.s

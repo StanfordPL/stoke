@@ -4,7 +4,7 @@ clean:
 	rm -rf sin sin.o bins sin.tc result.s
 
 sin: main.cc sin.o
-	g++ -O0 main.cc -o sin sin.o
+	g++ -O3 main.cc -o sin sin.o
 
 sin.o: sin.s
 	g++ -c sin.s

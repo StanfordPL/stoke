@@ -7,7 +7,7 @@ mont_mul.o: mont_mul.s
 	g++ -std=c++11 -c mont_mul.s
 
 mont_mul: mont_mul.o main.cc
-	g++ -std=c++11 main.cc -o mont_mul mont_mul.o
+	g++ -std=c++11 -O3 main.cc -o mont_mul mont_mul.o
 
 bins: mont_mul
 	stoke extract -i ./mont_mul -o bins
