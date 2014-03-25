@@ -56,6 +56,12 @@ class Sandbox {
     return io_pairs_.size();
   }
 
+	/** Returns an input */
+	const CpuState& get_input(size_t index) const {
+		assert(index < size());
+		return io_pairs_[index]->in_;
+	}
+
   /** Clears the set of callbacks to invoke during execution. */
   Sandbox& clear_callbacks() {
     before_.clear();
@@ -86,7 +92,7 @@ class Sandbox {
   void run_one(size_t index);
 
   /** Iterator for return states. */
-  output_iterator result(size_t index) const {
+  output_iterator get_result(size_t index) const {
     assert(index < size());
     return output_iterator(io_pairs_.begin() + index);
   }

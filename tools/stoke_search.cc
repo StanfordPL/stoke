@@ -31,6 +31,7 @@
 #include "src/args/performance_term.h"
 #include "src/args/reduction.h"
 #include "src/args/reg_set.h"
+#include "src/args/strategy.h"
 #include "src/args/testcases.h"
 #include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
@@ -47,6 +48,9 @@
 #include "src/search/statistics_callback.h"
 #include "src/search/transforms.h"
 #include "src/state/cpu_state.h"
+#include "src/state/state_writer.h"
+#include "src/verifier/strategy.h"
+#include "src/verifier/verifier.h"
 
 using namespace cpputil;
 using namespace std;
@@ -97,10 +101,16 @@ auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::c
     .description("Testcases")
     .default_val({CpuState()});
 
-auto& indices =
-  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("indices")
+auto& training_set =
+  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("training_set")
       .usage("{ 0 1 ... 9 }")
-      .description("Subset of testcase indices to use")
+      .description("Subset of testcase indices to use for search")
+      .default_val({0});
+
+auto& test_set =
+  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("test_set")
+      .usage("{ 0 1 ... 9 }")
+      .description("Subset of testcase indices to use for verification strategies that use testcases")
       .default_val({0});
 
 auto& h4 = Heading::create("Correctness options:");
@@ -225,6 +235,11 @@ auto& timeout = ValueArg<size_t>::create("timeout")
     .description("Number of proposals to execute before giving up")
     .default_val(1000000);
 
+auto& verifs = ValueArg<size_t>::create("verification_cycles")
+    .usage("<int>")
+    .description("Number of verification cycles to attempt before giving up")
+    .default_val(16);
+
 auto& stat_int = ValueArg<size_t>::create("statistics_interval")
     .usage("<int>")
     .description("Number of iterations between statistics updates")
@@ -243,7 +258,14 @@ auto& max_instrs = ValueArg<size_t>::create("max_instrs")
 auto& empty_init = FlagArg::create("empty_init")
     .description("Remove all but control instructions from rewrite before running search");
 
-auto& h10 = Heading::create("Random number generator options");
+auto& h10 = Heading::create("Verification options:");
+
+auto& strategy = ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
+    .usage("(none|regression|formal|random)")
+    .description("Verification strategy")
+    .default_val(Strategy::NONE);
+
+auto& h11 = Heading::create("Random number generator options");
 
 auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
     .usage("<int>")
@@ -259,6 +281,7 @@ void sep(ostream& os) {
 
 void pcb(const ProgressCallbackData& data, void* arg) {
   ostream& os = *((ostream*)arg);
+	CfgTransforms tforms;
 
   os << "Progress Update: " << endl;
   os << endl;
@@ -266,14 +289,22 @@ void pcb(const ProgressCallbackData& data, void* arg) {
   ofilterstream<Column> ofs(os);
   ofs.filter().padding(5);
 
+	auto best_yet = data.best_yet;
+	tforms.remove_unreachable(best_yet);
+	tforms.remove_nop(best_yet);
+
   ofs << "Best Unverified (" << data.best_yet_cost << ")" << endl;
   ofs << endl;
-  ofs << data.best_yet.get_code();
+  ofs << best_yet.get_code();
   ofs.filter().next();
+
+	auto best_correct = data.best_correct;
+	tforms.remove_unreachable(best_correct);
+	tforms.remove_nop(best_correct);
 
   ofs << "Best Verified (" << data.best_correct_cost << ")" << endl;
   ofs << endl;
-  ofs << data.best_correct.get_code();
+  ofs << best_correct.get_code();
   ofs.filter().done();
 
   os << endl << endl;
@@ -366,23 +397,18 @@ int main(int argc, char** argv) {
   Cfg cfg_t(target.value().code, def_in, live_out);
   Cfg cfg_r(rewrite.value().code, def_in, live_out);
 
-  Sandbox sb;
-  sb.set_max_jumps(max_jumps);
-  for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i) {
-    if (indices.value().find(i) != indices.value().end()) {
-      sb.insert_input(testcases.value()[i]);
-    }
-  }
+  Sandbox training_sb;
+  training_sb.set_max_jumps(max_jumps);
+  Sandbox test_sb;
+  test_sb.set_max_jumps(max_jumps);
 
-  CostFunction fxn(&sb);
-  fxn.set_distance(::distance)
-  .set_target(cfg_t, stack_out, heap_out)
-  .set_sse(sse_width, sse_count)
-  .set_relax(relax_reg, relax_mem)
-  .set_penalty(misalign_penalty, sig_penalty, nesting_penalty)
-  .set_min_ulp(min_ulp)
-  .set_reduction(reduction)
-  .set_performance_term(perf);
+  for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i) {
+    if (training_set.value().find(i) != training_set.value().end()) {
+      training_sb.insert_input(testcases.value()[i]);
+    } else if (test_set.value().find(i) != test_set.value().end()) {
+			test_sb.insert_input(testcases.value()[i]);
+		}
+  }
 
   Transforms transforms;
   transforms.set_seed(seed)
@@ -403,18 +429,52 @@ int main(int argc, char** argv) {
   .set_statistics_callback(scb, &cout)
   .set_statistics_interval(stat_int);
 
-  auto ret = search.run(cfg_t, cfg_r, fxn);
-  if (ret.second) {
-    cout << "Search terminated successfully!" << endl;
-    CfgTransforms tforms;
-    tforms.remove_unreachable(ret.first);
-    tforms.remove_nop(ret.first);
-  } else {
-    cout << "Search terminated unsuccessfully..." << endl;
-  }
+	CostFunction regression(&test_sb);
+	regression.set_distance(Distance::HAMMING)
+	.set_target(cfg_t, stack_out, heap_out)
+	.set_sse(sse_width, sse_count)
+	.set_relax(false, false)
+	.set_penalty(1,1,1)
+	.set_reduction(Reduction::SUM)
+	.set_performance_term(PerformanceTerm::NONE);
+
+	Verifier verifier(regression);
+	verifier.set_strategy(strategy);
+
+	for ( size_t i = 0; i < verifs.value(); ++i ) {
+		CostFunction fxn(&training_sb);
+		fxn.set_distance(::distance)
+		.set_target(cfg_t, stack_out, heap_out)
+		.set_sse(sse_width, sse_count)
+		.set_relax(relax_reg, relax_mem)
+		.set_penalty(misalign_penalty, sig_penalty, nesting_penalty)
+		.set_min_ulp(min_ulp)
+		.set_reduction(reduction)
+		.set_performance_term(perf);
+
+		auto ret = search.run(cfg_t, cfg_r, fxn);
+		if (!ret.second) {
+			cout << "Unable to discover a new rewrite before timing out... giving up." << endl;
+			break;
+		} else if ( verifier.verify(cfg_t, ret.first) ) {
+			cout << "Search terminated successfully with a verified rewrite!" << endl;
+
+			CfgTransforms tforms;
+			tforms.remove_unreachable(ret.first);
+			tforms.remove_nop(ret.first);
+			rewrite.value().code = ret.first.get_code();
+			break;
+		} else {
+			cout << "Unable to verify rewrite; adding a new testcase..." << endl << endl;
+			cout << verifier.get_counter_example() << endl << endl;
+			sep(cout);
+
+			training_sb.insert_input(verifier.get_counter_example());
+		}
+	}
 
   ofstream ofs(out.value());
-  TUnitWriter()(ofs, {rewrite.value().name, ret.first.get_code()});
+  TUnitWriter()(ofs, rewrite);
 
   return 0;
 }

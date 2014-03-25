@@ -37,15 +37,21 @@ bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
 }
 
 bool Verifier::regression(const Cfg& target, const Cfg& rewrite) {
+	const auto res = regression_(rewrite, 1);
+	if ( !res.first ) {
+		counter_example_ = regression_.last_testcase_evaluated();
+		return false;
+	}
+  return true;
+}
+
+bool Verifier::formal(const Cfg & target, const Cfg & rewrite) {
   return false;
 }
 
-bool Verifier::formal(const Cfg& target, const Cfg& rewrite) {
-  return false;
-}
-
-bool Verifier::random(const Cfg& target, const Cfg& rewrite) {
+bool Verifier::random(const Cfg & target, const Cfg & rewrite) {
   return false;
 }
 
 } // namespace stoke
+

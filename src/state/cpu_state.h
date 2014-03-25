@@ -24,7 +24,7 @@ namespace stoke {
 struct CpuState {
   /** Returns a new CpuState. */
   CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) :
-    gp(16, 64), sse(16, 256) {
+		code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256) {
     stack.resize(0, stack_size);
     heap.resize(base, heap_size);
   }

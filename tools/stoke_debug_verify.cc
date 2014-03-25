@@ -27,6 +27,10 @@
 #include "src/args/testcases.h"
 #include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
+#include "src/cost/cost_function.h"
+#include "src/cost/distance.h"
+#include "src/cost/performance_term.h"
+#include "src/cost/reduction.h"
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
 #include "src/state/state_writer.h"
@@ -73,20 +77,28 @@ auto& strategy = ValueArg<Strategy, StrategyReader, StrategyWriter>::create("str
     .description("Verification strategy")
     .default_val(Strategy::NONE);
 
-auto& h3 = Heading::create("Regression options:");
-
 auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
     .usage("<path/to/file>")
-    .description("Testcases")
+    .description("Testcases for verification strategies that use testcases")
     .default_val({CpuState()});
 
-auto& indices =
-  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("indices")
+auto& test_set =
+  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("test_set")
       .usage("{ 0 1 ... 9 }")
-      .description("Subset of testcase indices to use")
+      .description("Subset of testcase indices to use for verification strategies that use testcases")
       .default_val({0});
 
-auto& h4 = Heading::create("Sandbox options:");
+auto& sse_width = ValueArg<size_t>::create("sse_width")
+    .usage("(1|2|4|8)")
+    .description("Number of bytes in sse elements")
+    .default_val(8);
+
+auto& sse_count = ValueArg<size_t>::create("sse_count")
+    .usage("<int>")
+    .description("Number of values in sse registers")
+    .default_val(1);
+
+auto& h3 = Heading::create("Sandbox options:");
 
 auto& max_jumps = ValueArg<size_t>::create("max_jumps")
     .usage("<int>")
@@ -105,12 +117,21 @@ int main(int argc, char** argv) {
   sb.set_max_jumps(max_jumps);
 
   for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i) {
-    if (indices.value().find(i) != indices.value().end()) {
+    if (test_set.value().find(i) != test_set.value().end()) {
       sb.insert_input(testcases.value()[i]);
     }
   }
 
-  Verifier verifier(&sb);
+	CostFunction regression(&sb);
+	regression.set_distance(Distance::HAMMING)
+	.set_target(cfg_t, stack_out, heap_out)
+	.set_sse(sse_width, sse_count)
+	.set_relax(false, false)
+	.set_penalty(1,1,1)
+	.set_reduction(Reduction::SUM)
+	.set_performance_term(PerformanceTerm::NONE);
+
+	Verifier verifier(regression);
   verifier.set_strategy(strategy);
 
   ofilterstream<Column> os(cout);
@@ -126,14 +147,16 @@ int main(int argc, char** argv) {
   os << rewrite.value().code << endl;
   os.filter().done();
 
+	cout << endl;
+
   const auto res = verifier.verify(cfg_t, cfg_r);
 
   cout << "Equivalent: " << (res ? "yes" : "no") << endl;
 
   if (!res) {
-    cout << "Counter example: " << endl;
     cout << endl;
     cout << verifier.get_counter_example();
+		cout << endl;
   }
 
   return 0;

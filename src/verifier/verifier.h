@@ -16,7 +16,7 @@
 #define STOKE_SRC_VERIFIER_VERIFIER_H
 
 #include "src/cfg/cfg.h"
-#include "src/sandbox/sandbox.h"
+#include "src/cost/cost_function.h"
 #include "src/state/cpu_state.h"
 #include "src/verifier/strategy.h"
 
@@ -24,7 +24,7 @@ namespace stoke {
 
 class Verifier {
  public:
-  Verifier(Sandbox* sb) : sandbox_(sb) {
+  Verifier(CostFunction& regression) : counter_example_(), regression_(regression) {
     set_strategy(Strategy::NONE);
   }
 
@@ -43,7 +43,7 @@ class Verifier {
   Strategy strategy_;
   CpuState counter_example_;
 
-  Sandbox* sandbox_;
+	CostFunction regression_;
 
   bool regression(const Cfg& target, const Cfg& rewrite);
   bool formal(const Cfg& target, const Cfg& rewrite);

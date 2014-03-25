@@ -111,6 +111,15 @@ class CostFunction {
     return result_type(correct, cost);
   }
 
+	size_t testcases_evaluated() const {
+		return testcases_evaluated_;
+	}
+
+	const CpuState& last_testcase_evaluated() const {
+		assert(testcases_evaluated() < sandbox_->size());
+		return sandbox_->get_input(testcases_evaluated()-1);
+	}
+
  private:
   Sandbox* sandbox_;
 
@@ -128,6 +137,8 @@ class CostFunction {
   Cost min_ulp_;
   Reduction reduction_;
   PerformanceTerm pterm_;
+
+	size_t testcases_evaluated_;
 
   std::vector<CpuState> reference_out_;
   std::vector<x64asm::R64> target_gp_out_;

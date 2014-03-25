@@ -78,8 +78,8 @@ auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::c
     .description("Testcases")
     .default_val({CpuState()});
 
-auto& indices =
-  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("indices")
+auto& training_set =
+  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("training_set")
       .usage("{ 0 1 ... 9 }")
       .description("Subset of testcase indices to use")
       .default_val({0});
@@ -170,7 +170,7 @@ int main(int argc, char** argv) {
   Sandbox sb;
   sb.set_max_jumps(max_jumps);
   for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i) {
-    if (indices.value().find(i) != indices.value().end()) {
+    if (training_set.value().find(i) != training_set.value().end()) {
       sb.insert_input(testcases.value()[i]);
     }
   }

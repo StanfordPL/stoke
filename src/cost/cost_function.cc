@@ -83,15 +83,14 @@ Cost CostFunction::evaluate_correctness(const Cfg& cfg, Cost max) {
 Cost CostFunction::correctness_max(const Cfg& cfg, Cost max) {
   Cost res = 0;
   sandbox_->compile(cfg);
-  auto t = reference_out_.begin();
 
-  for (size_t i = 0, ie = sandbox_->size(); res < max && i < ie; ++i, ++t) {
+	size_t i = 0;
+  for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
     sandbox_->run_one(i);
-    const auto r = sandbox_->result(i);
-
-    res = std::max(res, error(*t, *r));
+    res = std::max(res, error(reference_out_[i], *(sandbox_->get_result(i))));
     assert(res <= max_testcase_cost);
   }
+	testcases_evaluated_ = i;
 
   return res;
 }
@@ -99,17 +98,16 @@ Cost CostFunction::correctness_max(const Cfg& cfg, Cost max) {
 Cost CostFunction::correctness_sum(const Cfg& cfg, Cost max) {
   Cost res = 0;
   sandbox_->compile(cfg);
-  auto t = reference_out_.begin();
 
-  for (size_t i = 0, ie = sandbox_->size(); res < max && i < ie; ++i, ++t) {
+	size_t i = 0;
+  for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
     sandbox_->run_one(i);
-    const auto r = sandbox_->result(i);
-
-    const auto err = error(*t, *r);
+    const auto err = error(reference_out_[i], *(sandbox_->get_result(i)));
     assert(err <= max_testcase_cost);
 
     res += err;
   }
+	testcases_evaluated_ = i;
 
   return res;
 }

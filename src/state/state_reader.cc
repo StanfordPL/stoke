@@ -102,7 +102,9 @@ void StateReader::read_row(istream& is, Memory& mem) const {
     is >> s;
 
     mem.set_valid(addr + j, s == "v" || s == "d");
-    mem.set_defined(addr + j, s == "d");
+		if ( s == "d" ) {
+    	mem.set_defined(addr + j, true);
+		}
   }
 
   is.get();
@@ -114,7 +116,9 @@ void StateReader::read_row(istream& is, Memory& mem) const {
     uint8_t val = 0;
     HexReader<uint8_t, 2>()(is, val);
 
-    mem[addr + j] = val;
+		if ( mem.is_valid(addr+j) ) {
+	    mem[addr + j] = val;
+		}
   }
 }
 
