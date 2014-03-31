@@ -55,8 +55,8 @@ void StateReader::read_regs(istream& is, Regs& regs) const {
     }
 
     auto& r = regs[i];
-    for (auto i = r.fixed_quad_begin(), ie = r.fixed_quad_end(); i != ie; ++i) {
-      HexReader<uint64_t, 2>()(is, *i);
+		for (int j = r.num_fixed_bytes()-1; j >=0; --j ) {
+      HexReader<uint8_t, 2>()(is, r.get_fixed_byte(j));
       is.get();
     }
   }
@@ -98,7 +98,7 @@ void StateReader::read_row(istream& is, Memory& mem) const {
   is.get();
   is.get();
 
-  for (size_t j = 0; j < 8; ++j) {
+  for (int j = 7; j >= 0; --j) {
     is >> s;
 
     mem.set_valid(addr + j, s == "v" || s == "d");
@@ -110,7 +110,7 @@ void StateReader::read_row(istream& is, Memory& mem) const {
   is.get();
   is.get();
 
-  for (size_t j = 0; j < 8; ++j) {
+  for (int j = 7; j >= 0; --j) {
     is.get();
 
     uint8_t val = 0;

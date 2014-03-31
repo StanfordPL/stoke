@@ -281,6 +281,8 @@ void sep(ostream& os) {
 
 void pcb(const ProgressCallbackData& data, void* arg) {
   ostream& os = *((ostream*)arg);
+	os << dec;
+
 	CfgTransforms tforms;
 
   os << "Progress Update: " << endl;
@@ -313,6 +315,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 
 void scb(const StatisticsCallbackData& data, void* arg) {
   ostream& os = *((ostream*)arg);
+	os << dec;
 
   os << "Statistics Update: " << endl;
   os << endl;
@@ -458,11 +461,7 @@ int main(int argc, char** argv) {
 			break;
 		} else if ( verifier.verify(cfg_t, ret.first) ) {
 			cout << "Search terminated successfully with a verified rewrite!" << endl;
-
-			CfgTransforms tforms;
-			tforms.remove_unreachable(ret.first);
-			tforms.remove_nop(ret.first);
-			rewrite.value().code = ret.first.get_code();
+			cfg_r = ret.first;
 			break;
 		} else {
 			cout << "Unable to verify rewrite; adding a new testcase..." << endl << endl;
@@ -472,6 +471,11 @@ int main(int argc, char** argv) {
 			training_sb.insert_input(verifier.get_counter_example());
 		}
 	}
+
+	CfgTransforms tforms;
+	tforms.remove_unreachable(cfg_r);
+	tforms.remove_nop(cfg_r);
+	rewrite.value().code = cfg_r.get_code();
 
   ofstream ofs(out.value());
   TUnitWriter()(ofs, rewrite);

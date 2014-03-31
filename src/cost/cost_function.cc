@@ -159,7 +159,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
   for (size_t i = 0; i < sse_count_; ++i) {
     for (const auto& s_t : target_sse_out_) {
       auto delta = max_error_cost;
-      auto val_t = 0;
+      uint64_t val_t = 0;
       switch (sse_width_) {
         case 1: val_t = t[s_t].get_fixed_byte(i);
           break;
@@ -178,7 +178,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
           continue;
         }
 
-        auto val_r = 0;
+        uint64_t val_r = 0;
         switch (sse_width_) {
           case 1: val_r = r[s_r].get_fixed_byte(i);
             break;
@@ -191,6 +191,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
           default: assert(false);
             break;
         }
+
         const auto eval = distance(val_t, val_r) + ((s_t == s_r) ? 0 : misalign_penalty_);
         delta = min(delta, eval);
       }
@@ -231,7 +232,8 @@ Cost CostFunction::distance(uint64_t x, uint64_t y) const {
 
     uint64_t ulp = t >= r ? t - r : r - t;
     ulp = ulp < min_ulp_ ? 0 : ulp - min_ulp_;
-    ulp = ulp > max_error_cost ? max_error_cost : ulp;
+
+    return ulp > max_error_cost ? max_error_cost : ulp;
   }
 }
 

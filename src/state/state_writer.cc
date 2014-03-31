@@ -65,8 +65,8 @@ void StateWriter::write_regs(ostream& os, const Regs& regs, const char** names,
 
   for (size_t i = 0, ie = regs.size(); i < ie; ++i) {
     const auto& r = regs[i];
-    for (auto j = r.fixed_quad_begin(), je = r.fixed_quad_end(); j != je; ++j) {
-      HexWriter<uint64_t, 2>()(fs, *j);
+		for (int j = r.num_fixed_bytes()-1; j >= 0; --j ) {
+			HexWriter<uint8_t, 2>()(fs, r.get_fixed_byte(j));
       fs << " ";
     }
     if (i + 1 != ie) {
@@ -93,7 +93,7 @@ void StateWriter::write_summary(ostream& os, const Memory& mem) const {
 void StateWriter::write_row(ostream& os, const Memory& mem, uint64_t addr) const {
   HexWriter<uint64_t, 8>()(os, addr);
   os << "   ";
-  for (size_t i = 0; i < 8; ++i) {
+  for (int i = 7; i >= 0; --i) {
     if (mem.is_valid(addr + i)) {
       os << (mem.is_defined(addr + i) ? "d" : "v");
     } else {
@@ -102,7 +102,7 @@ void StateWriter::write_row(ostream& os, const Memory& mem, uint64_t addr) const
     os << " ";
   }
   os << "  ";
-  for (size_t i = 0; i < 8; ++i) {
+  for (int i = 7; i >= 0; --i) {
     HexWriter<uint8_t, 2>()(os, mem.is_valid(addr+i) ? mem[addr + i] : 0);
     os << " ";
   }
