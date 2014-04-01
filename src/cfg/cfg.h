@@ -64,7 +64,6 @@ class Cfg {
     recompute_structure();
     recompute_loops();
     recompute_defs();
-    recompute_liveness();
   }
   /** Recompute graph structure; modifying control flow will invalidate this information, calling this
     method will restore it. */
@@ -95,16 +94,6 @@ class Cfg {
       recompute_defs_loops();
     } else {
       recompute_defs_loop_free();
-    }
-  }
-  /** Recomputes the live-out relation for instructions; modifying an instruction will invalidate
-    this relation, calling this method will restore it. This method is undefined if graph structure
-    is not up to date. */
-  void recompute_liveness() {
-    if (!is_loop_free()) {
-      recompute_liveness_loops();
-    } else {
-      recompute_liveness_loop_free();
     }
   }
 
@@ -224,8 +213,7 @@ class Cfg {
     return succs_[id][1];
   }
 
-  /** Returns true if the first basic block dominates the second; undefined for unreachable
-    blocks, including the entry and exit blocks. */
+  /** Returns true if the first basic block dominates the second; undefined for unreachable blocks. */
   bool dom(id_type x, id_type y) const {
     assert(is_reachable(x));
     assert(is_reachable(y));
@@ -272,19 +260,16 @@ class Cfg {
     return nesting_depth_[id];
   }
 
-  /** Returns an iterator that points to the beginning of this graph's reachable block list;
-   the entry and exit blocks are not considered reachable. */
+  /** Returns an iterator that points to the beginning of this graph's reachable block list. */
   reachable_iterator reachable_begin() const {
     return reachable_.set_bit_index_begin();
   }
-  /** Returns an iterator that points to the end of this graph's reachable block list;
-   the entry and exit blocks are not considered reachable. */
+  /** Returns an iterator that points to the end of this graph's reachable block list. */
   reachable_iterator reachable_end() const {
     return reachable_.set_bit_index_end();
   }
 
-  /** Returns true if control can proceed normally from the entry block to this block;
-   the entry and exit blocks are not considered reachable. */
+  /** Returns true if control can proceed normally from the entry block to this block. */
   bool is_reachable(id_type id) const {
     assert(id < num_blocks());
     return reachable_[id];
@@ -306,22 +291,14 @@ class Cfg {
     assert(is_reachable(loc.first));
     return def_ins_[get_index(loc)];
   }
+	/** Returns the set of registers that are defined on exit from this graph. */
+	x64asm::RegSet def_outs() const {
+		return def_outs_[get_exit()];
+	}
 
   /** Returns the set of registers that are live on exit from this graph. */
   x64asm::RegSet live_outs() const {
     return fxn_live_outs_;
-  }
-  /** Returns the set of registers that are live on exit from this block; undefined for unreachable
-    blocks. */
-  x64asm::RegSet live_outs(id_type id) const {
-    assert(is_reachable(id));
-    return live_outs_[get_index({id, num_instrs(id) - 1})];
-  }
-  /** Returns the set of registers that are live on exit from this instruction; undefined for
-    unreachable blocks. */
-  x64asm::RegSet live_outs(const loc_type& loc) const {
-    assert(is_reachable(loc.first));
-    return live_outs_[get_index(loc)];
   }
 
   /** Returns true if performs_undef_reach() returns true. */
@@ -369,10 +346,6 @@ class Cfg {
   std::vector<x64asm::RegSet> def_ins_;
   /** The set of registers defined out of every block. */
   std::vector<x64asm::RegSet> def_outs_;
-  /** The set of registers live in to every block. */
-  std::vector<x64asm::RegSet> live_ins_;
-  /** The set of registers live out of every instruction. */
-  std::vector<x64asm::RegSet> live_outs_;
   /** The gen set for each basic block. */
   std::vector<x64asm::RegSet> gen_;
   /** The kill set for each basic block. */
@@ -380,8 +353,6 @@ class Cfg {
 
   /** Performs a forward topological sort of reachable blocks and places the result in block_sort_ */
   void forward_topo_sort();
-  /** Performs a backward topological sort of reachable blocks and places the result in block_sort_ */
-  void backward_topo_sort();
 
   /** Recompute the indices in blocks_. */
   void recompute_blocks();
@@ -413,13 +384,6 @@ class Cfg {
   void recompute_defs_loops();
   /** Faster recomputation of def_ins_; valid only for loop-free graphs. */
   void recompute_defs_loop_free();
-
-  /** Recomputes the gen and kill sets used by recompute_liveness_loops(). */
-  void recompute_liveness_gen_kill();
-  /** Recomputes live_outs_ using the generic least fixed point dataflow algorithm. */
-  void recompute_liveness_loops();
-  /** Faster recomputation of live_outs_; valid only for loop-free graphs. */
-  void recompute_liveness_loop_free();
 };
 
 } // namespace stoke

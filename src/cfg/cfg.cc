@@ -33,7 +33,8 @@ Cfg::loc_type Cfg::get_loc(size_t idx) const {
 }
 
 bool Cfg::performs_undef_read() const {
-  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+	// No need to check the entry; this will consider the exit, but it will be a nop.
+  for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
       const auto r = code_[idx].maybe_read_set();
@@ -53,41 +54,15 @@ void Cfg::forward_topo_sort() {
   visited_.reset();
 
   // No need to check for reachability here; it's implicit in a forward traversal.
-  for (auto s = succ_begin(get_entry()), se = succ_end(get_entry()); s != se; ++s) {
-    if (!visited_[*s] && !is_exit(*s)) {
-      block_sort_.push_back(*s);
-      visited_[*s] = true;
-    }
-  }
+	block_sort_.push_back(get_entry());
+	visited_[get_entry()] = true;
+
   for (size_t i = 0; i < block_sort_.size(); ++i) {
     const auto next = block_sort_[i];
     for (auto s = succ_begin(next), se = succ_end(next); s != se; ++s) {
-      if (!visited_[*s] && !is_exit(*s)) {
+      if (!visited_[*s]) {
         block_sort_.push_back(*s);
         visited_[*s] = true;
-      }
-    }
-  }
-}
-
-void Cfg::backward_topo_sort() {
-  block_sort_.clear();
-  visited_.resize_for_bits(num_blocks());
-  visited_.reset();
-
-  // Going backwards, we need to stay away from unreachable blocks.
-  for (auto p = pred_begin(get_exit()), pe = pred_end(get_exit()); p != pe; ++p) {
-    if (!visited_[*p] && is_reachable(*p)) {
-      block_sort_.push_back(*p);
-      visited_[*p] = true;
-    }
-  }
-  for (size_t i = 0; i < block_sort_.size(); ++i) {
-    const auto next = block_sort_[i];
-    for (auto p = pred_begin(next), pe = pred_end(next); p != pe; ++p) {
-      if (!visited_[*p] && is_reachable(*p)) {
-        block_sort_.push_back(*p);
-        visited_[*p] = true;
       }
     }
   }
@@ -201,15 +176,15 @@ void Cfg::recompute_dominators_loops() {
   doms_[get_entry()][get_entry()] = true;
 
   // Initial conditions
-  for (size_t i = get_entry() + 1, ie = get_exit(); i < ie; ++i) {
+  for (size_t i = get_entry()+1, ie = get_exit(); i <= ie; ++i) {
     doms_[i] = universe;
   }
 
-  // Iterate until fixed point
+  // Iterate until fixed point; always skip entry
   for (auto changed = true; changed;) {
     changed = false;
 
-    for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+    for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
       // Meet operator; okay to read unreachable blocks which are fixed to universe
       auto new_out = universe;
       for (auto p = pred_begin(*i), pe = pred_end(*i); p != pe; ++p) {
@@ -238,27 +213,31 @@ void Cfg::recompute_dominators_loop_free() {
   doms_[get_entry()].reset();
   doms_[get_entry()][get_entry()] = true;
 
-  // Iterate only once in topological order
+  // Iterate only once in topological order; skip entry
   forward_topo_sort();
-  for (auto i : block_sort_) {
+  for (size_t i = 1, ie = block_sort_.size(); i < ie; ++i) {
+		const auto b = block_sort_[i];
+
     // Initial conditions
-    doms_[i] = universe;
+    doms_[b] = universe;
 
     // Meet operator (here, we have to check for unreachable since we haven't set everything)
-    for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p) {
-      if (is_reachable(*p) || is_entry(*p)) {
-        doms_[i] &= doms_[*p];
+    for (auto p = pred_begin(b), pe = pred_end(b); p != pe; ++p) {
+      if (is_reachable(*p)) {
+        doms_[b] &= doms_[*p];
       }
     }
 
     // Transfer function
-    doms_[i][i] = true;
+    doms_[b][b] = true;
   }
 }
 
 void Cfg::recompute_back_edges() {
   loops_.clear();
-  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+
+	// No sense in checking the entry which can't ever be in a loop
+  for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (auto s = succ_begin(*i), se = succ_end(*i); s != se; ++s) {
       if (!is_exit(*s) && dom(*s, *i)) {
         loops_[edge_type(*i, *s)] = BitVector(num_blocks());
@@ -304,7 +283,8 @@ void Cfg::recompute_defs_gen_kill() {
   gen_.assign(num_blocks(), RegSet::empty());
   kill_.assign(num_blocks(), RegSet::empty());
 
-  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+	// No sense in checking the entry; we'll consider the exit, but it'll be a nop.
+  for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
       gen_[*i] |= j->must_write_set();
       gen_[*i] -= j->maybe_undef_set();
@@ -317,14 +297,18 @@ void Cfg::recompute_defs_gen_kill() {
 void Cfg::recompute_defs_loops() {
   recompute_defs_gen_kill();
 
-  def_ins_.resize(code_.size(), RegSet::empty());
+	// Need a little extra room for def_ins_[get_exit()]
+	// You'll notice that this function uses blocks_[...] instead of get_index(...)
+	// This is to subvert the assertion we'd blow for trying to call get_index(get_exit(),0)
+
+  def_ins_.resize(code_.size()+1, RegSet::empty());
   def_outs_.resize(num_blocks(), RegSet::empty());
 
   // Boundary conditions; MXCSR[rc] is always defined
   def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
 
   // Initial conditions
-  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+  for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     def_outs_[*i] = RegSet::universe();
   }
 
@@ -332,16 +316,16 @@ void Cfg::recompute_defs_loops() {
   for (auto changed = true; changed;) {
     changed = false;
 
-    for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+    for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
       // Meet operator
-      def_ins_[get_index({*i, 0})] = RegSet::universe();
+      def_ins_[blocks_[*i]] = RegSet::universe();
       for (auto p = pred_begin(*i), pe = pred_end(*i); p != pe; ++p) {
-        if (is_reachable(*p) || is_entry(*p)) {
-          def_ins_[get_index({*i, 0})] &= def_outs_[*p];
+        if (is_reachable(*p)) {
+          def_ins_[blocks_[*i]] &= def_outs_[*p];
         }
       }
       // Transfer function
-      const auto new_out = (def_ins_[get_index({*i, 0})] - kill_[*i]) | gen_[*i];
+      const auto new_out = (def_ins_[blocks_[*i]] - kill_[*i]) | gen_[*i];
 
       // Check for fixed point
       changed |= def_outs_[*i] != new_out;
@@ -350,9 +334,9 @@ void Cfg::recompute_defs_loops() {
   }
 
   // Compute dataflow values for each instruction
-  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+  for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 1, je = num_instrs(*i); j < je; ++j) {
-      const auto idx = get_index({*i, j});
+      const auto idx = blocks_[*i] + j;
       def_ins_[idx] = def_ins_[idx - 1];
 
       const auto& instr = code_[idx - 1];
@@ -363,28 +347,34 @@ void Cfg::recompute_defs_loops() {
 }
 
 void Cfg::recompute_defs_loop_free() {
-  def_ins_.resize(code_.size(), RegSet::empty());
+	// Need a little extra room for def_ins_[get_exit()]
+	// You'll notice that this function uses blocks_[...] instead of get_index(...)
+	// This is to subvert the assertion we'd blow for trying to call get_index(get_exit(),0)
+
+  def_ins_.resize(code_.size()+1, RegSet::empty());
   def_outs_.resize(num_blocks(), RegSet::empty());
 
   // Boundary conditions ; MXCSR[rc] is always defined
   def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
 
-  // Iterate only once in topological order
+  // Iterate only once in topological order (skip entry)
   forward_topo_sort();
-  for (auto i : block_sort_) {
+  for (size_t i = 1, ie = block_sort_.size(); i < ie; ++i) {
+		const auto b = block_sort_[i];
+
     // Initial conditions
-    def_ins_[get_index({i, 0})] = RegSet::universe();
+    def_ins_[blocks_[b]] = RegSet::universe();
 
     // Meet operator
-    for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p) {
-      if (is_reachable(*p) || is_entry(*p)) {
-        def_ins_[get_index({i, 0})] &= def_outs_[*p];
+    for (auto p = pred_begin(b), pe = pred_end(b); p != pe; ++p) {
+      if (is_reachable(*p)) {
+        def_ins_[blocks_[b]] &= def_outs_[*p];
       }
     }
 
     // Transfer function
-    for (size_t j = 1, je = num_instrs(i); j < je; ++j) {
-      const auto idx = get_index({i, j});
+    for (size_t j = 1, je = num_instrs(b); j < je; ++j) {
+      const auto idx = blocks_[b] + j;
       def_ins_[idx] = def_ins_[idx - 1];
 
       const auto& instr = code_[idx - 1];
@@ -392,120 +382,17 @@ void Cfg::recompute_defs_loop_free() {
       def_ins_[idx] -= instr.maybe_undef_set();
     }
 
-    // Summarize block
-    const auto idx = get_index({i, num_instrs(i) - 1});
-    def_outs_[i] = def_ins_[idx];
+		// Summarize block
+		if (num_instrs(b) == 0) {
+			def_outs_[b] = def_ins_[blocks_[b]];
+		} else {
+			const auto idx = blocks_[b] + num_instrs(b) - 1;
+			def_outs_[i] = def_ins_[idx];
 
-    const auto& instr = code_[idx];
-    def_outs_[i] |= instr.must_write_set();
-    def_outs_[i] -= instr.maybe_undef_set();
-  }
-}
-
-void Cfg::recompute_liveness_gen_kill() {
-  gen_.assign(num_blocks(), RegSet::empty());
-  kill_.assign(num_blocks(), RegSet::empty());
-
-  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-    for (int j = num_instrs(*i) - 1; j >= 0; --j) {
-      const auto idx = get_index({*i, j});
-      const auto& instr = code_[idx];
-      const auto use = instr.maybe_read_set();
-      const auto def = instr.maybe_write_set() | instr.maybe_undef_set();
-
-      kill_[*i] |= def;
-      kill_[*i] -= use;
-
-      gen_[*i] -= def;
-      gen_[*i] |= use;
-    }
-  }
-}
-
-void Cfg::recompute_liveness_loops() {
-  recompute_liveness_gen_kill();
-
-  live_outs_.resize(code_.size(), RegSet::empty());
-  live_ins_.resize(num_blocks(), RegSet::empty());
-
-  // Boundary conditions
-  live_ins_[get_exit()] = fxn_live_outs_;
-
-  // Initial conditions
-  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-    live_ins_[*i] = RegSet::empty();
-  }
-
-  // Iterate until fixed point
-  for (auto changed = true; changed;) {
-    changed = false;
-
-    for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-      // Meet operator (reachability is implicit here)
-      live_outs_[get_index({*i, num_instrs(*i) - 1})] = RegSet::empty();
-      for (auto s = succ_begin(*i), se = succ_end(*i); s != se; ++s) {
-        live_outs_[get_index({*i, num_instrs(*i) - 1})] |= live_ins_[*s];
-      }
-
-      // Transfer function
-      const auto new_in = (live_outs_[get_index({*i, num_instrs(*i) - 1})] - kill_[*i]) | gen_[*i];
-
-      // Check for fixed point
-      changed |= live_ins_[*i] != new_in;
-      live_ins_[*i] = new_in;
-    }
-  }
-
-  // Compute dataflow values for each instruction
-  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-    for (int j = num_instrs(*i) - 2; j >= 0; --j) {
-      const auto idx = get_index({*i, j});
-      live_outs_[idx] = live_outs_[idx + 1];
-
-      const auto& instr = code_[idx + 1];
-      live_outs_[idx] -= instr.maybe_write_set();
-      live_outs_[idx] -= instr.maybe_undef_set();
-      live_outs_[idx] |= instr.maybe_read_set();
-    }
-  }
-}
-
-void Cfg::recompute_liveness_loop_free() {
-  live_outs_.resize(code_.size(), RegSet::empty());
-  live_ins_.resize(num_blocks(), RegSet::empty());
-
-  // Boundary conditions
-  live_ins_[get_exit()] = fxn_live_outs_;
-
-  // Iterate only once in topological order
-  backward_topo_sort();
-  for (auto i : block_sort_) {
-    // Initial conditions
-    live_outs_[get_index({i, num_instrs(i) - 1})] = RegSet::empty();
-
-    // Meet operator (reachability is implicit here)
-    for (auto s = succ_begin(i), se = succ_end(i); s != se; ++s) {
-      live_outs_[get_index({i, num_instrs(i) - 1})] |= live_ins_[*s];
-    }
-    // Transfer function
-    for (int j = num_instrs(i) - 2; j >= 0; --j) {
-      const auto idx = get_index({i, j});
-      live_outs_[idx] = live_outs_[idx + 1];
-
-      const auto& instr = code_[idx + 1];
-      live_outs_[idx] -= instr.maybe_write_set();
-      live_outs_[idx] -= instr.maybe_undef_set();
-      live_outs_[idx] |= instr.maybe_read_set();
-    }
-
-    // Summarize block
-    const auto idx = get_index({i, 0});
-    live_ins_[i] = live_outs_[idx];
-
-    const auto& instr = code_[idx];
-    live_ins_[idx] -= instr.maybe_write_set();
-    live_ins_[idx] -= instr.maybe_undef_set();
-    live_ins_[idx] |= instr.maybe_read_set();
+			const auto& instr = code_[idx];
+			def_outs_[b] |= instr.must_write_set();
+			def_outs_[b] -= instr.maybe_undef_set();
+		}
   }
 }
 

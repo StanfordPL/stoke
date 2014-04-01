@@ -45,7 +45,7 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
   heap_out_ = heap_out;
 
   reference_out_.clear();
-  recompute_defs(target.live_outs());
+  recompute_defs(target.live_outs(), target_gp_out_, target_sse_out_);
 
   sandbox_->run(target);
   for (auto i = sandbox_->result_begin(), ie = sandbox_->result_end(); i != ie; ++i) {
@@ -54,18 +54,20 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
   return *this;
 }
 
-void CostFunction::recompute_defs(const RegSet& rs) {
-  target_gp_out_.clear();
-  for (const auto& r : r64s)
-    if (rs.contains(r)) {
-      target_gp_out_.push_back(r);
-    }
+void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm>& sses) {
+  gps.clear();
+	for (const auto& r : r64s) {
+		if (rs.contains(r)) {
+			gps.push_back(r);
+		}
+	}
 
-  target_sse_out_.clear();
-  for (const auto& s : xmms)
+  sses.clear();
+  for (const auto& s : xmms) {
     if (rs.contains(s)) {
-      target_sse_out_.push_back(s);
+      sses.push_back(s);
     }
+	}
 }
 
 Cost CostFunction::evaluate_correctness(const Cfg& cfg, Cost max) {
@@ -82,7 +84,9 @@ Cost CostFunction::evaluate_correctness(const Cfg& cfg, Cost max) {
 
 Cost CostFunction::correctness_max(const Cfg& cfg, Cost max) {
   Cost res = 0;
+
   sandbox_->compile(cfg);
+	recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_sse_out_);
 
 	size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
@@ -97,7 +101,9 @@ Cost CostFunction::correctness_max(const Cfg& cfg, Cost max) {
 
 Cost CostFunction::correctness_sum(const Cfg& cfg, Cost max) {
   Cost res = 0;
+
   sandbox_->compile(cfg);
+	recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_sse_out_);
 
 	size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
@@ -137,7 +143,7 @@ Cost CostFunction::gp_error(const Regs& t, const Regs& r) const {
     auto delta = max_error_cost;
     const auto val_t = t[r_t].get_fixed_quad(0);
 
-    for (const auto& r_r : target_gp_out_) {
+    for (const auto& r_r : rewrite_gp_out_) {
       if (r_t != r_r && !relax_reg_) {
         continue;
       }
@@ -173,7 +179,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
           break;
       }
 
-      for (const auto& s_r : target_sse_out_) {
+      for (const auto& s_r : rewrite_sse_out_) {
         if (s_t != s_r && !relax_reg_) {
           continue;
         }
@@ -253,7 +259,11 @@ Cost CostFunction::size(const Cfg& cfg) const {
   Cost size = 0;
 
   const auto& code = cfg.get_code();
-  for (auto b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+		if (cfg.is_exit(*b)) {
+			continue;
+		}
+
     const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
       if (!code[i].is_nop()) {
@@ -269,9 +279,12 @@ Cost CostFunction::latency(const Cfg& cfg) const {
   Cost latency = 0;
 
   const auto& code = cfg.get_code();
-  for (auto b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-    Cost block_latency = 0;
+  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+		if (cfg.is_exit(*b)) {
+			continue;
+		}
 
+    Cost block_latency = 0;
     const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
       block_latency += latencies_[code[i].get_opcode()];

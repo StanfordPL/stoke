@@ -63,10 +63,6 @@ auto& lob = FlagArg::create("lob")
     .alternate("live_out_block")
     .description("Display live out values for basic blocks");
 
-auto& loi = FlagArg::create("loi")
-    .alternate("live_out_instr")
-    .description("Display live out values for instructions");
-
 auto& dom = FlagArg::create("dom")
     .alternate("dominators")
     .description("Display dominators");
@@ -88,7 +84,7 @@ void to_dot() {
 
   DotWriter dw;
   dw.set_def_in(dib, dii)
-  .set_live_out(lob, loi)
+  .set_live_out(lob)
   .set_dom(dom);
 
   dw(ofs, {target.value().code, def_in, live_out});

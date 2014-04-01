@@ -103,8 +103,12 @@ void Sandbox::compile(const Cfg& cfg) {
   emit_write_user_state();
   emit_save_user_callee_save();
 
-  // Assemble reachable blocks
-  for (auto b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+  // Assemble reachable blocks (skip entry and exit)
+  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+		if (cfg.is_exit(*b)) {
+			continue;
+		}
+
     const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
       const auto& instr = code[i];

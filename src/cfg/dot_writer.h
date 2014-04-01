@@ -27,7 +27,7 @@ class DotWriter {
  public:
   DotWriter() {
     set_def_in(false, false);
-    set_live_out(false, false);
+    set_live_out(false);
     set_dom(false);
   }
 
@@ -36,9 +36,8 @@ class DotWriter {
     def_in_instr_ = instr;
     return *this;
   }
-  DotWriter& set_live_out(bool block, bool instr) {
+  DotWriter& set_live_out(bool block) {
     live_out_block_ = block;
-    live_out_instr_ = instr;
     return *this;
   }
   DotWriter& set_dom(bool dom) {
@@ -78,7 +77,6 @@ class DotWriter {
   bool def_in_instr_;
 
   bool live_out_block_;
-  bool live_out_instr_;
 
   bool dom_;
 };

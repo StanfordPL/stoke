@@ -66,15 +66,6 @@ void DotWriter::write_block(ostream& os, const Cfg& cfg, Cfg::id_type id) const 
     os << "|";
     os << cfg.get_instr({id, j});
     os << "\\l";
-
-    if (live_out_instr_ && cfg.is_reachable(id)) {
-      os << "|live-out: ";
-      write_reg_set(os, cfg.live_outs({id, j}));
-    }
-  }
-  if (live_out_block_ && cfg.is_reachable(id)) {
-    os << "|live-out: ";
-    write_reg_set(os, cfg.live_outs(id));
   }
   os << "}\"];" << endl;
 }
