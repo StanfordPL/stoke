@@ -50,19 +50,18 @@ bool Cfg::performs_undef_read() const {
 
 void Cfg::forward_topo_sort() {
   block_sort_.clear();
-  visited_.resize_for_bits(num_blocks());
-  visited_.reset();
 
-  // No need to check for reachability here; it's implicit in a forward traversal.
+	remaining_preds_.resize(num_blocks());
+	for ( size_t i = get_entry(), ie = get_exit(); i <= ie; ++i ) {
+		remaining_preds_[i] = preds_[i].size();
+	}
+
 	block_sort_.push_back(get_entry());
-	visited_[get_entry()] = true;
-
   for (size_t i = 0; i < block_sort_.size(); ++i) {
     const auto next = block_sort_[i];
     for (auto s = succ_begin(next), se = succ_end(next); s != se; ++s) {
-      if (!visited_[*s]) {
+      if (--remaining_preds_[*s] == 0) {
         block_sort_.push_back(*s);
-        visited_[*s] = true;
       }
     }
   }
@@ -157,7 +156,6 @@ void Cfg::recompute_reachable() {
   reachable_.resize_for_bits(num_blocks());
   reachable_.reset();
 
-  forward_topo_sort();
   for (const auto i : block_sort_) {
     reachable_[i] = true;
   }
@@ -214,7 +212,6 @@ void Cfg::recompute_dominators_loop_free() {
   doms_[get_entry()][get_entry()] = true;
 
   // Iterate only once in topological order; skip entry
-  forward_topo_sort();
   for (size_t i = 1, ie = block_sort_.size(); i < ie; ++i) {
 		const auto b = block_sort_[i];
 
@@ -358,7 +355,6 @@ void Cfg::recompute_defs_loop_free() {
   def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
 
   // Iterate only once in topological order (skip entry)
-  forward_topo_sort();
   for (size_t i = 1, ie = block_sort_.size(); i < ie; ++i) {
 		const auto b = block_sort_[i];
 

@@ -72,6 +72,7 @@ class Cfg {
     recompute_labels();
     recompute_succs();
     recompute_preds();
+		forward_topo_sort();
     recompute_reachable();
   }
   /** Recompute loops; modifying control flow will invalidate this information, calling this method
@@ -320,8 +321,8 @@ class Cfg {
   cpputil::BitVector boundaries_;
   /** A stack of basic block ids. */
   std::stack<size_t, std::vector<size_t>> block_stack_;
-  /** A set of visited basic block ids. */
-  cpputil::BitVector visited_;
+  /** A list of remaining predecessors for each block. */
+	std::vector<size_t> remaining_preds_;
   /** A sorted list of basic block ids. */
   std::vector<size_t> block_sort_;
   /** A map from labels to the basic blocks they mark the beginning of. */
