@@ -33,9 +33,13 @@ class Memory {
 
   /** Sets the virtual address base and size. Rounds down to 256-bit align. Pads with headroom. */
   Memory& resize(uint64_t base, size_t size) {
+		// Round down to 256-bit (32-byte) align.
     base_ = base & 0xffffffffffffffe0;
-
+		// Pad size with amount rounded down and 256-bits (32-bytes) of headroom.
     size += (base % 32) + 32;
+		// Round size up to align to an 8 byte boundary.
+		size = (size + 7) & 0xfffffffffffffff8;
+
     contents_.resize_for_fixed_bytes(size);
     valid_.resize_for_bits(size);
     def_.resize_for_bits(size);
