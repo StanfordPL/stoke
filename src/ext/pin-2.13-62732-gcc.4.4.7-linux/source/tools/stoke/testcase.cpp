@@ -249,6 +249,7 @@ VOID end_tc() {
 		(*os_) << endl;
 		(*os_) << endl;
 	}
+  os_->flush();
 
   tcs_.pop();
   heap_valids_.pop();
