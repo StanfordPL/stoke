@@ -156,12 +156,23 @@ void Cfg::recompute_reachable() {
   reachable_.resize_for_bits(num_blocks());
   reachable_.reset();
 
-  for (const auto i : block_sort_) {
-    reachable_[i] = true;
-  }
+	work_list_.clear();
+
+ 	work_list_.push_back(get_entry());
+	reachable_[get_entry()] = true;
+
+	for ( size_t i = 0; i < work_list_.size(); ++i ) {
+		const auto next = work_list_[i];
+		for ( auto s = succ_begin(i), se = succ_end(i); s != se; ++s ) {
+			if ( !reachable_[*s] ) {
+				reachable_[*s] = true;
+				work_list_.push_back(*s);
+			}
+		}
+	}
 }
 
-void Cfg::recompute_dominators_loops() {
+void Cfg::recompute_dominators() {
   doms_.resize(num_blocks());
 
   // Constants
@@ -196,37 +207,6 @@ void Cfg::recompute_dominators_loops() {
       changed |= (doms_[*i] != new_out);
       doms_[*i] = new_out;
     }
-  }
-}
-
-void Cfg::recompute_dominators_loop_free() {
-  doms_.resize(num_blocks());
-
-  // Constants
-  BitVector universe(num_blocks());
-  universe.set();
-
-  // Bounary conditions
-  doms_[get_entry()].resize_for_bits(num_blocks());
-  doms_[get_entry()].reset();
-  doms_[get_entry()][get_entry()] = true;
-
-  // Iterate only once in topological order; skip entry
-  for (size_t i = 1, ie = block_sort_.size(); i < ie; ++i) {
-		const auto b = block_sort_[i];
-
-    // Initial conditions
-    doms_[b] = universe;
-
-    // Meet operator (here, we have to check for unreachable since we haven't set everything)
-    for (auto p = pred_begin(b), pe = pred_end(b); p != pe; ++p) {
-      if (is_reachable(*p)) {
-        doms_[b] &= doms_[*p];
-      }
-    }
-
-    // Transfer function
-    doms_[b][b] = true;
   }
 }
 
@@ -355,6 +335,7 @@ void Cfg::recompute_defs_loop_free() {
   def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
 
   // Iterate only once in topological order (skip entry)
+	forward_topo_sort();
   for (size_t i = 1, ie = block_sort_.size(); i < ie; ++i) {
 		const auto b = block_sort_[i];
 

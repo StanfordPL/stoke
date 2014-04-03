@@ -72,17 +72,12 @@ class Cfg {
     recompute_labels();
     recompute_succs();
     recompute_preds();
-		forward_topo_sort();
     recompute_reachable();
   }
   /** Recompute loops; modifying control flow will invalidate this information, calling this method
     will restore it. This method is undefined if graph structure is not up to date. */
   void recompute_loops() {
-    if (!is_loop_free()) {
-      recompute_dominators_loops();
-    } else {
-      recompute_dominators_loop_free();
-    }
+    recompute_dominators();
     recompute_back_edges();
     recompute_loop_blocks();
     recompute_nesting_depth();
@@ -336,6 +331,8 @@ class Cfg {
   std::vector<std::vector<id_type>> succs_;
   /** The set of reachable basic blocks. */
   cpputil::BitVector reachable_;
+	/** Scratch space for computing reachability. */
+	std::vector<id_type> work_list_;
   /** The dominated by relation. */
   std::vector<cpputil::BitVector> doms_;
   /** A map from back edges to the set of basic blocks in the corresponding natural loop. */
@@ -368,9 +365,7 @@ class Cfg {
   void recompute_reachable();
 
   /** Recomputes dominators using the generic least fixed point dataflow algorithm. */
-  void recompute_dominators_loops();
-  /** Faster recomputation of dominators; valid only for loop-free graphs. */
-  void recompute_dominators_loop_free();
+  void recompute_dominators();
 
   /** Recompute the keys in loops_; assumes blocks_ succs_ and reachable_ are up to date. */
   void recompute_back_edges();
