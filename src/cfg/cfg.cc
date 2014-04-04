@@ -163,7 +163,7 @@ void Cfg::recompute_reachable() {
 
 	for ( size_t i = 0; i < work_list_.size(); ++i ) {
 		const auto next = work_list_[i];
-		for ( auto s = succ_begin(i), se = succ_end(i); s != se; ++s ) {
+		for ( auto s = succ_begin(next), se = succ_end(next); s != se; ++s ) {
 			if ( !reachable_[*s] ) {
 				reachable_[*s] = true;
 				work_list_.push_back(*s);
