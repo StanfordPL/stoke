@@ -98,19 +98,23 @@ int main(int argc, char** argv) {
   os << cfg.get_code() << endl;
   os.filter().next();
 
-  transforms.modify(cfg, ::move);
+  const auto res = transforms.modify(cfg, ::move);
 
-  os << "After Transform:" << endl;
+  os << "After " << (res ? "Successful" : "Failed" ) << " Transform:" << endl;
   os << endl;
   os << cfg.get_code() << endl;
   os.filter().next();
 
-  transforms.undo(cfg, ::move);
+	if ( res ) {
+		transforms.undo(cfg, ::move);
+	}
 
   os << "After Undo:" << endl;
   os << endl;
   os << cfg.get_code() << endl;
   os.filter().done();
+
+	cout << endl;
 
   return 0;
 }
