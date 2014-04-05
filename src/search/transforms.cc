@@ -153,18 +153,21 @@ bool Transforms::modify(Cfg& cfg, Move type) {
 bool Transforms::instruction_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-  const auto bb = (gen_() % (cfg.num_blocks() - 2)) + 1;
-  if (!cfg.is_reachable(bb)) {
-    return false;
-  }
+	if ( cfg.num_reachable() < 3 ) {
+		return false;
+	}
+	auto bb = cfg.reachable_begin();
+	for ( size_t i = 0, ie = (gen_() % (cfg.num_reachable()-2))+1; i < ie; ++i ) {
+		++bb;
+	}
 
-  const auto num_instrs = cfg.num_instrs(bb);
+  const auto num_instrs = cfg.num_instrs(*bb);
   if (num_instrs == 0) {
     return false;
   }
   const auto idx = gen_() % num_instrs;
 
-  instr_index_ = cfg.get_index({bb, idx});
+  instr_index_ = cfg.get_index({*bb, idx});
   if (is_control_opcode(code[instr_index_].get_opcode())) {
     return false;
   }
@@ -172,7 +175,7 @@ bool Transforms::instruction_move(Cfg& cfg) {
 
   auto& instr = code[instr_index_];
   instr.set_opcode(get_control_free_or_nop());
-  const auto& rs = cfg.def_ins({bb, idx});
+  const auto& rs = cfg.def_ins({*bb, idx});
 
   for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
     Operand o = instr.get_operand<R64>(i);
@@ -201,16 +204,19 @@ bool Transforms::instruction_move(Cfg& cfg) {
 bool Transforms::opcode_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-  const auto bb = (gen_() % (cfg.num_blocks() - 2)) + 1;
-  if (!cfg.is_reachable(bb)) {
-    return false;
-  }
+	if ( cfg.num_reachable() < 3 ) {
+		return false;
+	}
+	auto bb = cfg.reachable_begin();
+	for ( size_t i = 0, ie = (gen_() % (cfg.num_reachable()-2))+1; i < ie; ++i ) {
+		++bb;
+	}
 
-  const auto num_instrs = cfg.num_instrs(bb);
+  const auto num_instrs = cfg.num_instrs(*bb);
   if (num_instrs == 0) {
     return false;
   }
-  instr_index_ = cfg.get_index({bb, gen_() % num_instrs});
+  instr_index_ = cfg.get_index({*bb, gen_() % num_instrs});
 
   auto& instr = code[instr_index_];
   old_opcode_ = instr.get_opcode();
@@ -232,18 +238,21 @@ bool Transforms::opcode_move(Cfg& cfg) {
 bool Transforms::operand_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-  const auto bb = (gen_() % (cfg.num_blocks() - 2)) + 1;
-  if (!cfg.is_reachable(bb)) {
-    return false;
-  }
+	if ( cfg.num_reachable() < 3 ) {
+		return false;
+	}
+	auto bb = cfg.reachable_begin();
+	for ( size_t i = 0, ie = (gen_() % (cfg.num_reachable()-2))+1; i < ie; ++i ) {
+		++bb;
+	}
 
-  const auto num_instrs = cfg.num_instrs(bb);
+  const auto num_instrs = cfg.num_instrs(*bb);
   if (num_instrs == 0) {
     return false;
   }
   const auto idx = gen_() % num_instrs;
 
-  instr_index_ = cfg.get_index({bb, idx});
+  instr_index_ = cfg.get_index({*bb, idx});
   if (code[instr_index_].arity() == 0 || is_control_opcode(code[instr_index_].get_opcode())) {
     return false;
   }
@@ -253,7 +262,7 @@ bool Transforms::operand_move(Cfg& cfg) {
   old_operand_ = instr.get_operand<R64>(operand_index_);
   auto o = old_operand_;
 
-  const auto& rs = cfg.def_ins({bb, idx});
+  const auto& rs = cfg.def_ins({*bb, idx});
   if (instr.maybe_read(operand_index_)) {
     if (!get_read_op(instr.get_opcode(), operand_index_, rs, o)) {
       return false;

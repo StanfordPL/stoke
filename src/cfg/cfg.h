@@ -256,6 +256,10 @@ class Cfg {
     return nesting_depth_[id];
   }
 
+	/** Returns the number of reachable blocks in this graph. */
+	size_t num_reachable() const {
+		return work_list_.size();
+	}
   /** Returns an iterator that points to the beginning of this graph's reachable block list. */
   reachable_iterator reachable_begin() const {
     return reachable_.set_bit_index_begin();
