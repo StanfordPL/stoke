@@ -293,7 +293,7 @@ class Cfg {
   }
 	/** Returns the set of registers that are defined on exit from this graph. */
 	x64asm::RegSet def_outs() const {
-		return def_outs_[get_exit()];
+		return def_ins_[get_exit()];
 	}
 
   /** Returns the set of registers that are live on exit from this graph. */
