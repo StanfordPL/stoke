@@ -77,11 +77,6 @@ int main(int argc, char** argv) {
 
   term << " -- " << bin.value() << " " << args.value() << endl;
 
-  if (term.result() != 0) {
-    cout << "Unable to run pintool!" << endl;
-    return 1;
-  }
-
   return 0;
 }
 

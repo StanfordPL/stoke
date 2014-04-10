@@ -388,9 +388,9 @@ int main(int argc, char** argv) {
 
   if (empty_init) {
     for (auto& instr : rewrite.value().code) {
-      if (!instr.is_label_defn() && !instr.is_jump() && !instr.is_return()) {
-        instr.set_opcode(NOP);
-      }
+			if ( !instr.is_return() ) {
+				instr.set_opcode(NOP);
+			}
     }
   }
   while (rewrite.value().code.size() < max_instrs) {
