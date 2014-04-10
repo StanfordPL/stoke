@@ -387,14 +387,11 @@ int main(int argc, char** argv) {
   }
 
   if (empty_init) {
-    for (auto& instr : rewrite.value().code) {
-			if ( !instr.is_return() ) {
-				instr.set_opcode(NOP);
-			}
-    }
-  }
-  while (rewrite.value().code.size() < max_instrs) {
-    rewrite.value().code.push_back({NOP});
+		rewrite.value().code.clear();
+		for ( size_t i = 0, ie = max_instrs-1; i < ie; ++i ) {
+			rewrite.value().code.push_back({NOP});
+		}
+		rewrite.value().code.push_back({RET});
   }
 
   Cfg cfg_t(target.value().code, def_in, live_out);
