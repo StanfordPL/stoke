@@ -24,7 +24,7 @@ namespace stoke {
 
 class Verifier {
  public:
-  Verifier(CostFunction& regression) : counter_example_(), regression_(regression) {
+  Verifier(CostFunction& fxn) : counter_example_(), fxn_(fxn) {
     set_strategy(Strategy::NONE);
   }
 
@@ -43,11 +43,9 @@ class Verifier {
   Strategy strategy_;
   CpuState counter_example_;
 
-	CostFunction regression_;
+	CostFunction fxn_;
 
-  bool regression(const Cfg& target, const Cfg& rewrite);
-  bool formal(const Cfg& target, const Cfg& rewrite);
-  bool random(const Cfg& target, const Cfg& rewrite);
+  bool hold_out(const Cfg& target, const Cfg& rewrite);
 };
 
 } // namespace stoke

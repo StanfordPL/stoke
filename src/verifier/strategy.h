@@ -19,9 +19,7 @@ namespace stoke {
 
 enum class Strategy {
   NONE,
-  REGRESSION,
-  FORMAL,
-  RANDOM
+  HOLD_OUT
 };
 
 } // namespace stoke

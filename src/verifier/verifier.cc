@@ -24,33 +24,21 @@ bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
   switch (strategy_) {
     case Strategy::NONE:
       return true;
-    case Strategy::REGRESSION:
-      return regression(target, rewrite);
-    case Strategy::FORMAL:
-      return formal(target, rewrite);
-    case Strategy::RANDOM:
-      return random(target, rewrite);
+    case Strategy::HOLD_OUT:
+      return hold_out(target, rewrite);
     default:
       assert(false);
       return false;
   }
 }
 
-bool Verifier::regression(const Cfg& target, const Cfg& rewrite) {
-	const auto res = regression_(rewrite, 1);
+bool Verifier::hold_out(const Cfg& target, const Cfg& rewrite) {
+	const auto res = fxn_(rewrite, 1);
 	if ( !res.first ) {
-		counter_example_ = regression_.last_testcase_evaluated();
+		counter_example_ = fxn_.last_testcase_evaluated();
 		return false;
 	}
   return true;
-}
-
-bool Verifier::formal(const Cfg & target, const Cfg & rewrite) {
-  return false;
-}
-
-bool Verifier::random(const Cfg & target, const Cfg & rewrite) {
-  return false;
 }
 
 } // namespace stoke

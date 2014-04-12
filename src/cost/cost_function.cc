@@ -56,9 +56,14 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
 
 void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm>& sses) {
   gps.clear();
-	for (const auto& r : r64s) {
+	for (const auto& r : rls) {
 		if (rs.contains(r)) {
-			gps.push_back(r);
+			gps.push_back(r64s[r]);
+		}
+	}
+	for (const auto& r : rbs) {
+		if (rs.contains(r)) {
+			gps.push_back(r64s[r]);
 		}
 	}
 
