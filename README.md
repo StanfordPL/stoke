@@ -19,7 +19,7 @@ Table of Contents
 3. [Extending STOKE](https://github.com/eschkufz/stoke#extending-stoke)
  1. [Initial Search State](https://github.com/eschkufz/stoke#initial-search-state)
  2. [Search Transformations](https://github.com/eschkufz/stoke#search-transformations)
- 3. [Performance Term](https://github.com/eschkufz/stoke#peformance-term)
+ 3. [Performance Term](https://github.com/eschkufz/stoke#performance-term)
  4. [Correctness Term](https://github.com/eschkufz/stoke#correctness-term)
  5. [Live-out Error](https://github.com/eschkufz/stoke#computing-error)
  6. [Verification Strategy](https://github.com/eschkufz/stoke#verification-strategy)
