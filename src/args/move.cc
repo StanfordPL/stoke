@@ -24,13 +24,16 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Move>, 6> moves {{
+array<pair<string, Move>, 7> moves {{
     {"instruction", Move::INSTRUCTION},
     {"opcode", Move::OPCODE},
     {"operand", Move::OPERAND},
     {"local_swap", Move::LOCAL_SWAP},
     {"global_swap", Move::GLOBAL_SWAP},
     {"resize", Move::RESIZE},
+
+		// Add user-defined extensions here ...
+		{"extension", Move::EXTENSION}
   }
 };
 

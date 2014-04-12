@@ -73,6 +73,15 @@ auto& breakpoint = ValueArg<size_t>::create("breakpoint")
     .description("Set breakpoint")
     .default_val(numeric_limits<size_t>::max());
 
+// Add user-defined extensions here ...
+
+auto& h5 = Heading::create("Extension options:");
+
+auto& ext = ValueArg<int>::create("extension")
+		.usage("<int>")
+		.description("User-defined extension")
+		.default_val(0);
+
 void callback(const StateCallbackData& data, void* arg) {
   auto stepping = (bool*) arg;
 

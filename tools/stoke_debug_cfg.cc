@@ -79,6 +79,15 @@ auto& view = FlagArg::create("view")
     .alternate("v")
     .description("View cfg immediately");
 
+// Add user-defined extensions here ...
+
+auto& h4 = Heading::create("Extension options:");
+
+auto& ext = ValueArg<int>::create("extension")
+		.usage("<int>")
+		.description("User-defined extension")
+		.default_val(0);
+
 void to_dot() {
   ofstream ofs(string("/tmp/stoke.") + getenv("USER") + ".dot");
 

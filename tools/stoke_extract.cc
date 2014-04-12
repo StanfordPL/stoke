@@ -45,6 +45,15 @@ auto& out = ValueArg<string>::create("o")
     .description("Directory to write results to")
     .default_val("out");
 
+// Add user-defined extensions here ...
+
+auto& h2 = Heading::create("Extension options:");
+
+auto& ext = ValueArg<int>::create("extension")
+		.usage("<int>")
+		.description("User-defined extension")
+		.default_val(0);
+
 typedef map<string, string> line_map;
 typedef set<string> label_set;
 

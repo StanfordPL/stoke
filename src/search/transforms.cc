@@ -144,6 +144,8 @@ bool Transforms::modify(Cfg& cfg, Move type) {
       return local_swap_move(cfg);
     case Move::GLOBAL_SWAP:
       return global_swap_move(cfg);
+		case Move::EXTENSION:	
+			return extension_move(cfg);
     default:
       assert(false);
       return false;
@@ -371,6 +373,11 @@ bool Transforms::global_swap_move(Cfg& cfg) {
   return true;
 }
 
+bool Transforms::extension_move(Cfg& cfg) {
+	// Add user-defined implementation here ...
+	return false;
+}
+
 void Transforms::undo(Cfg& cfg, Move type) {
   switch (type) {
     case Move::INSTRUCTION:
@@ -391,10 +398,17 @@ void Transforms::undo(Cfg& cfg, Move type) {
     case Move::GLOBAL_SWAP:
       undo_global_swap_move(cfg);
       break;
+			undo_extension_move(cfg);
+			break;
     default:
       assert(false);
       break;
   }
+}
+
+void Transforms::undo_extension_move(Cfg& cfg) {
+	// Add user-defined implementation here ...
+	return;
 }
 
 bool Transforms::is_rh_opcode(Opcode o) const {

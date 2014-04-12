@@ -50,6 +50,7 @@ class Transforms {
   bool resize_move(Cfg& cfg);
   bool local_swap_move(Cfg& cfg);
   bool global_swap_move(Cfg& cfg);
+	bool extension_move(Cfg& cfg);
 
   void undo(Cfg& cfg, Move type);
   void undo_instruction_move(Cfg& cfg) {
@@ -76,6 +77,7 @@ class Transforms {
     std::swap(cfg.get_code()[move_i_], cfg.get_code()[move_j_]);
     cfg.recompute_defs();
   }
+	void undo_extension_move(Cfg& cfg);
 
  private:
   size_t arity(x64asm::Opcode o) const {

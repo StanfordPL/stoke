@@ -17,19 +17,19 @@
 #include <utility>
 
 #include "src/args/generic.h"
-#include "src/args/distance.h"
+#include "src/args/init.h"
 
 using namespace std;
 using namespace stoke;
 
 namespace {
 
-array<pair<string, Distance>, 3> ds {{
-    {"hamming", Distance::HAMMING},
-    {"ulp", Distance::ULP},
+array<pair<string, Init>, 3> ds {{
+    {"empty", Init::EMPTY},
+    {"source", Init::SOURCE},
 
 		// Add user-defined extensions here ...
-		{"extension", Distance::EXTENSION}
+		{"extension", Init::EXTENSION}
   }
 };
 
@@ -37,18 +37,19 @@ array<pair<string, Distance>, 3> ds {{
 
 namespace stoke {
 
-void DistanceReader::operator()(std::istream& is, Distance& d) {
+void InitReader::operator()(std::istream& is, Init& i) {
   string s;
   is >> s;
-  if (!generic_read(ds, s, d)) {
+  if (!generic_read(ds, s, i)) {
     is.setstate(ios::failbit);
   }
 }
 
-void DistanceWriter::operator()(std::ostream& os, const Distance d) {
+void InitWriter::operator()(std::ostream& os, const Init i) {
   string s;
-  generic_write(ds, s, d);
+  generic_write(ds, s, i);
   os << s;
 }
 
 } // namespace stoke
+

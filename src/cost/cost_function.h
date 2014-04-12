@@ -20,6 +20,7 @@
 
 #include <vector>
 
+#include "src/ext/cpputil/include/bits/bit_manip.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/cfg/cfg.h"
@@ -152,17 +153,26 @@ class CostFunction {
 			std::vector<x64asm::Xmm>& sses);
 
   Cost evaluate_correctness(const Cfg& cfg, Cost max);
-  Cost correctness_max(const Cfg& cfg, Cost max);
-  Cost correctness_sum(const Cfg& cfg, Cost max);
+  Cost max_correctness(const Cfg& cfg, Cost max);
+  Cost sum_correctness(const Cfg& cfg, Cost max);
+  Cost extension_correctness(const Cfg& cfg, Cost max);
+
   Cost error(const CpuState& t, const CpuState& r) const;
   Cost gp_error(const Regs& t, const Regs& r) const;
   Cost sse_error(const Regs& t, const Regs& r) const;
   Cost mem_error(const Memory& t, const Memory& r) const;
-  Cost distance(uint64_t t, uint64_t r) const;
 
-  Cost evaluate_performance(const Cfg& cfg, Cost max);
-  Cost size(const Cfg& cfg) const;
-  Cost latency(const Cfg& cfg) const;
+  Cost evaluate_distance(uint64_t t, uint64_t r) const;
+	Cost hamming_distance(uint64_t t, uint64_t r) const {
+		return cpputil::BitManip<uint64_t>::pop_count(t ^ r);
+	}
+	Cost ulp_distance(uint64_t t, uint64_t r) const;
+	Cost extension_distance(uint64_t t, uint64_t r) const;
+
+  Cost evaluate_performance(const Cfg& cfg, Cost max) const;
+  Cost size_performance(const Cfg& cfg) const;
+  Cost latency_performance(const Cfg& cfg) const;
+	Cost extension_performance(const Cfg& cfg) const;
 };
 
 } // namespace stoke

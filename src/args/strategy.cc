@@ -24,9 +24,12 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Strategy>, 2> pts {{
+array<pair<string, Strategy>, 3> pts {{
     {"none", Strategy::NONE},
-    {"hold_out", Strategy::HOLD_OUT}
+    {"hold_out", Strategy::HOLD_OUT},
+
+		// Add user-defined extensions here ...
+		{"extension", Strategy::EXTENSION}
   }
 };
 

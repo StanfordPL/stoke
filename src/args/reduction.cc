@@ -24,9 +24,12 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Reduction>, 2> rs {{
+array<pair<string, Reduction>, 3> rs {{
     {"sum", Reduction::SUM},
-    {"max", Reduction::MAX}
+    {"max", Reduction::MAX},
+
+		// Add user-defined reductions here ...
+		{"extension", Reduction::EXTENSION}
   }
 };
 

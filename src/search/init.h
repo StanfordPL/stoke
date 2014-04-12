@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_COST_REDUCTION_H
-#define STOKE_SRC_COST_REDUCTION_H
+#ifndef STOKE_SRC_SEARCH_INIT_H
+#define STOKE_SRC_SEARCH_INIT_H
 
 namespace stoke {
 
-enum class Reduction {
-  SUM,
-  MAX,
+enum class Init {
+  EMPTY,
+  SOURCE,
 
 	// Add user-defined extensions here ...
 	EXTENSION
@@ -28,4 +28,5 @@ enum class Reduction {
 } // namespace stoke
 
 #endif
+
 

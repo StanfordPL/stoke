@@ -45,7 +45,10 @@ class Verifier {
 
 	CostFunction fxn_;
 
+	/** Verify rewrite user hold-out cost function. */
   bool hold_out(const Cfg& target, const Cfg& rewrite);
+	/** Verify rewrite using user-defined extension. */
+	bool extension(const Cfg& target, const Cfg& rewrite);
 };
 
 } // namespace stoke

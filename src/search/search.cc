@@ -39,6 +39,7 @@ void handler(int sig, siginfo_t* siginfo, void* context) {
 namespace stoke {
 
 Search::Search(Transforms* transforms) : transforms_(transforms) {
+	set_init(Init::EMPTY, 16);
   set_seed(0);
   set_timeout(0);
   set_beta(1.0);
@@ -81,10 +82,10 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
   assert(fxn(target).first);
   // Make sure target and rewrite are sound to begin with
   assert(target.is_sound());
-  assert(rewrite.is_sound());
+  assert(initialize(rewrite).is_sound());
 
-  // Progress callback variables
-  auto current = rewrite;
+  // Progress callback and search variables
+  auto current = initialize(rewrite);
   auto current_cost = fxn(current, CostFunction::max_cost - 1).second;
   auto best_yet = current;
   auto best_yet_cost = current_cost;
@@ -155,6 +156,41 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 	}
 
   return result_type(best_correct, success);
+}
+
+Cfg Search::initialize(const Cfg& rewrite) const {
+	auto ret = rewrite;
+	switch ( init_ ) {
+		case Init::EMPTY:
+			return empty_init(rewrite);
+		case Init::SOURCE:
+			return rewrite;
+		case Init::EXTENSION:
+			return extension_init(rewrite);
+
+		default:
+			assert(false);
+			return rewrite;
+	}
+}
+
+Cfg Search::empty_init(const Cfg& rewrite) const {
+	auto ret = rewrite;
+
+	ret.get_code().clear();
+	for ( size_t i = 0, ie = max_instrs_-1; i < ie; ++i ) {
+		ret.get_code().push_back({NOP});
+	}
+	ret.get_code().push_back({RET});
+
+	ret.recompute();
+
+	return ret;
+}
+
+Cfg Search::extension_init(const Cfg& rewrite) const {
+	// Add user-defined implementation here ...
+	return rewrite;
 }
 
 } // namespace stoke

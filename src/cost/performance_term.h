@@ -20,7 +20,10 @@ namespace stoke {
 enum class PerformanceTerm {
   NONE,
   SIZE,
-  LATENCY
+  LATENCY,
+
+	// Add user-defined extensions here ...
+	EXTENSION
 };
 
 } // namespace stoke

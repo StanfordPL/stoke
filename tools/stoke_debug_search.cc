@@ -74,6 +74,15 @@ auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
     .description("Seed for random number generator; set to zero for random")
     .default_val(0);
 
+// Add user-defined extensions here ...
+
+auto& h4 = Heading::create("Extension options:");
+
+auto& ext = ValueArg<int>::create("extension")
+		.usage("<int>")
+		.description("User-defined extension")
+		.default_val(0);
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 

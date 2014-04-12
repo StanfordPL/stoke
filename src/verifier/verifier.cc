@@ -26,6 +26,8 @@ bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
       return true;
     case Strategy::HOLD_OUT:
       return hold_out(target, rewrite);
+		case Strategy::EXTENSION:
+			return extension(target, rewrite);
     default:
       assert(false);
       return false;
@@ -39,6 +41,11 @@ bool Verifier::hold_out(const Cfg& target, const Cfg& rewrite) {
 		return false;
 	}
   return true;
+}
+
+bool Verifier::extension(const Cfg& target, const Cfg& rewrite) {
+	// Add user-defined implementation here ...
+	return true;
 }
 
 } // namespace stoke

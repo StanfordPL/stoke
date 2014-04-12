@@ -12,17 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_COST_REDUCTION_H
-#define STOKE_SRC_COST_REDUCTION_H
+#ifndef STOKE_SRC_ARGS_INIT_H
+#define STOKE_SRC_ARGS_INIT_H
+
+#include <iostream>
+
+#include "src/search/init.h"
 
 namespace stoke {
 
-enum class Reduction {
-  SUM,
-  MAX,
+struct InitReader {
+  void operator()(std::istream& is, Init& i);
+};
 
-	// Add user-defined extensions here ...
-	EXTENSION
+struct InitWriter {
+  void operator()(std::ostream& os, const Init i);
 };
 
 } // namespace stoke

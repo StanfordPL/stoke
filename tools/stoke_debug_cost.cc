@@ -153,6 +153,15 @@ auto& max_jumps = ValueArg<size_t>::create("max_jumps")
     .description("Maximum jumps before exit due to infinite loop")
     .default_val(1024);
 
+// Add user-defined extensions here ...
+
+auto& h7 = Heading::create("Extension options:");
+
+auto& ext = ValueArg<int>::create("extension")
+		.usage("<int>")
+		.description("User-defined extension")
+		.default_val(0);
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();

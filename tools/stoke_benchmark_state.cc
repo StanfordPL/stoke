@@ -45,6 +45,15 @@ auto& itr = ValueArg<size_t>::create("iterations")
     .description("Number of iterations to run for")
     .default_val(1000000);
 
+// Add user-defined extensions here ...
+
+auto& h3 = Heading::create("Extension options:");
+
+auto& ext = ValueArg<int>::create("extension")
+		.usage("<int>")
+		.description("User-defined extension")
+		.default_val(0);
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 

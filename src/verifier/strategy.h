@@ -19,7 +19,10 @@ namespace stoke {
 
 enum class Strategy {
   NONE,
-  HOLD_OUT
+  HOLD_OUT,
+
+	// Add user-defined extensions here ...
+	EXTENSION
 };
 
 } // namespace stoke

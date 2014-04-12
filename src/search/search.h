@@ -18,6 +18,7 @@
 #include <random>
 
 #include "src/cost/cost_function.h"
+#include "src/search/init.h"
 #include "src/search/move.h"
 #include "src/search/progress_callback.h"
 #include "src/search/statistics.h"
@@ -32,6 +33,11 @@ class Search {
 
   Search(Transforms* transforms);
 
+	Search& set_init(Init init, size_t max_instrs) {
+		init_ = init;
+		max_instrs_ = max_instrs;
+		return *this;
+	}
   Search& set_seed(std::default_random_engine::result_type seed) {
     gen_.seed(seed);
     return *this;
@@ -77,6 +83,11 @@ class Search {
   /** Transformation helper class. */
   Transforms* transforms_;
 
+	/** Rewrite to begin search from. */
+	Init init_;
+	/** Maximum number of rewrite instructions. */
+	size_t max_instrs_;
+
   /** How many iterations should search run for? */
   size_t timeout_;
   /** Annealing constant. */
@@ -90,6 +101,13 @@ class Search {
   void* statistics_cb_arg_;
   /** How often are statistics printed? */
   size_t interval_;
+
+	/** Set initial search state based on value of init_ */
+	Cfg initialize(const Cfg& rewrite) const;
+	/** Removes all non-return instructions from rewrite. */
+	Cfg empty_init(const Cfg& rewrite) const;
+	/** Returns a user-defined initial rewrite */
+	Cfg extension_init(const Cfg& rewrite) const;
 };
 
 } // namespace stoke

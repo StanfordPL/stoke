@@ -18,8 +18,6 @@
 #include <array>
 #include <limits>
 
-#include "src/ext/cpputil/include/bits/bit_manip.h"
-
 #include "src/cost/cost_function.h"
 
 using namespace cpputil;
@@ -78,16 +76,18 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm
 Cost CostFunction::evaluate_correctness(const Cfg& cfg, Cost max) {
   switch (reduction_) {
     case Reduction::MAX:
-      return correctness_max(cfg, max);
+      return max_correctness(cfg, max);
     case Reduction::SUM:
-      return correctness_sum(cfg, max);
+      return sum_correctness(cfg, max);
+		case Reduction::EXTENSION:
+			return extension_correctness(cfg, max);
     default:
       assert(false);
       return 0;
   }
 }
 
-Cost CostFunction::correctness_max(const Cfg& cfg, Cost max) {
+Cost CostFunction::max_correctness(const Cfg& cfg, Cost max) {
   Cost res = 0;
 
   sandbox_->compile(cfg);
@@ -104,7 +104,7 @@ Cost CostFunction::correctness_max(const Cfg& cfg, Cost max) {
   return res;
 }
 
-Cost CostFunction::correctness_sum(const Cfg& cfg, Cost max) {
+Cost CostFunction::sum_correctness(const Cfg& cfg, Cost max) {
   Cost res = 0;
 
   sandbox_->compile(cfg);
@@ -121,6 +121,11 @@ Cost CostFunction::correctness_sum(const Cfg& cfg, Cost max) {
 	testcases_evaluated_ = i;
 
   return res;
+}
+
+Cost CostFunction::extension_correctness(const Cfg& cfg, Cost max) {
+	// Add user-defined implementation here ...	
+	return 0;
 }
 
 Cost CostFunction::error(const CpuState& t, const CpuState& r) const {
@@ -154,7 +159,7 @@ Cost CostFunction::gp_error(const Regs& t, const Regs& r) const {
       }
 
       const auto val_r = r[r_r].get_fixed_quad(0);
-      const auto eval = distance(val_t, val_r) + ((r_t == r_r) ? 0 : misalign_penalty_);
+      const auto eval = evaluate_distance(val_t, val_r) + ((r_t == r_r) ? 0 : misalign_penalty_);
 
       delta = min(delta, eval);
     }
@@ -203,7 +208,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
             break;
         }
 
-        const auto eval = distance(val_t, val_r) + ((s_t == s_r) ? 0 : misalign_penalty_);
+        const auto eval = evaluate_distance(val_t, val_r) + ((s_t == s_r) ? 0 : misalign_penalty_);
         delta = min(delta, eval);
       }
       cost += delta;
@@ -220,47 +225,64 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
     if (relax_mem_) {
       Cost delta = max_error_cost;
       for (auto j = t.defined_begin(), je = t.defined_end(); j != je; ++j) {
-        delta = min(delta, distance(t[*i], r[*j]));
+        delta = min(delta, evaluate_distance(t[*i], r[*j]));
       }
       cost += delta;
     } else {
-      cost += distance(t[*i], r[*i]);
+      cost += evaluate_distance(t[*i], r[*i]);
     }
   }
 
   return cost;
 }
 
-Cost CostFunction::distance(uint64_t x, uint64_t y) const {
-  if (distance_ == Distance::HAMMING) {
-    return BitManip<uint64_t>::pop_count(x ^ y);
-  } else {
-    auto t = *((int64_t*)&x);
-    t = t < 0 ? numeric_limits<int64_t>::min() - t : t;
-
-    auto r = *((int64_t*)&y);
-    r = r < 0 ? numeric_limits<int64_t>::min() - r : r;
-
-    uint64_t ulp = t >= r ? t - r : r - t;
-    ulp = ulp < min_ulp_ ? 0 : ulp - min_ulp_;
-
-    return ulp > max_error_cost ? max_error_cost : ulp;
-  }
+Cost CostFunction::evaluate_distance(uint64_t x, uint64_t y) const {
+	switch(distance_) {
+		case Distance::HAMMING:
+			return hamming_distance(x, y);
+		case Distance::ULP:
+			return ulp_distance(x, y);
+		case Distance::EXTENSION:
+			return extension_distance(x, y);
+		default:
+			assert(false);
+			return 0;
+	}
 }
 
-Cost CostFunction::evaluate_performance(const Cfg& cfg, Cost max) {
+Cost CostFunction::ulp_distance(uint64_t x, uint64_t y) const {
+	auto t = *((int64_t*)&x);
+	t = t < 0 ? numeric_limits<int64_t>::min() - t : t;
+
+	auto r = *((int64_t*)&y);
+	r = r < 0 ? numeric_limits<int64_t>::min() - r : r;
+
+	uint64_t ulp = t >= r ? t - r : r - t;
+	ulp = ulp < min_ulp_ ? 0 : ulp - min_ulp_;
+
+	return ulp > max_error_cost ? max_error_cost : ulp;
+}
+
+Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {
+	// Add user-defined implementation here ...
+	return 0;
+}
+
+Cost CostFunction::evaluate_performance(const Cfg& cfg, Cost max) const {
   switch (pterm_) {
     case PerformanceTerm::SIZE:
-      return size(cfg);
+      return size_performance(cfg);
     case PerformanceTerm::LATENCY:
-      return latency(cfg);
+      return latency_performance(cfg);
+		case PerformanceTerm::EXTENSION:
+			return extension_performance(cfg);
     default:
       assert(false);
       return 0;
   }
 }
 
-Cost CostFunction::size(const Cfg& cfg) const {
+Cost CostFunction::size_performance(const Cfg& cfg) const {
   Cost size = 0;
 
   const auto& code = cfg.get_code();
@@ -280,7 +302,7 @@ Cost CostFunction::size(const Cfg& cfg) const {
   return size;
 }
 
-Cost CostFunction::latency(const Cfg& cfg) const {
+Cost CostFunction::latency_performance(const Cfg& cfg) const {
   Cost latency = 0;
 
   const auto& code = cfg.get_code();
@@ -299,6 +321,11 @@ Cost CostFunction::latency(const Cfg& cfg) const {
   }
 
   return latency;
+}
+
+Cost CostFunction::extension_performance(const Cfg& cfg) const {
+	// Add user-defined implementation here ...
+	return 0;
 }
 
 } // namespace stoke

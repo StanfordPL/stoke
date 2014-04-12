@@ -28,6 +28,7 @@
 
 #include "src/args/distance.h"
 #include "src/args/flag_set.h"
+#include "src/args/init.h"
 #include "src/args/performance_term.h"
 #include "src/args/reduction.h"
 #include "src/args/reg_set.h"
@@ -228,6 +229,11 @@ auto& resize_mass = ValueArg<size_t>::create("resize_mass")
     .description("Resize move proposal mass")
     .default_val(1);
 
+auto& extension_mass = ValueArg<size_t>::create("extension_mass")
+		.usage("<int>")
+		.description("Extension move proposal mass")
+		.default_val(0);
+
 auto& h9 = Heading::create("Search options");
 
 auto& timeout = ValueArg<size_t>::create("timeout")
@@ -255,8 +261,10 @@ auto& max_instrs = ValueArg<size_t>::create("max_instrs")
     .description("The maximum number of instructions allowed in a rewrite")
     .default_val(16);
 
-auto& empty_init = FlagArg::create("empty_init")
-    .description("Remove all but control instructions from rewrite before running search");
+auto& init = ValueArg<Init, InitReader, InitWriter>::create("init")
+		.usage("(empty|source|extension)")
+    .description("Initial search state")
+		.default_val(Init::EMPTY);
 
 auto& h10 = Heading::create("Verification options:");
 
@@ -271,6 +279,15 @@ auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
     .usage("<int>")
     .description("Seed for random number generator; set to zero for random")
     .default_val(0);
+
+// Add user-defined extensions here ...
+
+auto& h12 = Heading::create("Extension options:");
+
+auto& ext = ValueArg<int>::create("extension")
+		.usage("<int>")
+		.description("User-defined extension")
+		.default_val(0);
 
 void sep(ostream& os) {
   for (size_t i = 0; i < 80; ++i) {
@@ -340,13 +357,14 @@ void scb(const StatisticsCallbackData& data, void* arg) {
   ofs << "Resize" << endl;
   ofs << "Local Swap" << endl;
   ofs << "Global Swap" << endl;
+	ofs << "Extension" << endl;
   ofs << endl;
   ofs << "Total";
   ofs.filter().next();
 
   ofs << "Proposed" << endl;
   ofs << endl;
-  for (size_t i = 0; i < 6; ++i) {
+  for (size_t i = 0; i < (size_t) Move::NUM_MOVES; ++i) {
     ofs << 100 * (double)data.move_statistics[i].num_proposed / data.iterations << "%" << endl;
   }
   ofs << endl;
@@ -355,7 +373,7 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 
   ofs << "Succeeded" << endl;
   ofs << endl;
-  for (size_t i = 0; i < 6; ++i) {
+  for (size_t i = 0; i < (size_t) Move::NUM_MOVES; ++i) {
     ofs << 100 * (double)data.move_statistics[i].num_succeeded / data.iterations << "%" << endl;
   }
   ofs << endl;
@@ -364,7 +382,7 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 
   ofs << "Accepted" << endl;
   ofs << endl;
-  for (size_t i = 0; i < 6; ++i) {
+  for (size_t i = 0; i < (size_t) Move::NUM_MOVES; ++i) {
     ofs << 100 * (double)data.move_statistics[i].num_accepted / data.iterations << "%" << endl;
   }
   ofs << endl;
@@ -386,14 +404,10 @@ int main(int argc, char** argv) {
     seed.value() = gen();
   }
 
-  if (empty_init) {
-		rewrite.value().code.clear();
-		for ( size_t i = 0, ie = max_instrs-1; i < ie; ++i ) {
-			rewrite.value().code.push_back({NOP});
-		}
-		rewrite.value().code.push_back({RET});
-  }
-
+	if (rewrite.value().name == "anon") {
+		rewrite.value().name = target.value().name;
+	}
+	
   Cfg cfg_t(target.value().code, def_in, live_out);
   Cfg cfg_r(rewrite.value().code, def_in, live_out);
 
@@ -417,6 +431,7 @@ int main(int argc, char** argv) {
 
   Search search(&transforms);
   search.set_seed(seed)
+	.set_init(init, max_instrs)
   .set_timeout(timeout)
   .set_beta(beta)
   .set_mass(Move::OPCODE, opcode_mass)
@@ -425,6 +440,7 @@ int main(int argc, char** argv) {
   .set_mass(Move::LOCAL_SWAP, local_swap_mass)
   .set_mass(Move::GLOBAL_SWAP, global_swap_mass)
   .set_mass(Move::RESIZE, resize_mass)
+	.set_mass(Move::EXTENSION, extension_mass)
   .set_progress_callback(pcb, &cout)
   .set_statistics_callback(scb, &cout)
   .set_statistics_interval(stat_int);
