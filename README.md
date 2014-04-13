@@ -377,8 +377,44 @@ As expected, the results are close to an order of magnitude faster than the orig
 
 Extending STOKE
 =====
+
+This repository contains a minimal implementation of STOKE as described in ASPLOS 2013, OOPSLA 2013, and PLDI 2014. Most, but not all of the features described in those papers appear here. Some of the more experimental features (notably, a formal verifier) are not yet ready for public release and have not been provided. Developers who are interested in refining these features or adding their own extensions are encouraged to try modifying this implementation as described below.
+
 Initial Search State
 -----
+
+Support is gived for two types of initial states: all nops, and user-specified. These types are defined in `src/search/init.h` along with an additional type for user-defined extensions.
+
+```c++
+enum class Init {
+  EMPTY,
+  SOURCE,
+
+  // Add user-defined extensions here ...
+  EXTENSION
+};
+```
+
+Initial state is specified using the `--init` command line argument. This value controls the behavior of `Search::initialize() const`, which dispatches to the family of `Search::xxxxx_init() const` methods. User-defined extensions should be placed in the `Search::extension_init() const` method, which can be triggered by specifying `--init extension`.
+
+```c++
+Cfg Search::extension_init(const Cfg& rewrite) const {
+  auto ret = rewrite;
+
+  // Add user-defined transformations here ...
+
+  // Invariant 1: ret and rewrite must agree on boundary conditions.
+  assert(ret.def_in() == rewrite.def_in());
+  assert(ret.live_out() == rewrite.live_out();
+  
+  // Invariant 2: ret must be in a valid state. This function isn't on
+  // a critical path, so this can safely be accomplished by calling
+  ret.recompute();
+
+  return ret;
+} 
+```
+
 Search Transformations
 -----
 Performance Term
