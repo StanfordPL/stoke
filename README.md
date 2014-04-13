@@ -14,26 +14,17 @@ Table of Contents
 1. [Downloading and Building STOKE](https://github.com/eschkufz/stoke#downloading-and-building-stoke)
 2. [Using STOKE](https://github.com/eschkufz/stoke#using-stoke)
 3. [Extending STOKE](https://github.com/eschkufz/stoke#extending-stoke)
- 1. [Initial Search State](https://github.com/eschkufz/stoke#initial-search-state)
- 2. [Search Transformations](https://github.com/eschkufz/stoke#search-transformations)
- 3. [Performance Term](https://github.com/eschkufz/stoke#performance-term)
- 4. [Correctness Term](https://github.com/eschkufz/stoke#correctness-term)
- 5. [Live-out Error](https://github.com/eschkufz/stoke#computing-error)
- 6. [Verification Strategy](https://github.com/eschkufz/stoke#verification-strategy)
- 7. [Command Line Args](https://github.com/eschkufz/stoke#command-line-args)
+ 1. [Code Organization](https://github.com/eschkufz/stoke#code-organization)
+ 2. [Initial Search State](https://github.com/eschkufz/stoke#initial-search-state)
+ 3. [Search Transformations](https://github.com/eschkufz/stoke#search-transformations)
+ 4. [Performance Term](https://github.com/eschkufz/stoke#performance-term)
+ 5. [Correctness Term](https://github.com/eschkufz/stoke#correctness-term)
+ 6. [Live-out Error](https://github.com/eschkufz/stoke#computing-error)
+ 7. [Verification Strategy](https://github.com/eschkufz/stoke#verification-strategy)
+ 8. [Command Line Args](https://github.com/eschkufz/stoke#command-line-args)
 4. [Additional Features](https://github.com/eschkufz/stoke#additional-features)
- 1. [Debug Control Flow Graph](https://github.com/eschkufz/stoke#debug-control-flow-graph)
- 2. [Debug Cost Function](https://github.com/eschkufz/stoke#debug-cost-function)
- 3. [Debug Sandbox](https://github.com/eschkufz/stoke#debug-sandbox)
- 4. [Debug Search Transformations](https://github.com/eschkufz/stoke#debug-search-transformations)
- 5. [Debug State Transformations](https://github.com/eschkufz/stoke#debug-state-transformations)
- 6. [Debug Verifier](https://github.com/eschkufz/stoke#debug-verifier)
- 7. [Benchmark Control Flow Graph](https://github.com/eschkufz/stoke#benchmark-control-flow-graph)
- 8. [Benchmark Cost Function](https://github.com/eschkufz/stoke#benchmark-cost-function)
- 9. [Benchmark Sandbox](https://github.com/eschkufz/stoke#benchmark-sandbox)
- 10. [Benchmark Search Transformations](https://github.com/eschkufz/stoke#benchmark-search-transformations)
- 11. [Benchmark State Transformations](https://github.com/eschkufz/stoke#benchmark-state-transformations)
- 12. [Benchmark Verifier](https://github.com/eschkufz/stoke#benchmark-verifier)
+ 1. [Debugging](https://github.com/eschkufz/stoke#debugging)
+ 2. [Benchmarking](https://github.com/eschkufz/stoke#benchmarking)
 5. [Frequently Asked Questions](https://github.com/eschkufz/stoke#frequently-asked-questions)
 6. [Contact](https://github.com/eschkufz/stoke#contact)
 
@@ -380,6 +371,21 @@ Extending STOKE
 
 This repository contains a minimal implementation of STOKE as described in ASPLOS 2013, OOPSLA 2013, and PLDI 2014. Most, but not all of the features described in those papers appear here. Some of the more experimental features (notably, a formal verifier) are not yet ready for public release and have not been provided. Developers who are interested in refining these features or adding their own extensions are encouraged to try modifying this implementation as described below.
 
+Code Organization
+-----
+
+The STOKE source is organized into modules, each of which correspond to a subdirectory of the `src/` directory:
+
+- `src/args`: Function objects for performing I/O operations on command line arguments.
+- `src/cfg`: Classes for representing and manipulating control flow graphs.
+- `src/cost`: Classes for computing cost functions.
+- `src/ext`: External dependencies.
+- `src/sandbox`: Classes for safely executing random code sequences.
+- `src/search`: Classes for performing MCMC sampling.
+- `src/state`: Classes for representing and manipulating hardware machine states.
+- `src/tunit`: Classes for representing translation units (named instruction sequences).
+- `src/verifier`: Classes for verifying program equivalence.
+
 Initial Search State
 -----
 
@@ -480,7 +486,7 @@ enum class PerformanceTerm {
 };
 ```
 
-Performance term type is specified using the `--perf` command line argument. This value control the behavior of the `CostFunction::evaluate_performance() const` method, which dispatches to the family of `CostFunction::xxxxx_performance() const` methods. User-defined extensions should be placed in the `CostFunction::extension_performance() const` method, which can be triggered by specifying `--perf extension`.
+Performance term type is specified using the `--perf` command line argument. This value controls the behavior of the `CostFunction::evaluate_performance() const` method, which dispatches to the family of `CostFunction::xxxxx_performance() const` methods. User-defined extensions should be placed in the `CostFunction::extension_performance() const` method, which can be triggered by specifying `--perf extension`.
 
 ```c++
 Cost CostFunction::extension_performance(const Cfg& cfg) const { 
@@ -510,7 +516,7 @@ enum class Reduction {
 };
 ```
 
-Correctness term type is specified using the `--reduction` command line argument. This value control the behavior of the `CostFunction::evaluate_correctness()` method, which dispatches to the family of `CostFunction::xxxxx_correctness()` methods, each of which represent a distinct method for aggregating errors observed across testcases. User-defined extensions should be placed in the `CostFunction::extension_correctness()` method, which can be triggered by specifying `--reduction extension`.
+Correctness term type is specified using the `--reduction` command line argument. This value controls the behavior of the `CostFunction::evaluate_correctness()` method, which dispatches to the family of `CostFunction::xxxxx_correctness()` methods, each of which represent a  method for aggregating errors observed across testcases. User-defined extensions should be placed in the `CostFunction::extension_correctness()` method, which can be triggered by specifying `--reduction extension`.
 
 ```c++
 Cost CostFunction::extension_correctness(const Cfg& cfg, Cost max) {                                             
@@ -544,36 +550,120 @@ Cost CostFunction::extension_correctness(const Cfg& cfg, Cost max) {
 
 Live-out Error
 -----
+
+Live-out error measurement types are defined in `src/cost/distance.h` along with an additional type for user-defined extensions.
+
+```c++
+enum class Distance {
+  HAMMING,
+  ULP,
+
+  // Add user-defined extensions here ...
+  EXTENSION
+};
+```
+
+Measurement type is specified using the `--distance` command line argument. This value controls the behavior of the `CostFunction::evaluate_distance() const` method, which dispatches to the family of `CostFunction::xxxxx_distance() const` methods, each of which represent a method computing the distance between 64-bit values. User-defined extensions should be placed in the `CostFunction::extension_distance() const` method, which can be triggered by specifying `--distance extension`.
+
+```c++
+Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {                                            
+  Cost res = 0;
+
+  // Add user-defined implementation here ...                                                                    
+
+  // Invariant 1: Return value should not exceed max_error_cost                                                  
+
+  return res;                                                                                                    
+}
+```
+
 Verification Strategy
 -----
+
+Verification strategy types are defined in `src/verifier/strategy.h` along with an additional type for user-defined extensions.
+
+```c++
+enum class Strategy {
+  NONE,
+  HOLD_OUT,
+
+  // Add user-defined extensions here ...
+  EXTENSION
+};
+```
+
+Strategy type is specified using the `--strategy` command line argument. This value controls the behavior of the `Verifier::verify()` method, which dispatches to the family of `Verifier::xxxxx_verify() const` methods, each of which represent a method for verifying correctness. User-defined extensions should be placed in the `Verifier::extension_verify()` method, which can be triggered by specifying `--strategy extension`.
+
+```c++
+bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {                                         
+  // Add user-defined implementation here ...
+
+  // Invariant 1. If this method returns false, counter_example_ should be                                       
+  // set to a CpuState that will cause target and rewrite to produce different                                   
+  // values.                                                                                                     
+
+  return true;
+} 
+``` 
+
 Command Line Args
 -----
 
+Command line arguments can be added to any of the STOKE subcommands using the following syntax. Argument separators which are printed as part of help messages are specified by defining a heading variable:
+
+```c++
+auto& heading = Heading::create("Heading Description:");
+```
+
+Command line flags are specified by declaring a `FlagArg`.
+
+```c+++
+auto& flag = FlagArg::create("flag_name")
+  .alternate("alternate_flag_name")
+  .description("What this flag does");
+```
+
+Any of the built-in c++ primitve types are specified by declaring a `ValueArg`.
+
+```c++
+auto& val = ValueArg<int>::create("value_name")
+  .alternate("alternate_value_name")
+  .usage("<int>")
+  .description("What this value represents")
+  .default_val(0);
+```
+
+User-defined types are specified by additionally providing function objects that define I/O methods.
+
+```c++
+struct T {
+  int x, y, z;
+};
+
+struct Reader {
+  void operator()(istream& is, T& t) const {
+    is >> t.x >> t.y >> t.z;
+  }
+};
+
+struct Writer {
+  void operator()(ostream& os, const T& t) const {
+    os << t.x << " " << t.y << " " << t.z;
+  }
+};
+
+auto& val = ValueArg<T, Reader, Writer>::create("value_name")
+  .alternate("alternate_value_name")
+  .usage("<int> <int> <int>")
+  .description("What this value represents")
+  .default_val({0,0,0});
+```
+  
 Additional Features
 =====
-Debug Control Flow Graph
+Debugging
 -----
-Debug Cost Function
------
-Debug Sandbox
------
-Debug Search Transformations
------
-Debug State Transformations
------
-Debug Verifier
------
-Benchmark Control Flow Graph
------
-Benchmark Cost Function
------
-Benchmark Sandbox
------
-Benchmark Search Transformations
------
-Benchmark State Transformations
------
-Benchmark Verifier
+Benchmarking
 -----
 
 Frequently Asked Questions
