@@ -13,7 +13,8 @@ Table of Contents
 =====
 1. [Downloading and Building STOKE](https://github.com/eschkufz/stoke#downloading-and-building-stoke)
 2. [Using STOKE](https://github.com/eschkufz/stoke#using-stoke)
-3. [Extending STOKE](https://github.com/eschkufz/stoke#extending-stoke)
+3. [Additional Features](https://github.com/eschkufz/stoke#additional-features)
+4. [Extending STOKE](https://github.com/eschkufz/stoke#extending-stoke)
  1. [Code Organization](https://github.com/eschkufz/stoke#code-organization)
  2. [Initial Search State](https://github.com/eschkufz/stoke#initial-search-state)
  3. [Search Transformations](https://github.com/eschkufz/stoke#search-transformations)
@@ -22,9 +23,6 @@ Table of Contents
  6. [Live-out Error](https://github.com/eschkufz/stoke#computing-error)
  7. [Verification Strategy](https://github.com/eschkufz/stoke#verification-strategy)
  8. [Command Line Args](https://github.com/eschkufz/stoke#command-line-args)
-4. [Additional Features](https://github.com/eschkufz/stoke#additional-features)
- 1. [Debugging](https://github.com/eschkufz/stoke#debugging)
- 2. [Benchmarking](https://github.com/eschkufz/stoke#benchmarking)
 5. [Frequently Asked Questions](https://github.com/eschkufz/stoke#frequently-asked-questions)
 6. [Contact](https://github.com/eschkufz/stoke#contact)
 
@@ -366,6 +364,24 @@ And runtime can once again be measured by typing:
 
 As expected, the results are close to an order of magnitude faster than the original.
 
+Additional Features
+=====
+
+In addition to the subcommands described above, STOKE has facilities for debugging and benchmarking the performance of each of its core components:
+
+- `stoke debug cfg`: Generate a pdf of a control flow graph.
+- `stoke debug cost`: Compute the cost of a rewrite.
+- `stoke debug sandbox`: Step through the execution of a rewrite.
+- `stoke debug search`: View the changes produced by performing and undoing a program transformation.
+- `stoke debug state`: Check the behavior of operators that manipulate hardware machine states.
+- `stoke debug verify`: Check the equivalence of two programs.
+- `stoke benchmark cfg`: Measure the time required to recompute a control flow graph.
+- `stoke benchmark cost`: Measure the time required to compute a cost function.
+- `stoke benchmark sandbox`: Measure the time required to execute a program in a STOKE sandbox.
+- `stoke benchmark search`: Measure the time required to perform and undo a transformation to a program.
+- `stoke benchmark state`: Measure the time required to reset the memory of a hardware machine state.
+- `stoke benchmark verify`: Measure the time required to check the equivalence of two programs.
+
 Extending STOKE
 =====
 
@@ -469,6 +485,8 @@ void Transforms::undo_extension_move(Cfg& cfg) {
   return;
 }
 ```
+
+As above, both performing and undoing a transformation should leave a control flow graph in a valid state. In general, this can be performed by invoking the `Cfg::recompute()` method. However because these methods are on STOKE's critical path, the faster `Cfg::recompute_defs()` method should be used for transformations that do not modify control flow structure and only potentially invalidate data-flow values.
 
 Performance Term
 -----
@@ -658,13 +676,16 @@ auto& val = ValueArg<T, Reader, Writer>::create("value_name")
   .description("What this value represents")
   .default_val({0,0,0});
 ```
-  
-Additional Features
-=====
-Debugging
------
-Benchmarking
------
+
+For complex values that are better suited to being read from files, a `FileArg` may be more appopriate than a `ValueArg`. The syntax is identical.
+
+```c++
+auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
+  .alternate("alternate_value_name")
+  .usage("<complex representation>")
+  .description("What this value represents")
+  .default_val(Complex());
+```
 
 Frequently Asked Questions
 =====
