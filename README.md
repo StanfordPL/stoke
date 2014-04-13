@@ -34,6 +34,8 @@ Table of Contents
  10. [Benchmark Search Transformations](https://github.com/eschkufz/stoke#benchmark-search-transformations)
  11. [Benchmark State Transformations](https://github.com/eschkufz/stoke#benchmark-state-transformations)
  12. [Benchmark Verifier](https://github.com/eschkufz/stoke#benchmark-verifier)
+5. [Frequently Asked Questions](https://github.com/eschkufz/stoke#frequently-asked-questions)
+6. [Contact](https://github.com/eschkufz/stoke#contact)
 
 Downloading and Building STOKE
 =====
@@ -416,3 +418,13 @@ Benchmark State Transformations
 -----
 Benchmark Verifier
 -----
+
+Frequently Asked Questions
+=====
+
+To appear.
+
+Feedback
+=====
+
+Questions and comments are encouraged. The best way to contact the developers is with the built-in github issue tracker.
