@@ -383,7 +383,7 @@ This repository contains a minimal implementation of STOKE as described in ASPLO
 Initial Search State
 -----
 
-Support is gived for two types of initial states: all nops, and user-specified. These types are defined in `src/search/init.h` along with an additional type for user-defined extensions.
+Initial state types are defined in `src/search/init.h` along with an additional type for user-defined extensions.
 
 ```c++
 enum class Init {
@@ -395,7 +395,7 @@ enum class Init {
 };
 ```
 
-Initial state is specified using the `--init` command line argument. This value controls the behavior of `Search::initialize() const`, which dispatches to the family of `Search::xxxxx_init() const` methods. User-defined extensions should be placed in the `Search::extension_init() const` method, which can be triggered by specifying `--init extension`.
+Initial state is specified using the `--init` command line argument. This value controls the behavior of the `Search::initialize() const` method, which dispatches to the family of `Search::xxxxx_init() const` methods. User-defined extensions should be placed in the `Search::extension_init() const` method, which can be triggered by specifying `--init extension`.
 
 ```c++
 Cfg Search::extension_init(const Cfg& rewrite) const {
@@ -417,10 +417,131 @@ Cfg Search::extension_init(const Cfg& rewrite) const {
 
 Search Transformations
 -----
+
+Transformation types are defined in `src/search/move.h` along with an additional type for user-defined extensions.
+
+```c++
+enum class Move {
+  INSTRUCTION = 0,
+  OPCODE,
+  OPERAND,
+  RESIZE,
+  LOCAL_SWAP,
+  GLOBAL_SWAP,
+
+  // Add user-defined extensions here ...
+  EXTENSION,
+
+  NUM_MOVES
+};
+```
+
+Transformations are specified using the family of `--xxxxx_mass` command line arguments. These values control the distribution of proposals that are made by the `Transforms::modify()` method and undone by the `Transforms::undo()` method, which dispatch to the family of `Transforms::xxxxx_move()` and `Transforms::undo_xxxxx_move()` methods respectively. User-defined extensions should be placed in the `Transforms::extension_move()` and `Transforms::undo_extension_move()` methods, which can be triggered by specifying a non-zero `--extension_mass`.
+
+```c++
+bool Transforms::extension_move(Cfg& cfg) {
+  // Add user-defined implementation here ...
+  
+  // Invariant 1a:
+  // If this method returns true, it should leave this class in a state such that calling
+  // undo_extension_move() will revert cfg to its original state.
+  
+  // Invariant 1b:
+  // If this method returns false, it must leave cfg in its original state.
+  
+  return false;
+}
+```
+
+```c++
+void Transforms::undo_extension_move(Cfg& cfg) {
+  // Add user-defined implementation here ...
+
+  // Invariant: If the previous invocation of extension_move() returned true, this
+  // method must return cfg to its original state. 
+  
+  return;
+}
+```
+
 Performance Term
 -----
+
+Performance term types are defined in `src/cost/performance_term.h` along with an additional type for user-defined extensions.
+
+```c++
+enum class PerformanceTerm {
+  NONE,
+  SIZE,
+  LATENCY,
+
+  // Add user-defined extensions here ...
+  EXTENSION
+};
+```
+
+Performance term type is specified using the `--perf` command line argument. This value control the behavior of the `CostFunction::evaluate_performance() const` method, which dispatches to the family of `CostFunction::xxxxx_performance() const` methods. User-defined extensions should be placed in the `CostFunction::extension_performance() const` method, which can be triggered by specifying `--perf extension`.
+
+```c++
+Cost CostFunction::extension_performance(const Cfg& cfg) const { 
+  Cost res = 0;                                                  
+
+  // Add user-defined implementation here ... 
+
+  // Invariant: Return value should not exceed max_performance_cost 
+  assert(res <= max_performance_cost); 
+
+  return res;  
+}
+```
+
 Correctness Term
 -----
+
+Correctness term types are defined in `src/cost/reduction.h` along with an additional type for user-defined extensions.
+
+```c++
+enum class Reduction {
+  SUM,
+  MAX,
+
+  // Add user-defined extensions here ...
+  EXTENSION
+};
+```
+
+Correctness term type is specified using the `--reduction` command line argument. This value control the behavior of the `CostFunction::evaluate_correctness()` method, which dispatches to the family of `CostFunction::xxxxx_correctness()` methods, each of which represent a distinct method for aggregating errors observed across testcases. User-defined extensions should be placed in the `CostFunction::extension_correctness()` method, which can be triggered by specifying `--reduction extension`.
+
+```c++
+Cost CostFunction::extension_correctness(const Cfg& cfg, Cost max) {                                             
+  Cost res = 0;                                                                                                  
+
+  // Add user-defined implementation here ... 
+
+  // This method is not required to examine all testcases. Implementations                                       
+  // that compute res iteratively may stop executing and return max once res                                     
+  // equals or exceeds that value.                                                                               
+
+  // This method should set the testcases_evaluated_ attribute to reflect the                                    
+  // number of testcases that were examined prior to a possible early exit. The                                  
+  // final testcase that was used (testcases_evaluted_-1) is returned by a hold_out                              
+  // verifier as a counter-example following a failed proof of correctness (a hold-out
+  // verifier uses a max cost of 0; for non-zero results, the evaluation of this testcase 
+  // is presumably responsible for res exceeding max).
+
+  testcases_evaluated_ = 1;
+
+  // Invariant 1: 0 < testcases_evaluated_ < sandbox_->size()                                                    
+  assert(testcases_evaluated_ > 0);                                                                              
+  assert(testcases_evaluated_ < sandbox_->size());                                                               
+
+  // Invariant 2: Return value should not exceed max_correctness_cost                                            
+  assert(res <= max_correctness_cost);                                                                           
+    
+  return res;                                                                                                    
+}
+```
+
 Live-out Error
 -----
 Verification Strategy
