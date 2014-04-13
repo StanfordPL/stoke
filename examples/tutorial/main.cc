@@ -1,9 +1,10 @@
 #include <cstdlib>
+#include <stddef.h>
 #include <stdint.h>
 
 using namespace std;
 
-extern int popcnt(uint64_t x);
+extern size_t popcnt(uint64_t x);
 
 int main(int argc, char** argv) {
 	const auto itr = atoi(argv[1]);

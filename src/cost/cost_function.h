@@ -41,6 +41,10 @@ class CostFunction {
 
   /** The maximum cost that any rewrite should produce. */
   static constexpr auto max_cost = (Cost)(0x1ull << 62);
+	/** The maximum cost that evaluating correctness should produce. */
+	static constexpr auto max_correctness_cost = (Cost)(0x1ull << 61);
+	/** The maximum cost that evaluating performance should produce. */
+	static constexpr auto max_performance_cost = (Cost)(0x1ull << 61);
   /** The maximum cost that a single testcase should produce. */
   static constexpr auto max_testcase_cost = (Cost)(0x1ull << 42);
   /** The maximum cost that a single error calculation should produce. */
@@ -157,7 +161,7 @@ class CostFunction {
   Cost sum_correctness(const Cfg& cfg, Cost max);
   Cost extension_correctness(const Cfg& cfg, Cost max);
 
-  Cost error(const CpuState& t, const CpuState& r) const;
+  Cost evaluate_error(const CpuState& t, const CpuState& r) const;
   Cost gp_error(const Regs& t, const Regs& r) const;
   Cost sse_error(const Regs& t, const Regs& r) const;
   Cost mem_error(const Memory& t, const Memory& r) const;

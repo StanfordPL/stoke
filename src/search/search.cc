@@ -189,8 +189,19 @@ Cfg Search::empty_init(const Cfg& rewrite) const {
 }
 
 Cfg Search::extension_init(const Cfg& rewrite) const {
-	// Add user-defined implementation here ...
-	return rewrite;
+	auto ret = rewrite;
+
+	// Add user-defined transformations here ...
+
+	// Invariant 1: ret and rewrite must agree on boundary conditions.
+	assert(ret.def_ins() == rewrite.def_ins());
+	assert(ret.live_outs() == rewrite.live_outs());
+
+	// Invariant 2: ret must be in a valid state. This function isn't on
+	// a critical path, so this can safely be accomplished by calling
+	ret.recompute();
+
+	return ret;
 }
 
 } // namespace stoke

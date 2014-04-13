@@ -25,16 +25,16 @@ bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
     case Strategy::NONE:
       return true;
     case Strategy::HOLD_OUT:
-      return hold_out(target, rewrite);
+      return hold_out_verify(target, rewrite);
 		case Strategy::EXTENSION:
-			return extension(target, rewrite);
+			return extension_verify(target, rewrite);
     default:
       assert(false);
       return false;
   }
 }
 
-bool Verifier::hold_out(const Cfg& target, const Cfg& rewrite) {
+bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
 	const auto res = fxn_(rewrite, 1);
 	if ( !res.first ) {
 		counter_example_ = fxn_.last_testcase_evaluated();
@@ -43,8 +43,13 @@ bool Verifier::hold_out(const Cfg& target, const Cfg& rewrite) {
   return true;
 }
 
-bool Verifier::extension(const Cfg& target, const Cfg& rewrite) {
+bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {
 	// Add user-defined implementation here ...
+
+	// Invariant 1. If this method returns false, counter_example_ should be
+	// set to a CpuState that will cause target and rewrite to produce different
+	// values.
+
 	return true;
 }
 

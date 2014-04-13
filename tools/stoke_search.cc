@@ -280,15 +280,6 @@ auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
     .description("Seed for random number generator; set to zero for random")
     .default_val(0);
 
-// Add user-defined extensions here ...
-
-auto& h12 = Heading::create("Extension options:");
-
-auto& ext = ValueArg<int>::create("extension")
-		.usage("<int>")
-		.description("User-defined extension")
-		.default_val(0);
-
 void sep(ostream& os) {
   for (size_t i = 0; i < 80; ++i) {
     os << "*";

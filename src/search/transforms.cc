@@ -375,6 +375,14 @@ bool Transforms::global_swap_move(Cfg& cfg) {
 
 bool Transforms::extension_move(Cfg& cfg) {
 	// Add user-defined implementation here ...
+
+	// Invariant 1a:
+	// If this method returns true, it should leave this class in a state such that calling
+	// undo_extension_move() will revert cfg to its original state.
+
+	// Invariant 1b:
+	// If this method returns false, it must leave cfg in its original state.
+
 	return false;
 }
 
@@ -408,6 +416,10 @@ void Transforms::undo(Cfg& cfg, Move type) {
 
 void Transforms::undo_extension_move(Cfg& cfg) {
 	// Add user-defined implementation here ...
+
+	// Invariant: If the previous invocation of extension_move() returned true, this
+	// method must return cfg to its original state. 
+
 	return;
 }
 

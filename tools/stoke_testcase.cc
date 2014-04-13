@@ -56,15 +56,6 @@ auto& max_tc = ValueArg<size_t>::create("max_testcases")
     .description("The maximum number of testcases to generate")
     .default_val(16);
 
-// Add user-defined extensions here ...
-
-auto& h3 = Heading::create("Extension options:");
-
-auto& ext = ValueArg<int>::create("extension")
-		.usage("<int>")
-		.description("User-defined extension")
-		.default_val(0);
-
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
