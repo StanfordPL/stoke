@@ -37,6 +37,7 @@ namespace stoke {
 
 class CostFunction {
  public:
+	/** Result type; cost and whether correctness term equals zero. */
   typedef std::pair<bool, Cost> result_type;
 
   /** The maximum cost that any rewrite should produce. */
@@ -50,6 +51,7 @@ class CostFunction {
   /** The maximum cost that a single error calculation should produce. */
   static constexpr auto max_error_cost = (Cost)(0x1ull << 32);
 
+	/** Create a new cost function with default values for extended features. */
   CostFunction(Sandbox* sb) : sandbox_(sb) {
     set_target({{{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()}, false, false);
     set_distance(Distance::HAMMING);
@@ -62,47 +64,50 @@ class CostFunction {
     set_performance_term(PerformanceTerm::NONE);
   }
 
+	/** Reset target function; evaluates testcases and caches the results. */
   CostFunction& set_target(const Cfg& target, bool stack_out, bool heap_out);
-
+	/** Set metric for measuring distance between 64-bit values. */
   CostFunction& set_distance(Distance d) {
     distance_ = d;
     return *this;
   }
-
+	/** Set the bit-width and number of values to expect in sse registers. */
   CostFunction& set_sse(size_t width, size_t count) {
     sse_width_ = width;
     sse_count_ = count;
     return *this;
   }
-
+	/** Toggles whether to relax the requirement that results must appear in the correct locations. */
   CostFunction& set_relax(bool reg, bool mem) {
     relax_reg_ = reg;
     relax_mem_ = mem;
     return *this;
   }
-
+	/** Set penalty values. */
   CostFunction& set_penalty(Cost misalign, Cost sig, Cost nesting) {
     misalign_penalty_ = misalign;
     sig_penalty_ = sig;
     nesting_penalty_ = nesting;
     return *this;
   }
-
+	/** Set the minimum unacceptable ULP error for floating-point comparisons. */
   CostFunction& set_min_ulp(Cost mu) {
     min_ulp_ = mu;
     return *this;
   }
-
+	/** Set the reduction method to use when aggregating testcase costs. */
   CostFunction& set_reduction(Reduction r) {
     reduction_ = r;
     return *this;
   }
-
+	/** Set performance term type. */
   CostFunction& set_performance_term(PerformanceTerm t) {
     pterm_ = t;
     return *this;
   }
 
+	/** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
+		result would equal or exceed that value. */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
     auto cost = evaluate_correctness(cfg, max);
     assert(cost <= max_cost);
@@ -116,66 +121,106 @@ class CostFunction {
     return result_type(correct, cost);
   }
 
+	/** Returns the number of testcases evaluated by the last invocation of operator(). */
 	size_t testcases_evaluated() const {
 		return testcases_evaluated_;
 	}
-
+	/** Returns the last testcase evaluated by the last invocation of operator(). */
 	const CpuState& last_testcase_evaluated() const {
 		assert(testcases_evaluated() < sandbox_->size());
 		return sandbox_->get_input(testcases_evaluated()-1);
 	}
 
  private:
+	/** A sandbox for evaluating target and rewrites. */
   Sandbox* sandbox_;
 
+	/** Method for measuring the distance between two 64-bit values. */
   Distance distance_;
+	/** The set of registers that are live-out in the target. */
   x64asm::RegSet live_out_;
+	/** Is the stack live out in the target? */
   bool stack_out_;
+	/** Is the heap live out in the target? */
   bool heap_out_;
+	/** The bit-width of values in sse registers. */
   size_t sse_width_;
+	/** The number of values in sse registers. */
   size_t sse_count_;
+	/** Allow correct values in incorrect register locations? */
   bool relax_reg_;
+	/** Allow correct values in incorrect memory locations? */
   bool relax_mem_;
+	/** Cost to add to correct values that appear in incorrect locations. */
   Cost misalign_penalty_;
+	/** Cost to return for rewrites that do not agree with target on exit code. */
   Cost sig_penalty_;
+	/** Multiplier to apply to instructions that appear in loops. */
   Cost nesting_penalty_;
+	/** Minimum unacceptable ULP error for floating-point comparisons. */
   Cost min_ulp_;
+	/** Reduction method. */
   Reduction reduction_;
+	/** Performance term type. */
   PerformanceTerm pterm_;
 
+	/** The number of testcases evaluated by the last invocation of operator(). */
 	size_t testcases_evaluated_;
 
+	/** The results produced by executing the target on testcases. */
   std::vector<CpuState> reference_out_;
 
-  std::vector<x64asm::R64> target_gp_out_;
-  std::vector<x64asm::Xmm> target_sse_out_;
+	// These are stored as vectors to speed up iteration.
 
+	/** The set of general purpose registers live out for the target. */
+  std::vector<x64asm::R64> target_gp_out_;
+	/** The set of sse registers live out for the target. */
+  std::vector<x64asm::Xmm> target_sse_out_;
+	/** The set of general purpose registers live out for a rewrite. */
   std::vector<x64asm::R64> rewrite_gp_out_;
+	/** The set of sse registers live out for a rewrite. */
   std::vector<x64asm::Xmm> rewrite_sse_out_;
 
+	/** Convert a RegSet into a vector of registers. */
   void recompute_defs(const x64asm::RegSet& rs, std::vector<x64asm::R64>& gps, 
 			std::vector<x64asm::Xmm>& sses);
 
+	/** Evaluate the correctness term for a rewrite. */
   Cost evaluate_correctness(const Cfg& cfg, Cost max);
+	/** Evaluate correctness by returning the max cost over testcases. */
   Cost max_correctness(const Cfg& cfg, Cost max);
+	/** Evaluate correctness by summing cost over testcases. */
   Cost sum_correctness(const Cfg& cfg, Cost max);
+	/** Add user-defined correctness implementations here ... */
   Cost extension_correctness(const Cfg& cfg, Cost max);
 
+	/** Evaluate error between states. */
   Cost evaluate_error(const CpuState& t, const CpuState& r) const;
+	/** Evaluate error between general purpose registers. */
   Cost gp_error(const Regs& t, const Regs& r) const;
+	/** Evaluate error between sse registers. */
   Cost sse_error(const Regs& t, const Regs& r) const;
+	/** Evaluate error between memories. */
   Cost mem_error(const Memory& t, const Memory& r) const;
 
+	/** Evaluate the distance between two 64-bit values. */
   Cost evaluate_distance(uint64_t t, uint64_t r) const;
+	/** Counts the number of bits that two values disagree on. */
 	Cost hamming_distance(uint64_t t, uint64_t r) const {
 		return cpputil::BitManip<uint64_t>::pop_count(t ^ r);
 	}
+	/** Returns the ULP error between two values. */
 	Cost ulp_distance(uint64_t t, uint64_t r) const;
+	/** Add user-defined distance implementation here ... */
 	Cost extension_distance(uint64_t t, uint64_t r) const;
 
+	/** Evaluate performance term. */
   Cost evaluate_performance(const Cfg& cfg, Cost max) const;
+	/** Evaluate performance by counting instructions. */
   Cost size_performance(const Cfg& cfg) const;
+	/** Evaluate performance by summing expected latencies. */
   Cost latency_performance(const Cfg& cfg) const;
+	/** Add user-defined performance implementation here ... */
 	Cost extension_performance(const Cfg& cfg) const;
 };
 

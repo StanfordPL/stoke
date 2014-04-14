@@ -289,7 +289,6 @@ void sep(ostream& os) {
 
 void pcb(const ProgressCallbackData& data, void* arg) {
   ostream& os = *((ostream*)arg);
-	os << dec;
 
 	CfgTransforms tforms;
 
@@ -303,6 +302,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 	tforms.remove_unreachable(best_yet);
 	tforms.remove_nop(best_yet);
 
+	ofs << dec;
   ofs << "Best Unverified (" << data.best_yet_cost << ")" << endl;
   ofs << endl;
   ofs << best_yet.get_code();
@@ -312,6 +312,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 	tforms.remove_unreachable(best_correct);
 	tforms.remove_nop(best_correct);
 
+	ofs << dec;
   ofs << "Best Verified (" << data.best_correct_cost << ")" << endl;
   ofs << endl;
   ofs << best_correct.get_code();

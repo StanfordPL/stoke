@@ -21,9 +21,9 @@ namespace stoke {
 
 class CfgTransforms {
  public:
-  /** Modifies the underlying code such that all unreachable basic blocks are removed. */
+  /** Modifies underlying code such that all unreachable basic blocks are removed. */
   void remove_unreachable(Cfg& cfg);
-  /** Modifies the underlying code such that all nops are removed. */
+  /** Modifies underlying code such that all nops are removed. */
   void remove_nop(Cfg& cfg);
 };
 

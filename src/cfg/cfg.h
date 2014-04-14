@@ -33,9 +33,9 @@ class Cfg {
  public:
   /** Basic block id type. */
   typedef size_t id_type;
-  /** Location type; block followed by index within block. */
+  /** Location type; block and index within block. */
   typedef std::pair<id_type, size_t> loc_type;
-  /** Edge type; points from first basic block to second. */
+  /** Edge type; points from source to target. */
   typedef std::pair<id_type, id_type> edge_type;
   /** Loop type: a set of basic blocks. */
   typedef cpputil::BitVector loop_type;
@@ -48,9 +48,9 @@ class Cfg {
   typedef std::vector<id_type>::const_iterator succ_iterator;
   /** Iterator over the basic blocks in a loop. */
   typedef loop_type::const_set_bit_index_iterator loop_iterator;
-  /** Iterator over this graph's back edges. */
+  /** Iterator over back edges. */
   typedef cpputil::CppUtilMap<std::map<edge_type, loop_type>>::const_key_iterator back_edge_iterator;
-  /** Iterator over reachable basic blocks. */
+  /** Iterator over reachable blocks. */
   typedef cpputil::BitVector::const_set_bit_index_iterator reachable_iterator;
 
   /** Creates a new control flow graph with valid internal state. */
@@ -65,7 +65,7 @@ class Cfg {
     recompute_loops();
     recompute_defs();
   }
-  /** Recompute graph structure; modifying control flow will invalidate this information, calling this
+  /** Recompute graph structure; modifying control flow will invalidate this state, calling this
     method will restore it. */
   void recompute_structure() {
     recompute_blocks();
@@ -74,8 +74,8 @@ class Cfg {
     recompute_preds();
     recompute_reachable();
   }
-  /** Recompute loops; modifying control flow will invalidate this information, calling this method
-    will restore it. This method is undefined if graph structure is not up to date. */
+  /** Recompute loops; modifying control flow will invalidate this state, calling this method
+    will restore it. Undefined if graph structure is not up to date. */
   void recompute_loops() {
     recompute_dominators();
     recompute_back_edges();
@@ -83,8 +83,8 @@ class Cfg {
     recompute_nesting_depth();
   }
   /** Recomputes the defined-in relation for instructions; modifying an instruction will invalidate
-    this relation, calling this method will restore it. This method is undefined if graph structure
-    is not up to date. */
+    this relation, calling this method will restore it. Undefined if graph structure is not up to 
+		date. */
   void recompute_defs() {
     if (!is_loop_free()) {
       recompute_defs_loops();
@@ -316,6 +316,8 @@ class Cfg {
   /** User-specified registers that are defined on exit from this graph. */
   x64asm::RegSet fxn_live_outs_;
 
+	// This temporary state is maintained to reduce the overhead of repeated allocations
+
   /** A set of indices that correspond to the beginning of basic blocks. */
   cpputil::BitVector boundaries_;
   /** A stack of basic block ids. */
@@ -348,9 +350,9 @@ class Cfg {
   std::vector<x64asm::RegSet> def_ins_;
   /** The set of registers defined out of every block. */
   std::vector<x64asm::RegSet> def_outs_;
-  /** The gen set for each basic block. */
+  /** The gen set for each block. */
   std::vector<x64asm::RegSet> gen_;
-  /** The kill set for each basic block. */
+  /** The kill set for each block. */
   std::vector<x64asm::RegSet> kill_;
 
   /** Performs a forward topological sort of reachable blocks and places the result in block_sort_ */
@@ -389,5 +391,3 @@ class Cfg {
 } // namespace stoke
 
 #endif
-
-

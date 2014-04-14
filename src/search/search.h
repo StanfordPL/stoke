@@ -29,45 +29,54 @@ namespace stoke {
 
 class Search {
  public:
+	/** Result type; best verified rewrite and whether it differs from the target. */
   typedef std::pair<Cfg, bool> result_type;
 
+	/** Create a new search from a transform helper. */
   Search(Transforms* transforms);
 
+	/** Set the initial search state. */
 	Search& set_init(Init init, size_t max_instrs) {
 		init_ = init;
 		max_instrs_ = max_instrs;
 		return *this;
 	}
+	/** Set the random search seed. */
   Search& set_seed(std::default_random_engine::result_type seed) {
     gen_.seed(seed);
     return *this;
   }
+	/** Set the maximum number of proposals to perform before giving up. */
   Search& set_timeout(size_t timeout) {
     timeout_ = timeout;
     return *this;
   }
+	/** Set the annealing constant. */
   Search& set_beta(double beta) {
     beta_ = beta;
     return *this;
   }
-
+	/** Set the proposal mass for a transformation type. */
   Search& set_mass(Move move, size_t mass);
-
+	/** Set progress callback function. */
   Search& set_progress_callback(ProgressCallback cb, void* arg) {
     progress_cb_ = cb;
     progress_cb_arg_ = arg;
     return *this;
   }
+	/** Set statistics callback function. */
   Search& set_statistics_callback(StatisticsCallback cb, void* arg) {
     statistics_cb_ = cb;
     statistics_cb_arg_ = arg;
     return *this;
   }
+	/** Set the number of proposals to perform between statistics updates. */
   Search& set_statistics_interval(size_t si) {
     interval_ = si;
     return *this;
   }
 
+	/** Run search for a rewrite using a user-supplied cost function. */
   result_type run(const Cfg& target, const Cfg& rewrite, CostFunction& fxn);
 
  private:

@@ -18,8 +18,10 @@
 namespace stoke {
 
 struct Statistics {
+	/** Creates a new statistics triple. */
   Statistics() : num_proposed(0), num_succeeded(0), num_accepted(0) { }
 
+	/** Pointwise increment. */
   Statistics& operator+=(const Statistics& rhs) {
     num_proposed += rhs.num_proposed;
     num_succeeded += rhs.num_succeeded;
@@ -27,8 +29,11 @@ struct Statistics {
     return *this;
   }
 
+	/** The number of proposals that have taken place. */
   size_t num_proposed;
+	/** The number of proposals that haven't immediately failed. */
   size_t num_succeeded;
+	/** The number of proposals that were accepted. */
   size_t num_accepted;
 };
 

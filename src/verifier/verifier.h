@@ -24,25 +24,31 @@ namespace stoke {
 
 class Verifier {
  public:
+	/** Creates a new verifier with a cost function for use in hold-out verification. */
   Verifier(CostFunction& fxn) : counter_example_(), fxn_(fxn) {
     set_strategy(Strategy::NONE);
   }
 
+	/** Sets proof strategy. */
   Verifier& set_strategy(Strategy s) {
     strategy_ = s;
     return *this;
   }
 
+	/** Returns true iff these two functions are identical. Sets counter_example_ for failed 
+		proofs. */
   bool verify(const Cfg& target, const Cfg& rewrite);
-
+	/** Returns the counter example produced by the last failed invocation of verify(). */
   const CpuState& get_counter_example() const {
     return counter_example_;
   }
 
  private:
+	/** Proof strategy. */
   Strategy strategy_;
+	/** Counter example set by last failed proof. */
   CpuState counter_example_;
-
+	/** Cost function for use in hold-out verification. */
 	CostFunction fxn_;
 
 	/** Verify rewrite user hold-out cost function. */

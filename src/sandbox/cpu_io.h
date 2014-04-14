@@ -24,14 +24,13 @@
 
 namespace stoke {
 
-/** Helper class for assembling cpu io functions. */
 class CpuIo {
  public:
-  /** Returns a function which writes masked registers to hardware. */
+  /** Returns a function that writes masked registers to hardware. */
   static x64asm::Function write(CpuState& cs,
       const x64asm::RegSet& mask = x64asm::RegSet::universe());
 
-  /** Returns a function which reads masked registers from hardware
+  /** Returns a function that reads masked registers from hardware
     unless otherwise specified in arg list. */
   static x64asm::Function read(CpuState& cs,
       const x64asm::RegSet& mask = x64asm::RegSet::universe(),

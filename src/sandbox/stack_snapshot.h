@@ -25,7 +25,6 @@
 
 namespace stoke {
 
-/** Records user-/stoke-facing stack frames prior to sandbox execution. */
 class StackSnapshot {
  public:
   /** Compiles internal functions. */

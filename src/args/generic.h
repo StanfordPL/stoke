@@ -22,6 +22,7 @@
 
 namespace stoke {
 
+/** Forward lookup; returns true iff lookup succeeds. */
 template <size_t N, typename T1, typename T2>
 bool generic_read(const std::array<std::pair<T1, T2>, N>& elems, const T1& key, T2& val) {
   for (const auto& elem : elems) {
@@ -33,6 +34,7 @@ bool generic_read(const std::array<std::pair<T1, T2>, N>& elems, const T1& key, 
   return false;
 }
 
+/** Backward lookup; returns true iff lookup succeeds. */
 template <size_t N, typename T1, typename T2>
 void generic_write(const std::array<std::pair<T1, T2>, N>& elems, T1& key, const T2& val) {
   for (const auto& elem : elems) {

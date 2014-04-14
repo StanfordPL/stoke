@@ -25,26 +25,31 @@ namespace stoke {
 
 class DotWriter {
  public:
+	/** Creates a new dot writer. By default, all extended printing is disabled. */
   DotWriter() {
     set_def_in(false, false);
     set_live_out(false);
     set_dom(false);
   }
 
+	/** Toggle whether to display the defined-in relation for blocks and instructions. */
   DotWriter& set_def_in(bool block, bool instr) {
     def_in_block_ = block;
     def_in_instr_ = instr;
     return *this;
   }
+	/** Toggle whether to display the live-out relation for blocks. */
   DotWriter& set_live_out(bool block) {
     live_out_block_ = block;
     return *this;
   }
+	/** Toggle whether to display the dom relation for blocks. */
   DotWriter& set_dom(bool dom) {
     dom_ = dom;
     return *this;
   }
 
+	/** Emits a control flow graph in .dot format. */
   void operator()(std::ostream& os, const Cfg& cfg) const {
     os << "digraph g {" << std::endl;
     os << "colorscheme = blues6" << std::endl;
@@ -73,24 +78,16 @@ class DotWriter {
   /** Write the contents of a register set. */
   void write_reg_set(std::ostream& os, const x64asm::RegSet& rs) const;
 
+	/** Write the defined-in relation for blocks? */
   bool def_in_block_;
+	/** Write the defined-in relation for instructions? */
   bool def_in_instr_;
-
+	/** Write the live-out relation for blocks? */
   bool live_out_block_;
-
+	/** Write the dom relation for blocks? */
   bool dom_;
 };
 
 } // namespace stoke
-
-namespace std {
-
-/** Convenience overload for ostreams; supresses debugging output. */
-inline std::ostream& operator<<(std::ostream& os, const stoke::Cfg& cfg) {
-  stoke::DotWriter()(os, cfg);
-  return os;
-}
-
-} // namespace std
 
 #endif

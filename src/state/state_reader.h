@@ -25,14 +25,19 @@ namespace stoke {
 
 class StateReader {
  public:
+	/** Reads a state from an istream. */
   void operator()(std::istream& is, CpuState& cs) const;
 
  private:
+	/** Read a register file from an istream. */
   void read_regs(std::istream& is, Regs& regs) const;
-
+	/** Read a memory file from an istream. */
   void read_mem(std::istream& is, Memory& mem) const;
+	/** Read a memory summary from a memory file. */
   void read_summary(std::istream& is, Memory& mem) const;
+	/** Read a memory row from a memory file. */
   void read_row(std::istream& is, Memory& mem) const;
+	/** Read all memory rows from a memory file. */
   void read_contents(std::istream& is, Memory& mem) const;
 };
 
@@ -40,6 +45,7 @@ class StateReader {
 
 namespace std {
 
+/** Convenience overload. */
 inline std::istream& operator>>(std::istream& is, stoke::CpuState& cs) {
   stoke::StateReader()(is, cs);
   return is;

@@ -22,10 +22,12 @@
 
 namespace stoke {
 
-/** POD-datatype passed to callbacks by search */
 struct StatisticsCallbackData {
+	/** Statistics for each transformation type. */
   const std::vector<Statistics>& move_statistics;
+	/** The number of proposals that have taken place. */
   const size_t iterations;
+	/** The amount of time that has taken place. */
   const std::chrono::duration<double> elapsed;
 };
 

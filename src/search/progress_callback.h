@@ -20,17 +20,23 @@
 
 namespace stoke {
 
-/** POD-datatype passed to callbacks by search */
 struct ProgressCallbackData {
+	/** The current rewrite. */
   const Cfg& current;
+	/** The cost of the current rewrite. */
   const Cost current_cost;
 
+	/** The lowest cost unverified rewrite discovered so far. */
   const Cfg& best_yet;
+	/** The lowest unverified cost discovered so far. */
   const Cost best_yet_cost;
 
+	/** The lowest cost verified rewrite discovered so far. */
   const Cfg& best_correct;
+	/** The lowest verified cost discovered so far. */
   const Cost best_correct_cost;
 
+	/** Has at least one verified rewrite been discovered? */
   const bool success;
 };
 
