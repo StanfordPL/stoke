@@ -2180,6 +2180,7 @@
 
 , 999 // REP_INS m16, DX
 , 999 // REP_INS m32, DX
+, 999 // REP_INS m64, DX
 , 999 // REP_INS m8, DX
 , 999 // REP_LODS AL
 , 999 // REP_LODS AX
@@ -2191,6 +2192,7 @@
 , 999 // REP_MOVS m8, m8
 , 999 // REP_OUTS DX, m16
 , 999 // REP_OUTS DX, m32
+, 999 // REP_OUTS DX, m64
 , 999 // REP_OUTS DX, m8
 , 999 // REP_STOS m16
 , 999 // REP_STOS m32
@@ -2964,8 +2966,8 @@
 , 20 // VDIVSD xmm, xmm, xmm
 , 999 // VDIVSS xmm, xmm, m32
 , 13 // VDIVSS xmm, xmm, xmm
-, 999 // VDPPD xmm, xmm, m128, imm8
 
+, 999 // VDPPD xmm, xmm, m128, imm8
 , 9 // VDPPD xmm, xmm, xmm, imm8
 , 999 // VDPPS xmm, xmm, m128, imm8
 , 14 // VDPPS xmm, xmm, xmm, imm8
@@ -4194,4 +4196,3 @@
 , 999 // XSAVEOPT64 m64
 
 , 999 // XTEST
-
