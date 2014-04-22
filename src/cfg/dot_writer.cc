@@ -20,7 +20,7 @@ using namespace x64asm;
 namespace stoke {
 
 void DotWriter::write_entry(ostream& os, const Cfg& cfg) const {
-  os << "bb" << cfg.get_entry() << " [";
+  os << "bb" << dec << cfg.get_entry() << " [";
   os << "shape=record  ";
   os << "label=\"{ENTRY";
   if (def_in_block_) {
@@ -32,7 +32,7 @@ void DotWriter::write_entry(ostream& os, const Cfg& cfg) const {
 
 void DotWriter::write_exit(ostream& os, const Cfg& cfg) const {
   const auto id = cfg.get_exit();
-  os << "bb" << id << " [";
+  os << "bb" << dec << id << " [";
   os << "shape=record ";
   os << "label=\"{EXIT";
   if (live_out_block_) {
@@ -47,7 +47,7 @@ void DotWriter::write_exit(ostream& os, const Cfg& cfg) const {
 }
 
 void DotWriter::write_block(ostream& os, const Cfg& cfg, Cfg::id_type id) const {
-  os << "bb" << id << "[";
+  os << "bb" << dec << id << "[";
   os << "shape=record, style=filled, fillcolor=white, ";
   if (!cfg.is_reachable(id)) {
     os << "color = grey, ";
@@ -109,7 +109,7 @@ void DotWriter::write_dominators(ostream& os, const Cfg& cfg, Cfg::id_type bb) c
 void DotWriter::write_edges(ostream& os, const Cfg& cfg) const {
   for (size_t i = cfg.get_entry(), ie = cfg.get_exit(); i < ie; ++i)
     for (auto s = cfg.succ_begin(i), se = cfg.succ_end(i); s != se; ++s) {
-      os << "bb" << i << "->bb" << *s << " [";
+      os << "bb" << dec << i << "->bb" << dec << *s << " [";
       os << "style=";
       if (cfg.has_fallthrough_target(i) && cfg.fallthrough_target(i) == *s) {
         os << "bold";
