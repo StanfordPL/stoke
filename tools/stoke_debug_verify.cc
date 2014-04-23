@@ -22,6 +22,8 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
+#include "src/args/distance.h"
+#include "src/args/reduction.h"
 #include "src/args/reg_set.h"
 #include "src/args/strategy.h"
 #include "src/args/testcases.h"
@@ -55,12 +57,12 @@ auto& rewrite = FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
     .default_val({"anon", {{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
-    .usage("{ rax rsp ... }")
+    .usage("{ %rax %rsp ... }")
     .description("Registers defined on entry")
     .default_val(RegSet::linux_caller_save());
 
 auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
-    .usage("{ rax rsp ... }")
+    .usage("{ %rax %rsp ... }")
     .description("Registers live on exit")
     .default_val(RegSet::empty() + rax);
 
@@ -73,7 +75,7 @@ auto& heap_out = FlagArg::create("heap_out")
 auto& h2 = Heading::create("Verification options:");
 
 auto& strategy = ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
-    .usage("(none|regression|formal|random)")
+    .usage("(none|hold_out|extension)")
     .description("Verification strategy")
     .default_val(Strategy::NONE);
 
@@ -88,6 +90,16 @@ auto& test_set =
       .description("Subset of testcase indices to use for verification strategies that use testcases")
       .default_val({0});
 
+auto& distance = ValueArg<Distance, DistanceReader, DistanceWriter>::create("distance")
+    .usage("(hamming|ulp)")
+    .description("Metric for measuring distance between states")
+    .default_val(Distance::HAMMING);
+
+auto& reduction = ValueArg<Reduction, ReductionReader, ReductionWriter>::create("reduction")
+    .usage("(max|sum)")
+    .description("Reduction method")
+    .default_val(Reduction::SUM);
+
 auto& sse_width = ValueArg<size_t>::create("sse_width")
     .usage("(1|2|4|8)")
     .description("Number of bytes in sse elements")
@@ -97,6 +109,27 @@ auto& sse_count = ValueArg<size_t>::create("sse_count")
     .usage("<int>")
     .description("Number of values in sse registers")
     .default_val(1);
+
+auto& relax_reg = FlagArg::create("relax_reg")
+    .description("Allow correct values in incorrect register locations");
+
+auto& relax_mem = FlagArg::create("relax_mem")
+    .description("Allow correct values in incorrect memory locations");
+
+auto& misalign_penalty = ValueArg<Cost>::create("misalign_penalty")
+    .usage("<int>")
+    .description("Penalty for correct values in incorrect locations")
+    .default_val(0);
+
+auto& sig_penalty = ValueArg<Cost>::create("sig_penalty")
+    .usage("<int>")
+    .description("Penalty for incorrect signal behavior")
+    .default_val(0);
+
+auto& min_ulp = ValueArg<Cost>::create("min_ulp")
+    .usage("<int>")
+    .description("minimum ULP value to record")
+    .default_val(0);
 
 auto& h3 = Heading::create("Sandbox options:");
 
@@ -122,16 +155,17 @@ int main(int argc, char** argv) {
     }
   }
 
-	CostFunction regression(&sb);
-	regression.set_distance(Distance::HAMMING)
+	CostFunction fxn(&sb);
+	fxn.set_distance(::distance)
 	.set_target(cfg_t, stack_out, heap_out)
 	.set_sse(sse_width, sse_count)
-	.set_relax(false, false)
-	.set_penalty(1,1,1)
-	.set_reduction(Reduction::SUM)
+	.set_relax(relax_reg, relax_mem)
+	.set_penalty(misalign_penalty, sig_penalty, 0)
+	.set_min_ulp(min_ulp)
+	.set_reduction(reduction)
 	.set_performance_term(PerformanceTerm::NONE);
 
-	Verifier verifier(regression);
+	Verifier verifier(fxn);
   verifier.set_strategy(strategy);
 
   ofilterstream<Column> os(cout);

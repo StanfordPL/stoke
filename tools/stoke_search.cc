@@ -72,12 +72,12 @@ auto& rewrite = FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
     .default_val({"anon", {{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
-    .usage("{ rax rsp ... }")
+    .usage("{ %rax %rsp ... }")
     .description("Registers defined on entry")
     .default_val(RegSet::linux_caller_save());
 
 auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
-    .usage("{ rax rsp ... }")
+    .usage("{ %rax %rsp ... }")
     .description("Registers live on exit")
     .default_val(RegSet::empty() + rax);
 
@@ -269,7 +269,7 @@ auto& init = ValueArg<Init, InitReader, InitWriter>::create("init")
 auto& h10 = Heading::create("Verification options:");
 
 auto& strategy = ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
-    .usage("(none|regression|formal|random)")
+    .usage("(none|hold_out|extension)")
     .description("Verification strategy")
     .default_val(Strategy::NONE);
 
@@ -437,16 +437,17 @@ int main(int argc, char** argv) {
   .set_statistics_callback(scb, &cout)
   .set_statistics_interval(stat_int);
 
-	CostFunction regression(&test_sb);
-	regression.set_distance(Distance::HAMMING)
+	CostFunction hold_out_fxn(&test_sb);
+	hold_out_fxn.set_distance(::distance)
 	.set_target(cfg_t, stack_out, heap_out)
 	.set_sse(sse_width, sse_count)
-	.set_relax(false, false)
-	.set_penalty(1,1,1)
-	.set_reduction(Reduction::SUM)
+	.set_relax(relax_reg, relax_mem)
+	.set_penalty(misalign_penalty, sig_penalty, 0)
+	.set_min_ulp(min_ulp)
+	.set_reduction(reduction)
 	.set_performance_term(PerformanceTerm::NONE);
 
-	Verifier verifier(regression);
+	Verifier verifier(hold_out_fxn);
 	verifier.set_strategy(strategy);
 
 	for ( size_t i = 0; i < verifs.value(); ++i ) {

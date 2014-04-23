@@ -36,12 +36,12 @@ auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
 .default_val({"anon", {{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
-    .usage("{ rax rsp ... }")
+    .usage("{ %rax %rsp ... }")
     .description("Registers defined on entry")
     .default_val(RegSet::linux_caller_save());
 
 auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
-    .usage("{ rax rsp ... }")
+    .usage("{ %rax %rsp ... }")
     .description("Registers live on exit")
     .default_val(RegSet::empty() + rax);
 
