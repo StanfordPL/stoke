@@ -131,7 +131,7 @@ auto& sig_penalty = ValueArg<Cost>::create("sig_penalty")
 
 auto& min_ulp = ValueArg<Cost>::create("min_ulp")
     .usage("<int>")
-    .description("minimum ULP value to record")
+    .description("Minimum ULP value to record")
     .default_val(0);
 
 auto& h5 = Heading::create("Performance options:");
