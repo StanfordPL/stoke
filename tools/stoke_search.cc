@@ -117,12 +117,12 @@ auto& test_set =
 auto& h4 = Heading::create("Correctness options:");
 
 auto& distance = ValueArg<Distance, DistanceReader, DistanceWriter>::create("distance")
-    .usage("(hamming|ulp)")
+    .usage("(hamming|ulp|extension)")
     .description("Metric for measuring distance between states")
     .default_val(Distance::HAMMING);
 
 auto& reduction = ValueArg<Reduction, ReductionReader, ReductionWriter>::create("reduction")
-    .usage("(max|sum)")
+    .usage("(max|sum|extension)")
     .description("Reduction method")
     .default_val(Reduction::SUM);
 
@@ -160,7 +160,7 @@ auto& min_ulp = ValueArg<Cost>::create("min_ulp")
 auto& h5 = Heading::create("Performance options:");
 
 auto& perf = ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
-    .usage("(none|size|latency)")
+    .usage("(none|size|latency|extension)")
     .description("Performance definition")
     .default_val(PerformanceTerm::NONE);
 

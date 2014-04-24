@@ -91,12 +91,12 @@ auto& test_set =
       .default_val({0});
 
 auto& distance = ValueArg<Distance, DistanceReader, DistanceWriter>::create("distance")
-    .usage("(hamming|ulp)")
+    .usage("(hamming|ulp|extension)")
     .description("Metric for measuring distance between states")
     .default_val(Distance::HAMMING);
 
 auto& reduction = ValueArg<Reduction, ReductionReader, ReductionWriter>::create("reduction")
-    .usage("(max|sum)")
+    .usage("(max|sum|extension)")
     .description("Reduction method")
     .default_val(Reduction::SUM);
 

@@ -137,7 +137,7 @@ auto& min_ulp = ValueArg<Cost>::create("min_ulp")
 auto& h5 = Heading::create("Performance options:");
 
 auto& perf = ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
-    .usage("(none|size|latency)")
+    .usage("(none|size|latency|extension)")
     .description("Performance definition")
     .default_val(PerformanceTerm::NONE);
 
