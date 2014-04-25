@@ -35,13 +35,13 @@ void DotWriter::write_exit(ostream& os, const Cfg& cfg) const {
   os << "bb" << dec << id << " [";
   os << "shape=record ";
   os << "label=\"{EXIT";
+  if (def_in_block_) {
+    os << "|def-in: ";
+    write_reg_set(os, cfg.def_outs());
+  }
   if (live_out_block_) {
     os << "|live-out: ";
     write_reg_set(os, cfg.live_outs());
-  }
-  if (def_in_block_) {
-    os << "|def-in: ";
-    write_reg_set(os, cfg.def_ins(id));
   }
   os << "}\"];" << endl;
 }

@@ -53,7 +53,12 @@ void Cfg::forward_topo_sort() {
 
 	remaining_preds_.resize(num_blocks());
 	for ( size_t i = get_entry(), ie = get_exit(); i <= ie; ++i ) {
-		remaining_preds_[i] = preds_[i].size();
+		remaining_preds_[i] = 0;
+		for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p ) {
+			if (is_reachable(*p)) {
+				remaining_preds_[i]++;
+			}
+		}
 	}
 
 	block_sort_.push_back(get_entry());
