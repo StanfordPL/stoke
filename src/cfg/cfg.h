@@ -293,7 +293,8 @@ class Cfg {
   }
 	/** Returns the set of registers that are defined on exit from this graph. */
 	x64asm::RegSet def_outs() const {
-		return def_ins_[get_exit()];
+		// Careful... this structure is organized by instruction index. The exit block is a special case.
+		return def_ins_.back();
 	}
 
   /** Returns the set of registers that are live on exit from this graph. */
@@ -346,7 +347,7 @@ class Cfg {
   /** The number of loops that each basic block is contained in. */
   std::vector<size_t> nesting_depth_;
 
-  /** The set of registers defined in for every instruction. */
+  /** The set of registers defined in for every instruction. The final element refers to the exit block. */
   std::vector<x64asm::RegSet> def_ins_;
   /** The set of registers defined out of every block. */
   std::vector<x64asm::RegSet> def_outs_;
