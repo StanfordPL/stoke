@@ -343,7 +343,9 @@ Cost CostFunction::latency_performance(const Cfg& cfg) const {
     Cost block_latency = 0;
     const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
-      block_latency += latencies_[code[i].get_opcode()];
+			if (!code[i].is_nop()) {
+        block_latency += latencies_[code[i].get_opcode()];
+			}
     }
 
     latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
