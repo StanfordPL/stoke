@@ -82,7 +82,7 @@ class Transforms {
   }
 	/** Undo resize move, recompute EVERYTHING. */
   void undo_resize_move(Cfg& cfg) {
-    move(cfg.get_code(), move_i_, move_j_);
+    move(cfg.get_code(), move_j_, move_i_);
     cfg.recompute();
   }
 	/** Undo local swap move, recompute def-in relation. */
