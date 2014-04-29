@@ -14,8 +14,10 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/system/terminal.h"
 
 using namespace cpputil;
@@ -56,6 +58,16 @@ auto& max_tc = ValueArg<size_t>::create("max_testcases")
     .description("The maximum number of testcases to generate")
     .default_val(16);
 
+auto& begin_line = ValueArg<size_t>::create("begin_line") 
+		.usage("<int>")
+		.description("The line number to begin recording from")
+		.default_val(1);
+
+auto& end_lines = ValueArg<vector<size_t>, SpanReader<vector<size_t>, Range<size_t, 1, 1024>>>::create("end_lines")
+    .usage("{ 0 1 ... 9 }")
+    .description("Line number to end recording on; recording always stops on returns")
+    .default_val({});
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
@@ -72,8 +84,14 @@ int main(int argc, char** argv) {
   if (out.value() != "") {
     term << "-o " << out.value() << " ";
   }
-  term << "-n " << max_tc.value() << " ";
   term << "-x " << max_stack.value() << " ";
+  term << "-n " << max_tc.value() << " ";
+	term << "-b " << begin_line.value() << " ";
+	term << "-e \" ";
+	for ( auto e : end_lines.value() ) {
+		term << e << " ";
+	}
+	term << "\" ";
 
   term << " -- " << bin.value() << " " << args.value() << endl;
 

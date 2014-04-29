@@ -24,6 +24,7 @@
 #include <unordered_map>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/indent.h"
 #include "src/ext/cpputil/include/system/terminal.h"
@@ -268,28 +269,35 @@ label_set fix_label_uses(line_map& lines) {
 
 void emit(const string& fxn, const line_map& lines, const label_set& labels) {
   ofstream ofs(out.value() + "/" + fxn + ".s");
-  ofilterstream<Indent> os(ofs);
 
-  os.filter().indent();
-  os << ".text" << endl;
-  os << ".globl " << fxn << endl;
-  os << ".type " << fxn << ", @function" << endl;
+  ofs << "  .text" << endl;
+  ofs << "  .globl " << fxn << endl;
+  ofs << "  .type " << fxn << ", @function" << endl;
+  ofs << fxn << ":" << endl;
 
-  os.filter().unindent();
-  os << fxn << ":" << endl;
+  ofilterstream<Column> col(ofs);
+  col.filter().padding(2);
 
-  os.filter().indent();
   for (const auto& l : lines) {
     const auto itr = labels.find(l.first);
     if (itr != labels.end()) {
-      os.filter().unindent();
-      os << ".L_" << l.first << ":" << endl;
-      os.filter().indent();
+      col << ".L_" << l.first << ":" << endl;
     }
-    os << l.second << endl;
+    col << "  " << l.second << endl;
   }
+	col.filter().next();
 
-  os << ".size " << fxn << ", .-" << fxn << endl;
+	size_t line = 1;
+  for (const auto& l : lines) {
+    if (labels.find(l.first) != labels.end()) {
+			col << endl;
+		}
+		col << "# " << line++ << endl;
+	}
+	col.filter().done();
+
+	ofs << endl;
+  ofs << ".size " << fxn << ", .-" << fxn << endl;
 }
 
 void extract() {
