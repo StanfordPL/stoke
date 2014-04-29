@@ -20,8 +20,8 @@
 #include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
-#include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/column.h"
+#include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
