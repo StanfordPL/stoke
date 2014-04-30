@@ -371,7 +371,7 @@ int main(int argc, char* argv[]) {
 
   tc_remaining_ = KnobMaxTc.Value();
 	begin_line_ = KnobBeginLine.Value();
-	while ( iss >> hex >> inst ) {
+	while ( iss >> dec >> inst ) {
 		end_lines_.insert(inst);
 	}
 
