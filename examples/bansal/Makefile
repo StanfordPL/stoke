@@ -1,13 +1,8 @@
-all: bansal bins bansal.tc
+all: 
+	g++ -c traverse.s
+	g++ -std=c++11 -O3 -mavx -mavx2 main.cc -o bansal traverse.o
+	stoke extract -i ./bansal -o bins
+	stoke testcase --bin ./bansal -o bansal.tc --fxn _Z8traverseP4Node --max_testcases 1024
 
 clean:
-	rm -rf bansal bins bansal.tc result.s
-
-bansal: main.cc
-	g++ -std=c++11 -O0 -mavx -mavx2 main.cc -o bansal
-
-bins: bansal
-	stoke extract -i ./bansal -o bins
-
-bansal.tc: bansal
-	stoke testcase --bin ./bansal -o bansal.tc --fxn _Z8traverseP4Node --max_testcases 1024
+	rm -rf bansal bins bansal.tc result.s traverse.o

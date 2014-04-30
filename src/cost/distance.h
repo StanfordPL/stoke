@@ -28,4 +28,3 @@ enum class Distance {
 } // namespace stoke
 
 #endif
-

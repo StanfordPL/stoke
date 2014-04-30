@@ -248,12 +248,13 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
   for (auto i = t.defined_begin(), ie = t.defined_end(); i != ie; ++i) {
     if (relax_mem_) {
       Cost delta = max_error_cost;
-      for (auto j = t.defined_begin(), je = t.defined_end(); j != je; ++j) {
-        delta = min(delta, evaluate_distance(t[*i], r[*j]));
+      for (auto j = r.defined_begin(), je = r.defined_end(); j != je; ++j) {
+				const auto eval = evaluate_distance(t[*i], r[*j]) + (*i == *j ? 0 : misalign_penalty_);
+        delta = min(delta, eval);
       }
       cost += delta;
     } else {
-      cost += evaluate_distance(t[*i], r[*i]);
+      cost += r.is_defined(*i) ? evaluate_distance(t[*i], r[*i]) : max_error_cost;
     }
   }
 
@@ -343,7 +344,9 @@ Cost CostFunction::latency_performance(const Cfg& cfg) const {
     Cost block_latency = 0;
     const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
-      block_latency += latencies_[code[i].get_opcode()];
+			if (!code[i].is_nop()) {
+        block_latency += latencies_[code[i].get_opcode()];
+			}
     }
 
     latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));

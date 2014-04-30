@@ -31,16 +31,10 @@ struct Node {
   Node* next;
 };
 
-__attribute__((noinline)) 
-void traverse(Node* n) {
-	while ( n != nullptr ) {
-		n->val *= 2;
-		n = n->next;
-	}
-}
+extern void traverse(Node* n);
 
 int main() {
-	for ( size_t i = 0; i < 16; ++i ) {
+	for ( size_t i = 0; i < 1024; ++i ) {
 		Node* n = new Node();
 		Node* list = n;
 
