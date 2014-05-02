@@ -44,6 +44,11 @@ void StateReader::operator()(istream& is, CpuState& cs) const {
   getline(is, ignore);
 
   read_mem(is, cs.heap);
+
+	// Stack addresses should be strictly greater than heap addresses
+	if (cs.stack.lower_bound() <= cs.heap.upper_bound()) {
+		is.setstate(ios::failbit);
+	}
 }
 
 void StateReader::read_regs(istream& is, Regs& regs) const {
@@ -93,6 +98,12 @@ void StateReader::read_row(istream& is, Memory& mem) const {
   string s;
   uint64_t addr = 0;
   HexReader<uint64_t, 8>()(is, addr);
+
+	// Watch out for rows that are outside the range given in summary
+	if (addr < mem.lower_bound() || addr >= mem.upper_bound()) {
+		is.setstate(ios::failbit);
+		return;
+	}
 
   is.get();
   is.get();
