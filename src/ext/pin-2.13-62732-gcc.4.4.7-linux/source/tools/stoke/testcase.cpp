@@ -220,7 +220,7 @@ VOID end_tc() {
 
 	const auto default_stack = 0x7000000000000000;
 	const auto stack_base = stack_valid.empty() ? default_stack : stack_min;
-	const auto stack_size = stack_valid.empty() ? default_stack : stack_max - stack_min + 1;
+	const auto stack_size = stack_valid.empty() ? 0 : stack_max - stack_min + 1;
 	tc.stack.resize(stack_base, stack_size);
 
   for (const auto addr : stack_valid) {
@@ -240,7 +240,7 @@ VOID end_tc() {
 
 	const auto default_heap = 0;
 	const auto heap_base = heap_valid.empty() ? default_heap : heap_min;
-	const auto heap_size = heap_valid.empty() ? default_heap : heap_max - heap_min + 1;
+	const auto heap_size = heap_valid.empty() ? 0 : heap_max - heap_min + 1;
 	tc.heap.resize(heap_base, heap_size);
 
   for (const auto addr : heap_valid) {
