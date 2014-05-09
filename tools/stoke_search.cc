@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -101,6 +102,9 @@ auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::c
     .usage("<path/to/file>")
     .description("Testcases")
     .default_val({CpuState()});
+
+auto& shuf_tc = FlagArg::create("shuffle_testcases")
+		.description("Shuffle testcase order");
 
 auto& training_set =
   ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("training_set")
@@ -402,6 +406,10 @@ int main(int argc, char** argv) {
 	
   Cfg cfg_t(target.value().code, def_in, live_out);
   Cfg cfg_r(rewrite.value().code, def_in, live_out);
+
+	if (shuf_tc) {
+		shuffle(testcases.value().begin(), testcases.value().end(), default_random_engine());
+	}
 
   Sandbox training_sb;
   training_sb.set_max_jumps(max_jumps);
