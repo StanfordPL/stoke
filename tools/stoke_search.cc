@@ -419,7 +419,8 @@ int main(int argc, char** argv) {
   for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i) {
     if (training_set.value().find(i) != training_set.value().end()) {
       training_sb.insert_input(testcases.value()[i]);
-    } else if (test_set.value().find(i) != test_set.value().end()) {
+    } 
+		if (test_set.value().find(i) != test_set.value().end()) {
 			test_sb.insert_input(testcases.value()[i]);
 		}
   }
