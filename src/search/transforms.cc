@@ -37,9 +37,9 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
     auto op = (Opcode)i;
     if (is_control_opcode(op) || is_unsupported(op) || !is_enabled(op, flags)) {
       continue;
-    } else if (!use_mem_read && !use_mem_write && is_mem_opcode(op)) {
+    } else if (!use_mem_write && is_mem_opcode(op) && !use_mem_read) {
       continue;
-    } else if (use_mem_read && is_mem_opcode(op) && !is_mem_read_only_opcode(op)) {
+    } else if (!use_mem_write && is_mem_opcode(op) && use_mem_read && !is_mem_read_only_opcode(op)) {
       continue;
     } else {
       control_free_.push_back(op);
