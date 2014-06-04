@@ -303,7 +303,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 	tforms.remove_nop(best_yet);
 
 	ofs << dec;
-  ofs << "Best Unverified (" << data.best_yet_cost << ")" << endl;
+  ofs << "Lowest Cost (" << data.best_yet_cost << ")" << endl;
   ofs << endl;
   ofs << best_yet.get_code();
   ofs.filter().next();
@@ -313,7 +313,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 	tforms.remove_nop(best_correct);
 
 	ofs << dec;
-  ofs << "Best Verified (" << data.best_correct_cost << ")" << endl;
+  ofs << "Lowest Correct Cost (" << data.best_correct_cost << ")" << endl;
   ofs << endl;
   ofs << best_correct.get_code();
   ofs.filter().done();
