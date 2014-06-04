@@ -19,6 +19,7 @@ namespace stoke {
 
 enum class Timeout {
   QUIT = 0,
+	RESTART,
 	TESTCASE
 };
 
