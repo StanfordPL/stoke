@@ -99,7 +99,6 @@ Cost CostFunction::max_correctness(const Cfg& cfg, Cost max) {
     res = std::max(res, evaluate_error(reference_out_[i], *(sandbox_->get_result(i))));
     assert(res <= max_testcase_cost);
   }
-	testcases_evaluated_ = i;
 
 	assert(res <= max_correctness_cost);
   return res;
@@ -119,7 +118,6 @@ Cost CostFunction::sum_correctness(const Cfg& cfg, Cost max) {
 
     res += err;
   }
-	testcases_evaluated_ = i;
 
 	assert(res <= max_correctness_cost);
   return res;
@@ -134,19 +132,7 @@ Cost CostFunction::extension_correctness(const Cfg& cfg, Cost max) {
 	// that compute res iteratively may stop executing and return max once res
 	// equals or exceeds that value.
 
-	// This method should set the testcases_evaluated_ attribute to reflect the                                    
-	// number of testcases that were examined prior to a possible early exit. The                                  
-	// final testcase that was used (testcases_evaluted_-1) is returned by a hold_out                              
-	// verifier as a counter-example following a failed proof of correctness (a hold-out
-	// verifier uses a max cost of 0; for non-zero results, the evaluation of this testcase 
-	// is presumably responsible for res exceeding max).
-	testcases_evaluated_ = 1;
-
-	// Invariant 1: 0 < testcases_evaluated_ < sandbox_->size()
-	assert(testcases_evaluated_ > 0);
-	assert(testcases_evaluated_ < sandbox_->size());
-
-	// Invariant 2: Return value should not exceed max_correctness_cost
+	// Invariant 1: Return value should not exceed max_correctness_cost
 	assert(res <= max_correctness_cost);
 
 	return res;
