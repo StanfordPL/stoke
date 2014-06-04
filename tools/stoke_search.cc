@@ -484,14 +484,14 @@ int main(int argc, char** argv) {
 
 		sep(cout);
 
-		if (verifier.counter_example_available() && (timeout_action == Timeout::TESTCASE) && (i < timeouts.value())) {
-			// @todo should we check for duplicates here?
-
+		if ((timeout_action == Timeout::RESTART) && (i < timeouts.value())) {
+			cout << "Restarting search:" << endl << endl;
+		} else if ((timeout_action == Timeout::TESTCASE) && (i < timeouts.value()) && verifier.counter_example_available()) {
 			cout << "Restarting search using new testcase:" << endl << endl;
 			cout << verifier.get_counter_example() << endl << endl;
 			training_sb.insert_input(verifier.get_counter_example());
 		} else {
-			cout << "Search terminated unsuccessfully; unable to discover a verified rewrite!" << endl;
+			cout << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
 			break;
 		}
 	}
