@@ -36,6 +36,7 @@ OBJ=\
 	src/args/performance_term.o \
 	src/args/strategy.o \
 	src/args/testcases.o \
+	src/args/timeout.o \
 	src/args/tunit.o \
 	\
 	src/cfg/cfg.o \
