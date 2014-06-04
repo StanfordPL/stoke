@@ -292,12 +292,12 @@ where `search.conf` contains:
 --strategy hold_out # Verify results using a larger hold out testcase set
 ```
 
-STOKE search will produce two types of status messages. Progress update messages will be printed whenever STOKE discovers a new lowest cost verified or unverified rewrite. The code shown on the left is not equivalent to the target code; the code shown on the right is.
+STOKE search will produce two types of status messages. Progress update messages will be printed whenever STOKE discovers a new lowest cost verified or unverified rewrite. The code shown on the left is not equivalent to the target code; the code shown on the right is with respect to the current set of testcases.
 
 ```
 Progress Update: 
 
-Best Unverified (9)                Best Verified (15)     
+Lowest Cost (9)                    Lowest Correct Cost (15)     
                                                          
 btrq $0xffffffffffffffc0, %rdi     testq %rdi, %rdi      
 retq                               je .L_X64ASM_0        
