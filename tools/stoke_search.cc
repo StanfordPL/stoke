@@ -34,6 +34,7 @@
 #include "src/args/reg_set.h"
 #include "src/args/strategy.h"
 #include "src/args/testcases.h"
+#include "src/args/timeout.h"
 #include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
 #include "src/cfg/cfg_transforms.h"
@@ -241,9 +242,14 @@ auto& timeout = ValueArg<size_t>::create("timeout")
     .description("Number of proposals to execute before giving up")
     .default_val(1000000);
 
-auto& verifs = ValueArg<size_t>::create("verification_cycles")
+auto& timeout_action = ValueArg<Timeout, TimeoutReader, TimeoutWriter>::create("timeout_action")
+		.usage("(quit|testcase)")
+		.description("Action to take when search times out")
+		.default_val(Timeout::QUIT);
+
+auto& timeouts = ValueArg<size_t>::create("timeout_cycles")
     .usage("<int>")
-    .description("Number of verification cycles to attempt before giving up")
+    .description("Number of timeout cycles to attempt before giving up")
     .default_val(16);
 
 auto& stat_int = ValueArg<size_t>::create("statistics_interval")
@@ -303,7 +309,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 	tforms.remove_nop(best_yet);
 
 	ofs << dec;
-  ofs << "Lowest Cost (" << data.best_yet_cost << ")" << endl;
+  ofs << "Lowest Cost Discovered (" << data.best_yet_cost << ")" << endl;
   ofs << endl;
   ofs << best_yet.get_code();
   ofs.filter().next();
@@ -313,7 +319,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 	tforms.remove_nop(best_correct);
 
 	ofs << dec;
-  ofs << "Lowest Correct Cost (" << data.best_correct_cost << ")" << endl;
+  ofs << "Lowest Known Correct Cost (" << data.best_correct_cost << ")" << endl;
   ofs << endl;
   ofs << best_correct.get_code();
   ofs.filter().done();
@@ -451,7 +457,7 @@ int main(int argc, char** argv) {
 	Verifier verifier(hold_out_fxn);
 	verifier.set_strategy(strategy);
 
-	for ( size_t i = 0; i < verifs.value(); ++i ) {
+	for (size_t i = 0; ; ++i) {
 		CostFunction fxn(&training_sb);
 		fxn.set_distance(::distance)
 		.set_target(cfg_t, stack_out, heap_out)
@@ -462,20 +468,31 @@ int main(int argc, char** argv) {
 		.set_reduction(reduction)
 		.set_performance_term(perf);
 
-		auto ret = search.run(cfg_t, cfg_r, fxn);
+		cout << "Running search:" << endl << endl;
+		const auto ret = search.run(cfg_t, cfg_r, fxn);
+		const auto verified = verifier.verify(cfg_t, ret.first);
+
 		if (!ret.second) {
-			cout << "Unable to discover a new rewrite before timing out... giving up." << endl;
-			break;
-		} else if ( verifier.verify(cfg_t, ret.first) ) {
+			cout << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
+		} else if (!verified) {
+			cout << "Unable to verify new rewrite..." << endl << endl;
+		} else {
 			cout << "Search terminated successfully with a verified rewrite!" << endl;
 			cfg_r = ret.first;
 			break;
-		} else {
-			cout << "Unable to verify rewrite; adding a new testcase..." << endl << endl;
-			cout << verifier.get_counter_example() << endl << endl;
-			sep(cout);
+		} 
 
+		sep(cout);
+
+		if (verifier.counter_example_available() && (timeout_action == Timeout::TESTCASE) && (i < timeouts.value())) {
+			// @todo should we check for duplicates here?
+
+			cout << "Restarting search using new testcase:" << endl << endl;
+			cout << verifier.get_counter_example() << endl << endl;
 			training_sb.insert_input(verifier.get_counter_example());
+		} else {
+			cout << "Search terminated unsuccessfully; unable to discover a verified rewrite!" << endl;
+			break;
 		}
 	}
 
