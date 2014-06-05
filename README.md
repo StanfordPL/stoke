@@ -260,7 +260,7 @@ where `search.conf` contains:
 
 --testcases popcnt.tc # Path to testcase file
 --training_set "{ 0 ... 7 }" # Testcases to use for measuring correctness during search
---test_set "{ 0 ... 1023 }"  # Testcases to use as holdout set for checking correctness
+--test_set "{ 8 ... 1023 }"  # Testcases to use as holdout set for checking correctness
 
 --distance hamming # Metric for measuring error between live-outs
 --relax_reg # Allow partial credit for results that appear in wrong locations
@@ -287,17 +287,18 @@ where `search.conf` contains:
 
 --statistics_interval 100000 # Print statistics every 100k proposals
 --timeout 1000000 # Propose 1m modifications before giving up
---verification_cycles 16 # Attempt to verify 16 zero cost rewrites before giving up
+--timeout_action testcase # Try adding a new testcase from the testset when search times out
+--timeout_cycles 16 # Timeout up to 16 times before giving up
 
 --strategy hold_out # Verify results using a larger hold out testcase set
 ```
 
-STOKE search will produce two types of status messages. Progress update messages will be printed whenever STOKE discovers a new lowest cost verified or unverified rewrite. The code shown on the left is not equivalent to the target code; the code shown on the right is.
+STOKE search will produce two types of status messages. Progress update messages will be printed whenever STOKE discovers a new lowest cost verified or unverified rewrite. The code shown on the left is not equivalent to the target code; the code shown on the right is with respect to the current set of testcases.
 
 ```
 Progress Update: 
 
-Best Unverified (9)                Best Verified (15)     
+Lowest Cost Discovered (9)         Lowest Known Correct Cost (15)     
                                                          
 btrq $0xffffffffffffffc0, %rdi     testq %rdi, %rdi      
 retq                               je .L_X64ASM_0        
@@ -546,20 +547,7 @@ Cost CostFunction::extension_correctness(const Cfg& cfg, Cost max) {
   // that compute res iteratively may stop executing and return max once res                                     
   // equals or exceeds that value.                                                                               
 
-  // This method should set the testcases_evaluated_ attribute to reflect the                                    
-  // number of testcases that were examined prior to a possible early exit. The                                  
-  // final testcase that was used (testcases_evaluted_-1) is returned by a hold_out                              
-  // verifier as a counter-example following a failed proof of correctness (a hold-out
-  // verifier uses a max cost of 0; for non-zero results, the evaluation of this testcase 
-  // is presumably responsible for res exceeding max).
-
-  testcases_evaluated_ = 1;
-
-  // Invariant 1: 0 < testcases_evaluated_ < sandbox_->size()                                                    
-  assert(testcases_evaluated_ > 0);                                                                              
-  assert(testcases_evaluated_ < sandbox_->size());                                                               
-
-  // Invariant 2: Return value should not exceed max_correctness_cost                                            
+  // Invariant 1: Return value should not exceed max_correctness_cost                                            
   assert(res <= max_correctness_cost);                                                                           
     
   return res;                                                                                                    
@@ -614,11 +602,18 @@ Strategy type is specified using the `--strategy` command line argument. This va
 
 ```c++
 bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {                                         
-  // Add user-defined implementation here ...
+	// Add user-defined implementation here ...
 
-  // Invariant 1. If this method returns false, counter_example_ should be                                       
-  // set to a CpuState that will cause target and rewrite to produce different                                   
-  // values.                                                                                                     
+	// Invariant 1. If this method returns false and is able to produce a 
+	// counter example explaining why, counter_example_available_ should be
+	// set to true.
+
+	// Invariant 2. If this method returns false, and it is able (see above), 
+	// counter_example_ should be set to a CpuState that will cause target and 
+	// rewrite to produce different values.
+
+	// Invariant 3. If this method produces a counter example, it should be
+	// unique relative to all previously produced counter examples.
 
   return true;
 } 

@@ -121,14 +121,14 @@ class CostFunction {
     return result_type(correct, cost);
   }
 
-	/** Returns the number of testcases evaluated by the last invocation of operator(). */
-	size_t testcases_evaluated() const {
-		return testcases_evaluated_;
+	/** Returns the number of testcases used in this function's correctness term. */
+	size_t num_testcases() const {
+		return sandbox_->size();
 	}
-	/** Returns the last testcase evaluated by the last invocation of operator(). */
-	const CpuState& last_testcase_evaluated() const {
-		assert(testcases_evaluated() < sandbox_->size());
-		return sandbox_->get_input(testcases_evaluated()-1);
+	/** Returns the ith testcase used in this function's correctness term. */
+	const CpuState& get_testcase(size_t i) const {
+		assert(i < num_testcases());
+		return sandbox_->get_input(i);
 	}
 
  private:
@@ -163,9 +163,6 @@ class CostFunction {
   Reduction reduction_;
 	/** Performance term type. */
   PerformanceTerm pterm_;
-
-	/** The number of testcases evaluated by the last invocation of operator(). */
-	size_t testcases_evaluated_;
 
 	/** The results produced by executing the target on testcases. */
   std::vector<CpuState> reference_out_;

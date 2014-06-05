@@ -31,7 +31,7 @@ namespace {
 bool give_up_now = false;
 void handler(int sig, siginfo_t* siginfo, void* context) {
   give_up_now = true;
-  cout << "\nTerminating Early!!\n" << endl;
+  cout << "\nTiming Out Early!\n" << endl;
 }
 
 } // namespace
@@ -105,6 +105,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
   size_t iterations = 0;
   const auto start = chrono::steady_clock::now();
 
+	give_up_now = false;
 	for (; (iterations < timeout_) && (current_cost > 0) && !give_up_now; ++iterations) {
 		if ((statistics_cb_ != nullptr) && (iterations % interval_ == 0) && iterations > 0) {
 			const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
@@ -155,7 +156,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 		}
 	}
 
-  return result_type(best_correct, success);
+  return result_type(success ? best_correct : best_yet, success);
 }
 
 Cfg Search::initialize(const Cfg& rewrite) const {
