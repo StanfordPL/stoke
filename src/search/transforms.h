@@ -121,6 +121,14 @@ class Transforms {
     const auto mi = instr.mem_index();
     return mi != -1 && !instr.maybe_write(mi) && !instr.maybe_undef(mi);
   }
+
+  /** Does this instruction write (but not read or undef) memory. */
+  bool is_mem_write_only_opcode(x64asm::Opcode o) const {
+    const auto instr = x64asm::Instruction(o);
+    const auto mi = instr.mem_index();
+    return mi != -1 && !instr.maybe_read(mi) && !instr.maybe_undef(mi);
+  }
+
 	/** Does this instruction take an rh operand? */
   bool is_rh_opcode(x64asm::Opcode o) const;
 	/** Does this instruction induce control flow? */

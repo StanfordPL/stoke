@@ -37,13 +37,25 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
     auto op = (Opcode)i;
     if (is_control_opcode(op) || is_unsupported(op) || !is_enabled(op, flags)) {
       continue;
-    } else if (!use_mem_write && is_mem_opcode(op) && !use_mem_read) {
-      continue;
-    } else if (!use_mem_write && is_mem_opcode(op) && use_mem_read && !is_mem_read_only_opcode(op)) {
-      continue;
-    } else {
-      control_free_.push_back(op);
-    }
+    } 
+   
+    if(!use_mem_read) {
+      if (!use_mem_write) {
+        //no memory allowed
+        if(is_mem_opcode(op))
+          continue;
+      } else {
+        //reads disallowed, writes allowed
+        if(is_mem_opcode(op) && !is_mem_write_only_opcode(op))
+          continue;
+      }
+    } else if (!use_mem_write) {
+      //read allowed, write disallowed
+      if (is_mem_opcode(op) && !is_mem_read_only_opcode(op))
+        continue;
+    } 
+    
+    control_free_.push_back(op);
   }
 
   control_free_or_nop_ = control_free_;
