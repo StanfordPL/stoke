@@ -1209,9 +1209,7 @@
 , 999 // LAR r64, m16
 , 999 // LAR r64, r32
 
-, 3 // LDDQU xmm, m16
-, 3 // LDDQU xmm, m32
-, 3 // LDDQU xmm, m64
+, 3 // LDDQU xmm, m128
 
 , 6 // LDMXCSR m32
 
