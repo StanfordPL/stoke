@@ -19,7 +19,7 @@ class Normalizer {
 
   private:
 
-    std::vector<Chunk> _chunk_list;
+    std::vector<Chunk> chunk_list_;
     
 
 };
