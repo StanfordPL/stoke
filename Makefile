@@ -56,7 +56,9 @@ OBJ=\
 	src/state/state_reader.o \
 	src/state/state_writer.o \
 	\
-	src/verifier/verifier.o
+	src/verifier/verifier.o \
+  \
+  src/normalizer/normalizer.o
 
 BIN=\
 	bin/stoke_extract \
@@ -122,6 +124,10 @@ src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/normalizer/%.o: src/normalizer/%.cc src/normalizer/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+
+
 
 ##### BINARY TARGETS
 

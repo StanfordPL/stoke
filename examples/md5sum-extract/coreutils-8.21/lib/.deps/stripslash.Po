@@ -1,0 +1,16 @@
+lib/stripslash.o: lib/stripslash.c /usr/include/stdc-predef.h \
+ lib/config.h lib/dirname.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.8/include/stdbool.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.8/include/stddef.h lib/dosname.h
+
+/usr/include/stdc-predef.h:
+
+lib/config.h:
+
+lib/dirname.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/4.8/include/stdbool.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/4.8/include/stddef.h:
+
+lib/dosname.h:

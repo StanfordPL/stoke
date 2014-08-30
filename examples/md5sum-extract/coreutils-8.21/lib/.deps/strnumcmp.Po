@@ -1,0 +1,13 @@
+lib/strnumcmp.o: lib/strnumcmp.c /usr/include/stdc-predef.h lib/config.h \
+ lib/strnumcmp-in.h lib/strnumcmp.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.8/include/stddef.h
+
+/usr/include/stdc-predef.h:
+
+lib/config.h:
+
+lib/strnumcmp-in.h:
+
+lib/strnumcmp.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/4.8/include/stddef.h:

@@ -1,0 +1,74 @@
+  .text
+  .globl sha1_finish_ctx
+  .type sha1_finish_ctx, @function
+sha1_finish_ctx:
+  pushq  %r13
+  pushq  %r12
+  movq   %rsi,%r12
+  pushq  %rbp
+  pushq  %rbx
+  movq   %rdi,%rbx
+  subq   $0x8,%rsp
+  movl   0x1c(%rdi),%edx
+  movl   0x14(%rdi),%esi
+  cmpl   $0x38,%edx
+  sbbq   %rbp,%rbp
+  andq   $0xffffffffffffffc0,%rbp
+  subq   $0xffffffffffffff80,%rbp
+  cmpl   $0x38,%edx
+  sbbq   %rcx,%rcx
+  andq   $0xfffffffffffffff0,%rcx
+  addq   $0x1f,%rcx
+  cmpl   $0x38,%edx
+  sbbq   %rax,%rax
+  addl   %edx,%esi
+  andq   $0xfffffffffffffff0,%rax
+  movl   %esi,0x14(%rdi)
+  movl   0x18(%rdi),%edi
+  addq   $0x1e,%rax
+  cmpl   %esi,%edx
+  jbe    .L_403f92
+  addl   $0x1,%edi
+  movl   %edi,0x18(%rbx)
+.L_403f92:
+  movl   %esi,%r8d
+  shll   $0x3,%edi
+  leaq   0x20(%rbx),%r13
+  shrl   $0x1d,%r8d
+  orl    %r8d,%edi
+  bswap  %edi
+  movl   %edi,0x20(%rbx,%rax,4)
+  leal   0x0(,%rsi,8),%edi
+  shll   $0x1b,%esi
+  movl   %edi,%eax
+  shrl   $0x18,%eax
+  orl    %esi,%eax
+  movl   %edi,%esi
+  shrl   $0x8,%edi
+  andl   $0xff00,%esi
+  shll   $0x8,%esi
+  orl    %esi,%eax
+  movl   %edi,%esi
+  leaq   0x0(%r13,%rdx,1),%rdi
+  andl   $0xff00,%esi
+  orl    %esi,%eax
+  movl   $0x407620,%esi
+  movl   %eax,0x20(%rbx,%rcx,4)
+  movq   %rbp,%rax
+  subq   %rdx,%rax
+  leaq   -0x8(%rax),%rdx
+  callq  .L_401610
+  movq   %rbp,%rsi
+  movq   %r13,%rdi
+  movq   %rbx,%rdx
+  callq  .L_402be0
+  addq   $0x8,%rsp
+  movq   %rbx,%rdi
+  movq   %r12,%rsi
+  popq   %rbx
+  popq   %rbp
+  popq   %r12
+  popq   %r13
+  jmpq   .L_402bb0
+  nop
+  .size sha1_finish_ctx, .-sha1_finish_ctx

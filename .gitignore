@@ -1,0 +1,4 @@
+*.o
+bin/
+*.swp
+src/ext

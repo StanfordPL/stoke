@@ -1,0 +1,2 @@
+Tests: upstream
+Depends: coreutils, acl, strace

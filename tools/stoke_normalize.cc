@@ -1,17 +1,3 @@
-// Copyright 2014 eric schkufza
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 #include <iomanip>
 #include <iostream>
 #include <random>
@@ -26,6 +12,12 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/args/init.h"
+#include "src/args/tunit.h"
+#include "src/args/reg_set.h"
+
+#include "src/cfg/cfg.h"
+#include "src/normalizer/normalizer.h"
+
 
 using namespace cpputil;
 using namespace std;
@@ -34,10 +26,10 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("Input programs:");
 
-auto& target = ValueArg<string>::create("target")
+auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Target")
-    .default_val("target");
+    .default_val({"anon", {{RET}}});
 
 auto& h2 = Heading::create("Output options:");
 
@@ -47,18 +39,29 @@ auto& out = ValueArg<string>::create("out")
     .description("File to write successful results to")
     .default_val("results");
 
+auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
+    .usage("{ %rax %rsp ... }")
+    .description("Registers defined on entry")
+    .default_val(RegSet::linux_caller_save());
+
+auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
+    .usage("{ %rax %rsp ... }")
+    .description("Registers live on exit")
+    .default_val(RegSet::empty() + rax);
+
+
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-  // STEP 1: run objdump on the binary
+  // STEP 1: read the input
+  Cfg cfg_t(target.value().code, def_in, live_out);
 
-  // STEP 2: create list of functions we're working on
+  // STEP 2: run the normalization routine
+  Normalizer n;
+  n.slurp_cfg(cfg_t);
 
-  // STEP 3: extract the basic blocks
-
-  // STEP 4: run the normalization routine
-
-  // STEP 5: write the results out to disk
+  // STEP 3: write the results out to disk or database
 
   return 0;
 }

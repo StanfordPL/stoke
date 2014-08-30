@@ -1,0 +1,8 @@
+lib/diacrit.o: lib/diacrit.c /usr/include/stdc-predef.h lib/config.h \
+ lib/diacrit.h
+
+/usr/include/stdc-predef.h:
+
+lib/config.h:
+
+lib/diacrit.h:

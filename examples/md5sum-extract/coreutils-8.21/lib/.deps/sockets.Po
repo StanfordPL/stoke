@@ -1,0 +1,8 @@
+lib/sockets.o: lib/sockets.c /usr/include/stdc-predef.h lib/config.h \
+ lib/sockets.h
+
+/usr/include/stdc-predef.h:
+
+lib/config.h:
+
+lib/sockets.h:

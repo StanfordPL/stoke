@@ -1,0 +1,67 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 99_float_endian_detection.dpatch by Colin Watson <cjwatson@ubuntu.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Fix detection of floating point endianness
+## DP: See https://lists.gnu.org/archive/html/bug-gnulib/2013-12/msg00104.html
+## DP: Based on a suggestion by Alan Modra.
+
+@DPATCH@
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' coreutils~/gnulib-tests/test-isnanl.h coreutils/gnulib-tests/test-isnanl.h
+--- coreutils~/gnulib-tests/test-isnanl.h	2013-10-30 15:35:33.000000000 +0000
++++ coreutils/gnulib-tests/test-isnanl.h	2013-12-18 13:27:45.944005833 +0000
+@@ -24,6 +24,12 @@
+ #include "nan.h"
+ #include "macros.h"
+ 
++#ifdef __FLOAT_WORD_ORDER__
++# define FLOAT_BIG_ENDIAN (__FLOAT_WORD_ORDER__ != __ORDER_LITTLE_ENDIAN__)
++#else
++# define FLOAT_BIG_ENDIAN (LDBL_EXPBIT0_WORD < NWORDS / 2)
++#endif
++
+ int
+ main ()
+ {
+@@ -56,10 +62,10 @@
+ # if LDBL_EXPBIT0_BIT > 0
+     m.word[LDBL_EXPBIT0_WORD] ^= (unsigned int) 1 << (LDBL_EXPBIT0_BIT - 1);
+ # else
+-    m.word[LDBL_EXPBIT0_WORD + (LDBL_EXPBIT0_WORD < NWORDS / 2 ? 1 : - 1)]
++    m.word[LDBL_EXPBIT0_WORD + (FLOAT_BIG_ENDIAN ? 1 : - 1)]
+       ^= (unsigned int) 1 << (sizeof (unsigned int) * CHAR_BIT - 1);
+ # endif
+-    m.word[LDBL_EXPBIT0_WORD + (LDBL_EXPBIT0_WORD < NWORDS / 2 ? 1 : - 1)]
++    m.word[LDBL_EXPBIT0_WORD + (FLOAT_BIG_ENDIAN ? 1 : - 1)]
+       |= (unsigned int) 1 << LDBL_EXPBIT0_BIT;
+     ASSERT (isnanl (m.value));
+   }
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' coreutils~/gnulib-tests/test-signbit.c coreutils/gnulib-tests/test-signbit.c
+--- coreutils~/gnulib-tests/test-signbit.c	2013-10-30 15:35:33.000000000 +0000
++++ coreutils/gnulib-tests/test-signbit.c	2013-12-18 13:27:45.944005833 +0000
+@@ -36,6 +36,12 @@
+ double zerod = 0.0;
+ long double zerol = 0.0L;
+ 
++#ifdef __FLOAT_WORD_ORDER__
++# define FLOAT_BIG_ENDIAN (__FLOAT_WORD_ORDER__ != __ORDER_LITTLE_ENDIAN__)
++#else
++# define FLOAT_BIG_ENDIAN (LDBL_EXPBIT0_WORD < NWORDS / 2)
++#endif
++
+ static void
+ test_signbitf ()
+ {
+@@ -156,10 +162,10 @@
+ # if LDBL_EXPBIT0_BIT > 0
+     m.word[LDBL_EXPBIT0_WORD] ^= (unsigned int) 1 << (LDBL_EXPBIT0_BIT - 1);
+ # else
+-    m.word[LDBL_EXPBIT0_WORD + (LDBL_EXPBIT0_WORD < NWORDS / 2 ? 1 : - 1)]
++    m.word[LDBL_EXPBIT0_WORD + (FLOAT_BIG_ENDIAN ? 1 : - 1)]
+       ^= (unsigned int) 1 << (sizeof (unsigned int) * CHAR_BIT - 1);
+ # endif
+-    m.word[LDBL_EXPBIT0_WORD + (LDBL_EXPBIT0_WORD < NWORDS / 2 ? 1 : - 1)]
++    m.word[LDBL_EXPBIT0_WORD + (FLOAT_BIG_ENDIAN ? 1 : - 1)]
+       |= (unsigned int) 1 << LDBL_EXPBIT0_BIT;
+     (void) signbit (m.value);
+     #undef NWORDS

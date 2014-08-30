@@ -7,7 +7,7 @@ pushd `dirname $0` > /dev/null
 HERE=`pwd`
 popd > /dev/null
 
-if [ `ls -1 $HERE | wc -l` -ne "16" ]
+if [ `ls -1 $HERE | wc -l` -ne "17" ]
 then
 	echo "Fatal Error: Failed to locate one or more STOKE components!"
 	exit 1
@@ -30,6 +30,7 @@ then
 	echo "  extract             extract the contents of a binary file"
 	echo "  search              run STOKE search"
 	echo "  testcase            generate a STOKE testcase file"
+  echo "  normalize           rewrite assembly for the database"
 	echo ""
 	echo "  debug cfg           generate the control flow graph for a function"
 	echo "  debug cost          evaluate a function using a STOKE cost function"
@@ -108,6 +109,9 @@ then
 elif [ "$SCMD" == "testcase" ]
 then
 	$HERE/stoke_testcase "$@"
+elif [ "$SCMD" == "normalize" ]
+then
+  $HERE/stoke_normalize "$@"
 else
 	echo "Unknown command: '"$SCMD"'"
 	echo "Type 'stoke --help' for usage."

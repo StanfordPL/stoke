@@ -1,0 +1,11 @@
+lib/buffer-lcm.o: lib/buffer-lcm.c /usr/include/stdc-predef.h \
+ lib/config.h lib/buffer-lcm.h \
+ /usr/lib/gcc/x86_64-linux-gnu/4.8/include/stddef.h
+
+/usr/include/stdc-predef.h:
+
+lib/config.h:
+
+lib/buffer-lcm.h:
+
+/usr/lib/gcc/x86_64-linux-gnu/4.8/include/stddef.h:

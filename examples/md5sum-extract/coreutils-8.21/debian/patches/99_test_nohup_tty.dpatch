@@ -1,0 +1,32 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+
+@DPATCH@
+From 5dce6bdfafc930dfd17d5d16aea7d1add3472066 Mon Sep 17 00:00:00 2001
+From: Pádraig Brady <P@draigBrady.com>
+Date: Wed, 05 Mar 2014 15:14:07 +0000
+Subject: tests: fix false failure in nohup.sh in non tty builds
+
+* tests/misc/nohup.sh: When running tests without a controlling tty,
+an exec failure is triggered in a subshell, which causes POSIX
+shells to immediately exit the subshell.  This was brought
+to notice by the newly conforming bash 4.3.
+Fixes http:/bugs.gnu.org/16940
+---
+diff --git a/tests/misc/nohup.sh b/tests/misc/nohup.sh
+index 6d2b515..2328b43 100755
+--- a/tests/misc/nohup.sh
++++ b/tests/misc/nohup.sh
+@@ -63,6 +63,11 @@ rm -f nohup.out err
+ # to stderr must be fatal.  Requires stdout to be terminal.
+ if test -w /dev/full && test -c /dev/full; then
+ (
++  # POSIX shells immediately exit the subshell on exec error.
++  # So check we can write to /dev/tty before the exec, which
++  # isn't possible if we've no controlling tty for example.
++  test -c /dev/tty && >/dev/tty || exit 0
++
+   exec >/dev/tty
+   test -t 1 || exit 0
+   nohup echo hi 2> /dev/full
+--
+cgit v0.9.0.2

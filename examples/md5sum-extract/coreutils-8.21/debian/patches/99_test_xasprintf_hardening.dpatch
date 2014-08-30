@@ -1,0 +1,25 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 99_test_xasprintf_hardening.dpatch by Colin Watson <cjwatson@ubuntu.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: Backport from gnulib upstream (Paul Eggert):
+## DP: xvasprintf-tests: port to GCC with hardening flags
+
+@DPATCH@
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' coreutils~/gnulib-tests/test-xvasprintf.c coreutils/gnulib-tests/test-xvasprintf.c
+--- coreutils~/gnulib-tests/test-xvasprintf.c	2013-10-30 08:35:33.000000000 -0700
++++ coreutils/gnulib-tests/test-xvasprintf.c	2013-10-31 08:30:04.396586301 -0700
+@@ -93,9 +93,11 @@
+     }
+ 
+   {
+-    /* Silence gcc warning about zero-length format string.  */
++    /* Silence gcc warning about zero-length format string,
++       and about "format not a string literal and no format"
++       (whatever that means) .  */
+     const char *empty = "";
+-    result = xasprintf (empty);
++    result = xasprintf (empty, empty);
+     ASSERT (result != NULL);
+     ASSERT (strcmp (result, "") == 0);
+     free (result);

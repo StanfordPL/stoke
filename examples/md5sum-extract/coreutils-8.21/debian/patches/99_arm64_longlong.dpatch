@@ -1,0 +1,43 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 99_arm64_longlong.dpatch by Colin Watson <cjwatson@ubuntu.com>
+##
+## All lines beginning with `## DP:' are a description of the patch.
+## DP: (aarch64): Make add_ssaaaa and sub_ddmmss actually work.
+## DP: Author: Torbjorn Granlund <tege@gmplib.org>
+## DP: Origin: upstream, http://gmplib.org:8000/gmp/rev/187b7b1646ee
+
+@DPATCH@
+diff -urNad '--exclude=CVS' '--exclude=.svn' '--exclude=.git' '--exclude=.arch' '--exclude=.hg' '--exclude=_darcs' '--exclude=.bzr' coreutils-8.20~/src/longlong.h coreutils-8.20/src/longlong.h
+--- coreutils-8.20~/src/longlong.h	2013-01-17 04:05:16.000000000 +0000
++++ coreutils-8.20/src/longlong.h	2013-01-17 04:05:46.000000000 +0000
+@@ -530,23 +530,16 @@
+ #endif /* __arm__ */
+ 
+ #if defined (__aarch64__) && W_TYPE_SIZE == 64
++/* FIXME: Extend the immediate range for the low word by using both
++   ADDS and SUBS, since they set carry in the same way.  */
+ #define add_ssaaaa(sh, sl, ah, al, bh, bl) \
+-  __asm__ ("adds\t%1, %4, %5\n\tadc\t%0, %2, %3"			\
++  __asm__ ("adds\t%1, %x4, %5\n\tadc\t%0, %x2, %x3"			\
+ 	   : "=r" (sh), "=&r" (sl)					\
+-	   : "r" (ah), "rZ" (bh), "%r" (al), "rI" (bl) __CLOBBER_CC)
++	   : "rZ" (ah), "rZ" (bh), "%r" (al), "rI" (bl) __CLOBBER_CC)
+ #define sub_ddmmss(sh, sl, ah, al, bh, bl) \
+-  do {									\
+-    if (__builtin_constant_p (bl))					\
+-      {									\
+-	__asm__ ("subs\t%1, %4, %5\n\tsbc\t%0, %2, %3"			\
+-		 : "=r" (sh), "=&r" (sl)				\
+-		 : "r" (ah), "r" (bh), "r" (al), "rI" (bl) __CLOBBER_CC); \
+-      }									\
+-    else /* only bh might be a constant */				\
+-      __asm__ ("subs\t%1, %4, %5\n\tsbc\t%0, %2, %3"			\
+-	       : "=r" (sh), "=&r" (sl)					\
+-	       : "r" (ah), "rZ" (bh), "r" (al), "rI" (bl) __CLOBBER_CC);\
+-    } while (0)
++  __asm__ ("subs\t%1, %x4, %5\n\tsbc\t%0, %x2, %x3"			\
++	   : "=r,r" (sh), "=&r,&r" (sl)					\
++	   : "rZ,rZ" (ah), "rZ,rZ" (bh), "r,Z" (al), "rI,r" (bl) __CLOBBER_CC)
+ #define umul_ppmm(ph, pl, m0, m1) \
+   do {									\
+     UDItype __m0 = (m0), __m1 = (m1);					\
