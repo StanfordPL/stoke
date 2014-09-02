@@ -421,6 +421,12 @@ void Cfg::recompute_liveness() {
             liveness_use_[*i];
 
         changed |= live_ins_[*i] != new_in;
+        if (changed) {
+          cout << "block " << *i << " from " << live_ins_[*i] << " --> " << new_in << endl;
+          cout << "   " << "live out: " << live_outs_[blocks_[*i]+ num_instrs(*i)-1] << endl;
+          cout << "   " << "kill: " << liveness_kill_[*i] << endl;
+          cout << "   " << "use:  " << liveness_use_[*i] << endl;
+        }
         live_ins_[*i] = new_in;
       }
     }
@@ -449,12 +455,12 @@ void Cfg::recompute_liveness_use_kill() {
   liveness_kill_.assign(num_blocks(), RegSet::empty());
 
 	// No sense in checking the entry; we'll consider the exit, but it'll be a nop.
-  for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
-      liveness_use_[*i] |= (j->maybe_read_set() - kill_[*i]);
+      liveness_use_[*i] |= (j->maybe_read_set() - liveness_kill_[*i]);
 
-      kill_[*i] |= j->must_undef_set();
-      kill_[*i] |= j->must_write_set();
+      liveness_kill_[*i] |= j->must_undef_set();
+      liveness_kill_[*i] |= j->must_write_set();
     }
   }
 }
