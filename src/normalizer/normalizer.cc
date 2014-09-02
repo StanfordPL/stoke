@@ -12,11 +12,10 @@ Normalizer::Normalizer() {
 
 void Normalizer::slurp_cfg(Cfg &cfg) {
 
-  vector<Instruction>* vs = new vector<Instruction>();
+  Code* vs = new Code();
 
   // STEP 1: compute reaching definitions
-  cfg.recompute_defs();
-  cout << "the block count: " << cfg.num_blocks() << endl;
+  cfg.recompute();
 
   // STEP 2: build chunks with
   // vectors of instructions
@@ -26,10 +25,14 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
            it != cfg.reachable_end(); ++it) {
 
     //loop through instructions
+    size_t instr_index = 0;
     for(auto instr_it = cfg.instr_begin(*it);
              instr_it != cfg.instr_end(*it);
-             ++instr_it) {
+             ++instr_it, instr_index++) {
 
+      Cfg::loc_type here(*it, instr_index);
+      cout << dec << endl << "IN: " << cfg.def_ins(here) << endl;
+      cout << "b" << *it << "/" << instr_index << ": " << *instr_it << endl;
 
       if (instr_it->is_label_defn() ||
           instr_it->is_nop() ||
@@ -39,9 +42,13 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
 
         if(vs->size() > 0) {
           //save this chunk!
-          Chunk* c = new Chunk(*vs);
+          Cfg::loc_type here(*it, instr_index);
+          auto def_ins = cfg.def_ins(here);
+          auto live_outs = cfg.live_outs(here);
+
+          Chunk* c = new Chunk(*vs, def_ins, live_outs);
           chunk_list_.push_back(*c);
-          vs = new vector<Instruction>();
+          vs = new Code();
         }
 
       } else {
@@ -52,16 +59,14 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
 
     if(vs->size() > 0) {
       //save this chunk!
-      Chunk* c = new Chunk(*vs);
-      chunk_list_.push_back(*c);
-      vs = new vector<Instruction>();
-    }
-  }
+      Cfg::loc_type here(*it, instr_index);
+      auto def_ins = cfg.def_ins(here);
+      auto live_outs = cfg.live_outs(here);
 
-  for(auto it = chunk_list_.begin(); 
-           it != chunk_list_.end(); 
-           ++it) {
-    cout << "x" << endl;
+      Chunk* c = new Chunk(*vs, def_ins, live_outs);
+      chunk_list_.push_back(*c);
+      vs = new Code();
+    }
   }
 
 

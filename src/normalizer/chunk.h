@@ -13,17 +13,17 @@ class Chunk {
 
   public:
 
-    Chunk(std::vector<x64asm::Instruction>& code) : _code(code) {
+    Chunk(x64asm::Code code, x64asm::RegSet def_ins, x64asm::RegSet live_outs) 
+      : _code(code), _def_ins(def_ins), _live_outs(live_outs) {
 
     }
 
     void normalize();
 
   private:
-//    x64asm::RegSet& _def_ins;
-//    x64asm::RegSet& _live_outs;
-//    x64asm::RegSet& _available;
-    std::vector<x64asm::Instruction>& _code;
+    x64asm::RegSet& _def_ins;
+    x64asm::RegSet& _live_outs;
+    x64asm::Code& _code;
 
 };
 

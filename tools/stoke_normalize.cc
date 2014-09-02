@@ -47,8 +47,7 @@ auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
 auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
     .usage("{ %rax %rsp ... }")
     .description("Registers live on exit")
-    .default_val(RegSet::empty() + rax);
-
+    .default_val(RegSet::linux_callee_save() + rax);
 
 
 int main(int argc, char** argv) {

@@ -378,4 +378,44 @@ void Cfg::recompute_defs_loop_free() {
   }
 }
 
+void Cfg::recompute_liveness() {
+    live_ins_.resize(num_blocks(), RegSet::empty());
+    live_outs_.resize(code_.size()+1, RegSet::empty());
+
+    live_ins_[get_exit()] = fxn_live_outs_;
+
+    for (auto i = ++reachable_begin(), ie = reachable_end();
+          i != ie; ++i) {
+      live_ins_[*i] = RegSet::empty();
+      live_outs_[blocks_[*i]] = RegSet::empty();
+    }
+
+    // Fixedpoint algorithm
+    for (auto changed = true; changed;) {
+      changed = false;
+
+      for (auto i = ++reachable_begin(), ie = reachable_end();
+            i != ie; ++i) {
+        // Meet operator
+        live_outs_[blocks_[*i]] = RegSet::empty();
+        for (auto s = succ_begin(*i), si = succ_end(*i); s != si; ++s) {
+          if (is_reachable(*s)) {
+            live_outs_[blocks_[*i]] |= live_ins_[*s];
+          }
+        }
+
+        // Transfer function
+        const auto new_in = (live_outs_[blocks_[*i]] - def_[*i]) | def_[*i];
+
+        changed |= live_ins_[*i] != new_in;
+        live_ins_[*i] = new_in;
+      }
+    }
+}
+
+
+void Cfg::recompute_use_def() {
+
+}
+
 } // namespace x64

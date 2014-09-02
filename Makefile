@@ -85,7 +85,7 @@ BIN=\
 
 ##### TOP LEVEL TARGETS (release is default)
 
-all: release
+all: release tags
 
 debug:
 	make -C . external EXT_OPT="debug"
@@ -96,6 +96,9 @@ release:
 profile:
 	make -C . external EXT_OPT="profile"
 	make -C . $(BIN) OPT="-DNDEBUG -O3 -pg" 
+
+tags:
+	ctags -R src
 
 ##### EXTERNAL TARGETS
 
