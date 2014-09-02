@@ -441,9 +441,14 @@ void Cfg::recompute_liveness() {
         live_outs_[idx] = live_outs_[idx + 1];
 
         const auto& instr = code_[idx + 1];
-        live_outs_[idx] -= instr.must_write_set();
-        live_outs_[idx] -= instr.must_undef_set();
-        live_outs_[idx] |= instr.maybe_read_set();
+        if(instr.is_call()) {
+          live_outs_[idx] -= RegSet::linux_callee_save();
+          live_outs_[idx] |= RegSet::linux_caller_save();
+        } else {
+          live_outs_[idx] -= instr.must_write_set();
+          live_outs_[idx] -= instr.must_undef_set();
+          live_outs_[idx] |= instr.maybe_read_set();
+        }
       }
     }
 
@@ -457,10 +462,17 @@ void Cfg::recompute_liveness_use_kill() {
 	// No sense in checking the entry; we'll consider the exit, but it'll be a nop.
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
-      liveness_use_[*i] |= (j->maybe_read_set() - liveness_kill_[*i]);
 
-      liveness_kill_[*i] |= j->must_undef_set();
-      liveness_kill_[*i] |= j->must_write_set();
+      if(j->is_call()) {
+        liveness_use_[*i] |= RegSet::linux_caller_save();
+        liveness_kill_[*i] |= RegSet::linux_callee_save();
+
+      } else {
+        liveness_use_[*i] |= (j->maybe_read_set() - liveness_kill_[*i]);
+
+        liveness_kill_[*i] |= j->must_undef_set();
+        liveness_kill_[*i] |= j->must_write_set();
+      }
     }
   }
 }
