@@ -368,9 +368,9 @@ class Cfg {
   /** The set of registers live in at each block */
   std::vector<x64asm::RegSet> live_ins_;
   /** The use set for each block. */
-  std::vector<x64asm::RegSet> use_;
+  std::vector<x64asm::RegSet> liveness_use_;
   /** The def set for each block. */
-  std::vector<x64asm::RegSet> def_;
+  std::vector<x64asm::RegSet> liveness_kill_;
 
 
 
@@ -402,7 +402,7 @@ class Cfg {
   /** Recomputes the gen and kill sets used by recompute_defs_loops(). */
   void recompute_defs_gen_kill();
   /** Recomputes the use and defs set used for liveness */
-  void recompute_use_def();
+  void recompute_liveness_use_kill();
   /** Recomputes def_ins_ using the generic least fixed point dataflow algorithm. */
   void recompute_defs_loops();
   /** Faster recomputation of def_ins_; valid only for loop-free graphs. */

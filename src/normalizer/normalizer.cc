@@ -14,9 +14,6 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
 
   Code* vs = new Code();
 
-  // STEP 1: compute reaching definitions
-  cfg.recompute();
-
   // STEP 2: build chunks with
   // vectors of instructions
 
@@ -31,8 +28,9 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
              ++instr_it, instr_index++) {
 
       Cfg::loc_type here(*it, instr_index);
-      cout << dec << endl << "IN: " << cfg.def_ins(here) << endl;
+      cout << dec << endl << "DEF: " << cfg.def_ins(here) << endl;
       cout << "b" << *it << "/" << instr_index << ": " << *instr_it << endl;
+      cout << "LIVE: " << cfg.live_outs(here) << endl;
 
       if (instr_it->is_label_defn() ||
           instr_it->is_nop() ||

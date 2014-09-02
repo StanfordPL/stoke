@@ -379,43 +379,84 @@ void Cfg::recompute_defs_loop_free() {
 }
 
 void Cfg::recompute_liveness() {
-    live_ins_.resize(num_blocks(), RegSet::empty());
-    live_outs_.resize(code_.size()+1, RegSet::empty());
+    recompute_liveness_use_kill();
+
+    live_ins_.assign(num_blocks(), RegSet::empty());
+    live_outs_.assign(code_.size()+1, RegSet::empty());
+
+    // Initial Conditions
+    for (auto i = reachable_begin(), ie = reachable_end();
+          i != ie; ++i) {
+
+      if(num_instrs(*i) == 0)
+        continue;
+
+      live_ins_[*i] = RegSet::empty();
+      live_outs_[blocks_[*i]+num_instrs(*i)-1] = RegSet::empty();
+    }
 
     live_ins_[get_exit()] = fxn_live_outs_;
-
-    for (auto i = ++reachable_begin(), ie = reachable_end();
-          i != ie; ++i) {
-      live_ins_[*i] = RegSet::empty();
-      live_outs_[blocks_[*i]] = RegSet::empty();
-    }
 
     // Fixedpoint algorithm
     for (auto changed = true; changed;) {
       changed = false;
 
-      for (auto i = ++reachable_begin(), ie = reachable_end();
+      for (auto i = reachable_begin(), ie = reachable_end();
             i != ie; ++i) {
+        //iterate through all blocks except the exit
+        if (num_instrs(*i) == 0)
+          continue;
+
         // Meet operator
-        live_outs_[blocks_[*i]] = RegSet::empty();
+        live_outs_[blocks_[*i]+num_instrs(*i)-1] = RegSet::empty();
         for (auto s = succ_begin(*i), si = succ_end(*i); s != si; ++s) {
           if (is_reachable(*s)) {
-            live_outs_[blocks_[*i]] |= live_ins_[*s];
+            live_outs_[blocks_[*i]+num_instrs(*i)-1] |= live_ins_[*s];
           }
         }
 
         // Transfer function
-        const auto new_in = (live_outs_[blocks_[*i]] - def_[*i]) | def_[*i];
+        const auto new_in = 
+          (live_outs_[blocks_[*i]+num_instrs(*i)-1] - liveness_kill_[*i]) | 
+            liveness_use_[*i];
 
         changed |= live_ins_[*i] != new_in;
         live_ins_[*i] = new_in;
       }
     }
+
+    // Compute dataflow values for each instruction
+    for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+      //iterate through all blocks w/ at least 2 instructions
+      if(num_instrs(*i) < 2)
+        continue;
+      for (int j = num_instrs(*i)-2; j >= 0; --j) {
+        const auto idx = blocks_[*i] + j;
+        live_outs_[idx] = live_outs_[idx + 1];
+
+        const auto& instr = code_[idx + 1];
+        live_outs_[idx] -= instr.must_write_set();
+        live_outs_[idx] -= instr.must_undef_set();
+        live_outs_[idx] |= instr.maybe_read_set();
+      }
+    }
+
 }
 
 
-void Cfg::recompute_use_def() {
+void Cfg::recompute_liveness_use_kill() {
+  liveness_use_.assign(num_blocks(), RegSet::empty());
+  liveness_kill_.assign(num_blocks(), RegSet::empty());
 
+	// No sense in checking the entry; we'll consider the exit, but it'll be a nop.
+  for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+    for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
+      liveness_use_[*i] |= (j->maybe_read_set() - kill_[*i]);
+
+      kill_[*i] |= j->must_undef_set();
+      kill_[*i] |= j->must_write_set();
+    }
+  }
 }
 
 } // namespace x64
