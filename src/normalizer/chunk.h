@@ -13,7 +13,7 @@ class Chunk {
 
   public:
 
-    Chunk(x64asm::Code code, x64asm::RegSet def_ins, x64asm::RegSet live_outs) 
+    Chunk(x64asm::Code& code, x64asm::RegSet& def_ins, x64asm::RegSet& live_outs) 
       : code_(code), def_ins_(def_ins), live_outs_(live_outs) {
 
     }
