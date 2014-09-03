@@ -70,5 +70,10 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
 
   // STEP 3: rewrite registers
 
-
+  // STEP 4: upload to database
+  for (auto it = chunk_list_.begin(), ie = chunk_list_.end();
+       it != ie; ++it) {
+    //it->upload();
+    it->print();
+  }
 }

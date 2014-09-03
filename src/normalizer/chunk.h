@@ -14,16 +14,19 @@ class Chunk {
   public:
 
     Chunk(x64asm::Code code, x64asm::RegSet def_ins, x64asm::RegSet live_outs) 
-      : _code(code), _def_ins(def_ins), _live_outs(live_outs) {
+      : code_(code), def_ins_(def_ins), live_outs_(live_outs) {
 
     }
 
+    void upload();
+
     void normalize();
+    void print();
 
   private:
-    x64asm::RegSet& _def_ins;
-    x64asm::RegSet& _live_outs;
-    x64asm::Code& _code;
+    x64asm::RegSet& def_ins_;
+    x64asm::RegSet& live_outs_;
+    x64asm::Code& code_;
 
 };
 

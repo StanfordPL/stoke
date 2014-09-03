@@ -24,7 +24,9 @@ INC=\
 	-I./src/ext/x64asm
 
 LIB=\
-	src/ext/x64asm/lib/libx64asm.a
+	src/ext/x64asm/lib/libx64asm.a\
+  -pthread -lmongoclient -lboost_thread -lboost_system\
+  -lboost_regex -lboost_filesystem -lssl -lcrypto
 
 OBJ=\
 	src/args/distance.o \
