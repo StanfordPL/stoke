@@ -365,6 +365,13 @@ void Chunk::normalize_order() {
     }
   }
 
+  /* Check our work */
+  for(size_t i = 0; i < size; ++i) {
+    for(size_t j = i+1; j < size; ++j) {
+      assert(!dependency[j][i]);
+    }
+  }
+
 }
 
 vector<Chunk*>* Chunk::normalize_mangle() {
