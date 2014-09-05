@@ -18,9 +18,26 @@ class Chunk {
 
     }
 
-    void upload();
+    Chunk* clone() {
+      //FIXME: def_ins_, live_outs_ not properly cloned
+      //x64asm::Code* newcode = new x64asm::Code();
+      /*
+      for(auto& instr : code_) {
+ //       newcode->push_back(*it);
+        std::cout << instr << std::endl;
+      }
+      */
+      //return new Chunk(*newcode, def_ins_, live_outs_);
+      return this;
+    }
 
-    void normalize();
+    void upload(int norm_type);
+
+    void normalize_registers();
+    void normalize_constants();
+    void normalize_memory();
+    std::vector<Chunk*>* normalize_mangle();
+
     void print();
 
   private:

@@ -112,7 +112,7 @@ src/ext/cpputil:
 	git clone git://github.com/eschkufz/cpputil.git src/ext/cpputil
 
 src/ext/x64asm:
-	git clone git://github.com/eschkufz/x64asm.git src/ext/x64asm
+	git clone -b berkeley git://github.com/eschkufz/x64asm.git src/ext/x64asm
 
 ##### BUILD TARGETS
 

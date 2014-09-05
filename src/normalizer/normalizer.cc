@@ -75,12 +75,55 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
   }
 
 
-  // STEP 3: rewrite registers
+  // STEP 3: do normalization and upload
 
-  // STEP 4: upload to database
+  // (A) rename registers
+  // (B) rename constants
+  // (C) rename all memory references to "mem"
+  // OR rename definitely-distinct memory references (?)
+  // (D) mangle and create duplicates
+
   for (auto it = chunk_list_.begin(), ie = chunk_list_.end();
        it != ie; ++it) {
-    it->upload();
-    //it->print();
+
+    cout << "________________________________________________" << endl;
+    cout << "________________________________________________" << endl;
+    for(int i = 0; i < 4; i++) {
+
+      Chunk* copy = it->clone();
+
+      if (i & 1) {
+        cout << "regs" << endl;
+        //rename registers
+        copy->normalize_registers();
+      }
+
+      if (i & 2) {
+        cout << "imms" << endl;
+        //rename constants
+        copy->normalize_constants();
+      }
+
+      if (i & 4) {
+        //rename memory
+        copy->normalize_memory();
+      }
+
+      if (i & 8) {
+        //mangle
+        copy->normalize_mangle();
+      }
+
+      //copy->upload(i);
+      //delete copy;
+      cout << "i = " << i << endl;
+      copy->print();
+    }
+
+
   }
+
+
+  // STEP 4: upload to database
+    //it->upload();
 }
