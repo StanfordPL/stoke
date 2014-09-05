@@ -156,6 +156,7 @@ void Chunk::normalize_constants() {
         case Type::FAR_PTR_16_64: {
           auto op = instr.get_operand<M8>(i);
           op.set_disp(Imm32(imms.tokenize(op.get_disp())->second));
+          op.set_scale(Scale::TIMES_1);
           instr.set_operand(i, op);
           break;
         }
@@ -166,9 +167,6 @@ void Chunk::normalize_constants() {
       }
     }
   }
-
-
-
 }
 
 void Chunk::normalize_memory() {

@@ -20,15 +20,11 @@ class Chunk {
 
     Chunk* clone() {
       //FIXME: def_ins_, live_outs_ not properly cloned
-      //x64asm::Code* newcode = new x64asm::Code();
-      /*
+      x64asm::Code* newcode = new x64asm::Code();
       for(auto& instr : code_) {
- //       newcode->push_back(*it);
-        std::cout << instr << std::endl;
+        newcode->push_back(instr);
       }
-      */
-      //return new Chunk(*newcode, def_ins_, live_outs_);
-      return this;
+      return new Chunk(*newcode, def_ins_, live_outs_);
     }
 
     void upload(int norm_type);
