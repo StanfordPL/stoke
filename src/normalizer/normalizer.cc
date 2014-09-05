@@ -22,6 +22,9 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
   for(auto it = cfg.reachable_begin();
            it != cfg.reachable_end(); ++it) {
 
+    if (cfg.num_instrs(*it) == 0)
+      continue;
+
     def_ins = new RegSet();
     *def_ins |= cfg.def_ins(*it);
 
@@ -88,25 +91,28 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
 
     cout << "________________________________________________" << endl;
     cout << "________________________________________________" << endl;
-    for(int i = 0; i < 4; i++) {
+    for(int i = 0; i < 5; i+=4) {
 
       Chunk* copy = it->clone();
 
+      if (i & 4) {
+        cout << "reorder" << endl;
+        //change the order of instructions
+        copy->normalize_order();
+      }
+
       if (i & 1) {
         cout << "regs" << endl;
+        //must happen after reordering
         //rename registers
         copy->normalize_registers();
       }
 
       if (i & 2) {
         cout << "imms" << endl;
+        //must happen after reordering
         //rename constants
         copy->normalize_constants();
-      }
-
-      if (i & 4) {
-        //rename memory
-        copy->normalize_memory();
       }
 
       if (i & 8) {

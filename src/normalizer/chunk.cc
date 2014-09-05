@@ -1,5 +1,6 @@
 
 #include <sstream>
+#include <algorithm>
 
 #include "src/normalizer/chunk.h"
 
@@ -169,10 +170,209 @@ void Chunk::normalize_constants() {
   }
 }
 
-void Chunk::normalize_memory() {
+void Chunk::normalize_order() {
+
+  size_t size = code_.size(); 
+  bool dependency[size][size];
+
+  // This function tries to canonically reorder the instructions so that if you
+  // have instructions where the order doesn't matter, one ordering will be
+  // picked ahead of time.  An easy thing to do would be to just sort the
+  // instructions lexiographically given the constraints of the dependency
+  // chains.  But this is totally broken becuase we're renaming registers and
+  // constants.  Getting both renaming and reordering to work at the same time
+  // turns out to be really hard.  I think this problem is closely tied to
+  // isomorphism of directed, acyclic graphs, where the best algorithms are
+  // exponential in time.
+  //
+  // I'm designing this function with the following goals in mind:
+  //
+  // * Be sound (i.e. don't reorder in an illegal way)
+  // * Be sort-of fast (there's *DEFINITELY* room for improvement)
+  // * Make normalize_order() commutative with normalize_registers()
+  //   (this gives us some guarantee we don't make things worse)
+  // * Do our best to get a cannonical form without implementing too much
+  //
+  // I decided to go with the following metrics to sort nodes:
+  // 
+  // First: the nodes have to satisfy dependency chains
+  // Then, sort by the number of in-edges of dependency graph
+  // Then, sort by number of out-edges of dependency graph
+  // Then, sort by opcode
+  //
+  // You can keep adding to this list; e.g.
+  //  - size of connected component [in both directions],
+  //  - number of distance-k vertices [in both directions] [for each k >= 2],
+  //
+  // Basically, any property of nodes of a graph that distinguish it from
+  // others can go here, and you can get pretty esoteric.  "E.g. number of
+  // paths of length s that go to a node with has out-degree t".  And you could
+  // keep going until the algorithm takes exponential time and solves this
+  // problem entirely, but we want to keep this moderately fast.  I suspect
+  // that we could add a few more quick things to the implementation, but only
+  // if it proves useful.
+  // 
+  //TODO: make whole function more efficient
+  //
+
+  /* STEP 1: COMPUTE DEPENDENCY CHAINS */
+  for (size_t i = 0; i < size; ++i) {
+    for (size_t j = 0; j < size; ++j) {
+      dependency[i][j] = false;
+    }
+  }
+
+  for (size_t i = 0; i < size; ++i) {
+    for(size_t j = i+1; j < size; ++j) {
+
+      auto& fst_ins = code_[i];
+      auto& snd_ins = code_[j];
+
+      // Check for register R-W, W-R, W-W dependencies
+      RegSet write_1 = fst_ins.must_write_set() |
+                       fst_ins.maybe_write_set() |
+                       fst_ins.must_undef_set() |
+                       fst_ins.maybe_undef_set();
+      RegSet read_1  = fst_ins.must_read_set() |
+                       fst_ins.maybe_read_set();
+
+                       
+      RegSet write_2 = snd_ins.must_write_set() |
+                       snd_ins.maybe_write_set() |
+                       snd_ins.must_undef_set() |
+                       snd_ins.maybe_undef_set();
+      RegSet read_2  = snd_ins.must_read_set() |
+                       snd_ins.maybe_read_set();
+
+      if ( (write_1 & (read_2 | write_2)) != RegSet::empty() ) {
+        cout << dec << "dependency " << i << " --> " << j << endl;
+        dependency[i][j] = true;
+        continue;
+      }
+
+      if ( (write_2 & (read_1 | write_1)) != RegSet::empty() ) {
+        cout << dec << "dependency " << i << " --> " << j << endl;
+        dependency[i][j] = true;
+        continue;
+      }
+
+      // Overapproximate memory dependencies
+      // TODO: We can do better here if both of them only read memory
+      if (fst_ins.derefs_mem() && snd_ins.derefs_mem()) {
+        cout << dec << "dependency " << i << " --> " << j << endl;
+        dependency[i][j] = true;
+      }
+
+    }
+  }
+
+
+  /* STEP 2: SORT ACCORDING TO CONSTRAINTS */
+
+  for (size_t i = 0; i < size; ++i) {
+    for (size_t j = i+1; j < size; ++j) {
+
+//     cout << "Comparing " << i << " with " << j << endl;
+
+      //Is code_[j] a candidate for the ith position?
+      //We need to make sure that there's no k >= i such
+      //that dependency[k][j] is true.
+
+      bool dep_ok = true;
+      for (size_t k = i; k < size; k++) 
+//        cout << "      checking if " << k << " --> " << j << endl;
+        if (dependency[k][j]) {
+//          cout << "    oops!  no good." << endl;
+          dep_ok = false;
+//        } else {
+//          cout << "    looks find." << endl;
+//        }
+        }
+
+      if (!dep_ok)
+        continue;
+      
+
+//      cout << "  dependencies ok" << endl;
+      // if a future instruction is dependent on the
+      // one currently in this position, we have to switch.
+      bool j_first = false;
+      for (size_t k = i+1; k < size; ++k) {
+        if (dependency[k][i])
+          j_first = true;
+      }
+
+      //compute #in-nodes
+      size_t i_in = 0;
+      size_t j_in = 0;
+
+      for (size_t k = 0; k < size; ++k)
+        i_in += dependency[k][i];
+
+      for (size_t k = 0; k < size; ++k)
+        j_in += dependency[k][j];
+
+      if (!j_first && i_in < j_in) {
+//        cout << "  " << i << " has fewer in-nodes.  Give up." << endl;
+        continue;
+      } else if (j_in < i_in) {
+//        cout << "  " << j << " has fewer in-nodes.  Continuing." << endl;
+        j_first |= true;
+      }
+
+      //compute #out-notes
+      size_t i_out = 0;
+      size_t j_out = 0;
+
+      for (size_t k = 0; k < size; ++k)
+        i_out += dependency[i][k];
+
+      for (size_t k = 0; k < size; ++k)
+        j_out += dependency[j][k];
+
+      if (!j_first && i_out < j_out) {
+//        cout << "  " << i << " has fewer out-nodes.  Give up." << endl;
+        continue;
+      } else if (j_out < i_out) {
+//        cout << "  " << j << " has fewer out-nodes.  Continuing." << endl;
+        j_first |= true;
+      }
+
+      //compare opcodes
+      if (!j_first && code_[i].get_opcode() < code_[j].get_opcode()) {
+//        cout << "  " << i << "  has smaller opcode.  Give up." << endl;
+        continue;
+      } else if (code_[j].get_opcode() < code_[i].get_opcode()) {
+        j_first |= true;
+      }
+
+      if (j_first) {
+        cout << "Swaping " << i << " and " << j << endl;
+        std::swap(code_[i], code_[j]);
+        for(size_t k = 0; k < size; ++k) {
+          bool tmp = dependency[i][k];
+          dependency[i][k] = dependency[j][k];
+          dependency[j][k] = tmp;
+        }
+
+        for(size_t k = 0; k < size; ++k) {
+          bool tmp = dependency[k][i];
+          dependency[k][i] = dependency[k][j];
+          dependency[k][j] = tmp;
+        }
+      }
+
+    }
+  }
 
 }
 
 vector<Chunk*>* Chunk::normalize_mangle() {
-  return new vector<Chunk*>();
+  vector<Chunk*>* mangled = new vector<Chunk*>();
+
+  // Take subsets of size 2 or more
+  // Consider every ordering thereof
+
+  return mangled;
+
 }

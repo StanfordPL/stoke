@@ -31,7 +31,7 @@ class Chunk {
 
     void normalize_registers();
     void normalize_constants();
-    void normalize_memory();
+    void normalize_order();
     std::vector<Chunk*>* normalize_mangle();
 
     void print();
