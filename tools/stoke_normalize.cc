@@ -49,6 +49,16 @@ auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out"
     .description("Registers live on exit")
     .default_val(RegSet::linux_callee_save() + rax);
 
+auto& database = ValueArg<string>::create("database")
+    .usage("<db name>")
+    .description("Name of database to upload to")
+    .default_val("test");
+
+auto& collection = ValueArg<string>::create("collection")
+    .usage("<collection name>")
+    .description("Name of database collection to upload to")
+    .default_val("chunks");
+
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
@@ -57,7 +67,7 @@ int main(int argc, char** argv) {
   Cfg cfg_t(target.value().code, def_in, live_out);
 
   // STEP 2: run the normalization routine
-  Normalizer n;
+  Normalizer n(database, collection);
   n.slurp_cfg(cfg_t);
 
   // STEP 3: write the results out to disk or database

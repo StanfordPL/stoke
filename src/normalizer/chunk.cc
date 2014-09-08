@@ -15,7 +15,7 @@ using namespace x64asm;
 using namespace mongo;
 using namespace cpputil;
 
-void Chunk::upload(int norm_type) {
+void Chunk::upload(string db_destination, int norm_type) {
   
   try {
     DBClientConnection c;
@@ -30,15 +30,21 @@ void Chunk::upload(int norm_type) {
     stringstream liveout_ss;
     liveout_ss << live_outs_;
 
-    BSONObjBuilder b;
-    b.append("code", code_ss.str());
-    b.append("regin", regin_ss.str());
-    b.append("lvout", liveout_ss.str());
-    b.append("norm", norm_type);
+    /*
+    c.insert(db_destination,
+      BSON(
+        "code"  << code_ss.str() <<
+        "norm"  << norm_type));
+    */
 
-    c.insert("test.chunks", b.obj());
+    /* Either add this code to the database with
+       count 1, or update the existing count */
+    c.update(db_destination,
+             BSON( "code" << code_ss.str() <<
+                   "norm" << norm_type),
+             BSON( "$inc" << BSON( "count" << 1 ) ),
+             true);
 
-    cout << "db access OK" << endl;
   } catch (const DBException &e) {
     cerr << "caught " << e.what() << endl;
   }

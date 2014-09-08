@@ -13,14 +13,17 @@ class Normalizer {
 
   public:
 
-    Normalizer();
+    Normalizer(std::string database, std::string collection);
 
+    /* Break a CFG down into "chunks" and start processing them */
+    // FIXME: it would make more sense to have more functions
+    // exported by this class that can be called by the 'tool'
     void slurp_cfg(Cfg &cfg);
 
   private:
 
     std::vector<Chunk> chunk_list_;
-    
+    std::string db_destination_;    
 
 };
 

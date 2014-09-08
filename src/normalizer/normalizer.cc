@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <sstream>
 #include "src/normalizer/normalizer.h"
 
 
@@ -7,7 +8,11 @@ using namespace stoke;
 using namespace std;
 using namespace x64asm;
 
-Normalizer::Normalizer() {
+Normalizer::Normalizer(string database, string collection) {
+  stringstream db_destination_ss;
+  db_destination_ss << database << "." << collection; 
+  db_destination_ = db_destination_ss.str();
+
 }
 
 void Normalizer::slurp_cfg(Cfg &cfg) {
@@ -123,10 +128,10 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
         copy->normalize_mangle();
       }
 
-      //copy->upload(i);
+      copy->upload(db_destination_, i);
       //delete copy;
       cout << "i = " << i << endl;
-      copy->print();
+      //copy->print();
     }
 
 
