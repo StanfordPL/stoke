@@ -58,6 +58,8 @@ void Chunk::normalize_registers() {
   Tokenizer<uint64_t, uint64_t> gps;
   Tokenizer<uint64_t, uint64_t> sses;
 
+//  cout << "--- norming registers ---" << endl;
+
   for ( auto& instr : code_) {
     for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
       switch (instr.type(i)) {
@@ -67,6 +69,8 @@ void Chunk::normalize_registers() {
         case Type::R_32:
         case Type::R_64: {
           auto& op = instr.get_operand<R64>(i);
+          //cout << dec << "op: " << op << " tok: " << gps.tokenize(op)->second;
+          //cout << " (" << r64s[gps.tokenize(op)->second] << ")" << endl;
           instr.set_operand(i, r64s[gps.tokenize(op)->second]);
           break;
         }
@@ -245,13 +249,13 @@ void Chunk::normalize_order() {
                        snd_ins.maybe_read_set();
 
       if ( (write_1 & (read_2 | write_2)) != RegSet::empty() ) {
-        cout << dec << "dependency " << i << " --> " << j << endl;
+//        cout << dec << "dependency " << i << " --> " << j << endl;
         dependency[i][j] = true;
         continue;
       }
 
       if ( (write_2 & (read_1 | write_1)) != RegSet::empty() ) {
-        cout << dec << "dependency " << i << " --> " << j << endl;
+//        cout << dec << "dependency " << i << " --> " << j << endl;
         dependency[i][j] = true;
         continue;
       }
@@ -259,7 +263,7 @@ void Chunk::normalize_order() {
       // Overapproximate memory dependencies
       // TODO: We can do better here if both of them only read memory
       if (fst_ins.derefs_mem() && snd_ins.derefs_mem()) {
-        cout << dec << "dependency " << i << " --> " << j << endl;
+//        cout << dec << "dependency " << i << " --> " << j << endl;
         dependency[i][j] = true;
       }
 
@@ -347,7 +351,7 @@ void Chunk::normalize_order() {
       }
 
       if (j_first) {
-        cout << "Swaping " << i << " and " << j << endl;
+//        cout << "Swaping " << i << " and " << j << endl;
         std::swap(code_[i], code_[j]);
         for(size_t k = 0; k < size; ++k) {
           bool tmp = dependency[i][k];

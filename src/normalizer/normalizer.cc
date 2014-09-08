@@ -85,13 +85,16 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
   // (C) rename all memory references to "mem"
   // OR rename definitely-distinct memory references (?)
   // (D) mangle and create duplicates
+  //     - change instructions
+  //     - use a fragment of the code
+  //     - extract a def-use chain
 
   for (auto it = chunk_list_.begin(), ie = chunk_list_.end();
        it != ie; ++it) {
 
     cout << "________________________________________________" << endl;
     cout << "________________________________________________" << endl;
-    for(int i = 0; i < 5; i+=4) {
+    for(int i = 0; i < 8; ++i) {
 
       Chunk* copy = it->clone();
 
