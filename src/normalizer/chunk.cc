@@ -24,19 +24,6 @@ void Chunk::upload(string db_destination, int norm_type) {
     stringstream code_ss;
     code_ss << code_;
 
-    stringstream regin_ss;
-    regin_ss << def_ins_;
-
-    stringstream liveout_ss;
-    liveout_ss << live_outs_;
-
-    /*
-    c.insert(db_destination,
-      BSON(
-        "code"  << code_ss.str() <<
-        "norm"  << norm_type));
-    */
-
     /* Either add this code to the database with
        count 1, or update the existing count */
     c.update(db_destination,

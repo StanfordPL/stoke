@@ -26,10 +26,9 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("Input programs:");
 
-auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file>")
-    .description("Target")
-    .default_val({"anon", {{RET}}});
+auto& target = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("target")
+    .usage("<path/to/folder>")
+    .description("Directory of Source Programs");
 
 auto& h2 = Heading::create("Output options:");
 
@@ -63,14 +62,15 @@ auto& collection = ValueArg<string>::create("collection")
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-  // STEP 1: read the input
-  Cfg cfg_t(target.value().code, def_in, live_out);
-
-  // STEP 2: run the normalization routine
   Normalizer n(database, collection);
-  n.slurp_cfg(cfg_t);
 
-  // STEP 3: write the results out to disk or database
+  // STEP 1: read the input
+  for (auto& it : target.value()) {
+    Cfg cfg_t(it.code, def_in, live_out);
+
+    // STEP 2: run the normalization routine
+    n.slurp_cfg(cfg_t);
+  }
 
   return 0;
 }
