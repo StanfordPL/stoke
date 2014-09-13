@@ -8,12 +8,6 @@ using namespace stoke;
 using namespace std;
 using namespace x64asm;
 
-Normalizer::Normalizer(string database, string collection) {
-  stringstream db_destination_ss;
-  db_destination_ss << database << "." << collection; 
-  db_destination_ = db_destination_ss.str();
-
-}
 
 void Normalizer::slurp_cfg(Cfg &cfg) {
 
@@ -40,9 +34,9 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
              ++instr_it, instr_index++) {
 
       Cfg::loc_type here(*it, instr_index);
-      cout << dec << endl << "DEF: " << cfg.def_ins(here) << endl;
-      cout << "b" << *it << "/" << instr_index << ": " << *instr_it << endl;
-      cout << "LIVE: " << cfg.live_outs(here) << endl;
+//      cout << dec << endl << "DEF: " << cfg.def_ins(here) << endl;
+//      cout << "b" << *it << "/" << instr_index << ": " << *instr_it << endl;
+//      cout << "LIVE: " << cfg.live_outs(here) << endl;
 
       if (instr_it->is_label_defn() ||
           instr_it->is_nop() ||
@@ -55,7 +49,7 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
           Cfg::loc_type here(*it, instr_index);
           auto live_outs = cfg.live_outs(here);
 
-          Chunk* c = new Chunk(*vs, *def_ins, live_outs);
+          Chunk* c = new Chunk(connection_, *vs, *def_ins, live_outs);
           chunk_list_.push_back(*c);
           vs = new Code();
           def_ins = new RegSet();
@@ -73,7 +67,7 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
       Cfg::loc_type here(*it, instr_index);
       auto live_outs = cfg.live_outs(here);
 
-      Chunk* c = new Chunk(*vs, *def_ins, live_outs);
+      Chunk* c = new Chunk(connection_, *vs, *def_ins, live_outs);
       chunk_list_.push_back(*c);
       vs = new Code();
 
@@ -82,7 +76,27 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
     }
   }
 
+}
 
+void Normalizer::upload(int type) {
+
+  for (auto it = chunk_list_.begin(), ie = chunk_list_.end();
+        it != ie; ++it) {
+    //cout << "Uploading chunk." << endl;
+    it->upload(db_destination_, type);
+  }
+}
+
+void Normalizer::hit(int type) {
+
+  for (auto it = chunk_list_.begin(), ie = chunk_list_.end();
+        it != ie; ++it) {
+    it->hit(db_destination_, type);
+  }
+
+}
+
+void Normalizer::normalize(int type) {
   // STEP 3: do normalization and upload
 
   // (A) rename registers
@@ -97,42 +111,29 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
   for (auto it = chunk_list_.begin(), ie = chunk_list_.end();
        it != ie; ++it) {
 
-    cout << "________________________________________________" << endl;
-    cout << "________________________________________________" << endl;
-    for(int i = 0; i < 8; ++i) {
 
-      Chunk* copy = it->clone();
-
-      if (i & 4) {
-        cout << "reorder" << endl;
-        //change the order of instructions
-        copy->normalize_order();
-      }
-
-      if (i & 1) {
-        cout << "regs" << endl;
-        //must happen after reordering
-        //rename registers
-        copy->normalize_registers();
-      }
-
-      if (i & 2) {
-        cout << "imms" << endl;
-        //must happen after reordering
-        //rename constants
-        copy->normalize_constants();
-      }
-
-      if (i & 8) {
-        //mangle
-        copy->normalize_mangle();
-      }
-
-      copy->upload(db_destination_, i);
-      //delete copy;
-      cout << "i = " << i << endl;
-      //copy->print();
+    if (type & 4) {
+      //change the order of instructions
+      it->normalize_order();
     }
+
+    if (type & 1) {
+      //must happen after reordering
+      //rename registers
+      it->normalize_registers();
+    }
+
+    if (type & 2) {
+      //must happen after reordering
+      //rename constants
+      it->normalize_constants();
+    }
+
+    if (type & 8) {
+      //mangle
+      it->normalize_mangle();
+    }
+
 
 
   }

@@ -18,19 +18,37 @@ using namespace cpputil;
 void Chunk::upload(string db_destination, int norm_type) {
   
   try {
-    DBClientConnection c;
-    c.connect("localhost");
+    stringstream code_ss;
+    code_ss << code_;
+
+    /* Either add this code to the database with
+       count 1, or update the existing count */
+    connection_.update(db_destination,
+             BSON( "code" << code_ss.str() <<
+                   "norm" << norm_type),
+             BSON( "$inc" << BSON( "count" << 1 ) ),
+             true);
+
+  } catch (const DBException &e) {
+    cerr << "caught " << e.what() << endl;
+  }
+
+}
+
+void Chunk::hit(string db_destination, int norm_type) {
+  
+  try {
 
     stringstream code_ss;
     code_ss << code_;
 
     /* Either add this code to the database with
        count 1, or update the existing count */
-    c.update(db_destination,
+    connection_.update(db_destination,
              BSON( "code" << code_ss.str() <<
                    "norm" << norm_type),
-             BSON( "$inc" << BSON( "count" << 1 ) ),
-             true);
+             BSON( "$inc" << BSON( "hits" << 1 ) ),
+             false);
 
   } catch (const DBException &e) {
     cerr << "caught " << e.what() << endl;
@@ -56,7 +74,6 @@ void Chunk::normalize_registers() {
   for ( auto& instr : code_) {
     for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
       switch (instr.type(i)) {
-        case Type::RL:
         case Type::RB:
         case Type::R_16:
         case Type::R_32:

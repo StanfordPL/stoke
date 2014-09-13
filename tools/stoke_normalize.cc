@@ -18,11 +18,13 @@
 #include "src/cfg/cfg.h"
 #include "src/normalizer/normalizer.h"
 
+#include "mongo/client/dbclient.h"
 
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
+using namespace mongo;
 
 auto& h1 = Heading::create("Input programs:");
 
@@ -62,14 +64,27 @@ auto& collection = ValueArg<string>::create("collection")
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-  Normalizer n(database, collection);
+  DBClientConnection c;
+  c.connect("localhost");
 
-  // STEP 1: read the input
-  for (auto& it : target.value()) {
-    Cfg cfg_t(it.code, def_in, live_out);
+  for (int i = 0; i < 8; ++i) {
 
-    // STEP 2: run the normalization routine
-    n.slurp_cfg(cfg_t);
+    // STEP 1: read the input
+    for (auto& it : target.value()) {
+      //cout << "reading code @ " << i << endl;
+      Normalizer n(c, database, collection);
+      Cfg cfg_t(it.code, def_in, live_out);
+
+      n.slurp_cfg(cfg_t);
+
+      // STEP 2: normalize
+      n.normalize(i);
+
+      // STEP 3: upload
+      //n.upload(i);
+      n.hit(i);
+    }
+
   }
 
   return 0;

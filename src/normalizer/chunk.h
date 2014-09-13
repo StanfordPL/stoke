@@ -6,7 +6,7 @@
 #include <string>
 
 #include "src/ext/x64asm/include/x64asm.h"
-
+#include "mongo/client/dbclient.h"
 
 namespace stoke {
 
@@ -14,8 +14,11 @@ class Chunk {
 
   public:
 
-    Chunk(x64asm::Code& code, x64asm::RegSet& def_ins, x64asm::RegSet& live_outs) 
-      : code_(code), def_ins_(def_ins), live_outs_(live_outs) {
+    Chunk(mongo::DBClientConnection& connection, 
+          x64asm::Code& code, 
+          x64asm::RegSet& def_ins, 
+          x64asm::RegSet& live_outs) 
+      : connection_(connection), code_(code), def_ins_(def_ins), live_outs_(live_outs) {
 
     }
 
@@ -26,12 +29,13 @@ class Chunk {
       for(auto& instr : code_) {
         newcode->push_back(instr);
       }
-      return new Chunk(*newcode, def_ins_, live_outs_);
+      return new Chunk(connection_, *newcode, def_ins_, live_outs_);
     }
 
     /* Uploads the chunk to the given database with a few
        extra parameters */
     void upload(std::string db_destination, int norm_type);
+    void hit(std::string db_destination, int norm_type);
 
     /* Rewrite the register names in a canonical way */
     void normalize_registers();
@@ -50,6 +54,7 @@ class Chunk {
     x64asm::RegSet& def_ins_;
     x64asm::RegSet& live_outs_;
     x64asm::Code& code_;
+    mongo::DBClientConnection& connection_;
 
 };
 

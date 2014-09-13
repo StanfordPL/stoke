@@ -70,7 +70,8 @@ class FolderArg : public Arg {
           R()(ifs, temp);
 
           if (ifs.fail()) {
-            error(parse_error_);
+            continue;
+            //error(parse_error_);
           } else {
             val_.push_back(temp);
           }

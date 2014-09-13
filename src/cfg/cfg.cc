@@ -422,10 +422,10 @@ void Cfg::recompute_liveness() {
 
         changed |= live_ins_[*i] != new_in;
         if (changed) {
-          cout << "block " << *i << " from " << live_ins_[*i] << " --> " << new_in << endl;
-          cout << "   " << "live out: " << live_outs_[blocks_[*i]+ num_instrs(*i)-1] << endl;
-          cout << "   " << "kill: " << liveness_kill_[*i] << endl;
-          cout << "   " << "use:  " << liveness_use_[*i] << endl;
+          //cout << "block " << *i << " from " << live_ins_[*i] << " --> " << new_in << endl;
+          //cout << "   " << "live out: " << live_outs_[blocks_[*i]+ num_instrs(*i)-1] << endl;
+          //cout << "   " << "kill: " << liveness_kill_[*i] << endl;
+          //cout << "   " << "use:  " << liveness_use_[*i] << endl;
         }
         live_ins_[*i] = new_in;
       }
