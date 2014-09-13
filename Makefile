@@ -60,8 +60,8 @@ OBJ=\
 	\
 	src/verifier/verifier.o \
   \
-  src/normalizer/normalizer.o \
-  src/normalizer/chunk.o
+  src/database/normalizer.o \
+  src/database/chunk.o
 
 BIN=\
 	bin/stoke_extract \
@@ -82,7 +82,7 @@ BIN=\
 	bin/stoke_benchmark_state \
 	bin/stoke_benchmark_verify \
   \
-  bin/stoke_normalize
+  bin/stoke_database
 
 
 ##### TOP LEVEL TARGETS (release is default)
@@ -130,7 +130,7 @@ src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/normalizer/%.o: src/normalizer/%.cc src/normalizer/%.h
+src/database/%.o: src/database/%.cc src/database/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
 

@@ -30,7 +30,7 @@ then
 	echo "  extract             extract the contents of a binary file"
 	echo "  search              run STOKE search"
 	echo "  testcase            generate a STOKE testcase file"
-  echo "  normalize           rewrite assembly for the database"
+  echo "  database            add binaries to a database"
 	echo ""
 	echo "  debug cfg           generate the control flow graph for a function"
 	echo "  debug cost          evaluate a function using a STOKE cost function"
@@ -109,9 +109,9 @@ then
 elif [ "$SCMD" == "testcase" ]
 then
 	$HERE/stoke_testcase "$@"
-elif [ "$SCMD" == "normalize" ]
+elif [ "$SCMD" == "database" ]
 then
-  $HERE/stoke_normalize "$@"
+  $HERE/stoke_database "$@"
 else
 	echo "Unknown command: '"$SCMD"'"
 	echo "Type 'stoke --help' for usage."
