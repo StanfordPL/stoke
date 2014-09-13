@@ -61,9 +61,12 @@ auto& database = ValueArg<string>::create("database")
     .description("Name of database to upload to")
     .default_val("test");
 
-string normalize(int type, bool training, Normalizer& n) {
+void normalize(int type, bool training, Normalizer& n, string& tag) {
 
-  string tag = "";
+  if (type == 0)
+    tag = "none";
+  else
+    tag = "";
 
   if (type & 1) {
     n.normalize_registers();
@@ -74,8 +77,6 @@ string normalize(int type, bool training, Normalizer& n) {
     n.normalize_constants();
     tag = tag + "cons_";
   }
-
-  return tag;
 
 }
 
@@ -97,12 +98,13 @@ int main(int argc, char** argv) {
       n.slurp_cfg(cfg_t);
 
       // STEP 2: normalize
-      tag = normalize(i, true, n);
+      normalize(i, true, n, tag);
 
       // STEP 3: upload
       for (auto& chunk : *(n.get_chunks())) {
         d.insert(chunk,tag); 
       }
+
     }
 
     int hit = 0;
@@ -116,7 +118,7 @@ int main(int argc, char** argv) {
       n.slurp_cfg(cfg_t);
 
       // STEP 2: normalize
-      tag = normalize(i, true, n);
+      normalize(i, false, n, tag);
 
       // STEP 3: test
       for (auto& chunk : *(n.get_chunks())) {
@@ -125,7 +127,7 @@ int main(int argc, char** argv) {
           hit++;
       }
     }
-    double rate = (double)hit/(double)total;
+    double rate = ( total == 0 ? 0 : (double)hit/(double)total);
 
     //// Output
     cout << tag << "," << hit << "," << total << "," << rate << endl;

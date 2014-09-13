@@ -23,6 +23,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include <cstdio>
+
 #include "include/command_line/arg.h"
 #include "include/serialize/text_reader.h"
 #include "include/serialize/text_writer.h"
@@ -51,6 +53,7 @@ class FolderArg : public Arg {
       // http://www.cplusplus.com/forum/beginner/10292/
       DIR *dp = opendir(argv[i+1]);
       if(dp == NULL) {
+        perror("could not open directory");
         error(folder_error_);        
       }
 
@@ -77,6 +80,7 @@ class FolderArg : public Arg {
           }
         }
       }
+      closedir(dp);
 
       return std::make_pair(i, i + 1);
     }

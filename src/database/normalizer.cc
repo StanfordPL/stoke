@@ -14,7 +14,6 @@ using namespace cpputil;
 void Normalizer::slurp_cfg(Cfg &cfg) {
 
   Code* vs = new Code();
-  RegSet* def_ins = 0;
 
   // STEP 2: build chunks with
   // vectors of instructions
@@ -26,19 +25,12 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
     if (cfg.num_instrs(*it) == 0)
       continue;
 
-    def_ins = new RegSet();
-    *def_ins |= cfg.def_ins(*it);
-
     //loop through instructions
     size_t instr_index = 0;
     for(auto instr_it = cfg.instr_begin(*it);
              instr_it != cfg.instr_end(*it);
              ++instr_it, instr_index++) {
 
-      Cfg::loc_type here(*it, instr_index);
-//      cout << dec << endl << "DEF: " << cfg.def_ins(here) << endl;
-//      cout << "b" << *it << "/" << instr_index << ": " << *instr_it << endl;
-//      cout << "LIVE: " << cfg.live_outs(here) << endl;
 
       if (instr_it->is_label_defn() ||
           instr_it->is_nop() ||
@@ -48,13 +40,8 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
 
         if(vs->size() > 0) {
           //save this chunk!
-          Cfg::loc_type here(*it, instr_index);
-          auto live_outs = cfg.live_outs(here);
-
           chunk_list_.push_back(*vs);
           vs = new Code();
-          def_ins = new RegSet();
-          *def_ins |= cfg.def_ins(here);
         }
 
       } else {
@@ -65,14 +52,9 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
 
     if(vs->size() > 0) {
       //save this chunk!
-      Cfg::loc_type here(*it, instr_index);
-      auto live_outs = cfg.live_outs(here);
 
       chunk_list_.push_back(*vs);
       vs = new Code();
-
-      def_ins = new RegSet();
-      *def_ins |= cfg.def_ins(here);
     }
   }
 
