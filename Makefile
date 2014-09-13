@@ -61,7 +61,7 @@ OBJ=\
 	src/verifier/verifier.o \
   \
   src/database/normalizer.o \
-  src/database/chunk.o
+  src/database/database.o
 
 BIN=\
 	bin/stoke_extract \
