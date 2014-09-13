@@ -25,7 +25,7 @@ void Database::insert(x64asm::Code code, std::string tag) {
   try {
     /* Either add this code to the database with
        count 1, or update the existing count */
-    c.ensureIndex(db, fromjson("{code:1}"));
+    connection_.ensureIndex(db, fromjson("{code:1}"));
     connection_.update(db,
              BSON( "code" << code_ss.str() ),
              BSON( "$inc" << BSON( "count" << 1 ) ),
@@ -70,5 +70,8 @@ Database::Database(string hostname, uint16_t port, string database) {
   //TODO use the port :)
   connection_.connect(hostname);
   database_ = database;
+
+  // Wipe out anything that's ready there 
+  connection_.eval(database, "db.databaseDrop();");
 
 }

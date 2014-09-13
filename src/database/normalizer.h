@@ -27,8 +27,8 @@ class Normalizer {
 
   private:
     std::vector<x64asm::Code> chunk_list_;
-    void normalize_registers(x64asm::Code c);
-    void normalize_constants(x64asm::Code c);
+    void normalize_registers(x64asm::Code& c);
+    void normalize_constants(x64asm::Code& c);
 
 };
 

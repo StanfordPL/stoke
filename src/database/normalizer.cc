@@ -65,7 +65,7 @@ void Normalizer::normalize_registers() {
     normalize_registers(code);
 }
 
-void Normalizer::normalize_registers(x64asm::Code code) {
+void Normalizer::normalize_registers(x64asm::Code& code) {
 
   Tokenizer<uint64_t, uint64_t> gps;
   Tokenizer<uint64_t, uint64_t> sses;
@@ -138,7 +138,7 @@ void Normalizer::normalize_constants() {
     normalize_constants(code);
 }
 
-void Normalizer::normalize_constants(x64asm::Code code) {
+void Normalizer::normalize_constants(x64asm::Code& code) {
 
   Tokenizer<uint64_t, uint64_t> imms;
 
