@@ -20,7 +20,9 @@ void Database::insert(x64asm::Code code, std::string tag) {
   stringstream code_ss;
   code_ss << code;
 
-  string db = database_ + "." + tag;
+  stringstream db_ss;
+  db_ss << database_ << "." << tag;
+  string db = db_ss.str();
 
   try {
     /* Either add this code to the database with
@@ -42,7 +44,9 @@ uint64_t Database::lookup(x64asm::Code code, string tag) {
   stringstream code_ss;
   code_ss << code;
 
-  string db = database_ + "." + tag;
+  stringstream db_ss;
+  db_ss << database_ << "." << tag;
+  string db = db_ss.str();
 
   try {
     /* Lookup the count corresponding to this
@@ -55,6 +59,8 @@ uint64_t Database::lookup(x64asm::Code code, string tag) {
       BSONObj p = cursor->next();
       sum += p.getIntField("count");
     }
+
+    delete cursor;
     
     return sum;
 
