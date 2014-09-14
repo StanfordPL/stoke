@@ -41,6 +41,7 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
         if(vs->size() > 0) {
           //save this chunk!
           chunk_list_.push_back(*vs);
+          delete vs;
           vs = new Code();
         }
 
@@ -54,9 +55,11 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
       //save this chunk!
 
       chunk_list_.push_back(*vs);
+      delete vs;
       vs = new Code();
     }
   }
+  delete vs;
 
 }
 

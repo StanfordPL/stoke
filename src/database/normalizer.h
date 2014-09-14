@@ -22,7 +22,7 @@ class Normalizer {
     void normalize_constants();
 
     std::vector<x64asm::Code>* get_chunks() {
-      return new std::vector<x64asm::Code>(chunk_list_);
+      return &chunk_list_;
     }
 
   private:

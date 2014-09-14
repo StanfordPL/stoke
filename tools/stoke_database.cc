@@ -80,6 +80,8 @@ void normalize(int type, bool training, Normalizer& n, string& tag) {
 
 }
 
+#define STAT_MAX 20
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
@@ -107,8 +109,14 @@ int main(int argc, char** argv) {
 
     }
 
-    int hit = 0;
-    int total = 0;
+    //// Get ready to count
+    uint64_t hits[STAT_MAX + 1];
+    uint64_t total[STAT_MAX + 1];
+    for(int i = 0; i <= STAT_MAX; ++i) {
+      hits[i] = 0;
+      total[i] = 0;
+    }
+
     //// Test the database
     for (auto& it : test.value()) {
       Cfg cfg_t(it.code, def_in, live_out);
@@ -122,15 +130,28 @@ int main(int argc, char** argv) {
 
       // STEP 3: test
       for (auto& chunk : *(n.get_chunks())) {
-        total++;
+        int length = chunk.size();
+        length = (length > STAT_MAX ? STAT_MAX : length - 1);
+        total[length]++;
         if(d.lookup(chunk,tag))
-          hit++;
+          hits[length]++;
       }
     }
-    double rate = ( total == 0 ? 0 : (double)hit/(double)total);
 
     //// Output
-    cout << tag << "," << hit << "," << total << "," << rate << endl;
+    cout << tag;
+    for(int i = 0; i <= STAT_MAX; ++i) {
+      cout << "," << hits[i];
+    }
+    for(int i = 0; i <= STAT_MAX; ++i) {
+      cout << "," << total[i];
+    }
+    for(int i = 0; i <= STAT_MAX; ++i) {
+      double rate = ( total[i] == 0 ? 0 : (double)hits[i]/(double)total[i]);
+      cout << "," << rate;
+    }
+
+    cout << endl;
   }
 
   //// Test the database

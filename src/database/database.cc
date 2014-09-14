@@ -72,6 +72,6 @@ Database::Database(string hostname, uint16_t port, string database) {
   database_ = database;
 
   // Wipe out anything that's ready there 
-  connection_.eval(database, "db.databaseDrop();");
+  connection_.eval(database, "db.dropDatabase();");
 
 }
