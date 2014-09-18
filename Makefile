@@ -109,7 +109,7 @@ external: src/ext/cpputil src/ext/x64asm
 	make -C src/ext/x64asm $(EXT_OPT) 
 
 src/ext/cpputil:
-	git clone git://github.com/eschkufz/cpputil.git src/ext/cpputil
+	git clone git://github.com/bchurchill/cpputil.git src/ext/cpputil
 
 src/ext/x64asm:
 	git clone -b berkeley git://github.com/eschkufz/x64asm.git src/ext/x64asm

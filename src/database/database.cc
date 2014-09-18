@@ -24,13 +24,16 @@ void Database::insert(x64asm::Code code, std::string tag) {
   db_ss << database_ << "." << tag;
   string db = db_ss.str();
 
+  int size = code.size();
+
   try {
     /* Either add this code to the database with
        count 1, or update the existing count */
     connection_.ensureIndex(db, fromjson("{code:1}"));
     connection_.update(db,
              BSON( "code" << code_ss.str() ),
-             BSON( "$inc" << BSON( "count" << 1 ) ),
+             BSON( "$inc" << BSON( "count" << 1 ) <<
+                   "$set" << BSON( "size" << size ) ),
              true);
 
   } catch (const DBException &e) {
@@ -71,13 +74,17 @@ uint64_t Database::lookup(x64asm::Code code, string tag) {
 
 }
 
+void Database::erase() {
+
+  // Wipe out anything that's in the DB
+  connection_.eval(database_, "db.dropDatabase();");
+
+}
+
 Database::Database(string hostname, uint16_t port, string database) {
 
   //TODO use the port :)
   connection_.connect(hostname);
   database_ = database;
-
-  // Wipe out anything that's ready there 
-  connection_.eval(database, "db.dropDatabase();");
 
 }

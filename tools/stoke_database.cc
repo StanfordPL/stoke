@@ -27,17 +27,31 @@ using namespace stoke;
 using namespace x64asm;
 using namespace mongo;
 
-auto& h1 = Heading::create("Input programs:");
 
-auto& train = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("training_programs")
+#define STAT_MAX 20
+
+
+auto& h0 = Heading::create("Database job specification");
+
+auto& action = ValueArg<string>::create("action")
+    .usage("<action>")
+    .description("Choose build, rebuild, query, erase");
+
+auto& hostname = ValueArg<string>::create("hostname")
+    .usage("<hostname>")
+    .description("Hostname or IP address of database server.")
+    .default_val("localhost");
+
+auto& database = ValueArg<string>::create("database")
+    .usage("<db name>")
+    .description("Name of database to upload to")
+    .default_val("test");
+
+auto& programs = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("programs")
     .usage("<path/to/folder>")
-    .description("Directory of Training Programs");
+    .description("Directory of Programs");
 
-auto& test = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("test_programs")
-    .usage("<path/to/folder>")
-    .description("Directory of Test Programs");
-
-auto& h2 = Heading::create("Program configuration:");
+auto& h1 = Heading::create("Program configuration:");
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
     .usage("{ %rax %rsp ... }")
@@ -49,17 +63,7 @@ auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out"
     .description("Registers live on exit")
     .default_val(RegSet::empty() + rax);
 
-auto& h3 = Heading::create("Database options:");
 
-auto& hostname = ValueArg<string>::create("hostname")
-    .usage("<hostname>")
-    .description("Hostname or IP address of database server.")
-    .default_val("localhost");
-
-auto& database = ValueArg<string>::create("database")
-    .usage("<db name>")
-    .description("Name of database to upload to")
-    .default_val("test");
 
 void normalize(int type, bool training, Normalizer& n, string& tag) {
 
@@ -80,19 +84,14 @@ void normalize(int type, bool training, Normalizer& n, string& tag) {
 
 }
 
-#define STAT_MAX 20
 
-int main(int argc, char** argv) {
-  CommandLineConfig::strict_with_convenience(argc, argv);
+void build_database(Database& d) {
 
-  Database d(hostname,0,database);
+  string tag;
 
   for (int i = 0; i < 4; ++i) {
 
-    string tag;
-
-    //// Build the database
-    for (auto& it : train.value()) {
+    for (auto& it : programs.value()) {
       Cfg cfg_t(it.code, def_in, live_out);
 
       // STEP 1: break into chunks
@@ -108,8 +107,17 @@ int main(int argc, char** argv) {
       }
 
     }
+  }
 
-    //// Get ready to count
+}
+
+void query_database(Database& d) {
+
+  string tag;
+
+  for(int i = 0; i < 4; ++i) {
+
+    //initialize counting variables
     uint64_t hits[STAT_MAX + 1];
     uint64_t total[STAT_MAX + 1];
     for(int i = 0; i <= STAT_MAX; ++i) {
@@ -117,8 +125,8 @@ int main(int argc, char** argv) {
       total[i] = 0;
     }
 
-    //// Test the database
-    for (auto& it : test.value()) {
+    //// Test the code
+    for (auto& it : programs.value()) {
       Cfg cfg_t(it.code, def_in, live_out);
 
       // STEP 1: break into chunks
@@ -153,6 +161,27 @@ int main(int argc, char** argv) {
 
     cout << endl;
   }
+
+
+
+}
+
+
+int main(int argc, char** argv) {
+  CommandLineConfig::strict_with_convenience(argc, argv);
+
+  Database d(hostname,0,database);
+
+  string job = action.value();
+
+  if (job == "rebuild" || job == "erase")
+    d.erase();
+
+  if (job == "build" || job == "rebuild")
+    build_database(d);
+
+  if (job == "query")
+    query_database(d);
 
   //// Test the database
 

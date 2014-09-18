@@ -74,7 +74,8 @@ class FolderArg : public Arg {
 
           if (ifs.fail()) {
             continue;
-            //error(parse_error_);
+            // This could be a parse error; but for now I'm opting to
+            // silently ignore files that can't be parsed.  FIXME.
           } else {
             val_.push_back(temp);
           }

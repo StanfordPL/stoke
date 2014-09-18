@@ -39,6 +39,9 @@ class Database {
     uint64_t lookup(x64asm::Code code, std::string tag);
     
 
+    /* Erases everything in the database.  Use with caution. */
+    void erase();
+
   private:
     mongo::DBClientConnection connection_;
     std::string database_;
