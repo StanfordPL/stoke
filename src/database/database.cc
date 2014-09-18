@@ -15,7 +15,7 @@ using namespace x64asm;
 using namespace mongo;
 using namespace cpputil;
 
-void Database::insert(x64asm::Code code, std::string tag) {
+void Database::insert(x64asm::Code& code, std::string tag) {
 
   stringstream code_ss;
   code_ss << code;
@@ -42,7 +42,7 @@ void Database::insert(x64asm::Code code, std::string tag) {
 
 }
 
-uint64_t Database::lookup(x64asm::Code code, string tag) {
+uint64_t Database::lookup(x64asm::Code& code, string tag) {
 
   stringstream code_ss;
   code_ss << code;

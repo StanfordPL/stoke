@@ -21,12 +21,12 @@ class Normalizer {
     void normalize_registers();
     void normalize_constants();
 
-    std::vector<x64asm::Code>* get_chunks() {
-      return &chunk_list_;
-    }
+    std::vector<x64asm::Code*>* get_chunks(int min_depth = 0);
 
   private:
     std::vector<x64asm::Code> chunk_list_;
+    std::vector<int> nesting_depth_;
+
     void normalize_registers(x64asm::Code& c);
     void normalize_constants(x64asm::Code& c);
 

@@ -63,6 +63,12 @@ auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out"
     .description("Registers live on exit")
     .default_val(RegSet::empty() + rax);
 
+auto& h2 = Heading::create("Query Options");
+
+auto& query_min_nd = ValueArg<int>::create("min_nesting_depth")
+    .usage("<depth>")
+    .description("Require blocks to be nested this deep to do a lookup.")
+    .default_val(0);
 
 
 void normalize(int type, bool training, Normalizer& n, string& tag) {
@@ -102,8 +108,9 @@ void build_database(Database& d) {
       normalize(i, true, n, tag);
 
       // STEP 3: upload
-      for (auto& chunk : *(n.get_chunks())) {
-        d.insert(chunk,tag); 
+      auto* chunks = n.get_chunks(0);
+      for (auto* chunk : *chunks) {
+        d.insert(*chunk,tag); 
       }
 
     }
@@ -137,11 +144,13 @@ void query_database(Database& d) {
       normalize(i, false, n, tag);
 
       // STEP 3: test
-      for (auto& chunk : *(n.get_chunks())) {
-        int length = chunk.size();
+      auto* chunks = n.get_chunks(query_min_nd);
+      for (auto* chunk : *chunks) {
+
+        int length = chunk->size();
         length = (length > STAT_MAX ? STAT_MAX : length - 1);
         total[length]++;
-        if(d.lookup(chunk,tag))
+        if(d.lookup(*chunk,tag))
           hits[length]++;
       }
     }

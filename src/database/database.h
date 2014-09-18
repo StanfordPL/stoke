@@ -32,11 +32,11 @@ class Database {
     /* This function inserts 'code' into the database.
        If it's already there, it increments a count of
        how many times it appears.*/
-    void insert(x64asm::Code code, std::string tag);
+    void insert(x64asm::Code& code, std::string tag);
 
     /* This function returns the number of times this
        code has been added to the database with this tag */
-    uint64_t lookup(x64asm::Code code, std::string tag);
+    uint64_t lookup(x64asm::Code& code, std::string tag);
     
 
     /* Erases everything in the database.  Use with caution. */

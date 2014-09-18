@@ -25,6 +25,8 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
     if (cfg.num_instrs(*it) == 0)
       continue;
 
+    int nesting_depth = cfg.nesting_depth(*it);
+
     //loop through instructions
     size_t instr_index = 0;
     for(auto instr_it = cfg.instr_begin(*it);
@@ -41,6 +43,7 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
         if(vs->size() > 0) {
           //save this chunk!
           chunk_list_.push_back(*vs);
+          nesting_depth_.push_back(nesting_depth);
           delete vs;
           vs = new Code();
         }
@@ -55,12 +58,26 @@ void Normalizer::slurp_cfg(Cfg &cfg) {
       //save this chunk!
 
       chunk_list_.push_back(*vs);
+      nesting_depth_.push_back(nesting_depth);
       delete vs;
       vs = new Code();
     }
   }
   delete vs;
 
+}
+
+vector<x64asm::Code*>* Normalizer::get_chunks(int min_nd) {
+  int size = chunk_list_.size();
+  vector<x64asm::Code*>* result = new vector<x64asm::Code*>();
+
+  for(int i = 0; i < size; ++i) {
+    if(nesting_depth_[i] >= min_nd) {
+      result->push_back(&chunk_list_[i]);
+    }
+  }
+
+  return result;
 }
 
 void Normalizer::normalize_registers() {
