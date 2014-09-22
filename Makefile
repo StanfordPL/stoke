@@ -26,6 +26,10 @@ INC=\
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a
 
+GTEST_LIB=\
+  src/ext/gtest/libgtest.a \
+  src/ext/gtest/libgtest_main.a
+
 OBJ=\
 	src/args/distance.o \
 	src/args/flag_set.o \
@@ -75,7 +79,9 @@ BIN=\
 	bin/stoke_benchmark_sandbox \
 	bin/stoke_benchmark_search \
 	bin/stoke_benchmark_state \
-	bin/stoke_benchmark_verify 
+	bin/stoke_benchmark_verify \
+	\
+	bin/stoke_test
 
 ##### TOP LEVEL TARGETS (release is default)
 
@@ -93,7 +99,7 @@ profile:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/cpputil src/ext/x64asm src/ext/gtest
+external: src/ext/cpputil src/ext/x64asm src/ext/gtest/libgtest.a
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
 	make -C src/ext/x64asm $(EXT_OPT) 
 
@@ -103,10 +109,9 @@ src/ext/cpputil:
 src/ext/x64asm:
 	git clone git://github.com/eschkufz/x64asm.git src/ext/x64asm
 
-src/ext/gtest:
-	cd src/ext/gtest
-	cmake CMakeLists.txt
-	make
+src/ext/gtest/libgtest.a:
+	cmake src/ext/gtest/CMakeLists.txt
+	make -C src/ext/gtest
 
 ##### BUILD TARGETS
 
@@ -130,6 +135,9 @@ src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 bin/%: tools/%.cc $(OBJ) 
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  
 
+bin/stoke_test: tools/stoke_test.cc $(OBJ)
+	$(CXX) -pthread $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB) $(GTEST_LIB)
+
 ##### MISC
 
 .SECONDARY: $(OBJ)
@@ -139,6 +147,7 @@ bin/%: tools/%.cc $(OBJ)
 clean:
 	make -C src/ext/x64asm clean	
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
+	make -C src/ext/gtest clean
 	rm -rf $(OBJ) $(BIN)
 
 dist_clean: clean
