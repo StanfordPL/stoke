@@ -93,15 +93,20 @@ profile:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/cpputil src/ext/x64asm
+external: src/ext/cpputil src/ext/x64asm src/ext/gtest
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
 	make -C src/ext/x64asm $(EXT_OPT) 
 
 src/ext/cpputil:
-	git clone git://github.com/eschkufz/cpputil.git src/ext/cpputil
+	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
 
 src/ext/x64asm:
 	git clone git://github.com/eschkufz/x64asm.git src/ext/x64asm
+
+src/ext/gtest:
+	cd src/ext/gtest
+	cmake CMakeLists.txt
+	make
 
 ##### BUILD TARGETS
 
