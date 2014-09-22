@@ -1,8 +1,0 @@
-lib/xtime.o: lib/xtime.c /usr/include/stdc-predef.h lib/config.h \
- lib/xtime.h
-
-/usr/include/stdc-predef.h:
-
-lib/config.h:
-
-lib/xtime.h:
