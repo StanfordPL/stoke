@@ -16,3 +16,4 @@
 
 
 #include "tests/trivial.cc"
+#include "tests/cfg/fixtures.cc"

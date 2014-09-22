@@ -135,7 +135,7 @@ src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 bin/%: tools/%.cc $(OBJ) 
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  
 
-bin/stoke_test: tools/stoke_test.cc $(OBJ)
+bin/stoke_test: tools/stoke_test.cc $(OBJ) tests/
 	$(CXX) -pthread $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB) $(GTEST_LIB)
 
 ##### MISC
