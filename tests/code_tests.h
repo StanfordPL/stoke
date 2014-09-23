@@ -20,6 +20,10 @@
 class CodeTest : public ::testing::Test {
 
   protected:
+    // TODO:
+    // create standard file format
+    // read fixtures in through this format
+    // write code to go through directory and load all of them
 
       virtual void SetUp() {
 
