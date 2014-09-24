@@ -211,6 +211,70 @@ void Normalizer::normalize_constants(x64asm::Code& code) {
 
 }
 
+void Normalizer::normalize_window(size_t length) {
+
+  if (length == 0)
+    return;
+
+  //FIXME: this isn't the best way of constructing this vector
+  vector<x64asm::Code>* normalized = new vector<x64asm::Code>();
+
+  for(auto it : chunk_list_) {
+    if(it.size() < length)
+      continue;
+
+    size_t num_windows = it.size() - length + 1;
+
+    for(size_t i = 0; i < num_windows; ++i) {
+      x64asm::Code* windowed = new x64asm::Code();
+      for(size_t j = i; j < i + length; ++j) {
+        windowed->push_back(it[j]);
+      }
+      normalized->push_back(*windowed);
+    }
+  }
+
+  chunk_list_.clear();
+  chunk_list_.reserve(normalized->size());
+  for(auto it : *normalized) {
+    chunk_list_.push_back(it);
+  }
+  delete normalized;
+}
+
+
+void Normalizer::mangle_length() {
+
+  x64asm::Code windowed;
+  vector<x64asm::Code> tmp;
+
+  for(auto it : chunk_list_) {
+    size_t len = it.size();
+    tmp.reserve(tmp.size() + len*(len+1)/2);
+
+    for(size_t i = 0; i < len; ++i)
+      for(size_t j = i; j < len; ++j) {
+        if (i == 0 && j == 0)
+          continue;
+
+        windowed.clear();
+        for(size_t k = i; k < j; ++k) 
+          windowed.push_back(it[k]);
+        tmp.push_back(windowed);
+      }
+  }
+
+  chunk_list_.reserve(chunk_list_.size() + tmp.size());
+  for(auto it : tmp) {
+    chunk_list_.push_back(it);
+  }
+
+}
+
+void Normalizer::mangle_order() {
+
+}
+
 /*
 void Chunk::normalize_order() {
 

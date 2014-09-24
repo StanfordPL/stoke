@@ -29,6 +29,7 @@ using namespace mongo;
 
 
 #define STAT_MAX 20
+#define MAX_NORM 8
 
 
 auto& h0 = Heading::create("Database job specification");
@@ -78,6 +79,12 @@ void normalize(int type, bool training, Normalizer& n, string& tag) {
   else
     tag = "";
 
+  if (type & 4) {
+    if(training)
+      n.mangle_length();
+    tag = tag + "length_";
+  }
+
   if (type & 1) {
     n.normalize_registers();
     tag = tag + "regs_";
@@ -95,7 +102,7 @@ void build_database(Database& d) {
 
   string tag;
 
-  for (int i = 0; i < 4; ++i) {
+  for (int i = 0; i < MAX_NORM; ++i) {
 
     for (auto& it : programs.value()) {
       Cfg cfg_t(it.code, def_in, live_out);
@@ -122,7 +129,7 @@ void query_database(Database& d) {
 
   string tag;
 
-  for(int i = 0; i < 4; ++i) {
+  for(int i = 0; i < MAX_NORM; ++i) {
 
     //initialize counting variables
     uint64_t hits[STAT_MAX + 1];

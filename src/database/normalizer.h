@@ -21,6 +21,11 @@ class Normalizer {
     void normalize_registers();
     void normalize_constants();
 
+    void normalize_window(size_t length);
+
+    void mangle_length();
+    void mangle_order();
+
     std::vector<x64asm::Code*>* get_chunks(int min_depth = 0);
 
   private:
