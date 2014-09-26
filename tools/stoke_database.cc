@@ -29,7 +29,7 @@ using namespace mongo;
 
 
 #define STAT_MAX 20
-#define MAX_NORM 8
+#define MAX_NORM 5
 
 
 auto& h0 = Heading::create("Database job specification");
@@ -66,59 +66,69 @@ auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out"
 
 auto& h2 = Heading::create("Query Options");
 
-auto& query_min_nd = ValueArg<int>::create("min_nesting_depth")
+auto& min_nd = ValueArg<int>::create("min_nesting_depth")
     .usage("<depth>")
-    .description("Require blocks to be nested this deep to do a lookup.")
+    .description("Require blocks to be nested this deep to use.")
     .default_val(0);
 
 
-void normalize(int type, bool training, Normalizer& n, string& tag) {
+void normalize(int type, bool training, Normalizer* n, string& tag,
+                Normalizer::CodeContinuation continuation) {
 
-  if (type == 0)
-    tag = "none";
-  else
-    tag = "";
+  n->reset_pipeline(continuation);
 
-  if (type & 4) {
-    if(training)
-      n.mangle_length();
-    tag = tag + "length_";
+  switch(type) {
+
+    case 0:
+      tag = "none";
+      break;
+
+    case 1:
+      tag = "regs";
+      *n << n->normalize_registers();
+      break;
+
+    case 2:
+      tag = "cons";
+      *n << n->normalize_constants();
+      break;
+
+    case 3:
+      tag = "length";
+      if (training)
+        *n << n->mangle_length();
+      break;
+
+    case 4:
+      tag = "all";
+      *n << n->normalize_registers();
+      *n << n->normalize_constants();
+      if (training)
+        *n << n->mangle_length();
+      break;
   }
 
-  if (type & 1) {
-    n.normalize_registers();
-    tag = tag + "regs_";
-  }
-
-  if (type & 2) {
-    n.normalize_constants();
-    tag = tag + "cons_";
-  }
+  *n << n->extract_chunks_of_depth(min_nd);
 
 }
 
 
 void build_database(Database& d) {
 
+  Normalizer* n = new Normalizer();
   string tag;
+
+  Normalizer::CodeContinuation upload = [&tag, &d] (x64asm::Code* chunk) {
+    d.insert(*chunk, tag);
+  };
 
   for (int i = 0; i < MAX_NORM; ++i) {
 
+    normalize(i, true, n, tag, upload);
+
     for (auto& it : programs.value()) {
-      Cfg cfg_t(it.code, def_in, live_out);
 
-      // STEP 1: break into chunks
-      Normalizer n;
-      n.slurp_cfg(cfg_t);
-
-      // STEP 2: normalize
-      normalize(i, true, n, tag);
-
-      // STEP 3: upload
-      auto* chunks = n.get_chunks(0);
-      for (auto* chunk : *chunks) {
-        d.insert(*chunk,tag); 
-      }
+      n->run(it.code);
 
     }
   }
@@ -127,11 +137,13 @@ void build_database(Database& d) {
 
 void query_database(Database& d) {
 
+  Normalizer* n = new Normalizer();
   string tag;
+
 
   for(int i = 0; i < MAX_NORM; ++i) {
 
-    //initialize counting variables
+    // initialize counting variables
     uint64_t hits[STAT_MAX + 1];
     uint64_t total[STAT_MAX + 1];
     for(int i = 0; i <= STAT_MAX; ++i) {
@@ -139,30 +151,23 @@ void query_database(Database& d) {
       total[i] = 0;
     }
 
-    //// Test the code
+    // the lookup continuation
+    Normalizer::CodeContinuation lookup = [&] (x64asm::Code* chunk) {
+      int length = chunk->size();
+      length = (length > STAT_MAX ? STAT_MAX : length - 1);
+      total[length]++;
+      if(d.lookup(*chunk, tag))
+        hits[length]++;
+    };
+
+    // setting up the normalizer and running on the code
+    normalize(i, false, n, tag, lookup);
+
     for (auto& it : programs.value()) {
-      Cfg cfg_t(it.code, def_in, live_out);
-
-      // STEP 1: break into chunks
-      Normalizer n;
-      n.slurp_cfg(cfg_t);
-
-      // STEP 2: normalize
-      normalize(i, false, n, tag);
-
-      // STEP 3: test
-      auto* chunks = n.get_chunks(query_min_nd);
-      for (auto* chunk : *chunks) {
-
-        int length = chunk->size();
-        length = (length > STAT_MAX ? STAT_MAX : length - 1);
-        total[length]++;
-        if(d.lookup(*chunk,tag))
-          hits[length]++;
-      }
+      n->run(it.code);
     }
 
-    //// Output
+    // generate output
     cout << tag;
     for(int i = 0; i <= STAT_MAX; ++i) {
       cout << "," << hits[i];

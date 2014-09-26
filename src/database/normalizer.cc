@@ -11,206 +11,204 @@ using namespace x64asm;
 using namespace cpputil;
 
 
-void Normalizer::slurp_cfg(Cfg &cfg) {
+Normalizer::CodeOperator Normalizer::extract_chunks_of_depth(int depth) {
 
-  Code* vs = new Code();
+  return [&] (x64asm::Code* code, Normalizer::CodeContinuation continuation) {
 
-  // STEP 2: build chunks with
-  // vectors of instructions
+    Cfg cfg(*code, RegSet::empty(), RegSet::empty());
 
-  //loop through all the reachable blocks
-  for(auto it = cfg.reachable_begin();
-           it != cfg.reachable_end(); ++it) {
+    Code* vs = new Code();
 
-    if (cfg.num_instrs(*it) == 0)
-      continue;
+    // STEP 2: build chunks with
+    // vectors of instructions
 
-    int nesting_depth = cfg.nesting_depth(*it);
+    //loop through all the reachable blocks
+    for(auto it = cfg.reachable_begin();
+             it != cfg.reachable_end(); ++it) {
 
-    //loop through instructions
-    size_t instr_index = 0;
-    for(auto instr_it = cfg.instr_begin(*it);
-             instr_it != cfg.instr_end(*it);
-             ++instr_it, instr_index++) {
+      if (cfg.num_instrs(*it) == 0)
+        continue;
+
+      int nesting_depth = cfg.nesting_depth(*it);
+
+      //loop through instructions
+      size_t instr_index = 0;
+      for(auto instr_it = cfg.instr_begin(*it);
+               instr_it != cfg.instr_end(*it);
+               ++instr_it, instr_index++) {
 
 
-      if (instr_it->is_label_defn() ||
-          instr_it->is_nop() ||
-          instr_it->is_return() ||
-          instr_it->is_jump() ||
-          instr_it->is_call()) {
+        if (instr_it->is_label_defn() ||
+            instr_it->is_nop() ||
+            instr_it->is_return() ||
+            instr_it->is_jump() ||
+            instr_it->is_call()) {
 
-        if(vs->size() > 0) {
-          //save this chunk!
-          chunk_list_.push_back(*vs);
-          nesting_depth_.push_back(nesting_depth);
-          delete vs;
-          vs = new Code();
-        }
-
-      } else {
-        //add instruction to vector
-        vs->push_back(*instr_it);
-      }
-    }
-
-    if(vs->size() > 0) {
-      //save this chunk!
-
-      chunk_list_.push_back(*vs);
-      nesting_depth_.push_back(nesting_depth);
-      delete vs;
-      vs = new Code();
-    }
-  }
-  delete vs;
-
-}
-
-vector<x64asm::Code*>* Normalizer::get_chunks(int min_nd) {
-  int size = chunk_list_.size();
-  vector<x64asm::Code*>* result = new vector<x64asm::Code*>();
-
-  for(int i = 0; i < size; ++i) {
-    if(nesting_depth_[i] >= min_nd) {
-      result->push_back(&chunk_list_[i]);
-    }
-  }
-
-  return result;
-}
-
-void Normalizer::normalize_registers() {
-  for (auto& code : chunk_list_)
-    normalize_registers(code);
-}
-
-void Normalizer::normalize_registers(x64asm::Code& code) {
-
-  Tokenizer<uint64_t, uint64_t> gps;
-  Tokenizer<uint64_t, uint64_t> sses;
-
-  for ( auto& instr : code) {
-    for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
-      switch (instr.type(i)) {
-        case Type::RB:
-        case Type::R_16:
-        case Type::R_32:
-        case Type::R_64: {
-          auto& op = instr.get_operand<R64>(i);
-          //cout << dec << "op: " << op << " tok: " << gps.tokenize(op)->second;
-          //cout << " (" << r64s[gps.tokenize(op)->second] << ")" << endl;
-          instr.set_operand(i, r64s[gps.tokenize(op)->second]);
-          break;
-        }
-
-        case Type::XMM:
-        case Type::YMM: {
-          auto& op = instr.get_operand<Xmm>(i);
-          instr.set_operand(i, xmms[sses.tokenize(op)->second]);
-          break;
-        }
-
-        case Type::M_8:
-        case Type::M_16:
-        case Type::M_32:
-        case Type::M_64:
-        case Type::M_128:
-        case Type::M_256:
-        case Type::M_16_INT:
-        case Type::M_32_INT:
-        case Type::M_64_INT:
-        case Type::M_32_FP:
-        case Type::M_64_FP:
-        case Type::M_80_FP:
-        case Type::M_80_BCD:
-        case Type::M_2_BYTE:
-        case Type::M_28_BYTE:
-        case Type::M_108_BYTE:
-        case Type::M_512_BYTE:
-        case Type::FAR_PTR_16_16:
-        case Type::FAR_PTR_16_32:
-        case Type::FAR_PTR_16_64: {
-          auto op = instr.get_operand<M8>(i);
-          if (op.contains_base()) {
-            op.set_base(r64s[gps.tokenize(op.get_base())->second]);
+          if(vs->size() > 0) {
+            //process this chunk!
+            if(nesting_depth >= depth)
+              continuation(vs);
+            delete vs;
+            vs = new Code();
           }
-          if (op.contains_index()) {
-            op.set_index(r64s[gps.tokenize(op.get_index())->second]);
+
+        } else {
+          //add instruction to vector
+          vs->push_back(*instr_it);
+        }
+      }
+
+      if(vs->size() > 0) {
+        //process this chunk!
+
+        if(nesting_depth >= depth)
+          continuation(vs);
+        delete vs;
+        vs = new Code();
+      }
+    }
+    delete vs;
+
+  };
+}
+
+
+Normalizer::CodeOperator Normalizer::normalize_registers() {
+
+  return [] (x64asm::Code* code_orig, Normalizer::CodeContinuation continuation) {
+
+    Code code(*code_orig);
+
+    Tokenizer<uint64_t, uint64_t> gps;
+    Tokenizer<uint64_t, uint64_t> sses;
+
+    for ( auto& instr : code) {
+      for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
+        switch (instr.type(i)) {
+          case Type::RB:
+          case Type::R_16:
+          case Type::R_32:
+          case Type::R_64: {
+            auto& op = instr.get_operand<R64>(i);
+            //cout << dec << "op: " << op << " tok: " << gps.tokenize(op)->second;
+            //cout << " (" << r64s[gps.tokenize(op)->second] << ")" << endl;
+            instr.set_operand(i, r64s[gps.tokenize(op)->second]);
+            break;
           }
-          //op.set_scale(Scale::TIMES_1);
-          //op.set_disp(Imm32(imms.tokenize(op.get_disp())->second));
-          instr.set_operand(i, op);
-          break;
+
+          case Type::XMM:
+          case Type::YMM: {
+            auto& op = instr.get_operand<Xmm>(i);
+            instr.set_operand(i, xmms[sses.tokenize(op)->second]);
+            break;
+          }
+
+          case Type::M_8:
+          case Type::M_16:
+          case Type::M_32:
+          case Type::M_64:
+          case Type::M_128:
+          case Type::M_256:
+          case Type::M_16_INT:
+          case Type::M_32_INT:
+          case Type::M_64_INT:
+          case Type::M_32_FP:
+          case Type::M_64_FP:
+          case Type::M_80_FP:
+          case Type::M_80_BCD:
+          case Type::M_2_BYTE:
+          case Type::M_28_BYTE:
+          case Type::M_108_BYTE:
+          case Type::M_512_BYTE:
+          case Type::FAR_PTR_16_16:
+          case Type::FAR_PTR_16_32:
+          case Type::FAR_PTR_16_64: {
+            auto op = instr.get_operand<M8>(i);
+            if (op.contains_base()) {
+              op.set_base(r64s[gps.tokenize(op.get_base())->second]);
+            }
+            if (op.contains_index()) {
+              op.set_index(r64s[gps.tokenize(op.get_index())->second]);
+            }
+            //op.set_scale(Scale::TIMES_1);
+            //op.set_disp(Imm32(imms.tokenize(op.get_disp())->second));
+            instr.set_operand(i, op);
+            break;
+          }
+
+          default:
+            break;
+
         }
-
-        default:
-          break;
-
       }
     }
-  }
 
+    //invoke the continuation.
+    continuation(&code);
+
+  };
 }
 
-void Normalizer::normalize_constants() {
-  for (auto& code : chunk_list_)
-    normalize_constants(code);
-}
+Normalizer::CodeOperator Normalizer::normalize_constants() {
 
-void Normalizer::normalize_constants(x64asm::Code& code) {
+  return [] (x64asm::Code* code_orig, Normalizer::CodeContinuation continuation) {
 
-  Tokenizer<uint64_t, uint64_t> imms;
+    Code code(*code_orig);
 
+    Tokenizer<uint64_t, uint64_t> imms;
 
-  for ( auto& instr : code) {
-    for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
-      switch (instr.type(i)) {
-        case Type::IMM_8:
-        case Type::IMM_16:
-        case Type::IMM_32:
-        case Type::IMM_64: {
-          auto& op = instr.get_operand<Imm64>(i);
-          instr.set_operand(i, Imm64(imms.tokenize(op)->second));
-          break;
+    for ( auto& instr : code) {
+      for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
+        switch (instr.type(i)) {
+          case Type::IMM_8:
+          case Type::IMM_16:
+          case Type::IMM_32:
+          case Type::IMM_64: {
+            auto& op = instr.get_operand<Imm64>(i);
+            instr.set_operand(i, Imm64(imms.tokenize(op)->second));
+            break;
+          }
+
+          case Type::M_8:
+          case Type::M_16:
+          case Type::M_32:
+          case Type::M_64:
+          case Type::M_128:
+          case Type::M_256:
+          case Type::M_16_INT:
+          case Type::M_32_INT:
+          case Type::M_64_INT:
+          case Type::M_32_FP:
+          case Type::M_64_FP:
+          case Type::M_80_FP:
+          case Type::M_80_BCD:
+          case Type::M_2_BYTE:
+          case Type::M_28_BYTE:
+          case Type::M_108_BYTE:
+          case Type::M_512_BYTE:
+          case Type::FAR_PTR_16_16:
+          case Type::FAR_PTR_16_32:
+          case Type::FAR_PTR_16_64: {
+            auto op = instr.get_operand<M8>(i);
+            op.set_disp(Imm32(imms.tokenize(op.get_disp())->second));
+            op.set_scale(Scale::TIMES_1);
+            instr.set_operand(i, op);
+            break;
+          }
+
+          default:
+            break;
+
         }
-
-        case Type::M_8:
-        case Type::M_16:
-        case Type::M_32:
-        case Type::M_64:
-        case Type::M_128:
-        case Type::M_256:
-        case Type::M_16_INT:
-        case Type::M_32_INT:
-        case Type::M_64_INT:
-        case Type::M_32_FP:
-        case Type::M_64_FP:
-        case Type::M_80_FP:
-        case Type::M_80_BCD:
-        case Type::M_2_BYTE:
-        case Type::M_28_BYTE:
-        case Type::M_108_BYTE:
-        case Type::M_512_BYTE:
-        case Type::FAR_PTR_16_16:
-        case Type::FAR_PTR_16_32:
-        case Type::FAR_PTR_16_64: {
-          auto op = instr.get_operand<M8>(i);
-          op.set_disp(Imm32(imms.tokenize(op.get_disp())->second));
-          op.set_scale(Scale::TIMES_1);
-          instr.set_operand(i, op);
-          break;
-        }
-
-        default:
-          break;
-
       }
     }
-  }
 
+    //call the continuation
+    continuation(&code);
+  };
 }
 
+/*
 void Normalizer::normalize_window(size_t length) {
 
   if (length == 0)
@@ -241,38 +239,43 @@ void Normalizer::normalize_window(size_t length) {
   }
   delete normalized;
 }
+*/
 
 
-void Normalizer::mangle_length() {
+Normalizer::CodeOperator Normalizer::mangle_length() {
 
-  x64asm::Code windowed;
-  vector<x64asm::Code> tmp;
+  return [] (x64asm::Code* code, Normalizer::CodeContinuation continuation) {
 
-  for(auto it : chunk_list_) {
-    size_t len = it.size();
-    tmp.reserve(tmp.size() + len*(len+1)/2);
+    x64asm::Code windowed;
+    vector<x64asm::Code> tmp;
+
+    size_t len = code->size();
 
     for(size_t i = 0; i < len; ++i)
       for(size_t j = i; j < len; ++j) {
-        if (i == 0 && j == 0)
-          continue;
 
         windowed.clear();
+
         for(size_t k = i; k < j; ++k) 
-          windowed.push_back(it[k]);
-        tmp.push_back(windowed);
+          windowed.push_back((*code)[k]);
+
+        continuation(&windowed);
       }
-  }
 
-  chunk_list_.reserve(chunk_list_.size() + tmp.size());
-  for(auto it : tmp) {
-    chunk_list_.push_back(it);
-  }
-
+  };
 }
 
-void Normalizer::mangle_order() {
+Normalizer::CodeContinuation Normalizer::compose(
+  Normalizer::CodeOperator op, 
+  Normalizer::CodeContinuation cont) {
 
+  return [&] (x64asm::Code* c) {
+    op(c, cont);
+  };
+}
+
+void Normalizer::run(x64asm::Code code) {
+  continuation_(&code);
 }
 
 /*
