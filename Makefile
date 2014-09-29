@@ -28,6 +28,10 @@ LIB=\
   -pthread -lmongoclient -lboost_thread -lboost_system\
   -lboost_regex -lboost_filesystem -lssl -lcrypto
 
+GTEST_LIB=\
+  src/ext/gtest/libgtest.a \
+  src/ext/gtest/libgtest_main.a
+
 OBJ=\
 	src/args/distance.o \
 	src/args/flag_set.o \
@@ -82,8 +86,9 @@ BIN=\
 	bin/stoke_benchmark_state \
 	bin/stoke_benchmark_verify \
   \
-  bin/stoke_database
-
+  bin/stoke_database \
+	\
+	bin/stoke_test
 
 ##### TOP LEVEL TARGETS (release is default)
 
@@ -104,15 +109,19 @@ tags:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/cpputil src/ext/x64asm
+external: src/ext/cpputil src/ext/x64asm src/ext/gtest/libgtest.a
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
 	make -C src/ext/x64asm $(EXT_OPT) 
 
 src/ext/cpputil:
-	git clone git://github.com/bchurchill/cpputil.git src/ext/cpputil
+	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
 
 src/ext/x64asm:
 	git clone -b berkeley git://github.com/eschkufz/x64asm.git src/ext/x64asm
+
+src/ext/gtest/libgtest.a:
+	cmake src/ext/gtest/CMakeLists.txt
+	make -C src/ext/gtest
 
 ##### BUILD TARGETS
 
@@ -140,6 +149,9 @@ src/database/%.o: src/database/%.cc src/database/%.h
 bin/%: tools/%.cc $(OBJ) 
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  
 
+bin/stoke_test: tools/stoke_test.cc $(OBJ) tests/
+	$(CXX) -pthread $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB) $(GTEST_LIB)
+
 ##### MISC
 
 .SECONDARY: $(OBJ)
@@ -149,6 +161,7 @@ bin/%: tools/%.cc $(OBJ)
 clean:
 	make -C src/ext/x64asm clean	
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
+	make -C src/ext/gtest clean
 	rm -rf $(OBJ) $(BIN)
 
 dist_clean: clean

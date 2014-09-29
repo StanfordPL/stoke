@@ -1,5 +1,5 @@
 *.o
-bin/
+bin/*
 *.swp
 src/ext
 tags
