@@ -1,0 +1,118 @@
+#!/bin/bash
+
+# http://stackoverflow.com/questions/4774054/
+#   reliable-way-for-a-bash-script-to-get-the-full-path-to-itself
+
+pushd `dirname $0` > /dev/null
+HERE=`pwd`
+popd > /dev/null
+
+if [ $# -eq 0 ] 
+then
+	echo "Type 'stoke --help' for usage."
+	exit 1
+fi
+
+SCMD=$1
+shift
+
+if [ "$SCMD" == "--help" ] || [ "$SCMD" == "-h" ]
+then
+	echo "Usage: stoke <subcommand> [options]"
+	echo "Type 'stoke <subcommand> --help' for help on a specific subcommand."
+	echo ""
+	echo "  extract             extract the contents of a binary file"
+	echo "  search              run STOKE search"
+	echo "  testcase            generate a STOKE testcase file"
+  echo "  database            modify or query a database of binaries"
+  echo "  test                run the test suite"
+	echo ""
+	echo "  debug cfg           generate the control flow graph for a function"
+	echo "  debug cost          evaluate a function using a STOKE cost function"
+	echo "  debug sandbox       step through a function execution"
+	echo "  debug search        perform a program transformation"
+	echo "  debug state         check bit-wise operations"
+	echo "  debug verify        check the equivalence of two functions"
+	echo ""
+	echo "  benchmark cfg       benchmark Cfg::recompute() kernel"
+	echo "  benchmark cost      benchmark Cost::operator() kernel"
+	echo "  benchmark sandbox   benchmark Sandbox::run() kernel"
+	echo "  benchmark search    benchmark Transforms::modify() kernel"
+	echo "  benchmark state     benchmark Memory::copy_defined() kernel"
+	echo "  benchmark verify    benchmark Verifier::verify() kernel"
+	exit 0
+elif [ "$SCMD" == "debug" ]
+then
+	SCMD=$1
+	shift
+	if [ "$SCMD" == "cfg" ]
+	then
+		$HERE/stoke_debug_cfg "$@"
+	elif [ "$SCMD" == "cost" ]
+	then
+		$HERE/stoke_debug_cost "$@"
+	elif [ "$SCMD" == "sandbox" ]
+	then
+		$HERE/stoke_debug_sandbox "$@"
+	elif [ "$SCMD" == "state" ]
+	then
+		$HERE/stoke_debug_state "$@"
+	elif [ "$SCMD" == "search" ]
+	then
+		$HERE/stoke_debug_search "$@"
+	elif [ "$SCMD" == "verify" ]
+	then
+		$HERE/stoke_debug_verify "$@"
+	else
+		echo "Unknown command: '"$SCMD"'"
+		echo "Type 'stoke --help' for usage."
+		exit 1
+	fi
+elif [ "$SCMD" == "benchmark" ]
+then
+  SCMD=$1
+  shift
+  if [ "$SCMD" == "cfg" ]
+  then
+ 	  $HERE/stoke_benchmark_cfg "$@"
+	elif [ "$SCMD" == "cost" ]
+	then
+		$HERE/stoke_benchmark_cost "$@"
+	elif [ "$SCMD" == "sandbox" ]
+	then
+		$HERE/stoke_benchmark_sandbox "$@"
+	elif [ "$SCMD" == "search" ]
+	then
+		$HERE/stoke_benchmark_search "$@"
+	elif [ "$SCMD" == "state" ]
+	then
+		$HERE/stoke_benchmark_state "$@"
+	elif [ "$SCMD" == "verify" ]
+	then
+		$HERE/stoke_benchmark_verify "$@"
+  else
+ 	  echo "Unknown command: '"$SCMD"'"
+    echo "Type 'stoke --help' for usage."
+    exit 1
+  fi
+elif [ "$SCMD" == "extract" ]
+then
+	$HERE/stoke_extract "$@"
+elif [ "$SCMD" == "search" ]
+then
+	$HERE/stoke_search "$@"
+elif [ "$SCMD" == "testcase" ]
+then
+	$HERE/stoke_testcase "$@"
+elif [ "$SCMD" == "database" ]
+then
+	$HERE/stoke_database "$@"
+elif [ "$SCMD" == "test" ]
+then
+	$HERE/stoke_test "$@"
+
+else
+	echo "Unknown command: '"$SCMD"'"
+	echo "Type 'stoke --help' for usage."
+	exit 1
+fi
