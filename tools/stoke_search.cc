@@ -500,7 +500,7 @@ int main(int argc, char** argv) {
 			training_sb.insert_input(verifier.get_counter_example());
 		} else {
 			cout << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
-			break;
+			return 1;
 		}
 	}
 
