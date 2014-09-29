@@ -27,13 +27,23 @@ class CodeTest : public ::testing::Test {
 
       virtual void SetUp() {
 
-        x64asm::Code fixture1;
+        x64asm::Code fixture;
         std::stringstream ss;
-        ss << "incq %rax" << std::endl;
-        ss >> fixture1;
 
-        fixtures_.push_back(fixture1);
+        fixture.clear();
+        ss << "incq %rax" << std::endl;
+        ss >> fixture;
+        fixtures_.push_back(fixture);
         fixture_sizes_.push_back(1);
+
+        fixture.clear();
+        ss << "incq %rax" << std::endl;
+        ss << "subq $0x1, %rax" << std::endl;
+        ss >> fixture;
+        fixtures_.push_back(fixture);
+        fixture_sizes_.push_back(2);
+
+
       }
       
       std::vector<x64asm::Code> fixtures_;

@@ -104,6 +104,9 @@ profile:
 	make -C . external EXT_OPT="profile"
 	make -C . $(BIN) OPT="-DNDEBUG -O3 -pg" 
 
+test: 
+	bin/stoke_test 
+
 tags:
 	ctags -R src
 

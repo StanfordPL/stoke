@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <string>
+#include <sstream>
 
 #include "src/ext/x64asm/include/x64asm.h"
 #include "mongo/client/dbclient.h"
@@ -19,6 +20,15 @@ class Chunk {
     uint32_t nesting_depth;
 
 
+    bool operator< (const Chunk& other) const {
+      std::stringstream ss1;
+      ss1 << code;
+
+      std::stringstream ss2;
+      ss2 << other.code;
+
+      return ss1.str() < ss2.str();
+    }
 
 };
 

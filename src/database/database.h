@@ -13,15 +13,9 @@
 namespace stoke {
 
 
-/* This class provides an interface to an actual database.
-   It should hide the actual implementation details, such
-   as what database backend will be used.  It's reasonable
-   to assume that any database backend will require a few
-   parameters such as:
-    - ip address/hostname
-    - port
-    - database name
-    - credentials (in the future)
+/* This class provides an interface to a database.  It should hide the
+ * actual implementation details, such as what database backend will be
+ * used. 
  */
 class Database {
 
@@ -42,6 +36,7 @@ class Database {
 
 };
 
+/* This is the implementation for MongoDB */
 class MongoDatabase : public Database {
 
   public:
