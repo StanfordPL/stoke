@@ -17,14 +17,14 @@ class Normalizer {
     /* This type represents a function that takes code and does something
        meaningful to it, like uploads it to a database, and then resumes
        the computation.  */
-    typedef std::function<void (x64asm::Code*)> CodeContinuation;
+    typedef std::function<void (Chunk*)> CodeContinuation;
 
     /* This type represents a function that takes code and transforms
        it into something else.  An important convention I'm using is that the
        CodeOperators will allocate a new object without touching the old one.
        It's the job of the composition function to take care of freeing these
        objects after they've been used by the continuation. */
-    typedef std::function<void (x64asm::Code*, CodeContinuation)> CodeOperator;
+    typedef std::function<void (Chunk*, CodeContinuation)> CodeOperator;
 
     Normalizer() {};
 
@@ -35,7 +35,14 @@ class Normalizer {
     /* This function takes an operator to put into the chain of things done to
        each piece of code. */
     void operator<< (CodeOperator op) {
-      continuation_ = compose(op, continuation_);
+      //need to make a copy of the current continuation
+      CodeContinuation old_continuation(continuation_);
+
+      //update the continuation (and capture the old one so
+      // we still have a copy we can use)
+      continuation_ = [op,old_continuation] (Chunk* c) {
+        op(c, old_continuation);
+      };
     }
 
     /* This operator renames the registers in order of appearance */
@@ -56,12 +63,8 @@ class Normalizer {
     void run(x64asm::Code code);
 
   private:
-    std::vector<x64asm::Code> chunk_list_;
-    std::vector<int> nesting_depth_;
 
     CodeContinuation continuation_;
-    CodeContinuation compose(CodeOperator op, CodeContinuation cont);
-
 
 };
 

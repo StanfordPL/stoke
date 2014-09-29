@@ -15,16 +15,16 @@ using namespace x64asm;
 using namespace mongo;
 using namespace cpputil;
 
-void Database::insert(x64asm::Code& code, std::string tag) {
+void MongoDatabase::insert(Chunk& chunk, std::string tag) {
 
   stringstream code_ss;
-  code_ss << code;
+  code_ss << chunk.code;
 
   stringstream db_ss;
   db_ss << database_ << "." << tag;
   string db = db_ss.str();
 
-  int size = code.size();
+  int size = chunk.code.size();
 
   try {
     /* Either add this code to the database with
@@ -37,15 +37,15 @@ void Database::insert(x64asm::Code& code, std::string tag) {
              true);
 
   } catch (const DBException &e) {
-    cerr << "caught " << e.what() << endl;
+    cerr << "database error: caught " << e.what() << endl;
   }
 
 }
 
-uint64_t Database::lookup(x64asm::Code& code, string tag) {
+uint64_t MongoDatabase::lookup(Chunk& chunk, string tag) {
 
   stringstream code_ss;
-  code_ss << code;
+  code_ss << chunk.code;
 
   stringstream db_ss;
   db_ss << database_ << "." << tag;
@@ -68,20 +68,20 @@ uint64_t Database::lookup(x64asm::Code& code, string tag) {
     return sum;
 
   } catch (const DBException &e) {
-    cerr << "caught " << e.what() << endl;
+    cerr << "database error: caught " << e.what() << endl;
     return 0;
   }
 
 }
 
-void Database::erase() {
+void MongoDatabase::erase() {
 
   // Wipe out anything that's in the DB
   connection_.eval(database_, "db.dropDatabase();");
 
 }
 
-Database::Database(string hostname, uint16_t port, string database) {
+MongoDatabase::MongoDatabase(string hostname, uint16_t port, string database) {
 
   //TODO use the port :)
   connection_.connect(hostname);

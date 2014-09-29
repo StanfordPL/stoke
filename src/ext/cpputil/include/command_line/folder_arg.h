@@ -57,8 +57,13 @@ class FolderArg : public Arg {
         error(folder_error_);        
       }
 
+      int count = 0;
       struct dirent *dirp;
       while((dirp = readdir(dp))) {
+        count++;
+        if(count % 500 == 0) {
+          std::cout << "parsed " << count << " files" << std::endl;
+        }
         std::string filepath = std::string(argv[i+1]) + "/" + dirp->d_name;
 
         struct stat filestat;

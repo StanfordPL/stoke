@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+#include "src/database/chunk.h"
+
 #include "src/ext/x64asm/include/x64asm.h"
 #include "mongo/client/dbclient.h"
 
@@ -25,26 +27,38 @@ class Database {
 
   public:
 
-    /* This function connects to the database and
-       initializes everything */
-    Database(std::string hostname, uint16_t port, std::string database);
-
     /* This function inserts 'code' into the database.
        If it's already there, it increments a count of
        how many times it appears.*/
-    void insert(x64asm::Code& code, std::string tag);
+    virtual void insert(Chunk& chunk, std::string tag) = 0;
 
     /* This function returns the number of times this
        code has been added to the database with this tag */
-    uint64_t lookup(x64asm::Code& code, std::string tag);
+    virtual uint64_t lookup(Chunk& chunk, std::string tag) = 0;
     
 
     /* Erases everything in the database.  Use with caution. */
+    virtual void erase() = 0;
+
+};
+
+class MongoDatabase : public Database {
+
+  public:
+    /* This function connects to the database and
+       initializes everything */
+    MongoDatabase(std::string hostname, uint16_t port, std::string database);
+
+    void insert(Chunk& chunk, std::string tag);
+
+    uint64_t lookup(Chunk& chunk, std::string tag);
+
     void erase();
 
   private:
     mongo::DBClientConnection connection_;
     std::string database_;
+
 
 };
 

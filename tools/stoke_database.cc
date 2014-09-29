@@ -29,7 +29,7 @@ using namespace mongo;
 
 
 #define STAT_MAX 20
-#define MAX_NORM 5
+#define MAX_NORM 3
 
 
 auto& h0 = Heading::create("Database job specification");
@@ -84,22 +84,12 @@ void normalize(int type, bool training, Normalizer* n, string& tag,
       break;
 
     case 1:
-      tag = "regs";
+      tag = "regs_cons";
       *n << n->normalize_registers();
-      break;
-
-    case 2:
-      tag = "cons";
       *n << n->normalize_constants();
       break;
 
-    case 3:
-      tag = "length";
-      if (training)
-        *n << n->mangle_length();
-      break;
-
-    case 4:
+    case 2:
       tag = "all";
       *n << n->normalize_registers();
       *n << n->normalize_constants();
@@ -118,16 +108,19 @@ void build_database(Database& d) {
   Normalizer* n = new Normalizer();
   string tag;
 
-  Normalizer::CodeContinuation upload = [&tag, &d] (x64asm::Code* chunk) {
+  //specify action to perform
+  Normalizer::CodeContinuation upload = [&tag, &d] (Chunk* chunk) {
     d.insert(*chunk, tag);
   };
 
   for (int i = 0; i < MAX_NORM; ++i) {
 
+    //setup normalization routine
     normalize(i, true, n, tag, upload);
 
     for (auto& it : programs.value()) {
 
+      //run the routine
       n->run(it.code);
 
     }
@@ -152,8 +145,8 @@ void query_database(Database& d) {
     }
 
     // the lookup continuation
-    Normalizer::CodeContinuation lookup = [&] (x64asm::Code* chunk) {
-      int length = chunk->size();
+    Normalizer::CodeContinuation lookup = [&hits, &total, &d, &tag] (Chunk* chunk) {
+      int length = chunk->code.size();
       length = (length > STAT_MAX ? STAT_MAX : length - 1);
       total[length]++;
       if(d.lookup(*chunk, tag))
@@ -189,22 +182,27 @@ void query_database(Database& d) {
 
 
 int main(int argc, char** argv) {
+
+  cout << "Parsing Inputs" << endl;
+
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-  Database d(hostname,0,database);
+  cout << "Finished Parsing" << endl;
+
+  Database* d = (Database*) new MongoDatabase(hostname,0,database);
 
   string job = action.value();
 
   if (job == "rebuild" || job == "erase")
-    d.erase();
+    d->erase();
 
   if (job == "build" || job == "rebuild")
-    build_database(d);
+    build_database(*d);
 
   if (job == "query")
-    query_database(d);
+    query_database(*d);
 
-  //// Test the database
+  delete d;
 
   return 0;
 }

@@ -13,11 +13,11 @@ using namespace cpputil;
 
 Normalizer::CodeOperator Normalizer::extract_chunks_of_depth(int depth) {
 
-  return [&] (x64asm::Code* code, Normalizer::CodeContinuation continuation) {
+  return [depth] (Chunk* code, Normalizer::CodeContinuation continuation) {
 
-    Cfg cfg(*code, RegSet::empty(), RegSet::empty());
+    Cfg cfg(code->code, RegSet::empty(), RegSet::empty());
 
-    Code* vs = new Code();
+    Chunk new_chunk;
 
     // STEP 2: build chunks with
     // vectors of instructions
@@ -44,30 +44,27 @@ Normalizer::CodeOperator Normalizer::extract_chunks_of_depth(int depth) {
             instr_it->is_jump() ||
             instr_it->is_call()) {
 
-          if(vs->size() > 0) {
+          if(new_chunk.code.size() > 0) {
             //process this chunk!
             if(nesting_depth >= depth)
-              continuation(vs);
-            delete vs;
-            vs = new Code();
+              continuation(&new_chunk);
+            new_chunk.code.clear();
           }
 
         } else {
           //add instruction to vector
-          vs->push_back(*instr_it);
+          new_chunk.code.push_back(*instr_it);
         }
       }
 
-      if(vs->size() > 0) {
+      if(new_chunk.code.size() > 0) {
         //process this chunk!
 
         if(nesting_depth >= depth)
-          continuation(vs);
-        delete vs;
-        vs = new Code();
+          continuation(&new_chunk);
+        new_chunk.code.clear();
       }
     }
-    delete vs;
 
   };
 }
@@ -75,14 +72,14 @@ Normalizer::CodeOperator Normalizer::extract_chunks_of_depth(int depth) {
 
 Normalizer::CodeOperator Normalizer::normalize_registers() {
 
-  return [] (x64asm::Code* code_orig, Normalizer::CodeContinuation continuation) {
+  return [] (Chunk* chunk_orig, Normalizer::CodeContinuation continuation) {
 
-    Code code(*code_orig);
+    Chunk chunk(*chunk_orig);
 
     Tokenizer<uint64_t, uint64_t> gps;
     Tokenizer<uint64_t, uint64_t> sses;
 
-    for ( auto& instr : code) {
+    for ( auto& instr : chunk.code) {
       for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
         switch (instr.type(i)) {
           case Type::RB:
@@ -144,20 +141,20 @@ Normalizer::CodeOperator Normalizer::normalize_registers() {
     }
 
     //invoke the continuation.
-    continuation(&code);
+    continuation(&chunk);
 
   };
 }
 
 Normalizer::CodeOperator Normalizer::normalize_constants() {
 
-  return [] (x64asm::Code* code_orig, Normalizer::CodeContinuation continuation) {
+  return [] (Chunk* code_orig, Normalizer::CodeContinuation continuation) {
 
-    Code code(*code_orig);
+    Chunk chunk(*code_orig);
 
     Tokenizer<uint64_t, uint64_t> imms;
 
-    for ( auto& instr : code) {
+    for ( auto& instr : chunk.code) {
       for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
         switch (instr.type(i)) {
           case Type::IMM_8:
@@ -204,7 +201,7 @@ Normalizer::CodeOperator Normalizer::normalize_constants() {
     }
 
     //call the continuation
-    continuation(&code);
+    continuation(&chunk);
   };
 }
 
@@ -244,20 +241,26 @@ void Normalizer::normalize_window(size_t length) {
 
 Normalizer::CodeOperator Normalizer::mangle_length() {
 
-  return [] (x64asm::Code* code, Normalizer::CodeContinuation continuation) {
+  return [] (Chunk* chunk, Normalizer::CodeContinuation continuation) {
 
-    x64asm::Code windowed;
+    Chunk windowed;
     vector<x64asm::Code> tmp;
 
-    size_t len = code->size();
+    size_t len = chunk->code.size();
+
+    if (len > 6) {
+      Chunk c(*chunk);
+      continuation(&c);
+      len = 6;
+    }
 
     for(size_t i = 0; i < len; ++i)
       for(size_t j = i; j < len; ++j) {
 
-        windowed.clear();
+        windowed.code.clear();
 
-        for(size_t k = i; k < j; ++k) 
-          windowed.push_back((*code)[k]);
+        for(size_t k = i; k <= j; ++k) 
+          windowed.code.push_back(chunk->code[k]);
 
         continuation(&windowed);
       }
@@ -265,17 +268,10 @@ Normalizer::CodeOperator Normalizer::mangle_length() {
   };
 }
 
-Normalizer::CodeContinuation Normalizer::compose(
-  Normalizer::CodeOperator op, 
-  Normalizer::CodeContinuation cont) {
-
-  return [&] (x64asm::Code* c) {
-    op(c, cont);
-  };
-}
-
 void Normalizer::run(x64asm::Code code) {
-  continuation_(&code);
+  Chunk c;
+  c.code = code;
+  continuation_(&c);
 }
 
 /*
