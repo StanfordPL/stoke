@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <iostream>
+#include <random>
 #include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
@@ -84,6 +85,9 @@ auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::c
     .description("Testcases for verification strategies that use testcases")
     .default_val({CpuState()});
 
+auto& shuf_tc = FlagArg::create("shuffle_testcases")
+		.description("Shuffle testcase order");
+
 auto& test_set =
   ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("test_set")
       .usage("{ 0 1 ... 9 }")
@@ -145,6 +149,10 @@ int main(int argc, char** argv) {
 
   Cfg cfg_t(target.value().code, def_in, live_out);
   Cfg cfg_r(rewrite.value().code, def_in, live_out);
+
+	if (shuf_tc) {
+		shuffle(testcases.value().begin(), testcases.value().end(), default_random_engine());
+	}
 
   Sandbox sb;
   sb.set_max_jumps(max_jumps);

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -20,8 +21,8 @@
 #include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
-#include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/column.h"
+#include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
@@ -102,6 +103,9 @@ auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::c
     .usage("<path/to/file>")
     .description("Testcases")
     .default_val({CpuState()});
+
+auto& shuf_tc = FlagArg::create("shuffle_testcases")
+		.description("Shuffle testcase order");
 
 auto& training_set =
   ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("training_set")
@@ -409,6 +413,10 @@ int main(int argc, char** argv) {
   Cfg cfg_t(target.value().code, def_in, live_out);
   Cfg cfg_r(rewrite.value().code, def_in, live_out);
 
+	if (shuf_tc) {
+		shuffle(testcases.value().begin(), testcases.value().end(), default_random_engine());
+	}
+
   Sandbox training_sb;
   training_sb.set_max_jumps(max_jumps);
   Sandbox test_sb;
@@ -492,7 +500,7 @@ int main(int argc, char** argv) {
 			training_sb.insert_input(verifier.get_counter_example());
 		} else {
 			cout << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
-			break;
+			return 1;
 		}
 	}
 

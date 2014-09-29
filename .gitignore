@@ -1,5 +1,5 @@
 *.o
 bin/*
+src/tags
+src/ext/*
 *.swp
-src/ext
-tags

@@ -14,16 +14,18 @@
 
 /* ============================================================================================= */
 
-#include "pin.H"
+#include <cassert>
+#include <stdint.h>
 
 #include <algorithm>
-#include <cassert>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <stack>
-#include <stdint.h>
 #include <unordered_map>
 #include <unordered_set>
+
+#include "pin.H"
 
 #include "src/state/cpu_state.h"
 #include "src/state/state_writer.h"
@@ -36,23 +38,29 @@ using namespace stoke;
 /* ============================================================================================= */
 
 KNOB<string> KnobFxnName(KNOB_MODE_WRITEONCE, "pintool", "f", "main",
-                         "function to generate tests for");
+    "function to generate tests for");
 KNOB<string> KnobOutFile(KNOB_MODE_WRITEONCE, "pintool", "o", "",
-                         "file to write results to");
-KNOB<size_t> KnobMaxTc(KNOB_MODE_WRITEONCE, "pintool", "n", "0",
-                       "maximum number of testcases to emit");
+    "file to write results to");
 KNOB<size_t> KnobMaxStack(KNOB_MODE_WRITEONCE, "pintool", "x", "1024",
-                          "maximum number of bytes to assume appear on the stack");
+    "maximum number of bytes to assume appear on the stack");
+KNOB<size_t> KnobMaxTc(KNOB_MODE_WRITEONCE, "pintool", "n", "0",
+    "maximum number of testcases to emit");
+KNOB<uint64_t> KnobBeginLine(KNOB_MODE_WRITEONCE, "pintool", "b", "0", 
+    "address to begin logging at");
+KNOB<string> KnobEndLines(KNOB_MODE_WRITEONCE, "pintool", "e", "0", 
+    "addresses to stop logging at");
 
 /* ============================================================================================= */
 /* Global Variables */
 /* ============================================================================================= */
 
-stack<size_t> stack_frames_;
+int tc_remaining_;
+uint64_t begin_line_;
+unordered_set<uint64_t> end_lines_;
 
 stack<CpuState> tcs_;
-int tc_remaining_;
 
+stack<size_t> stack_frames_;
 stack<unordered_set<uint64_t>> stack_valids_;
 stack<unordered_map<uint64_t, uint8_t>> stack_defs_;
 stack<unordered_set<uint64_t>> heap_valids_;
@@ -271,8 +279,8 @@ VOID end_stack_frame() {
 
 /* ============================================================================================= */
 
-VOID emit_start(RTN& fxn) {
-  RTN_InsertCall(fxn, IPOINT_BEFORE, (AFUNPTR)begin_tc,
+VOID emit_start(INS& ins) {
+	INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)begin_tc,
                  IARG_REG_VALUE, REG_RAX, IARG_REG_VALUE, REG_RBX,
                  IARG_REG_VALUE, REG_RCX, IARG_REG_VALUE, REG_RDX,
                  IARG_REG_VALUE, REG_R8,  IARG_REG_VALUE, REG_R9,
@@ -294,8 +302,8 @@ VOID emit_start(RTN& fxn) {
 
 /* ============================================================================================= */
 
-VOID emit_stop(RTN& fxn) {
-  RTN_InsertCall(fxn, IPOINT_AFTER, (AFUNPTR)end_tc, IARG_END);
+VOID emit_stop(INS& ins) {
+  INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)end_tc, IARG_END);
 }
 
 /* ============================================================================================= */
@@ -312,10 +320,18 @@ VOID image(IMG img, VOID* v) {
   RTN_InsertCall(fxn, IPOINT_BEFORE, (AFUNPTR)begin_stack_frame,
                  IARG_REG_VALUE, REG_RSP, IARG_END);
 
-  // Record initial register state
-  emit_start(fxn);
-
+	size_t line = 1;
   for (INS ins = RTN_InsHead(fxn); INS_Valid(ins); ins = INS_Next(ins)) {
+		// Record initial register state
+		if ( line == begin_line_ ) {
+			emit_start(ins);
+		}
+		// Record final register state
+		if ( end_lines_.find(line) != end_lines_.end() || INS_IsRet(ins) ) {
+			emit_stop(ins);
+		}
+		line++;
+
     // Find memory operand
     UINT32 memOpCount = INS_MemoryOperandCount(ins);
     assert(memOpCount < 2 && "No support for multiple mem operands!");
@@ -328,9 +344,6 @@ VOID image(IMG img, VOID* v) {
       INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_write,
                      IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
   }
-
-  // Finish up
-  emit_stop(fxn);
 
   // Discard stack frame
   RTN_InsertCall(fxn, IPOINT_AFTER, (AFUNPTR)end_stack_frame, IARG_END);
@@ -355,9 +368,16 @@ int main(int argc, char* argv[]) {
     return Usage();
   }
 
+	istringstream iss(KnobEndLines.Value());
+	uint64_t inst;
+
   tc_remaining_ = KnobMaxTc.Value();
-  os_ = KnobOutFile.Value() == "" ? &cout :
-        new ofstream(KnobOutFile.Value().c_str());
+	begin_line_ = KnobBeginLine.Value();
+	while ( iss >> dec >> inst ) {
+		end_lines_.insert(inst);
+	}
+
+  os_ = KnobOutFile.Value() == "" ? &cout : new ofstream(KnobOutFile.Value().c_str());
 
   PIN_InitSymbols();
   IMG_AddInstrumentFunction(image, 0);

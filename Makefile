@@ -162,7 +162,6 @@ bin/stoke_test: tools/stoke_test.cc $(OBJ) tests/
 ##### CLEAN TARGETS
 
 clean:
-	make -C src/ext/x64asm clean	
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
 	make -C src/ext/gtest clean
 	rm -rf $(OBJ) $(BIN)
