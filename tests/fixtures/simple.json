@@ -1,0 +1,10 @@
+{
+  "name": "simple",
+  "code": [ "incq %rax",
+            "movq %rax, %rdx" ],
+
+  "live_out": ["%rdx"],
+  "live_ins": ["%rax"]
+
+}
+

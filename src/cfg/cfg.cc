@@ -381,6 +381,9 @@ void Cfg::recompute_defs_loop_free() {
 void Cfg::recompute_liveness() {
     recompute_liveness_use_kill();
 
+    // IMPORTANT NOTE: the live_ins_ vector is indexed
+    // by the block, whereas the live_outs_ is indexed
+    // by the instruction.
     live_ins_.assign(num_blocks(), RegSet::empty());
     live_outs_.assign(code_.size()+1, RegSet::empty());
 
@@ -391,10 +394,13 @@ void Cfg::recompute_liveness() {
       if(num_instrs(*i) == 0)
         continue;
 
+      // set the live-in of each block to the empty set
       live_ins_[*i] = RegSet::empty();
+
+      // set the live-out of each block to the empty set this requires looking
+      // up the index of the last instruction in the block.
       live_outs_[blocks_[*i]+num_instrs(*i)-1] = RegSet::empty();
     }
-
     live_ins_[get_exit()] = fxn_live_outs_;
 
     // Fixedpoint algorithm
@@ -421,12 +427,14 @@ void Cfg::recompute_liveness() {
             liveness_use_[*i];
 
         changed |= live_ins_[*i] != new_in;
+#ifdef DEBUG_CFG_LIVENESS
         if (changed) {
-          //cout << "block " << *i << " from " << live_ins_[*i] << " --> " << new_in << endl;
-          //cout << "   " << "live out: " << live_outs_[blocks_[*i]+ num_instrs(*i)-1] << endl;
-          //cout << "   " << "kill: " << liveness_kill_[*i] << endl;
-          //cout << "   " << "use:  " << liveness_use_[*i] << endl;
+          cout << "block " << *i << " from " << live_ins_[*i] << " --> " << new_in << endl;
+          cout << "   " << "live out: " << live_outs_[blocks_[*i]+ num_instrs(*i)-1] << endl;
+          cout << "   " << "kill: " << liveness_kill_[*i] << endl;
+          cout << "   " << "use:  " << liveness_use_[*i] << endl;
         }
+#endif
         live_ins_[*i] = new_in;
       }
     }

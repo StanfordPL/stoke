@@ -43,7 +43,7 @@ and check that the following cpu flags are present:
 
 Most of STOKE's software dependencies are available through apt. These can be satisfied by typing:
 
-    $ sudo apt-get install flex bison ccache doxygen g++ g++-multilib ghc libghc-regex-tdfa-dev libghc-regex-compat-dev libghc-split-dev cmake libgtest-dev
+    $ sudo apt-get install flex bison ccache doxygen g++ g++-multilib ghc libghc-regex-tdfa-dev libghc-regex-compat-dev libghc-split-dev cmake libgtest-dev libjsoncpp-dev
 
 The remainder of STOKE's software dependencies are available on github and will be downloaded automatically the first time that STOKE is built. To build stoke, type:
 

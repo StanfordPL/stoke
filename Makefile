@@ -28,10 +28,6 @@ LIB=\
   -pthread -lmongoclient -lboost_thread -lboost_system\
   -lboost_regex -lboost_filesystem -lssl -lcrypto
 
-GTEST_LIB=\
-  src/ext/gtest/libgtest.a \
-  src/ext/gtest/libgtest_main.a
-
 OBJ=\
 	src/args/distance.o \
 	src/args/flag_set.o \
@@ -65,7 +61,7 @@ OBJ=\
 	src/verifier/verifier.o \
   \
   src/database/normalizer.o \
-  src/database/database.o
+  src/database/database.o \
 
 BIN=\
 	bin/stoke_extract \
@@ -86,9 +82,7 @@ BIN=\
 	bin/stoke_benchmark_state \
 	bin/stoke_benchmark_verify \
   \
-  bin/stoke_database \
-	\
-	bin/stoke_test
+  bin/stoke_database 
 
 ##### TOP LEVEL TARGETS (release is default)
 
@@ -104,7 +98,7 @@ profile:
 	make -C . external EXT_OPT="profile"
 	make -C . $(BIN) OPT="-DNDEBUG -O3 -pg" 
 
-test: 
+test: bin/stoke_test
 	bin/stoke_test 
 
 tags:
@@ -152,8 +146,24 @@ src/database/%.o: src/database/%.cc src/database/%.h
 bin/%: tools/%.cc $(OBJ) 
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  
 
-bin/stoke_test: tools/stoke_test.cc $(OBJ) tests/
-	$(CXX) -pthread $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB) $(GTEST_LIB)
+##### TESTING
+
+TEST_OBJ=\
+         tests/fixture.o \
+         \
+         src/ext/gtest/libgtest.a \
+         src/ext/gtest/libgtest_main.a
+
+TEST_LIBS=-ljsoncpp
+
+TEST_BIN=bin/stoke_test
+
+
+tests/%.o: tests/%.cc tests/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
+
+bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) tests/
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
 
 ##### MISC
 
@@ -164,7 +174,7 @@ bin/stoke_test: tools/stoke_test.cc $(OBJ) tests/
 clean:
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
 	make -C src/ext/gtest clean
-	rm -rf $(OBJ) $(BIN)
+	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN)
 
 dist_clean: clean
 	rm -rf src/ext/cpputil
