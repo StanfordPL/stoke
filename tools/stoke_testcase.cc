@@ -81,35 +81,45 @@ auto& end_lines = ValueArg<vector<size_t>, SpanReader<vector<size_t>, Range<size
 
 auto& h4 = Heading::create("Autogen options:");
 
+auto& max_attempts = ValueArg<uint64_t>::create("max_attempts")
+    .usage("<int>")
+    .description("The maximum number of attempts to make at generating a testcase")
+    .default_val(16);
+
+auto& max_jumps = ValueArg<size_t>::create("max_jumps")
+    .usage("<int>")
+    .description("Maximum jumps before exit due to infinite loop")
+    .default_val(1024);
+
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Source code to generate testcases for")
     .default_val({"anon", {{RET}}});
 
-int main(int argc, char** argv) {
-  CommandLineConfig::strict_with_convenience(argc, argv);
+int auto_gen() {
+	Cfg cfg_t(target.value().code, RegSet::universe(), RegSet::empty());
 
-	// Autogen path
-	if (target.value().name != "anon") {
-  	Cfg cfg_t(target.value().code, RegSet::universe(), RegSet::empty());
+	StateGen sg;
+	sg.set_max_attempts(max_attempts.value())
+		.set_max_stack(max_stack.value())
+		.set_max_jumps(max_jumps.value());
 
-		StateGen sg;
-		sg.set_max_stack(max_stack.value());
-
-		vector<CpuState> tcs;
-		for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
-			const auto tc = sg.get(cfg_t);
+	vector<CpuState> tcs;
+	for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
+		CpuState tc;
+		if (sg.get(tc, cfg_t)) {
 			tcs.push_back(tc);
 		}
-
-		ofstream ofs(out.value());
-		TestcasesWriter()(ofs, tcs);
-
-		return 0;
 	}
 
-	// Function trace path
-  string here = argv[0];
+	ofstream ofs(out.value());
+	TestcasesWriter()(ofs, tcs);
+
+	return 0;
+}
+
+int trace(const string& argv0) {
+  string here = argv0;
   here = here.substr(0, here.find_last_of("/") + 1);
 
   const string pin_path = here + "../src/ext/pin-2.13-62732-gcc.4.4.7-linux/";
@@ -134,5 +144,15 @@ int main(int argc, char** argv) {
   term << " -- " << bin.value() << " " << args.value() << endl;
 
   return 0;
+}
+
+int main(int argc, char** argv) {
+  CommandLineConfig::strict_with_convenience(argc, argv);
+
+	if (target.value().name != "anon") {
+		return auto_gen();
+	} else {
+		return trace(argv[0]);
+	}
 }
 

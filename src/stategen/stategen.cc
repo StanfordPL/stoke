@@ -4,14 +4,33 @@
 
 #include "src/ext/x64asm/include/x64asm.h"
 
+#include "src/sandbox/sandbox.h"
+#include "src/sandbox/state_callback.h"
 #include "src/state/regs.h"
 
+using namespace stoke;
 using namespace x64asm;
+
+namespace {
+
+struct CbResult {
+	size_t last_line;
+	uint64_t last_deref;
+};
+
+void callback(const StateCallbackData& data, void* arg) {
+	CbResult& cbr = *((CbResult*) arg);
+
+	cbr.last_line = data.line;
+	// @ todo
+	cbr.last_deref = 0;
+}
+
+} // namespace
 
 namespace stoke {
 
-CpuState StateGen::get() const {
-	CpuState cs;
+bool StateGen::get(CpuState& cs) const {
 	rand_regs(cs);
 
 	// Map rsp to a high address
@@ -29,11 +48,39 @@ CpuState StateGen::get() const {
 		cs.stack.set_valid(i, true);
 	}
 
-	return cs;
+	return true;
 }
 
-CpuState StateGen::get(const Cfg& cfg) const {
-	return get();
+bool StateGen::get(CpuState& cs, const Cfg& cfg) const {
+	// Make a sandbox
+	Sandbox sb;
+	sb.set_max_jumps(max_jumps_);	
+
+	// Insert callbacks before every instruction and compile
+	CbResult cbr;
+	for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
+		sb.insert_before(i, callback, (void*)&cbr);
+	}
+	sb.compile(cfg);
+
+	// Try max_attempts times to run to completion without failure
+	for (size_t i = 0; i < max_attempts_; ++i) {
+		// Start with a random state
+		sb.clear_inputs();
+		get(cs);
+		sb.insert_input(cs);
+
+		// Try executing
+		sb.run_one(0);
+
+		// Break if we ran successfully
+		if (sb.get_result(0)->code == ErrorCode::NORMAL) {
+			break;
+		}
+	}
+
+	cs = *(sb.get_result(0));
+	return cs.code == ErrorCode::NORMAL;
 }
 
 void StateGen::rand_regs(CpuState& cs) const {
