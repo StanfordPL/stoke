@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -19,9 +20,17 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/system/terminal.h"
+#include "src/ext/x64asm/include/x64asm.h"
+
+#include "src/args/testcases.h"
+#include "src/args/tunit.h"
+#include "src/cfg/cfg.h"
+#include "src/stategen/stategen.h"
 
 using namespace cpputil;
 using namespace std;
+using namespace stoke;
+using namespace x64asm;
 
 auto& h1 = Heading::create("I/O options:");
 
@@ -41,22 +50,24 @@ auto& out = ValueArg<string>::create("o")
     .description("File to write testcases to (defaults to console if unspecified)")
     .default_val("");
 
-auto& h2 = Heading::create("Trace options:");
+auto& h2 = Heading::create("Common options:");
 
-auto& fxn = ValueArg<string>::create("fxn")
-    .usage("<string>")
-    .description("Function to generate testcases for")
-    .default_val("main");
+auto& max_tc = ValueArg<size_t>::create("max_testcases")
+    .usage("<int>")
+    .description("The maximum number of testcases to generate")
+    .default_val(16);
 
 auto& max_stack = ValueArg<uint64_t>::create("max_stack")
     .usage("<bytes>")
     .description("The maximum number of bytes to assume could be stack")
     .default_val(1024);
 
-auto& max_tc = ValueArg<size_t>::create("max_testcases")
-    .usage("<int>")
-    .description("The maximum number of testcases to generate")
-    .default_val(16);
+auto& h3 = Heading::create("Trace options:");
+
+auto& fxn = ValueArg<string>::create("fxn")
+    .usage("<string>")
+    .description("Function to generate testcases for")
+    .default_val("main");
 
 auto& begin_line = ValueArg<size_t>::create("begin_line") 
 		.usage("<int>")
@@ -68,9 +79,36 @@ auto& end_lines = ValueArg<vector<size_t>, SpanReader<vector<size_t>, Range<size
     .description("Line number to end recording on; recording always stops on returns")
     .default_val({});
 
+auto& h4 = Heading::create("Autogen options:");
+
+auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
+    .usage("<path/to/file>")
+    .description("Source code to generate testcases for")
+    .default_val({"anon", {{RET}}});
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
+	// Autogen path
+	if (target.value().name != "anon") {
+  	Cfg cfg_t(target.value().code, RegSet::universe(), RegSet::empty());
+
+		StateGen sg;
+		sg.set_max_stack(max_stack.value());
+
+		vector<CpuState> tcs;
+		for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
+			const auto tc = sg.get(cfg_t);
+			tcs.push_back(tc);
+		}
+
+		ofstream ofs(out.value());
+		TestcasesWriter()(ofs, tcs);
+
+		return 0;
+	}
+
+	// Function trace path
   string here = argv[0];
   here = here.substr(0, here.find_last_of("/") + 1);
 
