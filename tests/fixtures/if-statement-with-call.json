@@ -1,0 +1,29 @@
+
+{
+  "name": "if-statement-with-call",
+  "comment": "CFG has 3 blocks: A->B, B->C, A->C.  Call in B.",
+  "code": [ "incq %rax",
+            "cmpq %rax, %rcx",
+            "jle .L1",
+            "subq $0x10, %rcx",
+            "movq %rcx, %rsi",
+            "movq %rcx, %rdi",
+            "callq .L2",
+            "addq $0x10, %rcx",
+            ".L1:",
+            "incq %rax",
+            "retq",
+            ".L2:" ],
+
+  "tests": {
+    "normalization": {
+      "chunks": 4
+    },
+
+    "liveness": {
+      "given liveout":   ["%rax"],
+      "expected livein": ["%rax", "%rcx"]
+    }
+  }
+
+}
