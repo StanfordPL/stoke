@@ -57,11 +57,6 @@ auto& max_tc = ValueArg<size_t>::create("max_testcases")
     .description("The maximum number of testcases to generate")
     .default_val(16);
 
-auto& max_stack = ValueArg<uint64_t>::create("max_stack")
-    .usage("<bytes>")
-    .description("The maximum number of bytes to assume could be stack")
-    .default_val(1024);
-
 auto& h3 = Heading::create("Trace options:");
 
 auto& fxn = ValueArg<string>::create("fxn")
@@ -79,6 +74,11 @@ auto& end_lines = ValueArg<vector<size_t>, SpanReader<vector<size_t>, Range<size
     .description("Line number to end recording on; recording always stops on returns")
     .default_val({});
 
+auto& max_stack = ValueArg<uint64_t>::create("max_stack")
+    .usage("<bytes>")
+    .description("The maximum number of bytes to assume could be stack")
+    .default_val(1024);
+
 auto& h4 = Heading::create("Autogen options:");
 
 auto& max_attempts = ValueArg<uint64_t>::create("max_attempts")
@@ -91,6 +91,11 @@ auto& max_jumps = ValueArg<size_t>::create("max_jumps")
     .description("Maximum jumps before exit due to infinite loop")
     .default_val(1024);
 
+auto& max_memory = ValueArg<uint64_t>::create("max_memory")
+    .usage("<bytes>")
+    .description("The maximum number of bytes to allocate to stack or heap")
+    .default_val(1024);
+
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Source code to generate testcases for")
@@ -101,7 +106,7 @@ int auto_gen() {
 
 	StateGen sg;
 	sg.set_max_attempts(max_attempts.value())
-		.set_max_stack(max_stack.value())
+		.set_max_memory(max_stack.value())
 		.set_max_jumps(max_jumps.value());
 
 	vector<CpuState> tcs;
