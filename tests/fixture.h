@@ -36,6 +36,9 @@ class Fixture {
 
     friend std::ostream& operator<<(std::ostream& os, const Fixture& f);
 
+    bool operator==(const Fixture& f) const {
+      return false;
+    }
   private:
     std::string name_;
     std::string filename_;
@@ -46,8 +49,6 @@ class Fixture {
     std::map<std::string, Json::Value> test_data_;
 };
 
-
-void PrintTo(const Fixture& f, ::std::ostream* os);
 
 
 class FixtureTestInit {

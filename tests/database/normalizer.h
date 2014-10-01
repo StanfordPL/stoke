@@ -14,7 +14,6 @@ TEST_P(FixtureTest, ExtractChunks) {
 
   //check that this fixture has data
   Fixture fixture = GetParam();
-  std::cout << fixture;
   Json::Value json = fixture.get_test_data("normalization");
   if (!json.isObject() || !json.isMember("chunks"))
     return;

@@ -12,8 +12,6 @@ using namespace std;
 
 
 Fixture::Fixture(string filename) {
-  name_ = filename;
-
   // slurp the whole file into a string
   ifstream in(filename);
   stringstream buffer;
@@ -26,6 +24,16 @@ Fixture::Fixture(string filename) {
 
   if (!parse_success)
     throw new runtime_error("JSON parsing failed for file " + filename);
+
+  // get the metadata
+  size_t name_pos = filename.rfind("/")+1;
+  string root_name = root["name"].asString();
+  string file_given_name = filename.substr(name_pos);
+  if (root_name.compare(file_given_name + ".json"))
+    name_ = root_name;
+  else
+    name_ = root_name + " [" + file_given_name + "]";
+
 
   // read the code
   stringstream code_ss;
@@ -48,9 +56,11 @@ Fixture::Fixture(string filename) {
   return os << f.get_name(); 
 }
 
+/*
 void PrintTo(const Fixture& f, ::std::ostream* os) {
   *os << f.get_name();  // whatever needed to print bar to os
 }
+*/
 
 
 
