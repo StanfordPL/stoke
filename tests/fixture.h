@@ -49,40 +49,11 @@ class Fixture {
 class FixtureTest : public ::testing::Test {
 
   protected:
-    // TODO:
-    // create standard file format
-    // read fixtures in through this format
-    // write code to go through directory and load all of them
 
-      virtual void SetUp() {
+    virtual void SetUp(); 
 
-        std::string folder = "/home/berkeley/stoke/tests/fixtures/";
+    std::vector<Fixture> fixtures_;
 
-        DIR *dp = opendir(folder.c_str());
-        if (dp == NULL) {
-          throw new std::runtime_error("Could not open fixtures directory.");
-        }
-
-
-        struct dirent *dirp;
-        while((dirp = readdir(dp))) {
-
-          // check if filename ends in .json
-          std::string filename(dirp->d_name);
-          if(filename.length() <= 5)
-            continue;
-          size_t extension_pos = filename.rfind(".json");
-          if (extension_pos != filename.length() - 5)
-            continue;
-
-          std::string filepath = folder + "/" + filename; 
-          Fixture f(filepath);
-          fixtures_.push_back(f);
-        }
-
-      }
-      
-      std::vector<Fixture> fixtures_;
 };
 
 

@@ -2,82 +2,46 @@
 #ifndef __STOKE_TEST_DATABASE_NORMALIZER
 #define __STOKE_TEST_DATABASE_NORMALIZER
 
-#include "src/database/normalizer.h"
 #include "tests/database/test_database.h"
+
+#include "src/database/normalizer.h"
 
 namespace stoke {
 namespace test {
 namespace database {
 
-/* This primarily tests the normalization procedure
-   that takes chunks from the source code and then
-   puts them into a database. */
+/* This tests the normalization procedure that takes chunks from
+ * the source code and then does something with them. */
 TEST_F(DatabaseTest, ExtractChunks) {
 
-  x64asm::Code code = fix_4chunks;
+  for (auto fixture : fixtures_) {
+    //check that this fixture has data
+    Json::Value json = fixture.get_test_data("normalization");
+    if (!json.isObject() || !json.isMember("chunks"))
+      continue;
 
-  // Setup the database and normalization procedure //
-  TestDatabase d;
+    x64asm::Code code = fixture.get_code();
+    int expected = json["chunks"].asInt();
 
-  auto upload_fun = [&d] (Chunk* c) {
-    d.insert(*c, (std::string)"test"); 
-  };
+    //count the number of normalized chunks
+    int chunk_count = 0;
 
-  Normalizer n;
-  n.reset_pipeline(upload_fun);
-  n << n.extract_chunks_of_depth(0);
-  n.run(code);
+    auto upload_fun = [&chunk_count] (Chunk* c) {
+      chunk_count++;
+    };
 
-  // Check that the database has the right stuff
-  ASSERT_EQ(4, d.count());
+    Normalizer n;
+    n.reset_pipeline(upload_fun);
+    n << n.extract_chunks_of_depth(0);
+    n.run(code);
 
-}
-
-
-TEST_F(DatabaseTest, NormalizeRegisters) {
-
-  x64asm::Code code = fix_4chunks;
-
-  // Setup the database and normalization procedure //
-  TestDatabase d;
-
-  auto upload_fun = [&d] (Chunk* c) {
-    d.insert(*c, (std::string)"test"); 
-  };
-
-  Normalizer n;
-  n.reset_pipeline(upload_fun);
-  n << n.normalize_registers();
-  n << n.extract_chunks_of_depth(0);
-  n.run(code);
-
-  // Check that the database has the right stuff
-  ASSERT_EQ(4, d.count());
+    // Check that the database has the right stuff
+    ASSERT_EQ(expected, chunk_count);
+  }
 
 }
 
 
-TEST_F(DatabaseTest, NormalizeConstants) {
-
-  x64asm::Code code = fix_4chunks;
-
-  // Setup the database and normalization procedure //
-  TestDatabase d;
-
-  auto upload_fun = [&d] (Chunk* c) {
-    d.insert(*c, (std::string)"test"); 
-  };
-
-  Normalizer n;
-  n.reset_pipeline(upload_fun);
-  n << n.normalize_constants();
-  n << n.extract_chunks_of_depth(0);
-  n.run(code);
-
-  // Check that the database has the right stuff
-  ASSERT_EQ(4, d.count());
-
-}
 
 
 }}}

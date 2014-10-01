@@ -3,8 +3,19 @@
   "code": [ "incq %rax",
             "movq %rax, %rdx" ],
 
-  "live_out": ["%rdx"],
-  "live_ins": ["%rax"]
+  "tests": {
+
+    "liveness": {
+      "given_out": ["%rdx"],
+      "expected_in": ["%rax"]
+    },
+
+    "normalization": {
+      "chunks": 1
+    }
+
+
+  }
 
 }
 

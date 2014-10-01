@@ -17,23 +17,6 @@
 
 #include "tests/fixture.h"
 #include "tests/trivial.cc"
-#include "tests/code_tests.h"
 #include "tests/database/database.h"
 
 #include <iostream>
-
-
-namespace stoke {
-  namespace test {
-TEST_F(FixtureTest, CheckingFixtures) {
-
-  for(auto it = fixtures_.begin(); it != fixtures_.end(); ++it) {
-
-    //std::string s1 = it->get_name();
-    //std::string s2 = it->get_test_data("filename").asString();
-
-    std::cout << it->get_code() << std::endl;
-  }
-}
-
-}}
