@@ -5,22 +5,21 @@
 #include <fstream>
 #include <exception>
 
-namespace stoke {
-namespace test {
+namespace stoke_test {
 
 using namespace std;
+
+
 
 Fixture::Fixture(string filename) {
   name_ = filename;
 
   // slurp the whole file into a string
-  cout << "reading " << filename << endl;
   ifstream in(filename);
   stringstream buffer;
   buffer << in.rdbuf();
 
   // parse the JSON
-  cout << "parsing JSON" << endl;
   Json::Value root;
   Json::Reader reader;
   bool parse_success = reader.parse(buffer.str(), root);
@@ -29,7 +28,6 @@ Fixture::Fixture(string filename) {
     throw new runtime_error("JSON parsing failed for file " + filename);
 
   // read the code
-  cout << "reading code" << endl;
   stringstream code_ss;
   const Json::Value& code_json = root["code"];
   for(size_t i = 0; i < code_json.size(); ++i) {
@@ -40,17 +38,31 @@ Fixture::Fixture(string filename) {
   // read the test data
   const Json::Value test_json = root["tests"];
   for (auto name : test_json.getMemberNames() ) {
-    cout << "Found test " << name << endl;
     test_data_[name] = test_json[name];
   }
 
-  cout << "DONE" << endl;
   
 }
 
+::std::ostream& operator<<(::std::ostream& os, const Fixture& f) {
+  return os << f.get_name(); 
+}
 
-void FixtureTest::SetUp() {
-  std::string folder = "/home/berkeley/stoke/tests/fixtures/";
+void PrintTo(const Fixture& f, ::std::ostream* os) {
+  *os << f.get_name();  // whatever needed to print bar to os
+}
+
+
+
+vector<Fixture> FixtureTestInit::fixtures_;
+
+void FixtureTestInit::generate_fixtures() {
+
+  //make sure that if this function gets called twice,
+  //we don't add them all over again.
+
+  fixtures_.clear();
+  std::string folder = "tests/fixtures/";
 
   DIR *dp = opendir(folder.c_str());
   if (dp == NULL) {
@@ -78,4 +90,4 @@ void FixtureTest::SetUp() {
   
 
 
-}}
+}

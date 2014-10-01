@@ -20,25 +20,26 @@
 #include <sys/types.h>
 #include <cstdio>
 
-
-namespace stoke {
-namespace test {
-
+namespace stoke_test {
 
 class Fixture {
 
   public:
     Fixture(std::string filename);
 
-    std::string get_name() { return std::string(name_); }
-    x64asm::Code get_code() { return x64asm::Code(code_); }
+    std::string get_name() const { return std::string(name_); }
+    x64asm::Code get_code() const { return x64asm::Code(code_); }
 
     Json::Value get_test_data(std::string test_name) {
       return test_data_[test_name];
     }
 
+    friend std::ostream& operator<<(std::ostream& os, const Fixture& f);
+
   private:
     std::string name_;
+    std::string filename_;
+    std::string comment_;
 
     x64asm::Code code_;
 
@@ -46,19 +47,45 @@ class Fixture {
 };
 
 
-class FixtureTest : public ::testing::Test {
+void PrintTo(const Fixture& f, ::std::ostream* os);
+
+
+class FixtureTestInit {
+
+  public:
+    FixtureTestInit() {
+      generate_fixtures();
+    }
+
+    static std::vector<Fixture> get_fixtures() { 
+      if (fixtures_.size() == 0)
+        generate_fixtures();
+
+      return fixtures_; 
+    }
+
+  private:
+    static void generate_fixtures();
+
+    static std::vector<Fixture> fixtures_;
+};
+
+
+class FixtureTest : public ::testing::TestWithParam<Fixture> {
+
+  public:
+    void SetUp() {
+      fixtures_ = std::vector<Fixture>(FixtureTestInit::get_fixtures());
+    }
 
   protected:
-
-    virtual void SetUp(); 
-
     std::vector<Fixture> fixtures_;
 
 };
 
 
+}
 
-}}
 
 #endif
 

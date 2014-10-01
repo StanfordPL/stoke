@@ -19,4 +19,11 @@
 #include "tests/trivial.cc"
 #include "tests/database/database.h"
 
-#include <iostream>
+
+namespace stoke_test {
+INSTANTIATE_TEST_CASE_P(
+  AllFixtures,
+  FixtureTest,
+  ::testing::ValuesIn(FixtureTestInit::get_fixtures())
+);
+}

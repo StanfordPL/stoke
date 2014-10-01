@@ -7,25 +7,15 @@
 
 #include <map>
 
-namespace stoke {
-namespace test {
-namespace database {
-
-/* This is a class for databases using the
-   fixtures from CodeTest... just another name */
-class DatabaseTest : public FixtureTest {
-  public:
-    DatabaseTest() : FixtureTest() {
-    }
-};
+namespace stoke_test {
 
 /* This is a database implementation */
-class TestDatabase : public Database {
+class TestDatabase : public stoke::Database {
 
   public:
     TestDatabase() {}
 
-    void insert(Chunk& chunk, std::string tag) {
+    void insert(stoke::Chunk& chunk, std::string tag) {
 
       tag_exists(tag);
 
@@ -34,7 +24,7 @@ class TestDatabase : public Database {
       count_++;
     }
 
-    uint64_t lookup(Chunk& chunk, std::string tag) {
+    uint64_t lookup(stoke::Chunk& chunk, std::string tag) {
 
       tag_exists(tag);
 
@@ -47,23 +37,23 @@ class TestDatabase : public Database {
     }
 
     void erase() {
-      map_ = std::map<std::string, std::map<Chunk, uint64_t>*>();
+      map_ = std::map<std::string, std::map<stoke::Chunk, uint64_t>*>();
     }
 
   private:
 
     void tag_exists(std::string& tag) {
       if(map_[tag] == 0) {
-        map_[tag] = new std::map<Chunk, uint64_t>();
+        map_[tag] = new std::map<stoke::Chunk, uint64_t>();
       }
     }
 
-    std::map<std::string, std::map<Chunk, uint64_t>*> map_;
+    std::map<std::string, std::map<stoke::Chunk, uint64_t>*> map_;
     uint64_t count_ = 0;
 };
 
 
-TEST_F(DatabaseTest, TestDatabaseWorks) {
+TEST_F(FixtureTest, TestDatabaseWorks) {
 
   /* We need two fixtures to do this test. */
   ASSERT_GE(fixtures_.size(), 2);
@@ -73,7 +63,7 @@ TEST_F(DatabaseTest, TestDatabaseWorks) {
   std::string zero("zero");
   std::string one("one");
 
-  Chunk chunks[2];
+  stoke::Chunk chunks[2];
   chunks[0].code = fixtures_[0].get_code();
   chunks[1].code = fixtures_[1].get_code();
  
@@ -89,6 +79,6 @@ TEST_F(DatabaseTest, TestDatabaseWorks) {
 
 }
 
-}}}
+}
 
 #endif

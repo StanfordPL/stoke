@@ -21,7 +21,8 @@ TARGET=-mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 INC=\
 	-I./ \
 	-I./src/ext/cpputil/ \
-	-I./src/ext/x64asm
+	-I./src/ext/x64asm \
+  -I./src/ext/gtest-1.7.0/include
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
@@ -106,7 +107,7 @@ tags:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/cpputil src/ext/x64asm src/ext/gtest/libgtest.a
+external: src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
 	make -C src/ext/x64asm $(EXT_OPT) 
 
@@ -116,9 +117,9 @@ src/ext/cpputil:
 src/ext/x64asm:
 	git clone -b berkeley git://github.com/eschkufz/x64asm.git src/ext/x64asm
 
-src/ext/gtest/libgtest.a:
-	cmake src/ext/gtest/CMakeLists.txt
-	make -C src/ext/gtest
+src/ext/gtest-1.7.0/libgtest.a:
+	cmake src/ext/gtest-1.7.0/CMakeLists.txt
+	make -C src/ext/gtest-1.7.0
 
 ##### BUILD TARGETS
 
@@ -151,8 +152,8 @@ bin/%: tools/%.cc $(OBJ)
 TEST_OBJ=\
          tests/fixture.o \
          \
-         src/ext/gtest/libgtest.a \
-         src/ext/gtest/libgtest_main.a
+         src/ext/gtest-1.7.0/libgtest.a \
+         src/ext/gtest-1.7.0/libgtest_main.a
 
 TEST_LIBS=-ljsoncpp
 
@@ -162,7 +163,7 @@ TEST_BIN=bin/stoke_test
 tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
-bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) tests/
+bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) tests/*.h
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
 
 ##### MISC
@@ -173,7 +174,7 @@ bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) tests/
 
 clean:
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
-	make -C src/ext/gtest clean
+	make -C src/ext/gtest-1.7.0 clean
 	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN)
 
 dist_clean: clean
