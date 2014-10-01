@@ -460,6 +460,14 @@ void Cfg::recompute_liveness() {
       }
     }
 
+    // Compute live outs for the entry node
+    /*
+    live_outs_[0] = RegSet::empty();
+    for (auto s=succ_begin(0), si=succ_end(0); s != si; ++s) {
+      live_outs_[0] |= live_ins_[*s];
+    }
+    */
+
 }
 
 

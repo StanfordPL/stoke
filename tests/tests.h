@@ -18,6 +18,7 @@
 #include "tests/fixture.h"
 #include "tests/trivial.cc"
 #include "tests/database/database.h"
+#include "tests/cfg/cfg.h"
 
 
 namespace stoke_test {

@@ -6,8 +6,8 @@
   "tests": {
 
     "liveness": {
-      "given_out": ["%rdx"],
-      "expected_in": ["%rax"]
+      "given liveout": ["%rdx"],
+      "expected livein": ["%rax"]
     },
 
     "normalization": {
