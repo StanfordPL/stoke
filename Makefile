@@ -14,7 +14,7 @@
 
 ##### CONSTANT DEFINITIONS
 
-CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors
+CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors -DDEBUG_REGSET
 
 TARGET=-mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 
@@ -173,10 +173,10 @@ bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) tests/*.h
 ##### CLEAN TARGETS
 
 clean:
-	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
-	make -C src/ext/gtest-1.7.0 clean
 	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN)
 
 dist_clean: clean
 	rm -rf src/ext/cpputil
 	rm -rf src/ext/x64asm
+	make -C src/ext/gtest-1.7.0 clean
+	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean

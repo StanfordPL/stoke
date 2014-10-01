@@ -4,22 +4,21 @@
   "comment": "CFG has 3 blocks: A->B, B->C, A->C.  Call in B.",
   "code": [ 
             //BB A 
-            "incq %rax",        // RAX, RCX, RDX, R8, R9
-            "cmpq %rax, %rcx",  // RAX, RCX, RDX, R8, R9
-            "jle .L1",          // RAX, RDX, RCX, R8, R9
+            "incq %rax",        // RAX, RCX, RDX, R8, R9, XMM...
+            "cmpq %rax, %rcx",  // RAX, RCX, RDX, R8, R9, XMM...
+            "jle .L1",          // RAX, RDX, RCX, R8, R9, XMM...
 
             //BB B
-            "subq $0x10, %rcx", // RDX, RCX, R8, R9
-            "movq %rcx, %rsi",  // RDX, RCX, R8, R9
-            "movq %rcx, %rdi",  // RSI, RDX, RCX, R8, R9
-            "callq .L2",        // RSI, RDI, RDX, RCX, R8, R9
+            "subq $0x10, %rcx", // RDX, RCX, R8, R9, XMM...
+            "movq %rcx, %rsi",  // RDX, RCX, R8, R9, XMM...
+            "movq %rcx, %rdi",  // RSI, RDX, RCX, R8, R9, XMM...
+            "callq .L2",        // RSI, RDI, RDX, RCX, R8, R9, XMM...
             "addq $0x10, %rcx", // RAX
                                 // RAX
 
             //BB C
             ".L1:",             // RAX
             "incq %rax",        // RAX
-            "retq",             // RAX
 
             //...
             ".L2:" ],
@@ -31,7 +30,9 @@
 
     "liveness": {
       "given liveout":   ["%rax"],
-      "expected livein": ["%rax", "%rcx", "%rdx", "%r8", "%r9"]
+      "expected livein": ["%rax", "%rcx", "%rdx", "%r8", "%r9", 
+                          "%xmm0", "%xmm1", "%xmm2", "%xmm3",
+                          "%xmm4", "%xmm5", "%xmm6", "%xmm7"]
     }
   }
 

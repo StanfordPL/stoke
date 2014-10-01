@@ -450,8 +450,8 @@ void Cfg::recompute_liveness() {
 
         const auto& instr = code_[idx + 1];
         if(instr.is_call()) {
-          live_outs_[idx] -= RegSet::linux_callee_save();
-          live_outs_[idx] |= RegSet::linux_caller_save();
+          live_outs_[idx] -= RegSet::linux_call_scratch();
+          live_outs_[idx] |= RegSet::linux_call_parameters();
         } else {
           live_outs_[idx] -= instr.must_write_set();
           live_outs_[idx] -= instr.must_undef_set();
@@ -480,8 +480,8 @@ void Cfg::recompute_liveness_use_kill() {
     for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
 
       if(j->is_call()) {
-        liveness_use_[*i] |= RegSet::linux_caller_save();
-        liveness_kill_[*i] |= RegSet::linux_callee_save();
+        liveness_use_[*i] |= (RegSet::linux_call_parameters() - liveness_kill_[*i]);
+        liveness_kill_[*i] |= RegSet::linux_call_scratch();
 
       } else {
         liveness_use_[*i] |= (j->maybe_read_set() - liveness_kill_[*i]);
