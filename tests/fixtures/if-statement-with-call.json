@@ -2,17 +2,26 @@
 {
   "name": "if-statement-with-call",
   "comment": "CFG has 3 blocks: A->B, B->C, A->C.  Call in B.",
-  "code": [ "incq %rax",
-            "cmpq %rax, %rcx",
-            "jle .L1",
-            "subq $0x10, %rcx",
-            "movq %rcx, %rsi",
-            "movq %rcx, %rdi",
-            "callq .L2",
-            "addq $0x10, %rcx",
-            ".L1:",
-            "incq %rax",
-            "retq",
+  "code": [ 
+            //BB A 
+            "incq %rax",        // RAX, RCX, RDX, R8, R9
+            "cmpq %rax, %rcx",  // RAX, RCX, RDX, R8, R9
+            "jle .L1",          // RAX, RDX, RCX, R8, R9
+
+            //BB B
+            "subq $0x10, %rcx", // RDX, RCX, R8, R9
+            "movq %rcx, %rsi",  // RDX, RCX, R8, R9
+            "movq %rcx, %rdi",  // RSI, RDX, RCX, R8, R9
+            "callq .L2",        // RSI, RDI, RDX, RCX, R8, R9
+            "addq $0x10, %rcx", // RAX
+                                // RAX
+
+            //BB C
+            ".L1:",             // RAX
+            "incq %rax",        // RAX
+            "retq",             // RAX
+
+            //...
             ".L2:" ],
 
   "tests": {
@@ -22,7 +31,7 @@
 
     "liveness": {
       "given liveout":   ["%rax"],
-      "expected livein": ["%rax", "%rcx"]
+      "expected livein": ["%rax", "%rcx", "%rdx", "%r8", "%r9"]
     }
   }
 

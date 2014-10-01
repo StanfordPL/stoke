@@ -21,7 +21,7 @@ x64asm::RegSet parse_regset_from_json(Json::Value json) {
     std::stringstream ss;
     ss << "{ ";
     for(size_t i = 0; i < json.size(); ++i) {
-      ss << json.get(i,"") << " ";
+      ss << json.get(i,"").asString() << " ";
     }
     ss << "}";
     rsr(ss, rs);
