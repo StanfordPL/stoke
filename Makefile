@@ -56,6 +56,8 @@ OBJ=\
 	src/state/state_reader.o \
 	src/state/state_writer.o \
 	\
+	src/stategen/stategen.o \
+	\
 	src/verifier/verifier.o
 
 BIN=\
@@ -116,6 +118,8 @@ src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
 src/search/%.o: src/search/%.cc src/search/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc src/state/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
