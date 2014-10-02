@@ -64,7 +64,7 @@ TEST_P(FixtureTest, LivenessAnalysis) {
 
   // Run the liveness analysis
   cfg.recompute();
-  auto actual_livein = cfg.live_ins();
+  auto actual_livein = cfg.live_ins(cfg.get_loc(0));
 
   ASSERT_EQ(expected_livein, actual_livein);
 

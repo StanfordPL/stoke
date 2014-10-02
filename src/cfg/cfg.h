@@ -310,8 +310,9 @@ class Cfg {
   }
 
   /** Returns the set of registers that are live-in for this graph. */
-  x64asm::RegSet live_ins() const {
-    return live_ins_[0];
+  x64asm::RegSet live_ins(const loc_type& loc) const {
+    assert(is_reachable(loc.first));
+    return live_ins_[get_index(loc)];
   }
 
   /** Returns true if performs_undef_reach() returns true. */
@@ -370,7 +371,7 @@ class Cfg {
 
   /** The set of registers live out for every instruction. The final element refers to the exit block. */
   std::vector<x64asm::RegSet> live_outs_;
-  /** The set of registers live in at each block */
+  /** The set of registers live in at each instruction */
   std::vector<x64asm::RegSet> live_ins_;
   /** The use set for each block. */
   std::vector<x64asm::RegSet> liveness_use_;
