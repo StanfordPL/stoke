@@ -309,6 +309,11 @@ class Cfg {
     return fxn_live_outs_;
   }
 
+  /** Returns the set of registers that are live-in for this graph. */
+  x64asm::RegSet live_ins() const {
+    return live_ins_[0];
+  }
+
   /** Returns true if performs_undef_reach() returns true. */
   bool is_sound() const {
     return !performs_undef_read();

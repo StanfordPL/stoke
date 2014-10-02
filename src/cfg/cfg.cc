@@ -394,11 +394,12 @@ void Cfg::recompute_liveness() {
       if(num_instrs(*i) == 0)
         continue;
 
-      // set the live-in of each block to the empty set
+      // Set the live-in of each block to the empty set.
       live_ins_[*i] = RegSet::empty();
 
-      // set the live-out of each block to the empty set this requires looking
-      // up the index of the last instruction in the block.
+      // Set the live-out of each block to the empty set.
+      // this requires looking up the index of the last 
+      // instruction in the block.
       live_outs_[blocks_[*i]+num_instrs(*i)-1] = RegSet::empty();
     }
     live_ins_[get_exit()] = fxn_live_outs_;
@@ -413,7 +414,9 @@ void Cfg::recompute_liveness() {
         if (num_instrs(*i) == 0)
           continue;
 
-        // Meet operator
+        // Meet operator.  Starting with the empty-set, union
+        // in the live-ins from the first statement of every
+        // successor block
         live_outs_[blocks_[*i]+num_instrs(*i)-1] = RegSet::empty();
         for (auto s = succ_begin(*i), si = succ_end(*i); s != si; ++s) {
           if (is_reachable(*s)) {
@@ -421,7 +424,9 @@ void Cfg::recompute_liveness() {
           }
         }
 
-        // Transfer function
+        // Transfer function.
+        // Take the live outs at the end of the block, remove the 
+        // kill set, and union in the use set.
         const auto new_in = 
           (live_outs_[blocks_[*i]+num_instrs(*i)-1] - liveness_kill_[*i]) | 
             liveness_use_[*i];
@@ -444,6 +449,9 @@ void Cfg::recompute_liveness() {
       //iterate through all blocks w/ at least 2 instructions
       if(num_instrs(*i) < 2)
         continue;
+
+      // Go from the second-to-last instruction to the first
+      // Update the live outs for each 
       for (int j = num_instrs(*i)-2; j >= 0; --j) {
         const auto idx = blocks_[*i] + j;
         live_outs_[idx] = live_outs_[idx + 1];
@@ -461,12 +469,11 @@ void Cfg::recompute_liveness() {
     }
 
     // Compute live outs for the entry node
-    /*
-    live_outs_[0] = RegSet::empty();
+    // (it was excluded before because it has zero nodes)
+    live_ins_[0] = RegSet::empty();
     for (auto s=succ_begin(0), si=succ_end(0); s != si; ++s) {
-      live_outs_[0] |= live_ins_[*s];
+      live_ins_[0] |= live_ins_[*s];
     }
-    */
 
 }
 

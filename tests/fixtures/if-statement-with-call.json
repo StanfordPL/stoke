@@ -19,11 +19,20 @@
             //BB C
             ".L1:",             // RAX
             "incq %rax",        // RAX
+            "retq",
 
             //...
             ".L2:" ],
 
   "tests": {
+
+    "cfg": {
+      "num_blocks": 6,
+      "num_instrs": [0, 3, 5, 3, 1, 0],
+      "get_exit":   5,
+      "reachable":  [0, 1, 2, 3, 5]
+    },
+
     "normalization": {
       "chunks": 4
     },

@@ -5,6 +5,13 @@
 
   "tests": {
 
+    "cfg": {
+      "num_blocks": 3,
+      "num_instrs": [0, 2, 0],
+      "get_exit":   2,
+      "reachable":  [0, 1, 2]
+    },
+
     "liveness": {
       "given liveout": ["%rdx"],
       "expected livein": ["%rax"]

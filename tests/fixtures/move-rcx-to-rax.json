@@ -1,11 +1,22 @@
 
 {
   "name": "movq rcx to rax",
-  "code": [
-            "movq %rcx, %rax"
-          ],
+  "code": [ "movq %rcx, %rax" ],
+
+  "comment": 
+    ["Believe it or not, this once exhibited a bug in liveness.",
+     "Namely, we used to check the live_outs_[0] variable for"  ,
+     "the getting the live inputs to the function, but it turns",
+     "out that we really need to check live_ins_[0]."           ],
 
   "tests": {
+
+    "cfg": {
+      "num_blocks": 3,
+      "num_instrs": [0, 1, 0],
+      "get_exit":   2,
+      "reachable":  [0, 1, 2]
+    },
 
     "liveness": {
       "given liveout": ["%rax"],

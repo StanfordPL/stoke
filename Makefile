@@ -91,7 +91,7 @@ all: release tags
 
 debug:
 	make -C . external EXT_OPT="debug"
-	make -C . $(BIN) OPT="-g" 
+	make -C . $(BIN) OPT="-g -DDEBUG_CFG_LIVENESS" 
 release:
 	make -C . external EXT_OPT="release"
 	make -C . $(BIN) OPT="-DNDEBUG -O3" 
