@@ -1,0 +1,16 @@
+{
+  "name": "xmms",
+  "code": [ "addsd %xmm2, %xmm0", //RDX, RDI, XMM0, XMM1, XMM2
+            "movq  %rdi, %rax",   //RDX, RDI, XMM0, XMM1
+            "subsd %xmm1, %xmm0", //RAX, RDX, XMM0, XMM1
+            "retq" ],             //RAX, RDX, XMM0, XMM1
+
+  "tests": {
+
+    "liveness": {
+      "given liveout": ["%rax", "%rdx", "%xmm0", "%xmm1"],
+      "expected livein": ["%rdx", "%rdi", "%xmm0", "%xmm1", "%xmm2"]
+    }
+  }
+}
+
