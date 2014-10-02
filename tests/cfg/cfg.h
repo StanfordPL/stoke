@@ -45,6 +45,10 @@ TEST_P(FixtureTest, LivenessAnalysis) {
   Fixture fixture = GetParam();
   auto json = fixture.get_test_data("liveness");
 
+  if (!json.isMember("given liveout") ||
+      !json.isMember("expected livein"))
+    return;
+
   x64asm::RegSet given_liveout = 
       parse_regset_from_json(json["given liveout"]);
 
@@ -129,6 +133,32 @@ TEST_P(FixtureTest, CFGNumInstr) {
 
   ASSERT_EQ(total, fixture.get_code().size());
 }
+
+
+TEST_P(FixtureTest, CFGNestingDepth) {
+
+  Fixture fixture = GetParam();
+  auto json = fixture.get_test_data("cfg");
+
+  if (!json.isMember("nesting_depth"))
+    return;
+
+  stoke::Cfg cfg(fixture.get_code(), 
+                 x64asm::RegSet::empty(),
+                 x64asm::RegSet::empty());
+
+  cfg.recompute();
+ 
+
+  const Json::Value& nesting_depth_array = json["nesting_depth"];
+  ASSERT_EQ(nesting_depth_array.size(), cfg.num_blocks());
+
+  for(size_t i = 0; i < nesting_depth_array.size(); ++i) {
+    auto expected_depth = nesting_depth_array.get(i, Json::Value(1)).asInt();
+    ASSERT_EQ(expected_depth, cfg.nesting_depth(i)) << " for block " << i;
+  }
+}
+
 
 TEST_P(FixtureTest, CFGReachable) {
   

@@ -15,7 +15,8 @@
       "num_blocks": 3,
       "num_instrs": [0, 1, 0],
       "get_exit":   2,
-      "reachable":  [0, 1, 2]
+      "reachable":  [0, 1, 2],
+      "nesting_depth": [0, 0, 0]
     },
 
     "liveness": {

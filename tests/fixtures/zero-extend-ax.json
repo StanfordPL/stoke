@@ -1,0 +1,12 @@
+{
+  "name": "zero-extend-ax",
+  "code": [ "movzwq %ax, %rax" ],
+
+  "tests": {
+
+    "liveness": {
+      "given liveout": ["%rax"],
+      "expected livein": ["%ax"]
+    } 
+  }
+}

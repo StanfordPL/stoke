@@ -23,7 +23,8 @@ Fixture::Fixture(string filename) {
   bool parse_success = reader.parse(buffer.str(), root);
 
   if (!parse_success)
-    throw new runtime_error("JSON parsing failed for file " + filename);
+    throw runtime_error("JSON parsing failed for file " + filename +
+                        ":" + reader.getFormattedErrorMessages());
 
   // get the metadata
   size_t name_pos = filename.rfind("/")+1;
@@ -72,7 +73,7 @@ void FixtureTestInit::generate_fixtures() {
   //we don't add them all over again.
 
   fixtures_.clear();
-  std::string folder = "tests/fixtures/";
+  std::string folder = "tests/fixtures";
 
   DIR *dp = opendir(folder.c_str());
   if (dp == NULL) {
@@ -92,6 +93,8 @@ void FixtureTestInit::generate_fixtures() {
       continue;
 
     std::string filepath = folder + "/" + filename; 
+
+
     Fixture f(filepath);
     fixtures_.push_back(f);
   }
