@@ -28,64 +28,71 @@ using namespace x64asm;
 
 namespace {
 
-array<pair<string, R64>, 68> gps {{
-    {"%al", rax},
-    {"%cl", rcx},
-    {"%dl", rdx},
-    {"%bl", rbx},
+array<pair<string, Rb>, 20> gp8s {{
+    {"%al", al},
+    {"%cl", cl},
+    {"%dl", dl},
+    {"%bl", bl},
 
-    {"%ah", rax},
-    {"%ch", rcx},
-    {"%dh", rdx},
-    {"%bh", rbx},
+    {"%ah", ah},
+    {"%ch", ch},
+    {"%dh", dh},
+    {"%bh", bh},
 
-    {"%spl", rsp},
-    {"%bpl", rbp},
-    {"%sil", rsi},
-    {"%dil", rdi},
-    {"%r8b", r8},
-    {"%r9b", r9},
-    {"%r10b", r10},
-    {"%r11b", r11},
-    {"%r12b", r12},
-    {"%r13b", r13},
-    {"%r14b", r14},
-    {"%r15b", r15},
+    {"%spl", spl},
+    {"%bpl", bpl},
+    {"%sil", sil},
+    {"%dil", dil},
+    {"%r8b", r8b},
+    {"%r9b", r9b},
+    {"%r10b", r10b},
+    {"%r11b", r11b},
+    {"%r12b", r12b},
+    {"%r13b", r13b},
+    {"%r14b", r14b},
+    {"%r15b", r15b}
+}};
 
-    {"%ax", rax},
-    {"%cx", rcx},
-    {"%dx", rdx},
-    {"%bx", rbx},
-    {"%sp", rsp},
-    {"%bp", rbp},
-    {"%si", rsi},
-    {"%di", rdi},
-    {"%r8w", r8},
-    {"%r9w", r9},
-    {"%r10w", r10},
-    {"%r11w", r11},
-    {"%r12w", r12},
-    {"%r13w", r13},
-    {"%r14w", r14},
-    {"%r15w", r15},
 
-    {"%eax", rax},
-    {"%ecx", rcx},
-    {"%edx", rdx},
-    {"%ebx", rbx},
-    {"%esp", rsp},
-    {"%ebp", rbp},
-    {"%esi", rsi},
-    {"%edi", rdi},
-    {"%r8d", r8},
-    {"%r9d", r9},
-    {"%r10d", r10},
-    {"%r11d", r11},
-    {"%r12d", r12},
-    {"%r13d", r13},
-    {"%r14d", r14},
-    {"%r15d", r15},
+array<pair<string, R16>, 16> gp16s {{
+    {"%ax", ax},
+    {"%cx", cx},
+    {"%dx", dx},
+    {"%bx", bx},
+    {"%sp", sp},
+    {"%bp", bp},
+    {"%si", si},
+    {"%di", di},
+    {"%r8w", r8w},
+    {"%r9w", r9w},
+    {"%r10w", r10w},
+    {"%r11w", r11w},
+    {"%r12w", r12w},
+    {"%r13w", r13w},
+    {"%r14w", r14w},
+    {"%r15w", r15w}
+}};
 
+array<pair<string, R32>, 16> gp32s {{
+    {"%eax", eax},
+    {"%ecx", ecx},
+    {"%edx", edx},
+    {"%ebx", ebx},
+    {"%esp", esp},
+    {"%ebp", ebp},
+    {"%esi", esi},
+    {"%edi", edi},
+    {"%r8d", r8d},
+    {"%r9d", r9d},
+    {"%r10d", r10d},
+    {"%r11d", r11d},
+    {"%r12d", r12d},
+    {"%r13d", r13d},
+    {"%r14d", r14d},
+    {"%r15d", r15d}
+}};
+
+array<pair<string, R64>, 16> gp64s {{
     {"%rax", rax},
     {"%rcx", rcx},
     {"%rdx", rdx},
@@ -105,24 +112,26 @@ array<pair<string, R64>, 68> gps {{
   }
 };
 
-array<pair<string, Ymm>, 32> ys {{
-    {"%xmm0", ymm0},
-    {"%xmm1", ymm1},
-    {"%xmm2", ymm2},
-    {"%xmm3", ymm3},
-    {"%xmm4", ymm4},
-    {"%xmm5", ymm5},
-    {"%xmm6", ymm6},
-    {"%xmm7", ymm7},
-    {"%xmm8", ymm8},
-    {"%xmm9", ymm9},
-    {"%xmm10", ymm10},
-    {"%xmm11", ymm11},
-    {"%xmm12", ymm12},
-    {"%xmm13", ymm13},
-    {"%xmm14", ymm14},
-    {"%xmm15", ymm15},
+array<pair<string, Xmm>, 16> xmms_a {{
+    {"%xmm0", xmm0},
+    {"%xmm1", xmm1},
+    {"%xmm2", xmm2},
+    {"%xmm3", xmm3},
+    {"%xmm4", xmm4},
+    {"%xmm5", xmm5},
+    {"%xmm6", xmm6},
+    {"%xmm7", xmm7},
+    {"%xmm8", xmm8},
+    {"%xmm9", xmm9},
+    {"%xmm10", xmm10},
+    {"%xmm11", xmm11},
+    {"%xmm12", xmm12},
+    {"%xmm13", xmm13},
+    {"%xmm14", xmm14},
+    {"%xmm15", xmm15}
+}};
 
+array<pair<string, Ymm>, 16> ymms_a {{
     {"%ymm0", ymm0},
     {"%ymm1", ymm1},
     {"%ymm2", ymm2},
@@ -151,12 +160,24 @@ void RegSetReader::operator()(istream& is, RegSet& r) {
   TextReader<vector<string>>()(is, args);
 
   for (const auto& a : args) {
-    auto gp = rsp;
-    auto ymm = ymm0;
+    Rb r8 = al;
+    R16 r16 = ax; 
+    R32 r32 = eax;
+    R64 r64 = rax;
+    Xmm xmm = xmm0;
+    Ymm ymm = ymm0;
 
-    if (generic_read(gps, a, gp)) {
-      r += gp;
-    } else if (generic_read(ys, a, ymm)) {
+    if (generic_read(gp64s, a, r64)) {
+      r += r64;
+    } else if (generic_read(gp32s, a, r32)) {
+      r += r32;
+    } else if (generic_read(gp16s, a, r16)) {
+      r += r16;
+    } else if (generic_read(gp8s, a, r8)) {
+      r += r8;
+    } else if (generic_read(xmms_a, a, xmm)) {
+      r += xmm;
+    } else if (generic_read(ymms_a, a, ymm)) {
       r += ymm;
     } else {
       is.setstate(ios::failbit);
@@ -168,15 +189,16 @@ void RegSetReader::operator()(istream& is, RegSet& r) {
 void RegSetWriter::operator()(ostream& os, const RegSet& r) {
   os << "{";
 	for (const auto& gp : r64s ) {
-		if (r.contains(gp)) {
-			os << " " << gp;
-		}
+    if (r.contains(gp)) {
+      os << " " << gp;
+    }
 	}
-	for (const auto& sse : ymms ) {
+	for (const auto& sse : xmms ) {
     if (r.contains(sse)) {
       os << " " << sse;
     }
 	}
+
   os << " }";
 }
 
