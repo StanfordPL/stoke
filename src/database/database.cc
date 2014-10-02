@@ -20,9 +20,17 @@ void MongoDatabase::insert(Chunk& chunk, std::string tag) {
   stringstream code_ss;
   code_ss << chunk.code;
 
-  stringstream db_ss;
-  db_ss << database_ << "." << tag;
-  string db = db_ss.str();
+  stringstream tmp;
+  tmp << database_ << "." << tag;
+  string db = tmp.str();
+  tmp.str("");
+
+  tmp << chunk.live_outs;
+  string live_outs = tmp.str();
+  tmp.str("");
+
+  tmp << chunk.live_ins;
+  string live_ins = tmp.str();
 
   int size = chunk.code.size();
 
@@ -31,7 +39,9 @@ void MongoDatabase::insert(Chunk& chunk, std::string tag) {
        count 1, or update the existing count */
     connection_.ensureIndex(db, fromjson("{code:1}"));
     connection_.update(db,
-             BSON( "code" << code_ss.str() ),
+             BSON( "code" << code_ss.str() <<
+                   "live_ins" << live_ins <<
+                   "live_outs" << live_outs ),
              BSON( "$inc" << BSON( "count" << 1 ) <<
                    "$set" << BSON( "size" << size ) ),
              true);
@@ -47,15 +57,26 @@ uint64_t MongoDatabase::lookup(Chunk& chunk, string tag) {
   stringstream code_ss;
   code_ss << chunk.code;
 
-  stringstream db_ss;
-  db_ss << database_ << "." << tag;
-  string db = db_ss.str();
+  stringstream tmp;
+  tmp << database_ << "." << tag;
+  string db = tmp.str();
+  tmp.str("");
+
+  tmp << chunk.live_outs;
+  string live_outs = tmp.str();
+  tmp.str("");
+
+  tmp << chunk.live_ins;
+  string live_ins = tmp.str();
+
 
   try {
     /* Lookup the count corresponding to this
        code/tag pair */
     DBClientCursor *cursor = 
-      connection_.query(db, QUERY("code" << code_ss.str())).release();
+      connection_.query(db, QUERY("code" << code_ss.str() <<
+                                  "live_ins" << live_ins << 
+                                  "live_outs" << live_outs )).release();
 
     uint64_t sum = 0;
     while (cursor->more()) {

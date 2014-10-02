@@ -14,7 +14,7 @@
 
 ##### CONSTANT DEFINITIONS
 
-CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors -DDEBUG_REGSET
+CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors
 
 TARGET=-mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 

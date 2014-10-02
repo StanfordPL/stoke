@@ -29,7 +29,7 @@ using namespace mongo;
 
 
 #define STAT_MAX 20
-#define MAX_NORM 3
+#define MAX_NORM 1
 
 
 auto& h0 = Heading::create("Database job specification");

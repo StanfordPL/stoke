@@ -14,7 +14,7 @@ namespace stoke {
 class Chunk {
 
   public:
-    x64asm::RegSet def_ins;
+    x64asm::RegSet live_ins;
     x64asm::RegSet live_outs;
     x64asm::Code code;
     uint32_t nesting_depth;

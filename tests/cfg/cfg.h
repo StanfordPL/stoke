@@ -71,7 +71,7 @@ TEST_P(FixtureTest, LivenessAnalysis) {
 
 }
 
-TEST_P(FixtureTest, CFGNumBlocks) {
+TEST_P(FixtureTest, DISABLED_CFGNumBlocks) {
 
   Fixture fixture = GetParam();
   auto json = fixture.get_test_data("cfg");
@@ -88,7 +88,7 @@ TEST_P(FixtureTest, CFGNumBlocks) {
   ASSERT_EQ(json["num_blocks"].asInt(), cfg.num_blocks());
 }
 
-TEST_P(FixtureTest, CFGGetExit) {
+TEST_P(FixtureTest, DISABLED_CFGGetExit) {
 
   Fixture fixture = GetParam();
   auto json = fixture.get_test_data("cfg");

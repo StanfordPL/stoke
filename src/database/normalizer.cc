@@ -15,7 +15,11 @@ Normalizer::CodeOperator Normalizer::extract_chunks_of_depth(int depth) {
 
   return [depth] (Chunk* code, Normalizer::CodeContinuation continuation) {
 
-    Cfg cfg(code->code, RegSet::empty(), RegSet::empty());
+    RegSet liveouts = RegSet::empty() + 
+                      Constants::rax() + Constants::rdx() +
+                      Constants::xmm0() + Constants::xmm1();
+
+    Cfg cfg(code->code, RegSet::empty(), liveouts);
 
     Chunk new_chunk;
 
@@ -46,6 +50,8 @@ Normalizer::CodeOperator Normalizer::extract_chunks_of_depth(int depth) {
 
           if(new_chunk.code.size() > 0) {
             //process this chunk!
+            Cfg::loc_type loc = std::pair<Cfg::id_type,size_t>(*it, instr_index-1);
+            new_chunk.live_outs = cfg.live_outs(loc);
             if(nesting_depth >= depth)
               continuation(&new_chunk);
             new_chunk.code.clear();
@@ -53,13 +59,18 @@ Normalizer::CodeOperator Normalizer::extract_chunks_of_depth(int depth) {
 
         } else {
           //add instruction to vector
+          if(new_chunk.code.size() == 0) {
+            Cfg::loc_type loc = std::pair<Cfg::id_type,size_t>(*it, instr_index);
+            new_chunk.live_ins = cfg.live_ins(loc);
+          }
           new_chunk.code.push_back(*instr_it);
         }
       }
 
       if(new_chunk.code.size() > 0) {
         //process this chunk!
-
+        Cfg::loc_type loc = std::pair<Cfg::id_type,size_t>(*it, instr_index-1);
+        new_chunk.live_outs = cfg.live_outs(loc);
         if(nesting_depth >= depth)
           continuation(&new_chunk);
         new_chunk.code.clear();
