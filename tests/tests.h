@@ -19,6 +19,7 @@
 #include "tests/trivial.cc"
 #include "tests/database/database.h"
 #include "tests/cfg/cfg.h"
+#include "tests/x64asm/x64asm.h"
 
 
 namespace stoke_test {

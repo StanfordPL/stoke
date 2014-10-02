@@ -1,0 +1,16 @@
+
+{
+  "name": "movq rcx to rax",
+  "code": [
+            "movq %rcx, %rax"
+          ],
+
+  "tests": {
+
+    "liveness": {
+      "given liveout": ["%rax"],
+      "expected livein": ["%rcx"]
+    }
+  }
+}
+

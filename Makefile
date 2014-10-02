@@ -163,7 +163,7 @@ TEST_BIN=bin/stoke_test
 tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
-bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) tests/*.h
+bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) $(wildcard tests/*.h) $(wildcard tests/*/*.h)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
 
 ##### MISC
