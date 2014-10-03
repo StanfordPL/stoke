@@ -64,6 +64,7 @@ class Cfg {
     recompute_structure();
     recompute_loops();
     recompute_defs();
+    recompute_liveness();
   }
   /** Recompute graph structure; modifying control flow will invalidate this state, calling this
     method will restore it. */
@@ -296,10 +297,22 @@ class Cfg {
 		// Careful... this structure is organized by instruction index. The exit block is a special case.
 		return def_ins_.back();
 	}
+  /** Returns the set of registers that are live-out on exit to an instruction; undefined for unrachable
+    blocks */
+  x64asm::RegSet live_outs(const loc_type& loc) const {
+    assert(is_reachable(loc.first));
+    return live_outs_[get_index(loc)];
+  }
 
   /** Returns the set of registers that are live on exit from this graph. */
   x64asm::RegSet live_outs() const {
     return fxn_live_outs_;
+  }
+
+  /** Returns the set of registers that are live-in for this graph. */
+  x64asm::RegSet live_ins(const loc_type& loc) const {
+    assert(is_reachable(loc.first));
+    return live_ins_[get_index(loc)];
   }
 
   /** Returns true if performs_undef_reach() returns true. */
@@ -356,6 +369,17 @@ class Cfg {
   /** The kill set for each block. */
   std::vector<x64asm::RegSet> kill_;
 
+  /** The set of registers live out for every instruction. The final element refers to the exit block. */
+  std::vector<x64asm::RegSet> live_outs_;
+  /** The set of registers live in at each instruction */
+  std::vector<x64asm::RegSet> live_ins_;
+  /** The use set for each block. */
+  std::vector<x64asm::RegSet> liveness_use_;
+  /** The def set for each block. */
+  std::vector<x64asm::RegSet> liveness_kill_;
+
+
+
   /** Performs a forward topological sort of reachable blocks and places the result in block_sort_ */
   void forward_topo_sort();
 
@@ -383,10 +407,14 @@ class Cfg {
 
   /** Recomputes the gen and kill sets used by recompute_defs_loops(). */
   void recompute_defs_gen_kill();
+  /** Recomputes the use and defs set used for liveness */
+  void recompute_liveness_use_kill();
   /** Recomputes def_ins_ using the generic least fixed point dataflow algorithm. */
   void recompute_defs_loops();
   /** Faster recomputation of def_ins_; valid only for loop-free graphs. */
   void recompute_defs_loop_free();
+  /** Recomputes live_outs_ using the generic LFP dataflow algorithm */
+  void recompute_liveness();
 };
 
 } // namespace stoke
