@@ -18,6 +18,7 @@
 #include "tests/fixture.h"
 #include "tests/trivial.h"
 #include "tests/x64asm/x64asm.h"
+#include "tests/cfg/cfg.h"
 
 
 INSTANTIATE_TEST_CASE_P(
