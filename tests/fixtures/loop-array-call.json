@@ -1,0 +1,77 @@
+
+{
+  "name": "loop-array-call",
+  "comment": "This runs a loop through some arguments, calls a function on each one, and adds up the results in a counter variable.  Compiled with -O3.",
+
+  "code": [
+
+    // B1
+    "pushq %r13",       //RCX, RDX, RSP, RBP, RBX, R8-9,12-13, RSI, EDI, XMM0-7
+    "movslq %edi, %r13",//RCX, RDX, RSP, RBP, RBX, R8-9,12, RSI, EDI, XMM0-7
+    "pushq %r12",       //RCX, RDX, RSP, RBP, RBX, R8-9,12-13, RSI, XMM0-7
+    "pushq %rbp",       //RCX, RDX, RSP, RBP, RBX, R8-9,13, RSI XMM0-7
+    "pushq %rbx",       //RCX, RDX, RSP, RBX, R8-9,13, RSI, XMM0-7
+    "subq $0x8, %rsp",  //...
+    "testq %r13, %r13", //...+EFLAGS
+    "je .L3",           //RCX, RDX, RSP, R8-9, R13, RSI, XMM0-7
+
+    // B2
+    "movq %rsi, %r12", //RCX, RDX, RSP, R8-9, R13, RSI, XMM0-7
+    "shlq $0x3, %r13", //RCX, RDX, RSP, R8-9, R12-13, RSI, XMM0-7
+    "xorl %ebx, %ebx", //RCX, RDX, RSP, R8-9, R12-13, RSI, XMM0-7
+    "xorl %ebp, %ebp", //RCX, RDX, RBX, RSP, R8-9, R12-13, RSI, XMM0-7
+
+    // B3
+    ".L1:",
+    "movq (%r12,%rbx,1), %rdi",  //RBX, %RCX, RDX, RSP, EBP, R8, R9, 
+                                 //R12, R13, RSI, XMM0-7
+    "addq $0x8, %rbx",           //...
+    "callq .L4",                 //EBP, RSP, R13, RBX
+                                 //RDI, RSI, RDX, RCX, R8, R9, XMM0-7
+    "addq %rax, %rbp",           //EBP, RSP, RDX, XMM0/1, R13, RBX, RAX
+    "cmpq %r13, %rbx",           //EBP, RSP, RDX, XMM0/1, R13, RBX, EFLAGS
+    "jne .L1",                   //EBP, RSP, RDX, XMM0/1 (++ FIXPOINT)
+
+    // B4
+    ".L2:",
+    "addq $0x8, %rsp",  //EBP, RSP, RDX, XMM0/1
+    "movl %ebp, %eax",  //EBP, RSP, RDX, XMM0/1 (note, RAX is killed)
+    "popq %rbx",
+    "popq %rbp",
+    "popq %r12",        //...
+    "popq %r13",        //RSP, RAX, RDX, XMM0/1
+    "retq",             //RAX, RDX, XMM0/1
+
+    // B5
+    ".L3:",
+    "xorl %ebp, %ebp",  //RSP, RDX, XMM0/1
+    "jmpq .L2",         //EBP, RSP, RDX, XMM0/1
+
+    // B6
+    ".L4:"
+  ],
+
+  "tests": {
+
+    "cfg": {
+      "num_blocks": 8,
+      "num_instrs": [0, 8, 4, 7, 8, 3, 1, 0],
+      "reachable" : [0, 1, 2, 3, 4, 5, 7],
+      "nesting_depth": [0, 0, 0, 1, 0, 0 , 0, 0]
+    },
+
+    "liveness": {
+      "given liveout": ["%rax", "%rdx", "%xmm0", "%xmm1"],
+      "expected livein": ["%rcx", "%rdx", "%rsp", "%rbp", "%rbx",
+                          "%r8", "%r9", "%r12", "%r13", "%rsi", "%edi",
+                          "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4",
+                          "%xmm5", "%xmm6", "%xmm7"]
+    },
+
+    "normalization": {
+      "chunks": 6
+    }
+
+  }
+
+}

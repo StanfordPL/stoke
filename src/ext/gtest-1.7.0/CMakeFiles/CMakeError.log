@@ -1,0 +1,114 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1920223237/fast"
+make[2]: Entering directory `/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1920223237.dir/build.make CMakeFiles/cmTryCompileExec1920223237.dir/build
+make[3]: Entering directory `/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1920223237.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -o CMakeFiles/cmTryCompileExec1920223237.dir/CheckSymbolExists.c.o   -c /home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec1920223237
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1920223237.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec1920223237.dir/CheckSymbolExists.c.o  -o cmTryCompileExec1920223237 -rdynamic 
+CMakeFiles/cmTryCompileExec1920223237.dir/CheckSymbolExists.c.o: In function `main':
+CheckSymbolExists.c:(.text+0x16): undefined reference to `pthread_create'
+collect2: error: ld returned 1 exit status
+make[3]: *** [cmTryCompileExec1920223237] Error 1
+make[3]: Leaving directory `/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+make[2]: *** [cmTryCompileExec1920223237/fast] Error 2
+make[2]: Leaving directory `/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+
+File /home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1228992908/fast"
+make[2]: Entering directory `/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1228992908.dir/build.make CMakeFiles/cmTryCompileExec1228992908.dir/build
+make[3]: Entering directory `/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1228992908.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTryCompileExec1228992908.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-2.8/Modules/CheckFunctionExists.c
+Linking C executable cmTryCompileExec1228992908
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1228992908.dir/link.txt --verbose=1
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTryCompileExec1228992908.dir/CheckFunctionExists.c.o  -o cmTryCompileExec1228992908 -rdynamic -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+make[3]: *** [cmTryCompileExec1228992908] Error 1
+make[3]: Leaving directory `/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+make[2]: *** [cmTryCompileExec1228992908/fast] Error 2
+make[2]: Leaving directory `/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+
+
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec229402902/fast"
+make[2]: Entering directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec229402902.dir/build.make CMakeFiles/cmTryCompileExec229402902.dir/build
+make[3]: Entering directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec229402902.dir/CheckSymbolExists.c.o
+/usr/bin/cc    -o CMakeFiles/cmTryCompileExec229402902.dir/CheckSymbolExists.c.o   -c /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTryCompileExec229402902
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec229402902.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec229402902.dir/CheckSymbolExists.c.o  -o cmTryCompileExec229402902 -rdynamic 
+CMakeFiles/cmTryCompileExec229402902.dir/CheckSymbolExists.c.o: In function `main':
+CheckSymbolExists.c:(.text+0x16): undefined reference to `pthread_create'
+collect2: error: ld returned 1 exit status
+make[3]: *** [cmTryCompileExec229402902] Error 1
+make[3]: Leaving directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+make[2]: *** [cmTryCompileExec229402902/fast] Error 2
+make[2]: Leaving directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+
+File /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec3348499273/fast"
+make[2]: Entering directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec3348499273.dir/build.make CMakeFiles/cmTryCompileExec3348499273.dir/build
+make[3]: Entering directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec3348499273.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTryCompileExec3348499273.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-2.8/Modules/CheckFunctionExists.c
+Linking C executable cmTryCompileExec3348499273
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec3348499273.dir/link.txt --verbose=1
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTryCompileExec3348499273.dir/CheckFunctionExists.c.o  -o cmTryCompileExec3348499273 -rdynamic -lpthreads 
+/usr/bin/ld: cannot find -lpthreads
+collect2: error: ld returned 1 exit status
+make[3]: *** [cmTryCompileExec3348499273] Error 1
+make[3]: Leaving directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+make[2]: *** [cmTryCompileExec3348499273/fast] Error 2
+make[2]: Leaving directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+
+

@@ -112,6 +112,9 @@ then
 elif [ "$SCMD" == "testcase" ]
 then
 	$HERE/stoke_testcase "$@"
+elif [ "$SCMD" == "test" ]
+then
+	$HERE/stoke_test "$@"
 else
 	echo "Unknown command: '"$SCMD"'"
 	echo "Type 'stoke --help' for usage."

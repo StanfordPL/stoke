@@ -21,10 +21,13 @@ TARGET=-mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 INC=\
 	-I./ \
 	-I./src/ext/cpputil/ \
-	-I./src/ext/x64asm
+	-I./src/ext/x64asm \
+  -I./src/ext/gtest-1.7.0/include
 
 LIB=\
-	src/ext/x64asm/lib/libx64asm.a
+	src/ext/x64asm/lib/libx64asm.a\
+  -pthread -lmongoclient -lboost_thread -lboost_system\
+  -lboost_regex -lboost_filesystem -lssl -lcrypto
 
 OBJ=\
 	src/args/distance.o \
@@ -82,7 +85,7 @@ BIN=\
 
 ##### TOP LEVEL TARGETS (release is default)
 
-all: release
+all: release tags
 
 debug:
 	make -C . external EXT_OPT="debug"
@@ -94,17 +97,27 @@ profile:
 	make -C . external EXT_OPT="profile"
 	make -C . $(BIN) OPT="-DNDEBUG -O3 -pg" 
 
+test: bin/stoke_test
+	bin/stoke_test 
+
+tags:
+	ctags -R src
+
 ##### EXTERNAL TARGETS
 
-external: src/ext/cpputil src/ext/x64asm
+external: src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
 	make -C src/ext/x64asm $(EXT_OPT) 
 
 src/ext/cpputil:
-	git clone git://github.com/eschkufz/cpputil.git src/ext/cpputil
+	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
 
 src/ext/x64asm:
-	git clone git://github.com/eschkufz/x64asm.git src/ext/x64asm
+	git clone -b develop git://github.com/eschkufz/x64asm.git src/ext/x64asm
+
+src/ext/gtest-1.7.0/libgtest.a:
+	cmake src/ext/gtest-1.7.0/CMakeLists.txt
+	make -C src/ext/gtest-1.7.0
 
 ##### BUILD TARGETS
 
@@ -125,10 +138,31 @@ src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
+
+
 ##### BINARY TARGETS
 
 bin/%: tools/%.cc $(OBJ) 
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  
+
+##### TESTING
+
+TEST_OBJ=\
+         tests/fixture.o \
+         \
+         src/ext/gtest-1.7.0/libgtest.a \
+         src/ext/gtest-1.7.0/libgtest_main.a
+
+TEST_LIBS=-ljsoncpp
+
+TEST_BIN=bin/stoke_test
+
+
+tests/%.o: tests/%.cc tests/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
+
+bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) $(wildcard tests/*.h) $(wildcard tests/*/*.h)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
 
 ##### MISC
 
@@ -137,9 +171,10 @@ bin/%: tools/%.cc $(OBJ)
 ##### CLEAN TARGETS
 
 clean:
-	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
-	rm -rf $(OBJ) $(BIN)
+	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN)
 
 dist_clean: clean
 	rm -rf src/ext/cpputil
 	rm -rf src/ext/x64asm
+	make -C src/ext/gtest-1.7.0 clean
+	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
