@@ -16,17 +16,13 @@
 
 
 #include "tests/fixture.h"
-#include "tests/trivial.cc"
+#include "tests/trivial.h"
 #include "tests/x64asm/x64asm.h"
-
-
-namespace stoke_test {
 
 
 INSTANTIATE_TEST_CASE_P(
   AllFixtures,
-  FixtureTest,
-  ::testing::ValuesIn(FixtureTestInit::get_fixtures())
+  CodeFixtureTest,
+  ::testing::ValuesIn(CodeFixtureTestInit::get_fixtures())
 );
 
-}

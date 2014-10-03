@@ -7,7 +7,6 @@
 
 #include <sstream>
 
-namespace stoke_test {
 
 class RegSetReaderTest : public ::testing::Test {
 
@@ -99,7 +98,6 @@ TEST(RegSetOutputStream, WritesComplex) {
 
 
 
-}
 
 
 #endif

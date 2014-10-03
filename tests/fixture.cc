@@ -5,13 +5,12 @@
 #include <fstream>
 #include <exception>
 
-namespace stoke_test {
 
 using namespace std;
 
 
 
-Fixture::Fixture(string filename) {
+CodeFixture::CodeFixture(string filename) {
   // slurp the whole file into a string
   ifstream in(filename);
   stringstream buffer;
@@ -53,21 +52,21 @@ Fixture::Fixture(string filename) {
   
 }
 
-::std::ostream& operator<<(::std::ostream& os, const Fixture& f) {
+::std::ostream& operator<<(::std::ostream& os, const CodeFixture& f) {
   return os << f.get_name(); 
 }
 
 /*
-void PrintTo(const Fixture& f, ::std::ostream* os) {
+void PrintTo(const CodeFixture& f, ::std::ostream* os) {
   *os << f.get_name();  // whatever needed to print bar to os
 }
 */
 
 
 
-vector<Fixture> FixtureTestInit::fixtures_;
+vector<CodeFixture> CodeFixtureTestInit::fixtures_;
 
-void FixtureTestInit::generate_fixtures() {
+void CodeFixtureTestInit::generate_fixtures() {
 
   //make sure that if this function gets called twice,
   //we don't add them all over again.
@@ -95,7 +94,7 @@ void FixtureTestInit::generate_fixtures() {
     std::string filepath = folder + "/" + filename; 
 
 
-    Fixture f(filepath);
+    CodeFixture f(filepath);
     fixtures_.push_back(f);
   }
 
@@ -103,4 +102,4 @@ void FixtureTestInit::generate_fixtures() {
   
 
 
-}
+

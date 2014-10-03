@@ -2,7 +2,6 @@
 #ifndef _STOKE_TEST_X64ASM_R_H
 #define _STOKE_TEST_X64ASM_R_H
 
-namespace stoke_test {
 
 // In the old code, the Rb class threw an assertion to
 // make sure that it couldn't print al/bl/cl/dl.  Now
@@ -33,6 +32,5 @@ TEST(RegisterPrinting, CanPrintDl) {
   ASSERT_EQ("%dl", ss.str());
 }
 
-}
 
 #endif

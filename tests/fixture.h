@@ -20,12 +20,11 @@
 #include <sys/types.h>
 #include <cstdio>
 
-namespace stoke_test {
 
-class Fixture {
+class CodeFixture {
 
   public:
-    Fixture(std::string filename);
+    CodeFixture(std::string filename);
 
     std::string get_name() const { return std::string(name_); }
     x64asm::Code get_code() const { return x64asm::Code(code_); }
@@ -34,9 +33,9 @@ class Fixture {
       return test_data_[test_name];
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const Fixture& f);
+    friend std::ostream& operator<<(std::ostream& os, const CodeFixture& f);
 
-    bool operator==(const Fixture& f) const {
+    bool operator==(const CodeFixture& f) const {
       return false;
     }
   private:
@@ -51,14 +50,14 @@ class Fixture {
 
 
 
-class FixtureTestInit {
+class CodeFixtureTestInit {
 
   public:
-    FixtureTestInit() {
+    CodeFixtureTestInit() {
       generate_fixtures();
     }
 
-    static std::vector<Fixture> get_fixtures() { 
+    static std::vector<CodeFixture> get_fixtures() { 
       if (fixtures_.size() == 0)
         generate_fixtures();
 
@@ -68,24 +67,23 @@ class FixtureTestInit {
   private:
     static void generate_fixtures();
 
-    static std::vector<Fixture> fixtures_;
+    static std::vector<CodeFixture> fixtures_;
 };
 
 
-class FixtureTest : public ::testing::TestWithParam<Fixture> {
+class CodeFixtureTest : public ::testing::TestWithParam<CodeFixture> {
 
   public:
     void SetUp() {
-      fixtures_ = std::vector<Fixture>(FixtureTestInit::get_fixtures());
+      fixtures_ = std::vector<CodeFixture>(CodeFixtureTestInit::get_fixtures());
     }
 
   protected:
-    std::vector<Fixture> fixtures_;
+    std::vector<CodeFixture> fixtures_;
 
 };
 
 
-}
 
 
 #endif
