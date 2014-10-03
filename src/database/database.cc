@@ -37,7 +37,7 @@ void MongoDatabase::insert(Chunk& chunk, std::string tag) {
   try {
     /* Either add this code to the database with
        count 1, or update the existing count */
-    connection_.ensureIndex(db, fromjson("{code:1}"));
+    connection_.ensureIndex(db, fromjson("{ code: \"hashed\" }"));
     connection_.update(db,
              BSON( "code" << code_ss.str() <<
                    "live_ins" << live_ins <<
