@@ -63,9 +63,12 @@ OBJ=\
   \
   src/database/normalizer.o \
   src/database/database.o \
+  \
+	src/stategen/stategen.o
 
 BIN=\
 	bin/stoke_extract \
+	bin/stoke_replace \
 	bin/stoke_search \
 	bin/stoke_testcase \
 	\
@@ -134,6 +137,8 @@ src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
 src/search/%.o: src/search/%.cc src/search/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc src/state/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@

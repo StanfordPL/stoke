@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -19,9 +20,17 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/system/terminal.h"
+#include "src/ext/x64asm/include/x64asm.h"
+
+#include "src/args/testcases.h"
+#include "src/args/tunit.h"
+#include "src/cfg/cfg.h"
+#include "src/stategen/stategen.h"
 
 using namespace cpputil;
 using namespace std;
+using namespace stoke;
+using namespace x64asm;
 
 auto& h1 = Heading::create("I/O options:");
 
@@ -41,22 +50,19 @@ auto& out = ValueArg<string>::create("o")
     .description("File to write testcases to (defaults to console if unspecified)")
     .default_val("");
 
-auto& h2 = Heading::create("Trace options:");
-
-auto& fxn = ValueArg<string>::create("fxn")
-    .usage("<string>")
-    .description("Function to generate testcases for")
-    .default_val("main");
-
-auto& max_stack = ValueArg<uint64_t>::create("max_stack")
-    .usage("<bytes>")
-    .description("The maximum number of bytes to assume could be stack")
-    .default_val(1024);
+auto& h2 = Heading::create("Common options:");
 
 auto& max_tc = ValueArg<size_t>::create("max_testcases")
     .usage("<int>")
     .description("The maximum number of testcases to generate")
     .default_val(16);
+
+auto& h3 = Heading::create("Trace options:");
+
+auto& fxn = ValueArg<string>::create("fxn")
+    .usage("<string>")
+    .description("Function to generate testcases for")
+    .default_val("main");
 
 auto& begin_line = ValueArg<size_t>::create("begin_line") 
 		.usage("<int>")
@@ -68,10 +74,57 @@ auto& end_lines = ValueArg<vector<size_t>, SpanReader<vector<size_t>, Range<size
     .description("Line number to end recording on; recording always stops on returns")
     .default_val({});
 
-int main(int argc, char** argv) {
-  CommandLineConfig::strict_with_convenience(argc, argv);
+auto& max_stack = ValueArg<uint64_t>::create("max_stack")
+    .usage("<bytes>")
+    .description("The maximum number of bytes to assume could be stack")
+    .default_val(1024);
 
-  string here = argv[0];
+auto& h4 = Heading::create("Autogen options:");
+
+auto& max_attempts = ValueArg<uint64_t>::create("max_attempts")
+    .usage("<int>")
+    .description("The maximum number of attempts to make at generating a testcase")
+    .default_val(16);
+
+auto& max_jumps = ValueArg<size_t>::create("max_jumps")
+    .usage("<int>")
+    .description("Maximum jumps before exit due to infinite loop")
+    .default_val(1024);
+
+auto& max_memory = ValueArg<uint64_t>::create("max_memory")
+    .usage("<bytes>")
+    .description("The maximum number of bytes to allocate to stack or heap")
+    .default_val(1024);
+
+auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
+    .usage("<path/to/file>")
+    .description("Source code to generate testcases for")
+    .default_val({"anon", {{RET}}});
+
+int auto_gen() {
+	Cfg cfg_t(target.value().code, RegSet::universe(), RegSet::empty());
+
+	StateGen sg;
+	sg.set_max_attempts(max_attempts.value())
+		.set_max_memory(max_stack.value())
+		.set_max_jumps(max_jumps.value());
+
+	vector<CpuState> tcs;
+	for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
+		CpuState tc;
+		if (sg.get(tc, cfg_t)) {
+			tcs.push_back(tc);
+		}
+	}
+
+	ofstream ofs(out.value());
+	TestcasesWriter()(ofs, tcs);
+
+	return 0;
+}
+
+int trace(const string& argv0) {
+  string here = argv0;
   here = here.substr(0, here.find_last_of("/") + 1);
 
   const string pin_path = here + "../src/ext/pin-2.13-62732-gcc.4.4.7-linux/";
@@ -96,5 +149,15 @@ int main(int argc, char** argv) {
   term << " -- " << bin.value() << " " << args.value() << endl;
 
   return 0;
+}
+
+int main(int argc, char** argv) {
+  CommandLineConfig::strict_with_convenience(argc, argv);
+
+	if (target.value().name != "anon") {
+		return auto_gen();
+	} else {
+		return trace(argv[0]);
+	}
 }
 

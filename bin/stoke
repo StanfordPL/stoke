@@ -22,6 +22,7 @@ then
 	echo "Type 'stoke <subcommand> --help' for help on a specific subcommand."
 	echo ""
 	echo "  extract             extract the contents of a binary file"
+	echo "  replace             replace the contents of a binary file"
 	echo "  search              run STOKE search"
 	echo "  testcase            generate a STOKE testcase file"
   echo "  database            modify or query a database of binaries"
@@ -98,6 +99,9 @@ then
 elif [ "$SCMD" == "extract" ]
 then
 	$HERE/stoke_extract "$@"
+elif [ "$SCMD" == "replace" ]
+then
+	$HERE/stoke_replace "$@"
 elif [ "$SCMD" == "search" ]
 then
 	$HERE/stoke_search "$@"
