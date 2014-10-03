@@ -39,10 +39,10 @@ x64asm::RegSet parse_regset_from_json(Json::Value json) {
   throw std::runtime_error("expected array of registers for liveness");
 }
 
-TEST_P(FixtureTest, LivenessAnalysis) {
+TEST_P(CodeFixtureTest, LivenessAnalysis) {
 
   //Read the data from the fixture
-  Fixture fixture = GetParam();
+  CodeFixture fixture = GetParam();
   auto json = fixture.get_test_data("liveness");
 
   if (!json.isMember("given liveout") ||
@@ -71,9 +71,9 @@ TEST_P(FixtureTest, LivenessAnalysis) {
 
 }
 
-TEST_P(FixtureTest, DISABLED_CFGNumBlocks) {
+TEST_P(CodeFixtureTest, DISABLED_CFGNumBlocks) {
 
-  Fixture fixture = GetParam();
+  CodeFixture fixture = GetParam();
   auto json = fixture.get_test_data("cfg");
 
   if (!json.isMember("num_blocks"))
@@ -88,9 +88,9 @@ TEST_P(FixtureTest, DISABLED_CFGNumBlocks) {
   ASSERT_EQ(json["num_blocks"].asInt(), cfg.num_blocks());
 }
 
-TEST_P(FixtureTest, DISABLED_CFGGetExit) {
+TEST_P(CodeFixtureTest, DISABLED_CFGGetExit) {
 
-  Fixture fixture = GetParam();
+  CodeFixture fixture = GetParam();
   auto json = fixture.get_test_data("cfg");
 
   if (!json.isMember("get_exit"))
@@ -106,9 +106,9 @@ TEST_P(FixtureTest, DISABLED_CFGGetExit) {
 }
 
 
-TEST_P(FixtureTest, CFGNumInstr) {
+TEST_P(CodeFixtureTest, CFGNumInstr) {
 
-  Fixture fixture = GetParam();
+  CodeFixture fixture = GetParam();
   auto json = fixture.get_test_data("cfg");
 
   if (!json.isMember("num_instrs"))
@@ -135,9 +135,9 @@ TEST_P(FixtureTest, CFGNumInstr) {
 }
 
 
-TEST_P(FixtureTest, CFGNestingDepth) {
+TEST_P(CodeFixtureTest, CFGNestingDepth) {
 
-  Fixture fixture = GetParam();
+  CodeFixture fixture = GetParam();
   auto json = fixture.get_test_data("cfg");
 
   if (!json.isMember("nesting_depth"))
@@ -160,9 +160,9 @@ TEST_P(FixtureTest, CFGNestingDepth) {
 }
 
 
-TEST_P(FixtureTest, CFGReachable) {
+TEST_P(CodeFixtureTest, CFGReachable) {
   
-  Fixture fixture = GetParam();
+  CodeFixture fixture = GetParam();
   auto json = fixture.get_test_data("cfg");
 
   if (!json.isMember("reachable"))
