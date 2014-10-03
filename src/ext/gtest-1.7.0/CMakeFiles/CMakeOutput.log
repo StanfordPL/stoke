@@ -305,3 +305,37 @@ make[3]: Leaving directory `/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/
 make[2]: Leaving directory `/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
 
 
+Determining if files pthread.h exist passed with the following output:
+Change Dir: /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec2785753734/fast"
+make[2]: Entering directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec2785753734.dir/build.make CMakeFiles/cmTryCompileExec2785753734.dir/build
+make[3]: Entering directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec2785753734.dir/CheckIncludeFiles.c.o
+/usr/bin/cc    -o CMakeFiles/cmTryCompileExec2785753734.dir/CheckIncludeFiles.c.o   -c /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CheckIncludeFiles.c
+Linking C executable cmTryCompileExec2785753734
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec2785753734.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTryCompileExec2785753734.dir/CheckIncludeFiles.c.o  -o cmTryCompileExec2785753734 -rdynamic 
+make[3]: Leaving directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+make[2]: Leaving directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+
+
+Determining if the function pthread_create exists in the pthread passed with the following output:
+Change Dir: /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/make "cmTryCompileExec1029194338/fast"
+make[2]: Entering directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/make -f CMakeFiles/cmTryCompileExec1029194338.dir/build.make CMakeFiles/cmTryCompileExec1029194338.dir/build
+make[3]: Entering directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building C object CMakeFiles/cmTryCompileExec1029194338.dir/CheckFunctionExists.c.o
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTryCompileExec1029194338.dir/CheckFunctionExists.c.o   -c /usr/share/cmake-2.8/Modules/CheckFunctionExists.c
+Linking C executable cmTryCompileExec1029194338
+/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTryCompileExec1029194338.dir/link.txt --verbose=1
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTryCompileExec1029194338.dir/CheckFunctionExists.c.o  -o cmTryCompileExec1029194338 -rdynamic -lpthread 
+make[3]: Leaving directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+make[2]: Leaving directory `/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/CMakeTmp'
+
+

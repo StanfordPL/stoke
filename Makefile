@@ -81,9 +81,7 @@ BIN=\
 	bin/stoke_benchmark_sandbox \
 	bin/stoke_benchmark_search \
 	bin/stoke_benchmark_state \
-	bin/stoke_benchmark_verify \
-  \
-  bin/stoke_database 
+	bin/stoke_benchmark_verify 
 
 ##### TOP LEVEL TARGETS (release is default)
 
@@ -115,7 +113,7 @@ src/ext/cpputil:
 	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
 
 src/ext/x64asm:
-	git clone -b berkeley git://github.com/eschkufz/x64asm.git src/ext/x64asm
+	git clone -b develop git://github.com/eschkufz/x64asm.git src/ext/x64asm
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt

@@ -3,6 +3,8 @@
 #define _STOKE_TEST_X64ASM_REGSET_H
 
 #include "src/ext/x64asm/src/reg_set.h"
+#include "src/args/reg_set.h"
+
 #include <sstream>
 
 namespace stoke_test {

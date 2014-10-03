@@ -6,23 +6,23 @@
 
 #IncludeRegexTransform: 
 
-/home/berkeley/stoke/src/ext/gtest-1.7.0/src/gtest-all.cc
+/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/gtest-all.cc
 gtest/gtest.h
-/home/berkeley/stoke/src/ext/gtest-1.7.0/src/gtest/gtest.h
+/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/gtest/gtest.h
 src/gtest.cc
-/home/berkeley/stoke/src/ext/gtest-1.7.0/src/src/gtest.cc
+/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/src/gtest.cc
 src/gtest-death-test.cc
-/home/berkeley/stoke/src/ext/gtest-1.7.0/src/src/gtest-death-test.cc
+/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/src/gtest-death-test.cc
 src/gtest-filepath.cc
-/home/berkeley/stoke/src/ext/gtest-1.7.0/src/src/gtest-filepath.cc
+/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/src/gtest-filepath.cc
 src/gtest-port.cc
-/home/berkeley/stoke/src/ext/gtest-1.7.0/src/src/gtest-port.cc
+/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/src/gtest-port.cc
 src/gtest-printers.cc
-/home/berkeley/stoke/src/ext/gtest-1.7.0/src/src/gtest-printers.cc
+/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/src/gtest-printers.cc
 src/gtest-test-part.cc
-/home/berkeley/stoke/src/ext/gtest-1.7.0/src/src/gtest-test-part.cc
+/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/src/gtest-test-part.cc
 src/gtest-typed-test.cc
-/home/berkeley/stoke/src/ext/gtest-1.7.0/src/src/gtest-typed-test.cc
+/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/src/gtest-typed-test.cc
 
 include/gtest/gtest-death-test.h
 gtest/internal/gtest-death-test-internal.h
