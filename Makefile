@@ -137,8 +137,6 @@ src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/database/%.o: src/database/%.cc src/database/%.h
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
 
 
