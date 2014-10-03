@@ -59,12 +59,9 @@ OBJ=\
 	src/state/state_reader.o \
 	src/state/state_writer.o \
 	\
-	src/verifier/verifier.o \
-  \
-  src/database/normalizer.o \
-  src/database/database.o \
-  \
-	src/stategen/stategen.o
+	src/stategen/stategen.o \
+	\
+	src/verifier/verifier.o
 
 BIN=\
 	bin/stoke_extract \
