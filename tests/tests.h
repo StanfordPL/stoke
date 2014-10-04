@@ -19,6 +19,7 @@
 #include "tests/trivial.h"
 #include "tests/x64asm/x64asm.h"
 #include "tests/cfg/cfg.h"
+#include "tests/sandbox/sandbox.h"
 
 
 INSTANTIATE_TEST_CASE_P(
