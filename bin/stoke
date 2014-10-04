@@ -7,12 +7,6 @@ pushd `dirname $0` > /dev/null
 HERE=`pwd`
 popd > /dev/null
 
-if [ `ls -1 $HERE | wc -l` -ne "19" ]
-then
-	echo "Fatal Error: Failed to locate one or more STOKE components!"
-	exit 1
-fi
-
 if [ $# -eq 0 ] 
 then
 	echo "Type 'stoke --help' for usage."
