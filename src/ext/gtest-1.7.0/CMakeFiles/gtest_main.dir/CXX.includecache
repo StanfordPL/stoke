@@ -6,11 +6,11 @@
 
 #IncludeRegexTransform: 
 
-/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/gtest_main.cc
+/home/berkeley/stoke/src/ext/gtest-1.7.0/src/gtest_main.cc
 stdio.h
 -
 gtest/gtest.h
-/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/gtest/gtest.h
+/home/berkeley/stoke/src/ext/gtest-1.7.0/src/gtest/gtest.h
 
 include/gtest/gtest-death-test.h
 gtest/internal/gtest-death-test-internal.h
