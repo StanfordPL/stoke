@@ -37,9 +37,9 @@ auto& in = ValueArg<string>::create("i")
     .description("Binary file to extract code from")
     .default_val("./a.out");
 
-auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
+auto& rewrite = FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
     .usage("<path/to/file>")
-    .description("Target function to replace in input binary")
+    .description("Function to replace in input binary")
     .default_val({"anon", {{RET}}});
 
 auto& out = ValueArg<string>::create("o")
@@ -143,7 +143,7 @@ bool lookup(const map<string, uint64_t>& section_offsets, uint64_t& offset, size
 		size = last_offset - offset + 1;
 		offset = offset - section_offset;
 
-		if (fxn == target.value().name) {
+		if (fxn == rewrite.value().name) {
 			return true;
 		}
 	}
@@ -154,7 +154,7 @@ bool lookup(const map<string, uint64_t>& section_offsets, uint64_t& offset, size
 bool replace(uint64_t offset, size_t size) {
 	// Assemble the new function
 	Assembler assm;
-	auto fxn = assm.assemble(target.value().code);
+	auto fxn = assm.assemble(rewrite.value().code);
 
 	// Fail if the new function is larger than the old
 	if (fxn.size() > size) {
@@ -175,7 +175,6 @@ bool replace(uint64_t offset, size_t size) {
 	fstream fs(dest, ios::binary | ios::in | ios::out);
 	fs.seekg(offset);
 	for (size_t i = 0; i < fxn.size(); ++i) {
-		cout << hex << (int)fxn.get_buffer()[i] << endl;
 		fs.put(fxn.get_buffer()[i]);
 	}
 
@@ -196,15 +195,12 @@ int main(int argc, char** argv) {
     cout << "Unable to extract metadata from binary file " << in.value() << "!" << endl;
     return 1;
 	} else if (!lookup(section_offsets, fxn_offset, fxn_size)) {
-		cout << "Unable to lookup function " << target.value().name << " in binary file " << in.value() << "!" << endl;
+		cout << "Unable to lookup function " << rewrite.value().name << " in binary file " << in.value() << "!" << endl;
 		return 1;
 	} else if (!replace(fxn_offset, fxn_size)) {
 		cout << "Unable to replace function text!" << endl;
 		return 1;
 	}
-
-	cout << "Offset = " << dec << fxn_offset << endl;
-	cout << "Size   = " << dec << fxn_size << endl;
 
 	return 0;
 }
