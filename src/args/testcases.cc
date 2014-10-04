@@ -42,7 +42,7 @@ void TestcasesWriter::operator()(ostream& os, const vector<CpuState>& ts) {
     os << endl;
     os << ts[i];
     if (i + 1 != ie) {
-      os << endl;
+    	os << endl;
       os << endl;
     }
   }

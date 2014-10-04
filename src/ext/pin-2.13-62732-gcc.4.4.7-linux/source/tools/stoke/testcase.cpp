@@ -27,6 +27,7 @@
 
 #include "pin.H"
 
+#include "src/args/testcases.h"
 #include "src/state/cpu_state.h"
 #include "src/state/state_writer.h"
 
@@ -59,13 +60,13 @@ uint64_t begin_line_;
 unordered_set<uint64_t> end_lines_;
 
 stack<CpuState> tcs_;
-
 stack<size_t> stack_frames_;
 stack<unordered_set<uint64_t>> stack_valids_;
 stack<unordered_map<uint64_t, uint8_t>> stack_defs_;
 stack<unordered_set<uint64_t>> heap_valids_;
 stack<unordered_map<uint64_t, uint8_t>> heap_defs_;
 
+vector<CpuState> results_;
 ostream* os_;
 
 /* ============================================================================================= */
@@ -251,17 +252,9 @@ VOID end_tc() {
     tc.heap[def.first] = def.second;
   }
 
-  static size_t id = 0;
-  (*os_) << "Testcase " << id++ << ":" << endl;
- 	(*os_) << endl;
- 	(*os_) << tc;
-	if ( tc_remaining_ != 1 ) {
-		(*os_) << endl;
-		(*os_) << endl;
-	}
-  os_->flush();
-
-  tcs_.pop();
+	results_.push_back(tc);
+  
+	tcs_.pop();
   heap_valids_.pop();
   heap_defs_.pop();
   stack_valids_.pop();
@@ -357,6 +350,11 @@ VOID Fini(INT32 code, VOID* v) {
   if (!tcs_.empty()) {
     exit(1);
   }
+
+	TestcasesWriter()(*os_, results_);
+	if (os_ == &cout) {
+		*os_ << endl;
+	}
 }
 
 /* ============================================================================================= */

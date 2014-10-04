@@ -117,8 +117,13 @@ int auto_gen() {
 		}
 	}
 
-	ofstream ofs(out.value());
-	TestcasesWriter()(ofs, tcs);
+	if (out.value() != "") {
+		ofstream ofs(out.value());
+		TestcasesWriter()(ofs, tcs);
+	} else {
+		TestcasesWriter()(cout, tcs);
+		cout << endl;
+	}
 
 	return 0;
 }
