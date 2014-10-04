@@ -45,15 +45,19 @@ PIN_OBJ=\
 	-L../../../intel64/runtime/glibc \
 	-L../../../extras/xed2-intel64/lib \
 	obj-intel64/memory.o \
+	obj-intel64/state_reader.o \
 	obj-intel64/state_writer.o \
 	obj-intel64/testcase.o \
+	obj-intel64/testcases.o \
 	-lpin -lxed -ldwarf -lelf -ldl
 
 all:
 	mkdir -p obj-intel64 && \
 	$(PIN_COMPILE) -c testcase.cpp -o obj-intel64/testcase.o && \
 	$(PIN_COMPILE) -c ../../../../../state/memory.cc -o obj-intel64/memory.o && \
+	$(PIN_COMPILE) -c ../../../../../state/state_reader.cc -o obj-intel64/state_reader.o && \
 	$(PIN_COMPILE) -c ../../../../../state/state_writer.cc -o obj-intel64/state_writer.o && \
+	$(PIN_COMPILE) -c ../../../../../args/testcases.cc -o obj-intel64/testcases.o && \
 	$(PIN_CC) -shared -Wl,--hash-style=sysv -Wl,-Bsymbolic -Wl,--version-script=../../../source/include/pin/pintool.ver -o obj-intel64/testcase.so $(PIN_OBJ)
 	
 clean:
