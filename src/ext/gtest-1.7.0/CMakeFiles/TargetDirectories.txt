@@ -1,2 +1,0 @@
-/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/gtest.dir
-/home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/gtest_main.dir
