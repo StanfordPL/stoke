@@ -67,21 +67,6 @@ Using STOKE
 The following toy example shows a typical workflow for using STOKE. All of the following code can be found in the `examples/tutorial/` directory. Consider a C++ program that repeatedly counts the number of bits (population count) in the 64-bit representation of an integer. (Keeping track of a running sum prevents `g++` from eliminating the calls to `popcnt()` altogether.)
 
 ```c++
-// popcnt.cc
-
-#include <stddef.h>
-#include <stdint.h>
- 
-size_t popcnt(uint64_t x) {
-  int res = 0;
-  for ( ; x > 0; x >>= 1 ) {
-    res += x & 0x1ull;
-  }
-  return res;
-}
-```
-
-```c++
 // main.cc
 
 #include <cstdlib>
@@ -90,7 +75,13 @@ size_t popcnt(uint64_t x) {
 
 using namespace std;
 
-extern size_t popcnt(uint64_t x);
+size_t popcnt(uint64_t x) {
+  int res = 0;
+  for ( ; x > 0; x >>= 1 ) {
+    res += x & 0x1ull;
+  }
+  return res;
+}
 
 int main(int argc, char** argv) {
   const auto itr = atoi(argv[1]);
@@ -105,8 +96,7 @@ int main(int argc, char** argv) {
 
 STOKE is a compiler and programming language agnostic optimization tool. It can be applied to any x86_64 ELF binary. Although this example uses the GNU toolchain, nothing prevents the use of other tools. To build this code with full optimizations, type:
 
-    $ g++ -std=c++11 -O3 -c popcnt.cc
-    $ g++ -std=c++11 -O3 main.cc popcnt.o
+    $ g++ -std=c++11 -O3 -fno-inline main.cc
     
 To measure runtime, type:
 
@@ -350,11 +340,19 @@ _Z6popcntm:
   .size _Z6popcntm, .-_Z6popcntm
 ```
 
-The original program can be recompiled using this improved implemenation by typing:
+This result can then be patched back into the original binary by typing:
 
-    $ g++ -std=c++11 -c result.s 
-    $ g++ -std=c++11 -O3 main.cc result.o
+    $ stoke replace --config replace.conf
     
+where `result.conf` contains:
+
+```
+##### stoke replace config file
+
+-i ./a.out # Path to the elf binary to patch
+--rewrite result.s # Path to the replacement function
+```
+
 And runtime can once again be measured by typing:
 
     $ time ./a.out 100000000

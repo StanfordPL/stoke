@@ -13,12 +13,7 @@
 # limitations under the License.
 
 orig:
-	g++ -std=c++11 -O3 -c popcnt.cc
-	g++ -std=c++11 -O3 main.cc popcnt.o
-
-opt:
-	g++ -std=c++11 -c result.s 
-	g++ -std=c++11 -O3 main.cc result.o
+	g++ -std=c++11 -fno-inline -O3 main.cc
 
 time:
 	time ./a.out 100000000
@@ -32,5 +27,8 @@ testcase:
 search:
 	stoke search --config search.conf
 
+replace:
+	stoke replace --config replace.conf
+
 clean:
-	rm -rf bins ./a.out *.o *.tc *.s
+	rm -rf bins ./a.out *.tc *.s
