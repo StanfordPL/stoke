@@ -406,7 +406,6 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	// Handle override arguments
 	if (callee_save.value()) {
 		preserve_regs.value() = RegSet::empty();
 	}
@@ -445,7 +444,7 @@ int main(int argc, char** argv) {
   Transforms transforms;
   transforms.set_seed(seed)
   .set_opcode_pool(flags, nop_percent, mem_read, mem_write)
-  .set_operand_pool(target.value().code, callee_save);
+  .set_operand_pool(target.value().code, preserve_regs.value());
 
   Search search(&transforms);
   search.set_seed(seed)

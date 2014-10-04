@@ -32,7 +32,7 @@ class Transforms {
 	/** Creates a new transformation helper. */
   Transforms() : old_instr_ {x64asm::RET}, old_opcode_ {x64asm::RET}, old_operand_ {x64asm::rax} {
     set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true);
-    set_operand_pool({x64asm::RET}, false);
+    set_operand_pool({x64asm::RET}, x64asm::RegSet::linux_callee_save());
   }
 
 	/** Sets random seed. */
@@ -44,7 +44,7 @@ class Transforms {
   Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t nop_percent, bool use_mem_read,
                               bool use_mem_write);
 	/** Sets the pool operands to propose from. */
-  Transforms& set_operand_pool(const x64asm::Code& target, bool use_callee_save);
+  Transforms& set_operand_pool(const x64asm::Code& target, const x64asm::RegSet& preserve_regs);
 
 	/** Transforms a control flow graph using a move type, returns true if the change succeeded. */
   bool modify(Cfg& cfg, Move type);
@@ -144,34 +144,6 @@ class Transforms {
   }
 	/** Do these two instructions take operands of the same arity and type? */
   bool is_type_equiv(x64asm::Opcode o1, x64asm::Opcode o2) const;
-	/** Is this a callee save register? */
-  bool is_callee_save(const x64asm::Rl& r) const {
-    return r == x64asm::bl;
-  }
-	/** Is this a callee save register? */
-  bool is_callee_save(const x64asm::Rh& r) const {
-    return r == x64asm::bh;
-  }
-	/** Is this a callee save register? */
-  bool is_callee_save(const x64asm::Rb& r) const {
-    return r == x64asm::spl || r == x64asm::bpl || r == x64asm::r12b ||
-           r == x64asm::r13b || r == x64asm::r14b || r == x64asm::r15b;
-  }
-	/** Is this a callee save register? */
-  bool is_callee_save(const x64asm::R16& r) const {
-    return r == x64asm::bx || r == x64asm::sp || r == x64asm::bp ||
-           r == x64asm::r12w || r == x64asm::r13w || r == x64asm::r14w || r == x64asm::r15w;
-  }
-	/** Is this a callee save register? */
-  bool is_callee_save(const x64asm::R32& r) const {
-    return r == x64asm::ebx || r == x64asm::esp || r == x64asm::ebp ||
-           r == x64asm::r12d || r == x64asm::r13d || r == x64asm::r14d || r == x64asm::r15d;
-  }
-	/** Is this a callee save register? */
-  bool is_callee_save(const x64asm::R64& r) const {
-    return r == x64asm::rbx || r == x64asm::rsp || r == x64asm::rbp ||
-           r == x64asm::r12 || r == x64asm::r13 || r == x64asm::r14 || r == x64asm::r15;
-  }
 
 	/** Get a random control free opcode. */
   x64asm::Opcode get_control_free() {

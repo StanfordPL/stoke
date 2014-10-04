@@ -76,40 +76,40 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
   return *this;
 }
 
-Transforms& Transforms::set_operand_pool(const Code& target, bool use_callee_save) {
+Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& preserve_regs) {
   rl_pool_.clear();
   for (const auto& r : rls) {
-    if (use_callee_save || !is_callee_save(r)) {
+		if (!preserve_regs.contains(r)) {
       rl_pool_.push_back(r);
     }
   }
   rh_pool_.clear();
   for (const auto& r : rhs) {
-    if (use_callee_save || !is_callee_save(r)) {
+		if (!preserve_regs.contains(r)) {
       rh_pool_.push_back(r);
     }
   }
   rb_pool_.clear();
   for (const auto& r : rbs) {
-    if (use_callee_save || !is_callee_save(r)) {
+		if (!preserve_regs.contains(r)) {
       rb_pool_.push_back(r);
     }
   }
   r16_pool_.clear();
   for (const auto& r : r16s) {
-    if (use_callee_save || !is_callee_save(r)) {
+		if (!preserve_regs.contains(r)) {
       r16_pool_.push_back(r);
     }
   }
   r32_pool_.clear();
   for (const auto& r : r32s) {
-    if (use_callee_save || !is_callee_save(r)) {
+		if (!preserve_regs.contains(r)) {
       r32_pool_.push_back(r);
     }
   }
   r64_pool_.clear();
   for (const auto& r : r64s) {
-    if (use_callee_save || !is_callee_save(r)) {
+		if (!preserve_regs.contains(r)) {
       r64_pool_.push_back(r);
     }
   }
@@ -128,11 +128,7 @@ Transforms& Transforms::set_operand_pool(const Code& target, bool use_callee_sav
   for (const auto& instr : target) {
     if (instr.derefs_mem()) {
       const auto& ref = instr.get_operand<M8>(instr.mem_index());
-      if (!use_callee_save && ref.contains_base() && is_callee_save(ref.get_base())) {
-        continue;
-      } else if (!use_callee_save && ref.contains_index() && is_callee_save(ref.get_index())) {
-        continue;
-      } else if (find(m_pool_.begin(), m_pool_.end(), ref) != m_pool_.end()) {
+      if (find(m_pool_.begin(), m_pool_.end(), ref) != m_pool_.end()) {
         continue;
       }
       m_pool_.push_back(ref);
