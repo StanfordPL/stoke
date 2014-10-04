@@ -200,7 +200,13 @@ auto& mem_write = FlagArg::create("mem_write")
     .description("Propose instruction and opcode moves that write memory?");
 
 auto& callee_save = FlagArg::create("callee_save")
-    .description("Propose instruction and operand moves that use callee save registers?");
+		.alternate("propose_callee_save")
+    .description("Override the value of preserve_regs to the empty set");
+
+auto& preserve_regs = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("preserve_regs")
+    .usage("{ %rax %rsp ... }")
+    .description("Prevent STOKE from proposing instructions that modify these registers")
+    .default_val(RegSet::linux_callee_save());
 
 auto& h8 = Heading::create("Proposal distribution options:");
 
@@ -400,6 +406,10 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
+	if (callee_save.value()) {
+		preserve_regs.value() = RegSet::empty();
+	}
+
   if (seed == 0) {
     const auto time = system_clock::now().time_since_epoch().count();
     default_random_engine gen(time);
@@ -434,7 +444,7 @@ int main(int argc, char** argv) {
   Transforms transforms;
   transforms.set_seed(seed)
   .set_opcode_pool(flags, nop_percent, mem_read, mem_write)
-  .set_operand_pool(target.value().code, callee_save);
+  .set_operand_pool(target.value().code, preserve_regs.value());
 
   Search search(&transforms);
   search.set_seed(seed)
