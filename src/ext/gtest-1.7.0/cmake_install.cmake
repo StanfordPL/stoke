@@ -1,4 +1,4 @@
-# Install script for directory: /home/berkeley/stoke-develop/src/ext/gtest-1.7.0
+# Install script for directory: /home/berkeley/stoke/src/ext/gtest-1.7.0
 
 # Set the install prefix
 IF(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -38,7 +38,7 @@ ELSE(CMAKE_INSTALL_COMPONENT)
   SET(CMAKE_INSTALL_MANIFEST "install_manifest.txt")
 ENDIF(CMAKE_INSTALL_COMPONENT)
 
-FILE(WRITE "/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/${CMAKE_INSTALL_MANIFEST}" "")
+FILE(WRITE "/home/berkeley/stoke/src/ext/gtest-1.7.0/${CMAKE_INSTALL_MANIFEST}" "")
 FOREACH(file ${CMAKE_INSTALL_MANIFEST_FILES})
-  FILE(APPEND "/home/berkeley/stoke-develop/src/ext/gtest-1.7.0/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
+  FILE(APPEND "/home/berkeley/stoke/src/ext/gtest-1.7.0/${CMAKE_INSTALL_MANIFEST}" "${file}\n")
 ENDFOREACH(file)

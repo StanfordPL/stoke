@@ -35,10 +35,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/berkeley/stoke-develop/src/ext/gtest-1.7.0
+CMAKE_SOURCE_DIR = /home/berkeley/stoke/src/ext/gtest-1.7.0
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/berkeley/stoke-develop/src/ext/gtest-1.7.0
+CMAKE_BINARY_DIR = /home/berkeley/stoke/src/ext/gtest-1.7.0
 
 # Include any dependencies generated for this target.
 include CMakeFiles/gtest_main.dir/depend.make
@@ -51,17 +51,17 @@ include CMakeFiles/gtest_main.dir/flags.make
 
 CMakeFiles/gtest_main.dir/src/gtest_main.cc.o: CMakeFiles/gtest_main.dir/flags.make
 CMakeFiles/gtest_main.dir/src/gtest_main.cc.o: src/gtest_main.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles $(CMAKE_PROGRESS_1)
+	$(CMAKE_COMMAND) -E cmake_progress_report /home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles $(CMAKE_PROGRESS_1)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object CMakeFiles/gtest_main.dir/src/gtest_main.cc.o"
-	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -c /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/gtest_main.cc
+	/usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -c /home/berkeley/stoke/src/ext/gtest-1.7.0/src/gtest_main.cc
 
 CMakeFiles/gtest_main.dir/src/gtest_main.cc.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/gtest_main.dir/src/gtest_main.cc.i"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -E /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/gtest_main.cc > CMakeFiles/gtest_main.dir/src/gtest_main.cc.i
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -E /home/berkeley/stoke/src/ext/gtest-1.7.0/src/gtest_main.cc > CMakeFiles/gtest_main.dir/src/gtest_main.cc.i
 
 CMakeFiles/gtest_main.dir/src/gtest_main.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/gtest_main.dir/src/gtest_main.cc.s"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -S /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/src/gtest_main.cc -o CMakeFiles/gtest_main.dir/src/gtest_main.cc.s
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -S /home/berkeley/stoke/src/ext/gtest-1.7.0/src/gtest_main.cc -o CMakeFiles/gtest_main.dir/src/gtest_main.cc.s
 
 CMakeFiles/gtest_main.dir/src/gtest_main.cc.o.requires:
 .PHONY : CMakeFiles/gtest_main.dir/src/gtest_main.cc.o.requires
@@ -98,6 +98,6 @@ CMakeFiles/gtest_main.dir/clean:
 .PHONY : CMakeFiles/gtest_main.dir/clean
 
 CMakeFiles/gtest_main.dir/depend:
-	cd /home/berkeley/stoke-develop/src/ext/gtest-1.7.0 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/berkeley/stoke-develop/src/ext/gtest-1.7.0 /home/berkeley/stoke-develop/src/ext/gtest-1.7.0 /home/berkeley/stoke-develop/src/ext/gtest-1.7.0 /home/berkeley/stoke-develop/src/ext/gtest-1.7.0 /home/berkeley/stoke-develop/src/ext/gtest-1.7.0/CMakeFiles/gtest_main.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/berkeley/stoke/src/ext/gtest-1.7.0 && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/berkeley/stoke/src/ext/gtest-1.7.0 /home/berkeley/stoke/src/ext/gtest-1.7.0 /home/berkeley/stoke/src/ext/gtest-1.7.0 /home/berkeley/stoke/src/ext/gtest-1.7.0 /home/berkeley/stoke/src/ext/gtest-1.7.0/CMakeFiles/gtest_main.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/gtest_main.dir/depend
 
