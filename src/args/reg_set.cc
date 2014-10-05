@@ -28,17 +28,12 @@ using namespace x64asm;
 
 namespace {
 
-array<pair<string, Rb>, 20> gp8s {{
+
+array<pair<string, Rb>, 16> gp8s {{
     {"%al", al},
     {"%cl", cl},
     {"%dl", dl},
     {"%bl", bl},
-
-    {"%ah", ah},
-    {"%ch", ch},
-    {"%dh", dh},
-    {"%bh", bh},
-
     {"%spl", spl},
     {"%bpl", bpl},
     {"%sil", sil},
@@ -51,6 +46,14 @@ array<pair<string, Rb>, 20> gp8s {{
     {"%r13b", r13b},
     {"%r14b", r14b},
     {"%r15b", r15b}
+}};
+
+
+array<pair<string, Rh>, 4> gphs {{
+    {"%ah", ah},
+    {"%ch", ch},
+    {"%dh", dh},
+    {"%bh", bh}
 }};
 
 
@@ -160,6 +163,7 @@ void RegSetReader::operator()(istream& is, RegSet& r) {
   TextReader<vector<string>>()(is, args);
 
   for (const auto& a : args) {
+    Rh rh = ah;
     Rb r8 = al;
     R16 r16 = ax; 
     R32 r32 = eax;
@@ -175,6 +179,8 @@ void RegSetReader::operator()(istream& is, RegSet& r) {
       r += r16;
     } else if (generic_read(gp8s, a, r8)) {
       r += r8;
+    } else if (generic_read(gphs, a, rh)) {
+      r += rh;
     } else if (generic_read(xmms_a, a, xmm)) {
       r += xmm;
     } else if (generic_read(ymms_a, a, ymm)) {
