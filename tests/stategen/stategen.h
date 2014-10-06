@@ -12,7 +12,7 @@ TEST(StateGenTest, Issue44) {
   time_t seed;
   time(&seed);
   srand((unsigned int)seed);
-  std::cout << "seed = " << seed << std::endl;
+
   // Build example
   std::stringstream ss;
   ss << "movq $0x4eb4b0, (%rdi)" << std::endl;
@@ -31,6 +31,6 @@ TEST(StateGenTest, Issue44) {
     .set_max_jumps(2);
 
   stoke::CpuState tc;
-  ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed;
+  ASSERT_FALSE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed;
 
 }
