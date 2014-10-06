@@ -12,7 +12,8 @@
 #include "src/ext/x64asm/src/reg_set.h"
 #include "src/ext/cpputil/include/serialize/text_reader.h"
 
-namespace stoke_test {
+#include "tests/fixture.h"
+
 
 x64asm::RegSet parse_regset_from_json(Json::Value json) {
   x64asm::RegSet rs;
@@ -193,7 +194,6 @@ TEST_P(CodeFixtureTest, CFGReachable) {
   }
 
 
-}
 
 }
 #endif

@@ -159,6 +159,8 @@ int trace(const string& argv0) {
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
+  srand(1);
+
 	if (target.value().name != "anon") {
 		return auto_gen();
 	} else {
