@@ -63,10 +63,9 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) const {
 		// ... and try executing
 		sb.run_one(0);
 
-		cs = *(sb.get_result(0));
-		// Break if the state didn't produce an error
+		// We're done if the state didn't produce an error
 		if (sb.get_result(0)->code == ErrorCode::NORMAL) {
-			break;
+			return true;
 		}
 		// If the error is fixable (segfault we can allocate away) fix and retry
 		else if (fix(*(sb.get_result(0)), cs, cfg, last_line)) {
@@ -78,8 +77,7 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) const {
 		}
 	}
 
-	cs = sb.get_input(0);
-	return sb.get_result(0)->code == ErrorCode::NORMAL;
+	return false;
 }
 
 void StateGen::randomize_regs(CpuState& cs) const {
