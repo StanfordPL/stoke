@@ -61,6 +61,10 @@ class StateGen {
 		uint64_t get_addr(const CpuState& cs, const Cfg& cfg, size_t line) const;
 		/** Returns the number of bytes dereferenced on this line. */
 		size_t get_size(const Cfg& cfg, size_t line) const;
+		/** Returns true if the memory at this address is already allocated. */
+		bool already_allocated(const Memory& mem, uint64_t addr, size_t size) const {
+			return mem.in_range(addr) && mem.in_range(addr+size-1);
+		}
 		/** Returns true if the memory at this address is misaligned. */
 		bool is_misaligned(uint64_t addr, size_t size) const {
 			return (size == 16 && ((addr % 16) != 0)) || (size == 32 && ((addr % 32) != 0));

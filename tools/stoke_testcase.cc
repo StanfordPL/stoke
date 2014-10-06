@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <string>
 #include <vector>
 
@@ -29,6 +31,7 @@
 
 using namespace cpputil;
 using namespace std;
+using namespace std::chrono;
 using namespace stoke;
 using namespace x64asm;
 
@@ -101,7 +104,20 @@ auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .description("Source code to generate testcases for")
     .default_val({"anon", {{RET}}});
 
+auto& h5 = Heading::create("Random number generator options");
+
+auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
+    .usage("<int>")
+    .description("Seed for random number generator; set to zero for random")
+    .default_val(0);
+
 int auto_gen() {
+  if (seed == 0) {
+    const auto time = system_clock::now().time_since_epoch().count();
+    default_random_engine gen(time);
+    seed.value() = gen();
+  }
+
 	Cfg cfg_t(target.value().code, RegSet::universe(), RegSet::empty());
 
 	StateGen sg;

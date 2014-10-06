@@ -197,10 +197,8 @@ size_t StateGen::get_size(const Cfg& cfg, size_t line) const {
 
 bool StateGen::resize_within(Memory& mem, uint64_t addr, size_t size) const {
 	// This should always be true, otherwise there'd be no work to do
-  if(addr + size <= mem.upper_bound())
-    return false;
+	// * See the previous check against already_allocated() one level up
 	assert((addr+size) > mem.upper_bound());
-
 
 	const auto delta = addr + size - mem.upper_bound();
 	if (mem.size() + delta > max_memory_) {
@@ -279,8 +277,12 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
 	const auto addr = get_addr(cs, cfg, line);
 	const auto size = get_size(cfg, line);
 
-	// We can't do anything about misaligned memory
+	// We can't do anything about misaligned memory or pre-allocated memory
 	if (is_misaligned(addr, size)) {
+		return false;
+	} else if (already_allocated(fixed.stack, addr, size)) {
+		return false;
+	} else if (already_allocated(fixed.heap, addr, size)) {
 		return false;
 	}
 
