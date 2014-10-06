@@ -197,7 +197,10 @@ size_t StateGen::get_size(const Cfg& cfg, size_t line) const {
 
 bool StateGen::resize_within(Memory& mem, uint64_t addr, size_t size) const {
 	// This should always be true, otherwise there'd be no work to do
+  if(addr + size <= mem.upper_bound())
+    return false;
 	assert((addr+size) > mem.upper_bound());
+
 
 	const auto delta = addr + size - mem.upper_bound();
 	if (mem.size() + delta > max_memory_) {
