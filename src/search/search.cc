@@ -58,6 +58,7 @@ Search::Search(Transforms* transforms) : transforms_(transforms) {
     term_act.sa_flags = SA_ONSTACK;
 
     sigaction(SIGINT, &term_act, 0);
+    sigaction(SIGALRM, &term_act, 0);
   }
 }
 
