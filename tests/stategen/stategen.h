@@ -1,4 +1,6 @@
 
+#include <iostream>
+#include <fstream>
 #include <sstream>
 #include <cstdlib>
 #include <time.h>
@@ -6,6 +8,43 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/stategen/stategen.h"
 #include "src/cfg/cfg.h"
+
+class StateGenParamTest : public ::testing::TestWithParam<int> {
+
+    void SetUp() {
+      
+      std::ifstream ifs;
+      std::string filename = "tests/fixtures/stategen/" + std::to_string(GetParam()) + ".s";
+      ifs.open(filename, std::ifstream::in);
+
+      std::stringstream ss;
+      ss << ifs.rdbuf();
+      ss >> code_;
+
+      ifs.close();
+
+      time(&seed_);
+      srand((unsigned int)seed_);
+    }
+
+  protected:
+    x64asm::Code code_;
+    time_t seed_;
+
+};
+
+
+TEST_P(StateGenParamTest, StateGenWorks) {
+
+  stoke::Cfg cfg_t(code_, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+  stoke::StateGen sg;
+  sg.set_max_attempts(40)
+    .set_max_memory(1024)
+    .set_max_jumps(10);
+
+  stoke::CpuState tc;
+  ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed_;
+}
 
 TEST(StateGenTest, Issue44) {
 
@@ -96,3 +135,8 @@ TEST(StateGenTest, Issue51) {
 
 }
 
+INSTANTIATE_TEST_CASE_P(
+  StategenFixtures,
+  StateGenParamTest,
+  ::testing::Range(1,9)
+);
