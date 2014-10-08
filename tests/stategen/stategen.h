@@ -43,7 +43,9 @@ TEST_P(StateGenParamTest, StateGenWorks) {
     .set_max_jumps(10);
 
   stoke::CpuState tc;
-  ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed_;
+  EXPECT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed_;
+  EXPECT_EQ("", sg.get_error());
+
 }
 
 TEST(StateGenTest, Issue44) {
