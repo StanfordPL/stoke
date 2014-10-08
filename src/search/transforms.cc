@@ -123,6 +123,23 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
     0ul, 1ul, -1ul, 2ul, -2ul, 3ul, -3ul, 4ul, -4ul, 5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
     16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
   });
+	for (const auto& instr : target) {
+		for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
+			switch (instr.type(i)) {
+				case Type::IMM_8:
+				case Type::IMM_16:
+				case Type::IMM_32:
+				case Type::IMM_64:
+				case Type::ZERO:
+				case Type::ONE:
+				case Type::THREE:
+					imm_pool_.push_back(instr.get_operand<Imm64>(i));
+					break;
+				default:
+					break;
+			}
+		}
+	}
 
   m_pool_.clear();
   for (const auto& instr : target) {
