@@ -107,6 +107,12 @@ bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
 
   // No support if it's not push/pop/ret, and no memory operand
   if (mi == -1) {
+
+    std::cout << "Instruction: " << instr << std::endl;
+    if (line > 0)
+      std::cout << "Previous In: " << cfg.get_code()[line-1] << std::endl;
+    std::cout << std::endl;
+
     return false;
   }
 
@@ -289,15 +295,12 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
 	const auto addr = get_addr(cs, cfg, line);
 	const auto size = get_size(cfg, line);
 
-  // We can't do anything about misaligned memory or if the address was already
-  // allocated
+	// We can't do anything about misaligned memory or pre-allocated memory
 	if (is_misaligned(addr, size)) {
     error_message_ = "Memory dereference misaligned.";
 		return false;
 	} else if (already_allocated(fixed.stack, addr, size)) {
     error_message_ = "Memory was already allocated in stack.";
-    std::cout << "addr= " << std::hex << addr << " size=" << std::dec << size << std::endl;
-    std::cout << "stack: " << std::hex << fixed.stack.lower_bound() << " --> " << fixed.stack.upper_bound() << std::endl;
 		return false;
 	} else if (already_allocated(fixed.heap, addr, size)) {
     error_message_ = "Memory was already allocated in heap.";
