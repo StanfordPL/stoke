@@ -42,7 +42,7 @@ bool StateGen::get(CpuState& cs) const {
 	return true;
 }
 
-bool StateGen::get(CpuState& cs, const Cfg& cfg) const {
+bool StateGen::get(CpuState& cs, const Cfg& cfg) {
 	// Make a sandbox
 	Sandbox sb;
 	sb.set_max_jumps(max_jumps_);	
@@ -98,12 +98,24 @@ void StateGen::randomize_regs(CpuState& cs) const {
 bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
 	const auto& instr = cfg.get_code()[line];
 
-	// Special support for push/pop
-	if (is_push(instr) || is_pop(instr)) {
+	// Special support for push/pop/ret
+	if (is_push(instr) || is_pop(instr) || is_ret(instr)) {
 		return true;
 	}
 
 	const auto mi = instr.mem_index();
+
+  // No support if it's not push/pop/ret, and no memory operand
+  if (mi == -1) {
+
+    std::cout << "Instruction: " << instr << std::endl;
+    if (line > 0)
+      std::cout << "Previous In: " << cfg.get_code()[line-1] << std::endl;
+    std::cout << std::endl;
+
+    return false;
+  }
+
 	const auto op = instr.get_operand<M8>(mi);
 
 	// No support for rip-offset form or segment register addressing
@@ -122,7 +134,9 @@ uint64_t StateGen::get_addr(const CpuState& cs, const Cfg& cfg, size_t line) con
 		return cs.gp[rsp].get_fixed_quad(0)-8;
 	} else if (is_pop(instr)) {
 		return cs.gp[rsp].get_fixed_quad(0);
-	}
+	} else if (is_ret(instr)) {
+    return cs.gp[rsp].get_fixed_quad(0);
+  }
 
 	const auto mi = instr.mem_index();
 	const auto op = instr.get_operand<M8>(mi);
@@ -167,7 +181,7 @@ size_t StateGen::get_size(const Cfg& cfg, size_t line) const {
 	const auto& instr = cfg.get_code()[line];
 
 	// Special handling for implicit dereferences
-	if (is_push(instr) || is_pop(instr)) {
+	if (is_push(instr) || is_pop(instr) || is_ret(instr)) {
 		return 8;
 	}
 
@@ -262,13 +276,19 @@ bool StateGen::resize_mem(Memory& mem, uint64_t addr, size_t size) const {
 	}
 }
 
-bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line) const {
+bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line) {
+
+  // Clear the error message unless something bad happens.
+  error_message_ = "";
+
 	// Only sigsegv is fixable
 	if (cs.code != ErrorCode::SIGSEGV_) {
+    error_message_ = "Interrupt was not segfault.";
 		return false;
 	}
 	// Only explicit dereferences are fixable 
 	if (!is_supported_deref(cfg, line)) {
+    error_message_ = "Dereference not supported.";
 		return false;
 	}
 
@@ -277,20 +297,25 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
 
 	// We can't do anything about misaligned memory or pre-allocated memory
 	if (is_misaligned(addr, size)) {
+    error_message_ = "Memory dereference misaligned.";
 		return false;
 	} else if (already_allocated(fixed.stack, addr, size)) {
+    error_message_ = "Memory was already allocated in stack.";
 		return false;
 	} else if (already_allocated(fixed.heap, addr, size)) {
+    error_message_ = "Memory was already allocated in heap.";
 		return false;
 	}
 
 	// If we can't resize stack or heap, give up.
 	if (!resize_mem(fixed.stack, addr, size) && !resize_mem(fixed.heap, addr, size)) {
+    error_message_ = "Could not resize memory.";
 		return false;
 	}
 
 	// If stack and heap overlap now, give up. This memory is broken.
 	if (fixed.heap.upper_bound() >= fixed.stack.lower_bound()) {
+    error_message_ = "Heap and stack overlap.";
 		return false;
 	}
 
