@@ -46,7 +46,15 @@ TEST_P(StateGenParamTest, StateGenWorks) {
   EXPECT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed_;
   EXPECT_EQ("", sg.get_error());
 
+  // Check that the testcase works in the Sandbox
+  stoke::Sandbox sb; 
+  sb.set_max_jumps(2);
+  sb.insert_input(tc);
+  sb.run({code_, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+
 }
+
 
 TEST(StateGenTest, Issue44) {
 
@@ -104,6 +112,13 @@ TEST(StateGenTest, Issue44WithRetQ) {
   stoke::CpuState tc;
   ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed;
 
+  // Check that the testcase works in the Sandbox
+  stoke::Sandbox sb; 
+  sb.set_max_jumps(2);
+  sb.insert_input(tc);
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+
 }
 
 
@@ -134,6 +149,13 @@ TEST(StateGenTest, Issue51) {
 
   stoke::CpuState tc;
   ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed;
+
+  // Check that the testcase works in the Sandbox
+  stoke::Sandbox sb; 
+  sb.set_max_jumps(2);
+  sb.insert_input(tc);
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
 
 }
 
