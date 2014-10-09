@@ -104,15 +104,6 @@ TEST(StateGenTest, Issue44WithRetQ) {
   stoke::CpuState tc;
   ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed;
 
-
-  // Check that it works in a sandbox
-  stoke::Sandbox sb;
-  sb.insert_input(tc);
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  const auto result = *(sb.result_begin());
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, result.code);
-
-
 }
 
 
@@ -143,13 +134,6 @@ TEST(StateGenTest, Issue51) {
 
   stoke::CpuState tc;
   ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed;
-
-  // Check that it works in a sandbox
-  stoke::Sandbox sb;
-  sb.insert_input(tc);
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  const auto result = *(sb.result_begin());
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, result.code);
 
 }
 

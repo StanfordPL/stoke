@@ -67,10 +67,6 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
 		if (sb.get_result(0)->code == ErrorCode::NORMAL) {
 			return true;
 		}
-    // FIXME: workaround for issue #51
-    else if (is_ret(cfg.get_code()[last_line])) {
-      return true;
-    }
 		// If the error is fixable (segfault we can allocate away) fix and retry
 		else if (fix(*(sb.get_result(0)), cs, cfg, last_line)) {
 			i--;
@@ -300,6 +296,8 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
 		return false;
 	} else if (already_allocated(fixed.stack, addr, size)) {
     error_message_ = "Memory was already allocated in stack.";
+    std::cout << "addr= " << std::hex << addr << " size=" << std::dec << size << std::endl;
+    std::cout << "stack: " << std::hex << fixed.stack.lower_bound() << " --> " << fixed.stack.upper_bound() << std::endl;
 		return false;
 	} else if (already_allocated(fixed.heap, addr, size)) {
     error_message_ = "Memory was already allocated in heap.";
