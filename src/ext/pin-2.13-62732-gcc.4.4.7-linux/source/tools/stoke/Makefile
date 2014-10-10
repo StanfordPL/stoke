@@ -39,26 +39,36 @@ PIN_WARN=\
 
 PIN_COMPILE=$(PIN_CC) $(PIN_WARN) $(PIN_OPT) $(PIN_DEF) $(PIN_INC)
 
-PIN_OBJ=\
+PIN_LIB=\
  	-L../../../intel64/lib \
 	-L../../../intel64/lib-ext \
 	-L../../../intel64/runtime/glibc \
 	-L../../../extras/xed2-intel64/lib \
+	-lpin -lxed -ldwarf -lelf -ldl
+
+PIN_OBJ=\
 	obj-intel64/memory.o \
 	obj-intel64/state_reader.o \
 	obj-intel64/state_writer.o \
 	obj-intel64/testcase.o \
-	obj-intel64/testcases.o \
-	-lpin -lxed -ldwarf -lelf -ldl
+	obj-intel64/testcases.o
 
-all:
-	mkdir -p obj-intel64 && \
-	$(PIN_COMPILE) -c testcase.cpp -o obj-intel64/testcase.o && \
-	$(PIN_COMPILE) -c ../../../../../state/memory.cc -o obj-intel64/memory.o && \
-	$(PIN_COMPILE) -c ../../../../../state/state_reader.cc -o obj-intel64/state_reader.o && \
-	$(PIN_COMPILE) -c ../../../../../state/state_writer.cc -o obj-intel64/state_writer.o && \
-	$(PIN_COMPILE) -c ../../../../../args/testcases.cc -o obj-intel64/testcases.o && \
-	$(PIN_CC) -shared -Wl,--hash-style=sysv -Wl,-Bsymbolic -Wl,--version-script=../../../source/include/pin/pintool.ver -o obj-intel64/testcase.so $(PIN_OBJ)
+all: obj-intel64/testcase.so
 	
 clean:
 	rm -rf obj-intel64
+
+obj-intel64/memory.o: ../../../../../state/memory.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+obj-intel64/state_reader.o: ../../../../../state/state_reader.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+obj-intel64/state_writer.o: ../../../../../state/state_writer.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+obj-intel64/testcases.o: ../../../../../args/testcases.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+	
+obj-intel64/testcase.o: testcase.cpp
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+
+obj-intel64/testcase.so: $(PIN_OBJ)
+	mkdir -p obj-intel64 && $(PIN_CC) -shared -Wl,--hash-style=sysv -Wl,-Bsymbolic -Wl,--version-script=../../../source/include/pin/pintool.ver -o $@ $(PIN_OBJ) $(PIN_LIB)
