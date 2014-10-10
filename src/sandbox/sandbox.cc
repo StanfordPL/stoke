@@ -172,9 +172,11 @@ void Sandbox::run_one(size_t index) {
       io->out_.code = ErrorCode::SIGKILL_;
     } else if (segv_ != 0) {
       io->out_.code = ErrorCode::SIGSEGV_;
-    } else if (!snapshot_.check_abi(io->out_)) {
-      io->out_.code = ErrorCode::SIGSEGV_;
-    }
+    } 
+    // issue 51 workaround: don't check the ABI
+    //else if (!snapshot_.check_abi(io->out_)) {
+    //  io->out_.code = ErrorCode::SIGSEGV_;
+    //}
   } else {
     io->out_.code = ErrorCode::SIGFPE_;
   }

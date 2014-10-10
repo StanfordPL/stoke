@@ -2,6 +2,7 @@
 #define STOKE_SRC_STATEGEN_STATEGEN_H
 
 #include <stdint.h>
+#include <string>
 
 #include "src/ext/x64asm/include/x64asm.h"
 
@@ -38,7 +39,12 @@ class StateGen {
 		/** Tries to generate a state that contains random register values; sensible rsp. */
 		bool get(CpuState& cs) const;
 		/** Tries to generate a state in which cfg can execute without signaling. */
-		bool get(CpuState& cs, const Cfg& cfg) const;
+		bool get(CpuState& cs, const Cfg& cfg);
+
+    /** Returns the reason the last attempt to fix a dereference failed. */
+    std::string get_error() const {
+      return error_message_;
+    }
 
 	private:
 		/** Replaces the register contents of cs with random bits. */
@@ -54,6 +60,11 @@ class StateGen {
 			const auto opcode = instr.get_opcode();
 			return opcode >= x64asm::POP_M16 && opcode <= x64asm::POP_R64;
 		}
+    /** Returns true if this is a return instruction. */
+    bool is_ret(const x64asm::Instruction& instr) const {
+      const auto opcode = instr.get_opcode();
+      return opcode == x64asm::RET;
+    }
 		/** Returns true if we support fixing derefs of this type. */
 		bool is_supported_deref(const Cfg& cfg, size_t line) const;
 
@@ -81,7 +92,7 @@ class StateGen {
 		/** Returns true if a memory can be resized to accommadate an access. */
 		bool resize_mem(Memory& mem, uint64_t addr, size_t size) const;
 		/** Returns true if the memory access on this line was fixable. */
-		bool fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line) const;
+		bool fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line);
 
 		/** The maximum number of attempts to make when generating a state. */
 		size_t max_attempts_;
@@ -89,6 +100,9 @@ class StateGen {
 		size_t max_memory_;
 		/** The maximum number of jumps to take before sigint. */
 		size_t max_jumps_;
+
+    /** A textual description of the cause of the last failure. */
+    std::string error_message_;
 };
 
 } // namespace stoke
