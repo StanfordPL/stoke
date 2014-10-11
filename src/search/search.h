@@ -15,6 +15,7 @@
 #ifndef STOKE_SRC_SEARCH_SEARCH_H
 #define STOKE_SRC_SEARCH_SEARCH_H
 
+#include <chrono>
 #include <random>
 
 #include "src/cost/cost_function.h"
@@ -47,10 +48,15 @@ class Search {
     return *this;
   }
 	/** Set the maximum number of proposals to perform before giving up. */
-  Search& set_timeout(size_t timeout) {
-    timeout_ = timeout;
+  Search& set_timeout_itr(size_t timeout) {
+    timeout_itr_ = timeout;
     return *this;
   }
+	/** Set the maximum number of seconds to run for before giving up. */
+	Search& set_timeout_sec(size_t timeout) {
+		timeout_sec_ = std::chrono::duration<size_t>(timeout);
+		return *this;
+	}
 	/** Set the annealing constant. */
   Search& set_beta(double beta) {
     beta_ = beta;
@@ -98,7 +104,9 @@ class Search {
 	size_t max_instrs_;
 
   /** How many iterations should search run for? */
-  size_t timeout_;
+  size_t timeout_itr_;
+	/** How many seconds should search run for? */
+	std::chrono::duration<size_t> timeout_sec_;
   /** Annealing constant. */
   double beta_;
 

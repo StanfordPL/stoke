@@ -19,7 +19,6 @@
 #include <random>
 #include <set>
 #include <vector>
-#include <sys/time.h>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/column.h"
@@ -248,15 +247,17 @@ auto& extension_mass = ValueArg<size_t>::create("extension_mass")
 
 auto& h9 = Heading::create("Search options");
 
-auto& timeout = ValueArg<size_t>::create("timeout")
+auto& timeout_itr = ValueArg<size_t>::create("timeout")
+		.alternate("timeout_itr")
     .usage("<int>")
     .description("Number of proposals to execute before giving up")
     .default_val(1000000);
 
-auto& timeout_time = ValueArg<size_t>::create("timeout_time")
+auto& timeout_sec = ValueArg<size_t>::create("timeout_time")
+		.alternate("timeout_sec")
     .usage("<int>")
-    .description("Maximum time (in seconds) before giving up (only used if non-zero)")
-    .default_val(0);
+    .description("Maximum runtime (in seconds) before giving up")
+    .default_val(1800);
 
 auto& timeout_action = ValueArg<Timeout, TimeoutReader, TimeoutWriter>::create("timeout_action")
 		.usage("(quit|testcase)")
@@ -455,7 +456,8 @@ int main(int argc, char** argv) {
   Search search(&transforms);
   search.set_seed(seed)
 	.set_init(init, max_instrs)
-  .set_timeout(timeout)
+  .set_timeout_itr(timeout_itr)
+	.set_timeout_sec(timeout_sec)
   .set_beta(beta)
   .set_mass(Move::OPCODE, opcode_mass)
   .set_mass(Move::OPERAND, operand_mass)
@@ -480,18 +482,6 @@ int main(int argc, char** argv) {
 
 	Verifier verifier(hold_out_fxn);
 	verifier.set_strategy(strategy);
-
-  if(timeout_time > 0) {
-    struct timeval interval, value;
-    interval.tv_sec = value.tv_sec = timeout_time;
-    interval.tv_usec = value.tv_usec = 0;
-
-    struct itimerval timer_settings;
-    timer_settings.it_interval = interval;
-    timer_settings.it_value = value;
-
-    setitimer(ITIMER_REAL, &timer_settings, NULL);
-  }
 
 	for (size_t i = 0; ; ++i) {
 		CostFunction fxn(&training_sb);
