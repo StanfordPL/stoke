@@ -43,32 +43,30 @@ bool StateGen::get(CpuState& cs) const {
 }
 
 bool StateGen::get(CpuState& cs, const Cfg& cfg) {
-	// Make a sandbox
-	Sandbox sb;
-	sb.set_max_jumps(max_jumps_);	
-
 	// Insert callbacks before every instruction and compile
+	sb_->clear_callbacks();
+
 	size_t last_line;
 	for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
-		sb.insert_before(i, callback, (void*)&last_line);
+		sb_->insert_before(i, callback, (void*)&last_line);
 	}
-	sb.compile(cfg);
+	sb_->compile(cfg);
 
 	// Generate a random state and keep checking for validity
 	get(cs);
 	for (int i = 0; i < (int)max_attempts_; ++i) {
 		// Reset the sandbox state ...
-		sb.clear_inputs();
-		sb.insert_input(cs);
+		sb_->clear_inputs();
+		sb_->insert_input(cs);
 		// ... and try executing
-		sb.run_one(0);
+		sb_->run_one(0);
 
 		// We're done if the state didn't produce an error
-		if (sb.get_result(0)->code == ErrorCode::NORMAL) {
+		if (sb_->get_result(0)->code == ErrorCode::NORMAL) {
 			return true;
 		}
 		// If the error is fixable (segfault we can allocate away) fix and retry
-		else if (fix(*(sb.get_result(0)), cs, cfg, last_line)) {
+		else if (fix(*(sb_->get_result(0)), cs, cfg, last_line)) {
 			i--;
 		} 
 		// Otherwise, generate a new state and call the attempt failed
@@ -103,19 +101,12 @@ bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
 		return true;
 	}
 
-	const auto mi = instr.mem_index();
-
-  // No support if it's not push/pop/ret, and no memory operand
-  if (mi == -1) {
-
-    std::cout << "Instruction: " << instr << std::endl;
-    if (line > 0)
-      std::cout << "Previous In: " << cfg.get_code()[line-1] << std::endl;
-    std::cout << std::endl;
-
+  // No support for implicit memory accesses
+  if (!instr.derefs_mem()) {
     return false;
   }
 
+	const auto mi = instr.mem_index();
 	const auto op = instr.get_operand<M8>(mi);
 
 	// No support for rip-offset form or segment register addressing
@@ -277,7 +268,6 @@ bool StateGen::resize_mem(Memory& mem, uint64_t addr, size_t size) const {
 }
 
 bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line) {
-
   // Clear the error message unless something bad happens.
   error_message_ = "";
 

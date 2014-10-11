@@ -7,6 +7,7 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/cfg/cfg.h"
+#include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
 
 namespace stoke {
@@ -14,10 +15,9 @@ namespace stoke {
 class StateGen {
 	public:
 		/** Creates a new state generator. */
-		StateGen() {
+		StateGen(Sandbox* sb) : sb_{sb} {
 			set_max_attempts(16);
 			set_max_memory(1024);
-			set_max_jumps(1024);
 		}
 
 		/** Sets the maximum number of attempts to make when generating a state. */
@@ -28,11 +28,6 @@ class StateGen {
 		/** Sets the maximum number of bytes to allocate to stack or heap. */
 		StateGen& set_max_memory(size_t ms) {
 			max_memory_ = ms;
-			return *this;
-		}
-		/** Sets the maximum number of jumps to take before siginit. */
-		StateGen& set_max_jumps(size_t mj) {
-			max_jumps_ = mj;
 			return *this;
 		}
 
@@ -47,6 +42,9 @@ class StateGen {
     }
 
 	private:
+		/** Sandbox */
+		Sandbox* sb_;
+
 		/** Replaces the register contents of cs with random bits. */
 		void randomize_regs(CpuState& cs) const;
 

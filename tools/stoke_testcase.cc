@@ -89,11 +89,6 @@ auto& max_attempts = ValueArg<uint64_t>::create("max_attempts")
     .description("The maximum number of attempts to make at generating a testcase")
     .default_val(16);
 
-auto& max_jumps = ValueArg<size_t>::create("max_jumps")
-    .usage("<int>")
-    .description("Maximum jumps before exit due to infinite loop")
-    .default_val(1024);
-
 auto& max_memory = ValueArg<uint64_t>::create("max_memory")
     .usage("<bytes>")
     .description("The maximum number of bytes to allocate to stack or heap")
@@ -104,7 +99,17 @@ auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .description("Source code to generate testcases for")
     .default_val({"anon", {{RET}}});
 
-auto& h5 = Heading::create("Random number generator options");
+auto& h5 = Heading::create("Sandbox options:");
+
+auto& abi_check = FlagArg::create("abi_check")
+		.description("Report SIGSEGV for abi violations");
+
+auto& max_jumps = ValueArg<size_t>::create("max_jumps")
+    .usage("<int>")
+    .description("Maximum jumps before exit due to infinite loop")
+    .default_val(1024);
+
+auto& h6 = Heading::create("Random number generator options");
 
 auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
     .usage("<int>")
@@ -120,10 +125,13 @@ int auto_gen() {
 
 	Cfg cfg_t(target.value().code, RegSet::universe(), RegSet::empty());
 
-	StateGen sg;
+	Sandbox sb;
+	sb.set_abi_check(abi_check)
+		.set_max_jumps(max_jumps);
+
+	StateGen sg(&sb);
 	sg.set_max_attempts(max_attempts.value())
-		.set_max_memory(max_stack.value())
-		.set_max_jumps(max_jumps.value());
+		.set_max_memory(max_stack.value());
 
 	vector<CpuState> tcs;
 	for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
@@ -131,6 +139,11 @@ int auto_gen() {
 		if (sg.get(tc, cfg_t)) {
 			tcs.push_back(tc);
 		}
+	}
+
+	if (tcs.empty()) {
+		cout << "Unable to generate testcases!" << endl;
+		return 1;
 	}
 
 	if (out.value() != "") {

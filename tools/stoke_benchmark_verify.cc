@@ -138,6 +138,9 @@ auto& min_ulp = ValueArg<Cost>::create("min_ulp")
 
 auto& h3 = Heading::create("Sandbox options:");
 
+auto& abi_check = FlagArg::create("abi_check")
+		.description("Report SIGSEGV for abi violations");
+
 auto& max_jumps = ValueArg<size_t>::create("max_jumps")
     .usage("<int>")
     .description("Maximum jumps before exit due to infinite loop")
@@ -162,7 +165,8 @@ int main(int argc, char** argv) {
 	}
 
   Sandbox sb;
-  sb.set_max_jumps(max_jumps);
+  sb.set_abi_check(abi_check)
+		.set_max_jumps(max_jumps);
 
   for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i) {
     if (test_set.value().find(i) != test_set.value().end()) {
