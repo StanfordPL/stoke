@@ -17,8 +17,6 @@
 #include <csignal>
 #include <unistd.h>
 
-#include <chrono>
-
 #include "src/search/search.h"
 
 using namespace cpputil;
@@ -41,7 +39,8 @@ namespace stoke {
 Search::Search(Transforms* transforms) : transforms_(transforms) {
 	set_init(Init::EMPTY, 16);
   set_seed(0);
-  set_timeout(0);
+  set_timeout_itr(0);
+	set_timeout_sec(0);
   set_beta(1.0);
   set_progress_callback(nullptr, nullptr);
   set_statistics_callback(nullptr, nullptr);
@@ -58,7 +57,6 @@ Search::Search(Transforms* transforms) : transforms_(transforms) {
     term_act.sa_flags = SA_ONSTACK;
 
     sigaction(SIGINT, &term_act, 0);
-    sigaction(SIGALRM, &term_act, 0);
   }
 }
 
@@ -103,14 +101,21 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 
   // Statistics callback variables
   vector<Statistics> statistics((size_t) Move::NUM_MOVES);
-  size_t iterations = 0;
   const auto start = chrono::steady_clock::now();
 
 	give_up_now = false;
-	for (; (iterations < timeout_) && (current_cost > 0) && !give_up_now; ++iterations) {
+	for (size_t iterations = 0; (current_cost > 0) && !give_up_now; ++iterations) {
+		// Invoke statistics callback if we've been running for long enough
 		if ((statistics_cb_ != nullptr) && (iterations % interval_ == 0) && iterations > 0) {
 			const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
 			statistics_cb_({statistics, iterations, dur}, statistics_cb_arg_);
+		}
+
+		// This is just here to clean up the for loop; check early exit conditions
+		if (iterations >= timeout_itr_) {
+			break;
+		} else if (duration_cast<duration<size_t>>(steady_clock::now()-start) >= timeout_sec_) {
+			break;
 		}
 
 		// @todo Check cost function hasn't changed across iterations
