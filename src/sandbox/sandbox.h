@@ -40,6 +40,11 @@ class Sandbox {
     clear_inputs();
   }
 
+	/** Sets whether the sandbox should report sigsegv for abi violations. */
+	Sandbox& set_abi_check(bool check) {
+		abi_check_ = check;
+		return *this;
+	}
   /** Sets the maximum number of jumps taken before premature exit. */
   Sandbox& set_max_jumps(size_t jumps) {
     max_jumps_ = jumps;
@@ -121,6 +126,8 @@ class Sandbox {
   /** Callbacks to invokes after a line is exeucted. */
   std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> after_;
 
+	/** Should the sandbox report errors for linux abi violations? */
+	bool abi_check_;
   /** The maximum number of jumps to take before exiting. */
   size_t max_jumps_;
   /** How many jumps have been taken during this execution. */

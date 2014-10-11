@@ -57,6 +57,9 @@ auto& idx = ValueArg<size_t>::create("index")
 
 auto& h3 = Heading::create("Sandboxing options:");
 
+auto& abi_check = FlagArg::create("abi_check")
+		.description("Report SIGSEGV for abi violations");
+
 auto& max_jumps = ValueArg<size_t>::create("max_jumps")
     .usage("<int>")
     .description("Maximum jumps before exit due to infinite loop")
@@ -126,7 +129,8 @@ int main(int argc, char** argv) {
   }
 
   Sandbox sb;
-  sb.set_max_jumps(max_jumps);
+  sb.set_abi_check(abi_check)
+		.set_max_jumps(max_jumps);
 
   const auto index = min(testcases.value().size() - 1, idx.value());
   const auto input = testcases.value()[index];

@@ -42,6 +42,7 @@ namespace stoke {
 Sandbox::Sandbox() : fxn_(32 * 1024) {
   clear_inputs();
   clear_callbacks();
+	set_abi_check(true);
   set_max_jumps(1024);
 
   snapshot_.init();
@@ -172,11 +173,9 @@ void Sandbox::run_one(size_t index) {
       io->out_.code = ErrorCode::SIGKILL_;
     } else if (segv_ != 0) {
       io->out_.code = ErrorCode::SIGSEGV_;
-    } 
-    // issue 51 workaround: don't check the ABI
-    //else if (!snapshot_.check_abi(io->out_)) {
-    //  io->out_.code = ErrorCode::SIGSEGV_;
-    //}
+    } else if (abi_check_ && !snapshot_.check_abi(io->out_)) {
+      io->out_.code = ErrorCode::SIGSEGV_;
+    }
   } else {
     io->out_.code = ErrorCode::SIGFPE_;
   }
