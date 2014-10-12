@@ -47,6 +47,8 @@ TEST(SandboxTest, ModifyingRbxWorks) {
 
   // Setup the sandbox
   stoke::Sandbox sb;
+  sb.set_abi_check(false);
+
   stoke::CpuState tc;
 
   sb.set_max_jumps(1);
@@ -56,9 +58,37 @@ TEST(SandboxTest, ModifyingRbxWorks) {
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
   ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
-
-
 }
+
+
+TEST(SandboxTest, ModifyingRbxFailsIfAbiEnforced) {
+
+  x64asm::Code c;
+  std::stringstream ss;
+
+  // Here's the input program
+  ss << "incq %rcx" << std::endl;
+  ss << "addq $0x8, %rbx" << std::endl;
+  ss << "retq" << std::endl;
+
+  ss >> c;
+
+  // Setup the sandbox; it's going to check abi.
+  stoke::Sandbox sb;
+
+  stoke::CpuState tc;
+
+  sb.set_max_jumps(1);
+  sb.insert_input(tc);
+
+  // Run it
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+
+  ASSERT_EQ(stoke::ErrorCode::SIGSEGV_, sb.result_begin()->code);
+}
+
+
+
 
 
 TEST(SandboxTest, NullDereferenceFails) {
