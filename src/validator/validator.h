@@ -8,6 +8,7 @@
 #include "src/cfg/cfg.h"
 #include "src/state/cpu_state.h"
 #include "src/validator/c_interface.h"
+#include "src/validator/error.h"
 #include "src/validator/SymState.h"
 
 #define PAIR_INFO const std::pair<stoke::Bijection<std::string>,std::map<SS_Id, unsigned int> >&

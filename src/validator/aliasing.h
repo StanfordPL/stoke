@@ -1,5 +1,6 @@
 #ifndef STOKE_SRC_VALIDATOR_ALIASING_H
 #define STOKE_SRC_VALIDATOR_ALIASING_H
+#include "src/validator/error.h"
 #include "src/validator/validator.h"
 #include "src/cfg/cfg.h"
 #include "src/state/cpu_state.h"

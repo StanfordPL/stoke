@@ -2,6 +2,7 @@
 #define HANDLERS_H
 
 //#include "SymState.h"
+#include "src/validator/error.h"
 #include "validator.h"
 
 #include<vector>

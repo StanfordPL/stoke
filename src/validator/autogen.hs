@@ -1904,7 +1904,8 @@ lookup_handler "nop" _ _ = ""
 lookup_handler "clc" _ _ = "setFlag(d.vc, d.Vnprime,V_CF, vc_falseExpr(d.vc), d.constraints, d.post_suffix);"
 lookup_handler "stc" _ _ = "setFlag(d.vc, d.Vnprime,V_CF, vc_trueExpr(d.vc), d.constraints, d.post_suffix);"
 lookup_handler "cmc" _ _ = "setFlag(d.vc, d.Vnprime,V_CF, vc_notExpr(d.vc, getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn)), d.constraints, d.post_suffix);"
-lookup_handler _ _ _ = "assert(false && \"Instruction not implemented\");"          
+lookup_handler opcode _ _ = "throw VALIDATOR_ERROR(\"Instruction '" ++ opcode ++ 
+                                                    "' is not implemented.\" );"
 -- Generates a declaration for an instruction
 validator_decl :: [Instr] -> String
 validator_decl is = concat $ ((("#ifndef SWITCH_H\n#define SWITCH_H\n#include \"handlers.h\"\n#include \"c_interface.h\"\n") : (nub (map render (tail is)))) ++ ("#endif"):[])

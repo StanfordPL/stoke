@@ -2,6 +2,7 @@
 #define SYMSTATE_H_
 
 #include "src/validator/c_interface.h"
+#include "src/validator/error.h"
 #include <string>
 #include <map>
 #include <vector>
@@ -93,7 +94,9 @@ class VersionNumber
 	void Increment(std::set<SS_Id> X, unsigned int n);
 	unsigned int get(SS_Id n) const
 	{
-		assert(VN_.find(n) != VN_.end() && "Unrecognized id!");
+    if(VN_.find(n) == VN_.end()) {
+      throw VALIDATOR_ERROR("Unregognized ID");
+    }
 		return (*(VN_.find(n))).second;
 	}
 };

@@ -1,5 +1,6 @@
 
 
+#include "src/validator/error.h"
 #include "src/validator/validator.h"
 
 TEST(Validator, SimpleExampleTrue) {
@@ -59,4 +60,26 @@ TEST(Validator, SimpleExampleFalse) {
 }
 
 
+TEST(Validator, UnimplementedFailsGracefully) {
+
+  x64asm::Code c;
+
+  std::stringstream tmp;
+  tmp << "incq %rax" << std::endl;
+  tmp << "vandpd %xmm0, %xmm1, %xmm2" << std::endl;
+  tmp << "retq" << std::endl;
+  tmp >> c;
+
+  stoke::Validator v(false);
+  stoke::CpuState tc;
+  stoke::CpuState ceg;
+
+  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
+  stoke::Cfg cfg_r(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
+
+  std::vector<stoke::CpuState> tcs;
+  tcs.push_back(tc);
+
+  ASSERT_THROW(v.validate(cfg_t, cfg_r, tcs, ceg), validator_error);
+}
 
