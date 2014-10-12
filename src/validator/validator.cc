@@ -140,9 +140,9 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
 		Expr REG1INIT = regExpr(vc, regname,V_UNITSIZE);
 		cout << regname << " is expr " << REG1INIT;
 		long long int val;
-		Z3_get_numeral_int64(*vc,wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG1INIT, true))), &val); 	
+		//Z3_get_numeral_int64(*vc,wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG1INIT, true))), &val); 	
 		cout << " with value " << val << endl; 
-		counter_example.gp[iter->first].get_fixed_quad(0) = val;
+		//counter_example.gp[iter->first].get_fixed_quad(0) = val;
 	}
 
 }
@@ -205,8 +205,9 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
         cout << "query is "; vc_printExpr(vc, bigQueryExpr); cout << endl ;
 		s.add(!bigQueryExpr);
 		clock_t start = clock();
-		result = s.check()==unsat;
-		assert(s.check()!=unknown && "Z3 gave up");
+		auto z3_says = s.check();
+    result = z3_says == unsat;
+		assert(z3_says !=unknown && "Z3 gave up");
 		clock_t end = clock();
 		clock_t elapsed =  end -start;
 		cout << "time was" << elapsed <<" i.e. " << (elapsed)/(1.0*CLOCKS_PER_SEC) << " seconds\n";

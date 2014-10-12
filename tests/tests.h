@@ -20,6 +20,7 @@
 #include "tests/sandbox/sandbox.h"
 #include "tests/stategen/stategen.h"
 #include "tests/trivial.h"
+#include "tests/validator/validator.h"
 #include "tests/x64asm/x64asm.h"
 
 
