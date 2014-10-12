@@ -1,0 +1,6 @@
+*.hi
+*.o
+autogen
+validator.switch
+switch.h
+switch.cc
