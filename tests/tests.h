@@ -18,6 +18,7 @@
 #include "tests/cfg/cfg.h"
 #include "tests/fixture.h"
 #include "tests/sandbox/sandbox.h"
+#include "tests/search/search.h"
 #include "tests/stategen/stategen.h"
 #include "tests/trivial.h"
 #include "tests/validator/validator.h"

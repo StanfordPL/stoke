@@ -74,7 +74,7 @@ class CodeFixtureTestInit {
 class CodeFixtureTest : public ::testing::TestWithParam<CodeFixture> {
 
   public:
-    void SetUp() {
+    virtual void SetUp() {
       fixtures_ = std::vector<CodeFixture>(CodeFixtureTestInit::get_fixtures());
     }
 
