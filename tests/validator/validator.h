@@ -90,16 +90,13 @@ TEST(Validator, SimpleCounterexample) {
 
   std::stringstream tmp;
   tmp << "movq $0x0, %rax" << std::endl;
-  tmp << "movq $0xc0decafe, %rdx" << std::endl;
-  tmp << "cmpq %rdx, %rcx" << std::endl;
+  tmp << "cmpq $0xc0decafe, %rcx" << std::endl;
   tmp << "sete %al" << std::endl;
-  tmp << "movq $0x0, %rdx" << std::endl;
   tmp << "retq" << std::endl;
   tmp >> c;
   tmp.str("");
 
   tmp << "movq $0x0, %rax" << std::endl;
-  tmp << "movq $0x0, %rdx" << std::endl;
   tmp << "retq" << std::endl;
   tmp >> d;
 
@@ -115,7 +112,7 @@ TEST(Validator, SimpleCounterexample) {
 
   EXPECT_FALSE(v.validate(cfg_t, cfg_r, tcs, ceg));
 
-  EXPECT_EQ(0xc0decafe, 0xffffffff & ceg.gp[1].get_fixed_quad(0));
+  EXPECT_EQ(0xc0decafe, ceg.gp[1].get_fixed_quad(0));
 
 }
 
@@ -127,6 +124,7 @@ TEST(Validator, ChecksUpper32bits) {
   std::stringstream tmp;
   tmp << "movq $0x1, %rax" << std::endl;
   tmp << "shlq $0x28, %rax" << std::endl;
+  tmp << "retq" << std::endl;
   tmp >> c;
   tmp.str("");
 
