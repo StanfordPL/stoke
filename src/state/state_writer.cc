@@ -90,7 +90,7 @@ void StateWriter::write_rflags(ostream& os, const RFlags& rf, const char** names
 	ofilterstream<Column> fs(os);
 	fs.filter().padding(padding);
 
-	for (size_t i = 0, ie = 22; i < ie; ++i) {
+	for (size_t i = 0, ie = rf.size(); i < ie; ++i) {
 		fs << names[i];
 		if (i + 1 != ie) {
 			fs << endl;
@@ -98,7 +98,7 @@ void StateWriter::write_rflags(ostream& os, const RFlags& rf, const char** names
 	}
 	fs.filter().next();
 
-	for (size_t i = 0, ie = 22; i < ie; ++i) {
+	for (size_t i = 0, ie = rf.size(); i < ie; ++i) {
 		fs << rf.is_set(i);
 		if (i + 1 != ie) {
 			fs << endl;

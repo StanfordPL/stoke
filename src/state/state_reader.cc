@@ -72,7 +72,7 @@ void StateReader::read_regs(istream& is, Regs& regs) const {
 }
 
 void StateReader::read_rflags(istream& is, RFlags& rf) const {
-	for (size_t i = 0, ie = 22; i < ie; ++i) {
+	for (size_t i = 0, ie = rf.size(); i < ie; ++i) {
 		string name;
 		bool val;
 		is >> name >> val;

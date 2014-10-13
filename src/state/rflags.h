@@ -24,18 +24,23 @@ namespace stoke {
 class RFlags {
 	public:
 		/** Creates an Rflags register with n bits. */
-		RFlags(size_t n) {
-			contents_.resize_for_bits(n);
+		RFlags() {
+			contents_.resize_for_bits(size());
+		}
+
+		/** Returns the number of meaningful bits. */
+		size_t size() const {
+			return 22;
 		}
 
 		/** Returns the value of the ith bit of a flag. */
 		bool is_set(size_t e, size_t i = 0) const {
-			assert(e+i < contents_.num_bits());
+			assert(e+i < size());
 			return contents_[e+i];
 		}
 		/** Sets the value of the ith bit of a flag. */
 		void set(size_t e, bool val, size_t i = 0) {
-			assert(e+i < contents_.num_bits());
+			assert(e+i < size());
 			contents_[e+i] = val;
 		}
 
