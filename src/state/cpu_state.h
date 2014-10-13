@@ -17,6 +17,7 @@
 
 #include "src/state/error_code.h"
 #include "src/state/regs.h"
+#include "src/state/rflags.h"
 #include "src/state/memory.h"
 
 namespace stoke {
@@ -24,7 +25,7 @@ namespace stoke {
 struct CpuState {
   /** Returns a new CpuState. */
   CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) :
-		code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256) {
+		code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf(64) {
     stack.resize(0, stack_size);
     heap.resize(base, heap_size);
   }
@@ -33,6 +34,7 @@ struct CpuState {
   CpuState& operator^=(const CpuState& rhs) {
     gp ^= rhs.gp;
     sse ^= rhs.sse;
+		rf ^= rhs.rf;
     stack ^= rhs.stack;
     heap ^= rhs.stack;
 
@@ -47,7 +49,7 @@ struct CpuState {
   /** Equality. */
   bool operator==(const CpuState& rhs) const {
     return code == rhs.code && gp == rhs.gp && sse == rhs.sse &&
-           stack == rhs.stack && heap == rhs.heap;
+           rf == rhs.rf && stack == rhs.stack && heap == rhs.heap;
   }
   /** Inequality. */
   bool operator!=(const CpuState& rhs) const {
@@ -60,6 +62,8 @@ struct CpuState {
   Regs gp;
   /** SSE register buffer. */
   Regs sse;
+	/** Rflags. */
+	RFlags rf;
   /** Stack. */
   Memory stack;
   /** Heap. */
