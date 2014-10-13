@@ -79,18 +79,28 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
 }
 
 void StateGen::randomize_regs(CpuState& cs) const {
+	// General purpose
 	for (size_t i = 0, ie = cs.gp.size(); i < ie; ++i) {
 		auto& r = cs.gp[i];
 		for (size_t j = 0, je = r.num_fixed_bytes(); j < je; ++j) {
 			r.get_fixed_byte(j) = rand() % 256;
 		}
 	}
+	// SSE
 	for (size_t i = 0, ie = cs.sse.size(); i < ie; ++i) {
 		auto& s = cs.sse[i];
 		for (size_t j = 0, je = s.num_fixed_bytes(); j < je; ++j) {
 			s.get_fixed_byte(j) = rand() % 256;
 		}
 	}
+	// RFlags (note that some bits have deterministic values)
+	for (size_t i = 0, ie = cs.rf.size(); i < ie; ++i) {
+		cs.rf.set(i, rand() % 2);
+	}
+	cs.rf.set(1, 1);
+	cs.rf.set(3, 0);
+	cs.rf.set(5, 0);
+	cs.rf.set(15, 0);
 }
 
 bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
