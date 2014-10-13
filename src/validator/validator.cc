@@ -184,6 +184,7 @@ bool z3Solve(VC& vc, vector<Expr>& constraints, vector<Expr>& query,PAIR_INFO st
 	}
 	int result;
 		{
+#ifdef DEBUG_VALIDATOR
 		  ofstream ofs;
 		  ofs.open("debug.smt2");
 		  ofs << "(set-logic UFBV)" << endl;
@@ -191,20 +192,8 @@ bool z3Solve(VC& vc, vector<Expr>& constraints, vector<Expr>& query,PAIR_INFO st
 		  string str = Z3_benchmark_to_smtlib_string (*vc,"", "","","",0,0,full_expr);
 		  ofs << str.erase(0,23);
 		  ofs.close();
+#endif
 		}
-	//result =  (s.check()==unsat);
-	/*
-	s.push();
-	//Is Constraints => False? If yes then we enumerated contradictory constraints.  
-	result =  (s.check()==unsat);
-	//cout << "Query executed! with result" << result << "\n";
-	if( result == 1 )
-	{
-		cout << endl << endl << "Debugging hell" << endl << endl;
-		exit(0);
-		assert(false && "Debugging hell");
-	}
-	s.pop();*/
 	{
 		//Construct a single query expression by taking conjunction of all queries.
 		//For some programs, asking queries one at a time might be the way to go.
@@ -219,12 +208,14 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
 		full_expr = vc_andExpr(vc, full_expr, !bigQueryExpr);
 		//Push, query Constraints=>bigQueryExpression?
 		{
+#ifdef DEBUG_VALIDATOR
 		  ofstream ofs;
 		  ofs.open("vc.smt2");
 		  ofs << "(set-logic UFBV)" << endl;
 		  Z3_set_ast_print_mode(*vc,Z3_PRINT_SMTLIB2_COMPLIANT);
 		  ofs << ((string)Z3_benchmark_to_smtlib_string (*vc,"", "","","",0,0,full_expr)).erase(0,23);
 		  ofs.close();
+#endif
 		}
 #ifdef DEBUG_VALIDATOR
 		cout << "Printing of SMT2 compliant benchmark complete" << endl;
@@ -335,31 +326,11 @@ set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, MemoryData& mem, string
 	for(uint i=0;i<x64asm::rbs.size();i++)
 	  if(modsetreg.contains(((x64asm::Rb)x64asm::rbs[i])))
 	    retval.insert(rbs[i]);  
-	/*for(RegSet::r8_iterator i = modsetreg.r8_begin(); i!=modsetreg.r8_end(); i++)
-	{
-	  //cout << "HAHA " << endl;
-	  retval.insert(parentRegister(*i));
-	}*//*
-	for(uint i=0;i<x64asm::rbs.size();i++)
-	  if(modsetreg.contains(((x64asm::Rb)x64asm::rbs[i])))
-	    retval.insert(i);  
-	  */
-	/*for(RegSet::gp_reg_iterator i = modsetreg.gp_begin(WORD); i!=modsetreg.gp_end(WORD); i++)
-		retval.insert(parentRegister(*i));
-	for(RegSet::gp_reg_iterator i = modsetreg.gp_begin(DOUBLE); i!=modsetreg.gp_end(DOUBLE); i++)
-		retval.insert(parentRegister(*i));
-	for(RegSet::gp_reg_iterator i = modsetreg.gp_begin(QUAD); i!=modsetreg.gp_end(QUAD); i++)
-		retval.insert(parentRegister(*i));*/
 
 	for(uint i=0;i<x64asm::xmms.size();i++)
 	  if(modsetreg.contains(((x64asm::Xmm)x64asm::xmms[i])))
 	    retval.insert(i+XMM_BEG);  
 
-/*    	for(int i=0;i<xmms.size();i++)
-	  if(modsetreg.contains(((XMM)xmms[i])))
-	    retval.insert(i+XMM_BEG);  
-
-*/	  
 	if(modsetreg.contains(x64asm::eflags_cf))
 	  retval.insert(V_CF);
 	if(modsetreg.contains(x64asm::eflags_of))
@@ -371,10 +342,6 @@ set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, MemoryData& mem, string
 	if(modsetreg.contains(x64asm::eflags_pf))
 	  retval.insert(V_PF);
 
-	//for(RegSet::xmm_iterator i = modsetreg.xmm_begin(); i!=modsetreg.xmm_end(); i++)
-	//	retval.insert(parentRegister(*i)+XMM_BEG);
-	/*for(RegSet::cond_reg_iterator i = modsetreg.cond_begin(); i!=modsetreg.cond_end(); i++)
-		retval.insert(parentRegister(*i)+FLAG_BEG);*/
 	if(include_undef)
 	{
 		x64asm::RegSet flagsetreg = instr.maybe_undef_set();
@@ -442,7 +409,6 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 		
 		else if(bitwidth == V_XMMSIZE )
 		{
-			//if(i->first==XMM_BEG+1 || i->first == XMM_BEG+2) continue; //HACK for LR2
 			string elem = bij.toVal(i->first); 
 			Expr E_state_elem_common = regExpr(vc, elem, V_XMMUNIT);
 			Expr E_state_elem_initial = regExpr(vc, (elem + "_" + code_num + "_0"), V_XMMUNIT);
@@ -454,10 +420,6 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 #endif
 			constraints.push_back(E_eq_initial);
 		}
-		/*else if(bitwidth == V_MEMSIZE)
-		{
-			//do nothing: unconstrained memory, Handle misaligned accesses here
-		}*/
 		else 
       throw VALIDATOR_ERROR("Unexpected bitwidth for register");
 #undef boolType
