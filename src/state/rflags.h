@@ -33,14 +33,30 @@ class RFlags {
 			return 22;
 		}
 
+		/** Returns true if this bit is fixed to true. */
+		bool is_fixed_true(size_t i) const {
+			assert(i < size());
+			return i == 1;
+		}
+		/** Returns true if this bit is fixed to false. */
+		bool is_fixed_false(size_t i) const {
+			assert(i < size());
+			return i == 3 || i == 5 || i == 15;
+		}
+		/** Returns true if this bit has a fixed value. */
+		bool is_fixed(size_t i) const {
+			return is_fixed_true(i) || is_fixed_false(i);
+		}
+
 		/** Returns the value of the ith bit of a flag. */
 		bool is_set(size_t e, size_t i = 0) const {
 			assert(e+i < size());
 			return contents_[e+i];
 		}
-		/** Sets the value of the ith bit of a flag. */
+		/** Sets the value of the ith bit of a flag; undefined for incorrect fixed values */
 		void set(size_t e, bool val, size_t i = 0) {
 			assert(e+i < size());
+			assert(!is_fixed(e+i) || (is_fixed_true(e+i) && val) || (is_fixed_false(e+i) && !val));
 			contents_[e+i] = val;
 		}
 

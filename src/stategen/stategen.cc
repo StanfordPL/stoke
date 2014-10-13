@@ -95,12 +95,14 @@ void StateGen::randomize_regs(CpuState& cs) const {
 	}
 	// RFlags (note that some bits have deterministic values)
 	for (size_t i = 0, ie = cs.rf.size(); i < ie; ++i) {
-		cs.rf.set(i, rand() % 2);
+		if (cs.rf.is_fixed_true(i)) {
+			cs.rf.set(i, true);
+		} else if (cs.rf.is_fixed_false(i)) {
+			cs.rf.set(i, false);
+		} else {
+			cs.rf.set(i, rand() % 2);
+		}
 	}
-	cs.rf.set(1, 1);
-	cs.rf.set(3, 0);
-	cs.rf.set(5, 0);
-	cs.rf.set(15, 0);
 }
 
 bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
