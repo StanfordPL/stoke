@@ -85,7 +85,11 @@ using namespace z3;
   //Expr vc_parseExpr(VC vc, const char* s){return 0;}
 
   //! Prints 'e' to stdout.
-  void vc_printExpr(VC vc, Expr e){std::cout << e ;}
+  void vc_printExpr(VC vc, Expr e){
+#ifdef DEBUG_VALIDATOR
+    std::cout << e ;
+#endif
+  }
 
   //! Prints 'e' to stdout as C code
   void vc_printExprCCode(VC vc, Expr e){}

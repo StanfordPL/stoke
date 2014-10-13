@@ -36,7 +36,9 @@ std::pair<stoke::Bijection<std::string>,std::map<SS_Id, unsigned int> > all_stat
 
 Meminfo MemoryData::deref(uint line_no, bool is_target) const
 {
+#ifdef DEBUG_VALIDATOR
   cout << "Dereferencing line " << line_no << " of " << (is_target ? "target" : "rewrite") << endl;
+#endif
   string retval = "";
   for(const auto& info : _minfo)
   {
@@ -64,7 +66,9 @@ std::string MemoryData::name_deref(uint line_no, bool is_target) const
 
 void demorgan() {
 
+#ifdef DEBUG_VALIDATOR
     std::cout << "de-Morgan example\n";
+#endif
     context* c = new context();
 
     expr x = c->bool_const("x");
@@ -80,7 +84,9 @@ void demorgan() {
 
     s.add(!conjecture);
 
+#ifdef DEBUG_VALIDATOR
     std::cout << s << "\n";
+#endif
 
     switch (s.check()) {
 
@@ -103,7 +109,9 @@ Expr regExpr(VC& vc, string s, unsigned int size)
 //Initialize the counter-example trace
 void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_example)
 {
+#ifdef DEBUG_VALIDATOR
   cout << "Printing Counterexample " << endl;
+#endif
 //	 ofstream ofs("CEX.txt");
 	//vc_printCounterExample(vc);
 	//WholeCounterExample wcex = vc_getWholeCounterExample(vc);
@@ -117,7 +125,9 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
 		if(iter->second == V_FLAGSIZE )
 			continue;
 		regname = bij.toVal(iter->first);
+#ifdef DEBUG_VALIDATOR
 		cout << regname <<":" << endl;
+#endif
 		//ofs << regname <<" " ;
 		Expr REG1INIT = vc_bvExtract(vc,regExpr(vc, (regname+"_1_0"),iter->second*V_UNITSIZE),31,0);
 		Expr REG2INIT = vc_bvExtract(vc,regExpr(vc, (regname+"_2_0"),iter->second*V_UNITSIZE),31,0);
@@ -127,7 +137,13 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
 		Expr vali2 = wcex.eval(REG2INIT,true);
 		Expr val1 = wcex.eval( REG1FINAL,true);
 		Expr val2 = wcex.eval( REG2FINAL,true);
-		vc_printExpr(vc, vali1);cout << "\t"; vc_printExpr(vc, vali2); cout << "\n"; vc_printExpr(vc, val1);cout << "\t"; vc_printExpr(vc, val2); cout << endl << endl;
+#ifdef DEBUG_VALIDATOR
+		vc_printExpr(vc, vali1);
+    cout << "\t"; vc_printExpr(vc, vali2); 
+    cout << "\n"; vc_printExpr(vc, val1);
+    cout << "\t"; vc_printExpr(vc, val2); 
+    cout << endl << endl;
+#endif
 //		ofs << wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG1FINAL, false))) << " " << wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG2FINAL, false))) << endl;
 		//Expr regval = to_expr(*vc, Z3_mk_bv2int(*vc, val, false));
 		//cout << "\n\t" << regval << "\n";    	
@@ -138,10 +154,14 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
 			continue;
 		regname = bij.toVal(iter->first);
 		Expr REG1INIT = regExpr(vc, regname,V_UNITSIZE);
+#ifdef DEBUG_VALIDATOR
 		cout << regname << " is expr " << REG1INIT;
+#endif
 		long long int val;
 		Z3_get_numeral_int64(*vc,wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG1INIT, true))), &val); 	
+#ifdef DEBUG_VALIDATOR
 		cout << " with value " << val << endl; 
+#endif
 		counter_example.gp[iter->first].get_fixed_quad(0) = val;
 	}
 
@@ -153,9 +173,13 @@ bool z3Solve(VC& vc, vector<Expr>& constraints, vector<Expr>& query,PAIR_INFO st
   Expr full_expr = vc_trueExpr(vc);
   for(unsigned int i = 0; i < constraints.size(); i++)
 	{
+#ifdef DEBUG_VALIDATOR
 		cout << "Asserting constraint:\n";
+#endif
 		vc_printExpr(vc, constraints[i]);
+#ifdef DEBUG_VALIDATOR
 		cout << endl;
+#endif
 		s.add(constraints[i]);
 		full_expr = vc_andExpr(vc, full_expr,constraints[i]);
 	}
@@ -188,7 +212,9 @@ bool z3Solve(VC& vc, vector<Expr>& constraints, vector<Expr>& query,PAIR_INFO st
 		Expr bigQueryExpr = vc_trueExpr(vc);
 		for(unsigned int i = 0; i< query.size(); i++)
 		{
+#ifdef DEBUG_VALIDATOR
 cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
+#endif
 			bigQueryExpr = vc_andExpr(vc, bigQueryExpr, query[i]);
 		}
 		full_expr = vc_andExpr(vc, full_expr, !bigQueryExpr);
@@ -201,8 +227,12 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
 		  ofs << ((string)Z3_benchmark_to_smtlib_string (*vc,"", "","","",0,0,full_expr)).erase(0,23);
 		  ofs.close();
 		}
+#ifdef DEBUG_VALIDATOR
 		cout << "Printing of SMT2 compliant benchmark complete" << endl;
+#endif
+#ifdef DEBUG_VALIDATOR
         cout << "query is "; vc_printExpr(vc, bigQueryExpr); cout << endl ;
+#endif
 		s.add(!bigQueryExpr);
 		clock_t start = clock();
 		auto z3_says = s.check();
@@ -210,19 +240,27 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
 		assert(z3_says !=unknown && "Z3 gave up");
 		clock_t end = clock();
 		clock_t elapsed =  end -start;
+#ifdef DEBUG_VALIDATOR
 		cout << "time was" << elapsed <<" i.e. " << (elapsed)/(1.0*CLOCKS_PER_SEC) << " seconds\n";
+#endif
 
+#ifdef DEBUG_VALIDATOR
 		cout << "Query executed! with result" << result << "\n";
+#endif
 		if( result == 0 )
 		{
 			model m=s.get_model();
 			//If validation failed then obtain the counter-example. Gives some useless thing if multiplications are uninterpreted.
+#ifdef DEBUG_VALIDATOR
 			cout << "Model is " << endl << m; 
+#endif
 			InitCex(vc,m,state_info, counter_example);
 		}
+#ifdef DEBUG_VALIDATOR
 		if(result == 1) { 
 		  cerr << "Success" << endl ;
 		}
+#endif
 	}
 
 
@@ -246,7 +284,8 @@ string idToStr(SS_Id n, PAIR_INFO I)
 		case V_PF: return "PFLAG";						
 		case V_SF: return "SFLAG";
 		case V_ZF: return "ZFLAG";
-		default:  cout << "Strange flag"; assert(false && "AF?");
+		default:  
+      throw VALIDATOR_ERROR("Unexpected flag, possibly AF");
 		}
 
 	}
@@ -351,10 +390,12 @@ set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, MemoryData& mem, string
 
 	  
 	}
+#ifdef DEBUG_VALIDATOR
 	cout << "Modset is: ";
 	for(set<SS_Id>::iterator l=retval.begin(); l!=retval.end(); l++)
 	  cout << idToStr(*l,state_info) << " ";
 	cout << endl ;
+#endif
 	return retval;
 }		
 					
@@ -377,9 +418,11 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 			Expr E_state_elem_common = regExpr(vc, elem, V_UNITSIZE);
 			Expr E_state_elem_initial = regExpr(vc, (elem + "_" + code_num + "_0"), V_UNITSIZE);
 			Expr E_eq_initial = EqExpr(vc, E_state_elem_common, E_state_elem_initial);
+#ifdef DEBUG_VALIDATOR
 			cout << "Register constraint is:\n";
 			vc_printExpr(vc, E_eq_initial);
 			cout << "\n";
+#endif
 			constraints.push_back(E_eq_initial);
 		}
 		else if(bitwidth == V_FLAGSIZE)
@@ -388,9 +431,11 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 			Expr E_state_elem_common = vc_varExpr(vc, elem.c_str(),  boolType);
 			Expr E_state_elem_initial = vc_varExpr(vc, (elem + "_" + code_num + "_0").c_str(), boolType);
 			Expr E_eq_initial = vc_iffExpr(vc, E_state_elem_common, E_state_elem_initial);
+#ifdef DEBUG_VALIDATOR
 			cout << "Flag constraint is:\n";
 			vc_printExpr(vc, E_eq_initial);
 			cout << "\n";
+#endif
 			constraints.push_back(E_eq_initial);			
 		}
 		
@@ -401,9 +446,11 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 			Expr E_state_elem_common = regExpr(vc, elem, V_XMMUNIT);
 			Expr E_state_elem_initial = regExpr(vc, (elem + "_" + code_num + "_0"), V_XMMUNIT);
 			Expr E_eq_initial =  EqExpr(vc, E_state_elem_common, E_state_elem_initial); 
+#ifdef DEBUG_VALIDATOR
 			cout << "XMM Register constraint is:\n";
 			vc_printExpr(vc, E_eq_initial);
 			cout << "\n";
+#endif
 			constraints.push_back(E_eq_initial);
 		}
 		/*else if(bitwidth == V_MEMSIZE)
@@ -446,7 +493,8 @@ Expr getFinalConstraint(VC& vc, const set<SS_Id>& state_elems, const VersionNumb
 			E_post = regExpr(vc, id_str + "_" + code_num + "_" + V_FSTATE, V_XMMUNIT);
 			retval = vc_andExpr(vc, retval, EqExpr(vc, E_pre, E_post));
 			break;
-		default:  cout << "A strange size " << sizes[temp] << "\n"; 
+		default:  
+      throw VALIDATOR_ERROR("Unexpected size " + to_string(sizes[temp]));
 		}
 	}
 	
@@ -477,17 +525,23 @@ VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constrai
 		oss <<  n.getInstr();
 
 		n.setVN(Vnprime);
+#ifdef DEBUG_VALIDATOR
 		cout << "Creating constraint from instruction " << oss.str() <<"\n";
+#endif
 		instrnToConstraint(mem, state_info, vc, n, Vnold, Vnprime, constraints, code_num, i, X_mod);		
 		if(n.succSize() != 1)
 		{
 			Expr E_final_constraint = getFinalConstraint(vc, state_elems, Vnprime, state_info.second, code_num, mem,state_info);
+#ifdef DEBUG_VALIDATOR
 			cout << "Adding final constraint\n";
 			vc_printExpr(vc, E_final_constraint);
 			cout << "\n\n";
+#endif
 			constraints.push_back(E_final_constraint);
 		}
+#ifdef DEBUG_VALIDATOR
 		cout << "\n\nNode " << i << " ends\n\n";
+#endif
 
 	}
 	return Vn;
@@ -512,7 +566,9 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 			Expr E_state_elem_1 = vc_bvExtract(vc, regExpr(vc, (elem + "_1_"+ V_FSTATE),V_UNITSIZE), 31, 0);
 			Expr E_state_elem_2 = vc_bvExtract(vc, regExpr(vc, (elem + "_2_"+ V_FSTATE),V_UNITSIZE), 31, 0);
 			Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+#ifdef DEBUG_VALIDATOR
 			cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
+#endif
 			query.push_back(E_eq_final);
 
 	  }
@@ -526,7 +582,9 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 			Expr E_state_elem_1 = vc_bvExtract(vc, regExpr(vc, (elem + "_1_"+ V_FSTATE),V_XMMUNIT), 31, 0);
 			Expr E_state_elem_2 = vc_bvExtract(vc, regExpr(vc, (elem + "_2_"+ V_FSTATE),V_XMMUNIT), 31, 0);
 			Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+#ifdef DEBUG_VALIDATOR
 			cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
+#endif
 			query.push_back(E_eq_final);
 
 	  }
@@ -542,7 +600,9 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 			Expr E_state_elem_1 = regExpr(vc, (elem + "_1_"+ V_FSTATE),size);
 			Expr E_state_elem_2 = regExpr(vc, (elem + "_2_"+ V_FSTATE),size);
 			Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+#ifdef DEBUG_VALIDATOR
 			cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
+#endif
 			query.push_back(E_eq_final);
 			}
 	}
@@ -563,7 +623,9 @@ MemoryData getMemoryInfo(string filename, pair<Bijection<string>,map<SS_Id, unsi
     for(int i=0;i<numrows;i++)
     {
       myfile >> name >> size;
+#ifdef DEBUG_VALIDATOR
       cout << "Read " << name << " " << size << endl;
+#endif
       state_info.second[state_info.first.insert(name,MEM_BEG+i)]=size;      
     }
     myfile >> name >> numrows;
@@ -940,16 +1002,22 @@ void addAxioms(context& ctx, vector<Expr>& constraints )
     for(uint i=0;i<numrows;i++)
     {
       myfile >> axiom_idx;
+#ifdef DEBUG_VALIDATOR
       cout << "Read axiom  " << axiom_idx << endl;
+#endif
       axioms.push_back(axiom_idx);
     }
     myfile.close();
   }
   for(const uint axiom : axioms)
   {
+#ifdef DEBUG_VALIDATOR
     cout << " Adding axiom " << axiom << endl;
+#endif
     addAxiom(ctx, constraints, (axiom_enum)axiom);
+#ifdef DEBUG_VALIDATOR
     cout << " Added " << axiom << endl;
+#endif
   }
 }
 
@@ -998,7 +1066,9 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite,
     const std::vector<CpuState>& testcases,CpuState& counter_example)
 {
   generateAliasing(target, rewrite, testcases);
+#ifdef DEBUG_VALIDATOR
   std::cout << "Enter the dragon!" << std::endl;
+#endif
   return EqualReadInv(target, rewrite, counter_example);
 }
 }

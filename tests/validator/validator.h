@@ -149,6 +149,36 @@ TEST(Validator, ChecksUpper32bits) {
 }
 
 
+TEST_P(CodeFixtureTest, IdentityValidates) {
+
+  CodeFixture f = GetParam();
+
+  if (!f.get_test_data("validate")) {
+    std::cout << "              [ Not testing this fixture. ]" << std::endl;
+    return;
+  } else {
+    std::cout << "              [ " << f.get_name() << "] " << std::endl;
+  }
+
+  x64asm::Code code = f.get_code();
+  code.push_back(x64asm::Instruction(x64asm::RET));
+
+  x64asm::Code c(code);
+  x64asm::Code d(code);
+
+  stoke::Validator v(false);
+  stoke::CpuState tc;
+  stoke::CpuState ceg;
+
+  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
+  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
+
+  std::vector<stoke::CpuState> tcs;
+  tcs.push_back(tc);
+
+  EXPECT_TRUE(v.validate(cfg_t, cfg_r, tcs, ceg));
+
+}
 
 
 TEST(Validator, DISABLED_ZeroTestcasesFailsGracefully) {

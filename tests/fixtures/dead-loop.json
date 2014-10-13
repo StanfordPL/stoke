@@ -1,7 +1,7 @@
 
 {
   "name": "dead-loop",
-  "comment": "There are two unrachable blocks that point to each other.",
+  "comment": "There are two unreachable blocks that point to each other.",
 
   "code": 
     [ "retq",

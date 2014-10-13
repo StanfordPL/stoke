@@ -105,7 +105,9 @@ Ebb toEbb(VC& vc, const stoke::Cfg& f, unsigned int blocksize, string codenum)
 	  {
 		  assert(node_idx == retval.nodes.size() - 1);
 		  Instruction instr = *j;
+#ifdef DEBUG_VALIDATOR
 		  cout << "Adding "  << instr << " to EBB" << endl;
+#endif
 		  //node for the successor
 		  V_Node n(codenum,  0, count+1, instr);
 		  retval.nodes.push_back(n);
@@ -238,6 +240,7 @@ string TextInstructionWriter(const Instruction& instr)
 void Ebb::print()
 {
 
+#ifdef DEBUG_VALIDATOR
   // cout << "Printing nodes" << "\n";
   unsigned int i = 0;
   unsigned int j = 0;
@@ -264,7 +267,7 @@ void Ebb::print()
 	   cout << "source is " << e.src_ins_no_ << "\n";
 	   cout << "target is " << e.dest_ins_no_ << "\n";
   }
-
+#endif
 }
 /*void VersionNumber::FindConflict(set<SS_Id> vars, VersionNumber& VN, set<SS_Id>& X_conf)
 {

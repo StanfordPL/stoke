@@ -63,7 +63,11 @@ void addExtraConstraints(VC& vc, vector<Expr>& constraints, string filename )
     for(int cnstridx =0; cnstridx<numcnstrs; cnstridx++)
     {
       Expr e = getcnstr(vc,myfile);
-      cout << "Adding " << filename << " " ; vc_printExpr(vc, e); cout << endl; 
+#ifdef DEBUG_VALIDATOR
+      cout << "Adding " << filename << " " ; 
+      vc_printExpr(vc, e); 
+      cout << endl; 
+#endif
       constraints.push_back(e);
     }
     myfile.close();

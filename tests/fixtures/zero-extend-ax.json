@@ -4,6 +4,8 @@
 
   "tests": {
 
+    "validate": true,
+
     "liveness": {
       "given liveout": ["%rax"],
       "expected livein": ["%ax"]

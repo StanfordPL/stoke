@@ -44,7 +44,9 @@ uint getMemAddrWidth(Instruction& instr, uint mem_idx)
     default:
       assert(false);
   }
+#ifdef DEBUG_VALIDATOR
   cout << "Cannot figure out the width of memop " << endl;
+#endif
   exit(0);
   return 0;
 }
@@ -56,7 +58,9 @@ void v_callback(const StateCallbackData& data, void* arg) {
 
   uint line = data.line;
   auto instr = f.get_code()[data.line];
+#ifdef DEBUG_VALIDATOR
   cout << "Current Instruction: " << instr << endl;
+#endif
   
   if(instr.derefs_mem())
   {
@@ -88,10 +92,14 @@ void getAddresses(const stoke::Cfg& f, const std::vector<CpuState>& testcases,  
 
   const auto result = *(sb.result_begin());
   if (result.code != ErrorCode::NORMAL) {
+#ifdef DEBUG_VALIDATOR
     cout << "Control returned abnormally with signal " << dec << (int)result.code << endl;
-    assert(false);
+#endif
+    throw VALIDATOR_ERROR("Sandbox returned signal " + to_string((int)result.code));
   } else {
+#ifdef DEBUG_VALIDATOR
     cout << "Control returned normally " << endl;
+#endif
   }
 
 }
@@ -100,7 +108,9 @@ void printAddresses(const map<uint, addr_n_width>& line_addrs)
 {
   for(const auto line_addr : line_addrs)
   {
+#ifdef DEBUG_VALIDATOR
     cout << line_addr.first << " " << line_addr.second.first << " " << line_addr.second.second << endl;
+#endif
   }
 }
 
@@ -181,12 +191,18 @@ void makeAliasingFile(const map<uint, addr_n_width>& t_addrs,const map<uint, add
   vector<CellInfo> target_rows;
   vector<CellInfo> rewrite_rows;
   getNames(t_addrs, mem_names);
+#ifdef DEBUG_VALIDATOR
   cout << " Got names ";
+#endif
   getCellInfo(t_addrs, mem_names, target_rows);
   getCellInfo(r_addrs, mem_names, rewrite_rows);
+#ifdef DEBUG_VALIDATOR
   cout << " Got info ";
+#endif
   dumpAliasingFile("aliasing",mem_names, target_rows, rewrite_rows);
+#ifdef DEBUG_VALIDATOR
   cout << " dump complete ";
+#endif
 
 }
 
