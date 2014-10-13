@@ -1,7 +1,11 @@
 
 #include <sys/time.h>
 #include "src/cfg/cfg.h"
+#include "src/cost/cost.h"
+#include "src/cost/cost_function.h"
+#include "src/cost/performance_term.h"
 #include "src/search/transforms.h"
+#include "src/stategen/stategen.h"
 
 class TransformsTest : public CodeFixtureTest {
 
@@ -155,7 +159,53 @@ TEST_P(TransformsTest, GlobalSwapIsReversible) {
   }
 }
 
+TEST_P(TransformsTest, CostInvariantAfterUndo) {
 
+  code_.push_back(x64asm::Instruction(x64asm::RET));
+  x64asm::Code original(code_);
+  cfg_ = new stoke::Cfg(code_, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+
+  stoke::Sandbox sb;
+  sb.set_max_jumps(30).set_abi_check(false);
+
+  //attempt to make a testcase
+  // there's an underlying bug here in stoke testcase.
+  /*
+  std::cout << "generating testcase" << std::endl;
+  std::cout << "cfg: " << cfg_->get_code() << std::endl;
+  */
+  stoke::CpuState tc;
+  /*
+  stoke::StateGen sg(&sb);
+  if (sg.get(tc, *cfg_))
+  */
+    sb.insert_input(tc);
+
+  //make cost function
+  stoke::CostFunction fxn(&sb);
+  fxn.set_target(*cfg_, true, true)
+     .set_performance_term(stoke::PerformanceTerm::LATENCY);
+
+  auto original_cost = fxn({original, x64asm::RegSet::universe(), x64asm::RegSet::empty()});
+
+  //loop and check
+  for (size_t i = 0; i < iterations_; ++i) {
+
+    stoke::Move m = (stoke::Move)(i % 6);
+    if(transforms_.modify(*cfg_, m)) {
+      transforms_.undo(*cfg_, m); 
+    } 
+
+    ASSERT_EQ(original_cost, fxn(*cfg_)) << 
+      "the original code: " << std::endl << original << std::endl <<
+      "the modified code: " << std::endl << cfg_->get_code() << std::endl <<
+      "and the seed was: " << seed_ << std::endl;
+
+    ASSERT_EQ(fxn(*cfg_), fxn(*cfg_)) << "evaluating cost twice failed.";
+  }
+
+
+}
 
 
 INSTANTIATE_TEST_CASE_P(
