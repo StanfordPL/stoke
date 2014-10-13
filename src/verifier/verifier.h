@@ -65,6 +65,8 @@ class Verifier {
   bool hold_out_verify(const Cfg& target, const Cfg& rewrite);
 	/** Verify rewrite using user-defined extension. */
 	bool extension_verify(const Cfg& target, const Cfg& rewrite);
+  /** Verify rewrite using STOKE's formal validator */
+  bool formal_verify(const Cfg& target, const Cfg& rewrite);
 };
 
 } // namespace stoke

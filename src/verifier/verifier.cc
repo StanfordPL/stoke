@@ -15,6 +15,7 @@
 #include <cassert>
 
 #include "src/verifier/verifier.h"
+#include "src/validator/validator.h"
 
 using namespace std;
 
@@ -27,6 +28,8 @@ bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
       return true;
     case Strategy::HOLD_OUT:
       return hold_out_verify(target, rewrite);
+    case Strategy::FORMAL:
+      return formal_verify(target, rewrite);
 		case Strategy::EXTENSION:
 			return extension_verify(target, rewrite);
     default:
@@ -44,6 +47,27 @@ bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
 		return false;
 	}
   return true;
+}
+
+bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
+
+  vector<CpuState> tcs;
+
+  CpuState tc;
+  tcs.push_back(tc);
+
+
+  CpuState ceg;
+  
+  Validator v(true);
+  bool success = v.validate(target, rewrite, tcs, ceg);
+
+  if (!success) {
+    counter_example_available_ = true;
+    counter_example_ = ceg;
+  }
+
+  return success;
 }
 
 bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {

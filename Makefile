@@ -108,7 +108,7 @@ profile:
 	make -C . $(BIN) OPT="-DNDEBUG -O3 -pg" 
 
 test: bin/stoke_test
-	bin/stoke_test 
+	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test 
 
 tags:
 	ctags -R src

@@ -77,7 +77,7 @@ auto& heap_out = FlagArg::create("heap_out")
 auto& h2 = Heading::create("Verification options:");
 
 auto& strategy = ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
-    .usage("(none|hold_out|extension)")
+    .usage("(none|hold_out|formal|extension)")
     .description("Verification strategy")
     .default_val(Strategy::NONE);
 
