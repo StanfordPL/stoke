@@ -45,8 +45,7 @@ Meminfo MemoryData::deref(uint line_no, bool is_target) const
     if(line_no == info._line_no && is_target == info._is_target_info)
       return info;    
   }
-  assert(false);
-  return Meminfo();
+  throw VALIDATOR_ERROR("error from validator assert");
 }
 
 
@@ -60,7 +59,7 @@ std::string MemoryData::name_deref(uint line_no, bool is_target) const
       return info.getName();
     
   }
-  assert(false);
+  throw VALIDATOR_ERROR("error from validator assert");
   return retval;
 }
 
@@ -237,7 +236,9 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
 		clock_t start = clock();
 		auto z3_says = s.check();
     result = z3_says == unsat;
-		assert(z3_says !=unknown && "Z3 gave up");
+    if ( z3_says == unknown ) {
+      throw VALIDATOR_ERROR("z3 gave up.");
+    }
 		clock_t end = clock();
 		clock_t elapsed =  end -start;
 #ifdef DEBUG_VALIDATOR
@@ -458,7 +459,7 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 			//do nothing: unconstrained memory, Handle misaligned accesses here
 		}*/
 		else 
-		  assert(false && "Unknown size!!");
+      throw VALIDATOR_ERROR("Unexpected bitwidth for register");
 #undef boolType
 	}
 }
@@ -563,8 +564,8 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 	  {
 	        if(op==x64asm::rsp || op==x64asm::rbp) continue;
 			string elem = bij.toVal(op); 
-			Expr E_state_elem_1 = vc_bvExtract(vc, regExpr(vc, (elem + "_1_"+ V_FSTATE),V_UNITSIZE), 31, 0);
-			Expr E_state_elem_2 = vc_bvExtract(vc, regExpr(vc, (elem + "_2_"+ V_FSTATE),V_UNITSIZE), 31, 0);
+			Expr E_state_elem_1 = regExpr(vc, (elem + "_1_"+ V_FSTATE),V_UNITSIZE);
+			Expr E_state_elem_2 = regExpr(vc, (elem + "_2_"+ V_FSTATE),V_UNITSIZE);
 			Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
 			cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
@@ -579,8 +580,8 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 	  if(liveout.contains(op))
 	  {
 			string elem = bij.toVal(XMM_BEG+op); 
-			Expr E_state_elem_1 = vc_bvExtract(vc, regExpr(vc, (elem + "_1_"+ V_FSTATE),V_XMMUNIT), 31, 0);
-			Expr E_state_elem_2 = vc_bvExtract(vc, regExpr(vc, (elem + "_2_"+ V_FSTATE),V_XMMUNIT), 31, 0);
+			Expr E_state_elem_1 = regExpr(vc, (elem + "_1_"+ V_FSTATE),V_XMMUNIT);
+			Expr E_state_elem_2 = regExpr(vc, (elem + "_2_"+ V_FSTATE),V_XMMUNIT);
 			Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
 			cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
@@ -978,8 +979,8 @@ Z3_sort D = ctx.bv_sort(32);
     }
 	break;
   default:
-	assert(false && "Unrecognized Axiom");
-    }
+    throw VALIDATOR_ERROR("Unrecognized axiom.");
+  }
     ctx.check_error();
         q = Z3_get_smtlib_formula(ctx, 0);
     printf("assert axiom:\n%s\n", Z3_ast_to_string(ctx, q));

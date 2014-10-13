@@ -62,8 +62,11 @@ class Bijection
     }
     SS_Id valToId(T val) const
     {
-      assert(toId_.find(val) != toId_.end() && "Unrecognized val!");
-      return toId_.find(val)->second;
+      auto result = toId_.find(val);
+      if(result == toId_.end())
+        throw VALIDATOR_ERROR("Lookup into bijection mapping failed");
+      
+      return result->second;
     }
     SS_Id insert(T val, SS_Id id)
     {
@@ -73,8 +76,11 @@ class Bijection
     }
     T toVal(SS_Id id) const
     {
-      assert(toVal_.find(id) != toVal_.end() && "Unrecognized id!");
-      return toVal_.find(id)->second;
+      auto result = toVal_.find(id);
+      if (result == toVal_.end())
+        throw VALIDATOR_ERROR("Lookup into bijection mapping failed");
+
+      return result->second;
     }
 
   private:

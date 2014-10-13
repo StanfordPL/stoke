@@ -4,6 +4,7 @@
 
 #include <exception>
 #include <string>
+#include <sstream>
 
 #define VALIDATOR_ERROR(X) validator_error(__FILE__, __LINE__, X);
 
@@ -26,7 +27,9 @@ class validator_error : public std::exception {
     }
 
     virtual const char* what() const throw() {
-      return message_.c_str();
+      std::stringstream ss;
+      ss << "[" << file_ << ":" << line_ << "] " << message_;
+      return ss.str().c_str();
     }
 
   private:

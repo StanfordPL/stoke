@@ -43,7 +43,7 @@ struct Meminfo
   uint _cell_size;
   uint _start_idx;
   uint _end_idx;
-  Meminfo(){assert(false);} //
+
   Meminfo(bool is_target_info,  uint line_no,  std::string mem_cell_name,  uint start_idx,  uint end_idx, uint cell_size)
   {
     _is_target_info = is_target_info;

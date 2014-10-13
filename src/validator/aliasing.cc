@@ -42,7 +42,7 @@ uint getMemAddrWidth(Instruction& instr, uint mem_idx)
     case  x64asm::Type::M_256: return 32;
 
     default:
-      assert(false);
+      throw VALIDATOR_ERROR("Unexpected type of memory argument");
   }
 #ifdef DEBUG_VALIDATOR
   cout << "Cannot figure out the width of memop " << endl;
@@ -140,7 +140,9 @@ void getNames(const map<uint, addr_n_width>& t_addrs,vector<pair<uint, uint64_t>
 
 uint getOffset(uint64_t beg_addr, uint64_t curr_addr)
 {
-  assert(curr_addr >= beg_addr);
+  if (curr_addr >= beg_addr) {
+    throw VALIDATOR_ERROR("internal error");
+  }
   return (curr_addr-beg_addr);
 }
 
@@ -151,7 +153,7 @@ pair<uint, uint64_t> find_cell_num(const vector<pair<uint, uint64_t>>& mem_names
     if(curr_addr >=mem_name.second && curr_addr < mem_name.second +16 )
       return mem_name;
   }
-  assert(false);
+  throw VALIDATOR_ERROR("Could not find memory in range.");
 }
 
 void getCellInfo(const map<uint, addr_n_width>& info_addrs, const vector<pair<uint, uint64_t>>& mem_names, vector<CellInfo>& output_rows)
@@ -160,7 +162,9 @@ void getCellInfo(const map<uint, addr_n_width>& info_addrs, const vector<pair<ui
   {
     pair<uint, uint64_t> mem_name = find_cell_num(mem_names, info_addr.second.first);
     uint beg = getOffset(mem_name.second, info_addr.second.first);
-    assert(beg + info_addr.second.second<=16);
+    if (beg+info_addr.second.second > 16) {
+      throw VALIDATOR_ERROR("Error from assertion in validator.");
+    }
     output_rows.push_back(CellInfo(info_addr.first, mem_name.first, beg, beg + info_addr.second.second-1));
   }
   

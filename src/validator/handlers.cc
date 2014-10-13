@@ -237,7 +237,8 @@ bool isGp(SS_Id id)
 Expr UnmodifiedBitsPreserve(VC& vc, SS_Id id_dest, v_data d, unsigned int bitWidth)
 {
   	uint full_size = V_UNITSIZE*all_state_info.second[id_dest];
-	assert(bitWidth < full_size);
+  if (bitWidth >= full_size)
+    throw VALIDATOR_ERROR("error from validator assert");
 	Expr E_dest_post = vc_bvExtract(vc, regExprWVN(vc,id_dest,d.post_suffix, d.Vnprime, full_size), full_size -1, bitWidth);
 	Expr E_dest_pre = isGp(id_dest) && bitWidth==32 ? vc_bvConstExprFromLL(vc, 32, 0) : vc_bvExtract(vc, regExprWVN(vc,id_dest,d.pre_suffix, d.Vn, full_size), full_size -1, bitWidth);
 	return EqExpr(vc, E_dest_post, E_dest_pre);
@@ -313,7 +314,9 @@ void paddHandler(v_data d, unsigned int opWidth, unsigned int bitWidth, Expr E_d
 {
 
 	VC&vc = d.vc;
-	assert(opWidth==32 && bitWidth==128);
+  if (opWidth != 32 || bitWidth != 128) {
+    throw VALIDATOR_ERROR("Only opWidth of 32 and bitWidth of 128 is supported for padd");
+  }
 	Expr retval = vc_trueExpr(vc);
 	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), vc_bvPlusExpr(vc, 32, vc_bvExtract(vc, E_src1, 31, 0), vc_bvExtract(vc, E_src2, 31, 0))));
 	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), vc_bvPlusExpr(vc, 32, vc_bvExtract(vc, E_src1, 63, 32), vc_bvExtract(vc, E_src2, 63, 32))));
@@ -591,7 +594,8 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
 
 	VC&vc = d.vc;
 	imm =imm &0x7;
-	assert((imm==1 || imm==2) && "Not fully implemented");
+  if (imm != 1 && imm != 2)
+    throw VALIDATOR_ERROR("cmpps is only implemented for immediate of 1 or 2");
 	if(imm==1)
 	{
 	z3::sort fl = vc->bv_sort(32);
@@ -730,9 +734,10 @@ void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
 }
 void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm)
 {
-  assert(imm==0);
-  	VC&vc = d.vc;
-        E_src = vc_bvExtract(vc, E_src, 31, 0);
+  if (imm != 0)
+    throw VALIDATOR_ERROR("Validator only supports shufps with immediate 0");
+	VC&vc = d.vc;
+  E_src = vc_bvExtract(vc, E_src, 31, 0);
 	Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), E_src);
 	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), E_src));
 	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), E_src));
@@ -747,10 +752,12 @@ void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, 
 
 void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm)
 {
-  assert(imm==5);
-  	VC&vc = d.vc;
-        Expr E_srcl = vc_bvExtract(vc, E_src, 31, 0);
-        Expr E_srch = vc_bvExtract(vc, E_src, 63, 32);
+  if (imm != 5)
+    throw VALIDATOR_ERROR("Validator only supports pshufd with immediate 5");
+
+	VC&vc = d.vc;
+  Expr E_srcl = vc_bvExtract(vc, E_src, 31, 0);
+  Expr E_srch = vc_bvExtract(vc, E_src, 63, 32);
 	Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), E_srch);
 	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), E_srch));
 	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), E_srcl));
@@ -1015,7 +1022,8 @@ void btHandler(v_data d, unsigned int bitWidth, Expr E_operand, Expr E_offset)
 //dest== operand with operand[idx]==pred
 Expr setBit(VC& vc, Expr E_dest, Expr E_operand, unsigned int idx, Expr pred, unsigned int bitWidth)
 {
-	assert( idx < bitWidth);
+  if(idx >= bitWidth)
+    throw VALIDATOR_ERROR("validator assertion failed");
 	if(idx==0)
 		return EqExpr(vc, E_dest, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_operand, bitWidth-1, 1), pred));
 	if(idx+1==bitWidth)
@@ -1207,7 +1215,8 @@ void cmpHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2)
 
 void cmpxchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, Expr E_dest_pre, bool dest_is_reg = true)
 {
-	assert(bitWidth != 32 && "Use cmpxchg32Handler");
+  if(bitWidth == 32)
+    throw VALIDATOR_ERROR("Internal error: for bitWidth=32 support, use chmxchg32Handler");
 	VC&vc = d.vc;
 	Expr E_rax_pre = regExprWVN(vc, rax, d.pre_suffix, d.Vn, V_UNITSIZE);
 	Expr E_rax_post = regExprWVN(vc, rax, d.post_suffix, d.Vnprime, V_UNITSIZE);
@@ -1237,7 +1246,9 @@ void cmpxchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, Ex
 
 void cmpxchg32Handler(v_data d, unsigned int bitWidth, Expr E_dest_post, Expr E_src, Expr E_dest_pre, bool dest_is_reg = true)
 {
-	assert(bitWidth == 32 && "Use cmpxchgHandler");
+  if(bitWidth != 32)
+    throw VALIDATOR_ERROR("Internal error: for bitWidth!=32 support, use chmxchgHandler");
+
 	VC&vc = d.vc;
 
 	Expr E_rax_pre = regExprWVN(vc, rax, d.pre_suffix, d.Vn, V_UNITSIZE);
@@ -1291,7 +1302,8 @@ void convert_cdq_Handler(v_data d, Expr pred, unsigned int bitWidth)
 
 void convert_e_Handler(v_data d, unsigned int bitWidth)
 {
-	assert(bitWidth < 64 && "Bitwidth of source is the input and not destination");
+  if(bitWidth >= 64)
+    throw VALIDATOR_ERROR("Internal error: bitWidth should be for the source, not the destination");
 	VC&vc = d.vc;
 	SS_Id id_dest = rax;
 	Expr E_dest = vc_bvExtract(vc, regExprWVN(vc, id_dest, d.post_suffix, d.Vnprime, V_UNITSIZE), 2*bitWidth - 1, 0);
@@ -1806,7 +1818,8 @@ void movhlpsHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true)
 {
 	VC&vc = d.vc;
 	Expr retval = vc_trueExpr(vc);
-	assert(dest_is_reg);
+  if (!dest_is_reg)
+    throw VALIDATOR_ERROR("movhlps only supports register destination");
 	{
 	  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_src, 127, 64))); 
 	  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0))) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
@@ -2749,7 +2762,8 @@ void shldHandler(v_data d, unsigned int bitWidth,   Expr E_dest, Expr E_dest_pre
 void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bool dest_is_reg=true)
 {
 	VC&vc = d.vc;
-	assert((bitWidth ==32 || bitWidth == 64) && "this bitwidth not implemented yet");
+  if(bitWidth != 32 && bitWidth != 64)
+    throw VALIDATOR_ERROR("Only bitwidth 32 and 64 supported for shl");
 	Expr  E_shamt = vc_bvAndExpr(vc, vc_bvConstExprFromInt(vc, bitWidth, bitWidth - 1), vc_bvExtract(vc, regExprWVN(vc, rcx, d.pre_suffix, d.Vn, V_UNITSIZE), bitWidth -1, 0));
 	//assume E_shamt is less than bitWidth
 	Expr res = vc_iteExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth,0)), E_src1, vc_bvConstExprFromLL(vc, bitWidth,0)) ;

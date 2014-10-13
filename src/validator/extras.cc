@@ -9,7 +9,8 @@ uint getop(ifstream& myfile)
 {
   string s;
   myfile >> s;
-  assert(!s.compare("EQ") && "Only equality supported for now");
+  if (s.compare("EQ"))
+    throw VALIDATOR_ERROR("Only equality is supported for now.");
   return 0;
 }
 
@@ -33,7 +34,9 @@ Expr getoperand(VC& vc,ifstream& myfile)
   myfile >> code_num >> end >> beg;
   SS_Id id = all_state_info.first.toId(name);
   size = all_state_info.second[id];
-  assert(size == V_REGSIZE || size == V_XMMSIZE);
+  if (size != V_REGSIZE && size != V_XMMSIZE) {
+    throw VALIDATOR_ERROR("Error from validator assert.");
+  }
   return vc_bvExtract(vc, vc_varExpr(vc, (((name + "_") + to_string(code_num)) + "_0").c_str(), vc_bvType(vc, size*V_UNITSIZE)), end, beg);
   }
 }
@@ -47,7 +50,9 @@ Expr getcnstr(VC& vc,ifstream& myfile)
   {
     return EqExpr(vc, operand1, operand2);
   }
-  else assert(false);
+  else {
+    throw VALIDATOR_ERROR("Error from validator assert.");
+  }
 }
 
   

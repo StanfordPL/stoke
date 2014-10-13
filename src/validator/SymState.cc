@@ -103,7 +103,9 @@ Ebb toEbb(VC& vc, const stoke::Cfg& f, unsigned int blocksize, string codenum)
   unsigned int count = 0;
   for(;/* count < blocksize &&*/ j !=je; j++, node_idx++, count++ )
 	  {
-		  assert(node_idx == retval.nodes.size() - 1);
+      if (node_idx != retval.nodes.size() - 1) {
+        throw VALIDATOR_ERROR("internal error");
+      }
 		  Instruction instr = *j;
 #ifdef DEBUG_VALIDATOR
 		  cout << "Adding "  << instr << " to EBB" << endl;
