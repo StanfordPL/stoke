@@ -60,6 +60,11 @@ class RFlags {
 			contents_[e+i] = val;
 		}
 
+		/** Exposes underlying bit vector. */
+		void* data() {
+			return contents_.data();
+		}
+
 		/** Bit-wise xor */
 		RFlags& operator^=(const RFlags& rhs) {
 			contents_ ^= rhs.contents_;
