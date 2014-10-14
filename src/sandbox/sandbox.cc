@@ -182,45 +182,42 @@ void Sandbox::run_one(size_t index) {
 }
 
 void Sandbox::emit_instruction(const Instruction& instr) {
-  // Some instructions implicitly dereference memory or otherwise require some form of special
-  // handling. Best effort happens here, but there's more that we're not doing.
-  switch (instr.get_opcode()) {
-    case PUSH_R64:
-      emit_push(instr);
-      return;
-    case POP_R64:
-      emit_pop(instr);
-      return;
-    case DIV_M16:
-    case DIV_M32:
-    case DIV_M64:
-    case DIV_M8:
-    case DIV_R16:
-    case DIV_R32:
-    case DIV_R64:
-    case DIV_RB:
-    case DIV_RH:
-    case DIV_RL:
-    case IDIV_M16:
-    case IDIV_M32:
-    case IDIV_M64:
-    case IDIV_M8:
-    case IDIV_R16:
-    case IDIV_R32:
-    case IDIV_R64:
-    case IDIV_RB:
-    case IDIV_RH:
-    case IDIV_RL:
-      emit_div(instr);
-      return;
-
-    default:
-      break;
-  }
-
-  // Heavy lifting if this instruction dereferences memory, otherwise just emit
-  if (instr.derefs_mem()) {
+  if (instr.is_explicit_memory_dereference()) {
     emit_memory_instr(instr);
+	} else if (instr.is_implicit_memory_dereference()) {
+		switch (instr.get_opcode()) {
+			case PUSH_R64:
+				emit_push(instr);
+				return;
+			case POP_R64:
+				emit_pop(instr);
+				return;
+			case DIV_M16:
+			case DIV_M32:
+			case DIV_M64:
+			case DIV_M8:
+			case DIV_R16:
+			case DIV_R32:
+			case DIV_R64:
+			case DIV_RB:
+			case DIV_RH:
+			case DIV_RL:
+			case IDIV_M16:
+			case IDIV_M32:
+			case IDIV_M64:
+			case IDIV_M8:
+			case IDIV_R16:
+			case IDIV_R32:
+			case IDIV_R64:
+			case IDIV_RB:
+			case IDIV_RH:
+			case IDIV_RL:
+				emit_div(instr);
+				return;
+			default:
+				assert(false);
+				return;
+		}
   } else {
     assm_.assemble(instr);
   }

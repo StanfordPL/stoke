@@ -48,21 +48,6 @@ class StateGen {
 		/** Replaces the register contents of cs with random bits. */
 		void randomize_regs(CpuState& cs) const;
 
-		/** Returns true if this is a push instruction. */
-		bool is_push(const x64asm::Instruction& instr) const {
-			const auto opcode = instr.get_opcode();
-			return opcode >= x64asm::PUSH_M16 && opcode <= x64asm::PUSH_R64;
-		}
-		/** Returns true if this is a pop instruction. */
-		bool is_pop(const x64asm::Instruction& instr) const {
-			const auto opcode = instr.get_opcode();
-			return opcode >= x64asm::POP_M16 && opcode <= x64asm::POP_R64;
-		}
-    /** Returns true if this is a return instruction. */
-    bool is_ret(const x64asm::Instruction& instr) const {
-      const auto opcode = instr.get_opcode();
-      return opcode == x64asm::RET;
-    }
 		/** Returns true if we support fixing derefs of this type. */
 		bool is_supported_deref(const Cfg& cfg, size_t line) const;
 

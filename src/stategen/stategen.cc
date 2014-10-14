@@ -124,15 +124,16 @@ bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
 	const auto& instr = cfg.get_code()[line];
 
 	// Special support for push/pop/ret
-	if (is_push(instr) || is_pop(instr) || is_ret(instr)) {
+	if (instr.is_push() || instr.is_pop() || instr.is_ret()) {
 		return true;
 	}
 
   // No support for implicit memory accesses
-  if (!instr.derefs_mem()) {
+  if (!instr.is_implicit_memory_dereference()) {
     return false;
   }
 
+	assert(instr.mem_index() != -1);
 	const auto mi = instr.mem_index();
 	const auto op = instr.get_operand<M8>(mi);
 
@@ -148,11 +149,11 @@ uint64_t StateGen::get_addr(const CpuState& cs, const Cfg& cfg, size_t line) con
 	const auto& instr = cfg.get_code()[line];
 
 	// Special handling for implicit dereferences
-	if (is_push(instr)) {
+	if (instr.is_push()) {
 		return cs.gp[rsp].get_fixed_quad(0)-8;
-	} else if (is_pop(instr)) {
+	} else if (instr.is_pop()) {
 		return cs.gp[rsp].get_fixed_quad(0);
-	} else if (is_ret(instr)) {
+	} else if (instr.is_ret()) {
     return cs.gp[rsp].get_fixed_quad(0);
   }
 
@@ -199,7 +200,7 @@ size_t StateGen::get_size(const Cfg& cfg, size_t line) const {
 	const auto& instr = cfg.get_code()[line];
 
 	// Special handling for implicit dereferences
-	if (is_push(instr) || is_pop(instr) || is_ret(instr)) {
+	if (instr.is_push() || instr.is_pop() || instr.is_ret()) {
 		return 8;
 	}
 

@@ -143,7 +143,8 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
 
   m_pool_.clear();
   for (const auto& instr : target) {
-    if (instr.derefs_mem()) {
+    if (instr.is_explicit_memory_dereference()) {
+			assert(instr.mem_index() != -1);
       const auto& ref = instr.get_operand<M8>(instr.mem_index());
       if (find(m_pool_.begin(), m_pool_.end(), ref) != m_pool_.end()) {
         continue;
