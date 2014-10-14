@@ -46,6 +46,13 @@ Function CpuIo::write(CpuState& cs, const RegSet& mask) {
     }
   }
 
+	// Write rflags 
+	// @todo Need to check whether any rflags appear in the mask before we do this
+	assm.mov((R64)rax, Imm64(cs.rf.data()));
+	assm.mov(rax, M64(rax));
+	assm.push(rax);
+	assm.popfq();
+
   // Restore rax if it wasn't written over
   if (!mask.contains(rax)) {
     assm.pop(rax);
@@ -63,8 +70,9 @@ Function CpuIo::read(CpuState& cs, const RegSet& mask, const map<R64, uint64_t*>
 
   assm.start(fxn);
 
-  // Backup rax no matter what
+  // Backup scratch registers no matter what
   assm.push(rax);
+	assm.push(rbx);
 
   // Read gp registers,
   for (const auto& r : r64s) {
@@ -87,7 +95,16 @@ Function CpuIo::read(CpuState& cs, const RegSet& mask, const map<R64, uint64_t*>
     }
   }
 
-  // Restore rax
+	// Read rflags
+	// @todo Need to check whether any rflags appear in the mask before we do this
+	assm.pushfq();
+	assm.mov((R64)rax, Imm64(cs.rf.data()));
+	assm.mov((R64)rbx, M64(rsp));
+	assm.mov(M64(rax), rbx);
+ 	assm.popfq();
+
+  // Restore scratch regs
+	assm.pop(rbx);
   assm.pop(rax);
 
   assm.ret();

@@ -19,6 +19,7 @@
 
 #include "src/state/cpu_state.h"
 #include "src/state/regs.h"
+#include "src/state/rflags.h"
 #include "src/state/memory.h"
 
 namespace stoke {
@@ -31,6 +32,8 @@ class StateReader {
  private:
 	/** Read a register file from an istream. */
   void read_regs(std::istream& is, Regs& regs) const;
+	/** Read a rflags file from an istream. */
+	void read_rflags(std::istream& is, RFlags& rf) const;
 	/** Read a memory file from an istream. */
   void read_mem(std::istream& is, Memory& mem) const;
 	/** Read a memory summary from a memory file. */

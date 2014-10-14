@@ -39,6 +39,10 @@ void StateReader::operator()(istream& is, CpuState& cs) const {
   getline(is, ignore);
   getline(is, ignore);
 
+	read_rflags(is, cs.rf);
+	getline(is, ignore);
+	getline(is, ignore);
+
   read_mem(is, cs.stack);
   getline(is, ignore);
   getline(is, ignore);
@@ -65,6 +69,16 @@ void StateReader::read_regs(istream& is, Regs& regs) const {
       is.get();
     }
   }
+}
+
+void StateReader::read_rflags(istream& is, RFlags& rf) const {
+	for (size_t i = 0, ie = rf.size(); i < ie; ++i) {
+		string name;
+		bool val;
+		is >> name >> val;
+
+		rf.set(i, val);
+	}
 }
 
 void StateReader::read_mem(istream& is, Memory& mem) const {

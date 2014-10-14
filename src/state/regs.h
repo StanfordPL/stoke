@@ -54,7 +54,7 @@ class Regs {
     return *this;
   }
   /** Bit-wise xor */
-  Regs operator^(const Regs& rhs) {
+  Regs operator^(const Regs& rhs) const {
     auto ret = *this;
     return ret ^= rhs;
   }

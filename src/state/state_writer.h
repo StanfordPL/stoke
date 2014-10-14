@@ -21,6 +21,7 @@
 
 #include "src/state/cpu_state.h"
 #include "src/state/regs.h"
+#include "src/state/rflags.h"
 #include "src/state/memory.h"
 
 namespace stoke {
@@ -33,6 +34,8 @@ class StateWriter {
  private:
 	/** Write a regsiter file to an ostream. */
   void write_regs(std::ostream& os, const Regs& regs, const char** names, size_t padding) const;
+	/** Write rflags register to an ostream. */
+	void write_rflags(std::ostream& os, const RFlags& rf, const char** names, size_t padding) const;
 	/** Write a memory file to an ostream. */
   void write_mem(std::ostream& os, const Memory& mem) const;
 	/** Write the summary of a memory file. */
