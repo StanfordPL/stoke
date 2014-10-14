@@ -1,7 +1,7 @@
 STOKE
 =====
 
-STOKE is a stochastic optimizer for the x86_64 instruciton set. STOKE uses random search to explore the extremely high-dimensional space of all possible program transformations. Although any one random transformation is unlikely to produce a code sequence that is both correct and an improvement over the original, the repeated application of millions of transformations is sufficient to produce novel and non-obvious code sequences that have been shown to outperform the code produced by general-purpose and domain-specific compilers, and in some cases expert hand-written code.
+STOKE is a stochastic optimizer for the x86_64 instruction set. STOKE uses random search to explore the extremely high-dimensional space of all possible program transformations. Although any one random transformation is unlikely to produce a code sequence that is both correct and an improvement over the original, the repeated application of millions of transformations is sufficient to produce novel and non-obvious code sequences that have been shown to outperform the code produced by general-purpose and domain-specific compilers, and in some cases expert hand-written code.
 
 STOKE has appeared in a number of publications. For a thorough introduction to the design of STOKE, please see the following:
 
@@ -634,7 +634,7 @@ auto& flag = FlagArg::create("flag_name")
   .description("What this flag does");
 ```
 
-Any of the built-in c++ primitve types are specified by declaring a `ValueArg`.
+Any of the built-in c++ primitive types are specified by declaring a `ValueArg`.
 
 ```c++
 auto& val = ValueArg<int>::create("value_name")
