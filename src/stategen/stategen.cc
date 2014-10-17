@@ -79,17 +79,44 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
 }
 
 void StateGen::randomize_regs(CpuState& cs) const {
+	// General purpose
 	for (size_t i = 0, ie = cs.gp.size(); i < ie; ++i) {
 		auto& r = cs.gp[i];
 		for (size_t j = 0, je = r.num_fixed_bytes(); j < je; ++j) {
 			r.get_fixed_byte(j) = rand() % 256;
 		}
 	}
+	// SSE
 	for (size_t i = 0, ie = cs.sse.size(); i < ie; ++i) {
 		auto& s = cs.sse[i];
 		for (size_t j = 0, je = s.num_fixed_bytes(); j < je; ++j) {
 			s.get_fixed_byte(j) = rand() % 256;
 		}
+	}
+	// RFlags (note that some bits have deterministic values)
+	for (size_t i = 0, ie = 12; i < ie; ++i) {
+		if (cs.rf.is_fixed_true(i)) {
+			cs.rf.set(i, true);
+		} else if (cs.rf.is_fixed_false(i)) {
+			cs.rf.set(i, false);
+		} else {
+			cs.rf.set(i, rand() % 2);
+		}
+	}
+	// Remaining flags don't necessarily have deterministic values, but setting
+	// them arbitrarily can cause pretty nasty behavior when they're copied
+	// to the cpu
+
+	// tf = 0 keeps cpu out of single step interrupt mode
+	cs.rf.set(8, false); 
+	// if = 1 turns maskable hardware interrupts on
+	cs.rf.set(9, true); 
+	// df = 1 somehow gives us trouble, so I'll keep it at zero
+	cs.rf.set(10, false);
+	// Generally speaking, I have no idea what these do, but pin traces show
+	// that they're always set to false
+	for (size_t i = 12, ie = cs.rf.size(); i < ie; ++i) {
+		cs.rf.set(i, false);
 	}
 }
 
@@ -97,15 +124,16 @@ bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
 	const auto& instr = cfg.get_code()[line];
 
 	// Special support for push/pop/ret
-	if (is_push(instr) || is_pop(instr) || is_ret(instr)) {
+	if (instr.is_push() || instr.is_pop() || instr.is_any_return()) {
 		return true;
 	}
 
   // No support for implicit memory accesses
-  if (!instr.derefs_mem()) {
+  if (instr.is_implicit_memory_dereference()) {
     return false;
   }
 
+	assert(instr.mem_index() != -1);
 	const auto mi = instr.mem_index();
 	const auto op = instr.get_operand<M8>(mi);
 
@@ -121,11 +149,11 @@ uint64_t StateGen::get_addr(const CpuState& cs, const Cfg& cfg, size_t line) con
 	const auto& instr = cfg.get_code()[line];
 
 	// Special handling for implicit dereferences
-	if (is_push(instr)) {
+	if (instr.is_push()) {
 		return cs.gp[rsp].get_fixed_quad(0)-8;
-	} else if (is_pop(instr)) {
+	} else if (instr.is_pop()) {
 		return cs.gp[rsp].get_fixed_quad(0);
-	} else if (is_ret(instr)) {
+	} else if (instr.is_any_return()) {
     return cs.gp[rsp].get_fixed_quad(0);
   }
 
@@ -172,7 +200,7 @@ size_t StateGen::get_size(const Cfg& cfg, size_t line) const {
 	const auto& instr = cfg.get_code()[line];
 
 	// Special handling for implicit dereferences
-	if (is_push(instr) || is_pop(instr) || is_ret(instr)) {
+	if (instr.is_push() || instr.is_pop() || instr.is_any_return()) {
 		return 8;
 	}
 

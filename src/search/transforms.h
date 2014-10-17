@@ -113,7 +113,7 @@ class Transforms {
   }
 	/** Does this instruction dereference memory? */
   bool is_mem_opcode(x64asm::Opcode o) const {
-    return x64asm::Instruction(o).derefs_mem();
+    return x64asm::Instruction(o).is_memory_dereference();
   }
 	/** Does this instruction read (but not write) memory. */
   bool is_mem_read_only_opcode(x64asm::Opcode o) const {

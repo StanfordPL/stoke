@@ -96,7 +96,8 @@ VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
               PIN_REGISTER* sse0, PIN_REGISTER* sse1, PIN_REGISTER* sse2, PIN_REGISTER* sse3,
               PIN_REGISTER* sse4, PIN_REGISTER* sse5, PIN_REGISTER* sse6, PIN_REGISTER* sse7,
               PIN_REGISTER* sse8, PIN_REGISTER* sse9, PIN_REGISTER* sse10, PIN_REGISTER* sse11,
-              PIN_REGISTER* sse12, PIN_REGISTER* sse13, PIN_REGISTER* sse14, PIN_REGISTER* sse15
+              PIN_REGISTER* sse12, PIN_REGISTER* sse13, PIN_REGISTER* sse14, PIN_REGISTER* sse15,
+							ADDRINT rflags
              ) {
   if (tc_remaining_ == 0) {
     return;
@@ -139,6 +140,10 @@ VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
     tc.sse[14].get_fixed_quad(i) = sse14->qword[i];
     tc.sse[15].get_fixed_quad(i) = sse15->qword[i];
   }
+
+	for (size_t i = 0, ie = tc.rf.size(); i < ie; ++i) {
+		tc.rf.set(i, (rflags >> i) & 0x1);
+	}
 
   tcs_.push(tc);
   stack_valids_.push(unordered_set<uint64_t>());
@@ -290,6 +295,7 @@ VOID emit_start(INS& ins) {
                  IARG_REG_REFERENCE, REG_YMM10, IARG_REG_REFERENCE, REG_YMM11,
                  IARG_REG_REFERENCE, REG_YMM12, IARG_REG_REFERENCE, REG_YMM13,
                  IARG_REG_REFERENCE, REG_YMM14, IARG_REG_REFERENCE, REG_YMM15,
+								 IARG_REG_VALUE, REG_RFLAGS,
                  IARG_END);
 }
 

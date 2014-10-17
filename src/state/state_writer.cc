@@ -34,6 +34,11 @@ void StateWriter::operator()(ostream& os, const CpuState& cs) const {
     "%ymm0", "%ymm1", "%ymm2", "%ymm3", "%ymm4", "%ymm5", "%ymm6", "%ymm7",
     "%ymm8", "%ymm9", "%ymm10", "%ymm11", "%ymm12", "%ymm13", "%ymm14", "%ymm15"
   };
+	const char* rflags[] = {
+		"%cf", "%1", "%pf", "%0", "%af", "%0", "%zf", "%sf", "%tf", "%if", 
+		"%df", "%of", "%iopl[0]", "%iopl[1]", "%nt", "%0", "%rf", "%vm", "%ac", "%vif", 
+		"%vip", "%id"
+	};
 
   write_regs(os, cs.gp, gps, 5);
   os << endl;
@@ -42,6 +47,10 @@ void StateWriter::operator()(ostream& os, const CpuState& cs) const {
   write_regs(os, cs.sse, sses, 3);
   os << endl;
   os << endl;
+
+	write_rflags(os, cs.rf, rflags, 1);
+	os << endl;
+	os << endl;
 
   write_mem(os, cs.stack);
   os << endl;
@@ -56,7 +65,7 @@ void StateWriter::write_regs(ostream& os, const Regs& regs, const char** names,
   fs.filter().padding(padding);
 
   for (size_t i = 0, ie = regs.size(); i < ie; ++i) {
-    fs << *(names + i);
+    fs << names[i];
     if (i + 1 != ie) {
       fs << endl;
     }
@@ -74,6 +83,28 @@ void StateWriter::write_regs(ostream& os, const Regs& regs, const char** names,
     }
   }
   fs.filter().done();
+}
+
+void StateWriter::write_rflags(ostream& os, const RFlags& rf, const char** names,
+		size_t padding) const {
+	ofilterstream<Column> fs(os);
+	fs.filter().padding(padding);
+
+	for (size_t i = 0, ie = rf.size(); i < ie; ++i) {
+		fs << names[i];
+		if (i + 1 != ie) {
+			fs << endl;
+		}
+	}
+	fs.filter().next();
+
+	for (size_t i = 0, ie = rf.size(); i < ie; ++i) {
+		fs << rf.is_set(i);
+		if (i + 1 != ie) {
+			fs << endl;
+		}
+	}
+	fs.filter().done();
 }
 
 void StateWriter::write_mem(ostream& os, const Memory& mem) const {

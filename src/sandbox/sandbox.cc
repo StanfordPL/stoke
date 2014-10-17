@@ -119,10 +119,10 @@ void Sandbox::compile(const Cfg& cfg) {
       if (!before_.empty()) {
         emit_callbacks(i, true);
       }
-      if (instr.is_jump()) {
+      if (instr.is_any_jump()) {
         emit_pre_jump();
       }
-      if (instr.is_return()) {
+      if (instr.is_any_return()) {
         emit_pre_return();
       }
       emit_instruction(instr);
@@ -182,47 +182,29 @@ void Sandbox::run_one(size_t index) {
 }
 
 void Sandbox::emit_instruction(const Instruction& instr) {
-  // Some instructions implicitly dereference memory or otherwise require some form of special
-  // handling. Best effort happens here, but there's more that we're not doing.
-  switch (instr.get_opcode()) {
-    case PUSH_R64:
-      emit_push(instr);
-      return;
-    case POP_R64:
-      emit_pop(instr);
-      return;
-    case DIV_M16:
-    case DIV_M32:
-    case DIV_M64:
-    case DIV_M8:
-    case DIV_R16:
-    case DIV_R32:
-    case DIV_R64:
-    case DIV_RB:
-    case DIV_RH:
-    case DIV_RL:
-    case IDIV_M16:
-    case IDIV_M32:
-    case IDIV_M64:
-    case IDIV_M8:
-    case IDIV_R16:
-    case IDIV_R32:
-    case IDIV_R64:
-    case IDIV_RB:
-    case IDIV_RH:
-    case IDIV_RL:
-      emit_div(instr);
-      return;
-
-    default:
-      break;
-  }
-
-  // Heavy lifting if this instruction dereferences memory, otherwise just emit
-  if (instr.derefs_mem()) {
-    emit_memory_instr(instr);
+  if (instr.is_explicit_memory_dereference()) {
+		if (instr.is_div() || instr.is_idiv()) {
+			emit_div(instr);
+		} else {
+			emit_memory_instr(instr);
+		}
+	} else if (instr.is_implicit_memory_dereference()) {
+		if (instr.is_any_return()) {
+			assm_.assemble(instr);
+			return;
+		} else if (instr.get_opcode() == PUSH_R64) {
+			emit_push(instr);
+		} else if (instr.get_opcode() == POP_R64) {
+			emit_pop(instr);
+		} else {
+			assert(false);
+		}
   } else {
-    assm_.assemble(instr);
+		if (instr.is_div() || instr.is_idiv()) {
+			emit_div(instr);
+		} else {
+			assm_.assemble(instr);
+		}
   }
 }
 
