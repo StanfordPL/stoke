@@ -158,8 +158,10 @@ class Sandbox {
   void emit_push(const x64asm::Instruction& instr);
   /** Special case for emitting pop. */
   void emit_pop(const x64asm::Instruction& instr);
-  /** Special case for emitting the div family of instructions. */
-  void emit_div(const x64asm::Instruction& instr);
+  /** Special case for emitting div instructions that read from registers. */
+  void emit_reg_div(const x64asm::Instruction& instr);
+	/** Special case for emitting div instructions that read from memory. */
+	void emit_mem_div(const x64asm::Instruction& instr);
 
   /** Emits code to save the true callee saved registers. */
   void emit_save_stoke_callee_save();
