@@ -194,17 +194,31 @@ void RegSetReader::operator()(istream& is, RegSet& r) {
 
 void RegSetWriter::operator()(ostream& os, const RegSet& r) {
   os << "{";
-	for (const auto& gp : r64s ) {
-    if (r.contains(gp)) {
-      os << " " << gp;
-    }
+	for (size_t i = 0; i < 16; ++i) {
+		if (r.contains(r64s[i])) {
+			os << " " << r64s[i];
+		} else if (r.contains(r32s[i])) {
+			os << " " << r32s[i];
+		} else if (r.contains(r16s[i])) {
+			os << " " << r16s[i];
+		} else if (i < 4) {
+			if (r.contains(rls[i])) {
+				os << " " << rls[i];
+			}
+			if (r.contains(rhs[i])) {
+				os << " " << rhs[i];
+			}
+		} else if (r.contains(rbs[i-4])) {
+			os << " " << rbs[i-4];
+		}
 	}
-	for (const auto& sse : xmms ) {
-    if (r.contains(sse)) {
-      os << " " << sse;
-    }
+	for (size_t i = 0; i < 16; ++i) {
+		if (r.contains(ymms[i])) {
+			os << " " << ymms[i];
+		} else if (r.contains(xmms[i])) {
+			os << " " << xmms[i];
+		}
 	}
-
   os << " }";
 }
 
