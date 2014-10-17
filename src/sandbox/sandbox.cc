@@ -184,7 +184,7 @@ void Sandbox::run_one(size_t index) {
 void Sandbox::emit_instruction(const Instruction& instr) {
   if (instr.is_explicit_memory_dereference()) {
 		if (instr.is_div() || instr.is_idiv()) {
-			emit_div(instr);
+			emit_mem_div(instr);
 		} else {
 			emit_memory_instr(instr);
 		}
@@ -201,7 +201,7 @@ void Sandbox::emit_instruction(const Instruction& instr) {
 		}
   } else {
 		if (instr.is_div() || instr.is_idiv()) {
-			emit_div(instr);
+			emit_reg_div(instr);
 		} else {
 			assm_.assemble(instr);
 		}
@@ -333,7 +333,7 @@ void Sandbox::emit_pop(const Instruction& instr) {
   emit_instruction({LEA_R64_M64, {rsp, M64{rsp, Imm32{8}}}});
 }
 
-void Sandbox::emit_div(const Instruction& instr) {
+void Sandbox::emit_reg_div(const Instruction& instr) {
   // First check whether this instruction is trying to read from some part of rsp
   auto rsp_op = false;
   switch (instr.type(0)) {
@@ -383,6 +383,61 @@ void Sandbox::emit_div(const Instruction& instr) {
     assm_.mov(rsp, Imm64 {snapshot_.get_user_rsp()});
     assm_.mov(rsp, M64 {rsp});
   }
+}
+
+void Sandbox::emit_mem_div(const Instruction& instr) {
+	// The idea here is to split a single divide instruction into four parts:
+	// 1. Backup rbx, which we know won't be written by the div
+	// 2. Load the divisor from memory into rbx (we'll let emit_mem_instr() catch a segv here)
+	// 3. Perform the div on rbx (we'll let emit_reg_div() catch a sigfpe here)
+	// 4. Restore the value of rbx which can't have changed
+
+	assm_.mov(Moffs64(&scratch_[rax]), rax);
+	assm_.mov(rax, rbx);
+	assm_.mov(Moffs64(&scratch_[rbx]), rax);
+	assm_.mov(rax, Moffs64(&scratch_[rax]));
+
+	switch(instr.get_opcode()) {
+		case DIV_M8:
+  		emit_instruction({MOV_RL_M8, {rbx, instr.get_operand<M8>(0)}});
+  		emit_instruction({DIV_RL, {rbx}});
+			break;
+		case DIV_M16:
+  		emit_instruction({MOV_R16_M16, {rbx, instr.get_operand<M16>(0)}});
+  		emit_instruction({DIV_R16, {rbx}});
+			break;
+		case DIV_M32:
+  		emit_instruction({MOV_R32_M32, {rbx, instr.get_operand<M32>(0)}});
+  		emit_instruction({DIV_R32, {rbx}});
+			break;
+		case DIV_M64:
+  		emit_instruction({MOV_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+  		emit_instruction({DIV_R64, {rbx}});
+			break;
+		case IDIV_M8:
+  		emit_instruction({MOV_RL_M8, {rbx, instr.get_operand<M8>(0)}});
+  		emit_instruction({IDIV_RL, {rbx}});
+			break;
+		case IDIV_M16:
+  		emit_instruction({MOV_R16_M16, {rbx, instr.get_operand<M16>(0)}});
+  		emit_instruction({IDIV_R16, {rbx}});
+			break;
+		case IDIV_M32:
+  		emit_instruction({MOV_R32_M32, {rbx, instr.get_operand<M32>(0)}});
+  		emit_instruction({IDIV_R32, {rbx}});
+			break;
+		case IDIV_M64:
+  		emit_instruction({MOV_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+  		emit_instruction({IDIV_R64, {rbx}});
+			break;
+
+		default:
+			assert(false);
+			break;
+	}
+
+	assm_.mov(rbx, Imm64(&scratch_[rbx]));
+	assm_.mov(rbx, M64(rbx));
 }
 
 void Sandbox::emit_save_stoke_callee_save() {
