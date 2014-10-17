@@ -1,6 +1,7 @@
 
 #include "src/ext/x64asm/src/reg_set.h"
 #include "src/state/cpu_state.h"
+#include "src/stategen/stategen.h"
 #include "src/sandbox/sandbox.h"
 
 TEST(SandboxTest, TrivialExampleWorks) {
@@ -36,7 +37,7 @@ TEST(SandboxTest, TrivialExampleWorks) {
 }
 
 
-TEST(SandboxTest, RegistersArePreserved) {
+TEST(SandboxTest, AllGPRegistersWork) {
 
   x64asm::Code c;
   std::stringstream ss;
@@ -79,6 +80,42 @@ TEST(SandboxTest, RegistersArePreserved) {
 
   for(int i = 0; i < 16; ++i) {
     ASSERT_EQ(1+i, output.gp[i].get_fixed_quad(0));
+  }
+
+
+}
+
+
+TEST(SandboxTest, RegisterValuesArePreserved) {
+
+  x64asm::Code c;
+  std::stringstream ss;
+
+  // Here's the input program
+  ss << "retq" << std::endl;
+
+  ss >> c;
+
+  // Setup the sandbox
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+
+  stoke::CpuState tc;
+  stoke::StateGen sg(&sb);
+  sg.get(tc);
+
+  sb.set_max_jumps(1);
+  sb.insert_input(tc);
+
+  // Run it
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+
+  stoke::CpuState output = *sb.result_begin();
+
+  for(int i = 0; i < 16; ++i) {
+    ASSERT_EQ(tc.gp[i].get_fixed_quad(0), output.gp[i].get_fixed_quad(0)) << " i = " << i;
   }
 
 
