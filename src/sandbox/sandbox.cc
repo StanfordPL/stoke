@@ -393,7 +393,7 @@ void Sandbox::emit_mem_div(const Instruction& instr) {
 	// 4. Restore the value of rbx which can't have changed
 
 	assm_.mov(Moffs64(&scratch_[rax]), rax);
-	assm_.mov(rbx, rax);
+	assm_.mov(rax, rbx);
 	assm_.mov(Moffs64(&scratch_[rbx]), rax);
 	assm_.mov(rax, Moffs64(&scratch_[rax]));
 
