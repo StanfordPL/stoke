@@ -109,7 +109,7 @@ class Transforms {
   }
 	/** Is this an lea instruction? */
   bool is_lea_opcode(x64asm::Opcode o) const {
-    return o >= x64asm::LEA_R16_M16 && o <= x64asm::LEA_R64_M64;
+    return x64asm::Instruction(o).is_lea();
   }
 	/** Does this instruction dereference memory? */
   bool is_mem_opcode(x64asm::Opcode o) const {
@@ -121,7 +121,6 @@ class Transforms {
     const auto mi = instr.mem_index();
     return mi != -1 && !instr.maybe_write(mi) && !instr.maybe_undef(mi);
   }
-
   /** Does this instruction write (but not read or undef) memory. */
   bool is_mem_write_only_opcode(x64asm::Opcode o) const {
     const auto instr = x64asm::Instruction(o);
@@ -162,6 +161,24 @@ class Transforms {
     return equiv.empty() ? o : equiv[gen_() % equiv.size()];
   }
 
+	/** Set o to a random element from a pool. Returns true on success. */
+	template <typename T>
+	bool get(const std::vector<T>& pool, x64asm::Operand& o) {
+		if (pool.empty()) {
+			return false;
+		}
+		o = pool[gen_() % pool.size()];
+		return true;
+	}
+	/** Set o to exactly one element from a pool. Returns true on success. */
+	template <typename T>
+	bool get(const std::vector<T>& pool, const T& val, x64asm::Operand& o) const {
+		if (find(pool.begin(), pool.end(), val) == pool.end()) {
+			return false;
+		}
+		o = val;
+		return true;
+	}
 	/** Set o to a random element in a register set. Returns true on success. */
   template <typename T>
   bool get(const std::vector<T>& pool, const x64asm::RegSet& rs, x64asm::Operand& o) {
@@ -177,55 +194,7 @@ class Transforms {
     o = ts[gen_() % ts.size()];
     return true;
   }
-	/** Convenience definition for rls. */
-  bool get_rl(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::Rl>(rl_pool_, rs, o);
-  }
-	/** Convenience defition for rhs. */
-  bool get_rh(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::Rh>(rh_pool_, rs, o);
-  }
-	/** Convenience defition for rbs. */
-  bool get_rb(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::Rb>(rb_pool_, rs, o);
-  }
-	/** Convenience defition for r16s. */
-  bool get_r16(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::R16>(r16_pool_, rs, o);
-  }
-	/** Convenience defition for r32s. */
-  bool get_r32(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::R32>(r32_pool_, rs, o);
-  }
-	/** Convenience defition for r64s. */
-  bool get_r64(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::R64>(r64_pool_, rs, o);
-  }
-	/** Convenience defition for mms. */
-  bool get_mm(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::Mm>(mm_pool_, rs, o);
-  }
-	/** Convenience defition for sregs. */
-  bool get_sreg(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::Sreg>(sreg_pool_, rs, o);
-  }
-	/** Convenience defition for sts. */
-  bool get_st(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::St>(st_pool_, rs, o);
-  }
-	/** Convenience defition for xmms. */
-  bool get_xmm(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::Xmm>(xmm_pool_, rs, o);
-  }
-	/** Convenience defition for ymms. */
-  bool get_ymm(const x64asm::RegSet& rs, x64asm::Operand& o) {
-    return get<x64asm::Ymm>(ymm_pool_, rs, o);
-  }
-	/** Convenience defition for imms. */
-  void get_imm(x64asm::Operand& o) {
-    assert(!imm_pool_.empty());
-    o = imm_pool_[gen_() % imm_pool_.size()];
-  }
+
 	/** Replaces the base register in m using an element of a reg set. Returns true on success. */
   bool get_base(const x64asm::RegSet& rs, x64asm::M& m);
 	/** Replaces the index register in m using an element of a reg set. Returns true on success. */
