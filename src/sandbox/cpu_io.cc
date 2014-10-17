@@ -30,7 +30,14 @@ Function CpuIo::write(CpuState& cs, const RegSet& mask) {
     assm.push(rax);
   }
 
-  // Write sse registers
+	// Write rflags (this has to happen before writing gp)
+	// @todo Need to check whether any rflags appear in the mask before we do this
+	assm.mov((R64)rax, Imm64(cs.rf.data()));
+	assm.mov(rax, M64(rax));
+	assm.push(rax);
+	assm.popfq();
+
+  // Write sse registers (this has to happen before writing gp)
   for (const auto& s : xmms) {
     if (mask.contains(s)) {
       assm.mov((R64)rax, Imm64 {cs.sse[s].data()});
@@ -45,13 +52,6 @@ Function CpuIo::write(CpuState& cs, const RegSet& mask) {
       assm.mov(r, M64 {r});
     }
   }
-
-	// Write rflags 
-	// @todo Need to check whether any rflags appear in the mask before we do this
-	assm.mov((R64)rax, Imm64(cs.rf.data()));
-	assm.mov(rax, M64(rax));
-	assm.push(rax);
-	assm.popfq();
 
   // Restore rax if it wasn't written over
   if (!mask.contains(rax)) {
