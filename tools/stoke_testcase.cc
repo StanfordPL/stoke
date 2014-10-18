@@ -97,7 +97,7 @@ auto& max_memory = ValueArg<uint64_t>::create("max_memory")
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Source code to generate testcases for")
-    .default_val({"anon", {{RET}}});
+    .default_val({"anon", {{RET}}, {}});
 
 auto& h5 = Heading::create("Sandbox options:");
 

@@ -40,7 +40,7 @@ auto& h1 = Heading::create("Input programs:");
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Target")
-    .default_val({"anon", {{RET}}});
+    .default_val({"anon", {{RET}}, {}});
 
 auto& h2 = Heading::create("Transform options:");
 
