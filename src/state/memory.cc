@@ -61,11 +61,11 @@ istream& Memory::read_text(istream& is) {
 ostream& Memory::write_bin(ostream& os) const {
 	os.write((const char*)&base_, sizeof(uint64_t));
 
-	const size_t content_size = sizeof(uint64_t) * contents_.num_fixed_quads(); 
+	const size_t content_size = contents_.num_fixed_bytes(); 
 	os.write((const char*)&content_size, sizeof(size_t));
 	os.write((const char*)contents_.data(), content_size);
 
-	const size_t mask_size = sizeof(uint64_t) * valid_.num_fixed_quads();
+	const size_t mask_size = valid_.num_fixed_bytes();
 	os.write((const char*)&mask_size, sizeof(size_t));
 	os.write((const char*)valid_.data(), mask_size);
 	os.write((const char*)def_.data(), mask_size);
