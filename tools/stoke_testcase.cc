@@ -213,8 +213,13 @@ int do_compress() {
 		return 1;
 	}
 
-	ofstream ofs(out.value());
-	cs.write_bin(ofs);
+	if (out.value() != "") {
+		ofstream ofs(out.value());
+		cs.write_bin(ofs);
+	} else {
+		cs.write_bin(cout);
+		cout << endl;
+	}
 
 	return 0;	
 }
@@ -233,8 +238,13 @@ int do_decompress() {
 		return 1;
 	}
 
-	ofstream ofs(out.value());
-	cs.write_text(ofs);
+	if (out.value() != "") {
+		ofstream ofs(out.value());
+		cs.write_text(ofs);
+	} else {
+		cs.write_text(cout);
+		cout << endl;
+	}
 
 	return 0;	
 }

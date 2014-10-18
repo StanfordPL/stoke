@@ -77,12 +77,15 @@ istream& Memory::read_bin(istream& is) {
 	is.read((char*)&base_, sizeof(uint64_t));
 
 	size_t content_size = 0;
+	contents_.resize_for_fixed_bytes(content_size);
 	is.read((char*)&content_size, sizeof(size_t));
 	is.read((char*)contents_.data(), content_size);
 
 	size_t mask_size = 0;
 	is.read((char*)&mask_size, sizeof(size_t));
+	valid_.resize_for_fixed_bytes(mask_size);
 	is.read((char*)valid_.data(), mask_size);
+	def_.resize_for_fixed_bytes(mask_size);
 	is.read((char*)def_.data(), mask_size);
 
 	return is;
