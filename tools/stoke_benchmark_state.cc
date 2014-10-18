@@ -19,8 +19,9 @@
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
-#include "src/args/testcases.h"
+#include "src/args/cpu_states.h"
 #include "src/state/cpu_state.h"
+#include "src/state/cpu_states.h"
 
 using namespace cpputil;
 using namespace std;
@@ -29,10 +30,9 @@ using namespace stoke;
 
 auto& h1 = Heading::create("Input state");
 
-auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
+auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
     .usage("<path/to/file>")
-    .description("Testcases")
-    .default_val({CpuState()});
+    .description("Testcases");
 
 auto& idx = ValueArg<size_t>::create("index")
     .usage("<int>")

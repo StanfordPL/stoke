@@ -16,6 +16,7 @@
 #define STOKE_SRC_STATE_MEMORY_H
 
 #include <cassert>
+#include <iostream>
 #include <stdint.h>
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
@@ -158,6 +159,16 @@ class Memory {
     return base_ != rhs.base_ || contents_ != rhs.contents_;
   }
 
+	/** Write text. */
+	std::ostream& write_text(std::ostream& os) const;
+	/** Read text. */
+	std::istream& read_text(std::istream& is);
+
+	/** Write binary. */
+	std::ostream& write_bin(std::ostream& os) const;
+	/** Read binary. */
+	std::istream& read_bin(std::istream& is);
+
  private:
   /** Virtual base address. */
   uint64_t base_;
@@ -168,12 +179,24 @@ class Memory {
   /** Shadow bit vector for tracking defined bytes. */
   cpputil::BitVector def_;
 
-  /** Reads summary information */
-  void read_summary(std::istream& is);
-  /** Read a row from contents */
-  void read_row(std::istream& is);
-  /** Read contents */
-  void read_contents(std::istream& is);
+	/** Write a text summary of memory. */
+  void write_text_summary(std::ostream& os) const;
+	/** Write a text row of memory. */
+  void write_text_row(std::ostream& os, uint64_t addr) const;
+	/** Write all text rows from memory. */
+  void write_text_contents(std::ostream& os) const;
+
+	/** Read a text summary of memory. */
+  void read_text_summary(std::istream& is);
+	/** Read a text row of memory. */
+  void read_text_row(std::istream& is);
+	/** Read all text rows of memory. */
+  void read_text_contents(std::istream& is);
+
+	/** Does this row contain at least one valid address? */
+  bool valid_row(uint64_t addr) const;
+	/** How many of the rows in this memory are valid? */
+  size_t valid_count() const;
 };
 
 } // namespace stoke
