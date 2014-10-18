@@ -24,11 +24,11 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
+#include "src/args/cpu_states.h"
 #include "src/args/distance.h"
 #include "src/args/performance_term.h"
 #include "src/args/reduction.h"
 #include "src/args/reg_set.h"
-#include "src/args/testcases.h"
 #include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
 #include "src/cost/cost.h"
@@ -38,6 +38,7 @@
 #include "src/cost/reduction.h"
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
+#include "src/state/cpu_states.h"
 
 using namespace cpputil;
 using namespace std;
@@ -75,10 +76,9 @@ auto& heap_out = FlagArg::create("heap_out")
 
 auto& h2 = Heading::create("Input options:");
 
-auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
+auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
     .usage("<path/to/file>")
-    .description("Testcases")
-    .default_val({CpuState()});
+    .description("Testcases");
 
 auto& shuf_tc = FlagArg::create("shuffle_testcases")
 		.description("Shuffle testcase order");

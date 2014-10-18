@@ -38,7 +38,6 @@ OBJ=\
 	src/args/reg_set.o \
 	src/args/performance_term.o \
 	src/args/strategy.o \
-	src/args/testcases.o \
 	src/args/timeout.o \
 	src/args/tunit.o \
 	\
@@ -55,9 +54,11 @@ OBJ=\
 	src/search/search.o \
 	src/search/transforms.o \
 	\
+	src/state/cpu_state.o \
+	src/state/cpu_states.o \
 	src/state/memory.o \
-	src/state/state_reader.o \
-	src/state/state_writer.o \
+	src/state/regs.o \
+	src/state/rflags.o \
 	\
 	src/stategen/stategen.o \
 	\

@@ -24,9 +24,9 @@
 #include "src/ext/cpputil/include/system/terminal.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/testcases.h"
 #include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
+#include "src/state/cpu_states.h"
 #include "src/stategen/stategen.h"
 
 using namespace cpputil;
@@ -133,7 +133,7 @@ int auto_gen() {
 	sg.set_max_attempts(max_attempts.value())
 		.set_max_memory(max_stack.value());
 
-	vector<CpuState> tcs;
+	CpuStates tcs;
 	for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
 		CpuState tc;
 		if (sg.get(tc, cfg_t)) {
@@ -148,9 +148,9 @@ int auto_gen() {
 
 	if (out.value() != "") {
 		ofstream ofs(out.value());
-		TestcasesWriter()(ofs, tcs);
+		tcs.write_text(ofs);
 	} else {
-		TestcasesWriter()(cout, tcs);
+		tcs.write_text(cout);
 		cout << endl;
 	}
 

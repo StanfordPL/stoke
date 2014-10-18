@@ -27,9 +27,7 @@
 
 #include "pin.H"
 
-#include "src/args/testcases.h"
-#include "src/state/cpu_state.h"
-#include "src/state/state_writer.h"
+#include "src/state/cpu_states.h"
 
 using namespace std;
 using namespace stoke;
@@ -66,7 +64,7 @@ stack<unordered_map<uint64_t, uint8_t>> stack_defs_;
 stack<unordered_set<uint64_t>> heap_valids_;
 stack<unordered_map<uint64_t, uint8_t>> heap_defs_;
 
-vector<CpuState> results_;
+CpuStates results_;
 ostream* os_;
 
 /* ============================================================================================= */
@@ -357,7 +355,7 @@ VOID Fini(INT32 code, VOID* v) {
     exit(1);
   }
 
-	TestcasesWriter()(*os_, results_);
+	results_.write_text(*os_);
 	if (os_ == &cout) {
 		*os_ << endl;
 	}

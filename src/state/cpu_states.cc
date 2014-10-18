@@ -12,39 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/args/testcases.h"
-#include "src/state/state_reader.h"
-#include "src/state/state_writer.h"
+#include "src/state/cpu_states.h"
 
+#include <string>
+
+using namespace cpputil;
 using namespace std;
 
 namespace stoke {
 
-void TestcasesReader::operator()(istream& is, vector<CpuState>& ts) {
-  ts.clear();
-  for (string s; is >> s >> s;) {
-    CpuState t;
-    is >> t;
-
-    getline(is, s);
-    getline(is, s);
-
-    ts.emplace_back(t);
-  }
-  if (is.eof()) {
-    is.clear(ios::eofbit);
-  }
-}
-
-void TestcasesWriter::operator()(ostream& os, const vector<CpuState>& ts) {
-  for (size_t i = 0, ie = ts.size(); i < ie; ++i) {
+ostream& CpuStates::write_text(std::ostream& os) const {
+  for (size_t i = 0, ie = this->size(); i < ie; ++i) {
     os << "Testcase " << i << ":" << endl;
     os << endl;
-    os << ts[i];
+    (*this)[i].write_text(os);
     if (i + 1 != ie) {
     	os << endl;
       os << endl;
     }
+  }
+}
+
+istream& CpuStates::read_text(std::istream& is) {
+  this->clear();
+  for (string s; is >> s >> s;) {
+    CpuState t;
+		t.read_text(is);
+
+    getline(is, s);
+    getline(is, s);
+
+    this->emplace_back(t);
+  }
+  if (is.eof()) {
+    is.clear(ios::eofbit);
   }
 }
 

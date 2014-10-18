@@ -19,9 +19,10 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/testcases.h"
+#include "src/args/cpu_states.h"
 #include "src/args/tunit.h"
 #include "src/state/cpu_state.h"
+#include "src/state/cpu_states.h"
 #include "src/sandbox/sandbox.h"
 
 using namespace cpputil;
@@ -39,10 +40,9 @@ auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
 
 auto& h2 = Heading::create("Testcases:");
 
-auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
+auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
     .usage("<path/to/file>")
-    .description("Testcases")
-    .default_val({CpuState()});
+    .description("Testcases");
 
 auto& h3 = Heading::create("Sandboxing options:");
 

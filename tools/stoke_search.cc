@@ -27,6 +27,7 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
+#include "src/args/cpu_states.h"
 #include "src/args/distance.h"
 #include "src/args/flag_set.h"
 #include "src/args/init.h"
@@ -34,7 +35,6 @@
 #include "src/args/reduction.h"
 #include "src/args/reg_set.h"
 #include "src/args/strategy.h"
-#include "src/args/testcases.h"
 #include "src/args/timeout.h"
 #include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
@@ -51,7 +51,7 @@
 #include "src/search/statistics_callback.h"
 #include "src/search/transforms.h"
 #include "src/state/cpu_state.h"
-#include "src/state/state_writer.h"
+#include "src/state/cpu_states.h"
 #include "src/verifier/strategy.h"
 #include "src/verifier/verifier.h"
 
@@ -99,10 +99,9 @@ auto& out = ValueArg<string>::create("out")
 
 auto& h3 = Heading::create("Testcase options:");
 
-auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
+auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
     .usage("<path/to/file>")
-    .description("Testcases")
-    .default_val({CpuState()});
+    .description("Testcases");
 
 auto& shuf_tc = FlagArg::create("shuffle_testcases")
 		.description("Shuffle testcase order");

@@ -58,13 +58,15 @@ all: obj-intel64/testcase.so
 clean:
 	rm -rf obj-intel64
 
+obj-intel64/cpu_state.o: ../../../../../state/cpu_state.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+obj-intel64/cpu_states.o: ../../../../../state/cpu_states.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
 obj-intel64/memory.o: ../../../../../state/memory.cc
 	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
-obj-intel64/state_reader.o: ../../../../../state/state_reader.cc
+obj-intel64/regs.o: ../../../../../state/regs.cc
 	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
-obj-intel64/state_writer.o: ../../../../../state/state_writer.cc
-	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
-obj-intel64/testcases.o: ../../../../../args/testcases.cc
+obj-intel64/rflags.o: ../../../../../state/rflags.cc
 	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
 	
 obj-intel64/testcase.o: testcase.cpp
