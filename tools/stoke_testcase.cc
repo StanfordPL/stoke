@@ -109,7 +109,21 @@ auto& max_jumps = ValueArg<size_t>::create("max_jumps")
     .description("Maximum jumps before exit due to infinite loop")
     .default_val(1024);
 
-auto& h6 = Heading::create("Random number generator options");
+auto& h6 = Heading::create("File conversion options:");
+
+auto& compress = FlagArg::create("compress")
+		.description("Convert testcase file from text to binary");
+
+auto& decompress = FlagArg::create("decompress")
+		.description("Convert testcase file from binary to text");
+
+auto& in = ValueArg<string>::create("input")
+		.alternate("i")
+		.usage("<path/to/file>")
+		.description("Path to testcases file")
+		.default_val("in.tc");
+
+auto& h7 = Heading::create("Random number generator options");
 
 auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
     .usage("<int>")
@@ -185,12 +199,56 @@ int trace(const string& argv0) {
   return 0;
 }
 
+int do_compress() {
+	ifstream ifs(in.value());
+	if (!ifs.is_open()) {
+		cout << "Unable to open input file: " << in.value() << "!" << endl;
+		return 1;
+	}
+
+	CpuStates cs;
+	cs.read_text(ifs);
+	if (ifs.fail()) {
+		cout << "Unable to read input file: " << in.value() << "!" << endl;
+		return 1;
+	}
+
+	ofstream ofs(out.value());
+	cs.write_bin(ofs);
+
+	return 0;	
+}
+
+int do_decompress() {
+	ifstream ifs(in.value());
+	if (!ifs.is_open()) {
+		cout << "Unable to open input file: " << in.value() << "!" << endl;
+		return 1;
+	}
+
+	CpuStates cs;
+	cs.read_bin(ifs);
+	if (ifs.fail()) {
+		cout << "Unable to read input file: " << in.value() << "!" << endl;
+		return 1;
+	}
+
+	ofstream ofs(out.value());
+	cs.write_text(ofs);
+
+	return 0;	
+}
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
   srand(1);
 
-	if (target.value().name != "anon") {
+	if (compress.value()) {
+		return do_compress();
+	} else if (decompress.value()) {
+		return do_decompress();
+	} else if (target.value().name != "anon") {
 		return auto_gen();
 	} else {
 		return trace(argv[0]);
