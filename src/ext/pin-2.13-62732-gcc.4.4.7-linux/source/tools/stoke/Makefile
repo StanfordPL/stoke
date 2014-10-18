@@ -47,11 +47,11 @@ PIN_LIB=\
 	-lpin -lxed -ldwarf -lelf -ldl
 
 PIN_OBJ=\
+	obj-intel64/cpu_state.o \
+	obj-intel64/cpu_states.o \
 	obj-intel64/memory.o \
-	obj-intel64/state_reader.o \
-	obj-intel64/state_writer.o \
-	obj-intel64/testcase.o \
-	obj-intel64/testcases.o
+	obj-intel64/regs.o \
+	obj-intel64/rflags.o
 
 all: obj-intel64/testcase.so
 	

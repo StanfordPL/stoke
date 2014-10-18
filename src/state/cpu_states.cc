@@ -31,6 +31,8 @@ ostream& CpuStates::write_text(std::ostream& os) const {
       os << endl;
     }
   }
+	
+	return os;
 }
 
 istream& CpuStates::read_text(std::istream& is) {
@@ -47,6 +49,8 @@ istream& CpuStates::read_text(std::istream& is) {
   if (is.eof()) {
     is.clear(ios::eofbit);
   }
+
+	return is;
 }
 
 } // namespace stoke
