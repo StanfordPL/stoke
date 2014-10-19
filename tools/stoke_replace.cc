@@ -23,6 +23,8 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/args/tunit.h"
+#include "src/disassembler/disassembler.h"
+
 
 using namespace cpputil;
 using namespace std;
@@ -48,108 +50,6 @@ auto& out = ValueArg<string>::create("o")
     .description("File to write changes to; default is to overwrite")
     .default_val("");
 
-bool exists(const string& file) {
-  Terminal term;
-  term << "ls " << file << " >> /dev/null" << endl;
-  return term.result() == 0;
-}
-
-bool header(map<string, uint64_t>& section_offsets) {
-  Terminal term;
-  term << "objdump -h " << in.value() << " > /tmp/stoke.$USER.header" << endl;
-  if (term.result() != 0) {
-		return false;
-	}
-
-  ifstream ifs(string("/tmp/stoke.") + getenv("USER") + ".header");
-	string line;
-
-	// Skip ahead to table
-	for (auto i = 0; i < 5; ++i) {
-		getline(ifs, line);
-	}
-
-	// Read entries one at a time
-	while (getline(ifs, line)) {
-		istringstream iss(line);
-		string section, temp;
-		uint64_t lma, offset;
-
-		iss >> temp >> section >> temp >> temp >> hex >> lma >> offset;
-		section_offsets[section] = lma - offset;
-		
-		// Trailing second line 
-		getline(ifs, line);
-	}
-
-	return true;
-}
-
-bool lookup(const map<string, uint64_t>& section_offsets, uint64_t& offset, size_t& size) {
-  Terminal term;
-  term << "objdump -d -Msuffix " << in.value() << " > /tmp/stoke.$USER.objdump" << endl;
-  if (term.result() != 0) {
-		return false;
-	}
-
-  ifstream ifs(string("/tmp/stoke.") + getenv("USER") + ".objdump");
-	string line;
-
-	// Skip ahead to contents
-	for (auto i = 0; i < 4; ++i) {
-		getline(ifs, line);
-	}
-
-	uint64_t section_offset = 0;
-	while (getline(ifs, line)) {
-		// If this is a header, update section_offset
-		if (line.substr(0,11) == "Disassembly") {
-			istringstream iss(line);
-			string section;
-			iss >> section >> section >> section >> section;
-			section = section.substr(0,section.length()-1);
-			
-			const auto itr = section_offsets.find(section);
-			if (itr == section_offsets.end()) {
-				return false;
-			}
-			section_offset = itr->second;
-			continue;
-		}
-		
-		// Skip blank lines
-		if (line == "") {
-			continue;
-		}
-		
-		// Parse function
-		istringstream iss(line);
-		iss >> hex >> offset;
-
-		string fxn;
-		iss >> fxn;
-		fxn = fxn.substr(1, fxn.length()-3);
-
-		size_t last_offset = offset;
-		while (true) {
-			getline(ifs, line);
-			if (line == "") {
-				break;
-			}
-			istringstream iss(line);
-			iss >> hex >> last_offset;
-		}
-
-		size = last_offset - offset + 1;
-		offset = offset - section_offset;
-
-		if (fxn == rewrite.value().name) {
-			return true;
-		}
-	}
-	
-	return false;
-}
 
 bool replace(uint64_t offset, size_t size) {
 	// Assemble the new function
@@ -188,17 +88,34 @@ int main(int argc, char** argv) {
 	uint64_t fxn_offset;
 	size_t fxn_size;
 
-  if (!exists(in.value())) {
-    cout << "Unable to read binary file " << in.value() << "!" << endl;
+  bool found = false;
+
+  function<void (const Disassembler::ParsedFunction&)> callback =
+    [&] (const Disassembler::ParsedFunction& pf) {
+
+      // Check if we've found the function
+      if(pf.name == rewrite.value().name) {
+        found = true;
+        fxn_offset = pf.offset;
+        /* This is an underapproximateion; we can do better. */
+        fxn_size   = 1 + pf.instruction_offsets[pf.instruction_offsets.size()-1];
+
+      }
+    };
+
+  Disassembler d;
+  d.disassemble(in.value(), callback);
+  if(d.has_error()) {
+    cerr << "disassemble: " << d.get_error() << endl;
     return 1;
-  } else if (!header(section_offsets)) {
-    cout << "Unable to extract metadata from binary file " << in.value() << "!" << endl;
-    return 1;
-	} else if (!lookup(section_offsets, fxn_offset, fxn_size)) {
-		cout << "Unable to lookup function " << rewrite.value().name << " in binary file " << in.value() << "!" << endl;
-		return 1;
-	} else if (!replace(fxn_offset, fxn_size)) {
-		cout << "Unable to replace function text!" << endl;
+  }
+
+  if (!found) {
+    cerr << "Couldn't find function " << rewrite.value().name << " in the binary." << endl;
+  }
+
+	if (!replace(fxn_offset, fxn_size)) {
+		cerr << "Unable to replace function text!" << endl;
 		return 1;
 	}
 

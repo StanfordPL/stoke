@@ -113,7 +113,6 @@ void Disassembler::parse_section_offsets(ipstream& ips, map<string, uint64_t>& s
 
     iss >> temp >> section >> temp >> temp >> hex >> lma >> offset;
     section_offsets[section] = lma - offset;
-    cout << "GOT SECTION " << section << " @ " << lma << " - " << offset << " = " << section_offsets[section];
 
     // Trailing second line
     getline(ips, line);
@@ -168,27 +167,19 @@ bool Disassembler::parse_function(ipstream& ips, ParsedFunction& pf,
   auto lines = index_lines(ips, line);
   const auto labels = fix_label_uses(lines);
   
-  cout << "name: " << pf.name << endl;
-  cout << "# lines: " << lines.size() << endl;
-
   // Build the code and offsets vector
   uint64_t starting_addr = lines[0].first;
-  cout << "starting_addr = " << starting_addr << endl;
-  cout << "offsets[.text] = " << offsets[".text"] << endl;
-  cout << "offsets[text] = " << offsets["text"] << endl;
   pf.offset = starting_addr - offsets[".text"];
 
   stringstream ss;
   for (const auto l : lines) {
     const auto itr = labels.find(l.first);
     if (itr != labels.end()) {
-      ss << ".L_" << l.first << ":" << endl;
+      ss << ".L_" << hex << l.first << ":" << endl;
     }
     ss << l.second << endl;
     pf.instruction_offsets.push_back(l.first - starting_addr);
   }
-  cout << "CODE : " << endl;
-  cout << ss.str() << endl;
   ss >> pf.code;
 
 
