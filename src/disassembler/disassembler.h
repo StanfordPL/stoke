@@ -52,13 +52,9 @@ class Disassembler {
 
   private:
 
-    typedef std::map<std::string, std::string> line_map;
-    typedef std::set<std::string> label_set;
+    typedef std::vector<std::pair<uint64_t, std::string>> line_map;
+    typedef std::set<uint64_t> label_set;
 
-
-    //TODO: I'm suspiscious that index_lines and fix_label_uses are really not
-    //needed, but I think I need to check with Eric to understand them.
-    //Really, I need to see where objdump's output differs from our parser.
 
 
     /* Parse the section offsets from objdump's stdout. */
@@ -70,13 +66,13 @@ class Disassembler {
     /* Parse an instruction from a line */
     bool parse_instr_from_line(const std::string& line, std::string& instr);
     /* Get an address from an objdump'd line */
-    std::string parse_addr_from_line(const std::string& line);
+    uint64_t parse_addr_from_line(const std::string& line);
     /* Ignore a few lines from the input */
     void strip_lines(redi::ipstream& ips, size_t lines);
     /* Get all the lines from a function */
     line_map index_lines(redi::ipstream& ips, std::string& line);
     /* Rewrite a line from objdump for our parser :( */
-    std::string fix_line(const std::string& line);
+    std::string fix_instruction(const std::string& line);
     /* Fix the labels */
     label_set fix_label_uses(line_map& lines);
 

@@ -7,6 +7,8 @@ using namespace stoke;
 using namespace redi;
 using namespace std;
 
+
+
 bool Disassembler::check_filename(string& s) {
 
   for(size_t i = 0; i < s.size(); ++i) {
@@ -104,36 +106,14 @@ void Disassembler::parse_section_offsets(ipstream& ips, map<string, uint64_t>& s
 
 }
 
-bool Disassembler::parse_function(ipstream& ips, ParsedFunction& pf, 
-                                  map<string, uint64_t>& offsets) {
-
-  string line;
-
-  // Ignore lines starting with "D"
-  while(getline(ips, line) && line[0] == 'D') { }
-
-  // Get the name of the function
-  const auto begin = line.find_first_of('<') + 1;
-  const auto len = line.find_last_of('>') - begin;
-  pf.name = line.substr(begin, len);
-
-  // Get an index of all the lines
-  auto lines = index_lines(ips, line);
-  const auto labels = set<string>(); //FIXME: fix_label_uses(lines);
-
-  return false;
+bool is_hex_string(const string& s) {
+  for (auto c : s) {
+    if (!isxdigit(c)) {
+      return false;
+    }
+  }
+  return true;
 }
-
-
-string Disassembler::parse_addr_from_line(const string& s) {
-  // Address is located between beginning of line and first :
-  auto begin = 0;
-  for (; isspace(s[begin]); ++begin);
-  const auto len = s.find_first_of(':') - begin;
-
-  return s.substr(begin, len);
-}
-
 
 Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s) {
   line_map lines;
@@ -144,11 +124,103 @@ Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s) {
     }
     string instr;
     if (parse_instr_from_line(s, instr)) {
-      lines[parse_addr_from_line(s)] = fix_line(instr);
+      lines.push_back(pair<uint64_t, string>(parse_addr_from_line(s), fix_instruction(instr)));
     }
   }
 
   return lines;
+}
+
+bool Disassembler::parse_function(ipstream& ips, ParsedFunction& pf, 
+                                  map<string, uint64_t>& offsets) {
+
+  if (ips.eof())
+    return false;
+
+  string line;
+  getline(ips, line);
+
+  // Reset any state in pf.
+  pf.code.clear();
+  pf.instruction_offsets.clear();
+
+  // Get the name of the function
+  const auto begin = line.find_first_of('<') + 1;
+  const auto len = line.find_last_of('>') - begin;
+  pf.name = line.substr(begin, len);
+
+  // Iterate through all the lines and make 'em pretty
+  auto lines = index_lines(ips, line);
+  const auto labels = fix_label_uses(lines);
+  
+  cout << "name: " << pf.name << endl;
+  cout << "# lines: " << lines.size() << endl;
+
+  // Build the code and offsets vector
+  uint64_t starting_addr = lines[0].first;
+
+  stringstream ss;
+  for (const auto l : lines) {
+    const auto itr = labels.find(l.first);
+    if (itr != labels.end()) {
+      ss << ".L_" << l.first << ":" << endl;
+    }
+    ss << l.second << endl;
+    pf.instruction_offsets.push_back(l.first - starting_addr);
+  }
+  cout << "CODE : " << endl;
+  cout << ss.str() << endl;
+  ss >> pf.code;
+
+
+  return true;
+}
+
+
+uint64_t hex_to_int(const string& s) {
+
+  uint64_t val;
+  istringstream iss(s);
+  iss >> hex >> val;
+  return val;
+}
+
+uint64_t Disassembler::parse_addr_from_line(const string& s) {
+  // Address is located between beginning of line and first :
+  auto begin = 0;
+  for (; isspace(s[begin]); ++begin);
+  const auto len = s.find_first_of(':') - begin;
+  
+  return hex_to_int(s.substr(begin, len));
+}
+
+
+Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lines) {
+  label_set labels;
+
+  for (auto& l : lines) {
+    auto& instr = l.second;
+
+    // Opcodes are followed by at least one space; ignore instructions with no operands
+    auto ops_begin = instr.find_first_of(' ');
+    for (; ops_begin != string::npos && isspace(instr[ops_begin]); ops_begin++);
+    if (ops_begin == instr.length() || ops_begin == string::npos) {
+      continue;
+    }
+
+    // Operands are terminated by whitespace
+    const auto ops_end = instr.find_first_of(' ', ops_begin + 1);
+    const auto ops_len = (ops_end == string::npos ? instr.length() : ops_end) - ops_begin;
+    const auto ops = instr.substr(ops_begin, ops_len);
+
+    // Arguments that are strictly hex digits become labels
+    if (is_hex_string(ops)) {
+      labels.insert(hex_to_int(ops));
+      instr = instr.substr(0, ops_begin) + ".L_" + ops;
+    }
+  }
+
+  return labels;
 }
 
 bool Disassembler::parse_instr_from_line(const string& s, string& instr) {
@@ -172,7 +244,7 @@ bool Disassembler::parse_instr_from_line(const string& s, string& instr) {
 }
 
 
-string Disassembler::fix_line(const string& line) {
+string Disassembler::fix_instruction(const string& line) {
   // Replace retq synonyms
   constexpr array<const char*, 2> rets {{"hlt    ", "repz retq "}};
   if (find(rets.begin(), rets.end(), line) != rets.end()) {
@@ -292,6 +364,10 @@ void Disassembler::disassemble(
 
   // Skip the first four lines of output
   strip_lines(*body, 4);
+
+  // Ignore lines starting with "D"
+  for(string line; getline(*body, line) && line[0] == 'D';) { 
+  }
 
   // Read the functions and invoke the callback.
   ParsedFunction pf;
