@@ -35,7 +35,7 @@ auto& h1 = Heading::create("Input program:");
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Target code")
-    .default_val({"auto", {{RET}}, {}});
+    .default_val({"auto", {{RET}}});
 
 auto& h2 = Heading::create("Testcases:");
 

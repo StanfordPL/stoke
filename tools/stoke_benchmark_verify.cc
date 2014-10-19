@@ -51,12 +51,12 @@ auto& h1 = Heading::create("Input programs:");
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Target")
-    .default_val({"anon", {{RET}}, {}});
+    .default_val({"anon", {{RET}}});
 
 auto& rewrite = FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
     .usage("<path/to/file>")
     .description("Rewrite")
-    .default_val({"anon", {{RET}}, {}});
+    .default_val({"anon", {{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
     .usage("{ %rax %rsp ... }")

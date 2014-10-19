@@ -26,8 +26,6 @@ struct TUnit {
 	std::string name;
 	/** The text of the function in this translation unit. */
 	x64asm::Code code;
-  /** The memory offsets, from the start of the function, of each instruction (by index) */
-  std::vector<uint64_t> instruction_offsets;
 };
 
 } // namespace stoke

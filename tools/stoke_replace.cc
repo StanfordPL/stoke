@@ -40,7 +40,7 @@ auto& in = ValueArg<string>::create("i")
 auto& rewrite = FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
     .usage("<path/to/file>")
     .description("Function to replace in input binary")
-    .default_val({"anon", {{RET}}, {}});
+    .default_val({"anon", {{RET}}});
 
 auto& out = ValueArg<string>::create("o")
     .alternate("out")
