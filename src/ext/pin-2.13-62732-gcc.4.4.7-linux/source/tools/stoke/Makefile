@@ -51,7 +51,8 @@ PIN_OBJ=\
 	obj-intel64/cpu_states.o \
 	obj-intel64/memory.o \
 	obj-intel64/regs.o \
-	obj-intel64/rflags.o
+	obj-intel64/rflags.o \
+	obj-intel64/testcase.o
 
 all: obj-intel64/testcase.so
 	
