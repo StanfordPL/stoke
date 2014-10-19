@@ -56,24 +56,25 @@ redi::ipstream* Disassembler::run_objdump(string& filename, bool only_header) {
   if (only_header) {
     target = "/usr/bin/objdump -h " + filename;  
   } else {
-    target = "/usr/bin/objdump -Msuffix -d " + filename;
+    target = "/usr/bin/objdump -j .text -Msuffix -d " + filename;
   }
 
-  auto ret = new ipstream(target, redi::pstreams::pstdout);
-  if(!ret) {
+  auto stream = new ipstream(target, redi::pstreams::pstdout);
+
+  if(!stream) {
     error_ = true;
     error_message_ = "Unknown error spawning objdump: no memory allocated.";
     return NULL;
   }
 
-  if(!ret->is_open()) {
+  if(!stream->is_open()) {
     error_ = true;
     error_message_ = "Unknown error spawning objdump.";
-    delete ret;
+    delete stream;
     return NULL;
   }
 
-  return ret;
+  return stream;
 
 }
 
@@ -97,8 +98,9 @@ void Disassembler::parse_section_offsets(ipstream& ips, map<string, uint64_t>& s
     string section, temp;
     uint64_t lma, offset;
 
-    iss >> temp >> section >> temp >> hex >> lma >> offset;
+    iss >> temp >> section >> temp >> temp >> hex >> lma >> offset;
     section_offsets[section] = lma - offset;
+    cout << "GOT SECTION " << section << " @ " << lma << " - " << offset << " = " << section_offsets[section];
 
     // Trailing second line
     getline(ips, line);
@@ -158,6 +160,10 @@ bool Disassembler::parse_function(ipstream& ips, ParsedFunction& pf,
 
   // Build the code and offsets vector
   uint64_t starting_addr = lines[0].first;
+  cout << "starting_addr = " << starting_addr << endl;
+  cout << "offsets[.text] = " << offsets[".text"] << endl;
+  cout << "offsets[text] = " << offsets["text"] << endl;
+  pf.offset = starting_addr - offsets[".text"];
 
   stringstream ss;
   for (const auto l : lines) {
@@ -339,7 +345,6 @@ string Disassembler::fix_instruction(const string& line) {
 
   return line;
 }
-
 
 
 

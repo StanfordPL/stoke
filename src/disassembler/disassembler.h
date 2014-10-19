@@ -79,6 +79,8 @@ class Disassembler {
 
     /* Runs objdump and provides the output stream */
     redi::ipstream* run_objdump(std::string& filename, bool only_header);
+    /* Checks if the file can be opened, etc. */
+    bool check_file(std::string&);
     /* Checks if a filename is whitelisted for use.  This prevents accidental
      * shell injection. */
     bool check_filename(std::string&);
