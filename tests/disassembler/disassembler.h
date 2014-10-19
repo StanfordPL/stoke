@@ -55,7 +55,7 @@ TEST(DisassemblerTest, NoFileGraceful) {
   stoke::Disassembler d;
   d.disassemble("texts/fixtures/disassembler/does_not_exist", empty);
   EXPECT_TRUE(d.has_error());
-  EXPECT_EQ("file not found", d.get_error());
+  EXPECT_EQ("Error opening file.", d.get_error());
 
 
 }

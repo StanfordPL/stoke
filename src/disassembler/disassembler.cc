@@ -1,5 +1,7 @@
 
 #include <sstream>
+#include <fstream>
+#include <iostream>
 
 #include "src/disassembler/disassembler.h"
 
@@ -11,6 +13,7 @@ using namespace std;
 
 bool Disassembler::check_filename(string& s) {
 
+  /* Prevent shell injection */
   for(size_t i = 0; i < s.size(); ++i) {
     char c = s[i];
 
@@ -43,7 +46,17 @@ bool Disassembler::check_filename(string& s) {
 
   }
 
-  return true;
+  /* Check that we can open the file */
+  fstream filestr;
+  filestr.open (s);
+  if (filestr.is_open()) {
+    filestr.close();
+    return true;
+  }
+
+  error_ = true;
+  error_message_ = "Error opening file.";
+  return false;
 
 }
 
