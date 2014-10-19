@@ -47,6 +47,8 @@ OBJ=\
 	\
 	src/cost/cost_function.o \
 	\
+	src/disassembler/disassembler.o \
+	\
 	src/sandbox/cpu_io.o \
 	src/sandbox/sandbox.o \
 	src/sandbox/stack_snapshot.o \
@@ -127,6 +129,8 @@ src/args/%.o: src/args/%.cc src/args/%.h
 src/cfg/%.o: src/cfg/%.cc src/cfg/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/cost/%.o: src/cost/%.cc src/cost/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/disassembler/%.o: src/disassembler/%.cc src/disassembler/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
