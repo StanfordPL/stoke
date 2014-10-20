@@ -1,0 +1,178 @@
+
+<!-- start of included file -->
+
+<!-- $Id: mainpage.html,v 1.21 2010/10/14 21:35:22 redi Exp $ -->
+
+<h3>A C++ iostream interface to POSIX process I/O.</h3>
+
+<p>The library is a work in progress. It is intended to provide a C++
+re-implementation of the POSIX.2 functions <kbd class="man_page">popen</kbd>(3)
+and <kbd class="man_page">pclose</kbd>(3), using iostreams to read from and
+write to the opened process.</p>
+<p>The advantages over the standard <code>popen()</code> function are:
+<ul>
+<li>Standard C++ interface. PStreams classes can be used in any code that
+expects an iostream class, giving all the advantages of type-safety and
+localisation that iostreams have over the
+<code>printf()</code>/<code>scanf()</code> functions in standard C.</li>
+<li>Bidirectional I/O. Implementations of <code>popen()</code> vary
+between systems. Some systems use bidirectional pipes, allowing reading
+and writing on the same stream, but this is not supported everywhere.
+Because PStreams doesn't use <code>popen()</code> but re-implements it
+at a lower level, bidirectional I/O is available on all systems.</li>
+<li>Reading from the process' <code>stderr</code>. Input PStreams can read
+from the process' <code>stderr</code> as well as <code>stdout</code>.</li>
+<li>More flexible interface. In addition to handling a shell command in
+the same way as <code>popen()</code> the PStreams classes can open a process
+specified by a filename and a vector of arguments, similar to the
+<code>execv()</code> function.</li>
+<li>Signals. The child process can be sent any signal, which can be used to
+kill or otherwise control it.</li>
+</ul>
+<p>The library is available under the <a href='http://www.gnu.org/'>GNU</a>
+<a href='http://www.gnu.org/licenses/lgpl.txt'>Lesser General Public License</a>
+<p>To help improve PStreams see the
+<a href="http://sf.net/projects/pstreams/">SourceForge project page</a>.</p>
+
+<p>&nbsp;</p>
+<h2><a name='status'>Current status</a></h2>
+<p>Version 0.8.1</p>
+<p>Working <code>ipstream</code>, <code>opstream</code> and
+<code>pstream</code> classes for
+ISO C++-compliant compilers. The classes are fully functional and the
+public interfaces should be stable for all except the <code>pstreambuf</code>
+class, which may be extended to add new features.</p>
+<p>The stream buffer class, <code>pstreambuf</code>, doesn't use
+<code>popen()</code>. It uses up to three
+pipes shared with the associated process, giving access to any combination
+of the process' <code>stdin</code>, <code>stdout</code> and <code>stderr</code>
+streams. I/O operations on these pipes are buffered to avoid making a
+system call for every character written or read.</p>
+<p>Another class, <code>rpstream</code> (Restricted PStream) is similar to
+<code>pstream</code> except that the child process' <code>stdout</code>
+and <code>stderr</code> cannot be read directly from an
+<code>rpstream</code>. To read from the process you must call either
+<code>rpstream::out()</code> or <code>rpstream::err()</code> to obtain a
+reference to an <code>istream</code> that reads from the process' 
+corresponding output stream. This class is not as well tested as the others
+(i.e. it's hardly tested at all).</p>
+<p>No code-conversion is performed on multi-byte character streams.
+It should be possible to use the PStreams classes templatized with character
+types other than <code>char</code> (e.g. <code>basic_pstream&lt;int&gt;</code>)
+but note that characters are transfered in a bytewise manner, so it is the
+programmer's responsibility to interpret the resulting character strings.
+Since the classes are intended to be used to read/write data between
+processes, which will usually share an internal character representation,
+rather than to/from files, this behaviour should be sufficient.</p>
+<p>The PStreams code has not been optimised, the emphasis is on simplicity
+and correctness, not performance.  If you have any performance benchmarks
+or ideas for (portable) ways to speed up the code then please share them.
+
+<p>&nbsp;</p>
+<h2><a name='usage'>Usage</a></h2>
+<p>Please refer to the doxygen-generated API documentation,
+accessible through the links at the top of the page.</p>
+<p>Using the PStreams classes is similar to using a <code>std::fstream</code>,
+except that a shell command is given rather than a filename:</p>
+<pre><code>
+// print names of all header files in current directory
+redi::ipstream in("ls ./*.h");
+std::string str;
+while (in &gt;&gt; str) {
+    std::cout &lt;&lt; str &lt;&lt; std::endl;
+}
+</code></pre>
+<p>The  command  argument  is  a pointer to a null-terminated
+string containing a shell command line.  This  command  is
+passed  to  /bin/sh  using the -c flag; Alias and wildcard interpretation,
+if any, is performed by the shell.</p>
+<p>Alternatively, the process can be started with a vector of arguments:</p>
+<pre><code>
+// remove some files, capturing any error messages
+std::vector&lt;std::string&gt; argv;
+std::vector&lt;std::string&gt; errors;
+argv.push_back("rm");
+argv.push_back("-rf");
+argv.push_back("./foo.txt");
+argv.push_back("./bar.html");
+argv.push_back("./fnord/");
+redi::ipstream in("rm", argv, redi::pstreambuf::pstderr);
+std::string errmsg;
+while (std::getline(in, errmsg)) {
+    errors.push_back(errmsg);
+}
+</code></pre>
+<p>If this form of initialisation is used and the file argument doesn't
+contain a slash then the actions of the shell
+will be duplicated in searching for an executable in <code>PATH</code>.
+The shell will not interpret the other arguments, so wildcard expansion will
+not take place if this interface is used.</p>
+<p>If an <code>rpstream</code> was used in the example above it would be
+necessary to replace the while condition like so:</p>
+<pre><code>
+while (std::getline(in<strong>.err()</strong>, errmsg)) {
+    errors.push_back(errmsg);
+}
+</code></pre>
+<p>This form can also be used with the unrestricted <code>pstream</code>
+and <code>ipstream</code> classes, but it is not strictly necessary.</p>
+
+<p>Here is a more complete example, showing how to use
+<code>std::istream::readsome()</code> to read without blocking:</p>
+<pre>
+const pstreams::pmode mode = pstreams::pstdout|pstreams::pstderr;
+ipstream child("echo OUT1; sleep 1; echo ERR &gt;&amp;2; sleep 1; echo OUT2", mode);
+char buf[1024];
+std::streamsize n;
+bool finished[2] = { false, false };
+while (!finished[0] || !finished[1])
+{
+    if (!finished[0])
+    {
+        while ((n = child.err().readsome(buf, sizeof(buf))) &gt; 0)
+            std::cerr.write(buf, n).flush();
+        if (child.eof())
+        {
+            finished[0] = true;
+            if (!finished[1])
+                child.clear();
+        }
+    }
+
+    if (!finished[1])
+    {
+        while ((n = child.out().readsome(buf, sizeof(buf))) &gt; 0)
+            std::cout.write(buf, n).flush();
+        if (child.eof())
+        {
+            finished[1] = true;
+            if (!finished[0])
+                child.clear();
+        }
+    }
+}
+</pre>
+
+
+<p>Since the underlying streams controlled by the <code>pstreambuf</code>
+are pipes, seek operations will not succeed. <code>pstreambuf::seekoff()</code>
+and <code>pstreambuf::seekpos()</code> will always fail, even for what may
+seem like no-ops, such as seeking with an offset of zero relative to the
+current position. Because the streambuf operations aren't successful and
+return <code>off_type(-1)</code>, calling <code>std::istream::seekg()</code>
+or <code>std::ostream::seekp()</code> on a PStream object will cause
+<code>failbit</code> to be added to the stream state.
+Following this you will need to call <code>std::basic_ios::clear()</code>
+on the stream object to clear the stream state information before further
+I/O can take place.
+This behaviour is analogous to calling <code>std::fseek()</code> on a pipe,
+which always fails and sets <code>errno</code> to <code>ESPIPE</code>
+(<em>"Illegal seek"</em>).
+</p>
+
+<hr>
+<p>The latest version of PStreams can be found at
+<a href="http://pstreams.sf.net">http://pstreams.sf.net</a></p>
+
+<!-- end of included file -->
+

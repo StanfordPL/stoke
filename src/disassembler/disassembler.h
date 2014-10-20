@@ -3,7 +3,7 @@
 #include <set>
 
 #include "src/tunit/tunit.h"
-#include "src/ext/pstreams/pstream.h"
+#include "src/ext/pstreams-0.8.1/pstream.h"
 
 namespace stoke {
 
