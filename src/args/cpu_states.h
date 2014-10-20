@@ -12,21 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_TESTCASE_H
-#define STOKE_SRC_ARGS_TESTCASE_H
+#ifndef STOKE_SRC_ARGS_CPU_STATES_H
+#define STOKE_SRC_ARGS_CPU_STATES_H
 
-#include <vector>
+#include <iostream>
 
-#include "src/state/cpu_state.h"
+#include "src/state/cpu_states.h"
 
 namespace stoke {
 
-struct TestcasesReader {
-  void operator()(std::istream& is, std::vector<stoke::CpuState>& ts);
+struct CpuStatesReader {
+  void operator()(std::istream& is, CpuStates& cs) {
+		cs.read_text(is);
+	}
 };
 
-struct TestcasesWriter {
-  void operator()(std::ostream& os, const std::vector<stoke::CpuState>& ts);
+struct CpuStatesWriter {
+  void operator()(std::ostream& os, const CpuStates& cs) {
+		cs.write_text(os);
+	}
 };
 
 } // namespace stoke

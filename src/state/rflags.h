@@ -16,6 +16,7 @@
 #define STOKE_SRC_STATE_RFLAGS_H
 
 #include <cassert>
+#include <iostream>
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
 
@@ -61,7 +62,7 @@ class RFlags {
 		}
 
 		/** Exposes underlying bit vector. */
-		void* data() {
+		const void* data() const {
 			return contents_.data();
 		}
 
@@ -83,6 +84,22 @@ class RFlags {
 		/** Inequality */
 		bool operator!=(const RFlags& rhs) const {
 			return contents_ != rhs.contents_;
+		}
+
+		/** Write text. */
+		std::ostream& write_text(std::ostream& os, const char** names, size_t padding) const;
+		/** Read text. */
+		std::istream& read_text(std::istream& is);
+
+		/** Write binary. */
+		std::ostream& write_bin(std::ostream& os) const {
+			os.write((const char*)contents_.data(), sizeof(uint64_t));
+			return os;
+		}
+		/** Read binary. */
+		std::istream& read_bin(std::istream& is) {
+			is.read((char*)contents_.data(), sizeof(uint64_t));
+			return is;
 		}
 
 	private:
