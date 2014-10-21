@@ -24,9 +24,10 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Init>, 3> ds {{
+array<pair<string, Init>, 4> ds {{
     {"empty", Init::EMPTY},
-    {"source", Init::SOURCE},
+    {"target", Init::TARGET},
+		{"previous", Init::PREVIOUS},
 
 		// Add user-defined extensions here ...
 		{"extension", Init::EXTENSION}

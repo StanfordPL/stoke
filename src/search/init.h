@@ -19,7 +19,8 @@ namespace stoke {
 
 enum class Init {
   EMPTY,
-  SOURCE,
+  TARGET,
+	PREVIOUS,
 
 	// Add user-defined extensions here ...
 	EXTENSION

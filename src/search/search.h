@@ -22,6 +22,7 @@
 #include "src/search/init.h"
 #include "src/search/move.h"
 #include "src/search/progress_callback.h"
+#include "src/search/search_state.h"
 #include "src/search/statistics.h"
 #include "src/search/statistics_callback.h"
 #include "src/search/transforms.h"
@@ -30,23 +31,19 @@ namespace stoke {
 
 class Search {
  public:
-	/** Result type; best verified rewrite and whether it differs from the target. */
-  typedef std::pair<Cfg, bool> result_type;
-
 	/** Create a new search from a transform helper. */
   Search(Transforms* transforms);
 
-	/** Set the initial search state. */
-	Search& set_init(Init init, size_t max_instrs) {
-		init_ = init;
-		max_instrs_ = max_instrs;
-		return *this;
-	}
 	/** Set the random search seed. */
   Search& set_seed(std::default_random_engine::result_type seed) {
     gen_.seed(seed);
     return *this;
   }
+	/** Set the maximum number of instructions. */
+	Search& set_max_instrs(size_t mi) {
+		max_instrs_ = mi;
+		return *this;
+	}
 	/** Set the maximum number of proposals to perform before giving up. */
   Search& set_timeout_itr(size_t timeout) {
     timeout_itr_ = timeout;
@@ -82,8 +79,8 @@ class Search {
     return *this;
   }
 
-	/** Run search for a rewrite using a user-supplied cost function. */
-  result_type run(const Cfg& target, const Cfg& rewrite, CostFunction& fxn);
+	/** Run search beginning from a search state using a user-supplied cost function. */
+  void run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state);
 
  private:
   /** Random generator. */
@@ -98,8 +95,6 @@ class Search {
   /** Transformation helper class. */
   Transforms* transforms_;
 
-	/** Rewrite to begin search from. */
-	Init init_;
 	/** Maximum number of rewrite instructions. */
 	size_t max_instrs_;
 
@@ -119,12 +114,14 @@ class Search {
   /** How often are statistics printed? */
   size_t interval_;
 
-	/** Set initial search state based on value of init_ */
-	Cfg initialize(const Cfg& rewrite) const;
-	/** Removes all non-return instructions from rewrite. */
-	Cfg empty_init(const Cfg& rewrite) const;
-	/** Returns a user-defined initial rewrite */
-	Cfg extension_init(const Cfg& rewrite) const;
+	/** Configures a search state. */
+	void configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state) const;
+	/** Resets search state by removing all non-return instructions from target. */
+	void configure_empty(const Cfg& target, SearchState& state) const;
+	/** Resets search state to the target. */
+	void configure_target(const Cfg& target, SearchState& state) const;
+	/** Resets search state to a user-defined function of target */
+	void configure_extension(const Cfg& target, SearchState& state) const;
 };
 
 } // namespace stoke

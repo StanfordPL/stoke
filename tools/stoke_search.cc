@@ -48,6 +48,7 @@
 #include "src/search/move.h"
 #include "src/search/progress_callback.h"
 #include "src/search/search.h"
+#include "src/search/search_state.h"
 #include "src/search/statistics_callback.h"
 #include "src/search/transforms.h"
 #include "src/state/cpu_state.h"
@@ -66,11 +67,6 @@ auto& h1 = Heading::create("Input programs:");
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Target")
-    .default_val({"anon", {{RET}}});
-
-auto& rewrite = FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
-    .usage("<path/to/file>")
-    .description("Rewrite")
     .default_val({"anon", {{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
@@ -287,9 +283,24 @@ auto& max_instrs = ValueArg<size_t>::create("max_instrs")
     .default_val(16);
 
 auto& init = ValueArg<Init, InitReader, InitWriter>::create("init")
-		.usage("(empty|source|extension)")
+		.usage("(empty|target|previous|extension)")
     .description("Initial search state")
 		.default_val(Init::EMPTY);
+
+auto& current = FileArg<TUnit, TUnitReader, TUnitWriter>::create("current")
+    .usage("<path/to/file>")
+    .description("Current rewrite; used with --init previous")
+    .default_val({"current", {{RET}}});
+
+auto& best_yet = FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_yet")
+    .usage("<path/to/file>")
+    .description("Best rewrite; used with --init previous")
+    .default_val({"best_yet", {{RET}}});
+
+auto& best_correct = FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_correct")
+    .usage("<path/to/file>")
+    .description("Best correct rewrite; used with --init previous")
+    .default_val({"best_correct", {{RET}}});
 
 auto& h10 = Heading::create("Verification options:");
 
@@ -323,22 +334,22 @@ void pcb(const ProgressCallbackData& data, void* arg) {
   ofilterstream<Column> ofs(os);
   ofs.filter().padding(5);
 
-	auto best_yet = data.best_yet;
+	auto best_yet = data.state.best_yet;
 	tforms.remove_unreachable(best_yet);
 	tforms.remove_nop(best_yet);
 
 	ofs << dec;
-  ofs << "Lowest Cost Discovered (" << data.best_yet_cost << ")" << endl;
+  ofs << "Lowest Cost Discovered (" << data.state.best_yet_cost << ")" << endl;
   ofs << endl;
   ofs << best_yet.get_code();
   ofs.filter().next();
 
-	auto best_correct = data.best_correct;
+	auto best_correct = data.state.best_correct;
 	tforms.remove_unreachable(best_correct);
 	tforms.remove_nop(best_correct);
 
 	ofs << dec;
-  ofs << "Lowest Known Correct Cost (" << data.best_correct_cost << ")" << endl;
+  ofs << "Lowest Known Correct Cost (" << data.state.best_correct_cost << ")" << endl;
   ofs << endl;
   ofs << best_correct.get_code();
   ofs.filter().done();
@@ -425,12 +436,7 @@ int main(int argc, char** argv) {
     seed.value() = gen();
   }
 
-	if (rewrite.value().name == "anon") {
-		rewrite.value().name = target.value().name;
-	}
-	
   Cfg cfg_t(target.value().code, def_in, live_out);
-  Cfg cfg_r(rewrite.value().code, def_in, live_out);
 
 	if (shuf_tc) {
 		shuffle(testcases.value().begin(), testcases.value().end(), default_random_engine());
@@ -459,7 +465,7 @@ int main(int argc, char** argv) {
 
   Search search(&transforms);
   search.set_seed(seed)
-	.set_init(init, max_instrs)
+	.set_max_instrs(max_instrs)
   .set_timeout_itr(timeout_itr)
 	.set_timeout_sec(timeout_sec)
   .set_beta(beta)
@@ -487,6 +493,7 @@ int main(int argc, char** argv) {
 	Verifier verifier(hold_out_fxn);
 	verifier.set_strategy(strategy);
 
+	SearchState state;
 	for (size_t i = 0; ; ++i) {
 		CostFunction fxn(&training_sb);
 		fxn.set_distance(::distance)
@@ -499,16 +506,20 @@ int main(int argc, char** argv) {
 		.set_performance_term(perf);
 
 		cout << "Running search:" << endl << endl;
-		const auto ret = search.run(cfg_t, cfg_r, fxn);
-		const auto verified = verifier.verify(cfg_t, ret.first);
+		
+		state.current = Cfg(current.value().code, def_in, live_out);
+		state.best_yet = Cfg(best_yet.value().code, def_in, live_out);
+		state.best_correct = Cfg(best_correct.value().code, def_in, live_out);
 
-		if (!ret.second) {
+		search.run(cfg_t, fxn, init, state);
+		const auto verified = verifier.verify(cfg_t, state.best_correct);
+
+		if (!state.success) {
 			cout << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
 		} else if (!verified) {
 			cout << "Unable to verify new rewrite..." << endl << endl;
 		} else {
 			cout << "Search terminated successfully with a verified rewrite!" << endl;
-			cfg_r = ret.first;
 			break;
 		} 
 
@@ -527,9 +538,12 @@ int main(int argc, char** argv) {
 	}
 
 	CfgTransforms tforms;
-	tforms.remove_unreachable(cfg_r);
-	tforms.remove_nop(cfg_r);
-	rewrite.value().code = cfg_r.get_code();
+	tforms.remove_unreachable(state.best_correct);
+	tforms.remove_nop(state.best_correct);
+
+	TUnit rewrite;
+	rewrite.name = target.value().name;
+	rewrite.code = state.best_correct.get_code();
 
   ofstream ofs(out.value());
   TUnitWriter()(ofs, rewrite);
