@@ -5,14 +5,12 @@
 
 #include "src/disassembler/disassembler.h"
 
-using namespace stoke;
 using namespace redi;
 using namespace std;
 
+namespace stoke {
 
-
-bool Disassembler::check_filename(string& s) {
-
+bool Disassembler::check_filename(const string& s) {
   /* Prevent shell injection */
   for(size_t i = 0; i < s.size(); ++i) {
     char c = s[i];
@@ -60,7 +58,7 @@ bool Disassembler::check_filename(string& s) {
 
 }
 
-redi::ipstream* Disassembler::run_objdump(string& filename, bool only_header) {
+redi::ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
 
   if (!check_filename(filename))
     return NULL;
@@ -145,8 +143,7 @@ Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s) {
   return lines;
 }
 
-bool Disassembler::parse_function(ipstream& ips, ParsedFunction& pf, 
-                                  map<string, uint64_t>& offsets) {
+bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map<string, uint64_t>& offsets) {
 
   if (ips.eof())
     return false;
@@ -155,13 +152,13 @@ bool Disassembler::parse_function(ipstream& ips, ParsedFunction& pf,
   getline(ips, line);
 
   // Reset any state in pf.
-  pf.code.clear();
-  pf.instruction_offsets.clear();
+  data.tunit.code.clear();
+  data.instruction_offsets.clear();
 
   // Get the name of the function
   const auto begin = line.find_first_of('<') + 1;
   const auto len = line.find_last_of('>') - begin;
-  pf.name = line.substr(begin, len);
+  data.tunit.name = line.substr(begin, len);
 
   // Iterate through all the lines and make 'em pretty
   auto lines = index_lines(ips, line);
@@ -169,7 +166,7 @@ bool Disassembler::parse_function(ipstream& ips, ParsedFunction& pf,
   
   // Build the code and offsets vector
   uint64_t starting_addr = lines[0].first;
-  pf.offset = starting_addr - offsets[".text"];
+  data.offset = starting_addr - offsets[".text"];
 
   stringstream ss;
   for (const auto l : lines) {
@@ -178,14 +175,12 @@ bool Disassembler::parse_function(ipstream& ips, ParsedFunction& pf,
       ss << ".L_" << hex << l.first << ":" << endl;
     }
     ss << l.second << endl;
-    pf.instruction_offsets.push_back(l.first - starting_addr);
+    data.instruction_offsets.push_back(l.first - starting_addr);
   }
-  ss >> pf.code;
-
+  ss >> data.tunit.code;
 
   return true;
 }
-
 
 uint64_t hex_to_int(const string& s) {
 
@@ -352,9 +347,7 @@ string Disassembler::fix_instruction(const string& line) {
 
 
 
-void Disassembler::disassemble(
-    std::string filename, std::function<void (const Disassembler::ParsedFunction&)>& callback) {
-
+void Disassembler::disassemble(const std::string& filename) {
   // Get the headers from the objdump
   ipstream* headers = run_objdump(filename, true);
 
@@ -379,12 +372,10 @@ void Disassembler::disassemble(
   }
 
   // Read the functions and invoke the callback.
-  ParsedFunction pf;
-  while(parse_function(*body, pf, section_offsets)) {
-    callback(pf);
+  FunctionCallbackData data;
+  while (parse_function(*body, data, section_offsets)) {
+    fxn_cb_(data, fxn_cb_arg_);
   }
-
-
 }
 
-
+} // namespace stoke

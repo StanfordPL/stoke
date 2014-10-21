@@ -39,7 +39,6 @@ OBJ=\
 	src/args/performance_term.o \
 	src/args/strategy.o \
 	src/args/timeout.o \
-	src/args/tunit.o \
 	\
 	src/cfg/cfg.o \
 	src/cfg/cfg_transforms.o \
@@ -63,6 +62,8 @@ OBJ=\
 	src/state/rflags.o \
 	\
 	src/stategen/stategen.o \
+	\
+	src/tunit/tunit.o \
 	\
 	src/verifier/verifier.o
 
@@ -140,10 +141,10 @@ src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-
-
 
 ##### BINARY TARGETS
 

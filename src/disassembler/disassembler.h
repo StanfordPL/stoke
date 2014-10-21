@@ -1,67 +1,67 @@
+// Copyright 2014 berkeley churchill
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#ifndef STOKE_SRC_DISASSEMBLER_DISASSEMBLER_H
+#define STOKE_SRC_DISASSEMBLER_DISASSEMBLER_H
 
 #include <map>
 #include <set>
 
-#include "src/tunit/tunit.h"
 #include "src/ext/pstreams-0.8.1/pstream.h"
+
+#include "src/disassembler/function_callback.h"
 
 namespace stoke {
 
 class Disassembler {
-
   public:
-
-    struct ParsedFunction {
-
-      /* The name of the function */
-      std::string name;
-      /* The text of the function */
-      x64asm::Code code;
-      /* The offset from the file of the function */
-      uint64_t offset;
-      /* The memory offsets, from the start of the function, of each
-         instruction (by index) */
-      std::vector<uint64_t> instruction_offsets;
-
-    };
-
     /* Constructs a fresh disassembler */
     Disassembler() {
+			set_function_callback(nullptr, nullptr);
       error_ = false;
       error_message_ = "";
     }
+
+		/** Installs a callback for when functions are parsed. */
+		Disassembler& set_function_callback(FunctionCallback cb, void* arg) {
+			fxn_cb_ = cb;
+			fxn_cb_arg_ = arg;
+			return *this;
+		}
 
     /* Reports if an error occurred in the last operation.  Whether an error
      * has occurred is cleared whenever disassemble() is called. */
     bool has_error() {
       return error_;
     }
-
     /* Returns the latest error message. */
     std::string get_error() {
       return error_message_;
     }
 
-    /* Disassembles the specified file; for each function it constructs a
-     * ParsedFunction object with the name, code, and memory offsets, and uses
-     * this to call the callback.  Be careful!  The ParsedFunction parameter is
-     * by reference, and it's guaranteed to be correct during the invocation to
-     * the call.  After the callback returns, this data can be modified.  Don't
-     * rely on it being correct later. */
-    void disassemble(std::string filename, std::function<void (const ParsedFunction&)>& callback);
+    /* Disassembles a file and invokes the function callback for each result. */
+    void disassemble(const std::string& filename);
 
   private:
-
     typedef std::vector<std::pair<uint64_t, std::string>> line_map;
     typedef std::set<uint64_t> label_set;
-
-
 
     /* Parse the section offsets from objdump's stdout. */
     void parse_section_offsets(redi::ipstream& ips, 
                                std::map<std::string, uint64_t>& section_offsets);
     /* Parse a single function from objdump's stdout */
-    bool parse_function(redi::ipstream& ips, ParsedFunction& pf,
+    bool parse_function(redi::ipstream& ips, FunctionCallbackData& data,
                         std::map<std::string, uint64_t>& section_offsets);
     /* Parse an instruction from a line */
     bool parse_instr_from_line(const std::string& line, std::string& instr);
@@ -76,21 +76,23 @@ class Disassembler {
     /* Fix the labels */
     label_set fix_label_uses(line_map& lines);
 
-
     /* Runs objdump and provides the output stream */
-    redi::ipstream* run_objdump(std::string& filename, bool only_header);
-    /* Checks if the file can be opened, etc. */
-    bool check_file(std::string&);
+    redi::ipstream* run_objdump(const std::string& filename, bool only_header);
     /* Checks if a filename is whitelisted for use.  This prevents accidental
      * shell injection. */
-    bool check_filename(std::string&);
+    bool check_filename(const std::string& filename);
 
+		/** Callback to invoke when functions are parsed. */
+	 	FunctionCallback fxn_cb_;
+		/** Argument to pass to function callback. */
+		void* fxn_cb_arg_;	
 
-    /* Tracks if an error occurred. */
+    /** Tracks if an error occurred. */
     bool error_;
     /* Tracks the last error message. */
     std::string error_message_;
-
 };
 
-}
+} // namespace stoke
+
+#endif

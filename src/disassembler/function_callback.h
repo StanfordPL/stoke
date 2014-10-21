@@ -12,25 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_TUNIT_TUNIT_H
-#define STOKE_SRC_TUNIT_TUNIT_H
+#ifndef STOKE_SRC_DISASSEMBLER_FUNCTION_CALLBACK_H
+#define STOKE_SRC_DISASSEMBLER_FUNCTION_CALLBACK_H
 
-#include <iostream>
-#include <string>
+#include "src/tunit/tunit.h"
 
-#include "src/ext/x64asm/include/x64asm.h"
+#include <vector>
 
 namespace stoke {
 
-struct TUnit {
-	/** The name of the function in this translation unit. */
-	std::string name;
-	/** The text of the function in this translation unit. */
-	x64asm::Code code;
+struct FunctionCallbackData {
+	/* The function */
+	TUnit tunit;
+	/* The offset from the file of the function */
+	uint64_t offset;
+	/* The offsets, from function start, of each instruction (by index) */
+	std::vector<uint64_t> instruction_offsets;
 };
 
-std::istream& operator>>(std::istream& is, TUnit& t);
-std::ostream& operator<<(std::ostream& os, const TUnit& t);
+/** Callback signature */
+typedef void (*FunctionCallback)(const FunctionCallbackData& data, void* arg);
 
 } // namespace stoke
 

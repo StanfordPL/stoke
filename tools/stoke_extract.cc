@@ -15,25 +15,14 @@
 #include <cctype>
 #include <cstdlib>
 
-#include <algorithm>
-#include <array>
 #include <fstream>
 #include <iostream>
-#include <set>
 #include <string>
-#include <unordered_map>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
 
 #include "src/disassembler/disassembler.h"
+#include "src/disassembler/function_callback.h"
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
-#include "src/ext/cpputil/include/io/column.h"
-#include "src/ext/cpputil/include/io/filterstream.h"
-#include "src/ext/cpputil/include/io/indent.h"
-#include "src/ext/cpputil/include/system/terminal.h"
 
 using namespace cpputil;
 using namespace stoke;
@@ -55,12 +44,10 @@ auto& out = ValueArg<string>::create("o")
 
 
 bool make_dir() {
-
   /* The permission is guarded by user's umask, which is why
      we set the mode to 0777.  We ignore the result, because mkdir will fail if
      the directory already exists.  We check for success later. */
   mkdir(out.value().c_str(), 0777);
-
 
   /* All said and done, check if the directory exists. */
   struct stat st;
@@ -72,27 +59,12 @@ bool make_dir() {
   }
 
   return S_ISDIR(st.st_mode);
-
 }
 
-
-function<void (const Disassembler::ParsedFunction&)> callback =
-  [=] (const Disassembler::ParsedFunction& pf) {
-
-    ofstream ofs(out.value() + "/" + pf.name + ".s");
-
-    ofs << "  .text" << endl;
-    ofs << "  .globl " << pf.name << endl;
-    ofs << "  .type " << pf.name << ", @function" << endl;
-    ofs << pf.name << ":" << endl;
-
-    ofs << pf.code << endl;
-
-    ofs << ".size " << pf.name << ", .-" << pf.name << endl;
-
-  };
-
-
+void callback(const FunctionCallbackData& data, void* arg) {
+	ofstream ofs(out.value() + "/" + data.tunit.name + ".s");
+	ofs << data.tunit << endl;
+}
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
@@ -103,10 +75,14 @@ int main(int argc, char** argv) {
   } 
 
   Disassembler d;
-  d.disassemble(in.value(), callback);
+	d.set_function_callback(callback, nullptr);
+  d.disassemble(in.value());
 
   if(d.has_error()) {
     cerr << "Error: " << d.get_error() << endl;
+		return 1;
   }
+
+	return 0;
 }
 
