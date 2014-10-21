@@ -579,6 +579,7 @@ MemoryData getMemoryInfo(string filename, pair<Bijection<string>,map<SS_Id, unsi
   string line, name;
   int numrows,size;
   ifstream myfile (filename);
+  /*
   if (myfile.is_open())
   {
     myfile >> numrows;
@@ -613,6 +614,7 @@ MemoryData getMemoryInfo(string filename, pair<Bijection<string>,map<SS_Id, unsi
     }    
     myfile.close();
   }
+  */
   return retval;
 }
 
@@ -1028,7 +1030,8 @@ namespace stoke{
 bool Validator::validate(const Cfg& target, const Cfg& rewrite, 
     const std::vector<CpuState>& testcases,CpuState& counter_example)
 {
-  generateAliasing(target, rewrite, testcases);
+  // The following line of code is used to write the 'aliasing' file.  We're not having it.
+  //generateAliasing(target, rewrite, testcases);
 #ifdef DEBUG_VALIDATOR
   std::cout << "Enter the dragon!" << std::endl;
 #endif
