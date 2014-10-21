@@ -6,27 +6,27 @@
   "code": [
 
     // B1
-    "pushq %r13",       //RCX, RDX, RSP, RBP, RBX, R8-9,12-13, RSI, EDI, XMM0-7
-    "movslq %edi, %r13",//RCX, RDX, RSP, RBP, RBX, R8-9,12, RSI, EDI, XMM0-7
-    "pushq %r12",       //RCX, RDX, RSP, RBP, RBX, R8-9,12-13, RSI, XMM0-7
-    "pushq %rbp",       //RCX, RDX, RSP, RBP, RBX, R8-9,13, RSI XMM0-7
-    "pushq %rbx",       //RCX, RDX, RSP, RBX, R8-9,13, RSI, XMM0-7
+    "pushq %r13",       //RAX, RCX, RDX, RSP, RBP, RBX, R8-9,12-13, RSI, EDI, XMM0-7
+    "movslq %edi, %r13",//RAX, RCX, RDX, RSP, RBP, RBX, R8-9,12, RSI, EDI, XMM0-7
+    "pushq %r12",       //RAX, RCX, RDX, RSP, RBP, RBX, R8-9,12-13, RSI, XMM0-7
+    "pushq %rbp",       //RAX, RCX, RDX, RSP, RBP, RBX, R8-9,13, RSI XMM0-7
+    "pushq %rbx",       //RAX, RCX, RDX, RSP, RBX, R8-9,13, RSI, XMM0-7
     "subq $0x8, %rsp",  //...
     "testq %r13, %r13", //...+EFLAGS
-    "je .L3",           //RCX, RDX, RSP, R8-9, R13, RSI, XMM0-7
+    "je .L3",           //RAX, RCX, RDX, RSP, R8-9, R13, RSI, XMM0-7
 
     // B2
-    "movq %rsi, %r12", //RCX, RDX, RSP, R8-9, R13, RSI, XMM0-7
-    "shlq $0x3, %r13", //RCX, RDX, RSP, R8-9, R12-13, RSI, XMM0-7
-    "xorl %ebx, %ebx", //RCX, RDX, RSP, R8-9, R12-13, RSI, XMM0-7
-    "xorl %ebp, %ebp", //RCX, RDX, RBX, RSP, R8-9, R12-13, RSI, XMM0-7
+    "movq %rsi, %r12", //RAX, RCX, RDX, RSP, R8-9, R13, RSI, XMM0-7
+    "shlq $0x3, %r13", //RAX, RCX, RDX, RSP, R8-9, R12-13, RSI, XMM0-7
+    "xorl %ebx, %ebx", //RAX, RCX, RDX, RSP, R8-9, R12-13, RSI, XMM0-7
+    "xorl %ebp, %ebp", //RAX, RCX, RDX, RBX, RSP, R8-9, R12-13, RSI, XMM0-7
 
     // B3
     ".L1:",
-    "movq (%r12,%rbx,1), %rdi",  //RBX, %RCX, RDX, RSP, EBP, R8, R9, 
+    "movq (%r12,%rbx,1), %rdi",  //RBX, %RCX, RDX, RSP, EBP, RAX, R8, R9, 
                                  //R12, R13, RSI, XMM0-7
     "addq $0x8, %rbx",           //...
-    "callq .L4",                 //EBP, RSP, R13, RBX
+    "callq .L4",                 //EBP, RSP, R13, RBX, RAX
                                  //RDI, RSI, RDX, RCX, R8, R9, XMM0-7
     "addq %rax, %rbp",           //EBP, RSP, RDX, XMM0/1, R13, RBX, RAX
     "cmpq %r13, %rbx",           //EBP, RSP, RDX, XMM0/1, R13, RBX, EFLAGS
@@ -62,7 +62,7 @@
 
     "liveness": {
       "given liveout": ["%rax", "%rdx", "%xmm0", "%xmm1"],
-      "expected livein": ["%rcx", "%rdx", "%rsp", "%rbp", "%rbx",
+      "expected livein": ["%rax", "%rcx", "%rdx", "%rsp", "%rbp", "%rbx",
                           "%r8", "%r9", "%r12", "%r13", "%rsi", "%edi",
                           "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4",
                           "%xmm5", "%xmm6", "%xmm7"]
