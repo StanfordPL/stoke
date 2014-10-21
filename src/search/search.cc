@@ -37,7 +37,7 @@ void handler(int sig, siginfo_t* siginfo, void* context) {
 namespace stoke {
 
 Search::Search(Transforms* transforms) : transforms_(transforms) {
-	set_init(Init::EMPTY, 16);
+	set_max_instrs(16);
   set_seed(0);
   set_timeout_itr(0);
 	set_timeout_sec(0);
@@ -76,27 +76,25 @@ Search& Search::set_mass(Move move, size_t mass) {
   return *this;
 }
 
-Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunction& fxn) {
+void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state) {
   // Make sure target is correct with respect to itself
   assert(fxn(target).first);
   // Make sure target and rewrite are sound to begin with
   assert(target.is_sound());
-  assert(initialize(rewrite).is_sound());
+	assert(state.current.is_sound());
+	assert(state.best_yet.is_sound());
+	assert(state.best_correct.is_sound());
 
-  // Progress callback and search variables
-  auto current = initialize(rewrite);
-  auto current_cost = fxn(current, CostFunction::max_cost - 1).second;
-  auto best_yet = current;
-  auto best_yet_cost = current_cost;
-  auto best_correct = target;
-  auto best_correct_cost = fxn(target, CostFunction::max_cost - 1).second;
-  auto success = false;
+  // Configure initial state
+	configure(init, target, fxn, state);
 
 	// Early corner case bailouts
-	if ( current_cost == 0 ) {
-		return result_type(rewrite, true);
+	if ( state.current_cost == 0 ) {
+		state.success = true;
+		return;
 	} else if ( moves_.empty() ) {
-		return result_type(target, false);
+		state.success = false;
+		return;
 	}
 
   // Statistics callback variables
@@ -104,7 +102,7 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
   const auto start = chrono::steady_clock::now();
 
 	give_up_now = false;
-	for (size_t iterations = 0; (current_cost > 0) && !give_up_now; ++iterations) {
+	for (size_t iterations = 0; (state.current_cost > 0) && !give_up_now; ++iterations) {
 		// Invoke statistics callback if we've been running for long enough
 		if ((statistics_cb_ != nullptr) && (iterations % interval_ == 0) && iterations > 0) {
 			const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
@@ -123,92 +121,114 @@ Search::result_type Search::run(const Cfg& target, const Cfg& rewrite, CostFunct
 		const auto move_type = moves_[int_(gen_)];
 		statistics[(size_t) move_type].num_proposed++;
 
-		if (!transforms_->modify(current, move_type)) {
+		if (!transforms_->modify(state.current, move_type)) {
 			continue;
 		}
 		statistics[(size_t) move_type].num_succeeded++;
 
 		const auto p = prob_(gen_);
-		const auto max = current_cost - (log(p) / beta_);
+		const auto max = state.current_cost - (log(p) / beta_);
 
-		const auto new_res = fxn(current, max + 1);
+		const auto new_res = fxn(state.current, max + 1);
 		const auto is_correct = new_res.first;
 		const auto new_cost = new_res.second;
 
 		// @todo Check that cost function hasnt' changed within an iteration
 
 		if (new_cost > max) {
-			transforms_->undo(current, move_type);
+			transforms_->undo(state.current, move_type);
 			continue;
 		}
 		statistics[(size_t) move_type].num_accepted++;
-		current_cost = new_cost;
+		state.current_cost = new_cost;
 
-		const auto new_best_yet = new_cost < best_yet_cost;
+		const auto new_best_yet = new_cost < state.best_yet_cost;
 		if (new_best_yet) {
-			best_yet = current;
-			best_yet_cost = new_cost;
+			state.best_yet = state.current;
+			state.best_yet_cost = new_cost;
 		}
-		const auto new_best_correct_yet = is_correct && ((new_cost == 0) || (new_cost < best_correct_cost));
+		const auto new_best_correct_yet = is_correct && ((new_cost == 0) || (new_cost < state.best_correct_cost));
 		if (new_best_correct_yet) {
-			success = true;
-			best_correct = current;
-			best_correct_cost = new_cost;
+			state.success = true;
+			state.best_correct = state.current;
+			state.best_correct_cost = new_cost;
 		}
 
 		if ((progress_cb_ != nullptr) && (new_best_yet || new_best_correct_yet)) {
-			progress_cb_({current, current_cost, best_yet, best_yet_cost, best_correct,
-					best_correct_cost, success}, progress_cb_arg_);
+			progress_cb_({state}, progress_cb_arg_);
 		}
 	}
-
-  return result_type(success ? best_correct : best_yet, success);
 }
 
-Cfg Search::initialize(const Cfg& rewrite) const {
-	auto ret = rewrite;
-	switch ( init_ ) {
+void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state) const {
+	switch (init) {
 		case Init::EMPTY:
-			return empty_init(rewrite);
-		case Init::SOURCE:
-			return rewrite;
+			configure_empty(target, state);
+			break;
+		case Init::TARGET:
+			configure_target(target, state);
+			break;
+		case Init::PREVIOUS:
+			// Does nothing.
+			break;
 		case Init::EXTENSION:
-			return extension_init(rewrite);
+			configure_extension(target, state);
+			break;
 
 		default:
 			assert(false);
-			return rewrite;
+			break;
 	}
+
+	state.current_cost = fxn(state.current).second;
+	state.best_yet_cost = fxn(state.best_yet).second;
+	state.best_correct_cost = fxn(state.best_correct).second;
+	state.success = false;
+
+	// Invariant 3: Best correct should be correct with respect to target
+	assert(fxn(state.best_correct).first);
+	// Invariant 4: Best yet should be less than or equal to correct cost
+	assert(state.best_yet_cost <= state.current_cost);
 }
 
-Cfg Search::empty_init(const Cfg& rewrite) const {
-	auto ret = rewrite;
-
-	ret.get_code().clear();
-	for ( size_t i = 0, ie = max_instrs_-1; i < ie; ++i ) {
-		ret.get_code().push_back({NOP});
+void Search::configure_empty(const Cfg& target, SearchState& state) const {
+	state.current = Cfg({{}}, target.def_ins(), target.live_outs());
+	for (size_t i = 0, ie = max_instrs_-1; i < ie; ++i) {
+		state.current.get_code().push_back({NOP});
 	}
-	ret.get_code().push_back({RET});
+	state.current.get_code().push_back({RET});
+	state.current.recompute();
 
-	ret.recompute();
-
-	return ret;
+	state.best_yet = state.current;
+	state.best_correct = target;
 }
 
-Cfg Search::extension_init(const Cfg& rewrite) const {
-	auto ret = rewrite;
+void Search::configure_target(const Cfg& target, SearchState& state) const {
+	state.current = target;
+	state.best_yet = target;
+	state.best_correct = target;
+}
 
-	// Add user-defined transformations here ...
+void Search::configure_extension(const Cfg& target, SearchState& state) const {
+	// Add user-defined logic here ...
 
-	// Invariant 1: ret and rewrite must agree on boundary conditions.
-	assert(ret.def_ins() == rewrite.def_ins());
-	assert(ret.live_outs() == rewrite.live_outs());
+	// Invariant 1: Search state should agree with target on boundary conditions.
+	assert(state.current.def_ins() == target.def_ins());
+	assert(state.current.live_outs() == target.live_outs());
 
-	// Invariant 2: ret must be in a valid state. This function isn't on
+	assert(state.best_yet.def_ins() == target.def_ins());
+	assert(state.best_yet.live_outs() == target.live_outs());
+
+	assert(state.best_correct.def_ins() == target.def_ins());
+	assert(state.best_correct.live_outs() == target.live_outs());
+
+	// Invariant 2: Search state must be in a valid state. This function isn't on
 	// a critical path, so this can safely be accomplished by calling
-	ret.recompute();
+	state.current.recompute();
+	state.best_yet.recompute();
+	state.best_correct.recompute();
 
-	return ret;
+	// See Search::configure for additional invariants
 }
 
 } // namespace stoke
