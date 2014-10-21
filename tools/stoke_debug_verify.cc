@@ -23,11 +23,11 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
+#include "src/args/cpu_states.h"
 #include "src/args/distance.h"
 #include "src/args/reduction.h"
 #include "src/args/reg_set.h"
 #include "src/args/strategy.h"
-#include "src/args/testcases.h"
 #include "src/args/tunit.h"
 #include "src/cfg/cfg.h"
 #include "src/cost/cost_function.h"
@@ -36,7 +36,7 @@
 #include "src/cost/reduction.h"
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
-#include "src/state/state_writer.h"
+#include "src/state/cpu_states.h"
 #include "src/verifier/strategy.h"
 #include "src/verifier/verifier.h"
 
@@ -80,10 +80,9 @@ auto& strategy = ValueArg<Strategy, StrategyReader, StrategyWriter>::create("str
     .description("Verification strategy")
     .default_val(Strategy::NONE);
 
-auto& testcases = FileArg<vector<CpuState>, TestcasesReader, TestcasesWriter>::create("testcases")
+auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
     .usage("<path/to/file>")
-    .description("Testcases for verification strategies that use testcases")
-    .default_val({CpuState()});
+    .description("Testcases for verification strategies that use testcases");
 
 auto& shuf_tc = FlagArg::create("shuffle_testcases")
 		.description("Shuffle testcase order");

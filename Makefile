@@ -40,7 +40,6 @@ OBJ=\
 	src/args/reg_set.o \
 	src/args/performance_term.o \
 	src/args/strategy.o \
-	src/args/testcases.o \
 	src/args/timeout.o \
 	src/args/tunit.o \
 	\
@@ -50,6 +49,8 @@ OBJ=\
 	\
 	src/cost/cost_function.o \
 	\
+	src/disassembler/disassembler.o \
+	\
 	src/sandbox/cpu_io.o \
 	src/sandbox/sandbox.o \
 	src/sandbox/stack_snapshot.o \
@@ -57,9 +58,11 @@ OBJ=\
 	src/search/search.o \
 	src/search/transforms.o \
 	\
+	src/state/cpu_state.o \
+	src/state/cpu_states.o \
 	src/state/memory.o \
-	src/state/state_reader.o \
-	src/state/state_writer.o \
+	src/state/regs.o \
+	src/state/rflags.o \
 	\
 	src/stategen/stategen.o \
 	\
@@ -136,6 +139,8 @@ src/args/%.o: src/args/%.cc src/args/%.h
 src/cfg/%.o: src/cfg/%.cc src/cfg/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/cost/%.o: src/cost/%.cc src/cost/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/disassembler/%.o: src/disassembler/%.cc src/disassembler/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@

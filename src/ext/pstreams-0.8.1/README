@@ -1,0 +1,233 @@
+PStreams README file
+====================
+
+Contents
+========
+Introduction
+Release notes for recent versions
+The PStream Buffer class
+Signalling and Termination
+The Good, the Bad and the Ugly
+
+
+Introduction
+============
+
+This is the README file for PStreams, a C++ utility for simple IOStream-based
+Inter-Process Communication. PStreams is a tool. Not the most efficient or
+flexible method of IPC, but fairly simple and IOStream-based, with all the
+advantages that provides. I hope you find it useful.
+
+PStreams is free software, see the file COPYING.LIB for copying permission.
+The latest version can be found at http://pstreams.sourceforge.net/ and
+frequently asked questions at http://pstreams.sourceforge.net/faq.html
+The author can be contacted at pstreams@kayari.org
+
+To use the PStreams classes copy the required header files to somewhere
+your compiler can find them and #include them. The headers are commented
+so that API documentation to be generated using Doxygen
+(http://www.doxygen.org/)
+
+This file contains some notes on PStreams, but is quite incomplete. There may
+be some notes here that aren't covered in the API documentation, but see
+those docs for most questions about usage (or at least, how things _should_
+work).
+
+PStreams has mostly been tested with gcc so far, if you have problems (or
+better still - solutions) with PStreams and other compilers please let
+me know.
+
+To use PStreams with the alpha cxx compiler you must not use strict_ansi
+mode and define __USE_STD_IOSTREAM to use the standard IOStream classes.
+
+To run the test program compile and run test_pstreams.cc
+This can be done with "make test_pstreams" if you have GNU or BSD make.
+The Makefile doesn't work with Solaris make, and probably other versions
+of make.
+
+
+Release notes for PStreams 0.8.1
+================================
+
+The change in version 0.8.0 that caused the child process to be put in
+a new process group could prevent the child from exiting when the parent
+process was killed by a signal. In version 0.8.1 it is still possible to
+create a new process group for the child, but that must be explicitly
+requested by setting the pstreams::newpg flag in the pmode argument
+used to create the new process.
+
+Release notes for PStreams 0.8.0
+================================
+
+The child process will now switch to a new process group, with the
+process group ID the same as the PID.  The basic_pstreambuf::killpg()
+member function has been added to send a signal to the child's process
+group.
+
+New constructors to simplify the common case where the string specifying
+the file to be executed is the same as the first element of the argv_type
+vector.
+
+Fixes for compatibility with Clang++ and _FORTIFY_SOURCE.
+
+Release notes for PStreams 0.7.0
+================================
+
+When opening a pstream for reading with mode pstderr, the pstdout mode is
+no longer added, and the initial read source will be set the the child
+process' stdout stream.
+
+The RPM spec file from the Fedora pstreams-devel package is now included.
+
+Release notes for PStreams 0.6.0
+================================
+
+The Library's licence has changed to LGPL version 3.
+
+If the read buffer is empty pstreambuf::in_avail() now performs a
+non-blocking read to fetch only as many characters as are available.
+This means that istream::readsome() won't block and can be used to test
+if characters are available on the child process' stdout or stderr pipes
+without blocking.
+
+Release notes for PStreams 0.5.2
+================================
+
+Support for streambuf::in_avail() added for platforms that support the
+FIONREAD ioctl request (known to work on Linux, FreeBSD and Solaris.)
+
+It is now possible to detect when the shell command failed to execute,
+as long as you open the pstream using the functions taking argv_type. If
+the command is not found or cannot be executed then pstreambuf::is_open()
+will return false.  This makes it possible to distinguish the cases where
+the command cannot be run and when it runs but exits with an error.
+
+
+Release notes for PStreams 0.5.0
+================================
+
+Version numbering changed to the GNU-style major.minor.patchlevel scheme.
+The PSTREAMS_VERSION macro has jumped to 0x0050, 1.0.0 will still be 0x0100.
+The current release would have been 0.50 with the old scheme.
+
+Because all names ending in _t are reserved by POSIX, the pstreambuf::fd_t
+typedef has been renamed to fd_type. The fd_t name is still available, but
+is deprecated and will be removed soon. If you've used that type in your
+code please change it to fd_type (which is a better name anyway).  There
+is also a new argv_type typedef for std::vector<std::string>, the type
+used to hold the argument list for a command. Thanks to Tommi Maekitalo
+for the argv_type suggestion.
+
+Added a FAQ, which is very incomplete.
+
+Thanks to Jez Bromley, Brett Williams, Danny Aizer and everyone else who
+has helped.
+
+The pstreambuf class will soon be split into separate process control and
+stream buffer classes, thanks to Angus Leeming.
+Possible Win32 version coming as well, thanks to Francis Andre.
+
+
+Release notes for PStreams 0.49
+===============================
+
+Seek operations on the streams are not supported. Trying to seek on a
+PStream object will cause std::ios_base::failbit to be set, requiring
+a call to std::basic_ios::clear() to clear the stream state and allow
+further I/O to take place. This behaviour is analogous to calling
+std::fseek() on a pipe, which always fails and sets errno to ESPIPE
+("Illegal seek").
+
+Fixed memory and file descriptor leaks that occurred if wait() reported
+the process had exited without close() having been called. Writing to
+process that has already exited no longer raises SIGPIPE.
+
+Fixed a serious bug where switching between reading stdout and stderr
+didn't update the streambuf's read position to point into the correct
+buffer.
+
+Jez Bromley has found that the eviscerated PStreams can not be used with
+the alpha's native cxx compiler in strict_ansi mode. To workaround this
+don't use strict_ansi and define __USE_STD_IOSTREAM to get the standard
+IOStream classes.
+
+
+Release notes for PStreams 0.48
+===============================
+
+This release includes changes to allow PStreams to be used with G++ 3.4,
+which is far more standards compliant that previous releases and caught
+several bugs in the code. Let me know if you have any problems.
+
+I've removed the rpstream.h header and moved the definition of the
+redi::rpstream class into pstream.h. This is now the only file needed.
+Please ensure you remove any copies of rpstream.h from your system if
+you're using this release.
+
+Fixed a 64-bit bug where int was compared to a pointer.
+
+The redi::peof IO manipulator now uses dynamic_cast not static_cast.
+This is safer, but if you don't want to use dynamic_cast you'll have to
+change it back to using static_cast.
+
+Use POSIX's ::_exit() instead of std::exit() to terminate child if exec()
+fails. This will prevent static destructors being run in the child process
+(which could try to destroy resources twice).
+
+I've also changed the macro that guards the pstream.h header from being
+included multiple times, by appending "_SEEN" to the names. If this
+causes any problems make sure you dont have any old versions of pstream.h
+on your system.
+
+This release has been long overdue and it shouldn't be as long before the
+next one. I have some good suggestions to incorporate.
+
+Thanks to everyone who suggested fixes and improvements, or just got
+in touch to say they were using the code.
+
+Jon Wakely
+
+
+The PStream Buffer class
+============================
+The pstreambuf used by the PStreams classes buffers all reads and writes
+as of version 0.42 (released 2002-12-03).
+
+
+Signalling and Termination
+==========================
+The pstreambuf class now provides a kill(int) member function which is
+similar to the C library call and allows signals to be sent to the child.
+The stream buffer class also provides an exited() member which will return
+true if the child process has terminated, and a status() member which returns
+the exit status of the child. This exit status can be evaluated using
+the WIFEXITED() and related macros as with the C library function waitpid().
+
+
+The Good, the Bad and the Ugly
+==============================
+PStreams is intended to be a clean design based on the standard IOStreams,
+but first and foremost it's a handy little tool, and so should be as useful
+as possible. Because it is not always possible to redesign a program to use
+IOStreams instead of C-style I/O it is possible to expose some internal
+details of the PStreams classes. If the macro REDI_EVISCERATE_PSTREAMS has
+a non-zero value then the following public method is added to each stream
+class:
+
+pmode fopen(FILE*& in, FILE*& out, FILE*& err);
+
+    Obtains FILE pointers relating to each open pipe to the process and
+    assigns them to the corresponding FILE* parameters.
+
+These functions should be used with caution because mixing C++ and C I/O
+on the same stream may cause problems. The caller should be aware of the
+issues involved in using the stream buffer's FILE pointer (see your system's
+docs for the fdopen() function that is used by the pstreambuf).
+The fdopen() call to obtain a FILE* sets errno to ESPIPE because fdopen()
+tries to lseek() on the stream, which is not supported on pipes. This error
+is expected and does not cause a problem, so errno is set to zero before
+returning from pstreambuf::fopen().
+
+
+$Id: README,v 1.21 2010/05/12 13:33:54 redi Exp $
+:vim: set tw=78
