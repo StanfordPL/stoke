@@ -741,7 +741,6 @@ void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
  * differently. */
 void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2)
 {
-  cout << "Running unpcklpd" << endl;
   VC& vc = d.vc;
 
   /* Force bits 0..63 of destination to match bits 0..63 of source1. */
@@ -756,8 +755,6 @@ void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_de
   if (three_args || bitWidth != 128) {
     VALIDATOR_ERROR("Berkeley only knows how to handle unpcklpd with two arguments and bit width 128.");
   }
-
-  cout << "Adding: " << all_bits << endl;
 
   d.constraints.push_back(all_bits);
 

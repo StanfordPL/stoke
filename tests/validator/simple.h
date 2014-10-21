@@ -112,7 +112,7 @@ TEST(Validator, SimpleCounterexample) {
 
   EXPECT_FALSE(v.validate(cfg_t, cfg_r, tcs, ceg));
 
-  EXPECT_EQ(0xc0decafe, ceg.gp[1].get_fixed_quad(0));
+  EXPECT_EQ(0xc0decafe, 0xffffffff & ceg.gp[1].get_fixed_quad(0));
 
 }
 
