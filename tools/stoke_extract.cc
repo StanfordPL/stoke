@@ -23,6 +23,10 @@
 #include <string>
 #include <unordered_map>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "src/disassembler/disassembler.h"
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
@@ -51,9 +55,24 @@ auto& out = ValueArg<string>::create("o")
 
 
 bool make_dir() {
-  /* The permission is guarded by user's umask */
-  int result = mkdir(out.value().c_str(), 0777);
-  return result == 0;
+
+  /* The permission is guarded by user's umask, which is why
+     we set the mode to 0777.  We ignore the result, because mkdir will fail if
+     the directory already exists.  We check for success later. */
+  mkdir(out.value().c_str(), 0777);
+
+
+  /* All said and done, check if the directory exists. */
+  struct stat st;
+  int result = stat(out.value().c_str(), &st);
+
+  if (result) {
+    // We couldn't even stat the file/directory.
+    return false;
+  }
+
+  return S_ISDIR(st.st_mode);
+
 }
 
 
@@ -73,33 +92,6 @@ function<void (const Disassembler::ParsedFunction&)> callback =
 
   };
 
-/*
-void emit(const string& fxn, const line_map& lines, const label_set& labels) {
-  ofilterstream<Column> col(ofs);
-  col.filter().padding(2);
-
-  for (const auto& l : lines) {
-    const auto itr = labels.find(l.first);
-    if (itr != labels.end()) {
-      col << ".L_" << l.first << ":" << endl;
-    }
-    col << "  " << l.second << endl;
-  }
-	col.filter().next();
-
-	size_t line = 1;
-  for (const auto& l : lines) {
-    if (labels.find(l.first) != labels.end()) {
-			col << endl;
-		}
-		col << "# " << line++ << endl;
-	}
-	col.filter().done();
-
-	ofs << endl;
-  ofs << ".size " << fxn << ", .-" << fxn << endl;
-}
-*/
 
 
 int main(int argc, char** argv) {
