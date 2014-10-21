@@ -66,7 +66,7 @@ bool make_dir() {
   struct stat st;
   int result = stat(out.value().c_str(), &st);
 
-  if (!result) {
+  if (result) {
     // We couldn't even stat the file/directory.
     return false;
   }
