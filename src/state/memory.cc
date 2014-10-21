@@ -79,6 +79,12 @@ istream& Memory::read_bin(istream& is) {
 	size_t content_size = 0;
 	is.read((char*)&content_size, sizeof(size_t));
 
+	// Fail for memories that are larger than 1KB
+	if (content_size > 1024) {
+		is.setstate(ios::failbit);
+		return is;
+	}
+
 	contents_.resize_for_fixed_bytes(content_size);
 	is.read((char*)contents_.data(), content_size);
 
@@ -152,6 +158,12 @@ void Memory::read_text_summary(istream& is) {
 
   is.get();
   is.get();
+
+	// Fail for memories that are larger than 1KB
+	if (upper - lower > 1024) {
+		is.setstate(ios::failbit);
+		return;
+	}
 
   resize(lower, upper - lower);
 }
