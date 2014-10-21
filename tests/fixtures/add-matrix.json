@@ -5,19 +5,19 @@
   "code": [ 
     
     //BB1
-    "pushq  %r14",           //RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14 XMM0-7
-    "movl   %edi, %r14d",    //RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 XMM0-7
-    "pushq  %r13",           //RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14D XMM0-7
-    "movq   %rcx, %r13",     //RDX RCX RBX EDI RSI RSP RBP R8-9,12 R14D XMM0-7
-    "pushq  %r12",           //RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14D XMM0-7
-    "movq   %rsi, %r12",     //RDX RCX RBX EDI RSI RSP RBP R8-9,13 R14D XMM0-7
-    "pushq  %rbp",           //RDX RCX RBX EDI RSP RBP R8-9,12-13 R14D XMM0-7
-    "pushq  %rbx",           //RDX RCX RBX EDI RSI R8-9,12-13 R14D XMM0-7
-    "movslq %edi, %rbx",     //RDX RCX EDI RSI R8-9,12-13 R14D XMM0-7
-    "movq   %rbx, %rdi",     //RDX RCX RBX RSI R8-9,12-13 R14D XMM0-7
+    "pushq  %r14",           //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14 XMM0-7
+    "movl   %edi, %r14d",    //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 XMM0-7
+    "pushq  %r13",           //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14D XMM0-7
+    "movq   %rcx, %r13",     //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12 R14D XMM0-7
+    "pushq  %r12",           //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14D XMM0-7
+    "movq   %rsi, %r12",     //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,13 R14D XMM0-7
+    "pushq  %rbp",           //RAX RDX RCX RBX EDI RSP RBP R8-9,12-13 R14D XMM0-7
+    "pushq  %rbx",           //RAX RDX RCX RBX EDI RSI R8-9,12-13 R14D XMM0-7
+    "movslq %edi, %rbx",     //RAX RDX RCX EDI RSI R8-9,12-13 R14D XMM0-7
+    "movq   %rbx, %rdi",     //RAX RDX RCX RBX RSI R8-9,12-13 R14D XMM0-7
     "imulq  %rbx, %rdi",     //..
     "shlq   $0x3, %rdi",     //..
-    "callq  .L4",//(malloc)  //RDX RCX RBX RDI RSI R8-9,12-13 R14D XMM0-7
+    "callq  .L4",//(malloc)  //RAX RDX RCX RBX RDI RSI R8-9,12-13 R14D XMM0-7
     "testq  %rbx, %rbx",     //RAX RBX R12-13 R14D RBX XMM01 | R9
     "movq   %rax, %rdx",     //RAX R12-13 R14D RBX XMM01 EFLAGS | R9
     "je     .L3",            //RDX R12-13 R14D RBX XMM01 EFLAGS | R9
@@ -64,7 +64,7 @@
   "tests": {
     "liveness": {
       "given liveout": ["%rax", "%rdx", "%xmm0", "%xmm1"],
-      "expected livein": ["%rdx", "%rcx", "%rbx", "%edi", "%rsi", "%rbp",
+      "expected livein": ["%rax", "%rdx", "%rcx", "%rbx", "%edi", "%rsi", "%rbp",
                           "%rsp", "%r8", "%r9", "%r12", "%r13", "%r14",
                           "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4",
                           "%xmm5", "%xmm6", "%xmm7"]
