@@ -117,7 +117,7 @@ auto& compress = FlagArg::create("compress")
 auto& decompress = FlagArg::create("decompress")
 		.description("Convert testcase file from binary to text");
 
-auto& in = ValueArg<string>::create("input")
+auto& in = ValueArg<string>::create("in")
 		.alternate("i")
 		.usage("<path/to/file>")
 		.description("Path to testcases file")
