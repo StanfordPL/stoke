@@ -1890,6 +1890,8 @@ lookup_handler "maxps" _ _  = "maxpsHandler(d, E1,E0,E2);"
 lookup_handler "shufps" _ _  = "shufpsHandler(d, imm, E1,E0,E2, E3);"
 lookup_handler "pshufd" _ _  = "pshufdHandler(d, imm, E0,E1,E2);"
 lookup_handler "punpckldq" _ _  = "punpckldqHandler(d, E1,E0,E2);"
+lookup_handler "unpcklpd" 2 _ = "unpcklpdHandler(d, bitWidth, false, E1, E0, E2);"
+lookup_handler "unpcklpd" 3 _ = "unpcklpdHandler(d, bitWidth, true, E1, E0, E2);"
 
  --"divb","divw","divl","divq"
  --"salw"

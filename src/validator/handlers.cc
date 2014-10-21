@@ -732,6 +732,38 @@ void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
 	d.constraints.push_back(retval);
   
 }
+
+/* The src1 and src2 are the same as the src1 and src2 in the "Operation"
+ * section of the Intel manual.  In the case of two arguments, src1 is the same
+ * as dest.  We need the bitWidth to disambiguate between the different
+ * operations and the three_args argument to tell us if there are three
+ * arguments or two.  The three argument version is VEX prefixed and behaves
+ * differently. */
+void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2)
+{
+  cout << "Running unpcklpd" << endl;
+  VC& vc = d.vc;
+
+  /* Force bits 0..63 of destination to match bits 0..63 of source1. */
+  Expr lower_bits = EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_src1, 63, 0));
+
+  /* Force bits 64..127 of destination to match bits 0..63 of source2. */
+  Expr upper_bits = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src2, 63, 0));
+
+  /* Ensure both of the above constraints are enforced */
+  Expr all_bits  = vc_andExpr(vc, lower_bits, upper_bits);
+
+  if (three_args || bitWidth != 128) {
+    VALIDATOR_ERROR("Berkeley only knows how to handle unpcklpd with two arguments and bit width 128.");
+  }
+
+  cout << "Adding: " << all_bits << endl;
+
+  d.constraints.push_back(all_bits);
+
+}
+
+
 void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm)
 {
   if (imm != 0)

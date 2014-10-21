@@ -107,6 +107,7 @@ void movddupHandler(v_data d, Expr E_dest, Expr E_src);
 void movhHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg);
 void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm);
 void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
+void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2);
 void umul1Handler(v_data d, unsigned int bitWidth, Expr E_src2);
 void negHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool dest_is_reg);
 void notHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool dest_is_reg);
