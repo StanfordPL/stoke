@@ -26,7 +26,6 @@ using namespace z3;
 using namespace std;
 using namespace stoke;
 
-std::pair<stoke::Bijection<std::string>,std::map<SS_Id, unsigned int> > all_state_info;
 
 Meminfo MemoryData::deref(uint line_no, bool is_target) const
 {
@@ -57,40 +56,6 @@ std::string MemoryData::name_deref(uint line_no, bool is_target) const
   return retval;
 }
 
-void demorgan() {
-
-#ifdef DEBUG_VALIDATOR
-    std::cout << "de-Morgan example\n";
-#endif
-    context* c = new context();
-
-    expr x = c->bool_const("x");
-
-    expr y = c->bool_const("y");
-
-    expr conjecture = !(x && y) == (!x || !y);
-
-
-    solver s(*c);
-
-    // adding the negation of the conjecture as a constraint.
-
-    s.add(!conjecture);
-
-#ifdef DEBUG_VALIDATOR
-    std::cout << s << "\n";
-#endif
-
-    switch (s.check()) {
-
-    case unsat:   std::cout << "de-Morgan is valid\n"; break;
-
-    case sat:     std::cout << "de-Morgan is not valid\n"; break;
-
-    case unknown: std::cout << "unknown\n"; break;
-
-    }
-}
 
 uint64_t parentRegister(uint64_t t){return t;}
 
@@ -112,6 +77,7 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
 	map<SS_Id, unsigned int>::iterator iter;
 	Bijection<string> bij = state_info.first;
 	map<SS_Id, unsigned int> sizes = state_info.second;
+
 	//Print initial values of registers, final values of registers by code 1, final values of registers by code 2
 	for(iter = sizes.begin(); iter != sizes.end(); iter++)
 	{
@@ -119,9 +85,8 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
 			continue;
 		regname = bij.toVal(iter->first);
 #ifdef DEBUG_VALIDATOR
-		cout << regname <<":" << endl;
+		cout << regname << ":" << endl;
 #endif
-		//ofs << regname <<" " ;
 		Expr REG1INIT = vc_bvExtract(vc,regExpr(vc, (regname+"_1_0"),iter->second*V_UNITSIZE),31,0);
 		Expr REG2INIT = vc_bvExtract(vc,regExpr(vc, (regname+"_2_0"),iter->second*V_UNITSIZE),31,0);
 		Expr REG1FINAL = vc_bvExtract(vc,regExpr(vc, (regname+"_1_Final"),iter->second*V_UNITSIZE),31,0);
@@ -137,10 +102,8 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
     cout << "\t"; vc_printExpr(vc, val2); 
     cout << endl << endl;
 #endif
-//		ofs << wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG1FINAL, false))) << " " << wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG2FINAL, false))) << endl;
-		//Expr regval = to_expr(*vc, Z3_mk_bv2int(*vc, val, false));
-		//cout << "\n\t" << regval << "\n";    	
 	}
+
 	for(iter = sizes.begin(); iter != sizes.end(); iter++)
 	{
 		if(iter->second != V_REGSIZE )
@@ -567,456 +530,32 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 
 }
 
-MemoryData getMemoryInfo(string filename, pair<Bijection<string>,map<SS_Id, unsigned int> >& state_info)
+
+       
+
+vector<Expr> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2, vector<Expr>& constraints)
 {
-  MemoryData retval;
-  string line, name;
-  int numrows,size;
-  ifstream myfile (filename);
-  /*
-  if (myfile.is_open())
-  {
-    myfile >> numrows;
+	MemoryData mem;
 
-    for(int i=0;i<numrows;i++)
-    {
-      myfile >> name >> size;
-#ifdef DEBUG_VALIDATOR
-      cout << "Read " << name << " " << size << endl;
-#endif
-      state_info.second[state_info.first.insert(name,MEM_BEG+i)]=size;      
-    }
-    myfile >> name >> numrows;
-    for(int i=0;i<numrows;i++)
-    {
-      int line_no;
-      string locname;
-      int beg;
-      int end;
-      myfile >> line_no >> locname >> beg >> end;
-      retval.insert(true,line_no,locname,beg,end,state_info.second[state_info.first.valToId(locname)]);
-    }
-    myfile >> name >> numrows;
-    for(int i=0;i<numrows;i++)
-    {
-      int line_no;
-      string locname;
-      int beg;
-      int end;
-      myfile >> line_no >> locname >> beg >> end;
-      retval.insert(false,line_no,locname,beg,end,state_info.second[state_info.first.valToId(locname)]);
-    }    
-    myfile.close();
-  }
-  */
-  return retval;
-}
-
-enum axiom_enum {
-  add_float_zero_right, //0
-  add_float_zero_left, //1
-  add_float_comm, //2
-  add_float_assoc, //3
-  add_double_zero_right, //4 
-  add_double_zero_left, //5
-  add_double_comm, //6
-  add_double_assoc, //7
-  mul_float_zero_right, //8 
-  mul_float_zero_left, //9
-  mul_float_one_right, //10
-  mul_float_one_left, //11
-  mul_float_comm, //12
-  mul_float_assoc, //13
-  mul_double_zero_right, //14 
-  mul_double_zero_left, //15
-  mul_double_one_right, //16
-  mul_double_one_left, //17
-  mul_double_comm, //18
-  mul_double_assoc,  //19
-  double_mul_dist_add,   //20
-  sub_strange,          //21
-  addf_strange,          //22
-};
-
-void addAxiom(context& ctx, vector<Expr>& constraints, axiom_enum idx )
-{
-      
-Z3_sort D = ctx.bv_sort(32);
- Z3_sort Q = ctx.bv_sort(64);
-    
-
-    Z3_symbol mulf_name;
-    Z3_sort mulf_domain[2];
-    Z3_func_decl mulf;
-        
-    mulf_name      = Z3_mk_string_symbol(ctx, "mulf");
-    mulf_domain[0] = D;
-    mulf_domain[1] = D;
-    mulf= Z3_mk_func_decl(ctx, mulf_name, 2, mulf_domain, D);
-    
-    Z3_symbol muld_name;
-    Z3_sort muld_domain[2];
-    Z3_func_decl muld;
-        
-    muld_name      = Z3_mk_string_symbol(ctx, "muld");
-    muld_domain[0] = Q;
-    muld_domain[1] = Q;
-    muld= Z3_mk_func_decl(ctx, muld_name, 2, muld_domain, Q);
-    
-    Z3_symbol addf_name;
-    Z3_sort addf_domain[2];
-    Z3_func_decl addf;
-        
-    addf_name      = Z3_mk_string_symbol(ctx, "addf");
-    addf_domain[0] = D;
-    addf_domain[1] = D;
-    addf= Z3_mk_func_decl(ctx, addf_name, 2, addf_domain, D);
-    
-    Z3_symbol addd_name;
-    Z3_sort addd_domain[2];
-    Z3_func_decl addd;
-        
-    addd_name      = Z3_mk_string_symbol(ctx, "addd");
-    addd_domain[0] = Q;
-    addd_domain[1] = Q;
-    addd= Z3_mk_func_decl(ctx, addd_name, 2, addd_domain, Q);
-    
-    Z3_symbol subd_name;
-    Z3_sort subd_domain[2];
-    Z3_func_decl subd;
-        
-    subd_name      = Z3_mk_string_symbol(ctx, "subd");
-    subd_domain[0] = Q;
-    subd_domain[1] = Q;
-    subd= Z3_mk_func_decl(ctx, subd_name, 2, subd_domain, Q);
-    
-    Z3_sort t;
-    Z3_symbol f_name,g_name,  t_name;
-    Z3_ast q;
-    f_name = Z3_mk_string_symbol(ctx, "f");    
-    g_name = Z3_mk_string_symbol(ctx, "g");   
-    Z3_symbol fun_name_arr[2] = {f_name, g_name}; 
-    Z3_func_decl fun_muld_addd_arr[2] = {muld, addd};
-    t_name = Z3_mk_string_symbol(ctx, "T");
-
-    Z3_func_decl fun_muld_subd_arr[2] = {muld, subd};
-
-
-    switch(idx)
-    {
-      case   add_float_zero_right:
-	    {
-
-    t = Z3_get_range(ctx, addf);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f x bv0[32])  x)))",
-                           1, &t_name, &t,
-                           1, &f_name, &addf);
-    }
-	break;
-      case   add_float_zero_left:
-	    {
- 
-    t = Z3_get_range(ctx, addf);
-       
-
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f  bv0[32] x)  x)))",
-                           1, &t_name, &t,
-                           1, &f_name, &addf);
-    }
-	break;
-      case   add_float_comm:
-	    {
-    t = Z3_get_range(ctx, addf);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T) (y T) (= (f x y) (f y x))))",
-                           1, &t_name, &t,
-                           1, &f_name, &addf);
-    }
-	break;
-    case   add_float_assoc:
-	    {
-    t = Z3_get_range(ctx, addf);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T) (y T) (z T) (= (f (f x y) z) (f x (f y z)))))",
-                           1, &t_name, &t,
-                           1, &f_name, &addf);
-    }
-	break;
-	      case   mul_float_zero_right:
-	    {
-
-    t = Z3_get_range(ctx, mulf);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f x bv0[32])  bv0[32])))",
-                           1, &t_name, &t,
-                           1, &f_name, &mulf);
-    }
-	break;
-      case   mul_float_zero_left:
-	    {
- 
-    t = Z3_get_range(ctx, mulf);
-       
-
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f  bv0[32] x)  bv0[32])))",
-                           1, &t_name, &t,
-                           1, &f_name, &mulf);
-    }
-    break;
-	      case   mul_float_one_right:
-	    {
-
-    t = Z3_get_range(ctx, mulf);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f x bv1[32])  x)))",
-                           1, &t_name, &t,
-                           1, &f_name, &mulf);
-    }
-	break;
-      case   mul_float_one_left:
-	    {
- 
-    t = Z3_get_range(ctx, mulf);
-       
-
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f  bv1[32] x)  x)))",
-                           1, &t_name, &t,
-                           1, &f_name, &mulf);
-    }
-	break;
-      case   mul_float_comm:
-	    {
-    t = Z3_get_range(ctx, mulf);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T) (y T) (= (f x y) (f y x))))",
-                           1, &t_name, &t,
-                           1, &f_name, &mulf);
-    }
-	break;
-    case   mul_float_assoc:
-	    {
-    t = Z3_get_range(ctx, mulf);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T) (y T) (z T) (= (f (f x y) z) (f x (f y z)))))",
-                           1, &t_name, &t,
-                           1, &f_name, &mulf);
-    }
-	break;
-	      case   add_double_zero_right:
-	    {
-
-    t = Z3_get_range(ctx, addd);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f x bv0[64])  x)))",
-                           1, &t_name, &t,
-                           1, &f_name, &addd);
-    }
-	break;
-      case   add_double_zero_left:
-	    {
- 
-    t = Z3_get_range(ctx, addd);
-       
-
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f  bv0[64] x)  x)))",
-                           1, &t_name, &t,
-                           1, &f_name, &addd);
-    }
-	break;
-      case   add_double_comm:
-	    {
-    t = Z3_get_range(ctx, addd);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T) (y T) (= (f x y) (f y x))))",
-                           1, &t_name, &t,
-                           1, &f_name, &addd);
-    }
-	break;
-    case   add_double_assoc:
-	    {
-    t = Z3_get_range(ctx, addd);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T) (y T) (z T) (= (f (f x y) z) (f x (f y z)))))",
-                           1, &t_name, &t,
-                           1, &f_name, &addd);
-    }
-	break;
-	      case   mul_double_zero_right:
-	    {
-
-    t = Z3_get_range(ctx, muld);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f x bv0[64])  bv0[64])))",
-                           1, &t_name, &t,
-                           1, &f_name, &muld);
-    }
-	break;
-      case   mul_double_zero_left:
-	    {
- 
-    t = Z3_get_range(ctx, muld);
-       
-
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f  bv0[64] x)  bv0[64])))",
-                           1, &t_name, &t,
-                           1, &f_name, &muld);
-    }
-    break;
-	      case   mul_double_one_right:
-	    {
-
-    t = Z3_get_range(ctx, muld);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f x bv1[64])  x)))",
-                           1, &t_name, &t,
-                           1, &f_name, &muld);
-    }
-	break;
-      case   mul_double_one_left:
-	    {
- 
-    t = Z3_get_range(ctx, muld);
-       
-
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T)  (= (f  bv1[64] x)  x)))",
-                           1, &t_name, &t,
-                           1, &f_name, &muld);
-    }
-	break;
-      case   mul_double_comm:
-	    {
-    t = Z3_get_range(ctx, muld);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T) (y T) (= (f x y) (f y x))))",
-                           1, &t_name, &t,
-                           1, &f_name, &muld);
-    }
-	break;
-    case   mul_double_assoc:
-	    {
-    t = Z3_get_range(ctx, muld);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T) (y T) (z T) (= (f (f x y) z) (f x (f y z)))))",
-                           1, &t_name, &t,
-                           1, &f_name, &muld);
-    }
-	break;
-  case   double_mul_dist_add:
-    {
-    t = Z3_get_range(ctx, muld);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T) (y T) (z T) (= (f (g x y) z) (g (f x z) (f y z)))))",
-                           1, &t_name, &t,
-                           2, fun_name_arr, fun_muld_addd_arr);
-    }
-	break;
-  case   sub_strange:
-    {
-    t = Z3_get_range(ctx, subd);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (x T) (= (f (g bv0[64] x) (g bv0[64] x)) (f x x))  ))",
-                           1, &t_name, &t,
-                           2, fun_name_arr, fun_muld_subd_arr);
-    }
-    break;
-          case   addf_strange:
-	    {
-
-    t = Z3_get_range(ctx, addf);
-    Z3_parse_smtlib_string(ctx, 
-                           "(benchmark comm :formula (forall (a T) (b T) (c T) (d T) (e T) (f1 T) (g T) (h T) (i T)  (= (f i (f (f (f (f (f (f (f a b) c) d) e) f1) g) h))  (f i (f (f (f b f1) (f d h)) (f (f a e) (f c g)))))))",
-                           1, &t_name, &t,
-                           1, &f_name, &addf);
-    }
-	break;
-  default:
-    throw VALIDATOR_ERROR("Unrecognized axiom.");
-  }
-    ctx.check_error();
-        q = Z3_get_smtlib_formula(ctx, 0);
-    printf("assert axiom:\n%s\n", Z3_ast_to_string(ctx, q));
-    Z3_assert_cnstr(ctx, q);
-    constraints.push_back(to_expr(ctx,q));
-
-
-  
-}
-
-void addAxioms(context& ctx, vector<Expr>& constraints )
-{
-  vector<int> axioms;
-  uint numrows,axiom_idx;
-  ifstream myfile ("axioms");
-  if (myfile.is_open())
-  {
-    myfile >> numrows;
-
-    for(uint i=0;i<numrows;i++)
-    {
-      myfile >> axiom_idx;
-#ifdef DEBUG_VALIDATOR
-      cout << "Read axiom  " << axiom_idx << endl;
-#endif
-      axioms.push_back(axiom_idx);
-    }
-    myfile.close();
-  }
-  for(const uint axiom : axioms)
-  {
-#ifdef DEBUG_VALIDATOR
-    cout << " Adding axiom " << axiom << endl;
-#endif
-    addAxiom(ctx, constraints, (axiom_enum)axiom);
-#ifdef DEBUG_VALIDATOR
-    cout << " Added " << axiom << endl;
-#endif
-  }
-}
-
-
-bool EqualReadInv(const stoke::Cfg& f1, const stoke::Cfg& f2,stoke::CpuState& counter_example, bool mem_out)
-{
-	VC vc = vc_createValidityChecker();
-	vector<Expr> constraints;
-	//demorgan(vc);
-	pair<Bijection<string>,map<SS_Id, unsigned int> > state_info = InitStateMapping();
-	MemoryData mem = getMemoryInfo("aliasing", state_info);
-        all_state_info = state_info; 
 	//Get target and rewrite in my data-structure. Its a path with instructions at nodes.
 	//the size is NOT including the return
-	Ebb e1 = toEbb(vc, f1, 10/*7*//*6*//*11*//*9*/, "1");
-	Ebb e2 = toEbb(vc, f2, 4/*4*//*4*//*6*//*3*/, "2");
+	Ebb e1 = toEbb(vc_, f1, 10/*7*//*6*//*11*//*9*/, "1");
+	Ebb e2 = toEbb(vc_, f2, 4/*4*//*4*//*6*//*3*/, "2");
 	
-	e1.print();
-	e2.print();
-
 	//Add start constraints for target i.e. codenum="1"
-	addStartConstraint(vc, "1", state_info, constraints);
-	addStartConstraint(vc, "2", state_info, constraints);
+	addStartConstraint(vc_, "1", state_info_, constraints);
+	addStartConstraint(vc_, "2", state_info_, constraints);
 
 	//Convert code 1 i.e. target to constraints
-	auto Vn1=C2C(vc, e1, state_info, constraints, "1", mem);
+	auto Vn1=C2C(vc_, e1, state_info_, constraints, "1", mem);
 
 	//ditto for code 2. Note we use the same mul as target.
-	
-	auto Vn2 = C2C(vc, e2, state_info, constraints, "2", mem);
+	auto Vn2 = C2C(vc_, e2, state_info_, constraints, "2", mem);
 
-	 addAxioms(*vc, constraints);
-	 addExtraConstraints(vc, constraints, "pre");
-	//Add expert constraints. If necessary.
-	//addExpertConstraints(*vc, constraints);
 	vector<Expr> query;
-	getQueryConstraint(vc, state_info, query, mem, f1.live_outs(), mem_out);
-	addExtraConstraints(vc, query, "post");
+	getQueryConstraint(vc_, state_info_, query, mem, f1.live_outs(), mem_out_);
 
-	return z3Solve(vc, constraints, query,state_info, counter_example);
+  return query;
 }
 
 
@@ -1024,11 +563,20 @@ namespace stoke{
 bool Validator::validate(const Cfg& target, const Cfg& rewrite, 
     const std::vector<CpuState>& testcases,CpuState& counter_example)
 {
-  // The following line of code is used to write the 'aliasing' file.  We're not having it.
-  //generateAliasing(target, rewrite, testcases);
 #ifdef DEBUG_VALIDATOR
   std::cout << "Enter the dragon!" << std::endl;
 #endif
-  return EqualReadInv(target, rewrite, counter_example, mem_out_);
+
+  // Setup some necessary variables.
+  vc_ = vc_createValidityChecker();
+  state_info_ = InitStateMapping();
+
+  // Generate constraints
+  vector<Expr> constraints;
+  vector<Expr> query = generate_constraints(target, rewrite, constraints);
+
+  // Run the solver
+
+	return z3Solve(vc_, constraints, query, state_info_, counter_example);
 }
 }

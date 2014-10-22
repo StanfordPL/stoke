@@ -5,22 +5,14 @@
 using namespace std;
 using namespace x64asm;
 
-namespace stoke{
 
-//Convert an integer to a string
-string itoa(int i)
-{
-	string retval;
-	ostringstream out;
-	out << i;
-	retval = out.str();
-	return retval;
-}
+std::pair< stoke::Bijection <std::string>, std::map <SS_Id, unsigned int> > all_state_info = InitStateMapping();
+
 
 //Map ids with their sizes. Registers get 64 and flags get 1.
-pair<Bijection<string>, map<SS_Id, unsigned int> > InitStateMapping()
+pair<stoke::Bijection<string>, map<SS_Id, unsigned int> > InitStateMapping()
 {
-	 Bijection<string> retbij;
+  stoke::Bijection<string> retbij;
 	 map<SS_Id, unsigned int> retsize;  
 
 	 retsize[retbij.insert("RAX",rax)] = V_REGSIZE;
@@ -69,9 +61,22 @@ pair<Bijection<string>, map<SS_Id, unsigned int> > InitStateMapping()
 	 retsize[retbij.insert("SFLAG", FLAG_BEG+4)] = V_FLAGSIZE;	 
 	 retsize[retbij.insert("ZFLAG", FLAG_BEG+5)] = V_FLAGSIZE;	 
 	 
-	 
-	 
-	 return pair<Bijection<string>, map<SS_Id, unsigned int> >(retbij, retsize);	 
+	 return pair<stoke::Bijection<string>, map<SS_Id, unsigned int> >(retbij, retsize);	 
+}
+
+
+
+
+namespace stoke{
+
+//Convert an integer to a string
+string itoa(int i)
+{
+	string retval;
+	ostringstream out;
+	out << i;
+	retval = out.str();
+	return retval;
 }
 
 

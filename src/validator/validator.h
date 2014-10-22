@@ -15,7 +15,6 @@
 
 
 uint64_t parentRegister(uint64_t);
-extern std::pair<stoke::Bijection<std::string>,std::map<SS_Id, unsigned int> > all_state_info;
 std::string idToStr(SS_Id, PAIR_INFO I=all_state_info);
 Expr regExpr(VC&, std::string, unsigned int size=V_UNITSIZE);
 Expr EqExpr(VC&, Expr, Expr);  
@@ -23,18 +22,6 @@ std::set<SS_Id> keys(std::map<SS_Id, unsigned int> dict);
 
 
   
-//void v_debug(x64asm::Code code);
-//void v_debug(x64asm::Instruction);	    
-//bool unconstrainedEqual(const stoke::Cfg& cfg1, const stoke::Cfg& cfg2, std::string& s);
-
-//void addStartConstraint(VC& vc, std::string code_num, PAIR_INFO state_info, std::vector<Expr>& constraints);
-//Expr getMemoryQuery(VC& vc, PAIR_INFO state_info, std::vector<Expr>& query, V_Memory& mem1, V_Memory& mem2);
-//void getQueryConstraint(VC& vc, PAIR_INFO state_info, std::vector<Expr>& query, V_Memory& mem1, V_Memory& mem2, const stoke::Cfg& f1, x64asm::RegSet liveout = x64asm::RegSet());
-//bool z3Solve(VC& vc, std::vector<Expr>& constraints, std::vector<Expr>& query,PAIR_INFO state_info);
-//void Lalreps(VC& vc, std::vector<Expr>& constraints, V_Memory& m1, V_Memory& m2);
-//stoke::VersionNumber C2C(VC& vc, stoke::Ebb& ebb, PAIR_INFO state_info, std::vector<Expr>& constraints, std::string code_num, V_Memory& mem, std::vector<stoke::muldata >& mul);
-//extern bool is_unit_test;
-//extern bool add_sub_reg;
 struct Meminfo
 {  
   bool _is_target_info;
@@ -108,7 +95,16 @@ class Validator {
     std::ostream& print_abduction(std::ostream& os);
 
   private:
+
+    std::vector<Expr> generate_constraints(const stoke::Cfg&, const stoke::Cfg&, std::vector<Expr>&);
+
+    /* Validity checker; needed for just about everything */
+    VC vc_;
+    /* Time to spend running z3 */
     uint64_t timeout_;
+    /* Used to keep track of register names, IDs and stuff */
+    std::pair<Bijection<std::string>,std::map<SS_Id, unsigned int> > state_info_;
+    /* Will the code write memory? */
     bool mem_out_;
 };
 

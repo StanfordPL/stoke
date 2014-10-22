@@ -26,13 +26,9 @@
 #else
 #define _CVCL_DEFAULT_ARG(v)
 #endif
-/*
-#ifdef NDEBUG
 
-#define assert(x) ( if(!(x)) { printf("Assertion Failed!  File %s, line %d.\n", __FILE__, __LINE__ ); exit(0xaa); })
 
-#endif
-*/
+
 #ifdef __cplusplus
 extern "C" {
 #endif

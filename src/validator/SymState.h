@@ -12,11 +12,6 @@
 
 typedef uint64_t SS_Id;
 
-/*
-typedef x64asm::Operand GpReg ;
-typedef x64asm::Operand SegReg ;
-typedef x64asm::M Addr ;
-*/
 
 namespace stoke{
 
@@ -88,8 +83,6 @@ class Bijection
     std::map<SS_Id, T> toVal_;
 };
 
-//string to SS_Id and SS_Id to size
-std::pair< Bijection <std::string>, std::map <SS_Id, unsigned int> > InitStateMapping();
 
 //Version numbers to handle assignments.
 class VersionNumber
@@ -183,4 +176,11 @@ std::string TextInstructionWriter(const x64asm::Instruction& instr);
 
 //result = arg1*arg2 and multiplication is an uninterpreted function
 }
+
+//string to SS_Id and SS_Id to size
+std::pair< stoke::Bijection <std::string>, std::map <SS_Id, unsigned int> > InitStateMapping();
+extern std::pair< stoke::Bijection <std::string>, std::map <SS_Id, unsigned int> > all_state_info;
+
+
+
 #endif
