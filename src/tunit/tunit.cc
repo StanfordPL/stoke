@@ -40,12 +40,15 @@ istream& operator>>(istream& is, TUnit& t) {
   for (size_t i = 0; getline(is, s); ++i) {
     lines.push_back(s);
   }
-  lines.pop_back();
   is.clear(ios::eofbit);
 
   stringstream ss;
   for (const auto& l : lines) {
-    ss << l << endl;
+    if(!l.empty()) {
+      ss << l << endl;
+    } else {
+      break;
+    }
   }
   ss >> t.code;
 
@@ -87,7 +90,7 @@ ostream& operator<<(ostream& os, const TUnit& t) {
 	}
 	col.filter().done();
 
-	os << endl;
+	os << endl << endl;
 	os << ".size " << t.name << ", .-" << t.name << endl;
 
 	return os;
