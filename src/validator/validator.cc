@@ -7,13 +7,13 @@
 #include <map>
 #include <list>
 #include <set>
-#include <string>
 #include <cassert>
 #include <tr1/unordered_set>
 #include <locale>
 #include <initializer_list>
 #include <unistd.h>
 
+#include "src/args/reg_set.h"
 #include "src/ext/z3/include/z3++.h"
 
 #include "src/validator/aliasing.h"
@@ -70,9 +70,6 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
 #ifdef DEBUG_VALIDATOR
   cout << "Printing Counterexample " << endl;
 #endif
-//	 ofstream ofs("CEX.txt");
-	//vc_printCounterExample(vc);
-	//WholeCounterExample wcex = vc_getWholeCounterExample(vc);
 	string regname;
 	map<SS_Id, unsigned int>::iterator iter;
 	Bijection<string> bij = state_info.first;
@@ -481,7 +478,6 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 	  auto op = x64asm::r64s[i];
 	  if(liveout.contains(op))
 	  {
-	        if(op==x64asm::rsp || op==x64asm::rbp) continue;
 			string elem = bij.toVal(op); 
 			Expr E_state_elem_1 = regExpr(vc, (elem + "_1_"+ V_FSTATE),V_UNITSIZE);
 			Expr E_state_elem_2 = regExpr(vc, (elem + "_2_"+ V_FSTATE),V_UNITSIZE);
@@ -509,24 +505,64 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 
 	  }
 	}
-	if(mem_out)
-	{
-	for(const auto& id : keys(sizes))
-	{
-			if(id>=MEM_BEG)
-			{
-			string elem = bij.toVal(id); 
-			int size = sizes[id]*64;
-			Expr E_state_elem_1 = regExpr(vc, (elem + "_1_"+ V_FSTATE),size);
-			Expr E_state_elem_2 = regExpr(vc, (elem + "_2_"+ V_FSTATE),size);
-			Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+
+  for(uint i = 0; i < eflags.size(); i++) {
+
+    auto op = x64asm::eflags[i];
+    if(liveout.contains(op))
+    {
+      /* Read the flag into a string */
+      stringstream tmp;
+      RegSetWriter rsw;
+      rsw(tmp, RegSet::empty() + eflags[i]);
+      string the_flag = tmp.str();
+
+      /* Extract the letter corresponding to the flag. */
+      char letter = the_flag.c_str()[3];
+      if ('a' <= letter && letter <= 'z') {
+        letter += ('A' - 'a');
+      }
+      
+      /* Check if we handle this flag */
+      if (letter != 'A' && letter != 'C' && letter != 'O' &&
+          letter != 'P' && letter != 'S' && letter != 'Z')
+        continue;
+
+      /* Build the validator's name for this flag. */
+      string elem = "_FLAG";
+      elem[0] = letter;
+   
+
+      /* Construct the constraint */
+      Expr E_state_elem_1 = vc_varExpr(vc, (elem + "_1_" + V_FSTATE).c_str(), vc_boolType(vc));
+      Expr E_state_elem_2 = vc_varExpr(vc, (elem + "_2_" + V_FSTATE).c_str(), vc_boolType(vc));
+      Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
 			cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
 #endif
 			query.push_back(E_eq_final);
-			}
-	}
-	}
+
+    }
+  }
+
+  if(mem_out)
+  {
+    for(const auto& id : keys(sizes))
+    {
+      if(id>=MEM_BEG)
+      {
+        string elem = bij.toVal(id); 
+        int size = sizes[id]*64;
+        Expr E_state_elem_1 = regExpr(vc, (elem + "_1_"+ V_FSTATE),size);
+        Expr E_state_elem_2 = regExpr(vc, (elem + "_2_"+ V_FSTATE),size);
+        Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+#ifdef DEBUG_VALIDATOR
+        cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
+#endif
+        query.push_back(E_eq_final);
+      }
+    }
+  }
 
 }
 
