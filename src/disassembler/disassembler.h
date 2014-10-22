@@ -26,6 +26,8 @@ namespace stoke {
 
 class Disassembler {
   public:
+    typedef std::function<void (const FunctionCallbackData&)> Callback;
+
     /* Constructs a fresh disassembler */
     Disassembler() {
 			set_function_callback(nullptr, nullptr);
@@ -37,6 +39,12 @@ class Disassembler {
 		Disassembler& set_function_callback(FunctionCallback cb, void* arg) {
 			fxn_cb_ = cb;
 			fxn_cb_arg_ = arg;
+			return *this;
+		}
+
+		/** Installs a callback for when functions are parsed. */
+		Disassembler& set_function_callback(Callback* cc) {
+      callback_closure_ = cc;
 			return *this;
 		}
 
@@ -86,6 +94,8 @@ class Disassembler {
 	 	FunctionCallback fxn_cb_;
 		/** Argument to pass to function callback. */
 		void* fxn_cb_arg_;	
+    /** Closure-alternative to callback */
+    Callback* callback_closure_ = NULL;
 
     /** Tracks if an error occurred. */
     bool error_;

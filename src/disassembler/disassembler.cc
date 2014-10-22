@@ -58,7 +58,7 @@ bool Disassembler::check_filename(const string& s) {
 
 }
 
-redi::ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
+ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
 
   if (!check_filename(filename))
     return NULL;
@@ -70,7 +70,7 @@ redi::ipstream* Disassembler::run_objdump(const string& filename, bool only_head
     target = "/usr/bin/objdump -j .text -Msuffix -d " + filename;
   }
 
-  auto stream = new ipstream(target, redi::pstreams::pstdout);
+  auto stream = new ipstream(target, pstreams::pstdout);
 
   if(!stream) {
     error_ = true;
@@ -89,7 +89,7 @@ redi::ipstream* Disassembler::run_objdump(const string& filename, bool only_head
 
 }
 
-void Disassembler::strip_lines(redi::ipstream& ips, size_t lines) {
+void Disassembler::strip_lines(ipstream& ips, size_t lines) {
 
   string line;
   for (size_t i = 0; i < lines; ++i) {
@@ -374,7 +374,10 @@ void Disassembler::disassemble(const std::string& filename) {
   // Read the functions and invoke the callback.
   FunctionCallbackData data;
   while (parse_function(*body, data, section_offsets)) {
-    fxn_cb_(data, fxn_cb_arg_);
+    if(!callback_closure_)
+      fxn_cb_(data, fxn_cb_arg_);
+    else
+      (*callback_closure_)(data);
   }
 }
 
