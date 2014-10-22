@@ -51,16 +51,12 @@ bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
 
 bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
 
-  vector<CpuState> tcs;
-
-  CpuState tc;
-  tcs.push_back(tc);
-
-
   CpuState ceg;
   
   Validator v;
-  bool success = v.validate(target, rewrite, tcs, ceg);
+  v.set_timeout(timeout_);
+
+  bool success = v.validate(target, rewrite, ceg);
 
   if (!success) {
     counter_example_available_ = true;

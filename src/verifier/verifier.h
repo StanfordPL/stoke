@@ -36,6 +36,12 @@ class Verifier {
     return *this;
   }
 
+  /** Sets the timeout, in milliseconds */
+  Verifier& set_timeout(uint64_t time) {
+    timeout_ = time;
+    return *this;
+  }
+
 	/** Returns true iff these two functions are identical. Sets counter_example_ for failed 
 		proofs. */
   bool verify(const Cfg& target, const Cfg& rewrite);
@@ -55,6 +61,9 @@ class Verifier {
   CpuState counter_example_;
 	/** Whether the last failed proof produced a new counter example. */
 	bool counter_example_available_;
+
+  /** Timeout (in ms) */
+  uint64_t timeout_;
 
 	/** Cost function for use in hold-out verification. */
 	CostFunction fxn_;

@@ -77,7 +77,7 @@ namespace stoke {
 class Validator {
 	public:
 	  bool validate(const Cfg& target, const Cfg& rewrite, 
-	                const std::vector<CpuState>& testcases, CpuState& counter_example);
+	                CpuState& counter_example);
 
     /* Set if the code being validated writes memory. */
     Validator& set_mem_out(bool b) {

@@ -560,8 +560,7 @@ vector<Expr> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::
 
 
 namespace stoke{
-bool Validator::validate(const Cfg& target, const Cfg& rewrite, 
-    const std::vector<CpuState>& testcases,CpuState& counter_example)
+bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counter_example)
 {
 #ifdef DEBUG_VALIDATOR
   std::cout << "Enter the dragon!" << std::endl;

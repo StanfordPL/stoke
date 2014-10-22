@@ -18,16 +18,12 @@ TEST(ValidatorUnpcklpd, Identity) {
   tmp >> d;
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
-
-  EXPECT_TRUE(v.validate(cfg_t, cfg_r, tcs, ceg)) << ceg;
+  EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
 }
 
 
@@ -46,16 +42,12 @@ TEST(ValidatorUnpcklpd, NonIdentity) {
   tmp >> d;
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
-
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, tcs, ceg));
+  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg));
 
 }
 
@@ -76,16 +68,12 @@ TEST(ValidatorUnpcklpd, Idempotent) {
   tmp >> d;
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
-
-  EXPECT_TRUE(v.validate(cfg_t, cfg_r, tcs, ceg)) << ceg;
+  EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
 
 }
 
@@ -106,16 +94,12 @@ TEST(ValidatorUnpcklpd, IdempotentOtherArg) {
   tmp >> d;
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
-
-  EXPECT_TRUE(v.validate(cfg_t, cfg_r, tcs, ceg)) << ceg;
+  EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
 
 }
 
@@ -136,16 +120,12 @@ TEST(ValidatorUnpcklpd, NotIdempotentWrongArg) {
   tmp >> d;
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
-
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, tcs, ceg)) << ceg;
+  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
 
 }
 

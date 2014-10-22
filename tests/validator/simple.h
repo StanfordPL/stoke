@@ -19,16 +19,12 @@ TEST(Validator, SimpleExampleTrue) {
   tmp >> d;
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
-
-  ASSERT_TRUE(v.validate(cfg_t, cfg_r, tcs, ceg));
+  ASSERT_TRUE(v.validate(cfg_t, cfg_r, ceg));
 
 }
 
@@ -47,16 +43,12 @@ TEST(Validator, SimpleExampleFalse) {
   tmp >> d;
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
-
-  ASSERT_FALSE(v.validate(cfg_t, cfg_r, tcs, ceg));
+  ASSERT_FALSE(v.validate(cfg_t, cfg_r, ceg));
 
 }
 
@@ -72,16 +64,13 @@ TEST(Validator, UnimplementedFailsGracefully) {
   tmp >> c;
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
 
-  ASSERT_THROW(v.validate(cfg_t, cfg_r, tcs, ceg), validator_error);
+  ASSERT_THROW(v.validate(cfg_t, cfg_r, ceg), validator_error);
 }
 
 
@@ -102,16 +91,13 @@ TEST(Validator, SimpleCounterexample) {
   tmp >> d;
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
 
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, tcs, ceg));
+  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg));
 
   EXPECT_EQ(0xc0decafe, 0xffffffff & ceg.gp[1].get_fixed_quad(0));
 
@@ -134,16 +120,13 @@ TEST(Validator, ChecksUpper32bits) {
   tmp >> d;
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
 
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, tcs, ceg));
+  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg));
 
 }
 
@@ -166,16 +149,13 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
   x64asm::Code d(code);
 
   stoke::Validator v;
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
 
-  EXPECT_TRUE(v.validate(cfg_t, cfg_r, tcs, ceg));
+  EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg));
 
 }
 
@@ -202,20 +182,17 @@ TEST(Validator, TimeoutWorks) {
   stoke::Validator v;
   v.set_timeout(200);
 
-  stoke::CpuState tc;
   stoke::CpuState ceg;
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
   stoke::Cfg cfg_r(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  std::vector<stoke::CpuState> tcs;
-  tcs.push_back(tc);
 
-  ASSERT_THROW(v.validate(cfg_t, cfg_r, tcs, ceg), validator_error);
+  ASSERT_THROW(v.validate(cfg_t, cfg_r, ceg), validator_error);
 
   std::string message = "";
   try {
-    v.validate(cfg_t, cfg_r, tcs, ceg);
+    v.validate(cfg_t, cfg_r, ceg);
   } catch (validator_error ve) {
     message = ve.get_message();
   }
