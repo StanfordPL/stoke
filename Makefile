@@ -41,7 +41,6 @@ OBJ=\
 	src/args/performance_term.o \
 	src/args/strategy.o \
 	src/args/timeout.o \
-	src/args/tunit.o \
 	\
 	src/cfg/cfg.o \
 	src/cfg/cfg_transforms.o \
@@ -66,6 +65,8 @@ OBJ=\
 	\
 	src/stategen/stategen.o \
 	\
+	src/tunit/tunit.o \
+	\
 	src/validator/aliasing.o \
 	src/validator/c_interface.o \
 	src/validator/extras.o \
@@ -73,7 +74,7 @@ OBJ=\
 	src/validator/switch.o  \
 	src/validator/SymState.o \
 	src/validator/validator.o \
-  \
+	\
 	src/verifier/verifier.o
 
 BIN=\
@@ -149,6 +150,8 @@ src/search/%.o: src/search/%.cc src/search/%.h
 src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/validator/handlers.o: src/validator/handlers.cc src/validator/handlers.o
 	$(CXX) $(TARGET) -Wno-maybe-uninitialized -O0 $(OPT) -O0 $(INC) -c $< -o $@

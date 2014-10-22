@@ -23,20 +23,21 @@ TEST(DisassemblerTest, SimpleExample) {
   /* Here's the callback sent to the disassembler */
   bool found_sample = false;
 
-  std::function<void (const stoke::Disassembler::ParsedFunction&)> test_tunit = 
-    [&] (const stoke::Disassembler::ParsedFunction& pf) {
+  stoke::Disassembler::Callback test_tunit = 
+    [&] (const stoke::FunctionCallbackData& fcd) {
 
     // There's only one function we're really testing.
-    if ( pf.name == "sample") {
-      EXPECT_EQ(sample_code, pf.code); 
-      EXPECT_EQ(sample_offsets, pf.instruction_offsets);
-      EXPECT_EQ(0x40, pf.offset);
+    if ( fcd.tunit.name == "sample") {
+      EXPECT_EQ(sample_code, fcd.tunit.code); 
+      EXPECT_EQ(sample_offsets, fcd.instruction_offsets);
+      EXPECT_EQ(0x40, fcd.offset);
       found_sample = true;
     }
   };
 
   stoke::Disassembler d;
-  d.disassemble("tests/fixtures/disassembler/sample", test_tunit);
+  d.set_function_callback(&test_tunit);
+  d.disassemble("tests/fixtures/disassembler/sample");
 
   EXPECT_TRUE(found_sample);
   EXPECT_FALSE(d.has_error());
@@ -77,12 +78,12 @@ TEST(DisassemblerTest, PopCnt) {
   /* Here's the callback sent to the disassembler */
   bool found_popcnt = false;
 
-  std::function<void (const stoke::Disassembler::ParsedFunction&)> test_tunit = 
-    [&] (const stoke::Disassembler::ParsedFunction& pf) {
+  stoke::Disassembler::Callback test_tunit = 
+    [&] (const stoke::FunctionCallbackData& pf) {
 
     // There's only one function we're really testing.
-    if ( pf.name == "_Z6popcntm") {
-      EXPECT_EQ(popcnt_code, pf.code); 
+    if ( pf.tunit.name == "_Z6popcntm") {
+      EXPECT_EQ(popcnt_code, pf.tunit.code); 
       EXPECT_EQ(popcnt_offsets, pf.instruction_offsets);
       EXPECT_EQ(0x570, pf.offset);
       found_popcnt = true;
@@ -90,7 +91,8 @@ TEST(DisassemblerTest, PopCnt) {
   };
 
   stoke::Disassembler d;
-  d.disassemble("tests/fixtures/disassembler/popcnt", test_tunit);
+  d.set_function_callback(&test_tunit);
+  d.disassemble("tests/fixtures/disassembler/popcnt");
 
   EXPECT_TRUE(found_popcnt);
   EXPECT_FALSE(d.has_error());
@@ -101,14 +103,16 @@ TEST(DisassemblerTest, PopCnt) {
 
 TEST(DisassemblerTest, NoFileGraceful) {
 
-  std::function<void (const stoke::Disassembler::ParsedFunction &pf)>  empty = 
-    [] (const stoke::Disassembler::ParsedFunction& pf) {
+  stoke::Disassembler::Callback  empty = 
+    [] (const stoke::FunctionCallbackData& pf) {
 
     EXPECT_TRUE(false) << "The file isn't supposed to exist...";
   };
 
   stoke::Disassembler d;
-  d.disassemble("texts/fixtures/disassembler/does_not_exist", empty);
+  d.set_function_callback(&empty);
+
+  d.disassemble("texts/fixtures/disassembler/does_not_exist");
   EXPECT_TRUE(d.has_error());
   EXPECT_EQ("Error opening file.", d.get_error());
 
@@ -119,12 +123,15 @@ TEST(DisassemblerTest, NoShellInjection) {
 
   stoke::Disassembler d;
 
-  std::function<void (const stoke::Disassembler::ParsedFunction&)> test_tunit =
-      [] (const stoke::Disassembler::ParsedFunction& pf) {
-    EXPECT_TRUE(false) << "Started disassembling with shell injection.";
+  stoke::Disassembler::Callback  empty = 
+    [] (const stoke::FunctionCallbackData& pf) {
+
+    EXPECT_TRUE(false) << "The file isn't supposed to exist...";
   };
 
-  d.disassemble("/usr/bin/ls && touch ~/pwned", test_tunit);
+
+  d.disassemble("/usr/bin/ls && touch ~/pwned");
+  d.set_function_callback(&empty);
 
   EXPECT_TRUE(d.has_error());
   EXPECT_EQ("Character ' ' not allowed in filename for security.", d.get_error());

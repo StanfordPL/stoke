@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/tunit/tunit.h"
+
 #include <sstream>
-#include <string>
 #include <vector>
 
+#include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/indent.h"
-
-#include "src/args/tunit.h"
 
 using namespace cpputil;
 using namespace std;
@@ -27,7 +27,7 @@ using namespace x64asm;
 
 namespace stoke {
 
-void TUnitReader::operator()(istream& is, TUnit& t) {
+istream& operator>>(istream& is, TUnit& t) {
   string s;
 
   getline(is, s);
@@ -52,23 +52,45 @@ void TUnitReader::operator()(istream& is, TUnit& t) {
   if (ss.fail()) {
     is.setstate(ios::failbit);
   }
+
+	return is;
 }
 
-void TUnitWriter::operator()(ostream& os, const TUnit& t) {
-  ofilterstream<Indent> ofs(os);
+ostream& operator<<(ostream& os, const TUnit& t) {
+	os << "  .text" << endl;
+	os << "  .globl " << t.name << endl;
+	os << "  .type " << t.name << ", @function" << endl;
+	os << t.name << ":" << endl;
 
-  ofs.filter().indent();
-  ofs << ".text" << endl;
-  ofs << ".globl " << t.name << endl;
-  ofs << ".type " << t.name << " @function" << endl;
+	ofilterstream<Column> col(os);
+	col.filter().padding(2);
 
-  ofs.filter().unindent();
-  ofs << t.name << ":" << endl;
+	for (size_t i = 0, ie = t.code.size(); i < ie; ++i) {
+		if (!t.code[i].is_label_defn()) {
+			col << "  ";
+		}
+		col << t.code[i];
+	 	if (i+1 != ie) {
+			col	<< endl;
+		}
+	}
+	col.filter().next();
 
-  ofs.filter().indent();
-  ofs << t.code << endl;
+	size_t line = 0;
+	for (size_t i = 0, ie = t.code.size(); i < ie; ++i) {
+		if (!t.code[i].is_label_defn()) {
+			col << "# " << dec << line++;
+		}
+		if (i+1 != ie) {
+			col << endl;
+		}
+	}
+	col.filter().done();
 
-  ofs << ".size " << t.name << ", .-" << t.name;
+	os << endl;
+	os << ".size " << t.name << ", .-" << t.name << endl;
+
+	return os;
 }
 
 } // namespace stoke

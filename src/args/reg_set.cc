@@ -154,6 +154,16 @@ array<pair<string, Ymm>, 16> ymms_a {{
   }
 };
 
+array<pair<string, Eflags>, 6> eflags_a {{
+		{"%cf", eflags_cf},
+		{"%pf", eflags_pf},
+		{"%af", eflags_af},
+		{"%zf", eflags_zf},
+		{"%sf", eflags_sf},
+		{"%of", eflags_of}
+	}
+};
+
 } // namespace
 
 namespace stoke {
@@ -170,6 +180,7 @@ void RegSetReader::operator()(istream& is, RegSet& r) {
     R64 r64 = rax;
     Xmm xmm = xmm0;
     Ymm ymm = ymm0;
+		Eflags ef = eflags_cf;
 
     if (generic_read(gp64s, a, r64)) {
       r += r64;
@@ -185,7 +196,9 @@ void RegSetReader::operator()(istream& is, RegSet& r) {
       r += xmm;
     } else if (generic_read(ymms_a, a, ymm)) {
       r += ymm;
-    } else {
+    } else if (generic_read(eflags_a, a, ef)) {
+			r += ef;
+		} else {
       is.setstate(ios::failbit);
       return;
     }
@@ -217,6 +230,13 @@ void RegSetWriter::operator()(ostream& os, const RegSet& r) {
 			os << " " << ymms[i];
 		} else if (r.contains(xmms[i])) {
 			os << " " << xmms[i];
+		}
+	}
+	for (size_t i = 0; i < 17; ++i) {
+		if (r.contains(eflags[i])) {
+			string s;
+			generic_write(eflags_a, s, eflags[i]);
+			os << " " << s;
 		}
 	}
   os << " }";

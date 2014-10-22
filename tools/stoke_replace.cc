@@ -24,7 +24,7 @@
 
 #include "src/args/tunit.h"
 #include "src/disassembler/disassembler.h"
-
+#include "src/disassembler/function_callback.h"
 
 using namespace cpputil;
 using namespace std;
@@ -50,6 +50,21 @@ auto& out = ValueArg<string>::create("o")
     .description("File to write changes to; default is to overwrite")
     .default_val("");
 
+
+map<string, uint64_t> section_offsets;
+uint64_t fxn_offset;
+size_t fxn_size;
+bool found;
+
+void callback(const FunctionCallbackData& data, void* arg) {
+	// Check if we've found the function
+	if(data.tunit.name == rewrite.value().name) {
+		found = true;
+		fxn_offset = data.offset;
+		/* This is an underapproximation; we can do better. */
+		fxn_size = 1 + data.instruction_offsets.back();
+	}
+}
 
 bool replace(uint64_t offset, size_t size) {
 	// Assemble the new function
@@ -84,37 +99,19 @@ bool replace(uint64_t offset, size_t size) {
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-	map<string, uint64_t> section_offsets;
-	uint64_t fxn_offset;
-	size_t fxn_size;
-
-  bool found = false;
-
-  function<void (const Disassembler::ParsedFunction&)> callback =
-    [&] (const Disassembler::ParsedFunction& pf) {
-
-      // Check if we've found the function
-      if(pf.name == rewrite.value().name) {
-        found = true;
-        fxn_offset = pf.offset;
-        /* This is an underapproximateion; we can do better. */
-        fxn_size   = 1 + pf.instruction_offsets[pf.instruction_offsets.size()-1];
-
-      }
-    };
-
   Disassembler d;
-  d.disassemble(in.value(), callback);
-  if(d.has_error()) {
+	d.set_function_callback(callback, nullptr);
+
+  found = false;
+  d.disassemble(in.value());
+
+  if (d.has_error()) {
     cerr << "disassemble: " << d.get_error() << endl;
     return 1;
-  }
-
-  if (!found) {
+  } else if (!found) {
     cerr << "Couldn't find function " << rewrite.value().name << " in the binary." << endl;
-  }
-
-	if (!replace(fxn_offset, fxn_size)) {
+		return 1;
+  } else if (!replace(fxn_offset, fxn_size)) {
 		cerr << "Unable to replace function text!" << endl;
 		return 1;
 	}
