@@ -25,12 +25,6 @@
 using namespace z3;
 using namespace std;
 using namespace stoke;
-static bool mem_out;
-
-Validator::Validator(bool b)
-{
-  mem_out = b;
-}
 
 std::pair<stoke::Bijection<std::string>,std::map<SS_Id, unsigned int> > all_state_info;
 
@@ -511,7 +505,7 @@ VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constrai
 	
 }
 //Get query constraint for registers and memory. The query constraints are missing for condition registers as they are not live out.
-void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, MemoryData& mem, x64asm::RegSet liveout)
+void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, MemoryData& mem, x64asm::RegSet liveout, bool mem_out)
 {
 	
 	//map<SS_Id, unsigned int>::iterator i;
@@ -987,7 +981,7 @@ void addAxioms(context& ctx, vector<Expr>& constraints )
 }
 
 
-bool EqualReadInv(const stoke::Cfg& f1, const stoke::Cfg& f2,stoke::CpuState& counter_example)
+bool EqualReadInv(const stoke::Cfg& f1, const stoke::Cfg& f2,stoke::CpuState& counter_example, bool mem_out)
 {
 	VC vc = vc_createValidityChecker();
 	vector<Expr> constraints;
@@ -1019,7 +1013,7 @@ bool EqualReadInv(const stoke::Cfg& f1, const stoke::Cfg& f2,stoke::CpuState& co
 	//Add expert constraints. If necessary.
 	//addExpertConstraints(*vc, constraints);
 	vector<Expr> query;
-	getQueryConstraint(vc, state_info, query, mem, f1.live_outs());
+	getQueryConstraint(vc, state_info, query, mem, f1.live_outs(), mem_out);
 	addExtraConstraints(vc, query, "post");
 
 	return z3Solve(vc, constraints, query,state_info, counter_example);
@@ -1035,6 +1029,6 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite,
 #ifdef DEBUG_VALIDATOR
   std::cout << "Enter the dragon!" << std::endl;
 #endif
-  return EqualReadInv(target, rewrite, counter_example);
+  return EqualReadInv(target, rewrite, counter_example, mem_out_);
 }
 }

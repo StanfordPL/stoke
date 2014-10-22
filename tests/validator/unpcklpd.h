@@ -17,7 +17,7 @@ TEST(ValidatorUnpcklpd, Identity) {
   tmp << "retq" << std::endl;
   tmp >> d;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -45,7 +45,7 @@ TEST(ValidatorUnpcklpd, NonIdentity) {
   tmp << "retq" << std::endl;
   tmp >> d;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -75,7 +75,7 @@ TEST(ValidatorUnpcklpd, Idempotent) {
   tmp << "retq" << std::endl;
   tmp >> d;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -105,7 +105,7 @@ TEST(ValidatorUnpcklpd, IdempotentOtherArg) {
   tmp << "retq" << std::endl;
   tmp >> d;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -135,7 +135,7 @@ TEST(ValidatorUnpcklpd, NotIdempotentWrongArg) {
   tmp << "retq" << std::endl;
   tmp >> d;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 

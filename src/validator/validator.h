@@ -88,33 +88,32 @@ public:
 namespace stoke {
 
 class Validator {
-	std::string formula;
 	public:
 	  bool validate(const Cfg& target, const Cfg& rewrite, 
 	                const std::vector<CpuState>& testcases, CpuState& counter_example);
 
-  //  CpuState get_counter_example();
-    //std::ostream& print_counter_example(std::ostream& os);
-    Validator(bool);
+    /* Set if the code being validated writes memory. */
+    Validator& set_mem_out(bool b) {
+      mem_out_ = b;
+      return *this;
+    }
+
+    /* Set the amount of time the validator runs before giving up. */
+    Validator& set_timeout(uint64_t time) {
+      timeout_ = time;
+      return *this;
+    }
+
     /** @todo Need a data structure for abductions if we ever write this. */
     std::ostream& print_abduction(std::ostream& os);
+
+  private:
+    uint64_t timeout_;
+    bool mem_out_;
 };
 
 
 
-/** @todo */
-//inline CpuState Validator::get_counter_example() {
-//  return CpuState::zeros();
-//}
-
-//inline std::ostream& Validator::print_counter_example(std::ostream& os) {
-//  return (os << get_counter_example());
-//}
-
-/** @todo */
-inline std::ostream& Validator::print_abduction(std::ostream& os) {
-  return (os << formula);
-}
 
 } // namespace stoke
 

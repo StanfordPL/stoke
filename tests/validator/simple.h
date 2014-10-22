@@ -17,7 +17,7 @@ TEST(Validator, SimpleExampleTrue) {
   tmp << "retq" << std::endl;
   tmp >> d;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -45,7 +45,7 @@ TEST(Validator, SimpleExampleFalse) {
   tmp << "retq" << std::endl;
   tmp >> d;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -70,7 +70,7 @@ TEST(Validator, UnimplementedFailsGracefully) {
   tmp << "retq" << std::endl;
   tmp >> c;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -100,7 +100,7 @@ TEST(Validator, SimpleCounterexample) {
   tmp << "retq" << std::endl;
   tmp >> d;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -132,7 +132,7 @@ TEST(Validator, ChecksUpper32bits) {
   tmp << "retq" << std::endl;
   tmp >> d;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -164,7 +164,7 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
   x64asm::Code c(code);
   x64asm::Code d(code);
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -188,7 +188,7 @@ TEST(Validator, DISABLED_ZeroTestcasesFailsGracefully) {
   tmp << "retq" << std::endl;
   tmp >> c;
 
-  stoke::Validator v(false);
+  stoke::Validator v;
   stoke::CpuState tc;
   stoke::CpuState ceg;
 

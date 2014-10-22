@@ -59,7 +59,7 @@ bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
 
   CpuState ceg;
   
-  Validator v(true);
+  Validator v;
   bool success = v.validate(target, rewrite, tcs, ceg);
 
   if (!success) {
