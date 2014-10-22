@@ -575,8 +575,10 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite,
   vector<Expr> constraints;
   vector<Expr> query = generate_constraints(target, rewrite, constraints);
 
-  // Run the solver
+  // Specify timeout for Z3
+  vc_->set("timeout", (int)timeout_);
 
+  // Run the solver
 	return z3Solve(vc_, constraints, query, state_info_, counter_example);
 }
 }

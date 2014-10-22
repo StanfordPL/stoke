@@ -26,6 +26,10 @@ class validator_error : public std::exception {
       return file_;
     }
 
+    std::string get_message() {
+      return message_;
+    }
+
     virtual const char* what() const throw() {
       std::stringstream ss;
       ss << "[" << file_ << ":" << line_ << "] " << message_;

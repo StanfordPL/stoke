@@ -2,6 +2,7 @@
 
 #include "src/validator/error.h"
 #include "src/validator/validator.h"
+#include "src/validator/error.h"
 
 TEST(Validator, SimpleExampleTrue) {
 
@@ -179,16 +180,28 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
 }
 
 
-TEST(Validator, DISABLED_ZeroTestcasesFailsGracefully) {
 
-  x64asm::Code c;
+TEST(Validator, TimeoutWorks) {
+
+  x64asm::Code c, d;
 
   std::stringstream tmp;
-  tmp << "incq %rax" << std::endl;
-  tmp << "retq" << std::endl;
+  tmp << "movaps %xmm11, %xmm1"   << std::endl;
+  tmp << "mulss  %xmm6, %xmm10"   << std::endl;
+  tmp << "mulss  %xmm9, %xmm7"    << std::endl;
+  tmp << "mulss  %xmm4, %xmm1"    << std::endl;
+  tmp << "movaps %xmm11, %xmm1"   << std::endl;
+  tmp << "mulss  %xmm6, %xmm10"   << std::endl;
+  tmp << "mulss  %xmm9, %xmm7"    << std::endl;
+  tmp << "mulss  %xmm4, %xmm1"    << std::endl;
+  tmp << "retq"                   << std::endl;
   tmp >> c;
+  tmp.str("");
+
 
   stoke::Validator v;
+  v.set_timeout(200);
+
   stoke::CpuState tc;
   stoke::CpuState ceg;
 
@@ -196,7 +209,20 @@ TEST(Validator, DISABLED_ZeroTestcasesFailsGracefully) {
   stoke::Cfg cfg_r(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
   std::vector<stoke::CpuState> tcs;
+  tcs.push_back(tc);
 
   ASSERT_THROW(v.validate(cfg_t, cfg_r, tcs, ceg), validator_error);
 
+  std::string message = "";
+  try {
+    v.validate(cfg_t, cfg_r, tcs, ceg);
+  } catch (validator_error ve) {
+    message = ve.get_message();
+  }
+
+  EXPECT_EQ("z3 gave up.", message);
+
+
 }
+
+
