@@ -473,21 +473,39 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 	map<SS_Id, unsigned int> sizes = state_info.second;
 	Expr retval = vc_trueExpr(vc);
 
+  /* Add constraints for the general purpose registers */
 	for(uint i=0;i<x64asm::r64s.size();i++)
 	{
+    int bitwidth;
 	  auto op = x64asm::r64s[i];
-	  if(liveout.contains(op))
-	  {
-			string elem = bij.toVal(op); 
-			Expr E_state_elem_1 = regExpr(vc, (elem + "_1_"+ V_FSTATE),V_UNITSIZE);
-			Expr E_state_elem_2 = regExpr(vc, (elem + "_2_"+ V_FSTATE),V_UNITSIZE);
-			Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
-#ifdef DEBUG_VALIDATOR
-			cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
-#endif
-			query.push_back(E_eq_final);
 
-	  }
+    /* See if we have the 64, 32, 16, or 8 bit register in the set */
+    if (liveout.contains(op)) {
+      bitwidth = 64;
+    } else if (liveout.contains(x64asm::r32s[i])) {
+      bitwidth = 32;
+    } else if (liveout.contains(x64asm::r16s[i])) {
+      bitwidth = 16;
+    } else if (i < 4 && liveout.contains(x64asm::rls[i])) {
+      bitwidth = 8;
+    } else {
+      continue;
+    }
+
+    /* Get the string representation of this register */
+    string elem = bij.toVal(op); 
+
+    /* Build constraints asserting final equality */
+    Expr E_state_elem_1 = vc_bvExtract(vc, regExpr(vc, (elem + "_1_"+ V_FSTATE),V_UNITSIZE), bitwidth - 1, 0);
+    Expr E_state_elem_2 = vc_bvExtract(vc, regExpr(vc, (elem + "_2_"+ V_FSTATE),V_UNITSIZE), bitwidth - 1, 0);
+    Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+#ifdef DEBUG_VALIDATOR
+    cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
+#endif
+
+    /* Add the constraints. */
+    query.push_back(E_eq_final);
+
 	}
 	for(uint i=0;i<x64asm::xmms.size();i++)
 	{
