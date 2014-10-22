@@ -182,7 +182,10 @@ void Sandbox::run_one(size_t index) {
 }
 
 void Sandbox::emit_instruction(const Instruction& instr) {
-  if (instr.is_explicit_memory_dereference()) {
+	if (instr.is_call()) {
+		emit_pre_return();
+		assm_.ret();
+	} else if (instr.is_explicit_memory_dereference()) {
 		if (instr.is_div() || instr.is_idiv()) {
 			emit_mem_div(instr);
 		} else {
