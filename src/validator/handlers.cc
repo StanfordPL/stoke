@@ -2668,8 +2668,8 @@ void subpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_d
   VC&vc = d.vc;
 
   // Declare uninterpreted function
-  z3::sort quadword = vc->bv_sort(64);
-  z3::func_decl subps_subf = z3::function("subps_subf", quadword, quadword, quadword);
+  z3::sort dword = vc->bv_sort(32);
+  z3::func_decl subps_subf = z3::function("subps_subf", dword, dword, dword);
 
   // Generate these constraints:
   // DEST[31:0]   <- SRC1[31:0]   - SRC2[31:0]
@@ -2683,6 +2683,7 @@ void subpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_d
     Expr s2  = vc_bvExtract(vc, E_src2, i+31, i);
     Expr equ = (dst == subps_subf(s1, s2));
 
+    cout << "adding: " << equ << endl;
     d.constraints.push_back(equ);
   }
 

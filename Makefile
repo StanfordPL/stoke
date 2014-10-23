@@ -171,12 +171,17 @@ TEST_OBJ=\
          tests/fixture.o \
          \
          src/ext/gtest-1.7.0/libgtest.a \
-         src/ext/gtest-1.7.0/libgtest_main.a
+         src/ext/gtest-1.7.0/libgtest_main.a \
+
 
 TEST_LIBS=-ljsoncpp
 
 TEST_BIN=bin/stoke_test
 
+.FORCE:
+
+tests/validator/handlers.h: .FORCE
+	tests/validator/generate_handlers_h.sh tests/validator	
 
 tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
@@ -199,7 +204,7 @@ src/validator/validator.switch: src/validator/autogen
 	cd src/validator; ./autogen; cd ..;
 
 validator_clean:
-	rm -f src/validator/validator.switch src/validator/switch.h src/validator/switch.cc src/validator/autogen src/validator/autogen.hi src/validator/autogen.o
+	rm -f src/validator/validator.switch src/validator/switch.h src/validator/switch.cc src/validator/autogen src/validator/autogen.hi src/validator/autogen.o tests/validator/handlers.h
 
 
 
