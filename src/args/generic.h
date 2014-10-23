@@ -40,6 +40,7 @@ void generic_write(const std::array<std::pair<T1, T2>, N>& elems, T1& key, const
   for (const auto& elem : elems) {
     if (val == elem.second) {
       key = elem.first;
+      return;
     }
   }
   assert(false);
