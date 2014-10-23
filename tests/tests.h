@@ -16,6 +16,7 @@
 
 
 #include "tests/cfg/cfg.h"
+#include "tests/cost/cost.h"
 #include "tests/disassembler/disassembler.h"
 #include "tests/fixture.h"
 #include "tests/sandbox/sandbox.h"
