@@ -5,6 +5,7 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+#include "helpers.cc"
 
 //The variable pred is captured by the context. It represents the predicate for conditional moves and conditional sets
 //V_CC_A is cf==0 and zf==0
@@ -25,224 +26,18 @@ using namespace x64asm;
 #define V_CC_O   pred = getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn);
 #define V_CC_P   pred = getBoolExpr(vc,V_PF,d.pre_suffix, d.Vn);
 
-#define CMOV_FLUFF  cout << "Inside CMOV "; vc_printExpr(vc, E_dest); vc_printExpr(vc, E_dest_pre); vc_printExpr(vc, E_src); cout << endl ;\
+#define CMOV_FLUFF  \
 	Expr retval = vc_iteExpr(vc, pred, EqExpr(vc, E_dest, E_src), EqExpr(vc, E_dest, E_dest_pre));\
 	if(bitWidth < V_UNITSIZE)\
 	{\
 		SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));\
 		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));\
 	}\
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";\
 	d.constraints.push_back(retval);  
 
 
-//assumes the last operand of the instruction is an immediate and returns the same
-uint64_t getLastOperandImm(const Instruction& instr)
-{
-	return (uint64_t)instr.get_operand<Imm64>(instr.arity()-1);
-}
-
-//A wrapper for get_register
-uint64_t getRegisterFromInstr(const Instruction& instr, unsigned int n)
-{
-	return instr.get_operand<R64>(n);
-}
-//wrapper for get_immediate
-uint64_t getImmediateFromInstr(const Instruction& instr, unsigned int n)
-{
-	return instr.get_operand<Imm64>(n);
-}
-//returns the flag variable it changed
-//Sets condition register flag with version number Vnprime and codenum given in post_suffix to the expression e.
-Expr setFlag(VC& vc,const VersionNumber& Vnprime,SS_Id flag, const Expr& e, vector<Expr>& constraints, string post_suffix)
-{
-	Expr E_flag_var = vc_varExpr(vc, (idToStr(flag)+post_suffix+itoa(Vnprime.get(flag))).c_str(), vc_boolType(vc));
-	Expr E_flag_constraint = vc_iffExpr(vc, E_flag_var, e);
-	//cout << "Instruction flag constraint is\n";
-	vc_printExpr(vc, E_flag_constraint);
-	constraints.push_back(E_flag_constraint);
-	return E_flag_var;
-}
-//nameWVN(RAX, "_1_", 0) becomes "RAX_1_0"
-string nameWVN(SS_Id id, string suffix, const VersionNumber& Vn)
-{
-	return idToStr(id)+suffix+itoa(Vn.get(id)).c_str();
-}
-SS_Id getOperandValue(uint64_t op)
-{
- return op; 
-}
-//Create a boolean expression with name id+suffix+Vn
-Expr getBoolExpr(VC&vc, SS_Id id, string suffix, const VersionNumber& Vn)
-{
-	return vc_varExpr(vc, nameWVN(id, suffix, Vn).c_str(),vc_boolType(vc));
-}
-
-//Set sign flag, parity flag, and zero flag according to REGPOST.
-//REGPOST has width bitWidth
-void setSFPFZF(Expr REGPOST, v_data d, unsigned int bitWidth)
-{
-	VC&vc = d.vc;
-	setFlag(vc,d.Vnprime, V_SF, vc_bvBoolExtract_One(vc, REGPOST, bitWidth - 1), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime, V_ZF, vc_eqExpr(vc, REGPOST, vc_bvConstExprFromLL(vc, bitWidth, 0)), d.constraints, d.post_suffix);
-	Expr E_temp_parity_1 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,0), vc_bvBoolExtract_One(vc, REGPOST,1));
-	Expr E_temp_parity_2 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,2), vc_bvBoolExtract_One(vc, REGPOST,3));
-	Expr E_temp_parity_3 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,4), vc_bvBoolExtract_One(vc, REGPOST,5));
-	Expr E_temp_parity_4 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,6), vc_bvBoolExtract_One(vc, REGPOST,7));
-	Expr E_temp_parity_5 = vc_xorExpr(vc, E_temp_parity_1, E_temp_parity_2);
-	Expr E_temp_parity_6 = vc_xorExpr(vc, E_temp_parity_3, E_temp_parity_4);
-	Expr E_temp_parity_7 = vc_notExpr(vc, vc_xorExpr(vc, E_temp_parity_5, E_temp_parity_6));
-	setFlag(vc,d.Vnprime, V_PF, E_temp_parity_7, d.constraints, d.post_suffix);
-}
-
-//New flag== old flag for all flags(CF'==CF)
-void preserveAllFlags(v_data d)
-{
-	VC&vc = d.vc;
-	setFlag(vc,d.Vnprime, V_SF, getBoolExpr(vc, V_SF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime, V_ZF, getBoolExpr(vc, V_ZF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime, V_PF, getBoolExpr(vc, V_PF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime, V_CF, getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime, V_OF, getBoolExpr(vc, V_OF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
-}
-
-//Get the expression corresponding to the OF of add instruction.
-//Takes msb's of arguments and result as input.
-Expr getOFExpr(VC& vc, Expr E_msb_1, Expr E_msb_2, Expr E_msb_3)
-{
-	Expr E_of1 = vc_andExpr(vc, E_msb_1,	vc_andExpr(vc, E_msb_2, vc_notExpr(vc, E_msb_3)));
-	Expr E_of2 = vc_andExpr(vc, vc_notExpr(vc, E_msb_1), vc_andExpr(vc, vc_notExpr(vc, E_msb_2), E_msb_3));
-	return vc_orExpr(vc, E_of1, E_of2);	
-}
-
-//A wrapper
-Expr regbvExpr(VC&vc, string name, unsigned int size=V_UNITSIZE)
-{
-	return regExpr(vc, name, size);
-}
-
-//Returns 0 for NO_REG and otherwise returns a bitvector of length size and name id+suffix+Vn
-Expr regExprWVN(VC&vc, SS_Id id, string suffix, const VersionNumber& Vn, unsigned int size)
-{
-		return regbvExpr(vc, nameWVN(id, suffix, Vn), size);
-}
-/*
-//Get the address part from the memory bitvector of length 72.
-Expr memAddr(VC& vc, Expr memExpr)
-{
-	return vc_bvExtract(vc, memExpr, 63, 0);
-}
-
-//Get the value part from the memory bitvector of length 72.
-Expr memVal(VC& vc, Expr memExpr)
-{
-	return vc_bvExtract(vc, memExpr, 71, 64);
-}
-*/
-//Get a 72 bitvector for 64 bits of address and 8 bit for value in the byte addressable memory.
-Expr memExprWVN(VC& vc, SS_Id mid, string suffix, VersionNumber& Vn, unsigned int memsize)
-{
-	return vc_varExpr(vc, (idToStr(mid)+suffix+itoa(Vn.get(mid))).c_str(), vc_bvType(vc, memsize));
-}
-
-//addrExpr == the address formed by 5 memory arguments. Assume that memory address is always 64 bits.
-Expr ConstrainAddr(VC& vc, Expr addrExpr, M8 m, v_data& d, unsigned int bitWidth=V_UNITSIZE)
-{
 
 
- auto base = m.get_base();
-  auto index = m.get_index();
-  auto scale = m.get_scale();
-  int disp = m.get_disp();
-	Expr rhs = !m.contains_index() ? vc_bvConstExprFromLL(vc, V_UNITSIZE, 0) :\
- 	vc_bvMultExpr(vc, V_UNITSIZE, regExprWVN(vc, index, d.pre_suffix, d.Vn, V_UNITSIZE), vc_bvConstExprFromLL(vc, V_UNITSIZE, (uint64_t)scale));
-	Expr E_base = !m.contains_base() ? vc_bvConstExprFromLL(vc, V_UNITSIZE, 0) : regExprWVN(vc, base, d.pre_suffix, d.Vn, V_UNITSIZE);
-	rhs = vc_bvPlusExpr(vc, V_UNITSIZE, rhs, E_base);
-	rhs = vc_bvPlusExpr(vc, V_UNITSIZE, rhs, vc_bvConstExprFromLL(vc, V_UNITSIZE, disp));
-	return EqExpr(vc, addrExpr, rhs); 
-}
-
-//read from memory
-Expr memRead(v_data d,MemoryData& mem)
-{
-        VC& vc = d.vc; 
-	Meminfo minfo = mem.deref(d.instr_no, d.isTargetData());
-	SS_Id mid = d.state_info.first.valToId(minfo.getName());
-	return vc_bvExtract(vc, memExprWVN(vc, mid, d.pre_suffix, d.Vn, minfo.getCellSize()),minfo.getEndBit()-1, minfo.getBegBit()) ;
-}
-Expr unmodifiedMemoryCnstr(v_data d, Meminfo& minfo, uint memsize, SS_Id mid)
-{
-  VC& vc = d.vc; 
-  uint beg = minfo.getBegBit();
-  uint end = minfo.getEndBit();
-  if(beg==0 && end == memsize)
-    return vc_trueExpr(vc);
-  if(beg>0 && end == memsize)
-      return EqExpr(vc,vc_bvExtract(vc, memExprWVN(vc, mid, d.post_suffix, d.Vnprime, memsize),beg-1, 0), vc_bvExtract(vc,memExprWVN(vc, mid, d.pre_suffix, d.Vn, memsize),beg-1, 0));
-  if(beg ==0 && end < memsize)
-    return EqExpr(vc,vc_bvExtract(vc, memExprWVN(vc, mid, d.post_suffix, d.Vnprime, memsize),memsize-1, end), vc_bvExtract(vc,memExprWVN(vc, mid, d.pre_suffix, d.Vn, memsize),memsize-1, end));
-  return vc_andExpr(vc,EqExpr(vc,vc_bvExtract(vc, memExprWVN(vc, mid, d.post_suffix, d.Vnprime, memsize),beg-1, 0), vc_bvExtract(vc,memExprWVN(vc, mid, d.pre_suffix, d.Vn, memsize),beg-1, 0)),\
-		    EqExpr(vc,vc_bvExtract(vc, memExprWVN(vc, mid, d.post_suffix, d.Vnprime, memsize),memsize-1, end), vc_bvExtract(vc,memExprWVN(vc, mid, d.pre_suffix, d.Vn, memsize),memsize-1, end)));
-}
-
-//Write to memory
-Expr memWrite(v_data d,  MemoryData& mem)
-{
-        VC& vc = d.vc; 
-	Meminfo minfo = mem.deref(d.instr_no, d.isTargetData());
-	SS_Id mid = d.state_info.first.valToId(minfo.getName());
-	uint memsize = minfo.getCellSize();
-	Expr umc = unmodifiedMemoryCnstr(d, minfo, memsize,mid);
-#ifdef DEBUG_VALIDATOR
-	cout << "Preserving memloc "; vc_printExpr(vc,umc); cout << endl; 
-#endif
-	d.constraints.push_back(umc);
-	return vc_bvExtract(vc, memExprWVN(vc, mid, d.post_suffix, d.Vnprime, memsize),minfo.getEndBit()-1, minfo.getBegBit()) ;
-}
-//write after read from memory. More efficient than doing a read and then a write for say ADD64mr
-Expr memWAR(v_data d, MemoryData& mem)
-{
-  return memWrite(d,mem);
-}
-
-
-
-//This circuit is wrong. Return is supposed to preserve flags
-void retHandler(v_data d)
-{
-	/*VC& vc = d.vc;
-	setFlag(vc,d.Vnprime,V_PF, vc_falseExpr(vc), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime,V_CF, vc_falseExpr(vc), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime,V_ZF, vc_falseExpr(vc), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime,V_SF, vc_falseExpr(vc), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime,V_OF, vc_falseExpr(vc), d.constraints, d.post_suffix);*/
-}
-
-//If we are modifying a sub-register then model the effects on the full register.
-//Some bits will be unchanged. So me bits will be assigned zero for 32 bit instructions.
-/*Expr UnmodifiedBitsPreserve(VC& vc, v_data d, unsigned int bitWidth)
-{
-	SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
-	assert(bitWidth < V_UNITSIZE);
-	Expr E_dest_post = vc_bvExtract(vc, regExprWVN(vc,id_dest,d.post_suffix, d.Vnprime, V_UNITSIZE), V_UNITSIZE -1, bitWidth);
-	Expr E_dest_pre = vc_bvExtract(vc, regExprWVN(vc,id_dest,d.pre_suffix, d.Vn, V_UNITSIZE), V_UNITSIZE -1, bitWidth);
-	return EqExpr(vc, E_dest_post, E_dest_pre);
-}*/
-
-bool isGp(SS_Id id)
-{
- return all_state_info.second[id] == V_REGSIZE;
-}
-//Same as above. Useful for implicit writes.
-Expr UnmodifiedBitsPreserve(VC& vc, SS_Id id_dest, v_data d, unsigned int bitWidth)
-{
-  	uint full_size = V_UNITSIZE*all_state_info.second[id_dest];
-  if (bitWidth >= full_size)
-    throw VALIDATOR_ERROR("error from validator assert");
-	Expr E_dest_post = vc_bvExtract(vc, regExprWVN(vc,id_dest,d.post_suffix, d.Vnprime, full_size), full_size -1, bitWidth);
-	Expr E_dest_pre = isGp(id_dest) && bitWidth==32 ? vc_bvConstExprFromLL(vc, 32, 0) : vc_bvExtract(vc, regExprWVN(vc,id_dest,d.pre_suffix, d.Vn, full_size), full_size -1, bitWidth);
-	return EqExpr(vc, E_dest_post, E_dest_pre);
-}
 
 //Add with carry. Promote arguments to bitWidth+2 (66 from 64) bits, do the additions, and set the flags.
 //If the destination register is not 64 bit then model the effects on the rest of the parent register of the destination register.
@@ -310,23 +105,45 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 }
 
 
-void paddHandler(v_data d, unsigned int opWidth, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
+#define DADDPATT(x)\
+	{\
+	Expr E_result = vc_bvExtract(vc, E_dest, x+63, x);\
+	Expr E_arg1 = vc_bvExtract(vc, E_src1, x+63, x);\
+	Expr E_arg2 = vc_bvExtract(vc, E_src2, x+63, x);\
+	retval = vc_andExpr(vc, retval, (E_result == dadd(E_arg1,E_arg2)));\
+	}
+	
+void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
 {
 
 	VC&vc = d.vc;
-  if (opWidth != 32 || bitWidth != 128) {
-    throw VALIDATOR_ERROR("Only opWidth of 32 and bitWidth of 128 is supported for padd");
-  }
+	uint bitWidth = numops*64; 
+	z3::sort fl = vc->bv_sort(64);
+	z3::func_decl dadd = z3::function("addd", fl, fl, fl);
 	Expr retval = vc_trueExpr(vc);
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), vc_bvPlusExpr(vc, 32, vc_bvExtract(vc, E_src1, 31, 0), vc_bvExtract(vc, E_src2, 31, 0))));
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), vc_bvPlusExpr(vc, 32, vc_bvExtract(vc, E_src1, 63, 32), vc_bvExtract(vc, E_src2, 63, 32))));
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), vc_bvPlusExpr(vc, 32, vc_bvExtract(vc, E_src1, 95, 64), vc_bvExtract(vc, E_src2, 95, 64))));
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), vc_bvPlusExpr(vc, 32, vc_bvExtract(vc, E_src1, 127, 96), vc_bvExtract(vc, E_src2, 127, 96))));
+	if(numops==1)
+	{
+	  DADDPATT(0)
+	}
+	else
+	{
+	  DADDPATT(0)
+	  DADDPATT(64)
+	}
+	if(dest_is_reg && numops == 1)
+	{
+		SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
+	}
 #ifdef DEBUG_VALIDATOR
 	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
 #endif
 	d.constraints.push_back(retval);
+	
 }
+#undef DADDPATT
+
+
 
 #define FADDPATT(x)\
 	{\
@@ -368,206 +185,6 @@ void addfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
 }
 #undef FADDPATT
 
-#define DADDPATT(x)\
-	{\
-	Expr E_result = vc_bvExtract(vc, E_dest, x+63, x);\
-	Expr E_arg1 = vc_bvExtract(vc, E_src1, x+63, x);\
-	Expr E_arg2 = vc_bvExtract(vc, E_src2, x+63, x);\
-	retval = vc_andExpr(vc, retval, (E_result == dadd(E_arg1,E_arg2)));\
-	}
-	
-void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
-{
-
-	VC&vc = d.vc;
-	uint bitWidth = numops*64; 
-	z3::sort fl = vc->bv_sort(64);
-	z3::func_decl dadd = z3::function("addd", fl, fl, fl);
-	Expr retval = vc_trueExpr(vc);
-	if(numops==1)
-	{
-	  DADDPATT(0)
-	}
-	else
-	{
-	  DADDPATT(0)
-	  DADDPATT(64)
-	}
-	if(dest_is_reg && numops == 1)
-	{
-		SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
-		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
-	}
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-	d.constraints.push_back(retval);
-	
-}
-#undef DADDPATT
-
-void vaddsdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
-{
-  	VC&vc = d.vc;
-	adddHandler(d, numops,E_dest,E_src1, E_src2, dest_is_reg);
-	Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src1, 127, 64));
-	
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-	d.constraints.push_back(retval);
-	
-}
-
-void movddupHandler(v_data d, Expr E_dest, Expr E_src)
-{
-
-	VC&vc = d.vc;
-	E_src = vc_bvExtract(vc, E_src, 63, 0);
-	Expr retval = vc_trueExpr(vc);
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63,0), vc_bvExtract(vc, E_src, 63,0))); 
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127,64), vc_bvExtract(vc, E_src, 63,0))); 
-
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-	d.constraints.push_back(retval);
-	
-}	
-	
-#define DSUBPATT(x)\
-	{\
-	Expr E_result = vc_bvExtract(vc, E_dest, x+63, x);\
-	Expr E_arg1 = vc_bvExtract(vc, E_src1, x+63, x);\
-	Expr E_arg2 = vc_bvExtract(vc, E_src2, x+63, x);\
-	retval = vc_andExpr(vc, retval, (E_result == dsub(E_arg1,E_arg2)));\
-	}
-	
-void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
-{
-
-	VC&vc = d.vc;
-	uint bitWidth = numops*64; 
-	z3::sort fl = vc->bv_sort(64);
-	z3::func_decl dsub = z3::function("subd", fl, fl, fl);
-	Expr retval = vc_trueExpr(vc);
-	if(numops==1)
-	{
-	  DSUBPATT(0)
-	}
-	else
-	{
-	  DSUBPATT(0)
-	  DSUBPATT(64)
-	}
-	if(dest_is_reg && numops == 1)
-	{
-		SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
-		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
-	}
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-	d.constraints.push_back(retval);
-	
-}
-#undef DSUBPATT	
-
-#define FSUBPATT(x)\
-	{\
-	Expr E_result = vc_bvExtract(vc, E_dest, x+31, x);\
-	Expr E_arg1 = vc_bvExtract(vc, E_src1, x+31, x);\
-	Expr E_arg2 = vc_bvExtract(vc, E_src2, x+31, x);\
-	retval = vc_andExpr(vc, retval, (E_result == fsub(E_arg1,E_arg2)));\
-	}
-	
-void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
-{
-
-	VC&vc = d.vc;
-	uint bitWidth = numops*32; 
-	z3::sort fl = vc->bv_sort(32);
-	z3::func_decl fsub = z3::function("subf", fl, fl, fl);
-	Expr retval = vc_trueExpr(vc);
-	if(numops==1)
-	{
-	  FSUBPATT(0)
-	}
-	else
-	{
-	  FSUBPATT(0)
-	  FSUBPATT(32)
-	  FSUBPATT(64)
-  	  FSUBPATT(96)
-	}
-	if(dest_is_reg && numops == 1)
-	{
-		SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
-		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
-	}
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-	d.constraints.push_back(retval);
-	
-}
-#undef FSUBPATT	
-
-#define DMULPATT(x)\
-	{\
-	Expr E_result = vc_bvExtract(vc, E_dest, x+63, x);\
-	Expr E_arg1 = vc_bvExtract(vc, E_src1, x+63, x);\
-	Expr E_arg2 = vc_bvExtract(vc, E_src2, x+63, x);\
-	retval = vc_andExpr(vc, retval, (E_result == dmul(E_arg1,E_arg2)));\
-	}
-	
-void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
-{
-
-	VC&vc = d.vc;
-	uint bitWidth = numops*64; 
-	z3::sort fl = vc->bv_sort(64);
-	z3::func_decl dmul = z3::function("muld", fl, fl, fl);
-	Expr retval = vc_trueExpr(vc);
-	if(numops==1)
-	{
-	  DMULPATT(0)
-	}
-	else
-	{
-	  DMULPATT(0)
-	  DMULPATT(64)
-	}
-	if(dest_is_reg && numops == 1)
-	{
-		SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
-		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
-	}
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-	d.constraints.push_back(retval);
-	
-}
-#undef DMULPATT	
-	
-void ucomissHandler(v_data d, Expr E_src1, Expr E_src2)
-{
-
-	VC&vc = d.vc;
-	E_src1 = vc_bvExtract(vc, E_src1, 31,0);
-	E_src2 = vc_bvExtract(vc, E_src2, 31,0);
-	z3::sort fl = vc->bv_sort(32);
-	z3::sort cmp_res = vc->bv_sort(2);
-	z3::func_decl fcmp = z3::function("cmpf", fl, fl, cmp_res);
-	Expr E_cmp_res = fcmp(E_src1, E_src2);
-	setFlag(vc,d.Vnprime,V_CF, vc_notExpr(vc, vc_bvBoolExtract_One(vc, E_cmp_res,0)), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime,V_ZF, vc_notExpr(vc, vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_cmp_res,0),vc_bvBoolExtract_One(vc, E_cmp_res,1))), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime,V_PF, vc_andExpr(vc, vc_bvBoolExtract(vc, E_cmp_res,0), vc_bvBoolExtract(vc, E_cmp_res,1)), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime,V_OF, vc_falseExpr(vc), d.constraints, d.post_suffix);
-	setFlag(vc,d.Vnprime,V_SF, vc_falseExpr(vc), d.constraints, d.post_suffix);
-	
-}
 
 #define FCMPPATT(x)\
   {\
@@ -589,6 +206,21 @@ void ucomissHandler(v_data d, Expr E_src1, Expr E_src2)
 	retval = vc_andExpr(vc, retval, vc_iteExpr(vc, E_gt, EqExpr(vc, E_dest_part, zeros), EqExpr(vc, E_dest_part, ones)));\
 	}	
 	
+
+void andpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
+{
+
+	VC&vc = d.vc;
+
+	Expr E_result = vc_bvAndExpr(vc,E_src1, E_src2 );
+	Expr retval = EqExpr(vc, E_dest, E_result);
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+	d.constraints.push_back(retval); 
+}
+
 void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm)
 {
 
@@ -703,168 +335,6 @@ void dppdHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Ex
 	d.constraints.push_back(retval);
 }
 
-void maxpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
-{
-
-	VC&vc = d.vc;
-	z3::sort pfl = vc->bv_sort(128);
-	z3::func_decl fpmax = z3::function("maxfp", pfl, pfl, pfl);
-	Expr E_result = fpmax(E_src1, E_src2);
-	Expr retval = EqExpr(vc, E_dest, E_result);
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-
-	d.constraints.push_back(retval); 
-}
-void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
-{
-  
-  	VC&vc = d.vc;
-	Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), vc_bvExtract(vc, E_src1, 31, 0));
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), vc_bvExtract(vc, E_src2, 31, 0)));
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), vc_bvExtract(vc, E_src1, 63, 32)));
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), vc_bvExtract(vc, E_src2, 63, 32)));
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-
-	d.constraints.push_back(retval);
-  
-}
-
-/* The src1 and src2 are the same as the src1 and src2 in the "Operation"
- * section of the Intel manual.  In the case of two arguments, src1 is the same
- * as dest.  We need the bitWidth to disambiguate between the different
- * operations and the three_args argument to tell us if there are three
- * arguments or two.  The three argument version is VEX prefixed and behaves
- * differently. */
-void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2) {
-  VC& vc = d.vc;
-
-  /* Force bits 0..63 of destination to match bits 0..63 of source1. */
-  Expr lower_bits = EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_src1, 63, 0));
-
-  /* Force bits 64..127 of destination to match bits 0..63 of source2. */
-  Expr upper_bits = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src2, 63, 0));
-
-  /* Ensure both of the above constraints are enforced */
-  Expr all_bits  = vc_andExpr(vc, lower_bits, upper_bits);
-
-  if (three_args || bitWidth != 128) {
-    VALIDATOR_ERROR("Berkeley only knows how to handle unpcklpd with two arguments and bit width 128.");
-  }
-
-  d.constraints.push_back(all_bits);
-
-}
-
-void unpcklpsHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2) {
-
-  VC& vc = d.vc;
-
-  if ( three_args || bitWidth != 128 ) {
-    VALIDATOR_ERROR("unpcklps only supported in form 'unpcklps xmm1, xmm2/m128'")
-  }
-
-  // DEST[31:0] <- SRC1[31:0]
-  Expr bits_31_0 = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), vc_bvExtract(vc, E_src1, 31, 0));
-
-  // DEST[63:32] <- SRC2[31:0]
-  Expr bits_63_32 = EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), vc_bvExtract(vc, E_src2, 31, 0));
-
-  // DEST[95:64] <- SRC1[63:32]
-  Expr bits_95_64 = EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), vc_bvExtract(vc, E_src1, 63, 32));
-
-  // DEST[127:96] <- SRC2[63:32]
-  Expr bits_127_96 = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), vc_bvExtract(vc, E_src2, 63, 32));
-
-  // Add the four constraints
-  d.constraints.push_back(bits_31_0);
-  d.constraints.push_back(bits_63_32);
-  d.constraints.push_back(bits_95_64);
-  d.constraints.push_back(bits_127_96);
-
-}
-
-void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm)
-{
-  if (imm != 0)
-    throw VALIDATOR_ERROR("Validator only supports shufps with immediate 0");
-	VC&vc = d.vc;
-  E_src = vc_bvExtract(vc, E_src, 31, 0);
-	Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), E_src);
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), E_src));
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), E_src));
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), E_src));
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-
-	d.constraints.push_back(retval);
-  
-}
-
-void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm)
-{
-  if (imm != 5)
-    throw VALIDATOR_ERROR("Validator only supports pshufd with immediate 5");
-
-	VC&vc = d.vc;
-  Expr E_srcl = vc_bvExtract(vc, E_src, 31, 0);
-  Expr E_srch = vc_bvExtract(vc, E_src, 63, 32);
-	Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), E_srch);
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), E_srch));
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), E_srcl));
-	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), E_srcl));
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-
-	d.constraints.push_back(retval);
-  
-}
-
-#define FMULPATT(x)\
-	{\
-	Expr E_result = vc_bvExtract(vc, E_dest, x+31, x);\
-	Expr E_arg1 = vc_bvExtract(vc, E_src1, x+31, x);\
-	Expr E_arg2 = vc_bvExtract(vc, E_src2, x+31, x);\
-	retval = vc_andExpr(vc, retval, (E_result == fmul(E_arg1,E_arg2)));\
-	}
-	
-void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
-{
-
-	VC&vc = d.vc;
-	uint bitWidth = numops*32; 
-	z3::sort fl = vc->bv_sort(32);
-	z3::func_decl fmul = z3::function("mulf", fl, fl, fl);
-	Expr retval = vc_trueExpr(vc);
-	if(numops==1)
-	{
-	  FMULPATT(0)
-	}
-	else
-	{
-	  FMULPATT(0)
-	  FMULPATT(32)
-	  FMULPATT(64)
-	  FMULPATT(96)	  
-	}
-	if(dest_is_reg && numops < 4)
-	{
-		SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
-		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
-	}
-#ifdef DEBUG_VALIDATOR
-	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
-	d.constraints.push_back(retval);
-	
-}
-#undef FMULPATT
-
 
 
 void haddpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
@@ -934,12 +404,14 @@ void haddpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is
 	
 }
 
-void andpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
+
+void maxpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
 {
 
 	VC&vc = d.vc;
-
-	Expr E_result = vc_bvAndExpr(vc,E_src1, E_src2 );
+	z3::sort pfl = vc->bv_sort(128);
+	z3::func_decl fpmax = z3::function("maxfp", pfl, pfl, pfl);
+	Expr E_result = fpmax(E_src1, E_src2);
 	Expr retval = EqExpr(vc, E_dest, E_result);
 #ifdef DEBUG_VALIDATOR
 	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -947,6 +419,125 @@ void andpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
 
 	d.constraints.push_back(retval); 
 }
+
+
+void movddupHandler(v_data d, Expr E_dest, Expr E_src)
+{
+
+	VC&vc = d.vc;
+	E_src = vc_bvExtract(vc, E_src, 63, 0);
+	Expr retval = vc_trueExpr(vc);
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63,0), vc_bvExtract(vc, E_src, 63,0))); 
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127,64), vc_bvExtract(vc, E_src, 63,0))); 
+
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+	d.constraints.push_back(retval);
+	
+}
+
+
+#define DMULPATT(x)\
+	{\
+	Expr E_result = vc_bvExtract(vc, E_dest, x+63, x);\
+	Expr E_arg1 = vc_bvExtract(vc, E_src1, x+63, x);\
+	Expr E_arg2 = vc_bvExtract(vc, E_src2, x+63, x);\
+	retval = vc_andExpr(vc, retval, (E_result == dmul(E_arg1,E_arg2)));\
+	}
+	
+void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
+{
+
+	VC&vc = d.vc;
+	uint bitWidth = numops*64; 
+	z3::sort fl = vc->bv_sort(64);
+	z3::func_decl dmul = z3::function("muld", fl, fl, fl);
+	Expr retval = vc_trueExpr(vc);
+	if(numops==1)
+	{
+	  DMULPATT(0)
+	}
+	else
+	{
+	  DMULPATT(0)
+	  DMULPATT(64)
+	}
+	if(dest_is_reg && numops == 1)
+	{
+		SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
+	}
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+	d.constraints.push_back(retval);
+	
+}
+#undef DMULPATT	
+	
+
+
+#define FMULPATT(x)\
+	{\
+	Expr E_result = vc_bvExtract(vc, E_dest, x+31, x);\
+	Expr E_arg1 = vc_bvExtract(vc, E_src1, x+31, x);\
+	Expr E_arg2 = vc_bvExtract(vc, E_src2, x+31, x);\
+	retval = vc_andExpr(vc, retval, (E_result == fmul(E_arg1,E_arg2)));\
+	}
+	
+void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
+{
+
+	VC&vc = d.vc;
+	uint bitWidth = numops*32; 
+	z3::sort fl = vc->bv_sort(32);
+	z3::func_decl fmul = z3::function("mulf", fl, fl, fl);
+	Expr retval = vc_trueExpr(vc);
+	if(numops==1)
+	{
+	  FMULPATT(0)
+	}
+	else
+	{
+	  FMULPATT(0)
+	  FMULPATT(32)
+	  FMULPATT(64)
+	  FMULPATT(96)	  
+	}
+	if(dest_is_reg && numops < 4)
+	{
+		SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
+	}
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+	d.constraints.push_back(retval);
+	
+}
+#undef FMULPATT
+
+
+
+void paddHandler(v_data d, unsigned int opWidth, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
+{
+
+	VC&vc = d.vc;
+  if (opWidth != 32 || bitWidth != 128) {
+    throw VALIDATOR_ERROR("Only opWidth of 32 and bitWidth of 128 is supported for padd");
+  }
+	Expr retval = vc_trueExpr(vc);
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), vc_bvPlusExpr(vc, 32, vc_bvExtract(vc, E_src1, 31, 0), vc_bvExtract(vc, E_src2, 31, 0))));
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), vc_bvPlusExpr(vc, 32, vc_bvExtract(vc, E_src1, 63, 32), vc_bvExtract(vc, E_src2, 63, 32))));
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), vc_bvPlusExpr(vc, 32, vc_bvExtract(vc, E_src1, 95, 64), vc_bvExtract(vc, E_src2, 95, 64))));
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), vc_bvPlusExpr(vc, 32, vc_bvExtract(vc, E_src1, 127, 96), vc_bvExtract(vc, E_src2, 127, 96))));
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+	d.constraints.push_back(retval);
+}
+
 
 void pandnHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
 {
@@ -961,6 +552,237 @@ void pandnHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
 
 	d.constraints.push_back(retval); 
 }
+
+
+void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm)
+{
+  if (imm != 5)
+    throw VALIDATOR_ERROR("Validator only supports pshufd with immediate 5");
+
+	VC&vc = d.vc;
+  Expr E_srcl = vc_bvExtract(vc, E_src, 31, 0);
+  Expr E_srch = vc_bvExtract(vc, E_src, 63, 32);
+	Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), E_srch);
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), E_srch));
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), E_srcl));
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), E_srcl));
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+	d.constraints.push_back(retval);
+  
+}
+
+
+void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
+{
+  
+  	VC&vc = d.vc;
+	Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), vc_bvExtract(vc, E_src1, 31, 0));
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), vc_bvExtract(vc, E_src2, 31, 0)));
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), vc_bvExtract(vc, E_src1, 63, 32)));
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), vc_bvExtract(vc, E_src2, 63, 32)));
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+	d.constraints.push_back(retval);
+  
+}
+
+
+void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm)
+{
+  if (imm != 0)
+    throw VALIDATOR_ERROR("Validator only supports shufps with immediate 0");
+	VC&vc = d.vc;
+  E_src = vc_bvExtract(vc, E_src, 31, 0);
+	Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), E_src);
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), E_src));
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), E_src));
+	retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), E_src));
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+	d.constraints.push_back(retval);
+  
+}
+	
+#define DSUBPATT(x)\
+	{\
+	Expr E_result = vc_bvExtract(vc, E_dest, x+63, x);\
+	Expr E_arg1 = vc_bvExtract(vc, E_src1, x+63, x);\
+	Expr E_arg2 = vc_bvExtract(vc, E_src2, x+63, x);\
+	retval = vc_andExpr(vc, retval, (E_result == dsub(E_arg1,E_arg2)));\
+	}
+	
+void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
+{
+
+	VC&vc = d.vc;
+	uint bitWidth = numops*64; 
+	z3::sort fl = vc->bv_sort(64);
+	z3::func_decl dsub = z3::function("subd", fl, fl, fl);
+	Expr retval = vc_trueExpr(vc);
+	if(numops==1)
+	{
+	  DSUBPATT(0)
+	}
+	else
+	{
+	  DSUBPATT(0)
+	  DSUBPATT(64)
+	}
+	if(dest_is_reg && numops == 1)
+	{
+		SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
+	}
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+	d.constraints.push_back(retval);
+	
+}
+#undef DSUBPATT	
+
+#define FSUBPATT(x)\
+	{\
+	Expr E_result = vc_bvExtract(vc, E_dest, x+31, x);\
+	Expr E_arg1 = vc_bvExtract(vc, E_src1, x+31, x);\
+	Expr E_arg2 = vc_bvExtract(vc, E_src2, x+31, x);\
+	retval = vc_andExpr(vc, retval, (E_result == fsub(E_arg1,E_arg2)));\
+	}
+	
+void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
+{
+
+	VC&vc = d.vc;
+	uint bitWidth = numops*32; 
+	z3::sort fl = vc->bv_sort(32);
+	z3::func_decl fsub = z3::function("subf", fl, fl, fl);
+	Expr retval = vc_trueExpr(vc);
+	if(numops==1)
+	{
+	  FSUBPATT(0)
+	}
+	else
+	{
+	  FSUBPATT(0)
+	  FSUBPATT(32)
+	  FSUBPATT(64)
+  	  FSUBPATT(96)
+	}
+	if(dest_is_reg && numops == 1)
+	{
+		SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+		retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
+	}
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+	d.constraints.push_back(retval);
+	
+}
+#undef FSUBPATT	
+
+
+void ucomissHandler(v_data d, Expr E_src1, Expr E_src2)
+{
+
+	VC&vc = d.vc;
+	E_src1 = vc_bvExtract(vc, E_src1, 31,0);
+	E_src2 = vc_bvExtract(vc, E_src2, 31,0);
+	z3::sort fl = vc->bv_sort(32);
+	z3::sort cmp_res = vc->bv_sort(2);
+	z3::func_decl fcmp = z3::function("cmpf", fl, fl, cmp_res);
+	Expr E_cmp_res = fcmp(E_src1, E_src2);
+	setFlag(vc,d.Vnprime,V_CF, vc_notExpr(vc, vc_bvBoolExtract_One(vc, E_cmp_res,0)), d.constraints, d.post_suffix);
+	setFlag(vc,d.Vnprime,V_ZF, vc_notExpr(vc, vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_cmp_res,0),vc_bvBoolExtract_One(vc, E_cmp_res,1))), d.constraints, d.post_suffix);
+	setFlag(vc,d.Vnprime,V_PF, vc_andExpr(vc, vc_bvBoolExtract(vc, E_cmp_res,0), vc_bvBoolExtract(vc, E_cmp_res,1)), d.constraints, d.post_suffix);
+	setFlag(vc,d.Vnprime,V_OF, vc_falseExpr(vc), d.constraints, d.post_suffix);
+	setFlag(vc,d.Vnprime,V_SF, vc_falseExpr(vc), d.constraints, d.post_suffix);
+	
+}
+
+
+/* The src1 and src2 are the same as the src1 and src2 in the "Operation"
+ * section of the Intel manual.  In the case of two arguments, src1 is the same
+ * as dest.  We need the bitWidth to disambiguate between the different
+ * operations and the three_args argument to tell us if there are three
+ * arguments or two.  The three argument version is VEX prefixed and behaves
+ * differently. */
+void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2) {
+  VC& vc = d.vc;
+
+  /* Force bits 0..63 of destination to match bits 0..63 of source1. */
+  Expr lower_bits = EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_src1, 63, 0));
+
+  /* Force bits 64..127 of destination to match bits 0..63 of source2. */
+  Expr upper_bits = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src2, 63, 0));
+
+  /* Ensure both of the above constraints are enforced */
+  Expr all_bits  = vc_andExpr(vc, lower_bits, upper_bits);
+
+  if (three_args || bitWidth != 128) {
+    VALIDATOR_ERROR("Berkeley only knows how to handle unpcklpd with two arguments and bit width 128.");
+  }
+
+  d.constraints.push_back(all_bits);
+
+}
+
+void unpcklpsHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2) {
+
+  VC& vc = d.vc;
+
+  if ( three_args || bitWidth != 128 ) {
+    VALIDATOR_ERROR("unpcklps only supported in form 'unpcklps xmm1, xmm2/m128'")
+  }
+
+  // DEST[31:0] <- SRC1[31:0]
+  Expr bits_31_0 = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), vc_bvExtract(vc, E_src1, 31, 0));
+
+  // DEST[63:32] <- SRC2[31:0]
+  Expr bits_63_32 = EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), vc_bvExtract(vc, E_src2, 31, 0));
+
+  // DEST[95:64] <- SRC1[63:32]
+  Expr bits_95_64 = EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), vc_bvExtract(vc, E_src1, 63, 32));
+
+  // DEST[127:96] <- SRC2[63:32]
+  Expr bits_127_96 = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), vc_bvExtract(vc, E_src2, 63, 32));
+
+  // Add the four constraints
+  d.constraints.push_back(bits_31_0);
+  d.constraints.push_back(bits_63_32);
+  d.constraints.push_back(bits_95_64);
+  d.constraints.push_back(bits_127_96);
+
+}
+
+
+
+void vaddsdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
+{
+  	VC&vc = d.vc;
+	adddHandler(d, numops,E_dest,E_src1, E_src2, dest_is_reg);
+	Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src1, 127, 64));
+	
+#ifdef DEBUG_VALIDATOR
+	cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+	d.constraints.push_back(retval);
+	
+}
+
+	
+
+
+
+
+
 
 void andHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true)
 {
@@ -3121,138 +2943,16 @@ void instrnToConstraint(MemoryData& mem, PAIR_INFO state_info,VC& vc, V_Node& n,
 	Expr E_constraint(*vc);
 	Expr E_dest(*vc), E_src1(*vc), E_src2(*vc), E_addr(*vc), pred(*vc), E_src_post(*vc);
 	E_addr = vc_varExpr(vc, ("ADDRTEMPEXPR"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, V_UNITSIZE));
-	//Operand op;
-	//unsigned int shamt;
+
 	M8 addr();
-	//unsigned int ratio = 0;
 
 	switch(instr.get_opcode())
 	{
 	#include "validator.switch"
 	
-	/*case OpcodeVal::CLC:
-		setFlag(vc, Vnprime,V_CF, vc_falseExpr(vc), constraints, post_suffix);
-		break;
-	
-	case Opcode::CMC:
-		setFlag(vc, Vnprime,V_CF, vc_notExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn)), constraints, post_suffix);
-		break;	
-	case OpcodeVal::SAHF:
-		E_src1 = regExprWVN(vc, Register::RAX, d.pre_suffix, d.Vn, V_UNITSIZE);
-		setFlag(vc, Vnprime,V_CF, vc_bvBoolExtract_One(vc, E_src1, 8), constraints, post_suffix);
-		setFlag(vc, Vnprime,V_PF, vc_bvBoolExtract_One(vc, E_src1, 10), constraints, post_suffix);
-		setFlag(vc, Vnprime,V_ZF, vc_bvBoolExtract_One(vc, E_src1, 14), constraints, post_suffix);
-		setFlag(vc, Vnprime,V_SF, vc_bvBoolExtract_One(vc, E_src1, 15), constraints, post_suffix);
-		break;
-	case OpcodeVal::LAHF:
-		lahfHandler(d);
-		break;	
-	case OpcodeVal::STC:
-		setFlag(vc, Vnprime,V_CF, vc_trueExpr(vc), constraints, post_suffix);
-		break;*/
-/*	case Opcode::LEA32r:
-	case Opcode::LEA64_32r:
-		leaHandler(d,32);
-		break;
-	case Opcode::CRC32r32:
-		op = getRegisterFromInstr( instr, 0 );
-		E_dest = vc_bvExtract(vc, regExprWVN(vc,getOperandValue(parentRegister(op)),d.post_suffix, d.Vnprime, V_UNITSIZE), 31, 0);
-		E_src1 = vc_bvExtract(vc, regExprWVN(vc,getOperandValue(parentRegister(op)),d.pre_suffix, d.Vn, V_UNITSIZE), 31, 0);
-		E_src2 = vc_bvExtract(vc, regExprWVN(vc,getOperandValue(parentRegister(getRegisterFromInstr(instr, instr.arity()-1))),d.pre_suffix, d.Vn, V_UNITSIZE), 31, 0);
-		crc32r32Handler(d, E_dest, E_src1, E_src2);
-		break;
-	case Opcode::POPCNT32rr:
-		op = getRegisterFromInstr( instr, 0 );
-		E_dest = vc_bvExtract(vc, regExprWVN(vc,getOperandValue(parentRegister(op)),d.post_suffix, d.Vnprime, V_UNITSIZE), 31, 0);
-		E_src1 = vc_bvExtract(vc, regExprWVN(vc,getOperandValue(parentRegister(getRegisterFromInstr(instr, instr.arity()-1))),d.pre_suffix, d.Vn, V_UNITSIZE), 31, 0);
-		popcnt32rrHandler(d, E_dest, E_src1);
-		break;
-#include "cmpxchg.inc"		
-#include "adc.inc"
-#include "add.inc"
-#include "and.inc"
-#include "bsf.inc"		
-#include "convert.inc"
-#include "cmov.inc"  
-#include "cmp.inc"
-#include "dec.inc"   
-#include "div.inc" 
-#include "mul.inc"  
-#include "incr.inc"  
-#include "mov.inc"
-#include "neg.inc"
-#include "not.inc"
-#include "or.inc"
-#include "rot.inc"	
-#include "set.inc"		
-#include "shift.inc"
-#include "sub.inc"        
-#include "test.inc" 
-#include "xor.inc"
-
-	case OpcodeVal::RETQ:
-	case OpcodeVal::LABEL_DEFN_64L:
-		//case Opcode::PUSH:
-		//case Opcode::POP:
-	case Opcode::JAE_1:
-	case Opcode::JAE_4:
-	case Opcode::JA_1:
-	case Opcode::JA_4:
-	case Opcode::JBE_1:
-	case Opcode::JBE_4:
-	case Opcode::JB_1:
-	case Opcode::JB_4:
-	case Opcode::JCXZ:
-	case Opcode::JECXZ_32:
-	case Opcode::JECXZ_64:
-	case Opcode::JE_1:
-	case Opcode::JE_4:
-	case Opcode::JGE_1:
-	case Opcode::JGE_4:
-	case Opcode::JG_1:
-	case Opcode::JG_4:
-	case Opcode::JLE_1:
-	case Opcode::JLE_4:
-	case Opcode::JL_1:
-	case Opcode::JL_4:
-	case Opcode::JMP32m:
-	case Opcode::JMP32r:
-	case Opcode::JMP64m:
-	case Opcode::JMP64pcrel32:
-	case Opcode::JMP64r:
-	case Opcode::JMP_1:
-	case Opcode::JMP_4:
-	case Opcode::JNE_1:
-	case Opcode::JNE_4:
-	case Opcode::JNO_1:
-	case Opcode::JNO_4:
-	case Opcode::JNP_1:
-	case Opcode::JNP_4:
-	case Opcode::JNS_1:
-	case Opcode::JNS_4:
-	case Opcode::JO_1:
-	case Opcode::JO_4:
-	case Opcode::JP_1:
-	case Opcode::JP_4:
-	case Opcode::JRCXZ:
-	case Opcode::JS_1:
-	case Opcode::JS_4:		
-		//retHandler(d);
-		break;
-	case Opcode::NOOP:	
-	case Opcode::TAILJMPd64:
-		break;*/
-	/*case JA_64L:
-	  V_CC_A
-	  d.constraints.push_back(pred);
-	  break;
-	case JBE_64L:
-	  V_CC_BE
-	  d.constraints.push_back(pred);
-	  break;*/
 	default: 
 #ifdef DEBUG_VALIDATOR
-      cout << "Unhandled Instruction for creating constraint "<<instr; cout  << "\n";
+      cout << "Unhandled Instruction for creating constraint " << instr << "\n";
 #endif
     throw VALIDATOR_ERROR("Unhandled instruction, of unknown type.");
 
