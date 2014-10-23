@@ -40,10 +40,12 @@ void callback_wrapper(StateCallback cb, size_t line, CpuState* current, void* ar
 namespace stoke {
 
 Sandbox::Sandbox() : fxn_(32 * 1024) {
+	fxn_.reserve(32 * 1024);
   clear_inputs();
   clear_callbacks();
 	set_abi_check(true);
-  set_max_jumps(1024);
+  set_max_jumps(16);
+	set_max_calls(16);
 
   snapshot_.init();
 

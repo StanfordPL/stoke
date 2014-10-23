@@ -45,11 +45,16 @@ class Sandbox {
 		abi_check_ = check;
 		return *this;
 	}
-  /** Sets the maximum number of jumps taken before premature exit. */
+  /** Sets the maximum number of jumps taken before raising SIGINT. */
   Sandbox& set_max_jumps(size_t jumps) {
     max_jumps_ = jumps;
     return *this;
   }
+	/** Sets the maximum number of calls performed before raising SIGINT. */
+	Sandbox& set_max_calls(size_t calls) {
+		max_calls_ = calls;
+		return *this;
+	}
 
   /** Clear input set. */
   Sandbox& clear_inputs();
@@ -128,8 +133,10 @@ class Sandbox {
 
 	/** Should the sandbox report errors for linux abi violations? */
 	bool abi_check_;
-  /** The maximum number of jumps to take before exiting. */
+  /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
+	/** The maximum number of calls to make before raising SIGINT. */
+	size_t max_calls_;
   /** How many jumps have been taken during this execution. */
   size_t jumps_;
   /** Has a segfault occurred during this execution? */
