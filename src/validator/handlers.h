@@ -153,6 +153,7 @@ void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, 
 void subHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg);
 void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg);
 void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg);
+void subpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2);
 void testHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2);
 void ucomissHandler(v_data d, Expr E_src1, Expr E_src2);
 void umul1Handler(v_data d, unsigned int bitWidth, Expr E_src2);
