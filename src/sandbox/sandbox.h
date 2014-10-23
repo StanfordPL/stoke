@@ -135,10 +135,12 @@ class Sandbox {
 	bool abi_check_;
   /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
+  /** How many more jumps can be made before SIGINT? */
+  size_t jumps_;
 	/** The maximum number of calls to make before raising SIGINT. */
 	size_t max_calls_;
-  /** How many jumps have been taken during this execution. */
-  size_t jumps_;
+	/** How many more calls cab be made before SIGINT? */
+	size_t calls_;
   /** Has a segfault occurred during this execution? */
   size_t segv_;
 

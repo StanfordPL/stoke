@@ -151,6 +151,7 @@ void Sandbox::run_one(size_t index) {
 
   // Reset infinite loop and segfault state
   jumps_ = max_jumps_;
+	calls_ = max_calls_;
   segv_ = 0;
 
   // Set the global variables for this input
