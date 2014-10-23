@@ -20,6 +20,7 @@ class RegSetReaderTest : public ::testing::Test {
 
     std::stringstream ss_;
     stoke::RegSetReader rsr_;
+    stoke::RegSetWriter rsw_;
     x64asm::RegSet rs_;
 
 };
@@ -34,6 +35,15 @@ TEST_F(RegSetReaderTest, ReadsRAX) {
 
 }
 
+TEST_F(RegSetReaderTest, WritesRAX) {
+
+  std::string expected = "{ %rax }";
+  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::Constants::rax();
+
+  rsw_(ss_, rs_);
+  ASSERT_EQ(expected, ss_.str());
+
+}
 
 TEST_F(RegSetReaderTest, ReadsAX) {
 
@@ -42,6 +52,16 @@ TEST_F(RegSetReaderTest, ReadsAX) {
 
   rsr_(ss_, rs_);
   ASSERT_EQ(expected, rs_);
+
+}
+
+TEST_F(RegSetReaderTest, WritesAX) {
+
+  std::string expected = "{ %ax }";
+  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::Constants::ax();
+
+  rsw_(ss_, rs_);
+  ASSERT_EQ(expected, ss_.str());
 
 }
 
@@ -55,6 +75,15 @@ TEST_F(RegSetReaderTest, ReadsXMM0) {
 
 }
 
+TEST_F(RegSetReaderTest, WritesXMM0) {
+
+  std::string expected = "{ %xmm0 }";
+  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::Constants::xmm0();
+
+  rsw_(ss_, rs_);
+  ASSERT_EQ(expected, ss_.str());
+
+}
 
 TEST_F(RegSetReaderTest, ReadsYMM0) {
 
@@ -66,38 +95,55 @@ TEST_F(RegSetReaderTest, ReadsYMM0) {
 
 }
 
-TEST(RegSetOutputStream, WritesRAX) {
+TEST_F(RegSetReaderTest, WritesYMM0) {
 
-  x64asm::RegSet rs = x64asm::RegSet::empty() + x64asm::Constants::rax();
-  std::stringstream ss;
-  ss << rs;
-  ASSERT_EQ("{ %rax }", ss.str());
+  std::string expected = "{ %ymm0 }";
+  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::Constants::ymm0();
+
+  rsw_(ss_, rs_);
+  ASSERT_EQ(expected, ss_.str());
+
 }
 
-TEST(RegSetOutputStream, WritesEmpty) {
+TEST_F(RegSetReaderTest, ReadsCf) {
 
-  x64asm::RegSet rs = x64asm::RegSet::empty();
-  std::stringstream ss;
-  ss << rs;
-  ASSERT_EQ("{ }", ss.str());
+  ss_ << "{ %cf }";
+  x64asm::RegSet expected = x64asm::RegSet::empty() + x64asm::eflags_cf;
+
+  rsr_(ss_, rs_);
+  ASSERT_EQ(expected, rs_);
+
 }
 
-TEST(RegSetOutputStream, WritesComplex) {
+TEST_F(RegSetReaderTest, WritesCf) {
 
-  x64asm::RegSet rs = x64asm::RegSet::empty() + 
-                      x64asm::Constants::rax() +
-                      x64asm::Constants::dx() +
-                      x64asm::Constants::xmm1() +
-                      x64asm::Constants::ymm2() +
-                      x64asm::Constants::cl();
+  std::string expected = "{ %cf }";
+  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::eflags_cf;
 
-  std::stringstream ss;
-  ss << rs;
-  ASSERT_EQ("{ %rax %cl %dx %xmm1 %ymm2 }", ss.str());
+  rsw_(ss_, rs_);
+  ASSERT_EQ(expected, ss_.str());
+
 }
 
+TEST_F(RegSetReaderTest, ReadsIopl) {
 
+  ss_ << "{ %iopl }";
+  x64asm::RegSet expected = x64asm::RegSet::empty() + x64asm::eflags_iopl;
 
+  rsr_(ss_, rs_);
+  ASSERT_EQ(expected, rs_);
+
+}
+
+TEST_F(RegSetReaderTest, WritesIopl) {
+
+  std::string expected = "{ %iopl }";
+  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::eflags_iopl;
+
+  rsw_(ss_, rs_);
+  ASSERT_EQ(expected, ss_.str());
+
+}
 
 
 #endif
