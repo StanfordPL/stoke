@@ -93,30 +93,11 @@ void StateGen::randomize_regs(CpuState& cs) const {
 			s.get_fixed_byte(j) = rand() % 256;
 		}
 	}
-	// RFlags (note that some bits have deterministic values)
-	for (size_t i = 0, ie = 12; i < ie; ++i) {
-		if (cs.rf.is_fixed_true(i)) {
-			cs.rf.set(i, true);
-		} else if (cs.rf.is_fixed_false(i)) {
-			cs.rf.set(i, false);
-		} else {
+	// RFlags (don't modify deterministic values)
+	for (size_t i = 0, ie = cs.rf.size(); i < ie; ++i) {
+		if (!cs.rf.is_fixed(i)) {
 			cs.rf.set(i, rand() % 2);
 		}
-	}
-	// Remaining flags don't necessarily have deterministic values, but setting
-	// them arbitrarily can cause pretty nasty behavior when they're copied
-	// to the cpu
-
-	// tf = 0 keeps cpu out of single step interrupt mode
-	cs.rf.set(8, false); 
-	// if = 1 turns maskable hardware interrupts on
-	cs.rf.set(9, true); 
-	// df = 1 somehow gives us trouble, so I'll keep it at zero
-	cs.rf.set(10, false);
-	// Generally speaking, I have no idea what these do, but pin traces show
-	// that they're always set to false
-	for (size_t i = 12, ie = cs.rf.size(); i < ie; ++i) {
-		cs.rf.set(i, false);
 	}
 }
 
