@@ -154,13 +154,26 @@ array<pair<string, Ymm>, 16> ymms_a {{
   }
 };
 
-array<pair<string, Eflags>, 6> eflags_a {{
+array<pair<string, Eflags>, 17> eflags_a {{
 		{"%cf", eflags_cf},
 		{"%pf", eflags_pf},
 		{"%af", eflags_af},
 		{"%zf", eflags_zf},
 		{"%sf", eflags_sf},
-		{"%of", eflags_of}
+		{"%of", eflags_of},
+    
+    // the reset of these are rarely used
+    {"%tf",   eflags_tf},
+    {"%if",   eflags_if},
+    {"%df",   eflags_df},
+    {"%iopl", eflags_iopl},
+    {"%nt",   eflags_nt},
+    {"%rf",   eflags_rf},
+    {"%vm",   eflags_vm},
+    {"%ac",   eflags_ac},
+    {"%vif",  eflags_vif},
+    {"%vip",  eflags_vip},
+    {"%id",   eflags_id}
 	}
 };
 
@@ -207,7 +220,7 @@ void RegSetReader::operator()(istream& is, RegSet& r) {
 
 void RegSetWriter::operator()(ostream& os, const RegSet& r) {
   os << "{";
-	for (size_t i = 0; i < 16; ++i) {
+	for (size_t i = 0; i < r64s.size(); ++i) {
 		if (r.contains(r64s[i])) {
 			os << " " << r64s[i];
 		} else if (r.contains(r32s[i])) {
@@ -225,14 +238,14 @@ void RegSetWriter::operator()(ostream& os, const RegSet& r) {
 			os << " " << rbs[i-4];
 		}
 	}
-	for (size_t i = 0; i < 16; ++i) {
+	for (size_t i = 0; i < ymms.size(); ++i) {
 		if (r.contains(ymms[i])) {
 			os << " " << ymms[i];
 		} else if (r.contains(xmms[i])) {
 			os << " " << xmms[i];
 		}
 	}
-	for (size_t i = 0; i < 17; ++i) {
+	for (size_t i = 0; i < eflags.size(); ++i) {
 		if (r.contains(eflags[i])) {
 			string s;
 			generic_write(eflags_a, s, eflags[i]);
