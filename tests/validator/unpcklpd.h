@@ -3,130 +3,72 @@
 #include "src/validator/error.h"
 #include "src/validator/validator.h"
 
-TEST(ValidatorUnpcklpd, Identity) {
+class ValidatorUnpcklpdTest : public ValidatorTest {};
 
-  x64asm::Code c, d;
+TEST_F(ValidatorUnpcklpdTest, Identity) {
 
-  std::stringstream tmp;
-  tmp << "unpcklpd %xmm1, %xmm1" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  target_ << "unpcklpd %xmm1, %xmm1" << std::endl;
+  target_ << "retq" << std::endl;
 
-  tmp << "unpcklpd %xmm1, %xmm1" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
+  rewrite_ << "unpcklpd %xmm1, %xmm1" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
+  assert_equiv();
 }
 
 
-TEST(ValidatorUnpcklpd, NonIdentity) {
+TEST_F(ValidatorUnpcklpdTest, NonIdentity) {
+
+  target_ << "unpcklpd %xmm1, %xmm1" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "unpcklpd %xmm2, %xmm2" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_ceg();
+}
+
+
+TEST_F(ValidatorUnpcklpdTest, Idempotent) {
 
   x64asm::Code c, d;
 
-  std::stringstream tmp;
-  tmp << "unpcklpd %xmm1, %xmm1" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  target_ << "unpcklpd %xmm3, %xmm2" << std::endl;
+  target_ << "retq" << std::endl;
 
-  tmp << "unpcklpd %xmm2, %xmm2" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
+  rewrite_ << "unpcklpd %xmm3, %xmm2" << std::endl;
+  rewrite_ << "unpcklpd %xmm3, %xmm2" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg));
+  assert_equiv();
 
 }
 
 
-TEST(ValidatorUnpcklpd, Idempotent) {
+TEST_F(ValidatorUnpcklpdTest, IdempotentOtherArg) {
 
-  x64asm::Code c, d;
+  target_ << "unpcklpd %xmm2, %xmm3" << std::endl;
+  target_ << "retq" << std::endl;
 
-  std::stringstream tmp;
-  tmp << "unpcklpd %xmm3, %xmm2" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  rewrite_ << "unpcklpd %xmm1, %xmm3" << std::endl;
+  rewrite_ << "unpcklpd %xmm2, %xmm3" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  tmp << "unpcklpd %xmm3, %xmm2" << std::endl;
-  tmp << "unpcklpd %xmm3, %xmm2" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
+  assert_equiv();
 
 }
 
 
-TEST(ValidatorUnpcklpd, IdempotentOtherArg) {
+TEST_F(ValidatorUnpcklpdTest, NotIdempotentWrongArg) {
 
-  x64asm::Code c, d;
+  target_ << "unpcklpd %xmm1, %xmm3" << std::endl;
+  target_ << "retq" << std::endl;
 
-  std::stringstream tmp;
-  tmp << "unpcklpd %xmm2, %xmm3" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  rewrite_ << "unpcklpd %xmm1, %xmm3" << std::endl;
+  rewrite_ << "unpcklpd %xmm2, %xmm3" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  tmp << "unpcklpd %xmm1, %xmm3" << std::endl;
-  tmp << "unpcklpd %xmm2, %xmm3" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
-
-}
-
-
-TEST(ValidatorUnpcklpd, NotIdempotentWrongArg) {
-
-  x64asm::Code c, d;
-
-  std::stringstream tmp;
-  tmp << "unpcklpd %xmm1, %xmm3" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
-
-  tmp << "unpcklpd %xmm1, %xmm3" << std::endl;
-  tmp << "unpcklpd %xmm2, %xmm3" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
-
+  assert_ceg();
 }
 
 
