@@ -7,6 +7,12 @@ using namespace x64asm;
 
 #include "helpers.cc"
 
+#ifdef DEBUG_VALIDATOR
+#define ADD_CONS(s) {cout << "Adding constraint: " << endl << s << endl;}
+#else
+#define ADD_CONS(S) 
+#endif
+
 //The variable pred is captured by the context. It represents the predicate for conditional moves and conditional sets
 //V_CC_A is cf==0 and zf==0
 #define V_CC_A   pred = vc_andExpr(vc, vc_notExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn)), vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn)));
@@ -2683,7 +2689,6 @@ void subpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_d
     Expr s2  = vc_bvExtract(vc, E_src2, i+31, i);
     Expr equ = (dst == subps_subf(s1, s2));
 
-    cout << "adding: " << equ << endl;
     d.constraints.push_back(equ);
   }
 
@@ -2786,20 +2791,19 @@ void umul1Handler(v_data d, unsigned int bitWidth, Expr E_src2) {
 void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2) {
   VC& vc = d.vc;
 
-  /* Force bits 0..63 of destination to match bits 0..63 of source1. */
-  Expr lower_bits = EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_src1, 63, 0));
-
-  /* Force bits 64..127 of destination to match bits 0..63 of source2. */
-  Expr upper_bits = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src2, 63, 0));
-
-  /* Ensure both of the above constraints are enforced */
-  Expr all_bits  = vc_andExpr(vc, lower_bits, upper_bits);
-
   if (three_args || bitWidth != 128) {
     VALIDATOR_ERROR("Berkeley only knows how to handle unpcklpd with two arguments and bit width 128.");
   }
 
-  d.constraints.push_back(all_bits);
+  /* Force bits 0..63 of destination to match bits 0..63 of source1. */
+  Expr lower_bits = EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_src1, 63, 0));
+  d.constraints.push_back(lower_bits);
+  ADD_CONS(lower_bits);
+
+  /* Force bits 64..127 of destination to match bits 0..63 of source2. */
+  Expr upper_bits = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src2, 63, 0));
+  d.constraints.push_back(upper_bits);
+  ADD_CONS(upper_bits);
 
 }
 
@@ -2839,9 +2843,7 @@ void vaddsdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr
   adddHandler(d, numops,E_dest,E_src1, E_src2, dest_is_reg);
   Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src1, 127, 64));
 
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
+  ADD_CONS(retval);
   d.constraints.push_back(retval);
 
 }
@@ -2860,7 +2862,7 @@ void xaddHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
     id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,d.instr.arity()-1)));
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
-  //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+  ADD_CONS(retval);
   d.constraints.push_back(retval);
 }
 
@@ -2879,7 +2881,7 @@ void xchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
     id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,d.instr.arity()-1)));
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
-  //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+  ADD_CONS(retval);
   d.constraints.push_back(retval);  
 }
 
@@ -2896,11 +2898,27 @@ void xorHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
     SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
-  //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+  ADD_CONS(retval);
   d.constraints.push_back(retval); 
   setFlag(vc,d.Vnprime,V_CF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime,V_OF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
+}
+
+void xorpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2) {
+
+  if (bitWidth != 128 || numops != 2)
+    VALIDATOR_ERROR("xorps only supported for two 128-bit operands");
+
+  VC&vc = d.vc;
+
+  // DEST[127:0] <- SRC1[127:0] ^ SRC2[127:0]
+  // note: this only works when bitwidth is 129.
+  Expr retval = EqExpr(vc, E_dest, vc_bvXorExpr(vc, E_src1, E_src2));
+
+  d.constraints.push_back(retval);
+  ADD_CONS(retval);
+
 }
 
 

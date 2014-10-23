@@ -67,6 +67,11 @@ Expr regExpr(VC& vc, string s, unsigned int size)
 //Initialize the counter-example trace
 void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_example)
 {
+  /*
+  cout << "Model size: " << dec << wcex.size() << endl;
+  cout << "Model functions: " << wcex.num_funcs() << endl;
+  cout << "Model constants: " << wcex.num_consts() << endl;
+  */
 #ifdef DEBUG_VALIDATOR
   cout << "Printing Counterexample " << endl;
 #endif
@@ -103,19 +108,39 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
 
 	for(iter = sizes.begin(); iter != sizes.end(); iter++)
 	{
-		if(iter->second != V_REGSIZE )
+		if(iter->second == V_FLAGSIZE )
 			continue;
 		regname = bij.toVal(iter->first);
-		Expr REG1INIT = regExpr(vc, regname,V_UNITSIZE);
+    if (iter->second == V_REGSIZE) {
+      long long int val;
+		  Expr REG1INIT = regExpr(vc, regname,V_UNITSIZE);
+      Z3_get_numeral_int64(*vc,wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG1INIT, true))), &val); 	
 #ifdef DEBUG_VALIDATOR
-		cout << regname << " is expr " << REG1INIT;
+		  cout << regname << " is expr " << REG1INIT;
+      cout << " with value " << val << endl; 
 #endif
-		long long int val;
-		Z3_get_numeral_int64(*vc,wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG1INIT, true))), &val); 	
-#ifdef DEBUG_VALIDATOR
-		cout << " with value " << val << endl; 
-#endif
-		counter_example.gp[iter->first].get_fixed_quad(0) = val;
+      counter_example.gp[iter->first].get_fixed_quad(0) = val;
+
+    } else if (iter->second == V_XMMSIZE) {
+
+      // Get the expression for this register
+      Expr xmm_reg = regExpr(vc, regname, 128);
+
+      // Get the low and high quadwords
+      Expr low = vc_bvExtract(vc, xmm_reg, 63, 0);
+      Expr high = vc_bvExtract(vc, xmm_reg, 127, 64);
+
+      // Convert to quadwords
+      long long int low_n;
+      long long int high_n;
+      Z3_get_numeral_int64(*vc, wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, low, true))), &low_n);
+      Z3_get_numeral_int64(*vc, wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, high, true))), &high_n);
+      
+      // Place into counterexample
+      counter_example.sse[iter->first - XMM_BEG].get_fixed_quad(1) = high_n;
+      counter_example.sse[iter->first - XMM_BEG].get_fixed_quad(0) = low_n;
+
+    }
 	}
 
 }
@@ -341,9 +366,7 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 			Expr E_state_elem_initial = regExpr(vc, (elem + "_" + code_num + "_0"), V_UNITSIZE);
 			Expr E_eq_initial = EqExpr(vc, E_state_elem_common, E_state_elem_initial);
 #ifdef DEBUG_VALIDATOR
-			cout << "Register constraint is:\n";
-			vc_printExpr(vc, E_eq_initial);
-			cout << "\n";
+			cout << "Register constraint is: " << endl << E_eq_initial << endl;
 #endif
 			constraints.push_back(E_eq_initial);
 		}
@@ -354,9 +377,7 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 			Expr E_state_elem_initial = vc_varExpr(vc, (elem + "_" + code_num + "_0").c_str(), boolType);
 			Expr E_eq_initial = vc_iffExpr(vc, E_state_elem_common, E_state_elem_initial);
 #ifdef DEBUG_VALIDATOR
-			cout << "Flag constraint is:\n";
-			vc_printExpr(vc, E_eq_initial);
-			cout << "\n";
+			cout << "Flag constraint is: " << endl << E_eq_initial << endl;
 #endif
 			constraints.push_back(E_eq_initial);			
 		}
@@ -368,9 +389,7 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 			Expr E_state_elem_initial = regExpr(vc, (elem + "_" + code_num + "_0"), V_XMMUNIT);
 			Expr E_eq_initial =  EqExpr(vc, E_state_elem_common, E_state_elem_initial); 
 #ifdef DEBUG_VALIDATOR
-			cout << "XMM Register constraint is:\n";
-			vc_printExpr(vc, E_eq_initial);
-			cout << "\n";
+			cout << "XMM Register constraint is:" << endl << E_eq_initial << endl;
 #endif
 			constraints.push_back(E_eq_initial);
 		}

@@ -163,6 +163,7 @@ void vaddsdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr
 void xaddHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_src_post, bool dest_is_reg);
 void xchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_src_post,  bool dest_is_reg);
 void xorHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg);
+void xorpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2);
 
 //Convert an instruction to a constraint
 void instrnToConstraint(MemoryData& mem, PAIR_INFO state_info,VC& vc,V_Node& n,
