@@ -739,8 +739,7 @@ void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2)
  * operations and the three_args argument to tell us if there are three
  * arguments or two.  The three argument version is VEX prefixed and behaves
  * differently. */
-void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2)
-{
+void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2) {
   VC& vc = d.vc;
 
   /* Force bits 0..63 of destination to match bits 0..63 of source1. */
@@ -760,6 +759,33 @@ void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_de
 
 }
 
+void unpcklpsHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2) {
+
+  VC& vc = d.vc;
+
+  if ( three_args || bitWidth != 128 ) {
+    VALIDATOR_ERROR("unpcklps only supported in form 'unpcklps xmm1, xmm2/m128'")
+  }
+
+  // DEST[31:0] <- SRC1[31:0]
+  Expr bits_31_0 = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), vc_bvExtract(vc, E_src1, 31, 0));
+
+  // DEST[63:32] <- SRC2[31:0]
+  Expr bits_63_32 = EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), vc_bvExtract(vc, E_src2, 31, 0));
+
+  // DEST[95:64] <- SRC1[63:32]
+  Expr bits_95_64 = EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), vc_bvExtract(vc, E_src1, 63, 32));
+
+  // DEST[127:96] <- SRC2[63:32]
+  Expr bits_127_96 = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), vc_bvExtract(vc, E_src2, 63, 32));
+
+  // Add the four constraints
+  d.constraints.push_back(bits_31_0);
+  d.constraints.push_back(bits_63_32);
+  d.constraints.push_back(bits_95_64);
+  d.constraints.push_back(bits_127_96);
+
+}
 
 void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm)
 {

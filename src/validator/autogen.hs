@@ -1892,6 +1892,9 @@ lookup_handler "pshufd" _ _  = "pshufdHandler(d, imm, E0,E1,E2);"
 lookup_handler "punpckldq" _ _  = "punpckldqHandler(d, E1,E0,E2);"
 lookup_handler "unpcklpd" 2 _ = "unpcklpdHandler(d, bitWidth, false, E1, E0, E2);"
 lookup_handler "unpcklpd" 3 _ = "unpcklpdHandler(d, bitWidth, true, E1, E0, E2);"
+lookup_handler "unpcklps" 2 _ = "unpcklpsHandler(d, bitWidth, false, E1, E0, E2);"
+lookup_handler "unpcklps" 3 _ = "unpcklpsHandler(d, bitWidth, true, E1, E0, E2);"
+
 
  --"divb","divw","divl","divq"
  --"salw"
