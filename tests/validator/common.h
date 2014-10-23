@@ -76,6 +76,10 @@ class ValidatorTest : public ::testing::Test {
        If you get the same thing, we have a validator bug. */
     void check_ceg(stoke::CpuState& ceg) {
 
+      // Make sure that a counterexample was intended.
+      if(!v_.is_counterexample_valid())
+        return;
+
       // Setup a sandbox with testcase
       stoke::Sandbox sb;
       sb.set_abi_check(false)

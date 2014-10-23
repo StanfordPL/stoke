@@ -65,13 +65,13 @@ Expr regExpr(VC& vc, string s, unsigned int size)
 }
 
 //Initialize the counter-example trace
-void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_example)
+void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_example, bool& counterexample_valid)
 {
-  /*
-  cout << "Model size: " << dec << wcex.size() << endl;
-  cout << "Model functions: " << wcex.num_funcs() << endl;
-  cout << "Model constants: " << wcex.num_consts() << endl;
-  */
+  if(wcex.num_funcs() > 0)
+    counterexample_valid = false;
+  else
+    counterexample_valid = true;
+
 #ifdef DEBUG_VALIDATOR
   cout << "Printing Counterexample " << endl;
 #endif
@@ -145,7 +145,7 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
 
 }
 
-bool z3Solve(VC& vc, vector<Expr>& constraints, vector<Expr>& query,PAIR_INFO state_info,stoke::CpuState& counter_example)
+bool z3Solve(VC& vc, vector<Expr>& constraints, vector<Expr>& query,PAIR_INFO state_info,stoke::CpuState& counter_example, bool& counterexample_valid)
 {
   solver s(*vc);
   Expr full_expr = vc_trueExpr(vc);
@@ -225,7 +225,7 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
 #ifdef DEBUG_VALIDATOR
 			cout << "Model is " << endl << m; 
 #endif
-			InitCex(vc,m,state_info, counter_example);
+			InitCex(vc,m,state_info, counter_example, counterexample_valid);
 		}
 #ifdef DEBUG_VALIDATOR
 		if(result == 1) { 
@@ -651,6 +651,6 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
   vc_->set("timeout", (int)timeout_);
 
   // Run the solver
-	return z3Solve(vc_, constraints, query, state_info_, counter_example);
+	return z3Solve(vc_, constraints, query, state_info_, counter_example, counterexample_valid_);
 }
 }

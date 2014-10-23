@@ -91,6 +91,11 @@ class Validator {
       return *this;
     }
 
+    /* Returns whether the last counterexample made sense */
+    bool is_counterexample_valid() {
+      return counterexample_valid_;
+    }
+
     /** @todo Need a data structure for abductions if we ever write this. */
     std::ostream& print_abduction(std::ostream& os);
 
@@ -106,6 +111,8 @@ class Validator {
     std::pair<Bijection<std::string>,std::map<SS_Id, unsigned int> > state_info_;
     /* Will the code write memory? */
     bool mem_out_;
+    /* Was the last counterexample sensible? */
+    bool counterexample_valid_;
 };
 
 
