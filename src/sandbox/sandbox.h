@@ -159,8 +159,6 @@ class Sandbox {
   /** Set prior to execution, function for sandboxing memory references. */
   uint64_t current_map_addr_;
 
-  /** Emit an instruction (and possibly sandbox memory). */
-  void emit_instruction(const x64asm::Instruction& instr);
   /** Emit a memory instruction. */
   void emit_memory_instr(const x64asm::Instruction& instr);
   /** Special case for emitting push. */
@@ -191,6 +189,36 @@ class Sandbox {
   x64asm::Function assemble_map_addr(CpuState& cs);
   /** Returns code to check memory for validity and then toggle def bits. */
   void emit_stack_heap_cases(CpuState& cs, bool stack);
+
+
+
+	/** Pointer to a function for writing the user's input state (modulo rsp) to the cpu */
+	void* in2cpu_;
+	/** Pointer to a function for writing the user's output state (modulo rsp) to the cpu */
+	void* out2cpu_;
+	/** Pointer to a function for reading the user's output state (all of it) from the cpu */
+	void* cpu2out_;
+	/** The user's current %rsp */
+	uint64_t user_rsp_;
+		
+	/** Pointer to the harness function */
+	x64asm::Function harness_;
+	/** The harness's %rsp */
+	uint64_t harness_rsp_;
+	/** STOKE's %rsp */
+	uint64_t stoke_rsp_;
+
+	/** Assembles a function for writing user state (modulo rsp) to the cpu */
+	x64asm::Function emit_state2cpu(const CpuState& cs);
+	/** Assembles a function for reading user state from the cpu */
+	x64asm::Function emit_cpu2state(CpuState& cs);
+	/** Assembles the harness function */
+	x64asm::Function emit_harness();
+	/** Assembles the user's function */
+	void emit_function(const Cfg& cfg);
+	
+  /** Emit an instruction (and possibly sandbox memory). */
+  void emit_instruction(const x64asm::Instruction& instr);
 };
 
 } // namespace stoke

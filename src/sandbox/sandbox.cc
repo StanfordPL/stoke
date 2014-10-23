@@ -49,6 +49,10 @@ Sandbox::Sandbox() : fxn_(32 * 1024) {
 
   snapshot_.init();
 
+
+
+	harness_ = emit_harness();
+
   static bool once = false;
   if (!once) {
     once = true;
@@ -85,9 +89,9 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
   // We handle rsp separately as part of the user's callee-saved state.
 
   // Assemble helper functions for this io pair.
-  io->in2cpu_ = CpuIo::write(io->in_, RegSet::universe() - (RegSet::empty() + rsp));
-  io->out2cpu_ = CpuIo::write(io->out_, RegSet::universe() - (RegSet::empty() + rax + rsp));
-  io->cpu2out_ = CpuIo::read(io->out_, RegSet::universe(), {{rax, &scratch_[rax]}, {rsp, &scratch_[rsp]}});
+  io->in2cpu_ = emit_state2cpu(io->in_);
+  io->out2cpu_ = emit_state2cpu(io->out_);
+  io->cpu2out_ = emit_cpu2state(io->out_);
   io->map_addr_ = assemble_map_addr(io->out_);
 
   return *this;
@@ -96,6 +100,8 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
 /** The goal here is to assemble a reusable function for every in_[i]. We can
   assume that globally visible current_xxx vars will be defined appropriately. */
 void Sandbox::compile(const Cfg& cfg) {
+	emit_function(cfg);
+	/*
   const auto& code = cfg.get_code();
   read_only_mem_ = true;
 
@@ -137,6 +143,7 @@ void Sandbox::compile(const Cfg& cfg) {
   emit_sig_return();
 
   assm_.finish();
+	*/
 }
 
 void Sandbox::run_all() {
@@ -167,10 +174,18 @@ void Sandbox::run_one(size_t index) {
     io->out_.heap.copy_defined(io->in_.heap);
   }
 
+	// THIS IS WHERE ALL THE NEW WORK IS GOING
+	in2cpu_ = io->in2cpu_.get_entrypoint();
+	out2cpu_ = io->out2cpu_.get_entrypoint();
+	cpu2out_ = io->cpu2out_.get_entrypoint();
+
+	user_rsp_ = io->in_.gp[rsp].get_fixed_quad(0);
+	
+
   // Run the code and set signal flags
   if (!sigsetjmp(buf_, 1)) {
     io->out_.code = ErrorCode::NORMAL;
-    fxn_.call<void, void*>(io->in2cpu_.get_entrypoint());
+    fxn_.call<void>(harness_.get_entrypoint());
 
     if (jumps_ == 0) {
       io->out_.code = ErrorCode::SIGKILL_;
@@ -184,35 +199,6 @@ void Sandbox::run_one(size_t index) {
   }
 }
 
-void Sandbox::emit_instruction(const Instruction& instr) {
-	if (instr.is_call()) {
-		emit_pre_return();
-		assm_.ret();
-	} else if (instr.is_explicit_memory_dereference()) {
-		if (instr.is_div() || instr.is_idiv()) {
-			emit_mem_div(instr);
-		} else {
-			emit_memory_instr(instr);
-		}
-	} else if (instr.is_implicit_memory_dereference()) {
-		if (instr.is_any_return()) {
-			assm_.assemble(instr);
-			return;
-		} else if (instr.get_opcode() == PUSH_R64) {
-			emit_push(instr);
-		} else if (instr.get_opcode() == POP_R64) {
-			emit_pop(instr);
-		} else {
-			assert(false);
-		}
-  } else {
-		if (instr.is_div() || instr.is_idiv()) {
-			emit_reg_div(instr);
-		} else {
-			assm_.assemble(instr);
-		}
-  }
-}
 
 void Sandbox::emit_memory_instr(const Instruction& instr) {
   const auto rs = instr.maybe_read_set();
@@ -714,6 +700,246 @@ void Sandbox::emit_stack_heap_cases(CpuState& cs, bool stack) {
 
   // Get out of here
   assm_.jmp(Label {"done"});
+}
+
+// This function writes the user's state module %rsp to the cpu.
+//
+// Calling Context:
+//   - harness function, from a valid x86 state
+// Assumptions:
+//   - <none>
+// Requirements:
+//   - This function MUST exit with %rsp unmodified from its original
+//   state
+// Arguments:
+//   - <none>
+
+Function Sandbox::emit_state2cpu(const CpuState& cs) {
+	Function fxn;
+	assm_.start(fxn);
+
+	// Write RFLAGS regs
+	assm_.mov((R64)rax, Imm64(cs.rf.data()));
+	assm_.mov(rax, M64(rax));
+	assm_.push(rax);
+	assm_.popfq();
+  // Write SSE regs
+  for (const auto& s : xmms) {
+    assm_.mov((R64)rax, Imm64(cs.sse[s].data()));
+    assm_.vmovdqu(ymms[s], M256(rax));
+  }
+  // Write GP regs
+  for (const auto& r : r64s) {
+    if (r != rsp) {
+      assm_.mov(r, Imm64(cs.gp[r].data()));
+      assm_.mov(r, M64(r));
+    }
+  }
+	// Done
+	assm_.ret();
+
+	assm_.finish();
+	return fxn;
+}
+
+// This function reads the user's state from the cpu (modulo %rsp) and reads the
+// value of the user's %rsp from the class variable user_rsp_.
+//
+// Calling Context:
+//   - Within instrumented code, in a state that consists entirely of user data
+//   modulo the value of %rsp, which is valid with respect to STOKE
+// Assumptions:
+//   - user_rsp_ contains the current value of the user's %rsp
+// Requirements:
+//   - This function must leave the machine in an identical state
+// Arguments:
+//   - <none>
+
+Function Sandbox::emit_cpu2state(CpuState& cs) {
+	Function fxn;
+	assm_.start(fxn);
+
+  // Backup scratch registers no matter what
+  assm_.push(rax);
+	assm_.push(rbx);
+
+	// Read user's %rsp
+	assm_.mov((R64)rax, Imm64(user_rsp_));
+	assm_.mov(Moffs64(cs.gp[rsp].data()), rax);
+  // Read remaining GP regs
+	for (const auto& r : r64s) {
+		assm_.mov(rax, r);
+		assm_.mov(Moffs64(cs.gp[r].data()), rax);
+	}
+  // Read SSE regs
+  for (const auto& s : xmms) {
+		assm_.mov((R64)rax, Imm64(cs.sse[s].data()));
+		assm_.vmovdqu(M256(rax), ymms[s]);
+  }
+	// Read RFLAGS regs
+	assm_.pushfq();
+	assm_.mov((R64)rax, Imm64(cs.rf.data()));
+	assm_.mov((R64)rbx, M64(rsp));
+	assm_.mov(M64(rax), rbx);
+ 	assm_.popfq();
+
+  // Restore scratch regs
+	assm_.pop(rbx);
+  assm_.pop(rax);
+
+	// Done
+	assm_.ret();
+
+	assm_.finish();
+	return fxn;
+}
+
+// This function is the main entrypoint for sandboxed code.
+//
+// Calling Context: 
+//   - STOKE, prior to the execution of any sandbox code
+// Assumptions: 
+//   - This function is called in a valid register state, as determined
+//   by gcc when it was used to compile STOKE.
+//   - The class variable user_rsp_ holds the value of the user's %rsp
+//   - The class variable in2cpu_ holds a pointer to a function for copying
+//   the user's state to the CPU
+//   - The class variable cpu2out_ holds a pointer to a function for copying
+//   the user's state from the CPU
+// Requirements:
+//   - This function must respect the x86 ABI and return in a valid
+//   state. Notably, this means that callee-save register values
+//   must be restored
+// Arguments:
+//   - <none>
+
+Function Sandbox::emit_harness() {
+  Function fxn;
+  assm_.start(fxn);
+
+	// Save the %rsp for this stack frame
+	assm_.mov((R64)rax, Imm64(&harness_rsp_));
+	assm_.mov(M64(rax), rsp);
+
+	// Almost immediately, all bets will be off. 
+	// Backup ALL callee-saved registers right away
+	assm_.push(rbx);
+	assm_.push(rbp);
+	assm_.push(r12);
+	assm_.push(r13);
+	assm_.push(r14);
+	assm_.push(r15);
+
+	// Call the function that loads the user's CPU state
+	// This DOES NOT include the user's %rsp (if it did we would crash on return)
+	assm_.mov((R64)rax, Imm64(in2cpu_));
+	assm_.call(rax);
+
+	// Get the address of the user's function onto the stack ...
+	assm_.push(rax);
+	assm_.mov((R64)rax, Imm64(fxn_.get_entrypoint()));
+	assm_.xchg(rax, M64(rsp, Imm32(-8)));
+	// and call the function
+	assm_.call(M64(rsp, Imm32(-8)));
+
+	// Now that that's done, get the address of the function that reads state onto the stack ...
+	assm_.push(rax);
+	assm_.mov((R64)rax, Imm64(cpu2out_));
+	assm_.xchg(rax, M64(rsp, Imm32(-8)));
+	// ... and call the function
+	assm_.call(M64(rsp, Imm32(-8)));
+
+	// Pop the stack slots we used (it's fine to clobber %rax now)
+	assm_.pop(rax);
+	assm_.pop(rax);
+
+	// Restore everything prior to return
+	assm_.pop(r15);
+	assm_.pop(r14);
+	assm_.pop(r13);
+	assm_.pop(r12);
+	assm_.pop(rbp);
+	assm_.pop(rbx);
+
+	// Done
+  assm_.ret();
+
+  assm_.finish();
+  return fxn;
+}
+
+// This function is the main entrypoint for the user's code. It is
+// emitted into a persistent buffer to reduce memory alloction time.
+//
+// Calling Context:
+//   - Generally the harness function, but potentially this function
+//   as well since we permit recursion now
+// Assumptions:
+//   - This function is called in a state that consists entirely of
+//   user data. The only exception is the value of %rsp, which is
+//   valid with respect to the STOKE stack.
+// Requirements:
+//   - This function MUST restore the STOKE %rsp before return
+//   - This function MUST report SIGSEGV if the user doesn't not
+//   correctly restore %rsp prior to return
+// Arguments:
+//   <none>
+
+void Sandbox::emit_function(const Cfg& cfg) {
+	assm_.start(fxn_);	
+
+	// Assemble every instruction; labels corresponding to functions might not appear reachable
+	for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
+		// Callback before
+		emit_instruction(cfg.get_code()[i]);
+		// Callback after
+	}
+
+	assm_.finish();
+}
+
+void Sandbox::emit_instruction(const Instruction& instr) {
+	/* THIS IS ALL OLD IMPLEMENTATION
+	if (instr.is_call()) {
+		emit_pre_return();
+		assm_.ret();
+	} else if (instr.is_explicit_memory_dereference()) {
+		if (instr.is_div() || instr.is_idiv()) {
+			emit_mem_div(instr);
+		} else {
+			emit_memory_instr(instr);
+		}
+	} else if (instr.is_implicit_memory_dereference()) {
+		if (instr.is_any_return()) {
+			assm_.assemble(instr);
+			return;
+		} else if (instr.get_opcode() == PUSH_R64) {
+			emit_push(instr);
+		} else if (instr.get_opcode() == POP_R64) {
+			emit_pop(instr);
+		} else {
+			assert(false);
+		}
+  } else {
+		if (instr.is_div() || instr.is_idiv()) {
+			emit_reg_div(instr);
+		} else {
+			assm_.assemble(instr);
+		}
+  }
+	*/
+
+	cout << "INSTRUCTION = " << instr << endl;
+
+	if (instr.is_label_defn()) {
+		assm_.assemble(instr);
+	} else if (instr.get_opcode() == CALL_LABEL) {
+		assm_.assemble(instr);
+	} else if (instr.get_opcode() == RET) {
+		assm_.assemble(instr);
+	}
+		
+
 }
 
 } // namespace stoke
