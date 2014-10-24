@@ -27,6 +27,13 @@ class RFlags {
 		/** Creates an Rflags register with n bits. */
 		RFlags() {
 			contents_.resize_for_bits(size());
+			for (size_t i = 0, ie = size(); i < ie; ++i) {
+				if (is_fixed_true(i)) {
+					set(i, true);
+				} else if (is_fixed_false(i)) {
+					set(i, false);
+				}
+			}
 		}
 
 		/** Returns the number of meaningful bits. */
@@ -34,15 +41,36 @@ class RFlags {
 			return 22;
 		}
 
+		/** Returns true if this is a reserved flag. */
+		bool is_reserved(size_t i) const {
+			assert(i < size());
+			return i == 1 || i == 3 || i == 5;
+		}
+		/** Returns true if this is a status flag. */
+		bool is_status(size_t i) const {
+			assert(i < size());
+			return i == 0 || i == 2 || i == 4 || i == 6 || i == 7 || i == 11;
+		}
+		/** Returns true if this is a control flag. */
+		bool is_control(size_t i) const {
+			assert(i < size());
+			return i >= 8 && i <= 10;
+		}
+		/** Returns true if this is a system flag. */
+		bool is_system(size_t i) const {
+			assert(i < size());
+			return i >= 12 && i <= 21;
+		}
+
 		/** Returns true if this bit is fixed to true. */
 		bool is_fixed_true(size_t i) const {
 			assert(i < size());
-			return i == 1;
+			return i == 1 || i == 9;
 		}
 		/** Returns true if this bit is fixed to false. */
 		bool is_fixed_false(size_t i) const {
 			assert(i < size());
-			return i == 3 || i == 5 || i == 15;
+			return i == 3 || i == 5 || i == 8 || i == 10 || i >= 12;
 		}
 		/** Returns true if this bit has a fixed value. */
 		bool is_fixed(size_t i) const {
