@@ -162,6 +162,7 @@ void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
 void subpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2);
 void testHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2);
 void ucomissHandler(v_data d, Expr E_src1, Expr E_src2);
+void ucomisdHandler(v_data d, Expr E_src1, Expr E_src2);
 void umul1Handler(v_data d, unsigned int bitWidth, Expr E_src2);
 void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2);
 void unpcklpsHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2);

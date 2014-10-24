@@ -2989,6 +2989,22 @@ void ucomissHandler(v_data d, Expr E_src1, Expr E_src2) {
 }
 
 
+void ucomisdHandler(v_data d, Expr E_src1, Expr E_src2) {
+
+  VC&vc = d.vc;
+  E_src1 = vc_bvExtract(vc, E_src1, 63,0);
+  E_src2 = vc_bvExtract(vc, E_src2, 63,0);
+  z3::sort fl = vc->bv_sort(64);
+  z3::sort cmp_res = vc->bv_sort(2);
+  z3::func_decl fcmp = z3::function("cmpd", fl, fl, cmp_res);
+  Expr E_cmp_res = fcmp(E_src1, E_src2);
+  setFlag(vc,d.Vnprime,V_CF, vc_notExpr(vc, vc_bvBoolExtract_One(vc, E_cmp_res,0)), d.constraints, d.post_suffix);
+  setFlag(vc,d.Vnprime,V_ZF, vc_notExpr(vc, vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_cmp_res,0),vc_bvBoolExtract_One(vc, E_cmp_res,1))), d.constraints, d.post_suffix);
+  setFlag(vc,d.Vnprime,V_PF, vc_andExpr(vc, vc_bvBoolExtract(vc, E_cmp_res,0), vc_bvBoolExtract(vc, E_cmp_res,1)), d.constraints, d.post_suffix);
+  setFlag(vc,d.Vnprime,V_OF, vc_falseExpr(vc), d.constraints, d.post_suffix);
+  setFlag(vc,d.Vnprime,V_SF, vc_falseExpr(vc), d.constraints, d.post_suffix);
+
+}
 
 void umul1Handler(v_data d, unsigned int bitWidth, Expr E_src2) {
 
