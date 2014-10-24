@@ -6,6 +6,7 @@
 #include <string>
 
 #include "src/cfg/cfg.h"
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
 #include "src/validator/c_interface.h"
 #include "src/validator/error.h"
@@ -95,6 +96,9 @@ class Validator {
     bool is_counterexample_valid() {
       return counterexample_valid_;
     }
+
+    /* Returns whether this instruction is supported */
+    static bool is_supported(x64asm::Instruction i);
 
     /** @todo Need a data structure for abductions if we ever write this. */
     std::ostream& print_abduction(std::ostream& os);

@@ -125,6 +125,34 @@ TEST(Validator, SimpleExampleFalse) {
 }
 
 
+TEST(Validator, ReportsUnsupported) {
+
+  x64asm::Code c;
+
+  std::stringstream tmp;
+  tmp << "vandpd %xmm0, %xmm1, %xmm2" << std::endl;
+  tmp >> c;
+
+  auto instr = c[0];
+
+  EXPECT_FALSE(stoke::Validator::is_supported(instr));
+
+}
+
+TEST(Validator, ReportsSupported) {
+
+  x64asm::Code c;
+
+  std::stringstream tmp;
+  tmp << "movaps %xmm0, %xmm1" << std::endl;
+  tmp >> c;
+
+  auto instr = c[0];
+
+  EXPECT_TRUE(stoke::Validator::is_supported(instr));
+
+}
+
 TEST(Validator, UnimplementedFailsGracefully) {
 
   x64asm::Code c;

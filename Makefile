@@ -203,8 +203,11 @@ src/validator/switch.cc: src/validator/autogen
 src/validator/validator.switch: src/validator/autogen
 	cd src/validator; ./autogen; cd ..;
 
+src/validator/supported.switch: src/validator/autogen
+	cd src/validator; ./autogen; cd ..;
+
 validator_clean:
-	rm -f src/validator/validator.switch src/validator/switch.h src/validator/switch.cc src/validator/autogen src/validator/autogen.hi src/validator/autogen.o tests/validator/handlers.h
+	rm -f src/validator/validator.switch src/validator/switch.h src/validator/switch.cc src/validator/supported.switch src/validator/autogen src/validator/autogen.hi src/validator/autogen.o tests/validator/handlers.h
 
 
 

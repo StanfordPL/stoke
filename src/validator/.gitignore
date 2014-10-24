@@ -4,3 +4,4 @@ autogen
 validator.switch
 switch.h
 switch.cc
+supported.switch
