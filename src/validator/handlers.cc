@@ -2848,6 +2848,24 @@ void vaddsdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr
 
 }
 
+
+void vpunpcklqdqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
+
+  VC& vc = d.vc;
+
+  // INTERLEAVE_QWORDS(SRC1, SRC2)
+  // DEST[63:0] <- SRC1[63:0]
+  Expr bits_63_0 = EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_src1, 63, 0));
+
+  // DEST[127:64] <- SRC2[63:0]
+  Expr bits_127_64 = EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src2, 63, 0));
+
+  d.constraints.push_back(bits_63_0);
+  d.constraints.push_back(bits_127_64);
+
+
+}
+
 void xaddHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_src_post, bool dest_is_reg=true) {
 
   VC&vc = d.vc;

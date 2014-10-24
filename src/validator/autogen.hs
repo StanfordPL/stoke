@@ -1119,6 +1119,7 @@ lookup_handler "vaddsd"   _ _ = Just "vaddsdHandler(d, 1, E0,E1,E2, dest_is_reg)
 lookup_handler "vlddqu"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
 lookup_handler "vmovddup" _ _ = Just "movddupHandler(d, E0,E1);"
 lookup_handler "vmulss"   _ _ = Just "mulfHandler(d, 1, E0, E1,E2, dest_is_reg);"
+lookup_handler "vpunpcklqdq" _ _ = Just "vpunpcklqdqHandler(d, E0, E1, E2);"
 lookup_handler "xchgb"    _ i = Just "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
 lookup_handler "xchgl"    _ i = Just "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
 lookup_handler "xchgq"    _ i = Just "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
