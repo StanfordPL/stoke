@@ -118,6 +118,8 @@ void popcnt16Handler(v_data d, Expr E_dest, Expr E_src);
 void popcnt32Handler(v_data d, Expr E_dest, Expr E_src);
 void popcnt64Handler(v_data d, Expr E_dest, Expr E_src);
 void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm);
+void pshufhwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr E_src);
+void pshuflwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr E_src);
 void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 void rclHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_dest, Expr E_src1, bool dest_is_reg);
 void rcrHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_dest, Expr E_src1, bool dest_is_reg);

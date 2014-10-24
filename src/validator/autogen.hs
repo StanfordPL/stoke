@@ -1045,6 +1045,8 @@ lookup_handler "popcntl"  _ i = Just "popcnt32Handler(d, E0, E1);"
 lookup_handler "popcntq"  _ i = Just "popcnt64Handler(d, E0, E1);"
 lookup_handler "popcntw"  _ i = Just "popcnt16Handler(d, E0, E1);"
 lookup_handler "pshufd"   _ _ = Just "pshufdHandler(d, imm, E0,E1,E2);"
+lookup_handler "pshufhw"  _ _ = Just "pshufhwHandler(d, 128, false, imm, E0, E1);"
+lookup_handler "pshuflw"  _ _ = Just "pshuflwHandler(d, 128, false, imm, E0, E1);"
 lookup_handler "punpckldq" _ _ = Just "punpckldqHandler(d, E1,E0,E2);"
 lookup_handler "retq"     _ _ = Just ""
 lookup_handler "roll"     2 i = Just $ if (((last (operand_types i)) == "I")) 

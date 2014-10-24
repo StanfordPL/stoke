@@ -1876,6 +1876,37 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, (s6), SUM_INNER(s4, 32, 0x00000000FFF
 
 void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm) {
 
+  VC& vc = d.vc;
+  
+  // We have a nice helper to get (SRC >> x)[y:z]
+  // With that in mind:
+
+  // DEST[31:0]   <- (SRC >> (Order[1:0]*32))[31:0]
+  // DEST[63:32]  <- (SRC >> (Order[3:2]*32))[31:0]
+  // DEST[95:64]  <- (SRC >> (Order[5:4]*32))[31:0]
+  // DEST[127:96] <- (SRC >> (Order[7:6]*32))[31:0]
+  for (int i = 0; i < 4; i++) {
+
+    int first_bit  = (1 << (2*i));
+    int second_bit = (1 << (2*i + 1));
+    int mask = (first_bit | second_bit);
+    int shift = ((mask & imm) >> (2*i))*32;
+
+    int high = 32*(i+1) - 1;
+    int low  = 32*i;
+
+    d.constraints.push_back( 
+        EqExpr(vc,
+          vc_bvExtract(vc, E_dest, high, low),
+          pshuf_shift_right_and_extract(vc, E_src, shift, 31, 0, 128)));
+  }
+
+
+  //--------------------------------------------------------------------
+  //  Here's an old version of the handler.
+  //  We don't need it, but could use to test the new implementation.
+  //--------------------------------------------------------------------
+  /*
   if (imm != 5)
     throw VALIDATOR_ERROR("Validator only supports pshufd with immediate 5");
 
@@ -1891,6 +1922,87 @@ void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm) {
 #endif
 
   d.constraints.push_back(retval);
+  */
+
+}
+
+void pshufhwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr E_src) {
+
+  if ( avx || bitWidth != 128 ) 
+    throw VALIDATOR_ERROR("pshufhw only supported in non-avx form");
+
+  VC &vc = d.vc;
+
+  // DEST[63:0] <- SRC[63:0]
+  d.constraints.push_back( 
+      EqExpr(vc,
+        vc_bvExtract(vc, E_dest, 63, 0),
+        vc_bvExtract(vc, E_src,  63, 0)));
+
+  // We have a nice helper to get (SRC >> x)[y:z]
+  // With that in mind:
+
+  // DEST[79:64] <- (SRC >> (imm[1:0]*16))[79:64]
+  // DEST[95:80] <- (SRC >> (imm[3:2]*16))[79:64]
+  // DEST[111:96] <- (SRC >> (imm[5:4]*16))[79:64]
+  // DEST[127:112] <- (SRC >> (imm[7:6]*16))[79:64]
+  for(int i = 0; i < 4; i++) {
+
+    int first_bit  = (1 << (2*i));
+    int second_bit = (1 << (2*i + 1));
+    int mask = (first_bit | second_bit);
+    int shift = ((mask & imm) >> (2*i))*16;
+
+    int low = 64 + 16*i;
+    int high = 79 + 16*i;
+
+    d.constraints.push_back( 
+        EqExpr(vc,
+          vc_bvExtract(vc, E_dest, high, low),
+          pshuf_shift_right_and_extract(vc, E_src, shift, 79, 64, 128)));
+
+  }
+
+
+}
+
+
+void pshuflwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr E_src) {
+
+  if ( avx || bitWidth != 128 ) 
+    throw VALIDATOR_ERROR("pshulhw only supported in non-avx form");
+
+  VC &vc = d.vc;
+
+  // We have a nice helper to get (SRC >> x)[y:z]
+  // With that in mind:
+
+  // DEST[15:0] <- (SRC >> (imm[1:0]*16))[15:0]
+  // DEST[31:16] <- (SRC >> (imm[3:2]*16))[31:16]
+  // DEST[47:32] <- (SRC >> (imm[5:4]*16))[47:32]
+  // DEST[63:48] <- (SRC >> (imm[7:6]*16))[63:48]
+  for(int i = 0; i < 4; i++) {
+
+    int first_bit  = (1 << (2*i));
+    int second_bit = (1 << (2*i + 1));
+    int mask = (first_bit | second_bit);
+    int shift = ((mask & imm) >> (2*i))*16;
+
+    int low =  16*i;
+    int high = 15 + 16*i;
+
+    d.constraints.push_back( 
+        EqExpr(vc,
+          vc_bvExtract(vc, E_dest, high, low),
+          pshuf_shift_right_and_extract(vc, E_src, shift, 15, 0, 128)));
+
+  }
+
+  // DEST[63:0] <- SRC[63:0]
+  d.constraints.push_back( 
+      EqExpr(vc,
+        vc_bvExtract(vc, E_dest, 127, 64),
+        vc_bvExtract(vc, E_src,  127, 64)));
 
 }
 
