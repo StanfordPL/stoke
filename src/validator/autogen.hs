@@ -445,6 +445,44 @@ flags i = filter (\x -> x /= "" ) $ splitOn " " $ flag i
 is_vex_encoded :: Instr -> Bool
 is_vex_encoded i = any (\x -> head x == 'V') $ opcode_terms i
 
+
+-- Common Assembler strings
+--------------------------------------------------------------------------------
+
+-- Assembler mnemonic
+assm_mnemonic :: Instr -> String
+assm_mnemonic i = let m = raw_mnemonic i in
+  case m of
+    "AND" -> "and_"
+    "INT" -> "int_"
+    "NOT" -> "not_"
+    "OR"  -> "or_"
+    "STD" -> "std_"
+    "XOR" -> "xor_"
+    _     -> (low m)
+
+-- Assembler doxygen comment
+assm_doxy :: Instr -> String
+assm_doxy i = "/** " ++ (description i) ++ " */"
+
+-- Assembler arg type
+assm_arg_type :: String -> String
+assm_arg_type a = "const " ++ (op2type a) ++ "&"
+
+-- Assembler declaration arg list
+assm_arg_list :: Instr -> String
+assm_arg_list i = intercalate ", " $ map arg $ zip [0..] (operands i)
+  where arg (i,a) = (assm_arg_type a) ++ " arg" ++ (show i)
+
+-- Assembler declaration
+assm_decl :: Instr -> String
+assm_decl i = "void " ++
+              (assm_mnemonic i) ++
+              "(" ++
+              (assm_arg_list i) ++
+              ")"
+
+
 --------------------------------------------------------------------------------
 -- Data parsing
 --------------------------------------------------------------------------------
@@ -686,56 +724,6 @@ parse_instrs file = do f <- readFile file
               read_instrs
 
 --------------------------------------------------------------------------------
--- Debugging
---------------------------------------------------------------------------------
-
--- Generate a list of unique mnemonics
-uniq_mnemonics :: [Instr] -> [String]
-uniq_mnemonics is = nub $ map raw_mnemonic is
-
--- Generate a list of unique operands
-uniq_operands :: [Instr] -> [String]
-uniq_operands is = nub $ concat $ map nub $ map operands is 
-
--- Generate a list of unique operand types
-uniq_operand_types :: [Instr] -> [String]
-uniq_operand_types is = map op2type $ uniq_operands is
-
--- Generate a list of unique opcode terms
-uniq_opc_terms :: [Instr] -> [String]
-uniq_opc_terms is = nub $ concat $ map opcode_terms is
-
--- Generate a list of unique op/ens
-uniq_op_en :: [Instr] -> [String]
-uniq_op_en is = nub $ map op_en is
-
--- Generate a list of unique implict operands
-uniq_implicits :: [Instr] -> [String]
-uniq_implicits is = nub $ concat imps
-  where imps = (map implicit_reads is) ++ (map implicit_writes is) ++ 
-               (map implicit_undefs is)
-
--- Generate a list of ambiguous declarations
-ambig_decls :: [Instr] -> [[Instr]]
-ambig_decls is = filter ambig $ groupBy eq $ sortBy srt is
-  where srt x y = compare (assm_decl x) (assm_decl y)
-        eq x y = (assm_decl x) == (assm_decl y)	
-        ambig x = (length x) > 1
-
--- Pretty print version of ambig_decls
-ambig_decls_pretty :: [Instr] -> [String]
-ambig_decls_pretty is = map pretty $ ambig_decls is
-  where pretty xs = (instruction (head xs)) ++ ":" ++ (concat (map elem xs))
-        elem x = "\n\t" ++ (opcode x)
-
--- Do operand and property arities always match?
-property_arity_check :: [Instr] -> IO ()
-property_arity_check is = sequence_ $ map check is
-  where check i = case (length (operands i)) == (length (properties i)) of
-                       True -> return ()
-                       False -> error $ "Property error for " ++ (opcode i)
-
---------------------------------------------------------------------------------
 -- Codegen
 -------------------------------------------------------------------------------
 
@@ -752,772 +740,10 @@ opcode_enum i = intercalate "_" $ (mnem i) : (ops i)
 opcode_enums :: [Instr] -> String
 opcode_enums is = to_table is opcode_enum
 
--- Instruction
---------------------------------------------------------------------------------
-
--- Converts an instruction to arity table row
-arity_row :: Instr -> String
-arity_row i = show $ arity i
-
--- Converts all instructions to arity table
-arity_table :: [Instr] -> String
-arity_table is = to_table is arity_row
-
--- Creates an entry for a property element
-property_elem :: (String, String) -> String
-property_elem (t,p) = "Properties::none()" ++ (concat (map (elem t) p))
-  where elem _ 'R' = "+Property::MUST_READ"
-        elem _ 'r' = "+Property::MAYBE_READ"
-        elem t 'Z' = case mem_op t of 
-                          True ->  "+Property::MUST_WRITE"
-                          False -> "+Property::MUST_WRITE_ZX"
-        elem t 'W' = case reg32_op t of 
-                          True ->  "+Property::MUST_WRITE_ZX"
-                          False -> "+Property::MUST_WRITE"
-        elem _ 'w' = "+Property::MAYBE_WRITE"
-        elem _ 'U' = "+Property::MUST_UNDEF"
-        elem _ 'u' = "+Property::MAYBE_UNDEF"
-        elem _ 'I' = ""
-        elem t c = error $ "Undefined property type " ++ t ++ ":" ++ [c]
-
--- Converts an instruction to properties table row
-properties_row :: Instr -> String
-properties_row i = "{{" ++ intercalate "," ps ++ "}}"
-  where ps = map property_elem $ zip (operands i) (properties i)
-
--- Converts all instruction to properties table
-properties_table is = to_table is properties_row
-
--- Creates an entry for a type row
-type_elem :: String -> String
-type_elem o = "Type::" ++ (op2tag o)
-
--- Converts an instruction to type table row
-type_row :: Instr -> String
-type_row i = "{{" ++ intercalate "," (map type_elem (operands i)) ++ "}}"
-
--- Converts all instruction to type table
-type_table is = to_table is type_row 
-
--- Converts an instruction to return table row
-return_row :: Instr -> String
-return_row i = case raw_mnemonic i of
-  "IRET" -> "true"
-  "IRETD" -> "true"
-  "IRETQ" -> "true"
-  "RET" -> "true"
-  "SYSEXIT" -> "true"
-  "SYSRET" -> "true"
-  _ -> "false"
-
--- Converts all instructions to return table
-return_table :: [Instr] -> String
-return_table is = to_table is return_row 
-
--- Converts an instruction to nop table row
-nop_row :: Instr -> String
-nop_row i = case raw_mnemonic i of
-  "NOP" -> "true"
-  "FNOP" -> "true"
-  _ -> "false"
-
--- Converts all instruction to nop table
-nop_table :: [Instr] -> String
-nop_table is = to_table is nop_row
-
--- Converts an instruction to jump table row
-jump_row :: Instr -> String
-jump_row i = case (is_cond_jump i) || (is_uncond_jump i) of
-  True -> "true"
-  False -> "false"
-
--- Converts all instructions to jump table
-jump_table :: [Instr] -> String
-jump_table is = to_table is jump_row 
-
--- Converts an instruction to cond_jump table row
-cond_jump_row :: Instr -> String
-cond_jump_row i = case is_cond_jump i of
-  True -> "true"
-  False -> "false"
-
--- Converts all instructions to cond_jump table
-cond_jump_table :: [Instr] -> String
-cond_jump_table is = to_table is cond_jump_row 
-
--- Converts an instruction to uncond_jump table row
-uncond_jump_row :: Instr -> String
-uncond_jump_row i = case is_uncond_jump i of
-  True -> "true"
-  False -> "false"
-
--- Converts all instructions to uncond_jump table
-uncond_jump_table :: [Instr] -> String
-uncond_jump_table is = to_table is uncond_jump_row 
-
--- Converts an instruction mem_index table row
-mem_index_row :: Instr -> String
-mem_index_row i = case findIndex mem_op (operands i) of
-  (Just idx) -> show idx
-  Nothing -> "-1"
-
--- Converts all instruction to mem_index table
-mem_index_table :: [Instr] -> String
-mem_index_table is = to_table is mem_index_row
-
--- Is this a must element?
-is_must :: String -> Bool
-is_must o = any isUpper o
-
--- Converts an operand to its fully qualified name
-qualify_imp :: String -> String
-qualify_imp s = rename s
-  where rep x y s = subRegex (mkRegex x) s y
-        rename s = rep "FPUDATA" "fpu_data" $
-                   rep "FPUINSTR" "fpu_instruction" $
-                   rep "FPUOPCODE" "fpu_opcode" $
-                   rep "RIP" "rip" $
-                   rep "ST\\((.)\\)" "ST\\1" $
-                   rep "st\\((.)\\)" "st\\1" $
-                   rep "TAG\\((.)\\)" "TAG\\1" $
-                   rep "tag\\((.)\\)" "tag\\1" $
-                   rep "E\\." "eflags_" $
-                   rep "e\\." "eflags_" $
-                   rep "C\\." "fpu_control_" $
-                   rep "c\\." "fpu_control_" $ 
-                   rep "S\\." "fpu_status_" $
-                   rep "s\\." "fpu_status_" $
-                   rep "M\\." "mxcsr_" $
-                   rep "m\\." "mxcsr_" $ s
-
--- Converts an instruction to implicit_read table row
-must_read_row :: Instr -> String
-must_read_row i 
-  | "???" `elem` (implicit_reads i) = "RegSet::universe()"
-  | otherwise = "RegSet::empty()" ++ (concat (map val (irs i)))
-    where irs i = filter is_must $ map qualify_imp $ implicit_reads i
-          val s = "+Constants::" ++ (low s) ++ "()"
-
--- Converts all instructions to implicit_read table
-must_read_table :: [Instr] -> String
-must_read_table is = to_table is must_read_row 
-
--- Converts an instruction to implicit_read table row
-maybe_read_row :: Instr -> String
-maybe_read_row i 
-  | "???" `elem` (implicit_reads i) = "RegSet::universe()"
-  | otherwise = "RegSet::empty()" ++ (concat (map val (irs i)))
-    where irs i = map qualify_imp $ implicit_reads i
-          val s = "+Constants::" ++ (low s) ++ "()"
-
--- Converts all instructions to implicit_read table
-maybe_read_table :: [Instr] -> String
-maybe_read_table is = to_table is maybe_read_row 
-
--- Converts an instruction to implicit_write table row
-must_write_row :: Instr -> String
-must_write_row i 
-  | "???" `elem` (implicit_writes i) = "RegSet::universe()"
-  | otherwise = "RegSet::empty()" ++ (concat (map val (iws i)))
-    where iws i = filter is_must $ map qualify_imp $ implicit_writes i
-          val s = "+Constants::" ++ (low s) ++ "()"
-
--- Converts all instructions to implicit_write table
-must_write_table :: [Instr] -> String
-must_write_table is = to_table is must_write_row
-
--- Converts an instruction to implicit_write table row
-maybe_write_row :: Instr -> String
-maybe_write_row i 
-  | "???" `elem` (implicit_writes i) = "RegSet::universe()"
-  | otherwise = "RegSet::empty()" ++ (concat (map val (iws i)))
-    where iws i = map qualify_imp $ implicit_writes i
-          val s = "+Constants::" ++ (low s) ++ "()"
-
--- Converts all instructions to implicit_write table
-maybe_write_table :: [Instr] -> String
-maybe_write_table is = to_table is maybe_write_row
-
--- Converts an instruction to implicit_undef table row
-must_undef_row :: Instr -> String
-must_undef_row i 
-  | "???" `elem` (implicit_undefs i) = "RegSet::universe()"
-  | otherwise = "RegSet::empty()" ++ (concat (map val (ius i)))
-    where ius i = filter is_must $ map qualify_imp $ implicit_undefs i
-          val s = "+Constants::" ++ (low s) ++ "()"
-
--- Converts all instructions to implicit_undef table
-must_undef_table :: [Instr] -> String
-must_undef_table is = to_table is must_undef_row
-
--- Converts an instruction to implicit_undef table row
-maybe_undef_row :: Instr -> String
-maybe_undef_row i 
-  | "???" `elem` (implicit_undefs i) = "RegSet::universe()"
-  | otherwise = "RegSet::empty()" ++ (concat (map val (ius i)))
-    where ius i = map qualify_imp $ implicit_undefs i
-          val s = "+Constants::" ++ (low s) ++ "()"
-
--- Converts all instructions to implicit_undef table
-maybe_undef_table :: [Instr] -> String
-maybe_undef_table is = to_table is maybe_undef_row
-
--- Converts an instruction to a flag table row
-flag_row :: Instr -> String
-flag_row i = "FlagSet::empty()" ++ (concat (map elem (flags i)))
-  where elem x = "+Flag::" ++ x
-
--- Converts all instructions to flag table
-flag_table :: [Instr] -> String
-flag_table is = to_table is flag_row
-
--- Converts an instruction to a printable at&t mnemonic
-att_mnemonic :: Instr -> String
-att_mnemonic i = "\"" ++ (att i) ++ "\""
-
--- Converts all instructions to printable at&t mnemonics
-att_mnemonics :: [Instr] -> String
-att_mnemonics is = intercalate "\n" $ map (", "++) $ map att_mnemonic is
-
--- Common Assembler strings
---------------------------------------------------------------------------------
-
--- Assembler mnemonic
-assm_mnemonic :: Instr -> String
-assm_mnemonic i = let m = raw_mnemonic i in
-  case m of
-    "AND" -> "and_"
-    "INT" -> "int_"
-    "NOT" -> "not_"
-    "OR"  -> "or_"
-    "STD" -> "std_"
-    "XOR" -> "xor_"
-    _     -> (low m)
-
--- Assembler doxygen comment
-assm_doxy :: Instr -> String
-assm_doxy i = "/** " ++ (description i) ++ " */"
-
--- Assembler arg type
-assm_arg_type :: String -> String
-assm_arg_type a = "const " ++ (op2type a) ++ "&"
-
--- Assembler declaration arg list
-assm_arg_list :: Instr -> String
-assm_arg_list i = intercalate ", " $ map arg $ zip [0..] (operands i)
-  where arg (i,a) = (assm_arg_type a) ++ " arg" ++ (show i)
-
--- Assembler declaration
-assm_decl :: Instr -> String
-assm_decl i = "void " ++
-              (assm_mnemonic i) ++
-              "(" ++
-              (assm_arg_list i) ++
-              ")"
-
--- Assembler header declarations
---------------------------------------------------------------------------------
-
--- Assembler header declaration
-assm_header_decl :: Instr -> String
-assm_header_decl i = (assm_doxy i) ++ "\n" ++ (assm_decl i) ++ ";"
-
--- Assembler header declarations
-assm_header_decls :: [Instr] -> String
-assm_header_decls is = intercalate "\n\n" $ map assm_header_decl is
-
--- Assembler source definitions
---------------------------------------------------------------------------------
-
--- Emits code for the FWAIT prefi
-pref_fwait :: Instr -> String
-pref_fwait i
-  | "9B" `elem` opcode_prefix i = "pref_fwait(0x9b);\n"
-  | otherwise = "// No FWAIT Prefix\n"
-
--- Emits code for Prefix Group 1
--- This doesn't check for the the lock prefix which we treat as an opcode
-pref1 :: Instr -> String
-pref1 i 
-  | "F2" `elem` opcode_prefix i = "pref_group1(0xf2);\n"
-  | "F3" `elem` opcode_prefix i = "pref_group1(0xf3);\n"
-  | otherwise = "// No Prefix Group 1\n"
-
--- Emits code for Prefix Group 2
-pref2 :: Instr -> String
-pref2 i
-  | "hint" `elem` operands i = "pref_group2(arg1);\n"
-  | otherwise = case findIndex mem_op (operands i) of
-                     (Just idx) -> "pref_group2(arg" ++ (show idx) ++ ");\n"
-                     Nothing -> "// No Prefix Group 2\n"
-
--- Emits code for Prefix Group 3 (operand size override)
-pref3 :: Instr -> String
-pref3 i 
-  | "PREF.66+" `elem` opcode_prefix i = "pref_group3();\n"
-  | "66" `elem` opcode_prefix i = "pref_group3();\n"
-  | otherwise = "// No Prefix Group 3\n"
-
--- Emits code for Prefix Group 4 (address size override)
-pref4 :: Instr -> String
-pref4 i = case findIndex mem_op (operands i) of
-               (Just idx) -> "pref_group4(arg" ++ (show idx) ++ ");\n"
-               Nothing -> "// No Prefix Group 4\n"
-
--- Explicit MOD/RM and REX args
-rm_args :: Instr -> String
-rm_args i = case op_en i of
-  "MI"   -> "arg0"
-  "MR"   -> "arg0,arg1"
-  "RM"   -> "arg1,arg0"
-  "RMI"  -> "arg1,arg0"
-  "RM0"  -> "arg1,arg0"
-  "M"    -> "arg0"
-  "MRI"  -> "arg0,arg1"
-  "RVM"  -> "arg2,arg0"
-  "RMV"  -> "arg1,arg0"
-  "MC"   -> "arg0"
-  "M1"   -> "arg0"
-  "MRC"  -> "arg0,arg1"
-  "RMVI" -> "arg1,arg0"
-  "RVMI" -> "arg2,arg0"
-  "RVMR" -> "arg2,arg0"
-  "MVR"  -> "arg0,arg2"
-  "XM"   -> "arg1,arg0"
-  "VM"   -> "arg1"
-  "VMI"  -> "arg1"
-  _      -> ""
-
--- Optional Mod R/M SIB digit argument
-digit :: Instr -> String
-digit i = case find is_digit (opcode_suffix i) of
-  (Just ('/':d:[])) -> ",r64s[" ++ [d] ++ "]"
-  Nothing -> ""
-
--- Implied rex values
-implied_rex :: Instr -> String
-implied_rex i
-  | "REX.W+" `elem` (opcode_prefix i) = "(uint8_t)0x48"
-  | "REX.R+" `elem` (opcode_prefix i) = "(uint8_t)0x44"
-  | "REX+"   `elem` (opcode_prefix i) = "(uint8_t)0x40"
-  | otherwise = "(uint8_t)0x00"
-
--- Emits code for REX Prefix 
-rex_prefix :: Instr -> String
-rex_prefix i 
-  | op_en i == "O" = "rex(arg0," ++ (implied_rex i) ++ ");\n"
-  | op_en i == "OI" = "rex(arg0," ++ (implied_rex i) ++ ");\n"
-  | rm_args i /= "" = "rex(" ++ (rm_args i) ++ "," ++ (implied_rex i) ++ ");\n"
-  | implied_rex i /= "(uint8_t)0x00" = "rex(" ++ (implied_rex i) ++ ");\n"
-  | otherwise = "// No REX Prefix\n"
-
--- Explicit VEX mmmmm arg
-vex_mmmmm :: Instr -> String
-vex_mmmmm i
-  | "0F"   `elem` (vex_terms i) = "0x01"
-  | "0F38" `elem` (vex_terms i) = "0x02"
-  | "0F3A" `elem` (vex_terms i) = "0x03"
-  | otherwise = "0x01"
-
--- Explicit VEX l arg
-vex_l :: Instr -> String
-vex_l i 
-  | "256" `elem` (vex_terms i) = "0x1"
-  | otherwise = "0x0"
-
--- Explicit VEX pp arg
-vex_pp :: Instr -> String
-vex_pp i 
-  | "66" `elem` (vex_terms i) = "0x1"
-  | "F3" `elem` (vex_terms i) = "0x2"
-  | "F2" `elem` (vex_terms i) = "0x3"
-  | otherwise = "0x0"
-
--- Default VEX w value
-vex_w :: Instr -> String
-vex_w i 
-  | "W1" `elem` (vex_terms i) = "0x1"
-  | otherwise = "0x0"
-
--- Explicit VEX vvvv arg
-vex_vvvv :: Instr -> String
-vex_vvvv i = case findIndex (=='V') (op_en i) of
-  (Just idx) -> "arg" ++ (show idx) 
-  Nothing -> "xmm0"
-
--- Emits code for VEX Prefix
-vex_prefix :: Instr -> String
-vex_prefix i = "vex(" ++ 
-               (vex_mmmmm i) ++ "," ++
-               (vex_l i) ++ "," ++
-               (vex_pp i) ++ "," ++
-               (vex_w i) ++ "," ++
-               (vex_vvvv i) ++ 
-               (case (rm_args i) of
-                  "" -> ""
-                  _  -> "," ++ (rm_args i) ++ (digit i)) ++ 
-               ");\n"
-
--- Emits code for VEX opcodes
-vex_opcode :: Instr -> String
-vex_opcode i = "opcode(0x" ++ (low ((opcode_terms i)!!1)) ++ ");\n"
-
--- Emits code for non-VEX encoded opcode bytes
-non_vex_opcode :: Instr -> String
-non_vex_opcode i 
-  | (opcode_bytes i) == [] = "// No Opcode Bytes"
-  | otherwise = "opcode(" ++ (bytes i) ++ (code i) ++ ");\n" 
-    where bytes i = intercalate "," $ map (("0x"++).low) (opcode_bytes i)
-          code i = case findIndex (=='O') (op_en i) of
-                        (Just idx) -> ",arg" ++ (show idx)
-                        Nothing -> ""
-
--- Emits code for mod/rm and sib bytes
-mod_rm_sib :: Instr -> String
-mod_rm_sib i = case rm_args i of
-    "" -> "// No MOD R/M or SIB Bytes\n"
-    _ -> "mod_rm_sib(" ++ (rm_args i) ++ (digit i) ++ ");\n"
-
--- Does this instruction have a displacement or immediate operand?
-disp_imm_index :: Instr -> Maybe Int
-disp_imm_index i = findIndex disp_imm_op (operands i)
-  where disp_imm_op o = imm_op o || moffs_op o || rel_op o || label_op o
-
--- Emits code for displacement or immediate bytes
-disp_imm :: Instr -> String
-disp_imm i 
-  | op_en i == "II" = "disp_imm(arg0,arg1);\n"
-  | otherwise = case disp_imm_index i of
-                     (Just idx) -> "disp_imm(arg" ++ (show idx) ++ ");\n"
-                     Nothing -> "// No Displacement/Immediate\n"
-
--- Emits code for vex immediate byte
-vex_imm :: Instr -> String
-vex_imm i = case "/is4" `elem` (opcode_suffix i) of
-  True -> "disp_imm(arg3);\n"
-  False -> "// No VEX Immediate\n"
-
--- Emits pre-assembly debug statement
-assm_debug_begin :: Instr -> String
-assm_debug_begin i = "\t#ifndef NDEBUG\n" ++
-                     "\t\tsize_t debug_i = fxn_->size();\n" ++
-                     "\t#endif\n\n"
-
--- Emits post-assembly debug statement
-assm_debug_end :: Instr -> String
-assm_debug_end i = "\t#ifndef NDEBUG\n" ++
-                   "\t\tdebug(" ++ instr ++ ", debug_i);\n" ++
-                   "\t#endif\n"
-  where instr = "Instruction{" ++ (opc i) ++ ",{" ++ (ops i) ++ "}}"
-        opc i = opcode_enum i 
-        ops i = intercalate "," $ map (("arg"++).show) $ take (arity i) [0..]
-
--- VEX encoded instruction definition
-assm_vex_defn :: Instr -> String
-assm_vex_defn i = "  // VEX-Encoded Instruction: \n\n" ++
-                  "  // Prefix Group 1 is #UD for VEX\n" ++
-                  "  " ++ pref2 i ++ 
-                  "  // Prefix Group 3 is #UD for VEX\n" ++
-                  "  " ++ pref4 i ++
-                  "  " ++ vex_prefix i ++ 
-                  "  " ++ vex_opcode i ++
-                  "  " ++ mod_rm_sib i ++
-                  "  " ++ disp_imm i ++
-                  "  " ++ vex_imm i ++
-									"  \n"
-
--- Other instruction definition
-assm_oth_defn :: Instr -> String
-assm_oth_defn i = "  // Non-VEX-Encoded Instruction: \n\n" ++
-                  "  " ++ pref_fwait i ++ 
-                  "  " ++ pref2 i ++ 
-                  "  " ++ pref4 i ++ -- gcc prefers this ordering
-                  "  " ++ pref3 i ++ -- gcc prefers this ordering
-                  "  " ++ pref1 i ++ -- gcc prefers this ordering
-                  "  " ++ rex_prefix i ++
-                  "  " ++ non_vex_opcode i ++
-                  "  " ++ mod_rm_sib i ++
-                  "  " ++ disp_imm i ++
-                  "  \n"
-
--- Assembler src definition
-assm_src_defn :: Instr -> String
-assm_src_defn i = "void Assembler::" ++
-                  (assm_mnemonic i) ++
-                  "(" ++
-                  (assm_arg_list i) ++
-                  ") {\n" ++
-                  assm_debug_begin i ++
-                  body i ++ 
-                  assm_debug_end i ++ 
-                  "}"
-  where body i = case is_vex_encoded i of
-                      True  -> assm_vex_defn i
-                      False -> assm_oth_defn i
-
--- Assembler src definitions
-assm_src_defns :: [Instr] -> String
-assm_src_defns is = intercalate "\n\n" $ map assm_src_defn is
-
--- Assembler switch code
---------------------------------------------------------------------------------
-
--- Assembler switch args
-assm_call_arg_list :: Instr -> String
-assm_call_arg_list i = intercalate ", " $ map arg $ zip [0..] (operands i)
-  where arg (i,a) = "instr.get_operand<" ++ (op2type a) ++ ">(" ++ (show i) ++ ")"
-
--- Assembler switch call
-assm_call :: Instr -> String
-assm_call i = (assm_mnemonic i) ++ "(" ++ (assm_call_arg_list i) ++ ");"
-
--- Assembler switch case
-assm_case :: Instr -> String
-assm_case i = "case " ++ (opcode_enum i) ++ ":\n" ++
-              "\t" ++ (assm_call i) ++ "\n" ++
-              "\tbreak;"
-
--- All assembler switch cases
-assm_cases :: [Instr] -> String
-assm_cases is = intercalate "\n" $ map assm_case is
-
--- Instruction ordering
---------------------------------------------------------------------------------
-
--- Comparison ordering for operands (more specific appear first)
-op_order :: [String]
-op_order = ["hint",
-  "0","1","3","imm8","imm16","imm32","imm64",
-  "label",
-  "p66","pw","far",
-  "AL","CL","rl","rh","rb","AX","DX","r16","EAX","r32","RAX","r64",
-  "rel8","rel32",
-  "moffs8","moffs16","moffs32","moffs64",
-  "m8","m16","m32","m64","m128","m256","m16:16","m16:32","m16:64",
-  "m16int","m32int","m64int","m80bcd","m32fp","m64fp","m80fp",
-  "m2byte","m28byte","m108byte","m512byte",
-  "mm",
-  "FS","GS","Sreg",
-  "ST","ST(i)",
-  "<XMM0>","xmm",
-  "ymm"]
-
--- Compare two operands
-compare_op :: String -> String -> Ordering
-compare_op o1 o2 = compare (idx o1 op_order) (idx o2 op_order)
-  where idx x xs = let (Just i) = elemIndex x xs in i
-
--- Compare operand lists
-compare_ops :: [String] -> [String] -> Ordering
-compare_ops [] [] = EQ
-compare_ops [] _ = LT
-compare_ops _ [] = GT
-compare_ops (x:xs) (y:ys) = case compare_op x y of
-  LT -> LT
-  GT -> GT
-  EQ -> compare_ops xs ys
-
--- Compare instructions based on operands, defer to preference info
-compare_instr :: Instr -> Instr -> Ordering
-compare_instr i1 i2
-  | (pref i1 == "YES") && (pref i2 == "YES") = EQ
-  | (pref i1 == "YES") = LT
-  | (pref i2 == "YES") = GT
-  | otherwise = compare_ops (operands i1) (operands i2)
-
--- Read AT&T code
---------------------------------------------------------------------------------
-
--- Sort instructions by at&t mnemonic
-att_sort :: [Instr] -> [Instr]
-att_sort is = sortBy (\x y -> compare (att x) (att y)) is
-
--- Group instructions by at&t mnemonic
-att_group :: [Instr] -> [[Instr]]
-att_group is = groupBy (\x y -> (att x) == (att y)) is'
-  where is' = att_sort is
-
--- Generates a part of a row in the at&t parse table
-att_row_elem :: Instr -> String
-att_row_elem i = "{" ++ e ++ ", vector<Type>{" ++ ops ++ "}}"
-  where e = opcode_enum i
-        ops = case (length (operands i)) of 
-                   0 -> ""
-                   _ -> intercalate "," $ map (("Type::"++).op2tag) $ operands i
-
--- Generates a row in the at&t parse table
-att_row :: [Instr] -> String
-att_row is = " \t{\"" ++ (mn is) ++ "\", {\n\t\t " ++ (body is) ++ "\n}}"
-  where mn is = (att (head is))
-        body is = intercalate "\n\t\t," $ map att_row_elem $ sortBy compare_instr is
-
--- Generates the entire at&t parse table
-att_table :: [Instr] -> String
-att_table is = intercalate "\n, " $ map att_row $ att_group is
-
--- Write code
---------------------------------------------------------------------------------
-
-write_code :: [Instr] -> IO ()
-write_code is = do writeFile "assembler.decl"    $ assm_header_decls is
-                   writeFile "assembler.defn"    $ assm_src_defns is
-                   writeFile "assembler.switch"  $ assm_cases is
-                   writeFile "arity.table"       $ arity_table is
-                   writeFile "properties.table"  $ properties_table is
-                   writeFile "type.table"        $ type_table is
-                   writeFile "return.table"      $ return_table is
-                   writeFile "nop.table"         $ nop_table is
-                   writeFile "jump.table"        $ jump_table is
-                   writeFile "cond_jump.table"   $ cond_jump_table is
-                   writeFile "uncond_jump.table" $ uncond_jump_table is
-                   writeFile "mem_index.table"   $ mem_index_table is
-                   writeFile "must_read.table"   $ must_read_table is
-                   writeFile "maybe_read.table"  $ maybe_read_table is
-                   writeFile "must_write.table"  $ must_write_table is
-                   writeFile "maybe_write.table" $ maybe_write_table is
-                   writeFile "must_undef.table"  $ must_undef_table is
-                   writeFile "maybe_undef.table" $ maybe_undef_table is
-                   writeFile "flag.table"        $ flag_table is
-                   writeFile "opcode.enum"       $ opcode_enums is
-                   writeFile "opcode.att"        $ att_mnemonics is
-                   writeFile "att.table"         $ att_table is		
-
---------------------------------------------------------------------------------
--- Test Codegen
---------------------------------------------------------------------------------
-
--- Representative memory values
-test_mem :: [String]
-test_mem = ["(%rip)","(%eax)","(%rax)","(%rax,%r8,1)","(%rbx,%r12,4)","0x1(%rcx,%rbp,8)"]
-
--- Representative moffs values
-test_moffs :: [String]
-test_moffs = ["0x0","0x1","0x7fffffffffffffff","-0x7fffffffffffffff"]
-
--- Representative values for each operand type
-test_operand :: String -> [String]
-test_operand "rl"       = ["%al","%cl","%dl","%bl"] 
-test_operand "rh"       = ["%ah","%ch","%dh","%bh"] 
-test_operand "rb"       = ["%spl","%bpl","%sil","%dil","%r8b","%r9b","%r10b","%r11b","%r12b","%r13b","%r14b","%r15b"]
-test_operand "r16"      = ["%ax","%cx","%dx","%bx","%sp","%bp","%si","%di","%r8w","%r9w","%r10w","%r11w","%r12w","%r13w","%r14w","%r15w"]
-test_operand "r32"      = ["%eax","%ecx","%edx","%ebx","%esp","%ebp","%esi","%edi","%r8d","%r9d","%r10d","%r11d","%r12d","%r13d","%r14d","%r15d"]
-test_operand "r64"      = ["%rax","%rcx","%rdx","%rbx","%rsp","%rbp","%rsi","%rdi","%r8","%r9","%r10","%r11","%r12","%r13","%r14","%r15"]
-test_operand "AL"       = ["%al"]
-test_operand "CL"       = ["%cl"]
-test_operand "AX"       = ["%ax"]
-test_operand "DX"       = ["%dx"]
-test_operand "EAX"      = ["%eax"]
-test_operand "RAX"      = ["%rax"]
-test_operand "m8"       = test_mem
-test_operand "m16"      = test_mem
-test_operand "m32"      = test_mem
-test_operand "m64"      = test_mem
-test_operand "m128"     = test_mem
-test_operand "m256"     = test_mem
-test_operand "m16:16"   = test_mem
-test_operand "m16:32"   = test_mem
-test_operand "m16:64"   = test_mem
-test_operand "m16int"   = test_mem
-test_operand "m32int"   = test_mem
-test_operand "m64int"   = test_mem
-test_operand "m80bcd"   = test_mem
-test_operand "m32fp"    = test_mem
-test_operand "m64fp"    = test_mem
-test_operand "m80fp"    = test_mem
-test_operand "m2byte"   = test_mem
-test_operand "m28byte"  = test_mem
-test_operand "m108byte" = test_mem
-test_operand "m512byte" = test_mem
-test_operand "imm8"     = ["$0x0","$0x1","$0x7f","$-0x1","$-0x7f"]
-test_operand "imm16"    = ["$0x0","$0x1","$0x7fff","$-0x1","$-0x7fff"]
-test_operand "imm32"    = ["$0x0","$0x1","$0x7fffffff","$-0x1","$-0x7fffffff"]
-test_operand "imm64"    = ["$0x0","$0x1","$0x7fffffffffffffff","$-0x1","$-0x7fffffffffffffff"]
-test_operand "0"        = ["$0x0"]
-test_operand "1"        = ["$0x1"]
-test_operand "3"        = ["$0x3"]
-test_operand "mm"       = map (("%mm"++).show) [0..7]
-test_operand "xmm"      = map (("%xmm"++).show) [0..15]
-test_operand "<XMM0>"   = ["%xmm0"]
-test_operand "ymm"      = map (("%ymm"++).show) [0..15]
-test_operand "ST"       = ["%st(0)"]
-test_operand "ST(i)"    = ["%st(0)","%st(1)","%st(2)","%st(3)","%st(4)","%st(5)","%st(6)","%st(7)"]
-test_operand "rel8"     = ["0x0","0x1","0x7f","-0x1","-0x7f"]
-test_operand "rel32"    = ["0x0","0x1","0x7fffffff","-0x1","-0x7fffffff"]
-test_operand "moffs8"   = test_moffs
-test_operand "moffs16"  = test_moffs
-test_operand "moffs32"  = test_moffs
-test_operand "moffs64"  = test_moffs
-test_operand "Sreg"     = ["%es","%cs","%ss","%ds","%fs","%gs"]
-test_operand "FS"       = ["%fs"]
-test_operand "GS"       = ["%gs"]
--- Below this point are operand types we have introduced
-test_operand "p66"      = []
-test_operand "pw"       = []
-test_operand "far"      = []
-test_operand "label"    = [".L0"]
-test_operand "hint"     = []
-test_operand o = error $ "Unrecognized test operand type: \"" ++ o ++ "\""
-
--- Generates a list of test operands for an instruction
-test_operands :: Instr -> [String]
-test_operands i = map (intercalate ",") $ cp i
-  where cp i = sequence $ map test_operand $ reverse $ operands i
-
--- Convert an instruction into a list of instances for compilation
-test_instr :: Instr -> [String]
-test_instr i = map (mn ++) $ test_operands i
-  where mn = (att i ++ " ")
-
--- Convert an instruction into a test file
-write_test_file :: Instr -> IO ()
-write_test_file i = writeFile file $ (intercalate "\n" $ test_instr i) ++ "\n"
-  where file = "../test/" ++ (low (opcode_enum i)) ++ ".s"
-
--- Convert all instructions into a list of instances for compilation
-write_test_files :: [Instr] -> IO ()
-write_test_files is = mapM_ write_test_file is
 
 --------------------------------------------------------------------------------
 -- Documentation
 --------------------------------------------------------------------------------
-
--- Convert an instruction into an html table row
-html_row :: Instr -> String
-html_row i = "<tr>" ++
-             "<td>" ++ (opcode i) ++ "</td>" ++
-             "<td>" ++ (low (instruction i)) ++ "</td>" ++
-             "<td>" ++ (low (att_form i)) ++ "</td>" ++
-             "<td>" ++ (intercalate ", " (map (:[]) (op_en i))) ++ "</td>" ++
-             "<td>" ++ (property i) ++ "</td>" ++
-             "<td>" ++ (intercalate ", " (implicit_reads i)) ++ "</td>" ++
-             "<td>" ++ (intercalate ", " (implicit_writes i)) ++ "</td>" ++
-             "<td>" ++ (intercalate ", " (implicit_undefs i)) ++ "</td>" ++
-             "<td>" ++ (flag i) ++ "</td>" ++
-             "<td>" ++ (description i) ++ "</td>" ++
-             "</tr>"
-  where att_form i = (att i) ++ " " ++ (intercalate ", " (reverse (operands i)))
-
--- Convert all instructions into an html table
-html_table :: [Instr] -> String
-html_table is = "<table>" ++ 
-                "<tr>" ++
-                "<th>Hex Encoding</th>" ++
-                "<th>Intel Form</th>" ++
-                "<th>AT&T Form</th>" ++
-                "<th>Operand Encoding</th>" ++
-                "<th>Explicit Read/Write/Undef Properties</th>" ++
-                "<th>Implicit Reads</th>" ++
-                "<th>Implicit Write</th>" ++
-                "<th>Implicit Undefs</th>" ++
-                "<th>CPU ID Flag</th>" ++
-                "<th>Description</th>" ++
-                "</tr>\n" ++ 
-                intercalate "\n" (map html_row is) ++ 
-                "</table>"
-
--- Write the html table
-write_html :: [Instr] -> IO ()
-write_html is = writeFile "../doc/ref/x64.html" $ html_table is
 
 
 
@@ -1630,300 +856,293 @@ assm_args i = concat $ intersperse "," $ (("bool dest_is_reg"):(args' (myoperand
 	  
 lookup_handler :: String -> Int -> Instr -> String
 lookup_handler "adcb" _ _= "adcHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
-lookup_handler "adcw" _ _= "adcHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "adcl" _ _= "adcHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "adcq" _ _= "adcHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
+lookup_handler "adcw" _ _= "adcHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "addb" _ _= "addHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
-lookup_handler "addw" _ _= "addHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "addl" _ _ = "addHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
+lookup_handler "addpd" _ _  = "adddHandler(d, 2, E1,E0,E2, dest_is_reg);"
+lookup_handler "addps" _ _  = "addfHandler(d, 4, E1,E0,E2, dest_is_reg);"
 lookup_handler "addq" _ _  = "addHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
+lookup_handler "addsd" _ _  = "adddHandler(d, 1, E1,E0,E2, dest_is_reg);"
+lookup_handler "addss" _ _  = "addfHandler(d, 1, E1,E0,E2, dest_is_reg);"
+lookup_handler "addw" _ _= "addHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "andb" _ _  = "andHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
-lookup_handler "andw" _ _  = "andHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "andl" _ _  = "andHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
+lookup_handler "andps" _ _  = "andpsHandler(d, E1,E0,E2);"
 lookup_handler "andq" _ _  = "andHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
-lookup_handler "bsfw" _ _  = "bsfHandler(d,bitWidth, E0,E1);"
+lookup_handler "andw" _ _  = "andHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "bsfl" _ _  = "bsfHandler(d,bitWidth, E0,E1);"
 lookup_handler "bsfq" _ _  = "bsfHandler(d,bitWidth, E0,E1);"
-lookup_handler "bsrw" _ _  = "bsrHandler(d,bitWidth, E0,E1);"
+lookup_handler "bsfw" _ _  = "bsfHandler(d,bitWidth, E0,E1);"
 lookup_handler "bsrl" _ _  = "bsrHandler(d,bitWidth, E0,E1);"
 lookup_handler "bsrq" _ _  = "bsrHandler(d,bitWidth, E0,E1);"
+lookup_handler "bsrw" _ _  = "bsrHandler(d,bitWidth, E0,E1);"
 lookup_handler "bswap" _ _  = "bswapHandler(d,bitWidth, E1,E0);"
-lookup_handler "btw" _  _ = "btHandler(d,bitWidth, E0,E1);"
-lookup_handler "btl" _ _  = "btHandler(d,bitWidth, E0,E1);"
-lookup_handler "btq" _ _  = "btHandler(d,bitWidth, E0,E1);"
-lookup_handler "btcw" _ _  = "btcHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "btcl" _ _  = "btcHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "btcq" _ _  = "btcHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
-lookup_handler "btrw" _ _  = "btvalHandler(d, bitWidth, E1,E0,E2, false, dest_is_reg);"
+lookup_handler "btcw" _ _  = "btcHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
+lookup_handler "btl" _ _  = "btHandler(d,bitWidth, E0,E1);"
+lookup_handler "btq" _ _  = "btHandler(d,bitWidth, E0,E1);"
 lookup_handler "btrl" _ _  = "btvalHandler(d, bitWidth, E1,E0,E2, false, dest_is_reg);"
 lookup_handler "btrq" _ _  = "btvalHandler(d, bitWidth, E1,E0,E2, false, dest_is_reg);"
-lookup_handler "btsw" _ _  = "btvalHandler(d, bitWidth, E1,E0,E2, true, dest_is_reg);"
+lookup_handler "btrw" _ _  = "btvalHandler(d, bitWidth, E1,E0,E2, false, dest_is_reg);"
 lookup_handler "btsl" _ _  = "btvalHandler(d, bitWidth, E1,E0,E2, true, dest_is_reg);"
 lookup_handler "btsq" _ _  = "btvalHandler(d, bitWidth, E1,E0,E2, true, dest_is_reg);"
+lookup_handler "btsw" _ _  = "btvalHandler(d, bitWidth, E1,E0,E2, true, dest_is_reg);"
+lookup_handler "btw" _  _ = "btHandler(d,bitWidth, E0,E1);"
 lookup_handler "cbtw" _ _ = "convert_e_Handler(d, 8);"
-lookup_handler "cwtl" _ _  = "convert_e_Handler(d, 16);"
+lookup_handler "clc" _ _ = "setFlag(d.vc, d.Vnprime,V_CF, vc_falseExpr(d.vc), d.constraints, d.post_suffix);"
 lookup_handler "cltq" _ _  = "convert_e_Handler(d, 32);"
-lookup_handler "cmovaw" _ _ = "cmovaHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovaew" _ _ = "cmovaeHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovbw" _ _ = "cmovbHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovbew" _ _ = "cmovbeHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovew" _ _ = "cmoveHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovgw" _ _ = "cmovgHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovgew" _ _ = "cmovgeHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovlw" _ _ = "cmovlHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovlew" _ _ = "cmovleHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovnew" _ _ = "cmovneHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovnsw" _ _ = "cmovnsHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovsw" _ _ = "cmovsHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmoval" _ _ = "cmovaHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmc" _ _ = "setFlag(d.vc, d.Vnprime,V_CF, vc_notExpr(d.vc, getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn)), d.constraints, d.post_suffix);"
 lookup_handler "cmovael" _ _ = "cmovaeHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovbl" _ _ = "cmovbHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovbel" _ _ = "cmovbeHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovel" _ _ = "cmoveHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovgl" _ _ = "cmovgHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovgel" _ _ = "cmovgeHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovll" _ _ = "cmovlHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovlel" _ _ = "cmovleHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovnel" _ _ = "cmovneHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovnsl" _ _ = "cmovnsHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovsl" _ _ = "cmovsHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovaq" _ _ = "cmovaHandler(d, bitWidth, E1, E0, E2);"
 lookup_handler "cmovaeq" _ _ = "cmovaeHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovbq" _ _ = "cmovbHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovaew" _ _ = "cmovaeHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmoval" _ _ = "cmovaHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovaq" _ _ = "cmovaHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovaw" _ _ = "cmovaHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovbel" _ _ = "cmovbeHandler(d, bitWidth, E1, E0, E2);"
 lookup_handler "cmovbeq" _ _ = "cmovbeHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovbew" _ _ = "cmovbeHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovbl" _ _ = "cmovbHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovbq" _ _ = "cmovbHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovbw" _ _ = "cmovbHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovel" _ _ = "cmoveHandler(d, bitWidth, E1, E0, E2);"
 lookup_handler "cmoveq" _ _ = "cmoveHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovgq" _ _ = "cmovgHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovew" _ _ = "cmoveHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovgel" _ _ = "cmovgeHandler(d, bitWidth, E1, E0, E2);"
 lookup_handler "cmovgeq" _ _ = "cmovgeHandler(d, bitWidth, E1, E0, E2);"
-lookup_handler "cmovlq" _ _ = "cmovlHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovgew" _ _ = "cmovgeHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovgl" _ _ = "cmovgHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovgq" _ _ = "cmovgHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovgw" _ _ = "cmovgHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovlel" _ _ = "cmovleHandler(d, bitWidth, E1, E0, E2);"
 lookup_handler "cmovleq" _ _ = "cmovleHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovlew" _ _ = "cmovleHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovll" _ _ = "cmovlHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovlq" _ _ = "cmovlHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovlw" _ _ = "cmovlHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovnel" _ _ = "cmovneHandler(d, bitWidth, E1, E0, E2);"
 lookup_handler "cmovneq" _ _ = "cmovneHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovnew" _ _ = "cmovneHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovnsl" _ _ = "cmovnsHandler(d, bitWidth, E1, E0, E2);"
 lookup_handler "cmovnsq" _ _ = "cmovnsHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovnsw" _ _ = "cmovnsHandler(d, bitWidth, E1, E0, E2);"
+lookup_handler "cmovsl" _ _ = "cmovsHandler(d, bitWidth, E1, E0, E2);"
 lookup_handler "cmovsq" _ _ = "cmovsHandler(d, bitWidth, E1, E0, E2);"
-
-
+lookup_handler "cmovsw" _ _ = "cmovsHandler(d, bitWidth, E1, E0, E2);"
 lookup_handler "cmpb" _ _  = "cmpHandler(d, bitWidth, E0,E1);"
-lookup_handler "cmpw" _ _  = "cmpHandler(d, bitWidth, E0,E1);"
 lookup_handler "cmpl" _ _  = "cmpHandler(d, bitWidth, E0,E1);"
+lookup_handler "cmpps" _ _  = "cmppsHandler(d,imm,  E1,E0,E2, E3);"
 lookup_handler "cmpq" _ _  = "cmpHandler(d, bitWidth, E0,E1);"
+lookup_handler "cmpw" _ _  = "cmpHandler(d, bitWidth, E0,E1);"
+lookup_handler "cwtl" _ _  = "convert_e_Handler(d, 16);"
 lookup_handler "decb" _ _  = "decHandler(d, bitWidth, E1,E0, dest_is_reg);"
-lookup_handler "decw" _ _  = "decHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "decl" _ _  = "decHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "decq" _ _  = "decHandler(d, bitWidth, E1,E0, dest_is_reg);"
+lookup_handler "decw" _ _  = "decHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "divb" _ _ = "divHandler(d, bitWidth, E0);"
-lookup_handler "divw" _ _ = "divHandler(d, bitWidth, E0);"
 lookup_handler "divl" _ _ = "div_uif_Handler(d, bitWidth, E0);"
 lookup_handler "divq" _ _ = "divHandler(d, bitWidth, E0);"
+lookup_handler "divw" _ _ = "divHandler(d, bitWidth, E0);"
+lookup_handler "dppd" _ _  = "dppdHandler(d,imm,  E1,E0,E2, E3);"
+lookup_handler "haddpd" _ _  = "haddpdHandler(d, E1,E0,E2, dest_is_reg);"
+lookup_handler "haddps" _ _  = "haddpsHandler(d, E1,E0,E2, dest_is_reg);"
 lookup_handler "idivb" _ _ = "idivHandler(d, bitWidth, E0);"
-lookup_handler "idivw" _ _ = "idivHandler(d, bitWidth, E0);"
 lookup_handler "idivl" _ _ = "idivHandler(d, bitWidth, E0);"
 lookup_handler "idivq" _ _ = "idivHandler(d, bitWidth, E0);"
+lookup_handler "idivw" _ _ = "idivHandler(d, bitWidth, E0);"
 lookup_handler "imulb" 1 _ = "imul1Handler(d, bitWidth, E0,dest_is_reg);"
 lookup_handler "imulb" 2 _ = "imul3Handler(d, bitWidth, E1,E0,E2);"
 lookup_handler "imulb" 3 _ = "imul3Handler(d, bitWidth, E0,E1,E2);"
-lookup_handler "imulw" 1 _ = "imul1Handler(d, bitWidth, E0,dest_is_reg);"
-lookup_handler "imulw" 2 _ = "imul3Handler(d, bitWidth, E1,E0,E2);"
-lookup_handler "imulw" 3 _ = "imul3Handler(d, bitWidth, E0,E1,E2);"
 lookup_handler "imull" 1 _ = "imul1Handler(d, bitWidth, E0,dest_is_reg);"
 lookup_handler "imull" 2 _ = "imul3Handler(d, bitWidth, E1,E0,E2);"
 lookup_handler "imull" 3 _ = "imul3Handler(d, bitWidth, E0,E1,E2);"
 lookup_handler "imulq" 1 _ = "imul1Handler(d, bitWidth, E0,dest_is_reg);"
 lookup_handler "imulq" 2 _ = "imul3Handler(d, bitWidth, E1,E0,E2);"
 lookup_handler "imulq" 3 _ = "imul3Handler(d, bitWidth, E0,E1,E2);"
+lookup_handler "imulw" 1 _ = "imul1Handler(d, bitWidth, E0,dest_is_reg);"
+lookup_handler "imulw" 2 _ = "imul3Handler(d, bitWidth, E1,E0,E2);"
+lookup_handler "imulw" 3 _ = "imul3Handler(d, bitWidth, E0,E1,E2);"
 lookup_handler "incb" _ _  = "incHandler(d, bitWidth, E1,E0, dest_is_reg);"
-lookup_handler "incw" _ _  = "incHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "incl" _ _  = "incHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "incq" _ _ = "incHandler(d, bitWidth, E1,E0, dest_is_reg);"
+lookup_handler "incw" _ _  = "incHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "ja"   _ _ = "d.constraints.push_back(vc_andExpr(d.vc, vc_notExpr(d.vc, getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn)), vc_notExpr(d.vc, getBoolExpr(d.vc,V_ZF,d.pre_suffix, d.Vn))));"
-lookup_handler "jbe"   _ _ = "d.constraints.push_back(vc_orExpr(d.vc, getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn), getBoolExpr(d.vc,V_ZF,d.pre_suffix, d.Vn)));"
 lookup_handler "jae"   _ _ = "d.constraints.push_back(vc_notExpr(d.vc, getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn)));"
 lookup_handler "jb"   _ _ = "d.constraints.push_back(getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn));"
-lookup_handler "jl"   _ _ = "d.constraints.push_back(vc_notExpr(d.vc, vc_iffExpr(d.vc, getBoolExpr(d.vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(d.vc,V_OF,d.pre_suffix, d.Vn))));"
-lookup_handler "jge"   _ _ = "d.constraints.push_back(vc_iffExpr(d.vc, getBoolExpr(d.vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(d.vc,V_OF,d.pre_suffix, d.Vn)));"
+lookup_handler "jbe"   _ _ = "d.constraints.push_back(vc_orExpr(d.vc, getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn), getBoolExpr(d.vc,V_ZF,d.pre_suffix, d.Vn)));"
 lookup_handler "je"   _ _ = "d.constraints.push_back(getBoolExpr(d.vc,V_ZF,d.pre_suffix, d.Vn));"
+lookup_handler "jge"   _ _ = "d.constraints.push_back(vc_iffExpr(d.vc, getBoolExpr(d.vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(d.vc,V_OF,d.pre_suffix, d.Vn)));"
+lookup_handler "jl"   _ _ = "d.constraints.push_back(vc_notExpr(d.vc, vc_iffExpr(d.vc, getBoolExpr(d.vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(d.vc,V_OF,d.pre_suffix, d.Vn))));"
 lookup_handler "jne"   _ _ = "d.constraints.push_back(vc_notExpr(d.vc, getBoolExpr(d.vc,V_ZF,d.pre_suffix, d.Vn)));"
 lookup_handler "lahf" _ _ = "lahfHandler(d);"
-lookup_handler "leaw" _ _ =  "leaHandler(d, 16);"
+lookup_handler "lddqu" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
 lookup_handler "leal" _ _ =  "leaHandler(d, 32);"
 lookup_handler "leaq" _ _ =  "leaHandler(d, 64);"
+lookup_handler "leaw" _ _ =  "leaHandler(d, 16);"
+lookup_handler "maxps" _ _  = "maxpsHandler(d, E1,E0,E2);"
+lookup_handler "movapd" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movaps" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
 lookup_handler "movb" 2 _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movw" 2 _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movd" _ _    = "movHandler(d, 32, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movdqa" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movdqu" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movhlps" _ _  = "movhlpsHandler(d, E0, E1, dest_is_reg);"
+lookup_handler "movhps" _ _  = "movhHandler(d, E0, E1, dest_is_reg);"
 lookup_handler "movl" 2 _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movlps" _ _  = "movHandler(d, 64, bitWidth1, E0,E1, true, dest_is_reg);"
 lookup_handler "movq" 2 _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);" 
-lookup_handler "movzbw" _ _ = "movHandler(d, bitWidth, bitWidth1, E0,E1, false, dest_is_reg);"
-lookup_handler "movzbl" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, false, dest_is_reg);"
-lookup_handler "movzbq" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, false, dest_is_reg);"
-lookup_handler "movzwl" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, false, dest_is_reg);"
-lookup_handler "movzwq" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, false, dest_is_reg);"
-lookup_handler "movsbw" _ _ = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
 lookup_handler "movsbl" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
 lookup_handler "movsbq" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movsbw" _ _ = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movsd" _ _  = "movHandler(d, 64, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movslq" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movss" _ _  = "movHandler(d, 32, bitWidth1, E0,E1, true, dest_is_reg);"
 lookup_handler "movswl" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
 lookup_handler "movswq" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movslq" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movupd" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movups" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movw" 2 _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "movzbl" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, false, dest_is_reg);"
+lookup_handler "movzbq" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, false, dest_is_reg);"
+lookup_handler "movzbw" _ _ = "movHandler(d, bitWidth, bitWidth1, E0,E1, false, dest_is_reg);"
+lookup_handler "movzwl" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, false, dest_is_reg);"
+lookup_handler "movzwq" _ _ ="movHandler(d, bitWidth, bitWidth1, E0,E1, false, dest_is_reg);"
 lookup_handler "mulb" _ _ ="umul1Handler(d, bitWidth, E0);"
-lookup_handler "mulw" _ _ ="umul1Handler(d, bitWidth, E0);"
 lookup_handler "mull" _ _ ="umul1Handler(d, bitWidth, E0);"
+lookup_handler "mulpd" _ _  = "muldHandler(d, 2, E1, E0,E2, dest_is_reg);"
+lookup_handler "mulps" _ _  = "mulfHandler(d, 4, E1, E0,E2, dest_is_reg);"
 lookup_handler "mulq" _ _ ="umul1Handler(d, bitWidth, E0);"
+lookup_handler "mulsd" _ _  = "muldHandler(d, 1, E1, E0,E2, dest_is_reg);"
+lookup_handler "mulss" _ _  = "mulfHandler(d, 1, E1, E0,E2, dest_is_reg);"
+lookup_handler "mulw" _ _ ="umul1Handler(d, bitWidth, E0);"
 lookup_handler "negb" _ _  = "negHandler(d, bitWidth, E1,E0, dest_is_reg);"
-lookup_handler "negw" _ _  = "negHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "negl" _ _  = "negHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "negq" _ _  = "negHandler(d, bitWidth, E1,E0, dest_is_reg);"
+lookup_handler "negw" _ _  = "negHandler(d, bitWidth, E1,E0, dest_is_reg);"
+lookup_handler "nop" _ _ = ""
 lookup_handler "notb" _ _  = "notHandler(d, bitWidth, E1,E0, dest_is_reg);"
-lookup_handler "notw" _ _  = "notHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "notl" _ _  = "notHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "notq" _ _  = "notHandler(d, bitWidth, E1,E0, dest_is_reg);"
+lookup_handler "notw" _ _  = "notHandler(d, bitWidth, E1,E0, dest_is_reg);"
 lookup_handler "orb" _ _  = "orHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
-lookup_handler "orw" _ _  = "orHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "orl" _ _  = "orHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
 lookup_handler "orq" _ _  = "orHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
+lookup_handler "orw" _ _  = "orHandler(d,bitWidth, E1,E0,E2,dest_is_reg);"
+lookup_handler "paddd" _ _  = "paddHandler(d, 32, bitWidth, E1, E0,E2, dest_is_reg);"
+lookup_handler "pandn" _ _  = "pandnHandler(d, E1,E0,E2);"
+lookup_handler "popcntl" _ i = "popcnt32Handler(d, E0, E1);"
+lookup_handler "popcntq" _ i = "popcnt64Handler(d, E0, E1);"
+lookup_handler "popcntw" _ i = "popcnt16Handler(d, E0, E1);"
+lookup_handler "pshufd" _ _  = "pshufdHandler(d, imm, E0,E1,E2);"
+lookup_handler "punpckldq" _ _  = "punpckldqHandler(d, E1,E0,E2);"
 lookup_handler "retq" _ _  = ""
 lookup_handler "roll" 2 i  = if (((last (operand_types i)) == "I")) then "rolHandler(d, bitWidth, imm & 0x1f,   E1, E0, dest_is_reg);" else ""
 lookup_handler "rorl" 2 i  = if (((last (operand_types i)) == "I")) then "rorHandler(d, bitWidth, imm & 0x1f,   E1, E0, dest_is_reg);" else ""
 lookup_handler "sahf" _ _ = "sahfHandler(d);"
 lookup_handler "salb" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "shlb" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "sarb" 1 _  = "sarHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "shrb" 1 _  = "shrHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "salw" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "shlw" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "sarw" 1 _  = "sarHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "shrw" 1 _  = "shrHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "sall" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);" 
-lookup_handler "shll" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "sarl" 1 _  = "sarHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "shrl" 1 _  = "shrHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "salq" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "shlq" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "sarq" 1 _  = "sarHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
-lookup_handler "shrq" 1 _  = "shrHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
 lookup_handler "salb" 2 i =  if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
-lookup_handler "salw" 2 i =  if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
+lookup_handler "sall" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);" 
 lookup_handler "sall" 2 i =  if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm&0x1f,  E1, E0, dest_is_reg);" else "shlVarHandler(d, bitWidth, E1, E0, dest_is_reg);"
+lookup_handler "salq" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
 lookup_handler "salq" 2 i = if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm&0x3f,  E1, E0, dest_is_reg);" else ""
-lookup_handler "shlb" 2 i = if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);"  else ""
-lookup_handler "shlw" 2 i = if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
-lookup_handler "shll" 2 i = if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm&0x1f,  E1, E0, dest_is_reg);" else ""
-lookup_handler "shlq" 2 i = if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm&0x3f,  E1, E0, dest_is_reg);" else ""
+lookup_handler "salw" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
+lookup_handler "salw" 2 i =  if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
+lookup_handler "sarb" 1 _  = "sarHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
 lookup_handler "sarb" 2 i = if (((last (operand_types i)) == "I")) then "sarHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
-lookup_handler "sarw" 2 i = if (((last (operand_types i)) == "I")) then "sarHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
+lookup_handler "sarl" 1 _  = "sarHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
 lookup_handler "sarl" 2 i = if (((last (operand_types i)) == "I")) then "sarHandler(d, bitWidth, imm&0x1f,  E1, E0, dest_is_reg);" else ""
+lookup_handler "sarq" 1 _  = "sarHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
 lookup_handler "sarq" 2 i = if (((last (operand_types i)) == "I")) then "sarHandler(d, bitWidth, imm&0x3f,  E1, E0, dest_is_reg);" else ""
-lookup_handler "shrb" 2 i = if (((last (operand_types i)) == "I")) then "shrHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
-lookup_handler "shrw" 2 i = if (((last (operand_types i)) == "I")) then "shrHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
-lookup_handler "shrl" 2 i = if (((last (operand_types i)) == "I")) then "shrHandler(d, bitWidth, imm&0x1f,  E1, E0, dest_is_reg);" else ""
-lookup_handler "shrq" 2 i = if (((last (operand_types i)) == "I")) then "shrHandler(d, bitWidth, imm&0x3f,  E1, E0, dest_is_reg);" else ""
-lookup_handler "shld" _ i = if (((last (operand_types i)) == "I")) then "shldHandler(d, bitWidth, imm &(bitWidth-1), E1, E0, E2, dest_is_reg);" else "shldHandler(d, bitWidth, E1, E0, E2, E3, dest_is_reg);"
+lookup_handler "sarw" 1 _  = "sarHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
+lookup_handler "sarw" 2 i = if (((last (operand_types i)) == "I")) then "sarHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
 lookup_handler "sbbb" _ _  = "sbbHandler(d,bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "sbbw" _ _  = "sbbHandler(d,bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "sbbl" _ _  = "sbbHandler(d,bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "sbbq" _ _  = "sbbHandler(d,bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "subb" _ _ = "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "subw" _ _ = "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "subl" _ _ = "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "subq" _ _ = "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "subps" 2 _ = "subpsHandler(d, 2, bitWidth, E1, E0, E2);"
-lookup_handler "subps" 3 _ = "subpsHandler(d, 3, bitWidth, E1, E0, E2);"
+lookup_handler "sbbw" _ _  = "sbbHandler(d,bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "seta" _ _ = "setaHandler(d, bitWidth, E0, dest_is_reg);"
 lookup_handler "setae" _ _ = "setaeHandler(d, bitWidth, E0, dest_is_reg);"
 lookup_handler "setb" _ _ = "setbHandler(d, bitWidth, E0, dest_is_reg);"
 lookup_handler "setbe" _ _ = "setbeHandler(d, bitWidth, E0, dest_is_reg);"
-lookup_handler "setl" _ _ = "setlHandler(d, bitWidth, E0, dest_is_reg);"
-lookup_handler "setle" _ _ = "setleHandler(d, bitWidth, E0, dest_is_reg);"
+lookup_handler "sete" _ _ = "seteHandler(d, bitWidth, E0, dest_is_reg);"
 lookup_handler "setg" _ _ = "setgHandler(d, bitWidth, E0, dest_is_reg);"
 lookup_handler "setge" _ _ = "setgeHandler(d, bitWidth, E0, dest_is_reg);"
-lookup_handler "sete" _ _ = "seteHandler(d, bitWidth, E0, dest_is_reg);"
+lookup_handler "setl" _ _ = "setlHandler(d, bitWidth, E0, dest_is_reg);"
+lookup_handler "setle" _ _ = "setleHandler(d, bitWidth, E0, dest_is_reg);"
 lookup_handler "setne" _ _ = "setneHandler(d, bitWidth, E0, dest_is_reg);"
-lookup_handler "sets" _ _ = "setsHandler(d, bitWidth, E0, dest_is_reg);"
-lookup_handler "setns" _ _ = "setnsHandler(d, bitWidth, E0, dest_is_reg);"
 lookup_handler "setno" _ _ = "setnoHandler(d, bitWidth, E0, dest_is_reg);"
 lookup_handler "setnp" _ _ = "setnpHandler(d, bitWidth, E0, dest_is_reg);"
+lookup_handler "setns" _ _ = "setnsHandler(d, bitWidth, E0, dest_is_reg);"
 lookup_handler "seto" _ _ = "setoHandler(d, bitWidth, E0, dest_is_reg);"
 lookup_handler "setp" _ _ = "setpHandler(d, bitWidth, E0, dest_is_reg);"
-lookup_handler "testb" _ _ = "testHandler(d, bitWidth, E0, E1);"
-lookup_handler "testw" _ _ = "testHandler(d, bitWidth, E0, E1);"
-lookup_handler "testl" _ _ = "testHandler(d, bitWidth, E0, E1);"
-lookup_handler "testq" _ _ = "testHandler(d, bitWidth, E0, E1);"
-lookup_handler "xchgb" _ i = "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
-lookup_handler "xchgw" _ i = "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
-lookup_handler "xchgl" _ i = "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
-lookup_handler "xchgq" _ i = "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
-lookup_handler "xorb" _ _ = "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "xorw" _ _ = "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "xorl" _ _ = "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "xorq" _ _ = "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "xorps" 2 _ = "xorpsHandler(d, 2, bitWidth, E1, E0, E2);"
-lookup_handler "xorps" 3 _ = "xorpsHandler(d, 3, bitWidth, E1, E0, E2);"
-lookup_handler "addpd" _ _  = "adddHandler(d, 2, E1,E0,E2, dest_is_reg);"
-lookup_handler "addsd" _ _  = "adddHandler(d, 1, E1,E0,E2, dest_is_reg);"
-lookup_handler "addps" _ _  = "addfHandler(d, 4, E1,E0,E2, dest_is_reg);"
-lookup_handler "vaddps" _ _  = "addfHandler(d, 4, E0,E1,E2, dest_is_reg);"
-lookup_handler "addss" _ _  = "addfHandler(d, 1, E1,E0,E2, dest_is_reg);"
-lookup_handler "haddps" _ _  = "haddpsHandler(d, E1,E0,E2, dest_is_reg);"
-lookup_handler "haddpd" _ _  = "haddpdHandler(d, E1,E0,E2, dest_is_reg);"
-lookup_handler "movapd" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movaps" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movd" _ _    = "movHandler(d, 32, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movhps" _ _  = "movhHandler(d, E0, E1, dest_is_reg);"
-lookup_handler "movhlps" _ _  = "movhlpsHandler(d, E0, E1, dest_is_reg);"
-lookup_handler "movlps" _ _  = "movHandler(d, 64, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movdqa" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movsd" _ _  = "movHandler(d, 64, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movss" _ _  = "movHandler(d, 32, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movupd" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movups" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "lddqu" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "vlddqu" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "movdqu" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
-lookup_handler "mulpd" _ _  = "muldHandler(d, 2, E1, E0,E2, dest_is_reg);"
-lookup_handler "mulps" _ _  = "mulfHandler(d, 4, E1, E0,E2, dest_is_reg);"
-lookup_handler "mulsd" _ _  = "muldHandler(d, 1, E1, E0,E2, dest_is_reg);"
-lookup_handler "mulss" _ _  = "mulfHandler(d, 1, E1, E0,E2, dest_is_reg);"
-lookup_handler "vmulss" _ _  = "mulfHandler(d, 1, E0, E1,E2, dest_is_reg);"
-lookup_handler "paddd" _ _  = "paddHandler(d, 32, bitWidth, E1, E0,E2, dest_is_reg);"
+lookup_handler "sets" _ _ = "setsHandler(d, bitWidth, E0, dest_is_reg);"
+lookup_handler "shlb" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
+lookup_handler "shlb" 2 i = if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);"  else ""
+lookup_handler "shld" _ i = if (((last (operand_types i)) == "I")) then "shldHandler(d, bitWidth, imm &(bitWidth-1), E1, E0, E2, dest_is_reg);" else "shldHandler(d, bitWidth, E1, E0, E2, E3, dest_is_reg);"
+lookup_handler "shll" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
+lookup_handler "shll" 2 i = if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm&0x1f,  E1, E0, dest_is_reg);" else ""
+lookup_handler "shlq" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
+lookup_handler "shlq" 2 i = if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm&0x3f,  E1, E0, dest_is_reg);" else ""
+lookup_handler "shlw" 1 _  = "shlHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
+lookup_handler "shlw" 2 i = if (((last (operand_types i)) == "I")) then "shlHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
+lookup_handler "shrb" 1 _  = "shrHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
+lookup_handler "shrb" 2 i = if (((last (operand_types i)) == "I")) then "shrHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
+lookup_handler "shrl" 1 _  = "shrHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
+lookup_handler "shrl" 2 i = if (((last (operand_types i)) == "I")) then "shrHandler(d, bitWidth, imm&0x1f,  E1, E0, dest_is_reg);" else ""
+lookup_handler "shrq" 1 _  = "shrHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
+lookup_handler "shrq" 2 i = if (((last (operand_types i)) == "I")) then "shrHandler(d, bitWidth, imm&0x3f,  E1, E0, dest_is_reg);" else ""
+lookup_handler "shrw" 1 _  = "shrHandler(d,bitWidth, 1, E1,E0,dest_is_reg);"
+lookup_handler "shrw" 2 i = if (((last (operand_types i)) == "I")) then "shrHandler(d, bitWidth, imm,  E1, E0, dest_is_reg);" else ""
+lookup_handler "shufps" _ _  = "shufpsHandler(d, imm, E1,E0,E2, E3);"
+lookup_handler "stc" _ _ = "setFlag(d.vc, d.Vnprime,V_CF, vc_trueExpr(d.vc), d.constraints, d.post_suffix);"
+lookup_handler "subb" _ _ = "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
+lookup_handler "subl" _ _ = "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "subpd" _ _  = "subdHandler(d, 2, E1,E0,E2, dest_is_reg);"
+lookup_handler "subps" 2 _ = "subpsHandler(d, 2, bitWidth, E1, E0, E2);"
+lookup_handler "subps" 3 _ = "subpsHandler(d, 3, bitWidth, E1, E0, E2);"
+lookup_handler "subq" _ _ = "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "subsd" _ _  = "subdHandler(d, 1, E1,E0,E2, dest_is_reg);"
 lookup_handler "subss" _ _  = "subfHandler(d, 1, E1,E0,E2, dest_is_reg);"
+lookup_handler "subw" _ _ = "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
+lookup_handler "testb" _ _ = "testHandler(d, bitWidth, E0, E1);"
+lookup_handler "testl" _ _ = "testHandler(d, bitWidth, E0, E1);"
+lookup_handler "testq" _ _ = "testHandler(d, bitWidth, E0, E1);"
+lookup_handler "testw" _ _ = "testHandler(d, bitWidth, E0, E1);"
 lookup_handler "ucomiss" _ _  = "ucomissHandler(d, E0,E1);"
-lookup_handler "vaddsd" _ _  = "vaddsdHandler(d, 1, E0,E1,E2, dest_is_reg);"
-lookup_handler "vmovddup" _ _  = "movddupHandler(d, E0,E1);"
-lookup_handler "cmpps" _ _  = "cmppsHandler(d,imm,  E1,E0,E2, E3);"
-lookup_handler "dppd" _ _  = "dppdHandler(d,imm,  E1,E0,E2, E3);"
-lookup_handler "andps" _ _  = "andpsHandler(d, E1,E0,E2);"
-lookup_handler "pandn" _ _  = "pandnHandler(d, E1,E0,E2);"
-lookup_handler "maxps" _ _  = "maxpsHandler(d, E1,E0,E2);"
-lookup_handler "shufps" _ _  = "shufpsHandler(d, imm, E1,E0,E2, E3);"
-lookup_handler "pshufd" _ _  = "pshufdHandler(d, imm, E0,E1,E2);"
-lookup_handler "punpckldq" _ _  = "punpckldqHandler(d, E1,E0,E2);"
 lookup_handler "unpcklpd" 2 _ = "unpcklpdHandler(d, bitWidth, false, E1, E0, E2);"
 lookup_handler "unpcklpd" 3 _ = "unpcklpdHandler(d, bitWidth, true, E1, E0, E2);"
 lookup_handler "unpcklps" 2 _ = "unpcklpsHandler(d, bitWidth, false, E1, E0, E2);"
 lookup_handler "unpcklps" 3 _ = "unpcklpsHandler(d, bitWidth, true, E1, E0, E2);"
-
-
- --"divb","divw","divl","divq"
- --"salw"
---"sall"
---"salq"
---void xchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_src_post,  bool dest_is_reg);
---lookup_handler "lahf" _  = "lahfHandler(d);"
-lookup_handler "popcntw" _ i = "popcnt16Handler(d, E0, E1);"
-lookup_handler "popcntl" _ i = "popcnt32Handler(d, E0, E1);"
-lookup_handler "popcntq" _ i = "popcnt64Handler(d, E0, E1);"
-lookup_handler "nop" _ _ = ""
-lookup_handler "clc" _ _ = "setFlag(d.vc, d.Vnprime,V_CF, vc_falseExpr(d.vc), d.constraints, d.post_suffix);"
-lookup_handler "stc" _ _ = "setFlag(d.vc, d.Vnprime,V_CF, vc_trueExpr(d.vc), d.constraints, d.post_suffix);"
-lookup_handler "cmc" _ _ = "setFlag(d.vc, d.Vnprime,V_CF, vc_notExpr(d.vc, getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn)), d.constraints, d.post_suffix);"
+lookup_handler "vaddps" _ _  = "addfHandler(d, 4, E0,E1,E2, dest_is_reg);"
+lookup_handler "vaddsd" _ _  = "vaddsdHandler(d, 1, E0,E1,E2, dest_is_reg);"
+lookup_handler "vlddqu" _ _  = "movHandler(d, bitWidth, bitWidth1, E0,E1, true, dest_is_reg);"
+lookup_handler "vmovddup" _ _  = "movddupHandler(d, E0,E1);"
+lookup_handler "vmulss" _ _  = "mulfHandler(d, 1, E0, E1,E2, dest_is_reg);"
+lookup_handler "xchgb" _ i = "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
+lookup_handler "xchgl" _ i = "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
+lookup_handler "xchgq" _ i = "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
+lookup_handler "xchgw" _ i = "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
+lookup_handler "xorb" _ _ = "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
+lookup_handler "xorl" _ _ = "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
+lookup_handler "xorps" 2 _ = "xorpsHandler(d, 2, bitWidth, E1, E0, E2);"
+lookup_handler "xorps" 3 _ = "xorpsHandler(d, 3, bitWidth, E1, E0, E2);"
+lookup_handler "xorq" _ _ = "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
+lookup_handler "xorw" _ _ = "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler opcode _ _ = "throw VALIDATOR_ERROR(\"Instruction '" ++ opcode ++ 
                                                     "' is not implemented.\" );"
 -- Generates a declaration for an instruction
 validator_decl :: [Instr] -> String
 validator_decl is = concat $ ((("#ifndef SWITCH_H\n#define SWITCH_H\n#include \"handlers.h\"\n#include \"c_interface.h\"\n") : (nub (map render (tail is)))) ++ ("#endif"):[])
-  where render i = ("void " ++ (att i) ++ (concat (operand_types i)) ++"Handler(v_data d,  unsigned int bitWidth, unsigned int bitWidth1, " ++ (assm_args i) ++ ");\n")
+  where render i = ("void " ++ (att i) ++ (concat (operand_types i)) ++
+                  "Handler(v_data d,  unsigned int bitWidth, unsigned int bitWidth1, " ++ (assm_args i) ++ ");\n")
 
 -- Generates a definition for an instruction		
 validator_defn :: [Instr] -> String
 validator_defn is = concat $ ("#include \"switch.h\"\n") : (nub (map render (tail is)))
-  where render i = "void " ++ (att i) ++ (concat (operand_types i)) ++"Handler(v_data d, unsigned int bitWidth, unsigned int bitWidth1, " ++ (assm_args i) ++ "){"++ (lookup_handler (att i) (arity i) i) ++ "}\n"		
+  where render i = "void " ++ (att i) ++ (concat (operand_types i)) ++
+                   "Handler(v_data d, unsigned int bitWidth, unsigned int bitWidth1, " ++ 
+                    (assm_args i) ++ "){"++ (lookup_handler (att i) (arity i) i) ++ "}\n"		
  
  
 filimm :: [(String,String,String)] -> Int -> [(String,String,String)]
@@ -1943,16 +1162,26 @@ getmem [] _ = ""
 -- Generates a switch statement based on opcode enum
 validator_switch :: [Instr] -> [String] -> String
 validator_switch is regs = concat $ map (render regs) (tail is)
-    where render regs i= "case " ++ (to_enum i) ++ ":\n\t" ++ (getmem (myoperands i) 0) ++ (att i) ++ (concat (operand_types i)) ++"Handler(d, " ++  (args i) ++ ");\n\tbreak;\n"
-	  args i = concat $ intersperse "," $ ((if (null (operand_widths i)) then ("0,0") else (if(null (tail (operand_widths i))) then ((head (operand_widths i))++",0") else ((head (operand_widths i))++","++(head (tail (operand_widths i)))) )): (if null (operand_types i) then "false " else if ((head (operand_types i)) `elem` regs) then "true " else "false ") :(args' (filimm (myoperands i) 0) 0))  ++ (condargs (sort (cond_read i)))
+    where render regs i= "case " ++ (to_enum i) ++ ":\n\t" ++ (getmem (myoperands i) 0) ++ (att i)
+                                 ++ (concat (operand_types i)) ++"Handler(d, " ++  (args i) ++ ");\n\tbreak;\n"
+	  args i = concat $ intersperse "," $ ((if (null (operand_widths i)) 
+                                          then ("0,0") 
+                                          else (if(null (tail (operand_widths i))) 
+                                                then ((head (operand_widths i))++",0") 
+                                                else ((head (operand_widths i))++","++
+                                                      (head (tail (operand_widths i)))) )): 
+                                          (if null (operand_types i) 
+                                           then "false " 
+                                           else 
+                                             if ((head (operand_types i)) `elem` regs) 
+                                             then "true " 
+                                             else "false ") :
+                                          (args' (filimm (myoperands i) 0) 0))  ++ (condargs (sort (cond_read i)))
 	  
---          args' (w:"M":"R":xs) i = ("(Addr addr = d.instr.get_addr(" ++ (show i) ++"), d.constraints.push_back(E_constraint = ConstrainAddr(vc, E_addr, addr.get_base(),addr.get_scale(), addr.get_index(), addr.get_disp(), addr.get_seg(), d," ++ w ++ ")),memRead(d, mem, "++ w ++ ", E_addr))"):[] ++ (args' xs (i+1))
---          args' (w:"M":"W":xs) i = ("(Addr addr = d.instr.get_addr(" ++ (show i) ++"), d.constraints.push_back(E_constraint = ConstrainAddr(vc, E_addr, addr.get_base(),addr.get_scale(), addr.get_index(), addr.get_disp(), addr.get_seg(), d," ++ w ++ ")),memWrite(d, mem, "++ w ++ ", E_addr))"):[] ++ (args' xs (i+1))
---          args' (w:"M":"X":xs) i = ("(Addr addr = d.instr.get_addr(" ++ (show i) ++"), d.constraints.push_back(E_constraint = ConstrainAddr(vc, E_addr, addr.get_base(),addr.get_scale(), addr.get_index(), addr.get_disp(), addr.get_seg(), d," ++ w ++ ")),memWAR(d, mem, "++ w ++ ", E_addr))"):[] ++ (args' xs (i+1))
           args' ((w,"R","R"):xs) i = (c1++(show i)++cpre ++(show ((read w) - 1)) ++c2):[] ++ (args' xs (i+1))
           args' ((w,"R","W"):xs) i = (c1++(show i)++cpost ++(show ((read w) - 1)) ++c2):[] ++ (args' xs (i+1))
           args' ((w,"R","X"):xs) i = (c1++(show i)++cpre ++(show ((read w) - 1)) ++c2++","++c1++(show i)++cpost ++(show ((read w) - 1)) ++c2):[] ++ (args' xs (i+1))
-	  args' ((w,"I",x):xs) i =    x:[] ++ (args' xs (i+1)) 
+      	  args' ((w,"I",x):xs) i =    x:[] ++ (args' xs (i+1)) 
           args' ((w,"M","R"):xs) i = ("E_src1"):[] ++ (args' xs (i+1))
           args' ((w,"M","W"):xs) i = ("E_dest"):[] ++ (args' xs (i+1))
           args' ((w,"M","X"):xs) i = ("E_src1,E_dest"):[] ++ (args' xs (i+1))
