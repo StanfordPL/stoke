@@ -114,7 +114,12 @@ void orHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E
 void paddHandler(v_data d, unsigned int opWidth, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg);
 void palignrHandler(v_data d, unsigned int numopt, unsigned int bitWidth, unsigned int immediate, Expr E_dest, Expr E_src1, Expr E_src2);
 void pandnHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
+void pmovsxdqHandler(v_data d, Expr E_dest, Expr E_src);
 void pmovsxwqHandler(v_data d, Expr E_dest, Expr E_src);
+void pmovzxbdHandler(v_data d, Expr E_dest, Expr E_src);
+void pmovzxbwHandler(v_data d, Expr E_dest, Expr E_src);
+void pmovzxwdHandler(v_data d, Expr E_dest, Expr E_src);
+void pmovzxwqHandler(v_data d, Expr E_dest, Expr E_src);
 void popcnt16Handler(v_data d, Expr E_dest, Expr E_src);
 void popcnt32Handler(v_data d, Expr E_dest, Expr E_src);
 void popcnt64Handler(v_data d, Expr E_dest, Expr E_src);

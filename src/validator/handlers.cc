@@ -1716,6 +1716,21 @@ void pandnHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   d.constraints.push_back(retval); 
 }
 
+void pmovsxdqHandler(v_data d, Expr E_dest, Expr E_src)
+{
+  VC&vc = d.vc;
+  
+  Expr E_first = vc_bvSignExtend(vc, vc_bvExtract(vc, E_src, 31, 0), 64);
+  Expr E_second = vc_bvSignExtend(vc, vc_bvExtract(vc, E_src, 63, 32), 64);
+  Expr retval = vc_andExpr(vc, EqExpr(vc, E_first, vc_bvExtract(vc, E_dest, 127, 64)),EqExpr(vc, E_second, vc_bvExtract(vc, E_dest, 63, 0)));
+
+#ifdef DEBUG_VALIDATOR
+  cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+  d.constraints.push_back(retval); 
+}
+
 void pmovsxwqHandler(v_data d, Expr E_dest, Expr E_src)
 {
   VC&vc = d.vc;
@@ -1730,6 +1745,86 @@ void pmovsxwqHandler(v_data d, Expr E_dest, Expr E_src)
 
   d.constraints.push_back(retval); 
 }
+
+void pmovzxbdHandler(v_data d, Expr E_dest, Expr E_src)
+{
+  VC&vc = d.vc;
+  
+  Expr E_first = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 7, 0));
+  Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 16, 8));
+  Expr E_third = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 23, 17));
+  Expr E_fourth = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 31, 24));
+  Expr retval = vc_andExpr(vc, EqExpr(vc, E_first, vc_bvExtract(vc, E_dest, 31, 0)),EqExpr(vc, E_second, vc_bvExtract(vc, E_dest, 63, 32)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_third, vc_bvExtract(vc, E_dest, 95, 64)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_fourth, vc_bvExtract(vc, E_dest, 127, 96)));
+#ifdef DEBUG_VALIDATOR
+  cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+  d.constraints.push_back(retval); 
+}
+
+
+void pmovzxbwHandler(v_data d, Expr E_dest, Expr E_src)
+{
+  VC&vc = d.vc;
+  
+  Expr E_first = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 7, 0));
+  Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 16, 8));
+  Expr E_third = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 23, 17));
+  Expr E_fourth = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 31, 24));
+  Expr E_fifth = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 39, 32));
+  Expr E_sixth = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 47, 40));
+  Expr E_seventh = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 55, 48));
+  Expr E_eight = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 63, 56));
+  Expr retval = vc_andExpr(vc, EqExpr(vc, E_first, vc_bvExtract(vc, E_dest, 15, 0)),EqExpr(vc, E_second, vc_bvExtract(vc, E_dest, 31, 16)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_third, vc_bvExtract(vc, E_dest, 47, 32)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_fourth, vc_bvExtract(vc, E_dest, 63, 48)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_fifth, vc_bvExtract(vc, E_dest, 79, 64)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_sixth, vc_bvExtract(vc, E_dest, 95, 80)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_seventh, vc_bvExtract(vc, E_dest, 111, 96)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_eight, vc_bvExtract(vc, E_dest, 127, 112)));
+#ifdef DEBUG_VALIDATOR
+  cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+  d.constraints.push_back(retval); 
+}
+
+void pmovzxwdHandler(v_data d, Expr E_dest, Expr E_src)
+{
+  VC&vc = d.vc;
+  
+  Expr E_first = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,16,0), vc_bvExtract(vc, E_src, 15, 0));
+  Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,16,0), vc_bvExtract(vc, E_src, 31, 16));
+  Expr E_third = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,16,0), vc_bvExtract(vc, E_src, 47, 32));
+  Expr E_fourth = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,16,0), vc_bvExtract(vc, E_src, 63, 48));
+  Expr retval = vc_andExpr(vc, EqExpr(vc, E_first, vc_bvExtract(vc, E_dest, 31, 0)),EqExpr(vc, E_second, vc_bvExtract(vc, E_dest, 63, 32)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_third, vc_bvExtract(vc, E_dest, 95, 64)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_fourth, vc_bvExtract(vc, E_dest, 127, 96)));
+#ifdef DEBUG_VALIDATOR
+  cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+  d.constraints.push_back(retval); 
+}
+
+
+void pmovzxwqHandler(v_data d, Expr E_dest, Expr E_src)
+{
+  VC&vc = d.vc;
+  
+  Expr E_first = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,48,0), vc_bvExtract(vc, E_src, 31, 16));
+  Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,48,0), vc_bvExtract(vc, E_src, 15, 0));
+  Expr retval = vc_andExpr(vc, EqExpr(vc, E_first, vc_bvExtract(vc, E_dest, 127, 64)),EqExpr(vc, E_second, vc_bvExtract(vc, E_dest, 63, 0)));
+
+#ifdef DEBUG_VALIDATOR
+  cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+  d.constraints.push_back(retval); 
+}
+
 
 void popcnt16Handler(v_data d, Expr E_dest, Expr E_src) {
 
