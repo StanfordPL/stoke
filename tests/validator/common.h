@@ -18,25 +18,40 @@ class ValidatorTest : public ::testing::Test {
     std::stringstream target_;
     std::stringstream rewrite_;
 
-    void assert_equiv() {
+    std::ostream& assert_equiv() {
+
+      // Check if valid
       stoke::CpuState ceg;
       bool b = validate(ceg);
+
       EXPECT_TRUE(b) << "Validation failed.  Counterexample:"
                      << std::endl << ceg << std::endl;
+
+      // Check counterexample, if exists
       if(!b)
         check_ceg(ceg);
+
+      return std::cout;
     }
 
-    void assert_ceg(stoke::CpuState& ceg) {
+    std::ostream& assert_ceg(stoke::CpuState& ceg) {
+
+      // Check if valid
       bool b = validate(ceg);
+
+      // Do the assert, save output stream
       EXPECT_FALSE(b) << "Codes were found equivalent." << std::endl;
+
+      // Check counterexample, if exists
       if(!b)
         check_ceg(ceg);
+
+      return std::cout;
     }
 
-    void assert_ceg() {
+    std::ostream& assert_ceg() {
       stoke::CpuState ceg;
-      assert_ceg(ceg);
+      return assert_ceg(ceg);
     }
 
     std::string assert_fail() {

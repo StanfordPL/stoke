@@ -1620,6 +1620,88 @@ void paddHandler(v_data d, unsigned int opWidth, unsigned int bitWidth, Expr E_d
   d.constraints.push_back(retval);
 }
 
+void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsigned int immediate, Expr E_dest, Expr E_src1, Expr E_src2) {
+
+  //FIXME: this is unsound for memory: memory must be aligned to a 128 bit boundary.
+
+  if (bitWidth != 128 || numops != 3) {
+    VALIDATOR_ERROR("palign only implemented for 128-bit operands and 3 arguments");
+    //to make this work for 128-bits and 4 arguments, you just need to clear the
+    //ymm register bits.
+  }
+
+  VC&vc = d.vc;
+
+  // The trick to doing this efficiently is matching which bits of the sources
+  // are going to go to which bits of the destination, without actually doing
+  // bitshifting or introducting temporaries.
+
+  // First, figure out how many bits we need to "shift" by
+  int bits_to_shift = ((immediate & 0xff) * 8);
+
+  // If it's too high, then we zero the output registers.
+  if (bits_to_shift > 255) {
+    Expr zero_bv = vc_bvConstExprFromInt(vc, 128, 0); 
+    Expr equals = EqExpr(vc, E_dest, zero_bv);
+    d.constraints.push_back(equals);
+    return;
+  }
+
+  // If it's between 129 and 255 (inclusive), we copy bits only from src1.
+  if (129 <= bits_to_shift && bits_to_shift <= 255) {
+    // DEST[0, 255-i] <- SRC1[i-128, 127]  (256 - i bits)
+
+    Expr src1_extract = vc_bvExtract(vc, E_src1, 127, bits_to_shift - 128);
+    Expr dest_to_src1 = vc_bvExtract(vc, E_dest, 255 - bits_to_shift, 0);
+
+    Expr dest_src1_equal = EqExpr(vc, dest_to_src1, src1_extract);
+    d.constraints.push_back(dest_src1_equal);
+
+    // DEST[256-i, 127] <- zero (i - 128 bits)
+    Expr zero = vc_bvConstExprFromInt(vc, bits_to_shift-128, 0);
+    Expr dest_zero = vc_bvExtract(vc, E_dest, 127, 256 - bits_to_shift);
+    assert(bits_to_shift - 128 == 127 - (256 - bits_to_shift) + 1);
+
+    Expr equal = EqExpr(vc, dest_zero, zero);
+    d.constraints.push_back(equal);
+
+    return;
+  }
+
+  // If it's exactly 128 bits, we copy src1 into dest
+  if (bits_to_shift == 128) {
+    Expr equals = EqExpr(vc, E_dest, E_src1);
+    d.constraints.push_back(equals);
+    return;
+  }
+
+  // If it's between 1 and 127 (inclusive) we copy parts of src1 and src2
+  if (1 <= bits_to_shift && bits_to_shift <= 127) {
+    // DEST[0, 127-i] = SRC2[i, 127]  (128-i bits)
+    Expr src2_extract = vc_bvExtract(vc, E_src2, 127, bits_to_shift);
+    Expr dest_to_src2 = vc_bvExtract(vc, E_dest, 127-bits_to_shift, 0);
+
+    Expr dest_src2_equal = EqExpr(vc, dest_to_src2, src2_extract);
+    d.constraints.push_back(dest_src2_equal);
+
+    // DEST[128-i, 127] = SRC1[i-1, 0]  (i bits)
+    Expr src1_extract = vc_bvExtract(vc, E_src1, bits_to_shift - 1, 0);
+    Expr dest_to_src1 = vc_bvExtract(vc, E_dest, 127, 128 - bits_to_shift);
+
+    Expr dest_src1_equal = EqExpr(vc, dest_to_src1, src1_extract);
+    d.constraints.push_back(dest_src1_equal);
+  }
+
+  // If it's 0, we just copy SRC2 into the destination
+  if (bits_to_shift == 0) {
+    Expr equals = EqExpr(vc, E_dest, E_src2);
+    d.constraints.push_back(equals);
+    return;
+  }
+
+  VALIDATOR_ERROR("palignr internal error; bits_to_shift out of bounds?");
+
+}
 
 void pandnHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
