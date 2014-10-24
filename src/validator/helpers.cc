@@ -233,6 +233,40 @@ Expr constructAShrByConstant(VC& vc, unsigned amount, Expr E_src1, unsigned int 
   }
 }
 
+/* Takes an expression, and extracts the bits following a shift */
+Expr pshuf_shift_right_and_extract(VC& vc, Expr bitvector, int shift, int high, int low, int width) {
+
+  // If you imagine the bitvector after the shift, the high and low bits are
+  // (high + shift) and (low + shift).  Things get interesting when one or both
+  // of those are negative.
+
+  int new_high = high + shift;
+  int new_low = low + shift;
+
+  if (new_high < width && new_low < width) {
+    return vc_bvExtract(vc, bitvector, new_high, new_low);
+  }
+
+  if (new_high >= width && new_low < width) {
+
+    // We need (new_high - width + 1) zeros.
+    Expr zeros = vc_bvConstExprFromInt(vc, new_high - width + 1, 0);
+
+    // The remainding bits left after the shift
+    Expr remaining = vc_bvExtract(vc, bitvector, width-1, new_low);
+
+    // Concat
+    Expr concat = vc_bvConcatExpr(vc, zeros, remaining);
+    return concat;
+  }
+
+  if (new_high >= width && new_low >= width) {
+    //return high-low + 1 zeros.
+    return vc_bvConstExprFromInt(vc, high - low + 1, 0);
+  }
+
+  throw VALIDATOR_ERROR("pshuf_shift_right_and_extract internal error: unexpected state");
+}
 
 void instrnToConstraint(MemoryData& mem, PAIR_INFO state_info,VC& vc, V_Node& n,
     VersionNumber& Vn, VersionNumber& Vnprime, 
