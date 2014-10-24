@@ -88,6 +88,7 @@ void cmpxchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, Ex
 void convert_cdq_Handler(v_data d, Expr pred, unsigned int bitWidth);
 void convert_e_Handler(v_data d, unsigned int bitWidth);
 void crc32r32Handler(v_data d, Expr E_dest, Expr E_dest_pre, Expr E_src);
+void cwd_cdq_cqoHandler(v_data d, int bitWidth);
 void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool dest_is_reg);
 void divHandler(v_data d, unsigned int bitWidth, Expr E_src2);
 void div_uif_Handler(v_data d, unsigned int bitWidth, Expr E_src2);

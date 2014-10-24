@@ -831,6 +831,41 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, dest, temp));
 #undef POLYDIV
 }
 
+
+
+// This handles CWD, CDQ, CQO
+void cwd_cdq_cqoHandler(v_data d, int width) {
+
+  VC&vc = d.vc;
+
+  // Unfortunately, we need to manually get the symbols for the "source" and
+  // "destination".  By "source" I mean the sub-register of RAX and by
+  // "destination" I mean the subregister of RDX.
+
+  Expr rax_expr       = regExprWVN(vc, rax, d.post_suffix, d.Vn, 64);
+  Expr rdx_end_expr   = regExprWVN(vc, rdx, d.post_suffix, d.Vnprime, 64);
+  Expr rdx_start_expr = regExprWVN(vc, rdx, d.post_suffix, d.Vn, 64);
+
+
+  // Extract the top bit of the source register
+  Expr last_bit_of_src = vc_bvExtract(vc, rax_expr, width - 1, width - 1);
+
+  // Constrain all the bits of the destination register.
+  for(int i = 0; i < width; ++i) {
+    Expr bit_of_dst = vc_bvExtract(vc, rdx_end_expr, i, i); 
+    Expr equal = EqExpr(vc, bit_of_dst, last_bit_of_src);
+    d.constraints.push_back(equal);
+  }
+
+  // Constrain remaining bits of rdx.
+  if (width < 64) {
+    Expr rdx_start_remaining = vc_bvExtract(vc, rdx_start_expr, 63, width);
+    Expr rdx_end_remaining = vc_bvExtract(vc, rdx_end_expr, 63, width);
+    Expr equal = EqExpr(vc, rdx_start_remaining, rdx_end_remaining);
+    d.constraints.push_back(equal);
+  }
+}
+
 //OF is SET iff original value is 0
 void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
 

@@ -94,7 +94,7 @@ class VersionNumber
 	unsigned int get(SS_Id n) const
 	{
     if(VN_.find(n) == VN_.end()) {
-      throw VALIDATOR_ERROR("Unregognized ID");
+      throw VALIDATOR_ERROR("Unregognized ID: " + std::to_string(n));
     }
 		return (*(VN_.find(n))).second;
 	}
