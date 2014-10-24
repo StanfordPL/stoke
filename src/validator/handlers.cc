@@ -1716,6 +1716,20 @@ void pandnHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   d.constraints.push_back(retval); 
 }
 
+void pmovsxwqHandler(v_data d, Expr E_dest, Expr E_src)
+{
+  VC&vc = d.vc;
+  
+  Expr E_first = vc_bvSignExtend(vc, vc_bvExtract(vc, E_src, 31, 16), 64);
+  Expr E_second = vc_bvSignExtend(vc, vc_bvExtract(vc, E_src, 15, 0), 64);
+  Expr retval = vc_andExpr(vc, EqExpr(vc, E_first, vc_bvExtract(vc, E_dest, 127, 64)),EqExpr(vc, E_second, vc_bvExtract(vc, E_dest, 63, 0)));
+
+#ifdef DEBUG_VALIDATOR
+  cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+  d.constraints.push_back(retval); 
+}
 
 void popcnt16Handler(v_data d, Expr E_dest, Expr E_src) {
 

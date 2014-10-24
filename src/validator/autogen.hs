@@ -1041,6 +1041,7 @@ lookup_handler "orw"      _ _ = Just "orHandler(d,bitWidth, E1,E0,E2,dest_is_reg
 lookup_handler "paddd"    _ _ = Just "paddHandler(d, 32, bitWidth, E1, E0,E2, dest_is_reg);"
 lookup_handler "palignr"  3 _ = Just "palignrHandler(d, 3, bitWidth, imm, E1, E0, E2);"
 lookup_handler "pandn"    _ _ = Just "pandnHandler(d, E1,E0,E2);"
+lookup_handler "pmovsxwq" _ _ = Just "pmovsxwqHandler(d, E0,E1);"
 lookup_handler "popcntl"  _ i = Just "popcnt32Handler(d, E0, E1);"
 lookup_handler "popcntq"  _ i = Just "popcnt64Handler(d, E0, E1);"
 lookup_handler "popcntw"  _ i = Just "popcnt16Handler(d, E0, E1);"
