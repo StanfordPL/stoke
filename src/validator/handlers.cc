@@ -2037,6 +2037,25 @@ void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 }
 
 
+void punpcklwdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
+
+  VC&vc = d.vc;
+  Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 15, 0), vc_bvExtract(vc, E_src1, 15, 0));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 16), vc_bvExtract(vc, E_src2, 15, 0)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 47, 32), vc_bvExtract(vc, E_src1, 31, 16)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 48), vc_bvExtract(vc, E_src2, 31, 16)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 79, 64), vc_bvExtract(vc, E_src1, 47, 32)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 80), vc_bvExtract(vc, E_src2, 47, 32)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 111, 96), vc_bvExtract(vc, E_src1, 63, 48)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 112), vc_bvExtract(vc, E_src2, 63, 48)));
+#ifdef DEBUG_VALIDATOR
+  cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
+#endif
+
+  d.constraints.push_back(retval);
+
+}
+
 
 void rclHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_dest, Expr E_src1, bool dest_is_reg=true) {
 

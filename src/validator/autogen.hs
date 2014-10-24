@@ -1049,6 +1049,7 @@ lookup_handler "pshufd"   _ _ = Just "pshufdHandler(d, imm, E0,E1,E2);"
 lookup_handler "pshufhw"  _ _ = Just "pshufhwHandler(d, 128, false, imm, E0, E1);"
 lookup_handler "pshuflw"  _ _ = Just "pshuflwHandler(d, 128, false, imm, E0, E1);"
 lookup_handler "punpckldq" _ _ = Just "punpckldqHandler(d, E1,E0,E2);"
+lookup_handler "punpcklwd" _ _ = Just "punpcklwdHandler(d, E1,E0,E2);"
 lookup_handler "retq"     _ _ = Just ""
 lookup_handler "roll"     2 i = Just $ if (((last (operand_types i)) == "I")) 
                                        then "rolHandler(d, bitWidth, imm & 0x1f,   E1, E0, dest_is_reg);" 
