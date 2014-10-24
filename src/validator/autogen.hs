@@ -770,6 +770,7 @@ operand_types i = map operand_types_helper (operands i)
     operand_types_helper "r16" = "R"
     operand_types_helper "r32" = "R"
     operand_types_helper "r64" = "R"
+    operand_types_helper "1" = "I"
     operand_types_helper "imm8" = "I"
     operand_types_helper "imm16" = "I"
     operand_types_helper "imm32" = "I"
@@ -812,6 +813,7 @@ operand_widths i = map operand_widths_helper (operands i)
     operand_widths_helper "RAX" = "64"
     operand_widths_helper "xmm" = "128"
     operand_widths_helper "<XMM0>" = "128"   
+    operand_widths_helper "1" = "1"   
     operand_widths_helper x = "0"
     
     
