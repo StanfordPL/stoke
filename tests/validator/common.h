@@ -56,10 +56,10 @@ class ValidatorTest : public ::testing::Test {
 
     std::string assert_fail() {
       stoke::CpuState ceg;
-      EXPECT_THROW(validate(ceg), validator_error);
 
       try {
         validate(ceg);
+        EXPECT_TRUE(false) << "The validator was supposed to throw an error but didn't." << std::endl;
       } catch (validator_error e) {
         return e.get_message();
       }
