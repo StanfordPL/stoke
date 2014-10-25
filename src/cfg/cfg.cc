@@ -389,7 +389,23 @@ void Cfg::recompute_liveness() {
     // which we ever use (i.e. read) becomes live-out at that point.  So, let's
     // get the set of stuff we *ever* read.
     RegSet ever_read = fxn_live_outs_;
-    ever_read |= code_.maybe_read_set();
+
+    // Note: maybe_read_set doesn't work for call, which
+    // is why I need this loop.
+    for(auto it : code_) {
+      if(it.is_call()) {
+        ever_read |= RegSet::linux_call_parameters();
+      } else if (it.is_any_call()) {
+        // we don't support this.
+        // abort is a mean, evil way.
+        std::cerr << "Instruction " << it << " not supported by liveness."
+                  << " @ " << __FILE__ << ":" << __LINE__ << endl;
+        exit(1);
+      } else {
+        ever_read |= it.maybe_read_set();
+      }
+
+    }
 
 
     // Initial Conditions
