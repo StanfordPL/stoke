@@ -505,11 +505,33 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
       bitwidth = 32;
     } else if (liveout.contains(x64asm::r16s[i])) {
       bitwidth = 16;
-    } else if (i < 4 && liveout.contains(x64asm::rls[i])) {
-      bitwidth = 8;
     } else {
-      continue;
+      // Need to think about the sub-16 bit situation carefully.
+      if (i < 4) {
+        // case for al, bl, cl, dl
+        bool have_low8 = liveout.contains(x64asm::rls[i]);
+
+        // case for ah, bc, ch, dh
+        bool have_high8 = liveout.contains(x64asm::rhs[i]);
+
+        if (have_low8 && have_high8) {
+          bitwidth = 16; 
+        } else if (have_low8 && !have_high8) {
+          bitwidth = 8;
+        } else if (!have_low8 && have_high8) {
+          VALIDATOR_ERROR("%ah, %bl, %ch, %dh not supported live-out yet.");
+        } else {
+          continue;
+        }
+      } else if (liveout.contains(x64asm::rbs[i-4])) {
+          //case for bpl, sil, dil, spl, r8b, r9b, ...
+          bitwidth = 8;
+      } else {
+        // The register is not here, in any form.
+        continue;
+      }
     }
+
 
     /* Get the string representation of this register */
     string elem = bij.toVal(op); 

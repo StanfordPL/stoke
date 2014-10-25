@@ -1,126 +1,94 @@
 
+class ValidatorBaseTest : public ValidatorTest { };
 
-TEST(Validator, SimpleExampleTrue) {
+TEST_F(ValidatorBaseTest, SimpleExampleTrue) {
 
-  x64asm::Code c, d;
+  target_ << "incq %rax" << std::endl;
+  target_ << "cmpq $0x10, %rax" << std::endl;
+  target_ << "retq" << std::endl;
 
-  std::stringstream tmp;
-  tmp << "incq %rax" << std::endl;
-  tmp << "cmpq $0x10, %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  rewrite_ << "addq $0x1, %rax" << std::endl;
+  rewrite_ << "cmpq $0x10, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  tmp << "addq $0x1, %rax" << std::endl;
-  tmp << "cmpq $0x10, %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  ASSERT_TRUE(v.validate(cfg_t, cfg_r, ceg));
+  assert_equiv();
 
 }
 
 
-TEST(Validator, EflagsChecked) {
+TEST_F(ValidatorBaseTest, EflagsChecked) {
 
-  x64asm::Code c, d;
+  target_ << "cmpq $0x5, %rax" << std::endl;
+  target_ << "retq" << std::endl;
 
-  std::stringstream tmp;
-  tmp << "incq %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  rewrite_ << "cmpq $0x10, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  tmp << "addq $0x1, %rax" << std::endl;
-  tmp << "cmpq $0x10, %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  ASSERT_FALSE(v.validate(cfg_t, cfg_r, ceg));
+  assert_ceg();
 
 }
 
 
-TEST(Validator, AxValidatedFalse) {
+TEST_F(ValidatorBaseTest, BplChecked) {
 
-  x64asm::Code c, d;
+  target_ << "movb $0x10, %bpl" << std::endl;
+  target_ << "retq" << std::endl;
 
-  std::stringstream tmp;
-  tmp << "incq %rax" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  rewrite_ << "retq" << std::endl;
 
-  tmp << "addq $0x2, %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::empty() + x64asm::ax);
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::empty() + x64asm::ax);
-
-  ASSERT_FALSE(v.validate(cfg_t, cfg_r, ceg));
+  set_live_outs(x64asm::RegSet::empty() + x64asm::bpl);
+  assert_ceg();
 
 }
 
-TEST(Validator, AxValidatedTrue) {
+TEST_F(ValidatorBaseTest, SilChecked) {
 
-  x64asm::Code c, d;
+  target_ << "addb $0x10, %sil" << std::endl;
+  target_ << "retq" << std::endl;
 
-  std::stringstream tmp;
-  tmp << "incq %rax" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  rewrite_ << "retq" << std::endl;
 
-  tmp << "addq $0x1, %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
+  set_live_outs(x64asm::RegSet::empty() + x64asm::sil);
+  assert_ceg();
 
-  stoke::Validator v;
-  stoke::CpuState ceg;
+}
 
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::empty() + x64asm::ax);
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::empty() + x64asm::ax);
+TEST_F(ValidatorBaseTest, AxValidatedFalse) {
 
-  ASSERT_TRUE(v.validate(cfg_t, cfg_r, ceg));
+  target_ << "incq %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "addq $0x2, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::ax);
+  assert_ceg();
+
+}
+
+TEST_F(ValidatorBaseTest, AxValidatedTrue) {
+
+  target_ << "incq %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "addq $0x1, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::ax);
+  assert_equiv();
 
 }
 
 
-TEST(Validator, SimpleExampleFalse) {
+TEST_F(ValidatorBaseTest, SimpleExampleFalse) {
 
-  x64asm::Code c, d;
+  target_ << "incq %rax" << std::endl;
+  target_ << "retq" << std::endl;
 
-  std::stringstream tmp;
-  tmp << "incq %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  rewrite_ << "addq $0x2, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  tmp << "addq $0x2, %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  ASSERT_FALSE(v.validate(cfg_t, cfg_r, ceg));
+  assert_ceg();
 
 }
 
@@ -153,80 +121,49 @@ TEST(Validator, ReportsSupported) {
 
 }
 
-TEST(Validator, UnimplementedFailsGracefully) {
+TEST_F(ValidatorBaseTest, UnimplementedFailsGracefully) {
 
   x64asm::Code c;
 
-  std::stringstream tmp;
-  tmp << "incq %rax" << std::endl;
-  tmp << "vandpd %xmm0, %xmm1, %xmm2" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
+  target_ << "incq %rax" << std::endl;
+  target_ << "vandpd %xmm0, %xmm1, %xmm2" << std::endl;
+  target_ << "retq" << std::endl;
 
-  stoke::Validator v;
-  stoke::CpuState ceg;
+  rewrite_ << "retq" << std::endl;
 
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-
-  ASSERT_THROW(v.validate(cfg_t, cfg_r, ceg), validator_error);
+  assert_fail();
 }
 
 
-TEST(Validator, SimpleCounterexample) {
+TEST_F(ValidatorBaseTest, SimpleCounterexample) {
 
-  x64asm::Code c, d;
+  target_ << "movq $0x0, %rax" << std::endl;
+  target_ << "cmpq $0xc0decafe, %rcx" << std::endl;
+  target_ << "sete %al" << std::endl;
+  target_ << "retq" << std::endl;
 
-  std::stringstream tmp;
-  tmp << "movq $0x0, %rax" << std::endl;
-  tmp << "cmpq $0xc0decafe, %rcx" << std::endl;
-  tmp << "sete %al" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  rewrite_ << "movq $0x0, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  tmp << "movq $0x0, %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
   stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg));
+  assert_ceg(ceg);
 
   EXPECT_EQ(0xc0decafe, 0xffffffff & ceg.gp[1].get_fixed_quad(0));
 
 }
 
 
-TEST(Validator, ChecksUpper32bits) {
-
-  x64asm::Code c, d;
-
-  std::stringstream tmp;
-  tmp << "movq $0x1, %rax" << std::endl;
-  tmp << "shlq $0x28, %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
-
-  tmp << "movq $0x0, %rax" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
+TEST_F(ValidatorBaseTest, ChecksUpper32bits) {
 
 
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg));
+  target_ << "movq $0x1, %rax" << std::endl;
+  target_ << "shlq $0x28, %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq $0x0, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_ceg();
 
 }
 
@@ -261,41 +198,23 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
 
 
 
-TEST(Validator, TimeoutWorks) {
+TEST_F(ValidatorBaseTest, TimeoutWorks) {
 
   x64asm::Code c, d;
 
-  std::stringstream tmp;
-  tmp << "movaps %xmm11, %xmm1"   << std::endl;
-  tmp << "mulss  %xmm6, %xmm10"   << std::endl;
-  tmp << "mulss  %xmm9, %xmm7"    << std::endl;
-  tmp << "mulss  %xmm4, %xmm1"    << std::endl;
-  tmp << "movaps %xmm11, %xmm1"   << std::endl;
-  tmp << "mulss  %xmm6, %xmm10"   << std::endl;
-  tmp << "mulss  %xmm9, %xmm7"    << std::endl;
-  tmp << "mulss  %xmm4, %xmm1"    << std::endl;
-  tmp << "retq"                   << std::endl;
-  tmp >> c;
-  tmp.str("");
+  target_ << "movaps %xmm11, %xmm1"   << std::endl;
+  target_ << "mulss  %xmm6, %xmm10"   << std::endl;
+  target_ << "mulss  %xmm9, %xmm7"    << std::endl;
+  target_ << "mulss  %xmm4, %xmm1"    << std::endl;
+  target_ << "retq"                   << std::endl;
 
+  rewrite_ << "movaps %xmm11, %xmm1"   << std::endl;
+  rewrite_ << "mulss  %xmm6, %xmm10"   << std::endl;
+  rewrite_ << "mulss  %xmm9, %xmm7"    << std::endl;
+  rewrite_ << "mulss  %xmm4, %xmm1"    << std::endl;
+  rewrite_ << "retq"                   << std::endl;
 
-  stoke::Validator v;
-  v.set_timeout(200);
-
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-
-  ASSERT_THROW(v.validate(cfg_t, cfg_r, ceg), validator_error);
-
-  std::string message = "";
-  try {
-    v.validate(cfg_t, cfg_r, ceg);
-  } catch (validator_error ve) {
-    message = ve.get_message();
-  }
+  std::string message = assert_fail();
 
   EXPECT_EQ("z3 gave up.", message);
 
