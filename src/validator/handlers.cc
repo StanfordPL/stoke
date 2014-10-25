@@ -13,44 +13,6 @@ using namespace x64asm;
 #define ADD_CONS(S) 
 #endif
 
-//The variable pred is captured by the context. It represents the predicate for conditional moves and conditional sets
-//V_CC_A is cf==0 and zf==0
-#define V_CC_A   pred = vc_andExpr(vc, vc_notExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn)), vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn)));
-#define V_CC_AE   pred = vc_notExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn));
-#define V_CC_B   pred = getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn);
-#define V_CC_BE   pred = vc_orExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn));
-#define V_CC_E   pred = getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn);
-#define V_CC_G   pred = vc_andExpr(vc, vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn)), vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn)));
-#define V_CC_GE   pred = vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn));
-#define V_CC_L   pred = vc_notExpr(vc, vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn)));
-#define V_CC_LE   pred = vc_orExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn), vc_notExpr(vc, vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn))));
-#define V_CC_NE   pred = vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn));
-#define V_CC_NS   pred = vc_notExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn));
-#define V_CC_S   pred = getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn);
-#define V_CC_NO   pred = vc_notExpr(vc, getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn));
-#define V_CC_NP   pred = vc_notExpr(vc, getBoolExpr(vc,V_PF,d.pre_suffix, d.Vn));
-#define V_CC_O   pred = getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn);
-#define V_CC_P   pred = getBoolExpr(vc,V_PF,d.pre_suffix, d.Vn);
-
-#define CMOV_FLUFF  \
-  Expr retval = vc_iteExpr(vc, pred, EqExpr(vc, E_dest, E_src), EqExpr(vc, E_dest, E_dest_pre));\
-if(bitWidth < V_UNITSIZE)\
-{\
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));\
-  retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));\
-}\
-d.constraints.push_back(retval);  
-
-
-#define SET_FLUFF 	Expr retval = vc_iteExpr(vc, pred, EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth, 1)), EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth, 0)));\
-                                  if(dest_is_reg && bitWidth < V_UNITSIZE)\
-{\
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));\
-  retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));\
-}\
-d.constraints.push_back(retval);  
-
-
 
 
 //Add with carry. Promote arguments to bitWidth+2 (66 from 64) bits, do the additions, and set the flags.
@@ -2620,6 +2582,13 @@ void setbeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg 
   SET_FLUFF
 }
 
+void setcHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_C
+  SET_FLUFF
+}
+
 void seteHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
   
   VC& vc = d.vc;
@@ -2657,10 +2626,73 @@ void setleHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg 
   SET_FLUFF
 }
 
+void setnaHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_NA
+  SET_FLUFF
+}
+
+void setnaeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_NAE
+  SET_FLUFF
+}
+
+void setnbHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_NB
+  SET_FLUFF
+}
+
+void setnbeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_NBE
+  SET_FLUFF
+}
+
+void setncHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_NC
+  SET_FLUFF
+}
+
 void setneHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
   
   VC& vc = d.vc;
   Expr V_CC_NE
+  SET_FLUFF
+}
+
+void setngHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_NG
+  SET_FLUFF
+}
+
+void setngeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_NGE
+  SET_FLUFF
+}
+
+void setnlHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_NL
+  SET_FLUFF
+}
+
+void setnleHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_NLE
   SET_FLUFF
 }
 
@@ -2686,6 +2718,13 @@ void setnsHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg 
   SET_FLUFF
 }
 
+void setnzHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_NZ
+  SET_FLUFF
+}
+
 void setoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
   
   VC& vc = d.vc;
@@ -2700,12 +2739,33 @@ void setpHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg =
   SET_FLUFF
 }
 
+void setpeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_PE
+  SET_FLUFF
+}
+
+void setpoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_PO
+  SET_FLUFF
+}
+
 void setsHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
   
   VC& vc = d.vc;
   Expr V_CC_S
   SET_FLUFF
 }	
+
+void setzHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+  
+  VC& vc = d.vc;
+  Expr V_CC_Z
+  SET_FLUFF
+}
 
 void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_dest, Expr E_src1, bool dest_is_reg=true) {
 
