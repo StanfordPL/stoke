@@ -3018,22 +3018,88 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
 }
 
 
-void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm) {
+void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_src1, Expr E_src2, Expr E_imm) {
 
-  if (imm != 0)
-    throw VALIDATOR_ERROR("Validator only supports shufps with immediate 0");
-  VC&vc = d.vc;
-  E_src = vc_bvExtract(vc, E_src, 31, 0);
-  Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), E_src);
-  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), E_src));
-  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), E_src));
-  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), E_src));
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
+  // Macro for add A[ha:la] <- B[hb:lb]
+#define SHUFPS_CON(A, ha, la, B, hb, lb) \
+        (d.constraints.push_back(\
+           EqExpr(vc,\
+             vc_bvExtract(vc, A, ha, la),\
+             vc_bvExtract(vc, B, hb, lb))));
 
-  d.constraints.push_back(retval);
 
+  VC& vc = d.vc;
+
+  // Implemented following intel manual's case statement
+  switch(imm & 0x3) {
+    case 0:
+      SHUFPS_CON(E_dest, 31, 0, E_src1, 31, 0);
+      break;
+    case 1:
+      SHUFPS_CON(E_dest, 31, 0, E_src1, 63, 32);
+      break;
+    case 2:
+      SHUFPS_CON(E_dest, 31, 0, E_src1, 95, 64);
+      break;
+    case 3:
+      SHUFPS_CON(E_dest, 31, 0, E_src1, 127, 96);
+      break;
+    default:
+      throw VALIDATOR_ERROR("internal error in shufps");
+  }
+
+  switch((imm >> 2) & 0x3) {
+    case 0:
+      SHUFPS_CON(E_dest, 63, 32, E_src1, 31, 0);
+      break;
+    case 1:
+      SHUFPS_CON(E_dest, 63, 32, E_src1, 63, 32);
+      break;
+    case 2:
+      SHUFPS_CON(E_dest, 63, 32, E_src1, 95, 64);
+      break;
+    case 3:
+      SHUFPS_CON(E_dest, 63, 32, E_src1, 127, 96);
+      break;
+    default:
+      throw VALIDATOR_ERROR("internal error in shufps");
+  }
+
+  switch((imm >> 4) & 0x3) {
+    case 0:
+      SHUFPS_CON(E_dest, 95, 64, E_src2, 31, 0);
+      break;
+    case 1:
+      SHUFPS_CON(E_dest, 95, 64, E_src2, 63, 32);
+      break;
+    case 2:
+      SHUFPS_CON(E_dest, 95, 64, E_src2, 95, 64);
+      break;
+    case 3:
+      SHUFPS_CON(E_dest, 95, 64, E_src2, 127, 96);
+      break;
+    default:
+      throw VALIDATOR_ERROR("internal error in shufps");
+  }
+
+  switch((imm >> 6) & 0x3) {
+    case 0:
+      SHUFPS_CON(E_dest, 127, 96, E_src2, 31, 0);
+      break;
+    case 1:
+      SHUFPS_CON(E_dest, 127, 96, E_src2, 63, 32);
+      break;
+    case 2:
+      SHUFPS_CON(E_dest, 127, 96, E_src2, 95, 64);
+      break;
+    case 3:
+      SHUFPS_CON(E_dest, 127, 96, E_src2, 127, 96);
+      break;
+    default:
+      throw VALIDATOR_ERROR("internal error in shufps");
+  }
+
+#undef SHUFPS_CON
 }
 
 
