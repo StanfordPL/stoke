@@ -385,6 +385,13 @@ void Cfg::recompute_liveness() {
     live_ins_.assign(code_.size()+1, RegSet::empty());
     live_outs_.assign(code_.size()+1, RegSet::empty());
 
+    // If we ever encounter an indirect jump, we need to assume that everything
+    // which we ever use (i.e. read) becomes live-out at that point.  So, let's
+    // get the set of stuff we *ever* read.
+    RegSet ever_read = fxn_live_outs_;
+    ever_read |= code_.maybe_read_set();
+
+
     // Initial Conditions
     for (auto i = reachable_begin(), ie = reachable_end();
           i != ie; ++i) {
@@ -395,10 +402,17 @@ void Cfg::recompute_liveness() {
       // Set the live-in of each block to the empty set.
       live_ins_[blocks_[*i]] = RegSet::empty();
 
-      // Set the live-out of each block to the empty set.
-      // this requires looking up the index of the last 
-      // instruction in the block.
-      live_outs_[blocks_[*i]+num_instrs(*i)-1] = RegSet::empty();
+      // Set the live-out of each block to the empty set.  this requires
+      // looking up the index of the last instruction in the block.  Except if
+      // we have an indirect jump, in which case we need to add in everything
+      // (see the note above)
+      size_t last_instr_index = blocks_[*i] + num_instrs(*i)-1;
+      Instruction last_instr = code_[last_instr_index];
+      if(last_instr.is_any_indirect_jump()) {
+        live_outs_[last_instr_index] = ever_read;
+      } else {
+        live_outs_[last_instr_index] = RegSet::empty();
+      }
     }
     live_ins_[blocks_[get_exit()]] = fxn_live_outs_;
 
@@ -412,13 +426,20 @@ void Cfg::recompute_liveness() {
         if (num_instrs(*i) == 0)
           continue;
 
-        // Meet operator.  Starting with the empty-set, union
-        // in the live-ins from the first statement of every
-        // successor block
-        live_outs_[blocks_[*i]+num_instrs(*i)-1] = RegSet::empty();
+        // Meet operator.  Starting with the empty-set, union in the live-ins
+        // from the first statement of every successor block.  Like before, we
+        // need to check for indirect jumps here to see if we need to add in
+        // all the registers ever read.
+        size_t last_instr_index = blocks_[*i] + num_instrs(*i) - 1;
+        Instruction last_instr = code_[last_instr_index];
+        if(last_instr.is_any_indirect_jump())
+          live_outs_[last_instr_index] = ever_read;
+        else
+          live_outs_[last_instr_index] = RegSet::empty();
+
         for (auto s = succ_begin(*i), si = succ_end(*i); s != si; ++s) {
           if (is_reachable(*s)) {
-            live_outs_[blocks_[*i]+num_instrs(*i)-1] |= live_ins_[blocks_[*s]];
+            live_outs_[last_instr_index] |= live_ins_[blocks_[*s]];
           }
         }
 
