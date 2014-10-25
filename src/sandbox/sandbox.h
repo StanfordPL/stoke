@@ -15,7 +15,6 @@
 #ifndef STOKE_SRC_SANDBOX_SANDBOX_H
 #define STOKE_SRC_SANDBOX_SANDBOX_H
 
-#include <array>
 #include <unordered_map>
 #include <vector>
 
@@ -24,7 +23,6 @@
 #include "src/cfg/cfg.h"
 #include "src/sandbox/io_pair.h"
 #include "src/sandbox/output_iterator.h"
-#include "src/sandbox/stack_snapshot.h"
 #include "src/sandbox/state_callback.h"
 #include "src/state/cpu_state.h"
 
@@ -111,25 +109,6 @@ class Sandbox {
   }
 
  private:
-  /** Stack snapshot for restoring valid stack state as necessary. */
-  StackSnapshot snapshot_;
-  /** Has a segfault occurred during this execution? */
-  size_t segv_;
-  /** Set prior to execution, function for sandboxing memory references. */
-  uint64_t current_map_addr_;
-  /** Emit a memory instruction. */
-  void emit_memory_instr(const x64asm::Instruction& instr);
-
-  /** Returns a function which maps rdi into the heap sandbox. */
-  x64asm::Function assemble_map_addr(CpuState& cs);
-  /** Returns code to check memory for validity and then toggle def bits. */
-  void emit_stack_heap_cases(CpuState& cs, bool stack);
-
-
-
-
-
-
 	/** Should the sandbox report errors for linux abi violations? */
 	bool abi_check_;
   /** The maximum number of jumps to take before raising SIGINT. */
@@ -153,14 +132,16 @@ class Sandbox {
   /** How many more jumps can be made before SIGKILL? */
   size_t jumps_remaining_;
 
+	/** Pointer to the user's state */
+	void* out_;
 	/** Pointer to a function for writing the user's input state (modulo rsp) to the cpu */
 	void* in2cpu_;
 	/** Pointer to a function for writing the user's output state (modulo rsp) to the cpu */
 	void* out2cpu_;
 	/** Pointer to a function for reading the user's output state (all of it) from the cpu */
 	void* cpu2out_;
-	/** Pointer to the user's state */
-	void* out_;
+  /** Pointer to a function for mapping virtual addresses to physical addresses */
+  void* map_addr_;
 
 	/** The user's current %rsp */
 	uint64_t user_rsp_;
@@ -176,6 +157,9 @@ class Sandbox {
   /** Function buffer for jit assembling codes. */
   x64asm::Function fxn_;
 
+	/** Check for abi violations between input and output states */
+	bool check_abi(const IoPair& iop) const;
+
 	/** Assembles the harness function */
 	x64asm::Function emit_harness();
 	/** Assembles a signal handler trap */
@@ -184,6 +168,10 @@ class Sandbox {
 	x64asm::Function emit_state2cpu(const CpuState& cs);
 	/** Assembles a function for reading user state from the cpu */
 	x64asm::Function emit_cpu2state(CpuState& cs);
+  /** Returns a function that maps virtual addresses to physical addresses. */
+  x64asm::Function emit_map_addr(CpuState& cs);
+  /** Returns code to check memory for validity and then toggle def bits. */
+  void emit_map_addr_cases(CpuState& cs, const x64asm::Label& fail, const x64asm::Label& done, bool stack);
 
 	/** Assembles the user's function */
 	void emit_function(const Cfg& cfg);
@@ -191,6 +179,8 @@ class Sandbox {
   void emit_callbacks(size_t line, bool before);
   /** Emit an instruction (and possibly sandbox memory). */
   void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& exit);
+  /** Emit a memory instruction. */
+  void emit_memory_instruction(const x64asm::Instruction& instr);
   /** Emit a jump instruction */
   void emit_jump(const x64asm::Instruction& instr);
 	/** Emit the CALL LABEL instruction. */

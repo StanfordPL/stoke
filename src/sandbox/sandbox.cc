@@ -18,8 +18,6 @@
 #include <setjmp.h>
 #include <signal.h>
 
-#include <algorithm>
-
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
@@ -84,14 +82,15 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
   io->in2cpu_ = emit_state2cpu(io->in_);
   io->out2cpu_ = emit_state2cpu(io->out_);
   io->cpu2out_ = emit_cpu2state(io->out_);
-  io->map_addr_ = assemble_map_addr(io->out_);
+  io->map_addr_ = emit_map_addr(io->out_);
 
   return *this;
 }
 
 void Sandbox::compile(const Cfg& cfg) {
+	// TODO --- Need to reimplement this
+	read_only_mem_ = false;
 	emit_function(cfg);
-	// TODO -- THIS SHOULD BE KEEPING TRACK OF READ_ONLY_MEM_
 }
 
 void Sandbox::run_all() {
@@ -118,8 +117,7 @@ void Sandbox::run_one(size_t index) {
 	in2cpu_ = io->in2cpu_.get_entrypoint();
 	out2cpu_ = io->out2cpu_.get_entrypoint();
 	cpu2out_ = io->cpu2out_.get_entrypoint();
-	// THIS IS OLD!!!
-  current_map_addr_ = (uint64_t)(io->map_addr_.get_entrypoint());
+  map_addr_ = io->map_addr_.get_entrypoint();
 
 	// Initialize state related to %rsp tracking
 	user_rsp_ = io->in_.gp[rsp].get_fixed_quad(0);
@@ -132,7 +130,20 @@ void Sandbox::run_one(size_t index) {
   } else {
     io->out_.code = ErrorCode::SIGFPE_;
   }
-	// TODO -- CHECK ABI VIOLATIONS
+
+	// Check for abi violations
+	if (abi_check_ && !check_abi(*io)) {
+		io->out_.code = ErrorCode::SIGSEGV_;
+	}
+}
+
+bool Sandbox::check_abi(const IoPair& iop) const {
+	for (const auto& r : {rbx, rbp, rsp, r12, r13, r14, r15}) {
+		if (iop.in_.gp[r].get_fixed_quad(0) != iop.out_.gp[r].get_fixed_quad(0)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 // Main entrypoint for sandboxed code.
@@ -338,6 +349,130 @@ Function Sandbox::emit_cpu2state(CpuState& cs) {
 	return fxn;
 }
 
+// Maps a virtual address to a physical address in the user's memory sandbox
+//
+// Calling Context:
+//   - emit_memory_instruction()
+// Assumptions:
+//   - Called in a context with STOKE's %rsp
+// Requirements:
+//   - MUST not modify registers aside from %rax, %rcx, %rdx, %rdi, %rsi
+//   - MUST invoke the signal_trap handler if unable to map
+// Arguments:
+//   - %rdi = virtual address
+//   - %rsi = alignment mask to check against
+//   - %rdx = byte read mask
+//   - %rcx = byte write mask
+// Return Vale:
+//   - %rax = physical address
+Function Sandbox::emit_map_addr(CpuState& cs) {
+  Function fxn;
+  assm_.start(fxn);
+
+	// Define labels
+	Label fail;
+	Label done;
+	Label heap_case;
+
+  // Check alignment: A well aligned address won't change
+  // Following this check, rsi is free for use as scratch space
+  assm_.and_(rsi, rdi);
+  assm_.cmp(rsi, rdi);
+  assm_.jne(fail);
+
+  // Check whether this address is stack or heap
+  assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
+  assm_.cmp(rdi, rax);
+  assm_.jl(heap_case);
+
+  // Stack case: Check that this address is inside the stack
+  assm_.sub(rdi, rax);
+  assm_.mov((R64)rax, Imm64(cs.stack.size()));
+  assm_.cmp(rdi, rax);
+  assm_.jge(fail);
+  // This address is at least in range, move on to harder checks:
+  emit_map_addr_cases(cs, fail, done, true);
+
+  // Heap case: Check that the address is inside the heap
+  assm_.bind(heap_case);
+  assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
+  assm_.cmp(rdi, rax);
+  assm_.jl(fail);
+  assm_.sub(rdi, rax);
+  assm_.mov((R64)rax, Imm64(cs.heap.size()));
+  assm_.cmp(rdi, rax);
+  assm_.jge(fail);
+  // This address is at least in range, move on to harder checks:
+  emit_map_addr_cases(cs, fail, done, false);
+
+	// If control reaches here, invoke the signal_trap handler for sigsegv
+  assm_.bind(fail);
+	emit_signal_trap_call(ErrorCode::SIGSEGV_);
+
+  // Done; get out of here
+  assm_.bind(done);
+  assm_.ret();
+
+  assm_.finish();
+  return fxn;
+}
+
+void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& done, bool stack) {
+  // Save rcx (we need to use it for the shift instruction below)
+  assm_.mov(rax, rcx);
+  // We have a valid address, divide by to find the corresponding address in the mask arrays
+  assm_.mov(rsi, rdi);
+  assm_.shr(rsi, Imm8(3));
+  // Now shift the byte masks based on offsets in those arrays
+  assm_.mov(ecx, Imm32(0x07));
+  assm_.and_(rcx, rdi);
+  assm_.shl(rdx, cl);
+  assm_.shl(rax, cl);
+  // Restore rcx
+  assm_.mov(rcx, rax);
+
+  // The read mask shouldn't change when and'ed against the def mask
+  if (stack) {
+    assm_.mov((R64)rax, Imm64(cs.stack.defined_mask()));
+	} else {
+    assm_.mov((R64)rax, Imm64(cs.heap.defined_mask()));
+	}
+  assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
+  assm_.and_(rax, rdx);
+  assm_.cmp(rax, rdx);
+  assm_.jne(fail);
+
+  // The write mask shouldn't change when and'ed against the valid mask
+  if (stack) {
+    assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
+	} else {
+    assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
+	}
+  assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
+  assm_.and_(rax, rcx);
+  assm_.cmp(rax, rcx);
+  assm_.jne(fail);
+
+  // Set new defined bits
+  if (stack) {
+    assm_.mov((R64)rax, Imm64(cs.stack.defined_mask()));
+	} else {
+    assm_.mov((R64)rax, Imm64(cs.heap.defined_mask()));
+	} 
+	assm_.or_(M64(rax, rsi, Scale::TIMES_1), rcx);
+
+  // Do final remapping
+  if (stack) {
+    assm_.mov((R64)rax, Imm64(cs.stack.data()));
+  } else {
+    assm_.mov((R64)rax, Imm64(cs.heap.data()));
+  }
+  assm_.add(rax, rdi);
+
+  // Get out of here
+  assm_.jmp(done);
+}
+
 // Emits an instrumented version of a user's function into a persistent
 // buffer to reduce memory allocation time
 //
@@ -444,7 +579,7 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
 		if (instr.is_div() || instr.is_idiv()) {
 			emit_mem_div(instr);
 		} else {
-			emit_memory_instr(instr);
+			emit_memory_instruction(instr);
 		}
 	}
 	// Implicits are even harder (note that we don't capture all of these)
@@ -467,202 +602,7 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
 	}
 }
 
-void Sandbox::emit_jump(const Instruction& instr) {
-	// Load the STOKE %rsp, we'll need to do some pushing here
-	emit_load_stoke_rsp();
-
-	// Backup rax and rflags 
-	assm_.push(rax);
-  assm_.pushfq();
-
-  // Decrement the jump counter
-  assm_.mov((R64)rax, Imm64(&jumps_remaining_));
-  assm_.dec(M64(rax));
-  
-	// Jump over the signal trap call if we haven't hit zero yet
-	Label okay;
-  assm_.jg(okay);
-	emit_signal_trap_call(ErrorCode::SIGKILL_);
-	assm_.bind(okay);
-
-  // Restore rflags and rax
-  assm_.popfq();
-	assm_.pop(rax);
-
-	// Go ahead and do the jump
-	assm_.assemble(instr);
-
-	// Reload the user's %rsp
-	emit_load_user_rsp();
-}
-
-void Sandbox::emit_call(const Instruction& instr) {
-	// Simulate push %rip (using a random value)
-	// Sandboxing the memory dereference will catch infinite recursions
-	//assm_.lea(rsp, M64(rsp, Imm32(-8)));
-	//emit_instruction({MOV_M64_IMM32, {M64(rsp), Imm32(0x01234567)}}, exit);
-
-	// Restore the STOKE %rsp
-	emit_load_stoke_rsp();
-	// Invoke the call
-	assm_.assemble(instr);
-	// Load the user's %rsp
-	emit_load_user_rsp();
-
-	// Simulate pop %rip; all that matters is moving %rsp
-	//assm_.lea(rsp, M64(rsp, Imm32(8)));
-}
-
-void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
-	assm_.jmp(exit);
-}
-
-void Sandbox::emit_push(const Instruction& instr) {
-  // This function emits the moral equivalent of a push
-	// First decrement the stack pointer
-	assm_.lea(rsp, M64(rsp, Imm32(-8)));
-	// Now emit the dereference and let our sigsegv handler do the hard work
-  emit_memory_instr({MOV_M64_R64, {M64(rsp), instr.get_operand<R64>(0)}});
-}
-
-void Sandbox::emit_pop(const Instruction& instr) {
-  // This function emits the moral equivalent of a push
-	// Emit the dereference and let our sigsegv handler do the hard work
-  emit_memory_instr({MOV_R64_M64, {instr.get_operand<R64>(0), M64(rsp)}});
-	// Now increment the stack pointer
-	assm_.lea(rsp, M64(rsp, Imm32(8)));
-}
-
-void Sandbox::emit_reg_div(const Instruction& instr) {
-  // First check whether this instruction is trying to read from some part of rsp
-  auto rsp_op = false;
-  switch (instr.type(0)) {
-    case Type::RL:
-    case Type::RH:
-    case Type::RB:
-    case Type::R_16:
-    case Type::R_32:
-    case Type::R_64:
-      rsp_op = instr.get_operand<R64>(0) == rsp;
-      break;
-    default:
-      break;
-  }
-
-	// Depending on how things go, we might throw sigsegv, so we need the STOKE rsp back
-	emit_load_stoke_rsp();
-  if (rsp_op) {
-    // If the user's rsp is the operand, we'll need to move it someplace where we can use it
-    // div implicitly reads/writes rax, so we'll need to use rdi instead.
-		assm_.push(rdi);
-		assm_.mov(rdi, Imm64(&user_rsp_));
-		assm_.mov(rdi, M64(rdi));
-    // Emit the instruction (with rdi substituted for rsp)
-    assm_.assemble({instr.get_opcode(), {rdi}});
-    // Restore rdi. 
-		assm_.pop(rdi);
-  } else {
-    // This is the easy case... just go for it, man
-    assm_.assemble(instr);
-  }
-	// Now that we're safely finished, reload the user's rsp
-	emit_load_user_rsp();
-}
-
-void Sandbox::emit_mem_div(const Instruction& instr) {
-	// The idea here is to split a single divide instruction into three parts:
-	// 1. Exchange rbx and the mem operand (which div won't touch) (this will catch a segv)
-	// 2. Perform the div on rbx (this will catch a sigfpe)
-	// 3. Exchange the values again (no need to double check the segv)
-
-	switch(instr.get_opcode()) {
-		case DIV_M8:
-  		emit_memory_instr({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
-  		emit_reg_div({DIV_RL, {bl}});
-			assm_.xchg(bl, instr.get_operand<M8>(0));
-			break;
-		case DIV_M16:
-  		emit_memory_instr({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
-  		emit_reg_div({DIV_R16, {bx}});
-			assm_.xchg(bx, instr.get_operand<M16>(0));
-			break;
-		case DIV_M32:
-  		emit_memory_instr({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
-  		emit_reg_div({DIV_R32, {ebx}});
-			assm_.xchg(ebx, instr.get_operand<M32>(0));
-			break;
-		case DIV_M64:
-  		emit_memory_instr({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
-  		emit_reg_div({DIV_R64, {rbx}});
-			assm_.xchg(rbx, instr.get_operand<M64>(0));
-			break;
-		case IDIV_M8:
-  		emit_memory_instr({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
-  		emit_reg_div({IDIV_RL, {bl}});
-			assm_.xchg(bl, instr.get_operand<M8>(0));
-			break;
-		case IDIV_M16:
-  		emit_memory_instr({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
-  		emit_reg_div({IDIV_R16, {bx}});
-			assm_.xchg(bx, instr.get_operand<M16>(0));
-			break;
-		case IDIV_M32:
-  		emit_memory_instr({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
-  		emit_reg_div({IDIV_R32, {ebx}});
-			assm_.xchg(ebx, instr.get_operand<M32>(0));
-			break;
-		case IDIV_M64:
-  		emit_memory_instr({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
-  		emit_reg_div({IDIV_R64, {rbx}});
-			assm_.xchg(rbx, instr.get_operand<M64>(0));
-			break;
-
-		default:
-			assert(false);
-			break;
-	}
-}
-
-void Sandbox::emit_signal_trap_call(ErrorCode ec) {
-	// Reload the stoke stack pointer
-	assm_.mov(rax, Moffs64(&stoke_rsp_));
-	assm_.mov(rsp, rax);
-	// Load up the error code argument
-	assm_.mov(rdi, Imm32((uint32_t)ec));
-	// Invoke the handler
-	assm_.mov((R64)rax, Imm64(signal_trap_.get_entrypoint()));
-	assm_.call(rax);
-}
-
-void Sandbox::emit_load_user_rsp() {
-	// Save the stoke %rsp
-	assm_.mov(Moffs64(&scratch_[rax]), rax);
-	assm_.mov(rax, rsp);
-	assm_.mov(Moffs64(&stoke_rsp_), rax);
-	// Load the user %rsp
-	assm_.mov(rax, Moffs64(&user_rsp_));
-	assm_.mov(rsp, rax);
-	assm_.mov(rax, Moffs64(&scratch_[rax]));
-}
-
-void Sandbox::emit_load_stoke_rsp() {
-	// Save the user %rsp
-	assm_.mov(Moffs64(&scratch_[rax]), rax);
-	assm_.mov(rax, rsp);
-	assm_.mov(Moffs64(&user_rsp_), rax);
-	// Load the stoke %rsp
-	assm_.mov(rax, Moffs64(&stoke_rsp_));
-	assm_.mov(rsp, rax);
-	assm_.mov(rax, Moffs64(&scratch_[rax]));
-}
-
-
-
-
-
-
-
-void Sandbox::emit_memory_instr(const Instruction& instr) {
+void Sandbox::emit_memory_instruction(const Instruction& instr) {
 	// Looks up read and write sets
   const auto rs = instr.maybe_read_set();
   const auto ws = instr.maybe_write_set();
@@ -739,7 +679,7 @@ void Sandbox::emit_memory_instr(const Instruction& instr) {
 
 	// Invoke the mapping function, this will place a result in rax on return
 	// SIGSEGV is trapped inside this function, no need to worry about it beyond here
-  assm_.mov(rax, Moffs64(&current_map_addr_));
+  assm_.mov(rax, Moffs64(&map_addr_));
   assm_.call(rax);
 
   // Find an unused register to hold the sandboxed address (it isn't read or written)
@@ -755,11 +695,11 @@ void Sandbox::emit_memory_instr(const Instruction& instr) {
 
 	// Restore the scratch space
   assm_.popfq();
-  assm_.push(rsi);
-  assm_.push(rdi);
-  assm_.push(rdx);
-	assm_.push(rcx);
-	assm_.push(rax);
+  assm_.pop(rsi);
+  assm_.pop(rdi);
+  assm_.pop(rdx);
+	assm_.pop(rcx);
+	assm_.pop(rax);
 	// Along with the user's rsp
 	emit_load_user_rsp();
 
@@ -773,140 +713,193 @@ void Sandbox::emit_memory_instr(const Instruction& instr) {
   assm_.mov(rx, M64(rx));
 }
 
-Function Sandbox::assemble_map_addr(CpuState& cs) {
-  // Input/Output: rdi = the address to sandbox
-  // Input: rsi = alignment mask to check against
-  // Input: rdx = byte read mask
-  // Input: rcx = byte write mask
-  // This isn't strict x64 abi, it simulates pass by reference
-  // Scratch: rax is safe to use here without restoring its value
+void Sandbox::emit_jump(const Instruction& instr) {
+	// Load the STOKE %rsp, we'll need to do some pushing here
+	emit_load_stoke_rsp();
 
-  Function fxn;
-  assm_.start(fxn);
+	// Backup rax and rflags 
+	assm_.push(rax);
+  assm_.pushfq();
 
-  // Check alignment: A well aligned address won't change
-  // Once this step is done, we can reclaim the space in rsi
-  assm_.and_(rsi, rdi);
-  assm_.cmp(rsi, rdi);
-  assm_.jne(Label {"fail"});
+  // Decrement the jump counter
+  assm_.mov((R64)rax, Imm64(&jumps_remaining_));
+  assm_.dec(M64(rax));
+  
+	// Jump over the signal trap call if we haven't hit zero yet
+	Label okay;
+  assm_.jg(okay);
+	emit_signal_trap_call(ErrorCode::SIGKILL_);
+	assm_.bind(okay);
 
-  // Check whether this address is stack or heap
-  assm_.mov((R64)rax, Imm64 {cs.stack.lower_bound()});
-  assm_.cmp(rdi, rax);
-  assm_.jl(Label {"heap_case"});
+  // Restore rflags and rax
+  assm_.popfq();
+	assm_.pop(rax);
 
-  // Stack case: Check that this address is inside the stack
-  // Try mapping this address into the stack
-  assm_.sub(rdi, rax);
-  // Check that this address isn't above the top of the stack sandbox
-  assm_.mov((R64)rax, Imm64 {cs.stack.size()});
-  assm_.cmp(rdi, rax);
-  assm_.jge(Label {"fail"});
-  // This address is at least in range, move on to harder checks:
-  emit_stack_heap_cases(cs, true);
+	// Go ahead and do the jump
+	assm_.assemble(instr);
 
-  // Heap case: Check that the address is inside the heap
-  assm_.bind(Label {"heap_case"});
-  // Load the bottom of the heap into rax
-  assm_.mov((R64)rax, Imm64 {cs.heap.lower_bound()});
-  // Check that this address isn't below the heap sandbox
-  assm_.cmp(rdi, rax);
-  assm_.jl(Label {"fail"});
-  // Map the address into the heap sandbox
-  assm_.sub(rdi, rax);
-  // Check that this address isn't above the heap sandbox
-  assm_.mov((R64)rax, Imm64 {cs.heap.size()});
-  assm_.cmp(rdi, rax);
-  assm_.jge(Label {"fail"});
-  // This address is at least in range, move on to harder checks:
-  emit_stack_heap_cases(cs, false);
-
-  // ...
-  // The code emitted by emit_stack_heap_cases() will jump to one
-  // of the two labels below
-  // ...
-
-  // Failure; set the segv flag. We can't jump directly to the sig exit
-  // since we're inside of a function call, so just fall through to return
-  // We'll check for segv_ up one level.
-
-	// HAHA! We can do this now!!!
-
-  assm_.bind(Label {"fail"});
-  assm_.mov((R64)rax, Imm64 {&segv_});
-  assm_.inc(M64 {rax});
-
-  // Done; get out of here
-  assm_.bind(Label {"done"});
-  assm_.ret();
-
-  assm_.finish();
-  return fxn;
+	// Reload the user's %rsp
+	emit_load_user_rsp();
 }
 
-void Sandbox::emit_stack_heap_cases(CpuState& cs, bool stack) {
-  // This function is called inside map_addr, as above
-  // Constant: rdi = an in-range sandboxed address (const)
-  // Scratch: rsi doesn't hold anything important anymore
-  // Scratch: rax is safe to use here without restoring its value
-  // Input: rdx = byte read mask
-  // Input: rcx = byte write mask
+void Sandbox::emit_call(const Instruction& instr) {
+	// Simulate push %rip (using a random value)
+	// Sandboxing the memory dereference will catch infinite recursions
+	//assm_.lea(rsp, M64(rsp, Imm32(-8)));
+	//emit_instruction({MOV_M64_IMM32, {M64(rsp), Imm32(0x01234567)}}, exit);
 
-  // Control should jump to either:
-  //   done: success after defining the relevant bits and remapping
-  //   fail: memory isn't valid, don't define anything
+	// Restore the STOKE %rsp
+	emit_load_stoke_rsp();
+	// Invoke the call
+	assm_.assemble(instr);
+	// Load the user's %rsp
+	emit_load_user_rsp();
 
-  // Save rcx (we need to use it for the shift instruction below)
-  assm_.mov(rax, rcx);
-  // We have a valid address, find the nearest 128-bit boundary in the masks
-  assm_.mov(rsi, rdi);
-  assm_.shr(rsi, Imm8 {3});
-  // Now shift the byte mask into that region
-  assm_.mov(ecx, Imm32 {0x07});
-  assm_.and_(rcx, rdi);
-  assm_.shl(rdx, cl);
-  assm_.shl(rax, cl);
-  // Restore rcx
-  assm_.mov(rcx, rax);
+	// Simulate pop %rip; all that matters is moving %rsp
+	//assm_.lea(rsp, M64(rsp, Imm32(8)));
+}
 
-  // The read mask shouldn't change when and'ed against the def mask
-  if (stack)
-    assm_.mov((R64)rax, Imm64 {cs.stack.defined_mask()});
-  else
-    assm_.mov((R64)rax, Imm64 {cs.heap.defined_mask()});
-  assm_.mov(rax, M64 {rax, rsi, Scale::TIMES_1});
-  assm_.and_(rax, rdx);
-  assm_.cmp(rax, rdx);
-  assm_.jne(Label {"fail"});
+void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
+	assm_.jmp(exit);
+}
 
-  // The write mask shouldn't change when and'ed against the valid mask
-  if (stack)
-    assm_.mov((R64)rax, Imm64 {cs.stack.valid_mask()});
-  else
-    assm_.mov((R64)rax, Imm64 {cs.heap.valid_mask()});
-  assm_.mov(rax, M64 {rax, rsi, Scale::TIMES_1});
-  assm_.and_(rax, rcx);
-  assm_.cmp(rax, rcx);
-  assm_.jne(Label {"fail"});
+void Sandbox::emit_push(const Instruction& instr) {
+  // This function emits the moral equivalent of a push
+	// First decrement the stack pointer
+	assm_.lea(rsp, M64(rsp, Imm32(-8)));
+	// Now emit the dereference and let our sigsegv handler do the hard work
+  emit_memory_instruction({MOV_M64_R64, {M64(rsp), instr.get_operand<R64>(0)}});
+}
 
-  // Set defined bits
-  if (stack)
-    assm_.mov((R64)rax, Imm64 {cs.stack.defined_mask()});
-  else
-    assm_.mov((R64)rax, Imm64 {cs.heap.defined_mask()});
-  assm_.or_(M64 {rax, rsi, Scale::TIMES_1}, rcx);
+void Sandbox::emit_pop(const Instruction& instr) {
+  // This function emits the moral equivalent of a push
+	// Emit the dereference and let our sigsegv handler do the hard work
+  emit_memory_instruction({MOV_R64_M64, {instr.get_operand<R64>(0), M64(rsp)}});
+	// Now increment the stack pointer
+	assm_.lea(rsp, M64(rsp, Imm32(8)));
+}
 
-  // Do final remapping
-  if (stack) {
-    assm_.mov((R64)rax, Imm64 {cs.stack.data()});
-    assm_.add(rdi, rax);
-  } else {
-    assm_.mov((R64)rax, Imm64 {cs.heap.data()});
-    assm_.add(rdi, rax);
+void Sandbox::emit_reg_div(const Instruction& instr) {
+  // First check whether this instruction is trying to read from some part of rsp
+  auto rsp_op = false;
+  switch (instr.type(0)) {
+    case Type::RL:
+    case Type::RH:
+    case Type::RB:
+    case Type::R_16:
+    case Type::R_32:
+    case Type::R_64:
+      rsp_op = instr.get_operand<R64>(0) == rsp;
+      break;
+    default:
+      break;
   }
 
-  // Get out of here
-  assm_.jmp(Label {"done"});
+	// Depending on how things go, we might throw sigsegv, so we need the STOKE rsp back
+	emit_load_stoke_rsp();
+  if (rsp_op) {
+    // If the user's rsp is the operand, we'll need to move it someplace where we can use it
+    // div implicitly reads/writes rax, so we'll need to use rdi instead.
+		assm_.push(rdi);
+		assm_.mov(rdi, Imm64(&user_rsp_));
+		assm_.mov(rdi, M64(rdi));
+    // Emit the instruction (with rdi substituted for rsp)
+    assm_.assemble({instr.get_opcode(), {rdi}});
+    // Restore rdi. 
+		assm_.pop(rdi);
+  } else {
+    // This is the easy case... just go for it, man
+    assm_.assemble(instr);
+  }
+	// Now that we're safely finished, reload the user's rsp
+	emit_load_user_rsp();
+}
+
+void Sandbox::emit_mem_div(const Instruction& instr) {
+	// The idea here is to split a single divide instruction into three parts:
+	// 1. Exchange rbx and the mem operand (which div won't touch) (this will catch a segv)
+	// 2. Perform the div on rbx (this will catch a sigfpe)
+	// 3. Exchange the values again (no need to double check the segv)
+
+	switch(instr.get_opcode()) {
+		case DIV_M8:
+  		emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
+  		emit_reg_div({DIV_RL, {bl}});
+			assm_.xchg(bl, instr.get_operand<M8>(0));
+			break;
+		case DIV_M16:
+  		emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
+  		emit_reg_div({DIV_R16, {bx}});
+			assm_.xchg(bx, instr.get_operand<M16>(0));
+			break;
+		case DIV_M32:
+  		emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
+  		emit_reg_div({DIV_R32, {ebx}});
+			assm_.xchg(ebx, instr.get_operand<M32>(0));
+			break;
+		case DIV_M64:
+  		emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+  		emit_reg_div({DIV_R64, {rbx}});
+			assm_.xchg(rbx, instr.get_operand<M64>(0));
+			break;
+		case IDIV_M8:
+  		emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
+  		emit_reg_div({IDIV_RL, {bl}});
+			assm_.xchg(bl, instr.get_operand<M8>(0));
+			break;
+		case IDIV_M16:
+  		emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
+  		emit_reg_div({IDIV_R16, {bx}});
+			assm_.xchg(bx, instr.get_operand<M16>(0));
+			break;
+		case IDIV_M32:
+  		emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
+  		emit_reg_div({IDIV_R32, {ebx}});
+			assm_.xchg(ebx, instr.get_operand<M32>(0));
+			break;
+		case IDIV_M64:
+  		emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+  		emit_reg_div({IDIV_R64, {rbx}});
+			assm_.xchg(rbx, instr.get_operand<M64>(0));
+			break;
+
+		default:
+			assert(false);
+			break;
+	}
+}
+
+void Sandbox::emit_signal_trap_call(ErrorCode ec) {
+	// Reload the stoke stack pointer
+	assm_.mov(rax, Moffs64(&stoke_rsp_));
+	assm_.mov(rsp, rax);
+	// Load up the error code argument
+	assm_.mov(rdi, Imm32((uint32_t)ec));
+	// Invoke the handler
+	assm_.mov((R64)rax, Imm64(signal_trap_.get_entrypoint()));
+	assm_.call(rax);
+}
+
+void Sandbox::emit_load_user_rsp() {
+	// Save the stoke %rsp
+	assm_.mov(Moffs64(&scratch_[rax]), rax);
+	assm_.mov(rax, rsp);
+	assm_.mov(Moffs64(&stoke_rsp_), rax);
+	// Load the user %rsp
+	assm_.mov(rax, Moffs64(&user_rsp_));
+	assm_.mov(rsp, rax);
+	assm_.mov(rax, Moffs64(&scratch_[rax]));
+}
+
+void Sandbox::emit_load_stoke_rsp() {
+	// Save the user %rsp
+	assm_.mov(Moffs64(&scratch_[rax]), rax);
+	assm_.mov(rax, rsp);
+	assm_.mov(Moffs64(&user_rsp_), rax);
+	// Load the stoke %rsp
+	assm_.mov(rax, Moffs64(&stoke_rsp_));
+	assm_.mov(rsp, rax);
+	assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
 
 } // namespace stoke
