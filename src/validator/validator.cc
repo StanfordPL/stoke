@@ -298,15 +298,15 @@ set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, MemoryData& mem, string
 	x64asm::RegSet modsetreg = instr.maybe_write_set();
        // if(modsetreg.is_set(dx)) cout << "found dx " << endl;
 	
-	for(uint i=0;i<x64asm::rls.size();i++)
+	for(size_t i=0;i<x64asm::rls.size();i++)
 	  if(modsetreg.contains(((x64asm::Rl)x64asm::rls[i])))
 	    retval.insert(rls[i]);  
 	    
-	for(uint i=0;i<x64asm::rbs.size();i++)
+	for(size_t i=0;i<x64asm::rbs.size();i++)
 	  if(modsetreg.contains(((x64asm::Rb)x64asm::rbs[i])))
 	    retval.insert(rbs[i]);  
 
-	for(uint i=0;i<x64asm::xmms.size();i++)
+	for(size_t i=0;i<x64asm::xmms.size();i++)
 	  if(modsetreg.contains(((x64asm::Xmm)x64asm::xmms[i])))
 	    retval.insert(i+XMM_BEG);  
 
@@ -492,8 +492,44 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 	map<SS_Id, unsigned int> sizes = state_info.second;
 	Expr retval = vc_trueExpr(vc);
 
+  /* Check to make sure all liveout are supported. */
+  /* Right now we support gps, xmms, ACOPSZ eflags */
+  RegSet supported = RegSet::empty() +
+                     eflags_af + eflags_cf + eflags_of +
+                     eflags_pf + eflags_sf + eflags_zf;
+
+  // We don't want to add rhs, so we can't just use all_gps()
+  for(size_t i = 0; i < x64asm::r64s.size(); i++) {
+    supported += r64s[i];
+    supported += r32s[i];
+    supported += r16s[i];
+    if ( i < 4 ) {
+      supported += rls[i];
+    } else {
+      supported += rbs[i - 4];
+    }
+  }
+
+  // We don't want to add ymms, so don't use all_xmms()
+  for(size_t i = 0; i < xmms.size(); i++) {
+    supported += xmms[i];
+  }
+
+  // Do the check.
+  if((supported & liveout) != liveout) {
+    RegSetWriter rsw;
+    stringstream tmp;
+    rsw(tmp, liveout - supported);
+
+    string message = 
+      string("Validator only supporgs gps (excluding %ah-%dh), xmms and eflags ACOPSZ in live out.") +
+      string("  Not supported: ") + tmp.str();
+                   
+    throw VALIDATOR_ERROR(message);
+  }
+
   /* Add constraints for the general purpose registers */
-	for(uint i=0;i<x64asm::r64s.size();i++)
+	for(size_t i=0;i<x64asm::r64s.size();i++)
 	{
     int bitwidth;
 	  auto op = x64asm::r64s[i];
@@ -508,21 +544,17 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
     } else {
       // Need to think about the sub-16 bit situation carefully.
       if (i < 4) {
-        // case for al, bl, cl, dl
-        bool have_low8 = liveout.contains(x64asm::rls[i]);
 
         // case for ah, bc, ch, dh
-        bool have_high8 = liveout.contains(x64asm::rhs[i]);
+        if(liveout.contains(x64asm::rhs[i]))
+          throw VALIDATOR_ERROR("%ah, %bl, %ch, %dh not supported live-out yet.");
 
-        if (have_low8 && have_high8) {
-          bitwidth = 16; 
-        } else if (have_low8 && !have_high8) {
+        // case for al, bl, cl, dl
+        if(liveout.contains(x64asm::rls[i]))
           bitwidth = 8;
-        } else if (!have_low8 && have_high8) {
-          VALIDATOR_ERROR("%ah, %bl, %ch, %dh not supported live-out yet.");
-        } else {
+        else
           continue;
-        }
+
       } else if (liveout.contains(x64asm::rbs[i-4])) {
           //case for bpl, sil, dil, spl, r8b, r9b, ...
           bitwidth = 8;
@@ -530,9 +562,8 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
         // The register is not here, in any form.
         continue;
       }
-    }
-
-
+    } 
+     
     /* Get the string representation of this register */
     string elem = bij.toVal(op); 
 
@@ -548,7 +579,7 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
     query.push_back(E_eq_final);
 
 	}
-	for(uint i=0;i<x64asm::xmms.size();i++)
+	for(size_t i=0;i<x64asm::xmms.size();i++)
 	{
 	  auto op = x64asm::xmms[i];
 	  if(liveout.contains(op))
@@ -565,7 +596,7 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
 	  }
 	}
 
-  for(uint i = 0; i < eflags.size(); i++) {
+  for(size_t i = 0; i < eflags.size(); i++) {
 
     auto op = x64asm::eflags[i];
     if(liveout.contains(op))
@@ -585,7 +616,7 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
       /* Check if we handle this flag */
       if (letter != 'A' && letter != 'C' && letter != 'O' &&
           letter != 'P' && letter != 'S' && letter != 'Z')
-        continue;
+        VALIDATOR_ERROR("The only eflags we support are ACOPSZ");
 
       /* Build the validator's name for this flag. */
       string elem = "_FLAG";

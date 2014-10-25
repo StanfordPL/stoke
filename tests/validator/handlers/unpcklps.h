@@ -1,107 +1,56 @@
 
 
-#include "src/validator/error.h"
-#include "src/validator/validator.h"
+class ValidatorUnpcklpsTest : public ValidatorTest {};
 
-TEST(ValidatorUnpcklps, Identity) {
+TEST_F(ValidatorUnpcklpsTest, Identity) {
 
-  x64asm::Code c, d;
+  target_ << "unpcklps %xmm1, %xmm1" << std::endl;
+  target_ << "retq" << std::endl;
 
-  std::stringstream tmp;
-  tmp << "unpcklps %xmm1, %xmm1" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
+  rewrite_ << "unpcklps %xmm1, %xmm1" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  tmp << "unpcklps %xmm1, %xmm1" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
+  assert_equiv();
 }
 
 
-TEST(ValidatorUnpcklps, NonIdentity) {
+TEST_F(ValidatorUnpcklpsTest, NonIdentity) {
+  
+  target_ << "unpcklps %xmm1, %xmm1" << std::endl;
+  target_ << "retq" << std::endl;
+  
+  rewrite_ << "unpcklps %xmm2, %xmm2" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  x64asm::Code c, d;
-
-  std::stringstream tmp;
-  tmp << "unpcklps %xmm1, %xmm1" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
-
-  tmp << "unpcklps %xmm2, %xmm2" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg));
+  assert_ceg();
 
 }
 
 
-TEST(ValidatorUnpcklps, NotIdempotent) {
+TEST_F(ValidatorUnpcklpsTest, NotIdempotent) {
+  
+  target_ << "unpcklps %xmm2, %xmm3" << std::endl;
+  target_ << "retq" << std::endl;
 
-  x64asm::Code c, d;
+  rewrite_ << "unpcklps %xmm1, %xmm3" << std::endl;
+  rewrite_ << "unpcklps %xmm2, %xmm3" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
-  std::stringstream tmp;
-  tmp << "unpcklps %xmm2, %xmm3" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
-
-  tmp << "unpcklps %xmm1, %xmm3" << std::endl;
-  tmp << "unpcklps %xmm2, %xmm3" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
+  assert_ceg();
 
 }
 
 
+TEST_F(ValidatorUnpcklpsTest, NotIdempotentWrongArg) {
 
+  target_ << "unpcklps %xmm1, %xmm3" << std::endl;
+  target_ << "retq" << std::endl;
 
-TEST(ValidatorUnpcklps, NotIdempotentWrongArg) {
-
-  x64asm::Code c, d;
-
-  std::stringstream tmp;
-  tmp << "unpcklps %xmm1, %xmm3" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> c;
-  tmp.str("");
-
-  tmp << "unpcklps %xmm1, %xmm3" << std::endl;
-  tmp << "unpcklps %xmm2, %xmm3" << std::endl;
-  tmp << "retq" << std::endl;
-  tmp >> d;
-
-  stoke::Validator v;
-  stoke::CpuState ceg;
-
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-
-  EXPECT_FALSE(v.validate(cfg_t, cfg_r, ceg)) << ceg;
+  rewrite_ << "unpcklps %xmm1, %xmm3" << std::endl;
+  rewrite_ << "unpcklps %xmm2, %xmm3" << std::endl;
+  rewrite_ << "retq" << std::endl;
+  
+  assert_ceg();
 
 }
 

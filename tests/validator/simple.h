@@ -123,8 +123,6 @@ TEST(Validator, ReportsSupported) {
 
 TEST_F(ValidatorBaseTest, UnimplementedFailsGracefully) {
 
-  x64asm::Code c;
-
   target_ << "incq %rax" << std::endl;
   target_ << "vandpd %xmm0, %xmm1, %xmm2" << std::endl;
   target_ << "retq" << std::endl;
@@ -134,6 +132,26 @@ TEST_F(ValidatorBaseTest, UnimplementedFailsGracefully) {
   assert_fail();
 }
 
+
+TEST_F(ValidatorBaseTest, YmmUnsupported) {
+
+  target_ << "retq" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::ymm1);
+
+  assert_fail();
+}
+
+TEST_F(ValidatorBaseTest, High8BitUnsupported) {
+
+  target_ << "retq" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::ah);
+
+  assert_fail();
+}
 
 TEST_F(ValidatorBaseTest, SimpleCounterexample) {
 
@@ -188,8 +206,10 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
   stoke::Validator v;
   stoke::CpuState ceg;
 
-  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::universe());
-  stoke::Cfg cfg_r(d, x64asm::RegSet::universe(), x64asm::RegSet::universe());
+  x64asm::RegSet rs = ValidatorBaseTest::get_default_regset();
+
+  stoke::Cfg cfg_t(c, rs, rs);
+  stoke::Cfg cfg_r(d, rs, rs);
 
 
   EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg));

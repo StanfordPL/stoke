@@ -13,6 +13,28 @@ class ValidatorTest : public ::testing::Test {
         delete cfg_r_;
     }
 
+    /* This is the default set of registers used when working
+       with the validator.*/
+    static x64asm::RegSet get_default_regset() {
+
+      x64asm::RegSet rs;
+
+      /* Include 64-bit gps, xmms, eflags */
+      rs = x64asm::RegSet::empty() + 
+        x64asm::eflags_af + x64asm::eflags_cf + x64asm::eflags_of +
+        x64asm::eflags_pf + x64asm::eflags_sf + x64asm::eflags_zf;
+
+      for(size_t i = 0; i < x64asm::r64s.size(); ++i) {
+        rs += x64asm::r64s[i];
+      }
+
+      for(size_t i = 0; i < x64asm::xmms.size(); ++i) {
+        rs += x64asm::xmms[i];
+      }
+
+      return rs;
+    }
+
   protected:
 
     std::stringstream target_;
@@ -56,13 +78,18 @@ class ValidatorTest : public ::testing::Test {
 
     std::string assert_fail() {
       stoke::CpuState ceg;
+      std::string message;
 
-      try {
-        validate(ceg);
-        EXPECT_TRUE(false) << "The validator was supposed to throw an error but didn't." << std::endl;
-      } catch (validator_error e) {
-        return e.get_message();
-      }
+      EXPECT_NO_THROW({
+        try {
+          validate(ceg);
+          EXPECT_FALSE(true) << "No error occurred.";
+        } catch(validator_error e) {
+          message = e.get_message(); 
+        } 
+      });
+
+      return message;
     }
 
     void set_live_outs(x64asm::RegSet rs) {
@@ -126,7 +153,7 @@ class ValidatorTest : public ::testing::Test {
       v_.set_mem_out(false)
         .set_timeout(1000);
 
-      live_outs_ = x64asm::RegSet::universe();
+      live_outs_ = get_default_regset();
 
       target_.clear();
       rewrite_.clear();
