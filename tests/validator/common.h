@@ -51,7 +51,7 @@ class ValidatorTest : public ::testing::Test {
 
       // Check counterexample, if exists
       if(!b)
-        check_ceg(ceg);
+        check_ceg(ceg, true);
 
       return std::cout;
     }
@@ -66,7 +66,7 @@ class ValidatorTest : public ::testing::Test {
 
       // Check counterexample, if exists
       if(!b)
-        check_ceg(ceg);
+        check_ceg(ceg, false);
 
       return std::cout;
     }
@@ -116,7 +116,7 @@ class ValidatorTest : public ::testing::Test {
 
     /* Takes the counterexample, and runs the target and the rewrite on it.
        If you get the same thing, we have a validator bug. */
-    void check_ceg(stoke::CpuState& ceg) {
+    void check_ceg(stoke::CpuState& ceg, bool print) {
 
       // Make sure that a counterexample was intended.
       if(!v_.is_counterexample_valid())
@@ -144,7 +144,16 @@ class ValidatorTest : public ::testing::Test {
       ASSERT_EQ(1, sb.size());
 
       EXPECT_NE(first, second) << "Counterexample didn't check out in the sandbox." << std::endl
+                               << "Almost definitely means a validator bug." << std::endl
                                << "The counterexample was: " << ceg << std::endl << std::endl;
+
+      if (first != second && print) {
+        std::cout << "The counterexample is correct." << std::endl;
+        std::cout << "Result from running on target: " << std::endl;
+        std::cout << first << std::endl << std::endl;
+        std::cout << "Result from running on rewrite: " << std::endl;
+        std::cout << second << std::endl << std::endl;
+      }
     }
 
     /* Initialize member variables. */

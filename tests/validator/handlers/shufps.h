@@ -46,12 +46,24 @@ TEST_F(ValidatorShufpsTest, NotIdentityForWrongConstant) {
 
 TEST_F(ValidatorShufpsTest, SameAsPshufdForMagic) {
 
+  target_ << "shufps $0xb1, %xmm0, %xmm0" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "pshufd $0xb1, %xmm0, %xmm0" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+
+}
+
+TEST_F(ValidatorShufpsTest, NotSameAsPshufdForWrongMagic) {
+
   target_ << "shufps $0xe4, %xmm0, %xmm0" << std::endl;
   target_ << "retq" << std::endl;
 
-  rewrite_ << "pshufd $0x8d, %xmm0, %xmm0" << std::endl;
+  rewrite_ << "pshufd $0xe4, %xmm0, %xmm0" << std::endl;
   rewrite_ << "retq" << std::endl;
 
-
+  assert_equiv();
 
 }
