@@ -46,7 +46,8 @@ TEST(DisassemblerTest, SimpleExample) {
 }
 
 /* This is primarily to check that labels are generated
-   correctly.  There was initially a bug here. */
+   correctly.  It also checks that offsets are correct
+   in the presense of labels. */
 TEST(DisassemblerTest, PopCnt) {
 
   /* These are the expected answers */
@@ -73,7 +74,9 @@ TEST(DisassemblerTest, PopCnt) {
   tmp >> popcnt_code;
 
   std::vector<uint64_t> popcnt_offsets 
-    { 0x0, 0x3, 0x5, 0x7, 0x10, 0x12, 0x15, 0x17, 0x1a, 0x1c, 0x1e, 0x1f, 0x21, 0x22, 0x2c };
+    { 0x0, 0x3, 0x5, 0x7, 
+      0x10, 0x10, 0x12, 0x15, 0x17, 0x1a, 0x1c, 0x1e, 
+      0x1f, 0x1f, 0x21, 0x22, 0x2c };
 
   /* Here's the callback sent to the disassembler */
   bool found_popcnt = false;
