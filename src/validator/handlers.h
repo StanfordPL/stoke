@@ -113,7 +113,10 @@ void notHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
 void orHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg);
 void paddHandler(v_data d, unsigned int opWidth, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg);
 void palignrHandler(v_data d, unsigned int numopt, unsigned int bitWidth, unsigned int immediate, Expr E_dest, Expr E_src1, Expr E_src2);
+void packusdwHandler(v_data d, unsigned int bitWidthSrc, unsigned int bitWidthTarget,  Expr E_dest, Expr E_src1, Expr E_src2);
 void pandnHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
+void pmaxsdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
+void pminuwHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 void pmovsxdqHandler(v_data d, Expr E_dest, Expr E_src);
 void pmovsxwqHandler(v_data d, Expr E_dest, Expr E_src);
 void pmovzxbdHandler(v_data d, Expr E_dest, Expr E_src);
@@ -126,8 +129,10 @@ void popcnt64Handler(v_data d, Expr E_dest, Expr E_src);
 void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm);
 void pshufhwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr E_src);
 void pshuflwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr E_src);
+void psllHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_dest, Expr E_src1); 
 void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 void punpcklwdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
+void pxorHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 void rclHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_dest, Expr E_src1, bool dest_is_reg);
 void rcrHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_dest, Expr E_src1, bool dest_is_reg);
 void retHandler(v_data d);
@@ -177,6 +182,7 @@ void xaddHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
 void xchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_src_post,  bool dest_is_reg);
 void xorHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg);
 void xorpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2);
+void xorpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 
 //Convert an instruction to a constraint
 void instrnToConstraint(MemoryData& mem, PAIR_INFO state_info,VC& vc,V_Node& n,
