@@ -1776,7 +1776,7 @@ void pminuwHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   MINMACRO(E_result3,E_src1, E_src2, 47,32) 
   MINMACRO(E_result4,E_src1, E_src2, 63,48) 
   MINMACRO(E_result5,E_src1, E_src2, 79,64) 
-  MINMACRO(E_result6,E_src1, E_src2, 95,60) 
+  MINMACRO(E_result6,E_src1, E_src2, 95,80) 
   MINMACRO(E_result7,E_src1, E_src2, 111,96) 
   MINMACRO(E_result8,E_src1, E_src2, 127,112) 
 
@@ -2205,7 +2205,7 @@ void psllHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_de
       retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_src1));
   else  
   {
-    for(int i =bitWidth; i<128;i+=bitWidth)
+    for(int i =bitWidth; i<=128;i+=bitWidth)
     {
       retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, i-1, i-bitWidth),
 	         vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, i-shamt-1, i-bitWidth), vc_bvConstExprFromLL(vc, shamt, 0) )
