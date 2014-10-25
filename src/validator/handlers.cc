@@ -432,6 +432,13 @@ void cmovbeHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre
   CMOV_FLUFF
 }
 
+void cmovcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_C
+  CMOV_FLUFF
+}
+
 void cmoveHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
 
   VC& vc = d.vc;
@@ -469,11 +476,87 @@ void cmovleHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre
   CMOV_FLUFF
 }
 
+void cmovnaHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NA
+  CMOV_FLUFF
+}
+
+void cmovnaeHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NAE
+  CMOV_FLUFF
+}
+
+void cmovnbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NB
+  CMOV_FLUFF
+}
+
+void cmovnbeHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NBE
+  CMOV_FLUFF
+}
+
+void cmovncHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NC
+  CMOV_FLUFF
+}
 
 void cmovneHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
 
   VC& vc = d.vc;
   Expr V_CC_NE
+  CMOV_FLUFF
+}
+
+void cmovngHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NG
+  CMOV_FLUFF
+}
+
+void cmovngeHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NGE
+  CMOV_FLUFF
+}
+
+void cmovnlHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NL
+  CMOV_FLUFF
+}
+
+void cmovnleHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NLE
+  CMOV_FLUFF
+}
+
+void cmovnoHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NO
+  CMOV_FLUFF
+}
+
+void cmovnpHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NP
   CMOV_FLUFF
 }
 
@@ -484,11 +567,52 @@ void cmovnsHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre
   CMOV_FLUFF
 }
 
+void cmovnzHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_NZ
+  CMOV_FLUFF
+}
+
+void cmovoHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_O
+  CMOV_FLUFF
+}
+
+void cmovpHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_P
+  CMOV_FLUFF
+}
+
+void cmovpeHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_PE
+  CMOV_FLUFF
+}
+
+void cmovpoHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_PO
+  CMOV_FLUFF
+}
 
 void cmovsHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
 
   VC& vc = d.vc;
   Expr V_CC_S
+  CMOV_FLUFF
+}
+
+void cmovzHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+
+  VC& vc = d.vc;
+  Expr V_CC_Z
   CMOV_FLUFF
 }
 
