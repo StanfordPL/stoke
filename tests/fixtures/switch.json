@@ -1,0 +1,33 @@
+
+{
+  "name": "switch",
+  "comment": "rdi is livein only if you follow the switch logic :)",
+  "code": [ 
+    "movq   (%rsi),%rdx",        //xmm0, xmm1, rax, rdi, rsi
+    "cmpb   $0x6,0x1(%rdx)",     //(same as below)
+    "jbe    .L1",                //xmm0, xmm1, rax, rdx, rdi
+    "retq",                      //xmm0, xmm1, rax, rdx
+    ".L1:",
+    "movzbl 0x1(%rdx),%eax",     //rdx, rdi, xmm0, xmm1
+    "jmpq   *0x400580(,%rax,8)", //here: treat everything as liveout: 
+                                 //rdi, rdx, rax, xmm0, xmm1
+    "movl   %edi,%eax",
+    "retq",
+    "xorl   %eax,%eax",
+    "retq",
+    "leal   -0x1(%rdi),%eax",
+    "xchg   %ax,%ax",
+    "retq",
+    "leal   0x1(%rdi),%eax",
+    "retq"
+  ],
+
+  "tests": {
+
+    "liveness": {
+      "given liveout":   ["%rax", "%rdx", "%xmm0", "%xmm1"],
+      "expected livein": ["%rax", "%rdi", "%rsi", "%xmm0", "%xmm1"]
+    }
+  }
+
+}
