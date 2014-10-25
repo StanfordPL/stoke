@@ -348,7 +348,9 @@ void instrnToConstraint(MemoryData& mem, PAIR_INFO state_info,VC& vc, V_Node& n,
 #ifdef DEBUG_VALIDATOR
       cout << "Unhandled Instruction for creating constraint " << instr << "\n";
 #endif
-      throw VALIDATOR_ERROR("Unhandled instruction, of unknown type.");
+      std::stringstream tmp;
+      tmp << "Unhandled instruction (not in switch): " << instr << endl;
+      throw VALIDATOR_ERROR(tmp.str());
 
   }
 

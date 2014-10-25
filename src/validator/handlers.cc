@@ -2678,49 +2678,49 @@ void setHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr pred, bool de
 
 
 
-void setaHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setaHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_A
   SET_FLUFF
 }
 
-void setaeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setaeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_AE
   SET_FLUFF
 }
 
-void setbHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setbHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_B
   SET_FLUFF
 }
 
-void setbeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setbeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_BE
   SET_FLUFF
 }
 
-void setcHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setcHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_C
   SET_FLUFF
 }
 
-void seteHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void seteHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_E
   SET_FLUFF
 }
 
-void setgHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setgHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_G
@@ -2728,14 +2728,14 @@ void setgHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg =
 }
 
 
-void setgeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setgeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_GE
   SET_FLUFF
 }
 
-void setlHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setlHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_L
@@ -2743,84 +2743,84 @@ void setlHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg =
 }
 
 
-void setleHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setleHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_LE
   SET_FLUFF
 }
 
-void setnaHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setnaHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NA
   SET_FLUFF
 }
 
-void setnaeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setnaeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NAE
   SET_FLUFF
 }
 
-void setnbHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setnbHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NB
   SET_FLUFF
 }
 
-void setnbeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setnbeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NBE
   SET_FLUFF
 }
 
-void setncHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setncHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NC
   SET_FLUFF
 }
 
-void setneHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setneHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NE
   SET_FLUFF
 }
 
-void setngHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setngHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NG
   SET_FLUFF
 }
 
-void setngeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setngeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NGE
   SET_FLUFF
 }
 
-void setnlHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setnlHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NL
   SET_FLUFF
 }
 
-void setnleHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setnleHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NLE
   SET_FLUFF
 }
 
-void setnoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setnoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NO
@@ -2828,63 +2828,63 @@ void setnoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg 
 }
 
 
-void setnpHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setnpHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NP
   SET_FLUFF
 }
 
-void setnsHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setnsHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NS
   SET_FLUFF
 }
 
-void setnzHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setnzHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_NZ
   SET_FLUFF
 }
 
-void setoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_O
   SET_FLUFF
 }
 
-void setpHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setpHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_P
   SET_FLUFF
 }
 
-void setpeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setpeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_PE
   SET_FLUFF
 }
 
-void setpoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setpoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_PO
   SET_FLUFF
 }
 
-void setsHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setsHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_S
   SET_FLUFF
 }	
 
-void setzHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
+void setzHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg) {
   
   VC& vc = d.vc;
   Expr V_CC_Z
