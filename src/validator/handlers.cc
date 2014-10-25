@@ -1831,8 +1831,8 @@ void pmovzxbdHandler(v_data d, Expr E_dest, Expr E_src)
   VC&vc = d.vc;
   
   Expr E_first = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 7, 0));
-  Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 16, 8));
-  Expr E_third = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 23, 17));
+  Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 15, 8));
+  Expr E_third = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 23, 16));
   Expr E_fourth = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 31, 24));
   Expr retval = vc_andExpr(vc, EqExpr(vc, E_first, vc_bvExtract(vc, E_dest, 31, 0)),EqExpr(vc, E_second, vc_bvExtract(vc, E_dest, 63, 32)));
   retval = vc_andExpr(vc, retval, EqExpr(vc, E_third, vc_bvExtract(vc, E_dest, 95, 64)));
@@ -1850,8 +1850,8 @@ void pmovzxbwHandler(v_data d, Expr E_dest, Expr E_src)
   VC&vc = d.vc;
   
   Expr E_first = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 7, 0));
-  Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 16, 8));
-  Expr E_third = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 23, 17));
+  Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 15, 8));
+  Expr E_third = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 23, 16));
   Expr E_fourth = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 31, 24));
   Expr E_fifth = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 39, 32));
   Expr E_sixth = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 47, 40));
