@@ -50,11 +50,6 @@ class Sandbox {
     max_jumps_ = jumps;
     return *this;
   }
-	/** Sets the maximum number of calls performed before raising SIGINT. */
-	Sandbox& set_max_calls(size_t calls) {
-		max_calls_ = calls;
-		return *this;
-	}
 
   /** Clear input set. */
   Sandbox& clear_inputs();
@@ -116,51 +111,92 @@ class Sandbox {
   }
 
  private:
-  /** Assembler, no sense in always creating these. */
-  x64asm::Assembler assm_;
-  /** Function buffer for jit assembling codes. */
-  x64asm::Function fxn_;
+  /** Stack snapshot for restoring valid stack state as necessary. */
+  StackSnapshot snapshot_;
+  /** Has a segfault occurred during this execution? */
+  size_t segv_;
+  /** Set prior to execution, function for sandboxing memory references. */
+  uint64_t current_map_addr_;
+  /** Emit a memory instruction. */
+  void emit_memory_instr(const x64asm::Instruction& instr);
+
+  /** Returns a function which maps rdi into the heap sandbox. */
+  x64asm::Function assemble_map_addr(CpuState& cs);
+  /** Returns code to check memory for validity and then toggle def bits. */
+  void emit_stack_heap_cases(CpuState& cs, bool stack);
+
+
+
+
+
+
+	/** Should the sandbox report errors for linux abi violations? */
+	bool abi_check_;
+  /** The maximum number of jumps to take before raising SIGINT. */
+  size_t max_jumps_;
+  /** Set prior to execution, is memory read only? */
+  bool read_only_mem_;
 
   /** I/O pairs. These are pointers to simplify vector reallocations. */
   std::vector<IoPair*> io_pairs_;
-  /** Stack snapshot for restoring valid stack state as necessary. */
-  StackSnapshot snapshot_;
 
   /** Callbacks to invoke before a line is executed. */
   std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> before_;
   /** Callbacks to invokes after a line is exeucted. */
   std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> after_;
 
-	/** Should the sandbox report errors for linux abi violations? */
-	bool abi_check_;
-  /** The maximum number of jumps to take before raising SIGINT. */
-  size_t max_jumps_;
-  /** How many more jumps can be made before SIGINT? */
-  size_t jumps_;
-	/** The maximum number of calls to make before raising SIGINT. */
-	size_t max_calls_;
-	/** How many more calls cab be made before SIGINT? */
-	size_t calls_;
-  /** Has a segfault occurred during this execution? */
-  size_t segv_;
-
+  /** Assembler, no sense in always creating these. */
+  x64asm::Assembler assm_;
   /** Scratch space used here and there by sandboxing code. */
   uint64_t scratch_[16];
-  /** Set prior to execution, is memory read only? */
-  bool read_only_mem_;
-  /** Set prior to execution, the value of the user-provided stack pointer. */
-  uint64_t current_frame_;
-  /** Set prior to execution, pointer to current state. */
-  uint64_t current_state_;
-  /** Set prior to execution, function for copying hardware state. */
-  uint64_t current_c2o_;
-  /** Set prior to execution, function for restoring hardware state. */
-  uint64_t current_o2c_;
-  /** Set prior to execution, function for sandboxing memory references. */
-  uint64_t current_map_addr_;
 
-  /** Emit a memory instruction. */
-  void emit_memory_instr(const x64asm::Instruction& instr);
+  /** How many more jumps can be made before SIGKILL? */
+  size_t jumps_remaining_;
+
+	/** Pointer to a function for writing the user's input state (modulo rsp) to the cpu */
+	void* in2cpu_;
+	/** Pointer to a function for writing the user's output state (modulo rsp) to the cpu */
+	void* out2cpu_;
+	/** Pointer to a function for reading the user's output state (all of it) from the cpu */
+	void* cpu2out_;
+	/** Pointer to the user's state */
+	void* out_;
+
+	/** The user's current %rsp */
+	uint64_t user_rsp_;
+	/** The harness's %rsp */
+	uint64_t harness_rsp_;
+	/** STOKE's %rsp */
+	uint64_t stoke_rsp_;
+		
+	/** Pointer to the harness function */
+	x64asm::Function harness_;
+	/** Pointer to the signal trap function */
+	x64asm::Function signal_trap_;
+  /** Function buffer for jit assembling codes. */
+  x64asm::Function fxn_;
+
+	/** Assembles the harness function */
+	x64asm::Function emit_harness();
+	/** Assembles a signal handler trap */
+	x64asm::Function emit_signal_trap();
+	/** Assembles a function for writing user state (modulo rsp) to the cpu */
+	x64asm::Function emit_state2cpu(const CpuState& cs);
+	/** Assembles a function for reading user state from the cpu */
+	x64asm::Function emit_cpu2state(CpuState& cs);
+
+	/** Assembles the user's function */
+	void emit_function(const Cfg& cfg);
+  /** Emit a callback (before or after) a line. */
+  void emit_callbacks(size_t line, bool before);
+  /** Emit an instruction (and possibly sandbox memory). */
+  void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& exit);
+  /** Emit a jump instruction */
+  void emit_jump(const x64asm::Instruction& instr);
+	/** Emit the CALL LABEL instruction. */
+	void emit_call(const x64asm::Instruction& instr);
+	/** Emit the RET instruction. */
+	void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
   /** Special case for emitting push. */
   void emit_push(const x64asm::Instruction& instr);
   /** Special case for emitting pop. */
@@ -170,55 +206,12 @@ class Sandbox {
 	/** Special case for emitting div instructions that read from memory. */
 	void emit_mem_div(const x64asm::Instruction& instr);
 
-  /** Emits code to save the true callee saved registers. */
-  void emit_save_stoke_callee_save();
-  /** Emits code to load user-specified register values to cpu. */
-  void emit_write_user_state();
-  /** Emits code to save the user callee saved registers. */
-  void emit_save_user_callee_save();
-  /** Emit a callback (before or after) a line. */
-  void emit_callbacks(size_t line, bool before);
-  /** Emit sandboxing code prior to taking a jump. */
-  void emit_pre_jump();
-  /** Emit sandboxing code prior to a return. */
-  void emit_pre_return();
-  /** Emit a special exit for code that signals. */
-  void emit_sig_return();
-
-  /** Returns a function which maps rdi into the heap sandbox. */
-  x64asm::Function assemble_map_addr(CpuState& cs);
-  /** Returns code to check memory for validity and then toggle def bits. */
-  void emit_stack_heap_cases(CpuState& cs, bool stack);
-
-
-
-	/** Pointer to a function for writing the user's input state (modulo rsp) to the cpu */
-	void* in2cpu_;
-	/** Pointer to a function for writing the user's output state (modulo rsp) to the cpu */
-	void* out2cpu_;
-	/** Pointer to a function for reading the user's output state (all of it) from the cpu */
-	void* cpu2out_;
-	/** The user's current %rsp */
-	uint64_t user_rsp_;
-		
-	/** Pointer to the harness function */
-	x64asm::Function harness_;
-	/** The harness's %rsp */
-	uint64_t harness_rsp_;
-	/** STOKE's %rsp */
-	uint64_t stoke_rsp_;
-
-	/** Assembles a function for writing user state (modulo rsp) to the cpu */
-	x64asm::Function emit_state2cpu(const CpuState& cs);
-	/** Assembles a function for reading user state from the cpu */
-	x64asm::Function emit_cpu2state(CpuState& cs);
-	/** Assembles the harness function */
-	x64asm::Function emit_harness();
-	/** Assembles the user's function */
-	void emit_function(const Cfg& cfg);
-	
-  /** Emit an instruction (and possibly sandbox memory). */
-  void emit_instruction(const x64asm::Instruction& instr);
+	/** Emits a bail-out call to the signal trap */
+	void emit_signal_trap_call(ErrorCode ec);
+	/** Emit code that swaps stoke_rsp_ out of and user_rsp_ into %rsp */
+	void emit_load_user_rsp();
+	/** Emit code that swaps user_rsp_ out of and stoke_rsp_ into %rsp */
+	void emit_load_stoke_rsp();
 };
 
 } // namespace stoke
