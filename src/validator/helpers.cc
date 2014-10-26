@@ -1,3 +1,142 @@
+
+
+/* Returns an expression corresponding to a flag in string form.
+   Second parameter sets if it should be negated. */
+Expr get_flag(v_data d, string cf, bool do_not_negate = true) {
+  
+  auto n = 0;
+
+  switch(cf[0]) {
+    case 'A':
+      n = V_AF;
+      break;
+
+    case 'C':
+      n = V_CF;
+      break;
+
+    case 'O':
+      n = V_OF;
+      break;
+
+    case 'P':
+      n = V_PF;
+      break;
+
+    case 'S':
+      n = V_SF;
+      break;
+
+    case 'Z':
+      n = V_ZF;
+      break;
+
+    default:
+      string message = "bad flag name " + cf;
+      throw VALIDATOR_ERROR(message);
+  }
+
+  if (do_not_negate)
+    return getBoolExpr(d.vc, n, d.pre_suffix, d.Vn);
+  else
+    return vc_notExpr(d.vc, getBoolExpr(d.vc, n, d.pre_suffix, d.Vn));
+}
+
+Expr get_condition_predicate(v_data d, string cc) {
+
+
+  //CF = 0 and ZF = 0
+  if (cc == "a" || cc == "nbe") {
+    return vc_andExpr(d.vc, get_flag(d, "C", false), get_flag(d, "Z", false));
+  } 
+  
+  // CF = 0
+  if (cc == "ae" || cc == "nb" || cc == "nc") {
+    return get_flag(d, "C", false);
+  } 
+  
+  // CF = 1
+  if (cc == "b" || cc == "c" || cc == "nae") {
+    return get_flag(d, "C");
+  } 
+  
+  // CF = 1 OR ZF = 1
+  if (cc == "be" || cc == "na") {
+    return vc_orExpr(d.vc, get_flag(d, "C"), get_flag(d, "Z"));
+  }
+
+  // CZ = 1
+  if (cc == "e" || cc == "z") {
+    return get_flag(d, "Z");
+  } 
+
+  // ZF = 0 and SF = OF
+  if (cc == "g" || cc == "nle") {
+    return vc_andExpr(d.vc,
+             get_flag(d, "Z", false),
+             vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF")));
+  }
+
+  // SF = OF
+  if (cc == "ge" || cc == "nl") {
+    return vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF"));
+  }
+
+  // SF != OF
+  if (cc == "l" || cc == "nge") {
+    return vc_notExpr(d.vc, vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF")));
+  }
+
+  // ZF = 1 or SF != OF
+  if (cc == "le" || cc == "ng") {
+    return vc_orExpr(d.vc,
+             get_flag(d, "Z"),
+             vc_notExpr(d.vc, vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF"))));
+  }
+
+  // ZF = 0
+  if (cc == "ne" || cc == "nz") {
+    return get_flag(d, "Z", false);
+  }
+
+  // OF = 0
+  if (cc == "no") {
+    return get_flag(d, "O", false);
+  }
+
+  // PF = 0
+  if (cc == "np" || cc == "po") {
+    return get_flag(d, "P", false);
+  }
+
+  // SF = 0
+  if (cc == "ns") {
+    return get_flag(d, "S", false);
+  }
+
+  // OF = 1
+  if (cc == "o") {
+    return get_flag(d, "O");
+  }
+
+  // PF = 1
+  if (cc == "p" || cc == "pe") {
+    return get_flag(d, "P");
+  }
+
+  // SF = 1
+  if (cc == "s") {
+    return get_flag(d, "S");
+  }
+
+  string message = "Condition flag " + cc + " is not handled.";
+  throw VALIDATOR_ERROR(message);
+
+}
+
+
+
+
 //assumes the last operand of the instruction is an immediate and returns the same
 uint64_t getLastOperandImm(const Instruction& instr)
 {
@@ -20,10 +159,13 @@ uint64_t getImmediateFromInstr(const Instruction& instr, unsigned int n)
 //Sets condition register flag with version number Vnprime and codenum given in post_suffix to the expression e.
 Expr setFlag(VC& vc,const VersionNumber& Vnprime,SS_Id flag, const Expr& e, vector<Expr>& constraints, string post_suffix)
 {
-  Expr E_flag_var = vc_varExpr(vc, (idToStr(flag)+post_suffix+itoa(Vnprime.get(flag))).c_str(), vc_boolType(vc));
+  string flag_name = idToStr(flag) + post_suffix + itoa(Vnprime.get(flag));
+  Expr E_flag_var = vc_varExpr(vc, flag_name.c_str(), vc_boolType(vc));
   Expr E_flag_constraint = vc_iffExpr(vc, E_flag_var, e);
   //cout << "Instruction flag constraint is\n";
+#ifdef DEBUG_VALIDATOR
   vc_printExpr(vc, E_flag_constraint);
+#endif
   constraints.push_back(E_flag_constraint);
   return E_flag_var;
 }
@@ -50,12 +192,26 @@ Expr getBoolExpr(VC&vc, SS_Id id, string suffix, const VersionNumber& Vn)
 void setSFPFZF(Expr REGPOST, v_data d, unsigned int bitWidth)
 {
   VC&vc = d.vc;
-  setFlag(vc,d.Vnprime, V_SF, vc_bvBoolExtract_One(vc, REGPOST, bitWidth - 1), d.constraints, d.post_suffix);
-  setFlag(vc,d.Vnprime, V_ZF, vc_eqExpr(vc, REGPOST, vc_bvConstExprFromLL(vc, bitWidth, 0)), d.constraints, d.post_suffix);
-  Expr E_temp_parity_1 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,0), vc_bvBoolExtract_One(vc, REGPOST,1));
-  Expr E_temp_parity_2 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,2), vc_bvBoolExtract_One(vc, REGPOST,3));
-  Expr E_temp_parity_3 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,4), vc_bvBoolExtract_One(vc, REGPOST,5));
-  Expr E_temp_parity_4 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,6), vc_bvBoolExtract_One(vc, REGPOST,7));
+
+  /* Set sign flag */
+  setFlag(vc, d.Vnprime, V_SF, 
+      vc_bvBoolExtract_One(vc, REGPOST, bitWidth - 1), 
+      d.constraints, d.post_suffix);
+
+  /* Set zero flag */
+  setFlag(vc,d.Vnprime, V_ZF, 
+      vc_eqExpr(vc, REGPOST, vc_bvConstExprFromLL(vc, bitWidth, 0)), 
+      d.constraints, d.post_suffix);
+
+  /* Compute and set parity flag */
+  Expr E_temp_parity_1 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,0), 
+                                        vc_bvBoolExtract_One(vc, REGPOST,1));
+  Expr E_temp_parity_2 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,2), 
+                                        vc_bvBoolExtract_One(vc, REGPOST,3));
+  Expr E_temp_parity_3 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,4), 
+                                        vc_bvBoolExtract_One(vc, REGPOST,5));
+  Expr E_temp_parity_4 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,6), 
+                                        vc_bvBoolExtract_One(vc, REGPOST,7));
   Expr E_temp_parity_5 = vc_xorExpr(vc, E_temp_parity_1, E_temp_parity_2);
   Expr E_temp_parity_6 = vc_xorExpr(vc, E_temp_parity_3, E_temp_parity_4);
   Expr E_temp_parity_7 = vc_notExpr(vc, vc_xorExpr(vc, E_temp_parity_5, E_temp_parity_6));
@@ -66,6 +222,7 @@ void setSFPFZF(Expr REGPOST, v_data d, unsigned int bitWidth)
 void preserveAllFlags(v_data d)
 {
   VC&vc = d.vc;
+  setFlag(vc,d.Vnprime, V_AF, getBoolExpr(vc, V_AF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime, V_SF, getBoolExpr(vc, V_SF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime, V_ZF, getBoolExpr(vc, V_ZF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime, V_PF, getBoolExpr(vc, V_PF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
@@ -293,7 +450,9 @@ void instrnToConstraint(MemoryData& mem, PAIR_INFO state_info,VC& vc, V_Node& n,
 #ifdef DEBUG_VALIDATOR
       cout << "Unhandled Instruction for creating constraint " << instr << "\n";
 #endif
-      throw VALIDATOR_ERROR("Unhandled instruction, of unknown type.");
+      std::stringstream tmp;
+      tmp << "Unhandled instruction (not in switch): " << instr << endl;
+      throw VALIDATOR_ERROR(tmp.str());
 
   }
 

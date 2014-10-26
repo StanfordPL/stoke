@@ -170,6 +170,23 @@ TEST_F(ValidatorBaseTest, SimpleCounterexample) {
 
 }
 
+TEST_F(ValidatorBaseTest, EflagsCounterexample) {
+
+  target_ << "movq $0x0, %rax" << std::endl;
+  target_ << "setz %al" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq $0x0, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  stoke::CpuState ceg;
+  assert_ceg(ceg);
+
+  // Zero flag should be set for counterexample.
+  EXPECT_EQ(1, ceg.rf.is_set(6));
+
+}
+
 
 TEST_F(ValidatorBaseTest, ChecksUpper32bits) {
 

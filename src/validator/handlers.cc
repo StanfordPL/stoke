@@ -13,44 +13,6 @@ using namespace x64asm;
 #define ADD_CONS(S) 
 #endif
 
-//The variable pred is captured by the context. It represents the predicate for conditional moves and conditional sets
-//V_CC_A is cf==0 and zf==0
-#define V_CC_A   pred = vc_andExpr(vc, vc_notExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn)), vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn)));
-#define V_CC_AE   pred = vc_notExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn));
-#define V_CC_B   pred = getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn);
-#define V_CC_BE   pred = vc_orExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn));
-#define V_CC_E   pred = getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn);
-#define V_CC_G   pred = vc_andExpr(vc, vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn)), vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn)));
-#define V_CC_GE   pred = vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn));
-#define V_CC_L   pred = vc_notExpr(vc, vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn)));
-#define V_CC_LE   pred = vc_orExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn), vc_notExpr(vc, vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn))));
-#define V_CC_NE   pred = vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn));
-#define V_CC_NS   pred = vc_notExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn));
-#define V_CC_S   pred = getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn);
-#define V_CC_NO   pred = vc_notExpr(vc, getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn));
-#define V_CC_NP   pred = vc_notExpr(vc, getBoolExpr(vc,V_PF,d.pre_suffix, d.Vn));
-#define V_CC_O   pred = getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn);
-#define V_CC_P   pred = getBoolExpr(vc,V_PF,d.pre_suffix, d.Vn);
-
-#define CMOV_FLUFF  \
-  Expr retval = vc_iteExpr(vc, pred, EqExpr(vc, E_dest, E_src), EqExpr(vc, E_dest, E_dest_pre));\
-if(bitWidth < V_UNITSIZE)\
-{\
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));\
-  retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));\
-}\
-d.constraints.push_back(retval);  
-
-
-#define SET_FLUFF 	Expr retval = vc_iteExpr(vc, pred, EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth, 1)), EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth, 0)));\
-                                  if(dest_is_reg && bitWidth < V_UNITSIZE)\
-{\
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));\
-  retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));\
-}\
-d.constraints.push_back(retval);  
-
-
 
 
 //Add with carry. Promote arguments to bitWidth+2 (66 from 64) bits, do the additions, and set the flags.
@@ -100,14 +62,31 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   VC&vc = d.vc;
 
-  Expr E_result = vc_varExpr(vc, ("ADDTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, bitWidth+2) );
+  /* add the first four bits together of each source to set AF flag if needed */
+  string aux_name = string("ADDTEMP_AUX") + d.pre_suffix + to_string(d.instr_no);
+
+  Expr auxiliary = vc_varExpr(vc, aux_name.c_str(), vc_bvType(vc, 5));
+  Expr set_aux_to_sum = EqExpr(vc, auxiliary, 
+      vc_bvPlusExpr(vc, 5, 
+        vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 1, 0), vc_bvExtract(vc, E_src1, 3, 0)),
+        vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 1, 0), vc_bvExtract(vc, E_src2, 3, 0))
+  ));
+  d.constraints.push_back(set_aux_to_sum);
+                            
+
+  /* Do the addition */
+  Expr E_result = vc_varExpr(vc, 
+                      ("ADDTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), 
+                      vc_bvType(vc, bitWidth+2) );
+
   Expr E_arg1 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 2, 0), E_src1);
   Expr E_arg2 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 2, 0), E_src2);  
 
   Expr retval = vc_trueExpr(vc);
   retval = vc_andExpr(vc, retval, EqExpr(vc, E_result, vc_bvPlusExpr(vc, bitWidth+2, E_arg1, E_arg2)));
-  retval = vc_andExpr(vc, retval, vc_eqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth-1, 0)));  
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth-1, 0)));  
 
+  /* Set unchanged bits */
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
@@ -116,10 +95,27 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
 #endif
+
   d.constraints.push_back(retval);
-  setFlag(vc, d.Vnprime, V_OF, getOFExpr(vc, vc_bvBoolExtract_One(vc, E_arg1, bitWidth - 1), vc_bvBoolExtract_One(vc, E_arg2, bitWidth - 1),
-        vc_bvBoolExtract_One(vc, E_result, bitWidth - 1)), d.constraints, d.post_suffix);
-  setFlag(vc, d.Vnprime, V_CF, vc_orExpr(vc, vc_bvBoolExtract_One(vc, E_result, bitWidth), vc_bvBoolExtract_One(vc, E_result, bitWidth+1)), d.constraints, d.post_suffix);
+
+  /* Set the AF flag */
+  setFlag(vc, d.Vnprime, V_AF, vc_bvBoolExtract_One(vc, auxiliary, 4),
+    d.constraints, d.post_suffix);
+  
+  /* Set the overflow flag */
+  setFlag(vc, d.Vnprime, V_OF, 
+    getOFExpr(vc, vc_bvBoolExtract_One(vc, E_arg1, bitWidth - 1), 
+              vc_bvBoolExtract_One(vc, E_arg2, bitWidth - 1),
+              vc_bvBoolExtract_One(vc, E_result, bitWidth - 1)), 
+    d.constraints, d.post_suffix);
+
+  /* Set the carry flag */
+  setFlag(vc, d.Vnprime, V_CF, 
+    vc_orExpr(vc, vc_bvBoolExtract_One(vc, E_result, bitWidth), 
+                  vc_bvBoolExtract_One(vc, E_result, bitWidth+1)), 
+    d.constraints, d.post_suffix);
+
+  /* Set the SFZ flags */
   setSFPFZF(E_dest, d, bitWidth);
 }
 
@@ -442,92 +438,37 @@ void cmovHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
   d.constraints.push_back(retval);  
 }
 
-void cmovaHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
-
-  VC& vc = d.vc;
-  Expr V_CC_A
-  CMOV_FLUFF
-}
-
-void cmovaeHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
-
-  VC& vc = d.vc;
-  Expr V_CC_AE
-  CMOV_FLUFF
-}
-
-void cmovbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
-
-  VC& vc = d.vc;
-  Expr V_CC_B
-  CMOV_FLUFF
-}
-
-void cmovbeHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
-
-  VC& vc = d.vc;
-  Expr V_CC_BE
-  CMOV_FLUFF
-}
-
-void cmoveHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
-
-  VC& vc = d.vc;
-  Expr V_CC_E
-  CMOV_FLUFF
-}
-
-void cmovgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
-
-  VC& vc = d.vc;
-  Expr V_CC_G
-  CMOV_FLUFF
-}
+#define CMOV_FLUFF  \
+  Expr retval = vc_iteExpr(vc, pred, EqExpr(vc, E_dest, E_src), EqExpr(vc, E_dest, E_dest_pre));\
+if(bitWidth < V_UNITSIZE)\
+{\
+  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));\
+  retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));\
+}\
+d.constraints.push_back(retval);  
 
 
-void cmovgeHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+void cmovccHandler(v_data d, unsigned int bitWidth, string cc, Expr E_dest, Expr E_dest_pre, 
+                   Expr E_src, bool dest_is_reg) {
 
-  VC& vc = d.vc;
-  Expr V_CC_GE
-  CMOV_FLUFF
-}
+  VC &vc = d.vc;
+  Expr pred = get_condition_predicate(d, cc);
 
-void cmovlHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
+  // If the predicate is true, then we set the destination equal to the new value
+  // If it's false, we set the destination equal to the previous value.
+ 	Expr setif = vc_iteExpr(vc, pred, 
+      EqExpr(vc, E_dest, E_src), 
+      EqExpr(vc, E_dest, E_dest_pre));
 
-  VC& vc = d.vc;
-  Expr V_CC_L
-  CMOV_FLUFF
-}
+  d.constraints.push_back(setif);
 
+  // Preserve the other bits in registers
+  if (dest_is_reg && bitWidth < V_UNITSIZE) {
+    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    Expr preserve = UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth);
+    d.constraints.push_back(preserve);
+  }
 
-void cmovleHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
-
-  VC& vc = d.vc;
-  Expr V_CC_LE
-  CMOV_FLUFF
-}
-
-
-void cmovneHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
-
-  VC& vc = d.vc;
-  Expr V_CC_NE
-  CMOV_FLUFF
-}
-
-void cmovnsHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
-
-  VC& vc = d.vc;
-  Expr V_CC_NS
-  CMOV_FLUFF
-}
-
-
-void cmovsHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src) {
-
-  VC& vc = d.vc;
-  Expr V_CC_S
-  CMOV_FLUFF
 }
 
 void cmpHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2) {
@@ -1196,13 +1137,12 @@ void imul3Handler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Exp
 //imul when mul is an uninterpreted function
 void imul64rrHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
-  VALIDATOR_ERROR("imul64rr suspisciously commented out -- aborting");
+  throw VALIDATOR_ERROR("imul64rr suspisciously commented out -- aborting");
   /*	VC&vc = d.vc;
 
       addmul64rr(vc, E_src1, E_src2, E_dest, mul, d);*/
 }
 
-//OF is SET iff original value is -1
 void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
   VC&vc = d.vc;
   //vc_printExpr(vc, E_dest); vc_printExpr(vc, E_src); cout << endl << bitWidth << endl ;
@@ -1219,7 +1159,20 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
   d.constraints.push_back(retval); 
 
-  setFlag(vc,d.Vnprime,V_OF, EqExpr(vc,E_dest,vc_bvConstExprFromLL(vc, bitWidth,0)), d.constraints, d.post_suffix);
+  // The AF flag will be set exactly if the lowest four bits of src are all one.
+  //  (which is equivalent to lowest four bits of destination being all zero)
+  setFlag(vc, d.Vnprime, V_AF, 
+      EqExpr(vc,
+        vc_bvConstExprFromInt(vc, 4, 0),
+        vc_bvExtract(vc, E_dest, 3, 0)),
+    d.constraints, d.post_suffix);
+ 
+
+  // The OF flag will be set exactly if the destination is 0 (i.e. the src is -1).
+  setFlag(vc, d.Vnprime, V_OF, 
+      EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth,0)), 
+    d.constraints, d.post_suffix);
+
   setSFPFZF(E_dest, d, bitWidth);
 }
 
@@ -2591,121 +2544,27 @@ void setHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr pred, bool de
 }
 
 
+void setccHandler(v_data d, string cc, Expr E_dest, Expr E_dest_pre, bool dest_is_reg) {
 
-void setaHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_A
-  SET_FLUFF
+  VC &vc = d.vc;
+  Expr pred = get_condition_predicate(d, cc);
+
+  // If the predicate is true, then we set the destination equal to 1
+  // If it's false, we set the destination equal to the previous value.
+ 	Expr setif = vc_iteExpr(vc, pred, 
+      EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, 8, 1)), 
+      EqExpr(vc, E_dest, E_dest_pre));
+  d.constraints.push_back(setif);
+
+  // Preserve the other bits in registers
+  if (dest_is_reg) {
+    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    Expr preserve = UnmodifiedBitsPreserve(vc, id_dest, d, 8);
+    d.constraints.push_back(preserve);
+  }
+
 }
 
-void setaeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_AE
-  SET_FLUFF
-}
-
-void setbHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_B
-  SET_FLUFF
-}
-
-void setbeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_BE
-  SET_FLUFF
-}
-
-void seteHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_E
-  SET_FLUFF
-}
-
-void setgHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_G
-  SET_FLUFF
-}
-
-
-void setgeHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_GE
-  SET_FLUFF
-}
-
-void setlHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_L
-  SET_FLUFF
-}
-
-
-void setleHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_LE
-  SET_FLUFF
-}
-
-void setneHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_NE
-  SET_FLUFF
-}
-
-void setnoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_NO
-  SET_FLUFF
-}
-
-
-void setnpHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_NP
-  SET_FLUFF
-}
-
-void setnsHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_NS
-  SET_FLUFF
-}
-
-void setoHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_O
-  SET_FLUFF
-}
-
-void setpHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_P
-  SET_FLUFF
-}
-
-void setsHandler(v_data d, unsigned int bitWidth, Expr E_dest,bool dest_is_reg = true) {
-  
-  VC& vc = d.vc;
-  Expr V_CC_S
-  SET_FLUFF
-}	
 
 void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_dest, Expr E_src1, bool dest_is_reg=true) {
 
@@ -3018,22 +2877,88 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
 }
 
 
-void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm) {
+void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_src1, Expr E_src2, Expr E_imm) {
 
-  if (imm != 0)
-    throw VALIDATOR_ERROR("Validator only supports shufps with immediate 0");
-  VC&vc = d.vc;
-  E_src = vc_bvExtract(vc, E_src, 31, 0);
-  Expr retval = EqExpr(vc, vc_bvExtract(vc, E_dest, 31, 0), E_src);
-  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), E_src));
-  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), E_src));
-  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), E_src));
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
-#endif
+  // Macro for add A[ha:la] <- B[hb:lb]
+#define SHUFPS_CON(A, ha, la, B, hb, lb) \
+        (d.constraints.push_back(\
+           EqExpr(vc,\
+             vc_bvExtract(vc, A, ha, la),\
+             vc_bvExtract(vc, B, hb, lb))));
 
-  d.constraints.push_back(retval);
 
+  VC& vc = d.vc;
+
+  // Implemented following intel manual's case statement
+  switch(imm & 0x3) {
+    case 0:
+      SHUFPS_CON(E_dest, 31, 0, E_src1, 31, 0);
+      break;
+    case 1:
+      SHUFPS_CON(E_dest, 31, 0, E_src1, 63, 32);
+      break;
+    case 2:
+      SHUFPS_CON(E_dest, 31, 0, E_src1, 95, 64);
+      break;
+    case 3:
+      SHUFPS_CON(E_dest, 31, 0, E_src1, 127, 96);
+      break;
+    default:
+      throw VALIDATOR_ERROR("internal error in shufps");
+  }
+
+  switch((imm >> 2) & 0x3) {
+    case 0:
+      SHUFPS_CON(E_dest, 63, 32, E_src1, 31, 0);
+      break;
+    case 1:
+      SHUFPS_CON(E_dest, 63, 32, E_src1, 63, 32);
+      break;
+    case 2:
+      SHUFPS_CON(E_dest, 63, 32, E_src1, 95, 64);
+      break;
+    case 3:
+      SHUFPS_CON(E_dest, 63, 32, E_src1, 127, 96);
+      break;
+    default:
+      throw VALIDATOR_ERROR("internal error in shufps");
+  }
+
+  switch((imm >> 4) & 0x3) {
+    case 0:
+      SHUFPS_CON(E_dest, 95, 64, E_src2, 31, 0);
+      break;
+    case 1:
+      SHUFPS_CON(E_dest, 95, 64, E_src2, 63, 32);
+      break;
+    case 2:
+      SHUFPS_CON(E_dest, 95, 64, E_src2, 95, 64);
+      break;
+    case 3:
+      SHUFPS_CON(E_dest, 95, 64, E_src2, 127, 96);
+      break;
+    default:
+      throw VALIDATOR_ERROR("internal error in shufps");
+  }
+
+  switch((imm >> 6) & 0x3) {
+    case 0:
+      SHUFPS_CON(E_dest, 127, 96, E_src2, 31, 0);
+      break;
+    case 1:
+      SHUFPS_CON(E_dest, 127, 96, E_src2, 63, 32);
+      break;
+    case 2:
+      SHUFPS_CON(E_dest, 127, 96, E_src2, 95, 64);
+      break;
+    case 3:
+      SHUFPS_CON(E_dest, 127, 96, E_src2, 127, 96);
+      break;
+    default:
+      throw VALIDATOR_ERROR("internal error in shufps");
+  }
+
+#undef SHUFPS_CON
 }
 
 

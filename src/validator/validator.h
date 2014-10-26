@@ -96,6 +96,19 @@ class Validator {
     bool is_counterexample_valid() {
       return counterexample_valid_;
     }
+    
+    /* Gets the counterexample */
+    CpuState get_counterexample() {
+      return counterexample_;
+    }
+    /* Gets the target's final state in counterexample. */
+    CpuState get_target_final_state() {
+      return target_final_state_;
+    }
+    /* Gets the rewrite's final state in counterexample. */
+    CpuState get_rewrite_final_state() {
+      return rewrite_final_state_;
+    }
 
     /* Returns whether this instruction is supported */
     static bool is_supported(x64asm::Instruction i);
@@ -115,8 +128,15 @@ class Validator {
     std::pair<Bijection<std::string>,std::map<SS_Id, unsigned int> > state_info_;
     /* Will the code write memory? */
     bool mem_out_;
+
     /* Was the last counterexample sensible? */
     bool counterexample_valid_;
+    /* The counterexample */
+    CpuState counterexample_;
+    /* If a counterexample existed, what was final state of target? */
+    CpuState target_final_state_;
+    /* If a counterexample existed, what was final state of rewrite? */
+    CpuState rewrite_final_state_;
 };
 
 
