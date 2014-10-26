@@ -193,6 +193,11 @@ TEST_F(CostFunctionTest, SizePenalty) {
   ss.clear();
   ss << "incq %rax" << std::endl;
   ss << "movq %rax, %rdx" << std::endl;
+
+  for(int i = 0; i < rand() % 3; i++) {
+    ss << "nop" << std::endl;
+  }
+
   ss << "addq $0x10, %rcx" << std::endl;
   ss << "retq" << std::endl;
   ss >> target;
@@ -206,21 +211,21 @@ TEST_F(CostFunctionTest, SizePenalty) {
   EXPECT_TRUE(cost.first);
   EXPECT_EQ(0, cost.second);
 
-  // It's size is 11 bytes (*not including retq, nop*)
+  // It's size is 10 bytes (*not including retq, nop*)
   // Let's set a max size of 7 bytes, with penalties 5 and 13.
   fxn_.set_max_size_penalty(7, 5, 13);
   cost = fxn_(cfg_t);
   EXPECT_FALSE(cost.first);
-  EXPECT_EQ(5 + 13*4, cost.second);
+  EXPECT_EQ(5 + 13*3, cost.second);
 
-  // Now lets change the penalty to size 11
-  fxn_.set_max_size_penalty(11, 5, 11);
+  // Now lets change the penalty to size 10
+  fxn_.set_max_size_penalty(10, 5, 11);
   cost = fxn_(cfg_t);
   EXPECT_TRUE(cost.first);
   EXPECT_EQ(0, cost.second);
 
-  // And down to size 10
-  fxn_.set_max_size_penalty(10, 5, 13);
+  // And down to size 9
+  fxn_.set_max_size_penalty(9, 5, 13);
   cost = fxn_(cfg_t);
   EXPECT_FALSE(cost.first);
   EXPECT_EQ(5+13, cost.second);
