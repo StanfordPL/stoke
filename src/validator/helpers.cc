@@ -1,54 +1,138 @@
 
 
-/* These macros are for the SETcc and CMOVcc instructions */
-#define V_CC_A   pred = vc_andExpr(vc, vc_notExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn)), vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn)));
-#define V_CC_AE  pred = vc_notExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn));
-#define V_CC_B   pred = getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn);
-#define V_CC_BE  pred = vc_orExpr(vc, getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn));
-#define V_CC_C   pred = getBoolExpr(vc,V_CF,d.pre_suffix, d.Vn);
-#define V_CC_E   pred = getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn);
-#define V_CC_G   pred = vc_andExpr(vc, vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn)), vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn)));
-#define V_CC_GE  pred = vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn));
-#define V_CC_L   pred = vc_notExpr(vc, vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn)));
-#define V_CC_LE  pred = vc_orExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn), vc_notExpr(vc, vc_iffExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn))));
-#define V_CC_NA  V_CC_BE
-#define V_CC_NAE V_CC_C
-#define V_CC_NB  V_CC_AE
-#define V_CC_NBE V_CC_A
-#define V_CC_NC  V_CC_AE
-#define V_CC_NE  pred = vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn));
-#define V_CC_NG  V_CC_LE
-#define V_CC_NGE V_CC_L
-#define V_CC_NL  V_CC_GE
-#define V_CC_NLE V_CC_G
-#define V_CC_NO  pred = vc_notExpr(vc, getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn));
-#define V_CC_NP  pred = vc_notExpr(vc, getBoolExpr(vc,V_PF,d.pre_suffix, d.Vn));
-#define V_CC_NS  pred = vc_notExpr(vc, getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn));
-#define V_CC_NZ  pred = vc_notExpr(vc, getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn));
-#define V_CC_O   pred = getBoolExpr(vc,V_OF,d.pre_suffix, d.Vn);
-#define V_CC_P   pred = getBoolExpr(vc,V_PF,d.pre_suffix, d.Vn);
-#define V_CC_PE  V_CC_P
-#define V_CC_PO  V_CC_NP
-#define V_CC_S   pred = getBoolExpr(vc,V_SF,d.pre_suffix, d.Vn);
-#define V_CC_Z   pred = getBoolExpr(vc,V_ZF,d.pre_suffix, d.Vn);
+/* Returns an expression corresponding to a flag in string form.
+   Second parameter sets if it should be negated. */
+Expr get_flag(v_data d, string cf, bool do_not_negate = true) {
+  
+  auto n = 0;
 
-#define CMOV_FLUFF  \
-  Expr retval = vc_iteExpr(vc, pred, EqExpr(vc, E_dest, E_src), EqExpr(vc, E_dest, E_dest_pre));\
-if(bitWidth < V_UNITSIZE)\
-{\
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));\
-  retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));\
-}\
-d.constraints.push_back(retval);  
+  switch(cf[0]) {
+    case 'A':
+      n = V_AF;
+      break;
+
+    case 'C':
+      n = V_CF;
+      break;
+
+    case 'O':
+      n = V_OF;
+      break;
+
+    case 'P':
+      n = V_PF;
+      break;
+
+    case 'S':
+      n = V_SF;
+      break;
+
+    case 'Z':
+      n = V_ZF;
+      break;
+
+    default:
+      string message = "bad flag name " + cf;
+      throw VALIDATOR_ERROR(message);
+  }
+
+  if (do_not_negate)
+    return getBoolExpr(d.vc, n, d.pre_suffix, d.Vn);
+  else
+    return vc_notExpr(d.vc, getBoolExpr(d.vc, n, d.pre_suffix, d.Vn));
+}
+
+Expr get_condition_predicate(v_data d, string cc) {
 
 
-#define SET_FLUFF 	Expr retval = vc_iteExpr(vc, pred, EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth, 1)), EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth, 0)));\
-                                  if(dest_is_reg && bitWidth < V_UNITSIZE)\
-{\
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));\
-  retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));\
-}\
-d.constraints.push_back(retval);  
+  //CF = 0 and ZF = 0
+  if (cc == "a" || cc == "nbe") {
+    return vc_andExpr(d.vc, get_flag(d, "C", false), get_flag(d, "Z", false));
+  } 
+  
+  // CF = 0
+  if (cc == "ae" || cc == "nb" || cc == "nc") {
+    return get_flag(d, "C", false);
+  } 
+  
+  // CF = 1
+  if (cc == "b" || cc == "c" || cc == "nae") {
+    return get_flag(d, "C");
+  } 
+  
+  // CF = 1 OR ZF = 1
+  if (cc == "be" || cc == "na") {
+    return vc_orExpr(d.vc, get_flag(d, "C"), get_flag(d, "Z"));
+  }
+
+  // CZ = 1
+  if (cc == "e" || cc == "z") {
+    return get_flag(d, "Z");
+  } 
+
+  // ZF = 0 and SF = OF
+  if (cc == "g" || cc == "nle") {
+    return vc_andExpr(d.vc,
+             get_flag(d, "Z", false),
+             vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF")));
+  }
+
+  // SF = OF
+  if (cc == "ge" || cc == "nl") {
+    return vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF"));
+  }
+
+  // SF != OF
+  if (cc == "l" || cc == "nge") {
+    return vc_notExpr(d.vc, vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF")));
+  }
+
+  // ZF = 1 or SF != OF
+  if (cc == "le" || cc == "ng") {
+    return vc_orExpr(d.vc,
+             get_flag(d, "Z"),
+             vc_notExpr(d.vc, vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF"))));
+  }
+
+  // ZF = 0
+  if (cc == "ne" || cc == "nz") {
+    return get_flag(d, "Z", false);
+  }
+
+  // OF = 0
+  if (cc == "no") {
+    return get_flag(d, "O", false);
+  }
+
+  // PF = 0
+  if (cc == "np" || cc == "po") {
+    return get_flag(d, "P", false);
+  }
+
+  // SF = 0
+  if (cc == "ns") {
+    return get_flag(d, "S", false);
+  }
+
+  // OF = 1
+  if (cc == "o") {
+    return get_flag(d, "O");
+  }
+
+  // PF = 1
+  if (cc == "p" || cc == "pe") {
+    return get_flag(d, "P");
+  }
+
+  // SF = 1
+  if (cc == "s") {
+    return get_flag(d, "S");
+  }
+
+  string message = "Condition flag " + cc + " is not handled.";
+  throw VALIDATOR_ERROR(message);
+
+}
 
 
 

@@ -144,8 +144,7 @@ class ValidatorTest : public ::testing::Test {
       ASSERT_EQ(1, sb.size());
 
       EXPECT_NE(first, second) << "Counterexample didn't check out in the sandbox." << std::endl
-                               << "Almost definitely means a validator bug." << std::endl
-                               << "The counterexample was: " << ceg << std::endl << std::endl;
+                               << "Almost definitely means a validator bug." << std::endl;
 
       if (first != second && print) {
         std::cout << "The counterexample is correct." << std::endl;

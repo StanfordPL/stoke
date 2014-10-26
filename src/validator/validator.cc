@@ -162,7 +162,9 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
         if(flagToString(eflags[i], tmp)) {
           if (tmp == regname) {
             //set the counterexample
+#ifdef DEBUG_VALIDATOR
             cout << "Setting " << tmp << " i.e. #" << i << " to " << value << endl;
+#endif
             counter_example.rf.set(eflags[i].index(), value);
           }
         }
@@ -279,9 +281,9 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
 		{
 			model m=s.get_model();
 			//If validation failed then obtain the counter-example. Gives some useless thing if multiplications are uninterpreted.
-//#ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
 			cout << "Model is " << endl << m; 
-//#endif
+#endif
 			InitCex(vc,m,state_info, counter_example, counterexample_valid);
 		}
 #ifdef DEBUG_VALIDATOR
