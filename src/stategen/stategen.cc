@@ -172,7 +172,13 @@ uint64_t StateGen::get_addr(const CpuState& cs, const Cfg& cfg, size_t line) con
 			addr += (scale * cs.gp[op.get_index()].get_fixed_quad(0));
 		}
 	}
-	addr += (uint64_t)(op.get_disp());
+
+  /* We need to sign-extend the displacement from 32 to 64 bits */
+  uint64_t displacement = (op.get_disp());
+  if (displacement & 0x80000000) {
+    displacement |= 0xffffffff00000000;
+  }
+	addr += displacement;
 
 	return addr;	
 }

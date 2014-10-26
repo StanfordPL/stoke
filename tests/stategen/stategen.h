@@ -144,9 +144,6 @@ TEST(StateGenTest, Issue51) {
   // Build example
   std::stringstream ss;
 
-  ss << "addq $0x1, %rsi" << std::endl;
-  ss << "cmpq %r8, %rdx" << std::endl;
-  ss << "movq %rdx, %r9" << std::endl;
   ss << "movb %cl, -0x1(%rdx)" << std::endl;
   ss << "retq" << std::endl;
 
