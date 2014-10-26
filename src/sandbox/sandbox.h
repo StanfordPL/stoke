@@ -36,6 +36,7 @@ class Sandbox {
   /** Deletes a sandbox. */
   ~Sandbox() {
     clear_inputs();
+		clear_functions();
   }
 
 	/** Sets whether the sandbox should report sigsegv for abi violations. */
@@ -49,20 +50,39 @@ class Sandbox {
     return *this;
   }
 
-  /** Clear input set. */
-  Sandbox& clear_inputs();
-  /** Add a new input. */
-  Sandbox& insert_input(const CpuState& input);
-
   /** Returns the number of inputs installed so far. */
   size_t size() const {
     return io_pairs_.size();
   }
-
+  /** Clear input set. */
+	Sandbox& clear_inputs() {
+		for (auto io : io_pairs_) {
+			delete io;
+		}
+		io_pairs_.clear();
+		return *this;
+	}
+  /** Add a new input. */
+  Sandbox& insert_input(const CpuState& input);
 	/** Returns an input */
 	const CpuState& get_input(size_t index) const {
 		assert(index < size());
 		return io_pairs_[index]->in_;
+	}
+
+	/** Clear auxiliary function set */
+	Sandbox& clear_functions() {
+		aux_fxn_read_only_ = true;
+		for (auto fxn : aux_fxns_) {
+			delete fxn;
+		}
+		aux_fxns_.clear();
+		return *this;
+	}
+	/** Insert an auxiliary function which can be called at runtime */
+	Sandbox& insert_function(const Cfg& cfg) {
+		aux_fxn_read_only_ &= emit_function(cfg);
+		aux_fxns_.push_back(new x64asm::Function(fxn_));	
 	}
 
   /** Clears the set of callbacks to invoke during execution. */
@@ -82,16 +102,16 @@ class Sandbox {
     return *this;
   }
 
-  /** Convenience method. Compile a new code and run for all inputs. */
+  /** Convenience method. Compile a new main function and run for all inputs. */
   void run(const Cfg& cfg) {
     compile(cfg);
     run_all();
   }
-  /** Compile a new code. */
+  /** Compile a new main function. */
   void compile(const Cfg& cfg);
-  /** Run a code for all inputs. */
+  /** Run a main function for all inputs. */
   void run_all();
-  /** Run a code for just one input. */
+  /** Run a main function for just one input. */
   void run_one(size_t index);
 
   /** Iterator for return states. */
@@ -113,11 +133,17 @@ class Sandbox {
 	bool abi_check_;
   /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
-  /** Set prior to execution, is memory read only? */
-  bool read_only_mem_;
+
+	/** Optimization flag, do any of the auxiliary functions write memory? */
+	bool aux_fxn_read_only_;
+  /** Optimization flag, does the main function write memory? */
+  bool main_fxn_read_only_;
 
   /** I/O pairs. These are pointers to simplify vector reallocations. */
   std::vector<IoPair*> io_pairs_;
+
+	/** Functions that the code may invoke at runtime. Pointers to simplify reallocation. */
+	std::vector<x64asm::Function*> aux_fxns_;
 
   /** Callbacks to invoke before a line is executed. */
   std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> before_;
@@ -126,6 +152,8 @@ class Sandbox {
 
   /** Assembler, no sense in always creating these. */
   x64asm::Assembler assm_;
+	/** Linker, no sense in always creating these either. */
+	x64asm::Linker lnkr_;
   /** Scratch space used here and there by sandboxing code. */
   uint64_t scratch_[16];
 
@@ -154,7 +182,7 @@ class Sandbox {
 	x64asm::Function harness_;
 	/** Pointer to the signal trap function */
 	x64asm::Function signal_trap_;
-  /** Function buffer for jit assembling codes. */
+  /** Function buffer for jit assembling codes; the main function */
   x64asm::Function fxn_;
 
 	/** Check for abi violations between input and output states */
@@ -174,7 +202,7 @@ class Sandbox {
   void emit_map_addr_cases(CpuState& cs, const x64asm::Label& fail, const x64asm::Label& done, bool stack);
 
 	/** Assembles the user's function */
-	void emit_function(const Cfg& cfg);
+	bool emit_function(const Cfg& cfg);
   /** Emit a callback (before or after) a line. */
   void emit_callbacks(size_t line, bool before);
   /** Emit an instruction (and possibly sandbox memory). */

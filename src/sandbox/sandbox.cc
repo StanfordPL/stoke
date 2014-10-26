@@ -40,6 +40,7 @@ namespace stoke {
 Sandbox::Sandbox() : fxn_(32 * 1024) {
 	fxn_.reserve(32 * 1024);
   clear_inputs();
+	clear_functions();
   clear_callbacks();
 	set_abi_check(true);
   set_max_jumps(16);
@@ -62,14 +63,6 @@ Sandbox::Sandbox() : fxn_(32 * 1024) {
   }
 }
 
-Sandbox& Sandbox::clear_inputs() {
-  for (auto io : io_pairs_) {
-    delete io;
-  }
-  io_pairs_.clear();
-  return *this;
-}
-
 Sandbox& Sandbox::insert_input(const CpuState& input) {
   io_pairs_.push_back(new IoPair());
   auto io = io_pairs_.back();
@@ -88,9 +81,16 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
 }
 
 void Sandbox::compile(const Cfg& cfg) {
-	// TODO --- Need to reimplement this
-	read_only_mem_ = false;
-	emit_function(cfg);
+	// Compile a new main function
+	main_fxn_read_only_ = emit_function(cfg);
+
+	// Relink everything
+	lnkr_.start();
+	lnkr_.link(fxn_);
+	for (auto f : aux_fxns_) {
+		lnkr_.link(*f);
+	}
+	lnkr_.finish();
 }
 
 void Sandbox::run_all() {
@@ -104,7 +104,7 @@ void Sandbox::run_one(size_t index) {
   auto io = io_pairs_[index];
 
   // Optimization: In read only mem mode, we don't need to reset output memory
-  if (!read_only_mem_) {
+  if (!aux_fxn_read_only_ || !main_fxn_read_only_) {
     io->out_.stack.copy_defined(io->in_.stack);
     io->out_.heap.copy_defined(io->in_.heap);
   }
@@ -489,8 +489,24 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
 // Arguments:
 //   <none>
 
-void Sandbox::emit_function(const Cfg& cfg) {
+bool Sandbox::emit_function(const Cfg& cfg) {
+	// Index reachable instructions
+	vector<const Instruction*> instrs;
+	for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+		const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
+		for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
+			instrs.push_back(&cfg.get_code()[i]);
+		}
+	}
+
+	// If any instruction reads mem, we'll set this to false
+	auto read_only_mem = true;
+
+	// The very first line of a function will always be a label
+	// This has to be assembled before anything
+	assert(instrs[0]->is_label_defn());
 	assm_.start(fxn_);	
+	assm_.assemble(*instrs[0]);
 
 	// Load the user's %rsp
 	emit_load_user_rsp();
@@ -498,9 +514,18 @@ void Sandbox::emit_function(const Cfg& cfg) {
 	// Create a new unique label for representing the end of this function
 	Label exit;
 
-	// For now lets leave this... but in a little bit we'll go back to reachable only
-	// Assemble every instruction; labels corresponding to functions might not appear reachable
-	for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
+	// Assemble every reachable instruction
+	for (size_t i = 1, ie = instrs.size(); i < ie; ++i) {
+		const auto& instr = *instrs[i];
+
+		// This is conservative, we assume anything implicit is a write
+		if (instr.is_implicit_memory_dereference()) {
+			read_only_mem = false;
+		} else if (instr.is_explicit_memory_dereference()) {
+			const auto mi = instr.mem_index();
+			read_only_mem &= (!instr.maybe_write(mi) && !instr.maybe_undef(mi));
+		}
+
 		if (!before_.empty()) {
 			emit_callbacks(i, true);
 		}
@@ -518,8 +543,9 @@ void Sandbox::emit_function(const Cfg& cfg) {
 	// Restore the STOKE %rsp and return
 	emit_load_stoke_rsp();
 	assm_.ret();
-
 	assm_.finish();
+
+	return read_only_mem;
 }
 
 void Sandbox::emit_callbacks(size_t line, bool before) {
