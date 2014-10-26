@@ -292,7 +292,7 @@ Cost CostFunction::assembled_size_cost(const Cfg& cfg) const {
     const auto begin = cfg.get_index(Cfg::loc_type(*b,0));
     for(size_t i = 0, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
       const auto& instr = code[i];
-      if(!instr.is_nop())
+      if(!instr.is_nop() && !instr.is_ret())
         assm.assemble(instr);
     }
   }
