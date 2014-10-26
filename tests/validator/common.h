@@ -2,6 +2,8 @@
 #ifndef TESTS_VALIDATOR_COMMON_H
 #define TESTS_VALIDATOR_COMMON_H
 
+#include "src/sandbox/sandbox.h"
+
 class ValidatorTest : public ::testing::Test {
 
   public:
@@ -40,13 +42,69 @@ class ValidatorTest : public ::testing::Test {
     std::stringstream target_;
     std::stringstream rewrite_;
 
+    /* Runs the target and rewrite against the sandbox.
+       If they are the same for all inputs, expect them to be equivalent.
+       Otherwise, expect validator to come up with a correct counterexample. */
+    void assert_sandbox(stoke::Sandbox& sb) {
+      get_target_rewrite();
+
+      // Run the sandbox on the inputs
+      sb.run(*cfg_t_);
+      std::vector<stoke::CpuState> target_results;
+      for (auto it = sb.result_begin(); it != sb.result_end(); ++it) {
+        target_results.push_back(*it);
+      }
+
+      sb.run(*cfg_r_);
+      std::vector<stoke::CpuState> rewrite_results;
+      for (auto it = sb.result_begin(); it != sb.result_end(); ++it) {
+        rewrite_results.push_back(*it);
+      }
+
+      // Figure out if the target/rewrite should be the same
+      ASSERT_EQ(target_results.size(), rewrite_results.size());
+
+      bool sandbox_equiv = true;
+      for(size_t i = 0; i < target_results.size(); ++i) {
+        if(target_results[i] != rewrite_results[i]) {
+          sandbox_equiv = false;
+        }
+      }
+
+      // Run the validator
+      stoke::CpuState ceg;
+      bool validator_equiv = validate(ceg);
+
+      EXPECT_EQ(sandbox_equiv, validator_equiv) 
+                      << "Target: " << std::endl
+                      << cfg_t_->get_code() << std::endl << std::endl 
+                      << "Rewrite: " << std::endl
+                      << cfg_r_->get_code() << std::endl << std::endl 
+                      << std::endl;
+
+
+
+      // Check the counterexample.  Report the counterexample
+      // only if it's not expected, i.e. the sandbox says the
+      // codes are equivalent.
+      if(!validator_equiv)
+        check_ceg(ceg, sandbox_equiv);
+
+    }
+
     std::ostream& assert_equiv() {
+      get_target_rewrite();
 
       // Check if valid
       stoke::CpuState ceg;
       bool b = validate(ceg);
 
-      EXPECT_TRUE(b) << "Validation failed.  Counterexample:"
+      EXPECT_TRUE(b) << "Validation failed." << std::endl
+                     << "Target: " << std::endl
+                     << cfg_t_->get_code() << std::endl << std::endl 
+                     << "Rewrite: " << std::endl
+                     << cfg_r_->get_code() << std::endl << std::endl 
+                     << " Counterexample:"
                      << std::endl << ceg << std::endl;
 
       // Check counterexample, if exists
@@ -57,12 +115,18 @@ class ValidatorTest : public ::testing::Test {
     }
 
     std::ostream& assert_ceg(stoke::CpuState& ceg) {
+      get_target_rewrite();
 
       // Check if valid
       bool b = validate(ceg);
 
-      // Do the assert, save output stream
-      EXPECT_FALSE(b) << "Codes were found equivalent." << std::endl;
+      // Do the assert
+      EXPECT_FALSE(b) << "Codes were found equivalent." << std::endl
+                      << "Target: " << std::endl
+                      << cfg_t_->get_code() << std::endl << std::endl 
+                      << "Rewrite: " << std::endl
+                      << cfg_r_->get_code() << std::endl << std::endl 
+                      << std::endl;
 
       // Check counterexample, if exists
       if(!b)
@@ -77,6 +141,8 @@ class ValidatorTest : public ::testing::Test {
     }
 
     std::string assert_fail() {
+      get_target_rewrite();
+
       stoke::CpuState ceg;
       std::string message;
 
@@ -96,15 +162,31 @@ class ValidatorTest : public ::testing::Test {
       live_outs_ = rs;
     }
 
+    /* Initialize member variables. */
+    virtual void SetUp() {
+
+      v_.set_mem_out(false)
+        .set_timeout(1000);
+
+      live_outs_ = get_default_regset();
+
+      target_.clear();
+      rewrite_.clear();
+    }
+
   private:
+
+    /* Called at the start of an "assert" to get the
+       target/rewrite the user wants to test. */
+    void get_target_rewrite() {
+      cfg_t_ = get_cfg(target_);
+      cfg_r_ = get_cfg(rewrite_);
+    }
 
     /* Run the validator and produce a counterexample */
     bool validate(stoke::CpuState& tc) {
 
-      cfg_t_ = get_cfg(target_);
-      cfg_r_ = get_cfg(rewrite_);
-
-      return v_.validate(*cfg_t_, *cfg_r_, tc);
+     return v_.validate(*cfg_t_, *cfg_r_, tc);
     } 
 
     /* Gets a CFG from a string stream */
@@ -153,18 +235,6 @@ class ValidatorTest : public ::testing::Test {
         std::cout << "Result from running on rewrite: " << std::endl;
         std::cout << second << std::endl << std::endl;
       }
-    }
-
-    /* Initialize member variables. */
-    void SetUp() {
-
-      v_.set_mem_out(false)
-        .set_timeout(1000);
-
-      live_outs_ = get_default_regset();
-
-      target_.clear();
-      rewrite_.clear();
     }
 
     /* The validator we're using */
