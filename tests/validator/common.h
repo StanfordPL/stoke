@@ -201,7 +201,7 @@ class ValidatorTest : public ::testing::Test {
     }
 
     template <typename T>
-    void expect_cpustate_expect(bool& same, T actual, T expect, std::string local, std::string global) {
+    void expect_cpustate_expect(bool& same, T expect, T actual, std::string local, std::string global) {
       if(actual != expect) {
         if (same) {
           std::cout << global << std::endl;
@@ -210,15 +210,15 @@ class ValidatorTest : public ::testing::Test {
         }
 
         std::cout << "  >  " << local << std::endl;
-        EXPECT_EQ(actual, expect) << std::endl;
+        EXPECT_EQ(expect, actual) << std::endl;
       }
     }
 
     void expect_cpustate_equal_on_liveout(
         stoke::CpuState actual,stoke::CpuState expected,std::string message) {
 
-#define EXPECT_CPU_EQ_INT(A, E, M)  expect_cpustate_expect<uint64_t>(same, A, E, M, message)
-#define EXPECT_CPU_EQ_CODE(A, E, M) expect_cpustate_expect<stoke::ErrorCode>(same, A, E, M, message)
+#define EXPECT_CPU_EQ_INT(A, B, M)  expect_cpustate_expect<uint64_t>(same, A, B, M, message)
+#define EXPECT_CPU_EQ_CODE(A, B, M) expect_cpustate_expect<stoke::ErrorCode>(same, A, B, M, message)
 
       bool same = true;
 

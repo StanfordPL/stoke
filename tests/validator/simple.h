@@ -156,8 +156,8 @@ TEST_F(ValidatorBaseTest, High8BitUnsupported) {
 TEST_F(ValidatorBaseTest, SimpleCounterexample) {
 
   target_ << "movq $0x0, %rax" << std::endl;
-  target_ << "cmpq $0xc0decafe, %rcx" << std::endl;
-  target_ << "sete %al" << std::endl;
+  target_ << "cmpb $0xc0, %cl" << std::endl;
+  target_ << "setz %al" << std::endl;
   target_ << "retq" << std::endl;
 
   rewrite_ << "movq $0x0, %rax" << std::endl;
@@ -166,7 +166,7 @@ TEST_F(ValidatorBaseTest, SimpleCounterexample) {
   stoke::CpuState ceg;
   assert_ceg(ceg);
 
-  EXPECT_EQ(0xc0decafe, 0xffffffff & ceg.gp[1].get_fixed_quad(0));
+  EXPECT_EQ(0xc0, 0xff & ceg.gp[1].get_fixed_quad(0));
 
 }
 
