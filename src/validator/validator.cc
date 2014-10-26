@@ -27,6 +27,35 @@ using namespace std;
 using namespace stoke;
 
 
+/* Takes an eflag and returns the name of the
+   coresponding variable, if we support it. */
+bool flagToString(Eflags eflag, string& elem) {
+
+  /* Read the flag into a string */
+  stringstream tmp;
+  RegSetWriter rsw;
+  rsw(tmp, RegSet::empty() + eflag);
+  string the_flag = tmp.str();
+
+  /* Extract the letter corresponding to the flag. */
+  char letter = the_flag.c_str()[3];
+  if ('a' <= letter && letter <= 'z') {
+    letter += ('A' - 'a');
+  }
+  
+  /* Check if we handle this flag */
+  if (letter != 'A' && letter != 'C' && letter != 'O' &&
+      letter != 'P' && letter != 'S' && letter != 'Z')
+    return false;
+
+  /* Build the validator's name for this flag. */
+  elem = "_FLAG";
+  elem[0] = letter;
+  return true;
+
+}
+
+
 Meminfo MemoryData::deref(uint line_no, bool is_target) const
 {
 #ifdef DEBUG_VALIDATOR
@@ -108,9 +137,37 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
 
 	for(iter = sizes.begin(); iter != sizes.end(); iter++)
 	{
-		if(iter->second == V_FLAGSIZE )
-			continue;
 		regname = bij.toVal(iter->first);
+    if (iter->second == V_FLAGSIZE) {
+
+      /* This is the boolean variable corresponding to the flag */
+			Expr flag  = vc_varExpr(vc, regname.c_str(),  vc_boolType(vc));
+
+      /* Lookup from the model */
+      Expr e = wcex.eval(to_expr(*vc, flag));
+      int n = Z3_get_bool_value(*vc, e);
+      bool value;
+
+      if (n == 1) {
+        value = true;
+      } else if (n == -1) {
+        value = false;
+      } else {
+        throw VALIDATOR_ERROR("Z3 returned invalid boolean value for ceg");
+      }
+
+      /* Figure out which flag this is.  A little slow, but it works. */
+      for (size_t i = 0; i < eflags.size(); i++) {
+        string tmp;
+        if(flagToString(eflags[i], tmp)) {
+          if (tmp == regname) {
+            //set the counterexample
+            cout << "Setting " << tmp << " i.e. #" << i << " to " << value << endl;
+            counter_example.rf.set(eflags[i].index(), value);
+          }
+        }
+      }
+    }
     if (iter->second == V_REGSIZE) {
       long long int val;
 		  Expr REG1INIT = regExpr(vc, regname,V_UNITSIZE);
@@ -222,9 +279,9 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
 		{
 			model m=s.get_model();
 			//If validation failed then obtain the counter-example. Gives some useless thing if multiplications are uninterpreted.
-#ifdef DEBUG_VALIDATOR
+//#ifdef DEBUG_VALIDATOR
 			cout << "Model is " << endl << m; 
-#endif
+//#endif
 			InitCex(vc,m,state_info, counter_example, counterexample_valid);
 		}
 #ifdef DEBUG_VALIDATOR
@@ -357,7 +414,6 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 
 	for(i = sizes.begin(); i != sizes.end(); i++)
 	{
-#define boolType (vc_boolType(vc))
 		unsigned int bitwidth = i->second;
 		if(bitwidth == V_REGSIZE )
 		{
@@ -373,8 +429,8 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 		else if(bitwidth == V_FLAGSIZE)
 		{
 			string elem = bij.toVal(i->first);			
-			Expr E_state_elem_common = vc_varExpr(vc, elem.c_str(),  boolType);
-			Expr E_state_elem_initial = vc_varExpr(vc, (elem + "_" + code_num + "_0").c_str(), boolType);
+			Expr E_state_elem_common = vc_varExpr(vc, elem.c_str(), vc_boolType(vc));
+			Expr E_state_elem_initial = vc_varExpr(vc, (elem + "_" + code_num + "_0").c_str(), vc_boolType(vc));
 			Expr E_eq_initial = vc_iffExpr(vc, E_state_elem_common, E_state_elem_initial);
 #ifdef DEBUG_VALIDATOR
 			cout << "Flag constraint is: " << endl << E_eq_initial << endl;
@@ -395,7 +451,6 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 		}
 		else 
       throw VALIDATOR_ERROR("Unexpected bitwidth for register");
-#undef boolType
 	}
 }
 
@@ -601,27 +656,12 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
     auto op = x64asm::eflags[i];
     if(liveout.contains(op))
     {
-      /* Read the flag into a string */
-      stringstream tmp;
-      RegSetWriter rsw;
-      rsw(tmp, RegSet::empty() + eflags[i]);
-      string the_flag = tmp.str();
-
-      /* Extract the letter corresponding to the flag. */
-      char letter = the_flag.c_str()[3];
-      if ('a' <= letter && letter <= 'z') {
-        letter += ('A' - 'a');
-      }
+      /* Get the name of this flag */
+      string elem;
       
-      /* Check if we handle this flag */
-      if (letter != 'A' && letter != 'C' && letter != 'O' &&
-          letter != 'P' && letter != 'S' && letter != 'Z')
+      if(!flagToString(eflags[i], elem))
         VALIDATOR_ERROR("The only eflags we support are ACOPSZ");
 
-      /* Build the validator's name for this flag. */
-      string elem = "_FLAG";
-      elem[0] = letter;
-   
 
       /* Construct the constraint */
       Expr E_state_elem_1 = vc_varExpr(vc, (elem + "_1_" + V_FSTATE).c_str(), vc_boolType(vc));
