@@ -62,14 +62,31 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   VC&vc = d.vc;
 
-  Expr E_result = vc_varExpr(vc, ("ADDTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, bitWidth+2) );
+  /* add the first four bits together of each source to set AF flag if needed */
+  string aux_name = string("ADDTEMP_AUX") + d.pre_suffix + to_string(d.instr_no);
+
+  Expr auxiliary = vc_varExpr(vc, aux_name.c_str(), vc_bvType(vc, 5));
+  Expr set_aux_to_sum = EqExpr(vc, auxiliary, 
+      vc_bvPlusExpr(vc, 5, 
+        vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 1, 0), vc_bvExtract(vc, E_src1, 3, 0)),
+        vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 1, 0), vc_bvExtract(vc, E_src2, 3, 0))
+  ));
+  d.constraints.push_back(set_aux_to_sum);
+                            
+
+  /* Do the addition */
+  Expr E_result = vc_varExpr(vc, 
+                      ("ADDTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), 
+                      vc_bvType(vc, bitWidth+2) );
+
   Expr E_arg1 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 2, 0), E_src1);
   Expr E_arg2 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 2, 0), E_src2);  
 
   Expr retval = vc_trueExpr(vc);
   retval = vc_andExpr(vc, retval, EqExpr(vc, E_result, vc_bvPlusExpr(vc, bitWidth+2, E_arg1, E_arg2)));
-  retval = vc_andExpr(vc, retval, vc_eqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth-1, 0)));  
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth-1, 0)));  
 
+  /* Set unchanged bits */
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
@@ -78,10 +95,27 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
 #endif
+
   d.constraints.push_back(retval);
-  setFlag(vc, d.Vnprime, V_OF, getOFExpr(vc, vc_bvBoolExtract_One(vc, E_arg1, bitWidth - 1), vc_bvBoolExtract_One(vc, E_arg2, bitWidth - 1),
-        vc_bvBoolExtract_One(vc, E_result, bitWidth - 1)), d.constraints, d.post_suffix);
-  setFlag(vc, d.Vnprime, V_CF, vc_orExpr(vc, vc_bvBoolExtract_One(vc, E_result, bitWidth), vc_bvBoolExtract_One(vc, E_result, bitWidth+1)), d.constraints, d.post_suffix);
+
+  /* Set the AF flag */
+  setFlag(vc, d.Vnprime, V_AF, vc_bvBoolExtract_One(vc, auxiliary, 4),
+    d.constraints, d.post_suffix);
+  
+  /* Set the overflow flag */
+  setFlag(vc, d.Vnprime, V_OF, 
+    getOFExpr(vc, vc_bvBoolExtract_One(vc, E_arg1, bitWidth - 1), 
+              vc_bvBoolExtract_One(vc, E_arg2, bitWidth - 1),
+              vc_bvBoolExtract_One(vc, E_result, bitWidth - 1)), 
+    d.constraints, d.post_suffix);
+
+  /* Set the carry flag */
+  setFlag(vc, d.Vnprime, V_CF, 
+    vc_orExpr(vc, vc_bvBoolExtract_One(vc, E_result, bitWidth), 
+                  vc_bvBoolExtract_One(vc, E_result, bitWidth+1)), 
+    d.constraints, d.post_suffix);
+
+  /* Set the SFZ flags */
   setSFPFZF(E_dest, d, bitWidth);
 }
 
@@ -423,8 +457,9 @@ void cmovccHandler(v_data d, unsigned int bitWidth, string cc, Expr E_dest, Expr
   // If the predicate is true, then we set the destination equal to the new value
   // If it's false, we set the destination equal to the previous value.
  	Expr setif = vc_iteExpr(vc, pred, 
-      EqExpr(vc, E_dest, E_dest_pre), 
-      EqExpr(vc, E_dest, E_src));
+      EqExpr(vc, E_dest, E_src), 
+      EqExpr(vc, E_dest, E_dest_pre));
+
   d.constraints.push_back(setif);
 
   // Preserve the other bits in registers
@@ -1102,13 +1137,12 @@ void imul3Handler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Exp
 //imul when mul is an uninterpreted function
 void imul64rrHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
-  VALIDATOR_ERROR("imul64rr suspisciously commented out -- aborting");
+  throw VALIDATOR_ERROR("imul64rr suspisciously commented out -- aborting");
   /*	VC&vc = d.vc;
 
       addmul64rr(vc, E_src1, E_src2, E_dest, mul, d);*/
 }
 
-//OF is SET iff original value is -1
 void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
   VC&vc = d.vc;
   //vc_printExpr(vc, E_dest); vc_printExpr(vc, E_src); cout << endl << bitWidth << endl ;
@@ -1125,7 +1159,20 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
   d.constraints.push_back(retval); 
 
-  setFlag(vc,d.Vnprime,V_OF, EqExpr(vc,E_dest,vc_bvConstExprFromLL(vc, bitWidth,0)), d.constraints, d.post_suffix);
+  // The AF flag will be set exactly if the lowest four bits of src are all one.
+  //  (which is equivalent to lowest four bits of destination being all zero)
+  setFlag(vc, d.Vnprime, V_AF, 
+      EqExpr(vc,
+        vc_bvConstExprFromInt(vc, 4, 0),
+        vc_bvExtract(vc, E_dest, 3, 0)),
+    d.constraints, d.post_suffix);
+ 
+
+  // The OF flag will be set exactly if the destination is 0 (i.e. the src is -1).
+  setFlag(vc, d.Vnprime, V_OF, 
+      EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth,0)), 
+    d.constraints, d.post_suffix);
+
   setSFPFZF(E_dest, d, bitWidth);
 }
 

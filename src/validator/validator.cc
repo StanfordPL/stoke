@@ -42,7 +42,17 @@ bool flagToString(Eflags eflag, string& elem) {
   if ('a' <= letter && letter <= 'z') {
     letter += ('A' - 'a');
   }
-  
+
+  if(the_flag.c_str()[4] != 'f') {
+    return false;
+  }
+
+
+  if(the_flag.c_str()[5] != ' ') {
+    return false;
+  }
+
+
   /* Check if we handle this flag */
   if (letter != 'A' && letter != 'C' && letter != 'O' &&
       letter != 'P' && letter != 'S' && letter != 'Z')
@@ -93,58 +103,32 @@ Expr regExpr(VC& vc, string s, unsigned int size)
 	return vc_varExpr(vc, s.c_str(), vc_bvType(vc, size));	
 }
 
-//Initialize the counter-example trace
-void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_example, bool& counterexample_valid)
-{
-  if(wcex.num_funcs() > 0)
-    counterexample_valid = false;
-  else
-    counterexample_valid = true;
+/* This takes a model, and produces a CpuState (that is, a stoke-readable
+   recording of all the variables).  This function can be used to extract a
+   counterexample (with name_suffix == ""), or to extract the expected output
+   of a code after executing on the counterexample (with name_suffix ==
+   "_1_Final" or "_2_Final") */
+stoke::CpuState model_to_cpustate(VC& vc, PAIR_INFO state_info, model& model, string name_suffix) {
 
-#ifdef DEBUG_VALIDATOR
-  cout << "Printing Counterexample " << endl;
-#endif
-	string regname;
 	map<SS_Id, unsigned int>::iterator iter;
 	Bijection<string> bij = state_info.first;
 	map<SS_Id, unsigned int> sizes = state_info.second;
 
-	//Print initial values of registers, final values of registers by code 1, final values of registers by code 2
-	for(iter = sizes.begin(); iter != sizes.end(); iter++)
-	{
-		if(iter->second == V_FLAGSIZE )
-			continue;
-		regname = bij.toVal(iter->first);
-#ifdef DEBUG_VALIDATOR
-		cout << regname << ":" << endl;
-#endif
-		Expr REG1INIT = vc_bvExtract(vc,regExpr(vc, (regname+"_1_0"),iter->second*V_UNITSIZE),31,0);
-		Expr REG2INIT = vc_bvExtract(vc,regExpr(vc, (regname+"_2_0"),iter->second*V_UNITSIZE),31,0);
-		Expr REG1FINAL = vc_bvExtract(vc,regExpr(vc, (regname+"_1_Final"),iter->second*V_UNITSIZE),31,0);
-		Expr REG2FINAL = vc_bvExtract(vc,regExpr(vc, (regname+"_2_Final"),iter->second*V_UNITSIZE),31,0);
-		Expr vali1 = wcex.eval(REG1INIT,true);
-		Expr vali2 = wcex.eval(REG2INIT,true);
-		Expr val1 = wcex.eval( REG1FINAL,true);
-		Expr val2 = wcex.eval( REG2FINAL,true);
-#ifdef DEBUG_VALIDATOR
-		vc_printExpr(vc, vali1);
-    cout << "\t"; vc_printExpr(vc, vali2); 
-    cout << "\n"; vc_printExpr(vc, val1);
-    cout << "\t"; vc_printExpr(vc, val2); 
-    cout << endl << endl;
-#endif
-	}
+  CpuState cs;
 
-	for(iter = sizes.begin(); iter != sizes.end(); iter++)
+	for(auto iter = sizes.begin(); iter != sizes.end(); iter++)
 	{
-		regname = bij.toVal(iter->first);
+		string regname = bij.toVal(iter->first) + name_suffix;
+    //cout << "Looking up " << regname << " of size " << iter->second << endl;
+
+    // Handle EFLAGS
     if (iter->second == V_FLAGSIZE) {
 
       /* This is the boolean variable corresponding to the flag */
 			Expr flag  = vc_varExpr(vc, regname.c_str(),  vc_boolType(vc));
 
       /* Lookup from the model */
-      Expr e = wcex.eval(to_expr(*vc, flag));
+      Expr e = model.eval(to_expr(*vc, flag), true);
       int n = Z3_get_bool_value(*vc, e);
       bool value;
 
@@ -153,7 +137,8 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
       } else if (n == -1) {
         value = false;
       } else {
-        throw VALIDATOR_ERROR("Z3 returned invalid boolean value for ceg");
+        string message = "Z3 returned invalid boolean value " + to_string(n) + " for ceg";
+        throw VALIDATOR_ERROR(message);
       }
 
       /* Figure out which flag this is.  A little slow, but it works. */
@@ -163,24 +148,29 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
           if (tmp == regname) {
             //set the counterexample
 #ifdef DEBUG_VALIDATOR
-            cout << "Setting " << tmp << " i.e. #" << i << " to " << value << endl;
+            cout << "Setting " << tmp << " i.e. #" << eflags[i].index() << " to " << value << endl;
 #endif
-            counter_example.rf.set(eflags[i].index(), value);
+            cs.rf.set(eflags[i].index(), value);
           }
         }
       }
     }
+
+    // GP Registers
     if (iter->second == V_REGSIZE) {
       long long int val;
 		  Expr REG1INIT = regExpr(vc, regname,V_UNITSIZE);
-      Z3_get_numeral_int64(*vc,wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG1INIT, true))), &val); 	
+      Z3_get_numeral_int64(*vc,model.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG1INIT, true)), true), &val); 	
 #ifdef DEBUG_VALIDATOR
 		  cout << regname << " is expr " << REG1INIT;
       cout << " with value " << val << endl; 
 #endif
-      counter_example.gp[iter->first].get_fixed_quad(0) = val;
+      cs.gp[iter->first].get_fixed_quad(0) = val;
 
-    } else if (iter->second == V_XMMSIZE) {
+    } 
+    
+    // SSE Registers
+    if (iter->second == V_XMMSIZE) {
 
       // Get the expression for this register
       Expr xmm_reg = regExpr(vc, regname, 128);
@@ -192,19 +182,23 @@ void InitCex(VC& vc, model& wcex, PAIR_INFO state_info,stoke::CpuState& counter_
       // Convert to quadwords
       long long int low_n;
       long long int high_n;
-      Z3_get_numeral_int64(*vc, wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, low, true))), &low_n);
-      Z3_get_numeral_int64(*vc, wcex.eval(to_expr(*vc, Z3_mk_bv2int(*vc, high, true))), &high_n);
+      Z3_get_numeral_int64(*vc, model.eval(to_expr(*vc, Z3_mk_bv2int(*vc, low, true)), true), &low_n);
+      Z3_get_numeral_int64(*vc, model.eval(to_expr(*vc, Z3_mk_bv2int(*vc, high, true)), true), &high_n);
       
       // Place into counterexample
-      counter_example.sse[iter->first - XMM_BEG].get_fixed_quad(1) = high_n;
-      counter_example.sse[iter->first - XMM_BEG].get_fixed_quad(0) = low_n;
+      cs.sse[iter->first - XMM_BEG].get_fixed_quad(1) = high_n;
+      cs.sse[iter->first - XMM_BEG].get_fixed_quad(0) = low_n;
 
     }
 	}
 
+  return cs;
 }
 
-bool z3Solve(VC& vc, vector<Expr>& constraints, vector<Expr>& query,PAIR_INFO state_info,stoke::CpuState& counter_example, bool& counterexample_valid)
+
+/* This function returns a model if it has a counterexaple, or zero
+   if all is correct. */
+z3::model* z3Solve(VC& vc, vector<Expr>& constraints, vector<Expr>& query,PAIR_INFO state_info)
 {
   solver s(*vc);
   Expr full_expr = vc_trueExpr(vc);
@@ -212,9 +206,7 @@ bool z3Solve(VC& vc, vector<Expr>& constraints, vector<Expr>& query,PAIR_INFO st
 	{
 #ifdef DEBUG_VALIDATOR
 		cout << "Asserting constraint:\n";
-#endif
 		vc_printExpr(vc, constraints[i]);
-#ifdef DEBUG_VALIDATOR
 		cout << endl;
 #endif
 		s.add(constraints[i]);
@@ -257,10 +249,9 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
 		}
 #ifdef DEBUG_VALIDATOR
 		cout << "Printing of SMT2 compliant benchmark complete" << endl;
+    cout << "query is "; vc_printExpr(vc, bigQueryExpr); cout << endl ;
 #endif
-#ifdef DEBUG_VALIDATOR
-        cout << "query is "; vc_printExpr(vc, bigQueryExpr); cout << endl ;
-#endif
+
 		s.add(!bigQueryExpr);
 		clock_t start = clock();
 		auto z3_says = s.check();
@@ -268,25 +259,16 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
     if ( z3_says == unknown ) {
       throw VALIDATOR_ERROR("z3 gave up.");
     }
+
 		clock_t end = clock();
-		clock_t elapsed =  end -start;
+		clock_t elapsed = end -start;
 #ifdef DEBUG_VALIDATOR
-		cout << "time was" << elapsed <<" i.e. " << (elapsed)/(1.0*CLOCKS_PER_SEC) << " seconds\n";
+		cout << "time was " << elapsed << " i.e. "  
+         << (elapsed)/(1.0*CLOCKS_PER_SEC) << " seconds\n";
 #endif
 
 #ifdef DEBUG_VALIDATOR
-		cout << "Query executed! with result" << result << "\n";
-#endif
-		if( result == 0 )
-		{
-			model m=s.get_model();
-			//If validation failed then obtain the counter-example. Gives some useless thing if multiplications are uninterpreted.
-#ifdef DEBUG_VALIDATOR
-			cout << "Model is " << endl << m; 
-#endif
-			InitCex(vc,m,state_info, counter_example, counterexample_valid);
-		}
-#ifdef DEBUG_VALIDATOR
+		cout << "Query executed! Result " << result << "\n";
 		if(result == 1) { 
 		  cerr << "Success" << endl ;
 		}
@@ -294,7 +276,10 @@ cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
 	}
 
 
-	return result==1;  
+  if (result == 0)
+    return new z3::model(s.get_model());
+  else
+    return 0;
 }
 
 string idToStr(SS_Id n, PAIR_INFO I)
@@ -315,7 +300,7 @@ string idToStr(SS_Id n, PAIR_INFO I)
 		case V_SF: return "SFLAG";
 		case V_ZF: return "ZFLAG";
 		default:  
-      throw VALIDATOR_ERROR("Unexpected flag, possibly AF");
+      throw VALIDATOR_ERROR("Unexpected flag.");
 		}
 
 	}
@@ -355,7 +340,6 @@ set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, MemoryData& mem, string
 	
 	
 	x64asm::RegSet modsetreg = instr.maybe_write_set();
-       // if(modsetreg.is_set(dx)) cout << "found dx " << endl;
 	
 	for(size_t i=0;i<x64asm::rls.size();i++)
 	  if(modsetreg.contains(((x64asm::Rl)x64asm::rls[i])))
@@ -379,20 +363,26 @@ set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, MemoryData& mem, string
 	  retval.insert(V_ZF);
 	if(modsetreg.contains(x64asm::eflags_pf))
 	  retval.insert(V_PF);
+	if(modsetreg.contains(x64asm::eflags_af))
+	  retval.insert(V_AF);
+
 
 	if(include_undef)
 	{
 		x64asm::RegSet flagsetreg = instr.maybe_undef_set();
 		if(flagsetreg.contains(x64asm::eflags_cf))
 		  retval.insert(V_CF);
-	if(flagsetreg.contains(x64asm::eflags_of))
-	  retval.insert(V_OF);
-	if(flagsetreg.contains(x64asm::eflags_sf))
-	  retval.insert(V_SF);
-	if(flagsetreg.contains(x64asm::eflags_zf))
-	  retval.insert(V_ZF);
-	if(flagsetreg.contains(x64asm::eflags_pf))
-	  retval.insert(V_PF);
+    if(flagsetreg.contains(x64asm::eflags_of))
+      retval.insert(V_OF);
+    if(flagsetreg.contains(x64asm::eflags_sf))
+      retval.insert(V_SF);
+    if(flagsetreg.contains(x64asm::eflags_zf))
+      retval.insert(V_ZF);
+    if(flagsetreg.contains(x64asm::eflags_pf))
+      retval.insert(V_PF);
+    if(flagsetreg.contains(x64asm::eflags_af))
+      retval.insert(V_AF);
+
 
 	  
 	}
@@ -552,7 +542,7 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
   /* Check to make sure all liveout are supported. */
   /* Right now we support gps, xmms, ACOPSZ eflags */
   RegSet supported = RegSet::empty() +
-                     eflags_af + eflags_cf + eflags_of +
+                     eflags_cf + eflags_of +
                      eflags_pf + eflags_sf + eflags_zf;
 
   // We don't want to add rhs, so we can't just use all_gps()
@@ -579,7 +569,7 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
     rsw(tmp, liveout - supported);
 
     string message = 
-      string("Validator only supporgs gps (excluding %ah-%dh), xmms and eflags ACOPSZ in live out.") +
+      string("Validator only supporgs gps (excluding %ah-%dh), xmms and eflags COPSZ in live out.") +
       string("  Not supported: ") + tmp.str();
                    
     throw VALIDATOR_ERROR(message);
@@ -756,6 +746,18 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
   vc_->set("timeout", (int)timeout_);
 
   // Run the solver
-	return z3Solve(vc_, constraints, query, state_info_, counter_example, counterexample_valid_);
+  z3::model* model = z3Solve(vc_, constraints, query, state_info_);
+
+  // Do we have a counterexample?
+  if (!model || model->num_funcs() != 0) {
+    counterexample_valid_ = false;
+  } else {
+    counterexample_valid_ = true;
+    counter_example =      model_to_cpustate(vc_, state_info_, *model, "");
+    target_final_state_  = model_to_cpustate(vc_, state_info_, *model, "_1_Final");
+    rewrite_final_state_ = model_to_cpustate(vc_, state_info_, *model, "_2_Final");
+  }
+
+  return !model;
 }
 
