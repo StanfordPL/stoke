@@ -63,8 +63,6 @@ TEST_P(CodeFixtureTest, LivenessAnalysis) {
       x64asm::RegSet::empty(), 
       given_liveout);
 
-  // Run the liveness analysis
-  cfg.recompute();
   auto actual_livein = cfg.live_ins(cfg.get_loc(0));
 
   ASSERT_EQ(expected_livein, actual_livein);
@@ -72,24 +70,8 @@ TEST_P(CodeFixtureTest, LivenessAnalysis) {
 
 }
 
-TEST_P(CodeFixtureTest, DISABLED_CFGNumBlocks) {
 
-  CodeFixture fixture = GetParam();
-  auto json = fixture.get_test_data("cfg");
-
-  if (!json.isMember("num_blocks"))
-    return;
-
-  stoke::Cfg cfg(fixture.get_code(), 
-                 x64asm::RegSet::empty(),
-                 x64asm::RegSet::empty());
-
-  cfg.recompute();
-  
-  ASSERT_EQ(json["num_blocks"].asInt(), cfg.num_blocks());
-}
-
-TEST_P(CodeFixtureTest, DISABLED_CFGGetExit) {
+TEST_P(CodeFixtureTest, CFGGetExit) {
 
   CodeFixture fixture = GetParam();
   auto json = fixture.get_test_data("cfg");
@@ -101,8 +83,6 @@ TEST_P(CodeFixtureTest, DISABLED_CFGGetExit) {
                  x64asm::RegSet::empty(),
                  x64asm::RegSet::empty());
 
-  cfg.recompute();
-  
   ASSERT_EQ(json["get_exit"].asInt(), cfg.get_exit());
 }
 
@@ -119,8 +99,6 @@ TEST_P(CodeFixtureTest, CFGNumInstr) {
                  x64asm::RegSet::empty(),
                  x64asm::RegSet::empty());
 
-  cfg.recompute();
- 
 
   const Json::Value& num_instrs_array = json["num_instrs"];
   ASSERT_EQ(num_instrs_array.size(), cfg.num_blocks());
@@ -148,8 +126,6 @@ TEST_P(CodeFixtureTest, CFGNestingDepth) {
                  x64asm::RegSet::empty(),
                  x64asm::RegSet::empty());
 
-  cfg.recompute();
- 
 
   const Json::Value& nesting_depth_array = json["nesting_depth"];
   ASSERT_EQ(nesting_depth_array.size(), cfg.num_blocks());
@@ -175,8 +151,6 @@ TEST_P(CodeFixtureTest, CFGReachable) {
                  x64asm::RegSet::empty(),
                  x64asm::RegSet::empty());
 
-  cfg.recompute();
- 
 
   std::set<int> expected_reachable_set;
   for(size_t i = 0; i < json_reachable.size(); ++i) {

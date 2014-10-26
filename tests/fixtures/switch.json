@@ -16,7 +16,7 @@
     "xorl   %eax,%eax",
     "retq",
     "leal   -0x1(%rdi),%eax",
-    "xchg   %ax,%ax",
+    "xchgw  %ax,%ax",
     "retq",
     "leal   0x1(%rdi),%eax",
     "retq"
