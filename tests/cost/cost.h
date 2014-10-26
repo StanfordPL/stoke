@@ -163,7 +163,7 @@ TEST_F(CostFunctionTest, SignalPenalty) {
 
   // Rewrite
   ss.clear();
-  ss << "inqc %rax" << std::endl;
+  ss << "incq %rax" << std::endl;
   ss << "movq (%rax), %rdx" << std::endl;
   ss << "retq" << std::endl;
   ss >> rewrite;
@@ -179,4 +179,52 @@ TEST_F(CostFunctionTest, SignalPenalty) {
 
 }
 
+
+TEST_F(CostFunctionTest, SizePenalty) {
+
+  // Add 10 testcases
+  add_testcases(10);
+
+  // Setup
+  std::stringstream ss;
+  x64asm::Code target, rewrite;
+
+  // Target
+  ss.clear();
+  ss << "incq %rax" << std::endl;
+  ss << "movq %rax, %rdx" << std::endl;
+  ss << "addq $0x10, %rcx" << std::endl;
+  ss << "retq" << std::endl;
+  ss >> target;
+
+  auto cfg_t = make_cfg(target);
+
+  fxn_.set_target(cfg_t, false, false);
+  auto cost = fxn_(cfg_t);
+
+  /* It's correct now... */
+  EXPECT_TRUE(cost.first);
+  EXPECT_EQ(0, cost.second);
+
+  // It's size is 11 bytes (*not including retq, nop*)
+  // Let's set a max size of 7 bytes, with penalties 5 and 13.
+  fxn_.set_max_size_penalty(7, 5, 13);
+  cost = fxn_(cfg_t);
+  EXPECT_FALSE(cost.first);
+  EXPECT_EQ(5 + 13*4, cost.second);
+
+  // Now lets change the penalty to size 11
+  fxn_.set_max_size_penalty(11, 5, 11);
+  cost = fxn_(cfg_t);
+  EXPECT_TRUE(cost.first);
+  EXPECT_EQ(0, cost.second);
+
+  // And down to size 10
+  fxn_.set_max_size_penalty(10, 5, 13);
+  cost = fxn_(cfg_t);
+  EXPECT_FALSE(cost.first);
+  EXPECT_EQ(5+13, cost.second);
+
+
+}
 
