@@ -634,8 +634,10 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
 	}
   assm_.lea(rdi, old_op);
 	if (uses_rsp) {
+		// STOKE's rsp has changed... careful here, mind the push's
 		assm_.mov(rsp, Imm64(&stoke_rsp_));
 		assm_.mov(rsp, M64(rsp));
+		assm_.lea(rsp, M64(rsp, Imm32(-48)));
 	}
 
   // Load the alignment mask into rsi, and the read/write mask into rdx/rcx
@@ -727,7 +729,7 @@ void Sandbox::emit_jump(const Instruction& instr) {
   
 	// Jump over the signal trap call if we haven't hit zero yet
 	Label okay;
-  assm_.jg(okay);
+  assm_.jne(okay);
 	emit_signal_trap_call(ErrorCode::SIGKILL_);
 	assm_.bind(okay);
 

@@ -286,6 +286,7 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
   std::stringstream ss;
 
   // Here's the input program
+	ss << "xorq %rcx, %rcx" << std::endl;
   ss << ".L1:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "cmpq $0x10, %rcx" << std::endl;
@@ -298,7 +299,7 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
   stoke::Sandbox sb;
   stoke::CpuState tc;
 
-  sb.set_max_jumps(17);
+  sb.set_max_jumps(1000000000000000000);
   sb.insert_input(tc);
 
   // Run it
@@ -315,6 +316,7 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
   std::stringstream ss;
 
   // Here's the input program
+	ss << "xorq %rcx, %rcx" << std::endl;
   ss << ".L1:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "cmpq $0x10, %rcx" << std::endl;
