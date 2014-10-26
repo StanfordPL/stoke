@@ -1,7 +1,8 @@
 
 class ValidatorSubpsTest : public ValidatorTest {};
 
-TEST_F(ValidatorSubpsTest, Identity) {
+/* This test takes too long :( */
+TEST_F(ValidatorSubpsTest, DISABLED_Identity) {
 
   target_ << "subps %xmm3, %xmm5" << std::endl;
   target_ << "retq" << std::endl;
