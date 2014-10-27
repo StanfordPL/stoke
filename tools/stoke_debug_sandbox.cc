@@ -124,7 +124,11 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   if (debug) {
-    breakpoint.value() = 0;
+		if (target.value().code[0].is_label_defn()) {
+	    breakpoint.value() = 1;
+		} else {
+			breakpoint.value() = 0;
+		}
   }
 
   Sandbox sb;

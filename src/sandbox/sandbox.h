@@ -142,9 +142,6 @@ class Sandbox {
   /** I/O pairs. These are pointers to simplify vector reallocations. */
   std::vector<IoPair*> io_pairs_;
 
-	/** Functions that the code may invoke at runtime. Pointers to simplify reallocation. */
-	std::vector<x64asm::Function*> aux_fxns_;
-
   /** Callbacks to invoke before a line is executed. */
   std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> before_;
   /** Callbacks to invokes after a line is exeucted. */
@@ -182,6 +179,8 @@ class Sandbox {
 	x64asm::Function harness_;
 	/** Pointer to the signal trap function */
 	x64asm::Function signal_trap_;
+	/** Functions that the code may invoke at runtime. Pointers to simplify reallocation. */
+	std::vector<x64asm::Function*> aux_fxns_;
   /** Function buffer for jit assembling codes; the main function */
   x64asm::Function fxn_;
 

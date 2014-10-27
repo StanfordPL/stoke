@@ -299,7 +299,7 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
   stoke::Sandbox sb;
   stoke::CpuState tc;
 
-  sb.set_max_jumps(1000000000000000000);
+  sb.set_max_jumps(17);
   sb.insert_input(tc);
 
   // Run it

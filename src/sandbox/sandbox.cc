@@ -491,22 +491,27 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
 
 bool Sandbox::emit_function(const Cfg& cfg) {
 	// Index reachable instructions
-	vector<const Instruction*> instrs;
+	vector<size_t> instrs;
 	for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+		if (cfg.is_exit(*b)) {
+			continue;
+		}
 		const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
 		for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
-			instrs.push_back(&cfg.get_code()[i]);
+			instrs.push_back(i);
 		}
 	}
 
-	// If any instruction reads mem, we'll set this to false
+	// Flags to track: do we read memory and is the first instr a label?
 	auto read_only_mem = true;
+	const auto first_is_label = cfg.get_code()[instrs[0]].is_label_defn();
 
-	// The very first line of a function will always be a label
-	// This has to be assembled before anything
-	assert(instrs[0]->is_label_defn());
 	assm_.start(fxn_);	
-	assm_.assemble(*instrs[0]);
+
+	// If the first instruction is a label, it must precede instrumentation
+	if (first_is_label) {
+		assm_.assemble(cfg.get_code()[instrs[0]]);
+	}
 
 	// Load the user's %rsp
 	emit_load_user_rsp();
@@ -514,9 +519,10 @@ bool Sandbox::emit_function(const Cfg& cfg) {
 	// Create a new unique label for representing the end of this function
 	Label exit;
 
-	// Assemble every reachable instruction
-	for (size_t i = 1, ie = instrs.size(); i < ie; ++i) {
-		const auto& instr = *instrs[i];
+	// Assemble every other reachable instruction
+	for (size_t i = first_is_label ? 1 : 0, ie = instrs.size(); i < ie; ++i) {
+		const auto idx = instrs[i];
+		const auto& instr = cfg.get_code()[idx];
 
 		// This is conservative, we assume anything implicit is a write
 		if (instr.is_implicit_memory_dereference()) {
@@ -526,12 +532,13 @@ bool Sandbox::emit_function(const Cfg& cfg) {
 			read_only_mem &= (!instr.maybe_write(mi) && !instr.maybe_undef(mi));
 		}
 
+		// Emit instruction and optionally, callbacks
 		if (!before_.empty()) {
-			emit_callbacks(i, true);
+			emit_callbacks(idx, true);
 		}
-		emit_instruction(cfg.get_code()[i], exit);
+		emit_instruction(instr, exit);
 		if (!after_.empty())  {
-			emit_callbacks(i, false);
+			emit_callbacks(idx, false);
 		}
 	}
 	// Catch for run-away code
@@ -549,9 +556,6 @@ bool Sandbox::emit_function(const Cfg& cfg) {
 }
 
 void Sandbox::emit_callbacks(size_t line, bool before) {
-  // This won't ever be called on the critical path
-	// We don't have to worry about it being efficient
-
 	// Reload the STOKE %rsp, we're about to call some functions
 	emit_load_stoke_rsp();
 
@@ -773,8 +777,8 @@ void Sandbox::emit_jump(const Instruction& instr) {
 void Sandbox::emit_call(const Instruction& instr) {
 	// Simulate push %rip (using a random value)
 	// Sandboxing the memory dereference will catch infinite recursions
-	//assm_.lea(rsp, M64(rsp, Imm32(-8)));
-	//emit_instruction({MOV_M64_IMM32, {M64(rsp), Imm32(0x01234567)}}, exit);
+	assm_.lea(rsp, M64(rsp, Imm32(-8)));
+	emit_memory_instruction({MOV_M64_IMM32, {M64(rsp), Imm32(0x01234567)}});
 
 	// Restore the STOKE %rsp
 	emit_load_stoke_rsp();
@@ -784,7 +788,7 @@ void Sandbox::emit_call(const Instruction& instr) {
 	emit_load_user_rsp();
 
 	// Simulate pop %rip; all that matters is moving %rsp
-	//assm_.lea(rsp, M64(rsp, Imm32(8)));
+	assm_.lea(rsp, M64(rsp, Imm32(8)));
 }
 
 void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
