@@ -199,6 +199,8 @@ class CostFunction {
   Cost sse_error(const Regs& t, const Regs& r) const;
 	/** Evaluate error between memories. */
   Cost mem_error(const Memory& t, const Memory& r) const;
+  /** Evaluate error between rflags. */
+  Cost rflags_error(const RFlags& t, const RFlags& r) const;
 
 	/** Evaluate the distance between two 64-bit values. */
   Cost evaluate_distance(uint64_t t, uint64_t r) const;

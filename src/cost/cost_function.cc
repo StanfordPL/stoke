@@ -146,6 +146,7 @@ Cost CostFunction::evaluate_error(const CpuState& t, const CpuState& r) const {
   Cost cost = 0;
   cost += gp_error(t.gp, r.gp);
   cost += sse_error(t.sse, r.sse);
+  cost += rflags_error(t.rf, r.rf);
   if (stack_out_) {
     cost += mem_error(t.stack, r.stack);
   }
@@ -244,6 +245,21 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
     }
   }
 
+  return cost;
+}
+
+Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r) const {
+  Cost cost = 0;
+
+  auto flags = vector<Eflags> { eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf };
+  
+  for(auto flag : flags) {
+    if (live_out_.contains(flag)) {
+      size_t i = flag.index();
+      cost += (t.is_set(i) ^ r.is_set(i));
+    }
+  }
+  
   return cost;
 }
 
