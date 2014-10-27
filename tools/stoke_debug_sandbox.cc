@@ -38,6 +38,11 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("Input program:");
 
+auto& aux_fxns = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
+		.usage("<path/to/dir>")
+		.description("Directory containing helper functions")
+		.default_val({});
+
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Target code")
@@ -124,12 +129,19 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   if (debug) {
-    breakpoint.value() = 0;
+		if (target.value().code[0].is_label_defn()) {
+	    breakpoint.value() = 1;
+		} else {
+			breakpoint.value() = 0;
+		}
   }
 
   Sandbox sb;
   sb.set_abi_check(abi_check)
 		.set_max_jumps(max_jumps);
+	for (const auto& fxn : aux_fxns.value()) {
+		sb.insert_function(Cfg(fxn.code, RegSet::empty(), RegSet::empty()));
+	}
 
   const auto index = min(testcases.value().size() - 1, idx.value());
   const auto input = testcases.value()[index];

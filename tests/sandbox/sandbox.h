@@ -266,6 +266,8 @@ TEST(SandboxTest, InfiniteLoopFails) {
   // Setup the sandbox
   stoke::Sandbox sb;
   stoke::CpuState tc;
+  stoke::StateGen sg(&sb);
+  sg.get(tc);
 
   sb.set_max_jumps(100);
   sb.insert_input(tc);
@@ -286,6 +288,7 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
   std::stringstream ss;
 
   // Here's the input program
+	ss << "xorq %rcx, %rcx" << std::endl;
   ss << ".L1:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "cmpq $0x10, %rcx" << std::endl;
@@ -297,9 +300,12 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
   // Setup the sandbox
   stoke::Sandbox sb;
   stoke::CpuState tc;
+  stoke::StateGen sg(&sb);
+  sg.get(tc);
 
   sb.set_max_jumps(17);
   sb.insert_input(tc);
+	sb.set_abi_check(false);
 
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
@@ -315,6 +321,7 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
   std::stringstream ss;
 
   // Here's the input program
+	ss << "xorq %rcx, %rcx" << std::endl;
   ss << ".L1:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "cmpq $0x10, %rcx" << std::endl;
@@ -326,9 +333,12 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
   // Setup the sandbox
   stoke::Sandbox sb;
   stoke::CpuState tc;
+  stoke::StateGen sg(&sb);
+  sg.get(tc);
 
   sb.set_max_jumps(16);
   sb.insert_input(tc);
+	sb.set_abi_check(false);
 
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});

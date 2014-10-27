@@ -105,7 +105,7 @@ bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
 	const auto& instr = cfg.get_code()[line];
 
 	// Special support for push/pop/ret
-	if (instr.is_push() || instr.is_pop() || instr.is_any_return()) {
+	if (instr.is_push() || instr.is_pop() || instr.is_any_return() || instr.is_call()) {
 		return true;
 	}
 
@@ -130,7 +130,7 @@ uint64_t StateGen::get_addr(const CpuState& cs, const Cfg& cfg, size_t line) con
 	const auto& instr = cfg.get_code()[line];
 
 	// Special handling for implicit dereferences
-	if (instr.is_push()) {
+	if (instr.is_push() || instr.is_call()) {
 		return cs.gp[rsp].get_fixed_quad(0)-8;
 	} else if (instr.is_pop()) {
 		return cs.gp[rsp].get_fixed_quad(0);
@@ -187,7 +187,7 @@ size_t StateGen::get_size(const Cfg& cfg, size_t line) const {
 	const auto& instr = cfg.get_code()[line];
 
 	// Special handling for implicit dereferences
-	if (instr.is_push() || instr.is_pop() || instr.is_any_return()) {
+	if (instr.is_push() || instr.is_pop() || instr.is_any_return() || instr.is_call()) {
 		return 8;
 	}
 

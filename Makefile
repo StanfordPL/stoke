@@ -48,9 +48,7 @@ OBJ=\
 	\
 	src/disassembler/disassembler.o \
 	\
-	src/sandbox/cpu_io.o \
 	src/sandbox/sandbox.o \
-	src/sandbox/stack_snapshot.o \
 	\
 	src/search/search.o \
 	src/search/transforms.o \

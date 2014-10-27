@@ -58,6 +58,9 @@ auto& mem_read = FlagArg::create("mem_read")
 auto& mem_write = FlagArg::create("mem_write")
     .description("Propose instruction and opcode moves that write memory?");
 
+auto& propose_call = FlagArg::create("propose_call")
+    .description("Propose instruction and opcode moves that call functions?");
+
 auto& callee_save = FlagArg::create("callee_save")
 		.alternate("propose_callee_save")
     .description("Override the value of preserve_regs to the empty set");
@@ -102,7 +105,7 @@ int main(int argc, char** argv) {
 
   Transforms transforms;
   transforms.set_seed(seed)
-  .set_opcode_pool(flags, nop_percent, mem_read, mem_write)
+  .set_opcode_pool(flags, nop_percent, mem_read, mem_write, propose_call)
   .set_operand_pool(target.value().code, preserve_regs.value());
 
   cout << "Transforms::modify()..." << endl;

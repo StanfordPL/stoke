@@ -31,15 +31,15 @@ set<Opcode> unsupported_ {{
 namespace stoke {
 
 Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent, bool use_mem_read,
-    bool use_mem_write) {
+    bool use_mem_write, bool propose_call) {
   control_free_.clear();
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     auto op = (Opcode)i;
     if (is_control_opcode(op) || is_unsupported(op) || !is_enabled(op, flags)) {
       continue;
-    } 
-   
-    if(!use_mem_read) {
+    } else if (op == CALL_LABEL && !propose_call) {
+			continue;
+		} else if (!use_mem_read) {
       if (!use_mem_write) {
         //no memory allowed
         if(is_mem_opcode(op))
@@ -152,6 +152,13 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
       m_pool_.push_back(ref);
     }
   }
+
+	label_pool_.clear();
+	for (const auto& instr : target) {
+		if (instr.is_call()) {
+			label_pool_.push_back(instr.get_operand<Label>(0));
+		}
+	}
 
   return *this;
 }
