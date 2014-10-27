@@ -15,9 +15,11 @@
 #ifndef STOKE_SRC_DISASSEMBLER_FUNCTION_CALLBACK_H
 #define STOKE_SRC_DISASSEMBLER_FUNCTION_CALLBACK_H
 
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/tunit/tunit.h"
 
 #include <vector>
+#include <map>
 
 namespace stoke {
 
@@ -28,6 +30,8 @@ struct FunctionCallbackData {
 	uint64_t offset;
 	/* The offsets, from function start, of each instruction (by index) */
 	std::vector<uint64_t> instruction_offsets;
+  /* Map from address labels to the original function names */
+  std::map<std::string, std::string> addr_label_map;
 };
 
 /** Callback signature */
