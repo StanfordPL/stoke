@@ -31,7 +31,7 @@ class Transforms {
  public:
 	/** Creates a new transformation helper. */
   Transforms() : old_instr_ {x64asm::RET}, old_opcode_ {x64asm::RET}, old_operand_ {x64asm::rax} {
-    set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true);
+    set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true, true);
     set_operand_pool({x64asm::RET}, x64asm::RegSet::linux_callee_save());
   }
 
@@ -42,7 +42,7 @@ class Transforms {
   }
 	/** Sets the pool of opcodes to propose from. */
   Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t nop_percent, bool use_mem_read,
-                              bool use_mem_write);
+                              bool use_mem_write, bool propose_call);
 	/** Sets the pool operands to propose from. */
   Transforms& set_operand_pool(const x64asm::Code& target, const x64asm::RegSet& preserve_regs);
 
@@ -245,6 +245,8 @@ class Transforms {
   std::vector<x64asm::Imm64> imm_pool_;
 	/** Operand pool. */
   std::vector<x64asm::M8> m_pool_;
+	/** Operand pool. */
+	std::vector<x64asm::Label> label_pool_;
 
   /** Old instruction for instruction moves. */
   x64asm::Instruction old_instr_;
