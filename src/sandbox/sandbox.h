@@ -81,7 +81,7 @@ class Sandbox {
 	}
 	/** Insert an auxiliary function which can be called at runtime */
 	Sandbox& insert_function(const Cfg& cfg) {
-		aux_fxn_read_only_ &= emit_function(cfg);
+		aux_fxn_read_only_ &= emit_function(cfg, false);
 		aux_fxns_.push_back(new x64asm::Function(fxn_));	
 	}
 
@@ -201,7 +201,7 @@ class Sandbox {
   void emit_map_addr_cases(CpuState& cs, const x64asm::Label& fail, const x64asm::Label& done, bool stack);
 
 	/** Assembles the user's function */
-	bool emit_function(const Cfg& cfg);
+	bool emit_function(const Cfg& cfg, bool callbacks);
   /** Emit a callback (before or after) a line. */
   void emit_callbacks(size_t line, bool before);
   /** Emit an instruction (and possibly sandbox memory). */

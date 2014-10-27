@@ -82,7 +82,7 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
 
 void Sandbox::compile(const Cfg& cfg) {
 	// Compile a new main function
-	main_fxn_read_only_ = emit_function(cfg);
+	main_fxn_read_only_ = emit_function(cfg, true);
 
 	// Relink everything
 	lnkr_.start();
@@ -489,7 +489,7 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
 // Arguments:
 //   <none>
 
-bool Sandbox::emit_function(const Cfg& cfg) {
+bool Sandbox::emit_function(const Cfg& cfg, bool callbacks) {
 	// Index reachable instructions
 	vector<size_t> instrs;
 	for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
@@ -533,11 +533,11 @@ bool Sandbox::emit_function(const Cfg& cfg) {
 		}
 
 		// Emit instruction and optionally, callbacks
-		if (!before_.empty()) {
+		if (callbacks && !before_.empty()) {
 			emit_callbacks(idx, true);
 		}
 		emit_instruction(instr, exit);
-		if (!after_.empty())  {
+		if (callbacks && !after_.empty())  {
 			emit_callbacks(idx, false);
 		}
 	}
