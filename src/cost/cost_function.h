@@ -60,6 +60,7 @@ class CostFunction {
     set_penalty(0, 0, 0);
     set_min_ulp(0);
     set_reduction(Reduction::SUM);
+    set_max_size_penalty(0, 0, 0);
 
     set_performance_term(PerformanceTerm::NONE);
   }
@@ -89,6 +90,13 @@ class CostFunction {
     sig_penalty_ = sig;
     nesting_penalty_ = nesting;
     return *this;
+  }
+  /** Incur a penalty of start_penalty + incr_penalty(size - max_size) for having an assembled size
+    of more than max_size bytes. */
+  CostFunction& set_max_size_penalty(size_t max_size, Cost start_penalty, Cost incr_penalty) {
+    max_size_ = max_size;
+    size_starting_penalty_ = start_penalty;
+    size_incr_penalty_ = incr_penalty;
   }
 	/** Set the minimum unacceptable ULP error for floating-point comparisons. */
   CostFunction& set_min_ulp(Cost mu) {
@@ -164,6 +172,14 @@ class CostFunction {
 	/** Performance term type. */
   PerformanceTerm pterm_;
 
+  /** Cost for have any instructions in excess of the maximum size. */
+  Cost size_starting_penalty_;
+  /** Additional cost per instruction in excess of the maximum size. */
+  Cost size_incr_penalty_;
+  /** Maximum size for rewrite without encurring a penalty. */
+  size_t max_size_;
+
+
 	/** The results produced by executing the target on testcases. */
   std::vector<CpuState> reference_out_;
 
@@ -201,6 +217,9 @@ class CostFunction {
   Cost mem_error(const Memory& t, const Memory& r) const;
   /** Evaluate error between rflags. */
   Cost rflags_error(const RFlags& t, const RFlags& r) const;
+
+	/** Evaluate size of assembed program. */
+  Cost assembled_size_cost(const Cfg& cfg) const;
 
 	/** Evaluate the distance between two 64-bit values. */
   Cost evaluate_distance(uint64_t t, uint64_t r) const;

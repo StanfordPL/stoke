@@ -19,6 +19,7 @@
 #include <limits>
 
 #include "src/cost/cost_function.h"
+#include "src/ext/x64asm/include/x64asm.h"
 
 using namespace cpputil;
 using namespace std;
@@ -74,13 +75,22 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm
 }
 
 Cost CostFunction::evaluate_correctness(const Cfg& cfg, Cost max) {
+
+  // Apply the size penalty if needed
+  Cost penalty = 0;
+  if (size_starting_penalty_ > 0 || size_incr_penalty_ > 0) {
+    penalty = assembled_size_cost(cfg);
+    if (penalty >= max)
+      return penalty;
+  }
+
   switch (reduction_) {
     case Reduction::MAX:
-      return max_correctness(cfg, max);
+      return penalty + max_correctness(cfg, max-penalty);
     case Reduction::SUM:
-      return sum_correctness(cfg, max);
+      return penalty + sum_correctness(cfg, max-penalty);
 		case Reduction::EXTENSION:
-			return extension_correctness(cfg, max);
+			return penalty + extension_correctness(cfg, max-penalty);
     default:
       assert(false);
       return 0;
@@ -262,6 +272,42 @@ Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r) const {
   
   return cost;
 }
+
+
+Cost CostFunction::assembled_size_cost(const Cfg& cfg) const {
+
+  x64asm::Assembler assm;
+  x64asm::Function fxn;
+
+  const auto& code = cfg.get_code();
+
+  assm.start(fxn);
+
+  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+
+    if(cfg.is_exit(*b)) {
+      continue;
+    }
+
+    const auto begin = cfg.get_index(Cfg::loc_type(*b,0));
+    for(size_t i = 0, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
+      const auto& instr = code[i];
+      if(!instr.is_nop() && !instr.is_ret())
+        assm.assemble(instr);
+    }
+  }
+
+  assm.finish();
+
+  uint64_t size = fxn.size();
+  if (size <= max_size_) {
+    return 0;
+  } else {
+    return (Cost)((size - max_size_)*size_incr_penalty_ + size_starting_penalty_);
+  }
+
+}
+
 
 Cost CostFunction::evaluate_distance(uint64_t x, uint64_t y) const {
 	switch(distance_) {

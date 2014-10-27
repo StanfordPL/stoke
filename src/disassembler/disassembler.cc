@@ -151,7 +151,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   string line;
   getline(ips, line);
 
-  // Reset any state in pf.
+  // Reset any state in callback data.
   data.tunit.code.clear();
   data.instruction_offsets.clear();
 
@@ -173,6 +173,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
     const auto itr = labels.find(l.first);
     if (itr != labels.end()) {
       ss << ".L_" << hex << l.first << ":" << endl;
+      data.instruction_offsets.push_back(l.first - starting_addr);
     }
     ss << l.second << endl;
     data.instruction_offsets.push_back(l.first - starting_addr);
