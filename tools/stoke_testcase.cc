@@ -94,6 +94,11 @@ auto& max_memory = ValueArg<uint64_t>::create("max_memory")
     .description("The maximum number of bytes to allocate to stack or heap")
     .default_val(1024);
 
+auto& aux_fxns = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
+		.usage("<path/to/dir>")
+		.description("Directory containing helper functions")
+		.default_val({});
+
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Source code to generate testcases for")
@@ -142,6 +147,9 @@ int auto_gen() {
 	Sandbox sb;
 	sb.set_abi_check(abi_check)
 		.set_max_jumps(max_jumps);
+	for (const auto& fxn : aux_fxns.value()) {
+		sb.insert_function(Cfg(fxn.code, RegSet::empty(), RegSet::empty()));
+	}
 
 	StateGen sg(&sb);
 	sg.set_max_attempts(max_attempts.value())
