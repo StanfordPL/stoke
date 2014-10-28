@@ -29,7 +29,7 @@
     "is_sound": {
       "live_in": ["%rax", "%rcx"],
       "live_out": ["%rax"],
-      "result": true
+      "result": false //rcx read after call is undefined.
     },
 
     "cfg": {
