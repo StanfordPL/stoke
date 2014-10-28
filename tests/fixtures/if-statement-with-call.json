@@ -26,6 +26,12 @@
 
   "tests": {
 
+    "is_sound": {
+      "live_in": ["%rax", "%rcx"],
+      "live_out": ["%rax"],
+      "result": true
+    },
+
     "cfg": {
       "num_blocks": 6,
       "num_instrs": [0, 3, 5, 3, 1, 0],
