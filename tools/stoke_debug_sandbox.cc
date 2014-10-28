@@ -143,6 +143,11 @@ int main(int argc, char** argv) {
 		sb.insert_function(Cfg(fxn.code, RegSet::empty(), RegSet::empty()));
 	}
 
+	if (testcases.value().empty()) {
+		cout << "No testcases provided." << endl;
+		return 0;
+	}
+
   const auto index = min(testcases.value().size() - 1, idx.value());
   const auto input = testcases.value()[index];
   sb.insert_input(input);
