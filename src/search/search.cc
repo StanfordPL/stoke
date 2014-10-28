@@ -29,7 +29,6 @@ namespace {
 bool give_up_now = false;
 void handler(int sig, siginfo_t* siginfo, void* context) {
   give_up_now = true;
-  cout << "\nTiming Out Early!\n" << endl;
 }
 
 } // namespace
@@ -158,6 +157,10 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
 			progress_cb_({state}, progress_cb_arg_);
 		}
 	}
+}
+
+void Search::stop() {
+  give_up_now = true;
 }
 
 void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state) const {
