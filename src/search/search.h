@@ -81,6 +81,8 @@ class Search {
 
 	/** Run search beginning from a search state using a user-supplied cost function. */
   void run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state);
+  /** Stops an in-progress search.  To be used from a callback, for example. */
+  void stop();
 
  private:
   /** Random generator. */
