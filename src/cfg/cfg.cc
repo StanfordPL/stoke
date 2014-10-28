@@ -45,6 +45,13 @@ bool Cfg::performs_undef_read() const {
       }
     }
   }
+
+  // Check that the live outs are all defined
+  // i.e. every life_out is also def in at the end
+  const auto di_end = def_ins_[blocks_[get_exit()]];
+  if((di_end & fxn_live_outs_) != fxn_live_outs_)
+    return true;
+
   return false;
 }
 

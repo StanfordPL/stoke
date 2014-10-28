@@ -4,9 +4,16 @@
 
   "tests": {
 
+    "is_sound": {
+      "live_in": [],
+      "live_out": [],
+      "result": false
+    },
+
     "liveness": {
       "given liveout": ["%rax"],
       "expected livein": ["%ax"]
     } 
+
   }
 }
