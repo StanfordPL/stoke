@@ -64,6 +64,11 @@ using namespace x64asm;
 
 auto& h1 = Heading::create("Input programs:");
 
+auto& aux_fxns = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
+		.usage("<path/to/dir>")
+		.description("Directory containing helper functions")
+		.default_val({});
+
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
     .usage("<path/to/file>")
     .description("Target")
@@ -196,6 +201,9 @@ auto& mem_read = FlagArg::create("mem_read")
 
 auto& mem_write = FlagArg::create("mem_write")
     .description("Propose instruction and opcode moves that write memory?");
+
+auto& propose_call = FlagArg::create("propose_call")
+    .description("Propose instruction and opcode moves that call functions?");
 
 auto& callee_save = FlagArg::create("callee_save")
 		.alternate("propose_callee_save")
@@ -445,9 +453,15 @@ int main(int argc, char** argv) {
   Sandbox training_sb;
   training_sb.set_abi_check(abi_check)
 		.set_max_jumps(max_jumps);
+	for (const auto& fxn : aux_fxns.value()) {
+		training_sb.insert_function(Cfg(fxn.code, RegSet::empty(), RegSet::empty()));
+	}
   Sandbox test_sb;
   test_sb.set_abi_check(abi_check)
 		.set_max_jumps(max_jumps);
+	for (const auto& fxn : aux_fxns.value()) {
+		test_sb.insert_function(Cfg(fxn.code, RegSet::empty(), RegSet::empty()));
+	}
 
   for (size_t i = 0, ie = testcases.value().size(); i < ie; ++i) {
     if (training_set.value().find(i) != training_set.value().end()) {
@@ -460,7 +474,7 @@ int main(int argc, char** argv) {
 
   Transforms transforms;
   transforms.set_seed(seed)
-  .set_opcode_pool(flags, nop_percent, mem_read, mem_write)
+  .set_opcode_pool(flags, nop_percent, mem_read, mem_write, propose_call)
   .set_operand_pool(target.value().code, preserve_regs.value());
 
   Search search(&transforms);

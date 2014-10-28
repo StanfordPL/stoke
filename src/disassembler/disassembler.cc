@@ -127,7 +127,7 @@ bool is_hex_string(const string& s) {
   return true;
 }
 
-Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s) {
+Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s, map<string,string>& addr_label_map) {
   line_map lines;
   while (getline(ips, s)) {
     // Functions are terminated by empty lines
@@ -136,6 +136,7 @@ Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s) {
     }
     string instr;
     if (parse_instr_from_line(s, instr)) {
+      parse_addr_label_from_line(s, addr_label_map);
       lines.push_back(pair<uint64_t, string>(parse_addr_from_line(s), fix_instruction(instr)));
     }
   }
@@ -161,7 +162,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   data.tunit.name = line.substr(begin, len);
 
   // Iterate through all the lines and make 'em pretty
-  auto lines = index_lines(ips, line);
+  auto lines = index_lines(ips, line, data.addr_label_map);
   const auto labels = fix_label_uses(lines);
   
   // Build the code and offsets vector
@@ -227,6 +228,41 @@ Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lin
   }
 
   return labels;
+}
+
+bool Disassembler::parse_addr_label_from_line(const string& s, map<string, string>& map) {
+
+  // Get the name of the function in addition to the "address"
+  // E.g. if we have "  callq 401100 <_foo>"
+  // then we want to add "401100" -> "_foo" to the mapping.
+
+  // get the function name
+  auto start = s.find_last_of('<');
+  auto end = s.find_last_of('>');
+
+  if (start == string::npos || end == string::npos)
+    return false;
+
+  auto function_name = s.substr(start+1, end - start - 1);
+
+  //skip labels that point inside the same function
+  if(function_name.find_last_of("+") != string::npos)
+    return false;
+
+  // get the address
+  auto end_addr   = s.find_first_of(' ', start-3);
+  auto start_addr = s.find_last_of(' ', end_addr-1);
+
+  if (start_addr == string::npos || end_addr == string::npos)
+    return false;
+
+  auto address = s.substr(start_addr+1, end_addr-start_addr-1);
+
+  // add to the map
+  map[address] = function_name;
+
+  return true;
+
 }
 
 bool Disassembler::parse_instr_from_line(const string& s, string& instr) {

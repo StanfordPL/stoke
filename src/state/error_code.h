@@ -20,6 +20,7 @@ namespace stoke {
 /** Hardware signal states. */
 enum class ErrorCode {
   NORMAL = 0,
+	SIGILL_ = 4,
   SIGFPE_ = 8,
   SIGKILL_ = 9,
   SIGSEGV_ = 11
