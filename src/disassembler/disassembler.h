@@ -75,10 +75,12 @@ class Disassembler {
     bool parse_instr_from_line(const std::string& line, std::string& instr);
     /* Get an address from an objdump'd line */
     uint64_t parse_addr_from_line(const std::string& line);
+    /* Get an address from an objdump'd line */
+    bool parse_addr_label_from_line(const std::string& line, std::map<std::string, std::string>&);
     /* Ignore a few lines from the input */
     void strip_lines(redi::ipstream& ips, size_t lines);
     /* Get all the lines from a function */
-    line_map index_lines(redi::ipstream& ips, std::string& line);
+    line_map index_lines(redi::ipstream& ips, std::string& line, std::map<std::string, std::string>&);
     /* Rewrite a line from objdump for our parser :( */
     std::string fix_instruction(const std::string& line);
     /* Fix the labels */
