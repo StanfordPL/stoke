@@ -47,11 +47,41 @@ class ValidatorTest : public ::testing::Test {
     std::stringstream target_;
     std::stringstream rewrite_;
 
+    std::ostream& assert_equiv() {
+      reset_state();
+
+      check_codes(EQUIVALENT);
+
+      return std::cout;
+    }
+
+    std::ostream& assert_ceg(stoke::CpuState* ceg = NULL) {
+      reset_state();
+
+      check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE);
+      if(ceg != NULL)
+        *ceg = v_.get_counterexample();
+
+      return std::cout;
+    }
+
+    std::string assert_fail() {
+      reset_state();
+
+      stoke::CpuState ceg;
+      std::string message;
+
+      check_codes(ERROR);
+
+      return v_.get_error();
+    }
+
+
     /* Runs the target and rewrite against the sandbox.
        If they are the same for all inputs, expect them to be equivalent.
        Otherwise, expect validator to come up with a correct counterexample. */
     void assert_sandbox(stoke::Sandbox& sb) {
-      get_target_rewrite();
+      reset_state();
 
       // Run the sandbox on the inputs
       sb.run(*cfg_t_);
@@ -80,14 +110,11 @@ class ValidatorTest : public ::testing::Test {
       stoke::CpuState ceg;
       bool validator_equiv = validate(ceg);
 
-      EXPECT_EQ(sandbox_equiv, validator_equiv) 
-                      << "Target: " << std::endl
-                      << cfg_t_->get_code() << std::endl << std::endl 
-                      << "Rewrite: " << std::endl
-                      << cfg_r_->get_code() << std::endl << std::endl 
-                      << std::endl;
-
-
+      if (sandbox_equiv) {
+        check_codes(EQUIVALENT);
+      } else {
+        check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE);
+      }
 
       // Check the counterexample.
       if(!validator_equiv)
@@ -95,77 +122,7 @@ class ValidatorTest : public ::testing::Test {
 
     }
 
-    std::ostream& assert_equiv() {
-      get_target_rewrite();
 
-      // Check if valid
-      stoke::CpuState ceg;
-      bool equivalent = validate(ceg);
-
-      EXPECT_TRUE(equivalent) << "Validation failed." << std::endl
-                     << "Target: " << std::endl
-                     << cfg_t_->get_code() << std::endl << std::endl 
-                     << "Rewrite: " << std::endl
-                     << cfg_r_->get_code() << std::endl << std::endl 
-                     << "Counterexample:"
-                     << std::endl << ceg << std::endl << std::endl
-                     << "Final Target State: " << std::endl
-                     << v_.get_target_final_state() << std::endl << std::endl
-                     << "Final Rewrite State: " << std::endl
-                     << v_.get_rewrite_final_state() << std::endl << std::endl;
-
-
-      // Check counterexample, if exists
-      if(!equivalent) {
-        check_ceg(ceg, false);
-      }
-
-      return std::cout;
-    }
-
-    std::ostream& assert_ceg(stoke::CpuState& ceg) {
-      get_target_rewrite();
-
-      // Check if valid
-      bool b = validate(ceg);
-
-      // Do the assert
-      EXPECT_FALSE(b) << "Codes were found equivalent." << std::endl
-                      << "Target: " << std::endl
-                      << cfg_t_->get_code() << std::endl << std::endl 
-                      << "Rewrite: " << std::endl
-                      << cfg_r_->get_code() << std::endl << std::endl 
-                      << std::endl;
-
-      // Check counterexample, if exists
-      if(!b)
-        check_ceg(ceg, true);
-
-      return std::cout;
-    }
-
-    std::ostream& assert_ceg() {
-      stoke::CpuState ceg;
-      return assert_ceg(ceg);
-    }
-
-    std::string assert_fail() {
-      get_target_rewrite();
-
-      stoke::CpuState ceg;
-      std::string message;
-
-      EXPECT_NO_THROW({
-        try {
-          validate(ceg);
-          EXPECT_FALSE(true) << "No error occurred.";
-        } catch(validator_error e) {
-          message = e.get_message(); 
-        } 
-      });
-
-      return message;
-    }
 
     /* Set live outs for equivalence check */
     void set_live_outs(x64asm::RegSet rs) {
@@ -190,12 +147,15 @@ class ValidatorTest : public ::testing::Test {
 
   private:
 
-    /* Called at the start of an "assert" to get the
-       target/rewrite the user wants to test. */
-    void get_target_rewrite() {
-      cfg_t_ = get_cfg(target_);
-      cfg_r_ = get_cfg(rewrite_);
-    }
+    enum Outcome {
+      OTHER = 0,
+      ERROR = 1,
+      EQUIVALENT = 2,
+      COUNTEREXAMPLE = 4,
+      NO_COUNTEREXAMPLE = 8
+    };
+
+
 
     /* Run the validator and produce a counterexample */
     bool validate(stoke::CpuState& tc) {
@@ -212,16 +172,25 @@ class ValidatorTest : public ::testing::Test {
 
     template <typename T>
     void expect_cpustate_expect(bool& same, T expect, T actual, std::string local, std::string global) {
-      if(actual != expect) {
-        if (same) {
-          std::cout << global << std::endl;
-          std::cout << "Here are the differences found: " << std::endl;
-          same = false;
+
+      if (actual == expect)
+        return;
+
+      if(same) {
+        report_error(OTHER, OTHER, false, global);
+
+        if(!ceg_shown_) {
+          std::cout << "Counterexample:" << std::endl;
+          std::cout << v_.get_counterexample() << std::endl;
+          ceg_shown_ = true;
         }
 
-        std::cout << "  >  " << local << std::endl;
-        EXPECT_EQ(expect, actual) << std::endl;
+        std::cout << "Here are the differences found: " << std::endl;
       }
+
+      std::cout << "   - " << local 
+                << " (sandbox: 0x" << std::hex << (uint64_t)expect 
+                << ", validator: 0x" << (uint64_t)actual << ")" << std::endl;
     }
 
     void expect_cpustate_equal_on_liveout(
@@ -318,7 +287,7 @@ class ValidatorTest : public ::testing::Test {
 
     /* Takes the counterexample, and runs the target and the rewrite on it.
        If you get the same thing, we have a validator bug. */
-    void check_ceg(stoke::CpuState& ceg, bool print) {
+    void check_ceg(stoke::CpuState& ceg, bool print = false) {
 
       // Make sure that a counterexample was intended.
       if(!v_.is_counterexample_valid())
@@ -340,11 +309,6 @@ class ValidatorTest : public ::testing::Test {
       stoke::CpuState sandbox_rewrite_state = *sb.get_result(0);
 
       // Check the results
-      EXPECT_EQ(stoke::ErrorCode::NORMAL, sandbox_target_state.code);
-      EXPECT_EQ(stoke::ErrorCode::NORMAL, sandbox_rewrite_state.code);
-
-      ASSERT_EQ(1, sb.size());
-
       std::stringstream tmp;
       tmp << "Sandbox disagrees with validator on final state of the target.  "
           << "This is almost definitely a validator bug." << std::endl;
@@ -364,6 +328,143 @@ class ValidatorTest : public ::testing::Test {
                                        tmp.str());
 
     }
+
+    void report_error(int expected, Outcome actual, bool fatal=false, std::string message="") {
+      if(!codes_shown_) {
+        std::cout << "=== Validator Test Failed ====================" << std::endl;
+        std::cout << "--Target--" << std::endl;
+        std::cout << cfg_t_->get_code() << std::endl << std::endl;
+        std::cout << "--Rewrite--" << std::endl;
+        std::cout << cfg_r_->get_code() << std::endl << std::endl;
+        codes_shown_ = true;
+      }
+
+      switch(actual) {
+
+        case EQUIVALENT:
+          if (expected & ERROR)
+            ADD_FAILURE() << "Codes were found equivalent, but expected error";
+          else
+            ADD_FAILURE() << "Codes were found equivalent, but expected different";
+          break;
+
+        case COUNTEREXAMPLE: {
+
+          ADD_FAILURE() << "Unexpected counterexample found." << std::endl;
+
+          std::cout << "Counterexample:" << std::endl;
+          std::cout << v_.get_counterexample() << std::endl << std::endl;
+          ceg_shown_ = true;
+
+          std::cout << "Target final state:" << std::endl;
+          std::cout << v_.get_target_final_state() << std::endl << std::endl;
+
+          std::cout << "Rewrite final state:" << std::endl;
+          std::cout << v_.get_rewrite_final_state() << std::endl;
+
+          break;
+        }
+
+        case NO_COUNTEREXAMPLE:
+          ADD_FAILURE() << "Codes were non-equivalent, but no counterexample generated";
+          break;
+
+        case ERROR: {
+          size_t line;
+          std::string file;
+          std::string message = v_.get_error(&line, &file);
+          ADD_FAILURE_AT(message.c_str(), line) << "Validator reported unexpected error: "
+                                                << std::endl <<  message << std::endl;
+          break;
+        }
+
+        case OTHER:
+          ADD_FAILURE() << message;
+          break;
+
+        default:
+          FAIL() << "Internal error in validator's testing system.";
+      }
+
+      if(fatal)
+        FAIL() << "(Encountered errors were fatal)";
+
+    }
+
+
+    void check_codes(int expected) {
+      
+      // Run the validator on both codes and check for equivalence
+      // Possible outcomes are:
+      //  - error
+      //  - equivalent
+      //  - counterexample
+      //  - non-equivalent, no counterexample
+
+      stoke::CpuState ceg;
+      Outcome outcome;
+
+      // Check for equivalence
+      bool equiv = v_.validate(*cfg_t_, *cfg_r_, ceg);
+      // See if an error occurred
+      bool error = v_.has_error();
+      // See if a counterexample is available
+      bool got_ceg = v_.is_counterexample_valid();
+      // Later, we'll check if CFG is valid
+      bool ceg_is_ok = false;
+
+      // See if it all checks out
+      if (equiv) {
+        if(error) {
+          report_error(expected, OTHER, true,
+              "Validator says codes are equivalent, but also returned an error.");
+        }
+        if(got_ceg) {
+          report_error(expected, OTHER, true,
+              "Validator says codes are equivalent, but also returned counterexample.");
+        }
+        outcome = EQUIVALENT;
+      } else {
+        if(got_ceg) {
+          if(error) {
+            report_error(expected, OTHER, true,
+                "Validator produced counterexample, but also returned an error.");
+          } else {
+            outcome = COUNTEREXAMPLE;
+          }
+        } else {
+          if(error)
+            outcome = ERROR;
+          else
+            outcome = NO_COUNTEREXAMPLE;
+        }
+      }
+
+
+      // See what we need to report.
+      // If outcome exceeds expected, we're in trouble
+      if((outcome & expected) != outcome) 
+        report_error(expected, outcome, false);
+
+      if(got_ceg) {
+        check_ceg(ceg);
+      }
+    }
+
+    /* Called at the start of an "assert" to get the
+       target/rewrite the user wants to test, and reset our state for tracking
+       what we've reported to the user. */
+    void reset_state() {
+      cfg_t_ = get_cfg(target_);
+      cfg_r_ = get_cfg(rewrite_);
+
+      codes_shown_ = false;
+      ceg_shown_ = false;
+    }
+
+    /* What information we've shown the user */
+    bool codes_shown_;
+    bool ceg_shown_;
 
     /* The validator we're using */
     stoke::Validator v_;

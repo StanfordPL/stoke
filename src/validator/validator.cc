@@ -739,31 +739,48 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
 #ifdef DEBUG_VALIDATOR
   std::cout << "Enter the dragon!" << std::endl;
 #endif
+  // State
+  has_error_ = false;
 
-  // Setup some necessary variables.
-  vc_ = vc_createValidityChecker();
-  state_info_ = InitStateMapping();
+  try {
 
-  // Generate constraints
-  vector<Expr> constraints;
-  vector<Expr> query = generate_constraints(target, rewrite, constraints);
+    // Setup some necessary variables.
+    vc_ = vc_createValidityChecker();
+    state_info_ = InitStateMapping();
 
-  // Specify timeout for Z3
-  vc_->set("timeout", (int)timeout_);
+    // Generate constraints
+    vector<Expr> constraints;
+    vector<Expr> query = generate_constraints(target, rewrite, constraints);
 
-  // Run the solver
-  z3::model* model = z3Solve(vc_, constraints, query, state_info_);
+    // Specify timeout for Z3
+    vc_->set("timeout", (int)timeout_);
 
-  // Do we have a counterexample?
-  if (!model || model->num_funcs() != 0) {
+    // Run the solver
+    z3::model* model = z3Solve(vc_, constraints, query, state_info_);
+
+    // Do we have a counterexample?
+    if (!model || model->num_funcs() != 0) {
+      counterexample_valid_ = false;
+    } else {
+      counterexample_valid_ = true;
+      counterexample_ =      model_to_cpustate(vc_, state_info_, *model, "");
+      target_final_state_  = model_to_cpustate(vc_, state_info_, *model, "_1_Final");
+      rewrite_final_state_ = model_to_cpustate(vc_, state_info_, *model, "_2_Final");
+
+      counter_example = counterexample_;
+    }
+
+    return !model;
+
+  } catch(validator_error e) {
+  
+    has_error_ = true;
+    error_message_ = e.get_message();
+    error_file_ = e.get_file();
+    error_line_ = e.get_line();
     counterexample_valid_ = false;
-  } else {
-    counterexample_valid_ = true;
-    counter_example =      model_to_cpustate(vc_, state_info_, *model, "");
-    target_final_state_  = model_to_cpustate(vc_, state_info_, *model, "_1_Final");
-    rewrite_final_state_ = model_to_cpustate(vc_, state_info_, *model, "_2_Final");
-  }
 
-  return !model;
+    return 0;
+  }
 }
 

@@ -164,7 +164,7 @@ TEST_F(ValidatorBaseTest, SimpleCounterexample) {
   rewrite_ << "retq" << std::endl;
 
   stoke::CpuState ceg;
-  assert_ceg(ceg);
+  assert_ceg(&ceg);
 
   EXPECT_EQ(0xc0, 0xff & ceg.gp[1].get_fixed_quad(0));
 
@@ -180,7 +180,7 @@ TEST_F(ValidatorBaseTest, EflagsCounterexample) {
   rewrite_ << "retq" << std::endl;
 
   stoke::CpuState ceg;
-  assert_ceg(ceg);
+  assert_ceg(&ceg);
 
   // Zero flag should be set for counterexample.
   EXPECT_EQ(1, ceg.rf.is_set(6));
@@ -338,9 +338,18 @@ TEST_F(ValidatorBaseTest, AllTheOpcodesIdentity) {
 
   // Setup the validator with 50ms timeout. 
   set_timeout(50);
-  std::cout << "ALL DONE :)" << std::endl;
 
   // Loop and check
+  for(auto it : instructions) {
+    target_.clear();
+    rewrite_.clear();
+
+    target_ << it;
+    rewrite_ << it;
+
+    //assert_equiv_or_error();
+
+  }
 
 
 }
