@@ -82,6 +82,7 @@ TEST(DisassemblerTest, PopCnt) {
 
   /* Here's the callback sent to the disassembler */
   bool found_popcnt = false;
+  bool found_main = false;
 
   stoke::Disassembler::Callback test_tunit = 
     [&] (const stoke::FunctionCallbackData& pf) {
@@ -95,6 +96,13 @@ TEST(DisassemblerTest, PopCnt) {
       EXPECT_EQ(0x570, pf.offset);
       found_popcnt = true;
     }
+
+    if ( pf.tunit.name == "main") {
+      std::map<std::string, std::string> amap = pf.addr_label_map;
+      EXPECT_EQ("atoi@plt", amap["400430"]);
+      EXPECT_EQ("_Z6popcntm", amap["400570"]);
+      found_main = true;
+    }
   };
 
   stoke::Disassembler d;
@@ -102,6 +110,7 @@ TEST(DisassemblerTest, PopCnt) {
   d.disassemble("tests/fixtures/disassembler/popcnt");
 
   EXPECT_TRUE(found_popcnt);
+  EXPECT_TRUE(found_main);
   EXPECT_FALSE(d.has_error());
   EXPECT_EQ("", d.get_error());
 
