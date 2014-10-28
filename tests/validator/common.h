@@ -47,26 +47,31 @@ class ValidatorTest : public ::testing::Test {
     std::stringstream target_;
     std::stringstream rewrite_;
 
-    std::ostream& assert_equiv() {
-      reset_state();
+    void assert_equiv() {
+      if(!reset_state())
+        return;
 
       check_codes(EQUIVALENT);
-
-      return std::cout;
     }
 
-    std::ostream& assert_ceg(stoke::CpuState* ceg = NULL) {
-      reset_state();
+    void assert_equiv_or_error() {
+      if(!reset_state())
+        return;
+      check_codes(EQUIVALENT | ERROR);
+    }
+
+    void assert_ceg(stoke::CpuState* ceg = NULL) {
+      if(!reset_state())
+        return;
 
       check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE);
       if(ceg != NULL)
         *ceg = v_.get_counterexample();
-
-      return std::cout;
     }
 
     std::string assert_fail() {
-      reset_state();
+      if(!reset_state())
+        return "";
 
       stoke::CpuState ceg;
       std::string message;
@@ -81,7 +86,8 @@ class ValidatorTest : public ::testing::Test {
        If they are the same for all inputs, expect them to be equivalent.
        Otherwise, expect validator to come up with a correct counterexample. */
     void assert_sandbox(stoke::Sandbox& sb) {
-      reset_state();
+      if(!reset_state())
+        return;
 
       // Run the sandbox on the inputs
       sb.run(*cfg_t_);
@@ -115,10 +121,6 @@ class ValidatorTest : public ::testing::Test {
       } else {
         check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE);
       }
-
-      // Check the counterexample.
-      if(!validator_equiv)
-        check_ceg(ceg, true);
 
     }
 
@@ -167,6 +169,11 @@ class ValidatorTest : public ::testing::Test {
     stoke::Cfg* get_cfg(std::stringstream& ss) {
       x64asm::Code c;
       ss >> c;
+      if (ss.fail()) {
+        report_error(OTHER, OTHER, true, "Error parsing instruction: " + ss.str());
+        return 0;
+      }
+
       return new stoke::Cfg(c, x64asm::RegSet::universe(), live_outs_);
     }
 
@@ -287,7 +294,7 @@ class ValidatorTest : public ::testing::Test {
 
     /* Takes the counterexample, and runs the target and the rewrite on it.
        If you get the same thing, we have a validator bug. */
-    void check_ceg(stoke::CpuState& ceg, bool print = false) {
+    void check_ceg(stoke::CpuState& ceg) {
 
       // Make sure that a counterexample was intended.
       if(!v_.is_counterexample_valid())
@@ -310,19 +317,13 @@ class ValidatorTest : public ::testing::Test {
 
       // Check the results
       std::stringstream tmp;
-      tmp << "Sandbox disagrees with validator on final state of the target.  "
-          << "This is almost definitely a validator bug." << std::endl;
-      if(print)
-        tmp << "The counterexample found was: " << std::endl << ceg << std::endl;
+      tmp << "Sandbox disagrees with validator on final state of the target." << std::endl;
       expect_cpustate_equal_on_liveout(sandbox_target_state,
                                        v_.get_target_final_state(),
                                        tmp.str());
 
       tmp.clear();
-      tmp << "Sandbox disagrees with validator on final state of the rewrite.  "
-          << "This is almost definitely a validator bug." << std::endl;
-      if(print)
-        tmp << "The counterexample found was: " << std::endl << ceg << std::endl;
+      tmp << "Sandbox disagrees with validator on final state of the rewrite." << std::endl;
       expect_cpustate_equal_on_liveout(sandbox_rewrite_state,
                                        v_.get_rewrite_final_state(),
                                        tmp.str());
@@ -332,10 +333,19 @@ class ValidatorTest : public ::testing::Test {
     void report_error(int expected, Outcome actual, bool fatal=false, std::string message="") {
       if(!codes_shown_) {
         std::cout << "=== Validator Test Failed ====================" << std::endl;
-        std::cout << "--Target--" << std::endl;
-        std::cout << cfg_t_->get_code() << std::endl << std::endl;
-        std::cout << "--Rewrite--" << std::endl;
-        std::cout << cfg_r_->get_code() << std::endl << std::endl;
+        if (cfg_t_ != 0) {
+          std::cout << "--Target--" << std::endl;
+          std::cout << cfg_t_->get_code() << std::endl << std::endl;
+        } else {
+          std::cout << "Target is null!" << std::endl;
+        }
+
+        if (cfg_r_ != 0) {
+          std::cout << "--Rewrite--" << std::endl;
+          std::cout << cfg_r_->get_code() << std::endl << std::endl;
+        } else {
+          std::cout << "Rewrite is null!" << std::endl;
+        }
         codes_shown_ = true;
       }
 
@@ -454,12 +464,16 @@ class ValidatorTest : public ::testing::Test {
     /* Called at the start of an "assert" to get the
        target/rewrite the user wants to test, and reset our state for tracking
        what we've reported to the user. */
-    void reset_state() {
+    bool reset_state() {
+      cfg_t_ = 0;
+      cfg_r_ = 0;
       cfg_t_ = get_cfg(target_);
       cfg_r_ = get_cfg(rewrite_);
 
       codes_shown_ = false;
       ceg_shown_ = false;
+
+      return cfg_t_ && cfg_r_;
     }
 
     /* What information we've shown the user */

@@ -275,6 +275,8 @@ TEST_F(ValidatorBaseTest, AllTheOpcodesIdentity) {
     if(!stoke::Validator::is_supported(i))
       continue;
 
+    bool insert = true;
+
     for(size_t j = 0; j < i.arity(); j++) {
       switch(i.type(j)) {
         case x64asm::Type::IMM_8:
@@ -291,19 +293,19 @@ TEST_F(ValidatorBaseTest, AllTheOpcodesIdentity) {
           break;
 
         case x64asm::Type::R_64:
-          i.set_operand(j, x64asm::rax);
+          i.set_operand(j, x64asm::rdx);
           break;
         case x64asm::Type::R_32:
-          i.set_operand(j, x64asm::eax);
+          i.set_operand(j, x64asm::edx);
           break;
         case x64asm::Type::R_16:
-          i.set_operand(j, x64asm::ax);
+          i.set_operand(j, x64asm::cx);
           break;
         case x64asm::Type::RB:
           i.set_operand(j, x64asm::bpl);
           break;
         case x64asm::Type::RL:
-          i.set_operand(j, x64asm::al);
+          i.set_operand(j, x64asm::dl);
           break;
 
         case x64asm::Type::XMM:
@@ -328,11 +330,13 @@ TEST_F(ValidatorBaseTest, AllTheOpcodesIdentity) {
         default:
           //we don't handle these
           //memory, labels, ah-dh, mms, sts, etc.
+          insert = false;
           continue;
       }
     }
 
-    instructions.push_back(i);
+    if(insert)
+      instructions.push_back(i);
   }
 
 
@@ -344,10 +348,10 @@ TEST_F(ValidatorBaseTest, AllTheOpcodesIdentity) {
     target_.clear();
     rewrite_.clear();
 
-    target_ << it;
-    rewrite_ << it;
+    target_ << it << std::endl;
+    rewrite_ << it << std::endl;
 
-    //assert_equiv_or_error();
+    assert_equiv_or_error();
 
   }
 
