@@ -8,6 +8,11 @@ class ValidatorTest : public ::testing::Test {
 
   public:
 
+    ValidatorTest() {
+      cfg_t_ = 0;
+      cfg_r_ = 0;
+    }
+
     ~ValidatorTest() {
       if (cfg_t_)
         delete cfg_t_;
@@ -162,8 +167,13 @@ class ValidatorTest : public ::testing::Test {
       return message;
     }
 
+    /* Set live outs for equivalence check */
     void set_live_outs(x64asm::RegSet rs) {
       live_outs_ = rs;
+    }
+    /* Set maximum validation time */
+    void set_timeout(uint64_t time) {
+      v_.set_timeout(time);
     }
 
     /* Initialize member variables. */

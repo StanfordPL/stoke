@@ -258,4 +258,94 @@ TEST_F(ValidatorBaseTest, TimeoutWorks) {
 
 }
 
+TEST_F(ValidatorBaseTest, AllTheOpcodesIdentity) {
+
+  // For each supported opcode, construct an instruction with every register
+  // argument being a subregister of rax, rdx, xmm0 or xmm1 and every immediate
+  // 0.  For now, skip memory.  Then validate it against itself.  Errors and
+  // timeouts are okay.  Just not counterexamples.
+
+
+  // Generate the list of instructions
+  std::vector<x64asm::Instruction> instructions;
+
+  for (auto op = (int)x64asm::LABEL_DEFN, ope = (int)x64asm::XSAVEOPT64_M64; op != ope; ++op) {
+    x64asm::Instruction i((x64asm::Opcode)op);
+
+    if(!stoke::Validator::is_supported(i))
+      continue;
+
+    for(size_t j = 0; j < i.arity(); j++) {
+      switch(i.type(j)) {
+        case x64asm::Type::IMM_8:
+          i.set_operand(j, x64asm::Imm8(0));
+          break;
+        case x64asm::Type::IMM_16:
+          i.set_operand(j, x64asm::Imm16(0));
+          break;
+        case x64asm::Type::IMM_32:
+          i.set_operand(j, x64asm::Imm32(0));
+          break;
+        case x64asm::Type::IMM_64:
+          i.set_operand(j, x64asm::Imm64(0));
+          break;
+
+        case x64asm::Type::R_64:
+          i.set_operand(j, x64asm::rax);
+          break;
+        case x64asm::Type::R_32:
+          i.set_operand(j, x64asm::eax);
+          break;
+        case x64asm::Type::R_16:
+          i.set_operand(j, x64asm::ax);
+          break;
+        case x64asm::Type::RB:
+          i.set_operand(j, x64asm::bpl);
+          break;
+        case x64asm::Type::RL:
+          i.set_operand(j, x64asm::al);
+          break;
+
+        case x64asm::Type::XMM:
+          i.set_operand(j, x64asm::xmm0);
+        case x64asm::Type::YMM:
+          i.set_operand(j, x64asm::ymm0);
+
+        case x64asm::Type::ZERO:
+        case x64asm::Type::ONE:
+        case x64asm::Type::THREE:
+        case x64asm::Type::AL:
+        case x64asm::Type::CL:
+        case x64asm::Type::AX:
+        case x64asm::Type::DX:
+        case x64asm::Type::EAX:
+        case x64asm::Type::RAX:
+        case x64asm::Type::XMM_0:
+          //nothing to do for these
+          break;
+
+
+        default:
+          //we don't handle these
+          //memory, labels, ah-dh, mms, sts, etc.
+          continue;
+      }
+    }
+
+    instructions.push_back(i);
+  }
+
+
+  // Setup the validator with 50ms timeout. 
+  set_timeout(50);
+  std::cout << "ALL DONE :)" << std::endl;
+
+  // Loop and check
+
+
+}
+
+
+
+
 

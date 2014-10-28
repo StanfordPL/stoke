@@ -77,15 +77,32 @@ namespace stoke {
 
 class Validator {
 	public:
+
+    /* Evalue if the target and rewrite are the same */
 	  bool validate(const Cfg& target, const Cfg& rewrite, 
 	                CpuState& counter_example);
+
+    /* Check for an error in the last operation */
+    bool has_error() {
+      return has_error_;
+    }
+    /* Get the error message, and optionally metadata */
+    std::string get_error(size_t* line_no = NULL, std::string* file = NULL) {
+      if(!has_error_)
+        return "";
+
+      if(line_no)
+        *line_no = error_line_;
+      if(file)
+        *file = error_file_;
+      return error_message_;
+    }
 
     /* Set if the code being validated writes memory. */
     Validator& set_mem_out(bool b) {
       mem_out_ = b;
       return *this;
     }
-
     /* Set the amount of time the validator runs before giving up. */
     Validator& set_timeout(uint64_t time) {
       timeout_ = time;
@@ -96,7 +113,6 @@ class Validator {
     bool is_counterexample_valid() {
       return counterexample_valid_;
     }
-    
     /* Gets the counterexample */
     CpuState get_counterexample() {
       return counterexample_;
@@ -112,6 +128,8 @@ class Validator {
 
     /* Returns whether this instruction is supported */
     static bool is_supported(x64asm::Instruction i);
+    /* Returns whether this opcode is supported*/
+    static bool is_supported(x64asm::Opcode o);
 
     /** @todo Need a data structure for abductions if we ever write this. */
     std::ostream& print_abduction(std::ostream& os);
@@ -137,6 +155,15 @@ class Validator {
     CpuState target_final_state_;
     /* If a counterexample existed, what was final state of rewrite? */
     CpuState rewrite_final_state_;
+
+    /* Was an error encountered? */
+    bool has_error_;
+    /* What was the message? */
+    std::string error_message_;
+    /* File where error occurred */
+    std::string error_file_;
+    /* Line where error occurred */
+    size_t error_line_;
 };
 
 
