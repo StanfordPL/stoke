@@ -149,6 +149,8 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   if (ips.eof())
     return false;
 
+  data.parse_error = false;
+
   string line;
   getline(ips, line);
 
@@ -179,7 +181,11 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
     ss << l.second << endl;
     data.instruction_offsets.push_back(l.first - starting_addr);
   }
+
+  // Read into code.
   ss >> data.tunit.code;
+  if(ss.fail())
+    data.parse_error = true;
 
   return true;
 }

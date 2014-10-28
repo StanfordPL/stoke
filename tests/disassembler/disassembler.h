@@ -26,6 +26,8 @@ TEST(DisassemblerTest, SimpleExample) {
   stoke::Disassembler::Callback test_tunit = 
     [&] (const stoke::FunctionCallbackData& fcd) {
 
+    EXPECT_FALSE(fcd.parse_error);
+
     // There's only one function we're really testing.
     if ( fcd.tunit.name == "sample") {
       EXPECT_EQ(sample_code, fcd.tunit.code); 
@@ -84,6 +86,8 @@ TEST(DisassemblerTest, PopCnt) {
   stoke::Disassembler::Callback test_tunit = 
     [&] (const stoke::FunctionCallbackData& pf) {
 
+    EXPECT_FALSE(pf.parse_error);
+
     // There's only one function we're really testing.
     if ( pf.tunit.name == "_Z6popcntm") {
       EXPECT_EQ(popcnt_code, pf.tunit.code); 
@@ -100,6 +104,28 @@ TEST(DisassemblerTest, PopCnt) {
   EXPECT_TRUE(found_popcnt);
   EXPECT_FALSE(d.has_error());
   EXPECT_EQ("", d.get_error());
+
+}
+
+TEST(DisassemblerTest, ParseErrors) {
+  // If this test is failing, it may be because we've fixed a parse error in
+  // x64asm which this test expects to encounter.  
+
+  size_t errors_found = 0;
+
+  stoke::Disassembler::Callback test_tunit = 
+    [&] (const stoke::FunctionCallbackData& pf) {
+
+    if (pf.parse_error)
+      errors_found++;
+  };
+
+  stoke::Disassembler d;
+  d.set_function_callback(&test_tunit);
+  d.disassemble("tests/fixtures/disassembler/errors");
+
+  EXPECT_GT(errors_found, 5);
+
 
 }
 
