@@ -37,7 +37,7 @@ bool Cfg::performs_undef_read() const {
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
-      const auto r = code_[idx].maybe_read_set();
+      const auto r = code_[idx].must_read_set();
       const auto di = def_ins_[idx];
 
       if ((r & di) != r) {
@@ -523,16 +523,16 @@ void Cfg::recompute_liveness_use_kill() {
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
 
-      if(j->is_call()) {
+/*      if(j->is_call()) {
         liveness_use_[*i] |= (RegSet::linux_call_parameters() - liveness_kill_[*i]);
         liveness_kill_[*i] |= RegSet::linux_call_scratch();
 
-      } else {
+      } else {*/
         liveness_use_[*i] |= (j->maybe_read_set() - liveness_kill_[*i]);
 
         liveness_kill_[*i] |= j->must_undef_set();
         liveness_kill_[*i] |= j->must_write_set();
-      }
+//      }
     }
   }
 }
