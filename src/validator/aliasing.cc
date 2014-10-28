@@ -62,7 +62,7 @@ void v_callback(const StateCallbackData& data, void* arg) {
   cout << "Current Instruction: " << instr << endl;
 #endif
   
-  if(instr.derefs_mem())
+  if(instr.is_explicit_memory_dereference())
   {
     auto mem_idx = instr.mem_index();
     line2addr[line]=addr_n_width(getMemAddrVal(instr.get_operand<M8>((size_t)mem_idx),data.state), getMemAddrWidth(instr, mem_idx));      	  

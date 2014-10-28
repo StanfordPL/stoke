@@ -332,7 +332,7 @@ set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, MemoryData& mem, string
 	set<SS_Id> retval;
 	const x64asm::Instruction& instr = n.getInstr();
 	
-	if(instr.derefs_mem())
+	if(instr.is_explicit_memory_dereference())
 	{
 	  if(instr.maybe_write(instr.mem_index()))
 	    retval.insert(state_info.first.valToId(mem.name_deref(n.getInsNo(),!codenum.compare("1"))));	  
