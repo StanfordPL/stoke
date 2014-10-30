@@ -286,7 +286,7 @@ auto& stat_int = ValueArg<size_t>::create("statistics_interval")
     .description("Number of iterations between statistics updates")
     .default_val(100000);
 
-auto& stat_max = ValueArg<uint64_t>::create("statistics_max_cost")
+auto& stat_max = ValueArg<uint32_t>::create("statistics_max_cost")
     .usage("<int>")
     .description("Maximum cost to record when collecting statistics")
     .default_val(400);
@@ -379,13 +379,13 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 
 struct ScbArg {
   ostream* os;
-  uint64_t** cost_stats;
+  uint32_t** cost_stats;
 };
 
 void scb(const StatisticsCallbackData& data, void* arg) {
   ScbArg sa = *((ScbArg*)arg);
   ostream& os = *(sa.os);
-  uint64_t** cost_stats = sa.cost_stats;
+  uint32_t** cost_stats = sa.cost_stats;
 
 	os << dec;
 
@@ -566,9 +566,9 @@ int main(int argc, char** argv) {
     if(stat_dir.value() != "") {
       if(!scb_arg.cost_stats) {
         cout << "Initialize cost_stats with size " << stat_max.value() + 1 << endl;
-        scb_arg.cost_stats = new uint64_t*[stat_max.value()+1];
+        scb_arg.cost_stats = new uint32_t*[stat_max.value()+1];
         for(size_t i = 0; i <= stat_max.value(); ++i) {
-          scb_arg.cost_stats[i] = new uint64_t[stat_max.value()+1];
+          scb_arg.cost_stats[i] = new uint32_t[stat_max.value()+1];
           for(size_t j = 0; j <= stat_max.value(); ++j)
             scb_arg.cost_stats[i][j] = 0;
         }
