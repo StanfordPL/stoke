@@ -19,6 +19,7 @@
 #include <random>
 #include <set>
 #include <vector>
+#include <sys/time.h>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/column.h"
@@ -275,10 +276,20 @@ auto& timeouts = ValueArg<size_t>::create("timeout_cycles")
     .description("Number of timeout cycles to attempt before giving up")
     .default_val(16);
 
+auto& stat_dir = ValueArg<string>::create("statistics_directory")
+    .usage("<dir>")
+    .description("Place to put files with cost function data")
+    .default_val("");
+
 auto& stat_int = ValueArg<size_t>::create("statistics_interval")
     .usage("<int>")
     .description("Number of iterations between statistics updates")
     .default_val(100000);
+
+auto& stat_max = ValueArg<uint64_t>::create("statistics_max_cost")
+    .usage("<int>")
+    .description("Maximum cost to record when collecting statistics")
+    .default_val(400);
 
 auto& beta = ValueArg<double>::create("beta")
     .usage("<double>")
@@ -366,8 +377,16 @@ void pcb(const ProgressCallbackData& data, void* arg) {
   sep(os);
 }
 
+struct ScbArg {
+  ostream* os;
+  uint64_t** cost_stats;
+};
+
 void scb(const StatisticsCallbackData& data, void* arg) {
-  ostream& os = *((ostream*)arg);
+  ScbArg sa = *((ScbArg*)arg);
+  ostream& os = *(sa.os);
+  uint64_t** cost_stats = sa.cost_stats;
+
 	os << dec;
 
   os << "Statistics Update: " << endl;
@@ -427,6 +446,27 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 
   os << endl << endl;
   sep(os);
+
+  if(stat_dir.value() != "" && cost_stats != NULL) {
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    string filename = stat_dir.value() + "/" + to_string(tv.tv_sec) + "_" + to_string(tv.tv_usec);
+
+    ofstream stats;
+    stats.open(filename);
+    if(!stats.is_open()) {
+      cerr << "Could not open " << filename << " for writing statistics." << endl;
+    }
+
+    for(size_t i = 0; i <= stat_max.value(); ++i) {
+      for(size_t j = 0; j <= stat_max.value(); ++j) {
+        if(cost_stats[i][j])
+          stats << i << " " << j << " " << cost_stats[i][j] << endl;
+      }
+    }
+
+    stats.close();
+  }
 }
 
 int main(int argc, char** argv) {
@@ -477,6 +517,10 @@ int main(int argc, char** argv) {
   .set_opcode_pool(flags, nop_percent, mem_read, mem_write, propose_call)
   .set_operand_pool(target.value().code, preserve_regs.value());
 
+  ScbArg scb_arg;
+  scb_arg.os = &cout;
+  scb_arg.cost_stats = NULL;
+
   Search search(&transforms);
   search.set_seed(seed)
 	.set_max_instrs(max_instrs)
@@ -491,7 +535,7 @@ int main(int argc, char** argv) {
   .set_mass(Move::RESIZE, resize_mass)
 	.set_mass(Move::EXTENSION, extension_mass)
   .set_progress_callback(pcb, &cout)
-  .set_statistics_callback(scb, &cout)
+  .set_statistics_callback(scb, &scb_arg)
   .set_statistics_interval(stat_int);
 
 	CostFunction hold_out_fxn(&test_sb);
@@ -518,6 +562,22 @@ int main(int argc, char** argv) {
 		.set_min_ulp(min_ulp)
 		.set_reduction(reduction)
 		.set_performance_term(perf);
+
+    if(stat_dir.value() != "") {
+      if(!scb_arg.cost_stats) {
+        cout << "Initialize cost_stats with size " << stat_max.value() + 1 << endl;
+        scb_arg.cost_stats = new uint64_t*[stat_max.value()+1];
+        for(size_t i = 0; i <= stat_max.value(); ++i) {
+          scb_arg.cost_stats[i] = new uint64_t[stat_max.value()+1];
+          for(size_t j = 0; j <= stat_max.value(); ++j)
+            scb_arg.cost_stats[i][j] = 0;
+        }
+      }
+
+      cout << "Setting up statistics" << endl;
+      cout << "address is " << scb_arg.cost_stats << endl;
+      fxn.set_statistics(scb_arg.cost_stats, stat_max.value()+1);
+    }
 
 		cout << "Running search:" << endl << endl;
 		
