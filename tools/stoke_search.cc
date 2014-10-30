@@ -163,6 +163,11 @@ auto& min_ulp = ValueArg<Cost>::create("min_ulp")
     .description("Minimum ULP value to record")
     .default_val(0);
 
+auto& k = ValueArg<uint32_t>::create("k")
+    .usage("<int>")
+    .description("Multiplier for the correctness term")
+    .default_val(1);
+
 auto& h5 = Heading::create("Performance options:");
 
 auto& perf = ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
@@ -450,10 +455,11 @@ void scb(const StatisticsCallbackData& data, void* arg) {
   if(stat_dir.value() != "" && cost_stats != NULL) {
     struct timeval tv;
     gettimeofday(&tv, 0);
-    string filename = stat_dir.value() + "/" + to_string(tv.tv_sec) + "_" + to_string(tv.tv_usec);
+    stringstream filename;
+    filename << stat_dir.value() << "/" << tv.tv_sec << setfill('0') << setw(6) << tv.tv_usec;
 
     ofstream stats;
-    stats.open(filename);
+    stats.open(filename.str());
     if(!stats.is_open()) {
       cerr << "Could not open " << filename << " for writing statistics." << endl;
     }
@@ -545,6 +551,7 @@ int main(int argc, char** argv) {
 	.set_relax(relax_reg, relax_mem)
 	.set_penalty(misalign_penalty, sig_penalty, 0)
 	.set_min_ulp(min_ulp)
+  .set_k(k.value())
 	.set_reduction(reduction)
 	.set_performance_term(PerformanceTerm::NONE);
 
@@ -559,6 +566,7 @@ int main(int argc, char** argv) {
 		.set_sse(sse_width, sse_count)
 		.set_relax(relax_reg, relax_mem)
 		.set_penalty(misalign_penalty, sig_penalty, nesting_penalty)
+    .set_k(k.value())
 		.set_min_ulp(min_ulp)
 		.set_reduction(reduction)
 		.set_performance_term(perf);
