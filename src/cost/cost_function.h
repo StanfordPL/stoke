@@ -59,6 +59,7 @@ class CostFunction {
     set_relax(false, false);
     set_penalty(0, 0, 0);
     set_min_ulp(0);
+    set_k(1);
     set_reduction(Reduction::SUM);
     set_max_size_penalty(0, 0, 0);
     set_statistics(NULL, 0);
@@ -102,6 +103,11 @@ class CostFunction {
 	/** Set the minimum unacceptable ULP error for floating-point comparisons. */
   CostFunction& set_min_ulp(Cost mu) {
     min_ulp_ = mu;
+    return *this;
+  }
+  /** Set the value of k, the multiplier on the correctness term */
+  CostFunction& set_k(uint32_t k) {
+    k_ = k;
     return *this;
   }
 	/** Set the reduction method to use when aggregating testcase costs. */
@@ -165,6 +171,8 @@ class CostFunction {
   Cost nesting_penalty_;
 	/** Minimum unacceptable ULP error for floating-point comparisons. */
   Cost min_ulp_;
+  /** Multiplier for the correctness term */
+  uint32_t k_;
 	/** Reduction method. */
   Reduction reduction_;
 	/** Performance term type. */

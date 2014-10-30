@@ -25,10 +25,17 @@ testcase:
 	stoke testcase --config testcase.conf
 
 search:
+	rm -rf stats/*
+	mkdir stats
 	stoke search --config search.conf
 
 replace:
 	stoke replace --config replace.conf
 
+plots:
+	chmod +x make_plots.sh
+	chmod +x plot.gnuplot
+	./make_plots.sh
+
 clean:
-	rm -rf bins ./a.out *.tc *.s
+	rm -rf bins ./a.out *.tc *.s stats plots

@@ -79,7 +79,7 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm
 CostFunction::result_type CostFunction::operator()(const Cfg& cfg, const Cost max) {
   if(!cost_statistics_) {
 
-    auto cost = evaluate_correctness(cfg, max);
+    auto cost = k_*evaluate_correctness(cfg, (max + k_ - 1)/k_);
     assert(cost <= max_cost);
 
     const auto correct = cost == 0;
@@ -92,25 +92,24 @@ CostFunction::result_type CostFunction::operator()(const Cfg& cfg, const Cost ma
 
   } else {
 
-    auto correctness = evaluate_correctness(cfg, max);
-    if (correctness >= cost_statistics_dim_)
-      correctness = cost_statistics_dim_ - 1;
+    const auto correctness = evaluate_correctness(cfg, (max + k_ - 1)/k_);
 
-    auto performance = 
+    const auto performance = 
       ( pterm_ == PerformanceTerm::NONE ? 0 :
-        evaluate_performance(cfg, cost_statistics_dim_-1));
+        evaluate_performance(cfg, (max + k_ - 1)/k_));
 
-    if (performance >= cost_statistics_dim_)
-      performance = cost_statistics_dim_ - 1;
+    const auto correctness_index = 
+      (correctness >= cost_statistics_dim_ ? cost_statistics_dim_ - 1: correctness);
 
-    cost_statistics_[correctness][performance]++;
+    const auto performance_index =
+      (performance >= cost_statistics_dim_ ? cost_statistics_dim_ - 1: performance);
+      
+    cost_statistics_[correctness_index][performance_index]++;
 
-    const auto total = correctness + performance;
+    const auto total = k_*correctness + performance;
     const auto correct = correctness == 0;
-    if(correctness + performance > max) 
-      return result_type(correct, max);
-    else
-      return result_type(correct, total);
+
+    return result_type(correct, total);
   }
 }
 
