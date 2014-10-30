@@ -116,7 +116,7 @@ class CostFunction {
   }
 
   /* Setup cost statistic gathering.  Returns false if there's no support. */
-  CostFunction& set_statistics(uint64_t** cost_statistics, uint64_t dimensions) {
+  CostFunction& set_statistics(uint32_t** cost_statistics, uint32_t dimensions) {
     cost_statistics_dim_ = dimensions;
     cost_statistics_ = cost_statistics;
     return *this;
@@ -178,9 +178,9 @@ class CostFunction {
   size_t max_size_;
 
   /** Pointer to table with statistics on the costs seen */
-  uint64_t** cost_statistics_;
+  uint32_t** cost_statistics_;
   /** The dimension of the above table (it's square) */
-  uint64_t cost_statistics_dim_;
+  uint32_t cost_statistics_dim_;
 
 
 	/** The results produced by executing the target on testcases. */
