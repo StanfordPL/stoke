@@ -26,7 +26,14 @@
     "retq"
   ],
 
+
   "tests": {
+
+    "is_sound": {
+      "live_in": ["%rdi"],
+      "live_out": ["%rax"],
+      "result": false
+    },
 
     "liveness": {
       "given liveout":   ["%rax", "%rdx", "%xmm0", "%xmm1"],

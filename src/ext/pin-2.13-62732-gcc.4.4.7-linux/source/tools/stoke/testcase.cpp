@@ -14,14 +14,13 @@
 
 /* ============================================================================================= */
 
-#include <cassert>
 #include <stdint.h>
 
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <stack>
+#include <vector>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -53,18 +52,24 @@ KNOB<string> KnobEndLines(KNOB_MODE_WRITEONCE, "pintool", "e", "0",
 /* Global Variables */
 /* ============================================================================================= */
 
+// Max number of testcases to emit
 int tc_remaining_;
+// Line to begin recording on in the target function
 uint64_t begin_line_;
+// Lines to stop recording on in the target function (we always stop on ret)
 unordered_set<uint64_t> end_lines_;
 
-stack<CpuState> tcs_;
-stack<size_t> stack_frames_;
-stack<unordered_set<uint64_t>> stack_valids_;
-stack<unordered_map<uint64_t, uint8_t>> stack_defs_;
-stack<unordered_set<uint64_t>> heap_valids_;
-stack<unordered_map<uint64_t, uint8_t>> heap_defs_;
-
-CpuStates results_;
+// Internal state associated with the current testcase
+bool recording_;
+size_t stack_frame_;
+size_t call_depth_;
+unordered_set<uint64_t> stack_valids_;
+unordered_map<uint64_t, uint8_t> stack_defs_;
+unordered_set<uint64_t> heap_valids_;
+unordered_map<uint64_t, uint8_t> heap_defs_;
+// The set of testcases so far accumulated (last is under construction)
+CpuStates tcs_;
+// Target ostream
 ostream* os_;
 
 /* ============================================================================================= */
@@ -81,8 +86,32 @@ INT32 Usage() {
 
 /* ============================================================================================= */
 
-VOID begin_stack_frame(ADDRINT rsp) {
-  stack_frames_.push(rsp);
+VOID unsupported_check() {
+	// If control hits here and we're recording, we need to quit
+	if (recording_) {
+		cout << "Encountered an unsupported instruction while recording!" << endl;
+		exit(1);
+	}
+}
+
+/* ============================================================================================= */
+
+VOID update_state(ADDRINT rsp) {
+	// Reset internal state if we're not recording; we might be about to start
+	if (!recording_) {
+		stack_frame_ = rsp;
+		call_depth_ = 0;
+
+		stack_valids_.clear();
+		stack_defs_.clear();
+
+		heap_valids_.clear();
+		heap_defs_.clear();
+	}
+	// Otherwise, we've jumped into the target function while recording; increment the call counter
+	else {
+		call_depth_++;
+	}
 }
 
 /* ============================================================================================= */
@@ -97,12 +126,16 @@ VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
               PIN_REGISTER* sse12, PIN_REGISTER* sse13, PIN_REGISTER* sse14, PIN_REGISTER* sse15,
 							ADDRINT rflags
              ) {
-  if (tc_remaining_ == 0) {
+	// Nothing to do if we've satisfied our quota, or we're currently recording
+  if (tc_remaining_ == 0 || recording_) {
     return;
   }
+	// Otherwise, we're starting recording right now
+	recording_ = true;
+	tcs_.push_back(CpuState());
+	auto& tc = tcs_.back();
 
-  CpuState tc;
-
+	// Record GP registers
   tc.gp[0].get_fixed_quad(0) = rax;
   tc.gp[1].get_fixed_quad(0) = rcx;
   tc.gp[2].get_fixed_quad(0) = rdx;
@@ -119,7 +152,7 @@ VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
   tc.gp[13].get_fixed_quad(0) = r13;
   tc.gp[14].get_fixed_quad(0) = r14;
   tc.gp[15].get_fixed_quad(0) = r15;
-
+	// Record SSE registers
   for (size_t i = 0; i < 4; ++i) {
     tc.sse[0].get_fixed_quad(i) = sse0->qword[i];
     tc.sse[1].get_fixed_quad(i) = sse1->qword[i];
@@ -138,43 +171,31 @@ VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
     tc.sse[14].get_fixed_quad(i) = sse14->qword[i];
     tc.sse[15].get_fixed_quad(i) = sse15->qword[i];
   }
-
+	// Record RFLAGS
 	for (size_t i = 0, ie = tc.rf.size(); i < ie; ++i) {
 		tc.rf.set(i, (rflags >> i) & 0x1);
 	}
-
-  tcs_.push(tc);
-  stack_valids_.push(unordered_set<uint64_t>());
-  stack_defs_.push(unordered_map<uint64_t, uint8_t>());
-  heap_valids_.push(unordered_set<uint64_t>());
-  heap_defs_.push(unordered_map<uint64_t, uint8_t>());
 }
 
 /* ============================================================================================= */
 
 VOID record_read(ADDRINT rip, VOID* addr, UINT32 size) {
-  assert(!stack_frames_.empty());
-
-  if (tc_remaining_ == 0 || tcs_.empty()) {
+	// Nothing to do here if we're not recording
+  if (!recording_) {
     return;
   }
 
-  auto& stack_valid = stack_valids_.top();
-  auto& stack_def = stack_defs_.top();
-  auto& heap_valid = heap_valids_.top();
-  auto& heap_def = heap_defs_.top();
-
   for (size_t i = 0; i < size; ++i) {
     uint64_t ptr = (uint64_t)addr + i;
-    if (ptr >= (stack_frames_.top() - KnobMaxStack.Value())) {
-      if (stack_valid.find(ptr) == stack_valid.end()) {
-        stack_valid.insert(ptr);
-        stack_def[ptr] = *((uint8_t*)ptr);
+    if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
+      if (stack_valids_.find(ptr) == stack_valids_.end()) {
+        stack_valids_.insert(ptr);
+        stack_defs_[ptr] = *((uint8_t*)ptr);
       }
     } else {
-      if (heap_valid.find(ptr) == heap_valid.end()) {
-        heap_valid.insert(ptr);
-        heap_def[ptr] = *((uint8_t*)ptr);
+      if (heap_valids_.find(ptr) == heap_valids_.end()) {
+        heap_valids_.insert(ptr);
+        heap_defs_[ptr] = *((uint8_t*)ptr);
       }
     }
   }
@@ -183,21 +204,17 @@ VOID record_read(ADDRINT rip, VOID* addr, UINT32 size) {
 /* ============================================================================================= */
 
 VOID record_write(ADDRINT rip, VOID* addr, UINT32 size) {
-  assert(!stack_frames_.empty());
-
-  if (tc_remaining_ == 0 || tcs_.empty()) {
+	// Nothing to do here if we're not recording
+  if (!recording_) {
     return;
   }
 
-  auto& stack_valid = stack_valids_.top();
-  auto& heap_valid = heap_valids_.top();
-
   for (size_t i = 0; i < size; ++i) {
     uint64_t ptr = (uint64_t)addr + i;
-    if (ptr >= (stack_frames_.top() - KnobMaxStack.Value())) {
-      stack_valid.insert(ptr);
+    if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
+      stack_valids_.insert(ptr);
     } else {
-      heap_valid.insert(ptr);
+      heap_valids_.insert(ptr);
     }
   }
 }
@@ -205,72 +222,62 @@ VOID record_write(ADDRINT rip, VOID* addr, UINT32 size) {
 /* ============================================================================================= */
 
 VOID end_tc() {
-  if (tc_remaining_ == 0 || tcs_.empty()) {
-    return;
-  }
+	// Nothing to do if we're not recording
+	if (!recording_) {
+		return;
+	}
+	// If we aren't at the top of the call stack, just decrement and return
+	if (call_depth_ > 0) {
+		call_depth_--;
+		return;
+	}
 
-  auto& tc = tcs_.top();
-  auto& stack_valid = stack_valids_.top();
-  auto& stack_def = stack_defs_.top();
-  auto& heap_valid = heap_valids_.top();
-  auto& heap_def = heap_defs_.top();
+	// Otherwise, we're done. Finish recording this testcase	
+	auto& tc = tcs_.back();
 
   uint64_t stack_min = 0xffffffffffffffff;
   uint64_t stack_max = 0;
-  for (const auto addr : stack_valid) {
+  for (const auto addr : stack_valids_) {
     stack_min = min(stack_min, addr);
     stack_max = max(stack_max, addr);
   }
 
 	const auto default_stack = 0x7000000000000000;
-	const auto stack_base = stack_valid.empty() ? default_stack : stack_min;
-	const auto stack_size = stack_valid.empty() ? 0 : stack_max - stack_min + 1;
+	const auto stack_base = stack_valids_.empty() ? default_stack : stack_min;
+	const auto stack_size = stack_valids_.empty() ? 0 : stack_max - stack_min + 1;
 	tc.stack.resize(stack_base, stack_size);
 
-  for (const auto addr : stack_valid) {
+  for (const auto addr : stack_valids_) {
     tc.stack.set_valid(addr, true);
   }
-  for (const auto& def : stack_def) {
+  for (const auto& def : stack_defs_) {
     tc.stack.set_defined(def.first, true);
     tc.stack[def.first] = def.second;
   }
 
   uint64_t heap_min = 0xffffffffffffffff;
   uint64_t heap_max = 0;
-  for (const auto addr : heap_valid) {
+  for (const auto addr : heap_valids_) {
     heap_min = min(heap_min, addr);
     heap_max = max(heap_max, addr);
   }
 
 	const auto default_heap = 0;
-	const auto heap_base = heap_valid.empty() ? default_heap : heap_min;
-	const auto heap_size = heap_valid.empty() ? 0 : heap_max - heap_min + 1;
+	const auto heap_base = heap_valids_.empty() ? default_heap : heap_min;
+	const auto heap_size = heap_valids_.empty() ? 0 : heap_max - heap_min + 1;
 	tc.heap.resize(heap_base, heap_size);
 
-  for (const auto addr : heap_valid) {
+  for (const auto addr : heap_valids_) {
     tc.heap.set_valid(addr, true);
   }
-  for (const auto& def : heap_def) {
+  for (const auto& def : heap_defs_) {
     tc.heap.set_defined(def.first, true);
     tc.heap[def.first] = def.second;
   }
 
-	results_.push_back(tc);
-  
-	tcs_.pop();
-  heap_valids_.pop();
-  heap_defs_.pop();
-  stack_valids_.pop();
-  stack_defs_.pop();
-
+	// Stop recording and decrement the quota
+	recording_ = false;
   tc_remaining_--;
-}
-
-/* ============================================================================================= */
-
-VOID end_stack_frame() {
-  assert(!stack_frames_.empty());
-  stack_frames_.pop();
 }
 
 /* ============================================================================================= */
@@ -305,33 +312,34 @@ VOID emit_stop(INS& ins) {
 
 /* ============================================================================================= */
 
-VOID image(IMG img, VOID* v) {
-  RTN fxn = RTN_FindByName(img, KnobFxnName.Value().c_str());
-  if (!RTN_Valid(fxn)) {
-    return;
-  }
-
+VOID rtn(RTN fxn, VOID* v) {
   RTN_Open(fxn);
 
-  // Record a new stack frame
-  RTN_InsertCall(fxn, IPOINT_BEFORE, (AFUNPTR)begin_stack_frame,
-                 IARG_REG_VALUE, REG_RSP, IARG_END);
+	// Is this the target function?
+	bool is_target = RTN_Name(fxn) == KnobFxnName.Value();
+
+	// Whenever we hit the target, if we're not recording, we need to reset internal state
+	if (is_target) {
+		RTN_InsertCall(fxn, IPOINT_BEFORE, (AFUNPTR)update_state, IARG_REG_VALUE, REG_RSP, IARG_END);
+	}
 
 	size_t line = 1;
   for (INS ins = RTN_InsHead(fxn); INS_Valid(ins); ins = INS_Next(ins)) {
-		// Record initial register state
-		if ( line == begin_line_ ) {
+		// Potentially start recording a new testcase
+		if (is_target && (line == begin_line_)) {
 			emit_start(ins);
 		}
-		// Record final register state
-		if ( end_lines_.find(line) != end_lines_.end() || INS_IsRet(ins) ) {
+		// Likewise, potentially it's time to stop
+		if (is_target && ((end_lines_.find(line) != end_lines_.end()) || INS_IsRet(ins))) {
 			emit_stop(ins);
 		}
 		line++;
 
-    // Find memory operand
+    // Find memory operand (throw an error if we find an instruction that takes 2+)
     UINT32 memOpCount = INS_MemoryOperandCount(ins);
-    assert(memOpCount < 2 && "No support for multiple mem operands!");
+		if (memOpCount >= 2) {
+			INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) unsupported_check, IARG_END);
+		}
 
     // Record memory references
     if (memOpCount > 0 && INS_MemoryOperandIsRead(ins, 0))
@@ -342,20 +350,17 @@ VOID image(IMG img, VOID* v) {
                      IARG_INST_PTR, IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
   }
 
-  // Discard stack frame
-  RTN_InsertCall(fxn, IPOINT_AFTER, (AFUNPTR)end_stack_frame, IARG_END);
-
   RTN_Close(fxn);
 }
 
 /* ============================================================================================= */
 
 VOID Fini(INT32 code, VOID* v) {
-  if (!tcs_.empty()) {
-    exit(1);
-  }
+	// We used to throw an error here if we attempted to terminate while recording.
+	// This is plausible, though. Some programs terminate without ever returning from a call.
 
-	results_.write_text(*os_);
+	// We're all set; print everything to the target file
+	tcs_.write_text(*os_);
 	if (os_ == &cout) {
 		*os_ << endl;
 	}
@@ -366,26 +371,33 @@ VOID Fini(INT32 code, VOID* v) {
 /* ============================================================================================= */
 
 int main(int argc, char* argv[]) {
+	// Check usage
   if (PIN_Init(argc, argv)) {
     return Usage();
   }
 
+	// Read number of testcases to emit
+  tc_remaining_ = KnobMaxTc.Value();
+
+	// Read line number to begin recording on
+	begin_line_ = KnobBeginLine.Value();
+	// Read line numbers to stop recording on (we always stop on ret)
 	istringstream iss(KnobEndLines.Value());
 	uint64_t inst;
-
-  tc_remaining_ = KnobMaxTc.Value();
-	begin_line_ = KnobBeginLine.Value();
 	while ( iss >> dec >> inst ) {
 		end_lines_.insert(inst);
 	}
 
+	// Either we're writing to a file, or if none is provided, cout
   os_ = KnobOutFile.Value() == "" ? &cout : new ofstream(KnobOutFile.Value().c_str());
 
+	// Instrument every function and emit a finishing routine
   PIN_InitSymbols();
-  IMG_AddInstrumentFunction(image, 0);
+  RTN_AddInstrumentFunction(rtn, 0);
   PIN_AddFiniFunction(Fini, 0);
 
-  // Never returns
+  // Never returns; we start in a state where nothing is being recorded
+	recording_ = false;
   PIN_StartProgram();
 
   return 0;

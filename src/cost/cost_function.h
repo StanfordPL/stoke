@@ -59,8 +59,10 @@ class CostFunction {
     set_relax(false, false);
     set_penalty(0, 0, 0);
     set_min_ulp(0);
+    set_k(1);
     set_reduction(Reduction::SUM);
     set_max_size_penalty(0, 0, 0);
+    set_statistics(NULL, 0);
 
     set_performance_term(PerformanceTerm::NONE);
   }
@@ -103,6 +105,11 @@ class CostFunction {
     min_ulp_ = mu;
     return *this;
   }
+  /** Set the value of k, the multiplier on the correctness term */
+  CostFunction& set_k(uint32_t k) {
+    k_ = k;
+    return *this;
+  }
 	/** Set the reduction method to use when aggregating testcase costs. */
   CostFunction& set_reduction(Reduction r) {
     reduction_ = r;
@@ -114,20 +121,17 @@ class CostFunction {
     return *this;
   }
 
+  /* Setup cost statistic gathering.  Returns false if there's no support. */
+  CostFunction& set_statistics(uint32_t** cost_statistics, uint32_t dimensions) {
+    cost_statistics_dim_ = dimensions;
+    cost_statistics_ = cost_statistics;
+    return *this;
+  }
+
+
 	/** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
 		result would equal or exceed that value. */
-  result_type operator()(const Cfg& cfg, Cost max = max_cost) {
-    auto cost = evaluate_correctness(cfg, max);
-    assert(cost <= max_cost);
-
-    const auto correct = cost == 0;
-    if (cost < max && pterm_ != PerformanceTerm::NONE) {
-      cost += evaluate_performance(cfg, max);
-    }
-    assert(cost <= max_cost);
-
-    return result_type(correct, cost);
-  }
+  result_type operator()(const Cfg& cfg, const Cost max = max_cost);
 
 	/** Returns the number of testcases used in this function's correctness term. */
 	size_t num_testcases() const {
@@ -167,6 +171,8 @@ class CostFunction {
   Cost nesting_penalty_;
 	/** Minimum unacceptable ULP error for floating-point comparisons. */
   Cost min_ulp_;
+  /** Multiplier for the correctness term */
+  uint32_t k_;
 	/** Reduction method. */
   Reduction reduction_;
 	/** Performance term type. */
@@ -178,6 +184,11 @@ class CostFunction {
   Cost size_incr_penalty_;
   /** Maximum size for rewrite without encurring a penalty. */
   size_t max_size_;
+
+  /** Pointer to table with statistics on the costs seen */
+  uint32_t** cost_statistics_;
+  /** The dimension of the above table (it's square) */
+  uint32_t cost_statistics_dim_;
 
 
 	/** The results produced by executing the target on testcases. */
@@ -199,13 +210,13 @@ class CostFunction {
 			std::vector<x64asm::Xmm>& sses);
 
 	/** Evaluate the correctness term for a rewrite. */
-  Cost evaluate_correctness(const Cfg& cfg, Cost max);
+  Cost evaluate_correctness(const Cfg& cfg, const Cost max);
 	/** Evaluate correctness by returning the max cost over testcases. */
-  Cost max_correctness(const Cfg& cfg, Cost max);
+  Cost max_correctness(const Cfg& cfg, const Cost max);
 	/** Evaluate correctness by summing cost over testcases. */
-  Cost sum_correctness(const Cfg& cfg, Cost max);
+  Cost sum_correctness(const Cfg& cfg, const Cost max);
 	/** Add user-defined correctness implementations here ... */
-  Cost extension_correctness(const Cfg& cfg, Cost max);
+  Cost extension_correctness(const Cfg& cfg, const Cost max);
 
 	/** Evaluate error between states. */
   Cost evaluate_error(const CpuState& t, const CpuState& r) const;

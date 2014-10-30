@@ -71,6 +71,38 @@ TEST_P(CodeFixtureTest, LivenessAnalysis) {
 }
 
 
+TEST_P(CodeFixtureTest, IsSound) {
+
+  //Read the data from the fixture
+  CodeFixture fixture = GetParam();
+  auto json = fixture.get_test_data("is_sound");
+
+  if (!json.isMember("live_in") ||
+      !json.isMember("live_out") ||
+      !json.isMember("result")) {
+    std::cout << "     [no soundness data found]   " << std::endl;
+    return;
+  }
+
+  x64asm::RegSet live_in = 
+      parse_regset_from_json(json["live_in"]);
+
+  x64asm::RegSet live_out = 
+      parse_regset_from_json(json["live_out"]);
+
+  bool result = json["result"].asBool();
+
+  // Construct the CFG
+
+  stoke::Cfg cfg(fixture.get_code(), live_in, live_out);
+  EXPECT_EQ(result, cfg.is_sound());
+
+}
+
+
+
+
+
 TEST_P(CodeFixtureTest, CFGGetExit) {
 
   CodeFixture fixture = GetParam();
@@ -107,10 +139,10 @@ TEST_P(CodeFixtureTest, CFGNumInstr) {
   for(size_t i = 0; i < num_instrs_array.size(); ++i) {
     auto expected_instrs = num_instrs_array.get(i, Json::Value(1)).asInt();
     total += expected_instrs;
-    ASSERT_EQ(expected_instrs, cfg.num_instrs(i)) << " when i=" << i;
+    EXPECT_EQ(expected_instrs, cfg.num_instrs(i)) << " when i=" << i;
   }
 
-  ASSERT_EQ(total, fixture.get_code().size());
+  EXPECT_EQ(total, fixture.get_code().size());
 }
 
 
@@ -132,7 +164,7 @@ TEST_P(CodeFixtureTest, CFGNestingDepth) {
 
   for(size_t i = 0; i < nesting_depth_array.size(); ++i) {
     auto expected_depth = nesting_depth_array.get(i, Json::Value(1)).asInt();
-    ASSERT_EQ(expected_depth, cfg.nesting_depth(i)) << " for block " << i;
+    EXPECT_EQ(expected_depth, cfg.nesting_depth(i)) << " for block " << i;
   }
 }
 
@@ -159,10 +191,10 @@ TEST_P(CodeFixtureTest, CFGReachable) {
 
   for(size_t i = 0; i < cfg.num_blocks(); ++i) {
     if (expected_reachable_set.find(i) != expected_reachable_set.end()) {
-      ASSERT_TRUE(cfg.is_reachable(i)) 
+      EXPECT_TRUE(cfg.is_reachable(i)) 
         << "block " << i << " is not reachable but should be.";
     } else {
-      ASSERT_FALSE(cfg.is_reachable(i)) 
+      EXPECT_FALSE(cfg.is_reachable(i)) 
         << "block " << i << " is reachable but shouldn't be.";
     }
   }

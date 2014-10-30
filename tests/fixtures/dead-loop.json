@@ -14,6 +14,12 @@
       "jle .L1" ],
 
   "tests": {
+
+    "is_sound": {
+      "live_in": [],
+      "live_out": [],
+      "result": true
+    },
   
     "cfg": {
       "num_blocks": 5,

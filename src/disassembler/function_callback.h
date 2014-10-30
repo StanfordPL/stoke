@@ -32,6 +32,8 @@ struct FunctionCallbackData {
 	std::vector<uint64_t> instruction_offsets;
   /* Map from address labels to the original function names */
   std::map<std::string, std::string> addr_label_map;
+  /* Did a parse error occur? */
+  bool parse_error;
 };
 
 /** Callback signature */

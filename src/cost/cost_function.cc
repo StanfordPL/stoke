@@ -74,14 +74,57 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm
 	}
 }
 
-Cost CostFunction::evaluate_correctness(const Cfg& cfg, Cost max) {
+/** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
+  result would equal or exceed that value. */
+CostFunction::result_type CostFunction::operator()(const Cfg& cfg, const Cost max) {
+  if(!cost_statistics_) {
+
+    auto cost = k_*evaluate_correctness(cfg, (max + k_ - 1)/k_);
+    assert(cost <= max_cost);
+
+    const auto correct = cost == 0;
+    if (cost < max && pterm_ != PerformanceTerm::NONE) {
+      cost += evaluate_performance(cfg, max);
+    }
+    assert(cost <= max_cost);
+
+    return result_type(correct, cost);
+
+  } else {
+
+    const auto correctness = evaluate_correctness(cfg, (max + k_ - 1)/k_);
+
+    const auto performance = 
+      ( pterm_ == PerformanceTerm::NONE ? 0 :
+        evaluate_performance(cfg, (max + k_ - 1)/k_));
+
+    const auto correctness_index = 
+      (correctness >= cost_statistics_dim_ ? cost_statistics_dim_ - 1: correctness);
+
+    const auto performance_index =
+      (performance >= cost_statistics_dim_ ? cost_statistics_dim_ - 1: performance);
+      
+    cost_statistics_[correctness_index][performance_index]++;
+
+    const auto total = k_*correctness + performance;
+    const auto correct = correctness == 0;
+
+    return result_type(correct, total);
+  }
+}
+
+
+
+
+
+Cost CostFunction::evaluate_correctness(const Cfg& cfg, const Cost max) {
 
   // Apply the size penalty if needed
   Cost penalty = 0;
   if (size_starting_penalty_ > 0 || size_incr_penalty_ > 0) {
     penalty = assembled_size_cost(cfg);
     if (penalty >= max)
-      return penalty;
+      return max;
   }
 
   switch (reduction_) {
@@ -97,7 +140,7 @@ Cost CostFunction::evaluate_correctness(const Cfg& cfg, Cost max) {
   }
 }
 
-Cost CostFunction::max_correctness(const Cfg& cfg, Cost max) {
+Cost CostFunction::max_correctness(const Cfg& cfg, const Cost max) {
   Cost res = 0;
 
   sandbox_->compile(cfg);
@@ -114,7 +157,7 @@ Cost CostFunction::max_correctness(const Cfg& cfg, Cost max) {
   return res;
 }
 
-Cost CostFunction::sum_correctness(const Cfg& cfg, Cost max) {
+Cost CostFunction::sum_correctness(const Cfg& cfg, const Cost max) {
   Cost res = 0;
 
   sandbox_->compile(cfg);
@@ -133,7 +176,7 @@ Cost CostFunction::sum_correctness(const Cfg& cfg, Cost max) {
   return res;
 }
 
-Cost CostFunction::extension_correctness(const Cfg& cfg, Cost max) {
+Cost CostFunction::extension_correctness(const Cfg& cfg, const Cost max) {
 	Cost res = 0;
 
 	// Add user-defined implementation here ...	
@@ -346,7 +389,7 @@ Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {
 	return res;
 }
 
-Cost CostFunction::evaluate_performance(const Cfg& cfg, Cost max) const {
+Cost CostFunction::evaluate_performance(const Cfg& cfg, const Cost max) const {
   switch (pterm_) {
     case PerformanceTerm::SIZE:
       return size_performance(cfg);
