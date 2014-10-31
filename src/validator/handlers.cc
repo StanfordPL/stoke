@@ -1629,7 +1629,6 @@ void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsign
     assert(127 - (bits_to_shift - 128) == 255 - bits_to_shift);
 
     Expr dest_src1_equal = EqExpr(vc, dest_to_src1, src1_extract);
-    cout << "dest_src1_equal: " << dest_src1_equal;
     d.constraints.push_back(dest_src1_equal);
 
     // DEST[256-i, 127] <- zero (i - 128 bits)
@@ -1638,7 +1637,6 @@ void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsign
     assert(bits_to_shift - 128 == 127 - (256 - bits_to_shift) + 1);
 
     Expr equal = EqExpr(vc, dest_zero, zero);
-    cout << "equal: " << dest_src1_equal;
     d.constraints.push_back(equal);
 
     return;
@@ -2544,10 +2542,10 @@ void setccHandler(v_data d, string cc, Expr E_dest, Expr E_dest_pre, bool dest_i
   Expr pred = get_condition_predicate(d, cc);
 
   // If the predicate is true, then we set the destination equal to 1
-  // If it's false, we set the destination equal to the previous value.
+  // and otherwise to 0
  	Expr setif = vc_iteExpr(vc, pred, 
       EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, 8, 1)), 
-      EqExpr(vc, E_dest, E_dest_pre));
+      EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, 8, 0)));
   d.constraints.push_back(setif);
 
   // Preserve the other bits in registers

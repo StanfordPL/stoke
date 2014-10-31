@@ -115,12 +115,12 @@ TEST_F(ValidatorCmovSetCCTest, CmovSetEquivalent) {
     rewrite_.clear();
     std::string instr = "cmov" + cc + "q %rax, %rax";
 
-    target_ << "movq $0x80, %rax" << std::endl;
+    target_ << "movq $0x0, %rax" << std::endl;
     target_ << "movq $0x1, %rcx"  << std::endl;
     target_ << "cmov" << cc << "q %rcx, %rax" << std::endl;
     target_ << "retq" << std::endl;
 
-    rewrite_ << "movq $0x80, %rax" << std::endl;
+    rewrite_ << "movq $0x0, %rax" << std::endl;
     rewrite_ << "movq $0x1, %rcx"  << std::endl;
     rewrite_ << "set" << cc << " %al" << std::endl;
     rewrite_ << "retq" << std::endl;
