@@ -2565,7 +2565,10 @@ void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
   Expr retval(*vc);
   if(shamt <= bitWidth)
   {
-    if(shamt < bitWidth) {
+    if(shamt == 0) {
+      retval = EqExpr(vc, E_dest,E_src1);
+    }
+    else if(shamt < bitWidth) {
       retval = EqExpr(vc, E_dest, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, bitWidth-shamt-1, 0), vc_bvConstExprFromLL(vc, shamt, 0) ));
     }
     else {
