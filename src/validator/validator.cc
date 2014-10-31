@@ -361,54 +361,154 @@ set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, string codenum, bool in
 }		
 					
 				
+bool regset_is_supported(x64asm::RegSet rs) {
+
+  /* Check to make sure all liveout are supported. */
+  /* Right now we support gps, xmms, ACOPSZ eflags */
+  RegSet supported = RegSet::empty() +
+                     eflags_cf + eflags_of +
+                     eflags_pf + eflags_sf + eflags_zf;
+
+  // We don't want to add rhs, so we can't just use all_gps()
+  for(size_t i = 0; i < x64asm::r64s.size(); i++) {
+    supported += r64s[i];
+    supported += r32s[i];
+    supported += r16s[i];
+    if ( i < 4 ) {
+      supported += rls[i];
+    } else {
+      supported += rbs[i - 4];
+    }
+  }
+
+  // We don't want to add ymms, so don't use all_xmms()
+  for(size_t i = 0; i < xmms.size(); i++) {
+    supported += xmms[i];
+  }
+
+  // Do the check.
+  if((supported & rs) != rs) {
+    RegSetWriter rsw;
+    stringstream tmp;
+    rsw(tmp, rs - supported);
+
+    string message = 
+      string("Validator only supporgs gps (excluding %ah-%dh), xmms and eflags COPSZ in live out.") +
+      string("  Not supported: ") + tmp.str();
+                   
+    throw VALIDATOR_ERROR(message);
+    return false;
+  }
+  return true;
+}
+
+
+
 //Constrain the initial registers in which code_num starts (RAX_1_0 == RAX) 
-void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Expr>& constraints)
+void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Expr>& constraints, x64asm::RegSet def_ins)
 {
 	map<SS_Id, unsigned int>::iterator i;
 	Bijection<string> bij = state_info.first;
 	map<SS_Id, unsigned int> sizes = state_info.second;
 
+  if(!regset_is_supported(def_ins))
+    throw VALIDATOR_ERROR("RegSet not supported");
 
-	for(i = sizes.begin(); i != sizes.end(); i++)
+
+  /* Add constraints for the general purpose registers */
+	for(size_t i=0;i<x64asm::r64s.size();i++)
 	{
-		unsigned int bitwidth = i->second;
-		if(bitwidth == V_REGSIZE )
-		{
-			string elem = bij.toVal(i->first); 
-			Expr E_state_elem_common = regExpr(vc, elem, V_UNITSIZE);
-			Expr E_state_elem_initial = regExpr(vc, (elem + "_" + code_num + "_0"), V_UNITSIZE);
-			Expr E_eq_initial = EqExpr(vc, E_state_elem_common, E_state_elem_initial);
+    int bitwidth;
+	  auto op = x64asm::r64s[i];
+
+    /* See if we have the 64, 32, 16, or 8 bit register in the set */
+    if (def_ins.contains(op)) {
+      bitwidth = 64;
+    } else if (def_ins.contains(x64asm::r32s[i])) {
+      bitwidth = 32;
+    } else if (def_ins.contains(x64asm::r16s[i])) {
+      bitwidth = 16;
+    } else {
+      // Need to think about the sub-16 bit situation carefully.
+      if (i < 4) {
+
+        // case for ah, bc, ch, dh
+        if(def_ins.contains(x64asm::rhs[i]))
+          throw VALIDATOR_ERROR("%ah, %bl, %ch, %dh not supported live-out yet.");
+
+        // case for al, bl, cl, dl
+        if(def_ins.contains(x64asm::rls[i]))
+          bitwidth = 8;
+        else
+          continue;
+
+      } else if (def_ins.contains(x64asm::rbs[i-4])) {
+          //case for bpl, sil, dil, spl, r8b, r9b, ...
+          bitwidth = 8;
+      } else {
+        // The register is not here, in any form.
+        continue;
+      }
+    } 
+     
+    /* Get the string representation of this register */
+    string elem = bij.toVal(op); 
+
+    /* Build constraints asserting initial equality */
+    Expr common = regExpr(vc, elem, V_UNITSIZE);
+    Expr version0 = vc_bvExtract(vc, regExpr(vc, (elem + "_" + code_num + "_0"), V_UNITSIZE), bitwidth - 1, 0);
+    Expr E_eq_final = EqExpr(vc, common, version0);
 #ifdef DEBUG_VALIDATOR
-			cout << "Register constraint is: " << endl << E_eq_initial << endl;
+    cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
 #endif
-			constraints.push_back(E_eq_initial);
-		}
-		else if(bitwidth == V_FLAGSIZE)
-		{
-			string elem = bij.toVal(i->first);			
-			Expr E_state_elem_common = vc_varExpr(vc, elem.c_str(), vc_boolType(vc));
-			Expr E_state_elem_initial = vc_varExpr(vc, (elem + "_" + code_num + "_0").c_str(), vc_boolType(vc));
-			Expr E_eq_initial = vc_iffExpr(vc, E_state_elem_common, E_state_elem_initial);
-#ifdef DEBUG_VALIDATOR
-			cout << "Flag constraint is: " << endl << E_eq_initial << endl;
-#endif
-			constraints.push_back(E_eq_initial);			
-		}
-		
-		else if(bitwidth == V_XMMSIZE )
-		{
-			string elem = bij.toVal(i->first); 
-			Expr E_state_elem_common = regExpr(vc, elem, V_XMMUNIT);
-			Expr E_state_elem_initial = regExpr(vc, (elem + "_" + code_num + "_0"), V_XMMUNIT);
-			Expr E_eq_initial =  EqExpr(vc, E_state_elem_common, E_state_elem_initial); 
-#ifdef DEBUG_VALIDATOR
-			cout << "XMM Register constraint is:" << endl << E_eq_initial << endl;
-#endif
-			constraints.push_back(E_eq_initial);
-		}
-		else 
-      throw VALIDATOR_ERROR("Unexpected bitwidth for register");
+
+    /* Add the constraints. */
+    constraints.push_back(E_eq_final);
+
 	}
+
+	for(size_t i=0;i<x64asm::xmms.size();i++)
+	{
+	  auto op = x64asm::xmms[i];
+	  if(def_ins.contains(op))
+	  {
+			string elem = bij.toVal(XMM_BEG+op); 
+			Expr E_state_elem_1 = regExpr(vc, elem, V_XMMUNIT);
+			Expr E_state_elem_2 = regExpr(vc, (elem + "_" + code_num + "_0"),V_XMMUNIT);
+			Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+#ifdef DEBUG_VALIDATOR
+			cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
+#endif
+			constraints.push_back(E_eq_final);
+
+	  }
+	}
+
+  for(size_t i = 0; i < eflags.size(); i++) {
+
+    auto op = x64asm::eflags[i];
+    if(def_ins.contains(op))
+    {
+      /* Get the name of this flag */
+      string elem;
+      
+      if(!flagToString(eflags[i], elem))
+        VALIDATOR_ERROR("The only eflags we support are ACOPSZ");
+
+
+      /* Construct the constraint */
+      Expr E_state_elem_1 = vc_varExpr(vc, (elem + "_" + code_num + "_0").c_str(), vc_boolType(vc));
+      Expr E_state_elem_2 = vc_varExpr(vc, elem.c_str(), vc_boolType(vc));
+      Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+#ifdef DEBUG_VALIDATOR
+			cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
+#endif
+			constraints.push_back(E_eq_final);
+
+    }
+  }
+
+
 }
 
 //Constrain the final output registers to a known name (RAX_codenum_versionnumber == RAX_codenum_Final) 
@@ -495,6 +595,7 @@ VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constrai
 	return Vn;
 	
 }
+
 //Get query constraint for registers and memory. The query constraints are missing for condition registers as they are not live out.
 void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, x64asm::RegSet liveout)
 {
@@ -504,41 +605,8 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, x64as
 	map<SS_Id, unsigned int> sizes = state_info.second;
 	Expr retval = vc_trueExpr(vc);
 
-  /* Check to make sure all liveout are supported. */
-  /* Right now we support gps, xmms, ACOPSZ eflags */
-  RegSet supported = RegSet::empty() +
-                     eflags_cf + eflags_of +
-                     eflags_pf + eflags_sf + eflags_zf;
-
-  // We don't want to add rhs, so we can't just use all_gps()
-  for(size_t i = 0; i < x64asm::r64s.size(); i++) {
-    supported += r64s[i];
-    supported += r32s[i];
-    supported += r16s[i];
-    if ( i < 4 ) {
-      supported += rls[i];
-    } else {
-      supported += rbs[i - 4];
-    }
-  }
-
-  // We don't want to add ymms, so don't use all_xmms()
-  for(size_t i = 0; i < xmms.size(); i++) {
-    supported += xmms[i];
-  }
-
-  // Do the check.
-  if((supported & liveout) != liveout) {
-    RegSetWriter rsw;
-    stringstream tmp;
-    rsw(tmp, liveout - supported);
-
-    string message = 
-      string("Validator only supporgs gps (excluding %ah-%dh), xmms and eflags COPSZ in live out.") +
-      string("  Not supported: ") + tmp.str();
-                   
-    throw VALIDATOR_ERROR(message);
-  }
+  if(!regset_is_supported(liveout))
+    throw VALIDATOR_ERROR("RegSet not supported");
 
   /* Add constraints for the general purpose registers */
 	for(size_t i=0;i<x64asm::r64s.size();i++)
@@ -663,8 +731,8 @@ vector<Expr> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::
 	Ebb e2 = toEbb(vc_, f2, 4/*4*//*4*//*6*//*3*/, "2");
 	
 	//Add start constraints for target i.e. codenum="1"
-	addStartConstraint(vc_, "1", state_info_, constraints);
-	addStartConstraint(vc_, "2", state_info_, constraints);
+	addStartConstraint(vc_, "1", state_info_, constraints, f1.def_ins());
+	addStartConstraint(vc_, "2", state_info_, constraints, f2.def_ins());
 
 	//Convert code 1 i.e. target to constraints
 	auto Vn1=C2C(vc_, e1, state_info_, constraints, "1");

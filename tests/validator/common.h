@@ -179,7 +179,7 @@ class ValidatorTest : public ::testing::Test {
         return 0;
       }
 
-      return new stoke::Cfg(c, x64asm::RegSet::universe(), live_outs_);
+      return new stoke::Cfg(c, get_default_regset(), live_outs_);
     }
 
     template <typename T>
