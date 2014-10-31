@@ -67,7 +67,7 @@ TEST_F(ValidatorPalignrTest, DifferentImmediateDifferent) {
   target_ << "palignr $0x12, %xmm1, %xmm2" << std::endl;
   target_ << "retq" << std::endl;
 
-  target_ << "palignr $0x13, %xmm1, %xmm2" << std::endl;
+  rewrite_ << "palignr $0x13, %xmm1, %xmm2" << std::endl;
   rewrite_ << "retq" << std::endl;
 
   assert_ceg();

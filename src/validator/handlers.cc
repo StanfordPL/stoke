@@ -1626,8 +1626,10 @@ void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsign
 
     Expr src1_extract = vc_bvExtract(vc, E_src1, 127, bits_to_shift - 128);
     Expr dest_to_src1 = vc_bvExtract(vc, E_dest, 255 - bits_to_shift, 0);
+    assert(127 - (bits_to_shift - 128) == 255 - bits_to_shift);
 
     Expr dest_src1_equal = EqExpr(vc, dest_to_src1, src1_extract);
+    cout << "dest_src1_equal: " << dest_src1_equal;
     d.constraints.push_back(dest_src1_equal);
 
     // DEST[256-i, 127] <- zero (i - 128 bits)
@@ -1636,6 +1638,7 @@ void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsign
     assert(bits_to_shift - 128 == 127 - (256 - bits_to_shift) + 1);
 
     Expr equal = EqExpr(vc, dest_zero, zero);
+    cout << "equal: " << dest_src1_equal;
     d.constraints.push_back(equal);
 
     return;
