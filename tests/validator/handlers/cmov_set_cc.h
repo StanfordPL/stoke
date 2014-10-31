@@ -130,7 +130,7 @@ TEST_F(ValidatorCmovSetCCTest, CmovSetEquivalent) {
 
 }
 
-TEST_F(ValidatorCmovSetCCTest, TestSetccAgainstItself) {
+TEST_F(ValidatorCmovSetCCTest, DISABLED_TestSetccAgainstItself) {
 
   for(auto cc1 : ccs) {
     for(auto cc2 : ccs) {
@@ -151,7 +151,7 @@ TEST_F(ValidatorCmovSetCCTest, TestSetccAgainstItself) {
   }
 }
 
-TEST_F(ValidatorCmovSetCCTest, TestCmovccAgainstItself) {
+TEST_F(ValidatorCmovSetCCTest, DISABLED_TestCmovccAgainstItself) {
 
   for(auto cc1 : ccs) {
     for(auto cc2 : ccs) {
@@ -170,4 +170,18 @@ TEST_F(ValidatorCmovSetCCTest, TestCmovccAgainstItself) {
       assert_sandbox(*sb_);
     }
   }
+}
+
+TEST_F(ValidatorCmovSetCCTest, CmovzlCmovsl) {
+
+
+  target_ << "cmovzl %ebp, %esp" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "cmovsl %ebp, %esp" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_ceg();
+  //assert_sandbox(*sb_);
+
 }

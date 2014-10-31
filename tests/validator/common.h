@@ -201,14 +201,14 @@ class ValidatorTest : public ::testing::Test {
     }
 
     void expect_cpustate_equal_on_liveout(
-        stoke::CpuState actual,stoke::CpuState expected,std::string message) {
+        stoke::CpuState expect,stoke::CpuState actual,std::string message) {
 
 #define EXPECT_CPU_EQ_INT(A, B, M)  expect_cpustate_expect<uint64_t>(same, A, B, M, message)
 #define EXPECT_CPU_EQ_CODE(A, B, M) expect_cpustate_expect<stoke::ErrorCode>(same, A, B, M, message)
 
       bool same = true;
 
-      EXPECT_CPU_EQ_CODE(actual.code, expected.code, "The error codes differ.");
+      EXPECT_CPU_EQ_CODE(expect.code, actual.code, "The error codes differ.");
 
       for(size_t i=0; i < x64asm::r64s.size(); i++)
       {
@@ -241,7 +241,7 @@ class ValidatorTest : public ::testing::Test {
 
         // Check the lower bitwidth bits of cpustates are equal.
         uint64_t actual_full = actual.gp[i].get_fixed_quad(0);
-        uint64_t expected_full = actual.gp[i].get_fixed_quad(0);
+        uint64_t expected_full = expect.gp[i].get_fixed_quad(0);
 
         uint64_t mask = (-1) >> (64-bitwidth);
         uint64_t actual_masked = actual_full & mask;
@@ -259,8 +259,8 @@ class ValidatorTest : public ::testing::Test {
         if(live_outs_.contains(op)) {
           uint64_t actual_xmm_low = actual.sse[i].get_fixed_quad(0);
           uint64_t actual_xmm_high = actual.sse[i].get_fixed_quad(1);
-          uint64_t expected_xmm_low = expected.sse[i].get_fixed_quad(0);
-          uint64_t expected_xmm_high = expected.sse[i].get_fixed_quad(1);
+          uint64_t expected_xmm_low = expect.sse[i].get_fixed_quad(0);
+          uint64_t expected_xmm_high = expect.sse[i].get_fixed_quad(1);
 
           std::stringstream tmp;
           tmp << "Lower 64 bits of " << op << " differ.";
@@ -278,7 +278,7 @@ class ValidatorTest : public ::testing::Test {
 
         if(live_outs_.contains(op)) {
           uint64_t actual_flag = actual.rf.is_set(op.index());
-          uint64_t expected_flag = expected.rf.is_set(op.index());
+          uint64_t expected_flag = expect.rf.is_set(op.index());
 
           std::stringstream tmp;
           tmp << "Value of flag " << op.index() << " differs.";
@@ -298,6 +298,8 @@ class ValidatorTest : public ::testing::Test {
       if(!v_.is_counterexample_valid())
         return;
 
+      ASSERT_EQ(ceg, v_.get_counterexample());
+
       // Setup a sandbox with testcase
       stoke::Sandbox sb;
       sb.set_abi_check(false)
@@ -309,6 +311,7 @@ class ValidatorTest : public ::testing::Test {
       // Run the sandbox and check the results for each.
       // We only want to do this check if the state isn't undefined.
       if(cfg_t_->is_sound()) {
+
         sb.run(*cfg_t_);
         stoke::CpuState sandbox_target_state = *sb.get_result(0);
 
@@ -318,6 +321,7 @@ class ValidatorTest : public ::testing::Test {
                                          v_.get_target_final_state(),
                                          tmp.str());
       }
+
 
       if(cfg_r_->is_sound()) {
         sb.run(*cfg_r_);

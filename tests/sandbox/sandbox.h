@@ -189,7 +189,49 @@ TEST(SandboxTest, ModifyingRbxFailsIfAbiEnforced) {
 }
 
 
+TEST(SandboxTest, RflagsRegistersArePreserved) {
 
+  x64asm::Code c;
+  std::stringstream ss;
+
+  // Here's the input program
+  ss << "cmovzl %ebp, %esp" << std::endl;
+  ss << "retq" << std::endl;
+  ss >> c;
+
+  // Setup the sandbox and generate a random state
+  stoke::Sandbox sb;
+
+  stoke::CpuState tc;
+  tc.rf.set(7, 1);
+  //set rsp
+  tc.gp[4].get_fixed_quad(0) = 0xfffaffe4;
+  //set rbp
+  tc.gp[5].get_fixed_quad(0) = 0x05001b;
+
+  std::cout << "***** SANDBOX TC:" << std::endl;
+  std::cout << tc << std::endl;
+  std::cout << "***** OUTPUT:" << std::endl;
+
+
+  sb.set_max_jumps(2)
+    .set_abi_check(false)
+    .insert_input(tc);
+
+  // Run it
+  sb.run({c, x64asm::RegSet::universe(), x64asm::RegSet::universe()});
+
+  // Check answers
+  stoke::CpuState result = *sb.result_begin();
+  std::cout << result << std::endl;
+  EXPECT_EQ(tc.rf.is_set(0), result.rf.is_set(0));
+  EXPECT_EQ(tc.rf.is_set(2), result.rf.is_set(2));
+  EXPECT_EQ(tc.rf.is_set(4), result.rf.is_set(4));
+  EXPECT_EQ(tc.rf.is_set(6), result.rf.is_set(6));
+  EXPECT_EQ(tc.rf.is_set(7), result.rf.is_set(7));
+  EXPECT_EQ(tc.rf.is_set(11), result.rf.is_set(11));
+
+}
 
 
 TEST(SandboxTest, NullDereferenceFails) {

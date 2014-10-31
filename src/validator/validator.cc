@@ -145,7 +145,7 @@ stoke::CpuState model_to_cpustate(VC& vc, PAIR_INFO state_info, model& model, st
       for (size_t i = 0; i < eflags.size(); i++) {
         string tmp;
         if(flagToString(eflags[i], tmp)) {
-          if (tmp == regname) {
+          if (tmp + name_suffix == regname) {
             //set the counterexample
 #ifdef DEBUG_VALIDATOR
             cout << "Setting " << tmp << " i.e. #" << eflags[i].index() << " to " << value << endl;
@@ -763,8 +763,11 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
       counterexample_valid_ = false;
     } else {
       counterexample_valid_ = true;
+      cout << "__________ EXTRACTING CEG _______________" << endl;
       counterexample_ =      model_to_cpustate(vc_, state_info_, *model, "");
+      cout << "__________ EXTRACTING TARGET _______________" << endl;
       target_final_state_  = model_to_cpustate(vc_, state_info_, *model, "_1_Final");
+      cout << "__________ EXTRACTING REWRITE _______________" << endl;
       rewrite_final_state_ = model_to_cpustate(vc_, state_info_, *model, "_2_Final");
 
       counter_example = counterexample_;
