@@ -2564,10 +2564,12 @@ void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
   Expr retval(*vc);
   if(shamt <= bitWidth)
   {
-    if(shamt < bitWidth)
+    if(shamt < bitWidth) {
       retval = EqExpr(vc, E_dest, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, bitWidth-shamt-1, 0), vc_bvConstExprFromLL(vc, shamt, 0) ));
-    else
+    }
+    else {
       retval = EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth, 0));
+    }
 
     //vc_printExpr(vc, E_dest);vc_printExpr(vc, E_src1);vc_printExpr(vc, retval);cout << shamt << endl ;
 
@@ -2590,8 +2592,9 @@ void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
       }
       setSFPFZF(E_dest, d, bitWidth);
     }
-    else
+    else {
       preserveAllFlags(d);
+    }
   }
   else
   {

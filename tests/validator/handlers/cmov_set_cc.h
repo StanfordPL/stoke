@@ -130,7 +130,7 @@ TEST_F(ValidatorCmovSetCCTest, CmovSetEquivalent) {
 
 }
 
-TEST_F(ValidatorCmovSetCCTest, DISABLED_TestSetccAgainstItself) {
+TEST_F(ValidatorCmovSetCCTest, TestSetccAgainstItself) {
 
   for(auto cc1 : ccs) {
     for(auto cc2 : ccs) {
@@ -151,7 +151,7 @@ TEST_F(ValidatorCmovSetCCTest, DISABLED_TestSetccAgainstItself) {
   }
 }
 
-TEST_F(ValidatorCmovSetCCTest, DISABLED_TestCmovccAgainstItself) {
+TEST_F(ValidatorCmovSetCCTest, TestCmovccAgainstItself) {
 
   for(auto cc1 : ccs) {
     for(auto cc2 : ccs) {

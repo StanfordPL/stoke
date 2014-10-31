@@ -1,4 +1,5 @@
 #include "c_interface.h"
+#include "error.h"
 #include <iostream>
 using namespace std;
 using namespace z3;
@@ -194,13 +195,27 @@ using namespace z3;
   /**************************/
   /* BIT VECTOR OPERATIONS  */
   /**************************/
-  Type vc_bvType(VC vc, int no_bits){return vc->bv_sort(no_bits);}
+  Type vc_bvType(VC vc, int no_bits){
+    if(no_bits == 0)
+      throw VALIDATOR_ERROR("vc_bvType called with no_bits = 0");
+    return vc->bv_sort(no_bits);
+  }
   //Type vc_bv32Type(VC vc){return 0;}
 
   //Expr vc_bvConstExprFromDecStr(VC vc, int width, const char* decimalInput ){return 0;}
   //Expr vc_bvConstExprFromStr(VC vc, const char* binary_repr){return 0;}
-  Expr vc_bvConstExprFromInt(VC vc, int n_bits, unsigned int value){return vc->bv_val(value,n_bits);}
-  Expr vc_bvConstExprFromLL(VC vc, int n_bits, unsigned long long value){return vc->bv_val(((long long unsigned int)value),n_bits);}
+  Expr vc_bvConstExprFromInt(VC vc, int n_bits, unsigned int value){
+    if(n_bits == 0)
+      throw VALIDATOR_ERROR("vc_bcConstExprFromInt called with n_bits = 0");
+    return vc->bv_val(value,n_bits);
+  }
+
+  Expr vc_bvConstExprFromLL(VC vc, int n_bits, unsigned long long value){
+    if(n_bits == 0)
+      throw VALIDATOR_ERROR("vc_bcConstExprFromLL called with n_bits = 0");
+    return vc->bv_val(((long long unsigned int)value),n_bits);
+  }
+
   Expr vc_bv32ConstExprFromInt(VC vc, unsigned int value){return vc->bv_val(value,32);}
 
   Expr vc_bvConcatExpr(VC vc, Expr left, Expr right){return to_expr(*vc, Z3_mk_concat(*vc, left, right));}

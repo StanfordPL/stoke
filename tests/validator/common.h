@@ -360,18 +360,27 @@ class ValidatorTest : public ::testing::Test {
         codes_shown_ = true;
       }
 
+      std::stringstream expected_string;
+      expected_string << "; expected one of: ";
+      if (expected & ERROR)
+        expected_string << "error  ";
+      if (expected & EQUIVALENT)
+        expected_string << "equivalent  ";
+      if (expected & COUNTEREXAMPLE)
+        expected_string << "counterexample  ";
+      if (expected & NO_COUNTEREXAMPLE)
+        expected_string << "nonequivalent  ";
+
+
       switch(actual) {
 
         case EQUIVALENT:
-          if (expected & ERROR)
-            ADD_FAILURE() << "Codes were found equivalent, but expected error";
-          else
-            ADD_FAILURE() << "Codes were found equivalent, but expected different";
+          ADD_FAILURE() << "Codes found equivalent" << expected_string.str() << std::endl;
           break;
 
         case COUNTEREXAMPLE: {
 
-          ADD_FAILURE() << "Unexpected counterexample found." << std::endl;
+          ADD_FAILURE() << "Unexpected counterexample found" << expected_string.str() << std::endl;
 
           std::cout << "Counterexample:" << std::endl;
           std::cout << v_.get_counterexample() << std::endl << std::endl;
@@ -387,15 +396,17 @@ class ValidatorTest : public ::testing::Test {
         }
 
         case NO_COUNTEREXAMPLE:
-          ADD_FAILURE() << "Codes were non-equivalent, but no counterexample generated";
+          ADD_FAILURE() << "Codes were non-equivalent without counterexample" 
+                        << expected_string.str() << std::endl;
           break;
 
         case ERROR: {
           size_t line;
           std::string file;
           std::string message = v_.get_error(&line, &file);
-          ADD_FAILURE_AT(message.c_str(), line) << "Validator reported unexpected error: "
-                                                << std::endl <<  message << std::endl;
+          ADD_FAILURE_AT(message.c_str(), line) << "Validator reported unexpected error"
+                                                << expected_string.str()
+                                                << std::endl << "Message: " << message << std::endl;
           break;
         }
 
