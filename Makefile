@@ -216,7 +216,7 @@ validator_clean:
 ##### CLEAN TARGETS
 
 clean: validator_clean
-	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN) tags bin/stoke_*
+	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN) tags
 
 dist_clean: clean
 	rm -rf src/ext/cpputil

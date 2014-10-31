@@ -272,7 +272,6 @@ class ValidatorTest : public ::testing::Test {
         }
       }
 
-      /*
       for(size_t i = 0; i < x64asm::eflags.size(); i++)
       {
         auto op = x64asm::eflags[i];
@@ -286,7 +285,6 @@ class ValidatorTest : public ::testing::Test {
           EXPECT_CPU_EQ_INT(expected_flag, actual_flag, tmp.str());
         }
       }
-      */
 
 #undef EXPECT_CPU_EQ_INT
 #undef EXPECT_CPU_EQ_CODE
@@ -308,25 +306,29 @@ class ValidatorTest : public ::testing::Test {
       stoke::CpuState s1(ceg);
       sb.insert_input(s1);
 
-      // Run the sandbox
-      sb.run(*cfg_t_);
-      stoke::CpuState sandbox_target_state = *sb.get_result(0);
+      // Run the sandbox and check the results for each.
+      // We only want to do this check if the state isn't undefined.
+      if(cfg_t_->is_sound()) {
+        sb.run(*cfg_t_);
+        stoke::CpuState sandbox_target_state = *sb.get_result(0);
 
-      sb.run(*cfg_r_);
-      stoke::CpuState sandbox_rewrite_state = *sb.get_result(0);
+        std::stringstream tmp;
+        tmp << "Sandbox disagrees with validator on final state of the target." << std::endl;
+        expect_cpustate_equal_on_liveout(sandbox_target_state,
+                                         v_.get_target_final_state(),
+                                         tmp.str());
+      }
 
-      // Check the results
-      std::stringstream tmp;
-      tmp << "Sandbox disagrees with validator on final state of the target." << std::endl;
-      expect_cpustate_equal_on_liveout(sandbox_target_state,
-                                       v_.get_target_final_state(),
-                                       tmp.str());
+      if(cfg_r_->is_sound()) {
+        sb.run(*cfg_r_);
+        stoke::CpuState sandbox_rewrite_state = *sb.get_result(0);
 
-      tmp.clear();
-      tmp << "Sandbox disagrees with validator on final state of the rewrite." << std::endl;
-      expect_cpustate_equal_on_liveout(sandbox_rewrite_state,
-                                       v_.get_rewrite_final_state(),
-                                       tmp.str());
+        std::stringstream tmp;
+        tmp << "Sandbox disagrees with validator on final state of the rewrite." << std::endl;
+        expect_cpustate_equal_on_liveout(sandbox_rewrite_state,
+                                         v_.get_rewrite_final_state(),
+                                         tmp.str());
+      }
 
     }
 
