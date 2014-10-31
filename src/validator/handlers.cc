@@ -41,7 +41,7 @@ void adcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   //Handle effects on parent register
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 
@@ -89,7 +89,7 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   /* Set unchanged bits */
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -147,7 +147,7 @@ void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
   if(dest_is_reg && numops == 1)
   {
-    SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -189,7 +189,7 @@ void addfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
   if(dest_is_reg && numops < 4)
   {
-    SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -249,7 +249,7 @@ void andHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -294,7 +294,7 @@ void bsfHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
 
   if(bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 
@@ -323,7 +323,7 @@ void bsrHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
 
   if(bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -345,7 +345,7 @@ void bswapHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
 
   if(bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -385,7 +385,7 @@ void btcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, Ex
   }
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }	
 #ifdef DEBUG_VALIDATOR
@@ -411,7 +411,7 @@ void btvalHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, 
   }
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }	
 #ifdef DEBUG_VALIDATOR
@@ -429,7 +429,7 @@ void cmovHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
   Expr retval = vc_iteExpr(vc, pred, EqExpr(vc, E_dest, E_src), EqExpr(vc, E_dest, E_dest_pre));
   if(bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -437,15 +437,6 @@ void cmovHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
 #endif
   d.constraints.push_back(retval);  
 }
-
-#define CMOV_FLUFF  \
-  Expr retval = vc_iteExpr(vc, pred, EqExpr(vc, E_dest, E_src), EqExpr(vc, E_dest, E_dest_pre));\
-if(bitWidth < V_UNITSIZE)\
-{\
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));\
-  retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));\
-}\
-d.constraints.push_back(retval);  
 
 
 void cmovccHandler(v_data d, unsigned int bitWidth, string cc, Expr E_dest, Expr E_dest_pre, 
@@ -464,7 +455,7 @@ void cmovccHandler(v_data d, unsigned int bitWidth, string cc, Expr E_dest, Expr
 
   // Preserve the other bits in registers
   if (dest_is_reg && bitWidth < V_UNITSIZE) {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     Expr preserve = UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth);
     d.constraints.push_back(preserve);
   }
@@ -576,7 +567,7 @@ void cmpxchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, Ex
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, rax, d, bitWidth));
 
@@ -609,7 +600,7 @@ void cmpxchg32Handler(v_data d, unsigned int bitWidth, Expr E_dest_post, Expr E_
 
   if(dest_is_reg)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     Expr E_full_dest_pre = regExprWVN(vc, id_dest, d.pre_suffix, d.Vn, V_UNITSIZE);
     Expr E_full_dest_post = regExprWVN(vc, id_dest, d.post_suffix, d.Vnprime, V_UNITSIZE);
 
@@ -821,7 +812,7 @@ void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   Expr retval = EqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth - 1, 0));
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -1113,7 +1104,7 @@ void imul3Handler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Exp
 
   if( bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 
@@ -1153,7 +1144,7 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   Expr retval = EqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth - 1, 0));
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -1205,7 +1196,7 @@ void leaHandler(v_data d, unsigned int bitWidth) {
 
   VC&vc = d.vc;
 
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+  SS_Id id_dest = getRegisterFromInstr(d.instr,0);
   Expr E_dest = vc_bvExtract(vc,regExprWVN(vc, id_dest, d.post_suffix, d.Vnprime, V_UNITSIZE),bitWidth - 1, 0);
   auto addr = d.instr.get_operand<M8>(1);
   Expr E_addr = vc_varExpr(vc, ("ADDRTEMPEXPR"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, V_UNITSIZE));
@@ -1253,7 +1244,7 @@ void movHandler(v_data d, unsigned int bitWidthTarget, unsigned int bitWidthSour
   Expr retval = EqExpr(vc, E_dest, E_src);
   if(dest_is_reg /*&& bitWidthTarget < full_size*/)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0))) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
     uint full_size = V_UNITSIZE*all_state_info.second[id_dest];
     if(bitWidthTarget<full_size)
       retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidthTarget));
@@ -1289,7 +1280,7 @@ void movhHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
   if(dest_is_reg)
   {
     retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src, 63, 0))); 
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0))) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
     Expr E_dest_pre = regExprWVN(vc, id_dest, d.pre_suffix, d.Vn, 128);
     retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_dest_pre, 63, 0))); 	  
   }
@@ -1311,7 +1302,7 @@ void movhlpsHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
     throw VALIDATOR_ERROR("movhlps only supports register destination");
   {
     retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_src, 127, 64))); 
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0))) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
     Expr E_dest_pre = regExprWVN(vc, id_dest, d.pre_suffix, d.Vn, 128);
     retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_dest_pre, 127, 64))); 	  
   }
@@ -1351,7 +1342,7 @@ void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
   if(dest_is_reg && numops == 1)
   {
-    SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -1392,7 +1383,7 @@ void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
   if(dest_is_reg && numops < 4)
   {
-    SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -1415,7 +1406,7 @@ void mul64rHandler(v_data d) {
       string post_suffix = d.post_suffix;
 
       SS_Id id_src =
-      getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+      getRegisterFromInstr(d.instr,0);
 
       Expr E_rax = regExprWVN(vc, rax, post_suffix, Vnprime, V_UNITSIZE);
       Expr E_rdx = regExprWVN(vc, rdx, post_suffix, Vnprime, V_UNITSIZE);
@@ -1515,7 +1506,7 @@ void negHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   Expr retval = EqExpr(vc, E_dest, E_result);
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -1532,7 +1523,7 @@ void notHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   Expr retval = EqExpr(vc, E_dest, E_result);
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -1546,7 +1537,7 @@ void orHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E
   Expr retval = EqExpr(vc, E_dest, vc_bvOrExpr(vc, E_src1, E_src2));
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -1891,7 +1882,7 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, (s4), SUM_INNER(s3, 8,  0x00FF)));\
     retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp4));
 
 
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+  SS_Id id_dest = getRegisterFromInstr(d.instr,0);
   retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, 16));
 
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -1943,7 +1934,7 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, (s5), SUM_INNER(s4, 16, 0x0000FFFF)))
     retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp5));
 
 
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+  SS_Id id_dest = getRegisterFromInstr(d.instr,0);
   retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, 32));
 
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -1995,7 +1986,7 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, (s6), SUM_INNER(s4, 32, 0x00000000FFF
     retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp6));
 
 
-  SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+  SS_Id id_dest = getRegisterFromInstr(d.instr,0);
   retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, 64));
 
 #ifdef DEBUG_VALIDATOR
@@ -2228,7 +2219,7 @@ void rclHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   if(rotamt != 0)
@@ -2272,7 +2263,7 @@ void rcrHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   if(rotamt != 0)
@@ -2302,7 +2293,7 @@ void rolHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //CF is LSB of dest
@@ -2328,7 +2319,7 @@ void rorHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //CF is MSB of dest
@@ -2382,7 +2373,7 @@ void sarHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
 
     if(dest_is_reg && bitWidth < V_UNITSIZE)
     {
-      SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+      SS_Id id_dest = getRegisterFromInstr(d.instr,0);
       retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
     }
     if(shamt != 0)
@@ -2431,7 +2422,7 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   Expr retval = EqExpr(vc, E_dest, res);//vc_bvVar32RightShiftExpr(vc, E_shamt, E_src1));
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -2512,7 +2503,7 @@ void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -2533,7 +2524,7 @@ void setHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr pred, bool de
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -2558,7 +2549,7 @@ void setccHandler(v_data d, string cc, Expr E_dest, Expr E_dest_pre, bool dest_i
 
   // Preserve the other bits in registers
   if (dest_is_reg) {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     Expr preserve = UnmodifiedBitsPreserve(vc, id_dest, d, 8);
     d.constraints.push_back(preserve);
   }
@@ -2582,7 +2573,7 @@ void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
 
     if(dest_is_reg && bitWidth < V_UNITSIZE)
     {
-      SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+      SS_Id id_dest = getRegisterFromInstr(d.instr,0);
       retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
     }
     if(shamt != 0)
@@ -2624,7 +2615,7 @@ void shldHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_de
       retval = EqExpr(vc, E_dest, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_dest_pre, bitWidth-shamt-1, 0), vc_bvExtract(vc, E_src, bitWidth-1,bitWidth-shamt)  ));
       if(dest_is_reg && bitWidth < V_UNITSIZE)
       {
-        SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+        SS_Id id_dest = getRegisterFromInstr(d.instr,0);
         retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
 
       }
@@ -2670,7 +2661,7 @@ void shldHandler(v_data d, unsigned int bitWidth,   Expr E_dest, Expr E_dest_pre
   //cout << "Shifted " << endl;
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
 
   }
@@ -2700,7 +2691,7 @@ void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bo
   Expr retval = EqExpr(vc, E_dest, res);
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -2774,7 +2765,7 @@ void shrHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
 
     if(dest_is_reg && bitWidth < V_UNITSIZE)
     {
-      SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+      SS_Id id_dest = getRegisterFromInstr(d.instr,0);
       retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
     }
     if(shamt != 0)
@@ -2816,7 +2807,7 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   Expr retval = EqExpr(vc, E_dest, res);
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -2971,7 +2962,7 @@ void subHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   Expr retval = EqExpr(vc, E_dest, vc_bvExtract(vc, vc_bvMinusExpr(vc, bitWidth+1, E_arg1, E_arg2), bitWidth-1, 0));
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint "; vc_printExpr(vc, retval);  cout << "\n";
@@ -3009,7 +3000,7 @@ void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
   if(dest_is_reg && numops == 1)
   {
-    SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -3049,7 +3040,7 @@ void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
   if(dest_is_reg && numops == 1)
   {
-    SS_Id id_dest = XMM_BEG+getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
@@ -3282,10 +3273,10 @@ void xaddHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
 
-    id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,d.instr.arity()-1)));
+    id_dest = getRegisterFromInstr(d.instr,d.instr.arity()-1);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   ADD_CONS(retval);
@@ -3301,10 +3292,10 @@ void xchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
 
-    id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,d.instr.arity()-1)));
+    id_dest = getRegisterFromInstr(d.instr,d.instr.arity()-1);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   ADD_CONS(retval);
@@ -3321,7 +3312,7 @@ void xorHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
-    SS_Id id_dest = getOperandValue(parentRegister(getRegisterFromInstr(d.instr,0)));
+    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   ADD_CONS(retval);

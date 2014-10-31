@@ -54,10 +54,15 @@ class ValidatorTest : public ::testing::Test {
       check_codes(EQUIVALENT);
     }
 
-    void assert_equiv_or_error() {
+    void assert_equiv_or_error_or_unsound() {
       if(!reset_state())
         return;
-      check_codes(EQUIVALENT | ERROR);
+      
+      if(!cfg_t_->is_sound() || !cfg_r_->is_sound()) {
+        check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE | ERROR);
+      } else {
+        check_codes(EQUIVALENT | ERROR);
+      }
     }
 
     void assert_ceg(stoke::CpuState* ceg = NULL) {

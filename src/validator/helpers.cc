@@ -176,11 +176,6 @@ string nameWVN(SS_Id id, string suffix, const VersionNumber& Vn)
   return idToStr(id)+suffix+itoa(Vn.get(id)).c_str();
 }
 
-SS_Id getOperandValue(uint64_t op)
-{
-  return op; 
-}
-
 //Create a boolean expression with name id+suffix+Vn
 Expr getBoolExpr(VC&vc, SS_Id id, string suffix, const VersionNumber& Vn)
 {
@@ -272,49 +267,6 @@ Expr ConstrainAddr(VC& vc, Expr addrExpr, M8 m, v_data& d, unsigned int bitWidth
   rhs = vc_bvPlusExpr(vc, V_UNITSIZE, rhs, E_base);
   rhs = vc_bvPlusExpr(vc, V_UNITSIZE, rhs, vc_bvConstExprFromLL(vc, V_UNITSIZE, disp));
   return EqExpr(vc, addrExpr, rhs); 
-}
-
-//read from memory
-Expr memRead(v_data d,MemoryData& mem)
-{
-  VC& vc = d.vc; 
-  Meminfo minfo = mem.deref(d.instr_no, d.isTargetData());
-  SS_Id mid = d.state_info.first.valToId(minfo.getName());
-  return vc_bvExtract(vc, memExprWVN(vc, mid, d.pre_suffix, d.Vn, minfo.getCellSize()),minfo.getEndBit()-1, minfo.getBegBit()) ;
-}
-Expr unmodifiedMemoryCnstr(v_data d, Meminfo& minfo, uint memsize, SS_Id mid)
-{
-  VC& vc = d.vc; 
-  uint beg = minfo.getBegBit();
-  uint end = minfo.getEndBit();
-  if(beg==0 && end == memsize)
-    return vc_trueExpr(vc);
-  if(beg>0 && end == memsize)
-    return EqExpr(vc,vc_bvExtract(vc, memExprWVN(vc, mid, d.post_suffix, d.Vnprime, memsize),beg-1, 0), vc_bvExtract(vc,memExprWVN(vc, mid, d.pre_suffix, d.Vn, memsize),beg-1, 0));
-  if(beg ==0 && end < memsize)
-    return EqExpr(vc,vc_bvExtract(vc, memExprWVN(vc, mid, d.post_suffix, d.Vnprime, memsize),memsize-1, end), vc_bvExtract(vc,memExprWVN(vc, mid, d.pre_suffix, d.Vn, memsize),memsize-1, end));
-  return vc_andExpr(vc,EqExpr(vc,vc_bvExtract(vc, memExprWVN(vc, mid, d.post_suffix, d.Vnprime, memsize),beg-1, 0), vc_bvExtract(vc,memExprWVN(vc, mid, d.pre_suffix, d.Vn, memsize),beg-1, 0)),\
-      EqExpr(vc,vc_bvExtract(vc, memExprWVN(vc, mid, d.post_suffix, d.Vnprime, memsize),memsize-1, end), vc_bvExtract(vc,memExprWVN(vc, mid, d.pre_suffix, d.Vn, memsize),memsize-1, end)));
-}
-
-//Write to memory
-Expr memWrite(v_data d,  MemoryData& mem)
-{
-  VC& vc = d.vc; 
-  Meminfo minfo = mem.deref(d.instr_no, d.isTargetData());
-  SS_Id mid = d.state_info.first.valToId(minfo.getName());
-  uint memsize = minfo.getCellSize();
-  Expr umc = unmodifiedMemoryCnstr(d, minfo, memsize,mid);
-#ifdef DEBUG_VALIDATOR
-  cout << "Preserving memloc "; vc_printExpr(vc,umc); cout << endl; 
-#endif
-  d.constraints.push_back(umc);
-  return vc_bvExtract(vc, memExprWVN(vc, mid, d.post_suffix, d.Vnprime, memsize),minfo.getEndBit()-1, minfo.getBegBit()) ;
-}
-//write after read from memory. More efficient than doing a read and then a write for say ADD64mr
-Expr memWAR(v_data d, MemoryData& mem)
-{
-  return memWrite(d,mem);
 }
 
 
@@ -425,7 +377,7 @@ Expr pshuf_shift_right_and_extract(VC& vc, Expr bitvector, int shift, int high, 
   throw VALIDATOR_ERROR("pshuf_shift_right_and_extract internal error: unexpected state");
 }
 
-void instrnToConstraint(MemoryData& mem, PAIR_INFO state_info,VC& vc, V_Node& n,
+void instrnToConstraint(PAIR_INFO state_info,VC& vc, V_Node& n,
     VersionNumber& Vn, VersionNumber& Vnprime, 
     std::vector<Expr>& constraints, std::string code_num,unsigned int  instr_no, std::set<SS_Id> X_mod)
 {

@@ -209,11 +209,6 @@ TEST(SandboxTest, RflagsRegistersArePreserved) {
   //set rbp
   tc.gp[5].get_fixed_quad(0) = 0x05001b;
 
-  std::cout << "***** SANDBOX TC:" << std::endl;
-  std::cout << tc << std::endl;
-  std::cout << "***** OUTPUT:" << std::endl;
-
-
   sb.set_max_jumps(2)
     .set_abi_check(false)
     .insert_input(tc);
@@ -223,7 +218,6 @@ TEST(SandboxTest, RflagsRegistersArePreserved) {
 
   // Check answers
   stoke::CpuState result = *sb.result_begin();
-  std::cout << result << std::endl;
   EXPECT_EQ(tc.rf.is_set(0), result.rf.is_set(0));
   EXPECT_EQ(tc.rf.is_set(2), result.rf.is_set(2));
   EXPECT_EQ(tc.rf.is_set(4), result.rf.is_set(4));

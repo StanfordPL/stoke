@@ -258,7 +258,7 @@ TEST_F(ValidatorBaseTest, TimeoutWorks) {
 
 }
 
-TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
+TEST_F(ValidatorBaseTest, AllTheOpcodesIdentity) {
 
   // For each supported opcode, construct an instruction with every register
   // argument being a subregister of rax, rdx, xmm0 or xmm1 and every immediate
@@ -310,8 +310,13 @@ TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
 
         case x64asm::Type::XMM:
           i.set_operand(j, x64asm::xmm0);
+          break;
+
+        // no support for YMM yet
         case x64asm::Type::YMM:
           i.set_operand(j, x64asm::ymm0);
+          insert = false;
+          break;
 
         case x64asm::Type::ZERO:
         case x64asm::Type::ONE:
@@ -323,10 +328,6 @@ TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
         case x64asm::Type::EAX:
         case x64asm::Type::RAX:
         case x64asm::Type::XMM_0:
-          //nothing to do for these
-          break;
-
-
         default:
           //we don't handle these
           //memory, labels, ah-dh, mms, sts, etc.
@@ -348,10 +349,11 @@ TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
     target_.clear();
     rewrite_.clear();
 
+    std::cout << "INS: " << it << std::endl;
     target_ << it << std::endl;
     rewrite_ << it << std::endl;
 
-    assert_equiv_or_error();
+    assert_equiv_or_error_or_unsound();
 
   }
 

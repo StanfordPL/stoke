@@ -1196,11 +1196,7 @@ filimm ((w,x,y):xs) z = (w,x,y): (filimm xs (max (read w) z))
 filimm [] z = []
 
 getmem :: [(String,String,String)] -> Int -> String
-getmem ((w,"M","R"):xs) i= ( "E_src1=memRead(d, mem);\n\t")
-getmem ((w,"M","W"):xs) i= ( "E_dest=memWrite(d, mem);\n\t")
-getmem ((w,"M","X"):xs) i= ( "E_src1=memRead(d, mem);\n\t E_dest=memWAR(d,mem);\n\t")
-getmem ((w,x,y):xs) i = getmem xs (i+1)
-getmem [] _ = ""
+getmem _ _ = ""
 
 
 -- Generates a switch statement showing if an opcode is suppported

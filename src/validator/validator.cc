@@ -16,9 +16,7 @@
 #include "src/args/reg_set.h"
 #include "src/ext/z3/include/z3++.h"
 
-#include "src/validator/aliasing.h"
 #include "src/validator/c_interface.h"
-#include "src/validator/extras.h"
 #include "src/validator/handlers.h"
 #include "src/validator/validator.h"
 
@@ -65,38 +63,6 @@ bool flagToString(Eflags eflag, string& elem) {
 
 }
 
-
-Meminfo MemoryData::deref(uint line_no, bool is_target) const
-{
-#ifdef DEBUG_VALIDATOR
-  cout << "Dereferencing line " << line_no << " of " << (is_target ? "target" : "rewrite") << endl;
-#endif
-  string retval = "";
-  for(const auto& info : _minfo)
-  {
-    if(line_no == info._line_no && is_target == info._is_target_info)
-      return info;    
-  }
-  throw VALIDATOR_ERROR("error from validator assert");
-}
-
-
-
-std::string MemoryData::name_deref(uint line_no, bool is_target) const
-{
-  string retval = "";
-  for(const auto& info : _minfo)
-  {
-    if(line_no == info._line_no && is_target == info._is_target_info)
-      return info.getName();
-    
-  }
-  throw VALIDATOR_ERROR("error from validator assert");
-  return retval;
-}
-
-
-uint64_t parentRegister(uint64_t t){return t;}
 
 Expr regExpr(VC& vc, string s, unsigned int size)
 {
@@ -327,15 +293,14 @@ set<SS_Id> keys(map<SS_Id, unsigned int> dict)
 				}
 
 
-set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, MemoryData& mem, string codenum, bool include_undef=true)
+set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, string codenum, bool include_undef=true)
 {
 	set<SS_Id> retval;
 	const x64asm::Instruction& instr = n.getInstr();
 	
 	if(instr.is_explicit_memory_dereference())
 	{
-	  if(instr.maybe_write(instr.mem_index()))
-	    retval.insert(state_info.first.valToId(mem.name_deref(n.getInsNo(),!codenum.compare("1"))));	  
+    throw VALIDATOR_ERROR("memory not handled");
 	}
 	
 	
@@ -447,7 +412,7 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 }
 
 //Constrain the final output registers to a known name (RAX_codenum_versionnumber == RAX_codenum_Final) 
-Expr getFinalConstraint(VC& vc, const set<SS_Id>& state_elems, const VersionNumber& Vn, const map<SS_Id, unsigned int>& sizes_, string code_num, MemoryData& mem, PAIR_INFO state_info)
+Expr getFinalConstraint(VC& vc, const set<SS_Id>& state_elems, const VersionNumber& Vn, const map<SS_Id, unsigned int>& sizes_, string code_num, PAIR_INFO state_info)
 {
 	map<SS_Id, unsigned int> sizes = sizes_;
 	Expr E_pre(*vc), E_post(*vc), E_flag(*vc);
@@ -486,7 +451,7 @@ Expr getFinalConstraint(VC& vc, const set<SS_Id>& state_elems, const VersionNumb
 }
 
 //Walk over the code and generate constraint for every instruction
-VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constraints, string code_num, MemoryData& mem)
+VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constraints, string code_num)
 {
 	Bijection<string> bij = state_info.first;
 	map<SS_Id, unsigned int> sizes = state_info.second;
@@ -499,7 +464,7 @@ VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constrai
 	for(i = 0; i< ebb.size(); i++, j++ )
 	{
 		V_Node& n = ebb.getNode(i);
-		set<SS_Id> modset = modSet(state_info, n, mem, code_num);
+		set<SS_Id> modset = modSet(state_info, n, code_num);
 		set<SS_Id> X_mod = modset;
 		VersionNumber Vnold(Vn); 
 		Vn.Increment(X_mod, 1);
@@ -511,10 +476,10 @@ VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constrai
 #ifdef DEBUG_VALIDATOR
 		cout << "Creating constraint from instruction " << oss.str() <<"\n";
 #endif
-		instrnToConstraint(mem, state_info, vc, n, Vnold, Vnprime, constraints, code_num, i, X_mod);		
+		instrnToConstraint(state_info, vc, n, Vnold, Vnprime, constraints, code_num, i, X_mod);		
 		if(n.succSize() != 1)
 		{
-			Expr E_final_constraint = getFinalConstraint(vc, state_elems, Vnprime, state_info.second, code_num, mem,state_info);
+			Expr E_final_constraint = getFinalConstraint(vc, state_elems, Vnprime, state_info.second, code_num, state_info);
 #ifdef DEBUG_VALIDATOR
 			cout << "Adding final constraint\n";
 			vc_printExpr(vc, E_final_constraint);
@@ -531,7 +496,7 @@ VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constrai
 	
 }
 //Get query constraint for registers and memory. The query constraints are missing for condition registers as they are not live out.
-void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, MemoryData& mem, x64asm::RegSet liveout, bool mem_out)
+void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, x64asm::RegSet liveout)
 {
 	
 	//map<SS_Id, unsigned int>::iterator i;
@@ -667,25 +632,6 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, Memor
     }
   }
 
-  if(mem_out)
-  {
-    for(const auto& id : keys(sizes))
-    {
-      if(id>=MEM_BEG)
-      {
-        string elem = bij.toVal(id); 
-        int size = sizes[id]*64;
-        Expr E_state_elem_1 = regExpr(vc, (elem + "_1_"+ V_FSTATE),size);
-        Expr E_state_elem_2 = regExpr(vc, (elem + "_2_"+ V_FSTATE),size);
-        Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
-#ifdef DEBUG_VALIDATOR
-        cout << "Printing query"; vc_printExpr(vc, E_eq_final); cout << endl ;
-#endif
-        query.push_back(E_eq_final);
-      }
-    }
-  }
-
 }
 
 
@@ -710,7 +656,6 @@ bool Validator::is_supported(Instruction i) {
 
 vector<Expr> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2, vector<Expr>& constraints)
 {
-	MemoryData mem;
 
 	//Get target and rewrite in my data-structure. Its a path with instructions at nodes.
 	//the size is NOT including the return
@@ -722,13 +667,13 @@ vector<Expr> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::
 	addStartConstraint(vc_, "2", state_info_, constraints);
 
 	//Convert code 1 i.e. target to constraints
-	auto Vn1=C2C(vc_, e1, state_info_, constraints, "1", mem);
+	auto Vn1=C2C(vc_, e1, state_info_, constraints, "1");
 
 	//ditto for code 2. Note we use the same mul as target.
-	auto Vn2 = C2C(vc_, e2, state_info_, constraints, "2", mem);
+	auto Vn2 = C2C(vc_, e2, state_info_, constraints, "2");
 
 	vector<Expr> query;
-	getQueryConstraint(vc_, state_info_, query, mem, f1.live_outs(), mem_out_);
+	getQueryConstraint(vc_, state_info_, query, f1.live_outs());
 
   return query;
 }
@@ -763,11 +708,8 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
       counterexample_valid_ = false;
     } else {
       counterexample_valid_ = true;
-      cout << "__________ EXTRACTING CEG _______________" << endl;
       counterexample_ =      model_to_cpustate(vc_, state_info_, *model, "");
-      cout << "__________ EXTRACTING TARGET _______________" << endl;
       target_final_state_  = model_to_cpustate(vc_, state_info_, *model, "_1_Final");
-      cout << "__________ EXTRACTING REWRITE _______________" << endl;
       rewrite_final_state_ = model_to_cpustate(vc_, state_info_, *model, "_2_Final");
 
       counter_example = counterexample_;

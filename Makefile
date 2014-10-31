@@ -65,9 +65,7 @@ OBJ=\
 	\
 	src/tunit/tunit.o \
 	\
-	src/validator/aliasing.o \
 	src/validator/c_interface.o \
-	src/validator/extras.o \
 	src/validator/handlers.o \
 	src/validator/switch.o  \
 	src/validator/SymState.o \
