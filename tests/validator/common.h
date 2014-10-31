@@ -129,12 +129,15 @@ class ValidatorTest : public ::testing::Test {
 
     }
 
-
-
     /* Set live outs for equivalence check */
     void set_live_outs(x64asm::RegSet rs) {
       live_outs_ = rs;
     }
+    /* Set def ins for equivalence check */
+    void set_def_ins(x64asm::RegSet rs) {
+      def_ins_ = rs;
+    }
+
     /* Set maximum validation time */
     void set_timeout(uint64_t time) {
       v_.set_timeout(time);
@@ -147,6 +150,7 @@ class ValidatorTest : public ::testing::Test {
         .set_timeout(1000);
 
       live_outs_ = get_default_regset();
+      def_ins_  = get_default_regset();
 
       target_.clear();
       rewrite_.clear();
@@ -179,7 +183,7 @@ class ValidatorTest : public ::testing::Test {
         return 0;
       }
 
-      return new stoke::Cfg(c, get_default_regset(), live_outs_);
+      return new stoke::Cfg(c, def_ins_, live_outs_);
     }
 
     template <typename T>
@@ -506,6 +510,7 @@ class ValidatorTest : public ::testing::Test {
     stoke::Validator v_;
     /* The set of live outputs */
     x64asm::RegSet live_outs_;
+    x64asm::RegSet def_ins_;
 
     /* The target CFG */
     stoke::Cfg* cfg_t_;

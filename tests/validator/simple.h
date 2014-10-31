@@ -153,6 +153,48 @@ TEST_F(ValidatorBaseTest, High8BitUnsupported) {
   assert_fail();
 }
 
+TEST_F(ValidatorBaseTest, UndefinedReadNotEquiv) {
+
+  target_ << "movq %rax, %rcx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq %rax, %rcx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_def_ins(x64asm::RegSet::empty() + x64asm::rcx);
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rcx);
+
+  assert_ceg();
+}
+
+TEST_F(ValidatorBaseTest, DefinedReadEquiv) {
+
+  target_ << "movq %rax, %rcx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq %rax, %rcx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_def_ins(x64asm::RegSet::empty() + x64asm::rax);
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rcx);
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorBaseTest, UndefinedLiveinLiveoutFails) {
+
+  target_ << "movq %rax, %rcx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq %rax, %rcx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_def_ins(x64asm::RegSet::empty() + x64asm::rax);
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rcx + x64asm::rdx);
+
+  assert_ceg();
+}
+
 TEST_F(ValidatorBaseTest, SimpleCounterexample) {
 
   target_ << "movq $0x0, %rax" << std::endl;
