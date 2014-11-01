@@ -300,7 +300,7 @@ TEST_F(ValidatorBaseTest, TimeoutWorks) {
 
 }
 
-TEST_F(ValidatorBaseTest, AllTheOpcodesIdentity) {
+TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
 
   // For each supported opcode, construct an instruction with every register
   // argument being a subregister of rax, rdx, xmm0 or xmm1 and every immediate
