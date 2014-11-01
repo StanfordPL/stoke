@@ -386,18 +386,21 @@ TEST_F(ValidatorBaseTest, AllTheOpcodesIdentity) {
   // Setup the validator with 50ms timeout. 
   set_timeout(50);
 
+  int instructions_checked = 0;
   // Loop and check
   for(auto it : instructions) {
     target_.clear();
     rewrite_.clear();
 
-    std::cout << "INS: " << it << std::endl;
     target_ << it << std::endl;
     rewrite_ << it << std::endl;
 
     assert_equiv_or_error_or_unsound();
+    instructions_checked++;
 
   }
+
+  EXPECT_GT(instructions_checked, 200);
 
 
 }
