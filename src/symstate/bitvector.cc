@@ -38,6 +38,11 @@ SymBitVectorXor& SymBitVector::operator^(const SymBitVector& other) const {
   return *(new SymBitVectorXor(*this, other));
 }
 
+/* Indexing */
+SymBitVectorExtract& SymBitVector::IndexHelper::operator[](uint16_t index) const {
+  return *(new SymBitVectorExtract(bv_, index_, index));
+}
+
 /* Bit Vector Comparison Operators */
 SymBoolEq& SymBitVector::operator==(const SymBitVector& other) const {
   return *(new SymBoolEq(*this, other));

@@ -26,11 +26,11 @@ TEST(SymBitvectorTest, CanPrintExpressions) {
   auto x = stoke::SymBitVectorVar(32, "x");
   auto y = stoke::SymBitVectorVar(32, "y");
 
-  auto z = ((x+y) & (( x << 3) ^ !y));
+  auto z = ((x+y) & (( x << 3) ^ !y))[10][5];
 
   std::stringstream ss;
   ss << z;
 
-  EXPECT_EQ("(and (plus <x|32> <y|32>) (xor (<x|32> << 3) (not <y|32>)))", ss.str());
+  EXPECT_EQ("(and (plus <x|32> <y|32>) (xor (<x|32> << 3) (not <y|32>)))[10:5]", ss.str());
 
 }

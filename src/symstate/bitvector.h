@@ -80,13 +80,11 @@ class SymBitVector {
     /** Returns a bitvector of length 1 indicating if the arguments are not equal */
     SymBoolNot& operator!=(const SymBitVector& other) const;
 
-    virtual void write_text(std::ostream& out) const = 0;
-
     class IndexHelper {
       friend class SymBitVector;
 
       public:
-        SymBitVectorExtract& operator[](uint16_t index);
+        SymBitVectorExtract& operator[](uint16_t index) const;
 
       private:
         IndexHelper(const SymBitVector& bv, uint16_t index) : bv_(bv), index_(index) {}
@@ -107,14 +105,6 @@ struct SymBitVectorAnd : public SymBitVector {
   public:
     SymBitVectorAnd(const SymBitVector& a, const SymBitVector& b) : a_(a), b_(b) {}
 
-    void write_text(std::ostream& os) const {
-      os << "(and ";
-      a_.write_text(os);
-      os << " ";
-      b_.write_text(os);
-      os << ")";
-    }
-
     SymBitVector::Type type() const { return AND; }
 
     const SymBitVector& a_;
@@ -126,14 +116,6 @@ struct SymBitVectorConcat : public SymBitVector {
   public:
     SymBitVectorConcat(const SymBitVector& a, const SymBitVector& b) :
        a_(a), b_(b) {
-    }
-
-    void write_text(std::ostream& os) const {
-      os << "(concat ";
-      a_.write_text(os);
-      os << " ";
-      b_.write_text(os);
-      os << ")";
     }
 
     SymBitVector::Type type() const { return CONCAT; }
@@ -149,9 +131,6 @@ struct SymBitVectorConstant : public SymBitVector {
       : constant_(constant), size_(size) {
     }
 
-    void write_text(std::ostream& os) const {
-    }
-
     SymBitVector::Type type() const { return CONSTANT; }
 
     const uint64_t constant_;
@@ -164,12 +143,7 @@ struct SymBitVectorExtract : public SymBitVector {
     /* Extracts bits low_bit,low_bit+1,...,low_bit+n-1 from a 
        bitvector of length m */
     SymBitVectorExtract(const SymBitVector& bv, uint16_t high_bit, uint16_t low_bit) :
-      bv_(bv), low_bit_(low_bit), high_bit_(high_bit_) {
-    }
-
-    void write_text(std::ostream& os) const {
-      //os << bv_ << "[" << high_bit_ << ":" << low_bit_ << "]";
-    }
+      bv_(bv), low_bit_(low_bit), high_bit_(high_bit) { }
 
     SymBitVector::Type type() const { return EXTRACT; }
 
@@ -184,15 +158,6 @@ struct SymBitVectorIte : public SymBitVector {
     SymBitVectorIte(const SymBool& cond, const SymBitVector& a, 
                     const SymBitVector& b) : cond_(cond), a_(a), b_(b) {}
 
-    void write_text(std::ostream& os) const {
-      os << "(if ";
-      os << " then ";
-      a_.write_text(os);
-      os << " else ";
-      b_.write_text(os);
-      os << ")";
-    }
-
     SymBitVector::Type type() const { return ITE; }
 
     const SymBool& cond_;
@@ -205,12 +170,6 @@ struct SymBitVectorNot : public SymBitVector {
   public:
     SymBitVectorNot(const SymBitVector& bv) : bv_(bv) {}
 
-    void write_text(std::ostream& os) const {
-      os << "(neg " ;
-      bv_.write_text(os);
-      os << ")";
-    }
-
     SymBitVector::Type type() const { return NOT; }
 
     const SymBitVector& bv_;
@@ -220,14 +179,6 @@ struct SymBitVectorOr : public SymBitVector {
 
   public:
     SymBitVectorOr(const SymBitVector& a, const SymBitVector& b) : a_(a), b_(b) {}
-
-    void write_text(std::ostream& os) const {
-      os << "(or ";
-      a_.write_text(os);
-      os << " ";
-      b_.write_text(os);
-      os << ")";
-    }
 
     SymBitVector::Type type() const { return OR; }
 
@@ -239,14 +190,6 @@ struct SymBitVectorPlus : public SymBitVector {
 
   public:
     SymBitVectorPlus(const SymBitVector& a, const SymBitVector& b) : a_(a), b_(b) {}
-
-    void write_text(std::ostream& os) const {
-      os << "(+ ";
-      a_.write_text(os);
-      os << " ";
-      b_.write_text(os);
-      os << ")";
-    }
 
     SymBitVector::Type type() const { return PLUS; }
 
@@ -260,12 +203,6 @@ struct SymBitVectorShiftLeft : public SymBitVector {
     SymBitVectorShiftLeft(const SymBitVector& bv, uint64_t shift) : 
       bv_(bv), shift_(shift) {}
 
-    void write_text(std::ostream& os) const {
-      os << "(";
-      bv_.write_text(os);
-      os << " << " << shift_ << ")";
-    }
-
     SymBitVector::Type type() const { return SHIFT_LEFT; }
 
     const SymBitVector& bv_;
@@ -278,12 +215,6 @@ struct SymBitVectorShiftRight : public SymBitVector {
     SymBitVectorShiftRight(const SymBitVector& bv, uint64_t shift) : 
       bv_(bv), shift_(shift) {}
 
-    void write_text(std::ostream& os) const {
-      os << "(";
-      bv_.write_text(os);
-      os << " >> " << shift_ << ")";
-    }
-
     SymBitVector::Type type() const { return SHIFT_RIGHT; }
 
     const SymBitVector& bv_;
@@ -294,10 +225,6 @@ struct SymBitVectorVar : public SymBitVector {
 
   public:
     SymBitVectorVar(uint16_t size, const std::string name) : name_(name), size_(size) {}
-
-    void write_text(std::ostream& os) const {
-      os << "<" << name_ << "#" << size_ << ">";
-    }
 
     SymBitVector::Type type() const { return VAR; }
 
@@ -311,14 +238,6 @@ struct SymBitVectorXor : public SymBitVector {
 
   public:
     SymBitVectorXor(const SymBitVector& a, const SymBitVector& b) : a_(a), b_(b) {}
-
-    void write_text(std::ostream& os) const {
-      os << "(xor ";
-      a_.write_text(os);
-      os << " ";
-      b_.write_text(os);
-      os << ")";
-    }
 
     SymBitVector::Type type() const { return XOR; }
 
