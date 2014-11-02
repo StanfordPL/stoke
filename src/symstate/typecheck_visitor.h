@@ -1,6 +1,6 @@
 
-#ifndef _STOKE_SRC_SYMSTATE_PRINT_VISITOR
-#define _STOKE_SRC_SYMSTATE_PRINT_VISITOR
+#ifndef _STOKE_SRC_SYMSTATE_TYPECHECK_VISITOR
+#define _STOKE_SRC_SYMSTATE_TYPECHECK_VISITOR
 
 #include "src/symstate/visitor.h"
 
@@ -48,7 +48,7 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
         return 0;
       if(bv.high_bit_ >= parent)
         return 0;
-      return (bv.high_bit - bv.low_bit + 1);
+      return (bv.high_bit_ - bv.low_bit_ + 1);
     }
 
     /** Visit a bit-vector if-then-else */
@@ -118,8 +118,8 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
 
     /** Visit a bit-vector EQ */
     uint16_t visit(const SymBoolEq& b) {
-      auto lhs = (*this)(bv.a_);
-      auto rhs = (*this)(bv.b_);
+      auto lhs = (*this)(b.a_);
+      auto rhs = (*this)(b.b_);
 
       if (lhs == rhs)
         return 1;
@@ -167,8 +167,6 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
       return (*this)(b.a_) && (*this)(b.b_);
     }
 
-  private:
-    std::ostream& os_;
 
 };
 

@@ -43,6 +43,6 @@ TEST(Z3SolverTest, FalsehoodIsUnSat) {
   constraints.push_back(&eq);
 
   stoke::Z3Solver z3;
-  EXPECT_TRUE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.is_sat(constraints));
 
 }
