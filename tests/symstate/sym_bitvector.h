@@ -1,20 +1,36 @@
 
 #include "src/symstate/sym_bitvector.h"
 
-TEST(SymStateTest, CanBuildExpressions) {
+TEST(SymBitvectorTest, CanPrintConstantsAtWidth) {
 
+  auto a = stoke::SymBitVectorConstant<3>(5);
 
-  stoke::SymBitVector<64> a = stoke::SymBitVectorConstant<64>(0xdeadbeef);
-  stoke::SymBitVector<64> b = stoke::SymBitVectorConstant<64>(0xc0decafe);
-  auto c = a + b;
-  auto d = stoke::SymBitVectorExtract<32, 64>(c, 10);
-  auto e = c.extract<32>(10);
-  auto f = (e >> 3) + d;
-  auto g = d == e;
-  auto h = f[5];
-  auto i = g == h;
-  auto j = h || i;
+  std::stringstream ss;
+  ss << a;
 
-  stoke::SymBitVector<128> k = a || b;
+  EXPECT_EQ("[ 1, 0, 1 ]", ss.str());
 }
 
+TEST(SymBitvectorTest, CanPrintConstantsOverWidth) {
+
+  auto a = stoke::SymBitVectorConstant<4>(5);
+
+  std::stringstream ss;
+  ss << a;
+
+  EXPECT_EQ("[ 0, 1, 0, 1 ]", ss.str());
+}
+
+TEST(SymBitvectorTest, CanPrintExpressions) {
+
+  auto x = stoke::SymBitVectorVar<32>("x");
+  auto y = stoke::SymBitVectorVar<32>("y");
+
+  auto z = ((x+y) & (( x << 3) ^ !y));
+
+  std::stringstream ss;
+  ss << z;
+
+  EXPECT_EQ("(and (+ <x#32> <y#32>) (xor (<x#32> << 3) (neg <y#32>)))", ss.str());
+
+}

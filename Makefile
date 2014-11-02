@@ -63,6 +63,8 @@ OBJ=\
 	\
 	src/stategen/stategen.o \
 	\
+	src/symstate/symstate.o \
+	\
 	src/tunit/tunit.o \
 	\
 	src/validator/c_interface.o \
@@ -146,6 +148,8 @@ src/search/%.o: src/search/%.cc src/search/%.h
 src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/symstate/%.o: src/symstate/%.cc src/symstate/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
