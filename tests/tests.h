@@ -21,6 +21,7 @@
 #include "tests/fixture.h"
 #include "tests/sandbox/sandbox.h"
 #include "tests/search/search.h"
+#include "tests/solver/solver.h"
 #include "tests/state/state.h"
 #include "tests/stategen/stategen.h"
 #include "tests/symstate/sym_bitvector.h"

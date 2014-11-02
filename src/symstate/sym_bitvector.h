@@ -1,4 +1,7 @@
 
+#ifndef _STOKE_SRC_SYMSTATE_SYM_BITVECTOR_H
+#define _STOKE_SRC_SYMSTATE_SYM_BITVECTOR_H
+
 #include <iostream>
 
 namespace stoke {
@@ -66,7 +69,11 @@ class SymBitVector {
   public:
 
     /** Get the type of this bitvector expression; helps for recursive algorithms on the tree. */
-    virtual SymBitVectorTypes type() = 0;
+    virtual SymBitVectorTypes type() const = 0;
+
+    /** Get the bitwidth of the arguments of this expression.  
+        Helps where the output size differs from input. */
+    virtual uint16_t size() const { return n; }
 
     /** Constructs the sum of two bitvectors */
     SymBitVectorPlus<n>& operator+(const SymBitVector<n>& other) const {
@@ -115,7 +122,7 @@ class SymBitVector {
     }
 
     /** Returns a bitvector of length 1 indicating if the arguments are not equal */
-    SymBitVectorNot<n>& operator!=(const SymBitVector<n>& other) const {
+    SymBitVectorNot<1>& operator!=(const SymBitVector<n>& other) const {
       return !(*this == other);
     }
 
@@ -156,7 +163,7 @@ struct SymBitVectorAnd : public SymBitVector<n> {
       os << ")";
     }
 
-    SymBitVectorTypes type() { AND; }
+    SymBitVectorTypes type() const { return AND; }
 
     const SymBitVector<n>& a_;
     const SymBitVector<n>& b_;
@@ -179,7 +186,7 @@ struct SymBitVectorConcat : public SymBitVector<n> {
       os << ")";
     }
 
-    SymBitVectorTypes type() { CONCAT; }
+    SymBitVectorTypes type() const { return CONCAT; }
 
     const SymBitVector<x>& a_;
     const SymBitVector<y>& b_;
@@ -205,7 +212,7 @@ struct SymBitVectorConstant : public SymBitVector<n> {
       os << " ]";
     }
 
-    SymBitVectorTypes type() { CONSTANT; }
+    SymBitVectorTypes type() const { return CONSTANT; }
 
     const uint64_t constant_;
 };
@@ -226,7 +233,7 @@ struct SymBitVectorExtract : public SymBitVector<n> {
     }
 
 
-    SymBitVectorTypes type() { EXTRACT; }
+    SymBitVectorTypes type() const { return EXTRACT; }
 
     const SymBitVector<m>& bv_;
     const uint16_t low_bit_;
@@ -247,7 +254,7 @@ struct SymBitVectorIff : public SymBitVector<1> {
       os << ")";
     }
 
-    SymBitVectorTypes type() { IFF; }
+    SymBitVectorTypes type() const { return IFF; }
 
     const SymBitVector<n>& a_;
     const SymBitVector<n>& b_;
@@ -270,7 +277,7 @@ struct SymBitVectorIte : public SymBitVector<n> {
       os << ")";
     }
 
-    SymBitVectorTypes type() { ITE; }
+    SymBitVectorTypes type() const { return ITE; }
 
     const SymBitVector<1>& cond_;
     const SymBitVector<n>& a_;
@@ -289,7 +296,7 @@ struct SymBitVectorNot : public SymBitVector<n> {
       os << ")";
     }
 
-    SymBitVectorTypes type() { NOT; }
+    SymBitVectorTypes type() const { return NOT; }
 
     const SymBitVector<n>& bv_;
 };
@@ -308,7 +315,7 @@ struct SymBitVectorOr : public SymBitVector<n> {
       os << ")";
     }
 
-    SymBitVectorTypes type() { OR; }
+    SymBitVectorTypes type() const { return OR; }
 
     const SymBitVector<n>& a_;
     const SymBitVector<n>& b_;
@@ -328,7 +335,7 @@ struct SymBitVectorPlus : public SymBitVector<n> {
       os << ")";
     }
 
-    SymBitVectorTypes type() { PLUS; }
+    SymBitVectorTypes type() const { return PLUS; }
 
     const SymBitVector<n>& a_;
     const SymBitVector<n>& b_;
@@ -347,7 +354,7 @@ struct SymBitVectorShiftLeft : public SymBitVector<n> {
       os << " << " << shift_ << ")";
     }
 
-    SymBitVectorTypes type() { SHIFT_LEFT; }
+    SymBitVectorTypes type() const { return SHIFT_LEFT; }
 
     const SymBitVector<n>& bv_;
     const uint16_t shift_;
@@ -366,7 +373,7 @@ struct SymBitVectorShiftRight : public SymBitVector<n> {
       os << " >> " << shift_ << ")";
     }
 
-    SymBitVectorTypes type() { SHIFT_RIGHT; }
+    SymBitVectorTypes type() const { return SHIFT_RIGHT; }
 
     const SymBitVector<n>& bv_;
     const uint16_t shift_;
@@ -382,7 +389,7 @@ struct SymBitVectorVar : public SymBitVector<n> {
       os << "<" << name_ << "#" << n << ">";
     }
 
-    SymBitVectorTypes type() { VAR; }
+    SymBitVectorTypes type() const { return VAR; }
 
     const std::string name_;
 };
@@ -403,7 +410,7 @@ struct SymBitVectorXor : public SymBitVector<n> {
       os << ")";
     }
 
-    SymBitVectorTypes type() { XOR; }
+    SymBitVectorTypes type() const { return XOR; }
 
     const SymBitVector<n>& a_;
     const SymBitVector<n>& b_;
@@ -417,3 +424,5 @@ std::ostream& operator<< (std::ostream& out, stoke::SymBitVector<n>& bv) {
   bv.write_text(out);
   return out;
 }
+
+#endif

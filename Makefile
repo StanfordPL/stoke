@@ -55,6 +55,8 @@ OBJ=\
 	src/search/search.o \
 	src/search/transforms.o \
 	\
+	src/solver/z3solver.o \
+	\
 	src/state/cpu_state.o \
 	src/state/cpu_states.o \
 	src/state/memory.o \
@@ -144,6 +146,8 @@ src/disassembler/%.o: src/disassembler/%.cc src/disassembler/%.h
 src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/search/%.o: src/search/%.cc src/search/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/solver/%.o: src/solver/%.cc src/solver/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
