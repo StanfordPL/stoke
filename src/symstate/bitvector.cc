@@ -49,6 +49,7 @@ SymBoolNot& SymBitVector::operator!=(const SymBitVector& other) const {
 
 /* Output overload */
 std::ostream& operator<< (std::ostream& out, stoke::SymBitVector& bv) {
-  bv.write_text(out);
+  SymPrintVisitor spv(out);
+  spv(bv);
   return out;
 }

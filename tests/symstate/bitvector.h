@@ -31,6 +31,6 @@ TEST(SymBitvectorTest, CanPrintExpressions) {
   std::stringstream ss;
   ss << z;
 
-  EXPECT_EQ("(and (+ <x#32> <y#32>) (xor (<x#32> << 3) (neg <y#32>)))", ss.str());
+  EXPECT_EQ("(and (plus <x|32> <y|32>) (xor (<x|32> << 3) (not <y|32>)))", ss.str());
 
 }

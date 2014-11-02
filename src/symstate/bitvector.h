@@ -13,7 +13,6 @@ struct SymBitVectorAnd;
 struct SymBitVectorConcat;
 struct SymBitVectorConstant;
 struct SymBitVectorExtract;
-struct SymBitVectorIff;
 struct SymBitVectorIte;
 struct SymBitVectorNot;
 struct SymBitVectorOr;
@@ -151,15 +150,6 @@ struct SymBitVectorConstant : public SymBitVector {
     }
 
     void write_text(std::ostream& os) const {
-      os << "[ ";
-      for(size_t i = size_; size_ >= 64; --i)
-        os << "0, ";
-      for(uint64_t mask = (0x8000000000000000 >> (64 - size_)); mask; mask >>= 1) {
-        os << (constant_ & mask ? 1 : 0); 
-        if(mask > 1)
-          os << ", ";
-      }
-      os << " ]";
     }
 
     SymBitVector::Type type() const { return CONSTANT; }
@@ -340,5 +330,11 @@ struct SymBitVectorXor : public SymBitVector {
 } //namespace stoke
 
 std::ostream& operator<< (std::ostream& out, stoke::SymBitVector& bv);
+
+
+/* We need to include these to make sure templates instantiate, but not
+   before SymBitVector is declared! */
+#include "src/symstate/print_visitor.h"
+#include "src/symstate/typecheck_visitor.h"
 
 #endif

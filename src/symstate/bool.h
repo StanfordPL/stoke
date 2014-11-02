@@ -105,11 +105,11 @@ struct SymBoolIff : public SymBool {
 struct SymBoolNot : public SymBool {
 
   public:
-    SymBoolNot(const SymBool& bv) : bv_(bv) {}
+    SymBoolNot(const SymBool& b) : b_(b) {}
 
     SymBool::Type type() const { return NOT; }
 
-    const SymBool& bv_;
+    const SymBool& b_;
 };
 
 struct SymBoolOr : public SymBool {
@@ -155,5 +155,6 @@ struct SymBoolXor : public SymBool {
 } //namespace stoke
 
 std::ostream& operator<< (std::ostream& out, stoke::SymBool& bv);
+
 
 #endif

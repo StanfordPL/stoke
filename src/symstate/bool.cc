@@ -1,6 +1,7 @@
 
 
 #include "src/symstate/bool.h"
+#include "src/symstate/print_visitor.h"
 
 using namespace std;
 using namespace stoke;
@@ -24,6 +25,7 @@ SymBoolXor& SymBool::operator^(const SymBool& other) const {
 
 /* Output overload */
 std::ostream& operator<< (std::ostream& out, stoke::SymBool& b) {
-  //bv.write_text(out);
+  SymPrintVisitor spv(out);
+  spv(b);
   return out;
 }
