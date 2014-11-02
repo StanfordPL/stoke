@@ -1,9 +1,9 @@
 
-#include "src/symstate/sym_bitvector.h"
+#include "src/symstate/bitvector.h"
 
 TEST(SymBitvectorTest, CanPrintConstantsAtWidth) {
 
-  auto a = stoke::SymBitVectorConstant<3>(5);
+  auto a = stoke::SymBitVectorConstant(3, 5);
 
   std::stringstream ss;
   ss << a;
@@ -13,7 +13,7 @@ TEST(SymBitvectorTest, CanPrintConstantsAtWidth) {
 
 TEST(SymBitvectorTest, CanPrintConstantsOverWidth) {
 
-  auto a = stoke::SymBitVectorConstant<4>(5);
+  auto a = stoke::SymBitVectorConstant(4, 5);
 
   std::stringstream ss;
   ss << a;
@@ -23,8 +23,8 @@ TEST(SymBitvectorTest, CanPrintConstantsOverWidth) {
 
 TEST(SymBitvectorTest, CanPrintExpressions) {
 
-  auto x = stoke::SymBitVectorVar<32>("x");
-  auto y = stoke::SymBitVectorVar<32>("y");
+  auto x = stoke::SymBitVectorVar(32, "x");
+  auto y = stoke::SymBitVectorVar(32, "y");
 
   auto z = ((x+y) & (( x << 3) ^ !y));
 

@@ -24,7 +24,7 @@
 #include "tests/solver/solver.h"
 #include "tests/state/state.h"
 #include "tests/stategen/stategen.h"
-#include "tests/symstate/sym_bitvector.h"
+#include "tests/symstate/bitvector.h"
 #include "tests/trivial.h"
 #include "tests/validator/validator.h"
 #include "tests/x64asm/x64asm.h"

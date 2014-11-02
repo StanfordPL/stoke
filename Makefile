@@ -65,7 +65,9 @@ OBJ=\
 	\
 	src/stategen/stategen.o \
 	\
-	src/symstate/symstate.o \
+	src/symstate/bitvector.o \
+	src/symstate/bool.o \
+	src/symstate/state.o \
 	\
 	src/tunit/tunit.o \
 	\
