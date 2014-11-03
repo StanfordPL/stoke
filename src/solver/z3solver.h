@@ -82,6 +82,8 @@ class Z3Solver : public SMTSolver {
         z3::expr visit(const SymBoolFalse& b);
         /** Visit a boolean IFF */
         z3::expr visit(const SymBoolIff& b);
+        /** Visit a boolean implies */
+        z3::expr visit(const SymBoolImplies& b);
         /** Visit a boolean NOT */
         z3::expr visit(const SymBoolNot& b);
         /** Visit a boolean OR */
@@ -95,14 +97,11 @@ class Z3Solver : public SMTSolver {
 
       private:
 
-        Z3_symbol get_symbol(std::string s) {
-          if(!symbol_map_[s])
-            symbol_map_[s] = Z3_mk_string_symbol(context_, s.c_str());
-          return symbol_map_[s];
+        z3::symbol get_symbol(std::string s) {
+          return context_.str_symbol(s.c_str());
         }
 
         z3::context& context_;
-        std::map<std::string, Z3_symbol> symbol_map_;
     };
 };
 

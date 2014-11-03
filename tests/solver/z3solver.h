@@ -46,3 +46,39 @@ TEST(Z3SolverTest, FalsehoodIsUnSat) {
   EXPECT_FALSE(z3.is_sat(constraints));
 
 }
+
+TEST(Z3SolverTest, ImpliesWorksUnsat) {
+
+  auto x = stoke::SymBoolVar("x");
+  auto y = stoke::SymBoolVar("y");
+
+  auto lhs = (!x) | y;
+  auto rhs = stoke::SymBoolImplies(x,y);
+
+  auto neq = lhs != rhs;
+
+  auto constraints = std::vector<stoke::SymBool*>();
+  constraints.push_back(&neq);
+
+  stoke::Z3Solver z3;
+  EXPECT_FALSE(z3.is_sat(constraints));
+
+}
+
+TEST(Z3SolverTest, ImpliesWorksSat) {
+
+  auto x = stoke::SymBoolVar("x");
+  auto y = stoke::SymBoolVar("y");
+
+  auto lhs = (!x) | y;
+  auto rhs = stoke::SymBoolImplies(x,y);
+
+  auto eq = lhs == rhs;
+
+  auto constraints = std::vector<stoke::SymBool*>();
+  constraints.push_back(&eq);
+
+  stoke::Z3Solver z3;
+  EXPECT_TRUE(z3.is_sat(constraints));
+
+}

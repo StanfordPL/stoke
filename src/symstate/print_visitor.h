@@ -145,6 +145,15 @@ class SymPrintVisitor : public SymVisitor<void> {
       os_ << ")";
     }
 
+    /** Visit a boolean IMPLIES */
+    void visit(const SymBoolImplies& b) {
+      os_ << "(implies ";
+      (*this)(b.a_);
+      os_ << " ";
+      (*this)(b.b_);
+      os_ << ")";
+    }
+
     /** Visit a boolean NOT */
     void visit(const SymBoolNot& b) {
       os_ << "(not ";

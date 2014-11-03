@@ -14,6 +14,7 @@ struct SymBoolAnd;
 struct SymBoolEq;
 struct SymBoolFalse;
 struct SymBoolIff;
+struct SymBoolImplies;
 struct SymBoolNot;
 struct SymBoolOr;
 struct SymBoolTrue;
@@ -25,13 +26,10 @@ class SymBool {
 
     enum Type {
       AND,
-      CONCAT,
-      CONSTANT,
       EQ,
-      EXTRACT,
       FALSE,
       IFF,
-      ITE,
+      IMPLIES,
       NOT,
       OR,
       TRUE,
@@ -97,6 +95,17 @@ struct SymBoolIff : public SymBool {
     SymBoolIff(const SymBool& a, const SymBool& b) : a_(a), b_(b) {}
 
     SymBool::Type type() const { return IFF; }
+
+    const SymBool& a_;
+    const SymBool& b_;
+};
+
+struct SymBoolImplies : public SymBool {
+
+  public:
+    SymBoolImplies(const SymBool& a, const SymBool& b) : a_(a), b_(b) {}
+
+    SymBool::Type type() const { return IMPLIES; }
 
     const SymBool& a_;
     const SymBool& b_;

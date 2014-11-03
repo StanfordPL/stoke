@@ -58,6 +58,8 @@ class SymVisitor {
           return visit(dynamic_cast<const SymBoolFalse&>(b));
         case SymBool::IFF:
           return visit(dynamic_cast<const SymBoolIff&>(b));
+        case SymBool::IMPLIES:
+          return visit(dynamic_cast<const SymBoolImplies&>(b));
         case SymBool::NOT:
           return visit(dynamic_cast<const SymBoolNot&>(b));
         case SymBool::OR:
@@ -107,6 +109,8 @@ class SymVisitor {
     virtual T visit(const SymBoolFalse& b) = 0;
     /** Visit a boolean IFF */
     virtual T visit(const SymBoolIff& b) = 0;
+    /** Visit a boolean IMPLIES */
+    virtual T visit(const SymBoolImplies& b) = 0;
     /** Visit a boolean NOT */
     virtual T visit(const SymBoolNot& b) = 0;
     /** Visit a boolean OR */

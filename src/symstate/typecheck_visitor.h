@@ -142,6 +142,11 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
       return (*this)(b.a_) && (*this)(b.b_);
     }
 
+    /** Visit a boolean Implies */
+    uint16_t visit(const SymBoolImplies& b) {
+      return (*this)(b.a_) && (*this)(b.b_);
+    }
+
     /** Visit a boolean NOT */
     uint16_t visit(const SymBoolNot& b) {
       return (*this)(b.b_);

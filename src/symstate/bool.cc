@@ -11,6 +11,10 @@ SymBoolAnd& SymBool::operator&(const SymBool& other) const {
   return *(new SymBoolAnd(*this, other));
 }
 
+SymBoolIff& SymBool::operator==(const SymBool& other) const {
+  return *(new SymBoolIff(*this, other));
+}
+
 SymBoolNot& SymBool::operator!() const {
   return *(new SymBoolNot(*this));
 }
@@ -21,6 +25,10 @@ SymBoolOr& SymBool::operator|(const SymBool& other) const {
 
 SymBoolXor& SymBool::operator^(const SymBool& other) const {
   return *(new SymBoolXor(*this, other));
+}
+
+SymBoolNot& SymBool::operator!=(const SymBool& other) const {
+  return !(*this == other);
 }
 
 /* Output overload */

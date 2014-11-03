@@ -232,7 +232,6 @@ Expr vc_bvMinusExpr(VC vc, int n_bits, Expr left, Expr right) {
 Expr vc_bvMultExpr(VC vc, int n_bits, Expr left, Expr right) {
   return left*right;
 }
-// left divided by right i.e. left/right
 Expr vc_bvDivExpr(VC vc, int n_bits, Expr left, Expr right) {
   return udiv(left,right);
 }
@@ -328,79 +327,3 @@ Expr vc_bvBoolExtract_One(VC vc, Expr x, int bit_no) {
 Expr vc_bvSignExtend(VC vc, Expr child, int nbits) {
   return to_expr(*vc, Z3_mk_sign_ext(*vc, nbits-child.get_sort().bv_size(), child));
 } 
-
-// return a string representation of the Expr e. The caller is responsible
-// for deallocating the string with free()
-char* exprString(Expr e) {
-  return 0;
-}
-
-// return a string representation of the Type t. The caller is responsible
-// for deallocating the string with free()
-char* typeString(Type t) {
-  return 0;
-}
-
-//3.otherwise the function returns -1
-int vc_isBool(Expr e) {
-  return 0;
-}
-
-/* Register the given error handler to be called for each fatal error.*/
-void vc_registerErrorHandler(void (*error_hdlr)(const char* err_msg)){}
-
-int vc_getHashQueryStateToBuffer(VC vc, Expr query) {
-  return 0;
-}
-
-//destroys the STP instance, and removes all the created expressions
-void vc_Destroy(VC vc){}
-
-//deletes the expression e
-void vc_DeleteExpr(Expr e){}
-
-
-// Free the return value of vc_getWholeCounterExample
-void vc_deleteWholeCounterExample(WholeCounterExample cc){}
-
-
-// get the number of children nodes
-int getDegree (Expr e) {
-  return 0;
-}
-
-// get the bv length
-int getBVLength(Expr e) {
-  return 0;
-}
-
-// get expression type
-
-
-// get value bit width
-int getVWidth (Expr e) {
-  return 0;
-}
-
-// get index bit width
-int getIWidth (Expr e) {
-  return 0;
-}
-
-// Prints counterexample to an open file descriptor 'fd'
-void vc_printCounterExampleFile(VC vc, int fd){}
-
-// get name of expression. must be a variable.
-const char* exprName(Expr e) {
-  return 0;
-}
-
-// get the node ID of an Expr.
-int getExprID (Expr ex) {
-  return 0;
-}
-
-// parse the expr from memory string!
-int vc_parseMemExpr(VC vc, const char* s, Expr* oquery, Expr* oasserts ) {
-  return 0;
-}
