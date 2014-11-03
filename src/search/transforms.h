@@ -17,6 +17,7 @@
 
 #include <cassert>
 
+#include <algorithm>
 #include <random>
 #include <vector>
 
@@ -45,6 +46,22 @@ class Transforms {
                               bool use_mem_write, bool propose_call);
 	/** Sets the pool operands to propose from. */
   Transforms& set_operand_pool(const x64asm::Code& target, const x64asm::RegSet& preserve_regs);
+	/** Insert a value into the immediate pool */
+	Transforms& insert_immediate(const x64asm::Imm64& imm) {
+		const auto itr = std::find(imm_pool_.begin(), imm_pool_.end(), imm);
+		if (itr == imm_pool_.end()) {
+			imm_pool_.push_back(imm);
+		}
+		return *this;
+	}
+	/** Insert a value into the label pool */
+	Transforms& insert_label(const x64asm::Label& l) {
+		const auto itr = std::find(label_pool_.begin(), label_pool_.end(), l);
+		if (itr == label_pool_.end()) {
+			label_pool_.push_back(l);
+		}
+		return *this;
+	}
 
 	/** Transforms a control flow graph using a move type, returns true if the change succeeded. */
   bool modify(Cfg& cfg, Move type);

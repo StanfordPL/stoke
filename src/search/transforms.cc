@@ -133,7 +133,7 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
 				case Type::ZERO:
 				case Type::ONE:
 				case Type::THREE:
-					imm_pool_.push_back(instr.get_operand<Imm64>(i));
+					insert_immediate(instr.get_operand<Imm64>(i));
 					break;
 				default:
 					break;
@@ -156,7 +156,7 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
 	label_pool_.clear();
 	for (const auto& instr : target) {
 		if (instr.is_call()) {
-			label_pool_.push_back(instr.get_operand<Label>(0));
+			insert_label(instr.get_operand<Label>(0));
 		}
 	}
 

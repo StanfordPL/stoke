@@ -220,6 +220,10 @@ auto& preserve_regs = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("pres
     .description("Prevent STOKE from proposing instructions that modify these registers")
     .default_val(RegSet::linux_callee_save());
 
+auto& imms = ValueArg<vector<uint64_t>, SpanReader<vector<uint64_t>, Range<uint64_t, 0ull, (uint64_t)-1>>>::create("immediates")
+		.usage("{ imm1 imm2 ... }")
+		.description("Additional immediates to propose as operands");
+
 auto& h8 = Heading::create("Proposal distribution options:");
 
 auto& instruction_mass = ValueArg<size_t>::create("instruction_mass")
@@ -522,6 +526,12 @@ int main(int argc, char** argv) {
   transforms.set_seed(seed)
   .set_opcode_pool(flags, nop_percent, mem_read, mem_write, propose_call)
   .set_operand_pool(target.value().code, preserve_regs.value());
+	for (const auto& imm : imms.value()) {
+		transforms.insert_immediate(imm);
+	}
+	for (const auto& fxn : aux_fxns.value()) {
+		transforms.insert_label(fxn.code[0].get_operand<Label>(0));
+	}
 
   ScbArg scb_arg;
   scb_arg.os = &cout;
