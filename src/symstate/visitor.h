@@ -16,7 +16,7 @@ class SymVisitor {
 
   public:
     /** Visit a symbolic bit vector */
-    T operator()(const SymBitVector& bv) {
+    virtual T operator()(const SymBitVector& bv) {
       switch(bv.type()) {
         case SymBitVector::AND:
           return visit(dynamic_cast<const SymBitVectorAnd&>(bv));
@@ -48,7 +48,7 @@ class SymVisitor {
     }
 
     /** Visit a symbolic bool */
-    T operator()(const SymBool& b) {
+    virtual T operator()(const SymBool& b) {
       switch(b.type()) {
         case SymBool::AND:
           return visit(dynamic_cast<const SymBoolAnd&>(b));

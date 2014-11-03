@@ -1,7 +1,7 @@
 
 
 #include "src/symstate/bool.h"
-#include "src/symstate/print_visitor.h"
+#include "src/symstate/bitvector.h"
 
 using namespace std;
 using namespace stoke;

@@ -33,7 +33,7 @@ class SMTSolver {
       return *this;
     }
 
-  private:
+  protected:
 
     /** Used to set the timeout before invoking solver */
     uint64_t timeout_;
