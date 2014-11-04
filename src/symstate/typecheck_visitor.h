@@ -25,6 +25,17 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
         return 0;
     }
 
+    /** Visit a bit-vector EQ */
+    uint16_t visit_compare(const SymBoolCompare& b) {
+      auto lhs = (*this)(b.a_);
+      auto rhs = (*this)(b.b_);
+
+      if (lhs == rhs)
+        return 1;
+      else
+        return 0;
+    }
+ 
     /** Visit a bit-vector concatenation.  Note, different than other
         binary operators because the lengths change. */
     uint16_t visit(const SymBitVectorConcat& bv) {
@@ -72,22 +83,26 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
       return (*this)(bv.bv_);
     }
 
+    /** Visit a bit-vector unary minus */
+    uint16_t visit(const SymBitVectorSignExtend& bv) {
+      auto child = (*this)(bv.bv_);
+
+      if (child < bv.size_ && child > 0)
+        return bv.size_;
+      else
+        return 0;
+    }
+
+    /** Visit a bit-vector unary minus */
+    uint16_t visit(const SymBitVectorUMinus& bv) {
+      return (*this)(bv.bv_);
+    }
+
     /** Visit a bit-vector variable */
     uint16_t visit(const SymBitVectorVar& bv) {
       return bv.size_;
     }
 
-    /** Visit a bit-vector EQ */
-    uint16_t visit(const SymBoolEq& b) {
-      auto lhs = (*this)(b.a_);
-      auto rhs = (*this)(b.b_);
-
-      if (lhs == rhs)
-        return 1;
-      else
-        return 0;
-    }
-    
     /** Visit a boolean AND */
     uint16_t visit(const SymBoolAnd& b) {
       return (*this)(b.a_) && (*this)(b.b_);

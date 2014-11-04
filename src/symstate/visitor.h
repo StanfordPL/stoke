@@ -22,6 +22,8 @@ class SymVisitor {
           return visit(dynamic_cast<const SymBitVectorAnd&>(bv));
         case SymBitVector::CONCAT:
           return visit(dynamic_cast<const SymBitVectorConcat&>(bv));
+        case SymBitVector::DIV:
+          return visit(dynamic_cast<const SymBitVectorDiv&>(bv));
         case SymBitVector::CONSTANT:
           return visit(dynamic_cast<const SymBitVectorConstant&>(bv));
         case SymBitVector::EXTRACT:
@@ -44,6 +46,16 @@ class SymVisitor {
           return visit(dynamic_cast<const SymBitVectorShiftRight&>(bv));
         case SymBitVector::SHIFT_LEFT:
           return visit(dynamic_cast<const SymBitVectorShiftLeft&>(bv));
+        case SymBitVector::SIGN_DIV:
+          return visit(dynamic_cast<const SymBitVectorSignDiv&>(bv));
+        case SymBitVector::SIGN_EXTEND:
+          return visit(dynamic_cast<const SymBitVectorSignExtend&>(bv));
+        case SymBitVector::SIGN_MOD:
+          return visit(dynamic_cast<const SymBitVectorSignMod&>(bv));
+        case SymBitVector::SIGN_SHIFT_RIGHT:
+          return visit(dynamic_cast<const SymBitVectorSignShiftRight&>(bv));
+        case SymBitVector::U_MINUS:
+          return visit(dynamic_cast<const SymBitVectorUMinus&>(bv));
         case SymBitVector::VAR:
           return visit(dynamic_cast<const SymBitVectorVar&>(bv));
         case SymBitVector::XOR:
@@ -64,10 +76,18 @@ class SymVisitor {
           return visit(dynamic_cast<const SymBoolEq&>(b));
         case SymBool::FALSE:
           return visit(dynamic_cast<const SymBoolFalse&>(b));
+        case SymBool::GE:
+          return visit(dynamic_cast<const SymBoolGe&>(b));
+        case SymBool::GT:
+          return visit(dynamic_cast<const SymBoolGt&>(b));
         case SymBool::IFF:
           return visit(dynamic_cast<const SymBoolIff&>(b));
         case SymBool::IMPLIES:
           return visit(dynamic_cast<const SymBoolImplies&>(b));
+        case SymBool::LE:
+          return visit(dynamic_cast<const SymBoolLe&>(b));
+        case SymBool::LT:
+          return visit(dynamic_cast<const SymBoolLt&>(b));
         case SymBool::NOT:
           return visit(dynamic_cast<const SymBoolNot&>(b));
         case SymBool::OR:
@@ -89,12 +109,19 @@ class SymVisitor {
      * concise.  Can be deleted if need be. */
     virtual T visit_binop(const SymBitVectorBinop& bv) = 0;
 
+    /** Visit a generic comparison operator. */
+    virtual T visit_compare(const SymBoolCompare& b) = 0;
+
     /** Visit a bit-vector AND */
     virtual T visit(const SymBitVectorAnd& bv) {
       return visit_binop(bv);
     }
     /** Visit a bit-vector concatenation */
     virtual T visit(const SymBitVectorConcat& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector concatenation */
+    virtual T visit(const SymBitVectorDiv& bv) {
       return visit_binop(bv);
     }
     /** Visit a bit-vector minus */
@@ -125,6 +152,18 @@ class SymVisitor {
     virtual T visit(const SymBitVectorShiftRight& bv) {
       return visit_binop(bv);
     }
+    /** Visit a bit-vector signed division */
+    virtual T visit(const SymBitVectorSignDiv& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector signed mod */
+    virtual T visit(const SymBitVectorSignMod& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector signed shift-right */
+    virtual T visit(const SymBitVectorSignShiftRight& bv) {
+      return visit_binop(bv);
+    }
     /** Visit a bit-vector XOR */
     virtual T visit(const SymBitVectorXor& bv) {
       return visit_binop(bv);
@@ -139,12 +178,34 @@ class SymVisitor {
     virtual T visit(const SymBitVectorIte& bv) = 0;
     /** Visit a bit-vector NOT */
     virtual T visit(const SymBitVectorNot& bv) = 0;
+    /** Visit a bit-vector extract */
+    virtual T visit(const SymBitVectorSignExtend& bv) = 0;
+    /** Visit a bit-vector extract */
+    virtual T visit(const SymBitVectorUMinus& bv) = 0;
     /** Visit a bit-vector variable */
     virtual T visit(const SymBitVectorVar& bv) = 0;
 
     /** Visit a bit-vector EQ */
-    virtual T visit(const SymBoolEq& b) = 0;
-    
+    virtual T visit(const SymBoolEq& b) {
+      return visit_compare(b);
+    }
+    /** Visit a bit-vector GE */
+    virtual T visit(const SymBoolGe& b) {
+      return visit_compare(b);
+    }
+    /** Visit a bit-vector GT */
+    virtual T visit(const SymBoolGt& b) {
+      return visit_compare(b);
+    }
+    /** Visit a bit-vector LE */
+    virtual T visit(const SymBoolLe& b) {
+      return visit_compare(b);
+    }
+    /** Visit a bit-vector LT */
+    virtual T visit(const SymBoolLt& b) {
+      return visit_compare(b);
+    }
+ 
     /** Visit a boolean AND */
     virtual T visit(const SymBoolAnd& b) = 0;
     /** Visit a boolean FALSE */

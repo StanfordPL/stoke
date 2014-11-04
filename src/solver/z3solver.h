@@ -55,6 +55,11 @@ class Z3Solver : public SMTSolver {
           assert(false);
         }
 
+        z3::expr visit_compare(const SymBoolCompare& b) {
+          std::cerr << "Unsupported compare: " << b.type() << std::endl;
+          assert(false);
+        }
+
         /** Visit a bit-vector AND */
         z3::expr visit(const SymBitVectorAnd& bv);
         /** Visit a bit-vector concatenation */
@@ -67,7 +72,7 @@ class Z3Solver : public SMTSolver {
         z3::expr visit(const SymBitVectorIte& bv);
         /** Visit a bit-vector minus */
         z3::expr visit(const SymBitVectorMinus& bv);
-        /** Visit a bit-vector minus */
+        /** Visit a bit-vector mod */
         z3::expr visit(const SymBitVectorMod& bv);
         /** Visit a bit-vector mult */
         z3::expr visit(const SymBitVectorMult& bv);
@@ -81,6 +86,16 @@ class Z3Solver : public SMTSolver {
         z3::expr visit(const SymBitVectorShiftLeft& bv);
         /** Visit a bit-vector shift-right */
         z3::expr visit(const SymBitVectorShiftRight& bv);
+        /** Visit a bit-vector signed divide */
+        z3::expr visit(const SymBitVectorSignDiv& bv);
+        /** Visit a bit-vector sign-extend */
+        z3::expr visit(const SymBitVectorSignExtend& bv);
+        /** Visit a bit-vector signed mod */
+        z3::expr visit(const SymBitVectorSignMod& bv);
+        /** Visit a bit-vector signed shift-right */
+        z3::expr visit(const SymBitVectorSignShiftRight& bv);
+        /** Visit a bit-vector unary minus */
+        z3::expr visit(const SymBitVectorUMinus& bv);
         /** Visit a bit-vector variable */
         z3::expr visit(const SymBitVectorVar& bv);
         /** Visit a bit-vector XOR */
@@ -88,6 +103,14 @@ class Z3Solver : public SMTSolver {
 
         /** Visit a bit-vector EQ */
         z3::expr visit(const SymBoolEq& b);
+        /** Visit a bit-vector Ge */
+        z3::expr visit(const SymBoolGe& b);
+        /** Visit a bit-vector Gt */
+        z3::expr visit(const SymBoolGt& b);
+        /** Visit a bit-vector LE */
+        z3::expr visit(const SymBoolLe& b);
+        /** Visit a bit-vector LT */
+        z3::expr visit(const SymBoolLt& b);
         
         /** Visit a boolean AND */
         z3::expr visit(const SymBoolAnd& b);

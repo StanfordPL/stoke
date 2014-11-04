@@ -12,6 +12,7 @@ namespace stoke {
 class SymBitVectorAnd;
 class SymBitVectorConcat;
 class SymBitVectorConstant;
+class SymBitVectorDiv;
 class SymBitVectorExtract;
 class SymBitVectorIte;
 class SymBitVectorMinus;
@@ -22,6 +23,11 @@ class SymBitVectorOr;
 class SymBitVectorPlus;
 class SymBitVectorShiftRight;
 class SymBitVectorShiftLeft;
+class SymBitVectorSignDiv;
+class SymBitVectorSignExtend;
+class SymBitVectorSignMod;
+class SymBitVectorSignShiftRight;
+class SymBitVectorUMinus;
 class SymBitVectorVar;
 class SymBitVectorXor;
 
@@ -34,6 +40,7 @@ class SymBitVector {
       AND,
       CONCAT,
       CONSTANT,
+      DIV,
       EXTRACT,
       ITE,
       MINUS,
@@ -44,6 +51,11 @@ class SymBitVector {
       PLUS,
       SHIFT_RIGHT,
       SHIFT_LEFT,
+      SIGN_DIV,
+      SIGN_EXTEND,
+      SIGN_MOD,
+      SIGN_SHIFT_RIGHT,
+      U_MINUS,
       VAR,
       XOR
     };
@@ -56,38 +68,62 @@ class SymBitVector {
     static SymBitVectorConstant& constant(uint16_t size, uint64_t constant);
     /** Creates a bitvector variables of specified size and name */
     static SymBitVectorVar& var(uint16_t size, std::string name);
+    /** Creates a length-1 bitvector from a boolean */
+    static SymBitVectorIte& from_bool(const SymBool& b);
+    /** Creates an if-then-else expression bitvector */
+    static SymBitVectorIte& ite(const SymBool& cond, const SymBitVector& t, const SymBitVector& f);
 
-    /** Conclasss the bitwise AND of two bitvectors */
+    /** Constructs the bitwise AND of two bitvectors */
     SymBitVectorAnd& operator&(const SymBitVector& other) const;
-    /** Conclasss the concatenation of two bitvectors */
+    /** Constructs the concatenation of two bitvectors */
     SymBitVectorConcat& operator||(const SymBitVector& other) const;
-    /** Conclasss the substraction of two bitvectors */
+    /** Constructs the concatenation of two bitvectors */
+    SymBitVectorDiv& operator/(const SymBitVector& other) const;
+    /** Constructs the substraction of two bitvectors */
     SymBitVectorMinus& operator-(const SymBitVector& other) const;
-    /** Conclasss the multiplication of two bitvectors */
+    /** Constructs the multiplication of two bitvectors */
     SymBitVectorMult& operator*(const SymBitVector& other) const;
-    /** Conclasss the modulus of two bitvectors */
+    /** Constructs the modulus of two bitvectors */
     SymBitVectorMod& operator%(const SymBitVector& other) const;
-    /** Conclasss the logical negation of this bitvector */
+    /** Constructs the logical negation of this bitvector */
     SymBitVectorNot& operator!() const;
-    /** Conclasss the bitwise OR of two bitvectors */
+    /** Constructs the bitwise OR of two bitvectors */
     SymBitVectorOr& operator|(const SymBitVector& other) const;
-    /** Conclasss the sum of two bitvectors */
+    /** Constructs the sum of two bitvectors */
     SymBitVectorPlus& operator+(const SymBitVector& other) const;
-    /** Conclasss a bitvector (of same size) shifted to the left by 'shift' */
+    /** Constructs a bitvector (of same size) shifted to the left by 'shift' */
     SymBitVectorShiftLeft& operator<<(uint64_t shift) const;
-    /** Conclasss a bitveector shifted to the left by another bitvector. */
+    /** Constructs a bitveector shifted to the left by another bitvector. */
     SymBitVectorShiftLeft& operator<<(const SymBitVector& other) const;
-    /** Conclasss a bitvector (of same size) shifted to the right by 'shift' */
+    /** Constructs a bitvector (of same size) shifted to the right by 'shift' */
     SymBitVectorShiftRight& operator>>(uint64_t shift) const;
-    /** Conclasss a bitveector shifted to the right by another bitvector. */
+    /** Constructs a bitveector shifted to the right by another bitvector. */
     SymBitVectorShiftRight& operator>>(const SymBitVector& other) const;
-    /** Conclasss the bitwise XOR of two bitvectors */
+    /** Creates a bitvector representing signed division */
+    SymBitVectorSignDiv& s_div(const SymBitVector& other) const;
+    /** Creates a sign-extended version of this bitvector */
+    SymBitVectorSignExtend& extend(uint16_t size) const;
+    /** Creates a bitvector representing signed modulus */
+    SymBitVectorSignMod& s_mod(const SymBitVector& other) const;
+    /** Creates a bitvector representing signed shift right */
+    SymBitVectorSignShiftRight& s_shr(const SymBitVector& other) const;
+    /** Creates a 2s-complement negation of this bitvector */
+    SymBitVectorUMinus& operator-() const;
+    /** Constructs the bitwise XOR of two bitvectors */
     SymBitVectorXor& operator^(const SymBitVector& other) const;
 
 
-    /** Returns a bitvector of length 1 indicating if the arguments are equal */
+    /** Returns a bool indicating if the arguments are equal */
     SymBoolEq& operator==(const SymBitVector& other) const;
-    /** Returns a bitvector of length 1 indicating if the arguments are not equal */
+    /** Returns a bool indicating if the first argument is at least the second */
+    SymBoolGe& operator>=(const SymBitVector& other) const;
+    /** Returns a bool indicating if the first argument is greater than the second */
+    SymBoolGt& operator>(const SymBitVector& other) const;
+    /** Returns a bool indicating if the first argument is at most the second */
+    SymBoolLe& operator<=(const SymBitVector& other) const;
+    /** Returns a bool indicating if the first argument is less than the second */
+    SymBoolLt& operator<(const SymBitVector& other) const;
+    /** Returns a bool indicating if the arguments are not equal */
     SymBoolNot& operator!=(const SymBitVector& other) const;
 
     class IndexHelper {
@@ -95,6 +131,7 @@ class SymBitVector {
 
       public:
         SymBitVectorExtract& operator[](uint16_t index) const;
+        operator SymBool&() const;
 
       private:
         IndexHelper(const SymBitVector& bv, uint16_t index) : bv_(bv), index_(index) {}
@@ -136,6 +173,14 @@ class SymBitVectorConcat : public SymBitVectorBinop {
 
   public:
     SymBitVector::Type type() const { return CONCAT; }
+};
+
+class SymBitVectorDiv : public SymBitVectorBinop {
+  friend class SymBitVector;
+  using SymBitVectorBinop::SymBitVectorBinop;
+
+  public:
+    SymBitVector::Type type() const { return DIV; }
 };
 
 class SymBitVectorConstant : public SymBitVector {
@@ -213,6 +258,11 @@ class SymBitVectorMult : public SymBitVectorBinop {
 class SymBitVectorNot : public SymBitVector {
   friend class SymBitVector;
 
+  // It's a bug that SymVisitor is here; it's unclear to me why it should be
+  // needed, but I have trouble compiling without it
+  template <typename T>
+  friend class SymVisitor;
+
   private:
     SymBitVectorNot(const SymBitVector& bv) : bv_(bv) {}
 
@@ -252,6 +302,55 @@ class SymBitVectorShiftRight : public SymBitVectorBinop {
 
   public:
     SymBitVector::Type type() const { return SHIFT_RIGHT; }
+};
+
+class SymBitVectorSignDiv : public SymBitVectorBinop {
+  friend class SymBitVector;
+  using SymBitVectorBinop::SymBitVectorBinop;
+
+  public:
+    SymBitVector::Type type() const { return SIGN_DIV; }
+};
+
+class SymBitVectorSignExtend : public SymBitVector {
+  friend class SymBitVector;
+
+  private:
+    SymBitVectorSignExtend(const SymBitVector& bv, uint16_t size) : bv_(bv), size_(size) {}
+
+  public:
+    SymBitVector::Type type() const { return SIGN_EXTEND; }
+
+    const SymBitVector& bv_;
+    const uint16_t size_;
+};
+
+class SymBitVectorSignMod : public SymBitVectorBinop {
+  friend class SymBitVector;
+  using SymBitVectorBinop::SymBitVectorBinop;
+
+  public:
+    SymBitVector::Type type() const { return SIGN_MOD; }
+};
+
+class SymBitVectorSignShiftRight : public SymBitVectorBinop {
+  friend class SymBitVector;
+  using SymBitVectorBinop::SymBitVectorBinop;
+
+  public:
+    SymBitVector::Type type() const { return SIGN_SHIFT_RIGHT; }
+};
+
+class SymBitVectorUMinus : public SymBitVector{
+  friend class SymBitVector;
+
+  private:
+    SymBitVectorUMinus(const SymBitVector& bv) : bv_(bv) {}
+
+  public:
+    SymBitVector::Type type() const { return U_MINUS; }
+
+    const SymBitVector& bv_;
 };
 
 

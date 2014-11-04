@@ -11,7 +11,7 @@ class SymRegs {
   public:
     /** Create a bank of n symbolic registers of w bits */
     SymRegs(uint16_t width, size_t count) {
-      contents_.resize(count, new SymBitVectorConstant(width, 0));
+      contents_.resize(count, &SymBitVector::constant(width, 0));
     };
 
     /** Number of elements */

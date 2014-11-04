@@ -13,8 +13,12 @@ class SymBitVector;
 class SymBoolAnd;
 class SymBoolEq;
 class SymBoolFalse;
+class SymBoolGe;
+class SymBoolGt;
 class SymBoolIff;
 class SymBoolImplies;
+class SymBoolLe;
+class SymBoolLt;
 class SymBoolNot;
 class SymBoolOr;
 class SymBoolTrue;
@@ -28,8 +32,12 @@ class SymBool {
       AND,
       EQ,
       FALSE,
+      GE,
+      GT,
       IFF,
       IMPLIES,
+      LE,
+      LT,
       NOT,
       OR,
       TRUE,
@@ -64,6 +72,16 @@ class SymBool {
 
 };
 
+class SymBoolCompare : public SymBool {
+
+  protected:
+    SymBoolCompare(const SymBitVector& a, const SymBitVector& b) : a_(a), b_(b) {}
+
+  public:
+    const SymBitVector& a_;
+    const SymBitVector& b_;
+
+};
 
 class SymBoolAnd : public SymBool {
   friend class SymBool;
@@ -78,18 +96,13 @@ class SymBoolAnd : public SymBool {
     const SymBool& b_;
 };
 
-class SymBoolEq : public SymBool {
+class SymBoolEq : public SymBoolCompare {
   friend class SymBool;
   friend class SymBitVector;
-
-  private:
-    SymBoolEq(const SymBitVector& a, const SymBitVector& b) : a_(a), b_(b) {}
+  using SymBoolCompare::SymBoolCompare;
 
   public:
     SymBool::Type type() const { return EQ; }
-
-    const SymBitVector& a_;
-    const SymBitVector& b_;
 };
 
 class SymBoolFalse : public SymBool {
@@ -97,6 +110,24 @@ class SymBoolFalse : public SymBool {
 
   public:
     SymBool::Type type() const { return FALSE; }
+};
+
+class SymBoolGe : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+  public:
+    SymBool::Type type() const { return GE; }
+};
+
+class SymBoolGt : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+  public:
+    SymBool::Type type() const { return GT; }
 };
 
 class SymBoolIff : public SymBool {
@@ -123,6 +154,24 @@ class SymBoolImplies : public SymBool {
 
     const SymBool& a_;
     const SymBool& b_;
+};
+
+class SymBoolLe : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+  public:
+    SymBool::Type type() const { return LE; }
+};
+
+class SymBoolLt : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+  public:
+    SymBool::Type type() const { return LT; }
 };
 
 class SymBoolNot : public SymBool {

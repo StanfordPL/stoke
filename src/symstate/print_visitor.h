@@ -20,6 +20,9 @@ class SymPrintVisitor : public SymVisitor<void> {
         case SymBitVector::CONCAT:
           os_ << "(concat ";
           break;
+        case SymBitVector::DIV:
+          os_ << "(div ";
+          break;
         case SymBitVector::MINUS:
           os_ << "(minus ";
           break;
@@ -41,6 +44,15 @@ class SymPrintVisitor : public SymVisitor<void> {
         case SymBitVector::SHIFT_RIGHT:
           os_ << "(>> ";
           break;
+        case SymBitVector::SIGN_DIV:
+          os_ << "(s_div ";
+          break;
+        case SymBitVector::SIGN_MOD:
+          os_ << "(s_mod ";
+          break;
+        case SymBitVector::SIGN_SHIFT_RIGHT:
+          os_ << "(s_shr ";
+          break;
         case SymBitVector::XOR:
           os_ << "(xor ";
           break;
@@ -53,6 +65,36 @@ class SymPrintVisitor : public SymVisitor<void> {
       os_ << " ";
       (*this)(bv.b_);
       os_ << ")";
+    }
+
+    void visit_compare(const SymBoolCompare& b) {
+
+      switch(b.type()) {
+        case SymBool::EQ:
+          os_ << "(== ";
+          break;
+        case SymBool::GE:
+          os_ << "(>= ";
+          break;
+        case SymBool::GT:
+          os_ << "(> ";
+          break;
+        case SymBool::LE:
+          os_ << "(<= ";
+          break;
+        case SymBool::LT:
+          os_ << "(< ";
+          break;
+        default:
+          os_ << "(UNHANDLED_COMPARE" << b.type() << " ";
+          assert(false);
+      }
+
+      (*this)(b.a_);
+      os_ << " ";
+      (*this)(b.b_);
+      os_ << ")";
+
     }
 
     /** Visit a bit-vector constant */
@@ -88,6 +130,20 @@ class SymPrintVisitor : public SymVisitor<void> {
     /** Visit a bit-vector NOT */
     void visit(const SymBitVectorNot& bv) {
       os_ << "(not ";
+      (*this)(bv.bv_);
+      os_ << ")";
+    }
+
+    /** Visit a bit-vector sign-extend */
+    void visit(const SymBitVectorSignExtend& bv) {
+      os_ << "(sign-extend-" << bv.size_ << " ";
+      (*this)(bv.bv_);
+      os_ << ")";
+    }
+
+    /** Visit a bit-vector unary minus */
+    void visit(const SymBitVectorUMinus& bv) {
+      os_ << "(negative ";
       (*this)(bv.bv_);
       os_ << ")";
     }
