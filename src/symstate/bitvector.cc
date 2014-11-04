@@ -5,6 +5,14 @@
 using namespace std;
 using namespace stoke;
 
+/* Various constructors */
+SymBitVectorConstant& SymBitVector::constant(uint16_t size, uint64_t value) {
+  return *(new SymBitVectorConstant(size, value));
+}
+SymBitVectorVar& SymBitVector::var(uint16_t size, string name) {
+  return *(new SymBitVectorVar(size, name));
+}
+
 /* Bit Vector Operators */
 SymBitVectorAnd& SymBitVector::operator&(const SymBitVector& other) const {
   return *(new SymBitVectorAnd(*this, other));
@@ -12,6 +20,18 @@ SymBitVectorAnd& SymBitVector::operator&(const SymBitVector& other) const {
 
 SymBitVectorConcat& SymBitVector::operator||(const SymBitVector& other) const {
   return *(new SymBitVectorConcat(*this, other));
+}
+
+SymBitVectorMinus& SymBitVector::operator-(const SymBitVector& other) const {
+  return *(new SymBitVectorMinus(*this, other));
+}
+
+SymBitVectorMod& SymBitVector::operator%(const SymBitVector& other) const {
+  return *(new SymBitVectorMod(*this, other));
+}
+
+SymBitVectorMult& SymBitVector::operator*(const SymBitVector& other) const {
+  return *(new SymBitVectorMult(*this, other));
 }
 
 SymBitVectorNot& SymBitVector::operator!() const {
@@ -26,12 +46,28 @@ SymBitVectorPlus& SymBitVector::operator+(const SymBitVector& other) const {
   return *(new SymBitVectorPlus(*this, other));
 }
 
+SymBitVectorShiftLeft& SymBitVector::operator<<(const SymBitVector& other) const {
+  return *(new SymBitVectorShiftLeft(*this, other));
+}
+
+SymBitVectorShiftRight& SymBitVector::operator>>(const SymBitVector& other) const {
+  return *(new SymBitVectorShiftRight(*this, other));
+}
+
 SymBitVectorShiftLeft& SymBitVector::operator<<(uint64_t shift) const {
-  return *(new SymBitVectorShiftLeft(*this, shift));
+  SymTypecheckVisitor tc;
+  auto size = tc(*this);
+
+  auto& constant = *(new SymBitVectorConstant(size, shift));
+  return (*this << constant);
 }
 
 SymBitVectorShiftRight& SymBitVector::operator>>(uint64_t shift) const {
-  return *(new SymBitVectorShiftRight(*this, shift));
+  SymTypecheckVisitor tc;
+  auto size = tc(*this);
+
+  auto& constant = *(new SymBitVectorConstant(size, shift));
+  return (*this >> constant);
 }
 
 SymBitVectorXor& SymBitVector::operator^(const SymBitVector& other) const {

@@ -2,7 +2,7 @@
 #ifndef _STOKE_SRC_SYMSTATE_TYPECHECK_VISITOR
 #define _STOKE_SRC_SYMSTATE_TYPECHECK_VISITOR
 
-#include "src/symstate/visitor.h"
+#include "src/symstate/bitvector.h"
 
 namespace stoke {
 
@@ -13,8 +13,9 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
 
   public:
 
-    /** Visit a bit-vector AND */
-    uint16_t visit(const SymBitVectorAnd& bv) {
+    /* Visit a generic binary operator */
+    uint16_t visit_binop(const SymBitVectorBinop& bv) {
+
       auto lhs = (*this)(bv.a_);
       auto rhs = (*this)(bv.b_);
 
@@ -24,13 +25,17 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
         return 0;
     }
 
-    /** Visit a bit-vector concatenation */
+    /** Visit a bit-vector concatenation.  Note, different than other
+        binary operators because the lengths change. */
     uint16_t visit(const SymBitVectorConcat& bv) {
-      auto lhs = (*this)(bv.a_);
+
       auto rhs = (*this)(bv.b_);
+      auto lhs = (*this)(bv.a_);
 
       if(lhs && rhs)
         return lhs + rhs;
+      else
+        return 0;
     }
     
     /** Visit a bit-vector constant */
@@ -62,41 +67,8 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
         return 0;
     }
 
-
     /** Visit a bit-vector NOT */
     uint16_t visit(const SymBitVectorNot& bv) {
-      return (*this)(bv.bv_);
-    }
-
-    /** Visit a bit-vector OR */
-    uint16_t visit(const SymBitVectorOr& bv) {
-      auto lhs = (*this)(bv.a_);
-      auto rhs = (*this)(bv.b_);
-
-      if (lhs == rhs)
-        return lhs;
-      else
-        return 0;
-    }
-
-    /** Visit a bit-vector plus */
-    uint16_t visit(const SymBitVectorPlus& bv) {
-      auto lhs = (*this)(bv.a_);
-      auto rhs = (*this)(bv.b_);
-
-      if (lhs == rhs)
-        return lhs;
-      else
-        return 0;
-    }
-
-    /** Visit a bit-vector shift-left */
-    uint16_t visit(const SymBitVectorShiftLeft& bv) {
-      return (*this)(bv.bv_);
-    }
-
-    /** Visit a bit-vector shift-right */
-    uint16_t visit(const SymBitVectorShiftRight& bv) {
       return (*this)(bv.bv_);
     }
 
@@ -104,17 +76,6 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
     uint16_t visit(const SymBitVectorVar& bv) {
       return bv.size_;
     }
-
-    /** Visit a bit-vector XOR */
-    uint16_t visit(const SymBitVectorXor& bv) {
-      auto lhs = (*this)(bv.a_);
-      auto rhs = (*this)(bv.b_);
-
-      if (lhs == rhs)
-        return lhs;
-      else
-        return 0;
-   }
 
     /** Visit a bit-vector EQ */
     uint16_t visit(const SymBoolEq& b) {

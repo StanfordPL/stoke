@@ -79,6 +79,21 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorIte& bv) {
   return z3::expr(context_, Z3_mk_ite(context_, (*this)(bv.cond_), (*this)(bv.a_), (*this)(bv.b_)));
 }
 
+/** Visit a bit-vector minus */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorMinus& bv) {
+  return z3::expr(context_, Z3_mk_bvsub(context_, (*this)(bv.a_), (*this)(bv.b_)));
+}
+
+/** Visit a bit-vector mod */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorMod& bv) {
+  return z3::expr(context_, Z3_mk_bvsmod(context_, (*this)(bv.a_), (*this)(bv.b_)));
+}
+
+/** Visit a bit-vector mult */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorMult& bv) {
+  return z3::expr(context_, Z3_mk_bvmul(context_, (*this)(bv.a_), (*this)(bv.b_)));
+}
+
 /** Visit a bit-vector NOT */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorNot& bv) {
   return z3::expr(context_, Z3_mk_bvnot(context_, (*this)(bv.bv_)));
@@ -96,24 +111,12 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorPlus& bv) {
 
 /** Visit a bit-vector shift-left */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorShiftLeft& bv) {
-  // Get the constant and the width
-  SymTypecheckVisitor tc;
-  uint16_t width = tc(bv);
-  auto c = SymBitVectorConstant(width, bv.shift_);
-  
-  // Build the expression
-  return z3::expr(context_, Z3_mk_bvshl(context_, (*this)(bv.bv_), (*this)(c)));
+  return z3::expr(context_, Z3_mk_bvshl(context_, (*this)(bv.a_), (*this)(bv.b_)));
 }
 
 /** Visit a bit-vector shift-right */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorShiftRight& bv) {
-  // Get the constant and the width
-  SymTypecheckVisitor tc;
-  uint16_t width = tc(bv);
-  auto c = SymBitVectorConstant(width, bv.shift_);
-  
-  // Build the expression
-  return z3::expr(context_, Z3_mk_bvshl(context_, (*this)(bv.bv_), (*this)(c)));
+  return z3::expr(context_, Z3_mk_bvlshr(context_, (*this)(bv.a_), (*this)(bv.b_)));
 }
 
 /** Visit a bit-vector variable */

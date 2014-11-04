@@ -28,6 +28,12 @@ class SymVisitor {
           return visit(dynamic_cast<const SymBitVectorExtract&>(bv));
         case SymBitVector::ITE:
           return visit(dynamic_cast<const SymBitVectorIte&>(bv));
+        case SymBitVector::MINUS:
+          return visit(dynamic_cast<const SymBitVectorMinus&>(bv));
+        case SymBitVector::MOD:
+          return visit(dynamic_cast<const SymBitVectorMod&>(bv));
+        case SymBitVector::MULT:
+          return visit(dynamic_cast<const SymBitVectorMult&>(bv));
         case SymBitVector::NOT:
           return visit(dynamic_cast<const SymBitVectorNot&>(bv));
         case SymBitVector::OR:
@@ -43,6 +49,8 @@ class SymVisitor {
         case SymBitVector::XOR:
           return visit(dynamic_cast<const SymBitVectorXor&>(bv));
         default:
+          std::cerr << "Unexpected bitvector type " << bv.type()
+                    << " in " << __FILE__ << ":" << __LINE__ << std::endl;
           assert(false);
       }
     }
@@ -71,14 +79,58 @@ class SymVisitor {
         case SymBool::XOR:
           return visit(dynamic_cast<const SymBoolXor&>(b));
         default:
+          std::cerr << "Unexpected bool type " << b.type()
+                    << " in " << __FILE__ << ":" << __LINE__ << std::endl;
           assert(false);
       }
     }
 
+    /** Visit a generic bin-op.  Used to make implementing visitors more
+     * concise.  Can be deleted if need be. */
+    virtual T visit_binop(const SymBitVectorBinop& bv) = 0;
+
     /** Visit a bit-vector AND */
-    virtual T visit(const SymBitVectorAnd& bv) = 0;
+    virtual T visit(const SymBitVectorAnd& bv) {
+      return visit_binop(bv);
+    }
     /** Visit a bit-vector concatenation */
-    virtual T visit(const SymBitVectorConcat& bv) = 0;
+    virtual T visit(const SymBitVectorConcat& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector minus */
+    virtual T visit(const SymBitVectorMinus& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector mod */
+    virtual T visit(const SymBitVectorMod& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector mult */
+    virtual T visit(const SymBitVectorMult& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector OR */
+    virtual T visit(const SymBitVectorOr& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector plus */
+    virtual T visit(const SymBitVectorPlus& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector shift-left */
+    virtual T visit(const SymBitVectorShiftLeft& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector shift-right */
+    virtual T visit(const SymBitVectorShiftRight& bv) {
+      return visit_binop(bv);
+    }
+    /** Visit a bit-vector XOR */
+    virtual T visit(const SymBitVectorXor& bv) {
+      return visit_binop(bv);
+    }
+
+
     /** Visit a bit-vector constant */
     virtual T visit(const SymBitVectorConstant& bv) = 0;
     /** Visit a bit-vector extract */
@@ -87,18 +139,8 @@ class SymVisitor {
     virtual T visit(const SymBitVectorIte& bv) = 0;
     /** Visit a bit-vector NOT */
     virtual T visit(const SymBitVectorNot& bv) = 0;
-    /** Visit a bit-vector OR */
-    virtual T visit(const SymBitVectorOr& bv) = 0;
-    /** Visit a bit-vector plus */
-    virtual T visit(const SymBitVectorPlus& bv) = 0;
-    /** Visit a bit-vector shift-left */
-    virtual T visit(const SymBitVectorShiftLeft& bv) = 0;
-    /** Visit a bit-vector shift-right */
-    virtual T visit(const SymBitVectorShiftRight& bv) = 0;
     /** Visit a bit-vector variable */
     virtual T visit(const SymBitVectorVar& bv) = 0;
-    /** Visit a bit-vector XOR */
-    virtual T visit(const SymBitVectorXor& bv) = 0;
 
     /** Visit a bit-vector EQ */
     virtual T visit(const SymBoolEq& b) = 0;

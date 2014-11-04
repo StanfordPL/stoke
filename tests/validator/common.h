@@ -159,11 +159,11 @@ class ValidatorTest : public ::testing::Test {
   private:
 
     enum Outcome {
-      OTHER = 0,
       ERROR = 1,
       EQUIVALENT = 2,
       COUNTEREXAMPLE = 4,
-      NO_COUNTEREXAMPLE = 8
+      NO_COUNTEREXAMPLE = 8,
+      OTHER = 16
     };
 
 
@@ -405,7 +405,7 @@ class ValidatorTest : public ::testing::Test {
           break;
 
         case ERROR: {
-          size_t line;
+          size_t line = 0;
           std::string file;
           std::string message = v_.get_error(&line, &file);
           ADD_FAILURE_AT(message.c_str(), line) << "Validator reported unexpected error"
@@ -438,7 +438,7 @@ class ValidatorTest : public ::testing::Test {
       //  - non-equivalent, no counterexample
 
       stoke::CpuState ceg;
-      Outcome outcome;
+      Outcome outcome = OTHER;
 
       // Check for equivalence
       bool equiv = v_.validate(*cfg_t_, *cfg_r_, ceg);

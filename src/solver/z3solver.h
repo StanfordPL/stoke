@@ -48,6 +48,13 @@ class Z3Solver : public SMTSolver {
         }
         */
 
+        z3::expr visit_binop(const SymBitVectorBinop& bv) {
+          // We can't support anything generically.  Error!
+          // This will almost definitely segfault.  We need better error handling here.
+          std::cerr << "Unsupported binop: " << bv.type() << std::endl;
+          assert(false);
+        }
+
         /** Visit a bit-vector AND */
         z3::expr visit(const SymBitVectorAnd& bv);
         /** Visit a bit-vector concatenation */
@@ -58,6 +65,12 @@ class Z3Solver : public SMTSolver {
         z3::expr visit(const SymBitVectorExtract& bv);
         /** Visit a bit-vector if-then-else */
         z3::expr visit(const SymBitVectorIte& bv);
+        /** Visit a bit-vector minus */
+        z3::expr visit(const SymBitVectorMinus& bv);
+        /** Visit a bit-vector minus */
+        z3::expr visit(const SymBitVectorMod& bv);
+        /** Visit a bit-vector mult */
+        z3::expr visit(const SymBitVectorMult& bv);
         /** Visit a bit-vector NOT */
         z3::expr visit(const SymBitVectorNot& bv);
         /** Visit a bit-vector OR */

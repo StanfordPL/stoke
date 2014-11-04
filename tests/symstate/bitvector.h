@@ -4,7 +4,7 @@
 
 TEST(SymBitvectorTest, CanPrintConstantsAtWidth) {
 
-  auto a = stoke::SymBitVectorConstant(3, 5);
+  auto a = stoke::SymBitVector::constant(3, 5);
 
   std::stringstream ss;
   ss << a;
@@ -14,7 +14,7 @@ TEST(SymBitvectorTest, CanPrintConstantsAtWidth) {
 
 TEST(SymBitvectorTest, CanPrintConstantsOverWidth) {
 
-  auto a = stoke::SymBitVectorConstant(4, 5);
+  auto a = stoke::SymBitVector::constant(4, 5);
 
   std::stringstream ss;
   ss << a;
@@ -24,22 +24,22 @@ TEST(SymBitvectorTest, CanPrintConstantsOverWidth) {
 
 TEST(SymBitvectorTest, CanPrintExpressions) {
 
-  auto x = stoke::SymBitVectorVar(32, "x");
-  auto y = stoke::SymBitVectorVar(32, "y");
+  auto x = stoke::SymBitVector::var(3, "x");
+  auto y = stoke::SymBitVector::var(3, "y");
 
-  auto z = ((x+y) & (( x << 3) ^ !y))[10][5];
+  auto z = ((x+y) & (( x << 3) ^ !y))[2][1];
 
   std::stringstream ss;
   ss << z;
 
-  EXPECT_EQ("(and (plus <x|32> <y|32>) (xor (<x|32> << 3) (not <y|32>)))[10:5]", ss.str());
+  EXPECT_EQ("(and (plus <x|3> <y|3>) (xor (<< <x|3> [ 0, 1, 1 ]) (not <y|3>)))[2:1]", ss.str());
 
 }
 
 TEST(SymBitVectorTest, TypecheckWorks) {
 
-  auto x = stoke::SymBitVectorVar(32, "x");
-  auto y = stoke::SymBitVectorVar(32, "y");
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(32, "y");
 
   auto z = ((x+y) & (( x << 3) ^ !y))[10][5];
 
@@ -50,8 +50,8 @@ TEST(SymBitVectorTest, TypecheckWorks) {
 
 TEST(SymBitVectorTest, TypecheckDetectsBad) {
 
-  auto x = stoke::SymBitVectorVar(32, "x");
-  auto y = stoke::SymBitVectorVar(32, "y");
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(32, "y");
 
   auto z = ((x || y) == y);
 
@@ -64,16 +64,16 @@ TEST(SymBitVectorTest, ConstantsTypecheck) {
 
   stoke::SymTypecheckVisitor tc;
 
-  auto x = stoke::SymBitVectorConstant(3, 8);
+  auto x = stoke::SymBitVector::constant(3, 8);
   EXPECT_EQ(0, tc(x));
 
-  auto y = stoke::SymBitVectorConstant(3, 7);
+  auto y = stoke::SymBitVector::constant(3, 7);
   EXPECT_EQ(3, tc(y));
 }
 
 TEST(SymBitVectorTest, ExtractTypechecks) {
 
-  auto x = stoke::SymBitVectorConstant(32, 8);
+  auto x = stoke::SymBitVector::constant(32, 8);
   stoke::SymTypecheckVisitor tc;
 
   EXPECT_EQ(0, tc(x[33][0]));

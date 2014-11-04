@@ -6,6 +6,19 @@
 using namespace std;
 using namespace stoke;
 
+/* Bool constructors */
+SymBoolFalse& SymBool::_false() {
+  return *(new SymBoolFalse());
+}
+
+SymBoolTrue& SymBool::_true() {
+  return *(new SymBoolTrue());
+}
+
+SymBoolVar& SymBool::var(std::string name) {
+  return *(new SymBoolVar(name));
+}
+
 /* Bool Operators */
 SymBoolAnd& SymBool::operator&(const SymBool& other) const {
   return *(new SymBoolAnd(*this, other));
@@ -13,6 +26,10 @@ SymBoolAnd& SymBool::operator&(const SymBool& other) const {
 
 SymBoolIff& SymBool::operator==(const SymBool& other) const {
   return *(new SymBoolIff(*this, other));
+}
+
+SymBoolImplies& SymBool::implies(const SymBool& other) const {
+  return *(new SymBoolImplies(*this, other));
 }
 
 SymBoolNot& SymBool::operator!() const {

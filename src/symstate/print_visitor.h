@@ -11,24 +11,50 @@ class SymPrintVisitor : public SymVisitor<void> {
   public:
     SymPrintVisitor(std::ostream& os) : os_(os) {}
 
-    /** Visit a bit-vector AND */
-    void visit(const SymBitVectorAnd& bv) {
-      os_ << "(and "; 
+    void visit_binop(const SymBitVectorBinop& bv) {
+
+      switch(bv.type()) {
+        case SymBitVector::AND:
+          os_ << "(and ";
+          break;
+        case SymBitVector::CONCAT:
+          os_ << "(concat ";
+          break;
+        case SymBitVector::MINUS:
+          os_ << "(minus ";
+          break;
+        case SymBitVector::MOD:
+          os_ << "(mod ";
+          break;
+        case SymBitVector::MULT:
+          os_ << "(mult ";
+          break;
+        case SymBitVector::OR:
+          os_ << "(or ";
+          break;
+        case SymBitVector::PLUS:
+          os_ << "(plus ";
+          break;
+        case SymBitVector::SHIFT_LEFT:
+          os_ << "(<< ";
+          break;
+        case SymBitVector::SHIFT_RIGHT:
+          os_ << "(>> ";
+          break;
+        case SymBitVector::XOR:
+          os_ << "(xor ";
+          break;
+        default:
+          os_ << "(UNHANDLED_BINOP" << bv.type() << " ";
+          assert(false);
+      }
+
       (*this)(bv.a_);
       os_ << " ";
       (*this)(bv.b_);
       os_ << ")";
     }
 
-    /** Visit a bit-vector concatenation */
-    void visit(const SymBitVectorConcat& bv) {
-      os_ << "(concat "; 
-      (*this)(bv.a_);
-      os_ << " ";
-      (*this)(bv.b_);
-      os_ << ")";
-    }
-    
     /** Visit a bit-vector constant */
     void visit(const SymBitVectorConstant& bv) {
       os_ << "[ ";
@@ -59,7 +85,6 @@ class SymPrintVisitor : public SymVisitor<void> {
       os_ << ")";
     }
 
-
     /** Visit a bit-vector NOT */
     void visit(const SymBitVectorNot& bv) {
       os_ << "(not ";
@@ -67,50 +92,9 @@ class SymPrintVisitor : public SymVisitor<void> {
       os_ << ")";
     }
 
-    /** Visit a bit-vector OR */
-    void visit(const SymBitVectorOr& bv) {
-      os_ << "(or "; 
-      (*this)(bv.a_);
-      os_ << " ";
-      (*this)(bv.b_);
-      os_ << ")";
-    }
-
-    /** Visit a bit-vector plus */
-    void visit(const SymBitVectorPlus& bv) {
-      os_ << "(plus "; 
-      (*this)(bv.a_);
-      os_ << " ";
-      (*this)(bv.b_);
-      os_ << ")";
-    }
-
-    /** Visit a bit-vector shift-left */
-    void visit(const SymBitVectorShiftLeft& bv) {
-      os_ << "("; 
-      (*this)(bv.bv_);
-      os_ << " << " << bv.shift_ << ")";
-    }
-
-    /** Visit a bit-vector shift-right */
-    void visit(const SymBitVectorShiftRight& bv) {
-      os_ << "("; 
-      (*this)(bv.bv_);
-      os_ << " >> " << bv.shift_ << ")";
-    }
-
     /** Visit a bit-vector variable */
     void visit(const SymBitVectorVar& bv) {
       os_ << "<" << bv.name_ << "|" << bv.size_ << ">";
-    }
-
-    /** Visit a bit-vector XOR */
-    void visit(const SymBitVectorXor& bv) {
-      os_ << "(xor "; 
-      (*this)(bv.a_);
-      os_ << " ";
-      (*this)(bv.b_);
-      os_ << ")";
     }
 
     /** Visit a bit-vector EQ */
