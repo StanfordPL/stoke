@@ -18,6 +18,9 @@ SymBitVectorIte& SymBitVector::from_bool(const SymBool& b) {
 SymBitVectorIte& SymBitVector::ite(const SymBool& c, const SymBitVector& t, const SymBitVector& f) {
   return *(new SymBitVectorIte(c, t, f));
 }
+SymBitVectorZ3& SymBitVector::z3(z3::expr& e) {
+  return *(new SymBitVectorZ3(e));
+}
 
 /* Bit Vector Operators */
 SymBitVectorAnd& SymBitVector::operator&(const SymBitVector& other) const {

@@ -19,6 +19,10 @@ SymBoolVar& SymBool::var(std::string name) {
   return *(new SymBoolVar(name));
 }
 
+SymBoolZ3& SymBool::z3(const z3::expr& e) {
+  return *(new SymBoolZ3(e));
+}
+
 /* Bool Operators */
 SymBoolAnd& SymBool::operator&(const SymBool& other) const {
   return *(new SymBoolAnd(*this, other));

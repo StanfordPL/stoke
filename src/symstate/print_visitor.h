@@ -153,6 +153,11 @@ class SymPrintVisitor : public SymVisitor<void> {
       os_ << "<" << bv.name_ << "|" << bv.size_ << ">";
     }
 
+    /** Visit a Z3 bitvector */
+    void visit(const SymBitVectorZ3& bv) {
+      os_ << bv.e_;
+    }
+
     /** Visit a bit-vector EQ */
     void visit(const SymBoolEq& b) {
       os_ << "(=="; 
@@ -228,6 +233,13 @@ class SymPrintVisitor : public SymVisitor<void> {
       (*this)(b.b_);
       os_ << ")";
     }
+
+    /** Visit a Z3 compatibility bool */
+    void visit(const SymBoolZ3& bv) {
+      os_ << bv.e_;
+    }
+
+
 
   private:
     std::ostream& os_;

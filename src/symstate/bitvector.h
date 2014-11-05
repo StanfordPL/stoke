@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "src/symstate/bool.h"
+#include "src/ext/z3/include/z3++.h"
 
 namespace stoke {
 
@@ -30,6 +31,7 @@ class SymBitVectorSignShiftRight;
 class SymBitVectorUMinus;
 class SymBitVectorVar;
 class SymBitVectorXor;
+class SymBitVectorZ3;
 
 
 
@@ -57,7 +59,8 @@ class SymBitVector {
       SIGN_SHIFT_RIGHT,
       U_MINUS,
       VAR,
-      XOR
+      XOR,
+      Z3
     };
 
 
@@ -72,6 +75,8 @@ class SymBitVector {
     static SymBitVectorIte& from_bool(const SymBool& b);
     /** Creates an if-then-else expression bitvector */
     static SymBitVectorIte& ite(const SymBool& cond, const SymBitVector& t, const SymBitVector& f);
+    /** Creates a symbolic bitvector from a z3 expression (for compatibility) */
+    static SymBitVectorZ3& z3(z3::expr& e);
 
     /** Constructs the bitwise AND of two bitvectors */
     SymBitVectorAnd& operator&(const SymBitVector& other) const;
@@ -375,6 +380,22 @@ class SymBitVectorXor : public SymBitVectorBinop {
 
   public:
     SymBitVector::Type type() const { return XOR; }
+};
+
+/** @Deprecated. This class provides compatibility with the legacy validator;
+ * one can build Z3 expressions and then put them into the modern bitvector
+ * representation.  Once the legacy handlers are all fixed, we can remove this
+ * class. */
+class SymBitVectorZ3 : public SymBitVector {
+  friend class SymBitVector;
+
+  private:
+    SymBitVectorZ3(z3::expr& e) : e_(e) {}
+
+  public:
+    SymBitVector::Type type() const { return Z3; }
+
+    const z3::expr& e_;
 };
 
 

@@ -100,6 +100,9 @@ class Z3Solver : public SMTSolver {
         z3::expr visit(const SymBitVectorVar& bv);
         /** Visit a bit-vector XOR */
         z3::expr visit(const SymBitVectorXor& bv);
+        /** Visit a bit-vector XOR */
+        z3::expr visit(const SymBitVectorZ3& bv);
+
 
         /** Visit a bit-vector EQ */
         z3::expr visit(const SymBoolEq& b);
@@ -130,6 +133,9 @@ class Z3Solver : public SMTSolver {
         z3::expr visit(const SymBoolVar& b);
         /** Visit a boolean XOR */
         z3::expr visit(const SymBoolXor& b);
+        /** Visit a Z3 compatibility bool */
+        z3::expr visit(const SymBoolZ3& b);
+
 
       private:
 

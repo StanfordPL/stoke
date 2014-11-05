@@ -2,6 +2,8 @@
 #ifndef _STOKE_SRC_SYMSTATE_BOOL_H
 #define _STOKE_SRC_SYMSTATE_BOOL_H
 
+#include "src/ext/z3/include/z3++.h"
+
 #include <string>
 
 namespace stoke {
@@ -24,6 +26,7 @@ class SymBoolOr;
 class SymBoolTrue;
 class SymBoolVar;
 class SymBoolXor;
+class SymBoolZ3;
 
 class SymBool {
   public:
@@ -42,7 +45,8 @@ class SymBool {
       OR,
       TRUE,
       VAR,
-      XOR
+      XOR,
+      Z3
     };
 
     /** Get the type of this bool expression; helps for recursive algorithms on the tree. */
@@ -54,6 +58,8 @@ class SymBool {
     static SymBoolTrue& _true();
     /** Builds a boolean variable */
     static SymBoolVar& var(std::string name);
+    /** Builds a z3 compatibility bool */
+    static SymBoolZ3& z3(const z3::expr& b);
 
     /** Constructs the logical AND of two bools */
     SymBoolAnd& operator&(const SymBool& other) const;
@@ -231,6 +237,20 @@ class SymBoolXor : public SymBool {
     const SymBool& a_;
     const SymBool& b_;
 };
+
+class SymBoolZ3 : public SymBool {
+  friend class SymBool;
+
+  private:
+    SymBoolZ3(const z3::expr& e) : e_(e) {}
+
+  public:
+    SymBool::Type type() const { return Z3; }
+
+    const z3::expr& e_;
+};
+
+
 
 
 } //namespace stoke

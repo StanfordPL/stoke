@@ -159,6 +159,10 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorXor& bv) {
   return z3::expr(context_, Z3_mk_bvxor(context_, (*this)(bv.a_), (*this)(bv.b_)));
 }
 
+/** Visit a Z3-compatability bitvector */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorZ3& bv) {
+  return bv.e_;
+}
 
 /** Visit a bit-vector EQ */
 z3::expr Z3Solver::ExprConverter::visit(const SymBoolEq& b) {
@@ -231,6 +235,11 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBoolVar& b) {
 /** Visit a boolean XOR */
 z3::expr Z3Solver::ExprConverter::visit(const SymBoolXor& b) {
   return z3::expr(context_, Z3_mk_xor(context_, (*this)(b.a_), (*this)(b.b_)));
+}
+
+/** Visit a Z3-compatability bool */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolZ3& b) {
+  return b.e_;
 }
 
 

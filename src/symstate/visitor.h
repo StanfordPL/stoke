@@ -60,6 +60,8 @@ class SymVisitor {
           return visit(dynamic_cast<const SymBitVectorVar&>(bv));
         case SymBitVector::XOR:
           return visit(dynamic_cast<const SymBitVectorXor&>(bv));
+        case SymBitVector::Z3:
+          return visit(dynamic_cast<const SymBitVectorZ3&>(bv));
         default:
           std::cerr << "Unexpected bitvector type " << bv.type()
                     << " in " << __FILE__ << ":" << __LINE__ << std::endl;
@@ -184,6 +186,8 @@ class SymVisitor {
     virtual T visit(const SymBitVectorUMinus& bv) = 0;
     /** Visit a bit-vector variable */
     virtual T visit(const SymBitVectorVar& bv) = 0;
+    /** Visit a Z3 bitvector */
+    virtual T visit(const SymBitVectorZ3& bv) = 0;
 
     /** Visit a bit-vector EQ */
     virtual T visit(const SymBoolEq& b) {
@@ -224,6 +228,9 @@ class SymVisitor {
     virtual T visit(const SymBoolVar& b) = 0;
     /** Visit a boolean XOR */
     virtual T visit(const SymBoolXor& b) = 0;
+    /** Visit a Z3 compatibility bool */
+    virtual T visit(const SymBoolZ3& b) = 0;
+
 
 };
 

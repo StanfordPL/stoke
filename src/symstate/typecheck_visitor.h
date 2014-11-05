@@ -103,6 +103,11 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
       return bv.size_;
     }
 
+    /** Visit a Z3 bitvector */
+    uint16_t visit(const SymBitVectorZ3& bv) {
+      return bv.e_.get_sort().bv_size();
+    }
+
     /** Visit a boolean AND */
     uint16_t visit(const SymBoolAnd& b) {
       return (*this)(b.a_) && (*this)(b.b_);
@@ -148,6 +153,10 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
       return (*this)(b.a_) && (*this)(b.b_);
     }
 
+    /** Visit a Z3 bool.  Trusting it's typechecked right. */
+    uint16_t visit(const SymBoolZ3& b) {
+      return 1;
+    }
 
 };
 
