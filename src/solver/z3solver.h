@@ -14,16 +14,39 @@ class Z3Solver : public SMTSolver {
 
 
   public:
+    /** Instantiate a new Z3 solver */
+    Z3Solver() : SMTSolver() { 
+      model_ = NULL;
+    }
+
     /** Check if a query is satisfiable given constraints */
     bool is_sat(const std::vector<SymBool*>& constraints);
 
     /** Check if a satisfying assignment is available. */
-    bool has_model() const;
-    /** Get the satisfying assignment from the model. */
-    SymBitVector& get_model(const std::string& var) const;
+    bool has_model() const {
+      return model_ && (model_->num_funcs() == 0);
+    }
+    /** Get the satisfying assignment for a bit-vector from the model. */
+    cpputil::BitVector get_model_bv(const std::string& var, uint16_t octs);
+    /** Get the satisfying assignment for a bit from the model. */
+    bool get_model_bool(const std::string& var);
+
 
   private:
 
+    /** The Z3 context we're working with */
+    z3::context context_;
+
+    /** Stores the most recent satisfying assignment */
+    z3::model* model_;
+
+    /** Helper function to build a string symbol */
+    z3::symbol get_symbol(std::string s) {
+      return context_.str_symbol(s.c_str());
+    }
+
+
+    /** This class converts symbolic bit-vectors into Z3's format. */
     class ExprConverter : public SymVisitor<z3::expr> {
 
       public:
@@ -139,6 +162,7 @@ class Z3Solver : public SMTSolver {
 
       private:
 
+        /** Helper function to build a string symbol */
         z3::symbol get_symbol(std::string s) {
           return context_.str_symbol(s.c_str());
         }

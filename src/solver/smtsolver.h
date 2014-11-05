@@ -2,12 +2,19 @@
 #include <vector>
 
 #include "src/symstate/bitvector.h"
+#include "src/ext/cpputil/include/container/bit_vector.h"
 
 namespace stoke {
 
 class SMTSolver {
 
   public:
+
+    /* Resets the state common to SMT solvers */
+    SMTSolver() {
+      timeout_ = 0;
+      error_ = "";
+    }
 
     /** Check if a query is satisfiable given constraints */
     virtual bool is_sat(const std::vector<SymBool*>& constraints) = 0;
@@ -23,8 +30,11 @@ class SMTSolver {
 
     /** Check if a satisfying assignment is available. */
     virtual bool has_model() const = 0;
-    /** Get the satisfying assignment from the model. */
-    virtual SymBitVector& get_model(const std::string& var) const = 0;
+    /** Get the satisfying assignment for a bit-vector from the model. 
+        For now, one must specify the expected number of octwords. */
+    virtual cpputil::BitVector get_model_bv(const std::string& var, uint16_t octs) = 0;
+    /** Get the satisfying assignment for a bit from the model. */
+    virtual bool get_model_bool(const std::string& var) = 0;
 
 
     /** Set the maximum time to spend solving */
