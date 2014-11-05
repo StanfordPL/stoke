@@ -31,6 +31,10 @@ class Z3Solver : public SMTSolver {
     /** Get the satisfying assignment for a bit from the model. */
     bool get_model_bool(const std::string& var);
 
+    /** @Deprecated.  Get the z3 context.  For backward compatibility. */
+    z3::context* get_context() {
+      return &context_;
+    }
 
   private:
 

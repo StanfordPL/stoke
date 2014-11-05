@@ -1,4 +1,7 @@
 
+#ifndef _STOKE_SRC_SOLVER_SMTSOLVER_H
+#define _STOKE_SRC_SOLVER_SMTSOLVER_H
+
 #include <vector>
 
 #include "src/symstate/bitvector.h"
@@ -53,3 +56,5 @@ class SMTSolver {
 };
 
 } //namespace stoke
+
+#endif

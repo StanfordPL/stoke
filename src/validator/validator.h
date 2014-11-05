@@ -8,6 +8,8 @@
 #include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
+#include "src/solver/smtsolver.h"
+#include "src/solver/z3solver.h"
 #include "src/validator/c_interface.h"
 #include "src/validator/error.h"
 #include "src/validator/SymState.h"
@@ -26,6 +28,10 @@ namespace stoke {
 
 class Validator {
 	public:
+
+    Validator(SMTSolver& solver) : solver_(solver) {
+      has_error_ = false;
+    }
 
     /* Evalue if the target and rewrite are the same */
 	  bool validate(const Cfg& target, const Cfg& rewrite, 
@@ -52,7 +58,8 @@ class Validator {
       mem_out_ = b;
       return *this;
     }
-    /* Set the amount of time the validator runs before giving up. */
+    /* @Deprecated.  Set the timeout on the solver instead. 
+       Set the amount of time the validator runs before giving up. */
     Validator& set_timeout(uint64_t time) {
       timeout_ = time;
       return *this;
@@ -87,6 +94,9 @@ class Validator {
 
     std::vector<Expr> generate_constraints(const stoke::Cfg&, const stoke::Cfg&, std::vector<Expr>&);
 
+    /* Build a CpuState from the solver's model. */
+    stoke::CpuState model_to_cpustate(std::string name_suffix);
+
     /* Validity checker; needed for just about everything */
     VC vc_;
     /* Time to spend running z3 */
@@ -95,6 +105,8 @@ class Validator {
     std::pair<Bijection<std::string>,std::map<SS_Id, unsigned int> > state_info_;
     /* Will the code write memory? */
     bool mem_out_;
+    /* SMT Solver to use */
+    SMTSolver& solver_;
 
     /* Was the last counterexample sensible? */
     bool counterexample_valid_;

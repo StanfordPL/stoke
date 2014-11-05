@@ -16,6 +16,8 @@
 #include "src/args/reg_set.h"
 #include "src/ext/z3/include/z3++.h"
 
+#include "src/symstate/bitvector.h"
+
 #include "src/validator/c_interface.h"
 #include "src/validator/handlers.h"
 #include "src/validator/validator.h"
@@ -69,43 +71,28 @@ Expr regExpr(VC& vc, string s, unsigned int size)
 	return vc_varExpr(vc, s.c_str(), vc_bvType(vc, size));	
 }
 
-/* This takes a model, and produces a CpuState (that is, a stoke-readable
+/* This produces a CpuState (that is, a stoke-readable
    recording of all the variables).  This function can be used to extract a
    counterexample (with name_suffix == ""), or to extract the expected output
    of a code after executing on the counterexample (with name_suffix ==
    "_1_Final" or "_2_Final") */
-stoke::CpuState model_to_cpustate(VC& vc, PAIR_INFO state_info, model& model, string name_suffix) {
+stoke::CpuState Validator::model_to_cpustate(string name_suffix) {
 
 	map<SS_Id, unsigned int>::iterator iter;
-	Bijection<string> bij = state_info.first;
-	map<SS_Id, unsigned int> sizes = state_info.second;
+	Bijection<string> bij = state_info_.first;
+	map<SS_Id, unsigned int> sizes = state_info_.second;
 
   CpuState cs;
 
-	for(auto iter = sizes.begin(); iter != sizes.end(); iter++)
-	{
+	for(auto iter = sizes.begin(); iter != sizes.end(); iter++) {
+
 		string regname = bij.toVal(iter->first) + name_suffix;
-    //cout << "Looking up " << regname << " of size " << iter->second << endl;
 
     // Handle EFLAGS
     if (iter->second == V_FLAGSIZE) {
 
-      /* This is the boolean variable corresponding to the flag */
-			Expr flag  = vc_varExpr(vc, regname.c_str(),  vc_boolType(vc));
-
-      /* Lookup from the model */
-      Expr e = model.eval(to_expr(*vc, flag), true);
-      int n = Z3_get_bool_value(*vc, e);
-      bool value;
-
-      if (n == 1) {
-        value = true;
-      } else if (n == -1) {
-        value = false;
-      } else {
-        string message = "Z3 returned invalid boolean value " + to_string(n) + " for ceg";
-        throw VALIDATOR_ERROR(message);
-      }
+      bool value = solver_.get_model_bool(regname);
+      //TODO: check for error in retrieving the bool.
 
       /* Figure out which flag this is.  A little slow, but it works. */
       for (size_t i = 0; i < eflags.size(); i++) {
@@ -124,129 +111,20 @@ stoke::CpuState model_to_cpustate(VC& vc, PAIR_INFO state_info, model& model, st
 
     // GP Registers
     if (iter->second == V_REGSIZE) {
-      long long int val;
-		  Expr REG1INIT = regExpr(vc, regname,V_UNITSIZE);
-      Z3_get_numeral_int64(*vc,model.eval(to_expr(*vc, Z3_mk_bv2int(*vc, REG1INIT, true)), true), &val); 	
-#ifdef DEBUG_VALIDATOR
-		  cout << regname << " is expr " << REG1INIT;
-      cout << " with value " << val << endl; 
-#endif
-      cs.gp[iter->first].get_fixed_quad(0) = val;
-
+      cs.gp[iter->first] = solver_.get_model_bv(regname, 1);
+      //TODO: check for error
     } 
     
     // SSE Registers
     if (iter->second == V_XMMSIZE) {
-
-      // Get the expression for this register
-      Expr xmm_reg = regExpr(vc, regname, 128);
-
-      // Get the low and high quadwords
-      Expr low = vc_bvExtract(vc, xmm_reg, 63, 0);
-      Expr high = vc_bvExtract(vc, xmm_reg, 127, 64);
-
-      // Convert to quadwords
-      long long int low_n;
-      long long int high_n;
-      Z3_get_numeral_int64(*vc, model.eval(to_expr(*vc, Z3_mk_bv2int(*vc, low, true)), true), &low_n);
-      Z3_get_numeral_int64(*vc, model.eval(to_expr(*vc, Z3_mk_bv2int(*vc, high, true)), true), &high_n);
-      
-      // Place into counterexample
-      cs.sse[iter->first - XMM_BEG].get_fixed_quad(1) = high_n;
-      cs.sse[iter->first - XMM_BEG].get_fixed_quad(0) = low_n;
-
+      cs.sse[iter->first - XMM_BEG] = solver_.get_model_bv(regname, 2);
+      //TODO: check for error
     }
 	}
 
   return cs;
 }
 
-
-/* This function returns a model if it has a counterexaple, or zero
-   if all is correct. */
-z3::model* z3Solve(VC& vc, vector<Expr>& constraints, vector<Expr>& query,PAIR_INFO state_info)
-{
-  solver s(*vc);
-  Expr full_expr = vc_trueExpr(vc);
-  for(unsigned int i = 0; i < constraints.size(); i++)
-	{
-#ifdef DEBUG_VALIDATOR
-		cout << "Asserting constraint:\n";
-		vc_printExpr(vc, constraints[i]);
-		cout << endl;
-#endif
-		s.add(constraints[i]);
-		full_expr = vc_andExpr(vc, full_expr,constraints[i]);
-	}
-	int result;
-		{
-#ifdef DEBUG_VALIDATOR
-		  ofstream ofs;
-		  ofs.open("debug.smt2");
-		  ofs << "(set-logic UFBV)" << endl;
-		  Z3_set_ast_print_mode(*vc,Z3_PRINT_SMTLIB2_COMPLIANT);
-		  string str = Z3_benchmark_to_smtlib_string (*vc,"", "","","",0,0,full_expr);
-		  ofs << str.erase(0,23);
-		  ofs.close();
-#endif
-		}
-	{
-		//Construct a single query expression by taking conjunction of all queries.
-		//For some programs, asking queries one at a time might be the way to go.
-		Expr bigQueryExpr = vc_trueExpr(vc);
-		for(unsigned int i = 0; i< query.size(); i++)
-		{
-#ifdef DEBUG_VALIDATOR
-cout << "Conjoining for bigqueryexpr "; vc_printExpr(vc,query[i]); cout << endl;
-#endif
-			bigQueryExpr = vc_andExpr(vc, bigQueryExpr, query[i]);
-		}
-		full_expr = vc_andExpr(vc, full_expr, !bigQueryExpr);
-		//Push, query Constraints=>bigQueryExpression?
-		{
-#ifdef DEBUG_VALIDATOR
-		  ofstream ofs;
-		  ofs.open("vc.smt2");
-		  ofs << "(set-logic UFBV)" << endl;
-		  Z3_set_ast_print_mode(*vc,Z3_PRINT_SMTLIB2_COMPLIANT);
-		  ofs << ((string)Z3_benchmark_to_smtlib_string (*vc,"", "","","",0,0,full_expr)).erase(0,23);
-		  ofs.close();
-#endif
-		}
-#ifdef DEBUG_VALIDATOR
-		cout << "Printing of SMT2 compliant benchmark complete" << endl;
-    cout << "query is "; vc_printExpr(vc, bigQueryExpr); cout << endl ;
-#endif
-
-		s.add(!bigQueryExpr);
-		clock_t start = clock();
-		auto z3_says = s.check();
-    result = z3_says == unsat;
-    if ( z3_says == unknown ) {
-      throw VALIDATOR_ERROR("z3 gave up.");
-    }
-
-		clock_t end = clock();
-		clock_t elapsed = end -start;
-#ifdef DEBUG_VALIDATOR
-		cout << "time was " << elapsed << " i.e. "  
-         << (elapsed)/(1.0*CLOCKS_PER_SEC) << " seconds\n";
-#endif
-
-#ifdef DEBUG_VALIDATOR
-		cout << "Query executed! Result " << result << "\n";
-		if(result == 1) { 
-		  cerr << "Success" << endl ;
-		}
-#endif
-	}
-
-
-  if (result == 0)
-    return new z3::model(s.get_model());
-  else
-    return 0;
-}
 
 string idToStr(SS_Id n, PAIR_INFO I)
 {
@@ -747,6 +625,35 @@ vector<Expr> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::
 }
 
 
+/* Returns the conjunction of several SymBools, starting with index */
+SymBool& conjunct(vector<SymBool*>& query, size_t index) {
+
+  if(query.size() - index == 0) {
+    return SymBool::_true();
+  } else if(query.size() - index == 1) {
+    return *query[index];
+  } else {
+    return (*query[index] & conjunct(query, index+1));
+  }
+}
+
+/* Returns the negation of the conjunction of several SymBools */
+SymBoolNot& conjunct_and_negate(vector<SymBool*>& query) {
+  return !conjunct(query, 0);
+}
+
+/* Z3 to SymBool */
+vector<SymBool*> z3_to_sym_bool(vector<Expr>& exprs) {
+
+  vector<SymBool*> result;
+  for(auto it : exprs) {
+    auto sb = SymBool::z3(it);
+    result.push_back(&sb);
+  }
+
+  return result;
+}
+
 bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counter_example)
 {
 #ifdef DEBUG_VALIDATOR
@@ -757,33 +664,45 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
 
   try {
 
+    // Currently we need to use the same Z3 context for the legacy handlers and
+    // for the symbolic state.  This means some ugly stuff has to happen...
+    // basically, for now we're limitted to using Z3Solver.  That is, until we
+    // rewrite everything.
+    vc_ = (dynamic_cast<Z3Solver&>(solver_)).get_context();
+
     // Setup some necessary variables.
-    vc_ = vc_createValidityChecker();
     state_info_ = InitStateMapping();
 
     // Generate constraints
     vector<Expr> constraints;
     vector<Expr> query = generate_constraints(target, rewrite, constraints);
 
+    vector<SymBool*> sym_constraints = z3_to_sym_bool(constraints);
+    vector<SymBool*> sym_query = z3_to_sym_bool(query);
+    auto final_query = conjunct_and_negate(sym_query);
+    sym_constraints.push_back(&final_query);
+
     // Specify timeout for Z3
     vc_->set("timeout", (int)timeout_);
 
     // Run the solver
-    z3::model* model = z3Solve(vc_, constraints, query, state_info_);
+    bool is_sat = solver_.is_sat(sym_constraints);
 
     // Do we have a counterexample?
-    if (!model || model->num_funcs() != 0) {
-      counterexample_valid_ = false;
-    } else {
+    if (is_sat && solver_.has_model()) {
+
       counterexample_valid_ = true;
-      counterexample_ =      model_to_cpustate(vc_, state_info_, *model, "");
-      target_final_state_  = model_to_cpustate(vc_, state_info_, *model, "_1_Final");
-      rewrite_final_state_ = model_to_cpustate(vc_, state_info_, *model, "_2_Final");
+      counterexample_ =      model_to_cpustate("");
+      target_final_state_  = model_to_cpustate("_1_Final");
+      rewrite_final_state_ = model_to_cpustate("_2_Final");
 
       counter_example = counterexample_;
+
+    } else {
+      counterexample_valid_ = false;
     }
 
-    return !model;
+    return !is_sat;
 
   } catch(validator_error e) {
   
