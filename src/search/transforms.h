@@ -45,7 +45,7 @@ class Transforms {
 	/** Sets the pool of opcodes to propose from. */
   Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t nop_percent, bool use_mem_read,
                               bool use_mem_write, bool propose_call,
-                              const std::set<x64asm::Opcode> opc_blacklist);
+                              const std::set<x64asm::Opcode>& opc_blacklist);
 	/** Sets the pool operands to propose from. */
   Transforms& set_operand_pool(const x64asm::Code& target, const x64asm::RegSet& preserve_regs);
 	/** Insert a value into the immediate pool */
