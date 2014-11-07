@@ -18,6 +18,7 @@ bool Z3Solver::is_sat(const vector<SymBool*>& constraints) {
 
   /* Context for Z3 solver */
   solver s(context_);
+  context_.set("timeout", (int)timeout_);
 
   /* Convert constraints and query to z3 object */
   ExprConverter ec(context_);
@@ -36,14 +37,17 @@ bool Z3Solver::is_sat(const vector<SymBool*>& constraints) {
 
   /* Run the solver and see */
   switch (s.check()) {
-    case unsat:
+    case unsat: {
       return false;
+    }
+
     case sat: {
       model_ = new z3::model(s.get_model());
       return true;
     }
+
     case unknown: {
-      error_ = "Z3 gave up.";
+      error_ = "z3 gave up.";
       return false;
     }
   }

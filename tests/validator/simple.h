@@ -296,7 +296,8 @@ TEST_F(ValidatorBaseTest, TimeoutWorks) {
 
   std::string message = assert_fail();
 
-  EXPECT_EQ("z3 gave up.", message);
+  set_timeout(100);
+  EXPECT_EQ("solver: z3 gave up.", message);
 
 
 }

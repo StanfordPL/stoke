@@ -683,11 +683,11 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
 
     sym_constraints.push_back(&final_query);
 
-    // Specify timeout for Z3
-    vc_->set("timeout", (int)timeout_);
-
     // Run the solver
     bool is_sat = solver_.is_sat(sym_constraints);
+
+    if(solver_.has_error()) 
+      throw VALIDATOR_ERROR("solver: " + solver_.get_error());
 
     // Do we have a counterexample?
     if (is_sat && solver_.has_model()) {

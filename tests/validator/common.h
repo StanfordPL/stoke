@@ -140,14 +140,13 @@ class ValidatorTest : public ::testing::Test {
 
     /* Set maximum validation time */
     void set_timeout(uint64_t time) {
-      v_.set_timeout(time);
+      s_.set_timeout(time);
     }
 
     /* Initialize member variables. */
     virtual void SetUp() {
 
-      v_.set_mem_out(false)
-        .set_timeout(1000);
+      set_timeout(1000);
 
       live_outs_ = get_default_regset();
       def_ins_  = get_default_regset();
@@ -515,9 +514,8 @@ class ValidatorTest : public ::testing::Test {
 
     /* Used to build a validator */
     stoke::Validator make_validator() {
-      //FIXME: this next line leaks memory.
-      stoke::SMTSolver* s = (stoke::SMTSolver*)(new stoke::Z3Solver());
-      stoke::Validator v(*s);
+      stoke::Validator v(s_);
+      v.set_mem_out(false);
       return v;
     }
 
@@ -527,8 +525,12 @@ class ValidatorTest : public ::testing::Test {
 
     /* The validator we're using */
     stoke::Validator v_;
-    /* The set of live outputs */
+    /* The solver we're using */
+    stoke::Z3Solver s_;
+
+    /* The set of live outputs for the next test */
     x64asm::RegSet live_outs_;
+    /* The set of defined inputs for the next test */
     x64asm::RegSet def_ins_;
 
     /* The target CFG */
