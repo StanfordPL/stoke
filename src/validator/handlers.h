@@ -68,7 +68,6 @@ void bswapHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src);
 void btHandler(v_data d, unsigned int bitWidth, Expr E_operand, Expr E_offset);
 void btcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, Expr E_offset, bool dest_is_reg );
 void btvalHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, Expr E_offset, bool val, bool dest_is_reg );
-void cmovHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr pred);
 void cmovccHandler(v_data d, unsigned int bitWidth, std::string cc, Expr E_dest, Expr E_dest_pre, Expr E_src, bool dest_is_reg);
 void cmpHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2);
 void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm);

@@ -8,7 +8,7 @@ class ValidatorTest : public ::testing::Test {
 
   public:
 
-    ValidatorTest() {
+    ValidatorTest() : v_(make_validator()){
       cfg_t_ = 0;
       cfg_r_ = 0;
     }
@@ -140,14 +140,13 @@ class ValidatorTest : public ::testing::Test {
 
     /* Set maximum validation time */
     void set_timeout(uint64_t time) {
-      v_.set_timeout(time);
+      s_.set_timeout(time);
     }
 
     /* Initialize member variables. */
     virtual void SetUp() {
 
-      v_.set_mem_out(false)
-        .set_timeout(1000);
+      set_timeout(1000);
 
       live_outs_ = get_default_regset();
       def_ins_  = get_default_regset();
@@ -159,11 +158,11 @@ class ValidatorTest : public ::testing::Test {
   private:
 
     enum Outcome {
-      OTHER = 0,
       ERROR = 1,
       EQUIVALENT = 2,
       COUNTEREXAMPLE = 4,
-      NO_COUNTEREXAMPLE = 8
+      NO_COUNTEREXAMPLE = 8,
+      OTHER = 16
     };
 
 
@@ -314,7 +313,8 @@ class ValidatorTest : public ::testing::Test {
       sb.set_abi_check(false)
         .set_max_jumps(2);
 
-      stoke::CpuState s1(ceg);
+
+      stoke::CpuState s1(v_.get_counterexample());
       sb.insert_input(s1);
 
       // Run the sandbox and check the results for each.
@@ -405,7 +405,7 @@ class ValidatorTest : public ::testing::Test {
           break;
 
         case ERROR: {
-          size_t line;
+          size_t line = 0;
           std::string file;
           std::string message = v_.get_error(&line, &file);
           ADD_FAILURE_AT(message.c_str(), line) << "Validator reported unexpected error"
@@ -438,7 +438,7 @@ class ValidatorTest : public ::testing::Test {
       //  - non-equivalent, no counterexample
 
       stoke::CpuState ceg;
-      Outcome outcome;
+      Outcome outcome = OTHER;
 
       // Check for equivalence
       bool equiv = v_.validate(*cfg_t_, *cfg_r_, ceg);
@@ -491,8 +491,16 @@ class ValidatorTest : public ::testing::Test {
        target/rewrite the user wants to test, and reset our state for tracking
        what we've reported to the user. */
     bool reset_state() {
-      cfg_t_ = 0;
-      cfg_r_ = 0;
+      if(cfg_t_) {
+        delete cfg_t_;
+        cfg_t_ = 0;
+      }
+
+      if(cfg_r_) {
+        delete cfg_r_;
+        cfg_r_ = 0;
+      }
+
       cfg_t_ = get_cfg(target_);
       cfg_r_ = get_cfg(rewrite_);
 
@@ -502,14 +510,25 @@ class ValidatorTest : public ::testing::Test {
       return cfg_t_ && cfg_r_;
     }
 
+    /* Used to build a validator */
+    stoke::Validator make_validator() {
+      stoke::Validator v(s_);
+      v.set_mem_out(false);
+      return v;
+    }
+
     /* What information we've shown the user */
     bool codes_shown_;
     bool ceg_shown_;
 
     /* The validator we're using */
     stoke::Validator v_;
-    /* The set of live outputs */
+    /* The solver we're using */
+    stoke::Z3Solver s_;
+
+    /* The set of live outputs for the next test */
     x64asm::RegSet live_outs_;
+    /* The set of defined inputs for the next test */
     x64asm::RegSet def_ins_;
 
     /* The target CFG */

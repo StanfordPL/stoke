@@ -14,6 +14,7 @@
 
 #include <cassert>
 
+#include "src/solver/z3solver.h"
 #include "src/verifier/verifier.h"
 #include "src/validator/validator.h"
 
@@ -53,8 +54,9 @@ bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
 
   CpuState ceg;
   
-  Validator v;
-  v.set_timeout(timeout_);
+  Z3Solver s;
+  Validator v(s);
+  s.set_timeout(timeout_);
 
   bool success = v.validate(target, rewrite, ceg);
 

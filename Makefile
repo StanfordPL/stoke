@@ -55,6 +55,8 @@ OBJ=\
 	src/search/search.o \
 	src/search/transforms.o \
 	\
+	src/solver/z3solver.o \
+	\
 	src/state/cpu_state.o \
 	src/state/cpu_states.o \
 	src/state/memory.o \
@@ -62,6 +64,10 @@ OBJ=\
 	src/state/rflags.o \
 	\
 	src/stategen/stategen.o \
+	\
+	src/symstate/bitvector.o \
+	src/symstate/bool.o \
+	src/symstate/state.o \
 	\
 	src/tunit/tunit.o \
 	\
@@ -143,9 +149,13 @@ src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/search/%.o: src/search/%.cc src/search/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/solver/%.o: src/solver/%.cc src/solver/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/symstate/%.o: src/symstate/%.cc src/symstate/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
