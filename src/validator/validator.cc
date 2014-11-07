@@ -117,8 +117,17 @@ stoke::CpuState Validator::model_to_cpustate(string name_suffix) {
     
     // SSE Registers
     if (iter->second == V_XMMSIZE) {
-      cs.sse[iter->first - XMM_BEG] = solver_.get_model_bv(regname, 2);
+      cpputil::BitVector xmm = solver_.get_model_bv(regname, 2);
       //TODO: check for error
+
+      // need to extend the result from xmm register to ymm.
+      cpputil::BitVector ymm = cpputil::BitVector(256);
+      for(size_t i = 0; i < 2; ++i)
+        ymm.get_fixed_quad(i) = xmm.get_fixed_quad(i);
+      for(size_t i = 2; i < 4; ++i)
+        ymm.get_fixed_quad(i) = 0;
+
+      cs.sse[iter->first - XMM_BEG] = ymm;
     }
 	}
 

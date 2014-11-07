@@ -302,9 +302,6 @@ class ValidatorTest : public ::testing::Test {
        If you get the same thing, we have a validator bug. */
     void check_ceg(stoke::CpuState& ceg) {
 
-      //FIXME: un-disable this check
-      return;
-
       // Make sure that a counterexample was intended.
       if(!v_.is_counterexample_valid())
         return;
@@ -316,7 +313,8 @@ class ValidatorTest : public ::testing::Test {
       sb.set_abi_check(false)
         .set_max_jumps(2);
 
-      stoke::CpuState s1(ceg);
+
+      stoke::CpuState s1(v_.get_counterexample());
       sb.insert_input(s1);
 
       // Run the sandbox and check the results for each.
