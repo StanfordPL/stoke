@@ -19,17 +19,14 @@ class SMTSolver {
       error_ = "";
     }
 
+    /** Set the maximum time to spend solving */
+    virtual SMTSolver& set_timeout(uint64_t ms) {
+      timeout_ = ms;
+      return *this;
+    }
+
     /** Check if a query is satisfiable given constraints */
     virtual bool is_sat(const std::vector<SymBool*>& constraints) = 0;
-
-    /** Check if the last query trivvered an error. */
-    virtual bool has_error() {
-      return error_.size() > 0;
-    }
-    /** Report the last encountered error. */
-    virtual std::string get_error() {
-      return error_;
-    }
 
     /** Check if a satisfying assignment is available. */
     virtual bool has_model() const = 0;
@@ -40,11 +37,15 @@ class SMTSolver {
     virtual bool get_model_bool(const std::string& var) = 0;
 
 
-    /** Set the maximum time to spend solving */
-    virtual SMTSolver& set_timeout(uint64_t ms) {
-      timeout_ = ms;
-      return *this;
+    /** Check if the last query trivvered an error. */
+    virtual bool has_error() {
+      return error_.size() > 0;
     }
+    /** Report the last encountered error. */
+    virtual std::string get_error() {
+      return error_;
+    }
+
 
   protected:
 

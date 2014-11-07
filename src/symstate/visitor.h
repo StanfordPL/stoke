@@ -100,6 +100,8 @@ class SymVisitor {
           return visit(dynamic_cast<const SymBoolVar&>(b));
         case SymBool::XOR:
           return visit(dynamic_cast<const SymBoolXor&>(b));
+        case SymBool::Z3:
+          return visit(dynamic_cast<const SymBoolZ3&>(b));
         default:
           std::cerr << "Unexpected bool type " << b.type()
                     << " in " << __FILE__ << ":" << __LINE__ << std::endl;

@@ -262,7 +262,8 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
   x64asm::Code c(code);
   x64asm::Code d(code);
 
-  stoke::Validator v;
+  stoke::Z3Solver s;
+  stoke::Validator v(s);
   stoke::CpuState ceg;
 
   x64asm::RegSet rs = ValidatorBaseTest::get_default_regset();
