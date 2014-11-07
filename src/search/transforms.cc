@@ -31,11 +31,12 @@ set<Opcode> unsupported_ {{
 namespace stoke {
 
 Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent, bool use_mem_read,
-    bool use_mem_write, bool propose_call) {
+    bool use_mem_write, bool propose_call, const set<Opcode> opc_blacklist) {
   control_free_.clear();
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     auto op = (Opcode)i;
-    if (is_control_opcode(op) || is_unsupported(op) || !is_enabled(op, flags)) {
+    if (is_control_opcode(op) || is_unsupported(op) || !is_enabled(op, flags) ||
+        opc_blacklist.find(op) != opc_blacklist.end()) {
       continue;
     } else if (op == CALL_LABEL && !propose_call) {
 			continue;

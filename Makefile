@@ -32,6 +32,7 @@ LIB=\
 OBJ=\
 	src/args/distance.o \
 	src/args/flag_set.o \
+	src/args/opc_set.o \
 	src/args/init.o \
 	src/args/move.o \
 	src/args/reduction.o \

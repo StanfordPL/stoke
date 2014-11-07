@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <random>
 #include <vector>
+#include <set>
 
 #include "src/ext/x64asm/include/x64asm.h"
 
@@ -32,7 +33,7 @@ class Transforms {
  public:
 	/** Creates a new transformation helper. */
   Transforms() : old_instr_ {x64asm::RET}, old_opcode_ {x64asm::RET}, old_operand_ {x64asm::rax} {
-    set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true, true);
+    set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true, true, {});
     set_operand_pool({x64asm::RET}, x64asm::RegSet::linux_callee_save());
   }
 
@@ -43,7 +44,8 @@ class Transforms {
   }
 	/** Sets the pool of opcodes to propose from. */
   Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t nop_percent, bool use_mem_read,
-                              bool use_mem_write, bool propose_call);
+                              bool use_mem_write, bool propose_call,
+                              const std::set<x64asm::Opcode> opc_blacklist);
 	/** Sets the pool operands to propose from. */
   Transforms& set_operand_pool(const x64asm::Code& target, const x64asm::RegSet& preserve_regs);
 	/** Insert a value into the immediate pool */
