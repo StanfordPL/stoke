@@ -20,11 +20,15 @@
 namespace stoke {
 
 struct RegSetReader {
-  void operator()(std::istream& is, x64asm::RegSet& r);
+  void operator()(std::istream& is, x64asm::RegSet& r) {
+		is >> r;
+	}
 };
 
 struct RegSetWriter {
-  void operator()(std::ostream& os, const x64asm::RegSet& r);
+  void operator()(std::ostream& os, const x64asm::RegSet& r) {
+		os << r;
+	}
 };
 
 } // namespace stoke

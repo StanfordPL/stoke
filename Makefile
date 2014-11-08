@@ -31,12 +31,10 @@ LIB=\
 
 OBJ=\
 	src/args/distance.o \
-	src/args/flag_set.o \
 	src/args/opc_set.o \
 	src/args/init.o \
 	src/args/move.o \
 	src/args/reduction.o \
-	src/args/reg_set.o \
 	src/args/performance_term.o \
 	src/args/strategy.o \
 	src/args/timeout.o \
