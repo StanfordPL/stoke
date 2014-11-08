@@ -35,7 +35,7 @@ using namespace x64asm;
 auto& h1 = Heading::create("Input program:");
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Target code")
     .default_val({"anon", {{RET}}});
 
@@ -71,7 +71,7 @@ auto& h3 = Heading::create("I/O options:");
 
 auto& out = ValueArg<string>::create("o")
     .alternate("out")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.pdf>")
     .description("Path to write cfg to")
     .default_val("./cfg.pdf");
 

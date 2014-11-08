@@ -24,6 +24,7 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/args/flag_set.h"
+#include "src/args/opc_set.h"
 #include "src/args/move.h"
 #include "src/args/reg_set.h"
 #include "src/args/tunit.h"
@@ -41,7 +42,7 @@ using namespace x64asm;
 auto& h1 = Heading::create("Input programs:");
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Target")
     .default_val({"anon", {{RET}}});
 
@@ -56,6 +57,11 @@ auto& flags = ValueArg<FlagSet, FlagSetReader, FlagSetWriter>::create("cpu_flags
     .usage("{ flag1 flag2 ... flagn }")
     .description("Propose instruction and opcode moves that use this CPU ID flag set")
     .default_val(FlagSet::empty());
+
+auto& opc_blacklist = ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("opc_blacklist")
+    .usage("{ opcode1 opcode2 ... opcoden; e.g., xorl or xorl_r32_r32 }")
+    .description("Don't proprose any instructions from this set")
+    .default_val({});
 
 auto& nop_percent = ValueArg<size_t>::create("nop_percent")
     .usage("<percent>")
@@ -113,7 +119,7 @@ int main(int argc, char** argv) {
 
   Transforms transforms;
   transforms.set_seed(seed)
-  .set_opcode_pool(flags, nop_percent, mem_read, mem_write, propose_call)
+  .set_opcode_pool(flags, nop_percent, mem_read, mem_write, propose_call, opc_blacklist)
   .set_operand_pool(target.value().code, preserve_regs.value());
 	for (const auto& imm : imms.value()) {
 		transforms.insert_immediate(imm);

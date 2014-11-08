@@ -29,7 +29,7 @@ using namespace stoke;
 auto& h1 = Heading::create("Input state");
 
 auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.tc>")
     .description("Testcases");
 
 auto& idx = ValueArg<size_t>::create("index")

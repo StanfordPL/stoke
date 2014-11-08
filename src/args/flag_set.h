@@ -22,11 +22,15 @@
 namespace stoke {
 
 struct FlagSetReader {
-  void operator()(std::istream& is, x64asm::FlagSet& fs);
+  void operator()(std::istream& is, x64asm::FlagSet& fs) {
+		is >> fs;
+	}
 };
 
 struct FlagSetWriter {
-  void operator()(std::ostream& os, const x64asm::FlagSet& fs);
+  void operator()(std::ostream& os, const x64asm::FlagSet& fs) {
+		os << fs;
+	}
 };
 
 } // namespace stoke

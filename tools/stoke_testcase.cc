@@ -49,7 +49,7 @@ auto& args = ValueArg<string>::create("args")
 
 auto& out = ValueArg<string>::create("o")
     .alternate("out")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.tc>")
     .description("File to write testcases to (defaults to console if unspecified)")
     .default_val("");
 
@@ -100,7 +100,7 @@ auto& aux_fxns = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
 		.default_val({});
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Source code to generate testcases for")
     .default_val({"anon", {{RET}}});
 
@@ -124,7 +124,7 @@ auto& decompress = FlagArg::create("decompress")
 
 auto& in = ValueArg<string>::create("in")
 		.alternate("i")
-		.usage("<path/to/file>")
+		.usage("<path/to/file.tc>")
 		.description("Path to testcases file")
 		.default_val("in.tc");
 

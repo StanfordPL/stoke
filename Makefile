@@ -31,11 +31,10 @@ LIB=\
 
 OBJ=\
 	src/args/distance.o \
-	src/args/flag_set.o \
+	src/args/opc_set.o \
 	src/args/init.o \
 	src/args/move.o \
 	src/args/reduction.o \
-	src/args/reg_set.o \
 	src/args/performance_term.o \
 	src/args/strategy.o \
 	src/args/timeout.o \
@@ -172,10 +171,15 @@ bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) $(wildcard tests/*.h) $(w
 
 .SECONDARY: $(OBJ)
 
+zsh_completion: bin/_stoke
+
+bin/_stoke: $(BIN) tools/zsh_completion_generator.py
+	tools/zsh_completion_generator.py
+
 ##### CLEAN TARGETS
 
 clean:
-	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN) tags bin/stoke_*
+	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN) tags bin/stoke_* bin/_stoke
 
 dist_clean: clean
 	rm -rf src/ext/cpputil
