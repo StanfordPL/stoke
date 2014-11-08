@@ -1,0 +1,4 @@
+STOKE Style Guide
+=================
+
+todo...
