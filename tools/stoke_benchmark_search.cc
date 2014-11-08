@@ -40,7 +40,7 @@ using namespace x64asm;
 auto& h1 = Heading::create("Input programs:");
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Target")
     .default_val({"anon", {{RET}}});
 

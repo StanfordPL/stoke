@@ -72,7 +72,7 @@ auto& aux_fxns = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
 		.default_val({});
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Target")
     .default_val({"anon", {{RET}}});
 
@@ -103,7 +103,7 @@ auto& out = ValueArg<string>::create("out")
 auto& h3 = Heading::create("Testcase options:");
 
 auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.tc>")
     .description("Testcases");
 
 auto& shuf_tc = FlagArg::create("shuffle_testcases")
@@ -292,7 +292,7 @@ auto& timeouts = ValueArg<size_t>::create("timeout_cycles")
     .default_val(16);
 
 auto& stat_dir = ValueArg<string>::create("statistics_directory")
-    .usage("<dir>")
+    .usage("<path/to/dir>")
     .description("Place to put files with cost function data")
     .default_val("");
 
@@ -322,17 +322,17 @@ auto& init = ValueArg<Init, InitReader, InitWriter>::create("init")
 		.default_val(Init::EMPTY);
 
 auto& current = FileArg<TUnit, TUnitReader, TUnitWriter>::create("current")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Current rewrite; used with --init previous")
     .default_val({"current", {{RET}}});
 
 auto& best_yet = FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_yet")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Best rewrite; used with --init previous")
     .default_val({"best_yet", {{RET}}});
 
 auto& best_correct = FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_correct")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Best correct rewrite; used with --init previous")
     .default_val({"best_correct", {{RET}}});
 

@@ -44,14 +44,14 @@ auto& aux_fxns = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
 		.default_val({});
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Target code")
     .default_val({"anon", {{RET}}});
 
 auto& h2 = Heading::create("Testcases:");
 
 auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.tc>")
     .description("Testcases");
 
 auto& idx = ValueArg<size_t>::create("index")
