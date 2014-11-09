@@ -31,6 +31,7 @@
 #include "src/args/cpu_states.h"
 #include "src/args/distance.h"
 #include "src/args/flag_set.h"
+#include "src/args/opc_set.h"
 #include "src/args/init.h"
 #include "src/args/performance_term.h"
 #include "src/args/reduction.h"
@@ -71,19 +72,19 @@ auto& aux_fxns = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
 		.default_val({});
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Target")
     .default_val({"anon", {{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
     .usage("{ %rax %rsp ... }")
     .description("Registers defined on entry")
-    .default_val(RegSet::linux_caller_save());
+    .default_val(RegSet::linux_call_preserved());
 
 auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
     .usage("{ %rax %rsp ... }")
     .description("Registers live on exit")
-    .default_val(RegSet::empty() + rax);
+    .default_val(RegSet::linux_call_return());
 
 auto& stack_out = FlagArg::create("stack_out")
     .description("Is stack defined on exit?");
@@ -102,7 +103,7 @@ auto& out = ValueArg<string>::create("out")
 auto& h3 = Heading::create("Testcase options:");
 
 auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.tc>")
     .description("Testcases");
 
 auto& shuf_tc = FlagArg::create("shuffle_testcases")
@@ -197,6 +198,11 @@ auto& flags = ValueArg<FlagSet, FlagSetReader, FlagSetWriter>::create("cpu_flags
     .description("Propose instruction and opcode moves that use this CPU ID flag set")
     .default_val(FlagSet::empty());
 
+auto& opc_blacklist = ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("opc_blacklist")
+    .usage("{ opcode1 opcode2 ... opcoden; e.g., xorl or xorl_r32_r32 }")
+    .description("Don't proprose any instructions from this set")
+    .default_val({});
+
 auto& nop_percent = ValueArg<size_t>::create("nop_percent")
     .usage("<percent>")
     .description("Percent of instruction moves that produce nops")
@@ -213,12 +219,12 @@ auto& propose_call = FlagArg::create("propose_call")
 
 auto& callee_save = FlagArg::create("callee_save")
 		.alternate("propose_callee_save")
-    .description("Override the value of preserve_regs to the empty set");
+    .description("Allow transforms to override callee-saved registers.");
 
 auto& preserve_regs = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("preserve_regs")
     .usage("{ %rax %rsp ... }")
     .description("Prevent STOKE from proposing instructions that modify these registers")
-    .default_val(RegSet::linux_callee_save());
+    .default_val(RegSet::linux_call_preserved());
 
 auto& imms = ValueArg<vector<uint64_t>, SpanReader<vector<uint64_t>, Range<uint64_t, 0ull, (uint64_t)-1>>>::create("immediates")
 		.usage("{ imm1 imm2 ... }")
@@ -286,7 +292,7 @@ auto& timeouts = ValueArg<size_t>::create("timeout_cycles")
     .default_val(16);
 
 auto& stat_dir = ValueArg<string>::create("statistics_directory")
-    .usage("<dir>")
+    .usage("<path/to/dir>")
     .description("Place to put files with cost function data")
     .default_val("");
 
@@ -316,17 +322,17 @@ auto& init = ValueArg<Init, InitReader, InitWriter>::create("init")
 		.default_val(Init::EMPTY);
 
 auto& current = FileArg<TUnit, TUnitReader, TUnitWriter>::create("current")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Current rewrite; used with --init previous")
     .default_val({"current", {{RET}}});
 
 auto& best_yet = FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_yet")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Best rewrite; used with --init previous")
     .default_val({"best_yet", {{RET}}});
 
 auto& best_correct = FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_correct")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Best correct rewrite; used with --init previous")
     .default_val({"best_correct", {{RET}}});
 
@@ -524,7 +530,7 @@ int main(int argc, char** argv) {
 
   Transforms transforms;
   transforms.set_seed(seed)
-  .set_opcode_pool(flags, nop_percent, mem_read, mem_write, propose_call)
+  .set_opcode_pool(flags, nop_percent, mem_read, mem_write, propose_call, opc_blacklist)
   .set_operand_pool(target.value().code, preserve_regs.value());
 	for (const auto& imm : imms.value()) {
 		transforms.insert_immediate(imm);

@@ -31,19 +31,19 @@ using namespace x64asm;
 auto& h1 = Heading::create("Input program:");
 
 auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file>")
+    .usage("<path/to/file.s>")
     .description("Target code")
 .default_val({"anon", {{RET}}});
 
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
     .usage("{ %rax %rsp ... }")
     .description("Registers defined on entry")
-    .default_val(RegSet::linux_caller_save());
+    .default_val(RegSet::linux_call_parameters());
 
 auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
     .usage("{ %rax %rsp ... }")
     .description("Registers live on exit")
-    .default_val(RegSet::empty() + rax);
+    .default_val(RegSet::linux_call_return());
 
 auto& h2 = Heading::create("Measurement options:");
 
