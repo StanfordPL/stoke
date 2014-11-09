@@ -227,7 +227,7 @@ bin/_stoke: $(BIN) tools/zsh_completion_generator.py
 
 ##### CLEAN TARGETS
 
-clean:
+clean: validator_clean
 	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN) tags bin/stoke_* bin/_stoke
 
 dist_clean: clean
