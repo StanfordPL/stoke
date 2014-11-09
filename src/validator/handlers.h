@@ -131,7 +131,7 @@ void sarHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
 void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_shamt, bool dest_is_reg);
 void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg);
 void setHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr pred, bool dest_is_reg);
-void setccHandler(v_data d, std::string cc, Expr E_dest, Expr E_dest_pre, bool dest_is_reg);
+void setccHandler(v_data d, std::string cc, Expr E_dest, bool dest_is_reg);
 void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_dest, Expr E_src1, bool dest_is_reg);;
 void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bool dest_is_reg);
 void shldHandler(v_data d, unsigned int bitWidth,   Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_shamt_pre, bool dest_is_reg);

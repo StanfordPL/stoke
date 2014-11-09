@@ -2518,7 +2518,7 @@ void setHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr pred, bool de
 }
 
 
-void setccHandler(v_data d, string cc, Expr E_dest, Expr E_dest_pre, bool dest_is_reg) {
+void setccHandler(v_data d, string cc, Expr E_dest, bool dest_is_reg) {
 
   VC &vc = d.vc;
   Expr pred = get_condition_predicate(d, cc);

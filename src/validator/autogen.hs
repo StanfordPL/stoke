@@ -1090,7 +1090,7 @@ lookup_handler "sbbq"     _ _ = Just "sbbHandler(d, bitWidth, E1, E0, E2, dest_i
 lookup_handler "sbbw"     _ _ = Just "sbbHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 
 -- this handles all the SETcc
-lookup_handler ('s':'e':'t':cc) _ _ = Just $ "setccHandler(d, \"" ++ cc ++ "\" , E1, E0, dest_is_reg);"
+lookup_handler ('s':'e':'t':cc) _ _ = Just $ "setccHandler(d, \"" ++ cc ++ "\" , E0, dest_is_reg);"
 
 lookup_handler "shlb"     1 _ = Just "shlHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
 lookup_handler "shlb"     2 i = Just $ if (((last (operand_types i)) == "I")) 
