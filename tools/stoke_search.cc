@@ -79,7 +79,7 @@ auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
     .usage("{ %rax %rsp ... }")
     .description("Registers defined on entry")
-    .default_val(RegSet::linux_call_preserve());
+    .default_val(RegSet::linux_call_preserved());
 
 auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
     .usage("{ %rax %rsp ... }")
@@ -224,7 +224,7 @@ auto& callee_save = FlagArg::create("callee_save")
 auto& preserve_regs = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("preserve_regs")
     .usage("{ %rax %rsp ... }")
     .description("Prevent STOKE from proposing instructions that modify these registers")
-    .default_val(RegSet::linux_call_preserve());
+    .default_val(RegSet::linux_call_preserved());
 
 auto& imms = ValueArg<vector<uint64_t>, SpanReader<vector<uint64_t>, Range<uint64_t, 0ull, (uint64_t)-1>>>::create("immediates")
 		.usage("{ imm1 imm2 ... }")

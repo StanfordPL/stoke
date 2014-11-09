@@ -34,7 +34,7 @@ class Transforms {
 	/** Creates a new transformation helper. */
   Transforms() : old_instr_ {x64asm::RET}, old_opcode_ {x64asm::RET}, old_operand_ {x64asm::rax} {
     set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true, true, {});
-    set_operand_pool({x64asm::RET}, x64asm::RegSet::linux_call_preserve());
+    set_operand_pool({x64asm::RET}, x64asm::RegSet::linux_call_preserved());
   }
 
 	/** Sets random seed. */
