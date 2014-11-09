@@ -61,12 +61,12 @@ auto& rewrite = FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
 auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
     .usage("{ %rax %rsp ... }")
     .description("Registers defined on entry")
-    .default_val(RegSet::linux_caller_save());
+    .default_val(RegSet::linux_call_parameters());
 
 auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
     .usage("{ %rax %rsp ... }")
     .description("Registers live on exit")
-    .default_val(RegSet::empty() + rax);
+    .default_val(RegSet::linux_call_return());
 
 auto& stack_out = FlagArg::create("stack_out")
     .description("Is stack defined on exit?");
