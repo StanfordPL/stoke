@@ -82,7 +82,7 @@ auto& callee_save = FlagArg::create("callee_save")
 auto& preserve_regs = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("preserve_regs")
     .usage("{ %rax %rsp ... }")
     .description("Prevent STOKE from proposing instructions that modify these registers")
-    .default_val(RegSet::linux_callee_save());
+    .default_val(RegSet::linux_call_preserved());
 
 auto& move = ValueArg<Move, MoveReader, MoveWriter>::create("move")
     .usage("<move_type>")
