@@ -39,6 +39,7 @@ class SymBitVector {
   public:
 
     enum Type {
+      NONE,
       AND,
       CONCAT,
       CONSTANT,
@@ -65,78 +66,78 @@ class SymBitVector {
 
 
     /** Get the type of this bitvector expression; helps for recursive algorithms on the tree. */
-    virtual Type type() const = 0;
+    virtual Type type() const { return Type::NONE; }
 
     /** Creates a constant bitvector of specified size and value */
-    static SymBitVectorConstant& constant(uint16_t size, uint64_t constant);
+    static SymBitVectorConstant constant(uint16_t size, uint64_t constant);
     /** Creates a bitvector variables of specified size and name */
-    static SymBitVectorVar& var(uint16_t size, std::string name);
+    static SymBitVectorVar var(uint16_t size, std::string name);
     /** Creates a length-1 bitvector from a boolean */
-    static SymBitVectorIte& from_bool(const SymBool& b);
+    static SymBitVectorIte from_bool(const SymBool& b);
     /** Creates an if-then-else expression bitvector */
-    static SymBitVectorIte& ite(const SymBool& cond, const SymBitVector& t, const SymBitVector& f);
+    static SymBitVectorIte ite(const SymBool& cond, const SymBitVector& t, const SymBitVector& f);
     /** Creates a symbolic bitvector from a z3 expression (for compatibility) */
-    static SymBitVectorZ3& z3(z3::expr& e);
+    static SymBitVectorZ3 z3(z3::expr& e);
 
     /** Constructs the bitwise AND of two bitvectors */
-    SymBitVectorAnd& operator&(const SymBitVector& other) const;
+    SymBitVectorAnd operator&(const SymBitVector& other) const;
     /** Constructs the concatenation of two bitvectors */
-    SymBitVectorConcat& operator||(const SymBitVector& other) const;
+    SymBitVectorConcat operator||(const SymBitVector& other) const;
     /** Constructs the concatenation of two bitvectors */
-    SymBitVectorDiv& operator/(const SymBitVector& other) const;
+    SymBitVectorDiv operator/(const SymBitVector& other) const;
     /** Constructs the substraction of two bitvectors */
-    SymBitVectorMinus& operator-(const SymBitVector& other) const;
+    SymBitVectorMinus operator-(const SymBitVector& other) const;
     /** Constructs the multiplication of two bitvectors */
-    SymBitVectorMult& operator*(const SymBitVector& other) const;
+    SymBitVectorMult operator*(const SymBitVector& other) const;
     /** Constructs the modulus of two bitvectors */
-    SymBitVectorMod& operator%(const SymBitVector& other) const;
+    SymBitVectorMod operator%(const SymBitVector& other) const;
     /** Constructs the logical negation of this bitvector */
-    SymBitVectorNot& operator!() const;
+    SymBitVectorNot operator!() const;
     /** Constructs the bitwise OR of two bitvectors */
-    SymBitVectorOr& operator|(const SymBitVector& other) const;
+    SymBitVectorOr operator|(const SymBitVector& other) const;
     /** Constructs the sum of two bitvectors */
-    SymBitVectorPlus& operator+(const SymBitVector& other) const;
+    SymBitVectorPlus operator+(const SymBitVector& other) const;
     /** Constructs a bitvector (of same size) shifted to the left by 'shift' */
-    SymBitVectorShiftLeft& operator<<(uint64_t shift) const;
+    SymBitVectorShiftLeft operator<<(uint64_t shift) const;
     /** Constructs a bitveector shifted to the left by another bitvector. */
-    SymBitVectorShiftLeft& operator<<(const SymBitVector& other) const;
+    SymBitVectorShiftLeft operator<<(const SymBitVector& other) const;
     /** Constructs a bitvector (of same size) shifted to the right by 'shift' */
-    SymBitVectorShiftRight& operator>>(uint64_t shift) const;
+    SymBitVectorShiftRight operator>>(uint64_t shift) const;
     /** Constructs a bitveector shifted to the right by another bitvector. */
-    SymBitVectorShiftRight& operator>>(const SymBitVector& other) const;
+    SymBitVectorShiftRight operator>>(const SymBitVector& other) const;
     /** Creates a bitvector representing signed division */
-    SymBitVectorSignDiv& s_div(const SymBitVector& other) const;
+    SymBitVectorSignDiv s_div(const SymBitVector& other) const;
     /** Creates a sign-extended version of this bitvector */
-    SymBitVectorSignExtend& extend(uint16_t size) const;
+    SymBitVectorSignExtend extend(uint16_t size) const;
     /** Creates a bitvector representing signed modulus */
-    SymBitVectorSignMod& s_mod(const SymBitVector& other) const;
+    SymBitVectorSignMod s_mod(const SymBitVector& other) const;
     /** Creates a bitvector representing signed shift right */
-    SymBitVectorSignShiftRight& s_shr(const SymBitVector& other) const;
+    SymBitVectorSignShiftRight s_shr(const SymBitVector& other) const;
     /** Creates a 2s-complement negation of this bitvector */
-    SymBitVectorUMinus& operator-() const;
+    SymBitVectorUMinus operator-() const;
     /** Constructs the bitwise XOR of two bitvectors */
-    SymBitVectorXor& operator^(const SymBitVector& other) const;
+    SymBitVectorXor operator^(const SymBitVector& other) const;
 
 
     /** Returns a bool indicating if the arguments are equal */
-    SymBoolEq& operator==(const SymBitVector& other) const;
+    SymBoolEq operator==(const SymBitVector& other) const;
     /** Returns a bool indicating if the first argument is at least the second */
-    SymBoolGe& operator>=(const SymBitVector& other) const;
+    SymBoolGe operator>=(const SymBitVector& other) const;
     /** Returns a bool indicating if the first argument is greater than the second */
-    SymBoolGt& operator>(const SymBitVector& other) const;
+    SymBoolGt operator>(const SymBitVector& other) const;
     /** Returns a bool indicating if the first argument is at most the second */
-    SymBoolLe& operator<=(const SymBitVector& other) const;
+    SymBoolLe operator<=(const SymBitVector& other) const;
     /** Returns a bool indicating if the first argument is less than the second */
-    SymBoolLt& operator<(const SymBitVector& other) const;
+    SymBoolLt operator<(const SymBitVector& other) const;
     /** Returns a bool indicating if the arguments are not equal */
-    SymBoolNot& operator!=(const SymBitVector& other) const;
+    SymBoolNot operator!=(const SymBitVector& other) const;
 
     class IndexHelper {
       friend class SymBitVector;
 
       public:
-        SymBitVectorExtract& operator[](uint16_t index) const;
-        operator SymBool&() const;
+        SymBitVectorExtract operator[](uint16_t index) const;
+        operator SymBool() const;
 
       private:
         IndexHelper(const SymBitVector& bv, uint16_t index) : bv_(bv), index_(index) {}
@@ -146,9 +147,12 @@ class SymBitVector {
     };
 
     /** Extracts a single bit from the bitvector */
-    SymBitVector::IndexHelper& operator[](uint16_t index) {
-      return *(new IndexHelper(*this, index));
+    SymBitVector::IndexHelper operator[](uint16_t index) const {
+      return IndexHelper(*this, index);
     }
+
+  protected:
+    SymBitVector() {}
 };
 
 /* Abstract class that has contains a left and right argument to a binary operator. */

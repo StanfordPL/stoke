@@ -6,68 +6,68 @@ using namespace std;
 using namespace stoke;
 
 /* Various constructors */
-SymBitVectorConstant& SymBitVector::constant(uint16_t size, uint64_t value) {
-  return *(new SymBitVectorConstant(size, value));
+SymBitVectorConstant SymBitVector::constant(uint16_t size, uint64_t value) {
+  return SymBitVectorConstant(size, value);
 }
-SymBitVectorVar& SymBitVector::var(uint16_t size, string name) {
-  return *(new SymBitVectorVar(size, name));
+SymBitVectorVar SymBitVector::var(uint16_t size, string name) {
+  return SymBitVectorVar(size, name);
 }
-SymBitVectorIte& SymBitVector::from_bool(const SymBool& b) {
-  return *(new SymBitVectorIte(b, SymBitVector::constant(1,1), SymBitVector::constant(1,0)));
+SymBitVectorIte SymBitVector::from_bool(const SymBool& b) {
+  return SymBitVectorIte(b, SymBitVector::constant(1,1), SymBitVector::constant(1,0));
 }
-SymBitVectorIte& SymBitVector::ite(const SymBool& c, const SymBitVector& t, const SymBitVector& f) {
-  return *(new SymBitVectorIte(c, t, f));
+SymBitVectorIte SymBitVector::ite(const SymBool& c, const SymBitVector& t, const SymBitVector& f) {
+  return SymBitVectorIte(c, t, f);
 }
-SymBitVectorZ3& SymBitVector::z3(z3::expr& e) {
-  return *(new SymBitVectorZ3(e));
+SymBitVectorZ3 SymBitVector::z3(z3::expr& e) {
+  return SymBitVectorZ3(e);
 }
 
 /* Bit Vector Operators */
-SymBitVectorAnd& SymBitVector::operator&(const SymBitVector& other) const {
-  return *(new SymBitVectorAnd(*this, other));
+SymBitVectorAnd SymBitVector::operator&(const SymBitVector& other) const {
+  return SymBitVectorAnd(*this, other);
 }
 
-SymBitVectorConcat& SymBitVector::operator||(const SymBitVector& other) const {
-  return *(new SymBitVectorConcat(*this, other));
+SymBitVectorConcat SymBitVector::operator||(const SymBitVector& other) const {
+  return SymBitVectorConcat(*this, other);
 }
 
-SymBitVectorDiv& SymBitVector::operator/(const SymBitVector& other) const {
-  return *(new SymBitVectorDiv(*this, other));
+SymBitVectorDiv SymBitVector::operator/(const SymBitVector& other) const {
+  return SymBitVectorDiv(*this, other);
 }
 
-SymBitVectorMinus& SymBitVector::operator-(const SymBitVector& other) const {
-  return *(new SymBitVectorMinus(*this, other));
+SymBitVectorMinus SymBitVector::operator-(const SymBitVector& other) const {
+  return SymBitVectorMinus(*this, other);
 }
 
-SymBitVectorMod& SymBitVector::operator%(const SymBitVector& other) const {
-  return *(new SymBitVectorMod(*this, other));
+SymBitVectorMod SymBitVector::operator%(const SymBitVector& other) const {
+  return SymBitVectorMod(*this, other);
 }
 
-SymBitVectorMult& SymBitVector::operator*(const SymBitVector& other) const {
-  return *(new SymBitVectorMult(*this, other));
+SymBitVectorMult SymBitVector::operator*(const SymBitVector& other) const {
+  return SymBitVectorMult(*this, other);
 }
 
-SymBitVectorNot& SymBitVector::operator!() const {
-  return *(new SymBitVectorNot(*this));
+SymBitVectorNot SymBitVector::operator!() const {
+  return SymBitVectorNot(*this);
 }
 
-SymBitVectorOr& SymBitVector::operator|(const SymBitVector& other) const {
-  return *(new SymBitVectorOr(*this, other));
+SymBitVectorOr SymBitVector::operator|(const SymBitVector& other) const {
+  return SymBitVectorOr(*this, other);
 }
 
-SymBitVectorPlus& SymBitVector::operator+(const SymBitVector& other) const {
-  return *(new SymBitVectorPlus(*this, other));
+SymBitVectorPlus SymBitVector::operator+(const SymBitVector& other) const {
+  return SymBitVectorPlus(*this, other);
 }
 
-SymBitVectorShiftLeft& SymBitVector::operator<<(const SymBitVector& other) const {
-  return *(new SymBitVectorShiftLeft(*this, other));
+SymBitVectorShiftLeft SymBitVector::operator<<(const SymBitVector& other) const {
+  return SymBitVectorShiftLeft(*this, other);
 }
 
-SymBitVectorShiftRight& SymBitVector::operator>>(const SymBitVector& other) const {
-  return *(new SymBitVectorShiftRight(*this, other));
+SymBitVectorShiftRight SymBitVector::operator>>(const SymBitVector& other) const {
+  return SymBitVectorShiftRight(*this, other);
 }
 
-SymBitVectorShiftLeft& SymBitVector::operator<<(uint64_t shift) const {
+SymBitVectorShiftLeft SymBitVector::operator<<(uint64_t shift) const {
   SymTypecheckVisitor tc;
   auto size = tc(*this);
 
@@ -75,7 +75,7 @@ SymBitVectorShiftLeft& SymBitVector::operator<<(uint64_t shift) const {
   return (*this << constant);
 }
 
-SymBitVectorShiftRight& SymBitVector::operator>>(uint64_t shift) const {
+SymBitVectorShiftRight SymBitVector::operator>>(uint64_t shift) const {
   SymTypecheckVisitor tc;
   auto size = tc(*this);
 
@@ -83,65 +83,61 @@ SymBitVectorShiftRight& SymBitVector::operator>>(uint64_t shift) const {
   return (*this >> constant);
 }
 
-SymBitVectorSignDiv& SymBitVector::s_div(const SymBitVector& other) const {
-  return *(new SymBitVectorSignDiv(*this, other));
+SymBitVectorSignDiv SymBitVector::s_div(const SymBitVector& other) const {
+  return SymBitVectorSignDiv(*this, other);
 }
 
-SymBitVectorSignExtend& SymBitVector::extend(uint16_t size) const {
-  return *(new SymBitVectorSignExtend(*this, size));
+SymBitVectorSignExtend SymBitVector::extend(uint16_t size) const {
+  return SymBitVectorSignExtend(*this, size);
 }
 
-SymBitVectorSignMod& SymBitVector::s_mod(const SymBitVector& other) const {
-  return *(new SymBitVectorSignMod(*this, other));
+SymBitVectorSignMod SymBitVector::s_mod(const SymBitVector& other) const {
+  return SymBitVectorSignMod(*this, other);
 }
 
-SymBitVectorSignShiftRight& SymBitVector::s_shr(const SymBitVector& other) const {
-  return *(new SymBitVectorSignShiftRight(*this, other));
+SymBitVectorSignShiftRight SymBitVector::s_shr(const SymBitVector& other) const {
+  return SymBitVectorSignShiftRight(*this, other);
 }
 
-SymBitVectorUMinus& SymBitVector::operator-() const {
-  return *(new SymBitVectorUMinus(*this));
+SymBitVectorUMinus SymBitVector::operator-() const {
+  return SymBitVectorUMinus(*this);
 }
 
-SymBitVectorXor& SymBitVector::operator^(const SymBitVector& other) const {
-  return *(new SymBitVectorXor(*this, other));
+SymBitVectorXor SymBitVector::operator^(const SymBitVector& other) const {
+  return SymBitVectorXor(*this, other);
 }
 
 /* Indexing */
-SymBitVectorExtract& SymBitVector::IndexHelper::operator[](uint16_t index) const {
-  return *(new SymBitVectorExtract(bv_, index_, index));
+SymBitVectorExtract SymBitVector::IndexHelper::operator[](uint16_t index) const {
+  return SymBitVectorExtract(bv_, index_, index);
 }
 
-SymBitVector::IndexHelper::operator SymBool&() const {
+SymBitVector::IndexHelper::operator SymBool() const {
   return (*this)[index_] == SymBitVector::constant(1,1);
 }
 
 /* Bit Vector Comparison Operators */
-SymBoolEq& SymBitVector::operator==(const SymBitVector& other) const {
-  return *(new SymBoolEq(*this, other));
+SymBoolEq SymBitVector::operator==(const SymBitVector& other) const {
+  return SymBoolEq(*this, other);
 }
 
-SymBoolGe& SymBitVector::operator>=(const SymBitVector& other) const {
-  return *(new SymBoolGe(*this, other));
+SymBoolGe SymBitVector::operator>=(const SymBitVector& other) const {
+  return SymBoolGe(*this, other);
 }
 
-SymBoolGt& SymBitVector::operator>(const SymBitVector& other) const {
-  return *(new SymBoolGt(*this, other));
+SymBoolGt SymBitVector::operator>(const SymBitVector& other) const {
+  return SymBoolGt(*this, other);
 }
 
-SymBoolLe& SymBitVector::operator<=(const SymBitVector& other) const {
-  return *(new SymBoolLe(*this, other));
+SymBoolLe SymBitVector::operator<=(const SymBitVector& other) const {
+  return SymBoolLe(*this, other);
 }
 
-SymBoolLt& SymBitVector::operator<(const SymBitVector& other) const {
-  return *(new SymBoolLt(*this, other));
+SymBoolLt SymBitVector::operator<(const SymBitVector& other) const {
+  return SymBoolLt(*this, other);
 }
 
-
-
-
-
-SymBoolNot& SymBitVector::operator!=(const SymBitVector& other) const {
+SymBoolNot SymBitVector::operator!=(const SymBitVector& other) const {
   return !(*this == other);
 }
 

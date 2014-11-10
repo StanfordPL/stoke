@@ -34,7 +34,7 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
   auto& src = instr.get_operand<Operand>(1);
 
   // Compute the value to move into the destination
-  auto& to_move = ss[src];
+  auto to_move = ss[src];
   
   if (dst.size() > src.size()) {
     // Case 1: we need to extend the source (sign or not)
@@ -50,13 +50,7 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
     to_move = ss[src][src.size()-1][0];
   } 
 
-  // Compute the final destination value
-  if (dst.type() == Type::EAX || dst.type() == Type::R_32) {
-    // If we're targeting a 32-bit GP, zero-out upper 32 bits
-    ss[dst] = SymBitVector::constant(32, 0) || to_move;
-  } else {
-    // Otherwise, preserve unset bits of destination
-    ss[dst] = ss[dst][dst.size() - 1][src.size()] || to_move;
-  }
+  /* Takes care of setting upper 32-bits of 64-bit registers, etc. */
+  ss.set(dst, to_move);
 }
 

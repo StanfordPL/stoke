@@ -28,17 +28,23 @@ class SymState {
 
 
     /** Lookup the symbolic representation of a generic operand */
-    const SymBitVector& operator[](const x64asm::Operand o) const {
-      return get_operand(o);
-    }
-    SymBitVector& operator[](const x64asm::Operand o) {
-      return const_cast<SymBitVector&>(get_operand(o));
-    }
+    SymBitVector operator[](const x64asm::Operand o) const;
+
+    /* Set the operand in the symbolic state to the specified bitvector.
+     *
+     * If the operand is smaller than its parent register, the parent register is
+     * preserved on the other bits *unless* (i) we're storing into the lower
+     * 32-bits of a 64-bit gp register, or (ii) it's an AVX instruction storing
+     * into the lower 128 bits of a ymm register; in both cases the other bits
+     * would be zero'd out.
+     * 
+     * The preserve32 param overrides the behavior of zeroing out the upper 32-bits
+     * of 64-bit gp registers, and the avx param enables zeroing out the upper 128
+     * bits of ymm registers.
+     */
+    void set(const x64asm::Operand o, SymBitVector bv, bool avx = false, bool preserve32 = false);
 
   private:
-
-    /** Compute the symbolic representation of some operand */
-    const SymBitVector& get_operand(x64asm::Operand o) const;
 
     /** Builds a symbolic CPU state from a concerete one */
     void build_from_cpustate(const CpuState& cs);

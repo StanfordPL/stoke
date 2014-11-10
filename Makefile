@@ -71,6 +71,7 @@ OBJ=\
 	src/tunit/tunit.o \
 	\
 	src/validator/c_interface.o \
+	src/validator/handler.o \
 	src/validator/handlers.o \
 	src/validator/legacy_handlers.o \
 	src/validator/switch.o  \

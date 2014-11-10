@@ -32,6 +32,7 @@ class SymBool {
   public:
 
     enum Type {
+      NONE,
       AND,
       EQ,
       FALSE,
@@ -50,7 +51,7 @@ class SymBool {
     };
 
     /** Get the type of this bool expression; helps for recursive algorithms on the tree. */
-    virtual Type type() const = 0;
+    virtual Type type() const { return NONE; }
 
     /** Builds a false value */
     static SymBoolFalse& _false();
@@ -75,6 +76,9 @@ class SymBool {
     SymBoolXor& operator^(const SymBool& other) const;
     /** Returns the negation of the logical 'if-and-only-if' */
     SymBoolNot& operator!=(const SymBool& other) const;
+
+  protected:
+    SymBool() {}
 
 };
 
