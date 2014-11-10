@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 
 	SeedGadget seed;
 	TestcaseGadget tc1(seed);
-	TestcaseGadget tc2 = tcs1;
+	TestcaseGadget tc2 = tc1;
 
   cout << "Memory::copy_defined()..." << endl;
 

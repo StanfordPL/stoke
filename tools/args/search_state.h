@@ -12,19 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "tools/args/verifier.h"
+#ifndef STOKE_TOOLS_ARGS_SEARCH_STATE_H
+#define STOKE_TOOLS_ARGS_SEARCH_STATE_H
 
-using namespace cpputil;
+#include "src/ext/cpputil/include/command_line/command_line.h"
+
+#include "src/args/tunit.h"
+#include "src/tunit/tunit.h"
 
 namespace stoke {
 
-Heading& verifier_heading = 
-	Heading::create("Verifier Options:");
+extern cpputil::Heading& search_state_heading;
 
-ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg = 
-	ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
-  .usage("(none|hold_out|extension)")
-  .description("Verification strategy")
-  .default_val(Strategy::NONE);
+extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& current_arg;
+extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_yet_arg;
+extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_correct_arg;
 
 } // namespace stoke
+
+#endif
+
+

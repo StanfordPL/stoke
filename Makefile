@@ -71,6 +71,8 @@ OBJ=\
 	tools/args/performance.o \
 	tools/args/rewrite.o \
 	tools/args/sandbox.o \
+	tools/args/search.o \
+	tools/args/search_state.o \
 	tools/args/seed.o \
 	tools/args/target.o \
 	tools/args/testcases.o \

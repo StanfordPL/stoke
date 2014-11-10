@@ -26,6 +26,7 @@
 #include "tools/gadgets/target.h"
 
 using namespace cpputil;
+using namespace std;
 using namespace stoke;
 
 auto& content = Heading::create("Content options:");

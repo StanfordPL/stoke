@@ -20,7 +20,7 @@ using namespace x64asm;
 namespace stoke {
 
 Heading& target_heading = 
-	Heading::create("Target options:");
+	Heading::create("Target Options:");
 
 FileArg<TUnit, TUnitReader, TUnitWriter>& target_arg = 
 	FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")

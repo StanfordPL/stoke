@@ -19,7 +19,7 @@ using namespace cpputil;
 namespace stoke {
 
 Heading& correctness_heading = 
-	Heading::create("Correctness options:");
+	Heading::create("Correctness Options:");
 
 ValueArg<Distance, DistanceReader, DistanceWriter>& distance_arg = 
 	ValueArg<Distance, DistanceReader, DistanceWriter>::create("distance")

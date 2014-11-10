@@ -19,7 +19,7 @@ using namespace cpputil;
 namespace stoke {
 
 Heading& benchmark_heading = 
-	Heading::create("Benchmark options:");
+	Heading::create("Benchmark Options:");
 
 ValueArg<size_t>& benchmark_itr_arg = 
 	ValueArg<size_t>::create("iterations")

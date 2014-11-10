@@ -21,7 +21,7 @@ using namespace x64asm;
 namespace stoke {
 
 Heading& transforms_heading =
-	Heading::create("Transform options:");
+	Heading::create("Transform Options:");
 
 ValueArg<FlagSet, FlagSetReader, FlagSetWriter>& cpu_flags_arg = 
 	ValueArg<FlagSet, FlagSetReader, FlagSetWriter>::create("cpu_flags")

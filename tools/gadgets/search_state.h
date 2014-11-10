@@ -12,19 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "tools/args/verifier.h"
+#ifndef STOKE_TOOLS_GADGETS_SEARCH_STATE_H
+#define STOKE_TOOLS_GADGETS_SEARCH_STATE_H
 
-using namespace cpputil;
+#include "src/cfg/cfg.h"
+#include "src/search/search_state.h"
+#include "tools/args/search_state.h"
+#include "tools/args/target.h"
 
 namespace stoke {
 
-Heading& verifier_heading = 
-	Heading::create("Verifier Options:");
-
-ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg = 
-	ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
-  .usage("(none|hold_out|extension)")
-  .description("Verification strategy")
-  .default_val(Strategy::NONE);
+class SearchStateGadget : public SearchState {
+	public:
+		SearchStateGadget() {
+			current = Cfg(current_arg.value().code, def_in_arg, live_out_arg);
+			best_yet = Cfg(best_yet_arg.value().code, def_in_arg, live_out_arg);
+			best_correct = Cfg(best_correct_arg.value().code, def_in_arg, live_out_arg);
+		}
+};
 
 } // namespace stoke
+
+#endif
+

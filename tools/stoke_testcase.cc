@@ -21,102 +21,83 @@
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/serialize/span_reader.h"
+#include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/system/terminal.h"
-#include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/args/tunit.h"
-#include "src/cfg/cfg.h"
 #include "src/state/cpu_states.h"
 #include "src/stategen/stategen.h"
+#include "tools/args/target.h"
+#include "tools/gadgets/sandbox.h"
+#include "tools/gadgets/target.h"
 
 using namespace cpputil;
 using namespace std;
-using namespace std::chrono;
 using namespace stoke;
-using namespace x64asm;
 
-auto& h1 = Heading::create("I/O options:");
-
+auto& io_opt = Heading::create("I/O options:");
 auto& bin = ValueArg<string>::create("bin")
-    .usage("<path/to/bin>")
-    .description("Executable binary containing function to generate testcases for")
-    .default_val("./a.out");
-
+  .usage("<path/to/bin>")
+  .description("Executable binary containing function to generate testcases for")
+  .default_val("./a.out");
 auto& args = ValueArg<string>::create("args")
-    .usage("<arg1 arg2 ... argn>")
-    .description("Optional command line arguments to pass to binary")
-    .default_val("");
-
+  .usage("<arg1 arg2 ... argn>")
+  .description("Optional command line arguments to pass to binary")
+  .default_val("");
 auto& out = ValueArg<string>::create("o")
-    .alternate("out")
-    .usage("<path/to/file.tc>")
-    .description("File to write testcases to (defaults to console if unspecified)")
-    .default_val("");
+  .alternate("out")
+  .usage("<path/to/file.tc>")
+  .description("File to write testcases to (defaults to console if unspecified)")
+  .default_val("");
 
-auto& h2 = Heading::create("Common options:");
-
+auto& common_opt = Heading::create("Common options:");
 auto& max_tc = ValueArg<size_t>::create("max_testcases")
-    .usage("<int>")
-    .description("The maximum number of testcases to generate")
-    .default_val(16);
+  .usage("<int>")
+  .description("The maximum number of testcases to generate")
+  .default_val(16);
 
-auto& h3 = Heading::create("Trace options:");
-
+auto& trace_opt = Heading::create("Trace options:");
 auto& fxn = ValueArg<string>::create("fxn")
-    .usage("<string>")
-    .description("Function to generate testcases for")
-    .default_val("main");
-
+  .usage("<string>")
+  .description("Function to generate testcases for")
+  .default_val("main");
 auto& begin_line = ValueArg<size_t>::create("begin_line") 
-		.usage("<int>")
-		.description("The line number to begin recording from")
-		.default_val(1);
-
-auto& end_lines = ValueArg<vector<size_t>, SpanReader<vector<size_t>, Range<size_t, 1, 1024>>>::create("end_lines")
-    .usage("{ 0 1 ... 9 }")
-    .description("Line number to end recording on; recording always stops on returns")
-    .default_val({});
-
+	.usage("<int>")
+	.description("The line number to begin recording from")
+	.default_val(1);
+auto& end_lines = ValueArg<vector<size_t>>::create("end_lines")
+  .usage("{ 0 1 ... 9 }")
+  .description("Line number to end recording on; recording always stops on returns")
+  .default_val({});
 auto& max_stack = ValueArg<uint64_t>::create("max_stack")
-    .usage("<bytes>")
-    .description("The maximum number of bytes to assume could be stack")
-    .default_val(1024);
+  .usage("<bytes>")
+  .description("The maximum number of bytes to assume could be stack")
+  .default_val(1024);
 
-auto& h4 = Heading::create("Autogen options:");
-
+auto& autogen_opt = Heading::create("Autogen options:");
 auto& max_attempts = ValueArg<uint64_t>::create("max_attempts")
-    .usage("<int>")
-    .description("The maximum number of attempts to make at generating a testcase")
-    .default_val(16);
-
+  .usage("<int>")
+  .description("The maximum number of attempts to make at generating a testcase")
+  .default_val(16);
 auto& max_memory = ValueArg<uint64_t>::create("max_memory")
-    .usage("<bytes>")
-    .description("The maximum number of bytes to allocate to stack or heap")
-    .default_val(1024);
+  .usage("<bytes>")
+  .description("The maximum number of bytes to allocate to stack or heap")
+  .default_val(1024);
 
-auto& h6 = Heading::create("File conversion options:");
-
+auto& conv_opt = Heading::create("File conversion options:");
 auto& compress = FlagArg::create("compress")
-		.description("Convert testcase file from text to binary");
-
+	.description("Convert testcase file from text to binary");
 auto& decompress = FlagArg::create("decompress")
-		.description("Convert testcase file from binary to text");
-
+	.description("Convert testcase file from binary to text");
 auto& in = ValueArg<string>::create("in")
-		.alternate("i")
-		.usage("<path/to/file.tc>")
-		.description("Path to testcases file")
-		.default_val("in.tc");
+	.alternate("i")
+	.usage("<path/to/file.tc>")
+	.description("Path to testcases file")
+	.default_val("in.tc");
 
 int auto_gen() {
-	Cfg cfg_t(target.value().code, RegSet::universe(), RegSet::empty());
-
-	Sandbox sb;
-	sb.set_abi_check(abi_check)
-		.set_max_jumps(max_jumps);
-	for (const auto& fxn : aux_fxns.value()) {
-		sb.insert_function(Cfg(fxn.code, RegSet::empty(), RegSet::empty()));
-	}
+	TargetGadget target;
+	SandboxGadget sb({});
 
 	StateGen sg(&sb);
 	sg.set_max_attempts(max_attempts.value())
@@ -125,7 +106,7 @@ int auto_gen() {
 	CpuStates tcs;
 	for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
 		CpuState tc;
-		if (sg.get(tc, cfg_t)) {
+		if (sg.get(tc, target)) {
 			tcs.push_back(tc);
 		}
 	}
@@ -226,14 +207,14 @@ int do_decompress() {
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
-
-  srand(1);
+  DebugHandler::install_sigsegv();
+  DebugHandler::install_sigill();
 
 	if (compress.value()) {
 		return do_compress();
 	} else if (decompress.value()) {
 		return do_decompress();
-	} else if (target.value().name != "anon") {
+	} else if (target_arg.value().name != "anon") {
 		return auto_gen();
 	} else {
 		return trace(argv[0]);

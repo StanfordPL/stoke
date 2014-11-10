@@ -18,6 +18,7 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
+#include "tools/args/benchmark.h"
 #include "tools/args/move.h"
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
@@ -35,7 +36,7 @@ int main(int argc, char** argv) {
 
 	SeedGadget seed;
 	TargetGadget target;
-	TransformsGadget tforms;
+	TransformsGadget tforms(seed);
 
   cout << "Transforms::modify()..." << endl;
 

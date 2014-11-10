@@ -100,11 +100,13 @@ int main(int argc, char** argv) {
 
 	TargetGadget target;
 	SeedGadget seed;
-	TestcaseGadget tcs(seed);
-	SandboxGadget sb({tc});
+	TestcaseGadget tc(seed);
+	CpuStates tcs;
+	tcs.push_back(tc);
+	SandboxGadget sb(tcs);
 
   auto stepping = false;
-  for (size_t i = 0, ie = target.value().code.size(); i < ie; ++i) {
+  for (size_t i = 0, ie = target_arg.value().code.size(); i < ie; ++i) {
     sb.insert_before(i, callback, &stepping);
   }
 

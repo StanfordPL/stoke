@@ -35,7 +35,7 @@ int main(int argc, char** argv) {
 
 	SeedGadget seed;
 	TargetGadget target;
-	TransformsGadget tforms;
+	TransformsGadget tforms(seed);
 
   ofilterstream<Column> os(cout);
   os.filter().padding(3);
@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
   os << target.get_code() << endl;
   os.filter().next();
 
-  const auto res = transforms.modify(target, move_arg);
+  const auto res = tforms.modify(target, move_arg);
 
   os << "After " << (res ? "Successful" : "Failed" ) << " Transform:" << endl;
   os << endl;
@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
   os.filter().next();
 
 	if (res) {
-		transforms.undo(target, move_arg);
+		tforms.undo(target, move_arg);
 	}
 
   os << "After Undo:" << endl;

@@ -19,7 +19,7 @@ using namespace cpputil;
 namespace stoke {
 
 Heading& sandbox_heading =
-	Heading::create("Sandbox options:");
+	Heading::create("Sandbox Options:");
 
 FlagArg& abi_check_arg = 
 	FlagArg::create("abi_check")

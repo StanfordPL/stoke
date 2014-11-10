@@ -29,10 +29,10 @@ class TransformsGadget : public Transforms {
 	public:
 		TransformsGadget(std::default_random_engine::result_type seed) : Transforms() {
 			if (callee_save_arg.value()) {
-				preserve_regs.value() = x64asm::RegSet::empty();
+				preserve_regs_arg.value() = x64asm::RegSet::empty();
 			}
 
-			set_opcode_pool(flags_arg, nop_percent_arg, mem_read_arg, mem_write_arg, 
+			set_opcode_pool(cpu_flags_arg, nop_percent_arg, mem_read_arg, mem_write_arg, 
 					propose_call_arg, opc_blacklist_arg);
 			set_operand_pool(target_arg.value().code, preserve_regs_arg);
 

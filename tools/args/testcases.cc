@@ -22,7 +22,7 @@ using namespace std;
 namespace stoke {
 
 Heading& testcases_heading = 
-	Heading::create("Testcase options:");
+	Heading::create("Testcase Options:");
 
 FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>& testcases_arg =
 	FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")

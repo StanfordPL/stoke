@@ -20,7 +20,7 @@ using namespace std;
 namespace stoke {
 
 Heading seed_group = 
-	Heading::create("Random seed options:");
+	Heading::create("Random Seed Options:");
 
 ValueArg<default_random_engine::result_type> seed_arg =
 	ValueArg<default_random_engine::result_type>::create("seed")

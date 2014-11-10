@@ -20,7 +20,7 @@ using namespace x64asm;
 namespace stoke {
 
 Heading& rewrite_heading = 
-	Heading::create("Rewrite options:");
+	Heading::create("Rewrite Options:");
 
 FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg = 
 	FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
