@@ -10,6 +10,7 @@ namespace stoke {
 
 
 class SymBitVector;
+class SymBitVectorAbstract;
 
 
 class SymBoolAnd;
@@ -85,11 +86,11 @@ class SymBool {
 class SymBoolCompare : public SymBool {
 
   protected:
-    SymBoolCompare(const SymBitVector& a, const SymBitVector& b) : a_(a), b_(b) {}
+    SymBoolCompare(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : a_(a), b_(b) {}
 
   public:
-    const SymBitVector& a_;
-    const SymBitVector& b_;
+    const SymBitVectorAbstract * const a_;
+    const SymBitVectorAbstract * const b_;
 
 };
 

@@ -56,29 +56,10 @@ class Z3Solver : public SMTSolver {
       public:
         ExprConverter(z3::context& cntx) : context_(cntx) {}
 
-        // The following is for debugging the Z3 driver.
-        /*
-        z3::expr operator()(const SymBitVector& bv) {
-          SymPrintVisitor spv(std::cout);
-          std::cout << "Visiting ";
-          spv(bv);
-          std::cout << std::endl;
-          return SymVisitor<z3::expr>::operator()(bv);
-        }
-
-        z3::expr operator()(const SymBool& b) {
-          SymPrintVisitor spv(std::cout);
-          std::cout << "Visiting ";
-          spv(b);
-          std::cout << std::endl;
-          return SymVisitor<z3::expr>::operator()(b);
-        }
-        */
-
-        z3::expr visit_binop(const SymBitVectorBinop& bv) {
+        z3::expr visit_binop(const SymBitVectorBinop * const bv) {
           // We can't support anything generically.  Error!
           // This will almost definitely segfault.  We need better error handling here.
-          std::cerr << "Unsupported binop: " << bv.type() << std::endl;
+          std::cerr << "Unsupported binop: " << bv->type() << std::endl;
           assert(false);
         }
 
@@ -88,47 +69,47 @@ class Z3Solver : public SMTSolver {
         }
 
         /** Visit a bit-vector AND */
-        z3::expr visit(const SymBitVectorAnd& bv);
+        z3::expr visit(const SymBitVectorAnd * const bv);
         /** Visit a bit-vector concatenation */
-        z3::expr visit(const SymBitVectorConcat& bv);
+        z3::expr visit(const SymBitVectorConcat * const bv);
         /** Visit a bit-vector constant */
-        z3::expr visit(const SymBitVectorConstant& bv);
+        z3::expr visit(const SymBitVectorConstant * const bv);
         /** Visit a bit-vector extract */
-        z3::expr visit(const SymBitVectorExtract& bv);
+        z3::expr visit(const SymBitVectorExtract * const bv);
         /** Visit a bit-vector if-then-else */
-        z3::expr visit(const SymBitVectorIte& bv);
+        z3::expr visit(const SymBitVectorIte * const bv);
         /** Visit a bit-vector minus */
-        z3::expr visit(const SymBitVectorMinus& bv);
+        z3::expr visit(const SymBitVectorMinus * const bv);
         /** Visit a bit-vector mod */
-        z3::expr visit(const SymBitVectorMod& bv);
+        z3::expr visit(const SymBitVectorMod * const bv);
         /** Visit a bit-vector mult */
-        z3::expr visit(const SymBitVectorMult& bv);
+        z3::expr visit(const SymBitVectorMult * const bv);
         /** Visit a bit-vector NOT */
-        z3::expr visit(const SymBitVectorNot& bv);
+        z3::expr visit(const SymBitVectorNot * const bv);
         /** Visit a bit-vector OR */
-        z3::expr visit(const SymBitVectorOr& bv);
+        z3::expr visit(const SymBitVectorOr * const bv);
         /** Visit a bit-vector plus */
-        z3::expr visit(const SymBitVectorPlus& bv);
+        z3::expr visit(const SymBitVectorPlus * const bv);
         /** Visit a bit-vector shift-left */
-        z3::expr visit(const SymBitVectorShiftLeft& bv);
+        z3::expr visit(const SymBitVectorShiftLeft * const bv);
         /** Visit a bit-vector shift-right */
-        z3::expr visit(const SymBitVectorShiftRight& bv);
+        z3::expr visit(const SymBitVectorShiftRight * const bv);
         /** Visit a bit-vector signed divide */
-        z3::expr visit(const SymBitVectorSignDiv& bv);
+        z3::expr visit(const SymBitVectorSignDiv * const bv);
         /** Visit a bit-vector sign-extend */
-        z3::expr visit(const SymBitVectorSignExtend& bv);
+        z3::expr visit(const SymBitVectorSignExtend * const bv);
         /** Visit a bit-vector signed mod */
-        z3::expr visit(const SymBitVectorSignMod& bv);
+        z3::expr visit(const SymBitVectorSignMod * const bv);
         /** Visit a bit-vector signed shift-right */
-        z3::expr visit(const SymBitVectorSignShiftRight& bv);
+        z3::expr visit(const SymBitVectorSignShiftRight * const bv);
         /** Visit a bit-vector unary minus */
-        z3::expr visit(const SymBitVectorUMinus& bv);
+        z3::expr visit(const SymBitVectorUMinus * const bv);
         /** Visit a bit-vector variable */
-        z3::expr visit(const SymBitVectorVar& bv);
+        z3::expr visit(const SymBitVectorVar * const bv);
         /** Visit a bit-vector XOR */
-        z3::expr visit(const SymBitVectorXor& bv);
+        z3::expr visit(const SymBitVectorXor * const bv);
         /** Visit a bit-vector XOR */
-        z3::expr visit(const SymBitVectorZ3& bv);
+        z3::expr visit(const SymBitVectorZ3 * const bv);
 
 
         /** Visit a bit-vector EQ */

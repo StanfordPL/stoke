@@ -9,13 +9,9 @@ TEST(Z3SolverTest, TautologyIsSat) {
 
   auto lhs = (x | y) & z;
   EXPECT_EQ(stoke::SymBitVector::AND, lhs.type());
-  EXPECT_EQ(stoke::SymBitVector::OR, lhs.a_.type());
-  EXPECT_EQ(stoke::SymBitVector::VAR, lhs.b_.type());
 
   auto rhs = (x & z) | (y & z);
   EXPECT_EQ(stoke::SymBitVector::OR, rhs.type());
-  EXPECT_EQ(stoke::SymBitVector::AND, rhs.a_.type());
-  EXPECT_EQ(stoke::SymBitVector::AND, rhs.b_.type());
 
   auto eq = lhs == rhs;
   EXPECT_EQ(stoke::SymBool::EQ, eq.type());

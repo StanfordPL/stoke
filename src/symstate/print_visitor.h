@@ -11,9 +11,9 @@ class SymPrintVisitor : public SymVisitor<void> {
   public:
     SymPrintVisitor(std::ostream& os) : os_(os) {}
 
-    void visit_binop(const SymBitVectorBinop& bv) {
+    void visit_binop(const SymBitVectorBinop * const bv) {
 
-      switch(bv.type()) {
+      switch(bv->type()) {
         case SymBitVector::AND:
           os_ << "(and ";
           break;
@@ -57,13 +57,13 @@ class SymPrintVisitor : public SymVisitor<void> {
           os_ << "(xor ";
           break;
         default:
-          os_ << "(UNHANDLED_BINOP" << bv.type() << " ";
+          os_ << "(UNHANDLED_BINOP" << bv->type() << " ";
           assert(false);
       }
 
-      (*this)(bv.a_);
+      (*this)(bv->a_);
       os_ << " ";
-      (*this)(bv.b_);
+      (*this)(bv->b_);
       os_ << ")";
     }
 
@@ -98,12 +98,12 @@ class SymPrintVisitor : public SymVisitor<void> {
     }
 
     /** Visit a bit-vector constant */
-    void visit(const SymBitVectorConstant& bv) {
+    void visit(const SymBitVectorConstant * const bv) {
       os_ << "[ ";
-      for(size_t i = bv.size_; bv.size_ >= 64; --i)
+      for(size_t i = bv->size_; bv->size_ >= 64; --i)
         os_ << "0, ";
-      for(uint64_t mask = (0x8000000000000000 >> (64 - bv.size_)); mask; mask >>= 1) {
-        os_ << (bv.constant_ & mask ? 1 : 0); 
+      for(uint64_t mask = (0x8000000000000000 >> (64 - bv->size_)); mask; mask >>= 1) {
+        os_ << (bv->constant_ & mask ? 1 : 0); 
         if(mask > 1)
           os_ << ", ";
       }
@@ -111,51 +111,51 @@ class SymPrintVisitor : public SymVisitor<void> {
     }
 
     /** Visit a bit-vector extract */
-    void visit(const SymBitVectorExtract& bv) {
-      (*this)(bv.bv_);    
-      os_ << "[" << bv.high_bit_ << ":" << bv.low_bit_ << "]";
+    void visit(const SymBitVectorExtract * const bv) {
+      (*this)(bv->bv_);    
+      os_ << "[" << bv->high_bit_ << ":" << bv->low_bit_ << "]";
     }
 
     /** Visit a bit-vector if-then-else */
-    void visit(const SymBitVectorIte& bv) {
+    void visit(const SymBitVectorIte * const bv) {
       os_ << "(if ";
-      (*this)(bv.cond_); 
+      (*this)(bv->cond_); 
       os_ << " then ";
-      (*this)(bv.a_); 
+      (*this)(bv->a_); 
       os_ << " else ";
-      (*this)(bv.b_); 
+      (*this)(bv->b_); 
       os_ << ")";
     }
 
     /** Visit a bit-vector NOT */
-    void visit(const SymBitVectorNot& bv) {
+    void visit(const SymBitVectorNot * const bv) {
       os_ << "(not ";
-      (*this)(bv.bv_);
+      (*this)(bv->bv_);
       os_ << ")";
     }
 
     /** Visit a bit-vector sign-extend */
-    void visit(const SymBitVectorSignExtend& bv) {
-      os_ << "(sign-extend-" << bv.size_ << " ";
-      (*this)(bv.bv_);
+    void visit(const SymBitVectorSignExtend * const bv) {
+      os_ << "(sign-extend-" << bv->size_ << " ";
+      (*this)(bv->bv_);
       os_ << ")";
     }
 
     /** Visit a bit-vector unary minus */
-    void visit(const SymBitVectorUMinus& bv) {
+    void visit(const SymBitVectorUMinus * const bv) {
       os_ << "(negative ";
-      (*this)(bv.bv_);
+      (*this)(bv->bv_);
       os_ << ")";
     }
 
     /** Visit a bit-vector variable */
-    void visit(const SymBitVectorVar& bv) {
-      os_ << "<" << bv.name_ << "|" << bv.size_ << ">";
+    void visit(const SymBitVectorVar * const bv) {
+      os_ << "<" << bv->name_ << "|" << bv->size_ << ">";
     }
 
     /** Visit a Z3 bitvector */
-    void visit(const SymBitVectorZ3& bv) {
-      os_ << bv.e_;
+    void visit(const SymBitVectorZ3 * const bv) {
+      os_ << bv->e_;
     }
 
     /** Visit a bit-vector EQ */

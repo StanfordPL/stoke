@@ -104,113 +104,113 @@ bool Z3Solver::get_model_bool(const std::string& var) {
 ///////  The following is for converting bit-vectors.  Very tedious.  //////////////////////////////
 
 /** Visit a bit-vector AND */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorAnd& bv) {
-  return z3::expr(context_, Z3_mk_bvand(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorAnd * const bv) {
+  return z3::expr(context_, Z3_mk_bvand(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector concatenation */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorConcat& bv) {
-  return z3::expr(context_, Z3_mk_concat(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorConcat * const bv) {
+  return z3::expr(context_, Z3_mk_concat(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector constant */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorConstant& bv) {
-  return z3::expr(context_, context_.bv_val((long long unsigned int)bv.constant_, bv.size_));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorConstant * const bv) {
+  return z3::expr(context_, context_.bv_val((long long unsigned int)bv->constant_, bv->size_));
 }
 
 /** Visit a bit-vector extract */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorExtract& bv) {
-  return z3::expr(context_, Z3_mk_extract(context_, bv.high_bit_, bv.low_bit_, (*this)(bv.bv_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorExtract * const bv) {
+  return z3::expr(context_, Z3_mk_extract(context_, bv->high_bit_, bv->low_bit_, (*this)(bv->bv_)));
 }
 
 /** Visit a bit-vector if-then-else */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorIte& bv) {
-  return z3::expr(context_, Z3_mk_ite(context_, (*this)(bv.cond_), (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorIte * const bv) {
+  return z3::expr(context_, Z3_mk_ite(context_, (*this)(bv->cond_), (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector minus */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorMinus& bv) {
-  return z3::expr(context_, Z3_mk_bvsub(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorMinus * const bv) {
+  return z3::expr(context_, Z3_mk_bvsub(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector mod */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorMod& bv) {
-  return z3::expr(context_, Z3_mk_bvurem(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorMod * const bv) {
+  return z3::expr(context_, Z3_mk_bvurem(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector mult */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorMult& bv) {
-  return z3::expr(context_, Z3_mk_bvmul(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorMult * const bv) {
+  return z3::expr(context_, Z3_mk_bvmul(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector NOT */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorNot& bv) {
-  return z3::expr(context_, Z3_mk_bvnot(context_, (*this)(bv.bv_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorNot * const bv) {
+  return z3::expr(context_, Z3_mk_bvnot(context_, (*this)(bv->bv_)));
 }
 
 /** Visit a bit-vector OR */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorOr& bv) {
-  return z3::expr(context_, Z3_mk_bvor(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorOr * const bv) {
+  return z3::expr(context_, Z3_mk_bvor(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector plus */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorPlus& bv) {
-  return z3::expr(context_, Z3_mk_bvadd(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorPlus * const bv) {
+  return z3::expr(context_, Z3_mk_bvadd(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector shift-left */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorShiftLeft& bv) {
-  return z3::expr(context_, Z3_mk_bvshl(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorShiftLeft * const bv) {
+  return z3::expr(context_, Z3_mk_bvshl(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector shift-right */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorShiftRight& bv) {
-  return z3::expr(context_, Z3_mk_bvlshr(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorShiftRight * const bv) {
+  return z3::expr(context_, Z3_mk_bvlshr(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector signed divide */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignDiv& bv) {
-  return z3::expr(context_, Z3_mk_bvsdiv(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignDiv * const bv) {
+  return z3::expr(context_, Z3_mk_bvsdiv(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector sign extension */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignExtend& bv) {
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignExtend * const bv) {
 
   SymTypecheckVisitor tc;
-  auto child = tc(bv.bv_);
+  auto child = tc(bv->bv_);
 
-  return z3::expr(context_, Z3_mk_sign_ext(context_, bv.size_ - child, (*this)(bv.bv_)));
+  return z3::expr(context_, Z3_mk_sign_ext(context_, bv->size_ - child, (*this)(bv->bv_)));
 }
 
 /** Visit a bit-vector signed mod */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignMod& bv) {
-  return z3::expr(context_, Z3_mk_bvsrem(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignMod * const bv) {
+  return z3::expr(context_, Z3_mk_bvsrem(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector signed shift-right */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignShiftRight& bv) {
-  return z3::expr(context_, Z3_mk_bvashr(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignShiftRight * const bv) {
+  return z3::expr(context_, Z3_mk_bvashr(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector unary minus */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorUMinus& bv) {
-  return z3::expr(context_, Z3_mk_bvneg(context_, (*this)(bv.bv_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorUMinus * const bv) {
+  return z3::expr(context_, Z3_mk_bvneg(context_, (*this)(bv->bv_)));
 }
 
 /** Visit a bit-vector variable */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorVar& bv) {
-  auto type = context_.bv_sort(bv.size_);
-  return z3::expr(context_, Z3_mk_const(context_, get_symbol(bv.name_), type));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorVar * const bv) {
+  auto type = context_.bv_sort(bv->size_);
+  return z3::expr(context_, Z3_mk_const(context_, get_symbol(bv->name_), type));
 }
 
 /** Visit a bit-vector XOR */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorXor& bv) {
-  return z3::expr(context_, Z3_mk_bvxor(context_, (*this)(bv.a_), (*this)(bv.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorXor * const bv) {
+  return z3::expr(context_, Z3_mk_bvxor(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a Z3-compatability bitvector */
-z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorZ3& bv) {
-  return bv.e_;
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorZ3 * const bv) {
+  return bv->e_;
 }
 
 /** Visit a bit-vector EQ */

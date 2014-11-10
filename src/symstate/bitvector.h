@@ -9,6 +9,7 @@
 
 namespace stoke {
 
+class SymBitVectorAbstract;
 
 class SymBitVectorAnd;
 class SymBitVectorConcat;
@@ -66,57 +67,57 @@ class SymBitVector {
 
 
     /** Get the type of this bitvector expression; helps for recursive algorithms on the tree. */
-    virtual Type type() const { return Type::NONE; }
+    Type type() const; 
 
     /** Creates a constant bitvector of specified size and value */
-    static SymBitVectorConstant constant(uint16_t size, uint64_t constant);
+    static SymBitVector constant(uint16_t size, uint64_t constant);
     /** Creates a bitvector variables of specified size and name */
-    static SymBitVectorVar var(uint16_t size, std::string name);
+    static SymBitVector var(uint16_t size, std::string name);
     /** Creates a length-1 bitvector from a boolean */
-    static SymBitVectorIte from_bool(const SymBool& b);
+    static SymBitVector from_bool(const SymBool& b);
     /** Creates an if-then-else expression bitvector */
-    static SymBitVectorIte ite(const SymBool& cond, const SymBitVector& t, const SymBitVector& f);
+    static SymBitVector ite(const SymBool& cond, const SymBitVector& t, const SymBitVector& f);
     /** Creates a symbolic bitvector from a z3 expression (for compatibility) */
-    static SymBitVectorZ3 z3(z3::expr& e);
+    static SymBitVector z3(z3::expr& e);
 
     /** Constructs the bitwise AND of two bitvectors */
-    SymBitVectorAnd operator&(const SymBitVector& other) const;
+    SymBitVector operator&(const SymBitVector& other) const;
     /** Constructs the concatenation of two bitvectors */
-    SymBitVectorConcat operator||(const SymBitVector& other) const;
+    SymBitVector operator||(const SymBitVector& other) const;
     /** Constructs the concatenation of two bitvectors */
-    SymBitVectorDiv operator/(const SymBitVector& other) const;
+    SymBitVector operator/(const SymBitVector& other) const;
     /** Constructs the substraction of two bitvectors */
-    SymBitVectorMinus operator-(const SymBitVector& other) const;
+    SymBitVector operator-(const SymBitVector& other) const;
     /** Constructs the multiplication of two bitvectors */
-    SymBitVectorMult operator*(const SymBitVector& other) const;
+    SymBitVector operator*(const SymBitVector& other) const;
     /** Constructs the modulus of two bitvectors */
-    SymBitVectorMod operator%(const SymBitVector& other) const;
+    SymBitVector operator%(const SymBitVector& other) const;
     /** Constructs the logical negation of this bitvector */
-    SymBitVectorNot operator!() const;
+    SymBitVector operator!() const;
     /** Constructs the bitwise OR of two bitvectors */
-    SymBitVectorOr operator|(const SymBitVector& other) const;
+    SymBitVector operator|(const SymBitVector& other) const;
     /** Constructs the sum of two bitvectors */
-    SymBitVectorPlus operator+(const SymBitVector& other) const;
+    SymBitVector operator+(const SymBitVector& other) const;
     /** Constructs a bitvector (of same size) shifted to the left by 'shift' */
-    SymBitVectorShiftLeft operator<<(uint64_t shift) const;
+    SymBitVector operator<<(uint64_t shift) const;
     /** Constructs a bitveector shifted to the left by another bitvector. */
-    SymBitVectorShiftLeft operator<<(const SymBitVector& other) const;
+    SymBitVector operator<<(const SymBitVector& other) const;
     /** Constructs a bitvector (of same size) shifted to the right by 'shift' */
-    SymBitVectorShiftRight operator>>(uint64_t shift) const;
+    SymBitVector operator>>(uint64_t shift) const;
     /** Constructs a bitveector shifted to the right by another bitvector. */
-    SymBitVectorShiftRight operator>>(const SymBitVector& other) const;
+    SymBitVector operator>>(const SymBitVector& other) const;
     /** Creates a bitvector representing signed division */
-    SymBitVectorSignDiv s_div(const SymBitVector& other) const;
+    SymBitVector s_div(const SymBitVector& other) const;
     /** Creates a sign-extended version of this bitvector */
-    SymBitVectorSignExtend extend(uint16_t size) const;
+    SymBitVector extend(uint16_t size) const;
     /** Creates a bitvector representing signed modulus */
-    SymBitVectorSignMod s_mod(const SymBitVector& other) const;
+    SymBitVector s_mod(const SymBitVector& other) const;
     /** Creates a bitvector representing signed shift right */
-    SymBitVectorSignShiftRight s_shr(const SymBitVector& other) const;
+    SymBitVector s_shr(const SymBitVector& other) const;
     /** Creates a 2s-complement negation of this bitvector */
-    SymBitVectorUMinus operator-() const;
+    SymBitVector operator-() const;
     /** Constructs the bitwise XOR of two bitvectors */
-    SymBitVectorXor operator^(const SymBitVector& other) const;
+    SymBitVector operator^(const SymBitVector& other) const;
 
 
     /** Returns a bool indicating if the arguments are equal */
@@ -136,7 +137,7 @@ class SymBitVector {
       friend class SymBitVector;
 
       public:
-        SymBitVectorExtract operator[](uint16_t index) const;
+        SymBitVector operator[](uint16_t index) const;
         operator SymBool() const;
 
       private:
@@ -151,20 +152,33 @@ class SymBitVector {
       return IndexHelper(*this, index);
     }
 
-  protected:
-    SymBitVector() {}
+    /* Accesses the underlying object */
+    const SymBitVectorAbstract * ptr;
+
+    /* Constructs a new SymBitVector from a pointer to the AST hierarchy */
+    SymBitVector(const SymBitVectorAbstract * ptr_) : ptr(ptr_) {}
+
+
+
 };
 
-/* Abstract class that has contains a left and right argument to a binary operator. */
-class SymBitVectorBinop : public SymBitVector {
+class SymBitVectorAbstract {
   friend class SymBitVector;
 
   public:
-    const SymBitVector& a_;
-    const SymBitVector& b_;
+    virtual SymBitVector::Type type() const = 0;
+};
+
+/* Abstract class that has contains a left and right argument to a binary operator. */
+class SymBitVectorBinop : public SymBitVectorAbstract {
+  friend class SymBitVector;
+
+  public:
+    const SymBitVectorAbstract * const a_;
+    const SymBitVectorAbstract * const b_;
 
   protected:
-    SymBitVectorBinop(const SymBitVector& a, const SymBitVector &b) : a_(a), b_(b) {}
+    SymBitVectorBinop(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : a_(a), b_(b) {}
 };
 
 
@@ -173,7 +187,7 @@ class SymBitVectorAnd : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return AND; }
+    SymBitVector::Type type() const { return SymBitVector::Type::AND; }
 };
 
 class SymBitVectorConcat : public SymBitVectorBinop {
@@ -181,7 +195,7 @@ class SymBitVectorConcat : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return CONCAT; }
+    SymBitVector::Type type() const { return SymBitVector::Type::CONCAT; }
 };
 
 class SymBitVectorDiv : public SymBitVectorBinop {
@@ -189,10 +203,10 @@ class SymBitVectorDiv : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return DIV; }
+    SymBitVector::Type type() const { return SymBitVector::Type::DIV; }
 };
 
-class SymBitVectorConstant : public SymBitVector {
+class SymBitVectorConstant : public SymBitVectorAbstract {
   friend class SymBitVector;
 
   private:
@@ -201,43 +215,43 @@ class SymBitVectorConstant : public SymBitVector {
     }
 
   public:
-    SymBitVector::Type type() const { return CONSTANT; }
+    SymBitVector::Type type() const { return SymBitVector::Type::CONSTANT; }
 
     const uint64_t constant_;
     const uint16_t size_;
 };
 
-class SymBitVectorExtract : public SymBitVector {
+class SymBitVectorExtract : public SymBitVectorAbstract {
   friend class SymBitVector;
 
   private:
     /* Extracts bits low_bit,low_bit+1,...,low_bit+n-1 from a 
        bitvector of length m */
-    SymBitVectorExtract(const SymBitVector& bv, uint16_t high_bit, uint16_t low_bit) :
+    SymBitVectorExtract(const SymBitVectorAbstract * const bv, uint16_t high_bit, uint16_t low_bit) :
       bv_(bv), low_bit_(low_bit), high_bit_(high_bit) { }
 
   public:
-    SymBitVector::Type type() const { return EXTRACT; }
+    SymBitVector::Type type() const { return SymBitVector::Type::EXTRACT; }
 
-    const SymBitVector& bv_;
+    const SymBitVectorAbstract * const bv_;
     const uint16_t low_bit_;
     const uint16_t high_bit_;
 };
 
-class SymBitVectorIte : public SymBitVector {
+class SymBitVectorIte : public SymBitVectorAbstract {
   friend class SymBitVector;
 
   private:
-    SymBitVectorIte(const SymBool& cond, const SymBitVector& a, 
-                    const SymBitVector& b) : cond_(cond), a_(a), b_(b) {}
+    SymBitVectorIte(const SymBool& cond, const SymBitVectorAbstract * const a, 
+                    const SymBitVectorAbstract * const b) : cond_(cond), a_(a), b_(b) {}
 
   public:
 
-    SymBitVector::Type type() const { return ITE; }
+    SymBitVector::Type type() const { return SymBitVector::Type::ITE; }
 
     const SymBool& cond_;
-    const SymBitVector& a_;
-    const SymBitVector& b_;
+    const SymBitVectorAbstract * const a_;
+    const SymBitVectorAbstract * const b_;
 };
 
 class SymBitVectorMinus : public SymBitVectorBinop {
@@ -245,7 +259,7 @@ class SymBitVectorMinus : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return MINUS; }
+    SymBitVector::Type type() const { return SymBitVector::Type::MINUS; }
 };
 
 class SymBitVectorMod : public SymBitVectorBinop {
@@ -253,7 +267,7 @@ class SymBitVectorMod : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return MOD; }
+    SymBitVector::Type type() const { return SymBitVector::Type::MOD; }
 };
 
 class SymBitVectorMult : public SymBitVectorBinop {
@@ -261,10 +275,10 @@ class SymBitVectorMult : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return MULT; }
+    SymBitVector::Type type() const { return SymBitVector::Type::MULT; }
 };
 
-class SymBitVectorNot : public SymBitVector {
+class SymBitVectorNot : public SymBitVectorAbstract {
   friend class SymBitVector;
 
   // It's a bug that SymVisitor is here; it's unclear to me why it should be
@@ -273,12 +287,12 @@ class SymBitVectorNot : public SymBitVector {
   friend class SymVisitor;
 
   private:
-    SymBitVectorNot(const SymBitVector& bv) : bv_(bv) {}
+    SymBitVectorNot(const SymBitVectorAbstract * const bv) : bv_(bv) {}
 
   public:
-    SymBitVector::Type type() const { return NOT; }
+    SymBitVector::Type type() const { return SymBitVector::Type::NOT; }
 
-    const SymBitVector& bv_;
+    const SymBitVectorAbstract * const bv_;
 };
 
 class SymBitVectorOr : public SymBitVectorBinop {
@@ -286,7 +300,7 @@ class SymBitVectorOr : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return OR; }
+    SymBitVector::Type type() const { return SymBitVector::Type::OR; }
 };
 
 class SymBitVectorPlus : public SymBitVectorBinop {
@@ -294,7 +308,7 @@ class SymBitVectorPlus : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return PLUS; }
+    SymBitVector::Type type() const { return SymBitVector::Type::PLUS; }
 };
 
 class SymBitVectorShiftLeft : public SymBitVectorBinop {
@@ -302,7 +316,7 @@ class SymBitVectorShiftLeft : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return SHIFT_LEFT; }
+    SymBitVector::Type type() const { return SymBitVector::Type::SHIFT_LEFT; }
 };
 
 class SymBitVectorShiftRight : public SymBitVectorBinop {
@@ -310,7 +324,7 @@ class SymBitVectorShiftRight : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return SHIFT_RIGHT; }
+    SymBitVector::Type type() const { return SymBitVector::Type::SHIFT_RIGHT; }
 };
 
 class SymBitVectorSignDiv : public SymBitVectorBinop {
@@ -318,19 +332,19 @@ class SymBitVectorSignDiv : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return SIGN_DIV; }
+    SymBitVector::Type type() const { return SymBitVector::Type::SIGN_DIV; }
 };
 
-class SymBitVectorSignExtend : public SymBitVector {
+class SymBitVectorSignExtend : public SymBitVectorAbstract {
   friend class SymBitVector;
 
   private:
-    SymBitVectorSignExtend(const SymBitVector& bv, uint16_t size) : bv_(bv), size_(size) {}
+    SymBitVectorSignExtend(const SymBitVectorAbstract * const bv, uint16_t size) : bv_(bv), size_(size) {}
 
   public:
-    SymBitVector::Type type() const { return SIGN_EXTEND; }
+    SymBitVector::Type type() const { return SymBitVector::Type::SIGN_EXTEND; }
 
-    const SymBitVector& bv_;
+    const SymBitVectorAbstract * const bv_;
     const uint16_t size_;
 };
 
@@ -339,7 +353,7 @@ class SymBitVectorSignMod : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return SIGN_MOD; }
+    SymBitVector::Type type() const { return SymBitVector::Type::SIGN_MOD; }
 };
 
 class SymBitVectorSignShiftRight : public SymBitVectorBinop {
@@ -347,30 +361,30 @@ class SymBitVectorSignShiftRight : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return SIGN_SHIFT_RIGHT; }
+    SymBitVector::Type type() const { return SymBitVector::Type::SIGN_SHIFT_RIGHT; }
 };
 
-class SymBitVectorUMinus : public SymBitVector{
+class SymBitVectorUMinus : public SymBitVectorAbstract {
   friend class SymBitVector;
 
   private:
-    SymBitVectorUMinus(const SymBitVector& bv) : bv_(bv) {}
+    SymBitVectorUMinus(const SymBitVectorAbstract * const bv) : bv_(bv) {}
 
   public:
-    SymBitVector::Type type() const { return U_MINUS; }
+    SymBitVector::Type type() const { return SymBitVector::Type::U_MINUS; }
 
-    const SymBitVector& bv_;
+    const SymBitVectorAbstract * const bv_;
 };
 
 
-class SymBitVectorVar : public SymBitVector {
+class SymBitVectorVar : public SymBitVectorAbstract {
   friend class SymBitVector;
 
   private:
     SymBitVectorVar(uint16_t size, const std::string name) : name_(name), size_(size) {}
 
   public:
-    SymBitVector::Type type() const { return VAR; }
+    SymBitVector::Type type() const { return SymBitVector::Type::VAR; }
 
     const std::string name_;
     const uint16_t size_;
@@ -383,21 +397,21 @@ class SymBitVectorXor : public SymBitVectorBinop {
   using SymBitVectorBinop::SymBitVectorBinop;
 
   public:
-    SymBitVector::Type type() const { return XOR; }
+    SymBitVector::Type type() const { return SymBitVector::Type::XOR; }
 };
 
 /** @Deprecated. This class provides compatibility with the legacy validator;
  * one can build Z3 expressions and then put them into the modern bitvector
  * representation.  Once the legacy handlers are all fixed, we can remove this
  * class. */
-class SymBitVectorZ3 : public SymBitVector {
+class SymBitVectorZ3 : public SymBitVectorAbstract {
   friend class SymBitVector;
 
   private:
     SymBitVectorZ3(z3::expr& e) : e_(e) {}
 
   public:
-    SymBitVector::Type type() const { return Z3; }
+    SymBitVector::Type type() const { return SymBitVector::Type::Z3; }
 
     const z3::expr& e_;
 };
