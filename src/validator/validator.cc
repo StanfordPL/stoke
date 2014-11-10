@@ -19,7 +19,7 @@
 #include "src/symstate/bitvector.h"
 
 #include "src/validator/c_interface.h"
-#include "src/validator/handlers.h"
+#include "src/validator/legacy_handlers.h"
 #include "src/validator/validator.h"
 
 using namespace z3;

@@ -1,11 +1,13 @@
-#include "handlers.h"
-#include "switch.h"
+
 #include <sstream>
+
+#include "src/validator/legacy_handlers.h"
+#include "src/validator/switch.h"
+
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-#include "helpers.cc"
 
 #ifdef DEBUG_VALIDATOR
 #define ADD_CONS(s) {cout << "Adding constraint: " << endl << s << endl;}
@@ -14,6 +16,7 @@ using namespace x64asm;
 #endif
 
 
+#include "src/validator/helpers.cc"
 
 //Add with carry. Promote arguments to bitWidth+2 (66 from 64) bits, do the additions, and set the flags.
 //If the destination register is not 64 bit then model the effects on the rest of the parent register of the destination register.

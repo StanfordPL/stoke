@@ -1178,7 +1178,7 @@ lookup_handler_or_error opcode num i =
 
 -- Generates a declaration for an instruction
 validator_decl :: [Instr] -> String
-validator_decl is = concat $ ((("#ifndef SWITCH_H\n#define SWITCH_H\n#include \"handlers.h\"\n#include \"c_interface.h\"\n") : (nub (map render (tail is)))) ++ ("#endif"):[])
+validator_decl is = concat $ ((("#ifndef SWITCH_H\n#define SWITCH_H\n#include \"legacy_handlers.h\"\n#include \"c_interface.h\"\n") : (nub (map render (tail is)))) ++ ("#endif"):[])
   where render i = ("void " ++ (att i) ++ (concat (operand_types i)) ++
                   "Handler(v_data d,  unsigned int bitWidth, unsigned int bitWidth1, " ++ (assm_args i) ++ ");\n")
 

@@ -20,3 +20,26 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   }
 
 }
+
+const SymBitVector& SymState::get_operand(const Operand o) const {
+
+  if(o.is_gp_register()) {
+    auto& r = reinterpret_cast<const R&>(o);
+    return gp[r];
+  }
+
+  if(o.type() == Type::XMM) {
+    auto& xmm = reinterpret_cast<const Xmm&>(o);
+    return sse[xmm][127][0];
+  }
+
+  if(o.type() == Type::YMM) {
+    auto& ymm = reinterpret_cast<const Ymm&>(o);
+    return sse[ymm];
+  }
+
+  if(o.is_immediate()) {
+    auto& imm = reinterpret_cast<const Imm&>(o);
+    return SymBitVector::constant(o.size(), imm);
+  }
+}
