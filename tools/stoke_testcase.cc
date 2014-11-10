@@ -94,26 +94,6 @@ auto& max_memory = ValueArg<uint64_t>::create("max_memory")
     .description("The maximum number of bytes to allocate to stack or heap")
     .default_val(1024);
 
-auto& aux_fxns = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
-		.usage("<path/to/dir>")
-		.description("Directory containing helper functions")
-		.default_val({});
-
-auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file.s>")
-    .description("Source code to generate testcases for")
-    .default_val({"anon", {{RET}}});
-
-auto& h5 = Heading::create("Sandbox options:");
-
-auto& abi_check = FlagArg::create("abi_check")
-		.description("Report SIGSEGV for abi violations");
-
-auto& max_jumps = ValueArg<size_t>::create("max_jumps")
-    .usage("<int>")
-    .description("Maximum jumps before exit due to infinite loop")
-    .default_val(1024);
-
 auto& h6 = Heading::create("File conversion options:");
 
 auto& compress = FlagArg::create("compress")
@@ -128,20 +108,7 @@ auto& in = ValueArg<string>::create("in")
 		.description("Path to testcases file")
 		.default_val("in.tc");
 
-auto& h7 = Heading::create("Random number generator options");
-
-auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
-    .usage("<int>")
-    .description("Seed for random number generator; set to zero for random")
-    .default_val(0);
-
 int auto_gen() {
-  if (seed == 0) {
-    const auto time = system_clock::now().time_since_epoch().count();
-    default_random_engine gen(time);
-    seed.value() = gen();
-  }
-
 	Cfg cfg_t(target.value().code, RegSet::universe(), RegSet::empty());
 
 	Sandbox sb;

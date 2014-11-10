@@ -12,36 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
 #include <iostream>
-#include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/signal/debug_handler.h"
 
-#include "src/args/cpu_states.h"
-#include "src/state/cpu_state.h"
-#include "src/state/cpu_states.h"
+#include "tools/gadgets/seed.h"
+#include "tools/gadgets/testcases.h"
 
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
 
-auto& h1 = Heading::create("Input state");
-
-auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
-    .usage("<path/to/file.tc>")
-    .description("Testcases");
-
-auto& idx = ValueArg<size_t>::create("index")
-    .usage("<int>")
-    .description("Testcase index")
-    .default_val(0);
-
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
+  DebugHandler::install_sigsegv();
+  DebugHandler::install_sigill();
 
-  const auto index = min(testcases.value().size() - 1, idx.value());
-  auto& s1 = testcases.value()[index];
+	SeedGadget seed;
+  TestcaseGadget s1(seed);
 
   cout << "Original state: " << endl;
   cout << endl;

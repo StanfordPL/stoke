@@ -12,80 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cstdlib>
-
-#include <algorithm>
 #include <iostream>
 #include <limits>
-#include <string>
-#include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
-#include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/cpu_states.h"
-#include "src/args/tunit.h"
-#include "src/state/cpu_state.h"
-#include "src/state/cpu_states.h"
-#include "src/sandbox/sandbox.h"
-#include "src/sandbox/state_callback.h"
+#include "tools/args/target.h"
+#include "tools/gadgets/sandbox.h"
+#include "tools/gadgets/seed.h"
+#include "tools/gadgets/target.h"
+#include "tools/gadgets/testcases.h"
 
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
-using namespace x64asm;
 
-auto& h1 = Heading::create("Input program:");
-
-auto& aux_fxns = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
-		.usage("<path/to/dir>")
-		.description("Directory containing helper functions")
-		.default_val({});
-
-auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file.s>")
-    .description("Target code")
-    .default_val({"anon", {{RET}}});
-
-auto& h2 = Heading::create("Testcases:");
-
-auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
-    .usage("<path/to/file.tc>")
-    .description("Testcases");
-
-auto& idx = ValueArg<size_t>::create("index")
-    .usage("<int>")
-    .description("Testcase index")
-    .default_val(numeric_limits<size_t>::max());
-
-auto& h3 = Heading::create("Sandboxing options:");
-
-auto& abi_check = FlagArg::create("abi_check")
-		.description("Report SIGSEGV for abi violations");
-
-auto& max_jumps = ValueArg<size_t>::create("max_jumps")
-    .usage("<int>")
-    .description("Maximum jumps before exit due to infinite loop")
-    .default_val(1024);
-
-auto& h4 = Heading::create("Debugging options:");
-
+auto& dbg = Heading::create("Debug Options:");
 auto& debug = FlagArg::create("debug")
-    .alternate("d")
-    .description("Debug mode, equivalent to --breakpoint 0");
-
+  .alternate("d")
+  .description("Debug mode, equivalent to --breakpoint 0");
 auto& breakpoint = ValueArg<size_t>::create("breakpoint")
-    .usage("<line>")
-    .description("Set breakpoint")
-    .default_val(numeric_limits<size_t>::max());
+  .usage("<line>")
+  .description("Set breakpoint")
+  .default_val(numeric_limits<size_t>::max());
 
 void callback(const StateCallbackData& data, void* arg) {
   auto stepping = (bool*) arg;
 
   cout << data.state << endl;
   cout << endl;
-  cout << "Current Instruction: " << target.value().code[data.line] << endl;
+  cout << "Current Instruction: " << target_arg.value().code[data.line] << endl;
   cout << endl;
 
   if (data.line != breakpoint && *stepping == false) {
@@ -100,8 +57,8 @@ void callback(const StateCallbackData& data, void* arg) {
 
     switch (key) {
       case 'l':
-        for (size_t i = 0, ie = target.value().code.size(); i < ie; ++i) {
-          cout << (i == data.line ? "-> " : "   ") << target.value().code[i] << endl;
+        for (size_t i = 0, ie = target_arg.value().code.size(); i < ie; ++i) {
+          cout << (i == data.line ? "-> " : "   ") << target_arg.value().code[i] << endl;
         }
         cout << endl;
         break;
@@ -128,36 +85,30 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
+	if (testcases_arg.value().empty()) {
+		cout << "No testcases provided." << endl;
+		return 0;
+	}
+
   if (debug) {
-		if (target.value().code[0].is_label_defn()) {
+		if (target_arg.value().code[0].is_label_defn()) {
 	    breakpoint.value() = 1;
 		} else {
 			breakpoint.value() = 0;
 		}
   }
 
-  Sandbox sb;
-  sb.set_abi_check(abi_check)
-		.set_max_jumps(max_jumps);
-	for (const auto& fxn : aux_fxns.value()) {
-		sb.insert_function(Cfg(fxn.code, RegSet::empty(), RegSet::empty()));
-	}
-
-	if (testcases.value().empty()) {
-		cout << "No testcases provided." << endl;
-		return 0;
-	}
-
-  const auto index = min(testcases.value().size() - 1, idx.value());
-  const auto input = testcases.value()[index];
-  sb.insert_input(input);
+	TargetGadget target;
+	SeedGadget seed;
+	TestcaseGadget tcs(seed);
+	SandboxGadget sb({tc});
 
   auto stepping = false;
   for (size_t i = 0, ie = target.value().code.size(); i < ie; ++i) {
     sb.insert_before(i, callback, &stepping);
   }
 
-  sb.run({target.value().code, RegSet::empty(), RegSet::empty()});
+  sb.run(target);
 
   const auto result = *(sb.result_begin());
   if (result.code != ErrorCode::NORMAL) {

@@ -19,75 +19,50 @@
 #include <string>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/system/terminal.h"
-#include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/reg_set.h"
-#include "src/args/tunit.h"
-#include "src/cfg/cfg.h"
 #include "src/cfg/dot_writer.h"
+#include "tools/gadgets/target.h"
 
 using namespace cpputil;
-using namespace std;
 using namespace stoke;
-using namespace x64asm;
 
-auto& h1 = Heading::create("Input program:");
-
-auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file.s>")
-    .description("Target code")
-    .default_val({"anon", {{RET}}});
-
-auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
-    .usage("{ %rax %rsp ... }")
-    .description("Registers defined on entry")
-    .default_val(RegSet::linux_call_parameters());
-
-auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
-    .usage("{ %rax %rsp ... }")
-    .description("Registers live on exit")
-    .default_val(RegSet::linux_call_return());
-
-auto& h2 = Heading::create("Content options:");
-
+auto& content = Heading::create("Content options:");
 auto& dib = FlagArg::create("dib")
-    .alternate("def_in_block")
-    .description("Display def in values for basic blocks");
-
+  .alternate("def_in_block")
+  .description("Display def in values for basic blocks");
 auto& dii = FlagArg::create("dii")
-    .alternate("def_in_instr")
-    .description("Display def in values for instructions");
-
+  .alternate("def_in_instr")
+  .description("Display def in values for instructions");
 auto& lob = FlagArg::create("lob")
-    .alternate("live_out_block")
-    .description("Display live out values for basic blocks");
-
+  .alternate("live_out_block")
+  .description("Display live out values for basic blocks");
 auto& dom = FlagArg::create("dom")
-    .alternate("dominators")
-    .description("Display dominators");
+  .alternate("dominators")
+  .description("Display dominators");
 
-auto& h3 = Heading::create("I/O options:");
-
+auto& io = Heading::create("I/O options:");
 auto& out = ValueArg<string>::create("o")
-    .alternate("out")
-    .usage("<path/to/file.pdf>")
-    .description("Path to write cfg to")
-    .default_val("./cfg.pdf");
-
+  .alternate("out")
+  .usage("<path/to/file.pdf>")
+  .description("Path to write cfg to")
+  .default_val("./cfg.pdf");
 auto& view = FlagArg::create("view")
-    .alternate("v")
-    .description("View cfg immediately");
+  .alternate("v")
+  .description("View cfg immediately");
 
 void to_dot() {
   ofstream ofs(string("/tmp/stoke.") + getenv("USER") + ".dot");
 
+	TargetGadget target;
+
   DotWriter dw;
   dw.set_def_in(dib, dii)
-  .set_live_out(lob)
-  .set_dom(dom);
+  	.set_live_out(lob)
+  	.set_dom(dom);
 
-  dw(ofs, {target.value().code, def_in, live_out});
+  dw(ofs, target);
 }
 
 bool to_pdf() {
@@ -110,6 +85,8 @@ bool rm_pdf() {
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
+  DebugHandler::install_sigsegv();
+  DebugHandler::install_sigill();
 
   to_dot();
   if (!to_pdf()) {

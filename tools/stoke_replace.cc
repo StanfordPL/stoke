@@ -19,37 +19,31 @@
 #include <string>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/system/terminal.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/args/tunit.h"
 #include "src/disassembler/disassembler.h"
 #include "src/disassembler/function_callback.h"
+#include "tools/args/rewrite.h"
 
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-auto& h1 = Heading::create("I/O options:");
-
+auto& io = Heading::create("I/O options:");
 auto& in = ValueArg<string>::create("i")
-    .alternate("in")
-    .usage("<path/to/bin>")
-    .description("Binary file to extract code from")
-    .default_val("./a.out");
-
-auto& rewrite = FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
-    .usage("<path/to/file.s>")
-    .description("Function to replace in input binary")
-    .default_val({"anon", {{RET}}});
-
+  .alternate("in")
+  .usage("<path/to/bin>")
+  .description("Binary file to extract code from")
+  .default_val("./a.out");
 auto& out = ValueArg<string>::create("o")
-    .alternate("out")
-    .usage("<path/to/dir>")
-    .description("File to write changes to; default is to overwrite")
-    .default_val("");
-
+  .alternate("out")
+  .usage("<path/to/dir>")
+  .description("File to write changes to; default is to overwrite")
+  .default_val("");
 
 map<string, uint64_t> section_offsets;
 uint64_t fxn_offset;
@@ -58,7 +52,7 @@ bool found;
 
 void callback(const FunctionCallbackData& data, void* arg) {
 	// Check if we've found the function
-	if(data.tunit.name == rewrite.value().name) {
+	if(data.tunit.name == rewrite_arg.value().name) {
 		found = true;
 		fxn_offset = data.offset;
 		/* This is an underapproximation; we can do better. */
@@ -69,7 +63,7 @@ void callback(const FunctionCallbackData& data, void* arg) {
 bool replace(uint64_t offset, size_t size) {
 	// Assemble the new function
 	Assembler assm;
-	auto fxn = assm.assemble(rewrite.value().code);
+	auto fxn = assm.assemble(rewrite_arg.value().code);
 
 	// Fail if the new function is larger than the old
 	if (fxn.size() > size) {
@@ -98,6 +92,8 @@ bool replace(uint64_t offset, size_t size) {
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
+  DebugHandler::install_sigsegv();
+  DebugHandler::install_sigill();
 
   Disassembler d;
 	d.set_function_callback(callback, nullptr);
@@ -109,7 +105,7 @@ int main(int argc, char** argv) {
     cerr << "disassemble: " << d.get_error() << endl;
     return 1;
   } else if (!found) {
-    cerr << "Couldn't find function " << rewrite.value().name << " in the binary." << endl;
+    cerr << "Couldn't find function " << rewrite_arg.value().name << " in the binary." << endl;
 		return 1;
   } else if (!replace(fxn_offset, fxn_size)) {
 		cerr << "Unable to replace function text!" << endl;

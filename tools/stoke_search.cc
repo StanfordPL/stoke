@@ -58,39 +58,13 @@
 #include "src/verifier/strategy.h"
 #include "src/verifier/verifier.h"
 
+#include "tools/gadgets/seed.h"
+
 using namespace cpputil;
 using namespace std;
 using namespace std::chrono;
 using namespace stoke;
 using namespace x64asm;
-
-auto& h1 = Heading::create("Input programs:");
-
-auto& aux_fxns = FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
-		.usage("<path/to/dir>")
-		.description("Directory containing helper functions")
-		.default_val({});
-
-auto& target = FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-    .usage("<path/to/file.s>")
-    .description("Target")
-    .default_val({"anon", {{RET}}});
-
-auto& def_in = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
-    .usage("{ %rax %rsp ... }")
-    .description("Registers defined on entry")
-    .default_val(RegSet::linux_call_preserved());
-
-auto& live_out = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
-    .usage("{ %rax %rsp ... }")
-    .description("Registers live on exit")
-    .default_val(RegSet::linux_call_return());
-
-auto& stack_out = FlagArg::create("stack_out")
-    .description("Is stack defined on exit?");
-
-auto& heap_out = FlagArg::create("heap_out")
-    .description("Is heap defined on exit?");
 
 auto& h2 = Heading::create("Output options:");
 
@@ -99,136 +73,6 @@ auto& out = ValueArg<string>::create("out")
     .usage("<path/to/file.s>")
     .description("File to write successful results to")
     .default_val("result.s");
-
-auto& h3 = Heading::create("Testcase options:");
-
-auto& testcases = FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
-    .usage("<path/to/file.tc>")
-    .description("Testcases");
-
-auto& shuf_tc = FlagArg::create("shuffle_testcases")
-		.description("Shuffle testcase order");
-
-auto& training_set =
-  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("training_set")
-      .usage("{ 0 1 ... 9 }")
-      .description("Subset of testcase indices to use for search")
-      .default_val({0});
-
-auto& test_set =
-  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("test_set")
-      .usage("{ 0 1 ... 9 }")
-      .description("Subset of testcase indices to use for verification strategies that use testcases")
-      .default_val({0});
-
-auto& h4 = Heading::create("Correctness options:");
-
-auto& distance = ValueArg<Distance, DistanceReader, DistanceWriter>::create("distance")
-    .usage("(hamming|ulp|extension)")
-    .description("Metric for measuring distance between states")
-    .default_val(Distance::HAMMING);
-
-auto& reduction = ValueArg<Reduction, ReductionReader, ReductionWriter>::create("reduction")
-    .usage("(max|sum|extension)")
-    .description("Reduction method")
-    .default_val(Reduction::SUM);
-
-auto& sse_width = ValueArg<size_t>::create("sse_width")
-    .usage("(1|2|4|8)")
-    .description("Number of bytes in sse elements")
-    .default_val(8);
-
-auto& sse_count = ValueArg<size_t>::create("sse_count")
-    .usage("<int>")
-    .description("Number of values in sse registers")
-    .default_val(1);
-
-auto& relax_reg = FlagArg::create("relax_reg")
-    .description("Allow correct values in incorrect register locations");
-
-auto& relax_mem = FlagArg::create("relax_mem")
-    .description("Allow correct values in incorrect memory locations");
-
-auto& misalign_penalty = ValueArg<Cost>::create("misalign_penalty")
-    .usage("<int>")
-    .description("Penalty for correct values in incorrect locations")
-    .default_val(0);
-
-auto& sig_penalty = ValueArg<Cost>::create("sig_penalty")
-    .usage("<int>")
-    .description("Penalty for incorrect signal behavior")
-    .default_val(0);
-
-auto& min_ulp = ValueArg<Cost>::create("min_ulp")
-    .usage("<int>")
-    .description("Minimum ULP value to record")
-    .default_val(0);
-
-auto& k = ValueArg<uint32_t>::create("k")
-    .usage("<int>")
-    .description("Multiplier for the correctness term")
-    .default_val(1);
-
-auto& h5 = Heading::create("Performance options:");
-
-auto& perf = ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
-    .usage("(none|size|latency|extension)")
-    .description("Performance definition")
-    .default_val(PerformanceTerm::NONE);
-
-auto& nesting_penalty = ValueArg<Cost>::create("nesting_penalty")
-    .usage("<int>")
-    .description("Latency multiplier for nested code")
-    .default_val(1);
-
-auto& h6 = Heading::create("Sandbox options:");
-
-auto& abi_check = FlagArg::create("abi_check")
-		.description("Report SIGSEGV for abi violations");
-
-auto& max_jumps = ValueArg<size_t>::create("max_jumps")
-    .usage("<int>")
-    .description("Maximum jumps before exit due to infinite loop")
-    .default_val(1024);
-
-auto& h7 = Heading::create("Transform options:");
-
-auto& flags = ValueArg<FlagSet, FlagSetReader, FlagSetWriter>::create("cpu_flags")
-    .usage("{ flag1 flag2 ... flagn }")
-    .description("Propose instruction and opcode moves that use this CPU ID flag set")
-    .default_val(FlagSet::empty());
-
-auto& opc_blacklist = ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("opc_blacklist")
-    .usage("{ opcode1 opcode2 ... opcoden; e.g., xorl or xorl_r32_r32 }")
-    .description("Don't proprose any instructions from this set")
-    .default_val({});
-
-auto& nop_percent = ValueArg<size_t>::create("nop_percent")
-    .usage("<percent>")
-    .description("Percent of instruction moves that produce nops")
-    .default_val(0);
-
-auto& mem_read = FlagArg::create("mem_read")
-    .description("Propose instruction and opcode moves that read memory?");
-
-auto& mem_write = FlagArg::create("mem_write")
-    .description("Propose instruction and opcode moves that write memory?");
-
-auto& propose_call = FlagArg::create("propose_call")
-    .description("Propose instruction and opcode moves that call functions?");
-
-auto& callee_save = FlagArg::create("callee_save")
-		.alternate("propose_callee_save")
-    .description("Allow transforms to override callee-saved registers.");
-
-auto& preserve_regs = ValueArg<RegSet, RegSetReader, RegSetWriter>::create("preserve_regs")
-    .usage("{ %rax %rsp ... }")
-    .description("Prevent STOKE from proposing instructions that modify these registers")
-    .default_val(RegSet::linux_call_preserved());
-
-auto& imms = ValueArg<vector<uint64_t>, SpanReader<vector<uint64_t>, Range<uint64_t, 0ull, (uint64_t)-1>>>::create("immediates")
-		.usage("{ imm1 imm2 ... }")
-		.description("Additional immediates to propose as operands");
 
 auto& h8 = Heading::create("Proposal distribution options:");
 
@@ -335,20 +179,6 @@ auto& best_correct = FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_corr
     .usage("<path/to/file.s>")
     .description("Best correct rewrite; used with --init previous")
     .default_val({"best_correct", {{RET}}});
-
-auto& h10 = Heading::create("Verification options:");
-
-auto& strategy = ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
-    .usage("(none|hold_out|extension)")
-    .description("Verification strategy")
-    .default_val(Strategy::NONE);
-
-auto& h11 = Heading::create("Random number generator options");
-
-auto& seed = ValueArg<default_random_engine::result_type>::create("seed")
-    .usage("<int>")
-    .description("Seed for random number generator; set to zero for random")
-    .default_val(0);
 
 void sep(ostream& os) {
   for (size_t i = 0; i < 80; ++i) {
@@ -494,12 +324,7 @@ int main(int argc, char** argv) {
 		preserve_regs.value() = RegSet::empty();
 	}
 
-  if (seed == 0) {
-    const auto time = system_clock::now().time_since_epoch().count();
-    default_random_engine gen(time);
-    seed.value() = gen();
-  }
-
+	SeedGadget seed;
   Cfg cfg_t(target.value().code, def_in, live_out);
 
 	if (shuf_tc) {

@@ -62,7 +62,20 @@ OBJ=\
 	\
 	src/tunit/tunit.o \
 	\
-	src/verifier/verifier.o
+	src/verifier/verifier.o \
+	\
+	tools/args/benchmark.o \
+	tools/args/correctness.o \
+	tools/args/cost.o \
+	tools/args/move.o \
+	tools/args/performance.o \
+	tools/args/rewrite.o \
+	tools/args/sandbox.o \
+	tools/args/seed.o \
+	tools/args/target.o \
+	tools/args/testcases.o \
+	tools/args/transforms.o \
+	tools/args/verifier.o
 
 BIN=\
 	bin/stoke_extract \
@@ -144,6 +157,11 @@ src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
 ##### BINARY TARGETS
+
+tools/args/%.o: tools/args/%.cc tools/args/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+tools/gadgets/%.o: tools/gadgets/%.cc tools/gadgets/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
 bin/%: tools/%.cc $(OBJ) 
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  

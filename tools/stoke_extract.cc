@@ -14,34 +14,31 @@
 
 #include <cctype>
 #include <cstdlib>
-
 #include <fstream>
 #include <iostream>
 #include <string>
 
+#include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/signal/debug_handler.h"
+
 #include "src/disassembler/disassembler.h"
 #include "src/disassembler/function_callback.h"
-
-#include "src/ext/cpputil/include/command_line/command_line.h"
 
 using namespace cpputil;
 using namespace stoke;
 using namespace std;
 
-auto& h1 = Heading::create("I/O options:");
-
+auto& io = Heading::create("I/O options:");
 auto& in = ValueArg<string>::create("i")
-    .alternate("in")
-    .usage("<path/to/bin>")
-    .description("Binary file to extract code from")
-    .default_val("./a.out");
-
+  .alternate("in")
+  .usage("<path/to/bin>")
+  .description("Binary file to extract code from")
+  .default_val("./a.out");
 auto& out = ValueArg<string>::create("o")
-    .alternate("out")
-    .usage("<path/to/dir>")
-    .description("Directory to write results to")
-    .default_val("out");
-
+  .alternate("out")
+  .usage("<path/to/dir>")
+  .description("Directory to write results to")
+  .default_val("out");
 
 bool make_dir() {
   /* The permission is guarded by user's umask, which is why
@@ -68,6 +65,8 @@ void callback(const FunctionCallbackData& data, void* arg) {
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
+  DebugHandler::install_sigsegv();
+  DebugHandler::install_sigill();
 
   if (!make_dir()) {
     cout << "Unable to create output directory " << out.value() << "!" << endl;
