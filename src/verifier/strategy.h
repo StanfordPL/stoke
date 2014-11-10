@@ -21,8 +21,8 @@ enum class Strategy {
   NONE,
   HOLD_OUT,
 
-	// Add user-defined extensions here ...
-	EXTENSION
+  // Add user-defined extensions here ...
+  EXTENSION
 };
 
 } // namespace stoke

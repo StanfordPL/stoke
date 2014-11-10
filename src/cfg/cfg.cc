@@ -33,7 +33,7 @@ Cfg::loc_type Cfg::get_loc(size_t idx) const {
 }
 
 bool Cfg::performs_undef_read() const {
-	// No need to check the entry; this will consider the exit, but it will be a nop.
+  // No need to check the entry; this will consider the exit, but it will be a nop.
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
@@ -49,8 +49,9 @@ bool Cfg::performs_undef_read() const {
   // Check that the live outs are all defined
   // i.e. every life_out is also def in at the end
   const auto di_end = def_ins_[blocks_[get_exit()]];
-  if((di_end & fxn_live_outs_) != fxn_live_outs_)
+  if ((di_end & fxn_live_outs_) != fxn_live_outs_) {
     return true;
+  }
 
   return false;
 }
@@ -58,17 +59,17 @@ bool Cfg::performs_undef_read() const {
 void Cfg::forward_topo_sort() {
   block_sort_.clear();
 
-	remaining_preds_.resize(num_blocks());
-	for ( size_t i = get_entry(), ie = get_exit(); i <= ie; ++i ) {
-		remaining_preds_[i] = 0;
-		for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p ) {
-			if (is_reachable(*p)) {
-				remaining_preds_[i]++;
-			}
-		}
-	}
+  remaining_preds_.resize(num_blocks());
+  for (size_t i = get_entry(), ie = get_exit(); i <= ie; ++i) {
+    remaining_preds_[i] = 0;
+    for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p) {
+      if (is_reachable(*p)) {
+        remaining_preds_[i]++;
+      }
+    }
+  }
 
-	block_sort_.push_back(get_entry());
+  block_sort_.push_back(get_entry());
   for (size_t i = 0; i < block_sort_.size(); ++i) {
     const auto next = block_sort_[i];
     for (auto s = succ_begin(next), se = succ_end(next); s != se; ++s) {
@@ -101,7 +102,8 @@ void Cfg::recompute_blocks() {
 
   // Add sentinels for entry and exit blocks along with boundaries
   blocks_.push_back(0);
-  for (auto i = boundaries_.set_bit_index_begin(), ie = boundaries_.set_bit_index_end(); i != ie; ++i) {
+  for (auto i = boundaries_.set_bit_index_begin(), ie = boundaries_.set_bit_index_end(); i != ie;
+       ++i) {
     blocks_.push_back(*i);
   }
   blocks_.push_back(code_.size());
@@ -168,20 +170,20 @@ void Cfg::recompute_reachable() {
   reachable_.resize_for_bits(num_blocks());
   reachable_.reset();
 
-	work_list_.clear();
+  work_list_.clear();
 
- 	work_list_.push_back(get_entry());
-	reachable_[get_entry()] = true;
+  work_list_.push_back(get_entry());
+  reachable_[get_entry()] = true;
 
-	for ( size_t i = 0; i < work_list_.size(); ++i ) {
-		const auto next = work_list_[i];
-		for ( auto s = succ_begin(next), se = succ_end(next); s != se; ++s ) {
-			if ( !reachable_[*s] ) {
-				reachable_[*s] = true;
-				work_list_.push_back(*s);
-			}
-		}
-	}
+  for (size_t i = 0; i < work_list_.size(); ++i) {
+    const auto next = work_list_[i];
+    for (auto s = succ_begin(next), se = succ_end(next); s != se; ++s) {
+      if (!reachable_[*s]) {
+        reachable_[*s] = true;
+        work_list_.push_back(*s);
+      }
+    }
+  }
 }
 
 void Cfg::recompute_dominators() {
@@ -197,7 +199,7 @@ void Cfg::recompute_dominators() {
   doms_[get_entry()][get_entry()] = true;
 
   // Initial conditions
-  for (size_t i = get_entry()+1, ie = get_exit(); i <= ie; ++i) {
+  for (size_t i = get_entry() + 1, ie = get_exit(); i <= ie; ++i) {
     doms_[i] = universe;
   }
 
@@ -225,7 +227,7 @@ void Cfg::recompute_dominators() {
 void Cfg::recompute_back_edges() {
   loops_.clear();
 
-	// No sense in checking the entry which can't ever be in a loop
+  // No sense in checking the entry which can't ever be in a loop
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (auto s = succ_begin(*i), se = succ_end(*i); s != se; ++s) {
       if (!is_exit(*s) && dom(*s, *i)) {
@@ -272,7 +274,7 @@ void Cfg::recompute_defs_gen_kill() {
   gen_.assign(num_blocks(), RegSet::empty());
   kill_.assign(num_blocks(), RegSet::empty());
 
-	// No sense in checking the entry; we'll consider the exit, but it'll be a nop.
+  // No sense in checking the entry; we'll consider the exit, but it'll be a nop.
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
       gen_[*i] |= j->must_write_set();
@@ -286,11 +288,11 @@ void Cfg::recompute_defs_gen_kill() {
 void Cfg::recompute_defs_loops() {
   recompute_defs_gen_kill();
 
-	// Need a little extra room for def_ins_[get_exit()]
-	// You'll notice that this function uses blocks_[...] instead of get_index(...)
-	// This is to subvert the assertion we'd blow for trying to call get_index(get_exit(),0)
+  // Need a little extra room for def_ins_[get_exit()]
+  // You'll notice that this function uses blocks_[...] instead of get_index(...)
+  // This is to subvert the assertion we'd blow for trying to call get_index(get_exit(),0)
 
-  def_ins_.resize(code_.size()+1, RegSet::empty());
+  def_ins_.resize(code_.size() + 1, RegSet::empty());
   def_outs_.resize(num_blocks(), RegSet::empty());
 
   // Boundary conditions; MXCSR[rc] is always defined
@@ -336,20 +338,20 @@ void Cfg::recompute_defs_loops() {
 }
 
 void Cfg::recompute_defs_loop_free() {
-	// Need a little extra room for def_ins_[get_exit()]
-	// You'll notice that this function uses blocks_[...] instead of get_index(...)
-	// This is to subvert the assertion we'd blow for trying to call get_index(get_exit(),0)
+  // Need a little extra room for def_ins_[get_exit()]
+  // You'll notice that this function uses blocks_[...] instead of get_index(...)
+  // This is to subvert the assertion we'd blow for trying to call get_index(get_exit(),0)
 
-  def_ins_.resize(code_.size()+1, RegSet::empty());
+  def_ins_.resize(code_.size() + 1, RegSet::empty());
   def_outs_.resize(num_blocks(), RegSet::empty());
 
   // Boundary conditions ; MXCSR[rc] is always defined
   def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
 
   // Iterate only once in topological order (skip entry)
-	forward_topo_sort();
+  forward_topo_sort();
   for (size_t i = 1, ie = block_sort_.size(); i < ie; ++i) {
-		const auto b = block_sort_[i];
+    const auto b = block_sort_[i];
 
     // Initial conditions
     def_ins_[blocks_[b]] = RegSet::universe();
@@ -371,146 +373,150 @@ void Cfg::recompute_defs_loop_free() {
       def_ins_[idx] -= instr.maybe_undef_set();
     }
 
-		// Summarize block
-		if (num_instrs(b) == 0) {
-			def_outs_[b] = def_ins_[blocks_[b]];
-		} else {
-			const auto idx = blocks_[b] + num_instrs(b) - 1;
-			def_outs_[i] = def_ins_[idx];
+    // Summarize block
+    if (num_instrs(b) == 0) {
+      def_outs_[b] = def_ins_[blocks_[b]];
+    } else {
+      const auto idx = blocks_[b] + num_instrs(b) - 1;
+      def_outs_[i] = def_ins_[idx];
 
-			const auto& instr = code_[idx];
-			def_outs_[b] |= instr.must_write_set();
-			def_outs_[b] -= instr.maybe_undef_set();
-		}
+      const auto& instr = code_[idx];
+      def_outs_[b] |= instr.must_write_set();
+      def_outs_[b] -= instr.maybe_undef_set();
+    }
   }
 }
 
 void Cfg::recompute_liveness() {
-    recompute_liveness_use_kill();
+  recompute_liveness_use_kill();
 
-    // IMPORTANT NOTE: both vectors indexed by code size
-    live_ins_.assign(code_.size()+1, RegSet::empty());
-    live_outs_.assign(code_.size()+1, RegSet::empty());
+  // IMPORTANT NOTE: both vectors indexed by code size
+  live_ins_.assign(code_.size() + 1, RegSet::empty());
+  live_outs_.assign(code_.size() + 1, RegSet::empty());
 
-    // If we ever encounter an indirect jump, we need to assume that everything
-    // which we ever use (i.e. read) becomes live-out at that point.  So, let's
-    // get the set of stuff we *ever* read.
-    RegSet ever_read = fxn_live_outs_;
+  // If we ever encounter an indirect jump, we need to assume that everything
+  // which we ever use (i.e. read) becomes live-out at that point.  So, let's
+  // get the set of stuff we *ever* read.
+  RegSet ever_read = fxn_live_outs_;
 
-    // Note: maybe_read_set doesn't work for call, which
-    // is why I need this loop.
-    for(auto it : code_) {
-      if(it.is_call()) {
-        ever_read |= RegSet::linux_call_parameters();
-      } else if (it.is_any_call()) {
-        // we don't support this.
-        // abort is a mean, evil way.
-        std::cerr << "Instruction " << it << " not supported by liveness."
-                  << " @ " << __FILE__ << ":" << __LINE__ << endl;
-        exit(1);
-      } else {
-        ever_read |= it.maybe_read_set();
-      }
-
+  // Note: maybe_read_set doesn't work for call, which
+  // is why I need this loop.
+  for (auto it : code_) {
+    if (it.is_call()) {
+      ever_read |= RegSet::linux_call_parameters();
+    } else if (it.is_any_call()) {
+      // we don't support this.
+      // abort is a mean, evil way.
+      std::cerr << "Instruction " << it << " not supported by liveness."
+                << " @ " << __FILE__ << ":" << __LINE__ << endl;
+      exit(1);
+    } else {
+      ever_read |= it.maybe_read_set();
     }
 
+  }
 
-    // Initial Conditions
+
+  // Initial Conditions
+  for (auto i = reachable_begin(), ie = reachable_end();
+       i != ie; ++i) {
+
+    if (num_instrs(*i) == 0) {
+      continue;
+    }
+
+    // Set the live-in of each block to the empty set.
+    live_ins_[blocks_[*i]] = RegSet::empty();
+
+    // Set the live-out of each block to the empty set.  this requires
+    // looking up the index of the last instruction in the block.  Except if
+    // we have an indirect jump, in which case we need to add in everything
+    // (see the note above)
+    size_t last_instr_index = blocks_[*i] + num_instrs(*i) - 1;
+    Instruction last_instr = code_[last_instr_index];
+    if (last_instr.is_any_indirect_jump()) {
+      live_outs_[last_instr_index] = ever_read;
+    } else {
+      live_outs_[last_instr_index] = RegSet::empty();
+    }
+  }
+  live_ins_[blocks_[get_exit()]] = fxn_live_outs_;
+
+  // Fixedpoint algorithm
+  for (auto changed = true; changed;) {
+    changed = false;
+
     for (auto i = reachable_begin(), ie = reachable_end();
-          i != ie; ++i) {
-
-      if(num_instrs(*i) == 0)
+         i != ie; ++i) {
+      //iterate through all blocks except the exit
+      if (num_instrs(*i) == 0) {
         continue;
+      }
 
-      // Set the live-in of each block to the empty set.
-      live_ins_[blocks_[*i]] = RegSet::empty();
-
-      // Set the live-out of each block to the empty set.  this requires
-      // looking up the index of the last instruction in the block.  Except if
-      // we have an indirect jump, in which case we need to add in everything
-      // (see the note above)
-      size_t last_instr_index = blocks_[*i] + num_instrs(*i)-1;
+      // Meet operator.  Starting with the empty-set, union in the live-ins
+      // from the first statement of every successor block.  Like before, we
+      // need to check for indirect jumps here to see if we need to add in
+      // all the registers ever read.
+      size_t last_instr_index = blocks_[*i] + num_instrs(*i) - 1;
       Instruction last_instr = code_[last_instr_index];
-      if(last_instr.is_any_indirect_jump()) {
+      if (last_instr.is_any_indirect_jump()) {
         live_outs_[last_instr_index] = ever_read;
       } else {
         live_outs_[last_instr_index] = RegSet::empty();
       }
-    }
-    live_ins_[blocks_[get_exit()]] = fxn_live_outs_;
 
-    // Fixedpoint algorithm
-    for (auto changed = true; changed;) {
-      changed = false;
-
-      for (auto i = reachable_begin(), ie = reachable_end();
-            i != ie; ++i) {
-        //iterate through all blocks except the exit
-        if (num_instrs(*i) == 0)
-          continue;
-
-        // Meet operator.  Starting with the empty-set, union in the live-ins
-        // from the first statement of every successor block.  Like before, we
-        // need to check for indirect jumps here to see if we need to add in
-        // all the registers ever read.
-        size_t last_instr_index = blocks_[*i] + num_instrs(*i) - 1;
-        Instruction last_instr = code_[last_instr_index];
-        if(last_instr.is_any_indirect_jump())
-          live_outs_[last_instr_index] = ever_read;
-        else
-          live_outs_[last_instr_index] = RegSet::empty();
-
-        for (auto s = succ_begin(*i), si = succ_end(*i); s != si; ++s) {
-          if (is_reachable(*s)) {
-            live_outs_[last_instr_index] |= live_ins_[blocks_[*s]];
-          }
+      for (auto s = succ_begin(*i), si = succ_end(*i); s != si; ++s) {
+        if (is_reachable(*s)) {
+          live_outs_[last_instr_index] |= live_ins_[blocks_[*s]];
         }
-
-        // Transfer function.
-        // Take the live outs at the end of the block, remove the 
-        // kill set, and union in the use set.
-        const auto new_in = 
-          (live_outs_[blocks_[*i]+num_instrs(*i)-1] - liveness_kill_[*i]) | 
-            liveness_use_[*i];
-
-        changed |= live_ins_[blocks_[*i]] != new_in;
-#ifdef DEBUG_CFG_LIVENESS
-        if (changed) {
-          cout << "block " << *i << " from " << live_ins_[blocks_[*i]] << " --> " << new_in << endl;
-          cout << "   " << "live out: " << live_outs_[blocks_[*i]+ num_instrs(*i)-1] << endl;
-          cout << "   " << "kill: " << liveness_kill_[*i] << endl;
-          cout << "   " << "use:  " << liveness_use_[*i] << endl;
-        }
-#endif
-        live_ins_[blocks_[*i]] = new_in;
       }
-    }
 
-    // Compute dataflow values for each instruction
-    for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-      //iterate through all blocks w/ at least 2 instructions
-      if(num_instrs(*i) < 2)
-        continue;
+      // Transfer function.
+      // Take the live outs at the end of the block, remove the
+      // kill set, and union in the use set.
+      const auto new_in =
+        (live_outs_[blocks_[*i] + num_instrs(*i) - 1] - liveness_kill_[*i]) |
+        liveness_use_[*i];
 
-      // Go from the second-to-last instruction to the first
-      // Update the live outs for each 
-      for (int j = num_instrs(*i)-2; j >= 0; --j) {
-        const auto idx = blocks_[*i] + j;
-        live_outs_[idx] = live_outs_[idx + 1];
-
-        const auto& instr = code_[idx + 1];
-        if(instr.is_call()) {
-          live_outs_[idx] -= RegSet::linux_call_scratch();
-          live_outs_[idx] |= RegSet::linux_call_parameters();
-        } else {
-          live_outs_[idx] -= instr.must_write_set();
-          live_outs_[idx] -= instr.must_undef_set();
-          live_outs_[idx] |= instr.maybe_read_set();
-        }
-
-        live_ins_[idx+1] = live_outs_[idx];
+      changed |= live_ins_[blocks_[*i]] != new_in;
+      #ifdef DEBUG_CFG_LIVENESS
+      if (changed) {
+        cout << "block " << *i << " from " << live_ins_[blocks_[*i]] << " --> " << new_in << endl;
+        cout << "   " << "live out: " << live_outs_[blocks_[*i] + num_instrs(*i) - 1] << endl;
+        cout << "   " << "kill: " << liveness_kill_[*i] << endl;
+        cout << "   " << "use:  " << liveness_use_[*i] << endl;
       }
+      #endif
+      live_ins_[blocks_[*i]] = new_in;
     }
+  }
+
+  // Compute dataflow values for each instruction
+  for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+    //iterate through all blocks w/ at least 2 instructions
+    if (num_instrs(*i) < 2) {
+      continue;
+    }
+
+    // Go from the second-to-last instruction to the first
+    // Update the live outs for each
+    for (int j = num_instrs(*i) - 2; j >= 0; --j) {
+      const auto idx = blocks_[*i] + j;
+      live_outs_[idx] = live_outs_[idx + 1];
+
+      const auto& instr = code_[idx + 1];
+      if (instr.is_call()) {
+        live_outs_[idx] -= RegSet::linux_call_scratch();
+        live_outs_[idx] |= RegSet::linux_call_parameters();
+      } else {
+        live_outs_[idx] -= instr.must_write_set();
+        live_outs_[idx] -= instr.must_undef_set();
+        live_outs_[idx] |= instr.maybe_read_set();
+      }
+
+      live_ins_[idx + 1] = live_outs_[idx];
+    }
+  }
 
 }
 
@@ -519,20 +525,20 @@ void Cfg::recompute_liveness_use_kill() {
   liveness_use_.assign(num_blocks(), RegSet::empty());
   liveness_kill_.assign(num_blocks(), RegSet::empty());
 
-	// No sense in checking the entry; we'll consider the exit, but it'll be a nop.
+  // No sense in checking the entry; we'll consider the exit, but it'll be a nop.
   for (auto i = reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
 
-/*      if(j->is_call()) {
-        liveness_use_[*i] |= (RegSet::linux_call_parameters() - liveness_kill_[*i]);
-        liveness_kill_[*i] |= RegSet::linux_call_scratch();
+      /*      if(j->is_call()) {
+              liveness_use_[*i] |= (RegSet::linux_call_parameters() - liveness_kill_[*i]);
+              liveness_kill_[*i] |= RegSet::linux_call_scratch();
 
-      } else {*/
-        liveness_use_[*i] |= (j->maybe_read_set() - liveness_kill_[*i]);
+            } else {*/
+      liveness_use_[*i] |= (j->maybe_read_set() - liveness_kill_[*i]);
 
-        liveness_kill_[*i] |= j->must_undef_set();
-        liveness_kill_[*i] |= j->must_write_set();
-//      }
+      liveness_kill_[*i] |= j->must_undef_set();
+      liveness_kill_[*i] |= j->must_write_set();
+      //      }
     }
   }
 }

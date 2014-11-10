@@ -10,46 +10,47 @@
 
 class CostFunctionTest : public ::testing::Test {
 
-  public:
-    CostFunctionTest() : fxn_(stoke::CostFunction(&sb_)) {}
+ public:
+  CostFunctionTest() : fxn_(stoke::CostFunction(&sb_)) {}
 
-  protected:
+ protected:
 
-    void add_testcases(int count) {
-      for(int i = 0; i < count; ++i)
-        sb_.insert_input(get_state());
+  void add_testcases(int count) {
+    for (int i = 0; i < count; ++i) {
+      sb_.insert_input(get_state());
     }
+  }
 
-    stoke::CpuState get_state() {
-      stoke::CpuState cs;
-      stoke::StateGen sg(&sb_);
-      sg.get(cs);
-      return cs;
-    }
+  stoke::CpuState get_state() {
+    stoke::CpuState cs;
+    stoke::StateGen sg(&sb_);
+    sg.get(cs);
+    return cs;
+  }
 
-    stoke::Cfg make_cfg(x64asm::Code c, x64asm::RegSet rs = x64asm::RegSet::universe()) {
-      return stoke::Cfg(c, rs, rs);
-    }
+  stoke::Cfg make_cfg(x64asm::Code c, x64asm::RegSet rs = x64asm::RegSet::universe()) {
+    return stoke::Cfg(c, rs, rs);
+  }
 
-    stoke::Cost misalign_penalty_;
-    stoke::Cost signal_penalty_;
-    stoke::Cost nesting_penalty_;
+  stoke::Cost misalign_penalty_;
+  stoke::Cost signal_penalty_;
+  stoke::Cost nesting_penalty_;
 
-    stoke::Sandbox sb_;
-    stoke::CostFunction fxn_;
+  stoke::Sandbox sb_;
+  stoke::CostFunction fxn_;
 
-  private:
-    void SetUp() {
-     
-      misalign_penalty_ = 7;
-      signal_penalty_   = 11;
-      nesting_penalty_  = 17;
+ private:
+  void SetUp() {
 
-      fxn_.set_penalty(misalign_penalty_, signal_penalty_, nesting_penalty_)
-          .set_reduction(stoke::Reduction::SUM)
-          .set_performance_term(stoke::PerformanceTerm::NONE);
+    misalign_penalty_ = 7;
+    signal_penalty_   = 11;
+    nesting_penalty_  = 17;
 
-    }
+    fxn_.set_penalty(misalign_penalty_, signal_penalty_, nesting_penalty_)
+    .set_reduction(stoke::Reduction::SUM)
+    .set_performance_term(stoke::PerformanceTerm::NONE);
+
+  }
 
 
 };
@@ -175,7 +176,7 @@ TEST_F(CostFunctionTest, SignalPenalty) {
   auto cost = fxn_(cfg_r);
 
   EXPECT_FALSE(cost.first);
-  EXPECT_EQ(signal_penalty_*10, cost.second);
+  EXPECT_EQ(signal_penalty_ * 10, cost.second);
 
 }
 
@@ -194,7 +195,7 @@ TEST_F(CostFunctionTest, SizePenalty) {
   ss << "incq %rax" << std::endl;
   ss << "movq %rax, %rdx" << std::endl;
 
-  for(int i = 0; i < rand() % 3; i++) {
+  for (int i = 0; i < rand() % 3; i++) {
     ss << "nop" << std::endl;
   }
 
@@ -216,7 +217,7 @@ TEST_F(CostFunctionTest, SizePenalty) {
   fxn_.set_max_size_penalty(7, 5, 13);
   cost = fxn_(cfg_t);
   EXPECT_FALSE(cost.first);
-  EXPECT_EQ(5 + 13*3, cost.second);
+  EXPECT_EQ(5 + 13 * 3, cost.second);
 
   // Now lets change the penalty to size 10
   fxn_.set_max_size_penalty(10, 5, 11);
@@ -228,7 +229,7 @@ TEST_F(CostFunctionTest, SizePenalty) {
   fxn_.set_max_size_penalty(9, 5, 13);
   cost = fxn_(cfg_t);
   EXPECT_FALSE(cost.first);
-  EXPECT_EQ(5+13, cost.second);
+  EXPECT_EQ(5 + 13, cost.second);
 
 
 }

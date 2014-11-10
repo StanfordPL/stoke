@@ -19,13 +19,13 @@ using namespace std;
 
 namespace stoke {
 
-Heading seed_group = 
-	Heading::create("Random Seed Options:");
+Heading seed_group =
+  Heading::create("Random Seed Options:");
 
 ValueArg<default_random_engine::result_type> seed_arg =
-	ValueArg<default_random_engine::result_type>::create("seed")
-	.usage("<int>")
-	.description("Random seed for stoke tools; set to zero for random")
-	.default_val(0);
+  ValueArg<default_random_engine::result_type>::create("seed")
+  .usage("<int>")
+  .description("Random seed for stoke tools; set to zero for random")
+  .default_val(0);
 
 } // namespace stoke

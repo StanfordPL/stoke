@@ -38,15 +38,15 @@ void callback_wrapper(StateCallback cb, size_t line, CpuState* current, void* ar
 namespace stoke {
 
 Sandbox::Sandbox() : fxn_(32 * 1024) {
-	fxn_.reserve(32 * 1024);
+  fxn_.reserve(32 * 1024);
   clear_inputs();
-	clear_functions();
+  clear_functions();
   clear_callbacks();
-	set_abi_check(true);
+  set_abi_check(true);
   set_max_jumps(16);
 
-	harness_ = emit_harness();
-	signal_trap_ = emit_signal_trap();
+  harness_ = emit_harness();
+  signal_trap_ = emit_signal_trap();
 
   static bool once = false;
   if (!once) {
@@ -81,16 +81,16 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
 }
 
 void Sandbox::compile(const Cfg& cfg) {
-	// Compile a new main function
-	main_fxn_read_only_ = emit_function(cfg, true);
+  // Compile a new main function
+  main_fxn_read_only_ = emit_function(cfg, true);
 
-	// Relink everything
-	lnkr_.start();
-	lnkr_.link(fxn_);
-	for (auto f : aux_fxns_) {
-		lnkr_.link(*f);
-	}
-	lnkr_.finish();
+  // Relink everything
+  lnkr_.start();
+  lnkr_.link(fxn_);
+  for (auto f : aux_fxns_) {
+    lnkr_.link(*f);
+  }
+  lnkr_.finish();
 }
 
 void Sandbox::run_all() {
@@ -112,18 +112,18 @@ void Sandbox::run_one(size_t index) {
   // Reset error-related variables
   jumps_remaining_ = max_jumps_;
 
-	// Initialize state that the instrumented function relies on
-	out_ = &io->out_;
-	in2cpu_ = io->in2cpu_.get_entrypoint();
-	out2cpu_ = io->out2cpu_.get_entrypoint();
-	cpu2out_ = io->cpu2out_.get_entrypoint();
+  // Initialize state that the instrumented function relies on
+  out_ = &io->out_;
+  in2cpu_ = io->in2cpu_.get_entrypoint();
+  out2cpu_ = io->out2cpu_.get_entrypoint();
+  cpu2out_ = io->cpu2out_.get_entrypoint();
   map_addr_ = io->map_addr_.get_entrypoint();
 
-	// Initialize state related to %rsp tracking
-	user_rsp_ = io->in_.gp[rsp].get_fixed_quad(0);
-	harness_rsp_ = 0;
-	stoke_rsp_ = 0;
-	
+  // Initialize state related to %rsp tracking
+  user_rsp_ = io->in_.gp[rsp].get_fixed_quad(0);
+  harness_rsp_ = 0;
+  stoke_rsp_ = 0;
+
   // Run the code (control exits abnormally for sigfpe)
   if (!sigsetjmp(buf_, 1)) {
     io->out_.code = harness_.call<ErrorCode>();
@@ -131,30 +131,32 @@ void Sandbox::run_one(size_t index) {
     io->out_.code = ErrorCode::SIGFPE_;
   }
 
-	// Check for abi violations
-	if (abi_check_ && !check_abi(*io)) {
-		io->out_.code = ErrorCode::SIGSEGV_;
-	}
+  // Check for abi violations
+  if (abi_check_ && !check_abi(*io)) {
+    io->out_.code = ErrorCode::SIGSEGV_;
+  }
 }
 
 bool Sandbox::check_abi(const IoPair& iop) const {
-	for (const auto& r : {rbx, rbp, rsp, r12, r13, r14, r15}) {
-		if (iop.in_.gp[r].get_fixed_quad(0) != iop.out_.gp[r].get_fixed_quad(0)) {
-			return false;
-		}
-	}
-	return true;
+  for (const auto& r : {
+  rbx, rbp, rsp, r12, r13, r14, r15
+}) {
+    if (iop.in_.gp[r].get_fixed_quad(0) != iop.out_.gp[r].get_fixed_quad(0)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 // Main entrypoint for sandboxed code.
 //
-// Calling Context: 
-//   - run_one() 
-// Assumptions: 
+// Calling Context:
+//   - run_one()
+// Assumptions:
 //   - This function is called in an x86 abi-consistent state
 //   - The class variable user_rsp_ holds the value of the user's %rsp
 //   - The class variable in2cpu_ holds a function pointer for writing state
-//   - The class variable cpu2out_ holds a function pointer for reading state 
+//   - The class variable cpu2out_ holds a function pointer for reading state
 // Requirements:
 //   - MUST leave callee-save registers unmodified
 //   - MUST leave class variables listed above unmodified
@@ -167,53 +169,53 @@ Function Sandbox::emit_harness() {
   Function fxn;
   assm_.start(fxn);
 
-	// Almost immediately, all bets will be off. 
-	// Backup ALL callee-saved registers right away
-	assm_.push(rbx);
-	assm_.push(rbp);
-	assm_.push(r12);
-	assm_.push(r13);
-	assm_.push(r14);
-	assm_.push(r15);
+  // Almost immediately, all bets will be off.
+  // Backup ALL callee-saved registers right away
+  assm_.push(rbx);
+  assm_.push(rbp);
+  assm_.push(r12);
+  assm_.push(r13);
+  assm_.push(r14);
+  assm_.push(r15);
 
-	// Save the %rsp for this stack frame
-	// If control ever traps an exception, we'll restore the %rsp here
-	// and jump back out of this function
-	assm_.mov(rax, rsp);
-	assm_.mov(Moffs64(&harness_rsp_), rax);
+  // Save the %rsp for this stack frame
+  // If control ever traps an exception, we'll restore the %rsp here
+  // and jump back out of this function
+  assm_.mov(rax, rsp);
+  assm_.mov(Moffs64(&harness_rsp_), rax);
 
-	// Call the function that loads the user's CPU state
-	// This DOES NOT include the user's %rsp (if it did we would crash on return)
-	assm_.mov(rax, Moffs64(&in2cpu_));
-	assm_.call(rax);
+  // Call the function that loads the user's CPU state
+  // This DOES NOT include the user's %rsp (if it did we would crash on return)
+  assm_.mov(rax, Moffs64(&in2cpu_));
+  assm_.call(rax);
 
-	// Load the user's function onto the stack and invoke it
-	// At this point %rsp is all we have to work with 
-	// The rest of the user's state must be restored prior to the call
-	assm_.push(rax);
-	assm_.mov((R64)rax, Imm64(fxn_.get_entrypoint()));
-	assm_.xchg(rax, M64(rsp));
-	assm_.call(M64(rsp));
-	assm_.lea(rsp, M64(rsp, Imm32(8)));
+  // Load the user's function onto the stack and invoke it
+  // At this point %rsp is all we have to work with
+  // The rest of the user's state must be restored prior to the call
+  assm_.push(rax);
+  assm_.mov((R64)rax, Imm64(fxn_.get_entrypoint()));
+  assm_.xchg(rax, M64(rsp));
+  assm_.call(M64(rsp));
+  assm_.lea(rsp, M64(rsp, Imm32(8)));
 
-	// Now load the function that reads user state and invoke it
-	// The same restrictions apply here; we can't disturb the user's state
-	assm_.push(rax);
-	assm_.mov(rax, Moffs64(&cpu2out_));
-	assm_.xchg(rax, M64(rsp));
-	assm_.call(M64(rsp));
-	assm_.lea(rsp, M64(rsp, Imm32(8)));
+  // Now load the function that reads user state and invoke it
+  // The same restrictions apply here; we can't disturb the user's state
+  assm_.push(rax);
+  assm_.mov(rax, Moffs64(&cpu2out_));
+  assm_.xchg(rax, M64(rsp));
+  assm_.call(M64(rsp));
+  assm_.lea(rsp, M64(rsp, Imm32(8)));
 
-	// Restore callee-save state
-	assm_.pop(r15);
-	assm_.pop(r14);
-	assm_.pop(r13);
-	assm_.pop(r12);
-	assm_.pop(rbp);
-	assm_.pop(rbx);
+  // Restore callee-save state
+  assm_.pop(r15);
+  assm_.pop(r14);
+  assm_.pop(r13);
+  assm_.pop(r12);
+  assm_.pop(rbp);
+  assm_.pop(rbx);
 
-	// If control has made it back here, we've exited normally; return 0
-	assm_.mov(rax, Imm32(0));
+  // If control has made it back here, we've exited normally; return 0
+  assm_.mov(rax, Imm32(0));
   assm_.ret();
 
   assm_.finish();
@@ -234,26 +236,26 @@ Function Sandbox::emit_harness() {
 //   - MUST then return back to STOKE code
 //   - MUST set the return code %rax to %rdi
 // Arguments:
-//   - %rdi - The error code 
+//   - %rdi - The error code
 
 Function Sandbox::emit_signal_trap() {
-	Function fxn;
-	assm_.start(fxn);
+  Function fxn;
+  assm_.start(fxn);
 
-	// Restore the stack pointer from the harness_
-	assm_.mov(rax, Moffs64(&harness_rsp_));
-	assm_.mov(rsp, rax);
+  // Restore the stack pointer from the harness_
+  assm_.mov(rax, Moffs64(&harness_rsp_));
+  assm_.mov(rsp, rax);
 
-	// Pop off the callee-saved register state we left in the harness
-	assm_.pop(r15);
-	assm_.pop(r14);
-	assm_.pop(r13);
-	assm_.pop(r12);
-	assm_.pop(rbp);
-	assm_.pop(rbx);
+  // Pop off the callee-saved register state we left in the harness
+  assm_.pop(r15);
+  assm_.pop(r14);
+  assm_.pop(r13);
+  assm_.pop(r12);
+  assm_.pop(rbp);
+  assm_.pop(rbx);
 
-	// Return the error code and go back to STOKE
-	assm_.mov(rax, rdi);
+  // Return the error code and go back to STOKE
+  assm_.mov(rax, rdi);
   assm_.ret();
 
   assm_.finish();
@@ -272,13 +274,13 @@ Function Sandbox::emit_signal_trap() {
 //   - <none>
 
 Function Sandbox::emit_state2cpu(const CpuState& cs) {
-	Function fxn;
-	assm_.start(fxn);
+  Function fxn;
+  assm_.start(fxn);
 
-	// Write RFLAGS regs
-	assm_.mov(rax, Moffs64(cs.rf.data()));
-	assm_.push(rax);
-	assm_.popfq();
+  // Write RFLAGS regs
+  assm_.mov(rax, Moffs64(cs.rf.data()));
+  assm_.push(rax);
+  assm_.popfq();
   // Write SSE regs
   for (const auto& s : xmms) {
     assm_.mov((R64)rax, Imm64(cs.sse[s].data()));
@@ -291,18 +293,18 @@ Function Sandbox::emit_state2cpu(const CpuState& cs) {
       assm_.mov(r, M64(r));
     }
   }
-	// Done
-	assm_.ret();
+  // Done
+  assm_.ret();
 
-	assm_.finish();
-	return fxn;
+  assm_.finish();
+  return fxn;
 }
 
 // Reads user state (modulo %rsp) from the cpu. Reads user %rsp
 // rsp from the class variable user_rsp_.
 //
 // Calling Context:
-//   - harness_(), instrumented functions prior to callback 
+//   - harness_(), instrumented functions prior to callback
 // Assumptions:
 //   - Called in a context with STOKE's %rsp
 //   - user_rsp_ contains the current value of the user's %rsp
@@ -312,41 +314,41 @@ Function Sandbox::emit_state2cpu(const CpuState& cs) {
 //   - <none>
 
 Function Sandbox::emit_cpu2state(CpuState& cs) {
-	Function fxn;
-	assm_.start(fxn);
+  Function fxn;
+  assm_.start(fxn);
 
   // Backup scratch registers no matter what
   assm_.push(rax);
 
   // Read non-rsp GP regs
-	for (const auto& r : r64s) {
-		if (r != rsp) {
-			assm_.mov(rax, r);
-			assm_.mov(Moffs64(cs.gp[r].data()), rax);
-		}
-	}
-	// Read user's %rsp
-	assm_.mov(rax, Moffs64(&user_rsp_));
-	assm_.mov(Moffs64(cs.gp[rsp].data()), rax);
+  for (const auto& r : r64s) {
+    if (r != rsp) {
+      assm_.mov(rax, r);
+      assm_.mov(Moffs64(cs.gp[r].data()), rax);
+    }
+  }
+  // Read user's %rsp
+  assm_.mov(rax, Moffs64(&user_rsp_));
+  assm_.mov(Moffs64(cs.gp[rsp].data()), rax);
   // Read SSE regs
   for (const auto& s : xmms) {
-		assm_.mov((R64)rax, Imm64(cs.sse[s].data()));
-		assm_.vmovdqu(M256(rax), ymms[s]);
+    assm_.mov((R64)rax, Imm64(cs.sse[s].data()));
+    assm_.vmovdqu(M256(rax), ymms[s]);
   }
-	// Read RFLAGS regs
-	assm_.pushfq();
-	assm_.mov((R64)rax, M64(rsp));
-	assm_.mov(Moffs64(cs.rf.data()), rax);
- 	assm_.popfq();
+  // Read RFLAGS regs
+  assm_.pushfq();
+  assm_.mov((R64)rax, M64(rsp));
+  assm_.mov(Moffs64(cs.rf.data()), rax);
+  assm_.popfq();
 
   // Restore scratch regs
   assm_.pop(rax);
 
-	// Done
-	assm_.ret();
+  // Done
+  assm_.ret();
 
-	assm_.finish();
-	return fxn;
+  assm_.finish();
+  return fxn;
 }
 
 // Maps a virtual address to a physical address in the user's memory sandbox
@@ -369,10 +371,10 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   Function fxn;
   assm_.start(fxn);
 
-	// Define labels
-	Label fail;
-	Label done;
-	Label heap_case;
+  // Define labels
+  Label fail;
+  Label done;
+  Label heap_case;
 
   // Check alignment: A well aligned address won't change
   // Following this check, rsi is free for use as scratch space
@@ -405,9 +407,9 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   // This address is at least in range, move on to harder checks:
   emit_map_addr_cases(cs, fail, done, false);
 
-	// If control reaches here, invoke the signal_trap handler for sigsegv
+  // If control reaches here, invoke the signal_trap handler for sigsegv
   assm_.bind(fail);
-	emit_signal_trap_call(ErrorCode::SIGSEGV_);
+  emit_signal_trap_call(ErrorCode::SIGSEGV_);
 
   // Done; get out of here
   assm_.bind(done);
@@ -434,9 +436,9 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   // The read mask shouldn't change when and'ed against the def mask
   if (stack) {
     assm_.mov((R64)rax, Imm64(cs.stack.defined_mask()));
-	} else {
+  } else {
     assm_.mov((R64)rax, Imm64(cs.heap.defined_mask()));
-	}
+  }
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rdx);
   assm_.cmp(rax, rdx);
@@ -445,9 +447,9 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   // The write mask shouldn't change when and'ed against the valid mask
   if (stack) {
     assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
-	} else {
+  } else {
     assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
-	}
+  }
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rcx);
   assm_.cmp(rax, rcx);
@@ -456,10 +458,10 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   // Set new defined bits
   if (stack) {
     assm_.mov((R64)rax, Imm64(cs.stack.defined_mask()));
-	} else {
+  } else {
     assm_.mov((R64)rax, Imm64(cs.heap.defined_mask()));
-	} 
-	assm_.or_(M64(rax, rsi, Scale::TIMES_1), rcx);
+  }
+  assm_.or_(M64(rax, rsi, Scale::TIMES_1), rcx);
 
   // Do final remapping
   if (stack) {
@@ -490,83 +492,83 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
 //   <none>
 
 bool Sandbox::emit_function(const Cfg& cfg, bool callbacks) {
-	// Index reachable instructions
-	vector<size_t> instrs;
-	for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-		if (cfg.is_exit(*b)) {
-			continue;
-		}
-		const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-		for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
-			instrs.push_back(i);
-		}
-	}
+  // Index reachable instructions
+  vector<size_t> instrs;
+  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+    if (cfg.is_exit(*b)) {
+      continue;
+    }
+    const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
+    for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
+      instrs.push_back(i);
+    }
+  }
 
-	// Flags to track: do we read memory and is the first instr a label?
-	auto read_only_mem = true;
-	const auto first_is_label = cfg.get_code()[instrs[0]].is_label_defn();
+  // Flags to track: do we read memory and is the first instr a label?
+  auto read_only_mem = true;
+  const auto first_is_label = cfg.get_code()[instrs[0]].is_label_defn();
 
-	assm_.start(fxn_);	
+  assm_.start(fxn_);
 
-	// If the first instruction is a label, it must precede instrumentation
-	if (first_is_label) {
-		assm_.assemble(cfg.get_code()[instrs[0]]);
-	}
+  // If the first instruction is a label, it must precede instrumentation
+  if (first_is_label) {
+    assm_.assemble(cfg.get_code()[instrs[0]]);
+  }
 
-	// Load the user's %rsp
-	emit_load_user_rsp();
+  // Load the user's %rsp
+  emit_load_user_rsp();
 
-	// Create a new unique label for representing the end of this function
-	Label exit;
+  // Create a new unique label for representing the end of this function
+  Label exit;
 
-	// Assemble every other reachable instruction
-	for (size_t i = first_is_label ? 1 : 0, ie = instrs.size(); i < ie; ++i) {
-		const auto idx = instrs[i];
-		const auto& instr = cfg.get_code()[idx];
+  // Assemble every other reachable instruction
+  for (size_t i = first_is_label ? 1 : 0, ie = instrs.size(); i < ie; ++i) {
+    const auto idx = instrs[i];
+    const auto& instr = cfg.get_code()[idx];
 
-		// This is conservative, we assume anything implicit is a write
-		if (instr.is_implicit_memory_dereference()) {
-			read_only_mem = false;
-		} else if (instr.is_explicit_memory_dereference()) {
-			const auto mi = instr.mem_index();
-			read_only_mem &= (!instr.maybe_write(mi) && !instr.maybe_undef(mi));
-		}
+    // This is conservative, we assume anything implicit is a write
+    if (instr.is_implicit_memory_dereference()) {
+      read_only_mem = false;
+    } else if (instr.is_explicit_memory_dereference()) {
+      const auto mi = instr.mem_index();
+      read_only_mem &= (!instr.maybe_write(mi) && !instr.maybe_undef(mi));
+    }
 
-		// Emit instruction and optionally, callbacks
-		if (callbacks && !before_.empty()) {
-			emit_callbacks(idx, true);
-		}
-		emit_instruction(instr, exit);
-		if (callbacks && !after_.empty())  {
-			emit_callbacks(idx, false);
-		}
-	}
-	// Catch for run-away code
-	emit_signal_trap_call(ErrorCode::SIGSEGV_);
+    // Emit instruction and optionally, callbacks
+    if (callbacks && !before_.empty()) {
+      emit_callbacks(idx, true);
+    }
+    emit_instruction(instr, exit);
+    if (callbacks && !after_.empty())  {
+      emit_callbacks(idx, false);
+    }
+  }
+  // Catch for run-away code
+  emit_signal_trap_call(ErrorCode::SIGSEGV_);
 
-	// All returns in this function point to here
-	assm_.bind(exit);
+  // All returns in this function point to here
+  assm_.bind(exit);
 
-	// Restore the STOKE %rsp and return
-	emit_load_stoke_rsp();
-	assm_.ret();
-	assm_.finish();
+  // Restore the STOKE %rsp and return
+  emit_load_stoke_rsp();
+  assm_.ret();
+  assm_.finish();
 
-	return read_only_mem;
+  return read_only_mem;
 }
 
 void Sandbox::emit_callbacks(size_t line, bool before) {
-	// Reload the STOKE %rsp, we're about to call some functions
-	emit_load_stoke_rsp();
+  // Reload the STOKE %rsp, we're about to call some functions
+  emit_load_stoke_rsp();
 
   const auto& cbs = before ? before_[line] : after_[line];
   for (const auto& cb : cbs) {
-		// Read the user's state without disturbing any state in the process
-		assm_.push(rax);
-		assm_.mov(rax, Moffs64(&cpu2out_));
-		assm_.xchg(rax, M64(rsp));
-		assm_.call(M64(rsp));
-		assm_.lea(rsp, M64(rsp, Imm32(8)));
+    // Read the user's state without disturbing any state in the process
+    assm_.push(rax);
+    assm_.mov(rax, Moffs64(&cpu2out_));
+    assm_.xchg(rax, M64(rsp));
+    assm_.call(M64(rsp));
+    assm_.lea(rsp, M64(rsp, Imm32(8)));
 
     // Invoke the callback through the callback wrapper
     assm_.mov(rdi, Imm64(cb.first));
@@ -577,63 +579,63 @@ void Sandbox::emit_callbacks(size_t line, bool before) {
     assm_.mov((R64)rax, Imm64(&callback_wrapper));
     assm_.call(rax);
 
-    // Restore the user's state 
-		// This leaves STOKE's %rsp in place, but that's what we want
-		assm_.mov(rax, Moffs64(&out2cpu_));
-		assm_.call(rax);
+    // Restore the user's state
+    // This leaves STOKE's %rsp in place, but that's what we want
+    assm_.mov(rax, Moffs64(&out2cpu_));
+    assm_.call(rax);
   }
 
-	// Back to userland, reload the user %rsp
-	emit_load_user_rsp();
+  // Back to userland, reload the user %rsp
+  emit_load_user_rsp();
 }
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
-	// Labels are translated directly
-	if (instr.is_label_defn()) {
-		assm_.assemble(instr);
-	} 
-	// Jumps are instrumented with premature exit logic
-	else if (instr.is_any_jump()) {
-		emit_jump(instr);
-	}
-	// Limited support for calls, label arguments are allowed
-	else if (instr.get_opcode() == CALL_LABEL) {
-		emit_call(instr);
-	} 
-	// Returns are turned into jumps to the function-wide common return	
-	else if (instr.get_opcode() == RET) {
-		emit_ret(instr, exit);
-	}
-	// Explicit memory dereferences need some pretty serious sandboxing
-	else if (instr.is_explicit_memory_dereference()) {
-		if (instr.is_div() || instr.is_idiv()) {
-			emit_mem_div(instr);
-		} else {
-			emit_memory_instruction(instr);
-		}
-	}
-	// Implicits are even harder (note that we don't capture all of these)
-	else if (instr.is_implicit_memory_dereference()) {
-		if (instr.get_opcode() == PUSH_R64) {
-			emit_push(instr);
-		} else if (instr.get_opcode() == POP_R64) {
-			emit_pop(instr);
-		} else {
-			emit_signal_trap_call(ErrorCode::SIGILL_);
-		}
-	}
-	// For everything else there are a few cases but mostly we hope for the best
-	else {
-		if (instr.is_div() || instr.is_idiv()) {
-			emit_reg_div(instr);
-		} else {
-			assm_.assemble(instr);
-		}
-	}
+  // Labels are translated directly
+  if (instr.is_label_defn()) {
+    assm_.assemble(instr);
+  }
+  // Jumps are instrumented with premature exit logic
+  else if (instr.is_any_jump()) {
+    emit_jump(instr);
+  }
+  // Limited support for calls, label arguments are allowed
+  else if (instr.get_opcode() == CALL_LABEL) {
+    emit_call(instr);
+  }
+  // Returns are turned into jumps to the function-wide common return
+  else if (instr.get_opcode() == RET) {
+    emit_ret(instr, exit);
+  }
+  // Explicit memory dereferences need some pretty serious sandboxing
+  else if (instr.is_explicit_memory_dereference()) {
+    if (instr.is_div() || instr.is_idiv()) {
+      emit_mem_div(instr);
+    } else {
+      emit_memory_instruction(instr);
+    }
+  }
+  // Implicits are even harder (note that we don't capture all of these)
+  else if (instr.is_implicit_memory_dereference()) {
+    if (instr.get_opcode() == PUSH_R64) {
+      emit_push(instr);
+    } else if (instr.get_opcode() == POP_R64) {
+      emit_pop(instr);
+    } else {
+      emit_signal_trap_call(ErrorCode::SIGILL_);
+    }
+  }
+  // For everything else there are a few cases but mostly we hope for the best
+  else {
+    if (instr.is_div() || instr.is_idiv()) {
+      emit_reg_div(instr);
+    } else {
+      assm_.assemble(instr);
+    }
+  }
 }
 
 void Sandbox::emit_memory_instruction(const Instruction& instr) {
-	// Looks up read and write sets
+  // Looks up read and write sets
   const auto rs = instr.maybe_read_set();
   const auto ws = instr.maybe_write_set();
 
@@ -642,33 +644,33 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
   auto* temp = const_cast<Instruction*>(&instr);
   const auto old_op = temp->get_operand<M64>(mi);
 
-	// We'll be doing some function calls, and need some scratch, so load STOKE's rsp
-	emit_load_stoke_rsp();
-	// Backup some scratch values and the rflags register
-	assm_.push(rax);
-	assm_.push(rcx);
+  // We'll be doing some function calls, and need some scratch, so load STOKE's rsp
+  emit_load_stoke_rsp();
+  // Backup some scratch values and the rflags register
+  assm_.push(rax);
+  assm_.push(rcx);
   assm_.push(rdx);
   assm_.push(rdi);
   assm_.push(rsi);
   assm_.pushfq();
 
-	// Does this address use rsp?
-	const auto rsp_base = old_op.contains_base() && (old_op.get_base() == rsp);
-	const auto rsp_index = old_op.contains_index() && (old_op.get_index() == rsp);
-	const auto uses_rsp = rsp_base || rsp_index;
+  // Does this address use rsp?
+  const auto rsp_base = old_op.contains_base() && (old_op.get_base() == rsp);
+  const auto rsp_index = old_op.contains_index() && (old_op.get_index() == rsp);
+  const auto uses_rsp = rsp_base || rsp_index;
 
-	// Load the effective address into rdi 
-	if (uses_rsp) {
-		assm_.mov(rsp, Imm64(&user_rsp_));
-		assm_.mov(rsp, M64(rsp));
-	}
+  // Load the effective address into rdi
+  if (uses_rsp) {
+    assm_.mov(rsp, Imm64(&user_rsp_));
+    assm_.mov(rsp, M64(rsp));
+  }
   assm_.lea(rdi, old_op);
-	if (uses_rsp) {
-		// STOKE's rsp has changed... careful here, mind the push's
-		assm_.mov(rsp, Imm64(&stoke_rsp_));
-		assm_.mov(rsp, M64(rsp));
-		assm_.lea(rsp, M64(rsp, Imm32(-48)));
-	}
+  if (uses_rsp) {
+    // STOKE's rsp has changed... careful here, mind the push's
+    assm_.mov(rsp, Imm64(&stoke_rsp_));
+    assm_.mov(rsp, M64(rsp));
+    assm_.lea(rsp, M64(rsp, Imm32(-48)));
+  }
 
   // Load the alignment mask into rsi, and the read/write mask into rdx/rcx
   switch (instr.type(mi)) {
@@ -704,111 +706,111 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
     assm_.mov(rcx, rdx);
   } else {
     assm_.mov(rcx, Imm64(0));
-	}
+  }
   if (!instr.maybe_read(mi)) {
     assm_.mov(rdx, Imm64(0));
-	}
+  }
 
-	// Invoke the mapping function, this will place a result in rax on return
-	// SIGSEGV is trapped inside this function, no need to worry about it beyond here
+  // Invoke the mapping function, this will place a result in rax on return
+  // SIGSEGV is trapped inside this function, no need to worry about it beyond here
   assm_.mov(rax, Moffs64(&map_addr_));
   assm_.call(rax);
 
   // Find an unused register to hold the sandboxed address (it isn't read or written)
   size_t idx = 0;
   for (idx = 4; idx < 12 && (rs.contains(rbs[idx]) || ws.contains(rbs[idx])); ++idx);
-	assert(idx < 12);
-  const auto rx = r64s[idx+4];
+  assert(idx < 12);
+  const auto rx = r64s[idx + 4];
 
   // Backup rx and store the value there
   assm_.mov(rdi, Imm64(&scratch_[rx]));
   assm_.mov(M64(rdi), rx);
   assm_.mov(rx, rax);
 
-	// Restore the scratch space
+  // Restore the scratch space
   assm_.popfq();
   assm_.pop(rsi);
   assm_.pop(rdi);
   assm_.pop(rdx);
-	assm_.pop(rcx);
-	assm_.pop(rax);
-	// Along with the user's rsp
-	emit_load_user_rsp();
+  assm_.pop(rcx);
+  assm_.pop(rax);
+  // Along with the user's rsp
+  emit_load_user_rsp();
 
   // Assemble the instruction using the temp operand instead
   temp->set_operand(mi, M8(rx));
   assm_.assemble(*temp);
   temp->set_operand(mi, old_op);
 
-  // Restore rx 
+  // Restore rx
   assm_.mov(rx, Imm64(&scratch_[rx]));
   assm_.mov(rx, M64(rx));
 }
 
 void Sandbox::emit_jump(const Instruction& instr) {
-	// Load the STOKE %rsp, we'll need to do some pushing here
-	emit_load_stoke_rsp();
+  // Load the STOKE %rsp, we'll need to do some pushing here
+  emit_load_stoke_rsp();
 
-	// Backup rax and rflags 
-	assm_.push(rax);
+  // Backup rax and rflags
+  assm_.push(rax);
   assm_.pushfq();
 
   // Decrement the jump counter
   assm_.mov((R64)rax, Imm64(&jumps_remaining_));
   assm_.dec(M64(rax));
-  
-	// Jump over the signal trap call if we haven't hit zero yet
-	Label okay;
+
+  // Jump over the signal trap call if we haven't hit zero yet
+  Label okay;
   assm_.jne(okay);
-	emit_signal_trap_call(ErrorCode::SIGKILL_);
-	assm_.bind(okay);
+  emit_signal_trap_call(ErrorCode::SIGKILL_);
+  assm_.bind(okay);
 
   // Restore rflags and rax
   assm_.popfq();
-	assm_.pop(rax);
+  assm_.pop(rax);
 
-	// Go ahead and do the jump
-	assm_.assemble(instr);
+  // Go ahead and do the jump
+  assm_.assemble(instr);
 
-	// Reload the user's %rsp
-	emit_load_user_rsp();
+  // Reload the user's %rsp
+  emit_load_user_rsp();
 }
 
 void Sandbox::emit_call(const Instruction& instr) {
-	// Simulate push %rip (using a random value)
-	// Sandboxing the memory dereference will catch infinite recursions
-	assm_.lea(rsp, M64(rsp, Imm32(-8)));
-	emit_memory_instruction({MOV_M64_IMM32, {M64(rsp), Imm32(0x01234567)}});
+  // Simulate push %rip (using a random value)
+  // Sandboxing the memory dereference will catch infinite recursions
+  assm_.lea(rsp, M64(rsp, Imm32(-8)));
+  emit_memory_instruction({MOV_M64_IMM32, {M64(rsp), Imm32(0x01234567)}});
 
-	// Restore the STOKE %rsp
-	emit_load_stoke_rsp();
-	// Invoke the call
-	assm_.assemble(instr);
-	// Load the user's %rsp
-	emit_load_user_rsp();
+  // Restore the STOKE %rsp
+  emit_load_stoke_rsp();
+  // Invoke the call
+  assm_.assemble(instr);
+  // Load the user's %rsp
+  emit_load_user_rsp();
 
-	// Simulate pop %rip; all that matters is moving %rsp
-	assm_.lea(rsp, M64(rsp, Imm32(8)));
+  // Simulate pop %rip; all that matters is moving %rsp
+  assm_.lea(rsp, M64(rsp, Imm32(8)));
 }
 
 void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
-	assm_.jmp(exit);
+  assm_.jmp(exit);
 }
 
 void Sandbox::emit_push(const Instruction& instr) {
   // This function emits the moral equivalent of a push
-	// First decrement the stack pointer
-	assm_.lea(rsp, M64(rsp, Imm32(-8)));
-	// Now emit the dereference and let our sigsegv handler do the hard work
+  // First decrement the stack pointer
+  assm_.lea(rsp, M64(rsp, Imm32(-8)));
+  // Now emit the dereference and let our sigsegv handler do the hard work
   emit_memory_instruction({MOV_M64_R64, {M64(rsp), instr.get_operand<R64>(0)}});
 }
 
 void Sandbox::emit_pop(const Instruction& instr) {
   // This function emits the moral equivalent of a push
-	// Emit the dereference and let our sigsegv handler do the hard work
+  // Emit the dereference and let our sigsegv handler do the hard work
   emit_memory_instruction({MOV_R64_M64, {instr.get_operand<R64>(0), M64(rsp)}});
-	// Now increment the stack pointer
-	assm_.lea(rsp, M64(rsp, Imm32(8)));
+  // Now increment the stack pointer
+  assm_.lea(rsp, M64(rsp, Imm32(8)));
 }
 
 void Sandbox::emit_reg_div(const Instruction& instr) {
@@ -827,111 +829,111 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
       break;
   }
 
-	// Depending on how things go, we might throw sigsegv, so we need the STOKE rsp back
-	emit_load_stoke_rsp();
+  // Depending on how things go, we might throw sigsegv, so we need the STOKE rsp back
+  emit_load_stoke_rsp();
   if (rsp_op) {
     // If the user's rsp is the operand, we'll need to move it someplace where we can use it
     // div implicitly reads/writes rax, so we'll need to use rdi instead.
-		assm_.push(rdi);
-		assm_.mov(rdi, Imm64(&user_rsp_));
-		assm_.mov(rdi, M64(rdi));
+    assm_.push(rdi);
+    assm_.mov(rdi, Imm64(&user_rsp_));
+    assm_.mov(rdi, M64(rdi));
     // Emit the instruction (with rdi substituted for rsp)
     assm_.assemble({instr.get_opcode(), {rdi}});
-    // Restore rdi. 
-		assm_.pop(rdi);
+    // Restore rdi.
+    assm_.pop(rdi);
   } else {
     // This is the easy case... just go for it, man
     assm_.assemble(instr);
   }
-	// Now that we're safely finished, reload the user's rsp
-	emit_load_user_rsp();
+  // Now that we're safely finished, reload the user's rsp
+  emit_load_user_rsp();
 }
 
 void Sandbox::emit_mem_div(const Instruction& instr) {
-	// The idea here is to split a single divide instruction into three parts:
-	// 1. Exchange rbx and the mem operand (which div won't touch) (this will catch a segv)
-	// 2. Perform the div on rbx (this will catch a sigfpe)
-	// 3. Exchange the values again (no need to double check the segv)
+  // The idea here is to split a single divide instruction into three parts:
+  // 1. Exchange rbx and the mem operand (which div won't touch) (this will catch a segv)
+  // 2. Perform the div on rbx (this will catch a sigfpe)
+  // 3. Exchange the values again (no need to double check the segv)
 
-	switch(instr.get_opcode()) {
-		case DIV_M8:
-  		emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
-  		emit_reg_div({DIV_RL, {bl}});
-			assm_.xchg(bl, instr.get_operand<M8>(0));
-			break;
-		case DIV_M16:
-  		emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
-  		emit_reg_div({DIV_R16, {bx}});
-			assm_.xchg(bx, instr.get_operand<M16>(0));
-			break;
-		case DIV_M32:
-  		emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
-  		emit_reg_div({DIV_R32, {ebx}});
-			assm_.xchg(ebx, instr.get_operand<M32>(0));
-			break;
-		case DIV_M64:
-  		emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
-  		emit_reg_div({DIV_R64, {rbx}});
-			assm_.xchg(rbx, instr.get_operand<M64>(0));
-			break;
-		case IDIV_M8:
-  		emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
-  		emit_reg_div({IDIV_RL, {bl}});
-			assm_.xchg(bl, instr.get_operand<M8>(0));
-			break;
-		case IDIV_M16:
-  		emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
-  		emit_reg_div({IDIV_R16, {bx}});
-			assm_.xchg(bx, instr.get_operand<M16>(0));
-			break;
-		case IDIV_M32:
-  		emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
-  		emit_reg_div({IDIV_R32, {ebx}});
-			assm_.xchg(ebx, instr.get_operand<M32>(0));
-			break;
-		case IDIV_M64:
-  		emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
-  		emit_reg_div({IDIV_R64, {rbx}});
-			assm_.xchg(rbx, instr.get_operand<M64>(0));
-			break;
+  switch (instr.get_opcode()) {
+    case DIV_M8:
+      emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
+      emit_reg_div({DIV_RL, {bl}});
+      assm_.xchg(bl, instr.get_operand<M8>(0));
+      break;
+    case DIV_M16:
+      emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
+      emit_reg_div({DIV_R16, {bx}});
+      assm_.xchg(bx, instr.get_operand<M16>(0));
+      break;
+    case DIV_M32:
+      emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
+      emit_reg_div({DIV_R32, {ebx}});
+      assm_.xchg(ebx, instr.get_operand<M32>(0));
+      break;
+    case DIV_M64:
+      emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+      emit_reg_div({DIV_R64, {rbx}});
+      assm_.xchg(rbx, instr.get_operand<M64>(0));
+      break;
+    case IDIV_M8:
+      emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
+      emit_reg_div({IDIV_RL, {bl}});
+      assm_.xchg(bl, instr.get_operand<M8>(0));
+      break;
+    case IDIV_M16:
+      emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
+      emit_reg_div({IDIV_R16, {bx}});
+      assm_.xchg(bx, instr.get_operand<M16>(0));
+      break;
+    case IDIV_M32:
+      emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
+      emit_reg_div({IDIV_R32, {ebx}});
+      assm_.xchg(ebx, instr.get_operand<M32>(0));
+      break;
+    case IDIV_M64:
+      emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+      emit_reg_div({IDIV_R64, {rbx}});
+      assm_.xchg(rbx, instr.get_operand<M64>(0));
+      break;
 
-		default:
-			assert(false);
-			break;
-	}
+    default:
+      assert(false);
+      break;
+  }
 }
 
 void Sandbox::emit_signal_trap_call(ErrorCode ec) {
-	// Reload the stoke stack pointer
-	assm_.mov(rax, Moffs64(&stoke_rsp_));
-	assm_.mov(rsp, rax);
-	// Load up the error code argument
-	assm_.mov(rdi, Imm32((uint32_t)ec));
-	// Invoke the handler
-	assm_.mov((R64)rax, Imm64(signal_trap_.get_entrypoint()));
-	assm_.call(rax);
+  // Reload the stoke stack pointer
+  assm_.mov(rax, Moffs64(&stoke_rsp_));
+  assm_.mov(rsp, rax);
+  // Load up the error code argument
+  assm_.mov(rdi, Imm32((uint32_t)ec));
+  // Invoke the handler
+  assm_.mov((R64)rax, Imm64(signal_trap_.get_entrypoint()));
+  assm_.call(rax);
 }
 
 void Sandbox::emit_load_user_rsp() {
-	// Save the stoke %rsp
-	assm_.mov(Moffs64(&scratch_[rax]), rax);
-	assm_.mov(rax, rsp);
-	assm_.mov(Moffs64(&stoke_rsp_), rax);
-	// Load the user %rsp
-	assm_.mov(rax, Moffs64(&user_rsp_));
-	assm_.mov(rsp, rax);
-	assm_.mov(rax, Moffs64(&scratch_[rax]));
+  // Save the stoke %rsp
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(rax, rsp);
+  assm_.mov(Moffs64(&stoke_rsp_), rax);
+  // Load the user %rsp
+  assm_.mov(rax, Moffs64(&user_rsp_));
+  assm_.mov(rsp, rax);
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
 
 void Sandbox::emit_load_stoke_rsp() {
-	// Save the user %rsp
-	assm_.mov(Moffs64(&scratch_[rax]), rax);
-	assm_.mov(rax, rsp);
-	assm_.mov(Moffs64(&user_rsp_), rax);
-	// Load the stoke %rsp
-	assm_.mov(rax, Moffs64(&stoke_rsp_));
-	assm_.mov(rsp, rax);
-	assm_.mov(rax, Moffs64(&scratch_[rax]));
+  // Save the user %rsp
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(rax, rsp);
+  assm_.mov(Moffs64(&user_rsp_), rax);
+  // Load the stoke %rsp
+  assm_.mov(rax, Moffs64(&stoke_rsp_));
+  assm_.mov(rsp, rax);
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
 
 } // namespace stoke

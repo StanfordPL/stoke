@@ -25,17 +25,17 @@
 namespace stoke {
 
 class SandboxGadget : public Sandbox {
-	public:
-		SandboxGadget(const CpuStates& tcs) {
-			set_abi_check(abi_check_arg);
-			set_max_jumps(max_jumps_arg);
-			for (const auto& fxn : aux_fxns_arg.value()) {
-				insert_function({fxn.code, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-			}
-			for (const auto& tc : tcs) {
-				insert_input(tc);
-			}
-		}
+ public:
+  SandboxGadget(const CpuStates& tcs) {
+    set_abi_check(abi_check_arg);
+    set_max_jumps(max_jumps_arg);
+    for (const auto& fxn : aux_fxns_arg.value()) {
+      insert_function({fxn.code, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+    }
+    for (const auto& tc : tcs) {
+      insert_input(tc);
+    }
+  }
 };
 
 } // namespace stoke

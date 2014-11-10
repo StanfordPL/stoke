@@ -23,22 +23,22 @@
 namespace stoke {
 
 class SeedGadget {
-	public:
-		SeedGadget() {
-			seed_ = seed_arg;
-			if (seed_ == 0) {
-				const auto time = std::chrono::system_clock::now().time_since_epoch().count();
-				std::default_random_engine gen(time);
-				seed_ = gen();
-			}
-		}
+ public:
+  SeedGadget() {
+    seed_ = seed_arg;
+    if (seed_ == 0) {
+      const auto time = std::chrono::system_clock::now().time_since_epoch().count();
+      std::default_random_engine gen(time);
+      seed_ = gen();
+    }
+  }
 
-		operator std::default_random_engine::result_type() const {
-			return seed_;
-		}
+  operator std::default_random_engine::result_type() const {
+    return seed_;
+  }
 
-	private:
-		std::default_random_engine::result_type seed_;
+ private:
+  std::default_random_engine::result_type seed_;
 };
 
 } // namespace stoke

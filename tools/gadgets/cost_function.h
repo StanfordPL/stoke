@@ -25,18 +25,18 @@
 namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
-	public:
-		CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(sb) {
-			set_target(target, stack_out_arg, heap_out_arg);
+ public:
+  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(sb) {
+    set_target(target, stack_out_arg, heap_out_arg);
 
-			set_distance(distance_arg);
-			set_sse(sse_width_arg, sse_count_arg);
-			set_relax(relax_reg_arg, relax_mem_arg);
-			set_penalty(misalign_penalty_arg, sig_penalty_arg, nesting_penalty_arg);
-			set_min_ulp(min_ulp_arg);
-			set_reduction(reduction_arg);
-			set_performance_term(perf_arg);
-		}
+    set_distance(distance_arg);
+    set_sse(sse_width_arg, sse_count_arg);
+    set_relax(relax_reg_arg, relax_mem_arg);
+    set_penalty(misalign_penalty_arg, sig_penalty_arg, nesting_penalty_arg);
+    set_min_ulp(min_ulp_arg);
+    set_reduction(reduction_arg);
+    set_performance_term(perf_arg);
+  }
 };
 
 } // namespace stoke

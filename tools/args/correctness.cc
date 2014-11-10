@@ -18,55 +18,55 @@ using namespace cpputil;
 
 namespace stoke {
 
-Heading& correctness_heading = 
-	Heading::create("Correctness Options:");
+Heading& correctness_heading =
+  Heading::create("Correctness Options:");
 
-ValueArg<Distance, DistanceReader, DistanceWriter>& distance_arg = 
-	ValueArg<Distance, DistanceReader, DistanceWriter>::create("distance")
+ValueArg<Distance, DistanceReader, DistanceWriter>& distance_arg =
+  ValueArg<Distance, DistanceReader, DistanceWriter>::create("distance")
   .usage("(hamming|ulp|extension)")
   .description("Metric for measuring distance between states")
   .default_val(Distance::HAMMING);
 
 ValueArg<Reduction, ReductionReader, ReductionWriter>& reduction_arg =
-	ValueArg<Reduction, ReductionReader, ReductionWriter>::create("reduction")
+  ValueArg<Reduction, ReductionReader, ReductionWriter>::create("reduction")
   .usage("(max|sum|extension)")
   .description("Reduction method")
   .default_val(Reduction::SUM);
 
 ValueArg<size_t>& sse_width_arg =
-	ValueArg<size_t>::create("sse_width")
+  ValueArg<size_t>::create("sse_width")
   .usage("(1|2|4|8)")
   .description("Number of bytes in sse elements")
   .default_val(8);
 
 ValueArg<size_t>& sse_count_arg =
-	ValueArg<size_t>::create("sse_count")
+  ValueArg<size_t>::create("sse_count")
   .usage("<int>")
   .description("Number of values in sse registers")
   .default_val(1);
 
 FlagArg& relax_reg_arg =
-	FlagArg::create("relax_reg")
+  FlagArg::create("relax_reg")
   .description("Allow correct values in incorrect register locations");
 
 FlagArg& relax_mem_arg =
-	FlagArg::create("relax_mem")
+  FlagArg::create("relax_mem")
   .description("Allow correct values in incorrect memory locations");
 
 ValueArg<Cost>& misalign_penalty_arg =
-	ValueArg<Cost>::create("misalign_penalty")
+  ValueArg<Cost>::create("misalign_penalty")
   .usage("<int>")
   .description("Penalty for correct values in incorrect locations")
   .default_val(0);
 
-ValueArg<Cost>& sig_penalty_arg = 
-	ValueArg<Cost>::create("sig_penalty")
+ValueArg<Cost>& sig_penalty_arg =
+  ValueArg<Cost>::create("sig_penalty")
   .usage("<int>")
   .description("Penalty for incorrect signal behavior")
   .default_val(0);
 
 ValueArg<Cost>& min_ulp_arg =
-	ValueArg<Cost>::create("min_ulp")
+  ValueArg<Cost>::create("min_ulp")
   .usage("<int>")
   .description("Minimum ULP value to record")
   .default_val(0);

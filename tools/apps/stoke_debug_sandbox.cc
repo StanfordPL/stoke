@@ -30,12 +30,12 @@ using namespace stoke;
 
 auto& dbg = Heading::create("Debug Options:");
 auto& debug = FlagArg::create("debug")
-  .alternate("d")
-  .description("Debug mode, equivalent to --breakpoint 0");
+              .alternate("d")
+              .description("Debug mode, equivalent to --breakpoint 0");
 auto& breakpoint = ValueArg<size_t>::create("breakpoint")
-  .usage("<line>")
-  .description("Set breakpoint")
-  .default_val(numeric_limits<size_t>::max());
+                   .usage("<line>")
+                   .description("Set breakpoint")
+                   .default_val(numeric_limits<size_t>::max());
 
 void callback(const StateCallbackData& data, void* arg) {
   auto stepping = (bool*) arg;
@@ -85,25 +85,25 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	if (testcases_arg.value().empty()) {
-		cout << "No testcases provided." << endl;
-		return 0;
-	}
-
-  if (debug) {
-		if (target_arg.value().code[0].is_label_defn()) {
-	    breakpoint.value() = 1;
-		} else {
-			breakpoint.value() = 0;
-		}
+  if (testcases_arg.value().empty()) {
+    cout << "No testcases provided." << endl;
+    return 0;
   }
 
-	TargetGadget target;
-	SeedGadget seed;
-	TestcaseGadget tc(seed);
-	CpuStates tcs;
-	tcs.push_back(tc);
-	SandboxGadget sb(tcs);
+  if (debug) {
+    if (target_arg.value().code[0].is_label_defn()) {
+      breakpoint.value() = 1;
+    } else {
+      breakpoint.value() = 0;
+    }
+  }
+
+  TargetGadget target;
+  SeedGadget seed;
+  TestcaseGadget tc(seed);
+  CpuStates tcs;
+  tcs.push_back(tc);
+  SandboxGadget sb(tcs);
 
   auto stepping = false;
   for (size_t i = 0, ie = target_arg.value().code.size(); i < ie; ++i) {

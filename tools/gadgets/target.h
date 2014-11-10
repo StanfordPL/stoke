@@ -21,8 +21,8 @@
 namespace stoke {
 
 class TargetGadget : public Cfg {
-	public:
-		TargetGadget() : Cfg(target_arg.value().code, def_in_arg, live_out_arg) {}
+ public:
+  TargetGadget() : Cfg(target_arg.value().code, def_in_arg, live_out_arg) {}
 };
 
 } // namespace stoke

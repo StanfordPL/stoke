@@ -10,18 +10,18 @@
 
 class RegSetReaderTest : public ::testing::Test {
 
-  public:
+ public:
 
-    void SetUp() {
+  void SetUp() {
 
-    }
+  }
 
-  protected:
+ protected:
 
-    std::stringstream ss_;
-    stoke::RegSetReader rsr_;
-    stoke::RegSetWriter rsw_;
-    x64asm::RegSet rs_;
+  std::stringstream ss_;
+  stoke::RegSetReader rsr_;
+  stoke::RegSetWriter rsw_;
+  x64asm::RegSet rs_;
 
 };
 

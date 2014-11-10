@@ -33,9 +33,9 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	SeedGadget seed;
-	TargetGadget target;
-	TransformsGadget tforms(seed);
+  SeedGadget seed;
+  TargetGadget target;
+  TransformsGadget tforms(seed);
 
   ofilterstream<Column> os(cout);
   os.filter().padding(3);
@@ -47,21 +47,21 @@ int main(int argc, char** argv) {
 
   const auto res = tforms.modify(target, move_arg);
 
-  os << "After " << (res ? "Successful" : "Failed" ) << " Transform:" << endl;
+  os << "After " << (res ? "Successful" : "Failed") << " Transform:" << endl;
   os << endl;
   os << target.get_code() << endl;
   os.filter().next();
 
-	if (res) {
-		tforms.undo(target, move_arg);
-	}
+  if (res) {
+    tforms.undo(target, move_arg);
+  }
 
   os << "After Undo:" << endl;
   os << endl;
   os << target.get_code() << endl;
   os.filter().done();
 
-	cout << endl;
+  cout << endl;
 
   return 0;
 }

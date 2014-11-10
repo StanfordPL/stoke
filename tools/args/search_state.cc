@@ -21,25 +21,25 @@ using namespace x64asm;
 
 namespace stoke {
 
-Heading& search_state_heading = 
-	Heading::create("Search State Options:");
+Heading& search_state_heading =
+  Heading::create("Search State Options:");
 
 FileArg<TUnit, TUnitReader, TUnitWriter>& current_arg =
-	FileArg<TUnit, TUnitReader, TUnitWriter>::create("current")
+  FileArg<TUnit, TUnitReader, TUnitWriter>::create("current")
   .usage("<path/to/file.s>")
   .description("Current rewrite; used with --init previous")
-  .default_val({"current", {{RET}}});
+.default_val({"current", {{RET}}});
 
 FileArg<TUnit, TUnitReader, TUnitWriter>& best_yet_arg =
-	FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_yet")
+  FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_yet")
   .usage("<path/to/file.s>")
   .description("Best rewrite; used with --init previous")
-  .default_val({"best_yet", {{RET}}});
+.default_val({"best_yet", {{RET}}});
 
 FileArg<TUnit, TUnitReader, TUnitWriter>& best_correct_arg =
-	FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_correct")
+  FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_correct")
   .usage("<path/to/file.s>")
   .description("Best correct rewrite; used with --init previous")
-  .default_val({"best_correct", {{RET}}});
+.default_val({"best_correct", {{RET}}});
 
 } // namespace stoke

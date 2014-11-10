@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	TargetGadget target;
+  TargetGadget target;
 
   cout << "Cfg::recompute()..." << endl;
 

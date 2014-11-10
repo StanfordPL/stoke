@@ -28,8 +28,8 @@ array<pair<string, Strategy>, 3> pts {{
     {"none", Strategy::NONE},
     {"hold_out", Strategy::HOLD_OUT},
 
-		// Add user-defined extensions here ...
-		{"extension", Strategy::EXTENSION}
+    // Add user-defined extensions here ...
+    {"extension", Strategy::EXTENSION}
   }
 };
 

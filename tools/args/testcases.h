@@ -29,8 +29,10 @@ extern cpputil::Heading& testcases_heading;
 
 extern cpputil::FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>& testcases_arg;
 extern cpputil::FlagArg& shuffle_tc_arg;
-extern cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024*1024>>>& training_set_arg;
-extern cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024*1024>>>& test_set_arg;
+extern cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>&
+training_set_arg;
+extern cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>&
+test_set_arg;
 extern cpputil::ValueArg<size_t>& testcase_idx_arg;
 
 } // namespace stoke

@@ -25,8 +25,8 @@ enum class Move {
   LOCAL_SWAP,
   GLOBAL_SWAP,
 
-	// Add user-defined extensions here ...
-	EXTENSION,
+  // Add user-defined extensions here ...
+  EXTENSION,
 
   NUM_MOVES
 };

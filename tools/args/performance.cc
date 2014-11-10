@@ -18,17 +18,17 @@ using namespace cpputil;
 
 namespace stoke {
 
-Heading& performance_heading = 
-	Heading::create("Performance Options:");
+Heading& performance_heading =
+  Heading::create("Performance Options:");
 
-ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>& perf_arg = 
-ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
+ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>& perf_arg =
+  ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
   .usage("(none|size|latency|extension)")
   .description("Performance definition")
   .default_val(PerformanceTerm::NONE);
 
-ValueArg<Cost>& nesting_penalty_arg = 
-	ValueArg<Cost>::create("nesting_penalty")
+ValueArg<Cost>& nesting_penalty_arg =
+  ValueArg<Cost>::create("nesting_penalty")
   .usage("<int>")
   .description("Latency multiplier for nested code")
   .default_val(1);

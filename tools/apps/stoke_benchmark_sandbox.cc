@@ -34,10 +34,10 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	TargetGadget target;
-	SeedGadget seed;
-	TestcasesGadget tcs(seed);
-	SandboxGadget sb(tcs);
+  TargetGadget target;
+  SeedGadget seed;
+  TestcasesGadget tcs(seed);
+  SandboxGadget sb(tcs);
 
   cout << "Sandbox::run()..." << endl;
 

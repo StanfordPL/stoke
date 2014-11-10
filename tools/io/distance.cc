@@ -28,8 +28,8 @@ array<pair<string, Distance>, 3> ds {{
     {"hamming", Distance::HAMMING},
     {"ulp", Distance::ULP},
 
-		// Add user-defined extensions here ...
-		{"extension", Distance::EXTENSION}
+    // Add user-defined extensions here ...
+    {"extension", Distance::EXTENSION}
   }
 };
 

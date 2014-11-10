@@ -19,39 +19,39 @@ using namespace x64asm;
 
 namespace stoke {
 
-Heading& target_heading = 
-	Heading::create("Target Options:");
+Heading& target_heading =
+  Heading::create("Target Options:");
 
-FileArg<TUnit, TUnitReader, TUnitWriter>& target_arg = 
-	FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
+FileArg<TUnit, TUnitReader, TUnitWriter>& target_arg =
+  FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
   .usage("<path/to/file.s>")
   .description("Target code")
-	.default_val({"anon", {{RET}}});
+.default_val({"anon", {{RET}}});
 
-FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg = 
-	FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
-	.usage("<path/to/dir>")
-	.description("Directory containing helper functions")
-	.default_val({});
+FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg =
+  FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
+  .usage("<path/to/dir>")
+  .description("Directory containing helper functions")
+  .default_val({});
 
-ValueArg<RegSet, RegSetReader, RegSetWriter>& def_in_arg = 
-	ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
+ValueArg<RegSet, RegSetReader, RegSetWriter>& def_in_arg =
+  ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
   .usage("{ %rax %rsp ... }")
   .description("Registers defined on entry")
   .default_val(RegSet::linux_call_parameters());
 
-ValueArg<RegSet, RegSetReader, RegSetWriter>& live_out_arg = 
-	ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
+ValueArg<RegSet, RegSetReader, RegSetWriter>& live_out_arg =
+  ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
   .usage("{ %rax %rsp ... }")
   .description("Registers live on exit")
   .default_val(RegSet::linux_call_return());
 
-FlagArg& stack_out_arg = 
-	FlagArg::create("stack_out")
+FlagArg& stack_out_arg =
+  FlagArg::create("stack_out")
   .description("Is stack defined on exit?");
 
-FlagArg& heap_out_arg = 
-	FlagArg::create("heap_out")
+FlagArg& heap_out_arg =
+  FlagArg::create("heap_out")
   .description("Is heap defined on exit?");
 
 } // namespace stoke

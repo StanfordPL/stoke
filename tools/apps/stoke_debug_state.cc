@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	SeedGadget seed;
+  SeedGadget seed;
   TestcaseGadget s1(seed);
 
   cout << "Original state: " << endl;

@@ -18,8 +18,8 @@ TEST(CpputilBitvector, CanIterateBytes) {
   bv.get_fixed_quad(0) = 0xdeadbeef;
 
   size_t i = 0;
-  for(auto it = bv.fixed_byte_begin(); it != bv.fixed_byte_end(); ++it, ++i) {
-    switch(i) {
+  for (auto it = bv.fixed_byte_begin(); it != bv.fixed_byte_end(); ++it, ++i) {
+    switch (i) {
       case 0:
         EXPECT_EQ(0xef, *it);
         break;
@@ -51,8 +51,8 @@ TEST(CpputilBitvector, CanIterateWords) {
   bv.get_fixed_quad(0) = 0xdeadbeef;
 
   size_t i = 0;
-  for(auto it = bv.fixed_word_begin(); it != bv.fixed_word_end(); ++it, ++i) {
-    switch(i) {
+  for (auto it = bv.fixed_word_begin(); it != bv.fixed_word_end(); ++it, ++i) {
+    switch (i) {
       case 0:
         EXPECT_EQ(0xbeef, *it);
         break;
@@ -76,8 +76,8 @@ TEST(CpputilBitvector, CanIterateQuads) {
   bv.get_fixed_quad(0) = 0xdeadbeef;
 
   size_t i = 0;
-  for(auto it = bv.fixed_quad_begin(); it != bv.fixed_quad_end(); ++it, ++i) {
-    switch(i) {
+  for (auto it = bv.fixed_quad_begin(); it != bv.fixed_quad_end(); ++it, ++i) {
+    switch (i) {
       case 0:
         EXPECT_EQ(0xdeadbeef, *it);
         break;
@@ -96,7 +96,7 @@ TEST(CpputilBitvector, IterateBitsOfZero) {
   bv.get_fixed_quad(0) = 0;
   bv.get_fixed_quad(1) = 0;
 
-  for(auto it = bv.set_bit_index_begin(); it != bv.set_bit_index_end(); ++it) {
+  for (auto it = bv.set_bit_index_begin(); it != bv.set_bit_index_end(); ++it) {
     ADD_FAILURE() << "Found bit set in zero: " << *it << std::endl;
   }
 

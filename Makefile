@@ -125,9 +125,13 @@ tags:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
+external: src/ext/astyle src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
 	make -C src/ext/x64asm $(EXT_OPT) 
+
+src/ext/astyle:
+	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle
+	make -C src/ext/astyle/build/gcc
 
 src/ext/cpputil:
 	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
@@ -251,12 +255,16 @@ zsh_completion: bin/_stoke
 bin/_stoke: $(BIN) tools/zsh_completion_generator.py
 	tools/zsh_completion_generator.py
 
+format:
+	src/ext/astyle/build/gcc/bin/astyle "*.cc" "*.h" --exclude="ext" --convert-tabs 2
+
 ##### CLEAN TARGETS
 
 clean:
 	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke
 
 dist_clean: clean
+	rm -rf src/ext/astyle
 	rm -rf src/ext/cpputil
 	rm -rf src/ext/x64asm
 	make -C src/ext/gtest-1.7.0 clean

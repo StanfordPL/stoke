@@ -36,14 +36,14 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	TargetGadget target;
-	RewriteGadget rewrite;
+  TargetGadget target;
+  RewriteGadget rewrite;
 
-	SeedGadget seed;
-	TestSetGadget test_set(seed);
-	SandboxGadget sb(test_set);
-	CostFunctionGadget fxn(target, &sb);
-	VerifierGadget verifier(fxn);
+  SeedGadget seed;
+  TestSetGadget test_set(seed);
+  SandboxGadget sb(test_set);
+  CostFunctionGadget fxn(target, &sb);
+  VerifierGadget verifier(fxn);
 
   ofilterstream<Column> os(cout);
   os.filter().padding(3);
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
   os << rewrite_arg.value().code << endl;
   os.filter().done();
 
-	cout << endl;
+  cout << endl;
 
   const auto res = verifier.verify(target, rewrite);
 
@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
   if (!res) {
     cout << endl;
     cout << verifier.get_counter_example();
-		cout << endl;
+    cout << endl;
   }
 
   return 0;

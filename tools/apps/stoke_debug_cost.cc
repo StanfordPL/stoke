@@ -38,13 +38,13 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	TargetGadget target;
-	RewriteGadget rewrite;
+  TargetGadget target;
+  RewriteGadget rewrite;
 
-	SeedGadget seed;
-	TestcasesGadget tcs(seed);
-	SandboxGadget sb(tcs);
-	CostFunctionGadget fxn(target, &sb);
+  SeedGadget seed;
+  TestcasesGadget tcs(seed);
+  SandboxGadget sb(tcs);
+  CostFunctionGadget fxn(target, &sb);
 
   ofilterstream<Column> os(cout);
   os.filter().padding(3);

@@ -5,9 +5,9 @@
 extern double sin(double val, uint64_t* st);
 
 int main() {
-	for ( double val = -3.1; val < 3.1; val += 0.01 ) {
-		sin(val, sym_table);
-	}
+  for (double val = -3.1; val < 3.1; val += 0.01) {
+    sin(val, sym_table);
+  }
 
-	return 0;
+  return 0;
 }

@@ -23,14 +23,14 @@ namespace stoke {
 
 struct CpuStatesReader {
   void operator()(std::istream& is, CpuStates& cs) {
-		cs.read_text(is);
-	}
+    cs.read_text(is);
+  }
 };
 
 struct CpuStatesWriter {
   void operator()(std::ostream& os, const CpuStates& cs) {
-		cs.write_text(os);
-	}
+    cs.write_text(os);
+  }
 };
 
 } // namespace stoke

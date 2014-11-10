@@ -37,94 +37,94 @@ using namespace stoke;
 
 auto& io_opt = Heading::create("I/O options:");
 auto& bin = ValueArg<string>::create("bin")
-  .usage("<path/to/bin>")
-  .description("Executable binary containing function to generate testcases for")
-  .default_val("./a.out");
+            .usage("<path/to/bin>")
+            .description("Executable binary containing function to generate testcases for")
+            .default_val("./a.out");
 auto& args = ValueArg<string>::create("args")
-  .usage("<arg1 arg2 ... argn>")
-  .description("Optional command line arguments to pass to binary")
-  .default_val("");
+             .usage("<arg1 arg2 ... argn>")
+             .description("Optional command line arguments to pass to binary")
+             .default_val("");
 auto& out = ValueArg<string>::create("o")
-  .alternate("out")
-  .usage("<path/to/file.tc>")
-  .description("File to write testcases to (defaults to console if unspecified)")
-  .default_val("");
+            .alternate("out")
+            .usage("<path/to/file.tc>")
+            .description("File to write testcases to (defaults to console if unspecified)")
+            .default_val("");
 
 auto& common_opt = Heading::create("Common options:");
 auto& max_tc = ValueArg<size_t>::create("max_testcases")
-  .usage("<int>")
-  .description("The maximum number of testcases to generate")
-  .default_val(16);
+               .usage("<int>")
+               .description("The maximum number of testcases to generate")
+               .default_val(16);
 
 auto& trace_opt = Heading::create("Trace options:");
 auto& fxn = ValueArg<string>::create("fxn")
-  .usage("<string>")
-  .description("Function to generate testcases for")
-  .default_val("main");
-auto& begin_line = ValueArg<size_t>::create("begin_line") 
-	.usage("<int>")
-	.description("The line number to begin recording from")
-	.default_val(1);
+            .usage("<string>")
+            .description("Function to generate testcases for")
+            .default_val("main");
+auto& begin_line = ValueArg<size_t>::create("begin_line")
+                   .usage("<int>")
+                   .description("The line number to begin recording from")
+                   .default_val(1);
 auto& end_lines = ValueArg<vector<size_t>>::create("end_lines")
-  .usage("{ 0 1 ... 9 }")
-  .description("Line number to end recording on; recording always stops on returns")
-  .default_val({});
+                  .usage("{ 0 1 ... 9 }")
+                  .description("Line number to end recording on; recording always stops on returns")
+                  .default_val({});
 auto& max_stack = ValueArg<uint64_t>::create("max_stack")
-  .usage("<bytes>")
-  .description("The maximum number of bytes to assume could be stack")
-  .default_val(1024);
+                  .usage("<bytes>")
+                  .description("The maximum number of bytes to assume could be stack")
+                  .default_val(1024);
 
 auto& autogen_opt = Heading::create("Autogen options:");
 auto& max_attempts = ValueArg<uint64_t>::create("max_attempts")
-  .usage("<int>")
-  .description("The maximum number of attempts to make at generating a testcase")
-  .default_val(16);
+                     .usage("<int>")
+                     .description("The maximum number of attempts to make at generating a testcase")
+                     .default_val(16);
 auto& max_memory = ValueArg<uint64_t>::create("max_memory")
-  .usage("<bytes>")
-  .description("The maximum number of bytes to allocate to stack or heap")
-  .default_val(1024);
+                   .usage("<bytes>")
+                   .description("The maximum number of bytes to allocate to stack or heap")
+                   .default_val(1024);
 
 auto& conv_opt = Heading::create("File conversion options:");
 auto& compress = FlagArg::create("compress")
-	.description("Convert testcase file from text to binary");
+                 .description("Convert testcase file from text to binary");
 auto& decompress = FlagArg::create("decompress")
-	.description("Convert testcase file from binary to text");
+                   .description("Convert testcase file from binary to text");
 auto& in = ValueArg<string>::create("in")
-	.alternate("i")
-	.usage("<path/to/file.tc>")
-	.description("Path to testcases file")
-	.default_val("in.tc");
+           .alternate("i")
+           .usage("<path/to/file.tc>")
+           .description("Path to testcases file")
+           .default_val("in.tc");
 
 int auto_gen() {
-	TargetGadget target;
-	SandboxGadget sb({});
+  TargetGadget target;
+  SandboxGadget sb({});
 
-	StateGen sg(&sb);
-	sg.set_max_attempts(max_attempts.value())
-		.set_max_memory(max_stack.value());
+  StateGen sg(&sb);
+  sg.set_max_attempts(max_attempts.value())
+  .set_max_memory(max_stack.value());
 
-	CpuStates tcs;
-	for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
-		CpuState tc;
-		if (sg.get(tc, target)) {
-			tcs.push_back(tc);
-		}
-	}
+  CpuStates tcs;
+  for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
+    CpuState tc;
+    if (sg.get(tc, target)) {
+      tcs.push_back(tc);
+    }
+  }
 
-	if (tcs.empty()) {
-		cout << "Unable to generate testcases!" << endl;
-		return 1;
-	}
+  if (tcs.empty()) {
+    cout << "Unable to generate testcases!" << endl;
+    return 1;
+  }
 
-	if (out.value() != "") {
-		ofstream ofs(out.value());
-		tcs.write_text(ofs);
-	} else {
-		tcs.write_text(cout);
-		cout << endl;
-	}
+  if (out.value() != "") {
+    ofstream ofs(out.value());
+    tcs.write_text(ofs);
+  } else {
+    tcs.write_text(cout);
+    cout << endl;
+  }
 
-	return 0;
+  return 0;
 }
 
 int trace(const string& argv0) {
@@ -143,12 +143,12 @@ int trace(const string& argv0) {
   }
   term << "-x " << max_stack.value() << " ";
   term << "-n " << max_tc.value() << " ";
-	term << "-b " << begin_line.value() << " ";
-	term << "-e \" ";
-	for ( auto e : end_lines.value() ) {
-		term << e << " ";
-	}
-	term << "\" ";
+  term << "-b " << begin_line.value() << " ";
+  term << "-e \" ";
+  for (auto e : end_lines.value()) {
+    term << e << " ";
+  }
+  term << "\" ";
 
   term << " -- " << bin.value() << " " << args.value() << endl;
 
@@ -156,53 +156,53 @@ int trace(const string& argv0) {
 }
 
 int do_compress() {
-	ifstream ifs(in.value());
-	if (!ifs.is_open()) {
-		cout << "Unable to open input file: " << in.value() << "!" << endl;
-		return 1;
-	}
+  ifstream ifs(in.value());
+  if (!ifs.is_open()) {
+    cout << "Unable to open input file: " << in.value() << "!" << endl;
+    return 1;
+  }
 
-	CpuStates cs;
-	cs.read_text(ifs);
-	if (ifs.fail()) {
-		cout << "Unable to read input file: " << in.value() << "!" << endl;
-		return 1;
-	}
+  CpuStates cs;
+  cs.read_text(ifs);
+  if (ifs.fail()) {
+    cout << "Unable to read input file: " << in.value() << "!" << endl;
+    return 1;
+  }
 
-	if (out.value() != "") {
-		ofstream ofs(out.value());
-		cs.write_bin(ofs);
-	} else {
-		cs.write_bin(cout);
-		cout << endl;
-	}
+  if (out.value() != "") {
+    ofstream ofs(out.value());
+    cs.write_bin(ofs);
+  } else {
+    cs.write_bin(cout);
+    cout << endl;
+  }
 
-	return 0;	
+  return 0;
 }
 
 int do_decompress() {
-	ifstream ifs(in.value());
-	if (!ifs.is_open()) {
-		cout << "Unable to open input file: " << in.value() << "!" << endl;
-		return 1;
-	}
+  ifstream ifs(in.value());
+  if (!ifs.is_open()) {
+    cout << "Unable to open input file: " << in.value() << "!" << endl;
+    return 1;
+  }
 
-	CpuStates cs;
-	cs.read_bin(ifs);
-	if (ifs.fail()) {
-		cout << "Unable to read input file: " << in.value() << "!" << endl;
-		return 1;
-	}
+  CpuStates cs;
+  cs.read_bin(ifs);
+  if (ifs.fail()) {
+    cout << "Unable to read input file: " << in.value() << "!" << endl;
+    return 1;
+  }
 
-	if (out.value() != "") {
-		ofstream ofs(out.value());
-		cs.write_text(ofs);
-	} else {
-		cs.write_text(cout);
-		cout << endl;
-	}
+  if (out.value() != "") {
+    ofstream ofs(out.value());
+    cs.write_text(ofs);
+  } else {
+    cs.write_text(cout);
+    cout << endl;
+  }
 
-	return 0;	
+  return 0;
 }
 
 int main(int argc, char** argv) {
@@ -210,14 +210,14 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	if (compress.value()) {
-		return do_compress();
-	} else if (decompress.value()) {
-		return do_decompress();
-	} else if (target_arg.value().name != "anon") {
-		return auto_gen();
-	} else {
-		return trace(argv[0]);
-	}
+  if (compress.value()) {
+    return do_compress();
+  } else if (decompress.value()) {
+    return do_decompress();
+  } else if (target_arg.value().name != "anon") {
+    return auto_gen();
+  } else {
+    return trace(argv[0]);
+  }
 }
 

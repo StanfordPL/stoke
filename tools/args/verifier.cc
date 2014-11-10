@@ -18,11 +18,11 @@ using namespace cpputil;
 
 namespace stoke {
 
-Heading& verifier_heading = 
-	Heading::create("Verifier Options:");
+Heading& verifier_heading =
+  Heading::create("Verifier Options:");
 
-ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg = 
-	ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
+ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg =
+  ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
   .usage("(none|hold_out|extension)")
   .description("Verification strategy")
   .default_val(Strategy::NONE);

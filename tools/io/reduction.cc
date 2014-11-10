@@ -28,8 +28,8 @@ array<pair<string, Reduction>, 3> rs {{
     {"sum", Reduction::SUM},
     {"max", Reduction::MAX},
 
-		// Add user-defined reductions here ...
-		{"extension", Reduction::EXTENSION}
+    // Add user-defined reductions here ...
+    {"extension", Reduction::EXTENSION}
   }
 };
 
