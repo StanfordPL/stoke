@@ -34,12 +34,12 @@ class Memory {
 
   /** Sets the virtual address base and size. Rounds down to 256-bit align. Pads with headroom. */
   Memory& resize(uint64_t base, size_t size) {
-		// Round down to 256-bit (32-byte) align.
+    // Round down to 256-bit (32-byte) align.
     base_ = base & 0xffffffffffffffe0;
-		// Pad size with amount rounded down and 256-bits (32-bytes) of headroom.
+    // Pad size with amount rounded down and 256-bits (32-bytes) of headroom.
     size += (base % 32) + 32;
-		// Round size up to align to an 8 byte boundary.
-		size = (size + 7) & 0xfffffffffffffff8;
+    // Round size up to align to an 8 byte boundary.
+    size = (size + 7) & 0xfffffffffffffff8;
 
     contents_.resize_for_fixed_bytes(size);
     valid_.resize_for_bits(size);
@@ -159,15 +159,15 @@ class Memory {
     return base_ != rhs.base_ || contents_ != rhs.contents_;
   }
 
-	/** Write text. */
-	std::ostream& write_text(std::ostream& os) const;
-	/** Read text. */
-	std::istream& read_text(std::istream& is);
+  /** Write text. */
+  std::ostream& write_text(std::ostream& os) const;
+  /** Read text. */
+  std::istream& read_text(std::istream& is);
 
-	/** Write binary. */
-	std::ostream& write_bin(std::ostream& os) const;
-	/** Read binary. */
-	std::istream& read_bin(std::istream& is);
+  /** Write binary. */
+  std::ostream& write_bin(std::ostream& os) const;
+  /** Read binary. */
+  std::istream& read_bin(std::istream& is);
 
  private:
   /** Virtual base address. */
@@ -179,23 +179,23 @@ class Memory {
   /** Shadow bit vector for tracking defined bytes. */
   cpputil::BitVector def_;
 
-	/** Write a text summary of memory. */
+  /** Write a text summary of memory. */
   void write_text_summary(std::ostream& os) const;
-	/** Write a text row of memory. */
+  /** Write a text row of memory. */
   void write_text_row(std::ostream& os, uint64_t addr) const;
-	/** Write all text rows from memory. */
+  /** Write all text rows from memory. */
   void write_text_contents(std::ostream& os) const;
 
-	/** Read a text summary of memory. */
+  /** Read a text summary of memory. */
   void read_text_summary(std::istream& is);
-	/** Read a text row of memory. */
+  /** Read a text row of memory. */
   void read_text_row(std::istream& is);
-	/** Read all text rows of memory. */
+  /** Read all text rows of memory. */
   void read_text_contents(std::istream& is);
 
-	/** Does this row contain at least one valid address? */
+  /** Does this row contain at least one valid address? */
   bool valid_row(uint64_t addr) const;
-	/** How many of the rows in this memory are valid? */
+  /** How many of the rows in this memory are valid? */
   size_t valid_count() const;
 };
 

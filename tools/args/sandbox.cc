@@ -19,14 +19,14 @@ using namespace cpputil;
 namespace stoke {
 
 Heading& sandbox_heading =
-	Heading::create("Sandbox Options:");
+  Heading::create("Sandbox Options:");
 
-FlagArg& abi_check_arg = 
-	FlagArg::create("abi_check")
-	.description("Report SIGSEGV for abi violations");
+FlagArg& abi_check_arg =
+  FlagArg::create("abi_check")
+  .description("Report SIGSEGV for abi violations");
 
 ValueArg<size_t>& max_jumps_arg =
-	ValueArg<size_t>::create("max_jumps")
+  ValueArg<size_t>::create("max_jumps")
   .usage("<int>")
   .description("Maximum jumps before exit due to infinite loop")
   .default_val(1024);

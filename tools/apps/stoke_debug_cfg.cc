@@ -31,37 +31,37 @@ using namespace stoke;
 
 auto& content = Heading::create("Content Options:");
 auto& dib = FlagArg::create("dib")
-  .alternate("def_in_block")
-  .description("Display def in values for basic blocks");
+            .alternate("def_in_block")
+            .description("Display def in values for basic blocks");
 auto& dii = FlagArg::create("dii")
-  .alternate("def_in_instr")
-  .description("Display def in values for instructions");
+            .alternate("def_in_instr")
+            .description("Display def in values for instructions");
 auto& lob = FlagArg::create("lob")
-  .alternate("live_out_block")
-  .description("Display live out values for basic blocks");
+            .alternate("live_out_block")
+            .description("Display live out values for basic blocks");
 auto& dom = FlagArg::create("dom")
-  .alternate("dominators")
-  .description("Display dominators");
+            .alternate("dominators")
+            .description("Display dominators");
 
 auto& io = Heading::create("I/O Options:");
 auto& out = ValueArg<string>::create("o")
-  .alternate("out")
-  .usage("<path/to/file.pdf>")
-  .description("Path to write cfg to")
-  .default_val("./cfg.pdf");
+            .alternate("out")
+            .usage("<path/to/file.pdf>")
+            .description("Path to write cfg to")
+            .default_val("./cfg.pdf");
 auto& view = FlagArg::create("view")
-  .alternate("v")
-  .description("View cfg immediately");
+             .alternate("v")
+             .description("View cfg immediately");
 
 void to_dot() {
   ofstream ofs(string("/tmp/stoke.") + getenv("USER") + ".dot");
 
-	TargetGadget target;
+  TargetGadget target;
 
   DotWriter dw;
   dw.set_def_in(dib, dii)
-  	.set_live_out(lob)
-  	.set_dom(dom);
+  .set_live_out(lob)
+  .set_dom(dom);
 
   dw(ofs, target);
 }

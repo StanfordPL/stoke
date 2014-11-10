@@ -32,8 +32,8 @@ array<pair<string, Move>, 7> moves {{
     {"global_swap", Move::GLOBAL_SWAP},
     {"resize", Move::RESIZE},
 
-		// Add user-defined extensions here ...
-		{"extension", Move::EXTENSION}
+    // Add user-defined extensions here ...
+    {"extension", Move::EXTENSION}
   }
 };
 

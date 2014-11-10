@@ -25,60 +25,60 @@
 namespace stoke {
 
 class TestcaseGadget : public CpuState {
-	public:
-		TestcaseGadget(std::default_random_engine::result_type seed) : CpuState() {
-			if (shuffle_tc_arg) {
-				std::default_random_engine rand;
-				rand.seed(seed);
-				std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand); 
-			}
-			const auto idx = std::min(testcases_arg.value().size()-1, testcase_idx_arg.value());
-			(CpuState)*this = testcases_arg.value()[idx];		
-		}
+ public:
+  TestcaseGadget(std::default_random_engine::result_type seed) : CpuState() {
+    if (shuffle_tc_arg) {
+      std::default_random_engine rand;
+      rand.seed(seed);
+      std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand);
+    }
+    const auto idx = std::min(testcases_arg.value().size() - 1, testcase_idx_arg.value());
+    (CpuState)*this = testcases_arg.value()[idx];
+  }
 };
 
 class TestcasesGadget : public CpuStates {
-	public:
-		TestcasesGadget(std::default_random_engine::result_type seed) : CpuStates() {
-			if (shuffle_tc_arg) {
-				std::default_random_engine rand;
-				rand.seed(seed);
-				std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand); 
-			}
-			(CpuStates)*this = testcases_arg.value();
-		}
+ public:
+  TestcasesGadget(std::default_random_engine::result_type seed) : CpuStates() {
+    if (shuffle_tc_arg) {
+      std::default_random_engine rand;
+      rand.seed(seed);
+      std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand);
+    }
+    (CpuStates)*this = testcases_arg.value();
+  }
 };
 
 class TrainingSetGadget : public CpuStates {
-	public:
-		TrainingSetGadget(std::default_random_engine::result_type seed) : CpuStates() {
-			if (shuffle_tc_arg) {
-				std::default_random_engine rand;
-				rand.seed(seed);
-				std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand); 
-			}
-			for (size_t i = 0, ie = testcases_arg.value().size(); i < ie; ++i) {
-				if (training_set_arg.value().find(i) != training_set_arg.value().end()) {
-					push_back(testcases_arg.value()[i]);
-				}
-			}
-		}
+ public:
+  TrainingSetGadget(std::default_random_engine::result_type seed) : CpuStates() {
+    if (shuffle_tc_arg) {
+      std::default_random_engine rand;
+      rand.seed(seed);
+      std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand);
+    }
+    for (size_t i = 0, ie = testcases_arg.value().size(); i < ie; ++i) {
+      if (training_set_arg.value().find(i) != training_set_arg.value().end()) {
+        push_back(testcases_arg.value()[i]);
+      }
+    }
+  }
 };
 
 class TestSetGadget : public CpuStates {
-	public:
-		TestSetGadget(std::default_random_engine::result_type seed) : CpuStates() {
-			if (shuffle_tc_arg) {
-				std::default_random_engine rand;
-				rand.seed(seed);
-				std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand); 
-			}
-			for (size_t i = 0, ie = testcases_arg.value().size(); i < ie; ++i) {
-				if (test_set_arg.value().find(i) != test_set_arg.value().end()) {
-					push_back(testcases_arg.value()[i]);
-				}
-			}
-		}
+ public:
+  TestSetGadget(std::default_random_engine::result_type seed) : CpuStates() {
+    if (shuffle_tc_arg) {
+      std::default_random_engine rand;
+      rand.seed(seed);
+      std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand);
+    }
+    for (size_t i = 0, ie = testcases_arg.value().size(); i < ie; ++i) {
+      if (test_set_arg.value().find(i) != test_set_arg.value().end()) {
+        push_back(testcases_arg.value()[i]);
+      }
+    }
+  }
 };
 
 } // namespace stoke

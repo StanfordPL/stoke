@@ -26,7 +26,7 @@ namespace {
 
 array<pair<string, Timeout>, 3> pts {{
     {"quit", Timeout::QUIT},
-		{"restart", Timeout::RESTART},
+    {"restart", Timeout::RESTART},
     {"testcase", Timeout::TESTCASE}
   }
 };

@@ -22,8 +22,8 @@
 namespace stoke {
 
 class RewriteGadget : public Cfg {
-	public:
-		RewriteGadget() : Cfg(rewrite_arg.value().code, def_in_arg, live_out_arg) {}
+ public:
+  RewriteGadget() : Cfg(rewrite_arg.value().code, def_in_arg, live_out_arg) {}
 };
 
 } // namespace stoke

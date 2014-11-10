@@ -18,11 +18,11 @@ using namespace cpputil;
 
 namespace stoke {
 
-Heading& benchmark_heading = 
-	Heading::create("Benchmark Options:");
+Heading& benchmark_heading =
+  Heading::create("Benchmark Options:");
 
-ValueArg<size_t>& benchmark_itr_arg = 
-	ValueArg<size_t>::create("iterations")
+ValueArg<size_t>& benchmark_itr_arg =
+  ValueArg<size_t>::create("iterations")
   .description("Number of benchmarking iterations to run for")
   .default_val(1000000);
 

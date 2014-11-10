@@ -35,15 +35,15 @@ using namespace x64asm;
 
 auto& io = Heading::create("I/O options:");
 auto& in = ValueArg<string>::create("i")
-  .alternate("in")
-  .usage("<path/to/bin>")
-  .description("Binary file to extract code from")
-  .default_val("./a.out");
+           .alternate("in")
+           .usage("<path/to/bin>")
+           .description("Binary file to extract code from")
+           .default_val("./a.out");
 auto& out = ValueArg<string>::create("o")
-  .alternate("out")
-  .usage("<path/to/dir>")
-  .description("File to write changes to; default is to overwrite")
-  .default_val("");
+            .alternate("out")
+            .usage("<path/to/dir>")
+            .description("File to write changes to; default is to overwrite")
+            .default_val("");
 
 map<string, uint64_t> section_offsets;
 uint64_t fxn_offset;
@@ -51,43 +51,43 @@ size_t fxn_size;
 bool found;
 
 void callback(const FunctionCallbackData& data, void* arg) {
-	// Check if we've found the function
-	if(data.tunit.name == rewrite_arg.value().name) {
-		found = true;
-		fxn_offset = data.offset;
-		/* This is an underapproximation; we can do better. */
-		fxn_size = 1 + data.instruction_offsets.back();
-	}
+  // Check if we've found the function
+  if (data.tunit.name == rewrite_arg.value().name) {
+    found = true;
+    fxn_offset = data.offset;
+    /* This is an underapproximation; we can do better. */
+    fxn_size = 1 + data.instruction_offsets.back();
+  }
 }
 
 bool replace(uint64_t offset, size_t size) {
-	// Assemble the new function
-	Assembler assm;
-	auto fxn = assm.assemble(rewrite_arg.value().code);
+  // Assemble the new function
+  Assembler assm;
+  auto fxn = assm.assemble(rewrite_arg.value().code);
 
-	// Fail if the new function is larger than the old
-	if (fxn.size() > size) {
-		return false;
-	}
+  // Fail if the new function is larger than the old
+  if (fxn.size() > size) {
+    return false;
+  }
 
-	// Copy binary to new destination if path was specified
-	string dest = in.value();
-	if (out.value() != "") {
-		dest = out.value();
-		ifstream ifs(in.value(), ios::binary);
-		ofstream ofs(out.value(), ios::binary); 
-		ofs << ifs.rdbuf();
-		ofs.close();
-	}	
+  // Copy binary to new destination if path was specified
+  string dest = in.value();
+  if (out.value() != "") {
+    dest = out.value();
+    ifstream ifs(in.value(), ios::binary);
+    ofstream ofs(out.value(), ios::binary);
+    ofs << ifs.rdbuf();
+    ofs.close();
+  }
 
-	// Overwrite the old function (fingers crossed!)
-	fstream fs(dest, ios::binary | ios::in | ios::out);
-	fs.seekg(offset);
-	for (size_t i = 0; i < fxn.size(); ++i) {
-		fs.put(fxn.get_buffer()[i]);
-	}
+  // Overwrite the old function (fingers crossed!)
+  fstream fs(dest, ios::binary | ios::in | ios::out);
+  fs.seekg(offset);
+  for (size_t i = 0; i < fxn.size(); ++i) {
+    fs.put(fxn.get_buffer()[i]);
+  }
 
-	return true;
+  return true;
 }
 
 int main(int argc, char** argv) {
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   Disassembler d;
-	d.set_function_callback(callback, nullptr);
+  d.set_function_callback(callback, nullptr);
 
   found = false;
   d.disassemble(in.value());
@@ -106,11 +106,11 @@ int main(int argc, char** argv) {
     return 1;
   } else if (!found) {
     cerr << "Couldn't find function " << rewrite_arg.value().name << " in the binary." << endl;
-		return 1;
+    return 1;
   } else if (!replace(fxn_offset, fxn_size)) {
-		cerr << "Unable to replace function text!" << endl;
-		return 1;
-	}
+    cerr << "Unable to replace function text!" << endl;
+    return 1;
+  }
 
-	return 0;
+  return 0;
 }

@@ -37,14 +37,14 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	TargetGadget target;
-	RewriteGadget rewrite;
+  TargetGadget target;
+  RewriteGadget rewrite;
 
-	SeedGadget seed;
-	TestSetGadget test_set(seed);
-	SandboxGadget sb(test_set);
-	CostFunctionGadget fxn(target, &sb);
-	VerifierGadget verifier(fxn);
+  SeedGadget seed;
+  TestSetGadget test_set(seed);
+  SandboxGadget sb(test_set);
+  CostFunctionGadget fxn(target, &sb);
+  VerifierGadget verifier(fxn);
 
   cout << "Verifier::verify()..." << endl;
 

@@ -5,9 +5,9 @@
 extern double tan(double val, uint64_t* st);
 
 int main() {
-	for ( double val = -1.5; val < 1.5; val += 0.01 ) {
-		tan(val, sym_table);
-	}
+  for (double val = -1.5; val < 1.5; val += 0.01) {
+    tan(val, sym_table);
+  }
 
-	return 0;
+  return 0;
 }

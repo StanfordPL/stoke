@@ -24,12 +24,12 @@
 namespace stoke {
 
 struct FunctionCallbackData {
-	/* The function */
-	TUnit tunit;
-	/* The offset from the file of the function */
-	uint64_t offset;
-	/* The offsets, from function start, of each instruction (by index) */
-	std::vector<uint64_t> instruction_offsets;
+  /* The function */
+  TUnit tunit;
+  /* The offset from the file of the function */
+  uint64_t offset;
+  /* The offsets, from function start, of each instruction (by index) */
+  std::vector<uint64_t> instruction_offsets;
   /* Map from address labels to the original function names */
   std::map<std::string, std::string> addr_label_map;
   /* Did a parse error occur? */

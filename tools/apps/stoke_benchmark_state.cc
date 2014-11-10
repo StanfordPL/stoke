@@ -32,16 +32,16 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	SeedGadget seed;
-	TestcaseGadget tc1(seed);
-	TestcaseGadget tc2 = tc1;
+  SeedGadget seed;
+  TestcaseGadget tc1(seed);
+  TestcaseGadget tc2 = tc1;
 
   cout << "Memory::copy_defined()..." << endl;
 
   const auto start = steady_clock::now();
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
-		tc1.stack.copy_defined(tc2.stack);
-		tc1.heap.copy_defined(tc2.heap);
+    tc1.stack.copy_defined(tc2.stack);
+    tc1.heap.copy_defined(tc2.heap);
   }
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto cps = benchmark_itr_arg / dur.count();

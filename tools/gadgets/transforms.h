@@ -26,23 +26,23 @@
 namespace stoke {
 
 class TransformsGadget : public Transforms {
-	public:
-		TransformsGadget(std::default_random_engine::result_type seed) : Transforms() {
-			if (callee_save_arg.value()) {
-				preserve_regs_arg.value() = x64asm::RegSet::empty();
-			}
+ public:
+  TransformsGadget(std::default_random_engine::result_type seed) : Transforms() {
+    if (callee_save_arg.value()) {
+      preserve_regs_arg.value() = x64asm::RegSet::empty();
+    }
 
-			set_opcode_pool(cpu_flags_arg, nop_percent_arg, mem_read_arg, mem_write_arg, 
-					propose_call_arg, opc_blacklist_arg);
-			set_operand_pool(target_arg.value().code, preserve_regs_arg);
+    set_opcode_pool(cpu_flags_arg, nop_percent_arg, mem_read_arg, mem_write_arg,
+                    propose_call_arg, opc_blacklist_arg);
+    set_operand_pool(target_arg.value().code, preserve_regs_arg);
 
-			for (const auto& imm : immediates_arg.value()) {
-				insert_immediate(imm);
-			}
-			for (const auto& fxn : aux_fxns_arg.value()) {
-				insert_label(fxn.code[0].get_operand<x64asm::Label>(0));
-			}
-		}
+    for (const auto& imm : immediates_arg.value()) {
+      insert_immediate(imm);
+    }
+    for (const auto& fxn : aux_fxns_arg.value()) {
+      insert_label(fxn.code[0].get_operand<x64asm::Label>(0));
+    }
+  }
 };
 
 } // namespace stoke

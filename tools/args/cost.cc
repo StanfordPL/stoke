@@ -20,11 +20,11 @@ using namespace cpputil;
 
 namespace stoke {
 
-Heading& cost_heading = 
-	Heading::create("Cost Function Evaluation Options:");
+Heading& cost_heading =
+  Heading::create("Cost Function Evaluation Options:");
 
-ValueArg<Cost>& max_cost_arg = 
-	ValueArg<Cost>::create("max_cost")
+ValueArg<Cost>& max_cost_arg =
+  ValueArg<Cost>::create("max_cost")
   .usage("<int>")
   .description("Give up once cost exceeds this value")
   .default_val(CostFunction::max_cost - 1);

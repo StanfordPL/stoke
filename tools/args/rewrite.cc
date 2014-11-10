@@ -19,13 +19,13 @@ using namespace x64asm;
 
 namespace stoke {
 
-Heading& rewrite_heading = 
-	Heading::create("Rewrite Options:");
+Heading& rewrite_heading =
+  Heading::create("Rewrite Options:");
 
-FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg = 
-	FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
+FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg =
+  FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
   .usage("<path/to/file.s>")
   .description("Rewrite code")
-	.default_val({"anon", {{RET}}});
+.default_val({"anon", {{RET}}});
 
 } // namespace stoke

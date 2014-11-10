@@ -69,27 +69,27 @@ class Regs {
     return contents_ != rhs.contents_;
   }
 
-	/** Write text. */
-	std::ostream& write_text(std::ostream& os, const char** names, size_t padding) const;
-	/** Read text. */
-	std::istream& read_text(std::istream& is);
+  /** Write text. */
+  std::ostream& write_text(std::ostream& os, const char** names, size_t padding) const;
+  /** Read text. */
+  std::istream& read_text(std::istream& is);
 
-	/** Write binary. */
-	std::ostream& write_bin(std::ostream& os) const {
-		for (size_t i = 0, ie = size(); i < ie; ++i) {
-			const auto size = sizeof(uint64_t) * contents_[i].num_fixed_quads();
-			os.write((const char*)contents_[i].data(), size);
-		}
-		return os;
-	}
-	/** Read binary. */
-	std::istream& read_bin(std::istream& is) {
-		for (size_t i = 0, ie = size(); i < ie; ++i) {
-			const auto size = sizeof(uint64_t) * contents_[i].num_fixed_quads();
-			is.read((char*)contents_[i].data(), size);	
-		}
-		return is;
-	}
+  /** Write binary. */
+  std::ostream& write_bin(std::ostream& os) const {
+    for (size_t i = 0, ie = size(); i < ie; ++i) {
+      const auto size = sizeof(uint64_t) * contents_[i].num_fixed_quads();
+      os.write((const char*)contents_[i].data(), size);
+    }
+    return os;
+  }
+  /** Read binary. */
+  std::istream& read_bin(std::istream& is) {
+    for (size_t i = 0, ie = size(); i < ie; ++i) {
+      const auto size = sizeof(uint64_t) * contents_[i].num_fixed_quads();
+      is.read((char*)contents_[i].data(), size);
+    }
+    return is;
+  }
 
  private:
   /** Register contents. */

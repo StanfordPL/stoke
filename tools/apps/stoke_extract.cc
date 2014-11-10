@@ -30,15 +30,15 @@ using namespace std;
 
 auto& io = Heading::create("I/O options:");
 auto& in = ValueArg<string>::create("i")
-  .alternate("in")
-  .usage("<path/to/bin>")
-  .description("Binary file to extract code from")
-  .default_val("./a.out");
+           .alternate("in")
+           .usage("<path/to/bin>")
+           .description("Binary file to extract code from")
+           .default_val("./a.out");
 auto& out = ValueArg<string>::create("o")
-  .alternate("out")
-  .usage("<path/to/dir>")
-  .description("Directory to write results to")
-  .default_val("out");
+            .alternate("out")
+            .usage("<path/to/dir>")
+            .description("Directory to write results to")
+            .default_val("out");
 
 bool make_dir() {
   /* The permission is guarded by user's umask, which is why
@@ -59,8 +59,8 @@ bool make_dir() {
 }
 
 void callback(const FunctionCallbackData& data, void* arg) {
-	ofstream ofs(out.value() + "/" + data.tunit.name + ".s");
-	ofs << data.tunit << endl;
+  ofstream ofs(out.value() + "/" + data.tunit.name + ".s");
+  ofs << data.tunit << endl;
 }
 
 int main(int argc, char** argv) {
@@ -71,17 +71,17 @@ int main(int argc, char** argv) {
   if (!make_dir()) {
     cout << "Unable to create output directory " << out.value() << "!" << endl;
     return 1;
-  } 
-
-  Disassembler d;
-	d.set_function_callback(callback, nullptr);
-  d.disassemble(in.value());
-
-  if(d.has_error()) {
-    cerr << "Error: " << d.get_error() << endl;
-		return 1;
   }
 
-	return 0;
+  Disassembler d;
+  d.set_function_callback(callback, nullptr);
+  d.disassemble(in.value());
+
+  if (d.has_error()) {
+    cerr << "Error: " << d.get_error() << endl;
+    return 1;
+  }
+
+  return 0;
 }
 

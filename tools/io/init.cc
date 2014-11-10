@@ -27,10 +27,10 @@ namespace {
 array<pair<string, Init>, 4> ds {{
     {"empty", Init::EMPTY},
     {"target", Init::TARGET},
-		{"previous", Init::PREVIOUS},
+    {"previous", Init::PREVIOUS},
 
-		// Add user-defined extensions here ...
-		{"extension", Init::EXTENSION}
+    // Add user-defined extensions here ...
+    {"extension", Init::EXTENSION}
   }
 };
 

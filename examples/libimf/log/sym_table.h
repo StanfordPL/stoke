@@ -11,7 +11,7 @@ uint64_t sym_table[] = {
   0xbfc5555e3d6fb175, 0x3fd5555555555555, // <coeff+16>
   0x3fc999999999999a, 0xbfe0000000000000, // <coeff+32>
 
-  0x3fe62e42fefa3800, 0x3d2ef35793c76730, // <L_tbl> 
+  0x3fe62e42fefa3800, 0x3d2ef35793c76730, // <L_tbl>
   0x3fe5ee82aa241800, 0x3d2202380cda46be, // ...
   0x3fe5af405c364800, 0x3d2dfa63ac10c9fb,
   0x3fe5707a26bb8c00, 0x3d09980bff3303dd,

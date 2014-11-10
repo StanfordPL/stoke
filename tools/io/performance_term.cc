@@ -29,8 +29,8 @@ array<pair<string, PerformanceTerm>, 4> pts {{
     {"size", PerformanceTerm::SIZE},
     {"latency", PerformanceTerm::LATENCY},
 
-		// Add user-defined extensions here ...
-		{"extension", PerformanceTerm::EXTENSION}
+    // Add user-defined extensions here ...
+    {"extension", PerformanceTerm::EXTENSION}
   }
 };
 

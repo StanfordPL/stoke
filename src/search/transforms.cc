@@ -31,7 +31,7 @@ set<Opcode> unsupported_ {{
 namespace stoke {
 
 Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent, bool use_mem_read,
-    bool use_mem_write, bool propose_call, const set<Opcode>& opc_blacklist) {
+                                        bool use_mem_write, bool propose_call, const set<Opcode>& opc_blacklist) {
   control_free_.clear();
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     auto op = (Opcode)i;
@@ -39,23 +39,26 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
         opc_blacklist.find(op) != opc_blacklist.end()) {
       continue;
     } else if (op == CALL_LABEL && !propose_call) {
-			continue;
-		} else if (!use_mem_read) {
+      continue;
+    } else if (!use_mem_read) {
       if (!use_mem_write) {
         //no memory allowed
-        if(is_mem_opcode(op))
+        if (is_mem_opcode(op)) {
           continue;
+        }
       } else {
         //reads disallowed, writes allowed
-        if(is_mem_opcode(op) && !is_mem_write_only_opcode(op))
+        if (is_mem_opcode(op) && !is_mem_write_only_opcode(op)) {
           continue;
+        }
       }
     } else if (!use_mem_write) {
       //read allowed, write disallowed
-      if (is_mem_opcode(op) && !is_mem_read_only_opcode(op))
+      if (is_mem_opcode(op) && !is_mem_read_only_opcode(op)) {
         continue;
-    } 
-    
+      }
+    }
+
     control_free_.push_back(op);
   }
 
@@ -80,37 +83,37 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
 Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& preserve_regs) {
   rl_pool_.clear();
   for (const auto& r : rls) {
-		if (!preserve_regs.contains(r)) {
+    if (!preserve_regs.contains(r)) {
       rl_pool_.push_back(r);
     }
   }
   rh_pool_.clear();
   for (const auto& r : rhs) {
-		if (!preserve_regs.contains(r)) {
+    if (!preserve_regs.contains(r)) {
       rh_pool_.push_back(r);
     }
   }
   rb_pool_.clear();
   for (const auto& r : rbs) {
-		if (!preserve_regs.contains(r)) {
+    if (!preserve_regs.contains(r)) {
       rb_pool_.push_back(r);
     }
   }
   r16_pool_.clear();
   for (const auto& r : r16s) {
-		if (!preserve_regs.contains(r)) {
+    if (!preserve_regs.contains(r)) {
       r16_pool_.push_back(r);
     }
   }
   r32_pool_.clear();
   for (const auto& r : r32s) {
-		if (!preserve_regs.contains(r)) {
+    if (!preserve_regs.contains(r)) {
       r32_pool_.push_back(r);
     }
   }
   r64_pool_.clear();
   for (const auto& r : r64s) {
-		if (!preserve_regs.contains(r)) {
+    if (!preserve_regs.contains(r)) {
       r64_pool_.push_back(r);
     }
   }
@@ -124,28 +127,28 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
     0ul, 1ul, -1ul, 2ul, -2ul, 3ul, -3ul, 4ul, -4ul, 5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
     16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
   });
-	for (const auto& instr : target) {
-		for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
-			switch (instr.type(i)) {
-				case Type::IMM_8:
-				case Type::IMM_16:
-				case Type::IMM_32:
-				case Type::IMM_64:
-				case Type::ZERO:
-				case Type::ONE:
-				case Type::THREE:
-					insert_immediate(instr.get_operand<Imm64>(i));
-					break;
-				default:
-					break;
-			}
-		}
-	}
+  for (const auto& instr : target) {
+    for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
+      switch (instr.type(i)) {
+        case Type::IMM_8:
+        case Type::IMM_16:
+        case Type::IMM_32:
+        case Type::IMM_64:
+        case Type::ZERO:
+        case Type::ONE:
+        case Type::THREE:
+          insert_immediate(instr.get_operand<Imm64>(i));
+          break;
+        default:
+          break;
+      }
+    }
+  }
 
   m_pool_.clear();
   for (const auto& instr : target) {
     if (instr.is_explicit_memory_dereference()) {
-			assert(instr.mem_index() != -1);
+      assert(instr.mem_index() != -1);
       const auto& ref = instr.get_operand<M8>(instr.mem_index());
       if (find(m_pool_.begin(), m_pool_.end(), ref) != m_pool_.end()) {
         continue;
@@ -154,12 +157,12 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
     }
   }
 
-	label_pool_.clear();
-	for (const auto& instr : target) {
-		if (instr.is_call()) {
-			insert_label(instr.get_operand<Label>(0));
-		}
-	}
+  label_pool_.clear();
+  for (const auto& instr : target) {
+    if (instr.is_call()) {
+      insert_label(instr.get_operand<Label>(0));
+    }
+  }
 
   return *this;
 }
@@ -178,8 +181,8 @@ bool Transforms::modify(Cfg& cfg, Move type) {
       return local_swap_move(cfg);
     case Move::GLOBAL_SWAP:
       return global_swap_move(cfg);
-		case Move::EXTENSION:	
-			return extension_move(cfg);
+    case Move::EXTENSION:
+      return extension_move(cfg);
     default:
       assert(false);
       return false;
@@ -189,13 +192,13 @@ bool Transforms::modify(Cfg& cfg, Move type) {
 bool Transforms::instruction_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-	if ( cfg.num_reachable() < 3 ) {
-		return false;
-	}
-	auto bb = cfg.reachable_begin();
-	for ( size_t i = 0, ie = (gen_() % (cfg.num_reachable()-2))+1; i < ie; ++i ) {
-		++bb;
-	}
+  if (cfg.num_reachable() < 3) {
+    return false;
+  }
+  auto bb = cfg.reachable_begin();
+  for (size_t i = 0, ie = (gen_() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
+    ++bb;
+  }
 
   const auto num_instrs = cfg.num_instrs(*bb);
   if (num_instrs == 0) {
@@ -240,13 +243,13 @@ bool Transforms::instruction_move(Cfg& cfg) {
 bool Transforms::opcode_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-	if ( cfg.num_reachable() < 3 ) {
-		return false;
-	}
-	auto bb = cfg.reachable_begin();
-	for ( size_t i = 0, ie = (gen_() % (cfg.num_reachable()-2))+1; i < ie; ++i ) {
-		++bb;
-	}
+  if (cfg.num_reachable() < 3) {
+    return false;
+  }
+  auto bb = cfg.reachable_begin();
+  for (size_t i = 0, ie = (gen_() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
+    ++bb;
+  }
 
   const auto num_instrs = cfg.num_instrs(*bb);
   if (num_instrs == 0) {
@@ -274,13 +277,13 @@ bool Transforms::opcode_move(Cfg& cfg) {
 bool Transforms::operand_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-	if ( cfg.num_reachable() < 3 ) {
-		return false;
-	}
-	auto bb = cfg.reachable_begin();
-	for ( size_t i = 0, ie = (gen_() % (cfg.num_reachable()-2))+1; i < ie; ++i ) {
-		++bb;
-	}
+  if (cfg.num_reachable() < 3) {
+    return false;
+  }
+  auto bb = cfg.reachable_begin();
+  for (size_t i = 0, ie = (gen_() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
+    ++bb;
+  }
 
   const auto num_instrs = cfg.num_instrs(*bb);
   if (num_instrs == 0) {
@@ -408,16 +411,16 @@ bool Transforms::global_swap_move(Cfg& cfg) {
 }
 
 bool Transforms::extension_move(Cfg& cfg) {
-	// Add user-defined implementation here ...
+  // Add user-defined implementation here ...
 
-	// Invariant 1a:
-	// If this method returns true, it should leave this class in a state such that calling
-	// undo_extension_move() will revert cfg to its original state.
+  // Invariant 1a:
+  // If this method returns true, it should leave this class in a state such that calling
+  // undo_extension_move() will revert cfg to its original state.
 
-	// Invariant 1b:
-	// If this method returns false, it must leave cfg in its original state.
+  // Invariant 1b:
+  // If this method returns false, it must leave cfg in its original state.
 
-	return false;
+  return false;
 }
 
 void Transforms::undo(Cfg& cfg, Move type) {
@@ -440,8 +443,8 @@ void Transforms::undo(Cfg& cfg, Move type) {
     case Move::GLOBAL_SWAP:
       undo_global_swap_move(cfg);
       break;
-			undo_extension_move(cfg);
-			break;
+      undo_extension_move(cfg);
+      break;
     default:
       assert(false);
       break;
@@ -449,12 +452,12 @@ void Transforms::undo(Cfg& cfg, Move type) {
 }
 
 void Transforms::undo_extension_move(Cfg& cfg) {
-	// Add user-defined implementation here ...
+  // Add user-defined implementation here ...
 
-	// Invariant: If the previous invocation of extension_move() returned true, this
-	// method must return cfg to its original state. 
+  // Invariant: If the previous invocation of extension_move() returned true, this
+  // method must return cfg to its original state.
 
-	return;
+  return;
 }
 
 bool Transforms::is_rh_opcode(Opcode o) const {

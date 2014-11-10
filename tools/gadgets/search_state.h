@@ -23,12 +23,12 @@
 namespace stoke {
 
 class SearchStateGadget : public SearchState {
-	public:
-		SearchStateGadget() {
-			current = Cfg(current_arg.value().code, def_in_arg, live_out_arg);
-			best_yet = Cfg(best_yet_arg.value().code, def_in_arg, live_out_arg);
-			best_correct = Cfg(best_correct_arg.value().code, def_in_arg, live_out_arg);
-		}
+ public:
+  SearchStateGadget() {
+    current = Cfg(current_arg.value().code, def_in_arg, live_out_arg);
+    best_yet = Cfg(best_yet_arg.value().code, def_in_arg, live_out_arg);
+    best_correct = Cfg(best_correct_arg.value().code, def_in_arg, live_out_arg);
+  }
 };
 
 } // namespace stoke

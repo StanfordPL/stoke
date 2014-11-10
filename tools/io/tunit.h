@@ -23,14 +23,14 @@ namespace stoke {
 
 struct TUnitReader {
   void operator()(std::istream& is, TUnit& t) {
-		is >> t;
-	}
+    is >> t;
+  }
 };
 
 struct TUnitWriter {
   void operator()(std::ostream& os, const TUnit& t) {
-		os << t;
-	}
+    os << t;
+  }
 };
 
 } // namespace stoke
