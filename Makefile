@@ -29,7 +29,7 @@ LIB=\
   -pthread -lmongoclient -lboost_thread -lboost_system\
   -lboost_regex -lboost_filesystem -lssl -lcrypto
 
-OBJ=\
+SRC_OBJ=\
 	src/args/distance.o \
 	src/args/opc_set.o \
 	src/args/init.o \
@@ -62,8 +62,9 @@ OBJ=\
 	\
 	src/tunit/tunit.o \
 	\
-	src/verifier/verifier.o \
-	\
+	src/verifier/verifier.o
+
+TOOL_OBJ=\
 	tools/args/benchmark.o \
 	tools/args/correctness.o \
 	tools/args/cost.o \
@@ -165,8 +166,8 @@ tools/args/%.o: tools/args/%.cc tools/args/%.h
 tools/gadgets/%.o: tools/gadgets/%.cc tools/gadgets/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
-bin/%: tools/%.cc $(OBJ) 
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  
+bin/%: tools/apps/%.cc $(SRC_OBJ)  $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_OBJ) $(LIB)  
 
 ##### TESTING
 
@@ -180,16 +181,15 @@ TEST_LIBS=-ljsoncpp
 
 TEST_BIN=bin/stoke_test
 
-
 tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
-bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) $(wildcard tests/*.h) $(wildcard tests/*/*.h)
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
+bin/stoke_test: tools/apps/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard tests/*.h) $(wildcard tests/*/*.h)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
 
 ##### MISC
 
-.SECONDARY: $(OBJ)
+.SECONDARY: $(SRC_OBJ) $(TOOL_OBJ)
 
 zsh_completion: bin/_stoke
 
@@ -199,7 +199,7 @@ bin/_stoke: $(BIN) tools/zsh_completion_generator.py
 ##### CLEAN TARGETS
 
 clean:
-	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN) tags bin/stoke_* bin/_stoke
+	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke
 
 dist_clean: clean
 	rm -rf src/ext/cpputil
