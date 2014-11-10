@@ -10,7 +10,7 @@ using namespace z3;
 using namespace std;
 
 
-bool Z3Solver::is_sat(const vector<SymBool*>& constraints) {
+bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 
   /* Reset state. */
   error_ = "";
@@ -24,14 +24,14 @@ bool Z3Solver::is_sat(const vector<SymBool*>& constraints) {
   ExprConverter ec(context_);
   SymTypecheckVisitor tc;
   for(auto it : constraints) {
-    if (tc(*it) != 1) {
+    if (tc(it) != 1) {
       stringstream ss;
-      ss << "Typechecking failed for constraint: " << *it << endl;
+      ss << "Typechecking failed for constraint: " << it << endl;
       error_ = ss.str();
       return false;
     }
 
-    auto constraint = ec(*it);
+    auto constraint = ec(it);
     s.add(constraint);
   }
 

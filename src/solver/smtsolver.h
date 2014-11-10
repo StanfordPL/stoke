@@ -26,7 +26,7 @@ class SMTSolver {
     }
 
     /** Check if a query is satisfiable given constraints */
-    virtual bool is_sat(const std::vector<SymBool*>& constraints) = 0;
+    virtual bool is_sat(const std::vector<SymBool>& constraints) = 0;
 
     /** Check if a satisfying assignment is available. */
     virtual bool has_model() const = 0;

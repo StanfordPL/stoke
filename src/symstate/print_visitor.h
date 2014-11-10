@@ -69,6 +69,7 @@ class SymPrintVisitor : public SymVisitor<void> {
 
     void visit_compare(const SymBoolCompare * const b) {
 
+      std::cout << "Visiting compare of type " << b->type() << std::endl;
       switch(b->type()) {
         case SymBool::EQ:
           os_ << "(== ";

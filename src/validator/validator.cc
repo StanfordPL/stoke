@@ -635,29 +635,29 @@ vector<Expr> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::
 
 
 /* Returns the conjunction of several SymBools, starting with index */
-SymBool conjunct(vector<SymBool*>& query, size_t index) {
+SymBool conjunct(vector<SymBool>& query, size_t index) {
 
   if(query.size() - index == 0) {
     return SymBool::_true();
   } else if(query.size() - index == 1) {
-    return *query[index];
+    return query[index];
   } else {
-    return (*query[index] & conjunct(query, index+1));
+    return (query[index] & conjunct(query, index+1));
   }
 }
 
 /* Returns the negation of the conjunction of several SymBools */
-SymBool conjunct_and_negate(vector<SymBool*>& query) {
+SymBool conjunct_and_negate(vector<SymBool>& query) {
   return !conjunct(query, 0);
 }
 
 /* Z3 to SymBool */
-vector<SymBool*> z3_to_sym_bool(vector<Expr>& exprs) {
+vector<SymBool> z3_to_sym_bool(vector<Expr>& exprs) {
 
-  vector<SymBool*> result;
+  vector<SymBool> result;
   for(auto& it : exprs) {
     auto sb = SymBool::z3(it);
-    result.push_back(&sb);
+    result.push_back(sb);
   }
 
   return result;
@@ -686,11 +686,11 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
     vector<Expr> constraints;
     vector<Expr> query = generate_constraints(target, rewrite, constraints);
 
-    vector<SymBool*> sym_constraints = z3_to_sym_bool(constraints);
-    vector<SymBool*> sym_query = z3_to_sym_bool(query);
+    vector<SymBool> sym_constraints = z3_to_sym_bool(constraints);
+    vector<SymBool> sym_query = z3_to_sym_bool(query);
     auto final_query = conjunct_and_negate(sym_query);
 
-    sym_constraints.push_back(&final_query);
+    sym_constraints.push_back(final_query);
 
     // Run the solver
     bool is_sat = solver_.is_sat(sym_constraints);

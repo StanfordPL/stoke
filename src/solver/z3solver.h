@@ -20,7 +20,7 @@ class Z3Solver : public SMTSolver {
     }
 
     /** Check if a query is satisfiable given constraints */
-    bool is_sat(const std::vector<SymBool*>& constraints);
+    bool is_sat(const std::vector<SymBool>& constraints);
 
     /** Check if a satisfying assignment is available. */
     bool has_model() const {
