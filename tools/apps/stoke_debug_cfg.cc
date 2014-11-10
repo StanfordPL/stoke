@@ -29,7 +29,7 @@ using namespace cpputil;
 using namespace std;
 using namespace stoke;
 
-auto& content = Heading::create("Content options:");
+auto& content = Heading::create("Content Options:");
 auto& dib = FlagArg::create("dib")
   .alternate("def_in_block")
   .description("Display def in values for basic blocks");
@@ -43,7 +43,7 @@ auto& dom = FlagArg::create("dom")
   .alternate("dominators")
   .description("Display dominators");
 
-auto& io = Heading::create("I/O options:");
+auto& io = Heading::create("I/O Options:");
 auto& out = ValueArg<string>::create("o")
   .alternate("out")
   .usage("<path/to/file.pdf>")
