@@ -36,7 +36,8 @@ bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
 }
 
 bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
-	const auto res = fxn_(rewrite, 1);
+	// Don't set a max value here; we're okay with performance costs
+	const auto res = fxn_(rewrite);
 	if (!res.first) {
 		counter_example_available_ = next_counter_example_ < fxn_.num_testcases();
 		counter_example_ = fxn_.get_testcase(next_counter_example_);

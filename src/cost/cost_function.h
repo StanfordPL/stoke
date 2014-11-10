@@ -128,7 +128,6 @@ class CostFunction {
     return *this;
   }
 
-
 	/** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
 		result would equal or exceed that value. */
   result_type operator()(const Cfg& cfg, const Cost max = max_cost);
