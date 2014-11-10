@@ -17,8 +17,8 @@
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
-#include "src/args/strategy.h"
 #include "src/verifier/strategy.h"
+#include "tools/io/strategy.h"
 
 namespace stoke {
 

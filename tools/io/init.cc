@@ -16,21 +16,21 @@
 #include <string>
 #include <utility>
 
-#include "src/args/generic.h"
-#include "src/args/performance_term.h"
+#include "tools/io/generic.h"
+#include "tools/io/init.h"
 
 using namespace std;
 using namespace stoke;
 
 namespace {
 
-array<pair<string, PerformanceTerm>, 4> pts {{
-    {"none", PerformanceTerm::NONE},
-    {"size", PerformanceTerm::SIZE},
-    {"latency", PerformanceTerm::LATENCY},
+array<pair<string, Init>, 4> ds {{
+    {"empty", Init::EMPTY},
+    {"target", Init::TARGET},
+		{"previous", Init::PREVIOUS},
 
 		// Add user-defined extensions here ...
-		{"extension", PerformanceTerm::EXTENSION}
+		{"extension", Init::EXTENSION}
   }
 };
 
@@ -38,18 +38,19 @@ array<pair<string, PerformanceTerm>, 4> pts {{
 
 namespace stoke {
 
-void PerformanceTermReader::operator()(std::istream& is, PerformanceTerm& pt) {
+void InitReader::operator()(std::istream& is, Init& i) {
   string s;
   is >> s;
-  if (!generic_read(pts, s, pt)) {
+  if (!generic_read(ds, s, i)) {
     is.setstate(ios::failbit);
   }
 }
 
-void PerformanceTermWriter::operator()(std::ostream& os, const PerformanceTerm pt) {
+void InitWriter::operator()(std::ostream& os, const Init i) {
   string s;
-  generic_write(pts, s, pt);
+  generic_write(ds, s, i);
   os << s;
 }
 
 } // namespace stoke
+

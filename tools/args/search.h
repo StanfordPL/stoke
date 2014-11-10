@@ -19,8 +19,8 @@
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
-#include "src/args/init.h"
 #include "src/search/init.h"
+#include "tools/io/init.h"
 
 namespace stoke {
 

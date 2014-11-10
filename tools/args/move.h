@@ -17,8 +17,8 @@
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
-#include "src/args/move.h"
 #include "src/search/move.h"
+#include "tools/io/move.h"
 
 namespace stoke {
 

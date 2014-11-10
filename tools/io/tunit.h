@@ -12,26 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_REG_SET_H
-#define STOKE_SRC_ARGS_REG_SET_H
+#ifndef STOKE_TOOLS_IO_TUNIT_H
+#define STOKE_TOOLS_IO_TUNIT_H
 
-#include "src/ext/x64asm/include/x64asm.h"
+#include <iostream>
+
+#include "src/tunit/tunit.h"
 
 namespace stoke {
 
-struct RegSetReader {
-  void operator()(std::istream& is, x64asm::RegSet& r) {
-		is >> r;
+struct TUnitReader {
+  void operator()(std::istream& is, TUnit& t) {
+		is >> t;
 	}
 };
 
-struct RegSetWriter {
-  void operator()(std::ostream& os, const x64asm::RegSet& r) {
-		os << r;
+struct TUnitWriter {
+  void operator()(std::ostream& os, const TUnit& t) {
+		os << t;
 	}
 };
 
 } // namespace stoke
 
 #endif
-

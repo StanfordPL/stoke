@@ -20,8 +20,8 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/serialize/span_reader.h"
 
-#include "src/args/cpu_states.h"
 #include "src/state/cpu_states.h"
+#include "tools/io/cpu_states.h"
 
 namespace stoke {
 

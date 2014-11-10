@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2014 eric schkufza, stefan heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,22 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_MOVE_H
-#define STOKE_SRC_ARGS_MOVE_H
+#ifndef STOKE_TOOLS_IO_OPC_SET_H
+#define STOKE_TOOLS_IO_OPC_SET_H
 
 #include <iostream>
 
-#include "src/search/move.h"
+#include "src/ext/x64asm/include/x64asm.h"
 
 namespace stoke {
 
-struct MoveReader {
-  void operator()(std::istream& is, Move& m);
+struct OpcSetReader {
+  void operator()(std::istream& is, std::set<x64asm::Opcode>& os);
 };
 
-struct MoveWriter {
-  void operator()(std::ostream& os, const Move m);
+struct OpcSetWriter {
+  void operator()(std::ostream& os, const std::set<x64asm::Opcode>& ocs);
 };
+
+std::string opcode_to_string(x64asm::Opcode op);
 
 } // namespace stoke
 

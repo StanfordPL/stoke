@@ -12,25 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_TIMEOUT_H
-#define STOKE_SRC_ARGS_TIMEOUT_H
+#ifndef STOKE_TOOLS_IO_CPU_STATES_H
+#define STOKE_TOOLS_IO_CPU_STATES_H
 
 #include <iostream>
 
-#include "src/search/timeout.h"
+#include "src/state/cpu_states.h"
 
 namespace stoke {
 
-struct TimeoutReader {
-  void operator()(std::istream& is, Timeout& t);
+struct CpuStatesReader {
+  void operator()(std::istream& is, CpuStates& cs) {
+		cs.read_text(is);
+	}
 };
 
-struct TimeoutWriter {
-  void operator()(std::ostream& os, const Timeout t);
+struct CpuStatesWriter {
+  void operator()(std::ostream& os, const CpuStates& cs) {
+		cs.write_text(os);
+	}
 };
 
 } // namespace stoke
 
 #endif
-
 

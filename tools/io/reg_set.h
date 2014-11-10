@@ -12,24 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_SEARCH_STATE_H
-#define STOKE_TOOLS_ARGS_SEARCH_STATE_H
+#ifndef STOKE_TOOLS_IO_REG_SET_H
+#define STOKE_TOOLS_IO_REG_SET_H
 
-#include "src/ext/cpputil/include/command_line/command_line.h"
-
-#include "src/tunit/tunit.h"
-#include "tools/io/tunit.h"
+#include "src/ext/x64asm/include/x64asm.h"
 
 namespace stoke {
 
-extern cpputil::Heading& search_state_heading;
+struct RegSetReader {
+  void operator()(std::istream& is, x64asm::RegSet& r) {
+		is >> r;
+	}
+};
 
-extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& current_arg;
-extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_yet_arg;
-extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_correct_arg;
+struct RegSetWriter {
+  void operator()(std::ostream& os, const x64asm::RegSet& r) {
+		os << r;
+	}
+};
 
 } // namespace stoke
 
 #endif
-
 

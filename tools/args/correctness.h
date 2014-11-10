@@ -17,11 +17,11 @@
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
-#include "src/args/distance.h"
-#include "src/args/reduction.h"
 #include "src/cost/cost.h"
 #include "src/cost/distance.h"
 #include "src/cost/reduction.h"
+#include "tools/io/distance.h"
+#include "tools/io/reduction.h"
 
 namespace stoke {
 

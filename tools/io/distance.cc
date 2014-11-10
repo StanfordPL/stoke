@@ -16,8 +16,8 @@
 #include <string>
 #include <utility>
 
-#include "src/args/generic.h"
-#include "src/args/distance.h"
+#include "tools/io/generic.h"
+#include "tools/io/distance.h"
 
 using namespace std;
 using namespace stoke;

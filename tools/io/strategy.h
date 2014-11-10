@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_REDUCTION_H
-#define STOKE_SRC_ARGS_REDUCTION_H
+#ifndef STOKE_TOOLS_IO_STRATEGY_H
+#define STOKE_TOOLS_IO_STRATEGY_H
 
 #include <iostream>
 
-#include "src/cost/reduction.h"
+#include "src/verifier/strategy.h"
 
 namespace stoke {
 
-struct ReductionReader {
-  void operator()(std::istream& is, Reduction& r);
+struct StrategyReader {
+  void operator()(std::istream& is, Strategy& s);
 };
 
-struct ReductionWriter {
-  void operator()(std::ostream& os, const Reduction r);
+struct StrategyWriter {
+  void operator()(std::ostream& os, const Strategy s);
 };
 
 } // namespace stoke

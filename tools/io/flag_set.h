@@ -12,24 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_PERFORMANCE_TERM_H
-#define STOKE_SRC_ARGS_PERFORMANCE_TERM_H
+#ifndef STOKE_TOOLS_IO_FLAG_SET_H
+#define STOKE_TOOLS_IO_FLAG_SET_H
 
 #include <iostream>
 
-#include "src/cost/performance_term.h"
+#include "src/ext/x64asm/include/x64asm.h"
 
 namespace stoke {
 
-struct PerformanceTermReader {
-  void operator()(std::istream& is, PerformanceTerm& pt);
+struct FlagSetReader {
+  void operator()(std::istream& is, x64asm::FlagSet& fs) {
+		is >> fs;
+	}
 };
 
-struct PerformanceTermWriter {
-  void operator()(std::ostream& os, const PerformanceTerm pt);
+struct FlagSetWriter {
+  void operator()(std::ostream& os, const x64asm::FlagSet& fs) {
+		os << fs;
+	}
 };
 
 } // namespace stoke
 
 #endif
+
+
 

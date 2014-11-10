@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza, stefan heule
+// Copyright 2014 eric schkufza
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,28 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_OPC_SET_H
-#define STOKE_SRC_ARGS_OPC_SET_H
+#ifndef STOKE_TOOLS_IO_REDUCTION_H
+#define STOKE_TOOLS_IO_REDUCTION_H
 
 #include <iostream>
 
-#include "src/ext/x64asm/include/x64asm.h"
+#include "src/cost/reduction.h"
 
 namespace stoke {
 
-struct OpcSetReader {
-  void operator()(std::istream& is, std::set<x64asm::Opcode>& os);
+struct ReductionReader {
+  void operator()(std::istream& is, Reduction& r);
 };
 
-struct OpcSetWriter {
-  void operator()(std::ostream& os, const std::set<x64asm::Opcode>& ocs);
+struct ReductionWriter {
+  void operator()(std::ostream& os, const Reduction r);
 };
-
-std::string opcode_to_string(x64asm::Opcode op);
 
 } // namespace stoke
 
 #endif
-
 
 

@@ -21,8 +21,8 @@
 
 #include "src/ext/x64asm/src/opcode.h"
 
-#include "src/args/opc_set.h"
-#include "src/args/generic.h"
+#include "tools/io/opc_set.h"
+#include "tools/io/generic.h"
 
 using namespace cpputil;
 using namespace std;

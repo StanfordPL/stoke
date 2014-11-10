@@ -30,15 +30,6 @@ LIB=\
   -lboost_regex -lboost_filesystem -lssl -lcrypto
 
 SRC_OBJ=\
-	src/args/distance.o \
-	src/args/opc_set.o \
-	src/args/init.o \
-	src/args/move.o \
-	src/args/reduction.o \
-	src/args/performance_term.o \
-	src/args/strategy.o \
-	src/args/timeout.o \
-	\
 	src/cfg/cfg.o \
 	src/cfg/cfg_transforms.o \
 	src/cfg/dot_writer.o \
@@ -64,7 +55,7 @@ SRC_OBJ=\
 	\
 	src/verifier/verifier.o
 
-TOOL_OBJ=\
+TOOL_ARGS_OBJ=\
 	tools/args/benchmark.o \
 	tools/args/correctness.o \
 	tools/args/cost.o \
@@ -79,6 +70,18 @@ TOOL_OBJ=\
 	tools/args/testcases.o \
 	tools/args/transforms.o \
 	tools/args/verifier.o
+
+TOOL_IO_OBJ=\
+	tools/io/distance.o \
+	tools/io/opc_set.o \
+	tools/io/init.o \
+	tools/io/move.o \
+	tools/io/reduction.o \
+	tools/io/performance_term.o \
+	tools/io/strategy.o \
+	tools/io/timeout.o
+
+TOOL_OBJ=$(TOOL_ARGS_OBJ) $(TOOL_IO_OBJ)
 
 BIN=\
 	bin/stoke_extract \
@@ -138,8 +141,6 @@ src/ext/gtest-1.7.0/libgtest.a:
 
 ##### BUILD TARGETS
 
-src/args/%.o: src/args/%.cc src/args/%.h
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/cfg/%.o: src/cfg/%.cc src/cfg/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/cost/%.o: src/cost/%.cc src/cost/%.h
@@ -159,15 +160,69 @@ src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
-##### BINARY TARGETS
-
 tools/args/%.o: tools/args/%.cc tools/args/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 tools/gadgets/%.o: tools/gadgets/%.cc tools/gadgets/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+tools/io/%.o: tools/io/%.cc tools/io/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
-bin/%: tools/apps/%.cc $(SRC_OBJ)  $(TOOL_OBJ)
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_OBJ) $(LIB)  
+##### BINARY TARGETS
+
+bin/stoke_benchmark_cfg: tools/apps/stoke_benchmark_cfg.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/target.o \
+	$(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_benchmark_cost: tools/apps/stoke_benchmark_cost.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/correctness.o \
+	tools/args/cost.o tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o \
+	tools/args/seed.o tools/args/target.o tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_benchmark_sandbox: tools/apps/stoke_benchmark_sandbox.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/sandbox.o \
+	tools/args/seed.o tools/args/target.o tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_benchmark_search: tools/apps/stoke_benchmark_search.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/move.o \
+	tools/args/seed.o tools/args/target.o tools/args/transforms.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_benchmark_state: tools/apps/stoke_benchmark_state.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/seed.o \
+	tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_benchmark_verify: tools/apps/stoke_benchmark_verify.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o \
+	tools/args/correctness.o tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o \
+	tools/args/seed.o tools/args/target.o tools/args/testcases.o tools/args/verifier.o \
+	$(TOOL_IO_OBJ) $(LIB)  
+
+bin/stoke_debug_cfg: tools/apps/stoke_debug_cfg.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/target.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_debug_cost: tools/apps/stoke_debug_cost.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o tools/args/cost.o \
+	tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o tools/args/seed.o \
+	tools/args/target.o tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_debug_sandbox: tools/apps/stoke_debug_sandbox.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/sandbox.o tools/args/seed.o \
+	tools/args/target.o tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_debug_search: tools/apps/stoke_debug_search.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/move.o tools/args/seed.o \
+	tools/args/target.o tools/args/transforms.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_debug_state: tools/apps/stoke_debug_state.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/seed.o tools/args/testcases.o \
+	$(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_debug_verify: tools/apps/stoke_debug_verify.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o \
+	tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o tools/args/seed.o \
+	tools/args/target.o tools/args/testcases.o tools/args/verifier.o $(TOOL_IO_OBJ) $(LIB)  
+
+bin/stoke_extract: tools/apps/stoke_extract.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_replace: tools/apps/stoke_replace.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/rewrite.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_search: tools/apps/stoke_search.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o \
+	tools/args/performance.o tools/args/search.o tools/args/search_state.o tools/args/seed.o \
+	tools/args/sandbox.o tools/args/target.o tools/args/testcases.o tools/args/transforms.o \
+	tools/args/verifier.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_testcase: tools/apps/stoke_testcase.cc $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/sandbox.o tools/args/target.o \
+	$(TOOL_IO_OBJ) $(LIB)  
 
 ##### TESTING
 

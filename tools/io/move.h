@@ -12,25 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_STRATEGY_H
-#define STOKE_SRC_ARGS_STRATEGY_H
+#ifndef STOKE_TOOLS_IO_MOVE_H
+#define STOKE_TOOLS_IO_MOVE_H
 
 #include <iostream>
 
-#include "src/verifier/strategy.h"
+#include "src/search/move.h"
 
 namespace stoke {
 
-struct StrategyReader {
-  void operator()(std::istream& is, Strategy& s);
+struct MoveReader {
+  void operator()(std::istream& is, Move& m);
 };
 
-struct StrategyWriter {
-  void operator()(std::ostream& os, const Strategy s);
+struct MoveWriter {
+  void operator()(std::ostream& os, const Move m);
 };
 
 } // namespace stoke
 
 #endif
+
 
 

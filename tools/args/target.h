@@ -18,9 +18,9 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/reg_set.h"
-#include "src/args/tunit.h"
 #include "src/tunit/tunit.h"
+#include "tools/io/reg_set.h"
+#include "tools/io/tunit.h"
 
 namespace stoke {
 

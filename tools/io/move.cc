@@ -16,20 +16,24 @@
 #include <string>
 #include <utility>
 
-#include "src/args/generic.h"
-#include "src/args/strategy.h"
+#include "tools/io/generic.h"
+#include "tools/io/move.h"
 
 using namespace std;
 using namespace stoke;
 
 namespace {
 
-array<pair<string, Strategy>, 3> pts {{
-    {"none", Strategy::NONE},
-    {"hold_out", Strategy::HOLD_OUT},
+array<pair<string, Move>, 7> moves {{
+    {"instruction", Move::INSTRUCTION},
+    {"opcode", Move::OPCODE},
+    {"operand", Move::OPERAND},
+    {"local_swap", Move::LOCAL_SWAP},
+    {"global_swap", Move::GLOBAL_SWAP},
+    {"resize", Move::RESIZE},
 
 		// Add user-defined extensions here ...
-		{"extension", Strategy::EXTENSION}
+		{"extension", Move::EXTENSION}
   }
 };
 
@@ -37,18 +41,19 @@ array<pair<string, Strategy>, 3> pts {{
 
 namespace stoke {
 
-void StrategyReader::operator()(std::istream& is, Strategy& pt) {
+void MoveReader::operator()(std::istream& is, Move& m) {
   string s;
   is >> s;
-  if (!generic_read(pts, s, pt)) {
+  if (!generic_read(moves, s, m)) {
     is.setstate(ios::failbit);
   }
 }
 
-void StrategyWriter::operator()(std::ostream& os, const Strategy pt) {
+void MoveWriter::operator()(std::ostream& os, const Move m) {
   string s;
-  generic_write(pts, s, pt);
+  generic_write(moves, s, m);
   os << s;
 }
 
 } // namespace stoke
+

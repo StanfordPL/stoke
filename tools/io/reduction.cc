@@ -16,24 +16,20 @@
 #include <string>
 #include <utility>
 
-#include "src/args/generic.h"
-#include "src/args/move.h"
+#include "tools/io/generic.h"
+#include "tools/io/reduction.h"
 
 using namespace std;
 using namespace stoke;
 
 namespace {
 
-array<pair<string, Move>, 7> moves {{
-    {"instruction", Move::INSTRUCTION},
-    {"opcode", Move::OPCODE},
-    {"operand", Move::OPERAND},
-    {"local_swap", Move::LOCAL_SWAP},
-    {"global_swap", Move::GLOBAL_SWAP},
-    {"resize", Move::RESIZE},
+array<pair<string, Reduction>, 3> rs {{
+    {"sum", Reduction::SUM},
+    {"max", Reduction::MAX},
 
-		// Add user-defined extensions here ...
-		{"extension", Move::EXTENSION}
+		// Add user-defined reductions here ...
+		{"extension", Reduction::EXTENSION}
   }
 };
 
@@ -41,19 +37,18 @@ array<pair<string, Move>, 7> moves {{
 
 namespace stoke {
 
-void MoveReader::operator()(std::istream& is, Move& m) {
+void ReductionReader::operator()(std::istream& is, Reduction& r) {
   string s;
   is >> s;
-  if (!generic_read(moves, s, m)) {
+  if (!generic_read(rs, s, r)) {
     is.setstate(ios::failbit);
   }
 }
 
-void MoveWriter::operator()(std::ostream& os, const Move m) {
+void ReductionWriter::operator()(std::ostream& os, const Reduction r) {
   string s;
-  generic_write(moves, s, m);
+  generic_write(rs, s, r);
   os << s;
 }
 
 } // namespace stoke
-

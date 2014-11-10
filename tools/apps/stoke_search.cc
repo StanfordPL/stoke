@@ -20,7 +20,6 @@
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
-#include "src/args/timeout.h"
 #include "src/cfg/cfg_transforms.h"
 #include "src/tunit/tunit.h"
 #include "src/search/progress_callback.h"
@@ -37,6 +36,7 @@
 #include "tools/gadgets/testcases.h"
 #include "tools/gadgets/transforms.h"
 #include "tools/gadgets/verifier.h"
+#include "tools/io/timeout.h"
 
 using namespace cpputil;
 using namespace std;

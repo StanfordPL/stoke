@@ -12,25 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_TUNIT_H
-#define STOKE_SRC_ARGS_TUNIT_H
+#ifndef STOKE_TOOLS_IO_DISTANCE_H
+#define STOKE_TOOLS_IO_DISTANCE_H
 
 #include <iostream>
 
-#include "src/tunit/tunit.h"
+#include "src/cost/distance.h"
 
 namespace stoke {
 
-struct TUnitReader {
-  void operator()(std::istream& is, TUnit& t) {
-		is >> t;
-	}
+struct DistanceReader {
+  void operator()(std::istream& is, Distance& d);
 };
 
-struct TUnitWriter {
-  void operator()(std::ostream& os, const TUnit& t) {
-		os << t;
-	}
+struct DistanceWriter {
+  void operator()(std::ostream& os, const Distance d);
 };
 
 } // namespace stoke

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_GENERIC_H
-#define STOKE_SRC_ARGS_GENERIC_H
+#ifndef STOKE_TOOLS_IO_GENERIC_H
+#define STOKE_TOOLS_IO_GENERIC_H
 
 #include <cassert>
 

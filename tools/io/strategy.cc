@@ -16,20 +16,20 @@
 #include <string>
 #include <utility>
 
-#include "src/args/generic.h"
-#include "src/args/reduction.h"
+#include "tools/io/generic.h"
+#include "tools/io/strategy.h"
 
 using namespace std;
 using namespace stoke;
 
 namespace {
 
-array<pair<string, Reduction>, 3> rs {{
-    {"sum", Reduction::SUM},
-    {"max", Reduction::MAX},
+array<pair<string, Strategy>, 3> pts {{
+    {"none", Strategy::NONE},
+    {"hold_out", Strategy::HOLD_OUT},
 
-		// Add user-defined reductions here ...
-		{"extension", Reduction::EXTENSION}
+		// Add user-defined extensions here ...
+		{"extension", Strategy::EXTENSION}
   }
 };
 
@@ -37,17 +37,17 @@ array<pair<string, Reduction>, 3> rs {{
 
 namespace stoke {
 
-void ReductionReader::operator()(std::istream& is, Reduction& r) {
+void StrategyReader::operator()(std::istream& is, Strategy& pt) {
   string s;
   is >> s;
-  if (!generic_read(rs, s, r)) {
+  if (!generic_read(pts, s, pt)) {
     is.setstate(ios::failbit);
   }
 }
 
-void ReductionWriter::operator()(std::ostream& os, const Reduction r) {
+void StrategyWriter::operator()(std::ostream& os, const Strategy pt) {
   string s;
-  generic_write(rs, s, r);
+  generic_write(pts, s, pt);
   os << s;
 }
 

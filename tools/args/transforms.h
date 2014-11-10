@@ -21,9 +21,9 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/args/flag_set.h"
-#include "src/args/opc_set.h"
-#include "src/args/reg_set.h"
+#include "tools/io/flag_set.h"
+#include "tools/io/opc_set.h"
+#include "tools/io/reg_set.h"
 
 namespace stoke {
 

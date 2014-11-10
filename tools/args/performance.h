@@ -17,9 +17,9 @@
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
-#include "src/args/performance_term.h"
 #include "src/cost/cost.h"
 #include "src/cost/performance_term.h"
+#include "tools/io/performance_term.h"
 
 namespace stoke {
 

@@ -12,30 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_ARGS_FLAG_SET_H
-#define STOKE_SRC_ARGS_FLAG_SET_H
+#ifndef STOKE_TOOLS_IO_TIMEOUT_H
+#define STOKE_TOOLS_IO_TIMEOUT_H
 
 #include <iostream>
 
-#include "src/ext/x64asm/include/x64asm.h"
+#include "src/search/timeout.h"
 
 namespace stoke {
 
-struct FlagSetReader {
-  void operator()(std::istream& is, x64asm::FlagSet& fs) {
-		is >> fs;
-	}
+struct TimeoutReader {
+  void operator()(std::istream& is, Timeout& t);
 };
 
-struct FlagSetWriter {
-  void operator()(std::ostream& os, const x64asm::FlagSet& fs) {
-		os << fs;
-	}
+struct TimeoutWriter {
+  void operator()(std::ostream& os, const Timeout t);
 };
 
 } // namespace stoke
 
 #endif
-
 
 
