@@ -121,17 +121,17 @@ class SymBitVector {
 
 
     /** Returns a bool indicating if the arguments are equal */
-    SymBoolEq operator==(const SymBitVector& other) const;
+    SymBool operator==(const SymBitVector& other) const;
     /** Returns a bool indicating if the first argument is at least the second */
-    SymBoolGe operator>=(const SymBitVector& other) const;
+    SymBool operator>=(const SymBitVector& other) const;
     /** Returns a bool indicating if the first argument is greater than the second */
-    SymBoolGt operator>(const SymBitVector& other) const;
+    SymBool operator>(const SymBitVector& other) const;
     /** Returns a bool indicating if the first argument is at most the second */
-    SymBoolLe operator<=(const SymBitVector& other) const;
+    SymBool operator<=(const SymBitVector& other) const;
     /** Returns a bool indicating if the first argument is less than the second */
-    SymBoolLt operator<(const SymBitVector& other) const;
+    SymBool operator<(const SymBitVector& other) const;
     /** Returns a bool indicating if the arguments are not equal */
-    SymBoolNot operator!=(const SymBitVector& other) const;
+    SymBool operator!=(const SymBitVector& other) const;
 
     class IndexHelper {
       friend class SymBitVector;
@@ -242,14 +242,14 @@ class SymBitVectorIte : public SymBitVectorAbstract {
   friend class SymBitVector;
 
   private:
-    SymBitVectorIte(const SymBool& cond, const SymBitVectorAbstract * const a, 
+    SymBitVectorIte(const SymBoolAbstract * const cond, const SymBitVectorAbstract * const a, 
                     const SymBitVectorAbstract * const b) : cond_(cond), a_(a), b_(b) {}
 
   public:
 
     SymBitVector::Type type() const { return SymBitVector::Type::ITE; }
 
-    const SymBool& cond_;
+    const SymBoolAbstract * const cond_;
     const SymBitVectorAbstract * const a_;
     const SymBitVectorAbstract * const b_;
 };

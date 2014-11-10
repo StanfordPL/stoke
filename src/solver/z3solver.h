@@ -63,8 +63,8 @@ class Z3Solver : public SMTSolver {
           assert(false);
         }
 
-        z3::expr visit_compare(const SymBoolCompare& b) {
-          std::cerr << "Unsupported compare: " << b.type() << std::endl;
+        z3::expr visit_compare(const SymBoolCompare * const b) {
+          std::cerr << "Unsupported compare: " << b->type() << std::endl;
           assert(false);
         }
 
@@ -113,36 +113,36 @@ class Z3Solver : public SMTSolver {
 
 
         /** Visit a bit-vector EQ */
-        z3::expr visit(const SymBoolEq& b);
+        z3::expr visit(const SymBoolEq * const b);
         /** Visit a bit-vector Ge */
-        z3::expr visit(const SymBoolGe& b);
+        z3::expr visit(const SymBoolGe * const b);
         /** Visit a bit-vector Gt */
-        z3::expr visit(const SymBoolGt& b);
+        z3::expr visit(const SymBoolGt * const b);
         /** Visit a bit-vector LE */
-        z3::expr visit(const SymBoolLe& b);
+        z3::expr visit(const SymBoolLe * const b);
         /** Visit a bit-vector LT */
-        z3::expr visit(const SymBoolLt& b);
+        z3::expr visit(const SymBoolLt * const b);
         
         /** Visit a boolean AND */
-        z3::expr visit(const SymBoolAnd& b);
+        z3::expr visit(const SymBoolAnd * const b);
         /** Visit a boolean FALSE */
-        z3::expr visit(const SymBoolFalse& b);
+        z3::expr visit(const SymBoolFalse * const b);
         /** Visit a boolean IFF */
-        z3::expr visit(const SymBoolIff& b);
+        z3::expr visit(const SymBoolIff * const b);
         /** Visit a boolean implies */
-        z3::expr visit(const SymBoolImplies& b);
+        z3::expr visit(const SymBoolImplies * const b);
         /** Visit a boolean NOT */
-        z3::expr visit(const SymBoolNot& b);
+        z3::expr visit(const SymBoolNot * const b);
         /** Visit a boolean OR */
-        z3::expr visit(const SymBoolOr& b);
+        z3::expr visit(const SymBoolOr * const b);
         /** Visit a boolean TRUE */
-        z3::expr visit(const SymBoolTrue& b);
+        z3::expr visit(const SymBoolTrue * const b);
         /** Visit a boolean VAR */
-        z3::expr visit(const SymBoolVar& b);
+        z3::expr visit(const SymBoolVar * const b);
         /** Visit a boolean XOR */
-        z3::expr visit(const SymBoolXor& b);
+        z3::expr visit(const SymBoolXor * const b);
         /** Visit a Z3 compatibility bool */
-        z3::expr visit(const SymBoolZ3& b);
+        z3::expr visit(const SymBoolZ3 * const b);
 
 
       private:

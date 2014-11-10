@@ -15,10 +15,10 @@ SymBitVector SymBitVector::var(uint16_t size, string name) {
 SymBitVector SymBitVector::from_bool(const SymBool& b) {
   auto c0 = SymBitVector::constant(1,0);
   auto c1 = SymBitVector::constant(1,1);
-  return SymBitVector(new SymBitVectorIte(b, c1.ptr, c0.ptr));
+  return SymBitVector(new SymBitVectorIte(b.ptr, c1.ptr, c0.ptr));
 }
 SymBitVector SymBitVector::ite(const SymBool& c, const SymBitVector& t, const SymBitVector& f) {
-  return SymBitVector(new SymBitVectorIte(c, t.ptr, f.ptr));
+  return SymBitVector(new SymBitVectorIte(c.ptr, t.ptr, f.ptr));
 }
 SymBitVector SymBitVector::z3(z3::expr& e) {
   return SymBitVector(new SymBitVectorZ3(e));
@@ -119,27 +119,27 @@ SymBitVector::IndexHelper::operator SymBool() const {
 }
 
 /* Bit Vector Comparison Operators */
-SymBoolEq SymBitVector::operator==(const SymBitVector& other) const {
-  return SymBoolEq(ptr, other.ptr);
+SymBool SymBitVector::operator==(const SymBitVector& other) const {
+  return SymBool(new SymBoolEq(ptr, other.ptr));
 }
 
-SymBoolGe SymBitVector::operator>=(const SymBitVector& other) const {
-  return SymBoolGe(ptr, other.ptr);
+SymBool SymBitVector::operator>=(const SymBitVector& other) const {
+  return SymBool(new SymBoolGe(ptr, other.ptr));
 }
 
-SymBoolGt SymBitVector::operator>(const SymBitVector& other) const {
-  return SymBoolGt(ptr, other.ptr);
+SymBool SymBitVector::operator>(const SymBitVector& other) const {
+  return SymBool(new SymBoolGt(ptr, other.ptr));
 }
 
-SymBoolLe SymBitVector::operator<=(const SymBitVector& other) const {
-  return SymBoolLe(ptr, other.ptr);
+SymBool SymBitVector::operator<=(const SymBitVector& other) const {
+  return SymBool(new SymBoolLe(ptr, other.ptr));
 }
 
-SymBoolLt SymBitVector::operator<(const SymBitVector& other) const {
-  return SymBoolLt(ptr, other.ptr);
+SymBool SymBitVector::operator<(const SymBitVector& other) const {
+  return SymBool(new SymBoolLt(ptr, other.ptr));
 }
 
-SymBoolNot SymBitVector::operator!=(const SymBitVector& other) const {
+SymBool SymBitVector::operator!=(const SymBitVector& other) const {
   return !(*this == other);
 }
 

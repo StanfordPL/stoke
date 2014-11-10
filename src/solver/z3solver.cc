@@ -214,81 +214,81 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorZ3 * const bv) {
 }
 
 /** Visit a bit-vector EQ */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolEq& b) {
-  return z3::expr(context_, Z3_mk_eq(context_, (*this)(b.a_), (*this)(b.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolEq * const b) {
+  return z3::expr(context_, Z3_mk_eq(context_, (*this)(b->a_), (*this)(b->b_)));
 }
 
 /** Visit a bit-vector GE */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolGe& b) {
-  return z3::expr(context_, Z3_mk_bvuge(context_, (*this)(b.a_), (*this)(b.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolGe * const b) {
+  return z3::expr(context_, Z3_mk_bvuge(context_, (*this)(b->a_), (*this)(b->b_)));
 }
 
 /** Visit a bit-vector GT */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolGt& b) {
-  return z3::expr(context_, Z3_mk_bvugt(context_, (*this)(b.a_), (*this)(b.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolGt * const b) {
+  return z3::expr(context_, Z3_mk_bvugt(context_, (*this)(b->a_), (*this)(b->b_)));
 }
 
 /** Visit a bit-vector LE */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolLe& b) {
-  return z3::expr(context_, Z3_mk_bvule(context_, (*this)(b.a_), (*this)(b.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolLe * const b) {
+  return z3::expr(context_, Z3_mk_bvule(context_, (*this)(b->a_), (*this)(b->b_)));
 }
 
 /** Visit a bit-vector LT */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolLt& b) {
-  return z3::expr(context_, Z3_mk_bvult(context_, (*this)(b.a_), (*this)(b.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolLt * const b) {
+  return z3::expr(context_, Z3_mk_bvult(context_, (*this)(b->a_), (*this)(b->b_)));
 }
 
 
 
 /** Visit a boolean AND */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolAnd& b) {
-  return (*this)(b.a_) && (*this)(b.b_);
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolAnd * const b) {
+  return (*this)(b->a_) && (*this)(b->b_);
 }
 
 /** Visit a boolean FALSE */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolFalse& b) {
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolFalse * const b) {
   return z3::expr(context_, Z3_mk_false(context_));
 }
 
 /** Visit a boolean IFF */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolIff& b) {
-  return z3::expr(context_, Z3_mk_eq(context_, (*this)(b.a_), (*this)(b.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolIff * const b) {
+  return z3::expr(context_, Z3_mk_eq(context_, (*this)(b->a_), (*this)(b->b_)));
 }
 
 /** Visit a boolean implies */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolImplies& b) {
-  return z3::expr(context_, Z3_mk_implies(context_, (*this)(b.a_), (*this)(b.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolImplies * const b) {
+  return z3::expr(context_, Z3_mk_implies(context_, (*this)(b->a_), (*this)(b->b_)));
 }
 
 /** Visit a boolean NOT */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolNot& b) {
-  return z3::expr(context_, Z3_mk_not(context_, (*this)(b.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolNot * const b) {
+  return z3::expr(context_, Z3_mk_not(context_, (*this)(b->b_)));
 }
 
 /** Visit a boolean OR */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolOr& b) {
-  return (*this)(b.a_) || (*this)(b.b_);
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolOr * const b) {
+  return (*this)(b->a_) || (*this)(b->b_);
 }
 
 /** Visit a boolean TRUE */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolTrue& b) {
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolTrue * const b) {
   return z3::expr(context_, Z3_mk_true(context_));
 }
 
 /** Visit a boolean VAR */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolVar& b) {
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolVar * const b) {
   auto type = Z3_mk_bool_sort(context_);
-  return z3::expr(context_, Z3_mk_const(context_, get_symbol(b.name_), type));
+  return z3::expr(context_, Z3_mk_const(context_, get_symbol(b->name_), type));
 }
 
 /** Visit a boolean XOR */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolXor& b) {
-  return z3::expr(context_, Z3_mk_xor(context_, (*this)(b.a_), (*this)(b.b_)));
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolXor * const b) {
+  return z3::expr(context_, Z3_mk_xor(context_, (*this)(b->a_), (*this)(b->b_)));
 }
 
 /** Visit a Z3-compatability bool */
-z3::expr Z3Solver::ExprConverter::visit(const SymBoolZ3& b) {
-  return b.e_;
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolZ3 * const b) {
+  return b->e_;
 }
 
 

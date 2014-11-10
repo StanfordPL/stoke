@@ -11,6 +11,7 @@ namespace stoke {
 
 class SymBitVector;
 class SymBitVectorAbstract;
+class SymBoolAbstract;
 
 
 class SymBoolAnd;
@@ -52,38 +53,49 @@ class SymBool {
     };
 
     /** Get the type of this bool expression; helps for recursive algorithms on the tree. */
-    virtual Type type() const { return NONE; }
+    virtual Type type() const;
 
     /** Builds a false value */
-    static SymBoolFalse& _false();
+    static SymBool _false();
     /** Builds a true value */
-    static SymBoolTrue& _true();
+    static SymBool _true();
     /** Builds a boolean variable */
-    static SymBoolVar& var(std::string name);
+    static SymBool var(std::string name);
     /** Builds a z3 compatibility bool */
-    static SymBoolZ3& z3(const z3::expr& b);
+    static SymBool z3(const z3::expr& b);
 
     /** Constructs the logical AND of two bools */
-    SymBoolAnd& operator&(const SymBool& other) const;
+    SymBool operator&(const SymBool& other) const;
     /** Constructs the logical 'if-and-only-if' for two bools */
-    SymBoolIff& operator==(const SymBool& other) const;
+    SymBool operator==(const SymBool& other) const;
     /** Constructs the logical implication of two bools */
-    SymBoolImplies& implies(const SymBool& other) const;
+    SymBool implies(const SymBool& other) const;
     /** Constructs the logical negation of this bool */
-    SymBoolNot& operator!() const;
+    SymBool operator!() const;
     /** Constructs the logical OR of two bools */
-    SymBoolOr& operator|(const SymBool& other) const;
+    SymBool operator|(const SymBool& other) const;
     /** Constructs the logical XOR of two bools */
-    SymBoolXor& operator^(const SymBool& other) const;
+    SymBool operator^(const SymBool& other) const;
     /** Returns the negation of the logical 'if-and-only-if' */
-    SymBoolNot& operator!=(const SymBool& other) const;
+    SymBool operator!=(const SymBool& other) const;
 
-  protected:
-    SymBool() {}
+
+    /** The pointer to the underlying object */
+    const SymBoolAbstract * ptr;
+
+    /** Construct a SymBool from a pointer to an underlying object */
+    SymBool(const SymBoolAbstract * const ptr_) : ptr(ptr_) {}
 
 };
 
-class SymBoolCompare : public SymBool {
+class SymBoolAbstract {
+
+  public:
+    virtual SymBool::Type type() const = 0;
+
+};
+
+class SymBoolCompare : public SymBoolAbstract {
 
   protected:
     SymBoolCompare(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : a_(a), b_(b) {}
@@ -94,17 +106,17 @@ class SymBoolCompare : public SymBool {
 
 };
 
-class SymBoolAnd : public SymBool {
+class SymBoolAnd : public SymBoolAbstract {
   friend class SymBool;
 
   private:
-    SymBoolAnd(const SymBool& a, const SymBool& b) : a_(a), b_(b) {}
+    SymBoolAnd(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
 
   public:
-    SymBool::Type type() const { return AND; }
+    SymBool::Type type() const { return SymBool::Type::AND; }
 
-    const SymBool& a_;
-    const SymBool& b_;
+    const SymBoolAbstract * const a_;
+    const SymBoolAbstract * const b_;
 };
 
 class SymBoolEq : public SymBoolCompare {
@@ -113,14 +125,14 @@ class SymBoolEq : public SymBoolCompare {
   using SymBoolCompare::SymBoolCompare;
 
   public:
-    SymBool::Type type() const { return EQ; }
+    SymBool::Type type() const { return SymBool::Type::EQ; }
 };
 
-class SymBoolFalse : public SymBool {
+class SymBoolFalse : public SymBoolAbstract {
   friend class SymBool;
 
   public:
-    SymBool::Type type() const { return FALSE; }
+    SymBool::Type type() const { return SymBool::Type::FALSE; }
 };
 
 class SymBoolGe : public SymBoolCompare {
@@ -129,7 +141,7 @@ class SymBoolGe : public SymBoolCompare {
   using SymBoolCompare::SymBoolCompare;
 
   public:
-    SymBool::Type type() const { return GE; }
+    SymBool::Type type() const { return SymBool::Type::GE; }
 };
 
 class SymBoolGt : public SymBoolCompare {
@@ -138,33 +150,33 @@ class SymBoolGt : public SymBoolCompare {
   using SymBoolCompare::SymBoolCompare;
 
   public:
-    SymBool::Type type() const { return GT; }
+    SymBool::Type type() const { return SymBool::Type::GT; }
 };
 
-class SymBoolIff : public SymBool {
+class SymBoolIff : public SymBoolAbstract {
   friend class SymBool;
 
   private:
-    SymBoolIff(const SymBool& a, const SymBool& b) : a_(a), b_(b) {}
+    SymBoolIff(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
 
   public:
-    SymBool::Type type() const { return IFF; }
+    SymBool::Type type() const { return SymBool::Type::IFF; }
 
-    const SymBool& a_;
-    const SymBool& b_;
+    const SymBoolAbstract * const a_;
+    const SymBoolAbstract * const b_;
 };
 
-class SymBoolImplies : public SymBool {
+class SymBoolImplies : public SymBoolAbstract {
   friend class SymBool;
 
   private:
-    SymBoolImplies(const SymBool& a, const SymBool& b) : a_(a), b_(b) {}
+    SymBoolImplies(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
 
   public:
-    SymBool::Type type() const { return IMPLIES; }
+    SymBool::Type type() const { return SymBool::Type::IMPLIES; }
 
-    const SymBool& a_;
-    const SymBool& b_;
+    const SymBoolAbstract * const a_;
+    const SymBoolAbstract * const b_;
 };
 
 class SymBoolLe : public SymBoolCompare {
@@ -173,7 +185,7 @@ class SymBoolLe : public SymBoolCompare {
   using SymBoolCompare::SymBoolCompare;
 
   public:
-    SymBool::Type type() const { return LE; }
+    SymBool::Type type() const { return SymBool::Type::LE; }
 };
 
 class SymBoolLt : public SymBoolCompare {
@@ -182,75 +194,75 @@ class SymBoolLt : public SymBoolCompare {
   using SymBoolCompare::SymBoolCompare;
 
   public:
-    SymBool::Type type() const { return LT; }
+    SymBool::Type type() const { return SymBool::Type::LT; }
 };
 
-class SymBoolNot : public SymBool {
+class SymBoolNot : public SymBoolAbstract {
   friend class SymBool;
 
   private:
-    SymBoolNot(const SymBool& b) : b_(b) {}
+    SymBoolNot(const SymBoolAbstract * const b) : b_(b) {}
 
   public:
-    SymBool::Type type() const { return NOT; }
+    SymBool::Type type() const { return SymBool::Type::NOT; }
 
-    const SymBool& b_;
+    const SymBoolAbstract * const b_;
 };
 
-class SymBoolOr : public SymBool {
+class SymBoolOr : public SymBoolAbstract {
   friend class SymBool;
 
   private:
-    SymBoolOr(const SymBool& a, const SymBool& b) : a_(a), b_(b) {}
+    SymBoolOr(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
 
   public:
-    SymBool::Type type() const { return OR; }
+    SymBool::Type type() const { return SymBool::Type::OR; }
 
-    const SymBool& a_;
-    const SymBool& b_;
+    const SymBoolAbstract * const a_;
+    const SymBoolAbstract * const b_;
 };
 
-class SymBoolTrue : public SymBool {
+class SymBoolTrue : public SymBoolAbstract {
   friend class SymBool;
 
   public:
-    SymBool::Type type() const { return TRUE; }
+    SymBool::Type type() const { return SymBool::Type::TRUE; }
 };
 
-class SymBoolVar : public SymBool {
+class SymBoolVar : public SymBoolAbstract {
   friend class SymBool;
 
   private:
     SymBoolVar(const std::string name) : name_(name) {}
 
   public:
-    SymBool::Type type() const { return VAR; }
+    SymBool::Type type() const { return SymBool::Type::VAR; }
 
     const std::string name_;
 };
 
 
-class SymBoolXor : public SymBool {
+class SymBoolXor : public SymBoolAbstract {
   friend class SymBool;
 
   private:
-    SymBoolXor(const SymBool& a, const SymBool& b) : a_(a), b_(b) {}
+    SymBoolXor(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
 
   public:
-    SymBool::Type type() const { return XOR; }
+    SymBool::Type type() const { return SymBool::Type::XOR; }
 
-    const SymBool& a_;
-    const SymBool& b_;
+    const SymBoolAbstract * const a_;
+    const SymBoolAbstract * const b_;
 };
 
-class SymBoolZ3 : public SymBool {
+class SymBoolZ3 : public SymBoolAbstract {
   friend class SymBool;
 
   private:
     SymBoolZ3(const z3::expr& e) : e_(e) {}
 
   public:
-    SymBool::Type type() const { return Z3; }
+    SymBool::Type type() const { return SymBool::Type::Z3; }
 
     const z3::expr& e_;
 };

@@ -67,9 +67,9 @@ class SymPrintVisitor : public SymVisitor<void> {
       os_ << ")";
     }
 
-    void visit_compare(const SymBoolCompare& b) {
+    void visit_compare(const SymBoolCompare * const b) {
 
-      switch(b.type()) {
+      switch(b->type()) {
         case SymBool::EQ:
           os_ << "(== ";
           break;
@@ -86,13 +86,13 @@ class SymPrintVisitor : public SymVisitor<void> {
           os_ << "(< ";
           break;
         default:
-          os_ << "(UNHANDLED_COMPARE" << b.type() << " ";
+          os_ << "(UNHANDLED_COMPARE" << b->type() << " ";
           assert(false);
       }
 
-      (*this)(b.a_);
+      (*this)(b->a_);
       os_ << " ";
-      (*this)(b.b_);
+      (*this)(b->b_);
       os_ << ")";
 
     }
@@ -159,84 +159,84 @@ class SymPrintVisitor : public SymVisitor<void> {
     }
 
     /** Visit a bit-vector EQ */
-    void visit(const SymBoolEq& b) {
+    void visit(const SymBoolEq * const b) {
       os_ << "(=="; 
-      (*this)(b.a_);
+      (*this)(b->a_);
       os_ << " ";
-      (*this)(b.b_);
+      (*this)(b->b_);
       os_ << ")";
     }
     
     /** Visit a boolean AND */
-    void visit(const SymBoolAnd& b) {
+    void visit(const SymBoolAnd * const b) {
       os_ << "(and ";
-      (*this)(b.a_);
+      (*this)(b->a_);
       os_ << " ";
-      (*this)(b.b_);
+      (*this)(b->b_);
       os_ << ")";
     }
 
     /** Visit a boolean FALSE */
-    void visit(const SymBoolFalse& b) {
+    void visit(const SymBoolFalse * const b) {
       os_ << "FALSE";
     }
 
     /** Visit a boolean IFF */
-    void visit(const SymBoolIff& b) {
+    void visit(const SymBoolIff * const b) {
       os_ << "(iff ";
-      (*this)(b.a_);
+      (*this)(b->a_);
       os_ << " ";
-      (*this)(b.b_);
+      (*this)(b->b_);
       os_ << ")";
     }
 
     /** Visit a boolean IMPLIES */
-    void visit(const SymBoolImplies& b) {
+    void visit(const SymBoolImplies * const b) {
       os_ << "(implies ";
-      (*this)(b.a_);
+      (*this)(b->a_);
       os_ << " ";
-      (*this)(b.b_);
+      (*this)(b->b_);
       os_ << ")";
     }
 
     /** Visit a boolean NOT */
-    void visit(const SymBoolNot& b) {
+    void visit(const SymBoolNot * const b) {
       os_ << "(not ";
-      (*this)(b.b_);
+      (*this)(b->b_);
       os_ << ")";
     }
 
     /** Visit a boolean OR */
-    void visit(const SymBoolOr& b) {
+    void visit(const SymBoolOr * const b) {
       os_ << "(or ";
-      (*this)(b.a_);
+      (*this)(b->a_);
       os_ << " ";
-      (*this)(b.b_);
+      (*this)(b->b_);
       os_ << ")";
     }
 
     /** Visit a boolean TRUE */
-    void visit(const SymBoolTrue& b) {
+    void visit(const SymBoolTrue * const b) {
       os_ << "TRUE";
     }
 
     /** Visit a boolean VAR */
-    void visit(const SymBoolVar& b) {
-      os_ << "<" << b.name_ << ">";
+    void visit(const SymBoolVar * const b) {
+      os_ << "<" << b->name_ << ">";
     }
 
     /** Visit a boolean XOR */
-    void visit(const SymBoolXor& b) {
+    void visit(const SymBoolXor * const b) {
       os_ << "(xor ";
-      (*this)(b.a_);
+      (*this)(b->a_);
       os_ << " ";
-      (*this)(b.b_);
+      (*this)(b->b_);
       os_ << ")";
     }
 
     /** Visit a Z3 compatibility bool */
-    void visit(const SymBoolZ3& bv) {
-      os_ << bv.e_;
+    void visit(const SymBoolZ3 * const b) {
+      os_ << b->e_;
     }
 
 

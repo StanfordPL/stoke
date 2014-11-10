@@ -635,7 +635,7 @@ vector<Expr> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::
 
 
 /* Returns the conjunction of several SymBools, starting with index */
-SymBool& conjunct(vector<SymBool*>& query, size_t index) {
+SymBool conjunct(vector<SymBool*>& query, size_t index) {
 
   if(query.size() - index == 0) {
     return SymBool::_true();
@@ -647,7 +647,7 @@ SymBool& conjunct(vector<SymBool*>& query, size_t index) {
 }
 
 /* Returns the negation of the conjunction of several SymBools */
-SymBoolNot& conjunct_and_negate(vector<SymBool*>& query) {
+SymBool conjunct_and_negate(vector<SymBool*>& query) {
   return !conjunct(query, 0);
 }
 
@@ -656,7 +656,7 @@ vector<SymBool*> z3_to_sym_bool(vector<Expr>& exprs) {
 
   vector<SymBool*> result;
   for(auto& it : exprs) {
-    auto& sb = SymBool::z3(it);
+    auto sb = SymBool::z3(it);
     result.push_back(&sb);
   }
 
@@ -688,7 +688,7 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
 
     vector<SymBool*> sym_constraints = z3_to_sym_bool(constraints);
     vector<SymBool*> sym_query = z3_to_sym_bool(query);
-    auto& final_query = conjunct_and_negate(sym_query);
+    auto final_query = conjunct_and_negate(sym_query);
 
     sym_constraints.push_back(&final_query);
 

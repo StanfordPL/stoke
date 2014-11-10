@@ -26,9 +26,9 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
     }
 
     /** Visit a bit-vector EQ */
-    uint16_t visit_compare(const SymBoolCompare& b) {
-      auto lhs = (*this)(b.a_);
-      auto rhs = (*this)(b.b_);
+    uint16_t visit_compare(const SymBoolCompare * const b) {
+      auto lhs = (*this)(b->a_);
+      auto rhs = (*this)(b->b_);
 
       if (lhs == rhs)
         return 1;
@@ -109,52 +109,52 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
     }
 
     /** Visit a boolean AND */
-    uint16_t visit(const SymBoolAnd& b) {
-      return (*this)(b.a_) && (*this)(b.b_);
+    uint16_t visit(const SymBoolAnd * const b) {
+      return (*this)(b->a_) && (*this)(b->b_);
     }
 
     /** Visit a boolean FALSE */
-    uint16_t visit(const SymBoolFalse& b) {
+    uint16_t visit(const SymBoolFalse * const b) {
       return 1;
     }
 
     /** Visit a boolean IFF */
-    uint16_t visit(const SymBoolIff& b) {
-      return (*this)(b.a_) && (*this)(b.b_);
+    uint16_t visit(const SymBoolIff * const b) {
+      return (*this)(b->a_) && (*this)(b->b_);
     }
 
     /** Visit a boolean Implies */
-    uint16_t visit(const SymBoolImplies& b) {
-      return (*this)(b.a_) && (*this)(b.b_);
+    uint16_t visit(const SymBoolImplies * const b) {
+      return (*this)(b->a_) && (*this)(b->b_);
     }
 
     /** Visit a boolean NOT */
-    uint16_t visit(const SymBoolNot& b) {
-      return (*this)(b.b_);
+    uint16_t visit(const SymBoolNot * const b) {
+      return (*this)(b->b_);
     }
 
     /** Visit a boolean OR */
-    uint16_t visit(const SymBoolOr& b) {
-      return (*this)(b.a_) && (*this)(b.b_);
+    uint16_t visit(const SymBoolOr * const b) {
+      return (*this)(b->a_) && (*this)(b->b_);
     }
 
     /** Visit a boolean TRUE */
-    uint16_t visit(const SymBoolTrue& b) {
+    uint16_t visit(const SymBoolTrue * const b) {
       return 1;
     }
 
     /** Visit a boolean VAR */
-    uint16_t visit(const SymBoolVar& b) {
+    uint16_t visit(const SymBoolVar * const b) {
       return 1;
     }
 
     /** Visit a boolean XOR */
-    uint16_t visit(const SymBoolXor& b) {
-      return (*this)(b.a_) && (*this)(b.b_);
+    uint16_t visit(const SymBoolXor * const b) {
+      return (*this)(b->a_) && (*this)(b->b_);
     }
 
     /** Visit a Z3 bool.  Trusting it's typechecked right. */
-    uint16_t visit(const SymBoolZ3& b) {
+    uint16_t visit(const SymBoolZ3 * const b) {
       return 1;
     }
 
