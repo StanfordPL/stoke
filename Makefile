@@ -255,7 +255,7 @@ zsh_completion: bin/_stoke
 bin/_stoke: $(BIN) tools/zsh_completion_generator.py
 	tools/zsh_completion_generator.py
 
-format:
+format: src/ext/astyle
 	src/ext/astyle/build/gcc/bin/astyle "*.cc" "*.h" --exclude="ext" --convert-tabs 2
 
 ##### CLEAN TARGETS
