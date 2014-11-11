@@ -36,7 +36,7 @@
 namespace stoke {
 
 class CostFunction {
- public:
+public:
   /** Result type; cost and whether correctness term equals zero. */
   typedef std::pair<bool, Cost> result_type;
 
@@ -142,7 +142,7 @@ class CostFunction {
     return sandbox_->get_input(i);
   }
 
- private:
+private:
   /** A sandbox for evaluating target and rewrites. */
   Sandbox* sandbox_;
 

@@ -26,7 +26,7 @@
 namespace stoke {
 
 class TransformsGadget : public Transforms {
- public:
+public:
   TransformsGadget(std::default_random_engine::result_type seed) : Transforms() {
     if (callee_save_arg.value()) {
       preserve_regs_arg.value() = x64asm::RegSet::empty();

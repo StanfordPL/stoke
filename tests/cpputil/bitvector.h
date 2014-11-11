@@ -20,26 +20,26 @@ TEST(CpputilBitvector, CanIterateBytes) {
   size_t i = 0;
   for (auto it = bv.fixed_byte_begin(); it != bv.fixed_byte_end(); ++it, ++i) {
     switch (i) {
-      case 0:
-        EXPECT_EQ(0xef, *it);
-        break;
+    case 0:
+      EXPECT_EQ(0xef, *it);
+      break;
 
-      case 1:
-        EXPECT_EQ(0xbe, *it);
-        break;
+    case 1:
+      EXPECT_EQ(0xbe, *it);
+      break;
 
-      case 2:
-        EXPECT_EQ(0xad, *it);
-        break;
+    case 2:
+      EXPECT_EQ(0xad, *it);
+      break;
 
-      case 3:
-        EXPECT_EQ(0xde, *it);
-        break;
+    case 3:
+      EXPECT_EQ(0xde, *it);
+      break;
 
-      default:
-        EXPECT_EQ(0, *it);
-        EXPECT_LT(i, 8);
-        break;
+    default:
+      EXPECT_EQ(0, *it);
+      EXPECT_LT(i, 8);
+      break;
     }
   }
   EXPECT_EQ(8, i);
@@ -53,18 +53,18 @@ TEST(CpputilBitvector, CanIterateWords) {
   size_t i = 0;
   for (auto it = bv.fixed_word_begin(); it != bv.fixed_word_end(); ++it, ++i) {
     switch (i) {
-      case 0:
-        EXPECT_EQ(0xbeef, *it);
-        break;
+    case 0:
+      EXPECT_EQ(0xbeef, *it);
+      break;
 
-      case 1:
-        EXPECT_EQ(0xdead, *it);
-        break;
+    case 1:
+      EXPECT_EQ(0xdead, *it);
+      break;
 
-      default:
-        EXPECT_EQ(0, *it);
-        EXPECT_LT(i, 4);
-        break;
+    default:
+      EXPECT_EQ(0, *it);
+      EXPECT_LT(i, 4);
+      break;
     }
   }
   EXPECT_EQ(4, i);
@@ -78,13 +78,13 @@ TEST(CpputilBitvector, CanIterateQuads) {
   size_t i = 0;
   for (auto it = bv.fixed_quad_begin(); it != bv.fixed_quad_end(); ++it, ++i) {
     switch (i) {
-      case 0:
-        EXPECT_EQ(0xdeadbeef, *it);
-        break;
+    case 0:
+      EXPECT_EQ(0xdeadbeef, *it);
+      break;
 
-      default:
-        EXPECT_LT(i, 1);
-        break;
+    default:
+      EXPECT_LT(i, 1);
+      break;
     }
   }
   EXPECT_EQ(1, i);

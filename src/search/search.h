@@ -30,7 +30,7 @@
 namespace stoke {
 
 class Search {
- public:
+public:
   /** Create a new search from a transform helper. */
   Search(Transforms* transforms);
 
@@ -84,7 +84,7 @@ class Search {
   /** Stops an in-progress search.  To be used from a callback, for example. */
   void stop();
 
- private:
+private:
   /** Random generator. */
   std::default_random_engine gen_;
   /** For sampling moves. */

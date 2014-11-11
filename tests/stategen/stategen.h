@@ -27,7 +27,7 @@ class StateGenParamTest : public ::testing::TestWithParam<int> {
     srand((unsigned int)seed_);
   }
 
- protected:
+protected:
   x64asm::Code code_;
   time_t seed_;
 

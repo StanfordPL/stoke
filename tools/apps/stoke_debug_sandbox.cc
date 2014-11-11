@@ -56,26 +56,26 @@ void callback(const StateCallbackData& data, void* arg) {
     cout << endl;
 
     switch (key) {
-      case 'l':
-        for (size_t i = 0, ie = target_arg.value().code.size(); i < ie; ++i) {
-          cout << (i == data.line ? "-> " : "   ") << target_arg.value().code[i] << endl;
-        }
-        cout << endl;
-        break;
-      case 'c':
-        *stepping = false;
-        break;
-      case 's':
-        *stepping = true;
-        break;
-      case 'd':
-        breakpoint.value() = numeric_limits<size_t>::max();
-        *stepping = false;
-        break;
-      case 'q':
-        exit(0);
-      default:
-        break;
+    case 'l':
+      for (size_t i = 0, ie = target_arg.value().code.size(); i < ie; ++i) {
+        cout << (i == data.line ? "-> " : "   ") << target_arg.value().code[i] << endl;
+      }
+      cout << endl;
+      break;
+    case 'c':
+      *stepping = false;
+      break;
+    case 's':
+      *stepping = true;
+      break;
+    case 'd':
+      breakpoint.value() = numeric_limits<size_t>::max();
+      *stepping = false;
+      break;
+    case 'q':
+      exit(0);
+    default:
+      break;
     }
   }
 }

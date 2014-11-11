@@ -152,18 +152,18 @@ uint64_t StateGen::get_addr(const CpuState& cs, const Cfg& cfg, size_t line) con
   if (op.contains_index()) {
     auto scale = 1;
     switch (op.get_scale()) {
-      case Scale::TIMES_2:
-        scale = 2;
-        break;
-      case Scale::TIMES_4:
-        scale = 4;
-        break;
-      case Scale::TIMES_8:
-        scale = 8;
-        break;
-      default:
-        scale = 1;
-        break;
+    case Scale::TIMES_2:
+      scale = 2;
+      break;
+    case Scale::TIMES_4:
+      scale = 4;
+      break;
+    case Scale::TIMES_8:
+      scale = 8;
+      break;
+    default:
+      scale = 1;
+      break;
     }
 
     if (op.addr_or()) {
@@ -194,22 +194,22 @@ size_t StateGen::get_size(const Cfg& cfg, size_t line) const {
   // Otherwise, we can infer width from type
   const auto mi = instr.mem_index();
   switch (instr.type(mi)) {
-    case Type::M_8:
-      return 1;
-    case Type::M_16:
-      return 2;
-    case Type::M_32:
-      return 4;
-    case Type::M_64:
-      return 8;
-    case Type::M_128:
-      return 16;
-    case Type::M_256:
-      return 32;
+  case Type::M_8:
+    return 1;
+  case Type::M_16:
+    return 2;
+  case Type::M_32:
+    return 4;
+  case Type::M_64:
+    return 8;
+  case Type::M_128:
+    return 16;
+  case Type::M_256:
+    return 32;
 
-    // All other memory types are pretty rare, return a conservative 512-bits
-    default:
-      return 64;
+  // All other memory types are pretty rare, return a conservative 512-bits
+  default:
+    return 64;
   }
 }
 

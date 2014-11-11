@@ -23,7 +23,7 @@
 namespace stoke {
 
 class SearchStateGadget : public SearchState {
- public:
+public:
   SearchStateGadget() {
     current = Cfg(current_arg.value().code, def_in_arg, live_out_arg);
     best_yet = Cfg(best_yet_arg.value().code, def_in_arg, live_out_arg);

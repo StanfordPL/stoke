@@ -30,7 +30,7 @@
 namespace stoke {
 
 class Transforms {
- public:
+public:
   /** Creates a new transformation helper. */
   Transforms() : old_instr_ {x64asm::RET}, old_opcode_ {x64asm::RET}, old_operand_ {x64asm::rax} {
     set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true, true, {});
@@ -117,7 +117,7 @@ class Transforms {
   /** Add user-defined undo implementation here ... */
   void undo_extension_move(Cfg& cfg);
 
- private:
+private:
   /** Returns the number of operands for this opcode. */
   size_t arity(x64asm::Opcode o) const {
     return x64asm::Instruction(o).arity();

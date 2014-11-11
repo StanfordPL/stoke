@@ -130,17 +130,17 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
   for (const auto& instr : target) {
     for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
       switch (instr.type(i)) {
-        case Type::IMM_8:
-        case Type::IMM_16:
-        case Type::IMM_32:
-        case Type::IMM_64:
-        case Type::ZERO:
-        case Type::ONE:
-        case Type::THREE:
-          insert_immediate(instr.get_operand<Imm64>(i));
-          break;
-        default:
-          break;
+      case Type::IMM_8:
+      case Type::IMM_16:
+      case Type::IMM_32:
+      case Type::IMM_64:
+      case Type::ZERO:
+      case Type::ONE:
+      case Type::THREE:
+        insert_immediate(instr.get_operand<Imm64>(i));
+        break;
+      default:
+        break;
       }
     }
   }
@@ -169,23 +169,23 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
 
 bool Transforms::modify(Cfg& cfg, Move type) {
   switch (type) {
-    case Move::INSTRUCTION:
-      return instruction_move(cfg);
-    case Move::OPCODE:
-      return opcode_move(cfg);
-    case Move::OPERAND:
-      return operand_move(cfg);
-    case Move::RESIZE:
-      return resize_move(cfg);
-    case Move::LOCAL_SWAP:
-      return local_swap_move(cfg);
-    case Move::GLOBAL_SWAP:
-      return global_swap_move(cfg);
-    case Move::EXTENSION:
-      return extension_move(cfg);
-    default:
-      assert(false);
-      return false;
+  case Move::INSTRUCTION:
+    return instruction_move(cfg);
+  case Move::OPCODE:
+    return opcode_move(cfg);
+  case Move::OPERAND:
+    return operand_move(cfg);
+  case Move::RESIZE:
+    return resize_move(cfg);
+  case Move::LOCAL_SWAP:
+    return local_swap_move(cfg);
+  case Move::GLOBAL_SWAP:
+    return global_swap_move(cfg);
+  case Move::EXTENSION:
+    return extension_move(cfg);
+  default:
+    assert(false);
+    return false;
   }
 }
 
@@ -425,29 +425,29 @@ bool Transforms::extension_move(Cfg& cfg) {
 
 void Transforms::undo(Cfg& cfg, Move type) {
   switch (type) {
-    case Move::INSTRUCTION:
-      undo_instruction_move(cfg);
-      break;
-    case Move::OPCODE:
-      undo_opcode_move(cfg);
-      break;
-    case Move::OPERAND:
-      undo_operand_move(cfg);
-      break;
-    case Move::RESIZE:
-      undo_resize_move(cfg);
-      break;
-    case Move::LOCAL_SWAP:
-      undo_local_swap_move(cfg);
-      break;
-    case Move::GLOBAL_SWAP:
-      undo_global_swap_move(cfg);
-      break;
-      undo_extension_move(cfg);
-      break;
-    default:
-      assert(false);
-      break;
+  case Move::INSTRUCTION:
+    undo_instruction_move(cfg);
+    break;
+  case Move::OPCODE:
+    undo_opcode_move(cfg);
+    break;
+  case Move::OPERAND:
+    undo_operand_move(cfg);
+    break;
+  case Move::RESIZE:
+    undo_resize_move(cfg);
+    break;
+  case Move::LOCAL_SWAP:
+    undo_local_swap_move(cfg);
+    break;
+  case Move::GLOBAL_SWAP:
+    undo_global_swap_move(cfg);
+    break;
+    undo_extension_move(cfg);
+    break;
+  default:
+    assert(false);
+    break;
   }
 }
 
@@ -551,143 +551,212 @@ bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
 
 bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& op) {
   switch (type(o, idx)) {
-    case Type::M_8:
-    case Type::M_16:
-    case Type::M_32:
-    case Type::M_64:
-    case Type::M_128:
-    case Type::M_256:
-    case Type::M_16_INT:
-    case Type::M_32_INT:
-    case Type::M_64_INT:
-    case Type::M_32_FP:
-    case Type::M_64_FP:
-    case Type::M_80_FP:
-    case Type::M_80_BCD:
-    case Type::M_2_BYTE:
-    case Type::M_28_BYTE:
-    case Type::M_108_BYTE:
-    case Type::M_512_BYTE:
-    case Type::FAR_PTR_16_16:
-    case Type::FAR_PTR_16_32:
-    case Type::FAR_PTR_16_64: return get_m(rs, o, op);
+  case Type::M_8:
+  case Type::M_16:
+  case Type::M_32:
+  case Type::M_64:
+  case Type::M_128:
+  case Type::M_256:
+  case Type::M_16_INT:
+  case Type::M_32_INT:
+  case Type::M_64_INT:
+  case Type::M_32_FP:
+  case Type::M_64_FP:
+  case Type::M_80_FP:
+  case Type::M_80_BCD:
+  case Type::M_2_BYTE:
+  case Type::M_28_BYTE:
+  case Type::M_108_BYTE:
+  case Type::M_512_BYTE:
+  case Type::FAR_PTR_16_16:
+  case Type::FAR_PTR_16_32:
+  case Type::FAR_PTR_16_64:
+    return get_m(rs, o, op);
 
-    case Type::MM: return get<Mm>(mm_pool_, op);
+  case Type::MM:
+    return get<Mm>(mm_pool_, op);
 
-    case Type::MOFFS_8:
-    case Type::MOFFS_16:
-    case Type::MOFFS_32:
-    case Type::MOFFS_64: return false;
+  case Type::MOFFS_8:
+  case Type::MOFFS_16:
+  case Type::MOFFS_32:
+  case Type::MOFFS_64:
+    return false;
 
-    case Type::RL: return get<Rl>(rl_pool_, op);
-    case Type::RH: return get<Rh>(rh_pool_, op);
-    case Type::RB: return get<Rb>(rb_pool_, op);
-    case Type::AL: return get<Rl>(rl_pool_, al, op);
-    case Type::CL: return get<Rl>(rl_pool_, cl, op);
-    case Type::R_16: return get<R16>(r16_pool_, op);
-    case Type::AX: return get<R16>(r16_pool_, ax, op);
-    case Type::DX: return get<R16>(r16_pool_, dx, op);
-    case Type::R_32: return get<R32>(r32_pool_, op);
-    case Type::EAX: return get<R32>(r32_pool_, eax, op);
-    case Type::R_64: return get<R64>(r64_pool_, op);
-    case Type::RAX: return get<R64>(r64_pool_, rax, op);
+  case Type::RL:
+    return get<Rl>(rl_pool_, op);
+  case Type::RH:
+    return get<Rh>(rh_pool_, op);
+  case Type::RB:
+    return get<Rb>(rb_pool_, op);
+  case Type::AL:
+    return get<Rl>(rl_pool_, al, op);
+  case Type::CL:
+    return get<Rl>(rl_pool_, cl, op);
+  case Type::R_16:
+    return get<R16>(r16_pool_, op);
+  case Type::AX:
+    return get<R16>(r16_pool_, ax, op);
+  case Type::DX:
+    return get<R16>(r16_pool_, dx, op);
+  case Type::R_32:
+    return get<R32>(r32_pool_, op);
+  case Type::EAX:
+    return get<R32>(r32_pool_, eax, op);
+  case Type::R_64:
+    return get<R64>(r64_pool_, op);
+  case Type::RAX:
+    return get<R64>(r64_pool_, rax, op);
 
-    case Type::REL_8:
-    case Type::REL_32: return false;
+  case Type::REL_8:
+  case Type::REL_32:
+    return false;
 
-    case Type::SREG: return get<Sreg>(sreg_pool_, op);
-    case Type::FS: return get<Sreg>(sreg_pool_, fs, op);
-    case Type::GS: return get<Sreg>(sreg_pool_, gs, op);
+  case Type::SREG:
+    return get<Sreg>(sreg_pool_, op);
+  case Type::FS:
+    return get<Sreg>(sreg_pool_, fs, op);
+  case Type::GS:
+    return get<Sreg>(sreg_pool_, gs, op);
 
-    case Type::ST: return get<St>(st_pool_, op);
-    case Type::ST_0: return get<St>(st_pool_, st0, op);
+  case Type::ST:
+    return get<St>(st_pool_, op);
+  case Type::ST_0:
+    return get<St>(st_pool_, st0, op);
 
-    case Type::XMM: return get<Xmm>(xmm_pool_, op);
-    case Type::XMM_0: return get<Xmm>(xmm_pool_, xmm0, op);
+  case Type::XMM:
+    return get<Xmm>(xmm_pool_, op);
+  case Type::XMM_0:
+    return get<Xmm>(xmm_pool_, xmm0, op);
 
-    case Type::YMM: return get<Ymm>(ymm_pool_, op);
+  case Type::YMM:
+    return get<Ymm>(ymm_pool_, op);
 
-    default:
-      assert(false); return false;;
+  default:
+    assert(false);
+    return false;;
   }
 }
 
 bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op) {
   switch (type(o, idx)) {
-    case Type::HINT: op = gen_() % 2 ? taken : not_taken; return true;
+  case Type::HINT:
+    op = gen_() % 2 ? taken : not_taken;
+    return true;
 
-    case Type::IMM_8: return get<Imm64>(imm_pool_, op);
-    case Type::IMM_16: return get<Imm64>(imm_pool_, op);
-    case Type::IMM_32: return get<Imm64>(imm_pool_, op);
-    case Type::IMM_64: return get<Imm64>(imm_pool_, op);
-    case Type::ZERO: op = zero; return true;
-    case Type::ONE: op = one; return true;
-    case Type::THREE: op = three; return true;
+  case Type::IMM_8:
+    return get<Imm64>(imm_pool_, op);
+  case Type::IMM_16:
+    return get<Imm64>(imm_pool_, op);
+  case Type::IMM_32:
+    return get<Imm64>(imm_pool_, op);
+  case Type::IMM_64:
+    return get<Imm64>(imm_pool_, op);
+  case Type::ZERO:
+    op = zero;
+    return true;
+  case Type::ONE:
+    op = one;
+    return true;
+  case Type::THREE:
+    op = three;
+    return true;
 
-    case Type::LABEL: return false;
+  case Type::LABEL:
+    return false;
 
-    case Type::M_8:
-    case Type::M_16:
-    case Type::M_32:
-    case Type::M_64:
-    case Type::M_128:
-    case Type::M_256:
-    case Type::M_16_INT:
-    case Type::M_32_INT:
-    case Type::M_64_INT:
-    case Type::M_32_FP:
-    case Type::M_64_FP:
-    case Type::M_80_FP:
-    case Type::M_80_BCD:
-    case Type::M_2_BYTE:
-    case Type::M_28_BYTE:
-    case Type::M_108_BYTE:
-    case Type::M_512_BYTE:
-    case Type::FAR_PTR_16_16:
-    case Type::FAR_PTR_16_32:
-    case Type::FAR_PTR_16_64: return get_m(rs, o, op);
+  case Type::M_8:
+  case Type::M_16:
+  case Type::M_32:
+  case Type::M_64:
+  case Type::M_128:
+  case Type::M_256:
+  case Type::M_16_INT:
+  case Type::M_32_INT:
+  case Type::M_64_INT:
+  case Type::M_32_FP:
+  case Type::M_64_FP:
+  case Type::M_80_FP:
+  case Type::M_80_BCD:
+  case Type::M_2_BYTE:
+  case Type::M_28_BYTE:
+  case Type::M_108_BYTE:
+  case Type::M_512_BYTE:
+  case Type::FAR_PTR_16_16:
+  case Type::FAR_PTR_16_32:
+  case Type::FAR_PTR_16_64:
+    return get_m(rs, o, op);
 
-    case Type::MM: return get<Mm>(mm_pool_, rs, op);
+  case Type::MM:
+    return get<Mm>(mm_pool_, rs, op);
 
-    case Type::PREF_66: op = pref_66; return true;
-    case Type::PREF_REX_W: op = pref_rex_w; return true;
-    case Type::FAR: op = far; return true;
+  case Type::PREF_66:
+    op = pref_66;
+    return true;
+  case Type::PREF_REX_W:
+    op = pref_rex_w;
+    return true;
+  case Type::FAR:
+    op = far;
+    return true;
 
-    case Type::MOFFS_8:
-    case Type::MOFFS_16:
-    case Type::MOFFS_32:
-    case Type::MOFFS_64: return false;
+  case Type::MOFFS_8:
+  case Type::MOFFS_16:
+  case Type::MOFFS_32:
+  case Type::MOFFS_64:
+    return false;
 
-    case Type::RL: return get<Rl>(rl_pool_, rs, op);
-    case Type::RH: return get<Rh>(rh_pool_, rs, op);
-    case Type::RB: return get<Rb>(rb_pool_, rs, op);
-    case Type::AL: return get<Al>({al}, rs, op);
-    case Type::CL: return get<Cl>({cl}, rs, op);
-    case Type::R_16: return get<R16>(r16_pool_, rs, op);
-    case Type::AX: return get<Ax>({ax}, rs, op);
-    case Type::DX: return get<Dx>({dx}, rs, op);
-    case Type::R_32: return get<R32>(r32_pool_, rs, op);
-    case Type::EAX: return get<Eax>({eax}, rs, op);
-    case Type::R_64: return get<R64>(r64_pool_, op);
-    case Type::RAX: return get<Rax>({rax}, rs, op);
+  case Type::RL:
+    return get<Rl>(rl_pool_, rs, op);
+  case Type::RH:
+    return get<Rh>(rh_pool_, rs, op);
+  case Type::RB:
+    return get<Rb>(rb_pool_, rs, op);
+  case Type::AL:
+    return get<Al>({al}, rs, op);
+  case Type::CL:
+    return get<Cl>({cl}, rs, op);
+  case Type::R_16:
+    return get<R16>(r16_pool_, rs, op);
+  case Type::AX:
+    return get<Ax>({ax}, rs, op);
+  case Type::DX:
+    return get<Dx>({dx}, rs, op);
+  case Type::R_32:
+    return get<R32>(r32_pool_, rs, op);
+  case Type::EAX:
+    return get<Eax>({eax}, rs, op);
+  case Type::R_64:
+    return get<R64>(r64_pool_, op);
+  case Type::RAX:
+    return get<Rax>({rax}, rs, op);
 
-    case Type::REL_8:
-    case Type::REL_32: return false;
+  case Type::REL_8:
+  case Type::REL_32:
+    return false;
 
-    case Type::SREG: return get<Sreg>(sreg_pool_, rs, op);
-    case Type::FS: return get<Fs>({fs}, rs, op);
-    case Type::GS: return get<Gs>({gs}, rs, op);
+  case Type::SREG:
+    return get<Sreg>(sreg_pool_, rs, op);
+  case Type::FS:
+    return get<Fs>({fs}, rs, op);
+  case Type::GS:
+    return get<Gs>({gs}, rs, op);
 
-    case Type::ST: return get<St>(st_pool_, rs, op);
-    case Type::ST_0: return get<St0>({st0}, rs, op);
+  case Type::ST:
+    return get<St>(st_pool_, rs, op);
+  case Type::ST_0:
+    return get<St0>({st0}, rs, op);
 
-    case Type::XMM: return get<Xmm>(xmm_pool_, rs, op);
-    case Type::XMM_0: return get<Xmm0>({xmm0}, rs, op);
+  case Type::XMM:
+    return get<Xmm>(xmm_pool_, rs, op);
+  case Type::XMM_0:
+    return get<Xmm0>({xmm0}, rs, op);
 
-    case Type::YMM: return get<Ymm>(ymm_pool_, rs, op);
+  case Type::YMM:
+    return get<Ymm>(ymm_pool_, rs, op);
 
-    default:
-      assert(false); return false;;
+  default:
+    assert(false);
+    return false;;
   }
 }
 

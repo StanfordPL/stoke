@@ -30,7 +30,7 @@
 namespace stoke {
 
 class Cfg {
- public:
+public:
   /** Basic block id type. */
   typedef size_t id_type;
   /** Location type; block and index within block. */
@@ -322,7 +322,7 @@ class Cfg {
   /** Returns true if an instruction performs a read from a register with an undefined value. */
   bool performs_undef_read() const;
 
- private:
+private:
   /** User-specified underlying code. */
   x64asm::Code code_;
   /** User-specified registers that are defined on entry to this graph. */

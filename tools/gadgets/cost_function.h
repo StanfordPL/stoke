@@ -25,7 +25,7 @@
 namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
- public:
+public:
   CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(sb) {
     set_target(target, stack_out_arg, heap_out_arg);
 

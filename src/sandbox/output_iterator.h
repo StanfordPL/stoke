@@ -26,7 +26,7 @@ class output_iterator {
   /** Needs access to constructor. */
   friend class Sandbox;
 
- public:
+public:
   /** Returns the underlying output state. */
   const CpuState& operator*() const {
     return (*itr_)->out_;
@@ -51,7 +51,7 @@ class output_iterator {
     return itr_ != rhs.itr_;
   }
 
- private:
+private:
   /** Creates a new output iterator using an IoPair iterator. */
   output_iterator(std::vector<IoPair*>::const_iterator itr) {
     itr_ = itr;

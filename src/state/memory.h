@@ -26,7 +26,7 @@
 namespace stoke {
 
 class Memory {
- public:
+public:
   /** Creates an empty memory. */
   Memory() {
     resize(0, 0);
@@ -169,7 +169,7 @@ class Memory {
   /** Read binary. */
   std::istream& read_bin(std::istream& is);
 
- private:
+private:
   /** Virtual base address. */
   uint64_t base_;
   /** Virtual memory sandbox. */

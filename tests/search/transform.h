@@ -9,7 +9,7 @@
 
 class TransformsTest : public CodeFixtureTest {
 
- public:
+public:
 
   virtual void SetUp() {
     CodeFixtureTest::SetUp();
@@ -35,7 +35,7 @@ class TransformsTest : public CodeFixtureTest {
     cfg_ = new stoke::Cfg(code_, x64asm::RegSet::universe(), x64asm::RegSet::empty());
   }
 
- protected:
+protected:
 
   static stoke::Transforms transforms_;
 
@@ -44,7 +44,7 @@ class TransformsTest : public CodeFixtureTest {
   x64asm::Code code_;
   stoke::Cfg* cfg_;
 
- private:
+private:
   static bool transforms_init_;
 };
 

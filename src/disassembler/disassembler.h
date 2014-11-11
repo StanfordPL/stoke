@@ -25,7 +25,7 @@
 namespace stoke {
 
 class Disassembler {
- public:
+public:
   typedef std::function<void (const FunctionCallbackData&)> Callback;
 
   /* Constructs a fresh disassembler */
@@ -61,7 +61,7 @@ class Disassembler {
   /* Disassembles a file and invokes the function callback for each result. */
   void disassemble(const std::string& filename);
 
- private:
+private:
   typedef std::vector<std::pair<uint64_t, std::string>> line_map;
   typedef std::set<uint64_t> label_set;
 

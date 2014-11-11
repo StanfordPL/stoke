@@ -13,7 +13,7 @@
 namespace stoke {
 
 class StateGen {
- public:
+public:
   /** Creates a new state generator. */
   StateGen(Sandbox* sb) : sb_{sb} {
     set_max_attempts(16);
@@ -41,7 +41,7 @@ class StateGen {
     return error_message_;
   }
 
- private:
+private:
   /** Sandbox */
   Sandbox* sb_;
 

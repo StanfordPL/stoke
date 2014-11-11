@@ -23,7 +23,7 @@
 
 class CodeFixture {
 
- public:
+public:
   CodeFixture(std::string filename);
 
   std::string get_name() const {
@@ -42,7 +42,7 @@ class CodeFixture {
   bool operator==(const CodeFixture& f) const {
     return false;
   }
- private:
+private:
   std::string name_;
   std::string filename_;
   std::string comment_;
@@ -56,7 +56,7 @@ class CodeFixture {
 
 class CodeFixtureTestInit {
 
- public:
+public:
   CodeFixtureTestInit() {
     generate_fixtures();
   }
@@ -69,7 +69,7 @@ class CodeFixtureTestInit {
     return fixtures_;
   }
 
- private:
+private:
   static void generate_fixtures();
 
   static std::vector<CodeFixture> fixtures_;
@@ -78,12 +78,12 @@ class CodeFixtureTestInit {
 
 class CodeFixtureTest : public ::testing::TestWithParam<CodeFixture> {
 
- public:
+public:
   virtual void SetUp() {
     fixtures_ = std::vector<CodeFixture>(CodeFixtureTestInit::get_fixtures());
   }
 
- protected:
+protected:
   std::vector<CodeFixture> fixtures_;
 
 };

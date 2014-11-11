@@ -674,33 +674,33 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
 
   // Load the alignment mask into rsi, and the read/write mask into rdx/rcx
   switch (instr.type(mi)) {
-    case Type::M_256:
-      assm_.mov(rsi, Imm64(0xffffffffffffffe0));
-      assm_.mov(rdx, Imm64(0x00000000ffffffff));
-      break;
-    case Type::M_128:
-      assm_.mov(rsi, Imm64(0xfffffffffffffff0));
-      assm_.mov(rdx, Imm64(0x000000000000ffff));
-      break;
-    case Type::M_64:
-      assm_.mov(rsi, Imm64(0xffffffffffffffff));
-      assm_.mov(rdx, Imm64(0x00000000000000ff));
-      break;
-    case Type::M_32:
-      assm_.mov(rsi, Imm64(0xffffffffffffffff));
-      assm_.mov(rdx, Imm64(0x000000000000000f));
-      break;
-    case Type::M_16:
-      assm_.mov(rsi, Imm64(0xffffffffffffffff));
-      assm_.mov(rdx, Imm64(0x0000000000000003));
-      break;
-    case Type::M_8:
-      assm_.mov(rsi, Imm64(0xffffffffffffffff));
-      assm_.mov(rdx, Imm64(0x0000000000000001));
-      break;
-    default:
-      assert(false);
-      break;
+  case Type::M_256:
+    assm_.mov(rsi, Imm64(0xffffffffffffffe0));
+    assm_.mov(rdx, Imm64(0x00000000ffffffff));
+    break;
+  case Type::M_128:
+    assm_.mov(rsi, Imm64(0xfffffffffffffff0));
+    assm_.mov(rdx, Imm64(0x000000000000ffff));
+    break;
+  case Type::M_64:
+    assm_.mov(rsi, Imm64(0xffffffffffffffff));
+    assm_.mov(rdx, Imm64(0x00000000000000ff));
+    break;
+  case Type::M_32:
+    assm_.mov(rsi, Imm64(0xffffffffffffffff));
+    assm_.mov(rdx, Imm64(0x000000000000000f));
+    break;
+  case Type::M_16:
+    assm_.mov(rsi, Imm64(0xffffffffffffffff));
+    assm_.mov(rdx, Imm64(0x0000000000000003));
+    break;
+  case Type::M_8:
+    assm_.mov(rsi, Imm64(0xffffffffffffffff));
+    assm_.mov(rdx, Imm64(0x0000000000000001));
+    break;
+  default:
+    assert(false);
+    break;
   }
   if (instr.maybe_write(mi)) {
     assm_.mov(rcx, rdx);
@@ -817,16 +817,16 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   // First check whether this instruction is trying to read from some part of rsp
   auto rsp_op = false;
   switch (instr.type(0)) {
-    case Type::RL:
-    case Type::RH:
-    case Type::RB:
-    case Type::R_16:
-    case Type::R_32:
-    case Type::R_64:
-      rsp_op = instr.get_operand<R64>(0) == rsp;
-      break;
-    default:
-      break;
+  case Type::RL:
+  case Type::RH:
+  case Type::RB:
+  case Type::R_16:
+  case Type::R_32:
+  case Type::R_64:
+    rsp_op = instr.get_operand<R64>(0) == rsp;
+    break;
+  default:
+    break;
   }
 
   // Depending on how things go, we might throw sigsegv, so we need the STOKE rsp back
@@ -856,50 +856,50 @@ void Sandbox::emit_mem_div(const Instruction& instr) {
   // 3. Exchange the values again (no need to double check the segv)
 
   switch (instr.get_opcode()) {
-    case DIV_M8:
-      emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
-      emit_reg_div({DIV_RL, {bl}});
-      assm_.xchg(bl, instr.get_operand<M8>(0));
-      break;
-    case DIV_M16:
-      emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
-      emit_reg_div({DIV_R16, {bx}});
-      assm_.xchg(bx, instr.get_operand<M16>(0));
-      break;
-    case DIV_M32:
-      emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
-      emit_reg_div({DIV_R32, {ebx}});
-      assm_.xchg(ebx, instr.get_operand<M32>(0));
-      break;
-    case DIV_M64:
-      emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
-      emit_reg_div({DIV_R64, {rbx}});
-      assm_.xchg(rbx, instr.get_operand<M64>(0));
-      break;
-    case IDIV_M8:
-      emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
-      emit_reg_div({IDIV_RL, {bl}});
-      assm_.xchg(bl, instr.get_operand<M8>(0));
-      break;
-    case IDIV_M16:
-      emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
-      emit_reg_div({IDIV_R16, {bx}});
-      assm_.xchg(bx, instr.get_operand<M16>(0));
-      break;
-    case IDIV_M32:
-      emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
-      emit_reg_div({IDIV_R32, {ebx}});
-      assm_.xchg(ebx, instr.get_operand<M32>(0));
-      break;
-    case IDIV_M64:
-      emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
-      emit_reg_div({IDIV_R64, {rbx}});
-      assm_.xchg(rbx, instr.get_operand<M64>(0));
-      break;
+  case DIV_M8:
+    emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
+    emit_reg_div({DIV_RL, {bl}});
+    assm_.xchg(bl, instr.get_operand<M8>(0));
+    break;
+  case DIV_M16:
+    emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
+    emit_reg_div({DIV_R16, {bx}});
+    assm_.xchg(bx, instr.get_operand<M16>(0));
+    break;
+  case DIV_M32:
+    emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
+    emit_reg_div({DIV_R32, {ebx}});
+    assm_.xchg(ebx, instr.get_operand<M32>(0));
+    break;
+  case DIV_M64:
+    emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+    emit_reg_div({DIV_R64, {rbx}});
+    assm_.xchg(rbx, instr.get_operand<M64>(0));
+    break;
+  case IDIV_M8:
+    emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
+    emit_reg_div({IDIV_RL, {bl}});
+    assm_.xchg(bl, instr.get_operand<M8>(0));
+    break;
+  case IDIV_M16:
+    emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
+    emit_reg_div({IDIV_R16, {bx}});
+    assm_.xchg(bx, instr.get_operand<M16>(0));
+    break;
+  case IDIV_M32:
+    emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
+    emit_reg_div({IDIV_R32, {ebx}});
+    assm_.xchg(ebx, instr.get_operand<M32>(0));
+    break;
+  case IDIV_M64:
+    emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+    emit_reg_div({IDIV_R64, {rbx}});
+    assm_.xchg(rbx, instr.get_operand<M64>(0));
+    break;
 
-    default:
-      assert(false);
-      break;
+  default:
+    assert(false);
+    break;
   }
 }
 

@@ -25,7 +25,7 @@
 namespace stoke {
 
 class TestcaseGadget : public CpuState {
- public:
+public:
   TestcaseGadget(std::default_random_engine::result_type seed) : CpuState() {
     if (shuffle_tc_arg) {
       std::default_random_engine rand;
@@ -38,7 +38,7 @@ class TestcaseGadget : public CpuState {
 };
 
 class TestcasesGadget : public CpuStates {
- public:
+public:
   TestcasesGadget(std::default_random_engine::result_type seed) : CpuStates() {
     if (shuffle_tc_arg) {
       std::default_random_engine rand;
@@ -50,7 +50,7 @@ class TestcasesGadget : public CpuStates {
 };
 
 class TrainingSetGadget : public CpuStates {
- public:
+public:
   TrainingSetGadget(std::default_random_engine::result_type seed) : CpuStates() {
     if (shuffle_tc_arg) {
       std::default_random_engine rand;
@@ -66,7 +66,7 @@ class TrainingSetGadget : public CpuStates {
 };
 
 class TestSetGadget : public CpuStates {
- public:
+public:
   TestSetGadget(std::default_random_engine::result_type seed) : CpuStates() {
     if (shuffle_tc_arg) {
       std::default_random_engine rand;
