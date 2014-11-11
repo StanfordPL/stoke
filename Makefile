@@ -256,12 +256,14 @@ bin/_stoke: $(BIN) tools/scripts/zsh_completion_generator.py
 	tools/scripts/zsh_completion_generator.py
 
 format: src/ext/astyle
-	src/ext/astyle/build/gcc/bin/astyle --options=none --suffix=none --exclude=ext --convert-tabs --indent=spaces=2 --recursive "*.cc" "*.h"
+	chmod +x tools/scripts/pre-commit.sh
+	tools/scripts/pre-commit.sh
 
 # builds a symlink to the post-commit hooks
 hooks: .git/hooks/pre-commit
 
 .git/hooks/pre-commit: tools/scripts/pre-commit.sh src/ext/astyle
+	chmod +x tools/scripts/pre-commit.sh
 	ln -sf $(shell pwd)/tools/scripts/pre-commit.sh .git/hooks/pre-commit
 
 
