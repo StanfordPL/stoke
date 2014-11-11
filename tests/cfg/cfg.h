@@ -7,7 +7,6 @@
 #include <stdexcept>
 #include <set>
 
-#include "src/args/reg_set.h"
 #include "src/cfg/cfg.h"
 #include "src/ext/x64asm/src/reg_set.h"
 #include "src/ext/cpputil/include/serialize/text_reader.h"
@@ -17,7 +16,6 @@
 
 x64asm::RegSet parse_regset_from_json(Json::Value json) {
   x64asm::RegSet rs;
-  stoke::RegSetReader rsr;
 
   if (json.isArray()) {
     std::stringstream ss;
@@ -26,14 +24,14 @@ x64asm::RegSet parse_regset_from_json(Json::Value json) {
       ss << json.get(i, "").asString() << " ";
     }
     ss << "}";
-    rsr(ss, rs);
+    ss >> rs;
     return rs;
 
 
   } else if (json.isString()) {
     std::stringstream ss;
     ss << json.asString();
-    rsr(ss, rs);
+    ss >> rs;
     return rs;
   }
 
