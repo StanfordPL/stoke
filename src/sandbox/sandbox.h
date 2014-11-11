@@ -29,7 +29,7 @@
 namespace stoke {
 
 class Sandbox {
- public:
+public:
   /** Creates a sandbox. */
   Sandbox();
 
@@ -128,7 +128,7 @@ class Sandbox {
     return output_iterator(io_pairs_.end());
   }
 
- private:
+private:
   /** Should the sandbox report errors for linux abi violations? */
   bool abi_check_;
   /** The maximum number of jumps to take before raising SIGINT. */

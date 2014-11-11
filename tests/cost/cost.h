@@ -10,10 +10,10 @@
 
 class CostFunctionTest : public ::testing::Test {
 
- public:
+public:
   CostFunctionTest() : fxn_(stoke::CostFunction(&sb_)) {}
 
- protected:
+protected:
 
   void add_testcases(int count) {
     for (int i = 0; i < count; ++i) {
@@ -39,7 +39,7 @@ class CostFunctionTest : public ::testing::Test {
   stoke::Sandbox sb_;
   stoke::CostFunction fxn_;
 
- private:
+private:
   void SetUp() {
 
     misalign_penalty_ = 7;

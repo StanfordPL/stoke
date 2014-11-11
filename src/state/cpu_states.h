@@ -23,7 +23,7 @@
 namespace stoke {
 
 class CpuStates : public std::vector<CpuState> {
- public:
+public:
   /** Write text. */
   std::ostream& write_text(std::ostream& os) const;
   /** Read text. */

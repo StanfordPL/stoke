@@ -256,7 +256,7 @@ bin/_stoke: $(BIN) tools/zsh_completion_generator.py
 	tools/zsh_completion_generator.py
 
 format: src/ext/astyle
-	src/ext/astyle/build/gcc/bin/astyle "*.cc" "*.h" --exclude="ext" --convert-tabs 2
+	src/ext/astyle/build/gcc/bin/astyle --options=none --suffix=none --exclude=ext --convert-tabs --indent=spaces=2 --recursive "*.cc" "*.h"
 
 ##### CLEAN TARGETS
 

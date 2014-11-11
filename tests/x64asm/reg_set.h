@@ -10,13 +10,13 @@
 
 class RegSetReaderTest : public ::testing::Test {
 
- public:
+public:
 
   void SetUp() {
 
   }
 
- protected:
+protected:
 
   std::stringstream ss_;
   stoke::RegSetReader rsr_;

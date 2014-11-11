@@ -479,14 +479,14 @@ void Cfg::recompute_liveness() {
         liveness_use_[*i];
 
       changed |= live_ins_[blocks_[*i]] != new_in;
-      #ifdef DEBUG_CFG_LIVENESS
+#ifdef DEBUG_CFG_LIVENESS
       if (changed) {
         cout << "block " << *i << " from " << live_ins_[blocks_[*i]] << " --> " << new_in << endl;
         cout << "   " << "live out: " << live_outs_[blocks_[*i] + num_instrs(*i) - 1] << endl;
         cout << "   " << "kill: " << liveness_kill_[*i] << endl;
         cout << "   " << "use:  " << liveness_use_[*i] << endl;
       }
-      #endif
+#endif
       live_ins_[blocks_[*i]] = new_in;
     }
   }

@@ -4,7 +4,7 @@
 #include "src/stategen/stategen.h"
 
 class StateFixtureTest : public ::testing::Test {
- private:
+private:
   void SetUp() {
     stoke::Sandbox sb;
     sb.set_abi_check(true)
@@ -18,7 +18,7 @@ class StateFixtureTest : public ::testing::Test {
     sg.get(state_, cfg);
   }
 
- protected:
+protected:
   stoke::CpuState state_;
 };
 

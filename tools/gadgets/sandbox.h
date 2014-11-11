@@ -25,7 +25,7 @@
 namespace stoke {
 
 class SandboxGadget : public Sandbox {
- public:
+public:
   SandboxGadget(const CpuStates& tcs) {
     set_abi_check(abi_check_arg);
     set_max_jumps(max_jumps_arg);

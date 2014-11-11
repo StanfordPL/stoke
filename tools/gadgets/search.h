@@ -25,7 +25,7 @@
 namespace stoke {
 
 class SearchGadget : public Search {
- public:
+public:
   SearchGadget(Transforms* tforms, std::default_random_engine::result_type seed) :
     Search(tforms) {
     set_seed(seed);

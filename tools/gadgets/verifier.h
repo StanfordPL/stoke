@@ -22,7 +22,7 @@
 namespace stoke {
 
 class VerifierGadget : public Verifier {
- public:
+public:
   VerifierGadget(CostFunction& fxn) : Verifier(fxn) {
     set_strategy(strategy_arg);
   }

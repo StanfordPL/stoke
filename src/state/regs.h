@@ -25,7 +25,7 @@
 namespace stoke {
 
 class Regs {
- public:
+public:
   /** Create a bank of n registers of w bits. */
   Regs(size_t n, size_t w) {
     contents_.resize(n, cpputil::BitVector(w));
@@ -91,7 +91,7 @@ class Regs {
     return is;
   }
 
- private:
+private:
   /** Register contents. */
   std::vector<cpputil::BitVector> contents_;
 };

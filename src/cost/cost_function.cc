@@ -129,15 +129,15 @@ Cost CostFunction::evaluate_correctness(const Cfg& cfg, const Cost max) {
   }
 
   switch (reduction_) {
-    case Reduction::MAX:
-      return penalty + max_correctness(cfg, max - penalty);
-    case Reduction::SUM:
-      return penalty + sum_correctness(cfg, max - penalty);
-    case Reduction::EXTENSION:
-      return penalty + extension_correctness(cfg, max - penalty);
-    default:
-      assert(false);
-      return 0;
+  case Reduction::MAX:
+    return penalty + max_correctness(cfg, max - penalty);
+  case Reduction::SUM:
+    return penalty + sum_correctness(cfg, max - penalty);
+  case Reduction::EXTENSION:
+    return penalty + extension_correctness(cfg, max - penalty);
+  default:
+    assert(false);
+    return 0;
   }
 }
 
@@ -242,16 +242,21 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
       auto delta = max_error_cost;
       uint64_t val_t = 0;
       switch (sse_width_) {
-        case 1: val_t = t[s_t].get_fixed_byte(i);
-          break;
-        case 2: val_t = t[s_t].get_fixed_word(i);
-          break;
-        case 4: val_t = t[s_t].get_fixed_double(i);
-          break;
-        case 8: val_t = t[s_t].get_fixed_quad(i);
-          break;
-        default: assert(false);
-          break;
+      case 1:
+        val_t = t[s_t].get_fixed_byte(i);
+        break;
+      case 2:
+        val_t = t[s_t].get_fixed_word(i);
+        break;
+      case 4:
+        val_t = t[s_t].get_fixed_double(i);
+        break;
+      case 8:
+        val_t = t[s_t].get_fixed_quad(i);
+        break;
+      default:
+        assert(false);
+        break;
       }
 
       for (const auto& s_r : rewrite_sse_out_) {
@@ -261,16 +266,21 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
 
         uint64_t val_r = 0;
         switch (sse_width_) {
-          case 1: val_r = r[s_r].get_fixed_byte(i);
-            break;
-          case 2: val_r = r[s_r].get_fixed_word(i);
-            break;
-          case 4: val_r = r[s_r].get_fixed_double(i);
-            break;
-          case 8: val_r = r[s_r].get_fixed_quad(i);
-            break;
-          default: assert(false);
-            break;
+        case 1:
+          val_r = r[s_r].get_fixed_byte(i);
+          break;
+        case 2:
+          val_r = r[s_r].get_fixed_word(i);
+          break;
+        case 4:
+          val_r = r[s_r].get_fixed_double(i);
+          break;
+        case 8:
+          val_r = r[s_r].get_fixed_quad(i);
+          break;
+        default:
+          assert(false);
+          break;
         }
 
         const auto eval = evaluate_distance(val_t, val_r) + ((s_t == s_r) ? 0 : misalign_penalty_);
@@ -356,15 +366,15 @@ Cost CostFunction::assembled_size_cost(const Cfg& cfg) const {
 
 Cost CostFunction::evaluate_distance(uint64_t x, uint64_t y) const {
   switch (distance_) {
-    case Distance::HAMMING:
-      return hamming_distance(x, y);
-    case Distance::ULP:
-      return ulp_distance(x, y);
-    case Distance::EXTENSION:
-      return extension_distance(x, y);
-    default:
-      assert(false);
-      return 0;
+  case Distance::HAMMING:
+    return hamming_distance(x, y);
+  case Distance::ULP:
+    return ulp_distance(x, y);
+  case Distance::EXTENSION:
+    return extension_distance(x, y);
+  default:
+    assert(false);
+    return 0;
   }
 }
 
@@ -393,15 +403,15 @@ Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {
 
 Cost CostFunction::evaluate_performance(const Cfg& cfg, const Cost max) const {
   switch (pterm_) {
-    case PerformanceTerm::SIZE:
-      return size_performance(cfg);
-    case PerformanceTerm::LATENCY:
-      return latency_performance(cfg);
-    case PerformanceTerm::EXTENSION:
-      return extension_performance(cfg);
-    default:
-      assert(false);
-      return 0;
+  case PerformanceTerm::SIZE:
+    return size_performance(cfg);
+  case PerformanceTerm::LATENCY:
+    return latency_performance(cfg);
+  case PerformanceTerm::EXTENSION:
+    return extension_performance(cfg);
+  default:
+    assert(false);
+    return 0;
   }
 }
 

@@ -24,7 +24,7 @@
 namespace stoke {
 
 class DotWriter {
- public:
+public:
   /** Creates a new dot writer. By default, all extended printing is disabled. */
   DotWriter() {
     set_def_in(false, false);
@@ -62,7 +62,7 @@ class DotWriter {
     os << "}";
   }
 
- private:
+private:
   /** Write the entry block for this graph. */
   void write_entry(std::ostream& os, const Cfg& cfg) const;
   /** Write the exit block for this graph. */

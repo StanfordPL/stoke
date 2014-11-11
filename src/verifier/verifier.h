@@ -23,7 +23,7 @@
 namespace stoke {
 
 class Verifier {
- public:
+public:
   /** Creates a new verifier with a cost function for use in hold-out verification. */
   Verifier(CostFunction& fxn) : counter_example_(), counter_example_available_(false),
     fxn_(fxn), next_counter_example_(0) {
@@ -48,7 +48,7 @@ class Verifier {
     return counter_example_;
   }
 
- private:
+private:
   /** Proof strategy. */
   Strategy strategy_;
   /** Counter example set by last failed proof. */

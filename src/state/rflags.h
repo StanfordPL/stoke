@@ -23,7 +23,7 @@
 namespace stoke {
 
 class RFlags {
- public:
+public:
   /** Creates an Rflags register with n bits. */
   RFlags() {
     contents_.resize_for_bits(size());
@@ -130,7 +130,7 @@ class RFlags {
     return is;
   }
 
- private:
+private:
   /** Rflag contents. */
   cpputil::BitVector contents_;
 };

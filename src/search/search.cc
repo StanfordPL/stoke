@@ -166,22 +166,22 @@ void Search::stop() {
 
 void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state) const {
   switch (init) {
-    case Init::EMPTY:
-      configure_empty(target, state);
-      break;
-    case Init::TARGET:
-      configure_target(target, state);
-      break;
-    case Init::PREVIOUS:
-      // Does nothing.
-      break;
-    case Init::EXTENSION:
-      configure_extension(target, state);
-      break;
+  case Init::EMPTY:
+    configure_empty(target, state);
+    break;
+  case Init::TARGET:
+    configure_target(target, state);
+    break;
+  case Init::PREVIOUS:
+    // Does nothing.
+    break;
+  case Init::EXTENSION:
+    configure_extension(target, state);
+    break;
 
-    default:
-      assert(false);
-      break;
+  default:
+    assert(false);
+    break;
   }
 
   state.current_cost = fxn(state.current).second;

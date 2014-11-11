@@ -23,7 +23,7 @@
 namespace stoke {
 
 class SeedGadget {
- public:
+public:
   SeedGadget() {
     seed_ = seed_arg;
     if (seed_ == 0) {
@@ -37,7 +37,7 @@ class SeedGadget {
     return seed_;
   }
 
- private:
+private:
   std::default_random_engine::result_type seed_;
 };
 
