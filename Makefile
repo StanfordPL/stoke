@@ -108,14 +108,14 @@ BIN=\
 all: release tags hooks
 
 debug:
-	make -C . external EXT_OPT="debug"
-	make -C . $(BIN) OPT="-g" 
+	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . -j1024 $(BIN) OPT="-g" 
 release:
-	make -C . external EXT_OPT="release"
-	make -C . $(BIN) OPT="-DNDEBUG -O3" 
+	$(MAKE) -C . external EXT_OPT="release"
+	$(MAKE) -C . -j1024 $(BIN) OPT="-DNDEBUG -O3" 
 profile:
-	make -C . external EXT_OPT="profile"
-	make -C . $(BIN) OPT="-DNDEBUG -O3 -pg" 
+	$(MAKE) -C . external EXT_OPT="profile"
+	$(MAKE) -C . -j1024 $(BIN) OPT="-DNDEBUG -O3 -pg" 
 
 test: bin/stoke_test tags
 	bin/stoke_test 
@@ -126,12 +126,12 @@ tags:
 ##### EXTERNAL TARGETS
 
 external: src/ext/astyle src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
-	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
-	make -C src/ext/x64asm $(EXT_OPT) 
+	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke -j1024
+	$(MAKE) -C src/ext/x64asm -j1024 $(EXT_OPT) 
 
 src/ext/astyle:
 	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle
-	make -C src/ext/astyle/build/gcc
+	$(MAKE) -C src/ext/astyle/build/gcc -j1024
 
 src/ext/cpputil:
 	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
@@ -141,7 +141,7 @@ src/ext/x64asm:
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
-	make -C src/ext/gtest-1.7.0
+	$(MAKE) -C src/ext/gtest-1.7.0 -j1024
 
 ##### BUILD TARGETS
 
@@ -276,5 +276,5 @@ dist_clean: clean
 	rm -rf src/ext/astyle
 	rm -rf src/ext/cpputil
 	rm -rf src/ext/x64asm
-	make -C src/ext/gtest-1.7.0 clean
-	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
+	$(MAKE) -C src/ext/gtest-1.7.0 clean
+	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
