@@ -33,7 +33,7 @@ public:
       std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand);
     }
     const auto idx = std::min(testcases_arg.value().size() - 1, testcase_idx_arg.value());
-    (CpuState)*this = testcases_arg.value()[idx];
+    *(static_cast<CpuState*>(this)) = testcases_arg.value()[idx];
   }
 };
 
@@ -45,7 +45,7 @@ public:
       rand.seed(seed);
       std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand);
     }
-    (CpuStates)*this = testcases_arg.value();
+    *(static_cast<CpuStates*>(this)) = testcases_arg.value();
   }
 };
 
