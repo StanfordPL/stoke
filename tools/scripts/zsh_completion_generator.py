@@ -81,7 +81,7 @@ class ZshHandler(Handler):
         for sub in command.subcommands:
           aux(sub)
       else:
-        self.write_arguments(command.name, command.arguments)
+        self.write_arguments(command.full_name(), command.arguments)
     self.write_header()
     aux(command)
 
@@ -112,7 +112,7 @@ class ZshHandler(Handler):
       subcommands=(
         """ + "\n        ".join(subhelp) + """
       )
-      _describe -t commands 'stoke' subcommands
+      _describe -t commands '""" + command.full_name() + """' subcommands
     ;;
 
     (options)
@@ -128,7 +128,7 @@ class ZshHandler(Handler):
   def write_arguments(self, name, args):
     def esc(s):
       return s.replace("{", "\\{").replace("}", "\\}").replace("'", "")
-    self.writeln("_stoke_" + name.replace(" ", "_") + "()\n{")
+    self.writeln("_" + name.replace(" ", "_") + "()\n{")
     res = []
     for arg in args:
       if len(arg.get_parameters()) > 1:
