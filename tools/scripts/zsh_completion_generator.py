@@ -52,7 +52,7 @@ def main():
 class Handler(object):
   def __init__(self, filename):
     self.filename = filename
-    self.full_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), ".." , "bin", filename)
+    self.full_filename = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", ".." , "bin", filename)
     self.file = open(self.full_filename, 'w')
 
   def handle(self, command):
@@ -172,7 +172,7 @@ class ZshHandler(Handler):
         continue
 
       # arguments without completion
-      m = re.search('({.*}|<move_type>|<arg1 arg2 ... argn>|<string>)$', usage)
+      m = re.search('({.*}|<move_type>|<move>|<arg1 arg2 ... argn>|<string>)$', usage)
       if m != None:
         options = m.group(1).split("|")
         res.append(a + "[" + esc(arg.desc + "; "+m.group(1))+"]:argument:'")
