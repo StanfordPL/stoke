@@ -140,7 +140,7 @@ string opcode_to_string(Opcode op) {
   string result(att_[op]);
   for (size_t i = 0; i < instr.arity(); i++) {
     result += "_";
-    result += types_[(int)instr.type(i)];
+    result += types_[(int)instr.type(i)-1];
   }
   return result;
 }
