@@ -83,6 +83,10 @@ auto& max_memory = ValueArg<uint64_t>::create("max_memory")
                    .usage("<bytes>")
                    .description("The maximum number of bytes to allocate to stack or heap")
                    .default_val(1024);
+auto& stack_size = ValueArg<size_t>::create("stack_size")
+                     .usage("<int>")
+                     .description("The minimum stack size available to the testcase")
+                     .default_val(16);
 
 auto& conv_opt = Heading::create("File conversion options:");
 auto& compress = FlagArg::create("compress")
@@ -99,7 +103,7 @@ int auto_gen() {
   TargetGadget target;
   SandboxGadget sb({});
 
-  StateGen sg(&sb);
+  StateGen sg(&sb, stack_size.value());
   sg.set_max_attempts(max_attempts.value())
   .set_max_memory(max_stack.value());
 

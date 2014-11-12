@@ -15,7 +15,7 @@ namespace stoke {
 class StateGen {
 public:
   /** Creates a new state generator. */
-  StateGen(Sandbox* sb) : sb_{sb} {
+  StateGen(Sandbox* sb, size_t stack_size = 16) : sb_{sb}, stack_size_(stack_size) {
     set_max_attempts(16);
     set_max_memory(1024);
   }
@@ -44,6 +44,9 @@ public:
 private:
   /** Sandbox */
   Sandbox* sb_;
+
+  /** The minimum stack size. */
+  size_t stack_size_;
 
   /** Replaces the register contents of cs with random bits. */
   void randomize_regs(CpuState& cs) const;

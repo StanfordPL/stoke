@@ -36,7 +36,7 @@ bool StateGen::get(CpuState& cs) const {
 
   // Create stack in the vicinity of rsp
   const auto s = cs.gp[rsp].get_fixed_quad(0);
-  cs.stack.resize(s, 8);
+  cs.stack.resize(s - stack_size_, stack_size_);
   randomize_mem(cs.stack);
 
   return true;
