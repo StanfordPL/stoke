@@ -24,18 +24,18 @@ namespace stoke {
 
 bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
   switch (strategy_) {
-    case Strategy::NONE:
-			counter_example_available_ = false;
-      return true;
-    case Strategy::HOLD_OUT:
-      return hold_out_verify(target, rewrite);
-    case Strategy::FORMAL:
-      return formal_verify(target, rewrite);
-		case Strategy::EXTENSION:
-			return extension_verify(target, rewrite);
-    default:
-      assert(false);
-      return false;
+  case Strategy::NONE:
+    counter_example_available_ = false;
+    return true;
+  case Strategy::HOLD_OUT:
+    return hold_out_verify(target, rewrite);
+  case Strategy::FORMAL:
+    return formal_verify(target, rewrite);
+  case Strategy::EXTENSION:
+    return extension_verify(target, rewrite);
+  default:
+    assert(false);
+    return false;
   }
 }
 
@@ -54,7 +54,7 @@ bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
 bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
 
   CpuState ceg;
-  
+
   Z3Solver s;
   Validator v(s);
   s.set_timeout(timeout_);

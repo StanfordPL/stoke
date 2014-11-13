@@ -3,11 +3,11 @@
 #include <iostream>
 using namespace std;
 using namespace z3;
-void vc_setInterfaceFlags(VC vc, enum ifaceflag_t f, int param_value){}
+void vc_setInterfaceFlags(VC vc, enum ifaceflag_t f, int param_value) {}
 
 // defines division by zero to equal 1, x%0 to equal x.
 // avoids division by zero errors.
-void make_division_total(VC vc){}
+void make_division_total(VC vc) {}
 
 //! Flags can be NULL
 VC vc_createValidityChecker(void)
@@ -88,14 +88,14 @@ Expr vc_boolToBVExpr(VC vc, Expr form) {
 
 
 //! Prints 'e' to stdout.
-void vc_printExpr(VC vc, Expr e){
+void vc_printExpr(VC vc, Expr e) {
 #ifdef DEBUG_VALIDATOR
   std::cout << e ;
 #endif
 }
 
 //! Prints 'e' to stdout as C code
-void vc_printExprCCode(VC vc, Expr e){}
+void vc_printExprCCode(VC vc, Expr e) {}
 
 //! print in smtlib format
 char * vc_printSMTLIB(VC vc, Expr e) {
@@ -103,7 +103,7 @@ char * vc_printSMTLIB(VC vc, Expr e) {
 }
 
 //! Prints 'e' into an open file descriptor 'fd'
-void vc_printExprFile(VC vc, Expr e, int fd){}
+void vc_printExprFile(VC vc, Expr e, int fd) {}
 
 //! Prints state of 'vc' into malloc'd buffer '*buf' and stores the
 //  length into '*len'.  It is the responsibility of the caller to
@@ -112,23 +112,23 @@ void vc_printExprFile(VC vc, Expr e, int fd){}
 
 //! Prints 'e' to malloc'd buffer '*buf'.  Sets '*len' to the length of
 //  the buffer. It is the responsibility of the caller to free the buffer.
-void vc_printExprToBuffer(VC vc, Expr e, char **buf, unsigned long * len){}
+void vc_printExprToBuffer(VC vc, Expr e, char **buf, unsigned long * len) {}
 
 //! Prints counterexample to stdout.
-void vc_printCounterExample(VC vc){}
+void vc_printCounterExample(VC vc) {}
 
 //! Prints variable declarations to stdout.
-void vc_printVarDecls(VC vc){}
+void vc_printVarDecls(VC vc) {}
 
 //! Clear the internal list of variables to declare maintained for
 //  vc_printVarDecls. Do this after you've printed them, or if you
 //  never want to print them, to prevent a memory leak.
-void vc_clearDecls(VC vc){}
+void vc_clearDecls(VC vc) {}
 
 //! Prints asserts to stdout. The flag simplify_print must be set to
 //"1" if you wish simplification to occur dring printing. It must be
 //set to "0" otherwise
-void vc_printAsserts(VC vc, int simplify_print){}
+void vc_printAsserts(VC vc, int simplify_print) {}
 
 //! Prints the state of the query to malloc'd buffer '*buf' and
 //stores ! the length of the buffer to '*len'.  It is the
@@ -136,13 +136,13 @@ void vc_printAsserts(VC vc, int simplify_print){}
 //simplify_print must be set to "1" if you wish simplification to
 //occur dring printing. It must be set to "0" otherwise
 void vc_printQueryStateToBuffer(VC vc, Expr e,
-    char **buf, unsigned long *len, int simplify_print){}
+                                char **buf, unsigned long *len, int simplify_print) {}
 
 //! Similar to vc_printQueryStateToBuffer()
-void vc_printCounterExampleToBuffer(VC vc, char **buf,unsigned long *len){}
+void vc_printCounterExampleToBuffer(VC vc, char **buf,unsigned long *len) {}
 
 //! Prints query to stdout.
-void vc_printQuery(VC vc){}
+void vc_printQuery(VC vc) {}
 
 /////////////////////////////////////////////////////////////////////////////
 // Context-related methods                                                 //
@@ -150,7 +150,7 @@ void vc_printQuery(VC vc){}
 
 //! Assert a new formula in the current context.
 /*! The formula must have Boolean type. */
-void vc_assertFormula(VC vc, Expr e){}
+void vc_assertFormula(VC vc, Expr e) {}
 
 // NB. The timeout is a soft timeout, use the -g flag for a hard timeout that
 // will abort automatically. The soft timeout is checked sometimes in the code,
@@ -169,7 +169,7 @@ int vc_query(VC vc, Expr e) {
 
 
 //! Return an array from a counterexample after a failed query.
-void vc_getCounterExampleArray(VC vc, Expr e, Expr **indices, Expr **values, int *size){}
+void vc_getCounterExampleArray(VC vc, Expr e, Expr **indices, Expr **values, int *size) {}
 
 //! get size of counterexample, i.e. the number of variables/array
 //locations in the counterexample.
@@ -178,10 +178,10 @@ int vc_counterexample_size(VC vc) {
 }
 
 //! Checkpoint the current context and increase the scope level
-void vc_push(VC vc){}
+void vc_push(VC vc) {}
 
 //! Restore the current context to its state at the last checkpoint
-void vc_pop(VC vc){}
+void vc_pop(VC vc) {}
 
 //! Return an int from a constant bitvector expression
 int getBVInt(Expr e) {
@@ -199,18 +199,18 @@ unsigned long long int getBVUnsignedLongLong(Expr e) {
 /**************************/
 /* BIT VECTOR OPERATIONS  */
 /**************************/
-Type vc_bvType(VC vc, int no_bits){
+Type vc_bvType(VC vc, int no_bits) {
   if(no_bits == 0)
     throw VALIDATOR_ERROR("vc_bvType called with no_bits = 0");
   return vc->bv_sort(no_bits);
 }
-Expr vc_bvConstExprFromInt(VC vc, int n_bits, unsigned int value){
+Expr vc_bvConstExprFromInt(VC vc, int n_bits, unsigned int value) {
   if(n_bits == 0)
     throw VALIDATOR_ERROR("vc_bcConstExprFromInt called with n_bits = 0");
   return vc->bv_val(value,n_bits);
 }
 
-Expr vc_bvConstExprFromLL(VC vc, int n_bits, unsigned long long value){
+Expr vc_bvConstExprFromLL(VC vc, int n_bits, unsigned long long value) {
   if(n_bits == 0)
     throw VALIDATOR_ERROR("vc_bcConstExprFromLL called with n_bits = 0");
   return vc->bv_val(((long long unsigned int)value),n_bits);
@@ -264,7 +264,7 @@ Expr vc_bvGeExpr(VC vc, Expr left, Expr right) {
 Expr vc_sbvLtExpr(VC vc, Expr left, Expr right) {
   return left<right;
 }
-Expr vc_sbvLeExpr(VC vc, Expr left, Expr right){ 
+Expr vc_sbvLeExpr(VC vc, Expr left, Expr right) {
   return left<=right;
 }
 Expr vc_sbvGtExpr(VC vc, Expr left, Expr right) {
@@ -297,7 +297,7 @@ Expr vc_bvLeftShiftExprExpr(VC vc, int n_bits, Expr left, Expr right) {
   return to_expr(*vc, Z3_mk_bvshl(*vc, left, right));
 }
 
-Expr vc_bvRightShiftExprExpr(VC vc, int n_bits,  Expr left, Expr right){
+Expr vc_bvRightShiftExprExpr(VC vc, int n_bits,  Expr left, Expr right) {
   return to_expr(*vc, Z3_mk_bvlshr(*vc, left, right));
 }
 Expr vc_bvSignedRightShiftExprExpr(VC vc, int n_bits, Expr left, Expr right) {
@@ -326,4 +326,4 @@ Expr vc_bvBoolExtract_One(VC vc, Expr x, int bit_no) {
 }
 Expr vc_bvSignExtend(VC vc, Expr child, int nbits) {
   return to_expr(*vc, Z3_mk_sign_ext(*vc, nbits-child.get_sort().bv_size(), child));
-} 
+}

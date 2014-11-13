@@ -65,15 +65,15 @@ private:
   /** Timeout (in ms) */
   uint64_t timeout_;
 
-	/** Cost function for use in hold-out verification. */
-	CostFunction fxn_;
-	/** Next counter example returned by hold-out verifier. */
-	size_t next_counter_example_;
+  /** Cost function for use in hold-out verification. */
+  CostFunction fxn_;
+  /** Next counter example returned by hold-out verifier. */
+  size_t next_counter_example_;
 
   /** Verify rewrite user hold-out cost function. */
   bool hold_out_verify(const Cfg& target, const Cfg& rewrite);
-	/** Verify rewrite using user-defined extension. */
-	bool extension_verify(const Cfg& target, const Cfg& rewrite);
+  /** Verify rewrite using user-defined extension. */
+  bool extension_verify(const Cfg& target, const Cfg& rewrite);
   /** Verify rewrite using STOKE's formal validator */
   bool formal_verify(const Cfg& target, const Cfg& rewrite);
 };

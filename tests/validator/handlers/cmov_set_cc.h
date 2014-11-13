@@ -1,54 +1,54 @@
 
 class ValidatorCmovSetCCTest : public ValidatorTest {
 
-  protected:
-    const std::vector<std::string> ccs 
-      { "a", "ae", "b", "be", "c", "e", "g", "ge",
-        "l", "le", "na", "nae", "nb", "nbe", "nc",
-        "ne", "ng", "nge", "nl", "nle", "no", "np",
-        "ns", "nz", "o", "p", "pe", "po", "s", "z" };
+protected:
+  const std::vector<std::string> ccs
+  { "a", "ae", "b", "be", "c", "e", "g", "ge",
+    "l", "le", "na", "nae", "nb", "nbe", "nc",
+    "ne", "ng", "nge", "nl", "nle", "no", "np",
+    "ns", "nz", "o", "p", "pe", "po", "s", "z" };
 
-    std::vector<stoke::CpuState> testcases_;
+  std::vector<stoke::CpuState> testcases_;
 
-    stoke::Sandbox* sb_;
+  stoke::Sandbox* sb_;
 
-  private:
+private:
 
-    void SetUp() {
-      ValidatorTest::SetUp();
+  void SetUp() {
+    ValidatorTest::SetUp();
 
-      const std::vector<int> flag_indexes
-          { 0, 2, 4, 6, 7, 11 };
+    const std::vector<int> flag_indexes
+    { 0, 2, 4, 6, 7, 11 };
 
-      sb_ = new stoke::Sandbox();
+    sb_ = new stoke::Sandbox();
 
-      // Create one testcase for each combination of the
-      // six status eflags. 0b00111111 = 0x3f.
-      stoke::StateGen sg(sb_);
+    // Create one testcase for each combination of the
+    // six status eflags. 0b00111111 = 0x3f.
+    stoke::StateGen sg(sb_);
 
-      for(size_t i = 0; i <= 0x3f; ++i) {
+    for(size_t i = 0; i <= 0x3f; ++i) {
 
-        // Initialize state to random
-        stoke::CpuState tc;
-        sg.get(tc);
+      // Initialize state to random
+      stoke::CpuState tc;
+      sg.get(tc);
 
-        // Set the appropriate flags
-        for(size_t j = 0; j < 6; ++j) {
-          if (i & (1 << j)) {
-            tc.rf.set(flag_indexes[j], 1);
-          } else {
-            tc.rf.set(flag_indexes[j], 0);
-          }
+      // Set the appropriate flags
+      for(size_t j = 0; j < 6; ++j) {
+        if (i & (1 << j)) {
+          tc.rf.set(flag_indexes[j], 1);
+        } else {
+          tc.rf.set(flag_indexes[j], 0);
         }
-
-        testcases_.push_back(tc);
       }
 
-      // Add the testcases to the sandbox
-      for(auto tc : testcases_) {
-        sb_->insert_input(tc);        
-      }
+      testcases_.push_back(tc);
     }
+
+    // Add the testcases to the sandbox
+    for(auto tc : testcases_) {
+      sb_->insert_input(tc);
+    }
+  }
 
 };
 

@@ -2,12 +2,12 @@
 class ValidatorPalignrTest : public ValidatorTest {
 
   // We need to test this one with several immediate values
-  protected:
-    const std::vector<std::string> imms 
-      { "$0x0", "$0x1", "$0x2", 
-        "$0x0f", "$0x10", "$0x11",
-        "$0x1f", "$0x20", "$0x21",
-        "$0xff" };
+protected:
+  const std::vector<std::string> imms
+  { "$0x0", "$0x1", "$0x2",
+    "$0x0f", "$0x10", "$0x11",
+    "$0x1f", "$0x20", "$0x21",
+    "$0xff" };
 
 };
 

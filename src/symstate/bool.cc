@@ -53,7 +53,7 @@ SymBool SymBool::operator!=(const SymBool& other) const {
 }
 
 /* Bit vector type */
-SymBool::Type SymBool::type() const { 
+SymBool::Type SymBool::type() const {
   if(ptr)
     return ptr->type();
   else

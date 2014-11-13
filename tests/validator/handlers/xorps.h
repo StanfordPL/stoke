@@ -42,12 +42,12 @@ TEST_F(ValidatorXorpsTest, XorCommutative) {
   // Suppose xmm0 and xmm1 start at A and B respectively.
   // See the table of values next to each instr.
 
-                                                  // xmm0  xmm1  xmm2 
+  // xmm0  xmm1  xmm2
   target_ << "xorps  %xmm0, %xmm1" << std::endl;  // A     A+B
   target_ << "retq" << std::endl;
 
-  rewrite_ << "movaps %xmm0, %xmm2" << std::endl; // A     B     A   
-  rewrite_ << "xorps  %xmm1, %xmm0" << std::endl; // A+B   B     A  
+  rewrite_ << "movaps %xmm0, %xmm2" << std::endl; // A     B     A
+  rewrite_ << "xorps  %xmm1, %xmm0" << std::endl; // A+B   B     A
   rewrite_ << "movaps %xmm0, %xmm1" << std::endl; // A+B   A+B   A
   rewrite_ << "movaps %xmm2, %xmm0" << std::endl; // A     A+B   A
   rewrite_ << "retq" << std::endl;

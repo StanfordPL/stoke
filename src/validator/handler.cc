@@ -29,8 +29,9 @@ bool Handler::operands_supported(const Instruction& instr) {
 
 
 array<const char*, 3801> Handler::att_ = {{
-  "<label definition>"
-  #include "src/ext/x64asm/src/opcode.att"
-}};
+    "<label definition>"
+#include "src/ext/x64asm/src/opcode.att"
+  }
+};
 
 

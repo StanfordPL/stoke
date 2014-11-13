@@ -210,8 +210,8 @@ TEST(SandboxTest, RflagsRegistersArePreserved) {
   tc.gp[5].get_fixed_quad(0) = 0x05001b;
 
   sb.set_max_jumps(2)
-    .set_abi_check(false)
-    .insert_input(tc);
+  .set_abi_check(false)
+  .insert_input(tc);
 
   // Run it
   sb.run({c, x64asm::RegSet::universe(), x64asm::RegSet::universe()});

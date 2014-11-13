@@ -9,20 +9,20 @@ namespace stoke {
 /** Supports all variants of instructions that simply move bits from one register to another */
 class MoveHandler : public Handler {
 
-  public:
-    SupportLevel get_support(const x64asm::Instruction& instr);
+public:
+  SupportLevel get_support(const x64asm::Instruction& instr);
 
-    void build_circuit(const x64asm::Instruction& instr, SymState& start);
+  void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
-  private:
+private:
 
-    enum MoveSupport{
-      NONE = 0,
-      SIGN_EXTEND = 1,
-      ZERO_EXTEND = 2
-    };
+  enum MoveSupport {
+    NONE = 0,
+    SIGN_EXTEND = 1,
+    ZERO_EXTEND = 2
+  };
 
-    MoveSupport lookup(const x64asm::Instruction& instr) const;
+  MoveSupport lookup(const x64asm::Instruction& instr) const;
 
 };
 

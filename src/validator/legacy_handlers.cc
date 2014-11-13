@@ -12,7 +12,7 @@ using namespace x64asm;
 #ifdef DEBUG_VALIDATOR
 #define ADD_CONS(s) {cout << "Adding constraint: " << endl << s << endl;}
 #else
-#define ADD_CONS(S) 
+#define ADD_CONS(S)
 #endif
 
 
@@ -39,7 +39,7 @@ void adcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   //E_src1 + E_src2 + Carry
   retval = vc_andExpr(vc, retval, EqExpr(vc, E_result,vc_bvPlusExpr(vc, bitWidth+2, vc_bvPlusExpr(vc, bitWidth+2, E_arg1, E_arg2), E_carry)));
-  retval = vc_andExpr(vc, retval, vc_eqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth-1, 0)));  
+  retval = vc_andExpr(vc, retval, vc_eqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth-1, 0)));
 
   //Handle effects on parent register
   if(dest_is_reg && bitWidth < V_UNITSIZE)
@@ -56,7 +56,7 @@ void adcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   //Set flags accordingly
   setFlag(vc, d.Vnprime, V_OF, getOFExpr(vc, vc_bvBoolExtract_One(vc, E_arg1, bitWidth - 1), vc_bvBoolExtract_One(vc, E_arg2, bitWidth - 1),
-        vc_bvBoolExtract_One(vc, E_result, bitWidth - 1)), d.constraints, d.post_suffix);
+                                         vc_bvBoolExtract_One(vc, E_result, bitWidth - 1)), d.constraints, d.post_suffix);
   setFlag(vc, d.Vnprime, V_CF, vc_orExpr(vc, vc_bvBoolExtract_One(vc, E_result, bitWidth), vc_bvBoolExtract_One(vc, E_result, bitWidth+1)), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
@@ -69,25 +69,25 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   string aux_name = string("ADDTEMP_AUX") + d.pre_suffix + to_string(d.instr_no);
 
   Expr auxiliary = vc_varExpr(vc, aux_name.c_str(), vc_bvType(vc, 5));
-  Expr set_aux_to_sum = EqExpr(vc, auxiliary, 
-      vc_bvPlusExpr(vc, 5, 
-        vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 1, 0), vc_bvExtract(vc, E_src1, 3, 0)),
-        vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 1, 0), vc_bvExtract(vc, E_src2, 3, 0))
-  ));
+  Expr set_aux_to_sum = EqExpr(vc, auxiliary,
+                               vc_bvPlusExpr(vc, 5,
+                                   vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 1, 0), vc_bvExtract(vc, E_src1, 3, 0)),
+                                   vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 1, 0), vc_bvExtract(vc, E_src2, 3, 0))
+                                            ));
   d.constraints.push_back(set_aux_to_sum);
-                            
+
 
   /* Do the addition */
-  Expr E_result = vc_varExpr(vc, 
-                      ("ADDTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), 
-                      vc_bvType(vc, bitWidth+2) );
+  Expr E_result = vc_varExpr(vc,
+                             ("ADDTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(),
+                             vc_bvType(vc, bitWidth+2) );
 
   Expr E_arg1 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 2, 0), E_src1);
-  Expr E_arg2 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 2, 0), E_src2);  
+  Expr E_arg2 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 2, 0), E_src2);
 
   Expr retval = vc_trueExpr(vc);
   retval = vc_andExpr(vc, retval, EqExpr(vc, E_result, vc_bvPlusExpr(vc, bitWidth+2, E_arg1, E_arg2)));
-  retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth-1, 0)));  
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth-1, 0)));
 
   /* Set unchanged bits */
   if(dest_is_reg && bitWidth < V_UNITSIZE)
@@ -103,20 +103,20 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   /* Set the AF flag */
   setFlag(vc, d.Vnprime, V_AF, vc_bvBoolExtract_One(vc, auxiliary, 4),
-    d.constraints, d.post_suffix);
-  
+          d.constraints, d.post_suffix);
+
   /* Set the overflow flag */
-  setFlag(vc, d.Vnprime, V_OF, 
-    getOFExpr(vc, vc_bvBoolExtract_One(vc, E_arg1, bitWidth - 1), 
-              vc_bvBoolExtract_One(vc, E_arg2, bitWidth - 1),
-              vc_bvBoolExtract_One(vc, E_result, bitWidth - 1)), 
-    d.constraints, d.post_suffix);
+  setFlag(vc, d.Vnprime, V_OF,
+          getOFExpr(vc, vc_bvBoolExtract_One(vc, E_arg1, bitWidth - 1),
+                    vc_bvBoolExtract_One(vc, E_arg2, bitWidth - 1),
+                    vc_bvBoolExtract_One(vc, E_result, bitWidth - 1)),
+          d.constraints, d.post_suffix);
 
   /* Set the carry flag */
-  setFlag(vc, d.Vnprime, V_CF, 
-    vc_orExpr(vc, vc_bvBoolExtract_One(vc, E_result, bitWidth), 
-                  vc_bvBoolExtract_One(vc, E_result, bitWidth+1)), 
-    d.constraints, d.post_suffix);
+  setFlag(vc, d.Vnprime, V_CF,
+          vc_orExpr(vc, vc_bvBoolExtract_One(vc, E_result, bitWidth),
+                    vc_bvBoolExtract_One(vc, E_result, bitWidth+1)),
+          d.constraints, d.post_suffix);
 
   /* Set the SFZ flags */
   setSFPFZF(E_dest, d, bitWidth);
@@ -135,7 +135,7 @@ void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
 
   VC&vc = d.vc;
-  uint bitWidth = numops*64; 
+  uint bitWidth = numops*64;
   z3::sort fl = vc->bv_sort(64);
   z3::func_decl dadd = z3::function("addd", fl, fl, fl);
   Expr retval = vc_trueExpr(vc);
@@ -146,7 +146,7 @@ void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   else
   {
     DADDPATT(0)
-      DADDPATT(64)
+    DADDPATT(64)
   }
   if(dest_is_reg && numops == 1)
   {
@@ -175,7 +175,7 @@ void addfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
 
   VC&vc = d.vc;
-  uint bitWidth = numops*32; 
+  uint bitWidth = numops*32;
   z3::sort fl = vc->bv_sort(32);
   z3::func_decl fadd = z3::function("addf", fl, fl, fl);
   Expr retval = vc_trueExpr(vc);
@@ -186,9 +186,9 @@ void addfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   else
   {
     FADDPATT(0)
-      FADDPATT(32)
-      FADDPATT(64)
-      FADDPATT(96)	  
+    FADDPATT(32)
+    FADDPATT(64)
+    FADDPATT(96)
   }
   if(dest_is_reg && numops < 4)
   {
@@ -207,33 +207,33 @@ void addfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
 void addmul64rr(VC& vc, Expr E_arg1, Expr E_arg2, Expr E_dest, v_data d, bool add_sym=true) {
 
   VALIDATOR_ERROR("addmul64rr suspisciously commented out -- aborting.");
-  /*	muldata tuple(vc);
+  /*  muldata tuple(vc);
       tuple.arg1 = E_arg1;
       tuple.arg2 = E_arg2;
       tuple.result = E_dest;
 
       Expr cond = vc_eqExpr(vc, E_arg1, vc_bvConstExprFromLL(vc, V_UNITSIZE, 0));
       Expr retval = vc_impliesExpr(vc, cond, EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, V_UNITSIZE, 0)));
-#ifdef DEBUG_VALIDATOR
+  #ifdef DEBUG_VALIDATOR
   //cout << "Adding congruence constraint " << retval <<  endl;
-#endif
-d.constraints.push_back(retval); 
+  #endif
+  d.constraints.push_back(retval);
 
-for(vector<muldata>::iterator iter = mul.begin(); iter != mul.end(); iter++)
-{
-Expr e1 = vc_eqExpr(vc, E_arg1, iter->arg1);
-Expr e2 = vc_eqExpr(vc, E_arg2, iter->arg2);
-Expr cond = vc_andExpr(vc, e1, e2);
-Expr retval = vc_impliesExpr(vc, cond, vc_eqExpr(vc, E_dest, iter->result));
-#ifdef DEBUG_VALIDATOR
+  for(vector<muldata>::iterator iter = mul.begin(); iter != mul.end(); iter++)
+  {
+  Expr e1 = vc_eqExpr(vc, E_arg1, iter->arg1);
+  Expr e2 = vc_eqExpr(vc, E_arg2, iter->arg2);
+  Expr cond = vc_andExpr(vc, e1, e2);
+  Expr retval = vc_impliesExpr(vc, cond, vc_eqExpr(vc, E_dest, iter->result));
+  #ifdef DEBUG_VALIDATOR
   //cout << "Adding congruence constraint " << retval <<  endl;
-#endif
-d.constraints.push_back(retval); 
-if(add_sym){
-Expr cond = vc_andExpr(vc, vc_eqExpr(vc, E_arg1, iter->arg2), vc_eqExpr(vc, E_arg2, iter->arg1));
-Expr retval = vc_impliesExpr(vc, cond, vc_eqExpr(vc, E_dest, iter->result));
+  #endif
+  d.constraints.push_back(retval);
+  if(add_sym){
+  Expr cond = vc_andExpr(vc, vc_eqExpr(vc, E_arg1, iter->arg2), vc_eqExpr(vc, E_arg2, iter->arg1));
+  Expr retval = vc_impliesExpr(vc, cond, vc_eqExpr(vc, E_dest, iter->result));
   //cout << "Adding commutativity constraint " << retval <<  endl;
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
   }
 
   }
@@ -258,7 +258,7 @@ void andHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
   setFlag(vc,d.Vnprime,V_CF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime,V_OF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
@@ -275,7 +275,7 @@ void andpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 
@@ -287,7 +287,7 @@ void bsfHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
   setFlag(vc,d.Vnprime,V_ZF, EqExpr(vc, E_src, vc_bvConstExprFromLL(vc, bitWidth, 0)), d.constraints, d.post_suffix);
 
 
-  //	Expr E_result = vc_varExpr(vc, ("BSFTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, bitWidth));
+  //  Expr E_result = vc_varExpr(vc, ("BSFTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, bitWidth));
   Expr E_result = vc_bvConstExprFromLL(vc, bitWidth,0);
   for(int i = (int)bitWidth - 1; i>=0; i-- )
   {
@@ -305,7 +305,7 @@ void bsfHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 //If E_src[bitWidth-1]==1 then bitWidth else if E_src[bitWidth-2]==1 then bitWidth-2 else ...
@@ -316,7 +316,7 @@ void bsrHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
   setFlag(vc,d.Vnprime,V_ZF, EqExpr(vc, E_src, vc_bvConstExprFromLL(vc, bitWidth, 0)), d.constraints, d.post_suffix);
 
 
-  //	Expr E_result = vc_varExpr(vc, ("BSRTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, bitWidth));
+  //  Expr E_result = vc_varExpr(vc, ("BSRTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, bitWidth));
   Expr E_result = vc_bvConstExprFromLL(vc, bitWidth,0);
   for(unsigned int i = 0 ; i<bitWidth; i++ )
   {
@@ -332,7 +332,7 @@ void bsrHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 //Do a byte by byte swap
@@ -354,7 +354,7 @@ void bswapHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 
@@ -367,7 +367,7 @@ void btHandler(v_data d, unsigned int bitWidth, Expr E_operand, Expr E_offset) {
   {
     E_result = vc_iteExpr(vc, EqExpr(vc, E_idx, vc_bvConstExprFromLL(vc, bitWidth, i)), vc_bvBoolExtract_One(vc, E_operand, i), E_result);
   }
-  setFlag(vc,d.Vnprime,V_CF, E_result, d.constraints, d.post_suffix);	 
+  setFlag(vc,d.Vnprime,V_CF, E_result, d.constraints, d.post_suffix);
 }
 
 
@@ -379,23 +379,23 @@ void btcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, Ex
   Expr retval = vc_trueExpr(vc);
   for(unsigned int i = 0; i<bitWidth; i++)
   {
-    retval = vc_iteExpr(vc, EqExpr(vc, E_idx, vc_bvConstExprFromLL(vc, bitWidth, i)), 
-        vc_andExpr(vc, 
-          vc_iffExpr(vc, E_carry, vc_bvBoolExtract_One(vc, E_operand, i)),
-          setBit(vc, E_dest, E_operand, i, vc_bvNotExpr(vc, vc_bvExtract(vc, E_operand, i, i)), bitWidth)
-          ), 
-        retval);
+    retval = vc_iteExpr(vc, EqExpr(vc, E_idx, vc_bvConstExprFromLL(vc, bitWidth, i)),
+                        vc_andExpr(vc,
+                                   vc_iffExpr(vc, E_carry, vc_bvBoolExtract_One(vc, E_operand, i)),
+                                   setBit(vc, E_dest, E_operand, i, vc_bvNotExpr(vc, vc_bvExtract(vc, E_operand, i, i)), bitWidth)
+                                  ),
+                        retval);
   }
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
-  }	
+  }
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval); 		 
-} 
+  d.constraints.push_back(retval);
+}
 
 void btvalHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, Expr E_offset, bool val, bool dest_is_reg = true) {
 
@@ -405,26 +405,26 @@ void btvalHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, 
   Expr retval = vc_trueExpr(vc);
   for(unsigned int i = 0; i<bitWidth; i++)
   {
-    retval = vc_iteExpr(vc, EqExpr(vc, E_idx, vc_bvConstExprFromLL(vc, bitWidth, i)), 
-        vc_andExpr(vc, 
-          vc_iffExpr(vc, E_carry, vc_bvBoolExtract_One(vc, E_operand, i)),
-          setBit(vc, E_dest, E_operand, i, vc_bvConstExprFromInt(vc, 1, val), bitWidth)
-          ), 
-        retval);
+    retval = vc_iteExpr(vc, EqExpr(vc, E_idx, vc_bvConstExprFromLL(vc, bitWidth, i)),
+                        vc_andExpr(vc,
+                                   vc_iffExpr(vc, E_carry, vc_bvBoolExtract_One(vc, E_operand, i)),
+                                   setBit(vc, E_dest, E_operand, i, vc_bvConstExprFromInt(vc, 1, val), bitWidth)
+                                  ),
+                        retval);
   }
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
-  }	
+  }
 #ifdef DEBUG_VALIDATOR
   /out << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval); 		 
-} 
+  d.constraints.push_back(retval);
+}
 
 
-void cmovccHandler(v_data d, unsigned int bitWidth, string cc, Expr E_dest, Expr E_dest_pre, 
+void cmovccHandler(v_data d, unsigned int bitWidth, string cc, Expr E_dest, Expr E_dest_pre,
                    Expr E_src, bool dest_is_reg) {
 
   VC &vc = d.vc;
@@ -432,9 +432,9 @@ void cmovccHandler(v_data d, unsigned int bitWidth, string cc, Expr E_dest, Expr
 
   // If the predicate is true, then we set the destination equal to the new value
   // If it's false, we set the destination equal to the previous value.
- 	Expr setif = vc_iteExpr(vc, pred, 
-      EqExpr(vc, E_dest, E_src), 
-      EqExpr(vc, E_dest, E_dest_pre));
+  Expr setif = vc_iteExpr(vc, pred,
+                          EqExpr(vc, E_dest, E_src),
+                          EqExpr(vc, E_dest, E_dest_pre));
 
   d.constraints.push_back(setif);
 
@@ -460,7 +460,7 @@ void cmpHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2) {
 #endif
   d.constraints.push_back(retval);
   setFlag(vc, d.Vnprime, V_OF, getOFExpr(vc, vc_bvBoolExtract_One(vc, E_src1, bitWidth - 1), vc_bvBoolExtract(vc, E_src2, bitWidth - 1),  vc_bvBoolExtract_One(vc, E_dest, bitWidth - 1)),
-      d.constraints, d.post_suffix);
+          d.constraints, d.post_suffix);
   setFlag(vc, d.Vnprime, V_CF, vc_bvLtExpr(vc, E_src1, E_src2), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
@@ -487,7 +487,7 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
     Expr E_cmp_res = fcmp(E_src1, E_src2);\
     Expr E_gt = vc_andExpr(vc, vc_notExpr(vc, vc_bvBoolExtract_One(vc, E_cmp_res, 1)),vc_bvBoolExtract_One(vc, E_cmp_res, 0)); \
     retval = vc_andExpr(vc, retval, vc_iteExpr(vc, E_gt, EqExpr(vc, E_dest_part, zeros), EqExpr(vc, E_dest_part, ones)));\
-  }	
+  }
 
   VC&vc = d.vc;
   imm =imm &0x7;
@@ -529,7 +529,7 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
 #ifdef DEBUG_VALIDATOR
     cout << "Adding constraint " << retval << endl;
 #endif
-    d.constraints.push_back(retval);	  
+    d.constraints.push_back(retval);
   }
 #undef FCMPPATT
 }
@@ -546,9 +546,9 @@ void cmpxchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, Ex
 
   cmpHandler(d, bitWidth, E_acc_pre, E_dest_pre);
   Expr retval = vc_iteExpr(vc, getBoolExpr(vc, V_ZF, d.post_suffix, d.Vnprime),
-      vc_andExpr(vc, EqExpr(vc, E_dest, E_src), EqExpr(vc, E_acc_post, E_acc_pre)),
-      vc_andExpr(vc, EqExpr(vc, E_acc_post, E_dest), EqExpr(vc, E_dest, E_dest_pre))
-      );
+                           vc_andExpr(vc, EqExpr(vc, E_dest, E_src), EqExpr(vc, E_acc_post, E_acc_pre)),
+                           vc_andExpr(vc, EqExpr(vc, E_acc_post, E_dest), EqExpr(vc, E_dest, E_dest_pre))
+                          );
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -557,7 +557,7 @@ void cmpxchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, Ex
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, rax, d, bitWidth));
 
 
-  }    
+  }
 #ifdef DEBUG_VALIDATOR
   //cout << "Adding constraint " << retval << endl;
 #endif
@@ -579,9 +579,9 @@ void cmpxchg32Handler(v_data d, unsigned int bitWidth, Expr E_dest_post, Expr E_
 
   cmpHandler(d, bitWidth, E_acc_pre, E_dest_pre);
   Expr retval = vc_iteExpr(vc, getBoolExpr(vc, V_ZF, d.post_suffix, d.Vnprime),
-      vc_andExpr(vc, EqExpr(vc, E_dest_post, E_src), EqExpr(vc, E_acc_post, E_acc_pre)),
-      vc_andExpr(vc, EqExpr(vc, E_acc_post, E_dest_post), EqExpr(vc, E_dest_post, E_dest_pre))
-      );
+                           vc_andExpr(vc, EqExpr(vc, E_dest_post, E_src), EqExpr(vc, E_acc_post, E_acc_pre)),
+                           vc_andExpr(vc, EqExpr(vc, E_acc_post, E_dest_post), EqExpr(vc, E_dest_post, E_dest_pre))
+                          );
 
   if(dest_is_reg)
   {
@@ -590,14 +590,14 @@ void cmpxchg32Handler(v_data d, unsigned int bitWidth, Expr E_dest_post, Expr E_
     Expr E_full_dest_post = regExprWVN(vc, id_dest, d.post_suffix, d.Vnprime, V_UNITSIZE);
 
     retval = vc_iteExpr(vc, getBoolExpr(vc, V_ZF, d.post_suffix, d.Vnprime),
-        vc_andExpr(vc, EqExpr(vc, vc_bvExtract(vc, E_rax_pre, 63, 32), vc_bvExtract(vc, E_rax_post, 63, 32))
-          , EqExpr(vc, vc_bvConstExprFromLL(vc, 32, 0), vc_bvExtract(vc, E_full_dest_post, 63, 32))
-          ),	  
-        vc_andExpr(vc, EqExpr(vc, vc_bvExtract(vc, E_full_dest_pre, 63, 32), vc_bvExtract(vc, E_full_dest_post, 63, 32))
-          , EqExpr(vc, vc_bvConstExprFromLL(vc, 32, 0), vc_bvExtract(vc, E_rax_post, 63, 32))
-          )
-        );
-  }    
+                        vc_andExpr(vc, EqExpr(vc, vc_bvExtract(vc, E_rax_pre, 63, 32), vc_bvExtract(vc, E_rax_post, 63, 32))
+                                   , EqExpr(vc, vc_bvConstExprFromLL(vc, 32, 0), vc_bvExtract(vc, E_full_dest_post, 63, 32))
+                                  ),
+                        vc_andExpr(vc, EqExpr(vc, vc_bvExtract(vc, E_full_dest_pre, 63, 32), vc_bvExtract(vc, E_full_dest_post, 63, 32))
+                                   , EqExpr(vc, vc_bvConstExprFromLL(vc, 32, 0), vc_bvExtract(vc, E_rax_post, 63, 32))
+                                  )
+                       );
+  }
 #ifdef DEBUG_VALIDATOR
   //cout << "Adding constraint " << retval << endl;
 #endif
@@ -613,12 +613,12 @@ void convert_cdq_Handler(v_data d, Expr pred, unsigned int bitWidth) {
   Expr E_src = vc_iteExpr(vc, pred, vc_bvConstExprFromLL(vc, bitWidth, -1),  vc_bvConstExprFromLL(vc, bitWidth, 0));
   Expr retval = EqExpr(vc, E_dest, E_src);
   if(bitWidth < V_UNITSIZE)
-    retval = vc_andExpr(vc, retval, UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));   
+    retval = vc_andExpr(vc, retval, UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
 #ifdef DEBUG_VALIDATOR
   //cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval);  
-}  
+  d.constraints.push_back(retval);
+}
 
 void convert_e_Handler(v_data d, unsigned int bitWidth) {
 
@@ -631,11 +631,11 @@ void convert_e_Handler(v_data d, unsigned int bitWidth) {
   Expr E_result = vc_bvSignExtend(vc, E_src, 2*bitWidth);
   Expr retval = EqExpr(vc, E_dest, E_result);
   if(2*bitWidth < V_UNITSIZE)
-    retval = vc_andExpr(vc, retval, UnmodifiedBitsPreserve(vc, id_dest, d, 2*bitWidth));   
+    retval = vc_andExpr(vc, retval, UnmodifiedBitsPreserve(vc, id_dest, d, 2*bitWidth));
 #ifdef DEBUG_VALIDATOR
   //cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
 }
 
 void crc32r32Handler(v_data d, Expr E_dest, Expr E_dest_pre, Expr E_src) {
@@ -672,25 +672,25 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, dest, temp));
   Expr E_temp1(*vc), E_temp1_1(*vc), E_temp1_2(*vc), E_temp1_3(*vc), E_temp1_4(*vc), E_temp1_5(*vc);
   E_temp1 = vc_varExpr(vc, ("TEMP1CRC"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, 32));
 
-  REFLECT(E_src, E_temp1_1, E_temp1_2, E_temp1_3, E_temp1_4, E_temp1_5)  
+  REFLECT(E_src, E_temp1_1, E_temp1_2, E_temp1_3, E_temp1_4, E_temp1_5)
 
 #ifdef DEBUG_VALIDATOR
-    //cout << "TEMP1CRC done" << endl ;
+  //cout << "TEMP1CRC done" << endl ;
 #endif
 
-    retval =vc_andExpr(vc, retval, EqExpr(vc, E_temp1, E_temp1_5));
+  retval =vc_andExpr(vc, retval, EqExpr(vc, E_temp1, E_temp1_5));
 
   Expr E_temp2(*vc), E_temp2_1(*vc), E_temp2_2(*vc), E_temp2_3(*vc), E_temp2_4(*vc), E_temp2_5(*vc);
   E_temp2 = vc_varExpr(vc, ("TEMP2CRC"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, 32));
 
-  REFLECT(E_dest_pre, E_temp2_1, E_temp2_2, E_temp2_3, E_temp2_4, E_temp2_5)  
-    retval =vc_andExpr(vc, retval, EqExpr(vc, E_temp2, E_temp2_5));  
+  REFLECT(E_dest_pre, E_temp2_1, E_temp2_2, E_temp2_3, E_temp2_4, E_temp2_5)
+  retval =vc_andExpr(vc, retval, EqExpr(vc, E_temp2, E_temp2_5));
 
   Expr E_temp3 = vc_bvConcatExpr(vc, E_temp1, vc_bvConstExprFromLL(vc, 32, 0));
   Expr E_temp4 = vc_bvConcatExpr(vc, E_temp2, vc_bvConstExprFromLL(vc, 32, 0));
 
   Expr E_temp5 = vc_varExpr(vc, ("TEMP5CRC"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, 64));
-  retval =vc_andExpr(vc, retval, EqExpr(vc, E_temp5, vc_bvXorExpr(vc, E_temp3, E_temp4)));  
+  retval =vc_andExpr(vc, retval, EqExpr(vc, E_temp5, vc_bvXorExpr(vc, E_temp3, E_temp4)));
 
   Expr E_temp6(*vc), E_temp6_1(*vc), E_temp6_2(*vc), E_temp6_3(*vc), E_temp6_4(*vc), E_temp6_5(*vc);
   E_temp6 = vc_varExpr(vc, ("TEMP6CRC"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, 32));
@@ -702,46 +702,46 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, dest, temp));
   Expr E_var31 = vc_iteExpr(vc, vc_bvBoolExtract_One(vc, E_temp5, 63), vc_bvXorExpr(vc, vc_bvConcatExpr(vc, E_poly, vc_bvConstExprFromLL(vc, 31, 0)), E_temp5), E_temp5);
 
   POLYDIV(E_var30, E_var31, E_poly, 30, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var29, E_var30, E_poly, 29, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var28, E_var29, E_poly, 28, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var27, E_var28, E_poly, 27, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var26, E_var27, E_poly, 26, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var25, E_var26, E_poly, 25, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var24, E_var25, E_poly, 24, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var23, E_var24, E_poly, 23, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var22, E_var23, E_poly, 22, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var21, E_var22, E_poly, 21, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var20, E_var21, E_poly, 20, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var19, E_var20, E_poly, 19, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var18, E_var19, E_poly, 18, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var17, E_var18, E_poly, 17, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var16, E_var17, E_poly, 16, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var15, E_var16, E_poly, 15, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var14, E_var15, E_poly, 14, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var13, E_var14, E_poly, 13, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var12, E_var13, E_poly, 12, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var11, E_var12, E_poly, 11, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var10, E_var11, E_poly, 10, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var9 , E_var10, E_poly,  9, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var8 , E_var9 , E_poly,  8, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var7 , E_var8 , E_poly,  7, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var6 , E_var7 , E_poly,  6, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var5 , E_var6 , E_poly,  5, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var4 , E_var5 , E_poly,  4, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var3 , E_var4 , E_poly,  3, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var2 , E_var3 , E_poly,  2, d.instr_no, d.pre_suffix)
-    POLYDIV(E_var1 , E_var2 , E_poly,  1, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var29, E_var30, E_poly, 29, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var28, E_var29, E_poly, 28, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var27, E_var28, E_poly, 27, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var26, E_var27, E_poly, 26, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var25, E_var26, E_poly, 25, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var24, E_var25, E_poly, 24, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var23, E_var24, E_poly, 23, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var22, E_var23, E_poly, 22, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var21, E_var22, E_poly, 21, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var20, E_var21, E_poly, 20, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var19, E_var20, E_poly, 19, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var18, E_var19, E_poly, 18, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var17, E_var18, E_poly, 17, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var16, E_var17, E_poly, 16, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var15, E_var16, E_poly, 15, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var14, E_var15, E_poly, 14, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var13, E_var14, E_poly, 13, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var12, E_var13, E_poly, 12, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var11, E_var12, E_poly, 11, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var10, E_var11, E_poly, 10, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var9 , E_var10, E_poly,  9, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var8 , E_var9 , E_poly,  8, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var7 , E_var8 , E_poly,  7, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var6 , E_var7 , E_poly,  6, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var5 , E_var6 , E_poly,  5, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var4 , E_var5 , E_poly,  4, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var3 , E_var4 , E_poly,  3, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var2 , E_var3 , E_poly,  2, d.instr_no, d.pre_suffix)
+  POLYDIV(E_var1 , E_var2 , E_poly,  1, d.instr_no, d.pre_suffix)
 
-    Expr E_var0 = vc_iteExpr(vc, vc_bvBoolExtract_One(vc, E_var1, 32), vc_bvXorExpr(vc, vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 31, 0), E_poly), E_var1), E_var1);
-  retval = vc_andExpr(vc, retval, EqExpr(vc, E_temp6, vc_bvExtract(vc, E_var0, 31, 0)));  
+  Expr E_var0 = vc_iteExpr(vc, vc_bvBoolExtract_One(vc, E_var1, 32), vc_bvXorExpr(vc, vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 31, 0), E_poly), E_var1), E_var1);
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_temp6, vc_bvExtract(vc, E_var0, 31, 0)));
 
-  REFLECT(E_temp6, E_temp6_1, E_temp6_2, E_temp6_3, E_temp6_4, E_temp6_5)    
-    retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp6_5));  
+  REFLECT(E_temp6, E_temp6_1, E_temp6_2, E_temp6_3, E_temp6_4, E_temp6_5)
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp6_5));
 
 #ifdef DEBUG_VALIDATOR
   //cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 
 #undef REFLECT
 #undef REFLECT_INNER
@@ -769,7 +769,7 @@ void cwd_cdq_cqoHandler(v_data d, int width) {
 
   // Constrain all the bits of the destination register.
   for(int i = 0; i < width; ++i) {
-    Expr bit_of_dst = vc_bvExtract(vc, rdx_end_expr, i, i); 
+    Expr bit_of_dst = vc_bvExtract(vc, rdx_end_expr, i, i);
     Expr equal = EqExpr(vc, bit_of_dst, last_bit_of_src);
     d.constraints.push_back(equal);
   }
@@ -791,9 +791,9 @@ void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   //cout << E_dest << E_src <<  endl << bitWidth << endl ;
 #endif
 
-  Expr E_result = vc_bvMinusExpr(vc, bitWidth+1, 
-      vc_bvConcatExpr(vc, vc_bvConstExprFromInt(vc, 1, 0), E_src),
-      vc_bvConcatExpr(vc, vc_bvConstExprFromInt(vc, 1, 0), vc_bvConstExprFromLL(vc, bitWidth, 1)));
+  Expr E_result = vc_bvMinusExpr(vc, bitWidth+1,
+                                 vc_bvConcatExpr(vc, vc_bvConstExprFromInt(vc, 1, 0), E_src),
+                                 vc_bvConcatExpr(vc, vc_bvConstExprFromInt(vc, 1, 0), vc_bvConstExprFromLL(vc, bitWidth, 1)));
   Expr retval = EqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth - 1, 0));
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -803,7 +803,7 @@ void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
 #ifdef DEBUG_VALIDATOR
   //cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 
   setFlag(vc,d.Vnprime,V_OF, EqExpr(vc,E_dest,vc_bvConstExprFromLL(vc, bitWidth,0)), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
@@ -814,8 +814,8 @@ void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
 void divHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
 
   VC&vc = d.vc;
-  //	SS_Id rdx = rdx;
-  //	SS_Id rax = rax;
+  //  SS_Id rdx = rdx;
+  //  SS_Id rax = rax;
   if(bitWidth > 8)
   {
     Expr E_src1 = vc_bvConcatExpr(vc, vc_bvExtract(vc, regExprWVN(vc, rdx, d.pre_suffix, d.Vn, V_UNITSIZE), bitWidth - 1, 0), vc_bvExtract(vc, regExprWVN(vc, rax, d.pre_suffix, d.Vn, V_UNITSIZE), bitWidth - 1, 0));
@@ -836,7 +836,7 @@ void divHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
 #ifdef DEBUG_VALIDATOR
     //cout << "Adding constraint " << retval << endl;
 #endif
-    d.constraints.push_back(retval); 
+    d.constraints.push_back(retval);
   }
   else
   {
@@ -855,13 +855,13 @@ void divHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
 #ifdef DEBUG_VALIDATOR
     //cout << "Adding constraint " << retval << endl;
 #endif
-    d.constraints.push_back(retval); 	  	  
+    d.constraints.push_back(retval);
   }
 }
 
 void div_uif_Handler(v_data d, unsigned int bitWidth, Expr E_src2 ) {
   VALIDATOR_ERROR("div_uif suspisciously commented out -- aborting.");
-  /*	assert(bitWidth==32 && "only for 32 remainder right now");
+  /*  assert(bitWidth==32 && "only for 32 remainder right now");
       VC&vc = d.vc;
       Expr E_src1 = vc_bvConcatExpr(vc, vc_bvExtract(vc, regExprWVN(vc, rdx, d.pre_suffix, d.Vn, V_UNITSIZE), bitWidth - 1, 0), vc_bvExtract(vc, regExprWVN(vc, rax, d.pre_suffix, d.Vn, V_UNITSIZE), bitWidth - 1, 0));
       E_src2 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, bitWidth, 0), E_src2);
@@ -883,24 +883,24 @@ void dppdHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Ex
   if(imm & 0x10)
     retval = vc_andExpr(vc, retval, dmul(vc, vc_bvExtract(vc, E_temp1, 63, 0), vc_bvExtract(vc, E_dest_pre, 63, 0), vc_bvExtract(vc, E_src, 63, 0)));
   else
-    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_temp1, 63, 0), vc_bvConstExprFromLL(vc, 64,0)));	  
+    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_temp1, 63, 0), vc_bvConstExprFromLL(vc, 64,0)));
 
   if(imm & 0x20)
     retval = vc_andExpr(vc, retval, dmul(vc, vc_bvExtract(vc, E_temp1, 127, 64), vc_bvExtract(vc, E_dest_pre, 127, 64), vc_bvExtract(vc, E_src, 127, 64)));
   else
-    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_temp1, 127, 64), vc_bvConstExprFromLL(vc, 64,0)));	  
+    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_temp1, 127, 64), vc_bvConstExprFromLL(vc, 64,0)));
 
   retval = vc_andExpr(vc, retval, dadd(vc, E_temp2, vc_bvExtract(vc, E_temp1, 127, 64), vc_bvExtract(vc, E_temp1, 63, 0)));
 
   if( imm & 0x1)
-    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc,E_dest,63,0), E_temp2)); 
+    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc,E_dest,63,0), E_temp2));
   else
-    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc,E_dest,63,0), vc_bvConstExprFromLL(vc, 64,0) )); 	  
+    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc,E_dest,63,0), vc_bvConstExprFromLL(vc, 64,0) ));
 
   if( imm & 0x2)
-    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc,E_dest,127,64), E_temp2)); 	  
+    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc,E_dest,127,64), E_temp2));
   else
-    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc,E_dest,127,64), vc_bvConstExprFromLL(vc, 64,0) )); 	  
+    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc,E_dest,127,64), vc_bvConstExprFromLL(vc, 64,0) ));
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -919,7 +919,7 @@ void haddpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is
   Expr retval = vc_trueExpr(vc);
 
   Expr e1_src1 = vc_bvExtract(vc,E_src1, 63, 0);
-  Expr e2_src1 = vc_bvExtract(vc,E_src1, 127, 64);	
+  Expr e2_src1 = vc_bvExtract(vc,E_src1, 127, 64);
 
   Expr e1_src2 = vc_bvExtract(vc,E_src2, 63, 0);
   Expr e2_src2 = vc_bvExtract(vc,E_src2, 127, 64);
@@ -928,8 +928,8 @@ void haddpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is
   Expr e1_dest = vc_bvExtract(vc,E_dest, 63, 0);
   Expr e2_dest = vc_bvExtract(vc,E_dest, 127, 64);
 
-  retval = vc_andExpr(vc, retval, e1_dest == dadd(e2_src1,e1_src1)); 
-  retval = vc_andExpr(vc, retval, e2_dest == dadd(e2_src2,e1_src2)); 
+  retval = vc_andExpr(vc, retval, e1_dest == dadd(e2_src1,e1_src1));
+  retval = vc_andExpr(vc, retval, e2_dest == dadd(e2_src2,e1_src2));
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -963,10 +963,10 @@ void haddpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is
   Expr e3_dest = vc_bvExtract(vc,E_dest, 95, 64);
   Expr e4_dest = vc_bvExtract(vc,E_dest, 127, 96);
 
-  retval = vc_andExpr(vc, retval, e1_dest == fadd(e2_src1,e1_src1)); 
-  retval = vc_andExpr(vc, retval, e2_dest == fadd(e4_src1,e3_src1)); 
-  retval = vc_andExpr(vc, retval, e3_dest == fadd(e2_src2,e1_src2)); 
-  retval = vc_andExpr(vc, retval, e4_dest == fadd(e4_src2,e3_src2)); 
+  retval = vc_andExpr(vc, retval, e1_dest == fadd(e2_src1,e1_src1));
+  retval = vc_andExpr(vc, retval, e2_dest == fadd(e4_src1,e3_src1));
+  retval = vc_andExpr(vc, retval, e3_dest == fadd(e2_src2,e1_src2));
+  retval = vc_andExpr(vc, retval, e4_dest == fadd(e4_src2,e3_src2));
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -979,8 +979,8 @@ void haddpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is
 void idivHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
 
   VC&vc = d.vc;
-  //	SS_Id rdx = rdx;
-  //	SS_Id rax = rax;
+  //  SS_Id rdx = rdx;
+  //  SS_Id rax = rax;
   if(bitWidth > 8)
   {
     Expr E_src1 = vc_bvConcatExpr(vc, vc_bvExtract(vc, regExprWVN(vc, rdx, d.pre_suffix, d.Vn, V_UNITSIZE), bitWidth - 1, 0), vc_bvExtract(vc, regExprWVN(vc, rax, d.pre_suffix, d.Vn, V_UNITSIZE), bitWidth - 1, 0));
@@ -999,7 +999,7 @@ void idivHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
 
     }
     //cout << "Adding constraint " << retval << endl;
-    d.constraints.push_back(retval); 
+    d.constraints.push_back(retval);
   }
   else
   {
@@ -1016,7 +1016,7 @@ void idivHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, rax, d, 2*bitWidth));
 
     //cout << "Adding constraint " << retval << endl;
-    d.constraints.push_back(retval); 	  
+    d.constraints.push_back(retval);
   }
 }
 
@@ -1024,8 +1024,8 @@ void idivHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
 void imul1Handler(v_data d, unsigned int bitWidth, Expr E_src2, bool dest_is_reg=true) {
 
   VC&vc = d.vc;
-  //	SS_Id rdx = rdx;
-  //	SS_Id rax = rax;
+  //  SS_Id rdx = rdx;
+  //  SS_Id rax = rax;
   if(bitWidth > 8)
   {
     E_src2 = vc_bvSignExtend(vc, E_src2, 2*bitWidth);
@@ -1074,7 +1074,7 @@ void imul1Handler(v_data d, unsigned int bitWidth, Expr E_src2, bool dest_is_reg
     Expr E_flag_src1 = vc_bvSignExtend(vc, E_rax, flagBitWidth);
     Expr E_flag_src2 = E_dest;
     Expr E_flag_result = vc_notExpr(vc, EqExpr(vc, E_flag_src1, E_flag_src2));
-    setFlag(vc,d.Vnprime,V_OF, setFlag(vc,d.Vnprime,V_CF, E_flag_result, d.constraints, d.post_suffix), d.constraints, d.post_suffix);	  	  
+    setFlag(vc,d.Vnprime,V_OF, setFlag(vc,d.Vnprime,V_CF, E_flag_result, d.constraints, d.post_suffix), d.constraints, d.post_suffix);
   }
 }
 
@@ -1102,9 +1102,9 @@ void imul3Handler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Exp
   Expr E_prod = vc_bvMultExpr(vc, flagBitWidth, E_flag_src1, E_flag_src2 );
   //TODO Expr E_old_prod = vc_bvSignExtend(vc, E_result, flagBitWidth);
   //Expr E_flag_result = vc_notExpr(vc, EqExpr(vc, E_prod, E_old_prod));
-  Expr E_flag_result = vc_andExpr(vc, 
-      vc_notExpr(vc, EqExpr(vc, vc_bvExtract(vc, E_prod, flagBitWidth-1, bitWidth), vc_bvConstExprFromLL(vc, bitWidth, 0))),
-      vc_notExpr(vc, EqExpr(vc, vc_bvExtract(vc, E_prod, flagBitWidth-1, bitWidth), vc_bvConstExprFromLL(vc, bitWidth, -1))));
+  Expr E_flag_result = vc_andExpr(vc,
+                                  vc_notExpr(vc, EqExpr(vc, vc_bvExtract(vc, E_prod, flagBitWidth-1, bitWidth), vc_bvConstExprFromLL(vc, bitWidth, 0))),
+                                  vc_notExpr(vc, EqExpr(vc, vc_bvExtract(vc, E_prod, flagBitWidth-1, bitWidth), vc_bvConstExprFromLL(vc, bitWidth, -1))));
   //CF = OF = (temp=/=dest)
   setFlag(vc,d.Vnprime,V_OF, setFlag(vc,d.Vnprime,V_CF, E_flag_result, d.constraints, d.post_suffix), d.constraints, d.post_suffix);
   //Rest flags are undefined
@@ -1114,7 +1114,7 @@ void imul3Handler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Exp
 void imul64rrHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
   throw VALIDATOR_ERROR("imul64rr suspisciously commented out -- aborting");
-  /*	VC&vc = d.vc;
+  /*  VC&vc = d.vc;
 
       addmul64rr(vc, E_src1, E_src2, E_dest, mul, d);*/
 }
@@ -1123,9 +1123,9 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   VC&vc = d.vc;
   //cout << E_dest << E_src <<  endl << bitWidth << endl ;
 
-  Expr E_result = vc_bvPlusExpr(vc, bitWidth+1, 
-      vc_bvConcatExpr(vc, vc_bvConstExprFromInt(vc, 1, 0), E_src),
-      vc_bvConcatExpr(vc, vc_bvConstExprFromInt(vc, 1, 0), vc_bvConstExprFromLL(vc, bitWidth, 1)));
+  Expr E_result = vc_bvPlusExpr(vc, bitWidth+1,
+                                vc_bvConcatExpr(vc, vc_bvConstExprFromInt(vc, 1, 0), E_src),
+                                vc_bvConcatExpr(vc, vc_bvConstExprFromInt(vc, 1, 0), vc_bvConstExprFromLL(vc, bitWidth, 1)));
   Expr retval = EqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth - 1, 0));
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -1133,21 +1133,21 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint " << retval << endl;
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 
   // The AF flag will be set exactly if the lowest four bits of src are all one.
   //  (which is equivalent to lowest four bits of destination being all zero)
-  setFlag(vc, d.Vnprime, V_AF, 
-      EqExpr(vc,
-        vc_bvConstExprFromInt(vc, 4, 0),
-        vc_bvExtract(vc, E_dest, 3, 0)),
-    d.constraints, d.post_suffix);
- 
+  setFlag(vc, d.Vnprime, V_AF,
+          EqExpr(vc,
+                 vc_bvConstExprFromInt(vc, 4, 0),
+                 vc_bvExtract(vc, E_dest, 3, 0)),
+          d.constraints, d.post_suffix);
+
 
   // The OF flag will be set exactly if the destination is 0 (i.e. the src is -1).
-  setFlag(vc, d.Vnprime, V_OF, 
-      EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth,0)), 
-    d.constraints, d.post_suffix);
+  setFlag(vc, d.Vnprime, V_OF,
+          EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth,0)),
+          d.constraints, d.post_suffix);
 
   setSFPFZF(E_dest, d, bitWidth);
 }
@@ -1172,7 +1172,7 @@ void lahfHandler(v_data d) {
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
 }
 
 
@@ -1190,13 +1190,13 @@ void leaHandler(v_data d, unsigned int bitWidth) {
   retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvExtract(vc, E_addr, bitWidth-1,0)));
 
   if(bitWidth < V_UNITSIZE)
-    retval = vc_andExpr(vc, retval, UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));   
+    retval = vc_andExpr(vc, retval, UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
 }
 
 
@@ -1212,7 +1212,7 @@ void maxpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 
@@ -1237,7 +1237,7 @@ void movHandler(v_data d, unsigned int bitWidthTarget, unsigned int bitWidthSour
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
 }
 
 
@@ -1246,8 +1246,8 @@ void movddupHandler(v_data d, Expr E_dest, Expr E_src) {
   VC&vc = d.vc;
   E_src = vc_bvExtract(vc, E_src, 63, 0);
   Expr retval = vc_trueExpr(vc);
-  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63,0), vc_bvExtract(vc, E_src, 63,0))); 
-  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127,64), vc_bvExtract(vc, E_src, 63,0))); 
+  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63,0), vc_bvExtract(vc, E_src, 63,0)));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127,64), vc_bvExtract(vc, E_src, 63,0)));
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -1264,19 +1264,19 @@ void movhHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
   Expr retval = vc_trueExpr(vc);
   if(dest_is_reg)
   {
-    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src, 63, 0))); 
+    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_src, 63, 0)));
     SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
     Expr E_dest_pre = regExprWVN(vc, id_dest, d.pre_suffix, d.Vn, 128);
-    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_dest_pre, 63, 0))); 	  
+    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_dest_pre, 63, 0)));
   }
   else
   {
-    retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvExtract(vc, E_src, 127, 64))); 	  
+    retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvExtract(vc, E_src, 127, 64)));
   }
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
 }
 
 void movhlpsHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
@@ -1286,15 +1286,15 @@ void movhlpsHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
   if (!dest_is_reg)
     throw VALIDATOR_ERROR("movhlps only supports register destination");
   {
-    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_src, 127, 64))); 
+    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 0), vc_bvExtract(vc, E_src, 127, 64)));
     SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
     Expr E_dest_pre = regExprWVN(vc, id_dest, d.pre_suffix, d.Vn, 128);
-    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_dest_pre, 127, 64))); 	  
+    retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 64), vc_bvExtract(vc, E_dest_pre, 127, 64)));
   }
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
 }
 
 
@@ -1312,7 +1312,7 @@ void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
 
   VC&vc = d.vc;
-  uint bitWidth = numops*64; 
+  uint bitWidth = numops*64;
   z3::sort fl = vc->bv_sort(64);
   z3::func_decl dmul = z3::function("muld", fl, fl, fl);
   Expr retval = vc_trueExpr(vc);
@@ -1323,7 +1323,7 @@ void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   else
   {
     DMULPATT(0)
-      DMULPATT(64)
+    DMULPATT(64)
   }
   if(dest_is_reg && numops == 1)
   {
@@ -1335,7 +1335,7 @@ void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
 #endif
   d.constraints.push_back(retval);
 
-#undef DMULPATT	
+#undef DMULPATT
 }
 
 
@@ -1351,7 +1351,7 @@ void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
 
   VC&vc = d.vc;
-  uint bitWidth = numops*32; 
+  uint bitWidth = numops*32;
   z3::sort fl = vc->bv_sort(32);
   z3::func_decl fmul = z3::function("mulf", fl, fl, fl);
   Expr retval = vc_trueExpr(vc);
@@ -1364,7 +1364,7 @@ void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     FMULPATT(0)
     FMULPATT(32)
     FMULPATT(64)
-    FMULPATT(96)	  
+    FMULPATT(96)
   }
   if(dest_is_reg && numops < 4)
   {
@@ -1384,7 +1384,7 @@ void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
 void mul64rHandler(v_data d) {
 
   VALIDATOR_ERROR("mul64r suspisciously commented out -- aborting.");
-  /*	VC&vc = d.vc;
+  /*  VC&vc = d.vc;
       const VersionNumber& Vn = d.Vn;
       const VersionNumber& Vnprime = d.Vnprime;
       string pre_suffix = d.pre_suffix;
@@ -1467,18 +1467,18 @@ void mul64rHandler(v_data d) {
           carry2, 63, 1), vc_bvConstExprFromInt(vc, 63, 0)));
   //cout << "Adding constraint " << retval << endl;
   d.constraints.push_back(retval);
-}
+  }
 
-Expr E_sumexpr = vc_bvConcatExpr(vc, vc_bvConstExprFromInt(vc, 32,
+  Expr E_sumexpr = vc_bvConcatExpr(vc, vc_bvConstExprFromInt(vc, 32,
       0), vc_bvExtract(vc, E_ADpBC, 63, 32));
-E_sumexpr = vc_bvPlusExpr(vc, V_UNITSIZE, E_sumexpr, E_AC);
-E_sumexpr = vc_bvPlusExpr(vc, V_UNITSIZE, E_sumexpr, carry1);
-E_sumexpr = vc_bvPlusExpr(vc, V_UNITSIZE, E_sumexpr, carry2);
-Expr retval = vc_eqExpr(vc, E_rdx, E_sumexpr);
+  E_sumexpr = vc_bvPlusExpr(vc, V_UNITSIZE, E_sumexpr, E_AC);
+  E_sumexpr = vc_bvPlusExpr(vc, V_UNITSIZE, E_sumexpr, carry1);
+  E_sumexpr = vc_bvPlusExpr(vc, V_UNITSIZE, E_sumexpr, carry2);
+  Expr retval = vc_eqExpr(vc, E_rdx, E_sumexpr);
 
-//cout << "Adding constraint " << retval << endl;
-d.constraints.push_back(retval);
-*/
+  //cout << "Adding constraint " << retval << endl;
+  d.constraints.push_back(retval);
+  */
 }
 
 
@@ -1495,9 +1495,9 @@ void negHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint " << retval << endl;
-  d.constraints.push_back(retval); 
-  setFlag(vc,d.Vnprime,V_CF, vc_notExpr(vc, EqExpr(vc, E_src, vc_bvConstExprFromLL(vc, bitWidth, 0))), d.constraints, d.post_suffix);     
-  setFlag(vc,d.Vnprime,V_OF, vc_andExpr(vc, vc_bvBoolExtract_One(vc, E_src, bitWidth -1 ), vc_bvBoolExtract_One(vc, E_dest, bitWidth -1 )), d.constraints, d.post_suffix);     	
+  d.constraints.push_back(retval);
+  setFlag(vc,d.Vnprime,V_CF, vc_notExpr(vc, EqExpr(vc, E_src, vc_bvConstExprFromLL(vc, bitWidth, 0))), d.constraints, d.post_suffix);
+  setFlag(vc,d.Vnprime,V_OF, vc_andExpr(vc, vc_bvBoolExtract_One(vc, E_src, bitWidth -1 ), vc_bvBoolExtract_One(vc, E_dest, bitWidth -1 )), d.constraints, d.post_suffix);
   setSFPFZF(E_result, d, bitWidth);
 }
 
@@ -1512,7 +1512,7 @@ void notHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   //cout << "Adding constraint " << retval << endl;
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 
@@ -1534,18 +1534,18 @@ void orHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E
 
 #define ALTZZA(D,B,S) retval = vc_andExpr(vc, retval, EqExpr(vc, D, \
                                vc_iteExpr(vc, vc_sbvLtExpr(vc, B, vc_bv32ConstExprFromInt(vc, 0)), vc_bvConstExprFromLL(vc, 16, 0), S )));
-                               
+
 #define AGTFFA(D,B,S) retval = vc_andExpr(vc, retval, EqExpr(vc, D, \
                                vc_iteExpr(vc, vc_sbvGtExpr(vc, B, vc_bv32ConstExprFromInt(vc, 0x0FFFF)), vc_bvConstExprFromLL(vc, 16, 0xFFFF), S )));
-                     
+
 #define HALTZZAAGFTFFA(X,Y)   ALTZZA(vc_bvExtract(vc, E_temp, (16*X)-1,16*(X-1)), vc_bvExtract(vc, Y, ((32*X)-1)%128, (32*(X-1))%128), vc_bvExtract(vc, E_src1, (16*X)-1, 16*(X-1))) \
                               AGTFFA(vc_bvExtract(vc, E_dest, (16*X)-1,16*(X-1)), vc_bvExtract(vc, Y, ((32*X)-1)%128, (32*(X-1))%128), vc_bvExtract(vc, E_temp, (16*X)-1, 16*(X-1)))
 
-void packusdwHandler(v_data d, unsigned int bitWidthSrc, unsigned int bitWidthTarget,  Expr E_dest, Expr E_src1, Expr E_src2) 
+void packusdwHandler(v_data d, unsigned int bitWidthSrc, unsigned int bitWidthTarget,  Expr E_dest, Expr E_src1, Expr E_src2)
 {
   VC&vc = d.vc;
   Expr retval = vc_trueExpr(vc);
- 
+
   Expr E_temp = vc_varExpr(vc, ("PACKTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, 128) );
   HALTZZAAGFTFFA(1,E_src1)
   HALTZZAAGFTFFA(2,E_src1)
@@ -1555,7 +1555,7 @@ void packusdwHandler(v_data d, unsigned int bitWidthSrc, unsigned int bitWidthTa
   HALTZZAAGFTFFA(6,E_src2)
   HALTZZAAGFTFFA(7,E_src2)
   HALTZZAAGFTFFA(8,E_src2)
-  
+
   ADD_CONS(retval)
   d.constraints.push_back(retval);
 }
@@ -1599,7 +1599,7 @@ void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsign
 
   // If it's too high, then we zero the output registers.
   if (bits_to_shift > 255) {
-    Expr zero_bv = vc_bvConstExprFromInt(vc, 128, 0); 
+    Expr zero_bv = vc_bvConstExprFromInt(vc, 128, 0);
     Expr equals = EqExpr(vc, E_dest, zero_bv);
     d.constraints.push_back(equals);
     return;
@@ -1672,28 +1672,28 @@ void pandnHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 #define MAXMACRO(R,X,Y, U, L)  Expr R = vc_iteExpr(vc, vc_bvGtExpr(vc, vc_bvExtract(vc, X, U,L), vc_bvExtract(vc, Y, U,L)),\
                                     vc_bvExtract(vc, X, U,L), vc_bvExtract(vc, Y, U,L));
-#define RETMACRO(D,R, U, L) retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, D, U, L), R));                                    
+#define RETMACRO(D,R, U, L) retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, D, U, L), R));
 void pmaxsdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
   VC&vc = d.vc;
-  MAXMACRO(E_result1,E_src1, E_src2, 31,0) 
-  MAXMACRO(E_result2,E_src1, E_src2, 63,32) 
-  MAXMACRO(E_result3,E_src1, E_src2, 95,64) 
-  MAXMACRO(E_result4,E_src1, E_src2, 127,96) 
+  MAXMACRO(E_result1,E_src1, E_src2, 31,0)
+  MAXMACRO(E_result2,E_src1, E_src2, 63,32)
+  MAXMACRO(E_result3,E_src1, E_src2, 95,64)
+  MAXMACRO(E_result4,E_src1, E_src2, 127,96)
 
   Expr retval = vc_trueExpr(vc);
   RETMACRO(E_dest, E_result1,31,0)
   RETMACRO(E_dest, E_result2,63,32)
   RETMACRO(E_dest, E_result3,95,64)
   RETMACRO(E_dest, E_result4,127,96)
-  
+
   ADD_CONS(retval);
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 #define MINMACRO(R,X,Y, U, L)  Expr R = vc_iteExpr(vc, vc_bvLtExpr(vc, vc_bvExtract(vc, X, U,L), vc_bvExtract(vc, Y, U,L)),\
@@ -1701,14 +1701,14 @@ void pmaxsdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 void pminuwHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
   VC&vc = d.vc;
-  MINMACRO(E_result1,E_src1, E_src2, 15,0) 
-  MINMACRO(E_result2,E_src1, E_src2, 31,16) 
-  MINMACRO(E_result3,E_src1, E_src2, 47,32) 
-  MINMACRO(E_result4,E_src1, E_src2, 63,48) 
-  MINMACRO(E_result5,E_src1, E_src2, 79,64) 
-  MINMACRO(E_result6,E_src1, E_src2, 95,80) 
-  MINMACRO(E_result7,E_src1, E_src2, 111,96) 
-  MINMACRO(E_result8,E_src1, E_src2, 127,112) 
+  MINMACRO(E_result1,E_src1, E_src2, 15,0)
+  MINMACRO(E_result2,E_src1, E_src2, 31,16)
+  MINMACRO(E_result3,E_src1, E_src2, 47,32)
+  MINMACRO(E_result4,E_src1, E_src2, 63,48)
+  MINMACRO(E_result5,E_src1, E_src2, 79,64)
+  MINMACRO(E_result6,E_src1, E_src2, 95,80)
+  MINMACRO(E_result7,E_src1, E_src2, 111,96)
+  MINMACRO(E_result8,E_src1, E_src2, 127,112)
 
   Expr retval = vc_trueExpr(vc);
   RETMACRO(E_dest, E_result1,15,0)
@@ -1719,9 +1719,9 @@ void pminuwHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   RETMACRO(E_dest, E_result6,95,80)
   RETMACRO(E_dest, E_result7,111,96)
   RETMACRO(E_dest, E_result8,127,112)
-  
+
   ADD_CONS(retval);
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 #undef MINMACRO
 #undef MAXMACRO
@@ -1729,7 +1729,7 @@ void pminuwHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 void pmovsxdqHandler(v_data d, Expr E_dest, Expr E_src)
 {
   VC&vc = d.vc;
-  
+
   Expr E_first = vc_bvSignExtend(vc, vc_bvExtract(vc, E_src, 31, 0), 64);
   Expr E_second = vc_bvSignExtend(vc, vc_bvExtract(vc, E_src, 63, 32), 64);
   Expr retval = vc_andExpr(vc, EqExpr(vc, E_first, vc_bvExtract(vc, E_dest, 127, 64)),EqExpr(vc, E_second, vc_bvExtract(vc, E_dest, 63, 0)));
@@ -1738,13 +1738,13 @@ void pmovsxdqHandler(v_data d, Expr E_dest, Expr E_src)
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 void pmovsxwqHandler(v_data d, Expr E_dest, Expr E_src)
 {
   VC&vc = d.vc;
-  
+
   Expr E_first = vc_bvSignExtend(vc, vc_bvExtract(vc, E_src, 31, 16), 64);
   Expr E_second = vc_bvSignExtend(vc, vc_bvExtract(vc, E_src, 15, 0), 64);
   Expr retval = vc_andExpr(vc, EqExpr(vc, E_first, vc_bvExtract(vc, E_dest, 127, 64)),EqExpr(vc, E_second, vc_bvExtract(vc, E_dest, 63, 0)));
@@ -1753,13 +1753,13 @@ void pmovsxwqHandler(v_data d, Expr E_dest, Expr E_src)
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 void pmovzxbdHandler(v_data d, Expr E_dest, Expr E_src)
 {
   VC&vc = d.vc;
-  
+
   Expr E_first = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 7, 0));
   Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 15, 8));
   Expr E_third = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,24,0), vc_bvExtract(vc, E_src, 23, 16));
@@ -1771,14 +1771,14 @@ void pmovzxbdHandler(v_data d, Expr E_dest, Expr E_src)
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 
 void pmovzxbwHandler(v_data d, Expr E_dest, Expr E_src)
 {
   VC&vc = d.vc;
-  
+
   Expr E_first = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 7, 0));
   Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 15, 8));
   Expr E_third = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,8,0), vc_bvExtract(vc, E_src, 23, 16));
@@ -1798,13 +1798,13 @@ void pmovzxbwHandler(v_data d, Expr E_dest, Expr E_src)
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 void pmovzxwdHandler(v_data d, Expr E_dest, Expr E_src)
 {
   VC&vc = d.vc;
-  
+
   Expr E_first = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,16,0), vc_bvExtract(vc, E_src, 15, 0));
   Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,16,0), vc_bvExtract(vc, E_src, 31, 16));
   Expr E_third = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,16,0), vc_bvExtract(vc, E_src, 47, 32));
@@ -1816,14 +1816,14 @@ void pmovzxwdHandler(v_data d, Expr E_dest, Expr E_src)
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 
 void pmovzxwqHandler(v_data d, Expr E_dest, Expr E_src)
 {
   VC&vc = d.vc;
-  
+
   Expr E_first = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,48,0), vc_bvExtract(vc, E_src, 31, 16));
   Expr E_second = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc,48,0), vc_bvExtract(vc, E_src, 15, 0));
   Expr retval = vc_andExpr(vc, EqExpr(vc, E_first, vc_bvExtract(vc, E_dest, 127, 64)),EqExpr(vc, E_second, vc_bvExtract(vc, E_dest, 63, 0)));
@@ -1832,7 +1832,7 @@ void pmovzxwqHandler(v_data d, Expr E_dest, Expr E_src)
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 
@@ -1865,14 +1865,14 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, (s4), SUM_INNER(s3, 8,  0x00FF)));\
 
   SUM_OUTER(E_src, E_temp1, E_temp2, E_temp3, E_temp4)
 
-    retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp4));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp4));
 
 
   SS_Id id_dest = getRegisterFromInstr(d.instr,0);
   retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, 16));
 
   //cout << "Adding constraint " << retval << endl;
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
   setFlag(vc,d.Vnprime,V_CF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime,V_OF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime,V_PF, vc_falseExpr(vc), d.constraints, d.post_suffix);
@@ -1917,14 +1917,14 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, (s5), SUM_INNER(s4, 16, 0x0000FFFF)))
 
   SUM_OUTER(E_src, E_temp1, E_temp2, E_temp3, E_temp4, E_temp5)
 
-    retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp5));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp5));
 
 
   SS_Id id_dest = getRegisterFromInstr(d.instr,0);
   retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, 32));
 
   //cout << "Adding constraint " << retval << endl;
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
   setFlag(vc,d.Vnprime,V_CF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime,V_OF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime,V_PF, vc_falseExpr(vc), d.constraints, d.post_suffix);
@@ -1969,7 +1969,7 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, (s6), SUM_INNER(s4, 32, 0x00000000FFF
 
   SUM_OUTER(E_src, E_temp1, E_temp2, E_temp3, E_temp4, E_temp5,E_temp6)
 
-    retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp6));
+  retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_temp6));
 
 
   SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -1978,7 +1978,7 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, (s6), SUM_INNER(s4, 32, 0x00000000FFF
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
   setFlag(vc,d.Vnprime,V_CF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime,V_OF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime,V_PF, vc_falseExpr(vc), d.constraints, d.post_suffix);
@@ -1996,7 +1996,7 @@ retval = vc_andExpr(vc, retval, EqExpr(vc, (s6), SUM_INNER(s4, 32, 0x00000000FFF
 void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm) {
 
   VC& vc = d.vc;
-  
+
   // We have a nice helper to get (SRC >> x)[y:z]
   // With that in mind:
 
@@ -2014,10 +2014,10 @@ void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm) {
     int high = 32*(i+1) - 1;
     int low  = 32*i;
 
-    d.constraints.push_back( 
-        EqExpr(vc,
-          vc_bvExtract(vc, E_dest, high, low),
-          pshuf_shift_right_and_extract(vc, E_src, shift, 31, 0, 128)));
+    d.constraints.push_back(
+      EqExpr(vc,
+             vc_bvExtract(vc, E_dest, high, low),
+             pshuf_shift_right_and_extract(vc, E_src, shift, 31, 0, 128)));
   }
 
 
@@ -2036,9 +2036,9 @@ void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm) {
   retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 63, 32), E_srch));
   retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 95, 64), E_srcl));
   retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, 127, 96), E_srcl));
-#ifdef DEBUG_VALIDATOR
+  #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-#endif
+  #endif
 
   d.constraints.push_back(retval);
   */
@@ -2047,16 +2047,16 @@ void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm) {
 
 void pshufhwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr E_src) {
 
-  if ( avx || bitWidth != 128 ) 
+  if ( avx || bitWidth != 128 )
     throw VALIDATOR_ERROR("pshufhw only supported in non-avx form");
 
   VC &vc = d.vc;
 
   // DEST[63:0] <- SRC[63:0]
-  d.constraints.push_back( 
-      EqExpr(vc,
-        vc_bvExtract(vc, E_dest, 63, 0),
-        vc_bvExtract(vc, E_src,  63, 0)));
+  d.constraints.push_back(
+    EqExpr(vc,
+           vc_bvExtract(vc, E_dest, 63, 0),
+           vc_bvExtract(vc, E_src,  63, 0)));
 
   // We have a nice helper to get (SRC >> x)[y:z]
   // With that in mind:
@@ -2075,10 +2075,10 @@ void pshufhwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr
     int low = 64 + 16*i;
     int high = 79 + 16*i;
 
-    d.constraints.push_back( 
-        EqExpr(vc,
-          vc_bvExtract(vc, E_dest, high, low),
-          pshuf_shift_right_and_extract(vc, E_src, shift, 79, 64, 128)));
+    d.constraints.push_back(
+      EqExpr(vc,
+             vc_bvExtract(vc, E_dest, high, low),
+             pshuf_shift_right_and_extract(vc, E_src, shift, 79, 64, 128)));
 
   }
 
@@ -2088,7 +2088,7 @@ void pshufhwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr
 
 void pshuflwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr E_src) {
 
-  if ( avx || bitWidth != 128 ) 
+  if ( avx || bitWidth != 128 )
     throw VALIDATOR_ERROR("pshulhw only supported in non-avx form");
 
   VC &vc = d.vc;
@@ -2110,36 +2110,36 @@ void pshuflwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr
     int low =  16*i;
     int high = 15 + 16*i;
 
-    d.constraints.push_back( 
-        EqExpr(vc,
-          vc_bvExtract(vc, E_dest, high, low),
-          pshuf_shift_right_and_extract(vc, E_src, shift, 15, 0, 128)));
+    d.constraints.push_back(
+      EqExpr(vc,
+             vc_bvExtract(vc, E_dest, high, low),
+             pshuf_shift_right_and_extract(vc, E_src, shift, 15, 0, 128)));
 
   }
 
   // DEST[63:0] <- SRC[63:0]
-  d.constraints.push_back( 
-      EqExpr(vc,
-        vc_bvExtract(vc, E_dest, 127, 64),
-        vc_bvExtract(vc, E_src,  127, 64)));
+  d.constraints.push_back(
+    EqExpr(vc,
+           vc_bvExtract(vc, E_dest, 127, 64),
+           vc_bvExtract(vc, E_src,  127, 64)));
 
 }
 
-void psllHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_dest, Expr E_src1) 
+void psllHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_dest, Expr E_src1)
 {
   VC&vc = d.vc;
-   Expr retval = vc_trueExpr(vc);
+  Expr retval = vc_trueExpr(vc);
   if(shamt>=bitWidth)
-      retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, 128, 0 )));
+    retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, 128, 0 )));
   else if(shamt==0)
-      retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_src1));
-  else  
+    retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, E_src1));
+  else
   {
-    for(int i =bitWidth; i<=128;i+=bitWidth)
+    for(int i =bitWidth; i<=128; i+=bitWidth)
     {
       retval = vc_andExpr(vc, retval, EqExpr(vc, vc_bvExtract(vc, E_dest, i-1, i-bitWidth),
-	         vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, i-shamt-1, i-bitWidth), vc_bvConstExprFromLL(vc, shamt, 0) )
-                 ));
+                                             vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, i-shamt-1, i-bitWidth), vc_bvConstExprFromLL(vc, shamt, 0) )
+                                            ));
     }
   }
   ADD_CONS(retval)
@@ -2189,7 +2189,7 @@ void pxorHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   Expr E_result = vc_bvXorExpr(vc,E_src1, E_src2 );
   Expr retval = EqExpr(vc, E_dest, E_result);
   ADD_CONS(retval);
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
 }
 
 void rclHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_dest, Expr E_src1, bool dest_is_reg=true) {
@@ -2199,9 +2199,9 @@ void rclHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
   Expr E_arg = vc_bvConcatExpr(vc, vc_boolToBVExpr(vc, getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)), E_src1);
   Expr retval(*vc);
   retval = rotamt!=0 ?
-    EqExpr(vc, E_dest, 
-        vc_bvExtract(vc, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_arg, bitWidth-rotamt, 0), vc_bvExtract(vc, E_arg, bitWidth, bitWidth+1 - rotamt) ), bitWidth-1, 0))
-    : EqExpr(vc, E_dest, E_src1);
+           EqExpr(vc, E_dest,
+                  vc_bvExtract(vc, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_arg, bitWidth-rotamt, 0), vc_bvExtract(vc, E_arg, bitWidth, bitWidth+1 - rotamt) ), bitWidth-1, 0))
+           : EqExpr(vc, E_dest, E_src1);
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -2211,10 +2211,10 @@ void rclHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
   if(rotamt != 0)
   {
     //OF = msb dest xor CF when shift by 1
-    if(rotamt == 1)   
+    if(rotamt == 1)
       setFlag(vc, d.Vnprime, V_OF,
-          vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), setFlag(vc, d.Vnprime, V_CF, vc_bvBoolExtract_One(vc, E_src1, bitWidth-rotamt), d.constraints, d.post_suffix)),
-          d.constraints, d.post_suffix);
+              vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), setFlag(vc, d.Vnprime, V_CF, vc_bvBoolExtract_One(vc, E_src1, bitWidth-rotamt), d.constraints, d.post_suffix)),
+              d.constraints, d.post_suffix);
     else
       setFlag(vc, d.Vnprime, V_CF, vc_bvBoolExtract_One(vc, E_src1, bitWidth-rotamt), d.constraints, d.post_suffix);
   }
@@ -2236,16 +2236,16 @@ void rcrHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 
   VC&vc = d.vc;
   //OF = MSB xor CF
-  if(rotamt == 1)   
+  if(rotamt == 1)
     setFlag(vc, d.Vnprime, V_OF,
-        vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_src1, bitWidth -1), getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)), d.constraints, d.post_suffix);
+            vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_src1, bitWidth -1), getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)), d.constraints, d.post_suffix);
 
   Expr E_arg = vc_bvConcatExpr(vc, vc_boolToBVExpr(vc, getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)), E_src1);
   Expr retval(*vc);
   retval = rotamt!=0 ?
-    EqExpr(vc, E_dest, 
-        vc_bvExtract(vc, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_arg, rotamt-1, 0), vc_bvExtract(vc, E_arg, bitWidth, rotamt) ), bitWidth-1, 0))
-    : EqExpr(vc, E_dest, E_src1);
+           EqExpr(vc, E_dest,
+                  vc_bvExtract(vc, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_arg, rotamt-1, 0), vc_bvExtract(vc, E_arg, bitWidth, rotamt) ), bitWidth-1, 0))
+           : EqExpr(vc, E_dest, E_src1);
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -2274,8 +2274,8 @@ void rolHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 
   Expr retval(*vc);
   retval = rotamt!=0 ?
-    EqExpr(vc, E_dest, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, bitWidth-rotamt-1, 0), vc_bvExtract(vc, E_src1, bitWidth - 1, bitWidth - rotamt) ))
-    : EqExpr(vc, E_dest, E_src1);
+           EqExpr(vc, E_dest, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, bitWidth-rotamt-1, 0), vc_bvExtract(vc, E_src1, bitWidth - 1, bitWidth - rotamt) ))
+           : EqExpr(vc, E_dest, E_src1);
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -2284,9 +2284,9 @@ void rolHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
   }
   //CF is LSB of dest
   Expr E_cf = setFlag(vc, d.Vnprime, V_CF, vc_bvBoolExtract_One(vc, E_dest, 0), d.constraints, d.post_suffix);
-  if(rotamt == 1)   
+  if(rotamt == 1)
     setFlag(vc, d.Vnprime, V_OF,
-        vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), E_cf), d.constraints, d.post_suffix);
+            vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), E_cf), d.constraints, d.post_suffix);
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -2300,8 +2300,8 @@ void rorHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 
   Expr retval(*vc);
   retval = rotamt!=0 ?
-    EqExpr(vc, E_dest, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, rotamt-1, 0), vc_bvExtract(vc, E_src1, bitWidth - 1, rotamt) ))
-    : EqExpr(vc, E_dest, E_src1);
+           EqExpr(vc, E_dest, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, rotamt-1, 0), vc_bvExtract(vc, E_src1, bitWidth - 1, rotamt) ))
+           : EqExpr(vc, E_dest, E_src1);
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -2310,9 +2310,9 @@ void rorHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
   }
   //CF is MSB of dest
   setFlag(vc, d.Vnprime, V_CF, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), d.constraints, d.post_suffix);
-  if(rotamt == 1)   
+  if(rotamt == 1)
     setFlag(vc, d.Vnprime, V_OF,
-        vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1),vc_bvBoolExtract_One(vc, E_dest, bitWidth -2)), d.constraints, d.post_suffix);
+            vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1),vc_bvBoolExtract_One(vc, E_dest, bitWidth -2)), d.constraints, d.post_suffix);
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -2333,7 +2333,7 @@ void sahfHandler(v_data d) {
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
 }
 
 //shamt has been masked
@@ -2354,8 +2354,8 @@ void sarHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
     else if(shamt == 0)
       retval = EqExpr(vc, E_dest, E_src1);
     else
-      retval = EqExpr(vc, E_dest, 
-          vc_iteExpr(vc, vc_bvBoolExtract_One(vc, E_src1, bitWidth - 1), vc_bvConstExprFromLL(vc, bitWidth, -1), vc_bvConstExprFromLL(vc, bitWidth, 0)));
+      retval = EqExpr(vc, E_dest,
+                      vc_iteExpr(vc, vc_bvBoolExtract_One(vc, E_src1, bitWidth - 1), vc_bvConstExprFromLL(vc, bitWidth, -1), vc_bvConstExprFromLL(vc, bitWidth, 0)));
 
     if(dest_is_reg && bitWidth < V_UNITSIZE)
     {
@@ -2374,9 +2374,9 @@ void sarHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
   }
   else
   {
-    retval = EqExpr(vc, E_dest, 
-        vc_iteExpr(vc, vc_bvBoolExtract_One(vc, E_src1, bitWidth - 1), vc_bvConstExprFromLL(vc, bitWidth, -1), vc_bvConstExprFromLL(vc, bitWidth, 0)));
-    setSFPFZF(E_dest, d, bitWidth);		
+    retval = EqExpr(vc, E_dest,
+                    vc_iteExpr(vc, vc_bvBoolExtract_One(vc, E_src1, bitWidth - 1), vc_bvConstExprFromLL(vc, bitWidth, -1), vc_bvConstExprFromLL(vc, bitWidth, 0)));
+    setSFPFZF(E_dest, d, bitWidth);
   }
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -2388,7 +2388,7 @@ void sarHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
 
 
 //Arithmetic shift right by a variable.
-//if variable==0 then shift by 0 else if variable == 1 then shift by 1 else ... 
+//if variable==0 then shift by 0 else if variable == 1 then shift by 1 else ...
 void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_shamt, bool dest_is_reg=true) {
   //assert((bitWidth == 32  || bitWidth == 64) && "Unhandled CF");
   VC&vc = d.vc;
@@ -2396,12 +2396,12 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   //cout << "DEST " << E_dest <<  "SRC " << E_src1 <<  "SHAMT " << E_shamt <<  endl ;
   Expr res = vc_iteExpr(vc, vc_bvBoolExtract_One(vc, E_src1, bitWidth - 1), vc_bvConstExprFromLL(vc, bitWidth, -1), vc_bvConstExprFromLL(vc, bitWidth, 0));
   for( int i=bitWidth - 1; i>=0; i-- ) {
-    //		cout << "In SAR VAR handler " << endl ;
+    //    cout << "In SAR VAR handler " << endl ;
     res = vc_iteExpr(vc,
-        EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth,i)),
-        constructAShrByConstant(vc, i, E_src1, bitWidth),
-        res);
-    //		cout << res;
+                     EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth,i)),
+                     constructAShrByConstant(vc, i, E_src1, bitWidth),
+                     res);
+    //    cout << res;
   }
 
 
@@ -2425,15 +2425,15 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   Expr overflow = vc_varExpr(vc, (idToStr(V_OF)+d.post_suffix+itoa(d.Vnprime.get(V_OF))).c_str(), vc_boolType(vc));
 
   Expr preserveall =  vc_andExpr(vc, vc_iffExpr(vc, sign, getBoolExpr(vc, V_SF, d.pre_suffix, d.Vn)),
-      vc_andExpr(vc, vc_iffExpr(vc, zero, getBoolExpr(vc, V_ZF, d.pre_suffix, d.Vn) ), 
-        vc_andExpr(vc, vc_iffExpr(vc, parity, getBoolExpr(vc, V_PF, d.pre_suffix, d.Vn)),
-          vc_andExpr(vc, 
-            vc_iffExpr(vc, carry, getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)),
-            vc_iffExpr(vc, overflow, getBoolExpr(vc, V_OF, d.pre_suffix, d.Vn))
-            )
-          )
-        )
-      );
+                                 vc_andExpr(vc, vc_iffExpr(vc, zero, getBoolExpr(vc, V_ZF, d.pre_suffix, d.Vn) ),
+                                     vc_andExpr(vc, vc_iffExpr(vc, parity, getBoolExpr(vc, V_PF, d.pre_suffix, d.Vn)),
+                                         vc_andExpr(vc,
+                                             vc_iffExpr(vc, carry, getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)),
+                                             vc_iffExpr(vc, overflow, getBoolExpr(vc, V_OF, d.pre_suffix, d.Vn))
+                                                   )
+                                               )
+                                           )
+                                );
 
   Expr setsfpfzf = vc_iffExpr(vc, sign, vc_bvBoolExtract_One(vc, E_dest, bitWidth - 1));
   setsfpfzf = vc_andExpr(vc, setsfpfzf, vc_iffExpr(vc, zero, vc_eqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth, 0))));
@@ -2456,14 +2456,14 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   }
   //If shamt is greater than bitWidth then carry is undefined
   carryexpr = vc_iteExpr(vc, vc_bvGtExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, bitWidth)), vc_trueExpr(vc), carryexpr);
-  Expr temp = vc_iteExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 0)), 
-      preserveall, 
-      vc_andExpr(vc, setsfpfzf, 
-        vc_andExpr(vc, carryexpr, 
-          vc_impliesExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 1)), vc_iffExpr(vc, overflow, vc_falseExpr(vc)))
-          )
-        )
-      );
+  Expr temp = vc_iteExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 0)),
+                         preserveall,
+                         vc_andExpr(vc, setsfpfzf,
+                                    vc_andExpr(vc, carryexpr,
+                                        vc_impliesExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 1)), vc_iffExpr(vc, overflow, vc_falseExpr(vc)))
+                                              )
+                                   )
+                        );
 
   retval = vc_andExpr(vc, temp, retval);
   d.constraints.push_back(retval);
@@ -2473,19 +2473,19 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
 
 
 void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
-  
+
   VC&vc = d.vc;
 
   Expr E_result = vc_varExpr(vc, ("SBBTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, bitWidth+2) );
   Expr E_arg1 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 2, 0), E_src1);
-  Expr E_arg2 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 2, 0), vc_bvNotExpr(vc, E_src2));  
+  Expr E_arg2 = vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 2, 0), vc_bvNotExpr(vc, E_src2));
   Expr E_carry = vc_varExpr(vc, ("BORROW"+d.pre_suffix+itoa(d.instr_no)).c_str(), vc_bvType(vc, bitWidth+2));
 
   Expr retval = vc_iffExpr(vc, vc_bvBoolExtract_One(vc, E_carry, 0), vc_notExpr(vc, getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)));
   retval = vc_andExpr(vc, retval, vc_eqExpr(vc, vc_bvExtract(vc, E_carry, bitWidth+1, 1),  vc_bvConcatExpr(vc, vc_bvConstExprFromLL(vc, 1, 0),vc_bvConstExprFromLL(vc, bitWidth, 0))));
 
   retval = vc_andExpr(vc, retval, EqExpr(vc, E_result,vc_bvPlusExpr(vc, bitWidth+2, vc_bvPlusExpr(vc, bitWidth+2, E_arg1, E_arg2), E_carry)));
-  retval = vc_andExpr(vc, retval, vc_eqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth-1, 0)));  
+  retval = vc_andExpr(vc, retval, vc_eqExpr(vc, E_dest, vc_bvExtract(vc, E_result, bitWidth-1, 0)));
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -2495,7 +2495,7 @@ void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   //cout << "Adding constraint " << retval << endl;
   d.constraints.push_back(retval);
   setFlag(vc, d.Vnprime, V_OF, getOFExpr(vc, vc_bvBoolExtract_One(vc, E_arg1, bitWidth - 1), vc_bvBoolExtract_One(vc, E_arg2, bitWidth - 1),
-        vc_bvBoolExtract_One(vc, E_result, bitWidth - 1)), d.constraints, d.post_suffix);
+                                         vc_bvBoolExtract_One(vc, E_result, bitWidth - 1)), d.constraints, d.post_suffix);
   setFlag(vc, d.Vnprime, V_CF, vc_notExpr(vc, vc_orExpr(vc, vc_bvBoolExtract_One(vc, E_result, bitWidth), vc_bvBoolExtract_One(vc, E_result, bitWidth+1))), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
@@ -2517,7 +2517,7 @@ void setHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr pred, bool de
   cout << "Adding constraint " << retval << endl;
 #endif
 
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
 }
 
 
@@ -2528,9 +2528,9 @@ void setccHandler(v_data d, string cc, Expr E_dest, bool dest_is_reg) {
 
   // If the predicate is true, then we set the destination equal to 1
   // and otherwise to 0
- 	Expr setif = vc_iteExpr(vc, pred, 
-      EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, 8, 1)), 
-      EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, 8, 0)));
+  Expr setif = vc_iteExpr(vc, pred,
+                          EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, 8, 1)),
+                          EqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, 8, 0)));
   d.constraints.push_back(setif);
 
   // Preserve the other bits in registers
@@ -2570,13 +2570,13 @@ void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
     if(shamt != 0)
     {
       //OF = msb dest xor CF when shift by 1
-      if(shamt == 1)   
+      if(shamt == 1)
         setFlag(vc, d.Vnprime, V_OF,
-            vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), setFlag(vc, d.Vnprime, V_CF, vc_bvBoolExtract_One(vc, E_src1, bitWidth-shamt), d.constraints, d.post_suffix)),
-            d.constraints, d.post_suffix);
+                vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), setFlag(vc, d.Vnprime, V_CF, vc_bvBoolExtract_One(vc, E_src1, bitWidth-shamt), d.constraints, d.post_suffix)),
+                d.constraints, d.post_suffix);
       else
       {
-        //     				setFlag(vc, d.Vnprime, V_OF, getBoolExpr(vc, V_OF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
+        //            setFlag(vc, d.Vnprime, V_OF, getBoolExpr(vc, V_OF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
         setFlag(vc, d.Vnprime, V_CF, vc_bvBoolExtract_One(vc, E_src1, bitWidth-shamt), d.constraints, d.post_suffix);
       }
       setSFPFZF(E_dest, d, bitWidth);
@@ -2599,7 +2599,7 @@ void shldHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_de
 
   VC&vc = d.vc;
   Expr retval(*vc);
-  shamt = (bitWidth==64) ? (shamt & 0x3f) : shamt & (0x1f); 
+  shamt = (bitWidth==64) ? (shamt & 0x3f) : shamt & (0x1f);
   if(shamt != 0)
   {
     if(shamt <=bitWidth)
@@ -2618,16 +2618,16 @@ void shldHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_de
       if(shamt==1)
       {
         setFlag(vc, d.Vnprime, V_OF,
-            vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), vc_bvBoolExtract_One(vc, E_dest_pre, bitWidth -1)), d.constraints, d.post_suffix);
+                vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), vc_bvBoolExtract_One(vc, E_dest_pre, bitWidth -1)), d.constraints, d.post_suffix);
       }
     }
   }
-  else 
+  else
   {
     retval = EqExpr(vc, E_dest, E_dest_pre);
     d.constraints.push_back(retval);
     //cout << "Adding constraint " << retval << endl;
-    preserveAllFlags(d);	  	  
+    preserveAllFlags(d);
   }
 }
 
@@ -2643,13 +2643,13 @@ void shldHandler(v_data d, unsigned int bitWidth,   Expr E_dest, Expr E_dest_pre
   for( unsigned int i=1; i<=bitWidth -1; i++ ) {
     //cout << "In SHL VAR handler " << endl ;
     res = vc_iteExpr(vc,
-        EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth,i)),
-        vc_bvConcatExpr(vc, vc_bvExtract(vc, E_dest_pre, bitWidth-i-1, 0), vc_bvExtract(vc, E_src, bitWidth-1, bitWidth-i) ),
-        res);
+                     EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth,i)),
+                     vc_bvConcatExpr(vc, vc_bvExtract(vc, E_dest_pre, bitWidth-i-1, 0), vc_bvExtract(vc, E_src, bitWidth-1, bitWidth-i) ),
+                     res);
     //cout << res;
   }
   Expr retval = EqExpr(vc, E_dest, res);
-  //	retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvLeftShiftExprExpr(vc, bitWidth, E_dest_pre,E_shamt)));
+  //  retval = vc_andExpr(vc, retval, EqExpr(vc, E_dest, vc_bvLeftShiftExprExpr(vc, bitWidth, E_dest_pre,E_shamt)));
   //cout << "Shifted " << endl;
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -2674,9 +2674,9 @@ void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bo
   for( unsigned int i=1; i<=bitWidth -1; i++ ) {
     //cout << "In SHL VAR handler " << endl ;
     res = vc_iteExpr(vc,
-        EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth,i)),
-        vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, bitWidth-i-1, 0), vc_bvConstExprFromLL(vc, i, 0) ),
-        res);
+                     EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth,i)),
+                     vc_bvConcatExpr(vc, vc_bvExtract(vc, E_src1, bitWidth-i-1, 0), vc_bvConstExprFromLL(vc, i, 0) ),
+                     res);
     //cout << res;
   }
 
@@ -2695,15 +2695,15 @@ void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bo
   Expr overflow = vc_varExpr(vc, (idToStr(V_OF)+d.post_suffix+itoa(d.Vnprime.get(V_OF))).c_str(), vc_boolType(vc));
 
   Expr preserveall =  vc_andExpr(vc, vc_iffExpr(vc, sign, getBoolExpr(vc, V_SF, d.pre_suffix, d.Vn)),
-      vc_andExpr(vc, vc_iffExpr(vc, zero, getBoolExpr(vc, V_ZF, d.pre_suffix, d.Vn) ), 
-        vc_andExpr(vc, vc_iffExpr(vc, parity, getBoolExpr(vc, V_PF, d.pre_suffix, d.Vn)),
-          vc_andExpr(vc, 
-            vc_iffExpr(vc, carry, getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)),
-            vc_iffExpr(vc, overflow, getBoolExpr(vc, V_OF, d.pre_suffix, d.Vn))
-            )
-          )
-        )
-      );
+                                 vc_andExpr(vc, vc_iffExpr(vc, zero, getBoolExpr(vc, V_ZF, d.pre_suffix, d.Vn) ),
+                                     vc_andExpr(vc, vc_iffExpr(vc, parity, getBoolExpr(vc, V_PF, d.pre_suffix, d.Vn)),
+                                         vc_andExpr(vc,
+                                             vc_iffExpr(vc, carry, getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)),
+                                             vc_iffExpr(vc, overflow, getBoolExpr(vc, V_OF, d.pre_suffix, d.Vn))
+                                                   )
+                                               )
+                                           )
+                                );
 
   Expr setsfpfzf = vc_iffExpr(vc, sign, vc_bvBoolExtract_One(vc, E_dest, bitWidth - 1));
   setsfpfzf = vc_andExpr(vc, setsfpfzf, vc_iffExpr(vc, zero, vc_eqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth, 0))));
@@ -2727,18 +2727,18 @@ void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bo
   }
   carryexpr = vc_iteExpr(vc, vc_bvGtExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, bitWidth)), vc_trueExpr(vc), carryexpr);
 
-  Expr temp = vc_iteExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 0)), 
-      preserveall, 
-      vc_andExpr(vc, setsfpfzf, 
-        vc_andExpr(vc, carryexpr, 
-          vc_impliesExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 1)),
-            vc_iffExpr(vc, overflow, 
-              vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), carry)
-              )
-            )
-          )
-        )
-      );
+  Expr temp = vc_iteExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 0)),
+                         preserveall,
+                         vc_andExpr(vc, setsfpfzf,
+                                    vc_andExpr(vc, carryexpr,
+                                        vc_impliesExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 1)),
+                                            vc_iffExpr(vc, overflow,
+                                                vc_xorExpr(vc, vc_bvBoolExtract_One(vc, E_dest, bitWidth -1), carry)
+                                                      )
+                                                      )
+                                              )
+                                   )
+                        );
 
   retval = vc_andExpr(vc, temp, retval);
   d.constraints.push_back(retval);
@@ -2765,10 +2765,10 @@ void shrHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
     if(shamt != 0)
     {
       //OF = msb dest xor CF when shift by 1
-      if(shamt == 1)   
+      if(shamt == 1)
         setFlag(vc, d.Vnprime, V_OF,
-            vc_bvBoolExtract_One(vc, E_src1, bitWidth -1),
-            d.constraints, d.post_suffix);
+                vc_bvBoolExtract_One(vc, E_src1, bitWidth -1),
+                d.constraints, d.post_suffix);
       setFlag(vc, d.Vnprime, V_CF, vc_bvBoolExtract_One(vc, E_src1, bitWidth-shamt), d.constraints, d.post_suffix);
       setSFPFZF(E_dest, d, bitWidth);
     }
@@ -2793,9 +2793,9 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   for(unsigned int i=1; i<=bitWidth -1; i++ ) {
 
     res = vc_iteExpr(vc,
-        EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth,i)),
-        vc_bvRightShiftExprExpr(vc, bitWidth, E_src1, vc_bvConstExprFromInt(vc, bitWidth, i)),
-        res);
+                     EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth,i)),
+                     vc_bvRightShiftExprExpr(vc, bitWidth, E_src1, vc_bvConstExprFromInt(vc, bitWidth, i)),
+                     res);
   }
 
   Expr retval = EqExpr(vc, E_dest, res);
@@ -2813,15 +2813,15 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   Expr overflow = vc_varExpr(vc, (idToStr(V_OF)+d.post_suffix+itoa(d.Vnprime.get(V_OF))).c_str(), vc_boolType(vc));
 
   Expr preserveall =  vc_andExpr(vc, vc_iffExpr(vc, sign, getBoolExpr(vc, V_SF, d.pre_suffix, d.Vn)),
-      vc_andExpr(vc, vc_iffExpr(vc, zero, getBoolExpr(vc, V_ZF, d.pre_suffix, d.Vn) ), 
-        vc_andExpr(vc, vc_iffExpr(vc, parity, getBoolExpr(vc, V_PF, d.pre_suffix, d.Vn)),
-          vc_andExpr(vc, 
-            vc_iffExpr(vc, carry, getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)),
-            vc_iffExpr(vc, overflow, getBoolExpr(vc, V_OF, d.pre_suffix, d.Vn))
-            )
-          )
-        )
-      );
+                                 vc_andExpr(vc, vc_iffExpr(vc, zero, getBoolExpr(vc, V_ZF, d.pre_suffix, d.Vn) ),
+                                     vc_andExpr(vc, vc_iffExpr(vc, parity, getBoolExpr(vc, V_PF, d.pre_suffix, d.Vn)),
+                                         vc_andExpr(vc,
+                                             vc_iffExpr(vc, carry, getBoolExpr(vc, V_CF, d.pre_suffix, d.Vn)),
+                                             vc_iffExpr(vc, overflow, getBoolExpr(vc, V_OF, d.pre_suffix, d.Vn))
+                                                   )
+                                               )
+                                           )
+                                );
 
   Expr setsfpfzf = vc_iffExpr(vc, sign, vc_bvBoolExtract_One(vc, E_dest, bitWidth - 1));
   setsfpfzf = vc_andExpr(vc, setsfpfzf, vc_iffExpr(vc, zero, vc_eqExpr(vc, E_dest, vc_bvConstExprFromLL(vc, bitWidth, 0))));
@@ -2846,16 +2846,16 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   carryexpr = vc_iteExpr(vc, vc_bvGtExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, bitWidth)), vc_trueExpr(vc), carryexpr);
 
 
-  Expr temp = vc_iteExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 0)), 
-      preserveall, 
-      vc_andExpr(vc, setsfpfzf, 
-        vc_andExpr(vc, carryexpr, 
-          vc_impliesExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 1)),
-            vc_iffExpr(vc, overflow, vc_bvBoolExtract_One(vc, E_src1, bitWidth -1)	)
-            )
-          )
-        )
-      );
+  Expr temp = vc_iteExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 0)),
+                         preserveall,
+                         vc_andExpr(vc, setsfpfzf,
+                                    vc_andExpr(vc, carryexpr,
+                                        vc_impliesExpr(vc, EqExpr(vc, E_shamt, vc_bvConstExprFromLL(vc, bitWidth, 1)),
+                                            vc_iffExpr(vc, overflow, vc_bvBoolExtract_One(vc, E_src1, bitWidth -1)  )
+                                                      )
+                                              )
+                                   )
+                        );
 
   retval = vc_andExpr(vc, temp, retval);
   d.constraints.push_back(retval);
@@ -2876,71 +2876,71 @@ void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_src1, Expr E_src2, Exp
 
   // Implemented following intel manual's case statement
   switch(imm & 0x3) {
-    case 0:
-      SHUFPS_CON(E_dest, 31, 0, E_src1, 31, 0);
-      break;
-    case 1:
-      SHUFPS_CON(E_dest, 31, 0, E_src1, 63, 32);
-      break;
-    case 2:
-      SHUFPS_CON(E_dest, 31, 0, E_src1, 95, 64);
-      break;
-    case 3:
-      SHUFPS_CON(E_dest, 31, 0, E_src1, 127, 96);
-      break;
-    default:
-      throw VALIDATOR_ERROR("internal error in shufps");
+  case 0:
+    SHUFPS_CON(E_dest, 31, 0, E_src1, 31, 0);
+    break;
+  case 1:
+    SHUFPS_CON(E_dest, 31, 0, E_src1, 63, 32);
+    break;
+  case 2:
+    SHUFPS_CON(E_dest, 31, 0, E_src1, 95, 64);
+    break;
+  case 3:
+    SHUFPS_CON(E_dest, 31, 0, E_src1, 127, 96);
+    break;
+  default:
+    throw VALIDATOR_ERROR("internal error in shufps");
   }
 
   switch((imm >> 2) & 0x3) {
-    case 0:
-      SHUFPS_CON(E_dest, 63, 32, E_src1, 31, 0);
-      break;
-    case 1:
-      SHUFPS_CON(E_dest, 63, 32, E_src1, 63, 32);
-      break;
-    case 2:
-      SHUFPS_CON(E_dest, 63, 32, E_src1, 95, 64);
-      break;
-    case 3:
-      SHUFPS_CON(E_dest, 63, 32, E_src1, 127, 96);
-      break;
-    default:
-      throw VALIDATOR_ERROR("internal error in shufps");
+  case 0:
+    SHUFPS_CON(E_dest, 63, 32, E_src1, 31, 0);
+    break;
+  case 1:
+    SHUFPS_CON(E_dest, 63, 32, E_src1, 63, 32);
+    break;
+  case 2:
+    SHUFPS_CON(E_dest, 63, 32, E_src1, 95, 64);
+    break;
+  case 3:
+    SHUFPS_CON(E_dest, 63, 32, E_src1, 127, 96);
+    break;
+  default:
+    throw VALIDATOR_ERROR("internal error in shufps");
   }
 
   switch((imm >> 4) & 0x3) {
-    case 0:
-      SHUFPS_CON(E_dest, 95, 64, E_src2, 31, 0);
-      break;
-    case 1:
-      SHUFPS_CON(E_dest, 95, 64, E_src2, 63, 32);
-      break;
-    case 2:
-      SHUFPS_CON(E_dest, 95, 64, E_src2, 95, 64);
-      break;
-    case 3:
-      SHUFPS_CON(E_dest, 95, 64, E_src2, 127, 96);
-      break;
-    default:
-      throw VALIDATOR_ERROR("internal error in shufps");
+  case 0:
+    SHUFPS_CON(E_dest, 95, 64, E_src2, 31, 0);
+    break;
+  case 1:
+    SHUFPS_CON(E_dest, 95, 64, E_src2, 63, 32);
+    break;
+  case 2:
+    SHUFPS_CON(E_dest, 95, 64, E_src2, 95, 64);
+    break;
+  case 3:
+    SHUFPS_CON(E_dest, 95, 64, E_src2, 127, 96);
+    break;
+  default:
+    throw VALIDATOR_ERROR("internal error in shufps");
   }
 
   switch((imm >> 6) & 0x3) {
-    case 0:
-      SHUFPS_CON(E_dest, 127, 96, E_src2, 31, 0);
-      break;
-    case 1:
-      SHUFPS_CON(E_dest, 127, 96, E_src2, 63, 32);
-      break;
-    case 2:
-      SHUFPS_CON(E_dest, 127, 96, E_src2, 95, 64);
-      break;
-    case 3:
-      SHUFPS_CON(E_dest, 127, 96, E_src2, 127, 96);
-      break;
-    default:
-      throw VALIDATOR_ERROR("internal error in shufps");
+  case 0:
+    SHUFPS_CON(E_dest, 127, 96, E_src2, 31, 0);
+    break;
+  case 1:
+    SHUFPS_CON(E_dest, 127, 96, E_src2, 63, 32);
+    break;
+  case 2:
+    SHUFPS_CON(E_dest, 127, 96, E_src2, 95, 64);
+    break;
+  case 3:
+    SHUFPS_CON(E_dest, 127, 96, E_src2, 127, 96);
+    break;
+  default:
+    throw VALIDATOR_ERROR("internal error in shufps");
   }
 
 #undef SHUFPS_CON
@@ -2962,7 +2962,7 @@ void subHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   //cout << "Adding constraint " << retval << endl;
   d.constraints.push_back(retval);
   setFlag(vc, d.Vnprime, V_OF, getOFExpr(vc, vc_bvBoolExtract_One(vc, E_src1, bitWidth - 1), vc_bvBoolExtract(vc, E_src2, bitWidth - 1),  vc_bvBoolExtract_One(vc, E_dest, bitWidth - 1)),
-      d.constraints, d.post_suffix);
+          d.constraints, d.post_suffix);
   setFlag(vc, d.Vnprime, V_CF, vc_bvLtExpr(vc, E_src1, E_src2), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
@@ -2979,7 +2979,7 @@ void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
 
   VC&vc = d.vc;
-  uint bitWidth = numops*64; 
+  uint bitWidth = numops*64;
   z3::sort fl = vc->bv_sort(64);
   z3::func_decl dsub = z3::function("subd", fl, fl, fl);
   Expr retval = vc_trueExpr(vc);
@@ -2990,7 +2990,7 @@ void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   else
   {
     DSUBPATT(0)
-      DSUBPATT(64)
+    DSUBPATT(64)
   }
   if(dest_is_reg && numops == 1)
   {
@@ -3002,7 +3002,7 @@ void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
 #endif
   d.constraints.push_back(retval);
 
-#undef DSUBPATT	
+#undef DSUBPATT
 }
 
 
@@ -3017,7 +3017,7 @@ void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   }
 
   VC&vc = d.vc;
-  uint bitWidth = numops*32; 
+  uint bitWidth = numops*32;
   z3::sort fl = vc->bv_sort(32);
   z3::func_decl fsub = z3::function("subf", fl, fl, fl);
   Expr retval = vc_trueExpr(vc);
@@ -3028,9 +3028,9 @@ void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
   else
   {
     FSUBPATT(0)
-      FSUBPATT(32)
-      FSUBPATT(64)
-      FSUBPATT(96)
+    FSUBPATT(32)
+    FSUBPATT(64)
+    FSUBPATT(96)
   }
   if(dest_is_reg && numops == 1)
   {
@@ -3042,7 +3042,7 @@ void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
 #endif
   d.constraints.push_back(retval);
 
-#undef FSUBPATT	
+#undef FSUBPATT
 }
 
 
@@ -3171,7 +3171,7 @@ void umul1Handler(v_data d, unsigned int bitWidth, Expr E_src2) {
 
     Expr E_flag_result = vc_notExpr(vc, EqExpr(vc, E_rdx,  vc_bvConstExprFromLL(vc, bitWidth, 0)));
     setFlag(vc,d.Vnprime,V_OF, setFlag(vc,d.Vnprime,V_CF, E_flag_result, d.constraints, d.post_suffix), d.constraints, d.post_suffix);
-    //Rest flags are undefined	  
+    //Rest flags are undefined
   }
 }
 
@@ -3293,7 +3293,7 @@ void xchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   ADD_CONS(retval);
-  d.constraints.push_back(retval);  
+  d.constraints.push_back(retval);
 }
 
 
@@ -3310,7 +3310,7 @@ void xorHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
     retval = vc_andExpr(vc, retval,  UnmodifiedBitsPreserve(vc, id_dest, d, bitWidth));
   }
   ADD_CONS(retval);
-  d.constraints.push_back(retval); 
+  d.constraints.push_back(retval);
   setFlag(vc,d.Vnprime,V_CF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setFlag(vc,d.Vnprime,V_OF, vc_falseExpr(vc), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
