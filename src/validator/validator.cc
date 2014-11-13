@@ -13,7 +13,6 @@
 #include <initializer_list>
 #include <unistd.h>
 
-#include "src/args/reg_set.h"
 #include "src/ext/z3/include/z3++.h"
 
 #include "src/symstate/bitvector.h"
@@ -33,8 +32,7 @@ bool flagToString(Eflags eflag, string& elem) {
 
   /* Read the flag into a string */
   stringstream tmp;
-  RegSetWriter rsw;
-  rsw(tmp, RegSet::empty() + eflag);
+  tmp << RegSet::empty() + eflag;
   string the_flag = tmp.str();
 
   /* Extract the letter corresponding to the flag. */
@@ -281,9 +279,8 @@ bool regset_is_supported(x64asm::RegSet rs) {
 
   // Do the check.
   if((supported & rs) != rs) {
-    RegSetWriter rsw;
     stringstream tmp;
-    rsw(tmp, rs - supported);
+    tmp << (rs - supported);
 
     string message =
       string("Validator only supporgs gps (excluding %ah-%dh), xmms and eflags COPSZ in live out.") +
