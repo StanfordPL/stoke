@@ -3,6 +3,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cost/cost_function.h"
+#include "src/ext/cpputil/include/bits/bit_manip.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
@@ -117,8 +118,8 @@ TEST_F(CostFunctionTest, ExcludesEflagsWhenNotSet) {
 
 TEST_F(CostFunctionTest, ChecksRAX) {
 
-  // Add 10 testcases
-  add_testcases(10);
+  // Add one testcases
+  add_testcases(1);
 
   // Setup
   std::stringstream ss;
@@ -141,9 +142,16 @@ TEST_F(CostFunctionTest, ChecksRAX) {
   fxn_.set_target(cfg_t, false, false);
   auto cost = fxn_(cfg_r);
 
+  /* Compute the expected number of bits to change */
+  auto tc = sb_.get_input(0);
+  uint64_t orig = tc.gp[0].get_fixed_quad(0);
+  uint64_t expected = cpputil::BitManip<uint64_t>::pop_count(orig ^ (orig+1));
+  ASSERT_GE(expected, 1) << "there's a bug in counting the bits that change; must be more than 0";
+  ASSERT_LE(expected, 64) << "there's a bug in counting the bits that change; must be less than 64";
+
+
   EXPECT_FALSE(cost.first);
-  EXPECT_GE(cost.second, 10);
-  EXPECT_LE(cost.second, 20);
+  EXPECT_EQ(expected, cost.second);
 }
 
 
