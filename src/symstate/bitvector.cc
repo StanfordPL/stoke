@@ -144,7 +144,7 @@ SymBool SymBitVector::operator!=(const SymBitVector& other) const {
 }
 
 
-SymBitVector::Type SymBitVector::type() const { 
+SymBitVector::Type SymBitVector::type() const {
   if(ptr)
     return ptr->type();
   else

@@ -22,35 +22,37 @@ Expr setFlag(VC& vc,const VersionNumber& Vnprime,SS_Id flag, const Expr& e, std:
 //To avoid passing 10 parameters to functions.
 class v_data
 {
-  public:
-    PAIR_INFO state_info;
-    VC& vc;
-    VersionNumber& Vn;
-    VersionNumber& Vnprime;
-    Instruction& instr;
-    unsigned int low;
-    unsigned int high;
-    std:: string pre_suffix;
-    std:: string post_suffix;
-    std::vector<Expr>& constraints;
-    std::set<SS_Id>& X_mod;
-    unsigned int instr_no;
-    ~v_data(){}
+public:
+  PAIR_INFO state_info;
+  VC& vc;
+  VersionNumber& Vn;
+  VersionNumber& Vnprime;
+  Instruction& instr;
+  unsigned int low;
+  unsigned int high;
+  std:: string pre_suffix;
+  std:: string post_suffix;
+  std::vector<Expr>& constraints;
+  std::set<SS_Id>& X_mod;
+  unsigned int instr_no;
+  ~v_data() {}
 
-    v_data(PAIR_INFO state_info_, VC& vc_,  VersionNumber& Vn_,  VersionNumber& Vnprime_,  Instruction& instr_, unsigned int low, unsigned int high, std:: string pre_suffix_,
-        std:: string post_suffix_, std::vector<Expr>& constraints_,  std::set<SS_Id>& X_mod_, unsigned int instr_no_):
-      state_info(state_info_),
-      vc( vc_),
-      Vn (Vn_),
-      Vnprime (Vnprime_),
-      instr (instr_),
-      pre_suffix (pre_suffix_),
-      post_suffix (post_suffix_),
-      constraints (constraints_),
-      X_mod (X_mod_),
-      instr_no(instr_no_)
+  v_data(PAIR_INFO state_info_, VC& vc_,  VersionNumber& Vn_,  VersionNumber& Vnprime_,  Instruction& instr_, unsigned int low, unsigned int high, std:: string pre_suffix_,
+         std:: string post_suffix_, std::vector<Expr>& constraints_,  std::set<SS_Id>& X_mod_, unsigned int instr_no_):
+    state_info(state_info_),
+    vc( vc_),
+    Vn (Vn_),
+    Vnprime (Vnprime_),
+    instr (instr_),
+    pre_suffix (pre_suffix_),
+    post_suffix (post_suffix_),
+    constraints (constraints_),
+    X_mod (X_mod_),
+    instr_no(instr_no_)
   {}
-    bool isTargetData(){return pre_suffix ==  "_1_";}
+  bool isTargetData() {
+    return pre_suffix ==  "_1_";
+  }
 
 };
 
@@ -117,7 +119,7 @@ void popcnt64Handler(v_data d, Expr E_dest, Expr E_src);
 void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm);
 void pshufhwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr E_src);
 void pshuflwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr E_src);
-void psllHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_dest, Expr E_src1); 
+void psllHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_dest, Expr E_src1);
 void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 void punpcklwdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 void pxorHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
@@ -159,7 +161,7 @@ void xorpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 
 //Convert an instruction to a constraint
 void instrnToConstraint(PAIR_INFO state_info,VC& vc,V_Node& n,
-    VersionNumber& Vn, VersionNumber& Vnprime, 
-    std::vector<Expr>& constraints, std::string code_num,unsigned int  instr_no, std::set<SS_Id> X_mod);
+                        VersionNumber& Vn, VersionNumber& Vnprime,
+                        std::vector<Expr>& constraints, std::string code_num,unsigned int  instr_no, std::set<SS_Id> X_mod);
 
 #endif

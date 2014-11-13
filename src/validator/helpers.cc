@@ -3,37 +3,37 @@
 /* Returns an expression corresponding to a flag in string form.
    Second parameter sets if it should be negated. */
 Expr get_flag(v_data d, string cf, bool do_not_negate = true) {
-  
+
   auto n = 0;
 
   switch(cf[0]) {
-    case 'A':
-      n = V_AF;
-      break;
+  case 'A':
+    n = V_AF;
+    break;
 
-    case 'C':
-      n = V_CF;
-      break;
+  case 'C':
+    n = V_CF;
+    break;
 
-    case 'O':
-      n = V_OF;
-      break;
+  case 'O':
+    n = V_OF;
+    break;
 
-    case 'P':
-      n = V_PF;
-      break;
+  case 'P':
+    n = V_PF;
+    break;
 
-    case 'S':
-      n = V_SF;
-      break;
+  case 'S':
+    n = V_SF;
+    break;
 
-    case 'Z':
-      n = V_ZF;
-      break;
+  case 'Z':
+    n = V_ZF;
+    break;
 
-    default:
-      string message = "bad flag name " + cf;
-      throw VALIDATOR_ERROR(message);
+  default:
+    string message = "bad flag name " + cf;
+    throw VALIDATOR_ERROR(message);
   }
 
   if (do_not_negate)
@@ -48,18 +48,18 @@ Expr get_condition_predicate(v_data d, string cc) {
   //CF = 0 and ZF = 0
   if (cc == "a" || cc == "nbe") {
     return vc_andExpr(d.vc, get_flag(d, "C", false), get_flag(d, "Z", false));
-  } 
-  
+  }
+
   // CF = 0
   if (cc == "ae" || cc == "nb" || cc == "nc") {
     return get_flag(d, "C", false);
-  } 
-  
+  }
+
   // CF = 1
   if (cc == "b" || cc == "c" || cc == "nae") {
     return get_flag(d, "C");
-  } 
-  
+  }
+
   // CF = 1 OR ZF = 1
   if (cc == "be" || cc == "na") {
     return vc_orExpr(d.vc, get_flag(d, "C"), get_flag(d, "Z"));
@@ -68,13 +68,13 @@ Expr get_condition_predicate(v_data d, string cc) {
   // CZ = 1
   if (cc == "e" || cc == "z") {
     return get_flag(d, "Z");
-  } 
+  }
 
   // ZF = 0 and SF = OF
   if (cc == "g" || cc == "nle") {
     return vc_andExpr(d.vc,
-             get_flag(d, "Z", false),
-             vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF")));
+                      get_flag(d, "Z", false),
+                      vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF")));
   }
 
   // SF = OF
@@ -90,8 +90,8 @@ Expr get_condition_predicate(v_data d, string cc) {
   // ZF = 1 or SF != OF
   if (cc == "le" || cc == "ng") {
     return vc_orExpr(d.vc,
-             get_flag(d, "Z"),
-             vc_notExpr(d.vc, vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF"))));
+                     get_flag(d, "Z"),
+                     vc_notExpr(d.vc, vc_iffExpr(d.vc, get_flag(d, "SF"), get_flag(d, "OF"))));
   }
 
   // ZF = 0
@@ -189,24 +189,24 @@ void setSFPFZF(Expr REGPOST, v_data d, unsigned int bitWidth)
   VC&vc = d.vc;
 
   /* Set sign flag */
-  setFlag(vc, d.Vnprime, V_SF, 
-      vc_bvBoolExtract_One(vc, REGPOST, bitWidth - 1), 
-      d.constraints, d.post_suffix);
+  setFlag(vc, d.Vnprime, V_SF,
+          vc_bvBoolExtract_One(vc, REGPOST, bitWidth - 1),
+          d.constraints, d.post_suffix);
 
   /* Set zero flag */
-  setFlag(vc,d.Vnprime, V_ZF, 
-      vc_eqExpr(vc, REGPOST, vc_bvConstExprFromLL(vc, bitWidth, 0)), 
-      d.constraints, d.post_suffix);
+  setFlag(vc,d.Vnprime, V_ZF,
+          vc_eqExpr(vc, REGPOST, vc_bvConstExprFromLL(vc, bitWidth, 0)),
+          d.constraints, d.post_suffix);
 
   /* Compute and set parity flag */
-  Expr E_temp_parity_1 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,0), 
-                                        vc_bvBoolExtract_One(vc, REGPOST,1));
-  Expr E_temp_parity_2 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,2), 
-                                        vc_bvBoolExtract_One(vc, REGPOST,3));
-  Expr E_temp_parity_3 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,4), 
-                                        vc_bvBoolExtract_One(vc, REGPOST,5));
-  Expr E_temp_parity_4 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,6), 
-                                        vc_bvBoolExtract_One(vc, REGPOST,7));
+  Expr E_temp_parity_1 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,0),
+                                    vc_bvBoolExtract_One(vc, REGPOST,1));
+  Expr E_temp_parity_2 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,2),
+                                    vc_bvBoolExtract_One(vc, REGPOST,3));
+  Expr E_temp_parity_3 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,4),
+                                    vc_bvBoolExtract_One(vc, REGPOST,5));
+  Expr E_temp_parity_4 = vc_xorExpr(vc, vc_bvBoolExtract_One(vc, REGPOST,6),
+                                    vc_bvBoolExtract_One(vc, REGPOST,7));
   Expr E_temp_parity_5 = vc_xorExpr(vc, E_temp_parity_1, E_temp_parity_2);
   Expr E_temp_parity_6 = vc_xorExpr(vc, E_temp_parity_3, E_temp_parity_4);
   Expr E_temp_parity_7 = vc_notExpr(vc, vc_xorExpr(vc, E_temp_parity_5, E_temp_parity_6));
@@ -229,9 +229,9 @@ void preserveAllFlags(v_data d)
 //Takes msb's of arguments and result as input.
 Expr getOFExpr(VC& vc, Expr E_msb_1, Expr E_msb_2, Expr E_msb_3)
 {
-  Expr E_of1 = vc_andExpr(vc, E_msb_1,	vc_andExpr(vc, E_msb_2, vc_notExpr(vc, E_msb_3)));
+  Expr E_of1 = vc_andExpr(vc, E_msb_1,  vc_andExpr(vc, E_msb_2, vc_notExpr(vc, E_msb_3)));
   Expr E_of2 = vc_andExpr(vc, vc_notExpr(vc, E_msb_1), vc_andExpr(vc, vc_notExpr(vc, E_msb_2), E_msb_3));
-  return vc_orExpr(vc, E_of1, E_of2);	
+  return vc_orExpr(vc, E_of1, E_of2);
 }
 
 //A wrapper
@@ -266,7 +266,7 @@ Expr ConstrainAddr(VC& vc, Expr addrExpr, M8 m, v_data& d, unsigned int bitWidth
   Expr E_base = !m.contains_base() ? vc_bvConstExprFromLL(vc, V_UNITSIZE, 0) : regExprWVN(vc, base, d.pre_suffix, d.Vn, V_UNITSIZE);
   rhs = vc_bvPlusExpr(vc, V_UNITSIZE, rhs, E_base);
   rhs = vc_bvPlusExpr(vc, V_UNITSIZE, rhs, vc_bvConstExprFromLL(vc, V_UNITSIZE, disp));
-  return EqExpr(vc, addrExpr, rhs); 
+  return EqExpr(vc, addrExpr, rhs);
 }
 
 
@@ -291,15 +291,17 @@ Expr dmul(VC& vc, Expr E_dest, Expr E_src1, Expr E_src2)
 {
   z3::sort fl = vc->bv_sort(64);
   z3::func_decl dmul = z3::function("muld", fl, fl, fl);
-  return E_dest == dmul(E_src1,E_src2);\
+  return E_dest == dmul(E_src1,E_src2);
+  \
 }
 
 Expr dadd(VC& vc, Expr E_dest, Expr E_src1, Expr E_src2)
 {
   z3::sort fl = vc->bv_sort(64);
   z3::func_decl dadd = z3::function("addd", fl, fl, fl);
-  return E_dest == dadd(E_src1,E_src2);\
-}	
+  return E_dest == dadd(E_src1,E_src2);
+  \
+}
 
 
 //dest== operand with operand[idx]==pred
@@ -311,7 +313,7 @@ Expr setBit(VC& vc, Expr E_dest, Expr E_operand, unsigned int idx, Expr pred, un
     return EqExpr(vc, E_dest, vc_bvConcatExpr(vc, vc_bvExtract(vc, E_operand, bitWidth-1, 1), pred));
   if(idx+1==bitWidth)
     return EqExpr(vc, E_dest, vc_bvConcatExpr(vc, pred, vc_bvExtract(vc, E_operand, bitWidth-2, 0)));
-  Expr E_pre = vc_bvExtract(vc, E_operand, bitWidth - 1,idx+1);	
+  Expr E_pre = vc_bvExtract(vc, E_operand, bitWidth - 1,idx+1);
   Expr E_post = vc_bvExtract(vc, E_operand, idx-1, 0);
   Expr E_result = vc_bvConcatExpr(vc, vc_bvConcatExpr(vc, E_pre, pred), E_post);
   return EqExpr(vc, E_dest, E_result);
@@ -334,11 +336,11 @@ Expr constructAShrByConstant(VC& vc, unsigned amount, Expr E_src1, unsigned int 
     return E_src1;
   } else {
     return vc_iteExpr(vc,
-        vc_bvBoolExtract_One(vc, E_src1, bitWidth -1),
-        vc_bvConcatExpr(vc,
-          vc_bvConstExprFromLL(vc, shift, -1),
-          vc_bvExtract(vc, E_src1, bitWidth - 1, shift)),
-        vc_bvRightShiftExprExpr(vc, bitWidth,  E_src1, vc_bvConstExprFromInt(vc, bitWidth, shift)));
+                      vc_bvBoolExtract_One(vc, E_src1, bitWidth -1),
+                      vc_bvConcatExpr(vc,
+                                      vc_bvConstExprFromLL(vc, shift, -1),
+                                      vc_bvExtract(vc, E_src1, bitWidth - 1, shift)),
+                      vc_bvRightShiftExprExpr(vc, bitWidth,  E_src1, vc_bvConstExprFromInt(vc, bitWidth, shift)));
   }
 }
 
@@ -378,8 +380,8 @@ Expr pshuf_shift_right_and_extract(VC& vc, Expr bitvector, int shift, int high, 
 }
 
 void instrnToConstraint(PAIR_INFO state_info,VC& vc, V_Node& n,
-    VersionNumber& Vn, VersionNumber& Vnprime, 
-    std::vector<Expr>& constraints, std::string code_num,unsigned int  instr_no, std::set<SS_Id> X_mod)
+                        VersionNumber& Vn, VersionNumber& Vnprime,
+                        std::vector<Expr>& constraints, std::string code_num,unsigned int  instr_no, std::set<SS_Id> X_mod)
 {
 
   Instruction instr = n.getInstr();
@@ -398,13 +400,13 @@ void instrnToConstraint(PAIR_INFO state_info,VC& vc, V_Node& n,
   {
 #include "validator.switch"
 
-    default: 
+  default:
 #ifdef DEBUG_VALIDATOR
-      cout << "Unhandled Instruction for creating constraint " << instr << "\n";
+    cout << "Unhandled Instruction for creating constraint " << instr << "\n";
 #endif
-      std::stringstream tmp;
-      tmp << "Unhandled instruction (not in switch): " << instr << endl;
-      throw VALIDATOR_ERROR(tmp.str());
+    std::stringstream tmp;
+    tmp << "Unhandled instruction (not in switch): " << instr << endl;
+    throw VALIDATOR_ERROR(tmp.str());
 
   }
 

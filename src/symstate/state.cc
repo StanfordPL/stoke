@@ -8,14 +8,14 @@ using namespace x64asm;
 void SymState::build_from_cpustate(const CpuState& cs) {
 
   for(size_t i = 0; i < cs.gp.size(); ++i) {
-    gp[i] = SymBitVector::constant(64, cs.gp[i].get_fixed_quad(0));    
+    gp[i] = SymBitVector::constant(64, cs.gp[i].get_fixed_quad(0));
   }
 
   for(size_t i = 0; i < cs.sse.size(); ++i) {
     sse[i] =
-      SymBitVector::constant(64, cs.sse[i].get_fixed_quad(3)) || 
-      SymBitVector::constant(64, cs.sse[i].get_fixed_quad(2)) || 
-      SymBitVector::constant(64, cs.sse[i].get_fixed_quad(1)) || 
+      SymBitVector::constant(64, cs.sse[i].get_fixed_quad(3)) ||
+      SymBitVector::constant(64, cs.sse[i].get_fixed_quad(2)) ||
+      SymBitVector::constant(64, cs.sse[i].get_fixed_quad(1)) ||
       SymBitVector::constant(64, cs.sse[i].get_fixed_quad(0));
   }
 
@@ -52,7 +52,7 @@ SymBitVector SymState::operator[](const Operand o) const {
  * 32-bits of a 64-bit gp register, or (ii) it's an AVX instruction storing
  * into the lower 128 bits of a ymm register; in both cases the other bits
  * would be zero'd out.
- * 
+ *
  * The preserve32 param overrides the behavior of zeroing out the upper 32-bits
  * of 64-bit gp registers, and the avx param enables zeroing out the upper 128
  * bits of ymm registers.

@@ -38,7 +38,7 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   // Compute the value to move into the destination
   auto to_move = ss[src];
-  
+
   if (dst.size() > src.size()) {
     // Case 1: we need to extend the source (sign or not)
     bool sign_extend = lookup(instr) == MoveSupport::SIGN_EXTEND;
@@ -49,9 +49,9 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
     }
 
   } else if (src.size() > dst.size()) {
-    // Case 2: we need to truncate the source 
+    // Case 2: we need to truncate the source
     to_move = ss[src][src.size()-1][0];
-  } 
+  }
 
   /* Takes care of setting upper 32-bits of 64-bit registers, etc. */
   ss.set(dst, to_move);
