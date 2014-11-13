@@ -662,7 +662,7 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
     return true;
 
   case Type::LABEL:
-    return false;
+    return get<Label>(label_pool_, op);
 
   case Type::M_8:
   case Type::M_16:
