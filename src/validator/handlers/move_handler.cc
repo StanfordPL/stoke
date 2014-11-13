@@ -8,6 +8,7 @@ using namespace std;
 MoveHandler::MoveSupport MoveHandler::lookup(const Instruction& instr) const {
 
   string opcode = get_opcode(instr);
+  cout << "OPCODE is " << opcode << endl;
 
   if (opcode == "movq")
     return MoveSupport::SIGN_EXTEND;
@@ -15,9 +16,11 @@ MoveHandler::MoveSupport MoveHandler::lookup(const Instruction& instr) const {
   return MoveSupport::NONE;
 }
 
-Handler::SupportLevel MoveHandler::is_supported(const Instruction& instr) {
+Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
   if(!operands_supported(instr))
     return SupportLevel::NONE;
+
+  cout << "OPERAND supported: " << instr << endl;
 
   if(!lookup(instr))
     return SupportLevel::NONE;
@@ -27,7 +30,7 @@ Handler::SupportLevel MoveHandler::is_supported(const Instruction& instr) {
 
 void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
-  assert(is_supported(instr));
+  assert(get_support(instr));
 
   // Get the source and destination operands
   auto& dst = instr.get_operand<Operand>(0);

@@ -10,7 +10,7 @@ namespace stoke {
 class MoveHandler : public Handler {
 
   public:
-    SupportLevel is_supported(const x64asm::Instruction& instr);
+    SupportLevel get_support(const x64asm::Instruction& instr);
 
     void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
