@@ -488,35 +488,6 @@ bool Transforms::is_unsupported(Opcode o) const {
   return unsupported_.find(o) != unsupported_.end();
 };
 
-bool Transforms::get_base(const RegSet& rs, M& m) {
-  if (gen_() % 2) {
-    m.clear_base();
-  } else {
-    auto r = rax;
-    if (get<R64>(r64_pool_, rs, r)) {
-      m.set_base(r);
-    } else {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool Transforms::get_index(const RegSet& rs, M& m) {
-  if (gen_() % 2) {
-    m.clear_index();
-  } else {
-    auto r = rax;
-    if (get<R64>(r64_pool_, rs, r)) {
-      m.set_index(r);
-      return m.get_index() != rsp;
-    } else {
-      return false;
-    }
-  }
-  return true;
-}
-
 bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
   if (is_lea_opcode(c)) {
     auto m = *((M8*)(&o));
