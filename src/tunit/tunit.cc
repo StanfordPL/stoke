@@ -55,6 +55,12 @@ istream& operator>>(istream& is, TUnit& t) {
     is.setstate(ios::failbit);
   }
 
+  // TODO: output an error message of what when wrong
+  if (t.code[0].get_opcode() != LABEL_DEFN ||
+      t.code[0].get_operand<Label>(0) != x64asm::Label("." + t.name)) {
+    is.setstate(ios::failbit);
+  }
+
   return is;
 }
 
@@ -62,6 +68,7 @@ ostream& operator<<(ostream& os, const TUnit& t) {
   os << "  .text" << endl;
   os << "  .globl " << t.name << endl;
   os << "  .type " << t.name << ", @function" << endl;
+  os << "." << t.name << ":" << endl;
 
   ofilterstream<Column> col(os);
   col.filter().padding(2);
