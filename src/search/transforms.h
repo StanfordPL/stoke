@@ -215,9 +215,38 @@ private:
   }
 
   /** Replaces the base register in m using an element of a reg set. Returns true on success. */
-  bool get_base(const x64asm::RegSet& rs, x64asm::M& m);
+  template <class T>
+  bool get_base(const x64asm::RegSet& rs, x64asm::M<T>& m) {
+    if (gen_() % 2) {
+      m.clear_base();
+    } else {
+      auto r = x64asm::rax;
+      if (get<x64asm::R64>(r64_pool_, rs, r)) {
+        m.set_base(r);
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /** Replaces the index register in m using an element of a reg set. Returns true on success. */
-  bool get_index(const x64asm::RegSet& rs, x64asm::M& m);
+  template <class T>
+  bool get_index(const x64asm::RegSet& rs, x64asm::M<T>& m) {
+    if (gen_() % 2) {
+      m.clear_index();
+    } else {
+      auto r = x64asm::rax;
+      if (get<x64asm::R64>(r64_pool_, rs, r)) {
+        m.set_index(r);
+        return m.get_index() != x64asm::rsp;
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /** Sets o to a random memory operand, returns true on success. */
   bool get_m(const x64asm::RegSet& rs, x64asm::Opcode c, x64asm::Operand& o);
 
