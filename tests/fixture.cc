@@ -26,34 +26,35 @@ CodeFixture::CodeFixture(string filename) {
                         ":" + reader.getFormattedErrorMessages());
 
   // get the metadata
-  size_t name_pos = filename.rfind("/")+1;
+  size_t name_pos = filename.rfind("/") + 1;
   string root_name = root["name"].asString();
   string file_given_name = filename.substr(name_pos);
-  if (root_name.compare(file_given_name + ".json"))
+  if (root_name.compare(file_given_name + ".json")) {
     name_ = root_name;
-  else
+  } else {
     name_ = root_name + " [" + file_given_name + "]";
+  }
 
 
   // read the code
   stringstream code_ss;
   const Json::Value& code_json = root["code"];
-  for(size_t i = 0; i < code_json.size(); ++i) {
+  for (size_t i = 0; i < code_json.size(); ++i) {
     code_ss << code_json.get(i, Json::Value(string(""))).asString() << endl;
   }
   code_ss >> code_;
 
   // read the test data
   const Json::Value test_json = root["tests"];
-  for (auto name : test_json.getMemberNames() ) {
+  for (auto name : test_json.getMemberNames()) {
     test_data_[name] = test_json[name];
   }
 
-  
+
 }
 
 ::std::ostream& operator<<(::std::ostream& os, const CodeFixture& f) {
-  return os << f.get_name(); 
+  return os << f.get_name();
 }
 
 /*
@@ -74,24 +75,26 @@ void CodeFixtureTestInit::generate_fixtures() {
   fixtures_.clear();
   std::string folder = "tests/fixtures";
 
-  DIR *dp = opendir(folder.c_str());
+  DIR* dp = opendir(folder.c_str());
   if (dp == NULL) {
     throw new std::runtime_error("Could not open fixtures directory.");
   }
 
 
-  struct dirent *dirp;
-  while((dirp = readdir(dp))) {
+  struct dirent* dirp;
+  while ((dirp = readdir(dp))) {
 
     // check if filename ends in .json
     std::string filename(dirp->d_name);
-    if(filename.length() <= 5)
+    if (filename.length() <= 5) {
       continue;
+    }
     size_t extension_pos = filename.rfind(".json");
-    if (extension_pos != filename.length() - 5)
+    if (extension_pos != filename.length() - 5) {
       continue;
+    }
 
-    std::string filepath = folder + "/" + filename; 
+    std::string filepath = folder + "/" + filename;
 
 
     CodeFixture f(filepath);
@@ -99,7 +102,7 @@ void CodeFixtureTestInit::generate_fixtures() {
   }
 
 }
-  
+
 
 
 

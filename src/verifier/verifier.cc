@@ -40,13 +40,14 @@ bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
 }
 
 bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
-	const auto res = fxn_(rewrite, 1);
-	if (!res.first) {
-		counter_example_available_ = next_counter_example_ < fxn_.num_testcases();
-		counter_example_ = fxn_.get_testcase(next_counter_example_);
-		next_counter_example_++;
-		return false;
-	}
+  // Don't set a max value here; we're okay with performance costs
+  const auto res = fxn_(rewrite);
+  if (!res.first) {
+    counter_example_available_ = next_counter_example_ < fxn_.num_testcases();
+    counter_example_ = fxn_.get_testcase(next_counter_example_);
+    next_counter_example_++;
+    return false;
+  }
   return true;
 }
 
@@ -69,20 +70,20 @@ bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
 }
 
 bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {
-	// Add user-defined implementation here ...
+  // Add user-defined implementation here ...
 
-	// Invariant 1. If this method returns false and is able to produce a 
-	// counter example explaining why, counter_example_available_ should be
-	// set to true.
+  // Invariant 1. If this method returns false and is able to produce a
+  // counter example explaining why, counter_example_available_ should be
+  // set to true.
 
-	// Invariant 2. If this method returns false, and it is able (see above), 
-	// counter_example_ should be set to a CpuState that will cause target and 
-	// rewrite to produce different values.
+  // Invariant 2. If this method returns false, and it is able (see above),
+  // counter_example_ should be set to a CpuState that will cause target and
+  // rewrite to produce different values.
 
-	// Invariant 3. If this method produces a counter example, it should be
-	// unique relative to all previously produced counter examples.
+  // Invariant 3. If this method produces a counter example, it should be
+  // unique relative to all previously produced counter examples.
 
-	return true;
+  return true;
 }
 
 } // namespace stoke

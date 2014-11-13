@@ -23,10 +23,10 @@
 namespace stoke {
 
 struct TUnit {
-	/** The name of the function in this translation unit. */
-	std::string name;
-	/** The text of the function in this translation unit. */
-	x64asm::Code code;
+  /** The name of the function in this translation unit. */
+  std::string name;
+  /** The text of the function in this translation unit. */
+  x64asm::Code code;
 };
 
 std::istream& operator>>(std::istream& is, TUnit& t);

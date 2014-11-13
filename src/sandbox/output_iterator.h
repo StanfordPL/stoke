@@ -26,38 +26,38 @@ class output_iterator {
   /** Needs access to constructor. */
   friend class Sandbox;
 
- public:
-	/** Returns the underlying output state. */
+public:
+  /** Returns the underlying output state. */
   const CpuState& operator*() const {
     return (*itr_)->out_;
   }
-	/** Returns the underlying output state. */
+  /** Returns the underlying output state. */
   const CpuState* operator->() const {
     return &((*itr_)->out_);
   }
 
-	/** Increments the outer iterator. */
+  /** Increments the outer iterator. */
   output_iterator& operator++() {
     itr_++;
     return *this;
   }
 
-	/** Equality based on outer iterators. */
+  /** Equality based on outer iterators. */
   bool operator==(const output_iterator& rhs) const {
     return itr_ == rhs.itr_;
   }
-	/** Inequality based on outer iterators. */
+  /** Inequality based on outer iterators. */
   bool operator!=(const output_iterator& rhs) const {
     return itr_ != rhs.itr_;
   }
 
- private:
-	/** Creates a new output iterator using an IoPair iterator. */
+private:
+  /** Creates a new output iterator using an IoPair iterator. */
   output_iterator(std::vector<IoPair*>::const_iterator itr) {
     itr_ = itr;
   }
 
-	/** Outer iterator. */
+  /** Outer iterator. */
   std::vector<IoPair*>::const_iterator itr_;
 };
 

@@ -30,11 +30,11 @@ ostream& CpuState::write_text(ostream& os) const {
     "%ymm0", "%ymm1", "%ymm2", "%ymm3", "%ymm4", "%ymm5", "%ymm6", "%ymm7",
     "%ymm8", "%ymm9", "%ymm10", "%ymm11", "%ymm12", "%ymm13", "%ymm14", "%ymm15"
   };
-	const char* rflags[] = {
-		"%cf", "%1", "%pf", "%0", "%af", "%0", "%zf", "%sf", "%tf", "%if", 
-		"%df", "%of", "%iopl[0]", "%iopl[1]", "%nt", "%0", "%rf", "%vm", "%ac", "%vif", 
-		"%vip", "%id"
-	};
+  const char* rflags[] = {
+    "%cf", "%1", "%pf", "%0", "%af", "%0", "%zf", "%sf", "%tf", "%if",
+    "%df", "%of", "%iopl[0]", "%iopl[1]", "%nt", "%0", "%rf", "%vm", "%ac", "%vif",
+    "%vip", "%id"
+  };
 
   gp.write_text(os, gps, 5);
   os << endl;
@@ -44,9 +44,9 @@ ostream& CpuState::write_text(ostream& os) const {
   os << endl;
   os << endl;
 
-	rf.write_text(os, rflags, 1);
-	os << endl;
-	os << endl;
+  rf.write_text(os, rflags, 1);
+  os << endl;
+  os << endl;
 
   stack.write_text(os);
   os << endl;
@@ -54,7 +54,7 @@ ostream& CpuState::write_text(ostream& os) const {
 
   heap.write_text(os);
 
-	return os;
+  return os;
 }
 
 istream& CpuState::read_text(istream& is) {
@@ -70,9 +70,9 @@ istream& CpuState::read_text(istream& is) {
   getline(is, ignore);
   getline(is, ignore);
 
-	rf.read_text(is);
-	getline(is, ignore);
-	getline(is, ignore);
+  rf.read_text(is);
+  getline(is, ignore);
+  getline(is, ignore);
 
   stack.read_text(is);
   getline(is, ignore);
@@ -80,12 +80,12 @@ istream& CpuState::read_text(istream& is) {
 
   heap.read_text(is);
 
-	// Stack addresses should be strictly greater than heap addresses
-	if (stack.lower_bound() <= heap.upper_bound()) {
-		is.setstate(ios::failbit);
-	}
+  // Stack addresses should be strictly greater than heap addresses
+  if (stack.lower_bound() <= heap.upper_bound()) {
+    is.setstate(ios::failbit);
+  }
 
-	return is;
+  return is;
 }
 
 } // namespace stoke

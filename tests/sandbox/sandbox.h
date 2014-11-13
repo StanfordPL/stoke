@@ -78,8 +78,8 @@ TEST(SandboxTest, AllGPRegistersWork) {
 
   stoke::CpuState output = *sb.result_begin();
 
-  for(int i = 0; i < 16; ++i) {
-    ASSERT_EQ(1+i, output.gp[i].get_fixed_quad(0));
+  for (int i = 0; i < 16; ++i) {
+    ASSERT_EQ(1 + i, output.gp[i].get_fixed_quad(0));
   }
 
 
@@ -114,7 +114,7 @@ TEST(SandboxTest, RegisterValuesArePreserved) {
 
   stoke::CpuState output = *sb.result_begin();
 
-  for(int i = 0; i < 16; ++i) {
+  for (int i = 0; i < 16; ++i) {
     ASSERT_EQ(tc.gp[i].get_fixed_quad(0), output.gp[i].get_fixed_quad(0)) << " i = " << i;
   }
 
@@ -125,7 +125,7 @@ TEST(SandboxTest, RegisterValuesArePreserved) {
 
 
 
-/* This test exists because the Sandbox used to throw a 
+/* This test exists because the Sandbox used to throw a
    segfault if the code violates the ABI */
 TEST(SandboxTest, ModifyingRbxWorks) {
 
@@ -324,7 +324,7 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << "xorq %rcx, %rcx" << std::endl;
+  ss << "xorq %rcx, %rcx" << std::endl;
   ss << ".L1:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "cmpq $0x10, %rcx" << std::endl;
@@ -341,7 +341,7 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
 
   sb.set_max_jumps(17);
   sb.insert_input(tc);
-	sb.set_abi_check(false);
+  sb.set_abi_check(false);
 
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
@@ -357,7 +357,7 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << "xorq %rcx, %rcx" << std::endl;
+  ss << "xorq %rcx, %rcx" << std::endl;
   ss << ".L1:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "cmpq $0x10, %rcx" << std::endl;
@@ -374,7 +374,7 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
 
   sb.set_max_jumps(16);
   sb.insert_input(tc);
-	sb.set_abi_check(false);
+  sb.set_abi_check(false);
 
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});

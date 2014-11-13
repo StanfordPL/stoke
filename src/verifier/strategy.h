@@ -22,8 +22,8 @@ enum class Strategy {
   HOLD_OUT,
   FORMAL,
 
-	// Add user-defined extensions here ...
-	EXTENSION
+  // Add user-defined extensions here ...
+  EXTENSION
 };
 
 } // namespace stoke

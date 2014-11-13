@@ -22,8 +22,8 @@ enum class PerformanceTerm {
   SIZE,
   LATENCY,
 
-	// Add user-defined extensions here ...
-	EXTENSION
+  // Add user-defined extensions here ...
+  EXTENSION
 };
 
 } // namespace stoke
