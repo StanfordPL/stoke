@@ -12,17 +12,20 @@ namespace stoke {
 
 bool Disassembler::check_filename(const string& s) {
   /* Prevent shell injection */
-  for(size_t i = 0; i < s.size(); ++i) {
+  for (size_t i = 0; i < s.size(); ++i) {
     char c = s[i];
 
-    if (c >= 'a' && c <= 'z')
+    if (c >= 'a' && c <= 'z') {
       continue;
+    }
 
-    if (c >= 'A' && c <= 'Z')
+    if (c >= 'A' && c <= 'Z') {
       continue;
+    }
 
-    if (c >= '0' && c <= '9')
+    if (c >= '0' && c <= '9') {
       continue;
+    }
 
     if (c == '.' ||
         c == '/' ||
@@ -46,7 +49,7 @@ bool Disassembler::check_filename(const string& s) {
 
   /* Check that we can open the file */
   fstream filestr;
-  filestr.open (s);
+  filestr.open(s);
   if (filestr.is_open()) {
     filestr.close();
     return true;
@@ -60,25 +63,26 @@ bool Disassembler::check_filename(const string& s) {
 
 ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
 
-  if (!check_filename(filename))
+  if (!check_filename(filename)) {
     return NULL;
+  }
 
   string target = "";
   if (only_header) {
-    target = "/usr/bin/objdump -h " + filename;  
+    target = "/usr/bin/objdump -h " + filename;
   } else {
     target = "/usr/bin/objdump -j .text -Msuffix -d " + filename;
   }
 
   auto stream = new ipstream(target, pstreams::pstdout);
 
-  if(!stream) {
+  if (!stream) {
     error_ = true;
     error_message_ = "Unknown error spawning objdump: no memory allocated.";
     return NULL;
   }
 
-  if(!stream->is_open()) {
+  if (!stream->is_open()) {
     error_ = true;
     error_message_ = "Unknown error spawning objdump.";
     delete stream;
@@ -127,7 +131,8 @@ bool is_hex_string(const string& s) {
   return true;
 }
 
-Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s, map<string,string>& addr_label_map) {
+Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s,
+    map<string, string>& addr_label_map) {
   line_map lines;
   while (getline(ips, s)) {
     // Functions are terminated by empty lines
@@ -144,10 +149,12 @@ Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s, map<s
   return lines;
 }
 
-bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map<string, uint64_t>& offsets) {
+bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
+                                  map<string, uint64_t>& offsets) {
 
-  if (ips.eof())
+  if (ips.eof()) {
     return false;
+  }
 
   data.parse_error = false;
 
@@ -166,7 +173,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   // Iterate through all the lines and make 'em pretty
   auto lines = index_lines(ips, line, data.addr_label_map);
   const auto labels = fix_label_uses(lines);
-  
+
   // Build the code and offsets vector
   uint64_t starting_addr = lines[0].first;
   data.offset = starting_addr - offsets[".text"];
@@ -184,8 +191,9 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
 
   // Read into code.
   ss >> data.tunit.code;
-  if(ss.fail())
+  if (ss.fail()) {
     data.parse_error = true;
+  }
 
   return true;
 }
@@ -203,7 +211,7 @@ uint64_t Disassembler::parse_addr_from_line(const string& s) {
   auto begin = 0;
   for (; isspace(s[begin]); ++begin);
   const auto len = s.find_first_of(':') - begin;
-  
+
   return hex_to_int(s.substr(begin, len));
 }
 
@@ -246,23 +254,26 @@ bool Disassembler::parse_addr_label_from_line(const string& s, map<string, strin
   auto start = s.find_last_of('<');
   auto end = s.find_last_of('>');
 
-  if (start == string::npos || end == string::npos)
+  if (start == string::npos || end == string::npos) {
     return false;
+  }
 
-  auto function_name = s.substr(start+1, end - start - 1);
+  auto function_name = s.substr(start + 1, end - start - 1);
 
   //skip labels that point inside the same function
-  if(function_name.find_last_of("+") != string::npos)
+  if (function_name.find_last_of("+") != string::npos) {
     return false;
+  }
 
   // get the address
-  auto end_addr   = s.find_first_of(' ', start-3);
-  auto start_addr = s.find_last_of(' ', end_addr-1);
+  auto end_addr   = s.find_first_of(' ', start - 3);
+  auto start_addr = s.find_last_of(' ', end_addr - 1);
 
-  if (start_addr == string::npos || end_addr == string::npos)
+  if (start_addr == string::npos || end_addr == string::npos) {
     return false;
+  }
 
-  auto address = s.substr(start_addr+1, end_addr-start_addr-1);
+  auto address = s.substr(start_addr + 1, end_addr - start_addr - 1);
 
   // add to the map
   map[address] = function_name;
@@ -394,8 +405,9 @@ void Disassembler::disassemble(const std::string& filename) {
   // Get the headers from the objdump
   ipstream* headers = run_objdump(filename, true);
 
-  if (!headers) // if this fails, an error was already reported.
+  if (!headers) { // if this fails, an error was already reported.
     return;
+  }
 
   // Parse the headers
   map<string, uint64_t> section_offsets;
@@ -404,23 +416,25 @@ void Disassembler::disassemble(const std::string& filename) {
   // Get the disassembly from objdump
   ipstream* body = run_objdump(filename, false);
 
-  if (!body)  //an error occurred, it's already recorded.
+  if (!body) { //an error occurred, it's already recorded.
     return;
+  }
 
   // Skip the first four lines of output
   strip_lines(*body, 4);
 
   // Ignore lines starting with "D"
-  for(string line; getline(*body, line) && line[0] == 'D';) { 
+  for (string line; getline(*body, line) && line[0] == 'D';) {
   }
 
   // Read the functions and invoke the callback.
   FunctionCallbackData data;
   while (parse_function(*body, data, section_offsets)) {
-    if(!callback_closure_)
+    if (!callback_closure_) {
       fxn_cb_(data, fxn_cb_arg_);
-    else
+    } else {
       (*callback_closure_)(data);
+    }
   }
 }
 

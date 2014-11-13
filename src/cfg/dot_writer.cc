@@ -119,7 +119,8 @@ void DotWriter::write_edges(ostream& os, const Cfg& cfg) const {
       os << " color=";
       if (cfg.is_back_edge({i, *s})) {
         os << "red";
-      } else if (cfg.is_reachable(i) || cfg.is_entry(i)) {
+      }
+      else if (cfg.is_reachable(i) || cfg.is_entry(i)) {
         os << "black";
       } else {
         os << "grey";

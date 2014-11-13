@@ -23,33 +23,37 @@
 namespace stoke {
 
 struct SearchState {
-	SearchState() :
-		current({{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()), 
-		current_cost(0),
-		best_yet({{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()), 
-		best_yet_cost(0),
-		best_correct({{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()),
-		best_correct_cost(0),
-		success(false) { 
-	}
+  SearchState() :
+    current( {
+    {
+      x64asm::RET
+    }
+  }, x64asm::RegSet::empty(), x64asm::RegSet::empty()),
+  current_cost(0),
+  best_yet({{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()),
+  best_yet_cost(0),
+  best_correct({{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()),
+  best_correct_cost(0),
+  success(false) {
+  }
 
-	/** The current rewrite. */
+  /** The current rewrite. */
   Cfg current;
-	/** The cost of the current rewrite. */
+  /** The cost of the current rewrite. */
   Cost current_cost;
 
-	/** The lowest cost unverified rewrite discovered so far. */
+  /** The lowest cost unverified rewrite discovered so far. */
   Cfg best_yet;
-	/** The lowest unverified cost discovered so far. */
+  /** The lowest unverified cost discovered so far. */
   Cost best_yet_cost;
 
-	/** The lowest cost verified rewrite discovered so far. */
+  /** The lowest cost verified rewrite discovered so far. */
   Cfg best_correct;
-	/** The lowest verified cost discovered so far. */
+  /** The lowest verified cost discovered so far. */
   Cost best_correct_cost;
 
-	/** Has search discovered at least one new correct rewrite? */
-	bool success;
+  /** Has search discovered at least one new correct rewrite? */
+  bool success;
 };
 
 } // namespace stoke

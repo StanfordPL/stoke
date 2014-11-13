@@ -21,8 +21,8 @@ enum class Reduction {
   SUM,
   MAX,
 
-	// Add user-defined extensions here ...
-	EXTENSION
+  // Add user-defined extensions here ...
+  EXTENSION
 };
 
 } // namespace stoke

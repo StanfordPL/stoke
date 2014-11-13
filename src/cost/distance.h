@@ -21,8 +21,8 @@ enum class Distance {
   HAMMING,
   ULP,
 
-	// Add user-defined extensions here ...
-	EXTENSION
+  // Add user-defined extensions here ...
+  EXTENSION
 };
 
 } // namespace stoke

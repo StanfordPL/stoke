@@ -7,7 +7,7 @@
  */
 
 TEST(TrivialTest, Addition) {
-  ASSERT_EQ(1+1, 2);
+  ASSERT_EQ(1 + 1, 2);
 }
 
 TEST(TrivialTest, StringCaseInsensitiveEquality) {

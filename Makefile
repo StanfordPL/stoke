@@ -31,16 +31,7 @@ LIB=\
   -lboost_regex -lboost_filesystem -lssl -lcrypto \
 	-L src/ext/z3/bin -lz3
 
-OBJ=\
-	src/args/distance.o \
-	src/args/opc_set.o \
-	src/args/init.o \
-	src/args/move.o \
-	src/args/reduction.o \
-	src/args/performance_term.o \
-	src/args/strategy.o \
-	src/args/timeout.o \
-	\
+SRC_OBJ=\
 	src/cfg/cfg.o \
 	src/cfg/cfg_transforms.o \
 	src/cfg/dot_writer.o \
@@ -80,6 +71,34 @@ OBJ=\
 	\
 	src/verifier/verifier.o
 
+TOOL_ARGS_OBJ=\
+	tools/args/benchmark.o \
+	tools/args/correctness.o \
+	tools/args/cost.o \
+	tools/args/move.o \
+	tools/args/performance.o \
+	tools/args/rewrite.o \
+	tools/args/sandbox.o \
+	tools/args/search.o \
+	tools/args/search_state.o \
+	tools/args/seed.o \
+	tools/args/target.o \
+	tools/args/testcases.o \
+	tools/args/transforms.o \
+	tools/args/verifier.o
+
+TOOL_IO_OBJ=\
+	tools/io/distance.o \
+	tools/io/opc_set.o \
+	tools/io/init.o \
+	tools/io/move.o \
+	tools/io/reduction.o \
+	tools/io/performance_term.o \
+	tools/io/strategy.o \
+	tools/io/timeout.o
+
+TOOL_OBJ=$(TOOL_ARGS_OBJ) $(TOOL_IO_OBJ)
+
 BIN=\
 	bin/stoke_extract \
 	bin/stoke_replace \
@@ -106,17 +125,17 @@ BIN=\
 
 ##### TOP LEVEL TARGETS (release is default)
 
-all: release tags
+all: release tags hooks
 
 debug:
-	make -C . external EXT_OPT="debug"
-	make -C . $(BIN) OPT="-g" 
+	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . -j1024 $(BIN) OPT="-g" 
 release:
-	make -C . external EXT_OPT="release"
-	make -C . $(BIN) OPT="-DNDEBUG -O3" 
+	$(MAKE) -C . external EXT_OPT="release"
+	$(MAKE) -C . -j1024 $(BIN) OPT="-DNDEBUG -O3" 
 profile:
-	make -C . external EXT_OPT="profile"
-	make -C . $(BIN) OPT="-DNDEBUG -O3 -pg" 
+	$(MAKE) -C . external EXT_OPT="profile"
+	$(MAKE) -C . -j1024 $(BIN) OPT="-DNDEBUG -O3 -pg" 
 
 test: bin/stoke_test tags
 	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test 
@@ -126,9 +145,13 @@ tags:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
-	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
-	make -C src/ext/x64asm $(EXT_OPT) 
+external: src/ext/astyle src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
+	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke -j1024
+	$(MAKE) -C src/ext/x64asm -j1024 $(EXT_OPT) 
+
+src/ext/astyle:
+	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle
+	$(MAKE) -C src/ext/astyle/build/gcc -j1024
 
 src/ext/cpputil:
 	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
@@ -138,12 +161,10 @@ src/ext/x64asm:
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
-	make -C src/ext/gtest-1.7.0
+	$(MAKE) -C src/ext/gtest-1.7.0 -j1024
 
 ##### BUILD TARGETS
 
-src/args/%.o: src/args/%.cc src/args/%.h
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/cfg/%.o: src/cfg/%.cc src/cfg/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/cost/%.o: src/cost/%.cc src/cost/%.h
@@ -173,10 +194,67 @@ src/validator/%.o: src/validator/%.cc src/validator/%.h
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
+tools/args/%.o: tools/args/%.cc tools/args/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+tools/io/%.o: tools/io/%.cc tools/io/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+
 ##### BINARY TARGETS
 
-bin/%: tools/%.cc $(OBJ) 
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(LIB)  
+bin/stoke_benchmark_cfg: tools/apps/stoke_benchmark_cfg.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/target.o \
+	$(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_benchmark_cost: tools/apps/stoke_benchmark_cost.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/correctness.o \
+	tools/args/cost.o tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o \
+	tools/args/seed.o tools/args/target.o tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_benchmark_sandbox: tools/apps/stoke_benchmark_sandbox.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/sandbox.o \
+	tools/args/seed.o tools/args/target.o tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_benchmark_search: tools/apps/stoke_benchmark_search.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/move.o \
+	tools/args/seed.o tools/args/target.o tools/args/transforms.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_benchmark_state: tools/apps/stoke_benchmark_state.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/seed.o \
+	tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_benchmark_verify: tools/apps/stoke_benchmark_verify.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o \
+	tools/args/correctness.o tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o \
+	tools/args/seed.o tools/args/target.o tools/args/testcases.o tools/args/verifier.o \
+	$(TOOL_IO_OBJ) $(LIB)  
+
+bin/stoke_debug_cfg: tools/apps/stoke_debug_cfg.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/target.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_debug_cost: tools/apps/stoke_debug_cost.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o tools/args/cost.o \
+	tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o tools/args/seed.o \
+	tools/args/target.o tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_debug_sandbox: tools/apps/stoke_debug_sandbox.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/sandbox.o tools/args/seed.o \
+	tools/args/target.o tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_debug_search: tools/apps/stoke_debug_search.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/move.o tools/args/seed.o \
+	tools/args/target.o tools/args/transforms.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_debug_state: tools/apps/stoke_debug_state.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/seed.o tools/args/testcases.o \
+	$(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_debug_verify: tools/apps/stoke_debug_verify.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o \
+	tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o tools/args/seed.o \
+	tools/args/target.o tools/args/testcases.o tools/args/verifier.o $(TOOL_IO_OBJ) $(LIB)  
+
+bin/stoke_extract: tools/apps/stoke_extract.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_replace: tools/apps/stoke_replace.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/rewrite.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_search: tools/apps/stoke_search.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o \
+	tools/args/performance.o tools/args/search.o tools/args/search_state.o tools/args/seed.o \
+	tools/args/sandbox.o tools/args/target.o tools/args/testcases.o tools/args/transforms.o \
+	tools/args/verifier.o $(TOOL_IO_OBJ) $(LIB)  
+bin/stoke_testcase: tools/apps/stoke_testcase.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/sandbox.o tools/args/target.o \
+	$(TOOL_IO_OBJ) $(LIB)  
 
 ##### TESTING
 
@@ -197,7 +275,7 @@ tests/validator/handlers.h: .FORCE
 tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
-bin/stoke_test: tools/stoke_test.cc $(OBJ) $(TEST_OBJ) $(wildcard tests/*.h) $(wildcard tests/*/*.h) tests/validator/handlers.h
+bin/stoke_test: tools/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard tests/*.h) $(wildcard tests/*/*.h) tests/validator/handlers.h
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
 
 ##### VALIDATOR AUTOGENERATED FILES
@@ -227,21 +305,33 @@ validator_clean:
 
 ##### MISC
 
-.SECONDARY: $(OBJ)
+.SECONDARY: $(SRC_OBJ) $(TOOL_OBJ)
 
 zsh_completion: bin/_stoke
 
-bin/_stoke: $(BIN) tools/zsh_completion_generator.py
-	tools/zsh_completion_generator.py
+bin/_stoke: $(BIN) tools/scripts/zsh_completion_generator.py
+	tools/scripts/zsh_completion_generator.py
+
+format: src/ext/astyle
+	chmod +x tools/scripts/pre-commit.sh
+	tools/scripts/pre-commit.sh
+
+# builds a symlink to the post-commit hooks
+hooks: .git/hooks/pre-commit
+
+.git/hooks/pre-commit: tools/scripts/pre-commit.sh src/ext/astyle
+	chmod +x tools/scripts/pre-commit.sh
+	ln -sf $(shell pwd)/tools/scripts/pre-commit.sh .git/hooks/pre-commit
+
 
 ##### CLEAN TARGETS
 
 clean: validator_clean
-	rm -rf $(OBJ) $(BIN) $(TEST_OBJ) $(TEST_BIN) tags bin/stoke_* bin/_stoke
+	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke
 
 dist_clean: clean
+	rm -rf src/ext/astyle
 	rm -rf src/ext/cpputil
 	rm -rf src/ext/x64asm
 	make -C src/ext/gtest-1.7.0 clean
 	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
-
