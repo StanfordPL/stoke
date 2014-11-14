@@ -26,6 +26,7 @@
 #include "src/search/statistics.h"
 #include "src/search/statistics_callback.h"
 #include "src/search/transforms.h"
+#include "src/tunit/tunit.h"
 
 namespace stoke {
 
@@ -80,7 +81,7 @@ public:
   }
 
   /** Run search beginning from a search state using a user-supplied cost function. */
-  void run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state);
+  void run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, std::vector<stoke::TUnit>& aux_fxn);
   /** Stops an in-progress search.  To be used from a callback, for example. */
   void stop();
 
@@ -117,7 +118,7 @@ private:
   size_t interval_;
 
   /** Configures a search state. */
-  void configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state) const;
+  void configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state, std::vector<stoke::TUnit>& aux_fxn) const;
   /** Resets search state by removing all non-return instructions from target. */
   void configure_empty(const Cfg& target, SearchState& state) const;
   /** Resets search state to the target. */
