@@ -55,10 +55,6 @@ FlagArg& mem_write_arg =
   FlagArg::create("mem_write")
   .description("Propose instruction and opcode moves that write memory?");
 
-FlagArg& propose_call_arg =
-  FlagArg::create("propose_call")
-  .description("Propose instruction and opcode moves that call functions?");
-
 FlagArg& callee_save_arg =
   FlagArg::create("callee_save")
   .alternate("propose_callee_save")
