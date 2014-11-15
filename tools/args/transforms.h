@@ -35,7 +35,6 @@ extern cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>& 
 extern cpputil::ValueArg<size_t>& nop_percent_arg;
 extern cpputil::FlagArg& mem_read_arg;
 extern cpputil::FlagArg& mem_write_arg;
-extern cpputil::FlagArg& propose_call_arg;
 extern cpputil::FlagArg& callee_save_arg;
 extern cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& preserve_regs_arg;
 extern cpputil::ValueArg<std::vector<uint64_t>>& immediates_arg;

@@ -33,7 +33,7 @@ public:
     }
 
     set_opcode_pool(cpu_flags_arg, nop_percent_arg, mem_read_arg, mem_write_arg,
-                    propose_call_arg, opc_blacklist_arg, opc_whitelist_arg);
+                    opc_blacklist_arg, opc_whitelist_arg);
     set_operand_pool(target_arg.value().code, preserve_regs_arg);
 
     for (const auto& imm : immediates_arg.value()) {
