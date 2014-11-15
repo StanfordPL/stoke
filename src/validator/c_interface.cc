@@ -3,18 +3,6 @@
 #include <iostream>
 using namespace std;
 using namespace z3;
-void vc_setInterfaceFlags(VC vc, enum ifaceflag_t f, int param_value) {}
-
-// defines division by zero to equal 1, x%0 to equal x.
-// avoids division by zero errors.
-void make_division_total(VC vc) {}
-
-//! Flags can be NULL
-VC vc_createValidityChecker(void)
-{
-  //RS: Creating a memory leak?
-  return new context();
-}
 
 // Basic types
 Type vc_boolType(VC vc) {
@@ -32,10 +20,6 @@ Type vc_boolType(VC vc) {
   symbol, you will get a segfault. */
 Expr vc_varExpr(VC vc, const char * name, Type type) {
   return vc->constant(name,type);
-}
-
-int vc_getBVLength(VC vc, Expr e) {
-  return 0;
 }
 
 //! Create an equality expression.  The two children must have the same type.
@@ -86,115 +70,6 @@ Expr vc_boolToBVExpr(VC vc, Expr form) {
   return vc_iteExpr(vc, vc_iffExpr(vc, form, vc_trueExpr(vc)), vc->bv_val(1,1), vc->bv_val(1,0) );
 }
 
-
-//! Prints 'e' to stdout.
-void vc_printExpr(VC vc, Expr e) {
-#ifdef DEBUG_VALIDATOR
-  std::cout << e ;
-#endif
-}
-
-//! Prints 'e' to stdout as C code
-void vc_printExprCCode(VC vc, Expr e) {}
-
-//! print in smtlib format
-char * vc_printSMTLIB(VC vc, Expr e) {
-  return 0;
-}
-
-//! Prints 'e' into an open file descriptor 'fd'
-void vc_printExprFile(VC vc, Expr e, int fd) {}
-
-//! Prints state of 'vc' into malloc'd buffer '*buf' and stores the
-//  length into '*len'.  It is the responsibility of the caller to
-//  free the buffer.
-//void vc_printStateToBuffer(VC vc, char **buf, unsigned long *len);
-
-//! Prints 'e' to malloc'd buffer '*buf'.  Sets '*len' to the length of
-//  the buffer. It is the responsibility of the caller to free the buffer.
-void vc_printExprToBuffer(VC vc, Expr e, char **buf, unsigned long * len) {}
-
-//! Prints counterexample to stdout.
-void vc_printCounterExample(VC vc) {}
-
-//! Prints variable declarations to stdout.
-void vc_printVarDecls(VC vc) {}
-
-//! Clear the internal list of variables to declare maintained for
-//  vc_printVarDecls. Do this after you've printed them, or if you
-//  never want to print them, to prevent a memory leak.
-void vc_clearDecls(VC vc) {}
-
-//! Prints asserts to stdout. The flag simplify_print must be set to
-//"1" if you wish simplification to occur dring printing. It must be
-//set to "0" otherwise
-void vc_printAsserts(VC vc, int simplify_print) {}
-
-//! Prints the state of the query to malloc'd buffer '*buf' and
-//stores ! the length of the buffer to '*len'.  It is the
-//responsibility of the caller to free the buffer. The flag
-//simplify_print must be set to "1" if you wish simplification to
-//occur dring printing. It must be set to "0" otherwise
-void vc_printQueryStateToBuffer(VC vc, Expr e,
-                                char **buf, unsigned long *len, int simplify_print) {}
-
-//! Similar to vc_printQueryStateToBuffer()
-void vc_printCounterExampleToBuffer(VC vc, char **buf,unsigned long *len) {}
-
-//! Prints query to stdout.
-void vc_printQuery(VC vc) {}
-
-/////////////////////////////////////////////////////////////////////////////
-// Context-related methods                                                 //
-/////////////////////////////////////////////////////////////////////////////
-
-//! Assert a new formula in the current context.
-/*! The formula must have Boolean type. */
-void vc_assertFormula(VC vc, Expr e) {}
-
-// NB. The timeout is a soft timeout, use the -g flag for a hard timeout that
-// will abort automatically. The soft timeout is checked sometimes in the code,
-// and if the time has passed, then "timeout" will be returned. It's only checked
-// sometimes though, so the actual timeout may be larger. Cryptominisat doesn't check
-// the timeout yet..
-
-// The C-language doesn't allow default arguments, so to get it compiling, I've split
-// it into two functions.
-int vc_query_with_timeout(VC vc, Expr e, int timeout_ms) {
-  return 0;
-}
-int vc_query(VC vc, Expr e) {
-  return 0;
-}
-
-
-//! Return an array from a counterexample after a failed query.
-void vc_getCounterExampleArray(VC vc, Expr e, Expr **indices, Expr **values, int *size) {}
-
-//! get size of counterexample, i.e. the number of variables/array
-//locations in the counterexample.
-int vc_counterexample_size(VC vc) {
-  return 0;
-}
-
-//! Checkpoint the current context and increase the scope level
-void vc_push(VC vc) {}
-
-//! Restore the current context to its state at the last checkpoint
-void vc_pop(VC vc) {}
-
-//! Return an int from a constant bitvector expression
-int getBVInt(Expr e) {
-  return 0;
-}
-//! Return an unsigned int from a constant bitvector expression
-unsigned int getBVUnsigned(Expr e) {
-  return 0;
-}
-//! Return an unsigned long long int from a constant bitvector expressions
-unsigned long long int getBVUnsignedLongLong(Expr e) {
-  return 0;
-}
 
 /**************************/
 /* BIT VECTOR OPERATIONS  */

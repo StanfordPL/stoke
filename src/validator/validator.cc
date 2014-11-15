@@ -349,9 +349,7 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
     Expr version0 = vc_bvExtract(vc, regExpr(vc, (elem + "_" + code_num + "_0"), V_UNITSIZE), bitwidth - 1, 0);
     Expr E_eq_final = EqExpr(vc, common, version0);
 #ifdef DEBUG_VALIDATOR
-    cout << "Printing query";
-    vc_printExpr(vc, E_eq_final);
-    cout << endl ;
+    cout << "Printing query " << endl << E_eq_final << endl;
 #endif
 
     /* Add the constraints. */
@@ -369,9 +367,7 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
       Expr E_state_elem_2 = regExpr(vc, (elem + "_" + code_num + "_0"),V_XMMUNIT);
       Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
-      cout << "Printing query";
-      vc_printExpr(vc, E_eq_final);
-      cout << endl ;
+      cout << "Printing query" << endl << E_eq_final << endl;
 #endif
       constraints.push_back(E_eq_final);
 
@@ -395,9 +391,7 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
       Expr E_state_elem_2 = vc_varExpr(vc, elem.c_str(), vc_boolType(vc));
       Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
-      cout << "Printing query";
-      vc_printExpr(vc, E_eq_final);
-      cout << endl ;
+      cout << "Printing query" << endl << E_eq_final << endl;
 #endif
       constraints.push_back(E_eq_final);
 
@@ -477,9 +471,7 @@ VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constrai
     {
       Expr E_final_constraint = getFinalConstraint(vc, state_elems, Vnprime, state_info.second, code_num, state_info);
 #ifdef DEBUG_VALIDATOR
-      cout << "Adding final constraint\n";
-      vc_printExpr(vc, E_final_constraint);
-      cout << "\n\n";
+      cout << "Adding final constraint" << endl << E_final_constraint << endl;
 #endif
       constraints.push_back(E_final_constraint);
     }
@@ -548,9 +540,7 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, x64as
     Expr E_state_elem_2 = vc_bvExtract(vc, regExpr(vc, (elem + "_2_"+ V_FSTATE),V_UNITSIZE), bitwidth - 1, 0);
     Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
-    cout << "Printing query";
-    vc_printExpr(vc, E_eq_final);
-    cout << endl ;
+    cout << "Printing query" << endl << E_eq_final << endl;
 #endif
 
     /* Add the constraints. */
@@ -567,9 +557,7 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, x64as
       Expr E_state_elem_2 = regExpr(vc, (elem + "_2_"+ V_FSTATE),V_XMMUNIT);
       Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
-      cout << "Printing query";
-      vc_printExpr(vc, E_eq_final);
-      cout << endl ;
+      cout << "Printing query" << endl << E_eq_final << endl;
 #endif
       query.push_back(E_eq_final);
 
@@ -593,9 +581,7 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, x64as
       Expr E_state_elem_2 = vc_varExpr(vc, (elem + "_2_" + V_FSTATE).c_str(), vc_boolType(vc));
       Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
-      cout << "Printing query";
-      vc_printExpr(vc, E_eq_final);
-      cout << endl ;
+      cout << "Printing query" << endl << E_eq_final << endl;
 #endif
       query.push_back(E_eq_final);
 
