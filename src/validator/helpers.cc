@@ -164,7 +164,7 @@ Expr setFlag(VC& vc,const VersionNumber& Vnprime,SS_Id flag, const Expr& e, vect
   Expr E_flag_constraint = vc_iffExpr(vc, E_flag_var, e);
   //cout << "Instruction flag constraint is\n";
 #ifdef DEBUG_VALIDATOR
-  vc_printExpr(vc, E_flag_constraint);
+  std::cout << E_flag_constraint << std::endl;
 #endif
   constraints.push_back(E_flag_constraint);
   return E_flag_var;
