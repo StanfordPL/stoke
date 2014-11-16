@@ -898,10 +898,10 @@ lookup_handler "btsq"     _ _ = Just "btvalHandler(d, bitWidth, E1, E0, E2, true
 lookup_handler "btsw"     _ _ = Just "btvalHandler(d, bitWidth, E1, E0, E2, true, dest_is_reg);"
 lookup_handler "btw"      _ _ = Just "btHandler(d, bitWidth, E0, E1);"
 lookup_handler "cbtw"     _ _ = Just "convert_e_Handler(d, 8);"
-lookup_handler "clc"      _ _ = Just "setFlag(d.vc, d.Vnprime,V_CF, SymBool::_false(), d.constraints, d.post_suffix);"
+lookup_handler "clc"      _ _ = Just "setFlag(d.Vnprime,V_CF, SymBool::_false(), d.constraints, d.post_suffix);"
 lookup_handler "cltd"     _ _ = Just "cwd_cdq_cqoHandler(d, 32);"
 lookup_handler "cltq"     _ _ = Just "convert_e_Handler(d, 32);"
-lookup_handler "cmc"      _ _ = Just "setFlag(d.vc, d.Vnprime,V_CF, !(getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn)), d.constraints, d.post_suffix);"
+lookup_handler "cmc"      _ _ = Just "setFlag(d.Vnprime,V_CF, !(getBoolExpr(V_CF,d.pre_suffix, d.Vn)), d.constraints, d.post_suffix);"
 
 -- handles all the cmovs
 lookup_handler ('c':'m':'o':'v':xs) _ _ = Just $ "cmovccHandler(d, bitWidth, \"" ++ cc ++ "\", E1, E0, E2, dest_is_reg);"
@@ -945,14 +945,6 @@ lookup_handler "incb"     _ _ = Just "incHandler(d, bitWidth, E1, E0, dest_is_re
 lookup_handler "incl"     _ _ = Just "incHandler(d, bitWidth, E1, E0, dest_is_reg);"
 lookup_handler "incq"     _ _ = Just "incHandler(d, bitWidth, E1, E0, dest_is_reg);"
 lookup_handler "incw"     _ _ = Just "incHandler(d, bitWidth, E1, E0, dest_is_reg);"
-lookup_handler "ja"       _ _ = Just "d.constraints.push_back(vc_andExpr(d.vc, !(getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn)), !(getBoolExpr(d.vc,V_ZF,d.pre_suffix, d.Vn))));"
-lookup_handler "jae"      _ _ = Just "d.constraints.push_back(!(getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn)));"
-lookup_handler "jb"       _ _ = Just "d.constraints.push_back(getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn));"
-lookup_handler "jbe"      _ _ = Just "d.constraints.push_back(vc_orExpr(d.vc, getBoolExpr(d.vc,V_CF,d.pre_suffix, d.Vn), getBoolExpr(d.vc,V_ZF,d.pre_suffix, d.Vn)));"
-lookup_handler "je"       _ _ = Just "d.constraints.push_back(getBoolExpr(d.vc,V_ZF,d.pre_suffix, d.Vn));"
-lookup_handler "jge"      _ _ = Just "d.constraints.push_back(vc_iffExpr(d.vc, getBoolExpr(d.vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(d.vc,V_OF,d.pre_suffix, d.Vn)));"
-lookup_handler "jl"       _ _ = Just "d.constraints.push_back(!(vc_iffExpr(d.vc, getBoolExpr(d.vc,V_SF,d.pre_suffix, d.Vn), getBoolExpr(d.vc,V_OF,d.pre_suffix, d.Vn))));"
-lookup_handler "jne"      _ _ = Just "d.constraints.push_back(!(getBoolExpr(d.vc,V_ZF,d.pre_suffix, d.Vn)));"
 lookup_handler "lahf"     _ _ = Just "lahfHandler(d);"
 lookup_handler "lddqu"    _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "leal"     _ _ = Just "leaHandler(d, 32);"
@@ -1128,7 +1120,7 @@ lookup_handler "shrw"     2 i = Just $ if (((last (operand_types i)) == "I"))
                                        then "shrHandler(d, bitWidth, imm, E1, E0, dest_is_reg);" 
                                        else ""
 lookup_handler "shufps"   _ _ = Just "shufpsHandler(d, imm, E1, E0, E2, E3);"
-lookup_handler "stc"      _ _ = Just "setFlag(d.vc, d.Vnprime,V_CF, vc_trueExpr(d.vc), d.constraints, d.post_suffix);"
+lookup_handler "stc"      _ _ = Just "setFlag(d.Vnprime,V_CF, SymBool::_true(), d.constraints, d.post_suffix);"
 lookup_handler "subb"     _ _ = Just "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "subl"     _ _ = Just "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "subpd"    _ _ = Just "subdHandler(d, 2, E1, E0, E2, dest_is_reg);"
@@ -1191,7 +1183,7 @@ validator_defn is = concat $ ("#include \"switch.h\"\n") : (nub (map render (tai
  
  
 filimm :: [(String,String,String)] -> Int -> [(String,String,String)]
-filimm ((w,"I",y):xs) z = (w , "I" , (if (z>(read w)) then ("vc_bvSignExtend(vc, vc_bvConstExprFromLL(vc,"++ w ++",getLastOperandImm(instr)), "++(show z)++"),getLastOperandImm(instr)") else ("vc_bvConstExprFromLL(vc,"++ w ++",getLastOperandImm(instr)),getLastOperandImm(instr)"))): (filimm xs z)
+filimm ((w,"I",y):xs) z = (w , "I" , (if (z>(read w)) then ("vc_bvSignExtend(SymBitVector::constant("++ w ++",getLastOperandImm(instr)), "++(show z)++"),getLastOperandImm(instr)") else ("SymBitVector::constant("++ w ++",getLastOperandImm(instr)),getLastOperandImm(instr)"))): (filimm xs z)
 filimm ((w,x,y):xs) z = (w,x,y): (filimm xs (max (read w) z))  
 filimm [] z = []
 
@@ -1265,19 +1257,19 @@ validator_switch is regs = concat $ map (render regs) (tail is)
           args' ((w,"S0","X"):xs) i = (cxmm0++cpre++","++cxmm0++cpost):[] ++ (args' xs (i+1))
           args' ((_,_,_):xs) i = (args' xs (i+1))
           args' [] _ = []
-          condargs (x:xs) = ("getBoolExpr(vc,V_"++(map toUpper x)++",d.pre_suffix, d.Vn)"):(condargs xs)
+          condargs (x:xs) = ("getBoolExpr(V_"++(map toUpper x)++", d.pre_suffix, d.Vn)"):(condargs xs)
 	  condargs [] = []
-	  c1="vc_bvExtract(vc, regExprWVN(vc,instr.get_operand<R64>("
-	  cx1="regExprWVN(vc,XMM_BEG+instr.get_operand<Xmm>("
+	  c1="vc_bvExtract(regExprWVN(instr.get_operand<R64>("
+	  cx1="regExprWVN(XMM_BEG+instr.get_operand<Xmm>("
 	  cpre="),d.pre_suffix, d.Vn, V_UNITSIZE), "
 	  c2=", 0)"
 	  cpost="),d.post_suffix, d.Vnprime, V_UNITSIZE), "
 	  cxpre="),d.pre_suffix, d.Vn, V_XMMUNIT) "
 	  cxpost="),d.post_suffix, d.Vnprime, V_XMMUNIT) "
-	  crax="vc_bvExtract(vc, regExprWVN(vc,(rax"
-  	  crcx="vc_bvExtract(vc, regExprWVN(vc,(rcx"
-	  crdx="vc_bvExtract(vc, regExprWVN(vc,(rdx"
-	  cxmm0="regExprWVN(vc,(XMM_BEG"
+	  crax="vc_bvExtract(regExprWVN((rax"
+  	  crcx="vc_bvExtract(regExprWVN((rcx"
+	  crdx="vc_bvExtract(regExprWVN((rdx"
+	  cxmm0="regExprWVN((XMM_BEG"
 
 valid_instr :: [String] -> [String] -> Bool
 valid_instr [] _ = True
