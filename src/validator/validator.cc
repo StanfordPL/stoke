@@ -64,9 +64,9 @@ bool flagToString(Eflags eflag, string& elem) {
 }
 
 
-Expr regExpr(VC& vc, string s, unsigned int size)
+Expr regExpr(string s, unsigned int size)
 {
-  return vc_varExpr(vc, s.c_str(), vc_bvType(vc, size));
+  return SymBitVector::var(size, s);
 }
 
 /* This produces a CpuState (that is, a stoke-readable
@@ -169,9 +169,9 @@ string idToStr(SS_Id n, PAIR_INFO I)
 }
 
 //Generate a constraint saying lhs==rhs
-Expr EqExpr(VC& vc, Expr lhs, Expr rhs)
+Expr EqExpr(Expr lhs, Expr rhs)
 {
-  Expr retval = vc_eqExpr(vc, lhs, rhs);
+  Expr retval = lhs == rhs;
   return retval;
 }
 set<SS_Id> keys(map<SS_Id, unsigned int> dict)
@@ -295,7 +295,7 @@ bool regset_is_supported(x64asm::RegSet rs) {
 
 
 //Constrain the initial registers in which code_num starts (RAX_1_0 == RAX)
-void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Expr>& constraints, x64asm::RegSet def_ins)
+void addStartConstraint(string code_num, PAIR_INFO state_info, vector<Expr>& constraints, x64asm::RegSet def_ins)
 {
   map<SS_Id, unsigned int>::iterator i;
   Bijection<string> bij = state_info.first;
@@ -345,9 +345,9 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
     string elem = bij.toVal(op);
 
     /* Build constraints asserting initial equality */
-    Expr common = regExpr(vc, elem, V_UNITSIZE);
-    Expr version0 = vc_bvExtract(vc, regExpr(vc, (elem + "_" + code_num + "_0"), V_UNITSIZE), bitwidth - 1, 0);
-    Expr E_eq_final = EqExpr(vc, common, version0);
+    Expr common = regExpr(elem, V_UNITSIZE);
+    Expr version0 = regExpr((elem + "_" + code_num + "_0"), V_UNITSIZE)[bitwidth - 1][0];
+    Expr E_eq_final = common == version0;
 #ifdef DEBUG_VALIDATOR
     cout << "Printing query " << endl << E_eq_final << endl;
 #endif
@@ -363,9 +363,9 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
     if(def_ins.contains(op))
     {
       string elem = bij.toVal(XMM_BEG+op);
-      Expr E_state_elem_1 = regExpr(vc, elem, V_XMMUNIT);
-      Expr E_state_elem_2 = regExpr(vc, (elem + "_" + code_num + "_0"),V_XMMUNIT);
-      Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+      Expr E_state_elem_1 = regExpr(elem, V_XMMUNIT);
+      Expr E_state_elem_2 = regExpr((elem + "_" + code_num + "_0"),V_XMMUNIT);
+      Expr E_eq_final = EqExpr(E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
       cout << "Printing query" << endl << E_eq_final << endl;
 #endif
@@ -387,9 +387,9 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 
 
       /* Construct the constraint */
-      Expr E_state_elem_1 = vc_varExpr(vc, (elem + "_" + code_num + "_0").c_str(), vc_boolType(vc));
-      Expr E_state_elem_2 = vc_varExpr(vc, elem.c_str(), vc_boolType(vc));
-      Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+      Expr E_state_elem_1 = SymBool::var(elem + "_" + code_num + "_0");
+      Expr E_state_elem_2 = SymBool::var(elem);
+      Expr E_eq_final = E_state_elem_1 == E_state_elem_2;
 #ifdef DEBUG_VALIDATOR
       cout << "Printing query" << endl << E_eq_final << endl;
 #endif
@@ -402,13 +402,12 @@ void addStartConstraint(VC& vc, string code_num, PAIR_INFO state_info, vector<Ex
 }
 
 //Constrain the final output registers to a known name (RAX_codenum_versionnumber == RAX_codenum_Final)
-Expr getFinalConstraint(VC& vc, const set<SS_Id>& state_elems, const VersionNumber& Vn, const map<SS_Id, unsigned int>& sizes_, string code_num, PAIR_INFO state_info)
+Expr getFinalConstraint(const set<SS_Id>& state_elems, const VersionNumber& Vn, const map<SS_Id, unsigned int>& sizes_, string code_num, PAIR_INFO state_info)
 {
   map<SS_Id, unsigned int> sizes = sizes_;
-  Expr E_pre(*vc), E_post(*vc), E_flag(*vc);
-  Expr retval = vc_trueExpr(vc);
+  Expr E_pre, E_post, E_flag;
+  Expr retval = SymBool::_true();
   set<SS_Id>::iterator iter;
-  ::Type bool_type = vc_boolType(vc);
   for(iter = state_elems.begin(); iter != state_elems.end(); iter++)
   {
     SS_Id temp = *iter;
@@ -416,20 +415,20 @@ Expr getFinalConstraint(VC& vc, const set<SS_Id>& state_elems, const VersionNumb
     switch(sizes[temp])
     {
     case V_REGSIZE:
-      E_pre = regExpr(vc, id_str + "_" + code_num + "_" + itoa(Vn.get(temp)),V_UNITSIZE);
-      E_post = regExpr(vc, id_str + "_" + code_num + "_" + V_FSTATE, V_UNITSIZE);
-      retval = vc_andExpr(vc, retval, EqExpr(vc, E_pre, E_post));
+      E_pre = regExpr(id_str + "_" + code_num + "_" + to_string(Vn.get(temp)),V_UNITSIZE);
+      E_post = regExpr(id_str + "_" + code_num + "_" + V_FSTATE, V_UNITSIZE);
+      retval = retval & E_pre == E_post;
       break;
     case V_FLAGSIZE:
-      E_flag = vc_iffExpr(vc,
-                          vc_varExpr(vc, (id_str+"_"+code_num+"_"+itoa(Vn.get(temp))).c_str(), bool_type),
-                          vc_varExpr(vc, (id_str+"_"+code_num+"_"+V_FSTATE).c_str(), bool_type));
-      retval = vc_andExpr(vc, retval, E_flag);
+      E_flag = vc_iffExpr(
+                          SymBool::var(id_str+"_"+code_num+"_"+to_string(Vn.get(temp))),
+                          SymBool::var(id_str+"_"+code_num+"_"+V_FSTATE));
+      retval = retval & E_flag;
       break;
     case V_XMMSIZE:
-      E_pre = regExpr(vc, id_str + "_" + code_num + "_" + itoa(Vn.get(temp)),V_XMMUNIT);
-      E_post = regExpr(vc, id_str + "_" + code_num + "_" + V_FSTATE, V_XMMUNIT);
-      retval = vc_andExpr(vc, retval, EqExpr(vc, E_pre, E_post));
+      E_pre = regExpr(id_str + "_" + code_num + "_" + itoa(Vn.get(temp)),V_XMMUNIT);
+      E_post = regExpr(id_str + "_" + code_num + "_" + V_FSTATE, V_XMMUNIT);
+      retval = retval & E_pre == E_post;
       break;
     default:
       throw VALIDATOR_ERROR("Unexpected size " + to_string(sizes[temp]));
@@ -441,7 +440,7 @@ Expr getFinalConstraint(VC& vc, const set<SS_Id>& state_elems, const VersionNumb
 }
 
 //Walk over the code and generate constraint for every instruction
-VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constraints, string code_num)
+VersionNumber C2C(Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constraints, string code_num)
 {
   Bijection<string> bij = state_info.first;
   map<SS_Id, unsigned int> sizes = state_info.second;
@@ -466,10 +465,10 @@ VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constrai
 #ifdef DEBUG_VALIDATOR
     cout << "Creating constraint from instruction " << oss.str() <<"\n";
 #endif
-    instrnToConstraint(state_info, vc, n, Vnold, Vnprime, constraints, code_num, i, X_mod);
+    instrnToConstraint(state_info,  n, Vnold, Vnprime, constraints, code_num, i, X_mod);
     if(n.succSize() != 1)
     {
-      Expr E_final_constraint = getFinalConstraint(vc, state_elems, Vnprime, state_info.second, code_num, state_info);
+      Expr E_final_constraint = getFinalConstraint(state_elems, Vnprime, state_info.second, code_num, state_info);
 #ifdef DEBUG_VALIDATOR
       cout << "Adding final constraint" << endl << E_final_constraint << endl;
 #endif
@@ -485,13 +484,13 @@ VersionNumber C2C(VC& vc, Ebb& ebb, PAIR_INFO state_info, vector<Expr>& constrai
 }
 
 //Get query constraint for registers and memory. The query constraints are missing for condition registers as they are not live out.
-void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, x64asm::RegSet liveout)
+void getQueryConstraint(PAIR_INFO state_info, vector<Expr>& query, x64asm::RegSet liveout)
 {
 
   //map<SS_Id, unsigned int>::iterator i;
   Bijection<string> bij = state_info.first;
   map<SS_Id, unsigned int> sizes = state_info.second;
-  Expr retval = vc_trueExpr(vc);
+  Expr retval = SymBool::_true();
 
   if(!regset_is_supported(liveout))
     throw VALIDATOR_ERROR("RegSet not supported");
@@ -536,9 +535,9 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, x64as
     string elem = bij.toVal(op);
 
     /* Build constraints asserting final equality */
-    Expr E_state_elem_1 = vc_bvExtract(vc, regExpr(vc, (elem + "_1_"+ V_FSTATE),V_UNITSIZE), bitwidth - 1, 0);
-    Expr E_state_elem_2 = vc_bvExtract(vc, regExpr(vc, (elem + "_2_"+ V_FSTATE),V_UNITSIZE), bitwidth - 1, 0);
-    Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+    Expr E_state_elem_1 = vc_bvExtract(regExpr((elem + "_1_"+ V_FSTATE),V_UNITSIZE), bitwidth - 1, 0);
+    Expr E_state_elem_2 = vc_bvExtract(regExpr((elem + "_2_"+ V_FSTATE),V_UNITSIZE), bitwidth - 1, 0);
+    Expr E_eq_final = EqExpr(E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
     cout << "Printing query" << endl << E_eq_final << endl;
 #endif
@@ -553,9 +552,9 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, x64as
     if(liveout.contains(op))
     {
       string elem = bij.toVal(XMM_BEG+op);
-      Expr E_state_elem_1 = regExpr(vc, (elem + "_1_"+ V_FSTATE),V_XMMUNIT);
-      Expr E_state_elem_2 = regExpr(vc, (elem + "_2_"+ V_FSTATE),V_XMMUNIT);
-      Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+      Expr E_state_elem_1 = regExpr((elem + "_1_"+ V_FSTATE),V_XMMUNIT);
+      Expr E_state_elem_2 = regExpr((elem + "_2_"+ V_FSTATE),V_XMMUNIT);
+      Expr E_eq_final = E_state_elem_1 == E_state_elem_2;
 #ifdef DEBUG_VALIDATOR
       cout << "Printing query" << endl << E_eq_final << endl;
 #endif
@@ -577,9 +576,9 @@ void getQueryConstraint(VC& vc, PAIR_INFO state_info, vector<Expr>& query, x64as
 
 
       /* Construct the constraint */
-      Expr E_state_elem_1 = vc_varExpr(vc, (elem + "_1_" + V_FSTATE).c_str(), vc_boolType(vc));
-      Expr E_state_elem_2 = vc_varExpr(vc, (elem + "_2_" + V_FSTATE).c_str(), vc_boolType(vc));
-      Expr E_eq_final = EqExpr(vc, E_state_elem_1, E_state_elem_2);
+      Expr E_state_elem_1 = vc_varExpr((elem + "_1_" + V_FSTATE).c_str(), vc_boolType());
+      Expr E_state_elem_2 = vc_varExpr((elem + "_2_" + V_FSTATE).c_str(), vc_boolType());
+      Expr E_eq_final = EqExpr(E_state_elem_1, E_state_elem_2);
 #ifdef DEBUG_VALIDATOR
       cout << "Printing query" << endl << E_eq_final << endl;
 #endif
@@ -615,21 +614,21 @@ vector<Expr> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::
 
   //Get target and rewrite in my data-structure. Its a path with instructions at nodes.
   //the size is NOT including the return
-  Ebb e1 = toEbb(vc_, f1, 10/*7*//*6*//*11*//*9*/, "1");
-  Ebb e2 = toEbb(vc_, f2, 4/*4*//*4*//*6*//*3*/, "2");
+  Ebb e1 = toEbb(f1, 10/*7*//*6*//*11*//*9*/, "1");
+  Ebb e2 = toEbb(f2, 4/*4*//*4*//*6*//*3*/, "2");
 
   //Add start constraints for target i.e. codenum="1"
-  addStartConstraint(vc_, "1", state_info_, constraints, f1.def_ins());
-  addStartConstraint(vc_, "2", state_info_, constraints, f2.def_ins());
+  addStartConstraint("1", state_info_, constraints, f1.def_ins());
+  addStartConstraint("2", state_info_, constraints, f2.def_ins());
 
   //Convert code 1 i.e. target to constraints
-  auto Vn1=C2C(vc_, e1, state_info_, constraints, "1");
+  auto Vn1=C2C(e1, state_info_, constraints, "1");
 
   //ditto for code 2. Note we use the same mul as target.
-  auto Vn2 = C2C(vc_, e2, state_info_, constraints, "2");
+  auto Vn2 = C2C(e2, state_info_, constraints, "2");
 
   vector<Expr> query;
-  getQueryConstraint(vc_, state_info_, query, f1.live_outs());
+  getQueryConstraint(state_info_, query, f1.live_outs());
 
   return query;
 }
@@ -673,12 +672,6 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
   has_error_ = false;
 
   try {
-
-    // Currently we need to use the same Z3 context for the legacy handlers and
-    // for the symbolic state.  This means some ugly stuff has to happen...
-    // basically, for now we're limitted to using Z3Solver.  That is, until we
-    // rewrite everything.
-    vc_ = (dynamic_cast<Z3Solver&>(solver_)).get_context();
 
     // Setup some necessary variables.
     state_info_ = InitStateMapping();

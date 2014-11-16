@@ -94,7 +94,7 @@ VersionNumber& V_Edge::getVN()
   return incomingVN_;
 }
 
-Ebb toEbb(VC& vc, const stoke::Cfg& f, unsigned int blocksize, string codenum)
+Ebb toEbb(const stoke::Cfg& f, unsigned int blocksize, string codenum)
 {
   Ebb retval;
   V_Node prev;
@@ -129,68 +129,6 @@ Ebb toEbb(VC& vc, const stoke::Cfg& f, unsigned int blocksize, string codenum)
     retval.nodes[node_idx + 1].predecessors_.push_back(edge_idx);
   }
 
-  /*  Ebb retval;
-    V_Node prev;
-    //This is because Eric added an entry block?
-    unsigned int i  = f.fallthrough_target(f.get_entry());
-    {
-      //get ith basic block
-      std::vector<Instruction>::const_iterator j = f.instr_begin(i);
-      std::vector<Instruction>::const_iterator je = f.instr_end(i);   //make a node out of the first instruction
-      retval.nodes.push_back(V_Node(codenum, i, 0, *j));
-      j++;
-      unsigned int node_idx;
-      node_idx = retval.nodes.size()-1;
-
-      //Store the indexes of the start and end of this block
-      //cout << "Block " << i << " starts at " << node_idx << " and ends at " << node_idx + f.num_instrs(i) - 1 << "\n";
-      //Insert the successor node and the edge
-        unsigned int count = 0;
-
-      for(; count < blocksize && j !=je; j++, node_idx++, count++ )
-      {
-        assert(node_idx == retval.nodes.size() - 1);
-        Instruction instr = *j;
-        cout << "Adding "  << instr << " to EBB" << endl;
-        //node for the successor
-        V_Node n(codenum,  i, count+1, instr);
-        retval.nodes.push_back(n);
-        //Edge between successor and node_idx
-            V_Edge e(codenum, node_idx, node_idx + 1);
-        retval.edges.push_back(e);
-        //index for the edge
-        unsigned int edge_idx = retval.edges.size() - 1;
-        //this edge is my successor
-        retval.nodes[node_idx].successors_.push_back(edge_idx);
-        //this edge is predecessor of my successor
-        retval.nodes[node_idx + 1].predecessors_.push_back(edge_idx);
-      }
-        //if(bbi.succs.size() > 1)
-      //  retval.nodes[node_idx - 1].recordFlags = true;
-    }
-  */
-  /* for (i  = blockid; i == blockid; i++ )
-   {
-     BasicBlock bbi = f.blocks[i];
-     pair<unsigned int, unsigned int> bbi_start_end = block_start_end[i];
-     unsigned int start = bbi_start_end.first;
-     //// cout << "Block " << i << " has start " << start <<"\n";
-     //look at all my predecessor blocks
-     for(j = 0; j < bbi.preds.size(); j++)
-     {
-         pair<unsigned int, unsigned int> pred_start_end = block_start_end[bbi.preds[j]];
-         unsigned int pred_end = pred_start_end.second;
-         //// cout << "Block " << bbi.getPred(j) << " has end " << pred_end <<"\n";
-         //create an edge between end of my predecessor and start of me
-       Edge e(vc, codenum,  pred_end, start);
-       retval.edges.push_back(e);
-   unsigned int edge_idx = retval.edges.size() - 1;
-   //this edge is successor of my predecessor
-       retval.nodes[pred_end].successors_.push_back(edge_idx);
-       //this edge is my predecessor
-       retval.nodes[start].predecessors_.push_back(edge_idx);
-     }
-   }*/
   return retval;
 }
 
