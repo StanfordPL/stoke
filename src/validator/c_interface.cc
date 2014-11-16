@@ -58,6 +58,9 @@ SymBool vc_iffExpr(Expr left, Expr right) {
 Expr vc_iteExpr(SymBool conditional, Expr ifthenpart, Expr elsepart) {
   return SymBitVector::ite(conditional, ifthenpart, elsepart);
 }
+SymBool vc_iteExpr(SymBool cond, SymBool a, SymBool b) {
+  return (cond & a) | (!cond & b);
+}
 
 //Boolean to single bit BV Expression
 Expr vc_boolToBVExpr(SymBool from) {

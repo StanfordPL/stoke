@@ -23,9 +23,6 @@
 #include "src/ext/z3/include/z3++.h"
 #include "src/validator/error.h"
 
-extern "C" {
-
-#include <stdio.h>
 
 
   typedef int Type;
@@ -66,6 +63,7 @@ extern "C" {
 //The output type of vc_iteExpr can be Boolean (formula-level ite)
 //or bit-vector (word-level ite)
   Expr vc_iteExpr(stoke::SymBool conditional, Expr ifthenpart, Expr elsepart);
+  stoke::SymBool vc_iteExpr(stoke::SymBool cond, stoke::SymBool true_branch, stoke::SymBool false_branch);
 
 //Boolean to single bit BV Expression
   Expr vc_boolToBVExpr(stoke::SymBool from);
@@ -111,7 +109,6 @@ extern "C" {
   Expr vc_bvSignExtend(Expr child, int nbits);
 
 
-}
 
 #endif
 

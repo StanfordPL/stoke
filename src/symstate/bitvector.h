@@ -138,7 +138,18 @@ public:
 
   public:
     SymBitVector operator[](uint16_t index) const;
+
     operator SymBool() const;
+    SymBool operator ==(const SymBool& other) const {
+      return (SymBool)(*this) == other;
+    }
+    SymBool operator &(const SymBool& other) const {
+      return (SymBool)(*this) & other;
+    }
+
+    SymBool operator |(const SymBool& other) const {
+      return (SymBool)(*this) | other;
+    }
 
   private:
     IndexHelper(const SymBitVector& bv, uint16_t index) : bv_(bv), index_(index) {}

@@ -221,11 +221,11 @@ void preserveAllFlags(v_data d)
 
 //Get the expression corresponding to the OF of add instruction.
 //Takes msb's of arguments and result as input.
-Expr getOFExpr(Expr E_msb_1, Expr E_msb_2, Expr E_msb_3)
+SymBool getOFExpr(SymBool E_msb_1, SymBool E_msb_2, SymBool E_msb_3)
 {
-  Expr E_of1 = vc_andExpr(E_msb_1,  vc_andExpr(E_msb_2, !(E_msb_3)));
-  Expr E_of2 = vc_andExpr(!(E_msb_1), vc_andExpr(!(E_msb_2), E_msb_3));
-  return vc_orExpr(E_of1, E_of2);
+  SymBool E_of1 = E_msb_1 & E_msb_2 & !E_msb_3;
+  SymBool E_of2 = !E_msb_1 & !E_msb_2 & E_msb_3;
+  return E_of1 | E_of2;
 }
 
 //A wrapper
@@ -270,14 +270,14 @@ bool isGp(SS_Id id)
   return all_state_info.second[id] == V_REGSIZE;
 }
 //Same as above. Useful for implicit writes.
-Expr UnmodifiedBitsPreserve(SS_Id id_dest, v_data d, unsigned int bitWidth)
+SymBool UnmodifiedBitsPreserve(SS_Id id_dest, v_data d, unsigned int bitWidth)
 {
   uint full_size = V_UNITSIZE*all_state_info.second[id_dest];
   if (bitWidth >= full_size)
     throw VALIDATOR_ERROR("error from validator assert");
-  Expr E_dest_post = vc_bvExtract(regExprWVN(id_dest,d.post_suffix, d.Vnprime, full_size), full_size -1, bitWidth);
-  Expr E_dest_pre = isGp(id_dest) && bitWidth==32 ? SymBitVector::constant(32, 0) : vc_bvExtract(regExprWVN(id_dest,d.pre_suffix, d.Vn, full_size), full_size -1, bitWidth);
-  return EqExpr(E_dest_post, E_dest_pre);
+  Expr E_dest_post = regExprWVN(id_dest, d.post_suffix, d.Vnprime, full_size)[full_size - 1][bitWidth];
+  Expr E_dest_pre = (isGp(id_dest) && bitWidth==32 ? SymBitVector::constant(32, 0) : regExprWVN(id_dest,d.pre_suffix, d.Vn, full_size)[full_size -1][bitWidth]);
+  return E_dest_post == E_dest_pre;
 }
 
 
