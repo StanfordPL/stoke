@@ -20,6 +20,7 @@
 #define _cvcl__include__c_interface_h_
 
 #include "src/ext/z3/include/z3++.h"
+#include "src/validator/error.h"
 
 #define _CVCL_DEFAULT_ARG(v) =v
 
@@ -27,23 +28,18 @@ extern "C" {
 
 #include <stdio.h>
 
-  typedef z3::context* VC;
-  typedef z3::expr Expr;
-  typedef z3::sort Type;
-  typedef z3::model WholeCounterExample;
 
-// o  : optimizations
-// c  : check counterexample
-// p  : print counterexample
-// h  : help
-// s  : stats
-// v  : print nodes
+typedef z3::context* VC;
+typedef z3::expr Expr;
+typedef int Type;
+
+
 
 // Basic types
-  Type vc_boolType(VC vc);
+Type vc_boolType(VC vc);
 
-//! Create an array type
-//Type vc_arrayType(VC vc, Type typeIndex, Type typeData);
+Type vc_bvType(VC vc, int no_bits);
+
 
 /////////////////////////////////////////////////////////////////////////////
 // Expr manipulation methods                                               //
@@ -84,7 +80,6 @@ extern "C" {
   /**************************/
   /* BIT VECTOR OPERATIONS  */
   /**************************/
-  Type vc_bvType(VC vc, int no_bits);
 
   Expr vc_bvConstExprFromInt(VC vc, int n_bits, unsigned int value);
   Expr vc_bvConstExprFromLL(VC vc, int n_bits, unsigned long long value);
