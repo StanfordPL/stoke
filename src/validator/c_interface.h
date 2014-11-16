@@ -19,26 +19,24 @@
 #ifndef _cvcl__include__c_interface_h_
 #define _cvcl__include__c_interface_h_
 
+#include "src/symstate/bitvector.h"
 #include "src/ext/z3/include/z3++.h"
 #include "src/validator/error.h"
-
-#define _CVCL_DEFAULT_ARG(v) =v
 
 extern "C" {
 
 #include <stdio.h>
 
 
-typedef z3::context* VC;
-typedef z3::expr Expr;
-typedef int Type;
+  typedef int Type;
+  typedef stoke::SymBitVector Expr;
 
 
 
 // Basic types
-Type vc_boolType(VC vc);
+  Type vc_boolType();
 
-Type vc_bvType(VC vc, int no_bits);
+  Type vc_bvType(int no_bits);
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -49,10 +47,8 @@ Type vc_bvType(VC vc, int no_bits);
   /*! The type cannot be a function type. The var name can contain
     only variables, numerals and underscore. If you use any other
     symbol, you will get a segfault. */
-  Expr vc_varExpr(VC vc, const char * name, Type type);
-
 //! Create an equality expression.  The two children must have the same type.
-  Expr vc_eqExpr(VC vc, Expr child0, Expr child1);
+  stoke::SymBool vc_eqExpr(Expr child0, Expr child1);
 
 // Boolean expressions
 
@@ -62,72 +58,60 @@ Type vc_bvType(VC vc, int no_bits);
 // conditional must always be Boolean, but the ifthenpart
 // (resp. elsepart) can be bit-vector or Boolean type. But, the
 // ifthenpart and elsepart must be both of the same type)
-  Expr vc_trueExpr(VC vc);
-  Expr vc_falseExpr(VC vc);
-  Expr vc_notExpr(VC vc, Expr child);
-  Expr vc_andExpr(VC vc, Expr left, Expr right);
-  Expr vc_orExpr(VC vc, Expr left, Expr right);
-  Expr vc_xorExpr(VC vc, Expr left, Expr right);
-  Expr vc_impliesExpr(VC vc, Expr hyp, Expr conc);
-  Expr vc_iffExpr(VC vc, Expr left, Expr right);
+  Expr vc_andExpr(Expr left, Expr right);
+  Expr vc_orExpr(Expr left, Expr right);
+  Expr vc_xorExpr(Expr left, Expr right);
+  stoke::SymBool vc_impliesExpr(stoke::SymBool hyp, stoke::SymBool conc);
+  stoke::SymBool vc_iffExpr(Expr left, Expr right);
 //The output type of vc_iteExpr can be Boolean (formula-level ite)
 //or bit-vector (word-level ite)
-  Expr vc_iteExpr(VC vc, Expr conditional, Expr ifthenpart, Expr elsepart);
+  Expr vc_iteExpr(stoke::SymBool conditional, Expr ifthenpart, Expr elsepart);
 
 //Boolean to single bit BV Expression
-  Expr vc_boolToBVExpr(VC vc, Expr form);
+  Expr vc_boolToBVExpr(stoke::SymBool from);
 
   /**************************/
   /* BIT VECTOR OPERATIONS  */
   /**************************/
 
-  Expr vc_bvConstExprFromInt(VC vc, int n_bits, unsigned int value);
-  Expr vc_bvConstExprFromLL(VC vc, int n_bits, unsigned long long value);
-  Expr vc_bv32ConstExprFromInt(VC vc, unsigned int value);
+  Expr vc_bvConstExprFromInt(int n_bits, unsigned int value);
+  Expr vc_bv32ConstExprFromInt(unsigned int value);
 
-  Expr vc_bvConcatExpr(VC vc, Expr left, Expr right);
-  Expr vc_bvPlusExpr(VC vc, int n_bits, Expr left, Expr right);
-  Expr vc_bvMinusExpr(VC vc, int n_bits, Expr left, Expr right);
-  Expr vc_bvMultExpr(VC vc, int n_bits, Expr left, Expr right);
-  Expr vc_bvDivExpr(VC vc, int n_bits, Expr left, Expr right);
-  Expr vc_bvModExpr(VC vc, int n_bits, Expr left, Expr right);
-  Expr vc_sbvDivExpr(VC vc, int n_bits, Expr left, Expr right);
-  Expr vc_sbvModExpr(VC vc, int n_bits, Expr left, Expr right);
+  Expr vc_bvPlusExpr(int n_bits, Expr left, Expr right);
+  Expr vc_bvMinusExpr(int n_bits, Expr left, Expr right);
+  Expr vc_bvMultExpr(int n_bits, Expr left, Expr right);
+  Expr vc_bvDivExpr(int n_bits, Expr left, Expr right);
+  Expr vc_bvModExpr(int n_bits, Expr left, Expr right);
+  Expr vc_sbvDivExpr(int n_bits, Expr left, Expr right);
+  Expr vc_sbvModExpr(int n_bits, Expr left, Expr right);
 
-  Expr vc_bvLtExpr(VC vc, Expr left, Expr right);
-  Expr vc_bvLeExpr(VC vc, Expr left, Expr right);
-  Expr vc_bvGtExpr(VC vc, Expr left, Expr right);
-  Expr vc_bvGeExpr(VC vc, Expr left, Expr right);
+  stoke::SymBool vc_bvLtExpr(Expr left, Expr right);
+  stoke::SymBool vc_bvLeExpr(Expr left, Expr right);
+  stoke::SymBool vc_bvGtExpr(Expr left, Expr right);
+  stoke::SymBool vc_bvGeExpr(Expr left, Expr right);
 
-  Expr vc_sbvLtExpr(VC vc, Expr left, Expr right);
-  Expr vc_sbvLeExpr(VC vc, Expr left, Expr right);
-  Expr vc_sbvGtExpr(VC vc, Expr left, Expr right);
-  Expr vc_sbvGeExpr(VC vc, Expr left, Expr right);
-
-  Expr vc_bvUMinusExpr(VC vc, Expr child);
+  Expr vc_bvUMinusExpr(Expr child);
 
 // bitwise operations: these are terms not formulas
-  Expr vc_bvAndExpr(VC vc, Expr left, Expr right);
-  Expr vc_bvOrExpr(VC vc, Expr left, Expr right);
-  Expr vc_bvXorExpr(VC vc, Expr left, Expr right);
-  Expr vc_bvNotExpr(VC vc, Expr child);
+  Expr vc_bvAndExpr(Expr left, Expr right);
+  Expr vc_bvOrExpr(Expr left, Expr right);
+  Expr vc_bvXorExpr(Expr left, Expr right);
+  Expr vc_bvNotExpr(Expr child);
 
 // Shift an expression by another expression. This is newstyle.
-  Expr vc_bvLeftShiftExprExpr(VC vc, int n_bits, Expr left, Expr right);
-  Expr vc_bvRightShiftExprExpr(VC vc, int n_bits,  Expr left, Expr right);
-  Expr vc_bvSignedRightShiftExprExpr(VC vc, int n_bits, Expr left, Expr right);
+  Expr vc_bvLeftShiftExprExpr(int n_bits, Expr left, Expr right);
+  Expr vc_bvRightShiftExprExpr(int n_bits,  Expr left, Expr right);
+  Expr vc_bvSignedRightShiftExprExpr(int n_bits, Expr left, Expr right);
 
-  Expr vc_bvExtract(VC vc, Expr child, int high_bit_no, int low_bit_no);
+  Expr vc_bvExtract(Expr child, int high_bit_no, int low_bit_no);
 
-  Expr vc_bvBoolExtract(VC vc, Expr x, int bit_no);
-  Expr vc_bvBoolExtract_Zero(VC vc, Expr x, int bit_no);
-  Expr vc_bvBoolExtract_One(VC vc, Expr x, int bit_no);
-  Expr vc_bvSignExtend(VC vc, Expr child, int nbits);
+  stoke::SymBool vc_bvBoolExtract(Expr x, int bit_no);
+  stoke::SymBool vc_bvBoolExtract_Zero(Expr x, int bit_no);
+  stoke::SymBool vc_bvBoolExtract_One(Expr x, int bit_no);
+  Expr vc_bvSignExtend(Expr child, int nbits);
 
 
 }
-
-#undef _CVCL_DEFAULT_ARG
 
 #endif
 

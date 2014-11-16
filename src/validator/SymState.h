@@ -176,7 +176,7 @@ public:
 };
 
 
-Ebb toEbb(VC& vc, const stoke::Cfg& f1, unsigned int blockid, std::string codenum);
+Ebb toEbb(const stoke::Cfg& f1, unsigned int blockid, std::string codenum);
 std::string TextInstructionWriter(const x64asm::Instruction& instr);
 
 //result = arg1*arg2 and multiplication is an uninterpreted function

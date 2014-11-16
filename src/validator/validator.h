@@ -18,8 +18,8 @@
 
 
 std::string idToStr(SS_Id, PAIR_INFO I=all_state_info);
-Expr regExpr(VC&, std::string, unsigned int size=V_UNITSIZE);
-Expr EqExpr(VC&, Expr, Expr);
+Expr regExpr(std::string, unsigned int size=V_UNITSIZE);
+Expr EqExpr(Expr, Expr);
 std::set<SS_Id> keys(std::map<SS_Id, unsigned int> dict);
 
 
@@ -97,8 +97,6 @@ private:
   /* Build a CpuState from the solver's model. */
   stoke::CpuState model_to_cpustate(std::string name_suffix);
 
-  /* Validity checker; needed for just about everything */
-  VC vc_;
   /* Time to spend running z3 */
   uint64_t timeout_;
   /* Used to keep track of register names, IDs and stuff */

@@ -11,20 +11,19 @@ using namespace stoke;
 using namespace x64asm;
 
 // These helpers can be found in helpers.cc, which is #included into handlers.cc
-Expr getBoolExpr(VC&vc, SS_Id id, std::string suffix, const VersionNumber& Vn);
-Expr regExprWVN(VC&vc, SS_Id id, std::string suffix, const VersionNumber& Vn, unsigned int size);
-Expr memAddr(VC& vc, Expr memExpr);
-Expr memVal(VC& vc, Expr memExpr);
-Expr memExprWVN(VC& vc, SS_Id memid, std::string suffix, unsigned int num);
+Expr getBoolExpr(SS_Id id, std::string suffix, const VersionNumber& Vn);
+Expr regExprWVN(SS_Id id, std::string suffix, const VersionNumber& Vn, unsigned int size);
+Expr memAddr(Expr memExpr);
+Expr memVal(Expr memExpr);
+Expr memExprWVN(SS_Id memid, std::string suffix, unsigned int num);
 SS_Id getOperandValue(uint64_t op);
-Expr setFlag(VC& vc,const VersionNumber& Vnprime,SS_Id flag, const Expr& e, std::vector<Expr>& constraints, std::string post_suffix);
+Expr setFlag(const VersionNumber& Vnprime,SS_Id flag, const Expr& e, std::vector<Expr>& constraints, std::string post_suffix);
 
 //To avoid passing 10 parameters to functions.
 class v_data
 {
 public:
   PAIR_INFO state_info;
-  VC& vc;
   VersionNumber& Vn;
   VersionNumber& Vnprime;
   Instruction& instr;
@@ -37,10 +36,9 @@ public:
   unsigned int instr_no;
   ~v_data() {}
 
-  v_data(PAIR_INFO state_info_, VC& vc_,  VersionNumber& Vn_,  VersionNumber& Vnprime_,  Instruction& instr_, unsigned int low, unsigned int high, std:: string pre_suffix_,
+  v_data(PAIR_INFO state_info_, VersionNumber& Vn_,  VersionNumber& Vnprime_,  Instruction& instr_, unsigned int low, unsigned int high, std:: string pre_suffix_,
          std:: string post_suffix_, std::vector<Expr>& constraints_,  std::set<SS_Id>& X_mod_, unsigned int instr_no_):
     state_info(state_info_),
-    vc( vc_),
     Vn (Vn_),
     Vnprime (Vnprime_),
     instr (instr_),
@@ -160,7 +158,7 @@ void xorpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_d
 void xorpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 
 //Convert an instruction to a constraint
-void instrnToConstraint(PAIR_INFO state_info,VC& vc,V_Node& n,
+void instrnToConstraint(PAIR_INFO state_info,V_Node& n,
                         VersionNumber& Vn, VersionNumber& Vnprime,
                         std::vector<Expr>& constraints, std::string code_num,unsigned int  instr_no, std::set<SS_Id> X_mod);
 
