@@ -348,3 +348,30 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
 
 }
 
+TEST(SandboxTest, LahfSahfOkay) {
+
+  x64asm::Code c;
+  std::stringstream ss;
+
+  // Here's the input program
+  ss << "xorq %rax, %rax" << std::endl;
+	ss << "lahf" << std::endl;
+	ss << "sahf" << std::endl;
+  ss << "retq" << std::endl;
+
+  ss >> c;
+
+  // Setup the sandbox
+  stoke::Sandbox sb;
+  stoke::CpuState tc;
+  stoke::StateGen sg(&sb);
+  sg.get(tc);
+
+	sb.insert_input(tc);
+
+  // Run it
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+
+
+}
