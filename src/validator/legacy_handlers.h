@@ -11,13 +11,13 @@ using namespace stoke;
 using namespace x64asm;
 
 // These helpers can be found in helpers.cc, which is #included into handlers.cc
-Expr getBoolExpr(SS_Id id, std::string suffix, const VersionNumber& Vn);
+SymBool getBoolExpr(SS_Id id, std::string suffix, const VersionNumber& Vn);
 Expr regExprWVN(SS_Id id, std::string suffix, const VersionNumber& Vn, unsigned int size);
 Expr memAddr(Expr memExpr);
 Expr memVal(Expr memExpr);
 Expr memExprWVN(SS_Id memid, std::string suffix, unsigned int num);
 SS_Id getOperandValue(uint64_t op);
-Expr setFlag(const VersionNumber& Vnprime,SS_Id flag, const Expr& e, std::vector<Expr>& constraints, std::string post_suffix);
+Expr setFlag(const VersionNumber& Vnprime,SS_Id flag, const Expr& e, std::vector<SymBool>& constraints, std::string post_suffix);
 
 //To avoid passing 10 parameters to functions.
 class v_data
@@ -31,13 +31,13 @@ public:
   unsigned int high;
   std:: string pre_suffix;
   std:: string post_suffix;
-  std::vector<Expr>& constraints;
+  std::vector<SymBool>& constraints;
   std::set<SS_Id>& X_mod;
   unsigned int instr_no;
   ~v_data() {}
 
   v_data(PAIR_INFO state_info_, VersionNumber& Vn_,  VersionNumber& Vnprime_,  Instruction& instr_, unsigned int low, unsigned int high, std:: string pre_suffix_,
-         std:: string post_suffix_, std::vector<Expr>& constraints_,  std::set<SS_Id>& X_mod_, unsigned int instr_no_):
+         std:: string post_suffix_, std::vector<SymBool>& constraints_,  std::set<SS_Id>& X_mod_, unsigned int instr_no_):
     state_info(state_info_),
     Vn (Vn_),
     Vnprime (Vnprime_),
