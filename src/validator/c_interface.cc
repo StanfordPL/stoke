@@ -4,10 +4,16 @@
 using namespace std;
 using namespace z3;
 
+
 // Basic types
-Type vc_boolType(VC vc) {
-  return vc->bool_sort();
+Type vc_boolType(VC vc) { return 0; }
+
+Type vc_bvType(VC vc, int no_bits) { 
+  if(no_bits == 0)
+    throw VALIDATOR_ERROR("vc_bvType called with no_bits = 0");
+  return no_bits; 
 }
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -19,7 +25,13 @@ Type vc_boolType(VC vc) {
   only variables, numerals and underscore. If you use any other
   symbol, you will get a segfault. */
 Expr vc_varExpr(VC vc, const char * name, Type type) {
-  return vc->constant(name,type);
+  if (!type) {
+    auto t = vc->bool_sort();
+    return vc->constant(name, t);
+  } else {
+    auto t = vc->bv_sort(type);
+    return vc->constant(name, t);
+  }
 }
 
 //! Create an equality expression.  The two children must have the same type.
@@ -74,11 +86,6 @@ Expr vc_boolToBVExpr(VC vc, Expr form) {
 /**************************/
 /* BIT VECTOR OPERATIONS  */
 /**************************/
-Type vc_bvType(VC vc, int no_bits) {
-  if(no_bits == 0)
-    throw VALIDATOR_ERROR("vc_bvType called with no_bits = 0");
-  return vc->bv_sort(no_bits);
-}
 Expr vc_bvConstExprFromInt(VC vc, int n_bits, unsigned int value) {
   if(n_bits == 0)
     throw VALIDATOR_ERROR("vc_bcConstExprFromInt called with n_bits = 0");
