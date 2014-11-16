@@ -421,8 +421,8 @@ Expr getFinalConstraint(const set<SS_Id>& state_elems, const VersionNumber& Vn, 
       break;
     case V_FLAGSIZE:
       E_flag = vc_iffExpr(
-                          SymBool::var(id_str+"_"+code_num+"_"+to_string(Vn.get(temp))),
-                          SymBool::var(id_str+"_"+code_num+"_"+V_FSTATE));
+                 SymBool::var(id_str+"_"+code_num+"_"+to_string(Vn.get(temp))),
+                 SymBool::var(id_str+"_"+code_num+"_"+V_FSTATE));
       retval = retval & E_flag;
       break;
     case V_XMMSIZE:
