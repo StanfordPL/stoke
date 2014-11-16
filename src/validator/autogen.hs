@@ -1188,7 +1188,11 @@ filimm ((w,x,y):xs) z = (w,x,y): (filimm xs (max (read w) z))
 filimm [] z = []
 
 getmem :: [(String,String,String)] -> Int -> String
-getmem _ _ = ""
+getmem ((w,"M","R"):xs) i= ( "\n  SymBitVector E_src1=SymBitVector::constant(32, 0);\n")
+getmem ((w,"M","W"):xs) i= ( "\n  SymBitVector E_dest=SymBitVector::constant(32, 0);\n")
+getmem ((w,"M","X"):xs) i= ( "\n  SymBitVector E_src1=SymBitVector::constant(32, 0);\n  SymBitVector E_dest=SymBitVector::constant(0,0);\n")
+getmem ((w,x,y):xs) i = getmem xs (i+1)
+getmem [] _ = ""
 
 
 -- Generates a switch statement showing if an opcode is suppported
@@ -1208,8 +1212,8 @@ supported_switch is = foldl1 (++) (map instr_switch is)
 -- Generates a switch statement based on opcode enum
 validator_switch :: [Instr] -> [String] -> String
 validator_switch is regs = concat $ map (render regs) (tail is)
-    where render regs i= "case " ++ (to_enum i) ++ ":\n\t" ++ (getmem (myoperands i) 0) ++ (att i)
-                                 ++ (concat (operand_types i)) ++"Handler(d, " ++  (args i) ++ ");\n\tbreak;\n"
+    where render regs i= "case " ++ (to_enum i) ++ ": {\n\t" ++ (getmem (myoperands i) 0) ++ (att i)
+                                 ++ (concat (operand_types i)) ++"Handler(d, " ++  (args i) ++ ");\n\tbreak;\n}\n\n"
 	  args i = concat $ intersperse "," $ ((if (null (operand_widths i)) 
                                           then ("0,0") 
                                           else (if(null (tail (operand_widths i))) 
