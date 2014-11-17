@@ -1081,7 +1081,7 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
 
   //cout << E_dest << E_src <<  endl << bitWidth << endl ;
 
-  auto E_result = (SymBitVector::constant(1, 0) || E_src) + 
+  auto E_result = (SymBitVector::constant(1, 0) || E_src) +
                   (SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 1));
 
   SymBool retval = E_dest == (E_result)[bitWidth - 1][0];
