@@ -127,6 +127,11 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorExtract * const bv) {
   return z3::expr(context_, Z3_mk_extract(context_, bv->high_bit_, bv->low_bit_, (*this)(bv->bv_)));
 }
 
+/** Visit an uninterpreted function */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorFunction * const bv) {
+  return z3::expr(context_, context_.bv_val((long long unsigned int)0, 32));
+}
+
 /** Visit a bit-vector if-then-else */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorIte * const bv) {
   return z3::expr(context_, Z3_mk_ite(context_, (*this)(bv->cond_), (*this)(bv->a_), (*this)(bv->b_)));
