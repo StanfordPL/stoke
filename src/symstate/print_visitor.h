@@ -69,7 +69,6 @@ public:
 
   void visit_compare(const SymBoolCompare * const b) {
 
-    std::cout << "Visiting compare of type " << b->type() << std::endl;
     switch(b->type()) {
     case SymBool::EQ:
       os_ << "(== ";
@@ -114,7 +113,7 @@ public:
   /** Visit a bit-vector extract */
   void visit(const SymBitVectorExtract * const bv) {
     (*this)(bv->bv_);
-    os_ << "[" << bv->high_bit_ << ":" << bv->low_bit_ << "]";
+    os_ << "[" << std::dec << bv->high_bit_ << ":" << bv->low_bit_ << "]";
   }
 
   /** Visit a bit-vector if-then-else */

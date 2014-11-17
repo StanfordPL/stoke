@@ -37,7 +37,9 @@ public:
     else {
       std::stringstream e;
       SymPrintVisitor pv(e);
-      e << "In binop: "; pv(bv); e << " the LHS has width " << lhs
+      e << "In binop: ";
+      pv(bv);
+      e << " the LHS has width " << lhs
         << " but RHS has width " << rhs;
       set_error(e);
       return 0;
@@ -54,7 +56,9 @@ public:
     else {
       std::stringstream e;
       SymPrintVisitor pv(e);
-      e << "In compare: "; pv(b); e << " the LHS has width " << lhs
+      e << "In compare: ";
+      pv(b);
+      e << " the LHS has width " << lhs
         << " but RHS has width " << rhs;
       set_error(e);
       return 0;
@@ -73,7 +77,8 @@ public:
     else {
       std::stringstream e;
       SymPrintVisitor pv(e);
-      e << "In concatenation: "; pv(bv);
+      e << "In concatenation: ";
+      pv(bv);
       if(!lhs)
         e << " the left hand side didn't typecheck";
       else if (!rhs)
@@ -104,7 +109,9 @@ public:
     if(bv->low_bit_ > bv->high_bit_) {
       std::stringstream e;
       SymPrintVisitor pv(e);
-      e << "In bitvector extract "; pv(bv); e << " the low index " << bv->low_bit_ 
+      e << "In bitvector extract ";
+      pv(bv);
+      e << " the low index " << bv->low_bit_
         << " is greater than high index " << bv->high_bit_;
       set_error(e);
       return 0;
@@ -112,7 +119,9 @@ public:
     if(bv->high_bit_ >= parent) {
       std::stringstream e;
       SymPrintVisitor pv(e);
-      e << "In bitvector extract "; pv(bv); e << " the high index " << bv->high_bit_
+      e << "In bitvector extract ";
+      pv(bv);
+      e << " the high index " << bv->high_bit_
         << " is greater than width of parent, namely " << parent;
       set_error(e);
       return 0;
@@ -131,7 +140,9 @@ public:
     else {
       std::stringstream e;
       SymPrintVisitor pv(e);
-      e << "In ite: "; pv(bv); e << " the true branch has width " << lhs
+      e << "In ite: ";
+      pv(bv);
+      e << " the true branch has width " << lhs
         << " but the false branch has width " << rhs;
       set_error(e);
       return 0;
@@ -147,23 +158,32 @@ public:
   uint16_t visit(const SymBitVectorSignExtend * const bv) {
     auto child = (*this)(bv->bv_);
 
-    if (child < bv->size_ && child > 0 && bv->size_ > 0)
+    if (child <= bv->size_ && child > 0 && bv->size_ > 0)
       return bv->size_;
     else if (bv->size_ == 0) {
       std::stringstream e;
       SymPrintVisitor pv(e);
-      e << "In sign-extend: "; pv(bv); e << " the extension is to length 0";
+      e << "In sign-extend: ";
+      pv(bv);
+      e << " the extension is to length 0";
+      set_error(e);
       return 0;
-    } else if (child >= bv->size_) {
+    } else if (child > bv->size_) {
       std::stringstream e;
       SymPrintVisitor pv(e);
-      e << "In sign-extend: "; pv(bv); e << " the vector has width " << child
+      e << "In sign-extend: ";
+      pv(bv);
+      e << " the vector has width " << child
         << " and cannot be extended to " << bv->size_;
+      set_error(e);
       return 0;
     } else {
       std::stringstream e;
       SymPrintVisitor pv(e);
-      e << "In sign-extend: "; pv(bv); e << " the vector could not be typechecked.";
+      e << "In sign-extend: ";
+      pv(bv);
+      e << " the vector could not be typechecked.";
+      set_error(e);
       return 0;
     }
   }

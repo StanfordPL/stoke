@@ -232,7 +232,7 @@ class SymBitVectorConstant : public SymBitVectorAbstract {
 
 private:
   SymBitVectorConstant(uint16_t size, uint64_t constant)
-    : constant_(constant & ((1 << size) - 1)), size_(size) {
+    : constant_(constant), size_(size) {
   }
 
 public:
