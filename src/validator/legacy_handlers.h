@@ -17,7 +17,7 @@ Expr memAddr(Expr memExpr);
 Expr memVal(Expr memExpr);
 Expr memExprWVN(SS_Id memid, std::string suffix, unsigned int num);
 SS_Id getOperandValue(uint64_t op);
-Expr setFlag(const VersionNumber& Vnprime,SS_Id flag, const Expr& e, std::vector<SymBool>& constraints, std::string post_suffix);
+SymBool setFlag(const VersionNumber& Vnprime, SS_Id flag, const SymBool& e, std::vector<SymBool>& constraints, std::string post_suffix);
 
 //To avoid passing 10 parameters to functions.
 class v_data
@@ -130,7 +130,6 @@ void sahfHandler(v_data d);
 void sarHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_dest, Expr E_src1, bool dest_is_reg);
 void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_shamt, bool dest_is_reg);
 void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg);
-void setHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr pred, bool dest_is_reg);
 void setccHandler(v_data d, std::string cc, Expr E_dest, bool dest_is_reg);
 void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_dest, Expr E_src1, bool dest_is_reg);;
 void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bool dest_is_reg);
@@ -160,6 +159,6 @@ void xorpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 //Convert an instruction to a constraint
 void instrnToConstraint(PAIR_INFO state_info,V_Node& n,
                         VersionNumber& Vn, VersionNumber& Vnprime,
-                        std::vector<Expr>& constraints, std::string code_num,unsigned int  instr_no, std::set<SS_Id> X_mod);
+                        std::vector<SymBool>& constraints, std::string code_num,unsigned int  instr_no, std::set<SS_Id> X_mod);
 
 #endif

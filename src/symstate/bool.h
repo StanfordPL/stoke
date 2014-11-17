@@ -31,6 +31,8 @@ class SymBoolXor;
 class SymBoolZ3;
 
 class SymBool {
+  friend class SymBitVector;
+
 public:
 
   enum Type {
@@ -83,6 +85,10 @@ public:
   /** The pointer to the underlying object */
   const SymBoolAbstract * ptr;
 
+  /** Construct a SymBool pointing to nothing */
+  SymBool() : ptr(NULL) {}
+
+private:
   /** Construct a SymBool from a pointer to an underlying object */
   SymBool(const SymBoolAbstract * const ptr_) : ptr(ptr_) {}
 

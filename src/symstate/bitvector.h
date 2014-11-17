@@ -37,6 +37,8 @@ class SymBitVectorZ3;
 
 
 class SymBitVector {
+  friend class SymBool;
+
 public:
 
   enum Type {
@@ -146,9 +148,11 @@ public:
     SymBool operator &(const SymBool& other) const {
       return (SymBool)(*this) & other;
     }
-
     SymBool operator |(const SymBool& other) const {
       return (SymBool)(*this) | other;
+    }
+    SymBool operator ^(const SymBool& other) const {
+      return (SymBool)(*this) ^ other;
     }
 
   private:
@@ -166,6 +170,10 @@ public:
   /* Accesses the underlying object */
   const SymBitVectorAbstract * ptr;
 
+  /* Constructs a SymBitVector that doesn't point to anything */
+  SymBitVector() : ptr(NULL) {}
+
+private:
   /* Constructs a new SymBitVector from a pointer to the AST hierarchy */
   SymBitVector(const SymBitVectorAbstract * ptr_) : ptr(ptr_) {}
 
