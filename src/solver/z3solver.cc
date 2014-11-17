@@ -36,6 +36,10 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     }
 
     auto constraint = ec(it);
+    if(ec.has_error()) {
+      error_ = ec.error();
+      return false;
+    }
     s.add(constraint);
   }
 
@@ -125,6 +129,52 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorConstant * const bv) {
 /** Visit a bit-vector extract */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorExtract * const bv) {
   return z3::expr(context_, Z3_mk_extract(context_, bv->high_bit_, bv->low_bit_, (*this)(bv->bv_)));
+}
+
+/** Visit an uninterpreted function */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorFunction * const bv) {
+
+  auto f = bv->f_;
+  auto args = f.args;
+  auto ret = f.return_type;
+  char const * name = f.name.c_str();
+
+  // get z3 representation of the argument/return types
+  vector<z3::sort> sorts;
+  for(uint16_t it : args) {
+    sorts.push_back(context_.bv_sort(it));
+  }
+
+  z3::sort ret_sort = context_.bv_sort(ret);
+
+  // create z3 function declaration
+  switch(sorts.size()) {
+  case 0:
+    error_ = "Function " + f.name + " has no arguments: " + to_string(sorts.size());
+    assert(false);
+    break;
+
+  case 1:
+    return z3::function(name, sorts[0], ret_sort)(
+             (*this)(bv->args_[0]));
+    break;
+
+  case 2:
+    return z3::function(name, sorts[0], sorts[1], ret_sort)(
+             (*this)(bv->args_[0]), (*this)(bv->args_[1]));
+    break;
+
+  case 3:
+    return z3::function(name, sorts[0], sorts[1], sorts[2], ret_sort)(
+             (*this)(bv->args_[0]), (*this)(bv->args_[1]), (*this)(bv->args_[2]));
+    break;
+
+  default:
+    error_ = "Function " + f.name + " has too many arguments: " + to_string(sorts.size());
+    assert(false);
+    break;
+  }
+
 }
 
 /** Visit a bit-vector if-then-else */

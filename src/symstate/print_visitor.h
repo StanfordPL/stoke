@@ -116,6 +116,19 @@ public:
     os_ << "[" << std::dec << bv->high_bit_ << ":" << bv->low_bit_ << "]";
   }
 
+  /** Visit a bit-vector function */
+  void visit(const SymBitVectorFunction * const bv) {
+    os_ << bv->f_.name << "(";
+
+    for(size_t i = 0; i < bv->args_.size(); ++i) {
+      (*this)(bv->args_[i]);
+      if (i != bv->args_.size() - 1)
+        os_ << ", ";
+    }
+
+    os_ << ")";
+  }
+
   /** Visit a bit-vector if-then-else */
   void visit(const SymBitVectorIte * const bv) {
     os_ << "(if ";
