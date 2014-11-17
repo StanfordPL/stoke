@@ -9,19 +9,15 @@ TEST(Z3SolverTest, TautologyIsSat) {
 
   auto lhs = (x | y) & z;
   EXPECT_EQ(stoke::SymBitVector::AND, lhs.type());
-  EXPECT_EQ(stoke::SymBitVector::OR, lhs.a_.type());
-  EXPECT_EQ(stoke::SymBitVector::VAR, lhs.b_.type());
 
   auto rhs = (x & z) | (y & z);
   EXPECT_EQ(stoke::SymBitVector::OR, rhs.type());
-  EXPECT_EQ(stoke::SymBitVector::AND, rhs.a_.type());
-  EXPECT_EQ(stoke::SymBitVector::AND, rhs.b_.type());
 
   auto eq = lhs == rhs;
   EXPECT_EQ(stoke::SymBool::EQ, eq.type());
 
-  auto constraints = std::vector<stoke::SymBool*>();
-  constraints.push_back(&eq);
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(eq);
 
   stoke::Z3Solver z3;
   EXPECT_TRUE(z3.is_sat(constraints));
@@ -40,8 +36,8 @@ TEST(Z3SolverTest, FalsehoodIsUnSat) {
   auto rhs = (x & z) | (y & z);
   auto eq = lhs != rhs;
 
-  auto constraints = std::vector<stoke::SymBool*>();
-  constraints.push_back(&eq);
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(eq);
 
   stoke::Z3Solver z3;
   EXPECT_FALSE(z3.is_sat(constraints));
@@ -59,8 +55,8 @@ TEST(Z3SolverTest, ImpliesWorksUnsat) {
 
   auto neq = lhs != rhs;
 
-  auto constraints = std::vector<stoke::SymBool*>();
-  constraints.push_back(&neq);
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(neq);
 
   stoke::Z3Solver z3;
   EXPECT_FALSE(z3.is_sat(constraints));
@@ -78,8 +74,8 @@ TEST(Z3SolverTest, ImpliesWorksSat) {
 
   auto eq = lhs == rhs;
 
-  auto constraints = std::vector<stoke::SymBool*>();
-  constraints.push_back(&eq);
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(eq);
 
   stoke::Z3Solver z3;
   EXPECT_TRUE(z3.is_sat(constraints));
@@ -92,8 +88,8 @@ TEST(Z3SolverTest, ConcatTautology) {
   auto x = stoke::SymBitVector::var(32, "x");
   auto eq = (x[31][16] || x[15][0]) != x;
 
-  auto constraints = std::vector<stoke::SymBool*>();
-  constraints.push_back(&eq);
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(eq);
 
   stoke::Z3Solver z3;
   EXPECT_FALSE(z3.is_sat(constraints));
@@ -107,9 +103,9 @@ TEST(Z3SolverTest, ConcatTautology2) {
   auto eq1 = (zeros || x[15][0]) != x;
   auto eq2 = x[31][16] == zeros;
 
-  auto constraints = std::vector<stoke::SymBool*>();
-  constraints.push_back(&eq1);
-  constraints.push_back(&eq2);
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(eq1);
+  constraints.push_back(eq2);
 
   stoke::Z3Solver z3;
   EXPECT_FALSE(z3.is_sat(constraints));
@@ -134,10 +130,10 @@ TEST(Z3SolverTest, MulModTest) {
   auto zero_x = x[7][3] == stoke::SymBitVector::constant(5,0);
   auto zero_y = y[7][3] == stoke::SymBitVector::constant(5,0);
 
-  auto constraints = std::vector<stoke::SymBool*>();
-  constraints.push_back(&eq);
-  constraints.push_back(&zero_x);
-  constraints.push_back(&zero_y);
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(eq);
+  constraints.push_back(zero_x);
+  constraints.push_back(zero_y);
 
   stoke::Z3Solver z3;
   EXPECT_FALSE(z3.is_sat(constraints));

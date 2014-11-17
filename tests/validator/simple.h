@@ -323,60 +323,60 @@ TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
 
     for(size_t j = 0; j < i.arity(); j++) {
       switch(i.type(j)) {
-        case x64asm::Type::IMM_8:
-          i.set_operand(j, x64asm::Imm8(0));
-          break;
-        case x64asm::Type::IMM_16:
-          i.set_operand(j, x64asm::Imm16(0));
-          break;
-        case x64asm::Type::IMM_32:
-          i.set_operand(j, x64asm::Imm32(0));
-          break;
-        case x64asm::Type::IMM_64:
-          i.set_operand(j, x64asm::Imm64(0));
-          break;
+      case x64asm::Type::IMM_8:
+        i.set_operand(j, x64asm::Imm8(0));
+        break;
+      case x64asm::Type::IMM_16:
+        i.set_operand(j, x64asm::Imm16(0));
+        break;
+      case x64asm::Type::IMM_32:
+        i.set_operand(j, x64asm::Imm32(0));
+        break;
+      case x64asm::Type::IMM_64:
+        i.set_operand(j, x64asm::Imm64(0));
+        break;
 
-        case x64asm::Type::R_64:
-          i.set_operand(j, x64asm::rdx);
-          break;
-        case x64asm::Type::R_32:
-          i.set_operand(j, x64asm::edx);
-          break;
-        case x64asm::Type::R_16:
-          i.set_operand(j, x64asm::cx);
-          break;
-        case x64asm::Type::RB:
-          i.set_operand(j, x64asm::bpl);
-          break;
-        case x64asm::Type::RL:
-          i.set_operand(j, x64asm::dl);
-          break;
+      case x64asm::Type::R_64:
+        i.set_operand(j, x64asm::rdx);
+        break;
+      case x64asm::Type::R_32:
+        i.set_operand(j, x64asm::edx);
+        break;
+      case x64asm::Type::R_16:
+        i.set_operand(j, x64asm::cx);
+        break;
+      case x64asm::Type::RB:
+        i.set_operand(j, x64asm::bpl);
+        break;
+      case x64asm::Type::RL:
+        i.set_operand(j, x64asm::dl);
+        break;
 
-        case x64asm::Type::XMM:
-          i.set_operand(j, x64asm::xmm0);
-          break;
+      case x64asm::Type::XMM:
+        i.set_operand(j, x64asm::xmm0);
+        break;
 
-        // no support for YMM yet
-        case x64asm::Type::YMM:
-          i.set_operand(j, x64asm::ymm0);
-          insert = false;
-          break;
+      // no support for YMM yet
+      case x64asm::Type::YMM:
+        i.set_operand(j, x64asm::ymm0);
+        insert = false;
+        break;
 
-        case x64asm::Type::ZERO:
-        case x64asm::Type::ONE:
-        case x64asm::Type::THREE:
-        case x64asm::Type::AL:
-        case x64asm::Type::CL:
-        case x64asm::Type::AX:
-        case x64asm::Type::DX:
-        case x64asm::Type::EAX:
-        case x64asm::Type::RAX:
-        case x64asm::Type::XMM_0:
-        default:
-          //we don't handle these
-          //memory, labels, ah-dh, mms, sts, etc.
-          insert = false;
-          continue;
+      case x64asm::Type::ZERO:
+      case x64asm::Type::ONE:
+      case x64asm::Type::THREE:
+      case x64asm::Type::AL:
+      case x64asm::Type::CL:
+      case x64asm::Type::AX:
+      case x64asm::Type::DX:
+      case x64asm::Type::EAX:
+      case x64asm::Type::RAX:
+      case x64asm::Type::XMM_0:
+      default:
+        //we don't handle these
+        //memory, labels, ah-dh, mms, sts, etc.
+        insert = false;
+        continue;
       }
     }
 
@@ -385,7 +385,7 @@ TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
   }
 
 
-  // Setup the validator with 50ms timeout. 
+  // Setup the validator with 50ms timeout.
   set_timeout(50);
 
   int instructions_checked = 0;

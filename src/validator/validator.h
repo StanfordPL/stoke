@@ -18,113 +18,110 @@
 
 
 std::string idToStr(SS_Id, PAIR_INFO I=all_state_info);
-Expr regExpr(VC&, std::string, unsigned int size=V_UNITSIZE);
-Expr EqExpr(VC&, Expr, Expr);  
-std::set<SS_Id> keys(std::map<SS_Id, unsigned int> dict);  
+Expr regExpr(std::string, unsigned int size=V_UNITSIZE);
+std::set<SS_Id> keys(std::map<SS_Id, unsigned int> dict);
 
 
-  
+
 namespace stoke {
 
 class Validator {
-	public:
+public:
 
-    Validator(SMTSolver& solver) : solver_(solver) {
-      has_error_ = false;
-    }
+  Validator(SMTSolver& solver) : solver_(solver) {
+    has_error_ = false;
+  }
 
-    /* Evalue if the target and rewrite are the same */
-	  bool validate(const Cfg& target, const Cfg& rewrite, 
-	                CpuState& counter_example);
+  /* Evalue if the target and rewrite are the same */
+  bool validate(const Cfg& target, const Cfg& rewrite,
+                CpuState& counter_example);
 
-    /* Check for an error in the last operation */
-    bool has_error() {
-      return has_error_;
-    }
-    /* Get the error message, and optionally metadata */
-    std::string get_error(size_t* line_no = NULL, std::string* file = NULL) {
-      if(!has_error_)
-        return "";
+  /* Check for an error in the last operation */
+  bool has_error() {
+    return has_error_;
+  }
+  /* Get the error message, and optionally metadata */
+  std::string get_error(size_t* line_no = NULL, std::string* file = NULL) {
+    if(!has_error_)
+      return "";
 
-      if(line_no)
-        *line_no = error_line_;
-      if(file)
-        *file = error_file_;
-      return error_message_;
-    }
+    if(line_no)
+      *line_no = error_line_;
+    if(file)
+      *file = error_file_;
+    return error_message_;
+  }
 
-    /* Set if the code being validated writes memory. */
-    Validator& set_mem_out(bool b) {
-      mem_out_ = b;
-      return *this;
-    }
-    /* @Deprecated.  Set the timeout on the solver instead. 
-       Set the amount of time the validator runs before giving up. */
-    Validator& set_timeout(uint64_t time) {
-      timeout_ = time;
-      return *this;
-    }
+  /* Set if the code being validated writes memory. */
+  Validator& set_mem_out(bool b) {
+    mem_out_ = b;
+    return *this;
+  }
+  /* @Deprecated.  Set the timeout on the solver instead.
+     Set the amount of time the validator runs before giving up. */
+  Validator& set_timeout(uint64_t time) {
+    timeout_ = time;
+    return *this;
+  }
 
-    /* Returns whether the last counterexample made sense */
-    bool is_counterexample_valid() {
-      return counterexample_valid_;
-    }
-    /* Gets the counterexample */
-    CpuState get_counterexample() {
-      return counterexample_;
-    }
-    /* Gets the target's final state in counterexample. */
-    CpuState get_target_final_state() {
-      return target_final_state_;
-    }
-    /* Gets the rewrite's final state in counterexample. */
-    CpuState get_rewrite_final_state() {
-      return rewrite_final_state_;
-    }
+  /* Returns whether the last counterexample made sense */
+  bool is_counterexample_valid() {
+    return counterexample_valid_;
+  }
+  /* Gets the counterexample */
+  CpuState get_counterexample() {
+    return counterexample_;
+  }
+  /* Gets the target's final state in counterexample. */
+  CpuState get_target_final_state() {
+    return target_final_state_;
+  }
+  /* Gets the rewrite's final state in counterexample. */
+  CpuState get_rewrite_final_state() {
+    return rewrite_final_state_;
+  }
 
-    /* Returns whether this instruction is supported */
-    static bool is_supported(x64asm::Instruction i);
-    /* Returns whether this opcode is supported*/
-    static bool is_supported(x64asm::Opcode o);
+  /* Returns whether this instruction is supported */
+  static bool is_supported(x64asm::Instruction i);
+  /* Returns whether this opcode is supported*/
+  static bool is_supported(x64asm::Opcode o);
 
-    /** @todo Need a data structure for abductions if we ever write this. */
-    std::ostream& print_abduction(std::ostream& os);
+  /** @todo Need a data structure for abductions if we ever write this. */
+  std::ostream& print_abduction(std::ostream& os);
 
-  private:
+private:
 
-    std::vector<Expr> generate_constraints(const stoke::Cfg&, const stoke::Cfg&, std::vector<Expr>&);
+  std::vector<SymBool> generate_constraints(const stoke::Cfg&, const stoke::Cfg&, std::vector<SymBool>&);
 
-    /* Build a CpuState from the solver's model. */
-    stoke::CpuState model_to_cpustate(std::string name_suffix);
+  /* Build a CpuState from the solver's model. */
+  stoke::CpuState model_to_cpustate(std::string name_suffix);
 
-    /* Validity checker; needed for just about everything */
-    VC vc_;
-    /* Time to spend running z3 */
-    uint64_t timeout_;
-    /* Used to keep track of register names, IDs and stuff */
-    std::pair<Bijection<std::string>,std::map<SS_Id, unsigned int> > state_info_;
-    /* Will the code write memory? */
-    bool mem_out_;
-    /* SMT Solver to use */
-    SMTSolver& solver_;
+  /* Time to spend running z3 */
+  uint64_t timeout_;
+  /* Used to keep track of register names, IDs and stuff */
+  std::pair<Bijection<std::string>,std::map<SS_Id, unsigned int> > state_info_;
+  /* Will the code write memory? */
+  bool mem_out_;
+  /* SMT Solver to use */
+  SMTSolver& solver_;
 
-    /* Was the last counterexample sensible? */
-    bool counterexample_valid_;
-    /* The counterexample */
-    CpuState counterexample_;
-    /* If a counterexample existed, what was final state of target? */
-    CpuState target_final_state_;
-    /* If a counterexample existed, what was final state of rewrite? */
-    CpuState rewrite_final_state_;
+  /* Was the last counterexample sensible? */
+  bool counterexample_valid_;
+  /* The counterexample */
+  CpuState counterexample_;
+  /* If a counterexample existed, what was final state of target? */
+  CpuState target_final_state_;
+  /* If a counterexample existed, what was final state of rewrite? */
+  CpuState rewrite_final_state_;
 
-    /* Was an error encountered? */
-    bool has_error_;
-    /* What was the message? */
-    std::string error_message_;
-    /* File where error occurred */
-    std::string error_file_;
-    /* Line where error occurred */
-    size_t error_line_;
+  /* Was an error encountered? */
+  bool has_error_;
+  /* What was the message? */
+  std::string error_message_;
+  /* File where error occurred */
+  std::string error_file_;
+  /* Line where error occurred */
+  size_t error_line_;
 };
 
 

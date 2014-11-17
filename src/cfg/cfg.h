@@ -30,7 +30,7 @@
 namespace stoke {
 
 class Cfg {
- public:
+public:
   /** Basic block id type. */
   typedef size_t id_type;
   /** Location type; block and index within block. */
@@ -84,8 +84,8 @@ class Cfg {
     recompute_nesting_depth();
   }
   /** Recomputes the defined-in relation for instructions; modifying an instruction will invalidate
-    this relation, calling this method will restore it. Undefined if graph structure is not up to 
-		date. */
+    this relation, calling this method will restore it. Undefined if graph structure is not up to
+    date. */
   void recompute_defs() {
     if (!is_loop_free()) {
       recompute_defs_loops();
@@ -257,10 +257,10 @@ class Cfg {
     return nesting_depth_[id];
   }
 
-	/** Returns the number of reachable blocks in this graph. */
-	size_t num_reachable() const {
-		return work_list_.size();
-	}
+  /** Returns the number of reachable blocks in this graph. */
+  size_t num_reachable() const {
+    return work_list_.size();
+  }
   /** Returns an iterator that points to the beginning of this graph's reachable block list. */
   reachable_iterator reachable_begin() const {
     return reachable_.set_bit_index_begin();
@@ -292,11 +292,11 @@ class Cfg {
     assert(is_reachable(loc.first));
     return def_ins_[get_index(loc)];
   }
-	/** Returns the set of registers that are defined on exit from this graph. */
-	x64asm::RegSet def_outs() const {
-		// Careful... this structure is organized by instruction index. The exit block is a special case.
-		return def_ins_.back();
-	}
+  /** Returns the set of registers that are defined on exit from this graph. */
+  x64asm::RegSet def_outs() const {
+    // Careful... this structure is organized by instruction index. The exit block is a special case.
+    return def_ins_.back();
+  }
   /** Returns the set of registers that are live-out on exit to an instruction; undefined for unrachable
     blocks */
   x64asm::RegSet live_outs(const loc_type& loc) const {
@@ -322,7 +322,7 @@ class Cfg {
   /** Returns true if an instruction performs a read from a register with an undefined value. */
   bool performs_undef_read() const;
 
- private:
+private:
   /** User-specified underlying code. */
   x64asm::Code code_;
   /** User-specified registers that are defined on entry to this graph. */
@@ -330,14 +330,14 @@ class Cfg {
   /** User-specified registers that are defined on exit from this graph. */
   x64asm::RegSet fxn_live_outs_;
 
-	// This temporary state is maintained to reduce the overhead of repeated allocations
+  // This temporary state is maintained to reduce the overhead of repeated allocations
 
   /** A set of indices that correspond to the beginning of basic blocks. */
   cpputil::BitVector boundaries_;
   /** A stack of basic block ids. */
   std::stack<size_t, std::vector<size_t>> block_stack_;
   /** A list of remaining predecessors for each block. */
-	std::vector<size_t> remaining_preds_;
+  std::vector<size_t> remaining_preds_;
   /** A sorted list of basic block ids. */
   std::vector<size_t> block_sort_;
   /** A map from labels to the basic blocks they mark the beginning of. */
@@ -351,8 +351,8 @@ class Cfg {
   std::vector<std::vector<id_type>> succs_;
   /** The set of reachable basic blocks. */
   cpputil::BitVector reachable_;
-	/** Scratch space for computing reachability. */
-	std::vector<id_type> work_list_;
+  /** Scratch space for computing reachability. */
+  std::vector<id_type> work_list_;
   /** The dominated by relation. */
   std::vector<cpputil::BitVector> doms_;
   /** A map from back edges to the set of basic blocks in the corresponding natural loop. */

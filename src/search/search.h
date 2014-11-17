@@ -30,61 +30,61 @@
 namespace stoke {
 
 class Search {
- public:
-	/** Create a new search from a transform helper. */
+public:
+  /** Create a new search from a transform helper. */
   Search(Transforms* transforms);
 
-	/** Set the random search seed. */
+  /** Set the random search seed. */
   Search& set_seed(std::default_random_engine::result_type seed) {
     gen_.seed(seed);
     return *this;
   }
-	/** Set the maximum number of instructions. */
-	Search& set_max_instrs(size_t mi) {
-		max_instrs_ = mi;
-		return *this;
-	}
-	/** Set the maximum number of proposals to perform before giving up. */
+  /** Set the maximum number of instructions. */
+  Search& set_max_instrs(size_t mi) {
+    max_instrs_ = mi;
+    return *this;
+  }
+  /** Set the maximum number of proposals to perform before giving up. */
   Search& set_timeout_itr(size_t timeout) {
     timeout_itr_ = timeout;
     return *this;
   }
-	/** Set the maximum number of seconds to run for before giving up. */
-	Search& set_timeout_sec(size_t timeout) {
-		timeout_sec_ = std::chrono::duration<size_t>(timeout);
-		return *this;
-	}
-	/** Set the annealing constant. */
+  /** Set the maximum number of seconds to run for before giving up. */
+  Search& set_timeout_sec(size_t timeout) {
+    timeout_sec_ = std::chrono::duration<size_t>(timeout);
+    return *this;
+  }
+  /** Set the annealing constant. */
   Search& set_beta(double beta) {
     beta_ = beta;
     return *this;
   }
-	/** Set the proposal mass for a transformation type. */
+  /** Set the proposal mass for a transformation type. */
   Search& set_mass(Move move, size_t mass);
-	/** Set progress callback function. */
+  /** Set progress callback function. */
   Search& set_progress_callback(ProgressCallback cb, void* arg) {
     progress_cb_ = cb;
     progress_cb_arg_ = arg;
     return *this;
   }
-	/** Set statistics callback function. */
+  /** Set statistics callback function. */
   Search& set_statistics_callback(StatisticsCallback cb, void* arg) {
     statistics_cb_ = cb;
     statistics_cb_arg_ = arg;
     return *this;
   }
-	/** Set the number of proposals to perform between statistics updates. */
+  /** Set the number of proposals to perform between statistics updates. */
   Search& set_statistics_interval(size_t si) {
     interval_ = si;
     return *this;
   }
 
-	/** Run search beginning from a search state using a user-supplied cost function. */
+  /** Run search beginning from a search state using a user-supplied cost function. */
   void run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state);
   /** Stops an in-progress search.  To be used from a callback, for example. */
   void stop();
 
- private:
+private:
   /** Random generator. */
   std::default_random_engine gen_;
   /** For sampling moves. */
@@ -97,13 +97,13 @@ class Search {
   /** Transformation helper class. */
   Transforms* transforms_;
 
-	/** Maximum number of rewrite instructions. */
-	size_t max_instrs_;
+  /** Maximum number of rewrite instructions. */
+  size_t max_instrs_;
 
   /** How many iterations should search run for? */
   size_t timeout_itr_;
-	/** How many seconds should search run for? */
-	std::chrono::duration<size_t> timeout_sec_;
+  /** How many seconds should search run for? */
+  std::chrono::duration<size_t> timeout_sec_;
   /** Annealing constant. */
   double beta_;
 
@@ -116,14 +116,14 @@ class Search {
   /** How often are statistics printed? */
   size_t interval_;
 
-	/** Configures a search state. */
-	void configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state) const;
-	/** Resets search state by removing all non-return instructions from target. */
-	void configure_empty(const Cfg& target, SearchState& state) const;
-	/** Resets search state to the target. */
-	void configure_target(const Cfg& target, SearchState& state) const;
-	/** Resets search state to a user-defined function of target */
-	void configure_extension(const Cfg& target, SearchState& state) const;
+  /** Configures a search state. */
+  void configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state) const;
+  /** Resets search state by removing all non-return instructions from target. */
+  void configure_empty(const Cfg& target, SearchState& state) const;
+  /** Resets search state to the target. */
+  void configure_target(const Cfg& target, SearchState& state) const;
+  /** Resets search state to a user-defined function of target */
+  void configure_extension(const Cfg& target, SearchState& state) const;
 };
 
 } // namespace stoke

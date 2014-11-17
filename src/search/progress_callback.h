@@ -20,7 +20,7 @@
 namespace stoke {
 
 struct ProgressCallbackData {
-	/** The current search state. */
+  /** The current search state. */
   const SearchState& state;
 };
 
