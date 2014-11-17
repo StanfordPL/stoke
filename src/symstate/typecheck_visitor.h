@@ -51,9 +51,9 @@ public:
     auto lhs = (*this)(b->a_);
     auto rhs = (*this)(b->b_);
 
-    if (lhs == rhs)
+    if (lhs == rhs && lhs)
       return 1;
-    else {
+    else if (lhs != rhs) {
       std::stringstream e;
       SymPrintVisitor pv(e);
       e << "In compare: ";
@@ -62,7 +62,16 @@ public:
         << " but RHS has width " << rhs;
       set_error(e);
       return 0;
+    } else if (!lhs) {
+      std::stringstream e;
+      SymPrintVisitor pv(e);
+      e << "In compare: ";
+      pv(b);
+      e << " the LHS does not typecheck.";
+      set_error(e);
+      return 0;
     }
+    return 0;
   }
 
   /** Visit a bit-vector concatenation.  Note, different than other

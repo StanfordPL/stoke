@@ -80,3 +80,58 @@ TEST(SymBitVectorTest, ExtractTypechecks) {
   EXPECT_EQ(0, tc(x[0][7]));
   EXPECT_EQ(8, tc(x[7][0]));
 }
+
+TEST(SymBitVectorTest, UninterpretedFunctionTypechecks) {
+
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(32, "y");
+
+  auto f = stoke::SymFunction("f", 32, {32, 32});
+  auto eq = f(x,y) == f(x,y);
+
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(eq);
+
+  stoke::SymTypecheckVisitor tc;
+  EXPECT_EQ(32, tc(f(x,y)));
+  EXPECT_EQ(1, tc(eq));
+}
+
+TEST(SymBitVectorTest, UninterpretedFunctionWrongArg) {
+
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(40, "y");
+
+  auto f = stoke::SymFunction("f", 32, {32, 32});
+  auto eq = f(x,y) == f(x,y);
+
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(eq);
+
+  stoke::SymTypecheckVisitor tc;
+  EXPECT_EQ(0, tc(f(x,y)));
+  EXPECT_EQ(0, tc(eq));
+}
+
+TEST(SymBitVectorTest, UninterpretedFunctionWrongArgNum) {
+
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(32, "y");
+
+  auto f = stoke::SymFunction("f", 32, {32, 32});
+
+  stoke::SymTypecheckVisitor tc;
+  EXPECT_EQ(0, tc(f(x,y, x)));
+}
+
+TEST(SymBitVectorTest, UninterpretedFunctionTypesDisagree) {
+
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(32, "y");
+
+  auto f = stoke::SymFunction("f", 32, {32, 32});
+  auto g = stoke::SymFunction("f", 32, {32, 32, 32});
+
+  stoke::SymTypecheckVisitor tc;
+  EXPECT_EQ(0, tc(f(x,y) == g(x,x,y)));
+}
