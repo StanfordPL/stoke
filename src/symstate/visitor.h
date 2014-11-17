@@ -33,6 +33,8 @@ public:
       return visit(dynamic_cast<const SymBitVectorConstant * const>(bv));
     case SymBitVector::EXTRACT:
       return visit(dynamic_cast<const SymBitVectorExtract * const>(bv));
+    case SymBitVector::FUNCTION:
+      return visit(dynamic_cast<const SymBitVectorFunction * const>(bv));
     case SymBitVector::ITE:
       return visit(dynamic_cast<const SymBitVectorIte * const>(bv));
     case SymBitVector::MINUS:
@@ -188,6 +190,8 @@ public:
   virtual T visit(const SymBitVectorConstant * const bv) = 0;
   /** Visit a bit-vector extract */
   virtual T visit(const SymBitVectorExtract * const bv) = 0;
+  /** Visit a bit-vector extract */
+  virtual T visit(const SymBitVectorFunction * const bv) = 0;
   /** Visit a bit-vector if-then-else */
   virtual T visit(const SymBitVectorIte * const bv) = 0;
   /** Visit a bit-vector NOT */
