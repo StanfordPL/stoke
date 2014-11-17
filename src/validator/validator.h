@@ -19,7 +19,6 @@
 
 std::string idToStr(SS_Id, PAIR_INFO I=all_state_info);
 Expr regExpr(std::string, unsigned int size=V_UNITSIZE);
-Expr EqExpr(Expr, Expr);
 std::set<SS_Id> keys(std::map<SS_Id, unsigned int> dict);
 
 
@@ -92,7 +91,7 @@ public:
 
 private:
 
-  std::vector<Expr> generate_constraints(const stoke::Cfg&, const stoke::Cfg&, std::vector<Expr>&);
+  std::vector<SymBool> generate_constraints(const stoke::Cfg&, const stoke::Cfg&, std::vector<SymBool>&);
 
   /* Build a CpuState from the solver's model. */
   stoke::CpuState model_to_cpustate(std::string name_suffix);
