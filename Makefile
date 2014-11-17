@@ -274,5 +274,5 @@ dist_clean: clean
 	rm -rf src/ext/astyle
 	rm -rf src/ext/cpputil
 	rm -rf src/ext/x64asm
-	$(MAKE) -C src/ext/gtest-1.7.0 clean
-	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
+	- $(MAKE) -C src/ext/gtest-1.7.0 clean
+	- $(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
