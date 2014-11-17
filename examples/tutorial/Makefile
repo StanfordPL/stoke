@@ -25,7 +25,7 @@ testcase:
 	stoke testcase --config testcase.conf
 
 search:
-	rm -rf stats/*
+	rm -rf stats
 	mkdir stats
 	stoke search --config search.conf
 

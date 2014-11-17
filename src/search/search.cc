@@ -75,7 +75,7 @@ Search& Search::set_mass(Move move, size_t mass) {
   return *this;
 }
 
-void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state) {
+void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxn) {
   // Make sure target is correct with respect to itself
   assert(fxn(target).first);
   // Make sure target and rewrite are sound to begin with
@@ -85,7 +85,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   assert(state.best_correct.is_sound());
 
   // Configure initial state
-  configure(init, target, fxn, state);
+  configure(init, target, fxn, state, aux_fxn);
 
   // Early corner case bailouts
   if (state.current_cost == 0) {
@@ -164,7 +164,7 @@ void Search::stop() {
   give_up_now = true;
 }
 
-void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state) const {
+void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state, vector<TUnit>& aux_fxn) const {
   switch (init) {
   case Init::EMPTY:
     configure_empty(target, state);
@@ -182,6 +182,19 @@ void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchSt
   default:
     assert(false);
     break;
+  }
+
+  // add dataflow information about function call targets
+  for (const auto& fxn : aux_fxn) {
+    auto code = fxn.code;
+    auto lbl = code[0].get_operand<x64asm::Label>(0);
+    state.current.add_summary(lbl,
+                              code.must_read_set(),
+                              code.must_write_set(),
+                              code.must_undef_set(),
+                              code.maybe_read_set(),
+                              code.maybe_write_set(),
+                              code.maybe_undef_set());
   }
 
   state.current_cost = fxn(state.current).second;
