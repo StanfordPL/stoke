@@ -32,7 +32,13 @@ ValueArg<FlagSet, FlagSetReader, FlagSetWriter>& cpu_flags_arg =
 ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>& opc_blacklist_arg =
   ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("opc_blacklist")
   .usage("{ opcode1 opcode2 ... opcoden; e.g., xorl or xorl_r32_r32 }")
-  .description("Don't proprose any instructions from this set")
+  .description("Don't proprose any instructions from this set (takes precedence over --opc_whitelist)")
+  .default_val({});
+
+ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>& opc_whitelist_arg =
+  ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("opc_whitelist")
+  .usage("{ opcode1 opcode2 ... opcoden; e.g., xorl or xorl_r32_r32 }")
+  .description("Only proprose instructions from this set (unless they are not proposed for other reasons, e.g. --opc_blacklist, --propose_call, --cpu_flags, --mem_read, --mem_write, instructions not supported by stoke, etc.); empty whitelist means no whitelist")
   .default_val({});
 
 ValueArg<size_t>& nop_percent_arg =
@@ -48,10 +54,6 @@ FlagArg& mem_read_arg =
 FlagArg& mem_write_arg =
   FlagArg::create("mem_write")
   .description("Propose instruction and opcode moves that write memory?");
-
-FlagArg& propose_call_arg =
-  FlagArg::create("propose_call")
-  .description("Propose instruction and opcode moves that call functions?");
 
 FlagArg& callee_save_arg =
   FlagArg::create("callee_save")
