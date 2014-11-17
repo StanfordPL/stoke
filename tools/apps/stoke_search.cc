@@ -256,7 +256,7 @@ int main(int argc, char** argv) {
 
     cout << "Running search:" << endl << endl;
     state = SearchStateGadget();
-    search.run(target, fxn, init_arg, state);
+    search.run(target, fxn, init_arg, state, aux_fxns_arg.value());
     const auto verified = verifier.verify(target, state.best_correct);
 
     if (!state.success) {

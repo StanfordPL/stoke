@@ -21,6 +21,7 @@
 #include "tools/args/correctness.h"
 #include "tools/args/performance.h"
 #include "tools/args/target.h"
+#include "tools/args/cost.h"
 
 namespace stoke {
 
@@ -34,6 +35,7 @@ public:
     set_relax(relax_reg_arg, relax_mem_arg);
     set_penalty(misalign_penalty_arg, sig_penalty_arg, nesting_penalty_arg);
     set_min_ulp(min_ulp_arg);
+    set_k(k_arg);
     set_reduction(reduction_arg);
     set_performance_term(perf_arg);
   }
