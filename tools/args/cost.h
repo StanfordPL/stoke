@@ -25,6 +25,8 @@ extern cpputil::Heading& cost_heading;
 
 extern cpputil::ValueArg<Cost>& max_cost_arg;
 
+extern cpputil::ValueArg<uint32_t>& k_arg;
+
 } // namespace stoke
 
 #endif

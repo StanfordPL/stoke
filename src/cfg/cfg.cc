@@ -37,7 +37,7 @@ bool Cfg::performs_undef_read() const {
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
-      const auto r = code_[idx].must_read_set();
+      const auto r = must_read_set(code_[idx]);
       const auto di = def_ins_[idx];
 
       if ((r & di) != r) {
@@ -277,11 +277,11 @@ void Cfg::recompute_defs_gen_kill() {
   // No sense in checking the entry; we'll consider the exit, but it'll be a nop.
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (auto j = instr_begin(*i), je = instr_end(*i); j != je; ++j) {
-      gen_[*i] |= j->must_write_set();
-      gen_[*i] -= j->maybe_undef_set();
+      gen_[*i] |= must_write_set(*j);
+      gen_[*i] -= maybe_undef_set(*j);
 
-      kill_[*i] |= j->maybe_undef_set();
-      kill_[*i] -= j->maybe_write_set();
+      kill_[*i] |= maybe_undef_set(*j);
+      kill_[*i] -= maybe_write_set(*j);
     }
   }
 }
@@ -331,8 +331,8 @@ void Cfg::recompute_defs_loops() {
       def_ins_[idx] = def_ins_[idx - 1];
 
       const auto& instr = code_[idx - 1];
-      def_ins_[idx] |= instr.must_write_set();
-      def_ins_[idx] -= instr.maybe_undef_set();
+      def_ins_[idx] |= must_write_set(instr);
+      def_ins_[idx] -= maybe_undef_set(instr);
     }
   }
 }
@@ -369,8 +369,8 @@ void Cfg::recompute_defs_loop_free() {
       def_ins_[idx] = def_ins_[idx - 1];
 
       const auto& instr = code_[idx - 1];
-      def_ins_[idx] |= instr.must_write_set();
-      def_ins_[idx] -= instr.maybe_undef_set();
+      def_ins_[idx] |= must_write_set(instr);
+      def_ins_[idx] -= maybe_undef_set(instr);
     }
 
     // Summarize block
@@ -381,8 +381,8 @@ void Cfg::recompute_defs_loop_free() {
       def_outs_[i] = def_ins_[idx];
 
       const auto& instr = code_[idx];
-      def_outs_[b] |= instr.must_write_set();
-      def_outs_[b] -= instr.maybe_undef_set();
+      def_outs_[b] |= must_write_set(instr);
+      def_outs_[b] -= maybe_undef_set(instr);
     }
   }
 }
@@ -403,7 +403,7 @@ void Cfg::recompute_liveness() {
   // is why I need this loop.
   for (auto it : code_) {
     if (it.is_call()) {
-      ever_read |= RegSet::linux_call_parameters();
+      ever_read |= maybe_read_set(it);
     } else if (it.is_any_call()) {
       // we don't support this.
       // abort is a mean, evil way.
@@ -411,7 +411,7 @@ void Cfg::recompute_liveness() {
                 << " @ " << __FILE__ << ":" << __LINE__ << endl;
       exit(1);
     } else {
-      ever_read |= it.maybe_read_set();
+      ever_read |= maybe_read_set(it);
     }
 
   }
@@ -505,14 +505,9 @@ void Cfg::recompute_liveness() {
       live_outs_[idx] = live_outs_[idx + 1];
 
       const auto& instr = code_[idx + 1];
-      if (instr.is_call()) {
-        live_outs_[idx] -= RegSet::linux_call_scratch();
-        live_outs_[idx] |= RegSet::linux_call_parameters();
-      } else {
-        live_outs_[idx] -= instr.must_write_set();
-        live_outs_[idx] -= instr.must_undef_set();
-        live_outs_[idx] |= instr.maybe_read_set();
-      }
+      live_outs_[idx] -= must_write_set(instr);
+      live_outs_[idx] -= must_undef_set(instr);
+      live_outs_[idx] |= maybe_read_set(instr);
 
       live_ins_[idx + 1] = live_outs_[idx];
     }
@@ -534,10 +529,10 @@ void Cfg::recompute_liveness_use_kill() {
               liveness_kill_[*i] |= RegSet::linux_call_scratch();
 
             } else {*/
-      liveness_use_[*i] |= (j->maybe_read_set() - liveness_kill_[*i]);
+      liveness_use_[*i] |= (maybe_read_set(*j) - liveness_kill_[*i]);
 
-      liveness_kill_[*i] |= j->must_undef_set();
-      liveness_kill_[*i] |= j->must_write_set();
+      liveness_kill_[*i] |= must_undef_set(*j);
+      liveness_kill_[*i] |= must_write_set(*j);
       //      }
     }
   }

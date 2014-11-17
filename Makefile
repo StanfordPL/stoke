@@ -219,7 +219,7 @@ bin/stoke_benchmark_state: tools/apps/stoke_benchmark_state.cc tools/gadgets/*.h
 	tools/args/testcases.o $(TOOL_IO_OBJ) $(LIB)  
 bin/stoke_benchmark_verify: tools/apps/stoke_benchmark_verify.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o \
-	tools/args/correctness.o tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o \
+	tools/args/correctness.o tools/args/cost.o tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o \
 	tools/args/seed.o tools/args/target.o tools/args/testcases.o tools/args/verifier.o \
 	$(TOOL_IO_OBJ) $(LIB)  
 
@@ -239,7 +239,7 @@ bin/stoke_debug_state: tools/apps/stoke_debug_state.cc tools/gadgets/*.h $(SRC_O
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/seed.o tools/args/testcases.o \
 	$(TOOL_IO_OBJ) $(LIB)  
 bin/stoke_debug_verify: tools/apps/stoke_debug_verify.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o \
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o tools/args/cost.o \
 	tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o tools/args/seed.o \
 	tools/args/target.o tools/args/testcases.o tools/args/verifier.o $(TOOL_IO_OBJ) $(LIB)  
 
@@ -248,7 +248,7 @@ bin/stoke_extract: tools/apps/stoke_extract.cc tools/gadgets/*.h $(SRC_OBJ) $(TO
 bin/stoke_replace: tools/apps/stoke_replace.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/rewrite.o $(TOOL_IO_OBJ) $(LIB)  
 bin/stoke_search: tools/apps/stoke_search.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o \
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o tools/args/cost.o \
 	tools/args/performance.o tools/args/search.o tools/args/search_state.o tools/args/seed.o \
 	tools/args/sandbox.o tools/args/target.o tools/args/testcases.o tools/args/transforms.o \
 	tools/args/verifier.o $(TOOL_IO_OBJ) $(LIB)  
@@ -333,5 +333,5 @@ dist_clean: clean
 	rm -rf src/ext/astyle
 	rm -rf src/ext/cpputil
 	rm -rf src/ext/x64asm
-	make -C src/ext/gtest-1.7.0 clean
-	make -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
+	- $(MAKE) -C src/ext/gtest-1.7.0 clean
+	- $(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
