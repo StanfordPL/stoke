@@ -3,6 +3,7 @@
 #define _STOKE_SRC_SYMSTATE_SYM_BITVECTOR_H
 
 #include <iostream>
+#include <vector>
 
 #include "src/symstate/bool.h"
 #include "src/ext/z3/include/z3++.h"
@@ -16,6 +17,7 @@ class SymBitVectorConcat;
 class SymBitVectorConstant;
 class SymBitVectorDiv;
 class SymBitVectorExtract;
+class SymBitVectorFunction;
 class SymBitVectorIte;
 class SymBitVectorMinus;
 class SymBitVectorMod;
@@ -34,10 +36,10 @@ class SymBitVectorVar;
 class SymBitVectorXor;
 class SymBitVectorZ3;
 
+class SymFunction;
 
 
 class SymBitVector {
-  friend class SymBool;
 
 public:
 
@@ -48,6 +50,7 @@ public:
     CONSTANT,
     DIV,
     EXTRACT,
+    FUNCTION,
     ITE,
     MINUS,
     MOD,
@@ -261,6 +264,47 @@ public:
   const SymBitVectorAbstract * const bv_;
   const uint16_t low_bit_;
   const uint16_t high_bit_;
+};
+
+class SymBitVectorFunction : public SymBitVectorAbstract {
+  friend class SymBitVector;
+  friend class SymFunction;
+
+public:
+  SymBitVector::Type type() const {
+    return SymBitVector::Type::FUNCTION;
+  }
+
+  const SymFunction& f_;
+  const std::vector<const SymBitVectorAbstract *> args_;
+
+private:
+  SymBitVectorFunction(const SymFunction& f,
+                       const SymBitVectorAbstract * const a) : f_(f), args_( {
+    a
+  }) {}
+
+  SymBitVectorFunction(const SymFunction& f,
+                       const SymBitVectorAbstract * const a,
+                       const SymBitVectorAbstract * const b) : f_(f), args_( {
+    a, b
+  }) {}
+
+  SymBitVectorFunction(const SymFunction& f,
+                       const SymBitVectorAbstract * const a,
+                       const SymBitVectorAbstract * const b,
+                       const SymBitVectorAbstract * const c) : f_(f), args_( {
+    a, b, c
+  }) {}
+
+  SymBitVectorFunction(const SymFunction& f,
+                       const SymBitVectorAbstract * const a,
+                       const SymBitVectorAbstract * const b,
+                       const SymBitVectorAbstract * const c,
+                       const SymBitVectorAbstract * const d) : f_(f), args_( {
+    a, b, c, d
+  }) {}
+
 };
 
 class SymBitVectorIte : public SymBitVectorAbstract {
@@ -482,6 +526,7 @@ std::ostream& operator<< (std::ostream& out, stoke::SymBitVector& bv);
 
 /* We need to include these to make sure templates instantiate, but not
    before SymBitVector is declared! */
+#include "src/symstate/function.h"
 #include "src/symstate/print_visitor.h"
 #include "src/symstate/typecheck_visitor.h"
 

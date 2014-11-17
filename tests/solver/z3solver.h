@@ -140,3 +140,35 @@ TEST(Z3SolverTest, MulModTest) {
   EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
 
 }
+
+TEST(Z3SolverTest, UninterpretedFunctionIdentity) {
+
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(32, "y");
+
+  auto f = stoke::SymFunction("f", 32, {32, 32});
+  auto eq = f(x,y) == f(x,y);
+
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(eq);
+
+  stoke::Z3Solver z3;
+  EXPECT_TRUE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
+}
+
+TEST(Z3SolverTest, UninterpretedFunctionFail) {
+
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(32, "y");
+
+  auto f = stoke::SymFunction("f", 32, {32, 32});
+  auto eq = f(x,y) == x + y;
+
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(eq);
+
+  stoke::Z3Solver z3;
+  EXPECT_TRUE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
+}
