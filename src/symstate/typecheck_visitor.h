@@ -2,9 +2,9 @@
 #ifndef _STOKE_SRC_SYMSTATE_TYPECHECK_VISITOR
 #define _STOKE_SRC_SYMSTATE_TYPECHECK_VISITOR
 
-#include "src/symstate/visitor.h"
+#include <map>
 
-std::ostream& operator<< (std::ostream& out, stoke::SymBitVector& bv);
+#include "src/symstate/visitor.h"
 
 namespace stoke {
 
@@ -127,6 +127,75 @@ public:
       return 0;
     }
     return (bv->high_bit_ - bv->low_bit_ + 1);
+  }
+
+  /** Visit a function application */
+  uint16_t visit(const SymBitVectorFunction * const bv) {
+    SymFunction f = bv->f_;
+    std::string name = f.name;
+
+    auto type = function_type(f.return_type, f.args);
+
+    // Check if we've seen this function before
+    auto p = functions_[name];
+    if(p.first) {
+      // Verify the same type as before
+      if (type != p) {
+        std::stringstream e;
+        SymPrintVisitor pv(e);
+        e << "The function " << name << " declared with two different types.  "
+          << "The first time it had type (";
+        for(size_t i = 0; i < p.second.size(); ++i) {
+          e << p.second[i];
+          if(i != p.second.size() - 1)
+            e << ", ";
+        }
+        e << ") -> " << p.first << std::endl;
+        e << "while in ";
+        pv(bv);
+        e << " it has type (";
+        for(size_t i = 0; i < type.second.size(); ++i) {
+          e << type.second[i];
+          if(i != type.second.size() - 1)
+            e << ", ";
+        }
+        e << ") => " << type.first;
+        set_error(e);
+        return 0;
+      }
+    } else {
+      // Insert this function into our table
+      functions_[name] = type;
+    }
+
+    // Check there are the right number of arguments.
+    if(bv->args_.size() != type.second.size()) {
+      std::stringstream e;
+      SymPrintVisitor pv(e);
+      e << "In ";
+      pv(bv);
+      e << " the type of " << name << " has " << type.second.size()
+        << " arguments but there are actually " << bv->args_.size();
+      set_error(e);
+      return 0;
+    }
+
+    // Check the arguments are of the right type
+    for(size_t i = 0; i < type.second.size(); ++i) {
+      auto t = (*this)(bv->args_[i]);
+      if (t != type.second[i]) {
+        std::stringstream e;
+        SymPrintVisitor pv(e);
+        e << "In ";
+        pv(bv);
+        e << " the width of argument " << i << " was declared " << type.second[i]
+          << " but is actually " << t;
+        set_error(e);
+        return 0;
+      }
+    }
+
+    return type.first;
   }
 
   /** Visit a bit-vector if-then-else */
@@ -276,6 +345,11 @@ private:
     if(error_.size() == 0)
       error_ = e.str();
   }
+
+  /** Keeps track of the arities of different functions
+      (and where we get this info from) */
+  typedef std::pair<uint16_t, std::vector<uint16_t>> function_type;
+  std::map<std::string, function_type> functions_;
 
 };
 

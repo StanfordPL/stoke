@@ -76,6 +76,8 @@ private:
     z3::expr visit(const SymBitVectorConstant * const bv);
     /** Visit a bit-vector extract */
     z3::expr visit(const SymBitVectorExtract * const bv);
+    /** Visit a bit-vector function */
+    z3::expr visit(const SymBitVectorFunction * const bv);
     /** Visit a bit-vector if-then-else */
     z3::expr visit(const SymBitVectorIte * const bv);
     /** Visit a bit-vector minus */
