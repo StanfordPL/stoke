@@ -17,7 +17,7 @@ TEST(CpputilBitManip, PopCntWorks) {
   EXPECT_EQ(64, cpputil::BitManip<uint64_t>::pop_count(-1));
   EXPECT_EQ(2,  cpputil::BitManip<uint64_t>::pop_count(9));
 
-  uint64_t x = (1 << 12) | (1 << 11) | (1 << 7) | (1 << 3) | ( 1 << 1);
+  uint64_t x = (1 << 12) | (1 << 11) | (1 << 7) | (1 << 3) | (1 << 1);
   EXPECT_EQ(5,  cpputil::BitManip<uint64_t>::pop_count(x));
 }
 

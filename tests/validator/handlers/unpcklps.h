@@ -15,10 +15,10 @@ TEST_F(ValidatorUnpcklpsTest, Identity) {
 
 
 TEST_F(ValidatorUnpcklpsTest, NonIdentity) {
-  
+
   target_ << "unpcklps %xmm1, %xmm1" << std::endl;
   target_ << "retq" << std::endl;
-  
+
   rewrite_ << "unpcklps %xmm2, %xmm2" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -28,7 +28,7 @@ TEST_F(ValidatorUnpcklpsTest, NonIdentity) {
 
 
 TEST_F(ValidatorUnpcklpsTest, NotIdempotent) {
-  
+
   target_ << "unpcklps %xmm2, %xmm3" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -49,7 +49,7 @@ TEST_F(ValidatorUnpcklpsTest, NotIdempotentWrongArg) {
   rewrite_ << "unpcklps %xmm1, %xmm3" << std::endl;
   rewrite_ << "unpcklps %xmm2, %xmm3" << std::endl;
   rewrite_ << "retq" << std::endl;
-  
+
   assert_ceg();
 
 }

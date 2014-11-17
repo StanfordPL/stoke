@@ -27,7 +27,7 @@ namespace stoke {
 struct CpuState {
   /** Returns a new CpuState. */
   CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) :
-		code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
+    code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
     stack.resize(0, stack_size);
     heap.resize(base, heap_size);
   }
@@ -36,7 +36,7 @@ struct CpuState {
   CpuState& operator^=(const CpuState& rhs) {
     gp ^= rhs.gp;
     sse ^= rhs.sse;
-		rf ^= rhs.rf;
+    rf ^= rhs.rf;
     stack ^= rhs.stack;
     heap ^= rhs.stack;
 
@@ -58,33 +58,33 @@ struct CpuState {
     return !(*this == rhs);
   }
 
-	/** Write text. */
-	std::ostream& write_text(std::ostream& os) const;
-	/** Read text. */
-	std::istream& read_text(std::istream& is);
+  /** Write text. */
+  std::ostream& write_text(std::ostream& os) const;
+  /** Read text. */
+  std::istream& read_text(std::istream& is);
 
-	/** Write binary. */
-	std::ostream& write_bin(std::ostream& os) const {
-		os.write((const char*)&code, sizeof(ErrorCode));
-		gp.write_bin(os);
-		sse.write_bin(os);
-		rf.write_bin(os);
-		stack.write_bin(os);
-		heap.write_bin(os);
+  /** Write binary. */
+  std::ostream& write_bin(std::ostream& os) const {
+    os.write((const char*)&code, sizeof(ErrorCode));
+    gp.write_bin(os);
+    sse.write_bin(os);
+    rf.write_bin(os);
+    stack.write_bin(os);
+    heap.write_bin(os);
 
-		return os;
-	}
-	/** Read binary. */
-	std::istream& read_bin(std::istream& is) {
-		is.read((char*)&code, sizeof(ErrorCode));
-		gp.read_bin(is);
-		sse.read_bin(is);
-		rf.read_bin(is);
-		stack.read_bin(is);
-		heap.read_bin(is);
+    return os;
+  }
+  /** Read binary. */
+  std::istream& read_bin(std::istream& is) {
+    is.read((char*)&code, sizeof(ErrorCode));
+    gp.read_bin(is);
+    sse.read_bin(is);
+    rf.read_bin(is);
+    stack.read_bin(is);
+    heap.read_bin(is);
 
-		return is;	
-	}
+    return is;
+  }
 
   /** The error code associated with this state. */
   ErrorCode code;
@@ -92,8 +92,8 @@ struct CpuState {
   Regs gp;
   /** SSE register buffer. */
   Regs sse;
-	/** Rflags. */
-	RFlags rf;
+  /** Rflags. */
+  RFlags rf;
   /** Stack. */
   Memory stack;
   /** Heap. */
@@ -105,11 +105,11 @@ struct CpuState {
 namespace std {
 
 inline std::ostream& operator<<(std::ostream& os, const stoke::CpuState& cs) {
-	return cs.write_text(os);
+  return cs.write_text(os);
 }
 
 inline std::istream& operator>>(std::istream& is, stoke::CpuState& cs) {
-	return cs.read_text(is);
+  return cs.read_text(is);
 }
 
 } // namespace std

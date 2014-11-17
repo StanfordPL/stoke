@@ -20,10 +20,10 @@ namespace stoke {
 enum class Init {
   EMPTY,
   TARGET,
-	PREVIOUS,
+  PREVIOUS,
 
-	// Add user-defined extensions here ...
-	EXTENSION
+  // Add user-defined extensions here ...
+  EXTENSION
 };
 
 } // namespace stoke

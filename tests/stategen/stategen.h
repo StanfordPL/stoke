@@ -11,25 +11,25 @@
 
 class StateGenParamTest : public ::testing::TestWithParam<int> {
 
-    void SetUp() {
-      
-      std::ifstream ifs;
-      std::string filename = "tests/fixtures/stategen/" + std::to_string(GetParam()) + ".s";
-      ifs.open(filename, std::ifstream::in);
+  void SetUp() {
 
-      std::stringstream ss;
-      ss << ifs.rdbuf();
-      ss >> code_;
+    std::ifstream ifs;
+    std::string filename = "tests/fixtures/stategen/" + std::to_string(GetParam()) + ".s";
+    ifs.open(filename, std::ifstream::in);
 
-      ifs.close();
+    std::stringstream ss;
+    ss << ifs.rdbuf();
+    ss >> code_;
 
-      time(&seed_);
-      srand((unsigned int)seed_);
-    }
+    ifs.close();
 
-  protected:
-    x64asm::Code code_;
-    time_t seed_;
+    time(&seed_);
+    srand((unsigned int)seed_);
+  }
+
+protected:
+  x64asm::Code code_;
+  time_t seed_;
 
 };
 
@@ -40,20 +40,20 @@ TEST_P(StateGenParamTest, StateGenWorks) {
 
   stoke::Sandbox sg_sb;
   sg_sb.set_max_jumps(10)
-       .set_abi_check(false);
+  .set_abi_check(false);
 
   stoke::StateGen sg(&sg_sb);
   sg.set_max_attempts(40)
-    .set_max_memory(1024);
+  .set_max_memory(1024);
 
   stoke::CpuState tc;
   EXPECT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed_;
   EXPECT_EQ("", sg.get_error());
 
   // Check that the testcase works in the Sandbox
-  stoke::Sandbox sb; 
+  stoke::Sandbox sb;
   sb.set_max_jumps(2)
-    .set_abi_check(false);
+  .set_abi_check(false);
   sb.insert_input(tc);
   sb.run({code_, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
   ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
@@ -82,11 +82,11 @@ TEST(StateGenTest, Issue44) {
 
   stoke::Sandbox sg_sb;
   sg_sb.set_max_jumps(10)
-       .set_abi_check(false);
+  .set_abi_check(false);
 
   stoke::StateGen sg(&sg_sb);
   sg.set_max_attempts(10)
-    .set_max_memory(1000);
+  .set_max_memory(1000);
 
   stoke::CpuState tc;
   ASSERT_FALSE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed;
@@ -114,20 +114,20 @@ TEST(StateGenTest, Issue44WithRetQ) {
   // Run stategen
   stoke::Sandbox sg_sb;
   sg_sb.set_max_jumps(10)
-       .set_abi_check(false);
+  .set_abi_check(false);
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::empty());
   stoke::StateGen sg(&sg_sb);
   sg.set_max_attempts(10)
-    .set_max_memory(1000);
+  .set_max_memory(1000);
 
   stoke::CpuState tc;
   ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed;
 
   // Check that the testcase works in the Sandbox
-  stoke::Sandbox sb; 
+  stoke::Sandbox sb;
   sb.set_max_jumps(2)
-    .set_abi_check(false);
+  .set_abi_check(false);
   sb.insert_input(tc);
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
   ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
@@ -153,20 +153,20 @@ TEST(StateGenTest, Issue51) {
   // Run stategen
   stoke::Sandbox sg_sb;
   sg_sb.set_max_jumps(2)
-       .set_abi_check(false);
+  .set_abi_check(false);
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::empty());
   stoke::StateGen sg(&sg_sb);
   sg.set_max_attempts(10)
-    .set_max_memory(1000);
+  .set_max_memory(1000);
 
   stoke::CpuState tc;
   ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed;
 
   // Check that the testcase works in the Sandbox
-  stoke::Sandbox sb; 
+  stoke::Sandbox sb;
   sb.set_max_jumps(2)
-    .set_abi_check(false);
+  .set_abi_check(false);
   sb.insert_input(tc);
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
   ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
@@ -176,5 +176,5 @@ TEST(StateGenTest, Issue51) {
 INSTANTIATE_TEST_CASE_P(
   StategenFixtures,
   StateGenParamTest,
-  ::testing::Range(1,9)
+  ::testing::Range(1, 9)
 );

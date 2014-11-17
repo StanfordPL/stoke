@@ -23,7 +23,7 @@ class addr_iterator {
   /** Needs access to constructor. */
   friend class Memory;
 
- public:
+public:
   /** Dereference. */
   size_t operator*() const {
     return *itr_ + base_;
@@ -43,7 +43,7 @@ class addr_iterator {
     return itr_ != rhs.itr_ || base_ != rhs.base_;
   }
 
- private:
+private:
   /** This constructor is only visible to Memory. */
   addr_iterator(const cpputil::BitVector::const_set_bit_index_iterator& itr, size_t base) :
     itr_(itr), base_(base) { }

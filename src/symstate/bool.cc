@@ -7,49 +7,57 @@ using namespace std;
 using namespace stoke;
 
 /* Bool constructors */
-SymBoolFalse& SymBool::_false() {
-  return *(new SymBoolFalse());
+SymBool SymBool::_false() {
+  return SymBool(new SymBoolFalse());
 }
 
-SymBoolTrue& SymBool::_true() {
-  return *(new SymBoolTrue());
+SymBool SymBool::_true() {
+  return SymBool(new SymBoolTrue());
 }
 
-SymBoolVar& SymBool::var(std::string name) {
-  return *(new SymBoolVar(name));
+SymBool SymBool::var(std::string name) {
+  return SymBool(new SymBoolVar(name));
 }
 
-SymBoolZ3& SymBool::z3(const z3::expr& e) {
-  return *(new SymBoolZ3(e));
+SymBool SymBool::z3(const z3::expr& e) {
+  return SymBool(new SymBoolZ3(e));
 }
 
 /* Bool Operators */
-SymBoolAnd& SymBool::operator&(const SymBool& other) const {
-  return *(new SymBoolAnd(*this, other));
+SymBool SymBool::operator&(const SymBool& other) const {
+  return SymBool(new SymBoolAnd(ptr, other.ptr));
 }
 
-SymBoolIff& SymBool::operator==(const SymBool& other) const {
-  return *(new SymBoolIff(*this, other));
+SymBool SymBool::operator==(const SymBool& other) const {
+  return SymBool(new SymBoolIff(ptr, other.ptr));
 }
 
-SymBoolImplies& SymBool::implies(const SymBool& other) const {
-  return *(new SymBoolImplies(*this, other));
+SymBool SymBool::implies(const SymBool& other) const {
+  return SymBool(new SymBoolImplies(ptr, other.ptr));
 }
 
-SymBoolNot& SymBool::operator!() const {
-  return *(new SymBoolNot(*this));
+SymBool SymBool::operator!() const {
+  return SymBool(new SymBoolNot(ptr));
 }
 
-SymBoolOr& SymBool::operator|(const SymBool& other) const {
-  return *(new SymBoolOr(*this, other));
+SymBool SymBool::operator|(const SymBool& other) const {
+  return SymBool(new SymBoolOr(ptr, other.ptr));
 }
 
-SymBoolXor& SymBool::operator^(const SymBool& other) const {
-  return *(new SymBoolXor(*this, other));
+SymBool SymBool::operator^(const SymBool& other) const {
+  return SymBool(new SymBoolXor(ptr, other.ptr));
 }
 
-SymBoolNot& SymBool::operator!=(const SymBool& other) const {
+SymBool SymBool::operator!=(const SymBool& other) const {
   return !(*this == other);
+}
+
+/* Bit vector type */
+SymBool::Type SymBool::type() const {
+  if(ptr)
+    return ptr->type();
+  else
+    return NONE;
 }
 
 /* Output overload */
