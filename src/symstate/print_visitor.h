@@ -101,7 +101,7 @@ public:
   /** Visit a bit-vector constant */
   void visit(const SymBitVectorConstant * const bv) {
     os_ << "[ ";
-    for(size_t i = bv->size_; i >= 64; --i)
+    for(size_t i = bv->size_; i > 64; --i)
       os_ << "0, ";
     for(uint64_t mask = (0x8000000000000000 >> (64 - bv->size_)); mask; mask >>= 1) {
       os_ << (bv->constant_ & mask ? 1 : 0);
@@ -157,15 +157,6 @@ public:
   /** Visit a Z3 bitvector */
   void visit(const SymBitVectorZ3 * const bv) {
     os_ << bv->e_;
-  }
-
-  /** Visit a bit-vector EQ */
-  void visit(const SymBoolEq * const b) {
-    os_ << "(==";
-    (*this)(b->a_);
-    os_ << " ";
-    (*this)(b->b_);
-    os_ << ")";
   }
 
   /** Visit a boolean AND */
