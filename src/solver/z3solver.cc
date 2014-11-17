@@ -27,6 +27,10 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     if (tc(it) != 1) {
       stringstream ss;
       ss << "Typechecking failed for constraint: " << it << endl;
+      if(tc.has_error())
+        ss << "error: " << tc.error() << endl;
+      else
+        ss << "(no typechecking error message given)" << endl;
       error_ = ss.str();
       return false;
     }

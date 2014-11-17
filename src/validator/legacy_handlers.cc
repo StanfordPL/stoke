@@ -377,7 +377,7 @@ void btvalHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, 
   {
     retval = vc_iteExpr(vc_eqExpr(E_idx, SymBitVector::constant(bitWidth, i)),
                         ( E_carry == (E_operand)[i]) &
-                        setBit(E_dest, E_operand, i, vc_bvConstExprFromInt(1, val), bitWidth)
+                        setBit(E_dest, E_operand, i, SymBitVector::constant(1, val), bitWidth)
                         ,
                         retval);
   }
@@ -419,8 +419,8 @@ void cmpHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2) {
 
 
   auto E_dest = SymBitVector::var(bitWidth, ("CMPTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str());
-  auto E_arg1 = vc_bvConstExprFromInt(1, 0) || E_src1;
-  auto E_arg2 = vc_bvConstExprFromInt(1, 0) || E_src2;
+  auto E_arg1 = SymBitVector::constant(1, 0) || E_src1;
+  auto E_arg2 = SymBitVector::constant(1, 0) || E_src2;
 
   SymBool retval = E_dest == (E_arg1 - E_arg2)[bitWidth - 1][0];
 #ifdef DEBUG_VALIDATOR
@@ -750,8 +750,8 @@ void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
 #endif
 
   auto E_result = vc_bvMinusExpr(bitWidth+1,
-                                 vc_bvConstExprFromInt(1, 0) || E_src,
-                                 vc_bvConstExprFromInt(1, 0) || SymBitVector::constant(bitWidth, 1));
+                                 SymBitVector::constant(1, 0) || E_src,
+                                 SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 1));
   SymBool retval = E_dest == (E_result)[bitWidth - 1][0];
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -1081,9 +1081,9 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
 
   //cout << E_dest << E_src <<  endl << bitWidth << endl ;
 
-  auto E_result = vc_bvPlusExpr(bitWidth+1,
-                                vc_bvConstExprFromInt(1, 0) || E_src,
-                                vc_bvConstExprFromInt(1, 0) || SymBitVector::constant(bitWidth, 1));
+  auto E_result = (SymBitVector::constant(1, 0) || E_src) + 
+                  (SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 1));
+
   SymBool retval = E_dest == (E_result)[bitWidth - 1][0];
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -1096,15 +1096,13 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   // The AF flag will be set exactly if the lowest four bits of src are all one.
   //  (which is equivalent to lowest four bits of destination being all zero)
   setFlag(d.Vnprime, V_AF,
-          vc_eqExpr(
-            vc_bvConstExprFromInt(4, 0),
-            (E_dest)[3][0]),
+          SymBitVector::constant(4, 0) == E_dest[3][0],
           d.constraints, d.post_suffix);
 
 
   // The OF flag will be set exactly if the destination is 0 (i.e. the src is -1).
   setFlag(d.Vnprime, V_OF,
-          vc_eqExpr(E_dest, SymBitVector::constant(bitWidth, 0)),
+          E_dest == SymBitVector::constant(bitWidth, 0),
           d.constraints, d.post_suffix);
 
   setSFPFZF(E_dest, d, bitWidth);
@@ -1448,7 +1446,7 @@ void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsign
 
   // If it's too high, then we zero the output registers.
   if (bits_to_shift > 255) {
-    auto zero_bv = vc_bvConstExprFromInt(128, 0);
+    auto zero_bv = SymBitVector::constant(128, 0);
     auto equals = (E_dest) == (zero_bv);
     d.constraints.push_back(equals);
     return;
@@ -1466,7 +1464,7 @@ void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsign
     d.constraints.push_back(dest_src1_equal);
 
     // DEST[256-i, 127] <- zero (i - 128 bits)
-    auto zero = vc_bvConstExprFromInt(bits_to_shift-128, 0);
+    auto zero = SymBitVector::constant(bits_to_shift-128, 0);
     auto dest_zero = (E_dest)[127][256 - bits_to_shift];
     assert(bits_to_shift - 128 == 127 - (256 - bits_to_shift) + 1);
 
@@ -1690,7 +1688,7 @@ void popcnt16Handler(v_data d, Expr E_dest, Expr E_src) {
 #define SUM_INNER(x, shift, hex)\
   vc_bvPlusExpr(16,\
       vc_bvAndExpr((x), SymBitVector::constant(16,  (hex))),\
-      vc_bvAndExpr(vc_bvRightShiftExprExpr(16, (x), vc_bvConstExprFromInt(16, (shift))), SymBitVector::constant(16, (hex)))\
+      vc_bvAndExpr(vc_bvRightShiftExprExpr(16, (x), SymBitVector::constant(16, (shift))), SymBitVector::constant(16, (hex)))\
       )\
 
 #define SUM_OUTER(x, s1, s2, s3, s4)\
@@ -1792,7 +1790,7 @@ void popcnt64Handler(v_data d, Expr E_dest, Expr E_src) {
 #define SUM_INNER(x, shift, hex)\
   vc_bvPlusExpr(64,\
       vc_bvAndExpr((x), SymBitVector::constant(64,  (hex))),\
-      vc_bvAndExpr(vc_bvRightShiftExprExpr(64, (x), vc_bvConstExprFromInt(64, (shift))), SymBitVector::constant(64, (hex)))\
+      vc_bvAndExpr(vc_bvRightShiftExprExpr(64, (x), SymBitVector::constant(64, (shift))), SymBitVector::constant(64, (hex)))\
       )\
 
 #define SUM_OUTER(x, s1, s2, s3, s4, s5, s6) \
@@ -2444,7 +2442,7 @@ void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bo
 
   if(bitWidth != 32 && bitWidth != 64)
     throw VALIDATOR_ERROR("Only bitwidth 32 and 64 supported for shl");
-  Expr  E_shamt = vc_bvAndExpr(vc_bvConstExprFromInt(bitWidth, bitWidth - 1), (regExprWVN(rcx, d.pre_suffix, d.Vn, V_UNITSIZE))[bitWidth -1][0]);
+  Expr  E_shamt = vc_bvAndExpr(SymBitVector::constant(bitWidth, bitWidth - 1), (regExprWVN(rcx, d.pre_suffix, d.Vn, V_UNITSIZE))[bitWidth -1][0]);
   //assume E_shamt is less than bitWidth
   auto res = vc_iteExpr(vc_eqExpr(E_shamt, SymBitVector::constant(bitWidth, 0)), E_src1, SymBitVector::constant(bitWidth, 0)) ;
   //cout << "DEST " << E_dest <<  "SRC " << E_src1 <<  "SHAMT " << E_shamt <<  endl ;
@@ -2522,7 +2520,7 @@ void shrHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
   SymBool retval;
   if(shamt <= bitWidth)
   {
-    retval =  vc_eqExpr(E_dest, vc_bvRightShiftExprExpr(bitWidth, E_src1, vc_bvConstExprFromInt(bitWidth ,shamt)));
+    retval =  vc_eqExpr(E_dest, vc_bvRightShiftExprExpr(bitWidth, E_src1, SymBitVector::constant(bitWidth ,shamt)));
 #ifdef DEBUG_VALIDATOR
     cout << E_dest << E_src1 << retval << shamt;
 #endif
@@ -2564,7 +2562,7 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
 
     res = vc_iteExpr(
             vc_eqExpr(E_shamt, SymBitVector::constant(bitWidth, i)),
-            vc_bvRightShiftExprExpr(bitWidth, E_src1, vc_bvConstExprFromInt(bitWidth, i)),
+            vc_bvRightShiftExprExpr(bitWidth, E_src1, SymBitVector::constant(bitWidth, i)),
             res);
   }
 
@@ -2711,8 +2709,8 @@ void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_src1, Expr E_src2, Exp
 void subHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
 
-  auto E_arg1 = vc_bvConstExprFromInt(1,0) || E_src1;
-  auto E_arg2 = vc_bvConstExprFromInt(1,0) || E_src2;
+  auto E_arg1 = SymBitVector::constant(1,0) || E_src1;
+  auto E_arg2 = SymBitVector::constant(1,0) || E_src2;
 
   SymBool retval = E_dest == (E_arg1 - E_arg2)[bitWidth - 1][0];
   if(dest_is_reg && bitWidth < V_UNITSIZE)

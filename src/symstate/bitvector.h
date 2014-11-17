@@ -167,17 +167,13 @@ public:
     return IndexHelper(*this, index);
   }
 
-  /* Accesses the underlying object */
+  /** Accesses the underlying object */
   const SymBitVectorAbstract * ptr;
 
-  /* Constructs a SymBitVector that doesn't point to anything */
+  /** Constructs a SymBitVector that doesn't point to anything */
   SymBitVector() : ptr(NULL) {}
-
-private:
-  /* Constructs a new SymBitVector from a pointer to the AST hierarchy */
+  /** Constructs a new SymBitVector from a pointer to the AST hierarchy */
   SymBitVector(const SymBitVectorAbstract * ptr_) : ptr(ptr_) {}
-
-
 
 };
 
@@ -236,7 +232,7 @@ class SymBitVectorConstant : public SymBitVectorAbstract {
 
 private:
   SymBitVectorConstant(uint16_t size, uint64_t constant)
-    : constant_(constant), size_(size) {
+    : constant_(constant & ((1 << size) - 1)), size_(size) {
   }
 
 public:
@@ -483,7 +479,6 @@ public:
 } //namespace stoke
 
 std::ostream& operator<< (std::ostream& out, stoke::SymBitVector& bv);
-
 
 /* We need to include these to make sure templates instantiate, but not
    before SymBitVector is declared! */

@@ -1,6 +1,6 @@
 
-#ifndef _STOKE_SRC_SYMSTATE_VISITOR_H
-#define _STOKE_SRC_SYMSTATE_VISITOR_H
+#ifndef STOKE_SRC_SYMSTATE_VISITOR_H
+#define STOKE_SRC_SYMSTATE_VISITOR_H
 
 #include <cassert>
 
@@ -16,7 +16,7 @@ class SymVisitor {
 
 public:
   /** Visit a symbolic bit vector (encapsulated) */
-  T operator()(const SymBitVector& bv) {
+  virtual T operator()(const SymBitVector& bv) {
     return (*this)(bv.ptr);
   }
 
@@ -75,7 +75,7 @@ public:
   }
 
   /** Visit a symbolic bool (encapsulated) */
-  T operator()(const SymBool& b) {
+  virtual T operator()(const SymBool& b) {
     return (*this)(b.ptr);
   }
 

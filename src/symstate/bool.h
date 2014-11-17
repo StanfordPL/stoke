@@ -87,8 +87,6 @@ public:
 
   /** Construct a SymBool pointing to nothing */
   SymBool() : ptr(NULL) {}
-
-private:
   /** Construct a SymBool from a pointer to an underlying object */
   SymBool(const SymBoolAbstract * const ptr_) : ptr(ptr_) {}
 
