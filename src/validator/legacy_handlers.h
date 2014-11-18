@@ -23,29 +23,23 @@ SymBool setFlag(const VersionNumber& Vnprime, SS_Id flag, const SymBool& e, std:
 class v_data
 {
 public:
-  PAIR_INFO state_info;
   VersionNumber& Vn;
   VersionNumber& Vnprime;
   Instruction& instr;
-  unsigned int low;
-  unsigned int high;
   std:: string pre_suffix;
   std:: string post_suffix;
   std::vector<SymBool>& constraints;
-  std::set<SS_Id>& X_mod;
   unsigned int instr_no;
   ~v_data() {}
 
-  v_data(PAIR_INFO state_info_, VersionNumber& Vn_,  VersionNumber& Vnprime_,  Instruction& instr_, unsigned int low, unsigned int high, std:: string pre_suffix_,
-         std:: string post_suffix_, std::vector<SymBool>& constraints_,  std::set<SS_Id>& X_mod_, unsigned int instr_no_):
-    state_info(state_info_),
+  v_data(VersionNumber& Vn_,  VersionNumber& Vnprime_,  Instruction& instr_, std:: string pre_suffix_,
+         std:: string post_suffix_, std::vector<SymBool>& constraints_, unsigned int instr_no_):
     Vn (Vn_),
     Vnprime (Vnprime_),
     instr (instr_),
     pre_suffix (pre_suffix_),
     post_suffix (post_suffix_),
     constraints (constraints_),
-    X_mod (X_mod_),
     instr_no(instr_no_)
   {}
   bool isTargetData() {
@@ -157,8 +151,8 @@ void xorpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_d
 void xorpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 
 //Convert an instruction to a constraint
-void instrnToConstraint(PAIR_INFO state_info,V_Node& n,
-                        VersionNumber& Vn, VersionNumber& Vnprime,
-                        std::vector<SymBool>& constraints, std::string code_num,unsigned int  instr_no, std::set<SS_Id> X_mod);
+void instrnToConstraint(Instruction& instr,
+                        VersionNumber Vn, VersionNumber Vnprime,
+                        std::vector<SymBool>& constraints, std::string code_num,unsigned int  instr_no);
 
 #endif
