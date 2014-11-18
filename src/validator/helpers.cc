@@ -219,10 +219,16 @@ void preserveAllFlags(v_data d)
   setFlag(d.Vnprime, V_OF, getBoolExpr(V_OF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
 }
 
-//Get the expression corresponding to the OF of add instruction.
+//Get the expression corresponding to the OF of plus instruction.
 //Takes msb's of arguments and result as input.
-SymBool getOFExpr(SymBool E_msb_1, SymBool E_msb_2, SymBool E_msb_3) {
-  return E_msb_1 != E_msb_3;
+SymBool getPlusOFExpr(SymBool E_msb_1, SymBool E_msb_2, SymBool E_msb_3) {
+  return (E_msb_1 == E_msb_2) & E_msb_1 != E_msb_3;
+}
+
+//Get the expression corresponding to the OF of sub instruction.
+//Takes msb's of arguments and result as input.
+SymBool getMinusOFExpr(SymBool E_msb_1, SymBool E_msb_2, SymBool E_msb_3) {
+  return (E_msb_2 == E_msb_3) & E_msb_1 != E_msb_2;
 }
 
 //A wrapper
