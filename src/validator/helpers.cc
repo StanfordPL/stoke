@@ -370,9 +370,9 @@ Expr pshuf_shift_right_and_extract(Expr bitvector, int shift, int high, int low,
   throw VALIDATOR_ERROR("pshuf_shift_right_and_extract internal error: unexpected state");
 }
 
-void instrnToConstraint(PAIR_INFO state_info,V_Node& n,
+void instrnToConstraint(V_Node& n,
                         VersionNumber& Vn, VersionNumber& Vnprime,
-                        std::vector<SymBool>& constraints, std::string code_num,unsigned int  instr_no, std::set<SS_Id> X_mod)
+                        std::vector<SymBool>& constraints, std::string code_num,unsigned int  instr_no)
 {
 
   Instruction instr = n.getInstr();
@@ -380,7 +380,7 @@ void instrnToConstraint(PAIR_INFO state_info,V_Node& n,
   string pre_suffix = "_" + code_num + "_";
   string post_suffix = "_" + code_num + "_";
 
-  v_data d(state_info,Vn,Vnprime,instr,-1,-1,pre_suffix, post_suffix, constraints, X_mod, instr_no);
+  v_data d(Vn, Vnprime, instr, pre_suffix, post_suffix, constraints, instr_no);
 
   switch(instr.get_opcode())
   {
