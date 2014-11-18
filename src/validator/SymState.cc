@@ -69,84 +69,6 @@ pair<stoke::Bijection<string>, map<SS_Id, unsigned int> > InitStateMapping()
 
 namespace stoke {
 
-//Convert an integer to a string
-string itoa(int i)
-{
-  string retval;
-  ostringstream out;
-  out << i;
-  retval = out.str();
-  return retval;
-}
-
-
-
-
-
-V_Edge::V_Edge(string codenum, unsigned int i, unsigned int  j)
-{
-
-  src_ins_no_ = i;
-  dest_ins_no_ = j;
-}
-VersionNumber& V_Edge::getVN()
-{
-  return incomingVN_;
-}
-
-Ebb toEbb(const stoke::Cfg& f, unsigned int blocksize, string codenum)
-{
-  Ebb retval;
-  V_Node prev;
-  const Code& c = f.get_code();
-  Cfg::instr_iterator j = c.begin();
-  Cfg::instr_iterator je = c.end();
-  retval.nodes.push_back(V_Node(codenum, 0, 0, *j));
-  j++;
-  unsigned int node_idx;
-  node_idx = retval.nodes.size()-1;
-  unsigned int count = 0;
-  for(;/* count < blocksize &&*/ j !=je; j++, node_idx++, count++ )
-  {
-    if (node_idx != retval.nodes.size() - 1) {
-      throw VALIDATOR_ERROR("internal error");
-    }
-    Instruction instr = *j;
-#ifdef DEBUG_VALIDATOR
-    cout << "Adding "  << instr << " to EBB" << endl;
-#endif
-    //node for the successor
-    V_Node n(codenum,  0, count+1, instr);
-    retval.nodes.push_back(n);
-    //Edge between successor and node_idx
-    V_Edge e(codenum, node_idx, node_idx + 1);
-    retval.edges.push_back(e);
-    //index for the edge
-    unsigned int edge_idx = retval.edges.size() - 1;
-    //this edge is my successor
-    retval.nodes[node_idx].successors_.push_back(edge_idx);
-    //this edge is predecessor of my successor
-    retval.nodes[node_idx + 1].predecessors_.push_back(edge_idx);
-  }
-
-  return retval;
-}
-
-unsigned int Ebb::size()
-{
-  return nodes.size();
-}
-
-V_Node& Ebb::getNode(unsigned int i)
-{
-  return nodes[i];
-}
-
-VersionNumber& V_Node::getVN()
-{
-  return outgoingVN_;
-}
-
 void VersionNumber::Init(set<SS_Id> vars, int n)
 {
   set<SS_Id>::iterator iter;
@@ -154,116 +76,14 @@ void VersionNumber::Init(set<SS_Id> vars, int n)
     VN_[ *iter ] = n;
 }
 
-
-unsigned int V_Node::predSize()
-{
-  return predecessors_.size();
-}
-
-unsigned int V_Node::getPred(unsigned int i)
-{
-  return predecessors_[i];
-}
-
-unsigned int V_Node::getSucc(unsigned int i)
-{
-  return successors_[i];
-}
-
-V_Edge& Ebb::getEdge(unsigned int i)
-{
-  return edges[i];
-}
-
-string TextInstructionWriter(const Instruction& instr)
-{
-  ostringstream oss;
-  oss << instr;
-  return oss.str();
-}
-
-void Ebb::print()
-{
-
-#ifdef DEBUG_VALIDATOR
-  // cout << "Printing nodes" << "\n";
-  unsigned int i = 0;
-  unsigned int j = 0;
-  for(i = 0; i< nodes.size(); i++)
-  {
-    V_Node n = nodes[i];
-
-    cout << "Node " << i <<"\n";
-    cout <<"Instruction: " << TextInstructionWriter(n.instr_) << "\n";
-    cout <<"BBNO " << n.bb_no_ << "Instr no " << n.ins_no_ << "\n";
-    cout << "printing predecessors\n";
-    for(j = 0; j < n.predecessors_.size(); j++)
-      cout << n.predecessors_[j] << "\n";
-    cout << "printing successors\n";
-    for(j = 0; j < n.successors_.size(); j++)
-      cout << n.successors_[j] << "\n";
-    if(n.recordFlags)  cout << "\tThis instruction is recording flags\n";
-  }
-  cout << "Printing edges \n";
-  for(i = 0; i < edges.size(); i++)
-  {
-    V_Edge e = edges[i];
-    cout << "Edge " << i <<"\n";
-    cout << "source is " << e.src_ins_no_ << "\n";
-    cout << "target is " << e.dest_ins_no_ << "\n";
-  }
-#endif
-}
-/*void VersionNumber::FindConflict(set<SS_Id> vars, VersionNumber& VN, set<SS_Id>& X_conf)
-{
-  set<SS_Id>::iterator i;
-  for( i = vars.begin(); i != vars.end(); i++ )
-    if(VN_[*i] != VN.VN_[*i])
-      X_conf.insert(*i);
-}
-*/
 void VersionNumber::Increment(std::set<SS_Id> X, unsigned int n)
 {
   set<SS_Id>::iterator iter;
-  for( iter = X.begin(); iter != X.end(); iter++)
+  for( iter = X.begin(); iter != X.end(); iter++) {
     VN_[*iter] += n;
-}
-
-const Instruction& V_Node::getInstr() const
-{
-  return instr_;
-}
-/*
-VersionNumber VersionNumber::ConflictJoin(const VersionNumber& Vn,const VersionNumber& Vmax,
-                    const std::set<SS_Id>& X,const std::set<SS_Id>& state_elems)
-{
-  VersionNumber retval;
-  set<SS_Id>::iterator iter;
-  for(iter = state_elems.begin(); iter != state_elems.end(); iter++)
-  {
-    SS_Id temp = *iter;
-    if(X.find(temp) == X.end())
-      retval.VN_[temp] = Vn.get(temp);
-    else
-      retval.VN_[temp] = Vmax.get(temp);
   }
-  return retval;
-}
-*/
-unsigned int V_Node::succSize()
-{
-  return successors_.size();
 }
 
-void V_Edge::setVN(VersionNumber VN)
-{
-  incomingVN_ = VN;
-}
-
-void V_Node::setVN(VersionNumber VN)
-{
-  outgoingVN_ = VN;
-}
 
 
 }

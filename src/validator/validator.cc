@@ -175,10 +175,9 @@ set<SS_Id> keys(map<SS_Id, unsigned int> dict)
 }
 
 
-set<SS_Id> modSet(PAIR_INFO state_info, const V_Node& n, string codenum, bool include_undef=true)
+set<SS_Id> modSet(PAIR_INFO state_info, const Instruction instr, string codenum, bool include_undef=true)
 {
   set<SS_Id> retval;
-  const x64asm::Instruction& instr = n.getInstr();
 
   if(instr.is_explicit_memory_dereference())
   {
@@ -393,9 +392,9 @@ void addStartConstraint(string code_num, PAIR_INFO state_info, vector<SymBool>& 
 }
 
 //Constrain the final output registers to a known name (RAX_codenum_versionnumber == RAX_codenum_Final)
-SymBool getFinalConstraint(const set<SS_Id>& state_elems, const VersionNumber& Vn, const map<SS_Id, unsigned int>& sizes_, string code_num, PAIR_INFO state_info)
+SymBool getFinalConstraint(const set<SS_Id>& state_elems, const VersionNumber& Vn, string code_num, PAIR_INFO state_info)
 {
-  map<SS_Id, unsigned int> sizes = sizes_;
+  map<SS_Id, unsigned int> sizes = state_info.second;
   Expr E_pre, E_post;
   SymBool E_flag;
   auto retval = SymBool::_true();
@@ -417,7 +416,7 @@ SymBool getFinalConstraint(const set<SS_Id>& state_elems, const VersionNumber& V
       retval = retval & E_flag;
       break;
     case V_XMMSIZE:
-      E_pre = regExpr(id_str + "_" + code_num + "_" + itoa(Vn.get(temp)),V_XMMUNIT);
+      E_pre = regExpr(id_str + "_" + code_num + "_" + to_string(Vn.get(temp)),V_XMMUNIT);
       E_post = regExpr(id_str + "_" + code_num + "_" + V_FSTATE, V_XMMUNIT);
       retval = retval & E_pre == E_post;
       break;
@@ -431,47 +430,26 @@ SymBool getFinalConstraint(const set<SS_Id>& state_elems, const VersionNumber& V
 }
 
 //Walk over the code and generate constraint for every instruction
-VersionNumber C2C(Ebb& ebb, PAIR_INFO state_info, vector<SymBool>& constraints, string code_num)
+VersionNumber C2C(Code code, PAIR_INFO state_info, vector<SymBool>& constraints, string code_num)
 {
-  Bijection<string> bij = state_info.first;
   map<SS_Id, unsigned int> sizes = state_info.second;
   set<SS_Id> state_elems = keys(sizes);
   VersionNumber Vn;
   Vn.Init(state_elems, 0);
+
   unsigned int i = 0;
-  unsigned int j = 0;
-  //unsigned int unused_memory = 0;
-  for(i = 0; i< ebb.size(); i++, j++ )
-  {
-    V_Node& n = ebb.getNode(i);
-    set<SS_Id> modset = modSet(state_info, n, code_num);
-    set<SS_Id> X_mod = modset;
+  for(auto it : code) {
+    set<SS_Id> modset = modSet(state_info, it, code_num);
     VersionNumber Vnold(Vn);
-    Vn.Increment(X_mod, 1);
-    VersionNumber Vnprime(Vn);
-    ostringstream oss;
-    oss <<  n.getInstr();
-
-    n.setVN(Vnprime);
-#ifdef DEBUG_VALIDATOR
-    cout << "Creating constraint from instruction " << oss.str() <<"\n";
-#endif
-    instrnToConstraint(state_info, n, Vnold, Vnprime, constraints, code_num, i, X_mod);
-    if(n.succSize() != 1)
-    {
-      SymBool E_final_constraint = getFinalConstraint(state_elems, Vnprime, state_info.second, code_num, state_info);
-#ifdef DEBUG_VALIDATOR
-      cout << "Adding final constraint" << endl << E_final_constraint << endl;
-#endif
-      constraints.push_back(E_final_constraint);
-    }
-#ifdef DEBUG_VALIDATOR
-    cout << "\n\nNode " << i << " ends\n\n";
-#endif
-
+    Vn.Increment(modset, 1);
+    instrnToConstraint(it, Vnold, Vn, constraints, code_num, i);
+    i++;
   }
-  return Vn;
 
+  SymBool last = getFinalConstraint(state_elems, Vn, code_num, state_info);
+  constraints.push_back(last);
+
+  return Vn;
 }
 
 //Get query constraint for registers and memory. The query constraints are missing for condition registers as they are not live out.
@@ -603,20 +581,15 @@ bool Validator::is_supported(Instruction i) {
 vector<SymBool> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2, vector<SymBool>& constraints)
 {
 
-  //Get target and rewrite in my data-structure. Its a path with instructions at nodes.
-  //the size is NOT including the return
-  Ebb e1 = toEbb(f1, 10/*7*//*6*//*11*//*9*/, "1");
-  Ebb e2 = toEbb(f2, 4/*4*//*4*//*6*//*3*/, "2");
-
   //Add start constraints for target i.e. codenum="1"
   addStartConstraint("1", state_info_, constraints, f1.def_ins());
   addStartConstraint("2", state_info_, constraints, f2.def_ins());
 
   //Convert code 1 i.e. target to constraints
-  auto Vn1=C2C(e1, state_info_, constraints, "1");
+  auto Vn1=C2C(f1.get_code(), state_info_, constraints, "1");
 
   //ditto for code 2. Note we use the same mul as target.
-  auto Vn2 = C2C(e2, state_info_, constraints, "2");
+  auto Vn2 = C2C(f2.get_code(), state_info_, constraints, "2");
 
   vector<SymBool> query;
   getQueryConstraint(state_info_, query, f1.live_outs());
