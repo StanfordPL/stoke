@@ -67,6 +67,55 @@ public:
     os_ << ")";
   }
 
+  /* Visit a binop on a bool */
+  void visit_binop(const SymBoolBinop * const b) {
+
+    switch(b->type()) {
+    case SymBool::AND:
+      os_ << "(and ";
+      break;
+    case SymBool::IFF:
+      os_ << "(== ";
+      break;
+    case SymBool::IMPLIES:
+      os_ << "(implies ";
+      break;
+    case SymBitVector::OR:
+      os_ << "(or ";
+      break;
+    case SymBitVector::XOR:
+      os_ << "(xor ";
+      break;
+    default:
+      os_ << "(UNHANDLED_BINOP" << b->type() << " ";
+      assert(false);
+    }
+
+    (*this)(b->a_);
+    os_ << " ";
+    (*this)(b->b_);
+    os_ << ")";
+  }
+
+
+  void visit_unop(const SymBitVectorUnop * const bv) {
+
+    switch(bv->type()) {
+    case SymBitVector::NOT:
+      os_ << "!";
+      break;
+    case SymBitVector::U_MINUS:
+      os_ << "-";
+      break;
+    default:
+      os_ << "UNHANDLED_UNOP" << bv->type() << " ";
+      assert(false);
+    }
+
+    (*this)(bv->bv_);
+  }
+
+
   void visit_compare(const SymBoolCompare * const b) {
 
     switch(b->type()) {
@@ -140,23 +189,9 @@ public:
     os_ << ")";
   }
 
-  /** Visit a bit-vector NOT */
-  void visit(const SymBitVectorNot * const bv) {
-    os_ << "(not ";
-    (*this)(bv->bv_);
-    os_ << ")";
-  }
-
   /** Visit a bit-vector sign-extend */
   void visit(const SymBitVectorSignExtend * const bv) {
     os_ << "(sign-extend-" << bv->size_ << " ";
-    (*this)(bv->bv_);
-    os_ << ")";
-  }
-
-  /** Visit a bit-vector unary minus */
-  void visit(const SymBitVectorUMinus * const bv) {
-    os_ << "(negative ";
     (*this)(bv->bv_);
     os_ << ")";
   }
@@ -166,55 +201,14 @@ public:
     os_ << "<" << bv->name_ << "|" << bv->size_ << ">";
   }
 
-  /** Visit a Z3 bitvector */
-  void visit(const SymBitVectorZ3 * const bv) {
-    os_ << bv->e_;
-  }
-
-  /** Visit a boolean AND */
-  void visit(const SymBoolAnd * const b) {
-    os_ << "(and ";
-    (*this)(b->a_);
-    os_ << " ";
-    (*this)(b->b_);
-    os_ << ")";
-  }
-
   /** Visit a boolean FALSE */
   void visit(const SymBoolFalse * const b) {
     os_ << "FALSE";
   }
 
-  /** Visit a boolean IFF */
-  void visit(const SymBoolIff * const b) {
-    os_ << "(iff ";
-    (*this)(b->a_);
-    os_ << " ";
-    (*this)(b->b_);
-    os_ << ")";
-  }
-
-  /** Visit a boolean IMPLIES */
-  void visit(const SymBoolImplies * const b) {
-    os_ << "(implies ";
-    (*this)(b->a_);
-    os_ << " ";
-    (*this)(b->b_);
-    os_ << ")";
-  }
-
   /** Visit a boolean NOT */
   void visit(const SymBoolNot * const b) {
     os_ << "(not ";
-    (*this)(b->b_);
-    os_ << ")";
-  }
-
-  /** Visit a boolean OR */
-  void visit(const SymBoolOr * const b) {
-    os_ << "(or ";
-    (*this)(b->a_);
-    os_ << " ";
     (*this)(b->b_);
     os_ << ")";
   }
@@ -228,22 +222,6 @@ public:
   void visit(const SymBoolVar * const b) {
     os_ << "<" << b->name_ << ">";
   }
-
-  /** Visit a boolean XOR */
-  void visit(const SymBoolXor * const b) {
-    os_ << "(xor ";
-    (*this)(b->a_);
-    os_ << " ";
-    (*this)(b->b_);
-    os_ << ")";
-  }
-
-  /** Visit a Z3 compatibility bool */
-  void visit(const SymBoolZ3 * const b) {
-    os_ << b->e_;
-  }
-
-
 
 private:
   std::ostream& os_;

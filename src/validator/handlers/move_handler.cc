@@ -8,10 +8,15 @@ using namespace std;
 MoveHandler::MoveSupport MoveHandler::lookup(const Instruction& instr) const {
 
   string opcode = get_opcode(instr);
-  cout << "OPCODE is " << opcode << endl;
 
-  if (opcode == "movq")
+  if (opcode == "movq" || opcode == "movl" || opcode == "movw" || opcode == "movb" ||
+      opcode == "movsbw" || opcode == "movsbl" || opcode == "movsbq" ||
+      opcode == "movswl" || opcode == "movswq" || opcode == "movslq")
     return MoveSupport::SIGN_EXTEND;
+
+  if (opcode == "movzbw" || opcode == "movzbl" || opcode == "movzbq" ||
+      opcode == "movzwl" || opcode == "movzwq" || opcode == "movzlq")
+    return MoveSupport::ZERO_EXTEND;
 
   return MoveSupport::NONE;
 }
@@ -19,8 +24,6 @@ MoveHandler::MoveSupport MoveHandler::lookup(const Instruction& instr) const {
 Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
   if(!operands_supported(instr))
     return SupportLevel::NONE;
-
-  cout << "OPERAND supported: " << instr << endl;
 
   if(!lookup(instr))
     return SupportLevel::NONE;

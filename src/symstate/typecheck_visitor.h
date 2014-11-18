@@ -3,6 +3,7 @@
 #define _STOKE_SRC_SYMSTATE_TYPECHECK_VISITOR
 
 #include <map>
+#include <sstream>
 
 #include "src/symstate/visitor.h"
 
@@ -46,6 +47,18 @@ public:
     }
   }
 
+  /* Visit a generic binary operator on bool*/
+  uint16_t visit_binop(const SymBoolBinop * const b) {
+
+    auto lhs = (*this)(b->a_);
+    auto rhs = (*this)(b->b_);
+
+    if (lhs && rhs)
+      return 1;
+    else
+      return 0;
+  }
+
   /** Visit a bit-vector EQ */
   uint16_t visit_compare(const SymBoolCompare * const b) {
     auto lhs = (*this)(b->a_);
@@ -72,6 +85,11 @@ public:
       return 0;
     }
     return 0;
+  }
+
+  /** Visit a bit-vector unary operator */
+  uint16_t visit_unop(const SymBitVectorUnop * const bv) {
+    return (*this)(bv->bv_);
   }
 
   /** Visit a bit-vector concatenation.  Note, different than other
@@ -227,11 +245,6 @@ public:
     }
   }
 
-  /** Visit a bit-vector NOT */
-  uint16_t visit(const SymBitVectorNot * const bv) {
-    return (*this)(bv->bv_);
-  }
-
   /** Visit a bit-vector unary minus */
   uint16_t visit(const SymBitVectorSignExtend * const bv) {
     auto child = (*this)(bv->bv_);
@@ -266,70 +279,27 @@ public:
     }
   }
 
-  /** Visit a bit-vector unary minus */
-  uint16_t visit(const SymBitVectorUMinus * const bv) {
-    return (*this)(bv->bv_);
-  }
-
   /** Visit a bit-vector variable */
   uint16_t visit(const SymBitVectorVar * const bv) {
     return bv->size_;
   }
-
-  /** Visit a Z3 bitvector */
-  uint16_t visit(const SymBitVectorZ3 * const bv) {
-    return bv->e_.get_sort().bv_size();
-  }
-
-  /** Visit a boolean AND */
-  uint16_t visit(const SymBoolAnd * const b) {
-    return (*this)(b->a_) && (*this)(b->b_);
-  }
-
   /** Visit a boolean FALSE */
   uint16_t visit(const SymBoolFalse * const b) {
     return 1;
   }
-
-  /** Visit a boolean IFF */
-  uint16_t visit(const SymBoolIff * const b) {
-    return (*this)(b->a_) && (*this)(b->b_);
-  }
-
-  /** Visit a boolean Implies */
-  uint16_t visit(const SymBoolImplies * const b) {
-    return (*this)(b->a_) && (*this)(b->b_);
-  }
-
   /** Visit a boolean NOT */
   uint16_t visit(const SymBoolNot * const b) {
     return (*this)(b->b_);
   }
-
-  /** Visit a boolean OR */
-  uint16_t visit(const SymBoolOr * const b) {
-    return (*this)(b->a_) && (*this)(b->b_);
-  }
-
   /** Visit a boolean TRUE */
   uint16_t visit(const SymBoolTrue * const b) {
     return 1;
   }
-
   /** Visit a boolean VAR */
   uint16_t visit(const SymBoolVar * const b) {
     return 1;
   }
 
-  /** Visit a boolean XOR */
-  uint16_t visit(const SymBoolXor * const b) {
-    return (*this)(b->a_) && (*this)(b->b_);
-  }
-
-  /** Visit a Z3 bool.  Trusting it's typechecked right. */
-  uint16_t visit(const SymBoolZ3 * const b) {
-    return 1;
-  }
 
   /** Check if an error message was recorded on the last typecheck */
   bool has_error() const {

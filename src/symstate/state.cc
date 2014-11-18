@@ -25,7 +25,10 @@ SymBitVector SymState::operator[](const Operand o) const {
 
   if(o.is_gp_register()) {
     auto& r = reinterpret_cast<const R&>(o);
-    return gp[r];
+    if (o.size() != 64)
+      return gp[r][o.size() - 1][0];
+    else
+      return gp[r];
   }
 
   if(o.type() == Type::XMM) {
@@ -65,26 +68,32 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     // 32-bit special case
     auto& r32 = reinterpret_cast<const R32&>(o);
     gp[r32] = SymBitVector::constant(32, 0) || bv;
+    return;
   } else if (o.is_gp_register() && o.size() == 64) {
     // 64-bit gp register.  easy.
     auto& r = reinterpret_cast<const R&>(o);
     gp[r] = bv;
+    return;
   } else if (o.is_gp_register()) {
     // small gp register
     auto& r = reinterpret_cast<const R&>(o);
     gp[r] = gp[r][63][o.size()] || bv;
+    return;
   } else if (avx && o.type() == Type::XMM) {
     // avx special case
     auto& xmm = reinterpret_cast<const Xmm&>(o);
-    sse[xmm] = SymBitVector::constant(128, 0) || bv;
+    sse[xmm] = SymBitVector::constant(128, 0) || bv[127][0];
+    return;
   } else if (o.type() == Type::XMM) {
     // xmm with ymm preserved
     auto& xmm = reinterpret_cast<const Xmm&>(o);
     sse[xmm] = sse[xmm][255][128] || bv;
+    return;
   } else if (o.type() == Type::YMM) {
     // set the ymm register
     auto& ymm = reinterpret_cast<const Ymm&>(o);
     sse[ymm] = bv;
+    return;
   }
 
   assert(false);
