@@ -2,8 +2,6 @@
 #ifndef _STOKE_SRC_SYMSTATE_BOOL_H
 #define _STOKE_SRC_SYMSTATE_BOOL_H
 
-#include "src/ext/z3/include/z3++.h"
-
 #include <string>
 
 namespace stoke {
@@ -28,7 +26,6 @@ class SymBoolOr;
 class SymBoolTrue;
 class SymBoolVar;
 class SymBoolXor;
-class SymBoolZ3;
 
 class SymBool {
   friend class SymBitVector;
@@ -51,7 +48,6 @@ public:
     TRUE,
     VAR,
     XOR,
-    Z3
   };
 
   /** Get the type of this bool expression; helps for recursive algorithms on the tree. */
@@ -63,8 +59,6 @@ public:
   static SymBool _true();
   /** Builds a boolean variable */
   static SymBool var(std::string name);
-  /** Builds a z3 compatibility bool */
-  static SymBool z3(const z3::expr& b);
 
   /** Constructs the logical AND of two bools */
   SymBool operator&(const SymBool& other) const;
@@ -81,6 +75,8 @@ public:
   /** Returns the negation of the logical 'if-and-only-if' */
   SymBool operator!=(const SymBool& other) const;
 
+  /** Tells if two symbolic bools are identical */
+  bool equals(const SymBool& other) const;
 
   /** The pointer to the underlying object */
   const SymBoolAbstract * ptr;
@@ -96,6 +92,7 @@ class SymBoolAbstract {
 
 public:
   virtual SymBool::Type type() const = 0;
+  virtual bool equals(const SymBoolAbstract * const) const = 0;
 
 };
 
@@ -108,21 +105,36 @@ public:
   const SymBitVectorAbstract * const a_;
   const SymBitVectorAbstract * const b_;
 
+  bool equals(const SymBoolAbstract * const other) const;
 };
 
-class SymBoolAnd : public SymBoolAbstract {
-  friend class SymBool;
+class SymBoolBinop : public SymBoolAbstract {
 
-private:
-  SymBoolAnd(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
+protected:
+  SymBoolBinop(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
+
+public:
+  const SymBoolAbstract * const a_;
+  const SymBoolAbstract * const b_;
+
+  bool equals(const SymBoolAbstract * const other) const {
+    if(type() != other->type()) return false;
+    auto cast = static_cast<const SymBoolBinop * const>(other);
+    return a_->equals(cast->a_) && b_->equals(cast->b_);
+  }
+
+};
+
+
+
+class SymBoolAnd : public SymBoolBinop {
+  friend class SymBool;
+  using SymBoolBinop::SymBoolBinop;
 
 public:
   SymBool::Type type() const {
     return SymBool::Type::AND;
   }
-
-  const SymBoolAbstract * const a_;
-  const SymBoolAbstract * const b_;
 };
 
 class SymBoolEq : public SymBoolCompare {
@@ -142,6 +154,10 @@ class SymBoolFalse : public SymBoolAbstract {
 public:
   SymBool::Type type() const {
     return SymBool::Type::FALSE;
+  }
+
+  bool equals(const SymBoolAbstract * const other) const {
+    return other->type() == SymBool::Type::FALSE;
   }
 };
 
@@ -167,34 +183,24 @@ public:
   }
 };
 
-class SymBoolIff : public SymBoolAbstract {
+class SymBoolIff : public SymBoolBinop {
   friend class SymBool;
-
-private:
-  SymBoolIff(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
+  using SymBoolBinop::SymBoolBinop;
 
 public:
   SymBool::Type type() const {
     return SymBool::Type::IFF;
   }
-
-  const SymBoolAbstract * const a_;
-  const SymBoolAbstract * const b_;
 };
 
-class SymBoolImplies : public SymBoolAbstract {
+class SymBoolImplies : public SymBoolBinop {
   friend class SymBool;
-
-private:
-  SymBoolImplies(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
+  using SymBoolBinop::SymBoolBinop;
 
 public:
   SymBool::Type type() const {
     return SymBool::Type::IMPLIES;
   }
-
-  const SymBoolAbstract * const a_;
-  const SymBoolAbstract * const b_;
 };
 
 class SymBoolLe : public SymBoolCompare {
@@ -230,22 +236,23 @@ public:
     return SymBool::Type::NOT;
   }
 
+  bool equals(const SymBoolAbstract * const other) const {
+    if(other->type() != SymBool::Type::NOT) return false;
+    auto cast = static_cast<const SymBoolNot * const>(other);
+    return b_->equals(cast->b_);
+  }
+
   const SymBoolAbstract * const b_;
 };
 
-class SymBoolOr : public SymBoolAbstract {
+class SymBoolOr : public SymBoolBinop {
   friend class SymBool;
-
-private:
-  SymBoolOr(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
+  using SymBoolBinop::SymBoolBinop;
 
 public:
   SymBool::Type type() const {
     return SymBool::Type::OR;
   }
-
-  const SymBoolAbstract * const a_;
-  const SymBoolAbstract * const b_;
 };
 
 class SymBoolTrue : public SymBoolAbstract {
@@ -254,6 +261,10 @@ class SymBoolTrue : public SymBoolAbstract {
 public:
   SymBool::Type type() const {
     return SymBool::Type::TRUE;
+  }
+
+  bool equals(const SymBoolAbstract * const other) const {
+    return other->type() == SymBool::Type::TRUE;
   }
 };
 
@@ -268,39 +279,25 @@ public:
     return SymBool::Type::VAR;
   }
 
+  bool equals(const SymBoolAbstract * const other) const {
+    if(other->type() != SymBool::Type::VAR) return false;
+    auto cast = static_cast<const SymBoolVar * const>(other);
+    return name_ == cast->name_;
+  }
+
   const std::string name_;
 };
 
 
-class SymBoolXor : public SymBoolAbstract {
+class SymBoolXor : public SymBoolBinop {
   friend class SymBool;
-
-private:
-  SymBoolXor(const SymBoolAbstract * const a, const SymBoolAbstract * const b) : a_(a), b_(b) {}
+  using SymBoolBinop::SymBoolBinop;
 
 public:
   SymBool::Type type() const {
     return SymBool::Type::XOR;
   }
-
-  const SymBoolAbstract * const a_;
-  const SymBoolAbstract * const b_;
 };
-
-class SymBoolZ3 : public SymBoolAbstract {
-  friend class SymBool;
-
-private:
-  SymBoolZ3(const z3::expr& e) : e_(e) {}
-
-public:
-  SymBool::Type type() const {
-    return SymBool::Type::Z3;
-  }
-
-  const z3::expr& e_;
-};
-
 
 
 

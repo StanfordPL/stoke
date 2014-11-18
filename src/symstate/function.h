@@ -18,6 +18,21 @@ public:
   /** Constructs a bitvector corresponding to an arity-3 function application */
   SymBitVector operator()(SymBitVector a1, SymBitVector a2, SymBitVector a3) const;
 
+  /** Returns if these two functions are identical */
+  bool operator==(const SymFunction& other) const {
+    if (name != other.name) return false;
+    if (return_type != other.return_type) return false;
+    if (args.size() != other.args.size()) return false;
+    for(size_t i = 0; i < args.size(); ++i)
+      if (args[i] != other.args[i])
+        return false;
+    return true;
+  }
+  /** Returns if two functions are not equal */
+  bool operator!=(const SymFunction& other) const {
+    return !(*this == other);
+  }
+
   /** Holds the name of the function */
   const std::string name;
   /** Holds the bitwidth of the return type */

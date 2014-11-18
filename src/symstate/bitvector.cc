@@ -20,9 +20,6 @@ SymBitVector SymBitVector::from_bool(const SymBool& b) {
 SymBitVector SymBitVector::ite(const SymBool& c, const SymBitVector& t, const SymBitVector& f) {
   return SymBitVector(new SymBitVectorIte(c.ptr, t.ptr, f.ptr));
 }
-SymBitVector SymBitVector::z3(z3::expr& e) {
-  return SymBitVector(new SymBitVectorZ3(e));
-}
 
 /* Bit Vector Operators */
 SymBitVector SymBitVector::operator&(const SymBitVector& other) const {
@@ -143,19 +140,25 @@ SymBool SymBitVector::operator!=(const SymBitVector& other) const {
   return !(*this == other);
 }
 
-
+/** Get the type */
 SymBitVector::Type SymBitVector::type() const {
   if(ptr)
     return ptr->type();
   else
     return NONE;
 }
-
+/* equality */
+bool SymBitVector::equals(const SymBitVector& other) const {
+  if (ptr && other.ptr)
+    return ptr->equals(other.ptr);
+  else
+    return ptr == other.ptr;
+}
 
 
 
 /* Output overload */
-std::ostream& operator<< (std::ostream& out, stoke::SymBitVector& bv) {
+std::ostream& operator<< (std::ostream& out, const stoke::SymBitVector& bv) {
   SymPrintVisitor spv(out);
   spv(bv);
   return out;
