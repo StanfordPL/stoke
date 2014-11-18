@@ -26,14 +26,14 @@ void adcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
 
   //This contains n+2 bit result.
-  auto E_result = SymBitVector::var(bitWidth+2, ("ADCTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_result = SymBitVector::var(bitWidth+2, ("ADCTEMP"+d.pre_suffix+to_string(d.instr_no)).c_str());
 
   //Promote arguments to n bits
   auto E_arg1 = SymBitVector::constant(2, 0) || E_src1;
   auto E_arg2 = SymBitVector::constant(2, 0) || E_src2;
 
   //Get a bitWidth+2 bitvector with the lsb as carry
-  auto E_carry = SymBitVector::var(bitWidth+2, ("CARRY"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_carry = SymBitVector::var(bitWidth+2, ("CARRY"+d.pre_suffix+to_string(d.instr_no)).c_str());
   SymBool retval = (SymBool)E_carry[0] == getBoolExpr(V_CF, d.pre_suffix, d.Vn);
   retval = retval & vc_eqExpr(E_carry[bitWidth+1][1],  SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 0));
 
@@ -250,7 +250,7 @@ void bsfHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
   setFlag(d.Vnprime,V_ZF, vc_eqExpr(E_src, SymBitVector::constant(bitWidth, 0)), d.constraints, d.post_suffix);
 
 
-  //  auto E_result = SymBitVector::var(bitWidth, ("BSFTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  //  auto E_result = SymBitVector::var(bitWidth, ("BSFTEMP"+d.pre_suffix+to_string(d.instr_no)).c_str());
   auto E_result = SymBitVector::constant(bitWidth, 0);
   for(int i = (int)bitWidth - 1; i>=0; i-- )
   {
@@ -279,7 +279,7 @@ void bsrHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
   setFlag(d.Vnprime,V_ZF, vc_eqExpr(E_src, SymBitVector::constant(bitWidth, 0)), d.constraints, d.post_suffix);
 
 
-  //  auto E_result = SymBitVector::var(bitWidth, ("BSRTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  //  auto E_result = SymBitVector::var(bitWidth, ("BSRTEMP"+d.pre_suffix+to_string(d.instr_no)).c_str());
   auto E_result = SymBitVector::constant(bitWidth, 0);
   for(unsigned int i = 0 ; i<bitWidth; i++ )
   {
@@ -410,7 +410,7 @@ void cmovccHandler(v_data d, unsigned int bitWidth, string cc, Expr E_dest, Expr
 void cmpHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2) {
 
 
-  auto E_dest = SymBitVector::var(bitWidth, ("CMPTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_dest = SymBitVector::var(bitWidth, ("CMPTEMP"+d.pre_suffix+to_string(d.instr_no)).c_str());
   auto E_arg1 = SymBitVector::constant(1, 0) || E_src1;
   auto E_arg2 = SymBitVector::constant(1, 0) || E_src2;
 
@@ -603,7 +603,7 @@ auto s4 = REFLECT_INNER(s3, 8,  0x00FF00FF, 8,  0xFF00FF00);\
 auto s5 = REFLECT_INNER(s4, 16, 0x0000FFFF, 16, 0xFFFF0000);\
 
 #define POLYDIV(dest, src, poly, idx,n, s)\
-  auto dest = SymBitVector::var(64, ("DIVCRCTEMP"+itoa((idx))+s+itoa((n))).c_str());\
+  auto dest = SymBitVector::var(64, ("DIVCRCTEMP"+to_string((idx))+s+to_string((n))).c_str());\
   temp = vc_iteExpr(src[(idx)+32],\
     vc_bvXorExpr(src, SymBitVector::constant(31-idx, 0) || poly || SymBitVector::constant(idx, 0)),\
   src\
@@ -615,7 +615,7 @@ auto s5 = REFLECT_INNER(s4, 16, 0x0000FFFF, 16, 0xFFFF0000);\
 
 
   SymBool retval = SymBool::_true();
-  auto E_temp1 = SymBitVector::var(32, ("TEMP1CRC"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_temp1 = SymBitVector::var(32, ("TEMP1CRC"+d.pre_suffix+to_string(d.instr_no)).c_str());
 
   REFLECT(E_src, E_temp1_1, E_temp1_2, E_temp1_3, E_temp1_4, E_temp1_5)
 
@@ -625,7 +625,7 @@ auto s5 = REFLECT_INNER(s4, 16, 0x0000FFFF, 16, 0xFFFF0000);\
 
   retval =retval & E_temp1 == E_temp1_5;
 
-  auto E_temp2 = SymBitVector::var(32, ("TEMP2CRC"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_temp2 = SymBitVector::var(32, ("TEMP2CRC"+d.pre_suffix+to_string(d.instr_no)).c_str());
 
   REFLECT(E_dest_pre, E_temp2_1, E_temp2_2, E_temp2_3, E_temp2_4, E_temp2_5)
   retval =retval & E_temp2 == E_temp2_5;
@@ -633,10 +633,10 @@ auto s5 = REFLECT_INNER(s4, 16, 0x0000FFFF, 16, 0xFFFF0000);\
   auto E_temp3 = E_temp1 || SymBitVector::constant(32, 0);
   auto E_temp4 = E_temp2 || SymBitVector::constant(32, 0);
 
-  auto E_temp5 = SymBitVector::var(64, ("TEMP5CRC"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_temp5 = SymBitVector::var(64, ("TEMP5CRC"+d.pre_suffix+to_string(d.instr_no)).c_str());
   retval =retval & vc_eqExpr(E_temp5, vc_bvXorExpr(E_temp3, E_temp4));
 
-  auto E_temp6 = SymBitVector::var(32, ("TEMP6CRC"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_temp6 = SymBitVector::var(32, ("TEMP6CRC"+d.pre_suffix+to_string(d.instr_no)).c_str());
 
 
   auto E_poly = SymBitVector::constant(33, 0x11EDC6F41);
@@ -811,8 +811,8 @@ void dppdHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Ex
   imm = imm & 0xFF;
 
 
-  auto E_temp1 = SymBitVector::var(V_XMMUNIT, ("DPPD_TEMP1"+d.pre_suffix+itoa(d.instr_no)).c_str());
-  auto E_temp2 = SymBitVector::var(V_UNITSIZE, ("DPPD_TEMP2"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_temp1 = SymBitVector::var(V_XMMUNIT, ("DPPD_TEMP1"+d.pre_suffix+to_string(d.instr_no)).c_str());
+  auto E_temp2 = SymBitVector::var(V_UNITSIZE, ("DPPD_TEMP2"+d.pre_suffix+to_string(d.instr_no)).c_str());
   SymBool retval = SymBool::_true();
 
   if(imm & 0x10)
@@ -1103,7 +1103,7 @@ void leaHandler(v_data d, unsigned int bitWidth) {
   SS_Id id_dest = getRegisterFromInstr(d.instr,0);
   auto E_dest = (regExprWVN(id_dest, d.post_suffix, d.Vnprime, V_UNITSIZE))[bitWidth - 1][0];
   auto addr = d.instr.get_operand<M8>(1);
-  auto E_addr = SymBitVector::var(V_UNITSIZE, ("ADDRTEMPEXPR"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_addr = SymBitVector::var(V_UNITSIZE, ("ADDRTEMPEXPR"+d.pre_suffix+to_string(d.instr_no)).c_str());
 
   SymBool retval = ConstrainAddr(E_addr, addr, d); //Compute 64 bit address
   retval = retval & E_dest == E_addr[bitWidth-1][0];
@@ -1649,7 +1649,7 @@ retval = retval & vc_eqExpr((s3), SUM_INNER(s2, 4,  0x0F0F));\
 retval = retval & vc_eqExpr((s4), SUM_INNER(s3, 8,  0x00FF));\
 
 #define VAR_EXPR(s,w)\
-  SymBitVector::var((w), ((s)+d.pre_suffix+itoa(d.instr_no)).c_str());
+  SymBitVector::var((w), ((s)+d.pre_suffix+to_string(d.instr_no)).c_str());
 
 
 
@@ -1700,7 +1700,7 @@ retval = retval & vc_eqExpr((s4), SUM_INNER(s3, 8,  0x00FF00FF));\
 retval = retval & vc_eqExpr((s5), SUM_INNER(s4, 16, 0x0000FFFF));\
 
 #define VAR_EXPR(s,w)\
-  SymBitVector::var((w), ((s)+d.pre_suffix+itoa(d.instr_no)).c_str());
+  SymBitVector::var((w), ((s)+d.pre_suffix+to_string(d.instr_no)).c_str());
 
 
 
@@ -2106,7 +2106,7 @@ void sarHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
   {
     if(shamt != 0 && shamt<bitWidth)
     {
-      auto E_result = SymBitVector::var(bitWidth, ("SARTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str());
+      auto E_result = SymBitVector::var(bitWidth, ("SARTEMP"+d.pre_suffix+to_string(d.instr_no)).c_str());
       auto E_then = vc_eqExpr(E_result, SymBitVector::constant(shamt, -1) || E_src1[bitWidth-1][shamt] );
       auto E_else = vc_eqExpr(E_result, SymBitVector::constant(shamt, 0) || E_src1[bitWidth-1][shamt] );
       retval = vc_iteExpr(E_src1[bitWidth - 1], E_then, E_else);
@@ -2179,11 +2179,11 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
 
   //complicated handling of flags
 
-  auto sign = SymBool::var((idToStr(V_SF)+d.post_suffix+itoa(d.Vnprime.get(V_SF))).c_str());
-  auto zero = SymBool::var((idToStr(V_ZF)+d.post_suffix+itoa(d.Vnprime.get(V_ZF))).c_str());
-  auto parity = SymBool::var((idToStr(V_PF)+d.post_suffix+itoa(d.Vnprime.get(V_PF))).c_str());
-  auto carry = SymBool::var((idToStr(V_CF)+d.post_suffix+itoa(d.Vnprime.get(V_CF))).c_str());
-  auto overflow = SymBool::var((idToStr(V_OF)+d.post_suffix+itoa(d.Vnprime.get(V_OF))).c_str());
+  auto sign = SymBool::var((idToStr(V_SF)+d.post_suffix+to_string(d.Vnprime.get(V_SF))).c_str());
+  auto zero = SymBool::var((idToStr(V_ZF)+d.post_suffix+to_string(d.Vnprime.get(V_ZF))).c_str());
+  auto parity = SymBool::var((idToStr(V_PF)+d.post_suffix+to_string(d.Vnprime.get(V_PF))).c_str());
+  auto carry = SymBool::var((idToStr(V_CF)+d.post_suffix+to_string(d.Vnprime.get(V_CF))).c_str());
+  auto overflow = SymBool::var((idToStr(V_OF)+d.post_suffix+to_string(d.Vnprime.get(V_OF))).c_str());
 
   auto preserveall =  (sign == getBoolExpr(V_SF, d.pre_suffix, d.Vn)) &
                       (zero == getBoolExpr(V_ZF, d.pre_suffix, d.Vn)) &
@@ -2229,10 +2229,10 @@ void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
 
 
-  auto E_result = SymBitVector::var(bitWidth+2, ("SBBTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_result = SymBitVector::var(bitWidth+2, ("SBBTEMP"+d.pre_suffix+to_string(d.instr_no)).c_str());
   auto E_arg1 = SymBitVector::constant(2, 0) || E_src1;
   auto E_arg2 = SymBitVector::constant(2, 0) || vc_bvNotExpr(E_src2);
-  auto E_carry = SymBitVector::var(bitWidth+2, ("BORROW"+d.pre_suffix+itoa(d.instr_no)).c_str());
+  auto E_carry = SymBitVector::var(bitWidth+2, ("BORROW"+d.pre_suffix+to_string(d.instr_no)).c_str());
 
   SymBool retval = E_carry[0] == !(getBoolExpr(V_CF, d.pre_suffix, d.Vn));
   retval = retval & vc_eqExpr(E_carry[bitWidth+1][1],  SymBitVector::constant(1, 0) ||SymBitVector::constant(bitWidth, 0));
@@ -2414,11 +2414,11 @@ void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bo
   }
   //cout << "Adding constraint " << retval << endl;
 
-  auto sign = SymBool::var((idToStr(V_SF)+d.post_suffix+itoa(d.Vnprime.get(V_SF))).c_str());
-  auto zero = SymBool::var((idToStr(V_ZF)+d.post_suffix+itoa(d.Vnprime.get(V_ZF))).c_str());
-  auto parity = SymBool::var((idToStr(V_PF)+d.post_suffix+itoa(d.Vnprime.get(V_PF))).c_str());
-  auto carry = SymBool::var((idToStr(V_CF)+d.post_suffix+itoa(d.Vnprime.get(V_CF))).c_str());
-  auto overflow = SymBool::var((idToStr(V_OF)+d.post_suffix+itoa(d.Vnprime.get(V_OF))).c_str());
+  auto sign = SymBool::var((idToStr(V_SF)+d.post_suffix+to_string(d.Vnprime.get(V_SF))).c_str());
+  auto zero = SymBool::var((idToStr(V_ZF)+d.post_suffix+to_string(d.Vnprime.get(V_ZF))).c_str());
+  auto parity = SymBool::var((idToStr(V_PF)+d.post_suffix+to_string(d.Vnprime.get(V_PF))).c_str());
+  auto carry = SymBool::var((idToStr(V_CF)+d.post_suffix+to_string(d.Vnprime.get(V_CF))).c_str());
+  auto overflow = SymBool::var((idToStr(V_OF)+d.post_suffix+to_string(d.Vnprime.get(V_OF))).c_str());
 
   auto preserveall =
     (sign == getBoolExpr(V_SF, d.pre_suffix, d.Vn)) &
@@ -2525,11 +2525,11 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   }
   //cout << "Adding constraint " << retval << endl;
 
-  auto sign = SymBool::var((idToStr(V_SF)+d.post_suffix+itoa(d.Vnprime.get(V_SF))).c_str());
-  auto zero = SymBool::var((idToStr(V_ZF)+d.post_suffix+itoa(d.Vnprime.get(V_ZF))).c_str());
-  auto parity = SymBool::var((idToStr(V_PF)+d.post_suffix+itoa(d.Vnprime.get(V_PF))).c_str());
-  auto carry = SymBool::var((idToStr(V_CF)+d.post_suffix+itoa(d.Vnprime.get(V_CF))).c_str());
-  auto overflow = SymBool::var((idToStr(V_OF)+d.post_suffix+itoa(d.Vnprime.get(V_OF))).c_str());
+  auto sign = SymBool::var((idToStr(V_SF)+d.post_suffix+to_string(d.Vnprime.get(V_SF))).c_str());
+  auto zero = SymBool::var((idToStr(V_ZF)+d.post_suffix+to_string(d.Vnprime.get(V_ZF))).c_str());
+  auto parity = SymBool::var((idToStr(V_PF)+d.post_suffix+to_string(d.Vnprime.get(V_PF))).c_str());
+  auto carry = SymBool::var((idToStr(V_CF)+d.post_suffix+to_string(d.Vnprime.get(V_CF))).c_str());
+  auto overflow = SymBool::var((idToStr(V_OF)+d.post_suffix+to_string(d.Vnprime.get(V_OF))).c_str());
 
   auto preserveall =  (sign == getBoolExpr(V_SF, d.pre_suffix, d.Vn)) &
                       (zero == getBoolExpr(V_ZF, d.pre_suffix, d.Vn)) &
