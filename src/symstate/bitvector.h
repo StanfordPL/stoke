@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "src/symstate/bool.h"
+#include "src/symstate/function.h"
 #include "src/ext/z3/include/z3++.h"
 
 namespace stoke {
@@ -278,35 +279,27 @@ public:
     return SymBitVector::Type::FUNCTION;
   }
 
-  const SymFunction& f_;
+  const SymFunction f_;
   const std::vector<const SymBitVectorAbstract *> args_;
 
 private:
   SymBitVectorFunction(const SymFunction& f,
-                       const SymBitVectorAbstract * const a) : f_(f), args_( {
-    a
-  }) {}
+                       const SymBitVectorAbstract * const a) : f_(f), args_( {a}) {}
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
-                       const SymBitVectorAbstract * const b) : f_(f), args_( {
-    a, b
-  }) {}
+                       const SymBitVectorAbstract * const b) : f_(f), args_( {a, b}) {}
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
                        const SymBitVectorAbstract * const b,
-                       const SymBitVectorAbstract * const c) : f_(f), args_( {
-    a, b, c
-  }) {}
+                       const SymBitVectorAbstract * const c) : f_(f), args_( {a, b, c} ) {}
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
                        const SymBitVectorAbstract * const b,
                        const SymBitVectorAbstract * const c,
-                       const SymBitVectorAbstract * const d) : f_(f), args_( {
-    a, b, c, d
-  }) {}
+                       const SymBitVectorAbstract * const d) : f_(f), args_( {a, b, c, d}) {}
 
 };
 
@@ -529,7 +522,6 @@ std::ostream& operator<< (std::ostream& out, stoke::SymBitVector& bv);
 
 /* We need to include these to make sure templates instantiate, but not
    before SymBitVector is declared! */
-#include "src/symstate/function.h"
 #include "src/symstate/print_visitor.h"
 #include "src/symstate/typecheck_visitor.h"
 

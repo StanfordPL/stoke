@@ -122,7 +122,7 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
 void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  #define DADDPATT(x)\
+#define DADDPATT(x)\
   {\
     auto E_result = E_dest[x+63][x];\
     auto E_arg1 = E_src1[x+63][x];\
@@ -148,12 +148,12 @@ void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef DADDPATT
+#undef DADDPATT
 }
 
 
@@ -161,7 +161,7 @@ void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
 
 void addfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  #define FADDPATT(x)\
+#define FADDPATT(x)\
   {\
     auto E_result = E_dest[x+31][x];\
     auto E_arg1 = E_src1[x+31][x];\
@@ -189,12 +189,12 @@ void addfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef FADDPATT
+#undef FADDPATT
 }
 
 //This is more general than what the name suggests
@@ -429,7 +429,7 @@ void cmpHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2) {
 
 void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm) {
 
-  #define FCMPPATT(x)\
+#define FCMPPATT(x)\
   {\
     auto E_dest_part = E_dest[x+31][x];\
     auto E_src1 = E_src[x+31][x];\
@@ -439,7 +439,7 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
     retval = retval & vc_iteExpr(E_gt, E_dest_part == (ones), E_dest_part == (zeros));\
   }
 
-  #define FCMPPATT2(x)\
+#define FCMPPATT2(x)\
   {\
     auto E_dest_part = E_dest[x+31][x];\
     auto E_src1 = E_dest_pre[x+31][x];\
@@ -465,9 +465,9 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
     FCMPPATT(64);
     FCMPPATT(96);
 
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
     cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
     d.constraints.push_back(retval);
   }
   if(imm==2)
@@ -482,12 +482,12 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
     FCMPPATT2(64);
     FCMPPATT2(96);
 
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
     cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
     d.constraints.push_back(retval);
   }
-  #undef FCMPPATT
+#undef FCMPPATT
 }
 
 
@@ -837,9 +837,9 @@ void dppdHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Ex
   else
     retval = retval & vc_eqExpr(E_dest[127][64], SymBitVector::constant(64, 0) );
 
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 }
 
@@ -864,9 +864,9 @@ void haddpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is
   retval = retval & e1_dest == dadd(e2_src1,e1_src1);
   retval = retval & e2_dest == dadd(e2_src2,e1_src2);
 
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
 
@@ -1125,9 +1125,9 @@ void maxpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   SymFunction fpmax = SymFunction("maxfp", 128, {128, 128});
   auto E_result = fpmax(E_src1, E_src2);
   SymBool retval = E_dest == E_result;
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
 
   d.constraints.push_back(retval);
 }
@@ -1220,7 +1220,7 @@ void movhlpsHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
 
 void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  #define DMULPATT(x)\
+#define DMULPATT(x)\
   {\
     auto E_result = E_dest[x+63][x];\
     auto E_arg1 = E_src1[x+63][x];\
@@ -1246,19 +1246,19 @@ void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef DMULPATT
+#undef DMULPATT
 }
 
 
 
 void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  #define FMULPATT(x)\
+#define FMULPATT(x)\
   {\
     auto E_result = E_dest[x+31][x];\
     auto E_arg1 = E_src1[x+31][x];\
@@ -1287,12 +1287,12 @@ void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef FMULPATT
+#undef FMULPATT
 }
 
 //mul64r handler writes a 64 bit unsigned multiplication with 128 bit results in terms of
@@ -2680,7 +2680,7 @@ void subHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
 void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  #define DSUBPATT(x)\
+#define DSUBPATT(x)\
   {\
     auto E_result = E_dest[x+63][x];\
     auto E_arg1 = E_src1[x+63][x];\
@@ -2706,18 +2706,18 @@ void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef DSUBPATT
+#undef DSUBPATT
 }
 
 
 void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  #define FSUBPATT(x)\
+#define FSUBPATT(x)\
   {\
     auto E_result = E_dest[x+31][x];\
     auto E_arg1 = E_src1[x+31][x];\
@@ -2745,12 +2745,12 @@ void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef FSUBPATT
+#undef FSUBPATT
 }
 
 
