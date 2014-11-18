@@ -57,6 +57,7 @@ SRC_OBJ=\
 	\
 	src/symstate/bitvector.o \
 	src/symstate/bool.o \
+	src/symstate/function.o \
 	src/symstate/state.o \
 	\
 	src/tunit/tunit.o \

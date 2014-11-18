@@ -12,17 +12,11 @@ public:
     : name(my_name), return_type(r_type), args(my_args) {}
 
   /** Constructs a bitvector corresponding to an arity-1 function application */
-  SymBitVector operator()(SymBitVector a1) const {
-    return SymBitVector(new SymBitVectorFunction(*this, a1.ptr));
-  }
+  SymBitVector operator()(SymBitVector a1) const;
   /** Constructs a bitvector corresponding to an arity-2 function application */
-  SymBitVector operator()(SymBitVector a1, SymBitVector a2) const {
-    return SymBitVector(new SymBitVectorFunction(*this, a1.ptr, a2.ptr));
-  }
+  SymBitVector operator()(SymBitVector a1, SymBitVector a2) const;
   /** Constructs a bitvector corresponding to an arity-3 function application */
-  SymBitVector operator()(SymBitVector a1, SymBitVector a2, SymBitVector a3) const {
-    return SymBitVector(new SymBitVectorFunction(*this, a1.ptr, a2.ptr, a3.ptr));
-  }
+  SymBitVector operator()(SymBitVector a1, SymBitVector a2, SymBitVector a3) const;
 
   /** Holds the name of the function */
   const std::string name;

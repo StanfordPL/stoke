@@ -205,6 +205,8 @@ TEST_F(ValidatorBaseTest, SimpleCounterexample) {
   rewrite_ << "movq $0x0, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+
   stoke::CpuState ceg;
   assert_ceg(&ceg);
 
