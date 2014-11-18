@@ -34,12 +34,12 @@ void adcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   //Get a bitWidth+2 bitvector with the lsb as carry
   auto E_carry = SymBitVector::var(bitWidth+2, ("CARRY"+d.pre_suffix+itoa(d.instr_no)).c_str());
-  SymBool retval = (SymBool)(E_carry)[0] == getBoolExpr(V_CF, d.pre_suffix, d.Vn);
-  retval = retval & vc_eqExpr((E_carry)[bitWidth+1][1],  SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 0));
+  SymBool retval = (SymBool)E_carry[0] == getBoolExpr(V_CF, d.pre_suffix, d.Vn);
+  retval = retval & vc_eqExpr(E_carry[bitWidth+1][1],  SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 0));
 
   //E_src1 + E_src2 + Carry
   retval = retval & vc_eqExpr(E_result,vc_bvPlusExpr(bitWidth+2, vc_bvPlusExpr(bitWidth+2, E_arg1, E_arg2), E_carry));
-  retval = retval & E_dest == (E_result)[bitWidth-1][0];
+  retval = retval & E_dest == E_result[bitWidth-1][0];
 
   //Handle effects on parent register
   if(dest_is_reg && bitWidth < V_UNITSIZE)
@@ -55,9 +55,9 @@ void adcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   d.constraints.push_back(retval);
 
   //Set flags accordingly
-  setFlag(d.Vnprime, V_OF, getOFExpr((E_arg1)[bitWidth - 1], (E_arg2)[bitWidth - 1],
-                                     (E_result)[bitWidth - 1]), d.constraints, d.post_suffix);
-  setFlag(d.Vnprime, V_CF, (E_result)[bitWidth] | (E_result)[bitWidth+1], d.constraints, d.post_suffix);
+  setFlag(d.Vnprime, V_OF, getPlusOFExpr(E_arg1[bitWidth - 1], E_arg2[bitWidth - 1],
+                                         E_result[bitWidth - 1]), d.constraints, d.post_suffix);
+  setFlag(d.Vnprime, V_CF, E_result[bitWidth] | E_result[bitWidth+1], d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
 
@@ -71,8 +71,8 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   auto auxiliary = SymBitVector::var(5, aux_name.c_str());
   SymBool set_aux_to_sum = vc_eqExpr(auxiliary,
                                      vc_bvPlusExpr(5,
-                                         SymBitVector::constant(1, 0) || (E_src1)[3][0],
-                                         SymBitVector::constant(1, 0) || (E_src2)[3][0])
+                                         SymBitVector::constant(1, 0) || E_src1[3][0],
+                                         SymBitVector::constant(1, 0) || E_src2[3][0])
                                     );
   d.constraints.push_back(set_aux_to_sum);
 
@@ -85,7 +85,7 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   SymBool retval = SymBool::_true();
   retval = retval & vc_eqExpr(E_result, vc_bvPlusExpr(bitWidth+2, E_arg1, E_arg2));
-  retval = retval & E_dest == (E_result)[bitWidth-1][0];
+  retval = retval & E_dest == E_result[bitWidth-1][0];
 
   /* Set unchanged bits */
   if(dest_is_reg && bitWidth < V_UNITSIZE)
@@ -100,14 +100,14 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   d.constraints.push_back(retval);
 
   /* Set the AF flag */
-  setFlag(d.Vnprime, V_AF, (auxiliary)[4],
+  setFlag(d.Vnprime, V_AF, auxiliary[4],
           d.constraints, d.post_suffix);
 
   /* Set the overflow flag */
   setFlag(d.Vnprime, V_OF,
-          getOFExpr((E_arg1)[bitWidth - 1],
-                    (E_arg2)[bitWidth - 1],
-                    (E_result)[bitWidth - 1]),
+          getPlusOFExpr(E_arg1[bitWidth - 1],
+                        E_arg2[bitWidth - 1],
+                        E_result[bitWidth - 1]),
           d.constraints, d.post_suffix);
 
   /* Set the carry flag */
@@ -121,21 +121,18 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
 
 void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
-  throw VALIDATOR_ERROR("uninterpreted functions not supported");
 
-  /*
-  #define DADDPATT(x)\
+#define DADDPATT(x)\
   {\
-    auto E_result = (E_dest)[x+63][x];\
-    auto E_arg1 = (E_src1)[x+63][x];\
-    auto E_arg2 = (E_src2)[x+63][x];\
+    auto E_result = E_dest[x+63][x];\
+    auto E_arg1 = E_src1[x+63][x];\
+    auto E_arg2 = E_src2[x+63][x];\
     retval = retval & (E_result == dadd(E_arg1,E_arg2));\
   }
 
 
   uint bitWidth = numops*64;
-  z3::sort fl = vc->bv_sort(64);
-  z3::func_decl dadd = z3::function("addd", fl, fl, fl);
+  SymFunction dadd = SymFunction("addd", 64, {64, 64});
   SymBool retval = SymBool::_true();
   if(numops==1)
   {
@@ -151,13 +148,12 @@ void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef DADDPATT
-  */
+#undef DADDPATT
 }
 
 
@@ -165,20 +161,17 @@ void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
 
 void addfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  throw VALIDATOR_ERROR("uninterpreted functions not supported");
-  /*
-  #define FADDPATT(x)\
+#define FADDPATT(x)\
   {\
-    auto E_result = (E_dest)[x+31][x];\
-    auto E_arg1 = (E_src1)[x+31][x];\
-    auto E_arg2 = (E_src2)[x+31][x];\
+    auto E_result = E_dest[x+31][x];\
+    auto E_arg1 = E_src1[x+31][x];\
+    auto E_arg2 = E_src2[x+31][x];\
     retval = retval & (E_result == fadd(E_arg1,E_arg2));\
   }
 
 
   uint bitWidth = numops*32;
-  //z3::sort fl = vc->bv_sort(32);
-  //z3::func_decl fadd = z3::function("addf", fl, fl, fl);
+  SymFunction fadd = SymFunction("fadd", 32, {32, 32});
   SymBool retval = SymBool::_true();
   if(numops==1)
   {
@@ -196,13 +189,12 @@ void addfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef FADDPATT
-  */
+#undef FADDPATT
 }
 
 //This is more general than what the name suggests
@@ -219,7 +211,7 @@ void andHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
 
   auto E_result = vc_bvAndExpr(E_src1, E_src2 );
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -241,7 +233,7 @@ void andpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
 
   auto E_result = vc_bvAndExpr(E_src1, E_src2 );
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
@@ -262,9 +254,9 @@ void bsfHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
   auto E_result = SymBitVector::constant(bitWidth, 0);
   for(int i = (int)bitWidth - 1; i>=0; i-- )
   {
-    E_result = vc_iteExpr((E_src)[i], SymBitVector::constant(bitWidth, i), E_result);
+    E_result = vc_iteExpr(E_src[i], SymBitVector::constant(bitWidth, i), E_result);
   }
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
 
   if(bitWidth < V_UNITSIZE)
   {
@@ -291,9 +283,9 @@ void bsrHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
   auto E_result = SymBitVector::constant(bitWidth, 0);
   for(unsigned int i = 0 ; i<bitWidth; i++ )
   {
-    E_result = vc_iteExpr((E_src)[i], SymBitVector::constant(bitWidth, i), E_result);
+    E_result = vc_iteExpr(E_src[i], SymBitVector::constant(bitWidth, i), E_result);
   }
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
 
   if(bitWidth < V_UNITSIZE)
   {
@@ -336,7 +328,7 @@ void btHandler(v_data d, unsigned int bitWidth, Expr E_operand, Expr E_offset) {
   SymBool E_result = SymBool::_true();
   for(unsigned int i = 0; i<bitWidth; i++)
   {
-    E_result = vc_iteExpr(E_idx == SymBitVector::constant(bitWidth, i), (E_operand)[i], E_result);
+    E_result = vc_iteExpr(E_idx == SymBitVector::constant(bitWidth, i), E_operand[i], E_result);
   }
   setFlag(d.Vnprime,V_CF, E_result, d.constraints, d.post_suffix);
 }
@@ -351,8 +343,8 @@ void btcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, Ex
   for(unsigned int i = 0; i<bitWidth; i++)
   {
     retval = vc_iteExpr(vc_eqExpr(E_idx, SymBitVector::constant(bitWidth, i)),
-                        (E_carry == (E_operand)[i]) &
-                        setBit(E_dest, E_operand, i, vc_bvNotExpr((E_operand)[i][i]), bitWidth)
+                        (E_carry == E_operand[i]) &
+                        setBit(E_dest, E_operand, i, vc_bvNotExpr(E_operand[i][i]), bitWidth)
                         ,
                         retval);
   }
@@ -376,7 +368,7 @@ void btvalHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, 
   for(unsigned int i = 0; i<bitWidth; i++)
   {
     retval = vc_iteExpr(vc_eqExpr(E_idx, SymBitVector::constant(bitWidth, i)),
-                        ( E_carry == (E_operand)[i]) &
+                        ( E_carry == E_operand[i]) &
                         setBit(E_dest, E_operand, i, SymBitVector::constant(1, val), bitWidth)
                         ,
                         retval);
@@ -401,8 +393,8 @@ void cmovccHandler(v_data d, unsigned int bitWidth, string cc, Expr E_dest, Expr
   // If the predicate is true, then we set the destination equal to the new value
   // If it's false, we set the destination equal to the previous value.
   auto setif = vc_iteExpr(pred,
-                          (E_dest) == (E_src),
-                          (E_dest) == (E_dest_pre));
+                          E_dest == (E_src),
+                          E_dest == (E_dest_pre));
 
   d.constraints.push_back(setif);
 
@@ -427,7 +419,7 @@ void cmpHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2) {
   cout << "Adding constraint " << retval << endl;
 #endif
   d.constraints.push_back(retval);
-  setFlag(d.Vnprime, V_OF, getOFExpr(E_src1[bitWidth - 1], E_src2[bitWidth - 1],  E_dest[bitWidth - 1]),
+  setFlag(d.Vnprime, V_OF, getMinusOFExpr(E_src1[bitWidth - 1], E_src2[bitWidth - 1],  E_dest[bitWidth - 1]),
           d.constraints, d.post_suffix);
   setFlag(d.Vnprime, V_CF, vc_bvLtExpr(E_src1, E_src2), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
@@ -437,27 +429,24 @@ void cmpHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2) {
 
 void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm) {
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-
-  /*
-  #define FCMPPATT(x)\
+#define FCMPPATT(x)\
   {\
-    auto E_dest_part = (E_dest)[x+31][x];\
-    auto E_src1 = (E_src)[x+31][x];\
-    auto E_src2 = (E_dest_pre)[x+31][x];\
+    auto E_dest_part = E_dest[x+31][x];\
+    auto E_src1 = E_src[x+31][x];\
+    auto E_src2 = E_dest_pre[x+31][x];\
     auto E_cmp_res = fcmp(E_src1, E_src2);\
-    auto E_gt = vc_andExpr(!((E_cmp_res)[1],(E_cmp_res)[0]; \
-    retval = retval & vc_iteExpr(E_gt, (E_dest_part) == (ones), (E_dest_part) == (zeros));\
+    auto E_gt = !E_cmp_res[1] & E_cmp_res[0]; \
+    retval = retval & vc_iteExpr(E_gt, E_dest_part == (ones), E_dest_part == (zeros));\
   }
 
-  #define FCMPPATT2(x)\
+#define FCMPPATT2(x)\
   {\
-    auto E_dest_part = (E_dest)[x+31][x];\
-    auto E_src1 = (E_dest_pre)[x+31][x];\
-    auto E_src2 = (E_src)[x+31][x];\
+    auto E_dest_part = E_dest[x+31][x];\
+    auto E_src1 = E_dest_pre[x+31][x];\
+    auto E_src2 = E_src[x+31][x];\
     auto E_cmp_res = fcmp(E_src1, E_src2);\
-    auto E_gt = !(SymBool)(E_cmp_res)[1] & (E_cmp_res)[0]; \
-    retval = retval & vc_iteExpr(E_gt, (E_dest_part) == (zeros), (E_dest_part) == (ones));\
+    auto E_gt = !E_cmp_res[1] & E_cmp_res[0]; \
+    retval = retval & vc_iteExpr(E_gt, E_dest_part == (zeros), E_dest_part == (ones));\
   }
 
 
@@ -466,9 +455,7 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
     throw VALIDATOR_ERROR("cmpps is only implemented for immediate of 1 or 2");
   if(imm==1)
   {
-    z3::sort fl = vc->bv_sort(32);
-    z3::sort cmp_res = vc->bv_sort(2);
-    z3::func_decl fcmp = z3::function("cmpf", fl, fl, cmp_res);
+    SymFunction fcmp = SymFunction("cmpf", 2, {32, 32});
     SymBool retval = SymBool::_true();
     auto zeros = SymBitVector::constant(32, 0);
     auto ones = SymBitVector::constant(32, -1);
@@ -478,16 +465,14 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
     FCMPPATT(64);
     FCMPPATT(96);
 
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
     cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
     d.constraints.push_back(retval);
   }
   if(imm==2)
   {
-    z3::sort fl = vc->bv_sort(32);
-    z3::sort cmp_res = vc->bv_sort(2);
-    z3::func_decl fcmp = z3::function("cmpf", fl, fl, cmp_res);
+    SymFunction fcmp = SymFunction("cmpf", 2, {32, 32});
     SymBool retval = SymBool::_true();
     auto zeros = SymBitVector::constant(32, 0);
     auto ones = SymBitVector::constant(32, -1);
@@ -497,13 +482,12 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
     FCMPPATT2(64);
     FCMPPATT2(96);
 
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
     cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
     d.constraints.push_back(retval);
   }
-  #undef FCMPPATT
-  */
+#undef FCMPPATT
 }
 
 
@@ -513,8 +497,8 @@ void cmpxchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, Ex
 
   auto E_rax_pre = regExprWVN(rax, d.pre_suffix, d.Vn, V_UNITSIZE);
   auto E_rax_post = regExprWVN(rax, d.post_suffix, d.Vnprime, V_UNITSIZE);
-  auto E_acc_pre = (E_rax_pre)[bitWidth - 1][0];
-  auto E_acc_post = (E_rax_post)[bitWidth - 1][0];
+  auto E_acc_pre = E_rax_pre[bitWidth - 1][0];
+  auto E_acc_post = E_rax_post[bitWidth - 1][0];
 
   cmpHandler(d, bitWidth, E_acc_pre, E_dest_pre);
   SymBool retval = vc_iteExpr(getBoolExpr(V_ZF, d.post_suffix, d.Vnprime),
@@ -543,8 +527,8 @@ void cmpxchg32Handler(v_data d, unsigned int bitWidth, Expr E_dest_post, Expr E_
 
   auto E_rax_pre = regExprWVN(rax, d.pre_suffix, d.Vn, V_UNITSIZE);
   auto E_rax_post = regExprWVN(rax, d.post_suffix, d.Vnprime, V_UNITSIZE);
-  auto E_acc_pre = (E_rax_pre)[bitWidth - 1][0];
-  auto E_acc_post = (E_rax_post)[bitWidth - 1][0];
+  auto E_acc_pre = E_rax_pre[bitWidth - 1][0];
+  auto E_acc_post = E_rax_post[bitWidth - 1][0];
 
   cmpHandler(d, bitWidth, E_acc_pre, E_dest_pre);
   SymBool retval = vc_iteExpr(getBoolExpr(V_ZF, d.post_suffix, d.Vnprime),
@@ -576,7 +560,7 @@ void convert_cdq_Handler(v_data d, SymBool pred, unsigned int bitWidth) {
   SS_Id id_dest = rdx;
   auto E_dest = regExprWVN(id_dest, d.post_suffix, d.Vnprime, V_UNITSIZE)[bitWidth - 1][0];
   auto E_src = vc_iteExpr(pred, SymBitVector::constant(bitWidth, -1),  SymBitVector::constant(bitWidth, 0));
-  SymBool retval = (E_dest) == (E_src);
+  SymBool retval = E_dest == E_src;
   if(bitWidth < V_UNITSIZE)
     retval = retval & UnmodifiedBitsPreserve(id_dest, d, bitWidth);
 #ifdef DEBUG_VALIDATOR
@@ -594,7 +578,7 @@ void convert_e_Handler(v_data d, unsigned int bitWidth) {
   auto E_dest = (regExprWVN(id_dest, d.post_suffix, d.Vnprime, V_UNITSIZE))[2*bitWidth - 1][0];
   auto E_src = (regExprWVN(id_dest, d.pre_suffix, d.Vn, V_UNITSIZE))[bitWidth - 1][0];
   auto E_result = vc_bvSignExtend(E_src, 2*bitWidth);
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
   if(2*bitWidth < V_UNITSIZE)
     retval = retval & UnmodifiedBitsPreserve(id_dest, d, 2*bitWidth);
 #ifdef DEBUG_VALIDATOR
@@ -620,12 +604,12 @@ auto s5 = REFLECT_INNER(s4, 16, 0x0000FFFF, 16, 0xFFFF0000);\
 
 #define POLYDIV(dest, src, poly, idx,n, s)\
   auto dest = SymBitVector::var(64, ("DIVCRCTEMP"+itoa((idx))+s+itoa((n))).c_str());\
-  temp = vc_iteExpr((src)[(idx)+32],\
+  temp = vc_iteExpr(src[(idx)+32],\
     vc_bvXorExpr(src, SymBitVector::constant(31-idx, 0) || poly || SymBitVector::constant(idx, 0)),\
   src\
   ); \
   \
-  retval = retval & (dest) == (temp);
+  retval = retval & dest == temp;
 
 
 
@@ -639,12 +623,12 @@ auto s5 = REFLECT_INNER(s4, 16, 0x0000FFFF, 16, 0xFFFF0000);\
   //cout << "TEMP1CRC done" << endl ;
 #endif
 
-  retval =retval & (E_temp1) == (E_temp1_5);
+  retval =retval & E_temp1 == E_temp1_5;
 
   auto E_temp2 = SymBitVector::var(32, ("TEMP2CRC"+d.pre_suffix+itoa(d.instr_no)).c_str());
 
   REFLECT(E_dest_pre, E_temp2_1, E_temp2_2, E_temp2_3, E_temp2_4, E_temp2_5)
-  retval =retval & (E_temp2) == (E_temp2_5);
+  retval =retval & E_temp2 == E_temp2_5;
 
   auto E_temp3 = E_temp1 || SymBitVector::constant(32, 0);
   auto E_temp4 = E_temp2 || SymBitVector::constant(32, 0);
@@ -656,7 +640,7 @@ auto s5 = REFLECT_INNER(s4, 16, 0x0000FFFF, 16, 0xFFFF0000);\
 
 
   auto E_poly = SymBitVector::constant(33, 0x11EDC6F41);
-  auto E_var31 = vc_iteExpr((E_temp5)[63], vc_bvXorExpr(E_poly || SymBitVector::constant(31, 0), E_temp5), E_temp5);
+  auto E_var31 = vc_iteExpr(E_temp5[63], vc_bvXorExpr(E_poly || SymBitVector::constant(31, 0), E_temp5), E_temp5);
 
   SymBitVector temp = SymBitVector::constant(32, 0);
   POLYDIV(E_var30, E_var31, E_poly, 30, d.instr_no, d.pre_suffix)
@@ -690,11 +674,11 @@ auto s5 = REFLECT_INNER(s4, 16, 0x0000FFFF, 16, 0xFFFF0000);\
   POLYDIV(E_var2 , E_var3 , E_poly,  2, d.instr_no, d.pre_suffix)
   POLYDIV(E_var1 , E_var2 , E_poly,  1, d.instr_no, d.pre_suffix)
 
-  auto E_var0 = vc_iteExpr((E_var1)[32], vc_bvXorExpr(SymBitVector::constant(31, 0) || E_poly, E_var1), E_var1);
-  retval = retval & E_temp6 == (E_var0)[31][0];
+  auto E_var0 = vc_iteExpr(E_var1[32], vc_bvXorExpr(SymBitVector::constant(31, 0) || E_poly, E_var1), E_var1);
+  retval = retval & E_temp6 == E_var0[31][0];
 
   REFLECT(E_temp6, E_temp6_1, E_temp6_2, E_temp6_3, E_temp6_4, E_temp6_5)
-  retval = retval & (E_dest) == (E_temp6_5);
+  retval = retval & E_dest == E_temp6_5;
 
 #ifdef DEBUG_VALIDATOR
   //cout << "Adding constraint " << retval << endl;
@@ -723,20 +707,20 @@ void cwd_cdq_cqoHandler(v_data d, int width) {
 
 
   // Extract the top bit of the source register
-  auto last_bit_of_src = (rax_expr)[width - 1][width - 1];
+  auto last_bit_of_src = rax_expr[width - 1][width - 1];
 
   // Constrain all the bits of the destination register.
   for(int i = 0; i < width; ++i) {
-    auto bit_of_dst = (rdx_end_expr)[i][i];
-    auto equal = (bit_of_dst) == (last_bit_of_src);
+    auto bit_of_dst = rdx_end_expr[i][i];
+    auto equal = bit_of_dst == last_bit_of_src;
     d.constraints.push_back(equal);
   }
 
   // Constrain remaining bits of rdx.
   if (width < 64) {
-    auto rdx_start_remaining = (rdx_start_expr)[63][width];
-    auto rdx_end_remaining = (rdx_end_expr)[63][width];
-    auto equal = (rdx_start_remaining) == (rdx_end_remaining);
+    auto rdx_start_remaining = rdx_start_expr[63][width];
+    auto rdx_end_remaining = rdx_end_expr[63][width];
+    auto equal = rdx_start_remaining == rdx_end_remaining;
     d.constraints.push_back(equal);
   }
 }
@@ -752,7 +736,7 @@ void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   auto E_result = vc_bvMinusExpr(bitWidth+1,
                                  SymBitVector::constant(1, 0) || E_src,
                                  SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 1));
-  SymBool retval = E_dest == (E_result)[bitWidth - 1][0];
+  SymBool retval = E_dest == E_result[bitWidth - 1][0];
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -824,8 +808,6 @@ void div_uif_Handler(v_data d, unsigned int bitWidth, Expr E_src2 ) {
 
 void dppdHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_imm) {
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-  /*
   imm = imm & 0xFF;
 
 
@@ -834,32 +816,31 @@ void dppdHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Ex
   SymBool retval = SymBool::_true();
 
   if(imm & 0x10)
-    retval = retval & dmul((E_temp1)[63][0], (E_dest_pre)[63][0], (E_src)[63][0]);
+    retval = retval & dmul(E_temp1[63][0], E_dest_pre[63][0], E_src[63][0]);
   else
-    retval = retval & vc_eqExpr((E_temp1)[63][0], SymBitVector::constant(64, 0));
+    retval = retval & vc_eqExpr(E_temp1[63][0], SymBitVector::constant(64, 0));
 
   if(imm & 0x20)
-    retval = retval & dmul((E_temp1)[127][64], (E_dest_pre)[127][64], (E_src)[127][64]);
+    retval = retval & dmul(E_temp1[127][64], E_dest_pre[127][64], E_src[127][64]);
   else
-    retval = retval & vc_eqExpr((E_temp1)[127][64], SymBitVector::constant(64, 0));
+    retval = retval & vc_eqExpr(E_temp1[127][64], SymBitVector::constant(64, 0));
 
-  retval = retval & dadd(E_temp2, (E_temp1)[127][64], (E_temp1)[63][0]);
+  retval = retval & dadd(E_temp2, E_temp1[127][64], E_temp1[63][0]);
 
   if( imm & 0x1)
-    retval = retval & (E_dest)[63][0] == E_temp2;
+    retval = retval & E_dest[63][0] == E_temp2;
   else
-    retval = retval & vc_eqExpr((E_dest)[63][0], SymBitVector::constant(64, 0) );
+    retval = retval & vc_eqExpr(E_dest[63][0], SymBitVector::constant(64, 0) );
 
   if( imm & 0x2)
-    retval = retval & (E_dest)[127][64] == E_temp2;
+    retval = retval & E_dest[127][64] == E_temp2;
   else
-    retval = retval & vc_eqExpr((E_dest)[127][64], SymBitVector::constant(64, 0) );
+    retval = retval & vc_eqExpr(E_dest[127][64], SymBitVector::constant(64, 0) );
 
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
-  */
 }
 
 
@@ -867,73 +848,55 @@ void dppdHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Ex
 void haddpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-  /*
-
-  z3::sort fl = vc->bv_sort(64);
-  z3::func_decl dadd = z3::function("addd", fl, fl, fl);
+  SymFunction dadd = SymFunction("addd", 64, {64, 64});
   SymBool retval = SymBool::_true();
 
-  auto e1_src1 = (E_src1)[63][0];
-  auto e2_src1 = (E_src1)[127][64];
+  auto e1_src1 = E_src1[63][0];
+  auto e2_src1 = E_src1[127][64];
 
-  auto e1_src2 = (E_src2)[63][0];
-  auto e2_src2 = (E_src2)[127][64];
+  auto e1_src2 = E_src2[63][0];
+  auto e2_src2 = E_src2[127][64];
 
 
-  auto e1_dest = (E_dest)[63][0];
-  auto e2_dest = (E_dest)[127][64];
+  auto e1_dest = E_dest[63][0];
+  auto e2_dest = E_dest[127][64];
 
   retval = retval & e1_dest == dadd(e2_src1,e1_src1);
   retval = retval & e2_dest == dadd(e2_src2,e1_src2);
 
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  */
 
 }
 
 void haddpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-
-  /*
-
-  z3::sort fl = vc->bv_sort(32);
-  z3::func_decl fadd = z3::function("addf", fl, fl, fl);
+  SymFunction fadd = SymFunction("addf", 32, {32, 32});
   SymBool retval = SymBool::_true();
 
-  auto e1_src1 = (E_src1)[31][0];
-  auto e2_src1 = (E_src1)[63][32];
-  auto e3_src1 = (E_src1)[95][64];
-  auto e4_src1 = (E_src1)[127][96];
+  auto e1_src1 = E_src1[31][0];
+  auto e2_src1 = E_src1[63][32];
+  auto e3_src1 = E_src1[95][64];
+  auto e4_src1 = E_src1[127][96];
 
+  auto e1_src2 = E_src2[31][0];
+  auto e2_src2 = E_src2[63][32];
+  auto e3_src2 = E_src2[95][64];
+  auto e4_src2 = E_src2[127][96];
 
-  auto e1_src2 = (E_src2)[31][0];
-  auto e2_src2 = (E_src2)[63][32];
-  auto e3_src2 = (E_src2)[95][64];
-  auto e4_src2 = (E_src2)[127][96];
+  auto e1_dest = E_dest[31][0];
+  auto e2_dest = E_dest[63][32];
+  auto e3_dest = E_dest[95][64];
+  auto e4_dest = E_dest[127][96];
 
+  d.constraints.push_back( e1_dest == fadd(e2_src1, e1_src1) );
+  d.constraints.push_back( e2_dest == fadd(e4_src1, e3_src1) );
+  d.constraints.push_back( e3_dest == fadd(e2_src2, e1_src2) );
+  d.constraints.push_back( e4_dest == fadd(e4_src2, e3_src2) );
 
-  auto e1_dest = (E_dest)[31][0];
-  auto e2_dest = (E_dest)[63][32];
-  auto e3_dest = (E_dest)[95][64];
-  auto e4_dest = (E_dest)[127][96];
-
-  retval = retval & e1_dest == fadd(e2_src1,e1_src1);
-  retval = retval & e2_dest == fadd(e4_src1,e3_src1);
-  retval = retval & e3_dest == fadd(e2_src2,e1_src2);
-  retval = retval & e4_dest == fadd(e4_src2,e3_src2);
-
-  #ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint " << retval << endl;
-  #endif
-  d.constraints.push_back(retval);
-
-  */
 }
 
 
@@ -994,7 +957,7 @@ void imul1Handler(v_data d, unsigned int bitWidth, Expr E_src2, bool dest_is_reg
     auto E_dest = E_rdx || E_rax;
 
     auto E_result = vc_bvMultExpr(2*bitWidth, E_src1, E_src2 );
-    SymBool retval = (E_dest) == (E_result);
+    SymBool retval = E_dest == E_result;
 
     if(dest_is_reg && bitWidth < V_UNITSIZE)
     {
@@ -1022,7 +985,7 @@ void imul1Handler(v_data d, unsigned int bitWidth, Expr E_src2, bool dest_is_reg
     auto E_dest = E_rdx || E_rax;
 
     auto E_result = vc_bvMultExpr(2*bitWidth, E_src1, E_src2 );
-    SymBool retval = (E_dest) == (E_result);
+    SymBool retval = E_dest == E_result;
 
     if(dest_is_reg) retval = retval &  UnmodifiedBitsPreserve(rax, d, 2*bitWidth);
 
@@ -1044,7 +1007,7 @@ void imul3Handler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Exp
 
 
   auto E_result = vc_bvMultExpr(bitWidth, E_src1, E_src2 );
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
 
   if( bitWidth < V_UNITSIZE)
   {
@@ -1084,7 +1047,7 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   auto E_result = (SymBitVector::constant(1, 0) || E_src) +
                   (SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 1));
 
-  SymBool retval = E_dest == (E_result)[bitWidth - 1][0];
+  SymBool retval = E_dest == E_result[bitWidth - 1][0];
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -1115,16 +1078,16 @@ void lahfHandler(v_data d) {
   auto E_rax_post = regExprWVN(rax, d.post_suffix, d.Vnprime, V_UNITSIZE);
   auto E_src = regExprWVN(rax, d.pre_suffix, d.Vn, V_UNITSIZE);
   SymBool retval = SymBool::_true();
-  retval = retval & (E_src)[63][16] == (E_rax_post)[63][16];
-  retval = retval & (E_src)[7][0] == (E_rax_post)[7][0];
-  retval = retval & (E_rax_post)[15] == getBoolExpr(V_SF, d.pre_suffix, d.Vn);
-  retval = retval & (E_rax_post)[14] == getBoolExpr(V_ZF, d.pre_suffix, d.Vn);
-  retval = retval & (E_rax_post)[13] == SymBool::_false();
-  retval = retval & (E_rax_post)[12] == getBoolExpr(V_AF, d.pre_suffix, d.Vn);
-  retval = retval & (E_rax_post)[11]== SymBool::_false();
-  retval = retval & (E_rax_post)[10] == getBoolExpr(V_PF, d.pre_suffix, d.Vn);
-  retval = retval & (E_rax_post)[9] == SymBool::_true();
-  retval = retval & (E_rax_post)[8] == getBoolExpr(V_CF, d.pre_suffix, d.Vn);
+  retval = retval & E_src[63][16] == E_rax_post[63][16];
+  retval = retval & E_src[7][0] == E_rax_post[7][0];
+  retval = retval & E_rax_post[15] == getBoolExpr(V_SF, d.pre_suffix, d.Vn);
+  retval = retval & E_rax_post[14] == getBoolExpr(V_ZF, d.pre_suffix, d.Vn);
+  retval = retval & E_rax_post[13] == SymBool::_false();
+  retval = retval & E_rax_post[12] == getBoolExpr(V_AF, d.pre_suffix, d.Vn);
+  retval = retval & E_rax_post[11]== SymBool::_false();
+  retval = retval & E_rax_post[10] == getBoolExpr(V_PF, d.pre_suffix, d.Vn);
+  retval = retval & E_rax_post[9] == SymBool::_true();
+  retval = retval & E_rax_post[8] == getBoolExpr(V_CF, d.pre_suffix, d.Vn);
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
@@ -1143,7 +1106,7 @@ void leaHandler(v_data d, unsigned int bitWidth) {
   auto E_addr = SymBitVector::var(V_UNITSIZE, ("ADDRTEMPEXPR"+d.pre_suffix+itoa(d.instr_no)).c_str());
 
   SymBool retval = ConstrainAddr(E_addr, addr, d); //Compute 64 bit address
-  retval = retval & E_dest == (E_addr)[bitWidth-1][0];
+  retval = retval & E_dest == E_addr[bitWidth-1][0];
 
   if(bitWidth < V_UNITSIZE)
     retval = retval & UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -1159,33 +1122,28 @@ void leaHandler(v_data d, unsigned int bitWidth) {
 
 void maxpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-
-  /*
-  z3::sort pfl = vc->bv_sort(128);
-  z3::func_decl fpmax = z3::function("maxfp", pfl, pfl, pfl);
+  SymFunction fpmax = SymFunction("maxfp", 128, {128, 128});
   auto E_result = fpmax(E_src1, E_src2);
-  SymBool retval = (E_dest) == (E_result);
-  #ifdef DEBUG_VALIDATOR
+  SymBool retval = E_dest == E_result;
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
 
   d.constraints.push_back(retval);
-  */
 }
 
 
 void movHandler(v_data d, unsigned int bitWidthTarget, unsigned int bitWidthSource, Expr E_dest, Expr E_src, bool signExtend,  bool dest_is_reg=true) {
 
 
-  E_dest = (E_dest)[bitWidthTarget-1][0]; //Noop except for xmm
+  E_dest = E_dest[bitWidthTarget-1][0]; //Noop except for xmm
   if(signExtend && bitWidthTarget>bitWidthSource)
     E_src = vc_bvSignExtend(E_src, bitWidthTarget);
   else if(bitWidthTarget > bitWidthSource)
     E_src = SymBitVector::constant(bitWidthTarget-bitWidthSource, 0) || E_src;
   else if ( bitWidthSource > bitWidthTarget)
-    E_src = (E_src)[bitWidthTarget-1][0];
-  SymBool retval = (E_dest) == (E_src);
+    E_src = E_src[bitWidthTarget-1][0];
+  SymBool retval = E_dest == E_src;
   if(dest_is_reg /*&& bitWidthTarget < full_size*/)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
@@ -1203,10 +1161,10 @@ void movHandler(v_data d, unsigned int bitWidthTarget, unsigned int bitWidthSour
 void movddupHandler(v_data d, Expr E_dest, Expr E_src) {
 
 
-  E_src = (E_src)[63][0];
+  E_src = E_src[63][0];
   SymBool retval = SymBool::_true();
-  retval = retval & (E_dest)[63][0] == (E_src)[63][0];
-  retval = retval & (E_dest)[127][64] == (E_src)[63][0];
+  retval = retval & E_dest[63][0] == E_src[63][0];
+  retval = retval & E_dest[127][64] == E_src[63][0];
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -1223,14 +1181,14 @@ void movhHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
   SymBool retval = SymBool::_true();
   if(dest_is_reg)
   {
-    retval = retval & (E_dest)[127][64] == (E_src)[63][0];
+    retval = retval & E_dest[127][64] == E_src[63][0];
     SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
     auto E_dest_pre = regExprWVN(id_dest, d.pre_suffix, d.Vn, 128);
-    retval = retval & (E_dest)[63][0] == (E_dest_pre)[63][0];
+    retval = retval & E_dest[63][0] == E_dest_pre[63][0];
   }
   else
   {
-    retval = retval & E_dest == (E_src)[127][64];
+    retval = retval & E_dest == E_src[127][64];
   }
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -1245,10 +1203,10 @@ void movhlpsHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
   if (!dest_is_reg)
     throw VALIDATOR_ERROR("movhlps only supports register destination");
   {
-    retval = retval & (E_dest)[63][0] == (E_src)[127][64];
+    retval = retval & E_dest[63][0] == E_src[127][64];
     SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
     auto E_dest_pre = regExprWVN(id_dest, d.pre_suffix, d.Vn, 128);
-    retval = retval & (E_dest)[127][64] == (E_dest_pre)[127][64];
+    retval = retval & E_dest[127][64] == E_dest_pre[127][64];
   }
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -1262,20 +1220,17 @@ void movhlpsHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
 
 void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-  /*
-  #define DMULPATT(x)\
+#define DMULPATT(x)\
   {\
-    auto E_result = (E_dest)[x+63][x];\
-    auto E_arg1 = (E_src1)[x+63][x];\
-    auto E_arg2 = (E_src2)[x+63][x];\
+    auto E_result = E_dest[x+63][x];\
+    auto E_arg1 = E_src1[x+63][x];\
+    auto E_arg2 = E_src2[x+63][x];\
     retval = retval & (E_result == dmul(E_arg1,E_arg2));\
   }
 
 
   uint bitWidth = numops*64;
-  z3::sort fl = vc->bv_sort(64);
-  z3::func_decl dmul = z3::function("muld", fl, fl, fl);
+  SymFunction dmul = SymFunction("dmul", 64, {64, 64});
   SymBool retval = SymBool::_true();
   if(numops==1)
   {
@@ -1291,33 +1246,30 @@ void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef DMULPATT
-  */
+#undef DMULPATT
 }
 
 
 
 void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-  /*
-  #define FMULPATT(x)\
+#define FMULPATT(x)\
   {\
-    auto E_result = (E_dest)[x+31][x];\
-    auto E_arg1 = (E_src1)[x+31][x];\
-    auto E_arg2 = (E_src2)[x+31][x];\
+    auto E_result = E_dest[x+31][x];\
+    auto E_arg1 = E_src1[x+31][x];\
+    auto E_arg2 = E_src2[x+31][x];\
     retval = retval & (E_result == fmul(E_arg1,E_arg2));\
   }
 
 
   uint bitWidth = numops*32;
-  z3::sort fl = vc->bv_sort(32);
-  z3::func_decl fmul = z3::function("mulf", fl, fl, fl);
+  SymFunction fmul = SymFunction("mulf", 32, {32, 32});
+
   SymBool retval = SymBool::_true();
   if(numops==1)
   {
@@ -1335,13 +1287,12 @@ void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef FMULPATT
-  */
+#undef FMULPATT
 }
 
 //mul64r handler writes a 64 bit unsigned multiplication with 128 bit results in terms of
@@ -1357,7 +1308,7 @@ void negHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
 
 
   auto E_result = vc_bvUMinusExpr(E_src );
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -1366,7 +1317,7 @@ void negHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   //cout << "Adding constraint " << retval << endl;
   d.constraints.push_back(retval);
   setFlag(d.Vnprime,V_CF, E_src != SymBitVector::constant(bitWidth, 0), d.constraints, d.post_suffix);
-  setFlag(d.Vnprime,V_OF, (E_src)[bitWidth -1] & (E_dest)[bitWidth -1], d.constraints, d.post_suffix);
+  setFlag(d.Vnprime,V_OF, E_src[bitWidth -1] & E_dest[bitWidth -1], d.constraints, d.post_suffix);
   setSFPFZF(E_result, d, bitWidth);
 }
 
@@ -1374,7 +1325,7 @@ void notHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
 
 
   auto E_result = vc_bvNotExpr(E_src );
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -1415,10 +1366,10 @@ void paddHandler(v_data d, unsigned int opWidth, unsigned int bitWidth, Expr E_d
     throw VALIDATOR_ERROR("Only opWidth of 32 and bitWidth of 128 is supported for padd");
   }
   SymBool retval = SymBool::_true();
-  retval = retval & vc_eqExpr((E_dest)[31][0], vc_bvPlusExpr(32, (E_src1)[31][0], (E_src2)[31][0]));
-  retval = retval & vc_eqExpr((E_dest)[63][32], vc_bvPlusExpr(32, (E_src1)[63][32], (E_src2)[63][32]));
-  retval = retval & vc_eqExpr((E_dest)[95][64], vc_bvPlusExpr(32, (E_src1)[95][64], (E_src2)[95][64]));
-  retval = retval & vc_eqExpr((E_dest)[127][96], vc_bvPlusExpr(32, (E_src1)[127][96], (E_src2)[127][96]));
+  retval = retval & vc_eqExpr(E_dest[31][0], vc_bvPlusExpr(32, E_src1[31][0], E_src2[31][0]));
+  retval = retval & vc_eqExpr(E_dest[63][32], vc_bvPlusExpr(32, E_src1[63][32], E_src2[63][32]));
+  retval = retval & vc_eqExpr(E_dest[95][64], vc_bvPlusExpr(32, E_src1[95][64], E_src2[95][64]));
+  retval = retval & vc_eqExpr(E_dest[127][96], vc_bvPlusExpr(32, E_src1[127][96], E_src2[127][96]));
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
@@ -1447,7 +1398,7 @@ void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsign
   // If it's too high, then we zero the output registers.
   if (bits_to_shift > 255) {
     auto zero_bv = SymBitVector::constant(128, 0);
-    auto equals = (E_dest) == (zero_bv);
+    auto equals = E_dest == zero_bv;
     d.constraints.push_back(equals);
     return;
   }
@@ -1456,19 +1407,19 @@ void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsign
   if (129 <= bits_to_shift && bits_to_shift <= 255) {
     // DEST[0, 255-i] <- SRC1[i-128, 127]  (256 - i bits)
 
-    auto src1_extract = (E_src1)[127][bits_to_shift - 128];
-    auto dest_to_src1 = (E_dest)[255 - bits_to_shift][0];
+    auto src1_extract = E_src1[127][bits_to_shift - 128];
+    auto dest_to_src1 = E_dest[255 - bits_to_shift][0];
     assert(127 - (bits_to_shift - 128) == 255 - bits_to_shift);
 
-    auto dest_src1_equal = (dest_to_src1) == (src1_extract);
+    auto dest_src1_equal = dest_to_src1 == src1_extract;
     d.constraints.push_back(dest_src1_equal);
 
     // DEST[256-i, 127] <- zero (i - 128 bits)
     auto zero = SymBitVector::constant(bits_to_shift-128, 0);
-    auto dest_zero = (E_dest)[127][256 - bits_to_shift];
+    auto dest_zero = E_dest[127][256 - bits_to_shift];
     assert(bits_to_shift - 128 == 127 - (256 - bits_to_shift) + 1);
 
-    auto equal = (dest_zero) == (zero);
+    auto equal = dest_zero == zero;
     d.constraints.push_back(equal);
 
     return;
@@ -1476,31 +1427,31 @@ void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsign
 
   // If it's exactly 128 bits, we copy src1 into dest
   if (bits_to_shift == 128) {
-    auto equals = (E_dest) == (E_src1);
+    auto equals = E_dest == E_src1;
     d.constraints.push_back(equals);
     return;
   }
 
-  // If it's between 1 and 127 (inclusive) we copy parts of src1 and src2
+  // If it's between 1 and 127 inclusive we copy parts of src1 and src2
   if (1 <= bits_to_shift && bits_to_shift <= 127) {
     // DEST[0, 127-i] = SRC2[i, 127]  (128-i bits)
-    auto src2_extract = (E_src2)[127][bits_to_shift];
-    auto dest_to_src2 = (E_dest)[127-bits_to_shift][0];
+    auto src2_extract = E_src2[127][bits_to_shift];
+    auto dest_to_src2 = E_dest[127-bits_to_shift][0];
 
-    auto dest_src2_equal = (dest_to_src2) == (src2_extract);
+    auto dest_src2_equal = dest_to_src2 == src2_extract;
     d.constraints.push_back(dest_src2_equal);
 
     // DEST[128-i, 127] = SRC1[i-1, 0]  (i bits)
-    auto src1_extract = (E_src1)[bits_to_shift - 1][0];
-    auto dest_to_src1 = (E_dest)[127][128 - bits_to_shift];
+    auto src1_extract = E_src1[bits_to_shift - 1][0];
+    auto dest_to_src1 = E_dest[127][128 - bits_to_shift];
 
-    auto dest_src1_equal = (dest_to_src1) == (src1_extract);
+    auto dest_src1_equal = dest_to_src1 == src1_extract;
     d.constraints.push_back(dest_src1_equal);
   }
 
   // If it's 0, we just copy SRC2 into the destination
   if (bits_to_shift == 0) {
-    auto equals = (E_dest) == (E_src2);
+    auto equals = E_dest == E_src2;
     d.constraints.push_back(equals);
     return;
   }
@@ -1514,7 +1465,7 @@ void pandnHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
 
   auto E_result = vc_bvAndExpr(vc_bvNotExpr(E_src1) , E_src2 );
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
@@ -1522,9 +1473,9 @@ void pandnHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   d.constraints.push_back(retval);
 }
 
-#define MAXMACRO(R,X,Y, U, L)  auto R = vc_iteExpr(vc_bvGtExpr((X)[U][L], (Y)[U][L]),\
-                                    (X)[U][L], (Y)[U][L]);
-#define RETMACRO(D,R, U, L) retval = retval & (D)[U][L] == R;
+#define MAXMACRO(R,X,Y, U, L)  auto R = vc_iteExpr(vc_bvGtExpr(X[U][L], Y[U][L]),\
+                                    X[U][L], Y[U][L]);
+#define RETMACRO(D,R, U, L) retval = retval & D[U][L] == R;
 void pmaxsdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
 
@@ -1543,8 +1494,8 @@ void pmaxsdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
   d.constraints.push_back(retval);
 }
 
-#define MINMACRO(R,X,Y, U, L)  auto R = vc_iteExpr(vc_bvLtExpr((X)[U][L], (Y)[U][L]),\
-                                    (X)[U][L], (Y)[U][L]);
+#define MINMACRO(R,X,Y, U, L)  auto R = vc_iteExpr(vc_bvLtExpr(X[U][L], Y[U][L]),\
+                                    X[U][L], Y[U][L]);
 void pminuwHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
 
@@ -1577,9 +1528,9 @@ void pmovsxdqHandler(v_data d, Expr E_dest, Expr E_src)
 {
 
 
-  auto E_first = vc_bvSignExtend((E_src)[31][0], 64);
-  auto E_second = vc_bvSignExtend((E_src)[63][32], 64);
-  SymBool retval = (E_first == (E_dest)[127][64]) & (E_second == (E_dest)[63][0]);
+  auto E_first = vc_bvSignExtend(E_src[31][0], 64);
+  auto E_second = vc_bvSignExtend(E_src[63][32], 64);
+  SymBool retval = (E_first == E_dest[127][64]) & (E_second == E_dest[63][0]);
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -1592,9 +1543,9 @@ void pmovsxwqHandler(v_data d, Expr E_dest, Expr E_src)
 {
 
 
-  auto E_first = vc_bvSignExtend((E_src)[31][16], 64);
-  auto E_second = vc_bvSignExtend((E_src)[15][0], 64);
-  SymBool retval = (E_first == (E_dest)[127][64]) & (E_second == (E_dest)[63][0]);
+  auto E_first = vc_bvSignExtend(E_src[31][16], 64);
+  auto E_second = vc_bvSignExtend(E_src[15][0], 64);
+  SymBool retval = (E_first == E_dest[127][64]) & (E_second == E_dest[63][0]);
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -1607,13 +1558,13 @@ void pmovzxbdHandler(v_data d, Expr E_dest, Expr E_src)
 {
 
 
-  auto E_first = SymBitVector::constant(24, 0) || (E_src)[7][0];
-  auto E_second = SymBitVector::constant(24, 0) || (E_src)[15][8];
-  auto E_third = SymBitVector::constant(24, 0) || (E_src)[23][16];
-  auto E_fourth = SymBitVector::constant(24, 0) || (E_src)[31][24];
-  SymBool retval = (E_first == (E_dest)[31][0]) & (E_second == (E_dest)[63][32]);
-  retval = retval & E_third == (E_dest)[95][64];
-  retval = retval & E_fourth == (E_dest)[127][96];
+  auto E_first = SymBitVector::constant(24, 0) || E_src[7][0];
+  auto E_second = SymBitVector::constant(24, 0) || E_src[15][8];
+  auto E_third = SymBitVector::constant(24, 0) || E_src[23][16];
+  auto E_fourth = SymBitVector::constant(24, 0) || E_src[31][24];
+  SymBool retval = (E_first == E_dest[31][0]) & (E_second == E_dest[63][32]);
+  retval = retval & E_third == E_dest[95][64];
+  retval = retval & E_fourth == E_dest[127][96];
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
@@ -1626,21 +1577,21 @@ void pmovzxbwHandler(v_data d, Expr E_dest, Expr E_src)
 {
 
 
-  auto E_first = SymBitVector::constant(8, 0) || (E_src)[7][0];
-  auto E_second = SymBitVector::constant(8, 0) || (E_src)[15][8];
-  auto E_third = SymBitVector::constant(8, 0) || (E_src)[23][16];
-  auto E_fourth = SymBitVector::constant(8, 0) || (E_src)[31][24];
-  auto E_fifth = SymBitVector::constant(8, 0) || (E_src)[39][32];
-  auto E_sixth = SymBitVector::constant(8, 0) || (E_src)[47][40];
-  auto E_seventh = SymBitVector::constant(8, 0) || (E_src)[55][48];
-  auto E_eight = SymBitVector::constant(8, 0) || (E_src)[63][56];
+  auto E_first = SymBitVector::constant(8, 0) || E_src[7][0];
+  auto E_second = SymBitVector::constant(8, 0) || E_src[15][8];
+  auto E_third = SymBitVector::constant(8, 0) || E_src[23][16];
+  auto E_fourth = SymBitVector::constant(8, 0) || E_src[31][24];
+  auto E_fifth = SymBitVector::constant(8, 0) || E_src[39][32];
+  auto E_sixth = SymBitVector::constant(8, 0) || E_src[47][40];
+  auto E_seventh = SymBitVector::constant(8, 0) || E_src[55][48];
+  auto E_eight = SymBitVector::constant(8, 0) || E_src[63][56];
   SymBool retval = (E_first == E_dest[15][0]) & (E_second == E_dest[31][16]);
-  retval = retval & E_third == (E_dest)[47][32];
-  retval = retval & E_fourth == (E_dest)[63][48];
-  retval = retval & E_fifth == (E_dest)[79][64];
-  retval = retval & E_sixth == (E_dest)[95][80];
-  retval = retval & E_seventh == (E_dest)[111][96];
-  retval = retval & E_eight == (E_dest)[127][112];
+  retval = retval & E_third == E_dest[47][32];
+  retval = retval & E_fourth == E_dest[63][48];
+  retval = retval & E_fifth == E_dest[79][64];
+  retval = retval & E_sixth == E_dest[95][80];
+  retval = retval & E_seventh == E_dest[111][96];
+  retval = retval & E_eight == E_dest[127][112];
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
@@ -1652,13 +1603,13 @@ void pmovzxwdHandler(v_data d, Expr E_dest, Expr E_src)
 {
 
 
-  auto E_first = SymBitVector::constant(16, 0) || (E_src)[15][0];
-  auto E_second = SymBitVector::constant(16, 0) || (E_src)[31][16];
-  auto E_third = SymBitVector::constant(16, 0) || (E_src)[47][32];
-  auto E_fourth = SymBitVector::constant(16, 0) || (E_src)[63][48];
-  SymBool retval = (E_first == (E_dest)[31][0]) & (E_second == (E_dest)[63][32]);
-  retval = retval & E_third == (E_dest)[95][64];
-  retval = retval & E_fourth == (E_dest)[127][96];
+  auto E_first = SymBitVector::constant(16, 0) || E_src[15][0];
+  auto E_second = SymBitVector::constant(16, 0) || E_src[31][16];
+  auto E_third = SymBitVector::constant(16, 0) || E_src[47][32];
+  auto E_fourth = SymBitVector::constant(16, 0) || E_src[63][48];
+  SymBool retval = (E_first == E_dest[31][0]) & (E_second == E_dest[63][32]);
+  retval = retval & E_third == E_dest[95][64];
+  retval = retval & E_fourth == E_dest[127][96];
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
@@ -1671,9 +1622,9 @@ void pmovzxwqHandler(v_data d, Expr E_dest, Expr E_src)
 {
 
 
-  auto E_first = SymBitVector::constant(48, 0) || (E_src)[31][16];
-  auto E_second = SymBitVector::constant(48, 0) || (E_src)[15][0];
-  SymBool retval = (E_first == (E_dest)[127][64]) & (E_second == (E_dest)[63][0]);
+  auto E_first = SymBitVector::constant(48, 0) || E_src[31][16];
+  auto E_second = SymBitVector::constant(48, 0) || E_src[15][0];
+  SymBool retval = (E_first == E_dest[127][64]) & (E_second == E_dest[63][0]);
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -1712,7 +1663,7 @@ retval = retval & vc_eqExpr((s4), SUM_INNER(s3, 8,  0x00FF));\
 
   SUM_OUTER(E_src, E_temp1, E_temp2, E_temp3, E_temp4)
 
-  retval = retval & (E_dest) == (E_temp4);
+  retval = retval & E_dest == E_temp4;
 
 
   SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -1764,7 +1715,7 @@ retval = retval & vc_eqExpr((s5), SUM_INNER(s4, 16, 0x0000FFFF));\
 
   SUM_OUTER(E_src, E_temp1, E_temp2, E_temp3, E_temp4, E_temp5)
 
-  retval = retval & (E_dest) == (E_temp5);
+  retval = retval & E_dest == E_temp5;
 
 
   SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -1816,7 +1767,7 @@ retval = retval & vc_eqExpr((s6), SUM_INNER(s4, 32, 0x00000000FFFFFFFF));\
 
   SUM_OUTER(E_src, E_temp1, E_temp2, E_temp3, E_temp4, E_temp5, E_temp6)
 
-  retval = retval & (E_dest) == (E_temp6);
+  retval = retval & E_dest == E_temp6;
 
 
   SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -1863,7 +1814,7 @@ void pshufdHandler(v_data d, int imm, Expr E_dest, Expr E_src, Expr E_imm) {
 
     d.constraints.push_back(
       vc_eqExpr(
-        (E_dest)[high][low],
+        E_dest[high][low],
         pshuf_shift_right_and_extract(E_src, shift, 31, 0, 128)));
   }
 
@@ -1878,8 +1829,8 @@ void pshufhwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr
   // DEST[63:0] <- SRC[63:0]
   d.constraints.push_back(
     vc_eqExpr(
-      (E_dest)[63][0],
-      (E_src)[63][0]));
+      E_dest[63][0],
+      E_src[63][0]));
 
   // We have a nice helper to get (SRC >> x)[y:z]
   // With that in mind:
@@ -1900,7 +1851,7 @@ void pshufhwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr
 
     d.constraints.push_back(
       vc_eqExpr(
-        (E_dest)[high][low],
+        E_dest[high][low],
         pshuf_shift_right_and_extract(E_src, shift, 79, 64, 128)));
 
   }
@@ -1933,7 +1884,7 @@ void pshuflwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr
 
     d.constraints.push_back(
       vc_eqExpr(
-        (E_dest)[high][low],
+        E_dest[high][low],
         pshuf_shift_right_and_extract(E_src, shift, 15, 0, 128)));
 
   }
@@ -1941,8 +1892,8 @@ void pshuflwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr
   // DEST[63:0] <- SRC[63:0]
   d.constraints.push_back(
     vc_eqExpr(
-      (E_dest)[127][64],
-      (E_src)[127][64]));
+      E_dest[127][64],
+      E_src[127][64]));
 
 }
 
@@ -1953,7 +1904,7 @@ void psllHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_de
   if(shamt>=bitWidth)
     retval = retval & vc_eqExpr(E_dest, SymBitVector::constant(128, 0));
   else if(shamt==0)
-    retval = retval & (E_dest) == (E_src1);
+    retval = retval & E_dest == E_src1;
   else
   {
     for(int i =bitWidth; i<=128; i+=bitWidth)
@@ -1985,14 +1936,14 @@ void punpckldqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 void punpcklwdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
 
-  SymBool retval = (E_dest)[15][0] == (E_src1)[15][0];
-  retval = retval & (E_dest)[31][16] == (E_src2)[15][0];
-  retval = retval & (E_dest)[47][32] == (E_src1)[31][16];
-  retval = retval & (E_dest)[63][48] == (E_src2)[31][16];
-  retval = retval & (E_dest)[79][64] == (E_src1)[47][32];
-  retval = retval & (E_dest)[95][80] == (E_src2)[47][32];
-  retval = retval & (E_dest)[111][96] == (E_src1)[63][48];
-  retval = retval & (E_dest)[127][112] == (E_src2)[63][48];
+  SymBool retval = E_dest[15][0] == E_src1[15][0];
+  retval = retval & E_dest[31][16] == E_src2[15][0];
+  retval = retval & E_dest[47][32] == E_src1[31][16];
+  retval = retval & E_dest[63][48] == E_src2[31][16];
+  retval = retval & E_dest[79][64] == E_src1[47][32];
+  retval = retval & E_dest[95][80] == E_src2[47][32];
+  retval = retval & E_dest[111][96] == E_src1[63][48];
+  retval = retval & E_dest[127][112] == E_src2[63][48];
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
 #endif
@@ -2007,7 +1958,7 @@ void pxorHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
 
   auto E_result = vc_bvXorExpr(E_src1, E_src2 );
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
   ADD_CONS(retval);
   d.constraints.push_back(retval);
 }
@@ -2018,7 +1969,7 @@ void rclHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 
   auto E_arg = vc_boolToBVExpr(getBoolExpr(V_CF, d.pre_suffix, d.Vn)) || E_src1;
   auto retval = rotamt!=0 ?
-                E_dest == ((E_arg)[bitWidth-rotamt][0] || (E_arg)[bitWidth][bitWidth+1 - rotamt])[bitWidth-1][0]
+                E_dest == (E_arg[bitWidth-rotamt][0] || E_arg[bitWidth][bitWidth+1 - rotamt])[bitWidth-1][0]
                 : E_dest == E_src1;
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
@@ -2031,10 +1982,10 @@ void rclHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
     //OF = msb dest xor CF when shift by 1
     if(rotamt == 1)
       setFlag(d.Vnprime, V_OF,
-              (E_dest)[bitWidth -1] ^ setFlag(d.Vnprime, V_CF, (E_src1)[bitWidth-rotamt], d.constraints, d.post_suffix),
+              E_dest[bitWidth -1] ^ setFlag(d.Vnprime, V_CF, E_src1[bitWidth-rotamt], d.constraints, d.post_suffix),
               d.constraints, d.post_suffix);
     else
-      setFlag(d.Vnprime, V_CF, (E_src1)[bitWidth-rotamt], d.constraints, d.post_suffix);
+      setFlag(d.Vnprime, V_CF, E_src1[bitWidth-rotamt], d.constraints, d.post_suffix);
   }
   else
   {
@@ -2060,7 +2011,7 @@ void rcrHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 
   auto E_arg = vc_boolToBVExpr(getBoolExpr(V_CF, d.pre_suffix, d.Vn)) || E_src1;
   auto retval = rotamt!=0 ?
-                E_dest == ((E_arg)[rotamt-1][0] || (E_arg)[bitWidth][rotamt])[bitWidth-1][0]
+                E_dest == (E_arg[rotamt-1][0] || E_arg[bitWidth][rotamt])[bitWidth-1][0]
                 : E_dest == E_src1;
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
@@ -2070,7 +2021,7 @@ void rcrHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
   }
   if(rotamt != 0)
   {
-    setFlag(d.Vnprime, V_CF, (E_src1)[rotamt-1], d.constraints, d.post_suffix);
+    setFlag(d.Vnprime, V_CF, E_src1[rotamt-1], d.constraints, d.post_suffix);
   }
   else
   {
@@ -2087,8 +2038,8 @@ void rcrHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 void rolHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_dest, Expr E_src1, bool dest_is_reg=true) {
 
   auto retval = rotamt!=0 ?
-                vc_eqExpr(E_dest, (E_src1)[bitWidth-rotamt-1][0] || (E_src1)[bitWidth - 1][bitWidth - rotamt] )
-                : (E_dest) == (E_src1);
+                vc_eqExpr(E_dest, E_src1[bitWidth-rotamt-1][0] || E_src1[bitWidth - 1][bitWidth - rotamt] )
+                : E_dest == E_src1;
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -2096,10 +2047,10 @@ void rolHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
   //CF is LSB of dest
-  auto E_cf = setFlag(d.Vnprime, V_CF, (E_dest)[0], d.constraints, d.post_suffix);
+  auto E_cf = setFlag(d.Vnprime, V_CF, E_dest[0], d.constraints, d.post_suffix);
   if(rotamt == 1)
     setFlag(d.Vnprime, V_OF,
-            (E_dest)[bitWidth -1] ^ E_cf, d.constraints, d.post_suffix);
+            E_dest[bitWidth -1] ^ E_cf, d.constraints, d.post_suffix);
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -2110,8 +2061,8 @@ void rolHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
 void rorHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_dest, Expr E_src1, bool dest_is_reg=true) {
 
   auto retval = rotamt!=0 ?
-                vc_eqExpr(E_dest, (E_src1)[rotamt-1][0] || (E_src1)[bitWidth - 1][rotamt] )
-                : (E_dest) == (E_src1);
+                vc_eqExpr(E_dest, E_src1[rotamt-1][0] || E_src1[bitWidth - 1][rotamt] )
+                : E_dest == E_src1;
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -2119,7 +2070,7 @@ void rorHandler(v_data d, unsigned int bitWidth, unsigned int rotamt,  Expr E_de
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
   //CF is MSB of dest
-  setFlag(d.Vnprime, V_CF, (E_dest)[bitWidth -1], d.constraints, d.post_suffix);
+  setFlag(d.Vnprime, V_CF, E_dest[bitWidth -1], d.constraints, d.post_suffix);
   if(rotamt == 1)
     setFlag(d.Vnprime, V_OF,
             E_dest[bitWidth -1] ^ E_dest[bitWidth -2], d.constraints, d.post_suffix);
@@ -2135,10 +2086,10 @@ void sahfHandler(v_data d) {
 
   auto E_src = regExprWVN(rax, d.pre_suffix, d.Vn, V_UNITSIZE);
   SymBool retval = SymBool::_true();
-  retval = retval & (E_src)[15] == getBoolExpr(V_SF, d.post_suffix, d.Vnprime);
-  retval = retval & (E_src)[14] == getBoolExpr(V_ZF, d.post_suffix, d.Vnprime);
-  retval = retval & (E_src)[10] == getBoolExpr(V_PF, d.post_suffix, d.Vnprime);
-  retval = retval & (E_src)[8] == getBoolExpr(V_CF, d.post_suffix, d.Vnprime);
+  retval = retval & E_src[15] == getBoolExpr(V_SF, d.post_suffix, d.Vnprime);
+  retval = retval & E_src[14] == getBoolExpr(V_ZF, d.post_suffix, d.Vnprime);
+  retval = retval & E_src[10] == getBoolExpr(V_PF, d.post_suffix, d.Vnprime);
+  retval = retval & E_src[8] == getBoolExpr(V_CF, d.post_suffix, d.Vnprime);
 
 #ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
@@ -2156,16 +2107,16 @@ void sarHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
     if(shamt != 0 && shamt<bitWidth)
     {
       auto E_result = SymBitVector::var(bitWidth, ("SARTEMP"+d.pre_suffix+itoa(d.instr_no)).c_str());
-      auto E_then = vc_eqExpr(E_result, SymBitVector::constant(shamt, -1) || (E_src1)[bitWidth-1][shamt] );
-      auto E_else = vc_eqExpr(E_result, SymBitVector::constant(shamt, 0) || (E_src1)[bitWidth-1][shamt] );
-      retval = vc_iteExpr((E_src1)[bitWidth - 1], E_then, E_else);
-      retval = retval & (E_result) == (E_dest);
+      auto E_then = vc_eqExpr(E_result, SymBitVector::constant(shamt, -1) || E_src1[bitWidth-1][shamt] );
+      auto E_else = vc_eqExpr(E_result, SymBitVector::constant(shamt, 0) || E_src1[bitWidth-1][shamt] );
+      retval = vc_iteExpr(E_src1[bitWidth - 1], E_then, E_else);
+      retval = retval & E_result == E_dest;
     }
     else if(shamt == 0)
-      retval = (E_dest) == (E_src1);
+      retval = E_dest == E_src1;
     else
       retval = vc_eqExpr(E_dest,
-                         vc_iteExpr((E_src1)[bitWidth - 1], SymBitVector::constant(bitWidth, -1), SymBitVector::constant(bitWidth, 0)));
+                         vc_iteExpr(E_src1[bitWidth - 1], SymBitVector::constant(bitWidth, -1), SymBitVector::constant(bitWidth, 0)));
 
     if(dest_is_reg && bitWidth < V_UNITSIZE)
     {
@@ -2176,7 +2127,7 @@ void sarHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
     {
       if(shamt == 1)
         setFlag(d.Vnprime, V_OF, SymBool::_false(), d.constraints, d.post_suffix);
-      setFlag(d.Vnprime, V_CF, (E_src1)[shamt - 1], d.constraints, d.post_suffix);
+      setFlag(d.Vnprime, V_CF, E_src1[shamt - 1], d.constraints, d.post_suffix);
       setSFPFZF(E_dest, d, bitWidth);
     }
     else
@@ -2185,7 +2136,7 @@ void sarHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
   else
   {
     retval = vc_eqExpr(E_dest,
-                       vc_iteExpr((E_src1)[bitWidth - 1], SymBitVector::constant(bitWidth, -1), SymBitVector::constant(bitWidth, 0)));
+                       vc_iteExpr(E_src1[bitWidth - 1], SymBitVector::constant(bitWidth, -1), SymBitVector::constant(bitWidth, 0)));
     setSFPFZF(E_dest, d, bitWidth);
   }
 #ifdef DEBUG_VALIDATOR
@@ -2204,7 +2155,7 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
 
   //assume E_shamt is less than bitWidth
   //cout << "DEST " << E_dest <<  "SRC " << E_src1 <<  "SHAMT " << E_shamt <<  endl ;
-  auto res = vc_iteExpr((E_src1)[bitWidth - 1], SymBitVector::constant(bitWidth, -1), SymBitVector::constant(bitWidth, 0));
+  auto res = vc_iteExpr(E_src1[bitWidth - 1], SymBitVector::constant(bitWidth, -1), SymBitVector::constant(bitWidth, 0));
   for( int i=bitWidth - 1; i>=0; i-- ) {
     //    cout << "In SAR VAR handler " << endl ;
     res = vc_iteExpr(
@@ -2215,7 +2166,7 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   }
 
 
-  SymBool retval = (E_dest) == (res);//vc_bvVar32RightShiftExpr(E_shamt, E_src1);
+  SymBool retval = E_dest == res;//vc_bvVar32RightShiftExpr(E_shamt, E_src1);
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -2240,7 +2191,7 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
                       (carry == getBoolExpr(V_CF, d.pre_suffix, d.Vn)) &
                       (overflow == getBoolExpr(V_OF, d.pre_suffix, d.Vn));
 
-  auto setsfpfzf = sign == (E_dest)[bitWidth - 1];
+  auto setsfpfzf = sign == E_dest[bitWidth - 1];
   setsfpfzf = setsfpfzf, zero == vc_eqExpr(E_dest, SymBitVector::constant(bitWidth, 0));
   auto REGPOST = E_dest;
   auto E_temp_parity_1 = REGPOST[0] ^ REGPOST[1];
@@ -2251,12 +2202,12 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   auto E_temp_parity_6 = E_temp_parity_3 ^ E_temp_parity_4;
   auto E_temp_parity_7 = !(E_temp_parity_5 ^ E_temp_parity_6);
 
-  setsfpfzf = (setsfpfzf) & (parity == E_temp_parity_7);
+  setsfpfzf = setsfpfzf & (parity == E_temp_parity_7);
 
   auto carryexpr = carry == getBoolExpr(V_CF, d.pre_suffix, d.Vn);
   for(int j = bitWidth - 1; j>=1; j--)
   {
-    carryexpr = vc_iteExpr(E_shamt == SymBitVector::constant(bitWidth, j),  carry == (E_src1)[j - 1], carryexpr);
+    carryexpr = vc_iteExpr(E_shamt == SymBitVector::constant(bitWidth, j),  carry == E_src1[j - 1], carryexpr);
 
   }
   //If shamt is greater than bitWidth then carry is undefined
@@ -2267,7 +2218,7 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
                           vc_impliesExpr(vc_eqExpr(E_shamt, SymBitVector::constant(bitWidth, 1)), !overflow)
                         );
 
-  retval = (temp) & (retval);
+  retval = temp & retval;
   d.constraints.push_back(retval);
 }
 
@@ -2283,11 +2234,11 @@ void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   auto E_arg2 = SymBitVector::constant(2, 0) || vc_bvNotExpr(E_src2);
   auto E_carry = SymBitVector::var(bitWidth+2, ("BORROW"+d.pre_suffix+itoa(d.instr_no)).c_str());
 
-  SymBool retval = (E_carry)[0] == !(getBoolExpr(V_CF, d.pre_suffix, d.Vn));
-  retval = retval & vc_eqExpr((E_carry)[bitWidth+1][1],  SymBitVector::constant(1, 0) ||SymBitVector::constant(bitWidth, 0));
+  SymBool retval = E_carry[0] == !(getBoolExpr(V_CF, d.pre_suffix, d.Vn));
+  retval = retval & vc_eqExpr(E_carry[bitWidth+1][1],  SymBitVector::constant(1, 0) ||SymBitVector::constant(bitWidth, 0));
 
   retval = retval & vc_eqExpr(E_result,vc_bvPlusExpr(bitWidth+2, vc_bvPlusExpr(bitWidth+2, E_arg1, E_arg2), E_carry));
-  retval = retval & E_dest == (E_result)[bitWidth-1][0];
+  retval = retval & E_dest == E_result[bitWidth-1][0];
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -2296,8 +2247,8 @@ void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   }
   //cout << "Adding constraint " << retval << endl;
   d.constraints.push_back(retval);
-  setFlag(d.Vnprime, V_OF, getOFExpr((E_arg1)[bitWidth - 1], (E_arg2)[bitWidth - 1],
-                                     (E_result)[bitWidth - 1]), d.constraints, d.post_suffix);
+  setFlag(d.Vnprime, V_OF, getMinusOFExpr(E_arg1[bitWidth - 1], E_arg2[bitWidth - 1],
+                                          E_result[bitWidth - 1]), d.constraints, d.post_suffix);
   setFlag(d.Vnprime, V_CF, !(E_result[bitWidth] | E_result[bitWidth+1]), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
@@ -2333,10 +2284,10 @@ void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
   if(shamt <= bitWidth)
   {
     if(shamt == 0) {
-      retval = (E_dest) == (E_src1);
+      retval = E_dest == E_src1;
     }
     else if(shamt < bitWidth) {
-      retval = vc_eqExpr(E_dest, (E_src1)[bitWidth-shamt-1][0] || SymBitVector::constant(shamt, 0) );
+      retval = vc_eqExpr(E_dest, E_src1[bitWidth-shamt-1][0] || SymBitVector::constant(shamt, 0) );
     }
     else {
       retval = vc_eqExpr(E_dest, SymBitVector::constant(bitWidth, 0));
@@ -2354,12 +2305,12 @@ void shlHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
       //OF = msb dest xor CF when shift by 1
       if(shamt == 1)
         setFlag(d.Vnprime, V_OF,
-                E_dest[bitWidth -1] ^ setFlag(d.Vnprime, V_CF, (E_src1)[bitWidth-shamt], d.constraints, d.post_suffix),
+                E_dest[bitWidth -1] ^ setFlag(d.Vnprime, V_CF, E_src1[bitWidth-shamt], d.constraints, d.post_suffix),
                 d.constraints, d.post_suffix);
       else
       {
         //            setFlag(d.Vnprime, V_OF, getBoolExpr(V_OF, d.pre_suffix, d.Vn), d.constraints, d.post_suffix);
-        setFlag(d.Vnprime, V_CF, (E_src1)[bitWidth-shamt], d.constraints, d.post_suffix);
+        setFlag(d.Vnprime, V_CF, E_src1[bitWidth-shamt], d.constraints, d.post_suffix);
       }
       setSFPFZF(E_dest, d, bitWidth);
     }
@@ -2381,12 +2332,12 @@ void shldHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_de
 
 
   SymBool retval;
-  shamt = (bitWidth==64) ? (shamt & 0x3f) : shamt & (0x1f);
+  shamt = (bitWidth==64) ? (shamt & 0x3f) : shamt & 0x1f;
   if(shamt != 0)
   {
     if(shamt <=bitWidth)
     {
-      retval = vc_eqExpr(E_dest, (E_dest_pre)[bitWidth-shamt-1][0] || (E_src)[bitWidth-1][bitWidth-shamt]  );
+      retval = vc_eqExpr(E_dest, E_dest_pre[bitWidth-shamt-1][0] || E_src[bitWidth-1][bitWidth-shamt]  );
       if(dest_is_reg && bitWidth < V_UNITSIZE)
       {
         SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -2395,18 +2346,18 @@ void shldHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_de
       }
       // cout << "Adding constraint " << retval << endl;
       d.constraints.push_back(retval);
-      setFlag(d.Vnprime, V_CF, (E_dest_pre)[bitWidth-shamt], d.constraints, d.post_suffix);
+      setFlag(d.Vnprime, V_CF, E_dest_pre[bitWidth-shamt], d.constraints, d.post_suffix);
       setSFPFZF(E_dest, d, bitWidth);
       if(shamt==1)
       {
         setFlag(d.Vnprime, V_OF,
-                (E_dest)[bitWidth -1] ^ (E_dest_pre)[bitWidth -1], d.constraints, d.post_suffix);
+                E_dest[bitWidth -1] ^ E_dest_pre[bitWidth -1], d.constraints, d.post_suffix);
       }
     }
   }
   else
   {
-    retval = (E_dest) == (E_dest_pre);
+    retval = E_dest == E_dest_pre;
     d.constraints.push_back(retval);
     //cout << "Adding constraint " << retval << endl;
     preserveAllFlags(d);
@@ -2423,10 +2374,10 @@ void shldHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
   for( unsigned int i=1; i<=bitWidth -1; i++ ) {
     res = vc_iteExpr(
             vc_eqExpr(E_shamt, SymBitVector::constant(bitWidth, i)),
-            (E_dest_pre)[bitWidth-i-1][0] || (E_src)[bitWidth-1][bitWidth-i] ,
+            E_dest_pre[bitWidth-i-1][0] || E_src[bitWidth-1][bitWidth-i] ,
             res);
   }
-  SymBool retval = (E_dest) == (res);
+  SymBool retval = E_dest == res;
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -2450,12 +2401,12 @@ void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bo
     //cout << "In SHL VAR handler " << endl ;
     res = vc_iteExpr(
             vc_eqExpr(E_shamt, SymBitVector::constant(bitWidth, i)),
-            (E_src1)[bitWidth-i-1][0] || SymBitVector::constant(i, 0) ,
+            E_src1[bitWidth-i-1][0] || SymBitVector::constant(i, 0) ,
             res);
     //cout << res;
   }
 
-  SymBool retval = (E_dest) == (res);
+  SymBool retval = E_dest == res;
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -2476,7 +2427,7 @@ void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bo
     (carry == getBoolExpr(V_CF, d.pre_suffix, d.Vn)) &
     (overflow == getBoolExpr(V_OF, d.pre_suffix, d.Vn));
 
-  auto setsfpfzf = sign == (E_dest)[bitWidth - 1];
+  auto setsfpfzf = sign == E_dest[bitWidth - 1];
   setsfpfzf = setsfpfzf & (zero == (E_dest == SymBitVector::constant(bitWidth, 0)));
   auto REGPOST = E_dest;
   auto E_temp_parity_1 = REGPOST[0] ^ REGPOST[1];
@@ -2487,14 +2438,14 @@ void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bo
   auto E_temp_parity_6 = E_temp_parity_3 ^ E_temp_parity_4;
   auto E_temp_parity_7 = !(E_temp_parity_5 ^ E_temp_parity_6);
 
-  setsfpfzf = (setsfpfzf) & (parity == E_temp_parity_7);
+  setsfpfzf = setsfpfzf & (parity == E_temp_parity_7);
 
   auto carryexpr = carry ==  getBoolExpr(V_CF, d.pre_suffix, d.Vn) ;
 
   for(int j = bitWidth - 1; j>=1; j--)
   {
     carryexpr = vc_iteExpr(E_shamt == SymBitVector::constant(bitWidth, j),
-                           carry == (E_src1)[bitWidth - j],
+                           carry == E_src1[bitWidth - j],
                            carryexpr);
   }
   carryexpr = vc_iteExpr(E_shamt > SymBitVector::constant(bitWidth, bitWidth),
@@ -2505,11 +2456,11 @@ void shlVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, bo
                          preserveall,
                          setsfpfzf & carryexpr &
                          vc_impliesExpr(vc_eqExpr(E_shamt, SymBitVector::constant(bitWidth, 1)),
-                                        overflow == (E_dest)[bitWidth -1] ^ carry
+                                        overflow == E_dest[bitWidth -1] ^ carry
                                        )
                         );
 
-  retval = (temp) & (retval);
+  retval = temp & retval;
   d.constraints.push_back(retval);
 }
 
@@ -2535,9 +2486,9 @@ void shrHandler(v_data d, unsigned int bitWidth, unsigned int shamt,  Expr E_des
       //OF = msb dest xor CF when shift by 1
       if(shamt == 1)
         setFlag(d.Vnprime, V_OF,
-                (E_src1)[bitWidth -1],
+                E_src1[bitWidth -1],
                 d.constraints, d.post_suffix);
-      setFlag(d.Vnprime, V_CF, (E_src1)[bitWidth-shamt], d.constraints, d.post_suffix);
+      setFlag(d.Vnprime, V_CF, E_src1[bitWidth-shamt], d.constraints, d.post_suffix);
       setSFPFZF(E_dest, d, bitWidth);
     }
     else
@@ -2566,7 +2517,7 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
             res);
   }
 
-  SymBool retval = (E_dest) == (res);
+  SymBool retval = E_dest == res;
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
@@ -2586,7 +2537,7 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
                       (carry == getBoolExpr(V_CF, d.pre_suffix, d.Vn)) &
                       (overflow == getBoolExpr(V_OF, d.pre_suffix, d.Vn));
 
-  auto setsfpfzf = sign == (E_dest)[bitWidth - 1];
+  auto setsfpfzf = sign == E_dest[bitWidth - 1];
   setsfpfzf = setsfpfzf & (zero == (E_dest == SymBitVector::constant(bitWidth, 0)));
   auto REGPOST = E_dest;
   auto E_temp_parity_1 = REGPOST[0] ^ REGPOST[1];
@@ -2597,13 +2548,13 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
   auto E_temp_parity_6 = E_temp_parity_3 ^ E_temp_parity_4;
   auto E_temp_parity_7 = !(E_temp_parity_5 ^ E_temp_parity_6);
 
-  setsfpfzf = (setsfpfzf) & (parity == E_temp_parity_7);
+  setsfpfzf = setsfpfzf & (parity == E_temp_parity_7);
 
   auto carryexpr = carry ==  getBoolExpr(V_CF, d.pre_suffix, d.Vn) ;
 
   for(int j = bitWidth - 1; j>=1; j--)
   {
-    carryexpr = vc_iteExpr(vc_eqExpr(E_shamt, SymBitVector::constant(bitWidth, j)),  carry == (E_src1)[j - 1], carryexpr);
+    carryexpr = vc_iteExpr(vc_eqExpr(E_shamt, SymBitVector::constant(bitWidth, j)),  carry == E_src1[j - 1], carryexpr);
 
   }
   carryexpr = vc_iteExpr(vc_bvGtExpr(E_shamt, SymBitVector::constant(bitWidth, bitWidth)), SymBool::_true(), carryexpr);
@@ -2613,10 +2564,10 @@ void shrVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
                          preserveall,
                          setsfpfzf & carryexpr &
                          vc_impliesExpr(vc_eqExpr(E_shamt, SymBitVector::constant(bitWidth, 1)),
-                                        overflow == (E_src1)[bitWidth -1]
+                                        overflow == E_src1[bitWidth -1]
                                        ));
 
-  retval = (temp) & (retval);
+  retval = temp & retval;
   d.constraints.push_back(retval);
 }
 
@@ -2627,8 +2578,8 @@ void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_src1, Expr E_src2, Exp
 #define SHUFPS_CON(A, ha, la, B, hb, lb) \
         (d.constraints.push_back(\
            vc_eqExpr(\
-             (A)[ha][la],\
-             (B)[hb][lb])));
+             A[ha][la],\
+             B[hb][lb])));
 
 
 
@@ -2720,7 +2671,7 @@ void subHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   }
   //cout << "Adding constraint " << retval << endl;
   d.constraints.push_back(retval);
-  setFlag(d.Vnprime, V_OF, getOFExpr((E_src1)[bitWidth - 1], E_src2[bitWidth - 1], (E_dest)[bitWidth - 1]),
+  setFlag(d.Vnprime, V_OF, getMinusOFExpr(E_src1[bitWidth - 1], E_src2[bitWidth - 1], E_dest[bitWidth - 1]),
           d.constraints, d.post_suffix);
   setFlag(d.Vnprime, V_CF, vc_bvLtExpr(E_src1, E_src2), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
@@ -2729,20 +2680,17 @@ void subHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
 void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-  /*
-  #define DSUBPATT(x)\
+#define DSUBPATT(x)\
   {\
-    auto E_result = (E_dest)[x+63][x];\
-    auto E_arg1 = (E_src1)[x+63][x];\
-    auto E_arg2 = (E_src2)[x+63][x];\
+    auto E_result = E_dest[x+63][x];\
+    auto E_arg1 = E_src1[x+63][x];\
+    auto E_arg2 = E_src2[x+63][x];\
     retval = retval & (E_result == dsub(E_arg1,E_arg2));\
   }
 
 
   uint bitWidth = numops*64;
-  z3::sort fl = vc->bv_sort(64);
-  z3::func_decl dsub = z3::function("subd", fl, fl, fl);
+  SymFunction dsub = SymFunction("subd", 64, {64, 64});
   SymBool retval = SymBool::_true();
   if(numops==1)
   {
@@ -2758,32 +2706,28 @@ void subdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef DSUBPATT
-  */
+#undef DSUBPATT
 }
 
 
 void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-  /*
-  #define FSUBPATT(x)\
+#define FSUBPATT(x)\
   {\
-    auto E_result = (E_dest)[x+31][x];\
-    auto E_arg1 = (E_src1)[x+31][x];\
-    auto E_arg2 = (E_src2)[x+31][x];\
+    auto E_result = E_dest[x+31][x];\
+    auto E_arg1 = E_src1[x+31][x];\
+    auto E_arg2 = E_src2[x+31][x];\
     retval = retval & (E_result == fsub(E_arg1,E_arg2));\
   }
 
 
   uint bitWidth = numops*32;
-  z3::sort fl = vc->bv_sort(32);
-  z3::func_decl fsub = z3::function("subf", fl, fl, fl);
+  SymFunction fsub = SymFunction("subf", 32, {32, 32});
   SymBool retval = SymBool::_true();
   if(numops==1)
   {
@@ -2801,25 +2745,19 @@ void subfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E
     SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
   }
-  #ifdef DEBUG_VALIDATOR
+#ifdef DEBUG_VALIDATOR
   cout << "Adding constraint " << retval << endl;
-  #endif
+#endif
   d.constraints.push_back(retval);
 
-  #undef FSUBPATT
-  */
+#undef FSUBPATT
 }
 
 
 void subpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2) {
 
-
-  throw VALIDATOR_ERROR("uninterpreted function");
-
-  /*
   // Declare uninterpreted function
-  z3::sort dword = vc->bv_sort(32);
-  z3::func_decl subps_subf = z3::function("subps_subf", dword, dword, dword);
+  SymFunction subps_subf = SymFunction("subps_subf", 32, {32, 32});
 
   // Generate these constraints:
   // DEST[31:0]   <- SRC1[31:0]   - SRC2[31:0]
@@ -2828,14 +2766,13 @@ void subpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_d
   // DEST[127:96] <- SRC1[127:96] - SRC2[127:96]
   for(size_t i = 0; i < 128; i += 32) {
 
-    auto dst = (E_dest)[i+31][i];
-    Expr s1  = (E_src1)[i+31][i];
-    Expr s2  = (E_src2)[i+31][i];
+    auto dst = E_dest[i+31][i];
+    Expr s1  = E_src1[i+31][i];
+    Expr s2  = E_src2[i+31][i];
     auto equ = (dst == subps_subf(s1, s2));
 
     d.constraints.push_back(equ);
   }
-  */
 
 }
 
@@ -2856,42 +2793,30 @@ void testHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2) {
 
 void ucomissHandler(v_data d, Expr E_src1, Expr E_src2) {
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-
-  /*
-  E_src1 = (E_src1)[31][0];
-  E_src2 = (E_src2)[31][0];
-  z3::sort fl = vc->bv_sort(32);
-  z3::sort cmp_res = vc->bv_sort(2);
-  z3::func_decl fcmp = z3::function("cmpf", fl, fl, cmp_res);
+  E_src1 = E_src1[31][0];
+  E_src2 = E_src2[31][0];
+  SymFunction fcmp = SymFunction("cmpf", 2, {32, 32});
   auto E_cmp_res = fcmp(E_src1, E_src2);
-  setFlag(d.Vnprime,V_CF, !((E_cmp_res)[0], d.constraints, d.post_suffix);
-  setFlag(d.Vnprime,V_ZF, !(vc_xorExpr((E_cmp_res)[0],(E_cmp_res)[1], d.constraints, d.post_suffix);
-  setFlag(d.Vnprime,V_PF, vc_andExpr(vc_bvBoolExtract(E_cmp_res,0), vc_bvBoolExtract(E_cmp_res,1)), d.constraints, d.post_suffix);
+  setFlag(d.Vnprime,V_CF, !E_cmp_res[0], d.constraints, d.post_suffix);
+  setFlag(d.Vnprime,V_ZF, !(E_cmp_res[0] ^ E_cmp_res[1]), d.constraints, d.post_suffix);
+  setFlag(d.Vnprime,V_PF, E_cmp_res[0] & E_cmp_res[1], d.constraints, d.post_suffix);
   setFlag(d.Vnprime,V_OF, SymBool::_false(), d.constraints, d.post_suffix);
   setFlag(d.Vnprime,V_SF, SymBool::_false(), d.constraints, d.post_suffix);
-  */
 
 }
 
 
 void ucomisdHandler(v_data d, Expr E_src1, Expr E_src2) {
 
-  throw VALIDATOR_ERROR("uninterpreted function");
-
-  /*
-  E_src1 = (E_src1)[63][0];
-  E_src2 = (E_src2)[63][0];
-  z3::sort fl = vc->bv_sort(64);
-  z3::sort cmp_res = vc->bv_sort(2);
-  z3::func_decl fcmp = z3::function("cmpd", fl, fl, cmp_res);
+  E_src1 = E_src1[63][0];
+  E_src2 = E_src2[63][0];
+  SymFunction fcmp = SymFunction("cmpd", 2, {64, 64});
   auto E_cmp_res = fcmp(E_src1, E_src2);
-  setFlag(d.Vnprime,V_CF, !((E_cmp_res)[0], d.constraints, d.post_suffix);
-  setFlag(d.Vnprime,V_ZF, !(vc_xorExpr((E_cmp_res)[0],(E_cmp_res)[1], d.constraints, d.post_suffix);
-  setFlag(d.Vnprime,V_PF, vc_andExpr(vc_bvBoolExtract(E_cmp_res,0), vc_bvBoolExtract(E_cmp_res,1)), d.constraints, d.post_suffix);
+  setFlag(d.Vnprime,V_CF, !E_cmp_res[0], d.constraints, d.post_suffix);
+  setFlag(d.Vnprime,V_ZF, !(E_cmp_res[0] ^ E_cmp_res[1]), d.constraints, d.post_suffix);
+  setFlag(d.Vnprime,V_PF, E_cmp_res[0] & E_cmp_res[1], d.constraints, d.post_suffix);
   setFlag(d.Vnprime,V_OF, SymBool::_false(), d.constraints, d.post_suffix);
   setFlag(d.Vnprime,V_SF, SymBool::_false(), d.constraints, d.post_suffix);
-  */
 
 }
 
@@ -2907,7 +2832,7 @@ void umul1Handler(v_data d, unsigned int bitWidth, Expr E_src2) {
     auto E_dest = E_rdx || E_rax;
 
     auto E_result = vc_bvMultExpr(2*bitWidth, E_src1, E_src2 );
-    SymBool retval = (E_dest) == (E_result);
+    SymBool retval = E_dest == E_result;
 
     if( bitWidth < V_UNITSIZE)
     {
@@ -2934,7 +2859,7 @@ void umul1Handler(v_data d, unsigned int bitWidth, Expr E_src2) {
     auto E_dest = E_rdx || E_rax;
 
     auto E_result = vc_bvMultExpr(2*bitWidth, E_src1, E_src2 );
-    SymBool retval = (E_dest) == (E_result);
+    SymBool retval = E_dest == E_result;
 
     retval = retval &  UnmodifiedBitsPreserve(rax, d, 2*bitWidth);
 
@@ -2963,12 +2888,12 @@ void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_de
   }
 
   /* Force bits 0..63 of destination to match bits 0..63 of source1. */
-  auto lower_bits = (E_dest)[63][0] == (E_src1)[63][0];
+  auto lower_bits = E_dest[63][0] == E_src1[63][0];
   d.constraints.push_back(lower_bits);
   ADD_CONS(lower_bits);
 
   /* Force bits 64..127 of destination to match bits 0..63 of source2. */
-  auto upper_bits = (E_dest)[127][64] == (E_src2)[63][0];
+  auto upper_bits = E_dest[127][64] == E_src2[63][0];
   d.constraints.push_back(upper_bits);
   ADD_CONS(upper_bits);
 
@@ -2983,16 +2908,16 @@ void unpcklpsHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_de
   }
 
   // DEST[31:0] <- SRC1[31:0]
-  auto bits_31_0 = (E_dest)[31][0] == (E_src1)[31][0];
+  auto bits_31_0 = E_dest[31][0] == E_src1[31][0];
 
   // DEST[63:32] <- SRC2[31:0]
-  auto bits_63_32 = (E_dest)[63][32] == (E_src2)[31][0];
+  auto bits_63_32 = E_dest[63][32] == E_src2[31][0];
 
   // DEST[95:64] <- SRC1[63:32]
-  auto bits_95_64 = (E_dest)[95][64] == (E_src1)[63][32];
+  auto bits_95_64 = E_dest[95][64] == E_src1[63][32];
 
   // DEST[127:96] <- SRC2[63:32]
-  auto bits_127_96 = (E_dest)[127][96] == (E_src2)[63][32];
+  auto bits_127_96 = E_dest[127][96] == E_src2[63][32];
 
   // Add the four constraints
   d.constraints.push_back(bits_31_0);
@@ -3008,7 +2933,7 @@ void vaddsdHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr
 
 
   adddHandler(d, numops,E_dest,E_src1, E_src2, dest_is_reg);
-  SymBool retval = (E_dest)[127][64] == (E_src1)[127][64];
+  SymBool retval = E_dest[127][64] == E_src1[127][64];
 
   ADD_CONS(retval);
   d.constraints.push_back(retval);
@@ -3037,7 +2962,7 @@ void xaddHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
 
 
   addHandler(d, bitWidth, E_dest, E_dest_pre, E_src, dest_is_reg);
-  SymBool retval = (E_src_post) == (E_dest_pre);
+  SymBool retval = E_src_post == E_dest_pre;
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -3055,8 +2980,8 @@ void xchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, 
 
 
 
-  SymBool retval = (E_dest) == (E_src);
-  retval = retval & (E_dest_pre) == (E_src_post);
+  SymBool retval = E_dest == E_src;
+  retval = retval & E_dest_pre == E_src_post;
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
@@ -3076,7 +3001,7 @@ void xorHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
 
   auto E_result = E_src1 ^ E_src2;
-  SymBool retval = (E_dest) == (E_result);
+  SymBool retval = E_dest == E_result;
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
