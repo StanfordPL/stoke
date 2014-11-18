@@ -284,22 +284,30 @@ public:
 
 private:
   SymBitVectorFunction(const SymFunction& f,
-                       const SymBitVectorAbstract * const a) : f_(f), args_( {a}) {}
+                       const SymBitVectorAbstract * const a) : f_(f), args_( {
+    a
+  }) {}
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
-                       const SymBitVectorAbstract * const b) : f_(f), args_( {a, b}) {}
+                       const SymBitVectorAbstract * const b) : f_(f), args_( {
+    a, b
+  }) {}
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
                        const SymBitVectorAbstract * const b,
-                       const SymBitVectorAbstract * const c) : f_(f), args_( {a, b, c} ) {}
+                       const SymBitVectorAbstract * const c) : f_(f), args_( {
+    a, b, c
+  } ) {}
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
                        const SymBitVectorAbstract * const b,
                        const SymBitVectorAbstract * const c,
-                       const SymBitVectorAbstract * const d) : f_(f), args_( {a, b, c, d}) {}
+                       const SymBitVectorAbstract * const d) : f_(f), args_( {
+    a, b, c, d
+  }) {}
 
 };
 

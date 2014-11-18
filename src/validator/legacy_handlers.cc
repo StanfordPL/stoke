@@ -55,8 +55,8 @@ void adcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   d.constraints.push_back(retval);
 
   //Set flags accordingly
-  setFlag(d.Vnprime, V_OF, getOFExpr(E_arg1[bitWidth - 1], E_arg2[bitWidth - 1],
-                                     E_result[bitWidth - 1]), d.constraints, d.post_suffix);
+  setFlag(d.Vnprime, V_OF, getPlusOFExpr(E_arg1[bitWidth - 1], E_arg2[bitWidth - 1],
+                                         E_result[bitWidth - 1]), d.constraints, d.post_suffix);
   setFlag(d.Vnprime, V_CF, E_result[bitWidth] | E_result[bitWidth+1], d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
@@ -105,9 +105,9 @@ void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
 
   /* Set the overflow flag */
   setFlag(d.Vnprime, V_OF,
-          getOFExpr(E_arg1[bitWidth - 1],
-                    E_arg2[bitWidth - 1],
-                    E_result[bitWidth - 1]),
+          getPlusOFExpr(E_arg1[bitWidth - 1],
+                        E_arg2[bitWidth - 1],
+                        E_result[bitWidth - 1]),
           d.constraints, d.post_suffix);
 
   /* Set the carry flag */
@@ -419,7 +419,7 @@ void cmpHandler(v_data d, unsigned int bitWidth, Expr E_src1, Expr E_src2) {
   cout << "Adding constraint " << retval << endl;
 #endif
   d.constraints.push_back(retval);
-  setFlag(d.Vnprime, V_OF, getOFExpr(E_src1[bitWidth - 1], E_src2[bitWidth - 1],  E_dest[bitWidth - 1]),
+  setFlag(d.Vnprime, V_OF, getMinusOFExpr(E_src1[bitWidth - 1], E_src2[bitWidth - 1],  E_dest[bitWidth - 1]),
           d.constraints, d.post_suffix);
   setFlag(d.Vnprime, V_CF, vc_bvLtExpr(E_src1, E_src2), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
@@ -2247,8 +2247,8 @@ void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   }
   //cout << "Adding constraint " << retval << endl;
   d.constraints.push_back(retval);
-  setFlag(d.Vnprime, V_OF, getOFExpr(E_arg1[bitWidth - 1], E_arg2[bitWidth - 1],
-                                     E_result[bitWidth - 1]), d.constraints, d.post_suffix);
+  setFlag(d.Vnprime, V_OF, getMinusOFExpr(E_arg1[bitWidth - 1], E_arg2[bitWidth - 1],
+                                          E_result[bitWidth - 1]), d.constraints, d.post_suffix);
   setFlag(d.Vnprime, V_CF, !(E_result[bitWidth] | E_result[bitWidth+1]), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
@@ -2671,7 +2671,7 @@ void subHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   }
   //cout << "Adding constraint " << retval << endl;
   d.constraints.push_back(retval);
-  setFlag(d.Vnprime, V_OF, getOFExpr(E_src1[bitWidth - 1], E_src2[bitWidth - 1], E_dest[bitWidth - 1]),
+  setFlag(d.Vnprime, V_OF, getMinusOFExpr(E_src1[bitWidth - 1], E_src2[bitWidth - 1], E_dest[bitWidth - 1]),
           d.constraints, d.post_suffix);
   setFlag(d.Vnprime, V_CF, vc_bvLtExpr(E_src1, E_src2), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
