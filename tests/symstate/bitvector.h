@@ -32,7 +32,7 @@ TEST(SymBitvectorTest, CanPrintExpressions) {
   std::stringstream ss;
   ss << z;
 
-  EXPECT_EQ("(and (plus <x|3> <y|3>) (xor (<< <x|3> [ 0, 1, 1 ]) (not <y|3>)))[2:1]", ss.str());
+  EXPECT_EQ("(and (plus <x|3> <y|3>) (xor (<< <x|3> [ 0, 1, 1 ]) !<y|3>))[2:1]", ss.str());
 
 }
 

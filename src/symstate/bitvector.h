@@ -7,7 +7,6 @@
 
 #include "src/symstate/bool.h"
 #include "src/symstate/function.h"
-#include "src/ext/z3/include/z3++.h"
 
 namespace stoke {
 
@@ -35,7 +34,6 @@ class SymBitVectorSignShiftRight;
 class SymBitVectorUMinus;
 class SymBitVectorVar;
 class SymBitVectorXor;
-class SymBitVectorZ3;
 
 class SymFunction;
 
@@ -68,7 +66,6 @@ public:
     U_MINUS,
     VAR,
     XOR,
-    Z3
   };
 
 
@@ -83,8 +80,6 @@ public:
   static SymBitVector from_bool(const SymBool& b);
   /** Creates an if-then-else expression bitvector */
   static SymBitVector ite(const SymBool& cond, const SymBitVector& t, const SymBitVector& f);
-  /** Creates a symbolic bitvector from a z3 expression (for compatibility) */
-  static SymBitVector z3(z3::expr& e);
 
   /** Constructs the bitwise AND of two bitvectors */
   SymBitVector operator&(const SymBitVector& other) const;
@@ -139,6 +134,9 @@ public:
   /** Returns a bool indicating if the arguments are not equal */
   SymBool operator!=(const SymBitVector& other) const;
 
+  /** Returns true if the two ASTs are identical */
+  bool equals(const SymBitVector& other) const;
+
   class IndexHelper {
     friend class SymBitVector;
 
@@ -189,6 +187,7 @@ class SymBitVectorAbstract {
 
 public:
   virtual SymBitVector::Type type() const = 0;
+  virtual bool equals(const SymBitVectorAbstract * const other) const = 0;
 };
 
 /* Abstract class that has contains a left and right argument to a binary operator. */
@@ -199,9 +198,34 @@ public:
   const SymBitVectorAbstract * const a_;
   const SymBitVectorAbstract * const b_;
 
+  bool equals(const SymBitVectorAbstract * other) const {
+    if(other->type() != this->type()) return false;
+    auto cast = static_cast<const SymBitVectorBinop * const>(other);
+    return a_->equals(cast->a_) && b_->equals(cast->b_);
+  }
+
 protected:
   SymBitVectorBinop(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : a_(a), b_(b) {}
 };
+
+
+/* Abstract class that has contains an argument to a unary operator. */
+class SymBitVectorUnop : public SymBitVectorAbstract {
+  friend class SymBitVector;
+
+public:
+  const SymBitVectorAbstract * const bv_;
+
+  bool equals(const SymBitVectorAbstract * other) const {
+    if(other->type() != this->type()) return false;
+    auto cast = static_cast<const SymBitVectorUnop * const>(other);
+    return bv_->equals(cast->bv_);
+  }
+
+protected:
+  SymBitVectorUnop(const SymBitVectorAbstract * const bv) : bv_(bv) {}
+};
+
 
 
 class SymBitVectorAnd : public SymBitVectorBinop {
@@ -247,6 +271,12 @@ public:
     return SymBitVector::Type::CONSTANT;
   }
 
+  bool equals(const SymBitVectorAbstract * const other) const {
+    if(other->type() != SymBitVector::Type::CONSTANT) return false;
+    auto cast = static_cast<const SymBitVectorConstant * const>(other);
+    return constant_ == cast->constant_ && size_ == cast->size_;
+  }
+
   const uint64_t constant_;
   const uint16_t size_;
 };
@@ -265,6 +295,12 @@ public:
     return SymBitVector::Type::EXTRACT;
   }
 
+  bool equals(const SymBitVectorAbstract * const other) const {
+    if(other->type() != SymBitVector::Type::EXTRACT) return false;
+    auto cast = static_cast<const SymBitVectorExtract * const>(other);
+    return low_bit_ == cast->low_bit_ && high_bit_ == cast->high_bit_ && bv_->equals(cast->bv_);
+  }
+
   const SymBitVectorAbstract * const bv_;
   const uint16_t low_bit_;
   const uint16_t high_bit_;
@@ -281,6 +317,22 @@ public:
 
   const SymFunction f_;
   const std::vector<const SymBitVectorAbstract *> args_;
+
+  bool equals(const SymBitVectorAbstract * const other) const {
+    if(other->type() != SymBitVector::Type::FUNCTION) return false;
+
+    auto cast = static_cast<const SymBitVectorFunction * const>(other);
+
+    if (f_ != cast->f_) return false;
+    if (args_.size() != cast->args_.size()) return false;
+
+    for(size_t i = 0; i < args_.size(); ++i) {
+      if (!args_[i]->equals(cast->args_[i]))
+        return false;
+    }
+
+    return true;
+  }
 
 private:
   SymBitVectorFunction(const SymFunction& f,
@@ -324,6 +376,12 @@ public:
     return SymBitVector::Type::ITE;
   }
 
+  bool equals(const SymBitVectorAbstract * const other) const {
+    if(other->type() != SymBitVector::Type::ITE) return false;
+    auto cast = static_cast<const SymBitVectorIte * const>(other);
+    return cond_->equals(cast->cond_) && a_->equals(cast->a_) && b_->equals(cast->b_);
+  }
+
   const SymBoolAbstract * const cond_;
   const SymBitVectorAbstract * const a_;
   const SymBitVectorAbstract * const b_;
@@ -359,23 +417,14 @@ public:
   }
 };
 
-class SymBitVectorNot : public SymBitVectorAbstract {
+class SymBitVectorNot : public SymBitVectorUnop {
   friend class SymBitVector;
-
-  // It's a bug that SymVisitor is here; it's unclear to me why it should be
-  // needed, but I have trouble compiling without it
-  template <typename T>
-  friend class SymVisitor;
-
-private:
-  SymBitVectorNot(const SymBitVectorAbstract * const bv) : bv_(bv) {}
+  using SymBitVectorUnop::SymBitVectorUnop;
 
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::NOT;
   }
-
-  const SymBitVectorAbstract * const bv_;
 };
 
 class SymBitVectorOr : public SymBitVectorBinop {
@@ -439,6 +488,12 @@ public:
     return SymBitVector::Type::SIGN_EXTEND;
   }
 
+  bool equals(const SymBitVectorAbstract * const other) const {
+    if(other->type() != SymBitVector::Type::SIGN_EXTEND) return false;
+    auto cast = static_cast<const SymBitVectorSignExtend * const>(other);
+    return bv_->equals(cast->bv_) && size_ == cast->size_;
+  }
+
   const SymBitVectorAbstract * const bv_;
   const uint16_t size_;
 };
@@ -463,18 +518,14 @@ public:
   }
 };
 
-class SymBitVectorUMinus : public SymBitVectorAbstract {
+class SymBitVectorUMinus : public SymBitVectorUnop {
   friend class SymBitVector;
-
-private:
-  SymBitVectorUMinus(const SymBitVectorAbstract * const bv) : bv_(bv) {}
+  using SymBitVectorUnop::SymBitVectorUnop;
 
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::U_MINUS;
   }
-
-  const SymBitVectorAbstract * const bv_;
 };
 
 
@@ -487,6 +538,12 @@ private:
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::VAR;
+  }
+
+  bool equals(const SymBitVectorAbstract * const other) const {
+    if(other->type() != SymBitVector::Type::VAR) return false;
+    auto cast = static_cast<const SymBitVectorVar * const>(other);
+    return name_ == cast->name_ && size_ == cast->size_;
   }
 
   const std::string name_;
@@ -505,28 +562,11 @@ public:
   }
 };
 
-/** @Deprecated. This class provides compatibility with the legacy validator;
- * one can build Z3 expressions and then put them into the modern bitvector
- * representation.  Once the legacy handlers are all fixed, we can remove this
- * class. */
-class SymBitVectorZ3 : public SymBitVectorAbstract {
-  friend class SymBitVector;
-
-private:
-  SymBitVectorZ3(z3::expr& e) : e_(e) {}
-
-public:
-  SymBitVector::Type type() const {
-    return SymBitVector::Type::Z3;
-  }
-
-  const z3::expr& e_;
-};
 
 
 } //namespace stoke
 
-std::ostream& operator<< (std::ostream& out, stoke::SymBitVector& bv);
+std::ostream& operator<< (std::ostream& out, const stoke::SymBitVector& bv);
 
 /* We need to include these to make sure templates instantiate, but not
    before SymBitVector is declared! */
