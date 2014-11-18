@@ -4,7 +4,6 @@
 
 using namespace std;
 using namespace stoke;
-using namespace z3;
 
 
 // Basic types

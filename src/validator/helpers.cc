@@ -221,11 +221,8 @@ void preserveAllFlags(v_data d)
 
 //Get the expression corresponding to the OF of add instruction.
 //Takes msb's of arguments and result as input.
-SymBool getOFExpr(SymBool E_msb_1, SymBool E_msb_2, SymBool E_msb_3)
-{
-  SymBool E_of1 = E_msb_1 & E_msb_2 & !E_msb_3;
-  SymBool E_of2 = !E_msb_1 & !E_msb_2 & E_msb_3;
-  return E_of1 | E_of2;
+SymBool getOFExpr(SymBool E_msb_1, SymBool E_msb_2, SymBool E_msb_3) {
+  return E_msb_1 != E_msb_3;
 }
 
 //A wrapper
@@ -282,26 +279,16 @@ SymBool UnmodifiedBitsPreserve(SS_Id id_dest, v_data d, unsigned int bitWidth)
 
 
 
-Expr dmul(Expr E_dest, Expr E_src1, Expr E_src2)
+SymBool dmul(Expr E_dest, Expr E_src1, Expr E_src2)
 {
-  throw VALIDATOR_ERROR("No uninterpreted functions for now");
-  return E_dest;
-  /*
-  z3::sort fl = vc->bv_sort(64);
-  z3::func_decl dmul = z3::function("muld", fl, fl, fl);
-  return E_dest == dmul(E_src1,E_src2);
-  */
+  SymFunction dmul_ = SymFunction("muld", 64, {64, 64});
+  return E_dest == dmul_(E_src1, E_src2);
 }
 
-Expr dadd(Expr E_dest, Expr E_src1, Expr E_src2)
+SymBool dadd(Expr E_dest, Expr E_src1, Expr E_src2)
 {
-  throw VALIDATOR_ERROR("No uninterpreted functions for now");
-  return E_dest;
-  /*
-  z3::sort fl = vc->bv_sort(64);
-  z3::func_decl dadd = z3::function("addd", fl, fl, fl);
-  return E_dest == dadd(E_src1,E_src2);
-  */
+  SymFunction dadd_ = SymFunction("addd", 64, {64, 64});
+  return E_dest == dadd_(E_src1, E_src2);
 }
 
 
