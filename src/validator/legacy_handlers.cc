@@ -1147,7 +1147,7 @@ void movHandler(v_data d, unsigned int bitWidthTarget, unsigned int bitWidthSour
   if(dest_is_reg /*&& bitWidthTarget < full_size*/)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
-    uint full_size = V_UNITSIZE*all_state_info.second[id_dest];
+    uint full_size = (is_dest_xmm(E_dest) ? 128 : 64);
     if(bitWidthTarget<full_size)
       retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidthTarget);
   }
