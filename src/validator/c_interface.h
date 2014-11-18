@@ -20,7 +20,6 @@
 #define _cvcl__include__c_interface_h_
 
 #include "src/symstate/bitvector.h"
-#include "src/ext/z3/include/z3++.h"
 #include "src/validator/error.h"
 
 

@@ -13,15 +13,12 @@
 #include <initializer_list>
 #include <unistd.h>
 
-#include "src/ext/z3/include/z3++.h"
-
 #include "src/symstate/bitvector.h"
 
 #include "src/validator/c_interface.h"
 #include "src/validator/legacy_handlers.h"
 #include "src/validator/validator.h"
 
-using namespace z3;
 using namespace std;
 using namespace stoke;
 

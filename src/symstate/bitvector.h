@@ -157,6 +157,9 @@ public:
     SymBool operator ^(const SymBool& other) const {
       return (SymBool)(*this) ^ other;
     }
+    SymBool operator !() const {
+      return !(SymBool)(*this);
+    }
 
   private:
     IndexHelper(const SymBitVector& bv, uint16_t index) : bv_(bv), index_(index) {}

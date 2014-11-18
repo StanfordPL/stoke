@@ -9,7 +9,6 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
 #include "src/solver/smtsolver.h"
-#include "src/solver/z3solver.h"
 #include "src/validator/c_interface.h"
 #include "src/validator/error.h"
 #include "src/validator/SymState.h"
@@ -96,7 +95,7 @@ private:
   /* Build a CpuState from the solver's model. */
   stoke::CpuState model_to_cpustate(std::string name_suffix);
 
-  /* Time to spend running z3 */
+  /* Time to spend running solver */
   uint64_t timeout_;
   /* Used to keep track of register names, IDs and stuff */
   std::pair<Bijection<std::string>,std::map<SS_Id, unsigned int> > state_info_;
