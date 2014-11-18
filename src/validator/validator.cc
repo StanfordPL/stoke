@@ -456,7 +456,7 @@ VersionNumber C2C(Ebb& ebb, PAIR_INFO state_info, vector<SymBool>& constraints, 
 #ifdef DEBUG_VALIDATOR
     cout << "Creating constraint from instruction " << oss.str() <<"\n";
 #endif
-    instrnToConstraint(state_info, n, Vnold, Vnprime, constraints, code_num, i, X_mod);
+    instrnToConstraint(n, Vnold, Vnprime, constraints, code_num, i);
     if(n.succSize() != 1)
     {
       SymBool E_final_constraint = getFinalConstraint(state_elems, Vnprime, state_info.second, code_num, state_info);
