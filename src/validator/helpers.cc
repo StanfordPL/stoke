@@ -155,7 +155,7 @@ uint64_t getImmediateFromInstr(const Instruction& instr, unsigned int n)
 //Sets condition register flag with version number Vnprime and codenum given in post_suffix to the expression e.
 SymBool setFlag(const VersionNumber& Vnprime,SS_Id flag, const SymBool& e, vector<SymBool>& constraints, string post_suffix)
 {
-  string flag_name = idToStr(flag) + post_suffix + itoa(Vnprime.get(flag));
+  string flag_name = idToStr(flag) + post_suffix + to_string(Vnprime.get(flag));
   SymBool E_flag_var = SymBool::var(flag_name.c_str());
   SymBool E_flag_constraint = E_flag_var == e;
 #ifdef DEBUG_VALIDATOR
@@ -169,7 +169,7 @@ SymBool setFlag(const VersionNumber& Vnprime,SS_Id flag, const SymBool& e, vecto
 //nameWVN(RAX, "_1_", 0) becomes "RAX_1_0"
 string nameWVN(SS_Id id, string suffix, const VersionNumber& Vn)
 {
-  return idToStr(id)+suffix+itoa(Vn.get(id)).c_str();
+  return idToStr(id)+suffix+to_string(Vn.get(id)).c_str();
 }
 
 //Create a boolean expression with name id+suffix+Vn
@@ -246,7 +246,7 @@ Expr regExprWVN(SS_Id id, string suffix, const VersionNumber& Vn, unsigned int s
 //Get a 72 bitvector for 64 bits of address and 8 bit for value in the byte addressable memory.
 Expr memExprWVN(SS_Id mid, string suffix, VersionNumber& Vn, unsigned int memsize)
 {
-  return SymBitVector::var(memsize, idToStr(mid)+suffix+itoa(Vn.get(mid)));
+  return SymBitVector::var(memsize, idToStr(mid)+suffix+to_string(Vn.get(mid)));
 }
 
 //addrExpr == the address formed by 5 memory arguments. Assume that memory address is always 64 bits.
@@ -370,12 +370,11 @@ Expr pshuf_shift_right_and_extract(Expr bitvector, int shift, int high, int low,
   throw VALIDATOR_ERROR("pshuf_shift_right_and_extract internal error: unexpected state");
 }
 
-void instrnToConstraint(V_Node& n,
-                        VersionNumber& Vn, VersionNumber& Vnprime,
+void instrnToConstraint(Instruction& instr,
+                        VersionNumber Vn, VersionNumber Vnprime,
                         std::vector<SymBool>& constraints, std::string code_num,unsigned int  instr_no)
 {
 
-  Instruction instr = n.getInstr();
   if(instr.is_label_defn()) return;
   string pre_suffix = "_" + code_num + "_";
   string post_suffix = "_" + code_num + "_";

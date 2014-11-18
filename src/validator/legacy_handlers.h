@@ -151,8 +151,8 @@ void xorpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_d
 void xorpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 
 //Convert an instruction to a constraint
-void instrnToConstraint(V_Node& n,
-                        VersionNumber& Vn, VersionNumber& Vnprime,
+void instrnToConstraint(Instruction& instr,
+                        VersionNumber Vn, VersionNumber Vnprime,
                         std::vector<SymBool>& constraints, std::string code_num,unsigned int  instr_no);
 
 #endif
