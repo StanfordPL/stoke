@@ -13,9 +13,8 @@ bool Handler::operands_supported(const Instruction& instr) {
     if (o.type() != instr.type(i)) {
       // This means there's a bug in some other part of stoke, and that the wrong type
       // of argument is here.
-      cout << "o.type() = " << (int)o.type() << endl;
-      cout << "instr.type(" << i << ") = " << (int)instr.type(i) << endl;
-      error_ = "Expected type of operand " + to_string(i) + " does not match reality.";
+      error_ = "Expected type of operand " + to_string(i) + " is " + to_string((int)instr.type(i)) +
+               "; does not match actual of " + to_string((int)o.type()) + ".";
       return false;
     }
     if (!o.is_gp_register() && !o.is_sse_register() && !o.is_immediate()) {

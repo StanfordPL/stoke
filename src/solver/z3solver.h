@@ -63,7 +63,18 @@ private:
       assert(false);
       return context_.bv_val(0,0);
     }
-
+    z3::expr visit_binop(const SymBoolBinop * const b) {
+      // We can't support anything generically.  Error!
+      // This will almost definitely segfault.  We need better error handling here.
+      error_ = "Unsupported binop: " + std::to_string(b->type());
+      assert(false);
+      return context_.bv_val(0,0);
+    }
+    z3::expr visit_unop(const SymBitVectorUnop * const bv) {
+      error_ = "Unsupported unop: " + std::to_string(bv->type());
+      assert(false);
+      return (*this)(bv->bv_);
+    }
     z3::expr visit_compare(const SymBoolCompare * const b) {
       error_ = "Unsupported compare: " + std::to_string(b->type());
       assert(false);
@@ -123,9 +134,6 @@ private:
     z3::expr visit(const SymBitVectorVar * const bv);
     /** Visit a bit-vector XOR */
     z3::expr visit(const SymBitVectorXor * const bv);
-    /** Visit a bit-vector XOR */
-    z3::expr visit(const SymBitVectorZ3 * const bv);
-
 
     /** Visit a bit-vector EQ */
     z3::expr visit(const SymBoolEq * const b);
@@ -156,8 +164,6 @@ private:
     z3::expr visit(const SymBoolVar * const b);
     /** Visit a boolean XOR */
     z3::expr visit(const SymBoolXor * const b);
-    /** Visit a Z3 compatibility bool */
-    z3::expr visit(const SymBoolZ3 * const b);
 
     /** See if there's an error */
     bool has_error() {
