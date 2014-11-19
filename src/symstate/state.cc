@@ -2,6 +2,7 @@
 #include "src/symstate/state.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
+using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
@@ -25,6 +26,29 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   set(eflags_zf, SymBool::constant(cs.rf.is_set(eflags_zf.index())));
   set(eflags_sf, SymBool::constant(cs.rf.is_set(eflags_sf.index())));
   set(eflags_of, SymBool::constant(cs.rf.is_set(eflags_of.index())));
+
+}
+
+void SymState::build_with_suffix(const string& suffix) {
+
+  for(size_t i = 0; i < gp.size(); ++i) {
+    stringstream name;
+    name << r64s[i] << "_" << suffix;
+    gp[i] = SymBitVector::var(64, name.str());
+  }
+
+  for(size_t i = 0; i < sse.size(); ++i) {
+    stringstream name;
+    name << ymms[i] << "_" << suffix;
+    sse[i] = SymBitVector::var(256, name.str());
+  }
+
+  set(eflags_cf, SymBool::var("cf_" + suffix));
+  set(eflags_pf, SymBool::var("pf_" + suffix));
+  set(eflags_af, SymBool::var("af_" + suffix));
+  set(eflags_zf, SymBool::var("zf_" + suffix));
+  set(eflags_sf, SymBool::var("sf_" + suffix));
+  set(eflags_of, SymBool::var("of_" + suffix));
 
 }
 
@@ -156,3 +180,11 @@ void SymState::set(const Eflags f, SymBool b) {
 
   assert(false);
 }
+
+/** Generate constraints expressing equality of two states over a given regset */
+std::vector<SymBool> SymState::equality_constraints(const SymState& other, const RegSet& rs) {
+
+
+}
+
+
