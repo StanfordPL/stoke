@@ -19,6 +19,31 @@ void SymState::build_from_cpustate(const CpuState& cs) {
       SymBitVector::constant(64, cs.sse[i].get_fixed_quad(0));
   }
 
+  set(eflags_cf, SymBool::constant(cs.rf.is_set(eflags_cf.index())));
+  set(eflags_pf, SymBool::constant(cs.rf.is_set(eflags_pf.index())));
+  set(eflags_af, SymBool::constant(cs.rf.is_set(eflags_af.index())));
+  set(eflags_zf, SymBool::constant(cs.rf.is_set(eflags_zf.index())));
+  set(eflags_sf, SymBool::constant(cs.rf.is_set(eflags_sf.index())));
+  set(eflags_of, SymBool::constant(cs.rf.is_set(eflags_of.index())));
+
+}
+
+SymBool SymState::operator[](const Eflags f) const {
+
+  if(f.index() == 0)  //CF
+    return rf[0];
+  if(f.index() == 2)  //PF
+    return rf[1];
+  if(f.index() == 4)  //AF
+    return rf[2];
+  if(f.index() == 6)  //ZF
+    return rf[3];
+  if(f.index() == 7)  //SF
+    return rf[4];
+  if(f.index() == 11) //OF
+    return rf[5];
+
+  assert(false);
 }
 
 SymBitVector SymState::operator[](const Operand o) const {
@@ -98,4 +123,36 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
 
   assert(false);
 
+}
+
+void SymState::set(const Eflags f, SymBool b) {
+
+  switch(f.index()) {
+  case 0: { //CF
+    rf[0] = b;
+    return;
+  }
+  case 2: { //PF
+    rf[1] = b;
+    return;
+  }
+  case 4: { //AF
+    rf[2] = b;
+    return;
+  }
+  case 6: { //ZF
+    rf[3] = b;
+    return;
+  }
+  case 7: { //SF
+    rf[4] = b;
+    return;
+  }
+  case 11: { //OF
+    rf[5] = b;
+    return;
+  }
+  }
+
+  assert(false);
 }
