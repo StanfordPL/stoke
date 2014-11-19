@@ -578,8 +578,7 @@ bool Validator::is_supported(Instruction i) {
 }
 
 
-vector<SymBool> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2, vector<SymBool>& constraints)
-{
+void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2, vector<SymBool>& constraints) const {
 
   //Add start constraints for target i.e. codenum="1"
   addStartConstraint("1", state_info_, constraints, f1.def_ins());
@@ -593,8 +592,6 @@ vector<SymBool> Validator::generate_constraints(const stoke::Cfg& f1, const stok
 
   vector<SymBool> query;
   getQueryConstraint(state_info_, query, f1.live_outs());
-
-  return query;
 }
 
 
@@ -615,6 +612,42 @@ SymBool conjunct_and_negate(vector<SymBool>& query) {
   return !conjunct(query, 0);
 }
 
+SymState Validator::build_circuit(const Cfg& cfg, const SymState& start) {
+
+  SymState state = start;
+  Code code = cfg.get_code();
+
+  for(size_t i = 0; i < code.size(); ++i) {
+
+    /* Find the best handler for this instruction */
+    Handler* best_handler = NULL;
+    auto level = Handler::SupportLevel::NONE;
+    for(auto h : handlers_) {
+      auto cur_level = h->get_support(code[i]);
+
+      if(cur_level != level && (cur_level | level == cur_level)) {
+        best_handler = h;
+        level = cur_level;
+      }
+    }
+
+    /* If we didn't find a handler, give an error */
+    if (!best_handler) {
+      stringstream ss;
+      ss << "Unsupported instruction: " << code[i];
+      REPORT_ERROR(ss.str());
+    }
+
+    /* Otherwise, run the handler */
+    best_handler->build_circuit(code[i], state);
+
+  }
+
+  return state;
+
+}
+
+
 bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counter_example)
 {
 #ifdef DEBUG_VALIDATOR
@@ -630,10 +663,7 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
 
     // Generate constraints
     vector<SymBool> constraints;
-    vector<SymBool> query = generate_constraints(target, rewrite, constraints);
-    auto final_query = conjunct_and_negate(query);
-
-    constraints.push_back(final_query);
+    generate_constraints(target, rewrite, constraints);
 
     // Run the solver
     bool is_sat = solver_.is_sat(constraints);
