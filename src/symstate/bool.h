@@ -57,6 +57,10 @@ public:
   static SymBool _false();
   /** Builds a true value */
   static SymBool _true();
+  /** Builds a boolean */
+  static SymBool constant(bool b) {
+    return ( b ? _true() : _false() );
+  }
   /** Builds a boolean variable */
   static SymBool var(std::string name);
 
