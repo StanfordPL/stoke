@@ -378,8 +378,8 @@ TEST(SandboxTest, UndefSymbolError) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << "xorq %rax, %rax" << std::endl;
-	ss << "callq .no_target" << std::endl;
+  ss << "xorq %rax, %rax" << std::endl;
+  ss << "callq .no_target" << std::endl;
   ss << "retq" << std::endl;
 
   ss >> c;
