@@ -101,7 +101,7 @@ private:
   void generate_constraints(const stoke::Cfg&, const stoke::Cfg&, std::vector<SymBool>&) const;
 
   /** Get the 'result' cpustate (including constraints) from a piece of code */
-  stoke::SymState build_circuit(const stoke::Cfg& cfg, const stoke::SymState& state);
+  stoke::SymState build_circuit(const stoke::Cfg& cfg, const stoke::SymState& state) const;
 
   /* Build a CpuState from the solver's model. */
   stoke::CpuState model_to_cpustate(std::string name_suffix);
