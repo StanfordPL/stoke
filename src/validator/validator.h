@@ -10,20 +10,10 @@
 #include "src/state/cpu_state.h"
 #include "src/solver/smtsolver.h"
 #include "src/symstate/state.h"
-#include "src/validator/c_interface.h"
 #include "src/validator/error.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers.h"
-#include "src/validator/SymState.h"
 
-#define PAIR_INFO const std::pair<stoke::Bijection<std::string>,std::map<SS_Id, unsigned int> >&
-
-
-std::string idToStr(SS_Id, PAIR_INFO I=all_state_info);
-Expr regExpr(std::string, unsigned int size=V_UNITSIZE);
-std::set<SS_Id> keys(std::map<SS_Id, unsigned int> dict);
-
-#define REPORT_ERROR(m) report_error(m, __FILE__, __LINE__)
 
 namespace stoke {
 
@@ -92,22 +82,22 @@ public:
   }
 
   /** Returns whether this instruction is supported */
-  static bool is_supported(x64asm::Instruction i);
+  bool is_supported(x64asm::Instruction& i);
   /** Returns whether this opcode is supported*/
-  static bool is_supported(x64asm::Opcode o);
+  bool is_supported(x64asm::Opcode o);
 
 private:
 
   void generate_constraints(const stoke::Cfg&, const stoke::Cfg&, std::vector<SymBool>&) const;
 
   /** Get the 'result' cpustate (including constraints) from a piece of code */
-  stoke::SymState build_circuit(const stoke::Cfg& cfg, const stoke::SymState& state) const;
+  SymState build_circuit(const Cfg& cfg, const SymState& state) const;
+  /** Build a circuit for a single instruction (trashing the starting state) */
+  void build_circuit(const x64asm::Instruction& i, SymState& state) const;
 
   /* Build a CpuState from the solver's model. */
   stoke::CpuState model_to_cpustate(std::string name_suffix);
 
-  /** Used to keep track of register names, IDs and stuff */
-  std::pair<Bijection<std::string>,std::map<SS_Id, unsigned int> > state_info_;
   /** Will the code write memory? */
   bool mem_out_;
   /** Do we want to get a counterexample? */
@@ -126,14 +116,6 @@ private:
 
   /** This is a list of the handlers, in prioritized order */
   std::vector<stoke::Handler*> handlers_;
-
-  /** Report an error here */
-  void report_error(std::string message, std::string file, size_t line) {
-    error_message_ = message;
-    error_file_ = file;
-    error_line_ = line;
-    has_error_ = true;
-  }
 
   /** Was an error encountered? */
   bool has_error_;

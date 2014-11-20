@@ -26,4 +26,5 @@ array<const char*, 3801> Handler::att_ = {{
   }
 };
 
+uint64_t Handler::temporary_ = 0;
 

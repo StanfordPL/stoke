@@ -14,57 +14,12 @@
 #include <unistd.h>
 
 #include "src/symstate/bitvector.h"
-
-#include "src/validator/c_interface.h"
-#include "src/validator/legacy_handlers.h"
 #include "src/validator/validator.h"
 
 using namespace std;
 using namespace stoke;
+using namespace x64asm;
 
-
-/* Takes an eflag and returns the name of the
-   coresponding variable, if we support it. */
-bool flagToString(Eflags eflag, string& elem) {
-
-  /* Read the flag into a string */
-  stringstream tmp;
-  tmp << RegSet::empty() + eflag;
-  string the_flag = tmp.str();
-
-  /* Extract the letter corresponding to the flag. */
-  char letter = the_flag.c_str()[3];
-  if ('a' <= letter && letter <= 'z') {
-    letter += ('A' - 'a');
-  }
-
-  if(the_flag.c_str()[4] != 'f') {
-    return false;
-  }
-
-
-  if(the_flag.c_str()[5] != ' ') {
-    return false;
-  }
-
-
-  /* Check if we handle this flag */
-  if (letter != 'A' && letter != 'C' && letter != 'O' &&
-      letter != 'P' && letter != 'S' && letter != 'Z')
-    return false;
-
-  /* Build the validator's name for this flag. */
-  elem = "_FLAG";
-  elem[0] = letter;
-  return true;
-
-}
-
-
-Expr regExpr(string s, unsigned int size)
-{
-  return SymBitVector::var(size, s);
-}
 
 /* This produces a CpuState (that is, a stoke-readable
    recording of all the variables).  This function can be used to extract a
@@ -73,172 +28,27 @@ Expr regExpr(string s, unsigned int size)
    "_1_Final" or "_2_Final") */
 stoke::CpuState Validator::model_to_cpustate(string name_suffix) {
 
-  map<SS_Id, unsigned int>::iterator iter;
-  Bijection<string> bij = state_info_.first;
-  map<SS_Id, unsigned int> sizes = state_info_.second;
-
   CpuState cs;
+  for(size_t i = 0; i < r64s.size(); ++i) {
+    stringstream name;
+    name << r64s[i] << name_suffix;
+    cs.gp[r64s[i]] = solver_.get_model_bv(name.str(), 1);
+  }
+  for(size_t i = 0; i < ymms.size(); ++i) {
+    stringstream name;
+    name << ymms[i] << name_suffix;
+    cs.sse[ymms[i]] = solver_.get_model_bv(name.str(), 4);
+  }
+  for(size_t i = 0; i < eflags.size(); ++i) {
+    if(!cs.rf.is_status(eflags[i].index()))
+      continue;
 
-  for(auto iter = sizes.begin(); iter != sizes.end(); iter++) {
-
-    string regname = bij.toVal(iter->first) + name_suffix;
-
-    // Handle EFLAGS
-    if (iter->second == V_FLAGSIZE) {
-
-      bool value = solver_.get_model_bool(regname);
-      //TODO: check for error in retrieving the bool.
-
-      /* Figure out which flag this is.  A little slow, but it works. */
-      for (size_t i = 0; i < eflags.size(); i++) {
-        string tmp;
-        if(flagToString(eflags[i], tmp)) {
-          if (tmp + name_suffix == regname) {
-            //set the counterexample
-#ifdef DEBUG_VALIDATOR
-            cout << "Setting " << tmp << " i.e. #" << eflags[i].index() << " to " << value << endl;
-#endif
-            cs.rf.set(eflags[i].index(), value);
-          }
-        }
-      }
-    }
-
-    // GP Registers
-    if (iter->second == V_REGSIZE) {
-      cs.gp[iter->first] = solver_.get_model_bv(regname, 1);
-      //TODO: check for error
-    }
-
-    // SSE Registers
-    if (iter->second == V_XMMSIZE) {
-      cpputil::BitVector xmm = solver_.get_model_bv(regname, 2);
-      //TODO: check for error
-
-      // need to extend the result from xmm register to ymm.
-      cpputil::BitVector ymm = cpputil::BitVector(256);
-      for(size_t i = 0; i < 2; ++i)
-        ymm.get_fixed_quad(i) = xmm.get_fixed_quad(i);
-      for(size_t i = 2; i < 4; ++i)
-        ymm.get_fixed_quad(i) = 0;
-
-      cs.sse[iter->first - XMM_BEG] = ymm;
-    }
+    stringstream name;
+    name << eflags[i] << name_suffix;
+    cs.rf.set(eflags[i].index(), solver_.get_model_bool(name.str()));
   }
 
   return cs;
-}
-
-
-string idToStr(SS_Id n, PAIR_INFO I)
-{
-
-  if(n < FLAG_BEG)
-  {
-    return I.first.toVal(n);
-  }
-  else if(n < MEM_BEG)
-  {
-    switch(n)
-    {
-    case V_AF:
-      return "AFLAG";
-    case V_CF:
-      return "CFLAG";
-    case V_OF:
-      return "OFLAG";
-    case V_PF:
-      return "PFLAG";
-    case V_SF:
-      return "SFLAG";
-    case V_ZF:
-      return "ZFLAG";
-    default:
-      throw VALIDATOR_ERROR("Unexpected flag.");
-    }
-
-  }
-  else
-  {
-    return I.first.toVal(n);
-  }
-  return "";
-}
-
-set<SS_Id> keys(map<SS_Id, unsigned int> dict)
-{
-  set<SS_Id> retval;
-  map<SS_Id, unsigned int>::iterator iter;
-  for( iter = dict.begin(); iter != dict.end(); iter++ )
-    retval.insert(iter->first);
-  return retval;
-}
-
-
-set<SS_Id> modSet(PAIR_INFO state_info, const Instruction instr, string codenum, bool include_undef=true)
-{
-  set<SS_Id> retval;
-
-  if(instr.is_explicit_memory_dereference())
-  {
-    throw VALIDATOR_ERROR("memory not handled");
-  }
-
-
-  x64asm::RegSet modsetreg = instr.maybe_write_set();
-
-  for(size_t i=0; i<x64asm::rls.size(); i++)
-    if(modsetreg.contains(((x64asm::Rl)x64asm::rls[i])))
-      retval.insert(rls[i]);
-
-  for(size_t i=0; i<x64asm::rbs.size(); i++)
-    if(modsetreg.contains(((x64asm::Rb)x64asm::rbs[i])))
-      retval.insert(rbs[i]);
-
-  for(size_t i=0; i<x64asm::xmms.size(); i++)
-    if(modsetreg.contains(((x64asm::Xmm)x64asm::xmms[i])))
-      retval.insert(i+XMM_BEG);
-
-  if(modsetreg.contains(x64asm::eflags_cf))
-    retval.insert(V_CF);
-  if(modsetreg.contains(x64asm::eflags_of))
-    retval.insert(V_OF);
-  if(modsetreg.contains(x64asm::eflags_sf))
-    retval.insert(V_SF);
-  if(modsetreg.contains(x64asm::eflags_zf))
-    retval.insert(V_ZF);
-  if(modsetreg.contains(x64asm::eflags_pf))
-    retval.insert(V_PF);
-  if(modsetreg.contains(x64asm::eflags_af))
-    retval.insert(V_AF);
-
-
-  if(include_undef)
-  {
-    x64asm::RegSet flagsetreg = instr.maybe_undef_set();
-    if(flagsetreg.contains(x64asm::eflags_cf))
-      retval.insert(V_CF);
-    if(flagsetreg.contains(x64asm::eflags_of))
-      retval.insert(V_OF);
-    if(flagsetreg.contains(x64asm::eflags_sf))
-      retval.insert(V_SF);
-    if(flagsetreg.contains(x64asm::eflags_zf))
-      retval.insert(V_ZF);
-    if(flagsetreg.contains(x64asm::eflags_pf))
-      retval.insert(V_PF);
-    if(flagsetreg.contains(x64asm::eflags_af))
-      retval.insert(V_AF);
-
-
-
-  }
-#ifdef DEBUG_VALIDATOR
-  cout << "Modset is: ";
-  for(set<SS_Id>::iterator l=retval.begin(); l!=retval.end(); l++)
-    cout << idToStr(*l,state_info) << " ";
-  cout << endl ;
-#endif
-  return retval;
 }
 
 
@@ -283,26 +93,23 @@ bool regset_is_supported(x64asm::RegSet rs) {
 }
 
 
+bool Validator::is_supported(Instruction& i) {
 
+  SymState s("");
+  try {
 
+    build_circuit(i, s);
+    return true;
 
-
-
-bool Validator::is_supported(Opcode o) {
-  // Use autogenerated lookup table.
-  // Honestly, it would be better to use an array.
-  switch(o) {
-#include "supported.switch"
+  } catch (validator_error e) {
+    has_error_ = true;
+    error_message_ = e.get_message();
+    error_file_ = e.get_file();
+    error_line_ = e.get_line();
+    return false;
   }
 
-  // If we couldn't find it above, then we definitely don't support it.
   return false;
-}
-
-bool Validator::is_supported(Instruction i) {
-
-  return is_supported(i.get_opcode()) &&
-         !i.is_memory_dereference();
 }
 
 
@@ -342,6 +149,45 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
 
 }
 
+void Validator::build_circuit(const Instruction& instr, SymState& state) const {
+
+  /* For now, we don't handle any control flow */
+  if(instr.is_any_jump() || instr.is_any_call() || instr.is_any_return()) {
+    stringstream ss;
+    ss << "Control flow unsupported: " << instr;
+    throw VALIDATOR_ERROR(ss.str());
+  }
+
+  /* Find the best handler for this instruction */
+  Handler* best_handler = NULL;
+  auto level = Handler::SupportLevel::NONE;
+  for(auto h : handlers_) {
+    auto cur_level = h->get_support(instr);
+
+    if(cur_level != level && (cur_level | level == cur_level)) {
+      best_handler = h;
+      level = cur_level;
+    }
+  }
+
+  /* If we didn't find a handler, give an error */
+  if (!best_handler) {
+    stringstream ss;
+    ss << "Unsupported instruction: " << instr;
+    throw VALIDATOR_ERROR(ss.str());
+  }
+
+  /* Otherwise, run the handler and check for errors */
+  best_handler->build_circuit(instr, state);
+
+  if(best_handler->has_error()) {
+    stringstream ss;
+    ss << "Error building circuit for: " << instr << ".";
+    ss << "Handler says: " << best_handler->error();
+    throw VALIDATOR_ERROR(ss.str());
+  }
+}
+
 SymState Validator::build_circuit(const Cfg& cfg, const SymState& start) const {
 
   SymState state = start;
@@ -349,50 +195,13 @@ SymState Validator::build_circuit(const Cfg& cfg, const SymState& start) const {
 
   for(size_t i = 0; i < code.size(); ++i) {
 
-    /* For now, we don't handle any control flow */
-    if(code[i].is_any_jump() || code[i].is_any_call()) {
-      stringstream ss;
-      ss << "Control flow unsupported: " << code[i];
-      throw VALIDATOR_ERROR(ss.str());
-    }
-
-    /* If it's a return statement, then we're done. */
     if(code[i].is_any_return())
       break;
 
-    /* Find the best handler for this instruction */
-    Handler* best_handler = NULL;
-    auto level = Handler::SupportLevel::NONE;
-    for(auto h : handlers_) {
-      auto cur_level = h->get_support(code[i]);
-
-      if(cur_level != level && (cur_level | level == cur_level)) {
-        best_handler = h;
-        level = cur_level;
-      }
-    }
-
-    /* If we didn't find a handler, give an error */
-    if (!best_handler) {
-      stringstream ss;
-      ss << "Unsupported instruction: " << code[i];
-      throw VALIDATOR_ERROR(ss.str());
-    }
-
-    /* Otherwise, run the handler and check for errors */
-    best_handler->build_circuit(code[i], state);
-
-    if(best_handler->has_error()) {
-      stringstream ss;
-      ss << "Error building circuit for: " << code[i] << ".";
-      ss << "Handler says: " << best_handler->error();
-      throw VALIDATOR_ERROR(ss.str());
-    }
-
+    build_circuit(code[i], state);
   }
 
   return state;
-
 }
 
 
@@ -405,9 +214,6 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
   has_error_ = false;
 
   try {
-
-    // Setup some necessary variables.
-    state_info_ = InitStateMapping();
 
     // Generate constraints
     vector<SymBool> constraints;
