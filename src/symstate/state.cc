@@ -182,8 +182,31 @@ void SymState::set(const Eflags f, SymBool b) {
 }
 
 /** Generate constraints expressing equality of two states over a given regset */
-std::vector<SymBool> SymState::equality_constraints(const SymState& other, const RegSet& rs) {
+std::vector<SymBool> SymState::equality_constraints(const SymState& other, const RegSet& rs) const {
 
+  std::vector<SymBool> constraints;
+
+  for(auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
+    constraints.push_back((*this)[*gp_it] == other[*gp_it]);
+  }
+  for(auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
+    constraints.push_back((*this)[*sse_it] == other[*sse_it]);
+  }
+
+  // TODO: this can be simplified with the following changes to x64asm:
+  //   - iterate eflags
+  if(rs.contains(eflags_cf))
+    constraints.push_back((*this)[eflags_cf] == other[eflags_cf]);
+  if(rs.contains(eflags_pf))
+    constraints.push_back((*this)[eflags_pf] == other[eflags_pf]);
+  if(rs.contains(eflags_af))
+    constraints.push_back((*this)[eflags_af] == other[eflags_af]);
+  if(rs.contains(eflags_zf))
+    constraints.push_back((*this)[eflags_zf] == other[eflags_zf]);
+  if(rs.contains(eflags_sf))
+    constraints.push_back((*this)[eflags_sf] == other[eflags_sf]);
+  if(rs.contains(eflags_cf))
+    constraints.push_back((*this)[eflags_of] == other[eflags_of]);
 
 }
 
