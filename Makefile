@@ -18,12 +18,14 @@ CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors
 
 TARGET=-mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 
-INC=\
-	-I./ \
-	-I./src/ext/cpputil/ \
-	-I./src/ext/x64asm \
-  -I./src/ext/gtest-1.7.0/include \
-	-I./src/ext/z3/include
+INC_FOLDERS=\
+						./ \
+						src/ext/cpputil/ \
+						src/ext/x64asm \
+						src/ext/gtest-1.7.0/include \
+						src/ext/z3/include
+
+INC=$(addprefix -I./, $(INC_FOLDERS))
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
@@ -64,6 +66,7 @@ SRC_OBJ=\
 	\
 	src/validator/handler.o \
 	src/validator/handlers.o \
+	src/validator/legacy.o \
 	src/validator/validator.o \
 	\
 	src/verifier/verifier.o
@@ -160,6 +163,11 @@ src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
 	$(MAKE) -C src/ext/gtest-1.7.0
 
+##### VALIDATOR MISCELANEOUS
+
+VALIDATOR_AUTOGEN=src/validator/handlers.h
+src/validator/handlers.h:
+	src/validator/generate_handlers_h.sh src/validator
 
 ##### BUILD TARGETS
 
@@ -183,7 +191,10 @@ src/symstate/%.o: src/symstate/%.cc src/symstate/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/validator/handlers.o: src/validator/handlers/*.cc
+src/validator/legacy.o: $(VALIDATOR_AUTOGEN) src/validator/legacy/*
+	OPT="$(OPT)" CXX="$(CXX)" INC_FOLDERS="$(INC_FOLDERS)" $(MAKE) -C src/validator/legacy
+	cp src/validator/legacy/legacy.o src/validator
+src/validator/handlers.o: src/validator/handlers/*.cc $(VALIDATOR_AUTOGEN)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c src/validator/handlers/*.cc -o $@
 src/validator/%.o: src/validator/%.cc src/validator/%.h $(VALIDATOR_AUTOGEN)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
