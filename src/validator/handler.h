@@ -54,9 +54,16 @@ protected:
   /* Returns true if the validator supports all the operands of the instruction. */
   bool operands_supported(const x64asm::Instruction& instr);
 
+  /* Gets a temporary number guaranteed to be unique (e.g. for a temp variable */
+  uint64_t temp() {
+    return ++temporary_;
+  }
+
 private:
 
   static std::array<const char*, 3801> att_;
+
+  static uint64_t temporary_;
 };
 
 } //namespace

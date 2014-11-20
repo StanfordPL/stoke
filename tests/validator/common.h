@@ -54,6 +54,10 @@ protected:
     check_codes(EQUIVALENT);
   }
 
+  bool is_supported(x64asm::Instruction& instr) {
+    return v_.is_supported(instr);
+  }
+
   void assert_equiv_or_error_or_unsound() {
     if(!reset_state())
       return;
