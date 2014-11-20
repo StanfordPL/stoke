@@ -61,7 +61,8 @@ public:
   std::vector<SymBool> constraints;
 
   /** Generate constraints expressing equality of two states over a given regset */
-  std::vector<SymBool> equality_constraints(const SymState& other) const;
+  std::vector<SymBool> equality_constraints(const SymState& other, 
+                                     const x64asm::RegSet& rs = x64asm::RegSet::universe()) const;
 
 
 private:
