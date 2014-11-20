@@ -364,11 +364,7 @@ SymState Validator::build_circuit(const Cfg& cfg, const SymState& start) const {
     Handler* best_handler = NULL;
     auto level = Handler::SupportLevel::NONE;
     for(auto h : handlers_) {
-      cout << "Trying handler..." << endl;
       auto cur_level = h->get_support(code[i]);
-      cout << "Support level: " << cur_level << endl;
-      if(h->has_error())
-        cout << "ERROR: " << h->error() << endl;
 
       if(cur_level != level && (cur_level | level == cur_level)) {
         best_handler = h;

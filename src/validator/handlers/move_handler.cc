@@ -22,16 +22,11 @@ MoveHandler::MoveSupport MoveHandler::lookup(const Instruction& instr) const {
 }
 
 Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
-  cout << "[MoveHandler] Checking support for " << instr << endl;
   if(!operands_supported(instr))
     return SupportLevel::NONE;
 
-  cout << "[MoveHandler]     ...operands ok" << endl;
-
   if(!lookup(instr))
     return SupportLevel::NONE;
-
-  cout << "[MoveHandler]     ...instruction ok" << endl;
 
   return (Handler::SupportLevel)(SupportLevel::BASIC | SupportLevel::CEG);
 }
