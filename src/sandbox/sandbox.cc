@@ -125,9 +125,9 @@ void Sandbox::run_one(size_t index) {
   stoke_rsp_ = 0;
 
   // Run the code (control exits abnormally for sigfpe or if linking failed)
-	if (!lnkr_.good()) {
-		io->out_.code = ErrorCode::SIGBUS_;
-	} else if (!sigsetjmp(buf_, 1)) {
+  if (!lnkr_.good()) {
+    io->out_.code = ErrorCode::SIGBUS_;
+  } else if (!sigsetjmp(buf_, 1)) {
     io->out_.code = harness_.call<ErrorCode>();
   } else {
     io->out_.code = ErrorCode::SIGFPE_;
