@@ -56,22 +56,20 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
     // Create ending state
     ss.sse[*s_it] = end_var;
   }
-  /*
   for(auto flag = modified.flags_begin(); flag != modified.flags_end(); ++flag) {
 
     // Create variables for starting/ending state
     std::stringstream name;
-    name << *s_it << "_1_" ;
-    auto start_var = SymBitVector::var(256, name.str() + to_string(start_no));
-    auto end_var = SymBitVector::var(256, name.str() + to_string(end_no));
+    name << *flag << "_1_" ;
+    auto start_var = SymBool::var(name.str() + to_string(start_no));
+    auto end_var = SymBool::var(name.str() + to_string(end_no));
 
     // Constrain starting state
-    ss.add_constraint( ss.sse[*r_it] == start_var );
+    ss.add_constraint( ss[*flag] == start_var );
 
     // Create ending state
-    ss.sse[*r_it] = end_var;
+    ss.set(*flag, end_var);
   }
-  */
 
 
 }
