@@ -80,7 +80,7 @@ SymBitVector SymState::operator[](const Operand o) const {
       return gp[r];
   }
 
-  if(o.type() == Type::XMM) {
+  if(o.type() == Type::XMM || o.type() == Type::XMM_0) {
     auto& xmm = reinterpret_cast<const Xmm&>(o);
     return sse[xmm][127][0];
   }
@@ -94,6 +94,9 @@ SymBitVector SymState::operator[](const Operand o) const {
     auto& imm = reinterpret_cast<const Imm&>(o);
     return SymBitVector::constant(o.size(), imm);
   }
+
+  assert(false);
+  return SymBitVector::constant(o.size(), 0);
 }
 
 /* Set the operand in the symbolic state to the specified bitvector.
@@ -128,12 +131,12 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto& r = reinterpret_cast<const R&>(o);
     gp[r] = gp[r][63][o.size()] || bv;
     return;
-  } else if (avx && o.type() == Type::XMM) {
+  } else if (avx && (o.type() == Type::XMM || o.type() == Type::XMM_0)) {
     // avx special case
     auto& xmm = reinterpret_cast<const Xmm&>(o);
     sse[xmm] = SymBitVector::constant(128, 0) || bv[127][0];
     return;
-  } else if (o.type() == Type::XMM) {
+  } else if (o.type() == Type::XMM || o.type() == Type::XMM_0) {
     // xmm with ymm preserved
     auto& xmm = reinterpret_cast<const Xmm&>(o);
     sse[xmm] = sse[xmm][255][128] || bv;
@@ -152,33 +155,33 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
 void SymState::set(const Eflags f, SymBool b) {
 
   switch(f.index()) {
-    case 0: { //CF
-      rf[0] = b;
-      return;
-    }
-    case 2: { //PF
-      rf[1] = b;
-      return;
-    }
-    case 4: { //AF
-      rf[2] = b;
-      return;
-    }
-    case 6: { //ZF
-      rf[3] = b;
-      return;
-    }
-    case 7: { //SF
-      rf[4] = b;
-      return;
-    }
-    case 11: { //OF
-      rf[5] = b;
-      return;
-    }
-    default:
-      assert(false);
-      return;
+  case 0: { //CF
+    rf[0] = b;
+    return;
+  }
+  case 2: { //PF
+    rf[1] = b;
+    return;
+  }
+  case 4: { //AF
+    rf[2] = b;
+    return;
+  }
+  case 6: { //ZF
+    rf[3] = b;
+    return;
+  }
+  case 7: { //SF
+    rf[4] = b;
+    return;
+  }
+  case 11: { //OF
+    rf[5] = b;
+    return;
+  }
+  default:
+    assert(false);
+    return;
   }
 
   assert(false);
