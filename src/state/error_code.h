@@ -23,6 +23,7 @@ enum class ErrorCode {
   SIGILL_ = 4,
   SIGFPE_ = 8,
   SIGKILL_ = 9,
+	SIGBUS_ = 10,
   SIGSEGV_ = 11
 };
 
