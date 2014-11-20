@@ -6,6 +6,9 @@
                            << "Expected: " << (X) << std::endl \
                            << "Actual:   " << (Y) << std::endl
 
+class ValidatorMoveTest : public ValidatorTest {};
+
+
 TEST(MoveHandler, R64R64Works) {
 
   x64asm::Instruction i(x64asm::MOV_R64_R64);
@@ -81,4 +84,41 @@ TEST(MoveHandler, R16R16PreservesTop) {
   EXPECT_BV_EQ(rsi, ss[x64asm::rsi]);
   // Check RDI is a concatenation of 0 with RSI[31:0]
   EXPECT_BV_EQ(rdi[63][16] || rsi[15][0], ss[x64asm::rdi]);
+}
+
+TEST_F(ValidatorMoveTest, MoveRaxToRaxNoop) {
+
+  target_ << "movq %rax, %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+
+TEST_F(ValidatorMoveTest, MovesCommute) {
+
+  target_ << "movq %rax, %rcx" << std::endl;
+  target_ << "movq %rax, %rdx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq %rax, %rdx" << std::endl;
+  rewrite_ << "movq %rax, %rcx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorMoveTest, MovesDontCommute) {
+
+  target_ << "movq %rcx, %rax" << std::endl;
+  target_ << "movq %rdx, %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq %rdx, %rax" << std::endl;
+  rewrite_ << "movq %rcx, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_ceg();
 }

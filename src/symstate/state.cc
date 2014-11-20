@@ -152,30 +152,33 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
 void SymState::set(const Eflags f, SymBool b) {
 
   switch(f.index()) {
-  case 0: { //CF
-    rf[0] = b;
-    return;
-  }
-  case 2: { //PF
-    rf[1] = b;
-    return;
-  }
-  case 4: { //AF
-    rf[2] = b;
-    return;
-  }
-  case 6: { //ZF
-    rf[3] = b;
-    return;
-  }
-  case 7: { //SF
-    rf[4] = b;
-    return;
-  }
-  case 11: { //OF
-    rf[5] = b;
-    return;
-  }
+    case 0: { //CF
+      rf[0] = b;
+      return;
+    }
+    case 2: { //PF
+      rf[1] = b;
+      return;
+    }
+    case 4: { //AF
+      rf[2] = b;
+      return;
+    }
+    case 6: { //ZF
+      rf[3] = b;
+      return;
+    }
+    case 7: { //SF
+      rf[4] = b;
+      return;
+    }
+    case 11: { //OF
+      rf[5] = b;
+      return;
+    }
+    default:
+      assert(false);
+      return;
   }
 
   assert(false);
@@ -205,9 +208,10 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
     constraints.push_back((*this)[eflags_zf] == other[eflags_zf]);
   if(rs.contains(eflags_sf))
     constraints.push_back((*this)[eflags_sf] == other[eflags_sf]);
-  if(rs.contains(eflags_cf))
+  if(rs.contains(eflags_of))
     constraints.push_back((*this)[eflags_of] == other[eflags_of]);
 
+  return constraints;
 }
 
 
