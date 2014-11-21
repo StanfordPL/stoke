@@ -124,16 +124,11 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
   }
 
   // Create a starting symbolic state
-  SymState first_init("INIT_1");
-  SymState second_init("INIT_2");
-
-  // Assert equality of the starting states
-  for(auto it : first_init.equality_constraints(second_init, f1.def_ins()))
-    constraints.push_back(it);
+  SymState init("");
 
   // Build the circuits
-  SymState first_final = build_circuit(f1, first_init);
-  SymState second_final = build_circuit(f2, second_init);
+  SymState first_final = build_circuit(f1, init);
+  SymState second_final = build_circuit(f2, init);
 
   for(auto it : first_final.constraints)
     constraints.push_back(it);
@@ -144,6 +139,18 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
   SymBool inequality = SymBool::_false();
   for(auto it : first_final.equality_constraints(second_final, f1.live_outs()))
     inequality = inequality | !it;
+
+  // Create states to track the final values on each side
+  // (this is to get a counterexample)
+  SymState first_outputs("1_FINAL");
+  SymState second_outputs("2_FINAL");
+
+  for(auto it : first_outputs.equality_constraints(first_final, f1.live_outs()))
+    constraints.push_back(it);
+  for(auto it : second_outputs.equality_constraints(second_final, f1.live_outs()))
+    constraints.push_back(it);
+
+
 
   constraints.push_back(inequality);
 
@@ -185,6 +192,12 @@ void Validator::build_circuit(const Instruction& instr, SymState& state) const {
     ss << "Error building circuit for: " << instr << ".";
     ss << "Handler says: " << best_handler->error();
     throw VALIDATOR_ERROR(ss.str());
+  }
+
+  cout << endl;
+  cout << "====== STATE AFTER INSTRUCTION " << instr << endl;
+  for(size_t i = 0; i < r64s.size(); ++i) {
+    cout << r64s[i] << ": " << state[r64s[i]] << endl;
   }
 }
 
@@ -229,9 +242,9 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
     if (is_sat && solver_.has_model()) {
 
       counterexample_valid_ = true;
-      counterexample_ =      model_to_cpustate("");
-      target_final_state_  = model_to_cpustate("_1_Final");
-      rewrite_final_state_ = model_to_cpustate("_2_Final");
+      counterexample_ =      model_to_cpustate("_");
+      target_final_state_  = model_to_cpustate("_1_FINAL");
+      rewrite_final_state_ = model_to_cpustate("_2_FINAL");
 
       counter_example = counterexample_;
 

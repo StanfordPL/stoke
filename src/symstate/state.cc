@@ -43,12 +43,12 @@ void SymState::build_with_suffix(const string& suffix) {
     sse[i] = SymBitVector::var(256, name.str());
   }
 
-  set(eflags_cf, SymBool::var("cf_" + suffix));
-  set(eflags_pf, SymBool::var("pf_" + suffix));
-  set(eflags_af, SymBool::var("af_" + suffix));
-  set(eflags_zf, SymBool::var("zf_" + suffix));
-  set(eflags_sf, SymBool::var("sf_" + suffix));
-  set(eflags_of, SymBool::var("of_" + suffix));
+  set(eflags_cf, SymBool::var("%cf_" + suffix));
+  set(eflags_pf, SymBool::var("%pf_" + suffix));
+  set(eflags_af, SymBool::var("%af_" + suffix));
+  set(eflags_zf, SymBool::var("%zf_" + suffix));
+  set(eflags_sf, SymBool::var("%sf_" + suffix));
+  set(eflags_of, SymBool::var("%of_" + suffix));
 
 }
 
