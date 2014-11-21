@@ -24,6 +24,7 @@
 #include "tests/search/search.h"
 #include "tests/state/state.h"
 #include "tests/stategen/stategen.h"
+#include "tests/tunit/tunit.h"
 #include "tests/trivial.h"
 #include "tests/x64asm/x64asm.h"
 
