@@ -126,9 +126,18 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
   // Create a starting symbolic state
   SymState init("");
 
+  SymState first_init("1_INIT");
+  SymState second_init("2_INIT");
+
+  for(auto it : first_init.equality_constraints(init, f1.def_ins()))
+    constraints.push_back(it);
+
+  for(auto it : second_init.equality_constraints(init, f1.def_ins()))
+    constraints.push_back(it);
+
   // Build the circuits
-  SymState first_final = build_circuit(f1, init);
-  SymState second_final = build_circuit(f2, init);
+  SymState first_final = build_circuit(f1, first_init);
+  SymState second_final = build_circuit(f2, second_init);
 
   for(auto it : first_final.constraints)
     constraints.push_back(it);
