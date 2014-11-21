@@ -370,7 +370,7 @@ Expr pshuf_shift_right_and_extract(Expr bitvector, int shift, int high, int low,
   throw VALIDATOR_ERROR("pshuf_shift_right_and_extract internal error: unexpected state");
 }
 
-void instrnToConstraint(Instruction& instr,
+void instrnToConstraint(const Instruction& instr,
                         VersionNumber Vn, VersionNumber Vnprime,
                         std::vector<SymBool>& constraints, std::string code_num,unsigned int  instr_no)
 {

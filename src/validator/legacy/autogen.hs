@@ -1170,7 +1170,7 @@ lookup_handler_or_error opcode num i =
 
 -- Generates a declaration for an instruction
 validator_decl :: [Instr] -> String
-validator_decl is = concat $ ((("#ifndef SWITCH_H\n#define SWITCH_H\n#include \"legacy_handlers.h\"\n#include \"c_interface.h\"\n") : (nub (map render (tail is)))) ++ ("#endif"):[])
+validator_decl is = concat $ ((("#ifndef SWITCH_H\n#define SWITCH_H\n#include \"src/validator/legacy/legacy_handlers.h\"\n#include \"src/validator/legacy/c_interface.h\"\n") : (nub (map render (tail is)))) ++ ("#endif"):[])
   where render i = ("void " ++ (att i) ++ (concat (operand_types i)) ++
                   "Handler(v_data d,  unsigned int bitWidth, unsigned int bitWidth1, " ++ (assm_args i) ++ ");\n")
 
@@ -1307,7 +1307,7 @@ get_valid_instrs [] = []
 main :: IO ()
 main = do args <- getArgs
           --instrs_file <- readFile $ head args
-          instrs <- parse_instrs "../ext/x64asm/src/x86.csv"
+          instrs <- parse_instrs "../../ext/x64asm/src/x86.csv"
           let valid_instrs = get_valid_instrs instrs 
 	  writeFile "switch.h" $ validator_decl valid_instrs
           writeFile "switch.cc" $ validator_defn valid_instrs
