@@ -26,6 +26,7 @@ public:
     set_mem_out(false);
 
     handlers_.push_back(new MoveHandler());
+    handlers_.push_back(new LegacyHandler());
   }
 
   ~Validator() {

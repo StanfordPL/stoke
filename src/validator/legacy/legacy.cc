@@ -1,12 +1,22 @@
 
 #include "src/validator/legacy/legacy.h"
+#include "src/validator/legacy/legacy_handlers.h"
+#include "src/validator/legacy/sym_state.h"
 
 using namespace stoke;
 using namespace x64asm;
 using namespace std;
 
 Handler::SupportLevel LegacyHandler::get_support(const Instruction& instr) {
-  return (Handler::SupportLevel)(SupportLevel::BASIC | SupportLevel::CEG);
+  SymState ss("");
+
+  try {
+    build_circuit(instr,ss);
+    return (Handler::SupportLevel)(SupportLevel::BASIC);
+  } catch (validator_error e) {
+    return SupportLevel::NONE;
+  }
+
 }
 
 void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
@@ -71,6 +81,15 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
     ss.set(*flag, end_var);
   }
 
+  // Build this "version number" object
+  VersionNumber Vn;
+  VersionNumber Vnprime;
+
+  Vn.Init(start_no);
+  Vnprime.Init(start_no);
+
+  // Add the constraints for the instruction
+  instrnToConstraint(instr, Vn, Vnprime, ss.constraints, "1", temp());
 
 }
 

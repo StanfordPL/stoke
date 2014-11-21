@@ -2,7 +2,7 @@
 #define HANDLERS_H
 
 #include "src/validator/error.h"
-#include "validator.h"
+#include "src/validator/legacy/validator.h"
 
 #include<vector>
 
@@ -25,14 +25,14 @@ class v_data
 public:
   VersionNumber& Vn;
   VersionNumber& Vnprime;
-  Instruction& instr;
+  const Instruction& instr;
   std:: string pre_suffix;
   std:: string post_suffix;
   std::vector<SymBool>& constraints;
   unsigned int instr_no;
   ~v_data() {}
 
-  v_data(VersionNumber& Vn_,  VersionNumber& Vnprime_,  Instruction& instr_, std:: string pre_suffix_,
+  v_data(VersionNumber& Vn_,  VersionNumber& Vnprime_,  const Instruction& instr_, std:: string pre_suffix_,
          std:: string post_suffix_, std::vector<SymBool>& constraints_, unsigned int instr_no_):
     Vn (Vn_),
     Vnprime (Vnprime_),
@@ -151,7 +151,7 @@ void xorpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_d
 void xorpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2);
 
 //Convert an instruction to a constraint
-void instrnToConstraint(Instruction& instr,
+void instrnToConstraint(const Instruction& instr,
                         VersionNumber Vn, VersionNumber Vnprime,
                         std::vector<SymBool>& constraints, std::string code_num,unsigned int  instr_no);
 
