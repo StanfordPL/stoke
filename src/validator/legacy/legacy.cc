@@ -19,6 +19,24 @@ Handler::SupportLevel LegacyHandler::get_support(const Instruction& instr) {
 
 }
 
+SymBitVector var_for_register(R r, uint64_t number) {
+  stringstream ss;
+  ss << r << "_1_" << number;
+  return SymBitVector::var(64, ss.str());
+}
+
+SymBitVector var_for_register(Sse r, uint64_t number) {
+  stringstream ss;
+  ss << r << "_1_" << number;
+  return SymBitVector::var(256, ss.str());
+}
+
+SymBool var_for_register(Eflags r, uint64_t number) {
+  stringstream ss;
+  ss << r << "_1_" << number;
+  return SymBool::var(ss.str());
+}
+
 void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   // The legacy handlers assume that the initial symbolic state has only
@@ -32,68 +50,51 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
   assert(end_no = start_no + 1);
 
   // Find the set of registers which we need to assert equality on
-  RegSet modified = instr.maybe_read_set() | instr.maybe_write_set() | instr.maybe_undef_set() |
-                    instr.must_read_set() | instr.must_write_set() | instr.must_undef_set();
+  RegSet modified = instr.maybe_write_set() | instr.maybe_undef_set();
+  RegSet read = instr.maybe_read_set();
+
   cout << "INSTRUCTION: " << instr << endl;
   cout << "MODIFIED: " << modified << endl;
+  auto o = const_cast<Instruction&>(instr).get_operand<R64>(0);
+  cout << "R: " << o << endl;
 
   // Build the end state with modified variable names, and add constraints
   // IMPORTANT: we need to change the whole register, not just a part of it, because
   // some things in x64asm aren't sound, e.g. movl %eax, %ecx.  See x64asm issue #81.
-  for(auto r_it = modified.gp_begin(); r_it != modified.gp_end(); ++r_it) {
-
-    // Create variables for starting/ending state
-    std::stringstream name;
-    name << *r_it << "_1_" ;
-    auto start_var = SymBitVector::var(64, name.str() + to_string(start_no));
-    auto end_var = SymBitVector::var(64, name.str() + to_string(end_no));
-
+  for(auto it = read.gp_begin(); it != read.gp_end(); ++it) {
     // Constrain starting state
-    ss.add_constraint( ss.gp[*r_it] == start_var );
-    SymBool b = ss.gp[*r_it] == start_var;
-    cout << "Start for " << *r_it << ": " << b << endl;
-
-    // Create ending state
-    ss.gp[*r_it] = end_var;
-    cout << "End for " << *r_it << ": " << end_var << endl;
+    ss.add_constraint( ss.gp[*it] == var_for_register(*it, start_no) );
   }
-  for(auto s_it = modified.sse_begin(); s_it != modified.sse_end(); ++s_it) {
+  for(auto it = modified.gp_begin(); it != modified.gp_end(); ++it) {
+    // Create ending state
+    ss.gp[*it] = var_for_register(*it, end_no);
+  }
 
-    // Create variables for starting/ending state
-    std::stringstream name;
-    name << *s_it << "_1_" ;
-    auto start_var = SymBitVector::var(256, name.str() + to_string(start_no));
-    auto end_var = SymBitVector::var(256, name.str() + to_string(end_no));
-
+  for(auto it = read.sse_begin(); it != read.sse_end(); ++it) {
     // Constrain starting state
-    ss.add_constraint( ss.sse[*s_it] == start_var );
-
-    // Create ending state
-    ss.sse[*s_it] = end_var;
+    ss.add_constraint( ss.sse[*it] == var_for_register(*it, start_no) );
   }
-  for(auto flag = modified.flags_begin(); flag != modified.flags_end(); ++flag) {
+  for(auto it = modified.sse_begin(); it != modified.sse_end(); ++it) {
+    // Create ending state
+    ss.sse[*it] = var_for_register(*it, end_no);
+  }
 
-    // Create variables for starting/ending state
-    std::stringstream name;
-    name << *flag << "_1_" ;
-    auto start_var = SymBool::var(name.str() + to_string(start_no));
-    auto end_var = SymBool::var(name.str() + to_string(end_no));
-
+  for(auto it = read.flags_begin(); it != read.flags_end(); ++it) {
     // Constrain starting state
-    ss.add_constraint( ss[*flag] == start_var );
-    //cout << "Start for " << *flag << ": " << ss[*flag] == start_var << endl;
-
-    // Create ending state
-    ss.set(*flag, end_var);
-    //cout << "End for " << *flag << ": " << end_var << endl;
+    ss.add_constraint( ss[*it] == var_for_register(*it, start_no) );
   }
+  for(auto it = modified.flags_begin(); it != modified.flags_end(); ++it) {
+    // Create ending state
+    ss.set(*it, var_for_register(*it, end_no));
+  }
+
 
   // Build this "version number" object
   VersionNumber Vn;
   VersionNumber Vnprime;
 
   Vn.Init(start_no);
-  Vnprime.Init(start_no);
+  Vnprime.Init(end_no);
 
   // Add the constraints for the instruction
   instrnToConstraint(instr, Vn, Vnprime, ss.constraints, "1", temp());

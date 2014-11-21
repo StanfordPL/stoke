@@ -41,17 +41,17 @@ string idToStr(SS_Id n, PAIR_INFO I)
     switch(n)
     {
     case V_AF:
-      return "af";
+      return "%af";
     case V_CF:
-      return "cf";
+      return "%cf";
     case V_OF:
-      return "of";
+      return "%of";
     case V_PF:
-      return "pf";
+      return "%pf";
     case V_SF:
-      return "sf";
+      return "%sf";
     case V_ZF:
-      return "zf";
+      return "%zf";
     default:
       throw VALIDATOR_ERROR("Unexpected flag.");
     }
