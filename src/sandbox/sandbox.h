@@ -82,7 +82,7 @@ public:
   /** Insert an auxiliary function which can be called at runtime */
   Sandbox& insert_function(const Cfg& cfg) {
     aux_fxn_read_only_ &= emit_function(cfg, false);
-    aux_fxns_.push_back(new x64asm::Function(fxn_));
+    aux_fxns_.emplace_back(new x64asm::Function(fxn_));
   }
 
   /** Clears the set of callbacks to invoke during execution. */
