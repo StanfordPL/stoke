@@ -21,8 +21,8 @@
 
 namespace stoke {
 
-extern cpputil::Heading seed_group;
-extern cpputil::ValueArg<std::default_random_engine::result_type> seed_arg;
+extern cpputil::Heading& seed_group;
+extern cpputil::ValueArg<std::default_random_engine::result_type>& seed_arg;
 
 } // namespace stoke
 
