@@ -151,5 +151,19 @@ TEST_F(RegSetReaderTest, WritesIopl) {
 
 }
 
+TEST(RegSetWriteSet, AddbSil) {
+
+  std::stringstream ss;
+  ss << "addb $0x10, %sil" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  x64asm::Instruction i = c[0];
+  x64asm::RegSet writes = i.must_write_set();
+  EXPECT_TRUE(writes.contains(x64asm::sil));
+
+}
+
 
 #endif
