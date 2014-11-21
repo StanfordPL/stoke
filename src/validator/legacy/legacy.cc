@@ -34,6 +34,8 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
   // Find the set of registers which we need to assert equality on
   RegSet modified = instr.maybe_read_set() | instr.maybe_write_set() | instr.maybe_undef_set() |
                     instr.must_read_set() | instr.must_write_set() | instr.must_undef_set();
+  cout << "INSTRUCTION: " << instr << endl;
+  cout << "MODIFIED: " << modified << endl;
 
   // Build the end state with modified variable names, and add constraints
   // IMPORTANT: we need to change the whole register, not just a part of it, because
@@ -48,9 +50,12 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
     // Constrain starting state
     ss.add_constraint( ss.gp[*r_it] == start_var );
+    SymBool b = ss.gp[*r_it] == start_var;
+    cout << "Start for " << *r_it << ": " << b << endl;
 
     // Create ending state
     ss.gp[*r_it] = end_var;
+    cout << "End for " << *r_it << ": " << end_var << endl;
   }
   for(auto s_it = modified.sse_begin(); s_it != modified.sse_end(); ++s_it) {
 
@@ -76,9 +81,11 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
     // Constrain starting state
     ss.add_constraint( ss[*flag] == start_var );
+    //cout << "Start for " << *flag << ": " << ss[*flag] == start_var << endl;
 
     // Create ending state
     ss.set(*flag, end_var);
+    //cout << "End for " << *flag << ": " << end_var << endl;
   }
 
   // Build this "version number" object
@@ -90,6 +97,10 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   // Add the constraints for the instruction
   instrnToConstraint(instr, Vn, Vnprime, ss.constraints, "1", temp());
+
+  for(auto it : ss.constraints) {
+    cout << "C: " << it << endl;
+  }
 
 }
 
