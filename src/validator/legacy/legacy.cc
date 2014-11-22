@@ -21,13 +21,13 @@ Handler::SupportLevel LegacyHandler::get_support(const Instruction& instr) {
 
 SymBitVector var_for_register(R r, uint64_t number) {
   stringstream ss;
-  ss << r << "_1_" << number;
+  ss << r64s[r] << "_1_" << number;
   return SymBitVector::var(64, ss.str());
 }
 
 SymBitVector var_for_register(Sse r, uint64_t number) {
   stringstream ss;
-  ss << r << "_1_" << number;
+  ss << ymms[r] << "_1_" << number;
   return SymBitVector::var(256, ss.str());
 }
 

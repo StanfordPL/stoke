@@ -54,6 +54,7 @@ stoke::CpuState Validator::model_to_cpustate(string name_suffix) {
 
 bool regset_is_supported(x64asm::RegSet rs) {
 
+  cout << "CHECKING SUPPORT FOR " << rs << endl;
   /* Check to make sure all liveout are supported. */
   /* Right now we support gps, xmms, ACOPSZ eflags */
   RegSet supported = RegSet::empty() +
@@ -77,8 +78,10 @@ bool regset_is_supported(x64asm::RegSet rs) {
     supported += xmms[i];
   }
 
+  cout << "SUPPORTED: " << supported << endl;
   // Do the check.
   if((supported & rs) != rs) {
+    cout << "WE GOT AN ERROR" << endl;
     stringstream tmp;
     tmp << (rs - supported);
 
@@ -89,6 +92,7 @@ bool regset_is_supported(x64asm::RegSet rs) {
     throw VALIDATOR_ERROR(message);
     return false;
   }
+  cout << "COAST IS CLEAR" << endl;
   return true;
 }
 
@@ -122,6 +126,9 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
   if (f1.live_outs() != f2.live_outs()) {
     throw VALIDATOR_ERROR("Live-outs of the two CFGs differ");
   }
+  // Check that the regsets are supported, throw an error otherwise
+  regset_is_supported(f1.def_ins());
+  regset_is_supported(f1.live_outs());
 
   // Create a starting symbolic state
   SymState init("");
