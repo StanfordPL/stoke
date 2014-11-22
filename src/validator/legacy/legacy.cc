@@ -51,12 +51,7 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   // Find the set of registers which we need to assert equality on
   RegSet modified = instr.maybe_write_set() | instr.maybe_undef_set();
-  RegSet read = instr.maybe_read_set();
-
-  cout << "INSTRUCTION: " << instr << endl;
-  cout << "MODIFIED: " << modified << endl;
-  auto o = const_cast<Instruction&>(instr).get_operand<R64>(0);
-  cout << "R: " << o << endl;
+  RegSet read = instr.maybe_read_set() | modified;
 
   // Build the end state with modified variable names, and add constraints
   // IMPORTANT: we need to change the whole register, not just a part of it, because
@@ -98,10 +93,6 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   // Add the constraints for the instruction
   instrnToConstraint(instr, Vn, Vnprime, ss.constraints, "1", temp());
-
-  for(auto it : ss.constraints) {
-    cout << "C: " << it << endl;
-  }
 
 }
 

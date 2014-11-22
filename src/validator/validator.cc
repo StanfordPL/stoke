@@ -156,6 +156,8 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
   for(auto it : first_final.equality_constraints(second_final, f1.live_outs()))
     inequality = inequality | !it;
 
+  constraints.push_back(inequality);
+
   // Create states to track the final values on each side
   // (this is to get a counterexample)
   SymState first_outputs("1_FINAL");
@@ -166,10 +168,10 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
   for(auto it : second_outputs.equality_constraints(second_final, f1.live_outs()))
     constraints.push_back(it);
 
-
-
-  constraints.push_back(inequality);
-
+  cout << endl;
+  cout << "============= CONSTRAINTS =====================" << endl;
+  for(auto it : constraints)
+    cout << it << endl;
 }
 
 void Validator::build_circuit(const Instruction& instr, SymState& state) const {
