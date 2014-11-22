@@ -27,8 +27,8 @@ SymBitVector var_for_register(R r, uint64_t number) {
 
 SymBitVector var_for_register(Sse r, uint64_t number) {
   stringstream ss;
-  ss << ymms[r] << "_1_" << number;
-  return SymBitVector::var(256, ss.str());
+  ss << xmms[r] << "_1_" << number;
+  return SymBitVector::var(128, ss.str());
 }
 
 SymBool var_for_register(Eflags r, uint64_t number) {
@@ -51,7 +51,7 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   // Find the set of registers which we need to assert equality on
   RegSet modified = instr.maybe_write_set() | instr.maybe_undef_set();
-  RegSet read = instr.maybe_read_set() | modified;
+  RegSet read = RegSet::universe();
 
   // Build the end state with modified variable names, and add constraints
   // IMPORTANT: we need to change the whole register, not just a part of it, because
@@ -65,13 +65,11 @@ void LegacyHandler::build_circuit(const Instruction& instr, SymState& ss) {
     ss.gp[*it] = var_for_register(*it, end_no);
   }
 
-  for(auto it = read.sse_begin(); it != read.sse_end(); ++it) {
-    // Constrain starting state
-    ss.add_constraint( ss.sse[*it] == var_for_register(*it, start_no) );
-  }
-  for(auto it = modified.sse_begin(); it != modified.sse_end(); ++it) {
-    // Create ending state
-    ss.sse[*it] = var_for_register(*it, end_no);
+  for(size_t i = 0; i < xmms.size(); ++i) {
+    if(read.contains(xmms[i]))
+      ss.add_constraint( ss[xmms[i]] == var_for_register(xmms[i], start_no));
+    if(modified.contains(xmms[i]))
+      ss.set(xmms[i], var_for_register(xmms[i], end_no));
   }
 
   for(auto it = read.flags_begin(); it != read.flags_end(); ++it) {
