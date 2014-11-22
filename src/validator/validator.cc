@@ -54,7 +54,6 @@ stoke::CpuState Validator::model_to_cpustate(string name_suffix) {
 
 bool regset_is_supported(x64asm::RegSet rs) {
 
-  cout << "CHECKING SUPPORT FOR " << rs << endl;
   /* Check to make sure all liveout are supported. */
   /* Right now we support gps, xmms, ACOPSZ eflags */
   RegSet supported = RegSet::empty() +
@@ -78,10 +77,8 @@ bool regset_is_supported(x64asm::RegSet rs) {
     supported += xmms[i];
   }
 
-  cout << "SUPPORTED: " << supported << endl;
   // Do the check.
   if((supported & rs) != rs) {
-    cout << "WE GOT AN ERROR" << endl;
     stringstream tmp;
     tmp << (rs - supported);
 
@@ -92,7 +89,6 @@ bool regset_is_supported(x64asm::RegSet rs) {
     throw VALIDATOR_ERROR(message);
     return false;
   }
-  cout << "COAST IS CLEAR" << endl;
   return true;
 }
 
@@ -168,10 +164,12 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
   for(auto it : second_outputs.equality_constraints(second_final, f1.live_outs()))
     constraints.push_back(it);
 
+  /*
   cout << endl;
   cout << "============= CONSTRAINTS =====================" << endl;
   for(auto it : constraints)
     cout << it << endl;
+  */
 }
 
 void Validator::build_circuit(const Instruction& instr, SymState& state) const {
@@ -212,11 +210,13 @@ void Validator::build_circuit(const Instruction& instr, SymState& state) const {
     throw VALIDATOR_ERROR(ss.str());
   }
 
+  /*
   cout << endl;
   cout << "====== STATE AFTER INSTRUCTION " << instr << endl;
   for(size_t i = 0; i < r64s.size(); ++i) {
     cout << r64s[i] << ": " << state[r64s[i]] << endl;
   }
+  */
 }
 
 SymState Validator::build_circuit(const Cfg& cfg, const SymState& start) const {
