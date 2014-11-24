@@ -64,7 +64,7 @@ TEST(SymBitVectorTest, ConstantsTypecheck) {
 
   stoke::SymTypecheckVisitor tc;
 
-  auto x = stoke::SymBitVector::constant(3, 8);
+  auto x = stoke::SymBitVector::constant(0, 8);
   EXPECT_EQ(0, tc(x));
 
   auto y = stoke::SymBitVector::constant(3, 7);
