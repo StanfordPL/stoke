@@ -56,26 +56,9 @@ bool regset_is_supported(x64asm::RegSet rs) {
 
   /* Check to make sure all liveout are supported. */
   /* Right now we support gps, xmms, ACOPSZ eflags */
-  RegSet supported = RegSet::empty() +
+  RegSet supported = (RegSet::all_gps() | RegSet::all_ymms()) +
                      eflags_cf + eflags_of +
                      eflags_pf + eflags_sf + eflags_zf;
-
-  // We don't want to add rhs, so we can't just use all_gps()
-  for(size_t i = 0; i < x64asm::r64s.size(); i++) {
-    supported += r64s[i];
-    supported += r32s[i];
-    supported += r16s[i];
-    if ( i < 4 ) {
-      supported += rls[i];
-    } else {
-      supported += rbs[i - 4];
-    }
-  }
-
-  // We don't want to add ymms, so don't use all_xmms()
-  for(size_t i = 0; i < xmms.size(); i++) {
-    supported += xmms[i];
-  }
 
   // Do the check.
   if((supported & rs) != rs) {
