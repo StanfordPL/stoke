@@ -80,10 +80,10 @@ public:
     case SymBool::IMPLIES:
       os_ << "(implies ";
       break;
-    case SymBitVector::OR:
+    case SymBool::OR:
       os_ << "(or ";
       break;
-    case SymBitVector::XOR:
+    case SymBool::XOR:
       os_ << "(xor ";
       break;
     default:

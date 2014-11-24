@@ -93,7 +93,7 @@ TEST_F(ValidatorBaseTest, SimpleExampleFalse) {
 }
 
 
-TEST(Validator, ReportsUnsupported) {
+TEST_F(ValidatorBaseTest, ReportsUnsupported) {
 
   x64asm::Code c;
 
@@ -103,11 +103,11 @@ TEST(Validator, ReportsUnsupported) {
 
   auto instr = c[0];
 
-  EXPECT_FALSE(stoke::Validator::is_supported(instr));
+  EXPECT_FALSE(is_supported(instr));
 
 }
 
-TEST(Validator, ReportsSupported) {
+TEST_F(ValidatorBaseTest, ReportsSupported) {
 
   x64asm::Code c;
 
@@ -117,7 +117,7 @@ TEST(Validator, ReportsSupported) {
 
   auto instr = c[0];
 
-  EXPECT_TRUE(stoke::Validator::is_supported(instr));
+  EXPECT_TRUE(is_supported(instr));
 
 }
 
@@ -133,24 +133,16 @@ TEST_F(ValidatorBaseTest, UnimplementedFailsGracefully) {
 }
 
 
-TEST_F(ValidatorBaseTest, YmmUnsupported) {
+TEST_F(ValidatorBaseTest, YmmSupported) {
 
+  //TODO: fill in something here
   target_ << "retq" << std::endl;
   rewrite_ << "retq" << std::endl;
 
+  set_def_ins(x64asm::RegSet::empty() + x64asm::ymm1);
   set_live_outs(x64asm::RegSet::empty() + x64asm::ymm1);
 
-  assert_fail();
-}
-
-TEST_F(ValidatorBaseTest, High8BitUnsupported) {
-
-  target_ << "retq" << std::endl;
-  rewrite_ << "retq" << std::endl;
-
-  set_live_outs(x64asm::RegSet::empty() + x64asm::ah);
-
-  assert_fail();
+  assert_equiv();
 }
 
 TEST_F(ValidatorBaseTest, UndefinedReadNotEquiv) {
@@ -205,6 +197,7 @@ TEST_F(ValidatorBaseTest, SimpleCounterexample) {
   rewrite_ << "movq $0x0, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
+  set_def_ins(x64asm::RegSet::empty() + x64asm::rcx);
   set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
 
   stoke::CpuState ceg;
@@ -318,7 +311,7 @@ TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
   for (auto op = (int)x64asm::LABEL_DEFN, ope = (int)x64asm::XSAVEOPT64_M64; op != ope; ++op) {
     x64asm::Instruction i((x64asm::Opcode)op);
 
-    if(!stoke::Validator::is_supported(i))
+    if(!is_supported(i))
       continue;
 
     bool insert = true;

@@ -2,6 +2,7 @@
 #include "src/symstate/state.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
+using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
@@ -25,6 +26,29 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   set(eflags_zf, SymBool::constant(cs.rf.is_set(eflags_zf.index())));
   set(eflags_sf, SymBool::constant(cs.rf.is_set(eflags_sf.index())));
   set(eflags_of, SymBool::constant(cs.rf.is_set(eflags_of.index())));
+
+}
+
+void SymState::build_with_suffix(const string& suffix) {
+
+  for(size_t i = 0; i < gp.size(); ++i) {
+    stringstream name;
+    name << r64s[i] << "_" << suffix;
+    gp[i] = SymBitVector::var(64, name.str());
+  }
+
+  for(size_t i = 0; i < sse.size(); ++i) {
+    stringstream name;
+    name << ymms[i] << "_" << suffix;
+    sse[i] = SymBitVector::var(256, name.str());
+  }
+
+  set(eflags_cf, SymBool::var("%cf_" + suffix));
+  set(eflags_pf, SymBool::var("%pf_" + suffix));
+  set(eflags_af, SymBool::var("%af_" + suffix));
+  set(eflags_zf, SymBool::var("%zf_" + suffix));
+  set(eflags_sf, SymBool::var("%sf_" + suffix));
+  set(eflags_of, SymBool::var("%of_" + suffix));
 
 }
 
@@ -56,7 +80,7 @@ SymBitVector SymState::operator[](const Operand o) const {
       return gp[r];
   }
 
-  if(o.type() == Type::XMM) {
+  if(o.type() == Type::XMM || o.type() == Type::XMM_0) {
     auto& xmm = reinterpret_cast<const Xmm&>(o);
     return sse[xmm][127][0];
   }
@@ -70,6 +94,9 @@ SymBitVector SymState::operator[](const Operand o) const {
     auto& imm = reinterpret_cast<const Imm&>(o);
     return SymBitVector::constant(o.size(), imm);
   }
+
+  assert(false);
+  return SymBitVector::constant(o.size(), 0);
 }
 
 /* Set the operand in the symbolic state to the specified bitvector.
@@ -104,12 +131,12 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto& r = reinterpret_cast<const R&>(o);
     gp[r] = gp[r][63][o.size()] || bv;
     return;
-  } else if (avx && o.type() == Type::XMM) {
+  } else if (avx && (o.type() == Type::XMM || o.type() == Type::XMM_0)) {
     // avx special case
     auto& xmm = reinterpret_cast<const Xmm&>(o);
     sse[xmm] = SymBitVector::constant(128, 0) || bv[127][0];
     return;
-  } else if (o.type() == Type::XMM) {
+  } else if (o.type() == Type::XMM || o.type() == Type::XMM_0) {
     // xmm with ymm preserved
     auto& xmm = reinterpret_cast<const Xmm&>(o);
     sse[xmm] = sse[xmm][255][128] || bv;
@@ -152,7 +179,30 @@ void SymState::set(const Eflags f, SymBool b) {
     rf[5] = b;
     return;
   }
+  default:
+    assert(false);
+    return;
   }
 
   assert(false);
 }
+
+/** Generate constraints expressing equality of two states over a given regset */
+std::vector<SymBool> SymState::equality_constraints(const SymState& other, const RegSet& rs) const {
+
+  std::vector<SymBool> constraints;
+
+  for(auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
+    constraints.push_back((*this)[*gp_it] == other[*gp_it]);
+  }
+  for(auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
+    constraints.push_back((*this)[*sse_it] == other[*sse_it]);
+  }
+  for(auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
+    constraints.push_back((*this)[*flag_it] == other[*flag_it]);
+  }
+
+  return constraints;
+}
+
+

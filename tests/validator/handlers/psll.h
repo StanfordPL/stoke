@@ -2,7 +2,7 @@
 class ValidatorPsllTest : public ValidatorTest { };
 
 
-TEST_F(ValidatorPsllTest, Identity) {
+TEST_F(ValidatorPsllTest, DISABLED_Identity) {
 
   target_ << "pslld %xmm0, %xmm0" << std::endl;
   target_ << "retq" << std::endl;
@@ -15,7 +15,7 @@ TEST_F(ValidatorPsllTest, Identity) {
 
 
 
-TEST_F(ValidatorPsllTest, NotANop) {
+TEST_F(ValidatorPsllTest, DISABLED_NotANop) {
 
   target_ << "pslld %xmm0, %xmm0" << std::endl;
   target_ << "retq" << std::endl;
