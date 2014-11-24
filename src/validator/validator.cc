@@ -14,57 +14,12 @@
 #include <unistd.h>
 
 #include "src/symstate/bitvector.h"
-
-#include "src/validator/c_interface.h"
-#include "src/validator/legacy_handlers.h"
 #include "src/validator/validator.h"
 
 using namespace std;
 using namespace stoke;
+using namespace x64asm;
 
-
-/* Takes an eflag and returns the name of the
-   coresponding variable, if we support it. */
-bool flagToString(Eflags eflag, string& elem) {
-
-  /* Read the flag into a string */
-  stringstream tmp;
-  tmp << RegSet::empty() + eflag;
-  string the_flag = tmp.str();
-
-  /* Extract the letter corresponding to the flag. */
-  char letter = the_flag.c_str()[3];
-  if ('a' <= letter && letter <= 'z') {
-    letter += ('A' - 'a');
-  }
-
-  if(the_flag.c_str()[4] != 'f') {
-    return false;
-  }
-
-
-  if(the_flag.c_str()[5] != ' ') {
-    return false;
-  }
-
-
-  /* Check if we handle this flag */
-  if (letter != 'A' && letter != 'C' && letter != 'O' &&
-      letter != 'P' && letter != 'S' && letter != 'Z')
-    return false;
-
-  /* Build the validator's name for this flag. */
-  elem = "_FLAG";
-  elem[0] = letter;
-  return true;
-
-}
-
-
-Expr regExpr(string s, unsigned int size)
-{
-  return SymBitVector::var(size, s);
-}
 
 /* This produces a CpuState (that is, a stoke-readable
    recording of all the variables).  This function can be used to extract a
@@ -73,172 +28,27 @@ Expr regExpr(string s, unsigned int size)
    "_1_Final" or "_2_Final") */
 stoke::CpuState Validator::model_to_cpustate(string name_suffix) {
 
-  map<SS_Id, unsigned int>::iterator iter;
-  Bijection<string> bij = state_info_.first;
-  map<SS_Id, unsigned int> sizes = state_info_.second;
-
   CpuState cs;
+  for(size_t i = 0; i < r64s.size(); ++i) {
+    stringstream name;
+    name << r64s[i] << name_suffix;
+    cs.gp[r64s[i]] = solver_.get_model_bv(name.str(), 1);
+  }
+  for(size_t i = 0; i < ymms.size(); ++i) {
+    stringstream name;
+    name << ymms[i] << name_suffix;
+    cs.sse[ymms[i]] = solver_.get_model_bv(name.str(), 4);
+  }
+  for(size_t i = 0; i < eflags.size(); ++i) {
+    if(!cs.rf.is_status(eflags[i].index()))
+      continue;
 
-  for(auto iter = sizes.begin(); iter != sizes.end(); iter++) {
-
-    string regname = bij.toVal(iter->first) + name_suffix;
-
-    // Handle EFLAGS
-    if (iter->second == V_FLAGSIZE) {
-
-      bool value = solver_.get_model_bool(regname);
-      //TODO: check for error in retrieving the bool.
-
-      /* Figure out which flag this is.  A little slow, but it works. */
-      for (size_t i = 0; i < eflags.size(); i++) {
-        string tmp;
-        if(flagToString(eflags[i], tmp)) {
-          if (tmp + name_suffix == regname) {
-            //set the counterexample
-#ifdef DEBUG_VALIDATOR
-            cout << "Setting " << tmp << " i.e. #" << eflags[i].index() << " to " << value << endl;
-#endif
-            cs.rf.set(eflags[i].index(), value);
-          }
-        }
-      }
-    }
-
-    // GP Registers
-    if (iter->second == V_REGSIZE) {
-      cs.gp[iter->first] = solver_.get_model_bv(regname, 1);
-      //TODO: check for error
-    }
-
-    // SSE Registers
-    if (iter->second == V_XMMSIZE) {
-      cpputil::BitVector xmm = solver_.get_model_bv(regname, 2);
-      //TODO: check for error
-
-      // need to extend the result from xmm register to ymm.
-      cpputil::BitVector ymm = cpputil::BitVector(256);
-      for(size_t i = 0; i < 2; ++i)
-        ymm.get_fixed_quad(i) = xmm.get_fixed_quad(i);
-      for(size_t i = 2; i < 4; ++i)
-        ymm.get_fixed_quad(i) = 0;
-
-      cs.sse[iter->first - XMM_BEG] = ymm;
-    }
+    stringstream name;
+    name << eflags[i] << name_suffix;
+    cs.rf.set(eflags[i].index(), solver_.get_model_bool(name.str()));
   }
 
   return cs;
-}
-
-
-string idToStr(SS_Id n, PAIR_INFO I)
-{
-
-  if(n < FLAG_BEG)
-  {
-    return I.first.toVal(n);
-  }
-  else if(n < MEM_BEG)
-  {
-    switch(n)
-    {
-    case V_AF:
-      return "AFLAG";
-    case V_CF:
-      return "CFLAG";
-    case V_OF:
-      return "OFLAG";
-    case V_PF:
-      return "PFLAG";
-    case V_SF:
-      return "SFLAG";
-    case V_ZF:
-      return "ZFLAG";
-    default:
-      throw VALIDATOR_ERROR("Unexpected flag.");
-    }
-
-  }
-  else
-  {
-    return I.first.toVal(n);
-  }
-  return "";
-}
-
-set<SS_Id> keys(map<SS_Id, unsigned int> dict)
-{
-  set<SS_Id> retval;
-  map<SS_Id, unsigned int>::iterator iter;
-  for( iter = dict.begin(); iter != dict.end(); iter++ )
-    retval.insert(iter->first);
-  return retval;
-}
-
-
-set<SS_Id> modSet(PAIR_INFO state_info, const Instruction instr, string codenum, bool include_undef=true)
-{
-  set<SS_Id> retval;
-
-  if(instr.is_explicit_memory_dereference())
-  {
-    throw VALIDATOR_ERROR("memory not handled");
-  }
-
-
-  x64asm::RegSet modsetreg = instr.maybe_write_set();
-
-  for(size_t i=0; i<x64asm::rls.size(); i++)
-    if(modsetreg.contains(((x64asm::Rl)x64asm::rls[i])))
-      retval.insert(rls[i]);
-
-  for(size_t i=0; i<x64asm::rbs.size(); i++)
-    if(modsetreg.contains(((x64asm::Rb)x64asm::rbs[i])))
-      retval.insert(rbs[i]);
-
-  for(size_t i=0; i<x64asm::xmms.size(); i++)
-    if(modsetreg.contains(((x64asm::Xmm)x64asm::xmms[i])))
-      retval.insert(i+XMM_BEG);
-
-  if(modsetreg.contains(x64asm::eflags_cf))
-    retval.insert(V_CF);
-  if(modsetreg.contains(x64asm::eflags_of))
-    retval.insert(V_OF);
-  if(modsetreg.contains(x64asm::eflags_sf))
-    retval.insert(V_SF);
-  if(modsetreg.contains(x64asm::eflags_zf))
-    retval.insert(V_ZF);
-  if(modsetreg.contains(x64asm::eflags_pf))
-    retval.insert(V_PF);
-  if(modsetreg.contains(x64asm::eflags_af))
-    retval.insert(V_AF);
-
-
-  if(include_undef)
-  {
-    x64asm::RegSet flagsetreg = instr.maybe_undef_set();
-    if(flagsetreg.contains(x64asm::eflags_cf))
-      retval.insert(V_CF);
-    if(flagsetreg.contains(x64asm::eflags_of))
-      retval.insert(V_OF);
-    if(flagsetreg.contains(x64asm::eflags_sf))
-      retval.insert(V_SF);
-    if(flagsetreg.contains(x64asm::eflags_zf))
-      retval.insert(V_ZF);
-    if(flagsetreg.contains(x64asm::eflags_pf))
-      retval.insert(V_PF);
-    if(flagsetreg.contains(x64asm::eflags_af))
-      retval.insert(V_AF);
-
-
-
-  }
-#ifdef DEBUG_VALIDATOR
-  cout << "Modset is: ";
-  for(set<SS_Id>::iterator l=retval.begin(); l!=retval.end(); l++)
-    cout << idToStr(*l,state_info) << " ";
-  cout << endl ;
-#endif
-  return retval;
 }
 
 
@@ -246,26 +56,9 @@ bool regset_is_supported(x64asm::RegSet rs) {
 
   /* Check to make sure all liveout are supported. */
   /* Right now we support gps, xmms, ACOPSZ eflags */
-  RegSet supported = RegSet::empty() +
+  RegSet supported = (RegSet::all_gps() | RegSet::all_ymms()) +
                      eflags_cf + eflags_of +
                      eflags_pf + eflags_sf + eflags_zf;
-
-  // We don't want to add rhs, so we can't just use all_gps()
-  for(size_t i = 0; i < x64asm::r64s.size(); i++) {
-    supported += r64s[i];
-    supported += r32s[i];
-    supported += r16s[i];
-    if ( i < 4 ) {
-      supported += rls[i];
-    } else {
-      supported += rbs[i - 4];
-    }
-  }
-
-  // We don't want to add ymms, so don't use all_xmms()
-  for(size_t i = 0; i < xmms.size(); i++) {
-    supported += xmms[i];
-  }
 
   // Do the check.
   if((supported & rs) != rs) {
@@ -283,337 +76,148 @@ bool regset_is_supported(x64asm::RegSet rs) {
 }
 
 
+bool Validator::is_supported(Instruction& i) {
 
-//Constrain the initial registers in which code_num starts (RAX_1_0 == RAX)
-void addStartConstraint(string code_num, PAIR_INFO state_info, vector<SymBool>& constraints, x64asm::RegSet def_ins)
-{
-  map<SS_Id, unsigned int>::iterator i;
-  Bijection<string> bij = state_info.first;
-  map<SS_Id, unsigned int> sizes = state_info.second;
+  SymState s("");
+  try {
 
-  if(!regset_is_supported(def_ins))
-    throw VALIDATOR_ERROR("RegSet not supported");
+    build_circuit(i, s);
+    return true;
 
-
-  /* Add constraints for the general purpose registers */
-  for(size_t i=0; i<x64asm::r64s.size(); i++)
-  {
-    int bitwidth;
-    auto op = x64asm::r64s[i];
-
-    /* See if we have the 64, 32, 16, or 8 bit register in the set */
-    if (def_ins.contains(op)) {
-      bitwidth = 64;
-    } else if (def_ins.contains(x64asm::r32s[i])) {
-      bitwidth = 32;
-    } else if (def_ins.contains(x64asm::r16s[i])) {
-      bitwidth = 16;
-    } else {
-      // Need to think about the sub-16 bit situation carefully.
-      if (i < 4) {
-
-        // case for ah, bc, ch, dh
-        if(def_ins.contains(x64asm::rhs[i]))
-          throw VALIDATOR_ERROR("%ah, %bl, %ch, %dh not supported live-out yet.");
-
-        // case for al, bl, cl, dl
-        if(def_ins.contains(x64asm::rls[i]))
-          bitwidth = 8;
-        else
-          continue;
-
-      } else if (def_ins.contains(x64asm::rbs[i-4])) {
-        //case for bpl, sil, dil, spl, r8b, r9b, ...
-        bitwidth = 8;
-      } else {
-        // The register is not here, in any form.
-        continue;
-      }
-    }
-
-    /* Get the string representation of this register */
-    string elem = bij.toVal(op);
-
-    /* Build constraints asserting initial equality */
-    Expr common = regExpr(elem, V_UNITSIZE);
-    Expr version0 = regExpr((elem + "_" + code_num + "_0"), V_UNITSIZE)[bitwidth - 1][0];
-    SymBool E_eq_final = common == version0;
-#ifdef DEBUG_VALIDATOR
-    cout << "Printing query " << endl << E_eq_final << endl;
-#endif
-
-    /* Add the constraints. */
-    constraints.push_back(E_eq_final);
-
+  } catch (validator_error e) {
+    has_error_ = true;
+    error_message_ = e.get_message();
+    error_file_ = e.get_file();
+    error_line_ = e.get_line();
+    return false;
   }
 
-  for(size_t i=0; i<x64asm::xmms.size(); i++)
-  {
-    auto op = x64asm::xmms[i];
-    if(def_ins.contains(op))
-    {
-      string elem = bij.toVal(XMM_BEG+op);
-      Expr E_state_elem_1 = regExpr(elem, V_XMMUNIT);
-      Expr E_state_elem_2 = regExpr((elem + "_" + code_num + "_0"),V_XMMUNIT);
-      SymBool E_eq_final = E_state_elem_1 == E_state_elem_2;
-#ifdef DEBUG_VALIDATOR
-      cout << "Printing query" << endl << E_eq_final << endl;
-#endif
-      constraints.push_back(E_eq_final);
-
-    }
-  }
-
-  for(size_t i = 0; i < eflags.size(); i++) {
-
-    auto op = x64asm::eflags[i];
-    if(def_ins.contains(op))
-    {
-      /* Get the name of this flag */
-      string elem;
-
-      if(!flagToString(eflags[i], elem))
-        VALIDATOR_ERROR("The only eflags we support are ACOPSZ");
-
-
-      /* Construct the constraint */
-      auto E_state_elem_1 = SymBool::var(elem + "_" + code_num + "_0");
-      auto E_state_elem_2 = SymBool::var(elem);
-      auto E_eq_final = E_state_elem_1 == E_state_elem_2;
-#ifdef DEBUG_VALIDATOR
-      cout << "Printing query" << endl << E_eq_final << endl;
-#endif
-      constraints.push_back(E_eq_final);
-
-    }
-  }
-
-
-}
-
-//Constrain the final output registers to a known name (RAX_codenum_versionnumber == RAX_codenum_Final)
-SymBool getFinalConstraint(const set<SS_Id>& state_elems, const VersionNumber& Vn, string code_num, PAIR_INFO state_info)
-{
-  map<SS_Id, unsigned int> sizes = state_info.second;
-  Expr E_pre, E_post;
-  SymBool E_flag;
-  auto retval = SymBool::_true();
-  set<SS_Id>::iterator iter;
-  for(iter = state_elems.begin(); iter != state_elems.end(); iter++)
-  {
-    SS_Id temp = *iter;
-    string id_str = idToStr(temp,state_info);
-    switch(sizes[temp])
-    {
-    case V_REGSIZE:
-      E_pre = regExpr(id_str + "_" + code_num + "_" + to_string(Vn.get(temp)),V_UNITSIZE);
-      E_post = regExpr(id_str + "_" + code_num + "_" + V_FSTATE, V_UNITSIZE);
-      retval = retval & E_pre == E_post;
-      break;
-    case V_FLAGSIZE:
-      E_flag = SymBool::var(id_str+"_"+code_num+"_"+to_string(Vn.get(temp))) ==
-               SymBool::var(id_str+"_"+code_num+"_"+V_FSTATE);
-      retval = retval & E_flag;
-      break;
-    case V_XMMSIZE:
-      E_pre = regExpr(id_str + "_" + code_num + "_" + to_string(Vn.get(temp)),V_XMMUNIT);
-      E_post = regExpr(id_str + "_" + code_num + "_" + V_FSTATE, V_XMMUNIT);
-      retval = retval & E_pre == E_post;
-      break;
-    default:
-      throw VALIDATOR_ERROR("Unexpected size " + to_string(sizes[temp]));
-    }
-  }
-
-
-  return retval;
-}
-
-//Walk over the code and generate constraint for every instruction
-VersionNumber C2C(Code code, PAIR_INFO state_info, vector<SymBool>& constraints, string code_num)
-{
-  map<SS_Id, unsigned int> sizes = state_info.second;
-  set<SS_Id> state_elems = keys(sizes);
-  VersionNumber Vn;
-  Vn.Init(state_elems, 0);
-
-  unsigned int i = 0;
-  for(auto it : code) {
-    set<SS_Id> modset = modSet(state_info, it, code_num);
-    VersionNumber Vnold(Vn);
-    Vn.Increment(modset, 1);
-    instrnToConstraint(it, Vnold, Vn, constraints, code_num, i);
-    i++;
-  }
-
-  SymBool last = getFinalConstraint(state_elems, Vn, code_num, state_info);
-  constraints.push_back(last);
-
-  return Vn;
-}
-
-//Get query constraint for registers and memory. The query constraints are missing for condition registers as they are not live out.
-void getQueryConstraint(PAIR_INFO state_info, vector<SymBool>& query, x64asm::RegSet liveout)
-{
-
-  //map<SS_Id, unsigned int>::iterator i;
-  Bijection<string> bij = state_info.first;
-  map<SS_Id, unsigned int> sizes = state_info.second;
-  auto retval = SymBool::_true();
-
-  if(!regset_is_supported(liveout))
-    throw VALIDATOR_ERROR("RegSet not supported");
-
-  /* Add constraints for the general purpose registers */
-  for(size_t i=0; i<x64asm::r64s.size(); i++)
-  {
-    int bitwidth;
-    auto op = x64asm::r64s[i];
-
-    /* See if we have the 64, 32, 16, or 8 bit register in the set */
-    if (liveout.contains(op)) {
-      bitwidth = 64;
-    } else if (liveout.contains(x64asm::r32s[i])) {
-      bitwidth = 32;
-    } else if (liveout.contains(x64asm::r16s[i])) {
-      bitwidth = 16;
-    } else {
-      // Need to think about the sub-16 bit situation carefully.
-      if (i < 4) {
-
-        // case for ah, bc, ch, dh
-        if(liveout.contains(x64asm::rhs[i]))
-          throw VALIDATOR_ERROR("%ah, %bl, %ch, %dh not supported live-out yet.");
-
-        // case for al, bl, cl, dl
-        if(liveout.contains(x64asm::rls[i]))
-          bitwidth = 8;
-        else
-          continue;
-
-      } else if (liveout.contains(x64asm::rbs[i-4])) {
-        //case for bpl, sil, dil, spl, r8b, r9b, ...
-        bitwidth = 8;
-      } else {
-        // The register is not here, in any form.
-        continue;
-      }
-    }
-
-    /* Get the string representation of this register */
-    string elem = bij.toVal(op);
-
-    /* Build constraints asserting final equality */
-    Expr E_state_elem_1 = regExpr((elem + "_1_"+ V_FSTATE),V_UNITSIZE)[bitwidth - 1][0];
-    Expr E_state_elem_2 = regExpr((elem + "_2_"+ V_FSTATE),V_UNITSIZE)[bitwidth - 1][0];
-    SymBool E_eq_final = E_state_elem_1 == E_state_elem_2;
-#ifdef DEBUG_VALIDATOR
-    cout << "Printing query" << endl << E_eq_final << endl;
-#endif
-
-    /* Add the constraints. */
-    query.push_back(E_eq_final);
-
-  }
-  for(size_t i=0; i<x64asm::xmms.size(); i++)
-  {
-    auto op = x64asm::xmms[i];
-    if(liveout.contains(op))
-    {
-      string elem = bij.toVal(XMM_BEG+op);
-      Expr E_state_elem_1 = regExpr((elem + "_1_"+ V_FSTATE),V_XMMUNIT);
-      Expr E_state_elem_2 = regExpr((elem + "_2_"+ V_FSTATE),V_XMMUNIT);
-      auto E_eq_final = E_state_elem_1 == E_state_elem_2;
-#ifdef DEBUG_VALIDATOR
-      cout << "Printing query" << endl << E_eq_final << endl;
-#endif
-      query.push_back(E_eq_final);
-
-    }
-  }
-
-  for(size_t i = 0; i < eflags.size(); i++) {
-
-    auto op = x64asm::eflags[i];
-    if(liveout.contains(op))
-    {
-      /* Get the name of this flag */
-      string elem;
-
-      if(!flagToString(eflags[i], elem))
-        VALIDATOR_ERROR("The only eflags we support are ACOPSZ");
-
-
-      /* Construct the constraint */
-      auto E_state_elem_1 = SymBool::var(elem + "_1_" + V_FSTATE);
-      auto E_state_elem_2 = SymBool::var(elem + "_2_" + V_FSTATE);
-      auto E_eq_final = E_state_elem_1 == E_state_elem_2;
-#ifdef DEBUG_VALIDATOR
-      cout << "Printing query" << endl << E_eq_final << endl;
-#endif
-      query.push_back(E_eq_final);
-
-    }
-  }
-
-}
-
-
-
-bool Validator::is_supported(Opcode o) {
-  // Use autogenerated lookup table.
-  // Honestly, it would be better to use an array.
-  switch(o) {
-#include "supported.switch"
-  }
-
-  // If we couldn't find it above, then we definitely don't support it.
   return false;
 }
 
-bool Validator::is_supported(Instruction i) {
 
-  return is_supported(i.get_opcode()) &&
-         !i.is_memory_dereference();
-}
+void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2, vector<SymBool>& constraints) const {
 
-
-vector<SymBool> Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2, vector<SymBool>& constraints)
-{
-
-  //Add start constraints for target i.e. codenum="1"
-  addStartConstraint("1", state_info_, constraints, f1.def_ins());
-  addStartConstraint("2", state_info_, constraints, f2.def_ins());
-
-  //Convert code 1 i.e. target to constraints
-  auto Vn1=C2C(f1.get_code(), state_info_, constraints, "1");
-
-  //ditto for code 2. Note we use the same mul as target.
-  auto Vn2 = C2C(f2.get_code(), state_info_, constraints, "2");
-
-  vector<SymBool> query;
-  getQueryConstraint(state_info_, query, f1.live_outs());
-
-  return query;
-}
-
-
-/* Returns the conjunction of several SymBools, starting with index */
-SymBool conjunct(vector<SymBool>& query, size_t index) {
-
-  if(query.size() - index == 0) {
-    return SymBool::_true();
-  } else if(query.size() - index == 1) {
-    return query[index];
-  } else {
-    return (query[index] & conjunct(query, index+1));
+  // Check to make sure def-ins/live-outs agree
+  if (f1.def_ins() != f2.def_ins()) {
+    throw VALIDATOR_ERROR("Def-ins of the two CFGs differ");
   }
+  if (f1.live_outs() != f2.live_outs()) {
+    throw VALIDATOR_ERROR("Live-outs of the two CFGs differ");
+  }
+  // Check that the regsets are supported, throw an error otherwise
+  regset_is_supported(f1.def_ins());
+  regset_is_supported(f1.live_outs());
+
+  // Create a starting symbolic state
+  SymState init("");
+
+  SymState first_init("1_INIT");
+  SymState second_init("2_INIT");
+
+  for(auto it : first_init.equality_constraints(init, f1.def_ins()))
+    constraints.push_back(it);
+
+  for(auto it : second_init.equality_constraints(init, f1.def_ins()))
+    constraints.push_back(it);
+
+  // Build the circuits
+  SymState first_final = build_circuit(f1, first_init);
+  SymState second_final = build_circuit(f2, second_init);
+
+  for(auto it : first_final.constraints)
+    constraints.push_back(it);
+  for(auto it : second_final.constraints)
+    constraints.push_back(it);
+
+  // Assert inequality of the final states
+  SymBool inequality = SymBool::_false();
+  for(auto it : first_final.equality_constraints(second_final, f1.live_outs()))
+    inequality = inequality | !it;
+
+  constraints.push_back(inequality);
+
+  // Create states to track the final values on each side
+  // (this is to get a counterexample)
+  SymState first_outputs("1_FINAL");
+  SymState second_outputs("2_FINAL");
+
+  for(auto it : first_outputs.equality_constraints(first_final, f1.live_outs()))
+    constraints.push_back(it);
+  for(auto it : second_outputs.equality_constraints(second_final, f1.live_outs()))
+    constraints.push_back(it);
+
+  /*
+  cout << endl;
+  cout << "============= CONSTRAINTS =====================" << endl;
+  for(auto it : constraints)
+    cout << it << endl;
+  */
 }
 
-/* Returns the negation of the conjunction of several SymBools */
-SymBool conjunct_and_negate(vector<SymBool>& query) {
-  return !conjunct(query, 0);
+void Validator::build_circuit(const Instruction& instr, SymState& state) const {
+
+  /* For now, we don't handle any control flow */
+  if(instr.is_any_jump() || instr.is_any_call() || instr.is_any_return()) {
+    stringstream ss;
+    ss << "Control flow unsupported: " << instr;
+    throw VALIDATOR_ERROR(ss.str());
+  }
+
+  /* Find the best handler for this instruction */
+  Handler* best_handler = NULL;
+  auto level = Handler::SupportLevel::NONE;
+  for(auto h : handlers_) {
+    auto cur_level = h->get_support(instr);
+
+    if(cur_level != level && (cur_level | level == cur_level)) {
+      best_handler = h;
+      level = cur_level;
+    }
+  }
+
+  /* If we didn't find a handler, give an error */
+  if (!best_handler) {
+    stringstream ss;
+    ss << "Unsupported instruction: " << instr;
+    throw VALIDATOR_ERROR(ss.str());
+  }
+
+  /* Otherwise, run the handler and check for errors */
+  best_handler->build_circuit(instr, state);
+
+  if(best_handler->has_error()) {
+    stringstream ss;
+    ss << "Error building circuit for: " << instr << ".";
+    ss << "Handler says: " << best_handler->error();
+    throw VALIDATOR_ERROR(ss.str());
+  }
+
+  /*
+  cout << endl;
+  cout << "====== STATE AFTER INSTRUCTION " << instr << endl;
+  for(size_t i = 0; i < r64s.size(); ++i) {
+    cout << r64s[i] << ": " << state[r64s[i]] << endl;
+  }
+  */
 }
+
+SymState Validator::build_circuit(const Cfg& cfg, const SymState& start) const {
+
+  SymState state = start;
+  Code code = cfg.get_code();
+
+  for(size_t i = 0; i < code.size(); ++i) {
+
+    if(code[i].is_any_return())
+      break;
+
+    build_circuit(code[i], state);
+  }
+
+  return state;
+}
+
 
 bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counter_example)
 {
@@ -625,15 +229,9 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
 
   try {
 
-    // Setup some necessary variables.
-    state_info_ = InitStateMapping();
-
     // Generate constraints
     vector<SymBool> constraints;
-    vector<SymBool> query = generate_constraints(target, rewrite, constraints);
-    auto final_query = conjunct_and_negate(query);
-
-    constraints.push_back(final_query);
+    generate_constraints(target, rewrite, constraints);
 
     // Run the solver
     bool is_sat = solver_.is_sat(constraints);
@@ -645,9 +243,9 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
     if (is_sat && solver_.has_model()) {
 
       counterexample_valid_ = true;
-      counterexample_ =      model_to_cpustate("");
-      target_final_state_  = model_to_cpustate("_1_Final");
-      rewrite_final_state_ = model_to_cpustate("_2_Final");
+      counterexample_ =      model_to_cpustate("_");
+      target_final_state_  = model_to_cpustate("_1_FINAL");
+      rewrite_final_state_ = model_to_cpustate("_2_FINAL");
 
       counter_example = counterexample_;
 

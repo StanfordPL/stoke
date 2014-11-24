@@ -134,14 +134,11 @@ TEST(DisassemblerTest, ParseErrors) {
   d.set_function_callback(&test_tunit);
   d.disassemble("tests/fixtures/disassembler/errors");
 
-  EXPECT_GT(errors_found, 5);
-
-
+  EXPECT_EQ(errors_found, 0);
 }
 
 
 TEST(DisassemblerTest, NoFileGraceful) {
-
   stoke::Disassembler::Callback  empty =
   [](const stoke::FunctionCallbackData & pf) {
 
@@ -154,12 +151,9 @@ TEST(DisassemblerTest, NoFileGraceful) {
   d.disassemble("texts/fixtures/disassembler/does_not_exist");
   EXPECT_TRUE(d.has_error());
   EXPECT_EQ("Error opening file.", d.get_error());
-
-
 }
 
 TEST(DisassemblerTest, NoShellInjection) {
-
   stoke::Disassembler d;
 
   stoke::Disassembler::Callback  empty =
@@ -174,5 +168,4 @@ TEST(DisassemblerTest, NoShellInjection) {
 
   EXPECT_TRUE(d.has_error());
   EXPECT_EQ("Character ' ' not allowed in filename for security.", d.get_error());
-
 }

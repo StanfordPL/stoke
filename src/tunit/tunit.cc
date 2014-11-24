@@ -42,8 +42,9 @@ istream& operator>>(istream& is, TUnit& t) {
   is.clear(ios::eofbit);
 
   stringstream ss;
+  string end = ".size ";
   for (const auto& l : lines) {
-    if (!l.empty()) {
+    if (l.substr(0, end.size()) != end) {
       ss << l << endl;
     } else {
       break;

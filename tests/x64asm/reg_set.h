@@ -62,6 +62,15 @@ TEST_F(RegSetReaderTest, WritesAX) {
 
 }
 
+TEST_F(RegSetReaderTest, WritesAxEcx) {
+
+  std::string expected = "{ %ax %ecx }";
+  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::Constants::ax() + x64asm::Constants::ecx();
+
+  ss_ << rs_;
+  ASSERT_EQ(expected, ss_.str());
+}
+
 TEST_F(RegSetReaderTest, ReadsXMM0) {
 
   ss_ << "{ %xmm0 }";
@@ -139,6 +148,20 @@ TEST_F(RegSetReaderTest, WritesIopl) {
 
   ss_ << rs_;
   ASSERT_EQ(expected, ss_.str());
+
+}
+
+TEST(RegSetWriteSet, AddbSil) {
+
+  std::stringstream ss;
+  ss << "addb $0x10, %sil" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  x64asm::Instruction i = c[0];
+  x64asm::RegSet writes = i.must_write_set();
+  EXPECT_TRUE(writes.contains(x64asm::sil));
 
 }
 

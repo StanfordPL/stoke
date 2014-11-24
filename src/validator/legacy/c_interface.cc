@@ -1,5 +1,5 @@
-#include "c_interface.h"
-#include "error.h"
+#include "src/validator/legacy/c_interface.h"
+#include "src/validator/error.h"
 #include <iostream>
 
 using namespace std;
