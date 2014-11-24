@@ -222,65 +222,32 @@ private:
 
     EXPECT_CPU_EQ_CODE(expect.code, actual.code, "The error codes differ.");
 
-    for(size_t i=0; i < x64asm::r64s.size(); i++)
-    {
-      int bitwidth;
-      auto op = x64asm::r64s[i];
-
-      /* See if we have the 64, 32, 16, or 8 bit register in the set */
-      if (live_outs_.contains(op)) {
-        bitwidth = 64;
-      } else if (live_outs_.contains(x64asm::r32s[i])) {
-        bitwidth = 32;
-      } else if (live_outs_.contains(x64asm::r16s[i])) {
-        bitwidth = 16;
-      } else {
-        // Need to think about the sub-16 bit situation carefully.
-        if (i < 4) {
-          // case for al, bl, cl, dl
-          if(live_outs_.contains(x64asm::rls[i]))
-            bitwidth = 8;
-          else
-            continue;
-        } else if (live_outs_.contains(x64asm::rbs[i-4])) {
-          //case for bpl, sil, dil, spl, r8b, r9b, ...
-          bitwidth = 8;
-        } else {
-          // The register is not here, in any form.
-          continue;
-        }
-      }
+    for(auto it = live_outs_.gp_begin(); it != live_outs_.gp_end(); ++it) {
+      uint16_t bitwidth = (*it).size();
 
       // Check the lower bitwidth bits of cpustates are equal.
-      uint64_t actual_full = actual.gp[i].get_fixed_quad(0);
-      uint64_t expected_full = expect.gp[i].get_fixed_quad(0);
+      uint64_t actual_full = actual.gp[*it].get_fixed_quad(0);
+      uint64_t expected_full = expect.gp[*it].get_fixed_quad(0);
 
-      uint64_t mask = (-1) >> (64-bitwidth);
+      uint64_t mask = (1 << (64-bitwidth)) - 1;
       uint64_t actual_masked = actual_full & mask;
       uint64_t expected_masked = expected_full & mask;
 
       std::stringstream tmp;
-      tmp << "Lower " << bitwidth << " of " << op << " differ.";
+      tmp << "Lower " << bitwidth << " of " << *it << " differ. MASK=" << std::hex << mask;
       EXPECT_CPU_EQ_INT(actual_masked, expected_masked, tmp.str());
     }
 
-    for(size_t i = 0; i < x64asm::xmms.size(); i++)
-    {
-      auto op = x64asm::xmms[i];
+    for(auto it = live_outs_.sse_begin(); it != live_outs_.sse_end(); ++it) {
+      uint16_t bitwidth = (*it).size();
+      uint16_t quads = bitwidth/64;
 
-      if(live_outs_.contains(op)) {
-        uint64_t actual_xmm_low = actual.sse[i].get_fixed_quad(0);
-        uint64_t actual_xmm_high = actual.sse[i].get_fixed_quad(1);
-        uint64_t expected_xmm_low = expect.sse[i].get_fixed_quad(0);
-        uint64_t expected_xmm_high = expect.sse[i].get_fixed_quad(1);
-
+      for(size_t i = 0; i < quads; ++i) {
         std::stringstream tmp;
-        tmp << "Lower 64 bits of " << op << " differ.";
-        EXPECT_CPU_EQ_INT(expected_xmm_low, actual_xmm_low, tmp.str());
-
-        tmp.clear();
-        tmp << "Upper 64 bits of " << op << " differ.";
-        EXPECT_CPU_EQ_INT(expected_xmm_high, actual_xmm_high, tmp.str());
+        tmp << "Bits " << (i*64) <<  ".." << ((i+1)*64) << " of " << *it << " differ.";
+        uint64_t actual_v = actual.sse[*it].get_fixed_quad(i);
+        uint64_t expect_v = expect.sse[*it].get_fixed_quad(i);
+        EXPECT_CPU_EQ_INT(expect_v, actual_v, tmp.str());
       }
     }
 
