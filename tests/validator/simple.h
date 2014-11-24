@@ -133,7 +133,7 @@ TEST_F(ValidatorBaseTest, UnimplementedFailsGracefully) {
 }
 
 
-TEST_F(ValidatorBaseTest, DISABLED_YmmSupported) {
+TEST_F(ValidatorBaseTest, YmmSupported) {
 
   //TODO: fill in something here
   target_ << "retq" << std::endl;
@@ -143,16 +143,6 @@ TEST_F(ValidatorBaseTest, DISABLED_YmmSupported) {
   set_live_outs(x64asm::RegSet::empty() + x64asm::ymm1);
 
   assert_equiv();
-}
-
-TEST_F(ValidatorBaseTest, High8BitUnsupported) {
-
-  target_ << "retq" << std::endl;
-  rewrite_ << "retq" << std::endl;
-
-  set_live_outs(x64asm::RegSet::empty() + x64asm::ah);
-
-  assert_fail();
 }
 
 TEST_F(ValidatorBaseTest, UndefinedReadNotEquiv) {
