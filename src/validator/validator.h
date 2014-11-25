@@ -20,18 +20,20 @@ namespace stoke {
 class Validator {
 public:
 
-  Validator(SMTSolver& solver) : solver_(solver) {
+  Validator(SMTSolver& solver) : solver_(solver),
+    handler_(*(new ComboHandler())), free_handler_(true) {
     has_error_ = false;
-    set_ceg_prefered(true);
     set_mem_out(false);
+  }
 
-    handlers_.push_back(new MoveHandler());
-    handlers_.push_back(new LegacyHandler());
+  Validator(SMTSolver& solver, Handler& h) : solver_(solver), handler_(h), free_handler_(false) {
+    has_error_ = false;
+    set_mem_out(false);
   }
 
   ~Validator() {
-    for(auto it : handlers_)
-      delete it;
+    if (free_handler_)
+      delete &handler_;
   }
 
   /** Evalue if the target and rewrite are the same */
@@ -54,14 +56,9 @@ public:
     return error_message_;
   }
 
-  /** Set if the code being validated writes memory. */
+  /** Set whether to evaluate equivalence of memory */
   Validator& set_mem_out(bool b) {
     mem_out_ = b;
-    return *this;
-  }
-  /** Set if we would like a counterexample */
-  Validator& set_ceg_prefered(bool b) {
-    ceg_prefered_ = b;
     return *this;
   }
 
@@ -84,16 +81,16 @@ public:
 
   /** Returns whether this instruction is supported */
   bool is_supported(x64asm::Instruction& i);
-  /** Returns whether this opcode is supported*/
-  bool is_supported(x64asm::Opcode o);
 
 private:
 
   void generate_constraints(const stoke::Cfg&, const stoke::Cfg&, std::vector<SymBool>&) const;
 
-  /** Get the 'result' cpustate (including constraints) from a piece of code */
+  /** Get the 'result' cpustate (including constraints) from a piece of code.  Throws an error
+      on failure. */
   SymState build_circuit(const Cfg& cfg, const SymState& state) const;
-  /** Build a circuit for a single instruction (trashing the starting state) */
+  /** Build a circuit for a single instruction (trashing the starting state).  Throws an error
+      on failure. */
   void build_circuit(const x64asm::Instruction& i, SymState& state) const;
 
   /* Build a CpuState from the solver's model. */
@@ -115,8 +112,10 @@ private:
   /** If a counterexample existed, what was final state of rewrite? */
   CpuState rewrite_final_state_;
 
-  /** This is a list of the handlers, in prioritized order */
-  std::vector<stoke::Handler*> handlers_;
+  /** This is the handler used */
+  stoke::Handler& handler_;
+  /** Whether we're responsible for freeing the memory of this handler */
+  const bool free_handler_;
 
   /** Was an error encountered? */
   bool has_error_;
