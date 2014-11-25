@@ -93,13 +93,8 @@ private:
       on failure. */
   void build_circuit(const x64asm::Instruction& i, SymState& state) const;
 
-  /* Build a CpuState from the solver's model. */
-  stoke::CpuState model_to_cpustate(std::string name_suffix);
-
   /** Will the code write memory? */
   bool mem_out_;
-  /** Do we want to get a counterexample? */
-  bool ceg_prefered_;
   /** SMT Solver to use */
   SMTSolver& solver_;
 
