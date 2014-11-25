@@ -164,32 +164,13 @@ void Validator::build_circuit(const Instruction& instr, SymState& state) const {
     throw VALIDATOR_ERROR(ss.str());
   }
 
-  /* Find the best handler for this instruction */
-  Handler* best_handler = NULL;
-  auto level = Handler::SupportLevel::NONE;
-  for(auto h : handlers_) {
-    auto cur_level = h->get_support(instr);
-
-    if(cur_level != level && (cur_level | level == cur_level)) {
-      best_handler = h;
-      level = cur_level;
-    }
-  }
-
-  /* If we didn't find a handler, give an error */
-  if (!best_handler) {
-    stringstream ss;
-    ss << "Unsupported instruction: " << instr;
-    throw VALIDATOR_ERROR(ss.str());
-  }
-
   /* Otherwise, run the handler and check for errors */
-  best_handler->build_circuit(instr, state);
+  handler_.build_circuit(instr, state);
 
-  if(best_handler->has_error()) {
+  if(handler_.has_error()) {
     stringstream ss;
     ss << "Error building circuit for: " << instr << ".";
-    ss << "Handler says: " << best_handler->error();
+    ss << "Handler says: " << handler_.error();
     throw VALIDATOR_ERROR(ss.str());
   }
 
