@@ -21,35 +21,6 @@ using namespace stoke;
 using namespace x64asm;
 
 
-/* This produces a CpuState (that is, a stoke-readable
-   recording of all the variables).  This function can be used to extract a
-   counterexample (with name_suffix == ""), or to extract the expected output
-   of a code after executing on the counterexample (with name_suffix ==
-   "_1_Final" or "_2_Final") */
-stoke::CpuState Validator::model_to_cpustate(string name_suffix) {
-
-  CpuState cs;
-  for(size_t i = 0; i < r64s.size(); ++i) {
-    stringstream name;
-    name << r64s[i] << name_suffix;
-    cs.gp[r64s[i]] = solver_.get_model_bv(name.str(), 1);
-  }
-  for(size_t i = 0; i < ymms.size(); ++i) {
-    stringstream name;
-    name << ymms[i] << name_suffix;
-    cs.sse[ymms[i]] = solver_.get_model_bv(name.str(), 4);
-  }
-  for(size_t i = 0; i < eflags.size(); ++i) {
-    if(!cs.rf.is_status(eflags[i].index()))
-      continue;
-
-    stringstream name;
-    name << eflags[i] << name_suffix;
-    cs.rf.set(eflags[i].index(), solver_.get_model_bool(name.str()));
-  }
-
-  return cs;
-}
 
 
 bool regset_is_supported(x64asm::RegSet rs) {
@@ -224,9 +195,9 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
     if (is_sat && solver_.has_model()) {
 
       counterexample_valid_ = true;
-      counterexample_ =      model_to_cpustate("_");
-      target_final_state_  = model_to_cpustate("_1_FINAL");
-      rewrite_final_state_ = model_to_cpustate("_2_FINAL");
+      counterexample_ =      CpuState(solver_, "_");
+      target_final_state_  = CpuState(solver_, "_1_FINAL");
+      rewrite_final_state_ = CpuState(solver_, "_2_FINAL");
 
       counter_example = counterexample_;
 
