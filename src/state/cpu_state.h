@@ -34,9 +34,9 @@ struct CpuState {
     heap.resize(base, heap_size);
   }
 
-  /** Creates a new CpuState from an SMTSolver's model (i.e. counterexample). 
+  /** Creates a new CpuState from an SMTSolver's model (i.e. counterexample).
     * Uses 'suffix' to identify the right set of variables to extract. */
-  CpuState(SMTSolver& smt, std::string suffix) : 
+  CpuState(SMTSolver& smt, std::string suffix) :
     code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
     stack.resize(0, 0);
     heap.resize(0, 0);
@@ -110,7 +110,7 @@ struct CpuState {
   /** Heap. */
   Memory heap;
 
-  private:
+private:
 
   /** Used by constructor to build CpuState from a counterexample */
   void convert_from_model(SMTSolver& smt, std::string& suffix);
