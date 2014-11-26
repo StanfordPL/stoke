@@ -38,91 +38,91 @@ std::vector<std::pair<unsigned, level_to_flags>> cpuid_to_flags_ {
   // level 1
   std::make_pair(1, std::make_tuple<regbit_to_flags, regbit_to_flags, regbit_to_flags, regbit_to_flags>(
     // edx
-    {
-      std::make_pair(0, x64asm::Flag::FPU),
-      std::make_pair(4, x64asm::Flag::TSC),
-      std::make_pair(5, x64asm::Flag::MSR),
-      std::make_pair(8, x64asm::Flag::CX8),
-      std::make_pair(11, x64asm::Flag::SEP),
-      std::make_pair(15, x64asm::Flag::CMOV),
-      std::make_pair(19, x64asm::Flag::CLFLUSH),
-      std::make_pair(23, x64asm::Flag::MMX),
-      std::make_pair(24, x64asm::Flag::FXSR),
-      std::make_pair(25, x64asm::Flag::SSE),
-      std::make_pair(26, x64asm::Flag::SSE2),
-    },
-    // ecx
-    {
-      std::make_pair(0, x64asm::Flag::PNI),
-      std::make_pair(1, x64asm::Flag::PCLMULQDQ),
-      std::make_pair(3, x64asm::Flag::MONITOR),
-      std::make_pair(9, x64asm::Flag::SSSE3),
-      std::make_pair(12, x64asm::Flag::FMA),
-      std::make_pair(13, x64asm::Flag::CX16),
-      std::make_pair(19, x64asm::Flag::SSE4_1),
-      std::make_pair(20, x64asm::Flag::SSE4_2),
-      std::make_pair(22, x64asm::Flag::MOVBE),
-      std::make_pair(23, x64asm::Flag::POPCNT),
-      std::make_pair(25, x64asm::Flag::AES),
-      std::make_pair(26, x64asm::Flag::XSAVE),
-      std::make_pair(28, x64asm::Flag::AVX),
-      std::make_pair(29, x64asm::Flag::F16C),
-      std::make_pair(30, x64asm::Flag::RDRAND),
-    },
-    // ebx
-    {},
-    // eax
-    {}
+  {
+    std::make_pair(0, x64asm::Flag::FPU),
+    std::make_pair(4, x64asm::Flag::TSC),
+    std::make_pair(5, x64asm::Flag::MSR),
+    std::make_pair(8, x64asm::Flag::CX8),
+    std::make_pair(11, x64asm::Flag::SEP),
+    std::make_pair(15, x64asm::Flag::CMOV),
+    std::make_pair(19, x64asm::Flag::CLFLUSH),
+    std::make_pair(23, x64asm::Flag::MMX),
+    std::make_pair(24, x64asm::Flag::FXSR),
+    std::make_pair(25, x64asm::Flag::SSE),
+    std::make_pair(26, x64asm::Flag::SSE2),
+  },
+  // ecx
+  {
+    std::make_pair(0, x64asm::Flag::PNI),
+    std::make_pair(1, x64asm::Flag::PCLMULQDQ),
+    std::make_pair(3, x64asm::Flag::MONITOR),
+    std::make_pair(9, x64asm::Flag::SSSE3),
+    std::make_pair(12, x64asm::Flag::FMA),
+    std::make_pair(13, x64asm::Flag::CX16),
+    std::make_pair(19, x64asm::Flag::SSE4_1),
+    std::make_pair(20, x64asm::Flag::SSE4_2),
+    std::make_pair(22, x64asm::Flag::MOVBE),
+    std::make_pair(23, x64asm::Flag::POPCNT),
+    std::make_pair(25, x64asm::Flag::AES),
+    std::make_pair(26, x64asm::Flag::XSAVE),
+    std::make_pair(28, x64asm::Flag::AVX),
+    std::make_pair(29, x64asm::Flag::F16C),
+    std::make_pair(30, x64asm::Flag::RDRAND),
+  },
+  // ebx
+  {},
+  // eax
+  {}
   )),
   // level 7
   std::make_pair(7, std::make_tuple<regbit_to_flags, regbit_to_flags, regbit_to_flags, regbit_to_flags>(
     // edx
-    {},
-    // ecx
-    {},
-    // ebx
-    {
-      std::make_pair(0, x64asm::Flag::FSGSBASE),
-      std::make_pair(3, x64asm::Flag::BMI1),
-      std::make_pair(4, x64asm::Flag::HLE),
-      std::make_pair(5, x64asm::Flag::AVX2),
-      std::make_pair(8, x64asm::Flag::BMI2),
-      std::make_pair(9, x64asm::Flag::ERMS),
-      std::make_pair(10, x64asm::Flag::INVPCID),
-      std::make_pair(11, x64asm::Flag::RTM),
-    },
-    // eax
-    {}
+  {},
+  // ecx
+  {},
+  // ebx
+  {
+    std::make_pair(0, x64asm::Flag::FSGSBASE),
+    std::make_pair(3, x64asm::Flag::BMI1),
+    std::make_pair(4, x64asm::Flag::HLE),
+    std::make_pair(5, x64asm::Flag::AVX2),
+    std::make_pair(8, x64asm::Flag::BMI2),
+    std::make_pair(9, x64asm::Flag::ERMS),
+    std::make_pair(10, x64asm::Flag::INVPCID),
+    std::make_pair(11, x64asm::Flag::RTM),
+  },
+  // eax
+  {}
   )),
   // level 0x80000001
   std::make_pair(0x80000001, std::make_tuple<regbit_to_flags, regbit_to_flags, regbit_to_flags, regbit_to_flags>(
     // edx
-    {
-      std::make_pair(11, x64asm::Flag::SYSCALL),
-      std::make_pair(27, x64asm::Flag::RDTSCP),
-    },
-    // ecx
-    {
-      std::make_pair(0, x64asm::Flag::LAHF_LM),
-      std::make_pair(5, x64asm::Flag::ABM),
-    },
-    // ebx
-    {},
-    // eax
-    {}
+  {
+    std::make_pair(11, x64asm::Flag::SYSCALL),
+    std::make_pair(27, x64asm::Flag::RDTSCP),
+  },
+  // ecx
+  {
+    std::make_pair(0, x64asm::Flag::LAHF_LM),
+    std::make_pair(5, x64asm::Flag::ABM),
+  },
+  // ebx
+  {},
+  // eax
+  {}
   )),
   // level 0x8000000d
   std::make_pair(0x8000000d, std::make_tuple<regbit_to_flags, regbit_to_flags, regbit_to_flags, regbit_to_flags>(
     // edx
-    {},
-    // ecx
-    {},
-    // ebx
-    {},
-    // eax
-    {
-      std::make_pair(0, x64asm::Flag::XSAVEOPT),
-    }
+  {},
+  // ecx
+  {},
+  // ebx
+  {},
+  // eax
+  {
+    std::make_pair(0, x64asm::Flag::XSAVEOPT),
+  }
   )),
 };
 
