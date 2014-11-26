@@ -101,7 +101,7 @@ void StateGen::randomize_regs(CpuState& cs) const {
   }
 }
 
-bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
+bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) {
   const auto& instr = cfg.get_code()[line];
 
   // Special support for push/pop/ret
@@ -115,7 +115,8 @@ bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
     return false;
   }
 
-  if (instr.mem_index() != -1) {
+  assert(instr.mem_index() != -1);
+  if (instr.mem_index() == -1) {
     error_message_ = "Could not find an explicit or implicit memory dereference.  Bug somewhere.";
     return false;
   }
