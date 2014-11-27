@@ -119,6 +119,11 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     if(!b)
       continue;
 
+    if (!z3.has_model()) {
+      std::cout << "[----------]   - SMT solver could not produce model" << std::endl;
+      continue;
+    }
+
     // Solve for the final state
     stoke::CpuState validator_final(z3, "_FINAL");
 
