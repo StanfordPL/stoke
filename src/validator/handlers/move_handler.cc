@@ -32,7 +32,6 @@ Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
 }
 
 void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
-
   assert(get_support(instr));
 
   // Get the source and destination operands

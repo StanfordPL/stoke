@@ -37,7 +37,7 @@ Handler* ComboHandler::get_handler(const Instruction& instr, Handler::SupportLev
   for(auto h : handlers_) {
     auto cur_level = h->get_support(instr);
 
-    if(cur_level != sl && (cur_level | sl == cur_level)) {
+    if(cur_level != sl && ((cur_level | sl) == cur_level)) {
       best_handler = h;
       sl = cur_level;
     }
