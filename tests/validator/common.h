@@ -159,6 +159,14 @@ protected:
     rewrite_.clear();
   }
 
+  /** Check equivalence of CpuStates */
+  void expect_cpustate_eq(stoke::CpuState& s1, stoke::CpuState& s2,
+                          x64asm::RegSet lo, std::string message) {
+    live_outs_ = lo;
+    ceg_shown_ = true;
+    expect_cpustate_equal_on_liveout(s1, s2, message);
+  }
+
 private:
 
   enum Outcome {
@@ -234,7 +242,7 @@ private:
       uint64_t expected_masked = expected_full & mask;
 
       std::stringstream tmp;
-      tmp << "Lower " << bitwidth << " of " << *it << " differ. MASK=" << std::hex << mask;
+      tmp << "Lower " << bitwidth << " of " << *it << " differ.";
       EXPECT_CPU_EQ_INT(actual_masked, expected_masked, tmp.str());
     }
 
