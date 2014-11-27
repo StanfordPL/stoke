@@ -172,3 +172,34 @@ TEST(Z3SolverTest, UninterpretedFunctionFail) {
   EXPECT_TRUE(z3.is_sat(constraints));
   EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
 }
+
+TEST(Z3SolverTest, DivMeansNonzero) {
+
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(32, "y");
+  auto z = stoke::SymBitVector::var(32, "z");
+
+
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(y == stoke::SymBitVector::constant(32, 0));
+  constraints.push_back(x/y == z);
+
+  stoke::Z3Solver z3;
+  EXPECT_FALSE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
+}
+
+TEST(Z3SolverTest, DivWorks) {
+
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(32, "y");
+  auto z = stoke::SymBitVector::var(32, "z");
+
+
+  auto constraints = std::vector<stoke::SymBool>();
+  constraints.push_back(x/y == z);
+
+  stoke::Z3Solver z3;
+  EXPECT_TRUE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
+}
