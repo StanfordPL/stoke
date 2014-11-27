@@ -9,6 +9,7 @@
 class ValidatorMoveTest : public ValidatorTest {};
 
 
+
 TEST(MoveHandler, R64R64Works) {
 
   x64asm::Instruction i(x64asm::MOV_R64_R64);
@@ -86,6 +87,19 @@ TEST(MoveHandler, R16R16PreservesTop) {
   EXPECT_BV_EQ(rdi[63][16] || rsi[15][0], ss[x64asm::rdi]);
 }
 
+TEST_F(ValidatorMoveTest, SimpleExample) {
+
+  target_ << "movq $0x10, %rax" << std::endl;
+
+  rewrite_ << "movq $0x10, %rcx" << std::endl;
+  rewrite_ << "movq %rcx, %rax" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+
+  assert_equiv();
+
+}
+
 TEST_F(ValidatorMoveTest, MoveRaxToRaxNoop) {
 
   target_ << "movq %rax, %rax" << std::endl;
@@ -121,4 +135,40 @@ TEST_F(ValidatorMoveTest, MovesDontCommute) {
   rewrite_ << "retq" << std::endl;
 
   assert_ceg();
+}
+
+
+TEST_F(ValidatorMoveTest, Issue236SimpleIsSat) {
+
+  target_ << "movw $0x2, %r8w" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movw $0x2, %r8w" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorMoveTest, Issue236Equiv) {
+
+  target_ << "movss %xmm3, %xmm5" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movss %xmm3, %xmm5" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+
+}
+
+TEST_F(ValidatorMoveTest, Issue236NotEquiv) {
+
+  target_ << "movss %xmm3, %xmm5" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movapd %xmm3, %xmm5" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_ceg();
+
 }
