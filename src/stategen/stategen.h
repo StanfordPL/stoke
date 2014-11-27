@@ -52,7 +52,7 @@ private:
   void randomize_regs(CpuState& cs) const;
 
   /** Returns true if we support fixing derefs of this type. */
-  bool is_supported_deref(const Cfg& cfg, size_t line) const;
+  bool is_supported_deref(const Cfg& cfg, size_t line);
 
   /** Returns the address that was dereferenced on this line. */
   uint64_t get_addr(const CpuState& cs, const Cfg& cfg, size_t line) const;
