@@ -154,8 +154,8 @@ tags:
 ##### EXTERNAL TARGETS
 
 external: src/ext/astyle src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
-	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
 	$(MAKE) -C src/ext/x64asm $(EXT_OPT) 
+	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
 
 src/ext/astyle:
 	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle

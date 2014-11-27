@@ -16,6 +16,7 @@
 #define STOKE_STATE_CPU_STATE_H
 
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "src/solver/smtsolver.h"
