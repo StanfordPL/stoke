@@ -1,4 +1,5 @@
 
+#include <sys/time.h>
 #include "src/ext/x64asm/include/x64asm.h"
 
 class ValidatorFuzzTest : public ValidatorTest { };
@@ -9,9 +10,19 @@ class ValidatorFuzzTest : public ValidatorTest { };
  * ton of other functionality. */
 TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
-  // Initialize handler, solver, transforms, stategen, etc.
-  const size_t iterations = 10;
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  uint64_t seed = (uint64_t)tv.tv_usec;
 
+  // Generate a random seed
+  std::cout << "[----------]   Seed " << seed << std::endl;
+
+  // Parameters for the test
+  const size_t iterations = 10;
+  const size_t min_success = iterations/5;
+  size_t success = 0;  //counts number of iterations tested
+
+  // Initialize handler, solver, transforms, stategen, etc.
   stoke::ComboHandler ch;
   stoke::Z3Solver z3;
 
@@ -22,7 +33,8 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   flags >> flag_set;
 
   t.set_opcode_pool(flag_set, 0, false, false, {}, {})
-  .set_operand_pool({}, x64asm::RegSet::empty());
+   .set_operand_pool({}, x64asm::RegSet::empty())
+   .set_seed(seed);
 
   t.insert_immediate(x64asm::Imm64(0x00));
   t.insert_immediate(x64asm::Imm64(0x01));
@@ -67,16 +79,20 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     ins = pre_cfg.get_code()[0];
     stoke::Cfg cfg({{ins}, ins.maybe_read_set(), ins.must_write_set()});
 
-    std::cout << "[          ]  " << ins << std::endl;
+    std::cout << "[----------]   " << ins << std::endl;
 
     // Make sure we support this instruction
-    if(ch.get_support(ins) == stoke::Handler::NONE)
+    if(ch.get_support(ins) == stoke::Handler::NONE) {
+      std::cout << "[----------]     No validator support" << std::endl;
       continue;
+    }
 
     // Build a state at random, if possible
     stoke::CpuState cs;
-    if(!sg.get(cs, cfg))
+    if(!sg.get(cs, cfg)) {
+      std::cout << "[----------]     Could not generate state: " << sg.get_error() << std::endl;
       continue;
+    }
 
     // Build a circuit for this instruction
     std::vector<stoke::SymBool> constraints;
@@ -92,7 +108,9 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
       constraints.push_back(it);
 
     bool b = z3.is_sat(constraints);
-    EXPECT_TRUE(b) << "StateGen worked, but could not find end state";
+    EXPECT_TRUE(b) << "Circuit not satisfiable";
+    if(!b)
+      continue;
 
     // Solve for the final state
     stoke::CpuState validator_final(z3, "_FINAL");
@@ -105,7 +123,13 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
     // Compare the final states
     EXPECT_EQ(sandbox_final, validator_final);
+
+    // If we did the comparison, then we performed the test right
+    success++;
   }
+
+  // Make sure we supported enough of the instructions
+  EXPECT_GE(success, min_success);
 
 }
 
