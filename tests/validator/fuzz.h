@@ -1,5 +1,7 @@
 
+#include <set>
 #include <sys/time.h>
+
 #include "src/ext/x64asm/include/x64asm.h"
 
 class ValidatorFuzzTest : public ValidatorTest { };
@@ -15,11 +17,11 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   uint64_t seed = (uint64_t)tv.tv_usec;
 
   // Generate a random seed
-  std::cout << "[----------]   Seed " << seed << std::endl;
+  std::cout << "[----------] * Seed " << seed << std::endl;
 
   // Parameters for the test
-  const size_t iterations = 10;
-  const size_t min_success = iterations/5;
+  const size_t iterations = 100;
+  const size_t min_success = iterations/4;
   size_t success = 0;  //counts number of iterations tested
 
   // Initialize handler, solver, transforms, stategen, etc.
@@ -32,9 +34,14 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   x64asm::FlagSet flag_set = x64asm::FlagSet::empty();
   flags >> flag_set;
 
-  t.set_opcode_pool(flag_set, 0, false, false, {}, {})
-   .set_operand_pool({}, x64asm::RegSet::empty())
-   .set_seed(seed);
+  std::set<x64asm::Opcode> blacklist;
+  blacklist.insert(x64asm::ENTER_IMM8_IMM16);
+  blacklist.insert(x64asm::ENTER_ONE_IMM16);
+  blacklist.insert(x64asm::ENTER_ZERO_IMM16);
+
+  t.set_opcode_pool(flag_set, 0, false, false, blacklist, {})
+  .set_operand_pool({}, x64asm::RegSet::empty())
+  .set_seed(seed);
 
   t.insert_immediate(x64asm::Imm64(0x00));
   t.insert_immediate(x64asm::Imm64(0x01));
@@ -77,20 +84,20 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
       continue;
 
     ins = pre_cfg.get_code()[0];
-    stoke::Cfg cfg({{ins}, ins.maybe_read_set(), ins.must_write_set()});
+    stoke::Cfg cfg({{ins, x64asm::Instruction({x64asm::RET})}, ins.maybe_read_set(), ins.must_write_set()});
 
-    std::cout << "[----------]   " << ins << std::endl;
+    std::cout << "[----------] * " << ins << std::endl;
 
     // Make sure we support this instruction
     if(ch.get_support(ins) == stoke::Handler::NONE) {
-      std::cout << "[----------]     No validator support" << std::endl;
+      std::cout << "[----------]   - No validator support" << std::endl;
       continue;
     }
 
     // Build a state at random, if possible
     stoke::CpuState cs;
     if(!sg.get(cs, cfg)) {
-      std::cout << "[----------]     Could not generate state: " << sg.get_error() << std::endl;
+      std::cout << "[----------]   - Could not generate state: " << sg.get_error() << std::endl;
       continue;
     }
 
@@ -122,7 +129,8 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     stoke::CpuState sandbox_final = *sb.get_result(0);
 
     // Compare the final states
-    EXPECT_EQ(sandbox_final, validator_final);
+    expect_cpustate_eq(sandbox_final, validator_final, ins.must_write_set(),
+                       "Validator and sandbox disagree on output.");
 
     // If we did the comparison, then we performed the test right
     success++;
