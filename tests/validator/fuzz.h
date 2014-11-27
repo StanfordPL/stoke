@@ -63,14 +63,20 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   t.insert_immediate(x64asm::Imm64(0xc0decafec0decafe));
   t.insert_immediate(x64asm::Imm64(0xffffffffffffffff));
 
-  stoke::Sandbox sb;
-  stoke::StateGen sg(&sb);
-
   x64asm::RegSet supported_regs = (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
                                   x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf +
                                   x64asm::eflags_zf + x64asm::eflags_sf;
 
   for(size_t i = 0; i < iterations; ++i) {
+
+    stoke::Sandbox sb;
+    sb.set_abi_check(false)
+    .set_max_jumps(1);
+
+    stoke::StateGen sg(&sb);
+    sg.set_max_memory(1024)
+    .set_max_attempts(40);
+
     // Build an instruction and CFG at random
     x64asm::Instruction ins({x64asm::LAHF});
     stoke::Cfg pre_cfg({{ins}, x64asm::RegSet::universe(), x64asm::RegSet::empty()});
