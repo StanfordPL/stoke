@@ -261,7 +261,6 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignDiv * const bv) {
   auto width = tc(arg);
   auto zero = SymBitVector::constant(width, 0);
   auto constraint = arg != zero;
-  cout << "PUSHING" << endl;
   constraints_.push_back(constraint);
 
   return z3::expr(context_, Z3_mk_bvsdiv(context_, (*this)(bv->a_), (*this)(bv->b_)));
