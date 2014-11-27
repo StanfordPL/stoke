@@ -178,10 +178,7 @@ TEST(StateGenTest, Issue232) {
   // Build example
   std::stringstream ss;
 
-  ss << "sahf" << std::endl;
-  ss << "lahf" << std::endl;
-  ss << "sahf" << std::endl;
-  ss << "retq" << std::endl;
+  ss << "movq $0x10, %rax" << std::endl;
 
   x64asm::Code c;
   ss >> c;
