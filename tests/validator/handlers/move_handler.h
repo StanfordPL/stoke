@@ -137,10 +137,25 @@ TEST_F(ValidatorMoveTest, MovesDontCommute) {
   assert_ceg();
 }
 
+
+TEST_F(ValidatorMoveTest, Issue236SimpleIsSat) {
+
+  target_ << "movw $0x2, %r8w" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movw $0x2, %r8w" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
 TEST_F(ValidatorMoveTest, Issue236Equiv) {
 
   target_ << "movss %xmm3, %xmm5" << std::endl;
+  target_ << "retq" << std::endl;
+
   rewrite_ << "movss %xmm3, %xmm5" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
   assert_equiv();
 
@@ -149,7 +164,10 @@ TEST_F(ValidatorMoveTest, Issue236Equiv) {
 TEST_F(ValidatorMoveTest, Issue236NotEquiv) {
 
   target_ << "movss %xmm3, %xmm5" << std::endl;
+  target_ << "retq" << std::endl;
+
   rewrite_ << "movapd %xmm3, %xmm5" << std::endl;
+  rewrite_ << "retq" << std::endl;
 
   assert_ceg();
 

@@ -967,7 +967,6 @@ lookup_handler "movsbq"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1,
 lookup_handler "movsbw"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "movsd"    _ _ = Just "movHandler(d, 64, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "movslq"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
-lookup_handler "movss"    _ _ = Just "movHandler(d, 32, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "movswl"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "movswq"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "movupd"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
