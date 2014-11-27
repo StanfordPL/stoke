@@ -13,6 +13,7 @@ const map<string, bool> MoveHandler::sign_extend_ = {
   { "movsbw", true },
   { "movsbl", true },
   { "movsbq", true },
+  { "movsd", false },
   { "movswl", true },
   { "movswq", true },
   { "movslq", true },
@@ -26,6 +27,7 @@ const map<string, bool> MoveHandler::sign_extend_ = {
 };
 
 const map<string, uint16_t> MoveHandler::truncate_ = {
+  { "movsd", 64 },
   { "movss", 32 }
 };
 
