@@ -173,6 +173,33 @@ TEST(StateGenTest, Issue51) {
 
 }
 
+TEST(StateGenTest, Issue232) {
+
+  // Build example
+  std::stringstream ss;
+
+  ss << "sahf" << std::endl;
+  ss << "lahf" << std::endl;
+  ss << "sahf" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  // Run stategen
+  stoke::Sandbox sg_sb;
+  sg_sb.set_max_jumps(2)
+  .set_abi_check(false);
+
+  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+  stoke::StateGen sg(&sg_sb);
+  sg.set_max_attempts(10)
+  .set_max_memory(1000);
+
+  stoke::CpuState tc;
+  EXPECT_FALSE(sg.get(tc, cfg_t));
+}
+
 INSTANTIATE_TEST_CASE_P(
   StategenFixtures,
   StateGenParamTest,

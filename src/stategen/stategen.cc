@@ -101,7 +101,7 @@ void StateGen::randomize_regs(CpuState& cs) const {
   }
 }
 
-bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
+bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) {
   const auto& instr = cfg.get_code()[line];
 
   // Special support for push/pop/ret
@@ -111,15 +111,22 @@ bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) const {
 
   // No support for implicit memory accesses
   if (instr.is_implicit_memory_dereference()) {
+    error_message_ = "Implicit memory dereferences not supported.";
     return false;
   }
 
   assert(instr.mem_index() != -1);
+  if (instr.mem_index() == -1) {
+    error_message_ = "Could not find an explicit or implicit memory dereference.  Bug somewhere.";
+    return false;
+  }
+
   const auto mi = instr.mem_index();
   const auto op = instr.get_operand<M8>(mi);
 
   // No support for rip-offset form or segment register addressing
   if (op.rip_offset() || op.contains_seg()) {
+    error_message_ = "No support for RIP offset or segment addressing";
     return false;
   }
 
@@ -293,7 +300,6 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
   }
   // Only explicit dereferences are fixable
   if (!is_supported_deref(cfg, line)) {
-    error_message_ = "Dereference not supported.";
     return false;
   }
 
