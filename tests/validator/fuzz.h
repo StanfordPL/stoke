@@ -66,7 +66,9 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   stoke::Sandbox sb;
   stoke::StateGen sg(&sb);
 
-
+  x64asm::RegSet supported_regs = (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
+                                  x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf + 
+                                  x64asm::eflags_zf + x64asm::eflags_sf;
 
   for(size_t i = 0; i < iterations; ++i) {
     // Build an instruction and CFG at random
@@ -84,7 +86,9 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
       continue;
 
     ins = pre_cfg.get_code()[0];
-    stoke::Cfg cfg({{ins, x64asm::Instruction({x64asm::RET})}, ins.maybe_read_set(), ins.must_write_set()});
+    x64asm::RegSet liveouts = ins.must_write_set() & supported_regs;
+
+    stoke::Cfg cfg({{ins, x64asm::Instruction({x64asm::RET})}, ins.maybe_read_set(), liveouts});
 
     std::cout << "[----------] * " << ins << std::endl;
 
@@ -134,7 +138,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     stoke::CpuState sandbox_final = *sb.get_result(0);
 
     // Compare the final states
-    expect_cpustate_eq(sandbox_final, validator_final, ins.must_write_set(),
+    expect_cpustate_eq(sandbox_final, validator_final, liveouts,
                        "Validator and sandbox disagree on output.");
 
     // If we did the comparison, then we performed the test right
