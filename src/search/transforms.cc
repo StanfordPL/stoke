@@ -195,7 +195,6 @@ bool Transforms::instruction_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
   if (cfg.num_reachable() < 3) {
-    cout << "REACHABLE < 3" << endl;
     return false;
   }
   auto bb = cfg.reachable_begin();
@@ -205,14 +204,12 @@ bool Transforms::instruction_move(Cfg& cfg) {
 
   const auto num_instrs = cfg.num_instrs(*bb);
   if (num_instrs == 0) {
-    cout << "NUM_INSTRS = 0" << endl;
     return false;
   }
   const auto idx = gen_() % num_instrs;
 
   instr_index_ = cfg.get_index({*bb, idx});
   if (is_control_opcode(code[instr_index_].get_opcode())) {
-    cout << "CONTROL OPCODE" << endl;
     return false;
   }
   old_instr_ = code[instr_index_];
@@ -226,13 +223,11 @@ bool Transforms::instruction_move(Cfg& cfg) {
     if (instr.maybe_read(i)) {
       if (!get_read_op(instr.get_opcode(), i, rs, o)) {
         instr = old_instr_;
-        cout << "Could not get_read_op" << endl;
         return false;
       }
     } else {
       if (!get_write_op(instr.get_opcode(), i, rs, o)) {
         instr = old_instr_;
-        cout << "Could not get_write_op" << endl;
         return false;
       }
     }
@@ -241,7 +236,6 @@ bool Transforms::instruction_move(Cfg& cfg) {
   cfg.recompute_defs();
 
   if (!cfg.is_sound()) {
-    cout << "CFG unsound" << endl;
     undo_instruction_move(cfg);
     return false;
   }
