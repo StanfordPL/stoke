@@ -31,11 +31,6 @@ public:
   /** Get the satisfying assignment for a bit from the model. */
   bool get_model_bool(const std::string& var);
 
-  /** @Deprecated.  Get the z3 context.  For backward compatibility. */
-  z3::context* get_context() {
-    return &context_;
-  }
-
 private:
 
   /** The Z3 context we're working with */
@@ -54,7 +49,8 @@ private:
   class ExprConverter : public SymVisitor<z3::expr> {
 
   public:
-    ExprConverter(z3::context& cntx) : context_(cntx) {}
+    ExprConverter(z3::context& cntx, std::vector<SymBool>& constraints)
+      : context_(cntx), constraints_(constraints) {}
 
     z3::expr visit_binop(const SymBitVectorBinop * const bv) {
       // We can't support anything generically.  Error!
@@ -98,6 +94,8 @@ private:
     z3::expr visit(const SymBitVectorConcat * const bv);
     /** Visit a bit-vector constant */
     z3::expr visit(const SymBitVectorConstant * const bv);
+    /** Visit a bit-vector div */
+    z3::expr visit(const SymBitVectorDiv * const bv);
     /** Visit a bit-vector extract */
     z3::expr visit(const SymBitVectorExtract * const bv);
     /** Visit a bit-vector function */
@@ -180,6 +178,9 @@ private:
     z3::symbol get_symbol(std::string s) {
       return context_.str_symbol(s.c_str());
     }
+
+    /** Constraints that we can add to */
+    std::vector<SymBool>& constraints_;
 
     z3::context& context_;
 

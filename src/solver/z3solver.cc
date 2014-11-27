@@ -21,27 +21,45 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   context_.set("timeout", (int)timeout_);
 
   /* Convert constraints and query to z3 object */
-  ExprConverter ec(context_);
   SymTypecheckVisitor tc;
-  for(auto it : constraints) {
-    if (tc(it) != 1) {
-      stringstream ss;
-      ss << "Typechecking failed for constraint: " << it << endl;
-      if(tc.has_error())
-        ss << "error: " << tc.error() << endl;
-      else
-        ss << "(no typechecking error message given)" << endl;
-      error_ = ss.str();
-      return false;
+
+  const vector<SymBool>* current = &constraints;
+  vector<SymBool>* new_constraints = 0;
+  bool free_it = false;
+
+  while(current->size() != 0) {
+
+    new_constraints = new vector<SymBool>();
+
+    ExprConverter ec(context_, *new_constraints);
+
+    for(auto it : *current) {
+      if (tc(it) != 1) {
+        stringstream ss;
+        ss << "Typechecking failed for constraint: " << it << endl;
+        if(tc.has_error())
+          ss << "error: " << tc.error() << endl;
+        else
+          ss << "(no typechecking error message given)" << endl;
+        error_ = ss.str();
+        return false;
+      }
+
+      auto constraint = ec(it);
+      if(ec.has_error()) {
+        error_ = ec.error();
+        return false;
+      }
+      s.add(constraint);
     }
 
-    auto constraint = ec(it);
-    if(ec.has_error()) {
-      error_ = ec.error();
-      return false;
-    }
-    s.add(constraint);
+    if(free_it)
+      delete current;
+    free_it = true;
+
+    current = new_constraints;
   }
+  delete current;
 
   /* Run the solver and see */
   switch (s.check()) {
@@ -124,6 +142,20 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorConcat * const bv) {
 /** Visit a bit-vector constant */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorConstant * const bv) {
   return z3::expr(context_, context_.bv_val((long long unsigned int)bv->constant_, bv->size_));
+}
+
+/** Visit a bit-vector DIV */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorDiv * const bv) {
+  // assert second arg non-zero
+  auto arg = SymBitVector(bv->b_);
+  SymTypecheckVisitor tc;
+  auto width = tc(arg);
+  auto zero = SymBitVector::constant(width, 0);
+  auto constraint = arg != zero;
+  cout << "PUSHING" << endl;
+  constraints_.push_back(constraint);
+
+  return z3::expr(context_, Z3_mk_bvudiv(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
 /** Visit a bit-vector extract */
@@ -224,7 +256,17 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorShiftRight * const bv)
 
 /** Visit a bit-vector signed divide */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignDiv * const bv) {
+  // assert second arg non-zero
+  auto arg = SymBitVector(bv->b_);
+  SymTypecheckVisitor tc;
+  auto width = tc(arg);
+  auto zero = SymBitVector::constant(width, 0);
+  auto constraint = arg != zero;
+  cout << "PUSHING" << endl;
+  constraints_.push_back(constraint);
+
   return z3::expr(context_, Z3_mk_bvsdiv(context_, (*this)(bv->a_), (*this)(bv->b_)));
+
 }
 
 /** Visit a bit-vector sign extension */
