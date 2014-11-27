@@ -9,6 +9,7 @@
 class ValidatorMoveTest : public ValidatorTest {};
 
 
+
 TEST(MoveHandler, R64R64Works) {
 
   x64asm::Instruction i(x64asm::MOV_R64_R64);
@@ -84,6 +85,19 @@ TEST(MoveHandler, R16R16PreservesTop) {
   EXPECT_BV_EQ(rsi, ss[x64asm::rsi]);
   // Check RDI is a concatenation of 0 with RSI[31:0]
   EXPECT_BV_EQ(rdi[63][16] || rsi[15][0], ss[x64asm::rdi]);
+}
+
+TEST_F(ValidatorMoveTest, SimpleExample) {
+
+  target_ << "movq $0x10, %rax" << std::endl;
+
+  rewrite_ << "movq $0x10, %rcx" << std::endl;
+  rewrite_ << "movq %rcx, %rax" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+
+  assert_equiv();
+
 }
 
 TEST_F(ValidatorMoveTest, MoveRaxToRaxNoop) {
