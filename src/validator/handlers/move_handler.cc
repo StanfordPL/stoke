@@ -5,35 +5,46 @@ using namespace stoke;
 using namespace x64asm;
 using namespace std;
 
-MoveHandler::MoveSupport MoveHandler::lookup(const Instruction& instr) const {
+const map<string, bool> MoveHandler::sign_extend_ = {
+  { "movq", true },
+  { "movl", true },
+  { "movw", true },
+  { "movb", true },
+  { "movsbw", true },
+  { "movsbl", true },
+  { "movsbq", true },
+  { "movsd", false },
+  { "movswl", true },
+  { "movswq", true },
+  { "movslq", true },
+  { "movss", false },
+  { "movzbw", false },
+  { "movzbl", false },
+  { "movzbq", false },
+  { "movzwl", false },
+  { "movzwq", false },
+  { "movzlq", false }
+};
 
-  string opcode = get_opcode(instr);
-
-  if (opcode == "movq" || opcode == "movl" || opcode == "movw" || opcode == "movb" ||
-      opcode == "movsbw" || opcode == "movsbl" || opcode == "movsbq" ||
-      opcode == "movswl" || opcode == "movswq" || opcode == "movslq")
-    return MoveSupport::SIGN_EXTEND;
-
-  if (opcode == "movzbw" || opcode == "movzbl" || opcode == "movzbq" ||
-      opcode == "movzwl" || opcode == "movzwq" || opcode == "movzlq")
-    return MoveSupport::ZERO_EXTEND;
-
-  return MoveSupport::NONE;
-}
+const map<string, uint16_t> MoveHandler::truncate_ = {
+  { "movsd", 64 },
+  { "movss", 32 }
+};
 
 Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
-  if(!operands_supported(instr))
-    return SupportLevel::NONE;
+  string opcode = get_opcode(instr);
 
-  if(!lookup(instr))
+  if (sign_extend_.find(opcode) == sign_extend_.end())
     return SupportLevel::NONE;
-
-  return (Handler::SupportLevel)(SupportLevel::BASIC | SupportLevel::CEG);
+  else
+    return (Handler::SupportLevel)(SupportLevel::BASIC | SupportLevel::CEG);
 }
 
 void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
-
-  assert(get_support(instr));
+  if(!get_support(instr)) {
+    error_ = "Instruction not supported by move handler";
+    return;
+  }
 
   // Get the source and destination operands
   auto& dst = instr.get_operand<Operand>(0);
@@ -41,10 +52,17 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   // Compute the value to move into the destination
   auto to_move = ss[src];
+  const auto opcode = get_opcode(instr);
 
-  if (dst.size() > src.size()) {
+  bool sign_extend = sign_extend_.at(opcode);
+  uint16_t truncate = (truncate_.find(opcode) != truncate_.end() ? truncate_.at(opcode) : 0);
+
+  if(truncate) {
+    // Case 0: this instruction expects us to truncate the source (e.g. movss)
+    to_move = ss[dst][dst.size()-1][truncate] || ss[src][truncate-1][0];
+
+  } else if (dst.size() > src.size()) {
     // Case 1: we need to extend the source (sign or not)
-    bool sign_extend = lookup(instr) == MoveSupport::SIGN_EXTEND;
     if(sign_extend) {
       to_move = ss[src].extend(dst.size());
     } else {
@@ -53,7 +71,7 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   } else if (src.size() > dst.size()) {
     // Case 2: we need to truncate the source
-    to_move = ss[src][src.size()-1][0];
+    to_move = ss[src][dst.size()-1][0];
   }
 
   /* Takes care of setting upper 32-bits of 64-bit registers, etc. */

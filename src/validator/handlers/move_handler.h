@@ -2,6 +2,8 @@
 #ifndef STOKE_SRC_VALIDATOR_HANDLER_MOVE_HANDLER_H
 #define STOKE_SRC_VALIDATOR_HANDLER_MOVE_HANDLER_H
 
+#include <map>
+
 #include "src/validator/handler.h"
 
 namespace stoke {
@@ -22,7 +24,8 @@ private:
     ZERO_EXTEND = 2
   };
 
-  MoveSupport lookup(const x64asm::Instruction& instr) const;
+  static const std::map<std::string, bool> sign_extend_;
+  static const std::map<std::string, uint16_t> truncate_;
 
 };
 
