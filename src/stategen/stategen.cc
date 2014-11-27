@@ -115,9 +115,9 @@ bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) {
     return false;
   }
 
-  assert(instr.mem_index() != -1);
   if (instr.mem_index() == -1) {
-    error_message_ = "Could not find an explicit or implicit memory dereference.  Bug somewhere.";
+    error_message_ = "Could not find an explicit or implicit memory dereference."
+                     "  Bug somewhere (forgot retq?).";
     return false;
   }
 
