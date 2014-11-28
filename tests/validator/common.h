@@ -78,6 +78,15 @@ protected:
       *ceg = v_.get_counterexample();
   }
 
+  void assert_ceg_nocheck(stoke::CpuState* ceg = NULL) {
+    if(!reset_state())
+      return;
+
+    check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE, false);
+    if(ceg != NULL)
+      *ceg = v_.get_counterexample();
+  }
+
   std::string assert_fail() {
     if(!reset_state())
       return "";
@@ -411,7 +420,7 @@ private:
   }
 
 
-  void check_codes(int expected) {
+  void check_codes(int expected, bool do_check_ceg = true) {
 
     // Run the validator on both codes and check for equivalence
     // Possible outcomes are:
@@ -465,7 +474,7 @@ private:
     if((outcome & expected) != outcome)
       report_error(expected, outcome, false);
 
-    if(got_ceg) {
+    if(got_ceg && do_check_ceg) {
       check_ceg(ceg);
     }
   }
