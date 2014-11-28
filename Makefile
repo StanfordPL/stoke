@@ -74,8 +74,9 @@ SRC_OBJ=\
 	src/validator/legacy/sym_state.o \
 	src/validator/legacy/validator.o \
 	\
-	src/validator/handlers/move_handler.o \
 	src/validator/handlers/combo_handler.o \
+	src/validator/handlers/move_handler.o \
+	src/validator/handlers/shift_handler.o \
 	\
 	src/verifier/verifier.o
 
@@ -225,7 +226,7 @@ src/validator/legacy/switch.o: src/validator/legacy/switch.cc src/validator/lega
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/validator/legacy/%.o: src/validator/legacy/%.cc src/validator/legacy/%.h 
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/validator/handlers/%.o: src/validator/handlers/%.cc src/validator/handlers/%.h src/validator/*.h
+src/validator/handlers/%.o: src/validator/handlers/%.cc src/validator/handlers/%.h src/validator/handlers.h src/validator/*.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/validator/%.o: src/validator/%.cc src/validator/%.h src/validator/handlers.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@

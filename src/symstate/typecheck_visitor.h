@@ -17,11 +17,13 @@ class SymTypecheckVisitor : public SymVisitor<uint16_t> {
 public:
 
   /** Typecheck this abstract symbolic bit vector */
+  // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBitVector& bv) {
     error_ = "";
     return SymVisitor<uint16_t>::operator()(bv);
   }
   /** Typecheck this abstract symbolic bool */
+  // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBool& b) {
     error_ = "";
     return SymVisitor<uint16_t>::operator()(b);
@@ -30,8 +32,8 @@ public:
   /* Visit a generic binary operator */
   uint16_t visit_binop(const SymBitVectorBinop * const bv) {
 
-    auto lhs = (*this)(bv->a_);
-    auto rhs = (*this)(bv->b_);
+    auto lhs = apply(bv->a_);
+    auto rhs = apply(bv->b_);
 
     if (lhs == rhs)
       return lhs;
@@ -50,8 +52,8 @@ public:
   /* Visit a generic binary operator on bool*/
   uint16_t visit_binop(const SymBoolBinop * const b) {
 
-    auto lhs = (*this)(b->a_);
-    auto rhs = (*this)(b->b_);
+    auto lhs = apply(b->a_);
+    auto rhs = apply(b->b_);
 
     if (lhs && rhs)
       return 1;
@@ -61,8 +63,8 @@ public:
 
   /** Visit a bit-vector EQ */
   uint16_t visit_compare(const SymBoolCompare * const b) {
-    auto lhs = (*this)(b->a_);
-    auto rhs = (*this)(b->b_);
+    auto lhs = apply(b->a_);
+    auto rhs = apply(b->b_);
 
     if (lhs == rhs && lhs)
       return 1;
@@ -89,15 +91,15 @@ public:
 
   /** Visit a bit-vector unary operator */
   uint16_t visit_unop(const SymBitVectorUnop * const bv) {
-    return (*this)(bv->bv_);
+    return apply(bv->bv_);
   }
 
   /** Visit a bit-vector concatenation.  Note, different than other
       binary operators because the lengths change. */
   uint16_t visit(const SymBitVectorConcat * const bv) {
 
-    auto lhs = (*this)(bv->a_);
-    auto rhs = (*this)(bv->b_);
+    auto lhs = apply(bv->a_);
+    auto rhs = apply(bv->b_);
 
     if(lhs && rhs)
       return lhs + rhs;
@@ -132,7 +134,7 @@ public:
 
   /** Visit a bit-vector extract */
   uint16_t visit(const SymBitVectorExtract * const bv) {
-    auto parent = (*this)(bv->bv_);
+    auto parent = apply(bv->bv_);
     if(bv->low_bit_ > bv->high_bit_) {
       std::stringstream e;
       SymPrintVisitor pv(e);
@@ -209,7 +211,7 @@ public:
 
     // Check the arguments are of the right type
     for(size_t i = 0; i < type.second.size(); ++i) {
-      auto t = (*this)(bv->args_[i]);
+      auto t = apply(bv->args_[i]);
       if (t != type.second[i]) {
         std::stringstream e;
         SymPrintVisitor pv(e);
@@ -227,9 +229,9 @@ public:
 
   /** Visit a bit-vector if-then-else */
   uint16_t visit(const SymBitVectorIte * const bv) {
-    auto cond = (*this)(bv->cond_);
-    auto lhs = (*this)(bv->a_);
-    auto rhs = (*this)(bv->b_);
+    auto cond = apply(bv->cond_);
+    auto lhs = apply(bv->a_);
+    auto rhs = apply(bv->b_);
 
     if (lhs == rhs && cond)
       return lhs;
@@ -247,7 +249,7 @@ public:
 
   /** Visit a bit-vector unary minus */
   uint16_t visit(const SymBitVectorSignExtend * const bv) {
-    auto child = (*this)(bv->bv_);
+    auto child = apply(bv->bv_);
 
     if (child <= bv->size_ && child > 0 && bv->size_ > 0)
       return bv->size_;
@@ -289,7 +291,7 @@ public:
   }
   /** Visit a boolean NOT */
   uint16_t visit(const SymBoolNot * const b) {
-    return (*this)(b->b_);
+    return apply(b->b_);
   }
   /** Visit a boolean TRUE */
   uint16_t visit(const SymBoolTrue * const b) {
@@ -311,6 +313,21 @@ public:
   }
 
 private:
+
+  /** Recurse without clearing error message */
+  uint16_t apply(const SymBitVector& bv) {
+    return SymVisitor<uint16_t>::operator()(bv);
+  }
+  uint16_t apply(const SymBool& b) {
+    return SymVisitor<uint16_t>::operator()(b);
+  }
+  uint16_t apply(const SymBitVectorAbstract * const bv) {
+    return SymVisitor<uint16_t>::operator()(bv);
+  }
+  uint16_t apply(const SymBoolAbstract * const b) {
+    return SymVisitor<uint16_t>::operator()(b);
+  }
+
   /** Tracks the first error that occurred in typechecking */
   std::string error_;
 
