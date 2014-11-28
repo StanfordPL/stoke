@@ -41,6 +41,8 @@ Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
 }
 
 void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
+
+  error_ = "";
   if(!get_support(instr)) {
     error_ = "Instruction not supported by move handler";
     return;
