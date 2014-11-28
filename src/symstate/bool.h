@@ -78,6 +78,8 @@ public:
   SymBool operator^(const SymBool& other) const;
   /** Returns the negation of the logical 'if-and-only-if' */
   SymBool operator!=(const SymBool& other) const;
+  /** Builds an if-then-else expression */
+  SymBool ite(const SymBool& t, const SymBool& f) const;
 
   /** Tells if two symbolic bools are identical */
   bool equals(const SymBool& other) const;

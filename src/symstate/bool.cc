@@ -15,6 +15,10 @@ SymBool SymBool::_true() {
   return SymBool(new SymBoolTrue());
 }
 
+SymBool SymBool::ite(const SymBool& t, const SymBool& f) const {
+  return ((*this & t) | (!(*this)& f));
+}
+
 SymBool SymBool::var(std::string name) {
   return SymBool(new SymBoolVar(name));
 }

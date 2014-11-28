@@ -46,22 +46,22 @@ protected:
 
   std::string error_;
 
-  /* Returns string representation of an opcode */
+  /** Returns string representation of an opcode */
   static std::string get_opcode(const x64asm::Instruction& instr) {
     return std::string(att_[instr.get_opcode()]);
   }
 
-  /* Returns true if the validator supports all the operands of the instruction. */
+  /** Returns true if the validator supports all the operands of the instruction. */
   bool operands_supported(const x64asm::Instruction& instr);
 
-  /* Gets a temporary number guaranteed to be unique (e.g. for a temp variable */
+  /** Gets a temporary number guaranteed to be unique (e.g. for a temp variable */
   uint64_t temp() {
     return ++temporary_;
   }
 
 private:
 
-  static std::array<const char*, 3801> att_;
+  static const std::array<const char*, 3801> att_;
 
   static uint64_t temporary_;
 };
