@@ -200,7 +200,7 @@ void SymState::set_szp_flags(const SymBitVector& v) {
   set(eflags_zf, v == SymBitVector::constant(size, 0));
 
   /* The parity flag */
-  set(eflags_pf, v.pairity());
+  set(eflags_pf, v[7][0].pairity());
 }
 
 /** Generate constraints expressing equality of two states over a given regset */
