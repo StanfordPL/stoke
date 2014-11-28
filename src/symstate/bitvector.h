@@ -134,6 +134,9 @@ public:
   /** Returns a bool indicating if the arguments are not equal */
   SymBool operator!=(const SymBitVector& other) const;
 
+  /** Computes the parity of the bitvector */
+  SymBool pairity() const;
+
   /** Returns true if the two ASTs are identical */
   bool equals(const SymBitVector& other) const;
 

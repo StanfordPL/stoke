@@ -193,6 +193,10 @@ private:
       report_error(OTHER, OTHER, true, "Error parsing instruction: " + ss.str());
       return 0;
     }
+    if (c.size() == 0) {
+      report_error(OTHER, OTHER, true, "Target or rewrite was empty.");
+      return 0;
+    }
 
     return new stoke::Cfg(c, def_ins_, live_outs_);
   }

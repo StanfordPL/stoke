@@ -187,6 +187,22 @@ void SymState::set(const Eflags f, SymBool b) {
   assert(false);
 }
 
+
+void SymState::set_szp_flags(const SymBitVector& v) {
+
+  SymTypecheckVisitor tc;
+  uint16_t size = tc(v);
+
+  /* The sign flag is the most significant bit */
+  set(eflags_sf, v[size-1]);
+
+  /* The zero flag says if the whole BV is 0 */
+  set(eflags_zf, v == SymBitVector::constant(size, 0));
+
+  /* The parity flag */
+  set(eflags_pf, v.pairity());
+}
+
 /** Generate constraints expressing equality of two states over a given regset */
 std::vector<SymBool> SymState::equality_constraints(const SymState& other, const RegSet& rs) const {
 
