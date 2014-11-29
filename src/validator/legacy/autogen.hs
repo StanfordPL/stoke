@@ -957,7 +957,7 @@ lookup_handler "movb"     2 _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1,
 lookup_handler "movd"     _ _ = Just "movHandler(d, 32, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "movdqa"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "movdqu"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
-lookup_handler "movhlps"  _ _ = Just "movhlpsHandler(d, E0, E1, dest_is_reg);"
+-- removed as per #241 lookup_handler "movhlps"  _ _ = Just "movhlpsHandler(d, E0, E1, dest_is_reg);"
 lookup_handler "movhps"   _ _ = Just "movhHandler(d, E0, E1, dest_is_reg);"
 lookup_handler "movl"     2 _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "movlps"   _ _ = Just "movHandler(d, 64, bitWidth1, E0, E1, true, dest_is_reg);"
@@ -1015,6 +1015,7 @@ lookup_handler "popcntw"  _ i = Just "popcnt16Handler(d, E0, E1);"
 lookup_handler "pshufd"   _ _ = Just "pshufdHandler(d, imm, E0, E1, E2);"
 lookup_handler "pshufhw"  _ _ = Just "pshufhwHandler(d, 128, false, imm, E0, E1);"
 lookup_handler "pshuflw"  _ _ = Just "pshuflwHandler(d, 128, false, imm, E0, E1);"
+{- removed as per #174
 lookup_handler "psllw"  _ i = Just $ if (((last (operand_types i)) == "I")) 
                                        then "psllHandler(d, 16, imm, E1, E0);"  
                                        else ""
@@ -1024,6 +1025,7 @@ lookup_handler "pslld"  _ i = Just $ if (((last (operand_types i)) == "I"))
 lookup_handler "psllq"  _ i = Just $ if (((last (operand_types i)) == "I")) 
                                        then "psllHandler(d, 64, imm, E1, E0);"  
                                        else ""
+-}
 lookup_handler "punpckldq" _ _ = Just "punpckldqHandler(d, E1, E0, E2);"
 lookup_handler "punpcklwd" _ _ = Just "punpcklwdHandler(d, E1, E0, E2);"
 lookup_handler "pxor"     _ _ = Just "pxorHandler(d, E1, E0, E2);"
