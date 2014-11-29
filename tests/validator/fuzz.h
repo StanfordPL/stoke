@@ -134,7 +134,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
       continue;
     }
 
-    // Solve for the final state
+    // Solve for the final state and counterexample
     stoke::CpuState validator_final(z3, "_FINAL");
 
     // Use the sandbox to compute a final state
@@ -144,8 +144,12 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     stoke::CpuState sandbox_final = *sb.get_result(0);
 
     // Compare the final states
+    std::stringstream ss;
+    ss << "Counterexample:" << std::endl;
+    ss << cs << std::endl;
+    ss << "Validator and sandbox disagree on output.";
     expect_cpustate_eq(sandbox_final, validator_final, liveouts,
-                       "Validator and sandbox disagree on output.");
+                       ss.str());
 
     // If we did the comparison, then we performed the test right
     success++;

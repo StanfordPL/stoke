@@ -256,7 +256,7 @@ private:
 
       std::stringstream tmp;
       tmp << "Lower " << bitwidth << " of " << *it << " differ.";
-      EXPECT_CPU_EQ_INT(actual_masked, expected_masked, tmp.str());
+      EXPECT_CPU_EQ_INT(expected_masked, actual_masked, tmp.str());
     }
 
     for(auto it = live_outs_.sse_begin(); it != live_outs_.sse_end(); ++it) {
