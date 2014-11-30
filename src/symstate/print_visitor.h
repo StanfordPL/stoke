@@ -38,6 +38,12 @@ public:
     case SymBitVector::PLUS:
       os_ << "(plus ";
       break;
+    case SymBitVector::ROTATE_LEFT:
+      os_ << "(rol ";
+      break;
+    case SymBitVector::ROTATE_RIGHT:
+      os_ << "(ror ";
+      break;
     case SymBitVector::SHIFT_LEFT:
       os_ << "(<< ";
       break;

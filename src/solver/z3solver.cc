@@ -243,6 +243,16 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorPlus * const bv) {
   return z3::expr(context_, Z3_mk_bvadd(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
+/** Visit a bit-vector rotate-left */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorRotateLeft * const bv) {
+  return z3::expr(context_, Z3_mk_ext_rotate_left(context_, (*this)(bv->a_), (*this)(bv->b_)));
+}
+
+/** Visit a bit-vector rotate-right */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorRotateRight * const bv) {
+  return z3::expr(context_, Z3_mk_ext_rotate_right(context_, (*this)(bv->a_), (*this)(bv->b_)));
+}
+
 /** Visit a bit-vector shift-left */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorShiftLeft * const bv) {
   return z3::expr(context_, Z3_mk_bvshl(context_, (*this)(bv->a_), (*this)(bv->b_)));
