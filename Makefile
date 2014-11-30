@@ -75,7 +75,8 @@ SRC_OBJ=\
 	src/validator/legacy/validator.o \
 	\
 	src/validator/handlers/combo_handler.o \
-	src/validator/handlers/move_handler.o \
+	src/validator/handlers/lea_handler.o   \
+	src/validator/handlers/move_handler.o  \
 	src/validator/handlers/shift_handler.o \
 	\
 	src/verifier/verifier.o
