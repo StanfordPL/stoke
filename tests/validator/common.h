@@ -295,8 +295,9 @@ private:
   void check_ceg(stoke::CpuState& ceg) {
 
     // Make sure that a counterexample was intended.
-    if(!v_.is_counterexample_valid())
+    if(!v_.is_counterexample_valid()) {
       return;
+    }
 
     ASSERT_EQ(ceg, v_.get_counterexample());
 
@@ -321,6 +322,7 @@ private:
       expect_cpustate_equal_on_liveout(sandbox_target_state,
                                        v_.get_target_final_state(),
                                        tmp.str());
+    } else {
     }
 
 
@@ -333,6 +335,7 @@ private:
       expect_cpustate_equal_on_liveout(sandbox_rewrite_state,
                                        v_.get_rewrite_final_state(),
                                        tmp.str());
+    } else {
     }
 
   }

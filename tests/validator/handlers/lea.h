@@ -95,3 +95,22 @@ TEST_F(ValidatorLeaTest, Issue239) {
   assert_ceg();
 
 }
+
+TEST_F(ValidatorLeaTest, Issue239Scale4) {
+
+  target_ << "movl $0x3300, %esp" << std::endl;
+  target_ << "movl $0x81d1, %r14d" << std::endl;
+  target_ << "leaw 0x40(%rsp,%r14,8), %bx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movl $0x3300, %esp" << std::endl;
+  rewrite_ << "movl $0x81d1, %r14d" << std::endl;
+  rewrite_ << "shlq $0x1, %r14" << std::endl;
+  rewrite_ << "leaw 0x40(%rsp,%r14,4), %bx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rbx);
+
+  assert_equiv();
+
+}
