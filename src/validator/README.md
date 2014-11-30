@@ -4,7 +4,8 @@ Validator Readme
 Contract
 =====
 
-As the validator is the principal component of STOKE's trusted code base, it's important to be correct.  It therefore holds to the following contract.
+As the validator is the principal component of STOKE's trusted code base, it's
+important to be correct.  It therefore holds to the following contract.
 
 Code Tutorial
 =====
@@ -26,11 +27,25 @@ circuit.  In the future, they may also represent the symbolic state of
 execution, for example, what line of code was last executed or what the current
 memory aliasing constraints are.  
 
-The symbolic state class also has an important job for implementing the semantics of instructions.  It supports an array indexing operator [] that takes an operand (like a register '%rax' or memory reference '$0x10(%rcx,%rdx,2)') and returns the current symbolic value of this operand.  It also has a set() function with takes an operand and symbolic value, and sets the operand in the symbolic state appropriately.  The semantics of set depend on the destination; if the
+The symbolic state class also has an important job for implementing the
+semantics of instructions.  It supports an array indexing operator [] that
+takes an operand (like a register '%rax' or memory reference
+    '$0x10(%rcx,%rdx,2)') and returns the current symbolic value of this
+operand.  It also has a set() function with takes an operand and symbolic
+value, and sets the operand in the symbolic state appropriately.  The semantics
+of set depend on the destination; if the
 
+The `Handler` classes build circuits for a particular instruction.  These
+circuits are represented in a symbolic state.  The interface is simple: an
+`is_supported` method that reports if an instruction is supported, and a
+`build_circuit` method which takes a symbolic state and updates it in place.
+Handwritten handlers should just support a few instructions with much of the
+implementation in common.  The legacy handlers are the big exception -- enter
+if you dare!  
 
-
-The `Handler` classes build circuits for a particular instruction.  These circuits are represented in a symbolic state.
+Finally, the SMTSolver subclasses (e.g. Z3Solver) will take a vector of
+symbolic bools and check if they're satisfiable.  The Validator class
+orchestrates all this.
 
 Symbolic BitVectors and Bools
 -----
@@ -42,7 +57,7 @@ SymBitVectorAbstract and SymBitVectorBool classes.  These abstract classes are
 used to represent the actual AST, while the SymBitVector and SymBool classes
 manage memory (they do a poor job of this at the moment, btw).  These are
 entirely safe to copy.  If you leave one uninitialized, the pointer will be
-null and will crash when you try to use it.
+null and will crash when you try to use it.  The underlying ASTs are all const.
 
 - Be sure to study how operators are overloaded.  Operators &, |, ^ correspond
 to bitwise and, or and xor.  +, -, \*, /, <<, >> correspond to addition,
@@ -76,6 +91,10 @@ core algorithm to build a circuit for instructions X, Y, and Z, then it may
 make sense to also add support for Y and Z too.  However, it wouldn't also add
 support for W if it required adding more complexity to the handler and you
 don't think it's needed.
+
+After you write a handler, it's a good idea to add it to the ComboHandler's
+internal list.  The ComboHandler is a meta-handler that chooses another handler
+to call.  This is what the validator actually uses by default.
 
 Testing
 =====
