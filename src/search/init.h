@@ -19,6 +19,7 @@ namespace stoke {
 
 enum class Init {
   EMPTY,
+  ZERO,
   TARGET,
   PREVIOUS,
 
