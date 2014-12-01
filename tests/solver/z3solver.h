@@ -203,3 +203,52 @@ TEST(Z3SolverTest, DivWorks) {
   EXPECT_TRUE(z3.is_sat(constraints));
   EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
 }
+
+TEST(Z3SolverTest, RolWorks) {
+
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto y = stoke::SymBitVector::var(32, "y");
+  auto z = stoke::SymBitVector::var(32, "z");
+
+
+  auto constraints = std::vector<stoke::SymBool>();
+
+  // there's a y so that rotating to the left/right by y gives you back x (e.g. 32)
+  constraints.push_back(x.ror(y) == x);
+  constraints.push_back(x.rol(y) == x);
+
+  // there's a z so that rotating left/right gives different values)
+  auto z_l = x.rol(z);
+  auto z_r = x.ror(z);
+  constraints.push_back(z_l != x);
+  constraints.push_back(z_r != x);
+  constraints.push_back(z_l != z_r);
+
+  // x is not 0 or -1; y is not 0.
+  constraints.push_back(x != stoke::SymBitVector::constant(32, 0));
+  constraints.push_back(x != stoke::SymBitVector::constant(32, -1));
+  constraints.push_back(y != stoke::SymBitVector::constant(32, 0));
+
+  stoke::Z3Solver z3;
+  EXPECT_TRUE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
+}
+
+TEST(Z3SolverTest, RolWorks2) {
+
+  auto x = stoke::SymBitVector::var(32, "x");
+  auto one = stoke::SymBitVector::constant(32, 1);
+
+  auto constraints = std::vector<stoke::SymBool>();
+
+  // rotating x by 1 = x implies x = 0 or x = -1.
+  constraints.push_back(x.ror(one) == x);
+
+  // x is not 0 or -1
+  constraints.push_back(x != stoke::SymBitVector::constant(32, 0));
+  constraints.push_back(x != stoke::SymBitVector::constant(32, -1));
+
+  stoke::Z3Solver z3;
+  EXPECT_FALSE(z3.is_sat(constraints));
+  EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
+}

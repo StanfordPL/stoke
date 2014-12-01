@@ -58,6 +58,14 @@ SymBitVector SymBitVector::operator+(const SymBitVector& other) const {
   return SymBitVector(new SymBitVectorPlus(ptr, other.ptr));
 }
 
+SymBitVector SymBitVector::rol(const SymBitVector& other) const {
+  return SymBitVector(new SymBitVectorRotateLeft(ptr, other.ptr));
+}
+
+SymBitVector SymBitVector::ror(const SymBitVector& other) const {
+  return SymBitVector(new SymBitVectorRotateRight(ptr, other.ptr));
+}
+
 SymBitVector SymBitVector::operator<<(const SymBitVector& other) const {
   return SymBitVector(new SymBitVectorShiftLeft(ptr, other.ptr));
 }

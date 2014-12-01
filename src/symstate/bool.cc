@@ -16,7 +16,7 @@ SymBool SymBool::_true() {
 }
 
 SymBool SymBool::ite(const SymBool& t, const SymBool& f) const {
-  return ((*this & t) | (!(*this)& f));
+  return ((*this & t) | (!(*this) & f));
 }
 
 SymBool SymBool::var(std::string name) {

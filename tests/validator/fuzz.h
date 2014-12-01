@@ -20,7 +20,13 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   std::cout << "[----------] * Seed " << seed << std::endl;
 
   // Parameters for the test
-  const size_t iterations = 100;
+  unsigned long iterations = 100;
+  const char * iterations_str = getenv("TEST_VALIDATOR_FUZZ_COUNT");
+  if(iterations_str != NULL)
+    iterations = strtol(iterations_str, NULL, 10);
+  if(iterations == 0)
+    iterations == 100;
+
   const size_t min_success = iterations/4;
   size_t success = 0;  //counts number of iterations tested
 
@@ -92,7 +98,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
       continue;
 
     ins = pre_cfg.get_code()[0];
-    x64asm::RegSet liveouts = ins.must_write_set() & supported_regs;
+    x64asm::RegSet liveouts = (ins.must_write_set() - ins.maybe_undef_set()) & supported_regs;
 
     stoke::Cfg cfg({{ins, x64asm::Instruction({x64asm::RET})}, ins.maybe_read_set(), liveouts});
 
@@ -126,6 +132,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
     bool b = z3.is_sat(constraints);
     EXPECT_TRUE(b) << "Circuit not satisfiable";
+    EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
     if(!b)
       continue;
 

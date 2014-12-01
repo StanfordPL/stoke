@@ -25,6 +25,8 @@ class SymBitVectorMult;
 class SymBitVectorNot;
 class SymBitVectorOr;
 class SymBitVectorPlus;
+class SymBitVectorRotateRight;
+class SymBitVectorRotateLeft;
 class SymBitVectorShiftRight;
 class SymBitVectorShiftLeft;
 class SymBitVectorSignDiv;
@@ -57,6 +59,8 @@ public:
     NOT,
     OR,
     PLUS,
+    ROTATE_RIGHT,
+    ROTATE_LEFT,
     SHIFT_RIGHT,
     SHIFT_LEFT,
     SIGN_DIV,
@@ -107,6 +111,10 @@ public:
   SymBitVector operator>>(uint64_t shift) const;
   /** Constructs a bitveector shifted to the right by another bitvector. */
   SymBitVector operator>>(const SymBitVector& other) const;
+  /** Construts a bitvector rotated to the left by another bitvector */
+  SymBitVector rol(const SymBitVector& other) const;
+  /** Construts a bitvector rotated to the right by another bitvector */
+  SymBitVector ror(const SymBitVector& other) const;
   /** Creates a bitvector representing signed division */
   SymBitVector s_div(const SymBitVector& other) const;
   /** Creates a sign-extended version of this bitvector */
@@ -447,6 +455,26 @@ class SymBitVectorPlus : public SymBitVectorBinop {
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::PLUS;
+  }
+};
+
+class SymBitVectorRotateLeft : public SymBitVectorBinop {
+  friend class SymBitVector;
+  using SymBitVectorBinop::SymBitVectorBinop;
+
+public:
+  SymBitVector::Type type() const {
+    return SymBitVector::Type::ROTATE_LEFT;
+  }
+};
+
+class SymBitVectorRotateRight : public SymBitVectorBinop {
+  friend class SymBitVector;
+  using SymBitVectorBinop::SymBitVectorBinop;
+
+public:
+  SymBitVector::Type type() const {
+    return SymBitVector::Type::ROTATE_RIGHT;
   }
 };
 
