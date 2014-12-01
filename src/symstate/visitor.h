@@ -49,6 +49,10 @@ public:
       return visit(static_cast<const SymBitVectorOr * const>(bv));
     case SymBitVector::PLUS:
       return visit(static_cast<const SymBitVectorPlus * const>(bv));
+    case SymBitVector::ROTATE_LEFT:
+      return visit(static_cast<const SymBitVectorRotateLeft * const>(bv));
+    case SymBitVector::ROTATE_RIGHT:
+      return visit(static_cast<const SymBitVectorRotateRight * const>(bv));
     case SymBitVector::SHIFT_RIGHT:
       return visit(static_cast<const SymBitVectorShiftRight * const>(bv));
     case SymBitVector::SHIFT_LEFT:
@@ -162,6 +166,14 @@ public:
   }
   /** Visit a bit-vector plus */
   virtual T visit(const SymBitVectorPlus * const bv) {
+    return visit_binop(bv);
+  }
+  /** Visit a bit-vector plus */
+  virtual T visit(const SymBitVectorRotateLeft * const bv) {
+    return visit_binop(bv);
+  }
+  /** Visit a bit-vector plus */
+  virtual T visit(const SymBitVectorRotateRight * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector shift-left */

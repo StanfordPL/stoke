@@ -115,6 +115,10 @@ private:
     /** Visit a bit-vector plus */
     z3::expr visit(const SymBitVectorPlus * const bv);
     /** Visit a bit-vector shift-left */
+    z3::expr visit(const SymBitVectorRotateLeft * const bv);
+    /** Visit a bit-vector shift-right */
+    z3::expr visit(const SymBitVectorRotateRight * const bv);
+    /** Visit a bit-vector shift-left */
     z3::expr visit(const SymBitVectorShiftLeft * const bv);
     /** Visit a bit-vector shift-right */
     z3::expr visit(const SymBitVectorShiftRight * const bv);

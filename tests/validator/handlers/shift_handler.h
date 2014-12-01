@@ -49,3 +49,17 @@ TEST_F(ValidatorShiftTest, CfUndefinedInBigShift) {
   assert_ceg_nocheck();
 
 }
+
+TEST_F(ValidatorShiftTest, RotateWorks) {
+
+  target_ << "rolb $0xab, %r14b" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "rolb $0xab, %r14b" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::r14 + x64asm::eflags_cf);
+
+  assert_equiv();
+
+}
