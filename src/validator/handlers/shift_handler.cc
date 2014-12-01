@@ -106,7 +106,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     extended_src = state[dest] || SymBitVector::constant(1,0);
   else if (!right && !rotate)
     extended_src = SymBitVector::constant(1,0) || state[dest];
-  else if (rotate && rotate_cf) 
+  else if (rotate && rotate_cf)
     extended_src = SymBitVector::from_bool(state[eflags_cf]) || state[dest];
   else
     extended_src = state[dest];
@@ -210,7 +210,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     }
 
     state.set(eflags_of, set_of.ite(of, SymBool::var("OF_" + to_string(temp()))));
-    
+
   } else if (rotate && rotate_cf) {
 
     // Do the rotate and store the result
