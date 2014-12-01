@@ -76,16 +76,31 @@ Search& Search::set_mass(Move move, size_t mass) {
 }
 
 void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxn) {
+
   // Make sure target is correct with respect to itself
   assert(fxn(target).first);
-  // Make sure target and rewrite are sound to begin with
-  assert(target.is_sound());
-  assert(state.current.is_sound());
-  assert(state.best_yet.is_sound());
-  assert(state.best_correct.is_sound());
 
   // Configure initial state
   configure(init, target, fxn, state, aux_fxn);
+
+  if (!target.is_sound()) {
+    cerr << "ERROR: the target reads undefined values, or leaves live out values undefined!" << endl;
+    exit(1);
+  }
+
+  if (!state.current.is_sound()) {
+    cerr << "ERROR: the initial rewrite reads undefined values, or leaves live out values undefined!" << endl;
+    if (init == Init::EMPTY) {
+      cerr << "Using --init zero will automatically prevent this problem." << endl;
+    } else if (init == Init::ZERO) {
+      cerr << "This is a bug, please report it." << endl;
+    }
+    exit(1);
+  }
+
+  // Make sure target and rewrite are sound to begin with
+  assert(state.best_yet.is_sound());
+  assert(state.best_correct.is_sound());
 
   // Early corner case bailouts
   if (state.current_cost == 0) {
@@ -169,6 +184,9 @@ void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchSt
   case Init::EMPTY:
     configure_empty(target, state);
     break;
+  case Init::ZERO:
+    configure_zero(target, state);
+    break;
   case Init::TARGET:
     configure_target(target, state);
     break;
@@ -211,6 +229,96 @@ void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchSt
 void Search::configure_empty(const Cfg& target, SearchState& state) const {
   state.current = Cfg({{}}, target.def_ins(), target.live_outs());
   for (size_t i = 0, ie = max_instrs_ - 1; i < ie; ++i) {
+    state.current.get_code().push_back({NOP});
+  }
+  state.current.get_code().push_back({RET});
+  state.current.recompute();
+
+  state.best_yet = state.current;
+  state.best_correct = target;
+}
+
+Code Search::find_sound_code(const RegSet& def_ins, const RegSet& live_outs) {
+  auto diff = live_outs - def_ins;
+  vector<Instruction> code;
+
+  // initialize all general purpose registers
+  for (auto rit = diff.gp_begin(); rit != diff.gp_end(); ++rit) {
+    auto reg = *rit;
+    auto type = reg.type();
+    if (type == Type::R_64 || type == Type::RAX) {
+      code.push_back(Instruction(MOV_R64_IMM64, {reg, Imm64(0)}));
+    } else if (type == Type::R_32 || type == Type::EAX) {
+      code.push_back(Instruction(MOV_R32_IMM32, {reg, Imm32(0)}));
+    } else if (type == Type::R_16 || type == Type::AX || type == Type::DX) {
+      code.push_back(Instruction(MOV_R16_IMM16, {reg, Imm16(0)}));
+    } else if (type == Type::RL || type == Type::AL || type == Type::CL) {
+      code.push_back(Instruction(MOV_RL_IMM8, {reg, Imm8(0)}));
+    } else if (type == Type::RH) {
+      code.push_back(Instruction(MOV_RH_IMM8, {reg, Imm8(0)}));
+    } else if (type == Type::RB) {
+      code.push_back(Instruction(MOV_RB_IMM8, {reg, Imm8(0)}));
+    }
+  }
+
+  // initialize sse registers
+  for (auto rit = diff.sse_begin(); rit != diff.sse_end(); ++rit) {
+    auto reg = *rit;
+    auto type = reg.type();
+    if (type == Type::XMM || type == Type::XMM_0) {
+      code.push_back(Instruction(MOV_R32_IMM32, {Constants::eax(), Imm64(0)}));
+      code.push_back(Instruction(MOVD_XMM_R32, {reg, Constants::eax()}));
+    } else if (type == Type::YMM) {
+      code.push_back(Instruction(MOV_R32_IMM32, {Constants::eax(), Imm64(0)}));
+      code.push_back(Instruction(VMOVD_XMM_R32, {reg, Constants::eax()}));
+    }
+  }
+
+  // flags
+  bool regular = false;
+  for (auto rit = diff.flags_begin(); rit != diff.flags_end(); ++rit) {
+    auto reg = *rit;
+    if ((reg == Constants::eflags_of() ||
+        reg == Constants::eflags_zf() ||
+        reg == Constants::eflags_sf() ||
+        reg == Constants::eflags_af() ||
+        reg == Constants::eflags_cf() ||
+        reg == Constants::eflags_pf()) && !regular) {
+      regular = true;
+      code.push_back(Instruction(MOV_R32_IMM32, {Constants::eax(), Imm64(0)}));
+      code.push_back(Instruction(ADD_R32_IMM32, {Constants::eax(), Imm32(0)}));
+    }
+  }
+
+  // remove statements if possible
+  bool changed = true;
+  while (changed) {
+    changed = false;
+    int i = 0;
+    for (auto it = code.begin(); it != code.end(); ++it, ++i) {
+      vector<Instruction> copy = code;
+      copy.erase(copy.begin()+i);
+      if (Cfg(Code(copy.begin(), copy.end()), def_ins, live_outs).is_sound()) {
+        code = copy;
+        changed = true;
+        break;
+      }
+    }
+  }
+
+  return Code(code.begin(), code.end());
+}
+
+void Search::configure_zero(const Cfg& target, SearchState& state) const {
+  if (target.def_ins().contains(target.live_outs())) {
+    // no need to initialize any registers
+    configure_empty(target, state);
+    return;
+  }
+
+  auto code = find_sound_code(target.def_ins(), target.live_outs());
+  state.current = Cfg(code, target.def_ins(), target.live_outs());
+  for (size_t i = code.size(), ie = max_instrs_ - 1; i < ie; ++i) {
     state.current.get_code().push_back({NOP});
   }
   state.current.get_code().push_back({RET});
