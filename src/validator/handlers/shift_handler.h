@@ -17,7 +17,7 @@ public:
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
 private:
-  const static std::map<std::string, std::array<bool, 2>> to_right_sign_;
+  const static std::map<std::string, std::array<bool, 4>> to_right_sign_rotate_cf_;
 };
 
 } //namespace stoke
