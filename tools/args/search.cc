@@ -94,7 +94,7 @@ ValueArg<size_t>& max_instrs_arg =
 
 ValueArg<Init, InitReader, InitWriter>& init_arg =
   ValueArg<Init, InitReader, InitWriter>::create("init")
-  .usage("(empty|target|previous|extension)")
+  .usage("(empty|zero|target|previous|extension)")
   .description("Initial search state")
   .default_val(Init::EMPTY);
 
