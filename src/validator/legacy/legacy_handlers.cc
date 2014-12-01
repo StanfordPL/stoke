@@ -782,9 +782,8 @@ void divHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
   }
   else
   {
-    auto E_src1 = regExprWVN(rax, d.pre_suffix, d.Vn, V_UNITSIZE)[2*bitWidth - 1][bitWidth] ||
-                  regExprWVN(rax, d.pre_suffix, d.Vn, V_UNITSIZE)[bitWidth - 1][0];
-    E_src2 = SymBitVector::constant(bitWidth, 0) || E_src2;
+    assert(bitWidth == 8);
+    auto E_src1 = regExprWVN(rax, d.pre_suffix, d.Vn, V_UNITSIZE)[15][0];
     auto E_quotient = (E_src1 / E_src2)[bitWidth - 1][0];
     auto E_remainder = (E_src1 % E_src2)[bitWidth - 1][0];
     auto E_rem_dest = regExprWVN(rax, d.post_suffix, d.Vnprime, V_UNITSIZE)[2*bitWidth - 1][bitWidth];
