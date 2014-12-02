@@ -60,6 +60,16 @@ int main(int argc, char** argv) {
 
   cout << endl;
 
+  if (!target.is_sound()) {
+    cerr << "ERROR: target reads undefined variables, or leaves live_out undefined." << endl;
+    exit(1);
+  }
+
+  if (!rewrite.is_sound()) {
+    cerr << "ERROR: rewrite reads undefined variables, or leaves live_out undefined." << endl;
+    exit(1);
+  }
+
   const auto res = verifier.verify(target, rewrite);
 
   cout << "Equivalent: " << (res ? "yes" : "no") << endl;
