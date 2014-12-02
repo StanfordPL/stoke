@@ -12,7 +12,7 @@ Repository
 ----------
 
 - The ```develop``` branch is the internally-facing stable codebase. Don't commit anything to ```develop``` that doesn't pass ```make test```.
-- The ```master``` branch is the externally-facing stable codebase. DEFINITELY don't commit anything to ```master`` that doesn't pass ```make test```.
+- The ```master``` branch is the externally-facing stable codebase. DEFINITELY don't commit anything to ```master``` that doesn't pass ```make test```.
 - Issues are reported on the github issue tracker. Keep issues focused and provide detailed descriptions.
 - Branches related to issues are forked off of ```develop``` and named using the ```issue-XXX``` convention.
 - Completed issues are merged back into ```develop``` using the ```--no-ff``` command line switch.

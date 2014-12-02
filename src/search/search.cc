@@ -279,11 +279,11 @@ Code Search::find_sound_code(const RegSet& def_ins, const RegSet& live_outs) {
   for (auto rit = diff.flags_begin(); rit != diff.flags_end(); ++rit) {
     auto reg = *rit;
     if ((reg == Constants::eflags_of() ||
-        reg == Constants::eflags_zf() ||
-        reg == Constants::eflags_sf() ||
-        reg == Constants::eflags_af() ||
-        reg == Constants::eflags_cf() ||
-        reg == Constants::eflags_pf()) && !regular) {
+         reg == Constants::eflags_zf() ||
+         reg == Constants::eflags_sf() ||
+         reg == Constants::eflags_af() ||
+         reg == Constants::eflags_cf() ||
+         reg == Constants::eflags_pf()) && !regular) {
       regular = true;
       code.push_back(Instruction(MOV_R32_IMM32, {Constants::eax(), Imm64(0)}));
       code.push_back(Instruction(ADD_R32_IMM32, {Constants::eax(), Imm32(0)}));

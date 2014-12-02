@@ -69,7 +69,7 @@ auto& stat_max =
 auto& automation_heading = Heading::create("Automation Options:");
 auto& timeout_action_arg =
   ValueArg<Timeout, TimeoutReader, TimeoutWriter>::create("timeout_action")
-  .usage("(quit|testcase)")
+  .usage("(quit|restart|testcase)")
   .description("Action to take when search times out")
   .default_val(Timeout::QUIT);
 auto& timeout_cycles_arg =

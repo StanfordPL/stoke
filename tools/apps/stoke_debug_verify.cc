@@ -60,6 +60,21 @@ int main(int argc, char** argv) {
 
   cout << endl;
 
+  if (!target.is_sound()) {
+    cerr << "ERROR: target reads undefined variables, or leaves live_out undefined." << endl;
+    exit(1);
+  }
+
+  if (!rewrite.is_sound()) {
+    cerr << "ERROR: rewrite reads undefined variables, or leaves live_out undefined." << endl;
+    exit(1);
+  }
+
+  if (strategy_arg.value() == Strategy::NONE) {
+    cerr << "WARNING: '--stragegy none' passed, so no verification is done." << endl;
+    exit(0);
+  }
+
   const auto res = verifier.verify(target, rewrite);
 
   cout << "Equivalent: " << (res ? "yes" : "no") << endl;
