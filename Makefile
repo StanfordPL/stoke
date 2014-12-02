@@ -29,8 +29,7 @@ INC=$(addprefix -I./, $(INC_FOLDERS))
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
-  -pthread -lmongoclient -lboost_thread -lboost_system\
-  -lboost_regex -lboost_filesystem -lssl -lcrypto \
+	-pthread\
 	-L src/ext/z3/bin -lz3
 
 SRC_OBJ=\
@@ -130,7 +129,7 @@ BIN=\
 	bin/stoke_benchmark_verify 
 
 # used to force a target to rebuild
-.FORCE:
+.PHONY: .FORCE
 
 
 ##### TOP LEVEL TARGETS (release is default)
@@ -139,13 +138,13 @@ all: release tags hooks
 
 debug:
 	$(MAKE) -C . external EXT_OPT="debug"
-	$(MAKE) -C . $(BIN) OPT="-g" 
+	$(MAKE) -C . -j8 $(BIN) OPT="-g" 
 release:
 	$(MAKE) -C . external EXT_OPT="release"
-	$(MAKE) -C . $(BIN) OPT="-DNDEBUG -O3" 
+	$(MAKE) -C . -j8 $(BIN) OPT="-DNDEBUG -O3" 
 profile:
 	$(MAKE) -C . external EXT_OPT="profile"
-	$(MAKE) -C . $(BIN) OPT="-DNDEBUG -O3 -pg" 
+	$(MAKE) -C . -j8 $(BIN) OPT="-DNDEBUG -O3 -pg" 
 
 test: bin/stoke_test tags
 	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test 
@@ -161,7 +160,7 @@ external: src/ext/astyle src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libg
 
 src/ext/astyle:
 	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle
-	$(MAKE) -C src/ext/astyle/build/gcc
+	$(MAKE) -C src/ext/astyle/build/gcc -j8
 
 src/ext/cpputil:
 	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
@@ -171,7 +170,7 @@ src/ext/x64asm:
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
-	$(MAKE) -C src/ext/gtest-1.7.0
+	$(MAKE) -C src/ext/gtest-1.7.0 -j8
 
 ##### VALIDATOR MISCELANEOUS
 
@@ -180,6 +179,8 @@ VALIDATOR_AUTOGEN=src/validator/handlers.h \
 									src/validator/legacy/switch.h \
 									src/validator/legacy/switch.cc \
 									src/validator/legacy/supported.switch 
+
+VALIDATOR_AUTOGEN_TEST=src/validator/legacy/switch.cc
 
 VALIDATOR_CLEAN=src/validator/legacy/*.switch\
 						   	src/validator/legacy/switch.* \
@@ -196,7 +197,7 @@ src/validator/legacy/%.switch: src/validator/legacy/autogen
 src/validator/legacy/switch.%: src/validator/legacy/autogen
 	cd src/validator/legacy; ./autogen; cd ../../..;
 
-src/validator/handlers.h:
+src/validator/handlers.h: .FORCE
 	src/validator/generate_handlers_h.sh src/validator
 
 ##### BUILD TARGETS
@@ -221,7 +222,7 @@ src/symstate/%.o: src/symstate/%.cc src/symstate/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/validator/legacy/legacy_handlers.o: src/validator/legacy/legacy_handlers.cc src/validator/legacy/*.h
+src/validator/legacy/legacy_handlers.o: src/validator/legacy/legacy_handlers.cc src/validator/legacy/*.h $(VALIDATOR_AUTOGEN)
 	$(CXX) $(TARGET) $(OPT) -O0 $(INC) -c $< -o $@
 src/validator/legacy/switch.o: src/validator/legacy/switch.cc src/validator/legacy/switch.h 
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
@@ -302,8 +303,7 @@ TEST_OBJ=\
          tests/fixture.o \
          \
          src/ext/gtest-1.7.0/libgtest.a \
-         src/ext/gtest-1.7.0/libgtest_main.a \
-
+         src/ext/gtest-1.7.0/libgtest_main.a
 
 TEST_LIBS=-ljsoncpp
 
