@@ -165,44 +165,44 @@ private:
 
   /** Does this instruction take an rh operand? */
   bool is_rh_opcode(x64asm::Opcode o) const {
-		for (size_t i = 0, ie = arity(o); i < ie; ++i) {
-			if (type(o, i) == x64asm::Type::RH) {
-				return true;
-			}
-		}
-		return false;
-	}
+    for (size_t i = 0, ie = arity(o); i < ie; ++i) {
+      if (type(o, i) == x64asm::Type::RH) {
+        return true;
+      }
+    }
+    return false;
+  }
   /** Does this instruction induce control flow? */
   bool is_control_opcode(x64asm::Opcode o) const {
-		const x64asm::Instruction instr(o);
-		return instr.is_label_defn() || instr.is_any_jump() ||
-			     instr.is_any_call() || instr.is_any_return() ||
-					 instr.is_any_loop();
+    const x64asm::Instruction instr(o);
+    return instr.is_label_defn() || instr.is_any_jump() ||
+           instr.is_any_call() || instr.is_any_return() ||
+           instr.is_any_loop();
   }
-	/** Does this instruction produce non-deterministic results? */
-	bool is_non_deterministic(x64asm::Opcode o) const {
-		return x64asm::Instruction(o).is_rdrand();
-	}
+  /** Does this instruction produce non-deterministic results? */
+  bool is_non_deterministic(x64asm::Opcode o) const {
+    return x64asm::Instruction(o).is_rdrand();
+  }
   /** Add instructions that should never be proposed to this method. */
-	bool is_unsupported(x64asm::Opcode o) const {
-		return is_rh_opcode(o) || !Sandbox::is_supported(o);
-	}
+  bool is_unsupported(x64asm::Opcode o) const {
+    return is_rh_opcode(o) || !Sandbox::is_supported(o);
+  }
   /** Is this instruction enabled given this flag set? */
   bool is_enabled(x64asm::Opcode o, const x64asm::FlagSet& fs) const {
     return x64asm::Instruction {o} .enabled(fs);
   }
   /** Do these two instructions take operands of the same arity and type? */
-	bool is_type_equiv(x64asm::Opcode o1, x64asm::Opcode o2) const {
-		if (arity(o1) != arity(o2)) {
-			return false;
-		}
-		for (size_t i = 0, ie = arity(o1); i < ie; ++i) {
-			if (type(o1, i) != type(o2, i)) {
-				return false;
-			}
-		}
-		return true;
-	}
+  bool is_type_equiv(x64asm::Opcode o1, x64asm::Opcode o2) const {
+    if (arity(o1) != arity(o2)) {
+      return false;
+    }
+    for (size_t i = 0, ie = arity(o1); i < ie; ++i) {
+      if (type(o1, i) != type(o2, i)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   /** Get a random control free opcode. */
   x64asm::Opcode get_control_free() {
