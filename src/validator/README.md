@@ -60,6 +60,28 @@ the live-outs.  And the validator is good at figuring this out very precisely.
 If you have a counterexample that's not checking out in the sandbox, one
 possibility (besides a validator bug) is that it has undefined behavior.
 
+What's Supported
+=====
+
+- Many of the 'simple' opcodes that do integer arithmetic, moves, etc.
+- Some SSE instructions
+- Operands: immediates, general purpose registers, xmm/ymm registers
+- Live outs: general purpose registers, xmm registers, status flags
+
+What's not
+-----
+
+- Memory (coming soon!)
+- Control flow
+- AVX/AVX2 instructions
+- Support for floating point, MMX, and other registers.  
+
+All of these things are possible for the future, in some degree.  Adding
+support for more types of registers/operands is usually easy, but it then
+requires instructions to do things with them.  This is the state of the YMM
+registers; support is available, but no AVX/AVX2 instructions are available to
+manipulate them.
+
 Code Tutorial
 =====
 
@@ -86,7 +108,9 @@ takes an operand (like a register '%rax' or memory reference
     '$0x10(%rcx,%rdx,2)') and returns the current symbolic value of this
 operand.  It also has a set() function with takes an operand and symbolic
 value, and sets the operand in the symbolic state appropriately.  The semantics
-of set depend on the destination; if the
+of set depend on the destination; for example, moves to a 32-bit subregister of
+a 64-bit register will zero out the top 32 bits (although there's an optional
+    parameter to override this behavior).  
 
 The `Handler` classes build circuits for a particular instruction.  These
 circuits are represented in a symbolic state.  The interface is simple: an
@@ -123,6 +147,24 @@ and, or and xor.  +, -, \*, /, <<, >> correspond to addition, substraction,
   (numbered from 0) of the bit-vector, but you my need to cast it to a SymBool
   explicitly if you have a compile error.
 
+Constructing the Circuit
+-----
+
+The validator.cc file does the work of constructing the circuit and gluing all
+the handlers together.  It creates a starting symbolic state `init` with all
+the bitvectors initialized to a variable.  It creates starting states
+`first_init`, `second_init` for the target/rewrite to force equality with the
+starting state, *but only on the def-ins*.  Then, the validator builds the
+circuit for each instruction inside its `build_circuit()` function, which in
+turn calls `build_circuit()` on its handler.  Finally, the validator asserts
+the equivalence of the final symbolic states on the live outs and invokes the
+SMT solver.
+
+Individually, the handlers are subclasses of `Handler` which each implement
+`bool is_supported(Instruction& i)` and `void build_circuit(Instruction&,
+    SymState&)`.  The contract for `is_supported()` is different here: this
+function must be checked!  If it returns false, there's no guarantees about
+what `build_circuit()` will do.
 
 
 Implementing New Instructions
