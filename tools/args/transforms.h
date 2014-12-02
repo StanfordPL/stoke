@@ -33,6 +33,7 @@ extern cpputil::ValueArg<x64asm::FlagSet, FlagSetReader, FlagSetWriter>& cpu_fla
 extern cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>& opc_blacklist_arg;
 extern cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>& opc_whitelist_arg;
 extern cpputil::ValueArg<size_t>& nop_percent_arg;
+extern cpputil::ValueArg<size_t>& call_weight_arg;
 extern cpputil::FlagArg& mem_read_arg;
 extern cpputil::FlagArg& mem_write_arg;
 extern cpputil::FlagArg& callee_save_arg;
