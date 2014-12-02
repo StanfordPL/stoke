@@ -34,6 +34,7 @@ const map<string, uint16_t> MoveHandler::truncate_ = {
 Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
   string opcode = get_opcode(instr);
 
+
   if (sign_extend_.find(opcode) == sign_extend_.end())
     return SupportLevel::NONE;
   else
@@ -59,7 +60,20 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
   bool sign_extend = sign_extend_.at(opcode);
   uint16_t truncate = (truncate_.find(opcode) != truncate_.end() ? truncate_.at(opcode) : 0);
 
-  if(truncate) {
+  if(dst.is_sse_register() && opcode == "movq") {
+    // handles movq m/64, xmm and movq xmm, xmm
+    // all sse operands for this handler should be xmm
+    assert(dst.size() == 128);
+    ss.set(dst, SymBitVector::constant(64, 0) || ss[src][63][0]);
+    return;
+  } else if (src.is_sse_register() && dst.is_typical_memory() && opcode == "movq") {
+    // handles movq xmm, m/64
+    assert(dst.size() == 64 && src.size() == 128);
+
+    ss.set(dst, ss[src][63][0]);
+    return;
+
+  } else if(truncate) {
     // Case 0: this instruction expects us to truncate the source (e.g. movss)
     to_move = ss[dst][dst.size()-1][truncate] || ss[src][truncate-1][0];
 
