@@ -29,6 +29,7 @@ INC=$(addprefix -I./, $(INC_FOLDERS))
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
+	-pthread\
 	-L src/ext/z3/bin -lz3
 
 SRC_OBJ=\
@@ -128,7 +129,7 @@ BIN=\
 	bin/stoke_benchmark_verify 
 
 # used to force a target to rebuild
-.FORCE:
+.PHONY: .FORCE
 
 
 ##### TOP LEVEL TARGETS (release is default)
@@ -179,6 +180,8 @@ VALIDATOR_AUTOGEN=src/validator/handlers.h \
 									src/validator/legacy/switch.cc \
 									src/validator/legacy/supported.switch 
 
+VALIDATOR_AUTOGEN_TEST=src/validator/legacy/switch.cc
+
 VALIDATOR_CLEAN=src/validator/legacy/*.switch\
 						   	src/validator/legacy/switch.* \
 								src/validator/legacy/autogen \
@@ -194,7 +197,7 @@ src/validator/legacy/%.switch: src/validator/legacy/autogen
 src/validator/legacy/switch.%: src/validator/legacy/autogen
 	cd src/validator/legacy; ./autogen; cd ../../..;
 
-src/validator/handlers.h:
+src/validator/handlers.h: .FORCE
 	src/validator/generate_handlers_h.sh src/validator
 
 ##### BUILD TARGETS
@@ -219,7 +222,7 @@ src/symstate/%.o: src/symstate/%.cc src/symstate/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/validator/legacy/legacy_handlers.o: src/validator/legacy/legacy_handlers.cc src/validator/legacy/*.h
+src/validator/legacy/legacy_handlers.o: src/validator/legacy/legacy_handlers.cc src/validator/legacy/*.h $(VALIDATOR_AUTOGEN)
 	$(CXX) $(TARGET) $(OPT) -O0 $(INC) -c $< -o $@
 src/validator/legacy/switch.o: src/validator/legacy/switch.cc src/validator/legacy/switch.h 
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@

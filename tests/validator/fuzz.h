@@ -45,7 +45,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   blacklist.insert(x64asm::ENTER_ONE_IMM16);
   blacklist.insert(x64asm::ENTER_ZERO_IMM16);
 
-  t.set_opcode_pool(flag_set, 0, false, false, blacklist, {})
+  t.set_opcode_pool(flag_set, 0, 0, false, false, blacklist, {})
   .set_operand_pool({}, x64asm::RegSet::empty())
   .set_seed(seed);
 
