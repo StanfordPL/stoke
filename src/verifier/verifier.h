@@ -36,6 +36,12 @@ public:
     return *this;
   }
 
+  /** Sets the timeout, in milliseconds */
+  Verifier& set_timeout(uint64_t time) {
+    timeout_ = time;
+    return *this;
+  }
+
   /** Returns true iff these two functions are identical. Sets counter_example_ for failed
     proofs. */
   bool verify(const Cfg& target, const Cfg& rewrite);
@@ -56,6 +62,9 @@ private:
   /** Whether the last failed proof produced a new counter example. */
   bool counter_example_available_;
 
+  /** Timeout (in ms) */
+  uint64_t timeout_;
+
   /** Cost function for use in hold-out verification. */
   CostFunction fxn_;
   /** Next counter example returned by hold-out verifier. */
@@ -65,6 +74,8 @@ private:
   bool hold_out_verify(const Cfg& target, const Cfg& rewrite);
   /** Verify rewrite using user-defined extension. */
   bool extension_verify(const Cfg& target, const Cfg& rewrite);
+  /** Verify rewrite using STOKE's formal validator */
+  bool formal_verify(const Cfg& target, const Cfg& rewrite);
 };
 
 } // namespace stoke

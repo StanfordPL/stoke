@@ -18,16 +18,20 @@ CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors
 
 TARGET=-mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 
-INC=\
-	-I./ \
-	-I./src/ext/cpputil/ \
-	-I./src/ext/x64asm \
-  -I./src/ext/gtest-1.7.0/include
+INC_FOLDERS=\
+						./ \
+						src/ext/cpputil/ \
+						src/ext/x64asm \
+						src/ext/gtest-1.7.0/include \
+						src/ext/z3/include
+
+INC=$(addprefix -I./, $(INC_FOLDERS))
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
   -pthread -lmongoclient -lboost_thread -lboost_system\
-  -lboost_regex -lboost_filesystem -lssl -lcrypto
+  -lboost_regex -lboost_filesystem -lssl -lcrypto \
+	-L src/ext/z3/bin -lz3
 
 SRC_OBJ=\
 	src/cfg/cfg.o \
@@ -43,6 +47,8 @@ SRC_OBJ=\
 	src/search/search.o \
 	src/search/transforms.o \
 	\
+	src/solver/z3solver.o \
+	\
 	src/state/cpu_state.o \
 	src/state/cpu_states.o \
 	src/state/memory.o \
@@ -51,7 +57,27 @@ SRC_OBJ=\
 	\
 	src/stategen/stategen.o \
 	\
+	src/symstate/bitvector.o \
+	src/symstate/bool.o \
+	src/symstate/function.o \
+	src/symstate/state.o \
+	\
 	src/tunit/tunit.o \
+	\
+	src/validator/handler.o \
+	src/validator/validator.o \
+	\
+	src/validator/legacy/c_interface.o \
+	src/validator/legacy/legacy.o \
+	src/validator/legacy/legacy_handlers.o \
+	src/validator/legacy/switch.o \
+	src/validator/legacy/sym_state.o \
+	src/validator/legacy/validator.o \
+	\
+	src/validator/handlers/combo_handler.o \
+	src/validator/handlers/lea_handler.o   \
+	src/validator/handlers/move_handler.o  \
+	src/validator/handlers/shift_handler.o \
 	\
 	src/verifier/verifier.o
 
@@ -103,22 +129,26 @@ BIN=\
 	bin/stoke_benchmark_state \
 	bin/stoke_benchmark_verify 
 
+# used to force a target to rebuild
+.FORCE:
+
+
 ##### TOP LEVEL TARGETS (release is default)
 
 all: release tags hooks
 
 debug:
 	$(MAKE) -C . external EXT_OPT="debug"
-	$(MAKE) -C . -j1024 $(BIN) OPT="-g" 
+	$(MAKE) -C . $(BIN) OPT="-g" 
 release:
 	$(MAKE) -C . external EXT_OPT="release"
-	$(MAKE) -C . -j1024 $(BIN) OPT="-DNDEBUG -O3" 
+	$(MAKE) -C . $(BIN) OPT="-DNDEBUG -O3" 
 profile:
 	$(MAKE) -C . external EXT_OPT="profile"
-	$(MAKE) -C . -j1024 $(BIN) OPT="-DNDEBUG -O3 -pg" 
+	$(MAKE) -C . $(BIN) OPT="-DNDEBUG -O3 -pg" 
 
 test: bin/stoke_test tags
-	bin/stoke_test 
+	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test 
 
 tags:
 	ctags -R src
@@ -126,12 +156,12 @@ tags:
 ##### EXTERNAL TARGETS
 
 external: src/ext/astyle src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
-	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke -j1024
-	$(MAKE) -C src/ext/x64asm -j1024 $(EXT_OPT) 
+	$(MAKE) -C src/ext/x64asm $(EXT_OPT) 
+	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
 
 src/ext/astyle:
 	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle
-	$(MAKE) -C src/ext/astyle/build/gcc -j1024
+	$(MAKE) -C src/ext/astyle/build/gcc
 
 src/ext/cpputil:
 	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
@@ -141,7 +171,33 @@ src/ext/x64asm:
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
-	$(MAKE) -C src/ext/gtest-1.7.0 -j1024
+	$(MAKE) -C src/ext/gtest-1.7.0
+
+##### VALIDATOR MISCELANEOUS
+
+VALIDATOR_AUTOGEN=src/validator/handlers.h \
+								 	src/validator/legacy/validator.switch \
+									src/validator/legacy/switch.h \
+									src/validator/legacy/switch.cc \
+									src/validator/legacy/supported.switch 
+
+VALIDATOR_CLEAN=src/validator/legacy/*.switch\
+						   	src/validator/legacy/switch.* \
+								src/validator/legacy/autogen \
+								src/validator/legacy/autogen.hi \
+								src/validator/legacy/autogen.o
+
+src/validator/legacy/autogen: src/validator/legacy/autogen.hs
+	ghc src/validator/legacy/autogen.hs -o src/validator/legacy/autogen
+
+src/validator/legacy/%.switch: src/validator/legacy/autogen
+	cd src/validator/legacy; ./autogen; cd ../../..;
+
+src/validator/legacy/switch.%: src/validator/legacy/autogen
+	cd src/validator/legacy; ./autogen; cd ../../..;
+
+src/validator/handlers.h:
+	src/validator/generate_handlers_h.sh src/validator
 
 ##### BUILD TARGETS
 
@@ -155,11 +211,25 @@ src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/search/%.o: src/search/%.cc src/search/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/solver/%.o: src/solver/%.cc src/solver/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/symstate/%.o: src/symstate/%.cc src/symstate/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/validator/legacy/legacy_handlers.o: src/validator/legacy/legacy_handlers.cc src/validator/legacy/*.h
+	$(CXX) $(TARGET) $(OPT) -O0 $(INC) -c $< -o $@
+src/validator/legacy/switch.o: src/validator/legacy/switch.cc src/validator/legacy/switch.h 
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/validator/legacy/%.o: src/validator/legacy/%.cc src/validator/legacy/%.h 
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/validator/handlers/%.o: src/validator/handlers/%.cc src/validator/handlers/%.h src/validator/handlers.h src/validator/*.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/validator/%.o: src/validator/%.cc src/validator/%.h src/validator/handlers.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
@@ -232,17 +302,22 @@ TEST_OBJ=\
          tests/fixture.o \
          \
          src/ext/gtest-1.7.0/libgtest.a \
-         src/ext/gtest-1.7.0/libgtest_main.a
+         src/ext/gtest-1.7.0/libgtest_main.a \
+
 
 TEST_LIBS=-ljsoncpp
 
 TEST_BIN=bin/stoke_test
 
+tests/validator/handlers.h: .FORCE
+	tests/validator/generate_handlers_h.sh tests/validator	
+
 tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
-bin/stoke_test: tools/apps/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard tests/*.h) $(wildcard tests/*/*.h)
+bin/stoke_test: tools/apps/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard tests/*.h) $(wildcard tests/*/*.h) tests/validator/handlers.h
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
+
 
 ##### MISC
 
@@ -267,8 +342,9 @@ hooks: .git/hooks/pre-commit
 
 ##### CLEAN TARGETS
 
-clean:
+clean: 
 	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke
+	rm -rf $(VALIDATOR_AUTOGEN) $(VALIDATOR_CLEAN)
 
 dist_clean: clean
 	rm -rf src/ext/astyle

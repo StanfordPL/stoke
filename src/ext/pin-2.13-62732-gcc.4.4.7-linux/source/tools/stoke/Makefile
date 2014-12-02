@@ -15,6 +15,7 @@
 PIN_INC=\
 	-I../../../../../.. \
 	-I../../../../../ext/cpputil \
+	-I../../../../../ext/x64asm \
 	-I../../../source/include/pin \
 	-I../../../source/include/pin/gen \
 	-I../../../extras/components/include \
@@ -33,8 +34,6 @@ PIN_CC=g++ -std=c++11 -fPIC -mavx -mavx2 -mbmi -mbmi2 -mpopcnt
 PIN_OPT=-O3
 
 PIN_WARN=\
-	-Wall \
-	-Werror \
 	-Wno-unknown-pragmas 
 
 PIN_COMPILE=$(PIN_CC) $(PIN_WARN) $(PIN_OPT) $(PIN_DEF) $(PIN_INC)

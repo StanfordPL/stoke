@@ -16,6 +16,9 @@ fi
 SCMD=$1
 shift
 
+# This is to make sure we link the the right copy of z3.
+export LD_LIBRARY_PATH="$HERE/../src/ext/z3/bin"
+
 if [ "$SCMD" == "--help" ] || [ "$SCMD" == "-h" ]
 then
 	echo "Usage: stoke <subcommand> [options]"

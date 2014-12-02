@@ -13,6 +13,8 @@
       "nesting_depth": [0, 0, 0]
     },
 
+    "validate": true,
+
     "liveness": {
       "given liveout": ["%rdx"],
       "expected livein": ["%rax"]

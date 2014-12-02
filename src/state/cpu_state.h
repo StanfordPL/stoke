@@ -16,7 +16,10 @@
 #define STOKE_STATE_CPU_STATE_H
 
 #include <iostream>
+#include <sstream>
+#include <string>
 
+#include "src/solver/smtsolver.h"
 #include "src/state/error_code.h"
 #include "src/state/regs.h"
 #include "src/state/rflags.h"
@@ -30,6 +33,15 @@ struct CpuState {
     code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
     stack.resize(0, stack_size);
     heap.resize(base, heap_size);
+  }
+
+  /** Creates a new CpuState from an SMTSolver's model (i.e. counterexample).
+    * Uses 'suffix' to identify the right set of variables to extract. */
+  CpuState(SMTSolver& smt, std::string suffix) :
+    code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
+    stack.resize(0, 0);
+    heap.resize(0, 0);
+    convert_from_model(smt, suffix);
   }
 
   /** Bit-wise xor; ignores error code. */
@@ -98,6 +110,11 @@ struct CpuState {
   Memory stack;
   /** Heap. */
   Memory heap;
+
+private:
+
+  /** Used by constructor to build CpuState from a counterexample */
+  void convert_from_model(SMTSolver& smt, std::string& suffix);
 };
 
 } // namespace stoke

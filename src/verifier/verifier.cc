@@ -14,7 +14,9 @@
 
 #include <cassert>
 
+#include "src/solver/z3solver.h"
 #include "src/verifier/verifier.h"
+#include "src/validator/validator.h"
 
 using namespace std;
 
@@ -27,6 +29,8 @@ bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
     return true;
   case Strategy::HOLD_OUT:
     return hold_out_verify(target, rewrite);
+  case Strategy::FORMAL:
+    return formal_verify(target, rewrite);
   case Strategy::EXTENSION:
     return extension_verify(target, rewrite);
   default:
@@ -45,6 +49,24 @@ bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
     return false;
   }
   return true;
+}
+
+bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
+
+  CpuState ceg;
+
+  Z3Solver s;
+  Validator v(s);
+  s.set_timeout(timeout_);
+
+  bool success = v.validate(target, rewrite, ceg);
+
+  if (!success) {
+    counter_example_available_ = true;
+    counter_example_ = ceg;
+  }
+
+  return success;
 }
 
 bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {

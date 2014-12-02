@@ -22,10 +22,13 @@
 #include "tests/fixture.h"
 #include "tests/sandbox/sandbox.h"
 #include "tests/search/search.h"
+#include "tests/solver/solver.h"
 #include "tests/state/state.h"
 #include "tests/stategen/stategen.h"
-#include "tests/tunit/tunit.h"
+#include "tests/symstate/bitvector.h"
 #include "tests/trivial.h"
+#include "tests/tunit/tunit.h"
+#include "tests/validator/validator.h"
 #include "tests/x64asm/x64asm.h"
 
 
