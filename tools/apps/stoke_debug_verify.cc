@@ -70,6 +70,11 @@ int main(int argc, char** argv) {
     exit(1);
   }
 
+  if (strategy_arg.value() == Strategy::NONE) {
+    cerr << "WARNING: '--stragegy none' passed, so no verification is done." << endl;
+    exit(0);
+  }
+
   const auto res = verifier.verify(target, rewrite);
 
   cout << "Equivalent: " << (res ? "yes" : "no") << endl;
