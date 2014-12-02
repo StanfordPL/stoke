@@ -85,6 +85,10 @@ public:
   /** Stops an in-progress search.  To be used from a callback, for example. */
   void stop();
 
+  /** Returns a program that is sound for a given def_ins/live_outs combination by initializing
+  registers as necessary. */
+  static x64asm::Code find_sound_code(const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs);
+
 private:
   /** Random generator. */
   std::default_random_engine gen_;
@@ -121,6 +125,8 @@ private:
   void configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state, std::vector<stoke::TUnit>& aux_fxn) const;
   /** Resets search state by removing all non-return instructions from target. */
   void configure_empty(const Cfg& target, SearchState& state) const;
+  /** Resets search state just like empty, but also initializes live_outs as necessary. */
+  void configure_zero(const Cfg& target, SearchState& state) const;
   /** Resets search state to the target. */
   void configure_target(const Cfg& target, SearchState& state) const;
   /** Resets search state to a user-defined function of target */
