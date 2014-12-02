@@ -12,21 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <set>
-
 #include "src/search/transforms.h"
 
 using namespace std;
 using namespace x64asm;
-
-namespace {
-
-set<Opcode> unsupported_ {{
-#include "src/search/tables/unsupported.h"
-  }
-};
-
-} // namespace
 
 namespace stoke {
 
@@ -39,7 +28,7 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     auto op = (Opcode)i;
     if (is_control_opcode(op) || is_unsupported(op) || !is_enabled(op, flags) ||
-        opc_blacklist.find(op) != opc_blacklist.end()) {
+        is_non_deterministic(op) || opc_blacklist.find(op) != opc_blacklist.end()) {
       continue;
     } else if (use_whitelist && opc_whitelist.find(op) == opc_whitelist.end()) {
       continue;
@@ -471,34 +460,6 @@ void Transforms::undo_extension_move(Cfg& cfg) {
 
   return;
 }
-
-bool Transforms::is_rh_opcode(Opcode o) const {
-  for (size_t i = 0, ie = arity(o); i < ie; ++i) {
-    if (type(o, i) == Type::RH) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool Transforms::is_type_equiv(Opcode o1, Opcode o2) const {
-  if (arity(o1) != arity(o2)) {
-    return false;
-  }
-  for (size_t i = 0, ie = arity(o1); i < ie; ++i) {
-    if (type(o1, i) != type(o2, i)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool Transforms::is_unsupported(Opcode o) const {
-  if (is_rh_opcode(o)) {
-    return true;
-  }
-  return unsupported_.find(o) != unsupported_.end();
-};
 
 bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
   if (is_lea_opcode(c)) {
