@@ -329,7 +329,7 @@ private:
   std::default_random_engine gen_;
 
   /** Tracks if an error occurred. */
-  bool error_;
+  bool error_ = false;
   /* Tracks the last error message. */
   std::string error_message_;
 };
