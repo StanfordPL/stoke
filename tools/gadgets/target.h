@@ -34,6 +34,7 @@ public:
                   code.maybe_write_set(),
                   code.maybe_undef_set());
     }
+    recompute();
   }
 };
 

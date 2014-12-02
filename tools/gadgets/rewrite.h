@@ -23,7 +23,20 @@ namespace stoke {
 
 class RewriteGadget : public Cfg {
 public:
-  RewriteGadget() : Cfg(rewrite_arg.value().code, def_in_arg, live_out_arg) {}
+  RewriteGadget() : Cfg(rewrite_arg.value().code, def_in_arg, live_out_arg) {
+    for (const auto& fxn : aux_fxns_arg.value()) {
+      auto code = fxn.code;
+      auto lbl = code[0].get_operand<x64asm::Label>(0);
+      add_summary(lbl,
+                  code.must_read_set(),
+                  code.must_write_set(),
+                  code.must_undef_set(),
+                  code.maybe_read_set(),
+                  code.maybe_write_set(),
+                  code.maybe_undef_set());
+    }
+    recompute();
+  }
 };
 
 } // namespace stoke

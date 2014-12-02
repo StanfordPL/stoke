@@ -47,6 +47,12 @@ ValueArg<size_t>& nop_percent_arg =
   .description("Percent of instruction moves that produce nops")
   .default_val(0);
 
+ValueArg<size_t>& call_weight_arg =
+  ValueArg<size_t>::create("call_weight")
+  .usage("<int>")
+  .description("Number of additional call opcodes in the opcode pool")
+  .default_val(0);
+
 FlagArg& mem_read_arg =
   FlagArg::create("mem_read")
   .description("Propose instruction and opcode moves that read memory?");

@@ -33,7 +33,7 @@ class Transforms {
 public:
   /** Creates a new transformation helper. */
   Transforms() : old_instr_ {x64asm::RET}, old_opcode_ {x64asm::RET}, old_operand_ {x64asm::rax} {
-    set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true, {}, {});
+    set_opcode_pool(x64asm::FlagSet::universe(), 0, 0, true, true, {}, {});
     set_operand_pool({x64asm::RET}, x64asm::RegSet::linux_call_preserved());
   }
 
@@ -43,8 +43,8 @@ public:
     return *this;
   }
   /** Sets the pool of opcodes to propose from. */
-  Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t nop_percent, bool use_mem_read,
-                              bool use_mem_write,
+  Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t nop_percent, size_t call_weight,
+                              bool use_mem_read, bool use_mem_write,
                               const std::set<x64asm::Opcode>& opc_blacklist,
                               const std::set<x64asm::Opcode>& opc_whitelist);
   /** Sets the pool operands to propose from. */
@@ -117,6 +117,20 @@ public:
   }
   /** Add user-defined undo implementation here ... */
   void undo_extension_move(Cfg& cfg);
+
+  /* Reports if an error occurred during initialization (e.g. empty opcode pool). */
+  bool has_error() {
+    return error_;
+  }
+  /* Returns the latest error message. */
+  std::string get_error() {
+    return error_message_;
+  }
+  /* Clears any error there might be. */
+  void clear_error() {
+    error_ = false;
+    error_message_ = "";
+  }
 
 private:
   /** Returns the number of operands for this opcode. */
@@ -313,6 +327,11 @@ private:
 
   /** Random generator. */
   std::default_random_engine gen_;
+
+  /** Tracks if an error occurred. */
+  bool error_;
+  /* Tracks the last error message. */
+  std::string error_message_;
 };
 
 } // namespace stoke
