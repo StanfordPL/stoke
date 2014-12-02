@@ -118,6 +118,20 @@ public:
   /** Add user-defined undo implementation here ... */
   void undo_extension_move(Cfg& cfg);
 
+  /* Reports if an error occurred during initialization (e.g. empty opcode pool). */
+  bool has_error() {
+    return error_;
+  }
+  /* Returns the latest error message. */
+  std::string get_error() {
+    return error_message_;
+  }
+  /* Clears any error there might be. */
+  void clear_error() {
+    error_ = false;
+    error_message_ = "";
+  }
+
 private:
   /** Returns the number of operands for this opcode. */
   size_t arity(x64asm::Opcode o) const {
@@ -313,6 +327,11 @@ private:
 
   /** Random generator. */
   std::default_random_engine gen_;
+
+  /** Tracks if an error occurred. */
+  bool error_;
+  /* Tracks the last error message. */
+  std::string error_message_;
 };
 
 } // namespace stoke
