@@ -69,6 +69,11 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
     control_free_or_nop_.push_back(CALL_LABEL);
   }
 
+  if (control_free_.size() == 0) {
+    error_ = true;
+    error_message_ = "No opcodes left to propose (consider changing whitelist/blacklist parameters).";
+  }
+
   control_free_or_nop_ = control_free_;
   for (size_t i = 0, ie = (nop_percent / 100) * control_free_.size(); i < ie; ++i) {
     control_free_or_nop_.push_back(NOP);
