@@ -5,7 +5,60 @@ Contract
 =====
 
 As the validator is the principal component of STOKE's trusted code base, it's
-important to be correct.  It therefore holds to the following contract.
+important to be correct.  It therefore holds to the following contract:
+
+- `bool validate(const Cfg&, const Cfg&, CpuState& counter_example)` will
+return true if the validator found both Cfgs equivalent and no error was
+encountered.  If it returns false, it could mean an error was encountered or
+that the validator found the codes non-equivalent.
+
+- `bool has_error()` returns whether an error occurred.  You should always
+check this!  The `get_error()` method will reveal what happened, for example,
+if an instruction wasn't supported.
+
+- `bool is_counterexample_valid()` will return true if the validator found the
+codes non-equivalent and has a valid counterexample.  The concrete
+counterexample, along with concrete ending states, can be retrieved with the
+`get_counterexample(), get_target_final_state(), get_rewrite_final_state()`
+methods.  If this method returns true, the codes are definitely non-equivalent.
+
+- Sometimes the underlying SMT solver will report SAT (meaning the codes are
+non-equivalent), but won't produce a meaningful model.  This happens with
+uninterpreted functions, for example.  In most cases, this means codes are
+non-equivalent, but it can also mean that the validator didn't have enough
+axioms about an uninterpreted function to get equivalence.  So, this case is
+indeterminate.  When this happens, `validate()`, `has_error()` and
+`is_counterexample_valid()` all return false.
+
+- The validator provides a method `bool is_supported(Instruction&)` to tell you
+if it can handle an instruction.  This isn't a guarantee unfortunately; there
+are a few cases that this function could return 'true', but the validator won't
+succeed in supporting it (it's not super common though).  However, if this
+method returns 'false', you can be guaranteed you won't be validating this
+instruction.
+
+In particular, the following things would be bugs:
+
+- If two codes are not equivalent, but `validate` returns 'true'.  This is the worst kind of bug.
+- If two codes are equivalent, but `is_counterexample_valid()` returns 'true'.  Also the worst kind of bug.
+- If `is_supported(i)` returns false, but the validator runs on a Cfg
+containing `i` without an error, it's a moderate bug.  The validator might be
+missing a check to report that the result is invalid.
+- If both `validate()` and `has_error()` return true, this is a minor bug.  You should always check `has_error()`!
+- If both `is_counterexample_valid()` and `has_error()` return true, this is a minor bug.  You should always check `has_error()`!
+
+Undefined Behavior
+----
+
+Unlike the rest of STOKE, the validator is good at figuring out what to do when
+the behavior is undefined.  If, due to undefined behavior, two codes will
+sometimes be non-equivalent, the validator will produce a counterexample.
+However, this counterexample might appear wrong in the sandbox because of the
+undefined behavior.  However, it's also possible for two codes with undefined
+behavior to be equivalent, if the undefined values do not work their way into
+the live-outs.  And the validator is good at figuring this out very precisely.
+If you have a counterexample that's not checking out in the sandbox, one
+possibility (besides a validator bug) is that it has undefined behavior.
 
 Code Tutorial
 =====
@@ -59,15 +112,16 @@ manage memory (they do a poor job of this at the moment, btw).  These are
 entirely safe to copy.  If you leave one uninitialized, the pointer will be
 null and will crash when you try to use it.  The underlying ASTs are all const.
 
-- Be sure to study how operators are overloaded.  Operators &, |, ^ correspond
-to bitwise and, or and xor.  +, -, \*, /, <<, >> correspond to addition,
-   substraction, multiplication, unsigned division, and unsigned bit shifts.
-   Signed division and bit-shifts have their own member functions.  The ==
-   operator returns a symbolic bool specifying if two bit vectors are equal.
-   The indexing operator is overloaded to extract a range of bits or a single
-   bit.  `bv[7][0]` will extract the lower 8 bits of bv.  `bv[15]` will just
-   extract the 15th bit (numbered from 0) of the bit-vector, but you my need to
-   cast it to a SymBool explicitly if you have a compile error.
+- Be sure to study how operators are overloaded.  The || operator is for
+*concatenation*, not for logical or.  Operators &, |, ^ correspond to bitwise
+and, or and xor.  +, -, \*, /, <<, >> correspond to addition, substraction,
+  multiplication, unsigned division, and unsigned bit shifts.  Signed division
+  and bit-shifts have their own member functions.  The == operator returns a
+  symbolic bool specifying if two bit vectors are equal.  The indexing operator
+  is overloaded to extract a range of bits or a single bit.  `bv[7][0]` will
+  extract the lower 8 bits of bv.  `bv[15]` will just extract the 15th bit
+  (numbered from 0) of the bit-vector, but you my need to cast it to a SymBool
+  explicitly if you have a compile error.
 
 
 
@@ -115,7 +169,54 @@ target and rewrite, and specifying if they are equivalent or not.
 
 When the test infrastructure runs, it makes sure the validator reports the
 correct result.  It also takes any counterexamples and runs them in the sandbox
-to check for correctness; this is a very powerful way to test circuits.
+to check for correctness; this is a very powerful way to test circuits.  A
+common pattern is to choose a target/rewrite so that the validator builds a
+predictable counterexample, and then the test framework will carefully check
+that both the target/rewrite circuits are correct for this example.
+
+To add some tests for a handler, say pshufd, just create a file like `pshufd.h`
+in tests/validator/handlers that looks like this:
+
+```
+class ValidatorPshufdTest : public ValidatorTest {};
+
+TEST_F(ValidatorPshufdTest, NotANoop) {
+
+  target_ << "pshufd $0x0, %xmm3, %xmm5" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "retq" << std::endl;
+
+  assert_ceg();
+
+}
+
+TEST_F(ValidatorPshufdTest, IdentityForMagicConstant) {
+
+  target_ << "pshufd $0xe4, %xmm4, %xmm4" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+```
+
+When you run 'make test', all of the files in the tests/validator/handler
+directory are automatically included.  So there's nothing other than adding a
+new file that's required for adding a new collection of tests for a handler.
+
+The testing infrastructure takes care of paring the target/rewrite, setting up
+the validator and the sandbox, printing detailed messages and just about
+everything else.  Sometimes, you only want to assert equivalence on some
+inputs.  For this, use the `set_live_outs()` function, which takes a `RegSet`
+as a parameter.  Note that all the validator tests inherit from ValidatorTest;
+this allows you to use these helper functions.  It's best for each handler to
+create a new subclass of ValidatorBaseTest for testing it, even if this
+subclass is totally empty.  If your test cases are becomming long, it probably
+means you should abstract the details away either into the big test framework
+or into the class for your handler.  
 
 Fuzz Testing
 -----
