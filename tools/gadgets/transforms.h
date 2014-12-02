@@ -161,6 +161,11 @@ public:
     for (const auto& fxn : aux_fxns_arg.value()) {
       insert_label(fxn.code[0].get_operand<x64asm::Label>(0));
     }
+
+    if (has_error()) {
+      std::cerr << "ERROR: " << get_error() << std::endl;
+      exit(1);
+    }
   }
 
 private:
