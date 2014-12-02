@@ -30,7 +30,8 @@ set<Opcode> unsupported_ {{
 
 namespace stoke {
 
-Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent, bool use_mem_read,
+Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent,
+                                        size_t call_weight, bool use_mem_read,
                                         bool use_mem_write, const set<Opcode>& opc_blacklist,
                                         const set<Opcode>& opc_whitelist) {
   control_free_.clear();
@@ -62,6 +63,10 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
     }
 
     control_free_.push_back(op);
+  }
+
+  for (size_t i = 0; i < call_weight; ++i) {
+    control_free_or_nop_.push_back(CALL_LABEL);
   }
 
   control_free_or_nop_ = control_free_;

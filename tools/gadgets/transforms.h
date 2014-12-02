@@ -151,7 +151,7 @@ public:
       std::cerr << diff << std::endl;
     }
 
-    set_opcode_pool(arg_cpu_flags, nop_percent_arg, mem_read_arg, mem_write_arg,
+    set_opcode_pool(arg_cpu_flags, nop_percent_arg, call_weight_arg, mem_read_arg, mem_write_arg,
                     opc_blacklist_arg, opc_whitelist_arg);
     set_operand_pool(target_arg.value().code, preserve_regs_arg);
 
