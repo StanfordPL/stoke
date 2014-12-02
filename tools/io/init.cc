@@ -24,8 +24,9 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Init>, 4> ds {{
+array<pair<string, Init>, 5> ds {{
     {"empty", Init::EMPTY},
+    {"zero", Init::ZERO},
     {"target", Init::TARGET},
     {"previous", Init::PREVIOUS},
 
