@@ -15,6 +15,7 @@
 #include "src/sandbox/sandbox.h"
 
 #include <cassert>
+#include <set>
 #include <setjmp.h>
 #include <signal.h>
 
@@ -23,6 +24,11 @@ using namespace stoke;
 using namespace x64asm;
 
 namespace {
+
+set<Opcode> unsupported_ {{
+		#include "src/sandbox/tables/unsupported.h"
+  }
+};
 
 sigjmp_buf buf_;
 void sigfpe_handler(int signum, siginfo_t* si, void* data) {
@@ -36,6 +42,10 @@ void callback_wrapper(StateCallback cb, size_t line, CpuState* current, void* ar
 } // namespace
 
 namespace stoke {
+
+bool Sandbox::is_supported(Opcode o) {
+	return unsupported_.find(o) == unsupported_.end();
+}
 
 Sandbox::Sandbox() : fxn_(32 * 1024) {
   fxn_.reserve(32 * 1024);
@@ -630,7 +640,9 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
   else {
     if (instr.is_div() || instr.is_idiv()) {
       emit_reg_div(instr);
-    } else {
+    } else if (instr.get_opcode() == UD2) {
+			emit_signal_trap_call(ErrorCode::SIGILL_);
+		} else {
       assm_.assemble(instr);
     }
   }
