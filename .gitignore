@@ -4,3 +4,5 @@ src/tags
 src/ext/*
 *.swp
 tags
+
+aliasing

@@ -20,6 +20,7 @@ namespace stoke {
 enum class Strategy {
   NONE,
   HOLD_OUT,
+  FORMAL,
 
   // Add user-defined extensions here ...
   EXTENSION

@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
-
-#include <string>
 
 using namespace cpputil;
 using namespace std;
+using namespace x64asm;
 
 namespace stoke {
 
@@ -86,6 +86,29 @@ istream& CpuState::read_text(istream& is) {
   }
 
   return is;
+}
+
+void CpuState::convert_from_model(SMTSolver& smt, string& name_suffix) {
+
+  for(size_t i = 0; i < r64s.size(); ++i) {
+    stringstream name;
+    name << r64s[i] << name_suffix;
+    gp[r64s[i]] = smt.get_model_bv(name.str(), 1);
+  }
+  for(size_t i = 0; i < ymms.size(); ++i) {
+    stringstream name;
+    name << ymms[i] << name_suffix;
+    sse[ymms[i]] = smt.get_model_bv(name.str(), 4);
+  }
+  for(size_t i = 0; i < eflags.size(); ++i) {
+    if(!rf.is_status(eflags[i].index()))
+      continue;
+
+    stringstream name;
+    name << eflags[i] << name_suffix;
+    rf.set(eflags[i].index(), smt.get_model_bool(name.str()));
+  }
+
 }
 
 } // namespace stoke
