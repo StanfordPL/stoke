@@ -26,7 +26,7 @@ using namespace x64asm;
 namespace {
 
 set<Opcode> unsupported_ {{
-		#include "src/sandbox/tables/unsupported.h"
+#include "src/sandbox/tables/unsupported.h"
   }
 };
 
@@ -44,7 +44,7 @@ void callback_wrapper(StateCallback cb, size_t line, CpuState* current, void* ar
 namespace stoke {
 
 bool Sandbox::is_supported(Opcode o) {
-	return unsupported_.find(o) == unsupported_.end();
+  return unsupported_.find(o) == unsupported_.end();
 }
 
 Sandbox::Sandbox() : fxn_(32 * 1024) {
@@ -641,8 +641,8 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
     if (instr.is_div() || instr.is_idiv()) {
       emit_reg_div(instr);
     } else if (instr.get_opcode() == UD2) {
-			emit_signal_trap_call(ErrorCode::SIGILL_);
-		} else {
+      emit_signal_trap_call(ErrorCode::SIGILL_);
+    } else {
       assm_.assemble(instr);
     }
   }

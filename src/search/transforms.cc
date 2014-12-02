@@ -28,7 +28,7 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     auto op = (Opcode)i;
     if (is_control_opcode(op) || is_unsupported(op) || !is_enabled(op, flags) ||
-				is_non_deterministic(op) || opc_blacklist.find(op) != opc_blacklist.end()) {
+        is_non_deterministic(op) || opc_blacklist.find(op) != opc_blacklist.end()) {
       continue;
     } else if (use_whitelist && opc_whitelist.find(op) == opc_whitelist.end()) {
       continue;

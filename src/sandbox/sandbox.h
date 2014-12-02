@@ -30,12 +30,12 @@ namespace stoke {
 
 class Sandbox {
 public:
-	/** Returns true if this instruction is supported. */
-	static bool is_supported(const x64asm::Instruction& instr) {
-		return is_supported(instr.get_opcode());
-	}
-	/** Returns true if this opcode is supported. */
-	static bool is_supported(x64asm::Opcode o);
+  /** Returns true if this instruction is supported. */
+  static bool is_supported(const x64asm::Instruction& instr) {
+    return is_supported(instr.get_opcode());
+  }
+  /** Returns true if this opcode is supported. */
+  static bool is_supported(x64asm::Opcode o);
 
   /** Creates a sandbox. */
   Sandbox();

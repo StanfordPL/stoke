@@ -16,7 +16,7 @@
 // These instruction variants don't actually exist. Attempting to emit
 // code for these will cause the cpu to mutate values in registers other
 // than ah,dh,ch,bh.
-  CRC32_R32_RH
+CRC32_R32_RH
 , CRC32_R64_RH
 , MOVSX_R16_RH
 , MOVSX_R32_RH
@@ -25,8 +25,8 @@
 , MOVZX_R32_RH
 , MOVZX_R64_RH
 
-// See STOKE sandbox issue #253: This is the bit test (and clear/reset/set) family of 
-// instructions for memory operands. 
+// See STOKE sandbox issue #253: This is the bit test (and clear/reset/set) family of
+// instructions for memory operands.
 , BT_M16_IMM8
 , BT_M16_R16
 , BT_M32_IMM8
