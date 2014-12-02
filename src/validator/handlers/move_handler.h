@@ -8,7 +8,7 @@
 
 namespace stoke {
 
-/** Supports all variants of instructions that simply move bits from one register to another */
+/** Supports variants of mov, movz, movs */
 class MoveHandler : public Handler {
 
 public:
