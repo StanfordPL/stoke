@@ -301,18 +301,16 @@ TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
 
   // For each supported opcode, construct an instruction with every register
   // argument being a subregister of rax, rdx, xmm0 or xmm1 and every immediate
-  // 0.  For now, skip memory.  Then validate it against itself.  Errors and
-  // timeouts are okay.  Just not counterexamples.
-
+  // 0.  Make the live outs the 'must write set'.  For now, skip memory.  Then
+  // validate it against itself.  Errors and timeouts are okay.  Just not
+  // counterexamples.  Basically, this just makes sure that we don't have
+  // undefined behavior when we're not supposed to.
 
   // Generate the list of instructions
   std::vector<x64asm::Instruction> instructions;
 
   for (auto op = (int)x64asm::LABEL_DEFN, ope = (int)x64asm::XSAVEOPT64_M64; op != ope; ++op) {
     x64asm::Instruction i((x64asm::Opcode)op);
-
-    if(!is_supported(i))
-      continue;
 
     bool insert = true;
 
@@ -375,8 +373,9 @@ TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
       }
     }
 
-    if(insert)
+    if(insert && is_supported(i)) {
       instructions.push_back(i);
+    }
   }
 
 
@@ -391,6 +390,8 @@ TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
 
     target_ << it << std::endl;
     rewrite_ << it << std::endl;
+
+    set_live_outs(it.must_write_set());
 
     assert_equiv_or_error_or_unsound();
     instructions_checked++;
