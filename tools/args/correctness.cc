@@ -45,9 +45,9 @@ ValueArg<size_t>& sse_count_arg =
   .description("Number of values in sse registers")
   .default_val(4);
 
-FlagArg& relax_reg_arg =
-  FlagArg::create("relax_reg")
-  .description("Allow correct values in incorrect register locations");
+FlagArg& no_relax_reg_arg =
+  FlagArg::create("no_relax_reg")
+  .description("Disallow correct values in incorrect register locations");
 
 FlagArg& relax_mem_arg =
   FlagArg::create("relax_mem")
