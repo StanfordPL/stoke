@@ -27,6 +27,7 @@
 #include "src/search/transforms.h"
 #include "tools/args/target.h"
 #include "tools/args/transforms.h"
+#include "tools/ui/console.h"
 
 namespace {
 
@@ -147,8 +148,8 @@ public:
       diff -= (x64asm::Flag) real_cpu_flags.hash();
       arg_cpu_flags -= (x64asm::Flag) diff.hash();
 
-      std::cerr << "WARNING: some cpu flags are not available on this hardware and will be removed:" << std::endl;
-      std::cerr << diff << std::endl;
+			Console::warn() << "Some cpu flags are not available on this hardware and will be removed:" << std::endl;
+			Console::warn() << diff << std::endl;
     }
 
     set_opcode_pool(arg_cpu_flags, nop_percent_arg, call_weight_arg, mem_read_arg, mem_write_arg,
@@ -163,8 +164,7 @@ public:
     }
 
     if (has_error()) {
-      std::cerr << "ERROR: " << get_error() << std::endl;
-      exit(1);
+			Console::error(1) << get_error() << std::endl;
     }
   }
 

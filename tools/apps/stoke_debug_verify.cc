@@ -26,6 +26,7 @@
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
 #include "tools/gadgets/verifier.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -45,7 +46,7 @@ int main(int argc, char** argv) {
   CostFunctionGadget fxn(target, &sb);
   VerifierGadget verifier(fxn);
 
-  ofilterstream<Column> os(cout);
+  ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
 
   os << "Target" << endl;
@@ -58,31 +59,29 @@ int main(int argc, char** argv) {
   os << rewrite_arg.value().code << endl;
   os.filter().done();
 
-  cout << endl;
+	Console::msg() << endl;
 
   if (!target.is_sound()) {
-    cerr << "ERROR: target reads undefined variables, or leaves live_out undefined." << endl;
-    exit(1);
+		Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
   }
 
   if (!rewrite.is_sound()) {
-    cerr << "ERROR: rewrite reads undefined variables, or leaves live_out undefined." << endl;
-    exit(1);
+		Console::error(1) << "Rewrite reads undefined variables, or leaves live_out undefined." << endl;
   }
 
   if (strategy_arg.value() == Strategy::NONE) {
-    cerr << "WARNING: '--stragegy none' passed, so no verification is done." << endl;
-    exit(0);
+		Console::warn() << "'--stragegy none' passed, so no verification is done." << endl;
+		return 0;
   }
 
   const auto res = verifier.verify(target, rewrite);
 
-  cout << "Equivalent: " << (res ? "yes" : "no") << endl;
+	Console::msg() << "Equivalent: " << (res ? "yes" : "no") << endl;
 
   if (!res) {
-    cout << endl;
-    cout << verifier.get_counter_example();
-    cout << endl;
+		Console::msg() << endl;
+		Console::msg() << verifier.get_counter_example();
+		Console::msg() << endl;
   }
 
   return 0;

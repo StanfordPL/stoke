@@ -23,6 +23,7 @@
 
 #include "src/disassembler/disassembler.h"
 #include "src/disassembler/function_callback.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace stoke;
@@ -69,8 +70,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   if (!make_dir()) {
-    cout << "Unable to create output directory " << out.value() << "!" << endl;
-    return 1;
+		Console::error(1) << "Unable to create output directory " << out.value() << "!" << endl;
   }
 
   Disassembler d;
@@ -78,8 +78,7 @@ int main(int argc, char** argv) {
   d.disassemble(in.value());
 
   if (d.has_error()) {
-    cerr << "Error: " << d.get_error() << endl;
-    return 1;
+		Console::error(1) << "Error: " << d.get_error() << endl;
   }
 
   return 0;

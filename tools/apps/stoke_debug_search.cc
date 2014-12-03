@@ -23,6 +23,7 @@
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/transforms.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -37,7 +38,7 @@ int main(int argc, char** argv) {
   TargetGadget target;
   TransformsGadget tforms(seed);
 
-  ofilterstream<Column> os(cout);
+  ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
 
   os << "Original Code:" << endl;
@@ -61,7 +62,7 @@ int main(int argc, char** argv) {
   os << target.get_code() << endl;
   os.filter().done();
 
-  cout << endl;
+	Console::msg() << endl;
 
   return 0;
 }

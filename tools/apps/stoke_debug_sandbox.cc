@@ -23,6 +23,7 @@
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -40,10 +41,10 @@ auto& breakpoint = ValueArg<size_t>::create("breakpoint")
 void callback(const StateCallbackData& data, void* arg) {
   auto stepping = (bool*) arg;
 
-  cout << data.state << endl;
-  cout << endl;
-  cout << "Current Instruction: " << target_arg.value().code[data.line] << endl;
-  cout << endl;
+	Console::msg() << data.state << endl;
+	Console::msg() << endl;
+	Console::msg() << "Current Instruction: " << target_arg.value().code[data.line] << endl;
+	Console::msg() << endl;
 
   if (data.line != breakpoint && *stepping == false) {
     return;
@@ -51,16 +52,16 @@ void callback(const StateCallbackData& data, void* arg) {
 
   auto key = ' ';
   while (key != 'c' && key != 's' && key != 'd') {
-    cout << "(l)ist, (c)ontinue, (s)tep, (d)isable, or (q)uit: ";
+		Console::msg() << "(l)ist, (c)ontinue, (s)tep, (d)isable, or (q)uit: ";
     cin >> key;
-    cout << endl;
+		Console::msg() << endl;
 
     switch (key) {
     case 'l':
       for (size_t i = 0, ie = target_arg.value().code.size(); i < ie; ++i) {
-        cout << (i == data.line ? "-> " : "   ") << target_arg.value().code[i] << endl;
+				Console::msg() << (i == data.line ? "-> " : "   ") << target_arg.value().code[i] << endl;
       }
-      cout << endl;
+			Console::msg() << endl;
       break;
     case 'c':
       *stepping = false;
@@ -86,7 +87,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   if (testcases_arg.value().empty()) {
-    cout << "No testcases provided." << endl;
+		Console::msg() << "No testcases provided." << endl;
     return 0;
   }
 
@@ -114,13 +115,13 @@ int main(int argc, char** argv) {
 
   const auto result = *(sb.result_begin());
   if (result.code != ErrorCode::NORMAL) {
-    cout << "Control returned abnormally with signal " << dec << (int)result.code << endl;
+		Console::msg() << "Control returned abnormally with signal " << dec << (int)result.code << endl;
   } else {
-    cout << "Control returned normally with state: " << endl;
-    cout << endl;
-    cout << result << endl;
+		Console::msg() << "Control returned normally with state: " << endl;
+		Console::msg() << endl;
+		Console::msg() << result << endl;
   }
-  cout << endl;
+	Console::msg() << endl;
 
   return 0;
 }
