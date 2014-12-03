@@ -1154,13 +1154,13 @@ lookup_handler_or_error opcode num i =
 
 -- Generates a declaration for an instruction
 validator_decl :: [Instr] -> String
-validator_decl is = concat $ ((("#ifndef SWITCH_H\n#define SWITCH_H\n#include \"src/validator/legacy/legacy_handlers.h\"\n#include \"src/validator/legacy/c_interface.h\"\n") : (nub (map render (tail is)))) ++ ("#endif"):[])
+validator_decl is = concat $ ((("#ifndef SWITCH_H\n#define SWITCH_H\n#include \"src/validator/legacy/legacy_handlers.h\"\n#include \"src/validator/legacy/c_interface.h\"\n") : (nub (map render is))) ++ ("#endif"):[])
   where render i = ("void " ++ (att i) ++ (concat (operand_types i)) ++
                   "Handler(v_data d,  unsigned int bitWidth, unsigned int bitWidth1, " ++ (assm_args i) ++ ");\n")
 
 -- Generates a definition for an instruction		
 validator_defn :: [Instr] -> String
-validator_defn is = concat $ ("#include \"switch.h\"\n") : (nub (map render (tail is)))
+validator_defn is = concat $ ("#include \"switch.h\"\n") : (nub (map render is))
   where render i = "void " ++ (att i) ++ (concat (operand_types i)) ++
                    "Handler(v_data d, unsigned int bitWidth, unsigned int bitWidth1, " ++ 
                     (assm_args i) ++ "){"++ (lookup_handler_or_error (att i) (arity i) i) ++ "}\n"		
@@ -1195,7 +1195,7 @@ supported_switch is = foldl1 (++) (map instr_switch is)
 
 -- Generates a switch statement based on opcode enum
 validator_switch :: [Instr] -> [String] -> String
-validator_switch is regs = concat $ map (render regs) (tail is)
+validator_switch is regs = concat $ map (render regs) (is)
     where render regs i= "case " ++ (to_enum i) ++ ": {\n\t" ++ (getmem (myoperands i) 0) ++ (att i)
                                  ++ (concat (operand_types i)) ++"Handler(d, " ++  (args i) ++ ");\n\tbreak;\n}\n\n"
 	  args i = concat $ intersperse "," $ ((if (null (operand_widths i)) 
@@ -1264,7 +1264,7 @@ valid_instr [] _ = True
 valid_instr (x:xs) r = (x `elem` r) && (valid_instr xs r)
   	  
 validator_test :: [Instr] -> [String] -> String
-validator_test is regs = concat $ map (render regs) (tail is)
+validator_test is regs = concat $ map (render regs) is
   where render regs i= if (valid_instr  (operand_types i) regs) then "validator.debug(Instruction(" ++ (to_enum i) ++ ",{" ++(args i) ++ "}));\n" else ""
 	args i = concat $ intersperse "," $ (args' (myoperands i) 0)
         args' ((w,"R","R"):xs) i = ("r8"): (args' xs (i+1))
