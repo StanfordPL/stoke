@@ -806,14 +806,14 @@ operand_widths i = map operand_widths_helper (operands i)
     operand_widths_helper "m128" = "128"
     operand_widths_helper "m256" = "256"
     operand_widths_helper "AL"  = "8"
-    operand_widths_helper "CL"  = "32"
-    operand_widths_helper "AX"  = "32"
-    operand_widths_helper "DX"  = "32"
+    operand_widths_helper "CL"  = "8"
+    operand_widths_helper "AX"  = "16"
+    operand_widths_helper "DX"  = "16"
     operand_widths_helper "EAX" = "32"
     operand_widths_helper "RAX" = "64"
     operand_widths_helper "xmm" = "128"
     operand_widths_helper "<XMM0>" = "128"   
-    operand_widths_helper "1" = "1"   
+    operand_widths_helper "1" = "8"   
     operand_widths_helper x = "0"
     
     
@@ -929,18 +929,6 @@ lookup_handler "idivb"    _ _ = Just "idivHandler(d, bitWidth, E0);"
 lookup_handler "idivl"    _ _ = Just "idivHandler(d, bitWidth, E0);"
 lookup_handler "idivq"    _ _ = Just "idivHandler(d, bitWidth, E0);"
 lookup_handler "idivw"    _ _ = Just "idivHandler(d, bitWidth, E0);"
-lookup_handler "imulb"    1 _ = Just "imul1Handler(d, bitWidth, E0,dest_is_reg);"
-lookup_handler "imulb"    2 _ = Just "imul3Handler(d, bitWidth, E1, E0, E2);"
-lookup_handler "imulb"    3 _ = Just "imul3Handler(d, bitWidth, E0, E1, E2);"
-lookup_handler "imull"    1 _ = Just "imul1Handler(d, bitWidth, E0,dest_is_reg);"
-lookup_handler "imull"    2 _ = Just "imul3Handler(d, bitWidth, E1, E0, E2);"
-lookup_handler "imull"    3 _ = Just "imul3Handler(d, bitWidth, E0, E1, E2);"
-lookup_handler "imulq"    1 _ = Just "imul1Handler(d, bitWidth, E0,dest_is_reg);"
-lookup_handler "imulq"    2 _ = Just "imul3Handler(d, bitWidth, E1, E0, E2);"
-lookup_handler "imulq"    3 _ = Just "imul3Handler(d, bitWidth, E0, E1, E2);"
-lookup_handler "imulw"    1 _ = Just "imul1Handler(d, bitWidth, E0,dest_is_reg);"
-lookup_handler "imulw"    2 _ = Just "imul3Handler(d, bitWidth, E1, E0, E2);"
-lookup_handler "imulw"    3 _ = Just "imul3Handler(d, bitWidth, E0, E1, E2);"
 lookup_handler "incb"     _ _ = Just "incHandler(d, bitWidth, E1, E0, dest_is_reg);"
 lookup_handler "incl"     _ _ = Just "incHandler(d, bitWidth, E1, E0, dest_is_reg);"
 lookup_handler "incq"     _ _ = Just "incHandler(d, bitWidth, E1, E0, dest_is_reg);"
@@ -1143,10 +1131,6 @@ lookup_handler "vlddqu"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1,
 lookup_handler "vmovddup" _ _ = Just "movddupHandler(d, E0, E1);"
 lookup_handler "vmulss"   _ _ = Just "mulfHandler(d, 1, E0, E1, E2, dest_is_reg);"
 lookup_handler "vpunpcklqdq" _ _ = Just "vpunpcklqdqHandler(d, E0, E1, E2);"
-lookup_handler "xchgb"    _ i = Just "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
-lookup_handler "xchgl"    _ i = Just "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
-lookup_handler "xchgq"    _ i = Just "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
-lookup_handler "xchgw"    _ i = Just "xchgHandler(d, bitWidth, E1, E0, E2, E3,  dest_is_reg);"
 lookup_handler "xorb"     _ _ = Just "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "xorl"     _ _ = Just "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "xorpd"    _ _ = Just "pxorHandler(d, E1, E0, E2);"
@@ -1170,13 +1154,13 @@ lookup_handler_or_error opcode num i =
 
 -- Generates a declaration for an instruction
 validator_decl :: [Instr] -> String
-validator_decl is = concat $ ((("#ifndef SWITCH_H\n#define SWITCH_H\n#include \"src/validator/legacy/legacy_handlers.h\"\n#include \"src/validator/legacy/c_interface.h\"\n") : (nub (map render (tail is)))) ++ ("#endif"):[])
+validator_decl is = concat $ ((("#ifndef SWITCH_H\n#define SWITCH_H\n#include \"src/validator/legacy/legacy_handlers.h\"\n#include \"src/validator/legacy/c_interface.h\"\n") : (nub (map render is))) ++ ("#endif"):[])
   where render i = ("void " ++ (att i) ++ (concat (operand_types i)) ++
                   "Handler(v_data d,  unsigned int bitWidth, unsigned int bitWidth1, " ++ (assm_args i) ++ ");\n")
 
 -- Generates a definition for an instruction		
 validator_defn :: [Instr] -> String
-validator_defn is = concat $ ("#include \"switch.h\"\n") : (nub (map render (tail is)))
+validator_defn is = concat $ ("#include \"switch.h\"\n") : (nub (map render is))
   where render i = "void " ++ (att i) ++ (concat (operand_types i)) ++
                    "Handler(v_data d, unsigned int bitWidth, unsigned int bitWidth1, " ++ 
                     (assm_args i) ++ "){"++ (lookup_handler_or_error (att i) (arity i) i) ++ "}\n"		
@@ -1211,7 +1195,7 @@ supported_switch is = foldl1 (++) (map instr_switch is)
 
 -- Generates a switch statement based on opcode enum
 validator_switch :: [Instr] -> [String] -> String
-validator_switch is regs = concat $ map (render regs) (tail is)
+validator_switch is regs = concat $ map (render regs) (is)
     where render regs i= "case " ++ (to_enum i) ++ ": {\n\t" ++ (getmem (myoperands i) 0) ++ (att i)
                                  ++ (concat (operand_types i)) ++"Handler(d, " ++  (args i) ++ ");\n\tbreak;\n}\n\n"
 	  args i = concat $ intersperse "," $ ((if (null (operand_widths i)) 
@@ -1280,7 +1264,7 @@ valid_instr [] _ = True
 valid_instr (x:xs) r = (x `elem` r) && (valid_instr xs r)
   	  
 validator_test :: [Instr] -> [String] -> String
-validator_test is regs = concat $ map (render regs) (tail is)
+validator_test is regs = concat $ map (render regs) is
   where render regs i= if (valid_instr  (operand_types i) regs) then "validator.debug(Instruction(" ++ (to_enum i) ++ ",{" ++(args i) ++ "}));\n" else ""
 	args i = concat $ intersperse "," $ (args' (myoperands i) 0)
         args' ((w,"R","R"):xs) i = ("r8"): (args' xs (i+1))

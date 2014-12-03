@@ -186,3 +186,27 @@ TEST_F(ValidatorMoveTest, Issue236NotEquiv) {
   assert_ceg();
 
 }
+
+TEST_F(ValidatorMoveTest, Issue272) {
+
+  target_ << "movq %xmm0, %xmm0" << std::endl;
+  target_ << "retq" << std::endl;
+
+  stoke::CpuState cs;
+  cs.sse[x64asm::xmm0].get_fixed_quad(0) = 0xc0deface;
+  cs.sse[x64asm::xmm0].get_fixed_quad(1) = 0xc0deface;
+
+  check_circuit(cs);
+}
+
+TEST_F(ValidatorMoveTest, Issue272_2) {
+
+  target_ << "movq %xmm0, %xmm1" << std::endl;
+  target_ << "retq" << std::endl;
+
+  stoke::CpuState cs;
+  cs.sse[x64asm::xmm0].get_fixed_quad(0) = 0xc0deface;
+  cs.sse[x64asm::xmm0].get_fixed_quad(1) = 0xc0deface;
+
+  check_circuit(cs);
+}
