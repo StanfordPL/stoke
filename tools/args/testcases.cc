@@ -22,11 +22,11 @@ using namespace std;
 namespace stoke {
 
 namespace {
-  set<size_t> create_default_testcase_set() {
-    vector<size_t> n(10000);
-    iota(n.begin(), n.end(), 0);
-    return set<size_t>(n.begin(), n.end());
-  }
+set<size_t> create_default_testcase_set() {
+  vector<size_t> n(10000);
+  iota(n.begin(), n.end(), 0);
+  return set<size_t>(n.begin(), n.end());
+}
 }
 
 Heading& testcases_heading =
