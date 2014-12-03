@@ -199,7 +199,9 @@ src/validator/legacy/switch.%: src/validator/legacy/autogen
 	cd src/validator/legacy; ./autogen; cd ../../..;
 
 src/validator/handlers.h: .FORCE
-	src/validator/generate_handlers_h.sh src/validator
+	src/validator/generate_handlers_h.sh src/validator handlers-tmp; \
+	cmp -s $@ src/validator/handlers-tmp || mv src/validator/handlers-tmp $@;
+	rm -f src/validator/handlers-tmp
 
 ##### BUILD TARGETS
 
@@ -311,7 +313,10 @@ TEST_LIBS=-ljsoncpp
 TEST_BIN=bin/stoke_test
 
 tests/validator/handlers.h: .FORCE
-	tests/validator/generate_handlers_h.sh tests/validator	
+	tests/validator/generate_handlers_h.sh tests/validator handlers-tmp; \
+	cmp -s $@ tests/validator/handlers-tmp || mv tests/validator/handlers-tmp $@;
+	rm -f tests/validator/handlers-tmp
+
 
 tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
