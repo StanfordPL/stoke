@@ -590,23 +590,23 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
   case Type::IMM_8:
     bool b = get<Imm64>(imm_pool_, op);
     if (!b) return false;
-    op = Imm8((uint64_t)imm_pool_ & 0xff);
+    op = Imm8((uint64_t)op & 0xff);
     return true;
 
   case Type::IMM_16:
     bool b = get<Imm64>(imm_pool_, op);
     if (!b) return false;
-    op = Imm16((uint64_t)imm_pool_ & 0xffff);
+    op = Imm16((uint64_t)op & 0xffff);
     return true;
 
   case Type::IMM_32:
     bool b = get<Imm64>(imm_pool_, op);
     if (!b) return false;
-    op = Imm32((uint64_t)imm_pool_ & 0xffffffff);
+    op = Imm32((uint64_t)op & 0xffffffff);
     return true;
 
   case Type::IMM_64:
-    return get<Imm64>(imm_pool_, op);
+    return get<Imm64>(op, op);
   case Type::ZERO:
     op = zero;
     return true;
