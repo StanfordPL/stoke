@@ -21,6 +21,7 @@
 #include "tools/args/benchmark.h"
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/testcases.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -36,7 +37,7 @@ int main(int argc, char** argv) {
   TestcaseGadget tc1(seed);
   TestcaseGadget tc2 = tc1;
 
-  cout << "Memory::copy_defined()..." << endl;
+  Console::msg() << "Memory::copy_defined()..." << endl;
 
   const auto start = steady_clock::now();
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
@@ -46,8 +47,8 @@ int main(int argc, char** argv) {
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto cps = benchmark_itr_arg / dur.count();
 
-  cout << "Runtime:    " << dur.count() << " seconds" << endl;
-  cout << "Throughput: " << cps << " / second" << endl;
+  Console::msg() << "Runtime:    " << dur.count() << " seconds" << endl;
+  Console::msg() << "Throughput: " << cps << " / second" << endl;
 
   return 0;
 }

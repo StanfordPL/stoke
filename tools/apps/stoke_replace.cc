@@ -27,6 +27,7 @@
 #include "src/disassembler/function_callback.h"
 #include "tools/args/rewrite.h"
 #include "tools/io/tunit.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -102,14 +103,11 @@ int main(int argc, char** argv) {
   d.disassemble(in.value());
 
   if (d.has_error()) {
-    cerr << "disassemble: " << d.get_error() << endl;
-    return 1;
+    Console::error(1) << "disassemble: " << d.get_error() << endl;
   } else if (!found) {
-    cerr << "Couldn't find function " << rewrite_arg.value().name << " in the binary." << endl;
-    return 1;
+    Console::error(1) << "Couldn't find function " << rewrite_arg.value().name << " in the binary." << endl;
   } else if (!replace(fxn_offset, fxn_size)) {
-    cerr << "Unable to replace function text!" << endl;
-    return 1;
+    Console::error(1) << "Unable to replace function text!" << endl;
   }
 
   return 0;
