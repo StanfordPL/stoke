@@ -209,6 +209,7 @@ int do_decompress() {
 }
 
 int main(int argc, char** argv) {
+  target_arg.required(false);
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
