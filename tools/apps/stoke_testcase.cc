@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/serialize/line_reader.h"
 #include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/system/terminal.h"
@@ -29,7 +30,6 @@
 #include "tools/args/target.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/target.h"
-#include "tools/io/line.h"
 #include "tools/io/tunit.h"
 #include "tools/ui/console.h"
 
@@ -42,7 +42,7 @@ auto& bin = ValueArg<string>::create("bin")
             .usage("<path/to/bin>")
             .description("Executable binary containing function to generate testcases for")
             .default_val("./a.out");
-auto& args = ValueArg<string, LineReader, LineWriter>::create("args")
+auto& args = ValueArg<string, LineReader<>>::create("args")
              .usage("<arg1 arg2 ... argn>")
              .description("Optional command line arguments to pass to binary")
              .default_val("");
