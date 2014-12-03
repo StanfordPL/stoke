@@ -40,8 +40,7 @@ using namespace stoke;
 auto& io_opt = Heading::create("I/O options:");
 auto& bin = ValueArg<string>::create("bin")
             .usage("<path/to/bin>")
-            .description("Executable binary containing function to generate testcases for")
-            .default_val("./a.out");
+            .description("Executable binary containing function to generate testcases for");
 auto& args = ValueArg<string, LineReader<>>::create("args")
              .usage("<arg1 arg2 ... argn>")
              .description("Optional command line arguments to pass to binary")
@@ -49,8 +48,7 @@ auto& args = ValueArg<string, LineReader<>>::create("args")
 auto& out = ValueArg<string>::create("o")
             .alternate("out")
             .usage("<path/to/file.tc>")
-            .description("File to write testcases to (defaults to console if unspecified)")
-            .default_val("");
+            .description("File to write testcases to (defaults to console if unspecified)");
 
 auto& common_opt = Heading::create("Common options:");
 auto& max_tc = ValueArg<size_t>::create("max_testcases")
@@ -121,7 +119,7 @@ int auto_gen() {
     Console::error(1) << "Unable to generate testcases!" << endl;
   }
 
-  if (out.value() != "") {
+  if (out.has_been_provided()) {
     ofstream ofs(out.value());
     tcs.write_text(ofs);
   } else {
@@ -143,7 +141,7 @@ int trace(const string& argv0) {
   term << pin_path << "pin -injection child -t " << so_path << "testcase.so ";
 
   term << "-f " << fxn.value() << " ";
-  if (out.value() != "") {
+  if (out.has_been_provided()) {
     term << "-o " << out.value() << " ";
   }
   term << "-x " << max_stack.value() << " ";
@@ -172,7 +170,7 @@ int do_compress() {
     Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
   }
 
-  if (out.value() != "") {
+  if (out.has_been_provided()) {
     ofstream ofs(out.value());
     cs.write_bin(ofs);
   } else {
@@ -195,7 +193,7 @@ int do_decompress() {
     Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
   }
 
-  if (out.value() != "") {
+  if (out.has_been_provided()) {
     ofstream ofs(out.value());
     cs.write_text(ofs);
   } else {
@@ -207,6 +205,7 @@ int do_decompress() {
 }
 
 int main(int argc, char** argv) {
+  target_arg.required(false);
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
@@ -215,7 +214,7 @@ int main(int argc, char** argv) {
     return do_compress();
   } else if (decompress.value()) {
     return do_decompress();
-  } else if (target_arg.value().name != "anon") {
+  } else if (target_arg.has_been_provided()) {
     return auto_gen();
   } else {
     return trace(argv[0]);
