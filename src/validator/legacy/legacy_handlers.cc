@@ -739,7 +739,9 @@ void cwd_cdq_cqoHandler(v_data d, int width) {
   }
 }
 
-//OF is SET iff original value is 0
+//OF is set if original value is maximum negative value only
+// (and thus cycles to positive)
+//Decrementing 0 does not set OF
 void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
 
 
@@ -747,21 +749,22 @@ void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   //cout << E_dest << E_src <<  endl << bitWidth << endl ;
 #endif
 
-  auto E_result = vc_bvMinusExpr(bitWidth+1,
-                                 SymBitVector::constant(1, 0) || E_src,
-                                 SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 1));
-  SymBool retval = E_dest == E_result[bitWidth - 1][0];
+  auto E_result = E_src - SymBitVector::constant(bitWidth, 1);
+  d.constraints.push_back(E_dest == E_result);
+
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
-    retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
+    d.constraints.push_back(UnmodifiedBitsPreserve(id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
   //cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval);
 
-  setFlag(d.Vnprime,V_OF, vc_eqExpr(E_dest,SymBitVector::constant(bitWidth, 0)), d.constraints, d.post_suffix);
+  auto of = E_src[bitWidth-1] &
+            E_src[bitWidth-2][0] == SymBitVector::constant(bitWidth-1, 0);
+
+  setFlag(d.Vnprime,V_OF, of, d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
 
@@ -2258,8 +2261,8 @@ void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   }
   //cout << "Adding constraint " << retval << endl;
   d.constraints.push_back(retval);
-  setFlag(d.Vnprime, V_OF, getMinusOFExpr(E_arg1[bitWidth - 1], E_arg2[bitWidth - 1],
-                                          E_result[bitWidth - 1]), d.constraints, d.post_suffix);
+  setFlag(d.Vnprime, V_OF, getPlusOFExpr(E_arg1[bitWidth - 1], E_arg2[bitWidth - 1],
+                                         E_result[bitWidth - 1]), d.constraints, d.post_suffix);
   setFlag(d.Vnprime, V_CF, !(E_result[bitWidth] | E_result[bitWidth+1]), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
