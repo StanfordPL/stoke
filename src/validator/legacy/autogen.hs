@@ -806,14 +806,14 @@ operand_widths i = map operand_widths_helper (operands i)
     operand_widths_helper "m128" = "128"
     operand_widths_helper "m256" = "256"
     operand_widths_helper "AL"  = "8"
-    operand_widths_helper "CL"  = "32"
-    operand_widths_helper "AX"  = "32"
-    operand_widths_helper "DX"  = "32"
+    operand_widths_helper "CL"  = "8"
+    operand_widths_helper "AX"  = "16"
+    operand_widths_helper "DX"  = "16"
     operand_widths_helper "EAX" = "32"
     operand_widths_helper "RAX" = "64"
     operand_widths_helper "xmm" = "128"
     operand_widths_helper "<XMM0>" = "128"   
-    operand_widths_helper "1" = "1"   
+    operand_widths_helper "1" = "8"   
     operand_widths_helper x = "0"
     
     

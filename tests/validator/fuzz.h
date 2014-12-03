@@ -131,49 +131,18 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
       continue;
     }
 
-    // Build a circuit for this instruction
-    std::vector<stoke::SymBool> constraints;
-
-    stoke::SymState state(cs);
-    stoke::SymState end("FINAL");
-
-    ch.build_circuit(ins, state);
-
-    for(auto it : state.constraints)
-      constraints.push_back(it);
-    for(auto it : state.equality_constraints(end))
-      constraints.push_back(it);
-
-    bool b = z3.is_sat(constraints);
-    EXPECT_TRUE(b) << "Circuit not satisfiable";
-    EXPECT_FALSE(z3.has_error()) << "Z3 encountered: " << z3.get_error();
-    if(!b)
-      continue;
-
-    if (!z3.has_model()) {
-      std::cout << "[----------]   - SMT solver could not produce model" << std::endl;
-      continue;
-    }
-
-    // Solve for the final state and counterexample
-    stoke::CpuState validator_final(z3, "_FINAL");
-
-    // Use the sandbox to compute a final state
-    sb.insert_input(cs);
-    sb.run(cfg);
-
-    stoke::CpuState sandbox_final = *sb.get_result(0);
-
-    // Compare the final states
-    std::stringstream ss;
-    ss << "Counterexample:" << std::endl;
-    ss << cs << std::endl;
-    ss << "Validator and sandbox disagree on output.";
-    expect_cpustate_eq(sandbox_final, validator_final, liveouts,
-                       ss.str());
-
+    // Do the test
     // If we did the comparison, then we performed the test right
-    success++;
+    target_.clear();
+    target_.str("");
+    target_ << ins << std::endl;
+    target_ << "retq" << std::endl;
+
+    set_def_ins(cfg.def_ins());
+    set_live_outs(cfg.live_outs());
+
+    if(check_circuit(cs))
+      success++;
   }
 
   // Make sure we supported enough of the instructions
