@@ -2240,8 +2240,6 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
 
 void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-
-
   auto E_result = SymBitVector::var(bitWidth+2, ("SBBTEMP"+d.pre_suffix+to_string(d.instr_no)).c_str());
   auto E_arg1 = SymBitVector::constant(2, 0) || E_src1;
   auto E_arg2 = SymBitVector::constant(2, 0) || vc_bvNotExpr(E_src2);

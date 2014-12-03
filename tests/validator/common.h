@@ -168,6 +168,7 @@ protected:
     // Check sandbox and state equivalent
     std::stringstream ss;
     ss << "Counterexample: " << std::endl << cs << std::endl;
+    ss << "Sandbox final state: " << std::endl << sandbox_final << std::endl;
     ss << "Sandbox and validator disagree on liveout" << std::endl;
     expect_cpustate_equal_on_liveout(sandbox_final, validator_final, ss.str());
 

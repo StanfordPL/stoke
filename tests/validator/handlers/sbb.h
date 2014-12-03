@@ -49,3 +49,14 @@ TEST_F(ValidatorSbbTest, Issue238) {
 
   check_circuit(cs);
 }
+
+TEST_F(ValidatorSbbTest, Issue238_2) {
+
+  target_ << "sbbw $0xfffb, %ax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  stoke::CpuState cs;
+  cs.gp[x64asm::ax].get_fixed_quad(0) = 0x80000000b0a02d08;
+
+  check_circuit(cs);
+}
