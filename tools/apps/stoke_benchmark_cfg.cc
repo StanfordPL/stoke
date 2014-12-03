@@ -20,6 +20,7 @@
 
 #include "tools/args/benchmark.h"
 #include "tools/gadgets/target.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -33,7 +34,7 @@ int main(int argc, char** argv) {
 
   TargetGadget target;
 
-  cout << "Cfg::recompute()..." << endl;
+  Console::msg() << "Cfg::recompute()..." << endl;
 
   const auto start = steady_clock::now();
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
@@ -42,8 +43,8 @@ int main(int argc, char** argv) {
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto rps = benchmark_itr_arg / dur.count();
 
-  cout << "Runtime:    " << dur.count() << " seconds" << endl;
-  cout << "Throughput: " << rps << " / second" << endl;
+  Console::msg() << "Runtime:    " << dur.count() << " seconds" << endl;
+  Console::msg() << "Throughput: " << rps << " / second" << endl;
 
   return 0;
 }
