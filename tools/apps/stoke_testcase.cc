@@ -118,7 +118,7 @@ int auto_gen() {
   }
 
   if (tcs.empty()) {
-		Console::error(1) << "Unable to generate testcases!" << endl;
+    Console::error(1) << "Unable to generate testcases!" << endl;
   }
 
   if (out.value() != "") {
@@ -126,7 +126,7 @@ int auto_gen() {
     tcs.write_text(ofs);
   } else {
     tcs.write_text(Console::msg());
-		Console::msg() << endl;
+    Console::msg() << endl;
   }
 
   return 0;
@@ -163,13 +163,13 @@ int trace(const string& argv0) {
 int do_compress() {
   ifstream ifs(in.value());
   if (!ifs.is_open()) {
-		Console::error(1) << "Unable to open input file: " << in.value() << "!" << endl;
+    Console::error(1) << "Unable to open input file: " << in.value() << "!" << endl;
   }
 
   CpuStates cs;
   cs.read_text(ifs);
   if (ifs.fail()) {
-		Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
+    Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
   }
 
   if (out.value() != "") {
@@ -177,7 +177,7 @@ int do_compress() {
     cs.write_bin(ofs);
   } else {
     cs.write_bin(Console::msg());
-		Console::msg() << endl;
+    Console::msg() << endl;
   }
 
   return 0;
@@ -186,13 +186,13 @@ int do_compress() {
 int do_decompress() {
   ifstream ifs(in.value());
   if (!ifs.is_open()) {
-		Console::error(1) << "Unable to open input file: " << in.value() << "!" << endl;
+    Console::error(1) << "Unable to open input file: " << in.value() << "!" << endl;
   }
 
   CpuStates cs;
   cs.read_bin(ifs);
   if (ifs.fail()) {
-		Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
+    Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
   }
 
   if (out.value() != "") {
@@ -200,7 +200,7 @@ int do_decompress() {
     cs.write_text(ofs);
   } else {
     cs.write_text(Console::msg());
-		Console::msg() << endl;
+    Console::msg() << endl;
   }
 
   return 0;
