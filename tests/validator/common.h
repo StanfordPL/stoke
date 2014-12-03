@@ -17,6 +17,8 @@
 #define TESTS_VALIDATOR_COMMON_H
 
 #include "src/sandbox/sandbox.h"
+#include "src/validator/validator.h"
+#include "src/validator/handlers/combo_handler.h"
 
 class ValidatorTest : public ::testing::Test {
 
@@ -61,6 +63,7 @@ protected:
   std::stringstream target_;
   std::stringstream rewrite_;
 
+  /** Check the two codes are equivalent */
   void assert_equiv() {
     if(!reset_state())
       return;
@@ -68,21 +71,21 @@ protected:
     check_codes(EQUIVALENT);
   }
 
+  /** Check the two codes are equivalent or have an error*/
+  void assert_equiv_or_error() {
+    if(!reset_state())
+      return;
+
+    check_codes(EQUIVALENT | ERROR);
+  }
+
+  /** Check if an instruction is supported */
   bool is_supported(x64asm::Instruction& instr) {
     return v_.is_supported(instr);
   }
 
-  void assert_equiv_or_error_or_unsound() {
-    if(!reset_state())
-      return;
-
-    if(!cfg_t_->is_sound() || !cfg_r_->is_sound()) {
-      check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE | ERROR);
-    } else {
-      check_codes(EQUIVALENT | ERROR);
-    }
-  }
-
+  /** Check that the validator returns false; check the counterexample
+      if given */
   void assert_ceg(stoke::CpuState* ceg = NULL) {
     if(!reset_state())
       return;
@@ -92,6 +95,8 @@ protected:
       *ceg = v_.get_counterexample();
   }
 
+  /** Check that the validator returns false, but don't look
+      at the counterexample or lack thereof */
   void assert_ceg_nocheck(stoke::CpuState* ceg = NULL) {
     if(!reset_state())
       return;
@@ -101,6 +106,7 @@ protected:
       *ceg = v_.get_counterexample();
   }
 
+  /** Check that the validator encounters an error on these two rewrite s */
   std::string assert_fail() {
     if(!reset_state())
       return "";
@@ -113,8 +119,62 @@ protected:
     return v_.get_error();
   }
 
+  /** Runs the target on the given CpuState in a sandbox, and compares
+      with the validator output.  Returns false if the validator failed to
+      build a model (which means that passing the test is useless). */
+  bool check_circuit(stoke::CpuState cs) {
+    if(!reset_state(true))
+      return false;
+    ceg_shown_ = true;
 
-  /* Runs the target and rewrite against the sandbox.
+    // Build a circuit for this Cfg
+    stoke::ComboHandler ch;
+
+    std::vector<stoke::SymBool> constraints;
+
+    stoke::SymState state(cs);
+    stoke::SymState end("FINAL");
+
+    for(auto it : cfg_t_->get_code())
+      ch.build_circuit(it, state);
+
+    for(auto it : state.constraints)
+      constraints.push_back(it);
+    for(auto it : state.equality_constraints(end))
+      constraints.push_back(it);
+
+    // Check that we can generate a state
+    bool b = s_.is_sat(constraints);
+    EXPECT_TRUE(b) << "Circuit not satisfiable";
+    EXPECT_FALSE(s_.has_error()) << "Z3 encountered: " << s_.get_error();
+    if(!b || s_.has_error())
+      return true;
+
+    if(!s_.has_model())
+      return false;
+
+    stoke::CpuState validator_final(s_, "_FINAL");
+
+    // Run the sandbox
+    stoke::Sandbox sb;
+    sb.set_abi_check(false)
+    .set_max_jumps(1)
+    .insert_input(cs);
+
+    sb.run(*cfg_t_);
+
+    stoke::CpuState sandbox_final = *sb.get_result(0);
+
+    // Check sandbox and state equivalent
+    std::stringstream ss;
+    ss << "Counterexample: " << std::endl << cs << std::endl;
+    ss << "Sandbox final state: " << std::endl << sandbox_final << std::endl;
+    ss << "Sandbox and validator disagree on liveout" << std::endl;
+    expect_cpustate_equal_on_liveout(sandbox_final, validator_final, ss.str());
+
+  }
+
+  /** Runs the target and rewrite against the sandbox.
      If they are the same for all inputs, expect them to be equivalent.
      Otherwise, expect validator to come up with a correct counterexample. */
   void assert_sandbox(stoke::Sandbox& sb) {
@@ -156,21 +216,21 @@ protected:
 
   }
 
-  /* Set live outs for equivalence check */
+  /** Set live outs for equivalence check */
   void set_live_outs(x64asm::RegSet rs) {
     live_outs_ = rs;
   }
-  /* Set def ins for equivalence check */
+  /** Set def ins for equivalence check */
   void set_def_ins(x64asm::RegSet rs) {
     def_ins_ = rs;
   }
 
-  /* Set maximum validation time */
+  /** Set maximum validation time */
   void set_timeout(uint64_t time) {
     s_.set_timeout(time);
   }
 
-  /* Initialize member variables. */
+  /** Initialize member variables. */
   virtual void SetUp() {
 
     set_timeout(1000);
@@ -180,14 +240,6 @@ protected:
 
     target_.clear();
     rewrite_.clear();
-  }
-
-  /** Check equivalence of CpuStates */
-  void expect_cpustate_eq(stoke::CpuState& s1, stoke::CpuState& s2,
-                          x64asm::RegSet lo, std::string message) {
-    live_outs_ = lo;
-    ceg_shown_ = true;
-    expect_cpustate_equal_on_liveout(s1, s2, message);
   }
 
 private:
@@ -220,6 +272,7 @@ private:
       report_error(OTHER, OTHER, true, "Target or rewrite was empty.");
       return 0;
     }
+
 
     return new stoke::Cfg(c, def_ins_, live_outs_);
   }
@@ -499,7 +552,7 @@ private:
   /* Called at the start of an "assert" to get the
      target/rewrite the user wants to test, and reset our state for tracking
      what we've reported to the user. */
-  bool reset_state() {
+  bool reset_state(bool target_only = false) {
     if(cfg_t_) {
       delete cfg_t_;
       cfg_t_ = 0;
@@ -510,12 +563,18 @@ private:
       cfg_r_ = 0;
     }
 
-    cfg_t_ = get_cfg(target_);
-    cfg_r_ = get_cfg(rewrite_);
-
     codes_shown_ = false;
     ceg_shown_ = false;
 
+
+    // Build the Cfgs from the given instructions
+    cfg_t_ = get_cfg(target_);
+
+    if(target_only) {
+      return cfg_t_;
+    }
+
+    cfg_r_ = get_cfg(rewrite_);
     return cfg_t_ && cfg_r_;
   }
 
