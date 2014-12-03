@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
 
   TargetGadget target;
 
-	Console::msg() << "Cfg::recompute()..." << endl;
+  Console::msg() << "Cfg::recompute()..." << endl;
 
   const auto start = steady_clock::now();
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
@@ -43,8 +43,8 @@ int main(int argc, char** argv) {
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto rps = benchmark_itr_arg / dur.count();
 
-	Console::msg() << "Runtime:    " << dur.count() << " seconds" << endl;
-	Console::msg() << "Throughput: " << rps << " / second" << endl;
+  Console::msg() << "Runtime:    " << dur.count() << " seconds" << endl;
+  Console::msg() << "Throughput: " << rps << " / second" << endl;
 
   return 0;
 }

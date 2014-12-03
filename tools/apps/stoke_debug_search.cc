@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
   os << target.get_code() << endl;
   os.filter().done();
 
-	Console::msg() << endl;
+  Console::msg() << endl;
 
   return 0;
 }

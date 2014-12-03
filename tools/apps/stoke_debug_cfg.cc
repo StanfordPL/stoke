@@ -92,11 +92,11 @@ int main(int argc, char** argv) {
 
   to_dot();
   if (!to_pdf()) {
-		Console::error(1) << "Unable to save file!" << endl;
+    Console::error(1) << "Unable to save file!" << endl;
   } else if (view && !view_pdf()) {
-		Console::error(1) << "Unable to open file for viewing!" << endl;
+    Console::error(1) << "Unable to open file for viewing!" << endl;
   } else if (view && !rm_pdf()) {
-		Console::error(1) << "Unable to remove file!" << endl;
+    Console::error(1) << "Unable to remove file!" << endl;
   }
 
   return 0;

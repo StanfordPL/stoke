@@ -33,25 +33,25 @@ int main(int argc, char** argv) {
   SeedGadget seed;
   TestcaseGadget s1(seed);
 
-	Console::msg() << "Original state: " << endl;
-	Console::msg() << endl;
-	Console::msg() << s1 << endl;
-	Console::msg() << endl;
+  Console::msg() << "Original state: " << endl;
+  Console::msg() << endl;
+  Console::msg() << s1 << endl;
+  Console::msg() << endl;
 
   const auto s2 = s1 ^ s1;
 
-	Console::msg() << "XOR'ed with itself: " << endl;
-	Console::msg() << endl;
-	Console::msg() << s2 << endl;
-	Console::msg() << endl;
+  Console::msg() << "XOR'ed with itself: " << endl;
+  Console::msg() << endl;
+  Console::msg() << s2 << endl;
+  Console::msg() << endl;
 
   s1.stack.copy_defined(s2.stack);
   s1.heap.copy_defined(s2.heap);
 
-	Console::msg() << "Copy defined state from XOR'ed state" << endl;
-	Console::msg() << endl;
-	Console::msg() << s1 << endl;
-	Console::msg() << endl;
+  Console::msg() << "Copy defined state from XOR'ed state" << endl;
+  Console::msg() << endl;
+  Console::msg() << s1 << endl;
+  Console::msg() << endl;
 
   return 0;
 }
