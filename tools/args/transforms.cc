@@ -31,13 +31,13 @@ ValueArg<FlagSet, FlagSetReader, FlagSetWriter>& cpu_flags_arg =
 
 ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>& opc_blacklist_arg =
   ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("opc_blacklist")
-  .usage("{ opcode1 opcode2 ... opcoden; e.g., xorl or xorl_r32_r32 }")
+  .usage("{ opcode1 ... opcoden; e.g., xorl or xorl_r32_r32 }")
   .description("Don't propose any instructions from this set (takes precedence over --opc_whitelist)")
   .default_val({});
 
 ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>& opc_whitelist_arg =
   ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("opc_whitelist")
-  .usage("{ opcode1 opcode2 ... opcoden; e.g., xorl or xorl_r32_r32 }")
+  .usage("{ opcode1 ... opcoden; e.g., xorl or xorl_r32_r32 }")
   .description("Only proprose instructions from this set (unless they are not proposed for other reasons, e.g. --opc_blacklist, --propose_call, --cpu_flags, --mem_read, --mem_write, instructions not supported by stoke, etc.); empty whitelist means no whitelist")
   .default_val({});
 
