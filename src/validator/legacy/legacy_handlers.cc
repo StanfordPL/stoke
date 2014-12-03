@@ -49,11 +49,11 @@ void adcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   //Get a bitWidth+2 bitvector with the lsb as carry
   auto E_carry = SymBitVector::var(bitWidth+2, ("CARRY"+d.pre_suffix+to_string(d.instr_no)).c_str());
   SymBool retval = (SymBool)E_carry[0] == getBoolExpr(V_CF, d.pre_suffix, d.Vn);
-  retval = retval & vc_eqExpr(E_carry[bitWidth+1][1],  SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 0));
+  retval = retval & (E_carry[bitWidth+1][1] == SymBitVector::constant(bitWidth + 1, 0));
 
   //E_src1 + E_src2 + Carry
-  retval = retval & vc_eqExpr(E_result,vc_bvPlusExpr(bitWidth+2, vc_bvPlusExpr(bitWidth+2, E_arg1, E_arg2), E_carry));
-  retval = retval & E_dest == E_result[bitWidth-1][0];
+  retval = retval & (E_result == E_arg1 + E_arg2 + E_carry);
+  retval = retval & (E_dest == E_result[bitWidth-1][0]);
 
   //Handle effects on parent register
   if(dest_is_reg && bitWidth < V_UNITSIZE)
@@ -739,7 +739,9 @@ void cwd_cdq_cqoHandler(v_data d, int width) {
   }
 }
 
-//OF is SET iff original value is 0
+//OF is set if original value is maximum negative value only
+// (and thus cycles to positive)
+//Decrementing 0 does not set OF
 void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
 
 
@@ -747,21 +749,22 @@ void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   //cout << E_dest << E_src <<  endl << bitWidth << endl ;
 #endif
 
-  auto E_result = vc_bvMinusExpr(bitWidth+1,
-                                 SymBitVector::constant(1, 0) || E_src,
-                                 SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 1));
-  SymBool retval = E_dest == E_result[bitWidth - 1][0];
+  auto E_result = E_src - SymBitVector::constant(bitWidth, 1);
+  d.constraints.push_back(E_dest == E_result);
+
   if(dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
-    retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
+    d.constraints.push_back(UnmodifiedBitsPreserve(id_dest, d, bitWidth));
   }
 #ifdef DEBUG_VALIDATOR
   //cout << "Adding constraint " << retval << endl;
 #endif
-  d.constraints.push_back(retval);
 
-  setFlag(d.Vnprime,V_OF, vc_eqExpr(E_dest,SymBitVector::constant(bitWidth, 0)), d.constraints, d.post_suffix);
+  auto of = E_src[bitWidth-1] &
+            E_src[bitWidth-2][0] == SymBitVector::constant(bitWidth-1, 0);
+
+  setFlag(d.Vnprime,V_OF, of, d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
 
@@ -2240,8 +2243,6 @@ void sarVarHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Ex
 
 void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
-
-
   auto E_result = SymBitVector::var(bitWidth+2, ("SBBTEMP"+d.pre_suffix+to_string(d.instr_no)).c_str());
   auto E_arg1 = SymBitVector::constant(2, 0) || E_src1;
   auto E_arg2 = SymBitVector::constant(2, 0) || vc_bvNotExpr(E_src2);
@@ -2260,8 +2261,8 @@ void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   }
   //cout << "Adding constraint " << retval << endl;
   d.constraints.push_back(retval);
-  setFlag(d.Vnprime, V_OF, getMinusOFExpr(E_arg1[bitWidth - 1], E_arg2[bitWidth - 1],
-                                          E_result[bitWidth - 1]), d.constraints, d.post_suffix);
+  setFlag(d.Vnprime, V_OF, getPlusOFExpr(E_arg1[bitWidth - 1], E_arg2[bitWidth - 1],
+                                         E_result[bitWidth - 1]), d.constraints, d.post_suffix);
   setFlag(d.Vnprime, V_CF, !(E_result[bitWidth] | E_result[bitWidth+1]), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }

@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/serialize/line_reader.h"
 #include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/system/terminal.h"
@@ -30,6 +31,7 @@
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/target.h"
 #include "tools/io/tunit.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -39,7 +41,7 @@ auto& io_opt = Heading::create("I/O options:");
 auto& bin = ValueArg<string>::create("bin")
             .usage("<path/to/bin>")
             .description("Executable binary containing function to generate testcases for");
-auto& args = ValueArg<string>::create("args")
+auto& args = ValueArg<string, LineReader<>>::create("args")
              .usage("<arg1 arg2 ... argn>")
              .description("Optional command line arguments to pass to binary")
              .default_val("");
@@ -115,16 +117,15 @@ int auto_gen() {
   }
 
   if (tcs.empty()) {
-    cout << "Unable to generate testcases!" << endl;
-    return 1;
+    Console::error(1) << "Unable to generate testcases!" << endl;
   }
 
   if (out.value() != "") {
     ofstream ofs(out.value());
     tcs.write_text(ofs);
   } else {
-    tcs.write_text(cout);
-    cout << endl;
+    tcs.write_text(Console::msg());
+    Console::msg() << endl;
   }
 
   return 0;
@@ -161,23 +162,21 @@ int trace(const string& argv0) {
 int do_compress() {
   ifstream ifs(in.value());
   if (!ifs.is_open()) {
-    cout << "Unable to open input file: " << in.value() << "!" << endl;
-    return 1;
+    Console::error(1) << "Unable to open input file: " << in.value() << "!" << endl;
   }
 
   CpuStates cs;
   cs.read_text(ifs);
   if (ifs.fail()) {
-    cout << "Unable to read input file: " << in.value() << "!" << endl;
-    return 1;
+    Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
   }
 
   if (out.value() != "") {
     ofstream ofs(out.value());
     cs.write_bin(ofs);
   } else {
-    cs.write_bin(cout);
-    cout << endl;
+    cs.write_bin(Console::msg());
+    Console::msg() << endl;
   }
 
   return 0;
@@ -186,23 +185,21 @@ int do_compress() {
 int do_decompress() {
   ifstream ifs(in.value());
   if (!ifs.is_open()) {
-    cout << "Unable to open input file: " << in.value() << "!" << endl;
-    return 1;
+    Console::error(1) << "Unable to open input file: " << in.value() << "!" << endl;
   }
 
   CpuStates cs;
   cs.read_bin(ifs);
   if (ifs.fail()) {
-    cout << "Unable to read input file: " << in.value() << "!" << endl;
-    return 1;
+    Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
   }
 
   if (out.value() != "") {
     ofstream ofs(out.value());
     cs.write_text(ofs);
   } else {
-    cs.write_text(cout);
-    cout << endl;
+    cs.write_text(Console::msg());
+    Console::msg() << endl;
   }
 
   return 0;

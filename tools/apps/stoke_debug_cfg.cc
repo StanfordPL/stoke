@@ -24,6 +24,7 @@
 
 #include "src/cfg/dot_writer.h"
 #include "tools/gadgets/target.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -91,14 +92,11 @@ int main(int argc, char** argv) {
 
   to_dot();
   if (!to_pdf()) {
-    cout << "Unable to save file!" << endl;
-    return 1;
+    Console::error(1) << "Unable to save file!" << endl;
   } else if (view && !view_pdf()) {
-    cout << "Unable to open file for viewing!" << endl;
-    return 1;
+    Console::error(1) << "Unable to open file for viewing!" << endl;
   } else if (view && !rm_pdf()) {
-    cout << "Unable to remove file!" << endl;
-    return 1;
+    Console::error(1) << "Unable to remove file!" << endl;
   }
 
   return 0;
