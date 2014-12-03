@@ -43,7 +43,8 @@ PIN_LIB=\
 	-L../../../intel64/lib-ext \
 	-L../../../intel64/runtime/glibc \
 	-L../../../extras/xed2-intel64/lib \
-	-lpin -lxed -ldwarf -lelf -ldl
+	-L../../../../../ext/x64asm/lib/ \
+	-lx64asm -lpin -lxed -ldwarf -lelf -ldl
 
 PIN_OBJ=\
 	obj-intel64/cpu_state.o \
