@@ -71,7 +71,7 @@ ValueArg<size_t>& timeout_itr_arg =
   .alternate("timeout_itr")
   .usage("<int>")
   .description("Number of proposals to execute before giving up")
-  .default_val(1000000);
+  .default_val(1000000000);
 
 ValueArg<size_t>& timeout_sec_arg =
   ValueArg<size_t>::create("timeout_time")
@@ -96,7 +96,7 @@ ValueArg<Init, InitReader, InitWriter>& init_arg =
   ValueArg<Init, InitReader, InitWriter>::create("init")
   .usage("(empty|zero|target|previous|extension)")
   .description("Initial search state")
-  .default_val(Init::EMPTY);
+  .default_val(Init::ZERO);
 
 } // namespace stoke
 

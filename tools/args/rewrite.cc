@@ -26,6 +26,6 @@ FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg =
   FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
   .usage("<path/to/file.s>")
   .description("Rewrite code")
-.default_val({"anon", {{RET}}});
+  .required();
 
 } // namespace stoke
