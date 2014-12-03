@@ -125,6 +125,7 @@ protected:
   bool check_circuit(stoke::CpuState cs) {
     if(!reset_state(true))
       return false;
+    ceg_shown_ = true;
 
     // Build a circuit for this Cfg
     stoke::ComboHandler ch;
@@ -165,8 +166,11 @@ protected:
     stoke::CpuState sandbox_final = *sb.get_result(0);
 
     // Check sandbox and state equivalent
-    expect_cpustate_equal_on_liveout(sandbox_final, validator_final,
-                                     "Sandbox and validator disagree on liveout");
+    std::stringstream ss;
+    ss << "Counterexample: " << std::endl << cs << std::endl;
+    ss << "Sandbox and validator disagree on liveout" << std::endl;
+    expect_cpustate_equal_on_liveout(sandbox_final, validator_final, ss.str());
+
   }
 
   /** Runs the target and rewrite against the sandbox.
