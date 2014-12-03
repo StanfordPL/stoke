@@ -612,7 +612,7 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
   }
 
   case Type::IMM_64:
-    return get<Imm64>(op, op);
+    return get<Imm64>(imm_pool_, op);
   case Type::ZERO:
     op = zero;
     return true;
