@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   if (!make_dir()) {
-		Console::error(1) << "Unable to create output directory " << out.value() << "!" << endl;
+    Console::error(1) << "Unable to create output directory " << out.value() << "!" << endl;
   }
 
   Disassembler d;
@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
   d.disassemble(in.value());
 
   if (d.has_error()) {
-		Console::error(1) << "Error: " << d.get_error() << endl;
+    Console::error(1) << "Error: " << d.get_error() << endl;
   }
 
   return 0;

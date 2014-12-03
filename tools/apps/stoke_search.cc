@@ -196,7 +196,7 @@ void scb(const StatisticsCallbackData& data, void* arg) {
     ofstream stats;
     stats.open(filename.str());
     if (!stats.is_open()) {
-			Console::error(1) << "Could not open " << filename << " for writing statistics.";
+      Console::error(1) << "Could not open " << filename << " for writing statistics.";
     }
 
     for (size_t i = 0; i <= stat_max.value(); ++i) {
@@ -241,7 +241,7 @@ int main(int argc, char** argv) {
 
     if (stat_dir.value() != "") {
       if (!scb_arg.cost_stats) {
-				Console::msg() << "Initialize cost_stats with size " << stat_max.value() + 1 << endl;
+        Console::msg() << "Initialize cost_stats with size " << stat_max.value() + 1 << endl;
         scb_arg.cost_stats = new uint32_t* [stat_max.value() + 1];
         for (size_t j = 0; j <= stat_max.value(); ++j) {
           scb_arg.cost_stats[j] = new uint32_t[stat_max.value() + 1];
@@ -250,36 +250,36 @@ int main(int argc, char** argv) {
           }
         }
       }
-			Console::msg() << "Setting up statistics" << endl;
-			Console::msg() << "address is " << scb_arg.cost_stats << endl;
+      Console::msg() << "Setting up statistics" << endl;
+      Console::msg() << "address is " << scb_arg.cost_stats << endl;
       fxn.set_statistics(scb_arg.cost_stats, stat_max.value() + 1);
     }
 
-		Console::msg() << "Running search:" << endl << endl;
+    Console::msg() << "Running search:" << endl << endl;
     state = SearchStateGadget();
     search.run(target, fxn, init_arg, state, aux_fxns_arg.value());
     const auto verified = verifier.verify(target, state.best_correct);
 
     if (!state.success) {
-			Console::msg() << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
+      Console::msg() << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
     } else if (!verified) {
-			Console::msg() << "Unable to verify new rewrite..." << endl << endl;
+      Console::msg() << "Unable to verify new rewrite..." << endl << endl;
     } else {
-			Console::msg() << "Search terminated successfully with a verified rewrite!" << endl;
+      Console::msg() << "Search terminated successfully with a verified rewrite!" << endl;
       break;
     }
 
     sep(Console::msg());
 
     if ((timeout_action_arg == Timeout::RESTART) && (i < timeout_cycles_arg.value())) {
-			Console::msg() << "Restarting search:" << endl << endl;
+      Console::msg() << "Restarting search:" << endl << endl;
     } else if ((timeout_action_arg == Timeout::TESTCASE) && (i < timeout_cycles_arg.value())
                && verifier.counter_example_available()) {
-			Console::msg() << "Restarting search using new testcase:" << endl << endl;
-			Console::msg() << verifier.get_counter_example() << endl << endl;
+      Console::msg() << "Restarting search using new testcase:" << endl << endl;
+      Console::msg() << verifier.get_counter_example() << endl << endl;
       training_sb.insert_input(verifier.get_counter_example());
     } else {
-			Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+      Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
     }
   }
 

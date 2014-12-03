@@ -60,13 +60,13 @@ int main(int argc, char** argv) {
   os << rewrite_arg.value().code << endl;
   os.filter().done();
 
-	Console::msg() << endl;
+  Console::msg() << endl;
 
   const auto res = fxn(rewrite, max_cost_arg.value());
 
-	Console::msg() << "Correct: " << (res.first ? "yes" : "no") << endl;
-	Console::msg() << "Cost: " << res.second << endl;
-	Console::msg() << endl;
+  Console::msg() << "Correct: " << (res.first ? "yes" : "no") << endl;
+  Console::msg() << "Cost: " << res.second << endl;
+  Console::msg() << endl;
 
   return 0;
 }

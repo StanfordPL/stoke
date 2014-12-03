@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
   TargetGadget target;
   TransformsGadget tforms(seed);
 
-	Console::msg() << "Transforms::modify()..." << endl;
+  Console::msg() << "Transforms::modify()..." << endl;
 
   const auto start = steady_clock::now();
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
@@ -48,8 +48,8 @@ int main(int argc, char** argv) {
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto mps = benchmark_itr_arg / dur.count();
 
-	Console::msg() << "Runtime:    " << dur.count() << " seconds" << endl;
-	Console::msg() << "Throughput: " << mps << " / second" << endl;
+  Console::msg() << "Runtime:    " << dur.count() << " seconds" << endl;
+  Console::msg() << "Throughput: " << mps << " / second" << endl;
 
   return 0;
 }
