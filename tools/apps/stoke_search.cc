@@ -229,6 +229,10 @@ int main(int argc, char** argv) {
   CostFunctionGadget holdout_fxn(target, &test_sb);
   VerifierGadget verifier(holdout_fxn);
 
+  if (!target.is_sound()) {
+    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
+  }
+
   ScbArg scb_arg {&Console::msg(), nullptr};
   search.set_progress_callback(pcb, &Console::msg())
   .set_statistics_callback(scb, &scb_arg)
