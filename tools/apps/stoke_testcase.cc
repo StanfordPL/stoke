@@ -38,8 +38,7 @@ using namespace stoke;
 auto& io_opt = Heading::create("I/O options:");
 auto& bin = ValueArg<string>::create("bin")
             .usage("<path/to/bin>")
-            .description("Executable binary containing function to generate testcases for")
-            .default_val("./a.out");
+            .description("Executable binary containing function to generate testcases for");
 auto& args = ValueArg<string>::create("args")
              .usage("<arg1 arg2 ... argn>")
              .description("Optional command line arguments to pass to binary")
@@ -48,7 +47,7 @@ auto& out = ValueArg<string>::create("o")
             .alternate("out")
             .usage("<path/to/file.tc>")
             .description("File to write testcases to (defaults to console if unspecified)")
-            .default_val("");
+            .required();
 
 auto& common_opt = Heading::create("Common options:");
 auto& max_tc = ValueArg<size_t>::create("max_testcases")
@@ -218,7 +217,7 @@ int main(int argc, char** argv) {
     return do_compress();
   } else if (decompress.value()) {
     return do_decompress();
-  } else if (target_arg.value().name != "anon") {
+  } else if (target_arg.has_been_provided()) {
     return auto_gen();
   } else {
     return trace(argv[0]);
