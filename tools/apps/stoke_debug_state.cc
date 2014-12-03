@@ -19,6 +19,7 @@
 
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/testcases.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -32,25 +33,25 @@ int main(int argc, char** argv) {
   SeedGadget seed;
   TestcaseGadget s1(seed);
 
-  cout << "Original state: " << endl;
-  cout << endl;
-  cout << s1 << endl;
-  cout << endl;
+  Console::msg() << "Original state: " << endl;
+  Console::msg() << endl;
+  Console::msg() << s1 << endl;
+  Console::msg() << endl;
 
   const auto s2 = s1 ^ s1;
 
-  cout << "XOR'ed with itself: " << endl;
-  cout << endl;
-  cout << s2 << endl;
-  cout << endl;
+  Console::msg() << "XOR'ed with itself: " << endl;
+  Console::msg() << endl;
+  Console::msg() << s2 << endl;
+  Console::msg() << endl;
 
   s1.stack.copy_defined(s2.stack);
   s1.heap.copy_defined(s2.heap);
 
-  cout << "Copy defined state from XOR'ed state" << endl;
-  cout << endl;
-  cout << s1 << endl;
-  cout << endl;
+  Console::msg() << "Copy defined state from XOR'ed state" << endl;
+  Console::msg() << endl;
+  Console::msg() << s1 << endl;
+  Console::msg() << endl;
 
   return 0;
 }

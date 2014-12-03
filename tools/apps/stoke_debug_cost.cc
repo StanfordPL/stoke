@@ -28,6 +28,7 @@
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -46,7 +47,7 @@ int main(int argc, char** argv) {
   SandboxGadget sb(tcs);
   CostFunctionGadget fxn(target, &sb);
 
-  ofilterstream<Column> os(cout);
+  ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
 
   os << "Target" << endl;
@@ -59,13 +60,13 @@ int main(int argc, char** argv) {
   os << rewrite_arg.value().code << endl;
   os.filter().done();
 
-  cout << endl;
+  Console::msg() << endl;
 
   const auto res = fxn(rewrite, max_cost_arg.value());
 
-  cout << "Correct: " << (res.first ? "yes" : "no") << endl;
-  cout << "Cost: " << res.second << endl;
-  cout << endl;
+  Console::msg() << "Correct: " << (res.first ? "yes" : "no") << endl;
+  Console::msg() << "Cost: " << res.second << endl;
+  Console::msg() << endl;
 
   return 0;
 }
