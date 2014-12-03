@@ -26,6 +26,7 @@
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -45,7 +46,7 @@ int main(int argc, char** argv) {
   SandboxGadget sb(tcs);
   CostFunctionGadget fxn(target, &sb);
 
-  cout << "CostFunction::operator()..." << endl;
+  Console::msg() << "CostFunction::operator()..." << endl;
 
   const auto start = steady_clock::now();
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
@@ -54,8 +55,8 @@ int main(int argc, char** argv) {
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto eps = benchmark_itr_arg / dur.count();
 
-  cout << "Runtime:    " << dur.count() << " seconds" << endl;
-  cout << "Throughput: " << eps << " / second" << endl;
+  Console::msg() << "Runtime:    " << dur.count() << " seconds" << endl;
+  Console::msg() << "Throughput: " << eps << " / second" << endl;
 
   return 0;
 }
