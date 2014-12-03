@@ -268,7 +268,11 @@ int main(int argc, char** argv) {
     } else if (!verified) {
       Console::msg() << "Unable to verify new rewrite..." << endl << endl;
     } else {
-      Console::msg() << "Search terminated successfully with a verified rewrite!" << endl;
+      if (strategy_arg.value() == Strategy::NONE) {
+        Console::msg() << "Search terminated successfully (but no verification was performed)!" << endl;
+      } else {
+        Console::msg() << "Search terminated successfully with a verified rewrite!" << endl;
+      }
       break;
     }
 
