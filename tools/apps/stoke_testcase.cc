@@ -48,8 +48,7 @@ auto& args = ValueArg<string, LineReader<>>::create("args")
 auto& out = ValueArg<string>::create("o")
             .alternate("out")
             .usage("<path/to/file.tc>")
-            .description("File to write testcases to (defaults to console if unspecified)")
-            .required();
+            .description("File to write testcases to (defaults to console if unspecified)");
 
 auto& common_opt = Heading::create("Common options:");
 auto& max_tc = ValueArg<size_t>::create("max_testcases")
@@ -120,7 +119,7 @@ int auto_gen() {
     Console::error(1) << "Unable to generate testcases!" << endl;
   }
 
-  if (out.value() != "") {
+  if (out.has_been_provided()) {
     ofstream ofs(out.value());
     tcs.write_text(ofs);
   } else {
@@ -142,7 +141,7 @@ int trace(const string& argv0) {
   term << pin_path << "pin -injection child -t " << so_path << "testcase.so ";
 
   term << "-f " << fxn.value() << " ";
-  if (out.value() != "") {
+  if (out.has_been_provided()) {
     term << "-o " << out.value() << " ";
   }
   term << "-x " << max_stack.value() << " ";
@@ -171,7 +170,7 @@ int do_compress() {
     Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
   }
 
-  if (out.value() != "") {
+  if (out.has_been_provided()) {
     ofstream ofs(out.value());
     cs.write_bin(ofs);
   } else {
@@ -194,7 +193,7 @@ int do_decompress() {
     Console::error(1) << "Unable to read input file: " << in.value() << "!" << endl;
   }
 
-  if (out.value() != "") {
+  if (out.has_been_provided()) {
     ofstream ofs(out.value());
     cs.write_text(ofs);
   } else {
