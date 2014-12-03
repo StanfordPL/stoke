@@ -53,13 +53,12 @@ auto& stats = Heading::create("Statistics Options:");
 auto& stat_dir =
   ValueArg<string>::create("statistics_directory")
   .usage("<path/to/dir>")
-  .description("Place to put files with cost function data")
-  .default_val("");
+  .description("Place to put files with cost function data");
 auto& stat_int =
   ValueArg<size_t>::create("statistics_interval")
   .usage("<int>")
   .description("Number of iterations between statistics updates")
-  .default_val(100000);
+  .default_val(1000000);
 auto& stat_max =
   ValueArg<uint32_t>::create("statistics_max_cost")
   .usage("<int>")
@@ -71,7 +70,7 @@ auto& timeout_action_arg =
   ValueArg<Timeout, TimeoutReader, TimeoutWriter>::create("timeout_action")
   .usage("(quit|restart|testcase)")
   .description("Action to take when search times out")
-  .default_val(Timeout::QUIT);
+  .default_val(Timeout::RESTART);
 auto& timeout_cycles_arg =
   ValueArg<size_t>::create("timeout_cycles")
   .usage("<int>")

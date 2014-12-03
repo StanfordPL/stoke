@@ -34,17 +34,19 @@ FlagArg& shuffle_tc_arg =
   FlagArg::create("shuffle_testcases")
   .description("Shuffle testcase ordering");
 
+set<size_t> default_set = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+
 ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>& training_set_arg =
   ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("training_set")
   .usage("{ 0 1 ... 9 }")
   .description("Subset of testcase indices to use for training sets")
-  .default_val({0});
+  .default_val(default_set);
 
 ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>& test_set_arg =
   ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("test_set")
   .usage("{ 0 1 ... 9 }")
   .description("Subset of testcase indices to use for test sets")
-  .default_val({0});
+  .default_val(default_set);
 
 ValueArg<size_t>& testcase_idx_arg =
   ValueArg<size_t>::create("index")

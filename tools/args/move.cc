@@ -23,7 +23,7 @@ Heading& move_heading =
 
 ValueArg<Move, MoveReader, MoveWriter>& move_arg =
   ValueArg<Move, MoveReader, MoveWriter>::create("move_type")
-  .usage("<move>")
+  .usage("(instruction|opcode|operand|local_swap|global_swap|resize|extension)")
   .description("Move type to perform")
   .default_val(Move::INSTRUCTION);
 
