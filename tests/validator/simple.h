@@ -399,15 +399,15 @@ TEST_F(ValidatorBaseTest, DISABLED_AllTheOpcodesIdentity) {
   int instructions_checked = 0;
   // Loop and check
   for(auto it : instructions) {
-    target_.clear();
-    rewrite_.clear();
+    target_.str("");
+    rewrite_.str("");
 
     target_ << it << std::endl;
     rewrite_ << it << std::endl;
 
     set_live_outs(it.must_write_set());
 
-    assert_equiv_or_error_or_unsound();
+    assert_equiv_or_error();
     instructions_checked++;
 
   }
