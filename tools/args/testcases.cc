@@ -36,7 +36,7 @@ FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>& testcases_arg =
   FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
   .usage("<path/to/file>")
   .description("Testcases")
-  .default_val({});
+  .required();
 
 FlagArg& shuffle_tc_arg =
   FlagArg::create("shuffle_testcases")
@@ -60,6 +60,6 @@ ValueArg<size_t>& testcase_idx_arg =
   ValueArg<size_t>::create("index")
   .usage("<int>")
   .description("Testcase index")
-  .default_val(numeric_limits<size_t>::max());
+  .default_val(0);
 
 } // namespace stoke
