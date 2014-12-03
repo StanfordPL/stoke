@@ -23,6 +23,7 @@
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -39,7 +40,7 @@ int main(int argc, char** argv) {
   TestcasesGadget tcs(seed);
   SandboxGadget sb(tcs);
 
-  cout << "Sandbox::run()..." << endl;
+	Console::msg() << "Sandbox::run()..." << endl;
 
   const auto start = steady_clock::now();
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
@@ -48,8 +49,8 @@ int main(int argc, char** argv) {
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto rps = benchmark_itr_arg / dur.count();
 
-  cout << "Runtime:    " << dur.count() << " seconds" << endl;
-  cout << "Throughput: " << rps << " / second" << endl;
+	Console::msg() << "Runtime:    " << dur.count() << " seconds" << endl;
+	Console::msg() << "Throughput: " << rps << " / second" << endl;
 
   return 0;
 }
