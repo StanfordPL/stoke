@@ -40,6 +40,10 @@ int main(int argc, char** argv) {
   TestcasesGadget tcs(seed);
   SandboxGadget sb(tcs);
 
+  if (!target.is_sound()) {
+    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
+  }
+
   Console::msg() << "Sandbox::run()..." << endl;
 
   const auto start = steady_clock::now();

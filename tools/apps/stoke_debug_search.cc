@@ -41,6 +41,10 @@ int main(int argc, char** argv) {
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
 
+  if (!target.is_sound()) {
+    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
+  }
+
   os << "Original Code:" << endl;
   os << endl;
   os << target.get_code() << endl;
