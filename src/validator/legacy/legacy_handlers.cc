@@ -49,11 +49,11 @@ void adcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   //Get a bitWidth+2 bitvector with the lsb as carry
   auto E_carry = SymBitVector::var(bitWidth+2, ("CARRY"+d.pre_suffix+to_string(d.instr_no)).c_str());
   SymBool retval = (SymBool)E_carry[0] == getBoolExpr(V_CF, d.pre_suffix, d.Vn);
-  retval = retval & vc_eqExpr(E_carry[bitWidth+1][1],  SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 0));
+  retval = retval & (E_carry[bitWidth+1][1] == SymBitVector::constant(bitWidth + 1, 0));
 
   //E_src1 + E_src2 + Carry
-  retval = retval & vc_eqExpr(E_result,vc_bvPlusExpr(bitWidth+2, vc_bvPlusExpr(bitWidth+2, E_arg1, E_arg2), E_carry));
-  retval = retval & E_dest == E_result[bitWidth-1][0];
+  retval = retval & (E_result == E_arg1 + E_arg2 + E_carry);
+  retval = retval & (E_dest == E_result[bitWidth-1][0]);
 
   //Handle effects on parent register
   if(dest_is_reg && bitWidth < V_UNITSIZE)
