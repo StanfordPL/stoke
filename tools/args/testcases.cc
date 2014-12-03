@@ -21,6 +21,14 @@ using namespace std;
 
 namespace stoke {
 
+namespace {
+  set<size_t> create_default_testcase_set() {
+    vector<size_t> n(10000);
+    iota(n.begin(), n.end(), 0);
+    return set<size_t>(n.begin(), n.end());
+  }
+}
+
 Heading& testcases_heading =
   Heading::create("Testcase Options:");
 
@@ -34,7 +42,7 @@ FlagArg& shuffle_tc_arg =
   FlagArg::create("shuffle_testcases")
   .description("Shuffle testcase ordering");
 
-set<size_t> default_set = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
+const set<size_t> default_set = create_default_testcase_set();
 
 ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>& training_set_arg =
   ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("training_set")
