@@ -32,7 +32,7 @@ public:
 
     set_distance(distance_arg);
     set_sse(sse_width_arg, sse_count_arg);
-    set_relax(relax_reg_arg, relax_mem_arg);
+    set_relax(!no_relax_reg_arg, relax_mem_arg);
     set_penalty(misalign_penalty_arg, sig_penalty_arg, nesting_penalty_arg);
     set_min_ulp(min_ulp_arg);
     set_k(k_arg);
