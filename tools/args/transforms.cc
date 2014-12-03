@@ -73,9 +73,9 @@ ValueArg<RegSet, RegSetReader, RegSetWriter>& preserve_regs_arg =
   .default_val(RegSet::linux_call_preserved());
 
 ValueArg<vector<uint64_t>>& immediates_arg =
-  ValueArg<vector<uint64_t>>::create("immediates")
-  .usage("{ imm1 imm2 ... }")
-  .description("Additional immediates to propose as operands")
-  .default_val({});
+                          ValueArg<vector<uint64_t>>::create("immediates")
+                          .usage("{ imm1 imm2 ... }")
+                          .description("Additional immediates to propose as operands")
+                          .default_val({});
 
 } // namespace stoke
