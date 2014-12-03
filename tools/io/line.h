@@ -23,16 +23,16 @@ namespace stoke {
 
 struct LineReader {
   void operator()(std::istream& is, std::string& s) {
-		std::stringstream ss;
-		ss << is.rdbuf();
-		s = ss.str();
-	}
+    std::stringstream ss;
+    ss << is.rdbuf();
+    s = ss.str();
+  }
 };
 
 struct LineWriter {
   void operator()(std::ostream& os, const std::string& s) {
-		os << s;
-	}
+    os << s;
+  }
 };
 
 } // namespace stoke
