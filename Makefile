@@ -16,15 +16,12 @@
 
 CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors
 
-TARGET=-mavx -mavx2 -mbmi -mbmi2 -mpopcnt
-
 INC_FOLDERS=\
 						./ \
 						src/ext/cpputil/ \
 						src/ext/x64asm \
 						src/ext/gtest-1.7.0/include \
 						src/ext/z3/include
-
 INC=$(addprefix -I./, $(INC_FOLDERS))
 
 LIB=\
@@ -133,22 +130,55 @@ BIN=\
 .PHONY: .FORCE
 
 
-##### TOP LEVEL TARGETS (release is default)
+##### TOP LEVEL TARGETS 
 
-all: release tags hooks
+all: release hooks
 
-debug:
-	$(MAKE) -C . external EXT_OPT="debug"
-	$(MAKE) -C . -j8 $(BIN) OPT="-g" 
-release:
+release: haswell_release
+debug: haswell_debug 
+profile: haswell_profile 
+test: haswell_test
+
+haswell_release:
 	$(MAKE) -C . external EXT_OPT="release"
-	$(MAKE) -C . -j8 $(BIN) OPT="-DNDEBUG -O3" 
-profile:
+	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG"
+haswell_debug:
+	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -g"
+haswell_profile:
 	$(MAKE) -C . external EXT_OPT="profile"
-	$(MAKE) -C . -j8 $(BIN) OPT="-DNDEBUG -O3 -pg" 
-
-test: bin/stoke_test tags
+	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
+haswell_test:
+	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test 
+
+sandybridge_release:
+	$(MAKE) -C . external EXT_OPT="release"
+	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG"
+sandybridge_debug:
+	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -g"
+sandybridge_profile:
+	$(MAKE) -C . external EXT_OPT="profile"
+	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg"
+sandybridge_test:
+	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG"
+	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test 
+
+nehalem_release:
+	$(MAKE) -C . external EXT_OPT="release"
+	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -O3 -DNDEBUG"
+nehalem_debug:
+	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -g"
+nehalem_profile:
+	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg"
+nehalem_test:
+	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG"
+	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test 
+
+##### CTAGS TARGETS
 
 tags:
 	ctags -R src
@@ -317,13 +347,11 @@ tests/validator/handlers.h: .FORCE
 	cmp -s $@ tests/validator/handlers-tmp || mv tests/validator/handlers-tmp $@;
 	rm -f tests/validator/handlers-tmp
 
-
 tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
 bin/stoke_test: tools/apps/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard tests/*.h) $(wildcard tests/*/*.h) tests/validator/handlers.h
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
-
 
 ##### MISC
 
@@ -344,7 +372,6 @@ hooks: .git/hooks/pre-commit
 .git/hooks/pre-commit: tools/scripts/pre-commit.sh src/ext/astyle
 	chmod +x tools/scripts/pre-commit.sh
 	ln -sf $(shell pwd)/tools/scripts/pre-commit.sh .git/hooks/pre-commit
-
 
 ##### CLEAN TARGETS
 
