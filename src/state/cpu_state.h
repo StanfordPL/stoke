@@ -27,10 +27,17 @@
 
 namespace stoke {
 
+// See registers have variable width depending on target
+#ifdef __AVX__
+#define SSE_WIDTH 256
+#else
+#define SSE_WIDTH 128
+#endif
+
 struct CpuState {
   /** Returns a new CpuState. */
   CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) :
-    code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
+    code(ErrorCode::NORMAL), gp(16, 64), sse(16, SSE_WIDTH), rf() {
     stack.resize(0, stack_size);
     heap.resize(base, heap_size);
   }
@@ -38,7 +45,7 @@ struct CpuState {
   /** Creates a new CpuState from an SMTSolver's model (i.e. counterexample).
     * Uses 'suffix' to identify the right set of variables to extract. */
   CpuState(SMTSolver& smt, std::string suffix) :
-    code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
+    code(ErrorCode::NORMAL), gp(16, 64), sse(16, SSE_WIDTH), rf() {
     stack.resize(0, 0);
     heap.resize(0, 0);
     convert_from_model(smt, suffix);
