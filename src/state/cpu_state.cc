@@ -27,7 +27,7 @@ ostream& CpuState::write_text(ostream& os) const {
     "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15"
   };
 
-	// SSE register names will vary depending on target
+  // SSE register names will vary depending on target
   const char* sses[] = {
 #ifdef __AVX__
     "%ymm0", "%ymm1", "%ymm2", "%ymm3", "%ymm4", "%ymm5", "%ymm6", "%ymm7",
@@ -104,11 +104,11 @@ void CpuState::convert_from_model(SMTSolver& smt, string& name_suffix) {
     gp[r64s[i]] = smt.get_model_bv(name.str(), 1);
   }
 
-	#ifdef __AVX__
-		constexpr size_t width = 4;
-	#else
-		constexpr size_t width = 2;
-	#endif
+#ifdef __AVX__
+  constexpr size_t width = 4;
+#else
+  constexpr size_t width = 2;
+#endif
   for(size_t i = 0; i < ymms.size(); ++i) {
     stringstream name;
     name << ymms[i] << name_suffix;
