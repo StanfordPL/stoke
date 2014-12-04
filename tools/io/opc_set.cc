@@ -113,6 +113,7 @@ void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
     for (int i = ADC_AL_IMM8; i <= XTEST; i++) {
       Opcode opcode = static_cast<Opcode>(i);
       string str = opcode_to_string(opcode);
+      str += "$";
       if (str.find(a) == 0) {
         found = true;
         os.insert(opcode);
@@ -129,8 +130,7 @@ void OpcSetWriter::operator()(ostream& os, const set<Opcode>& ocs) {
   os << "{";
   set<const char*> result;
   for (auto opc : ocs) {
-    os << " ";
-    os << opcode_to_string(opc);
+    os << " " << opcode_to_string(opc) << "$";
   }
   os << " }";
 }
