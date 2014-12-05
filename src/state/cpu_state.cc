@@ -104,15 +104,14 @@ void CpuState::convert_from_model(SMTSolver& smt, string& name_suffix) {
     gp[r64s[i]] = smt.get_model_bv(name.str(), 1);
   }
 
-#ifdef __AVX__
-  constexpr size_t width = 4;
-#else
-  constexpr size_t width = 2;
-#endif
   for(size_t i = 0; i < ymms.size(); ++i) {
     stringstream name;
     name << ymms[i] << name_suffix;
+#ifdef __AVX__
+    sse[ymms[i]] = smt.get_model_bv(name.str(), 4);
+#else
     sse[ymms[i]] = smt.get_model_bv(name.str(), 2);
+#endif
   }
   for(size_t i = 0; i < eflags.size(); ++i) {
     if(!rf.is_status(eflags[i].index()))
