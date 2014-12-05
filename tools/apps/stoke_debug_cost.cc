@@ -60,6 +60,14 @@ int main(int argc, char** argv) {
   os << rewrite_arg.value().code << endl;
   os.filter().done();
 
+  if (!target.is_sound()) {
+    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
+  }
+
+  if (!rewrite.is_sound()) {
+    Console::error(1) << "Rewrite reads undefined variables, or leaves live_out undefined." << endl;
+  }
+
   Console::msg() << endl;
 
   const auto res = fxn(rewrite, max_cost_arg.value());

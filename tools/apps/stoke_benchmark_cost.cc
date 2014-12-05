@@ -46,6 +46,14 @@ int main(int argc, char** argv) {
   SandboxGadget sb(tcs);
   CostFunctionGadget fxn(target, &sb);
 
+  if (!target.is_sound()) {
+    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
+  }
+
+  if (!rewrite.is_sound()) {
+    Console::error(1) << "Rewrite reads undefined variables, or leaves live_out undefined." << endl;
+  }
+
   Console::msg() << "CostFunction::operator()..." << endl;
 
   const auto start = steady_clock::now();

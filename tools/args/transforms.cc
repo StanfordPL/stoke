@@ -27,17 +27,17 @@ ValueArg<FlagSet, FlagSetReader, FlagSetWriter>& cpu_flags_arg =
   ValueArg<FlagSet, FlagSetReader, FlagSetWriter>::create("cpu_flags")
   .usage("{ flag1 flag2 ... flagn }")
   .description("Propose instruction and opcode moves that use this CPU ID flag set")
-  .default_val(FlagSet::empty());
+  .default_val(FlagSet::universe());
 
 ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>& opc_blacklist_arg =
   ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("opc_blacklist")
-  .usage("{ opcode1 opcode2 ... opcoden; e.g., xorl or xorl_r32_r32 }")
-  .description("Don't proprose any instructions from this set (takes precedence over --opc_whitelist)")
+  .usage("{ opcode1 ... opcoden; e.g., xorl or xorl_r32_r32 }")
+  .description("Don't propose any instructions from this set (takes precedence over --opc_whitelist)")
   .default_val({});
 
 ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>& opc_whitelist_arg =
   ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("opc_whitelist")
-  .usage("{ opcode1 opcode2 ... opcoden; e.g., xorl or xorl_r32_r32 }")
+  .usage("{ opcode1 ... opcoden; e.g., xorl or xorl_r32_r32 }")
   .description("Only proprose instructions from this set (unless they are not proposed for other reasons, e.g. --opc_blacklist, --propose_call, --cpu_flags, --mem_read, --mem_write, instructions not supported by stoke, etc.); empty whitelist means no whitelist")
   .default_val({});
 
@@ -75,6 +75,7 @@ ValueArg<RegSet, RegSetReader, RegSetWriter>& preserve_regs_arg =
 ValueArg<vector<uint64_t>>& immediates_arg =
                           ValueArg<vector<uint64_t>>::create("immediates")
                           .usage("{ imm1 imm2 ... }")
-                          .description("Additional immediates to propose as operands");
+                          .description("Additional immediates to propose as operands")
+                          .default_val({});
 
 } // namespace stoke

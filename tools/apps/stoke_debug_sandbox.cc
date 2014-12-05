@@ -105,8 +105,12 @@ int main(int argc, char** argv) {
   CpuStates tcs;
   tcs.push_back(tc);
   SandboxGadget sb(tcs);
-
   auto stepping = false;
+
+  if (!target.is_sound()) {
+    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
+  }
+
   for (size_t i = 0, ie = target_arg.value().code.size(); i < ie; ++i) {
     sb.insert_before(i, callback, &stepping);
   }

@@ -26,7 +26,7 @@ FileArg<TUnit, TUnitReader, TUnitWriter>& target_arg =
   FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
   .usage("<path/to/file.s>")
   .description("Target code")
-.default_val({"anon", {{RET}}});
+  .required();
 
 FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg =
   FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")

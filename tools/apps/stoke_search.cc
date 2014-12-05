@@ -54,13 +54,12 @@ auto& stats = Heading::create("Statistics Options:");
 auto& stat_dir =
   ValueArg<string>::create("statistics_directory")
   .usage("<path/to/dir>")
-  .description("Place to put files with cost function data")
-  .default_val("");
+  .description("Place to put files with cost function data");
 auto& stat_int =
   ValueArg<size_t>::create("statistics_interval")
   .usage("<int>")
   .description("Number of iterations between statistics updates")
-  .default_val(100000);
+  .default_val(1000000);
 auto& stat_max =
   ValueArg<uint32_t>::create("statistics_max_cost")
   .usage("<int>")
@@ -72,7 +71,7 @@ auto& timeout_action_arg =
   ValueArg<Timeout, TimeoutReader, TimeoutWriter>::create("timeout_action")
   .usage("(quit|restart|testcase)")
   .description("Action to take when search times out")
-  .default_val(Timeout::QUIT);
+  .default_val(Timeout::RESTART);
 auto& timeout_cycles_arg =
   ValueArg<size_t>::create("timeout_cycles")
   .usage("<int>")
@@ -230,6 +229,10 @@ int main(int argc, char** argv) {
   CostFunctionGadget holdout_fxn(target, &test_sb);
   VerifierGadget verifier(holdout_fxn);
 
+  if (!target.is_sound()) {
+    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
+  }
+
   ScbArg scb_arg {&Console::msg(), nullptr};
   search.set_progress_callback(pcb, &Console::msg())
   .set_statistics_callback(scb, &scb_arg)
@@ -265,7 +268,11 @@ int main(int argc, char** argv) {
     } else if (!verified) {
       Console::msg() << "Unable to verify new rewrite..." << endl << endl;
     } else {
-      Console::msg() << "Search terminated successfully with a verified rewrite!" << endl;
+      if (strategy_arg.value() == Strategy::NONE) {
+        Console::msg() << "Search terminated successfully (but no verification was performed)!" << endl;
+      } else {
+        Console::msg() << "Search terminated successfully with a verified rewrite!" << endl;
+      }
       break;
     }
 
