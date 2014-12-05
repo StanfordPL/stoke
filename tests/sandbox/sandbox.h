@@ -473,4 +473,28 @@ TEST(SandboxTest, Issue239) {
 
 }
 
+TEST(SandboxTest, UnalignedOpcodes) {
+  x64asm::Code c;
+  std::stringstream ss;
+
+  // Here's the input program
+  ss << "lddqu 0x21(%rsp), %xmm0" << std::endl;
+  ss << "movdqu 0x21(%rsp), %xmm0" << std::endl;
+  ss << "movupd 0x21(%rsp), %xmm0" << std::endl;
+  ss << "movups 0x21(%rsp), %xmm0" << std::endl;
+  ss << "retq" << std::endl;
+
+  ss >> c;
+
+  stoke::Sandbox sb;
+  stoke::CpuState tc;
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+
+  sb.insert_input(tc);
+
+  // Run it
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+}
 
