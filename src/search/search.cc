@@ -243,40 +243,8 @@ void Search::configure_empty(const Cfg& target, SearchState& state) const {
 }
 
 Code Search::find_sound_code(const RegSet& def_ins, const RegSet& live_outs) {
-  auto diff = live_outs - def_ins;
+  auto diff = live_outs;
   vector<Instruction> code;
-
-  // initialize all general purpose registers
-  for (auto rit = diff.gp_begin(); rit != diff.gp_end(); ++rit) {
-    auto reg = *rit;
-    auto type = reg.type();
-    if (type == Type::R_64 || type == Type::RAX) {
-      code.push_back(Instruction(MOV_R64_IMM64, {reg, Imm64(0)}));
-    } else if (type == Type::R_32 || type == Type::EAX) {
-      code.push_back(Instruction(MOV_R32_IMM32, {reg, Imm32(0)}));
-    } else if (type == Type::R_16 || type == Type::AX || type == Type::DX) {
-      code.push_back(Instruction(MOV_R16_IMM16, {reg, Imm16(0)}));
-    } else if (type == Type::RL || type == Type::AL || type == Type::CL) {
-      code.push_back(Instruction(MOV_RL_IMM8, {reg, Imm8(0)}));
-    } else if (type == Type::RH) {
-      code.push_back(Instruction(MOV_RH_IMM8, {reg, Imm8(0)}));
-    } else if (type == Type::RB) {
-      code.push_back(Instruction(MOV_RB_IMM8, {reg, Imm8(0)}));
-    }
-  }
-
-  // initialize sse registers
-  for (auto rit = diff.sse_begin(); rit != diff.sse_end(); ++rit) {
-    auto reg = *rit;
-    auto type = reg.type();
-    if (type == Type::XMM || type == Type::XMM_0) {
-      code.push_back(Instruction(MOV_R32_IMM32, {Constants::eax(), Imm64(0)}));
-      code.push_back(Instruction(MOVD_XMM_R32, {reg, Constants::eax()}));
-    } else if (type == Type::YMM) {
-      code.push_back(Instruction(MOV_R32_IMM32, {Constants::eax(), Imm64(0)}));
-      code.push_back(Instruction(VMOVD_XMM_R32, {reg, Constants::eax()}));
-    }
-  }
 
   // flags
   bool regular = false;
@@ -289,8 +257,40 @@ Code Search::find_sound_code(const RegSet& def_ins, const RegSet& live_outs) {
          reg == Constants::eflags_cf() ||
          reg == Constants::eflags_pf()) && !regular) {
       regular = true;
-      code.push_back(Instruction(MOV_R32_IMM32, {Constants::eax(), Imm64(0)}));
-      code.push_back(Instruction(ADD_R32_IMM32, {Constants::eax(), Imm32(0)}));
+      code.push_back(Instruction(XOR_R32_R32, {Constants::rax(), Constants::rax()}));
+      code.push_back(Instruction(ADD_R32_IMM32, {Constants::rax(), Imm32(0)}));
+    }
+  }
+
+  // initialize all general purpose registers
+  for (auto rit = diff.gp_begin(); rit != diff.gp_end(); ++rit) {
+    auto reg = *rit;
+    auto type = reg.type();
+    if (type == Type::R_64 || type == Type::RAX) {
+      code.push_back(Instruction(XOR_R64_R64, {reg, reg}));
+    } else if (type == Type::R_32 || type == Type::EAX) {
+      code.push_back(Instruction(XOR_R32_R32, {reg, reg}));
+    } else if (type == Type::R_16 || type == Type::AX || type == Type::DX) {
+      code.push_back(Instruction(XOR_R16_R16, {reg, reg}));
+    } else if (type == Type::RL || type == Type::AL || type == Type::CL) {
+      code.push_back(Instruction(XOR_RL_RL, {reg, reg}));
+    } else if (type == Type::RH) {
+      code.push_back(Instruction(XOR_RH_RH, {reg, reg}));
+    } else if (type == Type::RB) {
+      code.push_back(Instruction(XOR_RB_RB, {reg, reg}));
+    }
+  }
+
+  // initialize sse registers
+  for (auto rit = diff.sse_begin(); rit != diff.sse_end(); ++rit) {
+    auto reg = *rit;
+    auto type = reg.type();
+    if (type == Type::XMM || type == Type::XMM_0) {
+      code.push_back(Instruction(PXOR_XMM_XMM, {reg, reg}));
+    } else if (type == Type::YMM) {
+      code.push_back(Instruction(VPXOR_YMM_YMM_YMM, {reg, reg, reg}));
+    } else if (type == Type::MM) {
+      code.push_back(Instruction(PXOR_MM_MM, {reg, reg}));
     }
   }
 
