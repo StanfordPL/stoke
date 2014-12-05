@@ -34,7 +34,8 @@ struct SearchState {
   best_yet_cost(0),
   best_correct({{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()),
   best_correct_cost(0),
-  success(false) {
+  success(false),
+  interrupted(false) {
   }
 
   /** The current rewrite. */
@@ -54,6 +55,9 @@ struct SearchState {
 
   /** Has search discovered at least one new correct rewrite? */
   bool success;
+
+  /** Did the search get interrupted? */
+  bool interrupted;
 };
 
 } // namespace stoke
