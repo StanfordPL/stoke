@@ -610,8 +610,12 @@ void Sandbox::emit_callbacks(size_t line, bool before) {
 }
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
+  // First things first. If it's unsupported, give up.
+  if (!is_supported(instr)) {
+    emit_signal_trap_call(ErrorCode::SIGILL_);
+  }
   // Labels are translated directly
-  if (instr.is_label_defn()) {
+  else if (instr.is_label_defn()) {
     assm_.assemble(instr);
   }
   // Jumps are instrumented with premature exit logic
@@ -630,15 +634,19 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
   else if (instr.is_explicit_memory_dereference()) {
     if (instr.is_div() || instr.is_idiv()) {
       emit_mem_div(instr);
+    } else if (instr.is_push()) {
+      emit_mem_push(instr);
+    } else if (instr.is_pop()) {
+      emit_mem_pop(instr);
     } else {
       emit_memory_instruction(instr);
     }
   }
-  // Implicits are even harder (note that we don't capture all of these)
+  // Implicits are even harder (we most likely bail out here as well)
   else if (instr.is_implicit_memory_dereference()) {
-    if (instr.get_opcode() == PUSH_R64) {
+    if (instr.is_push()) {
       emit_push(instr);
-    } else if (instr.get_opcode() == POP_R64) {
+    } else if (instr.is_pop()) {
       emit_pop(instr);
     } else {
       emit_signal_trap_call(ErrorCode::SIGILL_);
@@ -657,10 +665,6 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
 }
 
 void Sandbox::emit_memory_instruction(const Instruction& instr) {
-  // Looks up read and write sets
-  const auto rs = instr.maybe_read_set();
-  const auto ws = instr.maybe_write_set();
-
   // Grab the memory operand (no sense copying if we can promise to be const)
   const auto mi = instr.mem_index();
   auto* temp = const_cast<Instruction*>(&instr);
@@ -743,12 +747,8 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
   assm_.mov(rax, Moffs64(&map_addr_));
   assm_.call(rax);
 
-  // Find an unused register to hold the sandboxed address (it isn't read or written)
-  size_t idx = 0;
-  for (idx = 4; idx < 12 && (rs.contains(rbs[idx]) || ws.contains(rbs[idx])); ++idx);
-  assert(idx < 12);
-  const auto rx = r64s[idx + 4];
-
+  // Find an unused register to hold the sandboxed address
+  const auto rx = get_unused_quad(instr);
   // Backup rx and store the value there
   assm_.mov(rdi, Imm64(&scratch_[rx]));
   assm_.mov(M64(rdi), rx);
@@ -824,58 +824,6 @@ void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
   assm_.jmp(exit);
 }
 
-void Sandbox::emit_push(const Instruction& instr) {
-  // This function emits the moral equivalent of a push
-  // First decrement the stack pointer
-  assm_.lea(rsp, M64(rsp, Imm32(-8)));
-  // Now emit the dereference and let our sigsegv handler do the hard work
-  emit_memory_instruction({MOV_M64_R64, {M64(rsp), instr.get_operand<R64>(0)}});
-}
-
-void Sandbox::emit_pop(const Instruction& instr) {
-  // This function emits the moral equivalent of a push
-  // Emit the dereference and let our sigsegv handler do the hard work
-  emit_memory_instruction({MOV_R64_M64, {instr.get_operand<R64>(0), M64(rsp)}});
-  // Now increment the stack pointer
-  assm_.lea(rsp, M64(rsp, Imm32(8)));
-}
-
-void Sandbox::emit_reg_div(const Instruction& instr) {
-  // First check whether this instruction is trying to read from some part of rsp
-  auto rsp_op = false;
-  switch (instr.type(0)) {
-  case Type::RL:
-  case Type::RH:
-  case Type::RB:
-  case Type::R_16:
-  case Type::R_32:
-  case Type::R_64:
-    rsp_op = instr.get_operand<R64>(0) == rsp;
-    break;
-  default:
-    break;
-  }
-
-  // Depending on how things go, we might throw sigsegv, so we need the STOKE rsp back
-  emit_load_stoke_rsp();
-  if (rsp_op) {
-    // If the user's rsp is the operand, we'll need to move it someplace where we can use it
-    // div implicitly reads/writes rax, so we'll need to use rdi instead.
-    assm_.push(rdi);
-    assm_.mov(rdi, Imm64(&user_rsp_));
-    assm_.mov(rdi, M64(rdi));
-    // Emit the instruction (with rdi substituted for rsp)
-    assm_.assemble({instr.get_opcode(), {rdi}});
-    // Restore rdi.
-    assm_.pop(rdi);
-  } else {
-    // This is the easy case... just go for it, man
-    assm_.assemble(instr);
-  }
-  // Now that we're safely finished, reload the user's rsp
-  emit_load_user_rsp();
-}
-
 void Sandbox::emit_mem_div(const Instruction& instr) {
   // The idea here is to split a single divide instruction into three parts:
   // 1. Exchange rbx and the mem operand (which div won't touch) (this will catch a segv)
@@ -928,6 +876,136 @@ void Sandbox::emit_mem_div(const Instruction& instr) {
     assert(false);
     break;
   }
+}
+
+void Sandbox::emit_mem_pop(const Instruction& instr) {
+  switch (instr.get_opcode()) {
+  case POP_M16: {
+    const auto rx = get_unused_word(instr);
+    emit_memory_instruction({XCHG_R16_M16, {rx, M16(rsp)}});
+    emit_memory_instruction({MOV_M16_R16, {instr.get_operand<M16>(0), rx}});
+    emit_memory_instruction({XCHG_R16_M16, {rx, M64(rsp)}});
+    assm_.lea(rsp, M64(rsp, Imm32(2)));
+    break;
+  }
+  case POP_M64: {
+    const auto rx = get_unused_quad(instr);
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp)}});
+    emit_memory_instruction({MOV_M64_R64, {instr.get_operand<M64>(0), rx}});
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp)}});
+    assm_.lea(rsp, M64(rsp, Imm32(8)));
+    break;
+  }
+
+  default:
+    assert(false);
+  }
+}
+
+void Sandbox::emit_mem_push(const Instruction& instr) {
+  switch (instr.get_opcode()) {
+  case PUSH_M16: {
+    const auto rx = get_unused_word(instr);
+    emit_memory_instruction({XCHG_R16_M16, {rx, M16(rsp, Imm32(-2))}});
+    emit_memory_instruction({MOV_R16_M16, {rx, instr.get_operand<M16>(0)}});
+    emit_memory_instruction({XCHG_R16_M16, {rx, M64(rsp, Imm32(-2))}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  }
+  case PUSH_M64: {
+    const auto rx = get_unused_quad(instr);
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
+    emit_memory_instruction({MOV_R64_M64, {rx, instr.get_operand<M64>(0)}});
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
+    assm_.lea(rsp, M64(rsp, Imm32(-8)));
+    break;
+  }
+
+  default:
+    assert(false);
+    break;
+  }
+}
+
+void Sandbox::emit_pop(const Instruction& instr) {
+  switch (instr.get_opcode()) {
+  case POP_R16:
+    assm_.lea(rsp, M64(rsp, Imm32(2)));
+    emit_memory_instruction({MOV_R16_M16, {instr.get_operand<R16>(0), M16(rsp, Imm32(-2))}});
+    break;
+  case POP_R64:
+    assm_.lea(rsp, M64(rsp, Imm32(8)));
+    emit_memory_instruction({MOV_R64_M64, {instr.get_operand<R64>(0), M64(rsp, Imm32(-8))}});
+    break;
+
+  default:
+    assert(false);
+  }
+}
+
+void Sandbox::emit_push(const Instruction& instr) {
+  switch (instr.get_opcode()) {
+  case PUSH_IMM16:
+    emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), instr.get_operand<Imm16>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  case PUSH_IMM32:
+    emit_memory_instruction({MOV_M32_IMM32, {M32(rsp, Imm32(-4)), instr.get_operand<Imm32>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-4)));
+    break;
+  case PUSH_IMM8:
+    emit_memory_instruction({MOV_M8_IMM8, {M8(rsp, Imm32(-1)), instr.get_operand<Imm8>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-1)));
+    break;
+  case PUSH_R16:
+    emit_memory_instruction({MOV_M16_R16, {M16(rsp, Imm32(-2)), instr.get_operand<R16>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  case PUSH_R64:
+    emit_memory_instruction({MOV_M64_R64, {M64(rsp, Imm32(-8)), instr.get_operand<R64>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-8)));
+    break;
+
+  default:
+    assert(false);
+    break;
+  }
+}
+
+void Sandbox::emit_reg_div(const Instruction& instr) {
+  // First check whether this instruction is trying to read from some part of rsp
+  auto rsp_op = false;
+  switch (instr.type(0)) {
+  case Type::RL:
+  case Type::RH:
+  case Type::RB:
+  case Type::R_16:
+  case Type::R_32:
+  case Type::R_64:
+    rsp_op = instr.get_operand<R64>(0) == rsp;
+    break;
+  default:
+    break;
+  }
+
+  // Depending on how things go, we might throw sigsegv, so we need the STOKE rsp back
+  emit_load_stoke_rsp();
+  if (rsp_op) {
+    // If the user's rsp is the operand, we'll need to move it someplace where we can use it
+    // div implicitly reads/writes rax, so we'll need to use rdi instead.
+    assm_.push(rdi);
+    assm_.mov(rdi, Imm64(&user_rsp_));
+    assm_.mov(rdi, M64(rdi));
+    // Emit the instruction (with rdi substituted for rsp)
+    assm_.assemble({instr.get_opcode(), {rdi}});
+    // Restore rdi.
+    assm_.pop(rdi);
+  } else {
+    // This is the easy case... just go for it, man
+    assm_.assemble(instr);
+  }
+  // Now that we're safely finished, reload the user's rsp
+  emit_load_user_rsp();
 }
 
 void Sandbox::emit_signal_trap_call(ErrorCode ec) {
