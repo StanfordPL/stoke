@@ -724,6 +724,11 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
     assert(false);
     break;
   }
+	// Some special instructions get a bye for alignment
+	if (instr.is_unaligned()) {
+		assm_.mov(rsi, Imm64(0xffffffffffffffff));
+	}
+	// Finish up setting the read/write masks
   if (instr.maybe_write(mi)) {
     assm_.mov(rcx, rdx);
   } else {
