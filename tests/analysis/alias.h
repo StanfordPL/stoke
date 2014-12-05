@@ -5,12 +5,15 @@ TEST(AliasAnalysis, SimpleExample) {
 
   std::stringstream ss;
   ss << "movq $0x0, (%rax)" << std::endl;
-  ss << "movq $0x10, 8(%rax)" << std::endl;
+  ss << "movq $0x10, 0x8(%rax)" << std::endl;
 
-  Code c;
+  x64asm::Code c;
   ss >> c;
 
-  AliasAnalysis aa(c);
+  stoke::AliasAnalysis aa(c);
+
+  auto m1 = c[0].get_operand<x64asm::M64>(0);
+  auto m2 = c[1].get_operand<x64asm::M64>(1);
 
   /* First aliases itself */
   EXPECT_TRUE(aa.must_overlap(0, m1, 0, m1));
