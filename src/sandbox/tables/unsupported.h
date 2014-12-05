@@ -25,6 +25,25 @@ CRC32_R32_RH
 , MOVZX_R32_RH
 , MOVZX_R64_RH
 
+// These are instructions that have to do with reading/writing segment
+// registers. For the time being, STOKE has no way of dealing with these
+// so any attempt to modify them from their default values would likely
+// be catastrophic.
+, MOV_SREG_M16
+, MOV_SREG_M64
+, MOV_SREG_R16
+, MOV_SREG_R64
+, MOV_M16_SREG
+, MOV_M64_SREG
+, MOV_R16_SREG
+, MOV_R64_SREG
+, PUSH_FS
+, PUSH_GS
+, POP_FS
+, POP_FS_PREF66
+, POP_GS
+, POP_GS_PREF66
+
 // See STOKE sandbox issue #253: This is the bit test (and clear/reset/set) family of
 // instructions for memory operands.
 , BT_M16_IMM8
@@ -66,16 +85,6 @@ CRC32_R32_RH
 , WRGSBASE_R32
 , WRGSBASE_R64
 
-// See STOKE sandbox issue #257. These are mov sreg variants.
-, MOV_SREG_M16
-, MOV_SREG_M64
-, MOV_SREG_R16
-, MOV_SREG_R64
-, MOV_M16_SREG
-, MOV_M64_SREG
-, MOV_R16_SREG
-, MOV_R64_SREG
-
 // See STOKE sandbox issue #258. This is the swapgs instruction.
 , SWAPGS
 
@@ -84,23 +93,6 @@ CRC32_R32_RH
 , STMXCSR_M32
 , VLDMXCSR_M32
 , VSTMXCSR_M32
-
-// See STOKE sandbox issue #260. These are push/pop variants.
-, PUSH_FS
-, PUSH_GS
-, PUSH_IMM16
-, PUSH_IMM32
-, PUSH_IMM8
-, PUSH_M16
-, PUSH_M64
-, PUSH_R16
-, POP_FS
-, POP_FS_PREF66
-, POP_GS
-, POP_GS_PREF66
-, POP_M16
-, POP_M64
-, POP_R16
 
 // See STOKE sandbox issue #261. These are (push/pop)f(q) instructions.
 , PUSHF
