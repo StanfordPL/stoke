@@ -140,39 +140,39 @@ profile: haswell_profile
 test: haswell_test
 
 haswell_release:
-	$(MAKE) -C . external EXT_OPT="release"
+	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=core-avx2"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG"
 haswell_debug:
-	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=core-avx2"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -g"
 haswell_profile:
-	$(MAKE) -C . external EXT_OPT="profile"
+	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=core-avx2"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
 haswell_test:
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test 
 
 sandybridge_release:
-	$(MAKE) -C . external EXT_OPT="release"
+	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7-avx"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG"
 sandybridge_debug:
-	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7-avx"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -g"
 sandybridge_profile:
-	$(MAKE) -C . external EXT_OPT="profile"
+	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=corei7-avx"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg"
 sandybridge_test:
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test 
 
 nehalem_release:
-	$(MAKE) -C . external EXT_OPT="release"
+	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -O3 -DNDEBUG"
 nehalem_debug:
-	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -g"
 nehalem_profile:
-	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg"
 nehalem_test:
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG"
@@ -187,7 +187,7 @@ tags:
 
 external: src/ext/astyle src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
 	$(MAKE) -C src/ext/x64asm $(EXT_OPT) 
-	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke
+	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET=$(EXT_TARGET)
 
 src/ext/astyle:
 	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle
