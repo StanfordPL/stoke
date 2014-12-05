@@ -208,25 +208,25 @@ private:
   void emit_map_addr_cases(CpuState& cs, const x64asm::Label& fail, const x64asm::Label& done,
                            bool stack);
 
-	/** Returns an unused register with respect to an instruction. */
-	size_t get_unused_reg(const x64asm::Instruction& instr) const {
-		const auto rs = instr.maybe_read_set();
-		const auto ws = instr.maybe_write_set();
+  /** Returns an unused register with respect to an instruction. */
+  size_t get_unused_reg(const x64asm::Instruction& instr) const {
+    const auto rs = instr.maybe_read_set();
+    const auto ws = instr.maybe_write_set();
 
-		size_t idx = 4;
-		for (; idx < 12 && rs.contains(x64asm::rbs[idx]) || ws.contains(x64asm::rbs[idx]); ++idx);
+    size_t idx = 4;
+    for (; idx < 12 && rs.contains(x64asm::rbs[idx]) || ws.contains(x64asm::rbs[idx]); ++idx);
 
-		assert(idx < 12);
-		return idx + 4;
-	}
-	/** Returns an unused word register. */
-	const x64asm::R16& get_unused_word(const x64asm::Instruction& instr) const {
-		return x64asm::r16s[get_unused_reg(instr)];
-	}
-	/** Returns an unused quad register. */
-	const x64asm::R64& get_unused_quad(const x64asm::Instruction& instr) const {
-		return x64asm::r64s[get_unused_reg(instr)];
-	}
+    assert(idx < 12);
+    return idx + 4;
+  }
+  /** Returns an unused word register. */
+  const x64asm::R16& get_unused_word(const x64asm::Instruction& instr) const {
+    return x64asm::r16s[get_unused_reg(instr)];
+  }
+  /** Returns an unused quad register. */
+  const x64asm::R64& get_unused_quad(const x64asm::Instruction& instr) const {
+    return x64asm::r64s[get_unused_reg(instr)];
+  }
 
   /** Assembles the user's function */
   bool emit_function(const Cfg& cfg, bool callbacks);

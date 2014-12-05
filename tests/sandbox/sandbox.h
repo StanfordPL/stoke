@@ -494,21 +494,21 @@ TEST(SandboxTest, LDDQU_VLDDQU) {
 
 TEST(SandboxTest, PUSH_POP) {
   std::stringstream ss;
-	ss << "pushw -0x18(%rsp)" << std::endl;
-	ss << "pushw -0x18(%rsp)" << std::endl;
-	ss << "pushw %ax" << std::endl;
-	ss << "pushw %ax" << std::endl;
-	ss << "pushq -0x18(%rsp)" << std::endl;
-	ss << "pushq %rax" << std::endl;
-	ss << "pushq $0xaa" << std::endl;
-	ss << "pushq $0xaa" << std::endl;
-	ss << "pushq $0xbbbb" << std::endl;
-	ss << "pushq $0xcccccccc" << std::endl;
-	ss << "popq %rax" << std::endl;
-	ss << "popw %ax" << std::endl;
-	ss << "popq (%rsp)" << std::endl;
-	ss << "popw (%rsp)" << std::endl;
-	ss << "retq" << std::endl;
+  ss << "pushw -0x18(%rsp)" << std::endl;
+  ss << "pushw -0x18(%rsp)" << std::endl;
+  ss << "pushw %ax" << std::endl;
+  ss << "pushw %ax" << std::endl;
+  ss << "pushq -0x18(%rsp)" << std::endl;
+  ss << "pushq %rax" << std::endl;
+  ss << "pushq $0xaa" << std::endl;
+  ss << "pushq $0xaa" << std::endl;
+  ss << "pushq $0xbbbb" << std::endl;
+  ss << "pushq $0xcccccccc" << std::endl;
+  ss << "popq %rax" << std::endl;
+  ss << "popw %ax" << std::endl;
+  ss << "popq (%rsp)" << std::endl;
+  ss << "popw (%rsp)" << std::endl;
+  ss << "retq" << std::endl;
 
   x64asm::Code c;
   ss >> c;
