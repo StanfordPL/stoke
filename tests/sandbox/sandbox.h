@@ -469,6 +469,26 @@ TEST(SandboxTest, Issue239) {
   stoke::CpuState output = *sb.result_begin();
 
   ASSERT_EQ(0xb511, output.gp[x64asm::rbx].get_fixed_quad(0));
-
-
 }
+
+TEST(SandboxTest, LDDQU_VLDDQU) {
+  std::stringstream ss;
+  ss << "lddqu -0x21(%rsp), %xmm0" << std::endl;
+  ss << "vlddqu -0x21(%rsp), %ymm0" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+}
+
