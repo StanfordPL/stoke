@@ -492,3 +492,37 @@ TEST(SandboxTest, LDDQU_VLDDQU) {
   ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
+TEST(SandboxTest, PUSH_POP) {
+  std::stringstream ss;
+	ss << "pushw -0x18(%rsp)" << std::endl;
+	ss << "pushw -0x18(%rsp)" << std::endl;
+	ss << "pushw %ax" << std::endl;
+	ss << "pushw %ax" << std::endl;
+	ss << "pushq -0x18(%rsp)" << std::endl;
+	ss << "pushq %rax" << std::endl;
+	ss << "pushq $0xaa" << std::endl;
+	ss << "pushq $0xaa" << std::endl;
+	ss << "pushq $0xbbbb" << std::endl;
+	ss << "pushq $0xcccccccc" << std::endl;
+	ss << "popq %rax" << std::endl;
+	ss << "popw %ax" << std::endl;
+	ss << "popq (%rsp)" << std::endl;
+	ss << "popw (%rsp)" << std::endl;
+	ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+}
+
+
