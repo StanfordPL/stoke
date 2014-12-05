@@ -15,7 +15,7 @@
 
 class ValidatorIncTest : public ValidatorTest {};
 
-TEST_F(ValidatorIncTest, Issue280) {
+TEST_F(ValidatorIncTest, Issue287) {
 
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
@@ -26,7 +26,7 @@ TEST_F(ValidatorIncTest, Issue280) {
   check_circuit(cs);
 }
 
-TEST_F(ValidatorIncTest, Issue280_2) {
+TEST_F(ValidatorIncTest, Issue287_2) {
 
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
@@ -37,7 +37,7 @@ TEST_F(ValidatorIncTest, Issue280_2) {
   check_circuit(cs);
 }
 
-TEST_F(ValidatorIncTest, Issue280_3) {
+TEST_F(ValidatorIncTest, Issue287_3) {
 
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
@@ -48,7 +48,7 @@ TEST_F(ValidatorIncTest, Issue280_3) {
   check_circuit(cs);
 }
 
-TEST_F(ValidatorIncTest, Issue280_4) {
+TEST_F(ValidatorIncTest, Issue287_4) {
 
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
@@ -59,7 +59,7 @@ TEST_F(ValidatorIncTest, Issue280_4) {
   check_circuit(cs);
 }
 
-TEST_F(ValidatorIncTest, Issue280_5) {
+TEST_F(ValidatorIncTest, Issue287_5) {
 
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
@@ -70,7 +70,7 @@ TEST_F(ValidatorIncTest, Issue280_5) {
   check_circuit(cs);
 }
 
-TEST_F(ValidatorIncTest, Issue280_6) {
+TEST_F(ValidatorIncTest, Issue287_6) {
 
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
