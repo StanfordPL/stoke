@@ -144,9 +144,8 @@ public:
     auto real_cpu_flags = get_flagset_supported_by_hw();
     auto arg_cpu_flags = cpu_flags_arg.value();
     if (!real_cpu_flags.contains(arg_cpu_flags)) {
-      x64asm::FlagSet diff = arg_cpu_flags;
-      diff -= (x64asm::Flag) real_cpu_flags.hash();
-      arg_cpu_flags -= (x64asm::Flag) diff.hash();
+      x64asm::FlagSet diff = arg_cpu_flags - real_cpu_flags;
+      arg_cpu_flags -= diff;
 
       Console::warn() << "Some cpu flags are not available on this hardware and will be removed:" << std::endl;
       Console::warn() << diff << std::endl;
@@ -182,17 +181,12 @@ private:
   x64asm::FlagSet get_flagset_supported_by_hw() {
     x64asm::FlagSet result;
 
-    unsigned maxext = __get_cpuid_max(0x8000000, NULL);
     unsigned max = __get_cpuid_max(0, NULL);
 
     unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
     for (auto level : cpuid_to_flags_) {
       // is this level supported?
-      if (level.first >= 0x80000000) {
-        if (maxext < level.first - 0x80000000) {
-          continue;
-        }
-      } else if (max < level.first) {
+      if (max < level.first & 0x80000000) {
         continue;
       }
 

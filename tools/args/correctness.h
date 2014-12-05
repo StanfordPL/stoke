@@ -31,7 +31,7 @@ extern cpputil::ValueArg<Distance, DistanceReader, DistanceWriter>& distance_arg
 extern cpputil::ValueArg<Reduction, ReductionReader, ReductionWriter>& reduction_arg;
 extern cpputil::ValueArg<size_t>& sse_width_arg;
 extern cpputil::ValueArg<size_t>& sse_count_arg;
-extern cpputil::FlagArg& relax_reg_arg;
+extern cpputil::FlagArg& no_relax_reg_arg;
 extern cpputil::FlagArg& relax_mem_arg;
 extern cpputil::ValueArg<Cost>& misalign_penalty_arg;
 extern cpputil::ValueArg<Cost>& sig_penalty_arg;

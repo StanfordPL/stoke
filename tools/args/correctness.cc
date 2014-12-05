@@ -43,11 +43,11 @@ ValueArg<size_t>& sse_count_arg =
   ValueArg<size_t>::create("sse_count")
   .usage("<int>")
   .description("Number of values in sse registers")
-  .default_val(1);
+  .default_val(4);
 
-FlagArg& relax_reg_arg =
-  FlagArg::create("relax_reg")
-  .description("Allow correct values in incorrect register locations");
+FlagArg& no_relax_reg_arg =
+  FlagArg::create("no_relax_reg")
+  .description("Disallow correct values in incorrect register locations");
 
 FlagArg& relax_mem_arg =
   FlagArg::create("relax_mem")
@@ -57,13 +57,13 @@ ValueArg<Cost>& misalign_penalty_arg =
   ValueArg<Cost>::create("misalign_penalty")
   .usage("<int>")
   .description("Penalty for correct values in incorrect locations")
-  .default_val(0);
+  .default_val(1);
 
 ValueArg<Cost>& sig_penalty_arg =
   ValueArg<Cost>::create("sig_penalty")
   .usage("<int>")
   .description("Penalty for incorrect signal behavior")
-  .default_val(0);
+  .default_val(10000);
 
 ValueArg<Cost>& min_ulp_arg =
   ValueArg<Cost>::create("min_ulp")
