@@ -293,10 +293,14 @@ Function Sandbox::emit_state2cpu(const CpuState& cs) {
   assm_.mov(rax, Moffs64(cs.rf.data()));
   assm_.push(rax);
   assm_.popfq();
-  // Write SSE regs
+  // Write SSE regs (width is target dependent)
   for (const auto& s : xmms) {
     assm_.mov((R64)rax, Imm64(cs.sse[s].data()));
+#ifdef __AVX__
     assm_.vmovdqu(ymms[s], M256(rax));
+#else
+    assm_.movdqu(xmms[s], M128(rax));
+#endif
   }
   // Write GP regs
   for (const auto& r : r64s) {
@@ -342,10 +346,14 @@ Function Sandbox::emit_cpu2state(CpuState& cs) {
   // Read user's %rsp
   assm_.mov(rax, Moffs64(&user_rsp_));
   assm_.mov(Moffs64(cs.gp[rsp].data()), rax);
-  // Read SSE regs
+  // Read SSE regs (width is target dependent)
   for (const auto& s : xmms) {
     assm_.mov((R64)rax, Imm64(cs.sse[s].data()));
+#ifdef __AVX__
     assm_.vmovdqu(M256(rax), ymms[s]);
+#else
+    assm_.movdqu(M128(rax), xmms[s]);
+#endif
   }
   // Read RFLAGS regs
   assm_.pushfq();
