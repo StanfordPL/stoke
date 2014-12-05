@@ -1079,9 +1079,10 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
           d.constraints, d.post_suffix);
 
 
-  // The OF flag will be set exactly if the destination is 0 (i.e. the src is -1).
+  // The OF flag will be set exactly if the destination is 0x80* (i.e. the src is 0x7f*).
   setFlag(d.Vnprime, V_OF,
-          E_dest == SymBitVector::constant(bitWidth, 0),
+          (E_dest[bitWidth - 1] == SymBool::_true()) &
+          (E_dest[bitWidth - 2][0] == SymBitVector::constant(bitWidth - 1, 0)),
           d.constraints, d.post_suffix);
 
   setSFPFZF(E_dest, d, bitWidth);
