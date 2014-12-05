@@ -610,12 +610,12 @@ void Sandbox::emit_callbacks(size_t line, bool before) {
 }
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
-	// First things first. If it's unsupported, give up.
-	if (!is_supported(instr)) {
-		emit_signal_trap_call(ErrorCode::SIGILL_);
-	}
+  // First things first. If it's unsupported, give up.
+  if (!is_supported(instr)) {
+    emit_signal_trap_call(ErrorCode::SIGILL_);
+  }
   // Labels are translated directly
-	else if (instr.is_label_defn()) {
+  else if (instr.is_label_defn()) {
     assm_.assemble(instr);
   }
   // Jumps are instrumented with premature exit logic
@@ -635,22 +635,22 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
     if (instr.is_div() || instr.is_idiv()) {
       emit_mem_div(instr);
     } else if (instr.is_push()) {
-			emit_mem_push(instr);
-		} else if (instr.is_pop()) {
-			emit_mem_pop(instr);
-		} else {
+      emit_mem_push(instr);
+    } else if (instr.is_pop()) {
+      emit_mem_pop(instr);
+    } else {
       emit_memory_instruction(instr);
     }
   }
   // Implicits are even harder (we most likely bail out here as well)
   else if (instr.is_implicit_memory_dereference()) {
-		if (instr.is_push()) {
-			emit_push(instr);
-		} else if (instr.is_pop()) {
-			emit_pop(instr);
-		} else {
-	    emit_signal_trap_call(ErrorCode::SIGILL_);
-		}
+    if (instr.is_push()) {
+      emit_push(instr);
+    } else if (instr.is_pop()) {
+      emit_pop(instr);
+    } else {
+      emit_signal_trap_call(ErrorCode::SIGILL_);
+    }
   }
   // For everything else there are a few cases but mostly we hope for the best
   else {
@@ -747,7 +747,7 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
   assm_.mov(rax, Moffs64(&map_addr_));
   assm_.call(rax);
 
-  // Find an unused register to hold the sandboxed address 
+  // Find an unused register to hold the sandboxed address
   const auto rx = get_unused_quad(instr);
   // Backup rx and store the value there
   assm_.mov(rdi, Imm64(&scratch_[rx]));
@@ -879,97 +879,97 @@ void Sandbox::emit_mem_div(const Instruction& instr) {
 }
 
 void Sandbox::emit_mem_pop(const Instruction& instr) {
-	switch (instr.get_opcode()) {
-		case POP_M16: {
-			const auto rx = get_unused_word(instr);
-			emit_memory_instruction({XCHG_R16_M16, {rx, M16(rsp)}});
-			emit_memory_instruction({MOV_M16_R16, {instr.get_operand<M16>(0), rx}});	
-			emit_memory_instruction({XCHG_R16_M16, {rx, M64(rsp)}});
-  		assm_.lea(rsp, M64(rsp, Imm32(2)));
-			break;
-		}
-		case POP_M64: {
-			const auto rx = get_unused_quad(instr);
-			emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp)}});
-			emit_memory_instruction({MOV_M64_R64, {instr.get_operand<M64>(0), rx}});	
-			emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp)}});
-  		assm_.lea(rsp, M64(rsp, Imm32(8)));
-			break;
-		}
+  switch (instr.get_opcode()) {
+  case POP_M16: {
+    const auto rx = get_unused_word(instr);
+    emit_memory_instruction({XCHG_R16_M16, {rx, M16(rsp)}});
+    emit_memory_instruction({MOV_M16_R16, {instr.get_operand<M16>(0), rx}});
+    emit_memory_instruction({XCHG_R16_M16, {rx, M64(rsp)}});
+    assm_.lea(rsp, M64(rsp, Imm32(2)));
+    break;
+  }
+  case POP_M64: {
+    const auto rx = get_unused_quad(instr);
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp)}});
+    emit_memory_instruction({MOV_M64_R64, {instr.get_operand<M64>(0), rx}});
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp)}});
+    assm_.lea(rsp, M64(rsp, Imm32(8)));
+    break;
+  }
 
-		default:
-			assert(false);
-	}
+  default:
+    assert(false);
+  }
 }
 
 void Sandbox::emit_mem_push(const Instruction& instr) {
-	switch (instr.get_opcode()) {
-		case PUSH_M16: {
-			const auto rx = get_unused_word(instr);
-			emit_memory_instruction({XCHG_R16_M16, {rx, M16(rsp, Imm32(-2))}});
-			emit_memory_instruction({MOV_R16_M16, {rx, instr.get_operand<M16>(0)}});	
-			emit_memory_instruction({XCHG_R16_M16, {rx, M64(rsp, Imm32(-2))}});
-  		assm_.lea(rsp, M64(rsp, Imm32(-2)));
-			break;
-		}
-		case PUSH_M64: {
-			const auto rx = get_unused_quad(instr);
-			emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
-			emit_memory_instruction({MOV_R64_M64, {rx, instr.get_operand<M64>(0)}});	
-			emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
-  		assm_.lea(rsp, M64(rsp, Imm32(-8)));
-			break;
-		}							 
+  switch (instr.get_opcode()) {
+  case PUSH_M16: {
+    const auto rx = get_unused_word(instr);
+    emit_memory_instruction({XCHG_R16_M16, {rx, M16(rsp, Imm32(-2))}});
+    emit_memory_instruction({MOV_R16_M16, {rx, instr.get_operand<M16>(0)}});
+    emit_memory_instruction({XCHG_R16_M16, {rx, M64(rsp, Imm32(-2))}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  }
+  case PUSH_M64: {
+    const auto rx = get_unused_quad(instr);
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
+    emit_memory_instruction({MOV_R64_M64, {rx, instr.get_operand<M64>(0)}});
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
+    assm_.lea(rsp, M64(rsp, Imm32(-8)));
+    break;
+  }
 
-		default:
-			assert(false);
-			break;
-	}
+  default:
+    assert(false);
+    break;
+  }
 }
 
 void Sandbox::emit_pop(const Instruction& instr) {
-	switch (instr.get_opcode()) {
-		case POP_R16:
-  		assm_.lea(rsp, M64(rsp, Imm32(2)));
-  		emit_memory_instruction({MOV_R16_M16, {instr.get_operand<R16>(0), M16(rsp, Imm32(-2))}});
-			break;
-		case POP_R64:
-  		assm_.lea(rsp, M64(rsp, Imm32(8)));
-  		emit_memory_instruction({MOV_R64_M64, {instr.get_operand<R64>(0), M64(rsp, Imm32(-8))}});
-			break;
+  switch (instr.get_opcode()) {
+  case POP_R16:
+    assm_.lea(rsp, M64(rsp, Imm32(2)));
+    emit_memory_instruction({MOV_R16_M16, {instr.get_operand<R16>(0), M16(rsp, Imm32(-2))}});
+    break;
+  case POP_R64:
+    assm_.lea(rsp, M64(rsp, Imm32(8)));
+    emit_memory_instruction({MOV_R64_M64, {instr.get_operand<R64>(0), M64(rsp, Imm32(-8))}});
+    break;
 
-		default:
-			assert(false);
-	}
+  default:
+    assert(false);
+  }
 }
 
 void Sandbox::emit_push(const Instruction& instr) {
-	switch (instr.get_opcode()) {
-		case PUSH_IMM16:
-  		emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), instr.get_operand<Imm16>(0)}});
-  		assm_.lea(rsp, M64(rsp, Imm32(-2)));
-			break;
-		case PUSH_IMM32:
-  		emit_memory_instruction({MOV_M32_IMM32, {M32(rsp, Imm32(-4)), instr.get_operand<Imm32>(0)}});
-  		assm_.lea(rsp, M64(rsp, Imm32(-4)));
-			break;
-		case PUSH_IMM8:
-  		emit_memory_instruction({MOV_M8_IMM8, {M8(rsp, Imm32(-1)), instr.get_operand<Imm8>(0)}});
-  		assm_.lea(rsp, M64(rsp, Imm32(-1)));
-			break;
-		case PUSH_R16:	
-  		emit_memory_instruction({MOV_M16_R16, {M16(rsp, Imm32(-2)), instr.get_operand<R16>(0)}});
-  		assm_.lea(rsp, M64(rsp, Imm32(-2)));
-			break;
-		case PUSH_R64:	
-  		emit_memory_instruction({MOV_M64_R64, {M64(rsp, Imm32(-8)), instr.get_operand<R64>(0)}});
-  		assm_.lea(rsp, M64(rsp, Imm32(-8)));
-			break;
+  switch (instr.get_opcode()) {
+  case PUSH_IMM16:
+    emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), instr.get_operand<Imm16>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  case PUSH_IMM32:
+    emit_memory_instruction({MOV_M32_IMM32, {M32(rsp, Imm32(-4)), instr.get_operand<Imm32>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-4)));
+    break;
+  case PUSH_IMM8:
+    emit_memory_instruction({MOV_M8_IMM8, {M8(rsp, Imm32(-1)), instr.get_operand<Imm8>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-1)));
+    break;
+  case PUSH_R16:
+    emit_memory_instruction({MOV_M16_R16, {M16(rsp, Imm32(-2)), instr.get_operand<R16>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  case PUSH_R64:
+    emit_memory_instruction({MOV_M64_R64, {M64(rsp, Imm32(-8)), instr.get_operand<R64>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-8)));
+    break;
 
-		default:
-			assert(false);
-			break;
-	}
+  default:
+    assert(false);
+    break;
+  }
 }
 
 void Sandbox::emit_reg_div(const Instruction& instr) {
