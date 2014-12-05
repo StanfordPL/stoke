@@ -173,6 +173,10 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       progress_cb_({state}, progress_cb_arg_);
     }
   }
+
+  if (give_up_now) {
+    state.interrupted = true;
+  }
 }
 
 void Search::stop() {
