@@ -825,57 +825,58 @@ void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
 }
 
 void Sandbox::emit_mem_div(const Instruction& instr) {
-  // The idea here is to split a single divide instruction into three parts:
-  // 1. Exchange rbx and the mem operand (which div won't touch) (this will catch a segv)
-  // 2. Perform the div on rbx (this will catch a sigfpe)
-  // 3. Exchange the values again (no need to double check the segv)
+  // Backup rbx
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(rax, rbx);
+  assm_.mov(Moffs64(&scratch_[rbx]), rax);
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
 
+  // Move the mem operand into its place (this will catch a sigsegv)
+  // Perform the register div on rbx (this will catch a sigfpe)
   switch (instr.get_opcode()) {
   case DIV_M8:
-    emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
+    emit_memory_instruction({MOV_RL_M8, {bl, instr.get_operand<M8>(0)}});
     emit_reg_div({DIV_RL, {bl}});
-    assm_.xchg(bl, instr.get_operand<M8>(0));
     break;
   case DIV_M16:
-    emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
+    emit_memory_instruction({MOV_R16_M16, {bx, instr.get_operand<M16>(0)}});
     emit_reg_div({DIV_R16, {bx}});
-    assm_.xchg(bx, instr.get_operand<M16>(0));
     break;
   case DIV_M32:
-    emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
+    emit_memory_instruction({MOV_R32_M32, {ebx, instr.get_operand<M32>(0)}});
     emit_reg_div({DIV_R32, {ebx}});
-    assm_.xchg(ebx, instr.get_operand<M32>(0));
     break;
   case DIV_M64:
-    emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+    emit_memory_instruction({MOV_R64_M64, {rbx, instr.get_operand<M64>(0)}});
     emit_reg_div({DIV_R64, {rbx}});
-    assm_.xchg(rbx, instr.get_operand<M64>(0));
     break;
   case IDIV_M8:
-    emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
+    emit_memory_instruction({MOV_RL_M8, {bl, instr.get_operand<M8>(0)}});
     emit_reg_div({IDIV_RL, {bl}});
-    assm_.xchg(bl, instr.get_operand<M8>(0));
     break;
   case IDIV_M16:
-    emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
+    emit_memory_instruction({MOV_R16_M16, {bx, instr.get_operand<M16>(0)}});
     emit_reg_div({IDIV_R16, {bx}});
-    assm_.xchg(bx, instr.get_operand<M16>(0));
     break;
   case IDIV_M32:
-    emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
+    emit_memory_instruction({MOV_R32_M32, {ebx, instr.get_operand<M32>(0)}});
     emit_reg_div({IDIV_R32, {ebx}});
-    assm_.xchg(ebx, instr.get_operand<M32>(0));
     break;
   case IDIV_M64:
-    emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+    emit_memory_instruction({MOV_R64_M64, {rbx, instr.get_operand<M64>(0)}});
     emit_reg_div({IDIV_R64, {rbx}});
-    assm_.xchg(rbx, instr.get_operand<M64>(0));
     break;
 
   default:
     assert(false);
     break;
   }
+
+  // Restore rbx
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(rax, Moffs64(&scratch_[rbx]));
+  assm_.mov(rbx, rax);
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
 
 void Sandbox::emit_mem_pop(const Instruction& instr) {
