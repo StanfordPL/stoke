@@ -650,8 +650,8 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
     } else if (instr.is_pop()) {
       emit_mem_pop(instr);
     } else if (instr.is_any_bt()) {
-			emit_mem_bt(instr);
-		} else {
+      emit_mem_bt(instr);
+    } else {
       emit_memory_instruction(instr);
     }
   }
@@ -839,77 +839,77 @@ void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
 
 void Sandbox::emit_mem_bt(const Instruction& instr) {
   // We're going to need to compute some values and modify eflags in the process.
-	// Grab the STOKE rsp to back them up along with some registers while we have it.
+  // Grab the STOKE rsp to back them up along with some registers while we have it.
   emit_load_stoke_rsp();
   assm_.push(rdi);
   assm_.push(rsi);
-	assm_.push(r8);
+  assm_.push(r8);
   assm_.pushfq();
-	emit_load_user_rsp();
+  emit_load_user_rsp();
 
-	// All bt instructions that use memory have it as their first operand.
-	// Load the effective address of that operand (M64 is as good as anything) into rdi
-	assm_.lea(rdi, instr.get_operand<M64>(0));
+  // All bt instructions that use memory have it as their first operand.
+  // Load the effective address of that operand (M64 is as good as anything) into rdi
+  assm_.lea(rdi, instr.get_operand<M64>(0));
 
-	// Move the second operand into an R64 (again, as good as anything) ...
-	switch (instr.type(1)) {
-		case Type::IMM_8:
-			assm_.xor_(rsi, rsi);
-			assm_.mov(sil, instr.get_operand<Imm8>(1));
-			break;
-		case Type::R_16:
-			assm_.xor_(rsi, rsi);
-			assm_.mov(si, instr.get_operand<R16>(1));
-			break;
-		case Type::R_32:
-			assm_.mov(esi, instr.get_operand<R32>(1));
-			break;
-		case Type::R_64:
-			assm_.mov(rsi, instr.get_operand<R64>(1));
-			break;
+  // Move the second operand into an R64 (again, as good as anything) ...
+  switch (instr.type(1)) {
+  case Type::IMM_8:
+    assm_.xor_(rsi, rsi);
+    assm_.mov(sil, instr.get_operand<Imm8>(1));
+    break;
+  case Type::R_16:
+    assm_.xor_(rsi, rsi);
+    assm_.mov(si, instr.get_operand<R16>(1));
+    break;
+  case Type::R_32:
+    assm_.mov(esi, instr.get_operand<R32>(1));
+    break;
+  case Type::R_64:
+    assm_.mov(rsi, instr.get_operand<R64>(1));
+    break;
 
-		default:
-			assert(false);
-			break;
-	}
-	// ... and use it to figure out the byte address we'll ACTUALLY derefence
-	assm_.mov(r8, rsi);
-	assm_.shr(r8, Imm8(3));
-	assm_.lea(rdi, M64(rdi, r8, Scale::TIMES_1));
-	// ... and a bit index relative to that byte
-	assm_.and_(rsi, Imm8(0x07));
+  default:
+    assert(false);
+    break;
+  }
+  // ... and use it to figure out the byte address we'll ACTUALLY derefence
+  assm_.mov(r8, rsi);
+  assm_.shr(r8, Imm8(3));
+  assm_.lea(rdi, M64(rdi, r8, Scale::TIMES_1));
+  // ... and a bit index relative to that byte
+  assm_.and_(rsi, Imm8(0x07));
 
-	// Restore eflags
-	emit_load_stoke_rsp();
-	assm_.popfq();
-	emit_load_user_rsp();
-
-	// Now we're ready to invoke the instruction using %rdi and %rsi
-	// (Any memory operand variant is equivalent to any other.)
-	if (instr.is_bt()) {
-		emit_memory_instruction({BT_M64_R64, {M64(rdi), rsi}});
-	} else if (instr.is_btc()) {
-		emit_memory_instruction({BTC_M64_R64, {M64(rdi), rsi}});
-	} else if (instr.is_btr()) {
-		emit_memory_instruction({BTR_M64_R64, {M64(rdi), rsi}});
-	} else if (instr.is_bts()) {
-		emit_memory_instruction({BTS_M64_R64, {M64(rdi), rsi}});
-	}
-
-	// None of these variants write registers. Restore the values we saved.
+  // Restore eflags
   emit_load_stoke_rsp();
-	assm_.pop(r8);
+  assm_.popfq();
+  emit_load_user_rsp();
+
+  // Now we're ready to invoke the instruction using %rdi and %rsi
+  // (Any memory operand variant is equivalent to any other.)
+  if (instr.is_bt()) {
+    emit_memory_instruction({BT_M64_R64, {M64(rdi), rsi}});
+  } else if (instr.is_btc()) {
+    emit_memory_instruction({BTC_M64_R64, {M64(rdi), rsi}});
+  } else if (instr.is_btr()) {
+    emit_memory_instruction({BTR_M64_R64, {M64(rdi), rsi}});
+  } else if (instr.is_bts()) {
+    emit_memory_instruction({BTS_M64_R64, {M64(rdi), rsi}});
+  }
+
+  // None of these variants write registers. Restore the values we saved.
+  emit_load_stoke_rsp();
+  assm_.pop(r8);
   assm_.pop(rsi);
   assm_.pop(rdi);
-	emit_load_user_rsp();
+  emit_load_user_rsp();
 }
 
 void Sandbox::emit_mem_div(const Instruction& instr) {
   // Backup rbx --
-	// It isn't totally obvious why this use of scratch_ won't collide with
-	// the use inside emit_memory_instruction. The reason is that rx appears
-	// in every invocation. This prevents get_unused_reg from proposing it
-	// a second time around.
+  // It isn't totally obvious why this use of scratch_ won't collide with
+  // the use inside emit_memory_instruction. The reason is that rx appears
+  // in every invocation. This prevents get_unused_reg from proposing it
+  // a second time around.
   assm_.mov(Moffs64(&scratch_[rax]), rax);
   assm_.mov(rax, rbx);
   assm_.mov(Moffs64(&scratch_[rbx]), rax);
@@ -956,7 +956,7 @@ void Sandbox::emit_mem_div(const Instruction& instr) {
     break;
   }
 
-  // Restore rbx 
+  // Restore rbx
   assm_.mov(Moffs64(&scratch_[rax]), rax);
   assm_.mov(rax, Moffs64(&scratch_[rbx]));
   assm_.mov(rbx, rax);
@@ -1105,7 +1105,7 @@ void Sandbox::emit_signal_trap_call(ErrorCode ec) {
 }
 
 void Sandbox::emit_load_user_rsp() {
-  // Save the stoke %rsp 
+  // Save the stoke %rsp
   assm_.mov(Moffs64(&scratch_[rax]), rax);
   assm_.mov(rax, rsp);
   assm_.mov(Moffs64(&stoke_rsp_), rax);
@@ -1116,7 +1116,7 @@ void Sandbox::emit_load_user_rsp() {
 }
 
 void Sandbox::emit_load_stoke_rsp() {
-  // Save the user %rsp 
+  // Save the user %rsp
   assm_.mov(Moffs64(&scratch_[rax]), rax);
   assm_.mov(rax, rsp);
   assm_.mov(Moffs64(&user_rsp_), rax);

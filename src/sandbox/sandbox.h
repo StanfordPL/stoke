@@ -234,8 +234,8 @@ private:
   /** Emit the RET instruction. */
   void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
 
-	/** Special case for emitting bt instructions that read from memory. */
-	void emit_mem_bt(const x64asm::Instruction& instr);
+  /** Special case for emitting bt instructions that read from memory. */
+  void emit_mem_bt(const x64asm::Instruction& instr);
   /** Special case for emitting div instructions that read from memory. */
   void emit_mem_div(const x64asm::Instruction& instr);
   /** Special case for emitting pop to memory. */
