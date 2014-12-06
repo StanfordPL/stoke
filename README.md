@@ -11,20 +11,20 @@ STOKE has appeared in a number of publications. For a thorough introduction to t
 
 Table of Contents
 =====
-1. [Downloading and Building STOKE](https://github.com/eschkufz/stoke#downloading-and-building-stoke)
-2. [Using STOKE](https://github.com/eschkufz/stoke#using-stoke)
-3. [Additional Features](https://github.com/eschkufz/stoke#additional-features)
-4. [Extending STOKE](https://github.com/eschkufz/stoke#extending-stoke)
- 1. [Code Organization](https://github.com/eschkufz/stoke#code-organization)
- 2. [Initial Search State](https://github.com/eschkufz/stoke#initial-search-state)
- 3. [Search Transformations](https://github.com/eschkufz/stoke#search-transformations)
- 4. [Performance Term](https://github.com/eschkufz/stoke#performance-term)
- 5. [Correctness Term](https://github.com/eschkufz/stoke#correctness-term)
- 6. [Live-out Error](https://github.com/eschkufz/stoke#computing-error)
- 7. [Verification Strategy](https://github.com/eschkufz/stoke#verification-strategy)
- 8. [Command Line Args](https://github.com/eschkufz/stoke#command-line-args)
-5. [Frequently Asked Questions](https://github.com/eschkufz/stoke#frequently-asked-questions)
-6. [Contact](https://github.com/eschkufz/stoke#contact)
+1. [Downloading and Building STOKE](#downloading-and-building-stoke)
+2. [Using STOKE](#using-stoke)
+3. [Additional Features](#additional-features)
+4. [Extending STOKE](#extending-stoke)
+ 1. [Code Organization](#code-organization)
+ 2. [Initial Search State](#initial-search-state)
+ 3. [Search Transformations](#search-transformations)
+ 4. [Performance Term](#performance-term)
+ 5. [Correctness Term](#correctness-term)
+ 6. [Live-out Error](#computing-error)
+ 7. [Verification Strategy](#verification-strategy)
+ 8. [Command Line Args](#command-line-args)
+5. [Frequently Asked Questions](#frequently-asked-questions)
+6. [Contact](#contact)
 
 Downloading and Building STOKE
 =====
