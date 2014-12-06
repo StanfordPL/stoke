@@ -191,6 +191,17 @@ private:
   /** Function buffer for jit assembling codes; the main function */
   x64asm::Function fxn_;
 
+  /** Returns a register that doesn't appear in an instruction or the scratch space. */
+  size_t get_unused_reg(const x64asm::Instruction& instr) const;
+  /** Returns an unused word register. */
+  const x64asm::R16& get_unused_word(const x64asm::Instruction& instr) const {
+    return x64asm::r16s[get_unused_reg(instr)];
+  }
+  /** Returns an unused quad register. */
+  const x64asm::R64& get_unused_quad(const x64asm::Instruction& instr) const {
+    return x64asm::r64s[get_unused_reg(instr)];
+  }
+
   /** Check for abi violations between input and output states */
   bool check_abi(const IoPair& iop) const;
 
@@ -208,26 +219,6 @@ private:
   void emit_map_addr_cases(CpuState& cs, const x64asm::Label& fail, const x64asm::Label& done,
                            bool stack);
 
-  /** Returns an unused register with respect to an instruction. */
-  size_t get_unused_reg(const x64asm::Instruction& instr) const {
-    const auto rs = instr.maybe_read_set();
-    const auto ws = instr.maybe_write_set();
-
-    size_t idx = 4;
-    for (; idx < 12 && rs.contains(x64asm::rbs[idx]) || ws.contains(x64asm::rbs[idx]); ++idx);
-
-    assert(idx < 12);
-    return idx + 4;
-  }
-  /** Returns an unused word register. */
-  const x64asm::R16& get_unused_word(const x64asm::Instruction& instr) const {
-    return x64asm::r16s[get_unused_reg(instr)];
-  }
-  /** Returns an unused quad register. */
-  const x64asm::R64& get_unused_quad(const x64asm::Instruction& instr) const {
-    return x64asm::r64s[get_unused_reg(instr)];
-  }
-
   /** Assembles the user's function */
   bool emit_function(const Cfg& cfg, bool callbacks);
   /** Emit a callback (before or after) a line. */
@@ -243,6 +234,8 @@ private:
   /** Emit the RET instruction. */
   void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
 
+  /** Special case for emitting bt instructions that read from memory. */
+  void emit_mem_bt(const x64asm::Instruction& instr);
   /** Special case for emitting div instructions that read from memory. */
   void emit_mem_div(const x64asm::Instruction& instr);
   /** Special case for emitting pop to memory. */

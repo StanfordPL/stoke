@@ -44,33 +44,6 @@ CRC32_R32_RH
 , POP_GS
 , POP_GS_PREF66
 
-// See STOKE sandbox issue #253: This is the bit test (and clear/reset/set) family of
-// instructions for memory operands.
-, BT_M16_IMM8
-, BT_M16_R16
-, BT_M32_IMM8
-, BT_M32_R32
-, BT_M64_IMM8
-, BT_M64_R64
-, BTC_M16_IMM8
-, BTC_M16_R16
-, BTC_M32_IMM8
-, BTC_M32_R32
-, BTC_M64_IMM8
-, BTC_M64_R64
-, BTR_M16_IMM8
-, BTR_M16_R16
-, BTR_M32_IMM8
-, BTR_M32_R32
-, BTR_M64_IMM8
-, BTR_M64_R64
-, BTS_M16_IMM8
-, BTS_M16_R16
-, BTS_M32_IMM8
-, BTS_M32_R32
-, BTS_M64_IMM8
-, BTS_M64_R64
-
 // See STOKE sandbox issue #254. These instructions modify the dflag.
 , STD
 , CLD
