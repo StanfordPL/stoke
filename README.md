@@ -381,6 +381,8 @@ In addition to the subcommands described above, STOKE has facilities for debuggi
 - `stoke benchmark state`: Measure the time required to reset the memory of a hardware machine state.
 - `stoke benchmark verify`: Measure the time required to check the equivalence of two programs.
 
+Furthermore, STOKE comes with a zsh completion function.  Add `bin/_stoke` to you zsh completion path to get powerful completion for all stoke tools.
+
 Extending STOKE
 =====
 
