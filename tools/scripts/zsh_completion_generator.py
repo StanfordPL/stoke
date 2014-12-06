@@ -30,7 +30,7 @@ def main():
   cmd = get_command()
 
   # show AST
-  # print cmd
+  #print cmd
 
   handlers = [ZshHandler()]
 
@@ -127,7 +127,8 @@ class ZshHandler(Handler):
 
   def write_arguments(self, name, args):
     def esc(s):
-      return s.replace("{", "\\{").replace("}", "\\}").replace("'", "")
+      s = s.replace("{", "\\{").replace("}", "\\}").replace("'", "")
+      return s
     self.writeln("_" + name.replace(" ", "_") + "()\n{")
     res = []
     for arg in args:
@@ -139,7 +140,7 @@ class ZshHandler(Handler):
       usage = arg.get_usage()
 
       # no argument, just a flag
-      if usage == "":
+      if usage == None:
         res.append(a + "[" + esc(arg.desc) + "]::'")
         continue
 
@@ -153,7 +154,7 @@ class ZshHandler(Handler):
       m = re.search('<(path/to/(file|bin)\.?(.*))>$', usage)
       if m != None:
         if len(m.group(3)) > 0:
-          res.append(a + "[" + esc(arg.desc + "; <"+m.group(2)+">")+"]:file:_files -g \"*."+m.group(3)+"\"'")
+          res.append(a + "[" + esc(arg.desc + "; <"+m.group(2)+">")+"]:file:_files -g \"*."+esc(m.group(3))+"\"'")
         else:
           res.append(a + "[" + esc(arg.desc + "; <"+m.group(2)+">")+"]:file:_files'")
         continue
@@ -168,7 +169,7 @@ class ZshHandler(Handler):
       m = re.search('\((.*)\)$', usage)
       if m != None:
         options = m.group(1).split("|")
-        res.append(a + "[" + esc(arg.desc) + "]:argument:(" + " ".join(options) + ")'")
+        res.append(a + "[" + esc(arg.desc) + "]:argument:(" + " ".join(map(lambda x: esc(x), options)) + ")'")
         continue
 
       # arguments without completion
@@ -179,8 +180,9 @@ class ZshHandler(Handler):
         continue
 
       # no match, just add default help
-      print >> sys.stderr, "WARNING: Argument with unknown usage found: " + arg.name
-      res.append(a + "[" + esc(arg.desc) + "]:argument:'")
+      print "ERROR: Argument with unknown usage found: " + self.name
+      sys.exit(1)
+      #res.append(a + "[" + esc(arg.desc) + "]:argument:'")
 
     self.writeln("  _arguments \\")
     self.writeln("    " + " \\\n    ".join(res))
@@ -219,6 +221,30 @@ class Arg(object):
     self.name = arg
     self.desc = desc
 
+  # finish initialization (no more calls to add_desc after this)
+  def finish_init(self):
+    match = re.match("(-[^ ]*)( (-[^ ]*))?( (.+?))?( \(default: (.*)\))?$", self.name)
+    if match == None:
+      print "Error parsing argument: " + self.name
+      sys.exit(1)
+    self.params = [match.group(1)]
+    if match.group(3) != None:
+      self.params.append(match.group(3))
+    self.usage = match.group(5)
+    self.default = match.group(7)
+
+    filters = [
+      "Required argument",
+      "Default: use --debug_args to see this default"
+    ]
+    match = re.search("Default: (.+)$", self.desc)
+    if match != None:
+      filters.append(match.group(0))
+      self.default = match.group(1)
+    for f in filters:
+      if f in self.desc:
+        self.desc = self.desc.replace(f, "").strip()
+
   # extend the description as necessary
   def add_desc(self, desc):
     self.desc += " " + desc.strip()
@@ -226,14 +252,17 @@ class Arg(object):
 
   # get the list of parameter names (one or two)
   def get_parameters(self):
-    m = re.search("(-[^ ]*)( (-[^ ]*))?", self.name)
-    if m.group(3) != None:
-      return [m.group(1), m.group(3)]
-    return [m.group(1)]
+    return self.params
 
   # return the usage part of the parameter
   def get_usage(self):
-    return self.name[len(" ".join(self.get_parameters())):]
+    return self.usage
+
+  def has_default(self):
+    return self.default != None
+
+  def get_default(self):
+    return self.default
 
   # simple string representation
   def __repr__(self):
@@ -320,6 +349,8 @@ def get_arguments(subcommand):
     elif len(line) > 3:
       arg = Arg(line.strip())
       args.append(arg)
+  for a in args:
+    a.finish_init()
   return args
 
 if __name__ == '__main__':
