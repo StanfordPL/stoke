@@ -15,7 +15,7 @@ Repository
 - The ```master``` branch is the externally-facing stable codebase. DEFINITELY don't commit anything to ```master``` that doesn't pass ```make test```.
 - Issues are reported on the github issue tracker. Keep issues focused and provide detailed descriptions.
 - Branches related to issues are forked off of ```develop``` and named using the ```issue-XXX``` convention.
-- Completed issues are merged back into ```develop``` using the ```--no-ff``` command line switch.
+- Completed issues are merged back into ```develop``` using the ```--no-ff``` command line switch.  The merge commit should always contain the string ``Fixes #XXX``` to link the commit from the GitHub issue tracker.
 - Releases are forked off of ```develop``` and named using the ```release-XXX``` convention.
 - No new features are permitted in release branches, only bugfixes.
 - Upon completion, releases are merged into ```master```.
