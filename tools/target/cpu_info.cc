@@ -118,37 +118,37 @@ void insert_flag(FlagSet& result, regbit_to_flags info, unsigned reg) {
 namespace stoke {
 
 FlagSet CpuInfo::get_flags() {
-	FlagSet result;
+  FlagSet result;
 
-	unsigned max = __get_cpuid_max(0, NULL);
+  unsigned max = __get_cpuid_max(0, NULL);
 
-	unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
-	for (auto level : cpuid_to_flags_) {
-		// is this level supported?
-		if (max < level.first & 0x80000000) {
-			continue;
-		}
+  unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
+  for (auto level : cpuid_to_flags_) {
+    // is this level supported?
+    if (max < level.first & 0x80000000) {
+      continue;
+    }
 
-		// get cpuid information
-		__cpuid_count(level.first, 0, eax, ebx, ecx, edx);
-		insert_flag(result, get<0>(level.second), edx);
-		insert_flag(result, get<1>(level.second), ecx);
-		insert_flag(result, get<2>(level.second), ebx);
-		insert_flag(result, get<3>(level.second), eax);
-	}
+    // get cpuid information
+    __cpuid_count(level.first, 0, eax, ebx, ecx, edx);
+    insert_flag(result, get<0>(level.second), edx);
+    insert_flag(result, get<1>(level.second), ecx);
+    insert_flag(result, get<2>(level.second), ebx);
+    insert_flag(result, get<3>(level.second), eax);
+  }
 
-	// detect multi-byte nop support
-	__cpuid_count(1, 0, eax, ebx, ecx, edx);
-	unsigned int model = (eax >> 8) & 0x0F;
-	// support is present if model is 1111 or 0110
-	if ((model == 0x0F) || (model == 0x06)) {
-		result += Flag::NOPL;
-	}
+  // detect multi-byte nop support
+  __cpuid_count(1, 0, eax, ebx, ecx, edx);
+  unsigned int model = (eax >> 8) & 0x0F;
+  // support is present if model is 1111 or 0110
+  if ((model == 0x0F) || (model == 0x06)) {
+    result += Flag::NOPL;
+  }
 
-	// TODO: correctly detect REP_GOOD
-	result += Flag::REP_GOOD;
+  // TODO: correctly detect REP_GOOD
+  result += Flag::REP_GOOD;
 
-	return result;
+  return result;
 }
 
 } // namespace stoke

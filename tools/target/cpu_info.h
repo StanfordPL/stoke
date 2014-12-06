@@ -6,8 +6,8 @@
 namespace stoke {
 
 class CpuInfo {
-	public:
-		static x64asm::FlagSet get_flags();
+public:
+  static x64asm::FlagSet get_flags();
 };
 
 } // namespace stoke
