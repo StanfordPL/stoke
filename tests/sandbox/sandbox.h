@@ -527,20 +527,20 @@ TEST(SandboxTest, PUSH_POP) {
 
 TEST(SandboxTest, MEM_DIV) {
   std::stringstream ss;
-	ss << "movq $0x1, %rax" << std::endl;
-	ss << "movq $0x1, %rdx" << std::endl;
-	ss << "movq $0x20, -0x8(%rsp)" << std::endl;
-	ss << "divb -0x8(%rsp)" << std::endl;
-	ss << "divw -0x8(%rsp)" << std::endl;
-	ss << "divl -0x8(%rsp)" << std::endl;
-	ss << "divq -0x8(%rsp)" << std::endl;
-	ss << "idivb -0x8(%rsp)" << std::endl;
-	ss << "idivw -0x8(%rsp)" << std::endl;
-	ss << "idivl -0x8(%rsp)" << std::endl;
-	ss << "movq $0x0, %rdx" << std::endl;
-	ss << "movq $0x20, %rax" << std::endl;
-	ss << "idivq -0x8(%rsp)" << std::endl;
-	ss << "retq" << std::endl;
+  ss << "movq $0x1, %rax" << std::endl;
+  ss << "movq $0x1, %rdx" << std::endl;
+  ss << "movq $0x20, -0x8(%rsp)" << std::endl;
+  ss << "divb -0x8(%rsp)" << std::endl;
+  ss << "divw -0x8(%rsp)" << std::endl;
+  ss << "divl -0x8(%rsp)" << std::endl;
+  ss << "divq -0x8(%rsp)" << std::endl;
+  ss << "idivb -0x8(%rsp)" << std::endl;
+  ss << "idivw -0x8(%rsp)" << std::endl;
+  ss << "idivl -0x8(%rsp)" << std::endl;
+  ss << "movq $0x0, %rdx" << std::endl;
+  ss << "movq $0x20, %rax" << std::endl;
+  ss << "idivq -0x8(%rsp)" << std::endl;
+  ss << "retq" << std::endl;
 
   x64asm::Code c;
   ss >> c;
