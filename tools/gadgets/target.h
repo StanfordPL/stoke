@@ -28,22 +28,22 @@ namespace stoke {
 class TargetGadget : public Cfg {
 public:
   TargetGadget() : Cfg(target_arg.value().code, def_in_arg, live_out_arg) {
-		// Check for instructions that require unavailable flags
-		const auto cpu_flags = CpuInfo::get_flags();
-		auto target_flags = get_code().required_flags();
+    // Check for instructions that require unavailable flags
+    const auto cpu_flags = CpuInfo::get_flags();
+    auto target_flags = get_code().required_flags();
     if (!cpu_flags.contains(target_flags)) {
       const auto diff = target_flags - cpu_flags;
       Console::error(1) << "Target requires unavailable cpu flags: " << diff << std::endl;
     }
 
-		// Check for instructions that aren't supported by the sandbox
-		for (const auto& instr : get_code()) {
-			if (!Sandbox::is_supported(instr)) {
-				Console::error(1) << "Target contains an unsupported instruction: " << instr << std::endl;
-			}
-		}
+    // Check for instructions that aren't supported by the sandbox
+    for (const auto& instr : get_code()) {
+      if (!Sandbox::is_supported(instr)) {
+        Console::error(1) << "Target contains an unsupported instruction: " << instr << std::endl;
+      }
+    }
 
-		// Add summaries for auxiliary functions
+    // Add summaries for auxiliary functions
     for (const auto& fxn : aux_fxns_arg.value()) {
       auto code = fxn.code;
       auto lbl = code[0].get_operand<x64asm::Label>(0);
