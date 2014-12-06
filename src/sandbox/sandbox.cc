@@ -825,13 +825,13 @@ void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
 }
 
 void Sandbox::emit_mem_div(const Instruction& instr) {
-  // Backup rbx 
+  // Backup rbx
   assm_.mov(Moffs64(&scratch_[rax]), rax);
   assm_.mov(rax, rbx);
   assm_.mov(Moffs64(&scratch_[rbx]), rax);
   assm_.mov(rax, Moffs64(&scratch_[rax]));
 
-	// Move the mem operand into its place (this will catch a sigsegv)
+  // Move the mem operand into its place (this will catch a sigsegv)
   // Perform the register div on rbx (this will catch a sigfpe)
   switch (instr.get_opcode()) {
   case DIV_M8:
