@@ -289,9 +289,13 @@ Code Search::find_sound_code(const RegSet& def_ins, const RegSet& live_outs) {
       code.push_back(Instruction(PXOR_XMM_XMM, {reg, reg}));
     } else if (type == Type::YMM) {
       code.push_back(Instruction(VPXOR_YMM_YMM_YMM, {reg, reg, reg}));
-    } else if (type == Type::MM) {
-      code.push_back(Instruction(PXOR_MM_MM, {reg, reg}));
     }
+  }
+
+  // initialize mm registers
+  for (auto rit = diff.mm_begin(); rit != diff.mm_end(); ++rit) {
+    auto reg = *rit;
+    code.push_back(Instruction(PXOR_MM_MM, {reg, reg}));
   }
 
   // remove statements if possible
