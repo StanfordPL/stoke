@@ -379,7 +379,7 @@ format: src/ext/astyle
 # builds a symlink to the post-commit hooks
 hooks: .git/hooks/pre-commit
 
-.git/hooks/pre-commit: tools/scripts/pre-commit.sh src/ext/astyle
+.git/hooks/pre-commit: git/pre-commit.sh src/ext/astyle
 	chmod +x "git/pre-commit.sh"
 	ln -sf $(shell pwd)/git/pre-commit.sh .git/hooks/pre-commit
 
