@@ -38,9 +38,9 @@ protected:
   void test(std::string in, std::string out) {
     std::stringstream ss0;
     std::stringstream ss1;
-    ss0 << "{ " << in << " }";
+    ss0 << "{ " << out << " }";
     ss0 >> live_out_;
-    ss1 << "{ " << out << " }";
+    ss1 << "{ " << in << " }";
     ss1 >> def_in_;
 
     auto code = stoke::Search::find_sound_code(def_in_, live_out_);

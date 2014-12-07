@@ -469,8 +469,92 @@ TEST(SandboxTest, Issue239) {
   stoke::CpuState output = *sb.result_begin();
 
   ASSERT_EQ(0xb511, output.gp[x64asm::rbx].get_fixed_quad(0));
+}
 
+TEST(SandboxTest, LDDQU_VLDDQU) {
+  std::stringstream ss;
+  ss << "lddqu -0x21(%rsp), %xmm0" << std::endl;
+  ss << "vlddqu -0x21(%rsp), %ymm0" << std::endl;
+  ss << "retq" << std::endl;
 
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+}
+
+TEST(SandboxTest, PUSH_POP) {
+  std::stringstream ss;
+  ss << "pushw -0x18(%rsp)" << std::endl;
+  ss << "pushw -0x18(%rsp)" << std::endl;
+  ss << "pushw %ax" << std::endl;
+  ss << "pushw %ax" << std::endl;
+  ss << "pushq -0x18(%rsp)" << std::endl;
+  ss << "pushq %rax" << std::endl;
+  ss << "pushq $0xaa" << std::endl;
+  ss << "pushq $0xaa" << std::endl;
+  ss << "pushq $0xbbbb" << std::endl;
+  ss << "pushq $0xcccccccc" << std::endl;
+  ss << "popq %rax" << std::endl;
+  ss << "popw %ax" << std::endl;
+  ss << "popq (%rsp)" << std::endl;
+  ss << "popw (%rsp)" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+}
+
+TEST(SandboxTest, MEM_DIV) {
+  std::stringstream ss;
+  ss << "movq $0x1, %rax" << std::endl;
+  ss << "movq $0x1, %rdx" << std::endl;
+  ss << "movq $0x20, -0x8(%rsp)" << std::endl;
+  ss << "divb -0x8(%rsp)" << std::endl;
+  ss << "divw -0x8(%rsp)" << std::endl;
+  ss << "divl -0x8(%rsp)" << std::endl;
+  ss << "divq -0x8(%rsp)" << std::endl;
+  ss << "idivb -0x8(%rsp)" << std::endl;
+  ss << "idivw -0x8(%rsp)" << std::endl;
+  ss << "idivl -0x8(%rsp)" << std::endl;
+  ss << "movq $0x0, %rdx" << std::endl;
+  ss << "movq $0x20, %rax" << std::endl;
+  ss << "idivq -0x8(%rsp)" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
 

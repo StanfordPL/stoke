@@ -149,6 +149,17 @@ void Sandbox::run_one(size_t index) {
   }
 }
 
+size_t Sandbox::get_unused_reg(const Instruction& instr) const {
+  const auto rs = instr.maybe_read_set();
+  const auto ws = instr.maybe_write_set();
+
+  size_t idx = 4;
+  for (; idx < 12 && rs.contains(rbs[idx]) || ws.contains(rbs[idx]); ++idx);
+
+  assert(idx < 12);
+  return idx + 4;
+}
+
 bool Sandbox::check_abi(const IoPair& iop) const {
   for (const auto& r : {
   rbx, rbp, rsp, r12, r13, r14, r15
@@ -610,8 +621,12 @@ void Sandbox::emit_callbacks(size_t line, bool before) {
 }
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
+  // First things first. If it's unsupported, give up.
+  if (!is_supported(instr)) {
+    emit_signal_trap_call(ErrorCode::SIGILL_);
+  }
   // Labels are translated directly
-  if (instr.is_label_defn()) {
+  else if (instr.is_label_defn()) {
     assm_.assemble(instr);
   }
   // Jumps are instrumented with premature exit logic
@@ -630,15 +645,21 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
   else if (instr.is_explicit_memory_dereference()) {
     if (instr.is_div() || instr.is_idiv()) {
       emit_mem_div(instr);
+    } else if (instr.is_push()) {
+      emit_mem_push(instr);
+    } else if (instr.is_pop()) {
+      emit_mem_pop(instr);
+    } else if (instr.is_any_bt()) {
+      emit_mem_bt(instr);
     } else {
       emit_memory_instruction(instr);
     }
   }
-  // Implicits are even harder (note that we don't capture all of these)
+  // Implicits are even harder (we most likely bail out here as well)
   else if (instr.is_implicit_memory_dereference()) {
-    if (instr.get_opcode() == PUSH_R64) {
+    if (instr.is_push()) {
       emit_push(instr);
-    } else if (instr.get_opcode() == POP_R64) {
+    } else if (instr.is_pop()) {
       emit_pop(instr);
     } else {
       emit_signal_trap_call(ErrorCode::SIGILL_);
@@ -657,10 +678,6 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
 }
 
 void Sandbox::emit_memory_instruction(const Instruction& instr) {
-  // Looks up read and write sets
-  const auto rs = instr.maybe_read_set();
-  const auto ws = instr.maybe_write_set();
-
   // Grab the memory operand (no sense copying if we can promise to be const)
   const auto mi = instr.mem_index();
   auto* temp = const_cast<Instruction*>(&instr);
@@ -724,6 +741,11 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
     assert(false);
     break;
   }
+  // Some special instructions get a bye for alignment
+  if (instr.is_unaligned()) {
+    assm_.mov(rsi, Imm64(0xffffffffffffffff));
+  }
+  // Finish up setting the read/write masks
   if (instr.maybe_write(mi)) {
     assm_.mov(rcx, rdx);
   } else {
@@ -738,12 +760,8 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
   assm_.mov(rax, Moffs64(&map_addr_));
   assm_.call(rax);
 
-  // Find an unused register to hold the sandboxed address (it isn't read or written)
-  size_t idx = 0;
-  for (idx = 4; idx < 12 && (rs.contains(rbs[idx]) || ws.contains(rbs[idx])); ++idx);
-  assert(idx < 12);
-  const auto rx = r64s[idx + 4];
-
+  // Find an unused register to hold the sandboxed address
+  const auto rx = get_unused_quad(instr);
   // Backup rx and store the value there
   assm_.mov(rdi, Imm64(&scratch_[rx]));
   assm_.mov(M64(rdi), rx);
@@ -819,20 +837,224 @@ void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
   assm_.jmp(exit);
 }
 
-void Sandbox::emit_push(const Instruction& instr) {
-  // This function emits the moral equivalent of a push
-  // First decrement the stack pointer
-  assm_.lea(rsp, M64(rsp, Imm32(-8)));
-  // Now emit the dereference and let our sigsegv handler do the hard work
-  emit_memory_instruction({MOV_M64_R64, {M64(rsp), instr.get_operand<R64>(0)}});
+void Sandbox::emit_mem_bt(const Instruction& instr) {
+  // We're going to need to compute some values and modify eflags in the process.
+  // Grab the STOKE rsp to back them up along with some registers while we have it.
+  emit_load_stoke_rsp();
+  assm_.push(rdi);
+  assm_.push(rsi);
+  assm_.push(r8);
+  assm_.pushfq();
+  emit_load_user_rsp();
+
+  // All bt instructions that use memory have it as their first operand.
+  // Load the effective address of that operand (M64 is as good as anything) into rdi
+  assm_.lea(rdi, instr.get_operand<M64>(0));
+
+  // Move the second operand into an R64 (again, as good as anything) ...
+  switch (instr.type(1)) {
+  case Type::IMM_8:
+    assm_.xor_(rsi, rsi);
+    assm_.mov(sil, instr.get_operand<Imm8>(1));
+    break;
+  case Type::R_16:
+    assm_.xor_(rsi, rsi);
+    assm_.mov(si, instr.get_operand<R16>(1));
+    break;
+  case Type::R_32:
+    assm_.mov(esi, instr.get_operand<R32>(1));
+    break;
+  case Type::R_64:
+    assm_.mov(rsi, instr.get_operand<R64>(1));
+    break;
+
+  default:
+    assert(false);
+    break;
+  }
+  // ... and use it to figure out the byte address we'll ACTUALLY derefence
+  assm_.mov(r8, rsi);
+  assm_.shr(r8, Imm8(3));
+  assm_.lea(rdi, M64(rdi, r8, Scale::TIMES_1));
+  // ... and a bit index relative to that byte
+  assm_.and_(rsi, Imm8(0x07));
+
+  // Restore eflags
+  emit_load_stoke_rsp();
+  assm_.popfq();
+  emit_load_user_rsp();
+
+  // Now we're ready to invoke the instruction using %rdi and %rsi
+  // (Any memory operand variant is equivalent to any other.)
+  if (instr.is_bt()) {
+    emit_memory_instruction({BT_M64_R64, {M64(rdi), rsi}});
+  } else if (instr.is_btc()) {
+    emit_memory_instruction({BTC_M64_R64, {M64(rdi), rsi}});
+  } else if (instr.is_btr()) {
+    emit_memory_instruction({BTR_M64_R64, {M64(rdi), rsi}});
+  } else if (instr.is_bts()) {
+    emit_memory_instruction({BTS_M64_R64, {M64(rdi), rsi}});
+  }
+
+  // None of these variants write registers. Restore the values we saved.
+  emit_load_stoke_rsp();
+  assm_.pop(r8);
+  assm_.pop(rsi);
+  assm_.pop(rdi);
+  emit_load_user_rsp();
+}
+
+void Sandbox::emit_mem_div(const Instruction& instr) {
+  // Backup rbx --
+  // It isn't totally obvious why this use of scratch_ won't collide with
+  // the use inside emit_memory_instruction. The reason is that rx appears
+  // in every invocation. This prevents get_unused_reg from proposing it
+  // a second time around.
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(rax, rbx);
+  assm_.mov(Moffs64(&scratch_[rbx]), rax);
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
+
+  // Move the mem operand into its place (this will catch a sigsegv)
+  // Perform the register div on rbx (this will catch a sigfpe)
+  switch (instr.get_opcode()) {
+  case DIV_M8:
+    emit_memory_instruction({MOV_RL_M8, {bl, instr.get_operand<M8>(0)}});
+    emit_reg_div({DIV_RL, {bl}});
+    break;
+  case DIV_M16:
+    emit_memory_instruction({MOV_R16_M16, {bx, instr.get_operand<M16>(0)}});
+    emit_reg_div({DIV_R16, {bx}});
+    break;
+  case DIV_M32:
+    emit_memory_instruction({MOV_R32_M32, {ebx, instr.get_operand<M32>(0)}});
+    emit_reg_div({DIV_R32, {ebx}});
+    break;
+  case DIV_M64:
+    emit_memory_instruction({MOV_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+    emit_reg_div({DIV_R64, {rbx}});
+    break;
+  case IDIV_M8:
+    emit_memory_instruction({MOV_RL_M8, {bl, instr.get_operand<M8>(0)}});
+    emit_reg_div({IDIV_RL, {bl}});
+    break;
+  case IDIV_M16:
+    emit_memory_instruction({MOV_R16_M16, {bx, instr.get_operand<M16>(0)}});
+    emit_reg_div({IDIV_R16, {bx}});
+    break;
+  case IDIV_M32:
+    emit_memory_instruction({MOV_R32_M32, {ebx, instr.get_operand<M32>(0)}});
+    emit_reg_div({IDIV_R32, {ebx}});
+    break;
+  case IDIV_M64:
+    emit_memory_instruction({MOV_R64_M64, {rbx, instr.get_operand<M64>(0)}});
+    emit_reg_div({IDIV_R64, {rbx}});
+    break;
+
+  default:
+    assert(false);
+    break;
+  }
+
+  // Restore rbx
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(rax, Moffs64(&scratch_[rbx]));
+  assm_.mov(rbx, rax);
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
+}
+
+void Sandbox::emit_mem_pop(const Instruction& instr) {
+  switch (instr.get_opcode()) {
+  case POP_M16: {
+    const auto rx = get_unused_word(instr);
+    emit_memory_instruction({XCHG_R16_M16, {rx, M16(rsp)}});
+    emit_memory_instruction({MOV_M16_R16, {instr.get_operand<M16>(0), rx}});
+    emit_memory_instruction({XCHG_R16_M16, {rx, M64(rsp)}});
+    assm_.lea(rsp, M64(rsp, Imm32(2)));
+    break;
+  }
+  case POP_M64: {
+    const auto rx = get_unused_quad(instr);
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp)}});
+    emit_memory_instruction({MOV_M64_R64, {instr.get_operand<M64>(0), rx}});
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp)}});
+    assm_.lea(rsp, M64(rsp, Imm32(8)));
+    break;
+  }
+
+  default:
+    assert(false);
+  }
+}
+
+void Sandbox::emit_mem_push(const Instruction& instr) {
+  switch (instr.get_opcode()) {
+  case PUSH_M16: {
+    const auto rx = get_unused_word(instr);
+    emit_memory_instruction({XCHG_R16_M16, {rx, M16(rsp, Imm32(-2))}});
+    emit_memory_instruction({MOV_R16_M16, {rx, instr.get_operand<M16>(0)}});
+    emit_memory_instruction({XCHG_R16_M16, {rx, M64(rsp, Imm32(-2))}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  }
+  case PUSH_M64: {
+    const auto rx = get_unused_quad(instr);
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
+    emit_memory_instruction({MOV_R64_M64, {rx, instr.get_operand<M64>(0)}});
+    emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
+    assm_.lea(rsp, M64(rsp, Imm32(-8)));
+    break;
+  }
+
+  default:
+    assert(false);
+    break;
+  }
 }
 
 void Sandbox::emit_pop(const Instruction& instr) {
-  // This function emits the moral equivalent of a push
-  // Emit the dereference and let our sigsegv handler do the hard work
-  emit_memory_instruction({MOV_R64_M64, {instr.get_operand<R64>(0), M64(rsp)}});
-  // Now increment the stack pointer
-  assm_.lea(rsp, M64(rsp, Imm32(8)));
+  switch (instr.get_opcode()) {
+  case POP_R16:
+    assm_.lea(rsp, M64(rsp, Imm32(2)));
+    emit_memory_instruction({MOV_R16_M16, {instr.get_operand<R16>(0), M16(rsp, Imm32(-2))}});
+    break;
+  case POP_R64:
+    assm_.lea(rsp, M64(rsp, Imm32(8)));
+    emit_memory_instruction({MOV_R64_M64, {instr.get_operand<R64>(0), M64(rsp, Imm32(-8))}});
+    break;
+
+  default:
+    assert(false);
+  }
+}
+
+void Sandbox::emit_push(const Instruction& instr) {
+  switch (instr.get_opcode()) {
+  case PUSH_IMM16:
+    emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), instr.get_operand<Imm16>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  case PUSH_IMM32:
+    emit_memory_instruction({MOV_M32_IMM32, {M32(rsp, Imm32(-4)), instr.get_operand<Imm32>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-4)));
+    break;
+  case PUSH_IMM8:
+    emit_memory_instruction({MOV_M8_IMM8, {M8(rsp, Imm32(-1)), instr.get_operand<Imm8>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-1)));
+    break;
+  case PUSH_R16:
+    emit_memory_instruction({MOV_M16_R16, {M16(rsp, Imm32(-2)), instr.get_operand<R16>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  case PUSH_R64:
+    emit_memory_instruction({MOV_M64_R64, {M64(rsp, Imm32(-8)), instr.get_operand<R64>(0)}});
+    assm_.lea(rsp, M64(rsp, Imm32(-8)));
+    break;
+
+  default:
+    assert(false);
+    break;
+  }
 }
 
 void Sandbox::emit_reg_div(const Instruction& instr) {
@@ -869,60 +1091,6 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   }
   // Now that we're safely finished, reload the user's rsp
   emit_load_user_rsp();
-}
-
-void Sandbox::emit_mem_div(const Instruction& instr) {
-  // The idea here is to split a single divide instruction into three parts:
-  // 1. Exchange rbx and the mem operand (which div won't touch) (this will catch a segv)
-  // 2. Perform the div on rbx (this will catch a sigfpe)
-  // 3. Exchange the values again (no need to double check the segv)
-
-  switch (instr.get_opcode()) {
-  case DIV_M8:
-    emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
-    emit_reg_div({DIV_RL, {bl}});
-    assm_.xchg(bl, instr.get_operand<M8>(0));
-    break;
-  case DIV_M16:
-    emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
-    emit_reg_div({DIV_R16, {bx}});
-    assm_.xchg(bx, instr.get_operand<M16>(0));
-    break;
-  case DIV_M32:
-    emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
-    emit_reg_div({DIV_R32, {ebx}});
-    assm_.xchg(ebx, instr.get_operand<M32>(0));
-    break;
-  case DIV_M64:
-    emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
-    emit_reg_div({DIV_R64, {rbx}});
-    assm_.xchg(rbx, instr.get_operand<M64>(0));
-    break;
-  case IDIV_M8:
-    emit_memory_instruction({XCHG_RL_M8, {bl, instr.get_operand<M8>(0)}});
-    emit_reg_div({IDIV_RL, {bl}});
-    assm_.xchg(bl, instr.get_operand<M8>(0));
-    break;
-  case IDIV_M16:
-    emit_memory_instruction({XCHG_R16_M16, {bx, instr.get_operand<M16>(0)}});
-    emit_reg_div({IDIV_R16, {bx}});
-    assm_.xchg(bx, instr.get_operand<M16>(0));
-    break;
-  case IDIV_M32:
-    emit_memory_instruction({XCHG_R32_M32, {ebx, instr.get_operand<M32>(0)}});
-    emit_reg_div({IDIV_R32, {ebx}});
-    assm_.xchg(ebx, instr.get_operand<M32>(0));
-    break;
-  case IDIV_M64:
-    emit_memory_instruction({XCHG_R64_M64, {rbx, instr.get_operand<M64>(0)}});
-    emit_reg_div({IDIV_R64, {rbx}});
-    assm_.xchg(rbx, instr.get_operand<M64>(0));
-    break;
-
-  default:
-    assert(false);
-    break;
-  }
 }
 
 void Sandbox::emit_signal_trap_call(ErrorCode ec) {
