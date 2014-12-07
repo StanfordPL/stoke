@@ -34,8 +34,8 @@ for file in `find . -type f -and \( -name "*.h" -o -name "*.c" -o -name "*.cc" \
   ORIG=`head -n1 $file`
 	sed -i "1s/.*/\/\/ $cr/" $file
   DONE=`head -n1 $file`
-  if [ "$ORIG" != "$HEAD" ]; then
-	  echo Modified copright notice in $file
+  if [ "$ORIG" != "$DONE" ]; then
+	  echo Modified copyright notice in $file
   fi
 done
 
