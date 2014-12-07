@@ -31,8 +31,12 @@ for file in `find . -type f -and \( -name "*.h" -o -name "*.c" -o -name "*.cc" \
 	fi
 
 	# Replace first line with current copyright 
-	sed -i '1s/.*/\/\/ Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule/' $file
-	echo Modified copright notice in $file
+  ORIG=`head -n1 $file`
+	sed -i "1s/.*/\/\/ $cr/" $file
+  DONE=`head -n1 $file`
+  if [ "$ORIG" != "$DONE" ]; then
+	  echo Modified copyright notice in $file
+  fi
 done
 
 rm -f cr.txt
