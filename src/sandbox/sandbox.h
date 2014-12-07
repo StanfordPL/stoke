@@ -191,6 +191,17 @@ private:
   /** Function buffer for jit assembling codes; the main function */
   x64asm::Function fxn_;
 
+  /** Returns a register that doesn't appear in an instruction or the scratch space. */
+  size_t get_unused_reg(const x64asm::Instruction& instr) const;
+  /** Returns an unused word register. */
+  const x64asm::R16& get_unused_word(const x64asm::Instruction& instr) const {
+    return x64asm::r16s[get_unused_reg(instr)];
+  }
+  /** Returns an unused quad register. */
+  const x64asm::R64& get_unused_quad(const x64asm::Instruction& instr) const {
+    return x64asm::r64s[get_unused_reg(instr)];
+  }
+
   /** Check for abi violations between input and output states */
   bool check_abi(const IoPair& iop) const;
 
@@ -222,14 +233,21 @@ private:
   void emit_call(const x64asm::Instruction& instr);
   /** Emit the RET instruction. */
   void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
-  /** Special case for emitting push. */
-  void emit_push(const x64asm::Instruction& instr);
-  /** Special case for emitting pop. */
-  void emit_pop(const x64asm::Instruction& instr);
-  /** Special case for emitting div instructions that read from registers. */
-  void emit_reg_div(const x64asm::Instruction& instr);
+
+  /** Special case for emitting bt instructions that read from memory. */
+  void emit_mem_bt(const x64asm::Instruction& instr);
   /** Special case for emitting div instructions that read from memory. */
   void emit_mem_div(const x64asm::Instruction& instr);
+  /** Special case for emitting pop to memory. */
+  void emit_mem_pop(const x64asm::Instruction& instr);
+  /** Special case for emitting push from memory. */
+  void emit_mem_push(const x64asm::Instruction& instr);
+  /** Special case for emitting pop. */
+  void emit_pop(const x64asm::Instruction& instr);
+  /** Special case for emitting push. */
+  void emit_push(const x64asm::Instruction& instr);
+  /** Special case for emitting div instructions that read from registers. */
+  void emit_reg_div(const x64asm::Instruction& instr);
 
   /** Emits a bail-out call to the signal trap */
   void emit_signal_trap_call(ErrorCode ec);
