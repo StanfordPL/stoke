@@ -97,7 +97,7 @@ TEST_F(CostFunctionTest, IncludesEflagsWhenSet) {
   auto cost = fxn_(cfg_r);
 
   EXPECT_FALSE(cost.first);
-  EXPECT_GT(cost.second, 0);
+  EXPECT_GT(cost.second, (uint64_t)0);
 }
 
 TEST_F(CostFunctionTest, ExcludesEflagsWhenNotSet) {
@@ -127,7 +127,7 @@ TEST_F(CostFunctionTest, ExcludesEflagsWhenNotSet) {
   auto cost = fxn_(cfg_r);
 
   EXPECT_TRUE(cost.first);
-  EXPECT_EQ(0, cost.second);
+  EXPECT_EQ((uint64_t)0, cost.second);
 }
 
 TEST_F(CostFunctionTest, ChecksRAX) {
@@ -160,8 +160,8 @@ TEST_F(CostFunctionTest, ChecksRAX) {
   auto tc = sb_.get_input(0);
   uint64_t orig = tc.gp[0].get_fixed_quad(0);
   uint64_t expected = cpputil::BitManip<uint64_t>::pop_count(orig ^ (orig+1));
-  ASSERT_GE(expected, 1) << "there's a bug in counting the bits that change; must be more than 0";
-  ASSERT_LE(expected, 64) << "there's a bug in counting the bits that change; must be less than 64";
+  ASSERT_GE(expected, (uint64_t)1) << "there's a bug in counting the bits that change; must be more than 0";
+  ASSERT_LE(expected, (uint64_t)64) << "there's a bug in counting the bits that change; must be less than 64";
 
 
   EXPECT_FALSE(cost.first);
@@ -232,26 +232,26 @@ TEST_F(CostFunctionTest, SizePenalty) {
 
   /* It's correct now... */
   EXPECT_TRUE(cost.first);
-  EXPECT_EQ(0, cost.second);
+  EXPECT_EQ((uint64_t)0, cost.second);
 
   // It's size is 10 bytes (*not including retq, nop*)
   // Let's set a max size of 7 bytes, with penalties 5 and 13.
   fxn_.set_max_size_penalty(7, 5, 13);
   cost = fxn_(cfg_t);
   EXPECT_FALSE(cost.first);
-  EXPECT_EQ(5 + 13 * 3, cost.second);
+  EXPECT_EQ((uint64_t)(5 + 13 * 3), cost.second);
 
   // Now lets change the penalty to size 10
   fxn_.set_max_size_penalty(10, 5, 11);
   cost = fxn_(cfg_t);
   EXPECT_TRUE(cost.first);
-  EXPECT_EQ(0, cost.second);
+  EXPECT_EQ((uint64_t)0, cost.second);
 
   // And down to size 9
   fxn_.set_max_size_penalty(9, 5, 13);
   cost = fxn_(cfg_t);
   EXPECT_FALSE(cost.first);
-  EXPECT_EQ(5 + 13, cost.second);
+  EXPECT_EQ((uint64_t)(5 + 13), cost.second);
 
 
 }

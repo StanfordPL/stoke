@@ -46,7 +46,7 @@ TEST(DisassemblerTest, SimpleExample) {
     if (fcd.tunit.name == "sample") {
       EXPECT_EQ(sample_code, fcd.tunit.code);
       EXPECT_EQ(sample_offsets, fcd.instruction_offsets);
-      EXPECT_EQ(0x40, fcd.offset);
+      EXPECT_EQ((uint64_t)0x40, fcd.offset);
       found_sample = true;
     }
   };
@@ -107,7 +107,7 @@ TEST(DisassemblerTest, PopCnt) {
     if (pf.tunit.name == "_Z6popcntm") {
       EXPECT_EQ(popcnt_code, pf.tunit.code);
       EXPECT_EQ(popcnt_offsets, pf.instruction_offsets);
-      EXPECT_EQ(0x570, pf.offset);
+      EXPECT_EQ((uint64_t)0x570, pf.offset);
       found_popcnt = true;
     }
 
@@ -148,7 +148,7 @@ TEST(DisassemblerTest, ParseErrors) {
   d.set_function_callback(&test_tunit);
   d.disassemble("tests/fixtures/disassembler/errors");
 
-  EXPECT_EQ(errors_found, 0);
+  EXPECT_EQ(errors_found, (uint64_t)0);
 }
 
 
