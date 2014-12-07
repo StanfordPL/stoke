@@ -1,5 +1,5 @@
 #!/bin/bash
 
-for f in src/pre-commit.d/*; do
+for f in git/pre-commit.d/*; do
   source $f
 done
