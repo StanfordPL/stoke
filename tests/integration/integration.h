@@ -44,7 +44,7 @@ TEST(Integration, TutorialTest) {
       break;
     }
   }
-  EXPECT_GT(good, 0);
+  EXPECT_GT(good, (size_t)0);
 
   // Run make replace
   EXPECT_EQ(0, system("cd examples/tutorial; make replace >/dev/null"));
