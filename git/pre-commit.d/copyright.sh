@@ -32,7 +32,7 @@ for file in `find . -type f -and \( -name "*.h" -o -name "*.c" -o -name "*.cc" \
 
 	# Replace first line with current copyright 
   ORIG=`head -n1 $file`
-	sed -i "1s/.*/\/\/\/\/ $cr/" $file
+	sed -i "1s/.*/\/\/ $cr/" $file
   DONE=`head -n1 $file`
   if [ "$ORIG" != "$HEAD" ]; then
 	  echo Modified copright notice in $file
