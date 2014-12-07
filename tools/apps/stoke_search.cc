@@ -51,20 +51,11 @@ auto& out = ValueArg<string>::create("out")
             .default_val("result.s");
 
 auto& stats = Heading::create("Statistics Options:");
-auto& stat_dir =
-  ValueArg<string>::create("statistics_directory")
-  .usage("<path/to/dir>")
-  .description("Place to put files with cost function data");
 auto& stat_int =
   ValueArg<size_t>::create("statistics_interval")
   .usage("<int>")
   .description("Number of iterations between statistics updates")
   .default_val(1000000);
-auto& stat_max =
-  ValueArg<uint32_t>::create("statistics_max_cost")
-  .usage("<int>")
-  .description("Maximum cost to record when collecting statistics")
-  .default_val(400);
 
 auto& automation_heading = Heading::create("Automation Options:");
 auto& timeout_action_arg =
@@ -186,28 +177,6 @@ void scb(const StatisticsCallbackData& data, void* arg) {
   os << endl << endl;
   sep(os);
 
-  if (stat_dir.value() != "" && cost_stats != NULL) {
-    struct timeval tv;
-    gettimeofday(&tv, 0);
-    stringstream filename;
-    filename << stat_dir.value() << "/" << tv.tv_sec << setfill('0') << setw(6) << tv.tv_usec;
-
-    ofstream stats;
-    stats.open(filename.str());
-    if (!stats.is_open()) {
-      Console::error(1) << "Could not open " << filename << " for writing statistics.";
-    }
-
-    for (size_t i = 0; i <= stat_max.value(); ++i) {
-      for (size_t j = 0; j <= stat_max.value(); ++j) {
-        if (cost_stats[i][j]) {
-          stats << i << " " << j << " " << cost_stats[i][j] << endl;
-        }
-      }
-    }
-
-    stats.close();
-  }
 }
 
 int main(int argc, char** argv) {
@@ -241,22 +210,6 @@ int main(int argc, char** argv) {
   SearchStateGadget state;
   for (size_t i = 0; ; ++i) {
     CostFunctionGadget fxn(target, &training_sb);
-
-    if (stat_dir.value() != "") {
-      if (!scb_arg.cost_stats) {
-        Console::msg() << "Initialize cost_stats with size " << stat_max.value() + 1 << endl;
-        scb_arg.cost_stats = new uint32_t* [stat_max.value() + 1];
-        for (size_t j = 0; j <= stat_max.value(); ++j) {
-          scb_arg.cost_stats[j] = new uint32_t[stat_max.value() + 1];
-          for (size_t k = 0; k <= stat_max.value(); ++k) {
-            scb_arg.cost_stats[j][k] = 0;
-          }
-        }
-      }
-      Console::msg() << "Setting up statistics" << endl;
-      Console::msg() << "address is " << scb_arg.cost_stats << endl;
-      fxn.set_statistics(scb_arg.cost_stats, stat_max.value() + 1);
-    }
 
     Console::msg() << "Running search:" << endl << endl;
     state = SearchStateGadget();
