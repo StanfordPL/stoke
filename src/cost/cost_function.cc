@@ -77,40 +77,17 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm
 /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
   result would equal or exceed that value. */
 CostFunction::result_type CostFunction::operator()(const Cfg& cfg, const Cost max) {
-  if (!cost_statistics_) {
 
-    auto cost = k_ * evaluate_correctness(cfg, (max + k_ - 1) / k_);
-    assert(cost <= max_cost);
+  auto cost = k_ * evaluate_correctness(cfg, (max + k_ - 1) / k_);
+  assert(cost <= max_cost);
 
-    const auto correct = cost == 0;
-    if (cost < max && pterm_ != PerformanceTerm::NONE) {
-      cost += evaluate_performance(cfg, max);
-    }
-    assert(cost <= max_cost);
-
-    return result_type(correct, cost);
-
-  } else {
-
-    const auto correctness = evaluate_correctness(cfg, (max + k_ - 1) / k_);
-
-    const auto performance =
-      (pterm_ == PerformanceTerm::NONE ? 0 :
-       evaluate_performance(cfg, (max + k_ - 1) / k_));
-
-    const auto correctness_index =
-      (correctness >= cost_statistics_dim_ ? cost_statistics_dim_ - 1 : correctness);
-
-    const auto performance_index =
-      (performance >= cost_statistics_dim_ ? cost_statistics_dim_ - 1 : performance);
-
-    cost_statistics_[correctness_index][performance_index]++;
-
-    const auto total = k_ * correctness + performance;
-    const auto correct = correctness == 0;
-
-    return result_type(correct, total);
+  const auto correct = cost == 0;
+  if (cost < max && pterm_ != PerformanceTerm::NONE) {
+    cost += evaluate_performance(cfg, max);
   }
+  assert(cost <= max_cost);
+
+  return result_type(correct, cost);
 }
 
 
