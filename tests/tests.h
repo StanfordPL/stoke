@@ -34,6 +34,7 @@
 #include "tests/cpputil/cpputil.h"
 #include "tests/disassembler/disassembler.h"
 #include "tests/fixture.h"
+#include "tests/integration/integration.h"
 #include "tests/sandbox/sandbox.h"
 #include "tests/search/search.h"
 #include "tests/solver/solver.h"
