@@ -62,7 +62,6 @@ public:
     set_k(1);
     set_reduction(Reduction::SUM);
     set_max_size_penalty(0, 0, 0);
-    set_statistics(NULL, 0);
 
     set_performance_term(PerformanceTerm::NONE);
   }
@@ -121,13 +120,6 @@ public:
     return *this;
   }
 
-  /* Setup cost statistic gathering.  Returns false if there's no support. */
-  CostFunction& set_statistics(uint32_t** cost_statistics, uint32_t dimensions) {
-    cost_statistics_dim_ = dimensions;
-    cost_statistics_ = cost_statistics;
-    return *this;
-  }
-
   /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
     result would equal or exceed that value. */
   result_type operator()(const Cfg& cfg, const Cost max = max_cost);
@@ -183,12 +175,6 @@ private:
   Cost size_incr_penalty_;
   /** Maximum size for rewrite without encurring a penalty. */
   size_t max_size_;
-
-  /** Pointer to table with statistics on the costs seen */
-  uint32_t** cost_statistics_;
-  /** The dimension of the above table (it's square) */
-  uint32_t cost_statistics_dim_;
-
 
   /** The results produced by executing the target on testcases. */
   std::vector<CpuState> reference_out_;
