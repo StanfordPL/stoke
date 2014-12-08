@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,20 +19,20 @@
 using namespace std;
 
 size_t popcnt(uint64_t x) {
-	int res = 0;
-	for ( ; x > 0; x >>= 1 ) {
-		res += x & 0x1ull;
-	}
-	return res;    
+  int res = 0;
+  for (; x > 0; x >>= 1) {
+    res += x & 0x1ull;
+  }
+  return res;
 }
 
 int main(int argc, char** argv) {
-	const auto itr = atoi(argv[1]);
+  const auto itr = atoi(argv[1]);
 
-	auto ret = 0;
-	for ( auto i = 0; i < itr; ++i ) {
-		ret += popcnt(i);
-	}
+  auto ret = 0;
+  for (auto i = 0; i < itr; ++i) {
+    ret += popcnt(i);
+  }
 
-	return ret;
+  return ret;
 }

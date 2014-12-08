@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@
 namespace stoke {
 
 struct TUnit {
-	/** The name of the function in this translation unit. */
-	std::string name;
-	/** The text of the function in this translation unit. */
-	x64asm::Code code;
+  /** The name of the function in this translation unit. */
+  std::string name;
+  /** The text of the function in this translation unit. */
+  x64asm::Code code;
 };
 
 std::istream& operator>>(std::istream& is, TUnit& t);

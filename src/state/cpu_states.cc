@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,19 +27,19 @@ ostream& CpuStates::write_text(std::ostream& os) const {
     os << endl;
     (*this)[i].write_text(os);
     if (i + 1 != ie) {
-    	os << endl;
+      os << endl;
       os << endl;
     }
   }
-	
-	return os;
+
+  return os;
 }
 
 istream& CpuStates::read_text(std::istream& is) {
   this->clear();
   for (string s; is >> s >> s;) {
     CpuState t;
-		t.read_text(is);
+    t.read_text(is);
 
     getline(is, s);
     getline(is, s);
@@ -50,7 +50,7 @@ istream& CpuStates::read_text(std::istream& is) {
     is.clear(ios::eofbit);
   }
 
-	return is;
+  return is;
 }
 
 } // namespace stoke

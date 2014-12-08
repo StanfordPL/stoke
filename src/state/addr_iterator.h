@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ class addr_iterator {
   /** Needs access to constructor. */
   friend class Memory;
 
- public:
+public:
   /** Dereference. */
   size_t operator*() const {
     return *itr_ + base_;
@@ -43,7 +43,7 @@ class addr_iterator {
     return itr_ != rhs.itr_ || base_ != rhs.base_;
   }
 
- private:
+private:
   /** This constructor is only visible to Memory. */
   addr_iterator(const cpputil::BitVector::const_set_bit_index_iterator& itr, size_t base) :
     itr_(itr), base_(base) { }

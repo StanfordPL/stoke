@@ -1,0 +1,36 @@
+
+If you want to add a subclass to bitvector, you need to do the following things:
+
+0. Add a name for this type to the enum in bitvector.h.  Keep order
+   alphabetized, and use this name consistently for this subclass.
+
+1. Add the full class definition in bitvector.h in alphabetical order.  Inherit
+   from SymBitVectorBinop if this is a binary operator that takes two bitvector
+   arguments.  Implement the type() method to return the enum value defined
+   earlier.
+
+2. Add a method to visitor.h for visiting this subclass.  If it inherits from
+   SymBitVectorBinop, this should include a definition; otherwise it should be
+   pure.
+
+3. Go to the case statement in visitor.h in the operator() definition and add a
+   case for your new subclass.
+
+4. Go to the other visitors (print_visitor, typecheck_visitor,
+   z3_solver.h/z3_solver.cc) and add appropriate methods.  If you have
+   subclassed SymBitVectorBinOp, you probably have less work to do; you can ignore
+   typecheck_visitor entirely if your binop takes two arguments of the same size.
+   print_visitor needs modification nomatter what; for binops, it requires adding
+   a name to a case statement, and for others you need a full method.
+
+5. Test it!  Go to tests/bitvector and write some code to print your bitvector.
+   Go to tests/smtsolver and make sure Z3 and CVC4 can handle queries.
+
+If you want to additionally overload an operator:
+
+1. Add the incomplete class declaration to the beginning of bitvector.h.
+2. Add the operator overload to the declaration in bitvector.h
+3. Add the operator definition in bitvector.cc
+
+
+

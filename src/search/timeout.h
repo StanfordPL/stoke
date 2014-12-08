@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ namespace stoke {
 
 enum class Timeout {
   QUIT = 0,
-	RESTART,
-	TESTCASE
+  RESTART,
+  TESTCASE
 };
 
 } // namespace stoke

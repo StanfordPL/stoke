@@ -15,6 +15,7 @@
 PIN_INC=\
 	-I../../../../../.. \
 	-I../../../../../ext/cpputil \
+	-I../../../../../ext/x64asm \
 	-I../../../source/include/pin \
 	-I../../../source/include/pin/gen \
 	-I../../../extras/components/include \
@@ -28,13 +29,11 @@ PIN_DEF=\
 	-DHOST_IA32E \
 	-DTARGET_LINUX  
 
-PIN_CC=g++ -std=c++11 -fPIC -mavx -mavx2 -mbmi -mbmi2 -mpopcnt
+PIN_CC=g++ -std=c++11 -fPIC $(TARGET)
 
 PIN_OPT=-O3
 
 PIN_WARN=\
-	-Wall \
-	-Werror \
 	-Wno-unknown-pragmas 
 
 PIN_COMPILE=$(PIN_CC) $(PIN_WARN) $(PIN_OPT) $(PIN_DEF) $(PIN_INC)
@@ -44,7 +43,8 @@ PIN_LIB=\
 	-L../../../intel64/lib-ext \
 	-L../../../intel64/runtime/glibc \
 	-L../../../extras/xed2-intel64/lib \
-	-lpin -lxed -ldwarf -lelf -ldl
+	-L../../../../../ext/x64asm/lib/ \
+	-lx64asm -lpin -lxed -ldwarf -lelf -ldl
 
 PIN_OBJ=\
 	obj-intel64/cpu_state.o \

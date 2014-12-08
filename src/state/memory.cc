@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,8 @@ void Memory::copy_defined(const Memory& rhs) {
 
   // Copying invalid bits doesn't hurt so we'll use the largest atomic copy we can.
   // We don't have to worry about non-valid bytes since we never touch them.
-  for (auto i = rhs.valid_.set_quad_index_begin(), ie = rhs.valid_.set_quad_index_end(); i != ie; ++i) {
+  for (auto i = rhs.valid_.set_quad_index_begin(), ie = rhs.valid_.set_quad_index_end(); i != ie;
+       ++i) {
     def_.get_fixed_quad(*i) = rhs.def_.get_fixed_quad(*i);
   }
   // Now we'll copy the actual bytes. One byte of mask corresponds to one quad of data.
@@ -46,7 +47,7 @@ ostream& Memory::write_text(ostream& os) const {
   os << endl;
   write_text_contents(os);
 
-	return os;
+  return os;
 }
 
 istream& Memory::read_text(istream& is) {
@@ -55,49 +56,49 @@ istream& Memory::read_text(istream& is) {
   getline(is, ignore);
   read_text_contents(is);
 
-	return is;
+  return is;
 }
 
 ostream& Memory::write_bin(ostream& os) const {
-	os.write((const char*)&base_, sizeof(uint64_t));
+  os.write((const char*)&base_, sizeof(uint64_t));
 
-	const size_t content_size = contents_.num_fixed_bytes(); 
-	os.write((const char*)&content_size, sizeof(size_t));
-	os.write((const char*)contents_.data(), content_size);
+  const size_t content_size = contents_.num_fixed_bytes();
+  os.write((const char*)&content_size, sizeof(size_t));
+  os.write((const char*)contents_.data(), content_size);
 
-	const size_t mask_size = valid_.num_fixed_bytes();
-	os.write((const char*)&mask_size, sizeof(size_t));
-	os.write((const char*)valid_.data(), mask_size);
-	os.write((const char*)def_.data(), mask_size);
+  const size_t mask_size = valid_.num_fixed_bytes();
+  os.write((const char*)&mask_size, sizeof(size_t));
+  os.write((const char*)valid_.data(), mask_size);
+  os.write((const char*)def_.data(), mask_size);
 
-	return os;
+  return os;
 }
 
 istream& Memory::read_bin(istream& is) {
-	is.read((char*)&base_, sizeof(uint64_t));
+  is.read((char*)&base_, sizeof(uint64_t));
 
-	size_t content_size = 0;
-	is.read((char*)&content_size, sizeof(size_t));
+  size_t content_size = 0;
+  is.read((char*)&content_size, sizeof(size_t));
 
-	// Fail for memories that are larger than 1KB
-	if (content_size > 1024) {
-		is.setstate(ios::failbit);
-		return is;
-	}
+  // Fail for memories that are larger than 1KB
+  if (content_size > 1024) {
+    is.setstate(ios::failbit);
+    return is;
+  }
 
-	contents_.resize_for_fixed_bytes(content_size);
-	is.read((char*)contents_.data(), content_size);
+  contents_.resize_for_fixed_bytes(content_size);
+  is.read((char*)contents_.data(), content_size);
 
-	size_t mask_size = 0;
-	is.read((char*)&mask_size, sizeof(size_t));
+  size_t mask_size = 0;
+  is.read((char*)&mask_size, sizeof(size_t));
 
-	valid_.resize_for_fixed_bytes(mask_size);
-	def_.resize_for_fixed_bytes(mask_size);
+  valid_.resize_for_fixed_bytes(mask_size);
+  def_.resize_for_fixed_bytes(mask_size);
 
-	is.read((char*)valid_.data(), mask_size);
-	is.read((char*)def_.data(), mask_size);
+  is.read((char*)valid_.data(), mask_size);
+  is.read((char*)def_.data(), mask_size);
 
-	return is;
+  return is;
 }
 
 void Memory::write_text_summary(ostream& os) const {
@@ -121,7 +122,7 @@ void Memory::write_text_row(ostream& os, uint64_t addr) const {
   }
   os << "  ";
   for (int i = 7; i >= 0; --i) {
-    HexWriter<uint8_t, 2>()(os, is_valid(addr+i) ? (*this)[addr + i] : 0);
+    HexWriter<uint8_t, 2>()(os, is_valid(addr + i) ? (*this)[addr + i] : 0);
     os << " ";
   }
 }
@@ -159,11 +160,11 @@ void Memory::read_text_summary(istream& is) {
   is.get();
   is.get();
 
-	// Fail for memories that are larger than 1KB
-	if (upper - lower > 1024) {
-		is.setstate(ios::failbit);
-		return;
-	}
+  // Fail for memories that are larger than 1KB
+  if (upper - lower > 1024) {
+    is.setstate(ios::failbit);
+    return;
+  }
 
   resize(lower, upper - lower);
 }
@@ -173,11 +174,11 @@ void Memory::read_text_row(istream& is) {
   uint64_t addr = 0;
   HexReader<uint64_t, 8>()(is, addr);
 
-	// Watch out for rows that are outside the range given in summary
-	if (addr < lower_bound() || addr >= upper_bound()) {
-		is.setstate(ios::failbit);
-		return;
-	}
+  // Watch out for rows that are outside the range given in summary
+  if (addr < lower_bound() || addr >= upper_bound()) {
+    is.setstate(ios::failbit);
+    return;
+  }
 
   is.get();
   is.get();
@@ -187,9 +188,9 @@ void Memory::read_text_row(istream& is) {
     is >> s;
 
     set_valid(addr + j, s == "v" || s == "d");
-		if ( s == "d" ) {
-    	set_defined(addr + j, true);
-		}
+    if (s == "d") {
+      set_defined(addr + j, true);
+    }
   }
 
   is.get();
@@ -201,9 +202,9 @@ void Memory::read_text_row(istream& is) {
     uint8_t val = 0;
     HexReader<uint8_t, 2>()(is, val);
 
-		if (is_valid(addr+j)) {
-	    (*this)[addr + j] = val;
-		}
+    if (is_valid(addr + j)) {
+      (*this)[addr + j] = val;
+    }
   }
 }
 

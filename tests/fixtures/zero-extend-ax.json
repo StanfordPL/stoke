@@ -4,6 +4,8 @@
 
   "tests": {
 
+    "validate": true,
+
     "is_sound": {
       "live_in": [],
       "live_out": [],

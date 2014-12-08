@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
 namespace stoke {
 
 class Cfg {
- public:
+public:
   /** Basic block id type. */
   typedef size_t id_type;
   /** Location type; block and index within block. */
@@ -52,6 +52,19 @@ class Cfg {
   typedef cpputil::CppUtilMap<std::map<edge_type, loop_type>>::const_key_iterator back_edge_iterator;
   /** Iterator over reachable blocks. */
   typedef cpputil::BitVector::const_set_bit_index_iterator reachable_iterator;
+
+  /** A simple struct to store dataflow information. */
+  struct DataflowSummary {
+    x64asm::RegSet must_read_set;
+    x64asm::RegSet must_write_set;
+    x64asm::RegSet must_undef_set;
+    x64asm::RegSet maybe_read_set;
+    x64asm::RegSet maybe_write_set;
+    x64asm::RegSet maybe_undef_set;
+  };
+
+  /** A map from labels to the dataflow summary of that function. */
+  std::unordered_map<x64asm::Label, DataflowSummary> fncs_summary;
 
   /** Creates a new control flow graph with valid internal state. */
   Cfg(const x64asm::Code& code, const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs) :
@@ -84,8 +97,8 @@ class Cfg {
     recompute_nesting_depth();
   }
   /** Recomputes the defined-in relation for instructions; modifying an instruction will invalidate
-    this relation, calling this method will restore it. Undefined if graph structure is not up to 
-		date. */
+    this relation, calling this method will restore it. Undefined if graph structure is not up to
+    date. */
   void recompute_defs() {
     if (!is_loop_free()) {
       recompute_defs_loops();
@@ -257,10 +270,10 @@ class Cfg {
     return nesting_depth_[id];
   }
 
-	/** Returns the number of reachable blocks in this graph. */
-	size_t num_reachable() const {
-		return work_list_.size();
-	}
+  /** Returns the number of reachable blocks in this graph. */
+  size_t num_reachable() const {
+    return work_list_.size();
+  }
   /** Returns an iterator that points to the beginning of this graph's reachable block list. */
   reachable_iterator reachable_begin() const {
     return reachable_.set_bit_index_begin();
@@ -292,11 +305,11 @@ class Cfg {
     assert(is_reachable(loc.first));
     return def_ins_[get_index(loc)];
   }
-	/** Returns the set of registers that are defined on exit from this graph. */
-	x64asm::RegSet def_outs() const {
-		// Careful... this structure is organized by instruction index. The exit block is a special case.
-		return def_ins_.back();
-	}
+  /** Returns the set of registers that are defined on exit from this graph. */
+  x64asm::RegSet def_outs() const {
+    // Careful... this structure is organized by instruction index. The exit block is a special case.
+    return def_ins_.back();
+  }
   /** Returns the set of registers that are live-out on exit to an instruction; undefined for unrachable
     blocks */
   x64asm::RegSet live_outs(const loc_type& loc) const {
@@ -322,7 +335,27 @@ class Cfg {
   /** Returns true if an instruction performs a read from a register with an undefined value. */
   bool performs_undef_read() const;
 
- private:
+  /** Adds summary information about a call target to increase precision of the
+    dataflow analysis.  The information is about function (callable by the given
+    label), and is not meant to change over the lifetime of the Cfg. */
+  void add_summary(x64asm::Label label,
+                   x64asm::RegSet must_read_set,
+                   x64asm::RegSet must_write_set,
+                   x64asm::RegSet must_undef_set,
+                   x64asm::RegSet maybe_read_set,
+                   x64asm::RegSet maybe_write_set,
+                   x64asm::RegSet maybe_undef_set) {
+    fncs_summary[label] = {
+      must_read_set,
+      must_write_set,
+      must_undef_set,
+      maybe_read_set,
+      maybe_write_set,
+      maybe_undef_set,
+    };
+  }
+
+private:
   /** User-specified underlying code. */
   x64asm::Code code_;
   /** User-specified registers that are defined on entry to this graph. */
@@ -330,14 +363,14 @@ class Cfg {
   /** User-specified registers that are defined on exit from this graph. */
   x64asm::RegSet fxn_live_outs_;
 
-	// This temporary state is maintained to reduce the overhead of repeated allocations
+  // This temporary state is maintained to reduce the overhead of repeated allocations
 
   /** A set of indices that correspond to the beginning of basic blocks. */
   cpputil::BitVector boundaries_;
   /** A stack of basic block ids. */
   std::stack<size_t, std::vector<size_t>> block_stack_;
   /** A list of remaining predecessors for each block. */
-	std::vector<size_t> remaining_preds_;
+  std::vector<size_t> remaining_preds_;
   /** A sorted list of basic block ids. */
   std::vector<size_t> block_sort_;
   /** A map from labels to the basic blocks they mark the beginning of. */
@@ -351,8 +384,8 @@ class Cfg {
   std::vector<std::vector<id_type>> succs_;
   /** The set of reachable basic blocks. */
   cpputil::BitVector reachable_;
-	/** Scratch space for computing reachability. */
-	std::vector<id_type> work_list_;
+  /** Scratch space for computing reachability. */
+  std::vector<id_type> work_list_;
   /** The dominated by relation. */
   std::vector<cpputil::BitVector> doms_;
   /** A map from back edges to the set of basic blocks in the corresponding natural loop. */
@@ -378,7 +411,90 @@ class Cfg {
   /** The def set for each block. */
   std::vector<x64asm::RegSet> liveness_kill_;
 
-
+  /** Dataflow information about an instruction (more precise for function calls
+    that instr.must/maybe_read/write/undef_set). */
+  x64asm::RegSet must_read_set(const x64asm::Instruction& instr) const {
+    // do we have more precise information available?
+    if (instr.get_opcode() == x64asm::CALL_LABEL) {
+      auto lbl = instr.get_operand<x64asm::Label>(0);
+      auto found = fncs_summary.find(lbl);
+      if (found != fncs_summary.end()) {
+        // we do: use it, instead of linux calling convention
+        return found->second.must_read_set;
+      }
+    }
+    return instr.must_read_set();
+  }
+  /** Dataflow information about an instruction (more precise for function calls
+    that instr.must/maybe_read/write/undef_set). */
+  x64asm::RegSet must_write_set(const x64asm::Instruction& instr) const {
+    // do we have more precise information available?
+    if (instr.get_opcode() == x64asm::CALL_LABEL) {
+      auto lbl = instr.get_operand<x64asm::Label>(0);
+      auto found = fncs_summary.find(lbl);
+      if (found != fncs_summary.end()) {
+        // we do: use it, instead of linux calling convention
+        return found->second.must_write_set;
+      }
+    }
+    return instr.must_write_set();
+  }
+  /** Dataflow information about an instruction (more precise for function calls
+    that instr.must/maybe_read/write/undef_set). */
+  x64asm::RegSet must_undef_set(const x64asm::Instruction& instr) const {
+    // do we have more precise information available?
+    if (instr.get_opcode() == x64asm::CALL_LABEL) {
+      auto lbl = instr.get_operand<x64asm::Label>(0);
+      auto found = fncs_summary.find(lbl);
+      if (found != fncs_summary.end()) {
+        // we do: use it, instead of linux calling convention
+        return found->second.must_undef_set;
+      }
+    }
+    return instr.must_undef_set();
+  }
+  /** Dataflow information about an instruction (more precise for function calls
+    that instr.must/maybe_read/write/undef_set). */
+  x64asm::RegSet maybe_read_set(const x64asm::Instruction& instr) const {
+    // do we have more precise information available?
+    if (instr.get_opcode() == x64asm::CALL_LABEL) {
+      auto lbl = instr.get_operand<x64asm::Label>(0);
+      auto found = fncs_summary.find(lbl);
+      if (found != fncs_summary.end()) {
+        // we do: use it, instead of linux calling convention
+        return found->second.maybe_read_set;
+      }
+    }
+    return instr.maybe_read_set();
+  }
+  /** Dataflow information about an instruction (more precise for function calls
+    that instr.must/maybe_read/write/undef_set). */
+  x64asm::RegSet maybe_write_set(const x64asm::Instruction& instr) const {
+    // do we have more precise information available?
+    if (instr.get_opcode() == x64asm::CALL_LABEL) {
+      auto lbl = instr.get_operand<x64asm::Label>(0);
+      auto found = fncs_summary.find(lbl);
+      if (found != fncs_summary.end()) {
+        // we do: use it, instead of linux calling convention
+        return found->second.maybe_write_set;
+      }
+    }
+    return instr.maybe_write_set();
+  }
+  /** Dataflow information about an instruction (more precise for function calls
+    that instr.must/maybe_read/write/undef_set). */
+  x64asm::RegSet maybe_undef_set(const x64asm::Instruction& instr) const {
+    // do we have more precise information available?
+    if (instr.get_opcode() == x64asm::CALL_LABEL) {
+      auto lbl = instr.get_operand<x64asm::Label>(0);
+      auto found = fncs_summary.find(lbl);
+      if (found != fncs_summary.end()) {
+        // we do: use it, instead of linux calling convention
+        return found->second.maybe_undef_set;
+      }
+    }
+    return instr.maybe_undef_set();
+  }
 
   /** Performs a forward topological sort of reachable blocks and places the result in block_sort_ */
   void forward_topo_sort();

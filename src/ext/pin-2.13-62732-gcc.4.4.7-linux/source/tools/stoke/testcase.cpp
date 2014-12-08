@@ -152,8 +152,14 @@ VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
   tc.gp[13].get_fixed_quad(0) = r13;
   tc.gp[14].get_fixed_quad(0) = r14;
   tc.gp[15].get_fixed_quad(0) = r15;
-	// Record SSE registers
-  for (size_t i = 0; i < 4; ++i) {
+	
+	// Record SSE registers (width depends on architecture)
+	#ifdef __AVX__
+		constexpr size_t width = 4;
+	#else
+		constexpr size_t width = 2;
+	#endif
+  for (size_t i = 0; i < width; ++i) {
     tc.sse[0].get_fixed_quad(i) = sse0->qword[i];
     tc.sse[1].get_fixed_quad(i) = sse1->qword[i];
     tc.sse[2].get_fixed_quad(i) = sse2->qword[i];
@@ -171,7 +177,10 @@ VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
     tc.sse[14].get_fixed_quad(i) = sse14->qword[i];
     tc.sse[15].get_fixed_quad(i) = sse15->qword[i];
   }
-	// Record RFLAGS
+	// Record RFLAGS --
+	// Ordinarily we would use the Rflags API to avoid setting non-status flags.
+	// We can skip that check here because this method is only ever called to load 
+	// known good state from the cpu.
 	for (size_t i = 0, ie = tc.rf.size(); i < ie; ++i) {
 		tc.rf.set(i, (rflags >> i) & 0x1);
 	}
