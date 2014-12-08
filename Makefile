@@ -141,6 +141,7 @@ debug: haswell_debug
 profile: haswell_profile 
 test: haswell_test
 
+haswell: haswell_release
 haswell_release:
 	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=core-avx2"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG"
@@ -155,6 +156,7 @@ haswell_test:
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test
 
+sandybridge: sandybridge_release
 sandybridge_release:
 	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7-avx"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG"
@@ -169,6 +171,7 @@ sandybridge_test:
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test
 
+nehalem: nehalem_release
 nehalem_release:
 	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -O3 -DNDEBUG"
