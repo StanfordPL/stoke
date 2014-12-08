@@ -129,7 +129,7 @@ TEST_P(CodeFixtureTest, CFGGetExit) {
                  x64asm::RegSet::empty(),
                  x64asm::RegSet::empty());
 
-  ASSERT_EQ(json["get_exit"].asInt(), cfg.get_exit());
+  ASSERT_EQ((uint64_t)json["get_exit"].asInt(), cfg.get_exit());
 }
 
 
@@ -152,7 +152,7 @@ TEST_P(CodeFixtureTest, CFGNumInstr) {
 
   size_t total = 0;
   for (size_t i = 0; i < num_instrs_array.size(); ++i) {
-    auto expected_instrs = num_instrs_array.get(i, Json::Value(1)).asInt();
+    size_t expected_instrs = num_instrs_array.get(i, Json::Value(1)).asInt();
     total += expected_instrs;
     EXPECT_EQ(expected_instrs, cfg.num_instrs(i)) << " when i=" << i;
   }
@@ -179,7 +179,7 @@ TEST_P(CodeFixtureTest, CFGNestingDepth) {
   ASSERT_EQ(nesting_depth_array.size(), cfg.num_blocks());
 
   for (size_t i = 0; i < nesting_depth_array.size(); ++i) {
-    auto expected_depth = nesting_depth_array.get(i, Json::Value(1)).asInt();
+    uint64_t expected_depth = nesting_depth_array.get(i, Json::Value(1)).asInt();
     EXPECT_EQ(expected_depth, cfg.nesting_depth(i)) << " for block " << i;
   }
 }
