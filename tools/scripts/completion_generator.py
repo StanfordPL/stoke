@@ -32,7 +32,7 @@ def main():
   # show AST
   #print cmd
 
-  handlers = [ZshHandler()]
+  handlers = [BashHandler(),ZshHandler()]
 
   # let each handler output it's file
   for handler in handlers:
@@ -63,6 +63,53 @@ class Handler(object):
 
   def finish(self):
     self.file.close()
+
+
+
+# ------------------------------------------
+# a handler for bash completion
+# ------------------------------------------
+
+class BashHandler(Handler):
+  def __init__(self):
+    super(BashHandler, self).__init__("stoke.bash")
+
+  def handle(self, command):
+    self.writeln("# Bash completion script (auto-generated; do not modify!)")
+    self.writeln("")
+    self.writeln("_stoke()")
+    self.writeln("{")
+    self.writeln("  local prev=${COMP_WORDS[COMP_CWORD-1]}")
+    self.writeln("  local cur=${COMP_WORDS[COMP_CWORD]}")
+    self.writeln("  COMPREPLY=( $(compgen -A file -- $cur) )")
+
+    def aux(command, depth):
+      self.write_cmd(command, depth)
+      for sub in command.subcommands:
+        aux(sub, depth+1)
+    aux(command, 1)
+
+    self.writeln("}")
+    self.writeln("")
+    self.writeln("complete -F _stoke stoke")
+
+  def write_cmd(self, command, depth):
+    comps = []
+    if command.has_subcommands():
+      for sub in command.subcommands:
+        comps.append(sub.name)
+    else:
+      for arg in command.arguments:
+        for param in arg.params:
+          comps.append(param)
+
+    self.writeln("  if [ $COMP_CWORD -eq " + str(depth) + " -a $prev == " + command.name + " ]")
+    self.writeln("  then")
+    self.writeln("    COMPREPLY=( $(compgen -W \"" + " ".join(comps) + "\" -- $cur) )")
+    self.writeln("  fi")
+
+  def finish(self):
+    super(BashHandler, self).finish()
 
 
 

@@ -368,10 +368,11 @@ bin/stoke_test: tools/apps/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard tests
 .SECONDARY: $(SRC_OBJ) $(TOOL_OBJ)
 
 zsh_completion: bin/_stoke
+bin/_stoke: $(BIN) tools/scripts/zsh_completion_generator.py
+	tools/scripts/zsh_completion_generator.py
 
 bash_completion: bin/stoke.bash
-
-bin/_stoke: $(BIN) tools/scripts/zsh_completion_generator.py
+bin/stoke.bash: $(BIN) tools/scripts/zsh_completion_generator.py
 	tools/scripts/zsh_completion_generator.py
 
 format: src/ext/astyle
