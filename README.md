@@ -74,25 +74,22 @@ License version 2.0. To clone a copy of the source code, type:
 
 The remainder of STOKE's software dependencies are available on github and will
 be downloaded automatically the first time that STOKE is built. To build stoke for a Haswell system
-type:
+type the appropriate command for your system (the default is Haswell):
 
     $ make
-
-For Sandy Bridge and Nehalem, it instead requires
-
     $ make sandybridge
-
-or
-
     $ make nehalem
-    
+
 To add STOKE and its related components to your path, type:
 
     $ export PATH=$PATH:/<path_to_stoke>/bin
 
-Setting the path is important for the testing tools to run.  To run the tests, type:
+Setting the path is important for the testing tools to run.  To run the tests,
+choose the appropriate command:
 
     $ make test
+    $ make sandybridge_test
+    $ make nehalem_test
 
 The files generated during the build process can be deleted by typing:
 
