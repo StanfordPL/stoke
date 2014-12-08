@@ -369,6 +369,8 @@ bin/stoke_test: tools/apps/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard tests
 
 zsh_completion: bin/_stoke
 
+bash_completion: bin/stoke.bash
+
 bin/_stoke: $(BIN) tools/scripts/zsh_completion_generator.py
 	tools/scripts/zsh_completion_generator.py
 
