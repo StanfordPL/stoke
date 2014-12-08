@@ -126,7 +126,6 @@ bool binary_search(const string& key, set<Opcode>& os) {
   while (lower != opcodes.end() && test(k, *lower) == 0) {
     found = true;
     os.insert(lower->first);
-    cout << lower->second << endl;
     ++lower;
   }
   return found;
