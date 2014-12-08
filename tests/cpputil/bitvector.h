@@ -52,11 +52,11 @@ TEST(CpputilBitvector, CanIterateBytes) {
 
     default:
       EXPECT_EQ(0, *it);
-      EXPECT_LT(i, 8);
+      EXPECT_LT(i, (size_t)8);
       break;
     }
   }
-  EXPECT_EQ(8, i);
+  EXPECT_EQ((size_t)8, i);
 }
 
 TEST(CpputilBitvector, CanIterateWords) {
@@ -77,11 +77,11 @@ TEST(CpputilBitvector, CanIterateWords) {
 
     default:
       EXPECT_EQ(0, *it);
-      EXPECT_LT(i, 4);
+      EXPECT_LT(i, (size_t)4);
       break;
     }
   }
-  EXPECT_EQ(4, i);
+  EXPECT_EQ((size_t)4, i);
 }
 
 TEST(CpputilBitvector, CanIterateQuads) {
@@ -97,11 +97,11 @@ TEST(CpputilBitvector, CanIterateQuads) {
       break;
 
     default:
-      EXPECT_LT(i, 1);
+      EXPECT_LT(i, (size_t)1);
       break;
     }
   }
-  EXPECT_EQ(1, i);
+  EXPECT_EQ((size_t)1, i);
 }
 
 TEST(CpputilBitvector, IterateBitsOfZero) {

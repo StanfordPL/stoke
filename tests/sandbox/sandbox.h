@@ -44,8 +44,8 @@ TEST(SandboxTest, TrivialExampleWorks) {
 
   stoke::CpuState output = *sb.result_begin();
 
-  ASSERT_EQ(1, output.gp[1].get_fixed_quad(0));
-  ASSERT_EQ(8, output.gp[2].get_fixed_quad(0));
+  ASSERT_EQ((uint64_t)1, output.gp[1].get_fixed_quad(0));
+  ASSERT_EQ((uint64_t)8, output.gp[2].get_fixed_quad(0));
 
 
 }
@@ -92,7 +92,7 @@ TEST(SandboxTest, AllGPRegistersWork) {
 
   stoke::CpuState output = *sb.result_begin();
 
-  for (int i = 0; i < 16; ++i) {
+  for (uint64_t i = 0; i < 16; ++i) {
     ASSERT_EQ(1 + i, output.gp[i].get_fixed_quad(0));
   }
 
@@ -169,8 +169,8 @@ TEST(SandboxTest, ModifyingRbxWorks) {
 
   stoke::CpuState output = *sb.result_begin();
 
-  ASSERT_EQ(1, output.gp[1].get_fixed_quad(0));
-  ASSERT_EQ(8, output.gp[3].get_fixed_quad(0));
+  ASSERT_EQ((uint64_t)1, output.gp[1].get_fixed_quad(0));
+  ASSERT_EQ((uint64_t)8, output.gp[3].get_fixed_quad(0));
 
 
 }
@@ -468,10 +468,11 @@ TEST(SandboxTest, Issue239) {
 
   stoke::CpuState output = *sb.result_begin();
 
-  ASSERT_EQ(0xb511, output.gp[x64asm::rbx].get_fixed_quad(0));
+  ASSERT_EQ((uint64_t)0xb511, output.gp[x64asm::rbx].get_fixed_quad(0));
 }
 
 TEST(SandboxTest, LDDQU_VLDDQU) {
+#ifdef __AVX2__
   std::stringstream ss;
   ss << "lddqu -0x21(%rsp), %xmm0" << std::endl;
   ss << "vlddqu -0x21(%rsp), %ymm0" << std::endl;
@@ -490,6 +491,7 @@ TEST(SandboxTest, LDDQU_VLDDQU) {
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
   ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+#endif
 }
 
 TEST(SandboxTest, PUSH_POP) {
