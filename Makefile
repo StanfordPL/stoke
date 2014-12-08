@@ -368,8 +368,11 @@ bin/stoke_test: tools/apps/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard tests
 .SECONDARY: $(SRC_OBJ) $(TOOL_OBJ)
 
 zsh_completion: bin/_stoke
-
 bin/_stoke: $(BIN) tools/scripts/zsh_completion_generator.py
+	tools/scripts/zsh_completion_generator.py
+
+bash_completion: bin/stoke.bash
+bin/stoke.bash: $(BIN) tools/scripts/zsh_completion_generator.py
 	tools/scripts/zsh_completion_generator.py
 
 format: src/ext/astyle
@@ -386,7 +389,7 @@ hooks: .git/hooks/pre-commit
 ##### CLEAN TARGETS
 
 clean: 
-	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke
+	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke bin/stoke.bash
 	rm -rf $(VALIDATOR_AUTOGEN) $(VALIDATOR_CLEAN)
 
 dist_clean: clean
