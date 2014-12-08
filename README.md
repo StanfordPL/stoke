@@ -11,6 +11,7 @@ STOKE has appeared in a number of publications. For a thorough introduction to t
 
 Table of Contents
 =====
+0. [Prerequisites](#prerequisites)
 1. [Downloading and Building STOKE](#downloading-and-building-stoke)
 2. [Using STOKE](#using-stoke)
 3. [Additional Features](#additional-features)
@@ -26,45 +27,88 @@ Table of Contents
 5. [Frequently Asked Questions](#frequently-asked-questions)
 6. [Contact](#contact)
 
-Downloading and Building STOKE
+Prerequisites
 =====
 
-The entire STOKE code base, as well as its dependencies are available on github under the Apache Software License version 2.0. To clone a copy of the source code, type:
+STOKE will run on modern 64-bit x86 processors.  We officially support Haswell
+processors with the AVX2 extensions.  STOKE should also run on Sandy Bridge
+systems (with AVX, but not AVX2), and Nehalem systems without either extension;
+however, this is not supported.  
 
-    $ git clone https://github.com/eschkufz/stoke
-
-The implementation of STOKE is for better or worse highly platform dependent. The current version of STOKE was built and tested in Ubuntu 13.10 on an Intel CPU with full support for the Haswell instruction set. To determine whether your machine satisfies this hardware dependency, type:
+To check what level of hardware support you have, run:
 
     $ less /proc/cpuinfo
     
-and check that the following cpu flags are present:
+and check if the following cpu flags are present:
 
     $ flags: ... avx avx2 bmi bmi2 popcnt ...
 
-Most of STOKE's software dependencies are available through apt. These can be satisfied by typing:
+If you don't have 'avx' or 'avx2', you will need to compile for nehalem.  If
+you have 'avx', but not avx2, you will compile for 'sandybridge'.  If you have
+both, you can use the default make targets.  Build instructions are in the next
+section.
 
-    $ sudo apt-get install flex bison ccache doxygen g++ g++-multilib ghc libghc-regex-tdfa-dev libghc-regex-compat-dev libghc-split-dev cmake libjsoncpp-dev
+STOKE is supported on the latest Ubuntu LTS release; in practice, it will also
+run on Ubuntu 13.10+ and on debian testing.  If you're trying to get STOKE to
+work on another linux distribution, having the right version of g++ is key.
+STOKE is supported on 4.8.2 only (this is the current version in Ubuntu 14.04).
+It should also work on 4.9.1, but in the past this has required minor tweaks
+(4.9.1 is the current version in Debian testing).  g++ 4.7.x and older
+definitely will not work.
 
-The remainder of STOKE's software dependencies are available on github and will be downloaded automatically the first time that STOKE is built. To build stoke, type:
+Most of STOKE's software dependencies are available through apt. These can be
+satisfied by typing:
+
+    $ sudo apt-get install git subversion flex bison ccache doxygen g++ g++-multilib ghc libghc-regex-tdfa-dev libghc-regex-compat-dev libghc-split-dev cmake libghc-regex-compat-dev libjsoncpp-dev
+
+The rest of the dependencies will be fetched automatically in the build
+process.
+
+Downloading and Building STOKE
+=====
+
+The entire STOKE code base, is available on github under the Apache Software
+License version 2.0. To clone a copy of the source code, type:
+
+    $ git clone https://github.com/eschkufz/stoke
+
+The remainder of STOKE's software dependencies are available on github and will
+be downloaded automatically the first time that STOKE is built. To build stoke for a Haswell system
+type the appropriate command for your system (the default is Haswell):
 
     $ make
-    
+    $ make sandybridge
+    $ make nehalem
+
+To add STOKE and its related components to your path, type:
+
+    $ export PATH=$PATH:/<path_to_stoke>/bin
+
+Setting the path is important for the testing tools to run.  To run the tests,
+choose the appropriate command:
+
+    $ make test
+    $ make sandybridge_test
+    $ make nehalem_test
+
 The files generated during the build process can be deleted by typing:
 
     $ make clean
     
 To delete STOKE's github-hosted software dependencies as well (this is useful if an error occurs during the first build), type:
 
-    $ make dist-clean
+    $ make dist_clean
 
-To add STOKE and its related components to your path, type:
 
-    $ export PATH=$PATH:/<path_to_stoke>/bin
 
 Using STOKE
 =====
 
-The following toy example shows a typical workflow for using STOKE. All of the following code can be found in the `examples/tutorial/` directory. Consider a C++ program that repeatedly counts the number of bits (population count) in the 64-bit representation of an integer. (Keeping track of a running sum prevents `g++` from eliminating the calls to `popcnt()` altogether.)
+The following toy example shows a typical workflow for using STOKE. All of the
+following code can be found in the `examples/tutorial/` directory. Consider a
+C++ program that repeatedly counts the number of bits (population count) in the
+64-bit representation of an integer. (Keeping track of a running sum prevents
+`g++` from eliminating the calls to `popcnt()` altogether.)
 
 ```c++
 // main.cc
@@ -94,7 +138,10 @@ int main(int argc, char** argv) {
   return ret;
 ```
 
-STOKE is a compiler and programming language agnostic optimization tool. It can be applied to any x86_64 ELF binary. Although this example uses the GNU toolchain, nothing prevents the use of other tools. To build this code with full optimizations, type:
+STOKE is a compiler and programming language agnostic optimization tool. It can
+be applied to any x86_64 ELF binary. Although this example uses the GNU
+toolchain, nothing prevents the use of other tools. To build this code with
+full optimizations, type:
 
     $ g++ -std=c++11 -O3 -fno-inline main.cc
     
@@ -106,18 +153,24 @@ To measure runtime, type:
     user  0m1.047s
     sys	  0m0.000s
     
-A profiler will reveal that the runtime of `./a.out` is dominated by calls to the `popcnt()` function. STOKE can be used to improve the implementation of this function as follows. The first step is to disassemble the program by typing:
+A profiler will reveal that the runtime of `./a.out` is dominated by calls to
+the `popcnt()` function. STOKE can be used to improve the implementation of
+this function as follows. The first step is to disassemble the program by
+typing:
 
     $ stoke extract -i ./a.out -o bins
     
-This will produce a directory named `bins` that contains the text of every function contained in the binary `./a.out`. 
+This will produce a directory named `bins` that contains the text of every
+function contained in the binary `./a.out`. 
 
 Help for stoke or any of its subcommands can be obtained by typing:
 
     $ stoke -h
     $ stoke <subcommand> -h
     
-STOKE can accept arguments either through the command line or through a configuration file. The invocation of `stoke extract` shown above is equivalent to the following:
+STOKE can accept arguments either through the command line or through a
+configuration file. The invocation of `stoke extract` shown above is equivalent
+to the following:
 
     $ stoke extract --config extract.conf
     
@@ -130,11 +183,13 @@ Where `extract.conf` contains:
 -o bins # Path to the directory to store disassembled text in
 ```
 
-Every STOKE subcommand can be used to generate example configuration files by typing:
+Every STOKE subcommand can be used to generate example configuration files by
+typing:
 
     $ stoke <subcommand> --example_config <path/to/file.conf>
 
-Because `main.cc` was compiled using `g++`, the text of the `popcnt()` function will appear under the mangled name `_Z6popcntm` in `bins/_Z6popcntm.s`.
+Because `main.cc` was compiled using `g++`, the text of the `popcnt()` function
+will appear under the mangled name `_Z6popcntm` in `bins/_Z6popcntm.s`.
 
 ```asm
   .text
@@ -159,7 +214,8 @@ _Z6popcntm:
   .size _Z6popcntm, .-_Z6popcntm
 ```
 
-The next step is to generate a set of testcases for guiding STOKE's search procedure. These can be obtained by typing:
+The next step is to generate a set of testcases for guiding STOKE's search
+procedure. These can be obtained by typing:
 
     $ stoke testcase --config testcase.conf
     
@@ -225,13 +281,33 @@ Testcase 0:
 [ 0 valid rows shown ]
 ```
 
-Each entry corresponds to the hardware state that was observed just prior to an execution of the `popcnt()` function. The first 32 rows represent the contents of general purpose and sse registers, and the remaining rows represent the contents of memory, both on the stack and the heap. Memory is shown eight bytes at a time, where a block of eight bytes appears only if the target dereferenced at least one of those bytes. Each row contains values and state flags. Bytes are flagged as either (v)alid (the target dereferenced this byte), (d)efined (the target read this byte prior to reading its value), or (.)invalid (the target did not dereference this byte). 
+Each entry corresponds to the hardware state that was observed just prior to an
+execution of the `popcnt()` function. The first 32 rows represent the contents
+of general purpose and sse registers, and the remaining rows represent the
+contents of memory, both on the stack and the heap. Memory is shown eight bytes
+at a time, where a block of eight bytes appears only if the target dereferenced
+at least one of those bytes. Each row contains values and state flags. Bytes
+are flagged as either (v)alid (the target dereferenced this byte), (d)efined
+(the target read this byte prior to reading its value), or (.)invalid (the
+    target did not dereference this byte). 
 
-Each of the random transformations performed by STOKE are evaluated with respect to the contents of this file. Rewrites are compiled into a sandbox and executed beginning from the machine state represented by each entry. Rewrites are only permitted to dereference defined locations. This includes registers that are flagged as `def_in` (see `search.conf`, below), memory locations that are flagged as 'd', or locations that were written previously. Rewrites are permitted to write values to all registers and to any memory location that is flagged as valid. 
+Each of the random transformations performed by STOKE are evaluated with
+respect to the contents of this file. Rewrites are compiled into a sandbox and
+executed beginning from the machine state represented by each entry. Rewrites
+are only permitted to dereference defined locations. This includes registers
+that are flagged as `def_in` (see `search.conf`, below), memory locations that
+are flagged as 'd', or locations that were written previously. Rewrites are
+permitted to write values to all registers and to any memory location that is
+flagged as valid. 
 
-The STOKE sandbox will safely halt the execution of rewrites that perform undefined behavior. This includes leaving registers in a state that violates the x86_64 callee-save ABI, dereferencing invalid memory, performing a computation that results in a floating-point exception, or becoming trapped in a loop that performs more than `max_jumps` (see `search.conf`, below). 
+The STOKE sandbox will safely halt the execution of rewrites that perform
+undefined behavior. This includes leaving registers in a state that violates
+the x86_64 callee-save ABI, dereferencing invalid memory, performing a
+computation that results in a floating-point exception, or becoming trapped in
+a loop that performs more than `max_jumps` (see `search.conf`, below). 
 
-The final step is to use these testcases and the target code contained in `bins/_Z6popcntm.s` to run STOKE search by typing:
+The final step is to use these testcases and the target code contained in
+`bins/_Z6popcntm.s` to run STOKE search by typing:
 
     $ stoke search --config search.conf
     
@@ -283,7 +359,11 @@ where `search.conf` contains:
 --strategy hold_out # Verify results using a larger hold out testcase set
 ```
 
-STOKE search will produce two types of status messages. Progress update messages will be printed whenever STOKE discovers a new lowest cost verified or unverified rewrite. The code shown on the left is not equivalent to the target code; the code shown on the right is with respect to the current set of testcases.
+STOKE search will produce two types of status messages. Progress update
+messages will be printed whenever STOKE discovers a new lowest cost verified or
+unverified rewrite. The code shown on the left is not equivalent to the target
+code; the code shown on the right is with respect to the current set of
+testcases.
 
 ```
 Progress Update: 
@@ -306,7 +386,10 @@ retq                               je .L_X64ASM_0
                                    retq
 ```
 
-Statistics updates will be printed every `statistics_interval` proposals. Statistics are shown for the number of proposals that have taken place, elapsed time, proposal throughput, and for each of the transformations specified to have non-zero mass in `search.conf`.
+Statistics updates will be printed every `statistics_interval` proposals.
+Statistics are shown for the number of proposals that have taken place, elapsed
+time, proposal throughput, and for each of the transformations specified to
+have non-zero mass in `search.conf`.
 
 ```
 Statistics Update: 
@@ -328,7 +411,9 @@ Extension       0%           0%            0%
 Total           100%         34.544%       20.883%
 ```
 
-When search has run to completion, STOKE will write the lowest cost verified rewrite that it discovered to `result.s`. Because this is a particularly simple example, STOKE is almost guaranteed to produce the optimal rewrite:
+When search has run to completion, STOKE will write the lowest cost verified
+rewrite that it discovered to `result.s`. Because this is a particularly simple
+example, STOKE is almost guaranteed to produce the optimal rewrite:
 
 ```asm
   .text
@@ -366,7 +451,8 @@ As expected, the results are close to an order of magnitude faster than the orig
 Additional Features
 =====
 
-In addition to the subcommands described above, STOKE has facilities for debugging and benchmarking the performance of each of its core components:
+In addition to the subcommands described above, STOKE has facilities for
+debugging and benchmarking the performance of each of its core components:
 
 - `stoke debug cfg`: Generate a pdf of a control flow graph.
 - `stoke debug cost`: Compute the cost of a rewrite.
@@ -381,17 +467,25 @@ In addition to the subcommands described above, STOKE has facilities for debuggi
 - `stoke benchmark state`: Measure the time required to reset the memory of a hardware machine state.
 - `stoke benchmark verify`: Measure the time required to check the equivalence of two programs.
 
-Furthermore, STOKE comes with a zsh completion function.  Add `bin/_stoke` to you zsh completion path to get powerful completion for all stoke tools.
+Furthermore, STOKE comes with a zsh completion function.  Add `bin/_stoke` to
+you zsh completion path to get powerful completion for all stoke tools.
 
 Extending STOKE
 =====
 
-This repository contains a minimal implementation of STOKE as described in ASPLOS 2013, OOPSLA 2013, and PLDI 2014. Most, but not all of the features described in those papers appear here. Some of the more experimental features (notably, a formal verifier) are not yet ready for public release and have not been provided. Developers who are interested in refining these features or adding their own extensions are encouraged to try modifying this implementation as described below.
+This repository contains a minimal implementation of STOKE as described in
+ASPLOS 2013, OOPSLA 2013, and PLDI 2014. Most, but not all of the features
+described in those papers appear here. Some of the more experimental features
+(notably, a formal verifier) are not yet ready for public release and have not
+been provided. Developers who are interested in refining these features or
+adding their own extensions are encouraged to try modifying this implementation
+as described below.
 
 Code Organization
 -----
 
-The STOKE source is organized into modules, each of which correspond to a subdirectory of the `src/` directory:
+The STOKE source is organized into modules, each of which correspond to a
+subdirectory of the `src/` directory:
 
 - `src/args`: Function objects for performing I/O operations on command line arguments.
 - `src/cfg`: Classes for representing and manipulating control flow graphs.
@@ -406,7 +500,8 @@ The STOKE source is organized into modules, each of which correspond to a subdir
 Initial Search State
 -----
 
-Initial state types are defined in `src/search/init.h` along with an additional type for user-defined extensions.
+Initial state types are defined in `src/search/init.h` along with an additional
+type for user-defined extensions.
 
 ```c++
 enum class Init {
@@ -418,7 +513,11 @@ enum class Init {
 };
 ```
 
-Initial state is specified using the `--init` command line argument. This value controls the behavior of the `Search::initialize() const` method, which dispatches to the family of `Search::xxxxx_init() const` methods. User-defined extensions should be placed in the `Search::extension_init() const` method, which can be triggered by specifying `--init extension`.
+Initial state is specified using the `--init` command line argument. This value
+controls the behavior of the `Search::initialize() const` method, which
+dispatches to the family of `Search::xxxxx_init() const` methods. User-defined
+extensions should be placed in the `Search::extension_init() const` method,
+which can be triggered by specifying `--init extension`.
 
 ```c++
 Cfg Search::extension_init(const Cfg& rewrite) const {
@@ -441,7 +540,8 @@ Cfg Search::extension_init(const Cfg& rewrite) const {
 Search Transformations
 -----
 
-Transformation types are defined in `src/search/move.h` along with an additional type for user-defined extensions.
+Transformation types are defined in `src/search/move.h` along with an
+additional type for user-defined extensions.
 
 ```c++
 enum class Move {
@@ -459,7 +559,14 @@ enum class Move {
 };
 ```
 
-Transformations are specified using the family of `--xxxxx_mass` command line arguments. These values control the distribution of proposals that are made by the `Transforms::modify()` method and undone by the `Transforms::undo()` method, which dispatch to the family of `Transforms::xxxxx_move()` and `Transforms::undo_xxxxx_move()` methods respectively. User-defined extensions should be placed in the `Transforms::extension_move()` and `Transforms::undo_extension_move()` methods, which can be triggered by specifying a non-zero `--extension_mass`.
+Transformations are specified using the family of `--xxxxx_mass` command line
+arguments. These values control the distribution of proposals that are made by
+the `Transforms::modify()` method and undone by the `Transforms::undo()`
+method, which dispatch to the family of `Transforms::xxxxx_move()` and
+`Transforms::undo_xxxxx_move()` methods respectively. User-defined extensions
+should be placed in the `Transforms::extension_move()` and
+`Transforms::undo_extension_move()` methods, which can be triggered by
+specifying a non-zero `--extension_mass`.
 
 ```c++
 bool Transforms::extension_move(Cfg& cfg) {
@@ -487,7 +594,12 @@ void Transforms::undo_extension_move(Cfg& cfg) {
 }
 ```
 
-As above, both performing and undoing a transformation should leave a control flow graph in a valid state. In general, this can be performed by invoking the `Cfg::recompute()` method. However because these methods are on STOKE's critical path, the faster `Cfg::recompute_defs()` method should be used for transformations that do not modify control flow structure and only potentially invalidate data-flow values.
+As above, both performing and undoing a transformation should leave a control
+flow graph in a valid state. In general, this can be performed by invoking the
+`Cfg::recompute()` method. However because these methods are on STOKE's
+critical path, the faster `Cfg::recompute_defs()` method should be used for
+transformations that do not modify control flow structure and only potentially
+invalidate data-flow values.
 
 Performance Term
 -----
@@ -505,7 +617,12 @@ enum class PerformanceTerm {
 };
 ```
 
-Performance term type is specified using the `--perf` command line argument. This value controls the behavior of the `CostFunction::evaluate_performance() const` method, which dispatches to the family of `CostFunction::xxxxx_performance() const` methods. User-defined extensions should be placed in the `CostFunction::extension_performance() const` method, which can be triggered by specifying `--perf extension`.
+Performance term type is specified using the `--perf` command line argument.
+This value controls the behavior of the `CostFunction::evaluate_performance()
+  const` method, which dispatches to the family of
+  `CostFunction::xxxxx_performance() const` methods. User-defined extensions
+  should be placed in the `CostFunction::extension_performance() const` method,
+  which can be triggered by specifying `--perf extension`.
 
 ```c++
 Cost CostFunction::extension_performance(const Cfg& cfg) const { 
@@ -535,7 +652,13 @@ enum class Reduction {
 };
 ```
 
-Correctness term type is specified using the `--reduction` command line argument. This value controls the behavior of the `CostFunction::evaluate_correctness()` method, which dispatches to the family of `CostFunction::xxxxx_correctness()` methods, each of which represent a  method for aggregating errors observed across testcases. User-defined extensions should be placed in the `CostFunction::extension_correctness()` method, which can be triggered by specifying `--reduction extension`.
+Correctness term type is specified using the `--reduction` command line
+argument. This value controls the behavior of the
+`CostFunction::evaluate_correctness()` method, which dispatches to the family
+of `CostFunction::xxxxx_correctness()` methods, each of which represent a
+method for aggregating errors observed across testcases. User-defined
+extensions should be placed in the `CostFunction::extension_correctness()`
+method, which can be triggered by specifying `--reduction extension`.
 
 ```c++
 Cost CostFunction::extension_correctness(const Cfg& cfg, Cost max) {                                             
@@ -569,7 +692,13 @@ enum class Distance {
 };
 ```
 
-Measurement type is specified using the `--distance` command line argument. This value controls the behavior of the `CostFunction::evaluate_distance() const` method, which dispatches to the family of `CostFunction::xxxxx_distance() const` methods, each of which represent a method computing the distance between 64-bit values. User-defined extensions should be placed in the `CostFunction::extension_distance() const` method, which can be triggered by specifying `--distance extension`.
+Measurement type is specified using the `--distance` command line argument.
+This value controls the behavior of the `CostFunction::evaluate_distance()
+  const` method, which dispatches to the family of
+  `CostFunction::xxxxx_distance() const` methods, each of which represent a
+  method computing the distance between 64-bit values. User-defined extensions
+  should be placed in the `CostFunction::extension_distance() const` method,
+  which can be triggered by specifying `--distance extension`.
 
 ```c++
 Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {                                            
@@ -586,7 +715,8 @@ Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {
 Verification Strategy
 -----
 
-Verification strategy types are defined in `src/verifier/strategy.h` along with an additional type for user-defined extensions.
+Verification strategy types are defined in `src/verifier/strategy.h` along with
+an additional type for user-defined extensions.
 
 ```c++
 enum class Strategy {
@@ -598,7 +728,12 @@ enum class Strategy {
 };
 ```
 
-Strategy type is specified using the `--strategy` command line argument. This value controls the behavior of the `Verifier::verify()` method, which dispatches to the family of `Verifier::xxxxx_verify() const` methods, each of which represent a method for verifying correctness. User-defined extensions should be placed in the `Verifier::extension_verify()` method, which can be triggered by specifying `--strategy extension`.
+Strategy type is specified using the `--strategy` command line argument. This
+value controls the behavior of the `Verifier::verify()` method, which
+dispatches to the family of `Verifier::xxxxx_verify() const` methods, each of
+which represent a method for verifying correctness. User-defined extensions
+should be placed in the `Verifier::extension_verify()` method, which can be
+triggered by specifying `--strategy extension`.
 
 ```c++
 bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {                                         
@@ -622,7 +757,9 @@ bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {
 Command Line Args
 -----
 
-Command line arguments can be added to any of the STOKE subcommands using the following syntax. Argument separators which are printed as part of help messages are specified by defining a heading variable:
+Command line arguments can be added to any of the STOKE subcommands using the
+following syntax. Argument separators which are printed as part of help
+messages are specified by defining a heading variable:
 
 ```c++
 auto& heading = Heading::create("Heading Description:");
@@ -672,7 +809,8 @@ auto& val = ValueArg<T, Reader, Writer>::create("value_name")
   .default_val({0,0,0});
 ```
 
-For complex values that are better suited to being read from files, a `FileArg` may be more appopriate than a `ValueArg`. The syntax is identical.
+For complex values that are better suited to being read from files, a `FileArg`
+may be more appropriate than a `ValueArg`. The syntax is identical.
 
 ```c++
 auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
@@ -690,4 +828,5 @@ To appear.
 Feedback
 =====
 
-Questions and comments are encouraged. The best way to contact the developers is with the built-in github issue tracker.
+Questions and comments are encouraged. The best way to contact the developers
+is with the built-in github issue tracker.
