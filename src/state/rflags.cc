@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,38 +25,38 @@ using namespace std;
 namespace stoke {
 
 ostream& RFlags::write_text(ostream& os, const char** names, size_t padding) const {
-	ofilterstream<Column> fs(os);
-	fs.filter().padding(padding);
+  ofilterstream<Column> fs(os);
+  fs.filter().padding(padding);
 
-	for (size_t i = 0, ie = size(); i < ie; ++i) {
-		fs << names[i];
-		if (i + 1 != ie) {
-			fs << endl;
-		}
-	}
-	fs.filter().next();
+  for (size_t i = 0, ie = size(); i < ie; ++i) {
+    fs << names[i];
+    if (i + 1 != ie) {
+      fs << endl;
+    }
+  }
+  fs.filter().next();
 
-	for (size_t i = 0, ie = size(); i < ie; ++i) {
-		fs << is_set(i);
-		if (i + 1 != ie) {
-			fs << endl;
-		}
-	}
-	fs.filter().done();
+  for (size_t i = 0, ie = size(); i < ie; ++i) {
+    fs << is_set(i);
+    if (i + 1 != ie) {
+      fs << endl;
+    }
+  }
+  fs.filter().done();
 
-	return os;
+  return os;
 }
 
 istream& RFlags::read_text(istream& is) {
-	for (size_t i = 0, ie = size(); i < ie; ++i) {
-		string name;
-		bool val;
-		is >> name >> val;
+  for (size_t i = 0, ie = size(); i < ie; ++i) {
+    string name;
+    bool val;
+    is >> name >> val;
 
-		set(i, val);
-	}
+    set(i, val);
+  }
 
-	return is;
+  return is;
 }
 
 } // namespace stoke

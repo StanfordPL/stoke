@@ -1,5 +1,0 @@
-GLIBC_2.2.5 {
-    global:
-        sleep;
-        sched_yield;
-};

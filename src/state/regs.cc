@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,8 +40,8 @@ ostream& Regs::write_text(ostream& os, const char** names, size_t padding) const
 
   for (size_t i = 0, ie = size(); i < ie; ++i) {
     const auto& r = (*this)[i];
-		for (int j = r.num_fixed_bytes()-1; j >= 0; --j ) {
-			HexWriter<uint8_t, 2>()(fs, r.get_fixed_byte(j));
+    for (int j = r.num_fixed_bytes() - 1; j >= 0; --j) {
+      HexWriter<uint8_t, 2>()(fs, r.get_fixed_byte(j));
       fs << " ";
     }
     if (i + 1 != ie) {
@@ -50,7 +50,7 @@ ostream& Regs::write_text(ostream& os, const char** names, size_t padding) const
   }
   fs.filter().done();
 
-	return os;
+  return os;
 }
 
 istream& Regs::read_text(istream& is) {
@@ -62,13 +62,13 @@ istream& Regs::read_text(istream& is) {
     }
 
     auto& r = (*this)[i];
-		for (int j = r.num_fixed_bytes()-1; j >=0; --j ) {
+    for (int j = r.num_fixed_bytes() - 1; j >= 0; --j) {
       HexReader<uint8_t, 2>()(is, r.get_fixed_byte(j));
       is.get();
     }
   }
 
-	return is;
+  return is;
 }
 
 } // namespace stoke

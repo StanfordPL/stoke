@@ -1,3 +1,0 @@
-exeEntryCounter = 0x1
-dllEntryCounterThreadAttach = 0x40
-dllEntryCounterThreadDetach = 0x40

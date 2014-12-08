@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,8 +42,9 @@ istream& operator>>(istream& is, TUnit& t) {
   is.clear(ios::eofbit);
 
   stringstream ss;
+  string end = ".size ";
   for (const auto& l : lines) {
-    if(!l.empty()) {
+    if (l.substr(0, end.size()) != end) {
       ss << l << endl;
     } else {
       break;
@@ -55,43 +56,50 @@ istream& operator>>(istream& is, TUnit& t) {
     is.setstate(ios::failbit);
   }
 
-	return is;
+  // TODO: output an error message of what when wrong
+  if (t.code[0].get_opcode() != LABEL_DEFN ||
+      t.code[0].get_operand<Label>(0) != x64asm::Label("." + t.name)) {
+    is.setstate(ios::failbit);
+  }
+
+  return is;
 }
 
 ostream& operator<<(ostream& os, const TUnit& t) {
-	os << "  .text" << endl;
-	os << "  .globl " << t.name << endl;
-	os << "  .type " << t.name << ", @function" << endl;
+  os << "  .text" << endl;
+  os << "  .globl " << t.name << endl;
+  os << "  .type " << t.name << ", @function" << endl;
+  os << "." << t.name << ":" << endl;
 
-	ofilterstream<Column> col(os);
-	col.filter().padding(2);
+  ofilterstream<Column> col(os);
+  col.filter().padding(2);
 
-	for (size_t i = 0, ie = t.code.size(); i < ie; ++i) {
-		if (!t.code[i].is_label_defn()) {
-			col << "  ";
-		}
-		col << t.code[i];
-	 	if (i+1 != ie) {
-			col	<< endl;
-		}
-	}
-	col.filter().next();
+  for (size_t i = 0, ie = t.code.size(); i < ie; ++i) {
+    if (!t.code[i].is_label_defn()) {
+      col << "  ";
+    }
+    col << t.code[i];
+    if (i + 1 != ie) {
+      col << endl;
+    }
+  }
+  col.filter().next();
 
-	size_t line = 0;
-	for (size_t i = 0, ie = t.code.size(); i < ie; ++i) {
-		if (!t.code[i].is_label_defn()) {
-			col << "# " << dec << line++;
-		}
-		if (i+1 != ie) {
-			col << endl;
-		}
-	}
-	col.filter().done();
+  size_t line = 0;
+  for (size_t i = 0, ie = t.code.size(); i < ie; ++i) {
+    if (!t.code[i].is_label_defn()) {
+      col << "# " << dec << line++;
+    }
+    if (i + 1 != ie) {
+      col << endl;
+    }
+  }
+  col.filter().done();
 
-	os << endl << endl;
-	os << ".size " << t.name << ", .-" << t.name << endl;
+  os << endl << endl;
+  os << ".size " << t.name << ", .-" << t.name << endl;
 
-	return os;
+  return os;
 }
 
 } // namespace stoke

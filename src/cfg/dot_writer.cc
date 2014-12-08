@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#include <sstream>
 
 #include "src/cfg/dot_writer.h"
 
@@ -119,7 +121,8 @@ void DotWriter::write_edges(ostream& os, const Cfg& cfg) const {
       os << " color=";
       if (cfg.is_back_edge({i, *s})) {
         os << "red";
-      } else if (cfg.is_reachable(i) || cfg.is_entry(i)) {
+      }
+      else if (cfg.is_reachable(i) || cfg.is_entry(i)) {
         os << "black";
       } else {
         os << "grey";
@@ -129,33 +132,10 @@ void DotWriter::write_edges(ostream& os, const Cfg& cfg) const {
 }
 
 void DotWriter::write_reg_set(ostream& os, const RegSet& rs) const {
-  os << "\\{";
-  for (auto i = 0; i < 16; ++i) {
-    if (rs.contains(r64s[i])) {
-      os << " " << r64s[i];
-    } else if (rs.contains(r32s[i])) {
-      os << " " << r32s[i];
-    } else if (rs.contains(r16s[i])) {
-      os << " " << r16s[i];
-    } else if (i < 4) {
-      if (rs.contains(rls[i])) {
-        os << " " << rls[i];
-      } else if (rs.contains(rhs[i])) {
-        os << " " << rhs[i];
-      }
-    } else if (rs.contains(rbs[i - 4])) {
-      os << " " << rbs[i - 4];
-    }
-  }
-
-  for (auto i = 0; i < 16; ++i)
-    if (rs.contains(ymms[i])) {
-      os << " " << ymms[i];
-    } else if (rs.contains(xmms[i])) {
-      os << " " << xmms[i];
-    }
-
-  os << " \\}";
+  stringstream ss;
+  ss << rs;
+  string s = ss.str();
+  os << "\\" << s.substr(0, s.size() - 1) << "\\}";
 }
 
 } // namespace stoke

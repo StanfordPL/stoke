@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+all: orig extract testcase search replace plots
+
 orig:
 	g++ -std=c++11 -fno-inline -O3 main.cc
 
@@ -25,17 +27,10 @@ testcase:
 	stoke testcase --config testcase.conf
 
 search:
-	rm -rf stats/*
-	mkdir stats
 	stoke search --config search.conf
 
 replace:
 	stoke replace --config replace.conf
 
-plots:
-	chmod +x make_plots.sh
-	chmod +x plot.gnuplot
-	./make_plots.sh
-
 clean:
-	rm -rf bins ./a.out *.tc *.s stats plots
+	rm -rf bins ./a.out *.tc *.s

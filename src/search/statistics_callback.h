@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@
 namespace stoke {
 
 struct StatisticsCallbackData {
-	/** Statistics for each transformation type. */
+  /** Statistics for each transformation type. */
   const std::vector<Statistics>& move_statistics;
-	/** The number of proposals that have taken place. */
+  /** The number of proposals that have taken place. */
   const size_t iterations;
-	/** The amount of time that has taken place. */
+  /** The amount of time that has taken place. */
   const std::chrono::duration<double> elapsed;
 };
 
