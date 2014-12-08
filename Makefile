@@ -389,7 +389,7 @@ hooks: .git/hooks/pre-commit
 ##### CLEAN TARGETS
 
 clean: 
-	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke
+	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke bin/stoke.bash
 	rm -rf $(VALIDATOR_AUTOGEN) $(VALIDATOR_CLEAN)
 
 dist_clean: clean
