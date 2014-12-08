@@ -75,7 +75,7 @@ TEST(TunitParsing, EmptyLine) {
   stoke::TUnit tunit;
   ss >> tunit;
   ASSERT_FALSE(ss.fail());
-  ASSERT_EQ(2, tunit.code.size());
+  ASSERT_EQ((size_t)2, tunit.code.size());
 }
 
 
