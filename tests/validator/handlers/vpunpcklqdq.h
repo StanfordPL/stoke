@@ -36,7 +36,9 @@ TEST_F(ValidatorVpunpcklqdqTest, NonIdentity) {
   rewrite_ << "vpunpcklqdq %xmm2, %xmm2, %xmm3" << std::endl;
   rewrite_ << "retq" << std::endl;
 
+#ifdef __AVX2__
   assert_ceg();
+#endif
 }
 
 
@@ -79,7 +81,9 @@ TEST_F(ValidatorVpunpcklqdqTest, NotIdempotentWrongArg) {
   rewrite_ << "vpunpcklqdq %xmm2, %xmm3, %xmm4" << std::endl;
   rewrite_ << "retq" << std::endl;
 
+#ifdef __AVX2__
   assert_ceg();
+#endif
 }
 
 

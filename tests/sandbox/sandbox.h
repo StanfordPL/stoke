@@ -472,6 +472,7 @@ TEST(SandboxTest, Issue239) {
 }
 
 TEST(SandboxTest, LDDQU_VLDDQU) {
+#ifdef __AVX2__
   std::stringstream ss;
   ss << "lddqu -0x21(%rsp), %xmm0" << std::endl;
   ss << "vlddqu -0x21(%rsp), %ymm0" << std::endl;
@@ -490,6 +491,7 @@ TEST(SandboxTest, LDDQU_VLDDQU) {
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
   ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+#endif
 }
 
 TEST(SandboxTest, PUSH_POP) {
