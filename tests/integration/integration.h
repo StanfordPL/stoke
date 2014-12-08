@@ -57,9 +57,9 @@ TEST(Integration, TutorialTest) {
            (finish.tv_usec - start.tv_usec);
 
 
-  // There should have been at least a 3x speedup.
+  // There should have been at least a 5x speedup.
   // Note, we're also timing system() here,
-  EXPECT_GT(diff_1, diff_2*3);
+  EXPECT_GT(diff_1, diff_2*5);
 
   // Cleanup
   EXPECT_EQ(0, system("cd examples/tutorial; make clean >/dev/null"));
