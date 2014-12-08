@@ -23,7 +23,7 @@ Heading& verifier_heading =
 
 ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg =
   ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
-  .usage("(none|hold_out|extension)")
+  .usage("(none|hold_out|formal|extension)")
   .description("Verification strategy")
   .default_val(Strategy::NONE);
 
