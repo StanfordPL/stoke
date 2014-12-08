@@ -99,27 +99,45 @@ array<const char*, 59> types_ {{
     "ymm"
   }};
 
+vector<pair<Opcode, string>> opcodes;
+
 }
 
 namespace stoke {
+
+int test(const pair<Opcode, string>& a, const pair<Opcode, string>& b) {
+  return b.second.compare(0, a.second.size(), a.second);
+}
+bool cmp(const pair<Opcode, string>& a, const pair<Opcode, string>& b) {
+  return test(a, b) > 0;
+}
+bool binary_search(const string& key, set<Opcode>& os) {
+  if (opcodes.size() == 0) {
+    // initialize sorted opcode list
+    for (int i = ADC_AL_IMM8; i <= XTEST; i++) {
+      opcodes.push_back(pair<Opcode, string>((Opcode) i, opcode_to_string((Opcode) i) + "$"));
+    }
+    sort(opcodes.begin(), opcodes.end(), cmp);
+  }
+
+  auto k = pair<Opcode, string>(XTEST, key);
+  auto lower = lower_bound(opcodes.begin(), opcodes.end(), k, cmp);
+  bool found = false;
+  while (lower != opcodes.end() && test(k, *lower) == 0) {
+    found = true;
+    os.insert(lower->first);
+    cout << lower->second << endl;
+    ++lower;
+  }
+  return found;
+}
 
 void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
   vector<string> args;
   TextReader<vector<string>>()(is, args);
 
   for (const auto& a : args) {
-    bool found = false;
-    int i = 0;
-    for (int i = ADC_AL_IMM8; i <= XTEST; i++) {
-      Opcode opcode = static_cast<Opcode>(i);
-      string str = opcode_to_string(opcode);
-      str += "$";
-      if (str.find(a) == 0) {
-        found = true;
-        os.insert(opcode);
-      }
-    }
-    if (!found) {
+    if (!binary_search(a, os)) {
       is.setstate(ios::failbit);
       return;
     }
