@@ -1,2 +1,0 @@
-Send bugs to sde-dev@intel.com
-
