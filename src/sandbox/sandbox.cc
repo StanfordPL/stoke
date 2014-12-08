@@ -301,9 +301,9 @@ Function Sandbox::emit_state2cpu(const CpuState& cs) {
   assm_.start(fxn);
 
   // Write RFLAGS regs --
-	// Ordinarily we would use the Rflags API to avoid setting non-status flags.
-	// We can skip that check here because this method is only ever called to load 
-	// the cpu with known good state,
+  // Ordinarily we would use the Rflags API to avoid setting non-status flags.
+  // We can skip that check here because this method is only ever called to load
+  // the cpu with known good state,
   assm_.mov(rax, Moffs64(cs.rf.data()));
   assm_.push(rax);
   assm_.popfq();
@@ -369,10 +369,10 @@ Function Sandbox::emit_cpu2state(CpuState& cs) {
     assm_.movdqu(M128(rax), xmms[s]);
 #endif
   }
-	// Read RFLAGS --
-	// Ordinarily we would use the Rflags API to avoid setting non-status flags.
-	// We can skip that check here because this method is only ever called to load 
-	// known good state from the cpu.
+  // Read RFLAGS --
+  // Ordinarily we would use the Rflags API to avoid setting non-status flags.
+  // We can skip that check here because this method is only ever called to load
+  // known good state from the cpu.
   assm_.pushfq();
   assm_.mov((R64)rax, M64(rsp));
   assm_.mov(Moffs64(cs.rf.data()), rax);
