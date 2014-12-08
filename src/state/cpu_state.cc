@@ -29,13 +29,8 @@ ostream& CpuState::write_text(ostream& os) const {
 
   // SSE register names will vary depending on target
   const char* sses[] = {
-#ifdef __AVX__
     "%ymm0", "%ymm1", "%ymm2", "%ymm3", "%ymm4", "%ymm5", "%ymm6", "%ymm7",
     "%ymm8", "%ymm9", "%ymm10", "%ymm11", "%ymm12", "%ymm13", "%ymm14", "%ymm15"
-#else
-    "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", "%xmm7",
-    "%xmm8", "%xmm9", "%xmm10", "%xmm11", "%xmm12", "%xmm13", "%xmm14", "%xmm15"
-#endif
   };
 
   const char* rflags[] = {
@@ -107,12 +102,9 @@ void CpuState::convert_from_model(SMTSolver& smt, string& name_suffix) {
   for(size_t i = 0; i < ymms.size(); ++i) {
     stringstream name;
     name << ymms[i] << name_suffix;
-#ifdef __AVX__
     sse[ymms[i]] = smt.get_model_bv(name.str(), 4);
-#else
-    sse[ymms[i]] = smt.get_model_bv(name.str(), 2);
-#endif
   }
+
   for(size_t i = 0; i < eflags.size(); ++i) {
     if(!rf.is_status(eflags[i].index()))
       continue;
