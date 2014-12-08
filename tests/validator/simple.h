@@ -217,7 +217,7 @@ TEST_F(ValidatorBaseTest, SimpleCounterexample) {
   stoke::CpuState ceg;
   assert_ceg(&ceg);
 
-  EXPECT_EQ(0xc0, 0xff & ceg.gp[1].get_fixed_quad(0));
+  EXPECT_EQ((uint64_t)0xc0, 0xff & ceg.gp[1].get_fixed_quad(0));
 
 }
 
