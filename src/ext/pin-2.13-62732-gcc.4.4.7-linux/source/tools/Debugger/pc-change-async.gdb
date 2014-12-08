@@ -1,3 +1,0 @@
-b *&BreakpointLocation
-cont
-cont
