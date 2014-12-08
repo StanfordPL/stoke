@@ -715,7 +715,8 @@ Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {
 Verification Strategy
 -----
 
-Verification strategy types are defined in `src/verifier/strategy.h` along with an additional type for user-defined extensions.
+Verification strategy types are defined in `src/verifier/strategy.h` along with
+an additional type for user-defined extensions.
 
 ```c++
 enum class Strategy {
@@ -809,7 +810,7 @@ auto& val = ValueArg<T, Reader, Writer>::create("value_name")
 ```
 
 For complex values that are better suited to being read from files, a `FileArg`
-may be more appopriate than a `ValueArg`. The syntax is identical.
+may be more appropriate than a `ValueArg`. The syntax is identical.
 
 ```c++
 auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
