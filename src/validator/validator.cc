@@ -51,7 +51,7 @@ bool regset_is_supported(x64asm::RegSet rs) {
     tmp << (rs - supported);
 
     string message =
-      string("Validator only supporgs gps (excluding %ah-%dh), xmms and eflags COPSZ in live out.") +
+      string("Validator only supports gps (excluding %ah-%dh), xmms and eflags COPSZ in live out.") +
       string("  Not supported: ") + tmp.str();
 
     throw VALIDATOR_ERROR(message);
