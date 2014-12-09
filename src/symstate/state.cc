@@ -122,8 +122,16 @@ SymBitVector SymState::operator[](const Operand o) const {
     // Loop through memory writes
     for(auto write : memory_writes_) {
 
+      if(size == write.size) {
+        auto condition = (addr == write.address);
+        value = SymBitVector::ite(condition, write.value, value);
+      } else {
+        assert(false);
+      }
+
       // Case 1: This right side of this read could overlap with the write
       //         (or they could match exactly)
+      /*
       for(size_t i = 0; i < size/8; ++i) {
         auto condition = (addr + SymBitVector::constant(64, i) == write.address);
         size_t overlap = min(write.size/8, size/8 - i);
@@ -158,7 +166,9 @@ SymBitVector SymState::operator[](const Operand o) const {
         // God, endianness is confusing
         value = SymBitVector::ite(condition, existing || src, value);
       }
+      */
     }
+    return value;
   }
 
   assert(false);
@@ -221,6 +231,7 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
 
     MemoryWrite w = {addr, bv, width};
     memory_writes_.push_back(w);
+    return;
   }
 
   assert(false);
