@@ -54,6 +54,15 @@ public:
     return counter_example_;
   }
 
+  /** Checks if an error message is available */
+  bool has_error() {
+    return error_ != "";
+  }
+  /** Gets the error message */
+  std::string error() {
+    return error_;
+  }
+
 private:
   /** Proof strategy. */
   Strategy strategy_;
@@ -76,6 +85,9 @@ private:
   bool extension_verify(const Cfg& target, const Cfg& rewrite);
   /** Verify rewrite using STOKE's formal validator */
   bool formal_verify(const Cfg& target, const Cfg& rewrite);
+
+  /** Did an error occur? */
+  std::string error_ = "";
 };
 
 } // namespace stoke
