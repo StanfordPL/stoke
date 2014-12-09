@@ -41,6 +41,7 @@ bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
 
 bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
   // Don't set a max value here; we're okay with performance costs
+  error_ = "";
   const auto res = fxn_(rewrite);
   if (!res.first) {
     counter_example_available_ = next_counter_example_ < fxn_.num_testcases();
@@ -53,6 +54,7 @@ bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
 
 bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
 
+  error_ = "";
   CpuState ceg;
 
   Z3Solver s;
@@ -61,9 +63,18 @@ bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
 
   bool success = v.validate(target, rewrite, ceg);
 
-  if (!success) {
+  if(v.has_error()) {
+    error_ = v.get_error();
+    counter_example_available_ = false;
+    return false;
+  }
+
+  bool has_ceg = v.is_counterexample_valid();
+  if (has_ceg) {
     counter_example_available_ = true;
     counter_example_ = ceg;
+  } else {
+    counter_example_available_ = false;
   }
 
   return success;
@@ -80,8 +91,9 @@ bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {
   // counter_example_ should be set to a CpuState that will cause target and
   // rewrite to produce different values.
 
-  // Invariant 3. If this method produces a counter example, it should be
-  // unique relative to all previously produced counter examples.
+  // Invariant 3.  If this method encounters an error, it should set the
+  // error_ member variable to a non-empty string; otherwise the error_
+  // member should be empty.
 
   return true;
 }
