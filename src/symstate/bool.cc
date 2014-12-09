@@ -29,7 +29,7 @@ SymBool SymBool::_true() {
   return SymBool(new SymBoolTrue());
 }
 
-SymBool SymBool::ite(const SymBool& t, const SymBool& f) const {
+SymBool SymBool::ite(const SymBool t, const SymBool f) const {
   return ((*this & t) | (!(*this) & f));
 }
 
@@ -38,15 +38,15 @@ SymBool SymBool::var(std::string name) {
 }
 
 /* Bool Operators */
-SymBool SymBool::operator&(const SymBool& other) const {
+SymBool SymBool::operator&(const SymBool other) const {
   return SymBool(new SymBoolAnd(ptr, other.ptr));
 }
 
-SymBool SymBool::operator==(const SymBool& other) const {
+SymBool SymBool::operator==(const SymBool other) const {
   return SymBool(new SymBoolIff(ptr, other.ptr));
 }
 
-SymBool SymBool::implies(const SymBool& other) const {
+SymBool SymBool::implies(const SymBool other) const {
   return SymBool(new SymBoolImplies(ptr, other.ptr));
 }
 
@@ -54,15 +54,15 @@ SymBool SymBool::operator!() const {
   return SymBool(new SymBoolNot(ptr));
 }
 
-SymBool SymBool::operator|(const SymBool& other) const {
+SymBool SymBool::operator|(const SymBool other) const {
   return SymBool(new SymBoolOr(ptr, other.ptr));
 }
 
-SymBool SymBool::operator^(const SymBool& other) const {
+SymBool SymBool::operator^(const SymBool other) const {
   return SymBool(new SymBoolXor(ptr, other.ptr));
 }
 
-SymBool SymBool::operator!=(const SymBool& other) const {
+SymBool SymBool::operator!=(const SymBool other) const {
   return !(*this == other);
 }
 
@@ -74,7 +74,7 @@ SymBool::Type SymBool::type() const {
     return NONE;
 }
 /* equality */
-bool SymBool::equals(const SymBool& other) const {
+bool SymBool::equals(const SymBool other) const {
   if(ptr && other.ptr)
     return ptr->equals(other.ptr);
   else
