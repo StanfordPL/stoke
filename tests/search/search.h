@@ -82,8 +82,12 @@ INSTANTIATE_TEST_CASE_P(Flags, SearchTest, ::testing::Values(
                           "%of", "%sf", "%zf", "%af", "%cf", "%pf"
                         ));
 
-INSTANTIATE_TEST_CASE_P(Many, SearchTest, ::testing::Values(
+INSTANTIATE_TEST_CASE_P(Many0, SearchTest, ::testing::Values(
                           "%of %sf %zf %af %cf %pf %xmm0 %eax"
+                        ));
+
+INSTANTIATE_TEST_CASE_P(Many1, SearchTest, ::testing::Values(
+                          "%of %sf %zf %af %cf %pf %r8"
                         ));
 
 
