@@ -246,22 +246,6 @@ Code Search::find_sound_code(const RegSet& def_ins, const RegSet& live_outs) {
   auto diff = live_outs;
   vector<Instruction> code;
 
-  // flags
-  bool regular = false;
-  for (auto rit = diff.flags_begin(); rit != diff.flags_end(); ++rit) {
-    auto reg = *rit;
-    if ((reg == Constants::eflags_of() ||
-         reg == Constants::eflags_zf() ||
-         reg == Constants::eflags_sf() ||
-         reg == Constants::eflags_af() ||
-         reg == Constants::eflags_cf() ||
-         reg == Constants::eflags_pf()) && !regular) {
-      regular = true;
-      code.push_back(Instruction(XOR_R32_R32, {Constants::rax(), Constants::rax()}));
-      code.push_back(Instruction(ADD_R32_IMM32, {Constants::rax(), Imm32(0)}));
-    }
-  }
-
   // initialize all general purpose registers
   for (auto rit = diff.gp_begin(); rit != diff.gp_end(); ++rit) {
     auto reg = *rit;
@@ -296,6 +280,22 @@ Code Search::find_sound_code(const RegSet& def_ins, const RegSet& live_outs) {
   for (auto rit = diff.mm_begin(); rit != diff.mm_end(); ++rit) {
     auto reg = *rit;
     code.push_back(Instruction(PXOR_MM_MM, {reg, reg}));
+  }
+
+  // flags
+  bool regular = false;
+  for (auto rit = diff.flags_begin(); rit != diff.flags_end(); ++rit) {
+    auto reg = *rit;
+    if ((reg == Constants::eflags_of() ||
+         reg == Constants::eflags_zf() ||
+         reg == Constants::eflags_sf() ||
+         reg == Constants::eflags_af() ||
+         reg == Constants::eflags_cf() ||
+         reg == Constants::eflags_pf()) && !regular) {
+      regular = true;
+      code.push_back(Instruction(XOR_R32_R32, {Constants::rax(), Constants::rax()}));
+      code.push_back(Instruction(ADD_R32_IMM32, {Constants::rax(), Imm32(0)}));
+    }
   }
 
   // remove statements if possible
