@@ -129,3 +129,54 @@ TEST_F(ValidatorMemoryTest, Read4BytesFrom3Words) {
 
   assert_equiv();
 }
+
+TEST_F(ValidatorMemoryTest, ReadFromOverlappingWritesOffset2) {
+
+  target_ << "movl $0xc0deface, (%rsp)" << std::endl;
+  target_ << "movl $0xcafe501e, 0x2(%rsp)" << std::endl;
+  target_ << "movl 0x1(%rsp), %eax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movl $0xfe501efa, %eax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorMemoryTest, ReadFromOverlappingWritesOffset3) {
+
+  target_ << "movl $0xc0deface, (%rsp)" << std::endl;
+  target_ << "movl $0xcafe501e, 0x3(%rsp)" << std::endl;
+  target_ << "movl 0x2(%rsp), %eax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movl $0xfe501ede, %eax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorMemoryTest, ReadWordFromLong) {
+
+  target_ << "movl $0xc0deface, (%rsp)" << std::endl;
+  target_ << "movw 0x1(%rsp), %ax" << std::endl;
+
+  rewrite_ << "movw $0xdefa, %ax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+
+}
+
+TEST_F(ValidatorMemoryTest, ReadQuadWordFromConcat) {
+
+  target_ << "movw $0xc0de, (%rsp)" << std::endl;
+  target_ << "movw $0xcafe, 0x2(%rsp)" << std::endl;
+  target_ << "movl (%rsp), %eax" << std::endl;
+
+  rewrite_ << "movl $0xcafec0de, %eax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+
+}
