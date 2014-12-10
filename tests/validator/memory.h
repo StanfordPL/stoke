@@ -91,3 +91,41 @@ TEST_F(ValidatorMemoryTest, Read16AfterTwoWrite8) {
   set_live_outs(x64asm::RegSet::empty() + x64asm::rax + x64asm::rdx);
   assert_equiv();
 }
+
+TEST_F(ValidatorMemoryTest, ReadByteFromQuadword) {
+
+  target_ << "movq $0xc0deface, (%rsp)" << std::endl;
+  target_ << "movzbq 0x2(%rsp), %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq $0xde, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorMemoryTest, ReadWordFromQuadword) {
+
+  target_ << "movq $0xc0deface, (%rsp)" << std::endl;
+  target_ << "movzwq 0x1(%rsp), %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq $0xdefa, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorMemoryTest, Read4BytesFrom3Words) {
+
+  target_ << "movw $0xc0de, (%rsp)" << std::endl;
+  target_ << "movw $0xface, 0x2(%rsp)" << std::endl;
+  target_ << "movw $0xcafe, 0x4(%rsp)" << std::endl;
+  target_ << "movl 0x1(%rsp), %eax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movl $0xfefacec0, %eax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}

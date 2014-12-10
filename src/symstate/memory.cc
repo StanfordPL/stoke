@@ -76,7 +76,7 @@ SymBitVector SymMemory::read(SymBitVector address, uint16_t size) const {
     // R: _____________
     uint16_t min_size = min(write.size, size);
     for(uint16_t i = 8; i < min_size; i = i + 8) {
-      value = (address + SymBitVector::constant(64, i/8) == write.address).ite(
+      value = (address + SymBitVector::constant(64, (size-i)/8) == write.address).ite(
                 write.value[i-1][0] || value[size - i - 1][0],
                 value);
     }
@@ -143,7 +143,7 @@ SymBitVector SymMemory::read(SymBitVector address, uint16_t size) const {
       int max_x = size - 1 - write.size;
       for(uint16_t i = min_x; i <= max_x; i = i + 8) {
         value = (address + SymBitVector::constant(64, i/8) == write.address).ite(
-                  value[size - 1][i + write.size] || write.value[i+write.size-1][i] || value[i-1][0],
+                  value[size - 1][i + write.size] || write.value[write.size-1][0] || value[i-1][0],
                   value
                 );
       }
