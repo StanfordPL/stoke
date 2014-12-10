@@ -390,6 +390,7 @@ private:
 
 class SymBitVectorIte : public SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymBool;
 
 private:
   SymBitVectorIte(const SymBoolAbstract * const cond, const SymBitVectorAbstract * const a,

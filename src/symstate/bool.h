@@ -94,6 +94,8 @@ public:
   SymBool operator!=(const SymBool other) const;
   /** Builds an if-then-else expression */
   SymBool ite(const SymBool t, const SymBool f) const;
+  /** BUilds an if-then-else expression for bitvectors */
+  SymBitVector ite(const SymBitVector t, const SymBitVector f) const;
 
   /** Tells if two symbolic bools are identical */
   bool equals(const SymBool other) const;

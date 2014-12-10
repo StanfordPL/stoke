@@ -323,3 +323,20 @@ TEST_F(ValidatorBaseTest, TrivialMemorySupport) {
   assert_equiv();
 
 }
+
+TEST_F(ValidatorBaseTest, MemmoryLittleEndian) {
+
+  target_ << "movq %rdx, (%rsp)" << std::endl;
+  target_ << "movb 0x1(%rsp), %al" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "shrq $0x8, %rdx" << std::endl;
+  rewrite_ << "movb %dl, %al" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+
+  assert_equiv();
+
+}
+
