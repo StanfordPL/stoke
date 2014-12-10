@@ -171,11 +171,12 @@ TEST(StateGenTest, Issue51) {
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::empty());
   stoke::StateGen sg(&sg_sb);
-  sg.set_max_attempts(10)
+  sg.set_max_attempts(20)
   .set_max_memory(1000);
 
   stoke::CpuState tc;
-  ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed;
+  ASSERT_TRUE(sg.get(tc, cfg_t)) << "Failed with seed = " << seed << std::endl
+                                 << "Reason: " << sg.get_error() << std::endl;
 
   // Check that the testcase works in the Sandbox
   stoke::Sandbox sb;
