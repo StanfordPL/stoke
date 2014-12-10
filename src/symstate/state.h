@@ -20,6 +20,7 @@
 
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
+#include "src/symstate/memory.h"
 #include "src/symstate/regs.h"
 
 namespace stoke {
@@ -43,6 +44,8 @@ public:
   SymRegs gp;
   /** Symbolic SSE registers */
   SymRegs sse;
+  /** Memory */
+  SymMemory memory;
   /** Symbolic rflags: CF, PF, AF, ZF, SF, OF */
   std::array<SymBool, 6> rf;
 
@@ -92,23 +95,6 @@ private:
   void build_from_cpustate(const CpuState& cs);
   /** Builds a symbolic CPU state with variables */
   void build_with_suffix(const std::string& str);
-
-  /** For tracking writes to memory */
-  struct MemoryWrite {
-    SymBitVector address;
-    SymBitVector value;
-    size_t size;
-  };
-
-  /** Vector of memory writes */
-  std::vector<MemoryWrite> memory_writes_;
-
-  /** Track a unique counter value */
-  static uint64_t temp_;
-  /** Return unique counter value */
-  static uint64_t temp() {
-    return temp_++;
-  }
 
 };
 

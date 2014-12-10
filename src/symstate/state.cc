@@ -20,8 +20,6 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-uint64_t SymState::temp_ = 0;
-
 void SymState::build_from_cpustate(const CpuState& cs) {
 
   for(size_t i = 0; i < cs.gp.size(); ++i) {
@@ -115,60 +113,7 @@ SymBitVector SymState::operator[](const Operand o) const {
     uint16_t size = o.size();
     auto& m = reinterpret_cast<const M8&>(o);
     auto addr = get_addr(m);
-
-    // If we can't find a corresponding write, the value is undefined
-    auto value = SymBitVector::var(size, "READ_" + to_string(temp()));
-
-    // Loop through memory writes
-    for(auto write : memory_writes_) {
-
-      if(size == write.size) {
-        auto condition = (addr == write.address);
-        value = SymBitVector::ite(condition, write.value, value);
-      } else {
-        assert(false);
-      }
-
-      // Case 1: This right side of this read could overlap with the write
-      //         (or they could match exactly)
-      /*
-      for(size_t i = 0; i < size/8; ++i) {
-        auto condition = (addr + SymBitVector::constant(64, i) == write.address);
-        size_t overlap = min(write.size/8, size/8 - i);
-
-        // get the top 'overlap' bytes from the write
-        // these are written in little-endian form
-        // so this corresponds to the lowest bytes of the write
-        auto src = write.value[overlap*8-1][0];
-
-        if(i != 0) {
-          // Get highest bytes of 'existing' value
-          auto existing = value[size-1][size-1-i*8];
-          // God, endianness is confusing
-          value = SymBitVector::ite(condition, src || existing, value);
-        } else {
-          value = SymBitVector::ite(condition, src, value);
-        }
-      }
-
-      // Case 2: The left side of this read could overlap with the write
-      for(size_t i = 1; i < write.size/8; ++i) {
-        auto condition = (addr == write.address + SymBitVector::constant(64, i));
-        size_t overlap = min(write.size/8, i);
-
-        // get the bottom 'overlap' bytes from the write
-        // these are written in little-endian form
-        // so this corresponds to the highest bytes of the write
-        auto src = write.value[write.size - 1][write.size - 1 - overlap*8];
-
-        // Get lowest bytes of 'existing' value
-        auto existing = value[i*8-1][0];
-        // God, endianness is confusing
-        value = SymBitVector::ite(condition, existing || src, value);
-      }
-      */
-    }
-    return value;
+    return memory.read(addr, size);
   }
 
   assert(false);
@@ -229,8 +174,7 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto& m = reinterpret_cast<const M8&>(o);
     auto addr = get_addr(m);
 
-    MemoryWrite w = {addr, bv, width};
-    memory_writes_.push_back(w);
+    memory.write(addr, bv, width);
     return;
   }
 

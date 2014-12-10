@@ -33,6 +33,10 @@ SymBool SymBool::ite(const SymBool t, const SymBool f) const {
   return ((*this & t) | (!(*this) & f));
 }
 
+SymBitVector SymBool::ite(const SymBitVector t, const SymBitVector f) const {
+  return SymBitVector(new SymBitVectorIte(ptr, t.ptr, f.ptr));
+}
+
 SymBool SymBool::var(std::string name) {
   return SymBool(new SymBoolVar(name));
 }
