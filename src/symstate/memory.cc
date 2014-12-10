@@ -54,7 +54,7 @@ SymBitVector SymMemory::read(SymBitVector address, uint16_t size) const {
       // R: _________________
 
       value = (address == write.address).ite(
-                value[size - 1][size - write.size - 1] || write.value[write.size - 1][0],
+                value[size - 1][write.size] || write.value[write.size - 1][0],
                 value
               );
     } else if (write.size > size) {
@@ -70,30 +70,84 @@ SymBitVector SymMemory::read(SymBitVector address, uint16_t size) const {
 
 
 
-    // Case 1:
+    // Case 1A:
     // There's a section of overlap on the left.
     // W:         _____________
     // R: _____________
-    //    a       b   c       d
+    uint16_t min_size = min(write.size, size);
+    for(uint16_t i = 8; i < min_size; i = i + 8) {
+      value = (address + SymBitVector::constant(64, i/8) == write.address).ite(
+                write.value[i-1][0] || value[size - i - 1][0],
+                value);
+    }
+
+    // Case 1B:
+    // There's a section of overlap on the left, and align on right.
+    // W:         _____________
+    // R: _____________________
+    if (size > write.size) {
+      value = (address + SymBitVector::constant(64, (size - write.size)/8) == write.address).ite(
+                write.value || value[size - write.size - 1][0],
+                value
+              );
+    }
 
 
-    // Case 2:
+    // Case 2A:
     // There's a section of overlap on the right.
     // W:         _____________
     // R:               _____________
     //            a     b     c     d
+    for(uint16_t i = 8; i < min_size; i += 8) {
+      value = (address == write.address + SymBitVector::constant(64, i/8)).ite(
+                value[size-1][i] || write.value[write.size-1][write.size-i],
+                value);
+    }
+
+
+    // Case 2B:
+    // There's a section of overlap on the left, and align on right.
+    // W: _____________________
+    // R:         _____________
+    if (size < write.size) {
+      value = (address == SymBitVector::constant(64, (write.size - size)/8) + write.address).ite(
+                write.value[write.size-1][write.size - size],
+                value
+              );
+    }
+
 
     // Case 3:
     // The write contains the read
-    // W:         ______________
-    // R:               _____
-    //            a     b   c  d
+    // W:         _________________
+    // R:                  _____
+    //            |<- i ->|
+    if (size < write.size - 8) {
+      uint16_t min_x = 8;
+      uint16_t max_x = write.size - 1 - size;
+      for(uint16_t i = min_x; i <= max_x; i = i + 8) {
+        value = (write.address + SymBitVector::constant(64, i/8) == address).ite(
+                  write.value[i + size - 1][i],
+                  value
+                );
+      }
+    }
 
     // Case 4:
     // The read contains the write
     // W:              _____
-    // R:           ___________
-    //              a  b   c  d
+    // R:     _________________
+    //        |<- i ->|
+    if (write.size < size - 8) {
+      int min_x = 8;
+      int max_x = size - 1 - write.size;
+      for(uint16_t i = min_x; i <= max_x; i = i + 8) {
+        value = (address + SymBitVector::constant(64, i/8) == write.address).ite(
+                  value[size - 1][i + write.size] || write.value[i+write.size-1][i] || value[i-1][0],
+                  value
+                );
+      }
+    }
   }
 
 
