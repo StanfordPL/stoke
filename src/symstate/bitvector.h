@@ -184,6 +184,9 @@ public:
     SymBool operator !() const {
       return !(SymBool)(*this);
     }
+    SymBitVector ite(const SymBitVector t, const SymBitVector f) const {
+      return ((SymBool)(*this)).ite(t, f);
+    }
 
   private:
     IndexHelper(const SymBitVector& bv, uint16_t index) : bv_(bv), index_(index) {}

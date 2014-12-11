@@ -112,7 +112,7 @@ TEST_F(ValidatorBaseTest, ReportsUnsupported) {
   x64asm::Code c;
 
   std::stringstream tmp;
-  tmp << "vandpd %xmm0, %xmm1, %xmm2" << std::endl;
+  tmp << "vaesdec %xmm0, %xmm1, %xmm2" << std::endl;
   tmp >> c;
 
   auto instr = c[0];
@@ -137,8 +137,7 @@ TEST_F(ValidatorBaseTest, ReportsSupported) {
 
 TEST_F(ValidatorBaseTest, UnimplementedFailsGracefully) {
 
-  target_ << "incq %rax" << std::endl;
-  target_ << "vandpd %xmm0, %xmm1, %xmm2" << std::endl;
+  target_ << "vaesdec %xmm0, %xmm1, %xmm2" << std::endl;
   target_ << "retq" << std::endl;
 
   rewrite_ << "retq" << std::endl;

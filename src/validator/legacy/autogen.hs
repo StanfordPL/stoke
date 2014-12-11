@@ -860,18 +860,8 @@ assm_args i = concat $ intersperse "," $ (("bool dest_is_reg"):(args' (myoperand
 	  condargs [] _ = []
 	  
 lookup_handler :: String -> Int -> Instr -> Maybe String
-lookup_handler "adcb"     _ _ = Just "adcHandler(d, bitWidth, E1, E0, E2,dest_is_reg);"
-lookup_handler "adcl"     _ _ = Just "adcHandler(d, bitWidth, E1, E0, E2,dest_is_reg);"
-lookup_handler "adcq"     _ _ = Just "adcHandler(d, bitWidth, E1, E0, E2,dest_is_reg);"
-lookup_handler "adcw"     _ _ = Just "adcHandler(d, bitWidth, E1, E0, E2,dest_is_reg);"
-lookup_handler "addpd"    _ _ = Just "adddHandler(d, 2, E1, E0, E2, dest_is_reg);"
-lookup_handler "addps"    _ _ = Just "addfHandler(d, 4, E1, E0, E2, dest_is_reg);"
-lookup_handler "addsd"    _ _ = Just "adddHandler(d, 1, E1, E0, E2, dest_is_reg);"
-lookup_handler "addss"    _ _ = Just "addfHandler(d, 1, E1, E0, E2, dest_is_reg);"
 lookup_handler "andb"     _ _ = Just "andHandler(d, bitWidth, E1, E0, E2,dest_is_reg);"
 lookup_handler "andl"     _ _ = Just "andHandler(d, bitWidth, E1, E0, E2,dest_is_reg);"
-lookup_handler "andps"    _ _ = Just "andpsHandler(d, E1, E0, E2);"
-lookup_handler "andpd"    _ _ = Just "andpsHandler(d, E1, E0, E2);"
 lookup_handler "andq"     _ _ = Just "andHandler(d, bitWidth, E1, E0, E2,dest_is_reg);"
 lookup_handler "andw"     _ _ = Just "andHandler(d, bitWidth, E1, E0, E2,dest_is_reg);"
 lookup_handler "bsfl"     _ _ = Just "bsfHandler(d, bitWidth, E0, E1);"
@@ -965,15 +955,6 @@ lookup_handler "orq"      _ _ = Just "orHandler(d, bitWidth, E1, E0, E2,dest_is_
 lookup_handler "orw"      _ _ = Just "orHandler(d, bitWidth, E1, E0, E2,dest_is_reg);"
 lookup_handler "paddd"    _ _ = Just "paddHandler(d, 32, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "palignr"  3 _ = Just "palignrHandler(d, 3, bitWidth, imm, E1, E0, E2);"
-lookup_handler "pandn"    _ _ = Just "pandnHandler(d, E1, E0, E2);"
-lookup_handler "pmaxsd"    _ _ = Just "pmaxsdHandler(d, E1, E0, E2);"
-lookup_handler "pminuw"    _ _ = Just "pminuwHandler(d, E1, E0, E2);"
-lookup_handler "pmovsxdq" _ _ = Just "pmovsxdqHandler(d, E0, E1);"
-lookup_handler "pmovsxwq" _ _ = Just "pmovsxwqHandler(d, E0, E1);"
-lookup_handler "pmovzxbd" _ _ = Just "pmovzxbdHandler(d, E0, E1);"
-lookup_handler "pmovzxbw" _ _ = Just "pmovzxbwHandler(d, E0, E1);"
-lookup_handler "pmovzxwd" _ _ = Just "pmovzxwdHandler(d, E0, E1);"
-lookup_handler "pmovzxwq" _ _ = Just "pmovzxwqHandler(d, E0, E1);"
 lookup_handler "popcntl"  _ i = Just "popcnt32Handler(d, E0, E1);"
 lookup_handler "popcntq"  _ i = Just "popcnt64Handler(d, E0, E1);"
 lookup_handler "popcntw"  _ i = Just "popcnt16Handler(d, E0, E1);"
@@ -993,54 +974,7 @@ lookup_handler "psllq"  _ i = Just $ if (((last (operand_types i)) == "I"))
 -}
 lookup_handler "punpckldq" _ _ = Just "punpckldqHandler(d, E1, E0, E2);"
 lookup_handler "punpcklwd" _ _ = Just "punpcklwdHandler(d, E1, E0, E2);"
-lookup_handler "pxor"     _ _ = Just "pxorHandler(d, E1, E0, E2);"
 lookup_handler "retq"     _ _ = Just ""
-lookup_handler "rolb"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "rolHandler(d, bitWidth, (imm & 0x1f)%8,   E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "rorb"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "rorHandler(d, bitWidth, (imm & 0x1f)%8,   E1, E0, dest_is_reg);" 
-                                       else ""
-
-lookup_handler "roll"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "rolHandler(d, bitWidth, imm & 0x1f,   E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "rorl"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "rorHandler(d, bitWidth, imm & 0x1f,   E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "sahf"     _ _ = Just "sahfHandler(d);"
-lookup_handler "salb"     1 _ = Just "shlHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "salb"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shlHandler(d, bitWidth, imm, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "sall"     1 _ = Just "shlHandler(d, bitWidth, 1, E1, E0,dest_is_reg);" 
-lookup_handler "sall"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shlHandler(d, bitWidth, imm&0x1f, E1, E0, dest_is_reg);" 
-                                       else "shlVarHandler(d, bitWidth, E1, E0, dest_is_reg);"
-lookup_handler "salq"     1 _ = Just "shlHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "salq"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shlHandler(d, bitWidth, imm&0x3f, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "salw"     1 _ = Just "shlHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "salw"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shlHandler(d, bitWidth, imm, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "sarb"     1 _ = Just "sarHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "sarb"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "sarHandler(d, bitWidth, imm, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "sarl"     1 _ = Just "sarHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "sarl"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "sarHandler(d, bitWidth, imm&0x1f, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "sarq"     1 _ = Just "sarHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "sarq"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "sarHandler(d, bitWidth, imm&0x3f, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "sarw"     1 _ = Just "sarHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "sarw"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "sarHandler(d, bitWidth, imm, E1, E0, dest_is_reg);" 
-                                       else ""
 lookup_handler "sbbb"     _ _ = Just "sbbHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "sbbl"     _ _ = Just "sbbHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "sbbq"     _ _ = Just "sbbHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
@@ -1049,50 +983,11 @@ lookup_handler "sbbw"     _ _ = Just "sbbHandler(d, bitWidth, E1, E0, E2, dest_i
 -- this handles all the SETcc
 lookup_handler ('s':'e':'t':cc) _ _ = Just $ "setccHandler(d, \"" ++ cc ++ "\" , E0, dest_is_reg);"
 
-lookup_handler "shlb"     1 _ = Just "shlHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "shlb"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shlHandler(d, bitWidth, imm, E1, E0, dest_is_reg);"  
-                                       else ""
-lookup_handler "shld"     _ i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shldHandler(d, bitWidth, imm &(bitWidth-1), E1, E0, E2, dest_is_reg);" 
-                                       else "shldHandler(d, bitWidth, E1, E0, E2, E3, dest_is_reg);"
-lookup_handler "shll"     1 _ = Just "shlHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "shll"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shlHandler(d, bitWidth, imm&0x1f, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "shlq"     1 _ = Just "shlHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "shlq"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shlHandler(d, bitWidth, imm&0x3f, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "shlw"     1 _ = Just "shlHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "shlw"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shlHandler(d, bitWidth, imm, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "shrb"     1 _ = Just "shrHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "shrb"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shrHandler(d, bitWidth, imm, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "shrl"     1 _ = Just "shrHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "shrl"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shrHandler(d, bitWidth, imm&0x1f, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "shrq"     1 _ = Just "shrHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "shrq"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shrHandler(d, bitWidth, imm&0x3f, E1, E0, dest_is_reg);" 
-                                       else ""
-lookup_handler "shrw"     1 _ = Just "shrHandler(d, bitWidth, 1, E1, E0,dest_is_reg);"
-lookup_handler "shrw"     2 i = Just $ if (((last (operand_types i)) == "I")) 
-                                       then "shrHandler(d, bitWidth, imm, E1, E0, dest_is_reg);" 
-                                       else ""
 lookup_handler "shufps"   _ _ = Just "shufpsHandler(d, imm, E1, E0, E2, E3);"
 lookup_handler "stc"      _ _ = Just "setFlag(d.Vnprime,V_CF, SymBool::_true(), d.constraints, d.post_suffix);"
 lookup_handler "subb"     _ _ = Just "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "subl"     _ _ = Just "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "subpd"    _ _ = Just "subdHandler(d, 2, E1, E0, E2, dest_is_reg);"
-lookup_handler "subps"    2 _ = Just "subpsHandler(d, 2, bitWidth, E1, E0, E2);"
 lookup_handler "subq"     _ _ = Just "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "subsd"    _ _ = Just "subdHandler(d, 1, E1, E0, E2, dest_is_reg);"
-lookup_handler "subss"    _ _ = Just "subfHandler(d, 1, E1, E0, E2, dest_is_reg);"
 lookup_handler "subw"     _ _ = Just "subHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "testb"    _ _ = Just "testHandler(d, bitWidth, E0, E1);"
 lookup_handler "testl"    _ _ = Just "testHandler(d, bitWidth, E0, E1);"
@@ -1102,17 +997,10 @@ lookup_handler "ucomiss"  _ _ = Just "ucomissHandler(d, E0, E1);"
 lookup_handler "ucomisd"  _ _ = Just "ucomisdHandler(d, E0, E1);"
 lookup_handler "unpcklpd" 2 _ = Just "unpcklpdHandler(d, bitWidth, false, E1, E0, E2);"
 lookup_handler "unpcklps" 2 _ = Just "unpcklpsHandler(d, bitWidth, false, E1, E0, E2);"
-lookup_handler "vaddps"   _ _ = Just "addfHandler(d, 4, E0, E1, E2, dest_is_reg);"
-lookup_handler "vaddsd"   _ _ = Just "vaddsdHandler(d, 1, E0, E1, E2, dest_is_reg);"
 lookup_handler "vlddqu"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
-lookup_handler "vmovddup" _ _ = Just "movddupHandler(d, E0, E1);"
 lookup_handler "vmulss"   _ _ = Just "mulfHandler(d, 1, E0, E1, E2, dest_is_reg);"
-lookup_handler "vpunpcklqdq" _ _ = Just "vpunpcklqdqHandler(d, E0, E1, E2);"
 lookup_handler "xorb"     _ _ = Just "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "xorl"     _ _ = Just "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
-lookup_handler "xorpd"    _ _ = Just "pxorHandler(d, E1, E0, E2);"
-lookup_handler "xorps"    2 _ = Just "xorpsHandler(d, 2, bitWidth, E1, E0, E2);"
-lookup_handler "xorps"    3 _ = Just "xorpsHandler(d, 3, bitWidth, E1, E0, E2);"
 lookup_handler "xorq"     _ _ = Just "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler "xorw"     _ _ = Just "xorHandler(d, bitWidth, E1, E0, E2, dest_is_reg);"
 lookup_handler opcode _ _ = Nothing

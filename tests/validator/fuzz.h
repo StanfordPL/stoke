@@ -50,7 +50,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   stoke::Transforms t;
   std::stringstream flags;
-  flags << "{ popcnt sse sse2 ssse3 sse4 avx }";
+  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx avx2 }";
   x64asm::FlagSet flag_set = x64asm::FlagSet::empty();
   flags >> flag_set;
 
