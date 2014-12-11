@@ -93,6 +93,9 @@ istream& CpuState::read_text(istream& is) {
 
 void CpuState::convert_from_model(SMTSolver& smt, string& name_suffix) {
 
+  stack.resize(0, 0); //base, size
+  heap.resize(0, 0);  //base, size
+
   for(size_t i = 0; i < r64s.size(); ++i) {
     stringstream name;
     name << r64s[i] << name_suffix;
