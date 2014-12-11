@@ -26,6 +26,12 @@ Handler::SupportLevel AddHandler::get_support(const x64asm::Instruction& instr) 
   if(opcode == "addb" || opcode == "addw" || opcode == "addl" || opcode == "addq")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
 
+  if(opcode == "adcb" || opcode == "adcw" || opcode == "adcl" || opcode == "adcq")
+    return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
+
+  if(opcode == "xaddb" || opcode == "xaddw" || opcode == "xaddl" || opcode == "xaddq")
+    return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
+
   return Handler::NONE;
 
 }
@@ -40,9 +46,20 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
     return;
   }
 
+  string opcode = get_opcode(instr);
+  bool carry = opcode[2] == 'c';
+  bool exchange = opcode[0] == 'x';
+
   // Fetch Operands
   Operand dest = instr.get_operand<Operand>(0);
   Operand src  = instr.get_operand<Operand>(1);
+
+  // Do the exchange if need be
+  if(exchange) {
+    SymBitVector tmp = state[src];
+    state.set(src, state[dest]);
+    state.set(dest, tmp);
+  }
 
   SymBitVector src_bv = state[src];
   SymBitVector dst_bv = state[dest];
@@ -60,6 +77,11 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
 
   // Compute the final values
   SymBitVector total = ext_src + ext_dst;
+  if(carry) {
+    total = state[eflags_cf].ite(
+              total + SymBitVector::constant(width + 2, 1),
+              total);
+  }
 
   // Compute auxiliary carry
   SymBitVector aux = (SymBitVector::constant(1, 0) || state[src][3][0]) +

@@ -75,64 +75,6 @@ void adcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   setSFPFZF(E_dest, d, bitWidth);
 }
 
-void addHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
-
-
-
-  /* add the first four bits together of each source to set AF flag if needed */
-  string aux_name = string("ADDTEMP_AUX") + d.pre_suffix + to_string(d.instr_no);
-
-  auto auxiliary = SymBitVector::var(5, aux_name.c_str());
-  SymBool set_aux_to_sum = vc_eqExpr(auxiliary,
-                                     vc_bvPlusExpr(5,
-                                         SymBitVector::constant(1, 0) || E_src1[3][0],
-                                         SymBitVector::constant(1, 0) || E_src2[3][0])
-                                    );
-  d.constraints.push_back(set_aux_to_sum);
-
-
-  /* Do the addition */
-  auto E_result = SymBitVector::var(bitWidth+2, "ADDTEMP"+d.pre_suffix+to_string(d.instr_no));
-
-  auto E_arg1 = SymBitVector::constant(2, 0) || E_src1;
-  auto E_arg2 = SymBitVector::constant(2, 0) || E_src2;
-
-  SymBool retval = SymBool::_true();
-  retval = retval & vc_eqExpr(E_result, vc_bvPlusExpr(bitWidth+2, E_arg1, E_arg2));
-  retval = retval & E_dest == E_result[bitWidth-1][0];
-
-  /* Set unchanged bits */
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
-  {
-    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
-    retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
-  }
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint " << retval << endl;
-#endif
-
-  d.constraints.push_back(retval);
-
-  /* Set the AF flag */
-  setFlag(d.Vnprime, V_AF, auxiliary[4],
-          d.constraints, d.post_suffix);
-
-  /* Set the overflow flag */
-  setFlag(d.Vnprime, V_OF,
-          getPlusOFExpr(E_arg1[bitWidth - 1],
-                        E_arg2[bitWidth - 1],
-                        E_result[bitWidth - 1]),
-          d.constraints, d.post_suffix);
-
-  /* Set the carry flag */
-  setFlag(d.Vnprime, V_CF, E_result[bitWidth] | E_result[bitWidth + 1],
-          d.constraints, d.post_suffix);
-
-  /* Set the SFZ flags */
-  setSFPFZF(E_dest, d, bitWidth);
-}
-
-
 
 void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
@@ -2628,44 +2570,6 @@ void vpunpcklqdqHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
 
 
 }
-
-void xaddHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_src_post, bool dest_is_reg=true) {
-
-
-  addHandler(d, bitWidth, E_dest, E_dest_pre, E_src, dest_is_reg);
-  SymBool retval = E_src_post == E_dest_pre;
-
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
-  {
-    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
-    retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
-
-    id_dest = getRegisterFromInstr(d.instr,d.instr.arity()-1);
-    retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
-  }
-  ADD_CONS(retval);
-  d.constraints.push_back(retval);
-}
-
-void xchgHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_dest_pre, Expr E_src, Expr E_src_post,  bool dest_is_reg=true) {
-
-
-
-  SymBool retval = E_dest == E_src;
-  retval = retval & E_dest_pre == E_src_post;
-
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
-  {
-    SS_Id id_dest = getRegisterFromInstr(d.instr,0);
-    retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
-
-    id_dest = getRegisterFromInstr(d.instr,d.instr.arity()-1);
-    retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
-  }
-  ADD_CONS(retval);
-  d.constraints.push_back(retval);
-}
-
 
 void xorHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 

@@ -22,7 +22,7 @@
 
 namespace stoke {
 
-/** Supports add[bwlq] */
+/** Supports add, adc, xadd */
 class AddHandler : public Handler {
 
 public:
