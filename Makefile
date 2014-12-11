@@ -71,6 +71,7 @@ SRC_OBJ=\
 	src/validator/legacy/sym_state.o \
 	src/validator/legacy/validator.o \
 	\
+	src/validator/handlers/add_handler.o \
 	src/validator/handlers/combo_handler.o \
 	src/validator/handlers/lea_handler.o   \
 	src/validator/handlers/move_handler.o  \
