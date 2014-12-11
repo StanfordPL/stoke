@@ -74,8 +74,9 @@ public:
   /** Set a particular flag */
   void set(const x64asm::Eflags, SymBool b);
 
-  /** Set the SF/PF/ZF flags according to a given value */
-  void set_szp_flags(const SymBitVector& v);
+  /** Set the SF/PF/ZF flags according to a given value.  If width
+      is provided, it's used; otherwise, we compute it */
+  void set_szp_flags(const SymBitVector& v, uint16_t width = 0);
 
   /** Add constraint */
   void add_constraint(const SymBool& b) {

@@ -218,16 +218,18 @@ void SymState::set(const Eflags f, SymBool b) {
 }
 
 
-void SymState::set_szp_flags(const SymBitVector& v) {
+void SymState::set_szp_flags(const SymBitVector& v, uint16_t width) {
 
-  SymTypecheckVisitor tc;
-  uint16_t size = tc(v);
+  if (width == 0) {
+    SymTypecheckVisitor tc;
+    width = tc(v);
+  }
 
   /* The sign flag is the most significant bit */
-  set(eflags_sf, v[size-1]);
+  set(eflags_sf, v[width-1]);
 
   /* The zero flag says if the whole BV is 0 */
-  set(eflags_zf, v == SymBitVector::constant(size, 0));
+  set(eflags_zf, v == SymBitVector::constant(width, 0));
 
   /* The parity flag */
   set(eflags_pf, v[7][0].pairity());
