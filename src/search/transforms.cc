@@ -27,7 +27,7 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
   auto use_whitelist = opc_whitelist.size() > 0; // empty whitelist means no whitelist
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     auto op = (Opcode)i;
-    if (is_control_opcode(op) || is_unsupported(op) || !is_enabled(op, flags) ||
+    if ((op != CALL_LABEL && is_control_opcode(op)) || is_unsupported(op) || !is_enabled(op, flags) ||
         is_non_deterministic(op) || opc_blacklist.find(op) != opc_blacklist.end()) {
       continue;
     } else if (use_whitelist && opc_whitelist.find(op) == opc_whitelist.end()) {
@@ -55,7 +55,7 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
   }
 
   for (size_t i = 0; i < call_weight; ++i) {
-    control_free_or_nop_.push_back(CALL_LABEL);
+    control_free_.push_back(CALL_LABEL);
   }
 
   if (control_free_.size() == 0) {

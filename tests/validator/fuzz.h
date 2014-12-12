@@ -16,6 +16,7 @@
 #include <set>
 #include <sys/time.h>
 
+#include "tools/target/cpu_info.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 class ValidatorFuzzTest : public ValidatorTest { };
@@ -44,15 +45,24 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   const size_t min_success = iterations/4;
   size_t success = 0;  //counts number of iterations tested
 
+  // FIgure out the flags to use.
+  std::stringstream flags;
+#ifdef __AVX2__
+  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx avx2 }";
+#elif __AVX__
+  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx }";
+#else
+  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 }";
+#endif
+  x64asm::FlagSet flag_set = x64asm::FlagSet::empty();
+  flags >> flag_set;
+
+  flag_set &= stoke::CpuInfo::get_flags();
+
   // Initialize handler, solver, transforms, stategen, etc.
   stoke::ComboHandler ch;
   stoke::Z3Solver z3;
-
   stoke::Transforms t;
-  std::stringstream flags;
-  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx avx2 }";
-  x64asm::FlagSet flag_set = x64asm::FlagSet::empty();
-  flags >> flag_set;
 
   std::set<x64asm::Opcode> blacklist;
   blacklist.insert(x64asm::ENTER_IMM8_IMM16);
