@@ -104,7 +104,7 @@ public:
     }, 32, 32, true);
 
     add_opcode("cvtps2pd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Single_Precision_To_Double_Precision_Floating_Point", 32, {64});
+      SymFunction f("Convert_Single_Precision_To_Double_Precision_Floating_Point", 64, {32});
       return f(b);
     }, 32, 64, true);
 
@@ -341,6 +341,74 @@ public:
                           SymBitVector::constant(64, 0x0));
     }, 64);
 
+    add_opcode("pcmpgtb", [] (SymBitVector a, SymBitVector b) {
+      return (a.s_gt(b)).ite(SymBitVector::constant(8, 0xff),
+                             SymBitVector::constant(8, 0x0));
+    }, 8);
+
+    add_opcode("pcmpgtw", [] (SymBitVector a, SymBitVector b) {
+      return (a.s_gt(b)).ite(SymBitVector::constant(16, 0xffff),
+                             SymBitVector::constant(16, 0x0));
+    }, 16);
+
+    add_opcode("pcmpgtd", [] (SymBitVector a, SymBitVector b) {
+      return (a.s_gt(b)).ite(SymBitVector::constant(32, 0xffffffff),
+                             SymBitVector::constant(32, 0x0));
+    }, 32);
+
+    add_opcode("pcmpgtq", [] (SymBitVector a, SymBitVector b) {
+      return (a.s_gt(b)).ite(SymBitVector::constant(64, 0xffffffffffffffff),
+                             SymBitVector::constant(64, 0x0));
+    }, 64);
+
+    add_opcode("phaddw", [] (SymBitVector a, SymBitVector b) {
+        return (b[127][112] + b[111][96]) ||
+               (b[95][80]   + b[79][64])  ||
+               (b[63][48]   + b[47][32])  ||
+               (b[31][16]   + b[15][0])   ||
+               (a[127][112] + a[111][96]) ||
+               (a[95][80]   + a[79][64])  ||
+               (a[63][48]   + a[47][32])  ||
+               (a[31][16]   + a[15][0]);
+    }, 128);
+
+    add_opcode("phaddd", [] (SymBitVector a, SymBitVector b) {
+        return (b[127][96] + b[95][64]) ||
+               (b[63][32]  + b[31][0])  ||
+               (a[127][96] + a[95][64]) ||
+               (a[63][32]  + a[31][0]);
+    }, 128);
+
+    add_opcode("phsubw", [] (SymBitVector a, SymBitVector b) {
+        return (b[111][96] - b[127][112]) ||
+               (b[79][64]  - b[95][80]  )  ||
+               (b[47][32]  - b[63][48]  )  ||
+               (b[15][0]   - b[31][16]  )   ||
+               (a[111][96] - a[127][112]) ||
+               (a[79][64]  - a[95][80]  )  ||
+               (a[47][32]  - a[63][48]  )  ||
+               (a[15][0]   - a[31][16]  );
+    }, 128);
+
+    add_opcode("phsubd", [] (SymBitVector a, SymBitVector b) {
+        return (b[95][64] - b[127][96]) ||
+               (b[31][0]  - b[63][32] )  ||
+               (a[95][64] - a[127][96]) ||
+               (a[31][0]  - a[63][32] );
+    }, 128);
+
+    add_opcode("pmaxsb", [] (SymBitVector a, SymBitVector b) {
+      return (a.s_gt(b)).ite(a, b);
+    }, 8);
+
+    add_opcode("pmaxsw", [] (SymBitVector a, SymBitVector b) {
+      return (a.s_gt(b)).ite(a, b);
+    }, 16);
+
+    add_opcode("pmaxsd", [] (SymBitVector a, SymBitVector b) {
+      return (a.s_gt(b)).ite(a, b);
+    }, 32);
+
     add_opcode("pmaxub", [] (SymBitVector a, SymBitVector b) {
       return (a > b).ite(a, b);
     }, 8);
@@ -348,6 +416,22 @@ public:
     add_opcode("pmaxuw", [] (SymBitVector a, SymBitVector b) {
       return (a > b).ite(a, b);
     }, 16);
+
+    add_opcode("pmaxud", [] (SymBitVector a, SymBitVector b) {
+      return (a > b).ite(a, b);
+    }, 32);
+
+    add_opcode("pminsb", [] (SymBitVector a, SymBitVector b) {
+      return (a.s_lt(b)).ite(a, b);
+    }, 8);
+
+    add_opcode("pminsw", [] (SymBitVector a, SymBitVector b) {
+      return (a.s_lt(b)).ite(a, b);
+    }, 16);
+
+    add_opcode("pminsd", [] (SymBitVector a, SymBitVector b) {
+      return (a.s_lt(b)).ite(a, b);
+    }, 32);
 
     add_opcode("pminub", [] (SymBitVector a, SymBitVector b) {
       return (a < b).ite(a, b);
@@ -357,9 +441,92 @@ public:
       return (a < b).ite(a, b);
     }, 16);
 
+    add_opcode("pminud", [] (SymBitVector a, SymBitVector b) {
+      return (a < b).ite(a, b);
+    }, 32);
+
+    add_opcode("pmovsxbw", [] (SymBitVector a, SymBitVector b) {
+      return b.extend(16);
+    }, 8, 16);
+
+    add_opcode("pmovsxbd", [] (SymBitVector a, SymBitVector b) {
+      return b.extend(32);
+    }, 8, 32);
+
+    add_opcode("pmovsxbq", [] (SymBitVector a, SymBitVector b) {
+      return b.extend(64);
+    }, 8, 64);
+
+    add_opcode("pmovsxwd", [] (SymBitVector a, SymBitVector b) {
+      return b.extend(32);
+    }, 16, 32);
+
+    add_opcode("pmovsxwq", [] (SymBitVector a, SymBitVector b) {
+      return b.extend(64);
+    }, 16, 64);
+
+    add_opcode("pmovsxdq", [] (SymBitVector a, SymBitVector b) {
+      return b.extend(64);
+    }, 32, 64);
+
+    add_opcode("pmovzxbw", [] (SymBitVector a, SymBitVector b) {
+      return SymBitVector::constant(8, 0) || b;
+    }, 8, 16);
+
+    add_opcode("pmovzxbd", [] (SymBitVector a, SymBitVector b) {
+      return SymBitVector::constant(24, 0) || b;
+    }, 8, 32);
+
+    add_opcode("pmovzxbq", [] (SymBitVector a, SymBitVector b) {
+      return SymBitVector::constant(56, 0) || b;
+    }, 8, 64);
+
+    add_opcode("pmovzxwd", [] (SymBitVector a, SymBitVector b) {
+      return SymBitVector::constant(16, 0) || b;
+    }, 16, 32);
+
+    add_opcode("pmovzxwq", [] (SymBitVector a, SymBitVector b) {
+      return SymBitVector::constant(48, 0) || b;
+    }, 16, 64);
+
+    add_opcode("pmovzxdq", [] (SymBitVector a, SymBitVector b) {
+      return SymBitVector::constant(32, 0) || b;
+    }, 32, 64);
+
+    add_opcode("pmuldq", [] (SymBitVector a, SymBitVector b) {
+      return (a[31][0].extend(64))*(b[31][0].extend(64));
+    }, 64);
+
+    add_opcode("pmulhw", [] (SymBitVector a, SymBitVector b) {
+      return (a.extend(32)*b.extend(32))[31][16];
+    }, 16);
+
+    add_opcode("pmulld", [] (SymBitVector a, SymBitVector b) {
+      return (a.extend(64)*b.extend(64))[31][0];
+    }, 32);
+
+    add_opcode("pmullw", [] (SymBitVector a, SymBitVector b) {
+      return (a.extend(32)*b.extend(32))[15][0];
+    }, 16);
+
     add_opcode("por", [] (SymBitVector a, SymBitVector b) {
       return a | b;
     }, 0);
+
+    add_opcode("psignb", [] (SymBitVector a, SymBitVector b) {
+      auto zero = SymBitVector::constant(8, 0);
+      return (b.s_gt(zero)).ite(a, (b == zero).ite(zero, -a));
+    }, 8);
+
+    add_opcode("psignw", [] (SymBitVector a, SymBitVector b) {
+      auto zero = SymBitVector::constant(16, 0);
+      return (b.s_gt(zero)).ite(a, (b == zero).ite(zero, -a));
+    }, 16);
+
+    add_opcode("psignd", [] (SymBitVector a, SymBitVector b) {
+      auto zero = SymBitVector::constant(32, 0);
+      return (b.s_gt(zero)).ite(a, (b == zero).ite(zero, -a));
+    }, 32);
 
     add_opcode("psubb", [] (SymBitVector a, SymBitVector b) {
       return a - b;
@@ -376,6 +543,44 @@ public:
     add_opcode("psubq", [] (SymBitVector a, SymBitVector b) {
       return a - b;
     }, 64);
+
+    add_opcode("psubsb", [] (SymBitVector a, SymBitVector b) {
+      auto tmp = (a.extend(10) - b.extend(10));
+      return (tmp.s_gt(SymBitVector::constant(10, 0x7f))).ite(
+        SymBitVector::constant(8, 0x7f),
+        (tmp.s_lt(SymBitVector::constant(10, -0x80)).ite(
+          SymBitVector::constant(8, 0x80),
+          tmp[7][0])));
+    }, 8);
+
+    add_opcode("psubsw", [] (SymBitVector a, SymBitVector b) {
+      auto tmp = (a.extend(18) - b.extend(18));
+      return (tmp.s_gt(SymBitVector::constant(18, 0x7fff))).ite(
+        SymBitVector::constant(16, 0x7fff),
+        (tmp.s_lt(SymBitVector::constant(18, -0x8000)).ite(
+          SymBitVector::constant(16, 0x8000),
+          tmp[15][0])));
+    }, 16);
+
+    add_opcode("psubusb", [] (SymBitVector a, SymBitVector b) {
+      auto zeros = SymBitVector::constant(2, 0);
+      auto tmp = ((zeros || a) - (zeros || b));
+      return (tmp.s_gt(SymBitVector::constant(10, 0xff))).ite(
+        SymBitVector::constant(8, 0xff),
+        (tmp.s_lt(SymBitVector::constant(10, 0)).ite(
+          SymBitVector::constant(8, 0x0),
+          tmp[7][0])));
+    }, 8);
+
+    add_opcode("psubusw", [] (SymBitVector a, SymBitVector b) {
+      auto zeros = SymBitVector::constant(2, 0);
+      auto tmp = ((zeros || a) - (zeros || b));
+      return (tmp.s_gt(SymBitVector::constant(18, 0xffff))).ite(
+        SymBitVector::constant(16, 0xffff),
+        (tmp.s_lt(SymBitVector::constant(18, -0x0)).ite(
+          SymBitVector::constant(16, 0x0),
+          tmp[15][0])));
+    }, 16);
 
     add_opcode("pxor", [] (SymBitVector a, SymBitVector b) {
       return a ^ b;
