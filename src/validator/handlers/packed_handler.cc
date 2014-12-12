@@ -77,9 +77,9 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
       // Loop through sets of 'loop_width' in the input and apply the binary
       // operator in a pairwise way.
 
-      for(size_t i = loop_width, j = output_width; 
-                 i < total_width && j < total_width; 
-                 i = i + loop_width, j = j + output_width) {
+      for(size_t i = loop_width, j = output_width;
+          i < total_width && j < total_width;
+          i = i + loop_width, j = j + output_width) {
         result = f(arg1[i + loop_width - 1][i], arg2[i + loop_width - 1][i]) || result;
       }
     }
@@ -94,7 +94,7 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 }
 
 void PackedHandler::add_opcode(std::string opcode, BinaryOperator op,
-                               uint16_t width, uint16_t output_width, 
+                               uint16_t width, uint16_t output_width,
                                bool uninterpreted, bool limit1) {
 
   if(output_width == 0)

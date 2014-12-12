@@ -37,6 +37,10 @@ class SymBoolLe;
 class SymBoolLt;
 class SymBoolNot;
 class SymBoolOr;
+class SymBoolSignGe;
+class SymBoolSignGt;
+class SymBoolSignLe;
+class SymBoolSignLt;
 class SymBoolTrue;
 class SymBoolVar;
 class SymBoolXor;
@@ -59,6 +63,10 @@ public:
     LT,
     NOT,
     OR,
+    SIGN_GE,
+    SIGN_GT,
+    SIGN_LE,
+    SIGN_LT,
     TRUE,
     VAR,
     XOR,
@@ -274,6 +282,50 @@ class SymBoolOr : public SymBoolBinop {
 public:
   SymBool::Type type() const {
     return SymBool::Type::OR;
+  }
+};
+
+class SymBoolSignGe : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+public:
+  SymBool::Type type() const {
+    return SymBool::Type::SIGN_GE;
+  }
+};
+
+class SymBoolSignGt : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+public:
+  SymBool::Type type() const {
+    return SymBool::Type::SIGN_GT;
+  }
+};
+
+class SymBoolSignLe : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+public:
+  SymBool::Type type() const {
+    return SymBool::Type::SIGN_LE;
+  }
+};
+
+class SymBoolSignLt : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+public:
+  SymBool::Type type() const {
+    return SymBool::Type::SIGN_LT;
   }
 };
 

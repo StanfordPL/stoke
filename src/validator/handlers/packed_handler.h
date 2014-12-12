@@ -161,7 +161,7 @@ public:
     add_opcode("haddps", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("add_single", 32, {32, 32});
       return f(b[95][64], b[127][96]) ||
-             f(b[31][0],  b[63][32])  || 
+             f(b[31][0],  b[63][32])  ||
              f(a[95][64], a[127][96]) ||
              f(a[31][0],  a[63][32]);
     }, 128, 128, true);
@@ -174,7 +174,7 @@ public:
     add_opcode("hsubps", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("sub_single", 32, {32, 32});
       return f(b[95][64], b[127][96]) ||
-             f(b[31][0],  b[63][32])  || 
+             f(b[31][0],  b[63][32])  ||
              f(a[95][64], a[127][96]) ||
              f(a[31][0],  a[63][32]);
     }, 128, 128, true);
@@ -413,7 +413,7 @@ private:
 
   /** Adds an opcode to our internal maps */
   void add_opcode(std::string opcode, BinaryOperator op,
-                  uint16_t width, uint16_t output_width = 0, 
+                  uint16_t width, uint16_t output_width = 0,
                   bool uninterpreted = false, bool limit1 = false);
 
   /** Opcode -> BinaryOperator */

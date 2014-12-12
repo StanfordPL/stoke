@@ -155,6 +155,15 @@ public:
   SymBool operator<(const SymBitVector& other) const;
   /** Returns a bool indicating if the arguments are not equal */
   SymBool operator!=(const SymBitVector& other) const;
+  /** Signed >= comparison */
+  SymBool s_ge(const SymBitVector& other) const;
+  /** Signed > comparison */
+  SymBool s_gt(const SymBitVector& other) const;
+  /** Signed <= comparison */
+  SymBool s_le(const SymBitVector& other) const;
+  /** Signed < comparison */
+  SymBool s_lt(const SymBitVector& other) const;
+
 
   /** Computes the parity of the bitvector */
   SymBool pairity() const;
