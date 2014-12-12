@@ -210,3 +210,34 @@ TEST_F(ValidatorMoveTest, Issue272_2) {
 
   check_circuit(cs);
 }
+
+TEST_F(ValidatorMoveTest, MovqByteImmediate) {
+
+  target_ << "movq $0xab, %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  stoke::CpuState cs;
+  check_circuit(cs);
+}
+
+TEST_F(ValidatorMoveTest, Movzbq) {
+
+  target_ << "movb $0xab, %al" << std::endl;
+  target_ << "movzbq %al, %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  stoke::CpuState cs;
+  check_circuit(cs);
+}
+
+TEST_F(ValidatorMoveTest, MovqMovzbqEquivalent) {
+
+  target_ << "movq $0xab, %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movb $0xab, %al" << std::endl;
+  rewrite_ << "movzbq %al, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}

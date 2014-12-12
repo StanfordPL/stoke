@@ -16,7 +16,7 @@
 
 class ValidatorVpunpcklqdqTest : public ValidatorTest {};
 
-TEST_F(ValidatorVpunpcklqdqTest, Identity) {
+TEST_F(ValidatorVpunpcklqdqTest, DISABLED_Identity) {
 
   target_ << "vpunpcklqdq %xmm1, %xmm1, %xmm1" << std::endl;
   target_ << "retq" << std::endl;
@@ -28,7 +28,7 @@ TEST_F(ValidatorVpunpcklqdqTest, Identity) {
 }
 
 
-TEST_F(ValidatorVpunpcklqdqTest, NonIdentity) {
+TEST_F(ValidatorVpunpcklqdqTest, DISABLED_NonIdentity) {
 
   target_ << "vpunpcklqdq %xmm1, %xmm1, %xmm3" << std::endl;
   target_ << "retq" << std::endl;
@@ -42,7 +42,7 @@ TEST_F(ValidatorVpunpcklqdqTest, NonIdentity) {
 }
 
 
-TEST_F(ValidatorVpunpcklqdqTest, Idempotent) {
+TEST_F(ValidatorVpunpcklqdqTest, DISABLED_Idempotent) {
 
   x64asm::Code c, d;
 
@@ -58,7 +58,7 @@ TEST_F(ValidatorVpunpcklqdqTest, Idempotent) {
 }
 
 
-TEST_F(ValidatorVpunpcklqdqTest, IdempotentOtherArg) {
+TEST_F(ValidatorVpunpcklqdqTest, DISABLED_IdempotentOtherArg) {
 
   target_ << "vpunpcklqdq %xmm2, %xmm5, %xmm4" << std::endl;
   target_ << "retq" << std::endl;
@@ -72,7 +72,7 @@ TEST_F(ValidatorVpunpcklqdqTest, IdempotentOtherArg) {
 }
 
 
-TEST_F(ValidatorVpunpcklqdqTest, NotIdempotentWrongArg) {
+TEST_F(ValidatorVpunpcklqdqTest, DISABLED_NotIdempotentWrongArg) {
 
   target_ << "vpunpcklqdq %xmm1, %xmm3, %xmm4" << std::endl;
   target_ << "retq" << std::endl;

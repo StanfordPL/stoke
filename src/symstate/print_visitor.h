@@ -143,15 +143,19 @@ public:
       os_ << "(== ";
       break;
     case SymBool::GE:
+    case SymBool::SIGN_GE:
       os_ << "(>= ";
       break;
     case SymBool::GT:
+    case SymBool::SIGN_GT:
       os_ << "(> ";
       break;
     case SymBool::LE:
+    case SymBool::SIGN_LE:
       os_ << "(<= ";
       break;
     case SymBool::LT:
+    case SymBool::SIGN_LT:
       os_ << "(< ";
       break;
     default:

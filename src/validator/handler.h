@@ -37,8 +37,9 @@ public:
     BASIC = 1,
     /** Can construct counterexample */
     CEG = 2,
-    /** Immediate is parameterized */
-    IMMEDIATE = 4
+    /** Only updates symbolic state; no constraints generated.
+        Can be used to build analysis */
+    ANALYSIS = 4
   };
 
   /** Check the support for this instruction */
@@ -73,9 +74,16 @@ protected:
     return ++temporary_;
   }
 
+  /** Returns the overflow flag given the MSB of the two arguments and total for a plus operation */
+  SymBool plus_of(SymBool msb1, SymBool msb2, SymBool total_msb) const;
+  /** Returns the overflow flag given the MSB of the two arguments and total for a minus operation */
+  SymBool minus_of(SymBool msb1, SymBool msb2, SymBool total_msb) const;
+
+
+
 private:
 
-  static const std::array<const char*, 3801> att_;
+  static const std::array<const char*, 3803> att_;
 
   static uint64_t temporary_;
 };

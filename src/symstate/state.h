@@ -20,6 +20,7 @@
 
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
+#include "src/symstate/memory.h"
 #include "src/symstate/regs.h"
 
 namespace stoke {
@@ -43,8 +44,14 @@ public:
   SymRegs gp;
   /** Symbolic SSE registers */
   SymRegs sse;
+  /** Memory */
+  SymMemory memory;
   /** Symbolic rflags: CF, PF, AF, ZF, SF, OF */
   std::array<SymBool, 6> rf;
+
+  /** Get the address corresponding to a memory location */
+  template <typename T>
+  SymBitVector get_addr(x64asm::M<T> ref) const;
 
   /** Lookup the symbolic representation of a generic operand */
   SymBitVector operator[](const x64asm::Operand o) const;
@@ -67,8 +74,9 @@ public:
   /** Set a particular flag */
   void set(const x64asm::Eflags, SymBool b);
 
-  /** Set the SF/PF/ZF flags according to a given value */
-  void set_szp_flags(const SymBitVector& v);
+  /** Set the SF/PF/ZF flags according to a given value.  If width
+      is provided, it's used; otherwise, we compute it */
+  void set_szp_flags(const SymBitVector& v, uint16_t width = 0);
 
   /** Add constraint */
   void add_constraint(const SymBool& b) {
@@ -88,7 +96,6 @@ private:
   void build_from_cpustate(const CpuState& cs);
   /** Builds a symbolic CPU state with variables */
   void build_with_suffix(const std::string& str);
-
 
 };
 

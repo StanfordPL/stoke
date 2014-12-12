@@ -40,8 +40,6 @@ struct CpuState {
     * Uses 'suffix' to identify the right set of variables to extract. */
   CpuState(SMTSolver& smt, std::string suffix) :
     code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
-    stack.resize(0, 0);
-    heap.resize(0, 0);
     convert_from_model(smt, suffix);
   }
 

@@ -109,6 +109,13 @@ SymBitVector SymState::operator[](const Operand o) const {
     return SymBitVector::constant(o.size(), imm);
   }
 
+  if(o.is_typical_memory()) {
+    uint16_t size = o.size();
+    auto& m = reinterpret_cast<const M8&>(o);
+    auto addr = get_addr(m);
+    return memory.read(addr, size);
+  }
+
   assert(false);
   return SymBitVector::constant(o.size(), 0);
 }
@@ -160,6 +167,15 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto& ymm = reinterpret_cast<const Ymm&>(o);
     sse[ymm] = bv;
     return;
+  } else if (o.is_typical_memory()) {
+
+    auto width = o.size();
+    //note: the memory may be of a different width in this cast, but I don't care.
+    auto& m = reinterpret_cast<const M8&>(o);
+    auto addr = get_addr(m);
+
+    memory.write(addr, bv, width);
+    return;
   }
 
   assert(false);
@@ -202,16 +218,18 @@ void SymState::set(const Eflags f, SymBool b) {
 }
 
 
-void SymState::set_szp_flags(const SymBitVector& v) {
+void SymState::set_szp_flags(const SymBitVector& v, uint16_t width) {
 
-  SymTypecheckVisitor tc;
-  uint16_t size = tc(v);
+  if (width == 0) {
+    SymTypecheckVisitor tc;
+    width = tc(v);
+  }
 
   /* The sign flag is the most significant bit */
-  set(eflags_sf, v[size-1]);
+  set(eflags_sf, v[width-1]);
 
   /* The zero flag says if the whole BV is 0 */
-  set(eflags_zf, v == SymBitVector::constant(size, 0));
+  set(eflags_zf, v == SymBitVector::constant(width, 0));
 
   /* The parity flag */
   set(eflags_pf, v[7][0].pairity());
@@ -236,3 +254,40 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
 }
 
 
+/** Get address corresponding to a memory reference */
+template <typename T>
+SymBitVector SymState::get_addr(M<T> memory) const {
+
+  SymBitVector address = SymBitVector::constant(64, memory.get_disp());
+
+  if(memory.contains_base()) {
+    address = address + (*this)[memory.get_base()];
+  }
+
+  if(memory.contains_index()) {
+    auto index = (*this)[memory.get_index()];
+
+    switch(memory.get_scale()) {
+    case Scale::TIMES_1:
+      address = address + index;
+      break;
+
+    case Scale::TIMES_2:
+      address = address + (index << SymBitVector::constant(64, 1));
+      break;
+
+    case Scale::TIMES_4:
+      address = address + (index << SymBitVector::constant(64, 2));
+      break;
+
+    case Scale::TIMES_8:
+      address = address + (index << SymBitVector::constant(64, 3));
+      break;
+
+    default:
+      assert(false);
+    }
+  }
+
+  return address;
+}

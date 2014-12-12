@@ -13,12 +13,26 @@
 // limitations under the License.
 
 
-#include "src/validator/validator.h"
-#include "src/validator/error.h"
+#ifndef STOKE_SRC_VALIDATOR_HANDLER_ADD_HANDLER_H
+#define STOKE_SRC_VALIDATOR_HANDLER_ADD_HANDLER_H
 
-#include "tests/validator/common.h"
-#include "tests/validator/fuzz.h"
-#include "tests/validator/memory.h"
-#include "tests/validator/simple.h"
-#include "tests/validator/handlers.h"
+#include <map>
 
+#include "src/validator/handler.h"
+
+namespace stoke {
+
+/** Supports add, adc, xadd */
+class AddHandler : public Handler {
+
+public:
+  SupportLevel get_support(const x64asm::Instruction& instr);
+
+  void build_circuit(const x64asm::Instruction& instr, SymState& start);
+
+};
+
+} //namespace stoke
+
+
+#endif

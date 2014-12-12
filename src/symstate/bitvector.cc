@@ -179,6 +179,22 @@ SymBool SymBitVector::operator!=(const SymBitVector& other) const {
   return !(*this == other);
 }
 
+SymBool SymBitVector::s_ge(const SymBitVector& other) const {
+  return SymBool(new SymBoolSignGe(ptr, other.ptr));
+}
+
+SymBool SymBitVector::s_gt(const SymBitVector& other) const {
+  return SymBool(new SymBoolSignGt(ptr, other.ptr));
+}
+
+SymBool SymBitVector::s_le(const SymBitVector& other) const {
+  return SymBool(new SymBoolSignLe(ptr, other.ptr));
+}
+
+SymBool SymBitVector::s_lt(const SymBitVector& other) const {
+  return SymBool(new SymBoolSignLt(ptr, other.ptr));
+}
+
 /** Get the type */
 SymBitVector::Type SymBitVector::type() const {
   if(ptr)

@@ -352,7 +352,25 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBoolLt * const b) {
   return z3::expr(context_, Z3_mk_bvult(context_, (*this)(b->a_), (*this)(b->b_)));
 }
 
+/** Visit a bit-vector signed GE */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolSignGe * const b) {
+  return z3::expr(context_, Z3_mk_bvsge(context_, (*this)(b->a_), (*this)(b->b_)));
+}
 
+/** Visit a bit-vector signed GT */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolSignGt * const b) {
+  return z3::expr(context_, Z3_mk_bvsgt(context_, (*this)(b->a_), (*this)(b->b_)));
+}
+
+/** Visit a bit-vector signed LE */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolSignLe * const b) {
+  return z3::expr(context_, Z3_mk_bvsle(context_, (*this)(b->a_), (*this)(b->b_)));
+}
+
+/** Visit a bit-vector signed LT */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolSignLt * const b) {
+  return z3::expr(context_, Z3_mk_bvslt(context_, (*this)(b->a_), (*this)(b->b_)));
+}
 
 /** Visit a boolean AND */
 z3::expr Z3Solver::ExprConverter::visit(const SymBoolAnd * const b) {

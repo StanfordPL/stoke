@@ -52,8 +52,10 @@ private:
     std::vector<Handler*> v;
 
     // New Handlers
+    v.push_back(new AddHandler());
     v.push_back(new LeaHandler());
     v.push_back(new MoveHandler());
+    v.push_back(new PackedHandler());
     v.push_back(new ShiftHandler());
     v.push_back(new XchgHandler());
 
