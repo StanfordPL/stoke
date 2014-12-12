@@ -919,7 +919,6 @@ lookup_handler "incq"     _ _ = Just "incHandler(d, bitWidth, E1, E0, dest_is_re
 lookup_handler "incw"     _ _ = Just "incHandler(d, bitWidth, E1, E0, dest_is_reg);"
 lookup_handler "lahf"     _ _ = Just "lahfHandler(d);"
 lookup_handler "lddqu"    _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
-lookup_handler "maxps"    _ _ = Just "maxpsHandler(d, E1, E0, E2);"
 lookup_handler "movapd"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "movaps"   _ _ = Just "movHandler(d, bitWidth, bitWidth1, E0, E1, true, dest_is_reg);"
 lookup_handler "movd"     _ _ = Just "movHandler(d, 32, bitWidth1, E0, E1, true, dest_is_reg);"
