@@ -161,6 +161,15 @@ private:
     z3::expr visit(const SymBoolLe * const b);
     /** Visit a bit-vector LT */
     z3::expr visit(const SymBoolLt * const b);
+    /** Visit a bit-vector Ge */
+    z3::expr visit(const SymBoolSignGe * const b);
+    /** Visit a bit-vector Gt */
+    z3::expr visit(const SymBoolSignGt * const b);
+    /** Visit a bit-vector LE */
+    z3::expr visit(const SymBoolSignLe * const b);
+    /** Visit a bit-vector LT */
+    z3::expr visit(const SymBoolSignLt * const b);
+
 
     /** Visit a boolean AND */
     z3::expr visit(const SymBoolAnd * const b);

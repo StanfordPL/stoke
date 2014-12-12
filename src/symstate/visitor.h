@@ -122,6 +122,14 @@ public:
       return visit(static_cast<const SymBoolNot * const>(b));
     case SymBool::OR:
       return visit(static_cast<const SymBoolOr * const>(b));
+    case SymBool::SIGN_GE:
+      return visit(static_cast<const SymBoolSignGe * const>(b));
+    case SymBool::SIGN_GT:
+      return visit(static_cast<const SymBoolSignGt * const>(b));
+    case SymBool::SIGN_LE:
+      return visit(static_cast<const SymBoolSignLe * const>(b));
+    case SymBool::SIGN_LT:
+      return visit(static_cast<const SymBoolSignLt * const>(b));
     case SymBool::TRUE:
       return visit(static_cast<const SymBoolTrue * const>(b));
     case SymBool::VAR:
@@ -268,6 +276,22 @@ public:
   /** Visit a boolean implies */
   virtual T visit(const SymBoolOr * const b) {
     return visit_binop(b);
+  }
+  /** Visit a bit-vector signed GE */
+  virtual T visit(const SymBoolSignGe * const b) {
+    return visit_compare(b);
+  }
+  /** Visit a bit-vector signed GT */
+  virtual T visit(const SymBoolSignGt * const b) {
+    return visit_compare(b);
+  }
+  /** Visit a bit-vector signed LE */
+  virtual T visit(const SymBoolSignLe * const b) {
+    return visit_compare(b);
+  }
+  /** Visit a bit-vector signed LT */
+  virtual T visit(const SymBoolSignLt * const b) {
+    return visit_compare(b);
   }
   /** Visit a boolean implies */
   virtual T visit(const SymBoolXor * const b) {
