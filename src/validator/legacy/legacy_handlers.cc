@@ -570,21 +570,6 @@ void lahfHandler(v_data d) {
 }
 
 
-
-
-void maxpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
-
-  SymFunction fpmax = SymFunction("maxfp", 128, {128, 128});
-  auto E_result = fpmax(E_src1, E_src2);
-  SymBool retval = E_dest == E_result;
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint " << retval << endl;
-#endif
-
-  d.constraints.push_back(retval);
-}
-
-
 void movHandler(v_data d, unsigned int bitWidthTarget, unsigned int bitWidthSource, Expr E_dest, Expr E_src, bool signExtend,  bool dest_is_reg=true) {
 
 

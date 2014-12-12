@@ -57,9 +57,9 @@ private:
     v.push_back(new MoveHandler());
     v.push_back(new PackedHandler());
     v.push_back(new ShiftHandler());
+    v.push_back(new SimpleHandler());
     v.push_back(new XchgHandler());
 
-    v.push_back(new LegacyHandler());
     return v;
   }
 
