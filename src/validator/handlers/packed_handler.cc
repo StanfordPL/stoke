@@ -24,6 +24,12 @@ Handler::SupportLevel PackedHandler::get_support(const x64asm::Instruction& inst
 
   auto opcode = get_opcode(instr);
 
+  for(size_t i = 0; i < instr.arity(); ++i) {
+    Operand o = instr.get_operand<Operand>(i);
+    if(!o.is_gp_register() && !o.is_typical_memory() && !o.is_sse_register())
+      return Handler::NONE;
+  }
+
   if(!uninterpreted_.count(opcode))
     return Handler::NONE;
 
