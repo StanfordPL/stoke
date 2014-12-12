@@ -33,30 +33,243 @@ public:
     add_opcode("addpd", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("add_double", 64, {64, 64});
       return f(a, b);
-    }, 64, true);
+    }, 64, 64, true);
 
     add_opcode("addps", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("add_single", 32, {32, 32});
       return f(a, b);
-    }, 32, true);
+    }, 32, 32, true);
+
+    add_opcode("addsd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("add_double", 64, {64, 64});
+      return f(a, b);
+    }, 64, 64, true, true);
+
+    add_opcode("addss", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("add_single", 32, {32, 32});
+      return f(a, b);
+    }, 32, 32, true, true);
+
+    add_opcode("addsubpd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("add_double", 64, {64, 64});
+      SymFunction g("sub_double", 64, {64, 64});
+      return g(a[63][0], b[63][0]) || f(a[127][64], b[127][64]);
+    }, 128, 128, true);
+
+    add_opcode("addsubps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("add_single", 32, {32, 32});
+      SymFunction g("sub_single", 32, {32, 32});
+      return g(a[31][0], b[31][0]) || f(a[63][32], b[63][32]);
+    }, 64, 64, true);
 
     add_opcode("andpd", [] (SymBitVector a, SymBitVector b) {
       return a & b;
-    }, 64, true);
+    }, 0);
 
     add_opcode("andps", [] (SymBitVector a, SymBitVector b) {
       return a & b;
-    }, 32, true);
+    }, 0);
 
     add_opcode("andnpd", [] (SymBitVector a, SymBitVector b) {
       return (!a) & b;
-    }, 64, true);
+    }, 0);
 
     add_opcode("andnps", [] (SymBitVector a, SymBitVector b) {
       return (!a) & b;
-    }, 32, true);
+    }, 0);
 
+    add_opcode("cvtdq2pd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Integer_To_Double_Precision_Floating_Point", 64, {32});
+      return f(b);
+    }, 32, 64, true);
 
+    add_opcode("cvtdq2ps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Integer_To_Single_Precision_Floating_Point", 32, {32});
+      return f(b);
+    }, 32, 32, true);
+
+    add_opcode("cvtpi2pd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Integer_To_Double_Precision_Floating_Point", 64, {32});
+      return f(b);
+    }, 32, 64, true);
+
+    add_opcode("cvtpi2ps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Integer_To_Single_Precision_Floating_Point", 32, {32});
+      return f(b);
+    }, 32, 32, true);
+
+    add_opcode("cvtps2dq", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer", 32, {32});
+      return f(b);
+    }, 32, 32, true);
+
+    add_opcode("cvtps2pd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Single_Precision_To_Double_Precision_Floating_Point", 32, {64});
+      return f(b);
+    }, 32, 64, true);
+
+    add_opcode("cvtps2pi", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer", 32, {32});
+      return f(b);
+    }, 32, 32, true);
+
+    add_opcode("cvtsd2ss", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Double_Precision_To_Single_Precision_Floating_Point", 32, {64});
+      return f(b);
+    }, 64, 32, true, true);
+
+    add_opcode("cvtss2sd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Single_Precision_To_Double_Precision_Floating_Point", 64, {32});
+      return f(b);
+    }, 32, 64, true, true);
+
+    add_opcode("cvttps2dq", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer_Truncate", 32, {32});
+      return f(b);
+    }, 32, 32, true);
+
+    add_opcode("cvttps2pi", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer_Truncate", 32, {32});
+      return f(b);
+    }, 32, 32, true);
+
+    add_opcode("divpd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("div_double", 64, {64, 64});
+      return f(a, b);
+    }, 64, 64, true);
+
+    add_opcode("divps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("div_single", 32, {32, 32});
+      return f(a, b);
+    }, 32, 32, true);
+
+    add_opcode("divsd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("div_double", 64, {64, 64});
+      return f(a, b);
+    }, 64, 64, true, true);
+
+    add_opcode("divss", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("div_single", 32, {32, 32});
+      return f(a, b);
+    }, 32, 32, true, true);
+
+    add_opcode("haddpd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("add_double", 64, {64, 64});
+      return f(b[63][0], b[127][64]) || f(a[63][0], a[127][64]);
+    }, 128, 128, true);
+
+    add_opcode("haddps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("add_single", 32, {32, 32});
+      return f(b[95][64], b[127][96]) ||
+             f(b[31][0],  b[63][32])  || 
+             f(a[95][64], a[127][96]) ||
+             f(a[31][0],  a[63][32]);
+    }, 128, 128, true);
+
+    add_opcode("hsubpd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("sub_double", 64, {64, 64});
+      return f(b[63][0], b[127][64]) || f(a[63][0], a[127][64]);
+    }, 128, 128, true);
+
+    add_opcode("hsubps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("sub_single", 32, {32, 32});
+      return f(b[95][64], b[127][96]) ||
+             f(b[31][0],  b[63][32])  || 
+             f(a[95][64], a[127][96]) ||
+             f(a[31][0],  a[63][32]);
+    }, 128, 128, true);
+
+    add_opcode("lddqu", [] (SymBitVector a, SymBitVector b) {
+      return b;
+    }, 0);
+
+    add_opcode("maxpd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("maxpd_compare_double", 1, {64, 64});
+      return (f(a,b)[0]).ite(a, b);
+    }, 64, 64, true);
+
+    add_opcode("maxps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("maxps_compare_single", 1, {32, 32});
+      return (f(a,b)[0]).ite(a, b);
+    }, 32, 32, true);
+
+    add_opcode("maxsd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("maxpd_compare_double", 1, {64, 64});
+      return (f(a,b)[0]).ite(a, b);
+    }, 64, 64, true, true);
+
+    add_opcode("maxss", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("maxps_compare_single", 1, {32, 32});
+      return (f(a,b)[0]).ite(a, b);
+    }, 32, 32, true, true);
+
+    add_opcode("minpd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("minpd_compare_double", 1, {64, 64});
+      return (f(a,b)[0]).ite(a, b);
+    }, 64, 64, true);
+
+    add_opcode("minps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("minps_compare_single", 1, {32, 32});
+      return (f(a,b)[0]).ite(a, b);
+    }, 32, 32, true);
+
+    add_opcode("minsd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("minpd_compare_double", 1, {64, 64});
+      return (f(a,b)[0]).ite(a, b);
+    }, 64, 64, true, true);
+
+    add_opcode("minss", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("minps_compare_single", 1, {32, 32});
+      return (f(a,b)[0]).ite(a, b);
+    }, 32, 32, true, true);
+
+    add_opcode("movddup", [] (SymBitVector a, SymBitVector b) {
+      return b[63][0] || b[63][0];
+    }, 128, 128);
+
+    add_opcode("movdqu", [] (SymBitVector a, SymBitVector b) {
+      return b;
+    }, 0);
+
+    add_opcode("mulpd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("mul_double", 64, {64, 64});
+      return f(a, b);
+    }, 64, 64, true);
+
+    add_opcode("mulps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("mul_single", 32, {32, 32});
+      return f(a, b);
+    }, 32, 32, true);
+
+    add_opcode("mulsd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("mul_double", 64, {64, 64});
+      return f(a, b);
+    }, 64, 64, true, true);
+
+    add_opcode("mulss", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("mul_single", 32, {32, 32});
+      return f(a, b);
+    }, 32, 32, true, true);
+
+    add_opcode("orpd", [] (SymBitVector a, SymBitVector b) {
+      return a | b;
+    }, 0);
+
+    add_opcode("orps", [] (SymBitVector a, SymBitVector b) {
+      return a | b;
+    }, 0);
+
+    add_opcode("pabsb", [] (SymBitVector a, SymBitVector b) {
+      return (b > SymBitVector::constant(8, 0x7f)).ite(-b, b);
+    }, 8);
+
+    add_opcode("pabsw", [] (SymBitVector a, SymBitVector b) {
+      return (b > SymBitVector::constant(16, 0x7fff)).ite(-b, b);
+    }, 16);
+
+    add_opcode("pabsd", [] (SymBitVector a, SymBitVector b) {
+      return (b > SymBitVector::constant(32, 0x7fffffff)).ite(-b, b);
+    }, 32);
 
     add_opcode("paddb", [] (SymBitVector a, SymBitVector b) {
       return a + b;
@@ -171,12 +384,12 @@ public:
     add_opcode("subpd", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("sub_double", 64, {64, 64});
       return f(a, b);
-    }, 64, true);
+    }, 64, 64, true);
 
     add_opcode("subps", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("sub_single", 32, {32, 32});
       return f(a, b);
-    }, 32, true);
+    }, 32, 32, true);
 
     add_opcode("xorpd", [] (SymBitVector a, SymBitVector b) {
       return a ^ b;
@@ -195,20 +408,25 @@ public:
 
 private:
 
-
   /** Represents the operation done in parallel on the bitvectors */
   typedef std::function<SymBitVector (SymBitVector, SymBitVector)> BinaryOperator;
 
   /** Adds an opcode to our internal maps */
   void add_opcode(std::string opcode, BinaryOperator op,
-                  uint16_t width, bool uninterpreted = false);
+                  uint16_t width, uint16_t output_width = 0, 
+                  bool uninterpreted = false, bool limit1 = false);
 
   /** Opcode -> BinaryOperator */
   std::map<std::string, BinaryOperator> operator_;
   /** Opcode -> Uses uninterpreted function? */
   std::map<std::string, bool> uninterpreted_;
+  /** Opcode -> Only to first <width> bits? */
+  std::map<std::string, bool> limit1_;
   /** Opcode -> Width to break arguments into */
   std::map<std::string, uint16_t> width_;
+  /** Opcode -> output width for results */
+  std::map<std::string, uint16_t> output_width_;
+
 
 
 
