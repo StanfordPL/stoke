@@ -48,15 +48,21 @@ public:
   SymMemory memory;
   /** Symbolic rflags: CF, PF, AF, ZF, SF, OF */
   std::array<SymBool, 6> rf;
+  /** Has a hardware exception occurred? */
+  SymBool exception;
 
   /** Get the address corresponding to a memory location */
   template <typename T>
   SymBitVector get_addr(x64asm::M<T> ref) const;
 
-  /** Lookup the symbolic representation of a generic operand */
-  SymBitVector operator[](const x64asm::Operand o) const;
+  /** Lookup the symbolic representation of a generic operand.
+    * Can modify state if you lookup memory and it causes segfault. */
+  SymBitVector operator[](const x64asm::Operand o);
   /** Lookup the symbolic representation of a particular flag */
   SymBool operator[](const x64asm::Eflags rf) const;
+  /** Lookup the symbolic representation of a generic operand.
+    * Will not trigger symbolic segfaults. */
+  SymBitVector lookup(const x64asm::Operand o) const;
 
   /** Set the operand in the symbolic state to the specified bitvector.
     *
@@ -73,6 +79,11 @@ public:
   void set(const x64asm::Operand o, SymBitVector bv, bool avx = false, bool preserve32 = false);
   /** Set a particular flag */
   void set(const x64asm::Eflags, SymBool b);
+
+  /** Mark a condition triggering an exception */
+  inline void set_exception(SymBool b) {
+    exception = exception | b;
+  }
 
   /** Set the SF/PF/ZF flags according to a given value.  If width
       is provided, it's used; otherwise, we compute it */
@@ -96,6 +107,7 @@ private:
   void build_from_cpustate(const CpuState& cs);
   /** Builds a symbolic CPU state with variables */
   void build_with_suffix(const std::string& str);
+
 
 };
 
