@@ -132,6 +132,7 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
   for(auto it : second_outputs.equality_constraints(second_final, f1.live_outs()))
     constraints.push_back(it);
 
+
   /*
   cout << endl;
   cout << "============= CONSTRAINTS =====================" << endl;

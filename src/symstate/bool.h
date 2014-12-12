@@ -37,6 +37,10 @@ class SymBoolLe;
 class SymBoolLt;
 class SymBoolNot;
 class SymBoolOr;
+class SymBoolSignGe;
+class SymBoolSignGt;
+class SymBoolSignLe;
+class SymBoolSignLt;
 class SymBoolTrue;
 class SymBoolVar;
 class SymBoolXor;
@@ -59,6 +63,10 @@ public:
     LT,
     NOT,
     OR,
+    SIGN_GE,
+    SIGN_GT,
+    SIGN_LE,
+    SIGN_LT,
     TRUE,
     VAR,
     XOR,
@@ -79,24 +87,26 @@ public:
   static SymBool var(std::string name);
 
   /** Constructs the logical AND of two bools */
-  SymBool operator&(const SymBool& other) const;
+  SymBool operator&(const SymBool other) const;
   /** Constructs the logical 'if-and-only-if' for two bools */
-  SymBool operator==(const SymBool& other) const;
+  SymBool operator==(const SymBool other) const;
   /** Constructs the logical implication of two bools */
-  SymBool implies(const SymBool& other) const;
+  SymBool implies(const SymBool other) const;
   /** Constructs the logical negation of this bool */
   SymBool operator!() const;
   /** Constructs the logical OR of two bools */
-  SymBool operator|(const SymBool& other) const;
+  SymBool operator|(const SymBool other) const;
   /** Constructs the logical XOR of two bools */
-  SymBool operator^(const SymBool& other) const;
+  SymBool operator^(const SymBool other) const;
   /** Returns the negation of the logical 'if-and-only-if' */
-  SymBool operator!=(const SymBool& other) const;
+  SymBool operator!=(const SymBool other) const;
   /** Builds an if-then-else expression */
-  SymBool ite(const SymBool& t, const SymBool& f) const;
+  SymBool ite(const SymBool t, const SymBool f) const;
+  /** BUilds an if-then-else expression for bitvectors */
+  SymBitVector ite(const SymBitVector t, const SymBitVector f) const;
 
   /** Tells if two symbolic bools are identical */
-  bool equals(const SymBool& other) const;
+  bool equals(const SymBool other) const;
 
   /** The pointer to the underlying object */
   const SymBoolAbstract * ptr;
@@ -272,6 +282,50 @@ class SymBoolOr : public SymBoolBinop {
 public:
   SymBool::Type type() const {
     return SymBool::Type::OR;
+  }
+};
+
+class SymBoolSignGe : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+public:
+  SymBool::Type type() const {
+    return SymBool::Type::SIGN_GE;
+  }
+};
+
+class SymBoolSignGt : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+public:
+  SymBool::Type type() const {
+    return SymBool::Type::SIGN_GT;
+  }
+};
+
+class SymBoolSignLe : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+public:
+  SymBool::Type type() const {
+    return SymBool::Type::SIGN_LE;
+  }
+};
+
+class SymBoolSignLt : public SymBoolCompare {
+  friend class SymBool;
+  friend class SymBitVector;
+  using SymBoolCompare::SymBoolCompare;
+
+public:
+  SymBool::Type type() const {
+    return SymBool::Type::SIGN_LT;
   }
 };
 
