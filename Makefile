@@ -347,6 +347,8 @@ bin/stoke_testcase: tools/apps/stoke_testcase.cc tools/gadgets/*.h $(SRC_OBJ) $(
 
 TEST_OBJ=\
          tests/fixture.o \
+				 \
+				 tools/target/cpu_info.o \
          \
          src/ext/gtest-1.7.0/libgtest.a \
          src/ext/gtest-1.7.0/libgtest_main.a
