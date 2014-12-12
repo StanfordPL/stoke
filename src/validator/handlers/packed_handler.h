@@ -362,39 +362,39 @@ public:
     }, 64);
 
     add_opcode("phaddw", [] (SymBitVector a, SymBitVector b) {
-        return (b[127][112] + b[111][96]) ||
-               (b[95][80]   + b[79][64])  ||
-               (b[63][48]   + b[47][32])  ||
-               (b[31][16]   + b[15][0])   ||
-               (a[127][112] + a[111][96]) ||
-               (a[95][80]   + a[79][64])  ||
-               (a[63][48]   + a[47][32])  ||
-               (a[31][16]   + a[15][0]);
+      return (b[127][112] + b[111][96]) ||
+             (b[95][80]   + b[79][64])  ||
+             (b[63][48]   + b[47][32])  ||
+             (b[31][16]   + b[15][0])   ||
+             (a[127][112] + a[111][96]) ||
+             (a[95][80]   + a[79][64])  ||
+             (a[63][48]   + a[47][32])  ||
+             (a[31][16]   + a[15][0]);
     }, 128);
 
     add_opcode("phaddd", [] (SymBitVector a, SymBitVector b) {
-        return (b[127][96] + b[95][64]) ||
-               (b[63][32]  + b[31][0])  ||
-               (a[127][96] + a[95][64]) ||
-               (a[63][32]  + a[31][0]);
+      return (b[127][96] + b[95][64]) ||
+             (b[63][32]  + b[31][0])  ||
+             (a[127][96] + a[95][64]) ||
+             (a[63][32]  + a[31][0]);
     }, 128);
 
     add_opcode("phsubw", [] (SymBitVector a, SymBitVector b) {
-        return (b[111][96] - b[127][112]) ||
-               (b[79][64]  - b[95][80]  )  ||
-               (b[47][32]  - b[63][48]  )  ||
-               (b[15][0]   - b[31][16]  )   ||
-               (a[111][96] - a[127][112]) ||
-               (a[79][64]  - a[95][80]  )  ||
-               (a[47][32]  - a[63][48]  )  ||
-               (a[15][0]   - a[31][16]  );
+      return (b[111][96] - b[127][112]) ||
+             (b[79][64]  - b[95][80]  )  ||
+             (b[47][32]  - b[63][48]  )  ||
+             (b[15][0]   - b[31][16]  )   ||
+             (a[111][96] - a[127][112]) ||
+             (a[79][64]  - a[95][80]  )  ||
+             (a[47][32]  - a[63][48]  )  ||
+             (a[15][0]   - a[31][16]  );
     }, 128);
 
     add_opcode("phsubd", [] (SymBitVector a, SymBitVector b) {
-        return (b[95][64] - b[127][96]) ||
-               (b[31][0]  - b[63][32] )  ||
-               (a[95][64] - a[127][96]) ||
-               (a[31][0]  - a[63][32] );
+      return (b[95][64] - b[127][96]) ||
+             (b[31][0]  - b[63][32] )  ||
+             (a[95][64] - a[127][96]) ||
+             (a[31][0]  - a[63][32] );
     }, 128);
 
     add_opcode("pmaxsb", [] (SymBitVector a, SymBitVector b) {
@@ -547,39 +547,39 @@ public:
     add_opcode("psubsb", [] (SymBitVector a, SymBitVector b) {
       auto tmp = (a.extend(10) - b.extend(10));
       return (tmp.s_gt(SymBitVector::constant(10, 0x7f))).ite(
-        SymBitVector::constant(8, 0x7f),
-        (tmp.s_lt(SymBitVector::constant(10, -0x80)).ite(
-          SymBitVector::constant(8, 0x80),
-          tmp[7][0])));
+               SymBitVector::constant(8, 0x7f),
+               (tmp.s_lt(SymBitVector::constant(10, -0x80)).ite(
+                  SymBitVector::constant(8, 0x80),
+                  tmp[7][0])));
     }, 8);
 
     add_opcode("psubsw", [] (SymBitVector a, SymBitVector b) {
       auto tmp = (a.extend(18) - b.extend(18));
       return (tmp.s_gt(SymBitVector::constant(18, 0x7fff))).ite(
-        SymBitVector::constant(16, 0x7fff),
-        (tmp.s_lt(SymBitVector::constant(18, -0x8000)).ite(
-          SymBitVector::constant(16, 0x8000),
-          tmp[15][0])));
+               SymBitVector::constant(16, 0x7fff),
+               (tmp.s_lt(SymBitVector::constant(18, -0x8000)).ite(
+                  SymBitVector::constant(16, 0x8000),
+                  tmp[15][0])));
     }, 16);
 
     add_opcode("psubusb", [] (SymBitVector a, SymBitVector b) {
       auto zeros = SymBitVector::constant(2, 0);
       auto tmp = ((zeros || a) - (zeros || b));
       return (tmp.s_gt(SymBitVector::constant(10, 0xff))).ite(
-        SymBitVector::constant(8, 0xff),
-        (tmp.s_lt(SymBitVector::constant(10, 0)).ite(
-          SymBitVector::constant(8, 0x0),
-          tmp[7][0])));
+               SymBitVector::constant(8, 0xff),
+               (tmp.s_lt(SymBitVector::constant(10, 0)).ite(
+                  SymBitVector::constant(8, 0x0),
+                  tmp[7][0])));
     }, 8);
 
     add_opcode("psubusw", [] (SymBitVector a, SymBitVector b) {
       auto zeros = SymBitVector::constant(2, 0);
       auto tmp = ((zeros || a) - (zeros || b));
       return (tmp.s_gt(SymBitVector::constant(18, 0xffff))).ite(
-        SymBitVector::constant(16, 0xffff),
-        (tmp.s_lt(SymBitVector::constant(18, -0x0)).ite(
-          SymBitVector::constant(16, 0x0),
-          tmp[15][0])));
+               SymBitVector::constant(16, 0xffff),
+               (tmp.s_lt(SymBitVector::constant(18, -0x0)).ite(
+                  SymBitVector::constant(16, 0x0),
+                  tmp[15][0])));
     }, 16);
 
     add_opcode("pxor", [] (SymBitVector a, SymBitVector b) {
@@ -595,6 +595,66 @@ public:
       SymFunction f("sub_single", 32, {32, 32});
       return f(a, b);
     }, 32, 32, true);
+
+    add_opcode("rcpps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("approximate_reciprocal_single", 32, {32});
+      return f(b);
+    }, 32, 32, true);
+
+    add_opcode("rcpss", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("approximate_reciprocal_single", 32, {32});
+      return f(b);
+    }, 32, 32, true, true);
+
+    add_opcode("rsqrtps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("approximate_reciprocal_sqrt_single", 32, {32});
+      return f(b);
+    }, 32, 32, true);
+
+    add_opcode("rsqrtss", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("approximate_reciprocal_sqrt_single", 32, {32});
+      return f(b);
+    }, 32, 32, true, true);
+
+    add_opcode("sqrtpd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("sqrt_double", 64, {64});
+      return f(b);
+    }, 64, 64, true);
+
+    add_opcode("sqrtps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("sqrt_single", 32, {32});
+      return f(b);
+    }, 32, 32, true);
+
+    add_opcode("sqrtsd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("sqrt_double", 64, {64});
+      return f(b);
+    }, 64, 64, true, true);
+
+    add_opcode("sqrtss", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("sqrt_single", 32, {32});
+      return f(b);
+    }, 32, 32, true, true);
+
+    add_opcode("subpd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("sub_double", 64, {64, 64});
+      return f(a, b);
+    }, 64, 64, true);
+
+    add_opcode("subps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("sub_single", 32, {32, 32});
+      return f(a, b);
+    }, 32, 32, true);
+
+    add_opcode("subsd", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("sub_double", 64, {64, 64});
+      return f(a, b);
+    }, 64, 64, true, true);
+
+    add_opcode("subss", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("sub_single", 32, {32, 32});
+      return f(a, b);
+    }, 32, 32, true, true);
 
     add_opcode("xorpd", [] (SymBitVector a, SymBitVector b) {
       return a ^ b;
