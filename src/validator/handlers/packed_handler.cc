@@ -60,14 +60,28 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   // Do the loop to build the result
   uint16_t total_width = dest.size();
   uint16_t loop_width = width_[opcode];
+  uint16_t output_width = output_width_[opcode];
+  bool limit = limit1_[opcode];
   auto f = operator_[opcode];
 
   SymBitVector result;
 
   if(loop_width) {
     result = f(arg1[loop_width-1][0], arg2[loop_width-1][0]);
-    for(size_t i = loop_width; i < total_width; i = i + loop_width) {
-      result = f(arg1[i + loop_width - 1][i], arg2[i + loop_width - 1][i]) || result;
+
+    if(limit) {
+      // Only apply binop to lower bits.  Useful for scalar operations.
+      result = arg1[total_width - 1][output_width] || result;
+
+    } else {
+      // Loop through sets of 'loop_width' in the input and apply the binary
+      // operator in a pairwise way.
+
+      for(size_t i = loop_width, j = output_width; 
+                 i < total_width && j < total_width; 
+                 i = i + loop_width, j = j + output_width) {
+        result = f(arg1[i + loop_width - 1][i], arg2[i + loop_width - 1][i]) || result;
+      }
     }
   } else {
     result = f(arg1, arg2);
@@ -80,15 +94,23 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 }
 
 void PackedHandler::add_opcode(std::string opcode, BinaryOperator op,
-                               uint16_t width, bool uninterpreted) {
+                               uint16_t width, uint16_t output_width, 
+                               bool uninterpreted, bool limit1) {
+
+  if(output_width == 0)
+    output_width = width;
 
   operator_[opcode] = op;
   width_[opcode] = width;
+  output_width_[opcode] = output_width;
   uninterpreted_[opcode] = uninterpreted;
+  limit1_[opcode] = limit1;
 
   operator_["v" + opcode] = op;
   width_["v" + opcode] = width;
+  output_width_["v" + opcode] = output_width;
   uninterpreted_["v" + opcode] = uninterpreted;
+  limit1_["v" + opcode] = limit1;
 
 }
 
