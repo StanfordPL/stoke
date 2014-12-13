@@ -350,7 +350,7 @@ private:
         uint64_t expected_flag = expect.rf.is_set(op.index());
 
         std::stringstream tmp;
-        tmp << "Value of flag " << op.index() << " differs.";
+        tmp << "Value of flag " << op << " differs.";
         EXPECT_CPU_EQ_INT(expected_flag, actual_flag, tmp.str());
       }
     }
