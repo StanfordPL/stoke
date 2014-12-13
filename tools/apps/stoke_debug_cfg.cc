@@ -56,11 +56,11 @@ auto& view = FlagArg::create("view")
              .description("View cfg immediately");
 
 string tempfile(const string& temp) {
-	vector<char> v(temp.begin(), temp.end());
-	v.push_back('\0');
+  vector<char> v(temp.begin(), temp.end());
+  v.push_back('\0');
 
-	const auto fd = mkstemp(v.data());
-	return string(v.begin(), v.end()-1);
+  const auto fd = mkstemp(v.data());
+  return string(v.begin(), v.end()-1);
 }
 
 void to_dot(const string& dot_file) {
@@ -93,14 +93,14 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	const auto dot_file = tempfile("/tmp/stoke_debug_cfg.dot.XXXXXX");
+  const auto dot_file = tempfile("/tmp/stoke_debug_cfg.dot.XXXXXX");
 
   to_dot(dot_file);
   if (!to_pdf(dot_file, out.value())) {
     Console::error(1) << "Unable to save file!" << endl;
   } else if (view && !view_pdf(out.value())) {
     Console::error(1) << "Unable to open file for viewing!" << endl;
-  } 
+  }
 
   return 0;
 }
