@@ -38,7 +38,7 @@ TEST_F(ValidatorMovapdTest, NotANoop) {
 
 }
 
-TEST_F(ValidatorMovapdTest, DISABLED_PossiblyUnalignedBad) {
+TEST_F(ValidatorMovapdTest, PossiblyUnalignedBad) {
 
   target_ << "movapd %xmm3, (%rax)" << std::endl;
   target_ << "movapd (%rax), %xmm5" << std::endl;
@@ -61,6 +61,8 @@ TEST_F(ValidatorMovapdTest, AlwaysAlignedGood) {
   rewrite_ << "movapd %xmm3, %xmm5" << std::endl;
   rewrite_ << "retq" << std::endl;
 
-  assert_ceg();
+  set_live_outs(x64asm::RegSet::empty() + x64asm::xmm5);
+
+  assert_equiv();
 
 }

@@ -112,6 +112,10 @@ public:
   std::vector<SymBool> equality_constraints(const SymState& other,
       const x64asm::RegSet& rs = x64asm::RegSet::universe()) const;
 
+  /** Set the line number.  Used for memory aliasing analysis. */
+  void set_lineno(size_t line) {
+    lineno_ = line;
+  }
 
 private:
 
@@ -120,7 +124,8 @@ private:
   /** Builds a symbolic CPU state with variables */
   void build_with_suffix(const std::string& str);
 
-
+  /** The current line number */
+  size_t lineno_;
 };
 
 }; //namespace stoke

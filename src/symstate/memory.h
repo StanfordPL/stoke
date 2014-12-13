@@ -16,6 +16,7 @@
 #ifndef _STOKE_SRC_SYMSTATE_SYM_MEMORY_H
 #define _STOKE_SRC_SYMSTATE_SYM_MEMORY_H
 
+#include "src/analysis/alias.h"
 #include "src/state/memory.h"
 #include "src/symstate/bitvector.h"
 
@@ -27,16 +28,22 @@ class SymMemory {
 
 public:
 
-  void set_parent(SymState* ss) {
+  /** Set the parent symbolic state */
+  SymMemory& set_parent(SymState* ss) {
     state_ = ss;
+    return *this;
+  }
+  /** Setup an aliasing analysis */
+  SymMemory& set_analysis(AliasAnalysis* aa) {
+    analysis_ = aa;
   }
 
   /** Updates the memory with a write.
    *  Returns condition for segmentation fault */
-  SymBool write(SymBitVector address, SymBitVector value, uint16_t size);
+  SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no);
 
   /** Reads from the memory.  Returns value and segv condition. */
-  std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size) const;
+  std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no) const;
 
   /** Set concrete initialization values */
   void init_concrete(const Memory& stack, const Memory& heap);
@@ -55,6 +62,7 @@ private:
     SymBitVector address;
     SymBitVector value;
     uint16_t size;
+    size_t line_no;
   };
 
   /** Keep track of all the memory writes */
@@ -68,6 +76,8 @@ private:
     return temp_++;
   }
 
+  /** Optional aliasing analysis for simplication */
+  AliasAnalysis* analysis_;
   /** Reference back to symbolic state */
   SymState* state_;
 

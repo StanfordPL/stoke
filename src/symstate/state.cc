@@ -102,7 +102,7 @@ SymBitVector SymState::operator[](const Operand o) {
     uint16_t size = o.size();
     auto addr = get_addr(m);
 
-    auto p = memory.read(addr, size);
+    auto p = memory.read(addr, size, lineno_);
     set_sigsegv(p.second);
 
     return p.first;
@@ -142,7 +142,7 @@ SymBitVector SymState::lookup(const Operand o) const {
     uint16_t size = o.size();
     auto addr = get_addr(m);
 
-    auto p = memory.read(addr, size);
+    auto p = memory.read(addr, size, lineno_);
     return p.first;
   }
 
@@ -204,7 +204,7 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto& m = reinterpret_cast<const M8&>(o);
     auto addr = get_addr(m);
 
-    auto segv = memory.write(addr, bv, width);
+    auto segv = memory.write(addr, bv, width, lineno_);
     set_sigsegv(segv);
     return;
   }
