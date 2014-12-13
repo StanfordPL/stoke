@@ -48,8 +48,12 @@ public:
   SymMemory memory;
   /** Symbolic rflags: CF, PF, AF, ZF, SF, OF */
   std::array<SymBool, 6> rf;
-  /** Has a hardware exception occurred? */
-  SymBool exception;
+  /** Has a #NP, #SS or #AC exception occurred? (These trigger SIGBUG on linux)*/
+  SymBool sigbus;
+  /** Has a #DE, #MF or #XM exception occurred? (These trigger SIGFPE on linux) */
+  SymBool sigfpe;
+  /** Has a #OF, #BR, #TS, #GP or #PF exception occurred? These trigger SIGSEGV on linux) */
+  SymBool sigsegv;
 
   /** Get the address corresponding to a memory location */
   template <typename T>
@@ -80,9 +84,17 @@ public:
   /** Set a particular flag */
   void set(const x64asm::Eflags, SymBool b);
 
-  /** Mark a condition triggering an exception */
-  inline void set_exception(SymBool b) {
-    exception = exception | b;
+  /** Mark that a #DE, #MF or #XM exception conditionally occurs */
+  inline void set_sigfpe(SymBool b) {
+    sigfpe = sigfpe | b;
+  }
+  /** Mark that a #NP, #SS or #AC exception conditionally occurs. */
+  inline void set_sigbus(SymBool b) {
+    sigbus = sigbus | b;
+  }
+  /** Has a #OF, #BR, #TS, #GP or #PF exception occurred? These trigger SIGSEGV on linux) */
+  inline void set_sigsegv(SymBool b) {
+    sigsegv = sigsegv | b;
   }
 
   /** Set the SF/PF/ZF flags according to a given value.  If width

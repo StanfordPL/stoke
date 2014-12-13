@@ -63,18 +63,18 @@ possibility (besides a validator bug) is that it has undefined behavior.
 What's Supported
 =====
 
-- Many of the 'simple' opcodes that do integer arithmetic, moves, etc.
-- Some SSE instructions
+- The instructions we had time to implement.  There's a good selection of SSE/AVX/AVX2 instructions, but it's definitely not complete.
 - Operands: immediates, general purpose registers, xmm/ymm registers
 - Live outs: general purpose registers, xmm registers, status flags
+- Memory is supported, but not as an input or an output.  For example, we can
+prove equivalence of two codes that use memory to do their computation so long
+as the final state of the memory doesn't matter.
 
 What's not
 -----
 
-- Memory (coming soon!)
+- Support for the floating point stack, MMX, and other registers.  
 - Control flow
-- AVX/AVX2 instructions
-- Support for floating point, MMX, and other registers.  
 
 All of these things are possible for the future, in some degree.  Adding
 support for more types of registers/operands is usually easy, but it then
@@ -90,7 +90,6 @@ There are five main components to the validator:
 - The solver-independent representation of symbolic bitvectors, booleans, and states (/symstate)
 - The SMT solver interface (/solver)
 - The new handlers (/validator/handlers)
-- The legacy handlers (/validator/legacy)
 - The glue holding it all together (/validator)
 
 The overall structure of the code is as follows.  The symbolic bitvectors
@@ -108,7 +107,7 @@ takes an operand (like a register '%rax' or memory reference
     '$0x10(%rcx,%rdx,2)') and returns the current symbolic value of this
 operand.  It also has a set() function with takes an operand and symbolic
 value, and sets the operand in the symbolic state appropriately.  The semantics
-of set depend on the destination; for example, moves to a 32-bit subregister of
+of set depend on the destination; for example, moves to a 32-bit sub-register of
 a 64-bit register will zero out the top 32 bits (although there's an optional
     parameter to override this behavior).  
 
@@ -116,9 +115,12 @@ The `Handler` classes build circuits for a particular instruction.  These
 circuits are represented in a symbolic state.  The interface is simple: an
 `is_supported` method that reports if an instruction is supported, and a
 `build_circuit` method which takes a symbolic state and updates it in place.
-Handwritten handlers should just support a few instructions with much of the
-implementation in common.  The legacy handlers are the big exception -- enter
-if you dare!  
+The 'SimpleHandler' and 'PackedHandler' classes make it easy to implement a
+variety of instructions easily.  See if you can use one of those before
+creating a handler of your own.  As a rule of thumb, if you need to write a new
+helper function specific to your handler, it's a good idea to start a new one
+from scratch.  See the ConditionalHandler for setcc/cmovcc as an example of
+this.
 
 Finally, the SMTSolver subclasses (e.g. Z3Solver) will take a vector of
 symbolic bools and check if they're satisfiable.  The Validator class
@@ -138,7 +140,7 @@ null and will crash when you try to use it.  The underlying ASTs are all const.
 
 - Be sure to study how operators are overloaded.  The || operator is for
 *concatenation*, not for logical or.  Operators &, |, ^ correspond to bitwise
-and, or and xor.  +, -, \*, /, <<, >> correspond to addition, substraction,
+and, or and xor.  +, -, \*, /, <<, >> correspond to addition, subtraction,
   multiplication, unsigned division, and unsigned bit shifts.  Signed division
   and bit-shifts have their own member functions.  The == operator returns a
   symbolic bool specifying if two bit vectors are equal.  The indexing operator
@@ -171,10 +173,11 @@ Implementing New Instructions
 -----
 
 The best way to implement a new instruction is to look at how old ones are done
-and create a new handler, or modify an existing one.  Try to use an existing
-handler if possible to avoid duplication of code; many instructions use the
-same core construction to build a circuit.  As you build or modify handlers,
-please keep in mind:
+and create a new handler, or preferably, modify an existing one.  Try to use an
+existing handler if possible to avoid duplication of code; many instructions
+use the same core construction to build a circuit.  Look at PackedHandler and
+SimpleHandler in particular.  As you build or modify handlers, please keep in
+mind:
 
 - If a certain pattern is emerging across several handlers that can be
 abstracted, consider adding a helper function to the Handler class (from which

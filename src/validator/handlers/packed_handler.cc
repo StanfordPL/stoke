@@ -31,10 +31,10 @@ Handler::SupportLevel PackedHandler::get_support(const x64asm::Instruction& inst
       return Handler::NONE;
   }
 
-  if(!opcodes_.count(opcode))
+  if(!opcodes_[opcode])
     return Handler::NONE;
 
-  if(opcodes_[opcode].get_uninterpreted()) {
+  if(opcodes_[opcode]->get_uninterpreted()) {
     return Handler::BASIC;
   } else {
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
@@ -51,7 +51,7 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   Operand op1 = dest;
   Operand op2 = dest;
 
-  int arity = instr.arity();
+  size_t arity = instr.arity();
 
   if(arity == 2) {
     op1 = instr.get_operand<Operand>(0);
@@ -68,7 +68,7 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 
 
   // Do the loop to build the result
-  auto entry = opcodes_[opcode];
+  auto& entry = *opcodes_[opcode];
   uint16_t input_width = entry.get_input_width();
   if(input_width == 0)
     input_width = op1.size();
@@ -77,7 +77,21 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     output_width = input_width;
   bool limit = entry.get_only_one();
   bool clear = entry.get_clear();
+  bool avx_alignment = entry.get_avx_alignment();
 
+  // Check for memory alignment problems
+  if(avx_alignment) {
+    for(size_t i = 0; i < arity; ++i) {
+      Operand operand = instr.get_operand<Operand>(i);
+      if(operand.is_typical_memory()) {
+        auto addr = state.get_addr(*(reinterpret_cast<M8*>(&operand)));
+        uint64_t bits = (dest.size() == 128 ? 16 : 32);
+        state.set_sigsegv(addr[bits-1][0] != SymBitVector::constant(bits, 0));    
+      }
+    }
+  }
+
+  // Compute the result
   SymBitVector result;
 
   if(limit) {
