@@ -787,9 +787,9 @@ private:
     //Note: memory leak here.  Make custom destructor.
     PackedOpcode* entry = new PackedOpcode(opcode, op);
     entry->set_input_width(width)
-          .set_output_width(output_width)
-          .set_uninterpreted(uninterpreted)
-          .set_only_one(limit1);
+    .set_output_width(output_width)
+    .set_uninterpreted(uninterpreted)
+    .set_only_one(limit1);
 
     opcodes_[opcode] = entry;
     opcodes_["v" + opcode] = entry;

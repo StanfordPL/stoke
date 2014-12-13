@@ -86,7 +86,7 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
       if(operand.is_typical_memory()) {
         auto addr = state.get_addr(*(reinterpret_cast<M8*>(&operand)));
         uint64_t bits = (dest.size() == 128 ? 16 : 32);
-        state.set_sigsegv(addr[bits-1][0] != SymBitVector::constant(bits, 0));    
+        state.set_sigsegv(addr[bits-1][0] != SymBitVector::constant(bits, 0));
       }
     }
   }

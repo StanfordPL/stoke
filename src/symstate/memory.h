@@ -21,9 +21,15 @@
 
 namespace stoke {
 
+class SymState;
+
 class SymMemory {
 
 public:
+
+  void set_parent(SymState* ss) {
+    state_ = ss;
+  }
 
   /** Updates the memory with a write.
    *  Returns condition for segmentation fault */
@@ -61,6 +67,9 @@ private:
   static uint64_t temp() {
     return temp_++;
   }
+
+  /** Reference back to symbolic state */
+  SymState* state_;
 
 
 };
