@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
@@ -54,8 +55,16 @@ auto& view = FlagArg::create("view")
              .alternate("v")
              .description("View cfg immediately");
 
-void to_dot() {
-  ofstream ofs(string("/tmp/stoke.") + getenv("USER") + ".dot");
+string tempfile(const string& temp) {
+	vector<char> v(temp.begin(), temp.end());
+	v.push_back('\0');
+
+	const auto fd = mkstemp(v.data());
+	return string(v.begin(), v.end()-1);
+}
+
+void to_dot(const string& dot_file) {
+  ofstream ofs(dot_file);
 
   TargetGadget target;
 
@@ -67,21 +76,15 @@ void to_dot() {
   dw(ofs, target);
 }
 
-bool to_pdf() {
+bool to_pdf(const string& dot_file, const string& pdf_file) {
   Terminal term;
-  term << "cat /tmp/stoke.$USER.dot | dot -Tpdf > " << out.value() << endl;
+  term << "cat " << dot_file << " | dot -Tpdf > " << pdf_file << " 2> /dev/null" << endl;
   return term.result() == 0;
 }
 
-bool view_pdf() {
+bool view_pdf(const string& pdf_file) {
   Terminal term;
-  term << "evince " << out.value() << endl;
-  return term.result() == 0;
-}
-
-bool rm_pdf() {
-  Terminal term;
-  term << "rm -f " << out.value() << endl;
+  term << "evince " << pdf_file << endl;
   return term.result() == 0;
 }
 
@@ -90,14 +93,14 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-  to_dot();
-  if (!to_pdf()) {
+	const auto dot_file = tempfile("/tmp/stoke_debug_cfg.dot.XXXXXX");
+
+  to_dot(dot_file);
+  if (!to_pdf(dot_file, out.value())) {
     Console::error(1) << "Unable to save file!" << endl;
-  } else if (view && !view_pdf()) {
+  } else if (view && !view_pdf(out.value())) {
     Console::error(1) << "Unable to open file for viewing!" << endl;
-  } else if (view && !rm_pdf()) {
-    Console::error(1) << "Unable to remove file!" << endl;
-  }
+  } 
 
   return 0;
 }
