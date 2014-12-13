@@ -676,25 +676,90 @@ private:
   /** Represents the operation done in parallel on the bitvectors */
   typedef std::function<SymBitVector (SymBitVector, SymBitVector)> BinaryOperator;
 
-  /** Adds an opcode to our internal maps */
-  void add_opcode(std::string opcode, BinaryOperator op,
+  class PackedOpcode {
+
+    public:
+      /** Don't use this.  Leaves everything undefined. */
+      PackedOpcode() {}
+
+      PackedOpcode(std::string opcode, BinaryOperator binop) :
+        opcode_(opcode), binop_(binop) {
+        set_uninterpreted(false);
+        set_only_one(false);
+        set_clear(false);
+        set_input_width(0);
+        set_output_width(0);
+        set_fixed_arg(-1);
+      }
+
+      PackedOpcode& set_uninterpreted(bool b = true) {
+        uninterpreted_ = b;
+        return *this;
+      }
+      PackedOpcode& set_only_one(bool b = true) {
+        only_one_ = b;
+        return *this;
+      }
+      PackedOpcode& set_clear(bool b = true) {
+        clear_unset_ = b;
+        return *this;
+      }
+      PackedOpcode& set_input_width(uint16_t width) {
+        input_width_ = width;
+        return *this;
+      }
+      PackedOpcode& set_output_width(uint16_t width) {
+        output_width_ = width;
+        return *this;
+      }
+      PackedOpcode& set_fixed_arg(int16_t index) {
+        fixed_arg_ = index;
+        return *this;
+      }
+
+      SymBitVector operator()(x64asm::Operand arg1, SymBitVector bv1, x64asm::Operand arg2, SymBitVector bv2, SymState& ss) {
+        return binop_(bv1, bv2);
+      }
+
+      bool get_uninterpreted() { return uninterpreted_; }
+      bool get_only_one() { return only_one_; }
+      bool get_clear() { return clear_unset_; }
+      uint16_t get_input_width() { return input_width_; }
+      uint16_t get_output_width() { return output_width_; }
+      int16_t get_fixed_arg() { return fixed_arg_; }
+
+    private:
+
+      BinaryOperator binop_;
+
+      std::string opcode_;
+      bool uninterpreted_;
+      bool only_one_;
+      bool clear_unset_;
+      int16_t  fixed_arg_;
+      uint16_t input_width_;
+      uint16_t output_width_;
+  };
+
+    /** Adds an opcode to our internal maps */
+  PackedOpcode& add_opcode(std::string opcode, BinaryOperator op,
                   uint16_t width, uint16_t output_width = 0,
-                  bool uninterpreted = false, bool limit1 = false);
+                  bool uninterpreted = false, bool limit1 = false) {
 
-  /** Opcode -> BinaryOperator */
-  std::map<std::string, BinaryOperator> operator_;
-  /** Opcode -> Uses uninterpreted function? */
-  std::map<std::string, bool> uninterpreted_;
-  /** Opcode -> Only to first <width> bits? */
-  std::map<std::string, bool> limit1_;
-  /** Opcode -> Width to break arguments into */
-  std::map<std::string, uint16_t> width_;
-  /** Opcode -> output width for results */
-  std::map<std::string, uint16_t> output_width_;
+    PackedOpcode entry(opcode, op);
+    entry.set_input_width(width)
+         .set_output_width(output_width)
+         .set_uninterpreted(uninterpreted)
+         .set_only_one(limit1);
 
+    opcodes_[opcode] = entry;
+    opcodes_["v" + opcode] = entry;
 
+    return opcodes_[opcode];
+  }
 
-
+  /** Opcode -> PackedOpcode */
+  std::map<std::string, PackedOpcode> opcodes_;
 
 };
 
