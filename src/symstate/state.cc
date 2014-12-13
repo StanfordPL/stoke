@@ -42,6 +42,7 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   set(eflags_of, SymBool::constant(cs.rf.is_set(eflags_of.index())));
 
   memory.init_concrete(cs.stack, cs.heap);
+  memory.set_parent(this);
 
   sigbus = SymBool::_false();
   sigfpe = SymBool::_false();
@@ -68,6 +69,8 @@ void SymState::build_with_suffix(const string& suffix) {
   set(eflags_zf, SymBool::var("%zf_" + suffix));
   set(eflags_sf, SymBool::var("%sf_" + suffix));
   set(eflags_of, SymBool::var("%of_" + suffix));
+
+  memory.set_parent(this);
 
   sigbus = SymBool::_false();
   sigfpe = SymBool::_false();

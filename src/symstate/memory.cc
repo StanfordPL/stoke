@@ -14,6 +14,7 @@
 
 
 #include "src/symstate/memory.h"
+#include "src/symstate/state.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 using namespace std;
@@ -34,7 +35,14 @@ uint64_t read_quadword(const Memory& m, uint64_t base, uint64_t i) {
 }
 
 SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size) {
-  MemoryWrite mw({ address, value, size });
+
+  SymBitVector addr_var = SymBitVector::var(64, "ADDRESS_" + to_string(temp()));
+  SymBitVector value_var = SymBitVector::var(size, "MEMORY_" + to_string(temp()));
+
+  state_->constraints.push_back(addr_var == address);
+  state_->constraints.push_back(value_var == value);
+
+  MemoryWrite mw({ addr_var, value_var, size });
   writes_.push_back(mw);
 
   if(heap_.type()) {
