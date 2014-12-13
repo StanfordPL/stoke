@@ -23,10 +23,19 @@ Handler::SupportLevel AddHandler::get_support(const x64asm::Instruction& instr) 
 
   string opcode = get_opcode(instr);
 
+  if(opcode == "adcb" || opcode == "adcw" || opcode == "adcl" || opcode == "adcq")
+    return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
+
   if(opcode == "addb" || opcode == "addw" || opcode == "addl" || opcode == "addq")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
 
-  if(opcode == "adcb" || opcode == "adcw" || opcode == "adcl" || opcode == "adcq")
+  if(opcode == "cmpb" || opcode == "cmpw" || opcode == "cmpl" || opcode == "cmpq")
+    return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
+
+  if(opcode == "sbbb" || opcode == "sbbw" || opcode == "sbbl" || opcode == "sbbq")
+    return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
+
+  if(opcode == "subb" || opcode == "subw" || opcode == "subl" || opcode == "subq")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
 
   if(opcode == "xaddb" || opcode == "xaddw" || opcode == "xaddl" || opcode == "xaddq")
@@ -47,8 +56,21 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   }
 
   string opcode = get_opcode(instr);
-  bool carry = opcode[2] == 'c';
-  bool exchange = opcode[0] == 'x';
+
+  /* Use the carry flag in the addition? */
+  bool carry = opcode.substr(0, 3) == "adc" || 
+               opcode.substr(0, 3) == "sbb";
+
+  /* Flip the two arguments before adding */
+  bool exchange = opcode.substr(0, 4) == "xadd";
+
+  /* Negate the source argument? */
+  bool subtract = opcode.substr(0, 3) == "sub" ||
+                  opcode.substr(0, 3) == "sbb" ||
+                  opcode.substr(0, 3) == "cmp";
+
+  /* Don't actually write out the result */
+  bool compare = opcode.substr(0, 3) == "cmp";
 
   // Fetch Operands
   Operand dest = instr.get_operand<Operand>(0);
@@ -69,29 +91,53 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   // Sign/zero extend the source to destionation
   if (src.size() < dest.size()) {
     src_bv = src_bv.extend(dest.size());
-    width = dest.size();
   }
 
-  SymBitVector ext_src = SymBitVector::constant(2, 0) || src_bv;
-  SymBitVector ext_dst = SymBitVector::constant(2, 0) || dst_bv;
+  if(subtract) {
+    src_bv = !src_bv;
+  }
+
+  // Arrange for subtraction, carry flags, etc.
+  SymBitVector ext_src = SymBitVector::constant(1, 0) || src_bv;
+  SymBitVector ext_dst = SymBitVector::constant(1, 0) || dst_bv;
+
+  if(subtract) {
+    // This addition takes care of two things at once; on one hand,
+    // if finishes the two's complement negation started earlier.  
+    // On the other, it adds one to the src if the carry flag is
+    // set.  These are accomplished simultaneously here.
+    if(!carry)
+      ext_src = ext_src + SymBitVector::constant(width + 1, 1);
+    else
+      ext_src = state[eflags_cf].ite( ext_src,
+                                      ext_src + SymBitVector::constant(width + 1, 1));
+                
+  }
+
+  if(carry && !subtract) {
+    ext_src = state[eflags_cf].ite(
+              ext_src + SymBitVector::constant(width + 1, 1),
+              ext_src);
+  }
 
   // Compute the final values
   SymBitVector total = ext_src + ext_dst;
-  if(carry) {
-    total = state[eflags_cf].ite(
-              total + SymBitVector::constant(width + 2, 1),
-              total);
-  }
-
   // Compute auxiliary carry
   SymBitVector aux = (SymBitVector::constant(1, 0) || state[src][3][0]) +
                      (SymBitVector::constant(1, 0) || dst_bv[3][0]);
 
   // Set the destination value; takes care of perserving
   // other bits and setting other bits to zero
-  state.set(dest, total[width-1][0]);
+  if(!compare)
+    state.set(dest, total[width-1][0]);
+
   state.set(eflags_of, plus_of(src_bv[width-1], dst_bv[width-1], total[width-1]));
-  state.set(eflags_cf, total[width] | total[width+1]);
+
+  if(!subtract)
+    state.set(eflags_cf, total[width]);
+  else
+    state.set(eflags_cf, !total[width]);
+
   state.set(eflags_af, aux[4]);
   state.set_szp_flags(total[width-1][0]);
 }

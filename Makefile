@@ -64,13 +64,6 @@ SRC_OBJ=\
 	src/validator/handler.o \
 	src/validator/validator.o \
 	\
-	src/validator/legacy/c_interface.o \
-	src/validator/legacy/legacy.o \
-	src/validator/legacy/legacy_handlers.o \
-	src/validator/legacy/switch.o \
-	src/validator/legacy/sym_state.o \
-	src/validator/legacy/validator.o \
-	\
 	src/validator/handlers/add_handler.o \
 	src/validator/handlers/combo_handler.o \
 	src/validator/handlers/lea_handler.o   \

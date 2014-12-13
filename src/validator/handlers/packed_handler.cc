@@ -27,7 +27,7 @@ Handler::SupportLevel PackedHandler::get_support(const x64asm::Instruction& inst
   for(size_t i = 0; i < instr.arity(); ++i) {
     Operand o = instr.get_operand<Operand>(i);
     if(!o.is_gp_register() && !o.is_typical_memory() && !o.is_sse_register() &&
-       !o.is_immediate())
+        !o.is_immediate())
       return Handler::NONE;
   }
 
@@ -101,7 +101,7 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     for(i = input_width, j = output_width;
         i < op1.size() && i < op2.size() && j < dest.size();
         i = i + input_width, j = j + output_width) {
-      result = entry(op1, arg1[i + input_width - 1][i], 
+      result = entry(op1, arg1[i + input_width - 1][i],
                      op2, arg2[i + input_width - 1][i], state) || result;
     }
 
