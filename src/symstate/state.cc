@@ -43,7 +43,9 @@ void SymState::build_from_cpustate(const CpuState& cs) {
 
   memory.init_concrete(cs.stack, cs.heap);
 
-  exception = SymBool::_false();
+  sigbus = SymBool::_false();
+  sigfpe = SymBool::_false();
+  sigsegv = SymBool::_false();
 }
 
 void SymState::build_with_suffix(const string& suffix) {
@@ -67,7 +69,9 @@ void SymState::build_with_suffix(const string& suffix) {
   set(eflags_sf, SymBool::var("%sf_" + suffix));
   set(eflags_of, SymBool::var("%of_" + suffix));
 
-  exception = SymBool::_false();
+  sigbus = SymBool::_false();
+  sigfpe = SymBool::_false();
+  sigsegv = SymBool::_false();
 }
 
 SymBool SymState::operator[](const Eflags f) const {
@@ -96,7 +100,7 @@ SymBitVector SymState::operator[](const Operand o) {
     auto addr = get_addr(m);
 
     auto p = memory.read(addr, size);
-    set_exception(p.second);
+    set_sigsegv(p.second);
 
     return p.first;
   } else {
@@ -198,7 +202,7 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto addr = get_addr(m);
 
     auto segv = memory.write(addr, bv, width);
-    set_exception(segv);
+    set_sigsegv(segv);
     return;
   }
 
@@ -273,6 +277,10 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
   for(auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
     constraints.push_back((*this)[*flag_it] == other[*flag_it]);
   }
+
+  constraints.push_back(sigbus == other.sigbus);
+  constraints.push_back(sigfpe == other.sigfpe);
+  constraints.push_back(sigsegv == other.sigsegv);
 
   return constraints;
 }
