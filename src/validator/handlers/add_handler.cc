@@ -58,7 +58,7 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   string opcode = get_opcode(instr);
 
   /* Use the carry flag in the addition? */
-  bool carry = opcode.substr(0, 3) == "adc" || 
+  bool carry = opcode.substr(0, 3) == "adc" ||
                opcode.substr(0, 3) == "sbb";
 
   /* Flip the two arguments before adding */
@@ -103,7 +103,7 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
 
   if(subtract) {
     // This addition takes care of two things at once; on one hand,
-    // if finishes the two's complement negation started earlier.  
+    // if finishes the two's complement negation started earlier.
     // On the other, it adds one to the src if the carry flag is
     // set.  These are accomplished simultaneously here.
     if(!carry)
@@ -111,13 +111,13 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
     else
       ext_src = state[eflags_cf].ite( ext_src,
                                       ext_src + SymBitVector::constant(width + 1, 1));
-                
+
   }
 
   if(carry && !subtract) {
     ext_src = state[eflags_cf].ite(
-              ext_src + SymBitVector::constant(width + 1, 1),
-              ext_src);
+                ext_src + SymBitVector::constant(width + 1, 1),
+                ext_src);
   }
 
   // Compute the final values

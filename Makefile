@@ -66,12 +66,12 @@ SRC_OBJ=\
 	\
 	src/validator/handlers/add_handler.o \
 	src/validator/handlers/combo_handler.o \
+	src/validator/handlers/conditional_handler.o \
 	src/validator/handlers/lea_handler.o   \
 	src/validator/handlers/move_handler.o  \
 	src/validator/handlers/packed_handler.o \
 	src/validator/handlers/shift_handler.o \
 	src/validator/handlers/simple_handler.o \
-	src/validator/handlers/xchg_handler.o \
 	\
 	src/verifier/verifier.o
 
@@ -208,30 +208,7 @@ src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
 	$(MAKE) -C src/ext/gtest-1.7.0 -j8
 
-##### VALIDATOR MISCELANEOUS
-
-VALIDATOR_AUTOGEN=src/validator/handlers.h \
-								 	src/validator/legacy/validator.switch \
-									src/validator/legacy/switch.h \
-									src/validator/legacy/switch.cc \
-									src/validator/legacy/supported.switch 
-
-VALIDATOR_AUTOGEN_TEST=src/validator/legacy/switch.cc
-
-VALIDATOR_CLEAN=src/validator/legacy/*.switch\
-						   	src/validator/legacy/switch.* \
-								src/validator/legacy/autogen \
-								src/validator/legacy/autogen.hi \
-								src/validator/legacy/autogen.o
-
-src/validator/legacy/autogen: src/validator/legacy/autogen.hs
-	ghc src/validator/legacy/autogen.hs -o src/validator/legacy/autogen
-
-src/validator/legacy/%.switch: src/validator/legacy/autogen
-	cd src/validator/legacy; ./autogen; cd ../../..;
-
-src/validator/legacy/switch.%: src/validator/legacy/autogen
-	cd src/validator/legacy; ./autogen; cd ../../..;
+##### VALIDATOR AUTOGEN
 
 src/validator/handlers.h: .FORCE
 	src/validator/generate_handlers_h.sh src/validator handlers-tmp; \
@@ -259,12 +236,6 @@ src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
 src/symstate/%.o: src/symstate/%.cc src/symstate/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/validator/legacy/legacy_handlers.o: src/validator/legacy/legacy_handlers.cc src/validator/legacy/*.h $(VALIDATOR_AUTOGEN)
-	$(CXX) $(TARGET) $(OPT) -O0 $(INC) -c $< -o $@
-src/validator/legacy/switch.o: src/validator/legacy/switch.cc src/validator/legacy/switch.h 
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/validator/legacy/%.o: src/validator/legacy/%.cc src/validator/legacy/%.h 
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/validator/handlers/%.o: src/validator/handlers/%.cc src/validator/handlers/%.h src/validator/handlers.h src/validator/*.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
@@ -389,7 +360,7 @@ hooks: .git/hooks/pre-commit
 
 clean: 
 	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke bin/stoke.bash
-	rm -rf $(VALIDATOR_AUTOGEN) $(VALIDATOR_CLEAN)
+	rm -rf $(VALIDATOR_AUTOGEN)
 
 dist_clean: clean
 	rm -rf src/ext/astyle
