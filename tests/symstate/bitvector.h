@@ -23,7 +23,7 @@ TEST(SymBitvectorTest, CanPrintConstantsAtWidth) {
   std::stringstream ss;
   ss << a;
 
-  EXPECT_EQ("[ 1, 0, 1 ]", ss.str());
+  EXPECT_EQ("<0x5|3>", ss.str());
 }
 
 TEST(SymBitvectorTest, CanPrintConstantsOverWidth) {
@@ -33,7 +33,7 @@ TEST(SymBitvectorTest, CanPrintConstantsOverWidth) {
   std::stringstream ss;
   ss << a;
 
-  EXPECT_EQ("[ 0, 1, 0, 1 ]", ss.str());
+  EXPECT_EQ("<0x5|4>", ss.str());
 }
 
 TEST(SymBitvectorTest, CanPrintExpressions) {
@@ -46,7 +46,7 @@ TEST(SymBitvectorTest, CanPrintExpressions) {
   std::stringstream ss;
   ss << z;
 
-  EXPECT_EQ("(and (plus <x|3> <y|3>) (xor (<< <x|3> [ 0, 1, 1 ]) !<y|3>))[2:1]", ss.str());
+  EXPECT_EQ("(and (plus <x|3> <y|3>) (xor (<< <x|3> <0x3|3>) !<y|3>))[2:1]", ss.str());
 
 }
 
