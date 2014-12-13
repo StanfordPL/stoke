@@ -34,15 +34,18 @@ uint64_t read_quadword(const Memory& m, uint64_t base, uint64_t i) {
   return result;
 }
 
-SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size) {
+SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
 
   SymBitVector addr_var = SymBitVector::var(64, "ADDRESS_" + to_string(temp()));
   SymBitVector value_var = SymBitVector::var(size, "MEMORY_" + to_string(temp()));
 
+  /*
   state_->constraints.push_back(addr_var == address);
   state_->constraints.push_back(value_var == value);
+  */
 
-  MemoryWrite mw({ addr_var, value_var, size });
+  //MemoryWrite mw({ addr_var, value_var, size, line_no });
+  MemoryWrite mw({ address, value, size, line_no });
   writes_.push_back(mw);
 
   if(heap_.type()) {
@@ -68,7 +71,7 @@ void SymMemory::init_concrete(const Memory& stack, const Memory& heap) {
 
 }
 
-pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size) const {
+pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size, size_t line_no) const {
 
   SymBool segv = SymBool::_false();
 
@@ -97,6 +100,22 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size)
 
   for (auto write : writes_) {
 
+    bool must_overlap = false;
+
+    if(analysis_) {
+      if(!analysis_->may_overlap(write.line_no, line_no)) {
+        cout << "NO ALIAS for " << write.line_no << ", " << line_no << ".";
+        continue;
+      }
+
+      must_overlap = analysis_->must_overlap(write.line_no, line_no);
+      if(must_overlap && write.size == size) {
+        cout << "MUST ALIAS (same size) for " << write.line_no << ", " << line_no << ".";
+        value = write.value;
+        continue;
+      }
+    }
+
     // Case 0:
     // Write and read are the same address
     // (but possibly a different size)
@@ -110,6 +129,11 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size)
       // Case 0B: read is bigger than the write
       // W: __________
       // R: _________________
+      if(must_overlap) {
+        value = value[size-1][write.size] || write.value[write.size - 1][0];
+        cout << "MUST ALIAS (large read) for " << write.line_no << ", " << line_no << ".";
+        continue;
+      }
 
       value = (address == write.address).ite(
                 value[size - 1][write.size] || write.value[write.size - 1][0],
@@ -119,6 +143,11 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size)
       // Case 0C: write is bigger than the read
       // W: _________________
       // R: __________
+      if(must_overlap) {
+        value = write.value[size-1][0];
+        cout << "MUST ALIAS (large write) for " << write.line_no << ", " << line_no << ".";
+        continue;
+      }
 
       value = (address == write.address).ite(
                 write.value[size - 1][0],
