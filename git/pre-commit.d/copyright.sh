@@ -18,7 +18,9 @@ echo "" >> cr.txt
 
 cr="Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule"
 
-for file in `find . -type f -and \( -name "*.h" -o -name "*.c" -o -name "*.cc" \) -not -path "./src/ext/*"`; do
+for file in `find . -type f -and \( -name "*.h" -o -name "*.c" -o -name "*.cc" \)\
+                    -not -path "./src/ext/*"\
+                    -not -path "*/validator/handlers.h" `; do
 
 	# Prepend copright template to any file that doesn't already have one
 	line1=`head --lines 1 $file`
