@@ -237,9 +237,11 @@ public:
     }, 0)
     .set_avx_alignment(true);
 
+    /*
     add_opcode("movddup", [] (SymBitVector a, SymBitVector b) {
       return b[63][0] || b[63][0];
     }, 128, 128);
+    */
 
     add_opcode("movdqu", [] (SymBitVector a, SymBitVector b) {
       return b;
