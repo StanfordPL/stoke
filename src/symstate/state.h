@@ -48,15 +48,25 @@ public:
   SymMemory memory;
   /** Symbolic rflags: CF, PF, AF, ZF, SF, OF */
   std::array<SymBool, 6> rf;
+  /** Has a #NP, #SS or #AC exception occurred? (These trigger SIGBUG on linux)*/
+  SymBool sigbus;
+  /** Has a #DE, #MF or #XM exception occurred? (These trigger SIGFPE on linux) */
+  SymBool sigfpe;
+  /** Has a #OF, #BR, #TS, #GP or #PF exception occurred? These trigger SIGSEGV on linux) */
+  SymBool sigsegv;
 
   /** Get the address corresponding to a memory location */
   template <typename T>
   SymBitVector get_addr(x64asm::M<T> ref) const;
 
-  /** Lookup the symbolic representation of a generic operand */
-  SymBitVector operator[](const x64asm::Operand o) const;
+  /** Lookup the symbolic representation of a generic operand.
+    * Can modify state if you lookup memory and it causes segfault. */
+  SymBitVector operator[](const x64asm::Operand o);
   /** Lookup the symbolic representation of a particular flag */
   SymBool operator[](const x64asm::Eflags rf) const;
+  /** Lookup the symbolic representation of a generic operand.
+    * Will not trigger symbolic segfaults. */
+  SymBitVector lookup(const x64asm::Operand o) const;
 
   /** Set the operand in the symbolic state to the specified bitvector.
     *
@@ -74,6 +84,20 @@ public:
   /** Set a particular flag */
   void set(const x64asm::Eflags, SymBool b);
 
+  /** Mark that a #DE, #MF or #XM exception conditionally occurs */
+  //TODO: check for identically false for simplification purposes
+  inline void set_sigfpe(SymBool b) {
+    sigfpe = sigfpe | (!sigbus & !sigsegv & b);
+  }
+  /** Mark that a #NP, #SS or #AC exception conditionally occurs. */
+  inline void set_sigbus(SymBool b) {
+    sigbus = sigbus | (!sigfpe & !sigsegv & b);
+  }
+  /** Mark that a #OF, #BR, #TS, #GP or #PF exception conditionally occurs. */
+  inline void set_sigsegv(SymBool b) {
+    sigsegv = sigsegv | (!sigfpe & !sigbus & b);
+  }
+
   /** Set the SF/PF/ZF flags according to a given value.  If width
       is provided, it's used; otherwise, we compute it */
   void set_szp_flags(const SymBitVector& v, uint16_t width = 0);
@@ -89,6 +113,10 @@ public:
   std::vector<SymBool> equality_constraints(const SymState& other,
       const x64asm::RegSet& rs = x64asm::RegSet::universe()) const;
 
+  /** Set the line number.  Used for memory aliasing analysis. */
+  void set_lineno(size_t line) {
+    lineno_ = line;
+  }
 
 private:
 
@@ -97,6 +125,8 @@ private:
   /** Builds a symbolic CPU state with variables */
   void build_with_suffix(const std::string& str);
 
+  /** The current line number */
+  size_t lineno_;
 };
 
 }; //namespace stoke

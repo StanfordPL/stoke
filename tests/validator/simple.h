@@ -126,7 +126,7 @@ TEST_F(ValidatorBaseTest, ReportsSupported) {
   x64asm::Code c;
 
   std::stringstream tmp;
-  tmp << "movaps %xmm0, %xmm1" << std::endl;
+  tmp << "movq %rax, %rcx" << std::endl;
   tmp >> c;
 
   auto instr = c[0];
@@ -290,16 +290,14 @@ TEST_F(ValidatorBaseTest, TimeoutWorks) {
 
   x64asm::Code c, d;
 
-  target_ << "movaps %xmm11, %xmm1"   << std::endl;
-  target_ << "mulss  %xmm6, %xmm10"   << std::endl;
-  target_ << "mulss  %xmm9, %xmm7"    << std::endl;
-  target_ << "mulss  %xmm4, %xmm1"    << std::endl;
+  target_ << "mulpd  %xmm6, %xmm10"   << std::endl;
+  target_ << "mulpd  %xmm9, %xmm7"    << std::endl;
+  target_ << "mulpd  %xmm4, %xmm1"    << std::endl;
   target_ << "retq"                   << std::endl;
 
-  rewrite_ << "movaps %xmm11, %xmm1"   << std::endl;
-  rewrite_ << "mulss  %xmm6, %xmm10"   << std::endl;
-  rewrite_ << "mulss  %xmm9, %xmm7"    << std::endl;
-  rewrite_ << "mulss  %xmm4, %xmm1"    << std::endl;
+  rewrite_ << "mulpd  %xmm6, %xmm10"   << std::endl;
+  rewrite_ << "mulpd  %xmm9, %xmm7"    << std::endl;
+  rewrite_ << "mulpd  %xmm4, %xmm1"    << std::endl;
   rewrite_ << "retq"                   << std::endl;
 
   std::string message = assert_fail();

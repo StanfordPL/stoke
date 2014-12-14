@@ -160,14 +160,6 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorConstant * const bv) {
 
 /** Visit a bit-vector DIV */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorDiv * const bv) {
-  // assert second arg non-zero
-  auto arg = SymBitVector(bv->b_);
-  SymTypecheckVisitor tc;
-  auto width = tc(arg);
-  auto zero = SymBitVector::constant(width, 0);
-  auto constraint = arg != zero;
-  constraints_.push_back(constraint);
-
   return z3::expr(context_, Z3_mk_bvudiv(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
