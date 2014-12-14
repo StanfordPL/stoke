@@ -160,14 +160,6 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorConstant * const bv) {
 
 /** Visit a bit-vector DIV */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorDiv * const bv) {
-  // assert second arg non-zero
-  auto arg = SymBitVector(bv->b_);
-  SymTypecheckVisitor tc;
-  auto width = tc(arg);
-  auto zero = SymBitVector::constant(width, 0);
-  auto constraint = arg != zero;
-  constraints_.push_back(constraint);
-
   return z3::expr(context_, Z3_mk_bvudiv(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
@@ -352,7 +344,25 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBoolLt * const b) {
   return z3::expr(context_, Z3_mk_bvult(context_, (*this)(b->a_), (*this)(b->b_)));
 }
 
+/** Visit a bit-vector signed GE */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolSignGe * const b) {
+  return z3::expr(context_, Z3_mk_bvsge(context_, (*this)(b->a_), (*this)(b->b_)));
+}
 
+/** Visit a bit-vector signed GT */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolSignGt * const b) {
+  return z3::expr(context_, Z3_mk_bvsgt(context_, (*this)(b->a_), (*this)(b->b_)));
+}
+
+/** Visit a bit-vector signed LE */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolSignLe * const b) {
+  return z3::expr(context_, Z3_mk_bvsle(context_, (*this)(b->a_), (*this)(b->b_)));
+}
+
+/** Visit a bit-vector signed LT */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolSignLt * const b) {
+  return z3::expr(context_, Z3_mk_bvslt(context_, (*this)(b->a_), (*this)(b->b_)));
+}
 
 /** Visit a boolean AND */
 z3::expr Z3Solver::ExprConverter::visit(const SymBoolAnd * const b) {

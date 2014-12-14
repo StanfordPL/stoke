@@ -93,6 +93,9 @@ istream& CpuState::read_text(istream& is) {
 
 void CpuState::convert_from_model(SMTSolver& smt, string& name_suffix) {
 
+  stack.resize(0, 0); //base, size
+  heap.resize(0, 0);  //base, size
+
   for(size_t i = 0; i < r64s.size(); ++i) {
     stringstream name;
     name << r64s[i] << name_suffix;
@@ -112,6 +115,16 @@ void CpuState::convert_from_model(SMTSolver& smt, string& name_suffix) {
     stringstream name;
     name << eflags[i] << name_suffix;
     rf.set(eflags[i].index(), smt.get_model_bool(name.str()));
+  }
+
+  if(smt.get_model_bool("sigbus" + name_suffix)) {
+    code = ErrorCode::SIGBUS_;
+  } else if (smt.get_model_bool("sigfpe" + name_suffix)) {
+    code = ErrorCode::SIGFPE_;
+  } else if (smt.get_model_bool("sigsegv" + name_suffix)) {
+    code = ErrorCode::SIGSEGV_;
+  } else {
+    code = ErrorCode::NORMAL;
   }
 
 }

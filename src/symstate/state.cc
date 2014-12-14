@@ -41,6 +41,12 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   set(eflags_sf, SymBool::constant(cs.rf.is_set(eflags_sf.index())));
   set(eflags_of, SymBool::constant(cs.rf.is_set(eflags_of.index())));
 
+  memory.init_concrete(cs.stack, cs.heap);
+  memory.set_parent(this);
+
+  sigbus = SymBool::_false();
+  sigfpe = SymBool::_false();
+  sigsegv = SymBool::_false();
 }
 
 void SymState::build_with_suffix(const string& suffix) {
@@ -64,6 +70,11 @@ void SymState::build_with_suffix(const string& suffix) {
   set(eflags_sf, SymBool::var("%sf_" + suffix));
   set(eflags_of, SymBool::var("%of_" + suffix));
 
+  memory.set_parent(this);
+
+  sigbus = SymBool::var("sigbus_" + suffix);
+  sigfpe = SymBool::var("sigfpe_" + suffix);
+  sigsegv = SymBool::var("sigsegv_" + suffix);
 }
 
 SymBool SymState::operator[](const Eflags f) const {
@@ -84,7 +95,24 @@ SymBool SymState::operator[](const Eflags f) const {
   assert(false);
 }
 
-SymBitVector SymState::operator[](const Operand o) const {
+SymBitVector SymState::operator[](const Operand o) {
+
+  if(o.is_typical_memory()) {
+    auto& m = reinterpret_cast<const M8&>(o);
+    uint16_t size = o.size();
+    auto addr = get_addr(m);
+
+    auto p = memory.read(addr, size, lineno_);
+    set_sigsegv(p.second);
+
+    return p.first;
+  } else {
+    return lookup(o);
+  }
+
+}
+
+SymBitVector SymState::lookup(const Operand o) const {
 
   if(o.is_gp_register()) {
     auto& r = reinterpret_cast<const R&>(o);
@@ -107,6 +135,15 @@ SymBitVector SymState::operator[](const Operand o) const {
   if(o.is_immediate()) {
     auto& imm = reinterpret_cast<const Imm&>(o);
     return SymBitVector::constant(o.size(), imm);
+  }
+
+  if(o.is_typical_memory()) {
+    auto& m = reinterpret_cast<const M8&>(o);
+    uint16_t size = o.size();
+    auto addr = get_addr(m);
+
+    auto p = memory.read(addr, size, lineno_);
+    return p.first;
   }
 
   assert(false);
@@ -160,6 +197,16 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto& ymm = reinterpret_cast<const Ymm&>(o);
     sse[ymm] = bv;
     return;
+  } else if (o.is_typical_memory()) {
+
+    auto width = o.size();
+    //note: the memory may be of a different width in this cast, but I don't care.
+    auto& m = reinterpret_cast<const M8&>(o);
+    auto addr = get_addr(m);
+
+    auto segv = memory.write(addr, bv, width, lineno_);
+    set_sigsegv(segv);
+    return;
   }
 
   assert(false);
@@ -202,16 +249,18 @@ void SymState::set(const Eflags f, SymBool b) {
 }
 
 
-void SymState::set_szp_flags(const SymBitVector& v) {
+void SymState::set_szp_flags(const SymBitVector& v, uint16_t width) {
 
-  SymTypecheckVisitor tc;
-  uint16_t size = tc(v);
+  if (width == 0) {
+    SymTypecheckVisitor tc;
+    width = tc(v);
+  }
 
   /* The sign flag is the most significant bit */
-  set(eflags_sf, v[size-1]);
+  set(eflags_sf, v[width-1]);
 
   /* The zero flag says if the whole BV is 0 */
-  set(eflags_zf, v == SymBitVector::constant(size, 0));
+  set(eflags_zf, v == SymBitVector::constant(width, 0));
 
   /* The parity flag */
   set(eflags_pf, v[7][0].pairity());
@@ -223,16 +272,57 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
   std::vector<SymBool> constraints;
 
   for(auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
-    constraints.push_back((*this)[*gp_it] == other[*gp_it]);
+    constraints.push_back(lookup(*gp_it) == other.lookup(*gp_it));
   }
   for(auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
-    constraints.push_back((*this)[*sse_it] == other[*sse_it]);
+    constraints.push_back(lookup(*sse_it) == other.lookup(*sse_it));
   }
   for(auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
     constraints.push_back((*this)[*flag_it] == other[*flag_it]);
   }
 
+  constraints.push_back(sigbus == other.sigbus);
+  constraints.push_back(sigfpe == other.sigfpe);
+  constraints.push_back(sigsegv == other.sigsegv);
+
   return constraints;
 }
 
 
+/** Get address corresponding to a memory reference */
+template <typename T>
+SymBitVector SymState::get_addr(M<T> memory) const {
+
+  SymBitVector address = SymBitVector::constant(64, memory.get_disp());
+
+  if(memory.contains_base()) {
+    address = address + lookup(memory.get_base());
+  }
+
+  if(memory.contains_index()) {
+    auto index = lookup(memory.get_index());
+
+    switch(memory.get_scale()) {
+    case Scale::TIMES_1:
+      address = address + index;
+      break;
+
+    case Scale::TIMES_2:
+      address = address + (index << SymBitVector::constant(64, 1));
+      break;
+
+    case Scale::TIMES_4:
+      address = address + (index << SymBitVector::constant(64, 2));
+      break;
+
+    case Scale::TIMES_8:
+      address = address + (index << SymBitVector::constant(64, 3));
+      break;
+
+    default:
+      assert(false);
+    }
+  }
+
+  return address;
+}

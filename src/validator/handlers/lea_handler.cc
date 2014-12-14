@@ -46,6 +46,8 @@ void LeaHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   uint16_t width = dest.size();
 
   // Compute the memory address
+  // This is slightly different than the default method because it truncates
+  // all the values to width for a slightly smaller circuit
   SymBitVector address = SymBitVector::constant(width, memory.get_disp());
 
   if(memory.contains_base()) {

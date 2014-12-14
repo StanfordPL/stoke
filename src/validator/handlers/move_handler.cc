@@ -27,22 +27,15 @@ const map<string, bool> MoveHandler::sign_extend_ = {
   { "movsbw", true },
   { "movsbl", true },
   { "movsbq", true },
-  { "movsd", false },
   { "movswl", true },
   { "movswq", true },
   { "movslq", true },
-  { "movss", false },
   { "movzbw", false },
   { "movzbl", false },
   { "movzbq", false },
   { "movzwl", false },
   { "movzwq", false },
   { "movzlq", false }
-};
-
-const map<string, uint16_t> MoveHandler::truncate_ = {
-  { "movsd", 64 },
-  { "movss", 32 }
 };
 
 Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
@@ -72,7 +65,6 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
   const auto opcode = get_opcode(instr);
 
   bool sign_extend = sign_extend_.at(opcode);
-  uint16_t truncate = (truncate_.find(opcode) != truncate_.end() ? truncate_.at(opcode) : 0);
 
   if(dst.is_sse_register() && opcode == "movq") {
     // handles movq m/64, xmm and movq xmm, xmm
@@ -86,10 +78,6 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
     ss.set(dst, ss[src][63][0]);
     return;
-
-  } else if(truncate) {
-    // Case 0: this instruction expects us to truncate the source (e.g. movss)
-    to_move = ss[dst][dst.size()-1][truncate] || ss[src][truncate-1][0];
 
   } else if (dst.size() > src.size()) {
     // Case 1: we need to extend the source (sign or not)
