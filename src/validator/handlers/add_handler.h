@@ -13,8 +13,8 @@
 // limitations under the License.
 
 
-#ifndef STOKE_SRC_VALIDATOR_HANDLER_XCHG_HANDLER_H
-#define STOKE_SRC_VALIDATOR_HANDLER_XCHG_HANDLER_H
+#ifndef STOKE_SRC_VALIDATOR_HANDLER_ADD_HANDLER_H
+#define STOKE_SRC_VALIDATOR_HANDLER_ADD_HANDLER_H
 
 #include <map>
 
@@ -22,8 +22,8 @@
 
 namespace stoke {
 
-/** Supports lea[wlq] */
-class XchgHandler : public Handler {
+/** Supports add, adc, xadd */
+class AddHandler : public Handler {
 
 public:
   SupportLevel get_support(const x64asm::Instruction& instr);

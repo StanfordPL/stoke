@@ -13,5 +13,6 @@
 // limitations under the License.
 
 
+#include "tests/x64asm/parsing.h"
 #include "tests/x64asm/r.h"
 #include "tests/x64asm/reg_set.h"

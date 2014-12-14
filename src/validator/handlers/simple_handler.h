@@ -13,32 +13,42 @@
 // limitations under the License.
 
 
-#ifndef STOKE_SRC_VALIDATOR_HANDLER_MOVE_HANDLER_H
-#define STOKE_SRC_VALIDATOR_HANDLER_MOVE_HANDLER_H
+#ifndef STOKE_SRC_VALIDATOR_HANDLER_SIMPLE_HANDLER_H
+#define STOKE_SRC_VALIDATOR_HANDLER_SIMPLE_HANDLER_H
 
 #include <map>
+#include <functional>
 
 #include "src/validator/handler.h"
 
 namespace stoke {
 
-/** Supports variants of mov, movz, movs */
-class MoveHandler : public Handler {
+/** For instructions that repeat the same instruction across multiple data in
+ * the register.  Supports many AVX/SSE instructions easily.  */
+class SimpleHandler : public Handler {
 
 public:
+  SimpleHandler() : Handler() {
+    add_all();
+  }
+
   SupportLevel get_support(const x64asm::Instruction& instr);
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
 private:
 
-  enum MoveSupport {
-    NONE = 0,
-    SIGN_EXTEND = 1,
-    ZERO_EXTEND = 2
-  };
+  /** Add all the handlers */
+  void add_all();
 
-  static const std::map<std::string, bool> sign_extend_;
+  /** Represents the operation done on the state */
+  typedef std::function<void (x64asm::Operand, x64asm::Operand, SymBitVector, SymBitVector, SymState&)> BinaryOperator;
+
+  /** Adds an opcode to our internal maps */
+  void add_opcode(std::vector<std::string> opcode, BinaryOperator op);
+
+  /** Opcode -> BinaryOperator */
+  std::map<std::string, BinaryOperator> operator_;
 
 };
 

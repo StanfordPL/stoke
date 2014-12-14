@@ -94,7 +94,7 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
   regset_is_supported(f1.def_ins());
   regset_is_supported(f1.live_outs());
 
-  // Create a starting symbolic state
+  // Create starting symbolic states
   SymState init("");
 
   SymState first_init("1_INIT");
@@ -105,6 +105,13 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
 
   for(auto it : second_init.equality_constraints(init, f1.def_ins()))
     constraints.push_back(it);
+
+  // Setup aliasing analyses
+  AliasAnalysis first_analysis(f1.get_code());
+  AliasAnalysis second_analysis(f2.get_code());
+
+  first_init.memory.set_analysis(&first_analysis);
+  second_init.memory.set_analysis(&second_analysis);
 
   // Build the circuits
   SymState first_final = build_circuit(f1, first_init);
@@ -117,8 +124,9 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
 
   // Assert inequality of the final states
   SymBool inequality = SymBool::_false();
-  for(auto it : first_final.equality_constraints(second_final, f1.live_outs()))
+  for(auto it : first_final.equality_constraints(second_final, f1.live_outs())) {
     inequality = inequality | !it;
+  }
 
   constraints.push_back(inequality);
 
@@ -178,6 +186,7 @@ SymState Validator::build_circuit(const Cfg& cfg, const SymState& start) const {
     if(code[i].is_any_return())
       break;
 
+    state.set_lineno(i);
     build_circuit(code[i], state);
   }
 

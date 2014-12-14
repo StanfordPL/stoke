@@ -29,6 +29,7 @@
  */
 
 
+#include "tests/analysis/analysis.h"
 #include "tests/cfg/cfg.h"
 #include "tests/cost/cost.h"
 #include "tests/cpputil/cpputil.h"

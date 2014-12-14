@@ -155,6 +155,15 @@ public:
   SymBool operator<(const SymBitVector& other) const;
   /** Returns a bool indicating if the arguments are not equal */
   SymBool operator!=(const SymBitVector& other) const;
+  /** Signed >= comparison */
+  SymBool s_ge(const SymBitVector& other) const;
+  /** Signed > comparison */
+  SymBool s_gt(const SymBitVector& other) const;
+  /** Signed <= comparison */
+  SymBool s_le(const SymBitVector& other) const;
+  /** Signed < comparison */
+  SymBool s_lt(const SymBitVector& other) const;
+
 
   /** Computes the parity of the bitvector */
   SymBool pairity() const;
@@ -183,6 +192,9 @@ public:
     }
     SymBool operator !() const {
       return !(SymBool)(*this);
+    }
+    SymBitVector ite(const SymBitVector t, const SymBitVector f) const {
+      return ((SymBool)(*this)).ite(t, f);
     }
 
   private:
@@ -390,6 +402,7 @@ private:
 
 class SymBitVectorIte : public SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymBool;
 
 private:
   SymBitVectorIte(const SymBoolAbstract * const cond, const SymBitVectorAbstract * const a,

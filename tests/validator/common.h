@@ -169,6 +169,7 @@ protected:
     std::stringstream ss;
     ss << "Counterexample: " << std::endl << cs << std::endl;
     ss << "Sandbox final state: " << std::endl << sandbox_final << std::endl;
+    ss << "Validator final state: " << std::endl << validator_final << std::endl;
     ss << "Sandbox and validator disagree on liveout" << std::endl;
     expect_cpustate_equal_on_liveout(sandbox_final, validator_final, ss.str());
 
@@ -293,6 +294,7 @@ private:
       }
 
       std::cout << "Here are the differences found: " << std::endl;
+      same = false;
     }
 
     std::cout << "   - " << local
@@ -348,7 +350,7 @@ private:
         uint64_t expected_flag = expect.rf.is_set(op.index());
 
         std::stringstream tmp;
-        tmp << "Value of flag " << op.index() << " differs.";
+        tmp << "Value of flag " << op << " differs.";
         EXPECT_CPU_EQ_INT(expected_flag, actual_flag, tmp.str());
       }
     }

@@ -33,6 +33,15 @@ bool Handler::operands_supported(const Instruction& instr) {
   return true;
 }
 
+SymBool Handler::plus_of(SymBool arg1_msb, SymBool arg2_msb, SymBool total_msb) const {
+  return (arg1_msb == arg2_msb) & (arg1_msb != total_msb);
+}
+
+SymBool Handler::minus_of(SymBool arg1_msb, SymBool arg2_msb, SymBool total_msb) const {
+  return (arg2_msb == total_msb) & (arg1_msb != arg2_msb);
+}
+
+
 
 const array<const char*, 3803> Handler::att_ = {{
     "<label definition>"

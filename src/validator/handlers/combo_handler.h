@@ -52,12 +52,14 @@ private:
     std::vector<Handler*> v;
 
     // New Handlers
+    v.push_back(new AddHandler());
+    v.push_back(new ConditionalHandler());
     v.push_back(new LeaHandler());
     v.push_back(new MoveHandler());
+    v.push_back(new PackedHandler());
     v.push_back(new ShiftHandler());
-    v.push_back(new XchgHandler());
+    v.push_back(new SimpleHandler());
 
-    v.push_back(new LegacyHandler());
     return v;
   }
 
