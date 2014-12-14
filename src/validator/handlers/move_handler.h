@@ -39,7 +39,6 @@ private:
   };
 
   static const std::map<std::string, bool> sign_extend_;
-  static const std::map<std::string, uint16_t> truncate_;
 
 };
 
