@@ -85,16 +85,17 @@ public:
   void set(const x64asm::Eflags, SymBool b);
 
   /** Mark that a #DE, #MF or #XM exception conditionally occurs */
+  //TODO: check for identically false for simplification purposes
   inline void set_sigfpe(SymBool b) {
-    sigfpe = sigfpe | b;
+    sigfpe = sigfpe | (!sigbus & !sigsegv & b);
   }
   /** Mark that a #NP, #SS or #AC exception conditionally occurs. */
   inline void set_sigbus(SymBool b) {
-    sigbus = sigbus | b;
+    sigbus = sigbus | (!sigfpe & !sigsegv & b);
   }
-  /** Has a #OF, #BR, #TS, #GP or #PF exception occurred? These trigger SIGSEGV on linux) */
+  /** Mark that a #OF, #BR, #TS, #GP or #PF exception conditionally occurs. */
   inline void set_sigsegv(SymBool b) {
-    sigsegv = sigsegv | b;
+    sigsegv = sigsegv | (!sigfpe & !sigbus & b);
   }
 
   /** Set the SF/PF/ZF flags according to a given value.  If width

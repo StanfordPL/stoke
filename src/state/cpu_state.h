@@ -39,7 +39,7 @@ struct CpuState {
   /** Creates a new CpuState from an SMTSolver's model (i.e. counterexample).
     * Uses 'suffix' to identify the right set of variables to extract. */
   CpuState(SMTSolver& smt, std::string suffix) :
-    code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
+    gp(16, 64), sse(16, 256), rf() {
     convert_from_model(smt, suffix);
   }
 
