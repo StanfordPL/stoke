@@ -24,7 +24,7 @@ TEST(Integration, TutorialTest) {
   uint64_t diff_2;
 
   // Build and test original program
-  EXPECT_EQ(0, system("cd examples/tutorial; make clean orig >/dev/null"));
+  EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make clean orig >/dev/null"));
 
   gettimeofday(&start, NULL);
   EXPECT_EQ(49152, system("./examples/tutorial/a.out 90000000 >/dev/null"));
@@ -33,13 +33,13 @@ TEST(Integration, TutorialTest) {
            (finish.tv_usec - start.tv_usec);
 
   // Run make extract, testcase
-  EXPECT_EQ(0, system("cd examples/tutorial; make extract >/dev/null"));
-  EXPECT_EQ(0, system("cd examples/tutorial; make testcase >/dev/null"));
+  EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make extract >/dev/null"));
+  EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make testcase >/dev/null"));
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
   for(size_t i = 0; i < 10; ++i) {
-    if(!system("cd examples/tutorial; make search >/dev/null")) {
+    if(!system("cd examples/tutorial; PATH=$PATH:../../bin make search >/dev/null")) {
       good++;
       break;
     }
@@ -47,7 +47,7 @@ TEST(Integration, TutorialTest) {
   EXPECT_GT(good, (size_t)0);
 
   // Run make replace
-  EXPECT_EQ(0, system("cd examples/tutorial; make replace >/dev/null"));
+  EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make replace >/dev/null"));
 
   // Test new program
   gettimeofday(&start, NULL);
@@ -62,6 +62,6 @@ TEST(Integration, TutorialTest) {
   EXPECT_GT(diff_1, diff_2*5);
 
   // Cleanup
-  EXPECT_EQ(0, system("cd examples/tutorial; make clean >/dev/null"));
+  EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make clean >/dev/null"));
 
 }
