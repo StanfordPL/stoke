@@ -163,30 +163,6 @@ TEST_F(ValidatorMoveTest, Issue236SimpleIsSat) {
   assert_equiv();
 }
 
-TEST_F(ValidatorMoveTest, Issue236Equiv) {
-
-  target_ << "movss %xmm3, %xmm5" << std::endl;
-  target_ << "retq" << std::endl;
-
-  rewrite_ << "movss %xmm3, %xmm5" << std::endl;
-  rewrite_ << "retq" << std::endl;
-
-  assert_equiv();
-
-}
-
-TEST_F(ValidatorMoveTest, Issue236NotEquiv) {
-
-  target_ << "movss %xmm3, %xmm5" << std::endl;
-  target_ << "retq" << std::endl;
-
-  rewrite_ << "movapd %xmm3, %xmm5" << std::endl;
-  rewrite_ << "retq" << std::endl;
-
-  assert_ceg();
-
-}
-
 TEST_F(ValidatorMoveTest, Issue272) {
 
   target_ << "movq %xmm0, %xmm0" << std::endl;
