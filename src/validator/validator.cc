@@ -124,8 +124,9 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
 
   // Assert inequality of the final states
   SymBool inequality = SymBool::_false();
-  for(auto it : first_final.equality_constraints(second_final, f1.live_outs()))
+  for(auto it : first_final.equality_constraints(second_final, f1.live_outs())) {
     inequality = inequality | !it;
+  }
 
   constraints.push_back(inequality);
 
@@ -138,7 +139,6 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
     constraints.push_back(it);
   for(auto it : second_outputs.equality_constraints(second_final, f1.live_outs()))
     constraints.push_back(it);
-
 
   /*
   cout << endl;

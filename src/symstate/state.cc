@@ -72,9 +72,9 @@ void SymState::build_with_suffix(const string& suffix) {
 
   memory.set_parent(this);
 
-  sigbus = SymBool::_false();
-  sigfpe = SymBool::_false();
-  sigsegv = SymBool::_false();
+  sigbus = SymBool::var("sigbus_" + suffix);
+  sigfpe = SymBool::var("sigfpe_" + suffix);
+  sigsegv = SymBool::var("sigsegv_" + suffix);
 }
 
 SymBool SymState::operator[](const Eflags f) const {

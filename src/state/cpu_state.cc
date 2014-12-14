@@ -117,6 +117,16 @@ void CpuState::convert_from_model(SMTSolver& smt, string& name_suffix) {
     rf.set(eflags[i].index(), smt.get_model_bool(name.str()));
   }
 
+  if(smt.get_model_bool("sigbus" + name_suffix)) {
+    code = ErrorCode::SIGBUS_;
+  } else if (smt.get_model_bool("sigfpe" + name_suffix)) {
+    code = ErrorCode::SIGFPE_;
+  } else if (smt.get_model_bool("sigsegv" + name_suffix)) {
+    code = ErrorCode::SIGSEGV_;
+  } else {
+    code = ErrorCode::NORMAL;
+  }
+
 }
 
 } // namespace stoke
