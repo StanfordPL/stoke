@@ -156,7 +156,10 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   // Run the real handler
   auto f = operator_[opcode];
 
-  f(dst, src, state[dst], state[src], state);
+  if(arity > 0)
+    f(dst, src, state[dst], state[src], state);
+  else
+    f(dst, src, SymBitVector::constant(1, 0), SymBitVector::constant(1,0), state);
 
 }
 
