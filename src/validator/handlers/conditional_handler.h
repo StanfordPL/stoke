@@ -13,15 +13,17 @@
 // limitations under the License.
 
 
-#ifndef STOKE_SRC_VALIDATOR_HANDLER_LEGACY_LEGACY_H
-#define STOKE_SRC_VALIDATOR_HANDLER_LEGACY_LEGACY_H
+#ifndef STOKE_SRC_VALIDATOR_HANDLER_CONDITIONAL_HANDLER_H
+#define STOKE_SRC_VALIDATOR_HANDLER_CONDITIONAL_HANDLER_H
+
+#include <map>
 
 #include "src/validator/handler.h"
 
 namespace stoke {
 
-/** Supports all variants of instructions that simply move bits from one register to another */
-class LegacyHandler : public Handler {
+/** Supports lea[wlq] */
+class ConditionalHandler : public Handler {
 
 public:
   SupportLevel get_support(const x64asm::Instruction& instr);
@@ -29,6 +31,8 @@ public:
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
 private:
+
+  static SymBool condition_predicate(const std::string& cc, const SymState& ss);
 
 };
 

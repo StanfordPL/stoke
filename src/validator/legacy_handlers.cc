@@ -32,53 +32,6 @@ using namespace x64asm;
 
 #include "src/validator/legacy/helpers.cc"
 
-void adddHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
-
-#define DADDPATT(x)\
-  {\
-    auto E_result = E_dest[x+63][x];\
-    auto E_arg1 = E_src1[x+63][x];\
-    auto E_arg2 = E_src2[x+63][x];\
-    retval = retval & (E_result == dadd(E_arg1,E_arg2));\
-  }
-
-
-  uint bitWidth = numops*64;
-  SymFunction dadd = SymFunction("addd", 64, {64, 64});
-  SymBool retval = SymBool::_true();
-  if(numops==1)
-  {
-    DADDPATT(0)
-  }
-  else
-  {
-    DADDPATT(0)
-    DADDPATT(64)
-  }
-  if(dest_is_reg && numops == 1)
-  {
-    SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
-    retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
-  }
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint " << retval << endl;
-#endif
-  d.constraints.push_back(retval);
-
-#undef DADDPATT
-}
-
-
-
-
-//This is more general than what the name suggests
-void addmul64rr(Expr E_arg1, Expr E_arg2, Expr E_dest, v_data d, bool add_sym=true) {
-
-  VALIDATOR_ERROR("addmul64rr suspisciously commented out -- aborting.");
-}
-
-
-
 
 void andHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
 
@@ -518,62 +471,6 @@ void dppdHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Ex
 }
 
 
-
-void haddpdHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
-
-
-  SymFunction dadd = SymFunction("addd", 64, {64, 64});
-  SymBool retval = SymBool::_true();
-
-  auto e1_src1 = E_src1[63][0];
-  auto e2_src1 = E_src1[127][64];
-
-  auto e1_src2 = E_src2[63][0];
-  auto e2_src2 = E_src2[127][64];
-
-
-  auto e1_dest = E_dest[63][0];
-  auto e2_dest = E_dest[127][64];
-
-  retval = retval & e1_dest == dadd(e2_src1,e1_src1);
-  retval = retval & e2_dest == dadd(e2_src2,e1_src2);
-
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint " << retval << endl;
-#endif
-  d.constraints.push_back(retval);
-
-
-}
-
-void haddpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
-
-  SymFunction fadd = SymFunction("addf", 32, {32, 32});
-  SymBool retval = SymBool::_true();
-
-  auto e1_src1 = E_src1[31][0];
-  auto e2_src1 = E_src1[63][32];
-  auto e3_src1 = E_src1[95][64];
-  auto e4_src1 = E_src1[127][96];
-
-  auto e1_src2 = E_src2[31][0];
-  auto e2_src2 = E_src2[63][32];
-  auto e3_src2 = E_src2[95][64];
-  auto e4_src2 = E_src2[127][96];
-
-  auto e1_dest = E_dest[31][0];
-  auto e2_dest = E_dest[63][32];
-  auto e3_dest = E_dest[95][64];
-  auto e4_dest = E_dest[127][96];
-
-  d.constraints.push_back( e1_dest == fadd(e2_src1, e1_src1) );
-  d.constraints.push_back( e2_dest == fadd(e4_src1, e3_src1) );
-  d.constraints.push_back( e3_dest == fadd(e2_src2, e1_src2) );
-  d.constraints.push_back( e4_dest == fadd(e4_src2, e3_src2) );
-
-}
-
-
 void idivHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
 
 
@@ -673,21 +570,6 @@ void lahfHandler(v_data d) {
 }
 
 
-
-
-void maxpsHandler(v_data d, Expr E_dest, Expr E_src1, Expr E_src2) {
-
-  SymFunction fpmax = SymFunction("maxfp", 128, {128, 128});
-  auto E_result = fpmax(E_src1, E_src2);
-  SymBool retval = E_dest == E_result;
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint " << retval << endl;
-#endif
-
-  d.constraints.push_back(retval);
-}
-
-
 void movHandler(v_data d, unsigned int bitWidthTarget, unsigned int bitWidthSource, Expr E_dest, Expr E_src, bool signExtend,  bool dest_is_reg=true) {
 
 
@@ -733,84 +615,6 @@ void movhHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
 #endif
   d.constraints.push_back(retval);
 }
-
-void muldHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
-
-#define DMULPATT(x)\
-  {\
-    auto E_result = E_dest[x+63][x];\
-    auto E_arg1 = E_src1[x+63][x];\
-    auto E_arg2 = E_src2[x+63][x];\
-    retval = retval & (E_result == dmul(E_arg1,E_arg2));\
-  }
-
-
-  uint bitWidth = numops*64;
-  SymFunction dmul = SymFunction("dmul", 64, {64, 64});
-  SymBool retval = SymBool::_true();
-  if(numops==1)
-  {
-    DMULPATT(0)
-  }
-  else
-  {
-    DMULPATT(0)
-    DMULPATT(64)
-  }
-  if(dest_is_reg && numops == 1)
-  {
-    SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
-    retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
-  }
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint " << retval << endl;
-#endif
-  d.constraints.push_back(retval);
-
-#undef DMULPATT
-}
-
-
-
-void mulfHandler(v_data d, unsigned int numops, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
-
-#define FMULPATT(x)\
-  {\
-    auto E_result = E_dest[x+31][x];\
-    auto E_arg1 = E_src1[x+31][x];\
-    auto E_arg2 = E_src2[x+31][x];\
-    retval = retval & (E_result == fmul(E_arg1,E_arg2));\
-  }
-
-
-  uint bitWidth = numops*32;
-  SymFunction fmul = SymFunction("mulf", 32, {32, 32});
-
-  SymBool retval = SymBool::_true();
-  if(numops==1)
-  {
-    FMULPATT(0)
-  }
-  else
-  {
-    FMULPATT(0)
-    FMULPATT(32)
-    FMULPATT(64)
-    FMULPATT(96)
-  }
-  if(dest_is_reg && numops < 4)
-  {
-    SS_Id id_dest = XMM_BEG+getRegisterFromInstr(d.instr,0);
-    retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
-  }
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint " << retval << endl;
-#endif
-  d.constraints.push_back(retval);
-
-#undef FMULPATT
-}
-
 
 void negHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
 
@@ -860,23 +664,6 @@ void orHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E
   setSFPFZF(E_dest, d, bitWidth);
 }
 
-
-void paddHandler(v_data d, unsigned int opWidth, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
-
-
-  if (opWidth != 32 || bitWidth != 128) {
-    throw VALIDATOR_ERROR("Only opWidth of 32 and bitWidth of 128 is supported for padd");
-  }
-  SymBool retval = SymBool::_true();
-  retval = retval & vc_eqExpr(E_dest[31][0], vc_bvPlusExpr(32, E_src1[31][0], E_src2[31][0]));
-  retval = retval & vc_eqExpr(E_dest[63][32], vc_bvPlusExpr(32, E_src1[63][32], E_src2[63][32]));
-  retval = retval & vc_eqExpr(E_dest[95][64], vc_bvPlusExpr(32, E_src1[95][64], E_src2[95][64]));
-  retval = retval & vc_eqExpr(E_dest[127][96], vc_bvPlusExpr(32, E_src1[127][96], E_src2[127][96]));
-#ifdef DEBUG_VALIDATOR
-  cout << "Adding constraint " << retval << endl;
-#endif
-  d.constraints.push_back(retval);
-}
 
 void palignrHandler(v_data d, unsigned int numops, unsigned int bitWidth, unsigned int immediate, Expr E_dest, Expr E_src1, Expr E_src2) {
 
@@ -1286,9 +1073,9 @@ void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   auto E_carry = SymBitVector::var(bitWidth+2, ("BORROW"+d.pre_suffix+to_string(d.instr_no)).c_str());
 
   SymBool retval = E_carry[0] == !(getBoolExpr(V_CF, d.pre_suffix, d.Vn));
-  retval = retval & vc_eqExpr(E_carry[bitWidth+1][1],  SymBitVector::constant(1, 0) ||SymBitVector::constant(bitWidth, 0));
+  retval = retval & E_carry[bitWidth+1][1] == SymBitVector::constant(bitWidth+1, 0);
 
-  retval = retval & vc_eqExpr(E_result,vc_bvPlusExpr(bitWidth+2, vc_bvPlusExpr(bitWidth+2, E_arg1, E_arg2), E_carry));
+  retval = retval & (E_result = E_arg1 + E_arg2 + E_carry);
   retval = retval & E_dest == E_result[bitWidth-1][0];
 
   if(dest_is_reg && bitWidth < V_UNITSIZE)
@@ -1556,8 +1343,6 @@ void unpcklpdHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_de
 
 void unpcklpsHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_dest, Expr E_src1, Expr E_src2) {
 
-
-
   if ( three_args || bitWidth != 128 ) {
     VALIDATOR_ERROR("unpcklps only supported in form 'unpcklps xmm1, xmm2/m128'")
   }
@@ -1583,10 +1368,7 @@ void unpcklpsHandler(v_data d, unsigned int bitWidth, bool three_args, Expr E_de
 }
 
 
-
 void xorHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2, bool dest_is_reg=true) {
-
-
 
   auto E_result = E_src1 ^ E_src2;
   SymBool retval = E_dest == E_result;
@@ -1602,21 +1384,4 @@ void xorHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   setFlag(d.Vnprime,V_OF, SymBool::_false(), d.constraints, d.post_suffix);
   setSFPFZF(E_dest, d, bitWidth);
 }
-
-void xorpsHandler(v_data d, unsigned int numops, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E_src2) {
-
-  if (bitWidth != 128 || numops != 2)
-    VALIDATOR_ERROR("xorps only supported for two 128-bit operands");
-
-
-
-  // DEST[127:0] <- SRC1[127:0] ^ SRC2[127:0]
-  // note: this only works when bitwidth is 129.
-  SymBool retval = E_dest == vc_bvXorExpr(E_src1, E_src2);
-
-  d.constraints.push_back(retval);
-  ADD_CONS(retval);
-
-}
-
 

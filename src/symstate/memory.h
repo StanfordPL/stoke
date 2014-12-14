@@ -16,27 +16,53 @@
 #ifndef _STOKE_SRC_SYMSTATE_SYM_MEMORY_H
 #define _STOKE_SRC_SYMSTATE_SYM_MEMORY_H
 
+#include "src/analysis/alias.h"
+#include "src/state/memory.h"
 #include "src/symstate/bitvector.h"
 
 namespace stoke {
+
+class SymState;
 
 class SymMemory {
 
 public:
 
-  /** Updates the memory with a write */
-  void write(SymBitVector address, SymBitVector value, uint16_t size);
+  /** Set the parent symbolic state */
+  SymMemory& set_parent(SymState* ss) {
+    state_ = ss;
+    return *this;
+  }
+  /** Setup an aliasing analysis */
+  SymMemory& set_analysis(AliasAnalysis* aa) {
+    analysis_ = aa;
+  }
 
-  /** Reads from the memory */
-  SymBitVector read(SymBitVector address, uint16_t size) const;
+  /** Updates the memory with a write.
+   *  Returns condition for segmentation fault */
+  SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no);
+
+  /** Reads from the memory.  Returns value and segv condition. */
+  std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no) const;
+
+  /** Set concrete initialization values */
+  void init_concrete(const Memory& stack, const Memory& heap);
 
 private:
+
+  /** Concrete valid heap locations at start.  Stored big-endian.  Optional.*/
+  SymBitVector heap_;
+  /** Concrete heap starting address */
+  uint64_t heap_start_;
+  /** Concrete heap size */
+  uint64_t heap_size_;
 
   /** Data structure for saving writes */
   struct MemoryWrite {
     SymBitVector address;
     SymBitVector value;
     uint16_t size;
+    size_t line_no;
   };
 
   /** Keep track of all the memory writes */
@@ -49,6 +75,11 @@ private:
   static uint64_t temp() {
     return temp_++;
   }
+
+  /** Optional aliasing analysis for simplication */
+  AliasAnalysis* analysis_;
+  /** Reference back to symbolic state */
+  SymState* state_;
 
 
 };

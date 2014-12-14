@@ -69,8 +69,35 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   blacklist.insert(x64asm::ENTER_ONE_IMM16);
   blacklist.insert(x64asm::ENTER_ZERO_IMM16);
 
-  t.set_opcode_pool(flag_set, 0, 0, false, false, blacklist, {})
-  .set_operand_pool({}, x64asm::RegSet::empty())
+  // this code is used to provide memory references... big hack.
+  std::stringstream sample;
+  sample << "movq (%rax), %r13" << std::endl;
+  /*
+  sample << "movq 0x16(%r8), %r13" << std::endl;
+  sample << "movq 0x64(%rdx), %r13" << std::endl;
+  sample << "movq 0x64(%rax, %rcx, 4), %r13" << std::endl;
+  sample << "movq 0x64(%rsp, %rdx, 8), %r13" << std::endl;
+  sample << "movl (%rax), %r13d" << std::endl;
+  sample << "movl 0x16(%r8), %r13d" << std::endl;
+  sample << "movl 0x64(%rdx), %r13d" << std::endl;
+  sample << "movl 0x64(%rax, %rcx, 4), %r13d" << std::endl;
+  sample << "movl 0x64(%rsp, %rdx, 8), %r13d" << std::endl;
+  sample << "movw (%rax), %r13w" << std::endl;
+  sample << "movw 0x16(%r8), %r13w" << std::endl;
+  sample << "movw 0x64(%rdx), %r13w" << std::endl;
+  sample << "movw 0x64(%rax, %rcx, 4), %r13w" << std::endl;
+  sample << "movw 0x64(%rsp, %rdx, 8), %r13w" << std::endl;
+  sample << "movb (%rax), %r13b" << std::endl;
+  sample << "movb 0x16(%r8), %r13b" << std::endl;
+  sample << "movb 0x64(%rdx), %r13b" << std::endl;
+  sample << "movb 0x64(%rax, %rcx, 4), %r13b" << std::endl;
+  sample << "movb 0x64(%rsp, %rdx, 8), %r13b" << std::endl;
+  */
+  x64asm::Code target;
+  sample >> target;
+
+  t.set_opcode_pool(flag_set, 0, 0, true, false, blacklist, {})
+  .set_operand_pool(target, x64asm::RegSet::empty())
   .set_seed(seed);
 
   t.insert_immediate(x64asm::Imm64(0x00));
@@ -108,7 +135,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     .set_max_attempts(40);
 
     // Build an instruction and CFG at random
-    x64asm::Instruction ins({x64asm::LAHF});
+    x64asm::Instruction ins({x64asm::MOV_R64_M64, {x64asm::rax, x64asm::M64(x64asm::rax)}});
     stoke::Cfg pre_cfg({{ins}, x64asm::RegSet::universe(), x64asm::RegSet::empty()});
 
     bool found = false;

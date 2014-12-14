@@ -172,15 +172,7 @@ public:
 
   /** Visit a bit-vector constant */
   void visit(const SymBitVectorConstant * const bv) {
-    os_ << "[ ";
-    for(size_t i = bv->size_; i > 64; --i)
-      os_ << "0, ";
-    for(uint64_t mask = (0x8000000000000000 >> (64 - bv->size_)); mask; mask >>= 1) {
-      os_ << (bv->constant_ & mask ? 1 : 0);
-      if(mask > 1)
-        os_ << ", ";
-    }
-    os_ << " ]";
+    os_ << "<0x" << std::hex << bv->constant_ << "|" << std::dec << bv->size_ << ">";
   }
 
   /** Visit a bit-vector extract */

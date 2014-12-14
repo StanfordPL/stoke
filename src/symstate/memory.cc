@@ -14,6 +14,7 @@
 
 
 #include "src/symstate/memory.h"
+#include "src/symstate/state.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 using namespace std;
@@ -22,15 +23,75 @@ using namespace x64asm;
 
 uint64_t SymMemory::temp_ = 0;
 
-void SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size) {
-  MemoryWrite mw({ address, value, size });
-  writes_.push_back(mw);
+uint64_t read_quadword(const Memory& m, uint64_t base, uint64_t i) {
+
+  uint64_t result = 0;
+
+  for(uint64_t j = 0; j < 8; ++j) {
+    result = ((uint64_t)m[base+8*i+j] << j*8) | result;
+  }
+
+  return result;
 }
 
-SymBitVector SymMemory::read(SymBitVector address, uint16_t size) const {
+SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
 
-  // At the beginning, we know nothing, so initialize to undefined
+  /*
+  SymBitVector addr_var = SymBitVector::var(64, "ADDRESS_" + to_string(temp()));
+  SymBitVector value_var = SymBitVector::var(size, "MEMORY_" + to_string(temp()));
+
+  state_->constraints.push_back(addr_var == address);
+  state_->constraints.push_back(value_var == value);
+  */
+
+  //MemoryWrite mw({ addr_var, value_var, size, line_no });
+  MemoryWrite mw({ address, value, size, line_no });
+  writes_.push_back(mw);
+
+  if(heap_.type()) {
+    return (address < SymBitVector::constant(64, heap_start_)) |
+           (address > SymBitVector::constant(64, heap_start_ + heap_size_ - size));
+  } else {
+    return SymBool::_false();
+  }
+}
+
+void SymMemory::init_concrete(const Memory& stack, const Memory& heap) {
+
+  heap_start_ = heap.lower_bound();
+  heap_size_  = 8*heap.size();
+
+  if(!heap_size_)
+    return;
+
+  heap_ = SymBitVector::constant(64, read_quadword(heap, heap_start_, 0));
+  for(size_t i = 1; i < heap.size()/8; ++i) {
+    heap_ = SymBitVector::constant(64, read_quadword(heap, heap_start_, i)) || heap_;
+  }
+
+}
+
+pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size, size_t line_no) const {
+
+  SymBool segv = SymBool::_false();
+
   SymBitVector value = SymBitVector::var(size, "READ_" + to_string(temp()));
+
+  // Check if this value was concretely initialized in heap.
+  if(heap_.type() != SymBitVector::NONE) {
+    segv = (address < SymBitVector::constant(64, heap_start_)) |
+           (address > SymBitVector::constant(64, heap_start_ + heap_size_ - size));
+
+    auto offset = (address - SymBitVector::constant(64, heap_start_)) <<
+                  SymBitVector::constant(64, 3);
+
+    if(heap_size_ > 64) {
+      auto zeros = SymBitVector::constant(heap_size_ - 64, 0);
+      value = (heap_ >> (zeros || offset))[size-1][0];
+    } else {
+      value = (heap_ >> offset)[size-1][0];
+    }
+  }
 
 
   // Loop through the writes one at a time.
@@ -38,6 +99,20 @@ SymBitVector SymMemory::read(SymBitVector address, uint16_t size) const {
   // Update the 'value' variable appropriately.
 
   for (auto write : writes_) {
+
+    bool must_overlap = false;
+
+    if(analysis_) {
+      if(!analysis_->may_overlap(write.line_no, line_no)) {
+        continue;
+      }
+
+      must_overlap = analysis_->must_overlap(write.line_no, line_no);
+      if(must_overlap && write.size == size) {
+        value = write.value;
+        continue;
+      }
+    }
 
     // Case 0:
     // Write and read are the same address
@@ -52,6 +127,10 @@ SymBitVector SymMemory::read(SymBitVector address, uint16_t size) const {
       // Case 0B: read is bigger than the write
       // W: __________
       // R: _________________
+      if(must_overlap) {
+        value = value[size-1][write.size] || write.value[write.size - 1][0];
+        continue;
+      }
 
       value = (address == write.address).ite(
                 value[size - 1][write.size] || write.value[write.size - 1][0],
@@ -61,6 +140,10 @@ SymBitVector SymMemory::read(SymBitVector address, uint16_t size) const {
       // Case 0C: write is bigger than the read
       // W: _________________
       // R: __________
+      if(must_overlap) {
+        value = write.value[size-1][0];
+        continue;
+      }
 
       value = (address == write.address).ite(
                 write.value[size - 1][0],
@@ -151,7 +234,6 @@ SymBitVector SymMemory::read(SymBitVector address, uint16_t size) const {
   }
 
 
-  return value;
+  return pair<SymBitVector, SymBool>(value, segv);
 
 }
-

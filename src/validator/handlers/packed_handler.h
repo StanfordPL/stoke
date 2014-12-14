@@ -223,6 +223,16 @@ public:
       return (f(a,b)[0]).ite(a, b);
     }, 32, 32, true, true);
 
+    add_opcode("movapd", [] (SymBitVector a, SymBitVector b) {
+      return b;
+    }, 0)
+    .set_avx_alignment(true);
+
+    add_opcode("movaps", [] (SymBitVector a, SymBitVector b) {
+      return b;
+    }, 0)
+    .set_avx_alignment(true);
+
     add_opcode("movddup", [] (SymBitVector a, SymBitVector b) {
       return b[63][0] || b[63][0];
     }, 128, 128);
@@ -230,6 +240,16 @@ public:
     add_opcode("movdqu", [] (SymBitVector a, SymBitVector b) {
       return b;
     }, 0);
+
+    add_opcode("movupd", [] (SymBitVector a, SymBitVector b) {
+      return b;
+    }, 0);
+
+    add_opcode("movups", [] (SymBitVector a, SymBitVector b) {
+      return b;
+    }, 0);
+
+
 
     add_opcode("mulpd", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("mul_double", 64, {64, 64});
@@ -676,25 +696,109 @@ private:
   /** Represents the operation done in parallel on the bitvectors */
   typedef std::function<SymBitVector (SymBitVector, SymBitVector)> BinaryOperator;
 
+  class PackedOpcode {
+
+  public:
+
+    PackedOpcode(std::string opcode, BinaryOperator binop) :
+      opcode_(opcode), binop_(binop) {
+      set_uninterpreted(false);
+      set_only_one(false);
+      set_clear(false);
+      set_input_width(0);
+      set_output_width(0);
+      set_fixed_arg(-1);
+      set_avx_alignment(false);
+    }
+
+    PackedOpcode& set_uninterpreted(bool b = true) {
+      uninterpreted_ = b;
+      return *this;
+    }
+    PackedOpcode& set_only_one(bool b = true) {
+      only_one_ = b;
+      return *this;
+    }
+    PackedOpcode& set_clear(bool b = true) {
+      clear_unset_ = b;
+      return *this;
+    }
+    PackedOpcode& set_input_width(uint16_t width) {
+      input_width_ = width;
+      return *this;
+    }
+    PackedOpcode& set_output_width(uint16_t width) {
+      output_width_ = width;
+      return *this;
+    }
+    PackedOpcode& set_fixed_arg(int16_t index) {
+      fixed_arg_ = index;
+      return *this;
+    }
+    PackedOpcode& set_avx_alignment(bool avx_alignment) {
+      avx_alignment_ = avx_alignment;
+    }
+
+    SymBitVector operator()(x64asm::Operand arg1, SymBitVector bv1, x64asm::Operand arg2, SymBitVector bv2, SymState& ss) {
+      return binop_(bv1, bv2);
+    }
+
+    bool get_uninterpreted() {
+      return uninterpreted_;
+    }
+    bool get_only_one() {
+      return only_one_;
+    }
+    bool get_clear() {
+      return clear_unset_;
+    }
+    uint16_t get_input_width() {
+      return input_width_;
+    }
+    uint16_t get_output_width() {
+      return output_width_;
+    }
+    int16_t get_fixed_arg() {
+      return fixed_arg_;
+    }
+    uint16_t get_avx_alignment() {
+      return avx_alignment_;
+    }
+
+  private:
+
+    BinaryOperator binop_;
+
+    std::string opcode_;
+    bool uninterpreted_;
+    bool only_one_;
+    bool clear_unset_;
+    int16_t  fixed_arg_;
+    uint16_t input_width_;
+    uint16_t output_width_;
+    bool avx_alignment_;
+  };
+
   /** Adds an opcode to our internal maps */
-  void add_opcode(std::string opcode, BinaryOperator op,
-                  uint16_t width, uint16_t output_width = 0,
-                  bool uninterpreted = false, bool limit1 = false);
+  PackedOpcode& add_opcode(std::string opcode, BinaryOperator op,
+                           uint16_t width, uint16_t output_width = 0,
+                           bool uninterpreted = false, bool limit1 = false) {
 
-  /** Opcode -> BinaryOperator */
-  std::map<std::string, BinaryOperator> operator_;
-  /** Opcode -> Uses uninterpreted function? */
-  std::map<std::string, bool> uninterpreted_;
-  /** Opcode -> Only to first <width> bits? */
-  std::map<std::string, bool> limit1_;
-  /** Opcode -> Width to break arguments into */
-  std::map<std::string, uint16_t> width_;
-  /** Opcode -> output width for results */
-  std::map<std::string, uint16_t> output_width_;
+    //Note: memory leak here.  Make custom destructor.
+    PackedOpcode* entry = new PackedOpcode(opcode, op);
+    entry->set_input_width(width)
+    .set_output_width(output_width)
+    .set_uninterpreted(uninterpreted)
+    .set_only_one(limit1);
 
+    opcodes_[opcode] = entry;
+    opcodes_["v" + opcode] = entry;
 
+    return *entry;
+  }
 
-
+  /** Opcode -> PackedOpcode */
+  std::map<std::string, PackedOpcode*> opcodes_;
 
 };
 
