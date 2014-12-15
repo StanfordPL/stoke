@@ -148,8 +148,7 @@ haswell_debug:
 haswell_profile:
 	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=core-avx2"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
-haswell_test:
-	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=core-avx2"
+haswell_test: haswell_debug
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test
 
@@ -163,8 +162,7 @@ sandybridge_debug:
 sandybridge_profile:
 	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=corei7-avx"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg"
-sandybridge_test:
-	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7-avx"
+sandybridge_test: sandybridge_debug
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test
 
@@ -178,8 +176,7 @@ nehalem_debug:
 nehalem_profile:
 	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7"
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg"
-nehalem_test:
-	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7"
+nehalem_test: nehalem_debug
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test
 
