@@ -23,7 +23,7 @@
 #include "src/search/transforms.h"
 #include "tools/args/target.h"
 #include "tools/args/transforms.h"
-#include "tools/target/cpu_info.h"
+#include "src/target/cpu_info.h"
 #include "tools/ui/console.h"
 
 namespace stoke {

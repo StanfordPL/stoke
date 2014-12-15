@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "tools/target/cpu_info.h"
+#include "src/target/cpu_info.h"
 
 #include <cpuid.h>
 #include <tuple>

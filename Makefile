@@ -59,6 +59,8 @@ SRC_OBJ=\
 	src/symstate/memory.o \
 	src/symstate/state.o \
 	\
+	src/target/cpu_info.o	\
+	\
 	src/tunit/tunit.o \
 	\
 	src/validator/handler.o \
@@ -99,9 +101,7 @@ TOOL_NON_ARG_OBJ=\
 	tools/io/reduction.o \
 	tools/io/performance_term.o \
 	tools/io/strategy.o \
-	tools/io/timeout.o \
-	\
-	tools/target/cpu_info.o	
+	tools/io/timeout.o
 
 TOOL_OBJ=$(TOOL_ARGS_OBJ) $(TOOL_NON_ARG_OBJ)
 
@@ -235,6 +235,8 @@ src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/symstate/%.o: src/symstate/%.cc src/symstate/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/target/%.o: src/target/%.cc src/target/%.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/validator/handlers/%.o: src/validator/handlers/%.cc src/validator/handlers/%.h src/validator/handlers.h src/validator/*.h
@@ -247,8 +249,6 @@ src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
 tools/args/%.o: tools/args/%.cc tools/args/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 tools/io/%.o: tools/io/%.cc tools/io/%.h
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-tools/target/%.o: tools/target/%.cc tools/target/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
 ##### BINARY TARGETS
@@ -312,8 +312,6 @@ bin/stoke_testcase: tools/apps/stoke_testcase.cc tools/gadgets/*.h $(SRC_OBJ) $(
 
 TEST_OBJ=\
          tests/fixture.o \
-				 \
-				 tools/target/cpu_info.o \
          \
          src/ext/gtest-1.7.0/libgtest.a \
          src/ext/gtest-1.7.0/libgtest_main.a
