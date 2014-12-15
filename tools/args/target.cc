@@ -54,4 +54,8 @@ FlagArg& heap_out_arg =
   FlagArg::create("heap_out")
   .description("Is heap defined on exit?");
 
+FlagArg& no_default_mxcsr_arg =
+	FlagArg::create("no_default_mxcsr")
+	.description("Remove the default rounding control bit (%mxcsr[rc]) from def_in");
+
 } // namespace stoke

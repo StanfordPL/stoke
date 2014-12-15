@@ -295,8 +295,8 @@ void Cfg::recompute_defs_loops() {
   def_ins_.resize(code_.size() + 1, RegSet::empty());
   def_outs_.resize(num_blocks(), RegSet::empty());
 
-  // Boundary conditions; MXCSR[rc] is always defined
-  def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
+  // Boundary conditions
+  def_outs_[get_entry()] = fxn_def_ins_;
 
   // Initial conditions
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
@@ -345,8 +345,8 @@ void Cfg::recompute_defs_loop_free() {
   def_ins_.resize(code_.size() + 1, RegSet::empty());
   def_outs_.resize(num_blocks(), RegSet::empty());
 
-  // Boundary conditions ; MXCSR[rc] is always defined
-  def_outs_[get_entry()] = fxn_def_ins_ + mxcsr_rc;
+  // Boundary conditions 
+  def_outs_[get_entry()] = fxn_def_ins_;
 
   // Iterate only once in topological order (skip entry)
   forward_topo_sort();
