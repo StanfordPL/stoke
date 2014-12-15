@@ -59,10 +59,10 @@ public:
   }
 
 private:
-		x64asm::RegSet def_in() const {
-			// Add %mxcsr[rc] to def_in unless otherwise specified
-			return no_default_mxcsr_arg ? def_in_arg.value() : def_in_arg.value() + x64asm::mxcsr_rc;
-		}
+  x64asm::RegSet def_in() const {
+    // Add %mxcsr[rc] to def_in unless otherwise specified
+    return no_default_mxcsr_arg ? def_in_arg.value() : def_in_arg.value() + x64asm::mxcsr_rc;
+  }
 };
 
 } // namespace stoke
