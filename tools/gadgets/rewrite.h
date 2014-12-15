@@ -21,7 +21,7 @@
 #include "src/sandbox/sandbox.h"
 #include "tools/args/rewrite.h"
 #include "tools/args/target.h"
-#include "tools/target/cpu_info.h"
+#include "src/target/cpu_info.h"
 #include "tools/ui/console.h"
 
 namespace stoke {
