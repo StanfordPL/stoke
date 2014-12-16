@@ -153,7 +153,7 @@ protected:
     if(!s_.has_model())
       return false;
 
-    stoke::CpuState validator_final(s_, "_FINAL");
+    stoke::CpuState validator_final = stoke::Validator::state_from_model(s_, "_FINAL");
 
     // Run the sandbox
     stoke::Sandbox sb;

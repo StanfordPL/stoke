@@ -65,7 +65,7 @@ public:
   /** Lookup the symbolic representation of a particular flag */
   SymBool operator[](const x64asm::Eflags rf) const;
   /** Lookup the symbolic representation of a generic operand.
-    * Will not trigger symbolic segfaults. */
+    * Will not trigger symbolic segfaults.  Cannot be used to do memory. */
   SymBitVector lookup(const x64asm::Operand o) const;
 
   /** Set the operand in the symbolic state to the specified bitvector.

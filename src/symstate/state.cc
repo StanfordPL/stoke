@@ -137,15 +137,6 @@ SymBitVector SymState::lookup(const Operand o) const {
     return SymBitVector::constant(o.size(), imm);
   }
 
-  if(o.is_typical_memory()) {
-    auto& m = reinterpret_cast<const M8&>(o);
-    uint16_t size = o.size();
-    auto addr = get_addr(m);
-
-    auto p = memory.read(addr, size, lineno_);
-    return p.first;
-  }
-
   assert(false);
   return SymBitVector::constant(o.size(), 0);
 }
