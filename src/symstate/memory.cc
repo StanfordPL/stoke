@@ -36,21 +36,18 @@ uint64_t read_quadword(const Memory& m, uint64_t base, uint64_t i) {
 
 SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
 
-  /*
-  SymBitVector addr_var = SymBitVector::var(64, "ADDRESS_" + to_string(temp()));
-  SymBitVector value_var = SymBitVector::var(size, "MEMORY_" + to_string(temp()));
+  SymBitVector addr_var = SymBitVector::var(64, "MEMORY_ADDRESS_" + to_string(temp()));
+  SymBitVector value_var = SymBitVector::var(size, "MEMORY_WRITE_" + to_string(temp()));
 
   state_->constraints.push_back(addr_var == address);
   state_->constraints.push_back(value_var == value);
-  */
 
-  //MemoryWrite mw({ addr_var, value_var, size, line_no });
-  MemoryWrite mw({ address, value, size, line_no });
+  MemoryAccess mw({ addr_var, value_var, size, line_no });
   writes_.push_back(mw);
 
   if(heap_.type()) {
-    return (address < SymBitVector::constant(64, heap_start_)) |
-           (address > SymBitVector::constant(64, heap_start_ + heap_size_ - size));
+    return (addr_var < SymBitVector::constant(64, heap_start_)) |
+           (addr_var > SymBitVector::constant(64, heap_start_ + heap_size_ - size));
   } else {
     return SymBool::_false();
   }
@@ -71,11 +68,18 @@ void SymMemory::init_concrete(const Memory& stack, const Memory& heap) {
 
 }
 
-pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size, size_t line_no) const {
+pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
+
+  SymBitVector addr_var = SymBitVector::var(64, "MEMORY_ADDRESS_" + to_string(temp()));
+  SymBitVector value = SymBitVector::var(size, "MEMORY_READ_" + to_string(temp()));
+
+  state_->constraints.push_back(addr_var == address);
+
+  MemoryAccess mw({ addr_var, value, size, line_no });
+  reads_.push_back(mw);
 
   SymBool segv = SymBool::_false();
 
-  SymBitVector value = SymBitVector::var(size, "READ_" + to_string(temp()));
 
   // Check if this value was concretely initialized in heap.
   if(heap_.type() != SymBitVector::NONE) {
@@ -237,3 +241,20 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size,
   return pair<SymBitVector, SymBool>(value, segv);
 
 }
+
+
+vector<pair<string, uint16_t>> SymMemory::get_address_vars() const {
+  vector<pair<string, uint16_t>> list;
+  for(size_t i = 0; i < writes_.size(); ++i) {
+    assert(writes_[i].value.ptr->type() == SymBitVector::VAR);
+    const auto* var = static_cast<const SymBitVectorVar*>(writes_[i].value.ptr);
+    list.push_back(std::pair<std::string, uint16_t>(var->name_, var->size_));
+  }
+  for(size_t i = 0; i < reads_.size(); ++i) {
+    assert(reads_[i].value.ptr->type() == SymBitVector::VAR);
+    const auto* var = static_cast<const SymBitVectorVar*>(reads_[i].value.ptr);
+    list.push_back(std::pair<std::string, uint16_t>(var->name_, var->size_));
+  }
+  return list;
+}
+
