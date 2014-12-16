@@ -32,6 +32,7 @@ extern cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& def_in_arg
 extern cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& live_out_arg;
 extern cpputil::FlagArg& stack_out_arg;
 extern cpputil::FlagArg& heap_out_arg;
+extern cpputil::FlagArg& no_default_mxcsr_arg;
 
 } // namespace stoke
 
