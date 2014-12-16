@@ -32,6 +32,7 @@
 namespace stoke {
 
 class Validator {
+
 public:
 
   Validator(SMTSolver& solver) : solver_(solver),
@@ -96,9 +97,19 @@ public:
   /** Returns whether this instruction is supported */
   bool is_supported(x64asm::Instruction& i);
 
+  /** Extracts a counterexample from a model.  Assumes that you've constructed
+   * constraints the same way the validator does and know what you're doing.
+   * This would be private were it not for the need to be accessible from
+   * testing classes (where friendship doesn't work properly).*/
+  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
+                                   const SymMemory* memory = NULL, const SymMemory* memory2 = NULL);
+
 private:
 
-  void generate_constraints(const stoke::Cfg&, const stoke::Cfg&, 
+  /** Take two codes and generate constraints asserting their equivalence.
+   * Also return final symbolic states (that have information about memory
+   * which is useful for generating counterexamples) */
+  void generate_constraints(const stoke::Cfg&, const stoke::Cfg&,
                             SymState&, SymState&, std::vector<SymBool>&) const;
 
   /** Get the 'result' cpustate (including constraints) from a piece of code.  Throws an error
