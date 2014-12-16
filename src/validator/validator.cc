@@ -81,7 +81,9 @@ bool Validator::is_supported(Instruction& i) {
 }
 
 
-void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2, vector<SymBool>& constraints) const {
+void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2, 
+                                     SymState& f1_final, SymState& f2_final,
+                                     vector<SymBool>& constraints) const {
 
   // Check to make sure def-ins/live-outs agree
   if (f1.def_ins() != f2.def_ins()) {
@@ -97,47 +99,49 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
   // Create starting symbolic states
   SymState init("");
 
-  SymState first_init("1_INIT");
-  SymState second_init("2_INIT");
+  SymState first("1_INIT");
+  SymState second("2_INIT");
 
-  for(auto it : first_init.equality_constraints(init, f1.def_ins()))
+  for(auto it : first.equality_constraints(init, f1.def_ins()))
     constraints.push_back(it);
 
-  for(auto it : second_init.equality_constraints(init, f1.def_ins()))
+  for(auto it : second.equality_constraints(init, f1.def_ins()))
     constraints.push_back(it);
 
   // Setup aliasing analyses
   AliasAnalysis first_analysis(f1.get_code());
   AliasAnalysis second_analysis(f2.get_code());
 
-  first_init.memory.set_analysis(&first_analysis);
-  second_init.memory.set_analysis(&second_analysis);
+  first.memory.set_analysis(&first_analysis);
+  second.memory.set_analysis(&second_analysis);
 
   // Build the circuits
-  SymState first_final = build_circuit(f1, first_init);
-  SymState second_final = build_circuit(f2, second_init);
+  build_circuit(f1, first);
+  build_circuit(f2, second);
 
-  for(auto it : first_final.constraints)
+  for(auto it : first.constraints)
     constraints.push_back(it);
-  for(auto it : second_final.constraints)
+  for(auto it : second.constraints)
     constraints.push_back(it);
 
   // Assert inequality of the final states
   SymBool inequality = SymBool::_false();
-  for(auto it : first_final.equality_constraints(second_final, f1.live_outs())) {
+  for(auto it : first.equality_constraints(second, f1.live_outs())) {
     inequality = inequality | !it;
   }
 
   constraints.push_back(inequality);
+  f1_final = first;
+  f2_final = first;
 
   // Create states to track the final values on each side
   // (this is to get a counterexample)
   SymState first_outputs("1_FINAL");
   SymState second_outputs("2_FINAL");
 
-  for(auto it : first_outputs.equality_constraints(first_final, f1.live_outs()))
+  for(auto it : first_outputs.equality_constraints(first, f1.live_outs()))
     constraints.push_back(it);
-  for(auto it : second_outputs.equality_constraints(second_final, f1.live_outs()))
+  for(auto it : second_outputs.equality_constraints(second, f1.live_outs()))
     constraints.push_back(it);
 
   /*
@@ -176,9 +180,8 @@ void Validator::build_circuit(const Instruction& instr, SymState& state) const {
   */
 }
 
-SymState Validator::build_circuit(const Cfg& cfg, const SymState& start) const {
+void Validator::build_circuit(const Cfg& cfg, SymState& state) const {
 
-  SymState state = start;
   Code code = cfg.get_code();
 
   for(size_t i = 0; i < code.size(); ++i) {
@@ -189,8 +192,6 @@ SymState Validator::build_circuit(const Cfg& cfg, const SymState& start) const {
     state.set_lineno(i);
     build_circuit(code[i], state);
   }
-
-  return state;
 }
 
 
@@ -206,7 +207,9 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
 
     // Generate constraints
     vector<SymBool> constraints;
-    generate_constraints(target, rewrite, constraints);
+    SymState target_final;
+    SymState rewrite_final;
+    generate_constraints(target, rewrite, target_final, rewrite_final, constraints);
 
     // Run the solver
     bool is_sat = solver_.is_sat(constraints);
@@ -218,7 +221,7 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
     if (is_sat && solver_.has_model()) {
 
       counterexample_valid_ = true;
-      counterexample_ =      CpuState(solver_, "_");
+      counterexample_ =      CpuState(solver_, "_", &target_final.memory, &rewrite_final.memory);
       target_final_state_  = CpuState(solver_, "_1_FINAL");
       rewrite_final_state_ = CpuState(solver_, "_2_FINAL");
 

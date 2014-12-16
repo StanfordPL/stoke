@@ -98,11 +98,12 @@ public:
 
 private:
 
-  void generate_constraints(const stoke::Cfg&, const stoke::Cfg&, std::vector<SymBool>&) const;
+  void generate_constraints(const stoke::Cfg&, const stoke::Cfg&, 
+                            SymState&, SymState&, std::vector<SymBool>&) const;
 
   /** Get the 'result' cpustate (including constraints) from a piece of code.  Throws an error
       on failure. */
-  SymState build_circuit(const Cfg& cfg, const SymState& state) const;
+  void build_circuit(const Cfg& cfg, SymState& state) const;
   /** Build a circuit for a single instruction (trashing the starting state).  Throws an error
       on failure. */
   void build_circuit(const x64asm::Instruction& i, SymState& state) const;
