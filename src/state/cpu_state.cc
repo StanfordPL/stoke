@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
+#include "src/symstate/memory.h"
 
 using namespace cpputil;
 using namespace std;
@@ -89,44 +92,6 @@ istream& CpuState::read_text(istream& is) {
   }
 
   return is;
-}
-
-void CpuState::convert_from_model(SMTSolver& smt, string& name_suffix) {
-
-  stack.resize(0, 0); //base, size
-  heap.resize(0, 0);  //base, size
-
-  for(size_t i = 0; i < r64s.size(); ++i) {
-    stringstream name;
-    name << r64s[i] << name_suffix;
-    gp[r64s[i]] = smt.get_model_bv(name.str(), 1);
-  }
-
-  for(size_t i = 0; i < ymms.size(); ++i) {
-    stringstream name;
-    name << ymms[i] << name_suffix;
-    sse[ymms[i]] = smt.get_model_bv(name.str(), 4);
-  }
-
-  for(size_t i = 0; i < eflags.size(); ++i) {
-    if(!rf.is_status(eflags[i].index()))
-      continue;
-
-    stringstream name;
-    name << eflags[i] << name_suffix;
-    rf.set(eflags[i].index(), smt.get_model_bool(name.str()));
-  }
-
-  if(smt.get_model_bool("sigbus" + name_suffix)) {
-    code = ErrorCode::SIGBUS_;
-  } else if (smt.get_model_bool("sigfpe" + name_suffix)) {
-    code = ErrorCode::SIGFPE_;
-  } else if (smt.get_model_bool("sigsegv" + name_suffix)) {
-    code = ErrorCode::SIGSEGV_;
-  } else {
-    code = ErrorCode::NORMAL;
-  }
-
 }
 
 } // namespace stoke

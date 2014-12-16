@@ -43,11 +43,14 @@ public:
   SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no);
 
   /** Reads from the memory.  Returns value and segv condition. */
-  std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no) const;
+  std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no);
 
   /** Set concrete initialization values */
   void init_concrete(const Memory& stack, const Memory& heap);
 
+  /** Get variables holding all addresses encountered so far.  Good for extracting data from
+    * a model. */
+  std::vector<std::pair<std::string, uint16_t>> get_address_vars() const;
 private:
 
   /** Concrete valid heap locations at start.  Stored big-endian.  Optional.*/
@@ -57,8 +60,8 @@ private:
   /** Concrete heap size */
   uint64_t heap_size_;
 
-  /** Data structure for saving writes */
-  struct MemoryWrite {
+  /** Data structure for saving reads/writes */
+  struct MemoryAccess {
     SymBitVector address;
     SymBitVector value;
     uint16_t size;
@@ -66,7 +69,9 @@ private:
   };
 
   /** Keep track of all the memory writes */
-  std::vector<MemoryWrite> writes_;
+  std::vector<MemoryAccess> writes_;
+  /** Keep track of all the memory reads */
+  std::vector<MemoryAccess> reads_;
 
 
   /** Track a unique counter value */
