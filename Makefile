@@ -358,7 +358,6 @@ clean:
 	rm -rf $(VALIDATOR_AUTOGEN)
 
 dist_clean: clean
-	rm -rf src/ext/astyle
 	rm -rf src/ext/cpputil
 	rm -rf src/ext/x64asm
 	- $(MAKE) -C src/ext/gtest-1.7.0 clean
