@@ -38,6 +38,11 @@ bool regset_is_supported(x64asm::RegSet rs) {
                      eflags_cf + eflags_of +
                      eflags_pf + eflags_sf + eflags_zf;
 
+  // TODO mxcsr's presense here is a bug.  See #339.
+  for(size_t i = 0; i < mxcsr.size(); ++i) {
+    supported = supported + mxcsr[i];
+  }
+
   // Do the check.
   if((supported & rs) != rs) {
     stringstream tmp;
