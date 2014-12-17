@@ -308,3 +308,17 @@ TEST_F(ValidatorBaseTest, TimeoutWorks) {
 
 }
 
+TEST_F(ValidatorBaseTest, NopsAndLabelsSupported) {
+
+  target_ << "nop" << std::endl;
+  target_ << "nop" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << ".FOO:" << std::endl;
+  rewrite_ << "nop" << std::endl;
+  rewrite_ << ".BAR:" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
