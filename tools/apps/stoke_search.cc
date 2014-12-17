@@ -222,6 +222,11 @@ int main(int argc, char** argv) {
 
     const auto verified = verifier.verify(target, state.best_correct);
 
+    if(verifier.has_error()) {
+      Console::msg() << "The verifier encountered an error:" << endl;
+      Console::msg() << verifier.error() << endl;
+    }
+
     if (!state.success) {
       Console::msg() << "Unable to discover a new correct rewrite before timing out... " << endl << endl;
     } else if (!verified) {
