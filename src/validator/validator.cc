@@ -163,6 +163,10 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
 
 void Validator::build_circuit(const Instruction& instr, SymState& state) const {
 
+  /* No need to do anything for labels/nops */
+  if(instr.is_label_defn() || instr.is_nop())
+    return;
+
   /* For now, we don't handle any control flow */
   if(instr.is_any_jump() || instr.is_any_call() || instr.is_any_return()) {
     stringstream ss;
@@ -171,6 +175,12 @@ void Validator::build_circuit(const Instruction& instr, SymState& state) const {
   }
 
   /* Otherwise, run the handler and check for errors */
+  if(!handler_.get_support(instr)) {
+    stringstream ss;
+    ss << "Instruction not supported: " << instr;
+    throw VALIDATOR_ERROR(ss.str());
+  }
+
   handler_.build_circuit(instr, state);
 
   if(handler_.has_error()) {
