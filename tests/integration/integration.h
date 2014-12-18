@@ -13,6 +13,8 @@
 // limitations under the License.
 
 
+#include <iostream>
+#include <fstream>
 #include <cstdlib>
 #include <sys/time.h>
 
@@ -63,5 +65,65 @@ TEST(Integration, TutorialTest) {
 
   // Cleanup
   EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make clean >/dev/null"));
+
+}
+
+int wc(std::string filename) {
+  std::ifstream inFile(filename);
+  return std::count(std::istreambuf_iterator<char>(inFile),
+                    std::istreambuf_iterator<char>(), '\n');
+}
+
+TEST(Integration, PairityTest) {
+
+  struct timeval start;
+  struct timeval finish;
+  uint64_t diff_1;
+  uint64_t diff_2;
+
+  // Build and test original program
+  EXPECT_EQ(0, system("cd examples/pairity; PATH=$PATH:../../bin make clean orig >/dev/null"));
+
+  gettimeofday(&start, NULL);
+  EXPECT_EQ(0, system("./examples/pairity/a.out 10000000000000 >/dev/null"));
+  gettimeofday(&finish, NULL);
+  diff_1 = (finish.tv_sec - start.tv_sec)*1000000 +
+           (finish.tv_usec - start.tv_usec);
+
+
+
+  // Run make extract, testcase
+  EXPECT_EQ(0, system("cd examples/pairity; PATH=$PATH:../../bin make extract >/dev/null"));
+  EXPECT_EQ(0, system("cd examples/pairity; PATH=$PATH:../../bin make testcase >/dev/null"));
+
+  // In 10 tries, search should succeed at least once...
+  size_t good = 0;
+  for(size_t i = 0; i < 10; ++i) {
+    if(!system("cd examples/pairity; PATH=$PATH:../../bin make search >/dev/null")) {
+      if(wc("examples/pairity/result.s") < 20) {
+        good++;
+        break;
+      }
+    }
+  }
+  EXPECT_GT(good, (size_t)0);
+
+  // Run make replace
+  EXPECT_EQ(0, system("cd examples/pairity; PATH=$PATH:../../bin make replace >/dev/null"));
+
+  // Test new program
+  gettimeofday(&start, NULL);
+  EXPECT_EQ(0, system("./examples/pairity/a.out 10000000000000 >/dev/null"));
+  gettimeofday(&finish, NULL);
+  diff_2 = (finish.tv_sec - start.tv_sec)*1000000 +
+           (finish.tv_usec - start.tv_usec);
+
+
+  // There should have been at least a 2x speedup.
+  // Note, we're also timing system() here,
+  EXPECT_GT(diff_1, diff_2*2);
+
+  // Cleanup
+  EXPECT_EQ(0, system("cd examples/pairity; PATH=$PATH:../../bin make clean >/dev/null"));
 
 }
