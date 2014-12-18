@@ -25,6 +25,7 @@ class VerifierGadget : public Verifier {
 public:
   VerifierGadget(CostFunction& fxn) : Verifier(fxn) {
     set_strategy(strategy_arg);
+    set_timeout(timeout_arg);
   }
 };
 

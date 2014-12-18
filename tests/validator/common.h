@@ -583,7 +583,6 @@ private:
   /* Used to build a validator */
   stoke::Validator make_validator() {
     stoke::Validator v(s_);
-    v.set_mem_out(false);
     return v;
   }
 
