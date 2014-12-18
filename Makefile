@@ -329,17 +329,17 @@ tests/%.o: tests/%.cc tests/%.h
 bin/stoke_test: tools/apps/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard src/*/*.h) $(wildcard tests/*.h) $(wildcard tests/*/*.h) $(wildcard tests/*/*/*.h) tests/validator/handlers.h
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
 
-##### MISC
+## MISC
 
 .SECONDARY: $(SRC_OBJ) $(TOOL_OBJ)
 
 zsh_completion: bin/_stoke
-bin/_stoke: $(BIN) tools/scripts/zsh_completion_generator.py
-	tools/scripts/zsh_completion_generator.py
+bin/_stoke: $(BIN) tools/scripts/completion_generator.py
+	tools/scripts/completion_generator.py
 
 bash_completion: bin/stoke.bash
-bin/stoke.bash: $(BIN) tools/scripts/zsh_completion_generator.py
-	tools/scripts/zsh_completion_generator.py
+bin/stoke.bash: $(BIN) tools/scripts/completion_generator.py
+	tools/scripts/completion_generator.py
 
 format: src/ext/astyle
 	chmod +x "git/pre-commit.d/astyle.sh"
