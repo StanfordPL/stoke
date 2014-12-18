@@ -32,7 +32,7 @@ size_t pairity(uint64_t x) {
 }
 
 int main(int argc, char** argv) {
-  const auto itr = atoi(argv[1]);
+  const auto itr = strtoull(argv[1], NULL, 10);
 
   auto ret = 0;
   for (auto i = 0; i < itr; ++i) {
