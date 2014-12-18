@@ -39,12 +39,10 @@ public:
   Validator(SMTSolver& solver) : solver_(solver),
     handler_(*(new ComboHandler())), free_handler_(true) {
     has_error_ = false;
-    set_mem_out(false);
   }
 
   Validator(SMTSolver& solver, Handler& h) : solver_(solver), handler_(h), free_handler_(false) {
     has_error_ = false;
-    set_mem_out(false);
   }
 
   ~Validator() {
@@ -70,12 +68,6 @@ public:
     if(file)
       *file = error_file_;
     return error_message_;
-  }
-
-  /** Set whether to evaluate equivalence of memory */
-  Validator& set_mem_out(bool b) {
-    mem_out_ = b;
-    return *this;
   }
 
   /** Returns whether the last counterexample made sense */
@@ -135,8 +127,6 @@ private:
       on failure. */
   void build_circuit(const x64asm::Instruction& i, SymState& state) const;
 
-  /** Will the code write memory? */
-  bool mem_out_;
   /** SMT Solver to use */
   SMTSolver& solver_;
 

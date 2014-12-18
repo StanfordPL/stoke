@@ -52,7 +52,7 @@ public:
       ss << "PATH=$PATH:" << path_ << " ";
 
     ss << code;
-//    ss << " >/dev/null";
+    ss << " >/dev/null";
 
     uint64_t value = system(ss.str().c_str());
 
@@ -158,6 +158,6 @@ TEST_F(IntegrationTest, PairityTest) {
   EXPECT_GT(diff_1*100, diff_2*150);
 
   // Cleanup
-  //EXPECT_EQ(0, shell("make clean"));
+  EXPECT_EQ(0, shell("make clean"));
 
 }
