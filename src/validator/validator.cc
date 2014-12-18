@@ -60,20 +60,7 @@ bool regset_is_supported(x64asm::RegSet rs) {
 
 bool Validator::is_supported(Instruction& i) {
 
-  SymState s("");
-  try {
-    build_circuit(i, s);
-    has_error_ = false;
-    return true;
-  } catch (validator_error e) {
-    has_error_ = true;
-    error_message_ = e.get_message();
-    error_file_ = e.get_file();
-    error_line_ = e.get_line();
-    return false;
-  }
-
-  return false;
+  return handler_.get_support(i);
 }
 
 bool Validator::is_supported(Instruction& i) const {
