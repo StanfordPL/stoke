@@ -141,6 +141,12 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 
   auto opcode = get_opcode(instr);
 
+  error_ = "";
+  if(!get_support(instr)) {
+    error_ = "No support for this instruction.";
+    return;
+  }
+
   // Figure out the arguments
   Operand dst = instr.get_operand<Operand>(0);
   Operand src = instr.get_operand<Operand>(0);

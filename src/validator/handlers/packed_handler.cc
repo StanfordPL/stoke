@@ -44,6 +44,13 @@ Handler::SupportLevel PackedHandler::get_support(const x64asm::Instruction& inst
 
 void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& state) {
 
+  error_ = "";
+
+  if(!get_support(instr)) {
+    error_ = "Instruction not supported.";
+    return;
+  }
+
   auto opcode = get_opcode(instr);
 
   // Figure out the arguments
