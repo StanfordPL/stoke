@@ -66,6 +66,10 @@ FlagArg& callee_save_arg =
   .alternate("propose_callee_save")
   .description("Override the value of preserve_regs to the empty set");
 
+FlagArg& validator_must_support =
+  FlagArg::create("validator_must_support")
+  .description("Only propose rewrites that the STOKE formal validator can support");
+
 ValueArg<RegSet, RegSetReader, RegSetWriter>& preserve_regs_arg =
   ValueArg<RegSet, RegSetReader, RegSetWriter>::create("preserve_regs")
   .usage("{ %rax %rsp ... }")
