@@ -15,6 +15,7 @@
 #include "src/symstate/bitvector.h"
 #include "src/symstate/memory_manager.h"
 
+using namespace std;
 using namespace stoke;
 
 void SymMemoryManager::collect() {
@@ -24,6 +25,6 @@ void SymMemoryManager::collect() {
   for(const SymBoolAbstract* b : bools_) {
     delete b;
   }
-  bitvectors_ = std::vector<const SymBitVectorAbstract*>();
-  bools_ = std::vector<const SymBoolAbstract*>();
+  bitvectors_ = set<const SymBitVectorAbstract*>();
+  bools_ = set<const SymBoolAbstract*>();
 }
