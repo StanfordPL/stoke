@@ -22,11 +22,11 @@
 #include <vector>
 #include <set>
 
-#include "src/ext/x64asm/include/x64asm.h"
-
 #include "src/cfg/cfg.h"
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/sandbox/sandbox.h"
 #include "src/search/move.h"
+#include "src/validator/validator.h"
 
 namespace stoke {
 
@@ -66,6 +66,12 @@ public:
     }
     return *this;
   }
+  /** Provide a validator to check for instruction support.  If not provided, no check is done. */
+  Transforms& set_must_validate(Validator* v) {
+    validator_ = v;
+    return *this;
+  }
+
 
   /** Transforms a control flow graph using a move type, returns true if the change succeeded. */
   bool modify(Cfg& cfg, Move type);
@@ -350,6 +356,9 @@ private:
   /** Indices for swap or code motion moves. */
   size_t move_i_;
   size_t move_j_;
+
+  /** Validator to check for support. */
+  Validator* validator_ = NULL;
 
   /** Random generator. */
   std::default_random_engine gen_;

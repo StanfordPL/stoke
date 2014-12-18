@@ -21,6 +21,8 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/search/transforms.h"
+#include "src/solver/z3solver.h"
+#include "src/validator/validator.h"
 #include "tools/args/target.h"
 #include "tools/args/transforms.h"
 #include "tools/target/cpu_info.h"
@@ -59,10 +61,32 @@ public:
       insert_label(fxn.code[0].get_operand<x64asm::Label>(0));
     }
 
+    if(validator_must_support) {
+      // need to instantiate a validator/solver that will
+      // live into the future.
+      smt_ = new Z3Solver();
+      validator_ = new Validator(*smt_);
+      set_must_validate(validator_);
+    }
+
     if (has_error()) {
       Console::error(1) << get_error() << std::endl;
     }
   }
+
+  ~TransformsGadget() {
+    if(validator_) {
+      delete validator_;
+    }
+    if(smt_) {
+      delete smt_;
+    }
+  }
+
+private:
+
+  Z3Solver* smt_ = NULL;
+  Validator* validator_ = NULL;
 };
 
 } // namespace stoke
