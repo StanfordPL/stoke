@@ -123,6 +123,12 @@ void ConditionalHandler::build_circuit(const x64asm::Instruction& instr, SymStat
 
   string opcode = get_opcode(instr);
 
+  error_ = "";
+  if(!get_support(instr)) {
+    error_ = "Instruction not supported";
+    return;
+  }
+
   bool cmov = opcode.substr(0, 4) == "cmov";
 
   // Get operands
