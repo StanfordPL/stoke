@@ -16,6 +16,7 @@
 #ifndef _STOKE_SRC_SYMSTATE_BOOL_H
 #define _STOKE_SRC_SYMSTATE_BOOL_H
 
+#include "src/symstate/memory_manager.h"
 #include <string>
 
 namespace stoke {
@@ -113,8 +114,21 @@ public:
 
   /** Construct a SymBool pointing to nothing */
   SymBool() : ptr(NULL) {}
-  /** Construct a SymBool from a pointer to an underlying object */
-  SymBool(const SymBoolAbstract * const ptr_) : ptr(ptr_) {}
+  /** Constructs a new SymBool from a pointer to the AST hierarchy */
+  SymBool(const SymBoolAbstract * ptr_) : ptr(ptr_) {
+    if(memory_manager_)
+      memory_manager_->add(ptr_);
+  }
+
+  /** Set a memory manager */
+  static void set_memory_manager(SymMemoryManager* mm) {
+    memory_manager_ = mm;
+  }
+
+private:
+
+  /** Memory Manager */
+  static SymMemoryManager* memory_manager_;
 
 };
 

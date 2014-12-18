@@ -21,6 +21,7 @@
 
 #include "src/symstate/bool.h"
 #include "src/symstate/function.h"
+#include "src/symstate/memory_manager.h"
 
 namespace stoke {
 
@@ -164,7 +165,6 @@ public:
   /** Signed < comparison */
   SymBool s_lt(const SymBitVector& other) const;
 
-
   /** Computes the parity of the bitvector */
   SymBool pairity() const;
 
@@ -215,7 +215,20 @@ public:
   /** Constructs a SymBitVector that doesn't point to anything */
   SymBitVector() : ptr(NULL) {}
   /** Constructs a new SymBitVector from a pointer to the AST hierarchy */
-  SymBitVector(const SymBitVectorAbstract * ptr_) : ptr(ptr_) {}
+  SymBitVector(const SymBitVectorAbstract * ptr_) : ptr(ptr_) {
+    if(memory_manager_)
+      memory_manager_->add(ptr_);
+  }
+
+  /** Set a memory manager */
+  static void set_memory_manager(SymMemoryManager* mm) {
+    memory_manager_ = mm;
+  }
+
+private:
+
+  /** Memory Manager */
+  static SymMemoryManager* memory_manager_;
 
 };
 
