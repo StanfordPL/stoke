@@ -1,4 +1,4 @@
-# Copyright 2014 eric schkufza
+# Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-all: orig extract testcase search replace plots
+all: orig extract testcase search replace
 
 orig:
 	g++ -std=c++11 -fno-inline -O3 main.cc
