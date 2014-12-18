@@ -18,30 +18,80 @@
 #include <cstdlib>
 #include <sys/time.h>
 
-TEST(Integration, TutorialTest) {
+class IntegrationTest : public ::testing::Test {
 
-  struct timeval start;
-  struct timeval finish;
+public:
+
+  virtual void SetUp() {
+    set_path("../../bin");
+  }
+
+  /** Specify the working directory for calls to 'system' */
+  void set_working_dir(std::string wd) {
+    working_directory_ = wd;
+  }
+
+  /** Specify the path for calls to 'system' */
+  void set_path(std::string path) {
+    path_ = path;
+  }
+
+  /** Execute in the shell */
+  uint64_t shell(std::string code, uint64_t* time = NULL) {
+    struct timeval start;
+    struct timeval finish;
+
+    gettimeofday(&start, NULL);
+
+    std::stringstream ss;
+
+    if(working_directory_ != "")
+      ss << "cd " << working_directory_ << "; ";
+
+    if(path_ != "")
+      ss << "PATH=$PATH:" << path_ << " ";
+
+    ss << code;
+//    ss << " >/dev/null";
+
+    uint64_t value = system(ss.str().c_str());
+
+    gettimeofday(&finish, NULL);
+
+    if(time) {
+      *time = (finish.tv_sec - start.tv_sec)*1000000 +
+              (finish.tv_usec - start.tv_usec);
+    }
+
+    return value;
+  }
+
+private:
+
+  std::string working_directory_;
+  std::string path_;
+
+};
+
+TEST_F(IntegrationTest, TutorialTest) {
+
   uint64_t diff_1;
   uint64_t diff_2;
 
-  // Build and test original program
-  EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make clean orig >/dev/null"));
+  set_working_dir("examples/tutorial");
 
-  gettimeofday(&start, NULL);
-  EXPECT_EQ(49152, system("./examples/tutorial/a.out 90000000 >/dev/null"));
-  gettimeofday(&finish, NULL);
-  diff_1 = (finish.tv_sec - start.tv_sec)*1000000 +
-           (finish.tv_usec - start.tv_usec);
+  // Build and test original program
+  EXPECT_EQ(0, shell("make clean orig"));
+  EXPECT_EQ(49152, shell("./a.out 90000000", &diff_1));
 
   // Run make extract, testcase
-  EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make extract >/dev/null"));
-  EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make testcase >/dev/null"));
+  EXPECT_EQ(0, shell("make extract"));
+  EXPECT_EQ(0, shell("make testcase"));
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
   for(size_t i = 0; i < 10; ++i) {
-    if(!system("cd examples/tutorial; PATH=$PATH:../../bin make search >/dev/null")) {
+    if(!shell("make search")) {
       good++;
       break;
     }
@@ -49,22 +99,17 @@ TEST(Integration, TutorialTest) {
   EXPECT_GT(good, (size_t)0);
 
   // Run make replace
-  EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make replace >/dev/null"));
+  EXPECT_EQ(0, shell("make replace"));
 
   // Test new program
-  gettimeofday(&start, NULL);
-  EXPECT_EQ(49152, system("./examples/tutorial/a.out 90000000"));
-  gettimeofday(&finish, NULL);
-  diff_2 = (finish.tv_sec - start.tv_sec)*1000000 +
-           (finish.tv_usec - start.tv_usec);
-
+  EXPECT_EQ(49152, shell("./a.out 90000000", &diff_2));
 
   // There should have been at least a 5x speedup.
   // Note, we're also timing system() here,
   EXPECT_GT(diff_1, diff_2*5);
 
   // Cleanup
-  EXPECT_EQ(0, system("cd examples/tutorial; PATH=$PATH:../../bin make clean >/dev/null"));
+  EXPECT_EQ(0, shell("make clean"));
 
 }
 
@@ -74,32 +119,26 @@ int wc(std::string filename) {
                     std::istreambuf_iterator<char>(), '\n');
 }
 
-TEST(Integration, PairityTest) {
+TEST_F(IntegrationTest, PairityTest) {
 
-  struct timeval start;
-  struct timeval finish;
   uint64_t diff_1;
   uint64_t diff_2;
 
+  set_working_dir("examples/pairity");
+
   // Build and test original program
-  EXPECT_EQ(0, system("cd examples/pairity; PATH=$PATH:../../bin make clean orig >/dev/null"));
+  EXPECT_EQ(0, shell("make clean orig"));
 
-  gettimeofday(&start, NULL);
-  EXPECT_EQ(0, system("./examples/pairity/a.out 10000000000000 >/dev/null"));
-  gettimeofday(&finish, NULL);
-  diff_1 = (finish.tv_sec - start.tv_sec)*1000000 +
-           (finish.tv_usec - start.tv_usec);
-
-
+  EXPECT_EQ(0, shell("./a.out 10000000000000", &diff_1));
 
   // Run make extract, testcase
-  EXPECT_EQ(0, system("cd examples/pairity; PATH=$PATH:../../bin make extract >/dev/null"));
-  EXPECT_EQ(0, system("cd examples/pairity; PATH=$PATH:../../bin make testcase >/dev/null"));
+  EXPECT_EQ(0, shell("make extract"));
+  EXPECT_EQ(0, shell("make testcase"));
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
   for(size_t i = 0; i < 10; ++i) {
-    if(!system("cd examples/pairity; PATH=$PATH:../../bin make search >/dev/null")) {
+    if(!shell("make search")) {
       if(wc("examples/pairity/result.s") < 20) {
         good++;
         break;
@@ -109,21 +148,16 @@ TEST(Integration, PairityTest) {
   EXPECT_GT(good, (size_t)0);
 
   // Run make replace
-  EXPECT_EQ(0, system("cd examples/pairity; PATH=$PATH:../../bin make replace >/dev/null"));
+  EXPECT_EQ(0, shell("make replace"));
 
   // Test new program
-  gettimeofday(&start, NULL);
-  EXPECT_EQ(0, system("./examples/pairity/a.out 10000000000000 >/dev/null"));
-  gettimeofday(&finish, NULL);
-  diff_2 = (finish.tv_sec - start.tv_sec)*1000000 +
-           (finish.tv_usec - start.tv_usec);
+  EXPECT_EQ(0, shell("./a.out 10000000000000", &diff_2));
 
-
-  // There should have been at least a 2x speedup.
+  // There should have been at least a 50% speedup.
   // Note, we're also timing system() here,
-  EXPECT_GT(diff_1, diff_2*2);
+  EXPECT_GT(diff_1*100, diff_2*150);
 
   // Cleanup
-  EXPECT_EQ(0, system("cd examples/pairity; PATH=$PATH:../../bin make clean >/dev/null"));
+  //EXPECT_EQ(0, shell("make clean"));
 
 }
