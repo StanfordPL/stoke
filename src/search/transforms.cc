@@ -232,6 +232,12 @@ bool Transforms::instruction_move(Cfg& cfg) {
     }
     instr.set_operand(i, o);
   }
+
+  if(validator_ && !validator_->is_supported(instr)) {
+    undo_instruction_move(cfg);
+    return false;
+  }
+
   cfg.recompute_defs();
 
   if (!cfg.is_sound()) {
@@ -266,6 +272,12 @@ bool Transforms::opcode_move(Cfg& cfg) {
 
   const auto o = get_control_free_type_equiv(old_opcode_);
   instr.set_opcode(o);
+
+  if(validator_ && !validator_->is_supported(instr)) {
+    undo_opcode_move(cfg);
+    return false;
+  }
+
   cfg.recompute_defs();
 
   if (!cfg.is_sound()) {
@@ -313,6 +325,12 @@ bool Transforms::operand_move(Cfg& cfg) {
     }
   }
   instr.set_operand(operand_index_, o);
+
+  if(validator_ && !validator_->is_supported(instr)) {
+    undo_operand_move(cfg);
+    return false;
+  }
+
   cfg.recompute_defs();
 
   if (!cfg.is_sound()) {
@@ -414,12 +432,17 @@ bool Transforms::global_swap_move(Cfg& cfg) {
 bool Transforms::extension_move(Cfg& cfg) {
   // Add user-defined implementation here ...
 
-  // Invariant 1a:
-  // If this method returns true, it should leave this class in a state such that calling
-  // undo_extension_move() will revert cfg to its original state.
+  // Invariant 1:
+  // If this method returns true, it should leave this class in a state such
+  // that calling undo_extension_move() will revert cfg to its original state.
 
-  // Invariant 1b:
+  // Invariant 2:
   // If this method returns false, it must leave cfg in its original state.
+
+  // Invariant 3:
+  // If validator_ is non-null, validator_->is_sound(instr) must hold true for
+  // all instructions instr upon return.  (You can assume this holds at the
+  // beginning).
 
   return false;
 }
