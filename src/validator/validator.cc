@@ -374,11 +374,14 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix,
 
 bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counter_example)
 {
+
+
 #ifdef DEBUG_VALIDATOR
   std::cout << "Enter the dragon!" << std::endl;
 #endif
   // State
   has_error_ = false;
+  init_mm();
 
   try {
 
@@ -408,6 +411,7 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
       counterexample_valid_ = false;
     }
 
+    stop_mm();
     return !is_sat;
 
   } catch(validator_error e) {
@@ -418,8 +422,13 @@ bool Validator::validate(const Cfg& target, const Cfg& rewrite, CpuState& counte
     error_line_ = e.get_line();
     counterexample_valid_ = false;
 
-    return 0;
+    stop_mm();
+    return false;
   }
+
+  assert(false);
+  stop_mm();
+  return false;
 }
 
 

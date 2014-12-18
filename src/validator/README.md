@@ -10,7 +10,9 @@ important to be correct.  It therefore holds to the following contract:
 - `bool validate(const Cfg&, const Cfg&, CpuState& counter_example)` will
 return true if the validator found both Cfgs equivalent and no error was
 encountered.  If it returns false, it could mean an error was encountered or
-that the validator found the codes non-equivalent.
+that the validator found the codes non-equivalent.  It checks for equivalence
+on the live_out set of the Cfg inputs (which must be the same), assuming that
+the registers in the def_in sets are inputs.
 
 - `bool has_error()` returns whether an error occurred.  You should always
 check this!  The `get_error()` method will reveal what happened, for example,
@@ -138,6 +140,14 @@ manage memory (they do a poor job of this at the moment, btw).  These are
 entirely safe to copy.  If you leave one uninitialized, the pointer will be
 null and will crash when you try to use it.  The underlying ASTs are all const.
 
+- SymBitVector and SymBool each have a static pointer to a SymMemoryManager
+(which can be null).  If the pointer is valid, every new pointer to a
+SymBitVectorAbstract is added to the memory manager's list.  The memory manager
+has a collect() method which will free all the pointers.  Right now, this is
+used when Validator::validate() is called and Validator::validate() is exited.
+This means that any SymBitVector/SymBool inside the validator will become
+invalid once the call to validate() returns.
+
 - Be sure to study how operators are overloaded.  The || operator is for
 *concatenation*, not for logical or.  Operators &, |, ^ correspond to bitwise
 and, or and xor.  +, -, \*, /, <<, >> correspond to addition, subtraction,
@@ -198,12 +208,9 @@ to call.  This is what the validator actually uses by default.
 Testing
 =====
 
-The Rule
------
-
-For the validator, we want to observe a strict rule that's much more loose in
-the other parts of stoke: if you find a bug, write a testcase for it.  This is
-very easy for the validator; see the next section.
+For the validator, we want to observe a rule that's more loose in the other
+parts of stoke: if you find a bug, write a testcase for it.  This is very easy
+for the validator; see the next section.
 
 Handler and Unit Tests
 -----

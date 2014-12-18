@@ -20,6 +20,8 @@
 using namespace std;
 using namespace stoke;
 
+SymMemoryManager* SymBool::memory_manager_ = NULL;
+
 /* Bool constructors */
 SymBool SymBool::_false() {
   return SymBool(new SymBoolFalse());

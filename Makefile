@@ -57,6 +57,7 @@ SRC_OBJ=\
 	src/symstate/bool.o \
 	src/symstate/function.o \
 	src/symstate/memory.o \
+	src/symstate/memory_manager.o \
 	src/symstate/state.o \
 	\
 	src/target/cpu_info.o	\
