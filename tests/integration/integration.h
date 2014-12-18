@@ -153,9 +153,9 @@ TEST_F(IntegrationTest, PairityTest) {
   // Test new program
   EXPECT_EQ(0, shell("./a.out 1000000000", &diff_2));
 
-  // There should have been at least a 50% speedup.
+  // There should have been at least a 12% speedup.
   // Note, we're also timing system() here,
-  EXPECT_GT(diff_1*100, diff_2*150);
+  EXPECT_GT(diff_1*100, diff_2*112);
 
   // Cleanup
   EXPECT_EQ(0, shell("make clean"));
