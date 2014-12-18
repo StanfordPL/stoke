@@ -1,4 +1,4 @@
-# Copyright 2014 eric schkufza
+# Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ orig:
 	g++ -std=c++11 -fno-inline -O3 main.cc
 
 time:
-	time --quiet ./a.out 1000000000000
+	time --quiet ./a.out 10000000000000
 
 extract:
 	stoke extract --config extract.conf
