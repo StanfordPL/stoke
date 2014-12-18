@@ -28,7 +28,7 @@ ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg =
   .default_val(Strategy::NONE);
 
 ValueArg<uint64_t>& timeout_arg =
-  ValueArg<uint64_t>::create("timeout")
+  ValueArg<uint64_t>::create("validator_timeout")
   .usage("<int>")
   .description("Timeout in milliseconds for formal validator before giving up.  0 for no limit.")
   .default_val(0);
