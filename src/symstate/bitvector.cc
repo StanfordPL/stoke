@@ -19,6 +19,8 @@
 using namespace std;
 using namespace stoke;
 
+SymMemoryManager* SymBitVector::memory_manager_ = NULL;
+
 /* Various constructors */
 SymBitVector SymBitVector::constant(uint16_t size, uint64_t value) {
   return SymBitVector(new SymBitVectorConstant(size, value));

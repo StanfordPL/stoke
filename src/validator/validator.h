@@ -23,6 +23,7 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
 #include "src/solver/smtsolver.h"
+#include "src/symstate/memory_manager.h"
 #include "src/symstate/state.h"
 #include "src/validator/error.h"
 #include "src/validator/handler.h"
@@ -105,6 +106,21 @@ public:
                                    const SymMemory* memory = NULL, const SymMemory* memory2 = NULL);
 
 private:
+
+  /** Setup the memory manager (on invocation of the validator) */
+  void init_mm() {
+    memory_manager_ = SymMemoryManager();
+    SymBitVector::set_memory_manager(&memory_manager_);
+    SymBool::set_memory_manager(&memory_manager_);
+  }
+  /** Clean up the memory */
+  void stop_mm() {
+    memory_manager_.collect();
+    SymBitVector::set_memory_manager(NULL);
+    SymBool::set_memory_manager(NULL);
+  }
+  /** The memory manager */
+  SymMemoryManager memory_manager_;
 
   /** Take two codes and generate constraints asserting their equivalence.
    * Also return final symbolic states (that have information about memory
