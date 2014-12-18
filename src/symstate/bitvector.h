@@ -238,7 +238,11 @@ class SymBitVectorAbstract {
 public:
   virtual SymBitVector::Type type() const = 0;
   virtual bool equals(const SymBitVectorAbstract * const other) const = 0;
+
+  virtual ~SymBitVectorAbstract() = 0;
 };
+
+inline SymBitVectorAbstract::~SymBitVectorAbstract() {}
 
 /* Abstract class that has contains a left and right argument to a binary operator. */
 class SymBitVectorBinop : public SymBitVectorAbstract {

@@ -16,7 +16,7 @@
 #ifndef _STOKE_SRC_SYMSTATE_SYM_MEMORY_MANAGER_H
 #define _STOKE_SRC_SYMSTATE_SYM_MEMORY_MANAGER_H
 
-#include <vector>
+#include <set>
 #include <cassert>
 
 namespace stoke {
@@ -33,13 +33,13 @@ public:
 
   /** Collect bitvector */
   void add(const SymBitVectorAbstract* bv) {
-    assert(bv != NULL);
-    bitvectors_.push_back(bv);
+    assert(bv);
+    bitvectors_.insert(bv);
   }
   /** Collect bool */
   void add(const SymBoolAbstract* b) {
-    assert(b != NULL);
-    bools_.push_back(b);
+    assert(b);
+    bools_.insert(b);
   }
 
 
@@ -48,8 +48,8 @@ public:
 
 private:
 
-  std::vector<const SymBitVectorAbstract*> bitvectors_;
-  std::vector<const SymBoolAbstract*> bools_;
+  std::set<const SymBitVectorAbstract*> bitvectors_;
+  std::set<const SymBoolAbstract*> bools_;
 
 };
 

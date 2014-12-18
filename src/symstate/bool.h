@@ -138,7 +138,10 @@ public:
   virtual SymBool::Type type() const = 0;
   virtual bool equals(const SymBoolAbstract * const) const = 0;
 
+  virtual ~SymBoolAbstract() = 0;
 };
+
+inline SymBoolAbstract::~SymBoolAbstract() {}
 
 class SymBoolCompare : public SymBoolAbstract {
 
