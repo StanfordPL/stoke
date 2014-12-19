@@ -266,20 +266,20 @@ private:
   bool get_base(const x64asm::RegSet& rs, x64asm::M<T>& m) {
     if (gen_() % 2) {
       m.clear_base();
-			return true;
+      return true;
     } else if (m.addr_or()) {
       auto r = x64asm::eax;
       if (get<x64asm::R32>(r32_pool_, rs, r)) {
         m.set_base(r);
-				return true;
-      } 
-		} else {
+        return true;
+      }
+    } else {
       auto r = x64asm::rax;
       if (get<x64asm::R64>(r64_pool_, rs, r)) {
         m.set_base(r);
-				return true;
-      } 
-		}
+        return true;
+      }
+    }
     return false;
   }
 
@@ -294,7 +294,7 @@ private:
         m.set_index(r);
         return m.get_index() != x64asm::esp;
       }
-		} else {
+    } else {
       auto r = x64asm::rax;
       if (get<x64asm::R64>(r64_pool_, rs, r)) {
         m.set_index(r);
