@@ -1,9 +1,17 @@
 STOKE
 =====
 
-STOKE is a stochastic optimizer for the x86_64 instruction set. STOKE uses random search to explore the extremely high-dimensional space of all possible program transformations. Although any one random transformation is unlikely to produce a code sequence that is both correct and an improvement over the original, the repeated application of millions of transformations is sufficient to produce novel and non-obvious code sequences that have been shown to outperform the code produced by general-purpose and domain-specific compilers, and in some cases expert hand-written code.
+STOKE is a stochastic optimizer for the x86_64 instruction set. STOKE uses
+random search to explore the extremely high-dimensional space of all possible
+program transformations. Although any one random transformation is unlikely to
+produce a code sequence that is both correct and an improvement over the
+original, the repeated application of millions of transformations is sufficient
+to produce novel and non-obvious code sequences that have been shown to
+outperform the code produced by general-purpose and domain-specific compilers,
+           and in some cases expert hand-written code.
 
-STOKE has appeared in a number of publications. For a thorough introduction to the design of STOKE, please see the following:
+STOKE has appeared in a number of publications. For a thorough introduction to
+the design of STOKE, please see the following:
 
 - **Stochastic Superoptimization** -- ASPLOS 2013 ([link](http://cs.stanford.edu/people/eschkufz/research/asplos291-schkufza.pdf)):
 - **Data-Driven Equivalence Checking** -- OOPSLA 2013 ([link](http://cs.stanford.edu/people/eschkufz/research/oopsla011-sharma.pdf)):
@@ -448,6 +456,35 @@ And runtime can once again be measured by typing:
 
 As expected, the results are close to an order of magnitude faster than the original.
 
+Using the Formal Validator
+-----
+
+This release of STOKE includes a formal validator.  It's design and interface
+are detailed in the `src/validator/README.md` file.  To use the formal validator
+instead of hold out testing, you need to specify `--strategy formal` for any
+STOKE binary that you use.
+
+An example of using the validator can be found in the `examples/pairity`
+folder; this example has a Makefile much like the tutorial's and should be easy
+to follow.  The key difference is that the pairity example does not use
+testcases to guide the search.  Instead, after producing a candidate rewrite,
+the validator checks for equivalence.  If the codes are not equivalent, 
+a counterexample is found, and this is used as a testcase to guide the search.
+
+There are some important limitations to keep in mind using the validator:
+
+- Only some instructions are supported.  The `--validator_must_support` flag
+can be used to only propose instructions that can be validated.
+- Only the general purpose registers, SSE registers (`ymm0`-`ymm15`) and five of
+the status flags (`CF`, `SF`, `PF`, `ZF`, `OF`) are supported.
+- There is basic, experimental support for memory.  **Memory is not supported
+for input or output; the validator will check equivalence of codes that use
+memory, but will not check that they leave the machine's memory in the same
+state. **.  For example, if a program writes to memory and then later reads
+it, the validator supports this.  But, if two programs manipulate memory,
+the validator will not check if their modifications are equivalent.
+
+
 Additional Features
 =====
 
@@ -476,10 +513,9 @@ Extending STOKE
 This repository contains a minimal implementation of STOKE as described in
 ASPLOS 2013, OOPSLA 2013, and PLDI 2014. Most, but not all of the features
 described in those papers appear here. Some of the more experimental features
-(notably, a formal verifier) are not yet ready for public release and have not
-been provided. Developers who are interested in refining these features or
-adding their own extensions are encouraged to try modifying this implementation
-as described below.
+are not yet ready for public release and have not been provided. Developers who
+are interested in refining these features or adding their own extensions are
+encouraged to try modifying this implementation as described below.
 
 Code Organization
 -----
@@ -487,15 +523,18 @@ Code Organization
 The STOKE source is organized into modules, each of which correspond to a
 subdirectory of the `src/` directory:
 
-- `src/args`: Function objects for performing I/O operations on command line arguments.
+- `src/analysis`: An aliasing analysis used by the validator.
 - `src/cfg`: Classes for representing and manipulating control flow graphs.
 - `src/cost`: Classes for computing cost functions.
 - `src/ext`: External dependencies.
 - `src/sandbox`: Classes for safely executing random code sequences.
 - `src/search`: Classes for performing MCMC sampling.
 - `src/state`: Classes for representing and manipulating hardware machine states.
+- `src/symstate`: Classes for modeling the symbolic state of the hardware, used by the formal validator.
+- `src/target`: Code to find which instruction sets the CPU supports.
 - `src/tunit`: Classes for representing translation units (named instruction sequences).
-- `src/verifier`: Classes for verifying program equivalence.
+- `src/verifier`: Wrappers around verification techniques such as testing for formal validation.
+- `src/validator`: The formal validator for proving two codes equivalent.
 
 Initial Search State
 -----
@@ -722,6 +761,7 @@ an additional type for user-defined extensions.
 enum class Strategy {
   NONE,
   HOLD_OUT,
+  FORMAL,
 
   // Add user-defined extensions here ...
   EXTENSION

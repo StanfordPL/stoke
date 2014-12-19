@@ -65,7 +65,8 @@ possibility (besides a validator bug) is that it has undefined behavior.
 What's Supported
 =====
 
-- The instructions we had time to implement.  There's a good selection of SSE/AVX/AVX2 instructions, but it's definitely not complete.
+- The instructions we had time to implement.  There's a good selection of
+SSE/AVX/AVX2 instructions, but it's definitely not complete.
 - Operands: immediates, general purpose registers, xmm/ymm registers
 - Live outs: general purpose registers, xmm registers, status flags
 - Memory is supported, but not as an input or an output.  For example, we can
@@ -95,9 +96,9 @@ There are five main components to the validator:
 - The glue holding it all together (/validator)
 
 The overall structure of the code is as follows.  The symbolic bitvectors
-(SymBitVector) and bools (SymBool) are self-explanatory; these contain ASTs of
-bit-vector circuits.  The symbolic state (SymState) is the symbolic analog of a
-CpuState: it contains a symbolic bitvector for each supported register and
+(`SymBitVector1) and bools (`SymBool`) are self-explanatory; these contain ASTs of
+bit-vector circuits.  The symbolic state (`SymState`) is the symbolic analog of a
+`CpuState`: it contains a symbolic bitvector for each supported register and
 symbolic bool for each flag.  These have the responsibility for representing a
 circuit.  In the future, they may also represent the symbolic state of
 execution, for example, what line of code was last executed or what the current
@@ -117,14 +118,14 @@ The `Handler` classes build circuits for a particular instruction.  These
 circuits are represented in a symbolic state.  The interface is simple: an
 `is_supported` method that reports if an instruction is supported, and a
 `build_circuit` method which takes a symbolic state and updates it in place.
-The 'SimpleHandler' and 'PackedHandler' classes make it easy to implement a
+The `SimpleHandler` and `PackedHandler` classes make it easy to implement a
 variety of instructions easily.  See if you can use one of those before
 creating a handler of your own.  As a rule of thumb, if you need to write a new
 helper function specific to your handler, it's a good idea to start a new one
-from scratch.  See the ConditionalHandler for setcc/cmovcc as an example of
+from scratch.  See the `ConditionalHandler` for setcc/cmovcc as an example of
 this.
 
-Finally, the SMTSolver subclasses (e.g. Z3Solver) will take a vector of
+Finally, the `SMTSolver` subclasses (e.g. `Z3Solver`) will take a vector of
 symbolic bools and check if they're satisfiable.  The Validator class
 orchestrates all this.
 
@@ -165,12 +166,14 @@ Constructing the Circuit
 The validator.cc file does the work of constructing the circuit and gluing all
 the handlers together.  It creates a starting symbolic state `init` with all
 the bitvectors initialized to a variable.  It creates starting states
-`first_init`, `second_init` for the target/rewrite to force equality with the
-starting state, *but only on the def-ins*.  Then, the validator builds the
-circuit for each instruction inside its `build_circuit()` function, which in
-turn calls `build_circuit()` on its handler.  Finally, the validator asserts
-the equivalence of the final symbolic states on the live outs and invokes the
-SMT solver.
+`first_init`, `second_init` for the target/rewrite and constrains these states
+so they must equal `init` on the defined inputs.  Then, the validator builds
+the circuit for each instruction in each program with the `build_circuit()`
+function, which produces a final symbolic state for each program.  Finally, the
+validator asserts the non-equality of the final symbolic states on the live
+outs and invokes the SMT solver.  If the SMT solver returns a model, this means
+that on these inputs the codes differ.  If the SMT solver returns unsat, it
+means the codes are equivalent.
 
 Individually, the handlers are subclasses of `Handler` which each implement
 `bool is_supported(Instruction& i)` and `void build_circuit(Instruction&,
@@ -212,7 +215,7 @@ For the validator, we want to observe a rule that's more loose in the other
 parts of stoke: if you find a bug, write a testcase for it.  This is very easy
 for the validator; see the next section.
 
-Handler and Unit Tests
+Testing for Equivalence / Non-Equivalence
 -----
 
 Substantial testing infrastructure has been developed for the validator, making
@@ -266,9 +269,33 @@ inputs.  For this, use the `set_live_outs()` function, which takes a `RegSet`
 as a parameter.  Note that all the validator tests inherit from ValidatorTest;
 this allows you to use these helper functions.  It's best for each handler to
 create a new subclass of ValidatorBaseTest for testing it, even if this
-subclass is totally empty.  If your test cases are becomming long, it probably
+subclass is totally empty.  If your test cases are becoming long, it probably
 means you should abstract the details away either into the big test framework
 or into the class for your handler.  
+
+Testing Against Hardware
+-----
+
+There is another way to test a handler as well.  One can take a concrete
+machine state and compare the handler for an instruction against the hardware
+using STOKE's sandbox.  This is done using the `check_circuit()` function,
+which takes a concrete CPU state to test with.  For example, the following test
+checks that the `incb %al` instruction matches the hardware when `%ax` is
+initialized to `0x2d00`:
+
+```
+TEST_F(ValidatorIncTest, Issue287_2) {
+
+  target_ << "incb %al" << std::endl;
+  target_ << "retq" << std::endl;
+
+  stoke::CpuState cs;
+  cs.gp[x64asm::ax].get_fixed_quad(0) = 0x2d00;
+
+  check_circuit(cs);
+}
+
+```
 
 Fuzz Testing
 -----
@@ -276,7 +303,9 @@ Fuzz Testing
 The fuzz testers in tests/validator/fuzz.h attempt to find bugs proactively.
 These tests choose a random instruction, generate a random CPU state, build a
 circuit, compute an output state, and compare the results from the validator
-with the sandbox.  There are at least two main caveats to these tests:
+with the sandbox.  Essentially, the fuzzer creates many concrete CPU states and
+many instructions and invokes `check_circuit` on combinations of them.  There
+are at least two main caveats to these tests:
 
 - It has a very low probability of finding corner-case bugs because everything
 in the CpuState is randomized.
