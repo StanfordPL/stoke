@@ -488,6 +488,7 @@ bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
   if (is_lea_opcode(c)) {
     auto m = *((M8*)(&o));
     m.set_rip_offset(false);
+    m.set_addr_or(gen_() % 2);
     m.clear_seg();
     m.set_scale((Scale)(gen_() % 4));
     m.set_disp((Imm32)(imm_pool_[gen_() % imm_pool_.size()]));
