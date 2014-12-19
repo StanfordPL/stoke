@@ -15,6 +15,6 @@
 #include <stdint.h>
 
 int32_t p03(int32_t x) {
-	  int32_t o1 = -x;
-		  return x & o1;
+  int32_t o1 = -x;
+  return x & o1;
 }
