@@ -18,13 +18,10 @@ orig:
 	g++ -std=c++11 -fno-inline -O3 main.cc
 
 time:
-	time --quiet ./a.out 10000000000000
+	time --quiet ./a.out 1000000000
 
 extract:
 	stoke extract --config extract.conf
-
-testcase:
-	stoke testcase --config testcase.conf
 
 search:
 	stoke search --config search.conf

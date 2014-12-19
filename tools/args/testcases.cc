@@ -35,8 +35,7 @@ Heading& testcases_heading =
 FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>& testcases_arg =
   FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>::create("testcases")
   .usage("<path/to/file>")
-  .description("Testcases")
-  .required();
+  .description("Testcases");
 
 FlagArg& shuffle_tc_arg =
   FlagArg::create("shuffle_testcases")

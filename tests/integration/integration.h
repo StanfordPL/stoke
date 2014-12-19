@@ -52,7 +52,7 @@ public:
       ss << "PATH=$PATH:" << path_ << " ";
 
     ss << code;
-//    ss << " >/dev/null";
+    ss << " >/dev/null";
 
     uint64_t value = system(ss.str().c_str());
 
@@ -129,11 +129,10 @@ TEST_F(IntegrationTest, PairityTest) {
   // Build and test original program
   EXPECT_EQ(0, shell("make clean orig"));
 
-  EXPECT_EQ(0, shell("./a.out 10000000000000", &diff_1));
+  EXPECT_EQ(0, shell("./a.out 1000000000", &diff_1));
 
-  // Run make extract, testcase
+  // Run make extract
   EXPECT_EQ(0, shell("make extract"));
-  EXPECT_EQ(0, shell("make testcase"));
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
@@ -151,13 +150,13 @@ TEST_F(IntegrationTest, PairityTest) {
   EXPECT_EQ(0, shell("make replace"));
 
   // Test new program
-  EXPECT_EQ(0, shell("./a.out 10000000000000", &diff_2));
+  EXPECT_EQ(0, shell("./a.out 1000000000", &diff_2));
 
-  // There should have been at least a 50% speedup.
+  // There should have been at least a 12% speedup.
   // Note, we're also timing system() here,
-  EXPECT_GT(diff_1*100, diff_2*150);
+  EXPECT_GT(diff_1*100, diff_2*112);
 
   // Cleanup
-  //EXPECT_EQ(0, shell("make clean"));
+  EXPECT_EQ(0, shell("make clean"));
 
 }
