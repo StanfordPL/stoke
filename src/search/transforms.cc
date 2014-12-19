@@ -506,11 +506,19 @@ bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
       return false;
     }
     const auto& m = m_pool_[gen_() % m_pool_.size()];
-    if (m.contains_base() && !rs.contains(m.get_base())) {
-      return false;
+    if (m.contains_base()) {
+      if (m.addr_or() && !rs.contains(r32s[m.get_base()])) {
+        return false;
+      } else if (!m.addr_or() && !rs.contains(r64s[m.get_base()])) {
+        return false;
+      }
     }
-    if (m.contains_index() && !rs.contains(m.get_index())) {
-      return false;
+    if (m.contains_index()) {
+      if (m.addr_or() && !rs.contains(r32s[m.get_index()])) {
+        return false;
+      } else if (!m.addr_or() && !rs.contains(r64s[m.get_index()])) {
+        return false;
+      }
     }
     o = m;
     return true;
