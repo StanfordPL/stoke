@@ -23,11 +23,11 @@ int main(int argc, char** argv) {
 
   srand(seed);
 
-	for (auto i = 0; i < itr*4; i += 4) {
-		int x[4] {rand(), rand(), rand(), rand()};
-		int y[4] {rand(), rand(), rand(), rand()};
-		saxpy(19, &x[0], &y[0], 0);
-	}
+  for (auto i = 0; i < itr*4; i += 4) {
+    int x[4] {rand(), rand(), rand(), rand()};
+    int y[4] {rand(), rand(), rand(), rand()};
+    saxpy(19, &x[0], &y[0], 0);
+  }
 
   return 0;
 }
