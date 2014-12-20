@@ -12,10 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdlib>
 #include <stdint.h>
 
-int32_t p12(int32_t x, int32_t y) {
-  int32_t o1 = ~y;
-  int32_t o2 = x & o1;
-  return (uint32_t) o2 <= (uint32_t) y;
+extern int32_t p09(int32_t x);
+
+int main(int argc, char** argv) {
+  const auto itr = argc > 1 ? atoi(argv[1]) : 1024;
+  const auto seed = argc > 2 ? atoi(argv[2]) : 0;
+
+  srand(seed);
+  for (auto i = 0; i < itr; ++i) {
+    p09(rand() % 2 ? rand() : -rand());
+  }
+
+  return 0;
 }
