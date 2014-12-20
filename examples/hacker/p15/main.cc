@@ -15,20 +15,16 @@
 #include <cstdlib>
 #include <stdint.h>
 
-extern int32_t p10(int32_t x, int32_t y);
+extern int32_t p15(int32_t x, int32_t y);
 
 int main(int argc, char** argv) {
   const auto itr = argc > 1 ? atoi(argv[1]) : 1024;
   const auto seed = argc > 2 ? atoi(argv[2]) : 0;
 
   srand(seed);
+
   for (auto i = 0; i < itr; ++i) {
-    if (rand() % 2) {
-      p10(rand(), rand());
-    } else {
-      auto x = rand();
-      p10(x, x);
-    }
+    p15(rand(), rand());
   }
 
   return 0;
