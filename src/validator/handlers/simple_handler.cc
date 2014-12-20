@@ -86,6 +86,33 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a | b);
   });
 
+  add_opcode({"popcntw", "popcntl", "popcntq"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+
+    std::function<SymBitVector (SymBitVector, uint16_t)> helper =
+    [&] (SymBitVector src, uint16_t size) {
+      if(size == 1) {
+        return src;
+      } else {
+        uint16_t half = size/2;
+        SymBitVector zeros = SymBitVector::constant(half, 0);
+        SymBitVector left = src[size-1][half];
+        SymBitVector right = src[half-1][0];
+        return (zeros || helper(left, half)) + (zeros || helper(right, half));
+      }
+    };
+
+    uint16_t size = dst.size();
+
+    ss.set(dst, helper(b, size));
+    ss.set(eflags_zf, b == SymBitVector::constant(size, 0));
+    ss.set(eflags_cf, SymBool::_false());
+    ss.set(eflags_pf, SymBool::_false());
+    ss.set(eflags_sf, SymBool::_false());
+    ss.set(eflags_of, SymBool::_false());
+    ss.set(eflags_af, SymBool::_false());
+  });
+
   add_opcode({"testb", "testw", "testl", "testq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     if(src.size() < dst.size())
