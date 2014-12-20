@@ -14,8 +14,8 @@
 
 #include <stdint.h>
 
-int32_t p12(int32_t x, int32_t y) {
-  int32_t o1 = ~y;
-  int32_t o2 = x & o1;
-  return (uint32_t) o2 <= (uint32_t) y;
+int32_t p10(int32_t x, int32_t y) {
+	  int32_t o1 = x & y;
+		  int32_t o2 = x ^ y;
+			  return (uint32_t) o2 <= (uint32_t) o1;
 }

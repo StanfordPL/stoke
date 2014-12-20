@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
   srand(seed);
 
-	p13(0);
+  p13(0);
   for (auto i = 0; i < itr; ++i) {
     p13(rand());
   }
