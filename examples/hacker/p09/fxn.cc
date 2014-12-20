@@ -15,7 +15,7 @@
 #include <stdint.h>
 
 int32_t p09(int32_t x) {
-	  int32_t o1 = x >> 31;
-		  int32_t o2 = x ^ o1;
-			  return o2 - o1;
+  int32_t o1 = x >> 31;
+  int32_t o2 = x ^ o1;
+  return o2 - o1;
 }
