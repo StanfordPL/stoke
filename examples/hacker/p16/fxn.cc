@@ -14,11 +14,9 @@
 
 #include <stdint.h>
 
-int32_t p18(int32_t x) {
-  int32_t o1 = x - 1;
-  int32_t o2 = o1 & x;
-  int32_t o3 = !!x;
-  int32_t o4 = !!o2;
-  int32_t o5 = !o4;
-  return o5 && o3;
+int32_t p16(int32_t x, int32_t y) {
+	  int32_t o1 = x ^ y;
+		  int32_t o2 = -((uint32_t) x >= (uint32_t) y);
+			  int32_t o3 = o1 & o2;
+				  return o3 ^ y;
 }

@@ -12,13 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstdlib>
 #include <stdint.h>
 
-int32_t p18(int32_t x) {
-  int32_t o1 = x - 1;
-  int32_t o2 = o1 & x;
-  int32_t o3 = !!x;
-  int32_t o4 = !!o2;
-  int32_t o5 = !o4;
-  return o5 && o3;
+extern int32_t p16(int32_t x, int32_t y);
+
+int main(int argc, char** argv) {
+  const auto itr = argc > 1 ? atoi(argv[1]) : 1024;
+  const auto seed = argc > 2 ? atoi(argv[2]) : 0;
+
+  srand(seed);
+  for (auto i = 0; i < itr; ++i) {
+    p16(rand(), rand());
+  }
+
+  return 0;
 }
