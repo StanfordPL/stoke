@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <stdint.h>
 
-extern int32_t p21(int32_t x, int32_t a, int32_t b, int32_t c);
+extern int32_t p17(int32_t x);
 
 int main(int argc, char** argv) {
   const auto itr = argc > 1 ? atoi(argv[1]) : 1024;
@@ -23,11 +23,7 @@ int main(int argc, char** argv) {
 
   srand(seed);
   for (auto i = 0; i < itr; ++i) {
-    int32_t vals[3];
-    vals[0] = rand();
-    vals[1] = rand();
-    vals[2] = rand();
-    p21(vals[rand()%3], vals[0], vals[1], vals[2]);
+    p17(rand());
   }
 
   return 0;
