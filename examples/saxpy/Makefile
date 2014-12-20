@@ -14,21 +14,21 @@
 
 all: synth opt time_llvm time_gcc time_stoke
 
-synth: orig_llvm extract testcase search_synth
-opt: orig_llvm extract testcase search_opt
+synth: orig_gcc extract testcase search_synth
+opt: orig_gcc extract testcase search_opt
 
 time_llvm: orig_llvm time
 time_gcc: orig_gcc time
 time_stoke: orig_llvm replace time
 
 orig_llvm:
-	clang -std=c++11 -O0 -c fxn.s
+	clang -std=c++11 -O0 -c fxn.cc
 	g++ -std=c++11 -O3 main.cc fxn.o
 orig_gcc:
-	g++ -std=c++11 -O3 -c fxn.s
+	g++ -std=c++11 -O3 -c fxn.cc
 	g++ -std=c++11 -O3 main.cc fxn.o
 orig_icc:
-	icc -std=c++11 -O3 -c fxn.s
+	icc -std=c++11 -O3 -c fxn.cc
 	g++ -std=c++11 -O3 main.cc fxn.o
 
 extract:
@@ -43,7 +43,7 @@ replace:
 	stoke replace --config replace.conf
 
 time:
-	time ./a.out 100000000
+	time ./a.out 1024
 
 clean:
-	rm -rf bins ./a.out *.tc *result.s *.o
+	rm -rf bins ./a.out *.tc *.s *.o
