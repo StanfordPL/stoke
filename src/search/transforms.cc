@@ -488,6 +488,7 @@ bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
   if (is_lea_opcode(c)) {
     auto m = *((M8*)(&o));
     m.set_rip_offset(false);
+    m.set_addr_or(gen_() % 2);
     m.clear_seg();
     m.set_scale((Scale)(gen_() % 4));
     m.set_disp((Imm32)(imm_pool_[gen_() % imm_pool_.size()]));
@@ -505,11 +506,19 @@ bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
       return false;
     }
     const auto& m = m_pool_[gen_() % m_pool_.size()];
-    if (m.contains_base() && !rs.contains(m.get_base())) {
-      return false;
+    if (m.contains_base()) {
+      if (m.addr_or() && !rs.contains(r32s[m.get_base()])) {
+        return false;
+      } else if (!m.addr_or() && !rs.contains(r64s[m.get_base()])) {
+        return false;
+      }
     }
-    if (m.contains_index() && !rs.contains(m.get_index())) {
-      return false;
+    if (m.contains_index()) {
+      if (m.addr_or() && !rs.contains(r32s[m.get_index()])) {
+        return false;
+      } else if (!m.addr_or() && !rs.contains(r64s[m.get_index()])) {
+        return false;
+      }
     }
     o = m;
     return true;
