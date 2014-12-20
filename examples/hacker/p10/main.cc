@@ -23,7 +23,12 @@ int main(int argc, char** argv) {
 
   srand(seed);
   for (auto i = 0; i < itr; ++i) {
-    p10(rand(), rand());
+		if (rand() % 2) {
+    	p10(rand(), rand());
+		} else {
+			auto x = rand();
+			p10(x, x);
+		}
   }
 
   return 0;
