@@ -208,6 +208,9 @@ bool Transforms::instruction_move(Cfg& cfg) {
   const auto idx = gen_() % num_instrs;
 
   instr_index_ = cfg.get_index({*bb, idx});
+  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
   if (is_control_opcode(code[instr_index_].get_opcode())) {
     return false;
   }
@@ -263,6 +266,9 @@ bool Transforms::opcode_move(Cfg& cfg) {
     return false;
   }
   instr_index_ = cfg.get_index({*bb, gen_() % num_instrs});
+  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
 
   auto& instr = code[instr_index_];
   old_opcode_ = instr.get_opcode();
@@ -305,7 +311,13 @@ bool Transforms::operand_move(Cfg& cfg) {
   const auto idx = gen_() % num_instrs;
 
   instr_index_ = cfg.get_index({*bb, idx});
-  if (code[instr_index_].arity() == 0 || is_control_opcode(code[instr_index_].get_opcode())) {
+  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
+  if (is_control_opcode(code[instr_index_].get_opcode())) {
+    return false;
+  }
+  if (code[instr_index_].arity() == 0) {
     return false;
   }
 
@@ -342,9 +354,8 @@ bool Transforms::operand_move(Cfg& cfg) {
 
 bool Transforms::resize_move(Cfg& cfg) {
   auto& code = cfg.get_code();
-  const auto start = gen_() % code.size();
 
-  move_i_ = 0;
+  move_i_ = 1;
   for (size_t ie = code.size(); move_i_ < ie; ++move_i_) {
     if (code[move_i_].is_nop()) {
       goto found_a_nop;
@@ -353,7 +364,7 @@ bool Transforms::resize_move(Cfg& cfg) {
   return false;
 found_a_nop:
 
-  move_j_ = gen_() % code.size();
+  move_j_ = (gen_() % (code.size()-1)) + 1;
   if (move_i_ == move_j_) {
     return false;
   }
@@ -377,6 +388,9 @@ bool Transforms::local_swap_move(Cfg& cfg) {
   }
 
   move_i_ = cfg.get_index({bb, gen_() % num_instrs});
+  if (move_i_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
   move_j_ = cfg.get_index({bb, gen_() % num_instrs});
   if (move_i_ == move_j_) {
     return false;
@@ -404,8 +418,8 @@ bool Transforms::local_swap_move(Cfg& cfg) {
 bool Transforms::global_swap_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-  move_i_ = gen_() % code.size();
-  move_j_ = gen_() % code.size();
+  move_i_ = (gen_() % (code.size()-1)) + 1;
+  move_j_ = (gen_() % (code.size()-1)) + 1;
   if (move_i_ == move_j_) {
     return false;
   }
@@ -443,6 +457,10 @@ bool Transforms::extension_move(Cfg& cfg) {
   // If validator_ is non-null, validator_->is_sound(instr) must hold true for
   // all instructions instr upon return.  (You can assume this holds at the
   // beginning).
+
+  // Invariant 4:
+  // Transformations must preserve the first instruction in a code sequence
+  // which should be a label that represents the name of a function.
 
   return false;
 }
