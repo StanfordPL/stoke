@@ -195,7 +195,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
   stringstream ss;
 
   // Add a label to the beginning of the instruction stream with the function name
-  ss << ".L" << data.tunit.name << ":" << endl;
+  ss << "." << data.tunit.name << ":" << endl;
 
   // Now read the text of the function
   for (const auto l : lines) {
