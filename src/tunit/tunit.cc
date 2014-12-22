@@ -69,7 +69,6 @@ ostream& operator<<(ostream& os, const TUnit& t) {
   os << "  .text" << endl;
   os << "  .globl " << t.name << endl;
   os << "  .type " << t.name << ", @function" << endl;
-  os << "." << t.name << ":" << endl;
 
   ofilterstream<Column> col(os);
   col.filter().padding(2);
