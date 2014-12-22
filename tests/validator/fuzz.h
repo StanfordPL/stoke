@@ -71,7 +71,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   // this code is used to provide memory references... big hack.
   std::stringstream sample;
-	sample << ".sample:" << std::endl;
+  sample << ".sample:" << std::endl;
   sample << "movq (%rax), %r13" << std::endl;
   /*
   sample << "movq 0x16(%r8), %r13" << std::endl;
@@ -136,11 +136,11 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     .set_max_attempts(40);
 
     // Build an instruction and CFG at random
-		std::stringstream ss1;
-		ss1 << ".pre_cfg:" << std::endl;
-		ss1 << "movq (%rax), %rax" << std::endl;
-		x64asm::Code pre_cfg_code;
-		ss1 >> pre_cfg_code;
+    std::stringstream ss1;
+    ss1 << ".pre_cfg:" << std::endl;
+    ss1 << "movq (%rax), %rax" << std::endl;
+    x64asm::Code pre_cfg_code;
+    ss1 >> pre_cfg_code;
     stoke::Cfg pre_cfg(pre_cfg_code, x64asm::RegSet::universe(), x64asm::RegSet::empty());
 
     bool found = false;
@@ -156,12 +156,12 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     const auto ins = pre_cfg.get_code()[1];
     x64asm::RegSet liveouts = (ins.must_write_set() - ins.maybe_undef_set()) & supported_regs;
 
-		std::stringstream ss2;
-		ss2 << ".cfg:" << std::endl;
-		ss2 << ins << std::endl;
-		ss2 << "retq" << std::endl;
-		x64asm::Code cfg_code;
-		ss2 >> cfg_code;
+    std::stringstream ss2;
+    ss2 << ".cfg:" << std::endl;
+    ss2 << ins << std::endl;
+    ss2 << "retq" << std::endl;
+    x64asm::Code cfg_code;
+    ss2 >> cfg_code;
     stoke::Cfg cfg(cfg_code, ins.maybe_read_set(), liveouts);
 
     std::cout << "[----------] * " << ins << std::endl;
@@ -183,7 +183,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     // If we did the comparison, then we performed the test right
     target_.clear();
     target_.str("");
-		target_ << ".target:" << std::endl;
+    target_ << ".target:" << std::endl;
     target_ << ins << std::endl;
     target_ << "retq" << std::endl;
 
