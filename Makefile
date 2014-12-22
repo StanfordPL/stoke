@@ -14,7 +14,7 @@
 
 ##### CONSTANT DEFINITIONS
 
-CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors
+CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors -Wno-deprecated
 
 INC_FOLDERS=\
 						./ \
@@ -106,6 +106,7 @@ TOOL_NON_ARG_OBJ=\
 	tools/io/move.o \
 	tools/io/reduction.o \
 	tools/io/performance_term.o \
+	tools/io/solver.o \
 	tools/io/strategy.o \
 	tools/io/timeout.o
 
@@ -233,7 +234,7 @@ src/search/%.o: src/search/%.cc src/search/%.h
 src/solver/%.o: src/solver/%.cc src/solver/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/solver/cvc4solver.o: src/solver/cvc4solver.cc src/solver/cvc4solver.h
-	$(CXX) $(TARGET) $(OPT) -Wno-deprecated $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
@@ -270,7 +271,7 @@ bin/stoke_benchmark_sandbox: tools/apps/stoke_benchmark_sandbox.cc tools/gadgets
 	tools/args/seed.o tools/args/target.o tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_benchmark_search: tools/apps/stoke_benchmark_search.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/move.o \
-	tools/args/seed.o tools/args/target.o tools/args/transforms.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	tools/args/seed.o tools/args/verifier.o tools/args/target.o tools/args/transforms.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_benchmark_state: tools/apps/stoke_benchmark_state.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/seed.o \
 	tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
@@ -334,7 +335,7 @@ tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
 bin/stoke_test: tools/apps/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard src/*/*.h) $(wildcard tests/*.h) $(wildcard tests/*/*.h) $(wildcard tests/*/*/*.h) tests/validator/handlers.h
-	$(CXX) $(TARGET) $(OPT) -Wno-deprecated $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
 
 ## MISC
 

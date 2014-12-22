@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-all: orig extract testcase search replace
+all: orig extract search replace
 
 orig:
 	g++ -std=c++11 -fno-inline -O3 main.cc

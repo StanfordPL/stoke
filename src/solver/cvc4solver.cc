@@ -25,15 +25,16 @@ using namespace CVC4;
 
 bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
 
-  SmtEngine smt(&em_);
-  smt.setOption("incremental", true);
-  smt.setOption("produce-assignments", true);
-  smt.setLogic("QF_UFBV");
+  reset();
+  smt_->setOption("incremental", true);
+  smt_->setOption("produce-assignments", true);
+  smt_->setTimeLimit(timeout_, true);
+  smt_->setLogic("QF_UFBV");
 
   error_ = "";
 
   SymTypecheckVisitor tc;
-  ExprConverter ec(em_);
+  ExprConverter ec(this);
 
   for(auto it : constraints) {
 
@@ -54,16 +55,15 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
       return false;
     }
 
-    smt.assertFormula(converted);
+    smt_->assertFormula(converted);
   }
 
-  auto result = smt.checkSat(em_.mkConst(true));
+  auto result = smt_->checkSat(em_.mkConst(true));
 
   if(result.isUnknown()) { // || result.isSat() == Result::SAT_UNKNOWN) {
     error_ = "CVC4 returned unknown: " + result.whyUnknown();
     return false;
   }
-
   return result.isSat() == Result::SAT;
 
 }
@@ -73,8 +73,20 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
     variable/size, there's no way to know and the result you get back is
     undefined. */
 cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t octs) {
-  cpputil::BitVector v;
-  return v;
+  cpputil::BitVector bv(octs*64);
+
+  if(!variables_.count(var))
+    return bv;
+
+  auto val = variables_[var];
+  auto expr = smt_->getValue(val);
+  auto ret = expr.getConst<BitVector>();
+
+  for(size_t i = 0; i < octs*64; ++i) {
+    bv[i] = ret.isBitSet(i);
+  }
+
+  return bv;
 }
 
 /** Get the satisfying assignment for a bit from the model.
@@ -82,7 +94,13 @@ cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t oct
     variable/size, there's no way to know and the result you get back is
     undefined. */
 bool Cvc4Solver::get_model_bool(const std::string& var) {
-  return false;
+
+  if(!variables_.count(var))
+    return false;
+
+  auto val = variables_[var];
+  auto expr = smt_->getValue(val);
+  return expr.getConst<bool>();
 }
 
 
@@ -123,6 +141,8 @@ Expr Cvc4Solver::ExprConverter::visit_binop(const SymBitVectorBinop * const bino
     return em_.mkExpr(kind::BITVECTOR_AND, left, right);
   case SymBitVector::CONCAT:
     return em_.mkExpr(kind::BITVECTOR_CONCAT, left, right);
+  case SymBitVector::MINUS:
+    return em_.mkExpr(kind::BITVECTOR_SUB, left, right);
   case SymBitVector::DIV:
     return em_.mkExpr(kind::BITVECTOR_UDIV, left, right);
   case SymBitVector::MOD:
@@ -235,6 +255,8 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorExtract * const bv) {
 
 Expr Cvc4Solver::ExprConverter::build_function(const SymBitVectorFunction * const bv) {
 
+  *uninterpreted_ = true;
+
   auto f = bv->f_;
   auto args = f.args;
   auto ret = f.return_type;
@@ -285,8 +307,11 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorIte * const bv) {
 
 /** Visit a bit-vector sign extension */
 Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorSignExtend * const bv) {
+  SymTypecheckVisitor tc;
+  uint16_t size = tc(bv->bv_);
+  uint16_t amt = bv->size_ - size;
   return em_.mkExpr(kind::BITVECTOR_SIGN_EXTEND,
-                    em_.mkConst(BitVectorSignExtend(bv->size_)), (*this)(bv->bv_));
+                    em_.mkConst(BitVectorSignExtend(amt)), (*this)(bv->bv_));
 }
 
 /** Visit a bit-vector variable */

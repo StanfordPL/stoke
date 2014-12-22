@@ -12,25 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_VERIFIER_H
-#define STOKE_TOOLS_ARGS_VERIFIER_H
+#include <array>
+#include <string>
+#include <utility>
 
-#include "src/ext/cpputil/include/command_line/command_line.h"
-
-#include "src/solver/solver.h"
-#include "src/verifier/strategy.h"
+#include "tools/io/generic.h"
 #include "tools/io/solver.h"
-#include "tools/io/strategy.h"
+
+using namespace std;
+using namespace stoke;
+
+namespace {
+
+array<pair<string, Solver>, 2> pts {{
+    {"cvc4", Solver::CVC4},
+    {"z3",   Solver::Z3 }
+  }
+};
+
+} // namespace
 
 namespace stoke {
 
-extern cpputil::Heading& verifier_heading;
+void SolverReader::operator()(std::istream& is, Solver& pt) {
+  string s;
+  is >> s;
+  if (!generic_read(pts, s, pt)) {
+    is.setstate(ios::failbit);
+  }
+}
 
-extern cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg;
-extern cpputil::ValueArg<Solver, SolverReader, SolverWriter>& solver_arg;
-
-extern cpputil::ValueArg<uint64_t>& timeout_arg;
+void SolverWriter::operator()(std::ostream& os, const Solver pt) {
+  string s;
+  generic_write(pts, s, pt);
+  os << s;
+}
 
 } // namespace stoke
-
-#endif

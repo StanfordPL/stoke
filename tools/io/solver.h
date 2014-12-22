@@ -12,25 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_VERIFIER_H
-#define STOKE_TOOLS_ARGS_VERIFIER_H
+#ifndef STOKE_TOOLS_IO_SOLVER_H
+#define STOKE_TOOLS_IO_SOLVER_H
 
-#include "src/ext/cpputil/include/command_line/command_line.h"
+#include <iostream>
 
 #include "src/solver/solver.h"
-#include "src/verifier/strategy.h"
-#include "tools/io/solver.h"
-#include "tools/io/strategy.h"
 
 namespace stoke {
 
-extern cpputil::Heading& verifier_heading;
+struct SolverReader {
+  void operator()(std::istream& is, Solver& s);
+};
 
-extern cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg;
-extern cpputil::ValueArg<Solver, SolverReader, SolverWriter>& solver_arg;
-
-extern cpputil::ValueArg<uint64_t>& timeout_arg;
+struct SolverWriter {
+  void operator()(std::ostream& os, const Solver s);
+};
 
 } // namespace stoke
 
 #endif
+
+
