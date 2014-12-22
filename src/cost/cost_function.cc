@@ -170,10 +170,18 @@ Cost CostFunction::extension_correctness(const Cfg& cfg, const Cost max) {
 }
 
 Cost CostFunction::evaluate_error(const CpuState& t, const CpuState& r) const {
+  // Only assess a signal penalty if target and rewrite disagree
   if (t.code != r.code) {
     return sig_penalty_;
   }
+  // If this testcase has signalled, we can't guarantee register state --
+  // and technically we can do whatever we want with signalling code -- so
+  // just return zero cost
+  if (t.code != ErrorCode::NORMAL) {
+    return 0;
+  }
 
+  // Otherwise, we can do the usual thing and check results register by register
   Cost cost = 0;
   cost += gp_error(t.gp, r.gp);
   cost += sse_error(t.sse, r.sse);
