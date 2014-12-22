@@ -15,9 +15,6 @@
 #include <cstdlib>
 #include <stdint.h>
 
-#include <iostream>
-using namespace std;
-
 extern int32_t p18(int32_t x);
 
 int main(int argc, char** argv) {
@@ -26,7 +23,8 @@ int main(int argc, char** argv) {
 
   srand(seed);
   for (auto i = 0; i < itr; ++i) {
-    p18(rand() % 2 ? rand() : 0x1ul << (rand() % 32));
+    const auto x = rand() % 2 ? rand() : (0x1ul << (rand() % 32));
+    p18(x);
   }
 
   return 0;

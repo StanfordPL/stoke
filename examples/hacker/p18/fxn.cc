@@ -17,8 +17,8 @@
 int32_t p18(int32_t x) {
   int32_t o1 = x - 1;
   int32_t o2 = o1 & x;
-  int32_t o3 = !!x;
-  int32_t o4 = !!o2;
+  int32_t o3 = x == 0 ? 0 : 1;
+  int32_t o4 = o2 == 0 ? 0 : 1;
   int32_t o5 = !o4;
   return o5 && o3;
 }
