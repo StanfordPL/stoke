@@ -15,9 +15,6 @@
 #include <cstdlib>
 #include <stdint.h>
 
-#include <iostream>
-using namespace std;
-
 extern int32_t p19(int32_t x, int32_t m, int32_t k);
 
 int main(int argc, char** argv) {
