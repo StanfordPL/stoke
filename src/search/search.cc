@@ -130,8 +130,6 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       break;
     }
 
-    // @todo Check cost function hasn't changed across iterations
-
     const auto move_type = moves_[int_(gen_)];
     statistics[(size_t) move_type].num_proposed++;
 
@@ -146,8 +144,6 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     const auto new_res = fxn(state.current, max + 1);
     const auto is_correct = new_res.first;
     const auto new_cost = new_res.second;
-
-    // @todo Check that cost function hasnt' changed within an iteration
 
     if (new_cost > max) {
       transforms_->undo(state.current, move_type);
@@ -232,7 +228,8 @@ void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchSt
 
 void Search::configure_empty(const Cfg& target, SearchState& state) const {
   state.current = Cfg({{}}, target.def_ins(), target.live_outs());
-  for (size_t i = 0, ie = max_instrs_ - 1; i < ie; ++i) {
+  state.current.get_code().push_back(target.get_code()[0]);
+  for (size_t i = 1, ie = max_instrs_ - 1; i < ie; ++i) {
     state.current.get_code().push_back({NOP});
   }
   state.current.get_code().push_back({RET});
@@ -318,14 +315,18 @@ Code Search::find_sound_code(const RegSet& def_ins, const RegSet& live_outs) {
 }
 
 void Search::configure_zero(const Cfg& target, SearchState& state) const {
+  // If nothing is live out in the target, nothing to do
   if (target.def_ins().contains(target.live_outs())) {
-    // no need to initialize any registers
     configure_empty(target, state);
     return;
   }
 
+  state.current = Cfg({{}}, target.def_ins(), target.live_outs());
+  state.current.get_code().push_back(target.get_code()[0]);
   auto code = find_sound_code(target.def_ins(), target.live_outs());
-  state.current = Cfg(code, target.def_ins(), target.live_outs());
+  for (const auto& instr : code) {
+    state.current.get_code().push_back(instr);
+  }
   for (size_t i = code.size(), ie = max_instrs_ - 1; i < ie; ++i) {
     state.current.get_code().push_back({NOP});
   }
@@ -360,6 +361,12 @@ void Search::configure_extension(const Cfg& target, SearchState& state) const {
   state.current.recompute();
   state.best_yet.recompute();
   state.best_correct.recompute();
+
+  // Invariant 3: Search state must agree on first instruction. This instruction
+  // must be the label definition that appears in the target.
+  assert(state.current.get_code()[0] == target.get_code()[0]);
+  assert(state.best_yet.get_code()[0] == target.get_code()[0]);
+  assert(state.best_correct.get_code()[0] == target.get_code()[0]);
 
   // See Search::configure for additional invariants
 }
