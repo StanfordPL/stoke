@@ -20,6 +20,8 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+uint64_t SymState::temp_ = 0;
+
 void SymState::build_from_cpustate(const CpuState& cs) {
 
   for(size_t i = 0; i < cs.gp.size(); ++i) {
@@ -316,4 +318,29 @@ SymBitVector SymState::get_addr(M<T> memory) const {
   }
 
   return address;
+}
+
+void SymState::simplify() {
+
+  for(size_t i = 0; i < 16; ++i) {
+    if(gp[i].type() != SymBitVector::CONSTANT && gp[i].type() != SymBitVector::VAR) {
+      auto var = SymBitVector::var(64, "SIMPLIFY_" + to_string(temp()));
+      constraints.push_back(gp[i] == var);
+      gp[i] = var;
+    }
+    if(sse[i].type() != SymBitVector::CONSTANT && gp[i].type() != SymBitVector::VAR) {
+      auto var = SymBitVector::var(256, "SIMPLIFY_" + to_string(temp()));
+      constraints.push_back(sse[i] == var);
+      sse[i] = var;
+    }
+  }
+  for(size_t i = 0; i < 6; ++i) {
+    if(rf[i].type() != SymBool::TRUE &&
+        rf[i].type() != SymBool::FALSE &&
+        rf[i].type() != SymBool::VAR) {
+      auto var = SymBool::var("SIMPLIFY_" + to_string(temp()));
+      constraints.push_back(rf[i] == var);
+      rf[i] = var;
+    }
+  }
 }

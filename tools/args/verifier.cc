@@ -27,6 +27,12 @@ ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg =
   .description("Verification strategy")
   .default_val(Strategy::NONE);
 
+ValueArg<Solver, SolverReader, SolverWriter>& solver_arg =
+  ValueArg<Solver, SolverReader, SolverWriter>::create("solver")
+  .usage("(cvc4|z3)")
+  .description("SMT Solver backend")
+  .default_val(Solver::CVC4);
+
 ValueArg<uint64_t>& timeout_arg =
   ValueArg<uint64_t>::create("validator_timeout")
   .usage("<int>")

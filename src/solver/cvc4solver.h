@@ -26,29 +26,51 @@ namespace stoke {
 
 class Cvc4Solver : public SMTSolver {
 
-
 public:
+  Cvc4Solver() : smt_(NULL), uninterpreted_(false) {}
+  ~Cvc4Solver() {
+    if(smt_)
+      delete smt_;
+  }
+
   /** Check if a query is satisfiable given constraints */
   bool is_sat(const std::vector<SymBool>& constraints);
 
   /** Check if a satisfying assignment is available. */
   bool has_model() const {
-    return false;
+    return !uninterpreted_;
   }
   /** Get the satisfying assignment for a bit-vector from the model. */
   cpputil::BitVector get_model_bv(const std::string& var, uint16_t octs);
   /** Get the satisfying assignment for a bit from the model. */
   bool get_model_bool(const std::string& var);
 
+  void reset() {
+    if(smt_) {
+      delete smt_;
+    }
+
+    smt_ = new CVC4::SmtEngine(&em_);
+
+    variables_ = std::map<std::string, CVC4::Expr>();
+    uninterpreted_ = false;
+  }
+
 private:
 
+  CVC4::SmtEngine* smt_;
   CVC4::ExprManager em_;
+  bool uninterpreted_;
+  /** Tracks variable expressions already created for re-use */
+  std::map<std::string, CVC4::Expr> variables_;
+
 
   /** This class converts symbolic bit-vectors into Z3's format. */
   class ExprConverter : public SymVisitor<CVC4::Expr> {
 
   public:
-    ExprConverter(CVC4::ExprManager& em) : em_(em) {}
+    ExprConverter(Cvc4Solver* parent) : em_(parent->em_), variables_(parent->variables_),
+      uninterpreted_(&(parent->uninterpreted_)) {}
 
     /** Visit some bit vector */
     CVC4::Expr operator()(const SymBitVector& bv) {
@@ -103,13 +125,14 @@ private:
 
   private:
 
+    /** Reference to parent expression manager */
     CVC4::ExprManager& em_;
+    /** Reference to variable table */
+    std::map<std::string, CVC4::Expr>& variables_;
+    bool* uninterpreted_;
 
     /** Keep error messages */
     std::string error_;
-
-    /** Tracks variable expressions already created for re-use */
-    std::map<std::string, CVC4::Expr> variables_;
 
     /** Logic to instantiate a new function variable */
     CVC4::Expr build_function(const SymBitVectorFunction * const);

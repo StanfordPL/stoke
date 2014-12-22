@@ -19,6 +19,7 @@
 #include "src/sandbox/sandbox.h"
 #include "src/validator/validator.h"
 #include "src/validator/handlers/combo_handler.h"
+#include "tests/solver/test_solver.h"
 
 class ValidatorTest : public ::testing::Test {
 
@@ -146,7 +147,7 @@ protected:
     // Check that we can generate a state
     bool b = s_.is_sat(constraints);
     EXPECT_TRUE(b) << "Circuit not satisfiable";
-    EXPECT_FALSE(s_.has_error()) << "Z3 encountered: " << s_.get_error();
+    EXPECT_FALSE(s_.has_error()) << "Solver encountered: " << s_.get_error();
     if(!b || s_.has_error())
       return true;
 
@@ -593,7 +594,7 @@ private:
   /* The validator we're using */
   stoke::Validator v_;
   /* The solver we're using */
-  stoke::Z3Solver s_;
+  TestSolver s_;
 
   /* The set of live outputs for the next test */
   x64asm::RegSet live_outs_;
