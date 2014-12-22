@@ -208,9 +208,9 @@ bool Transforms::instruction_move(Cfg& cfg) {
   const auto idx = gen_() % num_instrs;
 
   instr_index_ = cfg.get_index({*bb, idx});
-	if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
-		return false;
-	}
+  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
   if (is_control_opcode(code[instr_index_].get_opcode())) {
     return false;
   }
@@ -266,9 +266,9 @@ bool Transforms::opcode_move(Cfg& cfg) {
     return false;
   }
   instr_index_ = cfg.get_index({*bb, gen_() % num_instrs});
-	if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
-		return false;
-	}
+  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
 
   auto& instr = code[instr_index_];
   old_opcode_ = instr.get_opcode();
@@ -311,12 +311,12 @@ bool Transforms::operand_move(Cfg& cfg) {
   const auto idx = gen_() % num_instrs;
 
   instr_index_ = cfg.get_index({*bb, idx});
-	if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
-		return false;
-	}
-	if (is_control_opcode(code[instr_index_].get_opcode())) {
-		return false;
-	}
+  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
+  if (is_control_opcode(code[instr_index_].get_opcode())) {
+    return false;
+  }
   if (code[instr_index_].arity() == 0) {
     return false;
   }
@@ -388,9 +388,9 @@ bool Transforms::local_swap_move(Cfg& cfg) {
   }
 
   move_i_ = cfg.get_index({bb, gen_() % num_instrs});
-	if (move_i_ == cfg.get_index({cfg.get_entry()+1,0})) {
-		return false;
-	}
+  if (move_i_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
   move_j_ = cfg.get_index({bb, gen_() % num_instrs});
   if (move_i_ == move_j_) {
     return false;
@@ -458,9 +458,9 @@ bool Transforms::extension_move(Cfg& cfg) {
   // all instructions instr upon return.  (You can assume this holds at the
   // beginning).
 
-	// Invariant 4:
-	// Transformations must preserve the first instruction in a code sequence
-	// which should be a label that represents the name of a function.
+  // Invariant 4:
+  // Transformations must preserve the first instruction in a code sequence
+  // which should be a label that represents the name of a function.
 
   return false;
 }

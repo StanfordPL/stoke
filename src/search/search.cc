@@ -228,7 +228,7 @@ void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchSt
 
 void Search::configure_empty(const Cfg& target, SearchState& state) const {
   state.current = Cfg({{}}, target.def_ins(), target.live_outs());
-	state.current.get_code().push_back(target.get_code()[0]);
+  state.current.get_code().push_back(target.get_code()[0]);
   for (size_t i = 1, ie = max_instrs_ - 1; i < ie; ++i) {
     state.current.get_code().push_back({NOP});
   }
@@ -322,11 +322,11 @@ void Search::configure_zero(const Cfg& target, SearchState& state) const {
   }
 
   state.current = Cfg({{}}, target.def_ins(), target.live_outs());
-	state.current.get_code().push_back(target.get_code()[0]);
+  state.current.get_code().push_back(target.get_code()[0]);
   auto code = find_sound_code(target.def_ins(), target.live_outs());
-	for (const auto& instr : code) {
-		state.current.get_code().push_back(instr);
-	}
+  for (const auto& instr : code) {
+    state.current.get_code().push_back(instr);
+  }
   for (size_t i = code.size(), ie = max_instrs_ - 1; i < ie; ++i) {
     state.current.get_code().push_back({NOP});
   }
@@ -362,11 +362,11 @@ void Search::configure_extension(const Cfg& target, SearchState& state) const {
   state.best_yet.recompute();
   state.best_correct.recompute();
 
-	// Invariant 3: Search state must agree on first instruction. This instruction
-	// must be the label definition that appears in the target.
-	assert(state.current.get_code()[0] == target.get_code()[0]);
-	assert(state.best_yet.get_code()[0] == target.get_code()[0]);
-	assert(state.best_correct.get_code()[0] == target.get_code()[0]);
+  // Invariant 3: Search state must agree on first instruction. This instruction
+  // must be the label definition that appears in the target.
+  assert(state.current.get_code()[0] == target.get_code()[0]);
+  assert(state.best_yet.get_code()[0] == target.get_code()[0]);
+  assert(state.best_correct.get_code()[0] == target.get_code()[0]);
 
   // See Search::configure for additional invariants
 }
