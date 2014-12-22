@@ -192,3 +192,15 @@ CRC32_R32_RH
 , OUT_IMM8_AL // OUT imm8, AL
 , OUT_IMM8_AX // OUT imm8, AX
 , OUT_IMM8_EAX // OUT imm8, EAX
+
+// These instructions read/write the segment registers
+, LSL_R16_M16 // LSL r16, m16
+, LSL_R16_R16 // LSL r16, r16
+, LSL_R32_M16 // LSL r32, m16
+, LSL_R32_R32 // LSL r32, r32
+, LSL_R64_M16 // LSL r64, m16
+, LSL_R64_R32 // LSL r64, r32
+, LSS_R16_FARPTR1616 // LSS r16, m16:16
+, LSS_R32_FARPTR1632 // LSS r32, m16:32
+, LSS_R64_FARPTR1664 // LSS r64, m16:64
+
