@@ -354,6 +354,9 @@ bool Transforms::operand_move(Cfg& cfg) {
 
 bool Transforms::resize_move(Cfg& cfg) {
   auto& code = cfg.get_code();
+  if (code.size() < 2) {
+    return false;
+  }
 
   move_i_ = 1;
   for (size_t ie = code.size(); move_i_ < ie; ++move_i_) {
@@ -417,6 +420,9 @@ bool Transforms::local_swap_move(Cfg& cfg) {
 
 bool Transforms::global_swap_move(Cfg& cfg) {
   auto& code = cfg.get_code();
+  if (code.size() < 3) {
+    return false;
+  }
 
   move_i_ = (gen_() % (code.size()-1)) + 1;
   move_j_ = (gen_() % (code.size()-1)) + 1;
