@@ -193,6 +193,11 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
   data.offset = starting_addr - offsets[".text"];
 
   stringstream ss;
+
+  // Add a label to the beginning of the instruction stream with the function name
+  ss << ".L" << data.tunit.name << ":" << endl;
+
+  // Now read the text of the function
   for (const auto l : lines) {
     const auto itr = labels.find(l.first);
     if (itr != labels.end()) {
