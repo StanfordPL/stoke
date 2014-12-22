@@ -20,6 +20,7 @@ TEST(DisassemblerTest, SimpleExample) {
 
   /* These are the expected answers */
   std::stringstream tmp;
+  tmp << ".sample:" << std::endl;
   tmp << "leal (%rsi, %rdi, 2), %eax" << std::endl;
   tmp << "subl  %edi, %esi" << std::endl;
   tmp << "imull %eax, %esi" << std::endl;
@@ -68,6 +69,7 @@ TEST(DisassemblerTest, PopCnt) {
 
   /* These are the expected answers */
   std::stringstream tmp;
+  tmp << "._Z6popcntm:" << std::endl;
   tmp << "testq  %rdi,%rdi" << std::endl;
   tmp << "je     .L_40058f" << std::endl;
   tmp << "xorl   %eax,%eax" << std::endl;
