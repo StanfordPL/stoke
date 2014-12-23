@@ -118,6 +118,9 @@ public:
     lineno_ = line;
   }
 
+  /** Replace symbolic values with variables and add constraints.*/
+  void simplify();
+
 private:
 
   /** Builds a symbolic CPU state from a concerete one */
@@ -127,6 +130,13 @@ private:
 
   /** The current line number */
   size_t lineno_;
+
+  /** Global counter */
+  static uint64_t temp_;
+  /** Get counter value */
+  static uint64_t temp() {
+    return temp_++;
+  }
 };
 
 }; //namespace stoke

@@ -17,7 +17,9 @@
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
+#include "src/solver/solver.h"
 #include "src/verifier/strategy.h"
+#include "tools/io/solver.h"
 #include "tools/io/strategy.h"
 
 namespace stoke {
@@ -25,6 +27,7 @@ namespace stoke {
 extern cpputil::Heading& verifier_heading;
 
 extern cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg;
+extern cpputil::ValueArg<Solver, SolverReader, SolverWriter>& solver_arg;
 
 extern cpputil::ValueArg<uint64_t>& timeout_arg;
 

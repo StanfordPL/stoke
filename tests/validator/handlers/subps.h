@@ -15,8 +15,7 @@
 
 class ValidatorSubpsTest : public ValidatorTest {};
 
-/* This test takes too long :( */
-TEST_F(ValidatorSubpsTest, DISABLED_Identity) {
+TEST_F(ValidatorSubpsTest, Identity) {
 
   target_ << "subps %xmm3, %xmm5" << std::endl;
   target_ << "retq" << std::endl;
@@ -25,6 +24,9 @@ TEST_F(ValidatorSubpsTest, DISABLED_Identity) {
   rewrite_ << "retq" << std::endl;
 
   assert_equiv();
+}
+
+TEST_F(ValidatorSubpsTest, DISABLED_MatchesSubss) {
 
 }
 
