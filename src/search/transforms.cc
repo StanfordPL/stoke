@@ -150,7 +150,7 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
   for (const auto& instr : target) {
     if (instr.is_explicit_memory_dereference()) {
       assert(instr.mem_index() != -1);
-			insert_mem(instr.get_operand<M8>(instr.mem_index()));
+      insert_mem(instr.get_operand<M8>(instr.mem_index()));
     }
   }
 

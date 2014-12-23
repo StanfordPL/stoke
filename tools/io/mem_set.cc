@@ -26,35 +26,35 @@ using namespace x64asm;
 namespace stoke {
 
 void MemSetReader::operator()(istream& is, set<M8>& ms) {
-	ms.clear();
-	
-	set<string> strs;
-	TextReader<set<string>>()(is, strs);
+  ms.clear();
 
-	for (const auto& s : strs) {
-		// Try making an instruction that contains this operands
-		stringstream ss;
-		ss << "movb %al, " << s << endl;
-		Code c;
-		ss >> c;
+  set<string> strs;
+  TextReader<set<string>>()(is, strs);
 
-		// If something went wrong the operand is bad	
-		if (ss.fail()) {
-			is.setstate(ios::failbit);
-			return;
-		}
-		
-		// Otherwise we can keep it
-		ms.insert(c[0].get_operand<M8>(0));
-	}
+  for (const auto& s : strs) {
+    // Try making an instruction that contains this operands
+    stringstream ss;
+    ss << "movb %al, " << s << endl;
+    Code c;
+    ss >> c;
+
+    // If something went wrong the operand is bad
+    if (ss.fail()) {
+      is.setstate(ios::failbit);
+      return;
+    }
+
+    // Otherwise we can keep it
+    ms.insert(c[0].get_operand<M8>(0));
+  }
 }
 
 void MemSetWriter::operator()(ostream& os, const set<M8>& ms) {
-	os << "{";
-	for (const auto& m : ms) {
-		os << " " << m;
-	}
-	os << " }";
+  os << "{";
+  for (const auto& m : ms) {
+    os << " " << m;
+  }
+  os << " }";
 }
 
 } // namespace stoke
