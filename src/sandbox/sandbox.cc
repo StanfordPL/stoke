@@ -796,7 +796,6 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
 void Sandbox::emit_jump(const Instruction& instr) {
   // Load the STOKE %rsp, we'll need to do some pushing here
   emit_load_stoke_rsp();
-
   // Backup rax and rflags
   assm_.push(rax);
   assm_.pushfq();
@@ -814,12 +813,11 @@ void Sandbox::emit_jump(const Instruction& instr) {
   // Restore rflags and rax
   assm_.popfq();
   assm_.pop(rax);
+  // Reload the user's %rsp
+  emit_load_user_rsp();
 
   // Go ahead and do the jump
   assm_.assemble(instr);
-
-  // Reload the user's %rsp
-  emit_load_user_rsp();
 }
 
 void Sandbox::emit_call(const Instruction& instr) {
@@ -1101,6 +1099,8 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
 
 void Sandbox::emit_signal_trap_call(ErrorCode ec) {
   // Reload the stoke stack pointer
+  // There are some code paths to here where the stoke stack pointer is
+  // already in place. Doing this anyway doesn't hurt anything.
   assm_.mov(rax, Moffs64(&stoke_rsp_));
   assm_.mov(rsp, rax);
   // Load up the error code argument
