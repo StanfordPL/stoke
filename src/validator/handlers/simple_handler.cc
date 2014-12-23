@@ -86,6 +86,27 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a | b);
   });
 
+  add_opcode({"popq"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    M64 target = M64(rsp);
+    ss.set(dst, ss[target]);
+    ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 8));
+  });
+
+  add_opcode({"popl"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    M32 target = M32(rsp);
+    ss.set(dst, ss[target]);
+    ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 4));
+  });
+
+  add_opcode({"popw"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    M16 target = M16(rsp);
+    ss.set(dst, ss[target]);
+    ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 2));
+  });
+
   add_opcode({"popcntw", "popcntl", "popcntq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
 
@@ -111,6 +132,27 @@ void SimpleHandler::add_all() {
     ss.set(eflags_sf, SymBool::_false());
     ss.set(eflags_of, SymBool::_false());
     ss.set(eflags_af, SymBool::_false());
+  });
+
+  add_opcode({"pushq"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    ss.set(rsp, ss[rsp] - SymBitVector::constant(64, 8));
+    M64 target = M64(rsp);
+    ss.set(target, a.extend(64));
+  });
+
+  add_opcode({"pushl"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    ss.set(rsp, ss[rsp] - SymBitVector::constant(64, 4));
+    M32 target = M32(rsp);
+    ss.set(target, a.extend(32));
+  });
+
+  add_opcode({"pushw"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    ss.set(rsp, ss[rsp] - SymBitVector::constant(64, 2));
+    M16 target = M16(rsp);
+    ss.set(target, a.extend(16));
   });
 
   add_opcode({"testb", "testw", "testl", "testq"},

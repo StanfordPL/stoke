@@ -310,8 +310,8 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix,
 
   auto compare = [] (const pair<uint64_t, uint16_t>& p1, const pair<uint64_t, uint16_t>& p2) {
     if(p1.first - p2.first == 0)
-      return (uint64_t)(p1.second - p2.second);
-    return p1.first - p2.first;
+      return (int64_t)(p1.second - p2.second);
+    return (int64_t)(p1.first - p2.first);
   };
   sort(concrete.begin(), concrete.end(), compare);
 
@@ -326,7 +326,7 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix,
     if(!ok)
       continue;
     uint64_t quality = heap_size + stack_size;
-    if(quality < best) {
+    if(quality < best && heap_size < quality && stack_size < quality) {
       best = quality;
       best_index = i;
     }
@@ -334,6 +334,13 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix,
 
   ok = compute_split(concrete, best_index, heap_min, heap_size, stack_min, stack_size);
   assert(ok);
+
+  if(stack_size > 4096 || heap_size > 4096) {
+    // Failed to allocate memory, oh well.
+    cs.stack.resize(0,0);
+    cs.heap.resize(0,0);
+    return cs;
+  }
 
   cs.stack.resize(stack_min, stack_size); //base, size
   cs.heap.resize(heap_min, heap_size);  //base, size
