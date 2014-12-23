@@ -15,14 +15,13 @@
 #include <stdint.h>
 
 struct Node {
-  Node* current;
-  char buffer[101];
+  int32_t val;
   Node* next;
-  uint32_t val;
 };
 
-void kernel(Node* n) {
-  Node* temp = n->current;
-  temp->val *= 2;
-  temp->current = temp->next;
+void traverse(Node* head) {
+	while (head != 0) {
+		head->val *= 2;
+		head = head->next;
+	}
 }

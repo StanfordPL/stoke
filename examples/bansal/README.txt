@@ -2,22 +2,16 @@ Notes --
 
 This is the linked list traversal benchmark from [bansal 06].
 
-Given the current implementation of stoke, it's actually a little
-bit difficult to run this experiment under the same conditions as
-it was run in [schkufza 12]. There are two complications:
+Given the current implementation of stoke, it's actually a little bit difficult
+to run this experiment under the same conditions as it was run in [schkufza 12]. 
+The primary complication is that STOKE works at the granularity of functions now. 
 
-1. STOKE works at the granularity of functions now, so we have to
-define the kernel() function to simulate the body of the loop.
+We solve this problem by using two files -- loop.s and kernel.s -- which are
+representative of an llvm -O0 compilation, and asking STOKE to optimize the
+former.  Once we're done, we paste the results back together and time as usual.
 
-2. STOKE allocates sandbox memory contiguously which means that 
-we have to fight a little bit to generate test cases that
-aren't enormous. We solve this by adding the Node* that would be on
-the stack to the beginning of the struct and adding an odd number of 
-padding bytes (stoke doesn't have the constant in it's immediate pool, 
-so it has to work for this value).
+Known Issues --
 
-The result still isn't perfect. There's no way to convince STOKE
-to load the initial value from memory (it has to be passed through the 
-stack). With that qualification, the code here is the moral equivalent
-of the original. STOKE will produce a result that uses one less instruction
-than the one shown in [schkufza 12].
+The synth and opt config files blacklist variants of the push/pop instructions.
+This is due to a bug in the current version of stoke that does not check for
+implicit register writes that modify preserved registers.
