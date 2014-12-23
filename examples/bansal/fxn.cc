@@ -20,8 +20,8 @@ struct Node {
 };
 
 void traverse(Node* head) {
-	while (head != 0) {
-		head->val *= 2;
-		head = head->next;
-	}
+  while (head != 0) {
+    head->val *= 2;
+    head = head->next;
+  }
 }
