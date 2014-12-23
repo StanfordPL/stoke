@@ -40,6 +40,3 @@ Known Issues:
 p19, p20, and p24 have optimization files that are configured to be used
 without first performing synthesis. make synth will work in these directories,
 but make opt will not read the results.
-
-p18 won't synthesize (seems like a bug)
-
