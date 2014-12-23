@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
       y[idx+j] = rand();
     }
 
-    saxpy(rand(), &x[idx], &y[idx], idx);
+    saxpy(rand(), x, y, idx);
   }
 
   return 0;
