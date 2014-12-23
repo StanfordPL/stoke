@@ -103,6 +103,7 @@ TOOL_NON_ARG_OBJ=\
 	tools/io/distance.o \
 	tools/io/opc_set.o \
 	tools/io/init.o \
+	tools/io/mem_set.o \
 	tools/io/move.o \
 	tools/io/reduction.o \
 	tools/io/performance_term.o \
