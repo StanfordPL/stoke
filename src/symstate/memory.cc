@@ -36,6 +36,8 @@ uint64_t read_quadword(const Memory& m, uint64_t base, uint64_t i) {
 
 SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
 
+  //cout << "Writing " << value << " to " << address << " (size " << size << ")" << endl;
+
   SymBitVector addr_var = SymBitVector::var(64, "MEMORY_ADDRESS_" + to_string(temp()));
   SymBitVector value_var = SymBitVector::var(size, "MEMORY_WRITE_" + to_string(temp()));
 
@@ -69,6 +71,8 @@ void SymMemory::init_concrete(const Memory& stack, const Memory& heap) {
 }
 
 pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
+
+  //cout << "Reading from " << address << " (size " << size << ")" << endl;
 
   SymBitVector addr_var = SymBitVector::var(64, "MEMORY_ADDRESS_" + to_string(temp()));
   SymBitVector value = SymBitVector::var(size, "MEMORY_READ_" + to_string(temp()));
@@ -108,15 +112,19 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size,
 
     if(analysis_) {
       if(!analysis_->may_overlap(write.line_no, line_no)) {
+        //cout << "Write @" << write.address << " on line " << write.line_no << " cannot overlap" << std::endl;
         continue;
       }
 
       must_overlap = analysis_->must_overlap(write.line_no, line_no);
       if(must_overlap && write.size == size) {
         value = write.value;
+        //cout << "Write @" << write.address << " on line " << write.line_no << " must overlap" << std::endl;
         continue;
       }
     }
+
+    //cout << "Write @" << write.address << " on line " << write.line_no << " has no aliasing info" << std::endl;
 
     // Case 0:
     // Write and read are the same address
@@ -236,7 +244,6 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size,
       }
     }
   }
-
 
   return pair<SymBitVector, SymBool>(value, segv);
 
