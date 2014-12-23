@@ -37,7 +37,9 @@ in [gulwani 11]). Every other benchmark uses llvm -O0.
 
 Known Issues:
 
+p19, p20, and p24 have optimization files that are configured to be used
+without first performing synthesis. make synth will work in these directories,
+but make opt will not read the results.
+
 p18 won't synthesize (seems like a bug)
-p19 won't synthesize (see [asplos 12]; optimization works)
-p20 won't synthesize (see [asplos 12]; optimization SEGFAULTS!!!) 
 
