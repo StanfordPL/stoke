@@ -25,11 +25,14 @@ orig_llvm:
 	clang -std=c++11 -O0 -c fxn.cc
 	g++ -std=c++11 -O3 main.cc fxn.o
 orig_gcc:
-	g++ -std=c++11 -O3 -c fxn.cc
+	g++ -std=c++11 -O0 -c fxn.cc
 	g++ -std=c++11 -O3 main.cc fxn.o
-orig_icc:
-	icc -std=c++11 -O3 -c fxn.cc
-	g++ -std=c++11 -O3 main.cc fxn.o
+
+rebuild:
+	rm -f stoke.s
+	head -n10 loop.s >> stoke.s	
+	tail -n+5 opt_result.s | head -n-3 >> stoke.s
+	tail -n8 loop.s >> stoke.s
 
 extract:
 	stoke extract --config extract.conf
@@ -46,4 +49,4 @@ time:
 	time ./a.out 100000000
 
 clean:
-	rm -rf bins ./a.out *.tc *result.s *.o
+	rm -rf bins ./a.out *.tc *result.s stoke.s *.o

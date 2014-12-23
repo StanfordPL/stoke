@@ -16,13 +16,32 @@
 #include <stdint.h>
 
 struct Node {
-  Node* current;
-  char buffer[101];
+  int32_t val;
   Node* next;
-  uint32_t val;
 };
 
-extern void kernel(Node* n);
+Node* new_list(size_t size) {
+	auto list = new Node{rand(),0};
+
+	auto n = list;
+	for (auto i = 1; i < size; ++i) {
+		auto nn = new Node{rand(),0};
+		n->next = nn;
+		n = n->next;
+	}
+
+	return list;
+}
+
+extern void traverse(Node* head);
+
+void free_list(Node* head) {
+	while (head != 0) {
+		auto n = head->next;
+		delete head;
+		head = n;
+	}
+}
 
 int main(int argc, char** argv) {
   const auto itr = argc > 1 ? atoi(argv[1]) : 1024;
@@ -30,21 +49,9 @@ int main(int argc, char** argv) {
 
   srand(seed);
 
-  for (auto i = 0; i < itr; ++i) {
-    Node* n2 = new Node;
-    n2->val = rand();
-    n2->next = 0;
-
-    Node* n1 = new Node;
-    n1->val = rand();
-    n1->next = n2;
-
-    n1->current = n1;
-    kernel(n1);
-
-    delete n1;
-    delete n2;
-  }
+	auto head = new_list(itr);
+	traverse(head);
+	free_list(head);
 
   return 0;
 }
