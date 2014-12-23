@@ -1099,8 +1099,8 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
 
 void Sandbox::emit_signal_trap_call(ErrorCode ec) {
   // Reload the stoke stack pointer
-	// There are some code paths to here where the stoke stack pointer is
-	// already in place. Doing this anyway doesn't hurt anything.
+  // There are some code paths to here where the stoke stack pointer is
+  // already in place. Doing this anyway doesn't hurt anything.
   assm_.mov(rax, Moffs64(&stoke_rsp_));
   assm_.mov(rsp, rax);
   // Load up the error code argument
