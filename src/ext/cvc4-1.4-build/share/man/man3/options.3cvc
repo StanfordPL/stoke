@@ -1,0 +1,1287 @@
+.\" Process this file with
+.\" groff -man -Tascii options.3cvc
+.\"
+.TH OPTIONS 3cvc "July 2014" "CVC4 release 1.4" "CVC4 Internals Documentation"
+.SH NAME
+options \- the options infrastructure
+
+.SH AVAILABLE INTERNAL OPTIONS
+
+.RS
+.TP 10
+.I "COMMON OPTIONS"
+
+.TP
+.B "inputLanguage"
+(InputLanguage, default = language::input::LANG_AUTO)
+.br
+force input language (default is "auto"; see \-\-lang help)
+.TP
+.B "outputLanguage"
+(OutputLanguage, default = language::output::LANG_AUTO)
+.br
+force output language (default is "auto"; see \-\-output\-lang help)
+.TP
+.B "statistics"
+(bool)
+.br
+give statistics on exit
+.TP
+.B "produceModels"
+(bool, default = false)
+.br
+support the get\-value and get\-model commands
+.TP
+.B "interactive"
+(bool)
+.br
+force interactive mode
+.TP
+.B "incrementalSolving"
+(bool, default = true)
+.br
+enable incremental solving
+.TP
+.B "cumulativeMillisecondLimit"
+(unsigned long)
+.br
+enable time limiting (give milliseconds)
+.TP
+.B "perCallMillisecondLimit"
+(unsigned long)
+.br
+enable time limiting per query (give milliseconds)
+.TP
+.B "cumulativeResourceLimit"
+(unsigned long)
+.br
+enable resource limiting (currently, roughly the number of SAT conflicts)
+.TP
+.B "perCallResourceLimit"
+(unsigned long)
+.br
+enable resource limiting per query
+.TP
+.B "version"
+(bool)
+.br
+identify this CVC4 binary
+.TP
+.B "help"
+(bool)
+.br
+full command line reference
+.TP
+.B "strictParsing"
+(bool)
+.br
+be less tolerant of non\-conforming inputs
+
+
+.TP
+.I "BASE OPTIONS"
+
+.TP
+.B "binary_name"
+(std::string)
+.br
+[undocumented]
+.TP
+.B "in"
+(std::istream*, default = &std::cin)
+.br
+[undocumented]
+.TP
+.B "out"
+(std::ostream*, default = &std::cout)
+.br
+[undocumented]
+.TP
+.B "err"
+(std::ostream*, default = &std::cerr)
+.br
+[undocumented]
+.TP
+.B "languageHelp"
+(bool)
+.br
+[undocumented]
+.TP
+.B "verbosity"
+(int, default = 0)
+.br
+the verbosity level of CVC4
+.TP
+.B "statsEveryQuery"
+(bool, default = false)
+.br
+in incremental mode, print stats after every satisfiability or validity query
+.TP
+.B "statsHideZeros"
+(bool, default = false)
+.br
+hide statistics which are zero
+.TP
+.B "parseOnly"
+(bool)
+.br
+exit after parsing input
+.TP
+.B "preprocessOnly"
+(bool)
+.br
+exit after preprocessing input
+.TP
+.B "printSuccess"
+(bool)
+.br
+print the "success" output required of SMT\-LIBv2
+.TP
+.I "EXPRESSION PACKAGE OPTIONS"
+
+.TP
+.B "defaultExprDepth"
+(int, default = 0)
+.br
+print exprs to depth N (0 == default, \-1 == no limit)
+.TP
+.B "defaultDagThresh"
+(int, default = 1)
+.br
+dagify common subexprs appearing > N times (1 == default, 0 == don't dagify)
+.TP
+.B "earlyTypeChecking"
+(bool, default = USE_EARLY_TYPE_CHECKING_BY_DEFAULT)
+.br
+type check expressions immediately on creation (debug builds only)
+.TP
+.B "typeChecking"
+(bool, default = DO_SEMANTIC_CHECKS_BY_DEFAULT)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-no\-type\-checking, which reverses the sense of the option, is documented thusly:"
+never type check expressions
+.TP
+.B "biasedITERemoval"
+(bool, default = false)
+.br
+try the new remove ite pass that is biased against term ites appearing
+.TP
+.I "BOOLEAN THEORY OPTIONS"
+
+.TP
+.B "booleanTermConversionMode"
+(CVC4::theory::booleans::BooleanTermConversionMode, default = CVC4::theory::booleans::BOOLEAN_TERM_CONVERT_TO_BITVECTORS)
+.br
+policy for converting Boolean terms
+.TP
+.I "THEORY LAYER OPTIONS"
+
+.TP
+.B "theoryOfMode"
+(CVC4::theory::TheoryOfMode, default = CVC4::theory::THEORY_OF_TYPE_BASED)
+.br
+mode for Theory::theoryof() (EXPERTS only)
+.TP
+.B "theoryAlternates"
+(::std::map<std::string,bool>)
+.br
+[undocumented]
+.TP
+.I "BITVECTOR THEORY OPTIONS"
+
+.TP
+.B "theoryAlternates"
+(::std::map<std::string,bool>)
+.br
+[undocumented]
+.TP
+.B "bitblastMode"
+(CVC4::theory::bv::BitblastMode, default = CVC4::theory::bv::BITBLAST_MODE_LAZY)
+.br
+choose bitblasting mode, see \-\-bitblast=help
+
+.TP
+.B "bitvectorAig"
+(bool, default = false)
+.br
+bitblast by first converting to AIG (only if \-\-bitblast=eager)
+.TP
+.B "bitvectorAigSimplifications"
+(std::string)
+.br
+abc command to run AIG simplifications (EXPERTS only)
+.TP
+.B "bitvectorPropagate"
+(bool, default = true)
+.br
+use bit\-vector propagation in the bit\-blaster
+.TP
+.B "bitvectorEqualitySolver"
+(bool, default = true)
+.br
+use the equality engine for the bit\-vector theory (only if \-\-bitblast=lazy)
+.TP
+.B "bitvectorEqualitySlicer"
+(CVC4::theory::bv::BvSlicerMode, default = CVC4::theory::bv::BITVECTOR_SLICER_OFF)
+.br
+turn on the slicing equality solver for the bit\-vector theory (only if \-\-bitblast=lazy)
+.TP
+.B "bitvectorInequalitySolver"
+(bool, default = true)
+.br
+turn on the inequality solver for the bit\-vector theory (only if \-\-bitblast=lazy)
+.TP
+.B "bitvectorAlgebraicSolver"
+(bool, default = true)
+.br
+turn on the algebraic solver for the bit\-vector theory (only if \-\-bitblast=lazy)
+
+.TP
+.B "bitvectorAlgebraicBudget"
+(unsigned, default = 1500)
+.br
+the budget allowed for the algebraic solver in number of SAT conflicts (EXPERTS only)
+.TP
+.B "bitvectorToBool"
+(bool, default = false)
+.br
+lift bit\-vectors of size 1 to booleans when possible
+.TP
+.B "bitvectorDivByZeroConst"
+(bool, default = false)
+.br
+always return \-1 on division by zero
+.TP
+.B "bvAbstraction"
+(bool, default = false)
+.br
+mcm benchmark abstraction  (EXPERTS only)
+.TP
+.B "skolemizeArguments"
+(bool, default = false)
+.br
+skolemize arguments for bv abstraction (only does something if \-\-bv\-abstraction is on) (EXPERTS only)
+.TP
+.B "bvNumFunc"
+(unsigned, default = 1)
+.br
+number of function symbols in conflicts that are generalized (EXPERTS only)
+.TP
+.B "bvEagerExplanations"
+(bool, default = false)
+.br
+compute bit\-blasting propagation explanations eagerly (EXPERTS only)
+.TP
+.B "bitvectorQuickXplain"
+(bool, default = false)
+.br
+minimize bv conflicts using the QuickXplain algorithm (EXPERTS only)
+
+.TP
+.B "bvIntroducePow2"
+(bool, default = false)
+.br
+introduce bitvector powers of two as a preprocessing pass (EXPERTS only)
+
+.TP
+.I "DATATYPES THEORY OPTIONS"
+
+.TP
+.B "dtRewriteErrorSel"
+(bool, default = false)
+.br
+rewrite incorrectly applied selectors to arbitrary ground term (EXPERTS only)
+.TP
+.B "dtForceAssignment"
+(bool, default = false)
+.br
+force the datatypes solver to give specific values to all datatypes terms before answering sat
+
+.TP
+.I "ARITHMETIC THEORY OPTIONS"
+
+.TP
+.B "arithUnateLemmaMode"
+(ArithUnateLemmaMode, default = ALL_PRESOLVE_LEMMAS)
+.br
+determines which lemmas to add before solving (default is 'all', see \-\-unate\-lemmas=help)
+.TP
+.B "arithPropagationMode"
+(ArithPropagationMode, default = BOTH_PROP)
+.br
+turns on arithmetic propagation (default is 'old', see \-\-arith\-prop=help)
+.TP
+.B "arithHeuristicPivots"
+(int16_t, default = 0)
+.br
+the number of times to apply the heuristic pivot rule; if N < 0, this defaults to the number of variables; if this is unset, this is tuned by the logic selection
+.TP
+.B "arithStandardCheckVarOrderPivots"
+(int16_t, default = \-1)
+.br
+limits the number of pivots in a single invocation of check() at a non\-full effort level using Bland's pivot rule (EXPERTS only)
+.TP
+.B "arithErrorSelectionRule"
+(ErrorSelectionRule, default = MINIMUM_AMOUNT)
+.br
+change the pivot rule for the basic variable (default is 'min', see \-\-pivot\-rule help)
+.TP
+.B "arithSimplexCheckPeriod"
+(uint16_t, default = 200)
+.br
+the number of pivots to do in simplex before rechecking for a conflict on all variables
+.TP
+.B "arithPivotThreshold"
+(uint16_t, default = 2)
+.br
+sets the number of pivots using \-\-pivot\-rule per basic variable per simplex instance before using variable order
+.TP
+.B "arithPropagateMaxLength"
+(uint16_t, default = 16)
+.br
+sets the maximum row length to be used in propagation
+.TP
+.B "arithDioSolver"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-dio\-solver, which reverses the sense of the option, is documented thusly:"
+turns off Linear Diophantine Equation solver (Griggio, JSAT 2012)
+.TP
+.B "arithRewriteEq"
+(bool, default = false)
+.br
+turns on the preprocessing rewrite turning equalities into a conjunction of inequalities
+.TP
+.B "arithMLTrick"
+(bool, default = false)
+.br
+turns on the preprocessing step of attempting to infer bounds on miplib problems
+.TP
+.B "arithMLTrickSubstitutions"
+(unsigned, default = 1)
+.br
+do substitution for miplib 'tmp' vars if defined in <= N eliminated vars
+.TP
+.B "doCutAllBounded"
+(bool, default = false)
+.br
+turns on the integer solving step of periodically cutting all integer variables that have both upper and lower bounds
+.TP
+.B "maxCutsInContext"
+(unsigned, default = 65535)
+.br
+maximum cuts in a given context before signalling a restart
+.TP
+.B "revertArithModels"
+(bool, default = false)
+.br
+revert the arithmetic model to a known safe model on unsat if one is cached
+.TP
+.B "havePenalties"
+(bool, default = false)
+.br
+turns on degenerate pivot penalties
+.TP
+.B "useFC"
+(bool, default = false)
+.br
+use focusing and converging simplex (FMCAD 2013 submission)
+.TP
+.B "useSOI"
+(bool, default = false)
+.br
+use sum of infeasibility simplex (FMCAD 2013 submission)
+.TP
+.B "restrictedPivots"
+(bool, default = true)
+.br
+have a pivot cap for simplex at effort levels below fullEffort
+.TP
+.B "collectPivots"
+(bool, default = false)
+.br
+collect the pivot history
+.TP
+.B "useApprox"
+(bool, default = false)
+.br
+attempt to use an approximate solver
+.TP
+.B "maxApproxDepth"
+(int16_t, default = 200)
+.br
+maximum branch depth the approximate solver is allowed to take
+.TP
+.B "exportDioDecompositions"
+(bool, default = false)
+.br
+let skolem variables for integer divisibility constraints leak from the dio solver
+.TP
+.B "newProp"
+(bool, default = false)
+.br
+use the new row propagation system
+.TP
+.B "arithPropAsLemmaLength"
+(uint16_t, default = 8)
+.br
+rows shorter than this are propagated as clauses
+.TP
+.B "soiQuickExplain"
+(bool, default = false)
+.br
+use quick explain to minimize the sum of infeasibility conflicts
+.TP
+.B "rewriteDivk"
+(bool, default = false)
+.br
+rewrite division and mod when by a constant into linear terms
+.TP
+.B "trySolveIntStandardEffort"
+(bool, default = false)
+.br
+attempt to use the approximate solve integer method on standard effort
+.TP
+.B "replayFailureLemma"
+(bool, default = false)
+.br
+attempt to use external lemmas if approximate solve integer failed
+.TP
+.B "dioSolverTurns"
+(int, default = 10)
+.br
+turns in a row dio solver cutting gets
+.TP
+.B "rrTurns"
+(int, default = 3)
+.br
+round robin turn
+.TP
+.B "dioRepeat"
+(bool, default = false)
+.br
+handle dio solver constraints in mass or one at a time
+.TP
+.B "replayEarlyCloseDepths"
+(int, default = 1)
+.br
+multiples of the depths to try to close the approx log eagerly
+.TP
+.B "replayFailurePenalty"
+(int, default = 100)
+.br
+number of solve integer attempts to skips after a numeric failure
+.TP
+.B "replayNumericFailurePenalty"
+(int, default = 4194304)
+.br
+number of solve integer attempts to skips after a numeric failure
+.TP
+.B "replayRejectCutSize"
+(unsigned, default = 25500)
+.br
+maximum complexity of any coefficient while replaying cuts
+.TP
+.B "lemmaRejectCutSize"
+(unsigned, default = 25500)
+.br
+maximum complexity of any coefficient while outputing replaying cut lemmas
+.TP
+.B "soiApproxMajorFailure"
+(double, default = .01)
+.br
+threshold for a major tolerance failure by the approximate solver
+.TP
+.B "soiApproxMajorFailurePen"
+(int, default = 50)
+.br
+threshold for a major tolerance failure by the approximate solver
+.TP
+.B "soiApproxMinorFailure"
+(double, default = .0001)
+.br
+threshold for a minor tolerance failure by the approximate solver
+.TP
+.B "soiApproxMinorFailurePen"
+(int, default = 10)
+.br
+threshold for a minor tolerance failure by the approximate solver
+.TP
+.B "ppAssertMaxSubSize"
+(unsigned, default = 2)
+.br
+threshold for substituting an equality in ppAssert
+.TP
+.B "maxReplayTree"
+(int, default = 512)
+.br
+threshold for attempting to replay a tree
+.TP
+.B "pbRewrites"
+(bool, default = false)
+.br
+apply pseudo boolean rewrites
+.TP
+.B "pbRewriteThreshold"
+(int, default = 256)
+.br
+threshold of number of pseudoboolean variables to have before doing rewrites
+.TP
+.I "UNINTERPRETED FUNCTIONS THEORY OPTIONS"
+
+.TP
+.B "ufSymmetryBreaker"
+(bool, default = true)
+.br
+use UF symmetry breaker (Deharbe et al., CADE 2011)
+.TP
+.B "condenseFunctionValues"
+(bool, default = true)
+.br
+condense models for functions rather than explicitly representing them
+.TP
+.B "ufssRegions"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-uf\-ss\-regions, which reverses the sense of the option, is documented thusly:"
+disable region\-based method for discovering cliques and splits in uf strong solver
+.TP
+.B "ufssEagerSplits"
+(bool, default = false)
+.br
+add splits eagerly for uf strong solver
+.TP
+.B "ufssTotality"
+(bool, default = false)
+.br
+always use totality axioms for enforcing cardinality constraints
+.TP
+.B "ufssTotalityLimited"
+(int, default = \-1)
+.br
+apply totality axioms, but only up to cardinality N (\-1 == do not apply totality axioms, default)
+.TP
+.B "ufssTotalitySymBreak"
+(bool, default = false)
+.br
+apply symmetry breaking for totality axioms
+.TP
+.B "ufssAbortCardinality"
+(int, default = \-1)
+.br
+tells the uf strong solver a cardinality to abort at (\-1 == no limit, default)
+.TP
+.B "ufssExplainedCliques"
+(bool, default = false)
+.br
+use explained clique lemmas for uf strong solver
+.TP
+.B "ufssSimpleCliques"
+(bool, default = true)
+.br
+always use simple clique lemmas for uf strong solver
+.TP
+.B "ufssDiseqPropagation"
+(bool, default = false)
+.br
+eagerly propagate disequalities for uf strong solver
+.TP
+.B "ufssMinimalModel"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-uf\-ss\-min\-model, which reverses the sense of the option, is documented thusly:"
+disable finding a minimal model in uf strong solver
+.TP
+.B "ufssCliqueSplits"
+(bool, default = false)
+.br
+use cliques instead of splitting on demand to shrink model
+.TP
+.B "ufssSymBreak"
+(bool, default = false)
+.br
+finite model finding symmetry breaking techniques
+.TP
+.B "ufssFairness"
+(bool, default = false)
+.br
+use fair strategy for finite model finding multiple sorts
+.TP
+.I "ARRAYS THEORY OPTIONS"
+
+.TP
+.B "arraysOptimizeLinear"
+(bool, default = true)
+.br
+turn on optimization for linear array terms (see de Moura FMCAD 09 arrays paper)
+.TP
+.B "arraysLazyRIntro1"
+(bool, default = true)
+.br
+turn on optimization to only perform RIntro1 rule lazily (see Jovanovic/Barrett 2012: Being Careful with Theory Combination)
+.TP
+.B "arraysModelBased"
+(bool, default = false)
+.br
+turn on model\-based arrray solver
+.TP
+.B "arraysEagerIndexSplitting"
+(bool, default = true)
+.br
+turn on eager index splitting for generated array lemmas
+.TP
+.B "arraysEagerLemmas"
+(bool, default = false)
+.br
+turn on eager lemma generation for arrays
+.TP
+.I "QUANTIFIERS OPTIONS"
+
+.TP
+.B "miniscopeQuant"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-miniscope\-quant, which reverses the sense of the option, is documented thusly:"
+disable miniscope quantifiers
+.TP
+.B "miniscopeQuantFreeVar"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-miniscope\-quant\-fv, which reverses the sense of the option, is documented thusly:"
+disable miniscope quantifiers for ground subformulas
+.TP
+.B "prenexQuant"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-prenex\-quant, which reverses the sense of the option, is documented thusly:"
+disable prenexing of quantified formulas
+.TP
+.B "varElimQuant"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-var\-elim\-quant, which reverses the sense of the option, is documented thusly:"
+disable simple variable elimination for quantified formulas
+.TP
+.B "simpleIteLiftQuant"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-ite\-lift\-quant, which reverses the sense of the option, is documented thusly:"
+disable simple ite lifting for quantified formulas
+.TP
+.B "cnfQuant"
+(bool, default = false)
+.br
+apply CNF conversion to quantified formulas
+.TP
+.B "nnfQuant"
+(bool, default = false)
+.br
+apply NNF conversion to quantified formulas
+.TP
+.B "clauseSplit"
+(bool, default = false)
+.br
+apply clause splitting to quantified formulas
+.TP
+.B "preSkolemQuant"
+(bool, default = false)
+.br
+apply skolemization eagerly to bodies of quantified formulas
+.TP
+.B "aggressiveMiniscopeQuant"
+(bool, default = false)
+.br
+perform aggressive miniscoping for quantifiers
+.TP
+.B "macrosQuant"
+(bool, default = false)
+.br
+perform quantifiers macro expansions
+.TP
+.B "foPropQuant"
+(bool, default = false)
+.br
+perform first\-order propagation on quantifiers
+.TP
+.B "smartTriggers"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-smart\-triggers, which reverses the sense of the option, is documented thusly:"
+disable smart triggers
+.TP
+.B "relevantTriggers"
+(bool, default = false)
+.br
+prefer triggers that are more relevant based on SInE style analysis
+.TP
+.B "relationalTriggers"
+(bool, default = false)
+.br
+choose relational triggers such as x = f(y), x >= f(y)
+.TP
+.B "registerQuantBodyTerms"
+(bool, default = false)
+.br
+consider ground terms within bodies of quantified formulas for matching
+.TP
+.B "instWhenMode"
+(CVC4::theory::quantifiers::InstWhenMode, default = CVC4::theory::quantifiers::INST_WHEN_FULL)
+.br
+when to apply instantiation
+.TP
+.B "instMaxLevel"
+(int, default = \-1)
+.br
+maximum inst level of terms used to instantiate quantified formulas with (\-1 == no limit, default)
+.TP
+.B "eagerInstQuant"
+(bool, default = false)
+.br
+apply quantifier instantiation eagerly
+.TP
+.B "fullSaturateQuant"
+(bool, default = false)
+.br
+when all other quantifier instantiation strategies fail, instantiate with ground terms from relevant domain, then arbitrary ground terms before answering unknown
+.TP
+.B "literalMatchMode"
+(CVC4::theory::quantifiers::LiteralMatchMode, default = CVC4::theory::quantifiers::LITERAL_MATCH_NONE)
+.br
+choose literal matching mode
+.TP
+.B "cbqi"
+(bool, default = false)
+.br
+turns on counterexample\-based quantifier instantiation
+.TP
+.B "recurseCbqi"
+(bool, default = false)
+.br
+turns on recursive counterexample\-based quantifier instantiation
+.TP
+.B "userPatternsQuant"
+(CVC4::theory::quantifiers::UserPatMode, default = CVC4::theory::quantifiers::USER_PAT_MODE_DEFAULT)
+.br
+policy for handling user\-provided patterns for quantifier instantiation
+.TP
+.B "flipDecision"
+(bool, default = false)
+.br
+turns on flip decision heuristic
+.TP
+.B "internalReps"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-quant\-internal\-reps, which reverses the sense of the option, is documented thusly:"
+disables instantiating with representatives chosen by quantifiers engine
+.TP
+.B "finiteModelFind"
+(bool, default = false)
+.br
+use finite model finding heuristic for quantifier instantiation
+.TP
+.B "mbqiMode"
+(CVC4::theory::quantifiers::MbqiMode, default = CVC4::theory::quantifiers::MBQI_FMC)
+.br
+choose mode for model\-based quantifier instantiation
+.TP
+.B "fmfOneInstPerRound"
+(bool, default = false)
+.br
+only add one instantiation per quantifier per round for mbqi
+.TP
+.B "fmfOneQuantPerRound"
+(bool, default = false)
+.br
+only add instantiations for one quantifier per round for mbqi
+.TP
+.B "fmfInstEngine"
+(bool, default = false)
+.br
+use instantiation engine in conjunction with finite model finding
+.TP
+.B "fmfInstGen"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-fmf\-inst\-gen, which reverses the sense of the option, is documented thusly:"
+disable Inst\-Gen instantiation techniques for finite model finding
+.TP
+.B "fmfInstGenOneQuantPerRound"
+(bool, default = false)
+.br
+only perform Inst\-Gen instantiation techniques on one quantifier per round
+.TP
+.B "fmfFreshDistConst"
+(bool, default = false)
+.br
+use fresh distinguished representative when applying Inst\-Gen techniques
+.TP
+.B "fmfFmcSimple"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-disable\-fmf\-fmc\-simple, which reverses the sense of the option, is documented thusly:"
+disable simple models in full model check for finite model finding
+.TP
+.B "fmfBoundInt"
+(bool, default = false)
+.br
+finite model finding on bounded integer quantification
+.TP
+.B "fmfBoundIntLazy"
+(bool, default = false)
+.br
+enforce bounds for bounded integer quantification lazily via use of proxy variables
+.TP
+.B "axiomInstMode"
+(CVC4::theory::quantifiers::AxiomInstMode, default = CVC4::theory::quantifiers::AXIOM_INST_MODE_DEFAULT)
+.br
+policy for instantiating axioms
+.TP
+.B "quantConflictFind"
+(bool, default = false)
+.br
+enable conflict find mechanism for quantifiers
+.TP
+.B "qcfMode"
+(CVC4::theory::quantifiers::QcfMode, default = CVC4::theory::quantifiers::QCF_PROP_EQ)
+.br
+what effort to apply conflict find mechanism
+.TP
+.B "qcfWhenMode"
+(CVC4::theory::quantifiers::QcfWhenMode, default = CVC4::theory::quantifiers::QCF_WHEN_MODE_DEFAULT)
+.br
+when to invoke conflict find mechanism for quantifiers
+.TP
+.B "qcfTConstraint"
+(bool, default = false)
+.br
+enable entailment checks for t\-constraints in qcf algorithm
+.TP
+.B "quantRewriteRules"
+(bool, default = true)
+.br
+use rewrite rules module
+.TP
+.B "rrOneInstPerRound"
+(bool, default = false)
+.br
+add one instance of rewrite rule per round
+.TP
+.B "dtStcInduction"
+(bool, default = false)
+.br
+apply strengthening for existential quantification over datatypes based on structural induction
+.TP
+.I "STRINGS THEORY OPTIONS"
+
+.TP
+.B "stringExp"
+(bool, default = false)
+.br
+experimental features in the theory of strings
+.TP
+.B "stringLB"
+(unsigned, default = 0)
+.br
+the strategy of LB rule application: 0\-lazy, 1\-eager, 2\-no
+.TP
+.B "stringFMF"
+(bool, default = false)
+.br
+the finite model finding used by the theory of strings
+.TP
+.B "stringEIT"
+(bool, default = false)
+.br
+the eager intersection used by the theory of strings
+.TP
+.B "stringOpt1"
+(bool, default = true)
+.br
+internal option1 for strings: normal form
+.TP
+.B "stringOpt2"
+(bool, default = false)
+.br
+internal option2 for strings: constant regexp splitting
+.TP
+.B "stringCharCardinality"
+(int16_t, default = 256)
+.br
+the cardinality of the characters used by the theory of strings, default 256 (EXPERTS only)
+.TP
+.I "SAT LAYER OPTIONS"
+
+.TP
+.B "satRandomFreq"
+(double, default = 0.0)
+.br
+sets the frequency of random decisions in the sat solver (P=0.0 by default)
+.TP
+.B "satRandomSeed"
+(uint32_t, default = 0)
+.br
+sets the random seed for the sat solver
+.TP
+.B "satVarDecay"
+(double, default = 0.95)
+.br
+variable activity decay factor for Minisat
+.TP
+.B "satClauseDecay"
+(double, default = 0.999)
+.br
+clause activity decay factor for Minisat
+.TP
+.B "satRestartFirst"
+(unsigned, default = 25)
+.br
+sets the base restart interval for the sat solver (N=25 by default)
+.TP
+.B "satRestartInc"
+(double, default = 3.0)
+.br
+sets the restart interval increase factor for the sat solver (F=3.0 by default)
+.TP
+.B "sat_refine_conflicts"
+(bool, default = false)
+.br
+refine theory conflict clauses (default false)
+.TP
+.B "minisatUseElim"
+(bool, default = true)
+.br
+use Minisat elimination
+.TP
+.B "minisatDumpDimacs"
+(bool, default = false)
+.br
+instead of solving minisat dumps the asserted clauses in Dimacs format
+
+.TP
+.I "PRINTING OPTIONS"
+
+.TP
+.B "modelFormatMode"
+(ModelFormatMode, default = MODEL_FORMAT_MODE_DEFAULT)
+.br
+print format mode for models, see \-\-model\-format=help
+.TP
+.B "instFormatMode"
+(InstFormatMode, default = INST_FORMAT_MODE_DEFAULT)
+.br
+print format mode for instantiations, see \-\-inst\-format=help
+.TP
+.I "SMT LAYER OPTIONS"
+
+.TP
+.B "forceLogic"
+(LogicInfo, default = "")
+.br
+set the logic, and override all further user attempts to change it (EXPERTS only)
+.TP
+.B "simplificationMode"
+(SimplificationMode, default = SIMPLIFICATION_MODE_BATCH)
+.br
+choose simplification mode, see \-\-simplification=help
+.TP
+.B "doStaticLearning"
+(bool, default = true)
+.br
+use static learning (on by default)
+.TP
+.B "expandDefinitions"
+(bool, default = false)
+.br
+always expand symbol definitions in output
+.TP
+.B "checkModels"
+(bool)
+.br
+after SAT/INVALID/UNKNOWN, check that the generated model satisfies user assertions
+.TP
+.B "dumpModels"
+(bool, default = false)
+.br
+output models after every SAT/INVALID/UNKNOWN response
+.TP
+.B "proof"
+(bool, default = false)
+.br
+turn on proof generation
+.TP
+.B "checkProofs"
+(bool)
+.br
+after UNSAT/VALID, machine\-check the generated proof
+.TP
+.B "dumpProofs"
+(bool, default = false)
+.br
+output proofs after every UNSAT/VALID response
+.TP
+.B "dumpInstantiations"
+(bool, default = false)
+.br
+output instantiations of quantified formulas after every UNSAT/VALID response
+.TP
+.B "unsatCores"
+(bool)
+.br
+turn on unsat core generation (NOT YET SUPPORTED)
+.TP
+.B "produceAssignments"
+(bool, default = false)
+.br
+support the get\-assignment command
+.TP
+.B "doITESimp"
+(bool)
+.br
+turn on ite simplification (Kim (and Somenzi) et al., SAT 2009)
+.TP
+.B "doITESimpOnRepeat"
+(bool, default = false)
+.br
+do the ite simplification pass again if repeating simplification
+.TP
+.B "simplifyWithCareEnabled"
+(bool, default = false)
+.br
+enables simplifyWithCare in ite simplificiation
+.TP
+.B "compressItes"
+(bool, default = false)
+.br
+enables compressing ites after ite simplification
+.TP
+.B "unconstrainedSimp"
+(bool, default = false)
+.br
+turn on unconstrained simplification (see Bruttomesso/Brummayer PhD thesis)
+.TP
+.B "repeatSimp"
+(bool)
+.br
+make multiple passes with nonclausal simplifier
+.TP
+.B "zombieHuntThreshold"
+(uint32_t, default = 524288)
+.br
+post ite compression enables zombie removal while the number of nodes is above this threshold
+.TP
+.B "sortInference"
+(bool, default = false)
+.br
+calculate sort inference of input problem, convert the input based on monotonic sorts
+.TP
+.B "abstractValues"
+(bool, default = false)
+.br
+in models, output arrays (and in future, maybe others) using abstract values, as required by the SMT\-LIB standard
+.TP
+.B "modelUninterpDtEnum"
+(bool, default = false)
+.br
+in models, output uninterpreted sorts as datatype enumerations
+.TP
+.B "rewriteApplyToConst"
+(bool, default = false)
+.br
+eliminate function applications, rewriting e.g. f(5) to a new symbol f_5 (EXPERTS only)
+.TP
+.B "replayFilename"
+(std::string)
+.br
+replay decisions from file
+.TP
+.B "replayLog"
+(std::ostream*)
+.br
+log decisions and propagations to file
+.TP
+.B "replayStream"
+(ExprStream*)
+.br
+[undocumented]
+.TP
+.B "lemmaInputChannel"
+(LemmaInputChannel*, default = NULL)
+.br
+The input channel to receive notfication events for new lemmas
+.TP
+.B "lemmaOutputChannel"
+(LemmaOutputChannel*, default = NULL)
+.br
+The output channel to receive notfication events for new lemmas
+.TP
+.B "forceNoLimitCpuWhileDump"
+(bool, default = false)
+.br
+Force no CPU limit when dumping models and proofs
+.TP
+.I "DECISION HEURISTICS OPTIONS"
+
+.TP
+.B "decisionMode"
+(decision::DecisionMode, default = decision::DECISION_STRATEGY_INTERNAL)
+.br
+choose decision mode, see \-\-decision=help
+.TP
+.B "decisionStopOnly"
+(bool)
+.br
+[undocumented]
+.TP
+.B "decisionThreshold"
+(decision::DecisionWeight, default = 0)
+.br
+ignore all nodes greater than threshold in first attempt to pick decision (EXPERTS only)
+.TP
+.B "decisionUseWeight"
+(bool, default = false)
+.br
+use the weight nodes (locally, by looking at children) to direct recursive search (EXPERTS only)
+.TP
+.B "decisionRandomWeight"
+(int, default = 0)
+.br
+assign random weights to nodes between 0 and N\-1 (0: disable) (EXPERTS only)
+.TP
+.B "decisionWeightInternal"
+(decision::DecisionWeightInternal, default = decision::DECISION_WEIGHT_INTERNAL_OFF)
+.br
+computer weights of internal nodes using children: off, max, sum, usr1 (meaning evolving) (EXPERTS only)
+.TP
+.I "DRIVER OPTIONS"
+
+.TP
+.B "earlyExit"
+(bool, default = true)
+.br
+do not run destructors at exit; default on except in debug builds (EXPERTS only)
+.TP
+.B "threads"
+(unsigned, default = 2)
+.br
+Total number of threads for portfolio
+.TP
+.B "threadStackSize"
+(unsigned, default = 0)
+.br
+stack size for worker threads in MB (0 means use Boost/thread lib default)
+.TP
+.B "threadArgv"
+(std::vector<std::string>)
+.br
+Thread configuration (a string to be passed to parseOptions)
+.TP
+.B "thread_id"
+(int, default = \-1)
+.br
+Thread ID, for internal use in case of multi\-threaded run
+.TP
+.B "sharingFilterByLength"
+(int, default = \-1)
+.br
+don't share (among portfolio threads) lemmas strictly longer than N
+.TP
+.B "fallbackSequential"
+(bool, default = false)
+.br
+Switch to sequential mode (instead of printing an error) if it can't be solved in portfolio mode
+.TP
+.B "incrementalParallel"
+(bool, default = false)
+.br
+Use parallel solver even in incremental mode (may print 'unknown's at times)
+.TP
+.B "interactivePrompt"
+(bool, default = true)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-no\-interactive\-prompt, which reverses the sense of the option, is documented thusly:"
+turn off interactive prompting while in interactive mode
+.TP
+.B "continuedExecution"
+(bool, default = false)
+.br
+continue executing commands, even on error
+.TP
+.B "segvSpin"
+(bool, default = false)
+.br
+spin on segfault/other crash waiting for gdb
+.TP
+.B "tearDownIncremental"
+(bool, default = false)
+.br
+implement PUSH/POP/multi\-query by destroying and recreating SmtEngine (EXPERTS only)
+.TP
+.B "waitToJoin"
+(bool, default = true)
+.br
+wait for other threads to join before quitting (EXPERTS only)
+.TP
+.I "PARSER OPTIONS"
+
+.TP
+.B "memoryMap"
+(bool)
+.br
+memory map file input
+.TP
+.B "semanticChecks"
+(bool, default = DO_SEMANTIC_CHECKS_BY_DEFAULT)
+.br
+.B "This internal Boolean flag is undocumented; however, its alternate option \-\-no\-checking, which reverses the sense of the option, is documented thusly:"
+disable ALL semantic checks, including type checks
+.TP
+.B "filesystemAccess"
+(bool, default = true)
+.br
+[undocumented]
+.TP
+.I "IDL OPTIONS"
+
+.TP
+.B "idlRewriteEq"
+(bool, default = false)
+.br
+enable rewriting equalities into two inequalities in IDL solver (default is disabled)
+.TP
+.I "SETS OPTIONS"
+
+.TP
+.B "setsPropagate"
+(bool, default = true)
+.br
+determines whether to propagate learnt facts to Theory Engine / SAT solver
+.TP
+.B "setsEagerLemmas"
+(bool, default = true)
+.br
+add lemmas even at regular effort
+.PD
+.RE
+
+.SH VERSION
+This manual page refers to
+.B CVC4
+version 1.4.
+.SH BUGS
+A Bugzilla for the CVC4 project is maintained at
+.BR http://cvc4.cs.nyu.edu/bugzilla3/ .
+.SH AUTHORS
+.B CVC4
+is developed by a team of researchers at New York University
+and the University of Iowa.
+See the AUTHORS file in the distribution for a full list of
+contributors.
+.SH "SEE ALSO"
+.BR libcvc4 (3),
+.BR libcvc4parser (3),
+.BR libcvc4compat (3)
+
+Additionally, the CVC4 wiki contains useful information about the
+design and internals of CVC4.  It is maintained at
+.BR http://cvc4.cs.nyu.edu/wiki/ .
