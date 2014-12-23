@@ -74,6 +74,39 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm
   }
 }
 
+Cost CostFunction::assembled_size_cost(const Cfg& cfg) const {
+  x64asm::Assembler assm;
+  x64asm::Function fxn;
+
+  const auto& code = cfg.get_code();
+
+  assm.start(fxn);
+
+  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+
+    if (cfg.is_exit(*b)) {
+      continue;
+    }
+
+    const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
+    for (size_t i = 0, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
+      const auto& instr = code[i];
+      if (!instr.is_nop() && !instr.is_ret()) {
+        assm.assemble(instr);
+      }
+    }
+  }
+
+  assm.finish();
+
+  uint64_t size = fxn.size();
+  if (size <= max_size_) {
+    return 0;
+  } else {
+    return (Cost)((size - max_size_) * size_incr_penalty_ + size_starting_penalty_);
+  }
+}
+
 /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
   result would equal or exceed that value. */
 CostFunction::result_type CostFunction::operator()(const Cfg& cfg, const Cost max) {
@@ -90,12 +123,7 @@ CostFunction::result_type CostFunction::operator()(const Cfg& cfg, const Cost ma
   return result_type(correct, cost);
 }
 
-
-
-
-
 Cost CostFunction::evaluate_correctness(const Cfg& cfg, const Cost max) {
-
   // Apply the size penalty if needed
   Cost penalty = 0;
   if (size_starting_penalty_ > 0 || size_incr_penalty_ > 0) {
@@ -200,7 +228,7 @@ Cost CostFunction::gp_error(const Regs& t, const Regs& r) const {
   Cost cost = 0;
 
   for (const auto& r_t : target_gp_out_) {
-    auto delta = max_error_cost;
+    auto delta = undef_default(8);
     const auto val_t = t[r_t].get_fixed_quad(0);
 
     for (const auto& r_r : rewrite_gp_out_) {
@@ -224,7 +252,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
 
   for (size_t i = 0; i < sse_count_; ++i) {
     for (const auto& s_t : target_sse_out_) {
-      auto delta = max_error_cost;
+      auto delta = undef_default(sse_width_);
       uint64_t val_t = 0;
       switch (sse_width_) {
       case 1:
@@ -283,14 +311,14 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
 
   for (auto i = t.defined_begin(), ie = t.defined_end(); i != ie; ++i) {
     if (relax_mem_) {
-      Cost delta = max_error_cost;
+      Cost delta = undef_default(1);
       for (auto j = r.defined_begin(), je = r.defined_end(); j != je; ++j) {
         const auto eval = evaluate_distance(t[*i], r[*j]) + (*i == *j ? 0 : misalign_penalty_);
         delta = min(delta, eval);
       }
       cost += delta;
     } else {
-      cost += r.is_defined(*i) ? evaluate_distance(t[*i], r[*i]) : max_error_cost;
+      cost += r.is_defined(*i) ? evaluate_distance(t[*i], r[*i]) : undef_default(1);
     }
   }
 
@@ -300,8 +328,7 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
 Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r) const {
   Cost cost = 0;
 
-  auto flags = vector<Eflags> { eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf };
-
+  auto flags = {eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf};
   for (auto flag : flags) {
     if (live_out_.contains(flag)) {
       size_t i = flag.index();
@@ -312,42 +339,29 @@ Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r) const {
   return cost;
 }
 
+Cost CostFunction::undef_default(size_t num_bytes) const {
+	Cost res = 0;
+	switch (distance_) {
+		case Distance::HAMMING:
+			res = 8*num_bytes;
+			break;
+		case Distance::ULP:
+			res = (0x1ull << (8*num_bytes)) - 1;
+			break;
+		case Distance::EXTENSION:
+			// Add user-defined implementation here ...
+			res = 0;
+			break;
 
-Cost CostFunction::assembled_size_cost(const Cfg& cfg) const {
+		default:
+			assert(false);
+			res = 0;
+	}	
 
-  x64asm::Assembler assm;
-  x64asm::Function fxn;
-
-  const auto& code = cfg.get_code();
-
-  assm.start(fxn);
-
-  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-
-    if (cfg.is_exit(*b)) {
-      continue;
-    }
-
-    const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-    for (size_t i = 0, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
-      const auto& instr = code[i];
-      if (!instr.is_nop() && !instr.is_ret()) {
-        assm.assemble(instr);
-      }
-    }
-  }
-
-  assm.finish();
-
-  uint64_t size = fxn.size();
-  if (size <= max_size_) {
-    return 0;
-  } else {
-    return (Cost)((size - max_size_) * size_incr_penalty_ + size_starting_penalty_);
-  }
-
+	// Invariant 1: Penalty should not exceed max_error_cost_
+	assert(res <= max_error_cost_);
+	return res;
 }
-
 
 Cost CostFunction::evaluate_distance(uint64_t x, uint64_t y) const {
   switch (distance_) {
@@ -382,6 +396,7 @@ Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {
   // Add user-defined implementation here ...
 
   // Invariant 1: Return value should not exceed max_error_cost
+	assert(res <= max_error_cost);
 
   return res;
 }
