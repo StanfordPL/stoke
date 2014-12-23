@@ -340,27 +340,27 @@ Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r) const {
 }
 
 Cost CostFunction::undef_default(size_t num_bytes) const {
-	Cost res = 0;
-	switch (distance_) {
-		case Distance::HAMMING:
-			res = 8*num_bytes;
-			break;
-		case Distance::ULP:
-			res = (0x1ull << (8*num_bytes)) - 1;
-			break;
-		case Distance::EXTENSION:
-			// Add user-defined implementation here ...
-			res = 0;
-			break;
+  Cost res = 0;
+  switch (distance_) {
+  case Distance::HAMMING:
+    res = 8*num_bytes;
+    break;
+  case Distance::ULP:
+    res = (0x1ull << (8*num_bytes)) - 1;
+    break;
+  case Distance::EXTENSION:
+    // Add user-defined implementation here ...
+    res = 0;
+    break;
 
-		default:
-			assert(false);
-			res = 0;
-	}	
+  default:
+    assert(false);
+    res = 0;
+  }
 
-	// Invariant 1: Penalty should not exceed max_error_cost_
-	assert(res <= max_error_cost_);
-	return res;
+  // Invariant 1: Penalty should not exceed max_error_cost_
+  assert(res <= max_error_cost_);
+  return res;
 }
 
 Cost CostFunction::evaluate_distance(uint64_t x, uint64_t y) const {
@@ -396,7 +396,7 @@ Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {
   // Add user-defined implementation here ...
 
   // Invariant 1: Return value should not exceed max_error_cost
-	assert(res <= max_error_cost);
+  assert(res <= max_error_cost);
 
   return res;
 }
