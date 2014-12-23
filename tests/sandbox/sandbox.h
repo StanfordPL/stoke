@@ -306,6 +306,7 @@ TEST(SandboxTest, InfiniteLoopFails) {
   std::stringstream ss;
 
   // Here's the input program
+  ss << "xorq %rcx, %rcx" << std::endl;
   ss << ".L1:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "jmpq .L1" << std::endl;
@@ -559,4 +560,30 @@ TEST(SandboxTest, MEM_DIV) {
   ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
+TEST(SandboxTest, RSP_WITH_JMPS) {
+  std::stringstream ss;
+  ss << "pushq %rbp" << std::endl;
+  ss << "movq %rsp, %rbp" << std::endl;
+  ss << "movl $0x0, -0x18(%rbp)" << std::endl;
+  ss << "cmpl $0x0, -0x18(%rbp)" << std::endl;
+  ss << "je .L_4006f9" << std::endl;
+  ss << ".L_4006f9:" << std::endl;
+  ss << "popq %rbp" << std::endl;
+  ss << "xorq %rax, %rax" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+}
 
