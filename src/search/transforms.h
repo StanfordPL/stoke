@@ -66,6 +66,14 @@ public:
     }
     return *this;
   }
+	/** Insert a value into the mem pool */
+	Transforms& insert_mem(const x64asm::M8& m)  {
+		const auto itr = std::find(m_pool_.begin(), m_pool_.end(), m);
+		if (itr == m_pool_.end()) {
+			m_pool_.push_back(m);
+		}
+		return *this;
+	}
   /** Provide a validator to check for instruction support.  If not provided, no check is done. */
   Transforms& set_must_validate(Validator* v) {
     validator_ = v;

@@ -22,6 +22,7 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "tools/io/flag_set.h"
+#include "tools/io/mem_set.h"
 #include "tools/io/opc_set.h"
 #include "tools/io/reg_set.h"
 
@@ -40,6 +41,7 @@ extern cpputil::FlagArg& callee_save_arg;
 extern cpputil::FlagArg& validator_must_support;
 extern cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& preserve_regs_arg;
 extern cpputil::ValueArg<std::vector<uint64_t>>& immediates_arg;
+extern cpputil::ValueArg<std::set<x64asm::M8>, MemSetReader, MemSetWriter>& mem_ops_arg;
 
 } // namespace stoke
 
