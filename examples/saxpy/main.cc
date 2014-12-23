@@ -23,10 +23,17 @@ int main(int argc, char** argv) {
 
   srand(seed);
 
-  for (auto i = 0; i < itr*4; i += 4) {
-    int x[4] {rand(), rand(), rand(), rand()};
-    int y[4] {rand(), rand(), rand(), rand()};
-    saxpy(19, &x[0], &y[0], 0);
+  for (auto i = 0; i < itr; ++i) {
+		auto x = new int[16];
+		auto y = new int[16];
+
+		auto idx = 4 * (rand() % 4);
+		for (auto j = 0; j < 4; ++j) {
+			x[idx+j] = rand();
+			y[idx+j] = rand();
+		}
+
+    saxpy(rand(), &x[idx], &y[idx], idx);
   }
 
   return 0;
