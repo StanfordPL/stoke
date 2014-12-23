@@ -212,3 +212,11 @@ CRC32_R32_RH
 , LGS_R32_FARPTR1632 // LGS r32, m16:32
 , LGS_R64_FARPTR1664 // LGS r64, m16:64
 
+// These instruction load access rights at memory address
+, LAR_R16_M16 // LAR r16, m16
+, LAR_R16_R16 // LAR r16, r16
+, LAR_R32_M16 // LAR r32, m16
+, LAR_R32_R32 // LAR r32, r32
+, LAR_R64_M16 // LAR r64, m16
+, LAR_R64_R32 // LAR r64, r32
+
