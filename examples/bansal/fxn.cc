@@ -15,15 +15,15 @@
 #include <stdint.h>
 
 struct Node {
-	Node* current;
-	uint32_t p32;
-	uint8_t p8;
-	Node* next;
-	uint32_t val;
+  Node* current;
+  uint32_t p32;
+  uint8_t p8;
+  Node* next;
+  uint32_t val;
 };
 
 void kernel(Node* n) {
-	Node* temp = n->current;
-	temp->val *= 2;
-	temp->current = temp->next;
+  Node* temp = n->current;
+  temp->val *= 2;
+  temp->current = temp->next;
 }

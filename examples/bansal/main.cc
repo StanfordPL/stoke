@@ -16,11 +16,11 @@
 #include <stdint.h>
 
 struct Node {
-	Node* current; 
-	uint32_t p32;
-	uint8_t p8;
-	Node* next;
-	uint32_t val;
+  Node* current;
+  uint32_t p32;
+  uint8_t p8;
+  Node* next;
+  uint32_t val;
 };
 
 extern void kernel(Node* n);
@@ -31,21 +31,21 @@ int main(int argc, char** argv) {
 
   srand(seed);
 
-	for (auto i = 0; i < itr; ++i) {
-		Node* n2 = new Node;
-		n2->val = rand();
-		n2->next = 0;
+  for (auto i = 0; i < itr; ++i) {
+    Node* n2 = new Node;
+    n2->val = rand();
+    n2->next = 0;
 
-		Node* n1 = new Node;
-		n1->val = rand();
-		n1->next = n2;
+    Node* n1 = new Node;
+    n1->val = rand();
+    n1->next = n2;
 
-		n1->current = n1;
-		kernel(n1);
-		 
-		delete n1;
-		delete n2;
-	}
+    n1->current = n1;
+    kernel(n1);
+
+    delete n1;
+    delete n2;
+  }
 
   return 0;
 }
