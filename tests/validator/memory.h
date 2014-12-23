@@ -180,3 +180,108 @@ TEST_F(ValidatorMemoryTest, ReadQuadWordFromConcat) {
   assert_equiv();
 
 }
+
+TEST_F(ValidatorMemoryTest, PushPopIsNop) {
+
+  target_ << "pushq %rax" << std::endl;
+  target_ << "popq %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorMemoryTest, PushPopIsMove) {
+
+  target_ << "pushq %rax" << std::endl;
+  target_ << "popq %rdx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq %rax, %rdx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+
+TEST_F(ValidatorMemoryTest, DoublePushPopIsNop) {
+
+  target_ << "pushq %rax" << std::endl;
+  target_ << "pushq %rdx" << std::endl;
+  target_ << "popq %rdx" << std::endl;
+  target_ << "popq %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorMemoryTest, DoublePushPopIsMove) {
+
+  target_ << "pushq %rax" << std::endl;
+  target_ << "pushq %rcx" << std::endl;
+  target_ << "popq %rdx" << std::endl;
+  target_ << "popq %rbx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq %rax, %rbx" << std::endl;
+  rewrite_ << "movq %rcx, %rdx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorMemoryTest, DoublePushPopIsCorrectMove) {
+
+  target_ << "pushq %rax" << std::endl;
+  target_ << "pushq %rcx" << std::endl;
+  target_ << "popq %rdx" << std::endl;
+  target_ << "popq %rbx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq %rax, %rdx" << std::endl;
+  rewrite_ << "movq %rcx, %rbx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_ceg_nocheck();
+}
+
+TEST_F(ValidatorMemoryTest, StackBasedAddition) {
+
+  target_ << "pushq $0x40" << std::endl;
+  target_ << "addq (%rsp), %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "addq $0x40, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+
+  assert_equiv();
+}
+
+TEST_F(ValidatorMemoryTest, StackBasedAdditionAffectsRsp) {
+
+  target_ << "pushq $0x40" << std::endl;
+  target_ << "addq (%rsp), %rax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "addq $0x40, %rax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_ceg_nocheck();
+}
+
+TEST_F(ValidatorMemoryTest, PopRspIsSpecial) {
+
+  target_ << "pushq %rax" << std::endl;
+  target_ << "popq %rsp" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "movq %rax, %rsp" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_ceg_nocheck();
+}
