@@ -17,7 +17,7 @@
 
 struct Node {
   Node* current;
-	char buffer[101];
+  char buffer[101];
   Node* next;
   uint32_t val;
 };
