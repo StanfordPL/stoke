@@ -14,19 +14,23 @@
 
 ##### CONSTANT DEFINITIONS
 
-CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors
+CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors -Wno-deprecated
 
 INC_FOLDERS=\
 						./ \
 						src/ext/cpputil/ \
 						src/ext/x64asm \
 						src/ext/gtest-1.7.0/include \
-						src/ext/z3/include
+						src/ext/z3/include \
+						src/ext/cvc4-1.4-build/include
+
 INC=$(addprefix -I./, $(INC_FOLDERS))
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
 	-pthread\
+	-lcln \
+	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
 	-L src/ext/z3/bin -lz3
 
 SRC_OBJ=\
@@ -44,6 +48,7 @@ SRC_OBJ=\
 	src/search/transforms.o \
 	\
 	src/solver/z3solver.o \
+	src/solver/cvc4solver.o \
 	\
 	src/state/cpu_state.o \
 	src/state/cpu_states.o \
@@ -101,6 +106,7 @@ TOOL_NON_ARG_OBJ=\
 	tools/io/move.o \
 	tools/io/reduction.o \
 	tools/io/performance_term.o \
+	tools/io/solver.o \
 	tools/io/strategy.o \
 	tools/io/timeout.o
 
@@ -151,7 +157,7 @@ haswell_profile:
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
 haswell_test: haswell_debug
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
-	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test
+	LD_LIBRARY_PATH=src/ext/z3/bin:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 sandybridge: sandybridge_release
 sandybridge_release:
@@ -165,7 +171,7 @@ sandybridge_profile:
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg"
 sandybridge_test: sandybridge_debug
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG"
-	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test
+	LD_LIBRARY_PATH=src/ext/z3/bin:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 nehalem: nehalem_release
 nehalem_release:
@@ -179,7 +185,7 @@ nehalem_profile:
 	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg"
 nehalem_test: nehalem_debug
 	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG"
-	LD_LIBRARY_PATH=src/ext/z3/bin bin/stoke_test
+	LD_LIBRARY_PATH=src/ext/z3/bin:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 ##### CTAGS TARGETS
 
@@ -227,6 +233,8 @@ src/search/%.o: src/search/%.cc src/search/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/solver/%.o: src/solver/%.cc src/solver/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/solver/cvc4solver.o: src/solver/cvc4solver.cc src/solver/cvc4solver.h
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc src/state/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
@@ -263,7 +271,7 @@ bin/stoke_benchmark_sandbox: tools/apps/stoke_benchmark_sandbox.cc tools/gadgets
 	tools/args/seed.o tools/args/target.o tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_benchmark_search: tools/apps/stoke_benchmark_search.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/move.o \
-	tools/args/seed.o tools/args/target.o tools/args/transforms.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	tools/args/seed.o tools/args/verifier.o tools/args/target.o tools/args/transforms.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_benchmark_state: tools/apps/stoke_benchmark_state.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/seed.o \
 	tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  

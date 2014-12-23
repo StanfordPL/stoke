@@ -17,6 +17,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cost/cost_function.h"
+#include "src/solver/cvc4solver.h"
 #include "src/state/cpu_state.h"
 #include "src/verifier/strategy.h"
 
@@ -28,6 +29,8 @@ public:
   Verifier(CostFunction& fxn) : counter_example_(), counter_example_available_(false),
     fxn_(fxn), next_counter_example_(0) {
     set_strategy(Strategy::NONE);
+    set_timeout(0);
+    set_solver(NULL);
   }
 
   /** Sets proof strategy. */
@@ -35,10 +38,14 @@ public:
     strategy_ = s;
     return *this;
   }
-
-  /** Sets the timeout, in milliseconds */
+  /** Sets the timeout, in milliseconds, for formal verification */
   Verifier& set_timeout(uint64_t time) {
     timeout_ = time;
+    return *this;
+  }
+  /** Set the SMTSolver to use */
+  Verifier& set_solver(SMTSolver* solver) {
+    solver_ = solver;
     return *this;
   }
 
@@ -71,13 +78,15 @@ private:
   /** Whether the last failed proof produced a new counter example. */
   bool counter_example_available_;
 
-  /** Timeout (in ms) */
-  uint64_t timeout_;
-
   /** Cost function for use in hold-out verification. */
   CostFunction fxn_;
   /** Next counter example returned by hold-out verifier. */
   size_t next_counter_example_;
+
+  /** SMT Solver for use in formal verification. */
+  SMTSolver* solver_;
+  /** Timeout (in ms) for formal verification */
+  uint64_t timeout_;
 
   /** Verify rewrite user hold-out cost function. */
   bool hold_out_verify(const Cfg& target, const Cfg& rewrite);
