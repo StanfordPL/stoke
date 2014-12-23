@@ -82,4 +82,10 @@ ValueArg<vector<uint64_t>>& immediates_arg =
                           .description("Additional immediates to propose as operands")
                           .default_val({});
 
+ValueArg<set<M8>, MemSetReader, MemSetWriter>& mem_ops_arg =
+  ValueArg<set<M8>, MemSetReader, MemSetWriter>::create("mem_ops")
+  .usage("{ (%rax) (%rdi, %rsp) ... }")
+  .description("Additional addresses to propose as operands")
+  .default_val({});
+
 } // namespace stoke

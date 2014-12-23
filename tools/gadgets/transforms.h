@@ -60,6 +60,9 @@ public:
     for (const auto& fxn : aux_fxns_arg.value()) {
       insert_label(fxn.code[0].get_operand<x64asm::Label>(0));
     }
+    for (const auto& m : mem_ops_arg.value()) {
+      insert_mem(m);
+    }
 
     if(validator_must_support) {
       // need to instantiate a validator/solver that will
