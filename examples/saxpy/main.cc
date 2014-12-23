@@ -15,7 +15,7 @@
 #include <cstdlib>
 #include <stdint.h>
 
-extern void saxpy(int a, int* x, int* y, int i);
+extern void saxpy(uint32_t a, uint32_t* x, uint32_t* y, int i);
 
 int main(int argc, char** argv) {
   const auto itr = argc > 1 ? atoi(argv[1]) : 1024;
@@ -24,8 +24,8 @@ int main(int argc, char** argv) {
   srand(seed);
 
   for (auto i = 0; i < itr; ++i) {
-    auto x = new int[16];
-    auto y = new int[16];
+    auto x = new uint32_t[16];
+    auto y = new uint32_t[16];
 
     auto idx = 4 * (rand() % 4);
     for (auto j = 0; j < 4; ++j) {

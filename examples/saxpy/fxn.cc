@@ -14,7 +14,7 @@
 
 #include <stdint.h>
 
-void saxpy(int a, int* x, int* y, int i) {
+void saxpy(uint32_t a, uint32_t* x, uint32_t* y, int i) {
   x[i+0] = x[i+0] * a + y[i+0];
   x[i+1] = x[i+1] * a + y[i+1];
   x[i+2] = x[i+2] * a + y[i+2];
