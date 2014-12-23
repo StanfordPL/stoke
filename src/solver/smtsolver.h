@@ -34,6 +34,8 @@ public:
     error_ = "";
   }
 
+  virtual ~SMTSolver() {}
+
   /** Set the maximum time to spend solving */
   virtual SMTSolver& set_timeout(uint64_t ms) {
     timeout_ = ms;

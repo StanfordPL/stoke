@@ -13,4 +13,5 @@
 // limitations under the License.
 
 
+#include "cvc4solver.h"
 #include "z3solver.h"

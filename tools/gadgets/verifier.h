@@ -16,6 +16,8 @@
 #define STOKE_TOOLS_GADGETS_VERIFIER_H
 
 #include "src/cost/cost_function.h"
+#include "src/solver/cvc4solver.h"
+#include "src/solver/z3solver.h"
 #include "src/verifier/verifier.h"
 #include "tools/args/verifier.h"
 
@@ -26,6 +28,17 @@ public:
   VerifierGadget(CostFunction& fxn) : Verifier(fxn) {
     set_strategy(strategy_arg);
     set_timeout(timeout_arg);
+
+    switch(solver_arg) {
+    case Solver::Z3:
+      set_solver(new Z3Solver());
+      break;
+    case Solver::CVC4:
+      set_solver(new Cvc4Solver());
+      break;
+    default:
+      assert(false);
+    }
   }
 };
 

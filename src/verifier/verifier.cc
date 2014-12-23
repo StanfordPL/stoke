@@ -57,15 +57,21 @@ bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
   error_ = "";
   CpuState ceg;
 
-  Z3Solver s;
-  Validator v(s);
-  s.set_timeout(timeout_);
+  bool need_solver = solver_ == NULL;
+  if(need_solver)
+    solver_ = new Cvc4Solver();
+
+  solver_->set_timeout(timeout_);
+  Validator v(*solver_);
 
   bool success = v.validate(target, rewrite, ceg);
 
   if(v.has_error()) {
     error_ = v.get_error();
     counter_example_available_ = false;
+
+    if(need_solver)
+      delete solver_;
     return false;
   }
 
@@ -77,6 +83,8 @@ bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
     counter_example_available_ = false;
   }
 
+  if(need_solver)
+    delete solver_;
   return success;
 }
 

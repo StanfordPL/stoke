@@ -29,6 +29,7 @@ template <typename T>
 class SymVisitor {
 
 public:
+
   /** Visit a symbolic bit vector (encapsulated) */
   virtual T operator()(const SymBitVector& bv) {
     return (*this)(bv.ptr);
@@ -306,7 +307,6 @@ public:
   virtual T visit(const SymBoolTrue * const b) = 0;
   /** Visit a boolean VAR */
   virtual T visit(const SymBoolVar * const b) = 0;
-
 
 };
 
