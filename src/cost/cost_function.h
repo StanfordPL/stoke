@@ -217,8 +217,8 @@ private:
   /** Evaluate error between rflags. */
   Cost rflags_error(const RFlags& t, const RFlags& r) const;
 
-	/** Assess an undefined register penalty. */
-	Cost undef_default(size_t num_bytes) const;
+  /** Assess an undefined register penalty. */
+  Cost undef_default(size_t num_bytes) const;
 
   /** Evaluate the distance between two 64-bit values. */
   Cost evaluate_distance(uint64_t t, uint64_t r) const;
