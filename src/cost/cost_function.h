@@ -64,7 +64,7 @@ public:
     set_max_size_penalty(0, 0, 0);
     set_performance_term(PerformanceTerm::NONE);
 
-		size_buffer_.reserve(32 * 1024);
+    size_buffer_.reserve(32 * 1024);
   }
 
   /** Reset target function; evaluates testcases and caches the results. */
@@ -139,10 +139,10 @@ public:
 private:
   /** A sandbox for evaluating target and rewrites. */
   Sandbox* sandbox_;
-	/** No reason to always allocate these. */
-	x64asm::Assembler assm_;
-	/** A buffer for assembling functions into to check hex length. */
-	x64asm::Function size_buffer_;
+  /** No reason to always allocate these. */
+  x64asm::Assembler assm_;
+  /** A buffer for assembling functions into to check hex length. */
+  x64asm::Function size_buffer_;
 
   /** Method for measuring the distance between two 64-bit values. */
   Distance distance_;
