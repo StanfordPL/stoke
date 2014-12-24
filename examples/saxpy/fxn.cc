@@ -1,0 +1,32 @@
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include <stdint.h>
+
+void saxpy(uint32_t a, uint32_t* x, uint32_t* y, int i) {
+  x[i+0] = x[i+0] * a + y[i+0];
+  x[i+1] = x[i+1] * a + y[i+1];
+  x[i+2] = x[i+2] * a + y[i+2];
+  x[i+3] = x[i+3] * a + y[i+3];
+
+  //x[i+0] = x[i+0] * x[i+0] + y[i+0];
+  //x[i+1] = x[i+1] * x[i+1] + y[i+1];
+  //x[i+2] = x[i+2] * x[i+2] + y[i+2];
+  //x[i+3] = x[i+3] * x[i+3] + y[i+3];
+
+  //x[i+0] = x[i+0] + y[i+0];
+  //x[i+1] = x[i+1] + y[i+1];
+  //x[i+2] = x[i+2] + y[i+2];
+  //x[i+3] = x[i+3] + y[i+3];
+}

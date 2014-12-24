@@ -55,6 +55,8 @@ Sandbox::Sandbox() : fxn_(32 * 1024) {
   set_abi_check(true);
   set_max_jumps(16);
 
+  init_label_pool();
+
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
 
@@ -91,6 +93,16 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
 }
 
 void Sandbox::compile(const Cfg& cfg) {
+  // Whatever labels we allocate here, we can put back in the pool
+  // when we're done since the next time they'll be used is for the
+  // next compilation
+
+  // Sort of.. there's a race condition here that can happen if you
+  // try to add another auxiliary function after compiling your main
+  // function. Just... don't do that.
+
+  checkpoint_label_pool();
+
   // Compile a new main function
   main_fxn_read_only_ = emit_function(cfg, true);
 
@@ -101,6 +113,8 @@ void Sandbox::compile(const Cfg& cfg) {
     lnkr_.link(*f);
   }
   lnkr_.finish();
+
+  reset_label_pool();
 }
 
 void Sandbox::run_all() {
@@ -409,9 +423,9 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.start(fxn);
 
   // Define labels
-  Label fail;
-  Label done;
-  Label heap_case;
+  const auto& fail = get_label();
+  const auto& done = get_label();
+  const auto& heap_case = get_label();
 
   // Check alignment: A well aligned address won't change
   // Following this check, rsi is free for use as scratch space
@@ -556,7 +570,7 @@ bool Sandbox::emit_function(const Cfg& cfg, bool callbacks) {
   emit_load_user_rsp();
 
   // Create a new unique label for representing the end of this function
-  Label exit;
+  const auto& exit = get_label();
 
   // Assemble every other reachable instruction
   for (size_t i = first_is_label ? 1 : 0, ie = instrs.size(); i < ie; ++i) {
@@ -805,7 +819,7 @@ void Sandbox::emit_jump(const Instruction& instr) {
   assm_.dec(M64(rax));
 
   // Jump over the signal trap call if we haven't hit zero yet
-  Label okay;
+  const auto& okay = get_label();
   assm_.jne(okay);
   emit_signal_trap_call(ErrorCode::SIGKILL_);
   assm_.bind(okay);
