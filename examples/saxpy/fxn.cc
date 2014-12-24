@@ -19,4 +19,14 @@ void saxpy(uint32_t a, uint32_t* x, uint32_t* y, int i) {
   x[i+1] = x[i+1] * a + y[i+1];
   x[i+2] = x[i+2] * a + y[i+2];
   x[i+3] = x[i+3] * a + y[i+3];
+
+  //x[i+0] = x[i+0] * x[i+0] + y[i+0];
+  //x[i+1] = x[i+1] * x[i+1] + y[i+1];
+  //x[i+2] = x[i+2] * x[i+2] + y[i+2];
+  //x[i+3] = x[i+3] * x[i+3] + y[i+3];
+
+  //x[i+0] = x[i+0] + y[i+0];
+  //x[i+1] = x[i+1] + y[i+1];
+  //x[i+2] = x[i+2] + y[i+2];
+  //x[i+3] = x[i+3] + y[i+3];
 }
