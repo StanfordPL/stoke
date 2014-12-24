@@ -17,13 +17,9 @@ all: synth opt time_llvm time_gcc time_stoke
 synth: orig_llvm extract testcase search_synth
 opt: orig_llvm extract testcase search_opt
 
-time_llvm: orig_llvm time
 time_gcc: orig_gcc time
-time_stoke: orig_llvm replace time
+time_stoke: orig_gcc replace time
 
-orig_llvm:
-	clang -std=c++11 -O0 -c fxn.s
-	g++ -std=c++11 -O3 main.cc fxn.o
 orig_gcc:
 	g++ -std=c++11 -O3 -c fxn.s
 	g++ -std=c++11 -O3 main.cc fxn.o
