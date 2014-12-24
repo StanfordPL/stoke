@@ -52,7 +52,7 @@ public:
   static constexpr auto max_error_cost = (Cost)(256);
 
   /** Create a new cost function with default values for extended features. */
-  CostFunction(Sandbox* sb) : sandbox_(sb) {
+  CostFunction(Sandbox* sb) : sandbox_(sb), size_buffer_(32 * 1024) {
     set_target({{{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()}, false, false);
     set_distance(Distance::HAMMING);
     set_sse(1, 1);
@@ -62,8 +62,9 @@ public:
     set_k(1);
     set_reduction(Reduction::SUM);
     set_max_size_penalty(0, 0, 0);
-
     set_performance_term(PerformanceTerm::NONE);
+
+    size_buffer_.reserve(32 * 1024);
   }
 
   /** Reset target function; evaluates testcases and caches the results. */
@@ -138,6 +139,10 @@ public:
 private:
   /** A sandbox for evaluating target and rewrites. */
   Sandbox* sandbox_;
+  /** No reason to always allocate these. */
+  x64asm::Assembler assm_;
+  /** A buffer for assembling functions into to check hex length. */
+  x64asm::Function size_buffer_;
 
   /** Method for measuring the distance between two 64-bit values. */
   Distance distance_;
@@ -198,7 +203,7 @@ private:
                       std::vector<x64asm::Xmm>& sses);
 
   /** Evaluate size of assembed program. */
-  Cost assembled_size_cost(const Cfg& cfg) const;
+  Cost assembled_size_cost(const Cfg& cfg);
 
   /** Evaluate the correctness term for a rewrite. */
   Cost evaluate_correctness(const Cfg& cfg, const Cost max);
