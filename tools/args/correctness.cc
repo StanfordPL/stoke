@@ -53,6 +53,10 @@ FlagArg& relax_mem_arg =
   FlagArg::create("relax_mem")
   .description("Allow correct values in incorrect memory locations");
 
+FlagArg& blocked_heap_opt_arg =
+  FlagArg::create("blocked_heap_opt")
+  .description("Enables an optimized version of relax_mem that assumes heap writes occur in 128-bit blocks");
+
 ValueArg<Cost>& misalign_penalty_arg =
   ValueArg<Cost>::create("misalign_penalty")
   .usage("<int>")
