@@ -24,7 +24,7 @@ int main(int argc, char** argv) {
   srand(seed);
 
   for (auto i = 0; i < itr; ++i) {
-		auto a = rand();
+    auto a = rand();
     auto x = new uint32_t[16];
     auto y = new uint32_t[16];
 
