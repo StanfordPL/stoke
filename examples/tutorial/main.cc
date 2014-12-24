@@ -30,8 +30,10 @@ int main(int argc, char** argv) {
   const auto itr = atoi(argv[1]);
 
   auto ret = 0;
+  uint64_t j = 1;
   for (auto i = 0; i < itr; ++i) {
-    ret += popcnt(i);
+    j = (j*16 + 7);
+    ret += popcnt(j);
   }
 
   return ret;
