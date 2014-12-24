@@ -15,6 +15,7 @@
 #ifndef STOKE_SRC_SANDBOX_SANDBOX_H
 #define STOKE_SRC_SANDBOX_SANDBOX_H
 
+#include <stack>
 #include <unordered_map>
 #include <vector>
 
@@ -158,6 +159,12 @@ private:
   x64asm::Assembler assm_;
   /** Linker, no sense in always creating these either. */
   x64asm::Linker lnkr_;
+	/** Label pool; if we allocate enough anonymous labels, we'll run out of memory. */
+	std::vector<x64asm::Label> label_pool_;
+	/** The next label to pull out of the pool. */
+	size_t next_label_;
+	/** The next label to reset to when we're ready to discard labels. */
+	std::stack<size_t> label_stack_;
   /** Scratch space used here and there by sandboxing code. */
   uint64_t scratch_[16];
 
@@ -190,6 +197,29 @@ private:
   std::vector<x64asm::Function*> aux_fxns_;
   /** Function buffer for jit assembling codes; the main function */
   x64asm::Function fxn_;
+
+	/** Initializes the label pool (4096 should be plenty) */
+	void init_label_pool() {
+		label_pool_.resize(4096);
+		next_label_ = 0;
+		label_stack_ = std::stack<size_t>();
+	}
+	/** Checkpoints the label pool; calling reset_label_pool() will return here */
+	void checkpoint_label_pool() {
+		label_stack_.push(next_label_);
+	}
+	/** Returns the next label from the pool */
+	const x64asm::Label& get_label() {
+		assert(next_label_ < label_pool_.size());
+		return label_pool_[next_label_++];
+	}
+	/** Resets back to the last label pool checkpoint. */
+	void reset_label_pool() {
+		assert(!label_stack_.empty());
+		assert(next_label_ >= label_stack_.top());
+		next_label_ = label_stack_.top();
+		label_stack_.pop();
+	}
 
   /** Returns a register that doesn't appear in an instruction or the scratch space. */
   size_t get_unused_reg(const x64asm::Instruction& instr) const;
