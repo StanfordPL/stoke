@@ -18,7 +18,7 @@
 #include <sys/time.h>
 
 #include "src/ext/x64asm/include/x64asm.h"
-#include "src/target/cpu_info.h"
+#include "tools/target/cpu_info.h"
 
 class ValidatorFuzzTest : public ValidatorTest { };
 
