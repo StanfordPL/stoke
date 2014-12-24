@@ -166,6 +166,37 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a & b);
   });
 
+  add_opcode({"vbroadcastf128"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    uint16_t size = 128;
+    SymBitVector output = b[size-1][0];
+    for(uint16_t i = size; i < dst.size(); i += size) {
+      output = output || b[size-1][0];
+    }
+    ss.set(dst, b, true);
+  });
+
+  add_opcode({"vbroadcastsd"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    uint16_t size = 64;
+    SymBitVector output = b[size-1][0];
+    for(uint16_t i = size; i < dst.size(); i += size) {
+      output = output || b[size-1][0];
+    }
+    ss.set(dst, b, true);
+  });
+
+  add_opcode({"vbroadcastss"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    uint16_t size = 32;
+    SymBitVector output = b[size-1][0];
+    for(uint16_t i = size; i < dst.size(); i += size) {
+      output = output || b[size-1][0];
+    }
+    ss.set(dst, b, true);
+  });
+
+
   add_opcode({"xchgb", "xchgw", "xchgl", "xchgq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     ss.set(dst, b);
