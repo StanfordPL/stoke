@@ -27,9 +27,6 @@ orig_llvm:
 orig_gcc:
 	g++ -std=c++11 -O3 -c fxn.s
 	g++ -std=c++11 -O3 main.cc fxn.o
-orig_icc:
-	icc -std=c++11 -O3 -c fxn.s
-	g++ -std=c++11 -O3 main.cc fxn.o
 
 extract:
 	stoke extract --config extract.conf
