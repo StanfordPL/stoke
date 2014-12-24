@@ -47,13 +47,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   // FIgure out the flags to use.
   std::stringstream flags;
-#ifdef __AVX2__
   flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx avx2 }";
-#elif __AVX__
-  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx }";
-#else
-  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 }";
-#endif
   x64asm::FlagSet flag_set = x64asm::FlagSet::empty();
   flags >> flag_set;
 
@@ -73,7 +67,6 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   std::stringstream sample;
   sample << ".sample:" << std::endl;
   sample << "movq (%rax), %r13" << std::endl;
-  /*
   sample << "movq 0x16(%r8), %r13" << std::endl;
   sample << "movq 0x64(%rdx), %r13" << std::endl;
   sample << "movq 0x64(%rax, %rcx, 4), %r13" << std::endl;
@@ -93,7 +86,6 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   sample << "movb 0x64(%rdx), %r13b" << std::endl;
   sample << "movb 0x64(%rax, %rcx, 4), %r13b" << std::endl;
   sample << "movb 0x64(%rsp, %rdx, 8), %r13b" << std::endl;
-  */
   x64asm::Code target;
   sample >> target;
 
