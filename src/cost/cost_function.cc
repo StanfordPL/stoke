@@ -74,16 +74,11 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm
   }
 }
 
-Cost CostFunction::assembled_size_cost(const Cfg& cfg) const {
-  x64asm::Assembler assm;
-  x64asm::Function fxn;
+Cost CostFunction::assembled_size_cost(const Cfg& cfg) {
+  assm_.start(size_buffer_);
 
   const auto& code = cfg.get_code();
-
-  assm.start(fxn);
-
   for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-
     if (cfg.is_exit(*b)) {
       continue;
     }
@@ -92,14 +87,14 @@ Cost CostFunction::assembled_size_cost(const Cfg& cfg) const {
     for (size_t i = 0, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
       const auto& instr = code[i];
       if (!instr.is_nop() && !instr.is_ret()) {
-        assm.assemble(instr);
+        assm_.assemble(instr);
       }
     }
   }
 
-  assm.finish();
+  assm_.finish();
 
-  uint64_t size = fxn.size();
+  uint64_t size = size_buffer_.size();
   if (size <= max_size_) {
     return 0;
   } else {
