@@ -86,6 +86,13 @@ public:
     return contents_.get_fixed_byte(addr - base_);
   }
 
+  /** Element access; undefined for invalid quads */
+  uint64_t get_quad(size_t addr) const {
+    assert(is_valid_quad(addr));
+    assert((addr - base_) % 8 == 0);
+    return contents_.get_fixed_quad((addr - base_)/8);
+  }
+
   /** Pointer to underlying data. */
   void* data() {
     return contents_.data();
@@ -110,6 +117,13 @@ public:
     valid_[addr - base_] = v;
     return *this;
   }
+  /** Returns true if a quad is valid. */
+  bool is_valid_quad(uint64_t addr) const {
+    assert(in_range(addr) && in_range(addr+7));
+    assert((addr - base_) % 8 == 0);
+
+    return valid_.get_fixed_byte((addr-base_)/8) == 0xff;
+  }
   /** Returns a pointer to the beginning of the valid byte addrs in this memory. */
   addr_iterator valid_begin() const {
     return addr_iterator(valid_.set_bit_index_begin(), base_);
@@ -129,6 +143,11 @@ public:
     assert(is_valid(addr));
     def_[addr - base_] = d;
     return *this;
+  }
+  /** Returns true if a quad is defined; undefined for invalid quads */
+  bool is_defined_quad(uint64_t addr) const {
+    assert(is_valid_quad(addr));
+    return def_.get_fixed_byte((addr-base_)/8) == 0xff;
   }
   /** Returns a pointer to the beginning of the defined byte addrs in this memory. */
   addr_iterator defined_begin() const {
