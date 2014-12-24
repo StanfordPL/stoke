@@ -110,7 +110,7 @@ TEST_F(IntegrationTest, TutorialTest) {
   EXPECT_GT(diff_1*100, diff_2*120);
 
   // Cleanup
-  //EXPECT_EQ(0, shell("make clean"));
+  EXPECT_EQ(0, shell("make clean"));
 
 }
 
