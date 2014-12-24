@@ -218,7 +218,7 @@ Cost CostFunction::evaluate_error(const CpuState& t, const CpuState& r) const {
     cost += mem_error(t.stack, r.stack);
   }
   if (heap_out_) {
-    cost += mem_error(t.heap, r.heap);
+    cost += block_heap_ ? block_mem_error(t.heap, r.heap, r.sse) : mem_error(t.heap, r.heap);
   }
 
   return cost;
@@ -319,6 +319,58 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
       cost += delta;
     } else {
       cost += r.is_defined(*i) ? evaluate_distance(t[*i], r[*i]) : undef_default(1);
+    }
+  }
+
+  return cost;
+}
+
+Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Regs& rsse) const {
+  Cost cost = 0;
+
+  for (size_t i = *t.valid_begin(), ie = t.upper_bound(); i < ie; i += 16) {
+    // Skip invalid blocks
+    if (!t.is_valid(i)) {
+      assert(!t.is_valid_quad(i));
+      assert(!t.is_valid_quad(i+8));
+      continue;
+    }
+    // Make sure that this block is valid in the target and rewrite
+    assert(t.is_valid_quad(i) && rmem.is_valid_quad(i));
+    assert(t.is_valid_quad(i+8) && rmem.is_valid_quad(i+8));
+
+    // Skip undefined blocks
+    if (!t.is_defined(i)) {
+      assert(!t.is_defined_quad(i));
+      assert(!t.is_defined_quad(i+8));
+      continue;
+    }
+    // Make sure everything in this block is defined in the target
+    assert(t.is_defined_quad(i));
+    assert(t.is_defined_quad(i+8));
+
+    // If any of the rewrite is undefined, assign a penalty
+    if (!rmem.is_defined_quad(i) || !rmem.is_defined_quad(i+8)) {
+      cost += undef_default(16);
+    }
+    // Otherwise let's compare
+    else {
+      // Start off with vanilla memory to memory comparison
+      Cost delta = evaluate_distance(t.get_quad(i), rmem.get_quad(i)) +
+                   evaluate_distance(t.get_quad(i+8), rmem.get_quad(i+8));
+
+      // If we've relaxed mem, we can also look in sse registers
+      if (relax_mem_) {
+        for (const auto& s_r : rewrite_sse_out_) {
+          Cost eval = evaluate_distance(t.get_quad(i), rsse[s_r].get_fixed_quad(0)) +
+                      evaluate_distance(t.get_quad(i+8), rsse[s_r].get_fixed_quad(1)) +
+                      misalign_penalty_;
+          delta = min(delta, eval);
+        }
+      }
+
+      // Now accrue the lowest cost we were able to find
+      cost += delta;
     }
   }
 
