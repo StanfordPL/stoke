@@ -15,19 +15,18 @@
 #ifndef STOKE_TOOLS_GADGETS_SEARCH_STATE_H
 #define STOKE_TOOLS_GADGETS_SEARCH_STATE_H
 
-#include "src/cfg/cfg.h"
 #include "src/search/search_state.h"
 #include "tools/args/search_state.h"
-#include "tools/args/target.h"
+#include "tools/gadgets/cfg.h"
 
 namespace stoke {
 
 class SearchStateGadget : public SearchState {
 public:
   SearchStateGadget() {
-    current = Cfg(current_arg.value().code, def_in_arg, live_out_arg);
-    best_yet = Cfg(best_yet_arg.value().code, def_in_arg, live_out_arg);
-    best_correct = Cfg(best_correct_arg.value().code, def_in_arg, live_out_arg);
+    current = CfgGadget(current_arg.value().code);
+    best_yet = CfgGadget(best_yet_arg.value().code);
+    best_correct = CfgGadget(best_correct_arg.value().code);
   }
 };
 
