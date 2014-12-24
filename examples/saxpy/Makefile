@@ -40,7 +40,7 @@ replace:
 	stoke replace --config replace.conf
 
 time:
-	time ./a.out 1024
+	time ./a.out 100000000
 
 clean:
 	rm -rf bins ./a.out *.tc *.s *.o
