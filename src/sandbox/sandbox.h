@@ -198,9 +198,9 @@ private:
   /** Function buffer for jit assembling codes; the main function */
   x64asm::Function fxn_;
 
-  /** Initializes the label pool (4096 should be plenty) */
+  /** Initializes the label pool  */
   void init_label_pool() {
-    label_pool_.resize(4096);
+    label_pool_.resize(16);
     next_label_ = 0;
     label_stack_ = std::stack<size_t>();
   }
@@ -210,7 +210,9 @@ private:
   }
   /** Returns the next label from the pool */
   const x64asm::Label& get_label() {
-    assert(next_label_ < label_pool_.size());
+    if(next_label_ >= label_pool_.size()) {
+      label_pool_.resize(label_pool_.size() * 2);
+    }
     return label_pool_[next_label_++];
   }
   /** Resets back to the last label pool checkpoint. */

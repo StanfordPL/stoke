@@ -125,24 +125,31 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
                                   x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf +
                                   x64asm::eflags_zf + x64asm::eflags_sf;
 
+  stoke::Sandbox sb;
+  sb.set_abi_check(false)
+  .set_max_jumps(1);
+
+  stoke::StateGen sg(&sb);
+  sg.set_max_memory(1024)
+  .set_max_attempts(40);
+
+  x64asm::Label label("silly");
+
+  x64asm::Code pre_cfg_code;
+  pre_cfg_code.push_back(x64asm::Instruction(x64asm::LABEL_DEFN, {label}));
+  pre_cfg_code.push_back(x64asm::Instruction(x64asm::Opcode::LAHF));
+  pre_cfg_code.push_back(x64asm::Instruction(x64asm::Opcode::RET));
+  stoke::Cfg pre_cfg(pre_cfg_code, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+
+  x64asm::Code cfg_code;
+  cfg_code.push_back(x64asm::Instruction(x64asm::LABEL_DEFN, {label}));
+  cfg_code.push_back(x64asm::Instruction(x64asm::Opcode::LAHF));
+  cfg_code.push_back(x64asm::Instruction(x64asm::Opcode::RET));
+
   for(size_t i = 0; i < iterations; ++i) {
 
-    stoke::Sandbox sb;
-    sb.set_abi_check(false)
-    .set_max_jumps(1);
-
-    stoke::StateGen sg(&sb);
-    sg.set_max_memory(1024)
-    .set_max_attempts(40);
 
     // Build an instruction and CFG at random
-    std::stringstream ss1;
-    ss1 << ".pre_cfg:" << std::endl;
-    ss1 << "movq (%rax), %rax" << std::endl;
-    x64asm::Code pre_cfg_code;
-    ss1 >> pre_cfg_code;
-    stoke::Cfg pre_cfg(pre_cfg_code, x64asm::RegSet::universe(), x64asm::RegSet::empty());
-
     bool found = false;
     for(size_t j = 0; j < 20; ++j) {
       if (t.instruction_move(pre_cfg)) {
@@ -155,13 +162,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
     const auto ins = pre_cfg.get_code()[1];
     x64asm::RegSet liveouts = (ins.must_write_set() - ins.maybe_undef_set()) & supported_regs;
-
-    std::stringstream ss2;
-    ss2 << ".cfg:" << std::endl;
-    ss2 << ins << std::endl;
-    ss2 << "retq" << std::endl;
-    x64asm::Code cfg_code;
-    ss2 >> cfg_code;
+    cfg_code[1] = ins;
     stoke::Cfg cfg(cfg_code, ins.maybe_read_set(), liveouts);
 
     std::cout << "[----------] * " << ins << std::endl;
