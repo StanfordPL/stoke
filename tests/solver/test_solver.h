@@ -36,6 +36,7 @@ public:
   }
 
   bool is_sat(const std::vector<stoke::SymBool>& c) {
+    error_ = "";
     bool first = false;
     bool success = false;
     bool last = false;
@@ -69,6 +70,9 @@ public:
     }
     if(!success) {
       error_ = "All solvers encountered an error.";
+      for(auto it : solvers_) {
+        error_ = error_ + "\n\n" + it->get_error();
+      }
     }
     return first;
   }
