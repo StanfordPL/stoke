@@ -358,8 +358,8 @@ Cost CostFunction::undef_default(size_t num_bytes) const {
     res = 0;
   }
 
-  // Invariant 1: Penalty should not exceed max_error_cost_
-  assert(res <= max_error_cost_);
+  // Invariant 1: Penalty should not exceed max_error_cost
+  assert(res <= max_error_cost);
   return res;
 }
 
