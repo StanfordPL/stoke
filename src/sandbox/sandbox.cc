@@ -55,7 +55,7 @@ Sandbox::Sandbox() : fxn_(32 * 1024) {
   set_abi_check(true);
   set_max_jumps(16);
 
-	init_label_pool();
+  init_label_pool();
 
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
@@ -93,15 +93,15 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
 }
 
 void Sandbox::compile(const Cfg& cfg) {
-	// Whatever labels we allocate here, we can put back in the pool 
-	// when we're done since the next time they'll be used is for the
-	// next compilation
+  // Whatever labels we allocate here, we can put back in the pool
+  // when we're done since the next time they'll be used is for the
+  // next compilation
 
-	// Sort of.. there's a race condition here that can happen if you
-	// try to add another auxiliary function after compiling your main
-	// function. Just... don't do that.
+  // Sort of.. there's a race condition here that can happen if you
+  // try to add another auxiliary function after compiling your main
+  // function. Just... don't do that.
 
-	checkpoint_label_pool();
+  checkpoint_label_pool();
 
   // Compile a new main function
   main_fxn_read_only_ = emit_function(cfg, true);
@@ -114,7 +114,7 @@ void Sandbox::compile(const Cfg& cfg) {
   }
   lnkr_.finish();
 
-	reset_label_pool();
+  reset_label_pool();
 }
 
 void Sandbox::run_all() {
