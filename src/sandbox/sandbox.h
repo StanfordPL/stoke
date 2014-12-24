@@ -121,16 +121,16 @@ public:
   /** Run a main function for just one input. */
   void run_one(size_t index);
 
-	/** Flag labels allocated after this call as disposable. */
-	void start_reusing_labels() {
-		label_checkpoint_ = next_label_;
-	}
-	/** Start recycling any labels that were allocated since the last call to 
-		start_reusing_labels(); invalidates EVERYTHING that was sandboxed in 
-		the interim. Make sure you know what you're doing. */
-	void start_recycling_labels() {
-		next_label_ = label_checkpoint_;
-	}
+  /** Flag labels allocated after this call as disposable. */
+  void start_reusing_labels() {
+    label_checkpoint_ = next_label_;
+  }
+  /** Start recycling any labels that were allocated since the last call to
+    start_reusing_labels(); invalidates EVERYTHING that was sandboxed in
+    the interim. Make sure you know what you're doing. */
+  void start_recycling_labels() {
+    next_label_ = label_checkpoint_;
+  }
 
   /** Iterator for return states. */
   output_iterator get_result(size_t index) const {
@@ -172,8 +172,8 @@ private:
 
   /** Reusable labels... if left unchecked, endless sandboxing will deplete memory */
   std::vector<x64asm::Label> labels_;
-	/** The label that was available the last time start_reusing_labels() was called */
-	size_t label_checkpoint_;
+  /** The label that was available the last time start_reusing_labels() was called */
+  size_t label_checkpoint_;
   /** The next label to pull out of the pool. */
   size_t next_label_;
 
@@ -221,19 +221,19 @@ private:
     return x64asm::r64s[get_unused_reg(instr)];
   }
 
-	/** Initialize the reusable label pool */
-	void init_labels() {
-		labels_.resize(16);
-		label_checkpoint_ = 0;
-		next_label_ = 0;
-	}
-	/** Take a label from the pool. */
-	const x64asm::Label& get_label() {
-		if (next_label_ == labels_.size()) {
-			labels_.resize(labels_.size()*2);
-		}
-		return labels_[next_label_++];
-	}
+  /** Initialize the reusable label pool */
+  void init_labels() {
+    labels_.resize(16);
+    label_checkpoint_ = 0;
+    next_label_ = 0;
+  }
+  /** Take a label from the pool. */
+  const x64asm::Label& get_label() {
+    if (next_label_ == labels_.size()) {
+      labels_.resize(labels_.size()*2);
+    }
+    return labels_[next_label_++];
+  }
 
   /** Check for abi violations between input and output states */
   bool check_abi(const IoPair& iop) const;
