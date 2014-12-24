@@ -56,7 +56,7 @@ public:
     set_target({{{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()}, false, false);
     set_distance(Distance::HAMMING);
     set_sse(1, 1);
-    set_relax(false, false);
+    set_relax(false, false, false);
     set_penalty(0, 0, 0);
     set_min_ulp(0);
     set_k(1);
@@ -80,9 +80,10 @@ public:
     return *this;
   }
   /** Toggles whether to relax the requirement that results must appear in the correct locations. */
-  CostFunction& set_relax(bool reg, bool mem) {
+  CostFunction& set_relax(bool reg, bool mem, bool block_heap) {
     relax_reg_ = reg;
     relax_mem_ = mem;
+    block_heap_ = block_heap;
     return *this;
   }
   /** Set penalty values. */
@@ -154,6 +155,8 @@ private:
   bool relax_reg_;
   /** Allow correct values in incorrect memory locations? */
   bool relax_mem_;
+  /** Use optimized relax_mem computation that requires a blocked heap? */
+  bool block_heap_;
   /** Cost to add to correct values that appear in incorrect locations. */
   Cost misalign_penalty_;
   /** Cost to return for rewrites that do not agree with target on exit code. */
@@ -214,6 +217,8 @@ private:
   Cost sse_error(const Regs& t, const Regs& r) const;
   /** Evaluate error between memories. */
   Cost mem_error(const Memory& t, const Memory& r) const;
+  /** Evaluate error between memories that are written in 128-bit blocks. */
+  Cost block_mem_error(const Memory& t, const Memory& rmem, const Regs& rsse) const;
   /** Evaluate error between rflags. */
   Cost rflags_error(const RFlags& t, const RFlags& r) const;
 
