@@ -49,7 +49,7 @@ public:
   /** The maximum cost that a single testcase should produce. */
   static constexpr auto max_testcase_cost = (Cost)(0x1ull << 42);
   /** The maximum cost that a single error calculation should produce. */
-  static constexpr auto max_error_cost = (Cost)(0x1ull << 32);
+  static constexpr auto max_error_cost = (Cost)(256);
 
   /** Create a new cost function with default values for extended features. */
   CostFunction(Sandbox* sb) : sandbox_(sb) {
@@ -194,6 +194,9 @@ private:
   void recompute_defs(const x64asm::RegSet& rs, std::vector<x64asm::R64>& gps,
                       std::vector<x64asm::Xmm>& sses);
 
+  /** Evaluate size of assembed program. */
+  Cost assembled_size_cost(const Cfg& cfg) const;
+
   /** Evaluate the correctness term for a rewrite. */
   Cost evaluate_correctness(const Cfg& cfg, const Cost max);
   /** Evaluate correctness by returning the max cost over testcases. */
@@ -214,8 +217,8 @@ private:
   /** Evaluate error between rflags. */
   Cost rflags_error(const RFlags& t, const RFlags& r) const;
 
-  /** Evaluate size of assembed program. */
-  Cost assembled_size_cost(const Cfg& cfg) const;
+  /** Assess an undefined register penalty. */
+  Cost undef_default(size_t num_bytes) const;
 
   /** Evaluate the distance between two 64-bit values. */
   Cost evaluate_distance(uint64_t t, uint64_t r) const;
