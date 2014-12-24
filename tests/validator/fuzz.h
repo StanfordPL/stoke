@@ -47,13 +47,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   // FIgure out the flags to use.
   std::stringstream flags;
-#ifdef __AVX2__
   flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx avx2 }";
-#elif __AVX__
-  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx }";
-#else
-  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 }";
-#endif
   x64asm::FlagSet flag_set = x64asm::FlagSet::empty();
   flags >> flag_set;
 
