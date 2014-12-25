@@ -19,7 +19,6 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/tunit/tunit.h"
-#include "tools/io/reg_set.h"
 #include "tools/io/tunit.h"
 
 namespace stoke {
@@ -27,13 +26,8 @@ namespace stoke {
 extern cpputil::Heading& target_heading;
 
 extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& target_arg;
-extern cpputil::FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg;
-extern cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& def_in_arg;
-extern cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& live_out_arg;
-extern cpputil::FlagArg& stack_out_arg;
-extern cpputil::FlagArg& heap_out_arg;
-extern cpputil::FlagArg& no_default_mxcsr_arg;
 
 } // namespace stoke
 
 #endif
+
