@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
   TrainingSetGadget training_set(seed);
   SandboxGadget training_sb(training_set);
 
-  TransformsGadget transforms(seed);
+  TransformsGadget transforms(target.get_code(), seed);
   SearchGadget search(&transforms, seed);
 
   TestSetGadget test_set(seed);
