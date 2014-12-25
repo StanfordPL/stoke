@@ -12,32 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_SANDBOX_H
-#define STOKE_TOOLS_GADGETS_SANDBOX_H
+#ifndef STOKE_TOOLS_ARGS_IN_OUT_H
+#define STOKE_TOOLS_ARGS_IN_OUT_H
 
+#include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/sandbox/sandbox.h"
-#include "src/state/cpu_states.h"
-#include "tools/args/in_out.h"
-#include "tools/args/sandbox.h"
-#include "tools/args/target.h"
+#include "src/tunit/tunit.h"
+#include "tools/io/reg_set.h"
+#include "tools/io/tunit.h"
 
 namespace stoke {
 
-class SandboxGadget : public Sandbox {
-public:
-  SandboxGadget(const CpuStates& tcs) {
-    set_abi_check(abi_check_arg);
-    set_max_jumps(max_jumps_arg);
-    for (const auto& fxn : aux_fxns_arg.value()) {
-      insert_function({fxn.code, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-    }
-    for (const auto& tc : tcs) {
-      insert_input(tc);
-    }
-  }
-};
+extern cpputil::Heading& in_out_heading;
+
+extern cpputil::FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg;
+extern cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& def_in_arg;
+extern cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& live_out_arg;
+extern cpputil::FlagArg& stack_out_arg;
+extern cpputil::FlagArg& heap_out_arg;
+extern cpputil::FlagArg& no_default_mxcsr_arg;
 
 } // namespace stoke
 
