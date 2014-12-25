@@ -20,19 +20,21 @@
 
 #include "src/ext/x64asm/include/x64asm.h"
 
+#include "src/cfg/cfg.h"
 #include "src/search/transforms.h"
 #include "src/solver/z3solver.h"
+#include "src/target/cpu_info.h"
 #include "src/validator/validator.h"
+
 #include "tools/args/target.h"
 #include "tools/args/transforms.h"
-#include "src/target/cpu_info.h"
 #include "tools/ui/console.h"
 
 namespace stoke {
 
 class TransformsGadget : public Transforms {
 public:
-  TransformsGadget(std::default_random_engine::result_type seed) : Transforms() {
+  TransformsGadget(x64asm::Code code, std::default_random_engine::result_type seed) : Transforms() {
     if (callee_save_arg.value()) {
       preserve_regs_arg.value() = x64asm::RegSet::empty();
     }
@@ -52,7 +54,7 @@ public:
 
     set_opcode_pool(arg_cpu_flags, nop_percent_arg, call_weight_arg, mem_read_arg, mem_write_arg,
                     opc_blacklist_arg, opc_whitelist_arg);
-    set_operand_pool(target_arg.value().code, preserve_regs_arg);
+    set_operand_pool(code, preserve_regs_arg);
 
     for (const auto& imm : immediates_arg.value()) {
       insert_immediate(imm);

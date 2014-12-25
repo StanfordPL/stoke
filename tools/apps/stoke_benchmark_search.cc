@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
 
   SeedGadget seed;
   TargetGadget target;
-  TransformsGadget tforms(seed);
+  TransformsGadget tforms(target.get_code(), seed);
 
   if (!target.is_sound()) {
     Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;

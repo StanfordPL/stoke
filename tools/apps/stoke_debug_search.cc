@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 
   SeedGadget seed;
   TargetGadget target;
-  TransformsGadget tforms(seed);
+  TransformsGadget tforms(target.get_code(), seed);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
