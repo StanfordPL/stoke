@@ -87,6 +87,7 @@ TOOL_ARGS_OBJ=\
 	tools/args/benchmark.o \
 	tools/args/correctness.o \
 	tools/args/cost.o \
+	tools/args/in_out.o \
 	tools/args/move.o \
 	tools/args/performance.o \
 	tools/args/rewrite.o \
@@ -261,46 +262,47 @@ tools/io/%.o: tools/io/%.cc tools/io/%.h
 ##### BINARY TARGETS
 
 bin/stoke_benchmark_cfg: tools/apps/stoke_benchmark_cfg.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/target.o \
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/target.o tools/args/in_out.o \
 	$(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_benchmark_cost: tools/apps/stoke_benchmark_cost.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/correctness.o \
 	tools/args/cost.o tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o \
-	tools/args/seed.o tools/args/target.o tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	tools/args/seed.o tools/args/target.o tools/args/in_out.o tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_benchmark_sandbox: tools/apps/stoke_benchmark_sandbox.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/sandbox.o \
-	tools/args/seed.o tools/args/target.o tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	tools/args/seed.o tools/args/target.o tools/args/in_out.o tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_benchmark_search: tools/apps/stoke_benchmark_search.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/move.o \
-	tools/args/seed.o tools/args/verifier.o tools/args/target.o tools/args/transforms.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	tools/args/seed.o tools/args/verifier.o tools/args/target.o tools/args/in_out.o tools/args/transforms.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_benchmark_state: tools/apps/stoke_benchmark_state.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o tools/args/seed.o \
 	tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_benchmark_verify: tools/apps/stoke_benchmark_verify.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/benchmark.o \
 	tools/args/correctness.o tools/args/cost.o tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o \
-	tools/args/seed.o tools/args/target.o tools/args/testcases.o tools/args/verifier.o \
+	tools/args/seed.o tools/args/target.o tools/args/in_out.o tools/args/testcases.o tools/args/verifier.o \
 	$(TOOL_NON_ARG_OBJ) $(LIB)  
 
 bin/stoke_debug_cfg: tools/apps/stoke_debug_cfg.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/target.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/target.o tools/args/in_out.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_debug_cost: tools/apps/stoke_debug_cost.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o tools/args/cost.o \
 	tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o tools/args/seed.o \
-	tools/args/target.o tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	tools/args/target.o tools/args/in_out.o tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_debug_sandbox: tools/apps/stoke_debug_sandbox.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/sandbox.o tools/args/seed.o \
-	tools/args/target.o tools/args/testcases.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	tools/args/target.o tools/args/testcases.o tools/args/in_out.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_debug_search: tools/apps/stoke_debug_search.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/move.o tools/args/seed.o \
-	tools/args/target.o tools/args/transforms.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	tools/args/target.o tools/args/in_out.o tools/args/transforms.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_debug_state: tools/apps/stoke_debug_state.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/seed.o tools/args/testcases.o \
+	tools/args/in_out.o \
 	$(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_debug_verify: tools/apps/stoke_debug_verify.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o tools/args/cost.o \
 	tools/args/performance.o tools/args/rewrite.o tools/args/sandbox.o tools/args/seed.o \
-	tools/args/target.o tools/args/testcases.o tools/args/verifier.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	tools/args/target.o tools/args/in_out.o tools/args/testcases.o tools/args/verifier.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 
 bin/stoke_extract: tools/apps/stoke_extract.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB)  
@@ -310,9 +312,10 @@ bin/stoke_search: tools/apps/stoke_search.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/correctness.o tools/args/cost.o \
 	tools/args/performance.o tools/args/search.o tools/args/search_state.o tools/args/seed.o \
 	tools/args/sandbox.o tools/args/target.o tools/args/testcases.o tools/args/transforms.o \
-	tools/args/verifier.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+	tools/args/verifier.o tools/args/in_out.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_testcase: tools/apps/stoke_testcase.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/sandbox.o tools/args/target.o \
+	tools/args/in_out.o \
 	$(TOOL_NON_ARG_OBJ) $(LIB)  
 
 ##### TESTING
