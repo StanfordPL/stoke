@@ -15,8 +15,8 @@
 #ifndef STOKE_TOOLS_GADGETS_TARGET_H
 #define STOKE_TOOLS_GADGETS_TARGET_H
 
-#include "tools/gadgets/cfg.h"
 #include "tools/args/target.h"
+#include "tools/gadgets/cfg.h"
 
 namespace stoke {
 

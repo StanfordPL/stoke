@@ -20,7 +20,7 @@
 #include "src/cfg/cfg.h"
 #include "src/sandbox/sandbox.h"
 #include "src/target/cpu_info.h"
-#include "tools/args/target.h"
+#include "tools/args/in_out.h"
 #include "tools/ui/console.h"
 
 namespace stoke {
