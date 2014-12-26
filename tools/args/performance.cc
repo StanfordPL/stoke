@@ -25,12 +25,12 @@ ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>& perf_ar
   ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
   .usage("(none|size|latency|extension)")
   .description("Performance definition")
-  .default_val(PerformanceTerm::NONE);
+  .default_val(PerformanceTerm::LATENCY);
 
 ValueArg<Cost>& nesting_penalty_arg =
   ValueArg<Cost>::create("nesting_penalty")
   .usage("<int>")
   .description("Latency multiplier for nested code")
-  .default_val(1);
+  .default_val(5);
 
 } // namespace stoke
