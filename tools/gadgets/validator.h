@@ -12,21 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_VERIFIER_H
-#define STOKE_TOOLS_GADGETS_VERIFIER_H
+#ifndef STOKE_TOOLS_GADGETS_VALIDATOR_H
+#define STOKE_TOOLS_GADGETS_VALIDATOR_H
 
-#include "src/cost/cost_function.h"
-#include "src/solver/cvc4solver.h"
-#include "src/solver/z3solver.h"
-#include "src/verifier/verifier.h"
-#include "tools/args/verifier.h"
+#include "src/solver/smtsolver.h"
+#include "src/validator/validator.h"
 
 namespace stoke {
 
-class VerifierGadget : public Verifier {
+class ValidatorGadget : public Validator {
 public:
-  VerifierGadget(CostFunction& fxn, Validator& val) : Verifier(fxn, val) {
-    set_strategy(strategy_arg);
+  ValidatorGadget(SMTSolver& smt) : Validator(smt) {
   }
 };
 

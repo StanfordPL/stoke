@@ -27,9 +27,6 @@ namespace stoke {
 extern cpputil::Heading& verifier_heading;
 
 extern cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg;
-extern cpputil::ValueArg<Solver, SolverReader, SolverWriter>& solver_arg;
-
-extern cpputil::ValueArg<uint64_t>& timeout_arg;
 
 } // namespace stoke
 
