@@ -57,25 +57,15 @@ bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
   error_ = "";
   CpuState ceg;
 
-  bool need_solver = solver_ == NULL;
-  if(need_solver)
-    solver_ = new Cvc4Solver();
+  bool success = validator_.validate(target, rewrite, ceg);
 
-  solver_->set_timeout(timeout_);
-  Validator v(*solver_);
-
-  bool success = v.validate(target, rewrite, ceg);
-
-  if(v.has_error()) {
-    error_ = v.get_error();
+  if(validator_.has_error()) {
+    error_ = validator_.get_error();
     counter_example_available_ = false;
-
-    if(need_solver)
-      delete solver_;
     return false;
   }
 
-  bool has_ceg = v.is_counterexample_valid();
+  bool has_ceg = validator_.is_counterexample_valid();
   if (has_ceg) {
     counter_example_available_ = true;
     counter_example_ = ceg;
@@ -83,8 +73,6 @@ bool Verifier::formal_verify(const Cfg& target, const Cfg& rewrite) {
     counter_example_available_ = false;
   }
 
-  if(need_solver)
-    delete solver_;
   return success;
 }
 

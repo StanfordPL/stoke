@@ -12,24 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_VERIFIER_H
-#define STOKE_TOOLS_GADGETS_VERIFIER_H
+#include "tools/args/solver.h"
 
-#include "src/cost/cost_function.h"
-#include "src/solver/cvc4solver.h"
-#include "src/solver/z3solver.h"
-#include "src/verifier/verifier.h"
-#include "tools/args/verifier.h"
+using namespace cpputil;
 
 namespace stoke {
 
-class VerifierGadget : public Verifier {
-public:
-  VerifierGadget(CostFunction& fxn, Validator& val) : Verifier(fxn, val) {
-    set_strategy(strategy_arg);
-  }
-};
+Heading& smt_heading =
+  Heading::create("Formal Validator Options:");
+
+ValueArg<Solver, SolverReader, SolverWriter>& solver_arg =
+  ValueArg<Solver, SolverReader, SolverWriter>::create("solver")
+  .usage("(cvc4|z3)")
+  .description("SMT Solver backend")
+  .default_val(Solver::CVC4);
+
+ValueArg<uint64_t>& timeout_arg =
+  ValueArg<uint64_t>::create("solver_timeout")
+  .usage("<int>")
+  .description("Timeout in milliseconds for SMT solver before giving up.  0 for no limit.")
+  .default_val(0);
+
 
 } // namespace stoke
-
-#endif
