@@ -32,9 +32,11 @@
 #include "tools/gadgets/search.h"
 #include "tools/gadgets/search_state.h"
 #include "tools/gadgets/seed.h"
+#include "tools/gadgets/solver.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
 #include "tools/gadgets/transforms.h"
+#include "tools/gadgets/validator.h"
 #include "tools/gadgets/verifier.h"
 #include "tools/io/timeout.h"
 #include "tools/ui/console.h"
@@ -196,7 +198,9 @@ int main(int argc, char** argv) {
   TestSetGadget test_set(seed);
   SandboxGadget test_sb(test_set);
   CostFunctionGadget holdout_fxn(target, &test_sb);
-  VerifierGadget verifier(holdout_fxn);
+  SolverGadget smt;
+  ValidatorGadget validator(smt);
+  VerifierGadget verifier(holdout_fxn, validator);
 
   if (!target.is_sound()) {
     Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;

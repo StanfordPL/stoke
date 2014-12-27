@@ -23,8 +23,10 @@
 #include "tools/gadgets/rewrite.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/seed.h"
+#include "tools/gadgets/solver.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
+#include "tools/gadgets/validator.h"
 #include "tools/gadgets/verifier.h"
 #include "tools/ui/console.h"
 
@@ -45,7 +47,9 @@ int main(int argc, char** argv) {
   TestSetGadget test_set(seed);
   SandboxGadget sb(test_set);
   CostFunctionGadget fxn(target, &sb);
-  VerifierGadget verifier(fxn);
+  SolverGadget smt;
+  ValidatorGadget validator(smt);
+  VerifierGadget verifier(fxn, validator);
 
   if (!target.is_sound()) {
     Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
