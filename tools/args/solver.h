@@ -12,23 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_VERIFIER_H
-#define STOKE_TOOLS_GADGETS_VERIFIER_H
+#ifndef STOKE_TOOLS_ARGS_SOLVER_H
+#define STOKE_TOOLS_ARGS_SOLVER_H
 
-#include "src/cost/cost_function.h"
-#include "src/solver/cvc4solver.h"
-#include "src/solver/z3solver.h"
-#include "src/verifier/verifier.h"
-#include "tools/args/verifier.h"
+#include "src/ext/cpputil/include/command_line/command_line.h"
+
+#include "src/solver/solver.h"
+#include "tools/io/solver.h"
 
 namespace stoke {
 
-class VerifierGadget : public Verifier {
-public:
-  VerifierGadget(CostFunction& fxn, Validator& val) : Verifier(fxn, val) {
-    set_strategy(strategy_arg);
-  }
-};
+extern cpputil::Heading& smt_heading;
+
+extern cpputil::ValueArg<Solver, SolverReader, SolverWriter>& solver_arg;
+extern cpputil::ValueArg<uint64_t>& timeout_arg;
 
 } // namespace stoke
 

@@ -19,6 +19,7 @@
 #include "src/cost/cost_function.h"
 #include "src/solver/cvc4solver.h"
 #include "src/state/cpu_state.h"
+#include "src/validator/validator.h"
 #include "src/verifier/strategy.h"
 
 namespace stoke {
@@ -26,26 +27,13 @@ namespace stoke {
 class Verifier {
 public:
   /** Creates a new verifier with a cost function for use in hold-out verification. */
-  Verifier(CostFunction& fxn) : counter_example_(), counter_example_available_(false),
-    fxn_(fxn), next_counter_example_(0) {
-    set_strategy(Strategy::NONE);
-    set_timeout(0);
-    set_solver(NULL);
-  }
+  Verifier(CostFunction& fxn, Validator& validator) :
+    counter_example_(), counter_example_available_(false), validator_(validator),
+    fxn_(fxn), next_counter_example_(0), strategy_(Strategy::NONE) { }
 
   /** Sets proof strategy. */
   Verifier& set_strategy(Strategy s) {
     strategy_ = s;
-    return *this;
-  }
-  /** Sets the timeout, in milliseconds, for formal verification */
-  Verifier& set_timeout(uint64_t time) {
-    timeout_ = time;
-    return *this;
-  }
-  /** Set the SMTSolver to use */
-  Verifier& set_solver(SMTSolver* solver) {
-    solver_ = solver;
     return *this;
   }
 
@@ -83,10 +71,8 @@ private:
   /** Next counter example returned by hold-out verifier. */
   size_t next_counter_example_;
 
-  /** SMT Solver for use in formal verification. */
-  SMTSolver* solver_;
-  /** Timeout (in ms) for formal verification */
-  uint64_t timeout_;
+  /** The validator for formal validation */
+  Validator& validator_;
 
   /** Verify rewrite user hold-out cost function. */
   bool hold_out_verify(const Cfg& target, const Cfg& rewrite);
