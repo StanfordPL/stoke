@@ -12,25 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "tools/args/performance.h"
+#ifndef STOKE_TOOLS_GADGETS_VALIDATOR_H
+#define STOKE_TOOLS_GADGETS_VALIDATOR_H
 
-using namespace cpputil;
+#include "src/solver/smtsolver.h"
+#include "src/validator/validator.h"
 
 namespace stoke {
 
-Heading& performance_heading =
-  Heading::create("Performance Options:");
-
-ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>& perf_arg =
-  ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
-  .usage("(none|size|latency|extension)")
-  .description("Performance definition")
-  .default_val(PerformanceTerm::LATENCY);
-
-ValueArg<Cost>& nesting_penalty_arg =
-  ValueArg<Cost>::create("nesting_penalty")
-  .usage("<int>")
-  .description("Latency multiplier for nested code")
-  .default_val(5);
+class ValidatorGadget : public Validator {
+public:
+  ValidatorGadget(SMTSolver& smt) : Validator(smt) {
+  }
+};
 
 } // namespace stoke
+
+#endif

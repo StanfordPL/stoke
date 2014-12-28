@@ -19,7 +19,7 @@ opt: orig_llvm extract testcase search_opt
 
 time_llvm: orig_llvm time
 time_gcc: orig_gcc time
-time_stoke: orig_llvm replace time
+time_stoke: orig_llvm rebuild replace time
 
 orig_llvm:
 	clang -std=c++11 -O0 -c fxn.cc
