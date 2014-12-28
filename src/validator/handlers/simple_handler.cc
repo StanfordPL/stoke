@@ -173,7 +173,7 @@ void SimpleHandler::add_all() {
     for(uint16_t i = size; i < dst.size(); i += size) {
       output = output || b[size-1][0];
     }
-    ss.set(dst, b, true);
+    ss.set(dst, output, true);
   });
 
   add_opcode({"vbroadcastsd"},
@@ -183,7 +183,7 @@ void SimpleHandler::add_all() {
     for(uint16_t i = size; i < dst.size(); i += size) {
       output = output || b[size-1][0];
     }
-    ss.set(dst, b, true);
+    ss.set(dst, output, true);
   });
 
   add_opcode({"vbroadcastss"},
@@ -193,7 +193,7 @@ void SimpleHandler::add_all() {
     for(uint16_t i = size; i < dst.size(); i += size) {
       output = output || b[size-1][0];
     }
-    ss.set(dst, b, true);
+    ss.set(dst, output, true);
   });
 
 
