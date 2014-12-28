@@ -25,20 +25,8 @@ namespace stoke {
 
 class VerifierGadget : public Verifier {
 public:
-  VerifierGadget(CostFunction& fxn) : Verifier(fxn) {
+  VerifierGadget(CostFunction& fxn, Validator& val) : Verifier(fxn, val) {
     set_strategy(strategy_arg);
-    set_timeout(timeout_arg);
-
-    switch(solver_arg) {
-    case Solver::Z3:
-      set_solver(new Z3Solver());
-      break;
-    case Solver::CVC4:
-      set_solver(new Cvc4Solver());
-      break;
-    default:
-      assert(false);
-    }
   }
 };
 

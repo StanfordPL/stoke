@@ -13,6 +13,7 @@
 // limitations under the License.
 
 
+#include <immintrin.h>
 #include <set>
 #include <sys/time.h>
 
@@ -48,7 +49,13 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   // FIgure out the flags to use.
   std::stringstream flags;
   flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx avx2 }";
+#elif __AVX__
+  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx2 }";
+#else
+  flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 }";
+#endif
   x64asm::FlagSet flag_set = x64asm::FlagSet::empty();
+
   flags >> flag_set;
 
   flag_set &= stoke::CpuInfo::get_flags();

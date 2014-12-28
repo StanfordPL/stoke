@@ -12,25 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "tools/args/performance.h"
+#include "tools/args/solver.h"
 
 using namespace cpputil;
 
 namespace stoke {
 
-Heading& performance_heading =
-  Heading::create("Performance Options:");
+Heading& smt_heading =
+  Heading::create("Formal Validator Options:");
 
-ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>& perf_arg =
-  ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
-  .usage("(none|size|latency|extension)")
-  .description("Performance definition")
-  .default_val(PerformanceTerm::LATENCY);
+ValueArg<Solver, SolverReader, SolverWriter>& solver_arg =
+  ValueArg<Solver, SolverReader, SolverWriter>::create("solver")
+  .usage("(cvc4|z3)")
+  .description("SMT Solver backend")
+  .default_val(Solver::CVC4);
 
-ValueArg<Cost>& nesting_penalty_arg =
-  ValueArg<Cost>::create("nesting_penalty")
+ValueArg<uint64_t>& timeout_arg =
+  ValueArg<uint64_t>::create("solver_timeout")
   .usage("<int>")
-  .description("Latency multiplier for nested code")
-  .default_val(5);
+  .description("Timeout in milliseconds for SMT solver before giving up.  0 for no limit.")
+  .default_val(0);
+
 
 } // namespace stoke

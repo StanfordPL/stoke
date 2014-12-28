@@ -82,7 +82,7 @@ TEST_F(IntegrationTest, TutorialTest) {
 
   // Build and test original program
   EXPECT_EQ(0, shell("make clean orig"));
-  EXPECT_EQ(49152, shell("./a.out 90000000", &diff_1));
+  EXPECT_EQ(42752, shell("./a.out 90000000", &diff_1));
 
   // Run make extract, testcase
   EXPECT_EQ(0, shell("make extract"));
@@ -102,7 +102,7 @@ TEST_F(IntegrationTest, TutorialTest) {
   EXPECT_EQ(0, shell("make replace"));
 
   // Test new program
-  EXPECT_EQ(49152, shell("./a.out 90000000", &diff_2));
+  EXPECT_EQ(42752, shell("./a.out 90000000", &diff_2));
 
   // There should have been at least a 20% speedup.
   // Usually we see a 10x speedup.
