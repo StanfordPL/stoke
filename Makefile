@@ -78,6 +78,7 @@ SRC_OBJ=\
 	src/validator/handlers/lea_handler.o   \
 	src/validator/handlers/move_handler.o  \
 	src/validator/handlers/packed_handler.o \
+	src/validator/handlers/punpck_handler.o \
 	src/validator/handlers/shift_handler.o \
 	src/validator/handlers/simple_handler.o \
 	\
