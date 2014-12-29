@@ -112,17 +112,17 @@ void PunpckHandler::build_circuit(const Instruction& instr, SymState& state) {
     size_t start_index = (low ? 0 : dest.size()/2);
     size_t end_index = (low ? dest.size()/2 : dest.size());
 
-    output = arg2[start_index+size-1][start_index] || 
+    output = arg2[start_index+size-1][start_index] ||
              arg1[start_index+size-1][start_index];
     for(size_t i = start_index+size; i < end_index; i += size) {
       output = arg2[i+size-1][i] || arg1[i+size-1][i] || output;
     }
   } else if (dest.size() == 256) {
-    
+
     size_t start_index = (low ? 0 : 64);
     size_t end_index = (low ? 64 : 128);
 
-    output = arg2[start_index+size-1][start_index] || 
+    output = arg2[start_index+size-1][start_index] ||
              arg1[start_index+size-1][start_index];
     for(size_t i = start_index+size; i < end_index; i += size) {
       output = arg2[i+size-1][i] || arg1[i+size-1][i] || output;

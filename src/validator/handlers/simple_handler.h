@@ -42,13 +42,30 @@ private:
   void add_all();
 
   /** Represents the operation done on the state */
-  typedef std::function<void (x64asm::Operand, x64asm::Operand, SymBitVector, SymBitVector, SymState&)> BinaryOperator;
+  typedef std::function<void (SymState&)> ConstantOperator;
+  typedef std::function<void (x64asm::Operand, SymBitVector, SymState&)> UnaryOperator;
+  typedef std::function<void (x64asm::Operand, x64asm::Operand, 
+                              SymBitVector, SymBitVector, SymState&)> BinaryOperator;
+  typedef std::function<void (x64asm::Operand, x64asm::Operand, x64asm::Operand,
+                              SymBitVector, SymBitVector, SymBitVector, 
+                              SymState&)> TrinaryOperator;
+  typedef std::function<void (x64asm::Operand, x64asm::Operand, x64asm::Operand, x64asm::Operand,
+                              SymBitVector, SymBitVector, SymBitVector, SymBitVector,
+                              SymState&)> QuadOperator;
 
   /** Adds an opcode to our internal maps */
+  void add_opcode(std::vector<std::string> opcode, ConstantOperator op);
+  void add_opcode(std::vector<std::string> opcode, UnaryOperator op);
   void add_opcode(std::vector<std::string> opcode, BinaryOperator op);
+  void add_opcode(std::vector<std::string> opcode, TrinaryOperator op);
+  void add_opcode(std::vector<std::string> opcode, QuadOperator op);
 
-  /** Opcode -> BinaryOperator */
-  std::map<std::string, BinaryOperator> operator_;
+  /** Opcode -> Operator */
+  std::map<std::string, ConstantOperator> operator_0_;
+  std::map<std::string, UnaryOperator> operator_1_;
+  std::map<std::string, BinaryOperator> operator_2_;
+  std::map<std::string, TrinaryOperator> operator_3_;
+  std::map<std::string, QuadOperator> operator_4_;
 
 };
 
