@@ -75,7 +75,6 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   std::stringstream sample;
   sample << ".sample:" << std::endl;
   sample << "movq (%rax), %r13" << std::endl;
-  /*
   sample << "movq 0x16(%r8), %r13" << std::endl;
   sample << "movq 0x64(%rdx), %r13" << std::endl;
   sample << "movq 0x64(%rax, %rcx, 4), %r13" << std::endl;
@@ -95,7 +94,6 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   sample << "movb 0x64(%rdx), %r13b" << std::endl;
   sample << "movb 0x64(%rax, %rcx, 4), %r13b" << std::endl;
   sample << "movb 0x64(%rsp, %rdx, 8), %r13b" << std::endl;
-  */
   x64asm::Code target;
   sample >> target;
 

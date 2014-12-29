@@ -34,7 +34,7 @@ void SimpleHandler::add_all() {
   });
 
   add_opcode({"decb", "decw", "decl", "decq"},
-  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+  [this] (Operand dst, SymBitVector a, SymState& ss) {
     SymBitVector one = SymBitVector::constant(dst.size(), 1);
 
     ss.set(dst, a - one);
@@ -46,7 +46,7 @@ void SimpleHandler::add_all() {
   });
 
   add_opcode({"incb", "incw", "incl", "incq"},
-  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+  [this] (Operand dst, SymBitVector a, SymState& ss) {
     SymBitVector one = SymBitVector::constant(dst.size(), 1);
 
     ss.set(dst, a + one);
@@ -58,7 +58,7 @@ void SimpleHandler::add_all() {
   });
 
   add_opcode({"negb", "negw", "negl", "negq"},
-  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+  [] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(dst, -a);
     ss.set(eflags_cf, a != SymBitVector::constant(dst.size(), 0));
     ss.set(eflags_of, a[dst.size()-1] & (-a)[dst.size()-1]);
@@ -67,10 +67,10 @@ void SimpleHandler::add_all() {
   });
 
   add_opcode({"nop"},
-  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {});
+  [] (SymState& ss) {});
 
   add_opcode({"notb", "notw", "notl", "notq"},
-  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+  [] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(dst, !a);
   });
 
@@ -87,21 +87,21 @@ void SimpleHandler::add_all() {
   });
 
   add_opcode({"popq"},
-  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+  [this] (Operand dst, SymBitVector a, SymState& ss) {
     M64 target = M64(rsp);
     ss.set(dst, ss[target]);
     ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 8));
   });
 
   add_opcode({"popl"},
-  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+  [this] (Operand dst, SymBitVector a, SymState& ss) {
     M32 target = M32(rsp);
     ss.set(dst, ss[target]);
     ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 4));
   });
 
   add_opcode({"popw"},
-  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+  [this] (Operand dst, SymBitVector a, SymState& ss) {
     M16 target = M16(rsp);
     ss.set(dst, ss[target]);
     ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 2));
@@ -135,24 +135,93 @@ void SimpleHandler::add_all() {
   });
 
   add_opcode({"pushq"},
-  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+  [this] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(rsp, ss[rsp] - SymBitVector::constant(64, 8));
     M64 target = M64(rsp);
     ss.set(target, a.extend(64));
   });
 
   add_opcode({"pushl"},
-  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+  [this] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(rsp, ss[rsp] - SymBitVector::constant(64, 4));
     M32 target = M32(rsp);
     ss.set(target, a.extend(32));
   });
 
   add_opcode({"pushw"},
-  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+  [this] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(rsp, ss[rsp] - SymBitVector::constant(64, 2));
     M16 target = M16(rsp);
     ss.set(target, a.extend(16));
+  });
+
+  add_opcode({"shufpd"},
+             [this] (Operand dst, Operand src, Operand ctl,
+  SymBitVector arg1, SymBitVector arg2, SymBitVector imm, SymState& ss) {
+
+    SymBitVector output;
+    output = (imm[0]).ite(arg1[127][64], arg1[63][0]);
+    output = (imm[1]).ite(arg2[127][64], arg2[63][0]) || output;
+    ss.set(dst, output);
+  });
+
+  add_opcode({"vshufpd"},
+             [this] (Operand dst, Operand src1, Operand src2, Operand ctl,
+                     SymBitVector ignore, SymBitVector arg1, SymBitVector arg2, SymBitVector imm,
+  SymState& ss) {
+
+    SymBitVector output;
+    output = (imm[0]).ite(arg1[127][64], arg1[63][0]);
+    output = (imm[1]).ite(arg2[127][64], arg2[63][0]) || output;
+
+    if(dst.size() == 256) {
+      output = (imm[2]).ite(arg1[255][192], arg1[191][128]) || output;
+      output = (imm[3]).ite(arg2[255][192], arg2[191][128]) || output;
+    }
+
+    ss.set(dst, output, true);
+  });
+
+  add_opcode({"shufps"},
+             [this] (Operand dst, Operand src, Operand ctl,
+  SymBitVector arg1, SymBitVector arg2, SymBitVector imm, SymState& ss) {
+
+    SymBitVector output;
+    for(size_t i = 0; i < 4; ++i) {
+      SymBitVector target = (i < 2 ? arg1 : arg2);
+      output = imm[2*i].ite(
+                 imm[2*i + 1].ite(target[127][96], target[63][32]),
+                 imm[2*i + 1].ite(target[95][64],  target[31][0])) || output;
+    }
+    ss.set(dst, output);
+
+  });
+
+  add_opcode({"vshufps"},
+             [this] (Operand dst, Operand src, Operand src2, Operand ctl,
+                     SymBitVector ignore, SymBitVector arg1, SymBitVector arg2, SymBitVector imm,
+  SymState& ss) {
+
+    SymBitVector output;
+    for(size_t i = 0; i < 4; ++i) {
+      SymBitVector target = (i < 2 ? arg1 : arg2);
+      output = imm[2*i].ite(
+                 imm[2*i + 1].ite(target[127][96], target[63][32]),
+                 imm[2*i + 1].ite(target[95][64],  target[31][0])) || output;
+    }
+
+    if(dst.size() == 256) {
+
+      for(size_t i = 0; i < 4; ++i) {
+        SymBitVector target = (i < 2 ? arg1 : arg2);
+        output = imm[2*i].ite(
+                   imm[2*i + 1].ite(target[255][224], target[191][160]),
+                   imm[2*i + 1].ite(target[223][192],  target[159][128])) || output;
+      }
+
+    }
+
+    ss.set(dst, output, true);
   });
 
   add_opcode({"testb", "testw", "testl", "testq"},
@@ -165,6 +234,37 @@ void SimpleHandler::add_all() {
     ss.set(eflags_af, SymBool::var("AF_" + to_string(temp())));
     ss.set_szp_flags(a & b);
   });
+
+  add_opcode({"vbroadcastf128"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    uint16_t size = 128;
+    SymBitVector output = b[size-1][0];
+    for(uint16_t i = size; i < dst.size(); i += size) {
+      output = output || b[size-1][0];
+    }
+    ss.set(dst, output, true);
+  });
+
+  add_opcode({"vbroadcastsd"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    uint16_t size = 64;
+    SymBitVector output = b[size-1][0];
+    for(uint16_t i = size; i < dst.size(); i += size) {
+      output = output || b[size-1][0];
+    }
+    ss.set(dst, output, true);
+  });
+
+  add_opcode({"vbroadcastss"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    uint16_t size = 32;
+    SymBitVector output = b[size-1][0];
+    for(uint16_t i = size; i < dst.size(); i += size) {
+      output = output || b[size-1][0];
+    }
+    ss.set(dst, output, true);
+  });
+
 
   add_opcode({"xchgb", "xchgw", "xchgl", "xchgq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
@@ -192,8 +292,30 @@ Handler::SupportLevel SimpleHandler::get_support(const x64asm::Instruction& inst
 
   auto opcode = get_opcode(instr);
 
-  if(!operator_.count(opcode))
+  switch(instr.arity()) {
+  case 0:
+    if (!operator_0_.count(opcode))
+      return Handler::NONE;
+    break;
+  case 1:
+    if (!operator_1_.count(opcode))
+      return Handler::NONE;
+    break;
+  case 2:
+    if (!operator_2_.count(opcode))
+      return Handler::NONE;
+    break;
+  case 3:
+    if (!operator_3_.count(opcode))
+      return Handler::NONE;
+    break;
+  case 4:
+    if (!operator_4_.count(opcode))
+      return Handler::NONE;
+    break;
+  default:
     return Handler::NONE;
+  }
 
   for(size_t i = 0; i < instr.arity(); ++i) {
     Operand o = instr.get_operand<Operand>(i);
@@ -216,33 +338,91 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     return;
   }
 
-  // Figure out the arguments
-  Operand dst = instr.get_operand<Operand>(0);
-  Operand src = instr.get_operand<Operand>(0);
-
+  // Figure out the right arguments
   size_t arity = instr.arity();
-
-  if(arity == 2) {
-    src = instr.get_operand<Operand>(1);
-  } else if (arity > 2) {
-    throw VALIDATOR_ERROR("Only arity 0/1/2 instructions supported by SimpleHandler");
+  switch(arity) {
+  case 0: {
+    auto f = operator_0_.at(opcode);
+    f(state);
+    break;
   }
 
-  // Run the real handler
-  auto f = operator_[opcode];
+  case 1: {
+    auto f = operator_1_.at(opcode);
+    Operand src = instr.get_operand<Operand>(0);
+    SymBitVector value = state[src];
+    f(src, value, state);
+    break;
+  }
 
-  if(arity > 0)
-    f(dst, src, state[dst], state[src], state);
-  else
-    f(dst, src, SymBitVector::constant(1, 0), SymBitVector::constant(1,0), state);
+  case 2: {
+    auto f = operator_2_.at(opcode);
+    Operand o1 = instr.get_operand<Operand>(0);
+    Operand o2 = instr.get_operand<Operand>(1);
+    SymBitVector v1 = state[o1];
+    SymBitVector v2 = state[o2];
+    f(o1, o2, v1, v2, state);
+    break;
+  }
+
+  case 3: {
+    auto f = operator_3_.at(opcode);
+    Operand o1 = instr.get_operand<Operand>(0);
+    Operand o2 = instr.get_operand<Operand>(1);
+    Operand o3 = instr.get_operand<Operand>(2);
+    SymBitVector v1 = state[o1];
+    SymBitVector v2 = state[o2];
+    SymBitVector v3 = state[o3];
+    f(o1, o2, o3, v1, v2, v3, state);
+    break;
+  }
+
+  case 4: {
+    auto f = operator_4_.at(opcode);
+    Operand o1 = instr.get_operand<Operand>(0);
+    Operand o2 = instr.get_operand<Operand>(1);
+    Operand o3 = instr.get_operand<Operand>(2);
+    Operand o4 = instr.get_operand<Operand>(3);
+    SymBitVector v1 = state[o1];
+    SymBitVector v2 = state[o2];
+    SymBitVector v3 = state[o3];
+    SymBitVector v4 = state[o4];
+    f(o1, o2, o3, o4, v1, v2, v3, v4, state);
+    break;
+  }
+
+  default: {
+    error_ = "Simple handler only support 0, 1, 2, 3 or 4 operands.";
+    break;
+  }
+
+  }
 
 }
 
+void SimpleHandler::add_opcode(vector<string> opcodes, ConstantOperator op) {
+  for(auto it : opcodes) {
+    operator_0_[it] = op;
+  }
+}
+void SimpleHandler::add_opcode(vector<string> opcodes, UnaryOperator op) {
+  for(auto it : opcodes) {
+    operator_1_[it] = op;
+  }
+}
 void SimpleHandler::add_opcode(vector<string> opcodes, BinaryOperator op) {
   for(auto it : opcodes) {
-    operator_[it] = op;
+    operator_2_[it] = op;
   }
 }
-
-
+void SimpleHandler::add_opcode(vector<string> opcodes, TrinaryOperator op) {
+  for(auto it : opcodes) {
+    operator_3_[it] = op;
+  }
+}
+void SimpleHandler::add_opcode(vector<string> opcodes, QuadOperator op) {
+  for(auto it : opcodes) {
+    operator_4_[it] = op;
+  }
+}
 

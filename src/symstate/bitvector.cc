@@ -43,6 +43,12 @@ SymBitVector SymBitVector::operator&(const SymBitVector& other) const {
 }
 
 SymBitVector SymBitVector::operator||(const SymBitVector& other) const {
+  if(!other.ptr) {
+    return *this;
+  }
+  if(!ptr) {
+    return other;
+  }
   return SymBitVector(new SymBitVectorConcat(ptr, other.ptr));
 }
 
