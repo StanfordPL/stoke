@@ -682,6 +682,22 @@ public:
       return f(a, b);
     }, 32, 32, true, true);
 
+    add_opcode("unpckhpd", [] (SymBitVector a, SymBitVector b) {
+      return b[127][64] || a[127][64];
+    }, 128);
+
+    add_opcode("unpckhps", [] (SymBitVector a, SymBitVector b) {
+      return b[127][96] || a[127][96] || b[95][64] || a[95][64];
+    }, 128);
+
+    add_opcode("unpcklpd", [] (SymBitVector a, SymBitVector b) {
+      return b[63][0] || a[63][0];
+    }, 128);
+
+    add_opcode("unpcklps", [] (SymBitVector a, SymBitVector b) {
+      return b[63][32] || a[63][32] || b[31][0] || a[31][0];
+    }, 128);
+
     add_opcode("xorpd", [] (SymBitVector a, SymBitVector b) {
       return a ^ b;
     }, 0);
