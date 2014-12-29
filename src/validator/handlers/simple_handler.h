@@ -44,10 +44,10 @@ private:
   /** Represents the operation done on the state */
   typedef std::function<void (SymState&)> ConstantOperator;
   typedef std::function<void (x64asm::Operand, SymBitVector, SymState&)> UnaryOperator;
-  typedef std::function<void (x64asm::Operand, x64asm::Operand, 
+  typedef std::function<void (x64asm::Operand, x64asm::Operand,
                               SymBitVector, SymBitVector, SymState&)> BinaryOperator;
   typedef std::function<void (x64asm::Operand, x64asm::Operand, x64asm::Operand,
-                              SymBitVector, SymBitVector, SymBitVector, 
+                              SymBitVector, SymBitVector, SymBitVector,
                               SymState&)> TrinaryOperator;
   typedef std::function<void (x64asm::Operand, x64asm::Operand, x64asm::Operand, x64asm::Operand,
                               SymBitVector, SymBitVector, SymBitVector, SymBitVector,
