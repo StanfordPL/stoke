@@ -33,9 +33,6 @@ SymBitVector SymBitVector::from_bool(const SymBool& b) {
   auto c1 = SymBitVector::constant(1,1);
   return SymBitVector(new SymBitVectorIte(b.ptr, c1.ptr, c0.ptr));
 }
-SymBitVector SymBitVector::ite(const SymBool& c, const SymBitVector& t, const SymBitVector& f) {
-  return SymBitVector(new SymBitVectorIte(c.ptr, t.ptr, f.ptr));
-}
 
 /* Bit Vector Operators */
 SymBitVector SymBitVector::operator&(const SymBitVector& other) const {

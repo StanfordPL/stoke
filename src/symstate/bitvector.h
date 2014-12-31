@@ -97,8 +97,6 @@ public:
   static SymBitVector var(uint16_t size, std::string name);
   /** Creates a length-1 bitvector from a boolean */
   static SymBitVector from_bool(const SymBool& b);
-  /** Creates an if-then-else expression bitvector */
-  static SymBitVector ite(const SymBool& cond, const SymBitVector& t, const SymBitVector& f);
 
   /** Constructs the bitwise AND of two bitvectors */
   SymBitVector operator&(const SymBitVector& other) const;
