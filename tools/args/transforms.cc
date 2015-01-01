@@ -38,7 +38,7 @@ ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>& opc_blacklist_arg =
 ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>& opc_whitelist_arg =
   ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("opc_whitelist")
   .usage("{ opcode1 ... opcoden; e.g., xorl or xorl_r32_r32 }")
-  .description("Only proprose instructions from this set (unless they are not proposed for other reasons, e.g. --opc_blacklist, --propose_call, --cpu_flags, --mem_read, --mem_write, instructions not supported by stoke, etc.); empty whitelist means no whitelist")
+  .description("Only proprose instructions from this set (unless they are not proposed for other reasons, e.g. --opc_blacklist, --propose_call, --cpu_flags, --force_mem_read, --force_mem_write, instructions not supported by stoke, etc.); empty whitelist means no whitelist")
   .default_val({});
 
 ValueArg<size_t>& nop_percent_arg =
@@ -53,13 +53,21 @@ ValueArg<size_t>& call_weight_arg =
   .description("Number of additional call opcodes in the opcode pool")
   .default_val(0);
 
-FlagArg& mem_read_arg =
-  FlagArg::create("mem_read")
-  .description("Propose instruction and opcode moves that read memory?");
+FlagArg& force_mem_read_arg =
+  FlagArg::create("force_mem_read")
+  .description("Propose moves that read memory, even if the target doesn't.");
 
-FlagArg& mem_write_arg =
-  FlagArg::create("mem_write")
-  .description("Propose instruction and opcode moves that write memory?");
+FlagArg& force_no_mem_read_arg =
+  FlagArg::create("force_no_mem_read")
+  .description("Propose no moves that read memory, even if the target does.");
+
+FlagArg& force_mem_write_arg =
+  FlagArg::create("force_mem_write")
+  .description("Propose moves that write memory, even if the target doesn't.");
+
+FlagArg& force_no_mem_write_arg =
+  FlagArg::create("force_no_mem_write")
+  .description("Propose no moves that write memory, even if the target does.");
 
 FlagArg& callee_save_arg =
   FlagArg::create("callee_save")
