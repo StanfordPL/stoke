@@ -43,6 +43,19 @@ TEST(X64AsmInstructionInfo, ExplicitReadIsMustRead) {
   EXPECT_TRUE(c[0].must_read_memory());
 }
 
+TEST(X64AsmInstructionInfo, ExplicitWriteIsMustWrite) {
+  x64asm::Code c;
+  std::stringstream ss;
+  ss << "movq %rdx, 0x4(%rax)" << std::endl;
+  ss >> c;
+  EXPECT_TRUE(c[0].is_explicit_memory_dereference());
+  EXPECT_FALSE(c[0].is_implicit_memory_dereference());
+  EXPECT_TRUE(c[0].maybe_write_memory());
+  EXPECT_TRUE(c[0].must_write_memory());
+  EXPECT_FALSE(c[0].maybe_read_memory());
+  EXPECT_FALSE(c[0].must_read_memory());
+}
+
 TEST(X64AsmInstructionInfo, NoMemoryReadOrWrite) {
   x64asm::Code c;
   std::stringstream ss;
