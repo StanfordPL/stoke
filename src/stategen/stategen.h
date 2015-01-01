@@ -32,6 +32,7 @@ public:
   StateGen(Sandbox* sb, size_t stack_size = 16) : sb_{sb}, stack_size_(stack_size) {
     set_max_attempts(16);
     set_max_memory(1024);
+    set_allow_unaligned(false);
   }
 
   /** Sets the maximum number of attempts to make when generating a state. */
@@ -42,6 +43,11 @@ public:
   /** Sets the maximum number of bytes to allocate to stack or heap. */
   StateGen& set_max_memory(size_t ms) {
     max_memory_ = ms;
+    return *this;
+  }
+  /** Sets if unaligned accesses are allowed? */
+  StateGen& set_allow_unaligned(bool b) {
+    allow_unaligned_ = b;
     return *this;
   }
 
@@ -68,6 +74,8 @@ private:
   /** Returns true if we support fixing derefs of this type. */
   bool is_supported_deref(const Cfg& cfg, size_t line);
 
+  /** Returns if we've already produced an acceptable state. */
+  bool is_ok(const Sandbox&, const Cfg&, size_t);
   /** Returns the address that was dereferenced on this line. */
   uint64_t get_addr(const CpuState& cs, const Cfg& cfg, size_t line) const;
   /** Returns the number of bytes dereferenced on this line. */
@@ -100,6 +108,8 @@ private:
   size_t max_memory_;
   /** The maximum number of jumps to take before sigint. */
   size_t max_jumps_;
+  /** If unaligned memory accesses are OK? */
+  bool allow_unaligned_;
 
   /** A textual description of the cause of the last failure. */
   std::string error_message_;
