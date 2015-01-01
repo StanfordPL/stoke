@@ -68,6 +68,7 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
 
   // Generate a random state and keep checking for validity
   get(cs);
+  tried_to_fix_misalign_ = false;
   for (int i = 0; i < (int)max_attempts_; ++i) {
     // Reset the sandbox state ...
     sb_->clear_inputs();
@@ -87,6 +88,7 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
     // Otherwise, generate a new state and call the attempt failed
     else {
       get(cs);
+      tried_to_fix_misalign_ = false;
     }
   }
 
@@ -312,6 +314,36 @@ bool StateGen::resize_mem(Memory& mem, uint64_t addr, size_t size) const {
   }
 }
 
+bool StateGen::fix_misalignment(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line) {
+
+  const auto instr = cfg.get_code()[line];
+  const auto mi = instr.mem_index();
+  const auto op = instr.get_operand<M8>(mi);
+
+  const auto addr = get_addr(cs, cfg, line);
+  const auto mask = 0x1f;
+  const auto offset = addr & mask;
+
+  if (op.contains_base()) {
+    const auto current = cs.gp[op.get_base()].get_fixed_quad(0);
+    if(((current - offset) & mask) && !tried_to_fix_misalign_) {
+      const auto new_byte = (current & mask) - offset;
+      fixed.gp[op.get_base()].get_fixed_byte(0) = new_byte;
+      tried_to_fix_misalign_ = true;
+      return true;
+    } else {
+      error_message_ = "Could not fix misaligned memory reference.";
+      tried_to_fix_misalign_ = false;
+      return false;
+    }
+  } else {
+    error_message_ = "Could not find misaligned memory reference.";
+    tried_to_fix_misalign_ = false;
+    return false;
+  }
+
+}
+
 bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line) {
   // Clear the error message unless something bad happens.
   error_message_ = "";
@@ -331,12 +363,13 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
 
   // We can't do anything about misaligned memory or pre-allocated memory
   if (is_misaligned(addr, size) && !allow_unaligned_) {
-    error_message_ = "Memory dereference misaligned.";
-    return false;
+    return fix_misalignment(cs, fixed, cfg, line);
   } else if (already_allocated(fixed.stack, addr, size)) {
+    tried_to_fix_misalign_ = false;
     error_message_ = "Memory was already allocated in stack.";
     return false;
   } else if (already_allocated(fixed.heap, addr, size)) {
+    tried_to_fix_misalign_ = false;
     error_message_ = "Memory was already allocated in heap.";
     return false;
   }

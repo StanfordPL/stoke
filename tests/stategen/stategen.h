@@ -266,6 +266,32 @@ TEST(StateGenTest, MisalignedAllowed) {
   EXPECT_TRUE(sg.get(tc, cfg_t)) << sg.get_error();
 }
 
+TEST(StateGenTest, EasyToAvoidMisalign) {
+
+  // Build example
+  std::stringstream ss;
+
+  ss << "movaps 0x7(%rax), %xmm1" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  // Run stategen
+  stoke::Sandbox sg_sb;
+  sg_sb.set_max_jumps(2)
+  .set_abi_check(false);
+
+  stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+  stoke::StateGen sg(&sg_sb);
+  sg.set_max_attempts(2)
+  .set_max_memory(1000)
+  .set_allow_unaligned(false);
+
+  stoke::CpuState tc;
+  EXPECT_TRUE(sg.get(tc, cfg_t));
+}
+
 INSTANTIATE_TEST_CASE_P(
   StategenFixtures,
   StateGenParamTest,
