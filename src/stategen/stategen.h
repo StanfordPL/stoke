@@ -101,6 +101,11 @@ private:
   bool resize_mem(Memory& mem, uint64_t addr, size_t size) const;
   /** Returns true if the memory access on this line was fixable. */
   bool fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line);
+  /** Returns true if we think we've adjusted registers to make memory align. */
+  bool fix_misalignment(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line);
+  /** If we've already tried to fix misalignment.  We can go into an infinite loop
+      if this check isn't done. */
+  bool tried_to_fix_misalign_;
 
   /** The maximum number of attempts to make when generating a state. */
   size_t max_attempts_;
