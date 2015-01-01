@@ -76,7 +76,8 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
     sb_->run_one(0);
 
     // We're done if the state didn't produce an error
-    if (sb_->get_result(0)->code == ErrorCode::NORMAL) {
+    // (or we're allowing certain unaligned references)
+    if(is_ok(*sb_, cfg, last_line)) {
       return true;
     }
     // If the error is fixable (segfault we can allocate away) fix and retry
@@ -87,6 +88,31 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
     else {
       get(cs);
     }
+  }
+
+  return false;
+}
+
+bool StateGen::is_ok(const Sandbox& sb, const Cfg& cfg, size_t line) {
+
+  if (sb_->get_result(0)->code == ErrorCode::NORMAL) {
+    return true;
+  }
+
+  if(!is_supported_deref(cfg, line))
+    return false;
+
+  CpuState cs = *(sb_->get_result(0));
+  const auto addr = get_addr(cs, cfg, line);
+  const auto size = get_size(cfg, line);
+
+  // If the address is already allocated, there's a segfault,
+  // it's misaligned and we allow misaligned, then we're ok.
+  if(allow_unaligned_ && is_misaligned(addr, size) &&
+      cs.code == ErrorCode::SIGSEGV_ &&
+      (already_allocated(cs.stack, addr, size) ||
+       already_allocated(cs.heap, addr, size))) {
+    return true;
   }
 
   return false;
@@ -214,24 +240,7 @@ size_t StateGen::get_size(const Cfg& cfg, size_t line) const {
 
   // Otherwise, we can infer width from type
   const auto mi = instr.mem_index();
-  switch (instr.type(mi)) {
-  case Type::M_8:
-    return 1;
-  case Type::M_16:
-    return 2;
-  case Type::M_32:
-    return 4;
-  case Type::M_64:
-    return 8;
-  case Type::M_128:
-    return 16;
-  case Type::M_256:
-    return 32;
-
-  // All other memory types are pretty rare, return a conservative 512-bits
-  default:
-    return 64;
-  }
+  return instr.get_operand<M8>(mi).size()/8;
 }
 
 bool StateGen::resize_within(Memory& mem, uint64_t addr, size_t size) const {
@@ -321,7 +330,7 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
   const auto size = get_size(cfg, line);
 
   // We can't do anything about misaligned memory or pre-allocated memory
-  if (is_misaligned(addr, size)) {
+  if (is_misaligned(addr, size) && !allow_unaligned_) {
     error_message_ = "Memory dereference misaligned.";
     return false;
   } else if (already_allocated(fixed.stack, addr, size)) {
@@ -339,7 +348,8 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
   }
 
   // If stack and heap overlap now, give up. This memory is broken.
-  if (fixed.heap.upper_bound() >= fixed.stack.lower_bound()) {
+  if (!(fixed.heap.upper_bound() < fixed.stack.lower_bound() ||
+        fixed.stack.upper_bound() < fixed.heap.lower_bound())) {
     error_message_ = "Heap and stack overlap.";
     return false;
   }
