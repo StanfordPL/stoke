@@ -51,7 +51,27 @@ public:
       Console::warn() << diff << std::endl;
     }
 
-    set_opcode_pool(arg_cpu_flags, nop_percent_arg, call_weight_arg, mem_read_arg, mem_write_arg,
+    // Determine if we need to read/write memory operands
+    bool mem_read = false;
+    bool mem_write = false;
+    for(size_t i = 0; i < code.size(); ++i) {
+      auto instr = code[i];
+      mem_read |= instr.maybe_read_memory();
+      mem_write |= instr.maybe_write_memory();
+      mem_write |= instr.maybe_undef_memory();
+    }
+
+    // Check if we're overridden by command line
+    if(force_mem_read_arg)
+      mem_read = true;
+    if(force_no_mem_read_arg)
+      mem_read = false;
+    if(force_mem_write_arg)
+      mem_write = true;
+    if(force_no_mem_write_arg)
+      mem_write = false;
+
+    set_opcode_pool(arg_cpu_flags, nop_percent_arg, call_weight_arg, mem_read, mem_write,
                     opc_blacklist_arg, opc_whitelist_arg);
     set_operand_pool(code, preserve_regs_arg);
 
