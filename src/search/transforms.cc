@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,50 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <set>
-
 #include "src/search/transforms.h"
 
 using namespace std;
 using namespace x64asm;
 
-namespace {
-
-set<Opcode> unsupported_ {{
-#include "src/search/tables/unsupported.h"
-  }
-};
-
-} // namespace
-
 namespace stoke {
 
-Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent, bool use_mem_read,
-    bool use_mem_write) {
+Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent,
+                                        size_t call_weight, bool use_mem_read,
+                                        bool use_mem_write, const set<Opcode>& opc_blacklist,
+                                        const set<Opcode>& opc_whitelist) {
   control_free_.clear();
+  auto use_whitelist = opc_whitelist.size() > 0; // empty whitelist means no whitelist
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     auto op = (Opcode)i;
-    if (is_control_opcode(op) || is_unsupported(op) || !is_enabled(op, flags)) {
+    if ((op != CALL_LABEL && is_control_opcode(op)) || is_unsupported(op) || !is_enabled(op, flags) ||
+        is_non_deterministic(op) || opc_blacklist.find(op) != opc_blacklist.end()) {
       continue;
-    } 
-   
-    if(!use_mem_read) {
+    } else if (use_whitelist && opc_whitelist.find(op) == opc_whitelist.end()) {
+      continue;
+    } else if (!use_mem_read) {
       if (!use_mem_write) {
         //no memory allowed
-        if(is_mem_opcode(op))
+        if (is_mem_opcode(op)) {
           continue;
+        }
       } else {
         //reads disallowed, writes allowed
-        if(is_mem_opcode(op) && !is_mem_write_only_opcode(op))
+        if (is_mem_opcode(op) && !is_mem_write_only_opcode(op)) {
           continue;
+        }
       }
     } else if (!use_mem_write) {
       //read allowed, write disallowed
-      if (is_mem_opcode(op) && !is_mem_read_only_opcode(op))
+      if (is_mem_opcode(op) && !is_mem_read_only_opcode(op)) {
         continue;
-    } 
-    
+      }
+    }
+
     control_free_.push_back(op);
+  }
+
+  for (size_t i = 0; i < call_weight; ++i) {
+    control_free_.push_back(CALL_LABEL);
+  }
+
+  if (control_free_.size() == 0) {
+    error_ = true;
+    error_message_ = "No opcodes left to propose (consider changing whitelist/blacklist parameters).";
   }
 
   control_free_or_nop_ = control_free_;
@@ -76,40 +81,40 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
   return *this;
 }
 
-Transforms& Transforms::set_operand_pool(const Code& target, bool use_callee_save) {
+Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& preserve_regs) {
   rl_pool_.clear();
   for (const auto& r : rls) {
-    if (use_callee_save || !is_callee_save(r)) {
+    if (!preserve_regs.contains(r)) {
       rl_pool_.push_back(r);
     }
   }
   rh_pool_.clear();
   for (const auto& r : rhs) {
-    if (use_callee_save || !is_callee_save(r)) {
+    if (!preserve_regs.contains(r)) {
       rh_pool_.push_back(r);
     }
   }
   rb_pool_.clear();
   for (const auto& r : rbs) {
-    if (use_callee_save || !is_callee_save(r)) {
+    if (!preserve_regs.contains(r)) {
       rb_pool_.push_back(r);
     }
   }
   r16_pool_.clear();
   for (const auto& r : r16s) {
-    if (use_callee_save || !is_callee_save(r)) {
+    if (!preserve_regs.contains(r)) {
       r16_pool_.push_back(r);
     }
   }
   r32_pool_.clear();
   for (const auto& r : r32s) {
-    if (use_callee_save || !is_callee_save(r)) {
+    if (!preserve_regs.contains(r)) {
       r32_pool_.push_back(r);
     }
   }
   r64_pool_.clear();
   for (const auto& r : r64s) {
-    if (use_callee_save || !is_callee_save(r)) {
+    if (!preserve_regs.contains(r)) {
       r64_pool_.push_back(r);
     }
   }
@@ -123,19 +128,36 @@ Transforms& Transforms::set_operand_pool(const Code& target, bool use_callee_sav
     0ul, 1ul, -1ul, 2ul, -2ul, 3ul, -3ul, 4ul, -4ul, 5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
     16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
   });
+  for (const auto& instr : target) {
+    for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
+      switch (instr.type(i)) {
+      case Type::IMM_8:
+      case Type::IMM_16:
+      case Type::IMM_32:
+      case Type::IMM_64:
+      case Type::ZERO:
+      case Type::ONE:
+      case Type::THREE:
+        insert_immediate(instr.get_operand<Imm64>(i));
+        break;
+      default:
+        break;
+      }
+    }
+  }
 
   m_pool_.clear();
   for (const auto& instr : target) {
-    if (instr.derefs_mem()) {
-      const auto& ref = instr.get_operand<M8>(instr.mem_index());
-      if (!use_callee_save && ref.contains_base() && is_callee_save(ref.get_base())) {
-        continue;
-      } else if (!use_callee_save && ref.contains_index() && is_callee_save(ref.get_index())) {
-        continue;
-      } else if (find(m_pool_.begin(), m_pool_.end(), ref) != m_pool_.end()) {
-        continue;
-      }
-      m_pool_.push_back(ref);
+    if (instr.is_explicit_memory_dereference()) {
+      assert(instr.mem_index() != -1);
+      insert_mem(instr.get_operand<M8>(instr.mem_index()));
+    }
+  }
+
+  label_pool_.clear();
+  for (const auto& instr : target) {
+    if (instr.is_call()) {
+      insert_label(instr.get_operand<Label>(0));
     }
   }
 
@@ -144,36 +166,36 @@ Transforms& Transforms::set_operand_pool(const Code& target, bool use_callee_sav
 
 bool Transforms::modify(Cfg& cfg, Move type) {
   switch (type) {
-    case Move::INSTRUCTION:
-      return instruction_move(cfg);
-    case Move::OPCODE:
-      return opcode_move(cfg);
-    case Move::OPERAND:
-      return operand_move(cfg);
-    case Move::RESIZE:
-      return resize_move(cfg);
-    case Move::LOCAL_SWAP:
-      return local_swap_move(cfg);
-    case Move::GLOBAL_SWAP:
-      return global_swap_move(cfg);
-		case Move::EXTENSION:	
-			return extension_move(cfg);
-    default:
-      assert(false);
-      return false;
+  case Move::INSTRUCTION:
+    return instruction_move(cfg);
+  case Move::OPCODE:
+    return opcode_move(cfg);
+  case Move::OPERAND:
+    return operand_move(cfg);
+  case Move::RESIZE:
+    return resize_move(cfg);
+  case Move::LOCAL_SWAP:
+    return local_swap_move(cfg);
+  case Move::GLOBAL_SWAP:
+    return global_swap_move(cfg);
+  case Move::EXTENSION:
+    return extension_move(cfg);
+  default:
+    assert(false);
+    return false;
   }
 }
 
 bool Transforms::instruction_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-	if ( cfg.num_reachable() < 3 ) {
-		return false;
-	}
-	auto bb = cfg.reachable_begin();
-	for ( size_t i = 0, ie = (gen_() % (cfg.num_reachable()-2))+1; i < ie; ++i ) {
-		++bb;
-	}
+  if (cfg.num_reachable() < 3) {
+    return false;
+  }
+  auto bb = cfg.reachable_begin();
+  for (size_t i = 0, ie = (gen_() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
+    ++bb;
+  }
 
   const auto num_instrs = cfg.num_instrs(*bb);
   if (num_instrs == 0) {
@@ -182,6 +204,9 @@ bool Transforms::instruction_move(Cfg& cfg) {
   const auto idx = gen_() % num_instrs;
 
   instr_index_ = cfg.get_index({*bb, idx});
+  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
   if (is_control_opcode(code[instr_index_].get_opcode())) {
     return false;
   }
@@ -206,6 +231,12 @@ bool Transforms::instruction_move(Cfg& cfg) {
     }
     instr.set_operand(i, o);
   }
+
+  if(validator_ && !validator_->is_supported(instr)) {
+    undo_instruction_move(cfg);
+    return false;
+  }
+
   cfg.recompute_defs();
 
   if (!cfg.is_sound()) {
@@ -218,19 +249,22 @@ bool Transforms::instruction_move(Cfg& cfg) {
 bool Transforms::opcode_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-	if ( cfg.num_reachable() < 3 ) {
-		return false;
-	}
-	auto bb = cfg.reachable_begin();
-	for ( size_t i = 0, ie = (gen_() % (cfg.num_reachable()-2))+1; i < ie; ++i ) {
-		++bb;
-	}
+  if (cfg.num_reachable() < 3) {
+    return false;
+  }
+  auto bb = cfg.reachable_begin();
+  for (size_t i = 0, ie = (gen_() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
+    ++bb;
+  }
 
   const auto num_instrs = cfg.num_instrs(*bb);
   if (num_instrs == 0) {
     return false;
   }
   instr_index_ = cfg.get_index({*bb, gen_() % num_instrs});
+  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
 
   auto& instr = code[instr_index_];
   old_opcode_ = instr.get_opcode();
@@ -240,6 +274,12 @@ bool Transforms::opcode_move(Cfg& cfg) {
 
   const auto o = get_control_free_type_equiv(old_opcode_);
   instr.set_opcode(o);
+
+  if(validator_ && !validator_->is_supported(instr)) {
+    undo_opcode_move(cfg);
+    return false;
+  }
+
   cfg.recompute_defs();
 
   if (!cfg.is_sound()) {
@@ -252,13 +292,13 @@ bool Transforms::opcode_move(Cfg& cfg) {
 bool Transforms::operand_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-	if ( cfg.num_reachable() < 3 ) {
-		return false;
-	}
-	auto bb = cfg.reachable_begin();
-	for ( size_t i = 0, ie = (gen_() % (cfg.num_reachable()-2))+1; i < ie; ++i ) {
-		++bb;
-	}
+  if (cfg.num_reachable() < 3) {
+    return false;
+  }
+  auto bb = cfg.reachable_begin();
+  for (size_t i = 0, ie = (gen_() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
+    ++bb;
+  }
 
   const auto num_instrs = cfg.num_instrs(*bb);
   if (num_instrs == 0) {
@@ -267,7 +307,13 @@ bool Transforms::operand_move(Cfg& cfg) {
   const auto idx = gen_() % num_instrs;
 
   instr_index_ = cfg.get_index({*bb, idx});
-  if (code[instr_index_].arity() == 0 || is_control_opcode(code[instr_index_].get_opcode())) {
+  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
+  if (is_control_opcode(code[instr_index_].get_opcode())) {
+    return false;
+  }
+  if (code[instr_index_].arity() == 0) {
     return false;
   }
 
@@ -287,6 +333,12 @@ bool Transforms::operand_move(Cfg& cfg) {
     }
   }
   instr.set_operand(operand_index_, o);
+
+  if(validator_ && !validator_->is_supported(instr)) {
+    undo_operand_move(cfg);
+    return false;
+  }
+
   cfg.recompute_defs();
 
   if (!cfg.is_sound()) {
@@ -298,9 +350,11 @@ bool Transforms::operand_move(Cfg& cfg) {
 
 bool Transforms::resize_move(Cfg& cfg) {
   auto& code = cfg.get_code();
-  const auto start = gen_() % code.size();
+  if (code.size() < 2) {
+    return false;
+  }
 
-  move_i_ = 0;
+  move_i_ = 1;
   for (size_t ie = code.size(); move_i_ < ie; ++move_i_) {
     if (code[move_i_].is_nop()) {
       goto found_a_nop;
@@ -309,7 +363,7 @@ bool Transforms::resize_move(Cfg& cfg) {
   return false;
 found_a_nop:
 
-  move_j_ = gen_() % code.size();
+  move_j_ = (gen_() % (code.size()-1)) + 1;
   if (move_i_ == move_j_) {
     return false;
   }
@@ -333,6 +387,9 @@ bool Transforms::local_swap_move(Cfg& cfg) {
   }
 
   move_i_ = cfg.get_index({bb, gen_() % num_instrs});
+  if (move_i_ == cfg.get_index({cfg.get_entry()+1,0})) {
+    return false;
+  }
   move_j_ = cfg.get_index({bb, gen_() % num_instrs});
   if (move_i_ == move_j_) {
     return false;
@@ -359,9 +416,12 @@ bool Transforms::local_swap_move(Cfg& cfg) {
 
 bool Transforms::global_swap_move(Cfg& cfg) {
   auto& code = cfg.get_code();
+  if (code.size() < 3) {
+    return false;
+  }
 
-  move_i_ = gen_() % code.size();
-  move_j_ = gen_() % code.size();
+  move_i_ = (gen_() % (code.size()-1)) + 1;
+  move_j_ = (gen_() % (code.size()-1)) + 1;
   if (move_i_ == move_j_) {
     return false;
   }
@@ -386,116 +446,69 @@ bool Transforms::global_swap_move(Cfg& cfg) {
 }
 
 bool Transforms::extension_move(Cfg& cfg) {
-	// Add user-defined implementation here ...
+  // Add user-defined implementation here ...
 
-	// Invariant 1a:
-	// If this method returns true, it should leave this class in a state such that calling
-	// undo_extension_move() will revert cfg to its original state.
+  // Invariant 1:
+  // If this method returns true, it should leave this class in a state such
+  // that calling undo_extension_move() will revert cfg to its original state.
 
-	// Invariant 1b:
-	// If this method returns false, it must leave cfg in its original state.
+  // Invariant 2:
+  // If this method returns false, it must leave cfg in its original state.
 
-	return false;
+  // Invariant 3:
+  // If validator_ is non-null, validator_->is_sound(instr) must hold true for
+  // all instructions instr upon return.  (You can assume this holds at the
+  // beginning).
+
+  // Invariant 4:
+  // Transformations must preserve the first instruction in a code sequence
+  // which should be a label that represents the name of a function.
+
+  return false;
 }
 
 void Transforms::undo(Cfg& cfg, Move type) {
   switch (type) {
-    case Move::INSTRUCTION:
-      undo_instruction_move(cfg);
-      break;
-    case Move::OPCODE:
-      undo_opcode_move(cfg);
-      break;
-    case Move::OPERAND:
-      undo_operand_move(cfg);
-      break;
-    case Move::RESIZE:
-      undo_resize_move(cfg);
-      break;
-    case Move::LOCAL_SWAP:
-      undo_local_swap_move(cfg);
-      break;
-    case Move::GLOBAL_SWAP:
-      undo_global_swap_move(cfg);
-      break;
-			undo_extension_move(cfg);
-			break;
-    default:
-      assert(false);
-      break;
+  case Move::INSTRUCTION:
+    undo_instruction_move(cfg);
+    break;
+  case Move::OPCODE:
+    undo_opcode_move(cfg);
+    break;
+  case Move::OPERAND:
+    undo_operand_move(cfg);
+    break;
+  case Move::RESIZE:
+    undo_resize_move(cfg);
+    break;
+  case Move::LOCAL_SWAP:
+    undo_local_swap_move(cfg);
+    break;
+  case Move::GLOBAL_SWAP:
+    undo_global_swap_move(cfg);
+    break;
+    undo_extension_move(cfg);
+    break;
+  default:
+    assert(false);
+    break;
   }
 }
 
 void Transforms::undo_extension_move(Cfg& cfg) {
-	// Add user-defined implementation here ...
+  // Add user-defined implementation here ...
 
-	// Invariant: If the previous invocation of extension_move() returned true, this
-	// method must return cfg to its original state. 
+  // Invariant: If the previous invocation of extension_move() returned true, this
+  // method must return cfg to its original state.
 
-	return;
-}
-
-bool Transforms::is_rh_opcode(Opcode o) const {
-  for (size_t i = 0, ie = arity(o); i < ie; ++i) {
-    if (type(o, i) == Type::RH) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool Transforms::is_type_equiv(Opcode o1, Opcode o2) const {
-  if (arity(o1) != arity(o2)) {
-    return false;
-  }
-  for (size_t i = 0, ie = arity(o1); i < ie; ++i) {
-    if (type(o1, i) != type(o2, i)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool Transforms::is_unsupported(Opcode o) const {
-  if (is_rh_opcode(o)) {
-    return true;
-  }
-  return unsupported_.find(o) != unsupported_.end();
-};
-
-bool Transforms::get_base(const RegSet& rs, M& m) {
-  if (gen_() % 2) {
-    m.clear_base();
-  } else {
-    auto r = rax;
-    if (get_r64(rs, r)) {
-      m.set_base(r);
-    } else {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool Transforms::get_index(const RegSet& rs, M& m) {
-  if (gen_() % 2) {
-    m.clear_index();
-  } else {
-    auto r = rax;
-    if (get_r64(rs, r)) {
-      m.set_index(r);
-      return m.get_index() != rsp;
-    } else {
-      return false;
-    }
-  }
-  return true;
+  return;
 }
 
 bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
   if (is_lea_opcode(c)) {
     auto m = *((M8*)(&o));
     m.set_rip_offset(false);
+    m.set_addr_or(gen_() % 2);
     m.clear_seg();
     m.set_scale((Scale)(gen_() % 4));
     m.set_disp((Imm32)(imm_pool_[gen_() % imm_pool_.size()]));
@@ -513,158 +526,251 @@ bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
       return false;
     }
     const auto& m = m_pool_[gen_() % m_pool_.size()];
-    if (m.contains_base() && !rs.contains(m.get_base())) {
-      return false;
+    if (m.contains_base()) {
+      if (m.addr_or() && !rs.contains(r32s[m.get_base()])) {
+        return false;
+      } else if (!m.addr_or() && !rs.contains(r64s[m.get_base()])) {
+        return false;
+      }
     }
-    if (m.contains_index() && !rs.contains(m.get_index())) {
-      return false;
+    if (m.contains_index()) {
+      if (m.addr_or() && !rs.contains(r32s[m.get_index()])) {
+        return false;
+      } else if (!m.addr_or() && !rs.contains(r64s[m.get_index()])) {
+        return false;
+      }
     }
     o = m;
     return true;
   }
 }
 
-bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs,
-                              Operand& op) {
+bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& op) {
   switch (type(o, idx)) {
-    case Type::M_8:
-    case Type::M_16:
-    case Type::M_32:
-    case Type::M_64:
-    case Type::M_128:
-    case Type::M_256:
-    case Type::M_16_INT:
-    case Type::M_32_INT:
-    case Type::M_64_INT:
-    case Type::M_32_FP:
-    case Type::M_64_FP:
-    case Type::M_80_FP:
-    case Type::M_80_BCD:
-    case Type::M_2_BYTE:
-    case Type::M_28_BYTE:
-    case Type::M_108_BYTE:
-    case Type::M_512_BYTE:
-    case Type::FAR_PTR_16_16:
-    case Type::FAR_PTR_16_32:
-    case Type::FAR_PTR_16_64: return get_m(rs, o, op);
+  case Type::M_8:
+  case Type::M_16:
+  case Type::M_32:
+  case Type::M_64:
+  case Type::M_128:
+  case Type::M_256:
+  case Type::M_16_INT:
+  case Type::M_32_INT:
+  case Type::M_64_INT:
+  case Type::M_32_FP:
+  case Type::M_64_FP:
+  case Type::M_80_FP:
+  case Type::M_80_BCD:
+  case Type::M_2_BYTE:
+  case Type::M_28_BYTE:
+  case Type::M_108_BYTE:
+  case Type::M_512_BYTE:
+  case Type::FAR_PTR_16_16:
+  case Type::FAR_PTR_16_32:
+  case Type::FAR_PTR_16_64:
+    return get_m(rs, o, op);
 
-    case Type::MM: op = mm_pool_[gen_() % mm_pool_.size()]; return true;
+  case Type::MM:
+    return get<Mm>(mm_pool_, op);
 
-    case Type::MOFFS_8:
-    case Type::MOFFS_16:
-    case Type::MOFFS_32:
-    case Type::MOFFS_64: return false;
+  case Type::MOFFS_8:
+  case Type::MOFFS_16:
+  case Type::MOFFS_32:
+  case Type::MOFFS_64:
+    return false;
 
-    case Type::RL: op = rl_pool_[gen_() % rl_pool_.size()]; return true;
-    case Type::RH: op = rh_pool_[gen_() % rh_pool_.size()]; return true;
-    case Type::RB: op = rb_pool_[gen_() % rb_pool_.size()]; return true;
-    case Type::AL: op = al; return true;
-    case Type::CL: op = cl; return true;
-    case Type::R_16: op = r16_pool_[gen_() % r16_pool_.size()]; return true;
-    case Type::AX: op = ax; return true;
-    case Type::DX: op = dx; return true;
-    case Type::R_32: op = r32_pool_[gen_() % r32_pool_.size()]; return true;
-    case Type::EAX: op = eax; return true;
-    case Type::R_64: op = r64_pool_[gen_() % r64_pool_.size()]; return true;
-    case Type::RAX: op = rax; return true;
+  case Type::RL:
+    return get<Rl>(rl_pool_, op);
+  case Type::RH:
+    return get<Rh>(rh_pool_, op);
+  case Type::RB:
+    return get<Rb>(rb_pool_, op);
+  case Type::AL:
+    return get<Rl>(rl_pool_, al, op);
+  case Type::CL:
+    return get<Rl>(rl_pool_, cl, op);
+  case Type::R_16:
+    return get<R16>(r16_pool_, op);
+  case Type::AX:
+    return get<R16>(r16_pool_, ax, op);
+  case Type::DX:
+    return get<R16>(r16_pool_, dx, op);
+  case Type::R_32:
+    return get<R32>(r32_pool_, op);
+  case Type::EAX:
+    return get<R32>(r32_pool_, eax, op);
+  case Type::R_64:
+    return get<R64>(r64_pool_, op);
+  case Type::RAX:
+    return get<R64>(r64_pool_, rax, op);
 
-    case Type::REL_8:
-    case Type::REL_32: return false;
+  case Type::REL_8:
+  case Type::REL_32:
+    return false;
 
-    case Type::SREG: op = sreg_pool_[gen_() % sreg_pool_.size()]; return true;
-    case Type::FS: op = fs; return true;
-    case Type::GS: op = gs; return true;
+  case Type::SREG:
+    return get<Sreg>(sreg_pool_, op);
+  case Type::FS:
+    return get<Sreg>(sreg_pool_, fs, op);
+  case Type::GS:
+    return get<Sreg>(sreg_pool_, gs, op);
 
-    case Type::ST: op = st_pool_[gen_() % st_pool_.size()]; return true;
-    case Type::ST_0: op = st0; return true;
+  case Type::ST:
+    return get<St>(st_pool_, op);
+  case Type::ST_0:
+    return get<St>(st_pool_, st0, op);
 
-    case Type::XMM: op = xmm_pool_[gen_() % xmm_pool_.size()]; return true;
-    case Type::XMM_0: op = xmm0; return true;
+  case Type::XMM:
+    return get<Xmm>(xmm_pool_, op);
+  case Type::XMM_0:
+    return get<Xmm>(xmm_pool_, xmm0, op);
 
-    case Type::YMM: op = ymm_pool_[gen_() % ymm_pool_.size()]; return true;
+  case Type::YMM:
+    return get<Ymm>(ymm_pool_, op);
 
-    default:
-      assert(false); return false;;
+  default:
+    assert(false);
+    return false;;
   }
 }
 
-bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs,
-                             Operand& op) {
+bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op) {
   switch (type(o, idx)) {
-    case Type::HINT: op = gen_() % 2 ? taken : not_taken; return true;
+  case Type::HINT:
+    op = gen_() % 2 ? taken : not_taken;
+    return true;
 
-    case Type::IMM_8: get_imm(op); return true;
-    case Type::IMM_16: get_imm(op); return true;
-    case Type::IMM_32: get_imm(op); return true;
-    case Type::IMM_64: get_imm(op); return true;
-    case Type::ZERO: op = zero; return true;
-    case Type::ONE: op = one; return true;
-    case Type::THREE: op = three; return true;
+  case Type::IMM_8: {
+    bool b = get<Imm64>(imm_pool_, op);
+    if (!b) return false;
+    Imm* i = static_cast<Imm*>(&op);
+    *i = Imm8((uint64_t)*i & 0xff);
+    return true;
+  }
 
-    case Type::LABEL: return false;
+  case Type::IMM_16: {
+    bool b = get<Imm64>(imm_pool_, op);
+    if (!b) return false;
+    Imm* i = static_cast<Imm*>(&op);
+    *i = Imm16((uint64_t)*i & 0xffff);
+    return true;
+  }
 
-    case Type::M_8:
-    case Type::M_16:
-    case Type::M_32:
-    case Type::M_64:
-    case Type::M_128:
-    case Type::M_256:
-    case Type::M_16_INT:
-    case Type::M_32_INT:
-    case Type::M_64_INT:
-    case Type::M_32_FP:
-    case Type::M_64_FP:
-    case Type::M_80_FP:
-    case Type::M_80_BCD:
-    case Type::M_2_BYTE:
-    case Type::M_28_BYTE:
-    case Type::M_108_BYTE:
-    case Type::M_512_BYTE:
-    case Type::FAR_PTR_16_16:
-    case Type::FAR_PTR_16_32:
-    case Type::FAR_PTR_16_64: return get_m(rs, o, op);
+  case Type::IMM_32: {
+    bool b = get<Imm64>(imm_pool_, op);
+    if (!b) return false;
+    Imm* i = static_cast<Imm*>(&op);
+    *i = Imm32((uint64_t)*i & 0xffffffff);
+    return true;
+  }
 
-    case Type::MM: return get_mm(rs, op);
+  case Type::IMM_64:
+    return get<Imm64>(imm_pool_, op);
+  case Type::ZERO:
+    op = zero;
+    return true;
+  case Type::ONE:
+    op = one;
+    return true;
+  case Type::THREE:
+    op = three;
+    return true;
 
-    case Type::PREF_66: op = pref_66; return true;
-    case Type::PREF_REX_W: op = pref_rex_w; return true;
-    case Type::FAR: op = far; return true;
+  case Type::LABEL:
+    return get<Label>(label_pool_, op);
 
-    case Type::MOFFS_8:
-    case Type::MOFFS_16:
-    case Type::MOFFS_32:
-    case Type::MOFFS_64: return false;
+  case Type::M_8:
+  case Type::M_16:
+  case Type::M_32:
+  case Type::M_64:
+  case Type::M_128:
+  case Type::M_256:
+  case Type::M_16_INT:
+  case Type::M_32_INT:
+  case Type::M_64_INT:
+  case Type::M_32_FP:
+  case Type::M_64_FP:
+  case Type::M_80_FP:
+  case Type::M_80_BCD:
+  case Type::M_2_BYTE:
+  case Type::M_28_BYTE:
+  case Type::M_108_BYTE:
+  case Type::M_512_BYTE:
+  case Type::FAR_PTR_16_16:
+  case Type::FAR_PTR_16_32:
+  case Type::FAR_PTR_16_64:
+    return get_m(rs, o, op);
 
-    case Type::RL: return get_rl(rs, op);
-    case Type::RH: return get_rh(rs, op);
-    case Type::RB: return get_rb(rs, op);
-    case Type::AL: op = al; return rs.contains(al);
-    case Type::CL: op = cl; return rs.contains(cl);
-    case Type::R_16: return get_r16(rs, op);
-    case Type::AX: op = ax; return rs.contains(ax);
-    case Type::DX: op = dx; return rs.contains(dx);
-    case Type::R_32: return get_r32(rs, op);
-    case Type::EAX: op = eax; return rs.contains(eax);
-    case Type::R_64: return get_r64(rs, op);
-    case Type::RAX: op = rax; return rs.contains(rax);
+  case Type::MM:
+    return get<Mm>(mm_pool_, rs, op);
 
-    case Type::REL_8:
-    case Type::REL_32: return false;
+  case Type::PREF_66:
+    op = pref_66;
+    return true;
+  case Type::PREF_REX_W:
+    op = pref_rex_w;
+    return true;
+  case Type::FAR:
+    op = far;
+    return true;
 
-    case Type::SREG: return get_sreg(rs, op);
-    case Type::FS: op = fs; return rs.contains(fs);
-    case Type::GS: op = gs; return rs.contains(gs);
+  case Type::MOFFS_8:
+  case Type::MOFFS_16:
+  case Type::MOFFS_32:
+  case Type::MOFFS_64:
+    return false;
 
-    case Type::ST: return get_st(rs, op);
-    case Type::ST_0: op = st0; return rs.contains(st0);
+  case Type::RL:
+    return get<Rl>(rl_pool_, rs, op);
+  case Type::RH:
+    return get<Rh>(rh_pool_, rs, op);
+  case Type::RB:
+    return get<Rb>(rb_pool_, rs, op);
+  case Type::AL:
+    return get<Al>({al}, rs, op);
+  case Type::CL:
+    return get<Cl>({cl}, rs, op);
+  case Type::R_16:
+    return get<R16>(r16_pool_, rs, op);
+  case Type::AX:
+    return get<Ax>({ax}, rs, op);
+  case Type::DX:
+    return get<Dx>({dx}, rs, op);
+  case Type::R_32:
+    return get<R32>(r32_pool_, rs, op);
+  case Type::EAX:
+    return get<Eax>({eax}, rs, op);
+  case Type::R_64:
+    return get<R64>(r64_pool_, op);
+  case Type::RAX:
+    return get<Rax>({rax}, rs, op);
 
-    case Type::XMM: return get_xmm(rs, op);
-    case Type::XMM_0: op = xmm0; return rs.contains(xmm0);
+  case Type::REL_8:
+  case Type::REL_32:
+    return false;
 
-    case Type::YMM: return get_ymm(rs, op);
+  case Type::SREG:
+    return get<Sreg>(sreg_pool_, rs, op);
+  case Type::FS:
+    return get<Fs>({fs}, rs, op);
+  case Type::GS:
+    return get<Gs>({gs}, rs, op);
 
-    default:
-      assert(false); return false;;
+  case Type::ST:
+    return get<St>(st_pool_, rs, op);
+  case Type::ST_0:
+    return get<St0>({st0}, rs, op);
+
+  case Type::XMM:
+    return get<Xmm>(xmm_pool_, rs, op);
+  case Type::XMM_0:
+    return get<Xmm0>({xmm0}, rs, op);
+
+  case Type::YMM:
+    return get<Ymm>(ymm_pool_, rs, op);
+
+  default:
+    assert(false);
+    return false;;
   }
 }
 

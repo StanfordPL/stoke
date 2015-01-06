@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -3497,6 +3497,8 @@
 
 , 999 // VPCMPEQB xmm, xmm, m128
 , 1 // VPCMPEQB xmm, xmm, xmm
+, 999 // VPCMPEQB ymm, ymm, m256
+, 1 // VPCMPEQB ymm, ymm, ymm
 , 999 // VPCMPEQD xmm, xmm, m128
 , 1 // VPCMPEQD xmm, xmm, xmm
 , 999 // VPCMPEQD ymm, ymm, m156

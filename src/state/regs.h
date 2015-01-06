@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 #include <cassert>
 
+#include <iostream>
 #include <vector>
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
@@ -24,7 +25,7 @@
 namespace stoke {
 
 class Regs {
- public:
+public:
   /** Create a bank of n registers of w bits. */
   Regs(size_t n, size_t w) {
     contents_.resize(n, cpputil::BitVector(w));
@@ -54,7 +55,7 @@ class Regs {
     return *this;
   }
   /** Bit-wise xor */
-  Regs operator^(const Regs& rhs) {
+  Regs operator^(const Regs& rhs) const {
     auto ret = *this;
     return ret ^= rhs;
   }
@@ -68,7 +69,29 @@ class Regs {
     return contents_ != rhs.contents_;
   }
 
- private:
+  /** Write text. */
+  std::ostream& write_text(std::ostream& os, const char** names, size_t padding) const;
+  /** Read text. */
+  std::istream& read_text(std::istream& is);
+
+  /** Write binary. */
+  std::ostream& write_bin(std::ostream& os) const {
+    for (size_t i = 0, ie = size(); i < ie; ++i) {
+      const auto size = sizeof(uint64_t) * contents_[i].num_fixed_quads();
+      os.write((const char*)contents_[i].data(), size);
+    }
+    return os;
+  }
+  /** Read binary. */
+  std::istream& read_bin(std::istream& is) {
+    for (size_t i = 0, ie = size(); i < ie; ++i) {
+      const auto size = sizeof(uint64_t) * contents_[i].num_fixed_quads();
+      is.read((char*)contents_[i].data(), size);
+    }
+    return is;
+  }
+
+private:
   /** Register contents. */
   std::vector<cpputil::BitVector> contents_;
 };

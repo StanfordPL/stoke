@@ -7,12 +7,6 @@ pushd `dirname $0` > /dev/null
 HERE=`pwd`
 popd > /dev/null
 
-if [ `ls -1 $HERE | wc -l` -ne "16" ]
-then
-	echo "Fatal Error: Failed to locate one or more STOKE components!"
-	exit 1
-fi
-
 if [ $# -eq 0 ] 
 then
 	echo "Type 'stoke --help' for usage."
@@ -22,12 +16,16 @@ fi
 SCMD=$1
 shift
 
+# This is to make sure we link the the right copy of z3.
+export LD_LIBRARY_PATH="$HERE/../src/ext/z3/bin"
+
 if [ "$SCMD" == "--help" ] || [ "$SCMD" == "-h" ]
 then
 	echo "Usage: stoke <subcommand> [options]"
 	echo "Type 'stoke <subcommand> --help' for help on a specific subcommand."
 	echo ""
 	echo "  extract             extract the contents of a binary file"
+	echo "  replace             replace the contents of a binary file"
 	echo "  search              run STOKE search"
 	echo "  testcase            generate a STOKE testcase file"
 	echo ""
@@ -102,12 +100,18 @@ then
 elif [ "$SCMD" == "extract" ]
 then
 	$HERE/stoke_extract "$@"
+elif [ "$SCMD" == "replace" ]
+then
+	$HERE/stoke_replace "$@"
 elif [ "$SCMD" == "search" ]
 then
 	$HERE/stoke_search "$@"
 elif [ "$SCMD" == "testcase" ]
 then
 	$HERE/stoke_testcase "$@"
+elif [ "$SCMD" == "test" ]
+then
+	$HERE/stoke_test "$@"
 else
 	echo "Unknown command: '"$SCMD"'"
 	echo "Type 'stoke --help' for usage."

@@ -1,0 +1,4 @@
+
+If you add a new test, you *MUST* update the tests/stategen/stategen.h file
+with a new number for the range for the parameterized tests.  Otherwise, it
+won't register your change.  This setting is around the end of the file.

@@ -1,0 +1,85 @@
+{
+  "name": "add-matrix",
+  "comment": "adds two matrices filled with doubles together.",
+
+  "code": [ 
+    
+    //BB1
+    "pushq  %r14",           //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14 XMM0-7
+    "movl   %edi, %r14d",    //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 XMM0-7
+    "pushq  %r13",           //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14D XMM0-7
+    "movq   %rcx, %r13",     //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12 R14D XMM0-7
+    "pushq  %r12",           //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14D XMM0-7
+    "movq   %rsi, %r12",     //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,13 R14D XMM0-7
+    "pushq  %rbp",           //RAX RDX RCX RBX EDI RSP RBP R8-9,12-13 R14D XMM0-7
+    "pushq  %rbx",           //RAX RDX RCX RBX EDI RSI R8-9,12-13 R14D XMM0-7
+    "movslq %edi, %rbx",     //RAX RDX RCX EDI RSI R8-9,12-13 R14D XMM0-7
+    "movq   %rbx, %rdi",     //RAX RDX RCX RBX RSI R8-9,12-13 R14D XMM0-7
+    "imulq  %rbx, %rdi",     //..
+    "shlq   $0x3, %rdi",     //..
+    "callq  .L4",//(malloc)  //RAX RDX RCX RBX RDI RSI R8-9,12-13 R14D XMM0-7
+    "testq  %rbx, %rbx",     //RAX RBX R12-13 R14D RBX XMM01 | R9
+    "movq   %rax, %rdx",     //RAX R12-13 R14D RBX XMM01 EFLAGS | R9
+    "je     .L3",            //RDX R12-13 R14D RBX XMM01 EFLAGS | R9
+    
+    //BB2
+    "xorl   %ebp, %ebp",     //RDX R12-13 R14D RBX XMM1 | R9
+    "xchgw  %ax, %ax",       //RDX R12-13 R14D RBP RBX XMM1 | R9
+
+    //BB3
+    ".L1:",
+    "movq   (%rdx,%rbp,8), %r11",   //RDX R12-13 R14D RBP RBX XMM1 | R9,12,13
+    "movq   (%r12,%rbp,8), %r10",   //RDX R11-13 R14D RBP RBX XMM1 | R9,11,12,13
+    "xorl   %r8d, %r8d",            //RDX R10-11 R13 R14D RBP RBX XMM1 | R9-13
+    "movq   0x0(%r13,%rbp,8), %r9", //RDX R8 R10-11 R13 R14D RBP RBX XMM1 | R8-13
+
+    //BB4
+    ".L2:",
+    "movsd  (%r10,%r9,8), %xmm0",   //RDX R8-11 R14D RBP RBX XMM1 | R8-13
+    "addsd  (%r9,%r8,8), %xmm0",    //RDX R8-9 R11 R14D RBP RBX XMM01 | R8-13
+    "movsd  %xmm0, (%r11, %r8, 8)", //RDX R8 R11 R14D RBP RBX XMM01 | R8-13
+    "addq   $0x1, %r8",       
+    "cmpq   %r8, %rbx",             //RDX R8 R14D RBP RBX XMM01 | R8-13
+    "ja .L2",                       //RDX R14D RBP RBX XMM01 | R8-13 
+
+    //BB5
+    "addq   $0x1, %rbp",            //RDX R14D RBP RBX XMM01 | R12-13 RBX | R9
+    "cmpq   %rbp, %rbx",            //RDX R14D RBP RBX XMM01 | R12-13 RBX | R9
+    "ja .L1",                       //RDX R14D XMM01 EFLAGS | R12-13 RBP RBX | R9
+
+    //BB6
+    ".L3:",                         //RDX R14D XMM0 XMM1
+    "popq   %rbx",
+    "popq   %rbp",
+    "popq   %r12",
+    "popq   %r13",
+    "movl   %r14d, %eax",           //RDX, R14D, XMM0, XMM1
+    "popq   %r14",
+    "retq",                         //RAX, RDX, XMM0, XMM1
+
+    //BB7
+    ".L4:"
+  ],
+
+  "tests": {
+    "liveness": {
+      "given liveout": ["%rax", "%rdx", "%xmm0", "%xmm1"],
+      "expected livein": ["%rax", "%rdx", "%rcx", "%rbx", "%edi", "%rsi", "%rbp",
+                          "%rsp", "%r8", "%r9", "%r12", "%r13", "%r14",
+                          "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4",
+                          "%xmm5", "%xmm6", "%xmm7"]
+    },
+
+    "normalization": {
+      "chunks": 7
+    },
+
+    "cfg": {
+      "num_blocks": 9,
+      "num_instrs": [0, 16, 2, 5, 7, 3, 8, 1, 0],
+      "nesting_depth": [0, 0, 0, 1, 2, 1, 0, 0, 0],
+      "reachable": [0, 1, 2, 3, 4, 5, 6, 8]
+    }
+
+  }
+}  

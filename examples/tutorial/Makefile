@@ -1,4 +1,4 @@
-# Copyright 2014 eric schkufza
+# Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-orig:
-	g++ -std=c++11 -O3 -c popcnt.cc
-	g++ -std=c++11 -O3 main.cc popcnt.o
+all: orig extract testcase search replace
 
-opt:
-	g++ -std=c++11 -c result.s 
-	g++ -std=c++11 -O3 main.cc result.o
+orig:
+	g++ -std=c++11 -fno-inline -O3 main.cc
 
 time:
 	time ./a.out 100000000
@@ -32,5 +29,8 @@ testcase:
 search:
 	stoke search --config search.conf
 
+replace:
+	stoke replace --config replace.conf
+
 clean:
-	rm -rf bins ./a.out *.o *.tc *.s
+	rm -rf bins ./a.out *.tc *.s

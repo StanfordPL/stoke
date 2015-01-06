@@ -1,0 +1,31 @@
+{
+  "name": "simple",
+  "code": [ "incq %rax",
+            "movq %rax, %rdx" ],
+
+  "tests": {
+
+    "cfg": {
+      "num_blocks": 3,
+      "num_instrs": [0, 2, 0],
+      "get_exit":   2,
+      "reachable":  [0, 1, 2],
+      "nesting_depth": [0, 0, 0]
+    },
+
+    "validate": true,
+
+    "liveness": {
+      "given liveout": ["%rdx"],
+      "expected livein": ["%rax"]
+    },
+
+    "normalization": {
+      "chunks": 1
+    }
+
+
+  }
+
+}
+

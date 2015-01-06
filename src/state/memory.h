@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 #define STOKE_SRC_STATE_MEMORY_H
 
 #include <cassert>
+#include <iostream>
 #include <stdint.h>
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
@@ -25,7 +26,7 @@
 namespace stoke {
 
 class Memory {
- public:
+public:
   /** Creates an empty memory. */
   Memory() {
     resize(0, 0);
@@ -33,12 +34,12 @@ class Memory {
 
   /** Sets the virtual address base and size. Rounds down to 256-bit align. Pads with headroom. */
   Memory& resize(uint64_t base, size_t size) {
-		// Round down to 256-bit (32-byte) align.
+    // Round down to 256-bit (32-byte) align.
     base_ = base & 0xffffffffffffffe0;
-		// Pad size with amount rounded down and 256-bits (32-bytes) of headroom.
+    // Pad size with amount rounded down and 256-bits (32-bytes) of headroom.
     size += (base % 32) + 32;
-		// Round size up to align to an 8 byte boundary.
-		size = (size + 7) & 0xfffffffffffffff8;
+    // Round size up to align to an 8 byte boundary.
+    size = (size + 7) & 0xfffffffffffffff8;
 
     contents_.resize_for_fixed_bytes(size);
     valid_.resize_for_bits(size);
@@ -85,6 +86,13 @@ class Memory {
     return contents_.get_fixed_byte(addr - base_);
   }
 
+  /** Element access; undefined for invalid quads */
+  uint64_t get_quad(size_t addr) const {
+    assert(is_valid_quad(addr));
+    assert((addr - base_) % 8 == 0);
+    return contents_.get_fixed_quad((addr - base_)/8);
+  }
+
   /** Pointer to underlying data. */
   void* data() {
     return contents_.data();
@@ -109,6 +117,13 @@ class Memory {
     valid_[addr - base_] = v;
     return *this;
   }
+  /** Returns true if a quad is valid. */
+  bool is_valid_quad(uint64_t addr) const {
+    assert(in_range(addr) && in_range(addr+7));
+    assert((addr - base_) % 8 == 0);
+
+    return valid_.get_fixed_byte((addr-base_)/8) == 0xff;
+  }
   /** Returns a pointer to the beginning of the valid byte addrs in this memory. */
   addr_iterator valid_begin() const {
     return addr_iterator(valid_.set_bit_index_begin(), base_);
@@ -128,6 +143,11 @@ class Memory {
     assert(is_valid(addr));
     def_[addr - base_] = d;
     return *this;
+  }
+  /** Returns true if a quad is defined; undefined for invalid quads */
+  bool is_defined_quad(uint64_t addr) const {
+    assert(is_valid_quad(addr));
+    return def_.get_fixed_byte((addr-base_)/8) == 0xff;
   }
   /** Returns a pointer to the beginning of the defined byte addrs in this memory. */
   addr_iterator defined_begin() const {
@@ -158,7 +178,17 @@ class Memory {
     return base_ != rhs.base_ || contents_ != rhs.contents_;
   }
 
- private:
+  /** Write text. */
+  std::ostream& write_text(std::ostream& os) const;
+  /** Read text. */
+  std::istream& read_text(std::istream& is);
+
+  /** Write binary. */
+  std::ostream& write_bin(std::ostream& os) const;
+  /** Read binary. */
+  std::istream& read_bin(std::istream& is);
+
+private:
   /** Virtual base address. */
   uint64_t base_;
   /** Virtual memory sandbox. */
@@ -168,12 +198,24 @@ class Memory {
   /** Shadow bit vector for tracking defined bytes. */
   cpputil::BitVector def_;
 
-  /** Reads summary information */
-  void read_summary(std::istream& is);
-  /** Read a row from contents */
-  void read_row(std::istream& is);
-  /** Read contents */
-  void read_contents(std::istream& is);
+  /** Write a text summary of memory. */
+  void write_text_summary(std::ostream& os) const;
+  /** Write a text row of memory. */
+  void write_text_row(std::ostream& os, uint64_t addr) const;
+  /** Write all text rows from memory. */
+  void write_text_contents(std::ostream& os) const;
+
+  /** Read a text summary of memory. */
+  void read_text_summary(std::istream& is);
+  /** Read a text row of memory. */
+  void read_text_row(std::istream& is);
+  /** Read all text rows of memory. */
+  void read_text_contents(std::istream& is);
+
+  /** Does this row contain at least one valid address? */
+  bool valid_row(uint64_t addr) const;
+  /** How many of the rows in this memory are valid? */
+  size_t valid_count() const;
 };
 
 } // namespace stoke

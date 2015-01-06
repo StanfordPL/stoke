@@ -1,0 +1,42 @@
+
+{
+  "name": "dead-loop",
+  "comment": "There are two unreachable blocks that point to each other.",
+
+  "code": 
+    [ "retq",
+      ".L1:",
+      "movq %rcx, %rax",
+      "movq %rdx, %rbx",
+      ".L2:",
+      "movq %rbx, %rax",
+      "cmpq $0x10, %rbx",
+      "jle .L1" ],
+
+  "tests": {
+
+    "is_sound": {
+      "live_in": [],
+      "live_out": [],
+      "result": true
+    },
+  
+    "cfg": {
+      "num_blocks": 5,
+      "num_instrs": [0, 1, 3, 4, 0],
+      "reachable":  [0, 1, 4],
+      "get_exit":   4,
+      "nesting_depth": [0, 0, 0, 0, 0]
+    },
+
+    "liveness": {
+      "given liveout": ["%rax"],
+      "expected livein": ["%rax"]
+    },
+
+    "normalization": {
+      "chunks": 0
+    }
+
+  }
+}
