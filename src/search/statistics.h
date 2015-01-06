@@ -1,4 +1,4 @@
-// Copyright 2014 eric schkufza
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,10 +18,10 @@
 namespace stoke {
 
 struct Statistics {
-	/** Creates a new statistics triple. */
+  /** Creates a new statistics triple. */
   Statistics() : num_proposed(0), num_succeeded(0), num_accepted(0) { }
 
-	/** Pointwise increment. */
+  /** Pointwise increment. */
   Statistics& operator+=(const Statistics& rhs) {
     num_proposed += rhs.num_proposed;
     num_succeeded += rhs.num_succeeded;
@@ -29,11 +29,11 @@ struct Statistics {
     return *this;
   }
 
-	/** The number of proposals that have taken place. */
+  /** The number of proposals that have taken place. */
   size_t num_proposed;
-	/** The number of proposals that haven't immediately failed. */
+  /** The number of proposals that haven't immediately failed. */
   size_t num_succeeded;
-	/** The number of proposals that were accepted. */
+  /** The number of proposals that were accepted. */
   size_t num_accepted;
 };
 

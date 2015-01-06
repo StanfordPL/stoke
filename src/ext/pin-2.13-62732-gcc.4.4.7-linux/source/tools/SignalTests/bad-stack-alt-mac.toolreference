@@ -1,4 +1,0 @@
-Intercepting signal SIGILL, which is an exception, application handles
-Got signal SIGILL
-Returning from signal handler
-Program exited

@@ -1,4 +1,0 @@
-b thread start
-b thread exit
-c 300
-q

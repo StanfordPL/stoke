@@ -1,0 +1,46 @@
+
+{
+  "name": "switch-call",
+  "comment": "ensure that call variables propogate to switch",
+  "code": [ 
+    "movq   (%rsi),%rdx",        //rdi, rax, xmm0-7, rsi, rcx, r8, r9
+    "cmpb   $0x6,0x1(%rdx)",     //(same as below)
+    "jbe    .L1",                //rdi, rdx, rax, xmm0-7, rsi, rcx, r8, r9
+    "retq",                      //xmm0, xmm1, rax, rdx
+    ".L1:",
+    "movzbl 0x1(%rdx),%eax",     //(everything below, except rax)
+    "jmpq   *0x400580(,%rax,8)", //here: treat everything as liveout: 
+                                 //rdi, rdx, rax, xmm0-7,
+                                 //rsi, rcx, r8, r9
+    "movl   %edi,%eax",
+    "retq",
+    "xorl   %eax,%eax",
+    "retq",
+    "leal   -0x1(%rdi),%eax",
+    "xchgw  %ax,%ax",
+    "retq",
+    "leal   0x1(%rdi),%eax",
+    "callq  .L3",
+    "retq",
+    ".L3:",
+    "retq"
+  ],
+
+
+  "tests": {
+
+    "is_sound": {
+      "live_in": ["%rdi"],
+      "live_out": ["%rax"],
+      "result": false
+    },
+
+    "liveness": {
+      "given liveout":   ["%rax", "%rdx", "%xmm0", "%xmm1"],
+      "expected livein": ["%rax", "%rdi", "%rsi", "%rcx", "%r8", "%r9", 
+                          "%xmm0", "%xmm1", "%xmm2", "%xmm3",
+                          "%xmm4", "%xmm5", "%xmm6", "%xmm7"]
+    }
+  }
+
+}

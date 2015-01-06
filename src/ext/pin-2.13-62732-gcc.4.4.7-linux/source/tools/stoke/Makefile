@@ -15,6 +15,7 @@
 PIN_INC=\
 	-I../../../../../.. \
 	-I../../../../../ext/cpputil \
+	-I../../../../../ext/x64asm \
 	-I../../../source/include/pin \
 	-I../../../source/include/pin/gen \
 	-I../../../extras/components/include \
@@ -28,33 +29,49 @@ PIN_DEF=\
 	-DHOST_IA32E \
 	-DTARGET_LINUX  
 
-PIN_CC=g++ -std=c++11 -fPIC -mavx -mavx2 -mbmi -mbmi2 -mpopcnt
+PIN_CC=g++ -std=c++11 -fPIC $(TARGET)
 
 PIN_OPT=-O3
 
 PIN_WARN=\
-	-Wall \
-	-Werror \
 	-Wno-unknown-pragmas 
 
 PIN_COMPILE=$(PIN_CC) $(PIN_WARN) $(PIN_OPT) $(PIN_DEF) $(PIN_INC)
 
-PIN_OBJ=\
+PIN_LIB=\
  	-L../../../intel64/lib \
 	-L../../../intel64/lib-ext \
 	-L../../../intel64/runtime/glibc \
 	-L../../../extras/xed2-intel64/lib \
-	obj-intel64/memory.o \
-	obj-intel64/state_writer.o \
-	obj-intel64/testcase.o \
-	-lpin -lxed -ldwarf -lelf -ldl
+	-L../../../../../ext/x64asm/lib/ \
+	-lx64asm -lpin -lxed -ldwarf -lelf -ldl
 
-all:
-	mkdir -p obj-intel64 && \
-	$(PIN_COMPILE) -c testcase.cpp -o obj-intel64/testcase.o && \
-	$(PIN_COMPILE) -c ../../../../../state/memory.cc -o obj-intel64/memory.o && \
-	$(PIN_COMPILE) -c ../../../../../state/state_writer.cc -o obj-intel64/state_writer.o && \
-	$(PIN_CC) -shared -Wl,--hash-style=sysv -Wl,-Bsymbolic -Wl,--version-script=../../../source/include/pin/pintool.ver -o obj-intel64/testcase.so $(PIN_OBJ)
+PIN_OBJ=\
+	obj-intel64/cpu_state.o \
+	obj-intel64/cpu_states.o \
+	obj-intel64/memory.o \
+	obj-intel64/regs.o \
+	obj-intel64/rflags.o \
+	obj-intel64/testcase.o
+
+all: obj-intel64/testcase.so
 	
 clean:
 	rm -rf obj-intel64
+
+obj-intel64/cpu_state.o: ../../../../../state/cpu_state.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+obj-intel64/cpu_states.o: ../../../../../state/cpu_states.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+obj-intel64/memory.o: ../../../../../state/memory.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+obj-intel64/regs.o: ../../../../../state/regs.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+obj-intel64/rflags.o: ../../../../../state/rflags.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+	
+obj-intel64/testcase.o: testcase.cpp
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
+
+obj-intel64/testcase.so: $(PIN_OBJ)
+	mkdir -p obj-intel64 && $(PIN_CC) -shared -Wl,--hash-style=sysv -Wl,-Bsymbolic -Wl,--version-script=../../../source/include/pin/pintool.ver -o $@ $(PIN_OBJ) $(PIN_LIB)

@@ -1,0 +1,22 @@
+{
+  "name": "xmms",
+  "code": [ "addsd %xmm2, %xmm0", //RDX, RDI, XMM0, XMM1, XMM2
+            "movq  %rdi, %rax",   //RDX, RDI, XMM0, XMM1
+            "subsd %xmm1, %xmm0", //RAX, RDX, XMM0, XMM1
+            "retq" ],             //RAX, RDX, XMM0, XMM1
+
+  "tests": {
+
+    "is_sound": {
+      "live_in": ["%rdx", "%rdi", "%xmm0", "%xmm1", "%xmm2"],
+      "live_out": ["%xmm0", "%xmm1", "%rax", "%rdx"],
+      "result": true
+    },
+
+    "liveness": {
+      "given liveout": ["%rax", "%rdx", "%xmm0", "%xmm1"],
+      "expected livein": ["%rdx", "%rdi", "%xmm0", "%xmm1", "%xmm2"]
+    }
+  }
+}
+
