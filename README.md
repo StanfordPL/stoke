@@ -11,7 +11,7 @@ outperform the code produced by general-purpose and domain-specific compilers,
            and in some cases expert hand-written code.
 
 STOKE has appeared in a number of publications. For a thorough introduction to
-the design of STOKE, please see the following:
+the design of STOKE, see:
 
 - **Stochastic Superoptimization** -- ASPLOS 2013 ([link](http://cs.stanford.edu/people/eschkufz/research/asplos291-schkufza.pdf)):
 - **Data-Driven Equivalence Checking** -- OOPSLA 2013 ([link](http://cs.stanford.edu/people/eschkufz/research/oopsla011-sharma.pdf)):
@@ -39,9 +39,9 @@ Prerequisites
 =====
 
 STOKE will run on modern 64-bit x86 processors.  We officially support Haswell
-processors with the AVX2 extensions.  STOKE should also run on Sandy Bridge
+processors with AVX2 extensions.  STOKE should also run on Sandy Bridge
 systems (with AVX, but not AVX2), and Nehalem systems without either extension;
-however, this is not supported.  
+however officially these targets are not supported.  
 
 To check what level of hardware support you have, run:
 
@@ -69,7 +69,7 @@ satisfied by typing:
 
     $ sudo apt-get install git subversion flex bison ccache doxygen g++ g++-multilib ghc libghc-regex-tdfa-dev libghc-regex-compat-dev libghc-split-dev cmake libghc-regex-compat-dev libjsoncpp-dev
 
-The rest of the dependencies will be fetched automatically in the build
+The rest of the dependencies will be fetched automatically as part of the build
 process.
 
 Downloading and Building STOKE
@@ -280,6 +280,29 @@ Testcase 0:
 %ymm14   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 %ymm15   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
+%cf      0 
+%1       1 
+%pf      1 
+%0       0 
+%af      0 
+%0       0 
+%zf      0 
+%sf      0 
+%tf      0 
+%if      1 
+%df      0 
+%of      0 
+%iopl[0] 0 
+%iopl[1] 0 
+%nt      0 
+%0       0 
+%rf      0 
+%vm      0 
+%ac      0 
+%vif     0 
+%vip     0 
+%id      0 
+
 [ 00007fff 97443630 - 00007fff 97443620 ]
 [ 1 valid rows shown ]
 
@@ -290,9 +313,9 @@ Testcase 0:
 ```
 
 Each entry corresponds to the hardware state that was observed just prior to an
-execution of the `popcnt()` function. The first 32 rows represent the contents
-of general purpose and sse registers, and the remaining rows represent the
-contents of memory, both on the stack and the heap. Memory is shown eight bytes
+execution of the `popcnt()` function. The first 60 rows represent the contents
+of general purpose, sse, and eflags registers, and the remaining rows represent 
+the contents of memory, both on the stack and the heap. Memory is shown eight bytes
 at a time, where a block of eight bytes appears only if the target dereferenced
 at least one of those bytes. Each row contains values and state flags. Bytes
 are flagged as either (v)alid (the target dereferenced this byte), (d)efined
@@ -342,18 +365,18 @@ where `search.conf` contains:
 --reduction sum # Method for summing errors across testcases
 --sig_penalty 9999 # Score to assign to rewrites that produce non-zero signals
 
---perf size # Measure performance by summing instruction latencies
+--perf latency # Measure performance by summing instruction latencies
 
 --cpu_flags "{ popcnt }" # cpuid flags to use when proposing instructions
 --mem_read # Propose instructions that read memory
 --mem_write # Propose instructions that write memory
 
---global_swap_mass 1 # Proposal mass
+--global_swap_mass 0 # Proposal mass
 --instruction_mass 1 # Proposal mass
 --local_swap_mass 1 # Proposal mass
 --opcode_mass 1 # Proposal mass
 --operand_mass 1 # Proposal mass
---resize_mass 1 # Proposal mass
+--resize_mass 0 # Proposal mass
 
 --nop_percent 80 # Percent of instruction moves that produce nop
 --beta 1 # Search annealing constant
@@ -461,17 +484,17 @@ Using the Formal Validator
 
 This release of STOKE includes a formal validator.  It's design and interface
 are detailed in the `src/validator/README.md` file.  To use the formal validator
-instead of hold out testing, you need to specify `--strategy formal` for any
+instead of hold out testing, specify `--strategy formal` for any
 STOKE binary that you use.
 
 An example of using the validator can be found in the `examples/pairity`
 folder; this example has a Makefile much like the tutorial's and should be easy
 to follow.  The key difference is that the pairity example does not use
-testcases to guide the search.  Instead, after producing a candidate rewrite,
+testcases to guide search.  Instead, after producing a candidate rewrite,
 the validator checks for equivalence.  If the codes are not equivalent, 
-a counterexample is found, and this is used as a testcase to guide the search.
+a counterexample is found, and this is used as a new testcase to help guide search.
 
-There are some important limitations to keep in mind using the validator:
+There are some important limitations to keep in mind while using the validator:
 
 - Only some instructions are supported.  The `--validator_must_support` flag
 can be used to only propose instructions that can be validated.
@@ -504,8 +527,10 @@ debugging and benchmarking the performance of each of its core components:
 - `stoke benchmark state`: Measure the time required to reset the memory of a hardware machine state.
 - `stoke benchmark verify`: Measure the time required to check the equivalence of two programs.
 
-Furthermore, STOKE comes with a zsh completion function.  Add `bin/_stoke` to
-you zsh completion path to get powerful completion for all stoke tools.
+STOKE also comes with support for bash and zsh completion.  To enable either, type:
+
+	$ make bash_completion
+	$ make zsh_completion
 
 Extending STOKE
 =====
@@ -545,35 +570,50 @@ type for user-defined extensions.
 ```c++
 enum class Init {
   EMPTY,
-  SOURCE,
+  ZERO,
+  TARGET,
+  PREVIOUS,
 
   // Add user-defined extensions here ...
   EXTENSION
 };
 ```
 
-Initial state is specified using the `--init` command line argument. This value
-controls the behavior of the `Search::initialize() const` method, which
-dispatches to the family of `Search::xxxxx_init() const` methods. User-defined
-extensions should be placed in the `Search::extension_init() const` method,
+Initial state is specified using the `--init` command line argument which controls the initial values
+given to the current, lowest cost, and lowest cost correct search states. This value
+affects the behavior of the `Search::configure() const` method, which
+dispatches to the family of `Search::configure_xxxxx() const` methods. User-defined
+extensions should be placed in the `Search::configure_extension() const` method,
 which can be triggered by specifying `--init extension`.
 
 ```c++
-Cfg Search::extension_init(const Cfg& rewrite) const {
-  auto ret = rewrite;
+void Search::configure_extension(const Cfg& target, SearchState& state) const {
+  // Add user-defined logic here ...
 
-  // Add user-defined transformations here ...
+  // Invariant 1: Search state should agree with target on boundary conditions.
+  assert(state.current.def_ins() == target.def_ins());
+  assert(state.current.live_outs() == target.live_outs());
 
-  // Invariant 1: ret and rewrite must agree on boundary conditions.
-  assert(ret.def_in() == rewrite.def_in());
-  assert(ret.live_out() == rewrite.live_out();
-  
-  // Invariant 2: ret must be in a valid state. This function isn't on
+  assert(state.best_yet.def_ins() == target.def_ins());
+  assert(state.best_yet.live_outs() == target.live_outs());
+
+  assert(state.best_correct.def_ins() == target.def_ins());
+  assert(state.best_correct.live_outs() == target.live_outs());
+
+  // Invariant 2: Search state must be in a valid state. This function isn't on
   // a critical path, so this can safely be accomplished by calling
-  ret.recompute();
+  state.current.recompute();
+  state.best_yet.recompute();
+  state.best_correct.recompute();
 
-  return ret;
-} 
+  // Invariant 3: Search state must agree on first instruction. This instruction
+  // must be the label definition that appears in the target.
+  assert(state.current.get_code()[0] == target.get_code()[0]);
+  assert(state.best_yet.get_code()[0] == target.get_code()[0]);
+  assert(state.best_correct.get_code()[0] == target.get_code()[0]);
+
+  // See Search::configure for additional invariants
+}
 ```
 
 Search Transformations
@@ -610,14 +650,23 @@ specifying a non-zero `--extension_mass`.
 ```c++
 bool Transforms::extension_move(Cfg& cfg) {
   // Add user-defined implementation here ...
-  
-  // Invariant 1a:
-  // If this method returns true, it should leave this class in a state such that calling
-  // undo_extension_move() will revert cfg to its original state.
-  
-  // Invariant 1b:
+
+  // Invariant 1:
+  // If this method returns true, it should leave this class in a state such
+  // that calling undo_extension_move() will revert cfg to its original state.
+
+  // Invariant 2:
   // If this method returns false, it must leave cfg in its original state.
-  
+
+  // Invariant 3:
+  // If validator_ is non-null, validator_->is_sound(instr) must hold true for
+  // all instructions instr upon return.  (You can assume this holds at the
+  // beginning).
+
+  // Invariant 4:
+  // Transformations must preserve the first instruction in a code sequence
+  // which should be a label that represents the name of a function.
+
   return false;
 }
 ```
@@ -743,11 +792,12 @@ This value controls the behavior of the `CostFunction::evaluate_distance()
 Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {                                            
   Cost res = 0;
 
-  // Add user-defined implementation here ...                                                                    
+  // Add user-defined implementation here ...
 
-  // Invariant 1: Return value should not exceed max_error_cost                                                  
+  // Invariant 1: Return value should not exceed max_error_cost
+  assert(res <= max_error_cost);
 
-  return res;                                                                                                    
+  return res;                                                                                                   
 }
 ```
 
@@ -777,18 +827,19 @@ triggered by specifying `--strategy extension`.
 
 ```c++
 bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {                                         
-	// Add user-defined implementation here ...
+  // Add user-defined implementation here ...
 
-	// Invariant 1. If this method returns false and is able to produce a 
-	// counter example explaining why, counter_example_available_ should be
-	// set to true.
+  // Invariant 1. If this method returns false and is able to produce a
+  // counter example explaining why, counter_example_available_ should be
+  // set to true.
 
-	// Invariant 2. If this method returns false, and it is able (see above), 
-	// counter_example_ should be set to a CpuState that will cause target and 
-	// rewrite to produce different values.
+  // Invariant 2. If this method returns false, and it is able (see above),
+  // counter_example_ should be set to a CpuState that will cause target and
+  // rewrite to produce different values.
 
-	// Invariant 3. If this method produces a counter example, it should be
-	// unique relative to all previously produced counter examples.
+  // Invariant 3.  If this method encounters an error, it should set the
+  // error_ member variable to a non-empty string; otherwise the error_
+  // member should be empty.
 
   return true;
 } 
