@@ -97,7 +97,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   x64asm::Code target;
   sample >> target;
 
-  t.set_opcode_pool(flag_set, 0, 0, true, false, blacklist, {})
+  t.set_opcode_pool(flag_set, 0, 0, true, false, x64asm::RegSet::empty(), blacklist, {})
   .set_operand_pool(target, x64asm::RegSet::empty())
   .set_seed(seed);
 
