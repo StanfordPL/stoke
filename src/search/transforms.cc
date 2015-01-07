@@ -22,31 +22,31 @@ namespace stoke {
 Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent,
                                         size_t call_weight, bool use_mem_read,
                                         bool use_mem_write, const RegSet& preserve_regs,
-																				const set<Opcode>& opc_blacklist,
+                                        const set<Opcode>& opc_blacklist,
                                         const set<Opcode>& opc_whitelist) {
   control_free_.clear();
   auto use_whitelist = opc_whitelist.size() > 0; // empty whitelist means no whitelist
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     const auto op = (Opcode)i;
-		const auto mw = Instruction(op).implicit_maybe_write_set();
-		const auto mu = Instruction(op).implicit_maybe_undef_set();
+    const auto mw = Instruction(op).implicit_maybe_write_set();
+    const auto mu = Instruction(op).implicit_maybe_undef_set();
     if (op != CALL_LABEL && is_control_opcode(op)) {
-		  continue;
-		} else if (is_unsupported(op)) {
-		  continue;
-		} else if (!is_enabled(op, flags)) {
-		  continue;
-		}	else if (is_non_deterministic(op)) {
-		 	continue;
-		} else if (opc_blacklist.find(op) != opc_blacklist.end()) {
+      continue;
+    } else if (is_unsupported(op)) {
+      continue;
+    } else if (!is_enabled(op, flags)) {
+      continue;
+    } else if (is_non_deterministic(op)) {
+      continue;
+    } else if (opc_blacklist.find(op) != opc_blacklist.end()) {
       continue;
     } else if (use_whitelist && opc_whitelist.find(op) == opc_whitelist.end()) {
       continue;
     } else if (preserve_regs.intersects(mw)) {
-		 	continue;
-		}	else if (preserve_regs.intersects(mu)) {
-			continue;
-		} else if (!use_mem_read) {
+      continue;
+    } else if (preserve_regs.intersects(mu)) {
+      continue;
+    } else if (!use_mem_read) {
       if (!use_mem_write) {
         //no memory allowed
         if (is_mem_opcode(op)) {
