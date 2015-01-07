@@ -72,7 +72,7 @@ public:
       mem_write = false;
 
     set_opcode_pool(arg_cpu_flags, nop_percent_arg, call_weight_arg, mem_read, mem_write,
-                    opc_blacklist_arg, opc_whitelist_arg);
+                    preserve_regs_arg, opc_blacklist_arg, opc_whitelist_arg);
     set_operand_pool(code, preserve_regs_arg);
 
     for (const auto& imm : immediates_arg.value()) {
