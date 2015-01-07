@@ -38,7 +38,7 @@ public:
 
     // Note: we only want to do this once.
     if (!transforms_init_) {
-      transforms_.set_opcode_pool(x64asm::FlagSet::universe(), 0, 0, true, true, {}, {});
+      transforms_.set_opcode_pool(x64asm::FlagSet::universe(), 0, 0, true, true, x64asm::RegSet::empty(), {}, {});
       transforms_init_ = true;
     }
 
