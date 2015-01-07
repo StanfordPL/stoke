@@ -46,7 +46,7 @@ public:
   /** Sets the pool of opcodes to propose from. */
   Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t nop_percent, size_t call_weight,
                               bool use_mem_read, bool use_mem_write,
-															const x64asm::RegSet& preserve_regs,
+                              const x64asm::RegSet& preserve_regs,
                               const std::set<x64asm::Opcode>& opc_blacklist,
                               const std::set<x64asm::Opcode>& opc_whitelist);
   /** Sets the pool operands to propose from. */
