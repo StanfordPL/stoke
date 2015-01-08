@@ -43,7 +43,7 @@ void DistanceReader::operator()(std::istream& is, Distance& d) {
   string s;
   is >> s;
   if (!generic_read(ds, s, d)) {
-		fail(is) << "Unrecognized distance \"" << s << "\"";
+    fail(is) << "Unrecognized distance \"" << s << "\"";
   }
 }
 
