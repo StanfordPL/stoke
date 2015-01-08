@@ -16,9 +16,11 @@
 #include <string>
 #include <utility>
 
+#include "src/ext/cpputil/include/io/fail.h"
 #include "tools/io/generic.h"
 #include "tools/io/distance.h"
 
+using namespace cpputil;
 using namespace std;
 using namespace stoke;
 
@@ -41,7 +43,7 @@ void DistanceReader::operator()(std::istream& is, Distance& d) {
   string s;
   is >> s;
   if (!generic_read(ds, s, d)) {
-    is.setstate(ios::failbit);
+		fail(is) << "Unrecognized distance \"" << s << "\"";
   }
 }
 
