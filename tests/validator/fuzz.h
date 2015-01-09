@@ -77,10 +77,10 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   sample << "movq (%rax), %r13" << std::endl;
   sample << "movq 0x16(%r8), %r13" << std::endl;
   sample << "movq 0x64(%rdx), %r13" << std::endl;
-  sample << "movq 0x64(%rax, %rcx, 4), %r13" << std::endl;
+  sample << "movq -0x64(%rax, %rcx, 4), %r13" << std::endl;
   sample << "movq 0x64(%rsp, %rdx, 8), %r13" << std::endl;
   sample << "movl (%rax), %r13d" << std::endl;
-  sample << "movl 0x16(%r8), %r13d" << std::endl;
+  sample << "movl -0x16(%r8), %r13d" << std::endl;
   sample << "movl 0x64(%rdx), %r13d" << std::endl;
   sample << "movl 0x64(%rax, %rcx, 4), %r13d" << std::endl;
   sample << "movl 0x64(%rsp, %rdx, 8), %r13d" << std::endl;
@@ -88,12 +88,13 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   sample << "movw 0x16(%r8), %r13w" << std::endl;
   sample << "movw 0x64(%rdx), %r13w" << std::endl;
   sample << "movw 0x64(%rax, %rcx, 4), %r13w" << std::endl;
-  sample << "movw 0x64(%rsp, %rdx, 8), %r13w" << std::endl;
+  sample << "movw -0x64(%rsp, %rdx, 8), %r13w" << std::endl;
   sample << "movb (%rax), %r13b" << std::endl;
   sample << "movb 0x16(%r8), %r13b" << std::endl;
   sample << "movb 0x64(%rdx), %r13b" << std::endl;
   sample << "movb 0x64(%rax, %rcx, 4), %r13b" << std::endl;
   sample << "movb 0x64(%rsp, %rdx, 8), %r13b" << std::endl;
+
   x64asm::Code target;
   sample >> target;
 
