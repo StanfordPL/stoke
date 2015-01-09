@@ -46,38 +46,7 @@ void LeaHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   uint16_t width = dest.size();
 
   // Compute the memory address
-  // This is slightly different than the default method because it truncates
-  // all the values to width for a slightly smaller circuit
-  SymBitVector address = SymBitVector::constant(width, memory.get_disp());
-
-  if(memory.contains_base()) {
-    address = address + state[memory.get_base()][width-1][0];
-  }
-
-  if(memory.contains_index()) {
-    auto index = state[memory.get_index()][width-1][0];
-
-    switch(memory.get_scale()) {
-    case Scale::TIMES_1:
-      address = address + index;
-      break;
-
-    case Scale::TIMES_2:
-      address = address + (index << SymBitVector::constant(width, 1));
-      break;
-
-    case Scale::TIMES_4:
-      address = address + (index << SymBitVector::constant(width, 2));
-      break;
-
-    case Scale::TIMES_8:
-      address = address + (index << SymBitVector::constant(width, 3));
-      break;
-
-    default:
-      assert(false);
-    }
-  }
+  SymBitVector address = state.get_addr(memory)[width-1][0];
 
   // Set the destination value; takes care of perserving other bits and setting other bits to zero
   state.set(dest, address);
