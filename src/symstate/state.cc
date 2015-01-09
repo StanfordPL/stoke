@@ -286,7 +286,7 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
 template <typename T>
 SymBitVector SymState::get_addr(M<T> memory) const {
 
-  SymBitVector address = SymBitVector::constant(64, memory.get_disp());
+  SymBitVector address = SymBitVector::constant(32, memory.get_disp()).extend(64);
 
   if(memory.contains_base()) {
     address = address + lookup(memory.get_base());
