@@ -128,3 +128,18 @@ TEST_F(ValidatorLeaTest, Issue239Scale4) {
   assert_equiv();
 
 }
+
+TEST_F(ValidatorLeaTest, Issue392NegativeOffset) {
+
+  target_ << "leaq -0x10(%rax), %rdx" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "addq $-0x10, %rax" << std::endl;
+  rewrite_ << "movq %rax, %rdx" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rdx);
+  assert_equiv();
+
+}
+
