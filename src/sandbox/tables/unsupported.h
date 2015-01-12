@@ -221,7 +221,7 @@ CRC32_R32_RH
 , LAR_R64_R32 // LAR r64, r32
 
 // These instructions use xsave
-, XGETBV // XGETBV 
+, XGETBV // XGETBV
 , XRSTOR_M16 // XRSTOR m16
 , XRSTOR_M32 // XRSTOR m32
 , XRSTOR_M64 // XRSTOR m64
