@@ -194,6 +194,10 @@ private:
            instr.is_any_call() || instr.is_any_return() ||
            instr.is_any_loop();
   }
+  /** Does this instruction induce control flow, other than a call (which STOKE can propose)? */
+  bool is_control_other_than_call(x64asm::Opcode op) {
+    return op != x64asm::CALL_LABEL && is_control_opcode(op);
+  }
   /** Does this instruction produce non-deterministic results? */
   bool is_non_deterministic(x64asm::Opcode o) const {
     return x64asm::Instruction(o).is_rdrand();

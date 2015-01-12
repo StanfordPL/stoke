@@ -30,7 +30,7 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
     const auto op = (Opcode)i;
     const auto mw = Instruction(op).implicit_maybe_write_set();
     const auto mu = Instruction(op).implicit_maybe_undef_set();
-    if (op != CALL_LABEL && is_control_opcode(op)) {
+    if (is_control_other_than_call(op)) {
       continue;
     } else if (is_unsupported(op)) {
       continue;
@@ -221,7 +221,7 @@ bool Transforms::instruction_move(Cfg& cfg) {
   if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
     return false;
   }
-  if (is_control_opcode(code[instr_index_].get_opcode())) {
+  if (is_control_other_than_call(code[instr_index_].get_opcode())) {
     return false;
   }
   old_instr_ = code[instr_index_];
@@ -282,7 +282,7 @@ bool Transforms::opcode_move(Cfg& cfg) {
 
   auto& instr = code[instr_index_];
   old_opcode_ = instr.get_opcode();
-  if (is_control_opcode(old_opcode_)) {
+  if (is_control_other_than_call(old_opcode_)) {
     return false;
   }
 
@@ -324,7 +324,7 @@ bool Transforms::operand_move(Cfg& cfg) {
   if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
     return false;
   }
-  if (is_control_opcode(code[instr_index_].get_opcode())) {
+  if (is_control_other_than_call(code[instr_index_].get_opcode())) {
     return false;
   }
   if (code[instr_index_].arity() == 0) {
@@ -410,11 +410,11 @@ bool Transforms::local_swap_move(Cfg& cfg) {
   }
 
   auto& i = code[move_i_];
-  if (is_control_opcode(i.get_opcode())) {
+  if (is_control_other_than_call(i.get_opcode())) {
     return false;
   }
   auto& j = code[move_j_];
-  if (is_control_opcode(j.get_opcode())) {
+  if (is_control_other_than_call(j.get_opcode())) {
     return false;
   }
 
@@ -441,11 +441,11 @@ bool Transforms::global_swap_move(Cfg& cfg) {
   }
 
   auto& i = code[move_i_];
-  if (is_control_opcode(i.get_opcode())) {
+  if (is_control_other_than_call(i.get_opcode())) {
     return false;
   }
   auto& j = code[move_j_];
-  if (is_control_opcode(j.get_opcode())) {
+  if (is_control_other_than_call(j.get_opcode())) {
     return false;
   }
 
