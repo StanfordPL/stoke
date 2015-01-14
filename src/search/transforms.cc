@@ -19,7 +19,7 @@ using namespace x64asm;
 
 namespace stoke {
 
-Transforms& Transforms::set_opcode_pool(const FlagSet& flags, 
+Transforms& Transforms::set_opcode_pool(const FlagSet& flags,
                                         size_t call_weight, bool use_mem_read,
                                         bool use_mem_write, const RegSet& preserve_regs,
                                         const set<Opcode>& opc_blacklist,
