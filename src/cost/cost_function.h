@@ -49,7 +49,7 @@ public:
   /** The maximum cost that a single testcase should produce. */
   static constexpr auto max_testcase_cost = (Cost)(0x1ull << 42);
   /** The maximum cost that a single error calculation should produce. */
-  static constexpr auto max_error_cost = (Cost)(256);
+  static constexpr auto max_error_cost = (Cost)(0x1ull << 32);
 
   /** Create a new cost function with default values for extended features. */
   CostFunction(Sandbox* sb) : sandbox_(sb), size_buffer_(32 * 1024) {
