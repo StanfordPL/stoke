@@ -19,7 +19,7 @@ using namespace x64asm;
 
 namespace stoke {
 
-Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent,
+Transforms& Transforms::set_opcode_pool(const FlagSet& flags, 
                                         size_t call_weight, bool use_mem_read,
                                         bool use_mem_write, const RegSet& preserve_regs,
                                         const set<Opcode>& opc_blacklist,
@@ -75,11 +75,6 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags, size_t nop_percent
   if (control_free_.size() == 0) {
     error_ = true;
     error_message_ = "No opcodes left to propose (consider changing whitelist/blacklist parameters).";
-  }
-
-  control_free_or_nop_ = control_free_;
-  for (size_t i = 0, ie = (nop_percent / 100) * control_free_.size(); i < ie; ++i) {
-    control_free_or_nop_.push_back(NOP);
   }
 
   control_free_type_equiv_.clear();
@@ -227,7 +222,7 @@ bool Transforms::instruction_move(Cfg& cfg) {
   old_instr_ = code[instr_index_];
 
   auto& instr = code[instr_index_];
-  instr.set_opcode(get_control_free_or_nop());
+  instr.set_opcode(get_control_free());
   const auto& rs = cfg.def_ins({*bb, idx});
 
   for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
