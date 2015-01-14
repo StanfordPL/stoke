@@ -357,15 +357,15 @@ bin/stoke.bash: $(BIN) tools/scripts/completion_generator.py
 	tools/scripts/completion_generator.py
 
 format: src/ext/astyle
-	chmod +x "git/pre-commit.d/astyle.sh"
-	git/pre-commit.d/astyle.sh
+	chmod +x "scripts/git/pre-commit.d/astyle.sh"
+	scripts/git/pre-commit.d/astyle.sh
 
 # builds a symlink to the post-commit hooks
 hooks: .git/hooks/pre-commit
 
-.git/hooks/pre-commit: git/pre-commit.sh src/ext/astyle
-	chmod +x "git/pre-commit.sh"
-	ln -sf $(shell pwd)/git/pre-commit.sh .git/hooks/pre-commit
+.git/hooks/pre-commit: scripts/git/pre-commit.sh src/ext/astyle
+	chmod +x "scripts/git/pre-commit.sh"
+	ln -sf $(shell pwd)/scripts/git/pre-commit.sh .git/hooks/pre-commit
 
 ##### CLEAN TARGETS
 
