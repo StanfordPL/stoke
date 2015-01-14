@@ -27,6 +27,7 @@ extern cpputil::Heading& performance_heading;
 
 extern cpputil::ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>& perf_arg;
 extern cpputil::ValueArg<Cost>& nesting_penalty_arg;
+extern cpputil::ValueArg<Cost>& sse_avx_penalty_arg;
 
 } // namespace stoke
 
