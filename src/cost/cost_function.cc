@@ -397,7 +397,7 @@ Cost CostFunction::undef_default(size_t num_bytes) const {
     res = 8*num_bytes;
     break;
   case Distance::ULP:
-    res = (0x1ull << (8*num_bytes)) - 1;
+    res = max_error_cost;
     break;
   case Distance::EXTENSION:
     // Add user-defined implementation here ...
