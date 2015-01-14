@@ -527,10 +527,18 @@ debugging and benchmarking the performance of each of its core components:
 - `stoke benchmark state`: Measure the time required to reset the memory of a hardware machine state.
 - `stoke benchmark verify`: Measure the time required to check the equivalence of two programs.
 
+Shell completion
+-----
+
 STOKE also comes with support for bash and zsh completion.  To enable either, type:
 
 	$ make bash_completion
 	$ make zsh_completion
+
+Using functions to be proposed by STOKE
+-----
+STOKE can not only propose instructions when searching for programs, but also propose calls to a list of known functions using the `--functions` command-line argument.  To decide whether these functions read any undefined state (before proposing them), we use a dataflow analysis.  Sometimes, the dataflow analysis can be too imprecise, which is why STOKE allows the user to annotate dataflow information in comments.  Here is an example:
+
 
 Extending STOKE
 =====
