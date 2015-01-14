@@ -57,7 +57,7 @@ public:
     set_distance(Distance::HAMMING);
     set_sse(1, 1);
     set_relax(false, false, false);
-    set_penalty(0, 0, 0);
+    set_penalty(0, 0, 0, 0);
     set_min_ulp(0);
     set_k(1);
     set_reduction(Reduction::SUM);
@@ -88,10 +88,11 @@ public:
     return *this;
   }
   /** Set penalty values. */
-  CostFunction& set_penalty(Cost misalign, Cost sig, Cost nesting) {
+  CostFunction& set_penalty(Cost misalign, Cost sig, Cost nesting, Cost sse_avx) {
     misalign_penalty_ = misalign;
     sig_penalty_ = sig;
     nesting_penalty_ = nesting;
+		sse_avx_penalty_ = sse_avx;
     return *this;
   }
   /** Incur a penalty of start_penalty + incr_penalty(size - max_size) for having an assembled size
@@ -168,6 +169,8 @@ private:
   Cost sig_penalty_;
   /** Multiplier to apply to instructions that appear in loops. */
   Cost nesting_penalty_;
+	/** Penalty for codes that mix avx and sse instructions. */
+	Cost sse_avx_penalty_;
   /** Minimum unacceptable ULP error for floating-point comparisons. */
   Cost min_ulp_;
   /** Multiplier for the correctness term */

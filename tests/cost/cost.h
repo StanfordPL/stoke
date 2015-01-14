@@ -50,6 +50,7 @@ protected:
   stoke::Cost misalign_penalty_;
   stoke::Cost signal_penalty_;
   stoke::Cost nesting_penalty_;
+  stoke::Cost sse_avx_penalty_;
 
   stoke::Sandbox sb_;
   stoke::CostFunction fxn_;
@@ -60,8 +61,9 @@ private:
     misalign_penalty_ = 7;
     signal_penalty_   = 11;
     nesting_penalty_  = 17;
+		sse_avx_penalty_  = 11; // EDS: ::shrug::
 
-    fxn_.set_penalty(misalign_penalty_, signal_penalty_, nesting_penalty_)
+    fxn_.set_penalty(misalign_penalty_, signal_penalty_, nesting_penalty_, sse_avx_penalty_)
     .set_reduction(stoke::Reduction::SUM)
     .set_performance_term(stoke::PerformanceTerm::NONE);
 
