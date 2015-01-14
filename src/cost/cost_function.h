@@ -92,7 +92,7 @@ public:
     misalign_penalty_ = misalign;
     sig_penalty_ = sig;
     nesting_penalty_ = nesting;
-		sse_avx_penalty_ = sse_avx;
+    sse_avx_penalty_ = sse_avx;
     return *this;
   }
   /** Incur a penalty of start_penalty + incr_penalty(size - max_size) for having an assembled size
@@ -169,8 +169,8 @@ private:
   Cost sig_penalty_;
   /** Multiplier to apply to instructions that appear in loops. */
   Cost nesting_penalty_;
-	/** Penalty for codes that mix avx and sse instructions. */
-	Cost sse_avx_penalty_;
+  /** Penalty for codes that mix avx and sse instructions. */
+  Cost sse_avx_penalty_;
   /** Minimum unacceptable ULP error for floating-point comparisons. */
   Cost min_ulp_;
   /** Multiplier for the correctness term */

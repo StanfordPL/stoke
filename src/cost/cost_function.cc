@@ -489,8 +489,8 @@ Cost CostFunction::size_performance(const Cfg& cfg) const {
 Cost CostFunction::latency_performance(const Cfg& cfg) const {
   Cost latency = 0;
 
-	auto uses_sse = false;
-	auto uses_avx = false;
+  auto uses_sse = false;
+  auto uses_avx = false;
 
   const auto& code = cfg.get_code();
   for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
@@ -501,27 +501,27 @@ Cost CostFunction::latency_performance(const Cfg& cfg) const {
     Cost block_latency = 0;
     const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
-			// Record latency for non nop instructions
+      // Record latency for non nop instructions
       if (!code[i].is_nop()) {
         block_latency += latencies_[code[i].get_opcode()];
       }
-			// Record whether this instruction was sse or avx
-			if (code[i].is_any_sse()) {
-				uses_sse = true;
-			}
-			if (code[i].is_any_avx()) {
-				uses_avx = true;
-			}
+      // Record whether this instruction was sse or avx
+      if (code[i].is_any_sse()) {
+        uses_sse = true;
+      }
+      if (code[i].is_any_avx()) {
+        uses_avx = true;
+      }
     }
 
-		// Increment latency by block latency scaled by nesting penalty
+    // Increment latency by block latency scaled by nesting penalty
     latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
   }
 
-	// Apply penalty to codes that mix avx and sse instructions
-	if (uses_sse && uses_avx) {
-		latency += sse_avx_penalty_;
-	}
+  // Apply penalty to codes that mix avx and sse instructions
+  if (uses_sse && uses_avx) {
+    latency += sse_avx_penalty_;
+  }
 
   return latency;
 }
