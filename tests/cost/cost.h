@@ -61,7 +61,7 @@ private:
     misalign_penalty_ = 7;
     signal_penalty_   = 11;
     nesting_penalty_  = 17;
-		sse_avx_penalty_  = 11; // EDS: ::shrug::
+    sse_avx_penalty_  = 11; // EDS: ::shrug::
 
     fxn_.set_penalty(misalign_penalty_, signal_penalty_, nesting_penalty_, sse_avx_penalty_)
     .set_reduction(stoke::Reduction::SUM)
