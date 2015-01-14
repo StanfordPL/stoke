@@ -33,7 +33,6 @@ extern cpputil::Heading& transforms_heading;
 extern cpputil::ValueArg<x64asm::FlagSet, FlagSetReader, FlagSetWriter>& cpu_flags_arg;
 extern cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>& opc_blacklist_arg;
 extern cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>& opc_whitelist_arg;
-extern cpputil::ValueArg<size_t>& nop_percent_arg;
 extern cpputil::ValueArg<size_t>& call_weight_arg;
 extern cpputil::FlagArg& force_mem_read_arg;
 extern cpputil::FlagArg& force_no_mem_read_arg;
