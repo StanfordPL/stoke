@@ -41,12 +41,6 @@ ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>& opc_whitelist_arg =
   .description("Only proprose instructions from this set (unless they are not proposed for other reasons, e.g. --opc_blacklist, --propose_call, --cpu_flags, --force_mem_read, --force_mem_write, instructions not supported by stoke, etc.); empty whitelist means no whitelist")
   .default_val({});
 
-ValueArg<size_t>& nop_percent_arg =
-  ValueArg<size_t>::create("nop_percent")
-  .usage("<percent>")
-  .description("Percent of instruction moves that produce nops")
-  .default_val(0);
-
 ValueArg<size_t>& call_weight_arg =
   ValueArg<size_t>::create("call_weight")
   .usage("<int>")

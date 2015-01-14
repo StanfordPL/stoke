@@ -71,7 +71,7 @@ public:
     if(force_no_mem_write_arg)
       mem_write = false;
 
-    set_opcode_pool(arg_cpu_flags, nop_percent_arg, call_weight_arg, mem_read, mem_write,
+    set_opcode_pool(arg_cpu_flags, call_weight_arg, mem_read, mem_write,
                     preserve_regs_arg, opc_blacklist_arg, opc_whitelist_arg);
     set_operand_pool(code, preserve_regs_arg);
 

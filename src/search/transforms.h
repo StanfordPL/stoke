@@ -34,7 +34,7 @@ class Transforms {
 public:
   /** Creates a new transformation helper. */
   Transforms() : old_instr_ {x64asm::RET}, old_opcode_ {x64asm::RET}, old_operand_ {x64asm::rax} {
-    set_opcode_pool(x64asm::FlagSet::universe(), 0, 0, true, true, x64asm::RegSet::empty(), {}, {});
+    set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true, x64asm::RegSet::empty(), {}, {});
     set_operand_pool({x64asm::RET}, x64asm::RegSet::linux_call_preserved());
   }
 
@@ -44,7 +44,7 @@ public:
     return *this;
   }
   /** Sets the pool of opcodes to propose from. */
-  Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t nop_percent, size_t call_weight,
+  Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t call_weight,
                               bool use_mem_read, bool use_mem_write,
                               const x64asm::RegSet& preserve_regs,
                               const std::set<x64asm::Opcode>& opc_blacklist,
@@ -228,11 +228,6 @@ private:
     assert(!control_free_.empty());
     return control_free_[gen_() % control_free_.size()];
   }
-  /** Get a random control free opcode or a nop. */
-  x64asm::Opcode get_control_free_or_nop() {
-    assert(!control_free_or_nop_.empty());
-    return control_free_or_nop_[gen_() % control_free_or_nop_.size()];
-  }
   /** Get a random control free opcode that is type equivalent to the input opcode. */
   x64asm::Opcode get_control_free_type_equiv(x64asm::Opcode o) {
     assert(!control_free_type_equiv_.empty());
@@ -332,8 +327,6 @@ private:
 
   /** The set of control free opcodes. */
   std::vector<x64asm::Opcode> control_free_;
-  /** The set of control free opcodes, padded with nops. */
-  std::vector<x64asm::Opcode> control_free_or_nop_;
   /** The set of control free type equivalent opcodes for each opcode. */
   std::vector<std::vector<x64asm::Opcode>> control_free_type_equiv_;
 
