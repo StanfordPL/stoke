@@ -167,18 +167,18 @@ private:
   }
   /** Does this instruction read (but not write) memory. */
   bool is_mem_read_only_opcode(x64asm::Opcode o) const {
-		if (x64asm::Instruction(o).is_pop()) {
-			return true;
-		}
+    if (x64asm::Instruction(o).is_pop()) {
+      return true;
+    }
     const auto instr = x64asm::Instruction(o);
     const auto mi = instr.mem_index();
     return mi != -1 && !instr.maybe_write(mi) && !instr.maybe_undef(mi);
   }
   /** Does this instruction write (but not read or undef) memory. */
   bool is_mem_write_only_opcode(x64asm::Opcode o) const {
-		if (x64asm::Instruction(o).is_push()) {
-			return true;
-		}
+    if (x64asm::Instruction(o).is_push()) {
+      return true;
+    }
     const auto instr = x64asm::Instruction(o);
     const auto mi = instr.mem_index();
     return mi != -1 && !instr.maybe_read(mi) && !instr.maybe_undef(mi);
