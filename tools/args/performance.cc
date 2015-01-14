@@ -33,4 +33,10 @@ ValueArg<Cost>& nesting_penalty_arg =
   .description("Latency multiplier for nested code")
   .default_val(5);
 
+ValueArg<Cost>& sse_avx_penalty_arg =
+  ValueArg<Cost>::create("sse_avx_penalty")
+  .usage("<int>")
+  .description("Latency penalty for programs that mix sse and avx instructions")
+  .default_val(10000);
+
 } // namespace stoke
