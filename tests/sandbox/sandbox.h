@@ -591,7 +591,7 @@ TEST(SandboxTest, PushfWorks) {
   std::stringstream ss;
   ss << "pushf" << std::endl;
   ss << "pushfq" << std::endl;
-	ss << "retq" << std::endl;
+  ss << "retq" << std::endl;
 
   x64asm::Code c;
   ss >> c;
@@ -610,10 +610,10 @@ TEST(SandboxTest, PushfWorks) {
 
 TEST(SandboxTest, PopfFailCase) {
   std::stringstream ss;
-	ss << "movq $-0x1, %rax" << std::endl;
+  ss << "movq $-0x1, %rax" << std::endl;
   ss << "pushq %rax" << std::endl;
   ss << "popf" << std::endl;
-	ss << "retq" << std::endl;
+  ss << "retq" << std::endl;
 
   x64asm::Code c;
   ss >> c;
@@ -632,10 +632,10 @@ TEST(SandboxTest, PopfFailCase) {
 
 TEST(SandboxTest, PopfqFailCase) {
   std::stringstream ss;
-	ss << "movq $-0x1, %rax" << std::endl;
+  ss << "movq $-0x1, %rax" << std::endl;
   ss << "pushq %rax" << std::endl;
   ss << "popfq" << std::endl;
-	ss << "retq" << std::endl;
+  ss << "retq" << std::endl;
 
   x64asm::Code c;
   ss >> c;
@@ -655,12 +655,12 @@ TEST(SandboxTest, PopfqFailCase) {
 TEST(SandboxTest, PopfqWorksCase) {
   std::stringstream ss;
   ss << "pushfq" << std::endl;
-	ss << "movl $0x000008d5, %edi" << std::endl;
-	ss << "popq %rax" << std::endl;
-	ss << "orq %rax, %rdi" << std::endl;
-	ss << "pushq %rdi" << std::endl;
-	ss << "popfq" << std::endl;
-	ss << "retq" << std::endl;
+  ss << "movl $0x000008d5, %edi" << std::endl;
+  ss << "popq %rax" << std::endl;
+  ss << "orq %rax, %rdi" << std::endl;
+  ss << "pushq %rdi" << std::endl;
+  ss << "popfq" << std::endl;
+  ss << "retq" << std::endl;
 
   x64asm::Code c;
   ss >> c;
