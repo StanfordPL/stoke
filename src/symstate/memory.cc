@@ -57,15 +57,22 @@ SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size
 
 void SymMemory::init_concrete(const Memory& stack, const Memory& heap) {
 
-  heap_start_ = heap.lower_bound();
-  heap_size_  = 8*heap.size();
+  Memory my_mem;
+  if(heap.size()) {
+    my_mem = heap;
+  } else {
+    my_mem = stack;
+  }
+
+  heap_start_ = my_mem.lower_bound();
+  heap_size_  = 8*my_mem.size();
 
   if(!heap_size_)
     return;
 
-  heap_ = SymBitVector::constant(64, read_quadword(heap, heap_start_, 0));
-  for(size_t i = 1; i < heap.size()/8; ++i) {
-    heap_ = SymBitVector::constant(64, read_quadword(heap, heap_start_, i)) || heap_;
+  heap_ = SymBitVector::constant(64, read_quadword(my_mem, heap_start_, 0));
+  for(size_t i = 1; i < my_mem.size()/8; ++i) {
+    heap_ = SymBitVector::constant(64, read_quadword(my_mem, heap_start_, i)) || heap_;
   }
 
 }
