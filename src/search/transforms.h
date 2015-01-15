@@ -167,7 +167,7 @@ private:
   }
   /** Does this instruction read (but not write) memory. */
   bool is_mem_read_only_opcode(x64asm::Opcode o) const {
-    if (x64asm::Instruction(o).is_pop()) {
+    if (x64asm::Instruction(o).is_pop() || x64asm::Instruction(o).is_popf()) {
       return true;
     }
     const auto instr = x64asm::Instruction(o);
@@ -176,7 +176,7 @@ private:
   }
   /** Does this instruction write (but not read or undef) memory. */
   bool is_mem_write_only_opcode(x64asm::Opcode o) const {
-    if (x64asm::Instruction(o).is_push()) {
+    if (x64asm::Instruction(o).is_push() || x64asm::Instruction(o).is_pushf()) {
       return true;
     }
     const auto instr = x64asm::Instruction(o);

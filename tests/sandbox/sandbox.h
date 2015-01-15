@@ -587,3 +587,93 @@ TEST(SandboxTest, RSP_WITH_JMPS) {
   ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
+TEST(SandboxTest, PushfWorks) {
+  std::stringstream ss;
+  ss << "pushf" << std::endl;
+  ss << "pushfq" << std::endl;
+	ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+}
+
+TEST(SandboxTest, PopfFailCase) {
+  std::stringstream ss;
+	ss << "movq $-0x1, %rax" << std::endl;
+  ss << "pushq %rax" << std::endl;
+  ss << "popf" << std::endl;
+	ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::SIGSEGV_, sb.result_begin()->code);
+}
+
+TEST(SandboxTest, PopfqFailCase) {
+  std::stringstream ss;
+	ss << "movq $-0x1, %rax" << std::endl;
+  ss << "pushq %rax" << std::endl;
+  ss << "popfq" << std::endl;
+	ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::SIGSEGV_, sb.result_begin()->code);
+}
+
+TEST(SandboxTest, PopfqWorksCase) {
+  std::stringstream ss;
+  ss << "pushfq" << std::endl;
+	ss << "movl $0x000008d5, %edi" << std::endl;
+	ss << "popq %rax" << std::endl;
+	ss << "orq %rax, %rdi" << std::endl;
+	ss << "pushq %rdi" << std::endl;
+	ss << "popfq" << std::endl;
+	ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+}
+
