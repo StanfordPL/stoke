@@ -67,12 +67,6 @@ CRC32_R32_RH
 , VLDMXCSR_M32
 , VSTMXCSR_M32
 
-// See STOKE sandbox issue #261. These are (push/pop)f(q) instructions.
-, PUSHF
-, PUSHFQ
-, POPF
-, POPFQ
-
 // See STOKE sandbox issue #262. This is the invpcid instruction.
 , INVPCID_R64_M128
 
