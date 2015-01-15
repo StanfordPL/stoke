@@ -667,9 +667,13 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
   else if (instr.is_implicit_memory_dereference()) {
     if (instr.is_push()) {
       emit_push(instr);
-    } else if (instr.is_pop()) {
+    } else if (instr.is_pushf()) {
+			emit_pushf(instr);
+		} else if (instr.is_pop()) {
       emit_pop(instr);
-    } else {
+    } else if (instr.is_popf()) {
+			emit_popf(instr);
+		} else {
       emit_signal_trap_call(ErrorCode::SIGILL_);
     }
   }
@@ -1034,6 +1038,63 @@ void Sandbox::emit_pop(const Instruction& instr) {
   }
 }
 
+void Sandbox::emit_popf(const Instruction& instr) {
+	// Two masks for reasoning about rflags. One is what the user can modify, the other is the inverse.
+	// It's possible that it's reasonable to modify more than these, but for now, this is all we
+	// support.
+	constexpr uint32_t user_mask = 0x000008d5; // rflags[11,7,6,4,2,0]
+	constexpr uint32_t reserved_mask = ~user_mask;
+
+	// Backup some scratch space
+	emit_load_stoke_rsp();
+	assm_.push(r15);
+	assm_.push(r14);
+	emit_load_user_rsp();
+
+	// Restore the user's rsp and try to take some bits off of his stack
+	// If a segv were going to happen, we would catch it here
+	if (instr.get_opcode() == POPFQ) {
+		emit_pop({POP_R64, {r15}});
+	} else {
+		assm_.lea(r15, M64(Imm32(0)));
+		emit_pop({POP_R16, {r15w}});
+	}
+
+	// Now back to stoke to do some real work
+	emit_load_stoke_rsp();
+	// Load rflags 
+	assm_.pushfq();
+
+	// Check whether any of the user-provided data disagrees with any non-condition flags
+	assm_.mov(r14, M64(rsp));
+	assm_.xor_(r14, r15);
+	assm_.and_(r14d, Imm32(reserved_mask));
+	// If the value is non-zero (meaning there was a disagreement), trigger a segfault (meaning freak out)
+	const auto okay = get_label();
+	assm_.je(okay);
+	emit_signal_trap_call(ErrorCode::SIGSEGV_);
+	assm_.bind(okay);
+
+	// Now that we know the user's value agrees on reserved bits, extract just the new bits
+	assm_.and_(r15d, Imm32(user_mask));
+ 	// Let's also copy the original rflags state to a temp register and zero out these bits
+	assm_.mov(r14, M64(rsp));
+	assm_.and_(r14, Imm32(reserved_mask));	
+	// And now put the results together into r15
+	assm_.or_(r15, r14);
+
+	// Load this value onto the stack and pop into rflags
+	assm_.push(r15);
+	assm_.popfq();
+	// One more pop to put the stack back where it was (we can clobber r14)
+	assm_.pop(r14);
+
+	// Restore everything and reload the user's rsp
+	assm_.pop(r14);
+	assm_.pop(r15);
+	emit_load_user_rsp();
+}
+
 void Sandbox::emit_push(const Instruction& instr) {
   switch (instr.get_opcode()) {
   case PUSH_IMM16:
@@ -1061,6 +1122,29 @@ void Sandbox::emit_push(const Instruction& instr) {
     assert(false);
     break;
   }
+}
+
+void Sandbox::emit_pushf(const Instruction& instr) {
+	// We need to do some pushing and popping, so reload the stoke rsp
+	emit_load_stoke_rsp();
+	// Backup the value of r15, which we're going to clobber and move rflags there
+	assm_.push(r15);
+	assm_.pushfq();
+	assm_.pop(r15);
+
+	// Now restore the user's rsp and try pushing r15 onto the user's stack
+	// If a segfault were going to happen, we would catch it here.
+	emit_load_user_rsp();
+	if (instr.get_opcode() == PUSHFQ) {
+		emit_push({PUSH_R64, {r15}});
+	} else {
+		emit_push({PUSH_R16, {r15w}});
+	}
+
+	// Now switch back to stoke's rsp just long enough to restore the original r15
+	emit_load_stoke_rsp();
+	assm_.pop(r15);
+	emit_load_user_rsp();
 }
 
 void Sandbox::emit_reg_div(const Instruction& instr) {

@@ -277,8 +277,12 @@ private:
   void emit_mem_push(const x64asm::Instruction& instr);
   /** Special case for emitting pop. */
   void emit_pop(const x64asm::Instruction& instr);
+  /** Special case for emitting popf. */
+  void emit_popf(const x64asm::Instruction& instr);
   /** Special case for emitting push. */
   void emit_push(const x64asm::Instruction& instr);
+  /** Special case for emitting pushf. */
+  void emit_pushf(const x64asm::Instruction& instr);
   /** Special case for emitting div instructions that read from registers. */
   void emit_reg_div(const x64asm::Instruction& instr);
 
