@@ -57,6 +57,79 @@ void SimpleHandler::add_all() {
 
   });
 
+  // can't be done with packed handler because of special case for memory
+  add_opcode({"movsd"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    if(src.is_sse_register()) {
+      if(dst.is_typical_memory()) {
+        ss.set(dst, b[63][0]);
+      } else {
+        ss.set(dst, a[127][64] || b[63][0]);
+      }
+    } else {
+      auto zeros = SymBitVector::constant(128 - 64, 0);
+      ss.set(dst, zeros || b[63][0]);
+    }
+  });
+
+  // can't be done with packed handler because of special case for memory
+  add_opcode({"vmovsd"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    assert(src.is_typical_memory() || dst.is_typical_memory());
+    if(src.is_typical_memory()) {
+      // memory to register
+      auto zeros = SymBitVector::constant(128 - 64, 0);
+      ss.set(dst, zeros || b[63][0], true);
+    } else {
+      // register to memory
+      ss.set(dst, b[63][0]);
+    }
+  });
+
+  // can't be done with packed handler because of special case for memory
+  add_opcode({"vmovsd"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    assert(src1.is_sse_register() && src2.is_sse_register() && dst.is_sse_register());
+    ss.set(dst, b[127][64] || c[63][0], true);
+  });
+
+  // can't be done with packed handler because of special case for memory
+  add_opcode({"movss"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    if(src.is_sse_register()) {
+      if(dst.is_typical_memory()) {
+        ss.set(dst, b[31][0]);
+      } else {
+        ss.set(dst, a[127][32] || b[31][0]);
+      }
+    } else {
+      auto zeros = SymBitVector::constant(128 - 32, 0);
+      ss.set(dst, zeros || b[31][0]);
+    }
+  });
+
+  // can't be done with packed handler because of special case for memory
+  add_opcode({"vmovss"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    assert(src.is_typical_memory() || dst.is_typical_memory());
+    if(src.is_typical_memory()) {
+      // memory to register
+      auto zeros = SymBitVector::constant(128 - 32, 0);
+      ss.set(dst, zeros || b[31][0], true);
+    } else {
+      // register to memory
+      ss.set(dst, b[31][0]);
+    }
+  });
+
+  // can't be done with packed handler because of special case for memory
+  add_opcode({"vmovss"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    assert(src1.is_sse_register() && src2.is_sse_register() && dst.is_sse_register());
+    ss.set(dst, b[127][32] || c[31][0], true);
+  });
+
+
   add_opcode({"negb", "negw", "negl", "negq"},
   [] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(dst, -a);
