@@ -349,6 +349,8 @@ class Command(object):
 # parsing --help output into an AST
 # ------------------------------------------
 
+base_path = os.path.dirname(os.path.realpath(__file__))
+
 def run(cmd):
   p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   out = ""
@@ -357,7 +359,7 @@ def run(cmd):
   return out
 
 def get_command():
-  output = run("stoke --help | grep \"^  \"")
+  output = run(base_path + "/../../bin/stoke --help | grep \"^  \"")
   subcommands = []
   cmd = Command(None, "stoke", "", subcommands, [])
   subsubmap = {}
@@ -389,7 +391,7 @@ def get_command():
   return cmd
 
 def get_arguments(subcommand):
-  data = run("stoke " + subcommand + " --help | grep \"^  \(-\| \)\"")
+  data = run(base_path + "/../../bin/stoke " + subcommand + " --help | grep \"^  \(-\| \)\"")
   args = []
   for line in data.split("\n"):
     if line.startswith("    "):
