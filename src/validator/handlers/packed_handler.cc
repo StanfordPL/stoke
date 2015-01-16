@@ -60,6 +60,18 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 
   size_t arity = instr.arity();
 
+  if(arity < 2 || arity > 4)
+    throw VALIDATOR_ERROR("Only arity 2/3/4 instructions supported by PackedHandler");
+
+  bool has_immediate;
+  Operand last = instr.get_operand<Operand>(arity-1);
+  has_immediate = last.is_immediate();
+  SymBitVector immediate;
+  if(has_immediate) {
+    immediate = state[last];
+    arity--;
+  }
+
   if(arity == 2) {
     op1 = instr.get_operand<Operand>(0);
     op2 = instr.get_operand<Operand>(1);
@@ -67,7 +79,7 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     op1 = instr.get_operand<Operand>(1);
     op2 = instr.get_operand<Operand>(2);
   } else {
-    throw VALIDATOR_ERROR("Only arity 2/3 instructions supported by PackedHandler");
+    throw VALIDATOR_ERROR("Only arity 2/3/4 instructions supported by PackedHandler");
   }
 
   SymBitVector arg1 = state[op1];
@@ -106,7 +118,11 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     auto arg1_bits = min(input_width, op1.size());
     auto arg2_bits = min(input_width, op2.size());
 
-    result = entry(op1, arg1[arg1_bits-1][0], op2, arg2[arg2_bits-1][0], state);
+    if(has_immediate) {
+      result = entry(op1, arg1[arg1_bits-1][0], op2, arg2[arg2_bits-1][0], state, immediate, 0);
+    } else {
+      result = entry(op1, arg1[arg1_bits-1][0], op2, arg2[arg2_bits-1][0], state);
+    }
     if(clear)
       result = SymBitVector::constant(dest.size() - output_width, 0) || result;
     else
@@ -116,14 +132,25 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     // Loop through sets of 'input_width' in the input and apply the binary
     // operator in a pairwise way.  Stop when we get to the end of the input/output
     // and clear or preserve the remaining bits.
-    result = entry(op1, arg1[input_width-1][0], op2, arg2[input_width-1][0], state);
+    SymBitVector imm_arg = immediate;
 
-    size_t i,j;
-    for(i = input_width, j = output_width;
+    if(has_immediate) {
+      result = entry(op1, arg1[input_width-1][0], op2, arg2[input_width-1][0], state, immediate, 0);
+    } else {
+      result = entry(op1, arg1[input_width-1][0], op2, arg2[input_width-1][0], state);
+    }
+
+    size_t i,j,k;
+    for(i = input_width, j = output_width, k = 1;
         i < op1.size() && i < op2.size() && j < dest.size();
-        i = i + input_width, j = j + output_width) {
-      result = entry(op1, arg1[i + input_width - 1][i],
-                     op2, arg2[i + input_width - 1][i], state) || result;
+        i = i + input_width, j = j + output_width, ++k) {
+      if(has_immediate) {
+        result = entry(op1, arg1[i + input_width - 1][i],
+                       op2, arg2[i + input_width - 1][i], state, immediate, k) || result;
+      } else {
+        result = entry(op1, arg1[i + input_width - 1][i],
+                       op2, arg2[i + input_width - 1][i], state) || result;
+      }
     }
 
     if(j + output_width < dest.size()) {

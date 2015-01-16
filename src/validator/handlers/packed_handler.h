@@ -717,20 +717,22 @@ private:
 
   /** Represents the operation done in parallel on the bitvectors */
   typedef std::function<SymBitVector (SymBitVector, SymBitVector)> BinaryOperator;
+  /** Represents the operation done in parallel on the bitvectors */
+  typedef std::function<SymBitVector (SymBitVector, SymBitVector, SymBitVector, uint16_t)> BinaryOperatorWithConstant;
+
 
   class PackedOpcode {
 
   public:
 
     PackedOpcode(std::string opcode, BinaryOperator binop) :
-      opcode_(opcode), binop_(binop) {
-      set_uninterpreted(false);
-      set_only_one(false);
-      set_clear(false);
-      set_input_width(0);
-      set_output_width(0);
-      set_fixed_arg(-1);
-      set_avx_alignment(false);
+      opcode_(opcode), binop_(binop), has_constant_(false) {
+      init();
+    }
+
+    PackedOpcode(std::string opcode, BinaryOperatorWithConstant binop) :
+      opcode_(opcode), binop_with_constant_(binop), has_constant_(true) {
+      init();
     }
 
     PackedOpcode& set_uninterpreted(bool b = true) {
@@ -762,7 +764,13 @@ private:
     }
 
     SymBitVector operator()(x64asm::Operand arg1, SymBitVector bv1, x64asm::Operand arg2, SymBitVector bv2, SymState& ss) {
+      assert(!has_constant_);
       return binop_(bv1, bv2);
+    }
+
+    SymBitVector operator()(x64asm::Operand arg1, SymBitVector bv1, x64asm::Operand arg2, SymBitVector bv2, SymState& ss, SymBitVector imm, uint16_t k) {
+      assert(has_constant_);
+      return binop_with_constant_(bv1, bv2, imm, k);
     }
 
     bool get_uninterpreted() {
@@ -789,7 +797,19 @@ private:
 
   private:
 
+    void init() {
+      set_uninterpreted(false);
+      set_only_one(false);
+      set_clear(false);
+      set_input_width(0);
+      set_output_width(0);
+      set_fixed_arg(-1);
+      set_avx_alignment(false);
+    }
+
     BinaryOperator binop_;
+    BinaryOperatorWithConstant binop_with_constant_;
+    bool has_constant_;
 
     std::string opcode_;
     bool uninterpreted_;
@@ -802,7 +822,8 @@ private:
   };
 
   /** Adds an opcode to our internal maps */
-  PackedOpcode& add_opcode(std::string opcode, BinaryOperator op,
+  template <typename T>
+  PackedOpcode& add_opcode(std::string opcode, T op,
                            uint16_t width, uint16_t output_width = 0,
                            bool uninterpreted = false, bool limit1 = false) {
 
