@@ -727,12 +727,12 @@ private:
 
     PackedOpcode(std::string opcode, BinaryOperator binop) :
       opcode_(opcode), binop_(binop), has_constant_(false) {
-        init();
+      init();
     }
 
     PackedOpcode(std::string opcode, BinaryOperatorWithConstant binop) :
       opcode_(opcode), binop_with_constant_(binop), has_constant_(true) {
-        init();
+      init();
     }
 
     PackedOpcode& set_uninterpreted(bool b = true) {
