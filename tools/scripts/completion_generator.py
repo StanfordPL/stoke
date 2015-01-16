@@ -175,6 +175,7 @@ class ZshHandler(Handler):
   def write_arguments(self, name, args):
     def esc(s):
       s = s.replace("{", "\\{").replace("}", "\\}").replace("'", "")
+      s = s.replace("[", "\\[").replace("]", "\\]")
       return s
     self.writeln("_" + name.replace(" ", "_") + "()\n{")
     res = []
