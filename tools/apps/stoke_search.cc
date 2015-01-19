@@ -203,7 +203,7 @@ int main(int argc, char** argv) {
   VerifierGadget verifier(holdout_fxn, validator);
 
   if (!target.is_sound()) {
-    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
+    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
   }
 
   ScbArg scb_arg {&Console::msg(), nullptr};

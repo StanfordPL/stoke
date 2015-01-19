@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
   os.filter().padding(3);
 
   if (!target.is_sound()) {
-    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
+    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
   }
 
   os << "Original Code:" << endl;

@@ -20,6 +20,7 @@
 
 #include <map>
 #include <stack>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
@@ -334,6 +335,9 @@ public:
   }
   /** Returns true if an instruction performs a read from a register with an undefined value. */
   bool performs_undef_read() const;
+
+  /** Explains what undefined value is read. */
+  std::string which_undef_read() const;
 
   /** Adds summary information about a call target to increase precision of the
     dataflow analysis.  The information is about function (callable by the given
