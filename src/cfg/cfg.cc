@@ -33,6 +33,8 @@ Cfg::loc_type Cfg::get_loc(size_t idx) const {
 }
 
 bool Cfg::performs_undef_read() const {
+  // NOTE: if this method changes, then which_undef_read must be adapted accordingly!
+
   // No need to check the entry; this will consider the exit, but it will be a nop.
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
@@ -54,6 +56,38 @@ bool Cfg::performs_undef_read() const {
   }
 
   return false;
+}
+
+string Cfg::which_undef_read() const {
+  // NOTE: if this method changes, then performs_undef_read must be adapted accordingly!
+  assert(performs_undef_read());
+
+  ostringstream ss;
+  bool empty = true;
+
+  // No need to check the entry; this will consider the exit, but it will be a nop.
+  for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
+    for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
+      const auto idx = get_index({*i, j});
+      const auto r = must_read_set(code_[idx]);
+      const auto di = def_ins_[idx];
+
+      if ((r & di) != r) {
+        ss << (empty ? "" : ". ") << "Instruction '" << code_[idx] << "' reads " << r << " but only " << di << " are defined.";
+        return ss.str();
+      }
+    }
+  }
+
+  // Check that the live outs are all defined
+  // i.e. every life_out is also def in at the end
+  const auto di_end = def_ins_[blocks_[get_exit()]];
+  if ((di_end & fxn_live_outs_) != fxn_live_outs_) {
+    ss << (empty ? "" : ". ") << "At the end, " << fxn_live_outs_ << " should be defined, but only " << di_end << " are.";
+  }
+
+  assert(!empty);
+  return ss.str();
 }
 
 void Cfg::forward_topo_sort() {

@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
   auto stepping = false;
 
   if (!target.is_sound()) {
-    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined." << endl;
+    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
   }
 
   for (size_t i = 0, ie = target_arg.value().code.size(); i < ie; ++i) {
