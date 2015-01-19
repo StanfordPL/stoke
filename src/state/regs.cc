@@ -67,7 +67,7 @@ istream& Regs::read_text(istream& is) {
     auto& r = (*this)[i];
     for (int j = r.num_fixed_bytes() - 1; j >= 0; --j) {
       HexReader<uint8_t, 2>()(is, r.get_fixed_byte(j));
-      is.get();
+      if (j != 0) is.get();
     }
   }
 
