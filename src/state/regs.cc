@@ -28,10 +28,13 @@ namespace stoke {
 
 ostream& Regs::write_text(ostream& os, const char** names, size_t padding) const {
   ofilterstream<Column> fs(os);
-  fs.filter().padding(padding);
+  fs.filter().padding(0);
 
   for (size_t i = 0, ie = size(); i < ie; ++i) {
     fs << names[i];
+    for (size_t k = 0; k < padding; k++) {
+      fs << " ";
+    }
     if (i + 1 != ie) {
       fs << endl;
     }
@@ -42,7 +45,7 @@ ostream& Regs::write_text(ostream& os, const char** names, size_t padding) const
     const auto& r = (*this)[i];
     for (int j = r.num_fixed_bytes() - 1; j >= 0; --j) {
       HexWriter<uint8_t, 2>()(fs, r.get_fixed_byte(j));
-      fs << " ";
+      if (j != 0) fs << " ";
     }
     if (i + 1 != ie) {
       fs << endl;
