@@ -20,6 +20,7 @@
 #include "src/cfg/cfg.h"
 #include "src/sandbox/sandbox.h"
 #include "src/target/cpu_info.h"
+#include "src/tunit/tunit.h"
 #include "tools/args/in_out.h"
 #include "tools/ui/console.h"
 
@@ -47,13 +48,27 @@ public:
     for (const auto& fxn : aux_fxns_arg.value()) {
       auto code = fxn.code;
       auto lbl = code[0].get_operand<x64asm::Label>(0);
-      add_summary(lbl,
-                  code.must_read_set(),
-                  code.must_write_set(),
-                  code.must_undef_set(),
-                  code.maybe_read_set(),
-                  code.maybe_write_set(),
-                  code.maybe_undef_set());
+      TUnit::MayMustSets mms = {
+        code.must_read_set(),
+        code.must_write_set(),
+        code.must_undef_set(),
+        code.maybe_read_set(),
+        code.maybe_write_set(),
+        code.maybe_undef_set()
+      };
+      mms = fxn.get_may_must_sets(mms);
+      // check consistency of dataflow information
+      std::string consistency_warning = "The dataflow information is inconsistent for function '" + fxn.name + "'.  The maybe set needs to contain the must set. ";
+      if (!mms.maybe_read_set.contains(mms.must_read_set)) {
+        Console::error(1) << consistency_warning << "maybe-read: " << mms.maybe_read_set << ". must-read: " << mms.must_read_set << std::endl;
+      }
+      if (!mms.maybe_write_set.contains(mms.must_write_set)) {
+        Console::error(1) << consistency_warning << "maybe-write: " << mms.maybe_write_set << ". must-write: " << mms.must_write_set << std::endl;
+      }
+      if (!mms.maybe_undef_set.contains(mms.must_undef_set)) {
+        Console::error(1) << consistency_warning << "maybe-undef: " << mms.maybe_undef_set << ". must-undef: " << mms.must_undef_set << std::endl;
+      }
+      add_summary(lbl, mms);
     }
     recompute();
   }

@@ -16,6 +16,7 @@
 #ifndef _STOKE_TEST_TUNIT_TUNIT_H
 #define _STOKE_TEST_TUNIT_TUNIT_H
 
+#include "src/ext/x64asm/src/constants.h"
 
 TEST(TunitParsing, Simple) {
   std::stringstream ss;
@@ -30,6 +31,13 @@ TEST(TunitParsing, Simple) {
   stoke::TUnit tunit;
   ss >> tunit;
   ASSERT_FALSE(ss.fail());
+  // no annotations, so nothing should be present
+  ASSERT_FALSE(tunit.must_read_set);
+  ASSERT_FALSE(tunit.must_write_set);
+  ASSERT_FALSE(tunit.must_undef_set);
+  ASSERT_FALSE(tunit.maybe_read_set);
+  ASSERT_FALSE(tunit.maybe_write_set);
+  ASSERT_FALSE(tunit.maybe_undef_set);
 }
 
 TEST(TunitParsing, RequireLabel) {
@@ -78,5 +86,75 @@ TEST(TunitParsing, EmptyLine) {
   ASSERT_EQ((size_t)2, tunit.code.size());
 }
 
+TEST(TunitParsing, DataflowAnnotations) {
+  std::stringstream ss;
+  ss << R"(  .text
+  .globl foo
+  .type foo, @function
+#! maybe-read { }
+#! maybe-write { %rcx }
+#! maybe-undef { %rcx }
+#! must-read { }
+#! must-write { }
+#! must-undef { }
+.foo:
+  retq
+
+.size foo, .-foo)";
+
+  stoke::TUnit tunit;
+  ss >> tunit;
+  x64asm::RegSet empty;
+  x64asm::RegSet rcxonly;
+  rcxonly += x64asm::Constants::rcx();
+  ASSERT_FALSE(ss.fail());
+  ASSERT_TRUE(tunit.must_read_set);
+  ASSERT_TRUE(tunit.must_write_set);
+  ASSERT_TRUE(tunit.must_undef_set);
+  ASSERT_TRUE(tunit.maybe_read_set);
+  ASSERT_TRUE(tunit.maybe_write_set);
+  ASSERT_TRUE(tunit.maybe_undef_set);
+  ASSERT_EQ(*tunit.must_read_set, empty);
+  ASSERT_EQ(*tunit.must_write_set, empty);
+  ASSERT_EQ(*tunit.must_undef_set, empty);
+  ASSERT_EQ(*tunit.maybe_read_set, empty);
+  ASSERT_EQ(*tunit.maybe_write_set, rcxonly);
+  ASSERT_EQ(*tunit.maybe_undef_set, rcxonly);
+}
+
+TEST(TunitParsing, DataflowAnnotationsNormalization) {
+  std::stringstream ss;
+  ss << R"(  .text
+  .globl foo
+  .type foo, @function
+#! maybe-read { }
+#! must-write { %rcx }
+.foo:
+  retq
+
+.size foo, .-foo)";
+
+  stoke::TUnit tunit;
+  ss >> tunit;
+  x64asm::RegSet empty;
+  x64asm::RegSet rcxonly;
+  x64asm::RegSet all = x64asm::RegSet::universe();
+  rcxonly += x64asm::Constants::rcx();
+  stoke::TUnit::MayMustSets mms = {
+    all, // must_read_set
+    empty, // must_write_set
+    empty, // must_undef_set
+    all, // maybe_read_set
+    empty, // maybe_write_set
+    empty // maybe_undef_set
+  };
+  mms = tunit.get_may_must_sets(mms);
+  ASSERT_FALSE(ss.fail());
+  // must read should be empty, because user specified empty set as maybe-read, and
+  // thus must read automatically gets to be empty, too
+  ASSERT_EQ(mms.must_read_set, empty);
+  // maybe write should be rcx, because user specified must write as rcx
+  ASSERT_EQ(mms.maybe_write_set, rcxonly);
+}
 
 #endif

@@ -527,10 +527,35 @@ debugging and benchmarking the performance of each of its core components:
 - `stoke benchmark state`: Measure the time required to reset the memory of a hardware machine state.
 - `stoke benchmark verify`: Measure the time required to check the equivalence of two programs.
 
+Shell completion
+-----
+
 STOKE also comes with support for bash and zsh completion.  To enable either, type:
 
 	$ make bash_completion
 	$ make zsh_completion
+
+Using functions to be proposed by STOKE
+-----
+STOKE can not only propose instructions when searching for programs, but also propose calls to a list of known functions using the `--functions` command-line argument.  To decide whether these functions read any undefined state (before proposing them), we use a dataflow analysis.  Sometimes, the dataflow analysis can be too imprecise, which is why STOKE allows the user to annotate dataflow information in comments.  Here is an example of a function that clears the overflow flag.  STOKEs dataflow analysis is too imprecise for this code.
+
+      .text
+      .globl clear_of
+      .type clear_of, @function
+    #! maybe-read { }
+    #! maybe-write { %of %r15 }
+    #! maybe-undef { }
+    .clear_of:
+      pushfq
+      popq %r15
+      andq $0xfffff7ff, %r15
+      pushq %r15
+      popfq
+      retq
+
+    .size clear_of, .-clear_of
+
+Note that it is enough to specify the maybe sets, as STOKE will automatically realize that the must sets need to be contained in the maybe set.
 
 Extending STOKE
 =====
