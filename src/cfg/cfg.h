@@ -24,6 +24,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "src/tunit/tunit.h"
+
 #include "src/ext/cpputil/include/container/bit_vector.h"
 #include "src/ext/cpputil/include/container/maputil.h"
 #include "src/ext/x64asm/include/x64asm.h"
@@ -342,20 +344,14 @@ public:
   /** Adds summary information about a call target to increase precision of the
     dataflow analysis.  The information is about function (callable by the given
     label), and is not meant to change over the lifetime of the Cfg. */
-  void add_summary(x64asm::Label label,
-                   x64asm::RegSet must_read_set,
-                   x64asm::RegSet must_write_set,
-                   x64asm::RegSet must_undef_set,
-                   x64asm::RegSet maybe_read_set,
-                   x64asm::RegSet maybe_write_set,
-                   x64asm::RegSet maybe_undef_set) {
+  void add_summary(x64asm::Label& label, TUnit::MayMustSets mms) {
     fncs_summary[label] = {
-      must_read_set,
-      must_write_set,
-      must_undef_set,
-      maybe_read_set,
-      maybe_write_set,
-      maybe_undef_set,
+      mms.must_read_set,
+      mms.must_write_set,
+      mms.must_undef_set,
+      mms.maybe_read_set,
+      mms.maybe_write_set,
+      mms.maybe_undef_set,
     };
   }
 

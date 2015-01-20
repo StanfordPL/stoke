@@ -17,6 +17,8 @@
 #include <sstream>
 #include <vector>
 
+#include "tools/ui/console.h"
+
 #include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/indent.h"
@@ -26,6 +28,15 @@ using namespace std;
 using namespace x64asm;
 
 namespace stoke {
+
+bool is_prefix(const string& pre, const string& s) {
+  auto sl = s.length();
+  auto prel = pre.length();
+  if (sl < prel) {
+    return false;
+  }
+  return 0 == s.compare(0, prel, pre, 0, prel);
+}
 
 istream& operator>>(istream& is, TUnit& t) {
   string s;
@@ -37,7 +48,38 @@ istream& operator>>(istream& is, TUnit& t) {
 
   vector<string> lines;
   for (size_t i = 0; getline(is, s); ++i) {
-    lines.push_back(s);
+    stringstream ss;
+    RegSet rs;
+    if (is_prefix("#! maybe-read {", s)) {
+      ss << s.substr(14);
+      ss >> rs;
+      t.maybe_read_set = rs;
+    } else if (is_prefix("#! must-read {", s)) {
+      ss << s.substr(13);
+      ss >> rs;
+      t.must_read_set = rs;
+    } else if (is_prefix("#! maybe-write {", s)) {
+      ss << s.substr(15);
+      ss >> rs;
+      t.maybe_write_set = rs;
+    } else if (is_prefix("#! must-write {", s)) {
+      ss << s.substr(14);
+      ss >> rs;
+      t.must_write_set = rs;
+    } else if (is_prefix("#! maybe-undef {", s)) {
+      ss << s.substr(15);
+      ss >> rs;
+      t.maybe_undef_set = rs;
+    } else if (is_prefix("#! must-undef {", s)) {
+      ss << s.substr(14);
+      ss >> rs;
+      t.must_undef_set = rs;
+    } else {
+      if (is_prefix("#!", s)) {
+        Console::warn() << "Found a comment that starts with #!, but that is not recognized.  Is it misspelled?" << endl;
+      }
+      lines.push_back(s);
+    }
   }
   is.clear(ios::eofbit);
 

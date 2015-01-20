@@ -206,13 +206,15 @@ void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchSt
   for (const auto& fxn : aux_fxn) {
     auto code = fxn.code;
     auto lbl = code[0].get_operand<x64asm::Label>(0);
-    state.current.add_summary(lbl,
-                              code.must_read_set(),
-                              code.must_write_set(),
-                              code.must_undef_set(),
-                              code.maybe_read_set(),
-                              code.maybe_write_set(),
-                              code.maybe_undef_set());
+    TUnit::MayMustSets mms = {
+      code.must_read_set(),
+      code.must_write_set(),
+      code.must_undef_set(),
+      code.maybe_read_set(),
+      code.maybe_write_set(),
+      code.maybe_undef_set()
+    };
+    state.current.add_summary(lbl, fxn.get_may_must_sets(mms));
   }
 
   state.current_cost = fxn(state.current).second;
