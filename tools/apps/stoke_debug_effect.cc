@@ -14,7 +14,6 @@
 
 #include <iostream>
 #include <limits>
-#include <sstream>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
@@ -24,6 +23,7 @@
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
+#include "tools/io/state_diff.h"
 #include "tools/ui/console.h"
 
 using namespace cpputil;
@@ -33,28 +33,6 @@ using namespace stoke;
 auto& dbg = Heading::create("Diff Options:");
 auto& show_unchanged = FlagArg::create("show_unchanged")
                        .description("Show unchanged lines");
-
-// see http://stackoverflow.com/questions/13172158/c-split-string-by-line
-std::vector<std::string> split_string(const std::string& str,
-                                      const std::string& delimiter) {
-  std::vector<std::string> strings;
-  std::string::size_type pos = 0;
-  std::string::size_type prev = 0;
-  while ((pos = str.find(delimiter, prev)) != std::string::npos) {
-    strings.push_back(str.substr(prev, pos - prev));
-    prev = pos + 1;
-  }
-  strings.push_back(str.substr(prev));
-  return strings;
-}
-
-string red(string s) {
-  return "\033[91m" + s + "\033[0m";
-}
-
-string green(string s) {
-  return "\033[92m" + s + "\033[0m";
-}
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
@@ -83,35 +61,7 @@ int main(int argc, char** argv) {
   if (result.code != ErrorCode::NORMAL) {
     Console::msg() << "Control returned abnormally with signal " << dec << (int)result.code << endl;
   } else {
-    ostringstream os1, os2;
-    os1 << initial << endl;
-    os2 << result << endl;
-    vector<string> ss1 = split_string(os1.str(), "\n");
-    vector<string> ss2 = split_string(os2.str(), "\n");
-    size_t len = min(ss1.size(), ss2.size());
-    for (size_t i = 0; i < len; i++) {
-      os1.str("");
-      os2.str("");
-      string s1 = ss1[i];
-      string s2 = ss2[i];
-      if (s1.size() != s2.size()) {
-        os1 << red(s1);
-        os2 << green(s2);
-      } else {
-        if (s1 != s2 || show_unchanged) {
-          for (size_t j = 0; j < s1.size(); j++) {
-            if (s1[j] == s2[j]) {
-              os1 << s1[j];
-              os2 << s1[j];
-            } else {
-              os1 << red(string(1, s1[j]));
-              os2 << green(string(1, s2[j]));
-            }
-          }
-          Console::msg() << os1.str() << endl << os2.str() << endl;
-        }
-      }
-    }
+    Console::msg() << diff_states(initial, result, show_unchanged);
   }
 
   return 0;
