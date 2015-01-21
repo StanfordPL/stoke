@@ -19,6 +19,7 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "tools/args/target.h"
+#include "tools/gadgets/rewrite.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
@@ -44,6 +45,7 @@ int main(int argc, char** argv) {
   }
 
   TargetGadget target;
+  RewriteGadget rewrite;
   SeedGadget seed;
   TestcaseGadget tc(seed);
   CpuStates tcs;
@@ -55,14 +57,16 @@ int main(int argc, char** argv) {
     Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
   }
 
-  sb.run(target);
-
-  const auto result = *(sb.result_begin());
-  if (result.code != ErrorCode::NORMAL) {
-    Console::msg() << "Control returned abnormally with signal " << dec << (int)result.code << endl;
-  } else {
-    Console::msg() << diff_states(initial, result, show_unchanged);
+  if (!rewrite.is_sound()) {
+    Console::error(1) << "Rewrite reads undefined variables, or leaves live_out undefined: " << rewrite.which_undef_read() << endl;
   }
+
+  sb.run(target);
+  const auto target_result = *(sb.result_begin());
+  sb.run(rewrite);
+  const auto rewrite_result = *(sb.result_begin());
+
+  Console::msg() << diff_states(target_result, rewrite_result, show_unchanged);
 
   return 0;
 }
