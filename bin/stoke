@@ -31,6 +31,7 @@ then
 	echo ""
 	echo "  debug cfg           generate the control flow graph for a function"
 	echo "  debug cost          evaluate a function using a STOKE cost function"
+	echo "  debug diff          diff the resulting state of two functions"
 	echo "  debug effect        show the effect of a function on the state"
 	echo "  debug sandbox       step through a function execution"
 	echo "  debug search        perform a program transformation"
@@ -54,6 +55,9 @@ then
 	elif [ "$SCMD" == "cost" ]
 	then
 		$HERE/stoke_debug_cost "$@"
+	elif [ "$SCMD" == "diff" ]
+	then
+		$HERE/stoke_debug_diff "$@"
 	elif [ "$SCMD" == "effect" ]
 	then
 		$HERE/stoke_debug_effect "$@"
