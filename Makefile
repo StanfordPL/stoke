@@ -111,6 +111,7 @@ TOOL_NON_ARG_OBJ=\
 	tools/io/reduction.o \
 	tools/io/performance_term.o \
 	tools/io/solver.o \
+	tools/io/state_diff.o \
 	tools/io/strategy.o \
 	tools/io/timeout.o
 
@@ -124,6 +125,7 @@ BIN=\
 	\
 	bin/stoke_debug_cfg \
 	bin/stoke_debug_cost \
+	bin/stoke_debug_diff \
 	bin/stoke_debug_effect \
 	bin/stoke_debug_sandbox \
 	bin/stoke_debug_search \
@@ -295,6 +297,9 @@ bin/stoke_debug_cost: tools/apps/stoke_debug_cost.cc tools/gadgets/*.h $(SRC_OBJ
 bin/stoke_debug_effect: tools/apps/stoke_debug_effect.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/sandbox.o tools/args/seed.o \
 	tools/args/target.o tools/args/testcases.o tools/args/in_out.o $(TOOL_NON_ARG_OBJ) $(LIB)  
+bin/stoke_debug_diff: tools/apps/stoke_debug_diff.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/sandbox.o tools/args/seed.o \
+	tools/args/target.o tools/args/rewrite.o tools/args/testcases.o tools/args/in_out.o $(TOOL_NON_ARG_OBJ) $(LIB)  
 bin/stoke_debug_sandbox: tools/apps/stoke_debug_sandbox.cc tools/gadgets/*.h $(SRC_OBJ) $(TOOL_OBJ)
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) tools/args/sandbox.o tools/args/seed.o \
 	tools/args/target.o tools/args/testcases.o tools/args/in_out.o $(TOOL_NON_ARG_OBJ) $(LIB)  
