@@ -74,6 +74,7 @@ string Cfg::which_undef_read() const {
 
       if ((r & di) != r) {
         ss << (empty ? "" : ". ") << "Instruction '" << code_[idx] << "' reads " << r << " but only " << di << " are defined.";
+        empty = false;
         return ss.str();
       }
     }
@@ -84,6 +85,7 @@ string Cfg::which_undef_read() const {
   const auto di_end = def_ins_[blocks_[get_exit()]];
   if ((di_end & fxn_live_outs_) != fxn_live_outs_) {
     ss << (empty ? "" : ". ") << "At the end, " << fxn_live_outs_ << " should be defined, but only " << di_end << " are.";
+    empty = false;
   }
 
   assert(!empty);
