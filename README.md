@@ -67,7 +67,7 @@ definitely will not work.
 Most of STOKE's software dependencies are available through apt. These can be
 satisfied by typing:
 
-    $ sudo apt-get install git subversion flex bison ccache doxygen g++ g++-multilib ghc libghc-regex-tdfa-dev libghc-regex-compat-dev libghc-split-dev cmake libghc-regex-compat-dev libjsoncpp-dev
+    $ sudo apt-get install git subversion flex bison ccache doxygen g++ g++-multilib ghc libghc-regex-tdfa-dev libghc-regex-compat-dev libghc-split-dev cmake libghc-regex-compat-dev libjsoncpp-dev libcln-dev
 
 The rest of the dependencies will be fetched automatically as part of the build
 process.
@@ -80,9 +80,11 @@ License version 2.0. To clone a copy of the source code, type:
 
     $ git clone https://github.com/eschkufz/stoke
 
-The remainder of STOKE's software dependencies are available on github and will
-be downloaded automatically the first time that STOKE is built. To build stoke for a Haswell system
-type the appropriate command for your system (the default is Haswell):
+See the previous section for a list of dependencies, and to check your hardware
+support level.  The remainder of STOKE's software dependencies are available on
+github and will be downloaded automatically the first time that STOKE is built.
+To build stoke for a Haswell system type the appropriate command for your
+system (the default is Haswell):
 
     $ make
     $ make sandybridge
