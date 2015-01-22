@@ -677,3 +677,34 @@ TEST(SandboxTest, PopfqWorksCase) {
   ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
+TEST(SandboxTest, fld_family) {
+  std::stringstream ss;
+	ss << "flds -0x20(%rsp)" << std::endl;
+	ss << "fldl -0x20(%rsp)" << std::endl;
+	ss << "fldt -0x20(%rsp)" << std::endl;
+	ss << "fld" << std::endl;
+	ss << "fld1" << std::endl;
+	ss << "fld2e" << std::endl;
+	ss << "fld2t" << std::endl;
+	ss << "fldg2" << std::endl;
+	ss << "fldn2" << std::endl;
+	ss << "fldpi" << std::endl;
+	ss << "fldz" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  stoke::CpuState tc;
+
+  stoke::Sandbox sb;
+  sb.set_abi_check(false);
+  stoke::StateGen sg(&sb, 64);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+}
+
+
