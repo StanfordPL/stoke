@@ -726,7 +726,7 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
   // Load the alignment mask into rsi, and the read/write mask into rdx/rcx
   switch (instr.type(mi)) {
   case Type::M_256:
-		// Berkeley says that 256-bit values DON'T have to be aligned? Is this true?
+    // Berkeley says that 256-bit values DON'T have to be aligned? Is this true?
     assm_.mov(rsi, Imm64(0xffffffffffffffe0));
     assm_.mov(rdx, Imm64(0x00000000ffffffff));
     break;
@@ -734,26 +734,26 @@ void Sandbox::emit_memory_instruction(const Instruction& instr) {
     assm_.mov(rsi, Imm64(0xfffffffffffffff0));
     assm_.mov(rdx, Imm64(0x000000000000ffff));
     break;
-	case Type::M_80_BCD:
-	case Type::M_80_FP:
-		// I'm not sure whether 128-bit alignment is required for 80-bit types or just preferred
+  case Type::M_80_BCD:
+  case Type::M_80_FP:
+    // I'm not sure whether 128-bit alignment is required for 80-bit types or just preferred
     assm_.mov(rsi, Imm64(0xfffffffffffffff0));
     assm_.mov(rdx, Imm64(0x00000000000003ff));
     break;
   case Type::M_64:
-	case Type::M_64_FP:
-	case Type::M_64_INT:
+  case Type::M_64_FP:
+  case Type::M_64_INT:
     assm_.mov(rsi, Imm64(0xffffffffffffffff));
     assm_.mov(rdx, Imm64(0x00000000000000ff));
     break;
   case Type::M_32:
-	case Type::M_32_FP:
-	case Type::M_32_INT:
+  case Type::M_32_FP:
+  case Type::M_32_INT:
     assm_.mov(rsi, Imm64(0xffffffffffffffff));
     assm_.mov(rdx, Imm64(0x000000000000000f));
     break;
   case Type::M_16:
-	case Type::M_16_INT:
+  case Type::M_16_INT:
     assm_.mov(rsi, Imm64(0xffffffffffffffff));
     assm_.mov(rdx, Imm64(0x0000000000000003));
     break;
