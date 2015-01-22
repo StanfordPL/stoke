@@ -60,8 +60,12 @@ bool make_dir() {
 }
 
 void callback(const FunctionCallbackData& data, void* arg) {
-  ofstream ofs(out.value() + "/" + data.tunit.name + ".s");
-  ofs << data.tunit << endl;
+  if(!data.parse_error) {
+    ofstream ofs(out.value() + "/" + data.tunit.name + ".s");
+    ofs << data.tunit << endl;
+  } else {
+    Console::warn() << "Could not disassemble " << data.tunit.name << " (parse error)." << endl;
+  }
 }
 
 int main(int argc, char** argv) {
