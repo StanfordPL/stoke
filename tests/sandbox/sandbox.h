@@ -486,6 +486,8 @@ TEST(SandboxTest, LDDQU_VLDDQU) {
 
   stoke::Sandbox sb;
   sb.set_abi_check(false);
+	// @todo Why does this test require 64 bytes of stack to begin
+	// with? Can't we automatically provide that?
   stoke::StateGen sg(&sb, 64);
   sg.get(tc);
   sb.insert_input(tc);
@@ -520,7 +522,7 @@ TEST(SandboxTest, PUSH_POP) {
 
   stoke::Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb, 64);
+  stoke::StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
@@ -552,7 +554,7 @@ TEST(SandboxTest, MEM_DIV) {
 
   stoke::Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb, 64);
+  stoke::StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
@@ -579,7 +581,7 @@ TEST(SandboxTest, RSP_WITH_JMPS) {
 
   stoke::Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb, 64);
+  stoke::StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
@@ -600,7 +602,7 @@ TEST(SandboxTest, PushfWorks) {
 
   stoke::Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb, 64);
+  stoke::StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
@@ -622,7 +624,7 @@ TEST(SandboxTest, PopfFailCase) {
 
   stoke::Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb, 64);
+  stoke::StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
@@ -644,7 +646,7 @@ TEST(SandboxTest, PopfqFailCase) {
 
   stoke::Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb, 64);
+  stoke::StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
@@ -669,7 +671,7 @@ TEST(SandboxTest, PopfqWorksCase) {
 
   stoke::Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb, 64);
+  stoke::StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
@@ -699,7 +701,7 @@ TEST(SandboxTest, fld_family) {
 
   stoke::Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb, 64);
+  stoke::StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
