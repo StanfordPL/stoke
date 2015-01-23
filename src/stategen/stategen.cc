@@ -75,16 +75,16 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
     sb_->insert_input(cs);
     sb_->run_one(0);
 
-		// There's a single failure case we have to deal with immediately.
-		// If the sandbox couldn't link cfg against its aux functions, it 
-		// won't ever run and set the value of last_line.
-		if (sb_->get_result(0)->code == ErrorCode::SIGBUS_) {
-			error_message_ = "Linking failed!";
-			return false;
-		}
+    // There's a single failure case we have to deal with immediately.
+    // If the sandbox couldn't link cfg against its aux functions, it
+    // won't ever run and set the value of last_line.
+    if (sb_->get_result(0)->code == ErrorCode::SIGBUS_) {
+      error_message_ = "Linking failed!";
+      return false;
+    }
 
-    // If we didn't segfault, or we did due to misalign and it's allowed, 
-		// then we're done
+    // If we didn't segfault, or we did due to misalign and it's allowed,
+    // then we're done
     if(is_ok(*sb_, cfg, last_line)) {
       return true;
     }
