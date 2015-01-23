@@ -486,8 +486,8 @@ TEST(SandboxTest, LDDQU_VLDDQU) {
 
   stoke::Sandbox sb;
   sb.set_abi_check(false);
-	// @todo Why does this test require 64 bytes of stack to begin
-	// with? Can't we automatically provide that?
+  // @todo Why does this test require 64 bytes of stack to begin
+  // with? Can't we automatically provide that?
   stoke::StateGen sg(&sb, 64);
   sg.get(tc);
   sb.insert_input(tc);
