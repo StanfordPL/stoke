@@ -134,7 +134,7 @@ public:
   /** Returns the ith testcase used in this function's correctness term. */
   const CpuState& get_testcase(size_t i) const {
     assert(i < num_testcases());
-    return sandbox_->get_input(i);
+    return *(sandbox_->get_input(i));
   }
 
 private:
