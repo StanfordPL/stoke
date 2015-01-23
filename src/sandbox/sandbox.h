@@ -114,10 +114,10 @@ public:
     aux_fxns_.clear();
     return *this;
   }
-	/** Returns the number of installed functions */
-	size_t num_functions() const {
-		return aux_fxns_.size();
-	}
+  /** Returns the number of installed functions */
+  size_t num_functions() const {
+    return aux_fxns_.size();
+  }
 
   /** Insert a callback to be invoked prior to exeucting a line. */
   Sandbox& insert_before(size_t line, StateCallback cb, void* arg) {
@@ -135,10 +135,10 @@ public:
     after_.clear();
     return *this;
   }
-	/** Returns the number of installed callbacks */
-	size_t num_callbacks() const {
-		return before_.size() + after_.size();
-	}
+  /** Returns the number of installed callbacks */
+  size_t num_callbacks() const {
+    return before_.size() + after_.size();
+  }
 
   /** Compile a new main function. */
   void compile(const Cfg& cfg);
@@ -169,15 +169,15 @@ public:
   }
   /** @deprecated Use get_output() */
   output_iterator get_result(size_t index) const {
-		return get_output(index);
+    return get_output(index);
   }
   /** @deprecated Use output_begin() */
   output_iterator result_begin() const {
-		return output_begin();
+    return output_begin();
   }
   /** @deprecated Use output_end() */
   output_iterator result_end() const {
-		return output_end();
+    return output_end();
   }
 
 private:
