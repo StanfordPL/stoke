@@ -22,6 +22,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/sandbox/io_pair.h"
+#include "src/sandbox/input_iterator.h"
 #include "src/sandbox/output_iterator.h"
 #include "src/sandbox/state_callback.h"
 #include "src/state/cpu_state.h"
@@ -39,7 +40,6 @@ public:
 
   /** Creates a sandbox. */
   Sandbox();
-
   /** Deletes a sandbox. */
   ~Sandbox() {
     clear_inputs();
@@ -57,10 +57,8 @@ public:
     return *this;
   }
 
-  /** Returns the number of inputs installed so far. */
-  size_t size() const {
-    return io_pairs_.size();
-  }
+  /** Add a new input. */
+  Sandbox& insert_input(const CpuState& input);
   /** Clear input set. */
   Sandbox& clear_inputs() {
     for (auto io : io_pairs_) {
@@ -69,14 +67,44 @@ public:
     io_pairs_.clear();
     return *this;
   }
-  /** Add a new input. */
-  Sandbox& insert_input(const CpuState& input);
-  /** Returns an input */
-  const CpuState& get_input(size_t index) const {
-    assert(index < size());
-    return io_pairs_[index]->in_;
+  /** Returns the number of inputs installed so far. */
+  size_t num_inputs() const {
+    return io_pairs_.size();
   }
 
+  /** Iterator for input states. */
+  input_iterator get_input(size_t index) const {
+    assert(index < size());
+    return input_iterator(io_pairs_.begin() + index);
+  }
+  /** Iterator for input states. */
+  input_iterator input_begin() const {
+    return input_iterator(io_pairs_.begin());
+  }
+  /** Iterator for input states. */
+  input_iterator input_end() const {
+    return input_iterator(io_pairs_.end());
+  }
+
+  /** Iterator for output states. */
+  output_iterator get_output(size_t index) const {
+    assert(index < size());
+    return output_iterator(io_pairs_.begin() + index);
+  }
+  /** Iterator for output states. */
+  output_iterator output_begin() const {
+    return output_iterator(io_pairs_.begin());
+  }
+  /** Iterator for output states. */
+  output_iterator output_end() const {
+    return output_iterator(io_pairs_.end());
+  }
+
+  /** Insert an auxiliary function which can be called at runtime */
+  Sandbox& insert_function(const Cfg& cfg) {
+    aux_fxn_read_only_ &= emit_function(cfg, false);
+    aux_fxns_.emplace_back(new x64asm::Function(fxn_));
+  }
   /** Clear auxiliary function set */
   Sandbox& clear_functions() {
     aux_fxn_read_only_ = true;
@@ -86,18 +114,11 @@ public:
     aux_fxns_.clear();
     return *this;
   }
-  /** Insert an auxiliary function which can be called at runtime */
-  Sandbox& insert_function(const Cfg& cfg) {
-    aux_fxn_read_only_ &= emit_function(cfg, false);
-    aux_fxns_.emplace_back(new x64asm::Function(fxn_));
-  }
+	/** Returns the number of installed functions */
+	size_t num_functions() const {
+		return aux_fxns_.size();
+	}
 
-  /** Clears the set of callbacks to invoke during execution. */
-  Sandbox& clear_callbacks() {
-    before_.clear();
-    after_.clear();
-    return *this;
-  }
   /** Insert a callback to be invoked prior to exeucting a line. */
   Sandbox& insert_before(size_t line, StateCallback cb, void* arg) {
     before_[line].push_back(std::make_pair(cb, arg));
@@ -108,18 +129,28 @@ public:
     after_[line].push_back(std::make_pair(cb, arg));
     return *this;
   }
+  /** Clears the set of callbacks to invoke during execution. */
+  Sandbox& clear_callbacks() {
+    before_.clear();
+    after_.clear();
+    return *this;
+  }
+	/** Returns the number of installed callbacks */
+	size_t num_callbacks() const {
+		return before_.size() + after_.size();
+	}
 
+  /** Compile a new main function. */
+  void compile(const Cfg& cfg);
+  /** Run a main function for just one input. */
+  void run_one(size_t index);
+  /** Run a main function for all inputs. */
+  void run_all();
   /** Convenience method. Compile a new main function and run for all inputs. */
   void run(const Cfg& cfg) {
     compile(cfg);
     run_all();
   }
-  /** Compile a new main function. */
-  void compile(const Cfg& cfg);
-  /** Run a main function for all inputs. */
-  void run_all();
-  /** Run a main function for just one input. */
-  void run_one(size_t index);
 
   /** Flag labels allocated after this call as disposable. */
   void start_reusing_labels() {
@@ -132,18 +163,21 @@ public:
     next_label_ = label_checkpoint_;
   }
 
-  /** Iterator for return states. */
+  /** @deprecated Use num_inputs() */
+  size_t size() const {
+    return num_inputs();
+  }
+  /** @deprecated Use get_output() */
   output_iterator get_result(size_t index) const {
-    assert(index < size());
-    return output_iterator(io_pairs_.begin() + index);
+		return get_output(index);
   }
-  /** Iterator for return states. */
+  /** @deprecated Use output_begin() */
   output_iterator result_begin() const {
-    return output_iterator(io_pairs_.begin());
+		return output_begin();
   }
-  /** Iterator for return states. */
+  /** @deprecated Use output_end() */
   output_iterator result_end() const {
-    return output_iterator(io_pairs_.end());
+		return output_end();
   }
 
 private:
