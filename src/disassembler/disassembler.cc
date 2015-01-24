@@ -236,7 +236,7 @@ uint64_t Disassembler::parse_addr_from_line(const string& s) {
 
 
 Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lines,
-		const map<string,string>& addr_label_map) {
+    const map<string,string>& addr_label_map) {
   label_set labels;
 
   for (auto& l : lines) {
@@ -256,13 +256,13 @@ Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lin
 
     // Arguments that are strictly hex digits become labels
     if (is_hex_string(ops)) {
-			const auto itr = addr_label_map.find(ops);
-			if (itr != addr_label_map.end()) {
-				instr = instr.substr(0, ops_begin) + "." + itr->second;
-			} else {
-				labels.insert(hex_to_int(ops));
-				instr = instr.substr(0, ops_begin) + ".L_" + ops;
-			}
+      const auto itr = addr_label_map.find(ops);
+      if (itr != addr_label_map.end()) {
+        instr = instr.substr(0, ops_begin) + "." + itr->second;
+      } else {
+        labels.insert(hex_to_int(ops));
+        instr = instr.substr(0, ops_begin) + ".L_" + ops;
+      }
     }
   }
 
@@ -289,10 +289,10 @@ bool Disassembler::parse_addr_label_from_line(const string& s, map<string, strin
     return false;
   }
 
-	// Mangle @s into _s (this is a hack around dealing with @plt functions)
-	for (auto& c : function_name) {
-		c = (c == '@') ? '_' : c;
-	}
+  // Mangle @s into _s (this is a hack around dealing with @plt functions)
+  for (auto& c : function_name) {
+    c = (c == '@') ? '_' : c;
+  }
 
   // get the address
   auto end_addr   = s.find_first_of(' ', start - 3);
