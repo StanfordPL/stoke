@@ -15,8 +15,9 @@
 #ifndef STOKE_TOOLS_GADGETS_TRANSFORMS_H
 #define STOKE_TOOLS_GADGETS_TRANSFORMS_H
 
-#include <random>
 #include <iostream>
+#include <random>
+#include <vector>
 
 #include "src/ext/x64asm/include/x64asm.h"
 
@@ -24,6 +25,7 @@
 #include "src/search/transforms.h"
 #include "src/solver/z3solver.h"
 #include "src/target/cpu_info.h"
+#include "src/tunit/tunit.h"
 #include "src/validator/validator.h"
 
 #include "tools/args/transforms.h"
@@ -33,7 +35,8 @@ namespace stoke {
 
 class TransformsGadget : public Transforms {
 public:
-  TransformsGadget(x64asm::Code code, std::default_random_engine::result_type seed) : Transforms() {
+  TransformsGadget(x64asm::Code code, const std::vector<TUnit>& aux_fxns,
+                   std::default_random_engine::result_type seed) : Transforms() {
     if (callee_save_arg.value()) {
       preserve_regs_arg.value() = x64asm::RegSet::empty();
     }
@@ -78,7 +81,7 @@ public:
     for (const auto& imm : immediates_arg.value()) {
       insert_immediate(imm);
     }
-    for (const auto& fxn : aux_fxns_arg.value()) {
+    for (const auto& fxn : aux_fxns) {
       insert_label(fxn.code[0].get_operand<x64asm::Label>(0));
     }
     for (const auto& m : mem_ops_arg.value()) {

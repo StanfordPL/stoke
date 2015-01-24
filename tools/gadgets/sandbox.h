@@ -15,10 +15,13 @@
 #ifndef STOKE_TOOLS_GADGETS_SANDBOX_H
 #define STOKE_TOOLS_GADGETS_SANDBOX_H
 
+#include <vector>
+
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_states.h"
+#include "src/tunit/tunit.h"
 #include "tools/args/in_out.h"
 #include "tools/args/sandbox.h"
 #include "tools/args/target.h"
@@ -27,10 +30,10 @@ namespace stoke {
 
 class SandboxGadget : public Sandbox {
 public:
-  SandboxGadget(const CpuStates& tcs) {
+  SandboxGadget(const CpuStates& tcs, const std::vector<TUnit>& aux_fxns) {
     set_abi_check(abi_check_arg);
     set_max_jumps(max_jumps_arg);
-    for (const auto& fxn : aux_fxns_arg.value()) {
+    for (const auto& fxn : aux_fxns) {
       insert_function({fxn.code, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
     }
     for (const auto& tc : tcs) {

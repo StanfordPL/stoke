@@ -28,6 +28,7 @@
 #include "src/state/cpu_states.h"
 #include "src/stategen/stategen.h"
 #include "tools/args/target.h"
+#include "tools/gadgets/functions.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/target.h"
 #include "tools/io/tunit.h"
@@ -100,8 +101,9 @@ auto& in = ValueArg<string>::create("in")
            .default_val("in.tc");
 
 int auto_gen() {
-  TargetGadget target;
-  SandboxGadget sb({});
+  FunctionsGadget aux_fxns;
+  TargetGadget target(aux_fxns);
+  SandboxGadget sb({}, aux_fxns);
 
   if (!target.is_sound()) {
     Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
