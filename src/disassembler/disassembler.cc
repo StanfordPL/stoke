@@ -156,7 +156,7 @@ Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s,
     string instr;
     if (parse_instr_from_line(s, instr)) {
       parse_addr_label_from_line(s, addr_label_map);
-      lines.push_back(pair<uint64_t, string>(parse_addr_from_line(s), fix_instruction(instr)));
+      lines.push_back({parse_addr_from_line(s), fix_instruction(instr)});
     }
   }
 
@@ -186,7 +186,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
 
   // Iterate through all the lines and make 'em pretty
   auto lines = index_lines(ips, line, data.addr_label_map);
-  const auto labels = fix_label_uses(lines);
+  const auto labels = fix_label_uses(lines, data.addr_label_map);
 
   // Build the code and offsets vector
   uint64_t starting_addr = lines[0].first;
@@ -235,7 +235,8 @@ uint64_t Disassembler::parse_addr_from_line(const string& s) {
 }
 
 
-Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lines) {
+Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lines,
+    const map<string,string>& addr_label_map) {
   label_set labels;
 
   for (auto& l : lines) {
@@ -255,8 +256,13 @@ Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lin
 
     // Arguments that are strictly hex digits become labels
     if (is_hex_string(ops)) {
-      labels.insert(hex_to_int(ops));
-      instr = instr.substr(0, ops_begin) + ".L_" + ops;
+      const auto itr = addr_label_map.find(ops);
+      if (itr != addr_label_map.end()) {
+        instr = instr.substr(0, ops_begin) + "." + itr->second;
+      } else {
+        labels.insert(hex_to_int(ops));
+        instr = instr.substr(0, ops_begin) + ".L_" + ops;
+      }
     }
   }
 
@@ -264,7 +270,6 @@ Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lin
 }
 
 bool Disassembler::parse_addr_label_from_line(const string& s, map<string, string>& map) {
-
   // Get the name of the function in addition to the "address"
   // E.g. if we have "  callq 401100 <_foo>"
   // then we want to add "401100" -> "_foo" to the mapping.
@@ -284,6 +289,11 @@ bool Disassembler::parse_addr_label_from_line(const string& s, map<string, strin
     return false;
   }
 
+  // Mangle @s into _s (this is a hack around dealing with @plt functions)
+  for (auto& c : function_name) {
+    c = (c == '@') ? '_' : c;
+  }
+
   // get the address
   auto end_addr   = s.find_first_of(' ', start - 3);
   auto start_addr = s.find_last_of(' ', end_addr - 1);
@@ -298,7 +308,6 @@ bool Disassembler::parse_addr_label_from_line(const string& s, map<string, strin
   map[address] = function_name;
 
   return true;
-
 }
 
 bool Disassembler::parse_instr_from_line(const string& s, string& instr) {
