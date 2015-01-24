@@ -101,7 +101,7 @@ auto& in = ValueArg<string>::create("in")
            .default_val("in.tc");
 
 int auto_gen() {
-	FunctionsGadget aux_fxns;
+  FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns);
   SandboxGadget sb({}, aux_fxns);
 

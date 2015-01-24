@@ -31,74 +31,74 @@ namespace stoke {
 
 class FunctionsGadget : public std::vector<TUnit> {
 public:
-	FunctionsGadget() {
-		// Copy the contents of the command line arg
-		for (const auto& fxn : aux_fxns_arg.value()) {
-			push_back(fxn);
-		}
-		// Remove the target and unreachable functions if necessary
-		remove_target();
-		remove_unreachable();
+  FunctionsGadget() {
+    // Copy the contents of the command line arg
+    for (const auto& fxn : aux_fxns_arg.value()) {
+      push_back(fxn);
+    }
+    // Remove the target and unreachable functions if necessary
+    remove_target();
+    remove_unreachable();
 
-		// Checks for unsupported instructions or flag requirements
+    // Checks for unsupported instructions or flag requirements
     for (const auto& fxn : aux_fxns_arg.value()) {
       flag_check(fxn.code);
       sandbox_check(fxn.code);
     }
-	}
+  }
 
 private:
-	/** Removes the target arg if present */
-	void remove_target() {
-		for (auto i = begin(), ie = end(); i != ie; ++i) {
-			if (i->name == target_arg.value().name) {
-				Console::warn() << "Target appears in auxiliary functions and will be removed" << std::endl;
-				erase(i);
-				return;
-			}
-		}
-	}
+  /** Removes the target arg if present */
+  void remove_target() {
+    for (auto i = begin(), ie = end(); i != ie; ++i) {
+      if (i->name == target_arg.value().name) {
+        Console::warn() << "Target appears in auxiliary functions and will be removed" << std::endl;
+        erase(i);
+        return;
+      }
+    }
+  }
 
-	/** Removes functions that aren't reachable from the target */
-	void remove_unreachable() {
-		vector<TUnit> reachable;
-		std::set<x64asm::Label> visited;
+  /** Removes functions that aren't reachable from the target */
+  void remove_unreachable() {
+    vector<TUnit> reachable;
+    std::set<x64asm::Label> visited;
 
-		reachable.push_back(target_arg.value());
-		visited.insert(target_arg.value().code[0].get_operand<x64asm::Label>(0));
+    reachable.push_back(target_arg.value());
+    visited.insert(target_arg.value().code[0].get_operand<x64asm::Label>(0));
 
-		for (size_t i = 0; i < reachable.size(); ++i) {
-			for (const auto& instr : reachable[i].code) {
-				for (size_t j = 0, je = instr.arity(); j < je; ++j) {
-					if (instr.type(j) != x64asm::Type::LABEL) {
-						continue;
-					}
-					const auto& l = instr.get_operand<x64asm::Label>(j);
-					if (visited.find(l) != visited.end()) {
-						continue;
-					} 
-					for (const auto& tu : *this) {
-						if (tu.code[0].get_operand<x64asm::Label>(0) == l) {
-							reachable.push_back(tu);
-							visited.insert(l);
-						}		
-					}
-				}
-			}
-		}
+    for (size_t i = 0; i < reachable.size(); ++i) {
+      for (const auto& instr : reachable[i].code) {
+        for (size_t j = 0, je = instr.arity(); j < je; ++j) {
+          if (instr.type(j) != x64asm::Type::LABEL) {
+            continue;
+          }
+          const auto& l = instr.get_operand<x64asm::Label>(j);
+          if (visited.find(l) != visited.end()) {
+            continue;
+          }
+          for (const auto& tu : *this) {
+            if (tu.code[0].get_operand<x64asm::Label>(0) == l) {
+              reachable.push_back(tu);
+              visited.insert(l);
+            }
+          }
+        }
+      }
+    }
 
-		for (const auto& tu : *this) {
-			const auto& l = tu.code[0].get_operand<x64asm::Label>(0);
-			if (visited.find(l) == visited.end()) {
-				Console::warn() << "Auxiliary function (" << tu.name << ") is unreachable from target and will be removed" << std::endl;
-			}
-		}
+    for (const auto& tu : *this) {
+      const auto& l = tu.code[0].get_operand<x64asm::Label>(0);
+      if (visited.find(l) == visited.end()) {
+        Console::warn() << "Auxiliary function (" << tu.name << ") is unreachable from target and will be removed" << std::endl;
+      }
+    }
 
-		clear();
-		for (size_t i = 1, ie = reachable.size(); i < ie; ++i) {
-			emplace_back(reachable[i]);
-		}
-	}
+    clear();
+    for (size_t i = 1, ie = reachable.size(); i < ie; ++i) {
+      emplace_back(reachable[i]);
+    }
+  }
 
   /** Checks for unsupported cpu flags */
   void flag_check(const x64asm::Code& code) const {

@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
     Console::error(1) << "No testcases provided.";
   }
 
-	FunctionsGadget aux_fxns;
+  FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns);
   RewriteGadget rewrite(aux_fxns);
   SeedGadget seed;
