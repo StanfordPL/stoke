@@ -15,6 +15,9 @@
 #ifndef STOKE_TOOLS_GADGETS_TARGET_H
 #define STOKE_TOOLS_GADGETS_TARGET_H
 
+#include <vector>
+
+#include "src/tunit/tunit.h"
 #include "tools/args/target.h"
 #include "tools/gadgets/cfg.h"
 
@@ -22,7 +25,7 @@ namespace stoke {
 
 class TargetGadget : public CfgGadget {
 public:
-  TargetGadget() : CfgGadget(target_arg.value().code) {}
+  TargetGadget(const std::vector<TUnit>& aux_fxns) : CfgGadget(target_arg.value().code, aux_fxns) {}
 };
 
 } // namespace stoke

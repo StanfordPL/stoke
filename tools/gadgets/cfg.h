@@ -15,9 +15,9 @@
 #ifndef STOKE_TOOLS_GADGETS_CFG_H
 #define STOKE_TOOLS_GADGETS_CFG_H
 
-#include "src/ext/x64asm/include/x64asm.h"
-
 #include <vector>
+
+#include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/cfg/cfg.h"
 #include "src/sandbox/sandbox.h"
@@ -30,24 +30,16 @@ namespace stoke {
 
 class CfgGadget : public Cfg {
 public:
-  CfgGadget(const x64asm::Code& code) : Cfg(code, def_in(), live_out_arg) {
-    // Check for unsupported flags
+  CfgGadget(const x64asm::Code& code, const std::vector<TUnit>& aux_fxns) : Cfg(code, def_in(), live_out_arg) {
+    // Check for unsupported instructions and cpu flags
     flag_check(get_code());
-    for (const auto& fxn : aux_fxns_arg.value()) {
-      flag_check(fxn.code);
-    }
-
-    // Check for unsupported sandbox instructions
     sandbox_check(get_code());
-    for (const auto& fxn : aux_fxns_arg.value()) {
-      sandbox_check(fxn.code);
-    }
 
     // Check that this function can link against auxiliary functions
-    linker_check();
+    linker_check(aux_fxns);
 
     // Add summaries for auxiliary functions
-    summarize_functions();
+    summarize_functions(aux_fxns);
   }
 
 private:
@@ -64,7 +56,7 @@ private:
     if (!cpu_flags.contains(code_flags)) {
       const auto diff = code_flags - cpu_flags;
       const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
-      Console::error(1) << "Function (" << fxn << ") requires unavailable cpu flags: " << diff << std::endl;
+      Console::error(1) << "Target/rewrite requires unavailable cpu flags: " << diff << std::endl;
     }
   }
 
@@ -73,19 +65,19 @@ private:
     for (const auto& instr : code) {
       if (!Sandbox::is_supported(instr)) {
         const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
-        Console::error(1) << "Function (" << fxn << ") contains an unsupported instruction: " << instr << std::endl;
+        Console::error(1) << "Target/rewrite contains an unsupported instruction: " << instr << std::endl;
       }
     }
   }
 
   /** Check whether linking is possible for these code sequences */
-  void linker_check() const {
+  void linker_check(const std::vector<TUnit>& aux_fxns) const {
     x64asm::Assembler assm;
 
     // We can't let this hex go out of scope before linking
     std::vector<x64asm::Function> hex;
     hex.push_back(assm.assemble(get_code()));
-    for (const auto& fxn : aux_fxns_arg.value()) {
+    for (const auto& fxn : aux_fxns) {
       hex.push_back(assm.assemble(fxn.code));
     }
 
@@ -104,8 +96,8 @@ private:
   }
 
   /** Add dataflow summaries for auxiliary functions */
-  void summarize_functions() {
-    for (const auto& fxn : aux_fxns_arg.value()) {
+  void summarize_functions(const std::vector<TUnit>& aux_fxns) {
+    for (const auto& fxn : aux_fxns) {
       auto code = fxn.code;
       auto lbl = code[0].get_operand<x64asm::Label>(0);
       TUnit::MayMustSets mms = {

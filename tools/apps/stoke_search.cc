@@ -28,6 +28,7 @@
 #include "tools/args/search.h"
 #include "tools/args/target.h"
 #include "tools/gadgets/cost_function.h"
+#include "tools/gadgets/functions.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/search.h"
 #include "tools/gadgets/search_state.h"
@@ -187,16 +188,17 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   SeedGadget seed;
-  TargetGadget target;
+	FunctionsGadget aux_fxns;
+  TargetGadget target(aux_fxns);
 
   TrainingSetGadget training_set(seed);
-  SandboxGadget training_sb(training_set);
+  SandboxGadget training_sb(training_set, aux_fxns);
 
-  TransformsGadget transforms(target.get_code(), seed);
+  TransformsGadget transforms(target.get_code(), aux_fxns, seed);
   SearchGadget search(&transforms, seed);
 
   TestSetGadget test_set(seed);
-  SandboxGadget test_sb(test_set);
+  SandboxGadget test_sb(test_set, aux_fxns);
   CostFunctionGadget holdout_fxn(target, &test_sb);
   SolverGadget smt;
   ValidatorGadget validator(smt);
@@ -211,13 +213,13 @@ int main(int argc, char** argv) {
   .set_statistics_callback(scb, &scb_arg)
   .set_statistics_interval(stat_int);
 
-  SearchStateGadget state;
+  SearchStateGadget state(aux_fxns);
   for (size_t i = 0; ; ++i) {
     CostFunctionGadget fxn(target, &training_sb);
 
     Console::msg() << "Running search:" << endl << endl;
-    state = SearchStateGadget();
-    search.run(target, fxn, init_arg, state, aux_fxns_arg.value());
+    state = SearchStateGadget(aux_fxns);
+    search.run(target, fxn, init_arg, state, aux_fxns);
 
     if (state.interrupted) {
       Console::msg() << "Search interrupted!" << endl;

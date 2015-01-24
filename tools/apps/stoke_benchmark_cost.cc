@@ -21,6 +21,7 @@
 #include "tools/args/benchmark.h"
 #include "tools/args/cost.h"
 #include "tools/gadgets/cost_function.h"
+#include "tools/gadgets/functions.h"
 #include "tools/gadgets/rewrite.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/seed.h"
@@ -38,12 +39,13 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-  TargetGadget target;
-  RewriteGadget rewrite;
+	FunctionsGadget aux_fxns;
+  TargetGadget target(aux_fxns);
+  RewriteGadget rewrite(aux_fxns);
 
   SeedGadget seed;
   TestcasesGadget tcs(seed);
-  SandboxGadget sb(tcs);
+  SandboxGadget sb(tcs, aux_fxns);
   CostFunctionGadget fxn(target, &sb);
 
   if (!target.is_sound()) {
