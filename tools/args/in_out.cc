@@ -42,12 +42,6 @@ FlagArg& heap_out_arg =
   FlagArg::create("heap_out")
   .description("Is heap defined on exit?");
 
-FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg =
-  FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
-  .usage("<path/to/dir>")
-  .description("Directory containing helper functions")
-  .default_val({});
-
 FlagArg& no_default_mxcsr_arg =
   FlagArg::create("no_default_mxcsr")
   .description("Remove the default rounding control bit (%mxcsr[rc]) from def_in");

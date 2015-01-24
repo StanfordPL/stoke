@@ -19,6 +19,7 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "tools/args/target.h"
+#include "tools/gadgets/functions.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
@@ -99,12 +100,13 @@ int main(int argc, char** argv) {
     }
   }
 
-  TargetGadget target;
+  FunctionsGadget aux_fxns;
+  TargetGadget target(aux_fxns);
   SeedGadget seed;
   TestcaseGadget tc(seed);
   CpuStates tcs;
   tcs.push_back(tc);
-  SandboxGadget sb(tcs);
+  SandboxGadget sb(tcs, aux_fxns);
   auto stepping = false;
 
   if (!target.is_sound()) {

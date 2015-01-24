@@ -19,6 +19,7 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "tools/args/target.h"
+#include "tools/gadgets/functions.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
@@ -43,13 +44,14 @@ int main(int argc, char** argv) {
     Console::error(1) << "No testcases provided.";
   }
 
-  TargetGadget target;
+  FunctionsGadget aux_fxns;
+  TargetGadget target(aux_fxns);
   SeedGadget seed;
   TestcaseGadget tc(seed);
   CpuStates tcs;
   CpuState initial = tc;
   tcs.push_back(tc);
-  SandboxGadget sb(tcs);
+  SandboxGadget sb(tcs, aux_fxns);
 
   if (!target.is_sound()) {
     Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
