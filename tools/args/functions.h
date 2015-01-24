@@ -12,25 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_IN_OUT_H
-#define STOKE_TOOLS_ARGS_IN_OUT_H
+#ifndef STOKE_TOOLS_ARGS_FUNCTIONS_H
+#define STOKE_TOOLS_ARGS_FUNCTIONS_H
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
-#include "src/ext/x64asm/include/x64asm.h"
-
 #include "src/tunit/tunit.h"
-#include "tools/io/reg_set.h"
 #include "tools/io/tunit.h"
 
 namespace stoke {
 
-extern cpputil::Heading& in_out_heading;
-
-extern cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& def_in_arg;
-extern cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& live_out_arg;
-extern cpputil::FlagArg& stack_out_arg;
-extern cpputil::FlagArg& heap_out_arg;
-extern cpputil::FlagArg& no_default_mxcsr_arg;
+extern cpputil::Heading& functions_heading;
+extern cpputil::FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg;
 
 } // namespace stoke
 

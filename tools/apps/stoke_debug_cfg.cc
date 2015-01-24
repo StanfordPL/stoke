@@ -24,6 +24,7 @@
 #include "src/ext/cpputil/include/system/terminal.h"
 
 #include "src/cfg/dot_writer.h"
+#include "tools/gadgets/functions.h"
 #include "tools/gadgets/target.h"
 #include "tools/ui/console.h"
 
@@ -66,7 +67,8 @@ string tempfile(const string& temp) {
 void to_dot(const string& dot_file) {
   ofstream ofs(dot_file);
 
-  TargetGadget target;
+	FunctionsGadget aux_fxns;
+  TargetGadget target(aux_fxns);
 
   DotWriter dw;
   dw.set_def_in(dib, dii)
