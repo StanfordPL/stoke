@@ -70,7 +70,7 @@ private:
 
   /** Checks for unsupported sandbox instructions */
   void sandbox_check(const x64asm::Code& code) const {
-    for (const auto& instr : get_code()) {
+    for (const auto& instr : code) {
       if (!Sandbox::is_supported(instr)) {
         const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
         Console::error(1) << "Function (" << fxn << ") contains an unsupported instruction: " << instr << std::endl;
