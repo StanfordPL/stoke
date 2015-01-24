@@ -31,80 +31,80 @@ namespace stoke {
 class CfgGadget : public Cfg {
 public:
   CfgGadget(const x64asm::Code& code) : Cfg(code, def_in(), live_out_arg) {
-		// Check for unsupported flags
-		flag_check(get_code());
-		for (const auto& fxn : aux_fxns_arg.value()) {
-			flag_check(fxn.code);
-		}
+    // Check for unsupported flags
+    flag_check(get_code());
+    for (const auto& fxn : aux_fxns_arg.value()) {
+      flag_check(fxn.code);
+    }
 
     // Check for unsupported sandbox instructions
-		sandbox_check(get_code());
-		for (const auto& fxn : aux_fxns_arg.value()) {
-			sandbox_check(fxn.code);
-		}
+    sandbox_check(get_code());
+    for (const auto& fxn : aux_fxns_arg.value()) {
+      sandbox_check(fxn.code);
+    }
 
-		// Check that this function can link against auxiliary functions
-		linker_check();
+    // Check that this function can link against auxiliary functions
+    linker_check();
 
     // Add summaries for auxiliary functions
-		summarize_functions();
+    summarize_functions();
   }
 
 private:
-	/** Convenience method: Adds mxcsr[rc] to def_in unless otherwise specified */
+  /** Convenience method: Adds mxcsr[rc] to def_in unless otherwise specified */
   x64asm::RegSet def_in() const {
     return no_default_mxcsr_arg ? def_in_arg.value() : def_in_arg.value() + x64asm::mxcsr_rc;
   }
 
-	/** Checks for unsupported cpu flags */
-	void flag_check(const x64asm::Code& code) const {
+  /** Checks for unsupported cpu flags */
+  void flag_check(const x64asm::Code& code) const {
     const auto cpu_flags = CpuInfo::get_flags();
     auto code_flags = code.required_flags();
 
     if (!cpu_flags.contains(code_flags)) {
       const auto diff = code_flags - cpu_flags;
-			const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
-			Console::error(1) << "Function (" << fxn << ") requires unavailable cpu flags: " << diff << std::endl;
+      const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
+      Console::error(1) << "Function (" << fxn << ") requires unavailable cpu flags: " << diff << std::endl;
     }
-	}
+  }
 
-	/** Checks for unsupported sandbox instructions */
-	void sandbox_check(const x64asm::Code& code) const {
-		for (const auto& instr : get_code()) {
-			if (!Sandbox::is_supported(instr)) {
-			const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
-			Console::error(1) << "Function (" << fxn << ") contains an unsupported instruction: " << instr << std::endl;
-			}
-		}
-	}
+  /** Checks for unsupported sandbox instructions */
+  void sandbox_check(const x64asm::Code& code) const {
+    for (const auto& instr : get_code()) {
+      if (!Sandbox::is_supported(instr)) {
+        const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
+        Console::error(1) << "Function (" << fxn << ") contains an unsupported instruction: " << instr << std::endl;
+      }
+    }
+  }
 
-	/** Check whether linking is possible for these code sequences */
-	void linker_check() const {
-		x64asm::Assembler assm;
+  /** Check whether linking is possible for these code sequences */
+  void linker_check() const {
+    x64asm::Assembler assm;
 
-		// We can't let this hex go out of scope before linking
-		std::vector<x64asm::Function> hex;
-		hex.push_back(assm.assemble(get_code()));
-		for (const auto& fxn : aux_fxns_arg.value()) {
-			hex.push_back(assm.assemble(fxn.code));
-		}
+    // We can't let this hex go out of scope before linking
+    std::vector<x64asm::Function> hex;
+    hex.push_back(assm.assemble(get_code()));
+    for (const auto& fxn : aux_fxns_arg.value()) {
+      hex.push_back(assm.assemble(fxn.code));
+    }
 
-		x64asm::Linker lnkr;
-		lnkr.start();
-		for (auto& h : hex) {
-			lnkr.link(h);
-		}
-		lnkr.finish();
+    x64asm::Linker lnkr;
+    lnkr.start();
+    for (auto& h : hex) {
+      lnkr.link(h);
+    }
+    lnkr.finish();
 
-		if (lnkr.multiple_def()) {
-			Console::error(1) << "Target/rewrite and functions contain a multiple definition error!" << std::endl;
-		} else if (lnkr.undef_symbol()) {
-			Console::error(1) << "Target/rewrite and functions contain an undefined symbol error!" << std::endl;
-		}
-	}
+    if (lnkr.multiple_def()) {
+      Console::error(1) << "Target/rewrite and functions contain a multiple definition error!" << std::endl;
+    } else if (lnkr.undef_symbol()) {
+      Console::error(1) << "Target/rewrite and functions contain an undefined symbol error!" << std::endl;
+    }
+  }
 
-	/** Add dataflow summaries for auxiliary functions */
-	void summarize_functions() {
+  /** Add dataflow summaries for auxiliary functions */
+  void summarize_functions() {
     for (const auto& fxn : aux_fxns_arg.value()) {
       auto code = fxn.code;
       auto lbl = code[0].get_operand<x64asm::Label>(0);
@@ -131,7 +131,7 @@ private:
       add_summary(lbl, mms);
     }
     recompute();
-	}
+  }
 };
 
 } // namespace stoke
