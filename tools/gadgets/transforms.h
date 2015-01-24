@@ -35,8 +35,8 @@ namespace stoke {
 
 class TransformsGadget : public Transforms {
 public:
-  TransformsGadget(x64asm::Code code, const std::vector<TUnit>& aux_fxns, 
-			std::default_random_engine::result_type seed) : Transforms() {
+  TransformsGadget(x64asm::Code code, const std::vector<TUnit>& aux_fxns,
+                   std::default_random_engine::result_type seed) : Transforms() {
     if (callee_save_arg.value()) {
       preserve_regs_arg.value() = x64asm::RegSet::empty();
     }

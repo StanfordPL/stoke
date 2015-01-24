@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-	FunctionsGadget aux_fxns;
+  FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns);
   RewriteGadget rewrite(aux_fxns);
 

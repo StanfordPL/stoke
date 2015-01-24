@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     }
   }
 
-	FunctionsGadget aux_fxns;
+  FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns);
   SeedGadget seed;
   TestcaseGadget tc(seed);

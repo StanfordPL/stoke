@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   SeedGadget seed;
-	FunctionsGadget aux_fxns;
+  FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns);
   TransformsGadget tforms(target.get_code(), aux_fxns, seed);
 

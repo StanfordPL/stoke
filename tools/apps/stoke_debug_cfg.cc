@@ -67,7 +67,7 @@ string tempfile(const string& temp) {
 void to_dot(const string& dot_file) {
   ofstream ofs(dot_file);
 
-	FunctionsGadget aux_fxns;
+  FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns);
 
   DotWriter dw;
