@@ -119,25 +119,39 @@ public:
     return aux_fxns_.size();
   }
 
-  /** Insert a callback to be invoked prior to exeucting a line. */
+	/** Insert a callback to be invoked prior to any line in any function. */
+	Sandbox& insert_before(StateCallback cb, void* arg) {
+		global_before_ = {cb, arg};
+		return *this;
+	}
+	/** Insert a callback to be invoked prior to any line in any function. */
+	Sandbox& insert_after(StateCallback cb, void* arg) {
+		global_after_ = {cb, arg};
+		return *this;
+	}
+  /** Insert a callback to be invoked prior to exeucting a line in the main function. */
   Sandbox& insert_before(size_t line, StateCallback cb, void* arg) {
     before_[line].push_back(std::make_pair(cb, arg));
     return *this;
   }
-  /** Insert a callback to be invoked after executing a line. */
+  /** Insert a callback to be invoked after executing a line in the main function. */
   Sandbox& insert_after(size_t line, StateCallback cb, void* arg) {
     after_[line].push_back(std::make_pair(cb, arg));
     return *this;
   }
   /** Clears the set of callbacks to invoke during execution. */
   Sandbox& clear_callbacks() {
+		global_before_ = {nullptr, nullptr};
+		global_after_ = {nullptr, nullptr};
     before_.clear();
     after_.clear();
     return *this;
   }
   /** Returns the number of installed callbacks */
   size_t num_callbacks() const {
-    return before_.size() + after_.size();
+		return (global_before_.first != nullptr ? 1 : 0) + 
+			(global_after_.first != nullptr ? 1 : 0) +
+    	before_.size() + after_.size();
   }
 
   /** Compile a new main function. */
@@ -194,6 +208,10 @@ private:
   /** I/O pairs. These are pointers to simplify vector reallocations. */
   std::vector<IoPair*> io_pairs_;
 
+	/** Global callback to invoke before any line is executed. */
+	std::pair<StateCallback, void*> global_before_;
+	/** Global callback to invoke after any line is executed. */
+	std::pair<StateCallback, void*> global_after_;
   /** Callbacks to invoke before a line is executed. */
   std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> before_;
   /** Callbacks to invokes after a line is exeucted. */
@@ -287,9 +305,9 @@ private:
                            bool stack);
 
   /** Assembles the user's function */
-  bool emit_function(const Cfg& cfg, bool callbacks);
-  /** Emit a callback (before or after) a line. */
-  void emit_callbacks(size_t line, bool before);
+  bool emit_function(const Cfg& cfg, bool is_main);
+	/** Emit a single callback for this line. */
+	void emit_callback(const std::pair<StateCallback, void*>& cb, size_t line);
   /** Emit an instruction (and possibly sandbox memory). */
   void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& exit);
   /** Emit a memory instruction. */
