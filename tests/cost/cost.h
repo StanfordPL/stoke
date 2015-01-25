@@ -159,7 +159,7 @@ TEST_F(CostFunctionTest, ChecksRAX) {
   auto cost = fxn_(cfg_r);
 
   /* Compute the expected number of bits to change */
-  auto tc = sb_.get_input(0);
+  auto tc = *(sb_.get_input(0));
   uint64_t orig = tc.gp[0].get_fixed_quad(0);
   uint64_t expected = cpputil::BitManip<uint64_t>::pop_count(orig ^ (orig+1));
   ASSERT_GE(expected, (uint64_t)1) << "there's a bug in counting the bits that change; must be more than 0";

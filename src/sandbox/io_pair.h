@@ -24,6 +24,8 @@ namespace stoke {
 class IoPair {
   /** This class is for use by the sandbox only. */
   friend class Sandbox;
+  /** This iterator exposes input states. */
+  friend class input_iterator;
   /** This iterator exposes output states. */
   friend class output_iterator;
 
