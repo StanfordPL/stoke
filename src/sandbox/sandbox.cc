@@ -105,12 +105,6 @@ void Sandbox::compile(const Cfg& cfg) {
   lnkr_.finish();
 }
 
-void Sandbox::run_all() {
-  for (size_t i = 0, ie = size(); i < ie; ++i) {
-    run_one(i);
-  }
-}
-
 void Sandbox::run_one(size_t index) {
   assert(index < size());
   auto io = io_pairs_[index];
@@ -148,6 +142,12 @@ void Sandbox::run_one(size_t index) {
   // Check for abi violations
   if (abi_check_ && !check_abi(*io)) {
     io->out_.code = ErrorCode::SIGSEGV_;
+  }
+}
+
+void Sandbox::run_all() {
+  for (size_t i = 0, ie = size(); i < ie; ++i) {
+    run_one(i);
   }
 }
 
