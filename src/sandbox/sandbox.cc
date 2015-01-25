@@ -530,7 +530,7 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
 // Arguments:
 //   <none>
 
-bool Sandbox::emit_function(const Cfg& cfg, bool callbacks) {
+bool Sandbox::emit_function(const Cfg& cfg, bool is_main) {
   // Index reachable instructions
   vector<size_t> instrs;
   for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
@@ -574,13 +574,23 @@ bool Sandbox::emit_function(const Cfg& cfg, bool callbacks) {
     }
 
     // Emit instruction and optionally, callbacks
-    if (callbacks && !before_.empty()) {
-      emit_callbacks(idx, true);
-    }
+    if (is_main && !before_.empty()) {
+			for (const auto& cb : before_[idx]) {
+				emit_callback(cb, idx);
+			}
+    } 
+		if (global_before_.first != nullptr) {
+			emit_callback(global_before_, idx);
+		}
     emit_instruction(instr, exit);
-    if (callbacks && !after_.empty())  {
-      emit_callbacks(idx, false);
+    if (is_main && !after_.empty())  {
+			for (const auto& cb : after_[idx]) {
+				emit_callback(cb, idx);
+			}
     }
+		if (global_after_.first != nullptr) {
+			emit_callback(global_after_, idx);
+		}
   }
   // Catch for run-away code
   emit_signal_trap_call(ErrorCode::SIGSEGV_);
@@ -596,36 +606,33 @@ bool Sandbox::emit_function(const Cfg& cfg, bool callbacks) {
   return read_only_mem;
 }
 
-void Sandbox::emit_callbacks(size_t line, bool before) {
-  // Reload the STOKE %rsp, we're about to call some functions
-  emit_load_stoke_rsp();
+void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, size_t line) {
+	// Reload the STOKE %rsp, we're about to call some functions
+	emit_load_stoke_rsp();
 
-  const auto& cbs = before ? before_[line] : after_[line];
-  for (const auto& cb : cbs) {
-    // Read the user's state without disturbing any state in the process
-    assm_.push(rax);
-    assm_.mov(rax, Moffs64(&cpu2out_));
-    assm_.xchg(rax, M64(rsp));
-    assm_.call(M64(rsp));
-    assm_.lea(rsp, M64(rsp, Imm32(8)));
+	// Read the user's state without disturbing any state in the process
+	assm_.push(rax);
+	assm_.mov(rax, Moffs64(&cpu2out_));
+	assm_.xchg(rax, M64(rsp));
+	assm_.call(M64(rsp));
+	assm_.lea(rsp, M64(rsp, Imm32(8)));
 
-    // Invoke the callback through the callback wrapper
-    assm_.mov(rdi, Imm64(cb.first));
-    assm_.mov(rsi, Imm64(line));
-    assm_.mov(rax, Moffs64(&out_));
-    assm_.mov(rdx, rax);
-    assm_.mov(rcx, Imm64(cb.second));
-    assm_.mov((R64)rax, Imm64(&callback_wrapper));
-    assm_.call(rax);
+	// Invoke the callback through the callback wrapper
+	assm_.mov(rdi, Imm64(cb.first));
+	assm_.mov(rsi, Imm64(line));
+	assm_.mov(rax, Moffs64(&out_));
+	assm_.mov(rdx, rax);
+	assm_.mov(rcx, Imm64(cb.second));
+	assm_.mov((R64)rax, Imm64(&callback_wrapper));
+	assm_.call(rax);
 
-    // Restore the user's state
-    // This leaves STOKE's %rsp in place, but that's what we want
-    assm_.mov(rax, Moffs64(&out2cpu_));
-    assm_.call(rax);
-  }
+	// Restore the user's state
+	// This leaves STOKE's %rsp in place, but that's what we want
+	assm_.mov(rax, Moffs64(&out2cpu_));
+	assm_.call(rax);
 
-  // Back to userland, reload the user %rsp
-  emit_load_user_rsp();
+	// Back to userland, reload the user %rsp
+	emit_load_user_rsp();
 }
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
