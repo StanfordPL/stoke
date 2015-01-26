@@ -17,6 +17,7 @@ class ValidatorPcmpeqbTest : public ValidatorTest {};
 
 TEST_F(ValidatorPcmpeqbTest, AllZeros) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "vpcmpeqb %ymm0, %ymm1, %ymm2" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -27,6 +28,7 @@ TEST_F(ValidatorPcmpeqbTest, AllZeros) {
 
 TEST_F(ValidatorPcmpeqbTest, OneMatch) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "vpcmpeqb %ymm0, %ymm1, %ymm2" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -48,6 +50,7 @@ TEST_F(ValidatorPcmpeqbTest, OneMatch) {
 
 TEST_F(ValidatorPcmpeqbTest, WordMatch) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "vpcmpeqb %ymm0, %ymm1, %ymm2" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -69,6 +72,7 @@ TEST_F(ValidatorPcmpeqbTest, WordMatch) {
 
 TEST_F(ValidatorPcmpeqbTest, SeveralMatch) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "vpcmpeqb %ymm0, %ymm1, %ymm2" << std::endl;
   target_ << "retq" << std::endl;
 

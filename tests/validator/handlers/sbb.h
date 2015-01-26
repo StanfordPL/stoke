@@ -17,9 +17,11 @@ class ValidatorSbbTest : public ValidatorTest {};
 
 TEST_F(ValidatorSbbTest, Identity) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "sbbq $0x10, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "sbbq $0x10, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -29,9 +31,11 @@ TEST_F(ValidatorSbbTest, Identity) {
 
 TEST_F(ValidatorSbbTest, NotANoop) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "sbbq $0x10, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "retq" << std::endl;
 
   assert_ceg();
@@ -41,6 +45,7 @@ TEST_F(ValidatorSbbTest, NotANoop) {
 
 TEST_F(ValidatorSbbTest, Issue238) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "sbbw $0xfffb, %ax" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -52,6 +57,7 @@ TEST_F(ValidatorSbbTest, Issue238) {
 
 TEST_F(ValidatorSbbTest, Issue238_2) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "sbbw $0xfffb, %ax" << std::endl;
   target_ << "retq" << std::endl;
 

@@ -30,14 +30,10 @@ namespace stoke {
 
 class SandboxGadget : public Sandbox {
 public:
-  SandboxGadget(const CpuStates& tcs, const std::vector<TUnit>& aux_fxns,
-                std::pair<StateCallback, void*> cb = {nullptr, nullptr}) {
+  SandboxGadget(const CpuStates& tcs, const std::vector<TUnit>& aux_fxns) {
     set_abi_check(abi_check_arg);
     set_max_jumps(max_jumps_arg);
 
-    if (cb.first != nullptr) {
-      insert_before(cb.first, cb.second);
-    }
     for (const auto& fxn : aux_fxns) {
       insert_function({fxn.code, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
     }
