@@ -15,6 +15,8 @@
 #ifndef STOKE_TOOLS_GADGETS_CFG_H
 #define STOKE_TOOLS_GADGETS_CFG_H
 
+#include <vector>
+
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/cfg/cfg.h"
@@ -28,24 +30,74 @@ namespace stoke {
 
 class CfgGadget : public Cfg {
 public:
-  CfgGadget(const x64asm::Code& code) : Cfg(code, def_in(), live_out_arg) {
-    // Check for instructions that require unavailable flags
-    const auto cpu_flags = CpuInfo::get_flags();
-    auto target_flags = get_code().required_flags();
-    if (!cpu_flags.contains(target_flags)) {
-      const auto diff = target_flags - cpu_flags;
-      Console::error(1) << "Target requires unavailable cpu flags: " << diff << std::endl;
-    }
+  CfgGadget(const x64asm::Code& code, const std::vector<TUnit>& aux_fxns) : Cfg(code, def_in(), live_out_arg) {
+    // Check for unsupported instructions and cpu flags
+    flag_check(get_code());
+    sandbox_check(get_code());
 
-    // Check for instructions that aren't supported by the sandbox
-    for (const auto& instr : get_code()) {
-      if (!Sandbox::is_supported(instr)) {
-        Console::error(1) << "Target contains an unsupported instruction: " << instr << std::endl;
-      }
-    }
+    // Check that this function can link against auxiliary functions
+    linker_check(aux_fxns);
 
     // Add summaries for auxiliary functions
-    for (const auto& fxn : aux_fxns_arg.value()) {
+    summarize_functions(aux_fxns);
+  }
+
+private:
+  /** Convenience method: Adds mxcsr[rc] to def_in unless otherwise specified */
+  x64asm::RegSet def_in() const {
+    return no_default_mxcsr_arg ? def_in_arg.value() : def_in_arg.value() + x64asm::mxcsr_rc;
+  }
+
+  /** Checks for unsupported cpu flags */
+  void flag_check(const x64asm::Code& code) const {
+    const auto cpu_flags = CpuInfo::get_flags();
+    auto code_flags = code.required_flags();
+
+    if (!cpu_flags.contains(code_flags)) {
+      const auto diff = code_flags - cpu_flags;
+      const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
+      Console::error(1) << "Target/rewrite requires unavailable cpu flags: " << diff << std::endl;
+    }
+  }
+
+  /** Checks for unsupported sandbox instructions */
+  void sandbox_check(const x64asm::Code& code) const {
+    for (const auto& instr : code) {
+      if (!Sandbox::is_supported(instr)) {
+        const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
+        Console::error(1) << "Target/rewrite contains an unsupported instruction: " << instr << std::endl;
+      }
+    }
+  }
+
+  /** Check whether linking is possible for these code sequences */
+  void linker_check(const std::vector<TUnit>& aux_fxns) const {
+    x64asm::Assembler assm;
+
+    // We can't let this hex go out of scope before linking
+    std::vector<x64asm::Function> hex;
+    hex.push_back(assm.assemble(get_code()));
+    for (const auto& fxn : aux_fxns) {
+      hex.push_back(assm.assemble(fxn.code));
+    }
+
+    x64asm::Linker lnkr;
+    lnkr.start();
+    for (auto& h : hex) {
+      lnkr.link(h);
+    }
+    lnkr.finish();
+
+    if (lnkr.multiple_def()) {
+      Console::error(1) << "Target/rewrite and functions contain a multiple definition error!" << std::endl;
+    } else if (lnkr.undef_symbol()) {
+      Console::error(1) << "Target/rewrite and functions contain an undefined symbol error!" << std::endl;
+    }
+  }
+
+  /** Add dataflow summaries for auxiliary functions */
+  void summarize_functions(const std::vector<TUnit>& aux_fxns) {
+    for (const auto& fxn : aux_fxns) {
       auto code = fxn.code;
       auto lbl = code[0].get_operand<x64asm::Label>(0);
       TUnit::MayMustSets mms = {
@@ -58,7 +110,7 @@ public:
       };
       mms = fxn.get_may_must_sets(mms);
       // check consistency of dataflow information
-      std::string consistency_warning = "The dataflow information is inconsistent for function '" + fxn.name + "'.  The maybe set needs to contain the must set. ";
+      std::string consistency_warning = "Dataflow information is inconsistent for function '" + fxn.name + "'.  The maybe set needs to contain the must set. ";
       if (!mms.maybe_read_set.contains(mms.must_read_set)) {
         Console::error(1) << consistency_warning << "maybe-read: " << mms.maybe_read_set << ". must-read: " << mms.must_read_set << std::endl;
       }
@@ -71,12 +123,6 @@ public:
       add_summary(lbl, mms);
     }
     recompute();
-  }
-
-private:
-  x64asm::RegSet def_in() const {
-    // Add %mxcsr[rc] to def_in unless otherwise specified
-    return no_default_mxcsr_arg ? def_in_arg.value() : def_in_arg.value() + x64asm::mxcsr_rc;
   }
 };
 

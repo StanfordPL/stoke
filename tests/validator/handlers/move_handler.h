@@ -103,8 +103,10 @@ TEST(MoveHandler, R16R16PreservesTop) {
 
 TEST_F(ValidatorMoveTest, SimpleExample) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq $0x10, %rax" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq $0x10, %rcx" << std::endl;
   rewrite_ << "movq %rcx, %rax" << std::endl;
 
@@ -116,9 +118,11 @@ TEST_F(ValidatorMoveTest, SimpleExample) {
 
 TEST_F(ValidatorMoveTest, MoveRaxToRaxNoop) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq %rax, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "retq" << std::endl;
 
   assert_equiv();
@@ -127,10 +131,12 @@ TEST_F(ValidatorMoveTest, MoveRaxToRaxNoop) {
 
 TEST_F(ValidatorMoveTest, MovesCommute) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq %rax, %rcx" << std::endl;
   target_ << "movq %rax, %rdx" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq %rax, %rdx" << std::endl;
   rewrite_ << "movq %rax, %rcx" << std::endl;
   rewrite_ << "retq" << std::endl;
@@ -140,10 +146,12 @@ TEST_F(ValidatorMoveTest, MovesCommute) {
 
 TEST_F(ValidatorMoveTest, MovesDontCommute) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq %rcx, %rax" << std::endl;
   target_ << "movq %rdx, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq %rdx, %rax" << std::endl;
   rewrite_ << "movq %rcx, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
@@ -154,9 +162,11 @@ TEST_F(ValidatorMoveTest, MovesDontCommute) {
 
 TEST_F(ValidatorMoveTest, Issue236SimpleIsSat) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movw $0x2, %r8w" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movw $0x2, %r8w" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -165,6 +175,7 @@ TEST_F(ValidatorMoveTest, Issue236SimpleIsSat) {
 
 TEST_F(ValidatorMoveTest, Issue272) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq %xmm0, %xmm0" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -177,6 +188,7 @@ TEST_F(ValidatorMoveTest, Issue272) {
 
 TEST_F(ValidatorMoveTest, Issue272_2) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq %xmm0, %xmm1" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -189,6 +201,8 @@ TEST_F(ValidatorMoveTest, Issue272_2) {
 
 TEST_F(ValidatorMoveTest, MovqByteImmediate) {
 
+  target_ << ".foo:" << std::endl;
+  target_ << "movq $0xab, %rax" << std::endl;
   target_ << "movq $0xab, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -198,6 +212,7 @@ TEST_F(ValidatorMoveTest, MovqByteImmediate) {
 
 TEST_F(ValidatorMoveTest, Movzbq) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movb $0xab, %al" << std::endl;
   target_ << "movzbq %al, %rax" << std::endl;
   target_ << "retq" << std::endl;
@@ -208,9 +223,11 @@ TEST_F(ValidatorMoveTest, Movzbq) {
 
 TEST_F(ValidatorMoveTest, MovqMovzbqEquivalent) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq $0xab, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movb $0xab, %al" << std::endl;
   rewrite_ << "movzbq %al, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;

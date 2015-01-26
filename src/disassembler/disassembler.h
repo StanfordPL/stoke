@@ -84,7 +84,7 @@ private:
   /* Rewrite a line from objdump for our parser :( */
   std::string fix_instruction(const std::string& line);
   /* Fix the labels */
-  label_set fix_label_uses(line_map& lines);
+  label_set fix_label_uses(line_map& lines, const std::map<std::string, std::string>&);
 
   /* Runs objdump and provides the output stream */
   redi::ipstream* run_objdump(const std::string& filename, bool only_header);

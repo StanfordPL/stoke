@@ -1,3 +1,4 @@
+.foo:
 addq $0xa8, %rsp
 movl $0x1, %eax
 popq %rbx

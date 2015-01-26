@@ -1,3 +1,4 @@
+.foo:
 movl (%rax), %esi
 movq %rbp, %rcx
 xorl %edi, %edi

@@ -1,3 +1,4 @@
+.foo:
 pushq %rbp
 movq %rdx, %rbp
 pushq %rbx

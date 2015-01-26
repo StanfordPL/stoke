@@ -15,7 +15,10 @@
 #ifndef STOKE_TOOLS_GADGETS_SEARCH_STATE_H
 #define STOKE_TOOLS_GADGETS_SEARCH_STATE_H
 
+#include <vector>
+
 #include "src/search/search_state.h"
+#include "src/tunit/tunit.h"
 #include "tools/args/search_state.h"
 #include "tools/gadgets/cfg.h"
 
@@ -23,10 +26,10 @@ namespace stoke {
 
 class SearchStateGadget : public SearchState {
 public:
-  SearchStateGadget() {
-    current = CfgGadget(current_arg.value().code);
-    best_yet = CfgGadget(best_yet_arg.value().code);
-    best_correct = CfgGadget(best_correct_arg.value().code);
+  SearchStateGadget(const std::vector<TUnit>& aux_fxns) {
+    current = CfgGadget(current_arg.value().code, aux_fxns);
+    best_yet = CfgGadget(best_yet_arg.value().code, aux_fxns);
+    best_correct = CfgGadget(best_correct_arg.value().code, aux_fxns);
   }
 };
 

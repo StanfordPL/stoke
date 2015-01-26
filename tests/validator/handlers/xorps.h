@@ -17,9 +17,11 @@ class ValidatorXorpsTest : public ValidatorTest {};
 
 TEST_F(ValidatorXorpsTest, Identity) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "xorps %xmm3, %xmm5" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "xorps %xmm3, %xmm5" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -29,9 +31,11 @@ TEST_F(ValidatorXorpsTest, Identity) {
 
 TEST_F(ValidatorXorpsTest, NotANoop) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "xorps %xmm3, %xmm5" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "retq" << std::endl;
 
   assert_ceg();
@@ -40,10 +44,12 @@ TEST_F(ValidatorXorpsTest, NotANoop) {
 
 TEST_F(ValidatorXorpsTest, SelfXorZero) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "xorps %xmm3, %xmm5" << std::endl;
   target_ << "xorps %xmm3, %xmm5" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "retq" << std::endl;
 
   assert_equiv();
@@ -57,9 +63,11 @@ TEST_F(ValidatorXorpsTest, XorCommutative) {
   // See the table of values next to each instr.
 
   // xmm0  xmm1  xmm2
+  target_ << ".foo:" << std::endl;
   target_ << "xorps  %xmm0, %xmm1" << std::endl;  // A     A+B
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movaps %xmm0, %xmm2" << std::endl; // A     B     A
   rewrite_ << "xorps  %xmm1, %xmm0" << std::endl; // A+B   B     A
   rewrite_ << "movaps %xmm0, %xmm1" << std::endl; // A+B   A+B   A

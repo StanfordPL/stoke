@@ -19,6 +19,7 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "tools/args/benchmark.h"
+#include "tools/gadgets/functions.h"
 #include "tools/gadgets/target.h"
 #include "tools/ui/console.h"
 
@@ -32,7 +33,8 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-  TargetGadget target;
+  FunctionsGadget aux_fxns;
+  TargetGadget target(aux_fxns);
 
   Console::msg() << "Cfg::recompute()..." << endl;
 

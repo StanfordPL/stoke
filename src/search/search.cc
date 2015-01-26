@@ -75,13 +75,13 @@ Search& Search::set_mass(Move move, size_t mass) {
   return *this;
 }
 
-void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxn) {
+void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxns) {
 
   // Make sure target is correct with respect to itself
   assert(fxn(target).first);
 
   // Configure initial state
-  configure(init, target, fxn, state, aux_fxn);
+  configure(init, target, fxn, state, aux_fxns);
 
   if (!target.is_sound()) {
     cerr << "ERROR: the target reads undefined values, or leaves live out values undefined!" << endl;
