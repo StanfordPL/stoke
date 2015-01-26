@@ -6,6 +6,7 @@
   "code": [
 
     // B1
+		".foo:",
     "pushq %r13",       //RAX, RCX, RDX, RSP, RBP, RBX, R8-9,12-13, RSI, EDI, XMM0-7
     "movslq %edi, %r13",//RAX, RCX, RDX, RSP, RBP, RBX, R8-9,12, RSI, EDI, XMM0-7
     "pushq %r12",       //RAX, RCX, RDX, RSP, RBP, RBX, R8-9,12-13, RSI, XMM0-7
@@ -55,7 +56,7 @@
 
     "cfg": {
       "num_blocks": 8,
-      "num_instrs": [0, 8, 4, 7, 8, 3, 1, 0],
+      "num_instrs": [0, 9, 4, 7, 8, 3, 1, 0],
       "reachable" : [0, 1, 2, 3, 4, 5, 7],
       "nesting_depth": [0, 0, 0, 1, 0, 0 , 0, 0]
     },

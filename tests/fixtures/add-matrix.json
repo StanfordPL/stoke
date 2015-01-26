@@ -5,6 +5,7 @@
   "code": [ 
     
     //BB1
+		".foo:",
     "pushq  %r14",           //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14 XMM0-7
     "movl   %edi, %r14d",    //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 XMM0-7
     "pushq  %r13",           //RAX RDX RCX RBX EDI RSI RSP RBP R8-9,12-13 R14D XMM0-7
@@ -76,7 +77,7 @@
 
     "cfg": {
       "num_blocks": 9,
-      "num_instrs": [0, 16, 2, 5, 7, 3, 8, 1, 0],
+      "num_instrs": [0, 17, 2, 5, 7, 3, 8, 1, 0],
       "nesting_depth": [0, 0, 0, 1, 2, 1, 0, 0, 0],
       "reachable": [0, 1, 2, 3, 4, 5, 6, 8]
     }

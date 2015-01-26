@@ -1,3 +1,4 @@
+.foo:
 pushq %r12
 movq %rsi, %r12
 pushq %rbp

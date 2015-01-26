@@ -24,7 +24,7 @@ private:
     sb.set_abi_check(true)
     .set_max_jumps(1024);
 
-    x64asm::Code code{{x64asm::RET, {}}};
+    x64asm::Code code{{x64asm::LABEL_DEFN, {x64asm::Label{".foo"}}}, {x64asm::RET, {}}};
     x64asm::RegSet rs = x64asm::RegSet::empty();
     stoke::Cfg cfg(code, rs, rs);
 
