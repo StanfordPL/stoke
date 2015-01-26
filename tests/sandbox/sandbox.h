@@ -707,14 +707,6 @@ TEST(SandboxTest, fld_family) {
   ss << "flds -0x20(%rsp)" << std::endl;
   ss << "fldl -0x20(%rsp)" << std::endl;
   ss << "fldt -0x20(%rsp)" << std::endl;
-  ss << "fld" << std::endl;
-  ss << "fld1" << std::endl;
-  ss << "fld2e" << std::endl;
-  ss << "fld2t" << std::endl;
-  ss << "fldg2" << std::endl;
-  ss << "fldn2" << std::endl;
-  ss << "fldpi" << std::endl;
-  ss << "fldz" << std::endl;
   ss << "retq" << std::endl;
 
   x64asm::Code c;
