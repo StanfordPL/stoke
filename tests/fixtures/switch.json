@@ -3,6 +3,7 @@
   "name": "switch",
   "comment": "rdi is livein only if you follow the switch logic :)",
   "code": [ 
+		".foo:",
     "movq   (%rsi),%rdx",        //xmm0, xmm1, rax, rdi, rsi
     "cmpb   $0x6,0x1(%rdx)",     //(same as below)
     "jbe    .L1",                //xmm0, xmm1, rax, rdx, rdi

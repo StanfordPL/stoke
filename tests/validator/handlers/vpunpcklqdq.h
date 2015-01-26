@@ -18,9 +18,11 @@ class ValidatorVpunpcklqdqTest : public ValidatorTest {};
 
 TEST_F(ValidatorVpunpcklqdqTest, DISABLED_Identity) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "vpunpcklqdq %xmm1, %xmm1, %xmm1" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "vpunpcklqdq %xmm1, %xmm1, %xmm1" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -30,9 +32,11 @@ TEST_F(ValidatorVpunpcklqdqTest, DISABLED_Identity) {
 
 TEST_F(ValidatorVpunpcklqdqTest, DISABLED_NonIdentity) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "vpunpcklqdq %xmm1, %xmm1, %xmm3" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "vpunpcklqdq %xmm2, %xmm2, %xmm3" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -46,9 +50,11 @@ TEST_F(ValidatorVpunpcklqdqTest, DISABLED_Idempotent) {
 
   x64asm::Code c, d;
 
+  target_ << ".foo:" << std::endl;
   target_ << "vpunpcklqdq %xmm3, %xmm2, %xmm1" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "vpunpcklqdq %xmm3, %xmm2, %xmm1" << std::endl;
   rewrite_ << "vpunpcklqdq %xmm3, %xmm2, %xmm1" << std::endl;
   rewrite_ << "retq" << std::endl;
@@ -60,9 +66,11 @@ TEST_F(ValidatorVpunpcklqdqTest, DISABLED_Idempotent) {
 
 TEST_F(ValidatorVpunpcklqdqTest, DISABLED_IdempotentOtherArg) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "vpunpcklqdq %xmm2, %xmm5, %xmm4" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "vpunpcklqdq %xmm1, %xmm3, %xmm4" << std::endl;
   rewrite_ << "vpunpcklqdq %xmm2, %xmm5, %xmm4" << std::endl;
   rewrite_ << "retq" << std::endl;
@@ -74,9 +82,11 @@ TEST_F(ValidatorVpunpcklqdqTest, DISABLED_IdempotentOtherArg) {
 
 TEST_F(ValidatorVpunpcklqdqTest, DISABLED_NotIdempotentWrongArg) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "vpunpcklqdq %xmm1, %xmm3, %xmm4" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "vpunpcklqdq %xmm1, %xmm3, %xmm4" << std::endl;
   rewrite_ << "vpunpcklqdq %xmm2, %xmm3, %xmm4" << std::endl;
   rewrite_ << "retq" << std::endl;

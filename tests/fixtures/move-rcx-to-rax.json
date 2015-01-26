@@ -1,7 +1,9 @@
 
 {
   "name": "movq rcx to rax",
-  "code": [ "movq %rcx, %rax" ],
+  "code": [ ".foo:",
+	          "movq %rcx, %rax" 
+					],
 
   "comment": 
     ["Believe it or not, this once exhibited a bug in liveness.",
@@ -19,7 +21,7 @@
 
     "cfg": {
       "num_blocks": 3,
-      "num_instrs": [0, 1, 0],
+      "num_instrs": [0, 2, 0],
       "get_exit":   2,
       "reachable":  [0, 1, 2],
       "nesting_depth": [0, 0, 0]
