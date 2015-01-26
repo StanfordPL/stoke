@@ -21,10 +21,12 @@ class ValidatorShiftTest : public ValidatorTest {};
 TEST_F(ValidatorShiftTest, IdentitySalb) {
   //note: the 'and' is needed to make sure 'cf' is defined
 
+  target_ << ".foo:" << std::endl;
   target_ << "andb $0x7, %cl" << std::endl;
   target_ << "salb %cl, %sil" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "andb $0x7, %cl" << std::endl;
   rewrite_ << "salb %cl, %sil" << std::endl;
   rewrite_ << "retq" << std::endl;
@@ -38,9 +40,11 @@ TEST_F(ValidatorShiftTest, OutputsEqualInBigShift) {
   // that's the same as shifting by 0x10 (i.e. 16 bits) on the value
   // of the register (but not on the CF)
 
+  target_ << ".foo:" << std::endl;
   target_ << "sall $0x10, %eax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "sall $0xf0, %eax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -52,9 +56,11 @@ TEST_F(ValidatorShiftTest, OutputsEqualInBigShift) {
 
 TEST_F(ValidatorShiftTest, CfUndefinedInBigShift) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "sall $0x10, %eax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "sall $0xf0, %eax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -66,9 +72,11 @@ TEST_F(ValidatorShiftTest, CfUndefinedInBigShift) {
 
 TEST_F(ValidatorShiftTest, RotateWorks) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "rolb $0xab, %r14b" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "rolb $0xab, %r14b" << std::endl;
   rewrite_ << "retq" << std::endl;
 

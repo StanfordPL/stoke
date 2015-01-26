@@ -186,7 +186,8 @@ int main(int argc, char** argv) {
   auto stepping = debug.value();
   fg = &aux_fxns;
   program_stack.push_back({target_arg.value(), 0});
-  SandboxGadget sb(tcs, aux_fxns, {callback, &stepping});
+  SandboxGadget sb(tcs, aux_fxns);
+	sb.insert_before(callback, &stepping);
 
   sb.run(target);
 

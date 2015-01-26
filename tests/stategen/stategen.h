@@ -83,6 +83,7 @@ TEST(StateGenTest, Issue44) {
 
   // Build example
   std::stringstream ss;
+	ss << ".foo:" << std::endl;
   ss << "movq $0x4eb4b0, (%rdi)" << std::endl;
   ss << "movq $0x0, 0x10(%rdi) " << std::endl;
   ss << "movq $0x0, 0x18(%rdi) " << std::endl;
@@ -116,6 +117,7 @@ TEST(StateGenTest, Issue44WithRetQ) {
 
   // Build example
   std::stringstream ss;
+	ss << ".foo:" << std::endl;
   ss << "movq $0x4eb4b0, (%rdi)" << std::endl;
   ss << "movq $0x0, 0x10(%rdi) " << std::endl;
   ss << "movq $0x0, 0x18(%rdi) " << std::endl;
@@ -158,6 +160,7 @@ TEST(StateGenTest, Issue51) {
   // Build example
   std::stringstream ss;
 
+	ss << ".foo:" << std::endl;
   ss << "movb %cl, -0x1(%rdx)" << std::endl;
   ss << "retq" << std::endl;
 
@@ -193,6 +196,7 @@ TEST(StateGenTest, Issue232) {
   // Build example
   std::stringstream ss;
 
+	ss << ".foo:" << std::endl;
   ss << "movq $0x10, %rax" << std::endl;
 
   x64asm::Code c;
@@ -217,6 +221,7 @@ TEST(StateGenTest, MisalignedNotAllowed) {
   // Build example
   std::stringstream ss;
 
+	ss << ".foo:" << std::endl;
   ss << "movaps 0x1(%rax), %xmm1" << std::endl;
   ss << "movaps 0x2(%rax), %xmm2" << std::endl;
   ss << "retq" << std::endl;
@@ -244,6 +249,7 @@ TEST(StateGenTest, MisalignedAllowed) {
   // Build example
   std::stringstream ss;
 
+	ss << ".foo:" << std::endl;
   ss << "movaps 0x1(%rax), %xmm1" << std::endl;
   ss << "movaps 0x2(%rax), %xmm2" << std::endl;
   ss << "retq" << std::endl;
@@ -271,6 +277,7 @@ TEST(StateGenTest, EasyToAvoidMisalign) {
   // Build example
   std::stringstream ss;
 
+	ss << ".foo:" << std::endl;
   ss << "movaps 0x7(%rax), %xmm1" << std::endl;
   ss << "retq" << std::endl;
 

@@ -17,9 +17,11 @@ class ValidatorXchgTest : public ValidatorTest {};
 
 TEST_F(ValidatorXchgTest, SameAsSwap64) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "xchgq %rax, %rcx" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq %rax, %rdx" << std::endl;
   rewrite_ << "movq %rcx, %rax" << std::endl;
   rewrite_ << "movq %rdx, %rcx" << std::endl;
@@ -33,9 +35,11 @@ TEST_F(ValidatorXchgTest, SameAsSwap64) {
 
 TEST_F(ValidatorXchgTest, SameAsSwap32) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "xchgl %eax, %ecx" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movl %eax, %edx" << std::endl;
   rewrite_ << "movl %ecx, %eax" << std::endl;
   rewrite_ << "movl %edx, %ecx" << std::endl;
@@ -49,9 +53,11 @@ TEST_F(ValidatorXchgTest, SameAsSwap32) {
 
 TEST_F(ValidatorXchgTest, SameAsSwap16) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "xchgw %ax, %cx" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movw %ax, %dx" << std::endl;
   rewrite_ << "movw %cx, %ax" << std::endl;
   rewrite_ << "movw %dx, %cx" << std::endl;
@@ -65,9 +71,11 @@ TEST_F(ValidatorXchgTest, SameAsSwap16) {
 
 TEST_F(ValidatorXchgTest, SameAsSwap8) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "xchgb %al, %cl" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movb %al, %dl" << std::endl;
   rewrite_ << "movb %cl, %al" << std::endl;
   rewrite_ << "movb %dl, %cl" << std::endl;

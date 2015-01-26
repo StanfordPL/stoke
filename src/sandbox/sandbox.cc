@@ -47,15 +47,16 @@ bool Sandbox::is_supported(Opcode o) {
   return unsupported_.find(o) == unsupported_.end();
 }
 
-Sandbox::Sandbox() : fxn_(32 * 1024) {
+Sandbox::Sandbox() : fxn_(32 * 1024), 
+		fxn_src_{{{LABEL_DEFN, {Label{".main"}}}, {RET}}, RegSet::empty(), RegSet::empty()} {
   fxn_.reserve(32 * 1024);
-  clear_inputs();
-  clear_functions();
-  clear_callbacks();
+  init_labels();
+
   set_abi_check(true);
   set_max_jumps(16);
 
-  init_labels();
+	aux_fxn_read_only_ = true;
+	aux_fxn_read_only_ = true;
 
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
@@ -92,9 +93,89 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
   return *this;
 }
 
-void Sandbox::compile(const Cfg& cfg) {
-  // Compile a new main function
-  main_fxn_read_only_ = emit_function(cfg, true);
+Sandbox& Sandbox::clear_inputs() {
+	for (auto io : io_pairs_) {
+		delete io;
+	}
+	io_pairs_.clear();
+	return *this;
+}
+
+Sandbox& Sandbox::compile_function(const Cfg& cfg) {
+	// Update the read only tracker for aux functions
+	aux_fxn_read_only_ &= is_mem_read_only(cfg);
+
+	// Compile the aux fxn and record its source
+	emit_function(cfg, false);
+	aux_fxns_.emplace_back(new x64asm::Function(fxn_));
+	aux_fxns_src_.push_back(cfg);
+
+	// Main may or may not work now (and we've clobbered fxn_ anyway)
+	compile(fxn_src_);
+}
+
+Sandbox& Sandbox::clear_functions() {
+	// Reset the read only tracker for aux functions
+	aux_fxn_read_only_ = true;
+
+	// Clear the aux fxns and their source
+	for (auto fxn : aux_fxns_) {
+		delete fxn;
+	}
+	aux_fxns_.clear();
+	aux_fxns_src_.clear();
+
+	// Recompile main which may not work anymore
+	compile(fxn_src_);
+
+	return *this;
+}
+
+Sandbox& Sandbox::insert_before(StateCallback cb, void* arg) {
+	global_before_ = {cb, arg};
+	recompile_all();
+	return *this;
+}
+
+Sandbox& Sandbox::insert_after(StateCallback cb, void* arg) {
+	global_after_ = {cb, arg};
+	recompile_all();
+	return *this;
+}
+
+Sandbox& Sandbox::insert_before(size_t line, StateCallback cb, void* arg) {
+	before_[line].push_back(std::make_pair(cb, arg));
+	recompile_main();
+	return *this;
+}
+
+Sandbox& Sandbox::insert_after(size_t line, StateCallback cb, void* arg) {
+	after_[line].push_back(std::make_pair(cb, arg));
+	recompile_main();
+	return *this;
+}
+
+Sandbox& Sandbox::clear_callbacks() {
+	global_before_ = {nullptr, nullptr};
+	global_after_ = {nullptr, nullptr};
+	before_.clear();
+	after_.clear();
+
+	recompile_all();
+
+	return *this;
+}
+
+size_t Sandbox::num_callbacks() const {
+	return (global_before_.first != nullptr ? 1 : 0) +
+		(global_after_.first != nullptr ? 1 : 0) +
+		before_.size() + after_.size();
+}
+
+void Sandbox::compile_main(const Cfg& cfg) {
+  main_fxn_read_only_ = is_mem_read_only(cfg);
+	emit_function(cfg, true);
+	fxn_src_ = cfg;
 
   // Relink everything
   lnkr_.start();
@@ -149,6 +230,27 @@ void Sandbox::run_all() {
   for (size_t i = 0, ie = size(); i < ie; ++i) {
     run_one(i);
   }
+}
+
+void Sandbox::recompile_main() {
+	compile(fxn_src_);
+}
+
+void Sandbox::recompile_all() {
+	// Clear old aux functions
+	for (auto fxn : aux_fxns_) {
+		delete fxn;
+	}
+	aux_fxns_.clear();
+
+	// Recompile aux functions
+	for (const auto& fxn : aux_fxns_src_) {
+		emit_function(fxn, false);
+		aux_fxns_.emplace_back(new x64asm::Function(fxn_));
+	}
+
+	// Recompile main
+	compile(fxn_src_);
 }
 
 size_t Sandbox::get_unused_reg(const Instruction& instr) const {
@@ -514,6 +616,31 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.jmp(done);
 }
 
+bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
+  for (auto b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+		const auto num_instrs = cfg.num_instrs(*b);
+		if (num_instrs == 0) {
+			continue;
+		}
+
+    const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
+    for (size_t i = begin, ie = begin + num_instrs; i < ie; ++i) {
+			const auto& instr = cfg.get_code()[i];
+			if (instr.is_implicit_memory_dereference()) {
+				return false;
+			} 
+			if (instr.is_explicit_memory_dereference()) {
+				const auto mi = instr.mem_index();
+				if (instr.maybe_write(mi) || instr.maybe_undef(mi)) {
+					return false;
+				}
+			}
+		}
+  }
+
+	return true;
+}
+
 // Emits an instrumented version of a user's function into a persistent
 // buffer to reduce memory allocation time
 //
@@ -530,8 +657,11 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
 // Arguments:
 //   <none>
 
-bool Sandbox::emit_function(const Cfg& cfg, bool is_main) {
-  // Index reachable instructions
+void Sandbox::emit_function(const Cfg& cfg, bool is_main) {
+  // Invariant: The first line of a function must be a label with its name
+  assert(cfg.get_code()[0].is_label_defn());
+
+  // Index reachable instructions (this would be a great iterator to have in Cfg)
   vector<size_t> instrs;
   for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
     if (cfg.is_exit(*b)) {
@@ -543,16 +673,10 @@ bool Sandbox::emit_function(const Cfg& cfg, bool is_main) {
     }
   }
 
-  // Flags to track: do we read memory and is the first instr a label?
-  auto read_only_mem = true;
-  const auto first_is_label = cfg.get_code()[instrs[0]].is_label_defn();
-
   assm_.start(fxn_);
 
-  // If the first instruction is a label, it must precede instrumentation
-  if (first_is_label) {
-    assm_.assemble(cfg.get_code()[instrs[0]]);
-  }
+  // The label that begins a function must precede instrumentation
+  assm_.assemble(cfg.get_code()[instrs[0]]);
 
   // Load the user's %rsp
   emit_load_user_rsp();
@@ -561,17 +685,9 @@ bool Sandbox::emit_function(const Cfg& cfg, bool is_main) {
   const auto exit = get_label();
 
   // Assemble every other reachable instruction
-  for (size_t i = first_is_label ? 1 : 0, ie = instrs.size(); i < ie; ++i) {
+  for (size_t i = 1 , ie = instrs.size(); i < ie; ++i) {
     const auto idx = instrs[i];
     const auto& instr = cfg.get_code()[idx];
-
-    // This is conservative, we assume anything implicit is a write
-    if (instr.is_implicit_memory_dereference()) {
-      read_only_mem = false;
-    } else if (instr.is_explicit_memory_dereference()) {
-      const auto mi = instr.mem_index();
-      read_only_mem &= (!instr.maybe_write(mi) && !instr.maybe_undef(mi));
-    }
 
     // Emit instruction and optionally, callbacks
     if (is_main && !before_.empty()) {
@@ -602,8 +718,6 @@ bool Sandbox::emit_function(const Cfg& cfg, bool is_main) {
   emit_load_stoke_rsp();
   assm_.ret();
   assm_.finish();
-
-  return read_only_mem;
 }
 
 void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, size_t line) {

@@ -4,7 +4,8 @@
   "comment": "There are two unreachable blocks that point to each other.",
 
   "code": 
-    [ "retq",
+    [ ".foo:",
+			"retq",
       ".L1:",
       "movq %rcx, %rax",
       "movq %rdx, %rbx",
@@ -23,7 +24,7 @@
   
     "cfg": {
       "num_blocks": 5,
-      "num_instrs": [0, 1, 3, 4, 0],
+      "num_instrs": [0, 2, 3, 4, 0],
       "reachable":  [0, 1, 4],
       "get_exit":   4,
       "nesting_depth": [0, 0, 0, 0, 0]

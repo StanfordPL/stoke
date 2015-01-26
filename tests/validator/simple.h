@@ -17,10 +17,12 @@ class ValidatorBaseTest : public ValidatorTest { };
 
 TEST_F(ValidatorBaseTest, SimpleExampleTrue) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "incq %rax" << std::endl;
   target_ << "cmpq $0x10, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "addq $0x1, %rax" << std::endl;
   rewrite_ << "cmpq $0x10, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
@@ -32,9 +34,11 @@ TEST_F(ValidatorBaseTest, SimpleExampleTrue) {
 
 TEST_F(ValidatorBaseTest, EflagsChecked) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "cmpq $0x5, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "cmpq $0x10, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -45,9 +49,11 @@ TEST_F(ValidatorBaseTest, EflagsChecked) {
 
 TEST_F(ValidatorBaseTest, BplChecked) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movb $0x10, %bpl" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "retq" << std::endl;
 
   set_live_outs(x64asm::RegSet::empty() + x64asm::bpl);
@@ -57,9 +63,11 @@ TEST_F(ValidatorBaseTest, BplChecked) {
 
 TEST_F(ValidatorBaseTest, SilChecked) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "addb $0x10, %sil" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "retq" << std::endl;
 
   set_live_outs(x64asm::RegSet::empty() + x64asm::sil);
@@ -69,9 +77,11 @@ TEST_F(ValidatorBaseTest, SilChecked) {
 
 TEST_F(ValidatorBaseTest, AxValidatedFalse) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "incq %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "addq $0x2, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -82,9 +92,11 @@ TEST_F(ValidatorBaseTest, AxValidatedFalse) {
 
 TEST_F(ValidatorBaseTest, AxValidatedTrue) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "incq %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "addq $0x1, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -96,9 +108,11 @@ TEST_F(ValidatorBaseTest, AxValidatedTrue) {
 
 TEST_F(ValidatorBaseTest, SimpleExampleFalse) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "incq %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "addq $0x2, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -137,9 +151,11 @@ TEST_F(ValidatorBaseTest, ReportsSupported) {
 
 TEST_F(ValidatorBaseTest, UnimplementedFailsGracefully) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "vaesdec %xmm0, %xmm1, %xmm2" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "retq" << std::endl;
 
   assert_fail();
@@ -149,7 +165,9 @@ TEST_F(ValidatorBaseTest, UnimplementedFailsGracefully) {
 TEST_F(ValidatorBaseTest, YmmSupported) {
 
   //TODO: fill in something here
+  target_ << ".foo:" << std::endl;
   target_ << "retq" << std::endl;
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "retq" << std::endl;
 
   set_def_ins(x64asm::RegSet::empty() + x64asm::ymm1);
@@ -160,9 +178,11 @@ TEST_F(ValidatorBaseTest, YmmSupported) {
 
 TEST_F(ValidatorBaseTest, UndefinedReadNotEquiv) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq %rax, %rcx" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq %rax, %rcx" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -174,9 +194,11 @@ TEST_F(ValidatorBaseTest, UndefinedReadNotEquiv) {
 
 TEST_F(ValidatorBaseTest, DefinedReadEquiv) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq %rax, %rcx" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq %rax, %rcx" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -188,9 +210,11 @@ TEST_F(ValidatorBaseTest, DefinedReadEquiv) {
 
 TEST_F(ValidatorBaseTest, UndefinedLiveinLiveoutFails) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq %rax, %rcx" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq %rax, %rcx" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -202,11 +226,13 @@ TEST_F(ValidatorBaseTest, UndefinedLiveinLiveoutFails) {
 
 TEST_F(ValidatorBaseTest, SimpleCounterexample) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq $0x0, %rax" << std::endl;
   target_ << "cmpb $0xc0, %cl" << std::endl;
   target_ << "setz %al" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq $0x0, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -222,10 +248,12 @@ TEST_F(ValidatorBaseTest, SimpleCounterexample) {
 
 TEST_F(ValidatorBaseTest, EflagsCounterexample) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "movq $0x0, %rax" << std::endl;
   target_ << "setz %al" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq $0x0, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -240,11 +268,12 @@ TEST_F(ValidatorBaseTest, EflagsCounterexample) {
 
 TEST_F(ValidatorBaseTest, ChecksUpper32bits) {
 
-
+  target_ << ".foo:" << std::endl;
   target_ << "movq $0x1, %rax" << std::endl;
   target_ << "shlq $0x28, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq $0x0, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -288,11 +317,13 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
 
 TEST_F(ValidatorBaseTest, DISABLED_TimeoutWorks) {
 
+  target_ << ".foo:"  << std::endl;
   target_ << "mulps  %xmm6, %xmm10"  << std::endl;
   target_ << "mulps  %xmm9, %xmm7"   << std::endl;
   target_ << "mulps  %xmm4, %xmm1"   << std::endl;
   target_ << "retq"                  << std::endl;
 
+  rewrite_ << ".foo:"  << std::endl;
   rewrite_ << "mulps  %xmm6, %xmm10"  << std::endl;
   rewrite_ << "mulps  %xmm9, %xmm7"   << std::endl;
   rewrite_ << "mulps  %xmm9, %xmm1"   << std::endl;
@@ -308,6 +339,7 @@ TEST_F(ValidatorBaseTest, DISABLED_TimeoutWorks) {
 
 TEST_F(ValidatorBaseTest, NopsAndLabelsSupported) {
 
+  target_ << ".foo:"  << std::endl;
   target_ << "nop" << std::endl;
   target_ << "nop" << std::endl;
   target_ << "retq" << std::endl;
