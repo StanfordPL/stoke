@@ -115,7 +115,7 @@ TEST(DisassemblerTest, PopCnt) {
 
     if (pf.tunit.name == "main") {
       std::map<std::string, std::string> amap = pf.addr_label_map;
-      EXPECT_EQ("atoi@plt", amap["400430"]);
+      EXPECT_EQ("atoi_plt", amap["400430"]);
       EXPECT_EQ("_Z6popcntm", amap["400570"]);
       found_main = true;
     }

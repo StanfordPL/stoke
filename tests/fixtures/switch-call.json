@@ -3,6 +3,7 @@
   "name": "switch-call",
   "comment": "ensure that call variables propogate to switch",
   "code": [ 
+		".foo:",
     "movq   (%rsi),%rdx",        //rdi, rax, xmm0-7, rsi, rcx, r8, r9
     "cmpb   $0x6,0x1(%rdx)",     //(same as below)
     "jbe    .L1",                //rdi, rdx, rax, xmm0-7, rsi, rcx, r8, r9

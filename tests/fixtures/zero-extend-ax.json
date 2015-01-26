@@ -1,6 +1,8 @@
 {
   "name": "zero-extend-ax",
-  "code": [ "movzwq %ax, %rax" ],
+  "code": [ ".foo:",
+						"movzwq %ax, %rax" 
+					],
 
   "tests": {
 

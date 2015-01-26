@@ -15,6 +15,9 @@
 #ifndef STOKE_TOOLS_GADGETS_REWRITE_H
 #define STOKE_TOOLS_GADGETS_REWRITE_H
 
+#include <vector>
+
+#include "src/tunit/tunit.h"
 #include "tools/gadgets/cfg.h"
 #include "tools/args/rewrite.h"
 
@@ -22,7 +25,7 @@ namespace stoke {
 
 class RewriteGadget : public CfgGadget {
 public:
-  RewriteGadget() : CfgGadget(rewrite_arg.value().code) { }
+  RewriteGadget(const std::vector<TUnit>& aux_fxns) : CfgGadget(rewrite_arg.value().code, aux_fxns) { }
 };
 
 } // namespace stoke

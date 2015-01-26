@@ -4,6 +4,7 @@
   "comment": "CFG has 3 blocks: A->B, B->C, A->C.  Call in B.",
   "code": [ 
             //BB A 
+						".foo:",
             "incq %rax",        // RAX, RCX, RDX, R8, R9, XMM...
             "cmpq %rax, %rcx",  // RAX, RCX, RDX, R8, R9, XMM...
             "jle .L1",          // RAX, RDX, RCX, R8, R9, XMM...
@@ -34,7 +35,7 @@
 
     "cfg": {
       "num_blocks": 6,
-      "num_instrs": [0, 3, 5, 3, 1, 0],
+      "num_instrs": [0, 4, 5, 3, 1, 0],
       "get_exit":   5,
       "reachable":  [0, 1, 2, 3, 5],
       "nesting_depth": [0, 0, 0, 0, 0, 0]

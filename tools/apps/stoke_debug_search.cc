@@ -20,6 +20,7 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "tools/args/move.h"
+#include "tools/gadgets/functions.h"
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/transforms.h"
@@ -35,8 +36,9 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   SeedGadget seed;
-  TargetGadget target;
-  TransformsGadget tforms(target.get_code(), seed);
+  FunctionsGadget aux_fxns;
+  TargetGadget target(aux_fxns);
+  TransformsGadget tforms(target.get_code(), aux_fxns, seed);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);

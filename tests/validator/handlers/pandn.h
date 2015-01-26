@@ -17,9 +17,11 @@ class ValidatorPandnTest : public ValidatorTest {};
 
 TEST_F(ValidatorPandnTest, Identity) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "pandn %xmm3, %xmm5" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "pandn %xmm3, %xmm5" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -29,9 +31,11 @@ TEST_F(ValidatorPandnTest, Identity) {
 
 TEST_F(ValidatorPandnTest, NotANoop) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "pandn %xmm3, %xmm5" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "retq" << std::endl;
 
   assert_ceg();
@@ -40,6 +44,7 @@ TEST_F(ValidatorPandnTest, NotANoop) {
 
 TEST_F(ValidatorPandnTest, LooksCorrect) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "pandn %xmm3, %xmm5" << std::endl;
   target_ << "retq" << std::endl;
 

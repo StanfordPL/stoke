@@ -53,7 +53,11 @@ public:
 
   /** Create a new cost function with default values for extended features. */
   CostFunction(Sandbox* sb) : sandbox_(sb), size_buffer_(32 * 1024) {
-    set_target({{{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()}, false, false);
+    const x64asm::Code code {
+      {x64asm::LABEL_DEFN, {x64asm::Label{".main"}}},
+      {x64asm::RET}
+    };
+    set_target({code, x64asm::RegSet::empty(), x64asm::RegSet::empty()}, false, false);
     set_distance(Distance::HAMMING);
     set_sse(1, 1);
     set_relax(false, false, false);

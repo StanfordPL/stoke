@@ -17,6 +17,7 @@ class ValidatorIncTest : public ValidatorTest {};
 
 TEST_F(ValidatorIncTest, Issue287) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -28,6 +29,7 @@ TEST_F(ValidatorIncTest, Issue287) {
 
 TEST_F(ValidatorIncTest, Issue287_2) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -39,6 +41,7 @@ TEST_F(ValidatorIncTest, Issue287_2) {
 
 TEST_F(ValidatorIncTest, Issue287_3) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -50,6 +53,7 @@ TEST_F(ValidatorIncTest, Issue287_3) {
 
 TEST_F(ValidatorIncTest, Issue287_4) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -61,6 +65,7 @@ TEST_F(ValidatorIncTest, Issue287_4) {
 
 TEST_F(ValidatorIncTest, Issue287_5) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -72,6 +77,7 @@ TEST_F(ValidatorIncTest, Issue287_5) {
 
 TEST_F(ValidatorIncTest, Issue287_6) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 

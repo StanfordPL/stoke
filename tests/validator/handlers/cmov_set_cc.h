@@ -74,9 +74,11 @@ TEST_F(ValidatorCmovSetCCTest, SetCCIdentity) {
     rewrite_.clear();
     std::string instr = "set" + cc + " %al";
 
+    target_ << ".foo:" << std::endl;
     target_ << instr << std::endl;
     target_ << "retq" << std::endl;
 
+    rewrite_ << ".foo:" << std::endl;
     rewrite_ << instr << std::endl;
     rewrite_ << "retq" << std::endl;
 
@@ -92,10 +94,11 @@ TEST_F(ValidatorCmovSetCCTest, CmovCCIdentity) {
     rewrite_.clear();
     std::string instr = "cmov" + cc + "w %cx, %dx";
 
-
+    target_ << ".foo:" << std::endl;
     target_ << instr << std::endl;
     target_ << "retq" << std::endl;
 
+    rewrite_ << ".foo:" << std::endl;
     rewrite_ << instr << std::endl;
     rewrite_ << "retq" << std::endl;
 
@@ -111,10 +114,12 @@ TEST_F(ValidatorCmovSetCCTest, CmovZeroToZeroDoesNothing) {
     rewrite_.clear();
     std::string instr = "cmov" + cc + "q %rax, %rax";
 
+    target_ << ".foo:" << std::endl;
     target_ << "movq $0x0, %rax" << std::endl;
     target_ << instr << std::endl;
     target_ << "retq" << std::endl;
 
+    rewrite_ << ".foo:" << std::endl;
     rewrite_ << "movq $0x0, %rax" << std::endl;
     rewrite_ << "retq" << std::endl;
 
@@ -129,11 +134,13 @@ TEST_F(ValidatorCmovSetCCTest, CmovSetEquivalent) {
     rewrite_.clear();
     std::string instr = "cmov" + cc + "q %rax, %rax";
 
+    target_ << ".foo:" << std::endl;
     target_ << "movq $0x0, %rax" << std::endl;
     target_ << "movq $0x1, %rcx"  << std::endl;
     target_ << "cmov" << cc << "q %rcx, %rax" << std::endl;
     target_ << "retq" << std::endl;
 
+    rewrite_ << ".foo:" << std::endl;
     rewrite_ << "movq $0x0, %rax" << std::endl;
     rewrite_ << "movq $0x1, %rcx"  << std::endl;
     rewrite_ << "set" << cc << " %al" << std::endl;
@@ -154,9 +161,11 @@ TEST_F(ValidatorCmovSetCCTest, DISABLED_TestSetccAgainstItself) {
       target_.clear();
       rewrite_.clear();
 
+      target_ << ".foo:" << std::endl;
       target_ << "set" << cc1 << " %al" << std::endl;
       target_ << "retq" << std::endl;
 
+      rewrite_ << ".foo:" << std::endl;
       rewrite_ << "set" << cc2 << " %al" << std::endl;
       rewrite_ << "retq" << std::endl;
 
@@ -175,9 +184,11 @@ TEST_F(ValidatorCmovSetCCTest, DISABLED_TestCmovccAgainstItself) {
       target_.clear();
       rewrite_.clear();
 
+      target_ << ".foo:" << std::endl;
       target_ << "cmov" << cc1 << "l %ebp, %esp" << std::endl;
       target_ << "retq" << std::endl;
 
+      rewrite_ << ".foo:" << std::endl;
       rewrite_ << "cmov" << cc2 << "l %ebp, %esp" << std::endl;
       rewrite_ << "retq" << std::endl;
 
@@ -188,10 +199,11 @@ TEST_F(ValidatorCmovSetCCTest, DISABLED_TestCmovccAgainstItself) {
 
 TEST_F(ValidatorCmovSetCCTest, CmovzlCmovsl) {
 
-
+  target_ << ".foo:" << std::endl;
   target_ << "cmovzl %ebp, %esp" << std::endl;
   target_ << "retq" << std::endl;
 
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "cmovsl %ebp, %esp" << std::endl;
   rewrite_ << "retq" << std::endl;
 

@@ -17,6 +17,7 @@ class ValidatorAdcTest : public ValidatorTest {};
 
 TEST_F(ValidatorAdcTest, Issue280) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "adcb $0x0, %al" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -28,6 +29,7 @@ TEST_F(ValidatorAdcTest, Issue280) {
 
 TEST_F(ValidatorAdcTest, Issue280_2) {
 
+  target_ << ".foo:" << std::endl;
   target_ << "adcb $0x50, %al" << std::endl;
   target_ << "retq" << std::endl;
 
