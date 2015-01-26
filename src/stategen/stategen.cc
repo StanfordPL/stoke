@@ -58,12 +58,9 @@ bool StateGen::get(CpuState& cs) const {
 
 bool StateGen::get(CpuState& cs, const Cfg& cfg) {
   // Insert callbacks before every instruction and compile
-  sb_->clear_callbacks();
-
   size_t last_line;
-  for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
-    sb_->insert_before(i, callback, (void*)&last_line);
-  }
+  sb_->clear_callbacks();
+  sb_->insert_before(callback, (void*)&last_line);
   sb_->compile(cfg);
 
   // Generate a random state and keep checking for validity
