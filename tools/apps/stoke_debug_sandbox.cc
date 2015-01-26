@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
   fg = &aux_fxns;
   program_stack.push_back({target_arg.value(), 0});
   SandboxGadget sb(tcs, aux_fxns);
-	sb.insert_before(callback, &stepping);
+  sb.insert_before(callback, &stepping);
 
   sb.run(target);
 

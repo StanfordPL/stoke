@@ -24,7 +24,7 @@ TEST(SandboxTest, TrivialExampleWorks) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "addq $0x8, %rdx" << std::endl;
   ss << "retq" << std::endl;
@@ -58,7 +58,7 @@ TEST(SandboxTest, AllGPRegistersWork) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "addq $0x1, %rax" << std::endl;
   ss << "addq $0x2, %rcx" << std::endl;
   ss << "addq $0x3, %rdx" << std::endl;
@@ -108,7 +108,7 @@ TEST(SandboxTest, RegisterValuesArePreserved) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "retq" << std::endl;
 
   ss >> c;
@@ -150,7 +150,7 @@ TEST(SandboxTest, ModifyingRbxWorks) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "addq $0x8, %rbx" << std::endl;
   ss << "retq" << std::endl;
@@ -186,7 +186,7 @@ TEST(SandboxTest, ModifyingRbxFailsIfAbiEnforced) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "addq $0x8, %rbx" << std::endl;
   ss << "retq" << std::endl;
@@ -214,7 +214,7 @@ TEST(SandboxTest, RflagsRegistersArePreserved) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "cmovzl %ebp, %esp" << std::endl;
   ss << "retq" << std::endl;
   ss >> c;
@@ -254,7 +254,7 @@ TEST(SandboxTest, NullDereferenceFails) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "incq %rcx" << std::endl;
   ss << "movq (%rax), %rcx" << std::endl;
   ss << "addq $0x8, %rdx" << std::endl;
@@ -284,7 +284,7 @@ TEST(SandboxTest, DivideByZeroFails) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "divq %rcx" << std::endl;
   ss << "addq $0x8, %rdx" << std::endl;
   ss << "retq" << std::endl;
@@ -314,7 +314,7 @@ TEST(SandboxTest, InfiniteLoopFails) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "xorq %rcx, %rcx" << std::endl;
   ss << ".L1:" << std::endl;
   ss << "incq %rcx" << std::endl;
@@ -348,7 +348,7 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "xorq %rcx, %rcx" << std::endl;
   ss << ".L1:" << std::endl;
   ss << "incq %rcx" << std::endl;
@@ -382,7 +382,7 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "xorq %rcx, %rcx" << std::endl;
   ss << ".L1:" << std::endl;
   ss << "incq %rcx" << std::endl;
@@ -415,7 +415,7 @@ TEST(SandboxTest, LahfSahfOkay) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "xorq %rax, %rax" << std::endl;
   ss << "lahf" << std::endl;
   ss << "sahf" << std::endl;
@@ -441,7 +441,7 @@ TEST(SandboxTest, UndefSymbolError) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "xorq %rax, %rax" << std::endl;
   ss << "callq .no_target" << std::endl;
   ss << "retq" << std::endl;
@@ -463,7 +463,7 @@ TEST(SandboxTest, Issue239) {
   std::stringstream ss;
 
   // Here's the input program
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "movl $0x3300, %esp" << std::endl;
   ss << "movl $0x81d1, %r14d" << std::endl;
   ss << "leaw 0x40(%rsp,%r14,1), %bx" << std::endl;
@@ -489,7 +489,7 @@ TEST(SandboxTest, Issue239) {
 TEST(SandboxTest, LDDQU_VLDDQU) {
 #ifdef __AVX2__
   std::stringstream ss;
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "lddqu -0x21(%rsp), %xmm0" << std::endl;
   ss << "vlddqu -0x21(%rsp), %ymm0" << std::endl;
   ss << "retq" << std::endl;
@@ -514,7 +514,7 @@ TEST(SandboxTest, LDDQU_VLDDQU) {
 
 TEST(SandboxTest, PUSH_POP) {
   std::stringstream ss;
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "pushw -0x18(%rsp)" << std::endl;
   ss << "pushw -0x18(%rsp)" << std::endl;
   ss << "pushw %ax" << std::endl;
@@ -548,7 +548,7 @@ TEST(SandboxTest, PUSH_POP) {
 
 TEST(SandboxTest, MEM_DIV) {
   std::stringstream ss;
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "movq $0x1, %rax" << std::endl;
   ss << "movq $0x1, %rdx" << std::endl;
   ss << "movq $0x20, -0x8(%rsp)" << std::endl;
@@ -581,7 +581,7 @@ TEST(SandboxTest, MEM_DIV) {
 
 TEST(SandboxTest, RSP_WITH_JMPS) {
   std::stringstream ss;
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "pushq %rbp" << std::endl;
   ss << "movq %rsp, %rbp" << std::endl;
   ss << "movl $0x0, -0x18(%rbp)" << std::endl;
@@ -609,7 +609,7 @@ TEST(SandboxTest, RSP_WITH_JMPS) {
 
 TEST(SandboxTest, PushfWorks) {
   std::stringstream ss;
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "pushf" << std::endl;
   ss << "pushfq" << std::endl;
   ss << "retq" << std::endl;
@@ -631,7 +631,7 @@ TEST(SandboxTest, PushfWorks) {
 
 TEST(SandboxTest, PopfFailCase) {
   std::stringstream ss;
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "movq $-0x1, %rax" << std::endl;
   ss << "pushq %rax" << std::endl;
   ss << "popf" << std::endl;
@@ -654,7 +654,7 @@ TEST(SandboxTest, PopfFailCase) {
 
 TEST(SandboxTest, PopfqFailCase) {
   std::stringstream ss;
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "movq $-0x1, %rax" << std::endl;
   ss << "pushq %rax" << std::endl;
   ss << "popfq" << std::endl;
@@ -677,7 +677,7 @@ TEST(SandboxTest, PopfqFailCase) {
 
 TEST(SandboxTest, PopfqWorksCase) {
   std::stringstream ss;
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "pushfq" << std::endl;
   ss << "movl $0x000008d5, %edi" << std::endl;
   ss << "popq %rax" << std::endl;
@@ -703,7 +703,7 @@ TEST(SandboxTest, PopfqWorksCase) {
 
 TEST(SandboxTest, fld_family) {
   std::stringstream ss;
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "flds -0x20(%rsp)" << std::endl;
   ss << "fldl -0x20(%rsp)" << std::endl;
   ss << "fldt -0x20(%rsp)" << std::endl;

@@ -250,14 +250,14 @@ TEST_F(ValidatorMemoryTest, DoublePushPopIsNop) {
 
 TEST_F(ValidatorMemoryTest, DoublePushPopIsMove) {
 
-	target_ << ".foo:" << std::endl;
+  target_ << ".foo:" << std::endl;
   target_ << "pushq %rax" << std::endl;
   target_ << "pushq %rcx" << std::endl;
   target_ << "popq %rdx" << std::endl;
   target_ << "popq %rbx" << std::endl;
   target_ << "retq" << std::endl;
 
-	rewrite_ << ".foo:" << std::endl;
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq %rax, %rbx" << std::endl;
   rewrite_ << "movq %rcx, %rdx" << std::endl;
   rewrite_ << "retq" << std::endl;
@@ -267,14 +267,14 @@ TEST_F(ValidatorMemoryTest, DoublePushPopIsMove) {
 
 TEST_F(ValidatorMemoryTest, DoublePushPopIsCorrectMove) {
 
-	target_ << ".foo:" << std::endl;
+  target_ << ".foo:" << std::endl;
   target_ << "pushq %rax" << std::endl;
   target_ << "pushq %rcx" << std::endl;
   target_ << "popq %rdx" << std::endl;
   target_ << "popq %rbx" << std::endl;
   target_ << "retq" << std::endl;
 
-	rewrite_ << ".foo:" << std::endl;
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq %rax, %rdx" << std::endl;
   rewrite_ << "movq %rcx, %rbx" << std::endl;
   rewrite_ << "retq" << std::endl;
@@ -284,12 +284,12 @@ TEST_F(ValidatorMemoryTest, DoublePushPopIsCorrectMove) {
 
 TEST_F(ValidatorMemoryTest, StackBasedAddition) {
 
-	target_ << ".foo:" << std::endl;
+  target_ << ".foo:" << std::endl;
   target_ << "pushq $0x40" << std::endl;
   target_ << "addq (%rsp), %rax" << std::endl;
   target_ << "retq" << std::endl;
 
-	rewrite_ << ".foo:" << std::endl;
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "addq $0x40, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -300,12 +300,12 @@ TEST_F(ValidatorMemoryTest, StackBasedAddition) {
 
 TEST_F(ValidatorMemoryTest, StackBasedAdditionAffectsRsp) {
 
-	target_ << ".foo:" << std::endl;
+  target_ << ".foo:" << std::endl;
   target_ << "pushq $0x40" << std::endl;
   target_ << "addq (%rsp), %rax" << std::endl;
   target_ << "retq" << std::endl;
 
-	rewrite_ << ".foo:" << std::endl;
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "addq $0x40, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
@@ -314,12 +314,12 @@ TEST_F(ValidatorMemoryTest, StackBasedAdditionAffectsRsp) {
 
 TEST_F(ValidatorMemoryTest, PopRspIsSpecial) {
 
-	target_ << ".foo:" << std::endl;
+  target_ << ".foo:" << std::endl;
   target_ << "pushq %rax" << std::endl;
   target_ << "popq %rsp" << std::endl;
   target_ << "retq" << std::endl;
 
-	rewrite_ << ".foo:" << std::endl;
+  rewrite_ << ".foo:" << std::endl;
   rewrite_ << "movq %rax, %rsp" << std::endl;
   rewrite_ << "retq" << std::endl;
 

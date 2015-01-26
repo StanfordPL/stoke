@@ -116,8 +116,8 @@ public:
   /** Returns the number of installed callbacks */
   size_t num_callbacks() const;
 
-	/** Compile a new main function. */
-	void compile_main(const Cfg& cfg);
+  /** Compile a new main function. */
+  void compile_main(const Cfg& cfg);
   /** Run a main function for just one input. */
   void run_one(size_t index);
   /** Run a main function for all inputs. */
@@ -157,12 +157,12 @@ public:
   }
   /** @deprecated Use compile_main */
   void compile(const Cfg& cfg) {
-		compile_main(cfg);
-	}
-	/** @deprecated Use compile_function */
+    compile_main(cfg);
+  }
+  /** @deprecated Use compile_function */
   Sandbox& insert_function(const Cfg& cfg) {
-		compile_function(cfg);
-	}
+    compile_function(cfg);
+  }
 
 private:
   /** Should the sandbox report errors for linux abi violations? */
@@ -229,17 +229,17 @@ private:
   x64asm::Function signal_trap_;
   /** Functions that the code may invoke at runtime. Pointers to simplify reallocation. */
   std::vector<x64asm::Function*> aux_fxns_;
-	/** Auxiliary function source (saved in case recompilation is necessary). */
-	std::vector<Cfg> aux_fxns_src_;
+  /** Auxiliary function source (saved in case recompilation is necessary). */
+  std::vector<Cfg> aux_fxns_src_;
   /** Function buffer for jit assembling codes; the main function */
   x64asm::Function fxn_;
-	/** Main function source (saved in case recompilation is necessary). */
-	Cfg fxn_src_;
+  /** Main function source (saved in case recompilation is necessary). */
+  Cfg fxn_src_;
 
-	/** Recompiles just the main function */
-	void recompile_main();
-	/** Recompiles main and auxiliary functions from saved source */
-	void recompile_all();
+  /** Recompiles just the main function */
+  void recompile_main();
+  /** Recompiles main and auxiliary functions from saved source */
+  void recompile_all();
 
   /** Returns a register that doesn't appear in an instruction or the scratch space. */
   size_t get_unused_reg(const x64asm::Instruction& instr) const;
@@ -283,8 +283,8 @@ private:
   void emit_map_addr_cases(CpuState& cs, const x64asm::Label& fail, const x64asm::Label& done,
                            bool stack);
 
-	/** Check whether a function is read only wrt memory */
-	bool is_mem_read_only(const Cfg& cfg) const;
+  /** Check whether a function is read only wrt memory */
+  bool is_mem_read_only(const Cfg& cfg) const;
   /** Assembles the user's function */
   void emit_function(const Cfg& cfg, bool is_main);
   /** Emit a single callback for this line. */
