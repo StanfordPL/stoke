@@ -47,16 +47,16 @@ bool Sandbox::is_supported(Opcode o) {
   return unsupported_.find(o) == unsupported_.end();
 }
 
-Sandbox::Sandbox() : fxn_(32 * 1024), 
-		fxn_src_{{{LABEL_DEFN, {Label{".main"}}}, {RET}}, RegSet::empty(), RegSet::empty()} {
+Sandbox::Sandbox() : fxn_(32 * 1024),
+  fxn_src_{{{LABEL_DEFN, {Label{".main"}}}, {RET}}, RegSet::empty(), RegSet::empty()} {
   fxn_.reserve(32 * 1024);
   init_labels();
 
   set_abi_check(true);
   set_max_jumps(16);
 
-	aux_fxn_read_only_ = true;
-	aux_fxn_read_only_ = true;
+  aux_fxn_read_only_ = true;
+  aux_fxn_read_only_ = true;
 
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
@@ -94,88 +94,88 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
 }
 
 Sandbox& Sandbox::clear_inputs() {
-	for (auto io : io_pairs_) {
-		delete io;
-	}
-	io_pairs_.clear();
-	return *this;
+  for (auto io : io_pairs_) {
+    delete io;
+  }
+  io_pairs_.clear();
+  return *this;
 }
 
 Sandbox& Sandbox::compile_function(const Cfg& cfg) {
-	// Update the read only tracker for aux functions
-	aux_fxn_read_only_ &= is_mem_read_only(cfg);
+  // Update the read only tracker for aux functions
+  aux_fxn_read_only_ &= is_mem_read_only(cfg);
 
-	// Compile the aux fxn and record its source
-	emit_function(cfg, false);
-	aux_fxns_.emplace_back(new x64asm::Function(fxn_));
-	aux_fxns_src_.push_back(cfg);
+  // Compile the aux fxn and record its source
+  emit_function(cfg, false);
+  aux_fxns_.emplace_back(new x64asm::Function(fxn_));
+  aux_fxns_src_.push_back(cfg);
 
-	// Main may or may not work now (and we've clobbered fxn_ anyway)
-	compile(fxn_src_);
+  // Main may or may not work now (and we've clobbered fxn_ anyway)
+  compile(fxn_src_);
 }
 
 Sandbox& Sandbox::clear_functions() {
-	// Reset the read only tracker for aux functions
-	aux_fxn_read_only_ = true;
+  // Reset the read only tracker for aux functions
+  aux_fxn_read_only_ = true;
 
-	// Clear the aux fxns and their source
-	for (auto fxn : aux_fxns_) {
-		delete fxn;
-	}
-	aux_fxns_.clear();
-	aux_fxns_src_.clear();
+  // Clear the aux fxns and their source
+  for (auto fxn : aux_fxns_) {
+    delete fxn;
+  }
+  aux_fxns_.clear();
+  aux_fxns_src_.clear();
 
-	// Recompile main which may not work anymore
-	compile(fxn_src_);
+  // Recompile main which may not work anymore
+  compile(fxn_src_);
 
-	return *this;
+  return *this;
 }
 
 Sandbox& Sandbox::insert_before(StateCallback cb, void* arg) {
-	global_before_ = {cb, arg};
-	recompile_all();
-	return *this;
+  global_before_ = {cb, arg};
+  recompile_all();
+  return *this;
 }
 
 Sandbox& Sandbox::insert_after(StateCallback cb, void* arg) {
-	global_after_ = {cb, arg};
-	recompile_all();
-	return *this;
+  global_after_ = {cb, arg};
+  recompile_all();
+  return *this;
 }
 
 Sandbox& Sandbox::insert_before(size_t line, StateCallback cb, void* arg) {
-	before_[line].push_back(std::make_pair(cb, arg));
-	recompile_main();
-	return *this;
+  before_[line].push_back(std::make_pair(cb, arg));
+  recompile_main();
+  return *this;
 }
 
 Sandbox& Sandbox::insert_after(size_t line, StateCallback cb, void* arg) {
-	after_[line].push_back(std::make_pair(cb, arg));
-	recompile_main();
-	return *this;
+  after_[line].push_back(std::make_pair(cb, arg));
+  recompile_main();
+  return *this;
 }
 
 Sandbox& Sandbox::clear_callbacks() {
-	global_before_ = {nullptr, nullptr};
-	global_after_ = {nullptr, nullptr};
-	before_.clear();
-	after_.clear();
+  global_before_ = {nullptr, nullptr};
+  global_after_ = {nullptr, nullptr};
+  before_.clear();
+  after_.clear();
 
-	recompile_all();
+  recompile_all();
 
-	return *this;
+  return *this;
 }
 
 size_t Sandbox::num_callbacks() const {
-	return (global_before_.first != nullptr ? 1 : 0) +
-		(global_after_.first != nullptr ? 1 : 0) +
-		before_.size() + after_.size();
+  return (global_before_.first != nullptr ? 1 : 0) +
+         (global_after_.first != nullptr ? 1 : 0) +
+         before_.size() + after_.size();
 }
 
 void Sandbox::compile_main(const Cfg& cfg) {
   main_fxn_read_only_ = is_mem_read_only(cfg);
-	emit_function(cfg, true);
-	fxn_src_ = cfg;
+  emit_function(cfg, true);
+  fxn_src_ = cfg;
 
   // Relink everything
   lnkr_.start();
@@ -233,24 +233,24 @@ void Sandbox::run_all() {
 }
 
 void Sandbox::recompile_main() {
-	compile(fxn_src_);
+  compile(fxn_src_);
 }
 
 void Sandbox::recompile_all() {
-	// Clear old aux functions
-	for (auto fxn : aux_fxns_) {
-		delete fxn;
-	}
-	aux_fxns_.clear();
+  // Clear old aux functions
+  for (auto fxn : aux_fxns_) {
+    delete fxn;
+  }
+  aux_fxns_.clear();
 
-	// Recompile aux functions
-	for (const auto& fxn : aux_fxns_src_) {
-		emit_function(fxn, false);
-		aux_fxns_.emplace_back(new x64asm::Function(fxn_));
-	}
+  // Recompile aux functions
+  for (const auto& fxn : aux_fxns_src_) {
+    emit_function(fxn, false);
+    aux_fxns_.emplace_back(new x64asm::Function(fxn_));
+  }
 
-	// Recompile main
-	compile(fxn_src_);
+  // Recompile main
+  compile(fxn_src_);
 }
 
 size_t Sandbox::get_unused_reg(const Instruction& instr) const {
@@ -618,27 +618,27 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
 
 bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
   for (auto b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-		const auto num_instrs = cfg.num_instrs(*b);
-		if (num_instrs == 0) {
-			continue;
-		}
+    const auto num_instrs = cfg.num_instrs(*b);
+    if (num_instrs == 0) {
+      continue;
+    }
 
     const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = begin, ie = begin + num_instrs; i < ie; ++i) {
-			const auto& instr = cfg.get_code()[i];
-			if (instr.is_implicit_memory_dereference()) {
-				return false;
-			} 
-			if (instr.is_explicit_memory_dereference()) {
-				const auto mi = instr.mem_index();
-				if (instr.maybe_write(mi) || instr.maybe_undef(mi)) {
-					return false;
-				}
-			}
-		}
+      const auto& instr = cfg.get_code()[i];
+      if (instr.is_implicit_memory_dereference()) {
+        return false;
+      }
+      if (instr.is_explicit_memory_dereference()) {
+        const auto mi = instr.mem_index();
+        if (instr.maybe_write(mi) || instr.maybe_undef(mi)) {
+          return false;
+        }
+      }
+    }
   }
 
-	return true;
+  return true;
 }
 
 // Emits an instrumented version of a user's function into a persistent

@@ -83,14 +83,14 @@ TEST_F(CostFunctionTest, IncludesEflagsWhenSet) {
 
   // Target
   ss.clear();
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "cmpq %rax, %rcx" << std::endl;
   ss << "retq" << std::endl;
   ss >> target;
 
   // Rewrite
   ss.clear();
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "retq" << std::endl;
   ss >> rewrite;
 
@@ -115,14 +115,14 @@ TEST_F(CostFunctionTest, ExcludesEflagsWhenNotSet) {
 
   // Target
   ss.clear();
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "cmpq %rax, %rcx" << std::endl;
   ss << "retq" << std::endl;
   ss >> target;
 
   // Rewrite
   ss.clear();
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "retq" << std::endl;
   ss >> rewrite;
 
@@ -147,14 +147,14 @@ TEST_F(CostFunctionTest, ChecksRAX) {
 
   // Target
   ss.clear();
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "incq %rax" << std::endl;
   ss << "retq" << std::endl;
   ss >> target;
 
   // Rewrite
   ss.clear();
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "retq" << std::endl;
   ss >> rewrite;
 
@@ -188,14 +188,14 @@ TEST_F(CostFunctionTest, SignalPenalty) {
 
   // Target
   ss.clear();
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "incq %rax" << std::endl;
   ss << "retq" << std::endl;
   ss >> target;
 
   // Rewrite
   ss.clear();
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "incq %rax" << std::endl;
   ss << "movq (%rax), %rdx" << std::endl;
   ss << "retq" << std::endl;
@@ -224,7 +224,7 @@ TEST_F(CostFunctionTest, SizePenalty) {
 
   // Target
   ss.clear();
-	ss << ".foo:" << std::endl;
+  ss << ".foo:" << std::endl;
   ss << "incq %rax" << std::endl;
   ss << "movq %rax, %rdx" << std::endl;
 
