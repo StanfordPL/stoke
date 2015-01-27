@@ -36,9 +36,12 @@ public:
     for (const auto& fxn : aux_fxns_arg.value()) {
       push_back(fxn);
     }
+
     // Remove the target and unreachable functions if necessary
+		if (prune_aux_arg) {
     remove_target();
     remove_unreachable();
+		}
 
     // Checks for unsupported instructions or flag requirements
     for (const auto& fxn : aux_fxns_arg.value()) {
@@ -52,7 +55,6 @@ private:
   void remove_target() {
     for (auto i = begin(), ie = end(); i != ie; ++i) {
       if (i->name == target_arg.value().name) {
-        Console::warn() << "Target appears in auxiliary functions and will be removed" << std::endl;
         erase(i);
         return;
       }
@@ -84,13 +86,6 @@ private:
             }
           }
         }
-      }
-    }
-
-    for (const auto& tu : *this) {
-      const auto& l = tu.code[0].get_operand<x64asm::Label>(0);
-      if (visited.find(l) == visited.end()) {
-        Console::warn() << "Auxiliary function (" << tu.name << ") is unreachable from target and will be removed" << std::endl;
       }
     }
 

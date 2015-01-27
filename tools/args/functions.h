@@ -23,6 +23,7 @@ namespace stoke {
 
 extern cpputil::Heading& functions_heading;
 extern cpputil::FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg;
+extern cpputil::FlagArg& prune_aux_arg;
 
 } // namespace stoke
 
