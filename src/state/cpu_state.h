@@ -57,8 +57,8 @@ struct CpuState {
   /** Equality. */
   bool operator==(const CpuState& rhs) const {
     return code == rhs.code && sym_table == rhs.sym_table &&
-			     gp == rhs.gp && sse == rhs.sse && rf == rhs.rf && 
-					 stack == rhs.stack && heap == rhs.heap;
+           gp == rhs.gp && sse == rhs.sse && rf == rhs.rf &&
+           stack == rhs.stack && heap == rhs.heap;
   }
   /** Inequality. */
   bool operator!=(const CpuState& rhs) const {
@@ -75,13 +75,13 @@ struct CpuState {
   /** Read binary. */
   std::istream& read_bin(std::istream& is);
 
-	/** Perform sanity checks on the contents of this cpu state. */
-	bool check() const;
+  /** Perform sanity checks on the contents of this cpu state. */
+  bool check() const;
 
   /** The error code associated with this state. */
   ErrorCode code;
-	/** Global symbol table. */
-	SymbolTable sym_table;
+  /** Global symbol table. */
+  SymbolTable sym_table;
   /** General purpose register buffer. */
   Regs gp;
   /** SSE register buffer. */

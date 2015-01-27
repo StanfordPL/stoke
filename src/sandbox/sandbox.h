@@ -31,6 +31,9 @@ namespace stoke {
 
 class Sandbox {
 public:
+	/** Iterator for auxiliary function source */
+	typedef std::vector<Cfg>::const_iterator function_iterator;
+		
   /** Returns true if this instruction is supported. */
   static bool is_supported(const x64asm::Instruction& instr) {
     return is_supported(instr.get_opcode());
@@ -103,6 +106,15 @@ public:
     return aux_fxns_.size();
   }
 
+	/** Iterator over auxiliary function source. */
+	function_iterator function_begin() const {
+		return aux_fxns_src_.begin();
+	}
+	/** Iterator over auxiliary function source. */
+	function_iterator function_end() const {
+		return aux_fxns_src_.end();
+	}
+
   /** Insert a callback to be invoked prior to any line in any function. */
   Sandbox& insert_before(StateCallback cb, void* arg);
   /** Insert a callback to be invoked prior to any line in any function. */
@@ -118,6 +130,11 @@ public:
 
   /** Compile a new main function. */
   void compile_main(const Cfg& cfg);
+	/** Access the source of the main function. */
+	const Cfg& get_main() const {
+		return fxn_src_;
+	}
+
   /** Run a main function for just one input. */
   void run_one(size_t index);
   /** Run a main function for all inputs. */

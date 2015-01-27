@@ -25,93 +25,93 @@ using namespace x64asm;
 namespace stoke {
 
 ostream& SymbolTable::write_text(ostream& os) const {
-	const auto fmt = os.flags();
+  const auto fmt = os.flags();
 
-	os << "[ " << table_.size() << " symbols ]";
- 	if (table_.empty()) {
-		return os;
-	}
+  os << "[ " << table_.size() << " symbols ]";
+  if (table_.empty()) {
+    return os;
+  }
 
-	os << endl;
-	for (const auto& entry : table_) {
-		os << endl;
-  	HexWriter<uint64_t, 8>()(os, entry.second); 
-		os << " " << entry.first.get_text();
-	}
+  os << endl;
+  for (const auto& entry : table_) {
+    os << endl;
+    HexWriter<uint64_t, 8>()(os, entry.second);
+    os << " " << entry.first.get_text();
+  }
 
-	os.flags(fmt);
-	return os;
+  os.flags(fmt);
+  return os;
 }
 
 istream& SymbolTable::read_text(istream& is) {
-	const auto fmt = is.flags();
+  const auto fmt = is.flags();
 
-	table_.clear();
+  clear();
 
-	string s;
-	getline(is, s, '[');
+  string s;
+  getline(is, s, '[');
 
-	size_t rows = 0;
-	is >> dec >> rows;
-	
-	getline(is, s, ']');
+  size_t rows = 0;
+  is >> dec >> rows;
 
-	if (rows != 0) {
-		getline(is, s);
-	}
-	for (size_t i = 0; i < rows; ++i) {
-		getline(is, s);
+  getline(is, s, ']');
 
-		uint64_t addr = 0;
-		HexReader<uint64_t, 8>()(is, addr);
+  if (rows != 0) {
+    getline(is, s);
+  }
+  for (size_t i = 0; i < rows; ++i) {
+    getline(is, s);
 
-		string label;
-		is >> label;
+    uint64_t addr = 0;
+    HexReader<uint64_t, 8>()(is, addr);
 
-		insert(Label(label), addr);
-	}
+    string label;
+    is >> label;
 
-	is.flags(fmt);
+    insert(Label(label), addr);
+  }
+
+  is.flags(fmt);
   return is;
 }
 
 ostream& SymbolTable::write_bin(ostream& os) const {
-	const size_t num_syms = table_.size();
-	os.write((const char*)&num_syms, sizeof(size_t));
-	for (const auto& entry : table_) {
-		const size_t num_chars = entry.first.get_text().length();
-		os.write((const char*)&num_chars, sizeof(size_t));
-		os.write(entry.first.get_text().c_str(), num_chars);
-		os.write((const char*)&entry.second, sizeof(uint64_t));
-	}
+  const size_t num_syms = table_.size();
+  os.write((const char*)&num_syms, sizeof(size_t));
+  for (const auto& entry : table_) {
+    const size_t num_chars = entry.first.get_text().length();
+    os.write((const char*)&num_chars, sizeof(size_t));
+    os.write(entry.first.get_text().c_str(), num_chars);
+    os.write((const char*)&entry.second, sizeof(uint64_t));
+  }
 
-	return os;
+  return os;
 }
 
 istream& SymbolTable::read_bin(istream& is) {
-	table_.clear();
+  clear();
 
-	size_t num_syms = 0;
-	is.read((char*)&num_syms, sizeof(size_t));
+  size_t num_syms = 0;
+  is.read((char*)&num_syms, sizeof(size_t));
 
-	for (size_t i = 0; i < num_syms; ++i) {
-		size_t num_chars = 0;
-		is.read((char*)&num_chars, sizeof(size_t));
+  for (size_t i = 0; i < num_syms; ++i) {
+    size_t num_chars = 0;
+    is.read((char*)&num_chars, sizeof(size_t));
 
-		string label = "";
-		for (size_t j = 0; j < num_chars; ++j) {
-			char c;
-			is.read(&c, sizeof(char));
-			label += c;
-		}
+    string label = "";
+    for (size_t j = 0; j < num_chars; ++j) {
+      char c;
+      is.read(&c, sizeof(char));
+      label += c;
+    }
 
-		uint64_t addr = 0;
-		is.read((char*)&addr, sizeof(uint64_t));
+    uint64_t addr = 0;
+    is.read((char*)&addr, sizeof(uint64_t));
 
-		insert(Label(label), addr);
-	}
+    insert(Label(label), addr);
+  }
 
-	return is;
+  return is;
 }
 
 } // namespace stoke
