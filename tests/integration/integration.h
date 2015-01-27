@@ -49,7 +49,7 @@ public:
       ss << "cd " << working_directory_ << "; ";
 
     if(path_ != "")
-      ss << "PATH=$PATH:" << path_ << " ";
+      ss << "PATH=" << path_ << ":$PATH ";
 
     ss << code;
     ss << " >/dev/null";
