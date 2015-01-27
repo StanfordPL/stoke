@@ -20,16 +20,19 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
 
 #include "pin.H"
 
+#include "../../../../x64asm/include/x64asm.h"
 #include "src/state/cpu_states.h"
 
 using namespace std;
 using namespace stoke;
+using namespace x64asm;
 
 /* ============================================================================================= */
 /* Commandline Switches */
@@ -58,6 +61,11 @@ int tc_remaining_;
 uint64_t begin_line_;
 // Lines to stop recording on in the target function (we always stop on ret)
 unordered_set<uint64_t> end_lines_;
+// Target ostream
+ostream* os_;
+
+// Global symbol table which we populate when instrumenting (callbacks reference this)
+unordered_map<uint64_t, string> symbol_table_;
 
 // Internal state associated with the current testcase
 bool recording_;
@@ -67,10 +75,9 @@ unordered_set<uint64_t> stack_valids_;
 unordered_map<uint64_t, uint8_t> stack_defs_;
 unordered_set<uint64_t> heap_valids_;
 unordered_map<uint64_t, uint8_t> heap_defs_;
+
 // The set of testcases so far accumulated (last is under construction)
 CpuStates tcs_;
-// Target ostream
-ostream* os_;
 
 /* ============================================================================================= */
 /* Functions */
@@ -183,6 +190,23 @@ VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
 	// known good state from the cpu.
 	for (size_t i = 0, ie = tc.rf.size(); i < ie; ++i) {
 		tc.rf.set(i, (rflags >> i) & 0x1);
+	}
+}
+
+/* ============================================================================================= */
+
+VOID record_fxn(ADDRINT rip) {
+	if (!recording_) {
+		return;
+	}
+
+	const auto itr = symbol_table_.find(rip);
+	assert(itr != symbol_table_.end());
+	Label l(itr->second);
+
+	auto& tc = tcs_.back();
+	if (!tc.sym_table.contains(l)) {
+		tc.sym_table.insert(l, rip);
 	}
 }
 
@@ -335,6 +359,9 @@ VOID emit_stop(INS& ins) {
 VOID rtn(RTN fxn, VOID* v) {
   RTN_Open(fxn);
 
+	// Place this function and the address of its first instruction into the symbol table
+	symbol_table_[INS_Address(RTN_InsHead(fxn))] = RTN_Name(fxn);
+
 	// Is this the target function?
 	bool is_target = RTN_Name(fxn) == KnobFxnName.Value();
 
@@ -349,10 +376,15 @@ VOID rtn(RTN fxn, VOID* v) {
 		if (is_target && (line == begin_line_)) {
 			emit_start(ins);
 		}
+		// Enter this function into the current states table if this is the first line
+		if (line == 1) {
+			INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_fxn, IARG_INST_PTR, IARG_END);
+		}
 		// Likewise, potentially it's time to stop
 		if (is_target && ((end_lines_.find(line) != end_lines_.end()) || INS_IsRet(ins))) {
 			emit_stop(ins);
 		}
+		// All done with tracking the line number, go ahead and update it now
 		line++;
 
     // Find memory operand (throw an error if we find an instruction that takes 2+)

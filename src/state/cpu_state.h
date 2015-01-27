@@ -20,9 +20,10 @@
 #include <string>
 
 #include "src/state/error_code.h"
+#include "src/state/memory.h"
 #include "src/state/regs.h"
 #include "src/state/rflags.h"
-#include "src/state/memory.h"
+#include "src/state/sym_table.h"
 
 namespace stoke {
 
@@ -32,7 +33,7 @@ namespace stoke {
 struct CpuState {
   /** Returns a new CpuState. */
   CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) :
-    code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
+    code(ErrorCode::NORMAL), sym_table(), gp(16, 64), sse(16, 256), rf() {
     stack.resize(0, stack_size);
     heap.resize(base, heap_size);
   }
@@ -55,8 +56,9 @@ struct CpuState {
 
   /** Equality. */
   bool operator==(const CpuState& rhs) const {
-    return code == rhs.code && gp == rhs.gp && sse == rhs.sse &&
-           rf == rhs.rf && stack == rhs.stack && heap == rhs.heap;
+    return code == rhs.code && sym_table == rhs.sym_table &&
+			     gp == rhs.gp && sse == rhs.sse && rf == rhs.rf && 
+					 stack == rhs.stack && heap == rhs.heap;
   }
   /** Inequality. */
   bool operator!=(const CpuState& rhs) const {
@@ -69,30 +71,17 @@ struct CpuState {
   std::istream& read_text(std::istream& is);
 
   /** Write binary. */
-  std::ostream& write_bin(std::ostream& os) const {
-    os.write((const char*)&code, sizeof(ErrorCode));
-    gp.write_bin(os);
-    sse.write_bin(os);
-    rf.write_bin(os);
-    stack.write_bin(os);
-    heap.write_bin(os);
-
-    return os;
-  }
+  std::ostream& write_bin(std::ostream& os) const;
   /** Read binary. */
-  std::istream& read_bin(std::istream& is) {
-    is.read((char*)&code, sizeof(ErrorCode));
-    gp.read_bin(is);
-    sse.read_bin(is);
-    rf.read_bin(is);
-    stack.read_bin(is);
-    heap.read_bin(is);
+  std::istream& read_bin(std::istream& is);
 
-    return is;
-  }
+	/** Perform sanity checks on the contents of this cpu state. */
+	bool check() const;
 
   /** The error code associated with this state. */
   ErrorCode code;
+	/** Global symbol table. */
+	SymbolTable sym_table;
   /** General purpose register buffer. */
   Regs gp;
   /** SSE register buffer. */
