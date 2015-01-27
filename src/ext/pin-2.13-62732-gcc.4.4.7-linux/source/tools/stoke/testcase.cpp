@@ -360,7 +360,7 @@ VOID rtn(RTN fxn, VOID* v) {
   RTN_Open(fxn);
 
 	// Place this function and the address of its first instruction into the symbol table
-	symbol_table_[INS_Address(RTN_InsHead(fxn))] = RTN_Name(fxn);
+	symbol_table_[INS_Address(RTN_InsHead(fxn))] = string(".") + RTN_Name(fxn);
 
 	// Is this the target function?
 	bool is_target = RTN_Name(fxn) == KnobFxnName.Value();

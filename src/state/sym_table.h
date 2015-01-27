@@ -25,24 +25,28 @@ namespace stoke {
 
 class SymbolTable {
 public:
-	/** Is there a mapping for this symbol? */
-	bool contains(const x64asm::Label& l) const {
-		return table_.find(l) != table_.end();
-	}
-	/** Insert a new symbol. */
-	void insert(const x64asm::Label& l, uint64_t addr) {
-		assert(!contains(l));
-		table_[l] = addr;
+  /** Is there a mapping for this symbol? */
+  bool contains(const x64asm::Label& l) const {
+    return table_.find(l) != table_.end();
+  }
+  /** Insert a new symbol. */
+  void insert(const x64asm::Label& l, uint64_t addr) {
+    assert(!contains(l));
+    table_[l] = addr;
+  }
+	/** Empty the symbol table. */
+	void clear() {
+		table_.clear();
 	}
 
-	/** Equality operator. */
-	bool operator==(const SymbolTable& rhs) const {
-		return table_ == rhs.table_;
-	}
-	/** Inequality operator. */
-	bool operator!=(const SymbolTable& rhs) const {
-		return !(*this == rhs);
-	}
+  /** Equality operator. */
+  bool operator==(const SymbolTable& rhs) const {
+    return table_ == rhs.table_;
+  }
+  /** Inequality operator. */
+  bool operator!=(const SymbolTable& rhs) const {
+    return !(*this == rhs);
+  }
 
   /** Write text. */
   std::ostream& write_text(std::ostream& os) const;
@@ -54,8 +58,8 @@ public:
   /** Read binary. */
   std::istream& read_bin(std::istream& is);
 
-private:	
-	std::unordered_map<x64asm::Label, uint64_t> table_;
+private:
+  std::unordered_map<x64asm::Label, uint64_t> table_;
 };
 
 } // namespace stoke

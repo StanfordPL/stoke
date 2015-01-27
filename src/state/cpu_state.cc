@@ -42,9 +42,9 @@ ostream& CpuState::write_text(ostream& os) const {
     "%vip", "%id"
   };
 
-	sym_table.write_text(os);
-	os << endl;
-	os << endl;
+  sym_table.write_text(os);
+  os << endl;
+  os << endl;
 
   gp.write_text(os, gps, 5);
   os << endl;
@@ -72,9 +72,9 @@ istream& CpuState::read_text(istream& is) {
 
   code = ErrorCode::NORMAL;
 
-	sym_table.read_text(is);
-	getline(is, ignore);
-	getline(is, ignore);
+  sym_table.read_text(is);
+  getline(is, ignore);
+  getline(is, ignore);
 
   gp.read_text(is);
   getline(is, ignore);
@@ -98,32 +98,32 @@ istream& CpuState::read_text(istream& is) {
 }
 
 ostream& CpuState::write_bin(ostream& os) const {
-    os.write((const char*)&code, sizeof(ErrorCode));
-		sym_table.write_bin(os);
-    gp.write_bin(os);
-    sse.write_bin(os);
-    rf.write_bin(os);
-    stack.write_bin(os);
-    heap.write_bin(os);
+  os.write((const char*)&code, sizeof(ErrorCode));
+  sym_table.write_bin(os);
+  gp.write_bin(os);
+  sse.write_bin(os);
+  rf.write_bin(os);
+  stack.write_bin(os);
+  heap.write_bin(os);
 
-    return os;
-  }
+  return os;
+}
 
 istream& CpuState::read_bin(istream& is) {
-    is.read((char*)&code, sizeof(ErrorCode));
-		sym_table.read_bin(is);
-    gp.read_bin(is);
-    sse.read_bin(is);
-    rf.read_bin(is);
-    stack.read_bin(is);
-    heap.read_bin(is);
-		
-		if (!check()) {
-			is.setstate(ios::failbit);
-		}
+  is.read((char*)&code, sizeof(ErrorCode));
+  sym_table.read_bin(is);
+  gp.read_bin(is);
+  sse.read_bin(is);
+  rf.read_bin(is);
+  stack.read_bin(is);
+  heap.read_bin(is);
 
-    return is;
+  if (!check()) {
+    is.setstate(ios::failbit);
   }
+
+  return is;
+}
 
 bool CpuState::check() const {
   // Stack addresses should be strictly greater than heap addresses
@@ -131,7 +131,7 @@ bool CpuState::check() const {
     return false;
   }
 
-	return true;
+  return true;
 }
 
 } // namespace stoke
