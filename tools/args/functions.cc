@@ -28,8 +28,8 @@ FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg =
   .description("Directory containing helper functions")
   .default_val({});
 
-FlagArg& prune_aux_arg = 
-	FlagArg::create("prune")
-	.description("Automatically remove target and unreachable functions from functions directory");
+FlagArg& prune_aux_arg =
+  FlagArg::create("prune")
+  .description("Automatically remove target and unreachable functions from functions directory");
 
 } // namespace stoke
