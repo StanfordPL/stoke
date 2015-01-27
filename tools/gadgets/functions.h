@@ -38,10 +38,10 @@ public:
     }
 
     // Remove the target and unreachable functions if necessary
-		if (prune_aux_arg) {
-    remove_target();
-    remove_unreachable();
-		}
+    if (prune_aux_arg) {
+      remove_target();
+      remove_unreachable();
+    }
 
     // Checks for unsupported instructions or flag requirements
     for (const auto& fxn : aux_fxns_arg.value()) {
