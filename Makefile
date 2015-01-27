@@ -55,6 +55,7 @@ SRC_OBJ=\
 	src/state/memory.o \
 	src/state/regs.o \
 	src/state/rflags.o \
+	src/state/sym_table.o \
 	\
 	src/stategen/stategen.o \
 	\
