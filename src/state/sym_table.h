@@ -34,10 +34,10 @@ public:
     assert(!contains(l));
     table_[l] = addr;
   }
-	/** Empty the symbol table. */
-	void clear() {
-		table_.clear();
-	}
+  /** Empty the symbol table. */
+  void clear() {
+    table_.clear();
+  }
 
   /** Equality operator. */
   bool operator==(const SymbolTable& rhs) const {
