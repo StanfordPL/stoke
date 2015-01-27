@@ -1,0 +1,51 @@
+
+{
+  "name": "issue-439",
+  "comment": "See also https://github.com/eschkufz/stoke-release/issues/8",
+  "code": [ 
+          "._Z6popcntm:",                            
+          "movq %rdi, %rax",                 // 0   
+          "movq $0xcccccccccccccccd, %rdx",  // 1   
+          "mulq %rdx",                       // 2   
+          "xorl %eax, %eax",                 // 3   
+          "shrq $0x2, %rdx",                 // 4   
+          "leaq (%rdx,%rdx,4), %rdx",        // 5   
+          "subq %rdx, %rdi",                 // 6   
+          "je .L_4005c8",                    // 7   
+          "cmpq $0x1, %rdi",                 // 8   
+          "je .L_4005d0",                    // 9   
+          "cmpq $0x2, %rdi",                 // 10  
+          "je .L_4005c0",                    // 11  
+          "xorl %eax, %eax",                 // 12  
+          "cmpq $0x3, %rdi",                 // 13  
+          "setne %al",                       // 14  
+          "addq $0x3, %rax",                 // 15  
+          "retq",                            // 16  
+          "nop",                             // 17  
+          ".L_4005c0:",                              
+          "movl $0x2, %eax",                 // 18  
+          "nop",                             // 19  
+          ".L_4005c8:",                              
+          "retq",                            // 20  
+          "nop",                             // 21  
+          ".L_4005d0:",                              
+          "movl $0x1, %eax",                 // 22  
+          "retq",                            // 23  
+          "nop"                              // 24
+    ],
+
+  "tests": {
+
+    "is_sound": {
+      "live_in": ["%rdi"],
+      "live_out": ["%rax"],
+      "result": true 
+    },
+
+    "liveness": {
+      "given liveout":   ["%rax"],
+      "expected livein": ["%rdi"]
+    }
+  }
+
+}
