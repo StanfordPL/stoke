@@ -378,7 +378,7 @@ void Cfg::recompute_defs_loop_free() {
       def_outs_[b] = def_ins_[blocks_[b]];
     } else {
       const auto idx = blocks_[b] + num_instrs(b) - 1;
-      def_outs_[i] = def_ins_[idx];
+      def_outs_[b] = def_ins_[idx];
 
       const auto& instr = code_[idx];
       def_outs_[b] |= must_write_set(instr);
