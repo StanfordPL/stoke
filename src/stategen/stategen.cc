@@ -53,6 +53,20 @@ bool StateGen::get(CpuState& cs) const {
   cs.stack.resize(s - stack_size_, stack_size_);
   randomize_mem(cs.stack);
 
+  // Set up the symbol table beginning at the bottom of the processes address space
+  cs.sym_table.clear();
+  uint64_t addr = 0x00400000;
+
+  const auto& l = sb_->get_main().get_code()[0].get_operand<Label>(0).get_text();
+  cs.sym_table.insert(l, addr);
+  addr += 16 * sb_->get_main().get_code().size();
+
+  for (auto i = sb_->function_begin(), ie = sb_->function_end(); i != ie; ++i) {
+    const auto& l = i->get_code()[0].get_operand<Label>(0).get_text();
+    cs.sym_table.insert(l, addr);
+    addr += 16 * i->get_code().size();
+  }
+
   return true;
 }
 
