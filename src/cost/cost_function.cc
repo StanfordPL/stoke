@@ -537,12 +537,14 @@ Cost CostFunction::latency_performance(const Cfg& cfg) const {
 
 Cost CostFunction::measured_performance(const Cfg& cfg) const {
   Cost latency = 0;
+  Cost tc_count = 0;
 
   for(auto i = sandbox_->output_begin(), ie = sandbox_->output_end(); i != ie; ++i) {
-    latency += i->latency_seen; 
+    latency += i->latency_seen;
+    tc_count++;
   }
 
-  return latency;
+  return latency/tc_count;
 }
 
 Cost CostFunction::extension_performance(const Cfg& cfg) const {
