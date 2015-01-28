@@ -56,7 +56,7 @@ Sandbox::Sandbox() : fxn_(32 * 1024),
   set_max_jumps(16);
 
   aux_fxn_read_only_ = true;
-  aux_fxn_read_only_ = true;
+  main_fxn_read_only_ = true;
 
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
@@ -194,6 +194,8 @@ void Sandbox::run_one(size_t index) {
   if (!aux_fxn_read_only_ || !main_fxn_read_only_) {
     io->out_.stack.copy_defined(io->in_.stack);
     io->out_.heap.copy_defined(io->in_.heap);
+    // Data memory is read only, no need to ever copy this
+    //io->out_.data.copy_defined(io->in_.data);
   }
 
   // Reset error-related variables

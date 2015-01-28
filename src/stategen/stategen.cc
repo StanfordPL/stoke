@@ -45,8 +45,9 @@ bool StateGen::get(CpuState& cs) const {
   auto& lower_rsp = cs.gp[rsp].get_fixed_byte(0);
   lower_rsp = 0;
 
-  // Clear heap
-  cs.heap.resize(0, 0);
+  // Clear heap and data segments
+  cs.heap.resize(0x100000000, 0);
+  cs.data.resize(0x000000000, 0);
 
   // Create stack in the vicinity of rsp
   const auto s = cs.gp[rsp].get_fixed_quad(0);
