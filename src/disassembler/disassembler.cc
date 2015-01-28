@@ -163,6 +163,14 @@ Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s,
   return lines;
 }
 
+string mangle_lable(string label) {
+  // Mangle @s into _s (this is a hack around dealing with @plt functions)
+  for (auto& c : label) {
+    c = (c == '@' || c == '.') ? '_' : c;
+  }
+  return label;
+}
+
 bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
                                   map<string, uint64_t>& offsets) {
 
@@ -182,7 +190,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
   // Get the name of the function
   const auto begin = line.find_first_of('<') + 1;
   const auto len = line.find_last_of('>') - begin;
-  data.tunit.name = line.substr(begin, len);
+  data.tunit.name = mangle_lable(line.substr(begin, len));
 
   // Iterate through all the lines and make 'em pretty
   auto lines = index_lines(ips, line, data.addr_label_map);
@@ -233,7 +241,6 @@ uint64_t Disassembler::parse_addr_from_line(const string& s) {
 
   return hex_to_int(s.substr(begin, len));
 }
-
 
 Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lines,
     const map<string,string>& addr_label_map) {
@@ -289,10 +296,7 @@ bool Disassembler::parse_addr_label_from_line(const string& s, map<string, strin
     return false;
   }
 
-  // Mangle @s into _s (this is a hack around dealing with @plt functions)
-  for (auto& c : function_name) {
-    c = (c == '@') ? '_' : c;
-  }
+  function_name = mangle_lable(function_name);
 
   // get the address
   auto end_addr   = s.find_first_of(' ', start - 3);
