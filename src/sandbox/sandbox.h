@@ -59,6 +59,16 @@ public:
     max_jumps_ = jumps;
     return *this;
   }
+  /** Sets whether the sandbox should count the number of instructions executed. */
+  Sandbox& set_count_instructions(bool b) {
+    count_instructions_ = b;
+    return *this;
+  }
+  /** Sets whether the sandbox should additionally weight counted instructions by latency? */
+  Sandbox& set_use_latency(bool b) {
+    use_latency_ = b;
+    return *this;
+  }
 
   /** Add a new input. */
   Sandbox& insert_input(const CpuState& input);
@@ -186,6 +196,10 @@ private:
   bool abi_check_;
   /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
+  /** Should the sandbox count the number of instructions executed? */
+  bool count_instructions_;
+  /** Should the sandbox use latency to weight the instructions? */
+  bool use_latency_;
 
   /** Optimization flag, do any of the auxiliary functions write memory? */
   bool aux_fxn_read_only_;
@@ -221,6 +235,8 @@ private:
 
   /** How many more jumps can be made before SIGKILL? */
   size_t jumps_remaining_;
+  /** How many instructions/cycles have passed? */
+  uint64_t instruction_count_;
 
   /** Pointer to the user's state */
   void* out_;
@@ -316,6 +332,8 @@ private:
   void emit_call(const x64asm::Instruction& instr);
   /** Emit the RET instruction. */
   void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
+  /** Emit code to increment the instruction count */
+  void emit_count_instruction(const x64asm::Instruction& instr);
 
   /** Special case for emitting bt instructions that read from memory. */
   void emit_mem_bt(const x64asm::Instruction& instr);
