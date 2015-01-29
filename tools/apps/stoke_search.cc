@@ -72,6 +72,12 @@ auto& timeout_cycles_arg =
   .description("Number of timeout cycles to attempt before giving up")
   .default_val(16);
 
+ValueArg<double>& exp_scaling_arg =
+  ValueArg<double>::create("exp_scaling")
+  .usage("<double>")
+  .description("Exponential scaling factor of timeout iterations per cycle (requires timeout_action==restart)")
+  .default_val(1.0);
+
 void sep(ostream& os) {
   for (size_t i = 0; i < 80; ++i) {
     os << "*";
@@ -218,6 +224,7 @@ int main(int argc, char** argv) {
     CostFunctionGadget fxn(target, &training_sb);
 
     Console::msg() << "Running search:" << endl << endl;
+    search.set_timeout_itr(timeout_itr_arg);
     state = SearchStateGadget(aux_fxns);
     search.run(target, fxn, init_arg, state, aux_fxns);
 
@@ -249,6 +256,10 @@ int main(int argc, char** argv) {
     sep(Console::msg());
 
     if ((timeout_action_arg == Timeout::RESTART) && (i < timeout_cycles_arg.value())) {
+      if (exp_scaling_arg.value() != 1.0) {
+        timeout_itr_arg.value() = (size_t)ceil(timeout_itr_arg.value() * exp_scaling_arg.value());
+        Console::msg() << "Increasing timeout iterations to " << timeout_itr_arg.value() << endl;
+      }
       Console::msg() << "Restarting search:" << endl << endl;
     } else if ((timeout_action_arg == Timeout::TESTCASE) && (i < timeout_cycles_arg.value())
                && verifier.counter_example_available()) {
