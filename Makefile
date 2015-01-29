@@ -28,6 +28,7 @@ INC=$(addprefix -I./, $(INC_FOLDERS))
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
+	-lboost_regex\
 	-pthread\
 	-lcln \
 	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
