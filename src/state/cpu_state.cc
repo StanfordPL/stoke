@@ -42,9 +42,9 @@ ostream& CpuState::write_text(ostream& os) const {
     "%vip", "%id"
   };
 
-	os << "SIGNAL " << static_cast<int>(code);
-	os << endl;
-	os << endl;
+  os << "SIGNAL " << static_cast<int>(code);
+  os << endl;
+  os << endl;
 
   sym_table.write_text(os);
   os << endl;
@@ -74,9 +74,9 @@ ostream& CpuState::write_text(ostream& os) const {
 istream& CpuState::read_text(istream& is) {
   string ignore;
 
-	int temp;
-	is >> ignore >> temp;
-	code = static_cast<ErrorCode>(temp);
+  int temp;
+  is >> ignore >> temp;
+  code = static_cast<ErrorCode>(temp);
   getline(is, ignore);
   getline(is, ignore);
 
