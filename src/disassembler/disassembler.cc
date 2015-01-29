@@ -22,6 +22,19 @@
 using namespace redi;
 using namespace std;
 
+// This is a stop-gap until g++-4.9 which will support c++11 regex
+#include "boost/regex.hpp"
+using namespace boost;
+
+namespace {
+
+/** Returns true if the first n characters of a string match a prefix */
+bool is_prefix(const std::string& s, const char* prefix, size_t len) {
+  return s.length() >= len && s.substr(0,len) == prefix;
+}
+
+} // namespace
+
 namespace stoke {
 
 bool Disassembler::check_filename(const string& s) {
@@ -163,6 +176,14 @@ Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s,
   return lines;
 }
 
+string mangle_lable(string label) {
+  // Mangle @s into _s (this is a hack around dealing with @plt functions)
+  for (auto& c : label) {
+    c = (c == '@' || c == '.') ? '_' : c;
+  }
+  return label;
+}
+
 bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
                                   map<string, uint64_t>& offsets) {
 
@@ -182,7 +203,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
   // Get the name of the function
   const auto begin = line.find_first_of('<') + 1;
   const auto len = line.find_last_of('>') - begin;
-  data.tunit.name = line.substr(begin, len);
+  data.tunit.name = mangle_lable(line.substr(begin, len));
 
   // Iterate through all the lines and make 'em pretty
   auto lines = index_lines(ips, line, data.addr_label_map);
@@ -233,7 +254,6 @@ uint64_t Disassembler::parse_addr_from_line(const string& s) {
 
   return hex_to_int(s.substr(begin, len));
 }
-
 
 Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lines,
     const map<string,string>& addr_label_map) {
@@ -289,10 +309,7 @@ bool Disassembler::parse_addr_label_from_line(const string& s, map<string, strin
     return false;
   }
 
-  // Mangle @s into _s (this is a hack around dealing with @plt functions)
-  for (auto& c : function_name) {
-    c = (c == '@') ? '_' : c;
-  }
+  function_name = mangle_lable(function_name);
 
   // get the address
   auto end_addr   = s.find_first_of(' ', start - 3);
@@ -332,18 +349,6 @@ bool Disassembler::parse_instr_from_line(const string& s, string& instr) {
 
 
 string Disassembler::fix_instruction(const string& line) {
-  // Replace retq synonyms
-  constexpr array<const char*, 2> rets {{"hlt    ", "repz retq "}};
-  if (find(rets.begin(), rets.end(), line) != rets.end()) {
-    return "retq";
-  }
-
-  // Replace nop synonyms
-  constexpr array<const char*, 3> nops {{"nopl", "nopw", "data"}};
-  if (line.length() >= 4 && find(nops.begin(), nops.end(), line.substr(0, 4)) != nops.end()) {
-    return "nop";
-  }
-
   // Add implicit trailing ones
   constexpr array<const char*, 8> rots {{"shl", "shr", "sal", "sar", "rcl", "rcr", "rol", "ror"}};
   if (line.length() >= 3) {
@@ -355,79 +360,101 @@ string Disassembler::fix_instruction(const string& line) {
     }
   }
 
-  // Remove convenience naming for vector comparison instructions
-  constexpr array<const char*, 24> cmp7 {{
-      "cmpeqsd", "cmpsd $0x0,", "cmpeqss", "cmpss $0x0,", "vcmpeqsd", "vcmpsd $0x0,", "vcmpeqss", "vcmpss $0x0,",
-      "cmpltsd", "cmpsd $0x1,", "cmpltss", "cmpss $0x1,", "vcmpltsd", "vcmpsd $0x1,", "vcmpltss", "vcmpss $0x1,",
-      "cmplesd", "cmpsd $0x2,", "cmpless", "cmpss $0x2,", "vcmplesd", "vcmpsd $0x2,", "vcmpless", "vcmpss $0x2,"
-    }
-  };
-  constexpr array<const char*, 8> cmp10 {{
-      "cmpunordsd", "cmpsd $0x3,", "cmpunordss", "cmpss $0x3,", "vcmpunordsd", "vcmpsd $0x3,", "vcmpunordss", "vcmpss $0x3,"
-    }
-  };
-  constexpr array<const char*, 32> cmp8 {{
-      "cmpneqsd", "cmpsd $0x4,", "cmpneqss", "cmpss $0x4,", "vcmpneqsd", "vcmpsd $0x4,", "vcmpneqss", "vcmpss $0x4,",
-      "cmpnltsd", "cmpsd $0x5,", "cmpnltss", "cmpss $0x5,", "vcmpnltsd", "vcmpsd $0x5,", "vcmpnltss", "vcmpss $0x5,",
-      "cmpnlesd", "cmpsd $0x6,", "cmpnless", "cmpss $0x6,", "vcmpnlesd", "vcmpsd $0x6,", "vcmpnless", "vcmpss $0x6,",
-      "cmpordsd", "cmpsd $0x7,", "cmpordss", "cmpss $0x7,", "vcmpordsd", "vcmpsd $0x7,", "vcmpordss", "vcmpss $0x7,"
-    }
-  };
-  if (line.length() >= 7) {
-    auto itr = find(cmp7.begin(), cmp7.end(), line.substr(0, 7));
-    if (itr != cmp7.end()) {
-      return *(++itr) + line.substr(8);
-    }
-  }
-  if (line.length() >= 10) {
-    auto itr = find(cmp10.begin(), cmp10.end(), line.substr(0, 10));
-    if (itr != cmp10.end()) {
-      return *(++itr) + line.substr(11);
-    }
-  }
-  if (line.length() >= 8) {
-    auto itr = find(cmp8.begin(), cmp8.end(), line.substr(0, 8));
-    if (itr != cmp8.end()) {
-      return *(++itr) + line.substr(9);
-    }
-  }
-
-  // Rename movabs for register arguments
-  if (line.length() >= 9 && line.substr(0, 9) == "movabsq $") {
-    return "movq " + line.substr(8);
-  }
-
-  // Add missing suffix to call and jmp
-  if (line.length() >= 5 && line.substr(0, 5) == "call ") {
-    return "callq " + line.substr(5);
-  }
-  if (line.length() >= 4 && line.substr(0, 4) == "jmp ") {
-    return "jmpq " + line.substr(4);
-  }
-
   // Remove documentation arg from string instructions
-  if (line.length() >= 4 && line.substr(0, 4) == "stos") {
+  if (is_prefix(line, "stos", 4)) {
     const auto comma = line.find_first_of(',');
     return line.substr(0, 6) + line.substr(comma + 1);
   }
-  if (line.length() >= 8 && line.substr(0, 8) == "rep stos") {
+  if (is_prefix(line, "rep stos", 8)) {
     const auto comma = line.find_first_of(',');
     return line.substr(0, 10) + line.substr(comma + 1);
   }
-  if (line.length() >= 10 && line.substr(0, 10) == "repnz scas") {
+  if (is_prefix(line, "repnz scas", 10)) {
     const auto comma = line.find_first_of(',');
     return line.substr(0, comma);
   }
 
-  // Make lock its own instruction
-  if (line.length() >= 4 && line.substr(0, 4) == "lock") {
-    return "lock\n" + line.substr(5);
+  // Synonyms
+  if (is_prefix(line, "hlt", 3) || is_prefix(line, "repz retq", 9)) {
+    return "retq";
+  } else if (is_prefix(line, "nop", 3) || is_prefix(line, "data", 4)) {
+    return "nop";
+  } else if (is_prefix(line, "movabsq", 7)) {
+    return "movq" + line.substr(7);
   }
 
-  return line;
+  // Append q to the end of call and jump
+  if (is_prefix(line, "call ", 5)) {
+    return "callq " + line.substr(5);
+  } else if (line.length() >= 4 && line.substr(0,4) == "jmp ") {
+    return "jmpq " + line.substr(4);
+  }
+
+  // Make lock its own instruction
+  if (is_prefix(line, "lock", 4)) {
+    return "lock\n" + line.substr(4);
+  }
+
+  // The remaining cases are easier to implement with regexs
+  // We do get a performance hit though, so let's at least try to be smart here
+  auto ll = line;
+
+  // The whole family of (v)cmp synonyms
+  if (is_prefix(line, "cmp", 4) || is_prefix(line, "vcmp", 4)) {
+    ll = regex_replace(ll, regex("(v?cmp)eq([^ ]+)"),       "$1$2 \\$0x00,$3");
+    ll = regex_replace(ll, regex("(v?cmp)lt([^ ]+)"),       "$1$2 \\$0x01,$3");
+    ll = regex_replace(ll, regex("(v?cmp)le([^ ]+)"),       "$1$2 \\$0x02,$3");
+    ll = regex_replace(ll, regex("(v?cmp)unord([^ ]+)"),    "$1$2 \\$0x03,$3");
+    ll = regex_replace(ll, regex("(v?cmp)neq([^ ]+)"),      "$1$2 \\$0x04,$3");
+    ll = regex_replace(ll, regex("(v?cmp)nlt([^ ]+)"),      "$1$2 \\$0x05,$3");
+    ll = regex_replace(ll, regex("(v?cmp)nle([^ ]+)"),      "$1$2 \\$0x06,$3");
+    ll = regex_replace(ll, regex("(v?cmp)ord([^ ]+)"),      "$1$2 \\$0x07,$3");
+    ll = regex_replace(ll, regex("(v?cmp)eq_uq([^ ]+)"),    "$1$2 \\$0x08,$3");
+    ll = regex_replace(ll, regex("(v?cmp)nge([^ ]+)"),      "$1$2 \\$0x09,$3");
+    ll = regex_replace(ll, regex("(v?cmp)ngt([^ ]+)"),      "$1$2 \\$0x0a,$3");
+    ll = regex_replace(ll, regex("(v?cmp)false([^ ]+)"),    "$1$2 \\$0x0b,$3");
+    ll = regex_replace(ll, regex("(v?cmp)neq_oq([^ ]+)"),   "$1$2 \\$0x0c,$3");
+    ll = regex_replace(ll, regex("(v?cmp)ge([^ ]+)"),       "$1$2 \\$0x0d,$3");
+    ll = regex_replace(ll, regex("(v?cmp)gt([^ ]+)"),       "$1$2 \\$0x0e,$3");
+    ll = regex_replace(ll, regex("(v?cmp)true([^ ]+)"),     "$1$2 \\$0x0f,$3");
+    ll = regex_replace(ll, regex("(v?cmp)eq_os([^ ]+)"),    "$1$2 \\$0x10,$3");
+    ll = regex_replace(ll, regex("(v?cmp)lt_oq([^ ]+)"),    "$1$2 \\$0x11,$3");
+    ll = regex_replace(ll, regex("(v?cmp)le_oq([^ ]+)"),    "$1$2 \\$0x12,$3");
+    ll = regex_replace(ll, regex("(v?cmp)unord_s([^ ]+)"),  "$1$2 \\$0x13,$3");
+    ll = regex_replace(ll, regex("(v?cmp)neq_us([^ ]+)"),   "$1$2 \\$0x14,$3");
+    ll = regex_replace(ll, regex("(v?cmp)nlt_uq([^ ]+)"),   "$1$2 \\$0x15,$3");
+    ll = regex_replace(ll, regex("(v?cmp)nle_uq([^ ]+)"),   "$1$2 \\$0x16,$3");
+    ll = regex_replace(ll, regex("(v?cmp)ord_s([^ ]+)"),    "$1$2 \\$0x17,$3");
+    ll = regex_replace(ll, regex("(v?cmp)ueq_us([^ ]+)"),   "$1$2 \\$0x18,$3");
+    ll = regex_replace(ll, regex("(v?cmp)nge_uq([^ ]+)"),   "$1$2 \\$0x19,$3");
+    ll = regex_replace(ll, regex("(v?cmp)ngt_uq([^ ]+)"),   "$1$2 \\$0x1a,$3");
+    ll = regex_replace(ll, regex("(v?cmp)false_os([^ ]+)"), "$1$2 \\$0x1b,$3");
+    ll = regex_replace(ll, regex("(v?cmp)neq_os([^ ]+)"),   "$1$2 \\$0x1c,$3");
+    ll = regex_replace(ll, regex("(v?cmp)ge_oq([^ ]+)"),    "$1$2 \\$0x1d,$3");
+    ll = regex_replace(ll, regex("(v?cmp)gt_oq([^ ]+)"),    "$1$2 \\$0x1e,$3");
+    ll = regex_replace(ll, regex("(v?cmp)true_us([^ ]+)"),  "$1$2 \\$0x1f,$3");
+  }
+
+  // I *think* these suffixe function as annotations and can be removed
+  if (is_prefix(line, "vcvt", 4)) {
+    ll = regex_replace(ll, regex("vcvtpd2psx"), "vcvtpd2ps");
+    ll = regex_replace(ll, regex("vcvtpd2psy"), "vcvtpd2ps");
+  } else if (is_prefix(line, "mova", 4)) {
+    ll = regex_replace(ll, regex("movapd\\.s"), "movapd");
+    ll = regex_replace(ll, regex("movaps\\.s"), "movaps");
+  } else if (is_prefix(line, "movu", 4)) {
+    ll = regex_replace(ll, regex("movupd\\.s"), "movupd");
+    ll = regex_replace(ll, regex("movups\\.s"), "movups");
+  } else if (is_prefix(line, "vmova", 5)) {
+    ll = regex_replace(ll, regex("vmovapd\\.s"), "vmovapd");
+    ll = regex_replace(ll, regex("vmovaps\\.s"), "vmovaps");
+  } else if (is_prefix(line, "vmovu", 5)) {
+    ll = regex_replace(ll, regex("vmovupd\\.s"), "vmovupd");
+    ll = regex_replace(ll, regex("vmovups\\.s"), "vmovups");
+  }
+
+  return ll;
 }
-
-
 
 void Disassembler::disassemble(const std::string& filename) {
   // Get the headers from the objdump
