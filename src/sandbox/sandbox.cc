@@ -190,6 +190,11 @@ void Sandbox::run_one(size_t index) {
   assert(index < size());
   auto io = io_pairs_[index];
 
+	// Don't bother executing testcases that are in error states
+	if (io->in_.code != ErrorCode::NORMAL) {
+		return;
+	}
+
   // Optimization: In read only mem mode, we don't need to reset output memory
   if (!aux_fxn_read_only_ || !main_fxn_read_only_) {
     io->out_.stack.copy_defined(io->in_.stack);
