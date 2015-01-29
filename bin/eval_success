@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+# ------------------------------------------------------------------------------
+#
+# Evaluate the success rate of a randomized command
+#
+# Author: Stefan Heule <sheule@cs.stanford.edu>
+#
+# ------------------------------------------------------------------------------
+
+import sys
+import subprocess
+import threading
+import time
+
+# ------------------------------------------
+# main entry point
+# ------------------------------------------
+
+def main():
+  if len(sys.argv)-1 == 0:
+    print "usage: "+sys.argv[0]+" <command> [args]"
+    print ""
+    print "Executes <command> repeatably, and checks how often the command succeeds (based on the return value)."
+    sys.exit(1)
+
+  n = 0
+  succ = 0
+  succtime = 0
+  unsucctime = 0
+  totaltime = 0
+
+  while True:
+    start = time.time()
+    val, output = execute(" ".join(sys.argv[1:]))
+    end = time.time()
+    n += 1
+    if val == 0:
+      succ += 1
+      succtime += end - start
+    else:
+      unsucctime += end - start
+    totaltime += end - start
+    print "Success: %d/%d (%.3f%%)" % (succ, n, float(succ)/float(n))
+    if succ == 0:
+      succtimeavg = 0
+    else:
+      succtimeavg = succtime / float(succ)
+    if succ == n:
+      unsucctimeavg = 0
+    else:
+      unsucctimeavg = unsucctime / float(n-succ)
+    print "  Average time for success: %.2f seconds" % (succtimeavg)
+    print "  Average time for non-success: %.2f seconds" % (unsucctimeavg)
+    print "  Total time: %.2f seconds" % totaltime
+    print ""
+
+
+def execute(cmd):
+  return Command(cmd).run(None)
+
+# taken from http://stackoverflow.com/questions/1191374/subprocess-with-timeout
+class Command(object):
+  def __init__(self, cmd):
+    self.cmd = cmd
+    self.process = None
+    self.output = ""
+    self.error = ""
+
+  def run(self, timeout):
+    def target():
+      self.process = subprocess.Popen(self.cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      self.output = self.process.stdout.read()
+      self.error = self.process.stderr.read()
+      self.child = self.process.communicate()[0]
+
+    thread = threading.Thread(target=target)
+    thread.start()
+
+    thread.join(timeout)
+    if thread.is_alive():
+      self.process.terminate()
+      thread.join()
+    retval = self.process.returncode
+    return (retval, self.output + "\n" + self.error)
+
+
+if __name__ == '__main__':
+  main()
