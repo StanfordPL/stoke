@@ -18,11 +18,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "src/ext/cpputil/include/container/maputil.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/cfg/cfg.h"
 #include "src/sandbox/io_pair.h"
+#include "src/sandbox/function_iterator.h"
 #include "src/sandbox/input_iterator.h"
 #include "src/sandbox/output_iterator.h"
 #include "src/sandbox/state_callback.h"
@@ -32,9 +32,6 @@ namespace stoke {
 
 class Sandbox {
 public:
-  /** Iterator for function source */
-  typedef cpputil::CppUtilMap<std::unordered_map<x64asm::Label, Cfg>>::const_value_iterator function_iterator;
-
   /** Returns true if this instruction is supported. */
   static bool is_supported(const x64asm::Instruction& instr) {
     return is_supported(instr.get_opcode());
@@ -46,8 +43,7 @@ public:
   Sandbox();
   /** Deletes a sandbox. */
   ~Sandbox() {
-    clear_inputs();
-    clear_functions();
+    reset();
   }
 
   /** Sets whether the sandbox should report sigsegv for abi violations. */
@@ -69,6 +65,15 @@ public:
   Sandbox& set_use_latency(bool b) {
     use_latency_ = b;
     return *this;
+  }
+
+  /** Resets the sandbox to a consistent state. Clears all inputs and resets the label pool */
+  Sandbox& reset() {
+    expert_mode_ = false;
+    init_labels();
+    clear_inputs();
+    clear_functions();
+    clear_callbacks();
   }
 
   /** Add a new input. */
@@ -123,16 +128,15 @@ public:
 
   /** Returns a function */
   function_iterator get_function(const x64asm::Label& l) const {
-    assert(contains_function(l));
     return function_iterator(fxns_src_.find(l));
   }
   /** Iterator over functions */
   function_iterator function_begin() const {
-    return fxns_src_.value_cbegin();
+    return function_iterator(fxns_src_.begin());
   }
   /** Iterator over functions. */
   function_iterator function_end() const {
-    return fxns_src_.value_cend();
+    return function_iterator(fxns_src_.end());
   }
 
   /** Insert a callback before every line in every function. */
@@ -157,16 +161,28 @@ public:
   /** Run a main function for all inputs. */
   Sandbox& run();
 
-  /** Flag labels allocated after this call as disposable. */
-  Sandbox& start_reusing_labels() {
+  /** Enter expert mode. Gain performance improvment but give up safety guarantees in api. */
+  Sandbox& expert_mode() {
+    expert_mode_ = true;
+    return *this;
+  }
+
+  /** Expert mode: Flag all subsequent labels as disposable. */
+  Sandbox& expert_use_disposable_labels() {
+    assert(expert_mode_);
     label_checkpoint_ = next_label_;
     return *this;
   }
-  /** Start recycling any labels that were allocated since the last call to
-    start_reusing_labels(); invalidates EVERYTHING that was sandboxed in
-    the interim. Make sure you know what you're doing. */
-  Sandbox& start_recycling_labels() {
+  /** Expert mode: Invalidate and start reusing disposable labels. */
+  Sandbox& expert_recycle_labels() {
+    assert(expert_mode_);
     next_label_ = label_checkpoint_;
+    return *this;
+  }
+  /** Expert mode: Recompile a function without allocating a buffer or saving its source */
+  Sandbox& expert_recompile(const Cfg& cfg) {
+    assert(expert_mode_);
+    recompile(cfg);
     return *this;
   }
 
@@ -208,9 +224,9 @@ public:
   }
   /** @deprecated */
   const Cfg& get_main() const {
-    const auto itr = fxns_src_.find(main_fxn_);
-    assert(itr != fxns_src_.end());
-    return itr->second;
+    const auto itr = get_function(main_fxn_);
+    assert(itr != function_end());
+    return *itr;
   }
   /** @deprecated  */
   void run(const Cfg& cfg) {
@@ -236,6 +252,9 @@ private:
   bool count_instructions_;
   /** Should the sandbox use latency to weight the instructions? */
   bool use_latency_;
+
+  /** Is the sandbox in expert mode? */
+  bool expert_mode_;
 
   /** Assembler, no sense in always creating these. */
   x64asm::Assembler assm_;
@@ -296,14 +315,14 @@ private:
   /** Pointer to the signal trap function */
   x64asm::Function signal_trap_;
   /** Functions that the code may invoke at runtime. Pointers to simplify reallocation. */
-  cpputil::CppUtilMap<std::unordered_map<x64asm::Label, x64asm::Function*>> fxns_;
+  std::unordered_map<x64asm::Label, x64asm::Function*> fxns_;
   /** Pointer to the current main function */
   x64asm::Label main_fxn_;
 
   /** Auxiliary function source (saved in case recompilation is necessary). */
-  cpputil::CppUtilMap<std::unordered_map<x64asm::Label, Cfg>> fxns_src_;
+  std::unordered_map<x64asm::Label, Cfg*> fxns_src_;
   /** Flags that track whether a function is memory read only */
-  cpputil::CppUtilMap<std::unordered_map<x64asm::Label, bool>> fxns_read_only_;
+  std::unordered_map<x64asm::Label, bool> fxns_read_only_;
   /** The logical and of all of the elements in fxns_read_only_ */
   bool all_fxns_read_only_;
 
@@ -359,7 +378,7 @@ private:
   /** Assembles the user's function into a buffer */
   void emit_function(const Cfg& cfg, x64asm::Function* fxn);
   /** Emit a single callback for this line. */
-  void emit_callback(const std::pair<StateCallback, void*>& cb, size_t line);
+  void emit_callback(const std::pair<StateCallback, void*>& cb, const x64asm::Label& fxn, size_t line);
   /** Emit all before callbacks */
   void emit_before(const x64asm::Label& fxn, size_t line);
   /** Emit all after callbacks */
