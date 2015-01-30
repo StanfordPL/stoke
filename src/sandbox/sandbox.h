@@ -125,10 +125,14 @@ public:
     return fxns_src_.value_cend();
   }
 
-  /** Insert a callback to be invoked prior to any line in any function. */
+  /** Insert a callback before every line in every function. */
   Sandbox& insert_before(StateCallback cb, void* arg);
-  /** Insert a callback to be invoked prior to any line in any function. */
+	/** Insert a callback before this line */
+	Sandbox& insert_before(const x64asm::Label& l, size_t line, StateCallback cb, void* arg);
+  /** Insert a callback after every line in every function. */
   Sandbox& insert_after(StateCallback cb, void* arg);
+	/** Insert a callback after this line */
+	Sandbox& insert_after(const x64asm::Label& l, size_t line, StateCallback cb, void* arg);
   /** Clears the set of callbacks to invoke during execution. */
   Sandbox& clear_callbacks();
 
@@ -184,15 +188,13 @@ public:
   }
   /** @deprecated */
   Sandbox& insert_before(size_t line, StateCallback cb, void* arg) {
+		insert_before(main_fxn_, line, cb, arg);
     return *this;
   }
   /** @deprecated */
   Sandbox& insert_after(size_t line, StateCallback cb, void* arg) {
+		insert_after(main_fxn_, line, cb, arg);
     return *this;
-  }
-  /** @deprecated */
-  size_t num_callbacks() const {
-    return 0;
   }
   /** @deprecated */
   const Cfg& get_main() const {
@@ -231,8 +233,12 @@ private:
 
   /** Global callback to invoke before any line is executed. */
   std::pair<StateCallback, void*> global_before_;
+	/** Before callbacks on a per-line basis */
+	std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>> before_;
   /** Global callback to invoke after any line is executed. */
   std::pair<StateCallback, void*> global_after_;
+	/** After callbacks on a per-line basis */
+	std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>> after_;
 
   /** Reusable labels... if left unchecked, endless sandboxing will deplete memory */
   std::vector<x64asm::Label> labels_;
@@ -338,6 +344,10 @@ private:
   void emit_function(const Cfg& cfg, x64asm::Function* fxn);
   /** Emit a single callback for this line. */
   void emit_callback(const std::pair<StateCallback, void*>& cb, size_t line);
+  /** Emit all before callbacks */
+  void emit_before(const x64asm::Label& fxn, size_t line);
+  /** Emit all after callbacks */
+  void emit_after(const x64asm::Label& fxn, size_t line);
   /** Emit an instruction (and possibly sandbox memory). */
   void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& exit);
   /** Emit a memory instruction. */
