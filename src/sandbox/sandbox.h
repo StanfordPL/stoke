@@ -107,13 +107,13 @@ public:
     return fxns_.size();
   }
   /** Does a function with this name exist? */
-  bool contains_function(const x64asm::Label& l) {
+  bool contains_function(const x64asm::Label& l) const {
     return fxns_.find(l) != fxns_.end();
   }
 
   /** Returns a function */
   function_iterator get_function(const x64asm::Label& l) const {
-    assert(contains(l));
+    assert(contains_function(l));
     return function_iterator(fxns_src_.find(l));
   }
   /** Iterator over functions */
@@ -144,14 +144,16 @@ public:
   Sandbox& run();
 
   /** Flag labels allocated after this call as disposable. */
-  void start_reusing_labels() {
+  Sandbox& start_reusing_labels() {
     label_checkpoint_ = next_label_;
+		return *this;
   }
   /** Start recycling any labels that were allocated since the last call to
     start_reusing_labels(); invalidates EVERYTHING that was sandboxed in
     the interim. Make sure you know what you're doing. */
-  void start_recycling_labels() {
+  Sandbox& start_recycling_labels() {
     next_label_ = label_checkpoint_;
+		return *this;
   }
 
   /** @deprecated */
