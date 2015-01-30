@@ -822,6 +822,10 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
 }
 
 void Sandbox::emit_count_instruction(const Instruction& instr) {
+
+  if(instr.is_nop())
+    return;
+
   // Load the STOKE %rsp, we'll need to do some pushing here
   emit_load_stoke_rsp();
   // Backup rax and rflags
