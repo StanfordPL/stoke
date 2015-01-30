@@ -148,7 +148,7 @@ Sandbox& Sandbox::clear_callbacks() {
 }
 
 Sandbox& Sandbox::run(size_t index) {
-	assert(num_functions() > 0);
+  assert(num_functions() > 0);
   assert(index < num_inputs());
   auto io = io_pairs_[index];
 
@@ -241,7 +241,7 @@ void Sandbox::recompile(const Cfg& cfg) {
   }
 
   // Relink everything
-	// @todo This isn't quite right since linking isn't pure
+  // @todo This isn't quite right since linking isn't pure
   lnkr_.start();
   for (auto f : fxns_) {
     lnkr_.link(*(f.second));
