@@ -43,7 +43,7 @@ public:
   Sandbox();
   /** Deletes a sandbox. */
   ~Sandbox() {
-		reset();
+    reset();
   }
 
   /** Sets whether the sandbox should report sigsegv for abi violations. */
@@ -67,14 +67,14 @@ public:
     return *this;
   }
 
-	/** Resets the sandbox to a consistent state. Clears all inputs and resets the label pool */
-	Sandbox& reset() {
-		expert_mode_ = false;
-		init_labels();
-		clear_inputs();
-		clear_functions();
-		clear_callbacks();
-	}
+  /** Resets the sandbox to a consistent state. Clears all inputs and resets the label pool */
+  Sandbox& reset() {
+    expert_mode_ = false;
+    init_labels();
+    clear_inputs();
+    clear_functions();
+    clear_callbacks();
+  }
 
   /** Add a new input. */
   Sandbox& insert_input(const CpuState& input);
@@ -161,30 +161,30 @@ public:
   /** Run a main function for all inputs. */
   Sandbox& run();
 
-	/** Enter expert mode. Gain performance improvment but give up safety guarantees in api. */
-	Sandbox& expert_mode() {
-		expert_mode_ = true;
-		return *this;
-	}
+  /** Enter expert mode. Gain performance improvment but give up safety guarantees in api. */
+  Sandbox& expert_mode() {
+    expert_mode_ = true;
+    return *this;
+  }
 
   /** Expert mode: Flag all subsequent labels as disposable. */
   Sandbox& expert_use_disposable_labels() {
-		assert(expert_mode_);
+    assert(expert_mode_);
     label_checkpoint_ = next_label_;
     return *this;
   }
   /** Expert mode: Invalidate and start reusing disposable labels. */
   Sandbox& expert_recycle_labels() {
-		assert(expert_mode_);
+    assert(expert_mode_);
     next_label_ = label_checkpoint_;
     return *this;
   }
-	/** Expert mode: Recompile a function without allocating a buffer or saving its source */
-	Sandbox& expert_recompile(const Cfg& cfg) {
-		assert(expert_mode_);
-		recompile(cfg);
-		return *this;
-	}
+  /** Expert mode: Recompile a function without allocating a buffer or saving its source */
+  Sandbox& expert_recompile(const Cfg& cfg) {
+    assert(expert_mode_);
+    recompile(cfg);
+    return *this;
+  }
 
   /** @deprecated */
   size_t size() const {
@@ -253,8 +253,8 @@ private:
   /** Should the sandbox use latency to weight the instructions? */
   bool use_latency_;
 
-	/** Is the sandbox in expert mode? */
-	bool expert_mode_;
+  /** Is the sandbox in expert mode? */
+  bool expert_mode_;
 
   /** Assembler, no sense in always creating these. */
   x64asm::Assembler assm_;

@@ -55,7 +55,7 @@ Sandbox::Sandbox() {
 
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
-	reset();
+  reset();
 
   static bool once = false;
   if (!once) {
@@ -103,16 +103,16 @@ Sandbox& Sandbox::insert_function(const Cfg& cfg) {
   const auto label = cfg.get_code()[0].get_operand<Label>(0);
 
   // If this is the first time we've seen this function, allocate state
-	// Otherwise just replace what's there
+  // Otherwise just replace what's there
   if (!contains_function(label)) {
     fxns_[label] = new x64asm::Function(32 * 1024);
-		fxns_src_[label] = new Cfg(cfg);
-  	recompile(cfg);
+    fxns_src_[label] = new Cfg(cfg);
+    recompile(cfg);
   } else {
-		delete fxns_src_[label];
-		fxns_src_[label] = new Cfg(cfg);
-  	recompile(cfg);
-	}
+    delete fxns_src_[label];
+    fxns_src_[label] = new Cfg(cfg);
+    recompile(cfg);
+  }
 
   // If this is the only function it becomes main by default
   if (num_functions() == 1) {
@@ -126,9 +126,9 @@ Sandbox& Sandbox::clear_functions() {
   }
   fxns_.clear();
 
-	for (auto fxn : fxns_src_) {
-		delete fxn.second;
-	}
+  for (auto fxn : fxns_src_) {
+    delete fxn.second;
+  }
   fxns_src_.clear();
 
   fxns_read_only_.clear();
@@ -254,8 +254,8 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
 }
 
 void Sandbox::recompile(const Cfg& cfg) {
-	// Grab the name of this function
-	const auto& label = cfg.get_code()[0].get_operand<Label>(0);
+  // Grab the name of this function
+  const auto& label = cfg.get_code()[0].get_operand<Label>(0);
 
   // Compile the function and record its source
   emit_function(cfg, fxns_[label]);
