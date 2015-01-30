@@ -151,7 +151,7 @@ Cost CostFunction::evaluate_correctness(const Cfg& cfg, const Cost max) {
 Cost CostFunction::max_correctness(const Cfg& cfg, const Cost max) {
   Cost res = 0;
 
-	sandbox_->expert_mode();
+  sandbox_->expert_mode();
   sandbox_->expert_use_disposable_labels();
   sandbox_->expert_recompile(cfg);
   sandbox_->expert_recycle_labels();
@@ -172,12 +172,12 @@ Cost CostFunction::max_correctness(const Cfg& cfg, const Cost max) {
 Cost CostFunction::sum_correctness(const Cfg& cfg, const Cost max) {
   Cost res = 0;
 
-	sandbox_->expert_mode();
+  sandbox_->expert_mode();
   sandbox_->expert_use_disposable_labels();
   sandbox_->expert_recompile(cfg);
   sandbox_->expert_recycle_labels();
-  
-	recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_sse_out_);
+
+  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_sse_out_);
 
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
