@@ -106,6 +106,13 @@ Cost CostFunction::assembled_size_cost(const Cfg& cfg) {
   result would equal or exceed that value. */
 CostFunction::result_type CostFunction::operator()(const Cfg& cfg, const Cost max) {
 
+  // we need to configure the sandbox differently if we're measuring its performance
+  if(pterm_ == PerformanceTerm::MEASURED) {
+    sandbox_->set_count_instructions(true);
+  } else {
+    sandbox_->set_count_instructions(false);
+  }
+
   auto cost = k_ * evaluate_correctness(cfg, (max + k_ - 1) / k_);
   assert(cost <= max_cost);
 
@@ -458,6 +465,8 @@ Cost CostFunction::evaluate_performance(const Cfg& cfg, const Cost max) const {
     return size_performance(cfg);
   case PerformanceTerm::LATENCY:
     return latency_performance(cfg);
+  case PerformanceTerm::MEASURED:
+    return measured_performance(cfg);
   case PerformanceTerm::EXTENSION:
     return extension_performance(cfg);
   default:
@@ -524,6 +533,18 @@ Cost CostFunction::latency_performance(const Cfg& cfg) const {
   }
 
   return latency;
+}
+
+Cost CostFunction::measured_performance(const Cfg& cfg) const {
+  Cost latency = 0;
+  Cost tc_count = 0;
+
+  for(auto i = sandbox_->output_begin(), ie = sandbox_->output_end(); i != ie; ++i) {
+    latency += i->latency_seen;
+    tc_count++;
+  }
+
+  return latency/tc_count;
 }
 
 Cost CostFunction::extension_performance(const Cfg& cfg) const {
