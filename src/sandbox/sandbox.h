@@ -365,7 +365,7 @@ private:
   /** Emit all after callbacks */
   void emit_after(const x64asm::Label& fxn, size_t line);
   /** Emit an instruction (and possibly sandbox memory). */
-  void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& exit);
+  void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& fxn, const x64asm::Label& exit);
   /** Emit a memory instruction. */
   void emit_memory_instruction(const x64asm::Instruction& instr);
   /** Emit a jump instruction */
@@ -375,7 +375,7 @@ private:
   /** Emit the RET instruction. */
   void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
   /** Emit code to increment the instruction count */
-  void emit_count_instruction(const x64asm::Instruction& instr);
+  void emit_count_instructions(const Cfg& cfg, Cfg::id_type bb);
 
   /** Special case for emitting bt instructions that read from memory. */
   void emit_mem_bt(const x64asm::Instruction& instr);
