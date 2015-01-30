@@ -55,8 +55,8 @@ Sandbox::Sandbox() {
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
 
-	clear_inputs();
-	clear_functions();
+  clear_inputs();
+  clear_functions();
 
   static bool once = false;
   if (!once) {
@@ -99,20 +99,20 @@ Sandbox& Sandbox::clear_inputs() {
 }
 
 Sandbox& Sandbox::insert_function(const Cfg& cfg) {
-	// Look up the name of this function
-	const auto label = cfg.get_code()[0].get_operand<Label>(0);
+  // Look up the name of this function
+  const auto label = cfg.get_code()[0].get_operand<Label>(0);
 
-	// If this is the first time we've seen this function, allocate a buffer
-	if (!contains_function(label)) {
-  	fxns_[label] = new x64asm::Function(32 * 1024);
-	}
-	// If this is the only function it becomes main by default
-	if (num_functions() == 1) {
-		set_entrypoint(label);
-	}
+  // If this is the first time we've seen this function, allocate a buffer
+  if (!contains_function(label)) {
+    fxns_[label] = new x64asm::Function(32 * 1024);
+  }
+  // If this is the only function it becomes main by default
+  if (num_functions() == 1) {
+    set_entrypoint(label);
+  }
 
-	// Now that all of the big awful state is set up, just do a recompile
-	recompile(cfg);	
+  // Now that all of the big awful state is set up, just do a recompile
+  recompile(cfg);
 }
 
 Sandbox& Sandbox::clear_functions() {
@@ -122,8 +122,8 @@ Sandbox& Sandbox::clear_functions() {
   }
   fxns_.clear();
   fxns_src_.clear();
-	fxns_read_only_.clear();
-	all_fxns_read_only_ = true;
+  fxns_read_only_.clear();
+  all_fxns_read_only_ = true;
 
   return *this;
 }
@@ -171,7 +171,7 @@ Sandbox& Sandbox::run(size_t index) {
   out2cpu_ = io->out2cpu_.get_entrypoint();
   cpu2out_ = io->cpu2out_.get_entrypoint();
   map_addr_ = io->map_addr_.get_entrypoint();
-	entrypoint_ = fxns_[main_fxn_]->get_entrypoint();
+  entrypoint_ = fxns_[main_fxn_]->get_entrypoint();
 
   // Initialize state related to %rsp tracking
   user_rsp_ = io->in_.gp[rsp].get_fixed_quad(0);
@@ -192,14 +192,14 @@ Sandbox& Sandbox::run(size_t index) {
     io->out_.code = ErrorCode::SIGSEGV_;
   }
 
-	return *this;
+  return *this;
 }
 
 Sandbox& Sandbox::run() {
   for (size_t i = 0, ie = size(); i < ie; ++i) {
     run(i);
   }
-	return *this;
+  return *this;
 }
 
 bool Sandbox::check_abi(const IoPair& iop) const {
@@ -225,21 +225,21 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
 }
 
 void Sandbox::recompile(const Cfg& cfg) {
-	// Lookup the name of this function
-	const auto label = cfg.get_code()[0].get_operand<Label>(0);
+  // Lookup the name of this function
+  const auto label = cfg.get_code()[0].get_operand<Label>(0);
 
   // Compile the function and record its source
   emit_function(cfg, fxns_[label]);
   fxns_src_.insert({label, cfg});
 
-	// Update the read only memory tracker
+  // Update the read only memory tracker
   fxns_read_only_[label] = is_mem_read_only(cfg);
-	all_fxns_read_only_ = true;
-	for (const auto& r : fxns_read_only_) {
-		all_fxns_read_only_ &= r.second;
-	}
+  all_fxns_read_only_ = true;
+  for (const auto& r : fxns_read_only_) {
+    all_fxns_read_only_ &= r.second;
+  }
 
-	// Relink everything
+  // Relink everything
   lnkr_.start();
   for (auto f : fxns_) {
     lnkr_.link(*(f.second));
@@ -248,12 +248,12 @@ void Sandbox::recompile(const Cfg& cfg) {
 }
 
 void Sandbox::recompile() {
-	// This could be marginally faster if we expanded it since there's no reason
-	// to iterate over all_fxns_read_only_ every interation, but we do so much
-	// else it's probably not worth saving this little bit
-	for (const auto& fxn : fxns_src_) {
-		recompile(fxn.second);
-	}
+  // This could be marginally faster if we expanded it since there's no reason
+  // to iterate over all_fxns_read_only_ every interation, but we do so much
+  // else it's probably not worth saving this little bit
+  for (const auto& fxn : fxns_src_) {
+    recompile(fxn.second);
+  }
 }
 
 // Main entrypoint for sandboxed code.
