@@ -183,7 +183,6 @@ Sandbox& Sandbox::run(size_t index) {
 
   // Reset error-related variables
   jumps_remaining_ = max_jumps_;
-
   // Reset instruction count
   instruction_count_ = 0;
 
@@ -213,7 +212,7 @@ Sandbox& Sandbox::run(size_t index) {
   if (abi_check_ && !check_abi(*io)) {
     io->out_.code = ErrorCode::SIGSEGV_;
   }
-  if(count_instructions_) {
+  if (count_instructions_) {
     io->out_.latency_seen = instruction_count_;
   }
 
@@ -625,14 +624,13 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
 }
 
 bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
-  for (auto b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-    const auto num_instrs = cfg.num_instrs(*b);
-    if (num_instrs == 0) {
+  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+    if (cfg.is_exit(*b)) {
       continue;
     }
 
     const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-    for (size_t i = begin, ie = begin + num_instrs; i < ie; ++i) {
+    for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
       const auto& instr = cfg.get_code()[i];
       if (instr.is_implicit_memory_dereference()) {
         return false;
@@ -666,44 +664,37 @@ bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
 //   <none>
 
 void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
-  // Index reachable instructions (this would be a great iterator to have in Cfg)
-  vector<size_t> instrs;
+  assm_.start(*fxn);
+
+  // The label that begins a function must precede instrumentation
+  assm_.assemble(cfg.get_code()[0]);
+
+  // Now load the user's %rsp
+  emit_load_user_rsp();
+
+  // Grab the name of this function and make a unique label for representing the end
+  const auto label = cfg.get_code()[0].get_operand<Label>(0);
+  const auto exit = get_label();
+
+  // Assemble instructions and add instrumentation
   for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
     if (cfg.is_exit(*b)) {
       continue;
     }
+
     const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-    for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
-      instrs.push_back(i);
-    }
-  }
-
-  assm_.start(*fxn);
-
-  // The label that begins a function must precede instrumentation
-  assm_.assemble(cfg.get_code()[instrs[0]]);
-
-  // Load the user's %rsp
-  emit_load_user_rsp();
-
-  // Create a new unique label for representing the end of this function
-  const auto exit = get_label();
-
-  // Assemble every other reachable instruction
-  for (size_t i = 1 , ie = instrs.size(); i < ie; ++i) {
-    const auto idx = instrs[i];
-    const auto& instr = cfg.get_code()[idx];
-
-    // Emit instruction and instrumentation
-    if (global_before_.first != nullptr || !before_.empty()) {
-      emit_before(cfg.get_code()[0].get_operand<Label>(0), idx);
-    }
     if (count_instructions_) {
-      emit_count_instruction(instr);
+      emit_count_instructions(cfg, *b);
     }
-    emit_instruction(instr, exit);
-    if (global_after_.first != nullptr || !after_.empty()) {
-      emit_after(cfg.get_code()[0].get_operand<Label>(0), idx);
+
+    for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
+      if (global_before_.first != nullptr || !before_.empty()) {
+        emit_before(cfg.get_code()[0].get_operand<Label>(0), i);
+      }
+      emit_instruction(cfg.get_code()[i], label, exit);
+      if (global_after_.first != nullptr || !after_.empty()) {
+        emit_after(cfg.get_code()[0].get_operand<Label>(0), i);
+      }
     }
   }
   // Catch for run-away code
@@ -777,14 +768,18 @@ void Sandbox::emit_after(const Label& label, size_t line) {
   emit_callback(j->second, line);
 }
 
-void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
+void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, const Label& exit) {
   // First things first. If it's unsupported, give up.
   if (!is_supported(instr)) {
     emit_signal_trap_call(ErrorCode::SIGILL_);
   }
   // Labels are translated directly
+  // (unless it's the name of the function... see emit_function())
   else if (instr.is_label_defn()) {
-    assm_.assemble(instr);
+    const auto label = instr.get_operand<Label>(0);
+    if (label != fxn) {
+      assm_.assemble(instr);
+    }
   }
   // Jumps are instrumented with premature exit logic
   else if (instr.is_any_jump()) {
@@ -838,13 +833,17 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
   }
 }
 
-void Sandbox::emit_count_instruction(const Instruction& instr) {
-  if(instr.is_label_defn() || instr.is_nop())
-    return;
+void Sandbox::emit_count_instructions(const Cfg& cfg, Cfg::id_type bb) {
+  size_t count = 0;
+  for (auto i = cfg.instr_begin(bb), ie = cfg.instr_end(bb); i != ie; ++i) {
+    if(i->is_label_defn() || i->is_nop())
+      continue;
+    count++;
+  }
 
   assm_.mov(Moffs64(&scratch_[rax]), rax);
   assm_.mov(rax, Moffs64(&instruction_count_));
-  assm_.lea(rax, M64(rax, Imm32(1)));
+  assm_.lea(rax, M64(rax, Imm32(count)));
   assm_.mov(Moffs64(&instruction_count_), rax);
   assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
