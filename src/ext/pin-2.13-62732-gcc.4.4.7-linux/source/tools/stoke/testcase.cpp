@@ -417,6 +417,9 @@ VOID Fini(INT32 code, VOID* v) {
 		*os_ << endl;
 	}
 	os_->flush();
+
+	// Pin doesn't seem to like returning zero on exit. But if we're here, everything is okay.
+	exit(0);
 }
 
 /* ============================================================================================= */
