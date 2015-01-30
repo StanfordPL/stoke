@@ -127,12 +127,12 @@ public:
 
   /** Insert a callback before every line in every function. */
   Sandbox& insert_before(StateCallback cb, void* arg);
-	/** Insert a callback before this line */
-	Sandbox& insert_before(const x64asm::Label& l, size_t line, StateCallback cb, void* arg);
+  /** Insert a callback before this line */
+  Sandbox& insert_before(const x64asm::Label& l, size_t line, StateCallback cb, void* arg);
   /** Insert a callback after every line in every function. */
   Sandbox& insert_after(StateCallback cb, void* arg);
-	/** Insert a callback after this line */
-	Sandbox& insert_after(const x64asm::Label& l, size_t line, StateCallback cb, void* arg);
+  /** Insert a callback after this line */
+  Sandbox& insert_after(const x64asm::Label& l, size_t line, StateCallback cb, void* arg);
   /** Clears the set of callbacks to invoke during execution. */
   Sandbox& clear_callbacks();
 
@@ -188,12 +188,12 @@ public:
   }
   /** @deprecated */
   Sandbox& insert_before(size_t line, StateCallback cb, void* arg) {
-		insert_before(main_fxn_, line, cb, arg);
+    insert_before(main_fxn_, line, cb, arg);
     return *this;
   }
   /** @deprecated */
   Sandbox& insert_after(size_t line, StateCallback cb, void* arg) {
-		insert_after(main_fxn_, line, cb, arg);
+    insert_after(main_fxn_, line, cb, arg);
     return *this;
   }
   /** @deprecated */
@@ -233,12 +233,12 @@ private:
 
   /** Global callback to invoke before any line is executed. */
   std::pair<StateCallback, void*> global_before_;
-	/** Before callbacks on a per-line basis */
-	std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>> before_;
+  /** Before callbacks on a per-line basis */
+  std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>> before_;
   /** Global callback to invoke after any line is executed. */
   std::pair<StateCallback, void*> global_after_;
-	/** After callbacks on a per-line basis */
-	std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>> after_;
+  /** After callbacks on a per-line basis */
+  std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>> after_;
 
   /** Reusable labels... if left unchecked, endless sandboxing will deplete memory */
   std::vector<x64asm::Label> labels_;
