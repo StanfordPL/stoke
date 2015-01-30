@@ -164,7 +164,7 @@ int trace(const string& argv0) {
   if(term.result() != 0) {
     Console::error(1) << "Pin failed with error " << term.result() << "!" << endl;
     return 1; // don't return term.result() because it computes it mod 256 in the shell,
-              // and this sometimes hides errors from pin -- Berkeley
+    // and this sometimes hides errors from pin -- Berkeley
   }
   return 0;
 }
