@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "src/ext/cpputil/include/container/maputil.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/cfg/cfg.h"
@@ -31,8 +32,8 @@ namespace stoke {
 
 class Sandbox {
 public:
-  /** Iterator for auxiliary function source */
-  typedef std::vector<Cfg>::const_iterator function_iterator;
+  /** Iterator for function source */
+  typedef cpputil::CppUtilMap<std::unordered_map<x64asm::Label, Cfg>>::const_value_iterator function_iterator;
 
   /** Returns true if this instruction is supported. */
   static bool is_supported(const x64asm::Instruction& instr) {
@@ -57,6 +58,16 @@ public:
   /** Sets the maximum number of jumps taken before raising SIGINT. */
   Sandbox& set_max_jumps(size_t jumps) {
     max_jumps_ = jumps;
+    return *this;
+  }
+  /** Sets whether the sandbox should count the number of instructions executed. */
+  Sandbox& set_count_instructions(bool b) {
+    count_instructions_ = b;
+    return *this;
+  }
+  /** Sets whether the sandbox should additionally weight counted instructions by latency? */
+  Sandbox& set_use_latency(bool b) {
+    use_latency_ = b;
     return *this;
   }
 
@@ -97,88 +108,123 @@ public:
     return output_iterator(io_pairs_.end());
   }
 
-  /** Insert an auxiliary function which can be called at runtime */
-  Sandbox& compile_function(const Cfg& cfg);
-  /** Clear auxiliary function set */
+  /** Compile a function. */
+  Sandbox& insert_function(const Cfg& cfg);
+  /** Clear functions. */
   Sandbox& clear_functions();
-  /** Returns the number of installed functions */
+  /** Returns the number of compiled functions */
   size_t num_functions() const {
-    return aux_fxns_.size();
+    return fxns_.size();
+  }
+  /** Does a function with this name exist? */
+  bool contains_function(const x64asm::Label& l) const {
+    return fxns_.find(l) != fxns_.end();
   }
 
-  /** Iterator over auxiliary function source. */
+  /** Returns a function */
+  function_iterator get_function(const x64asm::Label& l) const {
+    assert(contains_function(l));
+    return function_iterator(fxns_src_.find(l));
+  }
+  /** Iterator over functions */
   function_iterator function_begin() const {
-    return aux_fxns_src_.begin();
+    return fxns_src_.value_cbegin();
   }
-  /** Iterator over auxiliary function source. */
+  /** Iterator over functions. */
   function_iterator function_end() const {
-    return aux_fxns_src_.end();
+    return fxns_src_.value_cend();
   }
 
-  /** Insert a callback to be invoked prior to any line in any function. */
+  /** Insert a callback before every line in every function. */
   Sandbox& insert_before(StateCallback cb, void* arg);
-  /** Insert a callback to be invoked prior to any line in any function. */
+  /** Insert a callback before this line */
+  Sandbox& insert_before(const x64asm::Label& l, size_t line, StateCallback cb, void* arg);
+  /** Insert a callback after every line in every function. */
   Sandbox& insert_after(StateCallback cb, void* arg);
-  /** Insert a callback to be invoked prior to exeucting a line in the main function. */
-  Sandbox& insert_before(size_t line, StateCallback cb, void* arg);
-  /** Insert a callback to be invoked after executing a line in the main function. */
-  Sandbox& insert_after(size_t line, StateCallback cb, void* arg);
+  /** Insert a callback after this line */
+  Sandbox& insert_after(const x64asm::Label& l, size_t line, StateCallback cb, void* arg);
   /** Clears the set of callbacks to invoke during execution. */
   Sandbox& clear_callbacks();
-  /** Returns the number of installed callbacks */
-  size_t num_callbacks() const;
 
-  /** Compile a new main function. */
-  void compile_main(const Cfg& cfg);
-  /** Access the source of the main function. */
-  const Cfg& get_main() const {
-    return fxn_src_;
+  /** Designates a function as the entrypoint. */
+  Sandbox& set_entrypoint(const x64asm::Label& l) {
+    assert(contains_function(l));
+    main_fxn_ = l;
+    return *this;
   }
-
   /** Run a main function for just one input. */
-  void run_one(size_t index);
+  Sandbox& run(size_t index);
   /** Run a main function for all inputs. */
-  void run_all();
-  /** Convenience method. Compile a new main function and run for all inputs. */
-  void run(const Cfg& cfg) {
-    compile_main(cfg);
-    run_all();
-  }
+  Sandbox& run();
 
   /** Flag labels allocated after this call as disposable. */
-  void start_reusing_labels() {
+  Sandbox& start_reusing_labels() {
     label_checkpoint_ = next_label_;
+    return *this;
   }
   /** Start recycling any labels that were allocated since the last call to
     start_reusing_labels(); invalidates EVERYTHING that was sandboxed in
     the interim. Make sure you know what you're doing. */
-  void start_recycling_labels() {
+  Sandbox& start_recycling_labels() {
     next_label_ = label_checkpoint_;
+    return *this;
   }
 
-  /** @deprecated Use num_inputs() */
+  /** @deprecated */
   size_t size() const {
     return num_inputs();
   }
-  /** @deprecated Use get_output() */
+  /** @deprecated */
   output_iterator get_result(size_t index) const {
     return get_output(index);
   }
-  /** @deprecated Use output_begin() */
+  /** @deprecated */
   output_iterator result_begin() const {
     return output_begin();
   }
-  /** @deprecated Use output_end() */
+  /** @deprecated */
   output_iterator result_end() const {
     return output_end();
   }
-  /** @deprecated Use compile_main */
+  /** @deprecated */
   void compile(const Cfg& cfg) {
-    compile_main(cfg);
+    insert_function(cfg);
+    set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
   }
-  /** @deprecated Use compile_function */
-  Sandbox& insert_function(const Cfg& cfg) {
-    compile_function(cfg);
+  /** @deprecated */
+  void compile_main(const Cfg& cfg) {
+    insert_function(cfg);
+    set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
+  }
+  /** @deprecated */
+  Sandbox& insert_before(size_t line, StateCallback cb, void* arg) {
+    insert_before(main_fxn_, line, cb, arg);
+    return *this;
+  }
+  /** @deprecated */
+  Sandbox& insert_after(size_t line, StateCallback cb, void* arg) {
+    insert_after(main_fxn_, line, cb, arg);
+    return *this;
+  }
+  /** @deprecated */
+  const Cfg& get_main() const {
+    const auto itr = fxns_src_.find(main_fxn_);
+    assert(itr != fxns_src_.end());
+    return itr->second;
+  }
+  /** @deprecated  */
+  void run(const Cfg& cfg) {
+    insert_function(cfg);
+    set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
+    run();
+  }
+  /** @deprecated */
+  void run_one(size_t index) {
+    run(index);
+  }
+  /** @deprecated */
+  void run_all() {
+    run();
   }
 
 private:
@@ -186,28 +232,27 @@ private:
   bool abi_check_;
   /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
+  /** Should the sandbox count the number of instructions executed? */
+  bool count_instructions_;
+  /** Should the sandbox use latency to weight the instructions? */
+  bool use_latency_;
 
-  /** Optimization flag, do any of the auxiliary functions write memory? */
-  bool aux_fxn_read_only_;
-  /** Optimization flag, does the main function write memory? */
-  bool main_fxn_read_only_;
+  /** Assembler, no sense in always creating these. */
+  x64asm::Assembler assm_;
+  /** Linker, no sense in always creating these either. */
+  x64asm::Linker lnkr_;
 
   /** I/O pairs. These are pointers to simplify vector reallocations. */
   std::vector<IoPair*> io_pairs_;
 
   /** Global callback to invoke before any line is executed. */
   std::pair<StateCallback, void*> global_before_;
+  /** Before callbacks on a per-line basis */
+  std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>> before_;
   /** Global callback to invoke after any line is executed. */
   std::pair<StateCallback, void*> global_after_;
-  /** Callbacks to invoke before a line is executed. */
-  std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> before_;
-  /** Callbacks to invokes after a line is exeucted. */
-  std::unordered_map<size_t, std::vector<std::pair<StateCallback, void*>>> after_;
-
-  /** Assembler, no sense in always creating these. */
-  x64asm::Assembler assm_;
-  /** Linker, no sense in always creating these either. */
-  x64asm::Linker lnkr_;
+  /** After callbacks on a per-line basis */
+  std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>> after_;
 
   /** Reusable labels... if left unchecked, endless sandboxing will deplete memory */
   std::vector<x64asm::Label> labels_;
@@ -221,6 +266,8 @@ private:
 
   /** How many more jumps can be made before SIGKILL? */
   size_t jumps_remaining_;
+  /** How many instructions/cycles have passed? */
+  uint64_t instruction_count_;
 
   /** Pointer to the user's state */
   void* out_;
@@ -232,6 +279,8 @@ private:
   void* cpu2out_;
   /** Pointer to a function for mapping virtual addresses to physical addresses */
   void* map_addr_;
+  /** Address of the main function's entrypoint */
+  void* entrypoint_;
 
   /** The user's current %rsp */
   uint64_t user_rsp_;
@@ -240,23 +289,26 @@ private:
   /** STOKE's %rsp */
   uint64_t stoke_rsp_;
 
+  /** Pointer to the current function buffer */
+  x64asm::Function* fxn_;
   /** Pointer to the harness function */
   x64asm::Function harness_;
   /** Pointer to the signal trap function */
   x64asm::Function signal_trap_;
   /** Functions that the code may invoke at runtime. Pointers to simplify reallocation. */
-  std::vector<x64asm::Function*> aux_fxns_;
-  /** Auxiliary function source (saved in case recompilation is necessary). */
-  std::vector<Cfg> aux_fxns_src_;
-  /** Function buffer for jit assembling codes; the main function */
-  x64asm::Function fxn_;
-  /** Main function source (saved in case recompilation is necessary). */
-  Cfg fxn_src_;
+  cpputil::CppUtilMap<std::unordered_map<x64asm::Label, x64asm::Function*>> fxns_;
+  /** Pointer to the current main function */
+  x64asm::Label main_fxn_;
 
-  /** Recompiles just the main function */
-  void recompile_main();
-  /** Recompiles main and auxiliary functions from saved source */
-  void recompile_all();
+  /** Auxiliary function source (saved in case recompilation is necessary). */
+  cpputil::CppUtilMap<std::unordered_map<x64asm::Label, Cfg>> fxns_src_;
+  /** Flags that track whether a function is memory read only */
+  cpputil::CppUtilMap<std::unordered_map<x64asm::Label, bool>> fxns_read_only_;
+  /** The logical and of all of the elements in fxns_read_only_ */
+  bool all_fxns_read_only_;
+
+  /** Check for abi violations between input and output states */
+  bool check_abi(const IoPair& iop) const;
 
   /** Returns a register that doesn't appear in an instruction or the scratch space. */
   size_t get_unused_reg(const x64asm::Instruction& instr) const;
@@ -283,8 +335,10 @@ private:
     return labels_[next_label_++];
   }
 
-  /** Check for abi violations between input and output states */
-  bool check_abi(const IoPair& iop) const;
+  /** Recompiles a function */
+  void recompile(const Cfg& cfg);
+  /** Recompiles every function */
+  void recompile();
 
   /** Assembles the harness function */
   x64asm::Function emit_harness();
@@ -302,12 +356,16 @@ private:
 
   /** Check whether a function is read only wrt memory */
   bool is_mem_read_only(const Cfg& cfg) const;
-  /** Assembles the user's function */
-  void emit_function(const Cfg& cfg, bool is_main);
+  /** Assembles the user's function into a buffer */
+  void emit_function(const Cfg& cfg, x64asm::Function* fxn);
   /** Emit a single callback for this line. */
   void emit_callback(const std::pair<StateCallback, void*>& cb, size_t line);
+  /** Emit all before callbacks */
+  void emit_before(const x64asm::Label& fxn, size_t line);
+  /** Emit all after callbacks */
+  void emit_after(const x64asm::Label& fxn, size_t line);
   /** Emit an instruction (and possibly sandbox memory). */
-  void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& exit);
+  void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& fxn, const x64asm::Label& exit);
   /** Emit a memory instruction. */
   void emit_memory_instruction(const x64asm::Instruction& instr);
   /** Emit a jump instruction */
@@ -316,6 +374,8 @@ private:
   void emit_call(const x64asm::Instruction& instr);
   /** Emit the RET instruction. */
   void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
+  /** Emit code to increment the instruction count */
+  void emit_count_instructions(const Cfg& cfg, Cfg::id_type bb);
 
   /** Special case for emitting bt instructions that read from memory. */
   void emit_mem_bt(const x64asm::Instruction& instr);
