@@ -148,6 +148,7 @@ Sandbox& Sandbox::clear_callbacks() {
 }
 
 Sandbox& Sandbox::run(size_t index) {
+	assert(num_functions() > 0);
   assert(index < num_inputs());
   auto io = io_pairs_[index];
 
@@ -240,6 +241,7 @@ void Sandbox::recompile(const Cfg& cfg) {
   }
 
   // Relink everything
+	// @todo This isn't quite right since linking isn't pure
   lnkr_.start();
   for (auto f : fxns_) {
     lnkr_.link(*(f.second));
@@ -301,7 +303,7 @@ Function Sandbox::emit_harness() {
   // At this point %rsp is all we have to work with
   // The rest of the user's state must be restored prior to the call
   assm_.push(rax);
-  assm_.mov(rax, Moffs64(entrypoint_));
+  assm_.mov(rax, Moffs64(&entrypoint_));
   assm_.xchg(rax, M64(rsp));
   assm_.call(M64(rsp));
   assm_.lea(rsp, M64(rsp, Imm32(8)));
