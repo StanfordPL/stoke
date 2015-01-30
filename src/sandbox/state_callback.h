@@ -15,12 +15,14 @@
 #ifndef STOKE_SRC_SANDBOX_STATE_CALLBACK_H
 #define STOKE_SRC_SANDBOX_STATE_CALLBACK_H
 
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
 
 namespace stoke {
 
 /** POD-datatype passed to callbacks by sandbox */
 struct StateCallbackData {
+	const x64asm::Code& code;
   const size_t line;
   const CpuState& state;
 };

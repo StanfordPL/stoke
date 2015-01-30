@@ -378,7 +378,7 @@ private:
   /** Assembles the user's function into a buffer */
   void emit_function(const Cfg& cfg, x64asm::Function* fxn);
   /** Emit a single callback for this line. */
-  void emit_callback(const std::pair<StateCallback, void*>& cb, size_t line);
+  void emit_callback(const std::pair<StateCallback, void*>& cb, const x64asm::Label& fxn, size_t line);
   /** Emit all before callbacks */
   void emit_before(const x64asm::Label& fxn, size_t line);
   /** Emit all after callbacks */
