@@ -47,19 +47,16 @@ bool Sandbox::is_supported(Opcode o) {
   return unsupported_.find(o) == unsupported_.end();
 }
 
-Sandbox::Sandbox() : fxn_(32 * 1024),
-  fxn_src_{{{LABEL_DEFN, {Label{".main"}}}, {RET}}, RegSet::empty(), RegSet::empty()} {
-  fxn_.reserve(32 * 1024);
-  init_labels();
-
+Sandbox::Sandbox() {
   set_abi_check(true);
   set_max_jumps(16);
 
-  aux_fxn_read_only_ = true;
-  aux_fxn_read_only_ = true;
-
+  init_labels();
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
+
+	clear_inputs();
+	clear_functions();
 
   static bool once = false;
   if (!once) {
@@ -101,102 +98,66 @@ Sandbox& Sandbox::clear_inputs() {
   return *this;
 }
 
-Sandbox& Sandbox::compile_function(const Cfg& cfg) {
-  // Update the read only tracker for aux functions
-  aux_fxn_read_only_ &= is_mem_read_only(cfg);
+Sandbox& Sandbox::insert_function(const Cfg& cfg) {
+	// Look up the name of this function
+	const auto label = cfg.get_code()[0].get_operand<Label>(0);
 
-  // Compile the aux fxn and record its source
-  emit_function(cfg, false);
-  aux_fxns_.emplace_back(new x64asm::Function(fxn_));
-  aux_fxns_src_.push_back(cfg);
+	// If this is the first time we've seen this function, allocate a buffer
+	if (!contains_function(label)) {
+  	fxns_[label] = new x64asm::Function(32 * 1024);
+	}
+	// If this is the only function it becomes main by default
+	if (num_functions() == 1) {
+		set_entrypoint(label);
+	}
 
-  // Main may or may not work now (and we've clobbered fxn_ anyway)
-  compile(fxn_src_);
+	// Now that all of the big awful state is set up, just do a recompile
+	recompile(cfg);	
 }
 
 Sandbox& Sandbox::clear_functions() {
-  // Reset the read only tracker for aux functions
-  aux_fxn_read_only_ = true;
-
   // Clear the aux fxns and their source
-  for (auto fxn : aux_fxns_) {
-    delete fxn;
+  for (auto fxn : fxns_) {
+    delete fxn.second;
   }
-  aux_fxns_.clear();
-  aux_fxns_src_.clear();
-
-  // Recompile main which may not work anymore
-  compile(fxn_src_);
+  fxns_.clear();
+  fxns_src_.clear();
+	fxns_read_only_.clear();
+	all_fxns_read_only_ = true;
 
   return *this;
 }
 
 Sandbox& Sandbox::insert_before(StateCallback cb, void* arg) {
   global_before_ = {cb, arg};
-  recompile_all();
+  recompile();
   return *this;
 }
 
 Sandbox& Sandbox::insert_after(StateCallback cb, void* arg) {
   global_after_ = {cb, arg};
-  recompile_all();
-  return *this;
-}
-
-Sandbox& Sandbox::insert_before(size_t line, StateCallback cb, void* arg) {
-  before_[line].push_back(std::make_pair(cb, arg));
-  recompile_main();
-  return *this;
-}
-
-Sandbox& Sandbox::insert_after(size_t line, StateCallback cb, void* arg) {
-  after_[line].push_back(std::make_pair(cb, arg));
-  recompile_main();
+  recompile();
   return *this;
 }
 
 Sandbox& Sandbox::clear_callbacks() {
   global_before_ = {nullptr, nullptr};
   global_after_ = {nullptr, nullptr};
-  before_.clear();
-  after_.clear();
-
-  recompile_all();
-
+  recompile();
   return *this;
 }
 
-size_t Sandbox::num_callbacks() const {
-  return (global_before_.first != nullptr ? 1 : 0) +
-         (global_after_.first != nullptr ? 1 : 0) +
-         before_.size() + after_.size();
-}
-
-void Sandbox::compile_main(const Cfg& cfg) {
-  main_fxn_read_only_ = is_mem_read_only(cfg);
-  emit_function(cfg, true);
-  fxn_src_ = cfg;
-
-  // Relink everything
-  lnkr_.start();
-  lnkr_.link(fxn_);
-  for (auto f : aux_fxns_) {
-    lnkr_.link(*f);
-  }
-  lnkr_.finish();
-}
-
-void Sandbox::run_one(size_t index) {
-  assert(index < size());
+Sandbox& Sandbox::run(size_t index) {
+  assert(index < num_inputs());
   auto io = io_pairs_[index];
 
   // Don't bother executing testcases that are in error states
   if (io->in_.code != ErrorCode::NORMAL) {
-    return;
+    return *this;
   }
 
   // Optimization: In read only mem mode, we don't need to reset output memory
-  if (!aux_fxn_read_only_ || !main_fxn_read_only_) {
+  if (!all_fxns_read_only_) {
     io->out_.stack.copy_defined(io->in_.stack);
     io->out_.heap.copy_defined(io->in_.heap);
   }
@@ -210,6 +171,7 @@ void Sandbox::run_one(size_t index) {
   out2cpu_ = io->out2cpu_.get_entrypoint();
   cpu2out_ = io->cpu2out_.get_entrypoint();
   map_addr_ = io->map_addr_.get_entrypoint();
+	entrypoint_ = fxns_[main_fxn_]->get_entrypoint();
 
   // Initialize state related to %rsp tracking
   user_rsp_ = io->in_.gp[rsp].get_fixed_quad(0);
@@ -229,33 +191,26 @@ void Sandbox::run_one(size_t index) {
   if (abi_check_ && !check_abi(*io)) {
     io->out_.code = ErrorCode::SIGSEGV_;
   }
+
+	return *this;
 }
 
-void Sandbox::run_all() {
+Sandbox& Sandbox::run() {
   for (size_t i = 0, ie = size(); i < ie; ++i) {
-    run_one(i);
+    run(i);
   }
+	return *this;
 }
 
-void Sandbox::recompile_main() {
-  compile(fxn_src_);
-}
-
-void Sandbox::recompile_all() {
-  // Clear old aux functions
-  for (auto fxn : aux_fxns_) {
-    delete fxn;
+bool Sandbox::check_abi(const IoPair& iop) const {
+  for (const auto& r : {
+  rbx, rbp, rsp, r12, r13, r14, r15
+}) {
+    if (iop.in_.gp[r].get_fixed_quad(0) != iop.out_.gp[r].get_fixed_quad(0)) {
+      return false;
+    }
   }
-  aux_fxns_.clear();
-
-  // Recompile aux functions
-  for (const auto& fxn : aux_fxns_src_) {
-    emit_function(fxn, false);
-    aux_fxns_.emplace_back(new x64asm::Function(fxn_));
-  }
-
-  // Recompile main
-  compile(fxn_src_);
+  return true;
 }
 
 size_t Sandbox::get_unused_reg(const Instruction& instr) const {
@@ -269,15 +224,36 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
   return idx + 4;
 }
 
-bool Sandbox::check_abi(const IoPair& iop) const {
-  for (const auto& r : {
-  rbx, rbp, rsp, r12, r13, r14, r15
-}) {
-    if (iop.in_.gp[r].get_fixed_quad(0) != iop.out_.gp[r].get_fixed_quad(0)) {
-      return false;
-    }
+void Sandbox::recompile(const Cfg& cfg) {
+	// Lookup the name of this function
+	const auto label = cfg.get_code()[0].get_operand<Label>(0);
+
+  // Compile the function and record its source
+  emit_function(cfg, fxns_[label]);
+  fxns_src_.insert({label, cfg});
+
+	// Update the read only memory tracker
+  fxns_read_only_[label] = is_mem_read_only(cfg);
+	all_fxns_read_only_ = true;
+	for (const auto& r : fxns_read_only_) {
+		all_fxns_read_only_ &= r.second;
+	}
+
+	// Relink everything
+  lnkr_.start();
+  for (auto f : fxns_) {
+    lnkr_.link(*(f.second));
   }
-  return true;
+  lnkr_.finish();
+}
+
+void Sandbox::recompile() {
+	// This could be marginally faster if we expanded it since there's no reason
+	// to iterate over all_fxns_read_only_ every interation, but we do so much
+	// else it's probably not worth saving this little bit
+	for (const auto& fxn : fxns_src_) {
+		recompile(fxn.second);
+	}
 }
 
 // Main entrypoint for sandboxed code.
@@ -321,11 +297,11 @@ Function Sandbox::emit_harness() {
   assm_.mov(rax, Moffs64(&in2cpu_));
   assm_.call(rax);
 
-  // Load the user's function onto the stack and invoke it
+  // Load the main function onto the stack and invoke it
   // At this point %rsp is all we have to work with
   // The rest of the user's state must be restored prior to the call
   assm_.push(rax);
-  assm_.mov((R64)rax, Imm64(fxn_.get_entrypoint()));
+  assm_.mov(rax, Moffs64(entrypoint_));
   assm_.xchg(rax, M64(rsp));
   assm_.call(M64(rsp));
   assm_.lea(rsp, M64(rsp, Imm32(8)));
@@ -662,7 +638,7 @@ bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
 // Arguments:
 //   <none>
 
-void Sandbox::emit_function(const Cfg& cfg, bool is_main) {
+void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   // Invariant: The first line of a function must be a label with its name
   assert(cfg.get_code()[0].is_label_defn());
 
@@ -678,7 +654,7 @@ void Sandbox::emit_function(const Cfg& cfg, bool is_main) {
     }
   }
 
-  assm_.start(fxn_);
+  assm_.start(*fxn);
 
   // The label that begins a function must precede instrumentation
   assm_.assemble(cfg.get_code()[instrs[0]]);
@@ -695,20 +671,10 @@ void Sandbox::emit_function(const Cfg& cfg, bool is_main) {
     const auto& instr = cfg.get_code()[idx];
 
     // Emit instruction and optionally, callbacks
-    if (is_main && !before_.empty()) {
-      for (const auto& cb : before_[idx]) {
-        emit_callback(cb, idx);
-      }
-    }
     if (global_before_.first != nullptr) {
       emit_callback(global_before_, idx);
     }
     emit_instruction(instr, exit);
-    if (is_main && !after_.empty())  {
-      for (const auto& cb : after_[idx]) {
-        emit_callback(cb, idx);
-      }
-    }
     if (global_after_.first != nullptr) {
       emit_callback(global_after_, idx);
     }
