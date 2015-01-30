@@ -35,8 +35,8 @@ void sigfpe_handler(int signum, siginfo_t* si, void* data) {
   siglongjmp(buf_, 1);
 }
 
-void callback_wrapper(StateCallback cb, size_t line, CpuState* current, void* arg) {
-  cb({line, *current}, arg);
+void callback_wrapper(StateCallback cb, Code* code, size_t line, CpuState* current, void* arg) {
+  cb({*code, line, *current}, arg);
 }
 
 } // namespace
@@ -713,7 +713,7 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   assm_.finish();
 }
 
-void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, size_t line) {
+void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, const Label& fxn, size_t line) {
   // Reload the STOKE %rsp, we're about to call some functions
   emit_load_stoke_rsp();
 
@@ -724,12 +724,18 @@ void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, size_t line) {
   assm_.call(M64(rsp));
   assm_.lea(rsp, M64(rsp, Imm32(8)));
 
-  // Invoke the callback through the callback wrapper
+  // rdi = callback function pointer
   assm_.mov(rdi, Imm64(cb.first));
-  assm_.mov(rsi, Imm64(line));
+	// rsi = pointer to current code
+	assm_.mov(rsi, Imm64(&(fxns_src_[fxn]->get_code())));
+	// rdx = line number
+  assm_.mov(rdx, Imm64(line));
+	// rcx = pointer to current state
   assm_.mov(rax, Moffs64(&out_));
-  assm_.mov(rdx, rax);
-  assm_.mov(rcx, Imm64(cb.second));
+  assm_.mov(rcx, rax);
+	// r8 = pointer to callback arg
+  assm_.mov(r8, Imm64(cb.second));
+	// rax = callback wrapper call
   assm_.mov((R64)rax, Imm64(&callback_wrapper));
   assm_.call(rax);
 
@@ -744,7 +750,7 @@ void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, size_t line) {
 
 void Sandbox::emit_before(const Label& label, size_t line) {
   if (global_before_.first != nullptr) {
-    emit_callback(global_before_, line);
+    emit_callback(global_before_, label, line);
   }
   const auto i = before_.find(label);
   if (i == before_.end()) {
@@ -754,12 +760,12 @@ void Sandbox::emit_before(const Label& label, size_t line) {
   if (j == i->second.end()) {
     return;
   }
-  emit_callback(j->second, line);
+  emit_callback(j->second, label, line);
 }
 
 void Sandbox::emit_after(const Label& label, size_t line) {
   if (global_after_.first != nullptr) {
-    emit_callback(global_after_, line);
+    emit_callback(global_after_, label, line);
   }
   const auto i = after_.find(label);
   if (i == after_.end()) {
@@ -769,7 +775,7 @@ void Sandbox::emit_after(const Label& label, size_t line) {
   if (j == i->second.end()) {
     return;
   }
-  emit_callback(j->second, line);
+  emit_callback(j->second, label, line);
 }
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, const Label& exit) {
