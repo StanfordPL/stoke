@@ -254,6 +254,8 @@ private:
   Cost size_performance(const Cfg& cfg) const;
   /** Evaluate performance by summing expected latencies. */
   Cost latency_performance(const Cfg& cfg) const;
+  /** Evaluate performance by instrumenting sandbox. */
+  Cost measured_performance(const Cfg& cfg) const;
   /** Add user-defined performance implementation here ... */
   Cost extension_performance(const Cfg& cfg) const;
 };

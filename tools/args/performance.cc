@@ -23,7 +23,7 @@ Heading& performance_heading =
 
 ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>& perf_arg =
   ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
-  .usage("(none|size|latency|extension)")
+  .usage("(none|size|latency|measured|extension)")
   .description("Performance definition")
   .default_val(PerformanceTerm::LATENCY);
 
