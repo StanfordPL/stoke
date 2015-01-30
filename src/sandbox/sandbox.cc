@@ -726,16 +726,16 @@ void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, const Label& f
 
   // rdi = callback function pointer
   assm_.mov(rdi, Imm64(cb.first));
-	// rsi = pointer to current code
-	assm_.mov(rsi, Imm64(&(fxns_src_[fxn]->get_code())));
-	// rdx = line number
+  // rsi = pointer to current code
+  assm_.mov(rsi, Imm64(&(fxns_src_[fxn]->get_code())));
+  // rdx = line number
   assm_.mov(rdx, Imm64(line));
-	// rcx = pointer to current state
+  // rcx = pointer to current state
   assm_.mov(rax, Moffs64(&out_));
   assm_.mov(rcx, rax);
-	// r8 = pointer to callback arg
+  // r8 = pointer to callback arg
   assm_.mov(r8, Imm64(cb.second));
-	// rax = callback wrapper call
+  // rax = callback wrapper call
   assm_.mov((R64)rax, Imm64(&callback_wrapper));
   assm_.call(rax);
 

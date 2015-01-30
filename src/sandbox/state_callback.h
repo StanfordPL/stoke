@@ -22,7 +22,7 @@ namespace stoke {
 
 /** POD-datatype passed to callbacks by sandbox */
 struct StateCallbackData {
-	const x64asm::Code& code;
+  const x64asm::Code& code;
   const size_t line;
   const CpuState& state;
 };
