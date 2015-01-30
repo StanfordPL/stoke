@@ -53,13 +53,9 @@ Sandbox::Sandbox() {
   set_count_instructions(false);
   set_use_latency(false);
 
-  init_labels();
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
-
-  clear_inputs();
-  clear_callbacks();
-  clear_functions();
+	reset();
 
   static bool once = false;
   if (!once) {
@@ -106,26 +102,35 @@ Sandbox& Sandbox::insert_function(const Cfg& cfg) {
   assert(cfg.get_code()[0].is_label_defn());
   const auto label = cfg.get_code()[0].get_operand<Label>(0);
 
-  // If this is the first time we've seen this function, allocate a buffer
+  // If this is the first time we've seen this function, allocate state
+	// Otherwise just replace what's there
   if (!contains_function(label)) {
     fxns_[label] = new x64asm::Function(32 * 1024);
-  }
+		fxns_src_[label] = new Cfg(cfg);
+  	recompile(cfg);
+  } else {
+		delete fxns_src_[label];
+		fxns_src_[label] = new Cfg(cfg);
+  	recompile(cfg);
+	}
+
   // If this is the only function it becomes main by default
   if (num_functions() == 1) {
     set_entrypoint(label);
   }
-
-  // Now that all of the big awful state is set up, just do a recompile
-  recompile(cfg);
 }
 
 Sandbox& Sandbox::clear_functions() {
-  // Clear the aux fxns and their source
   for (auto fxn : fxns_) {
     delete fxn.second;
   }
   fxns_.clear();
+
+	for (auto fxn : fxns_src_) {
+		delete fxn.second;
+	}
   fxns_src_.clear();
+
   fxns_read_only_.clear();
   all_fxns_read_only_ = true;
 
@@ -141,7 +146,7 @@ Sandbox& Sandbox::insert_before(StateCallback cb, void* arg) {
 Sandbox& Sandbox::insert_before(const Label& l, size_t line, StateCallback cb, void* arg) {
   assert(contains_function(l));
   before_[l][line] = {cb, arg};
-  recompile(fxns_src_.find(l)->second);
+  recompile(*get_function(l));
 }
 
 Sandbox& Sandbox::insert_after(StateCallback cb, void* arg) {
@@ -153,7 +158,7 @@ Sandbox& Sandbox::insert_after(StateCallback cb, void* arg) {
 Sandbox& Sandbox::insert_after(const Label& l, size_t line, StateCallback cb, void* arg) {
   assert(contains_function(l));
   after_[l][line] = {cb, arg};
-  recompile(fxns_src_.find(l)->second);
+  recompile(*get_function(l));
 }
 
 Sandbox& Sandbox::clear_callbacks() {
@@ -249,12 +254,11 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
 }
 
 void Sandbox::recompile(const Cfg& cfg) {
-  // Lookup the name of this function
-  const auto label = cfg.get_code()[0].get_operand<Label>(0);
+	// Grab the name of this function
+	const auto& label = cfg.get_code()[0].get_operand<Label>(0);
 
   // Compile the function and record its source
   emit_function(cfg, fxns_[label]);
-  fxns_src_.insert({label, cfg});
 
   // Update the read only memory tracker
   fxns_read_only_[label] = is_mem_read_only(cfg);
@@ -278,7 +282,7 @@ void Sandbox::recompile() {
   // to iterate over all_fxns_read_only_ every interation, but we do so much
   // else it's probably not worth saving this little bit
   for (const auto& fxn : fxns_src_) {
-    recompile(fxn.second);
+    recompile(*fxn.second);
   }
 }
 
