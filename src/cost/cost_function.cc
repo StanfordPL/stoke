@@ -539,13 +539,10 @@ Cost CostFunction::measured_performance(const Cfg& cfg) const {
   Cost latency = 0;
   Cost tc_count = 0;
 
-  std::cout << "__________" << std::endl;
   for(auto i = sandbox_->output_begin(), ie = sandbox_->output_end(); i != ie; ++i) {
-    std::cout << "Measured: " << i->latency_seen << endl;
     latency += i->latency_seen;
     tc_count++;
   }
-  std::cout << tc_count << " testcases." << endl;
 
   return latency/tc_count;
 }
