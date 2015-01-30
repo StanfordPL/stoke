@@ -146,14 +146,14 @@ public:
   /** Flag labels allocated after this call as disposable. */
   Sandbox& start_reusing_labels() {
     label_checkpoint_ = next_label_;
-		return *this;
+    return *this;
   }
   /** Start recycling any labels that were allocated since the last call to
     start_reusing_labels(); invalidates EVERYTHING that was sandboxed in
     the interim. Make sure you know what you're doing. */
   Sandbox& start_recycling_labels() {
     next_label_ = label_checkpoint_;
-		return *this;
+    return *this;
   }
 
   /** @deprecated */
