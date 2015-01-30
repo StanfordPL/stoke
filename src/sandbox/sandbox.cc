@@ -50,8 +50,8 @@ bool Sandbox::is_supported(Opcode o) {
 Sandbox::Sandbox() {
   set_abi_check(true);
   set_max_jumps(16);
-	set_count_instructions(false);
-	set_use_latency(false);
+  set_count_instructions(false);
+  set_use_latency(false);
 
   init_labels();
   harness_ = emit_harness();
@@ -842,10 +842,10 @@ void Sandbox::emit_count_instruction(const Instruction& instr) {
   if(instr.is_label_defn() || instr.is_nop())
     return;
 
-	assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
   assm_.mov((R64)rax, Imm64(&instruction_count_));
-	assm_.lea(rax, M64(rax, Imm32(1)));
-	assm_.mov(rax, Moffs64(&scratch_[rax]));
+  assm_.lea(rax, M64(rax, Imm32(1)));
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
 
 void Sandbox::emit_memory_instruction(const Instruction& instr) {
