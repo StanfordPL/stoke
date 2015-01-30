@@ -56,7 +56,7 @@ Sandbox::Sandbox() {
   signal_trap_ = emit_signal_trap();
 
   clear_inputs();
-	clear_callbacks();
+  clear_callbacks();
   clear_functions();
 
   static bool once = false;
@@ -137,9 +137,9 @@ Sandbox& Sandbox::insert_before(StateCallback cb, void* arg) {
 }
 
 Sandbox& Sandbox::insert_before(const Label& l, size_t line, StateCallback cb, void* arg) {
-	assert(contains_function(l));
-	before_[l][line] = {cb, arg};
-	recompile(fxns_src_.find(l)->second);
+  assert(contains_function(l));
+  before_[l][line] = {cb, arg};
+  recompile(fxns_src_.find(l)->second);
 }
 
 Sandbox& Sandbox::insert_after(StateCallback cb, void* arg) {
@@ -149,16 +149,16 @@ Sandbox& Sandbox::insert_after(StateCallback cb, void* arg) {
 }
 
 Sandbox& Sandbox::insert_after(const Label& l, size_t line, StateCallback cb, void* arg) {
-	assert(contains_function(l));
-	after_[l][line] = {cb, arg};
-	recompile(fxns_src_.find(l)->second);
+  assert(contains_function(l));
+  after_[l][line] = {cb, arg};
+  recompile(fxns_src_.find(l)->second);
 }
 
 Sandbox& Sandbox::clear_callbacks() {
   global_before_ = {nullptr, nullptr};
-	before_.clear();
+  before_.clear();
   global_after_ = {nullptr, nullptr};
-	after_.clear();
+  after_.clear();
   recompile();
   return *this;
 }
@@ -258,7 +258,7 @@ void Sandbox::recompile(const Cfg& cfg) {
 
   // Relink everything
   // @todo This isn't quite right since linking isn't pure.
-	// See x64asm issue #138. Once that's closed, we can remove this comment.
+  // See x64asm issue #138. Once that's closed, we can remove this comment.
   lnkr_.start();
   for (auto f : fxns_) {
     lnkr_.link(*(f.second));
@@ -688,11 +688,11 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
 
     // Emit instruction and callbacks
     if (global_before_.first != nullptr || !before_.empty()) {
-			emit_before(cfg.get_code()[0].get_operand<Label>(0), idx);
+      emit_before(cfg.get_code()[0].get_operand<Label>(0), idx);
     }
     emit_instruction(instr, exit);
     if (global_after_.first != nullptr || !after_.empty()) {
-			emit_after(cfg.get_code()[0].get_operand<Label>(0), idx);
+      emit_after(cfg.get_code()[0].get_operand<Label>(0), idx);
     }
   }
   // Catch for run-away code
@@ -737,33 +737,33 @@ void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, size_t line) {
 }
 
 void Sandbox::emit_before(const Label& label, size_t line) {
-	if (global_before_.first != nullptr) {
-		emit_callback(global_before_, line);
-	}
-	const auto i = before_.find(label);
-	if (i == before_.end()) {
-		return;
-	}
-	const auto j = i->second.find(line);
-	if (j == i->second.end()) {
-		return;
-	}
-	emit_callback(j->second, line);
+  if (global_before_.first != nullptr) {
+    emit_callback(global_before_, line);
+  }
+  const auto i = before_.find(label);
+  if (i == before_.end()) {
+    return;
+  }
+  const auto j = i->second.find(line);
+  if (j == i->second.end()) {
+    return;
+  }
+  emit_callback(j->second, line);
 }
 
 void Sandbox::emit_after(const Label& label, size_t line) {
-	if (global_after_.first != nullptr) {
-		emit_callback(global_after_, line);
-	}
-	const auto i = after_.find(label);
-	if (i == after_.end()) {
-		return;
-	}
-	const auto j = i->second.find(line);
-	if (j == i->second.end()) {
-		return;
-	}
-	emit_callback(j->second, line);
+  if (global_after_.first != nullptr) {
+    emit_callback(global_after_, line);
+  }
+  const auto i = after_.find(label);
+  if (i == after_.end()) {
+    return;
+  }
+  const auto j = i->second.find(line);
+  if (j == i->second.end()) {
+    return;
+  }
+  emit_callback(j->second, line);
 }
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
