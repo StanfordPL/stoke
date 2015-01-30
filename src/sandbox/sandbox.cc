@@ -843,8 +843,9 @@ void Sandbox::emit_count_instruction(const Instruction& instr) {
     return;
 
   assm_.mov(Moffs64(&scratch_[rax]), rax);
-  assm_.mov((R64)rax, Imm64(&instruction_count_));
+  assm_.mov(rax, Moffs64(&instruction_count_));
   assm_.lea(rax, M64(rax, Imm32(1)));
+  assm_.mov(Moffs64(&instruction_count_), rax);
   assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
 
