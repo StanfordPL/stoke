@@ -204,6 +204,9 @@ void Sandbox::run_one(size_t index) {
   // Reset error-related variables
   jumps_remaining_ = max_jumps_;
 
+  // Reset instruction count
+  instruction_count_ = 0;
+
   // Initialize state that the instrumented function relies on
   out_ = &io->out_;
   in2cpu_ = io->in2cpu_.get_entrypoint();
@@ -228,6 +231,11 @@ void Sandbox::run_one(size_t index) {
   // Check for abi violations
   if (abi_check_ && !check_abi(*io)) {
     io->out_.code = ErrorCode::SIGSEGV_;
+  }
+
+  // Save counted number of instructions
+  if(count_instructions_) {
+    io->out_.latency_seen = instruction_count_;
   }
 }
 
@@ -703,6 +711,9 @@ void Sandbox::emit_function(const Cfg& cfg, bool is_main) {
     if (global_before_.first != nullptr) {
       emit_callback(global_before_, idx);
     }
+    if (count_instructions_ && !instr.is_label_defn()) {
+      emit_count_instruction(instr);
+    }
     emit_instruction(instr, exit);
     if (is_main && !after_.empty())  {
       for (const auto& cb : after_[idx]) {
@@ -813,6 +824,28 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
       assm_.assemble(instr);
     }
   }
+}
+
+void Sandbox::emit_count_instruction(const Instruction& instr) {
+
+  if(instr.is_nop())
+    return;
+
+  // Load the STOKE %rsp, we'll need to do some pushing here
+  emit_load_stoke_rsp();
+  // Backup rax and rflags
+  assm_.push(rax);
+  assm_.pushfq();
+
+  // Decrement the jump counter
+  assm_.mov((R64)rax, Imm64(&instruction_count_));
+  assm_.inc(M64(rax));
+
+  // Restore rflags and rax
+  assm_.popfq();
+  assm_.pop(rax);
+  // Reload the user's %rsp
+  emit_load_user_rsp();
 }
 
 void Sandbox::emit_memory_instruction(const Instruction& instr) {
