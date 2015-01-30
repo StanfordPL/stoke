@@ -106,16 +106,16 @@ public:
   size_t num_functions() const {
     return fxns_.size();
   }
-	/** Does a function with this name exist? */
-	bool contains_function(const x64asm::Label& l) {
-		return fxns_.find(l) != fxns_.end();
-	}
+  /** Does a function with this name exist? */
+  bool contains_function(const x64asm::Label& l) {
+    return fxns_.find(l) != fxns_.end();
+  }
 
-	/** Returns a function */
-	function_iterator get_function(const x64asm::Label& l) const {
-		assert(contains(l));
-		return function_iterator(fxns_src_.find(l));
-	}
+  /** Returns a function */
+  function_iterator get_function(const x64asm::Label& l) const {
+    assert(contains(l));
+    return function_iterator(fxns_src_.find(l));
+  }
   /** Iterator over functions */
   function_iterator function_begin() const {
     return fxns_src_.value_cbegin();
@@ -132,12 +132,12 @@ public:
   /** Clears the set of callbacks to invoke during execution. */
   Sandbox& clear_callbacks();
 
-	/** Designates a function as the entrypoint. */
-	Sandbox& set_entrypoint(const x64asm::Label& l) {
-		assert(contains_function(l));
-		main_fxn_ = l;
-		return *this;
-	}
+  /** Designates a function as the entrypoint. */
+  Sandbox& set_entrypoint(const x64asm::Label& l) {
+    assert(contains_function(l));
+    main_fxn_ = l;
+    return *this;
+  }
   /** Run a main function for just one input. */
   Sandbox& run(size_t index);
   /** Run a main function for all inputs. */
@@ -172,46 +172,46 @@ public:
   }
   /** @deprecated */
   void compile(const Cfg& cfg) {
-		insert_function(cfg);
-		set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
+    insert_function(cfg);
+    set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
   }
   /** @deprecated */
   void compile_main(const Cfg& cfg) {
-		insert_function(cfg);
-		set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
-	}
+    insert_function(cfg);
+    set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
+  }
   /** @deprecated */
   Sandbox& insert_before(size_t line, StateCallback cb, void* arg) {
-		return *this;
-	}
+    return *this;
+  }
   /** @deprecated */
   Sandbox& insert_after(size_t line, StateCallback cb, void* arg) {
-		return *this;
-	}
-	/** @deprecated */
-	size_t num_callbacks() const {
-		return 0;
-	}
+    return *this;
+  }
+  /** @deprecated */
+  size_t num_callbacks() const {
+    return 0;
+  }
   /** @deprecated */
   const Cfg& get_main() const {
-		const auto itr = fxns_src_.find(main_fxn_);
-		assert(itr != fxns_src_.end());
-		return itr->second;
+    const auto itr = fxns_src_.find(main_fxn_);
+    assert(itr != fxns_src_.end());
+    return itr->second;
   }
   /** @deprecated  */
   void run(const Cfg& cfg) {
-		insert_function(cfg);
-		set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
+    insert_function(cfg);
+    set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
     run();
   }
   /** @deprecated */
   void run_one(size_t index) {
-		run(index);
-	}
+    run(index);
+  }
   /** @deprecated */
   void run_all() {
-		run();
-	}
+    run();
+  }
 
 private:
   /** Should the sandbox report errors for linux abi violations? */
@@ -255,8 +255,8 @@ private:
   void* cpu2out_;
   /** Pointer to a function for mapping virtual addresses to physical addresses */
   void* map_addr_;
-	/** Address of the main function's entrypoint */
-	void* entrypoint_;
+  /** Address of the main function's entrypoint */
+  void* entrypoint_;
 
   /** The user's current %rsp */
   uint64_t user_rsp_;
@@ -272,16 +272,16 @@ private:
   /** Pointer to the signal trap function */
   x64asm::Function signal_trap_;
   /** Functions that the code may invoke at runtime. Pointers to simplify reallocation. */
-	cpputil::CppUtilMap<std::unordered_map<x64asm::Label, x64asm::Function*>> fxns_;
-	/** Pointer to the current main function */
-	x64asm::Label main_fxn_;
+  cpputil::CppUtilMap<std::unordered_map<x64asm::Label, x64asm::Function*>> fxns_;
+  /** Pointer to the current main function */
+  x64asm::Label main_fxn_;
 
   /** Auxiliary function source (saved in case recompilation is necessary). */
-	cpputil::CppUtilMap<std::unordered_map<x64asm::Label, Cfg>> fxns_src_;
-	/** Flags that track whether a function is memory read only */
-	cpputil::CppUtilMap<std::unordered_map<x64asm::Label, bool>> fxns_read_only_;
-	/** The logical and of all of the elements in fxns_read_only_ */
-	bool all_fxns_read_only_;
+  cpputil::CppUtilMap<std::unordered_map<x64asm::Label, Cfg>> fxns_src_;
+  /** Flags that track whether a function is memory read only */
+  cpputil::CppUtilMap<std::unordered_map<x64asm::Label, bool>> fxns_read_only_;
+  /** The logical and of all of the elements in fxns_read_only_ */
+  bool all_fxns_read_only_;
 
   /** Check for abi violations between input and output states */
   bool check_abi(const IoPair& iop) const;
@@ -311,10 +311,10 @@ private:
     return labels_[next_label_++];
   }
 
-	/** Recompiles a function */
-	void recompile(const Cfg& cfg);
-	/** Recompiles every function */
-	void recompile();
+  /** Recompiles a function */
+  void recompile(const Cfg& cfg);
+  /** Recompiles every function */
+  void recompile();
 
   /** Assembles the harness function */
   x64asm::Function emit_harness();
