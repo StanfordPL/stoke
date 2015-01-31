@@ -38,6 +38,7 @@ public:
     set_k(k_arg);
     set_reduction(reduction_arg);
     set_performance_term(perf_arg);
+    set_max_size_penalty(max_size_bytes, max_size_base_penalty, max_size_linear_penalty);
   }
 };
 
