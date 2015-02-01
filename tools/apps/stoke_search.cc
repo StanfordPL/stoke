@@ -85,6 +85,10 @@ void sep(ostream& os) {
   os << endl << endl;
 }
 
+static Cost lowest_cost = 0;
+static Cost lowest_correct = 0;
+static Cost starting_cost = 0;
+
 void pcb(const ProgressCallbackData& data, void* arg) {
   ostream& os = *((ostream*)arg);
 
@@ -100,6 +104,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
   tforms.remove_unreachable(best_yet);
   tforms.remove_nop(best_yet);
 
+  lowest_cost = data.state.best_yet_cost;
   ofs << "Lowest Cost Discovered (" << data.state.best_yet_cost << ")" << endl;
   ofs << endl;
   ofs << best_yet.get_code();
@@ -109,6 +114,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
   tforms.remove_unreachable(best_correct);
   tforms.remove_nop(best_correct);
 
+  lowest_correct = data.state.best_correct_cost;
   ofs << "Lowest Known Correct Cost (" << data.state.best_correct_cost << ")" << endl;
   ofs << endl;
   ofs << best_correct.get_code();
@@ -130,10 +136,18 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 
   os << "Statistics Update: " << endl;
   os << endl;
-  os << "Iterations:   " << data.iterations << endl;
-  os << "Elapsed Time: " << data.elapsed.count() << "s" << endl;
-  os << "Iterations/s: " << (data.iterations / data.elapsed.count()) << endl;
+  os << "Iterations:          " << data.iterations << endl;
+  os << "Elapsed Time:        " << data.elapsed.count() << "s" << endl;
+  os << "Iterations/s:        " << (data.iterations / data.elapsed.count()) << endl;
   os << endl;
+  os << "Starting cost:       " << starting_cost << endl;
+  os << "Lowest cost:         " << lowest_cost << endl;
+  if(lowest_correct) {
+    os << "Lowest correct cost: " << lowest_correct << endl;
+  } else {
+    os << "No correct rewrite found." << endl;
+  }
+
 
   ofilterstream<Column> ofs(os);
   ofs.filter().padding(5);
@@ -224,8 +238,23 @@ int main(int argc, char** argv) {
     CostFunctionGadget fxn(target, &training_sb);
 
     Console::msg() << "Running search:" << endl << endl;
-    search.set_timeout_itr(timeout_itr_arg);
     state = SearchStateGadget(aux_fxns);
+
+    // Run the initial cost function
+    // Used by statistics output and a sanity check
+    auto initial_cost = fxn(state.current);
+    if(!initial_cost.first && init_arg == Init::TARGET) {
+      Console::warn() << "Initial state has non-zero correctness cost with --init target.";
+    }
+    starting_cost = initial_cost.second;
+    lowest_cost = initial_cost.second;
+    if(initial_cost.first) {
+      lowest_correct = initial_cost.second;
+    } else {
+      lowest_correct = 0;
+    }
+
+    search.set_timeout_itr(timeout_itr_arg);
     search.run(target, fxn, init_arg, state, aux_fxns);
 
     if (state.interrupted) {
