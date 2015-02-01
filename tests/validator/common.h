@@ -171,7 +171,7 @@ protected:
     ss << "Counterexample: " << std::endl << cs << std::endl;
     ss << "Sandbox final state: " << std::endl << sandbox_final << std::endl;
     ss << "Validator final state: " << std::endl << validator_final << std::endl;
-    ss << "Sandbox and validator disagree on liveout" << std::endl;
+    ss << "Sandbox and validator disagree on liveout " << cfg_t_->live_outs() << std::endl;
     expect_cpustate_equal_on_liveout(sandbox_final, validator_final, ss.str());
 
   }
@@ -320,7 +320,10 @@ private:
       uint64_t actual_full = actual.gp[*it].get_fixed_quad(0);
       uint64_t expected_full = expect.gp[*it].get_fixed_quad(0);
 
-      uint64_t mask = (1 << (64-bitwidth)) - 1;
+      uint64_t mask = ((uint64_t)1 << bitwidth) - 1;
+      if(bitwidth == 64)
+        mask = -1;
+
       uint64_t actual_masked = actual_full & mask;
       uint64_t expected_masked = expected_full & mask;
 
