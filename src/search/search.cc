@@ -81,7 +81,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   assert(fxn(target).first);
 
   // Configure initial state
-  configure(init, target, fxn, state, aux_fxns);
+  configure(target, fxn, state, aux_fxns);
 
   if (!target.is_sound()) {
     cerr << "ERROR: the target reads undefined values, or leaves live out values undefined!" << endl;
@@ -179,28 +179,11 @@ void Search::stop() {
   give_up_now = true;
 }
 
-void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchState& state, vector<TUnit>& aux_fxn) const {
-  switch (init) {
-  case Init::EMPTY:
-    configure_empty(target, state);
-    break;
-  case Init::ZERO:
-    configure_zero(target, state);
-    break;
-  case Init::TARGET:
-    configure_target(target, state);
-    break;
-  case Init::PREVIOUS:
-    // Does nothing.
-    break;
-  case Init::EXTENSION:
-    configure_extension(target, state);
-    break;
+void Search::configure(const Cfg& target, CostFunction& fxn, SearchState& state, vector<TUnit>& aux_fxn) const {
 
-  default:
-    assert(false);
-    break;
-  }
+  state.current.recompute();
+  state.best_yet.recompute();
+  state.best_correct.recompute();
 
   // add dataflow information about function call targets
   for (const auto& fxn : aux_fxn) {
@@ -228,149 +211,6 @@ void Search::configure(Init init, const Cfg& target, CostFunction& fxn, SearchSt
   assert(state.best_yet_cost <= state.current_cost);
 }
 
-void Search::configure_empty(const Cfg& target, SearchState& state) const {
-  state.current = Cfg({{}}, target.def_ins(), target.live_outs());
-  state.current.get_code().push_back(target.get_code()[0]);
-  for (size_t i = 1, ie = max_instrs_ - 1; i < ie; ++i) {
-    state.current.get_code().push_back({NOP});
-  }
-  state.current.get_code().push_back({RET});
-  state.current.recompute();
 
-  state.best_yet = state.current;
-  state.best_correct = target;
-}
-
-Code Search::find_sound_code(const RegSet& def_ins, const RegSet& live_outs) {
-  auto diff = live_outs;
-  vector<Instruction> code;
-
-  // initialize all general purpose registers
-  for (auto rit = diff.gp_begin(); rit != diff.gp_end(); ++rit) {
-    auto reg = *rit;
-    auto type = reg.type();
-    if (type == Type::R_64 || type == Type::RAX) {
-      code.push_back(Instruction(XOR_R64_R64, {reg, reg}));
-    } else if (type == Type::R_32 || type == Type::EAX) {
-      code.push_back(Instruction(XOR_R32_R32, {reg, reg}));
-    } else if (type == Type::R_16 || type == Type::AX || type == Type::DX) {
-      code.push_back(Instruction(XOR_R16_R16, {reg, reg}));
-    } else if (type == Type::RL || type == Type::AL || type == Type::CL) {
-      code.push_back(Instruction(XOR_RL_RL, {reg, reg}));
-    } else if (type == Type::RH) {
-      code.push_back(Instruction(XOR_RH_RH, {reg, reg}));
-    } else if (type == Type::RB) {
-      code.push_back(Instruction(XOR_RB_RB, {reg, reg}));
-    }
-  }
-
-  // initialize sse registers
-  for (auto rit = diff.sse_begin(); rit != diff.sse_end(); ++rit) {
-    auto reg = *rit;
-    auto type = reg.type();
-    if (type == Type::XMM || type == Type::XMM_0) {
-      code.push_back(Instruction(PXOR_XMM_XMM, {reg, reg}));
-    } else if (type == Type::YMM) {
-      code.push_back(Instruction(VPXOR_YMM_YMM_YMM, {reg, reg, reg}));
-    }
-  }
-
-  // initialize mm registers
-  for (auto rit = diff.mm_begin(); rit != diff.mm_end(); ++rit) {
-    auto reg = *rit;
-    code.push_back(Instruction(PXOR_MM_MM, {reg, reg}));
-  }
-
-  // flags
-  bool regular = false;
-  for (auto rit = diff.flags_begin(); rit != diff.flags_end(); ++rit) {
-    auto reg = *rit;
-    if ((reg == Constants::eflags_of() ||
-         reg == Constants::eflags_zf() ||
-         reg == Constants::eflags_sf() ||
-         reg == Constants::eflags_af() ||
-         reg == Constants::eflags_cf() ||
-         reg == Constants::eflags_pf()) && !regular) {
-      regular = true;
-      code.push_back(Instruction(XOR_R32_R32, {Constants::rax(), Constants::rax()}));
-      code.push_back(Instruction(ADD_R32_IMM32, {Constants::rax(), Imm32(0)}));
-    }
-  }
-
-  // remove statements if possible
-  bool changed = true;
-  while (changed) {
-    changed = false;
-    int i = 0;
-    for (auto it = code.begin(); it != code.end(); ++it, ++i) {
-      vector<Instruction> copy = code;
-      copy.erase(copy.begin()+i);
-      if (Cfg(Code(copy.begin(), copy.end()), def_ins, live_outs).is_sound()) {
-        code = copy;
-        changed = true;
-        break;
-      }
-    }
-  }
-
-  return Code(code.begin(), code.end());
-}
-
-void Search::configure_zero(const Cfg& target, SearchState& state) const {
-  // If nothing is live out in the target, nothing to do
-  if (target.def_ins().contains(target.live_outs())) {
-    configure_empty(target, state);
-    return;
-  }
-
-  state.current = Cfg({{}}, target.def_ins(), target.live_outs());
-  state.current.get_code().push_back(target.get_code()[0]);
-  auto code = find_sound_code(target.def_ins(), target.live_outs());
-  for (const auto& instr : code) {
-    state.current.get_code().push_back(instr);
-  }
-  for (size_t i = code.size(), ie = max_instrs_ - 1; i < ie; ++i) {
-    state.current.get_code().push_back({NOP});
-  }
-  state.current.get_code().push_back({RET});
-  state.current.recompute();
-
-  state.best_yet = state.current;
-  state.best_correct = target;
-}
-
-void Search::configure_target(const Cfg& target, SearchState& state) const {
-  state.current = target;
-  state.best_yet = target;
-  state.best_correct = target;
-}
-
-void Search::configure_extension(const Cfg& target, SearchState& state) const {
-  // Add user-defined logic here ...
-
-  // Invariant 1: Search state should agree with target on boundary conditions.
-  assert(state.current.def_ins() == target.def_ins());
-  assert(state.current.live_outs() == target.live_outs());
-
-  assert(state.best_yet.def_ins() == target.def_ins());
-  assert(state.best_yet.live_outs() == target.live_outs());
-
-  assert(state.best_correct.def_ins() == target.def_ins());
-  assert(state.best_correct.live_outs() == target.live_outs());
-
-  // Invariant 2: Search state must be in a valid state. This function isn't on
-  // a critical path, so this can safely be accomplished by calling
-  state.current.recompute();
-  state.best_yet.recompute();
-  state.best_correct.recompute();
-
-  // Invariant 3: Search state must agree on first instruction. This instruction
-  // must be the label definition that appears in the target.
-  assert(state.current.get_code()[0] == target.get_code()[0]);
-  assert(state.best_yet.get_code()[0] == target.get_code()[0]);
-  assert(state.best_correct.get_code()[0] == target.get_code()[0]);
-
-  // See Search::configure for additional invariants
-}
 
 } // namespace stoke
