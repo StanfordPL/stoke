@@ -147,6 +147,7 @@ void scb(const StatisticsCallbackData& data, void* arg) {
   } else {
     os << "No correct rewrite found." << endl;
   }
+  os << endl;
 
 
   ofilterstream<Column> ofs(os);
@@ -233,12 +234,12 @@ int main(int argc, char** argv) {
   .set_statistics_callback(scb, &scb_arg)
   .set_statistics_interval(stat_int);
 
-  SearchStateGadget state(aux_fxns);
+  SearchStateGadget state(target, aux_fxns);
   for (size_t i = 0; ; ++i) {
     CostFunctionGadget fxn(target, &training_sb);
 
     Console::msg() << "Running search:" << endl << endl;
-    state = SearchStateGadget(aux_fxns);
+    state = SearchStateGadget(target, aux_fxns);
 
     // Run the initial cost function
     // Used by statistics output and a sanity check
