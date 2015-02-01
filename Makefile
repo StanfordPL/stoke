@@ -205,7 +205,7 @@ src/ext/cpputil:
 src/ext/x64asm:
 	git clone git://github.com/eschkufz/x64asm.git src/ext/x64asm && \
 	cd src/ext/x64asm && \
-	git checkout -b 0ed4faf
+	git checkout -b fbddb33 
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
