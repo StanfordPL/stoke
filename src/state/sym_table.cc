@@ -24,6 +24,47 @@ using namespace x64asm;
 
 namespace stoke {
 
+void SymbolTable::insert(const Label& l, uint64_t addr) {
+	assert(!contains(l));
+	table_[l] = addr;
+
+	// If the flat table is empty, simply insert the new element
+	if (flat_table_.empty()) {
+		min_label_ = static_cast<uint64_t>(l);
+		flat_table_.push_back(addr);
+	} 
+	
+	// If this label is above the logical min value
+	// grow the table if necessary and insert the new value
+	else if (l > min_label_) {
+		const auto offset = static_cast<uint64_t>(l) - min_label_;
+		
+		assert(offset+1 < 1024);
+		flat_table_.resize(offset+1);
+		
+		flat_table_[offset] = addr;
+	} 
+	
+	// If this label is below the logical min value
+	// grow the table, insert the new value, and re-index everything
+	else if (l < min_label_) {
+		const auto offset = min_label_ - static_cast<uint64_t>(l);
+		
+		assert(flat_table_.size()+offset < 1024);
+		flat_table_.resize(flat_table_.size() + offset);
+
+		min_label_ = static_cast<uint64_t>(l);
+		for (const auto& sym : table_) {
+			flat_table_[sym.first - min_label_] = sym.second;
+		}
+	} 
+	
+	// Control should never reach here, we never insert duplicates
+	else {
+		assert(false);
+	}
+}
+
 ostream& SymbolTable::write_text(ostream& os) const {
   const auto fmt = os.flags();
 
