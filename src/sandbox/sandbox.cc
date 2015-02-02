@@ -198,8 +198,8 @@ Sandbox& Sandbox::run(size_t index) {
   cpu2out_ = io->cpu2out_.get_entrypoint();
   map_addr_ = io->map_addr_.get_entrypoint();
   entrypoint_ = fxns_[main_fxn_]->get_entrypoint();
-	sym_table_ = io->in_.sym_table.flat_table_.data();
-	min_label_ = -io->in_.sym_table.min_label_;
+  sym_table_ = io->in_.sym_table.flat_table_.data();
+  min_label_ = -io->in_.sym_table.min_label_;
 
   // Initialize state related to %rsp tracking
   user_rsp_ = io->in_.gp[rsp].get_fixed_quad(0);
@@ -682,31 +682,31 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   const auto label = cfg.get_code()[0].get_operand<Label>(0);
   const auto exit = get_label();
 
-	// Keep track of the hex byte offset of every instruction in this function
-	uint64_t hex_offset = 0;
+  // Keep track of the hex byte offset of every instruction in this function
+  uint64_t hex_offset = 0;
 
   // Assemble instructions and add instrumentation for reachable blocks
-	for (Cfg::id_type b = 0, be = cfg.num_blocks(); b < be; ++b) {
-		const auto size = cfg.num_instrs(b);
+  for (Cfg::id_type b = 0, be = cfg.num_blocks(); b < be; ++b) {
+    const auto size = cfg.num_instrs(b);
     const auto begin = size == 0 ? 0 : cfg.get_index(Cfg::loc_type(b, 0));
-		const auto is_reachable = cfg.is_reachable(b);
+    const auto is_reachable = cfg.is_reachable(b);
 
     if (is_reachable && count_instructions_) {
-			emit_count_instructions(cfg, b);
-		}
-		for (auto i = begin, ie = begin + size; i < ie; ++i) {
-			const auto& instr = cfg.get_code()[i];
-			if (cfg.is_reachable(b)) {	
-				if (global_before_.first != nullptr || !before_.empty()) {
-					emit_before(cfg.get_code()[0].get_operand<Label>(0), i);
-				}
-				emit_instruction(instr, label, hex_offset, exit);
-				if (global_after_.first != nullptr || !after_.empty()) {
-					emit_after(cfg.get_code()[0].get_operand<Label>(0), i);
-				}
-			}
-			hex_offset += assm_.hex_size(instr);
-		}
+      emit_count_instructions(cfg, b);
+    }
+    for (auto i = begin, ie = begin + size; i < ie; ++i) {
+      const auto& instr = cfg.get_code()[i];
+      if (cfg.is_reachable(b)) {
+        if (global_before_.first != nullptr || !before_.empty()) {
+          emit_before(cfg.get_code()[0].get_operand<Label>(0), i);
+        }
+        emit_instruction(instr, label, hex_offset, exit);
+        if (global_after_.first != nullptr || !after_.empty()) {
+          emit_after(cfg.get_code()[0].get_operand<Label>(0), i);
+        }
+      }
+      hex_offset += assm_.hex_size(instr);
+    }
   }
   // Catch for run-away code
   emit_signal_trap_call(ErrorCode::SIGSEGV_);
@@ -1015,30 +1015,30 @@ void Sandbox::emit_jump(const Instruction& instr) {
 }
 
 void Sandbox::emit_call(const Instruction& instr, const x64asm::Label& fxn, uint64_t hex_offset) {
-	// Use the stoke stack to save a few registers
-	emit_load_stoke_rsp();
-	assm_.push(rax);
-	assm_.push(rbx);
+  // Use the stoke stack to save a few registers
+  emit_load_stoke_rsp();
+  assm_.push(rax);
+  assm_.push(rbx);
 
-	// Figure out the rip offset at this instruction	
-	assm_.mov(rax, Moffs64(&min_label_));
-	assm_.mov(rbx, rax);
-	assm_.mov((R64)rax, Imm64(static_cast<uint64_t>(fxn)));
-	assm_.lea(rbx, M64(rax, rbx, Scale::TIMES_1));
-	assm_.mov(rax, Moffs64(&sym_table_));
-	assm_.mov(rax, M64(rax, rbx, Scale::TIMES_8));
-	assm_.lea(rax, M64(rax, Imm32(hex_offset)));
+  // Figure out the rip offset at this instruction
+  assm_.mov(rax, Moffs64(&min_label_));
+  assm_.mov(rbx, rax);
+  assm_.mov((R64)rax, Imm64(static_cast<uint64_t>(fxn)));
+  assm_.lea(rbx, M64(rax, rbx, Scale::TIMES_1));
+  assm_.mov(rax, Moffs64(&sym_table_));
+  assm_.mov(rax, M64(rax, rbx, Scale::TIMES_8));
+  assm_.lea(rax, M64(rax, Imm32(hex_offset)));
 
   // Push %rip (which is in rax right now)
-	// Sandboxing the memory dereference will catch infinite recursions
-	emit_load_user_rsp();
+  // Sandboxing the memory dereference will catch infinite recursions
+  emit_load_user_rsp();
   emit_push({PUSH_R64, {rax}});
 
-  // Restore the STOKE %rsp (emit_push will have left the user's rsp in place) 
-	// and put back the values that we saved so the stack is sound
+  // Restore the STOKE %rsp (emit_push will have left the user's rsp in place)
+  // and put back the values that we saved so the stack is sound
   emit_load_stoke_rsp();
-	assm_.pop(rbx);
-	assm_.pop(rax);
+  assm_.pop(rbx);
+  assm_.pop(rax);
 
   // Invoke the call (functions assumes stoke rsp in and out)
   assm_.assemble(instr);
@@ -1046,7 +1046,7 @@ void Sandbox::emit_call(const Instruction& instr, const x64asm::Label& fxn, uint
   emit_load_user_rsp();
 
   // Simulate pop %rip; all that matters is moving %rsp
-	// @todo this is where to put the logic for checking stack smashing segfaults
+  // @todo this is where to put the logic for checking stack smashing segfaults
   assm_.lea(rsp, M64(rsp, Imm32(8)));
 }
 
