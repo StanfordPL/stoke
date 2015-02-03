@@ -26,13 +26,13 @@
 #include <unordered_set>
 
 #include "pin.H"
-extern "C" {
-#include "xed-interface.h"
-}
 
+#include "../../../../cpputil/include/debug/stl_print.h"
 #include "../../../../x64asm/include/x64asm.h"
+#include "tools/ui/console.h"
 #include "src/state/cpu_states.h"
 
+using namespace cpputil;
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
@@ -53,6 +53,8 @@ KNOB<uint64_t> KnobBeginLine(KNOB_MODE_WRITEONCE, "pintool", "b", "0",
     "address to begin logging at");
 KNOB<string> KnobEndLines(KNOB_MODE_WRITEONCE, "pintool", "e", "0", 
     "addresses to stop logging at");
+KNOB<string> KnobHexFile(KNOB_MODE_WRITEONCE, "pintool", "H", "", 
+    "file containing hex offsets for x64asm's encoding of this binary");
 
 /* ============================================================================================= */
 /* Global Variables */
@@ -64,15 +66,13 @@ int tc_remaining_;
 uint64_t begin_line_;
 // Lines to stop recording on in the target function (we always stop on ret)
 unordered_set<uint64_t> end_lines_;
+// x64asm hex offset table for this binary
+unordered_map<string, vector<uint64_t>> x64asm_offsets;
 // Target ostream
 ostream* os_;
 
 // Global symbol table which we populate when instrumenting (callbacks reference this)
 unordered_map<uint64_t, string> symbol_table_;
-
-// Global variables used by xed
-xed_state_t dstate;
-xed_decoded_inst_t xedd;
 
 // State associated with the current testcase
 bool recording_;
@@ -82,6 +82,7 @@ unordered_set<uint64_t> stack_valids_;
 unordered_map<uint64_t, uint8_t> stack_defs_;
 unordered_set<uint64_t> heap_valids_;
 unordered_map<uint64_t, uint8_t> heap_defs_;
+unordered_set<uint64_t> data_valids_;
 unordered_map<uint64_t, uint8_t> data_defs_;
 
 // The set of testcases so far accumulated (last is under construction)
@@ -104,8 +105,7 @@ INT32 Usage() {
 VOID unsupported_check() {
 	// If control hits here and we're recording, we need to quit
 	if (recording_) {
-		cout << "Encountered an unsupported instruction while recording!" << endl;
-		exit(1);
+		Console::error(1) << "Encountered an unsupported instruction while recording!" << endl;
 	}
 }
 
@@ -123,6 +123,7 @@ VOID update_state(ADDRINT rsp) {
 		heap_valids_.clear();
 		heap_defs_.clear();
 
+		data_valids_.clear();
 		data_defs_.clear();
 	}
 	// Otherwise, we've jumped into the target function while recording; increment the call counter
@@ -211,7 +212,9 @@ VOID record_fxn(ADDRINT rip) {
 	}
 
 	const auto itr = symbol_table_.find(rip);
-	assert(itr != symbol_table_.end());
+	if (itr == symbol_table_.end()) {
+		Console::error(1) << "No symbol table information for function at address" << rip << endl;
+	}
 	Label l(itr->second);
 
 	auto& tc = tcs_.back();
@@ -222,25 +225,20 @@ VOID record_fxn(ADDRINT rip) {
 
 /* ============================================================================================= */
 
-VOID record_read(VOID* addr, UINT32 size, bool rip_deref) {
+VOID record_read(VOID* addr, UINT32 size, bool rip_deref, int64_t delta) {
 	// Nothing to do here if we're not recording
   if (!recording_) {
     return;
   }
 
-	// Special case handling for rip offset dereferences
-	if (rip_deref) {
-		for (size_t i = 0; i < size; ++i) {
-			uint64_t ptr = (uint64_t)addr + i;
-			data_defs_[ptr] = *((uint8_t*)ptr);
-		}
-		return;
-	}
-
-	// Common path for stack or heap dereferences
   for (size_t i = 0; i < size; ++i) {
-    uint64_t ptr = (uint64_t)addr + i;
-    if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
+    const auto ptr = (uint64_t)addr + i;
+		if (rip_deref) {
+			if (data_valids_.find(ptr + delta) == data_valids_.end()) {
+				data_valids_.insert(ptr + delta);
+				data_defs_[ptr + delta] = *((uint8_t*)(ptr + delta));
+			}
+		} else if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
       if (stack_valids_.find(ptr) == stack_valids_.end()) {
         stack_valids_.insert(ptr);
         stack_defs_[ptr] = *((uint8_t*)ptr);
@@ -256,19 +254,48 @@ VOID record_read(VOID* addr, UINT32 size, bool rip_deref) {
 
 /* ============================================================================================= */
 
-VOID record_write(VOID* addr, UINT32 size) {
+VOID record_write(VOID* addr, UINT32 size, bool rip_deref, int64_t delta) {
 	// Nothing to do here if we're not recording
   if (!recording_) {
     return;
   }
 
   for (size_t i = 0; i < size; ++i) {
-    uint64_t ptr = (uint64_t)addr + i;
-    if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
+    const auto ptr = (uint64_t)addr + i;
+		if (rip_deref) {
+			data_valids_.insert(ptr+delta);
+		} else if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
       stack_valids_.insert(ptr);
     } else {
       heap_valids_.insert(ptr);
     }
+  }
+}
+
+/* ============================================================================================= */
+
+VOID record_mem(uint64_t default_base, const unordered_set<uint64_t>& valids, 
+		const unordered_map<uint64_t, uint8_t>& defs, Memory& mem) {
+	// Compute bounds
+  uint64_t min_addr = 0xffffffffffffffff;
+  uint64_t max_addr = 0;
+  for (const auto addr : valids) {
+    min_addr = min(min_addr, addr);
+    max_addr = max(max_addr, addr);
+  }
+
+	// Resize memory
+	const auto base = valids.empty() ? default_base : min_addr;
+	const auto size = valids.empty() ? 0 : max_addr - min_addr + 1;
+	mem.resize(base, size);
+
+	// Set values
+  for (const auto addr : valids) {
+    mem.set_valid(addr, true);
+  }
+  for (const auto& def : defs) {
+    mem.set_defined(def.first, true);
+    mem[def.first] = def.second;
   }
 }
 
@@ -287,66 +314,9 @@ VOID end_tc() {
 
 	// Otherwise, we're done. Finish recording this testcase	
 	auto& tc = tcs_.back();
-
-	// First the stack --
-  uint64_t stack_min = 0xffffffffffffffff;
-  uint64_t stack_max = 0;
-  for (const auto addr : stack_valids_) {
-    stack_min = min(stack_min, addr);
-    stack_max = max(stack_max, addr);
-  }
-
-	const auto default_stack = 0x700000000;
-	const auto stack_base = stack_valids_.empty() ? default_stack : stack_min;
-	const auto stack_size = stack_valids_.empty() ? 0 : stack_max - stack_min + 1;
-	tc.stack.resize(stack_base, stack_size);
-
-  for (const auto addr : stack_valids_) {
-    tc.stack.set_valid(addr, true);
-  }
-  for (const auto& def : stack_defs_) {
-    tc.stack.set_defined(def.first, true);
-    tc.stack[def.first] = def.second;
-  }
-
-	// Then the heap --
-  uint64_t heap_min = 0xffffffffffffffff;
-  uint64_t heap_max = 0;
-  for (const auto addr : heap_valids_) {
-    heap_min = min(heap_min, addr);
-    heap_max = max(heap_max, addr);
-  }
-
-	const auto default_heap = 0x100000000;
-	const auto heap_base = heap_valids_.empty() ? default_heap : heap_min;
-	const auto heap_size = heap_valids_.empty() ? 0 : heap_max - heap_min + 1;
-	tc.heap.resize(heap_base, heap_size);
-
-  for (const auto addr : heap_valids_) {
-    tc.heap.set_valid(addr, true);
-  }
-  for (const auto& def : heap_defs_) {
-    tc.heap.set_defined(def.first, true);
-    tc.heap[def.first] = def.second;
-  }
-
-	// And finally the data segment --
-  uint64_t data_min = 0xffffffffffffffff;
-  uint64_t data_max = 0;
-  for (const auto& def : data_defs_) {
-    data_min = min(data_min, def.first);
-    data_max = max(data_max, def.first);
-  }
-	const auto default_data = 0x0;
-	const auto data_base = data_defs_.empty() ? default_data : data_min;
-	const auto data_size = data_defs_.empty() ? 0 : data_max - data_min + 1;
-	tc.data.resize(data_base, data_size);
-
-  for (const auto& def : data_defs_) {
-    tc.data.set_valid(def.first, true);
-    tc.data.set_defined(def.first, true);
-    tc.data[def.first] = def.second;
-  }
+	record_mem(0x700000000, stack_valids_, stack_defs_, tc.stack);
+	record_mem(0x100000000, heap_valids_, heap_defs_, tc.heap);
+	record_mem(0x000000000, data_valids_, data_defs_, tc.data);
 
 	// Stop recording and decrement the quota
 	recording_ = false;
@@ -396,44 +366,21 @@ VOID emit_stop(INS& ins) {
 
 /* ============================================================================================= */
 
-INT32 x64asm_size(INS& ins) {
-	const auto addr = INS_Address(ins);
-	const auto next = INS_NextAddress(ins);
-	const auto size = next-addr;
-
-	unsigned char itext[XED_MAX_INSTRUCTION_BYTES];
-	for (size_t i = 0; i < size; ++i) {
-		itext[i] = XED_STATIC_CAST(xed_uint8_t, *((int8_t*)(addr)+i));
-	}
-
-	xed_decoded_inst_zero_set_mode(&xedd, &dstate);
-	const auto dres = xed_decode(&xedd, XED_REINTERPRET_CAST(xed_uint8_t*, itext), size);
-	assert(dres == XED_ERROR_NONE);
-
-	char buffer[128];
-	const auto res = xed_decoded_inst_dump_att_format(&xedd, buffer, 128, addr);
-	assert(res);
-
-	string att(buffer);
-
-	stringstream ss;
-	ss << att;
-	Code c; 
-	// WTF -- Why does uncommenting this line make a segfault during static initialization?
-	//c.read_att(ss);
-	cout << "PARSED CODE = " << c[0] << endl;
-	
-	return 0;
-}
-
-/* ============================================================================================= */
-
 VOID rtn(RTN fxn, VOID* v) {
   RTN_Open(fxn);
 
 	// State related to this function 
 	bool is_target = RTN_Name(fxn) == KnobFxnName.Value();
 	const auto fxn_rip = INS_Address(RTN_InsHead(fxn));
+	
+	// Lookup the x64asm hex offset table for this function
+	// If we can't find an entry, we're probably off in a dynamic library. If so, skip
+	const auto itr = x64asm_offsets.find(RTN_Name(fxn));
+	if (itr == x64asm_offsets.end()) {
+		RTN_Close(fxn);
+		return;
+	}
+	const auto& x64asm_offset = itr->second;
 
 	// Place this function in the global symbol table
 	symbol_table_[fxn_rip] = string(".") + RTN_Name(fxn);
@@ -442,10 +389,8 @@ VOID rtn(RTN fxn, VOID* v) {
 		RTN_InsertCall(fxn, IPOINT_BEFORE, (AFUNPTR)update_state, IARG_REG_VALUE, REG_RSP, IARG_END);
 	}
 
-	// Counters for the line we're on and byte difference between this hex and ax64asm hex
+	// Instrument every instruction (remember, we ignore labels and index from 1)
 	size_t line = 1;
-	size_t x64asm_bytes = 0;
-
   for (INS ins = RTN_InsHead(fxn); INS_Valid(ins); ins = INS_Next(ins)) {
 		// Potentially start recording a new testcase
 		if (is_target && (line == begin_line_)) {
@@ -459,38 +404,48 @@ VOID rtn(RTN fxn, VOID* v) {
 		if (is_target && ((end_lines_.find(line) != end_lines_.end()) || INS_IsRet(ins))) {
 			emit_stop(ins);
 		}
-
-		// Update line number and x64asm hex bytes
+		// Lookup number of x64asm hex bytes at this point
+		if (line > x64asm_offset.size()) {
+			Console::error(1) << "Missing hex offset information for " << RTN_Name(fxn) << ":" << line << endl;
+		}
+		const auto x64asm_bytes = x64asm_offset[line-1];
 		line++;
-		x64asm_bytes += x64asm_size(ins);
 
     // Record memory references
-    UINT32 memOpCount = INS_MemoryOperandCount(ins);
+    const auto memOpCount = INS_MemoryOperandCount(ins);
 		if (memOpCount >= 2) {
 			INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) unsupported_check, IARG_END);
 		}
+
+		const auto rip_deref = INS_RegRContain(ins, REG_INST_PTR) && !INS_IsCall(ins);
+		const int64_t delta = (INS_Address(ins) - fxn_rip) - x64asm_bytes;
     if (memOpCount > 0 && INS_MemoryOperandIsRead(ins, 0)) {
-			const auto rip_deref = INS_RegRContain(ins, REG_INST_PTR);
       INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_read,
                      IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, 
-										 IARG_BOOL, rip_deref, IARG_END);
+										 IARG_BOOL, rip_deref, IARG_ADDRINT, delta, 
+										 IARG_END);
 		}
     if (memOpCount > 0 && INS_MemoryOperandIsWritten(ins, 0)) {
       INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_write,
-                     IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, IARG_END);
+                     IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, 
+										 IARG_BOOL, rip_deref, IARG_ADDRINT, delta,
+										 IARG_END);
 		}
   }
 
+	// If everything went according to plan, line should point to the end of the x64asm offset
+	// table. I know for a fact this isn't always happening thanks to instructions like repz retq
+	// and data32 ... let's deal with these as they come up.
   RTN_Close(fxn);
 }
 
 /* ============================================================================================= */
 
 VOID Fini(INT32 code, VOID* v) {
-	// We used to throw an error here if we attempted to terminate while recording.
-	// This is plausible, though. Some programs terminate without ever returning from a call.
+	// It's possible that we might still be recording here; don't check this as an error case.
+	// Some programs terminate without returning.
 
-	// We're all set; print everything to the target file
+	// Print everything to the target file
 	tcs_.write_text(*os_);
 	if (os_ == &cout) {
 		*os_ << endl;
@@ -522,6 +477,9 @@ int main(int argc, char* argv[]) {
 	while ( iss >> dec >> inst ) {
 		end_lines_.insert(inst);
 	}
+	// Read the contents of the x64asm offset file
+	ifstream ifs(KnobHexFile.Value());
+	ifs >> x64asm_offsets;
 
 	// Either we're writing to a file, or if none is provided, cout
   os_ = KnobOutFile.Value() == "" ? &cout : new ofstream(KnobOutFile.Value().c_str());
@@ -530,12 +488,6 @@ int main(int argc, char* argv[]) {
   PIN_InitSymbols();
   RTN_AddInstrumentFunction(rtn, 0);
   PIN_AddFiniFunction(Fini, 0);
-
-	// Initialize xed disassembler state
-	xed_tables_init();
-	xed_state_zero(&dstate);
-	xed_set_verbosity(99);
-	dstate.mmode=XED_MACHINE_MODE_LONG_64;
 
   // Never returns; we start in a state where nothing is being recorded
 	recording_ = false;
