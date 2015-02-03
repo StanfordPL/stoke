@@ -184,6 +184,7 @@ Sandbox& Sandbox::run(size_t index) {
   if (!all_fxns_read_only_) {
     io->out_.stack.copy_defined(io->in_.stack);
     io->out_.heap.copy_defined(io->in_.heap);
+    io->out_.data.copy_defined(io->in_.data);
   }
 
   // Reset error-related variables
