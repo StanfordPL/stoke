@@ -82,4 +82,17 @@ TEST(X64AsmInstructionInfo, BothMemoryReadAndWrite) {
   EXPECT_TRUE(c[0].must_read_memory());
 }
 
+TEST(X64AsmInstructionInfo, PmovmskbRegSets) {
+  x64asm::Code c;
+  std::stringstream ss;
+  ss << "pmovmskb %xmm6, %r13d" << std::endl;
+  ss >> c;
+
+  x64asm::RegSet expected_must_read = x64asm::RegSet::empty() + x64asm::xmm6;
+  x64asm::RegSet expected_must_write = x64asm::RegSet::empty() + x64asm::r13;
+
+  EXPECT_EQ(expected_must_read,  c[0].must_read_set());
+  EXPECT_EQ(expected_must_write, c[0].must_write_set());
+}
+
 #endif

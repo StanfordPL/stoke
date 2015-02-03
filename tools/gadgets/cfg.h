@@ -30,7 +30,11 @@ namespace stoke {
 
 class CfgGadget : public Cfg {
 public:
-  CfgGadget(const x64asm::Code& code, const std::vector<TUnit>& aux_fxns) : Cfg(code, def_in(), live_out_arg) {
+  CfgGadget(const x64asm::Code& code, const std::vector<TUnit>& aux_fxns)
+    : Cfg(code, def_in(live_out()), live_out()) {
+    // Emit warning if register values were guessed
+    reg_warning();
+
     // Check for unsupported instructions and cpu flags
     flag_check(get_code());
     sandbox_check(get_code());
@@ -43,9 +47,73 @@ public:
   }
 
 private:
-  /** Convenience method: Adds mxcsr[rc] to def_in unless otherwise specified */
-  x64asm::RegSet def_in() const {
-    return no_default_mxcsr_arg ? def_in_arg.value() : def_in_arg.value() + x64asm::mxcsr_rc;
+  void reg_warning() const {
+    // The static guard here to prevent this warning from being emitted more than once
+    // once for the target, and once for current, best_cost, best_correct, etc...
+    static auto once = false;
+    if (!once) {
+      once = true;
+      if (!live_out_arg.has_been_provided()) {
+        Console::warn() << "No live out values provided, assuming " << live_out() << std::endl;
+      }
+      if (!def_in_arg.has_been_provided()) {
+        Console::warn() << "No def in values provided; assuming " << def_in(live_out()) << std::endl;
+      }
+    }
+  }
+
+  x64asm::RegSet def_in(const x64asm::RegSet& live_out) const {
+    // Add mxcsr[rc] unless otherwise specified
+    auto def_in = def_in_arg.value();
+    if (!no_default_mxcsr_arg) {
+      def_in += x64asm::mxcsr_rc;
+    }
+
+    // Always prefer user inputs
+    if (def_in_arg.has_been_provided()) {
+      return def_in_arg;
+    }
+
+    // Otherwise, we can solve for live ins and just use those
+    Cfg temp(target_arg.value().code, x64asm::RegSet::empty(), live_out);
+    return temp.live_ins();
+  }
+
+  x64asm::RegSet live_out() const {
+    // Always prefer user inputs
+    if (live_out_arg.has_been_provided()) {
+      return live_out_arg.value();
+    }
+
+    // Solve for defined out values
+    Cfg temp(target_arg.value().code, x64asm::RegSet::empty(), x64asm::RegSet::empty());
+    const auto dos = temp.def_outs();
+
+    // If no general purpose registers were written we can guess xmm live out
+    if (!dos.contains(x64asm::rax) && !dos.contains(x64asm::rdx)) {
+      auto res = x64asm::RegSet::empty();
+      if (dos.contains(x64asm::xmm0)) {
+        res += x64asm::xmm0;
+      }
+      if (dos.contains(x64asm::xmm1)) {
+        res += x64asm::xmm1;
+      }
+      return res;
+    }
+
+    // If no xmms were written we can guess general purpose live outs
+    if (!dos.contains(x64asm::xmm0) && !dos.contains(x64asm::xmm1)) {
+      auto res = x64asm::RegSet::empty();
+      if (dos.contains(x64asm::rax)) {
+        res += x64asm::rax;
+      }
+      if (dos.contains(x64asm::rdx)) {
+        res += x64asm::rdx;
+      }
+      return res;
+    }
+
+    return x64asm::RegSet::linux_call_return();
   }
 
   /** Checks for unsupported cpu flags */

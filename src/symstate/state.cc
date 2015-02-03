@@ -317,6 +317,10 @@ SymBitVector SymState::get_addr(M<T> memory) const {
     }
   }
 
+  if(memory.addr_or()) {
+    address = SymBitVector::constant(32, 0) || address[31][0];
+  }
+
   return address;
 }
 
