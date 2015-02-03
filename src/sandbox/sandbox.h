@@ -401,7 +401,7 @@ private:
   void emit_count_instructions(const Cfg& cfg, Cfg::id_type bb);
 
   /** Special case for emitting leave instructions. */
-	void emit_leave(const x64asm::Instruction& instr);
+  void emit_leave(const x64asm::Instruction& instr);
   /** Special case for emitting bt instructions that read from memory. */
   void emit_mem_bt(const x64asm::Instruction& instr);
   /** Special case for emitting div instructions that read from memory. */
