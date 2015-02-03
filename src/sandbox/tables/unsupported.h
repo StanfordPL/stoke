@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// NOTE: this lists all opcodes that are unsupported by the sandbox.  all
+// other instructions are supported, but it is assumed that they are
+// well-formed.  In particular, the following instructions can be malformed
+// (see x64asm issue #12), and the sandbox may behave in unexpected ways
+// if they are executed: MOVSX_R16_RH, MOVSX_R32_RH, MOVSX_R64_RH,
+// MOVZX_R16_RH, MOVZX_R32_RH, MOVZX_R64_RH
+
 // See x64asm issue #12
 // These instruction variants don't actually exist. Attempting to emit
 // code for these will cause the cpu to mutate values in registers other
 // than ah,dh,ch,bh.
 CRC32_R32_RH
 , CRC32_R64_RH
-, MOVSX_R16_RH
-, MOVSX_R32_RH
-, MOVSX_R64_RH
-, MOVZX_R16_RH
-, MOVZX_R32_RH
-, MOVZX_R64_RH
 
 // These are instructions that have to do with reading/writing segment
 // registers. For the time being, STOKE has no way of dealing with these
