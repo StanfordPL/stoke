@@ -80,9 +80,9 @@ istream& Memory::read_bin(istream& is) {
   size_t content_size = 0;
   is.read((char*)&content_size, sizeof(size_t));
 
-  // Fail for memories that are larger than 1KB
-  if (content_size > 1024) {
-    is.setstate(ios::failbit);
+  // Fail for memories that are larger than 100 KB
+  if (content_size > 100*1024) {
+    fail(is) << "Only memories of size up to 100KB are supported (otherwise, construction a sandbox gets prohibitively expensive)";
     return is;
   }
 
@@ -160,9 +160,9 @@ void Memory::read_text_summary(istream& is) {
   is.get();
   is.get();
 
-  // Fail for memories that are larger than 1KB
-  if (upper - lower > 1024) {
-    is.setstate(ios::failbit);
+  // Fail for memories that are larger than 100 KB
+  if (upper - lower > 100*1024) {
+    fail(is) << "Only memories of size up to 100KB are supported (otherwise, construction a sandbox gets prohibitively expensive)";
     return;
   }
 

@@ -19,10 +19,14 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cost/cost.h"
+#include "src/search/init.h"
 
 namespace stoke {
 
-struct SearchState {
+class SearchState {
+
+public:
+
   SearchState() :
     current( {
     {
@@ -58,6 +62,28 @@ struct SearchState {
 
   /** Did the search get interrupted? */
   bool interrupted;
+
+  /** Set the current state based on the command line argument. */
+  void configure(Init init, const Cfg& target, size_t size);
+
+  /** Returns a program that is sound for a given def_ins/live_outs combination by initializing
+  registers as necessary. */
+  static x64asm::Code find_sound_code(const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs);
+
+private:
+
+  /** Set the current state to be a series of nops. */
+  void configure_empty(const Cfg& target, size_t size);
+
+  /** Set the current state to zero the live-outs. */
+  void configure_zero(const Cfg& target, size_t size);
+
+  /** Set the current state to the target. */
+  void configure_target(const Cfg& target, size_t size);
+
+  /** Set the state in some other way. */
+  void configure_extension(const Cfg& target, size_t size);
+
 };
 
 } // namespace stoke

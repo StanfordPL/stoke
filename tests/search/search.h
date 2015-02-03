@@ -43,7 +43,7 @@ protected:
     ss1 << "{ " << in << " }";
     ss1 >> def_in_;
 
-    auto code = stoke::Search::find_sound_code(def_in_, live_out_);
+    auto code = stoke::SearchState::find_sound_code(def_in_, live_out_);
     auto cfg = stoke::Cfg(code, def_in_, live_out_);
     ASSERT_TRUE(cfg.is_sound()) << "def in:   " << def_in_ << std::endl <<
                                 "live out: " << live_out_ << std::endl <<

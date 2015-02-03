@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// NOTE: this lists all opcodes that are unsupported by the sandbox.  all
+// other instructions are supported, but it is assumed that they are
+// well-formed.  In particular, the following instructions can be malformed
+// (see x64asm issue #12), and the sandbox may behave in unexpected ways
+// if they are executed: MOVSX_R16_RH, MOVSX_R32_RH, MOVSX_R64_RH,
+// MOVZX_R16_RH, MOVZX_R32_RH, MOVZX_R64_RH
+
 // See x64asm issue #12
 // These instruction variants don't actually exist. Attempting to emit
 // code for these will cause the cpu to mutate values in registers other
 // than ah,dh,ch,bh.
 CRC32_R32_RH
 , CRC32_R64_RH
-, MOVSX_R16_RH
-, MOVSX_R32_RH
-, MOVSX_R64_RH
-, MOVZX_R16_RH
-, MOVZX_R32_RH
-, MOVZX_R64_RH
 
 // These are instructions that have to do with reading/writing segment
 // registers. For the time being, STOKE has no way of dealing with these
@@ -234,3 +235,27 @@ CRC32_R32_RH
 , XSAVEOPT64_M16 // XSAVEOPT64 m16
 , XSAVEOPT64_M32 // XSAVEOPT64 m32
 , XSAVEOPT64_M64 // XSAVEOPT64 m64
+
+// These instructions require pretty serious understanding of rips
+, CALL_FARPTR1616 // CALL m16:16
+, CALL_FARPTR1632 // CALL m16:32
+, CALL_FARPTR1664 // CALL m16:64
+, CALL_M64 // CALL m64
+, CALL_R64 // CALL r64
+, CALL_REL32 // CALL rel32
+
+// These instructions implicitly modify rsp
+, ENTER_IMM8_IMM16 // ENTER imm8, imm16
+, ENTER_ONE_IMM16 // ENTER 1, imm16
+, ENTER_ZERO_IMM16 // ENTER 0, imm16
+, SYSENTER // SYSENTER
+, SYSCALL // SYSCALL
+, SYSEXIT // SYSEXIT
+, SYSEXIT_PREFREXW // SYSEXIT pw
+, SYSRET // SYSRET
+, SYSRET_PREFREXW // SYSRET pw
+
+// See issue #463. I'm not sure why this isn't working correctly,
+// but it's sort of a distinction with a difference whether we support
+// this or not since gcc won't ever emit this instruction
+, LEAVE_PREF66

@@ -325,7 +325,15 @@ public:
     return fxn_live_outs_;
   }
 
-  /** Returns the set of registers that are live-in for this graph. */
+  /** Returns the set of registers that are live-in to this graph. */
+  x64asm::RegSet live_ins() const {
+    return live_ins(get_entry()+1);
+  }
+  /** Returns the set of registers that are live-in on entry a basic block. */
+  x64asm::RegSet live_ins(id_type id) const {
+    return live_ins({id, 0});
+  }
+  /** Returns the set of registers that are live-in on entry to an instruction. */
   x64asm::RegSet live_ins(const loc_type& loc) const {
     assert(is_reachable(loc.first));
     return live_ins_[get_index(loc)];
