@@ -834,6 +834,8 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
       emit_pop(instr);
     } else if (instr.is_popf()) {
       emit_popf(instr);
+    } else if (instr.is_leave()) {
+      emit_leave(instr);
     } else {
       emit_signal_trap_call(ErrorCode::SIGILL_);
     }
@@ -1052,6 +1054,11 @@ void Sandbox::emit_call(const Instruction& instr, const x64asm::Label& fxn, uint
 
 void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
   assm_.jmp(exit);
+}
+
+void Sandbox::emit_leave(const Instruction& instr) {
+  assm_.mov(rsp, rbp);
+  emit_pop({POP_R64, {rbp}});
 }
 
 void Sandbox::emit_mem_bt(const Instruction& instr) {
