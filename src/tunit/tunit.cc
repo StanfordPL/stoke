@@ -126,11 +126,11 @@ ostream& operator<<(ostream& os, const TUnit& t) {
   }
   col.filter().next();
 
-  size_t line = 0;
+  size_t line = 1;
   for (size_t i = 0, ie = t.code.size(); i < ie; ++i) {
-    if (!t.code[i].is_label_defn()) {
-      col << "# " << dec << line++;
-    }
+		if (!t.code[i].is_label_defn()) {
+			col << "# " << dec << line++;
+		}
     if (i + 1 != ie) {
       col << endl;
     }
