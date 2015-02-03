@@ -44,7 +44,7 @@ public:
     }
 
     // Checks for unsupported instructions or flag requirements
-    for (const auto& fxn : aux_fxns_arg.value()) {
+    for (const auto& fxn : *this) {
       flag_check(fxn.code);
       sandbox_check(fxn.code);
     }
