@@ -20,6 +20,7 @@
 #include <stdint.h>
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
+#include "src/ext/cpputil/include/io/fail.h"
 
 #include "src/state/addr_iterator.h"
 
