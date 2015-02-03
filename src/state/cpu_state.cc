@@ -67,6 +67,10 @@ ostream& CpuState::write_text(ostream& os) const {
   os << endl;
 
   heap.write_text(os);
+  os << endl;
+  os << endl;
+
+  data.write_text(os);
 
   return os;
 }
@@ -101,6 +105,14 @@ istream& CpuState::read_text(istream& is) {
   getline(is, ignore);
 
   heap.read_text(is);
+  getline(is, ignore);
+  getline(is, ignore);
+
+  data.read_text(is);
+
+  if (!check()) {
+    is.setstate(ios::failbit);
+  }
 
   return is;
 }
@@ -113,6 +125,7 @@ ostream& CpuState::write_bin(ostream& os) const {
   rf.write_bin(os);
   stack.write_bin(os);
   heap.write_bin(os);
+  data.write_bin(os);
 
   return os;
 }
@@ -125,6 +138,7 @@ istream& CpuState::read_bin(istream& is) {
   rf.read_bin(is);
   stack.read_bin(is);
   heap.read_bin(is);
+  data.read_bin(is);
 
   if (!check()) {
     is.setstate(ios::failbit);
@@ -136,6 +150,10 @@ istream& CpuState::read_bin(istream& is) {
 bool CpuState::check() const {
   // Stack addresses should be strictly greater than heap addresses
   if (stack.lower_bound() <= heap.upper_bound()) {
+    return false;
+  }
+  // Heap addresses should be strictly greater than data addresses
+  if (heap.lower_bound() <= data.upper_bound()) {
     return false;
   }
 
