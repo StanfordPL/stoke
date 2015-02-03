@@ -636,11 +636,11 @@ bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& o
   case Type::YMM:
     return get<Ymm>(ymm_pool_, op);
 
-	// See issue #463 -- This is probably an x64asm bug that LEAVE_PREF66 thinks
-	// this is a write op. But for now it doesn't hurt to just return the correct value.
-	case Type::PREF_66:
-		op = pref_66;
-		return true;
+  // See issue #463 -- This is probably an x64asm bug that LEAVE_PREF66 thinks
+  // this is a write op. But for now it doesn't hurt to just return the correct value.
+  case Type::PREF_66:
+    op = pref_66;
+    return true;
 
   default:
     assert(false);
