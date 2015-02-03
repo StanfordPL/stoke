@@ -35,8 +35,8 @@ void sigfpe_handler(int signum, siginfo_t* si, void* data) {
   siglongjmp(buf_, 1);
 }
 
-void callback_wrapper(StateCallback cb, size_t line, CpuState* current, void* arg) {
-  cb({line, *current}, arg);
+void callback_wrapper(StateCallback cb, Code* code, size_t line, CpuState* current, void* arg) {
+  cb({*code, line, *current}, arg);
 }
 
 } // namespace
@@ -47,19 +47,15 @@ bool Sandbox::is_supported(Opcode o) {
   return unsupported_.find(o) == unsupported_.end();
 }
 
-Sandbox::Sandbox() : fxn_(32 * 1024),
-  fxn_src_{{{LABEL_DEFN, {Label{".main"}}}, {RET}}, RegSet::empty(), RegSet::empty()} {
-  fxn_.reserve(32 * 1024);
-  init_labels();
-
+Sandbox::Sandbox() {
   set_abi_check(true);
   set_max_jumps(16);
-
-  aux_fxn_read_only_ = true;
-  aux_fxn_read_only_ = true;
+  set_count_instructions(false);
+  set_use_latency(false);
 
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
+  reset();
 
   static bool once = false;
   if (!once) {
@@ -101,103 +97,99 @@ Sandbox& Sandbox::clear_inputs() {
   return *this;
 }
 
-Sandbox& Sandbox::compile_function(const Cfg& cfg) {
-  // Update the read only tracker for aux functions
-  aux_fxn_read_only_ &= is_mem_read_only(cfg);
+Sandbox& Sandbox::insert_function(const Cfg& cfg) {
+  // Look up the name of this function
+  assert(cfg.get_code()[0].is_label_defn());
+  const auto label = cfg.get_code()[0].get_operand<Label>(0);
 
-  // Compile the aux fxn and record its source
-  emit_function(cfg, false);
-  aux_fxns_.emplace_back(new x64asm::Function(fxn_));
-  aux_fxns_src_.push_back(cfg);
+  // If this is the first time we've seen this function, allocate state
+  // Otherwise just replace what's there
+  if (!contains_function(label)) {
+    fxns_[label] = new x64asm::Function(256 * cfg.get_code().size() + 4096);
+    fxns_src_[label] = new Cfg(cfg);
+    recompile(cfg);
+  } else {
+    delete fxns_src_[label];
+    fxns_src_[label] = new Cfg(cfg);
+    recompile(cfg);
+  }
 
-  // Main may or may not work now (and we've clobbered fxn_ anyway)
-  compile(fxn_src_);
+  // If this is the only function it becomes main by default
+  if (num_functions() == 1) {
+    set_entrypoint(label);
+  }
 }
 
 Sandbox& Sandbox::clear_functions() {
-  // Reset the read only tracker for aux functions
-  aux_fxn_read_only_ = true;
-
-  // Clear the aux fxns and their source
-  for (auto fxn : aux_fxns_) {
-    delete fxn;
+  for (auto fxn : fxns_) {
+    delete fxn.second;
   }
-  aux_fxns_.clear();
-  aux_fxns_src_.clear();
+  fxns_.clear();
 
-  // Recompile main which may not work anymore
-  compile(fxn_src_);
+  for (auto fxn : fxns_src_) {
+    delete fxn.second;
+  }
+  fxns_src_.clear();
+
+  fxns_read_only_.clear();
+  all_fxns_read_only_ = true;
 
   return *this;
 }
 
 Sandbox& Sandbox::insert_before(StateCallback cb, void* arg) {
   global_before_ = {cb, arg};
-  recompile_all();
+  recompile();
   return *this;
+}
+
+Sandbox& Sandbox::insert_before(const Label& l, size_t line, StateCallback cb, void* arg) {
+  assert(contains_function(l));
+  before_[l][line] = {cb, arg};
+  recompile(*get_function(l));
 }
 
 Sandbox& Sandbox::insert_after(StateCallback cb, void* arg) {
   global_after_ = {cb, arg};
-  recompile_all();
+  recompile();
   return *this;
 }
 
-Sandbox& Sandbox::insert_before(size_t line, StateCallback cb, void* arg) {
-  before_[line].push_back(std::make_pair(cb, arg));
-  recompile_main();
-  return *this;
-}
-
-Sandbox& Sandbox::insert_after(size_t line, StateCallback cb, void* arg) {
-  after_[line].push_back(std::make_pair(cb, arg));
-  recompile_main();
-  return *this;
+Sandbox& Sandbox::insert_after(const Label& l, size_t line, StateCallback cb, void* arg) {
+  assert(contains_function(l));
+  after_[l][line] = {cb, arg};
+  recompile(*get_function(l));
 }
 
 Sandbox& Sandbox::clear_callbacks() {
   global_before_ = {nullptr, nullptr};
-  global_after_ = {nullptr, nullptr};
   before_.clear();
+  global_after_ = {nullptr, nullptr};
   after_.clear();
-
-  recompile_all();
-
+  recompile();
   return *this;
 }
 
-size_t Sandbox::num_callbacks() const {
-  return (global_before_.first != nullptr ? 1 : 0) +
-         (global_after_.first != nullptr ? 1 : 0) +
-         before_.size() + after_.size();
-}
-
-void Sandbox::compile_main(const Cfg& cfg) {
-  main_fxn_read_only_ = is_mem_read_only(cfg);
-  emit_function(cfg, true);
-  fxn_src_ = cfg;
-
-  // Relink everything
-  lnkr_.start();
-  lnkr_.link(fxn_);
-  for (auto f : aux_fxns_) {
-    lnkr_.link(*f);
-  }
-  lnkr_.finish();
-}
-
-void Sandbox::run_one(size_t index) {
-  assert(index < size());
+Sandbox& Sandbox::run(size_t index) {
+  assert(num_functions() > 0);
+  assert(index < num_inputs());
   auto io = io_pairs_[index];
 
+  // Don't bother executing testcases that are in error states
+  if (io->in_.code != ErrorCode::NORMAL) {
+    return *this;
+  }
+
   // Optimization: In read only mem mode, we don't need to reset output memory
-  if (!aux_fxn_read_only_ || !main_fxn_read_only_) {
+  if (!all_fxns_read_only_) {
     io->out_.stack.copy_defined(io->in_.stack);
     io->out_.heap.copy_defined(io->in_.heap);
   }
 
   // Reset error-related variables
   jumps_remaining_ = max_jumps_;
+  // Reset instruction count
+  instruction_count_ = 0;
 
   // Initialize state that the instrumented function relies on
   out_ = &io->out_;
@@ -205,6 +197,9 @@ void Sandbox::run_one(size_t index) {
   out2cpu_ = io->out2cpu_.get_entrypoint();
   cpu2out_ = io->cpu2out_.get_entrypoint();
   map_addr_ = io->map_addr_.get_entrypoint();
+  entrypoint_ = fxns_[main_fxn_]->get_entrypoint();
+  sym_table_ = io->in_.sym_table.flat_table_.data();
+  min_label_ = -io->in_.sym_table.min_label_;
 
   // Initialize state related to %rsp tracking
   user_rsp_ = io->in_.gp[rsp].get_fixed_quad(0);
@@ -220,37 +215,33 @@ void Sandbox::run_one(size_t index) {
     io->out_.code = ErrorCode::SIGFPE_;
   }
 
-  // Check for abi violations
+  // Finalize output state
   if (abi_check_ && !check_abi(*io)) {
     io->out_.code = ErrorCode::SIGSEGV_;
   }
+  if (count_instructions_) {
+    io->out_.latency_seen = instruction_count_;
+  }
+
+  return *this;
 }
 
-void Sandbox::run_all() {
+Sandbox& Sandbox::run() {
   for (size_t i = 0, ie = size(); i < ie; ++i) {
-    run_one(i);
+    run(i);
   }
+  return *this;
 }
 
-void Sandbox::recompile_main() {
-  compile(fxn_src_);
-}
-
-void Sandbox::recompile_all() {
-  // Clear old aux functions
-  for (auto fxn : aux_fxns_) {
-    delete fxn;
+bool Sandbox::check_abi(const IoPair& iop) const {
+  for (const auto& r : {
+  rbx, rbp, rsp, r12, r13, r14, r15
+}) {
+    if (iop.in_.gp[r].get_fixed_quad(0) != iop.out_.gp[r].get_fixed_quad(0)) {
+      return false;
+    }
   }
-  aux_fxns_.clear();
-
-  // Recompile aux functions
-  for (const auto& fxn : aux_fxns_src_) {
-    emit_function(fxn, false);
-    aux_fxns_.emplace_back(new x64asm::Function(fxn_));
-  }
-
-  // Recompile main
-  compile(fxn_src_);
+  return true;
 }
 
 size_t Sandbox::get_unused_reg(const Instruction& instr) const {
@@ -264,15 +255,37 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
   return idx + 4;
 }
 
-bool Sandbox::check_abi(const IoPair& iop) const {
-  for (const auto& r : {
-  rbx, rbp, rsp, r12, r13, r14, r15
-}) {
-    if (iop.in_.gp[r].get_fixed_quad(0) != iop.out_.gp[r].get_fixed_quad(0)) {
-      return false;
-    }
+void Sandbox::recompile(const Cfg& cfg) {
+  // Grab the name of this function
+  const auto& label = cfg.get_code()[0].get_operand<Label>(0);
+
+  // Compile the function and record its source
+  emit_function(cfg, fxns_[label]);
+
+  // Update the read only memory tracker
+  fxns_read_only_[label] = is_mem_read_only(cfg);
+  all_fxns_read_only_ = true;
+  for (const auto& r : fxns_read_only_) {
+    all_fxns_read_only_ &= r.second;
   }
-  return true;
+
+  // Relink everything
+  // @todo This isn't quite right since linking isn't pure.
+  // See x64asm issue #138. Once that's closed, we can remove this comment.
+  lnkr_.start();
+  for (auto f : fxns_) {
+    lnkr_.link(*(f.second));
+  }
+  lnkr_.finish();
+}
+
+void Sandbox::recompile() {
+  // This could be marginally faster if we expanded it since there's no reason
+  // to iterate over all_fxns_read_only_ every interation, but we do so much
+  // else it's probably not worth saving this little bit
+  for (const auto& fxn : fxns_src_) {
+    recompile(*fxn.second);
+  }
 }
 
 // Main entrypoint for sandboxed code.
@@ -316,11 +329,11 @@ Function Sandbox::emit_harness() {
   assm_.mov(rax, Moffs64(&in2cpu_));
   assm_.call(rax);
 
-  // Load the user's function onto the stack and invoke it
+  // Load the main function onto the stack and invoke it
   // At this point %rsp is all we have to work with
   // The rest of the user's state must be restored prior to the call
   assm_.push(rax);
-  assm_.mov((R64)rax, Imm64(fxn_.get_entrypoint()));
+  assm_.mov(rax, Moffs64(&entrypoint_));
   assm_.xchg(rax, M64(rsp));
   assm_.call(M64(rsp));
   assm_.lea(rsp, M64(rsp, Imm32(8)));
@@ -617,14 +630,13 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
 }
 
 bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
-  for (auto b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-    const auto num_instrs = cfg.num_instrs(*b);
-    if (num_instrs == 0) {
+  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+    if (cfg.is_exit(*b)) {
       continue;
     }
 
     const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-    for (size_t i = begin, ie = begin + num_instrs; i < ie; ++i) {
+    for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
       const auto& instr = cfg.get_code()[i];
       if (instr.is_implicit_memory_dereference()) {
         return false;
@@ -657,55 +669,43 @@ bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
 // Arguments:
 //   <none>
 
-void Sandbox::emit_function(const Cfg& cfg, bool is_main) {
-  // Invariant: The first line of a function must be a label with its name
-  assert(cfg.get_code()[0].is_label_defn());
-
-  // Index reachable instructions (this would be a great iterator to have in Cfg)
-  vector<size_t> instrs;
-  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-    if (cfg.is_exit(*b)) {
-      continue;
-    }
-    const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-    for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
-      instrs.push_back(i);
-    }
-  }
-
-  assm_.start(fxn_);
+void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
+  assm_.start(*fxn);
 
   // The label that begins a function must precede instrumentation
-  assm_.assemble(cfg.get_code()[instrs[0]]);
+  assm_.assemble(cfg.get_code()[0]);
 
-  // Load the user's %rsp
+  // Now load the user's %rsp
   emit_load_user_rsp();
 
-  // Create a new unique label for representing the end of this function
+  // Grab the name of this function and make a unique label for representing the end
+  const auto label = cfg.get_code()[0].get_operand<Label>(0);
   const auto exit = get_label();
 
-  // Assemble every other reachable instruction
-  for (size_t i = 1 , ie = instrs.size(); i < ie; ++i) {
-    const auto idx = instrs[i];
-    const auto& instr = cfg.get_code()[idx];
+  // Keep track of the hex byte offset of every instruction in this function
+  uint64_t hex_offset = 0;
 
-    // Emit instruction and optionally, callbacks
-    if (is_main && !before_.empty()) {
-      for (const auto& cb : before_[idx]) {
-        emit_callback(cb, idx);
+  // Assemble instructions and add instrumentation for reachable blocks
+  for (Cfg::id_type b = 0, be = cfg.num_blocks(); b < be; ++b) {
+    const auto size = cfg.num_instrs(b);
+    const auto begin = size == 0 ? 0 : cfg.get_index(Cfg::loc_type(b, 0));
+    const auto is_reachable = cfg.is_reachable(b);
+
+    if (is_reachable && count_instructions_) {
+      emit_count_instructions(cfg, b);
+    }
+    for (auto i = begin, ie = begin + size; i < ie; ++i) {
+      const auto& instr = cfg.get_code()[i];
+      if (cfg.is_reachable(b)) {
+        if (global_before_.first != nullptr || !before_.empty()) {
+          emit_before(cfg.get_code()[0].get_operand<Label>(0), i);
+        }
+        emit_instruction(instr, label, hex_offset, exit);
+        if (global_after_.first != nullptr || !after_.empty()) {
+          emit_after(cfg.get_code()[0].get_operand<Label>(0), i);
+        }
       }
-    }
-    if (global_before_.first != nullptr) {
-      emit_callback(global_before_, idx);
-    }
-    emit_instruction(instr, exit);
-    if (is_main && !after_.empty())  {
-      for (const auto& cb : after_[idx]) {
-        emit_callback(cb, idx);
-      }
-    }
-    if (global_after_.first != nullptr) {
-      emit_callback(global_after_, idx);
+      hex_offset += assm_.hex_size(instr);
     }
   }
   // Catch for run-away code
@@ -720,7 +720,7 @@ void Sandbox::emit_function(const Cfg& cfg, bool is_main) {
   assm_.finish();
 }
 
-void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, size_t line) {
+void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, const Label& fxn, size_t line) {
   // Reload the STOKE %rsp, we're about to call some functions
   emit_load_stoke_rsp();
 
@@ -731,12 +731,18 @@ void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, size_t line) {
   assm_.call(M64(rsp));
   assm_.lea(rsp, M64(rsp, Imm32(8)));
 
-  // Invoke the callback through the callback wrapper
+  // rdi = callback function pointer
   assm_.mov(rdi, Imm64(cb.first));
-  assm_.mov(rsi, Imm64(line));
+  // rsi = pointer to current code
+  assm_.mov(rsi, Imm64(&(fxns_src_[fxn]->get_code())));
+  // rdx = line number
+  assm_.mov(rdx, Imm64(line));
+  // rcx = pointer to current state
   assm_.mov(rax, Moffs64(&out_));
-  assm_.mov(rdx, rax);
-  assm_.mov(rcx, Imm64(cb.second));
+  assm_.mov(rcx, rax);
+  // r8 = pointer to callback arg
+  assm_.mov(r8, Imm64(cb.second));
+  // rax = callback wrapper call
   assm_.mov((R64)rax, Imm64(&callback_wrapper));
   assm_.call(rax);
 
@@ -749,14 +755,48 @@ void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, size_t line) {
   emit_load_user_rsp();
 }
 
-void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
+void Sandbox::emit_before(const Label& label, size_t line) {
+  if (global_before_.first != nullptr) {
+    emit_callback(global_before_, label, line);
+  }
+  const auto i = before_.find(label);
+  if (i == before_.end()) {
+    return;
+  }
+  const auto j = i->second.find(line);
+  if (j == i->second.end()) {
+    return;
+  }
+  emit_callback(j->second, label, line);
+}
+
+void Sandbox::emit_after(const Label& label, size_t line) {
+  if (global_after_.first != nullptr) {
+    emit_callback(global_after_, label, line);
+  }
+  const auto i = after_.find(label);
+  if (i == after_.end()) {
+    return;
+  }
+  const auto j = i->second.find(line);
+  if (j == i->second.end()) {
+    return;
+  }
+  emit_callback(j->second, label, line);
+}
+
+void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint64_t hex_offset, const Label& exit) {
   // First things first. If it's unsupported, give up.
   if (!is_supported(instr)) {
     emit_signal_trap_call(ErrorCode::SIGILL_);
   }
   // Labels are translated directly
+  // (unless it's the name of the function... see emit_function())
   else if (instr.is_label_defn()) {
-    assm_.assemble(instr);
+    const auto label = instr.get_operand<Label>(0);
+    if (label != fxn) {
+      assm_.assemble(instr);
+    }
   }
   // Jumps are instrumented with premature exit logic
   else if (instr.is_any_jump()) {
@@ -764,7 +804,7 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
   }
   // Limited support for calls, label arguments are allowed
   else if (instr.get_opcode() == CALL_LABEL) {
-    emit_call(instr);
+    emit_call(instr, fxn, hex_offset);
   }
   // Returns are turned into jumps to the function-wide common return
   else if (instr.get_opcode() == RET) {
@@ -794,6 +834,8 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
       emit_pop(instr);
     } else if (instr.is_popf()) {
       emit_popf(instr);
+    } else if (instr.is_leave()) {
+      emit_leave(instr);
     } else {
       emit_signal_trap_call(ErrorCode::SIGILL_);
     }
@@ -808,6 +850,21 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& exit) {
       assm_.assemble(instr);
     }
   }
+}
+
+void Sandbox::emit_count_instructions(const Cfg& cfg, Cfg::id_type bb) {
+  size_t count = 0;
+  for (auto i = cfg.instr_begin(bb), ie = cfg.instr_end(bb); i != ie; ++i) {
+    if(i->is_label_defn() || i->is_nop())
+      continue;
+    count++;
+  }
+
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(rax, Moffs64(&instruction_count_));
+  assm_.lea(rax, M64(rax, Imm32(count)));
+  assm_.mov(Moffs64(&instruction_count_), rax);
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
 
 void Sandbox::emit_memory_instruction(const Instruction& instr) {
@@ -959,25 +1016,49 @@ void Sandbox::emit_jump(const Instruction& instr) {
   assm_.assemble(instr);
 }
 
-void Sandbox::emit_call(const Instruction& instr) {
-  // Simulate push %rip (using a random value)
-  // Sandboxing the memory dereference will catch infinite recursions
-  assm_.lea(rsp, M64(rsp, Imm32(-8)));
-  emit_memory_instruction({MOV_M64_IMM32, {M64(rsp), Imm32(0x01234567)}});
-
-  // Restore the STOKE %rsp
+void Sandbox::emit_call(const Instruction& instr, const x64asm::Label& fxn, uint64_t hex_offset) {
+  // Use the stoke stack to save a few registers
   emit_load_stoke_rsp();
-  // Invoke the call
+  assm_.push(rax);
+  assm_.push(rbx);
+
+  // Figure out the rip offset at this instruction
+  assm_.mov(rax, Moffs64(&min_label_));
+  assm_.mov(rbx, rax);
+  assm_.mov((R64)rax, Imm64(static_cast<uint64_t>(fxn)));
+  assm_.lea(rbx, M64(rax, rbx, Scale::TIMES_1));
+  assm_.mov(rax, Moffs64(&sym_table_));
+  assm_.mov(rax, M64(rax, rbx, Scale::TIMES_8));
+  assm_.lea(rax, M64(rax, Imm32(hex_offset)));
+
+  // Push %rip (which is in rax right now)
+  // Sandboxing the memory dereference will catch infinite recursions
+  emit_load_user_rsp();
+  emit_push({PUSH_R64, {rax}});
+
+  // Restore the STOKE %rsp (emit_push will have left the user's rsp in place)
+  // and put back the values that we saved so the stack is sound
+  emit_load_stoke_rsp();
+  assm_.pop(rbx);
+  assm_.pop(rax);
+
+  // Invoke the call (functions assumes stoke rsp in and out)
   assm_.assemble(instr);
   // Load the user's %rsp
   emit_load_user_rsp();
 
   // Simulate pop %rip; all that matters is moving %rsp
+  // @todo this is where to put the logic for checking stack smashing segfaults
   assm_.lea(rsp, M64(rsp, Imm32(8)));
 }
 
 void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
   assm_.jmp(exit);
+}
+
+void Sandbox::emit_leave(const Instruction& instr) {
+  assm_.mov(rsp, rbp);
+  emit_pop({POP_R64, {rbp}});
 }
 
 void Sandbox::emit_mem_bt(const Instruction& instr) {

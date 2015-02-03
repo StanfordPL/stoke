@@ -37,6 +37,9 @@ extern cpputil::FlagArg& blocked_heap_opt_arg;
 extern cpputil::ValueArg<Cost>& misalign_penalty_arg;
 extern cpputil::ValueArg<Cost>& sig_penalty_arg;
 extern cpputil::ValueArg<Cost>& min_ulp_arg;
+extern cpputil::ValueArg<size_t>& max_size_bytes;
+extern cpputil::ValueArg<Cost>& max_size_base_penalty;
+extern cpputil::ValueArg<Cost>& max_size_linear_penalty;
 
 } // namespace stoke
 
