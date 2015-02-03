@@ -128,7 +128,7 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 
     if(j + output_width < dest.size()) {
       if(clear)
-        result = SymBitVector::constant(dest.size() - j, 0);
+        result = SymBitVector::constant(dest.size() - j, 0) || result;
       else
         result = state[dest][dest.size() - 1][j] || result;
     }
