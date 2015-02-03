@@ -253,3 +253,8 @@ CRC32_R32_RH
 , SYSEXIT_PREFREXW // SYSEXIT pw
 , SYSRET // SYSRET
 , SYSRET_PREFREXW // SYSRET pw
+
+// See issue #463. I'm not sure why this isn't working correctly,
+// but it's sort of a distinction with a difference whether we support
+// this or not since gcc won't ever emit this instruction
+, LEAVE_PREF66
