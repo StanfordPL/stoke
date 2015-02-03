@@ -40,6 +40,11 @@ bool Verifier::verify(const Cfg& target, const Cfg& rewrite) {
 }
 
 bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
+  if (fxn_.num_testcases() == 0) {
+    error_ = "No testcases provided; cannot perform hold-out verification.";
+    counter_example_available_ = false;
+    return false;
+  }
   // Don't set a max value here; we're okay with performance costs
   error_ = "";
   const auto res = fxn_(rewrite);

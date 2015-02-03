@@ -72,14 +72,14 @@ private:
   void randomize_regs(CpuState& cs) const;
 
   /** Returns true if we support fixing derefs of this type. */
-  bool is_supported_deref(const Cfg& cfg, size_t line);
+  bool is_supported_deref(const x64asm::Instruction& instr);
 
   /** Returns if we've already produced an acceptable state. */
-  bool is_ok(const Sandbox&, const Cfg&, size_t);
+  bool is_ok(const Sandbox&, const x64asm::Instruction& instr);
   /** Returns the address that was dereferenced on this line. */
-  uint64_t get_addr(const CpuState& cs, const Cfg& cfg, size_t line) const;
+  uint64_t get_addr(const CpuState& cs, const x64asm::Instruction& instr) const;
   /** Returns the number of bytes dereferenced on this line. */
-  size_t get_size(const Cfg& cfg, size_t line) const;
+  size_t get_size(const x64asm::Instruction& instr) const;
   /** Returns true if the memory at this address is already allocated. */
   bool already_allocated(const Memory& mem, uint64_t addr, size_t size) const {
     return mem.in_range(addr) && mem.in_range(addr + size - 1);
@@ -100,9 +100,9 @@ private:
   /** Returns true if a memory can be resized to accommadate an access. */
   bool resize_mem(Memory& mem, uint64_t addr, size_t size) const;
   /** Returns true if the memory access on this line was fixable. */
-  bool fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line);
+  bool fix(const CpuState& cs, CpuState& fixed, const x64asm::Instruction& instr);
   /** Returns true if we think we've adjusted registers to make memory align. */
-  bool fix_misalignment(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line);
+  bool fix_misalignment(const CpuState& cs, CpuState& fixed, const x64asm::Instruction& instr);
   /** If we've already tried to fix misalignment.  We can go into an infinite loop
       if this check isn't done. */
   bool tried_to_fix_misalign_;

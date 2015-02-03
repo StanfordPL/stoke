@@ -21,6 +21,7 @@ enum class PerformanceTerm {
   NONE,
   SIZE,
   LATENCY,
+  MEASURED,
 
   // Add user-defined extensions here ...
   EXTENSION

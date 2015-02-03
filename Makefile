@@ -46,6 +46,7 @@ SRC_OBJ=\
 	src/sandbox/sandbox.o \
 	\
 	src/search/search.o \
+	src/search/search_state.o \
 	src/search/transforms.o \
 	\
 	src/solver/z3solver.o \

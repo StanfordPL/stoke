@@ -26,8 +26,8 @@ using namespace x64asm;
 namespace {
 
 void callback(const StateCallbackData& data, void* arg) {
-  size_t& last_line = *((size_t*) arg);
-  last_line = data.line;
+  Instruction& last_line = *((Instruction*) arg);
+  last_line = data.code[data.line];
 }
 
 } // namespace
@@ -58,10 +58,6 @@ bool StateGen::get(CpuState& cs) const {
   cs.sym_table.clear();
   uint64_t addr = 0x00400000;
 
-  const auto& l = sb_->get_main().get_code()[0].get_operand<Label>(0).get_text();
-  cs.sym_table.insert(l, addr);
-  addr += 16 * sb_->get_main().get_code().size();
-
   for (auto i = sb_->function_begin(), ie = sb_->function_end(); i != ie; ++i) {
     const auto& l = i->get_code()[0].get_operand<Label>(0).get_text();
     cs.sym_table.insert(l, addr);
@@ -73,12 +69,9 @@ bool StateGen::get(CpuState& cs) const {
 
 bool StateGen::get(CpuState& cs, const Cfg& cfg) {
   // Insert callbacks before every instruction and compile
+  Instruction last_line(RET);
   sb_->clear_callbacks();
-
-  size_t last_line;
-  for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
-    sb_->insert_before(i, callback, (void*)&last_line);
-  }
+  sb_->insert_before(callback, (void*)&last_line);
   sb_->compile(cfg);
 
   // Generate a random state and keep checking for validity
@@ -100,11 +93,11 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
 
     // If we didn't segfault, or we did due to misalign and it's allowed,
     // then we're done
-    if(is_ok(*sb_, cfg, last_line)) {
+    if(is_ok(*sb_, last_line)) {
       return true;
     }
     // Otherwise, try allocating away a segfault and retry
-    else if (fix(*(sb_->get_result(0)), cs, cfg, last_line)) {
+    else if (fix(*(sb_->get_result(0)), cs, last_line)) {
       i--;
     }
     // Otherwise, generate a new state and call this attempt failed
@@ -117,17 +110,17 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
   return false;
 }
 
-bool StateGen::is_ok(const Sandbox& sb, const Cfg& cfg, size_t line) {
+bool StateGen::is_ok(const Sandbox& sb, const Instruction& line) {
   if (sb_->get_result(0)->code == ErrorCode::NORMAL) {
     return true;
   }
 
-  if(!is_supported_deref(cfg, line))
+  if(!is_supported_deref(line))
     return false;
 
   CpuState cs = *(sb_->get_result(0));
-  const auto addr = get_addr(cs, cfg, line);
-  const auto size = get_size(cfg, line);
+  const auto addr = get_addr(cs, line);
+  const auto size = get_size(line);
 
   // If the address is already allocated, there's a segfault,
   // it's misaligned and we allow misaligned, then we're ok.
@@ -164,9 +157,7 @@ void StateGen::randomize_regs(CpuState& cs) const {
   }
 }
 
-bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) {
-  const auto& instr = cfg.get_code()[line];
-
+bool StateGen::is_supported_deref(const Instruction& instr) {
   // Special support for push/pop/ret
   if (instr.is_push() || instr.is_pop() || instr.is_any_return() || instr.is_call()) {
     return true;
@@ -196,9 +187,7 @@ bool StateGen::is_supported_deref(const Cfg& cfg, size_t line) {
   return true;
 }
 
-uint64_t StateGen::get_addr(const CpuState& cs, const Cfg& cfg, size_t line) const {
-  const auto& instr = cfg.get_code()[line];
-
+uint64_t StateGen::get_addr(const CpuState& cs, const Instruction& instr) const {
   // Special handling for implicit dereferences
   if (instr.is_push() || instr.is_call()) {
     return cs.gp[rsp].get_fixed_quad(0) - 8;
@@ -253,9 +242,7 @@ uint64_t StateGen::get_addr(const CpuState& cs, const Cfg& cfg, size_t line) con
   return addr;
 }
 
-size_t StateGen::get_size(const Cfg& cfg, size_t line) const {
-  const auto& instr = cfg.get_code()[line];
-
+size_t StateGen::get_size(const Instruction& instr) const {
   // Special handling for implicit dereferences
   if (instr.is_push() || instr.is_pop() || instr.is_any_return() || instr.is_call()) {
     return 8;
@@ -335,13 +322,11 @@ bool StateGen::resize_mem(Memory& mem, uint64_t addr, size_t size) const {
   }
 }
 
-bool StateGen::fix_misalignment(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line) {
-
-  const auto instr = cfg.get_code()[line];
+bool StateGen::fix_misalignment(const CpuState& cs, CpuState& fixed, const Instruction& instr) {
   const auto mi = instr.mem_index();
   const auto op = instr.get_operand<M8>(mi);
 
-  const auto addr = get_addr(cs, cfg, line);
+  const auto addr = get_addr(cs, instr);
   const auto mask = 0x1f;
   const auto offset = addr & mask;
 
@@ -365,7 +350,7 @@ bool StateGen::fix_misalignment(const CpuState& cs, CpuState& fixed, const Cfg& 
 
 }
 
-bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line) {
+bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Instruction& instr) {
   // Clear the error message unless something bad happens.
   error_message_ = "";
 
@@ -375,16 +360,16 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
     return false;
   }
   // Only explicit dereferences are fixable
-  if (!is_supported_deref(cfg, line)) {
+  if (!is_supported_deref(instr)) {
     return false;
   }
 
-  const auto addr = get_addr(cs, cfg, line);
-  const auto size = get_size(cfg, line);
+  const auto addr = get_addr(cs, instr);
+  const auto size = get_size(instr);
 
   // We can't do anything about misaligned memory or pre-allocated memory
   if (is_misaligned(addr, size) && !allow_unaligned_) {
-    return fix_misalignment(cs, fixed, cfg, line);
+    return fix_misalignment(cs, fixed, instr);
   } else if (already_allocated(fixed.stack, addr, size)) {
     tried_to_fix_misalign_ = false;
     error_message_ = "Memory was already allocated in stack.";

@@ -19,17 +19,20 @@
 
 #include "src/search/search_state.h"
 #include "src/tunit/tunit.h"
+#include "tools/args/search.h"
 #include "tools/args/search_state.h"
 #include "tools/gadgets/cfg.h"
+#include "tools/gadgets/target.h"
 
 namespace stoke {
 
 class SearchStateGadget : public SearchState {
 public:
-  SearchStateGadget(const std::vector<TUnit>& aux_fxns) {
+  SearchStateGadget(const Cfg& target, const std::vector<TUnit>& aux_fxns) {
     current = CfgGadget(current_arg.value().code, aux_fxns);
     best_yet = CfgGadget(best_yet_arg.value().code, aux_fxns);
     best_correct = CfgGadget(best_correct_arg.value().code, aux_fxns);
+    configure(init_arg.value(), target, max_instrs_arg.value());
   }
 };
 

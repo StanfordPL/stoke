@@ -98,15 +98,17 @@ class BashHandler(Handler):
     if command.has_subcommands():
       for sub in command.subcommands:
         comps.append(sub.name)
+      self.writeln("  if [ \"$COMP_CWORD\" -eq " + str(depth) + " -a \"$prev\" == " + command.name + " ]; then")
+      self.writeln("    COMPREPLY=( $(compgen -W \"" + " ".join(comps) + "\" -- $cur) )")
+      self.writeln("  fi")
     else:
       for arg in command.arguments:
         for param in arg.params:
           comps.append(param)
-
-    self.writeln("  if [ $COMP_CWORD -eq " + str(depth) + " -a $prev == " + command.name + " ]")
-    self.writeln("  then")
-    self.writeln("    COMPREPLY=( $(compgen -W \"" + " ".join(comps) + "\" -- $cur) )")
-    self.writeln("  fi")
+      self.writeln("  if [ \"$COMP_CWORD\" -ge " + str(depth) + " -a \"${COMP_WORDS[" + str(depth-1) + "]}\" == " + command.name + " ]; then")
+      self.writeln("    FILES=`ls ./*`")
+      self.writeln("    COMPREPLY=( $(compgen -W \"$DIR " + " ".join(comps) + "\" -- $cur) )")
+      self.writeln("  fi")
 
   def finish(self):
     super(BashHandler, self).finish()

@@ -95,6 +95,11 @@ struct CpuState {
   Memory heap;
   /** Data. */
   Memory data;
+
+  /** The number of jumps last spent on this testcase */
+  uint64_t jumps_seen;
+  /** The total latency of the last run of this testcase */
+  uint64_t latency_seen;
 };
 
 } // namespace stoke

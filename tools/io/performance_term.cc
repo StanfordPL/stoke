@@ -24,10 +24,11 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, PerformanceTerm>, 4> pts {{
-    {"none", PerformanceTerm::NONE},
-    {"size", PerformanceTerm::SIZE},
-    {"latency", PerformanceTerm::LATENCY},
+array<pair<string, PerformanceTerm>, 5> pts {{
+    {"none",     PerformanceTerm::NONE},
+    {"size",     PerformanceTerm::SIZE},
+    {"latency",  PerformanceTerm::LATENCY},
+    {"measured", PerformanceTerm::MEASURED},
 
     // Add user-defined extensions here ...
     {"extension", PerformanceTerm::EXTENSION}
