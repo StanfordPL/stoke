@@ -149,33 +149,33 @@ string tempfile(const string& temp) {
 }
 
 void write_x64asm_offsets(const std::string& file) {
-	Assembler assm;
+  Assembler assm;
 
-	// Note the direct use of aux_fxns_arg; we need values for EVERY function
-	map<string, vector<size_t>> table;
-	for (const auto& fxn : aux_fxns_arg.value()) {
-		vector<size_t> offsets;
-		size_t offset = 0;
-		for (const auto& instr : fxn.code) {
-			if (instr.is_label_defn()) {
-				continue;
-			}
-			offsets.push_back(offset);
-			offset += assm.hex_size(instr);
-		}
-		table[fxn.name] = offsets;
-	}
+  // Note the direct use of aux_fxns_arg; we need values for EVERY function
+  map<string, vector<size_t>> table;
+  for (const auto& fxn : aux_fxns_arg.value()) {
+    vector<size_t> offsets;
+    size_t offset = 0;
+    for (const auto& instr : fxn.code) {
+      if (instr.is_label_defn()) {
+        continue;
+      }
+      offsets.push_back(offset);
+      offset += assm.hex_size(instr);
+    }
+    table[fxn.name] = offsets;
+  }
 
-	ofstream ofs(file);
-	ofs << table << endl;
+  ofstream ofs(file);
+  ofs << table << endl;
 }
 
 int trace(const string& argv0) {
   string here = argv0;
   here = here.substr(0, here.find_last_of("/") + 1);
 
-	const auto offset_file = tempfile("/tmp/stoke_testcase.hex.XXXXXX");
-	write_x64asm_offsets(offset_file);
+  const auto offset_file = tempfile("/tmp/stoke_testcase.hex.XXXXXX");
+  write_x64asm_offsets(offset_file);
 
   const string pin_path = here + "../src/ext/pin-2.13-62732-gcc.4.4.7-linux/";
   const string so_path = pin_path + "source/tools/stoke/obj-intel64/";
@@ -195,15 +195,15 @@ int trace(const string& argv0) {
     term << e << " ";
   }
   term << "\" ";
-	term << "-H " << offset_file << " ";
+  term << "-H " << offset_file << " ";
 
   term << " -- " << bin.value() << " " << args.value() << endl;
 
-	// Don't return term.result() because it computes it mod 256 in the shell,
+  // Don't return term.result() because it computes it mod 256 in the shell,
   // and this sometimes hides errors from pin -- Berkeley
   if(term.result() != 0) {
     Console::error(1) << "Pin failed with error " << term.result() << "!" << endl;
-    return 1; 
+    return 1;
   }
   return 0;
 }
