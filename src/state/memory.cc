@@ -83,7 +83,7 @@ istream& Memory::read_bin(istream& is) {
   // Fail for memories that are larger than 100 KB
   if (content_size > 100*1024) {
     fail(is) << "Only memories of size up to 100KB are supported (otherwise, construction a sandbox gets prohibitively expensive)";
-    return;
+    return is;
   }
 
   contents_.resize_for_fixed_bytes(content_size);
