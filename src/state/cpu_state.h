@@ -32,10 +32,10 @@ namespace stoke {
 
 struct CpuState {
   /** Returns a new CpuState. */
-  CpuState(size_t stack_size = 0, size_t heap_size = 0, uint64_t base = 0) :
-    code(ErrorCode::NORMAL), sym_table(), gp(16, 64), sse(16, 256), rf() {
-    stack.resize(0, stack_size);
-    heap.resize(base, heap_size);
+  CpuState() : code(ErrorCode::NORMAL), sym_table(), gp(16, 64), sse(16, 256), rf() {
+    stack.resize(0x700000000, 0);
+    heap.resize (0x100000000, 0);
+    data.resize (0x000000000, 0);
   }
 
   /** Bit-wise xor; ignores error code. */
@@ -45,6 +45,7 @@ struct CpuState {
     rf ^= rhs.rf;
     stack ^= rhs.stack;
     heap ^= rhs.stack;
+    data ^= rhs.data;
 
     return *this;
   }
@@ -58,7 +59,7 @@ struct CpuState {
   bool operator==(const CpuState& rhs) const {
     return code == rhs.code && sym_table == rhs.sym_table &&
            gp == rhs.gp && sse == rhs.sse && rf == rhs.rf &&
-           stack == rhs.stack && heap == rhs.heap;
+           stack == rhs.stack && heap == rhs.heap && data == rhs.data;
   }
   /** Inequality. */
   bool operator!=(const CpuState& rhs) const {
@@ -92,12 +93,13 @@ struct CpuState {
   Memory stack;
   /** Heap. */
   Memory heap;
+  /** Data. */
+  Memory data;
 
   /** The number of jumps last spent on this testcase */
   uint64_t jumps_seen;
   /** The total latency of the last run of this testcase */
   uint64_t latency_seen;
-
 };
 
 } // namespace stoke
