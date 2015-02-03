@@ -24,14 +24,14 @@ Heading& in_out_heading =
 
 ValueArg<RegSet, RegSetReader, RegSetWriter>& def_in_arg =
   ValueArg<RegSet, RegSetReader, RegSetWriter>::create("def_in")
-	.alternate("di")
+  .alternate("di")
   .usage("{ %rax %rsp ... }")
   .description("Registers defined on entry")
   .default_val(RegSet::linux_call_parameters());
 
 ValueArg<RegSet, RegSetReader, RegSetWriter>& live_out_arg =
   ValueArg<RegSet, RegSetReader, RegSetWriter>::create("live_out")
-	.alternate("lo")
+  .alternate("lo")
   .usage("{ %rax %rsp ... }")
   .description("Registers live on exit")
   .default_val(RegSet::linux_call_return());
