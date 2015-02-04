@@ -102,15 +102,6 @@ INT32 Usage() {
 
 /* ============================================================================================= */
 
-VOID unsupported_check() {
-	// If control hits here and we're recording, we need to quit
-	if (recording_) {
-		Console::error(1) << "Encountered an unsupported instruction while recording!" << endl;
-	}
-}
-
-/* ============================================================================================= */
-
 VOID update_state(ADDRINT rsp) {
 	// Reset internal state if we're not recording; we might be about to start
 	if (!recording_) {
@@ -404,33 +395,36 @@ VOID rtn(RTN fxn, VOID* v) {
 		if (is_target && ((end_lines_.find(line) != end_lines_.end()) || INS_IsRet(ins))) {
 			emit_stop(ins);
 		}
-		// Lookup number of x64asm hex bytes at this point
-		if (line > x64asm_offset.size()) {
-			Console::error(1) << "Missing hex offset information for " << RTN_Name(fxn) << ":" << line << endl;
-		}
-		const auto x64asm_bytes = x64asm_offset[line-1];
-		line++;
 
     // Record memory references
-    const auto memOpCount = INS_MemoryOperandCount(ins);
-		if (memOpCount >= 2) {
-			INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) unsupported_check, IARG_END);
+		const auto memOpCount = INS_MemoryOperandCount(ins);
+		if (memOpCount > 0) {
+			// If this is a rip-derefence, compute offset between this hex and x64asm hex
+			const auto rip_deref = INS_RegRContain(ins, REG_INST_PTR) && !INS_IsCall(ins);
+			const auto have_hex = line <= x64asm_offset.size();
+			if (rip_deref && !have_hex) {
+				Console::error(1) << "Missing hex offset information for rip dereference at " << RTN_Name(fxn) << ":" << line << endl;
+			} 
+			const auto x64asm_bytes = have_hex ? x64asm_offset[line-1] : 0;
+			const int64_t delta = x64asm_bytes - (INS_NextAddress(ins) - fxn_rip);
+
+			for (size_t i = 0; i < memOpCount; ++i) {
+				if (INS_MemoryOperandIsRead(ins, i)) {
+					INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_read,
+							IARG_MEMORYOP_EA, i, IARG_MEMORYREAD_SIZE, 
+							IARG_BOOL, rip_deref, IARG_ADDRINT, delta, 
+							IARG_END);
+				}
+				if (INS_MemoryOperandIsWritten(ins, i)) {
+					INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_write,
+							IARG_MEMORYOP_EA, i, IARG_MEMORYWRITE_SIZE, 
+							IARG_BOOL, rip_deref, IARG_ADDRINT, delta,
+							IARG_END);
+				}
+			}
 		}
 
-		const auto rip_deref = INS_RegRContain(ins, REG_INST_PTR) && !INS_IsCall(ins);
-		const int64_t delta = x64asm_bytes - (INS_NextAddress(ins) - fxn_rip);
-    if (memOpCount > 0 && INS_MemoryOperandIsRead(ins, 0)) {
-      INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_read,
-                     IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, 
-										 IARG_BOOL, rip_deref, IARG_ADDRINT, delta, 
-										 IARG_END);
-		}
-    if (memOpCount > 0 && INS_MemoryOperandIsWritten(ins, 0)) {
-      INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_write,
-                     IARG_MEMORYWRITE_EA, IARG_MEMORYWRITE_SIZE, 
-										 IARG_BOOL, rip_deref, IARG_ADDRINT, delta,
-										 IARG_END);
-		}
+		line++;
   }
 
 	// If everything went according to plan, line should point to the end of the x64asm offset
