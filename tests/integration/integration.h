@@ -81,12 +81,12 @@ TEST_F(IntegrationTest, TutorialTest) {
   set_working_dir("examples/tutorial");
 
   // Build and test original program
-  EXPECT_EQ(0, shell("make clean orig"));
-  EXPECT_EQ(42752, shell("./a.out 90000000", &diff_1));
+  EXPECT_EQ(0ull, shell("make clean orig"));
+  EXPECT_EQ(42752ull, shell("./a.out 90000000", &diff_1));
 
   // Run make extract, testcase
-  EXPECT_EQ(0, shell("make extract"));
-  EXPECT_EQ(0, shell("make testcase"));
+  EXPECT_EQ(0ull, shell("make extract"));
+  EXPECT_EQ(0ull, shell("make testcase"));
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
@@ -99,10 +99,10 @@ TEST_F(IntegrationTest, TutorialTest) {
   EXPECT_GT(good, (size_t)0);
 
   // Run make replace
-  EXPECT_EQ(0, shell("make replace"));
+  EXPECT_EQ(0ull, shell("make replace"));
 
   // Test new program
-  EXPECT_EQ(42752, shell("./a.out 90000000", &diff_2));
+  EXPECT_EQ(42752ull, shell("./a.out 90000000", &diff_2));
 
   // There should have been at least a 20% speedup.
   // Usually we see a 10x speedup.
@@ -110,7 +110,7 @@ TEST_F(IntegrationTest, TutorialTest) {
   EXPECT_GT(diff_1*100, diff_2*120);
 
   // Cleanup
-  EXPECT_EQ(0, shell("make clean"));
+  EXPECT_EQ(0ull, shell("make clean"));
 
 }
 
@@ -128,12 +128,12 @@ TEST_F(IntegrationTest, PairityTest) {
   set_working_dir("examples/pairity");
 
   // Build and test original program
-  EXPECT_EQ(0, shell("make clean orig"));
+  EXPECT_EQ(0ull, shell("make clean orig"));
 
-  EXPECT_EQ(0, shell("./a.out 1000000000", &diff_1));
+  EXPECT_EQ(0ull, shell("./a.out 1000000000", &diff_1));
 
   // Run make extract
-  EXPECT_EQ(0, shell("make extract"));
+  EXPECT_EQ(0ull, shell("make extract"));
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
@@ -148,12 +148,12 @@ TEST_F(IntegrationTest, PairityTest) {
   EXPECT_GT(good, (size_t)0);
 
   // Run make replace
-  EXPECT_EQ(0, shell("make replace"));
+  EXPECT_EQ(0ull, shell("make replace"));
 
   // Test new program
-  EXPECT_EQ(0, shell("./a.out 1000000000", &diff_2));
+  EXPECT_EQ(0ull, shell("./a.out 1000000000", &diff_2));
 
   // Cleanup
-  EXPECT_EQ(0, shell("make clean"));
+  EXPECT_EQ(0ull, shell("make clean"));
 
 }
