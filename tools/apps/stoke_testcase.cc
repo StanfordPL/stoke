@@ -160,8 +160,8 @@ void write_x64asm_offsets(const std::string& file) {
       if (instr.is_label_defn()) {
         continue;
       }
-      offsets.push_back(offset);
       offset += assm.hex_size(instr);
+      offsets.push_back(offset);
     }
     table[fxn.name] = offsets;
   }
