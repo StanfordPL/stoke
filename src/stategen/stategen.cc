@@ -35,26 +35,35 @@ void callback(const StateCallbackData& data, void* arg) {
 namespace stoke {
 
 bool StateGen::get(CpuState& cs) const {
-  randomize_regs(cs);
+  // Randomize registers
+  for (size_t i = 0, ie = cs.gp.size(); i < ie; ++i) {
+    auto& r = cs.gp[i];
+    for (size_t j = 0, je = r.num_fixed_bytes(); j < je; ++j) {
+      r.get_fixed_byte(j) = rand() % 256;
+    }
+  }
+  for (size_t i = 0, ie = cs.sse.size(); i < ie; ++i) {
+    auto& s = cs.sse[i];
+    for (size_t j = 0, je = s.num_fixed_bytes(); j < je; ++j) {
+      s.get_fixed_byte(j) = rand() % 256;
+    }
+  }
+  for (size_t i = 0, ie = cs.rf.size(); i < ie; ++i) {
+    if (!cs.rf.is_fixed(i)) {
+      cs.rf.set(i, rand() % 2);
+    }
+  }
 
   // Map rsp to a high address
-  auto& upper_rsp = cs.gp[rsp].get_fixed_double(1);
-  upper_rsp = 0x7fffffff;
+  cs.gp[rsp].get_fixed_quad(0) = 0x700000000;
 
-  // Map rsp to 256-bit align
-  auto& lower_rsp = cs.gp[rsp].get_fixed_byte(0);
-  lower_rsp = 0;
-
-  // Clear heap and data segments
+  // Generate default memory
+  cs.stack.resize(cs.gp[rsp].get_fixed_quad(0) - stack_size_, stack_size_);
   cs.heap.resize(0x100000000, 0);
   cs.data.resize(0x000000000, 0);
-
-  // Create stack in the vicinity of rsp
-  const auto s = cs.gp[rsp].get_fixed_quad(0);
-  cs.stack.resize(s - stack_size_, stack_size_);
   randomize_mem(cs.stack);
 
-  // Set up the symbol table beginning at the bottom of the processes address space
+  // Set up symbol table beginning at the bottom of the address space
   cs.sym_table.clear();
   uint64_t addr = 0x00400000;
 
@@ -132,29 +141,6 @@ bool StateGen::is_ok(const Sandbox& sb, const Instruction& line) {
   }
 
   return false;
-}
-
-void StateGen::randomize_regs(CpuState& cs) const {
-  // General purpose
-  for (size_t i = 0, ie = cs.gp.size(); i < ie; ++i) {
-    auto& r = cs.gp[i];
-    for (size_t j = 0, je = r.num_fixed_bytes(); j < je; ++j) {
-      r.get_fixed_byte(j) = rand() % 256;
-    }
-  }
-  // SSE
-  for (size_t i = 0, ie = cs.sse.size(); i < ie; ++i) {
-    auto& s = cs.sse[i];
-    for (size_t j = 0, je = s.num_fixed_bytes(); j < je; ++j) {
-      s.get_fixed_byte(j) = rand() % 256;
-    }
-  }
-  // RFlags (don't modify deterministic values)
-  for (size_t i = 0, ie = cs.rf.size(); i < ie; ++i) {
-    if (!cs.rf.is_fixed(i)) {
-      cs.rf.set(i, rand() % 2);
-    }
-  }
 }
 
 bool StateGen::is_supported_deref(const Instruction& instr) {
