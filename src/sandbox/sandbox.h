@@ -374,8 +374,7 @@ private:
   /** Returns a function that maps virtual addresses to physical addresses. */
   x64asm::Function emit_map_addr(CpuState& cs);
   /** Returns code to check memory for validity and then toggle def bits. */
-  void emit_map_addr_cases(CpuState& cs, const x64asm::Label& fail, const x64asm::Label& done,
-                           bool stack);
+  void emit_map_addr_cases(CpuState& cs, const x64asm::Label& fail, const x64asm::Label& done, size_t mem);
 
   /** Check whether a function is read only wrt memory */
   bool is_mem_read_only(const Cfg& cfg) const;
@@ -390,7 +389,7 @@ private:
   /** Emit an instruction (and possibly sandbox memory). */
   void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& fxn, uint64_t hex_offset, const x64asm::Label& exit);
   /** Emit a memory instruction. */
-  void emit_memory_instruction(const x64asm::Instruction& instr);
+  void emit_memory_instruction(const x64asm::Instruction& instr, const x64asm::Label& fxn = x64asm::Label(".none"), uint64_t hex_offset = 0);
   /** Emit a jump instruction */
   void emit_jump(const x64asm::Instruction& instr);
   /** Emit the CALL LABEL instruction. */
