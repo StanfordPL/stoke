@@ -163,21 +163,18 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     M64 target = M64(rsp);
     ss.set(dst, ss[target]);
-    ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 8));
-  });
-
-  add_opcode({"popl"},
-  [this] (Operand dst, SymBitVector a, SymState& ss) {
-    M32 target = M32(rsp);
-    ss.set(dst, ss[target]);
-    ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 4));
+    if(dst != rsp) {
+      ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 8));
+    }
   });
 
   add_opcode({"popw"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     M16 target = M16(rsp);
     ss.set(dst, ss[target]);
-    ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 2));
+    if(dst != sp) {
+      ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 2));
+    }
   });
 
   add_opcode({"popcntw", "popcntl", "popcntq"},
