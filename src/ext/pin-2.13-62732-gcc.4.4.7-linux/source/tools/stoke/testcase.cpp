@@ -410,13 +410,13 @@ VOID rtn(RTN fxn, VOID* v) {
 
 			for (size_t i = 0; i < memOpCount; ++i) {
 				if (INS_MemoryOperandIsRead(ins, i)) {
-					INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_read,
+					INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) record_read,
 							IARG_MEMORYOP_EA, i, IARG_MEMORYREAD_SIZE, 
 							IARG_BOOL, rip_deref, IARG_ADDRINT, delta, 
 							IARG_END);
 				}
 				if (INS_MemoryOperandIsWritten(ins, i)) {
-					INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_write,
+					INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) record_write,
 							IARG_MEMORYOP_EA, i, IARG_MEMORYWRITE_SIZE, 
 							IARG_BOOL, rip_deref, IARG_ADDRINT, delta,
 							IARG_END);
