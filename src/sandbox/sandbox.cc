@@ -1277,9 +1277,15 @@ void Sandbox::emit_mem_pop(const Instruction& instr) {
 }
 
 void Sandbox::emit_mem_push(const Instruction& instr) {
+	// Optimization opportunity:
+	// The memory write that happens here is to force the memory operand to
+	// xchg to be defined. Rather than go all the way through emit_memory_instr()
+	// it might be faster to have a method that just forces those bits to true.
+
   switch (instr.get_opcode()) {
   case PUSH_M16: {
     const auto rx = get_unused_word(instr);
+		emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), Imm16(0)}});
     emit_memory_instruction({XCHG_R16_M16, {rx, M16(rsp, Imm32(-2))}});
     emit_memory_instruction({MOV_R16_M16, {rx, instr.get_operand<M16>(0)}});
     emit_memory_instruction({XCHG_R16_M16, {rx, M64(rsp, Imm32(-2))}});
@@ -1288,6 +1294,7 @@ void Sandbox::emit_mem_push(const Instruction& instr) {
   }
   case PUSH_M64: {
     const auto rx = get_unused_quad(instr);
+		emit_memory_instruction({MOV_M64_IMM32, {M64(rsp, Imm32(-8)), Imm32(0)}});
     emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
     emit_memory_instruction({MOV_R64_M64, {rx, instr.get_operand<M64>(0)}});
     emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
