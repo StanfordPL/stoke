@@ -68,9 +68,6 @@ private:
   /** The minimum stack size. */
   size_t stack_size_;
 
-  /** Replaces the register contents of cs with random bits. */
-  void randomize_regs(CpuState& cs) const;
-
   /** Returns true if we support fixing derefs of this type. */
   bool is_supported_deref(const x64asm::Instruction& instr);
 
