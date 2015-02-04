@@ -236,7 +236,7 @@ VOID record_read(VOID* addr, UINT32 size, bool rip_deref, int64_t delta) {
 		if (rip_deref) {
 			if (data_valids_.find(ptr + delta) == data_valids_.end()) {
 				data_valids_.insert(ptr + delta);
-				data_defs_[ptr + delta] = *((uint8_t*)(ptr + delta));
+				data_defs_[ptr + delta] = *((uint8_t*)(ptr));
 			}
 		} else if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
       if (stack_valids_.find(ptr) == stack_valids_.end()) {
@@ -418,7 +418,7 @@ VOID rtn(RTN fxn, VOID* v) {
 		}
 
 		const auto rip_deref = INS_RegRContain(ins, REG_INST_PTR) && !INS_IsCall(ins);
-		const int64_t delta = (INS_Address(ins) - fxn_rip) - x64asm_bytes;
+		const int64_t delta = x64asm_bytes - (INS_NextAddress(ins) - fxn_rip);
     if (memOpCount > 0 && INS_MemoryOperandIsRead(ins, 0)) {
       INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_read,
                      IARG_MEMORYREAD_EA, IARG_MEMORYREAD_SIZE, 
