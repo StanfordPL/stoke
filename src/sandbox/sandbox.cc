@@ -530,7 +530,7 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   const auto fail = get_label();
   const auto done = get_label();
   const auto heap_case = get_label();
-	const auto data_case = get_label();
+  const auto data_case = get_label();
 
   // Check alignment: A well aligned address won't change
   // Following this check, rsi is free for use as scratch space
@@ -547,7 +547,7 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.mov((R64)rax, Imm64(cs.stack.size()));
   assm_.cmp(rdi, rax);
   assm_.jge(fail);
-  
+
   emit_map_addr_cases(cs, fail, done, 0);
 
   // Heap case: Check that the address is inside the heap
@@ -560,21 +560,21 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.mov((R64)rax, Imm64(cs.heap.size()));
   assm_.cmp(rdi, rax);
   assm_.jge(fail);
-  
+
   emit_map_addr_cases(cs, fail, done, 1);
 
-	// Data case: Check that the address is inside the data section
-	assm_.bind(data_case);
-	assm_.mov((R64)rax, Imm64(cs.data.lower_bound()));
-	assm_.cmp(rdi, rax);
-	assm_.jl(fail);
+  // Data case: Check that the address is inside the data section
+  assm_.bind(data_case);
+  assm_.mov((R64)rax, Imm64(cs.data.lower_bound()));
+  assm_.cmp(rdi, rax);
+  assm_.jl(fail);
 
-	assm_.sub(rdi, rax);
-	assm_.mov((R64)rax, Imm64(cs.data.size()));
-	assm_.cmp(rdi, rax);
-	assm_.jge(fail);
+  assm_.sub(rdi, rax);
+  assm_.mov((R64)rax, Imm64(cs.data.size()));
+  assm_.cmp(rdi, rax);
+  assm_.jge(fail);
 
-	emit_map_addr_cases(cs, fail, done, 2);
+  emit_map_addr_cases(cs, fail, done, 2);
 
   // If control reaches here, invoke the signal_trap handler for sigsegv
   assm_.bind(fail);
@@ -603,18 +603,18 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.mov(rcx, rax);
 
   // The read mask shouldn't change when and'ed against the def mask
-	switch (mem) {
-		case 0:
-    	assm_.mov((R64)rax, Imm64(cs.stack.defined_mask()));
-			break;
-		case 1:
-    	assm_.mov((R64)rax, Imm64(cs.heap.defined_mask()));
-			break;
-		case 2:
-			assm_.mov((R64)rax, Imm64(cs.data.defined_mask()));
-			break;
-		default:
-			assert(false);
+  switch (mem) {
+  case 0:
+    assm_.mov((R64)rax, Imm64(cs.stack.defined_mask()));
+    break;
+  case 1:
+    assm_.mov((R64)rax, Imm64(cs.heap.defined_mask()));
+    break;
+  case 2:
+    assm_.mov((R64)rax, Imm64(cs.data.defined_mask()));
+    break;
+  default:
+    assert(false);
   }
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rdx);
@@ -622,18 +622,18 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.jne(fail);
 
   // The write mask shouldn't change when and'ed against the valid mask
-	switch (mem) {
-		case 0:
-    	assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
-			break;
-		case 1:
-    	assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
-			break;
-		case 2:
-    	assm_.mov((R64)rax, Imm64(cs.data.valid_mask()));
-			break;
-		default:
-			assert(false);
+  switch (mem) {
+  case 0:
+    assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
+    break;
+  case 1:
+    assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
+    break;
+  case 2:
+    assm_.mov((R64)rax, Imm64(cs.data.valid_mask()));
+    break;
+  default:
+    assert(false);
   }
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rcx);
@@ -641,34 +641,34 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.jne(fail);
 
   // Set new defined bits
-	switch (mem) {
-		case 0:
-    	assm_.mov((R64)rax, Imm64(cs.stack.defined_mask()));
-			break;
-		case 1:
-    	assm_.mov((R64)rax, Imm64(cs.heap.defined_mask()));
-			break;
-		case 2:
-    	assm_.mov((R64)rax, Imm64(cs.data.defined_mask()));
-			break;
-		default:
-			assert(false);
+  switch (mem) {
+  case 0:
+    assm_.mov((R64)rax, Imm64(cs.stack.defined_mask()));
+    break;
+  case 1:
+    assm_.mov((R64)rax, Imm64(cs.heap.defined_mask()));
+    break;
+  case 2:
+    assm_.mov((R64)rax, Imm64(cs.data.defined_mask()));
+    break;
+  default:
+    assert(false);
   }
   assm_.or_(M64(rax, rsi, Scale::TIMES_1), rcx);
 
   // Do final remapping
-	switch (mem) {
-		case 0:
-	    assm_.mov((R64)rax, Imm64(cs.stack.data()));
-			break;
-		case 1:
-    	assm_.mov((R64)rax, Imm64(cs.heap.data()));
-			break;
-		case 2:
-    	assm_.mov((R64)rax, Imm64(cs.data.data()));
-			break;
-		default:
-			assert(false);
+  switch (mem) {
+  case 0:
+    assm_.mov((R64)rax, Imm64(cs.stack.data()));
+    break;
+  case 1:
+    assm_.mov((R64)rax, Imm64(cs.heap.data()));
+    break;
+  case 2:
+    assm_.mov((R64)rax, Imm64(cs.data.data()));
+    break;
+  default:
+    assert(false);
   }
   assm_.add(rax, rdi);
 
@@ -744,10 +744,10 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
     for (auto i = begin, ie = begin + size; i < ie; ++i) {
       const auto& instr = cfg.get_code()[i];
 
-			// Anything rip offset related is wrt to the next instruction
+      // Anything rip offset related is wrt to the next instruction
       hex_offset += assm_.hex_size(instr);
-      
-			if (cfg.is_reachable(b)) {
+
+      if (cfg.is_reachable(b)) {
         if (global_before_.first != nullptr || !before_.empty()) {
           emit_before(cfg.get_code()[0].get_operand<Label>(0), i);
         }
@@ -937,34 +937,34 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, const Label& fxn
   const auto rsp_base = old_op.contains_base() && (old_op.get_base() == rsp);
   const auto rsp_index = old_op.contains_index() && (old_op.get_index() == rsp);
   const auto uses_rsp = rsp_base || rsp_index;
-	const auto rip_offset = old_op.rip_offset();
+  const auto rip_offset = old_op.rip_offset();
 
   // Some special case handling here for rip offset style dereferences.
-	// Either way, the effective address is going into rdi
-	if (rip_offset) {
-		// Figure out the rip offset at this instruction and put the result in rax
-		assm_.mov(rax, Moffs64(&min_label_));
-		assm_.mov(rdi, rax);
-		assm_.mov((R64)rax, Imm64(static_cast<uint64_t>(fxn)));
-		assm_.lea(rdi, M64(rax, rdi, Scale::TIMES_1));
-		assm_.mov(rax, Moffs64(&sym_table_));
-		assm_.mov(rax, M64(rax, rdi, Scale::TIMES_8));
-		assm_.lea(rax, M64(rax, Imm32(hex_offset)));
-		// Add the offset for this instruction 
-		assm_.lea(rdi, M64(rax, old_op.get_disp()));
-	} else {
-		if (uses_rsp) {
-			assm_.mov(rsp, Imm64(&user_rsp_));
-			assm_.mov(rsp, M64(rsp));
-		}
-		assm_.lea(rdi, old_op);
-		if (uses_rsp) {
-			// STOKE's rsp has changed... careful here, mind the push's
-			assm_.mov(rsp, Imm64(&stoke_rsp_));
-			assm_.mov(rsp, M64(rsp));
-			assm_.lea(rsp, M64(rsp, Imm32(-48)));
-		}
-	}
+  // Either way, the effective address is going into rdi
+  if (rip_offset) {
+    // Figure out the rip offset at this instruction and put the result in rax
+    assm_.mov(rax, Moffs64(&min_label_));
+    assm_.mov(rdi, rax);
+    assm_.mov((R64)rax, Imm64(static_cast<uint64_t>(fxn)));
+    assm_.lea(rdi, M64(rax, rdi, Scale::TIMES_1));
+    assm_.mov(rax, Moffs64(&sym_table_));
+    assm_.mov(rax, M64(rax, rdi, Scale::TIMES_8));
+    assm_.lea(rax, M64(rax, Imm32(hex_offset)));
+    // Add the offset for this instruction
+    assm_.lea(rdi, M64(rax, old_op.get_disp()));
+  } else {
+    if (uses_rsp) {
+      assm_.mov(rsp, Imm64(&user_rsp_));
+      assm_.mov(rsp, M64(rsp));
+    }
+    assm_.lea(rdi, old_op);
+    if (uses_rsp) {
+      // STOKE's rsp has changed... careful here, mind the push's
+      assm_.mov(rsp, Imm64(&stoke_rsp_));
+      assm_.mov(rsp, M64(rsp));
+      assm_.lea(rsp, M64(rsp, Imm32(-48)));
+    }
+  }
 
   // Load the alignment mask into rsi, and the read/write mask into rdx/rcx
   switch (instr.type(mi)) {
