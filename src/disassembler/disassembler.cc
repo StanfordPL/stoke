@@ -159,8 +159,7 @@ void Disassembler::parse_section_offsets(ipstream& ips, map<string, uint64_t>& s
     uint64_t lma, offset;
 
     iss >> temp >> section >> temp >> temp >> hex >> lma >> offset;
-    section_offsets[section] = offset - lma;
-    cout << "RECORDING SECTION " << section << " " << lma << " " << offset << endl;
+    section_offsets[section] = lma - offset;
 
     // Trailing second line
     getline(ips, line);
@@ -486,9 +485,6 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   if (ss.fail()) {
     data.parse_error = true;
   }
-
-  cout << "FUNCTION NAME = " << data.tunit.name << endl;
-  cout << "OFFSET TEXT = " << offsets[".text"] << endl;
 
   // Rescale offsets
   rescale_offsets(data, lines, offsets[".text"]);
