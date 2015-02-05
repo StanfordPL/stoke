@@ -160,7 +160,7 @@ void Disassembler::parse_section_offsets(ipstream& ips, map<string, uint64_t>& s
 
     iss >> temp >> section >> temp >> temp >> hex >> lma >> offset;
     section_offsets[section] = offset - lma;
-		cout << "RECORDING SECTION " << section << " " << lma << " " << offset << endl;
+    cout << "RECORDING SECTION " << section << " " << lma << " " << offset << endl;
 
     // Trailing second line
     getline(ips, line);
@@ -339,7 +339,7 @@ bool Disassembler::parse_ptr(const string& s, map<string, string>& ptrs) {
 
   // We got a result
   ptrs[address] = function_name;
-	return true;
+  return true;
 }
 
 pair<vector<Disassembler::LineInfo>, map<string,string>> Disassembler::parse_lines(ipstream& ips, const string& name) {
@@ -354,7 +354,7 @@ pair<vector<Disassembler::LineInfo>, map<string,string>> Disassembler::parse_lin
     }
 
     // parse_line() returns false for line continuations
-	 	// When that happens only add hex bytes to previous result
+    // When that happens only add hex bytes to previous result
     LineInfo line;
     if (parse_line(s, line)) {
       lines.push_back(line);
@@ -410,7 +410,7 @@ pair<vector<Disassembler::LineInfo>, map<string,string>> Disassembler::parse_lin
 
 void Disassembler::rescale_offsets(FunctionCallbackData& data, const vector<LineInfo>& lines, uint64_t text_offset) {
   // Rescale function offsets
-	const auto start_addr = data.instruction_offsets[0];
+  const auto start_addr = data.instruction_offsets[0];
   data.offset = start_addr - text_offset;
   for (auto& o : data.instruction_offsets) {
     o -= start_addr;
@@ -462,19 +462,19 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   data.tunit.name = mangle_lable(line.substr(begin, len));
 
   // Parse the contents of this function
-	// This function inserts missing lines such as labels and splits lock into two instructions
+  // This function inserts missing lines such as labels and splits lock into two instructions
   const auto res = parse_lines(ips, data.tunit.name);
-	const auto& lines = res.first;
-	data.addr_label_map = res.second;
+  const auto& lines = res.first;
+  data.addr_label_map = res.second;
 
   // Record metadata
-	// This meta-data is wrt to the original code, so skip empty lines which are labels
-	// @todo if we've split a lock instruction, we're going to fall out of sync here
+  // This meta-data is wrt to the original code, so skip empty lines which are labels
+  // @todo if we've split a lock instruction, we're going to fall out of sync here
   for (const auto& l : lines) {
-		if (l.hex_bytes != 0) {
-			data.instruction_offsets.push_back(l.offset);
-			data.instruction_sizes.push_back(l.hex_bytes);
-		}
+    if (l.hex_bytes != 0) {
+      data.instruction_offsets.push_back(l.offset);
+      data.instruction_sizes.push_back(l.hex_bytes);
+    }
   }
 
   // Read code.
@@ -487,8 +487,8 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
     data.parse_error = true;
   }
 
-	cout << "FUNCTION NAME = " << data.tunit.name << endl;
-	cout << "OFFSET TEXT = " << offsets[".text"] << endl;
+  cout << "FUNCTION NAME = " << data.tunit.name << endl;
+  cout << "OFFSET TEXT = " << offsets[".text"] << endl;
 
   // Rescale offsets
   rescale_offsets(data, lines, offsets[".text"]);
