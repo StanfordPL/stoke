@@ -159,7 +159,7 @@ bool is_hex_string(const string& s) {
 }
 
 Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s,
-    map<string, string>& addr_label_map) {
+    map<string, string>& addr_label_map, size_t& last_addr) {
   line_map lines;
   while (getline(ips, s)) {
     // Functions are terminated by empty lines
@@ -180,7 +180,7 @@ Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s,
     uint64_t bytes = count_bytes_on_line(s);
     if(!bytes)
       continue;
-    uint64_t last_addr = line_addr + bytes;
+    last_addr = line_addr + bytes - 1;
 
   }
 
@@ -243,12 +243,14 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
   data.tunit.name = mangle_lable(line.substr(begin, len));
 
   // Iterate through all the lines and make 'em pretty
-  auto lines = index_lines(ips, line, data.addr_label_map);
+  size_t last_addr = 0;
+  auto lines = index_lines(ips, line, data.addr_label_map, last_addr);
   const auto labels = fix_label_uses(lines, data.addr_label_map);
 
   // Build the code and offsets vector
   uint64_t starting_addr = lines[0].first;
   data.offset = starting_addr - offsets[".text"];
+  data.size = last_addr - starting_addr + 1;
 
   stringstream ss;
 
