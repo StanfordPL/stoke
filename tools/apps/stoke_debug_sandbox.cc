@@ -151,10 +151,12 @@ void callback(const StateCallbackData& data, void* arg) {
   auto& frame = program_stack.back();
   frame.second = data.line;
 
-  // Print current execution state
-  print_state(data);
-  print_stack();
-  print_current(frame);
+  // Print current execution state if debug was ever specified
+  if (debug.value()) {
+    print_state(data);
+    print_stack();
+    print_current(frame);
+  }
 
   // User interaction loop
   auto stepping = (bool*) arg;
