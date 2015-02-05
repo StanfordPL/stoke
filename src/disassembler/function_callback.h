@@ -32,8 +32,8 @@ struct FunctionCallbackData {
   std::vector<uint64_t> instruction_offsets;
   /** The number of bytes in the hex encoding of each instruciton (by index) */
   std::vector<size_t> instruction_sizes;
-	/** A map from hex addresses to symbol names for this function */
-	std::map<std::string, std::string> addr_label_map;
+  /** A map from hex addresses to symbol names for this function */
+  std::map<std::string, std::string> addr_label_map;
   /** Did a parse error occur? */
   bool parse_error;
 };
