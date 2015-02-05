@@ -159,7 +159,7 @@ bool is_hex_string(const string& s) {
 }
 
 Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s,
-    map<string, string>& addr_label_map) {
+    map<string, string>& addr_label_map, size_t& last_addr) {
   line_map lines;
   while (getline(ips, s)) {
     // Functions are terminated by empty lines
@@ -171,9 +171,46 @@ Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s,
       parse_addr_label_from_line(s, addr_label_map);
       lines.push_back({parse_addr_from_line(s), fix_instruction(instr)});
     }
+
+    //Track the last byte seen in a line.  This is to get the overall size
+    //of the function.
+    uint64_t line_addr = parse_addr_from_line(s);
+    if(!line_addr)
+      continue;
+    uint64_t bytes = count_bytes_on_line(s);
+    if(!bytes)
+      continue;
+    last_addr = line_addr + bytes - 1;
+
   }
 
   return lines;
+}
+
+uint64_t Disassembler::count_bytes_on_line(const std::string& str) {
+  // Find the first ':'
+  const auto start_index = str.find_first_of(':');
+  if(start_index == string::npos)
+    return 0;
+
+  // Find the first hex character after ':'
+  const auto colon_index = str.find_first_of("0123456789abcdef", start_index);
+  if(start_index == string::npos)
+    return 0;
+
+  // Loop through hex bytes until we can't.
+  size_t bytes_found = 0;
+  for(size_t i = colon_index; i < str.length(); i += 3) {
+    if(!(('0' <= str[i] && str[i] <= '9') || ('a' <= str[i] && str[i] <= 'f')))
+      break;
+    if(!(('0' <= str[i+1] && str[i+1] <= '9') || ('a' <= str[i+1] && str[i+1] <= 'f')))
+      break;
+    if(str[i+2] != ' ' && str[i+2] != '\t')
+      break;
+    bytes_found++;
+  }
+
+  return bytes_found;
 }
 
 string mangle_lable(string label) {
@@ -206,12 +243,14 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
   data.tunit.name = mangle_lable(line.substr(begin, len));
 
   // Iterate through all the lines and make 'em pretty
-  auto lines = index_lines(ips, line, data.addr_label_map);
+  size_t last_addr = 0;
+  auto lines = index_lines(ips, line, data.addr_label_map, last_addr);
   const auto labels = fix_label_uses(lines, data.addr_label_map);
 
   // Build the code and offsets vector
   uint64_t starting_addr = lines[0].first;
   data.offset = starting_addr - offsets[".text"];
+  data.size = last_addr - starting_addr + 1;
 
   stringstream ss;
 
@@ -250,9 +289,13 @@ uint64_t Disassembler::parse_addr_from_line(const string& s) {
   // Address is located between beginning of line and first :
   auto begin = 0;
   for (; isspace(s[begin]); ++begin);
-  const auto len = s.find_first_of(':') - begin;
+  const auto idx = s.find_first_of(':');
+  const auto len = idx - begin;
 
-  return hex_to_int(s.substr(begin, len));
+  if(idx != string::npos)
+    return hex_to_int(s.substr(begin, len));
+  else
+    return 0;
 }
 
 Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lines,
