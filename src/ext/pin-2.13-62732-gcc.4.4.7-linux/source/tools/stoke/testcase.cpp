@@ -69,6 +69,9 @@ ostream* os_;
 // Global symbol table which we populate when instrumenting (callbacks reference this)
 unordered_map<uint64_t, string> symbol_table_;
 
+// Did we see the function the user wants to record for so far?
+bool function_found = false;
+
 // State associated with the current testcase
 bool recording_;
 size_t stack_frame_;
@@ -411,11 +414,34 @@ VOID rtn(RTN fxn, VOID* v) {
   RTN_Close(fxn);
 }
 
+VOID ImageLoad(IMG img, VOID *v)
+{
+  auto target_name = KnobFxnName.Value();
+  for( SEC sec= IMG_SecHead(img); !function_found && SEC_Valid(sec); sec = SEC_Next(sec) ) {
+    for( RTN rtn= SEC_RtnHead(sec); !function_found && RTN_Valid(rtn); rtn = RTN_Next(rtn) ) {
+      if (RTN_Name(rtn) == target_name) {
+        function_found = true;
+      }
+    }
+  }
+}
+
 /* ============================================================================================= */
 
 VOID Fini(INT32 code, VOID* v) {
 	// It's possible that we might still be recording here; don't check this as an error case.
 	// Some programs terminate without returning.
+
+  // Does the function we are looking for even exist?
+  if (!function_found) {
+    cerr << "ERROR: Function '" << KnobFxnName.Value() << "' not found in the binary.  Did you misspell its name?" << endl;
+    exit(1);
+  }
+
+  if (tcs_.size() == 0) {
+    cerr << "ERROR: failed to record any testcases." << endl;
+    exit(1);
+  }
 
 	// Print everything to the target file
 	tcs_.write_text(*os_);
@@ -457,6 +483,7 @@ int main(int argc, char* argv[]) {
   PIN_InitSymbols();
   RTN_AddInstrumentFunction(rtn, 0);
   PIN_AddFiniFunction(Fini, 0);
+  IMG_AddInstrumentFunction(ImageLoad, 0);
 
   // Never returns; we start in a state where nothing is being recorded
 	recording_ = false;
