@@ -30,8 +30,8 @@ struct FunctionCallbackData {
   uint64_t function_offset;
   /* The offsets, from function start, of each instruction (by index) */
   std::vector<uint64_t> instruction_offsets;
-	/* The number of bytes in the hex encoding of each instruciton (by index) */
-	std::vector<size_t> instruction_sizes;
+  /* The number of bytes in the hex encoding of each instruciton (by index) */
+  std::vector<size_t> instruction_sizes;
   /* Did a parse error occur? */
   bool parse_error;
 };

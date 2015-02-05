@@ -74,12 +74,12 @@ private:
   /** Closure-alternative to callback */
   Callback* callback_closure_ = NULL;
 
-	/** POD struct for recording line info */
-	struct LineInfo {
-		uint64_t offset;
-		size_t hex_bytes;
-		std::string instr;
-	};
+  /** POD struct for recording line info */
+  struct LineInfo {
+    uint64_t offset;
+    size_t hex_bytes;
+    std::string instr;
+  };
 
   /* Checks if a filename is whitelisted for use. Prevents accidental shell injection. */
   bool check_filename(const std::string& filename);
@@ -96,9 +96,9 @@ private:
   /* Get an address from an objdump'd line */
   void parse_ptr(const std::string& s, std::map<std::string, std::string>& ptrs);
   /* Get all the lines from a function */
-	std::vector<LineInfo> parse_lines(redi::ipstream& ips);
-	/** Rescale rip displacements for x64asm hex */
-	void rescale_rip(FunctionCallbackData& data);
+  std::vector<LineInfo> parse_lines(redi::ipstream& ips);
+  /** Rescale rip displacements for x64asm hex */
+  void rescale_rip(FunctionCallbackData& data);
 
   /* Parse a single function from objdump's stdout */
   bool parse_function(redi::ipstream& ips, FunctionCallbackData& data, std::map<std::string, uint64_t>& section_offsets);

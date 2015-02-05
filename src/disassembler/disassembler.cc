@@ -85,12 +85,12 @@ bool Disassembler::check_filename(const string& s) {
     } else if (c >= '0' && c <= '9') {
       continue;
     } else if (c == '.' ||
-        c == '/' ||
-        c == '_' ||
-        c == '-' ||
-        c == '~' ||
-        c == '@' ||
-        c == '+') {
+               c == '/' ||
+               c == '_' ||
+               c == '-' ||
+               c == '~' ||
+               c == '@' ||
+               c == '+') {
       continue;
     }
 
@@ -281,17 +281,17 @@ bool Disassembler::parse_line(const string& s, LineInfo& line) {
   // Some character landmarks
   const auto tab1 = s.find_first_of('\t');
   const auto tab2 = s.find_first_of('\t', tab1 + 1);
-	const auto colon = s.find_first_of(':');
+  const auto colon = s.find_first_of(':');
 
-	// Record line offset
-	line.offset = hex_to_int(s.substr(2, colon-2));
-	// Count hex bytes
-	line.hex_bytes = 0;
-	for (auto i = tab1, ie = tab2 == string::npos ? s.length() : tab2; i < ie; i+=3) {
-		line.hex_bytes += isdigit(s[i]) ? 1 : 0;
-	}
+  // Record line offset
+  line.offset = hex_to_int(s.substr(2, colon-2));
+  // Count hex bytes
+  line.hex_bytes = 0;
+  for (auto i = tab1, ie = tab2 == string::npos ? s.length() : tab2; i < ie; i+=3) {
+    line.hex_bytes += isdigit(s[i]) ? 1 : 0;
+  }
 
-	// If this is a hex only line, we're done
+  // If this is a hex only line, we're done
   if (tab2 == string::npos) {
     return false;
   }
@@ -325,7 +325,7 @@ void Disassembler::parse_ptr(const string& s, map<string, string>& ptrs) {
     return;
   }
 
-	// Mangle away tokens we don't support
+  // Mangle away tokens we don't support
   function_name = mangle_lable(function_name);
 
   // Read the address
@@ -341,9 +341,9 @@ void Disassembler::parse_ptr(const string& s, map<string, string>& ptrs) {
 }
 
 vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips) {
-	vector<LineInfo> lines;
-	map<string, string> ptrs;
-	string s;
+  vector<LineInfo> lines;
+  map<string, string> ptrs;
+  string s;
 
   while (getline(ips, s)) {
     // Functions are terminated by empty lines
@@ -351,17 +351,17 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips) {
       break;
     }
 
-		// parse_line() returns false for line continuations, only add hex bytes
-		LineInfo line;
+    // parse_line() returns false for line continuations, only add hex bytes
+    LineInfo line;
     if (parse_line(s, line)) {
       lines.push_back(line);
-			parse_ptr(s, ptrs);
+      parse_ptr(s, ptrs);
     } else {
-			lines.back().hex_bytes += line.hex_bytes;
-		}
+      lines.back().hex_bytes += line.hex_bytes;
+    }
   }
 
-	// Update non-funtion label references and record targets
+  // Update non-funtion label references and record targets
   set<uint64_t> label_refs;
   for (auto& l : lines) {
     // Opcodes are followed by at least one space; ignore instructions with no operands
@@ -388,43 +388,43 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips) {
     }
   }
 
-	// Insert label definitions where necessary and fix instruction text
-	vector<LineInfo> result;
-	for (const auto& l : lines) {
-		if (label_refs.find(l.offset) != label_refs.end()) {
-			ostringstream oss;
-			oss << ".L_" << hex << l.offset << ":";
-			result.push_back({l.offset, 0, oss.str()});
-		}
-		result.push_back({l.offset, l.hex_bytes, fix_instruction(l.instr)});
-	}
+  // Insert label definitions where necessary and fix instruction text
+  vector<LineInfo> result;
+  for (const auto& l : lines) {
+    if (label_refs.find(l.offset) != label_refs.end()) {
+      ostringstream oss;
+      oss << ".L_" << hex << l.offset << ":";
+      result.push_back({l.offset, 0, oss.str()});
+    }
+    result.push_back({l.offset, l.hex_bytes, fix_instruction(l.instr)});
+  }
 
   return result;
 }
 
 void Disassembler::rescale_rip(FunctionCallbackData& data) {
-	Assembler assm;
-	int64_t delta = 0;
-	for (size_t i = 0, ie = data.tunit.code.size(); i < ie; ++i) {
-		auto& instr = data.tunit.code[i];
+  Assembler assm;
+  int64_t delta = 0;
+  for (size_t i = 0, ie = data.tunit.code.size(); i < ie; ++i) {
+    auto& instr = data.tunit.code[i];
 
-		// Record delta between x64asm hex and this hex
-		delta += (data.instruction_sizes[i] - assm.hex_size(instr));
+    // Record delta between x64asm hex and this hex
+    delta += (data.instruction_sizes[i] - assm.hex_size(instr));
 
-		// Nothing to do if this isn't rip dereference
-		if (!instr.is_explicit_memory_dereference()) {
-			continue;
-		}
-		const auto mi = instr.mem_index();
-		auto mem = instr.get_operand<M8>(mi);
-		if (!mem.rip_offset()) {
-			continue;
-		}
+    // Nothing to do if this isn't rip dereference
+    if (!instr.is_explicit_memory_dereference()) {
+      continue;
+    }
+    const auto mi = instr.mem_index();
+    auto mem = instr.get_operand<M8>(mi);
+    if (!mem.rip_offset()) {
+      continue;
+    }
 
-		// Rescale displacement
-		mem.set_disp(mem.get_disp() + delta);
-		instr.set_operand(mi, mem);
-	}
+    // Rescale displacement
+    mem.set_disp(mem.get_disp() + delta);
+    instr.set_operand(mi, mem);
+  }
 }
 
 bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map<string, uint64_t>& offsets) {
@@ -432,11 +432,11 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
     return false;
   }
 
-	// Clear old values
-	data.tunit.code.clear();
-	data.function_offset = 0;
-	data.instruction_sizes.clear();
-	data.instruction_offsets.clear();
+  // Clear old values
+  data.tunit.code.clear();
+  data.function_offset = 0;
+  data.instruction_sizes.clear();
+  data.instruction_offsets.clear();
   data.parse_error = false;
 
   string line;
@@ -450,28 +450,28 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   // Record the lines in this function and their meta data
   stringstream ss;
   ss << "." << data.tunit.name << ":" << endl;
-	for (const auto& l : parse_lines(ips)) {
-		data.instruction_offsets.push_back(l.offset);
-		data.instruction_sizes.push_back(l.hex_bytes);
-		ss << l.instr << endl;
-	}
+  for (const auto& l : parse_lines(ips)) {
+    data.instruction_offsets.push_back(l.offset);
+    data.instruction_sizes.push_back(l.hex_bytes);
+    ss << l.instr << endl;
+  }
 
   // Read code.
-	cout << data.tunit.name << endl;
-	cout << ss.str() << endl;
+  cout << data.tunit.name << endl;
+  cout << ss.str() << endl;
   ss >> data.tunit.code;
   if (ss.fail()) {
     data.parse_error = true;
   }
 
-	// Rescale addresses
-	data.function_offset = data.instruction_offsets[0] - offsets[".text"];
-	for (auto& o : data.instruction_offsets) {
-		o -= data.function_offset;
-	}
+  // Rescale addresses
+  data.function_offset = data.instruction_offsets[0] - offsets[".text"];
+  for (auto& o : data.instruction_offsets) {
+    o -= data.function_offset;
+  }
 
-	// Rescale rip offsets
-	rescale_rip(data);
+  // Rescale rip offsets
+  rescale_rip(data);
 
   return true;
 }
@@ -479,7 +479,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
 void Disassembler::disassemble(const std::string& filename) {
   // Get the headers from the objdump (if this fails an error was already reported)
   ipstream* headers = run_objdump(filename, true);
-  if (!headers) { 
+  if (!headers) {
     return;
   }
 
@@ -489,7 +489,7 @@ void Disassembler::disassemble(const std::string& filename) {
 
   // Get the disassembly from objdump (if an error occurred, it's already been reported)
   ipstream* body = run_objdump(filename, false);
-  if (!body) { 
+  if (!body) {
     return;
   }
 
@@ -497,7 +497,7 @@ void Disassembler::disassemble(const std::string& filename) {
   strip_lines(*body, 4);
   // Ignore lines starting with "D"
   for (string line; getline(*body, line) && line[0] == 'D';) {
-		// Does nothing
+    // Does nothing
   }
 
   // Read the functions and invoke the callback.
