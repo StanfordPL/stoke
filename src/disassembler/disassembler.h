@@ -94,11 +94,11 @@ private:
   /* Parse a line */
   bool parse_line(const std::string& s, LineInfo& line);
   /* Get an address from an objdump'd line */
-  void parse_ptr(const std::string& s, std::map<std::string, std::string>& ptrs);
+  bool parse_ptr(const std::string& s, std::map<std::string, std::string>& ptrs);
   /* Get all the lines from a function */
-  std::vector<LineInfo> parse_lines(redi::ipstream& ips, FunctionCallbackData& data);
+	std::pair<std::vector<LineInfo>, std::map<std::string,std::string>> parse_lines(redi::ipstream& ips, const std::string& name);
   /** Rescale rip displacements for x64asm hex */
-  void rescale_offsets(FunctionCallbackData& data, uint64_t text_offset);
+  void rescale_offsets(FunctionCallbackData& data, const std::vector<LineInfo>& lines, uint64_t text_offset);
 
   /* Parse a single function from objdump's stdout */
   bool parse_function(redi::ipstream& ips, FunctionCallbackData& data, std::map<std::string, uint64_t>& section_offsets);

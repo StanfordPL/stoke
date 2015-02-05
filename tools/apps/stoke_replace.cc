@@ -56,8 +56,7 @@ void callback(const FunctionCallbackData& data, void* arg) {
   if (data.tunit.name == rewrite_arg.value().name) {
     found = true;
     fxn_offset = data.offset;
-    /* This is an underapproximation; we can do better. */
-    fxn_size = 1 + data.instruction_offsets.back();
+    fxn_size = data.instruction_offsets.back() + data.instruction_sizes.back();
   }
 }
 
