@@ -340,7 +340,7 @@ void Disassembler::parse_ptr(const string& s, map<string, string>& ptrs) {
   ptrs[address] = function_name;
 }
 
-vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const string& name) {
+vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, FunctionCallbackData& data) {
   vector<LineInfo> lines;
   map<string, string> ptrs;
   string s;
@@ -360,6 +360,9 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
       lines.back().hex_bytes += line.hex_bytes;
     }
   }
+
+	// Save ptrs (I don't love that this is happening here)
+	data.addr_label_map = ptrs;
 
   // Update non-funtion label references and record targets
   set<uint64_t> label_refs;
@@ -392,7 +395,7 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
   // (At some point, the fact that we split lock into two instructions is going
   //  to bite us here).
   vector<LineInfo> result;
-  result.push_back({lines[0].offset, 0, string(".") + name + string(":")});
+  result.push_back({lines[0].offset, 0, string(".") + data.tunit.name + string(":")});
   for (const auto& l : lines) {
     if (label_refs.find(l.offset) != label_refs.end()) {
       ostringstream oss;
@@ -407,9 +410,9 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
 
 void Disassembler::rescale_offsets(FunctionCallbackData& data, uint64_t text_offset) {
   // Rescale function offsets
-  data.function_offset = data.instruction_offsets[0] - text_offset;
+  data.offset = data.instruction_offsets[0] - text_offset;
   for (auto& o : data.instruction_offsets) {
-    o -= (data.function_offset + text_offset);
+    o -= (data.offset + text_offset);
   }
 
   // Rescale rip offsets
@@ -444,7 +447,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
 
   // Clear old values
   data.tunit.code.clear();
-  data.function_offset = 0;
+  data.offset = 0;
   data.instruction_sizes.clear();
   data.instruction_offsets.clear();
   data.parse_error = false;
@@ -458,7 +461,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   data.tunit.name = mangle_lable(line.substr(begin, len));
 
   // Parse the contents of this function
-  const auto lines = parse_lines(ips, data.tunit.name);
+  const auto lines = parse_lines(ips, data);
 
   // Record metadata
   for (const auto& l : lines) {

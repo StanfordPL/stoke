@@ -157,3 +157,17 @@ TEST_F(IntegrationTest, PairityTest) {
   EXPECT_EQ(0ull, shell("make clean"));
 
 }
+
+TEST_F(IntegrationTest, NibbleTest) {
+  set_working_dir("tests/fixtures/nibble");
+
+  // Extract bins
+  EXPECT_EQ(0ull, shell("stoke extract --config extract.conf"));
+	// Generate testcases
+  EXPECT_EQ(0ull, shell("stoke testcase --config testcase.conf"));
+	// Run stoke testcase
+	EXPECT_EQ(0ull, shell("stoke debug sandbox --config sandbox.conf | grep \"SIGNAL 0\""));
+  // Cleanup
+  EXPECT_EQ(0ull, shell("rm -rf bins nibble.tc"));
+}
+
