@@ -87,6 +87,11 @@ bool replace(uint64_t offset, size_t size) {
   for (size_t i = 0; i < fxn.size(); ++i) {
     fs.put(fxn.get_buffer()[i]);
   }
+  // Add no-ops so that we don't write garbage and confuse
+  // the disassembler.  See #452.
+  for (size_t i = fxn.size(); i < size; ++i) {
+    fs.put(0x90);
+  }
 
   return true;
 }
