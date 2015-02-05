@@ -469,10 +469,12 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   // Record metadata
   // This meta-data is wrt to the original code, so skip empty lines which are labels
   // @todo if we've split a lock instruction, we're going to fall out of sync here
+	data.size = 0;
   for (const auto& l : lines) {
     if (l.hex_bytes != 0) {
       data.instruction_offsets.push_back(l.offset);
       data.instruction_sizes.push_back(l.hex_bytes);
+			data.size += l.hex_bytes;
     }
   }
 

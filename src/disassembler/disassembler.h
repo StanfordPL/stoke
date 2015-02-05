@@ -28,7 +28,7 @@ class Disassembler {
 public:
   typedef std::function<void (const FunctionCallbackData&)> Callback;
 
-  /* Constructs a fresh disassembler */
+  /** Constructs a fresh disassembler */
   Disassembler() {
     set_function_callback(nullptr, nullptr);
     error_ = false;
@@ -48,17 +48,17 @@ public:
     return *this;
   }
 
-  /* Reports if an error occurred in the last operation.  Whether an error
+  /** Reports if an error occurred in the last operation.  Whether an error
    * has occurred is cleared whenever disassemble() is called. */
   bool has_error() {
     return error_;
   }
-  /* Returns the latest error message. */
+  /** Returns the latest error message. */
   std::string get_error() {
     return error_message_;
   }
 
-  /* Disassembles a file and invokes the function callback for each result. */
+  /** Disassembles a file and invokes the function callback for each result. */
   void disassemble(const std::string& filename);
 
 private:
