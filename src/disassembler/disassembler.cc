@@ -287,8 +287,8 @@ bool Disassembler::parse_line(const string& s, LineInfo& line) {
   line.offset = hex_to_int(s.substr(2, colon-2));
   // Count hex bytes
   line.hex_bytes = 0;
-  for (auto i = tab1, ie = tab2 == string::npos ? s.length() : tab2; i < ie; i+=3) {
-    line.hex_bytes += isdigit(s[i]) ? 1 : 0;
+  for (auto i = tab1+1, ie = tab2 == string::npos ? s.length() : tab2; i < ie; i+=3) {
+    line.hex_bytes += isxdigit(s[i]) ? 1 : 0;
   }
 
   // If this is a hex only line, we're done
@@ -340,7 +340,7 @@ void Disassembler::parse_ptr(const string& s, map<string, string>& ptrs) {
   ptrs[address] = function_name;
 }
 
-vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips) {
+vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const string& name) {
   vector<LineInfo> lines;
   map<string, string> ptrs;
   string s;
@@ -389,7 +389,10 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips) {
   }
 
   // Insert label definitions where necessary and fix instruction text
+	// (At some point, the fact that we split lock into two instructions is going
+	//  to bite us here).
   vector<LineInfo> result;
+	result.push_back({lines[0].offset, 0, string(".") + name + string(":")});
   for (const auto& l : lines) {
     if (label_refs.find(l.offset) != label_refs.end()) {
       ostringstream oss;
@@ -402,14 +405,21 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips) {
   return result;
 }
 
-void Disassembler::rescale_rip(FunctionCallbackData& data) {
+void Disassembler::rescale_offsets(FunctionCallbackData& data, uint64_t text_offset) {
+	// Rescale function offsets
+  data.function_offset = data.instruction_offsets[0] - text_offset;
+  for (auto& o : data.instruction_offsets) {
+    o -= (data.function_offset + text_offset);
+  }
+
+	// Rescale rip offsets
   Assembler assm;
   int64_t delta = 0;
   for (size_t i = 0, ie = data.tunit.code.size(); i < ie; ++i) {
     auto& instr = data.tunit.code[i];
 
     // Record delta between x64asm hex and this hex
-    delta += (data.instruction_sizes[i] - assm.hex_size(instr));
+    delta += ((int)data.instruction_sizes[i] - (int)assm.hex_size(instr));
 
     // Nothing to do if this isn't rip dereference
     if (!instr.is_explicit_memory_dereference()) {
@@ -447,31 +457,27 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   const auto len = line.find_last_of('>') - begin;
   data.tunit.name = mangle_lable(line.substr(begin, len));
 
-  // Record the lines in this function and their meta data
-  stringstream ss;
-  ss << "." << data.tunit.name << ":" << endl;
-  for (const auto& l : parse_lines(ips)) {
+	// Parse the contents of this function
+	const auto lines = parse_lines(ips, data.tunit.name);
+
+  // Record metadata
+  for (const auto& l : lines) {
     data.instruction_offsets.push_back(l.offset);
     data.instruction_sizes.push_back(l.hex_bytes);
-    ss << l.instr << endl;
   }
 
   // Read code.
-  cout << data.tunit.name << endl;
-  cout << ss.str() << endl;
+  stringstream ss;
+	for (const auto& l : lines) {
+		ss << l.instr << endl;
+	}
   ss >> data.tunit.code;
   if (ss.fail()) {
     data.parse_error = true;
   }
 
-  // Rescale addresses
-  data.function_offset = data.instruction_offsets[0] - offsets[".text"];
-  for (auto& o : data.instruction_offsets) {
-    o -= data.function_offset;
-  }
-
-  // Rescale rip offsets
-  rescale_rip(data);
+  // Rescale offsets
+  rescale_offsets(data, offsets["text"]);
 
   return true;
 }
