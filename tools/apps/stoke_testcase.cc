@@ -15,13 +15,11 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
-#include <map>
 #include <random>
 #include <string>
 #include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
-#include "src/ext/cpputil/include/debug/stl_print.h"
 #include "src/ext/cpputil/include/serialize/line_reader.h"
 #include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
@@ -140,42 +138,9 @@ int auto_gen() {
   return 0;
 }
 
-string tempfile(const string& temp) {
-  vector<char> v(temp.begin(), temp.end());
-  v.push_back('\0');
-
-  const auto fd = mkstemp(v.data());
-  return string(v.begin(), v.end()-1);
-}
-
-void write_x64asm_offsets(const std::string& file) {
-  Assembler assm;
-
-  // Note the direct use of aux_fxns_arg; we need values for EVERY function
-  map<string, vector<size_t>> table;
-  for (const auto& fxn : aux_fxns_arg.value()) {
-    vector<size_t> offsets;
-    size_t offset = 0;
-    for (const auto& instr : fxn.code) {
-      if (instr.is_label_defn()) {
-        continue;
-      }
-      offset += assm.hex_size(instr);
-      offsets.push_back(offset);
-    }
-    table[fxn.name] = offsets;
-  }
-
-  ofstream ofs(file);
-  ofs << table << endl;
-}
-
 int trace(const string& argv0) {
   string here = argv0;
   here = here.substr(0, here.find_last_of("/") + 1);
-
-  const auto offset_file = tempfile("/tmp/stoke_testcase.hex.XXXXXX");
-  write_x64asm_offsets(offset_file);
 
   const string pin_path = here + "../src/ext/pin-2.13-62732-gcc.4.4.7-linux/";
   const string so_path = pin_path + "source/tools/stoke/obj-intel64/";
@@ -195,7 +160,6 @@ int trace(const string& argv0) {
     term << e << " ";
   }
   term << "\" ";
-  term << "-H " << offset_file << " ";
 
   term << " -- " << bin.value() << " " << args.value() << endl;
 

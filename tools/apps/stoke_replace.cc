@@ -55,7 +55,7 @@ void callback(const FunctionCallbackData& data, void* arg) {
   // Check if we've found the function
   if (data.tunit.name == rewrite_arg.value().name) {
     found = true;
-    fxn_offset = data.offset;
+    fxn_offset = data.function_offset;
     /* This is an underapproximation; we can do better. */
     fxn_size = 1 + data.instruction_offsets.back();
   }

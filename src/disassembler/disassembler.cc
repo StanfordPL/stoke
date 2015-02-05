@@ -17,10 +17,12 @@
 #include <fstream>
 #include <iostream>
 
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/disassembler/disassembler.h"
 
 using namespace redi;
 using namespace std;
+using namespace x64asm;
 
 // This is a stop-gap until g++-4.9 which will support c++11 regex
 #include "boost/regex.hpp"
@@ -31,6 +33,40 @@ namespace {
 /** Returns true if the first n characters of a string match a prefix */
 bool is_prefix(const std::string& s, const char* prefix, size_t len) {
   return s.length() >= len && s.substr(0,len) == prefix;
+}
+
+/** Strips n lines from an ipstream */
+void strip_lines(ipstream& ips, size_t lines) {
+  string line;
+  for (size_t i = 0; i < lines; ++i) {
+    getline(ips, line);
+  }
+}
+
+/** Is this character sequence a hex string? */
+bool is_hex_string(const string& s) {
+  for (auto c : s) {
+    if (!isxdigit(c)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Convert a hex string to an int */
+uint64_t hex_to_int(const string& s) {
+  uint64_t val;
+  istringstream iss(s);
+  iss >> hex >> val;
+  return val;
+}
+
+/** Mangle @s and .s into _s (this is a hack around dealing with @plt functions) */
+string mangle_lable(string label) {
+  for (auto& c : label) {
+    c = (c == '@' || c == '.') ? '_' : c;
+  }
+  return label;
 }
 
 } // namespace
@@ -44,17 +80,11 @@ bool Disassembler::check_filename(const string& s) {
 
     if (c >= 'a' && c <= 'z') {
       continue;
-    }
-
-    if (c >= 'A' && c <= 'Z') {
+    } else if (c >= 'A' && c <= 'Z') {
       continue;
-    }
-
-    if (c >= '0' && c <= '9') {
+    } else if (c >= '0' && c <= '9') {
       continue;
-    }
-
-    if (c == '.' ||
+    } else if (c == '.' ||
         c == '/' ||
         c == '_' ||
         c == '-' ||
@@ -85,11 +115,9 @@ bool Disassembler::check_filename(const string& s) {
   error_ = true;
   error_message_ = "Error opening file.";
   return false;
-
 }
 
 ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
-
   if (!check_filename(filename)) {
     return NULL;
   }
@@ -117,19 +145,9 @@ ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
   }
 
   return stream;
-
-}
-
-void Disassembler::strip_lines(ipstream& ips, size_t lines) {
-
-  string line;
-  for (size_t i = 0; i < lines; ++i) {
-    getline(ips, line);
-  }
 }
 
 void Disassembler::parse_section_offsets(ipstream& ips, map<string, uint64_t>& section_offsets) {
-
   // Skip ahead to table
   strip_lines(ips, 5);
 
@@ -146,207 +164,7 @@ void Disassembler::parse_section_offsets(ipstream& ips, map<string, uint64_t>& s
     // Trailing second line
     getline(ips, line);
   }
-
 }
-
-bool is_hex_string(const string& s) {
-  for (auto c : s) {
-    if (!isxdigit(c)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-Disassembler::line_map Disassembler::index_lines(ipstream& ips, string& s,
-    map<string, string>& addr_label_map) {
-  line_map lines;
-  while (getline(ips, s)) {
-    // Functions are terminated by empty lines
-    if (s.empty()) {
-      break;
-    }
-    string instr;
-    if (parse_instr_from_line(s, instr)) {
-      parse_addr_label_from_line(s, addr_label_map);
-      lines.push_back({parse_addr_from_line(s), fix_instruction(instr)});
-    }
-  }
-
-  return lines;
-}
-
-string mangle_lable(string label) {
-  // Mangle @s into _s (this is a hack around dealing with @plt functions)
-  for (auto& c : label) {
-    c = (c == '@' || c == '.') ? '_' : c;
-  }
-  return label;
-}
-
-bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data,
-                                  map<string, uint64_t>& offsets) {
-
-  if (ips.eof()) {
-    return false;
-  }
-
-  data.parse_error = false;
-
-  string line;
-  getline(ips, line);
-
-  // Reset any state in callback data.
-  data.tunit.code.clear();
-  data.instruction_offsets.clear();
-
-  // Get the name of the function
-  const auto begin = line.find_first_of('<') + 1;
-  const auto len = line.find_last_of('>') - begin;
-  data.tunit.name = mangle_lable(line.substr(begin, len));
-
-  // Iterate through all the lines and make 'em pretty
-  auto lines = index_lines(ips, line, data.addr_label_map);
-  const auto labels = fix_label_uses(lines, data.addr_label_map);
-
-  // Build the code and offsets vector
-  uint64_t starting_addr = lines[0].first;
-  data.offset = starting_addr - offsets[".text"];
-
-  stringstream ss;
-
-  // Add a label to the beginning of the instruction stream with the function name
-  ss << "." << data.tunit.name << ":" << endl;
-
-  // Now read the text of the function
-  for (const auto l : lines) {
-    const auto itr = labels.find(l.first);
-    if (itr != labels.end()) {
-      ss << ".L_" << hex << l.first << ":" << endl;
-      data.instruction_offsets.push_back(l.first - starting_addr);
-    }
-    ss << l.second << endl;
-    data.instruction_offsets.push_back(l.first - starting_addr);
-  }
-
-  // Read into code.
-  ss >> data.tunit.code;
-  if (ss.fail()) {
-    data.parse_error = true;
-  }
-
-  return true;
-}
-
-uint64_t hex_to_int(const string& s) {
-
-  uint64_t val;
-  istringstream iss(s);
-  iss >> hex >> val;
-  return val;
-}
-
-uint64_t Disassembler::parse_addr_from_line(const string& s) {
-  // Address is located between beginning of line and first :
-  auto begin = 0;
-  for (; isspace(s[begin]); ++begin);
-  const auto len = s.find_first_of(':') - begin;
-
-  return hex_to_int(s.substr(begin, len));
-}
-
-Disassembler::label_set Disassembler::fix_label_uses(Disassembler::line_map& lines,
-    const map<string,string>& addr_label_map) {
-  label_set labels;
-
-  for (auto& l : lines) {
-    auto& instr = l.second;
-
-    // Opcodes are followed by at least one space; ignore instructions with no operands
-    auto ops_begin = instr.find_first_of(' ');
-    for (; ops_begin != string::npos && isspace(instr[ops_begin]); ops_begin++);
-    if (ops_begin == instr.length() || ops_begin == string::npos) {
-      continue;
-    }
-
-    // Operands are terminated by whitespace
-    const auto ops_end = instr.find_first_of(' ', ops_begin + 1);
-    const auto ops_len = (ops_end == string::npos ? instr.length() : ops_end) - ops_begin;
-    const auto ops = instr.substr(ops_begin, ops_len);
-
-    // Arguments that are strictly hex digits become labels
-    if (is_hex_string(ops)) {
-      const auto itr = addr_label_map.find(ops);
-      if (itr != addr_label_map.end()) {
-        instr = instr.substr(0, ops_begin) + "." + itr->second;
-      } else {
-        labels.insert(hex_to_int(ops));
-        instr = instr.substr(0, ops_begin) + ".L_" + ops;
-      }
-    }
-  }
-
-  return labels;
-}
-
-bool Disassembler::parse_addr_label_from_line(const string& s, map<string, string>& map) {
-  // Get the name of the function in addition to the "address"
-  // E.g. if we have "  callq 401100 <_foo>"
-  // then we want to add "401100" -> "_foo" to the mapping.
-
-  // get the function name
-  auto start = s.find_last_of('<');
-  auto end = s.find_last_of('>');
-
-  if (start == string::npos || end == string::npos) {
-    return false;
-  }
-
-  auto function_name = s.substr(start + 1, end - start - 1);
-
-  //skip labels that point inside the same function
-  if (function_name.find_last_of("+") != string::npos) {
-    return false;
-  }
-
-  function_name = mangle_lable(function_name);
-
-  // get the address
-  auto end_addr   = s.find_first_of(' ', start - 3);
-  auto start_addr = s.find_last_of(' ', end_addr - 1);
-
-  if (start_addr == string::npos || end_addr == string::npos) {
-    return false;
-  }
-
-  auto address = s.substr(start_addr + 1, end_addr - start_addr - 1);
-
-  // add to the map
-  map[address] = function_name;
-
-  return true;
-}
-
-bool Disassembler::parse_instr_from_line(const string& s, string& instr) {
-  // Instructions begin after second tab; blank lines have only one
-  const auto tab1 = s.find_first_of('\t');
-  const auto tab2 = s.find_first_of('\t', tab1 + 1);
-  if (tab2 == string::npos) {
-    return false;
-  }
-  const auto begin = tab2 + 1;
-
-  // Instruction are terminated by eol, # or <
-  auto comment = s.find_last_of('#');
-  comment = comment == string::npos ? s.length() : comment;
-  auto annot = s.find_last_of('<');
-  annot = annot == string::npos ? s.length() : annot;
-  const auto len = min(comment, annot) - begin;
-
-  instr = s.substr(begin, len);
-  return true;
-}
-
 
 string Disassembler::fix_instruction(const string& line) {
   // Add implicit trailing ones
@@ -448,6 +266,9 @@ string Disassembler::fix_instruction(const string& line) {
   } else if (is_prefix(line, "vmova", 5)) {
     ll = regex_replace(ll, regex("vmovapd\\.s"), "vmovapd");
     ll = regex_replace(ll, regex("vmovaps\\.s"), "vmovaps");
+  } else if (is_prefix(line, "vmovd", 5)) {
+    ll = regex_replace(ll, regex("vmovdqa\\.s"), "vmovdqa");
+    ll = regex_replace(ll, regex("vmovdqu\\.s"), "vmovdqu");
   } else if (is_prefix(line, "vmovu", 5)) {
     ll = regex_replace(ll, regex("vmovupd\\.s"), "vmovupd");
     ll = regex_replace(ll, regex("vmovups\\.s"), "vmovups");
@@ -456,11 +277,209 @@ string Disassembler::fix_instruction(const string& line) {
   return ll;
 }
 
-void Disassembler::disassemble(const std::string& filename) {
-  // Get the headers from the objdump
-  ipstream* headers = run_objdump(filename, true);
+bool Disassembler::parse_line(const string& s, LineInfo& line) {
+  // Some character landmarks
+  const auto tab1 = s.find_first_of('\t');
+  const auto tab2 = s.find_first_of('\t', tab1 + 1);
+	const auto colon = s.find_first_of(':');
 
-  if (!headers) { // if this fails, an error was already reported.
+	// Record line offset
+	line.offset = hex_to_int(s.substr(2, colon-2));
+	// Count hex bytes
+	line.hex_bytes = 0;
+	for (auto i = tab1, ie = tab2 == string::npos ? s.length() : tab2; i < ie; i+=3) {
+		line.hex_bytes += isdigit(s[i]) ? 1 : 0;
+	}
+
+	// If this is a hex only line, we're done
+  if (tab2 == string::npos) {
+    return false;
+  }
+  // Otherwise, instruction are terminated by eol, # or <
+  const auto begin = tab2 + 1;
+  auto comment = s.find_last_of('#');
+  comment = comment == string::npos ? s.length() : comment;
+  auto annot = s.find_last_of('<');
+  annot = annot == string::npos ? s.length() : annot;
+  const auto len = min(comment, annot) - begin;
+
+  line.instr = s.substr(begin, len);
+  return true;
+}
+
+void Disassembler::parse_ptr(const string& s, map<string, string>& ptrs) {
+  // Record the name of the function in addition to the "address"
+  // E.g. if we have "  callq 401100 <_foo>"
+  // then we want to add "401100" -> "_foo" to the mapping.
+
+  // get the function name
+  auto start = s.find_last_of('<');
+  auto end = s.find_last_of('>');
+  if (start == string::npos || end == string::npos) {
+    return;
+  }
+
+  //skip labels that point inside the same function
+  auto function_name = s.substr(start + 1, end - start - 1);
+  if (function_name.find_last_of("+") != string::npos) {
+    return;
+  }
+
+	// Mangle away tokens we don't support
+  function_name = mangle_lable(function_name);
+
+  // Read the address
+  auto end_addr   = s.find_first_of(' ', start - 3);
+  auto start_addr = s.find_last_of(' ', end_addr - 1);
+  if (start_addr == string::npos || end_addr == string::npos) {
+    return;
+  }
+  auto address = s.substr(start_addr + 1, end_addr - start_addr - 1);
+
+  // We got a result
+  ptrs[address] = function_name;
+}
+
+vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips) {
+	vector<LineInfo> lines;
+	map<string, string> ptrs;
+	string s;
+
+  while (getline(ips, s)) {
+    // Functions are terminated by empty lines
+    if (s.empty()) {
+      break;
+    }
+
+		// parse_line() returns false for line continuations, only add hex bytes
+		LineInfo line;
+    if (parse_line(s, line)) {
+      lines.push_back(line);
+			parse_ptr(s, ptrs);
+    } else {
+			lines.back().hex_bytes += line.hex_bytes;
+		}
+  }
+
+	// Update non-funtion label references and record targets
+  set<uint64_t> label_refs;
+  for (auto& l : lines) {
+    // Opcodes are followed by at least one space; ignore instructions with no operands
+    auto ops_begin = l.instr.find_first_of(' ');
+    for (; ops_begin != string::npos && isspace(l.instr[ops_begin]); ops_begin++);
+    if (ops_begin == l.instr.length() || ops_begin == string::npos) {
+      continue;
+    }
+
+    // Operands are terminated by whitespace
+    const auto ops_end = l.instr.find_first_of(' ', ops_begin + 1);
+    const auto ops_len = (ops_end == string::npos ? l.instr.length() : ops_end) - ops_begin;
+    const auto ops = l.instr.substr(ops_begin, ops_len);
+
+    // Arguments that are strictly hex digits become labels
+    if (is_hex_string(ops)) {
+      const auto itr = ptrs.find(ops);
+      if (itr != ptrs.end()) {
+        l.instr = l.instr.substr(0, ops_begin) + "." + itr->second;
+      } else {
+        label_refs.insert(hex_to_int(ops));
+        l.instr = l.instr.substr(0, ops_begin) + ".L_" + ops;
+      }
+    }
+  }
+
+	// Insert label definitions where necessary and fix instruction text
+	vector<LineInfo> result;
+	for (const auto& l : lines) {
+		if (label_refs.find(l.offset) != label_refs.end()) {
+			ostringstream oss;
+			oss << ".L_" << hex << l.offset << ":";
+			result.push_back({l.offset, 0, oss.str()});
+		}
+		result.push_back({l.offset, l.hex_bytes, fix_instruction(l.instr)});
+	}
+
+  return result;
+}
+
+void Disassembler::rescale_rip(FunctionCallbackData& data) {
+	Assembler assm;
+	int64_t delta = 0;
+	for (size_t i = 0, ie = data.tunit.code.size(); i < ie; ++i) {
+		auto& instr = data.tunit.code[i];
+
+		// Record delta between x64asm hex and this hex
+		delta += (data.instruction_sizes[i] - assm.hex_size(instr));
+
+		// Nothing to do if this isn't rip dereference
+		if (!instr.is_explicit_memory_dereference()) {
+			continue;
+		}
+		const auto mi = instr.mem_index();
+		auto mem = instr.get_operand<M8>(mi);
+		if (!mem.rip_offset()) {
+			continue;
+		}
+
+		// Rescale displacement
+		mem.set_disp(mem.get_disp() + delta);
+		instr.set_operand(mi, mem);
+	}
+}
+
+bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map<string, uint64_t>& offsets) {
+  if (ips.eof()) {
+    return false;
+  }
+
+	// Clear old values
+	data.tunit.code.clear();
+	data.function_offset = 0;
+	data.instruction_sizes.clear();
+	data.instruction_offsets.clear();
+  data.parse_error = false;
+
+  string line;
+
+  // Get the name of the function
+  getline(ips, line);
+  const auto begin = line.find_first_of('<') + 1;
+  const auto len = line.find_last_of('>') - begin;
+  data.tunit.name = mangle_lable(line.substr(begin, len));
+
+  // Record the lines in this function and their meta data
+  stringstream ss;
+  ss << "." << data.tunit.name << ":" << endl;
+	for (const auto& l : parse_lines(ips)) {
+		data.instruction_offsets.push_back(l.offset);
+		data.instruction_sizes.push_back(l.hex_bytes);
+		ss << l.instr << endl;
+	}
+
+  // Read code.
+	cout << data.tunit.name << endl;
+	cout << ss.str() << endl;
+  ss >> data.tunit.code;
+  if (ss.fail()) {
+    data.parse_error = true;
+  }
+
+	// Rescale addresses
+	data.function_offset = data.instruction_offsets[0] - offsets[".text"];
+	for (auto& o : data.instruction_offsets) {
+		o -= data.function_offset;
+	}
+
+	// Rescale rip offsets
+	rescale_rip(data);
+
+  return true;
+}
+
+void Disassembler::disassemble(const std::string& filename) {
+  // Get the headers from the objdump (if this fails an error was already reported)
+  ipstream* headers = run_objdump(filename, true);
+  if (!headers) { 
     return;
   }
 
@@ -468,18 +487,17 @@ void Disassembler::disassemble(const std::string& filename) {
   map<string, uint64_t> section_offsets;
   parse_section_offsets(*headers, section_offsets);
 
-  // Get the disassembly from objdump
+  // Get the disassembly from objdump (if an error occurred, it's already been reported)
   ipstream* body = run_objdump(filename, false);
-
-  if (!body) { //an error occurred, it's already recorded.
+  if (!body) { 
     return;
   }
 
   // Skip the first four lines of output
   strip_lines(*body, 4);
-
   // Ignore lines starting with "D"
   for (string line; getline(*body, line) && line[0] == 'D';) {
+		// Does nothing
   }
 
   // Read the functions and invoke the callback.

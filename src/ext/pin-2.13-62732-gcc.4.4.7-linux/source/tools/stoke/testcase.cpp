@@ -27,7 +27,6 @@
 
 #include "pin.H"
 
-#include "../../../../cpputil/include/debug/stl_print.h"
 #include "../../../../x64asm/include/x64asm.h"
 #include "tools/ui/console.h"
 #include "src/state/cpu_states.h"
@@ -53,8 +52,6 @@ KNOB<uint64_t> KnobBeginLine(KNOB_MODE_WRITEONCE, "pintool", "b", "0",
     "address to begin logging at");
 KNOB<string> KnobEndLines(KNOB_MODE_WRITEONCE, "pintool", "e", "0", 
     "addresses to stop logging at");
-KNOB<string> KnobHexFile(KNOB_MODE_WRITEONCE, "pintool", "H", "", 
-    "file containing hex offsets for x64asm's encoding of this binary");
 
 /* ============================================================================================= */
 /* Global Variables */
@@ -66,8 +63,6 @@ int tc_remaining_;
 uint64_t begin_line_;
 // Lines to stop recording on in the target function (we always stop on ret)
 unordered_set<uint64_t> end_lines_;
-// x64asm hex offset table for this binary
-unordered_map<string, vector<uint64_t>> x64asm_offsets;
 // Target ostream
 ostream* os_;
 
@@ -216,7 +211,7 @@ VOID record_fxn(ADDRINT rip) {
 
 /* ============================================================================================= */
 
-VOID record_read(VOID* addr, UINT32 size, bool rip_deref, int64_t delta) {
+VOID record_read(VOID* addr, UINT32 size, bool rip_deref) {
 	// Nothing to do here if we're not recording
   if (!recording_) {
     return;
@@ -225,9 +220,9 @@ VOID record_read(VOID* addr, UINT32 size, bool rip_deref, int64_t delta) {
   for (size_t i = 0; i < size; ++i) {
     const auto ptr = (uint64_t)addr + i;
 		if (rip_deref) {
-			if (data_valids_.find(ptr + delta) == data_valids_.end()) {
-				data_valids_.insert(ptr + delta);
-				data_defs_[ptr + delta] = *((uint8_t*)(ptr));
+			if (data_valids_.find(ptr) == data_valids_.end()) {
+				data_valids_.insert(ptr);
+				data_defs_[ptr] = *((uint8_t*)(ptr));
 			}
 		} else if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
       if (stack_valids_.find(ptr) == stack_valids_.end()) {
@@ -245,7 +240,7 @@ VOID record_read(VOID* addr, UINT32 size, bool rip_deref, int64_t delta) {
 
 /* ============================================================================================= */
 
-VOID record_write(VOID* addr, UINT32 size, bool rip_deref, int64_t delta) {
+VOID record_write(VOID* addr, UINT32 size, bool rip_deref) {
 	// Nothing to do here if we're not recording
   if (!recording_) {
     return;
@@ -254,7 +249,7 @@ VOID record_write(VOID* addr, UINT32 size, bool rip_deref, int64_t delta) {
   for (size_t i = 0; i < size; ++i) {
     const auto ptr = (uint64_t)addr + i;
 		if (rip_deref) {
-			data_valids_.insert(ptr+delta);
+			data_valids_.insert(ptr);
 		} else if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
       stack_valids_.insert(ptr);
     } else {
@@ -364,15 +359,6 @@ VOID rtn(RTN fxn, VOID* v) {
 	bool is_target = RTN_Name(fxn) == KnobFxnName.Value();
 	const auto fxn_rip = INS_Address(RTN_InsHead(fxn));
 	
-	// Lookup the x64asm hex offset table for this function
-	// If we can't find an entry, we're probably off in a dynamic library. If so, skip
-	const auto itr = x64asm_offsets.find(RTN_Name(fxn));
-	if (itr == x64asm_offsets.end()) {
-		RTN_Close(fxn);
-		return;
-	}
-	const auto& x64asm_offset = itr->second;
-
 	// Place this function in the global symbol table
 	symbol_table_[fxn_rip] = string(".") + RTN_Name(fxn);
 	// Potentially reset internal state if this is the target
@@ -396,31 +382,23 @@ VOID rtn(RTN fxn, VOID* v) {
 			emit_stop(ins);
 		}
 
-    // Record memory references
-		const auto memOpCount = INS_MemoryOperandCount(ins);
-		if (memOpCount > 0) {
-			// If this is a rip-derefence, compute offset between this hex and x64asm hex
-			const auto rip_deref = INS_RegRContain(ins, REG_INST_PTR) && !INS_IsCall(ins);
-			const auto have_hex = line <= x64asm_offset.size();
-			if (rip_deref && !have_hex) {
-				Console::error(1) << "Missing hex offset information for rip dereference at " << RTN_Name(fxn) << ":" << line << endl;
-			} 
-			const auto x64asm_bytes = have_hex ? x64asm_offset[line-1] : 0;
-			const int64_t delta = x64asm_bytes - (INS_NextAddress(ins) - fxn_rip);
+		if (INS_IsVgather(ins)) {
+			// @todo -- Why is everything in pin so hard?
+			continue;
+		}
 
-			for (size_t i = 0; i < memOpCount; ++i) {
-				if (INS_MemoryOperandIsRead(ins, i)) {
-					INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) record_read,
-							IARG_MEMORYOP_EA, i, IARG_MEMORYREAD_SIZE, 
-							IARG_BOOL, rip_deref, IARG_ADDRINT, delta, 
-							IARG_END);
-				}
-				if (INS_MemoryOperandIsWritten(ins, i)) {
-					INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) record_write,
-							IARG_MEMORYOP_EA, i, IARG_MEMORYWRITE_SIZE, 
-							IARG_BOOL, rip_deref, IARG_ADDRINT, delta,
-							IARG_END);
-				}
+    // Record memory references
+		for (size_t i = 0, ie = INS_MemoryOperandCount(ins); i < ie; ++i) {
+			const auto rip_deref = INS_RegRContain(ins, REG_INST_PTR) && !INS_IsCall(ins);
+			if (INS_MemoryOperandIsRead(ins, i)) {
+				INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) record_read,
+						IARG_MEMORYOP_EA, i, IARG_MEMORYREAD_SIZE, 
+						IARG_BOOL, rip_deref, IARG_END);
+			}
+			if (INS_MemoryOperandIsWritten(ins, i)) {
+				INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) record_write,
+						IARG_MEMORYOP_EA, i, IARG_MEMORYWRITE_SIZE, 
+						IARG_BOOL, rip_deref, IARG_END);
 			}
 		}
 
@@ -471,9 +449,6 @@ int main(int argc, char* argv[]) {
 	while ( iss >> dec >> inst ) {
 		end_lines_.insert(inst);
 	}
-	// Read the contents of the x64asm offset file
-	ifstream ifs(KnobHexFile.Value());
-	ifs >> x64asm_offsets;
 
 	// Either we're writing to a file, or if none is provided, cout
   os_ = KnobOutFile.Value() == "" ? &cout : new ofstream(KnobOutFile.Value().c_str());
