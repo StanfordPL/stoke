@@ -165,6 +165,7 @@ TEST_F(IntegrationTest, PairityTest) {
 
 TEST_F(IntegrationTest, Issue452) {
   set_working_dir("tests/fixtures/452");
+  set_path("../../../bin");
   ASSERT_EQ(0ull, shell("make"));
   ASSERT_EQ(0ull, shell("diff new1 new2"));
   ASSERT_EQ(0ull, shell("make clean"));
