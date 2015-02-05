@@ -96,7 +96,7 @@ private:
   /* Get an address from an objdump'd line */
   void parse_ptr(const std::string& s, std::map<std::string, std::string>& ptrs);
   /* Get all the lines from a function */
-  std::vector<LineInfo> parse_lines(redi::ipstream& ips, const std::string& name);
+  std::vector<LineInfo> parse_lines(redi::ipstream& ips, FunctionCallbackData& data);
   /** Rescale rip displacements for x64asm hex */
   void rescale_offsets(FunctionCallbackData& data, uint64_t text_offset);
 

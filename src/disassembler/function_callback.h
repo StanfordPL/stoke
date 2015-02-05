@@ -24,15 +24,17 @@
 namespace stoke {
 
 struct FunctionCallbackData {
-  /* A semantically equivalent x64asm function (rip offsets may be different) */
+  /** A semantically equivalent x64asm function (rip offsets may be different) */
   TUnit tunit;
-  /* The offset from the file of the function */
-  uint64_t function_offset;
-  /* The offsets, from function start, of each instruction (by index) */
+  /** The offset from the file of the function */
+  uint64_t offset;
+  /** The offsets, from function start, of each instruction (by index) */
   std::vector<uint64_t> instruction_offsets;
-  /* The number of bytes in the hex encoding of each instruciton (by index) */
+  /** The number of bytes in the hex encoding of each instruciton (by index) */
   std::vector<size_t> instruction_sizes;
-  /* Did a parse error occur? */
+	/** A map from hex addresses to symbol names for this function */
+	std::map<std::string, std::string> addr_label_map;
+  /** Did a parse error occur? */
   bool parse_error;
 };
 
