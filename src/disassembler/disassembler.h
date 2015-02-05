@@ -62,35 +62,10 @@ public:
   void disassemble(const std::string& filename);
 
 private:
-  typedef std::vector<std::pair<uint64_t, std::string>> line_map;
-  typedef std::set<uint64_t> label_set;
-
-  /* Parse the section offsets from objdump's stdout. */
-  void parse_section_offsets(redi::ipstream& ips,
-                             std::map<std::string, uint64_t>& section_offsets);
-  /* Parse a single function from objdump's stdout */
-  bool parse_function(redi::ipstream& ips, FunctionCallbackData& data,
-                      std::map<std::string, uint64_t>& section_offsets);
-  /* Parse an instruction from a line */
-  bool parse_instr_from_line(const std::string& line, std::string& instr);
-  /* Get an address from an objdump'd line */
-  uint64_t parse_addr_from_line(const std::string& line);
-  /* Get an address from an objdump'd line */
-  bool parse_addr_label_from_line(const std::string& line, std::map<std::string, std::string>&);
-  /* Ignore a few lines from the input */
-  void strip_lines(redi::ipstream& ips, size_t lines);
-  /* Get all the lines from a function */
-  line_map index_lines(redi::ipstream& ips, std::string& line, std::map<std::string, std::string>&);
-  /* Rewrite a line from objdump for our parser :( */
-  std::string fix_instruction(const std::string& line);
-  /* Fix the labels */
-  label_set fix_label_uses(line_map& lines, const std::map<std::string, std::string>&);
-
-  /* Runs objdump and provides the output stream */
-  redi::ipstream* run_objdump(const std::string& filename, bool only_header);
-  /* Checks if a filename is whitelisted for use.  This prevents accidental
-   * shell injection. */
-  bool check_filename(const std::string& filename);
+  /** Tracks if an error occurred. */
+  bool error_;
+  /* Tracks the last error message. */
+  std::string error_message_;
 
   /** Callback to invoke when functions are parsed. */
   FunctionCallback fxn_cb_;
@@ -99,10 +74,34 @@ private:
   /** Closure-alternative to callback */
   Callback* callback_closure_ = NULL;
 
-  /** Tracks if an error occurred. */
-  bool error_;
-  /* Tracks the last error message. */
-  std::string error_message_;
+	/** POD struct for recording line info */
+	struct LineInfo {
+		uint64_t offset;
+		size_t hex_bytes;
+		std::string instr;
+	};
+
+  /* Checks if a filename is whitelisted for use. Prevents accidental shell injection. */
+  bool check_filename(const std::string& filename);
+  /* Runs objdump and provides the output stream */
+  redi::ipstream* run_objdump(const std::string& filename, bool only_header);
+
+  /* Parse the section offsets from objdump's stdout. */
+  void parse_section_offsets(redi::ipstream& ips, std::map<std::string, uint64_t>& section_offsets);
+
+  /* Rewrite a line from objdump for our parser :( */
+  std::string fix_instruction(const std::string& line);
+  /* Parse a line */
+  bool parse_line(const std::string& s, LineInfo& line);
+  /* Get an address from an objdump'd line */
+  void parse_ptr(const std::string& s, std::map<std::string, std::string>& ptrs);
+  /* Get all the lines from a function */
+	std::vector<LineInfo> parse_lines(redi::ipstream& ips);
+	/** Rescale rip displacements for x64asm hex */
+	void rescale_rip(FunctionCallbackData& data);
+
+  /* Parse a single function from objdump's stdout */
+  bool parse_function(redi::ipstream& ips, FunctionCallbackData& data, std::map<std::string, uint64_t>& section_offsets);
 };
 
 } // namespace stoke
