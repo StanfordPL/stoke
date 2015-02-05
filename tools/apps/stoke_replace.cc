@@ -56,7 +56,7 @@ void callback(const FunctionCallbackData& data, void* arg) {
   if (data.tunit.name == rewrite_arg.value().name) {
     found = true;
     fxn_offset = data.offset;
-    fxn_size = data.instruction_offsets.back() + data.instruction_sizes.back();
+    fxn_size = data.size;
   }
 }
 
@@ -85,6 +85,11 @@ bool replace(uint64_t offset, size_t size) {
   fs.seekg(offset);
   for (size_t i = 0; i < fxn.size(); ++i) {
     fs.put(fxn.get_buffer()[i]);
+  }
+  // Add no-ops so that we don't write garbage and confuse
+  // the disassembler.  See #452.
+  for (size_t i = fxn.size(); i < size; ++i) {
+    fs.put(0x90);
   }
 
   return true;

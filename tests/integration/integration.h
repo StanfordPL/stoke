@@ -66,6 +66,13 @@ public:
     return value;
   }
 
+  /** Count the number of lines in a file */
+  int wc(std::string filename) {
+    std::ifstream inFile(filename);
+    return std::count(std::istreambuf_iterator<char>(inFile),
+                      std::istreambuf_iterator<char>(), '\n');
+  }
+
 private:
 
   std::string working_directory_;
@@ -87,6 +94,8 @@ TEST_F(IntegrationTest, TutorialTest) {
   // Run make extract, testcase
   EXPECT_EQ(0ull, shell("make extract"));
   EXPECT_EQ(0ull, shell("make testcase"));
+
+  // Make sure we've got
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
@@ -114,11 +123,7 @@ TEST_F(IntegrationTest, TutorialTest) {
 
 }
 
-int wc(std::string filename) {
-  std::ifstream inFile(filename);
-  return std::count(std::istreambuf_iterator<char>(inFile),
-                    std::istreambuf_iterator<char>(), '\n');
-}
+
 
 TEST_F(IntegrationTest, PairityTest) {
 
@@ -171,3 +176,10 @@ TEST_F(IntegrationTest, NibbleTest) {
   EXPECT_EQ(0ull, shell("rm -rf bins nibble.tc"));
 }
 
+TEST_F(IntegrationTest, Issue452) {
+  set_working_dir("tests/fixtures/452");
+  set_path("../../../bin");
+  ASSERT_EQ(0ull, shell("make"));
+  ASSERT_EQ(0ull, shell("diff new1 new2"));
+  ASSERT_EQ(0ull, shell("make clean"));
+}
