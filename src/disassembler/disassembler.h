@@ -73,7 +73,7 @@ private:
                       std::map<std::string, uint64_t>& section_offsets);
   /* Parse an instruction from a line */
   bool parse_instr_from_line(const std::string& line, std::string& instr);
-  /* Get an address from an objdump'd line */
+  /* Get an address from an objdump'd line.  Returns 0 on failure. */
   uint64_t parse_addr_from_line(const std::string& line);
   /* Get an address from an objdump'd line */
   bool parse_addr_label_from_line(const std::string& line, std::map<std::string, std::string>&);
@@ -85,6 +85,8 @@ private:
   std::string fix_instruction(const std::string& line);
   /* Fix the labels */
   label_set fix_label_uses(line_map& lines, const std::map<std::string, std::string>&);
+  /** Count the number of bytes on an objdump'd line */
+  static uint64_t count_bytes_on_line(const std::string& line);
 
   /* Runs objdump and provides the output stream */
   redi::ipstream* run_objdump(const std::string& filename, bool only_header);
