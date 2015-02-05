@@ -165,6 +165,7 @@ TEST_F(IntegrationTest, PairityTest) {
 
 TEST_F(IntegrationTest, NibbleTest) {
   set_working_dir("tests/fixtures/nibble");
+  set_path("../../../bin");
 
   // Extract bins
   EXPECT_EQ(0ull, shell("stoke extract --config extract.conf"));
