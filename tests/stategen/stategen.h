@@ -291,7 +291,7 @@ TEST(StateGenTest, EasyToAvoidMisalign) {
 
   stoke::Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::empty());
   stoke::StateGen sg(&sg_sb);
-  sg.set_max_attempts(2)
+  sg.set_max_attempts(16)
   .set_max_memory(1000)
   .set_allow_unaligned(false);
 
