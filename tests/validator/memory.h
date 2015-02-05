@@ -323,5 +323,5 @@ TEST_F(ValidatorMemoryTest, PopRspIsSpecial) {
   rewrite_ << "movq %rax, %rsp" << std::endl;
   rewrite_ << "retq" << std::endl;
 
-  assert_ceg_nocheck();
+  assert_equiv();
 }
