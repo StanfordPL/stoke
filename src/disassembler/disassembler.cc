@@ -389,10 +389,10 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
   }
 
   // Insert label definitions where necessary and fix instruction text
-	// (At some point, the fact that we split lock into two instructions is going
-	//  to bite us here).
+  // (At some point, the fact that we split lock into two instructions is going
+  //  to bite us here).
   vector<LineInfo> result;
-	result.push_back({lines[0].offset, 0, string(".") + name + string(":")});
+  result.push_back({lines[0].offset, 0, string(".") + name + string(":")});
   for (const auto& l : lines) {
     if (label_refs.find(l.offset) != label_refs.end()) {
       ostringstream oss;
@@ -406,13 +406,13 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
 }
 
 void Disassembler::rescale_offsets(FunctionCallbackData& data, uint64_t text_offset) {
-	// Rescale function offsets
+  // Rescale function offsets
   data.function_offset = data.instruction_offsets[0] - text_offset;
   for (auto& o : data.instruction_offsets) {
     o -= (data.function_offset + text_offset);
   }
 
-	// Rescale rip offsets
+  // Rescale rip offsets
   Assembler assm;
   int64_t delta = 0;
   for (size_t i = 0, ie = data.tunit.code.size(); i < ie; ++i) {
@@ -457,8 +457,8 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
   const auto len = line.find_last_of('>') - begin;
   data.tunit.name = mangle_lable(line.substr(begin, len));
 
-	// Parse the contents of this function
-	const auto lines = parse_lines(ips, data.tunit.name);
+  // Parse the contents of this function
+  const auto lines = parse_lines(ips, data.tunit.name);
 
   // Record metadata
   for (const auto& l : lines) {
@@ -468,9 +468,9 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map
 
   // Read code.
   stringstream ss;
-	for (const auto& l : lines) {
-		ss << l.instr << endl;
-	}
+  for (const auto& l : lines) {
+    ss << l.instr << endl;
+  }
   ss >> data.tunit.code;
   if (ss.fail()) {
     data.parse_error = true;
