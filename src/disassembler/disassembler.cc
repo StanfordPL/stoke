@@ -361,8 +361,8 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, Function
     }
   }
 
-	// Save ptrs (I don't love that this is happening here)
-	data.addr_label_map = ptrs;
+  // Save ptrs (I don't love that this is happening here)
+  data.addr_label_map = ptrs;
 
   // Update non-funtion label references and record targets
   set<uint64_t> label_refs;

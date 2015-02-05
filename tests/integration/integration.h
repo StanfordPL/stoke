@@ -163,10 +163,10 @@ TEST_F(IntegrationTest, NibbleTest) {
 
   // Extract bins
   EXPECT_EQ(0ull, shell("stoke extract --config extract.conf"));
-	// Generate testcases
+  // Generate testcases
   EXPECT_EQ(0ull, shell("stoke testcase --config testcase.conf"));
-	// Run stoke testcase
-	EXPECT_EQ(0ull, shell("stoke debug sandbox --config sandbox.conf | grep \"SIGNAL 0\""));
+  // Run stoke testcase
+  EXPECT_EQ(0ull, shell("stoke debug sandbox --config sandbox.conf | grep \"SIGNAL 0\""));
   // Cleanup
   EXPECT_EQ(0ull, shell("rm -rf bins nibble.tc"));
 }
