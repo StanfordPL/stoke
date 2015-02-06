@@ -177,8 +177,8 @@ private:
   std::vector<x64asm::M8> m_pool_;
   /** Operand pool. */
   std::vector<x64asm::Label> label_pool_;
-	/** Operand pool -- these are relative to the beginning of the function. */
-	std::vector<x64asm::Imm32> offset_pool_;
+  /** Operand pool -- these are relative to the beginning of the function. */
+  std::vector<x64asm::Imm32> offset_pool_;
 
   /** Old instruction for instruction moves. */
   x64asm::Instruction old_instr_;
@@ -196,8 +196,8 @@ private:
 
   /** Random generator. */
   std::default_random_engine gen_;
-	// Assembler.
-	x64asm::Assembler assm_;
+  // Assembler.
+  x64asm::Assembler assm_;
   /** Validator to check for support. */
   Validator* validator_ = NULL;
 

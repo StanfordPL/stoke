@@ -22,199 +22,199 @@ using namespace x64asm;
 namespace {
 
 /** Returns the number of operands for this opcode. */
-  size_t arity(Opcode o) {
-    return Instruction(o).arity();
-  }
+size_t arity(Opcode o) {
+  return Instruction(o).arity();
+}
 
-  /** Returns the index-th operand type for this opcode. */
-  Type type(Opcode o, size_t index) {
-    return Instruction(o).type(index);
-  }
+/** Returns the index-th operand type for this opcode. */
+Type type(Opcode o, size_t index) {
+  return Instruction(o).type(index);
+}
 
-  /** Is this an lea instruction? */
-  bool is_lea_opcode(Opcode o) {
-    return Instruction(o).is_lea();
-  }
+/** Is this an lea instruction? */
+bool is_lea_opcode(Opcode o) {
+  return Instruction(o).is_lea();
+}
 
-  /** Does this instruction dereference memory? */
-  bool is_mem_opcode(Opcode o) {
-    return Instruction(o).is_memory_dereference();
-  }
+/** Does this instruction dereference memory? */
+bool is_mem_opcode(Opcode o) {
+  return Instruction(o).is_memory_dereference();
+}
 
-  /** Does this instruction read (but not write) memory. */
-  bool is_mem_read_only_opcode(Opcode o) {
-    if (Instruction(o).is_pop() || Instruction(o).is_popf()) {
-      return true;
-    }
-    const auto instr = Instruction(o);
-    const auto mi = instr.mem_index();
-    return mi != -1 && !instr.maybe_write(mi) && !instr.maybe_undef(mi);
-  }
-
-  /** Does this instruction write (but not read or undef) memory. */
-  bool is_mem_write_only_opcode(Opcode o) {
-    if (Instruction(o).is_push() || Instruction(o).is_pushf()) {
-      return true;
-    }
-    const auto instr = Instruction(o);
-    const auto mi = instr.mem_index();
-    return mi != -1 && !instr.maybe_read(mi) && !instr.maybe_undef(mi);
-  }
-
-  /** Does this instruction take an rh operand? */
-  bool is_rh_opcode(Opcode o) {
-    for (size_t i = 0, ie = arity(o); i < ie; ++i) {
-      if (type(o, i) == Type::RH) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /** Does this instruction induce control flow? */
-  bool is_control_opcode(Opcode o) {
-    const Instruction instr(o);
-    return instr.is_label_defn() || instr.is_any_jump() ||
-           instr.is_any_call() || instr.is_any_return() ||
-           instr.is_any_loop();
-  }
-
-  /** Does this instruction induce control flow, other than a call (which STOKE can propose)? */
-  bool is_control_other_than_call(Opcode op) {
-    return op != CALL_LABEL && is_control_opcode(op);
-  }
-
-  /** Does this instruction produce non-deterministic results? */
-  bool is_non_deterministic(Opcode o) {
-    return Instruction(o).is_rdrand();
-  }
-
-  /** Add instructions that should never be proposed to this method. */
-  bool is_unsupported(Opcode o) {
-    return is_rh_opcode(o) || !Sandbox::is_supported(o);
-  }
-
-  /** Is this instruction enabled given this flag set? */
-  bool is_enabled(Opcode o, const FlagSet& fs) {
-    return Instruction(o).enabled(fs);
-  }
-
-  /** Do these two instructions take operands of the same arity and type? */
-  bool is_type_equiv(Opcode o1, Opcode o2) {
-    if (arity(o1) != arity(o2)) {
-      return false;
-    }
-    for (size_t i = 0, ie = arity(o1); i < ie; ++i) {
-      if (type(o1, i) != type(o2, i)) {
-        return false;
-      }
-    }
+/** Does this instruction read (but not write) memory. */
+bool is_mem_read_only_opcode(Opcode o) {
+  if (Instruction(o).is_pop() || Instruction(o).is_popf()) {
     return true;
   }
+  const auto instr = Instruction(o);
+  const auto mi = instr.mem_index();
+  return mi != -1 && !instr.maybe_write(mi) && !instr.maybe_undef(mi);
+}
+
+/** Does this instruction write (but not read or undef) memory. */
+bool is_mem_write_only_opcode(Opcode o) {
+  if (Instruction(o).is_push() || Instruction(o).is_pushf()) {
+    return true;
+  }
+  const auto instr = Instruction(o);
+  const auto mi = instr.mem_index();
+  return mi != -1 && !instr.maybe_read(mi) && !instr.maybe_undef(mi);
+}
+
+/** Does this instruction take an rh operand? */
+bool is_rh_opcode(Opcode o) {
+  for (size_t i = 0, ie = arity(o); i < ie; ++i) {
+    if (type(o, i) == Type::RH) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Does this instruction induce control flow? */
+bool is_control_opcode(Opcode o) {
+  const Instruction instr(o);
+  return instr.is_label_defn() || instr.is_any_jump() ||
+         instr.is_any_call() || instr.is_any_return() ||
+         instr.is_any_loop();
+}
+
+/** Does this instruction induce control flow, other than a call (which STOKE can propose)? */
+bool is_control_other_than_call(Opcode op) {
+  return op != CALL_LABEL && is_control_opcode(op);
+}
+
+/** Does this instruction produce non-deterministic results? */
+bool is_non_deterministic(Opcode o) {
+  return Instruction(o).is_rdrand();
+}
+
+/** Add instructions that should never be proposed to this method. */
+bool is_unsupported(Opcode o) {
+  return is_rh_opcode(o) || !Sandbox::is_supported(o);
+}
+
+/** Is this instruction enabled given this flag set? */
+bool is_enabled(Opcode o, const FlagSet& fs) {
+  return Instruction(o).enabled(fs);
+}
+
+/** Do these two instructions take operands of the same arity and type? */
+bool is_type_equiv(Opcode o1, Opcode o2) {
+  if (arity(o1) != arity(o2)) {
+    return false;
+  }
+  for (size_t i = 0, ie = arity(o1); i < ie; ++i) {
+    if (type(o1, i) != type(o2, i)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 /** Returns true if this instruction uses rip offset addressing */
 bool uses_rip(const Instruction& instr) {
-	if (!instr.is_explicit_memory_dereference()) {
-		return false;
-	}
-	const auto mi = instr.mem_index();
-	return instr.get_operand<M8>(mi).rip_offset();
+  if (!instr.is_explicit_memory_dereference()) {
+    return false;
+  }
+  const auto mi = instr.mem_index();
+  return instr.get_operand<M8>(mi).rip_offset();
 }
 
 /** Returns the rip offset for this instruction */
 uint64_t get_offset(const Instruction& instr) {
-	assert(uses_rip(instr));
-	const auto mi = instr.mem_index();
-	return instr.get_operand<M8>(mi).get_disp();
+  assert(uses_rip(instr));
+  const auto mi = instr.mem_index();
+  return instr.get_operand<M8>(mi).get_disp();
 }
 
 /** Set o to a random element from a pool. Returns true on success. */
 template <typename T>
 bool get(default_random_engine& gen, const vector<T>& pool, Operand& o) {
-	if (pool.empty()) {
-		return false;
-	}
-	o = pool[gen() % pool.size()];
-	return true;
+  if (pool.empty()) {
+    return false;
+  }
+  o = pool[gen() % pool.size()];
+  return true;
 }
 
 /** Set o to exactly one element from a pool. Returns true on success. */
 template <typename T>
 bool get(const vector<T>& pool, const T& val, Operand& o) {
-	if (find(pool.begin(), pool.end(), val) == pool.end()) {
-		return false;
-	}
-	o = val;
-	return true;
+  if (find(pool.begin(), pool.end(), val) == pool.end()) {
+    return false;
+  }
+  o = val;
+  return true;
 }
 
 /** Set o to a random element in a register set. Returns true on success. */
 template <typename T>
 bool get(default_random_engine& gen, const vector<T>& pool, const RegSet& rs, Operand& o) {
-	vector<T> ts;
-	for (const auto& t : pool) {
-		if (rs.contains(t)) {
-			ts.push_back(t);
-		}
-	}
-	if (ts.empty()) {
-		return false;
-	}
-	o = ts[gen() % ts.size()];
-	return true;
+  vector<T> ts;
+  for (const auto& t : pool) {
+    if (rs.contains(t)) {
+      ts.push_back(t);
+    }
+  }
+  if (ts.empty()) {
+    return false;
+  }
+  o = ts[gen() % ts.size()];
+  return true;
 }
 
 /** Replaces base register using an element of a reg set. Returns true on success. */
 template <class T>
 bool get_base(default_random_engine& gen, const vector<R32> r32_pool, const vector<R64>& r64_pool, const RegSet& rs, M<T>& m) {
-	if (gen() % 2) {
-		m.clear_base();
-		return true;
-	} else if (m.addr_or()) {
-		auto r = eax;
-		if (get<R32>(gen, r32_pool, rs, r)) {
-			m.set_base(r);
-			return true;
-		}
-	} else {
-		auto r = rax;
-		if (get<R64>(gen, r64_pool, rs, r)) {
-			m.set_base(r);
-			return true;
-		}
-	}
-	return false;
+  if (gen() % 2) {
+    m.clear_base();
+    return true;
+  } else if (m.addr_or()) {
+    auto r = eax;
+    if (get<R32>(gen, r32_pool, rs, r)) {
+      m.set_base(r);
+      return true;
+    }
+  } else {
+    auto r = rax;
+    if (get<R64>(gen, r64_pool, rs, r)) {
+      m.set_base(r);
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Replaces index register using an element of a reg set. Returns true on success. */
 template <class T>
 bool get_index(default_random_engine& gen, const vector<R32>& r32_pool, const vector<R64>& r64_pool, const RegSet& rs, M<T>& m) {
-	if (gen() % 2) {
-		m.clear_index();
-	} else if (m.addr_or()) {
-		auto r = eax;
-		if (get<R32>(gen, r32_pool, rs, r)) {
-			m.set_index(r);
-			return m.get_index() != esp;
-		}
-	} else {
-		auto r = rax;
-		if (get<R64>(gen, r64_pool, rs, r)) {
-			m.set_index(r);
-			return m.get_index() != rsp;
-		}
-	}
-	return false;
+  if (gen() % 2) {
+    m.clear_index();
+  } else if (m.addr_or()) {
+    auto r = eax;
+    if (get<R32>(gen, r32_pool, rs, r)) {
+      m.set_index(r);
+      return m.get_index() != esp;
+    }
+  } else {
+    auto r = rax;
+    if (get<R64>(gen, r64_pool, rs, r)) {
+      m.set_index(r);
+      return m.get_index() != rsp;
+    }
+  }
+  return false;
 }
 
 } // namespace
 
 namespace stoke {
 
-Transforms::Transforms() : 
-	old_instr_(RET), old_opcode_(RET), old_operand_(rax) {
-    set_opcode_pool(FlagSet::universe(), 0, true, true, RegSet::empty(), {}, {});
-    set_operand_pool({RET}, RegSet::linux_call_preserved());
+Transforms::Transforms() :
+  old_instr_(RET), old_opcode_(RET), old_operand_(rax) {
+  set_opcode_pool(FlagSet::universe(), 0, true, true, RegSet::empty(), {}, {});
+  set_operand_pool({RET}, RegSet::linux_call_preserved());
 }
 
 Transforms& Transforms::set_opcode_pool(const FlagSet& flags,
@@ -368,19 +368,19 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
     }
   }
 
-	offset_pool_.clear();
-	uint64_t fxn_offset = 0;
-	for (const auto& instr : target) {
-		fxn_offset += assm_.hex_size(instr);
-		if (!uses_rip(instr)) {
-			continue;
-		}
-		const auto ptr = get_offset(instr) + fxn_offset;
-		const auto itr = find(offset_pool_.begin(), offset_pool_.end(), ptr);
-		if (itr == offset_pool_.end()) {
-			offset_pool_.push_back(ptr);
-		}
-	}
+  offset_pool_.clear();
+  uint64_t fxn_offset = 0;
+  for (const auto& instr : target) {
+    fxn_offset += assm_.hex_size(instr);
+    if (!uses_rip(instr)) {
+      continue;
+    }
+    const auto ptr = get_offset(instr) + fxn_offset;
+    const auto itr = find(offset_pool_.begin(), offset_pool_.end(), ptr);
+    if (itr == offset_pool_.end()) {
+      offset_pool_.push_back(ptr);
+    }
+  }
 
   return *this;
 }
