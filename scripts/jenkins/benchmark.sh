@@ -4,6 +4,8 @@ bms=`ls -d examples/hacker/p*`
 bms=$bms" examples/saxpy"
 bms=$bms" examples/montmul"
 
+PATH=bin:$PATH
+
 HEADER=""
 ROW=""
 
