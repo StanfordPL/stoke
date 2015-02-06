@@ -130,11 +130,11 @@ uint64_t get_offset(const Instruction& instr) {
 
 /** Adds an offset to an existing rip offset */
 void rescale_offset(Instruction& instr, int64_t delta) {
-	assert(uses_rip(instr));
-	const auto mi = instr.mem_index();
-	auto m = instr.get_operand<M8>(mi);
-	m.set_disp(m.get_disp()+delta);
-	instr.set_operand(mi, m);
+  assert(uses_rip(instr));
+  const auto mi = instr.mem_index();
+  auto m = instr.get_operand<M8>(mi);
+  m.set_disp(m.get_disp()+delta);
+  instr.set_operand(mi, m);
 }
 
 /** Set o to a random element from a pool. Returns true on success. */
@@ -217,23 +217,23 @@ bool get_index(default_random_engine& gen, const vector<R32>& r32_pool, const ve
 }
 
 bool get_indices(default_random_engine& gen, const Cfg& cfg, Cfg::id_type& bb, size_t& block_idx, size_t& code_idx) {
-	// Corner case: This code could have no reachable blocks
+  // Corner case: This code could have no reachable blocks
   if (cfg.num_reachable() < 3) {
     return false;
   }
 
-	// Pick a random reachable block
+  // Pick a random reachable block
   auto b = cfg.reachable_begin();
   for (size_t i = 0, ie = (gen() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
     ++b;
   }
-	bb = *b;
+  bb = *b;
 
-	// Pick a random instruction in that block
+  // Pick a random instruction in that block
   block_idx = gen() % cfg.num_instrs(bb);
   code_idx = cfg.get_index({bb, block_idx});
 
-	// Corner cases: Is this a control instruction other than a call or the first instruction
+  // Corner cases: Is this a control instruction other than a call or the first instruction
   if (code_idx == 0) {
     return false;
   }
@@ -241,7 +241,7 @@ bool get_indices(default_random_engine& gen, const Cfg& cfg, Cfg::id_type& bb, s
     return false;
   }
 
-	return true;
+  return true;
 }
 
 } // namespace
@@ -446,19 +446,19 @@ bool Transforms::modify(Cfg& cfg, Move type) {
 bool Transforms::instruction_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-	// Grab the index of an old instruction
-	Cfg::id_type bb = cfg.get_entry();
-	size_t block_idx = 0;
-	if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
-		return false;
-	}
+  // Grab the index of an old instruction
+  Cfg::id_type bb = cfg.get_entry();
+  size_t block_idx = 0;
+  if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
+    return false;
+  }
 
-	// Record the old value and generate a new instruction
+  // Record the old value and generate a new instruction
   old_instr_ = code[instr_index_];
   auto& instr = code[instr_index_];
   instr.set_opcode(get_control_free());
 
-	// Try generating new operands but revert if we fail at any point
+  // Try generating new operands but revert if we fail at any point
   const auto& rs = cfg.def_ins({bb, block_idx});
   for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
     Operand o = instr.get_operand<R64>(i);
@@ -476,9 +476,9 @@ bool Transforms::instruction_move(Cfg& cfg) {
     instr.set_operand(i, o);
   }
 
-	// Success: rescale rips before going on to harder checks
-	// Any failure beyond here will require undoing the move
-	rescale_rips(code, old_instr_, instr_index_);
+  // Success: rescale rips before going on to harder checks
+  // Any failure beyond here will require undoing the move
+  rescale_rips(code, old_instr_, instr_index_);
 
   if(validator_ && !validator_->is_supported(instr)) {
     undo_instruction_move(cfg);
@@ -496,21 +496,21 @@ bool Transforms::instruction_move(Cfg& cfg) {
 bool Transforms::opcode_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-	// Grab the index of a random instruction
-	Cfg::id_type bb = cfg.get_entry();
-	size_t block_idx = 0;
-	if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
-		return false;
-	}
+  // Grab the index of a random instruction
+  Cfg::id_type bb = cfg.get_entry();
+  size_t block_idx = 0;
+  if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
+    return false;
+  }
 
-	// Record the old value and generate a new opcode
+  // Record the old value and generate a new opcode
   old_instr_ = code[instr_index_];
   auto& instr = code[instr_index_];
   instr.set_opcode(get_control_free_type_equiv(instr.get_opcode()));
 
-	// Success: Rescale rips before going on to harder checks
-	// Any failure beyond here will require undoing the move
-	rescale_rips(code, old_instr_, instr_index_);
+  // Success: Rescale rips before going on to harder checks
+  // Any failure beyond here will require undoing the move
+  rescale_rips(code, old_instr_, instr_index_);
 
   if(validator_ && !validator_->is_supported(instr)) {
     undo_opcode_move(cfg);
@@ -528,23 +528,23 @@ bool Transforms::opcode_move(Cfg& cfg) {
 bool Transforms::operand_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-	// Grab the index of a random instruction
-	Cfg::id_type bb = cfg.get_entry();
-	size_t block_idx = 0;
-	if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
-		return false;
-	}
+  // Grab the index of a random instruction
+  Cfg::id_type bb = cfg.get_entry();
+  size_t block_idx = 0;
+  if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
+    return false;
+  }
 
-	// Corner Cases: Don't try chaning 0-arity opcodes
+  // Corner Cases: Don't try chaning 0-arity opcodes
   if (code[instr_index_].arity() == 0) {
     return false;
   }
-	const auto operand_idx = gen_() % code[instr_index_].arity();
+  const auto operand_idx = gen_() % code[instr_index_].arity();
 
-	// Record the old value and generate a new operand
+  // Record the old value and generate a new operand
   old_instr_ = code[instr_index_];
   auto& instr = code[instr_index_];
-	Operand o = instr.get_operand<R64>(operand_idx);
+  Operand o = instr.get_operand<R64>(operand_idx);
 
   const auto& rs = cfg.def_ins({bb, block_idx});
   if (instr.maybe_read(operand_idx)) {
@@ -558,9 +558,9 @@ bool Transforms::operand_move(Cfg& cfg) {
   }
   instr.set_operand(operand_idx, o);
 
-	// Success: Rescale rips before going on to harder checks
-	// Any failure beyond here will require undoing the move
-	rescale_rips(code, old_instr_, instr_index_);
+  // Success: Rescale rips before going on to harder checks
+  // Any failure beyond here will require undoing the move
+  rescale_rips(code, old_instr_, instr_index_);
 
   if(validator_ && !validator_->is_supported(instr)) {
     undo_operand_move(cfg);
@@ -596,11 +596,11 @@ found_a_nop:
   }
 
   move(code, move_i_, move_j_);
-	if (move_i_ < move_j_) {
-		rescale_rips(code, code[move_j_], move_i_, move_j_);
-	} else {
-		rescale_rips(code, code[move_i_], move_j_, move_i_);
-	}
+  if (move_i_ < move_j_) {
+    rescale_rips(code, code[move_j_], move_i_, move_j_);
+  } else {
+    rescale_rips(code, code[move_i_], move_j_, move_i_);
+  }
   cfg.recompute();
 
   return true;
@@ -637,7 +637,7 @@ bool Transforms::local_swap_move(Cfg& cfg) {
   }
 
   swap(i, j);
-	rescale_rips(code, code[move_j_], move_i_, move_j_);
+  rescale_rips(code, code[move_j_], move_i_, move_j_);
 
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
@@ -670,7 +670,7 @@ bool Transforms::global_swap_move(Cfg& cfg) {
   }
 
   swap(i, j);
-	rescale_rips(code, code[move_j_], move_i_, move_j_);
+  rescale_rips(code, code[move_j_], move_i_, move_j_);
 
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
@@ -700,9 +700,9 @@ bool Transforms::extension_move(Cfg& cfg) {
   // Transformations must preserve the first instruction in a code sequence
   // which should be a label that represents the name of a function.
 
-	// Invariant 5:
-	// Transformations must preserve the soundness of rip offsets
-	// which should always point to elements in the offset_pool_ 
+  // Invariant 5:
+  // Transformations must preserve the soundness of rip offsets
+  // which should always point to elements in the offset_pool_
 
   return false;
 }
@@ -745,63 +745,63 @@ void Transforms::undo_extension_move(Cfg& cfg) {
 }
 
 bool Transforms::get_lea_mem(const RegSet& rs, Operand& o) {
-	auto m = *((M8*)(&o));
-	m.set_rip_offset(false);
-	m.set_addr_or(gen_() % 2);
-	m.clear_seg();
-	m.set_scale((Scale)(gen_() % 4));
-	m.set_disp((Imm32)(imm_pool_[gen_() % imm_pool_.size()]));
+  auto m = *((M8*)(&o));
+  m.set_rip_offset(false);
+  m.set_addr_or(gen_() % 2);
+  m.clear_seg();
+  m.set_scale((Scale)(gen_() % 4));
+  m.set_disp((Imm32)(imm_pool_[gen_() % imm_pool_.size()]));
 
-	if (!get_base(gen_, r32_pool_, r64_pool_, rs, m)) {
-		return false;
-	}
-	if (!get_index(gen_, r32_pool_, r64_pool_, rs, m)) {
-		return false;
-	}
-	o = m;
-	return true;
+  if (!get_base(gen_, r32_pool_, r64_pool_, rs, m)) {
+    return false;
+  }
+  if (!get_index(gen_, r32_pool_, r64_pool_, rs, m)) {
+    return false;
+  }
+  o = m;
+  return true;
 }
 
 bool Transforms::get_rip_mem(Operand& o) {
-	return false;
+  return false;
 }
 
 bool Transforms::get_reg_mem(const RegSet& rs, Operand& o) {
-	// Pull an operand out of the mem pool
-	if (m_pool_.empty()) {
-		return false;
-	}
-	const auto& m = m_pool_[gen_() % m_pool_.size()];
+  // Pull an operand out of the mem pool
+  if (m_pool_.empty()) {
+    return false;
+  }
+  const auto& m = m_pool_[gen_() % m_pool_.size()];
 
-	// All we do now is check whether this operand works here
-	if (m.contains_base()) {
-		if (m.addr_or() && !rs.contains(r32s[m.get_base()])) {
-			return false;
-		} else if (!m.addr_or() && !rs.contains(r64s[m.get_base()])) {
-			return false;
-		}
-	}
-	if (m.contains_index()) {
-		if (m.addr_or() && !rs.contains(r32s[m.get_index()])) {
-			return false;
-		} else if (!m.addr_or() && !rs.contains(r64s[m.get_index()])) {
-			return false;
-		}
-	}
+  // All we do now is check whether this operand works here
+  if (m.contains_base()) {
+    if (m.addr_or() && !rs.contains(r32s[m.get_base()])) {
+      return false;
+    } else if (!m.addr_or() && !rs.contains(r64s[m.get_base()])) {
+      return false;
+    }
+  }
+  if (m.contains_index()) {
+    if (m.addr_or() && !rs.contains(r32s[m.get_index()])) {
+      return false;
+    } else if (!m.addr_or() && !rs.contains(r64s[m.get_index()])) {
+      return false;
+    }
+  }
 
-	// If we're here it did, replace o
-	o = m;
-	return true;
+  // If we're here it did, replace o
+  o = m;
+  return true;
 }
 
 bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
   if (is_lea_opcode(c)) {
-		return get_lea_mem(rs, o);
+    return get_lea_mem(rs, o);
   } else if (gen_() % 2) {
-		return get_rip_mem(o);
-	} else {
-		return get_reg_mem(rs, o);
-	}
+    return get_rip_mem(o);
+  } else {
+    return get_reg_mem(rs, o);
+  }
 }
 
 bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& op) {
@@ -1054,20 +1054,20 @@ void Transforms::move(Code& code, size_t i, size_t j) const {
 }
 
 void Transforms::rescale_rips(Code& code, const Instruction& old_instr, size_t i, size_t j) {
-	// How much shorter has the new instruction encoding become?
-	const int64_t delta = assm_.hex_size(old_instr) - assm_.hex_size(code[i]);
+  // How much shorter has the new instruction encoding become?
+  const int64_t delta = assm_.hex_size(old_instr) - assm_.hex_size(code[i]);
 
-	// Nothing to do if nothing has changed
-	if (delta == 0) {
-		return;
-	}
+  // Nothing to do if nothing has changed
+  if (delta == 0) {
+    return;
+  }
 
-	// Otherwise, rip offsets between i and j are increased by this delta
-	for (size_t idx = i; idx <= j; ++idx) {
-		if (uses_rip(code[i])) {
-			rescale_offset(code[i], delta);
-		}
-	}
+  // Otherwise, rip offsets between i and j are increased by this delta
+  for (size_t idx = i; idx <= j; ++idx) {
+    if (uses_rip(code[i])) {
+      rescale_offset(code[i], delta);
+    }
+  }
 }
 
 } // namespace stoke
