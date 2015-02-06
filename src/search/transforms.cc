@@ -1068,6 +1068,26 @@ void Transforms::rescale_rips(Code& code, const Instruction& old_instr, size_t i
       rescale_offset(code[i], delta);
     }
   }
+
+	// This feels pretty sketchy. No harm in checking to be safe.
+	assert(check_rips(code));
+}
+
+bool Transforms::check_rips(const Code& code) {
+	uint64_t fxn_offset = 0;
+	for (const auto& instr : code) {
+		fxn_offset += assm_.hex_size(instr);
+		if (!uses_rip(instr)) {
+			continue;
+		}
+		const auto ptr = get_offset(instr) + fxn_offset;
+		const auto itr = find(offset_pool_.begin(), offset_pool_.end(), ptr);
+		if (itr == offset_pool_.end()) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 } // namespace stoke
