@@ -70,8 +70,10 @@ public:
   }
   /** Insert a value into the mem pool */
   Transforms& insert_mem(const x64asm::M8& m)  {
+		// @todo should we warn that rip offset instructions are being ignored?
+		// They don't make sense here... what rip is this relative to?
     const auto itr = std::find(m_pool_.begin(), m_pool_.end(), m);
-    if (itr == m_pool_.end()) {
+    if (itr == m_pool_.end() && !m.rip_offset()) {
       m_pool_.push_back(m);
     }
     return *this;
@@ -254,6 +256,9 @@ private:
   void rescale_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i) {
     rescale_rips(code, old_instr, i, code.size()-1);
   }
+
+	/** Checks that all rip offsets point into offset_pool when scaled to beginning of function */
+	bool check_rips(const x64asm::Code& code);
 };
 
 } // namespace stoke
