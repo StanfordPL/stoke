@@ -98,32 +98,48 @@ public:
   void undo(Cfg& cfg, Move type);
   /** Undo instruction move, recompute def-in relation. */
   void undo_instruction_move(Cfg& cfg) {
+		const auto undo_instr = cfg.get_code()[instr_index_];
     cfg.get_code()[instr_index_] = old_instr_;
+		rescale_rips(cfg.get_code(), undo_instr, instr_index_);
     cfg.recompute_defs();
   }
   /** Undo opcode move, recompute def-in relation. */
   void undo_opcode_move(Cfg& cfg) {
-    cfg.get_code()[instr_index_].set_opcode(old_opcode_);
+		const auto undo_instr = cfg.get_code()[instr_index_];
+    cfg.get_code()[instr_index_] = old_instr_;
+		rescale_rips(cfg.get_code(), undo_instr, instr_index_);
     cfg.recompute_defs();
   }
   /** Undo operand move, recompute def-in relation. */
   void undo_operand_move(Cfg& cfg) {
-    cfg.get_code()[instr_index_].set_operand(operand_index_, old_operand_);
+		const auto undo_instr = cfg.get_code()[instr_index_];
+    cfg.get_code()[instr_index_] = old_instr_;
+		rescale_rips(cfg.get_code(), undo_instr, instr_index_);
     cfg.recompute_defs();
   }
   /** Undo resize move, recompute EVERYTHING. */
   void undo_resize_move(Cfg& cfg) {
-    move(cfg.get_code(), move_j_, move_i_);
+		if (move_i_ < move_j_) {
+			const auto undo_instr = cfg.get_code()[move_i_];
+    	move(cfg.get_code(), move_j_, move_i_);
+			rescale_rips(cfg.get_code(), undo_instr, move_i_, move_j_);
+		} else {
+			const auto undo_instr = cfg.get_code()[move_j_];
+    	move(cfg.get_code(), move_j_, move_i_);
+			rescale_rips(cfg.get_code(), undo_instr, move_j_, move_i_);
+		}
     cfg.recompute();
   }
   /** Undo local swap move, recompute def-in relation. */
   void undo_local_swap_move(Cfg& cfg) {
     std::swap(cfg.get_code()[move_i_], cfg.get_code()[move_j_]);
+		rescale_rips(cfg.get_code(), cfg.get_code()[move_j_], move_i_, move_j_);
     cfg.recompute_defs();
   }
   /** Undo global swap move, recompute def-in relation. */
   void undo_global_swap_move(Cfg& cfg) {
     std::swap(cfg.get_code()[move_i_], cfg.get_code()[move_j_]);
+		rescale_rips(cfg.get_code(), cfg.get_code()[move_j_], move_i_, move_j_);
     cfg.recompute_defs();
   }
   /** Add user-defined undo implementation here ... */
@@ -182,10 +198,6 @@ private:
 
   /** Old instruction for instruction moves. */
   x64asm::Instruction old_instr_;
-  /** Old opcode for opcode moves. */
-  x64asm::Opcode old_opcode_;
-  /** Old operand for operand moves. */
-  x64asm::Operand old_operand_;
   /** Instruction index. */
   size_t instr_index_;
   /** Operand index. */
@@ -218,8 +230,15 @@ private:
     return equiv.empty() ? o : equiv[gen_() % equiv.size()];
   }
 
+  /** Sets o to a random lea operand, returns true on success. */
+  bool get_lea_mem(const x64asm::RegSet& rs, x64asm::Operand& o);
+  /** Sets o to a random rip offset operand, returns true on success. */
+  bool get_rip_mem(x64asm::Operand& o);
+  /** Sets o to a random register memory operand, returns true on success. */
+  bool get_reg_mem(const x64asm::RegSet& rs, x64asm::Operand& o);
   /** Sets o to a random memory operand, returns true on success. */
   bool get_m(const x64asm::RegSet& rs, x64asm::Opcode c, x64asm::Operand& o);
+
   /** Sets o to a random operand. Returns true on success. */
   bool get_write_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
                     x64asm::Operand& op);
@@ -227,8 +246,14 @@ private:
   bool get_read_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
                    x64asm::Operand& op);
 
-  /** Shifts instructions about a basic block boundary. */
-  void move(x64asm::Code& code, size_t i, size_t j) const;
+	/** Shifts instructions about a basic block boundary. */
+	void move(x64asm::Code& code, size_t i, size_t j) const;
+	/** Rescale rips between two instructions */
+	void rescale_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i, size_t j);
+	/** Convenience method, scale rips until end of code */
+	void rescale_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i) {
+		rescale_rips(code, old_instr, i, code.size()-1);
+	}
 };
 
 } // namespace stoke
