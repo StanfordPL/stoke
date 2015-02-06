@@ -72,6 +72,7 @@ int main(int argc, char** argv) {
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto rps = tcs.size() * benchmark_itr_arg / dur.count();
 
+  Console::msg() << fixed;
   Console::msg() << "LOC:        " << loc << endl;
   Console::msg() << "Loop Depth: " << nd << endl;
   Console::msg() << "Derefs:     " << mds << endl;

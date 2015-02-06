@@ -47,6 +47,7 @@ int main(int argc, char** argv) {
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto cps = benchmark_itr_arg / dur.count();
 
+  Console::msg() << fixed;
   Console::msg() << "Runtime:    " << dur.count() << " seconds" << endl;
   Console::msg() << "Throughput: " << cps << " / second" << endl;
 
