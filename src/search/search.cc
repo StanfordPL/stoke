@@ -124,9 +124,10 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     }
 
     // This is just here to clean up the for loop; check early exit conditions
-    if (iterations >= timeout_itr_) {
+    if (timeout_itr_ > 0 && iterations >= timeout_itr_) {
       break;
-    } else if (duration_cast<duration<size_t>>(steady_clock::now() - start) >= timeout_sec_) {
+    } else if (timeout_sec_ != steady_clock::duration::zero() &&
+               duration_cast<duration<size_t>>(steady_clock::now() - start) >= timeout_sec_) {
       break;
     }
 
