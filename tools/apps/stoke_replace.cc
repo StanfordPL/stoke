@@ -67,6 +67,8 @@ bool replace(uint64_t offset, size_t size) {
 
   // Fail if the new function is larger than the old
   if (fxn.size() > size) {
+    Console::msg() << "New function has " << fxn.size() << " bytes, but the old one had " << size;
+    Console::msg() << "." << endl;
     return false;
   }
 
