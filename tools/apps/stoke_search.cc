@@ -230,9 +230,12 @@ void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
     Console::msg() << "Additional cleanup iterations: " << total_cleanup_iterations << endl;
   }
   Console::msg() << endl << "Statistics of last search" << endl << endl;
+  // get the state first (because it updates some static variables)
+  ostringstream stream;
+  show_state(state, stream);
   show_statistics(stats, Console::msg());
   Console::msg() << endl << endl;
-  show_state(state, Console::msg());
+  Console::msg() << stream.str();
   Console::msg() << endl << endl;
   sep(Console::msg(), "#");
 }
