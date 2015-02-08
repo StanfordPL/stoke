@@ -102,6 +102,11 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   assert(state.best_yet.is_sound());
   assert(state.best_correct.is_sound());
 
+  // Statistics callback variables
+  move_statistics = vector<Statistics>((size_t) Move::NUM_MOVES);
+  num_iterations = 0;
+  const auto start = chrono::steady_clock::now();
+
   // Early corner case bailouts
   if (state.current_cost == 0) {
     state.success = true;
@@ -111,12 +116,8 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     return;
   }
 
-  // Statistics callback variables
-  move_statistics = vector<Statistics>((size_t) Move::NUM_MOVES);
-  const auto start = chrono::steady_clock::now();
-
   give_up_now = false;
-  size_t iterations;
+  size_t iterations = 0;
   for (iterations = 0; (state.current_cost > 0) && !give_up_now; ++iterations) {
     // Invoke statistics callback if we've been running for long enough
     if ((statistics_cb_ != nullptr) && (iterations % interval_ == 0) && iterations > 0) {
