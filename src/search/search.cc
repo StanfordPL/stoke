@@ -112,15 +112,17 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   }
 
   // Statistics callback variables
-  vector<Statistics> statistics((size_t) Move::NUM_MOVES);
+  move_statistics = vector<Statistics>((size_t) Move::NUM_MOVES);
   const auto start = chrono::steady_clock::now();
 
   give_up_now = false;
-  for (size_t iterations = 0; (state.current_cost > 0) && !give_up_now; ++iterations) {
+  size_t iterations;
+  for (iterations = 0; (state.current_cost > 0) && !give_up_now; ++iterations) {
     // Invoke statistics callback if we've been running for long enough
     if ((statistics_cb_ != nullptr) && (iterations % interval_ == 0) && iterations > 0) {
-      const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
-      statistics_cb_({statistics, iterations, dur}, statistics_cb_arg_);
+      elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
+      num_iterations = iterations;
+      statistics_cb_(get_statistics(), statistics_cb_arg_);
     }
 
     // This is just here to clean up the for loop; check early exit conditions
@@ -131,12 +133,12 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     }
 
     const auto move_type = moves_[int_(gen_)];
-    statistics[(size_t) move_type].num_proposed++;
+    move_statistics[(size_t) move_type].num_proposed++;
 
     if (!transforms_->modify(state.current, move_type)) {
       continue;
     }
-    statistics[(size_t) move_type].num_succeeded++;
+    move_statistics[(size_t) move_type].num_succeeded++;
 
     const auto p = prob_(gen_);
     const auto max = state.current_cost - (log(p) / beta_);
@@ -149,7 +151,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       transforms_->undo(state.current, move_type);
       continue;
     }
-    statistics[(size_t) move_type].num_accepted++;
+    move_statistics[(size_t) move_type].num_accepted++;
     state.current_cost = new_cost;
 
     const auto new_best_yet = new_cost < state.best_yet_cost;
@@ -170,9 +172,17 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     }
   }
 
+  // update values for statistics
+  elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
+  num_iterations = iterations;
+
   if (give_up_now) {
     state.interrupted = true;
   }
+}
+
+StatisticsCallbackData Search::get_statistics() const {
+  return {move_statistics, num_iterations, elapsed};
 }
 
 void Search::stop() {

@@ -42,6 +42,17 @@ public:
   interrupted(false) {
   }
 
+  SearchState(const SearchState& other) :
+    current(Cfg(other.current)),
+    current_cost(other.current_cost),
+    best_yet(Cfg(other.best_yet)),
+    best_yet_cost(other.best_yet_cost),
+    best_correct(Cfg(other.best_correct)),
+    best_correct_cost(other.best_correct_cost),
+    success(other.success),
+    interrupted(other.interrupted) {
+  }
+
   /** The current rewrite. */
   Cfg current;
   /** The cost of the current rewrite. */
