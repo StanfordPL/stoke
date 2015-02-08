@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
 #include <iostream>
 #include <sys/time.h>
 
@@ -45,6 +46,7 @@
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
+using namespace chrono;
 
 auto& io = Heading::create("Output Options:");
 auto& out = ValueArg<string>::create("out")
@@ -84,9 +86,9 @@ ValueArg<size_t>& cleanup_iterations_arg =
   .description("Clean up any successfully synthesized program using this many iterations (only takes effect with --perf none, and is equivalent to running stoke search with --perf size on the result found)")
   .default_val(500000);
 
-void sep(ostream& os) {
+void sep(ostream& os, string c = "*") {
   for (size_t i = 0; i < 80; ++i) {
-    os << "*";
+    os << c;
   }
   os << endl << endl;
 }
@@ -95,36 +97,40 @@ static Cost lowest_cost = 0;
 static Cost lowest_correct = 0;
 static Cost starting_cost = 0;
 
-void pcb(const ProgressCallbackData& data, void* arg) {
-  ostream& os = *((ostream*)arg);
-
+void show_state(const SearchState& state, ostream& os) {
   CfgTransforms tforms;
-
-  os << "Progress Update: " << endl;
-  os << endl;
 
   ofilterstream<Column> ofs(os);
   ofs.filter().padding(5);
 
-  auto best_yet = data.state.best_yet;
+  auto best_yet = state.best_yet;
   tforms.remove_unreachable(best_yet);
   tforms.remove_nop(best_yet);
 
-  lowest_cost = data.state.best_yet_cost;
-  ofs << "Lowest Cost Discovered (" << data.state.best_yet_cost << ")" << endl;
+  lowest_cost = state.best_yet_cost;
+  ofs << "Lowest Cost Discovered (" << state.best_yet_cost << ")" << endl;
   ofs << endl;
   ofs << best_yet.get_code();
   ofs.filter().next();
 
-  auto best_correct = data.state.best_correct;
+  auto best_correct = state.best_correct;
   tforms.remove_unreachable(best_correct);
   tforms.remove_nop(best_correct);
 
-  lowest_correct = data.state.best_correct_cost;
-  ofs << "Lowest Known Correct Cost (" << data.state.best_correct_cost << ")" << endl;
+  lowest_correct = state.best_correct_cost;
+  ofs << "Lowest Known Correct Cost (" << state.best_correct_cost << ")" << endl;
   ofs << endl;
   ofs << best_correct.get_code();
   ofs.filter().done();
+}
+
+void pcb(const ProgressCallbackData& data, void* arg) {
+  ostream& os = *((ostream*)arg);
+
+  os << "Progress Update: " << endl;
+  os << endl;
+
+  show_state(data.state, os);
 
   os << endl << endl;
   sep(os);
@@ -135,24 +141,14 @@ struct ScbArg {
   uint32_t** cost_stats;
 };
 
-void scb(const StatisticsCallbackData& data, void* arg) {
-  ScbArg sa = *((ScbArg*)arg);
-  ostream& os = *(sa.os);
-  uint32_t** cost_stats = sa.cost_stats;
-
-  os << "Statistics Update: " << endl;
+void show_statistics(const StatisticsCallbackData& data, ostream& os) {
+  os << "Iterations:                    " << data.iterations << endl;
+  os << "Elapsed Time:                  " << data.elapsed.count() << "s" << endl;
+  os << "Iterations/s:                  " << (data.iterations / data.elapsed.count()) << endl;
   os << endl;
-  os << "Iterations:          " << data.iterations << endl;
-  os << "Elapsed Time:        " << data.elapsed.count() << "s" << endl;
-  os << "Iterations/s:        " << (data.iterations / data.elapsed.count()) << endl;
-  os << endl;
-  os << "Starting cost:       " << starting_cost << endl;
-  os << "Lowest cost:         " << lowest_cost << endl;
-  if(lowest_correct) {
-    os << "Lowest correct cost: " << lowest_correct << endl;
-  } else {
-    os << "No correct rewrite found." << endl;
-  }
+  os << "Starting cost:                 " << starting_cost << endl;
+  os << "Lowest cost:                   " << lowest_cost << endl;
+  os << "Lowest correct cost:           " << lowest_correct << endl;
   os << endl;
 
 
@@ -203,13 +199,48 @@ void scb(const StatisticsCallbackData& data, void* arg) {
   ofs << endl;
   ofs << 100 * (double)total.num_accepted / data.iterations << "%";
   ofs.filter().done();
+}
+
+void scb(const StatisticsCallbackData& data, void* arg) {
+  ScbArg sa = *((ScbArg*)arg);
+  ostream& os = *(sa.os);
+  uint32_t** cost_stats = sa.cost_stats;
+
+  os << "Statistics Update: " << endl;
+  os << endl;
+  show_statistics(data, os);
 
   os << endl << endl;
   sep(os);
+}
 
+void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
+                       size_t total_restarts,
+                       size_t total_iterations, time_point<steady_clock> start,
+                       duration<double> search_elapsed,
+                       size_t total_cleanup_iterations) {
+  auto total_elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
+  sep(Console::msg(), "#");
+  Console::msg() << "Final update:" << endl << endl;
+  Console::msg() << "Total search iterations:       " << total_iterations << endl;
+  Console::msg() << "Number of attempted searches:  " << total_restarts << endl;
+  Console::msg() << "Total search time:             " << search_elapsed.count() << "s" << endl;
+  Console::msg() << "Total time:                    " << total_elapsed.count() << "s" << endl;
+  if (total_cleanup_iterations > 0) {
+    Console::msg() << "Additional cleanup iterations: " << total_cleanup_iterations << endl;
+  }
+  Console::msg() << endl << "Statistics of last search" << endl << endl;
+  show_statistics(stats, Console::msg());
+  Console::msg() << endl << endl;
+  show_state(state, Console::msg());
+  Console::msg() << endl << endl;
+  sep(Console::msg(), "#");
 }
 
 int main(int argc, char** argv) {
+  const auto start = steady_clock::now();
+  duration<double> search_elapsed;
+
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
@@ -240,6 +271,9 @@ int main(int argc, char** argv) {
   .set_statistics_callback(scb, &scb_arg)
   .set_statistics_interval(stat_int);
 
+  size_t total_iterations = 0;
+  size_t total_restarts = 0;
+
   SearchStateGadget state(target, aux_fxns);
   for (size_t i = 0; ; ++i) {
     CostFunctionGadget fxn(target, &training_sb);
@@ -262,9 +296,16 @@ int main(int argc, char** argv) {
     }
 
     search.set_timeout_itr(timeout_itr_arg);
+    const auto start_search = steady_clock::now();
     search.run(target, fxn, init_arg, state, aux_fxns);
+    search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
+
+    total_iterations += search.get_statistics().iterations;
+    total_restarts++;
 
     if (state.interrupted) {
+      Console::msg() << endl;
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, 0);
       Console::msg() << "Search interrupted!" << endl;
       exit(1);
     }
@@ -303,6 +344,7 @@ int main(int argc, char** argv) {
       Console::msg() << verifier.get_counter_example() << endl << endl;
       training_sb.insert_input(verifier.get_counter_example());
     } else {
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, 0);
       Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
     }
   }
@@ -311,11 +353,17 @@ int main(int argc, char** argv) {
   tforms.remove_unreachable(state.best_correct);
   tforms.remove_nop(state.best_correct);
 
+  auto final_stats = search.get_statistics();
+  auto final_state = SearchState(state);
+  Cost lowest_cost_backup = lowest_cost;
+  Cost lowest_correct_backup = lowest_correct;
+
   TUnit rewrite;
   rewrite.name = target_arg.value().name;
   rewrite.code = state.best_correct.get_code();
 
   // try to clean up code that was synthesized
+  size_t total_cleanup_iterations = 0;
   if (perf_arg == PerformanceTerm::NONE && cleanup_iterations_arg.value() > 0) {
     Console::msg() << endl << "Cleaning up program found so far..." << endl;
 
@@ -328,9 +376,12 @@ int main(int argc, char** argv) {
     search.set_timeout_itr(cleanup_iterations_arg);
     search.run(state.best_correct, fxn, Init::TARGET, state, aux_fxns);
 
+    total_cleanup_iterations += search.get_statistics().iterations;
+
     cout << endl;
 
     if (state.interrupted) {
+      show_final_update(final_stats, final_state, total_restarts, total_iterations, start, search_elapsed, total_cleanup_iterations);
       Console::msg() << "Cleanup search interrupted!" << endl;
       exit(1);
     }
@@ -348,9 +399,17 @@ int main(int argc, char** argv) {
       Console::msg() << "Unable to verify cleaned up rewrite, using program before cleanup..." << endl << endl;
     } else {
       Console::msg() << "Successfully cleaned up the synthesized program!" << endl << endl;
+      tforms.remove_unreachable(state.best_correct);
+      tforms.remove_nop(state.best_correct);
+      final_state.best_correct = state.best_correct;
+      final_state.best_yet = state.best_correct;
       rewrite.code = state.best_correct.get_code();
     }
   }
+
+  lowest_cost = lowest_cost_backup;
+  lowest_correct = lowest_correct_backup;
+  show_final_update(final_stats, final_state, total_restarts, total_iterations, start, search_elapsed, total_cleanup_iterations);
 
   ofstream ofs(out.value());
   ofs << rewrite;
