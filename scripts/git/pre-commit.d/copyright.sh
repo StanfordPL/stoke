@@ -17,6 +17,8 @@ echo "// limitations under the License." >> cr.txt
 echo "" >> cr.txt
 
 cr="Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule"
+crlen=${#cr}
+crlen=$((crlen+3))
 
 for file in `find . -type f -and \( -name "*.h" -o -name "*.c" -o -name "*.cc" \)\
                     -not -path "./src/ext/*"\
@@ -33,11 +35,14 @@ for file in `find . -type f -and \( -name "*.h" -o -name "*.c" -o -name "*.cc" \
 	fi
 
 	# Replace first line with current copyright 
-  ORIG=`head -n1 $file`
-	sed -i "1s/.*/\/\/ $cr/" $file
-  DONE=`head -n1 $file`
-  if [ "$ORIG" != "$DONE" ]; then
-	  echo Modified copyright notice in $file
+  if [ "${line1:3:$crlen}" != "$cr" ]
+  then
+    ORIG=`head -n1 $file`
+    sed -i "1s/.*/\/\/ $cr/" $file
+    DONE=`head -n1 $file`
+    if [ "$ORIG" != "$DONE" ]; then
+      echo Modified copyright notice in $file
+    fi
   fi
 done
 
