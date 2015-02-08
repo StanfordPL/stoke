@@ -274,6 +274,7 @@ int main(int argc, char** argv) {
   size_t total_iterations = 0;
   size_t total_restarts = 0;
 
+  string final_msg;
   SearchStateGadget state(target, aux_fxns);
   for (size_t i = 0; ; ++i) {
     CostFunctionGadget fxn(target, &training_sb);
@@ -323,9 +324,9 @@ int main(int argc, char** argv) {
       Console::msg() << "Unable to verify new rewrite..." << endl << endl;
     } else {
       if (strategy_arg.value() == Strategy::NONE) {
-        Console::msg() << "Search terminated successfully (but no verification was performed)!" << endl;
+        final_msg = "Search terminated successfully (but no verification was performed)!";
       } else {
-        Console::msg() << "Search terminated successfully with a verified rewrite!" << endl;
+        final_msg = "Search terminated successfully with a verified rewrite!";
       }
       break;
     }
@@ -365,7 +366,9 @@ int main(int argc, char** argv) {
   // try to clean up code that was synthesized
   size_t total_cleanup_iterations = 0;
   if (perf_arg == PerformanceTerm::NONE && cleanup_iterations_arg.value() > 0) {
-    Console::msg() << endl << "Cleaning up program found so far..." << endl;
+    Console::msg() << final_msg << endl;
+    Console::msg() << endl << "Cleaning up program found so far..." << endl << endl;
+    sep(Console::msg());
 
     transforms = TransformsGadget(state.best_correct.get_code(), aux_fxns, seed);
     CostFunctionGadget fxn(state.best_correct, &training_sb);
@@ -394,11 +397,11 @@ int main(int argc, char** argv) {
     }
 
     if (!state.success) {
-      Console::msg() << "Unable to discover a cleaned up rewrite, using program before cleanup... " << endl << endl;
+      final_msg = "Unable to discover a cleaned up rewrite, using program before cleanup... ";
     } else if (!verified) {
-      Console::msg() << "Unable to verify cleaned up rewrite, using program before cleanup..." << endl << endl;
+      final_msg = "Unable to verify cleaned up rewrite, using program before cleanup...";
     } else {
-      Console::msg() << "Successfully cleaned up the synthesized program!" << endl << endl;
+      final_msg = "Successfully cleaned up the synthesized program!";
       tforms.remove_unreachable(state.best_correct);
       tforms.remove_nop(state.best_correct);
       final_state.best_correct = state.best_correct;
@@ -410,6 +413,7 @@ int main(int argc, char** argv) {
   lowest_cost = lowest_cost_backup;
   lowest_correct = lowest_correct_backup;
   show_final_update(final_stats, final_state, total_restarts, total_iterations, start, search_elapsed, total_cleanup_iterations);
+  Console::msg() << final_msg << endl;
 
   ofstream ofs(out.value());
   ofs << rewrite;
