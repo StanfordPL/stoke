@@ -75,6 +75,12 @@ public:
     recompute();
   }
 
+  /** Copy constructor. */
+  Cfg(const Cfg& other) :
+    code_(x64asm::Code(other.code_)), fxn_def_ins_(other.fxn_def_ins_), fxn_live_outs_(other.fxn_live_outs_) {
+    recompute();
+  }
+
   /** Recompute internal state; recomputes basic block structure and data flow values. */
   void recompute() {
     recompute_structure();

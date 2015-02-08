@@ -85,6 +85,8 @@ public:
   /** Stops an in-progress search.  To be used from a callback, for example. */
   void stop();
 
+  /** Returns the statistics collected for the search up to now (or the full statistics for the whole run, if search terminated). */
+  StatisticsCallbackData get_statistics() const;
 
 private:
   /** Random generator. */
@@ -117,6 +119,11 @@ private:
   void* statistics_cb_arg_;
   /** How often are statistics printed? */
   size_t interval_;
+
+  /** Statistics so far. */
+  std::vector<Statistics> move_statistics;
+  size_t num_iterations;
+  std::chrono::duration<double> elapsed;
 
   /** Configures a search state. */
   void configure(const Cfg& target, CostFunction& fxn, SearchState& state, std::vector<stoke::TUnit>& aux_fxn) const;
