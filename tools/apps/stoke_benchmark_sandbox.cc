@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns);
   SeedGadget seed;
-  TestcasesGadget tcs(seed);
+  TrainingSetGadget tcs(seed);
   SandboxGadget sb(tcs, aux_fxns);
 
   if (!target.is_sound()) {
