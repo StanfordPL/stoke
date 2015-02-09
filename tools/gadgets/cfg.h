@@ -157,9 +157,9 @@ private:
     lnkr.finish();
 
     if (lnkr.multiple_def()) {
-      Console::error(1) << "Target/rewrite and functions contain a multiple definition error!" << std::endl;
+      Console::error(1) << "Target/rewrite and functions contain a multiple definition error (" << lnkr.get_multiple_def() << ")!" << std::endl;
     } else if (lnkr.undef_symbol()) {
-      Console::error(1) << "Target/rewrite and functions contain an undefined symbol error!" << std::endl;
+      Console::error(1) << "Target/rewrite and functions contain an undefined symbol error (" << lnkr.get_undef_symbol() << ")!" << std::endl;
     }
   }
 
