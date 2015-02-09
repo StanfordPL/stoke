@@ -45,7 +45,7 @@ int main(int argc, char** argv) {
   RewriteGadget rewrite(aux_fxns);
 
   SeedGadget seed;
-  TestcasesGadget tcs(seed);
+  TrainingSetGadget tcs(seed);
   SandboxGadget sb(tcs, aux_fxns);
   CostFunctionGadget fxn(target, &sb);
 
