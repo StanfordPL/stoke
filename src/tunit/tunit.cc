@@ -43,82 +43,82 @@ bool is_prefix(const string& pre, const string& s) {
 namespace stoke {
 
 TUnit::MayMustSets TUnit::get_may_must_sets(const MayMustSets& defaults) const {
-	RegSet res_must_read_set = defaults.must_read_set;
-	RegSet res_must_write_set = defaults.must_write_set;
-	RegSet res_must_undef_set = defaults.must_undef_set;
-	RegSet res_maybe_read_set = defaults.maybe_read_set;
-	RegSet res_maybe_write_set = defaults.maybe_write_set;
-	RegSet res_maybe_undef_set = defaults.maybe_undef_set;
-	if (must_read_set) {
-		res_must_read_set = *must_read_set;
-		if (!maybe_read_set) {
-			// make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-			res_maybe_read_set |= res_must_read_set;
-		}
-	}
-	if (must_write_set) {
-		res_must_write_set = *must_write_set;
-		if (!maybe_write_set) {
-			// make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-			res_maybe_write_set |= res_must_write_set;
-		}
-	}
-	if (must_undef_set) {
-		res_must_undef_set = *must_undef_set;
-		if (!maybe_undef_set) {
-			// make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-			res_maybe_undef_set |= res_must_undef_set;
-		}
-	}
-	if (maybe_read_set) {
-		res_maybe_read_set = *maybe_read_set;
-		if (!must_read_set) {
-			// make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-			res_must_read_set &= res_maybe_read_set;
-		}
-	}
-	if (maybe_write_set) {
-		res_maybe_write_set = *maybe_write_set;
-		if (!must_write_set) {
-			// make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-			res_must_write_set &= res_maybe_write_set;
-		}
-	}
-	if (maybe_undef_set) {
-		res_maybe_undef_set = *maybe_undef_set;
-		if (!must_undef_set) {
-			// make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-			res_must_undef_set &= res_maybe_undef_set;
-		}
-	}
-	return {
-		res_must_read_set,
-			res_must_write_set,
-			res_must_undef_set,
-			res_maybe_read_set,
-			res_maybe_write_set,
-			res_maybe_undef_set,
-	};
+  RegSet res_must_read_set = defaults.must_read_set;
+  RegSet res_must_write_set = defaults.must_write_set;
+  RegSet res_must_undef_set = defaults.must_undef_set;
+  RegSet res_maybe_read_set = defaults.maybe_read_set;
+  RegSet res_maybe_write_set = defaults.maybe_write_set;
+  RegSet res_maybe_undef_set = defaults.maybe_undef_set;
+  if (must_read_set) {
+    res_must_read_set = *must_read_set;
+    if (!maybe_read_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_maybe_read_set |= res_must_read_set;
+    }
+  }
+  if (must_write_set) {
+    res_must_write_set = *must_write_set;
+    if (!maybe_write_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_maybe_write_set |= res_must_write_set;
+    }
+  }
+  if (must_undef_set) {
+    res_must_undef_set = *must_undef_set;
+    if (!maybe_undef_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_maybe_undef_set |= res_must_undef_set;
+    }
+  }
+  if (maybe_read_set) {
+    res_maybe_read_set = *maybe_read_set;
+    if (!must_read_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_must_read_set &= res_maybe_read_set;
+    }
+  }
+  if (maybe_write_set) {
+    res_maybe_write_set = *maybe_write_set;
+    if (!must_write_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_must_write_set &= res_maybe_write_set;
+    }
+  }
+  if (maybe_undef_set) {
+    res_maybe_undef_set = *maybe_undef_set;
+    if (!must_undef_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_must_undef_set &= res_maybe_undef_set;
+    }
+  }
+  return {
+    res_must_read_set,
+    res_must_write_set,
+    res_must_undef_set,
+    res_maybe_read_set,
+    res_maybe_write_set,
+    res_maybe_undef_set,
+  };
 }
 
 istream& TUnit::read_text(istream& is) {
-	string first_line;
-	getline(is, first_line);
+  string first_line;
+  getline(is, first_line);
 
-	stringstream ss;
-	ss << first_line << endl;
-	ss << is.rdbuf();
+  stringstream ss;
+  ss << first_line << endl;
+  ss << is.rdbuf();
 
-	if (first_line == "  .text") {
-		read_formatted_text(ss);
-	} else {
-		read_naked_text(ss);
-	}
+  if (first_line == "  .text") {
+    read_formatted_text(ss);
+  } else {
+    read_naked_text(ss);
+  }
 
-	if (ss.fail()) {
-		is.setstate(ios::failbit);
-	}
-	return is;
+  if (ss.fail()) {
+    is.setstate(ios::failbit);
+  }
+  return is;
 }
 
 ostream& TUnit::write_text(ostream& os) const {
@@ -227,20 +227,20 @@ istream& TUnit::read_formatted_text(istream& is) {
 }
 
 istream& TUnit::read_naked_text(istream& is) {
-	is >> code;
-	if (is.fail()) {
-		return is;
-	}
-	
-	if (!code.empty() && code[0].is_label_defn()) {
-		const auto label = code[0].get_operand<Label>(0);
-		name = label.get_text().substr(1);
-	} else {
-		name = "anonymous_function";
-		code.insert(code.begin(), {LABEL_DEFN, {Label(".anonymous_function")}});
-	}
+  is >> code;
+  if (is.fail()) {
+    return is;
+  }
 
-	return is;
+  if (!code.empty() && code[0].is_label_defn()) {
+    const auto label = code[0].get_operand<Label>(0);
+    name = label.get_text().substr(1);
+  } else {
+    name = "anonymous_function";
+    code.insert(code.begin(), {LABEL_DEFN, {Label(".anonymous_function")}});
+  }
+
+  return is;
 }
 
 } // namespace stoke
