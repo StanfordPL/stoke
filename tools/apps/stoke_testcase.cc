@@ -165,8 +165,8 @@ int trace(const string& argv0) {
 
   // Don't return term.result() because it computes it mod 256 in the shell,
   // and this sometimes hides errors from pin -- Berkeley
-	if (term.result() != 0) {
-   	Console::error(1) << "Unspecified pintool error " << term.result() << "!" << endl;
+  if (term.result() != 0) {
+    Console::error(1) << "Unspecified pintool error " << term.result() << "!" << endl;
   }
 
   return 0;
