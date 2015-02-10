@@ -30,7 +30,7 @@ using namespace x64asm;
 
 namespace {
 
-array<const char*, 3803> att_ {{
+array<const char*, X64ASM_NUM_OPCODES> att_ {{
     // Internal mnemonics
     "<label definition>"
     // Auto-generated mnemonics
