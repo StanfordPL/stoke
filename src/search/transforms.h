@@ -246,10 +246,10 @@ private:
   void rescale_rip(x64asm::Code& code, size_t i);
   /** Scale rips between here and the end of the code */
   void rescale_trailing_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i, bool ignore_first = false);
-	/** Scale rips between two swapped instructions */
- 	void rescale_swapped_rips(x64asm::Code& code, size_t i, size_t j);
-	/** Scale rips for a set of rotated instructions. */
-	void rescale_rotated_rips(x64asm::Code& code, size_t i, size_t j);
+  /** Scale rips between two swapped instructions */
+  void rescale_swapped_rips(x64asm::Code& code, size_t i, size_t j);
+  /** Scale rips for a set of rotated instructions. */
+  void rescale_rotated_rips(x64asm::Code& code, size_t i, size_t j);
 
   /** Checks that all rip offsets point into offset_pool when scaled to beginning of function */
   bool check_rips(const x64asm::Code& code);
