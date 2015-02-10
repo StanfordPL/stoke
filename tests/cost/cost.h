@@ -55,6 +55,23 @@ protected:
   stoke::Sandbox sb_;
   stoke::CostFunction fxn_;
 
+  stoke::Cost latency(std::string s) {
+    x64asm::Code c;
+
+    std::stringstream str;
+    str << s << std::endl;
+    str >> c;
+
+    stoke::Sandbox sb;
+
+    stoke::CostFunction f(&sb);
+    f.set_performance_term(stoke::PerformanceTerm::LATENCY);
+    stoke::Cfg cfg(c, x64asm::RegSet::empty(), x64asm::RegSet::empty());
+    auto res = f(cfg);
+    return  res.second;
+  }
+
+
 private:
   void SetUp() {
 
@@ -174,6 +191,19 @@ TEST_F(CostFunctionTest, ChecksRAX) {
 
   EXPECT_FALSE(cost.first);
   EXPECT_EQ(expected, cost.second);
+}
+
+TEST_F(CostFunctionTest, Latencies) {
+
+  EXPECT_EQ(1ul, latency("movq %rax, %rdx"));
+
+  EXPECT_EQ(1ul,   latency("xorb %bl, %ch"));
+  EXPECT_EQ(1ul,   latency("xorb %ch, %bl"));
+  EXPECT_EQ(999ul, latency("xorb (%rdx), %al"));
+
+  EXPECT_EQ(999ul, latency("xorpd (%rax), %xmm3"));
+  EXPECT_EQ(3ul,   latency("xorpd %xmm1, %xmm2"));
+
 }
 
 
