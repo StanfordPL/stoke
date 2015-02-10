@@ -1,0 +1,24 @@
+{
+	"name": "rip-offset",
+		"comment": "A program with rip offsets",
+		"code": [ 
+			"._Z3bard:",                       
+			"pushq %rbp",  
+			"movq %rsp, %rbp",     
+			"movsd %xmm0, -0x8(%rbp)",
+			"movsd -0x8(%rbp), %xmm1",
+			"movsd 0xbb(%rip), %xmm0",
+			"addsd %xmm1, %xmm0",     
+			"popq %rbp",              
+			"retq",                   
+			"nop",
+			"nop",
+			"nop",
+			"nop",
+			"nop",
+			"nop",
+			"nop",
+			"nop",
+			"nop"
+			]
+}

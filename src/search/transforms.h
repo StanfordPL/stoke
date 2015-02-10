@@ -24,7 +24,6 @@
 
 #include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
-#include "src/sandbox/sandbox.h"
 #include "src/search/move.h"
 #include "src/validator/validator.h"
 
@@ -33,14 +32,16 @@ namespace stoke {
 class Transforms {
 public:
   /** Creates a new transformation helper. */
-  Transforms() : old_instr_ {x64asm::RET}, old_opcode_ {x64asm::RET}, old_operand_ {x64asm::rax} {
-    set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true, x64asm::RegSet::empty(), {}, {});
-    set_operand_pool({x64asm::RET}, x64asm::RegSet::linux_call_preserved());
-  }
+  Transforms();
 
   /** Sets random seed. */
   Transforms& set_seed(std::default_random_engine::result_type seed) {
     gen_.seed(seed);
+    return *this;
+  }
+  /** Provide a validator to check for instruction support. No check if not provided. */
+  Transforms& set_must_validate(Validator* v) {
+    validator_ = v;
     return *this;
   }
   /** Sets the pool of opcodes to propose from. */
@@ -69,18 +70,14 @@ public:
   }
   /** Insert a value into the mem pool */
   Transforms& insert_mem(const x64asm::M8& m)  {
+    // @todo should we warn that rip offset instructions are being ignored?
+    // They don't make sense here... what rip is this relative to?
     const auto itr = std::find(m_pool_.begin(), m_pool_.end(), m);
-    if (itr == m_pool_.end()) {
+    if (itr == m_pool_.end() && !m.rip_offset()) {
       m_pool_.push_back(m);
     }
     return *this;
   }
-  /** Provide a validator to check for instruction support.  If not provided, no check is done. */
-  Transforms& set_must_validate(Validator* v) {
-    validator_ = v;
-    return *this;
-  }
-
 
   /** Transforms a control flow graph using a move type, returns true if the change succeeded. */
   bool modify(Cfg& cfg, Move type);
@@ -103,32 +100,41 @@ public:
   void undo(Cfg& cfg, Move type);
   /** Undo instruction move, recompute def-in relation. */
   void undo_instruction_move(Cfg& cfg) {
+    const auto undo_instr = cfg.get_code()[instr_index_];
     cfg.get_code()[instr_index_] = old_instr_;
+    rescale_trailing_rips(cfg.get_code(), undo_instr, instr_index_, true);
     cfg.recompute_defs();
   }
   /** Undo opcode move, recompute def-in relation. */
   void undo_opcode_move(Cfg& cfg) {
-    cfg.get_code()[instr_index_].set_opcode(old_opcode_);
+    const auto undo_instr = cfg.get_code()[instr_index_];
+    cfg.get_code()[instr_index_] = old_instr_;
+    rescale_trailing_rips(cfg.get_code(), undo_instr, instr_index_, true);
     cfg.recompute_defs();
   }
   /** Undo operand move, recompute def-in relation. */
   void undo_operand_move(Cfg& cfg) {
-    cfg.get_code()[instr_index_].set_operand(operand_index_, old_operand_);
+    const auto undo_instr = cfg.get_code()[instr_index_];
+    cfg.get_code()[instr_index_] = old_instr_;
+    rescale_trailing_rips(cfg.get_code(), undo_instr, instr_index_, true);
     cfg.recompute_defs();
   }
   /** Undo resize move, recompute EVERYTHING. */
   void undo_resize_move(Cfg& cfg) {
     move(cfg.get_code(), move_j_, move_i_);
+    rescale_rotated_rips(cfg.get_code(), move_j_, move_i_);
     cfg.recompute();
   }
   /** Undo local swap move, recompute def-in relation. */
   void undo_local_swap_move(Cfg& cfg) {
     std::swap(cfg.get_code()[move_i_], cfg.get_code()[move_j_]);
+    rescale_swapped_rips(cfg.get_code(), move_i_, move_j_);
     cfg.recompute_defs();
   }
   /** Undo global swap move, recompute def-in relation. */
   void undo_global_swap_move(Cfg& cfg) {
     std::swap(cfg.get_code()[move_i_], cfg.get_code()[move_j_]);
+    rescale_swapped_rips(cfg.get_code(), move_i_, move_j_);
     cfg.recompute_defs();
   }
   /** Add user-defined undo implementation here ... */
@@ -149,188 +155,6 @@ public:
   }
 
 private:
-  /** Returns the number of operands for this opcode. */
-  size_t arity(x64asm::Opcode o) const {
-    return x64asm::Instruction(o).arity();
-  }
-  /** Returns the index-th operand type for this opcode. */
-  x64asm::Type type(x64asm::Opcode o, size_t index) const {
-    return x64asm::Instruction(o).type(index);
-  }
-  /** Is this an lea instruction? */
-  bool is_lea_opcode(x64asm::Opcode o) const {
-    return x64asm::Instruction(o).is_lea();
-  }
-  /** Does this instruction dereference memory? */
-  bool is_mem_opcode(x64asm::Opcode o) const {
-    return x64asm::Instruction(o).is_memory_dereference();
-  }
-  /** Does this instruction read (but not write) memory. */
-  bool is_mem_read_only_opcode(x64asm::Opcode o) const {
-    if (x64asm::Instruction(o).is_pop() || x64asm::Instruction(o).is_popf()) {
-      return true;
-    }
-    const auto instr = x64asm::Instruction(o);
-    const auto mi = instr.mem_index();
-    return mi != -1 && !instr.maybe_write(mi) && !instr.maybe_undef(mi);
-  }
-  /** Does this instruction write (but not read or undef) memory. */
-  bool is_mem_write_only_opcode(x64asm::Opcode o) const {
-    if (x64asm::Instruction(o).is_push() || x64asm::Instruction(o).is_pushf()) {
-      return true;
-    }
-    const auto instr = x64asm::Instruction(o);
-    const auto mi = instr.mem_index();
-    return mi != -1 && !instr.maybe_read(mi) && !instr.maybe_undef(mi);
-  }
-
-  /** Does this instruction take an rh operand? */
-  bool is_rh_opcode(x64asm::Opcode o) const {
-    for (size_t i = 0, ie = arity(o); i < ie; ++i) {
-      if (type(o, i) == x64asm::Type::RH) {
-        return true;
-      }
-    }
-    return false;
-  }
-  /** Does this instruction induce control flow? */
-  bool is_control_opcode(x64asm::Opcode o) const {
-    const x64asm::Instruction instr(o);
-    return instr.is_label_defn() || instr.is_any_jump() ||
-           instr.is_any_call() || instr.is_any_return() ||
-           instr.is_any_loop();
-  }
-  /** Does this instruction induce control flow, other than a call (which STOKE can propose)? */
-  bool is_control_other_than_call(x64asm::Opcode op) {
-    return op != x64asm::CALL_LABEL && is_control_opcode(op);
-  }
-  /** Does this instruction produce non-deterministic results? */
-  bool is_non_deterministic(x64asm::Opcode o) const {
-    return x64asm::Instruction(o).is_rdrand();
-  }
-  /** Add instructions that should never be proposed to this method. */
-  bool is_unsupported(x64asm::Opcode o) const {
-    return is_rh_opcode(o) || !Sandbox::is_supported(o);
-  }
-  /** Is this instruction enabled given this flag set? */
-  bool is_enabled(x64asm::Opcode o, const x64asm::FlagSet& fs) const {
-    return x64asm::Instruction {o} .enabled(fs);
-  }
-  /** Do these two instructions take operands of the same arity and type? */
-  bool is_type_equiv(x64asm::Opcode o1, x64asm::Opcode o2) const {
-    if (arity(o1) != arity(o2)) {
-      return false;
-    }
-    for (size_t i = 0, ie = arity(o1); i < ie; ++i) {
-      if (type(o1, i) != type(o2, i)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  /** Get a random control free opcode. */
-  x64asm::Opcode get_control_free() {
-    assert(!control_free_.empty());
-    return control_free_[gen_() % control_free_.size()];
-  }
-  /** Get a random control free opcode that is type equivalent to the input opcode. */
-  x64asm::Opcode get_control_free_type_equiv(x64asm::Opcode o) {
-    assert(!control_free_type_equiv_.empty());
-    const auto& equiv = control_free_type_equiv_[o];
-    return equiv.empty() ? o : equiv[gen_() % equiv.size()];
-  }
-
-  /** Set o to a random element from a pool. Returns true on success. */
-  template <typename T>
-  bool get(const std::vector<T>& pool, x64asm::Operand& o) {
-    if (pool.empty()) {
-      return false;
-    }
-    o = pool[gen_() % pool.size()];
-    return true;
-  }
-  /** Set o to exactly one element from a pool. Returns true on success. */
-  template <typename T>
-  bool get(const std::vector<T>& pool, const T& val, x64asm::Operand& o) const {
-    if (find(pool.begin(), pool.end(), val) == pool.end()) {
-      return false;
-    }
-    o = val;
-    return true;
-  }
-  /** Set o to a random element in a register set. Returns true on success. */
-  template <typename T>
-  bool get(const std::vector<T>& pool, const x64asm::RegSet& rs, x64asm::Operand& o) {
-    std::vector<T> ts;
-    for (const auto& t : pool) {
-      if (rs.contains(t)) {
-        ts.push_back(t);
-      }
-    }
-    if (ts.empty()) {
-      return false;
-    }
-    o = ts[gen_() % ts.size()];
-    return true;
-  }
-
-  /** Replaces the base register in m using an element of a reg set. Returns true on success. */
-  template <class T>
-  bool get_base(const x64asm::RegSet& rs, x64asm::M<T>& m) {
-    if (gen_() % 2) {
-      m.clear_base();
-      return true;
-    } else if (m.addr_or()) {
-      auto r = x64asm::eax;
-      if (get<x64asm::R32>(r32_pool_, rs, r)) {
-        m.set_base(r);
-        return true;
-      }
-    } else {
-      auto r = x64asm::rax;
-      if (get<x64asm::R64>(r64_pool_, rs, r)) {
-        m.set_base(r);
-        return true;
-      }
-    }
-    return false;
-  }
-
-  /** Replaces the index register in m using an element of a reg set. Returns true on success. */
-  template <class T>
-  bool get_index(const x64asm::RegSet& rs, x64asm::M<T>& m) {
-    if (gen_() % 2) {
-      m.clear_index();
-    } else if (m.addr_or()) {
-      auto r = x64asm::eax;
-      if (get<x64asm::R32>(r32_pool_, rs, r)) {
-        m.set_index(r);
-        return m.get_index() != x64asm::esp;
-      }
-    } else {
-      auto r = x64asm::rax;
-      if (get<x64asm::R64>(r64_pool_, rs, r)) {
-        m.set_index(r);
-        return m.get_index() != x64asm::rsp;
-      }
-    }
-    return false;
-  }
-
-  /** Sets o to a random memory operand, returns true on success. */
-  bool get_m(const x64asm::RegSet& rs, x64asm::Opcode c, x64asm::Operand& o);
-
-  /** Sets o to a random operand. Returns true on success. */
-  bool get_write_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
-                    x64asm::Operand& op);
-  /** Sets o to a random operand from the pool of defined values. Returns true on success. */
-  bool get_read_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
-                   x64asm::Operand& op);
-
-  /** Shifts instructions about a basic block boundary. */
-  void move(x64asm::Code& code, size_t i, size_t j) const;
-
   /** The set of control free opcodes. */
   std::vector<x64asm::Opcode> control_free_;
   /** The set of control free type equivalent opcodes for each opcode. */
@@ -364,13 +188,11 @@ private:
   std::vector<x64asm::M8> m_pool_;
   /** Operand pool. */
   std::vector<x64asm::Label> label_pool_;
+  /** Operand pool -- these are relative to the beginning of the function. */
+  std::vector<x64asm::Imm32> offset_pool_;
 
   /** Old instruction for instruction moves. */
   x64asm::Instruction old_instr_;
-  /** Old opcode for opcode moves. */
-  x64asm::Opcode old_opcode_;
-  /** Old operand for operand moves. */
-  x64asm::Operand old_operand_;
   /** Instruction index. */
   size_t instr_index_;
   /** Operand index. */
@@ -379,16 +201,59 @@ private:
   size_t move_i_;
   size_t move_j_;
 
-  /** Validator to check for support. */
-  Validator* validator_ = NULL;
-
   /** Random generator. */
   std::default_random_engine gen_;
+  // Assembler.
+  x64asm::Assembler assm_;
+  /** Validator to check for support. */
+  Validator* validator_ = NULL;
 
   /** Tracks if an error occurred. */
   bool error_ = false;
   /* Tracks the last error message. */
   std::string error_message_;
+
+  /** Get a random control free opcode. */
+  x64asm::Opcode get_control_free() {
+    assert(!control_free_.empty());
+    return control_free_[gen_() % control_free_.size()];
+  }
+  /** Get a random control free opcode that is type equivalent to the input opcode. */
+  x64asm::Opcode get_control_free_type_equiv(x64asm::Opcode o) {
+    assert(!control_free_type_equiv_.empty());
+    const auto& equiv = control_free_type_equiv_[o];
+    return equiv.empty() ? o : equiv[gen_() % equiv.size()];
+  }
+
+  /** Sets o to a random lea operand, returns true on success. */
+  bool get_lea_mem(const x64asm::RegSet& rs, x64asm::Operand& o);
+  /** Sets o to a random rip offset operand, returns true on success. */
+  bool get_rip_mem(x64asm::Operand& o);
+  /** Sets o to a random register memory operand, returns true on success. */
+  bool get_reg_mem(const x64asm::RegSet& rs, x64asm::Operand& o);
+  /** Sets o to a random memory operand, returns true on success. */
+  bool get_m(const x64asm::RegSet& rs, x64asm::Opcode c, x64asm::Operand& o);
+
+  /** Sets o to a random operand. Returns true on success. */
+  bool get_write_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
+                    x64asm::Operand& op);
+  /** Sets o to a random operand from the pool of defined values. Returns true on success. */
+  bool get_read_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
+                   x64asm::Operand& op);
+
+  /** Shifts instructions about a basic block boundary. */
+  void move(x64asm::Code& code, size_t i, size_t j) const;
+  /** Recompute this rip value */
+  void rescale_rip(x64asm::Code& code, size_t i);
+  /** Scale rips between here and the end of the code */
+  void rescale_trailing_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i, bool ignore_first = false);
+  /** Scale rips between two swapped instructions */
+  void rescale_swapped_rips(x64asm::Code& code, size_t i, size_t j);
+  /** Scale rips for a set of rotated instructions. */
+  void rescale_rotated_rips(x64asm::Code& code, size_t i, size_t j);
+
+  /** Checks that all rip offsets point into offset_pool when scaled to beginning of function */
+  bool check_rips(const x64asm::Code& code);
 };
 
 } // namespace stoke
