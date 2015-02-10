@@ -1978,6 +1978,7 @@
 , 1 // PSLLQ xmm, imm8
 , 999 // PSLLQ xmm, m128
 , 2 // PSLLQ xmm, xmm
+, 1 // PSLLW mm, imm8
 , 999 // PSLLW mm, m64
 , 1 // PSLLW mm, mm
 , 1 // PSLLW xmm, imm8
