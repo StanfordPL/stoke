@@ -50,71 +50,31 @@ struct TUnit {
     x64asm::RegSet maybe_undef_set;
   };
 
-  /** Returns the may/must sets, considering the user-provided values, and
-    using the provided defaults otherwise. */
-  MayMustSets get_may_must_sets(MayMustSets& defaults) const {
-    x64asm::RegSet res_must_read_set = defaults.must_read_set;
-    x64asm::RegSet res_must_write_set = defaults.must_write_set;
-    x64asm::RegSet res_must_undef_set = defaults.must_undef_set;
-    x64asm::RegSet res_maybe_read_set = defaults.maybe_read_set;
-    x64asm::RegSet res_maybe_write_set = defaults.maybe_write_set;
-    x64asm::RegSet res_maybe_undef_set = defaults.maybe_undef_set;
-    if (must_read_set) {
-      res_must_read_set = *must_read_set;
-      if (!maybe_read_set) {
-        // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-        res_maybe_read_set |= res_must_read_set;
-      }
-    }
-    if (must_write_set) {
-      res_must_write_set = *must_write_set;
-      if (!maybe_write_set) {
-        // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-        res_maybe_write_set |= res_must_write_set;
-      }
-    }
-    if (must_undef_set) {
-      res_must_undef_set = *must_undef_set;
-      if (!maybe_undef_set) {
-        // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-        res_maybe_undef_set |= res_must_undef_set;
-      }
-    }
-    if (maybe_read_set) {
-      res_maybe_read_set = *maybe_read_set;
-      if (!must_read_set) {
-        // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-        res_must_read_set &= res_maybe_read_set;
-      }
-    }
-    if (maybe_write_set) {
-      res_maybe_write_set = *maybe_write_set;
-      if (!must_write_set) {
-        // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-        res_must_write_set &= res_maybe_write_set;
-      }
-    }
-    if (maybe_undef_set) {
-      res_maybe_undef_set = *maybe_undef_set;
-      if (!must_undef_set) {
-        // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
-        res_must_undef_set &= res_maybe_undef_set;
-      }
-    }
-    return {
-      res_must_read_set,
-      res_must_write_set,
-      res_must_undef_set,
-      res_maybe_read_set,
-      res_maybe_write_set,
-      res_maybe_undef_set,
-    };
-  }
+  /** Returns may/must sets, considering user-provided values, defaults otherwise */
+  MayMustSets get_may_must_sets(const MayMustSets& defaults) const;
+
+  /** Read from istream. */
+  std::istream& read_text(std::istream& is);
+  /** Write to ostream. */
+  std::ostream& write_text(std::ostream& os) const;
+
+private:
+  std::istream& read_formatted_text(std::istream& is);
+  std::istream& read_naked_text(std::istream& is);
 };
 
-std::istream& operator>>(std::istream& is, TUnit& t);
-std::ostream& operator<<(std::ostream& os, const TUnit& t);
-
 } // namespace stoke
+
+namespace std {
+
+inline istream& operator>>(istream& is, stoke::TUnit& t) {
+  return t.read_text(is);
+}
+
+inline ostream& operator<<(ostream& os, const stoke::TUnit& t) {
+  return t.write_text(os);
+}
+
+} // namespace std
 
 #endif

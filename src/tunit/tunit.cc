@@ -27,7 +27,7 @@ using namespace cpputil;
 using namespace std;
 using namespace x64asm;
 
-namespace stoke {
+namespace {
 
 bool is_prefix(const string& pre, const string& s) {
   auto sl = s.length();
@@ -38,11 +38,130 @@ bool is_prefix(const string& pre, const string& s) {
   return 0 == s.compare(0, prel, pre, 0, prel);
 }
 
-istream& operator>>(istream& is, TUnit& t) {
+} // namespace
+
+namespace stoke {
+
+TUnit::MayMustSets TUnit::get_may_must_sets(const MayMustSets& defaults) const {
+  RegSet res_must_read_set = defaults.must_read_set;
+  RegSet res_must_write_set = defaults.must_write_set;
+  RegSet res_must_undef_set = defaults.must_undef_set;
+  RegSet res_maybe_read_set = defaults.maybe_read_set;
+  RegSet res_maybe_write_set = defaults.maybe_write_set;
+  RegSet res_maybe_undef_set = defaults.maybe_undef_set;
+  if (must_read_set) {
+    res_must_read_set = *must_read_set;
+    if (!maybe_read_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_maybe_read_set |= res_must_read_set;
+    }
+  }
+  if (must_write_set) {
+    res_must_write_set = *must_write_set;
+    if (!maybe_write_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_maybe_write_set |= res_must_write_set;
+    }
+  }
+  if (must_undef_set) {
+    res_must_undef_set = *must_undef_set;
+    if (!maybe_undef_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_maybe_undef_set |= res_must_undef_set;
+    }
+  }
+  if (maybe_read_set) {
+    res_maybe_read_set = *maybe_read_set;
+    if (!must_read_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_must_read_set &= res_maybe_read_set;
+    }
+  }
+  if (maybe_write_set) {
+    res_maybe_write_set = *maybe_write_set;
+    if (!must_write_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_must_write_set &= res_maybe_write_set;
+    }
+  }
+  if (maybe_undef_set) {
+    res_maybe_undef_set = *maybe_undef_set;
+    if (!must_undef_set) {
+      // make sure maybe/must sets are consistent (user-provided sets take precedence over default)
+      res_must_undef_set &= res_maybe_undef_set;
+    }
+  }
+  return {
+    res_must_read_set,
+    res_must_write_set,
+    res_must_undef_set,
+    res_maybe_read_set,
+    res_maybe_write_set,
+    res_maybe_undef_set,
+  };
+}
+
+istream& TUnit::read_text(istream& is) {
+  string first_line;
+  getline(is, first_line);
+
+  stringstream ss;
+  ss << first_line << endl;
+  ss << is.rdbuf();
+
+  if (first_line == "  .text") {
+    read_formatted_text(ss);
+  } else {
+    read_naked_text(ss);
+  }
+
+  if (ss.fail()) {
+    is.setstate(ios::failbit);
+  }
+  return is;
+}
+
+ostream& TUnit::write_text(ostream& os) const {
+  os << "  .text" << endl;
+  os << "  .globl " << name << endl;
+  os << "  .type " << name << ", @function" << endl;
+
+  ofilterstream<Column> col(os);
+  col.filter().padding(2);
+
+  for (size_t i = 0, ie = code.size(); i < ie; ++i) {
+    if (!code[i].is_label_defn()) {
+      col << "  ";
+    }
+    col << code[i];
+    if (i + 1 != ie) {
+      col << endl;
+    }
+  }
+  col.filter().next();
+
+  size_t line = 1;
+  for (size_t i = 0, ie = code.size(); i < ie; ++i) {
+    if (!code[i].is_label_defn()) {
+      col << "# " << dec << line++;
+    }
+    if (i + 1 != ie) {
+      col << endl;
+    }
+  }
+  col.filter().done();
+
+  os << endl << endl;
+  os << ".size " << name << ", .-" << name << endl;
+
+  return os;
+}
+
+istream& TUnit::read_formatted_text(istream& is) {
   string s;
 
   getline(is, s);
-  is >> s >> t.name;
+  is >> s >> name;
   getline(is, s);
   getline(is, s);
 
@@ -53,27 +172,27 @@ istream& operator>>(istream& is, TUnit& t) {
     if (is_prefix("#! maybe-read {", s)) {
       ss << s.substr(14);
       ss >> rs;
-      t.maybe_read_set = rs;
+      maybe_read_set = rs;
     } else if (is_prefix("#! must-read {", s)) {
       ss << s.substr(13);
       ss >> rs;
-      t.must_read_set = rs;
+      must_read_set = rs;
     } else if (is_prefix("#! maybe-write {", s)) {
       ss << s.substr(15);
       ss >> rs;
-      t.maybe_write_set = rs;
+      maybe_write_set = rs;
     } else if (is_prefix("#! must-write {", s)) {
       ss << s.substr(14);
       ss >> rs;
-      t.must_write_set = rs;
+      must_write_set = rs;
     } else if (is_prefix("#! maybe-undef {", s)) {
       ss << s.substr(15);
       ss >> rs;
-      t.maybe_undef_set = rs;
+      maybe_undef_set = rs;
     } else if (is_prefix("#! must-undef {", s)) {
       ss << s.substr(14);
       ss >> rs;
-      t.must_undef_set = rs;
+      must_undef_set = rs;
     } else {
       if (is_prefix("#!", s)) {
         Console::warn() << "Found a comment that starts with #!, but that is not recognized.  Is it misspelled?" << endl;
@@ -92,55 +211,36 @@ istream& operator>>(istream& is, TUnit& t) {
       break;
     }
   }
-  ss >> t.code;
+  ss >> code;
 
   if (ss.fail()) {
     is.setstate(ios::failbit);
   }
 
   // TODO: output an error message of what when wrong
-  if (t.code[0].get_opcode() != LABEL_DEFN ||
-      t.code[0].get_operand<Label>(0) != x64asm::Label("." + t.name)) {
+  if (code[0].get_opcode() != LABEL_DEFN ||
+      code[0].get_operand<Label>(0) != Label("." + name)) {
     is.setstate(ios::failbit);
   }
 
   return is;
 }
 
-ostream& operator<<(ostream& os, const TUnit& t) {
-  os << "  .text" << endl;
-  os << "  .globl " << t.name << endl;
-  os << "  .type " << t.name << ", @function" << endl;
-
-  ofilterstream<Column> col(os);
-  col.filter().padding(2);
-
-  for (size_t i = 0, ie = t.code.size(); i < ie; ++i) {
-    if (!t.code[i].is_label_defn()) {
-      col << "  ";
-    }
-    col << t.code[i];
-    if (i + 1 != ie) {
-      col << endl;
-    }
+istream& TUnit::read_naked_text(istream& is) {
+  is >> code;
+  if (is.fail()) {
+    return is;
   }
-  col.filter().next();
 
-  size_t line = 1;
-  for (size_t i = 0, ie = t.code.size(); i < ie; ++i) {
-    if (!t.code[i].is_label_defn()) {
-      col << "# " << dec << line++;
-    }
-    if (i + 1 != ie) {
-      col << endl;
-    }
+  if (!code.empty() && code[0].is_label_defn()) {
+    const auto label = code[0].get_operand<Label>(0);
+    name = label.get_text().substr(1);
+  } else {
+    name = "anonymous_function";
+    code.insert(code.begin(), {LABEL_DEFN, {Label(".anonymous_function")}});
   }
-  col.filter().done();
 
-  os << endl << endl;
-  os << ".size " << t.name << ", .-" << t.name << endl;
-
-  return os;
+  return is;
 }
 
 } // namespace stoke
