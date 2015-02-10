@@ -157,4 +157,15 @@ TEST(TunitParsing, DataflowAnnotationsNormalization) {
   ASSERT_EQ(mms.maybe_write_set, rcxonly);
 }
 
+TEST(TunitParsing, NakedRead) {
+	std::stringstream ss;
+	ss << "xorq %rax, %rax" << std::endl;
+	ss << "retq" << std::endl;
+
+	stoke::TUnit tunit;
+	ss >> tunit;
+
+	ASSERT_FALSE(ss.fail());
+}
+
 #endif
