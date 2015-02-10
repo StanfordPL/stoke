@@ -59,7 +59,7 @@ protected:
     x64asm::Code c;
 
     std::stringstream str;
-    str << ".dummy" << std::endl;
+    str << ".dummy:" << std::endl;
     str << s << std::endl;
     str >> c;
 
