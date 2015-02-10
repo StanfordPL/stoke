@@ -121,7 +121,7 @@ public:
   }
   /** Undo resize move, recompute EVERYTHING. */
   void undo_resize_move(Cfg& cfg) {
-		move(cfg.get_code(), move_j_, move_i_);
+    move(cfg.get_code(), move_j_, move_i_);
     rescale_rotated_rips(cfg.get_code(), move_j_, move_i_);
     cfg.recompute();
   }
