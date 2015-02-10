@@ -31,7 +31,7 @@ namespace stoke {
 class CfgGadget : public Cfg {
 public:
   CfgGadget(const x64asm::Code& code, const std::vector<TUnit>& aux_fxns)
-    : Cfg(code, def_in(live_out()), live_out()) {
+    : Cfg(fix_code(code), def_in(live_out()), live_out()) {
     // Emit warning if register values were guessed
     reg_warning();
 
@@ -61,6 +61,20 @@ private:
       }
     }
   }
+
+	x64asm::Code fix_code(const x64asm::Code& code) const {
+		for (const auto& instr : code) {
+			if (instr.is_ret()) {
+				return code;
+			}
+		}
+
+		Console::warn() << "Adding a missing retq instruction to target/rewrite" << std::endl;
+		auto ret = code;
+		ret.push_back({x64asm::RET});
+
+		return ret;
+	}
 
   x64asm::RegSet def_in(const x64asm::RegSet& live_out) const {
     // Add mxcsr[rc] unless otherwise specified
