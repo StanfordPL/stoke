@@ -98,15 +98,17 @@ class BashHandler(Handler):
     if command.has_subcommands():
       for sub in command.subcommands:
         comps.append(sub.name)
+      self.writeln("  if [ \"$COMP_CWORD\" -eq " + str(depth) + " -a \"$prev\" == " + command.name + " ]; then")
+      self.writeln("    COMPREPLY=( $(compgen -W \"" + " ".join(comps) + "\" -- $cur) )")
+      self.writeln("  fi")
     else:
       for arg in command.arguments:
         for param in arg.params:
           comps.append(param)
-
-    self.writeln("  if [ $COMP_CWORD -eq " + str(depth) + " -a $prev == " + command.name + " ]")
-    self.writeln("  then")
-    self.writeln("    COMPREPLY=( $(compgen -W \"" + " ".join(comps) + "\" -- $cur) )")
-    self.writeln("  fi")
+      self.writeln("  if [ \"$COMP_CWORD\" -ge " + str(depth) + " -a \"${COMP_WORDS[" + str(depth-1) + "]}\" == " + command.name + " ]; then")
+      self.writeln("    FILES=`ls ./*`")
+      self.writeln("    COMPREPLY=( $(compgen -W \"$DIR " + " ".join(comps) + "\" -- $cur) )")
+      self.writeln("  fi")
 
   def finish(self):
     super(BashHandler, self).finish()
@@ -175,6 +177,7 @@ class ZshHandler(Handler):
   def write_arguments(self, name, args):
     def esc(s):
       s = s.replace("{", "\\{").replace("}", "\\}").replace("'", "")
+      s = s.replace("[", "\\[").replace("]", "\\]")
       return s
     self.writeln("_" + name.replace(" ", "_") + "()\n{")
     res = []
@@ -348,6 +351,8 @@ class Command(object):
 # parsing --help output into an AST
 # ------------------------------------------
 
+base_path = os.path.dirname(os.path.realpath(__file__))
+
 def run(cmd):
   p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
   out = ""
@@ -356,7 +361,7 @@ def run(cmd):
   return out
 
 def get_command():
-  output = run("stoke --help | grep \"^  \"")
+  output = run(base_path + "/../../bin/stoke --help | grep \"^  \"")
   subcommands = []
   cmd = Command(None, "stoke", "", subcommands, [])
   subsubmap = {}
@@ -388,7 +393,7 @@ def get_command():
   return cmd
 
 def get_arguments(subcommand):
-  data = run("stoke " + subcommand + " --help | grep \"^  \(-\| \)\"")
+  data = run(base_path + "/../../bin/stoke " + subcommand + " --help | grep \"^  \(-\| \)\"")
   args = []
   for line in data.split("\n"):
     if line.startswith("    "):
