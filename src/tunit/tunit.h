@@ -53,14 +53,14 @@ struct TUnit {
   /** Returns may/must sets, considering user-provided values, defaults otherwise */
   MayMustSets get_may_must_sets(const MayMustSets& defaults) const;
 
-	/** Read from istream. */
-	std::istream& read_text(std::istream& is);
-	/** Write to ostream. */
-	std::ostream& write_text(std::ostream& os) const;
+  /** Read from istream. */
+  std::istream& read_text(std::istream& is);
+  /** Write to ostream. */
+  std::ostream& write_text(std::ostream& os) const;
 
-	private:
-		std::istream& read_formatted_text(std::istream& is);
-		std::istream& read_naked_text(std::istream& is);
+private:
+  std::istream& read_formatted_text(std::istream& is);
+  std::istream& read_naked_text(std::istream& is);
 };
 
 } // namespace stoke
@@ -68,11 +68,11 @@ struct TUnit {
 namespace std {
 
 inline istream& operator>>(istream& is, stoke::TUnit& t) {
-	return t.read_text(is);
+  return t.read_text(is);
 }
 
 inline ostream& operator<<(ostream& os, const stoke::TUnit& t) {
-	return t.write_text(os);
+  return t.write_text(os);
 }
 
 } // namespace std

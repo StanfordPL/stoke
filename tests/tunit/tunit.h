@@ -158,14 +158,14 @@ TEST(TunitParsing, DataflowAnnotationsNormalization) {
 }
 
 TEST(TunitParsing, NakedRead) {
-	std::stringstream ss;
-	ss << "xorq %rax, %rax" << std::endl;
-	ss << "retq" << std::endl;
+  std::stringstream ss;
+  ss << "xorq %rax, %rax" << std::endl;
+  ss << "retq" << std::endl;
 
-	stoke::TUnit tunit;
-	ss >> tunit;
+  stoke::TUnit tunit;
+  ss >> tunit;
 
-	ASSERT_FALSE(ss.fail());
+  ASSERT_FALSE(ss.fail());
 }
 
 #endif
