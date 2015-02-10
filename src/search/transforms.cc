@@ -434,7 +434,6 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
 }
 
 bool Transforms::modify(Cfg& cfg, Move type) {
-  cout << "MODIFY ";
   auto ret = false;
   switch (type) {
   case Move::INSTRUCTION:
@@ -468,7 +467,6 @@ bool Transforms::modify(Cfg& cfg, Move type) {
 }
 
 bool Transforms::instruction_move(Cfg& cfg) {
-  cout << "INSTR" << endl;
   auto& code = cfg.get_code();
 
   // Grab the index of an old instruction
@@ -524,7 +522,6 @@ bool Transforms::instruction_move(Cfg& cfg) {
 }
 
 bool Transforms::opcode_move(Cfg& cfg) {
-  cout << "OPCODE" << endl;
   auto& code = cfg.get_code();
 
   // Grab the index of a random instruction
@@ -559,7 +556,6 @@ bool Transforms::opcode_move(Cfg& cfg) {
 }
 
 bool Transforms::operand_move(Cfg& cfg) {
-  cout << "OPERAND" << endl;
   auto& code = cfg.get_code();
 
   // Grab the index of a random instruction
@@ -615,7 +611,6 @@ bool Transforms::operand_move(Cfg& cfg) {
 }
 
 bool Transforms::resize_move(Cfg& cfg) {
-  cout << "RESIZE" << endl;
   auto& code = cfg.get_code();
   if (code.size() < 2) {
     return false;
@@ -643,7 +638,6 @@ found_a_nop:
 }
 
 bool Transforms::local_swap_move(Cfg& cfg) {
-  cout << "LOCAL" << endl;
   auto& code = cfg.get_code();
 
   const auto bb = (gen_() % (cfg.num_blocks() - 2)) + 1;
@@ -689,7 +683,6 @@ bool Transforms::local_swap_move(Cfg& cfg) {
 }
 
 bool Transforms::global_swap_move(Cfg& cfg) {
-  cout << "GLOBAL" << endl;
   auto& code = cfg.get_code();
   if (code.size() < 3) {
     return false;
@@ -752,7 +745,6 @@ bool Transforms::extension_move(Cfg& cfg) {
 }
 
 void Transforms::undo(Cfg& cfg, Move type) {
-  cout << "UNDO" << endl;
   switch (type) {
   case Move::INSTRUCTION:
     undo_instruction_move(cfg);
@@ -1174,7 +1166,6 @@ void Transforms::rescale_swapped_rips(Code& code, size_t i, size_t j) {
 void Transforms::rescale_rotated_rips(Code& code, size_t i, size_t j) {
   // Left rotation
   if (i < j) {
-    cout << "LEFT" << endl;
     const int64_t j_size = assm_.hex_size(code[j]);
     int64_t span_size = 0;
     for (size_t idx = i; idx < j; ++idx) {
@@ -1190,7 +1181,6 @@ void Transforms::rescale_rotated_rips(Code& code, size_t i, size_t j) {
 
   // Right rotation
   else if (j < i) {
-    cout << "RIGHT" << endl;
     const int64_t j_size = assm_.hex_size(code[j]);
     int64_t span_size = 0;
     for (size_t idx = i; idx > j; --idx) {
@@ -1220,11 +1210,6 @@ bool Transforms::check_rips(const Code& code) {
     const auto ptr = get_offset(instr) + fxn_offset;
     const auto itr = find(offset_pool_.begin(), offset_pool_.end(), ptr);
     if (itr == offset_pool_.end()) {
-      cout << "FAIL: " << instr << " @ " << fxn_offset << endl;
-      for (const auto p : offset_pool_) {
-        cout << p << " ";
-      }
-      cout << endl;
       return false;
     }
   }
