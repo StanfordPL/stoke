@@ -95,8 +95,6 @@ TEST_F(IntegrationTest, TutorialTest) {
   EXPECT_EQ(0ull, shell("make extract"));
   EXPECT_EQ(0ull, shell("make testcase"));
 
-  // Make sure we've got
-
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
   for(size_t i = 0; i < 10; ++i) {
