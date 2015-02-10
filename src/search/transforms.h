@@ -250,8 +250,8 @@ private:
 
   /** Shifts instructions about a basic block boundary. */
   void move(x64asm::Code& code, size_t i, size_t j) const;
-	/** Scale the rip that appears at the ith location in the code */
-	void rescale_rip(x64asm::Code& code, size_t i);
+  /** Scale the rip that appears at the ith location in the code */
+  void rescale_rip(x64asm::Code& code, size_t i);
   /** Scale rips until end of code, for use with moves that ONLY change one instruction */
   void rescale_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i, bool ignore_first = false);
 
