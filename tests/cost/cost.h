@@ -63,11 +63,14 @@ protected:
     str << s << std::endl;
     str >> c;
 
+    stoke::Cfg cfg(c, x64asm::RegSet::empty(), x64asm::RegSet::empty());
+
     stoke::Sandbox sb;
+    sb.insert_function(cfg);
 
     stoke::CostFunction f(&sb);
     f.set_performance_term(stoke::PerformanceTerm::LATENCY);
-    stoke::Cfg cfg(c, x64asm::RegSet::empty(), x64asm::RegSet::empty());
+
     auto res = f(cfg);
     return  res.second;
   }
