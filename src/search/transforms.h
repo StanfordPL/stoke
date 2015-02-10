@@ -102,21 +102,21 @@ public:
   void undo_instruction_move(Cfg& cfg) {
     const auto undo_instr = cfg.get_code()[instr_index_];
     cfg.get_code()[instr_index_] = old_instr_;
-    rescale_rips(cfg.get_code(), undo_instr, instr_index_);
+    rescale_rips(cfg.get_code(), undo_instr, instr_index_, true);
     cfg.recompute_defs();
   }
   /** Undo opcode move, recompute def-in relation. */
   void undo_opcode_move(Cfg& cfg) {
     const auto undo_instr = cfg.get_code()[instr_index_];
     cfg.get_code()[instr_index_] = old_instr_;
-    rescale_rips(cfg.get_code(), undo_instr, instr_index_);
+    rescale_rips(cfg.get_code(), undo_instr, instr_index_, true);
     cfg.recompute_defs();
   }
   /** Undo operand move, recompute def-in relation. */
   void undo_operand_move(Cfg& cfg) {
     const auto undo_instr = cfg.get_code()[instr_index_];
     cfg.get_code()[instr_index_] = old_instr_;
-    rescale_rips(cfg.get_code(), undo_instr, instr_index_);
+    rescale_rips(cfg.get_code(), undo_instr, instr_index_, true);
     cfg.recompute_defs();
   }
   /** Undo resize move, recompute EVERYTHING. */
@@ -124,24 +124,24 @@ public:
     if (move_i_ < move_j_) {
       const auto undo_instr = cfg.get_code()[move_i_];
       move(cfg.get_code(), move_j_, move_i_);
-      rescale_rips(cfg.get_code(), undo_instr, move_i_, move_j_);
+      //rescale_rips(cfg.get_code(), undo_instr, move_i_, move_j_);
     } else {
       const auto undo_instr = cfg.get_code()[move_j_];
       move(cfg.get_code(), move_j_, move_i_);
-      rescale_rips(cfg.get_code(), undo_instr, move_j_, move_i_);
+      //rescale_rips(cfg.get_code(), undo_instr, move_j_, move_i_);
     }
     cfg.recompute();
   }
   /** Undo local swap move, recompute def-in relation. */
   void undo_local_swap_move(Cfg& cfg) {
     std::swap(cfg.get_code()[move_i_], cfg.get_code()[move_j_]);
-    rescale_rips(cfg.get_code(), cfg.get_code()[move_j_], move_i_, move_j_);
+    //rescale_rips(cfg.get_code(), cfg.get_code()[move_j_], move_i_, move_j_, true);
     cfg.recompute_defs();
   }
   /** Undo global swap move, recompute def-in relation. */
   void undo_global_swap_move(Cfg& cfg) {
     std::swap(cfg.get_code()[move_i_], cfg.get_code()[move_j_]);
-    rescale_rips(cfg.get_code(), cfg.get_code()[move_j_], move_i_, move_j_);
+    //rescale_rips(cfg.get_code(), cfg.get_code()[move_j_], move_i_, move_j_, true);
     cfg.recompute_defs();
   }
   /** Add user-defined undo implementation here ... */
@@ -250,12 +250,10 @@ private:
 
   /** Shifts instructions about a basic block boundary. */
   void move(x64asm::Code& code, size_t i, size_t j) const;
-  /** Rescale rips between two instructions */
-  void rescale_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i, size_t j);
-  /** Convenience method, scale rips until end of code */
-  void rescale_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i) {
-    rescale_rips(code, old_instr, i, code.size()-1);
-  }
+	/** Scale the rip that appears at the ith location in the code */
+	void rescale_rip(x64asm::Code& code, size_t i);
+  /** Scale rips until end of code, for use with moves that ONLY change one instruction */
+  void rescale_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i, bool ignore_first = false);
 
   /** Checks that all rip offsets point into offset_pool when scaled to beginning of function */
   bool check_rips(const x64asm::Code& code);

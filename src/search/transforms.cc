@@ -121,6 +121,18 @@ bool uses_rip(const Instruction& instr) {
   return instr.get_operand<M8>(mi).rip_offset();
 }
 
+/** Returns true if this instruction uses rip offset addressing in this operand */
+bool uses_rip(const Instruction& instr, size_t idx) {
+  if (!instr.is_explicit_memory_dereference()) {
+    return false;
+  }
+  const auto mi = instr.mem_index();
+	if ((size_t)mi != idx) {
+		return false;
+	}
+  return instr.get_operand<M8>(mi).rip_offset();
+}
+
 /** Returns the rip offset for this instruction */
 uint64_t get_offset(const Instruction& instr) {
   assert(uses_rip(instr));
@@ -422,6 +434,7 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
 }
 
 bool Transforms::modify(Cfg& cfg, Move type) {
+	cout << "MODIFY" << endl;
   switch (type) {
   case Move::INSTRUCTION:
     return instruction_move(cfg);
@@ -478,7 +491,12 @@ bool Transforms::instruction_move(Cfg& cfg) {
 
   // Success: rescale rips before going on to harder checks
   // Any failure beyond here will require undoing the move
-  rescale_rips(code, old_instr_, instr_index_);
+	if (uses_rip(instr)) {
+		rescale_rip(code, instr_index_);
+		rescale_rips(code, old_instr_, instr_index_, true);
+	} else {
+  	rescale_rips(code, old_instr_, instr_index_);
+	}
 
   if(validator_ && !validator_->is_supported(instr)) {
     undo_instruction_move(cfg);
@@ -560,7 +578,12 @@ bool Transforms::operand_move(Cfg& cfg) {
 
   // Success: Rescale rips before going on to harder checks
   // Any failure beyond here will require undoing the move
-  rescale_rips(code, old_instr_, instr_index_);
+	if (uses_rip(instr, operand_idx)) {
+		rescale_rip(code, instr_index_);
+		rescale_rips(code, old_instr_, instr_index_, true);
+	} else {
+	  rescale_rips(code, old_instr_, instr_index_);
+	}
 
   if(validator_ && !validator_->is_supported(instr)) {
     undo_operand_move(cfg);
@@ -597,9 +620,9 @@ found_a_nop:
 
   move(code, move_i_, move_j_);
   if (move_i_ < move_j_) {
-    rescale_rips(code, code[move_j_], move_i_, move_j_);
+    //rescale_rips(code, code[move_j_], move_i_, move_j_);
   } else {
-    rescale_rips(code, code[move_i_], move_j_, move_i_);
+    //rescale_rips(code, code[move_i_], move_j_, move_i_);
   }
   cfg.recompute();
 
@@ -626,6 +649,9 @@ bool Transforms::local_swap_move(Cfg& cfg) {
   if (move_i_ == move_j_) {
     return false;
   }
+	if (move_j_ < move_j_) {
+		swap(move_i_, move_j_);
+	}
 
   auto& i = code[move_i_];
   if (is_control_other_than_call(i.get_opcode())) {
@@ -637,7 +663,7 @@ bool Transforms::local_swap_move(Cfg& cfg) {
   }
 
   swap(i, j);
-  rescale_rips(code, code[move_j_], move_i_, move_j_);
+  //rescale_rips(code, code[move_j_], move_i_, move_j_);
 
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
@@ -659,6 +685,9 @@ bool Transforms::global_swap_move(Cfg& cfg) {
   if (move_i_ == move_j_) {
     return false;
   }
+	if (move_j_ < move_i_) {
+		swap(move_i_, move_j_);
+	}
 
   auto& i = code[move_i_];
   if (is_control_other_than_call(i.get_opcode())) {
@@ -670,7 +699,7 @@ bool Transforms::global_swap_move(Cfg& cfg) {
   }
 
   swap(i, j);
-  rescale_rips(code, code[move_j_], move_i_, move_j_);
+  //rescale_rips(code, code[move_j_], move_i_, move_j_);
 
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
@@ -708,6 +737,7 @@ bool Transforms::extension_move(Cfg& cfg) {
 }
 
 void Transforms::undo(Cfg& cfg, Move type) {
+	cout << "UNDO" << endl;
   switch (type) {
   case Move::INSTRUCTION:
     undo_instruction_move(cfg);
@@ -762,8 +792,20 @@ bool Transforms::get_lea_mem(const RegSet& rs, Operand& o) {
   return true;
 }
 
+/** Returns a rip offset from the offset pool... this will need scaling!!! */
 bool Transforms::get_rip_mem(Operand& o) {
-  return false;
+	if (offset_pool_.empty()) {
+		return false;
+	}
+
+	auto& m = *((M8*)(&o));
+	m.set_rip_offset(true);
+	m.clear_seg();
+	m.clear_base();
+	m.clear_index();
+	m.set_disp(offset_pool_[gen_() % offset_pool_.size()]);
+
+	return true;
 }
 
 bool Transforms::get_reg_mem(const RegSet& rs, Operand& o) {
@@ -1053,23 +1095,44 @@ void Transforms::move(Code& code, size_t i, size_t j) const {
   code[j] = temp;
 }
 
-void Transforms::rescale_rips(Code& code, const Instruction& old_instr, size_t i, size_t j) {
+void Transforms::rescale_rip(Code& code, size_t idx) {
+	assert(uses_rip(code[idx]));
+
+	cout << "SCALING JUST (" << idx << ")" << endl;
+	int64_t delta = 0;
+	for (size_t i = 0; i <= idx; ++i) {
+		delta -= assm_.hex_size(code[i]);
+	}
+	cout << "*** " << code[idx] << " -> ";
+	rescale_offset(code[idx], delta);
+	cout << code[idx] << endl;
+}
+
+void Transforms::rescale_rips(Code& code, const Instruction& old_instr, size_t idx, bool ignore_first) {
   // How much shorter has the new instruction encoding become?
-  const int64_t delta = assm_.hex_size(old_instr) - assm_.hex_size(code[i]);
+  const int64_t delta = assm_.hex_size(old_instr) - assm_.hex_size(code[idx]);
+
+	cout << old_instr << " - > " << code[idx] << " (" << delta << ")" << endl;
 
   // Nothing to do if nothing has changed
   if (delta == 0) {
     return;
   }
 
+	cout << "SCALING (" << (ignore_first ? idx+1 : idx) << "->" << (code.size()-1) << ")" << endl;
+
   // Otherwise, rip offsets between i and j are increased by this delta
-  for (size_t idx = i; idx <= j; ++idx) {
+  for (size_t i = ignore_first ? idx+1 : idx, ie = code.size(); i < ie; ++i) {
     if (uses_rip(code[i])) {
+			cout << "*** " << code[i] << " -> ";
       rescale_offset(code[i], delta);
+			cout << code[i] << endl;
     }
   }
 
-  // This feels pretty sketchy. No harm in checking to be safe.
+	cout << "DONE" << endl << endl;
+
+  // No harm in checking to be safe.
   assert(check_rips(code));
 }
 
@@ -1083,6 +1146,11 @@ bool Transforms::check_rips(const Code& code) {
     const auto ptr = get_offset(instr) + fxn_offset;
     const auto itr = find(offset_pool_.begin(), offset_pool_.end(), ptr);
     if (itr == offset_pool_.end()) {
+			cout << "FAIL: " << instr << " @ " << fxn_offset << endl;
+			for (const auto p : offset_pool_) {
+				cout << p << " ";
+			}
+			cout << endl;
       return false;
     }
   }
