@@ -27,9 +27,9 @@
 
 #include "pin.H"
 
-#include "../../../../x64asm/include/x64asm.h"
-#include "tools/ui/console.h"
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_states.h"
+#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
@@ -69,19 +69,16 @@ ostream* os_;
 // Global symbol table which we populate when instrumenting (callbacks reference this)
 unordered_map<uint64_t, string> symbol_table_;
 
-// Did we see the function the user wants to record for so far?
-bool function_found = false;
+// Was the target function found?
+bool fxn_found_ = false;
 
 // State associated with the current testcase
 bool recording_;
 size_t stack_frame_;
 size_t call_depth_;
-unordered_set<uint64_t> stack_valids_;
-unordered_map<uint64_t, uint8_t> stack_defs_;
-unordered_set<uint64_t> heap_valids_;
-unordered_map<uint64_t, uint8_t> heap_defs_;
-unordered_set<uint64_t> data_valids_;
-unordered_map<uint64_t, uint8_t> data_defs_;
+unordered_map<uint64_t, uint8_t> stack_vals_;
+unordered_map<uint64_t, uint8_t> heap_vals_;
+unordered_map<uint64_t, uint8_t> data_vals_;
 
 // The set of testcases so far accumulated (last is under construction)
 CpuStates tcs_;
@@ -105,15 +102,9 @@ VOID update_state(ADDRINT rsp) {
 	if (!recording_) {
 		stack_frame_ = rsp;
 		call_depth_ = 0;
-
-		stack_valids_.clear();
-		stack_defs_.clear();
-
-		heap_valids_.clear();
-		heap_defs_.clear();
-
-		data_valids_.clear();
-		data_defs_.clear();
+		stack_vals_.clear();
+		heap_vals_.clear();
+		data_vals_.clear();
 	}
 	// Otherwise, we've jumped into the target function while recording; increment the call counter
 	else {
@@ -201,9 +192,6 @@ VOID record_fxn(ADDRINT rip) {
 	}
 
 	const auto itr = symbol_table_.find(rip);
-	if (itr == symbol_table_.end()) {
-		Console::error(1) << "No symbol table information for function at address" << rip << endl;
-	}
 	Label l(itr->second);
 
 	auto& tc = tcs_.back();
@@ -214,7 +202,7 @@ VOID record_fxn(ADDRINT rip) {
 
 /* ============================================================================================= */
 
-VOID record_read(VOID* addr, UINT32 size, bool rip_deref) {
+VOID record_deref(VOID* addr, UINT32 size, bool rip_deref, bool read) {
 	// Nothing to do here if we're not recording
   if (!recording_) {
     return;
@@ -223,19 +211,16 @@ VOID record_read(VOID* addr, UINT32 size, bool rip_deref) {
   for (size_t i = 0; i < size; ++i) {
     const auto ptr = (uint64_t)addr + i;
 		if (rip_deref) {
-			if (data_valids_.find(ptr) == data_valids_.end()) {
-				data_valids_.insert(ptr);
-				data_defs_[ptr] = *((uint8_t*)(ptr));
+			if (data_vals_.find(ptr) == data_vals_.end()) {
+				data_vals_[ptr] = read ? *((uint8_t*)(ptr)) : 0;
 			}
 		} else if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
-      if (stack_valids_.find(ptr) == stack_valids_.end()) {
-        stack_valids_.insert(ptr);
-        stack_defs_[ptr] = *((uint8_t*)ptr);
+      if (stack_vals_.find(ptr) == stack_vals_.end()) {
+        stack_vals_[ptr] = read ? *((uint8_t*)ptr) : 0;
       }
     } else {
-      if (heap_valids_.find(ptr) == heap_valids_.end()) {
-        heap_valids_.insert(ptr);
-        heap_defs_[ptr] = *((uint8_t*)ptr);
+      if (heap_vals_.find(ptr) == heap_vals_.end()) {
+        heap_vals_[ptr] = read ? *((uint8_t*)ptr) : 0;
       }
     }
   }
@@ -243,48 +228,24 @@ VOID record_read(VOID* addr, UINT32 size, bool rip_deref) {
 
 /* ============================================================================================= */
 
-VOID record_write(VOID* addr, UINT32 size, bool rip_deref) {
-	// Nothing to do here if we're not recording
-  if (!recording_) {
-    return;
-  }
-
-  for (size_t i = 0; i < size; ++i) {
-    const auto ptr = (uint64_t)addr + i;
-		if (rip_deref) {
-			data_valids_.insert(ptr);
-		} else if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
-      stack_valids_.insert(ptr);
-    } else {
-      heap_valids_.insert(ptr);
-    }
-  }
-}
-
-/* ============================================================================================= */
-
-VOID record_mem(uint64_t default_base, const unordered_set<uint64_t>& valids, 
-		const unordered_map<uint64_t, uint8_t>& defs, Memory& mem) {
+VOID record_mem(uint64_t default_base, const unordered_map<uint64_t, uint8_t>& vals, Memory& mem) {
 	// Compute bounds
   uint64_t min_addr = 0xffffffffffffffff;
   uint64_t max_addr = 0;
-  for (const auto addr : valids) {
-    min_addr = min(min_addr, addr);
-    max_addr = max(max_addr, addr);
+  for (const auto& val : vals) {
+    min_addr = min(min_addr, val.first);
+    max_addr = max(max_addr, val.first);
   }
 
 	// Resize memory
-	const auto base = valids.empty() ? default_base : min_addr;
-	const auto size = valids.empty() ? 0 : max_addr - min_addr + 1;
+	const auto base = vals.empty() ? default_base : min_addr;
+	const auto size = vals.empty() ? 0 : max_addr - min_addr + 1;
 	mem.resize(base, size);
 
-	// Set values
-  for (const auto addr : valids) {
-    mem.set_valid(addr, true);
-  }
-  for (const auto& def : defs) {
-    mem.set_defined(def.first, true);
-    mem[def.first] = def.second;
+	// Set valid bits and values
+  for (const auto& val : vals) {
+    mem.set_valid(val.first, true);
+    mem[val.first] = val.second;
   }
 }
 
@@ -303,9 +264,9 @@ VOID end_tc() {
 
 	// Otherwise, we're done. Finish recording this testcase	
 	auto& tc = tcs_.back();
-	record_mem(0x700000000, stack_valids_, stack_defs_, tc.stack);
-	record_mem(0x100000000, heap_valids_, heap_defs_, tc.heap);
-	record_mem(0x000000000, data_valids_, data_defs_, tc.data);
+	record_mem(0x700000000, stack_vals_, tc.stack);
+	record_mem(0x100000000, heap_vals_, tc.heap);
+	record_mem(0x000000000, data_vals_, tc.data);
 
 	// Stop recording and decrement the quota
 	recording_ = false;
@@ -394,14 +355,16 @@ VOID rtn(RTN fxn, VOID* v) {
 		for (size_t i = 0, ie = INS_MemoryOperandCount(ins); i < ie; ++i) {
 			const auto rip_deref = INS_RegRContain(ins, REG_INST_PTR) && !INS_IsCall(ins);
 			if (INS_MemoryOperandIsRead(ins, i)) {
-				INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) record_read,
+				INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) record_deref,
 						IARG_MEMORYOP_EA, i, IARG_MEMORYREAD_SIZE, 
-						IARG_BOOL, rip_deref, IARG_END);
+						IARG_BOOL, rip_deref, IARG_BOOL, true, 
+						IARG_END);
 			}
 			if (INS_MemoryOperandIsWritten(ins, i)) {
-				INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) record_write,
+				INS_InsertPredicatedCall(ins, IPOINT_BEFORE, (AFUNPTR) record_deref,
 						IARG_MEMORYOP_EA, i, IARG_MEMORYWRITE_SIZE, 
-						IARG_BOOL, rip_deref, IARG_END);
+						IARG_BOOL, rip_deref, IARG_BOOL, false,
+						IARG_END);
 			}
 		}
 
@@ -414,16 +377,16 @@ VOID rtn(RTN fxn, VOID* v) {
   RTN_Close(fxn);
 }
 
-VOID ImageLoad(IMG img, VOID *v)
-{
-  auto target_name = KnobFxnName.Value();
-  for( SEC sec= IMG_SecHead(img); !function_found && SEC_Valid(sec); sec = SEC_Next(sec) ) {
-    for( RTN rtn= SEC_RtnHead(sec); !function_found && RTN_Valid(rtn); rtn = RTN_Next(rtn) ) {
-      if (RTN_Name(rtn) == target_name) {
-        function_found = true;
-      }
-    }
-  }
+/* ============================================================================================= */
+
+VOID ImageLoad(IMG img, VOID *v) {
+	for (auto sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec)) {
+		for (auto rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn)) {
+			if (RTN_Name(rtn) == KnobFxnName.Value()) {
+				fxn_found_ = true;
+			}
+		}
+	}
 }
 
 /* ============================================================================================= */
@@ -432,15 +395,10 @@ VOID Fini(INT32 code, VOID* v) {
 	// It's possible that we might still be recording here; don't check this as an error case.
 	// Some programs terminate without returning.
 
-  // Does the function we are looking for even exist?
-  if (!function_found) {
-    cerr << "ERROR: Function '" << KnobFxnName.Value() << "' not found in the binary.  Did you misspell its name?" << endl;
-    exit(1);
-  }
-
-  if (tcs_.size() == 0) {
-    cerr << "ERROR: failed to record any testcases." << endl;
-    exit(1);
+	if (!fxn_found_) {
+		Console::error(1) << "Unable to locate target " << KnobFxnName.Value() << " in binary!" << endl;
+	} else if (tcs_.size() == 0) {
+		Console::error(2) << "Unable to generate testcases!" << endl;
   }
 
 	// Print everything to the target file
@@ -472,7 +430,7 @@ int main(int argc, char* argv[]) {
 	// Read line numbers to stop recording on (we always stop on ret)
 	istringstream iss(KnobEndLines.Value());
 	uint64_t inst;
-	while ( iss >> dec >> inst ) {
+	while (iss >> dec >> inst) {
 		end_lines_.insert(inst);
 	}
 
@@ -482,11 +440,12 @@ int main(int argc, char* argv[]) {
 	// Instrument every function and emit a finishing routine
   PIN_InitSymbols();
   RTN_AddInstrumentFunction(rtn, 0);
-  PIN_AddFiniFunction(Fini, 0);
   IMG_AddInstrumentFunction(ImageLoad, 0);
+  PIN_AddFiniFunction(Fini, 0);
 
   // Never returns; we start in a state where nothing is being recorded
 	recording_ = false;
+	fxn_found_ = false;
   PIN_StartProgram();
 
   return 0;
