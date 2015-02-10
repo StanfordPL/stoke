@@ -12,12 +12,258 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/sandbox/sandbox.h"
 #include "src/search/transforms.h"
 
 using namespace std;
+using namespace stoke;
 using namespace x64asm;
 
+namespace {
+
+/** Returns the number of operands for this opcode. */
+size_t arity(Opcode o) {
+  return Instruction(o).arity();
+}
+
+/** Returns the index-th operand type for this opcode. */
+Type type(Opcode o, size_t index) {
+  return Instruction(o).type(index);
+}
+
+/** Is this an lea instruction? */
+bool is_lea_opcode(Opcode o) {
+  return Instruction(o).is_lea();
+}
+
+/** Does this instruction dereference memory? */
+bool is_mem_opcode(Opcode o) {
+  return Instruction(o).is_memory_dereference();
+}
+
+/** Does this instruction read (but not write) memory. */
+bool is_mem_read_only_opcode(Opcode o) {
+  if (Instruction(o).is_pop() || Instruction(o).is_popf()) {
+    return true;
+  }
+  const auto instr = Instruction(o);
+  const auto mi = instr.mem_index();
+  return mi != -1 && !instr.maybe_write(mi) && !instr.maybe_undef(mi);
+}
+
+/** Does this instruction write (but not read or undef) memory. */
+bool is_mem_write_only_opcode(Opcode o) {
+  if (Instruction(o).is_push() || Instruction(o).is_pushf()) {
+    return true;
+  }
+  const auto instr = Instruction(o);
+  const auto mi = instr.mem_index();
+  return mi != -1 && !instr.maybe_read(mi) && !instr.maybe_undef(mi);
+}
+
+/** Does this instruction take an rh operand? */
+bool is_rh_opcode(Opcode o) {
+  for (size_t i = 0, ie = arity(o); i < ie; ++i) {
+    if (type(o, i) == Type::RH) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Does this instruction induce control flow? */
+bool is_control_opcode(Opcode o) {
+  const Instruction instr(o);
+  return instr.is_label_defn() || instr.is_any_jump() ||
+         instr.is_any_call() || instr.is_any_return() ||
+         instr.is_any_loop();
+}
+
+/** Does this instruction induce control flow, other than a call (which STOKE can propose)? */
+bool is_control_other_than_call(Opcode op) {
+  return op != CALL_LABEL && is_control_opcode(op);
+}
+
+/** Does this instruction produce non-deterministic results? */
+bool is_non_deterministic(Opcode o) {
+  return Instruction(o).is_rdrand();
+}
+
+/** Add instructions that should never be proposed to this method. */
+bool is_unsupported(Opcode o) {
+  return is_rh_opcode(o) || !Sandbox::is_supported(o);
+}
+
+/** Is this instruction enabled given this flag set? */
+bool is_enabled(Opcode o, const FlagSet& fs) {
+  return Instruction(o).enabled(fs);
+}
+
+/** Do these two instructions take operands of the same arity and type? */
+bool is_type_equiv(Opcode o1, Opcode o2) {
+  if (arity(o1) != arity(o2)) {
+    return false;
+  }
+  for (size_t i = 0, ie = arity(o1); i < ie; ++i) {
+    if (type(o1, i) != type(o2, i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Returns true if this instruction uses rip offset addressing */
+bool uses_rip(const Instruction& instr) {
+  if (!instr.is_explicit_memory_dereference() && !instr.is_lea()) {
+    return false;
+  }
+  const auto mi = instr.mem_index();
+  return instr.get_operand<M8>(mi).rip_offset();
+}
+
+/** Returns true if this instruction uses rip offset addressing in this operand */
+bool uses_rip(const Instruction& instr, size_t idx) {
+  if (!instr.is_explicit_memory_dereference()) {
+    return false;
+  }
+  const auto mi = instr.mem_index();
+  if ((size_t)mi != idx) {
+    return false;
+  }
+  return instr.get_operand<M8>(mi).rip_offset();
+}
+
+/** Returns the rip offset for this instruction */
+uint64_t get_offset(const Instruction& instr) {
+  assert(uses_rip(instr));
+  const auto mi = instr.mem_index();
+  return instr.get_operand<M8>(mi).get_disp();
+}
+
+/** Adds an offset to an existing rip offset */
+void rescale_offset(Instruction& instr, int64_t delta) {
+  assert(uses_rip(instr));
+  const auto mi = instr.mem_index();
+  auto m = instr.get_operand<M8>(mi);
+  m.set_disp(m.get_disp()+delta);
+  instr.set_operand(mi, m);
+}
+
+/** Set o to a random element from a pool. Returns true on success. */
+template <typename T>
+bool get(default_random_engine& gen, const vector<T>& pool, Operand& o) {
+  if (pool.empty()) {
+    return false;
+  }
+  o = pool[gen() % pool.size()];
+  return true;
+}
+
+/** Set o to exactly one element from a pool. Returns true on success. */
+template <typename T>
+bool get(const vector<T>& pool, const T& val, Operand& o) {
+  if (find(pool.begin(), pool.end(), val) == pool.end()) {
+    return false;
+  }
+  o = val;
+  return true;
+}
+
+/** Set o to a random element in a register set. Returns true on success. */
+template <typename T>
+bool get(default_random_engine& gen, const vector<T>& pool, const RegSet& rs, Operand& o) {
+  vector<T> ts;
+  for (const auto& t : pool) {
+    if (rs.contains(t)) {
+      ts.push_back(t);
+    }
+  }
+  if (ts.empty()) {
+    return false;
+  }
+  o = ts[gen() % ts.size()];
+  return true;
+}
+
+/** Replaces base register using an element of a reg set. Returns true on success. */
+template <class T>
+bool get_base(default_random_engine& gen, const vector<R32> r32_pool, const vector<R64>& r64_pool, const RegSet& rs, M<T>& m) {
+  if (gen() % 2) {
+    m.clear_base();
+    return true;
+  } else if (m.addr_or()) {
+    auto r = eax;
+    if (get<R32>(gen, r32_pool, rs, r)) {
+      m.set_base(r);
+      return true;
+    }
+  } else {
+    auto r = rax;
+    if (get<R64>(gen, r64_pool, rs, r)) {
+      m.set_base(r);
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Replaces index register using an element of a reg set. Returns true on success. */
+template <class T>
+bool get_index(default_random_engine& gen, const vector<R32>& r32_pool, const vector<R64>& r64_pool, const RegSet& rs, M<T>& m) {
+  if (gen() % 2) {
+    m.clear_index();
+  } else if (m.addr_or()) {
+    auto r = eax;
+    if (get<R32>(gen, r32_pool, rs, r)) {
+      m.set_index(r);
+      return m.get_index() != esp;
+    }
+  } else {
+    auto r = rax;
+    if (get<R64>(gen, r64_pool, rs, r)) {
+      m.set_index(r);
+      return m.get_index() != rsp;
+    }
+  }
+  return false;
+}
+
+bool get_indices(default_random_engine& gen, const Cfg& cfg, Cfg::id_type& bb, size_t& block_idx, size_t& code_idx) {
+  // Corner case: This code could have no reachable blocks
+  if (cfg.num_reachable() < 3) {
+    return false;
+  }
+
+  // Pick a random reachable block
+  auto b = cfg.reachable_begin();
+  for (size_t i = 0, ie = (gen() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
+    ++b;
+  }
+  bb = *b;
+
+  // Pick a random instruction in that block
+  block_idx = gen() % cfg.num_instrs(bb);
+  code_idx = cfg.get_index({bb, block_idx});
+
+  // Corner cases: Is this a control instruction other than a call or the first instruction
+  if (code_idx == 0) {
+    return false;
+  }
+  if (is_control_other_than_call(cfg.get_code()[code_idx].get_opcode())) {
+    return false;
+  }
+
+  return true;
+}
+
+} // namespace
+
 namespace stoke {
+
+Transforms::Transforms() : old_instr_(RET) {
+  set_opcode_pool(FlagSet::universe(), 0, true, true, RegSet::empty(), {}, {});
+  set_operand_pool({RET}, RegSet::linux_call_preserved());
+}
 
 Transforms& Transforms::set_opcode_pool(const FlagSet& flags,
                                         size_t call_weight, bool use_mem_read,
@@ -170,61 +416,73 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
     }
   }
 
+  offset_pool_.clear();
+  uint64_t fxn_offset = 0;
+  for (const auto& instr : target) {
+    fxn_offset += assm_.hex_size(instr);
+    if (!uses_rip(instr)) {
+      continue;
+    }
+    const auto ptr = get_offset(instr) + fxn_offset;
+    const auto itr = find(offset_pool_.begin(), offset_pool_.end(), ptr);
+    if (itr == offset_pool_.end()) {
+      offset_pool_.push_back(ptr);
+    }
+  }
+
   return *this;
 }
 
 bool Transforms::modify(Cfg& cfg, Move type) {
+  auto ret = false;
   switch (type) {
   case Move::INSTRUCTION:
-    return instruction_move(cfg);
+    ret = instruction_move(cfg);
+    break;
   case Move::OPCODE:
-    return opcode_move(cfg);
+    ret = opcode_move(cfg);
+    break;
   case Move::OPERAND:
-    return operand_move(cfg);
+    ret = operand_move(cfg);
+    break;
   case Move::RESIZE:
-    return resize_move(cfg);
+    ret = resize_move(cfg);
+    break;
   case Move::LOCAL_SWAP:
-    return local_swap_move(cfg);
+    ret = local_swap_move(cfg);
+    break;
   case Move::GLOBAL_SWAP:
-    return global_swap_move(cfg);
+    ret = global_swap_move(cfg);
+    break;
   case Move::EXTENSION:
-    return extension_move(cfg);
+    ret = extension_move(cfg);
+    break;
   default:
     assert(false);
     return false;
   }
+
+  assert(check_rips(cfg.get_code()));
+  return ret;
 }
 
 bool Transforms::instruction_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-  if (cfg.num_reachable() < 3) {
+  // Grab the index of an old instruction
+  Cfg::id_type bb = cfg.get_entry();
+  size_t block_idx = 0;
+  if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
     return false;
-  }
-  auto bb = cfg.reachable_begin();
-  for (size_t i = 0, ie = (gen_() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
-    ++bb;
   }
 
-  const auto num_instrs = cfg.num_instrs(*bb);
-  if (num_instrs == 0) {
-    return false;
-  }
-  const auto idx = gen_() % num_instrs;
-
-  instr_index_ = cfg.get_index({*bb, idx});
-  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
-    return false;
-  }
-  if (is_control_other_than_call(code[instr_index_].get_opcode())) {
-    return false;
-  }
+  // Record the old value and generate a new instruction
   old_instr_ = code[instr_index_];
-
   auto& instr = code[instr_index_];
   instr.set_opcode(get_control_free());
-  const auto& rs = cfg.def_ins({*bb, idx});
 
+  // Try generating new operands but revert if we fail at any point
+  const auto& rs = cfg.def_ins({bb, block_idx});
   for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
     Operand o = instr.get_operand<R64>(i);
     if (instr.maybe_read(i)) {
@@ -241,119 +499,114 @@ bool Transforms::instruction_move(Cfg& cfg) {
     instr.set_operand(i, o);
   }
 
+  // Success: rescale rips before going on to harder checks
+  // Any failure beyond here will require undoing the move
+  if (uses_rip(instr)) {
+    rescale_rip(code, instr_index_);
+    rescale_trailing_rips(code, old_instr_, instr_index_, true);
+  } else {
+    rescale_trailing_rips(code, old_instr_, instr_index_);
+  }
+
   if(validator_ && !validator_->is_supported(instr)) {
     undo_instruction_move(cfg);
     return false;
   }
-
   cfg.recompute_defs();
-
   if (!cfg.is_sound()) {
     undo_instruction_move(cfg);
     return false;
   }
+
   return true;
 }
 
 bool Transforms::opcode_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-  if (cfg.num_reachable() < 3) {
-    return false;
-  }
-  auto bb = cfg.reachable_begin();
-  for (size_t i = 0, ie = (gen_() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
-    ++bb;
-  }
-
-  const auto num_instrs = cfg.num_instrs(*bb);
-  if (num_instrs == 0) {
-    return false;
-  }
-  instr_index_ = cfg.get_index({*bb, gen_() % num_instrs});
-  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
+  // Grab the index of a random instruction
+  Cfg::id_type bb = cfg.get_entry();
+  size_t block_idx = 0;
+  if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
     return false;
   }
 
+  assert(check_rips(code));
+
+  // Record the old value and generate a new opcode
+  old_instr_ = code[instr_index_];
   auto& instr = code[instr_index_];
-  old_opcode_ = instr.get_opcode();
-  if (is_control_other_than_call(old_opcode_)) {
-    return false;
-  }
+  instr.set_opcode(get_control_free_type_equiv(instr.get_opcode()));
 
-  const auto o = get_control_free_type_equiv(old_opcode_);
-  instr.set_opcode(o);
+  // Success: Rescale rips before going on to harder checks
+  // Any failure beyond here will require undoing the move
+  rescale_trailing_rips(code, old_instr_, instr_index_);
 
   if(validator_ && !validator_->is_supported(instr)) {
     undo_opcode_move(cfg);
     return false;
   }
-
   cfg.recompute_defs();
-
   if (!cfg.is_sound()) {
     undo_opcode_move(cfg);
     return false;
   }
+
   return true;
 }
 
 bool Transforms::operand_move(Cfg& cfg) {
   auto& code = cfg.get_code();
 
-  if (cfg.num_reachable() < 3) {
+  // Grab the index of a random instruction
+  Cfg::id_type bb = cfg.get_entry();
+  size_t block_idx = 0;
+  if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
     return false;
-  }
-  auto bb = cfg.reachable_begin();
-  for (size_t i = 0, ie = (gen_() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
-    ++bb;
   }
 
-  const auto num_instrs = cfg.num_instrs(*bb);
-  if (num_instrs == 0) {
-    return false;
-  }
-  const auto idx = gen_() % num_instrs;
-
-  instr_index_ = cfg.get_index({*bb, idx});
-  if (instr_index_ == cfg.get_index({cfg.get_entry()+1,0})) {
-    return false;
-  }
-  if (is_control_other_than_call(code[instr_index_].get_opcode())) {
-    return false;
-  }
+  // Corner Cases: Don't try chaning 0-arity opcodes
   if (code[instr_index_].arity() == 0) {
     return false;
   }
+  const auto operand_idx = gen_() % code[instr_index_].arity();
 
+  // Record the old value and generate a new operand
+  old_instr_ = code[instr_index_];
   auto& instr = code[instr_index_];
-  operand_index_ = gen_() % instr.arity();
-  old_operand_ = instr.get_operand<R64>(operand_index_);
-  auto o = old_operand_;
+  Operand o = instr.get_operand<R64>(operand_idx);
 
-  const auto& rs = cfg.def_ins({*bb, idx});
-  if (instr.maybe_read(operand_index_)) {
-    if (!get_read_op(instr.get_opcode(), operand_index_, rs, o)) {
+  const auto& rs = cfg.def_ins({bb, block_idx});
+  if (instr.maybe_read(operand_idx)) {
+    if (!get_read_op(instr.get_opcode(), operand_idx, rs, o)) {
       return false;
     }
   } else {
-    if (!get_write_op(instr.get_opcode(), operand_index_, rs, o)) {
+    if (!get_write_op(instr.get_opcode(), operand_idx, rs, o)) {
       return false;
     }
   }
-  instr.set_operand(operand_index_, o);
+  instr.set_operand(operand_idx, o);
+
+  // Success: Rescale rips before going on to harder checks
+  // Any failure beyond here will require undoing the move
+  if (uses_rip(instr, operand_idx)) {
+    rescale_rip(code, instr_index_);
+    rescale_trailing_rips(code, old_instr_, instr_index_, true);
+  } else {
+    rescale_trailing_rips(code, old_instr_, instr_index_);
+  }
 
   if(validator_ && !validator_->is_supported(instr)) {
     undo_operand_move(cfg);
     return false;
   }
-
   cfg.recompute_defs();
-
   if (!cfg.is_sound()) {
     undo_operand_move(cfg);
     return false;
   }
+
   return true;
 }
 
@@ -378,6 +631,7 @@ found_a_nop:
   }
 
   move(code, move_i_, move_j_);
+  rescale_rotated_rips(code, move_i_, move_j_);
   cfg.recompute();
 
   return true;
@@ -403,6 +657,9 @@ bool Transforms::local_swap_move(Cfg& cfg) {
   if (move_i_ == move_j_) {
     return false;
   }
+  if (move_j_ < move_i_) {
+    swap(move_i_, move_j_);
+  }
 
   auto& i = code[move_i_];
   if (is_control_other_than_call(i.get_opcode())) {
@@ -414,12 +671,14 @@ bool Transforms::local_swap_move(Cfg& cfg) {
   }
 
   swap(i, j);
-  cfg.recompute_defs();
+  rescale_swapped_rips(code, move_i_, move_j_);
 
+  cfg.recompute_defs();
   if (!cfg.is_sound()) {
     undo_local_swap_move(cfg);
     return false;
   }
+
   return true;
 }
 
@@ -434,6 +693,9 @@ bool Transforms::global_swap_move(Cfg& cfg) {
   if (move_i_ == move_j_) {
     return false;
   }
+  if (move_j_ < move_i_) {
+    swap(move_i_, move_j_);
+  }
 
   auto& i = code[move_i_];
   if (is_control_other_than_call(i.get_opcode())) {
@@ -445,12 +707,14 @@ bool Transforms::global_swap_move(Cfg& cfg) {
   }
 
   swap(i, j);
-  cfg.recompute_defs();
+  rescale_swapped_rips(code, move_i_, move_j_);
 
+  cfg.recompute_defs();
   if (!cfg.is_sound()) {
     undo_global_swap_move(cfg);
     return false;
   }
+
   return true;
 }
 
@@ -472,6 +736,10 @@ bool Transforms::extension_move(Cfg& cfg) {
   // Invariant 4:
   // Transformations must preserve the first instruction in a code sequence
   // which should be a label that represents the name of a function.
+
+  // Invariant 5:
+  // Transformations must preserve the soundness of rip offsets
+  // which should always point to elements in the offset_pool_
 
   return false;
 }
@@ -502,6 +770,8 @@ void Transforms::undo(Cfg& cfg, Move type) {
     assert(false);
     break;
   }
+
+  assert(check_rips(cfg.get_code()));
 }
 
 void Transforms::undo_extension_move(Cfg& cfg) {
@@ -513,44 +783,75 @@ void Transforms::undo_extension_move(Cfg& cfg) {
   return;
 }
 
+bool Transforms::get_lea_mem(const RegSet& rs, Operand& o) {
+  auto m = *((M8*)(&o));
+  m.set_rip_offset(false);
+  m.set_addr_or(gen_() % 2);
+  m.clear_seg();
+  m.set_scale((Scale)(gen_() % 4));
+  m.set_disp((Imm32)(imm_pool_[gen_() % imm_pool_.size()]));
+
+  if (!get_base(gen_, r32_pool_, r64_pool_, rs, m)) {
+    return false;
+  }
+  if (!get_index(gen_, r32_pool_, r64_pool_, rs, m)) {
+    return false;
+  }
+  o = m;
+  return true;
+}
+
+/** Returns a rip offset from the offset pool... this will need scaling!!! */
+bool Transforms::get_rip_mem(Operand& o) {
+  if (offset_pool_.empty()) {
+    return false;
+  }
+
+  auto& m = *((M8*)(&o));
+  m.set_rip_offset(true);
+  m.clear_seg();
+  m.clear_base();
+  m.clear_index();
+  m.set_disp(offset_pool_[gen_() % offset_pool_.size()]);
+
+  return true;
+}
+
+bool Transforms::get_reg_mem(const RegSet& rs, Operand& o) {
+  // Pull an operand out of the mem pool
+  if (m_pool_.empty()) {
+    return false;
+  }
+  const auto& m = m_pool_[gen_() % m_pool_.size()];
+
+  // All we do now is check whether this operand works here
+  if (m.contains_base()) {
+    if (m.addr_or() && !rs.contains(r32s[m.get_base()])) {
+      return false;
+    } else if (!m.addr_or() && !rs.contains(r64s[m.get_base()])) {
+      return false;
+    }
+  }
+  if (m.contains_index()) {
+    if (m.addr_or() && !rs.contains(r32s[m.get_index()])) {
+      return false;
+    } else if (!m.addr_or() && !rs.contains(r64s[m.get_index()])) {
+      return false;
+    }
+  }
+
+  // If we're here it did, replace o
+  o = m;
+  return true;
+}
+
 bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
   if (is_lea_opcode(c)) {
-    auto m = *((M8*)(&o));
-    m.set_rip_offset(false);
-    m.set_addr_or(gen_() % 2);
-    m.clear_seg();
-    m.set_scale((Scale)(gen_() % 4));
-    m.set_disp((Imm32)(imm_pool_[gen_() % imm_pool_.size()]));
-
-    if (!get_base(rs, m)) {
-      return false;
-    }
-    if (!get_index(rs, m)) {
-      return false;
-    }
-    o = m;
-    return true;
+    return get_lea_mem(rs, o);
+  } else if (gen_() % 2) {
+    return get_rip_mem(o);
   } else {
-    if (m_pool_.empty()) {
-      return false;
-    }
-    const auto& m = m_pool_[gen_() % m_pool_.size()];
-    if (m.contains_base()) {
-      if (m.addr_or() && !rs.contains(r32s[m.get_base()])) {
-        return false;
-      } else if (!m.addr_or() && !rs.contains(r64s[m.get_base()])) {
-        return false;
-      }
-    }
-    if (m.contains_index()) {
-      if (m.addr_or() && !rs.contains(r32s[m.get_index()])) {
-        return false;
-      } else if (!m.addr_or() && !rs.contains(r64s[m.get_index()])) {
-        return false;
-      }
-    }
-    o = m;
-    return true;
+    return get_reg_mem(rs, o);
   }
 }
 
@@ -579,7 +880,7 @@ bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& o
     return get_m(rs, o, op);
 
   case Type::MM:
-    return get<Mm>(mm_pool_, op);
+    return get<Mm>(gen_, mm_pool_, op);
 
   case Type::MOFFS_8:
   case Type::MOFFS_16:
@@ -588,27 +889,27 @@ bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& o
     return false;
 
   case Type::RL:
-    return get<Rl>(rl_pool_, op);
+    return get<Rl>(gen_, rl_pool_, op);
   case Type::RH:
-    return get<Rh>(rh_pool_, op);
+    return get<Rh>(gen_, rh_pool_, op);
   case Type::RB:
-    return get<Rb>(rb_pool_, op);
+    return get<Rb>(gen_, rb_pool_, op);
   case Type::AL:
     return get<Rl>(rl_pool_, al, op);
   case Type::CL:
     return get<Rl>(rl_pool_, cl, op);
   case Type::R_16:
-    return get<R16>(r16_pool_, op);
+    return get<R16>(gen_, r16_pool_, op);
   case Type::AX:
     return get<R16>(r16_pool_, ax, op);
   case Type::DX:
     return get<R16>(r16_pool_, dx, op);
   case Type::R_32:
-    return get<R32>(r32_pool_, op);
+    return get<R32>(gen_, r32_pool_, op);
   case Type::EAX:
     return get<R32>(r32_pool_, eax, op);
   case Type::R_64:
-    return get<R64>(r64_pool_, op);
+    return get<R64>(gen_, r64_pool_, op);
   case Type::RAX:
     return get<R64>(r64_pool_, rax, op);
 
@@ -617,24 +918,24 @@ bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& o
     return false;
 
   case Type::SREG:
-    return get<Sreg>(sreg_pool_, op);
+    return get<Sreg>(gen_, sreg_pool_, op);
   case Type::FS:
     return get<Sreg>(sreg_pool_, fs, op);
   case Type::GS:
     return get<Sreg>(sreg_pool_, gs, op);
 
   case Type::ST:
-    return get<St>(st_pool_, op);
+    return get<St>(gen_, st_pool_, op);
   case Type::ST_0:
     return get<St>(st_pool_, st0, op);
 
   case Type::XMM:
-    return get<Xmm>(xmm_pool_, op);
+    return get<Xmm>(gen_, xmm_pool_, op);
   case Type::XMM_0:
     return get<Xmm>(xmm_pool_, xmm0, op);
 
   case Type::YMM:
-    return get<Ymm>(ymm_pool_, op);
+    return get<Ymm>(gen_, ymm_pool_, op);
 
   // See issue #463 -- This is probably an x64asm bug that LEAVE_PREF66 thinks
   // this is a write op. But for now it doesn't hurt to just return the correct value.
@@ -655,7 +956,7 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
     return true;
 
   case Type::IMM_8: {
-    bool b = get<Imm64>(imm_pool_, op);
+    bool b = get<Imm64>(gen_, imm_pool_, op);
     if (!b) return false;
     Imm* i = static_cast<Imm*>(&op);
     *i = Imm8((uint64_t)*i & 0xff);
@@ -663,7 +964,7 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
   }
 
   case Type::IMM_16: {
-    bool b = get<Imm64>(imm_pool_, op);
+    bool b = get<Imm64>(gen_, imm_pool_, op);
     if (!b) return false;
     Imm* i = static_cast<Imm*>(&op);
     *i = Imm16((uint64_t)*i & 0xffff);
@@ -671,7 +972,7 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
   }
 
   case Type::IMM_32: {
-    bool b = get<Imm64>(imm_pool_, op);
+    bool b = get<Imm64>(gen_, imm_pool_, op);
     if (!b) return false;
     Imm* i = static_cast<Imm*>(&op);
     *i = Imm32((uint64_t)*i & 0xffffffff);
@@ -679,7 +980,7 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
   }
 
   case Type::IMM_64:
-    return get<Imm64>(imm_pool_, op);
+    return get<Imm64>(gen_, imm_pool_, op);
   case Type::ZERO:
     op = zero;
     return true;
@@ -691,7 +992,7 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
     return true;
 
   case Type::LABEL:
-    return get<Label>(label_pool_, op);
+    return get<Label>(gen_, label_pool_, op);
 
   case Type::M_8:
   case Type::M_16:
@@ -716,7 +1017,7 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
     return get_m(rs, o, op);
 
   case Type::MM:
-    return get<Mm>(mm_pool_, rs, op);
+    return get<Mm>(gen_, mm_pool_, rs, op);
 
   case Type::PREF_66:
     op = pref_66;
@@ -735,53 +1036,53 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
     return false;
 
   case Type::RL:
-    return get<Rl>(rl_pool_, rs, op);
+    return get<Rl>(gen_, rl_pool_, rs, op);
   case Type::RH:
-    return get<Rh>(rh_pool_, rs, op);
+    return get<Rh>(gen_, rh_pool_, rs, op);
   case Type::RB:
-    return get<Rb>(rb_pool_, rs, op);
+    return get<Rb>(gen_, rb_pool_, rs, op);
   case Type::AL:
-    return get<Al>({al}, rs, op);
+    return get<Al>(gen_, {al}, rs, op);
   case Type::CL:
-    return get<Cl>({cl}, rs, op);
+    return get<Cl>(gen_, {cl}, rs, op);
   case Type::R_16:
-    return get<R16>(r16_pool_, rs, op);
+    return get<R16>(gen_, r16_pool_, rs, op);
   case Type::AX:
-    return get<Ax>({ax}, rs, op);
+    return get<Ax>(gen_, {ax}, rs, op);
   case Type::DX:
-    return get<Dx>({dx}, rs, op);
+    return get<Dx>(gen_, {dx}, rs, op);
   case Type::R_32:
-    return get<R32>(r32_pool_, rs, op);
+    return get<R32>(gen_, r32_pool_, rs, op);
   case Type::EAX:
-    return get<Eax>({eax}, rs, op);
+    return get<Eax>(gen_, {eax}, rs, op);
   case Type::R_64:
-    return get<R64>(r64_pool_, op);
+    return get<R64>(gen_, r64_pool_, op);
   case Type::RAX:
-    return get<Rax>({rax}, rs, op);
+    return get<Rax>(gen_, {rax}, rs, op);
 
   case Type::REL_8:
   case Type::REL_32:
     return false;
 
   case Type::SREG:
-    return get<Sreg>(sreg_pool_, rs, op);
+    return get<Sreg>(gen_, sreg_pool_, rs, op);
   case Type::FS:
-    return get<Fs>({fs}, rs, op);
+    return get<Fs>(gen_, {fs}, rs, op);
   case Type::GS:
-    return get<Gs>({gs}, rs, op);
+    return get<Gs>(gen_, {gs}, rs, op);
 
   case Type::ST:
-    return get<St>(st_pool_, rs, op);
+    return get<St>(gen_, st_pool_, rs, op);
   case Type::ST_0:
-    return get<St0>({st0}, rs, op);
+    return get<St0>(gen_, {st0}, rs, op);
 
   case Type::XMM:
-    return get<Xmm>(xmm_pool_, rs, op);
+    return get<Xmm>(gen_, xmm_pool_, rs, op);
   case Type::XMM_0:
-    return get<Xmm0>({xmm0}, rs, op);
+    return get<Xmm0>(gen_, {xmm0}, rs, op);
 
   case Type::YMM:
-    return get<Ymm>(ymm_pool_, rs, op);
+    return get<Ymm>(gen_, ymm_pool_, rs, op);
 
   default:
     assert(false);
@@ -801,6 +1102,119 @@ void Transforms::move(Code& code, size_t i, size_t j) const {
     }
   }
   code[j] = temp;
+}
+
+void Transforms::rescale_rip(Code& code, size_t idx) {
+  assert(uses_rip(code[idx]));
+
+  int64_t delta = 0;
+  for (size_t i = 0; i <= idx; ++i) {
+    delta -= assm_.hex_size(code[i]);
+  }
+  rescale_offset(code[idx], delta);
+}
+
+void Transforms::rescale_trailing_rips(Code& code, const Instruction& old_instr, size_t idx, bool ignore_first) {
+  // How much shorter has the new instruction encoding become?
+  const int64_t delta = assm_.hex_size(old_instr) - assm_.hex_size(code[idx]);
+  // Nothing to do if nothing has changed
+  if (delta == 0) {
+    return;
+  }
+  // Otherwise, rip offsets between i and j are increased by this delta
+  for (size_t i = ignore_first ? idx+1 : idx, ie = code.size(); i < ie; ++i) {
+    if (uses_rip(code[i])) {
+      rescale_offset(code[i], delta);
+    }
+  }
+}
+
+void Transforms::rescale_swapped_rips(Code& code, size_t i, size_t j) {
+  // It's easiest to assume that i and j were swapped, so j holds what i used to
+  assert(i < j);
+
+  // Calculate some sizes
+  const int64_t i_size = assm_.hex_size(code[i]);
+  const int64_t j_size = assm_.hex_size(code[j]);
+  // We'll only use this one if either of the outside instructions use rip offsets
+  int64_t span_size = 0;
+  if (uses_rip(code[i]) || uses_rip(code[j])) {
+    for (size_t idx = i+1; idx < j; ++idx) {
+      span_size += assm_.hex_size(code[idx]);
+    }
+  }
+
+  // Update the outer instructions if either was a rip offset
+  if (uses_rip(code[i])) {
+    rescale_offset(code[i], span_size + j_size);
+  }
+  if (uses_rip(code[j])) {
+    rescale_offset(code[j], -span_size - i_size);
+  }
+
+  // Change the interior instructions if the outsides have changed
+  const int64_t delta = j_size - i_size;
+  if (delta != 0) {
+    for (size_t idx = i+1; idx < j; ++idx) {
+      if (uses_rip(code[idx])) {
+        rescale_offset(code[idx], delta);
+      }
+    }
+  }
+}
+
+void Transforms::rescale_rotated_rips(Code& code, size_t i, size_t j) {
+  // Left rotation
+  if (i < j) {
+    const int64_t j_size = assm_.hex_size(code[j]);
+    int64_t span_size = 0;
+    for (size_t idx = i; idx < j; ++idx) {
+      span_size -= assm_.hex_size(code[idx]);
+      if (uses_rip(code[idx])) {
+        rescale_offset(code[idx], j_size);
+      }
+    }
+    if (uses_rip(code[j])) {
+      rescale_offset(code[j], span_size);
+    }
+  }
+
+  // Right rotation
+  else if (j < i) {
+    const int64_t j_size = assm_.hex_size(code[j]);
+    int64_t span_size = 0;
+    for (size_t idx = i; idx > j; --idx) {
+      span_size += assm_.hex_size(code[idx]);
+      if (uses_rip(code[idx])) {
+        rescale_offset(code[idx], -j_size);
+      }
+    }
+    if (uses_rip(code[j])) {
+      rescale_offset(code[j], span_size);
+    }
+  }
+
+  // Control should never reach here
+  else {
+    assert(false);
+  }
+}
+
+bool Transforms::check_rips(const Code& code) {
+  uint64_t fxn_offset = 0;
+  for (const auto& instr : code) {
+    fxn_offset += assm_.hex_size(instr);
+    if (!uses_rip(instr)) {
+      continue;
+    }
+    const auto ptr = get_offset(instr) + fxn_offset;
+    const auto itr = find(offset_pool_.begin(), offset_pool_.end(), ptr);
+    if (itr == offset_pool_.end()) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 } // namespace stoke
