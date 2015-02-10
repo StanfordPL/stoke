@@ -258,9 +258,11 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
 
 void Sandbox::recompile(const Cfg& cfg) {
   // Grab the name of this function
+  assert(cfg.get_code()[0].is_label_defn());
   const auto& label = cfg.get_code()[0].get_operand<Label>(0);
 
   // Compile the function and record its source
+  assert(fxns_[label] != 0);
   emit_function(cfg, fxns_[label]);
 
   // Update the read only memory tracker
