@@ -13,6 +13,7 @@
 // limitations under the License.
 
 
+#include "tests/x64asm/assembler.h"
 #include "tests/x64asm/instruction.h"
 #include "tests/x64asm/parsing.h"
 #include "tests/x64asm/r.h"
