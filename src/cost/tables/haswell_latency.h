@@ -2861,6 +2861,7 @@
 
 , 5 // VBROADCASTSD ymm, m64
 , 5 // VBROADCASTSD ymm, xmm
+, 5 // VBROADCASTSD xmm, m32
 
 , 1 // VBROADCASTSS xmm, xmm
 , 5 // VBROADCASTSS ymm, m32
