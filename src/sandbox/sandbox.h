@@ -154,6 +154,7 @@ public:
   Sandbox& set_entrypoint(const x64asm::Label& l) {
     assert(contains_function(l));
     main_fxn_ = l;
+  	entrypoint_ = fxns_[main_fxn_]->get_entrypoint();
     return *this;
   }
   /** Run a main function for just one input. */

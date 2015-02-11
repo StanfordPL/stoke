@@ -194,13 +194,13 @@ Sandbox& Sandbox::run(size_t index) {
   // Reset instruction count
   instruction_count_ = 0;
 
-  // Initialize state that the instrumented function relies on
+  // Initialize input-specific state that the instrumented function relies on
+	// State that doesn't vary on a per-input basis (ie: entrypoint_) is set elsewhere
   out_ = &io->out_;
   in2cpu_ = io->in2cpu_.get_entrypoint();
   out2cpu_ = io->out2cpu_.get_entrypoint();
   cpu2out_ = io->cpu2out_.get_entrypoint();
   map_addr_ = io->map_addr_.get_entrypoint();
-  entrypoint_ = fxns_[main_fxn_]->get_entrypoint();
   sym_table_ = io->in_.sym_table.flat_table_.data();
   min_label_ = -io->in_.sym_table.min_label_;
 
