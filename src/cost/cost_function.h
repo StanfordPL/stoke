@@ -198,8 +198,8 @@ private:
 
   /** The set of general purpose registers live out for the target. */
   std::vector<x64asm::R64> target_gp_out_;
-	/** The set of rflags that are live out for the target. */
-	std::vector<x64asm::Eflags> target_rf_out_;
+  /** The set of rflags that are live out for the target. */
+  std::vector<x64asm::Eflags> target_rf_out_;
   /** The set of sse registers live out for the target. */
   std::vector<x64asm::Xmm> target_sse_out_;
   /** The set of general purpose registers live out for a rewrite. */

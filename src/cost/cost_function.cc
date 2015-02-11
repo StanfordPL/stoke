@@ -66,13 +66,15 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Efl
     }
   }
 
-	rfs.clear();
-  for (auto f : {eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf}) {
-		if (rs.contains(f)) {
-			rfs.push_back(f);
-		}
-	}
-		
+  rfs.clear();
+  for (auto f : {
+         eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
+       }) {
+    if (rs.contains(f)) {
+      rfs.push_back(f);
+    }
+  }
+
   sses.clear();
   for (const auto& s : xmms) {
     if (rs.contains(s)) {
@@ -380,9 +382,9 @@ Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Re
 Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r) const {
   Cost cost = 0;
   for (auto f : target_rf_out_) {
-     const auto i = f.index();
-		 const auto def = find(rewrite_rf_out_.begin(), rewrite_rf_out_.end(), f) != rewrite_rf_out_.end();
-     cost += def ? (t.is_set(i) ^ r.is_set(i)) : 1;
+    const auto i = f.index();
+    const auto def = find(rewrite_rf_out_.begin(), rewrite_rf_out_.end(), f) != rewrite_rf_out_.end();
+    cost += def ? (t.is_set(i) ^ r.is_set(i)) : 1;
   }
 
   return cost;
@@ -515,13 +517,13 @@ Cost CostFunction::latency_performance(const Cfg& cfg) const {
     }
 
     // Increment latency by block latency scaled by nesting penalty
-		// The call to pow() is expensive, so we hide it behind a faster check
-		const auto nd = cfg.nesting_depth(*b);
-		if (nd > 1) {
-			latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
-		} else {
-			latency += block_latency;
-		}
+    // The call to pow() is expensive, so we hide it behind a faster check
+    const auto nd = cfg.nesting_depth(*b);
+    if (nd > 1) {
+      latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
+    } else {
+      latency += block_latency;
+    }
   }
 
   // Apply penalty to codes that mix avx and sse instructions
