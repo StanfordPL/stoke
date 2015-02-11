@@ -3180,6 +3180,14 @@
 , 999 // VFNMSUB131SS xmm, xmm, m32
 , 5 // VFNMSUB131SS xmm, xmm, xmm
 
+, 999 // VGATHERDPD xmm, m32, xmm
+, 999 // VGATHERDPD ymm, m32, ymm
+, 999 // VGATHERDPS xmm, m32, xmm
+, 999 // VGATHERDPS ymm, m32, ymm
+, 999 // VGATHERQPD xmm, m64, xmm
+, 999 // VGATHERQPD ymm, m64, ymm
+, 999 // VGATHERQPS xmm, m64, xmm
+
 , 999 // VHADDPD xmm, xmm, m128
 , 5 // VHADDPD xmm, xmm, xmm
 , 999 // VHADDPD ymm, ymm, m156
@@ -3582,6 +3590,14 @@
 , 2 // VPEXTRW m16, xmm, imm8
 , 999 // VPEXTRW r32, xmm, imm8
 , 2 // VPEXTRW r64, xmm, imm8
+
+, 999 // VPGATHERDD xmm, m32, xmm
+, 999 // VPGATHERDD ymm, m32, ymm
+, 999 // VPGATHERDQ xmm, m32, xmm
+, 999 // VPGATHERDQ ymm, m32, ymm
+, 999 // VPGATHERQD xmm, m64, xmm
+, 999 // VPGATHERQQ xmm, m64, xmm
+, 999 // VPGATHERQQ ymm, m64, ymm
 
 , 999 // VPHADDD xmm, xmm, m128
 , 3 // VPHADDD xmm, xmm, xmm
