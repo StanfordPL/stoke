@@ -824,64 +824,64 @@ void Sandbox::emit_after(const Label& label, size_t line) {
 }
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint64_t hex_offset, const Label& exit) {
-	static DispatchTable table;
-	switch(table.lookup(instr)) {
-		case DispatchTable::SIGILL_:
-			emit_signal_trap_call(ErrorCode::SIGILL_);
-			break;
-		case DispatchTable::LABEL_DEFN:
-    	if (instr.get_operand<Label>(0) != fxn) {
-      	assm_.assemble(instr);
-    	}
-			break;
-		case DispatchTable::ANY_JUMP:
-			emit_jump(instr);
-			break;
-		case DispatchTable::CALL_LABEL:
-			emit_call(instr, fxn, hex_offset);
-			break;
-		case DispatchTable::RET:
-			emit_ret(instr, exit);
-			break;
-		case DispatchTable::MEM_DIV:
-			emit_mem_div(instr);
-			break;
-		case DispatchTable::MEM_PUSH:
-			emit_mem_push(instr);
-			break;
-		case DispatchTable::MEM_POP:
-			emit_mem_pop(instr);
-			break;
-		case DispatchTable::MEM_BT:
-			emit_mem_bt(instr);
-			break;
-		case DispatchTable::MEM_INSTR:
-			emit_memory_instruction(instr, fxn, hex_offset);
-			break;
-		case DispatchTable::PUSH:
-			emit_push(instr);
-			break;
-		case DispatchTable::PUSHF:
-			emit_pushf(instr);
-			break;
-		case DispatchTable::POP:
-			emit_pop(instr);
-			break;
-		case DispatchTable::POPF:
-      emit_popf(instr);
-			break;
-		case DispatchTable::LEAVE:
-			emit_leave(instr);
-			break;
-		case DispatchTable::REG_DIV:
-      emit_reg_div(instr);
-			break;
-		case DispatchTable::INSTR:
-			assm_.assemble(instr);
-			break;
-		default:
-			assert(false);
-	}
+  static DispatchTable table;
+  switch(table.lookup(instr)) {
+  case DispatchTable::SIGILL_:
+    emit_signal_trap_call(ErrorCode::SIGILL_);
+    break;
+  case DispatchTable::LABEL_DEFN:
+    if (instr.get_operand<Label>(0) != fxn) {
+      assm_.assemble(instr);
+    }
+    break;
+  case DispatchTable::ANY_JUMP:
+    emit_jump(instr);
+    break;
+  case DispatchTable::CALL_LABEL:
+    emit_call(instr, fxn, hex_offset);
+    break;
+  case DispatchTable::RET:
+    emit_ret(instr, exit);
+    break;
+  case DispatchTable::MEM_DIV:
+    emit_mem_div(instr);
+    break;
+  case DispatchTable::MEM_PUSH:
+    emit_mem_push(instr);
+    break;
+  case DispatchTable::MEM_POP:
+    emit_mem_pop(instr);
+    break;
+  case DispatchTable::MEM_BT:
+    emit_mem_bt(instr);
+    break;
+  case DispatchTable::MEM_INSTR:
+    emit_memory_instruction(instr, fxn, hex_offset);
+    break;
+  case DispatchTable::PUSH:
+    emit_push(instr);
+    break;
+  case DispatchTable::PUSHF:
+    emit_pushf(instr);
+    break;
+  case DispatchTable::POP:
+    emit_pop(instr);
+    break;
+  case DispatchTable::POPF:
+    emit_popf(instr);
+    break;
+  case DispatchTable::LEAVE:
+    emit_leave(instr);
+    break;
+  case DispatchTable::REG_DIV:
+    emit_reg_div(instr);
+    break;
+  case DispatchTable::INSTR:
+    assm_.assemble(instr);
+    break;
+  default:
+    assert(false);
+  }
 }
 
 void Sandbox::emit_count_instructions(const Cfg& cfg, Cfg::id_type bb) {
