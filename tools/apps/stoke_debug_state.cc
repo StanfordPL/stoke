@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 
   s1.stack = s2.stack;
   s1.heap = s2.heap;
-	s1.data = s2.data;
+  s1.data = s2.data;
 
   Console::msg() << "Copy defined state from XOR'ed state" << endl;
   Console::msg() << endl;

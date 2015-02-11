@@ -349,22 +349,22 @@ Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Re
     assert(t.is_valid_quad(i) && rmem.is_valid_quad(i));
     assert(t.is_valid_quad(i+8) && rmem.is_valid_quad(i+8));
 
-		// Start off with vanilla memory to memory comparison
-		Cost delta = evaluate_distance(t.get_quad(i), rmem.get_quad(i)) +
-			evaluate_distance(t.get_quad(i+8), rmem.get_quad(i+8));
+    // Start off with vanilla memory to memory comparison
+    Cost delta = evaluate_distance(t.get_quad(i), rmem.get_quad(i)) +
+                 evaluate_distance(t.get_quad(i+8), rmem.get_quad(i+8));
 
-		// If we've relaxed mem, we can also look in sse registers
-		if (relax_mem_) {
-			for (const auto& s_r : rewrite_sse_out_) {
-				Cost eval = evaluate_distance(t.get_quad(i), rsse[s_r].get_fixed_quad(0)) +
-					evaluate_distance(t.get_quad(i+8), rsse[s_r].get_fixed_quad(1)) +
-					misalign_penalty_;
-				delta = min(delta, eval);
-			}
-		}
+    // If we've relaxed mem, we can also look in sse registers
+    if (relax_mem_) {
+      for (const auto& s_r : rewrite_sse_out_) {
+        Cost eval = evaluate_distance(t.get_quad(i), rsse[s_r].get_fixed_quad(0)) +
+                    evaluate_distance(t.get_quad(i+8), rsse[s_r].get_fixed_quad(1)) +
+                    misalign_penalty_;
+        delta = min(delta, eval);
+      }
+    }
 
-		// Now accrue the lowest cost we were able to find
-		cost += delta;
+    // Now accrue the lowest cost we were able to find
+    cost += delta;
   }
 
   return cost;
