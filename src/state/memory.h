@@ -53,16 +53,16 @@ public:
     contents_.reset();
     valid_.reset();
   }
-	/** Copy state from another memory. */
-	void copy(const Memory& rhs) {
-		assert(base_ == rhs.base_);
+  /** Copy state from another memory. */
+  void copy(const Memory& rhs) {
+    assert(base_ == rhs.base_);
 
-		assert(contents_.num_fixed_bytes() == rhs.contents_.num_fixed_bytes());
-		contents_.copy(rhs.contents_);
+    assert(contents_.num_fixed_bytes() == rhs.contents_.num_fixed_bytes());
+    contents_.copy(rhs.contents_);
 
-		assert(valid_.num_fixed_bytes() == rhs.valid_.num_fixed_bytes());
-		valid_.copy(rhs.valid_);
-	}
+    assert(valid_.num_fixed_bytes() == rhs.valid_.num_fixed_bytes());
+    valid_.copy(rhs.valid_);
+  }
 
   /** Logical memory size; doesn't include headroom. */
   size_t size() const {

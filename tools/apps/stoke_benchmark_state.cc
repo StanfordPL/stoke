@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
     tc1.stack = tc2.stack;
     tc1.heap = tc2.heap;
-		tc1.data = tc2.data;
+    tc1.data = tc2.data;
   }
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto cps = benchmark_itr_arg / dur.count();
