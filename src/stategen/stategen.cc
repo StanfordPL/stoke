@@ -15,6 +15,7 @@
 #include "src/stategen/stategen.h"
 
 #include <cstdlib>
+#include <string>
 
 #include "src/sandbox/sandbox.h"
 #include "src/sandbox/state_callback.h"
@@ -341,7 +342,7 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Instruction& instr
 
   // Only sigsegv is fixable
   if (cs.code != ErrorCode::SIGSEGV_) {
-    error_message_ = "Interrupt was not segfault.";
+    error_message_ = "Interrupt was not segfault, but signal " + std::to_string((int)cs.code) + " instead.";
     return false;
   }
   // Only explicit dereferences are fixable
