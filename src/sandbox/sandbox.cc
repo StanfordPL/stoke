@@ -182,9 +182,9 @@ Sandbox& Sandbox::run(size_t index) {
 
   // Optimization: In read only mem mode, we don't need to reset output memory
   if (!all_fxns_read_only_) {
-    io->out_.stack.copy_defined(io->in_.stack);
-    io->out_.heap.copy_defined(io->in_.heap);
-    io->out_.data.copy_defined(io->in_.data);
+    //io->out_.stack = io->in_.stack;
+    //io->out_.heap = io->in_.heap;
+    //io->out_.data = io->in_.data;
   }
 
   // Reset error-related variables
@@ -593,7 +593,7 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
 void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& done, size_t mem) {
   // Save rcx (we need to use it for the shift instruction below)
   assm_.mov(rax, rcx);
-  // We have a valid address, divide by to find the corresponding address in the mask arrays
+  // We have a valid address, divide by to find the corresponding address in the mask array
   assm_.mov(rsi, rdi);
   assm_.shr(rsi, Imm8(3));
   // Now shift the byte masks based on offsets in those arrays
@@ -604,16 +604,16 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   // Restore rcx
   assm_.mov(rcx, rax);
 
-  // The read mask shouldn't change when and'ed against the def mask
+  // The read mask shouldn't change when and'ed against the valid mask
   switch (mem) {
   case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.defined_mask()));
+    assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
     break;
   case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.defined_mask()));
+    assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
     break;
   case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.defined_mask()));
+    assm_.mov((R64)rax, Imm64(cs.data.valid_mask()));
     break;
   default:
     assert(false);
@@ -641,22 +641,6 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.and_(rax, rcx);
   assm_.cmp(rax, rcx);
   assm_.jne(fail);
-
-  // Set new defined bits
-  switch (mem) {
-  case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.defined_mask()));
-    break;
-  case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.defined_mask()));
-    break;
-  case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.defined_mask()));
-    break;
-  default:
-    assert(false);
-  }
-  assm_.or_(M64(rax, rsi, Scale::TIMES_1), rcx);
 
   // Do final remapping
   switch (mem) {
@@ -1287,7 +1271,6 @@ void Sandbox::emit_mem_push(const Instruction& instr) {
   switch (instr.get_opcode()) {
   case PUSH_M16: {
     const auto rx = get_unused_word(instr);
-    emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), Imm16(0)}});
     emit_memory_instruction({XCHG_R16_M16, {rx, M16(rsp, Imm32(-2))}});
     emit_memory_instruction({MOV_R16_M16, {rx, instr.get_operand<M16>(0)}});
     emit_memory_instruction({XCHG_R16_M16, {rx, M64(rsp, Imm32(-2))}});
@@ -1296,7 +1279,6 @@ void Sandbox::emit_mem_push(const Instruction& instr) {
   }
   case PUSH_M64: {
     const auto rx = get_unused_quad(instr);
-    emit_memory_instruction({MOV_M64_IMM32, {M64(rsp, Imm32(-8)), Imm32(0)}});
     emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
     emit_memory_instruction({MOV_R64_M64, {rx, instr.get_operand<M64>(0)}});
     emit_memory_instruction({XCHG_R64_M64, {rx, M64(rsp, Imm32(-8))}});
