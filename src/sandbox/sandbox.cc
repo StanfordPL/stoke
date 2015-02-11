@@ -195,7 +195,7 @@ Sandbox& Sandbox::run(size_t index) {
   instruction_count_ = 0;
 
   // Initialize input-specific state that the instrumented function relies on
-	// State that doesn't vary on a per-input basis (ie: entrypoint_) is set elsewhere
+  // State that doesn't vary on a per-input basis (ie: entrypoint_) is set elsewhere
   out_ = &io->out_;
   in2cpu_ = io->in2cpu_.get_entrypoint();
   out2cpu_ = io->out2cpu_.get_entrypoint();
