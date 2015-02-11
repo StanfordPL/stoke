@@ -27,7 +27,7 @@
 class CfgTransformsTest : public ::testing::Test {};
 
 TEST_F(CfgTransformsTest, Simple) {
-    auto code = R"STR(.bar:
+  auto code = R"STR(.bar:
 movq $0x1, %rax
 movq %rax, %rcx
 movq (%rax), %rcx
