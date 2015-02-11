@@ -44,7 +44,7 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
   heap_out_ = heap_out;
 
   reference_out_.clear();
-  recompute_defs(target.live_outs(), target_gp_out_, target_sse_out_);
+  recompute_defs(target.live_outs(), target_gp_out_, target_rf_out_, target_sse_out_);
 
   sandbox_->run(target);
   for (auto i = sandbox_->result_begin(), ie = sandbox_->result_end(); i != ie; ++i) {
@@ -53,7 +53,7 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
   return *this;
 }
 
-void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm>& sses) {
+void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Eflags>& rfs, vector<Xmm>& sses) {
   gps.clear();
   for (const auto& r : rls) {
     if (rs.contains(r)) {
@@ -63,6 +63,15 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm
   for (const auto& r : rbs) {
     if (rs.contains(r)) {
       gps.push_back(r64s[r]);
+    }
+  }
+
+  rfs.clear();
+  for (auto f : {
+         eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
+       }) {
+    if (rs.contains(f)) {
+      rfs.push_back(f);
     }
   }
 
@@ -156,7 +165,7 @@ Cost CostFunction::max_correctness(const Cfg& cfg, const Cost max) {
   sandbox_->expert_recompile(cfg);
   sandbox_->expert_recycle_labels();
 
-  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_sse_out_);
+  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_rf_out_, rewrite_sse_out_);
 
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
@@ -177,7 +186,7 @@ Cost CostFunction::sum_correctness(const Cfg& cfg, const Cost max) {
   sandbox_->expert_recompile(cfg);
   sandbox_->expert_recycle_labels();
 
-  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_sse_out_);
+  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_rf_out_, rewrite_sse_out_);
 
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
@@ -372,13 +381,10 @@ Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Re
 
 Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r) const {
   Cost cost = 0;
-
-  auto flags = {eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf};
-  for (auto flag : flags) {
-    if (live_out_.contains(flag)) {
-      size_t i = flag.index();
-      cost += (t.is_set(i) ^ r.is_set(i));
-    }
+  for (auto f : target_rf_out_) {
+    const auto i = f.index();
+    const auto def = find(rewrite_rf_out_.begin(), rewrite_rf_out_.end(), f) != rewrite_rf_out_.end();
+    cost += def ? (t.is_set(i) ^ r.is_set(i)) : 1;
   }
 
   return cost;
@@ -511,7 +517,13 @@ Cost CostFunction::latency_performance(const Cfg& cfg) const {
     }
 
     // Increment latency by block latency scaled by nesting penalty
-    latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
+    // The call to pow() is expensive, so we hide it behind a faster check
+    const auto nd = cfg.nesting_depth(*b);
+    if (nd > 1) {
+      latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
+    } else {
+      latency += block_latency;
+    }
   }
 
   // Apply penalty to codes that mix avx and sse instructions

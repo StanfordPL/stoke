@@ -19,6 +19,8 @@
 #include <setjmp.h>
 #include <signal.h>
 
+#include "src/sandbox/dispatch_table.h"
+
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
@@ -192,13 +194,13 @@ Sandbox& Sandbox::run(size_t index) {
   // Reset instruction count
   instruction_count_ = 0;
 
-  // Initialize state that the instrumented function relies on
+  // Initialize input-specific state that the instrumented function relies on
+  // State that doesn't vary on a per-input basis (ie: entrypoint_) is set elsewhere
   out_ = &io->out_;
   in2cpu_ = io->in2cpu_.get_entrypoint();
   out2cpu_ = io->out2cpu_.get_entrypoint();
   cpu2out_ = io->cpu2out_.get_entrypoint();
   map_addr_ = io->map_addr_.get_entrypoint();
-  entrypoint_ = fxns_[main_fxn_]->get_entrypoint();
   sym_table_ = io->in_.sym_table.flat_table_.data();
   min_label_ = -io->in_.sym_table.min_label_;
 
@@ -822,69 +824,63 @@ void Sandbox::emit_after(const Label& label, size_t line) {
 }
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint64_t hex_offset, const Label& exit) {
-  // First things first. If it's unsupported, give up.
-  if (!is_supported(instr)) {
+  static DispatchTable table;
+  switch(table.lookup(instr)) {
+  case DispatchTable::SIGILL_:
     emit_signal_trap_call(ErrorCode::SIGILL_);
-  }
-  // Labels are translated directly
-  // (unless it's the name of the function... see emit_function())
-  else if (instr.is_label_defn()) {
-    const auto label = instr.get_operand<Label>(0);
-    if (label != fxn) {
+    break;
+  case DispatchTable::LABEL_DEFN:
+    if (instr.get_operand<Label>(0) != fxn) {
       assm_.assemble(instr);
     }
-  }
-  // Jumps are instrumented with premature exit logic
-  else if (instr.is_any_jump()) {
+    break;
+  case DispatchTable::ANY_JUMP:
     emit_jump(instr);
-  }
-  // Limited support for calls, label arguments are allowed
-  else if (instr.get_opcode() == CALL_LABEL) {
+    break;
+  case DispatchTable::CALL_LABEL:
     emit_call(instr, fxn, hex_offset);
-  }
-  // Returns are turned into jumps to the function-wide common return
-  else if (instr.get_opcode() == RET) {
+    break;
+  case DispatchTable::RET:
     emit_ret(instr, exit);
-  }
-  // Explicit memory dereferences need some pretty serious sandboxing
-  else if (instr.is_explicit_memory_dereference()) {
-    if (instr.is_div() || instr.is_idiv()) {
-      emit_mem_div(instr);
-    } else if (instr.is_push()) {
-      emit_mem_push(instr);
-    } else if (instr.is_pop()) {
-      emit_mem_pop(instr);
-    } else if (instr.is_any_bt()) {
-      emit_mem_bt(instr);
-    } else {
-      emit_memory_instruction(instr, fxn, hex_offset);
-    }
-  }
-  // Implicits are even harder (we most likely bail out here as well)
-  else if (instr.is_implicit_memory_dereference()) {
-    if (instr.is_push()) {
-      emit_push(instr);
-    } else if (instr.is_pushf()) {
-      emit_pushf(instr);
-    } else if (instr.is_pop()) {
-      emit_pop(instr);
-    } else if (instr.is_popf()) {
-      emit_popf(instr);
-    } else if (instr.is_leave()) {
-      emit_leave(instr);
-    } else {
-      emit_signal_trap_call(ErrorCode::SIGILL_);
-    }
-  }
-  // For everything else there are a few cases but mostly we hope for the best
-  else {
-    if (instr.is_div() || instr.is_idiv()) {
-      emit_reg_div(instr);
-    } else if (instr.get_opcode() == UD2) {
-      emit_signal_trap_call(ErrorCode::SIGILL_);
-    } else {
-      assm_.assemble(instr);
-    }
+    break;
+  case DispatchTable::MEM_DIV:
+    emit_mem_div(instr);
+    break;
+  case DispatchTable::MEM_PUSH:
+    emit_mem_push(instr);
+    break;
+  case DispatchTable::MEM_POP:
+    emit_mem_pop(instr);
+    break;
+  case DispatchTable::MEM_BT:
+    emit_mem_bt(instr);
+    break;
+  case DispatchTable::MEM_INSTR:
+    emit_memory_instruction(instr, fxn, hex_offset);
+    break;
+  case DispatchTable::PUSH:
+    emit_push(instr);
+    break;
+  case DispatchTable::PUSHF:
+    emit_pushf(instr);
+    break;
+  case DispatchTable::POP:
+    emit_pop(instr);
+    break;
+  case DispatchTable::POPF:
+    emit_popf(instr);
+    break;
+  case DispatchTable::LEAVE:
+    emit_leave(instr);
+    break;
+  case DispatchTable::REG_DIV:
+    emit_reg_div(instr);
+    break;
+  case DispatchTable::INSTR:
+    assm_.assemble(instr);
+    break;
+  default:
+    assert(false);
   }
 }
 
