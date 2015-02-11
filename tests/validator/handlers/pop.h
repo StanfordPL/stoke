@@ -27,7 +27,6 @@ TEST_F(ValidatorPopTest, PopSp) {
   cs.stack.resize(lower, 40);
   for(uint64_t i = lower; i < lower + 40; ++i) {
     cs.stack.set_valid(i, true);
-    cs.stack.set_defined(i, true);
   }
 
   check_circuit(cs);
@@ -45,7 +44,6 @@ TEST_F(ValidatorPopTest, PopRsp) {
   cs.stack.resize(lower, 40);
   for(uint64_t i = lower; i < lower + 40; ++i) {
     cs.stack.set_valid(i, true);
-    cs.stack.set_defined(i, true);
   }
 
   check_circuit(cs);
