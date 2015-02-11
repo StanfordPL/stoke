@@ -286,7 +286,6 @@ void StateGen::randomize_mem(Memory& mem) const {
   for (auto i = mem.lower_bound(), ie = mem.upper_bound(); i < ie; ++i) {
     if (!mem.is_valid(i)) {
       mem.set_valid(i, true);
-      mem.set_defined(i, true);
       mem[i] = rand() % 256;
     }
   }
