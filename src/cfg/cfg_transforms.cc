@@ -44,4 +44,46 @@ void CfgTransforms::remove_nop(Cfg& cfg) {
   cfg.recompute();
 }
 
+void CfgTransforms::remove_redundant(Cfg& cfg) {
+  bool changed = true;
+  while (changed) {
+    // loop will terminate, as we remove at least one instruction in every iteration, except maybe the last one
+    changed = false;
+    Code temp;
+    for (stoke::Cfg::reachable_iterator b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+      size_t c = 0;
+      for (auto i = cfg.instr_begin(*b), ie = cfg.instr_end(*b); i != ie; ++i, ++c) {
+        bool keep = true;
+        if ((*i).is_label_defn() || (*i).is_any_jump() ||
+            (*i).is_any_call() || (*i).is_any_return() ||
+            (*i).is_any_loop()) {
+          // we always keep control flow
+        } else {
+          if ((*i).maybe_write_memory()) {
+            // we always keep instructions that write memory, as we cannot reason
+            // about whether the memory written is read again
+          } else {
+            auto instr_outputs = cfg.maybe_write_set(*i);
+            auto live_regs_after_instruction = cfg.live_outs({*b, c});
+            if ((instr_outputs & live_regs_after_instruction) == x64asm::RegSet::empty()) {
+              // don't keep the instruction if it doesn't produce any values which
+              // are live right after that instruction
+              keep = false;
+            }
+          }
+        }
+
+        if (keep) {
+          temp.push_back(*i);
+        } else {
+          changed = true; // we removed an instruction
+        }
+      }
+    }
+
+    cfg.get_code() = temp;
+    cfg.recompute();
+  }
+}
+
 } // namespace stoke
