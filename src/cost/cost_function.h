@@ -198,16 +198,20 @@ private:
 
   /** The set of general purpose registers live out for the target. */
   std::vector<x64asm::R64> target_gp_out_;
+  /** The set of rflags that are live out for the target. */
+  std::vector<x64asm::Eflags> target_rf_out_;
   /** The set of sse registers live out for the target. */
   std::vector<x64asm::Xmm> target_sse_out_;
   /** The set of general purpose registers live out for a rewrite. */
   std::vector<x64asm::R64> rewrite_gp_out_;
+  /** The set of rflags that are live out for a rewrite. */
+  std::vector<x64asm::Eflags> rewrite_rf_out_;
   /** The set of sse registers live out for a rewrite. */
   std::vector<x64asm::Xmm> rewrite_sse_out_;
 
   /** Convert a RegSet into a vector of registers. */
   void recompute_defs(const x64asm::RegSet& rs, std::vector<x64asm::R64>& gps,
-                      std::vector<x64asm::Xmm>& sses);
+                      std::vector<x64asm::Eflags>& rfs, std::vector<x64asm::Xmm>& sses);
 
   /** Evaluate size of assembed program. */
   Cost assembled_size_cost(const Cfg& cfg);
