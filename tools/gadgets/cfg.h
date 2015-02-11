@@ -63,11 +63,11 @@ private:
   }
 
   x64asm::Code fix_code(const x64asm::Code& code) const {
-		// This function adds a retq to a code that doesn't have any
-		// It's causing endless warnings for the time being for search states which are
-		// default constructed to empty functions.
-		// I tried changing that, but ran into segfaults, so for the time being, this is
-		// deactivated.
+    // This function adds a retq to a code that doesn't have any
+    // It's causing endless warnings for the time being for search states which are
+    // default constructed to empty functions.
+    // I tried changing that, but ran into segfaults, so for the time being, this is
+    // deactivated.
     for (const auto& instr : code) {
       if (instr.is_ret()) {
         return code;
