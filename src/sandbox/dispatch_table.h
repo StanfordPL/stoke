@@ -24,40 +24,40 @@ namespace stoke {
 // This class addresses a performance issue that appears in the stoke sandbox.
 // As support for instructions has grown, the time spent in emit_instruction()
 // dispatching to various handlers has increased. This class builds a static lookup
-// table that turns a chain of if/else if/s into a switch statement. 
+// table that turns a chain of if/else if/s into a switch statement.
 
 class DispatchTable {
-	public:
-		enum Entry {
-			SIGILL_ = 0,
-			LABEL_DEFN,
-			ANY_JUMP,
-			CALL_LABEL,
-			RET,
-			MEM_DIV,
-			MEM_PUSH,
-			MEM_POP,
-			MEM_BT,
-			MEM_INSTR,
-			PUSH,
-			PUSHF,
-			POP,
-			POPF,
-			LEAVE,
-			REG_DIV,
-			INSTR
-		};
+public:
+  enum Entry {
+    SIGILL_ = 0,
+    LABEL_DEFN,
+    ANY_JUMP,
+    CALL_LABEL,
+    RET,
+    MEM_DIV,
+    MEM_PUSH,
+    MEM_POP,
+    MEM_BT,
+    MEM_INSTR,
+    PUSH,
+    PUSHF,
+    POP,
+    POPF,
+    LEAVE,
+    REG_DIV,
+    INSTR
+  };
 
-		DispatchTable();
-		
-		Entry lookup(const x64asm::Instruction& instr) const {
-			const auto idx = (size_t)instr.get_opcode();
-			assert(idx < X64ASM_NUM_OPCODES);
-			return table_[idx];
-		}
+  DispatchTable();
 
-	private:
-		std::array<Entry, X64ASM_NUM_OPCODES> table_;
+  Entry lookup(const x64asm::Instruction& instr) const {
+    const auto idx = (size_t)instr.get_opcode();
+    assert(idx < X64ASM_NUM_OPCODES);
+    return table_[idx];
+  }
+
+private:
+  std::array<Entry, X64ASM_NUM_OPCODES> table_;
 };
 
 } // namespace stoke
