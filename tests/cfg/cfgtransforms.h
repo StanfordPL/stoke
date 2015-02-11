@@ -27,7 +27,7 @@
 class CfgTransformsTest : public ::testing::Test {};
 
 TEST_F(CfgTransformsTest, Simple) {
-  auto code = R"STR(.bar:
+    auto code = R"STR(.bar:
 movq $0x1, %rax
 movq %rax, %rcx
 movq (%rax), %rcx
@@ -49,7 +49,20 @@ retq
   stoke::Cfg cfg(t, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
   stoke::CfgTransforms tforms;
-  std::cout << cfg.get_code() << std::endl << std::endl;
   tforms.remove_redundant(cfg);
-  std::cout << cfg.get_code() << std::endl;
+
+  ss.clear();
+  ss.str("");
+  ss << cfg.get_code();
+
+  ASSERT_EQ(ss.str(), R"STR(.bar:
+movq $0x1, %rcx
+jnz .foo
+movq $0x3, %rcx
+movq $0x0, %rbx
+.foo:
+movq $0x0, %rax
+movq $0x0, (%rax)
+callq .blah
+retq )STR");
 }
