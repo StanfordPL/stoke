@@ -30,7 +30,7 @@ TEST_F(CfgTransformsTest, Simple) {
   auto code = R"STR(.bar:
 movq $0x1, %rax
 movq %rax, %rcx
-movq (%rax), %rcx
+movq (%r8), %rcx
 movq $0x1, %rcx
 jnz .foo
 movq $0x3, %rcx
@@ -56,6 +56,7 @@ retq
   ss << cfg.get_code();
 
   ASSERT_EQ(ss.str(), R"STR(.bar:
+movq (%r8), %rcx
 movq $0x1, %rcx
 jnz .foo
 movq $0x3, %rcx
