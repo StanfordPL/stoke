@@ -48,12 +48,18 @@ void CfgTransforms::remove_nop(Cfg& cfg) {
 control flow or effect on registers (e.g. memory writes, possibility of
 signals, etc.). */
 bool has_side_effect(x64asm::Instruction& instr) {
+  // there are more instructions that have side-effects, that are not
+  // important here (e.g. ones that the sandbox doesn't support, like ud2).
   return instr.is_memory_dereference() ||
          (instr.get_opcode() >= DIV_M16 && instr.get_opcode() <= DIVSS_XMM_XMM);
 }
 
 void CfgTransforms::remove_redundant(Cfg& cfg) {
   bool changed = true;
+  // we keep removing instructions until the cfg doesn't change any longer
+  // this is necessary because removing an instruction might allow the dataflow
+  // analysis to realize that some other instruction is also redundant.
+  // there might be a way to do this without iterating, but for now this will do.
   while (changed) {
     // loop will terminate, as we remove at least one instruction in every iteration, except maybe the last one
     changed = false;
