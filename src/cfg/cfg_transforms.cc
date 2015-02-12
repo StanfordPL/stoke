@@ -61,16 +61,17 @@ void CfgTransforms::remove_redundant(Cfg& cfg) {
     for (stoke::Cfg::reachable_iterator b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
       size_t c = 0;
       for (auto i = cfg.instr_begin(*b), ie = cfg.instr_end(*b); i != ie; ++i, ++c) {
+        Instruction instr = *i;
         bool keep = true;
-        if ((*i).is_label_defn() || (*i).is_any_jump() ||
-            (*i).is_any_call() || (*i).is_any_return() ||
-            (*i).is_any_loop()) {
+        if (instr.is_label_defn() || instr.is_any_jump() ||
+            instr.is_any_call() || instr.is_any_return() ||
+            instr.is_any_loop()) {
           // we always keep control flow
-        } else if (has_side_effect(*i)) {
+        } else if (has_side_effect(instr)) {
           // we always keep instructions that have any side-effect other than
           // on the registers (hardware exceptions, memory writes, etc.)
         } else {
-          auto instr_outputs = cfg.maybe_write_set(*i);
+          auto instr_outputs = cfg.maybe_write_set(instr);
           auto live_regs_after_instruction = cfg.live_outs({*b, c});
           if ((instr_outputs & live_regs_after_instruction) == x64asm::RegSet::empty()) {
             // don't keep the instruction if it doesn't produce any values which
