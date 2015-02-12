@@ -344,9 +344,9 @@ int main(int argc, char** argv) {
   }
 
   CfgTransforms tforms;
+  tforms.remove_redundant(state.best_correct);
   tforms.remove_unreachable(state.best_correct);
   tforms.remove_nop(state.best_correct);
-  tforms.remove_redundant(state.best_correct);
 
   auto final_stats = search.get_statistics();
 
