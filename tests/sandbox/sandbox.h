@@ -204,7 +204,7 @@ TEST(SandboxTest, ModifyingRbxFailsIfAbiEnforced) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::SIGSEGV_, sb.result_begin()->code);
+  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_ABI_VIOLATION, sb.result_begin()->code);
 }
 
 
@@ -335,7 +335,7 @@ TEST(SandboxTest, InfiniteLoopFails) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::SIGKILL_, sb.result_begin()->code);
+  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS, sb.result_begin()->code);
 
 
 }
@@ -405,7 +405,7 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::SIGKILL_, sb.result_begin()->code);
+  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS, sb.result_begin()->code);
 
 
 }
@@ -455,7 +455,7 @@ TEST(SandboxTest, UndefSymbolError) {
 
   // Run it (we shouldn't ever actually run, so testcase doesn't matter)
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::SIGBUS_, sb.result_begin()->code);
+  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_LINKER_ERROR, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, Issue239) {
@@ -649,7 +649,7 @@ TEST(SandboxTest, PopfFailCase) {
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::SIGSEGV_, sb.result_begin()->code);
+  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_INVALID_POPF, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, PopfqFailCase) {
@@ -672,7 +672,7 @@ TEST(SandboxTest, PopfqFailCase) {
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::SIGSEGV_, sb.result_begin()->code);
+  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_INVALID_POPF, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, PopfqWorksCase) {
