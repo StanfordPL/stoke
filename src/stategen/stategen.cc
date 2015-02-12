@@ -342,7 +342,7 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Instruction& instr
 
   // Only sigsegv is fixable
   if (cs.code != ErrorCode::SIGSEGV_) {
-    error_message_ = "Interrupt was not segfault, but signal " + std::to_string((int)cs.code) + " instead.";
+    error_message_ = "Interrupt was not segfault, but signal " + std::to_string((int)cs.code) + " [" + readable_error_code(cs.code) + "] instead.";
     return false;
   }
   // Only explicit dereferences are fixable
