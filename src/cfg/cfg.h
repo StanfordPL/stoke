@@ -369,62 +369,6 @@ public:
     };
   }
 
-private:
-  /** User-specified underlying code. */
-  x64asm::Code code_;
-  /** User-specified registers that are defined on entry to this graph. */
-  x64asm::RegSet fxn_def_ins_;
-  /** User-specified registers that are defined on exit from this graph. */
-  x64asm::RegSet fxn_live_outs_;
-
-  // This temporary state is maintained to reduce the overhead of repeated allocations
-
-  /** A set of indices that correspond to the beginning of basic blocks. */
-  cpputil::BitVector boundaries_;
-  /** A stack of basic block ids. */
-  std::stack<size_t, std::vector<size_t>> block_stack_;
-  /** A list of remaining predecessors for each block. */
-  std::vector<size_t> remaining_preds_;
-  /** A sorted list of basic block ids. */
-  std::vector<size_t> block_sort_;
-  /** A map from labels to the basic blocks they mark the beginning of. */
-  std::unordered_map<x64asm::Label, size_t> labels_;
-
-  /** A list of the indices that correspond to the first instruction in each basic block. */
-  std::vector<size_t> blocks_;
-  /** Basic block predecessor lists. */
-  std::vector<std::vector<id_type>> preds_;
-  /** Basic block successor lists. */
-  std::vector<std::vector<id_type>> succs_;
-  /** The set of reachable basic blocks. */
-  cpputil::BitVector reachable_;
-  /** Scratch space for computing reachability. */
-  std::vector<id_type> work_list_;
-  /** The dominated by relation. */
-  std::vector<cpputil::BitVector> doms_;
-  /** A map from back edges to the set of basic blocks in the corresponding natural loop. */
-  cpputil::CppUtilMap<std::map<edge_type, loop_type>> loops_;
-  /** The number of loops that each basic block is contained in. */
-  std::vector<size_t> nesting_depth_;
-
-  /** The set of registers defined in for every instruction. The final element refers to the exit block. */
-  std::vector<x64asm::RegSet> def_ins_;
-  /** The set of registers defined out of every block. */
-  std::vector<x64asm::RegSet> def_outs_;
-  /** The gen set for each block. */
-  std::vector<x64asm::RegSet> gen_;
-  /** The kill set for each block. */
-  std::vector<x64asm::RegSet> kill_;
-
-  /** The set of registers live out for every instruction. The final element refers to the exit block. */
-  std::vector<x64asm::RegSet> live_outs_;
-  /** The set of registers live in at each instruction */
-  std::vector<x64asm::RegSet> live_ins_;
-  /** The use set for each block. */
-  std::vector<x64asm::RegSet> liveness_use_;
-  /** The def set for each block. */
-  std::vector<x64asm::RegSet> liveness_kill_;
-
   /** Dataflow information about an instruction (more precise for function calls
     that instr.must/maybe_read/write/undef_set). */
   x64asm::RegSet must_read_set(const x64asm::Instruction& instr) const {
@@ -509,6 +453,62 @@ private:
     }
     return instr.maybe_undef_set();
   }
+
+private:
+  /** User-specified underlying code. */
+  x64asm::Code code_;
+  /** User-specified registers that are defined on entry to this graph. */
+  x64asm::RegSet fxn_def_ins_;
+  /** User-specified registers that are defined on exit from this graph. */
+  x64asm::RegSet fxn_live_outs_;
+
+  // This temporary state is maintained to reduce the overhead of repeated allocations
+
+  /** A set of indices that correspond to the beginning of basic blocks. */
+  cpputil::BitVector boundaries_;
+  /** A stack of basic block ids. */
+  std::stack<size_t, std::vector<size_t>> block_stack_;
+  /** A list of remaining predecessors for each block. */
+  std::vector<size_t> remaining_preds_;
+  /** A sorted list of basic block ids. */
+  std::vector<size_t> block_sort_;
+  /** A map from labels to the basic blocks they mark the beginning of. */
+  std::unordered_map<x64asm::Label, size_t> labels_;
+
+  /** A list of the indices that correspond to the first instruction in each basic block. */
+  std::vector<size_t> blocks_;
+  /** Basic block predecessor lists. */
+  std::vector<std::vector<id_type>> preds_;
+  /** Basic block successor lists. */
+  std::vector<std::vector<id_type>> succs_;
+  /** The set of reachable basic blocks. */
+  cpputil::BitVector reachable_;
+  /** Scratch space for computing reachability. */
+  std::vector<id_type> work_list_;
+  /** The dominated by relation. */
+  std::vector<cpputil::BitVector> doms_;
+  /** A map from back edges to the set of basic blocks in the corresponding natural loop. */
+  cpputil::CppUtilMap<std::map<edge_type, loop_type>> loops_;
+  /** The number of loops that each basic block is contained in. */
+  std::vector<size_t> nesting_depth_;
+
+  /** The set of registers defined in for every instruction. The final element refers to the exit block. */
+  std::vector<x64asm::RegSet> def_ins_;
+  /** The set of registers defined out of every block. */
+  std::vector<x64asm::RegSet> def_outs_;
+  /** The gen set for each block. */
+  std::vector<x64asm::RegSet> gen_;
+  /** The kill set for each block. */
+  std::vector<x64asm::RegSet> kill_;
+
+  /** The set of registers live out for every instruction. The final element refers to the exit block. */
+  std::vector<x64asm::RegSet> live_outs_;
+  /** The set of registers live in at each instruction */
+  std::vector<x64asm::RegSet> live_ins_;
+  /** The use set for each block. */
+  std::vector<x64asm::RegSet> liveness_use_;
+  /** The def set for each block. */
+  std::vector<x64asm::RegSet> liveness_kill_;
 
   /** Performs a forward topological sort of reachable blocks and places the result in block_sort_ */
   void forward_topo_sort();

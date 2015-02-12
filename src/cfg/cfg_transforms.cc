@@ -44,4 +44,61 @@ void CfgTransforms::remove_nop(Cfg& cfg) {
   cfg.recompute();
 }
 
+/** Returns true if the instruction has any visible side-effect other than
+control flow or effect on registers (e.g. memory writes, possibility of
+signals, etc.). */
+bool has_side_effect(x64asm::Instruction& instr) {
+  // there are more instructions that have side-effects, that are not
+  // important here (e.g. ones that the sandbox doesn't support, like ud2).
+  return instr.is_memory_dereference() ||
+         (instr.get_opcode() >= DIV_M16 && instr.get_opcode() <= DIVSS_XMM_XMM);
+}
+
+void CfgTransforms::remove_redundant(Cfg& cfg) {
+  bool changed = true;
+  // we keep removing instructions until the cfg doesn't change any longer
+  // this is necessary because removing an instruction might allow the dataflow
+  // analysis to realize that some other instruction is also redundant.
+  // there might be a way to do this without iterating, but for now this will
+  // do.
+  while (changed) {
+    // loop will terminate, as we remove at least one instruction in every
+    // iteration, except maybe the last one
+    changed = false;
+    Code temp;
+    for (stoke::Cfg::reachable_iterator b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+      size_t c = 0;
+      for (auto i = cfg.instr_begin(*b), ie = cfg.instr_end(*b); i != ie; ++i, ++c) {
+        Instruction instr = *i;
+        bool keep = true;
+        if (instr.is_label_defn() || instr.is_any_jump() ||
+            instr.is_any_call() || instr.is_any_return() ||
+            instr.is_any_loop()) {
+          // we always keep control flow
+        } else if (has_side_effect(instr)) {
+          // we always keep instructions that have any side-effect other than
+          // on the registers (hardware exceptions, memory writes, etc.)
+        } else {
+          auto instr_outputs = cfg.maybe_write_set(instr);
+          auto live_regs_after_instruction = cfg.live_outs({*b, c});
+          if ((instr_outputs & live_regs_after_instruction) == x64asm::RegSet::empty()) {
+            // don't keep the instruction if it doesn't produce any values which
+            // are live right after that instruction
+            keep = false;
+          }
+        }
+
+        if (keep) {
+          temp.push_back(*i);
+        } else {
+          changed = true; // we removed an instruction
+        }
+      }
+    }
+
+    cfg.get_code() = temp;
+    cfg.recompute();
+  }
+}
+
 } // namespace stoke
