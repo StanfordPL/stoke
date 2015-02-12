@@ -19,10 +19,17 @@ import time
 
 def main():
   if len(sys.argv)-1 == 0:
-    print "usage: "+sys.argv[0]+" <command> [args]"
+    print "usage: "+sys.argv[0]+" [-n max] <command> [args]"
     print ""
     print "Executes <command> repeatably, and checks how often the command succeeds (based on the return value)."
     sys.exit(1)
+
+  if sys.argv[1] == "-n":
+    max_iterations = int(sys.argv[2])
+    index = 3
+  else:
+    max_iterations = 0
+    index = 1
 
   n = 0
   succ = 0
@@ -30,9 +37,9 @@ def main():
   unsucctime = 0
   totaltime = 0
 
-  while True:
+  while max_iterations == 0 or n < max_iterations:
     start = time.time()
-    val, output = execute(" ".join(sys.argv[1:]))
+    val, output = execute(" ".join(sys.argv[index:]))
     end = time.time()
     n += 1
     if val == 0:
@@ -41,7 +48,7 @@ def main():
     else:
       unsucctime += end - start
     totaltime += end - start
-    print "Success: %d/%d (%.3f%%)" % (succ, n, float(succ)/float(n))
+    print "Success: %d/%d (%.3f%%)" % (succ, n, float(succ*100)/float(n))
     if succ == 0:
       succtimeavg = 0
     else:

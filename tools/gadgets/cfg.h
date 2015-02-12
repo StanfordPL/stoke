@@ -31,7 +31,7 @@ namespace stoke {
 class CfgGadget : public Cfg {
 public:
   CfgGadget(const x64asm::Code& code, const std::vector<TUnit>& aux_fxns)
-    : Cfg(fix_code(code), def_in(live_out()), live_out()) {
+    : Cfg(code, def_in(live_out()), live_out()) {
     // Emit warning if register values were guessed
     reg_warning();
 
@@ -63,6 +63,11 @@ private:
   }
 
   x64asm::Code fix_code(const x64asm::Code& code) const {
+    // This function adds a retq to a code that doesn't have any
+    // It's causing endless warnings for the time being for search states which are
+    // default constructed to empty functions.
+    // I tried changing that, but ran into segfaults, so for the time being, this is
+    // deactivated.
     for (const auto& instr : code) {
       if (instr.is_ret()) {
         return code;
