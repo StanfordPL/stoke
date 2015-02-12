@@ -273,9 +273,9 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
                 state[eflags_zf]
               ));
 
-    // SET PF to pairity of result, unless there's no change
+    // SET PF to parity of result, unless there's no change
     state.set(eflags_pf, set_szp.ite(
-                result[7][0].pairity(),
+                result[7][0].parity(),
                 state[eflags_pf]
               ));
 
