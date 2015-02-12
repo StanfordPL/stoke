@@ -39,7 +39,7 @@ bool Cfg::performs_undef_read() const {
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
-      const auto r = must_read_set(code_[idx]);
+      const auto r = maybe_read_set(code_[idx]);
       const auto di = def_ins_[idx];
 
       if ((r & di) != r) {
