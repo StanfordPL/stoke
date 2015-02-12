@@ -181,6 +181,12 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   if (give_up_now) {
     state.interrupted = true;
   }
+
+  // make sure Cfg's are in a valid state (e.g. liveness information, which we
+  // do not update during search)
+  state.current.recompute();
+  state.best_correct.recompute();
+  state.best_yet.recompute();
 }
 
 StatisticsCallbackData Search::get_statistics() const {
