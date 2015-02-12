@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -211,8 +211,7 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
                        size_t total_restarts,
                        size_t total_iterations, time_point<steady_clock> start,
-                       duration<double> search_elapsed,
-                       size_t total_cleanup_iterations) {
+                       duration<double> search_elapsed) {
   auto total_elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
   sep(Console::msg(), "#");
   Console::msg() << "Final update:" << endl << endl;
@@ -220,9 +219,6 @@ void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
   Console::msg() << "Number of attempted searches:  " << total_restarts << endl;
   Console::msg() << "Total search time:             " << search_elapsed.count() << "s" << endl;
   Console::msg() << "Total time:                    " << total_elapsed.count() << "s" << endl;
-  if (total_cleanup_iterations > 0) {
-    Console::msg() << "Additional cleanup iterations: " << total_cleanup_iterations << endl;
-  }
   Console::msg() << endl << "Statistics of last search" << endl << endl;
   // get the state first (because it updates some static variables)
   ostringstream stream;
@@ -303,7 +299,7 @@ int main(int argc, char** argv) {
 
     if (state.interrupted) {
       Console::msg() << endl;
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, 0);
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
       Console::msg() << "Search interrupted!" << endl;
       exit(1);
     }
@@ -342,7 +338,7 @@ int main(int argc, char** argv) {
       Console::msg() << verifier.get_counter_example() << endl << endl;
       training_sb.insert_input(verifier.get_counter_example());
     } else {
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, 0);
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
       Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
     }
   }
@@ -358,7 +354,7 @@ int main(int argc, char** argv) {
   rewrite.name = target_arg.value().name;
   rewrite.code = state.best_correct.get_code();
 
-  show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed, total_cleanup_iterations);
+  show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed);
   Console::msg() << final_msg << endl;
 
   ofstream ofs(out.value());
