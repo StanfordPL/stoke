@@ -123,12 +123,12 @@ TEST_F(IntegrationTest, TutorialTest) {
 
 
 
-TEST_F(IntegrationTest, PairityTest) {
+TEST_F(IntegrationTest, ParityTest) {
 
   uint64_t diff_1;
   uint64_t diff_2;
 
-  set_working_dir("examples/pairity");
+  set_working_dir("examples/parity");
 
   // Build and test original program
   EXPECT_EQ(0ull, shell("make clean orig"));
@@ -142,7 +142,7 @@ TEST_F(IntegrationTest, PairityTest) {
   size_t good = 0;
   for(size_t i = 0; i < 10; ++i) {
     if(!shell("make search")) {
-      if(wc("examples/pairity/result.s") < 20) {
+      if(wc("examples/parity/result.s") < 20) {
         good++;
         break;
       }
