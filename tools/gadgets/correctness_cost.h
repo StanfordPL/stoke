@@ -12,43 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_COST_FUNCTION_H
-#define STOKE_TOOLS_GADGETS_COST_FUNCTION_H
+#ifndef STOKE_TOOLS_GADGETS_CORRECTNESS_COST_H
+#define STOKE_TOOLS_GADGETS_CORRECTNESS_COST_H
 
 #include "src/cfg/cfg.h"
 #include "src/cost/correctness.h"
 #include "src/cost/cost_function.h"
-#include "src/cost/expr.h"
-#include "src/cost/size.h"
 #include "src/sandbox/sandbox.h"
 #include "tools/args/correctness.h"
 #include "tools/args/in_out.h"
 #include "tools/args/performance.h"
 #include "tools/args/cost.h"
-#include "tools/gadgets/correctness_cost.h"
 
 namespace stoke {
 
-class CostFunctionGadget : public CostFunction {
-  public:
-    CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(), fxn_(*build_fxn(target, sb)) {
-    }
+class CorrectnessCostGadget : public CorrectnessCost {
+public:
+  CorrectnessCostGadget(const Cfg& target, Sandbox* sb) : CorrectnessCost(sb) {
+    set_target(target, stack_out_arg, heap_out_arg);
 
-    result_type operator()(const Cfg& cfg, Cost max) const {
-      return fxn_(cfg, max); 
-    }
-
-  private:
-
-    const CostFunction& fxn_;
-
-    CostFunction* build_fxn(const Cfg& target, Sandbox* sb) const {
-      CorrectnessCostGadget* ccg = new CorrectnessCostGadget(target, sb);
-      SizeCost* sc = new SizeCost();
-      ExprCost* ec(*ccg, *sc, ExprCost::Operator::PLUS);
-      return ec;
-    }
-
+    set_distance(distance_arg);
+    set_sse(sse_width_arg, sse_count_arg);
+    set_relax(!no_relax_reg_arg, relax_mem_arg, blocked_heap_opt_arg);
+    set_penalty(misalign_penalty_arg, sig_penalty_arg, nesting_penalty_arg, sse_avx_penalty_arg);
+    set_min_ulp(min_ulp_arg);
+    set_reduction(reduction_arg);
+  }
 };
 
 } // namespace stoke
