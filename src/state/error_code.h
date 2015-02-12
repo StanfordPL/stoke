@@ -29,6 +29,10 @@ enum class ErrorCode {
   SIGSEGV_ = 11,
 
   SIGCUSTOM_EXCEEDED_MAX_JUMPS = 256,
+  SIGCUSTOM_INVALID_POPF = 257,
+  SIGCUSTOM_LINKER_ERROR = 258,
+  SIGCUSTOM_ABI_VIOLATION = 259,
+  SIGCUSTOM_NO_RETURN = 260,
 };
 
 std::string readable_error_code(ErrorCode ec);

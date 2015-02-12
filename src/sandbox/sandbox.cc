@@ -211,7 +211,7 @@ Sandbox& Sandbox::run(size_t index) {
 
   // Run the code (control exits abnormally for sigfpe or if linking failed)
   if (!lnkr_.good()) {
-    io->out_.code = ErrorCode::SIGBUS_;
+    io->out_.code = ErrorCode::SIGCUSTOM_LINKER_ERROR;
   } else if (!sigsetjmp(buf_, 1)) {
     io->out_.code = harness_.call<ErrorCode>();
   } else {
@@ -220,7 +220,7 @@ Sandbox& Sandbox::run(size_t index) {
 
   // Finalize output state
   if (abi_check_ && !check_abi(*io)) {
-    io->out_.code = ErrorCode::SIGSEGV_;
+    io->out_.code = ErrorCode::SIGCUSTOM_ABI_VIOLATION;
   }
   if (count_instructions_) {
     io->out_.latency_seen = instruction_count_;
@@ -747,7 +747,7 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
     }
   }
   // Catch for run-away code
-  emit_signal_trap_call(ErrorCode::SIGSEGV_);
+  emit_signal_trap_call(ErrorCode::SIGCUSTOM_NO_RETURN);
 
   // All returns in this function point to here
   assm_.bind(exit);
@@ -1338,7 +1338,7 @@ void Sandbox::emit_popf(const Instruction& instr) {
   // If the value is non-zero (meaning there was a disagreement), trigger a segfault (meaning freak out)
   const auto okay = get_label();
   assm_.je(okay);
-  emit_signal_trap_call(ErrorCode::SIGSEGV_);
+  emit_signal_trap_call(ErrorCode::SIGCUSTOM_INVALID_POPF);
   assm_.bind(okay);
 
   // Now that we know the user's value agrees on reserved bits, extract just the new bits
