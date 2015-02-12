@@ -49,7 +49,7 @@ control flow or effect on registers (e.g. memory writes, possibility of
 signals, etc.). */
 bool has_side_effect(x64asm::Instruction& instr) {
   return instr.is_memory_dereference() ||
-    (instr.get_opcode() >= DIV_M16 && instr.get_opcode() <= DIVSS_XMM_XMM);
+         (instr.get_opcode() >= DIV_M16 && instr.get_opcode() <= DIVSS_XMM_XMM);
 }
 
 void CfgTransforms::remove_redundant(Cfg& cfg) {
