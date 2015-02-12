@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -133,21 +133,21 @@ SymBitVector SymBitVector::operator^(const SymBitVector& other) const {
   return SymBitVector(new SymBitVectorXor(ptr, other.ptr));
 }
 
-/* Pairity */
-SymBool SymBitVector::pairity() const {
+/* Parity */
+SymBool SymBitVector::parity() const {
 
   // Step 1: get my size
   SymTypecheckVisitor tc;
   uint16_t size = tc(*this);
 
   // Step 2: iterate over my bits and xor them together
-  SymBool pairity = (*this)[0];
+  SymBool parity = (*this)[0];
   for(size_t i = 1; i < size; ++i) {
-    pairity = pairity ^ (*this)[i];
+    parity = parity ^ (*this)[i];
   }
 
   // Step 3: flip
-  return !pairity;
+  return !parity;
 }
 
 /* Indexing */

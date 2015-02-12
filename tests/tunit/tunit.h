@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -155,6 +155,17 @@ TEST(TunitParsing, DataflowAnnotationsNormalization) {
   ASSERT_EQ(mms.must_read_set, empty);
   // maybe write should be rcx, because user specified must write as rcx
   ASSERT_EQ(mms.maybe_write_set, rcxonly);
+}
+
+TEST(TunitParsing, NakedRead) {
+  std::stringstream ss;
+  ss << "xorq %rax, %rax" << std::endl;
+  ss << "retq" << std::endl;
+
+  stoke::TUnit tunit;
+  ss >> tunit;
+
+  ASSERT_FALSE(ss.fail());
 }
 
 #endif

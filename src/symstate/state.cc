@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -256,7 +256,7 @@ void SymState::set_szp_flags(const SymBitVector& v, uint16_t width) {
   set(eflags_zf, v == SymBitVector::constant(width, 0));
 
   /* The parity flag */
-  set(eflags_pf, v[7][0].pairity());
+  set(eflags_pf, v[7][0].parity());
 }
 
 /** Generate constraints expressing equality of two states over a given regset */

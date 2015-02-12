@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,16 +44,24 @@ public:
 
     contents_.resize_for_fixed_bytes(size);
     valid_.resize_for_bits(size);
-    def_.resize_for_bits(size);
 
     return *this;
   }
 
-  /** Zeros memory and resets valid and defined bits. */
+  /** Zeros memory and resets valid bits. */
   void clear() {
     contents_.reset();
     valid_.reset();
-    def_.reset();
+  }
+  /** Copy state from another memory. */
+  void copy(const Memory& rhs) {
+    assert(base_ == rhs.base_);
+
+    assert(contents_.num_fixed_bytes() == rhs.contents_.num_fixed_bytes());
+    contents_.copy(rhs.contents_);
+
+    assert(valid_.num_fixed_bytes() == rhs.valid_.num_fixed_bytes());
+    valid_.copy(rhs.valid_);
   }
 
   /** Logical memory size; doesn't include headroom. */
@@ -73,9 +81,6 @@ public:
     return addr >= lower_bound() && addr < upper_bound();
   }
 
-  /** Copy defined state from another memory. */
-  void copy_defined(const Memory& rhs);
-
   /** Element access; undefined for invalid bytes */
   uint8_t& operator[](size_t addr) {
     assert(is_valid(addr));
@@ -86,7 +91,6 @@ public:
     assert(is_valid(addr));
     return contents_.get_fixed_byte(addr - base_);
   }
-
   /** Element access; undefined for invalid quads */
   uint64_t get_quad(size_t addr) const {
     assert(is_valid_quad(addr));
@@ -101,10 +105,6 @@ public:
   /** Pointer to the valid bit mask. */
   void* valid_mask() {
     return valid_.data();
-  }
-  /** Pointer to the defined bit mask. */
-  void* defined_mask() {
-    return def_.data();
   }
 
   /** Returns true if a byte is valid. */
@@ -132,31 +132,6 @@ public:
   /** Returns a pointer to the end of the valid byte addrs in this memory. */
   addr_iterator valid_end() const {
     return addr_iterator(valid_.set_bit_index_end(), base_);
-  }
-
-  /** Returns true if a byte is defined; undefined for invalid bytes */
-  bool is_defined(uint64_t addr) const {
-    assert(is_valid(addr));
-    return def_[addr - base_];
-  }
-  /** Sets this byte as defined; undefined for invalid bytes */
-  Memory& set_defined(uint64_t addr, bool d) {
-    assert(is_valid(addr));
-    def_[addr - base_] = d;
-    return *this;
-  }
-  /** Returns true if a quad is defined; undefined for invalid quads */
-  bool is_defined_quad(uint64_t addr) const {
-    assert(is_valid_quad(addr));
-    return def_.get_fixed_byte((addr-base_)/8) == 0xff;
-  }
-  /** Returns a pointer to the beginning of the defined byte addrs in this memory. */
-  addr_iterator defined_begin() const {
-    return addr_iterator(def_.set_bit_index_begin(), base_);
-  }
-  /** Returns a pointer to the end of the defined byte addrs in this memory. */
-  addr_iterator defined_end() const {
-    return addr_iterator(def_.set_bit_index_end(), base_);
   }
 
   /** Bit-wise xor; ignores shadows. */
@@ -196,8 +171,6 @@ private:
   cpputil::BitVector contents_;
   /** Shadow bit vector for tracking valid bytes. */
   cpputil::BitVector valid_;
-  /** Shadow bit vector for tracking defined bytes. */
-  cpputil::BitVector def_;
 
   /** Write a text summary of memory. */
   void write_text_summary(std::ostream& os) const;

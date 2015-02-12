@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,7 +44,7 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
   heap_out_ = heap_out;
 
   reference_out_.clear();
-  recompute_defs(target.live_outs(), target_gp_out_, target_sse_out_);
+  recompute_defs(target.live_outs(), target_gp_out_, target_rf_out_, target_sse_out_);
 
   sandbox_->run(target);
   for (auto i = sandbox_->result_begin(), ie = sandbox_->result_end(); i != ie; ++i) {
@@ -53,7 +53,7 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
   return *this;
 }
 
-void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm>& sses) {
+void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Eflags>& rfs, vector<Xmm>& sses) {
   gps.clear();
   for (const auto& r : rls) {
     if (rs.contains(r)) {
@@ -63,6 +63,15 @@ void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Xmm
   for (const auto& r : rbs) {
     if (rs.contains(r)) {
       gps.push_back(r64s[r]);
+    }
+  }
+
+  rfs.clear();
+  for (auto f : {
+         eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
+       }) {
+    if (rs.contains(f)) {
+      rfs.push_back(f);
     }
   }
 
@@ -156,7 +165,7 @@ Cost CostFunction::max_correctness(const Cfg& cfg, const Cost max) {
   sandbox_->expert_recompile(cfg);
   sandbox_->expert_recycle_labels();
 
-  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_sse_out_);
+  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_rf_out_, rewrite_sse_out_);
 
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
@@ -177,7 +186,7 @@ Cost CostFunction::sum_correctness(const Cfg& cfg, const Cost max) {
   sandbox_->expert_recompile(cfg);
   sandbox_->expert_recycle_labels();
 
-  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_sse_out_);
+  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_rf_out_, rewrite_sse_out_);
 
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
@@ -319,16 +328,16 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
 Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
   Cost cost = 0;
 
-  for (auto i = t.defined_begin(), ie = t.defined_end(); i != ie; ++i) {
+  for (auto i = t.valid_begin(), ie = t.valid_end(); i != ie; ++i) {
     if (relax_mem_) {
       Cost delta = undef_default(1);
-      for (auto j = r.defined_begin(), je = r.defined_end(); j != je; ++j) {
+      for (auto j = r.valid_begin(), je = r.valid_end(); j != je; ++j) {
         const auto eval = evaluate_distance(t[*i], r[*j]) + (*i == *j ? 0 : misalign_penalty_);
         delta = min(delta, eval);
       }
       cost += delta;
     } else {
-      cost += r.is_defined(*i) ? evaluate_distance(t[*i], r[*i]) : undef_default(1);
+      cost += evaluate_distance(t[*i], r[*i]);
     }
   }
 
@@ -349,39 +358,22 @@ Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Re
     assert(t.is_valid_quad(i) && rmem.is_valid_quad(i));
     assert(t.is_valid_quad(i+8) && rmem.is_valid_quad(i+8));
 
-    // Skip undefined blocks
-    if (!t.is_defined(i)) {
-      assert(!t.is_defined_quad(i));
-      assert(!t.is_defined_quad(i+8));
-      continue;
-    }
-    // Make sure everything in this block is defined in the target
-    assert(t.is_defined_quad(i));
-    assert(t.is_defined_quad(i+8));
+    // Start off with vanilla memory to memory comparison
+    Cost delta = evaluate_distance(t.get_quad(i), rmem.get_quad(i)) +
+                 evaluate_distance(t.get_quad(i+8), rmem.get_quad(i+8));
 
-    // If any of the rewrite is undefined, assign a penalty
-    if (!rmem.is_defined_quad(i) || !rmem.is_defined_quad(i+8)) {
-      cost += undef_default(16);
-    }
-    // Otherwise let's compare
-    else {
-      // Start off with vanilla memory to memory comparison
-      Cost delta = evaluate_distance(t.get_quad(i), rmem.get_quad(i)) +
-                   evaluate_distance(t.get_quad(i+8), rmem.get_quad(i+8));
-
-      // If we've relaxed mem, we can also look in sse registers
-      if (relax_mem_) {
-        for (const auto& s_r : rewrite_sse_out_) {
-          Cost eval = evaluate_distance(t.get_quad(i), rsse[s_r].get_fixed_quad(0)) +
-                      evaluate_distance(t.get_quad(i+8), rsse[s_r].get_fixed_quad(1)) +
-                      misalign_penalty_;
-          delta = min(delta, eval);
-        }
+    // If we've relaxed mem, we can also look in sse registers
+    if (relax_mem_) {
+      for (const auto& s_r : rewrite_sse_out_) {
+        Cost eval = evaluate_distance(t.get_quad(i), rsse[s_r].get_fixed_quad(0)) +
+                    evaluate_distance(t.get_quad(i+8), rsse[s_r].get_fixed_quad(1)) +
+                    misalign_penalty_;
+        delta = min(delta, eval);
       }
-
-      // Now accrue the lowest cost we were able to find
-      cost += delta;
     }
+
+    // Now accrue the lowest cost we were able to find
+    cost += delta;
   }
 
   return cost;
@@ -389,13 +381,10 @@ Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Re
 
 Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r) const {
   Cost cost = 0;
-
-  auto flags = {eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf};
-  for (auto flag : flags) {
-    if (live_out_.contains(flag)) {
-      size_t i = flag.index();
-      cost += (t.is_set(i) ^ r.is_set(i));
-    }
+  for (auto f : target_rf_out_) {
+    const auto i = f.index();
+    const auto def = find(rewrite_rf_out_.begin(), rewrite_rf_out_.end(), f) != rewrite_rf_out_.end();
+    cost += def ? (t.is_set(i) ^ r.is_set(i)) : 1;
   }
 
   return cost;
@@ -528,7 +517,13 @@ Cost CostFunction::latency_performance(const Cfg& cfg) const {
     }
 
     // Increment latency by block latency scaled by nesting penalty
-    latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
+    // The call to pow() is expensive, so we hide it behind a faster check
+    const auto nd = cfg.nesting_depth(*b);
+    if (nd > 1) {
+      latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
+    } else {
+      latency += block_latency;
+    }
   }
 
   // Apply penalty to codes that mix avx and sse instructions

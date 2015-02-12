@@ -43,6 +43,7 @@ SRC_OBJ=\
 	\
 	src/disassembler/disassembler.o \
 	\
+	src/sandbox/dispatch_table.o \
 	src/sandbox/sandbox.o \
 	\
 	src/search/search.o \

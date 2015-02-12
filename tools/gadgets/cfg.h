@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,6 +60,25 @@ private:
         Console::warn() << "No def in values provided; assuming " << def_in(live_out()) << std::endl;
       }
     }
+  }
+
+  x64asm::Code fix_code(const x64asm::Code& code) const {
+    // This function adds a retq to a code that doesn't have any
+    // It's causing endless warnings for the time being for search states which are
+    // default constructed to empty functions.
+    // I tried changing that, but ran into segfaults, so for the time being, this is
+    // deactivated.
+    for (const auto& instr : code) {
+      if (instr.is_ret()) {
+        return code;
+      }
+    }
+
+    Console::warn() << "Adding a missing retq instruction to target/rewrite" << std::endl;
+    auto ret = code;
+    ret.push_back({x64asm::RET});
+
+    return ret;
   }
 
   x64asm::RegSet def_in(const x64asm::RegSet& live_out) const {

@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -83,7 +83,7 @@ protected:
 
 private:
 
-  static const std::array<const char*, 3803> att_;
+  static const std::array<const char*, X64ASM_NUM_OPCODES> att_;
 
   static uint64_t temporary_;
 };

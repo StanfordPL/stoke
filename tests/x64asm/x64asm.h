@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 // limitations under the License.
 
 
+#include "tests/x64asm/assembler.h"
 #include "tests/x64asm/instruction.h"
 #include "tests/x64asm/parsing.h"
 #include "tests/x64asm/r.h"

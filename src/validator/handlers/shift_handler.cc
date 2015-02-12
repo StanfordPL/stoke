@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -273,9 +273,9 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
                 state[eflags_zf]
               ));
 
-    // SET PF to pairity of result, unless there's no change
+    // SET PF to parity of result, unless there's no change
     state.set(eflags_pf, set_szp.ite(
-                result[7][0].pairity(),
+                result[7][0].parity(),
                 state[eflags_pf]
               ));
 

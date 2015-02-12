@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -95,8 +95,6 @@ TEST_F(IntegrationTest, TutorialTest) {
   EXPECT_EQ(0ull, shell("make extract"));
   EXPECT_EQ(0ull, shell("make testcase"));
 
-  // Make sure we've got
-
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
   for(size_t i = 0; i < 10; ++i) {
@@ -125,12 +123,12 @@ TEST_F(IntegrationTest, TutorialTest) {
 
 
 
-TEST_F(IntegrationTest, PairityTest) {
+TEST_F(IntegrationTest, ParityTest) {
 
   uint64_t diff_1;
   uint64_t diff_2;
 
-  set_working_dir("examples/pairity");
+  set_working_dir("examples/parity");
 
   // Build and test original program
   EXPECT_EQ(0ull, shell("make clean orig"));
@@ -144,7 +142,7 @@ TEST_F(IntegrationTest, PairityTest) {
   size_t good = 0;
   for(size_t i = 0; i < 10; ++i) {
     if(!shell("make search")) {
-      if(wc("examples/pairity/result.s") < 20) {
+      if(wc("examples/parity/result.s") < 20) {
         good++;
         break;
       }

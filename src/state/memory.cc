@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,22 +25,6 @@ using namespace cpputil;
 using namespace std;
 
 namespace stoke {
-
-void Memory::copy_defined(const Memory& rhs) {
-  assert(base_ == rhs.base_);
-  assert(size() == rhs.size());
-
-  // Copying invalid bits doesn't hurt so we'll use the largest atomic copy we can.
-  // We don't have to worry about non-valid bytes since we never touch them.
-  for (auto i = rhs.valid_.set_quad_index_begin(), ie = rhs.valid_.set_quad_index_end(); i != ie;
-       ++i) {
-    def_.get_fixed_quad(*i) = rhs.def_.get_fixed_quad(*i);
-  }
-  // Now we'll copy the actual bytes. One byte of mask corresponds to one quad of data.
-  for (auto i = def_.set_byte_index_begin(), ie = def_.set_byte_index_end(); i != ie; ++i) {
-    contents_.get_fixed_quad(*i) = rhs.contents_.get_fixed_quad(*i);
-  }
-}
 
 ostream& Memory::write_text(ostream& os) const {
   write_text_summary(os);
@@ -69,7 +53,6 @@ ostream& Memory::write_bin(ostream& os) const {
   const size_t mask_size = valid_.num_fixed_bytes();
   os.write((const char*)&mask_size, sizeof(size_t));
   os.write((const char*)valid_.data(), mask_size);
-  os.write((const char*)def_.data(), mask_size);
 
   return os;
 }
@@ -91,12 +74,8 @@ istream& Memory::read_bin(istream& is) {
 
   size_t mask_size = 0;
   is.read((char*)&mask_size, sizeof(size_t));
-
   valid_.resize_for_fixed_bytes(mask_size);
-  def_.resize_for_fixed_bytes(mask_size);
-
   is.read((char*)valid_.data(), mask_size);
-  is.read((char*)def_.data(), mask_size);
 
   return is;
 }
@@ -113,11 +92,7 @@ void Memory::write_text_row(ostream& os, uint64_t addr) const {
   HexWriter<uint64_t, 8>()(os, addr);
   os << "   ";
   for (int i = 7; i >= 0; --i) {
-    if (is_valid(addr + i)) {
-      os << (is_defined(addr + i) ? "d" : "v");
-    } else {
-      os << ".";
-    }
+    os << (is_valid(addr + i) ? "v" : ".");
     os << " ";
   }
   os << "  ";
@@ -186,11 +161,7 @@ void Memory::read_text_row(istream& is) {
 
   for (int j = 7; j >= 0; --j) {
     is >> s;
-
-    set_valid(addr + j, s == "v" || s == "d");
-    if (s == "d") {
-      set_defined(addr + j, true);
-    }
+    set_valid(addr + j, s == "v");
   }
 
   is.get();
