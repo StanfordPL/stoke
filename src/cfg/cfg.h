@@ -96,7 +96,7 @@ public:
     recompute_succs();
     recompute_preds();
     recompute_reachable();
-		recompute_topo_sort();
+    recompute_topo_sort();
   }
   /** Recompute loops; modifying control flow will invalidate this state, calling this method
     will restore it. Undefined if graph structure is not up to date. */
