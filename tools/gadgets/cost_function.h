@@ -30,24 +30,28 @@
 namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
-  public:
-    CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(), fxn_(*build_fxn(target, sb)) {
-    }
+public:
+  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(), fxn_(*build_fxn(target, sb)) {
+  }
 
-    result_type operator()(const Cfg& cfg, Cost max) const {
-      return fxn_(cfg, max); 
-    }
+  result_type operator()(const Cfg& cfg, Cost max) {
+    return fxn_(cfg, max);
+  }
 
-  private:
+  result_type operator()(const Cfg& cfg) {
+    return fxn_(cfg);
+  }
 
-    const CostFunction& fxn_;
+private:
 
-    CostFunction* build_fxn(const Cfg& target, Sandbox* sb) const {
-      CorrectnessCostGadget* ccg = new CorrectnessCostGadget(target, sb);
-      SizeCost* sc = new SizeCost();
-      ExprCost* ec(*ccg, *sc, ExprCost::Operator::PLUS);
-      return ec;
-    }
+  CostFunction& fxn_;
+
+  static CostFunction* build_fxn(const Cfg& target, Sandbox* sb) {
+    CorrectnessCostGadget* ccg = new CorrectnessCostGadget(target, sb);
+    SizeCost* sc = new SizeCost();
+    ExprCost* ec = new ExprCost(*ccg, *sc, ExprCost::Operator::PLUS);
+    return ec;
+  }
 
 };
 

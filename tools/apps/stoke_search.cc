@@ -29,6 +29,7 @@
 #include "tools/args/search.h"
 #include "tools/args/target.h"
 #include "tools/gadgets/cost_function.h"
+#include "tools/gadgets/correctness_cost.h"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/search.h"
@@ -260,7 +261,7 @@ int main(int argc, char** argv) {
 
   TestSetGadget test_set(seed);
   SandboxGadget test_sb(test_set, aux_fxns);
-  CostFunctionGadget holdout_fxn(target, &test_sb);
+  CorrectnessCostGadget holdout_fxn(target, &test_sb);
   SolverGadget smt;
   ValidatorGadget validator(smt);
   VerifierGadget verifier(holdout_fxn, validator);
@@ -375,7 +376,6 @@ int main(int argc, char** argv) {
 
     transforms = TransformsGadget(state.best_correct.get_code(), aux_fxns, seed);
     CostFunctionGadget fxn(state.best_correct, &training_sb);
-    fxn.set_performance_term(PerformanceTerm::SIZE);
     state.configure(Init::TARGET, state.best_correct, max_instrs_arg.value());
 
     // optimize the best program so far for size

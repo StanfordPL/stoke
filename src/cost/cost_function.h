@@ -46,8 +46,9 @@ public:
 
   /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
     result would equal or exceed that value. */
-  virtual result_type operator()(const Cfg& cfg, const Cost max = max_cost) const {
-    return result_type(false, max);
+  virtual result_type operator()(const Cfg& cfg, const Cost max = max_cost) {
+    std::cout << "Called default cost function" << std::endl;
+    return result_type(false, 0);
   }
 
 };

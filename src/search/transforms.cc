@@ -315,8 +315,14 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags,
   }
 
   for (size_t i = 0; i < call_weight; ++i) {
+    control_free_.push_back(NOP);
+  }
+
+  /*
+  for (size_t i = 0; i < call_weight; ++i) {
     control_free_.push_back(CALL_LABEL);
   }
+  */
 
   if (control_free_.size() == 0) {
     error_ = true;
