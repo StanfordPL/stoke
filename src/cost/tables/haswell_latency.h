@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1978,6 +1978,7 @@
 , 1 // PSLLQ xmm, imm8
 , 999 // PSLLQ xmm, m128
 , 2 // PSLLQ xmm, xmm
+, 1 // PSLLW mm, imm8
 , 999 // PSLLW mm, m64
 , 1 // PSLLW mm, mm
 , 1 // PSLLW xmm, imm8
@@ -2860,6 +2861,7 @@
 
 , 5 // VBROADCASTSD ymm, m64
 , 5 // VBROADCASTSD ymm, xmm
+, 5 // VBROADCASTSD xmm, m32
 
 , 1 // VBROADCASTSS xmm, xmm
 , 5 // VBROADCASTSS ymm, m32
@@ -3178,13 +3180,21 @@
 , 999 // VFNMSUB131SS xmm, xmm, m32
 , 5 // VFNMSUB131SS xmm, xmm, xmm
 
+, 999 // VGATHERDPD xmm, m32, xmm
+, 999 // VGATHERDPD ymm, m32, ymm
+, 999 // VGATHERDPS xmm, m32, xmm
+, 999 // VGATHERDPS ymm, m32, ymm
+, 999 // VGATHERQPD xmm, m64, xmm
+, 999 // VGATHERQPD ymm, m64, ymm
+, 999 // VGATHERQPS xmm, m64, xmm
+
 , 999 // VHADDPD xmm, xmm, m128
 , 5 // VHADDPD xmm, xmm, xmm
-, 999 // VHADDPD ymm, ymm, m156
+, 999 // VHADDPD ymm, ymm, m256
 , 5 // VHADDPD ymm, ymm, ymm
 , 999 // VHADDPS xmm, xmm, m128
 , 5 // VHADDPS xmm, xmm, xmm
-, 999 // VHADDPS ymm, ymm, m156
+, 999 // VHADDPS ymm, ymm, m256
 , 5 // VHADDPS ymm, ymm, ymm
 
 , 999 // VHSUBPD xmm, xmm, m128
@@ -3580,6 +3590,14 @@
 , 2 // VPEXTRW m16, xmm, imm8
 , 999 // VPEXTRW r32, xmm, imm8
 , 2 // VPEXTRW r64, xmm, imm8
+
+, 999 // VPGATHERDD xmm, m32, xmm
+, 999 // VPGATHERDD ymm, m32, ymm
+, 999 // VPGATHERDQ xmm, m32, xmm
+, 999 // VPGATHERDQ ymm, m32, ymm
+, 999 // VPGATHERQD xmm, m64, xmm
+, 999 // VPGATHERQQ xmm, m64, xmm
+, 999 // VPGATHERQQ ymm, m64, ymm
 
 , 999 // VPHADDD xmm, xmm, m128
 , 3 // VPHADDD xmm, xmm, xmm

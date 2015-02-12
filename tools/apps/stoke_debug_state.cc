@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,8 +45,9 @@ int main(int argc, char** argv) {
   Console::msg() << s2 << endl;
   Console::msg() << endl;
 
-  s1.stack.copy_defined(s2.stack);
-  s1.heap.copy_defined(s2.heap);
+  s1.stack = s2.stack;
+  s1.heap = s2.heap;
+  s1.data = s2.data;
 
   Console::msg() << "Copy defined state from XOR'ed state" << endl;
   Console::msg() << endl;

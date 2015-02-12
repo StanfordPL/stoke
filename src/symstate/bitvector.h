@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -164,7 +164,7 @@ public:
   SymBool s_lt(const SymBitVector& other) const;
 
   /** Computes the parity of the bitvector */
-  SymBool pairity() const;
+  SymBool parity() const;
 
   /** Returns true if the two ASTs are identical */
   bool equals(const SymBitVector& other) const;
@@ -202,7 +202,7 @@ public:
     const SymBitVector& bv_;
   };
 
-  /** Extracts a single bit from the bitvector */
+  /** Extracts a single bit from the bitvector (or a range of bits, via IndexHelper). */
   SymBitVector::IndexHelper operator[](uint16_t index) const {
     return IndexHelper(*this, index);
   }

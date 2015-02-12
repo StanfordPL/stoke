@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -154,6 +154,7 @@ public:
   Sandbox& set_entrypoint(const x64asm::Label& l) {
     assert(contains_function(l));
     main_fxn_ = l;
+    entrypoint_ = fxns_[main_fxn_]->get_entrypoint();
     return *this;
   }
   /** Run a main function for just one input. */

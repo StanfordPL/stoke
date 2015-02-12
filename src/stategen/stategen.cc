@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 #include "src/stategen/stategen.h"
 
 #include <cstdlib>
+#include <string>
 
 #include "src/sandbox/sandbox.h"
 #include "src/sandbox/state_callback.h"
@@ -286,7 +287,6 @@ void StateGen::randomize_mem(Memory& mem) const {
   for (auto i = mem.lower_bound(), ie = mem.upper_bound(); i < ie; ++i) {
     if (!mem.is_valid(i)) {
       mem.set_valid(i, true);
-      mem.set_defined(i, true);
       mem[i] = rand() % 256;
     }
   }
@@ -342,7 +342,7 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Instruction& instr
 
   // Only sigsegv is fixable
   if (cs.code != ErrorCode::SIGSEGV_) {
-    error_message_ = "Interrupt was not segfault.";
+    error_message_ = "Interrupt was not segfault, but signal " + std::to_string((int)cs.code) + " instead.";
     return false;
   }
   // Only explicit dereferences are fixable

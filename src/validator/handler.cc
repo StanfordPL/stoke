@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ SymBool Handler::minus_of(SymBool arg1_msb, SymBool arg2_msb, SymBool total_msb)
 
 
 
-const array<const char*, 3803> Handler::att_ = {{
+const array<const char*, X64ASM_NUM_OPCODES> Handler::att_ = {{
     "<label definition>"
 #include "src/ext/x64asm/src/opcode.att"
   }

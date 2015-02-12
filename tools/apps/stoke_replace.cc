@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include "src/ext/cpputil/include/system/terminal.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
+#include "src/cfg/cfg_transforms.h"
 #include "src/disassembler/disassembler.h"
 #include "src/disassembler/function_callback.h"
 #include "tools/args/rewrite.h"
@@ -61,9 +62,16 @@ void callback(const FunctionCallbackData& data, void* arg) {
 }
 
 bool replace(uint64_t offset, size_t size) {
+
+  // Clean up the new function
+  CfgTransforms tforms;
+  Cfg cfg(rewrite_arg.value().code, RegSet::empty(), RegSet::empty());
+  tforms.remove_unreachable(cfg);
+  tforms.remove_nop(cfg);
+
   // Assemble the new function
   Assembler assm;
-  auto fxn = assm.assemble(rewrite_arg.value().code);
+  auto fxn = assm.assemble(cfg.get_code());
 
   // Fail if the new function is larger than the old
   if (fxn.size() > size) {

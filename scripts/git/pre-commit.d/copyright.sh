@@ -16,7 +16,7 @@ echo "// See the License for the specific language governing permissions and" >>
 echo "// limitations under the License." >> cr.txt
 echo "" >> cr.txt
 
-cr="Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule"
+cr="Copyright 2013-2015 Stanford University"
 crlen=${#cr}
 crlen=$((crlen+3))
 

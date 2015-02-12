@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -165,10 +165,10 @@ int trace(const string& argv0) {
 
   // Don't return term.result() because it computes it mod 256 in the shell,
   // and this sometimes hides errors from pin -- Berkeley
-  if(term.result() != 0) {
-    Console::error(1) << "Pin failed with error " << term.result() << "!" << endl;
-    return 1;
+  if (term.result() != 0) {
+    Console::error(1) << "Unspecified pintool error " << term.result() << "!" << endl;
   }
+
   return 0;
 }
 

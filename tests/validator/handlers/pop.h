@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ TEST_F(ValidatorPopTest, PopSp) {
   cs.stack.resize(lower, 40);
   for(uint64_t i = lower; i < lower + 40; ++i) {
     cs.stack.set_valid(i, true);
-    cs.stack.set_defined(i, true);
   }
 
   check_circuit(cs);
@@ -45,7 +44,6 @@ TEST_F(ValidatorPopTest, PopRsp) {
   cs.stack.resize(lower, 40);
   for(uint64_t i = lower; i < lower + 40; ++i) {
     cs.stack.set_valid(i, true);
-    cs.stack.set_defined(i, true);
   }
 
   check_circuit(cs);

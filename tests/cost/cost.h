@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -54,6 +54,27 @@ protected:
 
   stoke::Sandbox sb_;
   stoke::CostFunction fxn_;
+
+  stoke::Cost latency(std::string s) {
+    x64asm::Code c;
+
+    std::stringstream str;
+    str << ".dummy:" << std::endl;
+    str << s << std::endl;
+    str >> c;
+
+    stoke::Cfg cfg(c, x64asm::RegSet::empty(), x64asm::RegSet::empty());
+
+    stoke::Sandbox sb;
+    sb.insert_function(cfg);
+
+    stoke::CostFunction f(&sb);
+    f.set_performance_term(stoke::PerformanceTerm::LATENCY);
+
+    auto res = f(cfg);
+    return  res.second;
+  }
+
 
 private:
   void SetUp() {
@@ -174,6 +195,19 @@ TEST_F(CostFunctionTest, ChecksRAX) {
 
   EXPECT_FALSE(cost.first);
   EXPECT_EQ(expected, cost.second);
+}
+
+TEST_F(CostFunctionTest, Latencies) {
+
+  EXPECT_EQ(1ul, latency("movq %rax, %rdx"));
+
+  EXPECT_EQ(1ul,   latency("xorb %bl, %ch"));
+  EXPECT_EQ(1ul,   latency("xorb %ch, %bl"));
+  EXPECT_EQ(999ul, latency("xorb (%rdx), %al"));
+
+  EXPECT_EQ(999ul, latency("xorpd (%rax), %xmm3"));
+  EXPECT_EQ(3ul,   latency("xorpd %xmm1, %xmm2"));
+
 }
 
 

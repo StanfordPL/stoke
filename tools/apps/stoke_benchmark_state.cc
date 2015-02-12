@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Eric Schkufza, Rahul Sharma, Berkeley Churchill, Stefan Heule
+// Copyright 2013-2015 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,8 +41,9 @@ int main(int argc, char** argv) {
 
   const auto start = steady_clock::now();
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
-    tc1.stack.copy_defined(tc2.stack);
-    tc1.heap.copy_defined(tc2.heap);
+    tc1.stack = tc2.stack;
+    tc1.heap = tc2.heap;
+    tc1.data = tc2.data;
   }
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto cps = benchmark_itr_arg / dur.count();
