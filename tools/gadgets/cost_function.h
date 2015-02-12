@@ -16,6 +16,7 @@
 #define STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 
 #include "src/cfg/cfg.h"
+#include "src/cost/correctness.h"
 #include "src/cost/cost_function.h"
 #include "src/sandbox/sandbox.h"
 #include "tools/args/correctness.h"
@@ -25,9 +26,9 @@
 
 namespace stoke {
 
-class CostFunctionGadget : public CostFunction {
+class CostFunctionGadget : public CorrectnessCost {
 public:
-  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(sb) {
+  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CorrectnessCost(sb) {
     set_target(target, stack_out_arg, heap_out_arg);
 
     set_distance(distance_arg);
@@ -35,10 +36,7 @@ public:
     set_relax(!no_relax_reg_arg, relax_mem_arg, blocked_heap_opt_arg);
     set_penalty(misalign_penalty_arg, sig_penalty_arg, nesting_penalty_arg, sse_avx_penalty_arg);
     set_min_ulp(min_ulp_arg);
-    set_k(k_arg);
     set_reduction(reduction_arg);
-    set_performance_term(perf_arg);
-    set_max_size_penalty(max_size_bytes, max_size_base_penalty, max_size_linear_penalty);
   }
 };
 

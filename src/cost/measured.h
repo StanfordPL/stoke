@@ -12,22 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_VERIFIER_H
-#define STOKE_TOOLS_GADGETS_VERIFIER_H
+#ifndef STOKE_SRC_COST_MEASURED_H
+#define STOKE_SRC_COST_MEASURED_H
 
-#include "src/cost/cost_function.h"
-#include "src/solver/cvc4solver.h"
-#include "src/solver/z3solver.h"
-#include "src/verifier/verifier.h"
-#include "tools/args/verifier.h"
+#include <cmath>
+
+#include <algorithm>
+#include <array>
+#include <limits>
+
+#include "src/sandbox/sandbox.h"
 
 namespace stoke {
 
-class VerifierGadget : public Verifier {
-public:
-  VerifierGadget(CorrectnessCost& fxn, Validator& val) : Verifier(fxn, val) {
-    set_strategy(strategy_arg);
+class MasuredCost : public CostFunction {
+
+  Cost MeasuredCost::measured_performance(const Cfg& cfg) const {
+    Cost latency = 0;
+    Cost tc_count = 0;
+
+    for(auto i = sandbox_->output_begin(), ie = sandbox_->output_end(); i != ie; ++i) {
+      latency += i->latency_seen;
+      tc_count++;
+    }
+
+    return latency/tc_count;
   }
+
 };
 
 } // namespace stoke
