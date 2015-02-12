@@ -1050,7 +1050,7 @@ void Sandbox::emit_jump(const Instruction& instr) {
   // Jump over the signal trap call if we haven't hit zero yet
   const auto okay = get_label();
   assm_.jne(okay);
-  emit_signal_trap_call(ErrorCode::SIGKILL_);
+  emit_signal_trap_call(ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS);
   assm_.bind(okay);
 
   // Restore rflags and rax
