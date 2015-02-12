@@ -42,7 +42,7 @@ ostream& CpuState::write_text(ostream& os) const {
     "%vip", "%id"
   };
 
-  os << "SIGNAL " << static_cast<int>(code);
+  os << "SIGNAL " << static_cast<int>(code) << " [" << readable_error_code(code) << "]";
   os << endl;
   os << endl;
 
@@ -81,6 +81,7 @@ istream& CpuState::read_text(istream& is) {
   int temp;
   is >> ignore >> temp;
   code = static_cast<ErrorCode>(temp);
+  while (is.peek() != 10 && is.good()) is.get();
   getline(is, ignore);
   getline(is, ignore);
 

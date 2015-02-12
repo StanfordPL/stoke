@@ -47,6 +47,7 @@ PIN_LIB=\
 	-lx64asm -lpin -lxed -ldwarf -lelf -ldl
 
 PIN_OBJ=\
+	obj-intel64/error_code.o \
 	obj-intel64/cpu_state.o \
 	obj-intel64/cpu_states.o \
 	obj-intel64/memory.o \
@@ -60,6 +61,8 @@ all: obj-intel64/testcase.so
 clean:
 	rm -rf obj-intel64
 
+obj-intel64/error_code.o: ../../../../../state/error_code.cc
+	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
 obj-intel64/cpu_state.o: ../../../../../state/cpu_state.cc
 	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
 obj-intel64/cpu_states.o: ../../../../../state/cpu_states.cc
