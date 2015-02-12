@@ -59,9 +59,11 @@ void CfgTransforms::remove_redundant(Cfg& cfg) {
   // we keep removing instructions until the cfg doesn't change any longer
   // this is necessary because removing an instruction might allow the dataflow
   // analysis to realize that some other instruction is also redundant.
-  // there might be a way to do this without iterating, but for now this will do.
+  // there might be a way to do this without iterating, but for now this will
+  // do.
   while (changed) {
-    // loop will terminate, as we remove at least one instruction in every iteration, except maybe the last one
+    // loop will terminate, as we remove at least one instruction in every
+    // iteration, except maybe the last one
     changed = false;
     Code temp;
     for (stoke::Cfg::reachable_iterator b = cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
