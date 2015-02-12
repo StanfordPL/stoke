@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
 
   const auto result = *(sb.result_begin());
   if (result.code != ErrorCode::NORMAL) {
-    Console::msg() << "Control returned abnormally with signal " << dec << (int)result.code << endl;
+    Console::msg() << "Control returned abnormally with signal " << dec << (int)result.code << " [" << readable_error_code(result.code) << "]" << endl;
   } else {
     Console::msg() << "Control returned normally with state: " << endl;
     Console::msg() << endl;

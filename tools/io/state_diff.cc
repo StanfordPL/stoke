@@ -53,13 +53,13 @@ string diff_states(const CpuState& state1, const CpuState& state2, bool show_unc
   if (state1.code != state2.code) {
     result << red("Target and rewrite did not finish with the same error code:") << endl << endl;
     if (state1.code != ErrorCode::NORMAL) {
-      result << "Target returned abnormally with signal " << dec << (int)state1.code << endl << endl;
+      result << "Target returned abnormally with signal " << dec << (int)state1.code << " [" << readable_error_code(state1.code) << "]" << endl << endl;
     } else {
       result << "Target returned normally with state " << endl;
       result << state1 << endl << endl;
     }
     if (state2.code != ErrorCode::NORMAL) {
-      result << "Rewrite returned abnormally with signal " << dec << (int)state2.code << endl;
+      result << "Rewrite returned abnormally with signal " << dec << (int)state2.code << " [" << readable_error_code(state2.code) << "]" << endl;
     } else {
       result << "Rewrite returned normally with state " << endl;
       result << state2 << endl;
@@ -67,7 +67,7 @@ string diff_states(const CpuState& state1, const CpuState& state2, bool show_unc
   } else {
     if (state1.code != ErrorCode::NORMAL) {
       ostringstream os;
-      os << "Both target and rewrite returned abnormally with signal " << dec << (int)state1.code;
+      os << "Both target and rewrite returned abnormally with signal " << dec << (int)state1.code << " [" << readable_error_code(state1.code) << "]";
       result << green(os.str()) << endl;
     } else {
       ostringstream os1, os2;
