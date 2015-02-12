@@ -58,18 +58,16 @@ void CfgTransforms::remove_redundant(Cfg& cfg) {
             (*i).is_any_call() || (*i).is_any_return() ||
             (*i).is_any_loop()) {
           // we always keep control flow
+        } else if ((*i).maybe_write_memory()) {
+          // we always keep instructions that have any side-effect other than
+          // on the registers (hardware exceptions, memory writes, etc.)
         } else {
-          if ((*i).maybe_write_memory()) {
-            // we always keep instructions that write memory, as we cannot reason
-            // about whether the memory written is read again
-          } else {
-            auto instr_outputs = cfg.maybe_write_set(*i);
-            auto live_regs_after_instruction = cfg.live_outs({*b, c});
-            if ((instr_outputs & live_regs_after_instruction) == x64asm::RegSet::empty()) {
-              // don't keep the instruction if it doesn't produce any values which
-              // are live right after that instruction
-              keep = false;
-            }
+          auto instr_outputs = cfg.maybe_write_set(*i);
+          auto live_regs_after_instruction = cfg.live_outs({*b, c});
+          if ((instr_outputs & live_regs_after_instruction) == x64asm::RegSet::empty()) {
+            // don't keep the instruction if it doesn't produce any values which
+            // are live right after that instruction
+            keep = false;
           }
         }
 
