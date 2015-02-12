@@ -44,6 +44,14 @@ void CfgTransforms::remove_nop(Cfg& cfg) {
   cfg.recompute();
 }
 
+/** Returns true if the instruction has any visible side-effect other than
+control flow or effect on registers (e.g. memory writes, possibility of
+signals, etc.). */
+bool has_side_effect(x64asm::Instruction& instr) {
+  return instr.is_memory_dereference() ||
+    (instr.get_opcode() >= DIV_M16 && instr.get_opcode() <= DIVSS_XMM_XMM);
+}
+
 void CfgTransforms::remove_redundant(Cfg& cfg) {
   bool changed = true;
   while (changed) {
@@ -58,7 +66,7 @@ void CfgTransforms::remove_redundant(Cfg& cfg) {
             (*i).is_any_call() || (*i).is_any_return() ||
             (*i).is_any_loop()) {
           // we always keep control flow
-        } else if ((*i).maybe_write_memory()) {
+        } else if (has_side_effect(*i)) {
           // we always keep instructions that have any side-effect other than
           // on the registers (hardware exceptions, memory writes, etc.)
         } else {
