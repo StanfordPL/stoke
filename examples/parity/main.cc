@@ -18,7 +18,7 @@
 
 using namespace std;
 
-size_t pairity(uint64_t x) {
+size_t parity(uint64_t x) {
   size_t total = 0;
   total += ((x & 0x1) == 0x1);
   total += ((x & 0x2) == 0x2);
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 
   auto ret = 0;
   for (auto i = 0; i < itr; ++i) {
-    ret += pairity(i);
+    ret += parity(i);
   }
 
   return ret;
