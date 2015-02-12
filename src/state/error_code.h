@@ -15,6 +15,8 @@
 #ifndef STOKE_SRC_STATE_ERROR_CODE_H
 #define STOKE_SRC_STATE_ERROR_CODE_H
 
+#include <string>
+
 namespace stoke {
 
 /** Hardware signal states. */
@@ -24,8 +26,12 @@ enum class ErrorCode {
   SIGFPE_ = 8,
   SIGKILL_ = 9,
   SIGBUS_ = 10,
-  SIGSEGV_ = 11
+  SIGSEGV_ = 11,
+
+  SIGCUSTOM_EXCEEDED_MAX_JUMPS = 256,
 };
+
+std::string readable_error_code(ErrorCode ec);
 
 } // namespace stoke
 
