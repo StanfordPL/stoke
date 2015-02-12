@@ -43,6 +43,7 @@ SRC_OBJ=\
 	\
 	src/disassembler/disassembler.o \
 	\
+	src/sandbox/dispatch_table.o \
 	src/sandbox/sandbox.o \
 	\
 	src/search/search.o \
@@ -54,6 +55,7 @@ SRC_OBJ=\
 	\
 	src/state/cpu_state.o \
 	src/state/cpu_states.o \
+	src/state/error_code.o \
 	src/state/memory.o \
 	src/state/regs.o \
 	src/state/rflags.o \

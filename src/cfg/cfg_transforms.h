@@ -25,6 +25,8 @@ public:
   void remove_unreachable(Cfg& cfg);
   /** Modifies underlying code such that all nops are removed. */
   void remove_nop(Cfg& cfg);
+  /** Modifies underlying code such that all redundant instructions are removed (redundant according to the dataflow analysis). */
+  void remove_redundant(Cfg& cfg);
 };
 
 } // namespace stoke

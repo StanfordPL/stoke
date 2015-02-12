@@ -81,12 +81,6 @@ ValueArg<double>& exp_scaling_arg =
   .description("Exponential scaling factor of timeout iterations per cycle (requires timeout_action==restart)")
   .default_val(1.0);
 
-ValueArg<size_t>& cleanup_iterations_arg =
-  ValueArg<size_t>::create("cleanup_iterations")
-  .usage("<int>")
-  .description("Clean up any successfully synthesized program using this many iterations (only takes effect with --perf none, and is equivalent to running stoke search with --perf size on the result found)")
-  .default_val(500000);
-
 void sep(ostream& os, string c = "*") {
   for (size_t i = 0; i < 80; ++i) {
     os << c;
@@ -218,8 +212,7 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
                        size_t total_restarts,
                        size_t total_iterations, time_point<steady_clock> start,
-                       duration<double> search_elapsed,
-                       size_t total_cleanup_iterations) {
+                       duration<double> search_elapsed) {
   auto total_elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
   sep(Console::msg(), "#");
   Console::msg() << "Final update:" << endl << endl;
@@ -227,9 +220,6 @@ void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
   Console::msg() << "Number of attempted searches:  " << total_restarts << endl;
   Console::msg() << "Total search time:             " << search_elapsed.count() << "s" << endl;
   Console::msg() << "Total time:                    " << total_elapsed.count() << "s" << endl;
-  if (total_cleanup_iterations > 0) {
-    Console::msg() << "Additional cleanup iterations: " << total_cleanup_iterations << endl;
-  }
   Console::msg() << endl << "Statistics of last search" << endl << endl;
   // get the state first (because it updates some static variables)
   ostringstream stream;
@@ -310,7 +300,7 @@ int main(int argc, char** argv) {
 
     if (state.interrupted) {
       Console::msg() << endl;
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, 0);
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
       Console::msg() << "Search interrupted!" << endl;
       exit(1);
     }
@@ -349,73 +339,23 @@ int main(int argc, char** argv) {
       Console::msg() << verifier.get_counter_example() << endl << endl;
       training_sb.insert_input(verifier.get_counter_example());
     } else {
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, 0);
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
       Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
     }
   }
 
   CfgTransforms tforms;
+  tforms.remove_redundant(state.best_correct);
   tforms.remove_unreachable(state.best_correct);
   tforms.remove_nop(state.best_correct);
 
   auto final_stats = search.get_statistics();
-  auto final_state = SearchState(state);
-  Cost lowest_cost_backup = lowest_cost;
-  Cost lowest_correct_backup = lowest_correct;
 
   TUnit rewrite;
   rewrite.name = target_arg.value().name;
   rewrite.code = state.best_correct.get_code();
 
-  // try to clean up code that was synthesized
-  size_t total_cleanup_iterations = 0;
-  if (perf_arg == PerformanceTerm::NONE && cleanup_iterations_arg.value() > 0) {
-    Console::msg() << final_msg << endl;
-    Console::msg() << endl << "Cleaning up program found so far..." << endl << endl;
-    sep(Console::msg());
-
-    transforms = TransformsGadget(state.best_correct.get_code(), aux_fxns, seed);
-    CostFunctionGadget fxn(state.best_correct, &training_sb);
-    state.configure(Init::TARGET, state.best_correct, max_instrs_arg.value());
-
-    // optimize the best program so far for size
-    search.set_timeout_itr(cleanup_iterations_arg);
-    search.run(state.best_correct, fxn, Init::TARGET, state, aux_fxns);
-
-    total_cleanup_iterations += search.get_statistics().iterations;
-
-    cout << endl;
-
-    if (state.interrupted) {
-      show_final_update(final_stats, final_state, total_restarts, total_iterations, start, search_elapsed, total_cleanup_iterations);
-      Console::msg() << "Cleanup search interrupted!" << endl;
-      exit(1);
-    }
-
-    const auto verified = verifier.verify(target, state.best_correct);
-
-    if(verifier.has_error()) {
-      Console::msg() << "The verifier encountered an error:" << endl;
-      Console::msg() << verifier.error() << endl;
-    }
-
-    if (!state.success) {
-      final_msg = "Unable to discover a cleaned up rewrite, using program before cleanup... ";
-    } else if (!verified) {
-      final_msg = "Unable to verify cleaned up rewrite, using program before cleanup...";
-    } else {
-      final_msg = "Successfully cleaned up the synthesized program!";
-      tforms.remove_unreachable(state.best_correct);
-      tforms.remove_nop(state.best_correct);
-      final_state.best_correct = state.best_correct;
-      final_state.best_yet = state.best_correct;
-      rewrite.code = state.best_correct.get_code();
-    }
-  }
-
-  lowest_cost = lowest_cost_backup;
-  lowest_correct = lowest_correct_backup;
-  show_final_update(final_stats, final_state, total_restarts, total_iterations, start, search_elapsed, total_cleanup_iterations);
+  show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed);
   Console::msg() << final_msg << endl;
 
   ofstream ofs(out.value());

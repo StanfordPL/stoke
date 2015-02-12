@@ -39,7 +39,7 @@ bool Cfg::performs_undef_read() const {
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
-      const auto r = must_read_set(code_[idx]);
+      const auto r = maybe_read_set(code_[idx]);
       const auto di = def_ins_[idx];
 
       if ((r & di) != r) {
@@ -92,8 +92,8 @@ string Cfg::which_undef_read() const {
   return ss.str();
 }
 
-void Cfg::forward_topo_sort() {
-  block_sort_.clear();
+void Cfg::recompute_topo_sort() {
+  topo_sort_.clear();
 
   remaining_preds_.resize(num_blocks());
   for (size_t i = get_entry(), ie = get_exit(); i <= ie; ++i) {
@@ -105,12 +105,12 @@ void Cfg::forward_topo_sort() {
     }
   }
 
-  block_sort_.push_back(get_entry());
-  for (size_t i = 0; i < block_sort_.size(); ++i) {
-    const auto next = block_sort_[i];
+  topo_sort_.push_back(get_entry());
+  for (size_t i = 0; i < topo_sort_.size(); ++i) {
+    const auto next = topo_sort_[i];
     for (auto s = succ_begin(next), se = succ_end(next); s != se; ++s) {
       if (--remaining_preds_[*s] == 0) {
-        block_sort_.push_back(*s);
+        topo_sort_.push_back(*s);
       }
     }
   }
@@ -385,9 +385,8 @@ void Cfg::recompute_defs_loop_free() {
   def_outs_[get_entry()] = fxn_def_ins_;
 
   // Iterate only once in topological order (skip entry)
-  forward_topo_sort();
-  for (size_t i = 1, ie = block_sort_.size(); i < ie; ++i) {
-    const auto b = block_sort_[i];
+  for (size_t i = 1, ie = topo_sort_.size(); i < ie; ++i) {
+    const auto b = topo_sort_[i];
 
     // Initial conditions
     def_ins_[blocks_[b]] = RegSet::universe();
