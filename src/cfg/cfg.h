@@ -96,6 +96,7 @@ public:
     recompute_succs();
     recompute_preds();
     recompute_reachable();
+    recompute_topo_sort();
   }
   /** Recompute loops; modifying control flow will invalidate this state, calling this method
     will restore it. Undefined if graph structure is not up to date. */
@@ -471,7 +472,7 @@ private:
   /** A list of remaining predecessors for each block. */
   std::vector<size_t> remaining_preds_;
   /** A sorted list of basic block ids. */
-  std::vector<size_t> block_sort_;
+  std::vector<size_t> topo_sort_;
   /** A map from labels to the basic blocks they mark the beginning of. */
   std::unordered_map<x64asm::Label, size_t> labels_;
 
@@ -511,7 +512,7 @@ private:
   std::vector<x64asm::RegSet> liveness_kill_;
 
   /** Performs a forward topological sort of reachable blocks and places the result in block_sort_ */
-  void forward_topo_sort();
+  void recompute_topo_sort();
 
   /** Recompute the indices in blocks_. */
   void recompute_blocks();
