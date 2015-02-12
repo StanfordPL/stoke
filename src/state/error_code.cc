@@ -36,6 +36,14 @@ string stoke::readable_error_code(ErrorCode ec) {
     return "SIGSEGV (segmentation fault)";
   case ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS:
     return "SIGCUSTOM (exceeded the maximum number of jumps)";
+  case ErrorCode::SIGCUSTOM_INVALID_POPF:
+    return "SIGCUSTOM (invalid popf; can only modify AF, CF, OF, PF, SF, and ZF)";
+  case ErrorCode::SIGCUSTOM_LINKER_ERROR:
+    return "SIGCUSTOM (linker error)";
+  case ErrorCode::SIGCUSTOM_ABI_VIOLATION:
+    return "SIGCUSTOM (abi violation)";
+  case ErrorCode::SIGCUSTOM_NO_RETURN:
+    return "SIGCUSTOM (no return)";
   default:
     assert(false);
     return "STOKE_BUG";
