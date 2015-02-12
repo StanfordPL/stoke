@@ -39,7 +39,7 @@ SRC_OBJ=\
 	src/cfg/cfg_transforms.o \
 	src/cfg/dot_writer.o \
 	\
-	src/cost/cost_function.o \
+	src/cost/correctness.o \
 	\
 	src/disassembler/disassembler.o \
 	\
