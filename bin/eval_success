@@ -41,7 +41,7 @@ def main():
     else:
       unsucctime += end - start
     totaltime += end - start
-    print "Success: %d/%d (%.3f%%)" % (succ, n, float(succ)/float(n))
+    print "Success: %d/%d (%.3f%%)" % (succ, n, float(succ*100)/float(n))
     if succ == 0:
       succtimeavg = 0
     else:
