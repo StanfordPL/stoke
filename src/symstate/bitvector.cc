@@ -133,21 +133,21 @@ SymBitVector SymBitVector::operator^(const SymBitVector& other) const {
   return SymBitVector(new SymBitVectorXor(ptr, other.ptr));
 }
 
-/* Pairity */
-SymBool SymBitVector::pairity() const {
+/* Parity */
+SymBool SymBitVector::parity() const {
 
   // Step 1: get my size
   SymTypecheckVisitor tc;
   uint16_t size = tc(*this);
 
   // Step 2: iterate over my bits and xor them together
-  SymBool pairity = (*this)[0];
+  SymBool parity = (*this)[0];
   for(size_t i = 1; i < size; ++i) {
-    pairity = pairity ^ (*this)[i];
+    parity = parity ^ (*this)[i];
   }
 
   // Step 3: flip
-  return !pairity;
+  return !parity;
 }
 
 /* Indexing */
