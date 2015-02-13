@@ -55,16 +55,16 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
 
 void CostFunction::recompute_target_defs(const RegSet& rs) {
   target_gp_out_.clear();
-	for (auto i = rs.any_sub_gp_begin(), ie = rs.any_sub_gp_end(); i != ie; ++i) {
-		target_gp_out_.push_back(*i);
-	}
+  for (auto i = rs.any_sub_gp_begin(), ie = rs.any_sub_gp_end(); i != ie; ++i) {
+    target_gp_out_.push_back(*i);
+  }
 
   target_sse_out_.clear();
-	for (auto i = rs.any_sub_sse_begin(), ie = rs.any_sub_sse_end(); i != ie; ++i) {
-		target_sse_out_.push_back(*i);
-	}
+  for (auto i = rs.any_sub_sse_begin(), ie = rs.any_sub_sse_end(); i != ie; ++i) {
+    target_sse_out_.push_back(*i);
+  }
 
-	// @todo -- An x64asm iterator over these flags would be nice
+  // @todo -- An x64asm iterator over these flags would be nice
   target_rf_out_.clear();
   for (auto f : {
          eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
@@ -161,7 +161,7 @@ Cost CostFunction::max_correctness(const Cfg& cfg, const Cost max) {
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
     sandbox_->run_one(i);
 
-		const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)), cfg.def_outs());
+    const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)), cfg.def_outs());
     assert(err <= max_testcase_cost);
 
     res = std::max(res, err);
@@ -183,7 +183,7 @@ Cost CostFunction::sum_correctness(const Cfg& cfg, const Cost max) {
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
     sandbox_->run_one(i);
 
-		const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)), cfg.def_outs());
+    const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)), cfg.def_outs());
     assert(err <= max_testcase_cost);
 
     res += err;
@@ -242,7 +242,7 @@ Cost CostFunction::gp_error(const Regs& t, const Regs& r, const RegSet& defs) co
     auto delta = undef_default(8);
     const auto val_t = t[r_t].get_fixed_quad(0);
 
-		for (auto r_r = defs.any_sub_gp_begin(), r_re = defs.any_sub_gp_end(); r_r != r_re; ++r_r) {
+    for (auto r_r = defs.any_sub_gp_begin(), r_re = defs.any_sub_gp_end(); r_r != r_re; ++r_r) {
       if (r_t != *r_r && !relax_reg_) {
         continue;
       }
@@ -283,7 +283,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r, const RegSet& defs) c
         break;
       }
 
-			for (auto s_r = defs.any_sub_sse_begin(), s_re = defs.any_sub_sse_end(); s_r != s_re; ++s_r) {
+      for (auto s_r = defs.any_sub_sse_begin(), s_re = defs.any_sub_sse_end(); s_r != s_re; ++s_r) {
         if (s_t != *s_r && !relax_reg_) {
           continue;
         }
@@ -356,7 +356,7 @@ Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Re
 
     // If we've relaxed mem, we can also look in sse registers
     if (relax_mem_) {
-			for (auto s_r = defs.any_sub_sse_begin(), s_re = defs.any_sub_sse_end(); s_r != s_re; ++s_r) {
+      for (auto s_r = defs.any_sub_sse_begin(), s_re = defs.any_sub_sse_end(); s_r != s_re; ++s_r) {
         Cost eval = evaluate_distance(t.get_quad(i), rsse[*s_r].get_fixed_quad(0)) +
                     evaluate_distance(t.get_quad(i+8), rsse[*s_r].get_fixed_quad(1)) +
                     misalign_penalty_;
