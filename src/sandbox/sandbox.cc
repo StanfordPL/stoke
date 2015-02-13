@@ -432,7 +432,9 @@ Function Sandbox::emit_state2cpu(const CpuState& cs) {
   // Write SSE regs (width is target dependent)
   for (const auto& s : xmms) {
     assm_.mov((R64)rax, Imm64(cs.sse[s].data()));
-#ifdef __AVX__
+#ifdef __AVX2__
+    assm_.vmovdqu(ymms[s], M256(rax));
+#elif __AVX__
     assm_.vmovdqu(ymms[s], M256(rax));
 #else
     assm_.movdqu(xmms[s], M128(rax));
@@ -485,7 +487,9 @@ Function Sandbox::emit_cpu2state(CpuState& cs) {
   // Read SSE regs (width is target dependent)
   for (const auto& s : xmms) {
     assm_.mov((R64)rax, Imm64(cs.sse[s].data()));
-#ifdef __AVX__
+#ifdef __AVX2__
+    assm_.vmovdqu(M256(rax), ymms[s]);
+#elif __AVX__
     assm_.vmovdqu(M256(rax), ymms[s]);
 #else
     assm_.movdqu(M128(rax), xmms[s]);
