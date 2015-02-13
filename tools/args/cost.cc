@@ -29,10 +29,10 @@ ValueArg<Cost>& max_cost_arg =
   .description("Give up once cost exceeds this value")
   .default_val(CostFunction::max_cost - 1);
 
-ValueArg<uint32_t>& k_arg =
-  ValueArg<uint32_t>::create("k")
-  .usage("<int>")
-  .description("Multiplier for the correctness term")
-  .default_val(1);
+ValueArg<std::string>& cost_function_arg =
+  ValueArg<std::string>::create("--cost")
+  .usage("<string>")
+  .description("The cost function")
+  .default_val("correctness");
 
 } // namespace stoke
