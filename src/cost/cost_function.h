@@ -201,17 +201,10 @@ private:
   /** The set of rflags that are live out for the target. */
   std::vector<x64asm::Eflags> target_rf_out_;
   /** The set of sse registers live out for the target. */
-  std::vector<x64asm::Xmm> target_sse_out_;
-  /** The set of general purpose registers live out for a rewrite. */
-  std::vector<x64asm::R64> rewrite_gp_out_;
-  /** The set of rflags that are live out for a rewrite. */
-  std::vector<x64asm::Eflags> rewrite_rf_out_;
-  /** The set of sse registers live out for a rewrite. */
-  std::vector<x64asm::Xmm> rewrite_sse_out_;
+  std::vector<x64asm::Ymm> target_sse_out_;
 
-  /** Convert a RegSet into a vector of registers. */
-  void recompute_defs(const x64asm::RegSet& rs, std::vector<x64asm::R64>& gps,
-                      std::vector<x64asm::Eflags>& rfs, std::vector<x64asm::Xmm>& sses);
+  /** Parse the set of registers that are live out in the target. */
+  void recompute_target_defs(const x64asm::RegSet& rs);
 
   /** Evaluate size of assembed program. */
   Cost assembled_size_cost(const Cfg& cfg);
@@ -226,17 +219,17 @@ private:
   Cost extension_correctness(const Cfg& cfg, const Cost max);
 
   /** Evaluate error between states. */
-  Cost evaluate_error(const CpuState& t, const CpuState& r) const;
+  Cost evaluate_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between general purpose registers. */
-  Cost gp_error(const Regs& t, const Regs& r) const;
+  Cost gp_error(const Regs& t, const Regs& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between sse registers. */
-  Cost sse_error(const Regs& t, const Regs& r) const;
+  Cost sse_error(const Regs& t, const Regs& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between memories. */
   Cost mem_error(const Memory& t, const Memory& r) const;
   /** Evaluate error between memories that are written in 128-bit blocks. */
-  Cost block_mem_error(const Memory& t, const Memory& rmem, const Regs& rsse) const;
+  Cost block_mem_error(const Memory& t, const Memory& rmem, const Regs& rsse, const x64asm::RegSet& defs) const;
   /** Evaluate error between rflags. */
-  Cost rflags_error(const RFlags& t, const RFlags& r) const;
+  Cost rflags_error(const RFlags& t, const RFlags& r, const x64asm::RegSet& defs) const;
 
   /** Assess an undefined register penalty. */
   Cost undef_default(size_t num_bytes) const;
