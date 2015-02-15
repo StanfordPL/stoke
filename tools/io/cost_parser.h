@@ -144,4 +144,11 @@ private:
 
 }
 
+#ifdef DEFINE_STOKE_ARGS
+// If this file is included from a binary, then also provide the definitions.
+// This is to avoid compiling in sandbox/cost command line arguments unless
+// they are necessary.
+#include "cost_parser.cc"
+#endif
+
 #endif
