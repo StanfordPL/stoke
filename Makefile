@@ -109,6 +109,7 @@ TOOL_ARGS_OBJ=\
 	tools/args/verifier.o
 
 TOOL_NON_ARG_OBJ=\
+	tools/io/cost_parser.o \
 	tools/io/distance.o \
 	tools/io/opc_set.o \
 	tools/io/init.o \
