@@ -26,4 +26,24 @@ extern cpputil::ValueArg<std::default_random_engine::result_type>& seed_arg;
 
 } // namespace stoke
 
+#ifdef DEFINE_STOKE_ARGS
+
+using namespace cpputil;
+using namespace std;
+
+namespace stoke {
+
+Heading& seed_group =
+  Heading::create("Random Seed Options:");
+
+ValueArg<default_random_engine::result_type>& seed_arg =
+  ValueArg<default_random_engine::result_type>::create("seed")
+  .usage("<int>")
+  .description("Random seed for stoke tools; set to zero for random")
+  .default_val(0);
+
+} // namespace stoke
+
+
+#endif
 #endif

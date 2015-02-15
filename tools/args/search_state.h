@@ -30,6 +30,35 @@ extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_correct_arg;
 
 } // namespace stoke
 
+#ifdef DEFINE_STOKE_ARGS
+
+using namespace cpputil;
+using namespace x64asm;
+
+namespace stoke {
+
+Heading& search_state_heading =
+  Heading::create("Search State Options:");
+
+FileArg<TUnit, TUnitReader, TUnitWriter>& current_arg =
+  FileArg<TUnit, TUnitReader, TUnitWriter>::create("current")
+  .usage("<path/to/file.s>")
+  .description("Current rewrite; used with --init previous");
+
+FileArg<TUnit, TUnitReader, TUnitWriter>& best_yet_arg =
+  FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_yet")
+  .usage("<path/to/file.s>")
+  .description("Best rewrite; used with --init previous");
+
+FileArg<TUnit, TUnitReader, TUnitWriter>& best_correct_arg =
+  FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_correct")
+  .usage("<path/to/file.s>")
+  .description("Best correct rewrite; used with --init previous");
+
+} // namespace stoke
+
+
 #endif
 
 
+#endif

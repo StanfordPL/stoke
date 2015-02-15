@@ -23,6 +23,8 @@
 
 #include "src/disassembler/disassembler.h"
 #include "src/disassembler/function_callback.h"
+
+#define DEFINE_STOKE_ARGS 1
 #include "tools/ui/console.h"
 
 using namespace cpputil;
