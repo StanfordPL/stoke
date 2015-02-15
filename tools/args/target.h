@@ -29,5 +29,25 @@ extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& target_arg;
 
 } // namespace stoke
 
+#ifdef DEFINE_STOKE_ARGS
+
+using namespace cpputil;
+using namespace x64asm;
+
+namespace stoke {
+
+Heading& target_heading =
+  Heading::create("Target Options:");
+
+FileArg<TUnit, TUnitReader, TUnitWriter>& target_arg =
+  FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
+  .usage("<path/to/file.s>")
+  .description("Target code")
+  .required();
+
+} // namespace stoke
+
+
 #endif
 
+#endif

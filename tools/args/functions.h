@@ -27,4 +27,28 @@ extern cpputil::FlagArg& prune_aux_arg;
 
 } // namespace stoke
 
+#ifdef DEFINE_STOKE_ARGS
+
+using namespace cpputil;
+using namespace x64asm;
+
+namespace stoke {
+
+Heading& functions_heading =
+  Heading::create("Auxiliary Function Options:");
+
+FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg =
+  FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
+  .usage("<path/to/dir>")
+  .description("Directory containing helper functions")
+  .default_val({});
+
+FlagArg& prune_aux_arg =
+  FlagArg::create("prune")
+  .description("Automatically remove target and unreachable functions from functions directory");
+
+} // namespace stoke
+
+
+#endif
 #endif
