@@ -29,4 +29,30 @@ extern cpputil::ValueArg<uint64_t>& timeout_arg;
 
 } // namespace stoke
 
+#ifdef DEFINE_STOKE_ARGS
+
+using namespace cpputil;
+
+namespace stoke {
+
+Heading& smt_heading =
+  Heading::create("Formal Validator Options:");
+
+ValueArg<Solver, SolverReader, SolverWriter>& solver_arg =
+  ValueArg<Solver, SolverReader, SolverWriter>::create("solver")
+  .usage("(cvc4|z3)")
+  .description("SMT Solver backend")
+  .default_val(Solver::CVC4);
+
+ValueArg<uint64_t>& timeout_arg =
+  ValueArg<uint64_t>::create("solver_timeout")
+  .usage("<int>")
+  .description("Timeout in milliseconds for SMT solver before giving up.  0 for no limit.")
+  .default_val(0);
+
+
+} // namespace stoke
+
+
+#endif
 #endif

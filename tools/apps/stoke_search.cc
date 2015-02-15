@@ -26,6 +26,8 @@
 #include "src/search/progress_callback.h"
 #include "src/search/statistics_callback.h"
 #include "src/search/timeout.h"
+
+#define DEFINE_STOKE_ARGS 1
 #include "tools/args/search.h"
 #include "tools/args/target.h"
 #include "tools/gadgets/cost_function.h"

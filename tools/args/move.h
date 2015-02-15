@@ -28,4 +28,23 @@ extern cpputil::ValueArg<Move, MoveReader, MoveWriter>& move_arg;
 
 } // namespace stoke
 
+#ifdef DEFINE_STOKE_ARGS
+
+using namespace cpputil;
+
+namespace stoke {
+
+Heading& move_heading =
+  Heading::create("Transformation Type Options:");
+
+ValueArg<Move, MoveReader, MoveWriter>& move_arg =
+  ValueArg<Move, MoveReader, MoveWriter>::create("move_type")
+  .usage("(instruction|opcode|operand|local_swap|global_swap|resize|extension)")
+  .description("Move type to perform")
+  .default_val(Move::INSTRUCTION);
+
+} // namespace stoke
+
+
+#endif
 #endif
