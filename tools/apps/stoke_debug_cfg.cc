@@ -24,6 +24,8 @@
 #include "src/ext/cpputil/include/system/terminal.h"
 
 #include "src/cfg/dot_writer.h"
+
+#define DEFINE_STOKE_ARGS 1
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/target.h"
 #include "tools/ui/console.h"

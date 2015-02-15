@@ -16,7 +16,7 @@
 #define STOKE_TOOLS_ARGS_COST_H
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
-
+#include "src/cost/cost_function.h"
 #include "src/cost/cost.h"
 
 namespace stoke {
@@ -29,5 +29,30 @@ extern cpputil::ValueArg<uint32_t>& k_arg;
 
 } // namespace stoke
 
+#ifdef DEFINE_STOKE_ARGS
+
+using namespace cpputil;
+
+namespace stoke {
+
+Heading& cost_heading =
+  Heading::create("Cost Function Evaluation Options:");
+
+ValueArg<Cost>& max_cost_arg =
+  ValueArg<Cost>::create("max_cost")
+  .usage("<int>")
+  .description("Give up once cost exceeds this value")
+  .default_val(CostFunction::max_cost - 1);
+
+ValueArg<uint32_t>& k_arg =
+  ValueArg<uint32_t>::create("k")
+  .usage("<int>")
+  .description("Multiplier for the correctness term")
+  .default_val(1);
+
+} // namespace stoke
+
+
 #endif
 
+#endif

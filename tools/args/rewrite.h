@@ -29,5 +29,25 @@ extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg;
 
 } // namespace stoke
 
+#ifdef DEFINE_STOKE_ARGS
+
+using namespace cpputil;
+using namespace x64asm;
+
+namespace stoke {
+
+Heading& rewrite_heading =
+  Heading::create("Rewrite Options:");
+
+FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg =
+  FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
+  .usage("<path/to/file.s>")
+  .description("Rewrite code")
+  .required();
+
+} // namespace stoke
+
+
 #endif
 
+#endif

@@ -28,6 +28,8 @@
 
 #include "src/state/cpu_states.h"
 #include "src/stategen/stategen.h"
+
+#define DEFINE_STOKE_ARGS 1
 #include "tools/args/target.h"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/sandbox.h"
