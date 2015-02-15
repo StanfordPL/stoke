@@ -17,6 +17,7 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
+#define DEFINE_STOKE_ARGS 1
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/testcases.h"
 #include "tools/ui/console.h"

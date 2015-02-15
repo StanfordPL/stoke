@@ -19,6 +19,7 @@
 #include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
+#define DEFINE_STOKE_ARGS 1
 #include "tools/args/move.h"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/seed.h"
