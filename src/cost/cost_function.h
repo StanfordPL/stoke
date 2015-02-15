@@ -66,7 +66,7 @@ private:
    *   -> VAR
    *   -> NUM
    *
-   * BINOP = { + - * / % == << >> < > >= <= & | } 
+   * BINOP = { + - * / % == << >> < > >= <= & | }
    * Operator precedence:
    *    ()
    *    * / %        BINOP1
@@ -86,9 +86,9 @@ private:
    * L2     -> L3 BINOP3 L2 | L3
    *          ...
    * L(N-2) -> L(N-1) BINOP(N-1) L(N-2) | L(N-1)
-   * L(N-1) -> T  BINOP(N) L(N-1) | T 
+   * L(N-1) -> T  BINOP(N) L(N-1) | T
    * T      -> NUM | VAR | (S)
-   * 
+   *
    * Here's the left-factored version:
    *
    * S       -> L1 S'
@@ -109,7 +109,7 @@ private:
    * FOLLOW(S) = ")" "$"
    * FOLLOW(S') = FOLLOW(S)
    * FOLLOW(L'(N)) = FOLLOW(L(N))
-   * 
+   *
    *
    * So, we're going to implement this with functions
    *
