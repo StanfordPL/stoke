@@ -26,6 +26,8 @@
 #include "src/cfg/cfg_transforms.h"
 #include "src/disassembler/disassembler.h"
 #include "src/disassembler/function_callback.h"
+
+#define DEFINE_STOKE_ARGS 1
 #include "tools/args/rewrite.h"
 #include "tools/io/tunit.h"
 #include "tools/ui/console.h"

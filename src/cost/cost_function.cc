@@ -44,7 +44,7 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
   heap_out_ = heap_out;
 
   reference_out_.clear();
-  recompute_defs(target.live_outs(), target_gp_out_, target_rf_out_, target_sse_out_);
+  recompute_target_defs(target.live_outs());
 
   sandbox_->run(target);
   for (auto i = sandbox_->result_begin(), ie = sandbox_->result_end(); i != ie; ++i) {
@@ -53,32 +53,24 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
   return *this;
 }
 
-void CostFunction::recompute_defs(const RegSet& rs, vector<R64>& gps, vector<Eflags>& rfs, vector<Xmm>& sses) {
-  gps.clear();
-  for (const auto& r : rls) {
-    if (rs.contains(r)) {
-      gps.push_back(r64s[r]);
-    }
-  }
-  for (const auto& r : rbs) {
-    if (rs.contains(r)) {
-      gps.push_back(r64s[r]);
-    }
+void CostFunction::recompute_target_defs(const RegSet& rs) {
+  target_gp_out_.clear();
+  for (auto i = rs.any_sub_gp_begin(), ie = rs.any_sub_gp_end(); i != ie; ++i) {
+    target_gp_out_.push_back(*i);
   }
 
-  rfs.clear();
+  target_sse_out_.clear();
+  for (auto i = rs.any_sub_sse_begin(), ie = rs.any_sub_sse_end(); i != ie; ++i) {
+    target_sse_out_.push_back(*i);
+  }
+
+  // @todo -- An x64asm iterator over these flags would be nice
+  target_rf_out_.clear();
   for (auto f : {
          eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
        }) {
     if (rs.contains(f)) {
-      rfs.push_back(f);
-    }
-  }
-
-  sses.clear();
-  for (const auto& s : xmms) {
-    if (rs.contains(s)) {
-      sses.push_back(s);
+      target_rf_out_.push_back(f);
     }
   }
 }
@@ -168,13 +160,14 @@ Cost CostFunction::max_correctness(const Cfg& cfg, const Cost max) {
   sandbox_->expert_recompile(cfg);
   sandbox_->expert_recycle_labels();
 
-  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_rf_out_, rewrite_sse_out_);
-
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
     sandbox_->run_one(i);
-    res = std::max(res, evaluate_error(reference_out_[i], *(sandbox_->get_result(i))));
-    assert(res <= max_testcase_cost);
+
+    const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)), cfg.def_outs());
+    assert(err <= max_testcase_cost);
+
+    res = std::max(res, err);
   }
 
   assert(res <= max_correctness_cost);
@@ -189,12 +182,11 @@ Cost CostFunction::sum_correctness(const Cfg& cfg, const Cost max) {
   sandbox_->expert_recompile(cfg);
   sandbox_->expert_recycle_labels();
 
-  recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_rf_out_, rewrite_sse_out_);
-
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
     sandbox_->run_one(i);
-    const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)));
+
+    const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)), cfg.def_outs());
     assert(err <= max_testcase_cost);
 
     res += err;
@@ -219,7 +211,7 @@ Cost CostFunction::extension_correctness(const Cfg& cfg, const Cost max) {
   return res;
 }
 
-Cost CostFunction::evaluate_error(const CpuState& t, const CpuState& r) const {
+Cost CostFunction::evaluate_error(const CpuState& t, const CpuState& r, const RegSet& defs) const {
   // Only assess a signal penalty if target and rewrite disagree
   if (t.code != r.code) {
     return sig_penalty_;
@@ -233,33 +225,33 @@ Cost CostFunction::evaluate_error(const CpuState& t, const CpuState& r) const {
 
   // Otherwise, we can do the usual thing and check results register by register
   Cost cost = 0;
-  cost += gp_error(t.gp, r.gp);
-  cost += sse_error(t.sse, r.sse);
-  cost += rflags_error(t.rf, r.rf);
+  cost += gp_error(t.gp, r.gp, defs);
+  cost += sse_error(t.sse, r.sse, defs);
+  cost += rflags_error(t.rf, r.rf, defs);
   if (stack_out_) {
     cost += mem_error(t.stack, r.stack);
   }
   if (heap_out_) {
-    cost += block_heap_ ? block_mem_error(t.heap, r.heap, r.sse) : mem_error(t.heap, r.heap);
+    cost += block_heap_ ? block_mem_error(t.heap, r.heap, r.sse, defs) : mem_error(t.heap, r.heap);
   }
 
   return cost;
 }
 
-Cost CostFunction::gp_error(const Regs& t, const Regs& r) const {
+Cost CostFunction::gp_error(const Regs& t, const Regs& r, const RegSet& defs) const {
   Cost cost = 0;
 
   for (const auto& r_t : target_gp_out_) {
     auto delta = undef_default(8);
     const auto val_t = t[r_t].get_fixed_quad(0);
 
-    for (const auto& r_r : rewrite_gp_out_) {
-      if (r_t != r_r && !relax_reg_) {
+    for (auto r_r = defs.any_sub_gp_begin(), r_re = defs.any_sub_gp_end(); r_r != r_re; ++r_r) {
+      if (r_t != *r_r && !relax_reg_) {
         continue;
       }
 
-      const auto val_r = r[r_r].get_fixed_quad(0);
-      const auto eval = evaluate_distance(val_t, val_r) + ((r_t == r_r) ? 0 : misalign_penalty_);
+      const auto val_r = r[*r_r].get_fixed_quad(0);
+      const auto eval = evaluate_distance(val_t, val_r) + ((r_t == *r_r) ? 0 : misalign_penalty_);
 
       delta = min(delta, eval);
     }
@@ -269,7 +261,7 @@ Cost CostFunction::gp_error(const Regs& t, const Regs& r) const {
   return cost;
 }
 
-Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
+Cost CostFunction::sse_error(const Regs& t, const Regs& r, const RegSet& defs) const {
   Cost cost = 0;
 
   for (size_t i = 0; i < sse_count_; ++i) {
@@ -294,31 +286,31 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r) const {
         break;
       }
 
-      for (const auto& s_r : rewrite_sse_out_) {
-        if (s_t != s_r && !relax_reg_) {
+      for (auto s_r = defs.any_sub_sse_begin(), s_re = defs.any_sub_sse_end(); s_r != s_re; ++s_r) {
+        if (s_t != *s_r && !relax_reg_) {
           continue;
         }
 
         uint64_t val_r = 0;
         switch (sse_width_) {
         case 1:
-          val_r = r[s_r].get_fixed_byte(i);
+          val_r = r[*s_r].get_fixed_byte(i);
           break;
         case 2:
-          val_r = r[s_r].get_fixed_word(i);
+          val_r = r[*s_r].get_fixed_word(i);
           break;
         case 4:
-          val_r = r[s_r].get_fixed_double(i);
+          val_r = r[*s_r].get_fixed_double(i);
           break;
         case 8:
-          val_r = r[s_r].get_fixed_quad(i);
+          val_r = r[*s_r].get_fixed_quad(i);
           break;
         default:
           assert(false);
           break;
         }
 
-        const auto eval = evaluate_distance(val_t, val_r) + ((s_t == s_r) ? 0 : misalign_penalty_);
+        const auto eval = evaluate_distance(val_t, val_r) + ((s_t == *s_r) ? 0 : misalign_penalty_);
         delta = min(delta, eval);
       }
       cost += delta;
@@ -347,7 +339,7 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
   return cost;
 }
 
-Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Regs& rsse) const {
+Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Regs& rsse, const RegSet& defs) const {
   Cost cost = 0;
 
   for (size_t i = *t.valid_begin(), ie = t.upper_bound(); i < ie; i += 16) {
@@ -367,9 +359,9 @@ Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Re
 
     // If we've relaxed mem, we can also look in sse registers
     if (relax_mem_) {
-      for (const auto& s_r : rewrite_sse_out_) {
-        Cost eval = evaluate_distance(t.get_quad(i), rsse[s_r].get_fixed_quad(0)) +
-                    evaluate_distance(t.get_quad(i+8), rsse[s_r].get_fixed_quad(1)) +
+      for (auto s_r = defs.any_sub_sse_begin(), s_re = defs.any_sub_sse_end(); s_r != s_re; ++s_r) {
+        Cost eval = evaluate_distance(t.get_quad(i), rsse[*s_r].get_fixed_quad(0)) +
+                    evaluate_distance(t.get_quad(i+8), rsse[*s_r].get_fixed_quad(1)) +
                     misalign_penalty_;
         delta = min(delta, eval);
       }
@@ -382,12 +374,11 @@ Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Re
   return cost;
 }
 
-Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r) const {
+Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r, const RegSet& defs) const {
   Cost cost = 0;
   for (auto f : target_rf_out_) {
     const auto i = f.index();
-    const auto def = find(rewrite_rf_out_.begin(), rewrite_rf_out_.end(), f) != rewrite_rf_out_.end();
-    cost += def ? (t.is_set(i) ^ r.is_set(i)) : 1;
+    cost += defs.contains(f) ? (t.is_set(i) ^ r.is_set(i)) : 1;
   }
 
   return cost;
