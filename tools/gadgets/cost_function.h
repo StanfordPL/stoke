@@ -15,42 +15,37 @@
 #ifndef STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 #define STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 
-#include "src/cfg/cfg.h"
-#include "src/cost/correctness.h"
 #include "src/cost/cost_function.h"
-#include "src/cost/expr.h"
-#include "src/cost/size.h"
-#include "src/sandbox/sandbox.h"
 #include "tools/args/correctness.h"
 #include "tools/args/in_out.h"
 #include "tools/args/performance.h"
 #include "tools/args/cost.h"
+#include "tools/io/cost_parser.h"
 #include "tools/gadgets/correctness_cost.h"
+
 
 namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
 public:
-  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(), fxn_(*build_fxn(target, sb)) {
+  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(), fxn_(build_fxn(target, sb)) {
   }
 
   result_type operator()(const Cfg& cfg, Cost max) {
-    return fxn_(cfg, max);
+    return (*fxn_)(cfg, max);
   }
 
   result_type operator()(const Cfg& cfg) {
-    return fxn_(cfg);
+    return (*fxn_)(cfg);
   }
 
 private:
 
-  CostFunction& fxn_;
+  CostFunction* fxn_;
 
   static CostFunction* build_fxn(const Cfg& target, Sandbox* sb) {
-    CorrectnessCostGadget* ccg = new CorrectnessCostGadget(target, sb);
-    SizeCost* sc = new SizeCost();
-    ExprCost* ec = new ExprCost(*ccg, *sc, ExprCost::Operator::PLUS);
-    return ec;
+    CostParser cp(cost_function_arg.value(), target, sb);
+    return cp.run();
   }
 
 };
