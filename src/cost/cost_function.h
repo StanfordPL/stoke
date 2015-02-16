@@ -18,20 +18,8 @@
 #include <cassert>
 #include <stdint.h>
 
-#include <vector>
-
-#include "src/ext/cpputil/include/bits/bit_manip.h"
-#include "src/ext/x64asm/include/x64asm.h"
-
 #include "src/cfg/cfg.h"
 #include "src/cost/cost.h"
-#include "src/cost/distance.h"
-#include "src/cost/performance_term.h"
-#include "src/cost/reduction.h"
-#include "src/sandbox/sandbox.h"
-#include "src/state/cpu_state.h"
-#include "src/state/memory.h"
-#include "src/state/regs.h"
 
 namespace stoke {
 
@@ -43,13 +31,9 @@ public:
   /** The maximum cost that any rewrite should produce. */
   static constexpr auto max_cost = (Cost)(0x1ull << 62);
 
-
   /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
     result would equal or exceed that value. */
-  virtual result_type operator()(const Cfg& cfg, const Cost max = max_cost) {
-    std::cout << "Called default cost function" << std::endl;
-    return result_type(false, 0);
-  }
+  virtual result_type operator()(const Cfg& cfg, const Cost max = max_cost) = 0;
 
 };
 

@@ -25,11 +25,17 @@ public:
     Cost size = 0;
 
     x64asm::Code code = cfg.get_code();
-    for(size_t i = 0; i < code.size(); ++i) {
-      if(!code[i].is_nop())
-        size++;
-    }
+    for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+      if(cfg.is_exit(*b)) {
+        continue;
+      }
 
+      const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
+      for(size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; i < ie, ++i) {
+        if(!code[i].is_nop() && !code[i].is_label_defn())
+          size++;
+      }
+    }
     return result_type(true, size);
   }
 
