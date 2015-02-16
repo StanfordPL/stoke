@@ -15,9 +15,9 @@
 
 #include <sys/time.h>
 #include "src/cfg/cfg.h"
-#include "src/cost/cost.h"
-#include "src/cost/cost_function.h"
-#include "src/cost/performance_term.h"
+#include "src/cost/latency.h"
+#include "src/cost/correctness.h"
+#include "src/cost/size.h"
 #include "src/search/transforms.h"
 #include "src/stategen/stategen.h"
 
@@ -196,11 +196,20 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   sb.insert_input(tc);
 
   //make cost function
-  stoke::CostFunction fxn(&sb);
-  fxn.set_target(*cfg_, true, true)
-  .set_performance_term(stoke::PerformanceTerm::LATENCY);
+  stoke::CorrectnessCost correctness(&sb);
+  correctness.set_target(*cfg_, true, true)
+  .set_relax(true, false, false)
+  .set_penalty(3,5);
 
-  auto original_cost = fxn({original, x64asm::RegSet::universe(), x64asm::RegSet::empty()});
+  stoke::LatencyCost latency;
+  latency.set_nesting_penalty(7);
+
+  stoke::SizeCost size;
+
+  stoke::Cfg original_cfg(original, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+  auto correct_orig = correctness(original_cfg);
+  auto latency_orig = latency(original_cfg);
+  auto size_orig    = size(original_cfg);
 
   //loop and check
   for (size_t i = 0; i < iterations_; ++i) {
@@ -210,12 +219,27 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
       transforms_.undo(*cfg_, m);
     }
 
-    ASSERT_EQ(original_cost, fxn(*cfg_)) <<
-                                         "the original code: " << std::endl << original << std::endl <<
-                                         "the modified code: " << std::endl << cfg_->get_code() << std::endl <<
-                                         "and the seed was: " << seed_ << std::endl;
+    ASSERT_EQ(correct_orig, correctness(*cfg_)) <<
+        "the original code: " << std::endl << original << std::endl <<
+        "the modified code: " << std::endl << cfg_->get_code() << std::endl <<
+        "and the seed was: " << seed_ << std::endl;
 
-    ASSERT_EQ(fxn(*cfg_), fxn(*cfg_)) << "evaluating cost twice failed.";
+    ASSERT_EQ(correctness(*cfg_), correctness(*cfg_)) << "evaluating cost twice failed.";
+
+    ASSERT_EQ(latency_orig, latency(*cfg_)) <<
+                                            "the original code: " << std::endl << original << std::endl <<
+                                            "the modified code: " << std::endl << cfg_->get_code() << std::endl <<
+                                            "and the seed was: " << seed_ << std::endl;
+
+    ASSERT_EQ(latency(*cfg_), latency(*cfg_)) << "evaluating cost twice failed.";
+
+    ASSERT_EQ(size_orig, size(*cfg_)) <<
+                                      "the original code: " << std::endl << original << std::endl <<
+                                      "the modified code: " << std::endl << cfg_->get_code() << std::endl <<
+                                      "and the seed was: " << seed_ << std::endl;
+
+    ASSERT_EQ(size(*cfg_), size(*cfg_)) << "evaluating cost twice failed.";
+
   }
 
 

@@ -27,7 +27,7 @@ void CostParser::strip_spaces() {
   cout << "Calling strip_spaces()" << endl;
   cout << "index_=" << index_ << " s_.size()=" << s_.size() << " s_["<<index_<< "]=" << s_[index_] << endl;
   while(index_ < s_.size() && s_[index_] == ' ') {
-    index_++; 
+    index_++;
     cout << "Skipping space" << endl;
   }
 }
@@ -58,13 +58,13 @@ CostFunction* CostParser::parse_S() {
 }
 
 CostFunction* CostParser::parse_L(size_t n) {
-  assert(0 <= n && n <= COST_PARSER_N - 1);
+  assert(n <= COST_PARSER_N - 1);
   cout << "Parsing L(" << n << ")" << endl;
 
   // Parse an L(n+1) or T for the LHS
   CostFunction* lhs = 0;
   if (n == COST_PARSER_N - 1) {
-    lhs = parse_T(); 
+    lhs = parse_T();
   } else {
     lhs = parse_L(n+1);
   }
@@ -92,7 +92,7 @@ CostFunction* CostParser::parse_L(size_t n) {
 }
 
 pair<ExprCost::Operator, CostFunction*> CostParser::parse_LP(size_t n) {
-  assert(0 <= n && n <= COST_PARSER_N - 1);
+  assert(n <= COST_PARSER_N - 1);
   cout << "Parsing LP(" << n << ")" << endl;
 
   auto binop = parse_BINOP(n+1);
@@ -137,7 +137,7 @@ CostFunction* CostParser::parse_VAR() {
 
   if (var == "correctness") {
     return new CorrectnessCostGadget(target_, sb_);
-  } 
+  }
   if (var == "latency") {
     return new LatencyCostGadget();
   }
@@ -162,55 +162,59 @@ CostFunction* CostParser::parse_NUM() {
 }
 
 ExprCost::Operator CostParser::parse_BINOP(size_t n) {
-  assert(n <= 1 && n <= COST_PARSER_N);
+  assert(1ul <= n && n <= COST_PARSER_N);
 
   switch(n) {
 
-    case 1: {
-      switch(peek()) {
-        case '|':
-          next();
-          return ExprCost::Operator::OR;
-        default:
-          return ExprCost::Operator::NONE;
-    }}
-    case 2: {
-      switch(peek()) {
-        case '&':
-          next();
-          return ExprCost::Operator::AND;
-        default:
-          return ExprCost::Operator::NONE;
-    }}
-    case 3: {
-      switch(peek()) {
-        case '+':
-          next();
-          return ExprCost::Operator::PLUS;
-        case '-':
-          next();
-          return ExprCost::Operator::MINUS;
-        default:
-          return ExprCost::Operator::NONE;
-    }}
-    case 4: {
-      switch(peek()) {
-        case '*':
-          next();
-          return ExprCost::Operator::TIMES;
-        case '/':
-          next();
-          return ExprCost::Operator::DIV;
-        case '%':
-          next();
-          return ExprCost::Operator::MOD;
-        default:
-          return ExprCost::Operator::NONE;
-    }}
-    default: {
-      error("internal parse error in parse_BINOP() default case.");
-      assert(false);
+  case 1: {
+    switch(peek()) {
+    case '|':
+      next();
+      return ExprCost::Operator::OR;
+    default:
       return ExprCost::Operator::NONE;
     }
+  }
+  case 2: {
+    switch(peek()) {
+    case '&':
+      next();
+      return ExprCost::Operator::AND;
+    default:
+      return ExprCost::Operator::NONE;
+    }
+  }
+  case 3: {
+    switch(peek()) {
+    case '+':
+      next();
+      return ExprCost::Operator::PLUS;
+    case '-':
+      next();
+      return ExprCost::Operator::MINUS;
+    default:
+      return ExprCost::Operator::NONE;
+    }
+  }
+  case 4: {
+    switch(peek()) {
+    case '*':
+      next();
+      return ExprCost::Operator::TIMES;
+    case '/':
+      next();
+      return ExprCost::Operator::DIV;
+    case '%':
+      next();
+      return ExprCost::Operator::MOD;
+    default:
+      return ExprCost::Operator::NONE;
+    }
+  }
+  default: {
+    error("internal parse error in parse_BINOP() default case.");
+    assert(false);
+    return ExprCost::Operator::NONE;
+  }
   }
 }

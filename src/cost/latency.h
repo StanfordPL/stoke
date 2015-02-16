@@ -15,7 +15,7 @@
 #ifndef STOKE_SRC_COST_LATENCY_H
 #define STOKE_SRC_COST_LATENCY_H
 
-#include "src/cost/cost_function.h" 
+#include "src/cost/cost_function.h"
 
 namespace stoke {
 
@@ -26,7 +26,7 @@ public:
     nesting_penalty_ = penalty;
   }
 
-  result_type operator()(const Cfg& cfg, Cost max);
+  result_type operator()(const Cfg& cfg, Cost max = max_cost);
 
 private:
 

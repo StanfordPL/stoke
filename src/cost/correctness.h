@@ -57,7 +57,6 @@ public:
     set_penalty(0, 0);
     set_min_ulp(0);
     set_reduction(Reduction::SUM);
-    set_max_size_penalty(0, 0, 0);
 
     size_buffer_.reserve(32 * 1024);
   }
@@ -87,13 +86,6 @@ public:
     misalign_penalty_ = misalign;
     sig_penalty_ = sig;
     return *this;
-  }
-  /** Incur a penalty of start_penalty + incr_penalty(size - max_size) for having an assembled size
-    of more than max_size bytes. */
-  CorrectnessCost& set_max_size_penalty(size_t max_size, Cost start_penalty, Cost incr_penalty) {
-    max_size_ = max_size;
-    size_starting_penalty_ = start_penalty;
-    size_incr_penalty_ = incr_penalty;
   }
   /** Set the minimum unacceptable ULP error for floating-point comparisons. */
   CorrectnessCost& set_min_ulp(Cost mu) {
@@ -158,13 +150,6 @@ private:
   Cost min_ulp_;
   /** Reduction method. */
   Reduction reduction_;
-
-  /** Cost for have any instructions in excess of the maximum size. */
-  Cost size_starting_penalty_;
-  /** Additional cost per instruction in excess of the maximum size. */
-  Cost size_incr_penalty_;
-  /** Maximum size for rewrite without encurring a penalty. */
-  size_t max_size_;
 
   /** The results produced by executing the target on testcases. */
   std::vector<CpuState> reference_out_;

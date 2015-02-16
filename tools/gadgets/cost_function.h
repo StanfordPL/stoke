@@ -47,7 +47,7 @@ private:
       Console::error(1) << "Error parsing cost function: " << cp.get_error() << endl;
     }
     if(res == NULL) {
-      Console::error(1) << "Unknown error parsing cost function." << endl; 
+      Console::error(1) << "Unknown error parsing cost function." << endl;
     }
     return res;
   }
