@@ -21,8 +21,6 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cost/cost_function.h"
-#include "src/cost/distance.h"
-#include "src/cost/correctness.h"
 #include "src/cost/expr.h"
 #include "src/sandbox/sandbox.h"
 
@@ -59,13 +57,13 @@ private:
    *
    * BINOP = { + - * / % == << >> < > >= <= & | }
    * Operator precedence:
+   *    |            BINOP1
+   *    &            BINOP2
+   *    < <= > >=    BINOP3
+   *    >> <<        BINOP4
+   *    + -          BINOP5
+   *    * / %        BINOP6
    *    ()
-   *    * / %        BINOP1
-   *    + -          BINOP2
-   *    >> <<        BINOP3
-   *    < <= > >=    BINOP4
-   *    &            BINOP5
-   *    |            BINOP6
    *
    * Let "N" denote the number of binop classes there are
    * (six, as of this documentation)
@@ -112,14 +110,26 @@ private:
    * parse_L(n)
    * parse_LP(n)
    * parse_T()
-   * parse_BINOP(n)
    * parse_VAR()
    * parse_NUM()
+   * parse_BINOP(n)
    *
+   * Note that the parse_BINOP, parse_NUM, parse_VAR functions are a little
+   * wonky compared to a normal LL(0) parser because they also act as the
+   * tokenizer.  Because of this, functions trying to decide between two
+   * productions (i.e. the LP() ones) will attempt calls to these functions to
+   * choose the right production to use.  The tradeoff here is gaining
+   * the simplicity of not having a separate lexer in exchange for some
+   * awkwardness.  TODO: if anyone wants to write a very simple lexer and do
+   * some cleanup, feel free!
    */
 
+#define COST_PARSER_N 4
+
+  /** Helper used by peek and next() */
+  void strip_spaces();
   /** Look at a future character */
-  char peek(size_t n = 0) const;
+  char peek(size_t n = 0);
   /** Move forward in the string */
   char next();
 
@@ -128,8 +138,19 @@ private:
 
   /** Parse a S nonterminal */
   CostFunction* parse_S();
+  /** Parse an L nonterminal */
+  CostFunction* parse_L(size_t);
+  /** Parse an L' nonterminal */
+  std::pair<ExprCost::Operator, CostFunction*> parse_LP(size_t);
+  /** Parse a T nonterminal */
+  CostFunction* parse_T();
   /** Parse a VAR nonterminal */
   CostFunction* parse_VAR();
+  /** Parse a NUM nonterminal */
+  CostFunction* parse_NUM();
+
+  /** Parse a BINOP */
+  ExprCost::Operator parse_BINOP(size_t);
 
   /** Used for maintaining parsing state */
   std::string s_;

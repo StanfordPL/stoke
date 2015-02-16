@@ -16,12 +16,9 @@
 #define STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 
 #include "src/cost/cost_function.h"
-#include "tools/args/correctness.h"
-#include "tools/args/in_out.h"
-#include "tools/args/performance.h"
 #include "tools/args/cost.h"
 #include "tools/io/cost_parser.h"
-#include "tools/gadgets/correctness_cost.h"
+#include "tools/ui/console.h"
 
 
 namespace stoke {
@@ -45,7 +42,14 @@ private:
 
   static CostFunction* build_fxn(const Cfg& target, Sandbox* sb) {
     CostParser cp(cost_function_arg.value(), target, sb);
-    return cp.run();
+    auto res = cp.run();
+    if(cp.get_error().size()) {
+      Console::error(1) << "Error parsing cost function: " << cp.get_error() << endl;
+    }
+    if(res == NULL) {
+      Console::error(1) << "Unknown error parsing cost function." << endl; 
+    }
+    return res;
   }
 
 };

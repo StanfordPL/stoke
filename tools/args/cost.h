@@ -47,7 +47,7 @@ ValueArg<Cost>& max_cost_arg =
   .default_val(CostFunction::max_cost - 1);
 
 ValueArg<std::string>& cost_function_arg =
-  ValueArg<std::string>::create("--cost")
+  ValueArg<std::string>::create("cost")
   .usage("<string>")
   .description("The cost function")
   .default_val("correctness");

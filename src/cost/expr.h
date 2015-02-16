@@ -22,14 +22,24 @@ class ExprCost : public CostFunction {
 public:
 
   enum Operator {
-    PLUS = 0,
-    MINUS = 1,
-    TIMES = 2,
-    DIV = 3
+    NONE, //represents error condition in parser
+    PLUS,
+    MINUS,
+    TIMES,
+    DIV,
+    MOD,
+    AND,
+    OR,
+    SHL,
+    SHR,
+    LT,
+    GT,
+    LTE,
+    GTE
   };
 
-  ExprCost(CostFunction& a1, CostFunction& a2, Operator op) :
-    a1_(&a1), a2_(&a2), op_(op), arity_(2) {}
+  ExprCost(CostFunction* a1, CostFunction* a2, Operator op) :
+    a1_(a1), a2_(a2), op_(op), arity_(2) {}
 
   ExprCost(Cost constant) : constant_(constant), arity_(0) {}
 
@@ -45,6 +55,8 @@ public:
       bool correct = c1.first && c2.first;
 
       switch(op_) {
+      case NONE:
+        assert(false);
       case PLUS:
         return result_type(correct, c1.second + c2.second);
       case MINUS:
@@ -53,6 +65,26 @@ public:
         return result_type(correct, c1.second * c2.second);
       case DIV:
         return result_type(correct, c1.second / c2.second);
+      case MOD:
+        return result_type(correct, c1.second % c2.second);
+      case AND:
+        return result_type(correct, c1.second & c2.second);
+      case OR:
+        return result_type(correct, c1.second | c2.second);
+      case SHL:
+        return result_type(correct, c1.second << c2.second);
+      case SHR:
+        return result_type(correct, c1.second >> c2.second);
+      case LT:
+        return result_type(correct, c1.second < c2.second);
+      case LTE:
+        return result_type(correct, c1.second <= c2.second);
+      case GT:
+        return result_type(correct, c1.second > c2.second);
+      case GTE:
+        return result_type(correct, c1.second >= c2.second);
+      default:
+        assert(false);
       }
     }
     assert(false);

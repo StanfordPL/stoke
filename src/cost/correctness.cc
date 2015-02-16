@@ -73,25 +73,6 @@ CorrectnessCost::result_type CorrectnessCost::operator()(const Cfg& cfg, const C
   auto cost = evaluate_correctness(cfg, max);
   bool correct = cost == 0;
   return result_type(correct, cost);
-  /*
-  // we need to configure the sandbox differently if we're measuring its performance
-  if(pterm_ == PerformanceTerm::MEASURED) {
-    sandbox_->set_count_instructions(true);
-  } else {
-    sandbox_->set_count_instructions(false);
-  }
-
-  auto cost = k_ * evaluate_correctness(cfg, (max + k_ - 1) / k_);
-  assert(cost <= max_cost);
-
-  const auto correct = cost == 0;
-  if (cost < max && pterm_ != PerformanceTerm::NONE) {
-    cost += evaluate_performance(cfg, max);
-  }
-  assert(cost <= max_cost);
-
-  return result_type(correct, cost);
-  */
 }
 
 Cost CorrectnessCost::evaluate_correctness(const Cfg& cfg, const Cost max) {
