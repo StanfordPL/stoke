@@ -115,7 +115,6 @@ TOOL_NON_ARG_OBJ=\
 	tools/io/mem_set.o \
 	tools/io/move.o \
 	tools/io/reduction.o \
-	tools/io/performance_term.o \
 	tools/io/solver.o \
 	tools/io/state_diff.o \
 	tools/io/strategy.o \
