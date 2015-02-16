@@ -12,23 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/cost/size.h"
+#include <sstream>
 
-#include "tools/gadgets/correctness_cost.h"
-#include "tools/gadgets/latency_cost.h"
-#include "tools/io/cost_parser.h"
-
-
+#include "src/cost/cost_parser.h"
 
 using namespace std;
 using namespace stoke;
 
 void CostParser::strip_spaces() {
-  cout << "Calling strip_spaces()" << endl;
-  cout << "index_=" << index_ << " s_.size()=" << s_.size() << " s_["<<index_<< "]=" << s_[index_] << endl;
   while(index_ < s_.size() && s_[index_] == ' ') {
     index_++;
-    cout << "Skipping space" << endl;
   }
 }
 
@@ -49,8 +42,11 @@ char CostParser::next() {
 }
 
 void CostParser::error(std::string m) {
-  if(error_ == "")
-    error_ = m;
+  if(error_ == "") {
+    std::stringstream ss;
+    ss << "at or before character at index " << index_ << ": " << m;
+    error_ = ss.str();
+  }
 }
 
 CostFunction* CostParser::parse_S() {
@@ -59,7 +55,6 @@ CostFunction* CostParser::parse_S() {
 
 CostFunction* CostParser::parse_L(size_t n) {
   assert(n <= COST_PARSER_N - 1);
-  cout << "Parsing L(" << n << ")" << endl;
 
   // Parse an L(n+1) or T for the LHS
   CostFunction* lhs = 0;
@@ -93,7 +88,6 @@ CostFunction* CostParser::parse_L(size_t n) {
 
 pair<ExprCost::Operator, CostFunction*> CostParser::parse_LP(size_t n) {
   assert(n <= COST_PARSER_N - 1);
-  cout << "Parsing LP(" << n << ")" << endl;
 
   auto binop = parse_BINOP(n+1);
   if(binop == ExprCost::Operator::NONE)
@@ -104,15 +98,12 @@ pair<ExprCost::Operator, CostFunction*> CostParser::parse_LP(size_t n) {
 }
 
 CostFunction* CostParser::parse_T() {
-  cout << "Parsing T()" << endl;
 
   char c = peek();
   if('a' <= c && c <= 'z') {
-    cout << "Parsing variable" << endl;
     return parse_VAR();
   }
   if('0' <= c && c <= '9') {
-    cout << "Parsing number" << endl;
     return parse_NUM();
   }
   if(c == '(') {
@@ -135,18 +126,12 @@ CostFunction* CostParser::parse_VAR() {
     var = var.append(1, next());
   }
 
-  if (var == "correctness") {
-    return new CorrectnessCostGadget(target_, sb_);
-  }
-  if (var == "latency") {
-    return new LatencyCostGadget();
-  }
-  if (var == "size") {
-    return new SizeCost();
-  }
+  CostFunction* cf = symbol_table_[var];
 
-  error("undefined cost function variable: \"" + var + "\"");
-  return NULL;
+  if(cf == NULL)
+    error("undefined cost function variable: \"" + var + "\"");
+
+  return cf;
 }
 
 CostFunction* CostParser::parse_NUM() {
