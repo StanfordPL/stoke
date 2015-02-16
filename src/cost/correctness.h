@@ -27,7 +27,6 @@
 #include "src/cost/cost.h"
 #include "src/cost/cost_function.h"
 #include "src/cost/distance.h"
-#include "src/cost/performance_term.h"
 #include "src/cost/reduction.h"
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
@@ -55,11 +54,10 @@ public:
     set_distance(Distance::HAMMING);
     set_sse(1, 1);
     set_relax(false, false, false);
-    set_penalty(0, 0, 0, 0);
+    set_penalty(0, 0);
     set_min_ulp(0);
     set_reduction(Reduction::SUM);
     set_max_size_penalty(0, 0, 0);
-    set_performance_term(PerformanceTerm::NONE);
 
     size_buffer_.reserve(32 * 1024);
   }
@@ -85,11 +83,9 @@ public:
     return *this;
   }
   /** Set penalty values. */
-  CorrectnessCost& set_penalty(Cost misalign, Cost sig, Cost nesting, Cost sse_avx) {
+  CorrectnessCost& set_penalty(Cost misalign, Cost sig) {
     misalign_penalty_ = misalign;
     sig_penalty_ = sig;
-    nesting_penalty_ = nesting;
-    sse_avx_penalty_ = sse_avx;
     return *this;
   }
   /** Incur a penalty of start_penalty + incr_penalty(size - max_size) for having an assembled size
@@ -107,11 +103,6 @@ public:
   /** Set the reduction method to use when aggregating testcase costs. */
   CorrectnessCost& set_reduction(Reduction r) {
     reduction_ = r;
-    return *this;
-  }
-  /** Set performance term type. */
-  CorrectnessCost& set_performance_term(PerformanceTerm t) {
-    pterm_ = t;
     return *this;
   }
 
@@ -165,12 +156,8 @@ private:
   Cost sse_avx_penalty_;
   /** Minimum unacceptable ULP error for floating-point comparisons. */
   Cost min_ulp_;
-  /** Multiplier for the correctness term */
-  uint32_t k_;
   /** Reduction method. */
   Reduction reduction_;
-  /** Performance term type. */
-  PerformanceTerm pterm_;
 
   /** Cost for have any instructions in excess of the maximum size. */
   Cost size_starting_penalty_;
