@@ -15,9 +15,12 @@
 #ifndef STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 #define STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 
-#include "src/cost/cost_function.h"
+#include "src/cost/cost_parser.h"
+#include "src/cost/size.h"
+
 #include "tools/args/cost.h"
-#include "tools/io/cost_parser.h"
+#include "tools/gadgets/correctness_cost.h"
+#include "tools/gadgets/latency_cost.h"
 #include "tools/ui/console.h"
 
 
@@ -41,13 +44,19 @@ private:
   CostFunction* fxn_;
 
   static CostFunction* build_fxn(const Cfg& target, Sandbox* sb) {
-    CostParser cp(cost_function_arg.value(), target, sb);
+
+    CostParser::SymbolTable st;
+    st["correctness"] =  new CorrectnessCostGadget(target, sb);
+    st["latency"] =      new LatencyCostGadget();
+    st["size"] =         new SizeCost();
+
+    CostParser cp(cost_function_arg.value(), st);
     auto res = cp.run();
     if(cp.get_error().size()) {
-      Console::error(1) << "Error parsing cost function: " << cp.get_error() << endl;
+      Console::error(1) << "Error parsing cost function: " << cp.get_error() << std::endl;
     }
     if(res == NULL) {
-      Console::error(1) << "Unknown error parsing cost function." << endl;
+      Console::error(1) << "Unknown error parsing cost function." << std::endl;
     }
     return res;
   }

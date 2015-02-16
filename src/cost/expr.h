@@ -35,7 +35,8 @@ public:
     LT,
     GT,
     LTE,
-    GTE
+    GTE,
+    EQ
   };
 
   ExprCost(CostFunction* a1, CostFunction* a2, Operator op) :
@@ -83,6 +84,8 @@ public:
         return result_type(correct, c1.second > c2.second);
       case GTE:
         return result_type(correct, c1.second >= c2.second);
+      case EQ:
+        return result_type(correct, c1.second == c2.second);
       default:
         assert(false);
       }

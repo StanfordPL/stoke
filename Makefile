@@ -40,6 +40,7 @@ SRC_OBJ=\
 	src/cfg/dot_writer.o \
 	\
 	src/cost/correctness.o \
+	src/cost/cost_parser.o \
 	src/cost/latency.o \
 	\
 	src/disassembler/disassembler.o \

@@ -29,9 +29,14 @@ namespace stoke {
 class CostParser {
 
 public:
-  /** Constructs a parser to parse a string to a cost function */
-  CostParser(std::string s, const Cfg& target, Sandbox* sb) :
-    s_(s), target_(target), sb_(sb), index_(0), error_() {}
+
+  typedef std::map<std::string, CostFunction*> SymbolTable;
+
+  /** Constructs a parser to parse a string to a cost function.  The
+      parameter 's' is the string to parse, and the symbol_table is a
+      mapping from strings to CostFunctions. */
+  CostParser(std::string s, SymbolTable& symbol_table) :
+    s_(s), symbol_table_(symbol_table), index_(0), error_() {}
 
   /** Takes the string and parses it into a cost function.  Returns a pointer which
       the caller must delete. */
@@ -158,18 +163,10 @@ private:
   std::string error_;
 
   /** Used for constructing correctness cost function */
-  const Cfg& target_;
-  stoke::Sandbox* sb_;
+  SymbolTable& symbol_table_;
 
 };
 
 }
-
-#ifdef DEFINE_STOKE_ARGS
-// If this file is included from a binary, then also provide the definitions.
-// This is to avoid compiling in sandbox/cost command line arguments unless
-// they are necessary.
-#include "cost_parser.cc"
-#endif
 
 #endif
