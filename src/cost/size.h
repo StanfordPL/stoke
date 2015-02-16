@@ -19,7 +19,8 @@ namespace stoke {
 
 class SizeCost : public CostFunction {
 
-  result_type operator()(const Cfg& cfg, Cost max) {
+public:
+  result_type operator()(const Cfg& cfg, Cost max = max_cost) {
 
     Cost size = 0;
 
