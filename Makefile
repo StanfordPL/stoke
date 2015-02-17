@@ -17,6 +17,9 @@
 COMPILERBINARY=g++
 CXX=ccache ${COMPILERBINARY} -std=c++11 -Werror -Wextra -Wfatal-errors -Wno-deprecated
 
+# number of threads used for compiling
+NTHREADS=8
+
 INC_FOLDERS=\
 						./ \
 						src/ext/cpputil/ \
@@ -162,43 +165,43 @@ test: haswell_test
 haswell: haswell_release
 haswell_release:
 	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=core-avx2"
-	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG"
 haswell_debug:
 	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=core-avx2"
-	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -g"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -g"
 haswell_profile:
 	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=core-avx2"
-	$(MAKE) -C . -j8 $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
 haswell_test: haswell_debug
-	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 sandybridge: sandybridge_release
 sandybridge_release:
 	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7-avx"
-	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG"
 sandybridge_debug:
 	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7-avx"
-	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -g"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -g"
 sandybridge_profile:
 	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=corei7-avx"
-	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg"
 sandybridge_test: sandybridge_debug
-	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 nehalem: nehalem_release
 nehalem_release:
 	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7"
-	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -O3 -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG"
 nehalem_debug:
 	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7"
-	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -g"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -g"
 nehalem_profile:
 	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7"
-	$(MAKE) -C . -j8 $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg"
 nehalem_test: nehalem_debug
-	$(MAKE) -C . -j8 bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG"
 	LD_LIBRARY_PATH=src/ext/z3/bin:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 ##### CTAGS TARGETS
@@ -214,7 +217,7 @@ external: src/ext/astyle src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libg
 
 src/ext/astyle:
 	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle
-	$(MAKE) -C src/ext/astyle/build/gcc -j8
+	$(MAKE) -C src/ext/astyle/build/gcc -j$(NTHREADS)
 
 src/ext/cpputil:
 	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
@@ -224,7 +227,7 @@ src/ext/x64asm:
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
-	$(MAKE) -C src/ext/gtest-1.7.0 -j8
+	$(MAKE) -C src/ext/gtest-1.7.0 -j$(NTHREADS)
 
 ##### VALIDATOR AUTOGEN
 
