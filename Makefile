@@ -14,7 +14,8 @@
 
 ##### CONSTANT DEFINITIONS
 
-CXX=ccache g++ -std=c++11 -Werror -Wextra -Wfatal-errors -Wno-deprecated
+COMPILERBINARY=g++
+CXX=ccache ${COMPILERBINARY} -std=c++11 -Werror -Wextra -Wfatal-errors -Wno-deprecated
 
 INC_FOLDERS=\
 						./ \
@@ -208,7 +209,7 @@ tags:
 ##### EXTERNAL TARGETS
 
 external: src/ext/astyle src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
-	$(MAKE) -C src/ext/x64asm $(EXT_OPT) 
+	$(MAKE) -C src/ext/x64asm $(EXT_OPT) COMPILERBINARY=${COMPILERBINARY}
 	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET=$(EXT_TARGET)
 
 src/ext/astyle:
