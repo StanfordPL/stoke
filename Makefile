@@ -14,11 +14,15 @@
 
 ##### CONSTANT DEFINITIONS
 
-COMPILERBINARY=g++
+ifndef COMPILERBINARY
+	COMPILERBINARY=g++
+endif
 CXX=ccache ${COMPILERBINARY} -std=c++11 -Werror -Wextra -Wfatal-errors -Wno-deprecated
 
 # number of threads used for compiling
-NTHREADS=8
+ifndef NTHREADS
+	NTHREADS=8
+endif
 
 INC_FOLDERS=\
 						./ \
