@@ -66,12 +66,13 @@ private:
    *    &            BINOP2
    *    < <= > >=    BINOP3
    *    >> <<        BINOP4
-   *    + -          BINOP5
-   *    * / %        BINOP6
+   *    ==           BINOP5
+   *    + -          BINOP6
+   *    * / %        BINOP7
    *    ()
    *
    * Let "N" denote the number of binop classes there are
-   * (six, as of this documentation)
+   * (seven, as of this documentation)
    *
    * Here's a left-recursion free version:
    *
@@ -129,7 +130,7 @@ private:
    * some cleanup, feel free!
    */
 
-#define COST_PARSER_N 4
+#define COST_PARSER_N 7
 
   /** Helper used by peek and next() */
   void strip_spaces();
@@ -137,6 +138,8 @@ private:
   char peek(size_t n = 0);
   /** Move forward in the string */
   char next();
+  /** Remove some characters from the string */
+  void eat(size_t n);
 
   /** Report an error */
   void error(std::string m);
