@@ -41,6 +41,10 @@ char CostParser::next() {
   return c;
 }
 
+void CostParser::eat(size_t n) {
+  index_ += n;
+}
+
 void CostParser::error(std::string m) {
   if(error_ == "") {
     std::stringstream ss;
@@ -50,7 +54,11 @@ void CostParser::error(std::string m) {
 }
 
 CostFunction* CostParser::parse_S() {
-  return parse_L(0);
+  auto result = parse_L(0);
+  if(error_ != "")
+    return NULL;
+  else
+    return result;
 }
 
 CostFunction* CostParser::parse_L(size_t n) {
@@ -149,57 +157,124 @@ CostFunction* CostParser::parse_NUM() {
 ExprCost::Operator CostParser::parse_BINOP(size_t n) {
   assert(1ul <= n && n <= COST_PARSER_N);
 
-  switch(n) {
+  // STEP 1: TOKENIZATION
+  std::string var = "";
 
-  case 1: {
-    switch(peek()) {
-    case '|':
-      next();
-      return ExprCost::Operator::OR;
-    default:
-      return ExprCost::Operator::NONE;
-    }
+  size_t i;
+  char c;
+  for(i = 0, c = peek(); 
+      (c == '+' || c == '>' || c == '<' || c == '|' ||
+       c == '^' || c == '=' || c == '*' || c == '-' ||
+       c == '*' || c == '%' || c == '/' || c == '&'); 
+       c = peek(++i)) {
+
+    var = var.append(1, c);
   }
-  case 2: {
-    switch(peek()) {
-    case '&':
-      next();
-      return ExprCost::Operator::AND;
-    default:
-      return ExprCost::Operator::NONE;
-    }
-  }
-  case 3: {
-    switch(peek()) {
-    case '+':
-      next();
-      return ExprCost::Operator::PLUS;
-    case '-':
-      next();
-      return ExprCost::Operator::MINUS;
-    default:
-      return ExprCost::Operator::NONE;
-    }
-  }
-  case 4: {
-    switch(peek()) {
-    case '*':
-      next();
-      return ExprCost::Operator::TIMES;
-    case '/':
-      next();
-      return ExprCost::Operator::DIV;
-    case '%':
-      next();
-      return ExprCost::Operator::MOD;
-    default:
-      return ExprCost::Operator::NONE;
-    }
-  }
-  default: {
-    error("internal parse error in parse_BINOP() default case.");
-    assert(false);
+
+  ExprCost::Operator op;
+
+  if (var == "|") {
+    op = ExprCost::Operator::OR;
+  } else if (var == "&") {
+    op = ExprCost::Operator::AND;
+  } else if (var == "+") {
+    op = ExprCost::Operator::PLUS;
+  } else if (var == "-") {
+    op = ExprCost::Operator::MINUS;
+  } else if (var == "*") {
+    op = ExprCost::Operator::TIMES;
+  } else if (var == "/") {
+    op = ExprCost::Operator::DIV;
+  } else if (var == "%") {
+    op = ExprCost::Operator::MOD;
+  } else if (var == "<") {
+    op = ExprCost::Operator::LT;
+  } else if (var == "<=" || var == "=<") {
+    op = ExprCost::Operator::LTE;
+  } else if (var == ">") {
+    op = ExprCost::Operator::GT;
+  } else if (var == ">=" || var == "=>") {
+    op = ExprCost::Operator::GTE;
+  } else if (var == ">>") {
+    op = ExprCost::Operator::SHR;
+  } else if (var == "<<") {
+    op = ExprCost::Operator::SHL;
+  } else if (var == "==" || var == "=") {
+    op = ExprCost::Operator::EQ;
+  } else if (var == "") {
+    // there's no binary operator here
+    return ExprCost::Operator::NONE; 
+  } else {
+    // there's a symbol here, but not one we know!
+    error("Operator " + var + " is not supported.");
     return ExprCost::Operator::NONE;
   }
+
+  // STEP 2: FIGURE OUT ORDER OF OPERATION BUSINESS
+
+  switch(n) {
+    case 1:
+      if(op == ExprCost::Operator::OR) {
+        eat(var.size());
+        return op;
+      } else {
+        return ExprCost::Operator::NONE;
+      }
+
+    case 2:
+      if(op == ExprCost::Operator::AND) {
+        eat(var.size());
+        return op;
+      } else {
+        return ExprCost::Operator::NONE;
+      }
+
+    case 3:
+      if(op == ExprCost::Operator::EQ) {
+        eat(var.size());
+        return op; 
+      } else {
+        return ExprCost::Operator::NONE;
+      }
+
+    case 4:
+      if(op == ExprCost::Operator::LT || op == ExprCost::Operator::LTE ||
+         op == ExprCost::Operator::GT || op == ExprCost::Operator::GTE) {
+        eat(var.size());
+        return op;
+      } else {
+        return ExprCost::Operator::NONE;
+      }
+
+    case 5:
+      if(op == ExprCost::Operator::SHL || op == ExprCost::Operator::SHR) {
+        eat(var.size());
+        return op;
+      } else {
+        return ExprCost::Operator::NONE;
+      }
+
+    case 6:
+      if(op == ExprCost::Operator::PLUS || op == ExprCost::Operator::MINUS) {
+        eat(var.size());
+        return op;
+      } else {
+        return ExprCost::Operator::NONE;
+      }
+
+    case 7:
+      if(op == ExprCost::Operator::TIMES || op == ExprCost::Operator::DIV || 
+         op == ExprCost::Operator::MOD) {
+        eat(var.size());
+        return op;
+      } else {
+        return ExprCost::Operator::NONE;
+      }
+
+    default:
+      error("parse_BINOP() internal error.");
+      return ExprCost::Operator::NONE;
+
   }
+
 }
