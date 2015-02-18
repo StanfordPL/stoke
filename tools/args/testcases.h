@@ -31,9 +31,9 @@ extern cpputil::Heading& testcases_heading;
 extern cpputil::FileArg<CpuStates, CpuStatesReader, CpuStatesWriter>& testcases_arg;
 extern cpputil::FlagArg& shuffle_tc_arg;
 extern cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>, cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>&
-training_set_arg;
+    training_set_arg;
 extern cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>, cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>&
-test_set_arg;
+    test_set_arg;
 extern cpputil::ValueArg<size_t>& testcase_idx_arg;
 
 } // namespace stoke
@@ -68,16 +68,16 @@ FlagArg& shuffle_tc_arg =
 const set<size_t> default_set = create_default_testcase_set();
 
 ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>, SpanWriter<set<size_t>, Range<size_t, 0, 1024 * 1024>>>& training_set_arg =
-  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>, SpanWriter<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("training_set")
-  .usage("{ 0 1 ... 9 }")
-  .description("Subset of testcase indices to use for training sets")
-  .default_val(default_set);
+      ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>, SpanWriter<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("training_set")
+      .usage("{ 0 1 ... 9 }")
+      .description("Subset of testcase indices to use for training sets")
+      .default_val(default_set);
 
 ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>, SpanWriter<set<size_t>, Range<size_t, 0, 1024 * 1024>>>& test_set_arg =
-  ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>, SpanWriter<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("test_set")
-  .usage("{ 0 1 ... 9 }")
-  .description("Subset of testcase indices to use for test sets")
-  .default_val(default_set);
+      ValueArg<set<size_t>, SpanReader<set<size_t>, Range<size_t, 0, 1024 * 1024>>, SpanWriter<set<size_t>, Range<size_t, 0, 1024 * 1024>>>::create("test_set")
+      .usage("{ 0 1 ... 9 }")
+      .description("Subset of testcase indices to use for test sets")
+      .default_val(default_set);
 
 ValueArg<size_t>& testcase_idx_arg =
   ValueArg<size_t>::create("index")
