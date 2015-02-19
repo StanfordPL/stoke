@@ -18,8 +18,7 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
-#define DEFINE_STOKE_ARGS 1
-#include "tools/args/benchmark.h"
+#include "tools/args/benchmark.inc"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/target.h"
 #include "tools/ui/console.h"
