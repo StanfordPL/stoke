@@ -19,8 +19,8 @@
 
 #include "src/search/search_state.h"
 #include "src/tunit/tunit.h"
-#include "tools/args/search.h"
-#include "tools/args/search_state.h"
+#include "tools/args/search.inc"
+#include "tools/args/search_state.inc"
 #include "tools/gadgets/cfg.h"
 #include "tools/gadgets/target.h"
 

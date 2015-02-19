@@ -12,21 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_TARGET_H
-#define STOKE_TOOLS_GADGETS_TARGET_H
+#ifndef STOKE_TOOLS_ARGS_TARGET_INC
+#define STOKE_TOOLS_ARGS_TARGET_INC
 
-#include <vector>
+#include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/tunit/tunit.h"
-#include "tools/args/target.inc"
-#include "tools/gadgets/cfg.h"
+#include "tools/io/tunit.h"
 
 namespace stoke {
 
-class TargetGadget : public CfgGadget {
-public:
-  TargetGadget(const std::vector<TUnit>& aux_fxns) : CfgGadget(target_arg.value().code, aux_fxns) {}
-};
+cpputil::Heading& target_heading =
+  cpputil::Heading::create("Target Options:");
+
+cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& target_arg =
+  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
+  .usage("<path/to/file.s>")
+  .description("Target code")
+  .required();
 
 } // namespace stoke
 
