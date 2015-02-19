@@ -28,6 +28,8 @@ extern cpputil::ValueArg<Cost>& max_cost_arg;
 
 extern cpputil::ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg;
 
+extern cpputil::ValueArg<std::string, cpputil::LineReader<>>& correctness_arg;
+
 
 
 } // namespace stoke
@@ -51,7 +53,13 @@ ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
       ValueArg<std::string, cpputil::LineReader<>>::create("cost")
       .usage("<string>")
       .description("The cost function")
-      .default_val("correctness");
+      .default_val("correctness+latency");
+
+ValueArg<std::string, cpputil::LineReader<>>& correctness_arg =
+      ValueArg<std::string, cpputil::LineReader<>>::create("correctness")
+      .usage("<string>")
+      .description("Expression to check if code is correct")
+      .default_val("correctness == 0");
 
 } // namespace stoke
 

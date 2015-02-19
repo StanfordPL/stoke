@@ -95,6 +95,7 @@ TEST_F(CorrectnessCostTest, IncludesEflagsWhenSet) {
   auto cfg_r = make_cfg(rewrite);
 
   fxn_.set_target(cfg_t, false, false);
+  sb_.run(cfg_r);
   auto cost = fxn_(cfg_r);
 
   EXPECT_FALSE(cost.first);
@@ -127,6 +128,7 @@ TEST_F(CorrectnessCostTest, ExcludesEflagsWhenNotSet) {
   auto cfg_r = make_cfg(rewrite, x64asm::RegSet::empty() + x64asm::rax);
 
   fxn_.set_target(cfg_t, false, false);
+  sb_.run(cfg_r);
   auto cost = fxn_(cfg_r);
 
   EXPECT_TRUE(cost.first);
@@ -159,6 +161,7 @@ TEST_F(CorrectnessCostTest, ChecksRAX) {
   auto cfg_r = make_cfg(rewrite, x64asm::RegSet::empty() + x64asm::rax);
 
   fxn_.set_target(cfg_t, false, false);
+  sb_.run(cfg_r);
   auto cost = fxn_(cfg_r);
 
   /* Compute the expected number of bits to change */
@@ -201,6 +204,7 @@ TEST_F(CorrectnessCostTest, SignalPenalty) {
   auto cfg_r = make_cfg(rewrite);
 
   fxn_.set_target(cfg_t, false, false);
+  sb_.run(cfg_r);
   auto cost = fxn_(cfg_r);
 
   EXPECT_FALSE(cost.first);
