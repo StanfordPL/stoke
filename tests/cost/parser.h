@@ -59,7 +59,7 @@ protected:
     stoke::CostParser cp(s, table_);
 
     auto cf = cp.run();
-    EXPECT_FALSE(cf);
+    EXPECT_FALSE(cf) << "'" << s << "' parsed ok";
     auto result = cp.get_error();
     return result;
   }
@@ -192,6 +192,12 @@ TEST_F(CostParserTest, VariableNotFound) {
 TEST_F(CostParserTest, MiscelaneousErrors) {
   check_err("1+");
   check_err("1+()");
+  check_err("(1,2)");
+  check_err("a++bb");
+  check_err("1+1b");
+  check_err("b1+1");
+  check_err("(1+3)(2+4)");
+  check_err("+a-3");
 }
 
 TEST_F(CostParserTest, DoLogic) {
