@@ -17,6 +17,23 @@
 using namespace stoke;
 using namespace std;
 
+bool ExprCost::need_sandbox() {
+
+  for(auto cf : leaf_functions()) {
+    if(cf->need_sandbox())
+      return true;
+  }
+  return false;
+}
+
+void ExprCost::setup_sandbox(Sandbox* sb) {
+
+  sb_ = sb;
+  for(auto cf : leaf_functions()) {
+    cf->setup_sandbox(sb);
+  }
+}
+
 set<CostFunction*> ExprCost::leaf_functions() const {
 
   if(arity_ == 0) {
@@ -42,47 +59,73 @@ set<CostFunction*> ExprCost::leaf_functions() const {
 
 ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
 
-  if(arity_ == 0) {
-    return result_type(true, constant_);
-  } else if (arity_ == 1) {
-    return (*a1_)(cfg, max);
-  } else if (arity_ == 2) {
-    auto c1 = (*a1_)(cfg, max);
-    auto c2 = (*a2_)(cfg, max);
+  // run the sandbox, if needed
+  auto leaves = leaf_functions();
+  for(auto it : leaves) {
+    if(it->need_sandbox()) {
+      assert(sb_);
 
-    bool correct = c1.first && c2.first;
+      sb_->expert_mode();
+      sb_->expert_use_disposable_labels();
+      sb_->expert_recompile(cfg);
+      sb_->expert_recycle_labels();
+      sb_->run();
+
+      break;
+    }
+  }
+
+  // build the environment
+  std::map<CostFunction*, Cost> env;
+  for(auto it : leaves) {
+    env[it] = (*it)(cfg, max).second;
+  }
+
+  return result_type(true, run(env));
+}
+
+Cost ExprCost::run(const std::map<CostFunction*, Cost>& env) const {
+
+  if(arity_ == 0) {
+    return constant_;
+  } else if (arity_ == 1) {
+    assert(env.count(a1_) > 0);
+    return env.at(a1_);
+  } else if (arity_ == 2) {
+    auto c1 = static_cast<ExprCost*>(a1_)->run(env);
+    auto c2 = static_cast<ExprCost*>(a2_)->run(env);
 
     switch(op_) {
     case NONE:
       assert(false);
     case PLUS:
-      return result_type(correct, c1.second + c2.second);
+      return c1+c2;
     case MINUS:
-      return result_type(correct, c1.second - c2.second);
+      return c1-c2;
     case TIMES:
-      return result_type(correct, c1.second * c2.second);
+      return c1*c2;
     case DIV:
-      return result_type(correct, c1.second / c2.second);
+      return c1/c2;
     case MOD:
-      return result_type(correct, c1.second % c2.second);
+      return c1%c2;
     case AND:
-      return result_type(correct, c1.second & c2.second);
+      return c1&c2;
     case OR:
-      return result_type(correct, c1.second | c2.second);
+      return c1|c2;
     case SHL:
-      return result_type(correct, c1.second << c2.second);
+      return c1 << c2;
     case SHR:
-      return result_type(correct, c1.second >> c2.second);
+      return c1 >> c2;
     case LT:
-      return result_type(correct, c1.second < c2.second);
+      return c1 < c2;
     case LTE:
-      return result_type(correct, c1.second <= c2.second);
+      return c1 <= c2;
     case GT:
-      return result_type(correct, c1.second > c2.second);
+      return c1 > c2;
     case GTE:
-      return result_type(correct, c1.second >= c2.second);
+      return c1 >= c2;
     case EQ:
-      return result_type(correct, c1.second == c2.second);
+      return c1 == c2;
     default:
       assert(false);
     }

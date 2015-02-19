@@ -21,6 +21,8 @@
 #include "src/cost/cost_parser.h"
 #include "src/cost/expr.h"
 
+namespace stoke {
+
 class CostParserTest : public ::testing::Test {
 
 public:
@@ -29,17 +31,17 @@ public:
 protected:
 
   /** Parses the string s and returns the cost function */
-  stoke::ExprCost* parse(std::string s) {
-    stoke::Cfg empty({}, x64asm::RegSet::empty(), x64asm::RegSet::empty());;
-    stoke::CostParser cp(s, table_);
+  ExprCost* parse(std::string s) {
+    Cfg empty({}, x64asm::RegSet::empty(), x64asm::RegSet::empty());;
+    CostParser cp(s, table_);
 
     return cp.run();
   }
 
   /** Parses the string s and tests the cost. */
-  stoke::Cost check(std::string s) {
-    stoke::Cfg empty({}, x64asm::RegSet::empty(), x64asm::RegSet::empty());;
-    stoke::CostParser cp(s, table_);
+  Cost check(std::string s) {
+    Cfg empty({}, x64asm::RegSet::empty(), x64asm::RegSet::empty());;
+    CostParser cp(s, table_);
 
     auto cf = cp.run();
     EXPECT_TRUE(cf);
@@ -55,8 +57,8 @@ protected:
 
   /** Parses the string s and checks for an error. */
   std::string check_err(std::string s) {
-    stoke::Cfg empty({}, x64asm::RegSet::empty(), x64asm::RegSet::empty());;
-    stoke::CostParser cp(s, table_);
+    Cfg empty({}, x64asm::RegSet::empty(), x64asm::RegSet::empty());;
+    CostParser cp(s, table_);
 
     auto cf = cp.run();
     EXPECT_FALSE(cf) << "'" << s << "' parsed ok";
@@ -65,13 +67,13 @@ protected:
   }
 
   /** Leaf cost functions that can be used. */
-  stoke::ExprCost a_; // 2
-  stoke::ExprCost b_; // 3
-  stoke::ExprCost c_; // 7
+  ExprCost a_; // 2
+  ExprCost b_; // 3
+  ExprCost c_; // 7
 
 private:
 
-  stoke::CostParser::SymbolTable table_;
+  CostParser::SymbolTable table_;
 
   void SetUp() {
     table_["a"] = &a_;
@@ -210,8 +212,8 @@ TEST_F(CostParserTest, DoLogic) {
 TEST_F(CostParserTest, LeafFunctions) {
 
   auto cf = parse("1 + a");
-  std::set<stoke::CostFunction*> a;
-  a.insert(static_cast<stoke::CostFunction*>(&a_));
+  std::set<CostFunction*> a;
+  a.insert(static_cast<CostFunction*>(&a_));
 
   EXPECT_EQ(a, cf->leaf_functions());
 
@@ -219,14 +221,16 @@ TEST_F(CostParserTest, LeafFunctions) {
 
 TEST_F(CostParserTest, NoLeafFunctions) {
   auto cf = parse("1 + 3*4");
-  std::set<stoke::CostFunction*> a;
+  std::set<CostFunction*> a;
   EXPECT_EQ(a, cf->leaf_functions());
 }
 
 TEST_F(CostParserTest, TwoLeafFunctions) {
   auto cf = parse("1 + 3*(a - bb)");
-  std::set<stoke::CostFunction*> a;
-  a.insert(static_cast<stoke::CostFunction*>(&a_));
-  a.insert(static_cast<stoke::CostFunction*>(&b_));
+  std::set<CostFunction*> a;
+  a.insert(static_cast<CostFunction*>(&a_));
+  a.insert(static_cast<CostFunction*>(&b_));
   EXPECT_EQ(a, cf->leaf_functions());
 }
+
+}//namespace stoke

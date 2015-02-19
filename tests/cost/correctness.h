@@ -23,10 +23,12 @@
 #include "src/state/cpu_state.h"
 #include "src/stategen/stategen.h"
 
+namespace stoke {
+
 class CorrectnessCostTest : public ::testing::Test {
 
 public:
-  CorrectnessCostTest() : fxn_(stoke::CorrectnessCost(&sb_)) {}
+  CorrectnessCostTest() : fxn_(CorrectnessCost(&sb_)) {}
 
 protected:
 
@@ -36,22 +38,22 @@ protected:
     }
   }
 
-  stoke::CpuState get_state() {
-    stoke::CpuState cs;
-    stoke::StateGen sg(&sb_);
+  CpuState get_state() {
+    CpuState cs;
+    StateGen sg(&sb_);
     sg.get(cs);
     return cs;
   }
 
-  stoke::Cfg make_cfg(x64asm::Code c, x64asm::RegSet rs = x64asm::RegSet::universe()) {
-    return stoke::Cfg(c, rs, rs);
+  Cfg make_cfg(x64asm::Code c, x64asm::RegSet rs = x64asm::RegSet::universe()) {
+    return Cfg(c, rs, rs);
   }
 
-  stoke::Cost misalign_penalty_;
-  stoke::Cost signal_penalty_;
+  Cost misalign_penalty_;
+  Cost signal_penalty_;
 
-  stoke::Sandbox sb_;
-  stoke::CorrectnessCost fxn_;
+  Sandbox sb_;
+  CorrectnessCost fxn_;
 
 private:
   void SetUp() {
@@ -60,7 +62,7 @@ private:
     signal_penalty_   = 11;
 
     fxn_.set_penalty(misalign_penalty_, signal_penalty_)
-    .set_reduction(stoke::Reduction::SUM);
+    .set_reduction(Reduction::SUM);
 
   }
 
@@ -206,4 +208,4 @@ TEST_F(CorrectnessCostTest, SignalPenalty) {
 
 }
 
-
+} //namespace

@@ -20,6 +20,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cost/cost.h"
+#include "src/sandbox/sandbox.h"
 
 namespace stoke {
 
@@ -34,6 +35,14 @@ public:
   /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
     result would equal or exceed that value. */
   virtual result_type operator()(const Cfg& cfg, const Cost max = max_cost) = 0;
+
+  /** Does this Cost require the sandbox to be run first? */
+  virtual bool need_sandbox() { return false; }
+
+  /** Perform any one-time setup required using the sandbox (optional).
+      This function must be invoked with a good sandbox if need_sandbox()
+      returns true. */
+  virtual void setup_sandbox(Sandbox* sb) { }
 
 };
 
