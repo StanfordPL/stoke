@@ -53,7 +53,7 @@ void CostParser::error(std::string m) {
   }
 }
 
-CostFunction* CostParser::parse_S() {
+ExprCost* CostParser::parse_S() {
   auto result = parse_L(0);
   if(error_ != "")
     return NULL;
@@ -61,11 +61,11 @@ CostFunction* CostParser::parse_S() {
     return result;
 }
 
-CostFunction* CostParser::parse_L(size_t n) {
+ExprCost* CostParser::parse_L(size_t n) {
   assert(n <= COST_PARSER_N - 1);
 
   // Parse an L(n+1) or T for the LHS
-  CostFunction* lhs = 0;
+  ExprCost* lhs = 0;
   if (n == COST_PARSER_N - 1) {
     lhs = parse_T();
   } else {
@@ -94,18 +94,18 @@ CostFunction* CostParser::parse_L(size_t n) {
   }
 }
 
-pair<ExprCost::Operator, CostFunction*> CostParser::parse_LP(size_t n) {
+pair<ExprCost::Operator, ExprCost*> CostParser::parse_LP(size_t n) {
   assert(n <= COST_PARSER_N - 1);
 
   auto binop = parse_BINOP(n+1);
   if(binop == ExprCost::Operator::NONE)
-    return pair<ExprCost::Operator, CostFunction*>(binop, NULL);
+    return pair<ExprCost::Operator, ExprCost*>(binop, NULL);
 
   auto rhs = parse_L(n);
-  return pair<ExprCost::Operator, CostFunction*>(binop, rhs);
+  return pair<ExprCost::Operator, ExprCost*>(binop, rhs);
 }
 
-CostFunction* CostParser::parse_T() {
+ExprCost* CostParser::parse_T() {
 
   char c = peek();
   if('a' <= c && c <= 'z') {
@@ -127,22 +127,24 @@ CostFunction* CostParser::parse_T() {
   return 0;
 }
 
-CostFunction* CostParser::parse_VAR() {
+ExprCost* CostParser::parse_VAR() {
   std::string var = "";
 
   while(peek() >= 'a' && peek() <= 'z') {
     var = var.append(1, next());
   }
 
-  CostFunction* cf = symbol_table_[var];
+  auto ptr = symbol_table_[var];
 
-  if(cf == NULL)
+  if(ptr == NULL) {
     error("undefined cost function variable: \"" + var + "\"");
+    return NULL;
+  }
 
-  return cf;
+  return new ExprCost(ptr);
 }
 
-CostFunction* CostParser::parse_NUM() {
+ExprCost* CostParser::parse_NUM() {
 
   std::string num = "0";
 
@@ -162,11 +164,11 @@ ExprCost::Operator CostParser::parse_BINOP(size_t n) {
 
   size_t i;
   char c;
-  for(i = 0, c = peek(); 
+  for(i = 0, c = peek();
       (c == '+' || c == '>' || c == '<' || c == '|' ||
        c == '^' || c == '=' || c == '*' || c == '-' ||
-       c == '*' || c == '%' || c == '/' || c == '&'); 
-       c = peek(++i)) {
+       c == '*' || c == '%' || c == '/' || c == '&');
+      c = peek(++i)) {
 
     var = var.append(1, c);
   }
@@ -203,7 +205,7 @@ ExprCost::Operator CostParser::parse_BINOP(size_t n) {
     op = ExprCost::Operator::EQ;
   } else if (var == "") {
     // there's no binary operator here
-    return ExprCost::Operator::NONE; 
+    return ExprCost::Operator::NONE;
   } else {
     // there's a symbol here, but not one we know!
     error("Operator " + var + " is not supported.");
@@ -213,67 +215,67 @@ ExprCost::Operator CostParser::parse_BINOP(size_t n) {
   // STEP 2: FIGURE OUT ORDER OF OPERATION BUSINESS
 
   switch(n) {
-    case 1:
-      if(op == ExprCost::Operator::OR) {
-        eat(var.size());
-        return op;
-      } else {
-        return ExprCost::Operator::NONE;
-      }
-
-    case 2:
-      if(op == ExprCost::Operator::AND) {
-        eat(var.size());
-        return op;
-      } else {
-        return ExprCost::Operator::NONE;
-      }
-
-    case 3:
-      if(op == ExprCost::Operator::EQ) {
-        eat(var.size());
-        return op; 
-      } else {
-        return ExprCost::Operator::NONE;
-      }
-
-    case 4:
-      if(op == ExprCost::Operator::LT || op == ExprCost::Operator::LTE ||
-         op == ExprCost::Operator::GT || op == ExprCost::Operator::GTE) {
-        eat(var.size());
-        return op;
-      } else {
-        return ExprCost::Operator::NONE;
-      }
-
-    case 5:
-      if(op == ExprCost::Operator::SHL || op == ExprCost::Operator::SHR) {
-        eat(var.size());
-        return op;
-      } else {
-        return ExprCost::Operator::NONE;
-      }
-
-    case 6:
-      if(op == ExprCost::Operator::PLUS || op == ExprCost::Operator::MINUS) {
-        eat(var.size());
-        return op;
-      } else {
-        return ExprCost::Operator::NONE;
-      }
-
-    case 7:
-      if(op == ExprCost::Operator::TIMES || op == ExprCost::Operator::DIV || 
-         op == ExprCost::Operator::MOD) {
-        eat(var.size());
-        return op;
-      } else {
-        return ExprCost::Operator::NONE;
-      }
-
-    default:
-      error("parse_BINOP() internal error.");
+  case 1:
+    if(op == ExprCost::Operator::OR) {
+      eat(var.size());
+      return op;
+    } else {
       return ExprCost::Operator::NONE;
+    }
+
+  case 2:
+    if(op == ExprCost::Operator::AND) {
+      eat(var.size());
+      return op;
+    } else {
+      return ExprCost::Operator::NONE;
+    }
+
+  case 3:
+    if(op == ExprCost::Operator::EQ) {
+      eat(var.size());
+      return op;
+    } else {
+      return ExprCost::Operator::NONE;
+    }
+
+  case 4:
+    if(op == ExprCost::Operator::LT || op == ExprCost::Operator::LTE ||
+        op == ExprCost::Operator::GT || op == ExprCost::Operator::GTE) {
+      eat(var.size());
+      return op;
+    } else {
+      return ExprCost::Operator::NONE;
+    }
+
+  case 5:
+    if(op == ExprCost::Operator::SHL || op == ExprCost::Operator::SHR) {
+      eat(var.size());
+      return op;
+    } else {
+      return ExprCost::Operator::NONE;
+    }
+
+  case 6:
+    if(op == ExprCost::Operator::PLUS || op == ExprCost::Operator::MINUS) {
+      eat(var.size());
+      return op;
+    } else {
+      return ExprCost::Operator::NONE;
+    }
+
+  case 7:
+    if(op == ExprCost::Operator::TIMES || op == ExprCost::Operator::DIV ||
+        op == ExprCost::Operator::MOD) {
+      eat(var.size());
+      return op;
+    } else {
+      return ExprCost::Operator::NONE;
+    }
+
+  default:
+    error("parse_BINOP() internal error.");
+    return ExprCost::Operator::NONE;
 
   }
 

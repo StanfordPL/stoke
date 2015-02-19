@@ -40,7 +40,7 @@ public:
 
   /** Takes the string and parses it into a cost function.  Returns a pointer which
       the caller must delete. */
-  CostFunction* run() {
+  ExprCost* run() {
     return parse_S();
   }
 
@@ -145,17 +145,17 @@ private:
   void error(std::string m);
 
   /** Parse a S nonterminal */
-  CostFunction* parse_S();
+  ExprCost* parse_S();
   /** Parse an L nonterminal */
-  CostFunction* parse_L(size_t);
+  ExprCost* parse_L(size_t);
   /** Parse an L' nonterminal */
-  std::pair<ExprCost::Operator, CostFunction*> parse_LP(size_t);
+  std::pair<ExprCost::Operator, ExprCost*> parse_LP(size_t);
   /** Parse a T nonterminal */
-  CostFunction* parse_T();
+  ExprCost* parse_T();
   /** Parse a VAR nonterminal */
-  CostFunction* parse_VAR();
+  ExprCost* parse_VAR();
   /** Parse a NUM nonterminal */
-  CostFunction* parse_NUM();
+  ExprCost* parse_NUM();
 
   /** Parse a BINOP */
   ExprCost::Operator parse_BINOP(size_t);

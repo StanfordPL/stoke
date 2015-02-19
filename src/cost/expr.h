@@ -15,6 +15,10 @@
 #ifndef STOKE_SRC_COST_EXPR_H
 #define STOKE_SRC_COST_EXPR_H
 
+#include "src/cost/cost_function.h"
+
+#include <set>
+
 namespace stoke {
 
 class ExprCost : public CostFunction {
@@ -39,59 +43,22 @@ public:
     EQ
   };
 
-  ExprCost(CostFunction* a1, CostFunction* a2, Operator op) :
+  /** Constructs a binary operation on two other expressions*/
+  ExprCost(ExprCost* a1, ExprCost* a2, Operator op) :
     a1_(a1), a2_(a2), op_(op), arity_(2) {}
 
+  /** Constructs a reference to a "leaf" cost function.
+      (i.e. one that does real work) */
+  ExprCost(CostFunction* a1) : a1_(a1), arity_(1) {}
+
+  /** Constructs a constant operation */
   ExprCost(Cost constant) : constant_(constant), arity_(0) {}
 
+  /** Compute the cost of this expression. */
+  result_type operator()(const Cfg& cfg, Cost max = max_cost);
 
-  result_type operator()(const Cfg& cfg, Cost max) {
-
-    if(arity_ == 0) {
-      return result_type(true, constant_);
-    } else if (arity_ == 2) {
-      auto c1 = (*a1_)(cfg, max);
-      auto c2 = (*a2_)(cfg, max);
-
-      bool correct = c1.first && c2.first;
-
-      switch(op_) {
-      case NONE:
-        assert(false);
-      case PLUS:
-        return result_type(correct, c1.second + c2.second);
-      case MINUS:
-        return result_type(correct, c1.second - c2.second);
-      case TIMES:
-        return result_type(correct, c1.second * c2.second);
-      case DIV:
-        return result_type(correct, c1.second / c2.second);
-      case MOD:
-        return result_type(correct, c1.second % c2.second);
-      case AND:
-        return result_type(correct, c1.second & c2.second);
-      case OR:
-        return result_type(correct, c1.second | c2.second);
-      case SHL:
-        return result_type(correct, c1.second << c2.second);
-      case SHR:
-        return result_type(correct, c1.second >> c2.second);
-      case LT:
-        return result_type(correct, c1.second < c2.second);
-      case LTE:
-        return result_type(correct, c1.second <= c2.second);
-      case GT:
-        return result_type(correct, c1.second > c2.second);
-      case GTE:
-        return result_type(correct, c1.second >= c2.second);
-      case EQ:
-        return result_type(correct, c1.second == c2.second);
-      default:
-        assert(false);
-      }
-    }
-    assert(false);
-  }
+  /** Returns the pointers to leaf cost functions used in this expression. */
+  std::set<CostFunction*> leaf_functions() const;
 
 private:
 

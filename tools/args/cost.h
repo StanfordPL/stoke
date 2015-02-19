@@ -48,10 +48,10 @@ ValueArg<Cost>& max_cost_arg =
   .default_val(CostFunction::max_cost - 1);
 
 ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
-  ValueArg<std::string, cpputil::LineReader<>>::create("cost")
-  .usage("<string>")
-  .description("The cost function")
-  .default_val("correctness");
+      ValueArg<std::string, cpputil::LineReader<>>::create("cost")
+      .usage("<string>")
+      .description("The cost function")
+      .default_val("correctness");
 
 } // namespace stoke
 
