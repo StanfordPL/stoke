@@ -16,12 +16,17 @@
 #define STOKE_SRC_COST_EXPR_H
 
 #include "src/cost/cost_function.h"
+#include "gtest/gtest_prod.h"
 
 #include <set>
 
 namespace stoke {
 
 class ExprCost : public CostFunction {
+  friend class CostParserTest;
+  FRIEND_TEST(CostParserTest, LeafFunctions);
+  FRIEND_TEST(CostParserTest, NoLeafFunctions);
+  FRIEND_TEST(CostParserTest, TwoLeafFunctions);
 
 public:
 
@@ -57,10 +62,22 @@ public:
   /** Compute the cost of this expression. */
   result_type operator()(const Cfg& cfg, Cost max = max_cost);
 
-  /** Returns the pointers to leaf cost functions used in this expression. */
-  std::set<CostFunction*> leaf_functions() const;
+  /** Figure out if we need to do any cost function setup. */
+  bool need_sandbox();
+
+  /** Do any necessary cost function setup. */
+  void setup_sandbox(Sandbox* sb);
 
 private:
+
+  /** Compute the cost associated with this node. */
+  Cost run(const std::map<CostFunction*, Cost>& environment) const;
+
+  /** The sandbox that we (may) need to run. */
+  Sandbox* sb_;
+
+  /** Returns the pointers to leaf cost functions used in this expression. */
+  std::set<CostFunction*> leaf_functions() const;
 
   /** How many operands does this cost expression take? */
   size_t arity_;

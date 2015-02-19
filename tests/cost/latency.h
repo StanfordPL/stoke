@@ -19,13 +19,15 @@
 #include "src/cost/cost_function.h"
 #include "src/cost/latency.h"
 
+namespace stoke {
+
 class LatencyCostTest : public ::testing::Test {
 
 protected:
 
-  stoke::LatencyCost fxn_;
+  LatencyCost fxn_;
 
-  stoke::Cost latency(std::string s) {
+  Cost latency(std::string s) {
     x64asm::Code c;
 
     std::stringstream str;
@@ -34,7 +36,7 @@ protected:
     str << "retq" << std::endl;
     str >> c;
 
-    stoke::Cfg cfg(c, x64asm::RegSet::empty(), x64asm::RegSet::empty());
+    Cfg cfg(c, x64asm::RegSet::empty(), x64asm::RegSet::empty());
 
     auto res = fxn_(cfg);
     return res.second;
@@ -60,3 +62,4 @@ TEST_F(LatencyCostTest, Latencies) {
 
 }
 
+} //namespace stoke
