@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_PERFORMANCE_H
-#define STOKE_TOOLS_ARGS_PERFORMANCE_H
+#ifndef STOKE_TOOLS_ARGS_PERFORMANCE_INC
+#define STOKE_TOOLS_ARGS_PERFORMANCE_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
@@ -23,43 +23,27 @@
 
 namespace stoke {
 
-extern cpputil::Heading& performance_heading;
+cpputil::Heading& performance_heading =
+  cpputil::Heading::create("Performance Options:");
 
-extern cpputil::ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>& perf_arg;
-extern cpputil::ValueArg<Cost>& nesting_penalty_arg;
-extern cpputil::ValueArg<Cost>& sse_avx_penalty_arg;
-
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
-
-namespace stoke {
-
-Heading& performance_heading =
-  Heading::create("Performance Options:");
-
-ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>& perf_arg =
-  ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
+cpputil::ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>& perf_arg =
+  cpputil::ValueArg<PerformanceTerm, PerformanceTermReader, PerformanceTermWriter>::create("perf")
   .usage("(none|size|latency|measured|extension)")
   .description("Performance definition")
   .default_val(PerformanceTerm::LATENCY);
 
-ValueArg<Cost>& nesting_penalty_arg =
-  ValueArg<Cost>::create("nesting_penalty")
+cpputil::ValueArg<Cost>& nesting_penalty_arg =
+  cpputil::ValueArg<Cost>::create("nesting_penalty")
   .usage("<int>")
   .description("Latency multiplier for nested code")
   .default_val(5);
 
-ValueArg<Cost>& sse_avx_penalty_arg =
-  ValueArg<Cost>::create("sse_avx_penalty")
+cpputil::ValueArg<Cost>& sse_avx_penalty_arg =
+  cpputil::ValueArg<Cost>::create("sse_avx_penalty")
   .usage("<int>")
   .description("Latency penalty for programs that mix sse and avx instructions")
   .default_val(10000);
 
 } // namespace stoke
 
-
-#endif
 #endif

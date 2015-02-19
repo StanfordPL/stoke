@@ -28,9 +28,8 @@
 #include "src/search/timeout.h"
 #include "src/search/postprocessing.h"
 
-#define DEFINE_STOKE_ARGS 1
-#include "tools/args/search.h"
-#include "tools/args/target.h"
+#include "tools/args/search.inc"
+#include "tools/args/target.inc"
 #include "tools/gadgets/cost_function.h"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/sandbox.h"

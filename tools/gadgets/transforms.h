@@ -28,7 +28,7 @@
 #include "src/tunit/tunit.h"
 #include "src/validator/validator.h"
 
-#include "tools/args/transforms.h"
+#include "tools/args/transforms.inc"
 #include "tools/ui/console.h"
 
 namespace stoke {
