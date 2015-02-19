@@ -50,15 +50,28 @@ private:
     st["latency"] =      new LatencyCostGadget();
     st["size"] =         new SizeCost();
 
-    CostParser cp(cost_function_arg.value(), st);
-    auto res = cp.run();
-    if(cp.get_error().size()) {
-      Console::error(1) << "Error parsing cost function: " << cp.get_error() << std::endl;
+    CostParser cost_p(cost_function_arg.value(), st);
+    auto cost_fxn = cost_p.run();
+    if(cost_p.get_error().size()) {
+      Console::error(1) << "Error parsing cost function: " << cost_p.get_error() << std::endl;
     }
-    if(res == NULL) {
+    if(cost_fxn == NULL) {
       Console::error(1) << "Unknown error parsing cost function." << std::endl;
     }
-    return res;
+
+    CostParser correct_p(correctness_arg.value(), st);
+    auto correctness_fxn = correct_p.run();
+    if(correct_p.get_error().size()) {
+      Console::error(1) << "Error parsing correctness function: " << correct_p.get_error()
+                        << std::endl;
+    }
+    if(correctness_fxn == NULL) {
+      Console::error(1) << "Unknown error parsing correctness function." << std::endl;
+    }
+
+    (*cost_fxn).set_correctness(correctness_fxn)
+    .setup_sandbox(sb);
+    return cost_fxn;
   }
 
 };

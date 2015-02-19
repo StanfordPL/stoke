@@ -91,16 +91,10 @@ Cost CorrectnessCost::evaluate_correctness(const Cfg& cfg, const Cost max) {
 Cost CorrectnessCost::max_correctness(const Cfg& cfg, const Cost max) {
   Cost res = 0;
 
-  sandbox_->expert_mode();
-  sandbox_->expert_use_disposable_labels();
-  sandbox_->expert_recompile(cfg);
-  sandbox_->expert_recycle_labels();
-
   recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_sse_out_);
 
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
-    sandbox_->run_one(i);
     res = std::max(res, evaluate_error(reference_out_[i], *(sandbox_->get_result(i))));
     assert(res <= max_testcase_cost);
   }
@@ -112,16 +106,10 @@ Cost CorrectnessCost::max_correctness(const Cfg& cfg, const Cost max) {
 Cost CorrectnessCost::sum_correctness(const Cfg& cfg, const Cost max) {
   Cost res = 0;
 
-  sandbox_->expert_mode();
-  sandbox_->expert_use_disposable_labels();
-  sandbox_->expert_recompile(cfg);
-  sandbox_->expert_recycle_labels();
-
   recompute_defs(cfg.def_outs(), rewrite_gp_out_, rewrite_sse_out_);
 
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
-    sandbox_->run_one(i);
     const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)));
     assert(err <= max_testcase_cost);
 

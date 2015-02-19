@@ -19,19 +19,31 @@ using namespace std;
 
 bool ExprCost::need_sandbox() {
 
-  for(auto cf : leaf_functions()) {
+  for(auto cf : all_leaf_functions()) {
     if(cf->need_sandbox())
       return true;
   }
   return false;
 }
 
-void ExprCost::setup_sandbox(Sandbox* sb) {
+ExprCost& ExprCost::setup_sandbox(Sandbox* sb) {
 
   sb_ = sb;
-  for(auto cf : leaf_functions()) {
+  for(auto cf : all_leaf_functions()) {
     cf->setup_sandbox(sb);
   }
+  return *this;
+}
+
+set<CostFunction*> ExprCost::all_leaf_functions() const {
+
+  auto leaves = leaf_functions();
+  if(correctness_) {
+    auto more_leaves = correctness_->leaf_functions();
+    leaves.insert(more_leaves.begin(), more_leaves.end());
+  }
+  return leaves;
+
 }
 
 set<CostFunction*> ExprCost::leaf_functions() const {
@@ -59,8 +71,10 @@ set<CostFunction*> ExprCost::leaf_functions() const {
 
 ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
 
+  // Get the full list of leaf functions
+  auto leaves = all_leaf_functions();
+
   // run the sandbox, if needed
-  auto leaves = leaf_functions();
   for(auto it : leaves) {
     if(it->need_sandbox()) {
       assert(sb_);
@@ -69,7 +83,7 @@ ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
       sb_->expert_use_disposable_labels();
       sb_->expert_recompile(cfg);
       sb_->expert_recycle_labels();
-      sb_->run();
+      sb_->run(cfg);
 
       break;
     }
@@ -81,7 +95,15 @@ ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
     env[it] = (*it)(cfg, max).second;
   }
 
-  return result_type(true, run(env));
+  // compute cost and correctness
+  Cost cost = run(env);
+
+  bool correct = true;
+  if(correctness_) {
+    correct = correctness_->run(env);
+  }
+
+  return result_type(correct, cost);
 }
 
 Cost ExprCost::run(const std::map<CostFunction*, Cost>& env) const {

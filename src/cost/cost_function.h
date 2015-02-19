@@ -37,12 +37,16 @@ public:
   virtual result_type operator()(const Cfg& cfg, const Cost max = max_cost) = 0;
 
   /** Does this Cost require the sandbox to be run first? */
-  virtual bool need_sandbox() { return false; }
+  virtual bool need_sandbox() {
+    return false;
+  }
 
   /** Perform any one-time setup required using the sandbox (optional).
       This function must be invoked with a good sandbox if need_sandbox()
       returns true. */
-  virtual void setup_sandbox(Sandbox* sb) { }
+  virtual CostFunction& setup_sandbox(Sandbox* sb) {
+    return *this;
+  }
 
 };
 

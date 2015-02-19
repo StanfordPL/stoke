@@ -50,25 +50,37 @@ public:
 
   /** Constructs a binary operation on two other expressions*/
   ExprCost(ExprCost* a1, ExprCost* a2, Operator op) :
-    a1_(a1), a2_(a2), op_(op), arity_(2) {}
-
+    a1_(a1), a2_(a2), op_(op), arity_(2), correctness_(NULL) {
+    reset();
+  }
   /** Constructs a reference to a "leaf" cost function.
       (i.e. one that does real work) */
-  ExprCost(CostFunction* a1) : a1_(a1), arity_(1) {}
-
+  ExprCost(CostFunction* a1) : a1_(a1), arity_(1), correctness_(NULL) {
+    reset();
+  }
   /** Constructs a constant operation */
-  ExprCost(Cost constant) : constant_(constant), arity_(0) {}
+  ExprCost(Cost constant) : constant_(constant), arity_(0) {
+    reset();
+  }
 
   /** Compute the cost of this expression. */
   result_type operator()(const Cfg& cfg, Cost max = max_cost);
 
+  /** Set the correctness term to another expression. */
+  ExprCost& set_correctness(ExprCost* correctness) {
+    correctness_ = correctness;
+  }
+
   /** Figure out if we need to do any cost function setup. */
   bool need_sandbox();
-
   /** Do any necessary cost function setup. */
-  void setup_sandbox(Sandbox* sb);
+  ExprCost& setup_sandbox(Sandbox* sb);
 
 private:
+  /** Called by all initializers. */
+  void reset() {
+    correctness_ = NULL;
+  }
 
   /** Compute the cost associated with this node. */
   Cost run(const std::map<CostFunction*, Cost>& environment) const;
@@ -78,9 +90,13 @@ private:
 
   /** Returns the pointers to leaf cost functions used in this expression. */
   std::set<CostFunction*> leaf_functions() const;
+  /** Like leaf_functions(), but also inspects correctness term. */
+  std::set<CostFunction*> all_leaf_functions() const;
 
   /** How many operands does this cost expression take? */
   size_t arity_;
+  /** Set the correctness term */
+  ExprCost* correctness_;
 
   /** A constant (for arity 0) */
   Cost constant_;

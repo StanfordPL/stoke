@@ -112,6 +112,21 @@ public:
     return *(sandbox_->get_input(i));
   }
 
+  /** We need the sandbox! */
+  bool need_sandbox() {
+    return true;
+  }
+
+  /** Just make sure our sandbox is the same as theirs...
+      The constructor shouldn't ever be given a different sandbox than the one
+      passed here.  That could cause our reference outputs to differ (but no
+      other ill effects, I think). */
+  CorrectnessCost& setup_sandbox(Sandbox* sb) {
+    assert(sandbox_ == sb);
+    sandbox_ = sb;
+    return *this;
+  }
+
 private:
   /** A sandbox for evaluating target and rewrites. */
   Sandbox* sandbox_;
