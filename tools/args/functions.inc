@@ -12,42 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_TARGET_H
-#define STOKE_TOOLS_ARGS_TARGET_H
+#ifndef STOKE_TOOLS_ARGS_FUNCTIONS_INC
+#define STOKE_TOOLS_ARGS_FUNCTIONS_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
-#include "src/ext/x64asm/include/x64asm.h"
-
 #include "src/tunit/tunit.h"
 #include "tools/io/tunit.h"
 
 namespace stoke {
 
-extern cpputil::Heading& target_heading;
+cpputil::Heading& functions_heading =
+  cpputil::Heading::create("Auxiliary Function Options:");
 
-extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& target_arg;
+cpputil::FolderArg<TUnit, TUnitReader, TUnitWriter>& aux_fxns_arg =
+  cpputil::FolderArg<TUnit, TUnitReader, TUnitWriter>::create("functions")
+  .usage("<path/to/dir>")
+  .description("Directory containing helper functions")
+  .default_val({});
 
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
-using namespace x64asm;
-
-namespace stoke {
-
-Heading& target_heading =
-  Heading::create("Target Options:");
-
-FileArg<TUnit, TUnitReader, TUnitWriter>& target_arg =
-  FileArg<TUnit, TUnitReader, TUnitWriter>::create("target")
-  .usage("<path/to/file.s>")
-  .description("Target code")
-  .required();
+cpputil::FlagArg& prune_aux_arg =
+  cpputil::FlagArg::create("prune")
+  .description("Automatically remove target and unreachable functions from functions directory");
 
 } // namespace stoke
-
-
-#endif
 
 #endif

@@ -18,7 +18,7 @@
 #include "src/solver/smtsolver.h"
 #include "src/solver/cvc4solver.h"
 #include "src/solver/z3solver.h"
-#include "tools/args/solver.h"
+#include "tools/args/solver.inc"
 
 namespace stoke {
 

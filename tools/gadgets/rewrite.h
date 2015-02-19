@@ -18,8 +18,8 @@
 #include <vector>
 
 #include "src/tunit/tunit.h"
+#include "tools/args/rewrite.inc"
 #include "tools/gadgets/cfg.h"
-#include "tools/args/rewrite.h"
 
 namespace stoke {
 

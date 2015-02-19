@@ -12,38 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_SEED_H
-#define STOKE_TOOLS_ARGS_SEED_H
-
-#include <random>
+#ifndef STOKE_TOOLS_ARGS_MOVE_INC
+#define STOKE_TOOLS_ARGS_MOVE_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
-namespace stoke {
-
-extern cpputil::Heading& seed_group;
-extern cpputil::ValueArg<std::default_random_engine::result_type>& seed_arg;
-
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
-using namespace std;
+#include "src/search/move.h"
+#include "tools/io/move.h"
 
 namespace stoke {
 
-Heading& seed_group =
-  Heading::create("Random Seed Options:");
+cpputil::Heading& move_heading =
+  cpputil::Heading::create("Transformation Type Options:");
 
-ValueArg<default_random_engine::result_type>& seed_arg =
-  ValueArg<default_random_engine::result_type>::create("seed")
-  .usage("<int>")
-  .description("Random seed for stoke tools; set to zero for random")
-  .default_val(0);
+cpputil::ValueArg<Move, MoveReader, MoveWriter>& move_arg =
+  cpputil::ValueArg<Move, MoveReader, MoveWriter>::create("move_type")
+  .usage("(instruction|opcode|operand|local_swap|global_swap|resize|extension)")
+  .description("Move type to perform")
+  .default_val(Move::INSTRUCTION);
 
 } // namespace stoke
 
-
-#endif
 #endif
