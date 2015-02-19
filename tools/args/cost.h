@@ -16,6 +16,7 @@
 #define STOKE_TOOLS_ARGS_COST_H
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/serialize/line_reader.h"
 #include "src/cost/cost_function.h"
 #include "src/cost/cost.h"
 
@@ -25,7 +26,7 @@ extern cpputil::Heading& cost_heading;
 
 extern cpputil::ValueArg<Cost>& max_cost_arg;
 
-extern cpputil::ValueArg<std::string>& cost_function_arg;
+extern cpputil::ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg;
 
 
 
@@ -46,8 +47,8 @@ ValueArg<Cost>& max_cost_arg =
   .description("Give up once cost exceeds this value")
   .default_val(CostFunction::max_cost - 1);
 
-ValueArg<std::string>& cost_function_arg =
-  ValueArg<std::string>::create("cost")
+ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
+  ValueArg<std::string, cpputil::LineReader<>>::create("cost")
   .usage("<string>")
   .description("The cost function")
   .default_val("correctness");
