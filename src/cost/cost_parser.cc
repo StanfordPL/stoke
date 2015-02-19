@@ -55,6 +55,12 @@ void CostParser::error(std::string m) {
 
 ExprCost* CostParser::parse_S() {
   auto result = parse_L(0);
+
+  if (peek()) {
+    //There's more unconsumed stuff
+    error("trailing characters after expression");
+  }
+
   if(error_ != "")
     return NULL;
   else
@@ -116,7 +122,7 @@ ExprCost* CostParser::parse_T() {
   }
   if(c == '(') {
     next();
-    auto f = parse_S();
+    auto f = parse_L(0);
     char d = next();
     if (d != ')') {
       error("expected a close-paren");

@@ -76,24 +76,26 @@ private:
    *
    * Here's a left-recursion free version:
    *
-   * S      -> L1 BINOP1 S | L1
+   * S      -> L0 $
+   * L0     -> L1 BINOP1 L0 | L1
    * L1     -> L2 BINOP2 L1 | L2
    * L2     -> L3 BINOP3 L2 | L3
    *          ...
    * L(N-2) -> L(N-1) BINOP(N-1) L(N-2) | L(N-1)
    * L(N-1) -> T  BINOP(N) L(N-1) | T
-   * T      -> NUM | VAR | (S)
+   * T      -> NUM | VAR | (L0)
    *
    * Here's the left-factored version:
    *
-   * S       -> L1 S'
-   * S'      -> BINOP1 S | e
+   * S       -> L0 $
+   * L0      -> L1 L0'
+   * L0'     -> BINOP1 L0 | e
    * L1      -> L2 L1'
    * L1'     -> BINOP2 L1 | e
    *         ...
    * L(N-1)  -> T L(N-1)'
    * L(N-1)' -> BINOP(N) L(N-1) | e
-   * T       -> NUM | VAR | ( S )
+   * T       -> NUM | VAR | ( L0 )
    *
    * Here are the first/follow sets.
    *
