@@ -15,19 +15,23 @@
 #ifndef STOKE_SRC_COST_MEASURED_H
 #define STOKE_SRC_COST_MEASURED_H
 
-#include <cmath>
-
-#include <algorithm>
-#include <array>
-#include <limits>
-
-#include "src/sandbox/sandbox.h"
-
 namespace stoke {
 
-class MasuredCost : public CostFunction {
+class MeasuredCost : public CostFunction {
 
-  Cost MeasuredCost::measured_performance(const Cfg& cfg) const {
+public:
+
+  /** Yes, we need to use the sandbox */
+  bool need_sandbox() { return true; }
+
+  /** And we need to set it up. */
+  MeasuredCost& setup_sandbox(Sandbox* sb) {
+    sandbox_ = sb;
+    sandbox_->set_count_instructions(true);
+  }
+
+  /** Measures the "running time" with our latency table */
+  result_type operator()(const Cfg& cfg, Cost max = max_cost) {
     Cost latency = 0;
     Cost tc_count = 0;
 
@@ -36,8 +40,14 @@ class MasuredCost : public CostFunction {
       tc_count++;
     }
 
-    return latency/tc_count;
+    assert(tc_count != 0);
+    return result_type(true, latency/tc_count);
   }
+
+private:
+
+  /** The sandbox that has the most recently run target. */
+  Sandbox* sandbox_;
 
 };
 
