@@ -12,41 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_SANDBOX_H
-#define STOKE_TOOLS_ARGS_SANDBOX_H
+#ifndef STOKE_TOOLS_ARGS_SOLVER_INC
+#define STOKE_TOOLS_ARGS_SOLVER_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
-namespace stoke {
-
-extern cpputil::Heading& sandbox_heading;
-
-extern cpputil::FlagArg& abi_check_arg;
-extern cpputil::ValueArg<size_t>& max_jumps_arg;
-
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
+#include "src/solver/solver.h"
+#include "tools/io/solver.h"
 
 namespace stoke {
 
-Heading& sandbox_heading =
-  Heading::create("Sandbox Options:");
+cpputil::Heading& smt_heading =
+  cpputil::Heading::create("Formal Validator Options:");
 
-FlagArg& abi_check_arg =
-  FlagArg::create("abi_check")
-  .description("Report SIGSEGV for abi violations");
+cpputil::ValueArg<Solver, SolverReader, SolverWriter>& solver_arg =
+  cpputil::ValueArg<Solver, SolverReader, SolverWriter>::create("solver")
+  .usage("(cvc4|z3)")
+  .description("SMT Solver backend")
+  .default_val(Solver::CVC4);
 
-ValueArg<size_t>& max_jumps_arg =
-  ValueArg<size_t>::create("max_jumps")
+cpputil::ValueArg<uint64_t>& timeout_arg =
+  cpputil::ValueArg<uint64_t>::create("solver_timeout")
   .usage("<int>")
-  .description("Maximum jumps before exit due to infinite loop")
-  .default_val(1024);
+  .description("Timeout in milliseconds for SMT solver before giving up.  0 for no limit.")
+  .default_val(0);
 
 } // namespace stoke
 
-
-#endif
 #endif

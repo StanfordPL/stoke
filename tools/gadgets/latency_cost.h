@@ -16,8 +16,8 @@
 #define STOKE_TOOLS_GADGETS_LATENCY_COST_H
 
 #include "src/cost/latency.h"
-#include "tools/args/latency.h"
-#include "tools/args/cost.h"
+#include "tools/args/latency.inc"
+#include "tools/args/cost.inc"
 
 namespace stoke {
 

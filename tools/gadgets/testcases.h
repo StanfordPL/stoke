@@ -20,7 +20,7 @@
 
 #include "src/state/cpu_state.h"
 #include "src/state/cpu_states.h"
-#include "tools/args/testcases.h"
+#include "tools/args/testcases.inc"
 
 namespace stoke {
 

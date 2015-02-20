@@ -69,6 +69,7 @@ public:
   /** Set the correctness term to another expression. */
   ExprCost& set_correctness(ExprCost* correctness) {
     correctness_ = correctness;
+    return *this;
   }
 
   /** Figure out if we need to do any cost function setup. */

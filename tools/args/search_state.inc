@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_SEARCH_STATE_H
-#define STOKE_TOOLS_ARGS_SEARCH_STATE_H
+#ifndef STOKE_TOOLS_ARGS_SEARCH_STATE_INC
+#define STOKE_TOOLS_ARGS_SEARCH_STATE_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
@@ -22,43 +22,24 @@
 
 namespace stoke {
 
-extern cpputil::Heading& search_state_heading;
+cpputil::Heading& search_state_heading =
+  cpputil::Heading::create("Search State Options:");
 
-extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& current_arg;
-extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_yet_arg;
-extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_correct_arg;
-
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
-using namespace x64asm;
-
-namespace stoke {
-
-Heading& search_state_heading =
-  Heading::create("Search State Options:");
-
-FileArg<TUnit, TUnitReader, TUnitWriter>& current_arg =
-  FileArg<TUnit, TUnitReader, TUnitWriter>::create("current")
+cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& current_arg =
+  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("current")
   .usage("<path/to/file.s>")
   .description("Current rewrite; used with --init previous");
 
-FileArg<TUnit, TUnitReader, TUnitWriter>& best_yet_arg =
-  FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_yet")
+cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_yet_arg =
+  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_yet")
   .usage("<path/to/file.s>")
   .description("Best rewrite; used with --init previous");
 
-FileArg<TUnit, TUnitReader, TUnitWriter>& best_correct_arg =
-  FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_correct")
+cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_correct_arg =
+  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_correct")
   .usage("<path/to/file.s>")
   .description("Best correct rewrite; used with --init previous");
 
 } // namespace stoke
-
-
-#endif
-
 
 #endif

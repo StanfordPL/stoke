@@ -12,42 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_REWRITE_H
-#define STOKE_TOOLS_ARGS_REWRITE_H
+#ifndef STOKE_TOOLS_ARGS_MOVE_INC
+#define STOKE_TOOLS_ARGS_MOVE_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
-#include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/tunit/tunit.h"
-#include "tools/io/tunit.h"
-
-namespace stoke {
-
-extern cpputil::Heading& rewrite_heading;
-
-extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg;
-
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
-using namespace x64asm;
+#include "src/search/move.h"
+#include "tools/io/move.h"
 
 namespace stoke {
 
-Heading& rewrite_heading =
-  Heading::create("Rewrite Options:");
+cpputil::Heading& move_heading =
+  cpputil::Heading::create("Transformation Type Options:");
 
-FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg =
-  FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
-  .usage("<path/to/file.s>")
-  .description("Rewrite code")
-  .required();
+cpputil::ValueArg<Move, MoveReader, MoveWriter>& move_arg =
+  cpputil::ValueArg<Move, MoveReader, MoveWriter>::create("move_type")
+  .usage("(instruction|opcode|operand|local_swap|global_swap|resize|extension)")
+  .description("Move type to perform")
+  .default_val(Move::INSTRUCTION);
 
 } // namespace stoke
-
-
-#endif
 
 #endif

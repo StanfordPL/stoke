@@ -19,8 +19,8 @@
 #include "src/cost/correctness.h"
 #include "src/cost/cost_function.h"
 #include "src/sandbox/sandbox.h"
-#include "tools/args/correctness.h"
-#include "tools/args/in_out.h"
+#include "tools/args/correctness.inc"
+#include "tools/args/in_out.inc"
 
 namespace stoke {
 

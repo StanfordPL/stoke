@@ -12,38 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_LATENCY_H
-#define STOKE_TOOLS_ARGS_LATENCY_H
+#ifndef STOKE_TOOLS_ARGS_REWRITE_INC
+#define STOKE_TOOLS_ARGS_REWRITE_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/cost/cost.h"
-
-namespace stoke {
-
-extern cpputil::Heading& latency_heading;
-
-extern cpputil::ValueArg<Cost>& nesting_penalty_arg;
-
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
+#include "src/tunit/tunit.h"
+#include "tools/io/tunit.h"
 
 namespace stoke {
 
-Heading& latency_heading =
-  Heading::create("\"latency\" Cost Function Options:");
+cpputil::Heading& rewrite_heading =
+  cpputil::Heading::create("Rewrite Options:");
 
-ValueArg<Cost>& nesting_penalty_arg =
-  ValueArg<Cost>::create("nesting_penalty")
-  .usage("<int>")
-  .description("Latency multiplier for nested code")
-  .default_val(5);
+cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg =
+  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
+  .usage("<path/to/file.s>")
+  .description("Rewrite code")
+  .required();
 
 } // namespace stoke
 
-
-#endif
 #endif

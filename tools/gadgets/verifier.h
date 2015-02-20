@@ -19,7 +19,7 @@
 #include "src/solver/cvc4solver.h"
 #include "src/solver/z3solver.h"
 #include "src/verifier/verifier.h"
-#include "tools/args/verifier.h"
+#include "tools/args/verifier.inc"
 
 namespace stoke {
 

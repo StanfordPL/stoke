@@ -12,22 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_TARGET_H
-#define STOKE_TOOLS_GADGETS_TARGET_H
+#ifndef STOKE_SRC_SEARCH_POSTPROCESSING_H
+#define STOKE_SRC_SEARCH_POSTPROCESSING_H
 
-#include <vector>
-
-#include "src/tunit/tunit.h"
-#include "tools/args/target.inc"
-#include "tools/gadgets/cfg.h"
+#include <iostream>
 
 namespace stoke {
 
-class TargetGadget : public CfgGadget {
-public:
-  TargetGadget(const std::vector<TUnit>& aux_fxns) : CfgGadget(target_arg.value().code, aux_fxns) {}
+enum class Postprocessing {
+  NONE,
+  SIMPLE,
+  FULL,
 };
 
 } // namespace stoke
 
 #endif
+
+

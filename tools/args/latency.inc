@@ -12,38 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_SEED_H
-#define STOKE_TOOLS_ARGS_SEED_H
-
-#include <random>
+#ifndef STOKE_TOOLS_ARGS_LATENCY_INC
+#define STOKE_TOOLS_ARGS_LATENCY_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
-namespace stoke {
-
-extern cpputil::Heading& seed_group;
-extern cpputil::ValueArg<std::default_random_engine::result_type>& seed_arg;
-
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
-using namespace std;
+#include "src/cost/cost.h"
 
 namespace stoke {
 
-Heading& seed_group =
-  Heading::create("Random Seed Options:");
+cpputil::Heading& latency_heading =
+  cpputil::Heading::create("\"latency\" Cost Function Options:");
 
-ValueArg<default_random_engine::result_type>& seed_arg =
-  ValueArg<default_random_engine::result_type>::create("seed")
+cpputil::ValueArg<Cost>& nesting_penalty_arg =
+  cpputil::ValueArg<Cost>::create("nesting_penalty")
   .usage("<int>")
-  .description("Random seed for stoke tools; set to zero for random")
-  .default_val(0);
+  .description("Latency multiplier for nested code")
+  .default_val(5);
 
 } // namespace stoke
 
-
-#endif
 #endif
