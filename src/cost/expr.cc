@@ -100,7 +100,7 @@ ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
 
   bool correct = true;
   if(correctness_) {
-    correct = correctness_->run(env);
+    correct = (correctness_->run(env) != 0);
   }
 
   return result_type(correct, cost);
