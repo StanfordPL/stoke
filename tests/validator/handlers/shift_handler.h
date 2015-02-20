@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 #include "src/symstate/bitvector.h"
 
@@ -85,3 +86,4 @@ TEST_F(ValidatorShiftTest, RotateWorks) {
   assert_equiv();
 
 }
+} //namespace stoke

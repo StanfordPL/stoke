@@ -22,6 +22,8 @@
 #include "src/search/search.h"
 #include "tools/io/opc_set.h"
 
+namespace stoke {
+
 class SearchTest : public ::testing::TestWithParam<const char*> {
 
 public:
@@ -43,8 +45,8 @@ protected:
     ss1 << "{ " << in << " }";
     ss1 >> def_in_;
 
-    auto code = stoke::SearchState::find_sound_code(def_in_, live_out_);
-    auto cfg = stoke::Cfg(code, def_in_, live_out_);
+    auto code = SearchState::find_sound_code(def_in_, live_out_);
+    auto cfg = Cfg(code, def_in_, live_out_);
     ASSERT_TRUE(cfg.is_sound()) << "def in:   " << def_in_ << std::endl <<
                                 "live out: " << live_out_ << std::endl <<
                                 "cfg.def_outs(): " << cfg.def_outs() << std::endl <<
@@ -90,5 +92,6 @@ INSTANTIATE_TEST_CASE_P(Many1, SearchTest, ::testing::Values(
                           "%of %sf %zf %af %cf %pf %r8"
                         ));
 
+} //namespace stoke
 
 #endif

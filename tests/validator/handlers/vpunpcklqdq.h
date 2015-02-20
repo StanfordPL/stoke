@@ -13,6 +13,7 @@
 // limitations under the License.
 
 
+namespace stoke {
 
 class ValidatorVpunpcklqdqTest : public ValidatorTest {};
 
@@ -98,3 +99,4 @@ TEST_F(ValidatorVpunpcklqdqTest, DISABLED_NotIdempotentWrongArg) {
 
 
 
+} //namespace stoke

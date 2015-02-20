@@ -20,6 +20,8 @@
 
 #include <sstream>
 
+namespace x64asm {
+
 
 class RegSetReaderTest : public ::testing::Test {
 
@@ -32,14 +34,14 @@ public:
 protected:
 
   std::stringstream ss_;
-  x64asm::RegSet rs_;
+  RegSet rs_;
 
 };
 
 TEST_F(RegSetReaderTest, ReadsRAX) {
 
   ss_ << "{ %rax }";
-  x64asm::RegSet expected = x64asm::RegSet::empty() + x64asm::Constants::rax();
+  RegSet expected = RegSet::empty() + Constants::rax();
 
   ss_ >> rs_;
   ASSERT_EQ(expected, rs_);
@@ -49,7 +51,7 @@ TEST_F(RegSetReaderTest, ReadsRAX) {
 TEST_F(RegSetReaderTest, WritesRAX) {
 
   std::string expected = "{ %rax }";
-  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::Constants::rax();
+  RegSet rs_ = RegSet::empty() + Constants::rax();
 
   ss_ << rs_;
   ASSERT_EQ(expected, ss_.str());
@@ -59,7 +61,7 @@ TEST_F(RegSetReaderTest, WritesRAX) {
 TEST_F(RegSetReaderTest, ReadsAX) {
 
   ss_ << "{ %ax }";
-  x64asm::RegSet expected = x64asm::RegSet::empty() + x64asm::Constants::ax();
+  RegSet expected = RegSet::empty() + Constants::ax();
 
   ss_ >> rs_;
   ASSERT_EQ(expected, rs_);
@@ -69,7 +71,7 @@ TEST_F(RegSetReaderTest, ReadsAX) {
 TEST_F(RegSetReaderTest, WritesAX) {
 
   std::string expected = "{ %ax }";
-  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::Constants::ax();
+  RegSet rs_ = RegSet::empty() + Constants::ax();
 
   ss_ << rs_;
   ASSERT_EQ(expected, ss_.str());
@@ -79,7 +81,7 @@ TEST_F(RegSetReaderTest, WritesAX) {
 TEST_F(RegSetReaderTest, WritesAxEcx) {
 
   std::string expected = "{ %ax %ecx }";
-  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::Constants::ax() + x64asm::Constants::ecx();
+  RegSet rs_ = RegSet::empty() + Constants::ax() + Constants::ecx();
 
   ss_ << rs_;
   ASSERT_EQ(expected, ss_.str());
@@ -88,7 +90,7 @@ TEST_F(RegSetReaderTest, WritesAxEcx) {
 TEST_F(RegSetReaderTest, ReadsXMM0) {
 
   ss_ << "{ %xmm0 }";
-  x64asm::RegSet expected = x64asm::RegSet::empty() + x64asm::Constants::xmm0();
+  RegSet expected = RegSet::empty() + Constants::xmm0();
 
   ss_ >> rs_;
   ASSERT_EQ(expected, rs_);
@@ -98,7 +100,7 @@ TEST_F(RegSetReaderTest, ReadsXMM0) {
 TEST_F(RegSetReaderTest, WritesXMM0) {
 
   std::string expected = "{ %xmm0 }";
-  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::Constants::xmm0();
+  RegSet rs_ = RegSet::empty() + Constants::xmm0();
 
   ss_ << rs_;
   ASSERT_EQ(expected, ss_.str());
@@ -108,7 +110,7 @@ TEST_F(RegSetReaderTest, WritesXMM0) {
 TEST_F(RegSetReaderTest, ReadsYMM0) {
 
   ss_ << "{ %ymm0 }";
-  x64asm::RegSet expected = x64asm::RegSet::empty() + x64asm::Constants::ymm0();
+  RegSet expected = RegSet::empty() + Constants::ymm0();
 
   ss_ >> rs_;
   ASSERT_EQ(expected, rs_);
@@ -118,7 +120,7 @@ TEST_F(RegSetReaderTest, ReadsYMM0) {
 TEST_F(RegSetReaderTest, WritesYMM0) {
 
   std::string expected = "{ %ymm0 }";
-  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::Constants::ymm0();
+  RegSet rs_ = RegSet::empty() + Constants::ymm0();
 
   ss_ << rs_;
   ASSERT_EQ(expected, ss_.str());
@@ -128,7 +130,7 @@ TEST_F(RegSetReaderTest, WritesYMM0) {
 TEST_F(RegSetReaderTest, ReadsCf) {
 
   ss_ << "{ %cf }";
-  x64asm::RegSet expected = x64asm::RegSet::empty() + x64asm::eflags_cf;
+  RegSet expected = RegSet::empty() + eflags_cf;
 
   ss_ >> rs_;
   ASSERT_EQ(expected, rs_);
@@ -138,7 +140,7 @@ TEST_F(RegSetReaderTest, ReadsCf) {
 TEST_F(RegSetReaderTest, WritesCf) {
 
   std::string expected = "{ %cf }";
-  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::eflags_cf;
+  RegSet rs_ = RegSet::empty() + eflags_cf;
 
   ss_ << rs_;
   ASSERT_EQ(expected, ss_.str());
@@ -148,7 +150,7 @@ TEST_F(RegSetReaderTest, WritesCf) {
 TEST_F(RegSetReaderTest, ReadsIopl) {
 
   ss_ << "{ %iopl }";
-  x64asm::RegSet expected = x64asm::RegSet::empty() + x64asm::eflags_iopl;
+  RegSet expected = RegSet::empty() + eflags_iopl;
 
   ss_ >> rs_;
   ASSERT_EQ(expected, rs_);
@@ -158,7 +160,7 @@ TEST_F(RegSetReaderTest, ReadsIopl) {
 TEST_F(RegSetReaderTest, WritesIopl) {
 
   std::string expected = "{ %iopl }";
-  x64asm::RegSet rs_ = x64asm::RegSet::empty() + x64asm::eflags_iopl;
+  RegSet rs_ = RegSet::empty() + eflags_iopl;
 
   ss_ << rs_;
   ASSERT_EQ(expected, ss_.str());
@@ -170,14 +172,15 @@ TEST(RegSetWriteSet, AddbSil) {
   std::stringstream ss;
   ss << "addb $0x10, %sil" << std::endl;
 
-  x64asm::Code c;
+  Code c;
   ss >> c;
 
-  x64asm::Instruction i = c[0];
-  x64asm::RegSet writes = i.must_write_set();
-  EXPECT_TRUE(writes.contains(x64asm::sil));
+  Instruction i = c[0];
+  RegSet writes = i.must_write_set();
+  EXPECT_TRUE(writes.contains(sil));
 
 }
 
+} //namespace x64asm
 
 #endif
