@@ -84,12 +84,12 @@ private:
   x64asm::RegSet def_in(const x64asm::RegSet& live_out) const {
     // Always prefer user inputs
     if (def_in_arg.has_been_provided()) {
-    	auto def_in = def_in_arg.value();
-    	// Add mxcsr[rc] unless otherwise specified
-    	if (!no_default_mxcsr_arg) {
-      	def_in += x64asm::mxcsr_rc;
-			}
-			return def_in;
+      auto def_in = def_in_arg.value();
+      // Add mxcsr[rc] unless otherwise specified
+      if (!no_default_mxcsr_arg) {
+        def_in += x64asm::mxcsr_rc;
+      }
+      return def_in;
     }
     // Otherwise, we can solve for live ins and just use those
     Cfg temp(target_arg.value().code, x64asm::RegSet::empty(), live_out);
