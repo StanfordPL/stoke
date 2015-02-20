@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 class ValidatorMovapdTest : public ValidatorTest {};
 
@@ -198,3 +199,4 @@ TEST_F(ValidatorMovapdTest, Aligned32WithOriginalAvx2Good) {
 
 }
 
+} //namespace stoke

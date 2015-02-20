@@ -16,6 +16,7 @@
 #ifndef _STOKE_TEST_X64ASM_PARSING_H
 #define _STOKE_TEST_X64ASM_PARSING_H
 
+namespace x64asm {
 
 // In the old code, the Rb class threw an assertion to
 // make sure that it couldn't print al/bl/cl/dl.  Now
@@ -26,10 +27,10 @@ TEST(X64AsmParsing, Reads64BitMemory) {
   std::stringstream ss;
   ss << "movq %rax, (%rcx)" << std::endl;
 
-  x64asm::Code c;
+  Code c;
   ss >> c;
 
-  x64asm::Operand o = c[0].get_operand<x64asm::Operand>(0);
+  Operand o = c[0].get_operand<Operand>(0);
 
   EXPECT_TRUE(o.is_typical_memory());
   EXPECT_EQ(64, o.size());
@@ -39,10 +40,10 @@ TEST(X64AsmParsing, Reads32BitMemory) {
   std::stringstream ss;
   ss << "movl %eax, (%rcx)" << std::endl;
 
-  x64asm::Code c;
+  Code c;
   ss >> c;
 
-  x64asm::Operand o = c[0].get_operand<x64asm::Operand>(0);
+  Operand o = c[0].get_operand<Operand>(0);
 
   EXPECT_TRUE(o.is_typical_memory());
   EXPECT_EQ(32, o.size());
@@ -52,10 +53,10 @@ TEST(X64AsmParsing, Reads16BitMemory) {
   std::stringstream ss;
   ss << "movw (%rcx), %ax" << std::endl;
 
-  x64asm::Code c;
+  Code c;
   ss >> c;
 
-  x64asm::Operand o = c[0].get_operand<x64asm::Operand>(1);
+  Operand o = c[0].get_operand<Operand>(1);
 
   EXPECT_TRUE(o.is_typical_memory());
   EXPECT_EQ(16, o.size());
@@ -65,13 +66,15 @@ TEST(X64AsmParsing, Reads8BitMemory) {
   std::stringstream ss;
   ss << "movb (%rcx), %al" << std::endl;
 
-  x64asm::Code c;
+  Code c;
   ss >> c;
 
-  x64asm::Operand o = c[0].get_operand<x64asm::Operand>(1);
+  Operand o = c[0].get_operand<Operand>(1);
 
   EXPECT_TRUE(o.is_typical_memory());
   EXPECT_EQ(8, o.size());
 }
+
+} //namespace x64asm
 
 #endif
