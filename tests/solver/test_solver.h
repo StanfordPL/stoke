@@ -15,12 +15,14 @@
 
 #include "src/ext/cpputil/include/container/bit_vector.h"
 
-class TestSolver : public stoke::SMTSolver {
+namespace stoke {
+
+class TestSolver : public SMTSolver {
 
 public:
   TestSolver() {
-    solvers_.push_back(new stoke::Cvc4Solver());
-    solvers_.push_back(new stoke::Z3Solver());
+    solvers_.push_back(new Cvc4Solver());
+    solvers_.push_back(new Z3Solver());
   }
 
   ~TestSolver() {
@@ -35,7 +37,7 @@ public:
     return *this;
   }
 
-  bool is_sat(const std::vector<stoke::SymBool>& c) {
+  bool is_sat(const std::vector<SymBool>& c) {
     error_ = "";
     bool first = false;
     bool success = false;
@@ -107,5 +109,7 @@ public:
 
 private:
 
-  std::vector<stoke::SMTSolver*> solvers_;
+  std::vector<SMTSolver*> solvers_;
 };
+
+} //namespace stoke

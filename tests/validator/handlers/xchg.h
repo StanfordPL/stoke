@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 class ValidatorXchgTest : public ValidatorTest {};
 
@@ -86,3 +87,4 @@ TEST_F(ValidatorXchgTest, SameAsSwap8) {
   assert_equiv();
 
 }
+} //namespace stoke
