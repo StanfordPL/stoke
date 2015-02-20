@@ -60,8 +60,8 @@ void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
   // TODO -- An x64asm iterator over these flags would be nice
   target_rf_out_.clear();
   for(auto f: {
-    eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
-  }) {
+        eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
+      }) {
     if(rs.contains(f)) {
       target_rf_out_.push_back(f);
     }

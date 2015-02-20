@@ -68,7 +68,7 @@ private:
     }
 
     (*cost_fxn).set_correctness(correctness_fxn)
-               .setup_sandbox(sb);
+    .setup_sandbox(sb);
     return cost_fxn;
   }
 
