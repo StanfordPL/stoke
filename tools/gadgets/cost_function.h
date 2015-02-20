@@ -17,12 +17,10 @@
 
 #include "src/cost/cost_parser.h"
 #include "src/cost/size.h"
-
-#include "tools/args/cost.h"
+#include "tools/args/cost.inc"
 #include "tools/gadgets/correctness_cost.h"
 #include "tools/gadgets/latency_cost.h"
 #include "tools/ui/console.h"
-
 
 namespace stoke {
 
@@ -70,7 +68,7 @@ private:
     }
 
     (*cost_fxn).set_correctness(correctness_fxn)
-    .setup_sandbox(sb);
+               .setup_sandbox(sb);
     return cost_fxn;
   }
 

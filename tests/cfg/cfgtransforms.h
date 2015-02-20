@@ -55,7 +55,7 @@ retq
   ss.str("");
   ss << cfg.get_code();
 
-  ASSERT_EQ(ss.str(), R"STR(.bar:
+  std::string expected = R"STR(.bar:
 movq (%r8), %rcx
 movq $0x1, %rcx
 jnz .foo
@@ -65,5 +65,6 @@ movq $0x0, %rbx
 movq $0x0, %rax
 movq $0x0, (%rax)
 callq .blah
-retq )STR");
+retq )STR";
+  ASSERT_EQ(ss.str(), expected);
 }

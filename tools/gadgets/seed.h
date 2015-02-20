@@ -18,7 +18,7 @@
 #include <chrono>
 #include <random>
 
-#include "tools/args/seed.h"
+#include "tools/args/seed.inc"
 
 namespace stoke {
 

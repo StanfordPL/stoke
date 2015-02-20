@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_COST_H
-#define STOKE_TOOLS_ARGS_COST_H
+#ifndef STOKE_TOOLS_ARGS_COST_INC
+#define STOKE_TOOLS_ARGS_COST_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/serialize/line_reader.h"
@@ -22,47 +22,27 @@
 
 namespace stoke {
 
-extern cpputil::Heading& cost_heading;
+cpputil::Heading& cost_heading =
+  cpputil::Heading::create("Cost Function Evaluation Options:");
 
-extern cpputil::ValueArg<Cost>& max_cost_arg;
-
-extern cpputil::ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg;
-
-extern cpputil::ValueArg<std::string, cpputil::LineReader<>>& correctness_arg;
-
-
-
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
-
-namespace stoke {
-
-Heading& cost_heading =
-  Heading::create("Cost Function Evaluation Options:");
-
-ValueArg<Cost>& max_cost_arg =
-  ValueArg<Cost>::create("max_cost")
+cpputil::ValueArg<Cost>& max_cost_arg =
+  cpputil::ValueArg<Cost>::create("max_cost")
   .usage("<int>")
   .description("Give up once cost exceeds this value")
   .default_val(CostFunction::max_cost - 1);
 
-ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
-      ValueArg<std::string, cpputil::LineReader<>>::create("cost")
+cpputil::ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
+      cpputil::ValueArg<std::string, cpputil::LineReader<>>::create("cost")
       .usage("<string>")
       .description("The cost function")
       .default_val("correctness+latency");
 
-ValueArg<std::string, cpputil::LineReader<>>& correctness_arg =
-      ValueArg<std::string, cpputil::LineReader<>>::create("correctness")
+cpputil::ValueArg<std::string, cpputil::LineReader<>>& correctness_arg =
+      cpputil::ValueArg<std::string, cpputil::LineReader<>>::create("correctness")
       .usage("<string>")
       .description("Expression to check if code is correct")
       .default_val("correctness == 0");
 
-} // namespace stoke
-
-#endif
+} //namespace stoke
 
 #endif

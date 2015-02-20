@@ -26,10 +26,10 @@
 #include "src/search/progress_callback.h"
 #include "src/search/statistics_callback.h"
 #include "src/search/timeout.h"
+#include "src/search/postprocessing.h"
 
-#define DEFINE_STOKE_ARGS 1
-#include "tools/args/search.h"
-#include "tools/args/target.h"
+#include "tools/args/search.inc"
+#include "tools/args/target.inc"
 #include "tools/gadgets/cost_function.h"
 #include "tools/gadgets/correctness_cost.h"
 #include "tools/gadgets/functions.h"
@@ -43,6 +43,7 @@
 #include "tools/gadgets/transforms.h"
 #include "tools/gadgets/validator.h"
 #include "tools/gadgets/verifier.h"
+#include "tools/io/postprocessing.h"
 #include "tools/io/timeout.h"
 #include "tools/ui/console.h"
 
@@ -82,6 +83,12 @@ ValueArg<double>& exp_scaling_arg =
   .usage("<double>")
   .description("Exponential scaling factor of timeout iterations per cycle (requires timeout_action==restart)")
   .default_val(1.0);
+
+auto& postprocessing_arg =
+  ValueArg<Postprocessing, PostprocessingReader, PostprocessingWriter>::create("postprocessing")
+  .usage("(none|simple|full)")
+  .description("Postprocessing of the program found by STOKE (simple removes nops and unreachable blocks, and full additionally removes redundant statements without side-effects)")
+  .default_val(Postprocessing::FULL);
 
 void sep(ostream& os, string c = "*") {
   for (size_t i = 0; i < 80; ++i) {
@@ -347,9 +354,14 @@ int main(int argc, char** argv) {
   }
 
   CfgTransforms tforms;
-  tforms.remove_redundant(state.best_correct);
-  tforms.remove_unreachable(state.best_correct);
-  tforms.remove_nop(state.best_correct);
+  if (postprocessing_arg == Postprocessing::FULL) {
+    tforms.remove_redundant(state.best_correct);
+    tforms.remove_unreachable(state.best_correct);
+    tforms.remove_nop(state.best_correct);
+  } else if (postprocessing_arg == Postprocessing::SIMPLE) {
+    tforms.remove_unreachable(state.best_correct);
+    tforms.remove_nop(state.best_correct);
+  }
 
   auto final_stats = search.get_statistics();
 

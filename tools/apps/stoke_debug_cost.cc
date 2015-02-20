@@ -19,10 +19,9 @@
 #include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
-#define DEFINE_STOKE_ARGS 1
-#include "tools/args/cost.h"
-#include "tools/args/rewrite.h"
-#include "tools/args/target.h"
+#include "tools/args/cost.inc"
+#include "tools/args/rewrite.inc"
+#include "tools/args/target.inc"
 #include "tools/gadgets/cost_function.h"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/rewrite.h"
