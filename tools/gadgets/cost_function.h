@@ -18,10 +18,10 @@
 #include "src/cfg/cfg.h"
 #include "src/cost/cost_function.h"
 #include "src/sandbox/sandbox.h"
-#include "tools/args/correctness.h"
-#include "tools/args/in_out.h"
-#include "tools/args/performance.h"
-#include "tools/args/cost.h"
+#include "tools/args/correctness.inc"
+#include "tools/args/cost.inc"
+#include "tools/args/in_out.inc"
+#include "tools/args/performance.inc"
 
 namespace stoke {
 

@@ -20,6 +20,8 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/target/cpu_info.h"
 
+namespace stoke {
+
 class ValidatorFuzzTest : public ValidatorTest { };
 
 /** This test is vicious.  It picks random instructions, random states, runs
@@ -59,12 +61,12 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   flags >> flag_set;
 
-  flag_set &= stoke::CpuInfo::get_flags();
+  flag_set &= CpuInfo::get_flags();
 
   // Initialize handler, solver, transforms, stategen, etc.
-  stoke::ComboHandler ch;
-  stoke::Z3Solver z3;
-  stoke::Transforms t;
+  ComboHandler ch;
+  Z3Solver z3;
+  Transforms t;
 
   std::set<x64asm::Opcode> blacklist;
   blacklist.insert(x64asm::ENTER_IMM8_IMM16);
@@ -126,11 +128,11 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
                                   x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf +
                                   x64asm::eflags_zf + x64asm::eflags_sf;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false)
   .set_max_jumps(1);
 
-  stoke::StateGen sg(&sb);
+  StateGen sg(&sb);
   sg.set_max_memory(1024)
   .set_max_attempts(40);
 
@@ -140,7 +142,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   pre_cfg_code.push_back(x64asm::Instruction(x64asm::LABEL_DEFN, {label}));
   pre_cfg_code.push_back(x64asm::Instruction(x64asm::Opcode::LAHF));
   pre_cfg_code.push_back(x64asm::Instruction(x64asm::Opcode::RET));
-  stoke::Cfg pre_cfg(pre_cfg_code, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+  Cfg pre_cfg(pre_cfg_code, x64asm::RegSet::universe(), x64asm::RegSet::empty());
 
   x64asm::Code cfg_code;
   cfg_code.push_back(x64asm::Instruction(x64asm::LABEL_DEFN, {label}));
@@ -164,18 +166,18 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     const auto ins = pre_cfg.get_code()[1];
     x64asm::RegSet liveouts = (ins.must_write_set() - ins.maybe_undef_set()) & supported_regs;
     cfg_code[1] = ins;
-    stoke::Cfg cfg(cfg_code, ins.maybe_read_set(), liveouts);
+    Cfg cfg(cfg_code, ins.maybe_read_set(), liveouts);
 
     std::cout << "[----------] * " << ins << std::endl;
 
     // Make sure we support this instruction
-    if(ch.get_support(ins) == stoke::Handler::NONE) {
+    if(ch.get_support(ins) == Handler::NONE) {
       std::cout << "[----------]   - No validator support" << std::endl;
       continue;
     }
 
     // Build a state at random, if possible
-    stoke::CpuState cs;
+    CpuState cs;
     if(!sg.get(cs, cfg)) {
       std::cout << "[----------]   - Could not generate state: " << sg.get_error() << std::endl;
       continue;
@@ -200,4 +202,6 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   EXPECT_GE(success, min_success);
 
 }
+
+} //namespace stoke
 

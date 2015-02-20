@@ -22,9 +22,9 @@
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_states.h"
 #include "src/tunit/tunit.h"
-#include "tools/args/in_out.h"
-#include "tools/args/sandbox.h"
-#include "tools/args/target.h"
+#include "tools/args/in_out.inc"
+#include "tools/args/sandbox.inc"
+#include "tools/args/target.inc"
 
 namespace stoke {
 

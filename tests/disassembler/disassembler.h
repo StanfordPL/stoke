@@ -16,6 +16,8 @@
 #include "src/disassembler/disassembler.h"
 #include "src/tunit/tunit.h"
 
+namespace stoke {
+
 TEST(DisassemblerTest, SimpleExample) {
 
   /* These are the expected answers */
@@ -38,8 +40,8 @@ TEST(DisassemblerTest, SimpleExample) {
   /* Here's the callback sent to the disassembler */
   bool found_sample = false;
 
-  stoke::Disassembler::Callback test_tunit =
-  [&](const stoke::FunctionCallbackData & fcd) {
+  Disassembler::Callback test_tunit =
+  [&](const FunctionCallbackData & fcd) {
 
     EXPECT_FALSE(fcd.parse_error);
 
@@ -52,7 +54,7 @@ TEST(DisassemblerTest, SimpleExample) {
     }
   };
 
-  stoke::Disassembler d;
+  Disassembler d;
   d.set_function_callback(&test_tunit);
   d.disassemble("tests/fixtures/disassembler/sample");
 
@@ -100,8 +102,8 @@ TEST(DisassemblerTest, PopCnt) {
   bool found_popcnt = false;
   bool found_main = false;
 
-  stoke::Disassembler::Callback test_tunit =
-  [&](const stoke::FunctionCallbackData & pf) {
+  Disassembler::Callback test_tunit =
+  [&](const FunctionCallbackData & pf) {
 
     EXPECT_FALSE(pf.parse_error);
 
@@ -121,7 +123,7 @@ TEST(DisassemblerTest, PopCnt) {
     }
   };
 
-  stoke::Disassembler d;
+  Disassembler d;
   d.set_function_callback(&test_tunit);
   d.disassemble("tests/fixtures/disassembler/popcnt");
 
@@ -138,15 +140,15 @@ TEST(DisassemblerTest, ParseErrors) {
 
   size_t errors_found = 0;
 
-  stoke::Disassembler::Callback test_tunit =
-  [&](const stoke::FunctionCallbackData & pf) {
+  Disassembler::Callback test_tunit =
+  [&](const FunctionCallbackData & pf) {
 
     if (pf.parse_error) {
       errors_found++;
     }
   };
 
-  stoke::Disassembler d;
+  Disassembler d;
   d.set_function_callback(&test_tunit);
   d.disassemble("tests/fixtures/disassembler/errors");
 
@@ -155,13 +157,13 @@ TEST(DisassemblerTest, ParseErrors) {
 
 
 TEST(DisassemblerTest, NoFileGraceful) {
-  stoke::Disassembler::Callback  empty =
-  [](const stoke::FunctionCallbackData & pf) {
+  Disassembler::Callback  empty =
+  [](const FunctionCallbackData & pf) {
 
     EXPECT_TRUE(false) << "The file isn't supposed to exist...";
   };
 
-  stoke::Disassembler d;
+  Disassembler d;
   d.set_function_callback(&empty);
 
   d.disassemble("texts/fixtures/disassembler/does_not_exist");
@@ -170,10 +172,10 @@ TEST(DisassemblerTest, NoFileGraceful) {
 }
 
 TEST(DisassemblerTest, NoShellInjection) {
-  stoke::Disassembler d;
+  Disassembler d;
 
-  stoke::Disassembler::Callback  empty =
-  [](const stoke::FunctionCallbackData & pf) {
+  Disassembler::Callback  empty =
+  [](const FunctionCallbackData & pf) {
 
     EXPECT_TRUE(false) << "The file isn't supposed to exist...";
   };
@@ -185,3 +187,5 @@ TEST(DisassemblerTest, NoShellInjection) {
   EXPECT_TRUE(d.has_error());
   EXPECT_EQ("Character ' ' not allowed in filename for security.", d.get_error());
 }
+
+} //namespace stoke
