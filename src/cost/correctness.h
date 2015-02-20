@@ -45,7 +45,7 @@ public:
   static constexpr auto max_error_cost = (Cost)(0x1ull << 32);
 
   /** Create a new cost function with default values for extended features. */
-  CorrectnessCost(Sandbox* sb) : sandbox_(sb), size_buffer_(32 * 1024) {
+  CorrectnessCost(Sandbox* sb) : sandbox_(sb) {
     const x64asm::Code code {
       {x64asm::LABEL_DEFN, {x64asm::Label{".main"}}},
       {x64asm::RET}
@@ -58,7 +58,6 @@ public:
     set_min_ulp(0);
     set_reduction(Reduction::SUM);
 
-    size_buffer_.reserve(32 * 1024);
   }
 
   /** Reset target function; evaluates testcases and caches the results. */
@@ -130,10 +129,6 @@ public:
 private:
   /** A sandbox for evaluating target and rewrites. */
   Sandbox* sandbox_;
-  /** No reason to always allocate these. */
-  x64asm::Assembler assm_;
-  /** A buffer for assembling functions into to check hex length. */
-  x64asm::Function size_buffer_;
 
   /** Method for measuring the distance between two 64-bit values. */
   Distance distance_;
@@ -168,8 +163,6 @@ private:
 
   /** The results produced by executing the target on testcases. */
   std::vector<CpuState> reference_out_;
-
-  // These are stored as vectors to speed up iteration.
 
   /** The set of general purpose registers live out for the target. */
   std::vector<x64asm::R64> target_gp_out_;

@@ -16,7 +16,9 @@
 #define STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 
 #include "src/cost/cost_parser.h"
+#include "src/cost/binsize.h"
 #include "src/cost/size.h"
+#include "src/cost/sseavx.h"
 #include "tools/args/cost.inc"
 #include "tools/gadgets/correctness_cost.h"
 #include "tools/gadgets/latency_cost.h"
@@ -44,9 +46,11 @@ private:
   static CostFunction* build_fxn(const Cfg& target, Sandbox* sb) {
 
     CostParser::SymbolTable st;
+    st["binsize"] =      new BinSizeCost();
     st["correctness"] =  new CorrectnessCostGadget(target, sb);
     st["latency"] =      new LatencyCostGadget();
     st["size"] =         new SizeCost();
+    st["sseavx"] =       new SseAvxCost();
 
     CostParser cost_p(cost_function_arg.value(), st);
     auto cost_fxn = cost_p.run();
