@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 class ValidatorPopTest : public ValidatorTest {};
 
@@ -21,7 +22,7 @@ TEST_F(ValidatorPopTest, PopSp) {
   target_ << "popw %sp" << std::endl;
   target_ << "retq"     << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.gp[x64asm::rsp].get_fixed_quad(0) = 0x7fffffff9a2f6800;
   uint64_t lower = 0x7fffffff9a2f67e0;
   cs.stack.resize(lower, 40);
@@ -38,7 +39,7 @@ TEST_F(ValidatorPopTest, PopRsp) {
   target_ << "popq %rsp" << std::endl;
   target_ << "retq"     << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.gp[x64asm::rsp].get_fixed_quad(0) = 0x7fffffff9a2f6800;
   uint64_t lower = 0x7fffffff9a2f67e0;
   cs.stack.resize(lower, 40);
@@ -49,3 +50,4 @@ TEST_F(ValidatorPopTest, PopRsp) {
   check_circuit(cs);
 }
 
+} //namespace stoke

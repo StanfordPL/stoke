@@ -15,6 +15,8 @@
 
 #include "src/analysis/alias.h"
 
+namespace stoke {
+
 TEST(AliasAnalysis, SimpleExample) {
 
   std::stringstream ss;
@@ -24,7 +26,7 @@ TEST(AliasAnalysis, SimpleExample) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::AliasAnalysis aa(c);
+  AliasAnalysis aa(c);
 
   /* First aliases itself */
   EXPECT_TRUE(aa.must_overlap(0, 0));
@@ -54,7 +56,7 @@ TEST(AliasAnalysis, ReportsOverlap) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::AliasAnalysis aa(c);
+  AliasAnalysis aa(c);
 
   /* First aliases itself */
   EXPECT_TRUE(aa.must_overlap(0, 0));
@@ -82,7 +84,7 @@ TEST(AliasAnalysis, UnderstandsMutation) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::AliasAnalysis aa(c);
+  AliasAnalysis aa(c);
 
   /* First aliases itself */
   EXPECT_TRUE(aa.must_overlap(0, 0));
@@ -111,7 +113,7 @@ TEST(AliasAnalysis, FindsMustOverlap) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::AliasAnalysis aa(c);
+  AliasAnalysis aa(c);
 
   /* First aliases itself */
   EXPECT_TRUE(aa.must_overlap(0, 0));
@@ -128,3 +130,5 @@ TEST(AliasAnalysis, FindsMustOverlap) {
   EXPECT_TRUE(aa.may_overlap(0, 2));
   EXPECT_TRUE(aa.may_overlap(2, 0));
 }
+
+} //namespace stoke

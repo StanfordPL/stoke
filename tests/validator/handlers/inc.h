@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 class ValidatorIncTest : public ValidatorTest {};
 
@@ -21,7 +22,7 @@ TEST_F(ValidatorIncTest, Issue287) {
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.gp[x64asm::ax].get_fixed_quad(0) = 0x2d01;
 
   check_circuit(cs);
@@ -33,7 +34,7 @@ TEST_F(ValidatorIncTest, Issue287_2) {
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.gp[x64asm::ax].get_fixed_quad(0) = 0x2d00;
 
   check_circuit(cs);
@@ -45,7 +46,7 @@ TEST_F(ValidatorIncTest, Issue287_3) {
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.gp[x64asm::ax].get_fixed_quad(0) = 0x2dff;
 
   check_circuit(cs);
@@ -57,7 +58,7 @@ TEST_F(ValidatorIncTest, Issue287_4) {
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.gp[x64asm::ax].get_fixed_quad(0) = 0x2d81;
 
   check_circuit(cs);
@@ -69,7 +70,7 @@ TEST_F(ValidatorIncTest, Issue287_5) {
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.gp[x64asm::ax].get_fixed_quad(0) = 0x2d80;
 
   check_circuit(cs);
@@ -81,8 +82,9 @@ TEST_F(ValidatorIncTest, Issue287_6) {
   target_ << "incb %al" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.gp[x64asm::ax].get_fixed_quad(0) = 0x2d7f;
 
   check_circuit(cs);
 }
+} //namespace stoke

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 class ValidatorPcmpeqbTest : public ValidatorTest {};
 
@@ -21,7 +22,7 @@ TEST_F(ValidatorPcmpeqbTest, AllZeros) {
   target_ << "vpcmpeqb %ymm0, %ymm1, %ymm2" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   check_circuit(cs);
 }
 
@@ -32,7 +33,7 @@ TEST_F(ValidatorPcmpeqbTest, OneMatch) {
   target_ << "vpcmpeqb %ymm0, %ymm1, %ymm2" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.sse[x64asm::ymm0].get_fixed_quad(0) = 0x0;
   cs.sse[x64asm::ymm1].get_fixed_quad(0) = 0xffffffffffffffff;
 
@@ -54,7 +55,7 @@ TEST_F(ValidatorPcmpeqbTest, WordMatch) {
   target_ << "vpcmpeqb %ymm0, %ymm1, %ymm2" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.sse[x64asm::ymm0].get_fixed_quad(0) = 0x0;
   cs.sse[x64asm::ymm1].get_fixed_quad(0) = 0xffffffffffffffff;
 
@@ -76,7 +77,7 @@ TEST_F(ValidatorPcmpeqbTest, SeveralMatch) {
   target_ << "vpcmpeqb %ymm0, %ymm1, %ymm2" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.sse[x64asm::ymm0].get_fixed_quad(0) = 0x0;
   cs.sse[x64asm::ymm1].get_fixed_quad(0) = 0x00ff00ff00ff00ff;
 
@@ -92,3 +93,4 @@ TEST_F(ValidatorPcmpeqbTest, SeveralMatch) {
   check_circuit(cs);
 }
 
+} //namespace stoke

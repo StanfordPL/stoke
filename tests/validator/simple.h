@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 class ValidatorBaseTest : public ValidatorTest { };
 
@@ -239,7 +240,7 @@ TEST_F(ValidatorBaseTest, SimpleCounterexample) {
   set_def_ins(x64asm::RegSet::empty() + x64asm::rcx);
   set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
 
-  stoke::CpuState ceg;
+  CpuState ceg;
   assert_ceg(&ceg);
 
   EXPECT_EQ((uint64_t)0xc0, 0xff & ceg.gp[1].get_fixed_quad(0));
@@ -257,7 +258,7 @@ TEST_F(ValidatorBaseTest, EflagsCounterexample) {
   rewrite_ << "movq $0x0, %rax" << std::endl;
   rewrite_ << "retq" << std::endl;
 
-  stoke::CpuState ceg;
+  CpuState ceg;
   assert_ceg(&ceg);
 
   // Zero flag should be set for counterexample.
@@ -299,14 +300,14 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
   x64asm::Code c(code);
   x64asm::Code d(code);
 
-  stoke::Z3Solver s;
-  stoke::Validator v(s);
-  stoke::CpuState ceg;
+  Z3Solver s;
+  Validator v(s);
+  CpuState ceg;
 
   x64asm::RegSet rs = ValidatorBaseTest::get_default_regset();
 
-  stoke::Cfg cfg_t(c, rs, rs);
-  stoke::Cfg cfg_r(d, rs, rs);
+  Cfg cfg_t(c, rs, rs);
+  Cfg cfg_r(d, rs, rs);
 
 
   EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg));
@@ -352,3 +353,4 @@ TEST_F(ValidatorBaseTest, NopsAndLabelsSupported) {
   assert_equiv();
 }
 
+} //namespace stoke

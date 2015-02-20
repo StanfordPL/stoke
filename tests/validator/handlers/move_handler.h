@@ -13,6 +13,7 @@
 // limitations under the License.
 
 
+namespace stoke {
 #include "src/symstate/bitvector.h"
 #include "src/validator/handlers/move_handler.h"
 
@@ -30,13 +31,13 @@ TEST(MoveHandler, R64R64Works) {
   i.set_operand(0, x64asm::rdi); //dest
   i.set_operand(1, x64asm::rsi);
 
-  stoke::MoveHandler h;
-  EXPECT_EQ(stoke::Handler::BASIC | stoke::Handler::CEG, h.get_support(i));
+  MoveHandler h;
+  EXPECT_EQ(Handler::BASIC | Handler::CEG, h.get_support(i));
   EXPECT_FALSE(h.has_error()) << h.error();
 
-  stoke::SymState ss;
-  auto rsi = stoke::SymBitVector::var(64, "RSI");
-  auto rdi = stoke::SymBitVector::var(64, "RDI");
+  SymState ss;
+  auto rsi = SymBitVector::var(64, "RSI");
+  auto rdi = SymBitVector::var(64, "RDI");
 
   ss.set(x64asm::rdi, rdi);
   ss.set(x64asm::rsi, rsi);
@@ -55,13 +56,13 @@ TEST(MoveHandler, R32R32ZerosTop) {
   i.set_operand(0, x64asm::edi); //dest
   i.set_operand(1, x64asm::esi);
 
-  stoke::MoveHandler h;
-  EXPECT_EQ(stoke::Handler::BASIC | stoke::Handler::CEG, h.get_support(i));
+  MoveHandler h;
+  EXPECT_EQ(Handler::BASIC | Handler::CEG, h.get_support(i));
   EXPECT_FALSE(h.has_error()) << h.error();
 
-  stoke::SymState ss;
-  auto rsi = stoke::SymBitVector::var(64, "RSI");
-  auto rdi = stoke::SymBitVector::var(64, "RDI");
+  SymState ss;
+  auto rsi = SymBitVector::var(64, "RSI");
+  auto rdi = SymBitVector::var(64, "RDI");
 
   ss.set(x64asm::rdi, rdi);
   ss.set(x64asm::rsi, rsi);
@@ -72,7 +73,7 @@ TEST(MoveHandler, R32R32ZerosTop) {
   // Check RSI is unchanged
   EXPECT_BV_EQ(rsi, ss[x64asm::rsi]);
   // Check RDI is a concatenation of 0 with RSI[31:0]
-  EXPECT_BV_EQ(stoke::SymBitVector::constant(32, 0) || rsi[31][0], ss[x64asm::rdi]);
+  EXPECT_BV_EQ(SymBitVector::constant(32, 0) || rsi[31][0], ss[x64asm::rdi]);
 }
 
 TEST(MoveHandler, R16R16PreservesTop) {
@@ -81,13 +82,13 @@ TEST(MoveHandler, R16R16PreservesTop) {
   i.set_operand(0, x64asm::di); //dest
   i.set_operand(1, x64asm::si);
 
-  stoke::MoveHandler h;
-  EXPECT_EQ(stoke::Handler::BASIC | stoke::Handler::CEG, h.get_support(i));
+  MoveHandler h;
+  EXPECT_EQ(Handler::BASIC | Handler::CEG, h.get_support(i));
   EXPECT_FALSE(h.has_error()) << h.error();
 
-  stoke::SymState ss;
-  auto rsi = stoke::SymBitVector::var(64, "RSI");
-  auto rdi = stoke::SymBitVector::var(64, "RDI");
+  SymState ss;
+  auto rsi = SymBitVector::var(64, "RSI");
+  auto rdi = SymBitVector::var(64, "RDI");
 
   ss.set(x64asm::rdi, rdi);
   ss.set(x64asm::rsi, rsi);
@@ -179,7 +180,7 @@ TEST_F(ValidatorMoveTest, Issue272) {
   target_ << "movq %xmm0, %xmm0" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.sse[x64asm::xmm0].get_fixed_quad(0) = 0xc0deface;
   cs.sse[x64asm::xmm0].get_fixed_quad(1) = 0xc0deface;
 
@@ -192,7 +193,7 @@ TEST_F(ValidatorMoveTest, Issue272_2) {
   target_ << "movq %xmm0, %xmm1" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   cs.sse[x64asm::xmm0].get_fixed_quad(0) = 0xc0deface;
   cs.sse[x64asm::xmm0].get_fixed_quad(1) = 0xc0deface;
 
@@ -206,7 +207,7 @@ TEST_F(ValidatorMoveTest, MovqByteImmediate) {
   target_ << "movq $0xab, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   check_circuit(cs);
 }
 
@@ -217,7 +218,7 @@ TEST_F(ValidatorMoveTest, Movzbq) {
   target_ << "movzbq %al, %rax" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::CpuState cs;
+  CpuState cs;
   check_circuit(cs);
 }
 
@@ -234,3 +235,4 @@ TEST_F(ValidatorMoveTest, MovqMovzbqEquivalent) {
 
   assert_equiv();
 }
+} //namespace stoke
