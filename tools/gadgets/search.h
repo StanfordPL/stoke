@@ -20,7 +20,7 @@
 #include "src/search/move.h"
 #include "src/search/search.h"
 #include "src/search/transforms.h"
-#include "tools/args/search.h"
+#include "tools/args/search.inc"
 
 namespace stoke {
 

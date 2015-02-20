@@ -18,6 +18,8 @@
 #include "src/stategen/stategen.h"
 #include "src/sandbox/sandbox.h"
 
+namespace stoke {
+
 TEST(SandboxTest, TrivialExampleWorks) {
 
   x64asm::Code c;
@@ -32,8 +34,8 @@ TEST(SandboxTest, TrivialExampleWorks) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
-  stoke::CpuState tc;
+  Sandbox sb;
+  CpuState tc;
 
   sb.set_max_jumps(1);
   sb.insert_input(tc);
@@ -41,9 +43,9 @@ TEST(SandboxTest, TrivialExampleWorks) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
-  stoke::CpuState output = *sb.result_begin();
+  CpuState output = *sb.result_begin();
 
   ASSERT_EQ((uint64_t)1, output.gp[1].get_fixed_quad(0));
   ASSERT_EQ((uint64_t)8, output.gp[2].get_fixed_quad(0));
@@ -80,9 +82,9 @@ TEST(SandboxTest, AllGPRegistersWork) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
-  stoke::CpuState tc;
+  CpuState tc;
 
   sb.set_max_jumps(1);
   sb.insert_input(tc);
@@ -90,9 +92,9 @@ TEST(SandboxTest, AllGPRegistersWork) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
-  stoke::CpuState output = *sb.result_begin();
+  CpuState output = *sb.result_begin();
 
   for (uint64_t i = 0; i < 16; ++i) {
     ASSERT_EQ(1 + i, output.gp[i].get_fixed_quad(0));
@@ -114,11 +116,11 @@ TEST(SandboxTest, RegisterValuesArePreserved) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
 
-  stoke::CpuState tc;
-  stoke::StateGen sg(&sb);
+  CpuState tc;
+  StateGen sg(&sb);
   sg.get(tc);
 
   sb.set_max_jumps(1);
@@ -127,9 +129,9 @@ TEST(SandboxTest, RegisterValuesArePreserved) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
-  stoke::CpuState output = *sb.result_begin();
+  CpuState output = *sb.result_begin();
 
   for (int i = 0; i < 16; ++i) {
     ASSERT_EQ(tc.gp[i].get_fixed_quad(0), output.gp[i].get_fixed_quad(0)) << " i = " << i;
@@ -158,10 +160,10 @@ TEST(SandboxTest, ModifyingRbxWorks) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
 
-  stoke::CpuState tc;
+  CpuState tc;
 
   sb.set_max_jumps(1);
   sb.insert_input(tc);
@@ -169,9 +171,9 @@ TEST(SandboxTest, ModifyingRbxWorks) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
-  stoke::CpuState output = *sb.result_begin();
+  CpuState output = *sb.result_begin();
 
   ASSERT_EQ((uint64_t)1, output.gp[1].get_fixed_quad(0));
   ASSERT_EQ((uint64_t)8, output.gp[3].get_fixed_quad(0));
@@ -194,9 +196,9 @@ TEST(SandboxTest, ModifyingRbxFailsIfAbiEnforced) {
   ss >> c;
 
   // Setup the sandbox; it's going to check abi.
-  stoke::Sandbox sb;
+  Sandbox sb;
 
-  stoke::CpuState tc;
+  CpuState tc;
 
   sb.set_max_jumps(1);
   sb.insert_input(tc);
@@ -204,7 +206,7 @@ TEST(SandboxTest, ModifyingRbxFailsIfAbiEnforced) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_ABI_VIOLATION, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::SIGCUSTOM_ABI_VIOLATION, sb.result_begin()->code);
 }
 
 
@@ -220,9 +222,9 @@ TEST(SandboxTest, RflagsRegistersArePreserved) {
   ss >> c;
 
   // Setup the sandbox and generate a random state
-  stoke::Sandbox sb;
+  Sandbox sb;
 
-  stoke::CpuState tc;
+  CpuState tc;
   tc.rf.set(7, 1);
   //set rsp
   tc.gp[4].get_fixed_quad(0) = 0xfffaffe4;
@@ -237,7 +239,7 @@ TEST(SandboxTest, RflagsRegistersArePreserved) {
   sb.run({c, x64asm::RegSet::universe(), x64asm::RegSet::universe()});
 
   // Check answers
-  stoke::CpuState result = *sb.result_begin();
+  CpuState result = *sb.result_begin();
   EXPECT_EQ(tc.rf.is_set(0), result.rf.is_set(0));
   EXPECT_EQ(tc.rf.is_set(2), result.rf.is_set(2));
   EXPECT_EQ(tc.rf.is_set(4), result.rf.is_set(4));
@@ -263,8 +265,8 @@ TEST(SandboxTest, NullDereferenceFails) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
-  stoke::CpuState tc;
+  Sandbox sb;
+  CpuState tc;
 
   sb.set_max_jumps(1);
   sb.insert_input(tc);
@@ -272,7 +274,7 @@ TEST(SandboxTest, NullDereferenceFails) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::SIGSEGV_, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::SIGSEGV_, sb.result_begin()->code);
 
 
 }
@@ -292,8 +294,8 @@ TEST(SandboxTest, DivideByZeroFails) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
-  stoke::CpuState tc;
+  Sandbox sb;
+  CpuState tc;
 
   sb.set_max_jumps(1);
   sb.insert_input(tc);
@@ -301,7 +303,7 @@ TEST(SandboxTest, DivideByZeroFails) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::SIGFPE_, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::SIGFPE_, sb.result_begin()->code);
 
 
 }
@@ -324,9 +326,9 @@ TEST(SandboxTest, InfiniteLoopFails) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
-  stoke::CpuState tc;
-  stoke::StateGen sg(&sb);
+  Sandbox sb;
+  CpuState tc;
+  StateGen sg(&sb);
   sg.get(tc);
 
   sb.set_max_jumps(100);
@@ -335,7 +337,7 @@ TEST(SandboxTest, InfiniteLoopFails) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS, sb.result_begin()->code);
 
 
 }
@@ -359,9 +361,9 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
-  stoke::CpuState tc;
-  stoke::StateGen sg(&sb);
+  Sandbox sb;
+  CpuState tc;
+  StateGen sg(&sb);
   sg.get(tc);
 
   sb.set_max_jumps(17);
@@ -371,7 +373,7 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
 
 }
@@ -393,9 +395,9 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
-  stoke::CpuState tc;
-  stoke::StateGen sg(&sb);
+  Sandbox sb;
+  CpuState tc;
+  StateGen sg(&sb);
   sg.get(tc);
 
   sb.set_max_jumps(16);
@@ -405,7 +407,7 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
 
-  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS, sb.result_begin()->code);
 
 
 }
@@ -424,16 +426,16 @@ TEST(SandboxTest, LahfSahfOkay) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
-  stoke::CpuState tc;
-  stoke::StateGen sg(&sb);
+  Sandbox sb;
+  CpuState tc;
+  StateGen sg(&sb);
   sg.get(tc);
 
   sb.insert_input(tc);
 
   // Run it
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, UndefSymbolError) {
@@ -449,13 +451,13 @@ TEST(SandboxTest, UndefSymbolError) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
-  stoke::CpuState tc;
+  Sandbox sb;
+  CpuState tc;
   sb.insert_input(tc);
 
   // Run it (we shouldn't ever actually run, so testcase doesn't matter)
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_LINKER_ERROR, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::SIGCUSTOM_LINKER_ERROR, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, Issue239) {
@@ -472,16 +474,16 @@ TEST(SandboxTest, Issue239) {
   ss >> c;
 
   // Setup the sandbox
-  stoke::Sandbox sb;
-  stoke::CpuState tc;
+  Sandbox sb;
+  CpuState tc;
   sb.set_abi_check(false);
   sb.insert_input(tc);
 
   // Run it (we shouldn't ever actually run, so testcase doesn't matter)
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty() + x64asm::bx});
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
-  stoke::CpuState output = *sb.result_begin();
+  CpuState output = *sb.result_begin();
 
   ASSERT_EQ((uint64_t)0xb511, output.gp[x64asm::rbx].get_fixed_quad(0));
 }
@@ -497,18 +499,18 @@ TEST(SandboxTest, LDDQU_VLDDQU) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::CpuState tc;
+  CpuState tc;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
   // @todo Why does this test require 64 bytes of stack to begin
   // with? Can't we automatically provide that?
-  stoke::StateGen sg(&sb, 64);
+  StateGen sg(&sb, 64);
   sg.get(tc);
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 #endif
 }
 
@@ -534,16 +536,16 @@ TEST(SandboxTest, PUSH_POP) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::CpuState tc;
+  CpuState tc;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb);
+  StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, MEM_DIV) {
@@ -567,16 +569,16 @@ TEST(SandboxTest, MEM_DIV) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::CpuState tc;
+  CpuState tc;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb);
+  StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, RSP_WITH_JMPS) {
@@ -595,16 +597,16 @@ TEST(SandboxTest, RSP_WITH_JMPS) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::CpuState tc;
+  CpuState tc;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb);
+  StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, PushfWorks) {
@@ -617,16 +619,16 @@ TEST(SandboxTest, PushfWorks) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::CpuState tc;
+  CpuState tc;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb);
+  StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, PopfFailCase) {
@@ -640,16 +642,16 @@ TEST(SandboxTest, PopfFailCase) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::CpuState tc;
+  CpuState tc;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb);
+  StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_INVALID_POPF, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::SIGCUSTOM_INVALID_POPF, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, PopfqFailCase) {
@@ -663,16 +665,16 @@ TEST(SandboxTest, PopfqFailCase) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::CpuState tc;
+  CpuState tc;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb);
+  StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::SIGCUSTOM_INVALID_POPF, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::SIGCUSTOM_INVALID_POPF, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, PopfqWorksCase) {
@@ -689,16 +691,16 @@ TEST(SandboxTest, PopfqWorksCase) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::CpuState tc;
+  CpuState tc;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb);
+  StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
 TEST(SandboxTest, fld_family) {
@@ -712,16 +714,17 @@ TEST(SandboxTest, fld_family) {
   x64asm::Code c;
   ss >> c;
 
-  stoke::CpuState tc;
+  CpuState tc;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb);
+  StateGen sg(&sb);
   sg.get(tc);
   sb.insert_input(tc);
 
   sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
-  ASSERT_EQ(stoke::ErrorCode::NORMAL, sb.result_begin()->code);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
 
+} //namespace

@@ -12,35 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_BENCHMARK_H
-#define STOKE_TOOLS_ARGS_BENCHMARK_H
+#ifndef STOKE_TOOLS_ARGS_SANDBOX_INC
+#define STOKE_TOOLS_ARGS_SANDBOX_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
 namespace stoke {
 
-extern cpputil::Heading& benchmark_heading;
+cpputil::Heading& sandbox_heading =
+  cpputil::Heading::create("Sandbox Options:");
 
-extern cpputil::ValueArg<size_t>& benchmark_itr_arg;
+cpputil::FlagArg& abi_check_arg =
+  cpputil::FlagArg::create("abi_check")
+  .description("Report SIGSEGV for abi violations");
 
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
-
-namespace stoke {
-
-Heading& benchmark_heading =
-  Heading::create("Benchmark Options:");
-
-ValueArg<size_t>& benchmark_itr_arg =
-  ValueArg<size_t>::create("iterations")
-  .description("Number of benchmarking iterations to run for")
-  .default_val(1000000);
+cpputil::ValueArg<size_t>& max_jumps_arg =
+  cpputil::ValueArg<size_t>::create("max_jumps")
+  .usage("<int>")
+  .description("Maximum jumps before exit due to infinite loop")
+  .default_val(1024);
 
 } // namespace stoke
-
-#endif
 
 #endif

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_REWRITE_H
-#define STOKE_TOOLS_ARGS_REWRITE_H
+#ifndef STOKE_TOOLS_ARGS_REWRITE_INC
+#define STOKE_TOOLS_ARGS_REWRITE_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/x64asm/include/x64asm.h"
@@ -23,31 +23,15 @@
 
 namespace stoke {
 
-extern cpputil::Heading& rewrite_heading;
+cpputil::Heading& rewrite_heading =
+  cpputil::Heading::create("Rewrite Options:");
 
-extern cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg;
-
-} // namespace stoke
-
-#ifdef DEFINE_STOKE_ARGS
-
-using namespace cpputil;
-using namespace x64asm;
-
-namespace stoke {
-
-Heading& rewrite_heading =
-  Heading::create("Rewrite Options:");
-
-FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg =
-  FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
+cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& rewrite_arg =
+  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("rewrite")
   .usage("<path/to/file.s>")
   .description("Rewrite code")
   .required();
 
 } // namespace stoke
-
-
-#endif
 
 #endif

@@ -23,8 +23,8 @@
 #include "src/sandbox/sandbox.h"
 #include "src/target/cpu_info.h"
 #include "src/tunit/tunit.h"
-#include "tools/args/functions.h"
-#include "tools/args/target.h"
+#include "tools/args/functions.inc"
+#include "tools/args/target.inc"
 #include "tools/ui/console.h"
 
 namespace stoke {

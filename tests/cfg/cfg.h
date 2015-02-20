@@ -27,6 +27,7 @@
 
 #include "tests/fixture.h"
 
+namespace stoke {
 
 x64asm::RegSet parse_regset_from_json(Json::Value json) {
   x64asm::RegSet rs;
@@ -71,7 +72,7 @@ TEST_P(CodeFixtureTest, LivenessAnalysis) {
 
   // Construct the CFG
 
-  stoke::Cfg cfg(
+  Cfg cfg(
     fixture.get_code(),
     x64asm::RegSet::empty(),
     given_liveout);
@@ -107,7 +108,7 @@ TEST_P(CodeFixtureTest, IsSound) {
 
   // Construct the CFG
 
-  stoke::Cfg cfg(fixture.get_code(), live_in, live_out);
+  Cfg cfg(fixture.get_code(), live_in, live_out);
   EXPECT_EQ(result, cfg.is_sound());
 
 }
@@ -125,9 +126,9 @@ TEST_P(CodeFixtureTest, CFGGetExit) {
     return;
   }
 
-  stoke::Cfg cfg(fixture.get_code(),
-                 x64asm::RegSet::empty(),
-                 x64asm::RegSet::empty());
+  Cfg cfg(fixture.get_code(),
+          x64asm::RegSet::empty(),
+          x64asm::RegSet::empty());
 
   ASSERT_EQ((uint64_t)json["get_exit"].asInt(), cfg.get_exit());
 }
@@ -142,9 +143,9 @@ TEST_P(CodeFixtureTest, CFGNumInstr) {
     return;
   }
 
-  stoke::Cfg cfg(fixture.get_code(),
-                 x64asm::RegSet::empty(),
-                 x64asm::RegSet::empty());
+  Cfg cfg(fixture.get_code(),
+          x64asm::RegSet::empty(),
+          x64asm::RegSet::empty());
 
 
   const Json::Value& num_instrs_array = json["num_instrs"];
@@ -170,9 +171,9 @@ TEST_P(CodeFixtureTest, CFGNestingDepth) {
     return;
   }
 
-  stoke::Cfg cfg(fixture.get_code(),
-                 x64asm::RegSet::empty(),
-                 x64asm::RegSet::empty());
+  Cfg cfg(fixture.get_code(),
+          x64asm::RegSet::empty(),
+          x64asm::RegSet::empty());
 
 
   const Json::Value& nesting_depth_array = json["nesting_depth"];
@@ -196,9 +197,9 @@ TEST_P(CodeFixtureTest, CFGReachable) {
 
   auto json_reachable = json["reachable"];
 
-  stoke::Cfg cfg(fixture.get_code(),
-                 x64asm::RegSet::empty(),
-                 x64asm::RegSet::empty());
+  Cfg cfg(fixture.get_code(),
+          x64asm::RegSet::empty(),
+          x64asm::RegSet::empty());
 
 
   std::set<int> expected_reachable_set;
@@ -216,7 +217,7 @@ TEST_P(CodeFixtureTest, CFGReachable) {
     }
   }
 
-
-
 }
+
+} //namespace stoke
 #endif
