@@ -22,7 +22,7 @@ class BinSizeCost : public CostFunction {
 public:
 
   BinSizeCost() : buffer_(1024) {
-    
+
   }
 
   /** Return the size, in bytes, of the assembled CFG
