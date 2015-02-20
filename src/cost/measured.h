@@ -22,7 +22,9 @@ class MeasuredCost : public CostFunction {
 public:
 
   /** Yes, we need to use the sandbox */
-  bool need_sandbox() { return true; }
+  bool need_sandbox() {
+    return true;
+  }
 
   /** And we need to set it up. */
   MeasuredCost& setup_sandbox(Sandbox* sb) {
