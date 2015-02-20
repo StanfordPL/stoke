@@ -48,7 +48,7 @@ void SearchState::configure_empty(const Cfg& target, size_t size) {
     current.get_code().push_back({NOP});
   }
   current.get_code().push_back({RET});
-	current.recompute();
+  current.recompute();
 
   best_yet = current;
   best_correct = target;
@@ -146,7 +146,7 @@ void SearchState::configure_zero(const Cfg& target, size_t size) {
     current.get_code().push_back({NOP});
   }
   current.get_code().push_back({RET});
-	current.recompute();
+  current.recompute();
 
   best_yet = current;
   best_correct = target;
