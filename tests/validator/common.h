@@ -16,6 +16,8 @@
 #ifndef TESTS_VALIDATOR_COMMON_H
 #define TESTS_VALIDATOR_COMMON_H
 
+#include "src/ext/cpputil/include/io/fail.h"
+
 #include "src/sandbox/sandbox.h"
 #include "src/validator/validator.h"
 #include "src/validator/handlers/combo_handler.h"
@@ -94,8 +96,18 @@ protected:
       return;
 
     check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE);
-    if(ceg != NULL)
+    if(ceg != NULL) {
       *ceg = v_.get_counterexample();
+
+      // write out the counter-example, and then parse it back in
+      std::stringstream ss;
+      ss << (*ceg);
+      ASSERT_FALSE(ss.fail()) << "Failed to write the counterexample.";
+      CpuState state;
+      ss >> state;
+      ASSERT_FALSE(ss.fail()) << "Failed to parse the counterexample again";
+      EXPECT_EQ(*ceg, state) << "Counterexample is not identical after parsing";
+    }
   }
 
   /** Check that the validator returns false, but don't look
