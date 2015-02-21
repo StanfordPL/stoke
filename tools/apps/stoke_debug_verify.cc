@@ -30,11 +30,16 @@
 #include "tools/gadgets/testcases.h"
 #include "tools/gadgets/validator.h"
 #include "tools/gadgets/verifier.h"
+#include "tools/io/state_diff.h"
 #include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
+
+auto& dbg = Heading::create("Diff Options:");
+auto& show_unchanged = FlagArg::create("show_unchanged")
+                       .description("Show unchanged lines");
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
@@ -92,8 +97,20 @@ int main(int argc, char** argv) {
   Console::msg() << "Equivalent: " << (res ? "yes" : "no") << endl;
 
   if (!res && verifier.counter_example_available()) {
+    Console::msg() << endl << "Counterexample:" << endl;
     Console::msg() << endl;
     Console::msg() << verifier.get_counter_example();
+    Console::msg() << endl << endl;
+    Console::msg() << "Difference of running target and rewrite on the counterexample:";
+    Console::msg() << endl << endl;
+    CpuStates tcs;
+    tcs.push_back(verifier.get_counter_example());
+    SandboxGadget sb(tcs, aux_fxns);
+    sb.run(target);
+    const auto target_result = *(sb.result_begin());
+    sb.run(rewrite);
+    const auto rewrite_result = *(sb.result_begin());
+    Console::msg() << diff_states(target_result, rewrite_result, show_unchanged);
     Console::msg() << endl;
   } else if (!res) {
     Console::msg() << endl << "No counterexample available." << endl;
