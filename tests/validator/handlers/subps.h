@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 class ValidatorSubpsTest : public ValidatorTest {};
 
@@ -44,3 +45,4 @@ TEST_F(ValidatorSubpsTest, NotANoop) {
   assert_ceg();
 
 }
+} //namespace stoke

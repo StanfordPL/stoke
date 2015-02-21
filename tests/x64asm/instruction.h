@@ -16,9 +16,10 @@
 #ifndef _STOKE_TEST_X64ASM_INSTRUCTION_H
 #define _STOKE_TEST_X64ASM_INSTRUCTION_H
 
+namespace x64asm {
 
 TEST(X64AsmInstructionInfo, PushIsMaybeReadWrite) {
-  x64asm::Code c;
+  Code c;
   std::stringstream ss;
   ss << "pushq %rax" << std::endl;
   ss >> c;
@@ -31,7 +32,7 @@ TEST(X64AsmInstructionInfo, PushIsMaybeReadWrite) {
 }
 
 TEST(X64AsmInstructionInfo, ExplicitReadIsMustRead) {
-  x64asm::Code c;
+  Code c;
   std::stringstream ss;
   ss << "movq 0x4(%rax), %rdx" << std::endl;
   ss >> c;
@@ -44,7 +45,7 @@ TEST(X64AsmInstructionInfo, ExplicitReadIsMustRead) {
 }
 
 TEST(X64AsmInstructionInfo, ExplicitWriteIsMustWrite) {
-  x64asm::Code c;
+  Code c;
   std::stringstream ss;
   ss << "movq %rdx, 0x4(%rax)" << std::endl;
   ss >> c;
@@ -57,7 +58,7 @@ TEST(X64AsmInstructionInfo, ExplicitWriteIsMustWrite) {
 }
 
 TEST(X64AsmInstructionInfo, NoMemoryReadOrWrite) {
-  x64asm::Code c;
+  Code c;
   std::stringstream ss;
   ss << "movq $0x4, %rdx" << std::endl;
   ss >> c;
@@ -70,7 +71,7 @@ TEST(X64AsmInstructionInfo, NoMemoryReadOrWrite) {
 }
 
 TEST(X64AsmInstructionInfo, BothMemoryReadAndWrite) {
-  x64asm::Code c;
+  Code c;
   std::stringstream ss;
   ss << "incq (%rax)" << std::endl;
   ss >> c;
@@ -83,16 +84,18 @@ TEST(X64AsmInstructionInfo, BothMemoryReadAndWrite) {
 }
 
 TEST(X64AsmInstructionInfo, PmovmskbRegSets) {
-  x64asm::Code c;
+  Code c;
   std::stringstream ss;
   ss << "pmovmskb %xmm6, %r13d" << std::endl;
   ss >> c;
 
-  x64asm::RegSet expected_must_read = x64asm::RegSet::empty() + x64asm::xmm6;
-  x64asm::RegSet expected_must_write = x64asm::RegSet::empty() + x64asm::r13;
+  RegSet expected_must_read = RegSet::empty() + xmm6;
+  RegSet expected_must_write = RegSet::empty() + r13;
 
   EXPECT_EQ(expected_must_read,  c[0].must_read_set());
   EXPECT_EQ(expected_must_write, c[0].must_write_set());
+}
+
 }
 
 #endif

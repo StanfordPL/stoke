@@ -16,10 +16,14 @@
 #ifndef TESTS_VALIDATOR_COMMON_H
 #define TESTS_VALIDATOR_COMMON_H
 
+#include "src/ext/cpputil/include/io/fail.h"
+
 #include "src/sandbox/sandbox.h"
 #include "src/validator/validator.h"
 #include "src/validator/handlers/combo_handler.h"
 #include "tests/solver/test_solver.h"
+
+namespace stoke {
 
 class ValidatorTest : public ::testing::Test {
 
@@ -87,18 +91,28 @@ protected:
 
   /** Check that the validator returns false; check the counterexample
       if given */
-  void assert_ceg(stoke::CpuState* ceg = NULL) {
+  void assert_ceg(CpuState* ceg = NULL) {
     if(!reset_state())
       return;
 
     check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE);
-    if(ceg != NULL)
+    if(ceg != NULL) {
       *ceg = v_.get_counterexample();
+
+      // write out the counter-example, and then parse it back in
+      std::stringstream ss;
+      ss << (*ceg);
+      ASSERT_FALSE(ss.fail()) << "Failed to write the counterexample.";
+      CpuState state;
+      ss >> state;
+      ASSERT_FALSE(ss.fail()) << "Failed to parse the counterexample again";
+      EXPECT_EQ(*ceg, state) << "Counterexample is not identical after parsing";
+    }
   }
 
   /** Check that the validator returns false, but don't look
       at the counterexample or lack thereof */
-  void assert_ceg_nocheck(stoke::CpuState* ceg = NULL) {
+  void assert_ceg_nocheck(CpuState* ceg = NULL) {
     if(!reset_state())
       return;
 
@@ -112,7 +126,7 @@ protected:
     if(!reset_state())
       return "";
 
-    stoke::CpuState ceg;
+    CpuState ceg;
     std::string message;
 
     check_codes(ERROR);
@@ -123,18 +137,18 @@ protected:
   /** Runs the target on the given CpuState in a sandbox, and compares
       with the validator output.  Returns false if the validator failed to
       build a model (which means that passing the test is useless). */
-  bool check_circuit(stoke::CpuState cs) {
+  bool check_circuit(CpuState cs) {
     if(!reset_state(true))
       return false;
     ceg_shown_ = true;
 
     // Build a circuit for this Cfg
-    stoke::ComboHandler ch;
+    ComboHandler ch;
 
-    std::vector<stoke::SymBool> constraints;
+    std::vector<SymBool> constraints;
 
-    stoke::SymState state(cs);
-    stoke::SymState end("FINAL");
+    SymState state(cs);
+    SymState end("FINAL");
 
     for(auto it : cfg_t_->get_code())
       ch.build_circuit(it, state);
@@ -154,17 +168,17 @@ protected:
     if(!s_.has_model())
       return false;
 
-    stoke::CpuState validator_final = stoke::Validator::state_from_model(s_, "_FINAL");
+    CpuState validator_final = Validator::state_from_model(s_, "_FINAL");
 
     // Run the sandbox
-    stoke::Sandbox sb;
+    Sandbox sb;
     sb.set_abi_check(false)
     .set_max_jumps(1)
     .insert_input(cs);
 
     sb.run(*cfg_t_);
 
-    stoke::CpuState sandbox_final = *sb.get_result(0);
+    CpuState sandbox_final = *sb.get_result(0);
 
     // Check sandbox and state equivalent
     std::stringstream ss;
@@ -179,19 +193,19 @@ protected:
   /** Runs the target and rewrite against the sandbox.
      If they are the same for all inputs, expect them to be equivalent.
      Otherwise, expect validator to come up with a correct counterexample. */
-  void assert_sandbox(stoke::Sandbox& sb) {
+  void assert_sandbox(Sandbox& sb) {
     if(!reset_state())
       return;
 
     // Run the sandbox on the inputs
     sb.run(*cfg_t_);
-    std::vector<stoke::CpuState> target_results;
+    std::vector<CpuState> target_results;
     for (auto it = sb.result_begin(); it != sb.result_end(); ++it) {
       target_results.push_back(*it);
     }
 
     sb.run(*cfg_r_);
-    std::vector<stoke::CpuState> rewrite_results;
+    std::vector<CpuState> rewrite_results;
     for (auto it = sb.result_begin(); it != sb.result_end(); ++it) {
       rewrite_results.push_back(*it);
     }
@@ -207,7 +221,7 @@ protected:
     }
 
     // Run the validator
-    stoke::CpuState ceg;
+    CpuState ceg;
     bool validator_equiv = validate(ceg);
 
     if (sandbox_equiv) {
@@ -257,13 +271,13 @@ private:
 
 
   /* Run the validator and produce a counterexample */
-  bool validate(stoke::CpuState& tc) {
+  bool validate(CpuState& tc) {
 
     return v_.validate(*cfg_t_, *cfg_r_, tc);
   }
 
   /* Gets a CFG from astd::string stream */
-  stoke::Cfg* get_cfg(std::stringstream& ss) {
+  Cfg* get_cfg(std::stringstream& ss) {
     x64asm::Code c;
     ss >> c;
     if (ss.fail()) {
@@ -276,7 +290,7 @@ private:
     }
 
 
-    return new stoke::Cfg(c, def_ins_, live_outs_);
+    return new Cfg(c, def_ins_, live_outs_);
   }
 
   template <typename T>
@@ -304,10 +318,10 @@ private:
   }
 
   void expect_cpustate_equal_on_liveout(
-    stoke::CpuState expect,stoke::CpuState actual,std::string message) {
+    CpuState expect,CpuState actual,std::string message) {
 
 #define EXPECT_CPU_EQ_INT(A, B, M)  expect_cpustate_expect<uint64_t>(same, A, B, M, message)
-#define EXPECT_CPU_EQ_CODE(A, B, M) expect_cpustate_expect<stoke::ErrorCode>(same, A, B, M, message)
+#define EXPECT_CPU_EQ_CODE(A, B, M) expect_cpustate_expect<ErrorCode>(same, A, B, M, message)
 
     bool same = true;
 
@@ -365,7 +379,7 @@ private:
 
   /* Takes the counterexample, and runs the target and the rewrite on it.
      If you get the same thing, we have a validator bug. */
-  void check_ceg(stoke::CpuState& ceg) {
+  void check_ceg(CpuState& ceg) {
 
     // Make sure that a counterexample was intended.
     if(!v_.is_counterexample_valid()) {
@@ -375,12 +389,12 @@ private:
     ASSERT_EQ(ceg, v_.get_counterexample());
 
     // Setup a sandbox with testcase
-    stoke::Sandbox sb;
+    Sandbox sb;
     sb.set_abi_check(false)
     .set_max_jumps(2);
 
 
-    stoke::CpuState s1(v_.get_counterexample());
+    CpuState s1(v_.get_counterexample());
     sb.insert_input(s1);
 
     // Run the sandbox and check the results for each.
@@ -388,7 +402,7 @@ private:
     if(cfg_t_->is_sound()) {
 
       sb.run(*cfg_t_);
-      stoke::CpuState sandbox_target_state = *sb.get_result(0);
+      CpuState sandbox_target_state = *sb.get_result(0);
 
       std::stringstream tmp;
       tmp << "Sandbox disagrees with validator on final state of the target." << std::endl;
@@ -401,7 +415,7 @@ private:
 
     if(cfg_r_->is_sound()) {
       sb.run(*cfg_r_);
-      stoke::CpuState sandbox_rewrite_state = *sb.get_result(0);
+      CpuState sandbox_rewrite_state = *sb.get_result(0);
 
       std::stringstream tmp;
       tmp << "Sandbox disagrees with validator on final state of the rewrite." << std::endl;
@@ -505,7 +519,7 @@ private:
     //  - counterexample
     //  - non-equivalent, no counterexample
 
-    stoke::CpuState ceg;
+    CpuState ceg;
     Outcome outcome = OTHER;
 
     // Check for equivalence
@@ -585,8 +599,8 @@ private:
   }
 
   /* Used to build a validator */
-  stoke::Validator make_validator() {
-    stoke::Validator v(s_);
+  Validator make_validator() {
+    Validator v(s_);
     return v;
   }
 
@@ -595,7 +609,7 @@ private:
   bool ceg_shown_;
 
   /* The validator we're using */
-  stoke::Validator v_;
+  Validator v_;
   /* The solver we're using */
   TestSolver s_;
 
@@ -605,11 +619,13 @@ private:
   x64asm::RegSet def_ins_;
 
   /* The target CFG */
-  stoke::Cfg* cfg_t_;
+  Cfg* cfg_t_;
   /* The rewrite CFG */
-  stoke::Cfg* cfg_r_;
+  Cfg* cfg_r_;
 
 
 };
+
+}
 
 #endif

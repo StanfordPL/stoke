@@ -151,7 +151,7 @@ void Memory::read_text_row(istream& is) {
 
   // Watch out for rows that are outside the range given in summary
   if (addr < lower_bound() || addr >= upper_bound()) {
-    is.setstate(ios::failbit);
+    fail(is) << "Memory row is outside of the given range";
     return;
   }
 
