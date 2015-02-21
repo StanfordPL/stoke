@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 class ValidatorPandnTest : public ValidatorTest {};
 
@@ -48,13 +49,14 @@ TEST_F(ValidatorPandnTest, LooksCorrect) {
   target_ << "pandn %xmm3, %xmm5" << std::endl;
   target_ << "retq" << std::endl;
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_abi_check(false);
-  stoke::StateGen sg(&sb);
-  stoke::CpuState cs;
+  StateGen sg(&sb);
+  CpuState cs;
   sg.get(cs);
 
   check_circuit(cs);
 
 }
 
+} //namespace stoke

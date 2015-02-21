@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 class ValidatorMemoryTest : public ValidatorTest { };
 
@@ -325,3 +326,5 @@ TEST_F(ValidatorMemoryTest, PopRspIsSpecial) {
 
   assert_equiv();
 }
+
+} //namespace stoke

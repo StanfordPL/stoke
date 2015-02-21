@@ -77,7 +77,7 @@ struct CpuState {
   std::istream& read_bin(std::istream& is);
 
   /** Perform sanity checks on the contents of this cpu state. */
-  bool check() const;
+  void check(std::istream& is) const;
 
   /** The error code associated with this state. */
   ErrorCode code;

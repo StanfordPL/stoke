@@ -18,17 +18,19 @@
 
 #include "src/ext/x64asm/src/constants.h"
 
+namespace stoke {
+
 TEST(TunitParsing, Simple) {
   std::stringstream ss;
-  ss << R"(  .text
-  .globl foo
-  .type foo, @function
-.foo:
-  retq
+  ss << "  .text" << std::endl;
+  ss << "  .globl foo" << std::endl;
+  ss << "  .type foo, @function" << std::endl;
+  ss << ".foo:" << std::endl;
+  ss << "  retq" << std::endl;
+  ss << "" << std::endl;
+  ss << ".size foo, .-foo" << std::endl;
 
-.size foo, .-foo)";
-
-  stoke::TUnit tunit;
+  TUnit tunit;
   ss >> tunit;
   ASSERT_FALSE(ss.fail());
   // no annotations, so nothing should be present
@@ -42,45 +44,45 @@ TEST(TunitParsing, Simple) {
 
 TEST(TunitParsing, RequireLabel) {
   std::stringstream ss;
-  ss << R"(  .text
-  .globl foo
-  .type foo, @function
-  retq
+  ss << "  .text" << std::endl;
+  ss << "  .globl foo" << std::endl;
+  ss << "  .type foo, @function" << std::endl;
+  ss << "  retq" << std::endl;
+  ss << "" << std::endl;
+  ss << ".size foo, .-foo" << std::endl;
 
-.size foo, .-foo)";
-
-  stoke::TUnit tunit;
+  TUnit tunit;
   ss >> tunit;
   ASSERT_TRUE(ss.fail());
 }
 
 TEST(TunitParsing, RequireCorrectLabel) {
   std::stringstream ss;
-  ss << R"(  .text
-  .globl foo
-  .type foo, @function
-.bar:
-  retq
+  ss << "  .text" << std::endl;
+  ss << "  .globl foo" << std::endl;
+  ss << "  .type foo, @function" << std::endl;
+  ss << ".bar:" << std::endl;
+  ss << "  retq" << std::endl;
+  ss << "" << std::endl;
+  ss << ".size foo, .-foo" << std::endl;
 
-.size foo, .-foo)";
-
-  stoke::TUnit tunit;
+  TUnit tunit;
   ss >> tunit;
   ASSERT_TRUE(ss.fail());
 }
 
 TEST(TunitParsing, EmptyLine) {
   std::stringstream ss;
-  ss << R"(  .text
-  .globl foo
-  .type foo, @function
-.foo:
+  ss << "  .text" << std::endl;
+  ss << "  .globl foo" << std::endl;
+  ss << "  .type foo, @function" << std::endl;
+  ss << ".foo:" << std::endl;
+  ss << "" << std::endl;
+  ss << "  retq" << std::endl;
+  ss << "" << std::endl;
+  ss << ".size foo, .-foo" << std::endl;
 
-  retq
-
-.size foo, .-foo)";
-
-  stoke::TUnit tunit;
+  TUnit tunit;
   ss >> tunit;
   ASSERT_FALSE(ss.fail());
   ASSERT_EQ((size_t)2, tunit.code.size());
@@ -88,21 +90,21 @@ TEST(TunitParsing, EmptyLine) {
 
 TEST(TunitParsing, DataflowAnnotations) {
   std::stringstream ss;
-  ss << R"(  .text
-  .globl foo
-  .type foo, @function
-#! maybe-read { }
-#! maybe-write { %rcx }
-#! maybe-undef { %rcx }
-#! must-read { }
-#! must-write { }
-#! must-undef { }
-.foo:
-  retq
+  ss << "  .text" << std::endl;
+  ss << "  .globl foo" << std::endl;
+  ss << "  .type foo, @function" << std::endl;
+  ss << "#! maybe-read { }" << std::endl;
+  ss << "#! maybe-write { %rcx }" << std::endl;
+  ss << "#! maybe-undef { %rcx }" << std::endl;
+  ss << "#! must-read { }" << std::endl;
+  ss << "#! must-write { }" << std::endl;
+  ss << "#! must-undef { }" << std::endl;
+  ss << ".foo:" << std::endl;
+  ss << "  retq" << std::endl;
+  ss << "" << std::endl;
+  ss << ".size foo, .-foo" << std::endl;
 
-.size foo, .-foo)";
-
-  stoke::TUnit tunit;
+  TUnit tunit;
   ss >> tunit;
   x64asm::RegSet empty;
   x64asm::RegSet rcxonly;
@@ -124,23 +126,24 @@ TEST(TunitParsing, DataflowAnnotations) {
 
 TEST(TunitParsing, DataflowAnnotationsNormalization) {
   std::stringstream ss;
-  ss << R"(  .text
-  .globl foo
-  .type foo, @function
-#! maybe-read { }
-#! must-write { %rcx }
-.foo:
-  retq
+  ss << "  .text" << std::endl;
+  ss << "  .globl foo" << std::endl;
+  ss << "  .type foo, @function" << std::endl;
+  ss << "#! maybe-read { }" << std::endl;
+  ss << "#! must-write { %rcx }" << std::endl;
+  ss << ".foo:" << std::endl;
+  ss << "  retq" << std::endl;
+  ss << "" << std::endl;
+  ss << ".size foo, .-foo)" << std::endl;
 
-.size foo, .-foo)";
-
-  stoke::TUnit tunit;
+  TUnit tunit;
   ss >> tunit;
   x64asm::RegSet empty;
   x64asm::RegSet rcxonly;
   x64asm::RegSet all = x64asm::RegSet::universe();
   rcxonly += x64asm::Constants::rcx();
-  stoke::TUnit::MayMustSets mms = {
+
+  TUnit::MayMustSets mms = {
     all, // must_read_set
     empty, // must_write_set
     empty, // must_undef_set
@@ -162,10 +165,13 @@ TEST(TunitParsing, NakedRead) {
   ss << "xorq %rax, %rax" << std::endl;
   ss << "retq" << std::endl;
 
-  stoke::TUnit tunit;
+  TUnit tunit;
   ss >> tunit;
 
   ASSERT_FALSE(ss.fail());
 }
 
+} //namespace stoke
+
 #endif
+

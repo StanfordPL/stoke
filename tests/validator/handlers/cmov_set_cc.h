@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+namespace stoke {
 
 class ValidatorCmovSetCCTest : public ValidatorTest {
 
@@ -22,9 +23,9 @@ protected:
     "ne", "ng", "nge", "nl", "nle", "no", "np",
     "ns", "nz", "o", "p", "pe", "po", "s", "z" };
 
-  std::vector<stoke::CpuState> testcases_;
+  std::vector<CpuState> testcases_;
 
-  stoke::Sandbox* sb_;
+  Sandbox* sb_;
 
 private:
 
@@ -34,16 +35,16 @@ private:
     const std::vector<int> flag_indexes
     { 0, 2, 4, 6, 7, 11 };
 
-    sb_ = new stoke::Sandbox();
+    sb_ = new Sandbox();
 
     // Create one testcase for each combination of the
     // six status eflags. 0b00111111 = 0x3f.
-    stoke::StateGen sg(sb_);
+    StateGen sg(sb_);
 
     for(size_t i = 0; i <= 0x3f; ++i) {
 
       // Initialize state to random
-      stoke::CpuState tc;
+      CpuState tc;
       sg.get(tc);
 
       // Set the appropriate flags
@@ -211,3 +212,4 @@ TEST_F(ValidatorCmovSetCCTest, CmovzlCmovsl) {
   //assert_sandbox(*sb_);
 
 }
+} //namespace stoke

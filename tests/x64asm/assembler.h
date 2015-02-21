@@ -16,23 +16,24 @@
 #ifndef _STOKE_TEST_X64ASM_ASSEMBLER_H
 #define _STOKE_TEST_X64ASM_ASSEMBLER_H
 
+namespace x64asm {
 
 TEST(X64AsmInstructionInfo, FunctionSize) {
-  x64asm::Code c;
+  Code c;
   std::stringstream ss;
   ss << "pushq %rax" << std::endl;
   ss >> c;
 
-  x64asm::Assembler assm;
+  Assembler assm;
   auto fxn = assm.assemble(c);
-  x64asm::Function gxn = fxn; //testing copy constructor
+  Function gxn = fxn; //testing copy constructor
   EXPECT_EQ(2ul, fxn.size());
   EXPECT_EQ(2ul, gxn.size());
 }
 
 TEST(X64AsmInstructionInfo, FunctionSize2) {
 
-  x64asm::Code c;
+  Code c;
   std::stringstream ss;
 
   ss << "pushq  %rdi" << std::endl;
@@ -80,10 +81,12 @@ TEST(X64AsmInstructionInfo, FunctionSize2) {
   ss << "retq " << std::endl;
   ss >> c;
 
-  x64asm::Assembler assm;
+  Assembler assm;
   auto fxn = assm.assemble(c);
   EXPECT_EQ(145ul, fxn.size());
 
 }
+
+} //namespace x64asm
 
 #endif

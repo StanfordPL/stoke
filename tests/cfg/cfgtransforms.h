@@ -24,28 +24,30 @@
 #include "src/state/cpu_state.h"
 #include "src/stategen/stategen.h"
 
+namespace stoke {
+
 class CfgTransformsTest : public ::testing::Test {};
 
 TEST_F(CfgTransformsTest, Simple) {
-  auto code = R"STR(.bar:
-movq $0x1, %rax
-movq %rax, %rcx
-movq (%r8), %rcx
-movq $0x1, %rcx
-jnz .foo
-movq $0x3, %rcx
-movq $0x0, %rbx
-.foo:
-movq $0x0, %rax
-movq $0x0, (%rax)
-callq .blah
-retq
-)STR";
+
+  std::stringstream ss;
+  ss << ".bar:" << std::endl;
+  ss << "movq $0x1, %rax" << std::endl;
+  ss << "movq %rax, %rcx" << std::endl;
+  ss << "movq (%r8), %rcx" << std::endl;
+  ss << "movq $0x1, %rcx" << std::endl;
+  ss << "jnz .foo" << std::endl;
+  ss << "movq $0x3, %rcx" << std::endl;
+  ss << "movq $0x0, %rbx" << std::endl;
+  ss << ".foo:" << std::endl;
+  ss << "movq $0x0, %rax" << std::endl;
+  ss << "movq $0x0, (%rax)" << std::endl;
+  ss << "callq .blah" << std::endl;
+  ss << "retq" << std::endl;
 
   x64asm::Code t;
-  std::stringstream ss;
-  ss << code;
   ss >> t;
+
   stoke::Cfg cfg(t, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
   stoke::CfgTransforms tforms;
@@ -55,16 +57,20 @@ retq
   ss.str("");
   ss << cfg.get_code();
 
-  std::string expected = R"STR(.bar:
-movq (%r8), %rcx
-movq $0x1, %rcx
-jnz .foo
-movq $0x3, %rcx
-movq $0x0, %rbx
-.foo:
-movq $0x0, %rax
-movq $0x0, (%rax)
-callq .blah
-retq )STR";
-  ASSERT_EQ(ss.str(), expected);
+  std::stringstream expected;
+  expected << ".bar:" << std::endl;
+  expected << "movq (%r8), %rcx" << std::endl;
+  expected << "movq $0x1, %rcx" << std::endl;
+  expected << "jnz .foo" << std::endl;
+  expected << "movq $0x3, %rcx" << std::endl;
+  expected << "movq $0x0, %rbx" << std::endl;
+  expected << ".foo:" << std::endl;
+  expected << "movq $0x0, %rax" << std::endl;
+  expected << "movq $0x0, (%rax)" << std::endl;
+  expected << "callq .blah" << std::endl;
+  expected << "retq ";
+
+  ASSERT_EQ(expected.str(), ss.str());
 }
+
+} //namespace stoke

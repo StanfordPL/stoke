@@ -21,6 +21,8 @@
 #include "src/search/transforms.h"
 #include "src/stategen/stategen.h"
 
+namespace stoke {
+
 class TransformsTest : public CodeFixtureTest {
 
 public:
@@ -46,24 +48,24 @@ public:
     transforms_.set_operand_pool(GetParam().get_code(), x64asm::RegSet::empty());
 
     code_ = GetParam().get_code();
-    cfg_ = new stoke::Cfg(code_, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+    cfg_ = new Cfg(code_, x64asm::RegSet::universe(), x64asm::RegSet::empty());
   }
 
 protected:
 
-  static stoke::Transforms transforms_;
+  static Transforms transforms_;
 
   size_t iterations_;
   std::default_random_engine::result_type seed_;
   x64asm::Code code_;
-  stoke::Cfg* cfg_;
+  Cfg* cfg_;
 
 private:
   static bool transforms_init_;
 };
 
 bool TransformsTest::transforms_init_ = false;
-stoke::Transforms TransformsTest::transforms_;
+Transforms TransformsTest::transforms_;
 
 TEST_P(TransformsTest, InstructionMoveIsReversible) {
 
@@ -177,22 +179,15 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
 
   code_.push_back(x64asm::Instruction(x64asm::RET));
   x64asm::Code original(code_);
-  cfg_ = new stoke::Cfg(code_, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+  cfg_ = new Cfg(code_, x64asm::RegSet::universe(), x64asm::RegSet::empty());
 
-  stoke::Sandbox sb;
+  Sandbox sb;
   sb.set_max_jumps(30).set_abi_check(false);
 
   //attempt to make a testcase
   // there's an underlying bug here in stoke testcase.
-  /*
-  std::cout << "generating testcase" << std::endl;
-  std::cout << "cfg: " << cfg_->get_code() << std::endl;
-  */
-  stoke::CpuState tc;
-  /*
-  stoke::StateGen sg(&sb);
-  if (sg.get(tc, *cfg_))
-  */
+  CpuState tc;
+  StateGen sg(&sb);
   sb.insert_input(tc);
 
   //make cost function
@@ -214,7 +209,7 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   //loop and check
   for (size_t i = 0; i < iterations_; ++i) {
 
-    stoke::Move m = (stoke::Move)(i % 6);
+    Move m = (Move)(i % 6);
     if (transforms_.modify(*cfg_, m)) {
       transforms_.undo(*cfg_, m);
     }
@@ -251,3 +246,5 @@ INSTANTIATE_TEST_CASE_P(
   TransformsTest,
   ::testing::ValuesIn(CodeFixtureTestInit::get_fixtures())
 );
+
+} //namespace
