@@ -20,6 +20,7 @@
 
 using namespace std;
 using namespace stoke;
+using namespace x64asm;
 
 namespace {
 // see http://stackoverflow.com/questions/13172158/c-split-string-by-line
@@ -48,7 +49,31 @@ string green(string s) {
   return "\033[92m" + s + "\033[0m";
 }
 
-string diff_states(const CpuState& state1, const CpuState& state2, bool show_unchanged) {
+string diff_states(const CpuState& state1, const CpuState& state2, bool show_unchanged,
+                   bool show_all_registers, const RegSet& regs_to_show) {
+
+  // string representation of all registers we want to show
+  vector<string> regs;
+  stringstream ss;
+  for (auto i = regs_to_show.any_sub_gp_begin(), ie = regs_to_show.any_sub_gp_end(); i != ie; ++i) {
+    ss.str("");
+    ss.clear();
+    ss << *i;
+    regs.push_back(ss.str());
+  }
+  for (auto i = regs_to_show.any_sub_sse_begin(), ie = regs_to_show.any_sub_sse_end(); i != ie; ++i) {
+    ss.str("");
+    ss.clear();
+    ss << *i;
+    regs.push_back(ss.str());
+  }
+  for (auto i = regs_to_show.flags_begin(), ie = regs_to_show.flags_end(); i != ie; ++i) {
+    ss.str("");
+    ss.clear();
+    ss << *i;
+    regs.push_back(ss.str());
+  }
+
   ostringstream result;
   if (state1.code != state2.code) {
     result << red("Target and rewrite did not finish with the same error code:") << endl << endl;
@@ -86,6 +111,15 @@ string diff_states(const CpuState& state1, const CpuState& state2, bool show_unc
           os2 << green(s2);
         } else {
           if (s1 != s2 || show_unchanged) {
+            // is this a register?
+            if (!show_all_registers && s1[0] == '%' && s2[0] == '%') {
+              string reg = s1.substr(0, s1.find(" "));
+              assert(reg == s2.substr(0, s1.find(" ")));
+              // should we ignore this register?
+              if (find(regs.begin(), regs.end(), reg) == regs.end()) {
+                continue; // ignore
+              }
+            }
             for (size_t j = 0; j < s1.size(); j++) {
               if (s1[j] == s2[j]) {
                 os1 << s1[j];

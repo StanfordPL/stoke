@@ -31,10 +31,13 @@
 using namespace cpputil;
 using namespace std;
 using namespace stoke;
+using namespace x64asm;
 
 auto& dbg = Heading::create("Diff Options:");
 auto& show_unchanged = FlagArg::create("show_unchanged")
                        .description("Show unchanged lines");
+auto& dont_show_all_registers = FlagArg::create("diff_relevant_registers")
+                                .description("Show only changes from live_out and def_in");
 
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
@@ -68,7 +71,7 @@ int main(int argc, char** argv) {
   sb.run(rewrite);
   const auto rewrite_result = *(sb.result_begin());
 
-  Console::msg() << diff_states(target_result, rewrite_result, show_unchanged);
+  Console::msg() << diff_states(target_result, rewrite_result, show_unchanged, !dont_show_all_registers, target.live_outs() | target.def_ins());
 
   return 0;
 }
