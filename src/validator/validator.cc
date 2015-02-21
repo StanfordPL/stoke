@@ -290,9 +290,11 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix,
   // the goodness of each split; calculating the goodness costs O(n) and we
   // need to do this O(n) times.
 
+  // Generate default memory
+  cs.stack.resize(0x700000000, 0);
+  cs.heap.resize(0x100000000, 0);
+  cs.data.resize(0x000000000, 0);
   if(!memory && !memory2) {
-    cs.stack.resize(0, 0);
-    cs.heap.resize(0, 0);
     return cs;
   }
 
@@ -306,6 +308,11 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix,
     for(auto p : memory2->get_address_vars()) {
       concrete.push_back(pair<uint64_t, uint16_t>(smt.get_model_bv(p.first, 1).get_fixed_quad(0), p.second));
     }
+  }
+
+  if (concrete.size() == 0) {
+    // no memory
+    return cs;
   }
 
   auto compare = [] (const pair<uint64_t, uint16_t>& p1, const pair<uint64_t, uint16_t>& p2) {
@@ -337,8 +344,6 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix,
 
   if(stack_size > 4096 || heap_size > 4096) {
     // Failed to allocate memory, oh well.
-    cs.stack.resize(0,0);
-    cs.heap.resize(0,0);
     return cs;
   }
 
