@@ -111,9 +111,7 @@ istream& CpuState::read_text(istream& is) {
 
   data.read_text(is);
 
-  if (!check()) {
-    is.setstate(ios::failbit);
-  }
+  check(is);
 
   return is;
 }
@@ -141,24 +139,18 @@ istream& CpuState::read_bin(istream& is) {
   heap.read_bin(is);
   data.read_bin(is);
 
-  if (!check()) {
-    is.setstate(ios::failbit);
-  }
+  check(is);
 
   return is;
 }
 
-bool CpuState::check() const {
-  // Stack addresses should be strictly greater than heap addresses
+void CpuState::check(istream& is) const {
   if (stack.lower_bound() <= heap.upper_bound()) {
-    return false;
+    fail(is) << "Stack addresses should be strictly greater than heap addresses";
   }
-  // Heap addresses should be strictly greater than data addresses
   if (heap.lower_bound() <= data.upper_bound()) {
-    return false;
+    fail(is) << "Heap addresses should be strictly greater than data addresses";
   }
-
-  return true;
 }
 
 } // namespace stoke
