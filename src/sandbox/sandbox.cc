@@ -184,9 +184,9 @@ Sandbox& Sandbox::run(size_t index) {
 
   // Optimization: In read only mem mode, we don't need to reset output memory
   if (!all_fxns_read_only_) {
-    //io->out_.stack = io->in_.stack;
-    //io->out_.heap = io->in_.heap;
-    //io->out_.data = io->in_.data;
+    io->out_.stack = io->in_.stack;
+    io->out_.heap = io->in_.heap;
+    io->out_.data = io->in_.data;
   }
 
   // Reset error-related variables
