@@ -361,8 +361,8 @@ int main(int argc, char** argv) {
     tforms.remove_unreachable(state.best_correct);
     tforms.remove_nop(state.best_correct);
   } else {
-		// Do nothing.
-	}
+    // Do nothing.
+  }
 
   auto final_stats = search.get_statistics();
 
