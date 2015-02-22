@@ -16,12 +16,13 @@
 #include <array>
 
 #include "src/cost/latency.h"
+#include "src/ext/x64asm/include/x64asm.h"
 
 using namespace std;
 
 namespace {
 
-array<stoke::Cost, 3976> latencies_ {{
+array<stoke::Cost, X64ASM_NUM_OPCODES> latencies_ {{
 #include "src/cost/tables/haswell_latency.h"
   }
 };
