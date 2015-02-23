@@ -215,6 +215,7 @@ istream& TUnit::read_formatted_text(istream& is) {
 
   if (ss.fail()) {
     is.setstate(ios::failbit);
+    return is;
   }
 
   // TODO: output an error message of what when wrong
