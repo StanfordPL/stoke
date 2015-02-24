@@ -113,6 +113,8 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
   if(rotate && rotate_cf)
     shift_amt = shift_amt % SymBitVector::constant(dest.size() + 1, dest.size() + 1);
 
+  // If the shift is length 0, we don't set SF/ZF/PF
+  auto operand_nonzero = shift_amt[7][0] != SymBitVector::constant(8, 0);
 
   // We need to compute a shift on a slightly larger register to get the carry flag.  so:
   SymBitVector extended_src;
@@ -125,18 +127,10 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
   else
     extended_src = state[dest];
 
-  // If the shift is length 0, we don't set SF/ZF/PF
-  auto set_szp = state[shift][7][0] != SymBitVector::constant(8, 0);
-  if(rotate)
-    set_szp = shift_amt[7][0] != SymBitVector::constant(8, 0);
-
   // If the shift is length 1, we do set the OF
-  auto set_of = state[shift][7][0] == SymBitVector::constant(8, 1);
-  if(rotate)
-    set_of = shift_amt[7][0] == SymBitVector::constant(8, 1);
-
+  auto set_of = shift_amt[7][0] == SymBitVector::constant(8, 1);
   // If the shift amount is too large, CF is undefined for SHL/SHR
-  auto undef_cf = (state[shift] > SymBitVector::constant(shift.size(), dest.size()));
+  auto undef_cf = (shift_amt[7][0] >= SymBitVector::constant(8, dest.size()));
 
   // Do the shift and extract final value and CF/OF flags
   // Note that the computation of CF/OF depends on instruction variant
@@ -151,7 +145,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     // If not too large, CF is the lsb of extended result
     state.set(eflags_cf, undef_cf.ite(
                 SymBool::var("CF_" + to_string(temp())),
-                set_szp.ite(temp_dest[0], state[eflags_cf])
+                operand_nonzero.ite(temp_dest[0], state[eflags_cf])
               ));
 
     // If shift is length 1, OF is MSB of *original* operand
@@ -167,7 +161,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     state.set(dest, result);
 
     // For SAR, CF is set so long as a shift happens
-    state.set(eflags_cf, set_szp.ite(
+    state.set(eflags_cf, operand_nonzero.ite(
                 temp_dest[0],
                 state[eflags_cf]
               ));
@@ -187,7 +181,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     // If not too large, CF is the msb of extended result
     state.set(eflags_cf, undef_cf.ite(
                 SymBool::var("CF_" + to_string(temp())),
-                set_szp.ite(temp_dest[dest.size()], state[eflags_cf])
+                operand_nonzero.ite(temp_dest[dest.size()], state[eflags_cf])
               ));
 
     // The OF bit is 0 <=> MSB of result is same as carry flag (unless left alone)
@@ -209,7 +203,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     state.set(dest, temp_dest);
 
     // Set CF to last bit rotated, if any
-    state.set(eflags_cf, set_szp.ite(
+    state.set(eflags_cf, operand_nonzero.ite(
                 temp_dest[last_bit_shifted],
                 state[eflags_cf]
               ));
@@ -252,7 +246,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
 
     state.set(eflags_of, set_of.ite(
                 of,
-                set_szp.ite( state[eflags_of], SymBool::var("OF_" + to_string(temp())))
+                operand_nonzero.ite( state[eflags_of], SymBool::var("OF_" + to_string(temp())))
               ));
   }
 
@@ -262,25 +256,25 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
   if (!rotate) {
 
     // Set SF to MSB of result, unless there's no change
-    state.set(eflags_sf, set_szp.ite(
+    state.set(eflags_sf, operand_nonzero.ite(
                 result[dest.size()-1],
                 state[eflags_sf]
               ));
 
     // Set ZF to whether the final value is zero, unless there's no change
-    state.set(eflags_zf, set_szp.ite(
+    state.set(eflags_zf, operand_nonzero.ite(
                 result == SymBitVector::constant(dest.size(), 0),
                 state[eflags_zf]
               ));
 
     // SET PF to pairity of result, unless there's no change
-    state.set(eflags_pf, set_szp.ite(
+    state.set(eflags_pf, operand_nonzero.ite(
                 result[7][0].pairity(),
                 state[eflags_pf]
               ));
 
     // SET AF to undefined (fresh variable), unless no shift happened
-    state.set(eflags_af, set_szp.ite(
+    state.set(eflags_af, operand_nonzero.ite(
                 SymBool::var("AF_" + to_string(temp())),
                 state[eflags_af]
               ));
