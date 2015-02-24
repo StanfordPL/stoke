@@ -130,7 +130,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
   // If the shift is length 1, we do set the OF
   auto set_of = shift_amt[7][0] == SymBitVector::constant(8, 1);
   // If the shift amount is too large, CF is undefined for SHL/SHR
-  auto undef_cf = (shift_amt[7][0] > SymBitVector::constant(shift.size(), dest.size()));
+  auto undef_cf = (shift_amt[7][0] >= SymBitVector::constant(8, dest.size()));
 
   // Do the shift and extract final value and CF/OF flags
   // Note that the computation of CF/OF depends on instruction variant
