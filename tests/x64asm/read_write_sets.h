@@ -182,8 +182,8 @@ TEST(X64AsmTest, TestReadWriteSets) {
     // Run the sandbox
     Sandbox sb;
     sb.set_abi_check(false)
-      .insert_input(cs1)
-      .insert_input(cs2);
+    .insert_input(cs1)
+    .insert_input(cs2);
 
     sb.run(cfg);
 
