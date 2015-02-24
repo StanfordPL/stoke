@@ -52,6 +52,34 @@ TEST_F(ValidatorShiftTest, OutputsEqualInBigShift) {
 
 TEST_F(ValidatorShiftTest, CfUndefinedInBigShift) {
 
+  target_ << "salw $0x11, %ax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "salw $0x11, %ax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::eflags_cf);
+
+  assert_ceg_nocheck();
+
+}
+
+TEST_F(ValidatorShiftTest, CfUndefinedInBigShift2) {
+
+  target_ << "salw $0x10, %ax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "salw $0x10, %ax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::eflags_cf);
+
+  assert_ceg_nocheck();
+
+}
+
+TEST_F(ValidatorShiftTest, CfDefinedInSmallShift) {
+
   target_ << "sall $0x10, %eax" << std::endl;
   target_ << "retq" << std::endl;
 
@@ -60,7 +88,21 @@ TEST_F(ValidatorShiftTest, CfUndefinedInBigShift) {
 
   set_live_outs(x64asm::RegSet::empty() + x64asm::eflags_cf);
 
-  assert_ceg_nocheck();
+  assert_equiv();
+
+}
+
+TEST_F(ValidatorShiftTest, CfDdefinedInSmallShift2) {
+
+  target_ << "salw $0x0f, %ax" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << "salw $0x0f, %ax" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  set_live_outs(x64asm::RegSet::empty() + x64asm::eflags_cf);
+
+  assert_equiv();
 
 }
 
