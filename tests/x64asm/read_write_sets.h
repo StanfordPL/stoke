@@ -21,9 +21,38 @@
 
 namespace stoke {
 
+bool check(uint64_t a, uint64_t b, const std::string& msg, std::ostream& os) {
+  if (a == b) {
+    return false;
+  }
+  os << msg << std::endl;
+  os << "  In state 1: 0x" << std::hex << a << std::endl;
+  os << "  In state 2: 0x" << std::hex << b << std::endl;
+  return true;
+}
 
-TEST(X64AsmTest, TestReadWriteSets) {
+void report(bool failed, const x64asm::Instruction& instr, const stoke::CpuState& a, const stoke::CpuState& b, const std::string& msg) {
+  if (failed) {
+    std::cout << std::endl << "SpreadsheetReadWriteSetFuzzTest Failed!" << std::endl << std::endl;
+    std::cout << "Instruction: " << instr << std::endl;
+    std::cout << "  Maybe read set: " << instr.maybe_read_set() << std::endl;
+    std::cout << "  Must write set: " << instr.must_write_set() << std::endl << std::endl;
+    std::cout << msg << std::endl;
+    std::cout << "State 1:" << std::endl << std::endl;
+    std::cout << a << std::endl << std::endl;
+    std::cout << "State 2:" << std::endl << std::endl;
+    std::cout << b << std::endl << std::endl;
+    ADD_FAILURE();
+  }
+}
 
+/** This test generates random instructions, and then performs the following
+test:  It generates two random states, that agree in all the registers that
+the instruction reads (but are both random otherwise), and then executes
+the instruction.  The two resulting states are then checked to agree on the
+values the instruction writes.
+For example, this uncovers errors in the must/maybe read/write/undef sets. */
+TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   uint64_t seed = (uint64_t)tv.tv_usec;
@@ -158,7 +187,7 @@ TEST(X64AsmTest, TestReadWriteSets) {
     x64asm::RegSet liveouts = (ins.must_write_set() - ins.maybe_undef_set()) & supported_regs;
     x64asm::RegSet reads = ins.maybe_read_set();
     cfg_code[1] = ins;
-    Cfg cfg(cfg_code, ins.maybe_read_set(), liveouts);
+    Cfg cfg(cfg_code, reads, liveouts);
 
     std::cout << "[----------] * " << ins << std::endl;
 
@@ -170,14 +199,28 @@ TEST(X64AsmTest, TestReadWriteSets) {
 
     // Build two states at random, if possible
     CpuState cs1, cs2;
-    if(!sg.get(cs1, cfg)) {
+    if(!sg.get(cs1, cfg) || !sg.get(cs2, cfg)) {
       std::cout << "[----------]   - Could not generate state: " << sg.get_error() << std::endl;
       continue;
     }
-    // cs1 and cs2 should agree on memory, and all registers that the instruction might read
+    // cs1 and cs2 should agree on memory
     cs2.stack = cs1.stack;
     cs2.heap = cs1.heap;
     cs2.data = cs1.data;
+
+    // cs1 and cs2 should agree on all registers that the instruction might read
+    for(auto it = reads.gp_begin(); it != reads.gp_end(); ++it) {
+      cs2.gp[*it] = cs1.gp[*it];
+    }
+    for(auto it = reads.sse_begin(); it != reads.sse_end(); ++it) {
+      cs2.sse[*it] = cs1.sse[*it];
+    }
+    for(size_t i = 0; i < x64asm::eflags.size(); i++) {
+      auto op = x64asm::eflags[i];
+      if (reads.contains(op)) {
+        cs2.rf.set(op.index(), cs1.rf.is_set(op.index()));
+      }
+    }
 
     // Run the sandbox
     Sandbox sb;
@@ -190,7 +233,54 @@ TEST(X64AsmTest, TestReadWriteSets) {
     CpuState final1 = *sb.get_result(0);
     CpuState final2 = *sb.get_result(1);
 
-    EXPECT_TRUE(false);
+    // test that the two states match on live_out
+    bool failed = false;
+    std::stringstream os;
+    for(auto it = liveouts.gp_begin(); it != liveouts.gp_end(); ++it) {
+      uint16_t bitwidth = (*it).size();
+
+      // Check the lower bitwidth bits of cpustates are equal.
+      uint64_t actual_full = final1.gp[*it].get_fixed_quad(0);
+      uint64_t expected_full = final2.gp[*it].get_fixed_quad(0);
+
+      uint64_t mask = ((uint64_t)1 << bitwidth) - 1;
+      if(bitwidth == 64)
+        mask = -1;
+
+      uint64_t actual_masked = actual_full & mask;
+      uint64_t expected_masked = expected_full & mask;
+
+      std::stringstream ss;
+      ss << "The " << bitwidth << " bits of " << *it << " differ.";
+      failed |= check(expected_masked, actual_masked, ss.str(), os);
+    }
+    for(auto it = liveouts.sse_begin(); it != liveouts.sse_end(); ++it) {
+      uint16_t bitwidth = (*it).size();
+      uint16_t quads = bitwidth/64;
+
+      for(size_t i = 0; i < quads; ++i) {
+        uint64_t actual_v = final1.sse[*it].get_fixed_quad(i);
+        uint64_t expect_v = final2.sse[*it].get_fixed_quad(i);
+        std::stringstream ss;
+        ss << "Bits " << (i*64) <<  ".." << ((i+1)*64) << " of " << *it << " differ.";
+        failed |= check(expect_v, actual_v, ss.str(), os);
+      }
+    }
+    for(size_t i = 0; i < x64asm::eflags.size(); i++) {
+      auto op = x64asm::eflags[i];
+
+      if (liveouts.contains(op)) {
+        uint64_t actual_flag = final1.rf.is_set(op.index());
+        uint64_t expected_flag = final2.rf.is_set(op.index());
+
+        std::stringstream ss;
+        ss << "Value of flag " << op << " differs.";
+        failed |= check(expected_flag, actual_flag, ss.str(), os);
+      }
+    }
+    report(failed, ins, cs1, cs2, os.str());
+#undef EXPECT_EQ_HELPER
+#undef EXPECT_EQ_HEX
 
     success++;
   }
