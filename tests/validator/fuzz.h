@@ -164,7 +164,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
       continue;
 
     const auto ins = pre_cfg.get_code()[1];
-    x64asm::RegSet liveouts = (ins.must_write_set() - ins.maybe_undef_set()) & supported_regs;
+    x64asm::RegSet liveouts = supported_regs - ins.maybe_undef_set();
     cfg_code[1] = ins;
     Cfg cfg(cfg_code, ins.maybe_read_set(), liveouts);
 
