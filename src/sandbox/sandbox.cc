@@ -102,7 +102,7 @@ Sandbox& Sandbox::clear_inputs() {
 Sandbox& Sandbox::insert_function(const Cfg& cfg) {
   // Look up the name of this function
   assert(cfg.get_code()[0].is_label_defn());
-  const auto label = cfg.get_code()[0].get_operand<Label>(0);
+  const auto label = cfg.get_function().get_leading_label();
 
   // If this is the first time we've seen this function, allocate state
   // Otherwise just replace what's there
@@ -204,8 +204,6 @@ Sandbox& Sandbox::run(size_t index) {
   out2cpu_ = io->out2cpu_.get_entrypoint();
   cpu2out_ = io->cpu2out_.get_entrypoint();
   map_addr_ = io->map_addr_.get_entrypoint();
-  sym_table_ = io->in_.sym_table.flat_table_.data();
-  min_label_ = -io->in_.sym_table.min_label_;
 
   // Initialize state related to %rsp tracking
   user_rsp_ = io->in_.gp[rsp].get_fixed_quad(0);
@@ -264,7 +262,7 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
 void Sandbox::recompile(const Cfg& cfg) {
   // Grab the name of this function
   assert(cfg.get_code()[0].is_label_defn());
-  const auto& label = cfg.get_code()[0].get_operand<Label>(0);
+  const auto& label = cfg.get_function().get_leading_label();
 
   // Compile the function and record its source
   assert(fxns_[label] != 0);
@@ -721,7 +719,7 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   emit_load_user_rsp();
 
   // Grab the name of this function and make a unique label for representing the end
-  const auto label = cfg.get_code()[0].get_operand<Label>(0);
+  const auto label = cfg.get_function().get_leading_label();
   const auto exit = get_label();
 
   // Keep track of the hex byte offset of every instruction in this function
@@ -744,11 +742,11 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
 
       if (cfg.is_reachable(b)) {
         if (global_before_.first != nullptr || !before_.empty()) {
-          emit_before(cfg.get_code()[0].get_operand<Label>(0), i);
+          emit_before(cfg.get_function().get_leading_label(), i);
         }
         emit_instruction(instr, label, hex_offset, exit);
         if (global_after_.first != nullptr || !after_.empty()) {
-          emit_after(cfg.get_code()[0].get_operand<Label>(0), i);
+          emit_after(cfg.get_function().get_leading_label(), i);
         }
       }
     }
@@ -931,14 +929,8 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, const Label& fxn
   // Some special case handling here for rip offset style dereferences.
   // Either way, the effective address is going into rdi
   if (rip_offset) {
-    // Figure out the rip offset at this instruction and put the result in rax
-    assm_.mov(rax, Moffs64(&min_label_));
-    assm_.mov(rdi, rax);
-    assm_.mov((R64)rax, Imm64(static_cast<uint64_t>(fxn)));
-    assm_.lea(rdi, M64(rax, rdi, Scale::TIMES_1));
-    assm_.mov(rax, Moffs64(&sym_table_));
-    assm_.mov(rax, M64(rax, rdi, Scale::TIMES_8));
-    assm_.lea(rax, M64(rax, Imm32(hex_offset)));
+    // Figure out the rip offset at this instruction
+    assm_.mov((R64)rax, Imm64(fxns_src_[fxn]->get_function().get_rip_offset() + hex_offset));
     // Add the offset for this instruction
     assm_.lea(rdi, M64(rax, old_op.get_disp()));
   } else {
@@ -1076,17 +1068,9 @@ void Sandbox::emit_call(const Instruction& instr, const x64asm::Label& fxn, uint
   assm_.push(rax);
   assm_.push(rbx);
 
-  // Figure out the rip offset at this instruction
-  assm_.mov(rax, Moffs64(&min_label_));
-  assm_.mov(rbx, rax);
-  assm_.mov((R64)rax, Imm64(static_cast<uint64_t>(fxn)));
-  assm_.lea(rbx, M64(rax, rbx, Scale::TIMES_1));
-  assm_.mov(rax, Moffs64(&sym_table_));
-  assm_.mov(rax, M64(rax, rbx, Scale::TIMES_8));
-  assm_.lea(rax, M64(rax, Imm32(hex_offset)));
-
-  // Push %rip (which is in rax right now)
+  // Push out the rip offset at this instruction
   // Sandboxing the memory dereference will catch infinite recursions
+  assm_.mov((R64)rax, Imm64(fxns_src_[fxn]->get_function().get_rip_offset() + hex_offset));
   emit_load_user_rsp();
   emit_push({PUSH_R64, {rax}});
 

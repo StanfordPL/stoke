@@ -85,7 +85,7 @@ private:
     // Always prefer user inputs, otherwise solve for live_ins
     auto def_in = def_in_arg.has_been_provided() ?
                   def_in_arg.value() :
-                  Cfg(target_arg.value().code, x64asm::RegSet::empty(), live_out).live_ins();
+                  Cfg(target_arg.value().get_code(), x64asm::RegSet::empty(), live_out).live_ins();
 
     // Add mxcsr[rc] unless otherwise specified
     if (!no_default_mxcsr_arg) {
@@ -102,7 +102,7 @@ private:
     }
 
     // Solve for defined out values
-    Cfg temp(target_arg.value().code, x64asm::RegSet::empty(), x64asm::RegSet::empty());
+    Cfg temp(target_arg.value().get_code(), x64asm::RegSet::empty(), x64asm::RegSet::empty());
     const auto dos = temp.def_outs();
 
     // If no general purpose registers were written we can guess xmm live out
@@ -162,7 +162,7 @@ private:
     std::vector<x64asm::Function> hex;
     hex.push_back(assm.assemble(get_code()));
     for (const auto& fxn : aux_fxns) {
-      hex.push_back(assm.assemble(fxn.code));
+      hex.push_back(assm.assemble(fxn.get_code()));
     }
 
     x64asm::Linker lnkr;
@@ -182,7 +182,7 @@ private:
   /** Add dataflow summaries for auxiliary functions */
   void summarize_functions(const std::vector<TUnit>& aux_fxns) {
     for (const auto& fxn : aux_fxns) {
-      auto code = fxn.code;
+      auto code = fxn.get_code();
       auto lbl = code[0].get_operand<x64asm::Label>(0);
       TUnit::MayMustSets mms = {
         code.must_read_set(),
@@ -194,7 +194,7 @@ private:
       };
       mms = fxn.get_may_must_sets(mms);
       // check consistency of dataflow information
-      std::string consistency_warning = "Dataflow information is inconsistent for function '" + fxn.name + "'.  The maybe set needs to contain the must set. ";
+      std::string consistency_warning = "Dataflow information is inconsistent for function '" + fxn.get_name() + "'.  The maybe set needs to contain the must set. ";
       if (!mms.maybe_read_set.contains(mms.must_read_set)) {
         Console::error(1) << consistency_warning << "maybe-read: " << mms.maybe_read_set << ". must-read: " << mms.must_read_set << std::endl;
       }

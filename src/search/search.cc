@@ -205,7 +205,7 @@ void Search::configure(const Cfg& target, CostFunction& fxn, SearchState& state,
 
   // add dataflow information about function call targets
   for (const auto& fxn : aux_fxn) {
-    auto code = fxn.code;
+    auto code = fxn.get_code();
     auto lbl = code[0].get_operand<x64asm::Label>(0);
     TUnit::MayMustSets mms = {
       code.must_read_set(),
