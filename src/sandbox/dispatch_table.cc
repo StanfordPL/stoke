@@ -43,7 +43,7 @@ DispatchTable::DispatchTable() {
       } else if (instr.is_pop()) {
         table_[i] = MEM_POP;
       } else if (instr.is_any_bt()) {
-        table_[i] - MEM_BT;
+        table_[i] = MEM_BT;
       } else {
         table_[i] = MEM_INSTR;
       }

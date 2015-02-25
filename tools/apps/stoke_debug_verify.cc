@@ -113,7 +113,6 @@ int main(int argc, char** argv) {
     const auto target_result = *(sb.result_begin());
     sb.run(rewrite);
     const auto rewrite_result = *(sb.result_begin());
-    auto regs_to_diff = target.live_outs() | target.def_ins();
     Console::msg() << diff_states(target_result, rewrite_result, show_unchanged, show_all_registers, target.live_outs() | target.def_ins());
     Console::msg() << endl;
   } else if (!res) {

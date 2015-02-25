@@ -132,8 +132,6 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     // Loop through sets of 'input_width' in the input and apply the binary
     // operator in a pairwise way.  Stop when we get to the end of the input/output
     // and clear or preserve the remaining bits.
-    SymBitVector imm_arg = immediate;
-
     if(has_immediate) {
       result = entry(op1, arg1[input_width-1][0], op2, arg2[input_width-1][0], state, immediate, 0);
     } else {
