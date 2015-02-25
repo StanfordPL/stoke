@@ -35,7 +35,7 @@ namespace stoke {
 
 class TransformsGadget : public Transforms {
 public:
-  TransformsGadget(x64asm::Code code, const std::vector<TUnit>& aux_fxns,
+  TransformsGadget(const TUnit& fxn, const std::vector<TUnit>& aux_fxns,
                    std::default_random_engine::result_type seed) : Transforms() {
     if (callee_save_arg.value()) {
       preserve_regs_arg.value() = x64asm::RegSet::empty();
@@ -57,8 +57,8 @@ public:
     // Determine if we need to read/write memory operands
     bool mem_read = false;
     bool mem_write = false;
-    for(size_t i = 0; i < code.size(); ++i) {
-      auto instr = code[i];
+    for(size_t i = 0; i < fxn.get_code().size(); ++i) {
+      auto instr = fxn.get_code()[i];
       mem_read |= instr.maybe_read_memory();
       mem_write |= instr.maybe_write_memory();
       mem_write |= instr.maybe_undef_memory();
@@ -76,7 +76,7 @@ public:
 
     set_opcode_pool(arg_cpu_flags, call_weight_arg, mem_read, mem_write,
                     preserve_regs_arg, opc_blacklist_arg, opc_whitelist_arg);
-    set_operand_pool(code, preserve_regs_arg);
+    set_operand_pool(fxn, preserve_regs_arg);
 
     for (const auto& imm : immediates_arg.value()) {
       insert_immediate(imm);

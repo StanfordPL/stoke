@@ -262,7 +262,7 @@ namespace stoke {
 
 Transforms::Transforms() : old_instr_(RET) {
   set_opcode_pool(FlagSet::universe(), 0, true, true, RegSet::empty(), {}, {});
-  set_operand_pool({RET}, RegSet::linux_call_preserved());
+  set_operand_pool(TUnit({RET}), RegSet::linux_call_preserved());
 }
 
 Transforms& Transforms::set_opcode_pool(const FlagSet& flags,
@@ -336,7 +336,7 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags,
   return *this;
 }
 
-Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& preserve_regs) {
+Transforms& Transforms::set_operand_pool(const TUnit& target, const RegSet& preserve_regs) {
   rl_pool_.clear();
   for (const auto& r : rls) {
     if (!preserve_regs.contains(r)) {
@@ -380,45 +380,24 @@ Transforms& Transforms::set_operand_pool(const Code& target, const RegSet& prese
   ymm_pool_.assign(ymms.begin(), ymms.end());
 
   imm_pool_.assign({
-    0ul, 1ul, -1ul, 2ul, -2ul, 3ul, -3ul, 4ul, -4ul, 5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
+    0ul, 
+		1ul, -1ul, 2ul, -2ul, 3ul, -3ul, 4ul, -4ul, 
+		5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
     16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
   });
-  for (const auto& instr : target) {
-    for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
-      switch (instr.type(i)) {
-      case Type::IMM_8:
-      case Type::IMM_16:
-      case Type::IMM_32:
-      case Type::IMM_64:
-      case Type::ZERO:
-      case Type::ONE:
-      case Type::THREE:
-        insert_immediate(instr.get_operand<Imm64>(i));
-        break;
-      default:
-        break;
-      }
-    }
-  }
+	for (const auto& imm : set<Imm64>(target.imm_begin(), target.imm_end())) {
+		insert_immediate(imm);
+	}
 
-  m_pool_.clear();
-  for (const auto& instr : target) {
-    if (instr.is_explicit_memory_dereference()) {
-      assert(instr.mem_index() != -1);
-      insert_mem(instr.get_operand<M8>(instr.mem_index()));
-    }
-  }
+	set<M8> mem_ops(target.mem_begin(), target.mem_end());
+  m_pool_.assign(mem_ops.begin(), mem_ops.end());
 
-  label_pool_.clear();
-  for (const auto& instr : target) {
-    if (instr.is_call()) {
-      insert_label(instr.get_operand<Label>(0));
-    }
-  }
+	set<Label> call_ops(target.call_target_begin(), target.call_target_end());
+  label_pool_.assign(call_ops.begin(), call_ops.end());
 
   offset_pool_.clear();
   uint64_t fxn_offset = 0;
-  for (const auto& instr : target) {
+  for (const auto& instr : target.get_code()) {
     fxn_offset += assm_.hex_size(instr);
     if (!uses_rip(instr)) {
       continue;
