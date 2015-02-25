@@ -929,10 +929,11 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, const Label& fxn
   // Some special case handling here for rip offset style dereferences.
   // Either way, the effective address is going into rdi
   if (rip_offset) {
-    // Figure out the rip offset at this instruction
-    assm_.mov((R64)rax, Imm64(fxns_src_[fxn]->get_function().get_rip_offset() + hex_offset));
-    // Add the offset for this instruction
-    assm_.lea(rdi, M64(rax, old_op.get_disp()));
+    // Figure out the rip offset at this instruction and add the offset for this instruction.
+		auto offset = fxns_src_[fxn]->get_function().get_rip_offset();
+		offset += hex_offset;
+		offset += old_op.get_disp();
+    assm_.mov(rdi, Imm64(offset));
   } else {
     if (uses_rsp) {
       assm_.mov(rsp, Imm64(&user_rsp_));
