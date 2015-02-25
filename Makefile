@@ -24,6 +24,17 @@ ifndef NTHREADS
 	NTHREADS=8
 endif
 
+# set defaults (haswell) to allow building things like bin/stoke_search directly
+ifndef OPT
+	OPT=-march=core-avx2 -O3 -DNDEBUG
+endif
+ifndef EXT_OPT
+	EXT_OPT=release
+endif
+ifndef EXT_TARGET
+	EXT_TARGET=-march=core-avx2
+endif
+
 INC_FOLDERS=\
 						./ \
 						src/ext/cpputil/ \
