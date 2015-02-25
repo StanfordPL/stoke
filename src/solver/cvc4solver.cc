@@ -173,6 +173,8 @@ Expr Cvc4Solver::ExprConverter::visit_binop(const SymBitVectorBinop * const bino
     error_ = "Unexpected BV type: " + to_string(binop->type());
     assert(false);
   }
+  assert(false);
+  return em_.mkExpr(kind::BITVECTOR_AND, left, right); // keep the compiler happy
 }
 
 /** Visit a bit-vector binop */
@@ -188,6 +190,8 @@ Expr Cvc4Solver::ExprConverter::visit_unop(const SymBitVectorUnop * const unop) 
     error_ = "Unexpected BV type: " + to_string(unop->type());
     assert(false);
   }
+  assert(false);
+  return em_.mkExpr(kind::BITVECTOR_NEG, left); //keep the compiler happy
 }
 
 /** Visit a boolean binop */
@@ -210,6 +214,8 @@ Expr Cvc4Solver::ExprConverter::visit_binop(const SymBoolBinop * const binop) {
     error_ = "Unexpected bool type: " + to_string(binop->type());
     assert(false);
   }
+  assert(false);
+  return em_.mkExpr(kind::AND, left, right); //keep the compiler happy
 }
 
 /** Visit a binop compare  */
@@ -240,6 +246,8 @@ Expr Cvc4Solver::ExprConverter::visit_compare(const SymBoolCompare * const compa
     error_ = "Unexpected compare type: " + to_string(compare->type());
     assert(false);
   }
+  assert(false);
+  return em_.mkExpr(kind::EQUAL, left, right);
 }
 
 /** Visit a bit-vector constant */

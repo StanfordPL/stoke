@@ -105,6 +105,7 @@ public:
     max_size_ = max_size;
     size_starting_penalty_ = start_penalty;
     size_incr_penalty_ = incr_penalty;
+    return *this;
   }
   /** Set the minimum unacceptable ULP error for floating-point comparisons. */
   CostFunction& set_min_ulp(Cost mu) {
