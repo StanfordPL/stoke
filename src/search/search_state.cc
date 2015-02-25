@@ -42,7 +42,7 @@ void SearchState::configure(Init init, const Cfg& target, size_t size) {
 }
 
 void SearchState::configure_empty(const Cfg& target, size_t size) {
-  current = Cfg({{}}, target.def_ins(), target.live_outs());
+  current = Cfg(TUnit(), target.def_ins(), target.live_outs());
   current.get_code().push_back(target.get_code()[0]);
   for (size_t i = 1, ie = size - 1; i < ie; ++i) {
     current.get_code().push_back({NOP});
@@ -118,7 +118,7 @@ Code SearchState::find_sound_code(const RegSet& def_ins, const RegSet& live_outs
     for (auto it = code.begin(); it != code.end(); ++it, ++i) {
       vector<Instruction> copy = code;
       copy.erase(copy.begin()+i);
-      if (Cfg(Code(copy.begin(), copy.end()), def_ins, live_outs).is_sound()) {
+      if (Cfg(TUnit(Code(copy.begin(), copy.end())), def_ins, live_outs).is_sound()) {
         code = copy;
         changed = true;
         break;
@@ -136,7 +136,7 @@ void SearchState::configure_zero(const Cfg& target, size_t size) {
     return;
   }
 
-  current = Cfg({{}}, target.def_ins(), target.live_outs());
+  current = Cfg(TUnit(), target.def_ins(), target.live_outs());
   current.get_code().push_back(target.get_code()[0]);
   auto code = find_sound_code(target.def_ins(), target.live_outs());
   for (const auto& instr : code) {
