@@ -369,7 +369,7 @@ int main(int argc, char** argv) {
   Console::msg() << final_msg << endl;
 
   ofstream ofs(out.value());
-  ofs << state.best_correct.get_code();
+  ofs << state.best_correct.get_function();
 
   return 0;
 }

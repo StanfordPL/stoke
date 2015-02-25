@@ -57,7 +57,7 @@ public:
       {x64asm::LABEL_DEFN, {x64asm::Label{".main"}}},
       {x64asm::RET}
     };
-    set_target({code, x64asm::RegSet::empty(), x64asm::RegSet::empty()}, false, false);
+    set_target(Cfg(TUnit(code), x64asm::RegSet::empty(), x64asm::RegSet::empty()), false, false);
     set_distance(Distance::HAMMING);
     set_sse(1, 1);
     set_relax(false, false, false);

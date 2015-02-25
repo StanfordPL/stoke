@@ -110,32 +110,40 @@ istream& TUnit::read_text(istream& is) {
 }
 
 ostream& TUnit::write_text(ostream& os) const {
+	const auto fmt = os.flags();
+
   os << "  .text" << endl;
   os << "  .globl " << get_name() << endl;
   os << "  .type " << get_name() << ", @function" << endl;
+	os << endl;
 
-  os << "#! file-offset " << get_file_offset() << endl;
-  os << "#! capacity    " << get_capacity() << endl;
-  os << "#! rip-offset  " << get_rip_offset() << endl;
+  os << "  #! file-offset " << showbase << hex << get_file_offset() << endl;
+  os << "  #! rip-offset  " << showbase << hex << get_rip_offset() << endl;
+  os << "  #! capacity    " << noshowbase << get_capacity() << endl;
+	os << endl;
 
   if (maybe_read_set_) {
-    os << "#! maybe-read  " << *maybe_read_set_ << endl;
+    os << "  #! maybe-read  " << *maybe_read_set_ << endl;
   }
   if (must_read_set_) {
-    os << "#! must-read   " << *must_read_set_ << endl;
+    os << "  #! must-read   " << *must_read_set_ << endl;
   }
   if (maybe_write_set_) {
-    os << "#! maybe-write " << *maybe_write_set_ << endl;
+    os << "  #! maybe-write " << *maybe_write_set_ << endl;
   }
   if (must_write_set_) {
-    os << "#! must-write  " << *must_write_set_ << endl;
+    os << "  #! must-write  " << *must_write_set_ << endl;
   }
   if (maybe_undef_set_) {
-    os << "#! maybe-undef " << *maybe_undef_set_ << endl;
+    os << "  #! maybe-undef " << *maybe_undef_set_ << endl;
   }
   if (must_undef_set_) {
-    os << "#! must-undef  " << *must_undef_set_ << endl;
+    os << "  #! must-undef  " << *must_undef_set_ << endl;
   }
+	if (maybe_read_set_ || maybe_write_set_ || maybe_undef_set_ ||
+			must_read_set_ ||  must_write_set_  || must_undef_set_) {
+		os << endl;
+	}
 
   ofilterstream<Column> col(os);
   col.filter().padding(2);
@@ -165,10 +173,13 @@ ostream& TUnit::write_text(ostream& os) const {
   os << endl << endl;
   os << ".size " << get_name() << ", .-" << get_name() << endl;
 
+	os.setf(fmt);
   return os;
 }
 
 istream& TUnit::read_formatted_text(istream& is) {
+	const auto fmt = is.flags();
+
   string name, s;
 
   getline(is, s);
@@ -184,6 +195,10 @@ istream& TUnit::read_formatted_text(istream& is) {
   auto rs = RegSet::empty();
 
   for (size_t i = 0; getline(is, s); ++i) {
+		while (isspace(s[0])) {
+			s = s.substr(1);
+		}
+			
     stringstream ss;
     if (is_prefix("#! file-offset", s)) {
       ss << s.substr(14);
@@ -247,6 +262,7 @@ istream& TUnit::read_formatted_text(istream& is) {
     fail(is) << "Label on line one differs from name given in file";
   }
 
+	is.flags(fmt);
   return is;
 }
 

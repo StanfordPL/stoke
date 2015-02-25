@@ -202,7 +202,7 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   fxn.set_target(*cfg_, true, true)
   .set_performance_term(PerformanceTerm::LATENCY);
 
-  auto original_cost = fxn({original, x64asm::RegSet::universe(), x64asm::RegSet::empty()});
+  auto original_cost = fxn(Cfg(TUnit(original), x64asm::RegSet::universe(), x64asm::RegSet::empty()));
 
   //loop and check
   for (size_t i = 0; i < iterations_; ++i) {

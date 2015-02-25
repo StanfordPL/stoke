@@ -18,17 +18,17 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/tunit/tunit.h"
 
-#include <map>
 #include <string>
-#include <vector>
 
 namespace stoke {
 
 struct FunctionCallbackData {
-  /** A semantically equivalent x64asm function (rip offsets may be different) */
-  TUnit tunit;
   /** Did a parse error occur? */
   bool parse_error;
+	/** The name of this function (always valid) */
+	std::string name;
+  /** An equivalent x64asm function (offsets may be different) (valid if parsing succeeds)*/
+  TUnit tunit;
 };
 
 /** Callback signature */
