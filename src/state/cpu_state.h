@@ -53,7 +53,7 @@ struct CpuState {
 
   /** Equality. */
   bool operator==(const CpuState& rhs) const {
-    return code == rhs.code && 
+    return code == rhs.code &&
            gp == rhs.gp && sse == rhs.sse && rf == rhs.rf &&
            stack == rhs.stack && heap == rhs.heap && data == rhs.data;
   }
