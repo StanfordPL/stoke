@@ -119,7 +119,7 @@ ostream& TUnit::write_text(ostream& os) const {
 
   os << "  #! file-offset " << showbase << hex << get_file_offset() << endl;
   os << "  #! rip-offset  " << showbase << hex << get_rip_offset() << endl;
-  os << "  #! capacity    " << noshowbase << get_capacity() << endl;
+  os << "  #! capacity    " << noshowbase << dec << get_capacity() << " bytes" << endl;
   os << endl;
 
   if (maybe_read_set_) {
@@ -202,13 +202,13 @@ istream& TUnit::read_formatted_text(istream& is) {
     stringstream ss;
     if (is_prefix("#! file-offset", s)) {
       ss << s.substr(14);
-      ss >> file_offset_;
-    } else if (is_prefix("#! capacity", s)) {
-      ss << s.substr(11);
-      ss >> capacity_;
+      ss >> hex >> file_offset_;
     } else if (is_prefix("#! rip-offset", s)) {
       ss << s.substr(13);
-      ss >> rip_offset_;
+      ss >> hex >> rip_offset_;
+    } else if (is_prefix("#! capacity", s)) {
+      ss << s.substr(11);
+      ss >> dec >> capacity_;
     } else if (is_prefix("#! maybe-read", s)) {
       ss << s.substr(13);
       ss >> rs;
