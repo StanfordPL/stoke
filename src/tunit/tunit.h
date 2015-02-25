@@ -37,10 +37,9 @@ struct TUnit {
 
   /** Constructs a minimal valid function */
   TUnit() {
-    code_ = {{
-        {x64asm::LABEL_DEFN, {x64asm::Label(".anonymous_function")}},
-        {x64asm::RET}
-      }
+    code_ = {
+      {x64asm::LABEL_DEFN, {x64asm::Label(".anonymous_function")}},
+      {x64asm::RET}
     };
     file_offset_ = 0;
     capacity_ = 0;
