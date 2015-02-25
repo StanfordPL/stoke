@@ -16,6 +16,7 @@
 #ifndef _STOKE_TEST_TUNIT_TUNIT_H
 #define _STOKE_TEST_TUNIT_TUNIT_H
 
+#include "src/ext/cpputil/include/io/fail.h"
 #include "src/ext/x64asm/src/constants.h"
 
 namespace stoke {
@@ -32,14 +33,7 @@ TEST(TunitParsing, Simple) {
 
   TUnit tunit;
   ss >> tunit;
-  ASSERT_FALSE(ss.fail());
-  // no annotations, so nothing should be present
-  ASSERT_FALSE(tunit.must_read_set);
-  ASSERT_FALSE(tunit.must_write_set);
-  ASSERT_FALSE(tunit.must_undef_set);
-  ASSERT_FALSE(tunit.maybe_read_set);
-  ASSERT_FALSE(tunit.maybe_write_set);
-  ASSERT_FALSE(tunit.maybe_undef_set);
+  ASSERT_FALSE(cpputil::failed(ss));
 }
 
 TEST(TunitParsing, RequireLabel) {
@@ -53,7 +47,7 @@ TEST(TunitParsing, RequireLabel) {
 
   TUnit tunit;
   ss >> tunit;
-  ASSERT_TRUE(ss.fail());
+  ASSERT_TRUE(cpputil::failed(ss));
 }
 
 TEST(TunitParsing, RequireCorrectLabel) {
@@ -68,7 +62,7 @@ TEST(TunitParsing, RequireCorrectLabel) {
 
   TUnit tunit;
   ss >> tunit;
-  ASSERT_TRUE(ss.fail());
+  ASSERT_TRUE(cpputil::failed(ss));
 }
 
 TEST(TunitParsing, EmptyLine) {
@@ -84,8 +78,8 @@ TEST(TunitParsing, EmptyLine) {
 
   TUnit tunit;
   ss >> tunit;
-  ASSERT_FALSE(ss.fail());
-  ASSERT_EQ((size_t)2, tunit.code.size());
+  ASSERT_FALSE(cpputil::failed(ss));
+  ASSERT_EQ((size_t)2, tunit.get_code().size());
 }
 
 TEST(TunitParsing, DataflowAnnotations) {
@@ -110,18 +104,13 @@ TEST(TunitParsing, DataflowAnnotations) {
   x64asm::RegSet rcxonly;
   rcxonly += x64asm::Constants::rcx();
   ASSERT_FALSE(ss.fail());
-  ASSERT_TRUE(tunit.must_read_set);
-  ASSERT_TRUE(tunit.must_write_set);
-  ASSERT_TRUE(tunit.must_undef_set);
-  ASSERT_TRUE(tunit.maybe_read_set);
-  ASSERT_TRUE(tunit.maybe_write_set);
-  ASSERT_TRUE(tunit.maybe_undef_set);
-  ASSERT_EQ(*tunit.must_read_set, empty);
-  ASSERT_EQ(*tunit.must_write_set, empty);
-  ASSERT_EQ(*tunit.must_undef_set, empty);
-  ASSERT_EQ(*tunit.maybe_read_set, empty);
-  ASSERT_EQ(*tunit.maybe_write_set, rcxonly);
-  ASSERT_EQ(*tunit.maybe_undef_set, rcxonly);
+	const auto sets = tunit.get_may_must_sets();
+  ASSERT_EQ(sets.must_read_set, empty);
+  ASSERT_EQ(sets.must_write_set, empty);
+  ASSERT_EQ(sets.must_undef_set, empty);
+  ASSERT_EQ(sets.maybe_read_set, empty);
+  ASSERT_EQ(sets.maybe_write_set, rcxonly);
+  ASSERT_EQ(sets.maybe_undef_set, rcxonly);
 }
 
 TEST(TunitParsing, DataflowAnnotationsNormalization) {

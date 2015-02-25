@@ -48,25 +48,23 @@ auto& out = ValueArg<string>::create("o")
             .description("File to write changes to; default is to overwrite")
             .default_val("");
 
-map<string, uint64_t> section_offsets;
-uint64_t fxn_offset;
-size_t fxn_size;
-bool found;
+bool found = false;
+uint64_t fxn_offset = 0;
+size_t fxn_size = 0;
 
 void callback(const FunctionCallbackData& data, void* arg) {
   // Check if we've found the function
-  if (data.tunit.name == rewrite_arg.value().name) {
+  if (data.tunit.get_name() == rewrite_arg.value().get_name()) {
     found = true;
-    fxn_offset = data.offset;
-    fxn_size = data.size;
+    fxn_offset = data.tunit.get_file_offset();
+    fxn_size = data.tunit.get_capacity();
   }
 }
 
 bool replace(uint64_t offset, size_t size) {
-
   // Clean up the new function
   CfgTransforms tforms;
-  Cfg cfg(rewrite_arg.value().code, RegSet::empty(), RegSet::empty());
+  Cfg cfg(rewrite_arg.value().get_code(), RegSet::empty(), RegSet::empty());
   tforms.remove_unreachable(cfg);
   tforms.remove_nop(cfg);
 
@@ -120,7 +118,7 @@ int main(int argc, char** argv) {
   if (d.has_error()) {
     Console::error(1) << "disassemble: " << d.get_error() << endl;
   } else if (!found) {
-    Console::error(1) << "Couldn't find function " << rewrite_arg.value().name << " in the binary." << endl;
+    Console::error(1) << "Couldn't find function " << rewrite_arg.value().get_name() << " in the binary." << endl;
   } else if (!replace(fxn_offset, fxn_size)) {
     Console::error(1) << "Unable to replace function text!" << endl;
   }

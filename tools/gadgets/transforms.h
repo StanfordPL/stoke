@@ -82,7 +82,7 @@ public:
       insert_immediate(imm);
     }
     for (const auto& fxn : aux_fxns) {
-      insert_label(fxn.code[0].get_operand<x64asm::Label>(0));
+      insert_label(fxn.get_name());
     }
     for (const auto& m : mem_ops_arg.value()) {
       insert_mem(m);
