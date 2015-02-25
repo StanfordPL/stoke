@@ -930,9 +930,9 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, const Label& fxn
   // Either way, the effective address is going into rdi
   if (rip_offset) {
     // Figure out the rip offset at this instruction and add the offset for this instruction.
-		auto offset = fxns_src_[fxn]->get_function().get_rip_offset();
-		offset += hex_offset;
-		offset += old_op.get_disp();
+    auto offset = fxns_src_[fxn]->get_function().get_rip_offset();
+    offset += hex_offset;
+    offset += old_op.get_disp();
     assm_.mov(rdi, Imm64(offset));
   } else {
     if (uses_rsp) {
