@@ -57,6 +57,8 @@ public:
     return error_;
   }
 
+  virtual ~Handler() {}
+
 protected:
 
   std::string error_;
