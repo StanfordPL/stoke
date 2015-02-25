@@ -38,19 +38,20 @@ struct TUnit {
   /** Constructs a minimal valid function */
   TUnit() {
     code_ = {
-      {x64asm::LABEL_DEFN, {x64asm::Label(".anonymous_function")}},
+			// @todo this is causing a segfault in integration tests
+      //{x64asm::LABEL_DEFN, {x64asm::Label(".anonymous_function")}},
       {x64asm::RET}
     };
     file_offset_ = 0;
-    capacity_ = 0;
     rip_offset_ = 0;
+    capacity_ = 0;
   }
   /** Constructs a funtion with non-default values */
-  TUnit(const x64asm::Code& code, uint64_t fo = 0, size_t c = 0, uint64_t ro = 0) {
+  TUnit(const x64asm::Code& code, uint64_t fo = 0, uint64_t ro = 0, size_t c = 0) {
     code_ = code;
     file_offset_ = fo;
-    capacity_ = c;
     rip_offset_ = ro;
+    capacity_ = c;
   }
 
   /** Returns the underlying code sequence */

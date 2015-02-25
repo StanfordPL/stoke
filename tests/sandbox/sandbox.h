@@ -41,7 +41,7 @@ TEST(SandboxTest, TrivialExampleWorks) {
   sb.insert_input(tc);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
 
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
@@ -49,10 +49,7 @@ TEST(SandboxTest, TrivialExampleWorks) {
 
   ASSERT_EQ((uint64_t)1, output.gp[1].get_fixed_quad(0));
   ASSERT_EQ((uint64_t)8, output.gp[2].get_fixed_quad(0));
-
-
 }
-
 
 TEST(SandboxTest, AllGPRegistersWork) {
 
@@ -90,7 +87,7 @@ TEST(SandboxTest, AllGPRegistersWork) {
   sb.insert_input(tc);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
 
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
@@ -127,7 +124,7 @@ TEST(SandboxTest, RegisterValuesArePreserved) {
   sb.insert_input(tc);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
 
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
@@ -169,7 +166,7 @@ TEST(SandboxTest, ModifyingRbxWorks) {
   sb.insert_input(tc);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
 
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
@@ -204,7 +201,7 @@ TEST(SandboxTest, ModifyingRbxFailsIfAbiEnforced) {
   sb.insert_input(tc);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
 
   ASSERT_EQ(ErrorCode::SIGCUSTOM_ABI_VIOLATION, sb.result_begin()->code);
 }
@@ -236,7 +233,7 @@ TEST(SandboxTest, RflagsRegistersArePreserved) {
   .insert_input(tc);
 
   // Run it
-  sb.run({c, x64asm::RegSet::universe(), x64asm::RegSet::universe()});
+  sb.run(Cfg(TUnit(c), x64asm::RegSet::universe(), x64asm::RegSet::universe()));
 
   // Check answers
   CpuState result = *sb.result_begin();
@@ -272,7 +269,7 @@ TEST(SandboxTest, NullDereferenceFails) {
   sb.insert_input(tc);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
 
   ASSERT_EQ(ErrorCode::SIGSEGV_, sb.result_begin()->code);
 
@@ -301,14 +298,10 @@ TEST(SandboxTest, DivideByZeroFails) {
   sb.insert_input(tc);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
 
   ASSERT_EQ(ErrorCode::SIGFPE_, sb.result_begin()->code);
-
-
 }
-
-
 
 TEST(SandboxTest, InfiniteLoopFails) {
 
@@ -335,7 +328,7 @@ TEST(SandboxTest, InfiniteLoopFails) {
   sb.insert_input(tc);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
 
   ASSERT_EQ(ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS, sb.result_begin()->code);
 
@@ -371,7 +364,7 @@ TEST(SandboxTest, ShortLoopMaxIterationsOk) {
   sb.set_abi_check(false);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
 
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
@@ -405,7 +398,7 @@ TEST(SandboxTest, ShortLoopOneTooManyIterations) {
   sb.set_abi_check(false);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
 
   ASSERT_EQ(ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS, sb.result_begin()->code);
 
@@ -434,7 +427,7 @@ TEST(SandboxTest, LahfSahfOkay) {
   sb.insert_input(tc);
 
   // Run it
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -456,7 +449,7 @@ TEST(SandboxTest, UndefSymbolError) {
   sb.insert_input(tc);
 
   // Run it (we shouldn't ever actually run, so testcase doesn't matter)
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::SIGCUSTOM_LINKER_ERROR, sb.result_begin()->code);
 }
 
@@ -480,7 +473,7 @@ TEST(SandboxTest, Issue239) {
   sb.insert_input(tc);
 
   // Run it (we shouldn't ever actually run, so testcase doesn't matter)
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty() + x64asm::bx});
+  sb.run(Cfg(TUnit(c), x64asm::RegSet::empty(), x64asm::RegSet::empty() + x64asm::bx));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
   CpuState output = *sb.result_begin();
@@ -509,7 +502,7 @@ TEST(SandboxTest, LDDQU_VLDDQU) {
   sg.get(tc);
   sb.insert_input(tc);
 
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+	sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 #endif
 }
@@ -544,7 +537,7 @@ TEST(SandboxTest, PUSH_POP) {
   sg.get(tc);
   sb.insert_input(tc);
 
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+	sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -577,7 +570,7 @@ TEST(SandboxTest, MEM_DIV) {
   sg.get(tc);
   sb.insert_input(tc);
 
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+	sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -605,7 +598,7 @@ TEST(SandboxTest, RSP_WITH_JMPS) {
   sg.get(tc);
   sb.insert_input(tc);
 
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+	sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -627,7 +620,7 @@ TEST(SandboxTest, PushfWorks) {
   sg.get(tc);
   sb.insert_input(tc);
 
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+	sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -650,7 +643,7 @@ TEST(SandboxTest, PopfFailCase) {
   sg.get(tc);
   sb.insert_input(tc);
 
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+	sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::SIGCUSTOM_INVALID_POPF, sb.result_begin()->code);
 }
 
@@ -673,7 +666,7 @@ TEST(SandboxTest, PopfqFailCase) {
   sg.get(tc);
   sb.insert_input(tc);
 
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+	sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::SIGCUSTOM_INVALID_POPF, sb.result_begin()->code);
 }
 
@@ -699,7 +692,7 @@ TEST(SandboxTest, PopfqWorksCase) {
   sg.get(tc);
   sb.insert_input(tc);
 
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+	sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -722,7 +715,7 @@ TEST(SandboxTest, fld_family) {
   sg.get(tc);
   sb.insert_input(tc);
 
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+	sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 

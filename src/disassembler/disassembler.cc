@@ -464,8 +464,9 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
   const auto file_offset = rip_offset - text_offset;
 
   // All done; back to the user
-  data.tunit = {code, file_offset, capacity, rip_offset};
   data.parse_error = failed(ss);
+	data.name = name;
+  data.tunit = {code, file_offset, rip_offset, capacity};
 
   return true;
 }
