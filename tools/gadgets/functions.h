@@ -45,8 +45,8 @@ public:
 
     // Checks for unsupported instructions or flag requirements
     for (const auto& fxn : *this) {
-      flag_check(fxn.get_code());
-      sandbox_check(fxn.get_code());
+      flag_check(fxn);
+      sandbox_check(fxn);
     }
   }
 
@@ -96,23 +96,21 @@ private:
   }
 
   /** Checks for unsupported cpu flags */
-  void flag_check(const x64asm::Code& code) const {
+  void flag_check(const TUnit& fxn) const {
     const auto cpu_flags = CpuInfo::get_flags();
-    auto code_flags = code.required_flags();
+    auto code_flags = fxn.get_code().required_flags();
 
     if (!cpu_flags.contains(code_flags)) {
       const auto diff = code_flags - cpu_flags;
-      const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
-      Console::error(1) << "Auxiliary function (" << fxn << ") requires unavailable cpu flags: " << diff << std::endl;
+      Console::error(1) << "Auxiliary function (" << fxn.get_name() << ") requires unavailable cpu flags: " << diff << std::endl;
     }
   }
 
   /** Checks for unsupported sandbox instructions */
-  void sandbox_check(const x64asm::Code& code) const {
-    for (const auto& instr : code) {
+  void sandbox_check(const TUnit& fxn) const {
+    for (const auto& instr : fxn.get_code()) {
       if (!Sandbox::is_supported(instr)) {
-        const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
-        Console::error(1) << "Auxiliary function (" << fxn << ") contains an unsupported instruction: " << instr << std::endl;
+        Console::error(1) << "Auxiliary function (" << fxn.get_name() << ") contains an unsupported instruction: " << instr << std::endl;
       }
     }
   }
