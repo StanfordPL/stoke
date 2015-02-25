@@ -30,14 +30,14 @@ namespace stoke {
 
 class CfgGadget : public Cfg {
 public:
-  CfgGadget(const x64asm::Code& code, const std::vector<TUnit>& aux_fxns)
-    : Cfg(code, def_in(live_out()), live_out()) {
+  CfgGadget(const TUnit& fxn, const std::vector<TUnit>& aux_fxns)
+    : Cfg(fxn, def_in(live_out()), live_out()) {
     // Emit warning if register values were guessed
     reg_warning();
 
     // Check for unsupported instructions and cpu flags
-    flag_check(get_code());
-    sandbox_check(get_code());
+    flag_check(get_function());
+    sandbox_check(get_function());
 
     // Check that this function can link against auxiliary functions
     linker_check(aux_fxns);
@@ -133,22 +133,20 @@ private:
   }
 
   /** Checks for unsupported cpu flags */
-  void flag_check(const x64asm::Code& code) const {
+  void flag_check(const TUnit& fxn) const {
     const auto cpu_flags = CpuInfo::get_flags();
-    auto code_flags = code.required_flags();
+    auto code_flags = fxn.get_code().required_flags();
 
     if (!cpu_flags.contains(code_flags)) {
       const auto diff = code_flags - cpu_flags;
-      const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
       Console::error(1) << "Target/rewrite requires unavailable cpu flags: " << diff << std::endl;
     }
   }
 
   /** Checks for unsupported sandbox instructions */
-  void sandbox_check(const x64asm::Code& code) const {
-    for (const auto& instr : code) {
+  void sandbox_check(const TUnit& fxn) const {
+    for (const auto& instr : fxn.get_code()) {
       if (!Sandbox::is_supported(instr)) {
-        const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
         Console::error(1) << "Target/rewrite contains an unsupported instruction: " << instr << std::endl;
       }
     }
@@ -183,7 +181,7 @@ private:
   void summarize_functions(const std::vector<TUnit>& aux_fxns) {
     for (const auto& fxn : aux_fxns) {
       auto code = fxn.get_code();
-      auto lbl = code[0].get_operand<x64asm::Label>(0);
+      auto lbl = fxn.get_leading_label();
       TUnit::MayMustSets mms = {
         code.must_read_set(),
         code.must_write_set(),
