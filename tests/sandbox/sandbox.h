@@ -502,7 +502,7 @@ TEST(SandboxTest, LDDQU_VLDDQU) {
   sg.get(tc);
   sb.insert_input(tc);
 
-	sb.run(Cfg(TUnit(c)));
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 #endif
 }
@@ -537,7 +537,7 @@ TEST(SandboxTest, PUSH_POP) {
   sg.get(tc);
   sb.insert_input(tc);
 
-	sb.run(Cfg(TUnit(c)));
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -570,7 +570,7 @@ TEST(SandboxTest, MEM_DIV) {
   sg.get(tc);
   sb.insert_input(tc);
 
-	sb.run(Cfg(TUnit(c)));
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -598,7 +598,7 @@ TEST(SandboxTest, RSP_WITH_JMPS) {
   sg.get(tc);
   sb.insert_input(tc);
 
-	sb.run(Cfg(TUnit(c)));
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -620,7 +620,7 @@ TEST(SandboxTest, PushfWorks) {
   sg.get(tc);
   sb.insert_input(tc);
 
-	sb.run(Cfg(TUnit(c)));
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -643,7 +643,7 @@ TEST(SandboxTest, PopfFailCase) {
   sg.get(tc);
   sb.insert_input(tc);
 
-	sb.run(Cfg(TUnit(c)));
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::SIGCUSTOM_INVALID_POPF, sb.result_begin()->code);
 }
 
@@ -666,7 +666,7 @@ TEST(SandboxTest, PopfqFailCase) {
   sg.get(tc);
   sb.insert_input(tc);
 
-	sb.run(Cfg(TUnit(c)));
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::SIGCUSTOM_INVALID_POPF, sb.result_begin()->code);
 }
 
@@ -692,7 +692,7 @@ TEST(SandboxTest, PopfqWorksCase) {
   sg.get(tc);
   sb.insert_input(tc);
 
-	sb.run(Cfg(TUnit(c)));
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
@@ -715,7 +715,7 @@ TEST(SandboxTest, fld_family) {
   sg.get(tc);
   sb.insert_input(tc);
 
-	sb.run(Cfg(TUnit(c)));
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 

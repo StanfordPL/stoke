@@ -38,7 +38,7 @@ struct TUnit {
   /** Constructs a minimal valid function */
   TUnit() {
     code_ = {
-			// @todo this is causing a segfault in integration tests
+      // @todo this is causing a segfault in integration tests
       //{x64asm::LABEL_DEFN, {x64asm::Label(".anonymous_function")}},
       {x64asm::RET}
     };

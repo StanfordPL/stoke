@@ -70,8 +70,8 @@ public:
   std::unordered_map<x64asm::Label, DataflowSummary> fncs_summary;
 
   /** Creates a new control flow graph with valid internal state. */
-  explicit Cfg(const TUnit& function, const x64asm::RegSet& def_ins = x64asm::RegSet::empty(), 
-			const x64asm::RegSet& live_outs = x64asm::RegSet::empty()) :
+  explicit Cfg(const TUnit& function, const x64asm::RegSet& def_ins = x64asm::RegSet::empty(),
+               const x64asm::RegSet& live_outs = x64asm::RegSet::empty()) :
     function_(function), fxn_def_ins_(def_ins), fxn_live_outs_(live_outs) {
     recompute();
   }
@@ -118,14 +118,14 @@ public:
     }
   }
 
-	/** Return a reference to the function underlying this graph. */
-	TUnit& get_function() {
-		return function_;
-	}
-	/** Return a const reference to the function underlying this graph. */
-	const TUnit& get_function() const {
-		return function_;
-	}
+  /** Return a reference to the function underlying this graph. */
+  TUnit& get_function() {
+    return function_;
+  }
+  /** Return a const reference to the function underlying this graph. */
+  const TUnit& get_function() const {
+    return function_;
+  }
 
   /** Return a reference to the code underlying this graph. */
   x64asm::Code& get_code() {
@@ -467,7 +467,7 @@ public:
 
 private:
   /** User-specified underlying function. */
-	TUnit function_;
+  TUnit function_;
   /** User-specified registers that are defined on entry to this graph. */
   x64asm::RegSet fxn_def_ins_;
   /** User-specified registers that are defined on exit from this graph. */
