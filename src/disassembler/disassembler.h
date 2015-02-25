@@ -26,13 +26,13 @@ namespace stoke {
 
 class Disassembler {
 public:
-	/** Lift callbacks to std::functions */
+  /** Lift callbacks to std::functions */
   typedef std::function<void (const FunctionCallbackData&)> Callback;
 
   /** Constructs a fresh disassembler */
   Disassembler() {
     set_function_callback(nullptr, nullptr);
-		clear_error();
+    clear_error();
   }
 
   /** Installs a callback for when functions are parsed. */
@@ -81,16 +81,16 @@ private:
     std::string instr; // the text of this line
   };
 
-	/** Clears error state */
-	void clear_error() {
-		error_ = false;
-		error_message_ = "";
-	}
-	/** Sets error state */
-	void set_error(const std::string& msg) {
-		error_ = true;
-		error_message_ = msg;
-	}
+  /** Clears error state */
+  void clear_error() {
+    error_ = false;
+    error_message_ = "";
+  }
+  /** Sets error state */
+  void set_error(const std::string& msg) {
+    error_ = true;
+    error_message_ = msg;
+  }
 
   /* Checks if a filename is whitelisted for use. Prevents accidental shell injection. */
   bool check_filename(const std::string& filename);
@@ -98,7 +98,7 @@ private:
   redi::ipstream* run_objdump(const std::string& filename, bool only_header);
 
   /* Parse the section offsets from objdump's stdout. */
-	std::map<std::string, uint64_t> parse_section_offsets(redi::ipstream& ips);
+  std::map<std::string, uint64_t> parse_section_offsets(redi::ipstream& ips);
 
   /* Rewrite a line from objdump for our parser :( */
   std::string fix_instruction(const std::string& line);
