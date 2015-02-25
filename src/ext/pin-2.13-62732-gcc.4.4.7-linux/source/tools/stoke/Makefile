@@ -53,7 +53,6 @@ PIN_OBJ=\
 	obj-intel64/memory.o \
 	obj-intel64/regs.o \
 	obj-intel64/rflags.o \
-	obj-intel64/sym_table.o \
 	obj-intel64/testcase.o
 
 all: obj-intel64/testcase.so
@@ -72,8 +71,6 @@ obj-intel64/memory.o: ../../../../../state/memory.cc
 obj-intel64/regs.o: ../../../../../state/regs.cc
 	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
 obj-intel64/rflags.o: ../../../../../state/rflags.cc
-	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
-obj-intel64/sym_table.o: ../../../../../state/sym_table.cc
 	mkdir -p obj-intel64 && $(PIN_COMPILE) -c $< -o $@
 	
 obj-intel64/testcase.o: testcase.cpp

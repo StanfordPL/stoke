@@ -23,16 +23,12 @@
 #include "src/state/memory.h"
 #include "src/state/regs.h"
 #include "src/state/rflags.h"
-#include "src/state/sym_table.h"
 
 namespace stoke {
 
-/* #include'ing src/symstate/memory.h has problems for PIN, so make this easy. */
-//class SymMemory;
-
 struct CpuState {
   /** Returns a new CpuState. */
-  CpuState() : code(ErrorCode::NORMAL), sym_table(), gp(16, 64), sse(16, 256), rf() {
+  CpuState() : code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
     stack.resize(0x700000000, 0);
     heap.resize (0x100000000, 0);
     data.resize (0x000000000, 0);
@@ -57,7 +53,7 @@ struct CpuState {
 
   /** Equality. */
   bool operator==(const CpuState& rhs) const {
-    return code == rhs.code && sym_table == rhs.sym_table &&
+    return code == rhs.code && 
            gp == rhs.gp && sse == rhs.sse && rf == rhs.rf &&
            stack == rhs.stack && heap == rhs.heap && data == rhs.data;
   }
@@ -81,8 +77,6 @@ struct CpuState {
 
   /** The error code associated with this state. */
   ErrorCode code;
-  /** Global symbol table. */
-  SymbolTable sym_table;
   /** General purpose register buffer. */
   Regs gp;
   /** SSE register buffer. */
