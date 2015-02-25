@@ -26,13 +26,13 @@ namespace stoke {
 
 class Disassembler {
 public:
+	/** Lift callbacks to std::functions */
   typedef std::function<void (const FunctionCallbackData&)> Callback;
 
   /** Constructs a fresh disassembler */
   Disassembler() {
     set_function_callback(nullptr, nullptr);
-    error_ = false;
-    error_message_ = "";
+		clear_error();
   }
 
   /** Installs a callback for when functions are parsed. */
@@ -54,7 +54,7 @@ public:
     return error_;
   }
   /** Returns the latest error message. */
-  std::string get_error() {
+  const std::string& get_error() const {
     return error_message_;
   }
 
@@ -76,10 +76,21 @@ private:
 
   /** POD struct for recording line info */
   struct LineInfo {
-    uint64_t offset;
-    size_t hex_bytes;
-    std::string instr;
+    uint64_t offset;   // logical hex offset
+    size_t hex_bytes;  // number of hex bytes on this line
+    std::string instr; // the text of this line
   };
+
+	/** Clears error state */
+	void clear_error() {
+		error_ = false;
+		error_message_ = "";
+	}
+	/** Sets error state */
+	void set_error(const std::string& msg) {
+		error_ = true;
+		error_message_ = msg;
+	}
 
   /* Checks if a filename is whitelisted for use. Prevents accidental shell injection. */
   bool check_filename(const std::string& filename);
@@ -87,7 +98,7 @@ private:
   redi::ipstream* run_objdump(const std::string& filename, bool only_header);
 
   /* Parse the section offsets from objdump's stdout. */
-  void parse_section_offsets(redi::ipstream& ips, std::map<std::string, uint64_t>& section_offsets);
+	std::map<std::string, uint64_t> parse_section_offsets(redi::ipstream& ips);
 
   /* Rewrite a line from objdump for our parser :( */
   std::string fix_instruction(const std::string& line);
@@ -96,12 +107,12 @@ private:
   /* Get an address from an objdump'd line */
   bool parse_ptr(const std::string& s, std::map<std::string, std::string>& ptrs);
   /* Get all the lines from a function */
-  std::pair<std::vector<LineInfo>, std::map<std::string,std::string>> parse_lines(redi::ipstream& ips, const std::string& name);
+  std::vector<LineInfo> parse_lines(redi::ipstream& ips, const std::string& name);
   /** Rescale rip displacements for x64asm hex */
-  void rescale_offsets(FunctionCallbackData& data, const std::vector<LineInfo>& lines, uint64_t text_offset);
+  void rescale_offsets(x64asm::Code& code, const std::vector<LineInfo>& lines);
 
-  /* Parse a single function from objdump's stdout */
-  bool parse_function(redi::ipstream& ips, FunctionCallbackData& data, std::map<std::string, uint64_t>& section_offsets);
+  /* Parse a single function from objdump's stdout; returns true until eof */
+  bool parse_function(redi::ipstream& ips, FunctionCallbackData& data, uint64_t text_offset);
 };
 
 } // namespace stoke

@@ -35,7 +35,7 @@ public:
     set_max_jumps(max_jumps_arg);
 
     for (const auto& fxn : aux_fxns) {
-      insert_function({fxn.code, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+      insert_function({fxn.get_code(), x64asm::RegSet::empty(), x64asm::RegSet::empty()});
     }
     for (const auto& tc : tcs) {
       insert_input(tc);

@@ -65,7 +65,7 @@ void print_stack() {
   }
   ofs.filter().next();
   for (size_t i = 0, ie = program_stack.size(); i < ie; ++i) {
-    ofs << program_stack[i].first.name << endl;
+    ofs << program_stack[i].first.get_name() << endl;
   }
   ofs.filter().next();
   for (size_t i = 0, ie = program_stack.size(); i < ie; ++i) {
@@ -79,16 +79,16 @@ void print_stack() {
 }
 
 void print_current(const pair<TUnit, size_t>& frame) {
-  const auto& instr = frame.first.code[frame.second];
+  const auto& instr = frame.first.get_code()[frame.second];
   Console::msg() << "Current Instruction: " << instr << endl;
   Console::msg() << endl;
 }
 
 void print_frame(size_t idx, const pair<TUnit, size_t>& frame) {
-  Console::msg() << "[" << idx << "] " << frame.first.name << " " << frame.second << endl;
+  Console::msg() << "[" << idx << "] " << frame.first.get_name() << " " << frame.second << endl;
   Console::msg() << endl;
-  for (size_t i = 0, ie = frame.first.code.size(); i < ie; ++i) {
-    Console::msg() << (i == frame.second ? "-> " : "   ") << frame.first.code[i] << endl;
+  for (size_t i = 0, ie = frame.first.get_code().size(); i < ie; ++i) {
+    Console::msg() << (i == frame.second ? "-> " : "   ") << frame.first.get_code()[i] << endl;
   }
   Console::msg() << endl;
 }
@@ -127,14 +127,14 @@ bool user_loop() {
 }
 
 void update_stack(const pair<TUnit, size_t>& frame) {
-  const auto& instr = frame.first.code[frame.second];
+  const auto& instr = frame.first.get_code()[frame.second];
   if (instr.get_opcode() == CALL_LABEL) {
     const auto dest = instr.get_operand<Label>(0);
-    if (dest == target_arg.value().code[0].get_operand<Label>(0)) {
+    if (dest == target_arg.value().get_name()) {
       program_stack.push_back({target_arg.value(), 0});
     } else {
       for (const auto& fxn : *fg) {
-        if (dest == fxn.code[0].get_operand<Label>(0)) {
+        if (dest == fxn.get_name()) {
           program_stack.push_back({fxn, 0});
         }
       }

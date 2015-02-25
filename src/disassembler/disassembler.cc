@@ -17,9 +17,11 @@
 #include <fstream>
 #include <iostream>
 
+#include "src/ext/cpputil/include/io/fail.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/disassembler/disassembler.h"
 
+using namespace cpputil;
 using namespace redi;
 using namespace std;
 using namespace x64asm;
@@ -98,10 +100,8 @@ bool Disassembler::check_filename(const string& s) {
     buf[0] = c;
     buf[1] = '\0';
 
-    error_ = true;
-    error_message_ = "Character '" + string(buf) + "' not allowed in filename for security.";
+    set_error(string("Character '") + string(buf) + "' not allowed in filename for security.");
     return false;
-
   }
 
   /* Check that we can open the file */
@@ -112,8 +112,7 @@ bool Disassembler::check_filename(const string& s) {
     return true;
   }
 
-  error_ = true;
-  error_message_ = "Error opening file.";
+  set_error("Error opening file.");
   return false;
 }
 
@@ -130,16 +129,12 @@ ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
   }
 
   auto stream = new ipstream(target, pstreams::pstdout);
-
   if (!stream) {
-    error_ = true;
-    error_message_ = "Unknown error spawning objdump: no memory allocated.";
+    set_error("Unknown error spawning objdump: no memory allocated.");
     return NULL;
   }
-
   if (!stream->is_open()) {
-    error_ = true;
-    error_message_ = "Unknown error spawning objdump.";
+    set_error("Unknown error spawning objdump.");
     delete stream;
     return NULL;
   }
@@ -147,7 +142,9 @@ ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
   return stream;
 }
 
-void Disassembler::parse_section_offsets(ipstream& ips, map<string, uint64_t>& section_offsets) {
+map<string, uint64_t> Disassembler::parse_section_offsets(ipstream& ips) {
+	map<string, uint64_t> section_offsets;
+
   // Skip ahead to table
   strip_lines(ips, 5);
 
@@ -164,6 +161,8 @@ void Disassembler::parse_section_offsets(ipstream& ips, map<string, uint64_t>& s
     // Trailing second line
     getline(ips, line);
   }
+
+	return section_offsets;
 }
 
 string Disassembler::fix_instruction(const string& line) {
@@ -308,10 +307,6 @@ bool Disassembler::parse_line(const string& s, LineInfo& line) {
 }
 
 bool Disassembler::parse_ptr(const string& s, map<string, string>& ptrs) {
-  // Record the name of the function in addition to the "address"
-  // E.g. if we have "  callq 401100 <_foo>"
-  // then we want to add "401100" -> "_foo" to the mapping.
-
   // get the function name
   auto start = s.find_last_of('<');
   auto end = s.find_last_of('>');
@@ -341,7 +336,7 @@ bool Disassembler::parse_ptr(const string& s, map<string, string>& ptrs) {
   return true;
 }
 
-pair<vector<Disassembler::LineInfo>, map<string,string>> Disassembler::parse_lines(ipstream& ips, const string& name) {
+vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const string& name) {
   vector<LineInfo> lines;
   map<string, string> ptrs;
   string s;
@@ -391,8 +386,7 @@ pair<vector<Disassembler::LineInfo>, map<string,string>> Disassembler::parse_lin
   }
 
   // Insert label definitions where necessary and fix instruction text
-  // (At some point, the fact that we split lock into two instructions is going
-  //  to bite us here).
+  // @todo The fact that we split lock into two instructions is going to bite us here
   vector<LineInfo> result;
   result.push_back({lines[0].offset, 0, string(".") + name + string(":")});
   for (const auto& l : lines) {
@@ -404,22 +398,15 @@ pair<vector<Disassembler::LineInfo>, map<string,string>> Disassembler::parse_lin
     result.push_back({l.offset, l.hex_bytes, fix_instruction(l.instr)});
   }
 
-  return {result, ptrs};
+  return result;
 }
 
-void Disassembler::rescale_offsets(FunctionCallbackData& data, const vector<LineInfo>& lines, uint64_t text_offset) {
-  // Rescale function offsets
-  const auto start_addr = data.instruction_offsets[0];
-  data.offset = start_addr - text_offset;
-  for (auto& o : data.instruction_offsets) {
-    o -= start_addr;
-  }
-
+void Disassembler::rescale_offsets(Code& code, const vector<LineInfo>& lines) {
   // Rescale rip offsets
   Assembler assm;
   int64_t delta = 0;
-  for (size_t i = 0, ie = data.tunit.code.size(); i < ie; ++i) {
-    auto& instr = data.tunit.code[i];
+  for (size_t i = 0, ie = code.size(); i < ie; ++i) {
+    auto& instr = code[i];
 
     // Record delta between x64asm hex and this hex
     delta += ((int)lines[i].hex_bytes - (int)assm.hex_size(instr));
@@ -440,87 +427,79 @@ void Disassembler::rescale_offsets(FunctionCallbackData& data, const vector<Line
   }
 }
 
-bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, map<string, uint64_t>& offsets) {
+bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uint64_t text_offset) {
   if (ips.eof()) {
     return false;
   }
 
-  // Clear old values
-  data.tunit.code.clear();
-  data.offset = 0;
-  data.instruction_sizes.clear();
-  data.instruction_offsets.clear();
-  data.parse_error = false;
-
-  string line;
-
   // Get the name of the function
-  getline(ips, line);
-  const auto begin = line.find_first_of('<') + 1;
-  const auto len = line.find_last_of('>') - begin;
-  data.tunit.name = mangle_lable(line.substr(begin, len));
+  string name;
+  getline(ips, name);
+  const auto begin = name.find_first_of('<') + 1;
+  const auto len = name.find_last_of('>') - begin;
+  name = mangle_lable(name.substr(begin, len));
 
   // Parse the contents of this function
   // This function inserts missing lines such as labels and splits lock into two instructions
-  const auto res = parse_lines(ips, data.tunit.name);
-  const auto& lines = res.first;
-  data.addr_label_map = res.second;
-
-  // Record metadata
-  // This meta-data is wrt to the original code, so skip empty lines which are labels
-  // @todo if we've split a lock instruction, we're going to fall out of sync here
-  data.size = 0;
-  for (const auto& l : lines) {
-    if (l.hex_bytes != 0) {
-      data.instruction_offsets.push_back(l.offset);
-      data.instruction_sizes.push_back(l.hex_bytes);
-      data.size += l.hex_bytes;
-    }
-  }
-
-  // Read code.
+  const auto lines = parse_lines(ips, name);
   stringstream ss;
   for (const auto& l : lines) {
     ss << l.instr << endl;
   }
-  ss >> data.tunit.code;
-  if (ss.fail()) {
-    data.parse_error = true;
-  }
 
-  // Rescale offsets
-  rescale_offsets(data, lines, offsets[".text"]);
+  // Read code
+	Code code;
+	ss >> code;
+	if (!failed(ss)) {
+		rescale_offsets(code, lines);
+	}
+
+  // Record hex metadata
+  // @todo if we've split a lock instruction, we're going to fall out of sync here
+  size_t capacity = 0;
+  for (const auto& l : lines) {
+    capacity += l.hex_bytes;
+  }
+	const auto rip_offset = lines[0].offset;
+	const auto file_offset = rip_offset - text_offset;
+
+	// All done; back to the user
+	data.tunit = {code, file_offset, capacity, rip_offset};
+	data.parse_error = failed(ss);
 
   return true;
 }
 
 void Disassembler::disassemble(const std::string& filename) {
-  // Get the headers from the objdump (if this fails an error was already reported)
-  ipstream* headers = run_objdump(filename, true);
-  if (!headers) {
+	// We're starting out fresh, so reset the error tracker
+	clear_error();
+
+  // Get the headers from the objdump 
+  auto headers = run_objdump(filename, true);
+  if (has_error()) {
     return;
   }
-
   // Parse the headers
-  map<string, uint64_t> section_offsets;
-  parse_section_offsets(*headers, section_offsets);
+  const auto section_offsets = parse_section_offsets(*headers);
+	const auto text_itr = section_offsets.find(".text");
+	if (text_itr == section_offsets.end()) {
+		set_error("Unable to find value for text section offset");
+		return;
+	}
 
-  // Get the disassembly from objdump (if an error occurred, it's already been reported)
-  ipstream* body = run_objdump(filename, false);
-  if (!body) {
+  // Get the disassembly from objdump 
+  auto body = run_objdump(filename, false);
+  if (has_error()) {
     return;
   }
-
-  // Skip the first four lines of output
+  // Skip the first four lines of output and lines starting with 'D'
   strip_lines(*body, 4);
-  // Ignore lines starting with "D"
   for (string line; getline(*body, line) && line[0] == 'D';) {
     // Does nothing
   }
-
   // Read the functions and invoke the callback.
   FunctionCallbackData data;
-  while (parse_function(*body, data, section_offsets)) {
+  while (parse_function(*body, data, text_itr->second)) {
     if (!callback_closure_) {
       fxn_cb_(data, fxn_cb_arg_);
     } else {

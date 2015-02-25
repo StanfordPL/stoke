@@ -365,16 +365,11 @@ int main(int argc, char** argv) {
   }
 
   auto final_stats = search.get_statistics();
-
-  TUnit rewrite;
-  rewrite.name = target_arg.value().name;
-  rewrite.code = state.best_correct.get_code();
-
   show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed);
   Console::msg() << final_msg << endl;
 
   ofstream ofs(out.value());
-  ofs << rewrite;
+  ofs << state.best_correct.get_code();
 
   return 0;
 }
