@@ -95,6 +95,7 @@ SymBool SymState::operator[](const Eflags f) const {
     return rf[5];
 
   assert(false);
+  return SymBool(); //keep compiler happy
 }
 
 SymBitVector SymState::operator[](const Operand o) {

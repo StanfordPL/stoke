@@ -139,7 +139,7 @@ FlagSet CpuInfo::get_flags() {
   unsigned eax = 0, ebx = 0, ecx = 0, edx = 0;
   for (auto level : cpuid_to_flags_) {
     // is this level supported?
-    if (max < level.first & 0x80000000) {
+    if (max < (level.first & 0x80000000)) {
       continue;
     }
 

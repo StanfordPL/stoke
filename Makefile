@@ -17,7 +17,7 @@
 ifndef COMPILERBINARY
 	COMPILERBINARY=g++
 endif
-CXX=ccache ${COMPILERBINARY} -std=c++11 -Werror -Wextra -Wfatal-errors -Wno-deprecated
+CXX=ccache ${COMPILERBINARY} -std=c++11 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-reorder
 
 # number of threads used for compiling
 ifndef NTHREADS

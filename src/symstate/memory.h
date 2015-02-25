@@ -36,6 +36,7 @@ public:
   /** Setup an aliasing analysis */
   SymMemory& set_analysis(AliasAnalysis* aa) {
     analysis_ = aa;
+    return *this;
   }
 
   /** Updates the memory with a write.
