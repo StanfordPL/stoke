@@ -143,7 +143,7 @@ ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
 }
 
 map<string, uint64_t> Disassembler::parse_section_offsets(ipstream& ips) {
-	map<string, uint64_t> section_offsets;
+  map<string, uint64_t> section_offsets;
 
   // Skip ahead to table
   strip_lines(ips, 5);
@@ -162,7 +162,7 @@ map<string, uint64_t> Disassembler::parse_section_offsets(ipstream& ips) {
     getline(ips, line);
   }
 
-	return section_offsets;
+  return section_offsets;
 }
 
 string Disassembler::fix_instruction(const string& line) {
@@ -448,11 +448,11 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
   }
 
   // Read code
-	Code code;
-	ss >> code;
-	if (!failed(ss)) {
-		rescale_offsets(code, lines);
-	}
+  Code code;
+  ss >> code;
+  if (!failed(ss)) {
+    rescale_offsets(code, lines);
+  }
 
   // Record hex metadata
   // @todo if we've split a lock instruction, we're going to fall out of sync here
@@ -460,34 +460,34 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
   for (const auto& l : lines) {
     capacity += l.hex_bytes;
   }
-	const auto rip_offset = lines[0].offset;
-	const auto file_offset = rip_offset - text_offset;
+  const auto rip_offset = lines[0].offset;
+  const auto file_offset = rip_offset - text_offset;
 
-	// All done; back to the user
-	data.tunit = {code, file_offset, capacity, rip_offset};
-	data.parse_error = failed(ss);
+  // All done; back to the user
+  data.tunit = {code, file_offset, capacity, rip_offset};
+  data.parse_error = failed(ss);
 
   return true;
 }
 
 void Disassembler::disassemble(const std::string& filename) {
-	// We're starting out fresh, so reset the error tracker
-	clear_error();
+  // We're starting out fresh, so reset the error tracker
+  clear_error();
 
-  // Get the headers from the objdump 
+  // Get the headers from the objdump
   auto headers = run_objdump(filename, true);
   if (has_error()) {
     return;
   }
   // Parse the headers
   const auto section_offsets = parse_section_offsets(*headers);
-	const auto text_itr = section_offsets.find(".text");
-	if (text_itr == section_offsets.end()) {
-		set_error("Unable to find value for text section offset");
-		return;
-	}
+  const auto text_itr = section_offsets.find(".text");
+  if (text_itr == section_offsets.end()) {
+    set_error("Unable to find value for text section offset");
+    return;
+  }
 
-  // Get the disassembly from objdump 
+  // Get the disassembly from objdump
   auto body = run_objdump(filename, false);
   if (has_error()) {
     return;

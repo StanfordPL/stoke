@@ -104,7 +104,7 @@ TEST(TunitParsing, DataflowAnnotations) {
   x64asm::RegSet rcxonly;
   rcxonly += x64asm::Constants::rcx();
   ASSERT_FALSE(ss.fail());
-	const auto sets = tunit.get_may_must_sets();
+  const auto sets = tunit.get_may_must_sets();
   ASSERT_EQ(sets.must_read_set, empty);
   ASSERT_EQ(sets.must_write_set, empty);
   ASSERT_EQ(sets.must_undef_set, empty);

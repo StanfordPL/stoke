@@ -44,10 +44,10 @@ bool is_prefix(const string& pre, const string& s) {
 namespace stoke {
 
 TUnit::MayMustSets TUnit::get_may_must_sets(const MayMustSets& defaults) const {
-	auto res = defaults;
+  auto res = defaults;
 
-  // make sure maybe/must sets are consistent 
-	// (user-provided sets take precedence over default)
+  // make sure maybe/must sets are consistent
+  // (user-provided sets take precedence over default)
   if (must_read_set_) {
     res.must_read_set = *must_read_set_;
     if (!maybe_read_set_) {
@@ -103,7 +103,7 @@ istream& TUnit::read_text(istream& is) {
   }
 
   if (failed(ss)) {
-		fail(is) << fail_msg(ss);
+    fail(is) << fail_msg(ss);
   }
 
   return is;
@@ -114,28 +114,28 @@ ostream& TUnit::write_text(ostream& os) const {
   os << "  .globl " << get_name() << endl;
   os << "  .type " << get_name() << ", @function" << endl;
 
-	os << "#! file-offset " << get_file_offset() << endl;
-	os << "#! capacity    " << get_capacity() << endl;
-	os << "#! rip-offset  " << get_rip_offset() << endl;
+  os << "#! file-offset " << get_file_offset() << endl;
+  os << "#! capacity    " << get_capacity() << endl;
+  os << "#! rip-offset  " << get_rip_offset() << endl;
 
-	if (maybe_read_set_) {
-	  os << "#! maybe-read  " << *maybe_read_set_ << endl;
-	}
-	if (must_read_set_) {
-		os << "#! must-read   " << *must_read_set_ << endl;
-	}
-	if (maybe_write_set_) {
-		os << "#! maybe-write " << *maybe_write_set_ << endl;
-	}
-	if (must_write_set_) {
-		os << "#! must-write  " << *must_write_set_ << endl;
-	}
-	if (maybe_undef_set_) {
-		os << "#! maybe-undef " << *maybe_undef_set_ << endl;
-	}
-	if (must_undef_set_) {
-		os << "#! must-undef  " << *must_undef_set_ << endl;
-	}
+  if (maybe_read_set_) {
+    os << "#! maybe-read  " << *maybe_read_set_ << endl;
+  }
+  if (must_read_set_) {
+    os << "#! must-read   " << *must_read_set_ << endl;
+  }
+  if (maybe_write_set_) {
+    os << "#! maybe-write " << *maybe_write_set_ << endl;
+  }
+  if (must_write_set_) {
+    os << "#! must-write  " << *must_write_set_ << endl;
+  }
+  if (maybe_undef_set_) {
+    os << "#! maybe-undef " << *maybe_undef_set_ << endl;
+  }
+  if (must_undef_set_) {
+    os << "#! must-undef  " << *must_undef_set_ << endl;
+  }
 
   ofilterstream<Column> col(os);
   col.filter().padding(2);
@@ -176,50 +176,50 @@ istream& TUnit::read_formatted_text(istream& is) {
   getline(is, s);
   getline(is, s);
 
-	file_offset_ = 0;
-	capacity_ = 0;
-	rip_offset_ = 0;
+  file_offset_ = 0;
+  capacity_ = 0;
+  rip_offset_ = 0;
 
   vector<string> lines;
-	auto rs = RegSet::empty();
+  auto rs = RegSet::empty();
 
   for (size_t i = 0; getline(is, s); ++i) {
     stringstream ss;
-		if (is_prefix("#! file-offset", s)) {
-			ss << s.substr(14);
-			ss >> file_offset_;
-		} else if (is_prefix("#! capacity", s)) {
-			ss << s.substr(11);
-			ss >> capacity_;
-		} else if (is_prefix("#! rip-offset", s)) {
-			ss << s.substr(13);
-			ss >> rip_offset_;
-		} else if (is_prefix("#! maybe-read", s)) {
+    if (is_prefix("#! file-offset", s)) {
+      ss << s.substr(14);
+      ss >> file_offset_;
+    } else if (is_prefix("#! capacity", s)) {
+      ss << s.substr(11);
+      ss >> capacity_;
+    } else if (is_prefix("#! rip-offset", s)) {
+      ss << s.substr(13);
+      ss >> rip_offset_;
+    } else if (is_prefix("#! maybe-read", s)) {
       ss << s.substr(13);
       ss >> rs;
-			maybe_read_set_ = rs;
+      maybe_read_set_ = rs;
     } else if (is_prefix("#! must-read", s)) {
       ss << s.substr(12);
-			ss >> rs;
+      ss >> rs;
       must_read_set_ = rs;
     } else if (is_prefix("#! maybe-write", s)) {
       ss << s.substr(14);
       ss >> rs;
-			maybe_write_set_ = rs;
+      maybe_write_set_ = rs;
     } else if (is_prefix("#! must-write", s)) {
       ss << s.substr(13);
       ss >> rs;
-			must_write_set_ = rs;
+      must_write_set_ = rs;
     } else if (is_prefix("#! maybe-undef", s)) {
       ss << s.substr(14);
       ss >> rs;
-			maybe_undef_set_ = rs;
+      maybe_undef_set_ = rs;
     } else if (is_prefix("#! must-undef", s)) {
       ss << s.substr(13);
       ss >> rs;
-			must_undef_set_ = rs;
+      must_undef_set_ = rs;
     } else {
-			// @todo This warning should be packed up inot the stream's warning monad
+      // @todo This warning should be packed up inot the stream's warning monad
       if (is_prefix("#!", s)) {
         Console::warn() << "Found a comment that starts with #!, but that is not recognized.  Is it misspelled?" << endl;
       }
@@ -240,12 +240,12 @@ istream& TUnit::read_formatted_text(istream& is) {
   ss >> code_;
 
   if (failed(ss)) {
-		fail(is) << fail_msg(ss);
+    fail(is) << fail_msg(ss);
   } else if (!invariant_first_instr_is_label()) {
-		fail(is) << "First instruction is not a label";
-	} else if (get_name() != name) {
-		fail(is) << "Label on line one differs from name given in file";
-	}
+    fail(is) << "First instruction is not a label";
+  } else if (get_name() != name) {
+    fail(is) << "Label on line one differs from name given in file";
+  }
 
   return is;
 }
@@ -253,9 +253,9 @@ istream& TUnit::read_formatted_text(istream& is) {
 istream& TUnit::read_naked_text(istream& is) {
   is >> code_;
 
-	file_offset_ = 0;
-	capacity_ = 0;
-	rip_offset_ = 0;
+  file_offset_ = 0;
+  capacity_ = 0;
+  rip_offset_ = 0;
 
   if (!invariant_first_instr_is_label()) {
     code_.insert(code_.begin(), {LABEL_DEFN, {Label(".anonymous_function")}});
