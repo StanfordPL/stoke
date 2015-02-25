@@ -22,7 +22,7 @@ using namespace x64asm;
 namespace stoke {
 
 Cfg::loc_type Cfg::get_loc(size_t idx) const {
-  assert(idx < code_.size());
+  assert(idx < get_code().size());
   for (auto i = get_exit() - 1; i > get_entry(); --i)
     if (idx >= blocks_[i]) {
       return loc_type(i, idx - blocks_[i]);
@@ -39,7 +39,7 @@ bool Cfg::performs_undef_read() const {
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
-      const auto r = maybe_read_set(code_[idx]);
+      const auto r = maybe_read_set(get_code()[idx]);
       const auto di = def_ins_[idx];
 
       if ((r & di) != r) {
@@ -69,11 +69,11 @@ string Cfg::which_undef_read() const {
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
-      const auto r = must_read_set(code_[idx]);
+      const auto r = must_read_set(get_code()[idx]);
       const auto di = def_ins_[idx];
 
       if ((r & di) != r) {
-        ss << (empty ? "" : ". ") << "Instruction '" << code_[idx] << "' reads " << r << " but only " << di << " are defined.";
+        ss << (empty ? "" : ". ") << "Instruction '" << get_code()[idx] << "' reads " << r << " but only " << di << " are defined.";
         empty = false;
         return ss.str();
       }
@@ -119,16 +119,16 @@ void Cfg::recompute_topo_sort() {
 void Cfg::recompute_blocks() {
   blocks_.clear();
 
-  boundaries_.resize_for_bits(code_.size() + 1);
+  boundaries_.resize_for_bits(get_code().size() + 1);
   boundaries_.reset();
 
   // We know a-priori that these are boundaries
   boundaries_[0] = true;
-  boundaries_[code_.size()] = true;
+  boundaries_[get_code().size()] = true;
 
   // Labels define the beginning of blocks; jumps and returns define the ends. */
-  for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
-    const auto& instr = code_[i];
+  for (size_t i = 0, ie = get_code().size(); i < ie; ++i) {
+    const auto& instr = get_code()[i];
     if (instr.is_label_defn()) {
       boundaries_[i] = true;
     } else if (instr.is_jump() || instr.is_return()) {
@@ -142,14 +142,14 @@ void Cfg::recompute_blocks() {
        ++i) {
     blocks_.push_back(*i);
   }
-  blocks_.push_back(code_.size());
+  blocks_.push_back(get_code().size());
 }
 
 void Cfg::recompute_labels() {
   labels_.clear();
   for (auto i = get_entry() + 1, ie = get_exit(); i < ie; ++i) {
     if (num_instrs(i) > 0) {
-      const auto& instr = code_[get_index({i, 0})];
+      const auto& instr = get_code()[get_index({i, 0})];
       if (instr.is_label_defn()) {
         labels_[instr.get_operand<Label>(0)] = i;
       }
@@ -170,7 +170,7 @@ void Cfg::recompute_succs() {
       continue;
     }
     // Control passes from return statements to the exit.
-    const auto& instr = code_[get_index({i, num_instrs(i) - 1})];
+    const auto& instr = get_code()[get_index({i, num_instrs(i) - 1})];
     if (instr.is_return()) {
       succs_[i].push_back(get_exit());
       continue;
@@ -328,7 +328,7 @@ void Cfg::recompute_defs_loops() {
   // You'll notice that this function uses blocks_[...] instead of get_index(...)
   // This is to subvert the assertion we'd blow for trying to call get_index(get_exit(),0)
 
-  def_ins_.resize(code_.size() + 1, RegSet::empty());
+  def_ins_.resize(get_code().size() + 1, RegSet::empty());
   def_outs_.resize(num_blocks(), RegSet::empty());
 
   // Boundary conditions
@@ -366,7 +366,7 @@ void Cfg::recompute_defs_loops() {
       const auto idx = blocks_[*i] + j;
       def_ins_[idx] = def_ins_[idx - 1];
 
-      const auto& instr = code_[idx - 1];
+      const auto& instr = get_code()[idx - 1];
       def_ins_[idx] |= must_write_set(instr);
       def_ins_[idx] -= maybe_undef_set(instr);
     }
@@ -378,7 +378,7 @@ void Cfg::recompute_defs_loop_free() {
   // You'll notice that this function uses blocks_[...] instead of get_index(...)
   // This is to subvert the assertion we'd blow for trying to call get_index(get_exit(),0)
 
-  def_ins_.resize(code_.size() + 1, RegSet::empty());
+  def_ins_.resize(get_code().size() + 1, RegSet::empty());
   def_outs_.resize(num_blocks(), RegSet::empty());
 
   // Boundary conditions
@@ -403,7 +403,7 @@ void Cfg::recompute_defs_loop_free() {
       const auto idx = blocks_[b] + j;
       def_ins_[idx] = def_ins_[idx - 1];
 
-      const auto& instr = code_[idx - 1];
+      const auto& instr = get_code()[idx - 1];
       def_ins_[idx] |= must_write_set(instr);
       def_ins_[idx] -= maybe_undef_set(instr);
     }
@@ -415,7 +415,7 @@ void Cfg::recompute_defs_loop_free() {
       const auto idx = blocks_[b] + num_instrs(b) - 1;
       def_outs_[b] = def_ins_[idx];
 
-      const auto& instr = code_[idx];
+      const auto& instr = get_code()[idx];
       def_outs_[b] |= must_write_set(instr);
       def_outs_[b] -= maybe_undef_set(instr);
     }
@@ -426,8 +426,8 @@ void Cfg::recompute_liveness() {
   recompute_liveness_use_kill();
 
   // IMPORTANT NOTE: both vectors indexed by code size
-  live_ins_.assign(code_.size() + 1, RegSet::empty());
-  live_outs_.assign(code_.size() + 1, RegSet::empty());
+  live_ins_.assign(get_code().size() + 1, RegSet::empty());
+  live_outs_.assign(get_code().size() + 1, RegSet::empty());
 
   // If we ever encounter an indirect jump, we need to assume that everything
   // which we ever use (i.e. read) becomes live-out at that point.  So, let's
@@ -436,7 +436,7 @@ void Cfg::recompute_liveness() {
 
   // Note: maybe_read_set doesn't work for call, which
   // is why I need this loop.
-  for (auto it : code_) {
+  for (auto it : get_code()) {
     if (it.is_call()) {
       ever_read |= maybe_read_set(it);
     } else if (it.is_any_call()) {
@@ -468,7 +468,7 @@ void Cfg::recompute_liveness() {
     // we have an indirect jump, in which case we need to add in everything
     // (see the note above)
     size_t last_instr_index = blocks_[*i] + num_instrs(*i) - 1;
-    Instruction last_instr = code_[last_instr_index];
+    Instruction last_instr = get_code()[last_instr_index];
     if (last_instr.is_any_indirect_jump()) {
       live_outs_[last_instr_index] = ever_read;
     } else {
@@ -493,7 +493,7 @@ void Cfg::recompute_liveness() {
       // need to check for indirect jumps here to see if we need to add in
       // all the registers ever read.
       size_t last_instr_index = blocks_[*i] + num_instrs(*i) - 1;
-      Instruction last_instr = code_[last_instr_index];
+      Instruction last_instr = get_code()[last_instr_index];
       if (last_instr.is_any_indirect_jump()) {
         live_outs_[last_instr_index] = ever_read;
       } else {
@@ -539,7 +539,7 @@ void Cfg::recompute_liveness() {
       const auto idx = blocks_[*i] + j;
       live_outs_[idx] = live_outs_[idx + 1];
 
-      const auto& instr = code_[idx + 1];
+      const auto& instr = get_code()[idx + 1];
       live_outs_[idx] -= must_write_set(instr);
       live_outs_[idx] -= must_undef_set(instr);
       live_outs_[idx] |= maybe_read_set(instr);

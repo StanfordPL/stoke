@@ -66,9 +66,6 @@ unordered_set<uint64_t> end_lines_;
 // Target ostream
 ostream* os_;
 
-// Global symbol table which we populate when instrumenting (callbacks reference this)
-unordered_map<uint64_t, string> symbol_table_;
-
 // Was the target function found?
 bool fxn_found_ = false;
 
@@ -181,22 +178,6 @@ VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
 	// known good state from the cpu.
 	for (size_t i = 0, ie = tc.rf.size(); i < ie; ++i) {
 		tc.rf.set(i, (rflags >> i) & 0x1);
-	}
-}
-
-/* ============================================================================================= */
-
-VOID record_fxn(ADDRINT rip) {
-	if (!recording_) {
-		return;
-	}
-
-	const auto itr = symbol_table_.find(rip);
-	Label l(itr->second);
-
-	auto& tc = tcs_.back();
-	if (!tc.sym_table.contains(l)) {
-		tc.sym_table.insert(l, rip);
 	}
 }
 
@@ -323,8 +304,6 @@ VOID rtn(RTN fxn, VOID* v) {
 	bool is_target = RTN_Name(fxn) == KnobFxnName.Value();
 	const auto fxn_rip = INS_Address(RTN_InsHead(fxn));
 	
-	// Place this function in the global symbol table
-	symbol_table_[fxn_rip] = string(".") + RTN_Name(fxn);
 	// Potentially reset internal state if this is the target
 	if (is_target) {
 		RTN_InsertCall(fxn, IPOINT_BEFORE, (AFUNPTR)update_state, IARG_REG_VALUE, REG_RSP, IARG_END);
@@ -336,10 +315,6 @@ VOID rtn(RTN fxn, VOID* v) {
 		// Potentially start recording a new testcase
 		if (is_target && (line == begin_line_)) {
 			emit_start(ins);
-		}
-		// Add this function into the current symbol table
-		if (line == 1) {
-			INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) record_fxn, IARG_INST_PTR, IARG_END);
 		}
 		// Likewise, potentially it's time to stop
 		if (is_target && ((end_lines_.find(line) != end_lines_.end()) || INS_IsRet(ins))) {

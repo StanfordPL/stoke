@@ -70,14 +70,15 @@ public:
   std::unordered_map<x64asm::Label, DataflowSummary> fncs_summary;
 
   /** Creates a new control flow graph with valid internal state. */
-  Cfg(const x64asm::Code& code, const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs) :
-    code_(code), fxn_def_ins_(def_ins), fxn_live_outs_(live_outs) {
+  explicit Cfg(const TUnit& function, const x64asm::RegSet& def_ins = x64asm::RegSet::empty(),
+               const x64asm::RegSet& live_outs = x64asm::RegSet::empty()) :
+    function_(function), fxn_def_ins_(def_ins), fxn_live_outs_(live_outs) {
     recompute();
   }
 
   /** Copy constructor. */
   Cfg(const Cfg& other) :
-    code_(x64asm::Code(other.code_)), fxn_def_ins_(other.fxn_def_ins_), fxn_live_outs_(other.fxn_live_outs_) {
+    function_(other.function_), fxn_def_ins_(other.fxn_def_ins_), fxn_live_outs_(other.fxn_live_outs_) {
     recompute();
   }
 
@@ -117,13 +118,22 @@ public:
     }
   }
 
+  /** Return a reference to the function underlying this graph. */
+  TUnit& get_function() {
+    return function_;
+  }
+  /** Return a const reference to the function underlying this graph. */
+  const TUnit& get_function() const {
+    return function_;
+  }
+
   /** Return a reference to the code underlying this graph. */
   x64asm::Code& get_code() {
-    return code_;
+    return get_function().get_code();
   }
   /** Return a const reference to the code underlying this graph. */
   const x64asm::Code& get_code() const {
-    return code_;
+    return get_function().get_code();
   }
 
   /** Returns the number of basic blocks in this graph; includes entry and exit. */
@@ -165,24 +175,24 @@ public:
 
   /** Returns a reference to the instruction in the underlying code at this location. */
   x64asm::Instruction& get_instr(const loc_type& loc) {
-    assert(get_index(loc) < code_.size());
-    return code_[get_index(loc)];
+    assert(get_index(loc) < get_code().size());
+    return get_code()[get_index(loc)];
   }
   /** Returns a const reference to the instruction in the underlying code at this location. */
   const x64asm::Instruction& get_instr(const loc_type& loc) const {
-    assert(get_index(loc) < code_.size());
-    return code_[get_index(loc)];
+    assert(get_index(loc) < get_code().size());
+    return get_code()[get_index(loc)];
   }
 
   /** Returns an iterator that points to the beginning of this basic block. */
   instr_iterator instr_begin(id_type id) const {
     assert(id < num_blocks());
-    return code_.begin() + blocks_[id];
+    return get_code().begin() + blocks_[id];
   }
   /** Returns an iterator that points to the end of this basic block. */
   instr_iterator instr_end(id_type id) const {
     assert(id < num_blocks());
-    return code_.begin() + blocks_[id + 1];
+    return get_code().begin() + blocks_[id + 1];
   }
 
   /** Returns an iterator that points to the beginning of this block's predecessor list. */
@@ -456,8 +466,8 @@ public:
   }
 
 private:
-  /** User-specified underlying code. */
-  x64asm::Code code_;
+  /** User-specified underlying function. */
+  TUnit function_;
   /** User-specified registers that are defined on entry to this graph. */
   x64asm::RegSet fxn_def_ins_;
   /** User-specified registers that are defined on exit from this graph. */

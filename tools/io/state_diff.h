@@ -18,6 +18,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
 
 namespace stoke {

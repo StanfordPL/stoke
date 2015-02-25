@@ -66,12 +66,12 @@ int main(int argc, char** argv) {
 
   os << "Target" << endl;
   os << endl;
-  os << target_arg.value().code << endl;
+  os << target_arg.value().get_code() << endl;
   os.filter().next();
 
   os << "Rewrite" << endl;
   os << endl;
-  os << rewrite_arg.value().code << endl;
+  os << rewrite_arg.value().get_code() << endl;
   os.filter().done();
 
   Console::msg() << endl;
