@@ -120,6 +120,7 @@ Sandbox& Sandbox::insert_function(const Cfg& cfg) {
   if (num_functions() == 1) {
     set_entrypoint(label);
   }
+  return *this;
 }
 
 Sandbox& Sandbox::clear_functions() {
@@ -149,6 +150,7 @@ Sandbox& Sandbox::insert_before(const Label& l, size_t line, StateCallback cb, v
   assert(contains_function(l));
   before_[l][line] = {cb, arg};
   recompile(*get_function(l));
+  return *this;
 }
 
 Sandbox& Sandbox::insert_after(StateCallback cb, void* arg) {
@@ -161,6 +163,7 @@ Sandbox& Sandbox::insert_after(const Label& l, size_t line, StateCallback cb, vo
   assert(contains_function(l));
   after_[l][line] = {cb, arg};
   recompile(*get_function(l));
+  return *this;
 }
 
 Sandbox& Sandbox::clear_callbacks() {
@@ -252,7 +255,7 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
   const auto ws = instr.maybe_write_set();
 
   size_t idx = 4;
-  for (; idx < 12 && rs.contains(rbs[idx]) || ws.contains(rbs[idx]); ++idx);
+  for (; idx < 12 && (rs.contains(rbs[idx]) || ws.contains(rbs[idx])); ++idx);
 
   assert(idx < 12);
   return idx + 4;

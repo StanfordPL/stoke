@@ -761,6 +761,7 @@ private:
     }
     PackedOpcode& set_avx_alignment(bool avx_alignment) {
       avx_alignment_ = avx_alignment;
+      return *this;
     }
 
     SymBitVector operator()(x64asm::Operand arg1, SymBitVector bv1, x64asm::Operand arg2, SymBitVector bv2, SymState& ss) {

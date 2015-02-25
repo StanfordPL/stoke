@@ -74,6 +74,7 @@ public:
     clear_inputs();
     clear_functions();
     clear_callbacks();
+    return *this;
   }
 
   /** Add a new input. */

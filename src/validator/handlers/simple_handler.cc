@@ -39,7 +39,7 @@ void SimpleHandler::add_all() {
 
     ss.set(dst, a - one);
     ss.set(eflags_of, a[dst.size() - 1] &
-           a[dst.size() - 2][0] == SymBitVector::constant(dst.size() - 1, 0));
+           (a[dst.size() - 2][0] == SymBitVector::constant(dst.size() - 1, 0)));
     ss.set(eflags_af, a[3][0] == SymBitVector::constant(4, 0x0));
     ss.set_szp_flags(a - one, dst.size());
 
@@ -51,7 +51,7 @@ void SimpleHandler::add_all() {
 
     ss.set(dst, a + one);
     ss.set(eflags_of, !a[dst.size() - 1] &
-           a[dst.size()-2][0] == SymBitVector::constant(dst.size() - 1, -1));
+           (a[dst.size()-2][0] == SymBitVector::constant(dst.size() - 1, -1)));
     ss.set(eflags_af, a[3][0] == SymBitVector::constant(4, 0xf));
     ss.set_szp_flags(a + one, dst.size());
 
