@@ -18,3 +18,4 @@
 #include "tests/x64asm/parsing.h"
 #include "tests/x64asm/r.h"
 #include "tests/x64asm/reg_set.h"
+#include "tests/x64asm/read_write_sets.h"
