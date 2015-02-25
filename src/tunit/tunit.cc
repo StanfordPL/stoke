@@ -119,7 +119,7 @@ ostream& TUnit::write_text(ostream& os) const {
 
   os << "  #! file-offset " << showbase << hex << get_file_offset() << endl;
   os << "  #! rip-offset  " << showbase << hex << get_rip_offset() << endl;
-  os << "  #! capacity    " << noshowbase << dec << get_capacity() << " bytes" << endl;
+  os << "  #! capacity    " << noshowbase << dec << hex_capacity() << " bytes" << endl;
   os << endl;
 
   if (maybe_read_set_) {

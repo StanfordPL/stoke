@@ -51,7 +51,7 @@ public:
                               const std::set<x64asm::Opcode>& opc_blacklist,
                               const std::set<x64asm::Opcode>& opc_whitelist);
   /** Sets the pool operands to propose from. */
-  Transforms& set_operand_pool(const x64asm::Code& target, const x64asm::RegSet& preserve_regs);
+  Transforms& set_operand_pool(const TUnit& target, const x64asm::RegSet& preserve_regs);
   /** Insert a value into the immediate pool */
   Transforms& insert_immediate(const x64asm::Imm64& imm) {
     const auto itr = std::find(imm_pool_.begin(), imm_pool_.end(), imm);

@@ -254,7 +254,7 @@ int main(int argc, char** argv) {
   TrainingSetGadget training_set(seed);
   SandboxGadget training_sb(training_set, aux_fxns);
 
-  TransformsGadget transforms(target.get_code(), aux_fxns, seed);
+  TransformsGadget transforms(target.get_function(), aux_fxns, seed);
   SearchGadget search(&transforms, seed);
 
   TestSetGadget test_set(seed);
