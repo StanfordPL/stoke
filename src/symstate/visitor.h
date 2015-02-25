@@ -91,6 +91,8 @@ public:
                 << " in " << __FILE__ << ":" << __LINE__ << std::endl;
       assert(false);
     }
+    assert(false);
+    return visit(static_cast<const SymBitVectorAnd * const>(bv)); //keep compiler happy
   }
 
   /** Visit a symbolic bool (encapsulated) */
@@ -142,6 +144,8 @@ public:
                 << " in " << __FILE__ << ":" << __LINE__ << std::endl;
       assert(false);
     }
+    assert(false);
+    return visit(static_cast<const SymBoolAnd * const>(b)); //keep compiler happy
   }
 
   /** Visit a generic bin-op.  Used to make implementing visitors more
