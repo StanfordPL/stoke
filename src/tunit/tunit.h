@@ -26,10 +26,10 @@
 namespace stoke {
 
 struct TUnit {
-	/** Iterator over rip-offsets relative to function begin */
-	typedef std::vector<uint64_t>::const_iterator rip_offset_target_iterator;
-	/** Iterator over hex-offsets relative to function begin */
-	typedef std::vector<size_t>::const_iterator hex_offset_iterator;
+  /** Iterator over rip-offsets relative to function begin */
+  typedef std::vector<uint64_t>::const_iterator rip_offset_target_iterator;
+  /** Iterator over hex-offsets relative to function begin */
+  typedef std::vector<size_t>::const_iterator hex_offset_iterator;
 
   /** POD struct for aggregating sets */
   struct MayMustSets {
@@ -111,70 +111,70 @@ struct TUnit {
   bool invariant_first_instr_is_label() const {
     return !code_.empty() && code_[0].get_opcode() == x64asm::LABEL_DEFN;
   }
-	/** Check that the hex encoding of this function fits within its capacity */
-	bool invariant_encoding_size() const {
-		return hex_size() <= hex_capacity();
-	}
+  /** Check that the hex encoding of this function fits within its capacity */
+  bool invariant_encoding_size() const {
+    return hex_size() <= hex_capacity();
+  }
   /** Checks that this function statisfies all invariants */
   bool check_invariants() const {
     return invariant_first_instr_is_label();
   }
 
-	/** Returns the hex offset of this instruction */
-	size_t hex_offset(size_t index) const {
-		assert(index < code_.size());
-		return hex_offsets_[index];
-	}
-	/** Returns the total hex size of this function */
-	size_t hex_size() const {
-		return hex_offsets_[code_.size()];
-	}
+  /** Returns the hex offset of this instruction */
+  size_t hex_offset(size_t index) const {
+    assert(index < code_.size());
+    return hex_offsets_[index];
+  }
+  /** Returns the total hex size of this function */
+  size_t hex_size() const {
+    return hex_offsets_[code_.size()];
+  }
 
-	/** Iterator over instruction offsets relative to function begin */
-	hex_offset_iterator hex_offset_begin() const {
-		return hex_offsets_.begin();
-	}
-	/** Iterator over instruction offsets relative to function begin */
-	hex_offset_iterator hex_offset_end() const {
-		// Careful: Hex offsets also stores one-past-end info
-		return --hex_offsets_.end();
-	}
+  /** Iterator over instruction offsets relative to function begin */
+  hex_offset_iterator hex_offset_begin() const {
+    return hex_offsets_.begin();
+  }
+  /** Iterator over instruction offsets relative to function begin */
+  hex_offset_iterator hex_offset_end() const {
+    // Careful: Hex offsets also stores one-past-end info
+    return --hex_offsets_.end();
+  }
 
-	/** Iterator over rip-offset targets relative to function begin */
-	rip_offset_target_iterator rip_offset_target_begin() const {
-		return rip_offset_targets_.begin();
-	}
-	/** Iterator over rip-offset targets relative to function begin */
-	rip_offset_target_iterator rip_offset_target_end() const {
-		return rip_offset_targets_.end();
-	}
+  /** Iterator over rip-offset targets relative to function begin */
+  rip_offset_target_iterator rip_offset_target_begin() const {
+    return rip_offset_targets_.begin();
+  }
+  /** Iterator over rip-offset targets relative to function begin */
+  rip_offset_target_iterator rip_offset_target_end() const {
+    return rip_offset_targets_.end();
+  }
 
-	/** Iterator over call targets in this function */
-	call_target_iterator call_target_begin() const {
-		return call_target_iterator(&code_, true);
-	}
-	/** Iterator over call targets in this function */
-	call_target_iterator call_target_end() const {
-		return call_target_iterator(&code_, false);
-	}
+  /** Iterator over call targets in this function */
+  call_target_iterator call_target_begin() const {
+    return call_target_iterator(&code_, true);
+  }
+  /** Iterator over call targets in this function */
+  call_target_iterator call_target_end() const {
+    return call_target_iterator(&code_, false);
+  }
 
-	/** Iterator over immediate operands in this function */
-	imm_iterator imm_begin() const {
-		return imm_iterator(&code_, true);
-	}
-	/** Iterator over immediate operands in this function */
-	imm_iterator imm_end() const {
-		return imm_iterator(&code_, false);
-	}
+  /** Iterator over immediate operands in this function */
+  imm_iterator imm_begin() const {
+    return imm_iterator(&code_, true);
+  }
+  /** Iterator over immediate operands in this function */
+  imm_iterator imm_end() const {
+    return imm_iterator(&code_, false);
+  }
 
-	/** Iterator over non-rip memory operands in this function */
-	mem_iterator mem_begin() const {
-		return mem_iterator(&code_, true);
-	}
-	/** Iterator over non-rip memory operands in this function */
-	mem_iterator mem_end() const {
-		return mem_iterator(&code_, false);
-	}
+  /** Iterator over non-rip memory operands in this function */
+  mem_iterator mem_begin() const {
+    return mem_iterator(&code_, true);
+  }
+  /** Iterator over non-rip memory operands in this function */
+  mem_iterator mem_end() const {
+    return mem_iterator(&code_, false);
+  }
 
   /** Read from istream. */
   std::istream& read_text(std::istream& is);
@@ -192,10 +192,10 @@ private:
   /** The logical address of this function inside a process */
   uint64_t rip_offset_;
 
-	/** Rip-offset targets relative to function begin */
-	std::vector<uint64_t> rip_offset_targets_;
-	/** Hex offsets of every instruction relative to function begin (including one-past-end) */
-	std::vector<size_t> hex_offsets_;
+  /** Rip-offset targets relative to function begin */
+  std::vector<uint64_t> rip_offset_targets_;
+  /** Hex offsets of every instruction relative to function begin (including one-past-end) */
+  std::vector<size_t> hex_offsets_;
 
   /** User-provided maybe read set. */
   boost::optional<x64asm::RegSet> maybe_read_set_;
@@ -210,9 +210,9 @@ private:
   /** User-provided must undef set. */
   boost::optional<x64asm::RegSet> must_undef_set_;
 
-	/** Read a well-formatted function. */
+  /** Read a well-formatted function. */
   std::istream& read_formatted_text(std::istream& is);
-	/** Read a code sequence and fill in missing information */
+  /** Read a code sequence and fill in missing information */
   std::istream& read_naked_text(std::istream& is);
 };
 

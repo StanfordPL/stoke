@@ -380,19 +380,19 @@ Transforms& Transforms::set_operand_pool(const TUnit& target, const RegSet& pres
   ymm_pool_.assign(ymms.begin(), ymms.end());
 
   imm_pool_.assign({
-    0ul, 
-		1ul, -1ul, 2ul, -2ul, 3ul, -3ul, 4ul, -4ul, 
-		5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
+    0ul,
+    1ul, -1ul, 2ul, -2ul, 3ul, -3ul, 4ul, -4ul,
+    5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
     16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
   });
-	for (const auto& imm : set<Imm64>(target.imm_begin(), target.imm_end())) {
-		insert_immediate(imm);
-	}
+  for (const auto& imm : set<Imm64>(target.imm_begin(), target.imm_end())) {
+    insert_immediate(imm);
+  }
 
-	set<M8> mem_ops(target.mem_begin(), target.mem_end());
+  set<M8> mem_ops(target.mem_begin(), target.mem_end());
   m_pool_.assign(mem_ops.begin(), mem_ops.end());
 
-	set<Label> call_ops(target.call_target_begin(), target.call_target_end());
+  set<Label> call_ops(target.call_target_begin(), target.call_target_end());
   label_pool_.assign(call_ops.begin(), call_ops.end());
 
   offset_pool_.clear();
