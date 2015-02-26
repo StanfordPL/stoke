@@ -40,7 +40,6 @@ public:
     if (callee_save_arg.value()) {
       preserve_regs_arg.value() = x64asm::RegSet::empty();
     }
-
     set_seed(seed);
 
     // Warn and remove cpu flags that aren't provided by the user's machine
@@ -102,16 +101,15 @@ public:
   }
 
   ~TransformsGadget() {
-    if(validator_) {
+    if (validator_) {
       delete validator_;
     }
-    if(smt_) {
+    if (smt_) {
       delete smt_;
     }
   }
 
 private:
-
   Z3Solver* smt_ = NULL;
   Validator* validator_ = NULL;
 };

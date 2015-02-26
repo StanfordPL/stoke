@@ -15,10 +15,12 @@
 #ifndef STOKE_SRC_TUNIT_TUNIT_H
 #define STOKE_SRC_TUNIT_TUNIT_H
 
+#include <boost/optional.hpp>
 #include <cassert>
 #include <iostream>
+#include <set>
 #include <string>
-#include <boost/optional.hpp>
+#include <vector>
 
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/tunit/operand_iterator.h"
@@ -26,10 +28,12 @@
 namespace stoke {
 
 struct TUnit {
-  /** Iterator over rip-offsets relative to function begin */
-  typedef std::vector<uint64_t>::const_iterator rip_offset_target_iterator;
+  /** Iterator over global rip-offsets targets */
+  typedef std::set<uint64_t>::const_iterator rip_offset_target_iterator;
   /** Iterator over hex-offsets relative to function begin */
   typedef std::vector<size_t>::const_iterator hex_offset_iterator;
+	/** Iterator over hex-sizes */
+	typedef std::vector<size_t>::const_iterator hex_size_iterator;
 
   /** POD struct for aggregating sets */
   struct MayMustSets {
@@ -41,23 +45,14 @@ struct TUnit {
     x64asm::RegSet maybe_undef_set;
   };
 
-  /** Constructs a minimal valid function */
-  TUnit() {
-    code_ = {
-      // @todo this is causing a segfault in integration tests
-      //{x64asm::LABEL_DEFN, {x64asm::Label(".anonymous_function")}},
-      {x64asm::RET}
-    };
-    file_offset_ = 0;
-    rip_offset_ = 0;
-    capacity_ = 0;
-  }
-  /** Constructs a funtion with non-default values */
-  TUnit(const x64asm::Code& code, uint64_t fo = 0, uint64_t ro = 0, size_t c = 0) {
+  /** Constructs a funtion (not guaranteed to pass check_invariants()) */
+  TUnit(const x64asm::Code& code = {{}}, uint64_t fo = 0, uint64_t ro = 0, size_t c = 0) {
     code_ = code;
     file_offset_ = fo;
     rip_offset_ = ro;
     capacity_ = c;
+
+		recompute();
   }
 
   /** Returns the underlying code sequence */
@@ -125,9 +120,24 @@ struct TUnit {
     assert(index < code_.size());
     return hex_offsets_[index];
   }
+	/** Returns the hex size of this instruction */
+	size_t hex_size(size_t index) const {
+		assert(index < code_.size());
+		return hex_sizes_[index];
+	}
   /** Returns the total hex size of this function */
   size_t hex_size() const {
-    return hex_offsets_[code_.size()];
+		const auto size = code_.size();
+    return size == 0 ? 0 : hex_offset(size-1) + hex_size(size-1);
+  }
+
+  /** Iterator over global rip-offset targets */
+  rip_offset_target_iterator rip_offset_target_begin() const {
+    return rip_offset_targets_.begin();
+  }
+  /** Iterator over global rip-offset targets */
+  rip_offset_target_iterator rip_offset_target_end() const {
+    return rip_offset_targets_.end();
   }
 
   /** Iterator over instruction offsets relative to function begin */
@@ -136,18 +146,18 @@ struct TUnit {
   }
   /** Iterator over instruction offsets relative to function begin */
   hex_offset_iterator hex_offset_end() const {
-    // Careful: Hex offsets also stores one-past-end info
-    return --hex_offsets_.end();
+    return hex_offsets_.end();
   }
 
-  /** Iterator over rip-offset targets relative to function begin */
-  rip_offset_target_iterator rip_offset_target_begin() const {
-    return rip_offset_targets_.begin();
+  /** Iterator over hex sizes */
+  hex_size_iterator hex_size_begin() const {
+    return hex_sizes_.begin();
   }
-  /** Iterator over rip-offset targets relative to function begin */
-  rip_offset_target_iterator rip_offset_target_end() const {
-    return rip_offset_targets_.end();
+  /** Iterator over hex sizes */
+  hex_size_iterator hex_size_end() const {
+    return hex_sizes_.end();
   }
+
 
   /** Iterator over call targets in this function */
   call_target_iterator call_target_begin() const {
@@ -192,10 +202,12 @@ private:
   /** The logical address of this function inside a process */
   uint64_t rip_offset_;
 
-  /** Rip-offset targets relative to function begin */
-  std::vector<uint64_t> rip_offset_targets_;
-  /** Hex offsets of every instruction relative to function begin (including one-past-end) */
+  /** Global rip-offset targets */
+  std::set<uint64_t> rip_offset_targets_;
+  /** Hex offsets of every instruction relative to function begin */
   std::vector<size_t> hex_offsets_;
+	/** Hex size of every instruction */
+	std::vector<size_t> hex_sizes_;
 
   /** User-provided maybe read set. */
   boost::optional<x64asm::RegSet> maybe_read_set_;
@@ -209,6 +221,19 @@ private:
   boost::optional<x64asm::RegSet> maybe_undef_set_;
   /** User-provided must undef set. */
   boost::optional<x64asm::RegSet> must_undef_set_;
+
+	/** Compute global rip-offset (assumes hex_offsets_ and hex_sizes_) */
+	void recompute_rip_offset_targets();
+	/** Compute hex offsets for every instruction (assumes hex_sizes_) */
+	void recompute_hex_offsets();
+	/** Compute hex sizes for every instruction */
+	void recompute_hex_sizes();
+	/** Recompute everything from scratch */
+	void recompute() {
+		recompute_hex_sizes();
+		recompute_hex_offsets();
+		recompute_rip_offset_targets();
+	}
 
   /** Read a well-formatted function. */
   std::istream& read_formatted_text(std::istream& is);
