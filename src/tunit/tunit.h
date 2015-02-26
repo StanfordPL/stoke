@@ -110,13 +110,13 @@ struct TUnit {
   bool invariant_encoding_size() const {
     return hex_size() <= hex_capacity();
   }
-	/** Check that rip offsets all resolve to valid locations */
-	bool invariant_rip_offsets() const;
+  /** Check that rip offsets all resolve to valid locations */
+  bool invariant_rip_offsets() const;
   /** Checks that this function statisfies all invariants */
   bool check_invariants() const {
     return invariant_first_instr_is_label() &&
-			invariant_encoding_size() &&
-			invariant_rip_offsets();
+           invariant_encoding_size() &&
+           invariant_rip_offsets();
   }
 
   /** Returns the hex offset of this instruction */
