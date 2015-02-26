@@ -45,9 +45,9 @@ protected:
     ss1 << "{ " << in << " }";
     ss1 >> def_in_;
 
-		TUnit fxn;
-		Cfg cfg(fxn, def_in_, live_out_);
-		SearchState ss(cfg, cfg, cfg, cfg, Init::ZERO, 16);
+    TUnit fxn;
+    Cfg cfg(fxn, def_in_, live_out_);
+    SearchState ss(cfg, cfg, cfg, cfg, Init::ZERO, 16);
     cfg = ss.current;
 
     ASSERT_TRUE(cfg.is_sound()) << "def in:   " << def_in_ << std::endl <<
