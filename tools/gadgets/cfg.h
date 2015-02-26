@@ -31,7 +31,7 @@ namespace stoke {
 class CfgGadget : public Cfg {
 public:
   CfgGadget(const TUnit& fxn, const std::vector<TUnit>& aux_fxns)
-    	: Cfg(fxn, def_in(live_out()), live_out()) {
+    : Cfg(fxn, def_in(live_out()), live_out()) {
     // Emit warning if register values were guessed
     reg_warning();
 

@@ -32,8 +32,8 @@ struct TUnit {
   typedef std::set<uint64_t>::const_iterator rip_offset_target_iterator;
   /** Iterator over hex-offsets relative to function begin */
   typedef std::vector<size_t>::const_iterator hex_offset_iterator;
-	/** Iterator over hex-sizes */
-	typedef std::vector<size_t>::const_iterator hex_size_iterator;
+  /** Iterator over hex-sizes */
+  typedef std::vector<size_t>::const_iterator hex_size_iterator;
 
   /** POD struct for aggregating sets */
   struct MayMustSets {
@@ -52,7 +52,7 @@ struct TUnit {
     rip_offset_ = ro;
     capacity_ = c;
 
-		recompute();
+    recompute();
   }
 
   /** Returns the underlying code sequence */
@@ -120,14 +120,14 @@ struct TUnit {
     assert(index < code_.size());
     return hex_offsets_[index];
   }
-	/** Returns the hex size of this instruction */
-	size_t hex_size(size_t index) const {
-		assert(index < code_.size());
-		return hex_sizes_[index];
-	}
+  /** Returns the hex size of this instruction */
+  size_t hex_size(size_t index) const {
+    assert(index < code_.size());
+    return hex_sizes_[index];
+  }
   /** Returns the total hex size of this function */
   size_t hex_size() const {
-		const auto size = code_.size();
+    const auto size = code_.size();
     return size == 0 ? 0 : hex_offset(size-1) + hex_size(size-1);
   }
 
@@ -206,8 +206,8 @@ private:
   std::set<uint64_t> rip_offset_targets_;
   /** Hex offsets of every instruction relative to function begin */
   std::vector<size_t> hex_offsets_;
-	/** Hex size of every instruction */
-	std::vector<size_t> hex_sizes_;
+  /** Hex size of every instruction */
+  std::vector<size_t> hex_sizes_;
 
   /** User-provided maybe read set. */
   boost::optional<x64asm::RegSet> maybe_read_set_;
@@ -222,18 +222,18 @@ private:
   /** User-provided must undef set. */
   boost::optional<x64asm::RegSet> must_undef_set_;
 
-	/** Compute global rip-offset (assumes hex_offsets_ and hex_sizes_) */
-	void recompute_rip_offset_targets();
-	/** Compute hex offsets for every instruction (assumes hex_sizes_) */
-	void recompute_hex_offsets();
-	/** Compute hex sizes for every instruction */
-	void recompute_hex_sizes();
-	/** Recompute everything from scratch */
-	void recompute() {
-		recompute_hex_sizes();
-		recompute_hex_offsets();
-		recompute_rip_offset_targets();
-	}
+  /** Compute global rip-offset (assumes hex_offsets_ and hex_sizes_) */
+  void recompute_rip_offset_targets();
+  /** Compute hex offsets for every instruction (assumes hex_sizes_) */
+  void recompute_hex_offsets();
+  /** Compute hex sizes for every instruction */
+  void recompute_hex_sizes();
+  /** Recompute everything from scratch */
+  void recompute() {
+    recompute_hex_sizes();
+    recompute_hex_offsets();
+    recompute_rip_offset_targets();
+  }
 
   /** Read a well-formatted function. */
   std::istream& read_formatted_text(std::istream& is);
