@@ -99,8 +99,8 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   x64asm::Code code;
   sample >> code;
-	TUnit fxn(code);
-	Cfg target(fxn);
+  TUnit fxn(code);
+  Cfg target(fxn);
 
   t.set_opcode_pool(target, flag_set, 0, x64asm::RegSet::empty(), blacklist, {})
   .set_operand_pool(target, x64asm::RegSet::empty())
