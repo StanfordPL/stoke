@@ -44,8 +44,8 @@ public:
     return *this;
   }
   /** Sets the pool of opcodes to propose from. */
-  Transforms& set_opcode_pool(const Cfg& target, 
-															const x64asm::FlagSet& fs, size_t call_weight,
+  Transforms& set_opcode_pool(const Cfg& target,
+                              const x64asm::FlagSet& fs, size_t call_weight,
                               const x64asm::RegSet& preserve_regs,
                               const std::set<x64asm::Opcode>& opc_blacklist,
                               const std::set<x64asm::Opcode>& opc_whitelist);
@@ -69,21 +69,21 @@ public:
   }
   /** Insert a value into the mem operand pool */
   Transforms& insert_mem(const x64asm::M8& m)  {
-		assert(!m.rip_offset());
+    assert(!m.rip_offset());
     const auto itr = std::find(m_pool_.begin(), m_pool_.end(), m);
     if (itr == m_pool_.end()) {
       m_pool_.push_back(m);
     }
     return *this;
   }
-	/** Insert a value into the rip offset pool */
-	Transforms& insert_rip(uint64_t addr) {
-		const auto itr = std::find(rip_pool_.begin(), rip_pool_.end(), addr);
-		if (itr == rip_pool_.end()) {
-			rip_pool_.push_back(addr);
-		}
-		return *this;
-	}
+  /** Insert a value into the rip offset pool */
+  Transforms& insert_rip(uint64_t addr) {
+    const auto itr = std::find(rip_pool_.begin(), rip_pool_.end(), addr);
+    if (itr == rip_pool_.end()) {
+      rip_pool_.push_back(addr);
+    }
+    return *this;
+  }
 
   /** Transforms a control flow graph using a move type, returns true if the change succeeded. */
   bool modify(Cfg& cfg, Move type);
@@ -121,30 +121,30 @@ public:
   }
   /** Undo resize move, recompute EVERYTHING. */
   void undo_resize_move(Cfg& cfg) {
-		cfg.get_function().rotate(instr_idx1_, instr_idx2_, false);
+    cfg.get_function().rotate(instr_idx1_, instr_idx2_, false);
     cfg.recompute();
   }
   /** Undo local swap move, recompute def-in relation. */
   void undo_local_swap_move(Cfg& cfg) {
-		cfg.get_function().swap(instr_idx1_, instr_idx2_);
+    cfg.get_function().swap(instr_idx1_, instr_idx2_);
     cfg.recompute_defs();
   }
   /** Undo global swap move, recompute def-in relation. */
   void undo_global_swap_move(Cfg& cfg) {
-		cfg.get_function().swap(instr_idx1_, instr_idx2_);
+    cfg.get_function().swap(instr_idx1_, instr_idx2_);
     cfg.recompute_defs();
   }
   /** Add user-defined undo implementation here ... */
   void undo_extension_move(Cfg& cfg);
 
-	/** Can this class perform at least one opcode transformation? */
-	bool invariant_non_empty_opcode_pool() const {
-		return !control_free_.empty();
-	}
-	/** Check all invariants */
-	bool check_invariants() const {
-		return invariant_non_empty_opcode_pool();
-	}
+  /** Can this class perform at least one opcode transformation? */
+  bool invariant_non_empty_opcode_pool() const {
+    return !control_free_.empty();
+  }
+  /** Check all invariants */
+  bool check_invariants() const {
+    return invariant_non_empty_opcode_pool();
+  }
 
 private:
   /** The set of control free opcodes. */
@@ -187,7 +187,7 @@ private:
   x64asm::Instruction old_instr_;
   /** Instruction indices. */
   size_t instr_idx1_;
-	size_t instr_idx2_;
+  size_t instr_idx2_;
 
   /** Random generator. */
   std::default_random_engine gen_;
@@ -197,22 +197,22 @@ private:
   /** Sets o to a random opcode; returns true on success */
   bool get_control_free(x64asm::Opcode& o) {
     if (control_free_.empty()) {
-			return false;
-		}
+      return false;
+    }
     o = control_free_[gen_() % control_free_.size()];
-		return true;
+    return true;
   }
   /** Sets o to a random opcode of equivalent type; returns true on success */
   bool get_control_free_type_equiv(x64asm::Opcode& o) {
     if (control_free_type_equiv_.empty()) {
-			return false;
-		}
+      return false;
+    }
     const auto& equiv = control_free_type_equiv_[o];
-		if (equiv.empty()) {
-			return false;
-		}
+    if (equiv.empty()) {
+      return false;
+    }
     o = equiv[gen_() % equiv.size()];
-		return true;
+    return true;
   }
 
   /** Sets o to a random lea operand, returns true on success. */

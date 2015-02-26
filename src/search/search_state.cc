@@ -21,9 +21,9 @@ using namespace x64asm;
 namespace stoke {
 
 SearchState::SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const Cfg& bc,
-		Init init, size_t size) : current(c), best_yet(by), best_correct(bc) {
-	success = false;
-	interrupted = false;
+                         Init init, size_t size) : current(c), best_yet(by), best_correct(bc) {
+  success = false;
+  interrupted = false;
 
   switch(init) {
   case Init::TARGET:
@@ -45,25 +45,25 @@ SearchState::SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const C
     assert(false);
   }
 
-	// All invariants should be satisfied after construction
-	assert(check_invariants(target));
+  // All invariants should be satisfied after construction
+  assert(check_invariants(target));
 }
 
 void SearchState::configure_empty(const Cfg& target, size_t size) {
   // Start with initial label
-	current = Cfg(TUnit(), target.def_ins(), target.live_outs());
-	current.get_function().push_back(target.get_code()[0]);
+  current = Cfg(TUnit(), target.def_ins(), target.live_outs());
+  current.get_function().push_back(target.get_code()[0]);
 
-	// Pad with nops
+  // Pad with nops
   for (size_t i = 1, ie = size - 1; i < ie; ++i) {
     current.get_function().push_back({NOP});
   }
 
-	// Final return
+  // Final return
   current.get_function().push_back({RET});
-  
-	// Recompute cfg (underlying function is kept sound automatically)
-	current.recompute();
+
+  // Recompute cfg (underlying function is kept sound automatically)
+  current.recompute();
 
   best_yet = current;
   best_correct = target;
@@ -76,25 +76,25 @@ void SearchState::configure_zero(const Cfg& target, size_t size) {
     return;
   }
 
-	// Start with initial label
+  // Start with initial label
   current = Cfg(TUnit(), target.def_ins(), target.live_outs());
   current.get_function().push_back(target.get_code()[0]);
 
-	// Insert minimal number of instructions to cover live-outs
+  // Insert minimal number of instructions to cover live-outs
   const auto code = find_sound_code(target.def_ins(), target.live_outs());
   for (const auto& instr : code) {
     current.get_function().push_back(instr);
   }
 
-	// Pad with nops
+  // Pad with nops
   for (size_t i = current.get_code().size(), ie = size - 1; i < ie; ++i) {
     current.get_function().push_back({NOP});
   }
 
-	// Final return
+  // Final return
   current.get_function().push_back({RET});
 
-	// Recompute cfg (underlying function is kept sound automatically)
+  // Recompute cfg (underlying function is kept sound automatically)
   current.recompute();
 
   best_yet = current;
@@ -185,8 +185,8 @@ Code SearchState::find_sound_code(const RegSet& def_ins, const RegSet& live_outs
 void SearchState::configure_extension(const Cfg& target, size_t size) {
   // Add user-defined logic here ...
 
-	// Results must satisfy all class invariants
-	assert(check_invariants(target));
+  // Results must satisfy all class invariants
+  assert(check_invariants(target));
 
   // See Search::configure for enforcement of additional invariants.
   // 3. The "best_correct" code must actually be correct
@@ -194,33 +194,33 @@ void SearchState::configure_extension(const Cfg& target, size_t size) {
 }
 
 bool SearchState::invariant_boundary_conditions(const Cfg& target) const {
-	if (current.def_ins() != target.def_ins()) {
-		return false;
-	} else if (current.live_outs() != target.live_outs()) {
-		return false;
-	} else if (best_yet.def_ins() != target.def_ins()) {
-		return false;
-	} else if (best_yet.live_outs() != target.live_outs()) {
-		return false;
-	} else if (best_correct.def_ins() != target.def_ins()) {
-		return false;
-	} else if (best_correct.live_outs() != target.live_outs()) {
-		return false;
-	}
+  if (current.def_ins() != target.def_ins()) {
+    return false;
+  } else if (current.live_outs() != target.live_outs()) {
+    return false;
+  } else if (best_yet.def_ins() != target.def_ins()) {
+    return false;
+  } else if (best_yet.live_outs() != target.live_outs()) {
+    return false;
+  } else if (best_correct.def_ins() != target.def_ins()) {
+    return false;
+  } else if (best_correct.live_outs() != target.live_outs()) {
+    return false;
+  }
 
-	return true;
+  return true;
 }
 
 bool SearchState::invariant_functions() const {
-	if (!current.get_function().check_invariants()) {
-		return false;
-	} else if (!best_yet.get_function().check_invariants()) {
-		return false;
-	} else if (!best_correct.get_function().check_invariants()) {
-		return false;
-	}
+  if (!current.get_function().check_invariants()) {
+    return false;
+  } else if (!best_yet.get_function().check_invariants()) {
+    return false;
+  } else if (!best_correct.get_function().check_invariants()) {
+    return false;
+  }
 
-	return true;
+  return true;
 }
 
 } // namespace stoke

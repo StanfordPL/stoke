@@ -26,9 +26,9 @@ namespace stoke {
 class SearchState {
 
 public:
-	/** Default construction is disallowed */
-	SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const Cfg& bc,
-			Init init, size_t size);
+  /** Default construction is disallowed */
+  SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const Cfg& bc,
+              Init init, size_t size);
 
   /** The current rewrite. */
   Cfg current;
@@ -50,14 +50,14 @@ public:
   /** Did the search get interrupted? */
   bool interrupted;
 
-	/** Search state should agree on boundary conditions wrt target */
-	bool invariant_boundary_conditions(const Cfg& target) const;
-	/** Search state should be composed of well-formed functions */
-	bool invariant_functions() const;
-	/** Check all invariants */
-	bool check_invariants(const Cfg& target) const {
-		return invariant_boundary_conditions(target) && invariant_functions();
-	}
+  /** Search state should agree on boundary conditions wrt target */
+  bool invariant_boundary_conditions(const Cfg& target) const;
+  /** Search state should be composed of well-formed functions */
+  bool invariant_functions() const;
+  /** Check all invariants */
+  bool check_invariants(const Cfg& target) const {
+    return invariant_boundary_conditions(target) && invariant_functions();
+  }
 
 private:
   /** Set the current state to be a series of nops. */

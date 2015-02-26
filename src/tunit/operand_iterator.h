@@ -100,9 +100,9 @@ struct is_mem {
       return false;
     }
     const size_t mi = code->at(instr).mem_index();
-		if (operand != mi) {
-			return false;
-		}
+    if (operand != mi) {
+      return false;
+    }
     return !code->at(instr).get_operand<x64asm::M8>(mi).rip_offset();
   }
 };
