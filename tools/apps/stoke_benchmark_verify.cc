@@ -53,14 +53,6 @@ int main(int argc, char** argv) {
   ValidatorGadget validator(smt);
   VerifierGadget verifier(fxn, validator);
 
-  if (!target.is_sound()) {
-    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
-  }
-
-  if (!rewrite.is_sound()) {
-    Console::error(1) << "Rewrite reads undefined variables, or leaves live_out undefined: " << rewrite.which_undef_read() << endl;
-  }
-
   Console::msg() << "Verifier::verify()..." << endl;
 
   const auto start = steady_clock::now();

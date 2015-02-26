@@ -355,4 +355,154 @@ istream& TUnit::read_naked_text(istream& is) {
   return is;
 }
 
+#if 0
+/** Returns true if this instruction uses rip offset addressing */
+bool uses_rip(const Instruction& instr) {
+  if (!instr.is_explicit_memory_dereference() && !instr.is_lea()) {
+    return false;
+  }
+  const auto mi = instr.mem_index();
+  return instr.get_operand<M8>(mi).rip_offset();
+}
+
+/** Returns true if this instruction uses rip offset addressing in this operand */
+bool uses_rip(const Instruction& instr, size_t idx) {
+  if (!instr.is_explicit_memory_dereference()) {
+    return false;
+  }
+  const auto mi = instr.mem_index();
+  if ((size_t)mi != idx) {
+    return false;
+  }
+  return instr.get_operand<M8>(mi).rip_offset();
+}
+
+/** Returns the rip offset for this instruction */
+uint64_t get_offset(const Instruction& instr) {
+  assert(uses_rip(instr));
+  const auto mi = instr.mem_index();
+  return instr.get_operand<M8>(mi).get_disp();
+}
+
+/** Adds an offset to an existing rip offset */
+void rescale_offset(Instruction& instr, int64_t delta) {
+  assert(uses_rip(instr));
+  const auto mi = instr.mem_index();
+  auto m = instr.get_operand<M8>(mi);
+  m.set_disp(m.get_disp()+delta);
+  instr.set_operand(mi, m);
+}
+
+void Transforms::move(Code& code, size_t i, size_t j) const {
+  const auto temp = code[i];
+  if (i < j) {
+    for (size_t k = i; k < j; ++k) {
+      code[k] = code[k + 1];
+    }
+  } else {
+    for (int k = i; k > (int)j; --k) {
+      code[k] = code[k - 1];
+    }
+  }
+  code[j] = temp;
+}
+
+void Transforms::rescale_rip(Code& code, size_t idx) {
+  assert(uses_rip(code[idx]));
+
+  int64_t delta = 0;
+  for (size_t i = 0; i <= idx; ++i) {
+    delta -= assm_.hex_size(code[i]);
+  }
+  rescale_offset(code[idx], delta);
+}
+
+void Transforms::rescale_trailing_rips(Code& code, const Instruction& old_instr, size_t idx, bool ignore_first) {
+  // How much shorter has the new instruction encoding become?
+  const int64_t delta = assm_.hex_size(old_instr) - assm_.hex_size(code[idx]);
+  // Nothing to do if nothing has changed
+  if (delta == 0) {
+    return;
+  }
+  // Otherwise, rip offsets between i and j are increased by this delta
+  for (size_t i = ignore_first ? idx+1 : idx, ie = code.size(); i < ie; ++i) {
+    if (uses_rip(code[i])) {
+      rescale_offset(code[i], delta);
+    }
+  }
+}
+
+void Transforms::rescale_swapped_rips(Code& code, size_t i, size_t j) {
+  // It's easiest to assume that i and j were swapped, so j holds what i used to
+  assert(i < j);
+
+  // Calculate some sizes
+  const int64_t i_size = assm_.hex_size(code[i]);
+  const int64_t j_size = assm_.hex_size(code[j]);
+  // We'll only use this one if either of the outside instructions use rip offsets
+  int64_t span_size = 0;
+  if (uses_rip(code[i]) || uses_rip(code[j])) {
+    for (size_t idx = i+1; idx < j; ++idx) {
+      span_size += assm_.hex_size(code[idx]);
+    }
+  }
+
+  // Update the outer instructions if either was a rip offset
+  if (uses_rip(code[i])) {
+    rescale_offset(code[i], span_size + j_size);
+  }
+  if (uses_rip(code[j])) {
+    rescale_offset(code[j], -span_size - i_size);
+  }
+
+  // Change the interior instructions if the outsides have changed
+  const int64_t delta = j_size - i_size;
+  if (delta != 0) {
+    for (size_t idx = i+1; idx < j; ++idx) {
+      if (uses_rip(code[idx])) {
+        rescale_offset(code[idx], delta);
+      }
+    }
+  }
+}
+
+void Transforms::rescale_rotated_rips(Code& code, size_t i, size_t j) {
+  // Left rotation
+  if (i < j) {
+    const int64_t j_size = assm_.hex_size(code[j]);
+    int64_t span_size = 0;
+    for (size_t idx = i; idx < j; ++idx) {
+      span_size -= assm_.hex_size(code[idx]);
+      if (uses_rip(code[idx])) {
+        rescale_offset(code[idx], j_size);
+      }
+    }
+    if (uses_rip(code[j])) {
+      rescale_offset(code[j], span_size);
+    }
+  }
+
+  // Right rotation
+  else if (j < i) {
+    const int64_t j_size = assm_.hex_size(code[j]);
+    int64_t span_size = 0;
+    for (size_t idx = i; idx > j; --idx) {
+      span_size += assm_.hex_size(code[idx]);
+      if (uses_rip(code[idx])) {
+        rescale_offset(code[idx], -j_size);
+      }
+    }
+    if (uses_rip(code[j])) {
+      rescale_offset(code[j], span_size);
+    }
+  }
+
+  // Control should never reach here
+  else {
+    assert(false);
+  }
+}
+
+#endif
+
 } // namespace stoke

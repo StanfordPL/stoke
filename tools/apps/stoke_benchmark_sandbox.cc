@@ -43,10 +43,6 @@ int main(int argc, char** argv) {
   TrainingSetGadget tcs(seed);
   SandboxGadget sb(tcs, aux_fxns);
 
-  if (!target.is_sound()) {
-    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
-  }
-
   size_t loc = 0;
   size_t mds = 0;
   size_t nd = 0;

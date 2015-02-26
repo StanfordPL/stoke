@@ -56,10 +56,6 @@ struct TUnit {
   }
 
   /** Returns the underlying code sequence */
-  x64asm::Code& get_code() {
-    return code_;
-  }
-  /** Returns the underlying code sequence */
   const x64asm::Code& get_code() const {
     return code_;
   }
@@ -190,6 +186,26 @@ struct TUnit {
     return mem_iterator(&code_, false);
   }
 
+	/** Removes this instruction from the underlying code sequence */
+	void remove(size_t index) {
+	}
+	/** Inserts a new instruction in the underlying code sequence */
+	void insert(size_t index, const x64asm::Instruction& instr, bool rescale_rip = false) {
+	}
+	/** Inserts a new instruction at the end of the underlying code sequence */
+	void push_back(const x64asm::Instruction& instr, bool rescale_rip = false) {
+		insert(get_code().size(), instr, rescale_rip);
+	}
+	/** Replaces an instruction in the underlying code sequence */
+	void replace(size_t index, const x64asm::Instruction& instr, bool rescale_rip = false) {
+	}
+	/** Swaps two instructions in the underlying code sequence */
+	void swap(size_t index1, size_t index2) {
+	}
+	/** Rotates instructions in the underlying code sequence */
+	void rotate(size_t index1, size_t index2, bool left) {
+	}
+
   /** Read from istream. */
   std::istream& read_text(std::istream& is);
   /** Write to ostream. */
@@ -243,6 +259,19 @@ private:
   std::istream& read_formatted_text(std::istream& is);
   /** Read a code sequence and fill in missing information */
   std::istream& read_naked_text(std::istream& is);
+
+	// @todo This came from transforms
+
+  /** Shifts instructions about a basic block boundary. */
+  void move(x64asm::Code& code, size_t i, size_t j) const;
+  /** Recompute this rip value */
+  void rescale_rip(x64asm::Code& code, size_t i);
+  /** Scale rips between here and the end of the code */
+  void rescale_trailing_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i, bool ignore_first = false);
+  /** Scale rips between two swapped instructions */
+  void rescale_swapped_rips(x64asm::Code& code, size_t i, size_t j);
+  /** Scale rips for a set of rotated instructions. */
+  void rescale_rotated_rips(x64asm::Code& code, size_t i, size_t j);
 };
 
 } // namespace stoke
