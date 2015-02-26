@@ -15,16 +15,26 @@
 #ifndef STOKE_SRC_TUNIT_TUNIT_H
 #define STOKE_SRC_TUNIT_TUNIT_H
 
+#include <boost/optional.hpp>
 #include <cassert>
 #include <iostream>
+#include <set>
 #include <string>
-#include <boost/optional.hpp>
+#include <vector>
 
 #include "src/ext/x64asm/include/x64asm.h"
+#include "src/tunit/operand_iterator.h"
 
 namespace stoke {
 
 struct TUnit {
+  /** Iterator over global rip-offsets targets */
+  typedef std::set<uint64_t>::const_iterator rip_offset_target_iterator;
+  /** Iterator over hex-offsets relative to function begin */
+  typedef std::vector<size_t>::const_iterator hex_offset_iterator;
+  /** Iterator over hex-sizes */
+  typedef std::vector<size_t>::const_iterator hex_size_iterator;
+
   /** POD struct for aggregating sets */
   struct MayMustSets {
     x64asm::RegSet must_read_set;
@@ -35,23 +45,14 @@ struct TUnit {
     x64asm::RegSet maybe_undef_set;
   };
 
-  /** Constructs a minimal valid function */
-  TUnit() {
-    code_ = {
-      // @todo this is causing a segfault in integration tests
-      //{x64asm::LABEL_DEFN, {x64asm::Label(".anonymous_function")}},
-      {x64asm::RET}
-    };
-    file_offset_ = 0;
-    rip_offset_ = 0;
-    capacity_ = 0;
-  }
-  /** Constructs a funtion with non-default values */
-  TUnit(const x64asm::Code& code, uint64_t fo = 0, uint64_t ro = 0, size_t c = 0) {
+  /** Constructs a funtion (not guaranteed to pass check_invariants()) */
+  TUnit(const x64asm::Code& code = {{}}, uint64_t fo = 0, uint64_t ro = 0, size_t c = 0) {
     code_ = code;
     file_offset_ = fo;
     rip_offset_ = ro;
     capacity_ = c;
+
+    recompute();
   }
 
   /** Returns the underlying code sequence */
@@ -78,7 +79,7 @@ struct TUnit {
     return file_offset_;
   }
   /** Returns the number of hex bytes available to this function */
-  size_t get_capacity() const {
+  size_t hex_capacity() const {
     return capacity_;
   }
   /** Returns the rip offset of this function */
@@ -103,14 +104,90 @@ struct TUnit {
 
   /** Checks that the first instruction is a label */
   bool invariant_first_instr_is_label() const {
-    if (code_.empty()) {
-      return false;
-    }
-    return code_[0].get_opcode() == x64asm::LABEL_DEFN;
+    return !code_.empty() && code_[0].get_opcode() == x64asm::LABEL_DEFN;
   }
-  /** Checks that this translation unit statisfies all invariants */
+  /** Check that the hex encoding of this function fits within its capacity */
+  bool invariant_encoding_size() const {
+    return hex_size() <= hex_capacity();
+  }
+  /** Check that rip offsets all resolve to valid locations */
+  bool invariant_rip_offsets() const;
+  /** Checks that this function statisfies all invariants */
   bool check_invariants() const {
-    return invariant_first_instr_is_label();
+    return invariant_first_instr_is_label() &&
+           invariant_encoding_size() &&
+           invariant_rip_offsets();
+  }
+
+  /** Returns the hex offset of this instruction */
+  size_t hex_offset(size_t index) const {
+    assert(index < code_.size());
+    return hex_offsets_[index];
+  }
+  /** Returns the hex size of this instruction */
+  size_t hex_size(size_t index) const {
+    assert(index < code_.size());
+    return hex_sizes_[index];
+  }
+  /** Returns the total hex size of this function */
+  size_t hex_size() const {
+    const auto size = code_.size();
+    return size == 0 ? 0 : hex_offset(size-1) + hex_size(size-1);
+  }
+
+  /** Iterator over global rip-offset targets */
+  rip_offset_target_iterator rip_offset_target_begin() const {
+    return rip_offset_targets_.begin();
+  }
+  /** Iterator over global rip-offset targets */
+  rip_offset_target_iterator rip_offset_target_end() const {
+    return rip_offset_targets_.end();
+  }
+
+  /** Iterator over instruction offsets relative to function begin */
+  hex_offset_iterator hex_offset_begin() const {
+    return hex_offsets_.begin();
+  }
+  /** Iterator over instruction offsets relative to function begin */
+  hex_offset_iterator hex_offset_end() const {
+    return hex_offsets_.end();
+  }
+
+  /** Iterator over hex sizes */
+  hex_size_iterator hex_size_begin() const {
+    return hex_sizes_.begin();
+  }
+  /** Iterator over hex sizes */
+  hex_size_iterator hex_size_end() const {
+    return hex_sizes_.end();
+  }
+
+
+  /** Iterator over call targets in this function */
+  call_target_iterator call_target_begin() const {
+    return call_target_iterator(&code_, true);
+  }
+  /** Iterator over call targets in this function */
+  call_target_iterator call_target_end() const {
+    return call_target_iterator(&code_, false);
+  }
+
+  /** Iterator over immediate operands in this function */
+  imm_iterator imm_begin() const {
+    return imm_iterator(&code_, true);
+  }
+  /** Iterator over immediate operands in this function */
+  imm_iterator imm_end() const {
+    return imm_iterator(&code_, false);
+  }
+
+  /** Iterator over non-rip memory operands in this function */
+  mem_iterator mem_begin() const {
+    return mem_iterator(&code_, true);
+  }
+  /** Iterator over non-rip memory operands in this function */
+  mem_iterator mem_end() const {
+    return mem_iterator(&code_, false);
   }
 
   /** Read from istream. */
@@ -119,15 +196,22 @@ struct TUnit {
   std::ostream& write_text(std::ostream& os) const;
 
 private:
-  /** The text of the code in this translation unit. */
+  /** The text of the code in this function. */
   x64asm::Code code_;
 
   /** The physical address of this function in a file */
   uint64_t file_offset_;
   /** The total number of hex bytes available to this function */
-  uint64_t capacity_;
+  size_t capacity_;
   /** The logical address of this function inside a process */
   uint64_t rip_offset_;
+
+  /** Global rip-offset targets */
+  std::set<uint64_t> rip_offset_targets_;
+  /** Hex offsets of every instruction relative to function begin */
+  std::vector<size_t> hex_offsets_;
+  /** Hex size of every instruction */
+  std::vector<size_t> hex_sizes_;
 
   /** User-provided maybe read set. */
   boost::optional<x64asm::RegSet> maybe_read_set_;
@@ -142,7 +226,22 @@ private:
   /** User-provided must undef set. */
   boost::optional<x64asm::RegSet> must_undef_set_;
 
+  /** Compute global rip-offset (assumes hex_offsets_ and hex_sizes_) */
+  void recompute_rip_offset_targets();
+  /** Compute hex offsets for every instruction (assumes hex_sizes_) */
+  void recompute_hex_offsets();
+  /** Compute hex sizes for every instruction */
+  void recompute_hex_sizes();
+  /** Recompute everything from scratch */
+  void recompute() {
+    recompute_hex_sizes();
+    recompute_hex_offsets();
+    recompute_rip_offset_targets();
+  }
+
+  /** Read a well-formatted function. */
   std::istream& read_formatted_text(std::istream& is);
+  /** Read a code sequence and fill in missing information */
   std::istream& read_naked_text(std::istream& is);
 };
 

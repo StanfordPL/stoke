@@ -22,6 +22,7 @@
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
 #include "src/stategen/stategen.h"
+#include "src/tunit/tunit.h"
 
 class CostFunctionTest : public ::testing::Test {
 
@@ -44,7 +45,7 @@ protected:
   }
 
   stoke::Cfg make_cfg(x64asm::Code c, x64asm::RegSet rs = x64asm::RegSet::universe()) {
-    return stoke::Cfg(c, rs, rs);
+    return stoke::Cfg(stoke::TUnit(c), rs, rs);
   }
 
   stoke::Cost misalign_penalty_;

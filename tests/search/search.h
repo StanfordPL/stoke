@@ -46,7 +46,7 @@ protected:
     ss1 >> def_in_;
 
     auto code = SearchState::find_sound_code(def_in_, live_out_);
-    auto cfg = Cfg(code, def_in_, live_out_);
+    auto cfg = Cfg(TUnit(code), def_in_, live_out_);
     ASSERT_TRUE(cfg.is_sound()) << "def in:   " << def_in_ << std::endl <<
                                 "live out: " << live_out_ << std::endl <<
                                 "cfg.def_outs(): " << cfg.def_outs() << std::endl <<

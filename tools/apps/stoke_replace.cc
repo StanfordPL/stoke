@@ -57,7 +57,7 @@ void callback(const FunctionCallbackData& data, void* arg) {
   if (data.tunit.get_name() == rewrite_arg.value().get_name()) {
     found = true;
     fxn_offset = data.tunit.get_file_offset();
-    fxn_size = data.tunit.get_capacity();
+    fxn_size = data.tunit.hex_capacity();
   }
 }
 
