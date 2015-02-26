@@ -36,9 +36,8 @@ public:
     reg_warning();
 
     // Check for unsupported instructions and cpu flags
-    flag_check(get_function());
-    sandbox_check(get_function());
-
+    flag_check();
+    sandbox_check();
     // Check that this function can link against auxiliary functions
     linker_check(aux_fxns);
 
@@ -62,30 +61,11 @@ private:
     }
   }
 
-  x64asm::Code fix_code(const x64asm::Code& code) const {
-    // This function adds a retq to a code that doesn't have any
-    // It's causing endless warnings for the time being for search states which are
-    // default constructed to empty functions.
-    // I tried changing that, but ran into segfaults, so for the time being, this is
-    // deactivated.
-    for (const auto& instr : code) {
-      if (instr.is_ret()) {
-        return code;
-      }
-    }
-
-    Console::warn() << "Adding a missing retq instruction to target/rewrite" << std::endl;
-    auto ret = code;
-    ret.push_back({x64asm::RET});
-
-    return ret;
-  }
-
   x64asm::RegSet def_in(const x64asm::RegSet& live_out) const {
     // Always prefer user inputs, otherwise solve for live_ins
     auto def_in = def_in_arg.has_been_provided() ?
                   def_in_arg.value() :
-                  Cfg(target_arg.value().get_code(), x64asm::RegSet::empty(), live_out).live_ins();
+                  Cfg(target_arg.value(), x64asm::RegSet::empty(), live_out).live_ins();
 
     // Add mxcsr[rc] unless otherwise specified
     if (!no_default_mxcsr_arg) {
@@ -102,7 +82,7 @@ private:
     }
 
     // Solve for defined out values
-    Cfg temp(target_arg.value().get_code(), x64asm::RegSet::empty(), x64asm::RegSet::empty());
+    Cfg temp(target_arg.value());
     const auto dos = temp.def_outs();
 
     // If no general purpose registers were written we can guess xmm live out
@@ -133,9 +113,9 @@ private:
   }
 
   /** Checks for unsupported cpu flags */
-  void flag_check(const TUnit& fxn) const {
+  void flag_check() const {
     const auto cpu_flags = CpuInfo::get_flags();
-    auto code_flags = fxn.get_code().required_flags();
+    auto code_flags = get_function().get_code().required_flags();
 
     if (!cpu_flags.contains(code_flags)) {
       const auto diff = code_flags - cpu_flags;
@@ -144,8 +124,8 @@ private:
   }
 
   /** Checks for unsupported sandbox instructions */
-  void sandbox_check(const TUnit& fxn) const {
-    for (const auto& instr : fxn.get_code()) {
+  void sandbox_check() const {
+    for (const auto& instr : get_function().get_code()) {
       if (!Sandbox::is_supported(instr)) {
         Console::error(1) << "Target/rewrite contains an unsupported instruction: " << instr << std::endl;
       }

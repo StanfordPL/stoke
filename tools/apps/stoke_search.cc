@@ -254,7 +254,7 @@ int main(int argc, char** argv) {
   TrainingSetGadget training_set(seed);
   SandboxGadget training_sb(training_set, aux_fxns);
 
-  TransformsGadget transforms(target.get_code(), aux_fxns, seed);
+  TransformsGadget transforms(target.get_function(), aux_fxns, seed);
   SearchGadget search(&transforms, seed);
 
   TestSetGadget test_set(seed);
@@ -369,7 +369,8 @@ int main(int argc, char** argv) {
   Console::msg() << final_msg << endl;
 
   ofstream ofs(out.value());
-  ofs << state.best_correct.get_function();
+  TUnit result(state.best_correct.get_code());
+  ofs << result;
 
   return 0;
 }

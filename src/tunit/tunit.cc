@@ -88,6 +88,26 @@ TUnit::MayMustSets TUnit::get_may_must_sets(const MayMustSets& defaults) const {
   return res;
 }
 
+bool TUnit::invariant_rip_offsets() const {
+  for (size_t i = 0, ie = get_code().size(); i < ie; ++i) {
+    const auto& instr = get_code()[i];
+    if (!instr.is_explicit_memory_dereference()) {
+      continue;
+    }
+    const auto op = instr.get_operand<x64asm::M8>(instr.mem_index());
+    if (!op.rip_offset()) {
+      continue;
+    }
+    const auto after_instr = rip_offset_ + hex_offset(i) + hex_size(i);
+    const auto target = after_instr + op.get_disp();
+    if (rip_offset_targets_.find(target) == rip_offset_targets_.end()) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 istream& TUnit::read_text(istream& is) {
   string first_line;
   getline(is, first_line);
@@ -117,28 +137,28 @@ ostream& TUnit::write_text(ostream& os) const {
   os << "  .type " << get_name() << ", @function" << endl;
   os << endl;
 
-  os << "  #! file-offset " << showbase << hex << get_file_offset() << endl;
-  os << "  #! rip-offset  " << showbase << hex << get_rip_offset() << endl;
-  os << "  #! capacity    " << noshowbase << dec << get_capacity() << " bytes" << endl;
+  os << "#! file-offset " << showbase << hex << get_file_offset() << endl;
+  os << "#! rip-offset  " << showbase << hex << get_rip_offset() << endl;
+  os << "#! capacity    " << noshowbase << dec << hex_capacity() << " bytes" << endl;
   os << endl;
 
   if (maybe_read_set_) {
-    os << "  #! maybe-read  " << *maybe_read_set_ << endl;
+    os << "#! maybe-read  " << *maybe_read_set_ << endl;
   }
   if (must_read_set_) {
-    os << "  #! must-read   " << *must_read_set_ << endl;
+    os << "#! must-read   " << *must_read_set_ << endl;
   }
   if (maybe_write_set_) {
-    os << "  #! maybe-write " << *maybe_write_set_ << endl;
+    os << "#! maybe-write " << *maybe_write_set_ << endl;
   }
   if (must_write_set_) {
-    os << "  #! must-write  " << *must_write_set_ << endl;
+    os << "#! must-write  " << *must_write_set_ << endl;
   }
   if (maybe_undef_set_) {
-    os << "  #! maybe-undef " << *maybe_undef_set_ << endl;
+    os << "#! maybe-undef " << *maybe_undef_set_ << endl;
   }
   if (must_undef_set_) {
-    os << "  #! must-undef  " << *must_undef_set_ << endl;
+    os << "#! must-undef  " << *must_undef_set_ << endl;
   }
   if (maybe_read_set_ || maybe_write_set_ || maybe_undef_set_ ||
       must_read_set_ ||  must_write_set_  || must_undef_set_) {
@@ -148,33 +168,84 @@ ostream& TUnit::write_text(ostream& os) const {
   ofilterstream<Column> col(os);
   col.filter().padding(2);
 
+  // Print code
+  col << "# Text" << endl;
   for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
     if (!code_[i].is_label_defn()) {
       col << "  ";
     }
-    col << code_[i];
-    if (i + 1 != ie) {
-      col << endl;
-    }
+    col << code_[i] << endl;
   }
   col.filter().next();
 
+  // Print comment markers
+  col << "#" << endl;
+  for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
+    col << "#" << endl;
+  }
+  col.filter().next();
+
+  // Print line numbers
+  col << "Line" << endl;
   size_t line = 1;
   for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
     if (!code_[i].is_label_defn()) {
-      col << "# " << dec << line++;
+      col << dec << line++;
     }
-    if (i + 1 != ie) {
-      col << endl;
-    }
+    col << endl;
+  }
+  col.filter().next();
+
+  // Print rip offsets
+  col << "RIP" << endl;
+  for (auto i = hex_offset_begin(), ie = hex_offset_end(); i != ie; ++i) {
+    col << hex << showbase << rip_offset_ + *i << endl;
+  }
+  col.filter().next();
+
+  // Print hex size
+  col << "Bytes" << endl;
+  for (auto i = hex_size_begin(), ie = hex_size_end(); i != ie; ++i) {
+    col << dec << *i << endl;
   }
   col.filter().done();
 
-  os << endl << endl;
+  os << endl;
   os << ".size " << get_name() << ", .-" << get_name() << endl;
 
   os.setf(fmt);
   return os;
+}
+
+void TUnit::recompute_rip_offset_targets() {
+  rip_offset_targets_.clear();
+  for (size_t i = 0, ie = get_code().size(); i < ie; ++i) {
+    const auto& instr = get_code()[i];
+    if (!instr.is_explicit_memory_dereference()) {
+      continue;
+    }
+    const auto op = instr.get_operand<M8>(instr.mem_index());
+    if (op.rip_offset()) {
+      const auto after_instr = rip_offset_ + hex_offset(i) + hex_size(i);
+      const auto target = after_instr + op.get_disp();
+      rip_offset_targets_.insert(target);
+    }
+  }
+}
+
+void TUnit::recompute_hex_offsets() {
+  hex_offsets_ = {{0}};
+  for (int i = 0, ie = code_.size()-1; i < ie; ++i) {
+    hex_offsets_.push_back(hex_offsets_.back() + hex_size(i));
+  }
+}
+
+void TUnit::recompute_hex_sizes() {
+  Assembler assm;
+  hex_sizes_.clear();
+  for (const auto& instr : get_code()) {
+    hex_sizes_.push_back(assm.hex_size(instr));
+  }
 }
 
 istream& TUnit::read_formatted_text(istream& is) {
@@ -262,6 +333,8 @@ istream& TUnit::read_formatted_text(istream& is) {
     fail(is) << "Label on line one differs from name given in file";
   }
 
+  recompute();
+
   is.flags(fmt);
   return is;
 }
@@ -276,6 +349,8 @@ istream& TUnit::read_naked_text(istream& is) {
   if (!invariant_first_instr_is_label()) {
     code_.insert(code_.begin(), {LABEL_DEFN, {Label(".anonymous_function")}});
   }
+
+  recompute();
 
   return is;
 }

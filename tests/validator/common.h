@@ -291,7 +291,7 @@ private:
     }
 
 
-    return new Cfg(c, def_ins_, live_outs_);
+    return new Cfg(TUnit(c), def_ins_, live_outs_);
   }
 
   template <typename T>
