@@ -133,10 +133,13 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   sample << "movb 0x64(%rax, %rcx, 4), %r13b" << std::endl;
   sample << "movb 0x64(%rsp, %rdx, 8), %r13b" << std::endl;
 
-  x64asm::Code target;
-  sample >> target;
+  x64asm::Code code;
+  sample >> code;
 
-  t.set_opcode_pool(flag_set, 0, true, false, x64asm::RegSet::empty(), blacklist, {})
+	TUnit fxn(code);
+	Cfg target(fxn);
+
+  t.set_opcode_pool(target, flag_set, 0, x64asm::RegSet::empty(), blacklist, {})
   .set_operand_pool(target, x64asm::RegSet::empty())
   .set_seed(seed);
 
