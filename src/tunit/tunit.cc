@@ -88,6 +88,26 @@ TUnit::MayMustSets TUnit::get_may_must_sets(const MayMustSets& defaults) const {
   return res;
 }
 
+bool TUnit::invariant_rip_offsets() const {
+	for (size_t i = 0, ie = get_code().size(); i < ie; ++i) {
+		const auto& instr = get_code()[i];
+		if (!instr.is_explicit_memory_dereference()) {
+			continue;
+		}
+		const auto op = instr.get_operand<x64asm::M8>(instr.mem_index());
+		if (!op.rip_offset()) {
+			continue;
+		}
+    const auto after_instr = rip_offset_ + hex_offset(i) + hex_size(i);
+    const auto target = after_instr + op.get_disp();
+		if (rip_offset_targets_.find(target) == rip_offset_targets_.end()) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 istream& TUnit::read_text(istream& is) {
   string first_line;
   getline(is, first_line);
