@@ -112,7 +112,7 @@ bool is_type_equiv(Opcode o1, Opcode o2) {
   return true;
 }
 
-/** Fills a reg pool */ 
+/** Fills a reg pool */
 template <typename T, size_t N>
 void fill_pool(vector<T>& pool, const array<T, N>& src, const RegSet& omit) {
   pool.clear();
@@ -235,27 +235,27 @@ bool get_indices(default_random_engine& gen, const Cfg& cfg, Cfg::id_type& bb, s
 namespace stoke {
 
 Transforms::Transforms() : old_instr_(RET) {
-	validator_ = nullptr;
+  validator_ = nullptr;
 }
 
 Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
                                         size_t call_weight, const RegSet& preserve_regs,
                                         const set<Opcode>& opc_blacklist,
                                         const set<Opcode>& opc_whitelist) {
-	// Determine if we need to read/write memory operands
-	auto mem_read = false;
-	auto mem_write = false;
-	for (size_t i = 0, ie = target.get_code().size(); i < ie; ++i) {
-		const auto& instr = target.get_code()[i];
-		mem_read |= instr.maybe_read_memory();
-		mem_write |= instr.maybe_write_memory();
-		mem_write |= instr.maybe_undef_memory();
-	}
+  // Determine if we need to read/write memory operands
+  auto mem_read = false;
+  auto mem_write = false;
+  for (size_t i = 0, ie = target.get_code().size(); i < ie; ++i) {
+    const auto& instr = target.get_code()[i];
+    mem_read |= instr.maybe_read_memory();
+    mem_write |= instr.maybe_write_memory();
+    mem_write |= instr.maybe_undef_memory();
+  }
 
-	// Empty whitelist means no whitelist
+  // Empty whitelist means no whitelist
   const auto use_whitelist = !opc_whitelist.empty();
 
-	// Refill the opcode pool
+  // Refill the opcode pool
   control_free_.clear();
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     const auto op = (Opcode)i;
@@ -298,12 +298,12 @@ Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
     control_free_.push_back(op);
   }
 
-	// Add additional calls depending on weight
+  // Add additional calls depending on weight
   for (size_t i = 0; i < call_weight; ++i) {
     control_free_.push_back(CALL_LABEL);
   }
 
-	// Lift opcode pool to type equivalent pool
+  // Lift opcode pool to type equivalent pool
   control_free_type_equiv_.clear();
   control_free_type_equiv_.resize((int)XSAVEOPT64_M64 + 1);
   for (const auto i : control_free_) {
@@ -318,12 +318,12 @@ Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
 }
 
 Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preserve_regs) {
-	fill_pool(rl_pool_, rls, preserve_regs);
-	fill_pool(rh_pool_, rhs, preserve_regs);
-	fill_pool(rb_pool_, rbs, preserve_regs);
-	fill_pool(r16_pool_, r16s, preserve_regs);
-	fill_pool(r32_pool_, r32s, preserve_regs);
-	fill_pool(r64_pool_, r64s, preserve_regs);
+  fill_pool(rl_pool_, rls, preserve_regs);
+  fill_pool(rh_pool_, rhs, preserve_regs);
+  fill_pool(rb_pool_, rbs, preserve_regs);
+  fill_pool(r16_pool_, r16s, preserve_regs);
+  fill_pool(r32_pool_, r32s, preserve_regs);
+  fill_pool(r64_pool_, r64s, preserve_regs);
 
   mm_pool_.assign(mms.begin(), mms.end());
   sreg_pool_.assign(sregs.begin(), sregs.end());
@@ -331,7 +331,7 @@ Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preser
   xmm_pool_.assign(xmms.begin(), xmms.end());
   ymm_pool_.assign(ymms.begin(), ymms.end());
 
-	const auto& fxn = target.get_function();
+  const auto& fxn = target.get_function();
 
   imm_pool_.assign({
     0ul,
@@ -339,10 +339,10 @@ Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preser
     5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
     16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
   });
-	set<Imm64> imm_ops(fxn.imm_begin(), fxn.imm_end());
-	for (const auto& imm : imm_ops) {
-		insert_immediate(imm);
-	}
+  set<Imm64> imm_ops(fxn.imm_begin(), fxn.imm_end());
+  for (const auto& imm : imm_ops) {
+    insert_immediate(imm);
+  }
 
   set<M8> mem_ops(fxn.mem_begin(), fxn.mem_end());
   m_pool_.assign(mem_ops.begin(), mem_ops.end());
@@ -350,8 +350,8 @@ Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preser
   set<Label> call_ops(fxn.call_target_begin(), fxn.call_target_end());
   label_pool_.assign(call_ops.begin(), call_ops.end());
 
-	set<uint64_t> rip_ops(fxn.rip_offset_target_begin(), fxn.rip_offset_target_end());
-	rip_pool_.assign(rip_ops.begin(), rip_ops.end());
+  set<uint64_t> rip_ops(fxn.rip_offset_target_begin(), fxn.rip_offset_target_end());
+  rip_pool_.assign(rip_ops.begin(), rip_ops.end());
 
   return *this;
 }
@@ -397,17 +397,17 @@ bool Transforms::instruction_move(Cfg& cfg) {
     return false;
   }
 
-  // Record the old value 
+  // Record the old value
   old_instr_ = cfg.get_code()[instr_idx1_];
 
-	// Try generating a new instruction
+  // Try generating a new instruction
   auto instr = old_instr_;
 
-	auto opc = RET;
+  auto opc = RET;
   if (!get_control_free(opc)) {
-		return false;
-	}
-	instr.set_opcode(opc);
+    return false;
+  }
+  instr.set_opcode(opc);
 
   const auto& rs = cfg.def_ins({bb, block_idx});
   for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
@@ -424,13 +424,13 @@ bool Transforms::instruction_move(Cfg& cfg) {
     instr.set_operand(i, o);
   }
 
-	// Check for validator support for the new instruction
+  // Check for validator support for the new instruction
   if (validator_ && !validator_->is_supported(instr)) {
     return false;
   }
 
   // Success: Any failure beyond here will require undoing the move
-	cfg.get_function().replace(instr_idx1_, instr, true);
+  cfg.get_function().replace(instr_idx1_, instr, true);
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
     undo_instruction_move(cfg);
@@ -448,25 +448,25 @@ bool Transforms::opcode_move(Cfg& cfg) {
     return false;
   }
 
-  // Record the old value 
+  // Record the old value
   old_instr_ = cfg.get_code()[instr_idx1_];
 
-	// Try generating a new instruction
+  // Try generating a new instruction
   auto instr = old_instr_;
 
-	auto opc = RET;
-	if (!get_control_free_type_equiv(opc)) {
-		return false;
-	}
+  auto opc = RET;
+  if (!get_control_free_type_equiv(opc)) {
+    return false;
+  }
   instr.set_opcode(opc);
 
-	// Check for validator support for the new instruction
+  // Check for validator support for the new instruction
   if (validator_ && !validator_->is_supported(instr)) {
     return false;
   }
 
   // Success: Any failure beyond here will require undoing the move
-	cfg.get_function().replace(instr_idx1_, instr);
+  cfg.get_function().replace(instr_idx1_, instr);
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
     undo_opcode_move(cfg);
@@ -507,18 +507,18 @@ bool Transforms::operand_move(Cfg& cfg) {
   }
   instr.set_operand(operand_idx, o);
 
-	// Check for validator support for the new instruction
+  // Check for validator support for the new instruction
   if (validator_ && !validator_->is_supported(instr)) {
     return false;
   }
 
-	// If this is a rip operand, it needs rescaling since it's global
-	// Otherwise, the instruction should be replaced as is
-	const auto is_mem = instr.is_explicit_memory_dereference() && ((size_t)instr.mem_index() == operand_idx);
+  // If this is a rip operand, it needs rescaling since it's global
+  // Otherwise, the instruction should be replaced as is
+  const auto is_mem = instr.is_explicit_memory_dereference() && ((size_t)instr.mem_index() == operand_idx);
   const auto is_rip = ((M8*)&o)->rip_offset();
 
   // Success: Any failure beyond here will require undoing the move
-	cfg.get_function().replace(instr_idx1_, instr, is_rip);
+  cfg.get_function().replace(instr_idx1_, instr, is_rip);
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
     undo_operand_move(cfg);
@@ -547,7 +547,7 @@ found_a_nop:
     return false;
   }
 
-	cfg.get_function().rotate(instr_idx1_, instr_idx2_, true);
+  cfg.get_function().rotate(instr_idx1_, instr_idx2_, true);
   cfg.recompute();
 
   return true;
@@ -640,9 +640,9 @@ bool Transforms::extension_move(Cfg& cfg) {
   // beginning).
 
   // Invariant 4:
-	// The soundness of the underlying function must be preserved. This can be
-	// checking by calling ...
-	assert(cfg.get_function().check_invariants());
+  // The soundness of the underlying function must be preserved. This can be
+  // checking by calling ...
+  assert(cfg.get_function().check_invariants());
 
   return false;
 }
@@ -674,7 +674,7 @@ void Transforms::undo(Cfg& cfg, Move type) {
     break;
   }
 
-	assert(cfg.get_function().check_invariants());
+  assert(cfg.get_function().check_invariants());
 }
 
 void Transforms::undo_extension_move(Cfg& cfg) {

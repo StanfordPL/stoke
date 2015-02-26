@@ -25,11 +25,11 @@ namespace stoke {
 
 class RewriteGadget : public CfgGadget {
 public:
-  RewriteGadget(const std::vector<TUnit>& aux_fxns) : CfgGadget(rewrite_arg.value(), aux_fxns) { 
-		if (!is_sound()) {
-			Console::error(1) << "Rewrite reads undefined variables, or leaves live_out undefined: " << which_undef_read() << std::endl;
-		}
-	}
+  RewriteGadget(const std::vector<TUnit>& aux_fxns) : CfgGadget(rewrite_arg.value(), aux_fxns) {
+    if (!is_sound()) {
+      Console::error(1) << "Rewrite reads undefined variables, or leaves live_out undefined: " << which_undef_read() << std::endl;
+    }
+  }
 };
 
 } // namespace stoke

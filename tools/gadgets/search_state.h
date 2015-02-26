@@ -29,18 +29,18 @@ namespace stoke {
 class SearchStateGadget : public SearchState {
 public:
   SearchStateGadget(const Cfg& target, const std::vector<TUnit>& aux_fxns) :
-		SearchState(target, 
-				CfgGadget(current_arg.value(), aux_fxns),
-    		CfgGadget(best_yet_arg.value(), aux_fxns),
-    		CfgGadget(best_correct_arg.value(), aux_fxns),
-				init_arg.value(), 
-				max_instrs_arg.value()) {
+    SearchState(target,
+                CfgGadget(current_arg.value(), aux_fxns),
+                CfgGadget(best_yet_arg.value(), aux_fxns),
+                CfgGadget(best_correct_arg.value(), aux_fxns),
+                init_arg.value(),
+                max_instrs_arg.value()) {
 
-		if (!invariant_boundary_conditions(target)) {
-			Console::error(1) << "Search state and target disagree on def_in/live_out!" << std::endl;
-		} else if (!invariant_functions()) {
-			Console::error(1) << "Search state contains a poorly formed function!" << std::endl;
-		}
+    if (!invariant_boundary_conditions(target)) {
+      Console::error(1) << "Search state and target disagree on def_in/live_out!" << std::endl;
+    } else if (!invariant_functions()) {
+      Console::error(1) << "Search state contains a poorly formed function!" << std::endl;
+    }
   }
 };
 
