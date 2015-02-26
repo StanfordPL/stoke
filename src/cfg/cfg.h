@@ -127,10 +127,6 @@ public:
     return function_;
   }
 
-  /** Return a reference to the code underlying this graph. */
-  x64asm::Code& get_code() {
-    return get_function().get_code();
-  }
   /** Return a const reference to the code underlying this graph. */
   const x64asm::Code& get_code() const {
     return get_function().get_code();
@@ -173,11 +169,6 @@ public:
     return id == get_exit();
   }
 
-  /** Returns a reference to the instruction in the underlying code at this location. */
-  x64asm::Instruction& get_instr(const loc_type& loc) {
-    assert(get_index(loc) < get_code().size());
-    return get_code()[get_index(loc)];
-  }
   /** Returns a const reference to the instruction in the underlying code at this location. */
   const x64asm::Instruction& get_instr(const loc_type& loc) const {
     assert(get_index(loc) < get_code().size());

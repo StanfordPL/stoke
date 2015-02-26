@@ -17,9 +17,14 @@
 
 using namespace std;
 using namespace x64asm;
-using namespace stoke;
 
-void SearchState::configure(Init init, const Cfg& target, size_t size) {
+namespace stoke {
+
+SearchState::SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const Cfg& bc,
+		Init init, size_t size) : current(c), best_yet(by), best_correct(bc) {
+	success = false;
+	interrupted = false;
+
   switch(init) {
   case Init::TARGET:
     configure_target(target, size);
@@ -31,7 +36,7 @@ void SearchState::configure(Init init, const Cfg& target, size_t size) {
     configure_empty(target, size);
     break;
   case Init::PREVIOUS:
-    // no-op
+    // Do nothing; preserve input values
     break;
   case Init::EXTENSION:
     configure_extension(target, size);
@@ -39,18 +44,66 @@ void SearchState::configure(Init init, const Cfg& target, size_t size) {
   default:
     assert(false);
   }
+
+	// All invariants should be satisfied after construction
+	assert(check_invariants(target));
 }
 
 void SearchState::configure_empty(const Cfg& target, size_t size) {
-  current = Cfg(TUnit(), target.def_ins(), target.live_outs());
-  current.get_code().push_back(target.get_code()[0]);
+  // Start with initial label
+	current = Cfg(TUnit(), target.def_ins(), target.live_outs());
+	current.get_function().push_back(target.get_code()[0]);
+
+	// Pad with nops
   for (size_t i = 1, ie = size - 1; i < ie; ++i) {
-    current.get_code().push_back({NOP});
+    current.get_function().push_back({NOP});
   }
-  current.get_code().push_back({RET});
+
+	// Final return
+  current.get_function().push_back({RET});
+  
+	// Recompute cfg (underlying function is kept sound automatically)
+	current.recompute();
+
+  best_yet = current;
+  best_correct = target;
+}
+
+void SearchState::configure_zero(const Cfg& target, size_t size) {
+  // Nothing to do if def-ins cover live-outs
+  if (target.def_ins().contains(target.live_outs())) {
+    configure_empty(target, size);
+    return;
+  }
+
+	// Start with initial label
+  current = Cfg(TUnit(), target.def_ins(), target.live_outs());
+  current.get_function().push_back(target.get_code()[0]);
+
+	// Insert minimal number of instructions to cover live-outs
+  const auto code = find_sound_code(target.def_ins(), target.live_outs());
+  for (const auto& instr : code) {
+    current.get_function().push_back(instr);
+  }
+
+	// Pad with nops
+  for (size_t i = current.get_code().size(), ie = size - 1; i < ie; ++i) {
+    current.get_function().push_back({NOP});
+  }
+
+	// Final return
+  current.get_function().push_back({RET});
+
+	// Recompute cfg (underlying function is kept sound automatically)
   current.recompute();
 
   best_yet = current;
+  best_correct = target;
+}
+
+void SearchState::configure_target(const Cfg& target, size_t size) {
+  current = target;
+  best_yet = target;
   best_correct = target;
 }
 
@@ -129,55 +182,45 @@ Code SearchState::find_sound_code(const RegSet& def_ins, const RegSet& live_outs
   return Code(code.begin(), code.end());
 }
 
-void SearchState::configure_zero(const Cfg& target, size_t size) {
-  // If nothing is live out in the target, nothing to do
-  if (target.def_ins().contains(target.live_outs())) {
-    configure_empty(target, size);
-    return;
-  }
-
-  current = Cfg(TUnit(), target.def_ins(), target.live_outs());
-  current.get_code().push_back(target.get_code()[0]);
-  auto code = find_sound_code(target.def_ins(), target.live_outs());
-  for (const auto& instr : code) {
-    current.get_code().push_back(instr);
-  }
-  for (size_t i = code.size(), ie = size - 1; i < ie; ++i) {
-    current.get_code().push_back({NOP});
-  }
-  current.get_code().push_back({RET});
-  current.recompute();
-
-  best_yet = current;
-  best_correct = target;
-}
-
-void SearchState::configure_target(const Cfg& target, size_t size) {
-  current = target;
-  best_yet = target;
-  best_correct = target;
-}
-
 void SearchState::configure_extension(const Cfg& target, size_t size) {
   // Add user-defined logic here ...
 
-  // Invariant 1: Search state should agree with target on boundary conditions.
-  assert(current.def_ins() == target.def_ins());
-  assert(current.live_outs() == target.live_outs());
-
-  assert(best_yet.def_ins() == target.def_ins());
-  assert(best_yet.live_outs() == target.live_outs());
-
-  assert(best_correct.def_ins() == target.def_ins());
-  assert(best_correct.live_outs() == target.live_outs());
-
-  // Invariant 2: Search state must agree on first instruction. This instruction
-  // must be the label definition that appears in the target.
-  assert(current.get_code()[0] == target.get_code()[0]);
-  assert(best_yet.get_code()[0] == target.get_code()[0]);
-  assert(best_correct.get_code()[0] == target.get_code()[0]);
+	// Results must satisfy all class invariants
+	assert(check_invariants(target));
 
   // See Search::configure for enforcement of additional invariants.
   // 3. The "best_correct" code must actually be correct
   // 4. The cost of best_yet code must be less than the cost of current.
 }
+
+bool SearchState::invariant_boundary_conditions(const Cfg& target) const {
+	if (current.def_ins() != target.def_ins()) {
+		return false;
+	} else if (current.live_outs() != target.live_outs()) {
+		return false;
+	} else if (best_yet.def_ins() != target.def_ins()) {
+		return false;
+	} else if (best_yet.live_outs() != target.live_outs()) {
+		return false;
+	} else if (best_correct.def_ins() != target.def_ins()) {
+		return false;
+	} else if (best_correct.live_outs() != target.live_outs()) {
+		return false;
+	}
+
+	return true;
+}
+
+bool SearchState::invariant_functions() const {
+	if (!current.get_function().check_invariants()) {
+		return false;
+	} else if (!best_yet.get_function().check_invariants()) {
+		return false;
+	} else if (!best_correct.get_function().check_invariants()) {
+		return false;
+	}
+
+	return true;
+}
+
+} // namespace stoke

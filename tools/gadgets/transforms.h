@@ -35,47 +35,22 @@ namespace stoke {
 
 class TransformsGadget : public Transforms {
 public:
-  TransformsGadget(const TUnit& fxn, const std::vector<TUnit>& aux_fxns,
+  TransformsGadget(const Cfg& cfg, const std::vector<TUnit>& aux_fxns,
                    std::default_random_engine::result_type seed) : Transforms() {
-    if (callee_save_arg.value()) {
-      preserve_regs_arg.value() = x64asm::RegSet::empty();
-    }
+		smt_ = nullptr;
+		validator_ = nullptr;
+
     set_seed(seed);
 
-    // Warn and remove cpu flags that aren't provided by the user's machine
-    const auto real_cpu_flags = CpuInfo::get_flags();
-    auto arg_cpu_flags = cpu_flags_arg.value();
-    if (!real_cpu_flags.contains(arg_cpu_flags)) {
-      x64asm::FlagSet diff = arg_cpu_flags - real_cpu_flags;
-      arg_cpu_flags -= diff;
-
-      Console::warn() << "Some cpu flags are not available on this hardware and will be removed:" << std::endl;
-      Console::warn() << diff << std::endl;
+    if (validator_must_support) {
+      smt_ = new Z3Solver();
+      validator_ = new Validator(*smt_);
+      set_must_validate(validator_);
     }
-
-    // Determine if we need to read/write memory operands
-    bool mem_read = false;
-    bool mem_write = false;
-    for(size_t i = 0; i < fxn.get_code().size(); ++i) {
-      auto instr = fxn.get_code()[i];
-      mem_read |= instr.maybe_read_memory();
-      mem_write |= instr.maybe_write_memory();
-      mem_write |= instr.maybe_undef_memory();
-    }
-
-    // Check if we're overridden by command line
-    if(force_mem_read_arg)
-      mem_read = true;
-    if(force_no_mem_read_arg)
-      mem_read = false;
-    if(force_mem_write_arg)
-      mem_write = true;
-    if(force_no_mem_write_arg)
-      mem_write = false;
-
-    set_opcode_pool(arg_cpu_flags, call_weight_arg, mem_read, mem_write,
-                    preserve_regs_arg, opc_blacklist_arg, opc_whitelist_arg);
-    set_operand_pool(fxn, preserve_regs_arg);
+    
+		set_opcode_pool(cfg, cpu_flags(), call_weight_arg, preserve_regs(),
+				opc_blacklist_arg, opc_whitelist_arg);
+    set_operand_pool(cfg, preserve_regs_arg);
 
     for (const auto& imm : immediates_arg.value()) {
       insert_immediate(imm);
@@ -83,20 +58,15 @@ public:
     for (const auto& fxn : aux_fxns) {
       insert_label(fxn.get_name());
     }
-    for (const auto& m : mem_ops_arg.value()) {
+    for (const auto& m : mem_ops()) {
       insert_mem(m);
     }
+		for (const auto r : rips_arg.value()) {
+			insert_rip(r);
+		}
 
-    if(validator_must_support) {
-      // need to instantiate a validator/solver that will
-      // live into the future.
-      smt_ = new Z3Solver();
-      validator_ = new Validator(*smt_);
-      set_must_validate(validator_);
-    }
-
-    if (has_error()) {
-      Console::error(1) << get_error() << std::endl;
+    if (!invariant_non_empty_opcode_pool()) {
+      Console::warn() << "No valid opcodes can be proposed; consider modifying black/whitelists" << std::endl;
     }
   }
 
@@ -110,8 +80,39 @@ public:
   }
 
 private:
-  Z3Solver* smt_ = NULL;
-  Validator* validator_ = NULL;
+  Z3Solver* smt_;
+  Validator* validator_;
+
+	/** Overrides the value of --callee_save if necessary */
+	x64asm::RegSet preserve_regs() const {
+		return callee_save_arg.value() ? x64asm::RegSet::empty() : preserve_regs_arg.value();
+	}
+
+	/** Warns if cpu flags are unavailable and removes those values */
+	x64asm::FlagSet cpu_flags() const {
+    const auto real_cpu_flags = CpuInfo::get_flags();
+    const auto user_flags = cpu_flags_arg.value();
+
+    if (!real_cpu_flags.contains(user_flags)) {
+      Console::warn() << "Some cpu flags are not available on this hardware and will be removed:" << std::endl;
+      Console::warn() << (user_flags - real_cpu_flags) << std::endl;
+    }
+
+		return user_flags & real_cpu_flags;
+	}
+
+	/** Warns if mem operands contain rip offsets and removes those values */
+	std::vector<x64asm::M8> mem_ops() const {
+		std::vector<x64asm::M8> ms;
+		for (const auto& m : mem_ops_arg.value()) {
+			if (m.rip_offset()) {
+				Console::warn() << "Ignoring memory operand with rip offset (" << m << ") use --rips" << std::endl;
+			} else {
+				ms.push_back(m);
+			}
+		}
+		return ms;
+	}
 };
 
 } // namespace stoke

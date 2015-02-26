@@ -108,10 +108,6 @@ int auto_gen() {
   TargetGadget target(aux_fxns);
   SandboxGadget sb({}, aux_fxns);
 
-  if (!target.is_sound()) {
-    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
-  }
-
   StateGen sg(&sb, stack_size.value());
   sg.set_max_attempts(max_attempts.value())
   .set_max_memory(max_stack.value());

@@ -112,41 +112,15 @@ bool is_type_equiv(Opcode o1, Opcode o2) {
   return true;
 }
 
-/** Returns true if this instruction uses rip offset addressing */
-bool uses_rip(const Instruction& instr) {
-  if (!instr.is_explicit_memory_dereference() && !instr.is_lea()) {
-    return false;
+/** Fills a reg pool */ 
+template <typename T, size_t N>
+void fill_pool(vector<T>& pool, const array<T, N>& src, const RegSet& omit) {
+  pool.clear();
+  for (const auto& r : src) {
+    if (!omit.contains(r)) {
+      pool.push_back(r);
+    }
   }
-  const auto mi = instr.mem_index();
-  return instr.get_operand<M8>(mi).rip_offset();
-}
-
-/** Returns true if this instruction uses rip offset addressing in this operand */
-bool uses_rip(const Instruction& instr, size_t idx) {
-  if (!instr.is_explicit_memory_dereference()) {
-    return false;
-  }
-  const auto mi = instr.mem_index();
-  if ((size_t)mi != idx) {
-    return false;
-  }
-  return instr.get_operand<M8>(mi).rip_offset();
-}
-
-/** Returns the rip offset for this instruction */
-uint64_t get_offset(const Instruction& instr) {
-  assert(uses_rip(instr));
-  const auto mi = instr.mem_index();
-  return instr.get_operand<M8>(mi).get_disp();
-}
-
-/** Adds an offset to an existing rip offset */
-void rescale_offset(Instruction& instr, int64_t delta) {
-  assert(uses_rip(instr));
-  const auto mi = instr.mem_index();
-  auto m = instr.get_operand<M8>(mi);
-  m.set_disp(m.get_disp()+delta);
-  instr.set_operand(mi, m);
 }
 
 /** Set o to a random element from a pool. Returns true on success. */
@@ -261,17 +235,28 @@ bool get_indices(default_random_engine& gen, const Cfg& cfg, Cfg::id_type& bb, s
 namespace stoke {
 
 Transforms::Transforms() : old_instr_(RET) {
-  set_opcode_pool(FlagSet::universe(), 0, true, true, RegSet::empty(), {}, {});
-  set_operand_pool(TUnit({RET}), RegSet::linux_call_preserved());
+	validator_ = nullptr;
 }
 
-Transforms& Transforms::set_opcode_pool(const FlagSet& flags,
-                                        size_t call_weight, bool use_mem_read,
-                                        bool use_mem_write, const RegSet& preserve_regs,
+Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
+                                        size_t call_weight, const RegSet& preserve_regs,
                                         const set<Opcode>& opc_blacklist,
                                         const set<Opcode>& opc_whitelist) {
+	// Determine if we need to read/write memory operands
+	auto mem_read = false;
+	auto mem_write = false;
+	for (size_t i = 0, ie = target.get_code().size(); i < ie; ++i) {
+		const auto& instr = target.get_code()[i];
+		mem_read |= instr.maybe_read_memory();
+		mem_write |= instr.maybe_write_memory();
+		mem_write |= instr.maybe_undef_memory();
+	}
+
+	// Empty whitelist means no whitelist
+  const auto use_whitelist = !opc_whitelist.empty();
+
+	// Refill the opcode pool
   control_free_.clear();
-  auto use_whitelist = opc_whitelist.size() > 0; // empty whitelist means no whitelist
   for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
     const auto op = (Opcode)i;
     const auto mw = Instruction(op).implicit_maybe_write_set();
@@ -292,8 +277,8 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags,
       continue;
     } else if (preserve_regs.intersects(mu)) {
       continue;
-    } else if (!use_mem_read) {
-      if (!use_mem_write) {
+    } else if (!mem_read) {
+      if (!mem_write) {
         //no memory allowed
         if (is_mem_opcode(op)) {
           continue;
@@ -304,25 +289,21 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags,
           continue;
         }
       }
-    } else if (!use_mem_write) {
+    } else if (!mem_write) {
       //read allowed, write disallowed
       if (is_mem_opcode(op) && !is_mem_read_only_opcode(op)) {
         continue;
       }
     }
-
     control_free_.push_back(op);
   }
 
+	// Add additional calls depending on weight
   for (size_t i = 0; i < call_weight; ++i) {
     control_free_.push_back(CALL_LABEL);
   }
 
-  if (control_free_.size() == 0) {
-    error_ = true;
-    error_message_ = "No opcodes left to propose (consider changing whitelist/blacklist parameters).";
-  }
-
+	// Lift opcode pool to type equivalent pool
   control_free_type_equiv_.clear();
   control_free_type_equiv_.resize((int)XSAVEOPT64_M64 + 1);
   for (const auto i : control_free_) {
@@ -336,48 +317,21 @@ Transforms& Transforms::set_opcode_pool(const FlagSet& flags,
   return *this;
 }
 
-Transforms& Transforms::set_operand_pool(const TUnit& target, const RegSet& preserve_regs) {
-  rl_pool_.clear();
-  for (const auto& r : rls) {
-    if (!preserve_regs.contains(r)) {
-      rl_pool_.push_back(r);
-    }
-  }
-  rh_pool_.clear();
-  for (const auto& r : rhs) {
-    if (!preserve_regs.contains(r)) {
-      rh_pool_.push_back(r);
-    }
-  }
-  rb_pool_.clear();
-  for (const auto& r : rbs) {
-    if (!preserve_regs.contains(r)) {
-      rb_pool_.push_back(r);
-    }
-  }
-  r16_pool_.clear();
-  for (const auto& r : r16s) {
-    if (!preserve_regs.contains(r)) {
-      r16_pool_.push_back(r);
-    }
-  }
-  r32_pool_.clear();
-  for (const auto& r : r32s) {
-    if (!preserve_regs.contains(r)) {
-      r32_pool_.push_back(r);
-    }
-  }
-  r64_pool_.clear();
-  for (const auto& r : r64s) {
-    if (!preserve_regs.contains(r)) {
-      r64_pool_.push_back(r);
-    }
-  }
+Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preserve_regs) {
+	fill_pool(rl_pool_, rls, preserve_regs);
+	fill_pool(rh_pool_, rhs, preserve_regs);
+	fill_pool(rb_pool_, rbs, preserve_regs);
+	fill_pool(r16_pool_, r16s, preserve_regs);
+	fill_pool(r32_pool_, r32s, preserve_regs);
+	fill_pool(r64_pool_, r64s, preserve_regs);
+
   mm_pool_.assign(mms.begin(), mms.end());
   sreg_pool_.assign(sregs.begin(), sregs.end());
   st_pool_.assign(sts.begin(), sts.end());
   xmm_pool_.assign(xmms.begin(), xmms.end());
   ymm_pool_.assign(ymms.begin(), ymms.end());
+
+	const auto& fxn = target.get_function();
 
   imm_pool_.assign({
     0ul,
@@ -385,29 +339,19 @@ Transforms& Transforms::set_operand_pool(const TUnit& target, const RegSet& pres
     5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
     16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
   });
-  for (const auto& imm : set<Imm64>(target.imm_begin(), target.imm_end())) {
-    insert_immediate(imm);
-  }
+	set<Imm64> imm_ops(fxn.imm_begin(), fxn.imm_end());
+	for (const auto& imm : imm_ops) {
+		insert_immediate(imm);
+	}
 
-  set<M8> mem_ops(target.mem_begin(), target.mem_end());
+  set<M8> mem_ops(fxn.mem_begin(), fxn.mem_end());
   m_pool_.assign(mem_ops.begin(), mem_ops.end());
 
-  set<Label> call_ops(target.call_target_begin(), target.call_target_end());
+  set<Label> call_ops(fxn.call_target_begin(), fxn.call_target_end());
   label_pool_.assign(call_ops.begin(), call_ops.end());
 
-  offset_pool_.clear();
-  uint64_t fxn_offset = 0;
-  for (const auto& instr : target.get_code()) {
-    fxn_offset += assm_.hex_size(instr);
-    if (!uses_rip(instr)) {
-      continue;
-    }
-    const auto ptr = get_offset(instr) + fxn_offset;
-    const auto itr = find(offset_pool_.begin(), offset_pool_.end(), ptr);
-    if (itr == offset_pool_.end()) {
-      offset_pool_.push_back(ptr);
-    }
-  }
+	set<uint64_t> rip_ops(fxn.rip_offset_target_begin(), fxn.rip_offset_target_end());
+	rip_pool_.assign(rip_ops.begin(), rip_ops.end());
 
   return *this;
 }
@@ -441,56 +385,52 @@ bool Transforms::modify(Cfg& cfg, Move type) {
     return false;
   }
 
-  assert(check_rips(cfg.get_code()));
+  assert(cfg.get_function().check_invariants());
   return ret;
 }
 
 bool Transforms::instruction_move(Cfg& cfg) {
-  auto& code = cfg.get_code();
-
   // Grab the index of an old instruction
   Cfg::id_type bb = cfg.get_entry();
   size_t block_idx = 0;
-  if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
+  if (!get_indices(gen_, cfg, bb, block_idx, instr_idx1_)) {
     return false;
   }
 
-  // Record the old value and generate a new instruction
-  old_instr_ = code[instr_index_];
-  auto& instr = code[instr_index_];
-  instr.set_opcode(get_control_free());
+  // Record the old value 
+  old_instr_ = cfg.get_code()[instr_idx1_];
 
-  // Try generating new operands but revert if we fail at any point
+	// Try generating a new instruction
+  auto instr = old_instr_;
+
+	auto opc = RET;
+  if (!get_control_free(opc)) {
+		return false;
+	}
+	instr.set_opcode(opc);
+
   const auto& rs = cfg.def_ins({bb, block_idx});
   for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
     Operand o = instr.get_operand<R64>(i);
     if (instr.maybe_read(i)) {
       if (!get_read_op(instr.get_opcode(), i, rs, o)) {
-        instr = old_instr_;
         return false;
       }
     } else {
       if (!get_write_op(instr.get_opcode(), i, rs, o)) {
-        instr = old_instr_;
         return false;
       }
     }
     instr.set_operand(i, o);
   }
 
-  // Success: rescale rips before going on to harder checks
-  // Any failure beyond here will require undoing the move
-  if (uses_rip(instr)) {
-    rescale_rip(code, instr_index_);
-    rescale_trailing_rips(code, old_instr_, instr_index_, true);
-  } else {
-    rescale_trailing_rips(code, old_instr_, instr_index_);
-  }
-
-  if(validator_ && !validator_->is_supported(instr)) {
-    undo_instruction_move(cfg);
+	// Check for validator support for the new instruction
+  if (validator_ && !validator_->is_supported(instr)) {
     return false;
   }
+
+  // Success: Any failure beyond here will require undoing the move
+	cfg.get_function().replace(instr_idx1_, instr, true);
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
     undo_instruction_move(cfg);
@@ -501,30 +441,32 @@ bool Transforms::instruction_move(Cfg& cfg) {
 }
 
 bool Transforms::opcode_move(Cfg& cfg) {
-  auto& code = cfg.get_code();
-
   // Grab the index of a random instruction
   Cfg::id_type bb = cfg.get_entry();
   size_t block_idx = 0;
-  if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
+  if (!get_indices(gen_, cfg, bb, block_idx, instr_idx1_)) {
     return false;
   }
 
-  assert(check_rips(code));
+  // Record the old value 
+  old_instr_ = cfg.get_code()[instr_idx1_];
 
-  // Record the old value and generate a new opcode
-  old_instr_ = code[instr_index_];
-  auto& instr = code[instr_index_];
-  instr.set_opcode(get_control_free_type_equiv(instr.get_opcode()));
+	// Try generating a new instruction
+  auto instr = old_instr_;
 
-  // Success: Rescale rips before going on to harder checks
-  // Any failure beyond here will require undoing the move
-  rescale_trailing_rips(code, old_instr_, instr_index_);
+	auto opc = RET;
+	if (!get_control_free_type_equiv(opc)) {
+		return false;
+	}
+  instr.set_opcode(opc);
 
-  if(validator_ && !validator_->is_supported(instr)) {
-    undo_opcode_move(cfg);
+	// Check for validator support for the new instruction
+  if (validator_ && !validator_->is_supported(instr)) {
     return false;
   }
+
+  // Success: Any failure beyond here will require undoing the move
+	cfg.get_function().replace(instr_idx1_, instr);
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
     undo_opcode_move(cfg);
@@ -535,24 +477,22 @@ bool Transforms::opcode_move(Cfg& cfg) {
 }
 
 bool Transforms::operand_move(Cfg& cfg) {
-  auto& code = cfg.get_code();
-
   // Grab the index of a random instruction
   Cfg::id_type bb = cfg.get_entry();
   size_t block_idx = 0;
-  if (!get_indices(gen_, cfg, bb, block_idx, instr_index_)) {
+  if (!get_indices(gen_, cfg, bb, block_idx, instr_idx1_)) {
     return false;
   }
 
   // Corner Cases: Don't try chaning 0-arity opcodes
-  if (code[instr_index_].arity() == 0) {
+  if (cfg.get_code()[instr_idx1_].arity() == 0) {
     return false;
   }
-  const auto operand_idx = gen_() % code[instr_index_].arity();
+  const auto operand_idx = gen_() % cfg.get_code()[instr_idx1_].arity();
 
   // Record the old value and generate a new operand
-  old_instr_ = code[instr_index_];
-  auto& instr = code[instr_index_];
+  old_instr_ = cfg.get_code()[instr_idx1_];
+  auto instr = old_instr_;
   Operand o = instr.get_operand<R64>(operand_idx);
 
   const auto& rs = cfg.def_ins({bb, block_idx});
@@ -567,19 +507,18 @@ bool Transforms::operand_move(Cfg& cfg) {
   }
   instr.set_operand(operand_idx, o);
 
-  // Success: Rescale rips before going on to harder checks
-  // Any failure beyond here will require undoing the move
-  if (uses_rip(instr, operand_idx)) {
-    rescale_rip(code, instr_index_);
-    rescale_trailing_rips(code, old_instr_, instr_index_, true);
-  } else {
-    rescale_trailing_rips(code, old_instr_, instr_index_);
-  }
-
-  if(validator_ && !validator_->is_supported(instr)) {
-    undo_operand_move(cfg);
+	// Check for validator support for the new instruction
+  if (validator_ && !validator_->is_supported(instr)) {
     return false;
   }
+
+	// If this is a rip operand, it needs rescaling since it's global
+	// Otherwise, the instruction should be replaced as is
+	const auto is_mem = instr.is_explicit_memory_dereference() && ((size_t)instr.mem_index() == operand_idx);
+  const auto is_rip = ((M8*)&o)->rip_offset();
+
+  // Success: Any failure beyond here will require undoing the move
+	cfg.get_function().replace(instr_idx1_, instr, is_rip);
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
     undo_operand_move(cfg);
@@ -590,35 +529,31 @@ bool Transforms::operand_move(Cfg& cfg) {
 }
 
 bool Transforms::resize_move(Cfg& cfg) {
-  auto& code = cfg.get_code();
-  if (code.size() < 2) {
+  if (cfg.get_code().size() < 2) {
     return false;
   }
 
-  move_i_ = 1;
-  for (size_t ie = code.size(); move_i_ < ie; ++move_i_) {
-    if (code[move_i_].is_nop()) {
+  instr_idx1_ = 1;
+  for (size_t ie = cfg.get_code().size(); instr_idx1_ < ie; ++instr_idx1_) {
+    if (cfg.get_code()[instr_idx1_].is_nop()) {
       goto found_a_nop;
     }
   }
   return false;
 found_a_nop:
 
-  move_j_ = (gen_() % (code.size()-1)) + 1;
-  if (move_i_ == move_j_) {
+  instr_idx2_ = (gen_() % (cfg.get_code().size()-1)) + 1;
+  if (instr_idx1_ == instr_idx2_) {
     return false;
   }
 
-  move(code, move_i_, move_j_);
-  rescale_rotated_rips(code, move_i_, move_j_);
+	cfg.get_function().rotate(instr_idx1_, instr_idx2_, true);
   cfg.recompute();
 
   return true;
 }
 
 bool Transforms::local_swap_move(Cfg& cfg) {
-  auto& code = cfg.get_code();
-
   const auto bb = (gen_() % (cfg.num_blocks() - 2)) + 1;
   if (!cfg.is_reachable(bb)) {
     return false;
@@ -628,30 +563,28 @@ bool Transforms::local_swap_move(Cfg& cfg) {
     return false;
   }
 
-  move_i_ = cfg.get_index({bb, gen_() % num_instrs});
-  if (move_i_ == cfg.get_index({cfg.get_entry()+1,0})) {
+  instr_idx1_ = cfg.get_index({bb, gen_() % num_instrs});
+  if (instr_idx1_ == cfg.get_index({cfg.get_entry()+1,0})) {
     return false;
   }
-  move_j_ = cfg.get_index({bb, gen_() % num_instrs});
-  if (move_i_ == move_j_) {
+  instr_idx2_ = cfg.get_index({bb, gen_() % num_instrs});
+  if (instr_idx1_ == instr_idx2_) {
     return false;
   }
-  if (move_j_ < move_i_) {
-    swap(move_i_, move_j_);
+  if (instr_idx2_ < instr_idx1_) {
+    swap(instr_idx1_, instr_idx2_);
   }
 
-  auto& i = code[move_i_];
+  const auto& i = cfg.get_code()[instr_idx1_];
   if (is_control_other_than_call(i.get_opcode())) {
     return false;
   }
-  auto& j = code[move_j_];
+  const auto& j = cfg.get_code()[instr_idx2_];
   if (is_control_other_than_call(j.get_opcode())) {
     return false;
   }
 
-  swap(i, j);
-  rescale_swapped_rips(code, move_i_, move_j_);
-
+  cfg.get_function().swap(instr_idx1_, instr_idx2_);
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
     undo_local_swap_move(cfg);
@@ -662,32 +595,26 @@ bool Transforms::local_swap_move(Cfg& cfg) {
 }
 
 bool Transforms::global_swap_move(Cfg& cfg) {
-  auto& code = cfg.get_code();
-  if (code.size() < 3) {
+  if (cfg.get_code().size() < 3) {
     return false;
   }
 
-  move_i_ = (gen_() % (code.size()-1)) + 1;
-  move_j_ = (gen_() % (code.size()-1)) + 1;
-  if (move_i_ == move_j_) {
+  instr_idx1_ = (gen_() % (cfg.get_code().size()-1)) + 1;
+  instr_idx2_ = (gen_() % (cfg.get_code().size()-1)) + 1;
+  if (instr_idx1_ == instr_idx2_) {
     return false;
   }
-  if (move_j_ < move_i_) {
-    swap(move_i_, move_j_);
-  }
 
-  auto& i = code[move_i_];
+  const auto& i = cfg.get_code()[instr_idx1_];
   if (is_control_other_than_call(i.get_opcode())) {
     return false;
   }
-  auto& j = code[move_j_];
+  const auto& j = cfg.get_code()[instr_idx2_];
   if (is_control_other_than_call(j.get_opcode())) {
     return false;
   }
 
-  swap(i, j);
-  rescale_swapped_rips(code, move_i_, move_j_);
-
+  cfg.get_function().swap(instr_idx1_, instr_idx2_);
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
     undo_global_swap_move(cfg);
@@ -713,12 +640,9 @@ bool Transforms::extension_move(Cfg& cfg) {
   // beginning).
 
   // Invariant 4:
-  // Transformations must preserve the first instruction in a code sequence
-  // which should be a label that represents the name of a function.
-
-  // Invariant 5:
-  // Transformations must preserve the soundness of rip offsets
-  // which should always point to elements in the offset_pool_
+	// The soundness of the underlying function must be preserved. This can be
+	// checking by calling ...
+	assert(cfg.get_function().check_invariants());
 
   return false;
 }
@@ -750,7 +674,7 @@ void Transforms::undo(Cfg& cfg, Move type) {
     break;
   }
 
-  assert(check_rips(cfg.get_code()));
+	assert(cfg.get_function().check_invariants());
 }
 
 void Transforms::undo_extension_move(Cfg& cfg) {
@@ -780,9 +704,8 @@ bool Transforms::get_lea_mem(const RegSet& rs, Operand& o) {
   return true;
 }
 
-/** Returns a rip offset from the offset pool... this will need scaling!!! */
 bool Transforms::get_rip_mem(Operand& o) {
-  if (offset_pool_.empty()) {
+  if (rip_pool_.empty()) {
     return false;
   }
 
@@ -791,7 +714,7 @@ bool Transforms::get_rip_mem(Operand& o) {
   m.clear_seg();
   m.clear_base();
   m.clear_index();
-  m.set_disp(offset_pool_[gen_() % offset_pool_.size()]);
+  m.set_disp(rip_pool_[gen_() % rip_pool_.size()]);
 
   return true;
 }
@@ -1067,133 +990,6 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
     assert(false);
     return false;;
   }
-}
-
-void Transforms::move(Code& code, size_t i, size_t j) const {
-  const auto temp = code[i];
-  if (i < j) {
-    for (size_t k = i; k < j; ++k) {
-      code[k] = code[k + 1];
-    }
-  } else {
-    for (int k = i; k > (int)j; --k) {
-      code[k] = code[k - 1];
-    }
-  }
-  code[j] = temp;
-}
-
-void Transforms::rescale_rip(Code& code, size_t idx) {
-  assert(uses_rip(code[idx]));
-
-  int64_t delta = 0;
-  for (size_t i = 0; i <= idx; ++i) {
-    delta -= assm_.hex_size(code[i]);
-  }
-  rescale_offset(code[idx], delta);
-}
-
-void Transforms::rescale_trailing_rips(Code& code, const Instruction& old_instr, size_t idx, bool ignore_first) {
-  // How much shorter has the new instruction encoding become?
-  const int64_t delta = assm_.hex_size(old_instr) - assm_.hex_size(code[idx]);
-  // Nothing to do if nothing has changed
-  if (delta == 0) {
-    return;
-  }
-  // Otherwise, rip offsets between i and j are increased by this delta
-  for (size_t i = ignore_first ? idx+1 : idx, ie = code.size(); i < ie; ++i) {
-    if (uses_rip(code[i])) {
-      rescale_offset(code[i], delta);
-    }
-  }
-}
-
-void Transforms::rescale_swapped_rips(Code& code, size_t i, size_t j) {
-  // It's easiest to assume that i and j were swapped, so j holds what i used to
-  assert(i < j);
-
-  // Calculate some sizes
-  const int64_t i_size = assm_.hex_size(code[i]);
-  const int64_t j_size = assm_.hex_size(code[j]);
-  // We'll only use this one if either of the outside instructions use rip offsets
-  int64_t span_size = 0;
-  if (uses_rip(code[i]) || uses_rip(code[j])) {
-    for (size_t idx = i+1; idx < j; ++idx) {
-      span_size += assm_.hex_size(code[idx]);
-    }
-  }
-
-  // Update the outer instructions if either was a rip offset
-  if (uses_rip(code[i])) {
-    rescale_offset(code[i], span_size + j_size);
-  }
-  if (uses_rip(code[j])) {
-    rescale_offset(code[j], -span_size - i_size);
-  }
-
-  // Change the interior instructions if the outsides have changed
-  const int64_t delta = j_size - i_size;
-  if (delta != 0) {
-    for (size_t idx = i+1; idx < j; ++idx) {
-      if (uses_rip(code[idx])) {
-        rescale_offset(code[idx], delta);
-      }
-    }
-  }
-}
-
-void Transforms::rescale_rotated_rips(Code& code, size_t i, size_t j) {
-  // Left rotation
-  if (i < j) {
-    const int64_t j_size = assm_.hex_size(code[j]);
-    int64_t span_size = 0;
-    for (size_t idx = i; idx < j; ++idx) {
-      span_size -= assm_.hex_size(code[idx]);
-      if (uses_rip(code[idx])) {
-        rescale_offset(code[idx], j_size);
-      }
-    }
-    if (uses_rip(code[j])) {
-      rescale_offset(code[j], span_size);
-    }
-  }
-
-  // Right rotation
-  else if (j < i) {
-    const int64_t j_size = assm_.hex_size(code[j]);
-    int64_t span_size = 0;
-    for (size_t idx = i; idx > j; --idx) {
-      span_size += assm_.hex_size(code[idx]);
-      if (uses_rip(code[idx])) {
-        rescale_offset(code[idx], -j_size);
-      }
-    }
-    if (uses_rip(code[j])) {
-      rescale_offset(code[j], span_size);
-    }
-  }
-
-  // Control should never reach here
-  else {
-    assert(false);
-  }
-}
-
-bool Transforms::check_rips(const Code& code) {
-  uint64_t fxn_offset = 0;
-  for (const auto& instr : code) {
-    fxn_offset += assm_.hex_size(instr);
-    if (!uses_rip(instr)) {
-      continue;
-    }
-    const auto ptr = get_offset(instr) + fxn_offset;
-    const auto itr = find(offset_pool_.begin(), offset_pool_.end(), ptr);
-    if (itr == offset_pool_.end()) {
-      return false;
-    }
-  }
-
-  return true;
 }
 
 } // namespace stoke
