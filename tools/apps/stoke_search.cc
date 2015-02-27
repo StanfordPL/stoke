@@ -31,6 +31,7 @@
 #include "tools/args/search.inc"
 #include "tools/args/target.inc"
 #include "tools/gadgets/cost_function.h"
+#include "tools/gadgets/correctness_cost.h"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/search.h"
@@ -259,7 +260,7 @@ int main(int argc, char** argv) {
 
   TestSetGadget test_set(seed);
   SandboxGadget test_sb(test_set, aux_fxns);
-  CostFunctionGadget holdout_fxn(target, &test_sb);
+  CorrectnessCostGadget holdout_fxn(target, &test_sb);
   SolverGadget smt;
   ValidatorGadget validator(smt);
   VerifierGadget verifier(holdout_fxn, validator);

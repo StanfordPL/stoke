@@ -18,7 +18,7 @@
 #include "gtest/gtest.h"
 #include "tests/tests.h"
 
-namespace stoke_test {
+namespace stoke {
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

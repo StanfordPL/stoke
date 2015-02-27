@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   SeedGadget seed;
   TestSetGadget test_set(seed);
   SandboxGadget sb(test_set, aux_fxns);
-  CostFunctionGadget fxn(target, &sb);
+  CorrectnessCostGadget fxn(target, &sb);
   SolverGadget smt;
   ValidatorGadget validator(smt);
   VerifierGadget verifier(fxn, validator);

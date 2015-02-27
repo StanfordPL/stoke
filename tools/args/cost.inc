@@ -16,6 +16,7 @@
 #define STOKE_TOOLS_ARGS_COST_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/serialize/line_reader.h"
 #include "src/cost/cost_function.h"
 #include "src/cost/cost.h"
 
@@ -30,12 +31,18 @@ cpputil::ValueArg<Cost>& max_cost_arg =
   .description("Give up once cost exceeds this value")
   .default_val(CostFunction::max_cost - 1);
 
-cpputil::ValueArg<uint32_t>& k_arg =
-  cpputil::ValueArg<uint32_t>::create("k")
-  .usage("<int>")
-  .description("Multiplier for the correctness term")
-  .default_val(1);
+cpputil::ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
+      cpputil::ValueArg<std::string, cpputil::LineReader<>>::create("cost")
+      .usage("<string>")
+      .description("The cost function")
+      .default_val("correctness+latency");
 
-} // namespace stoke
+cpputil::ValueArg<std::string, cpputil::LineReader<>>& correctness_arg =
+      cpputil::ValueArg<std::string, cpputil::LineReader<>>::create("correctness")
+      .usage("<string>")
+      .description("Expression to check if code is correct")
+      .default_val("correctness == 0");
+
+} //namespace stoke
 
 #endif

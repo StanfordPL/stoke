@@ -12,24 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_IO_PERFORMANCE_TERM_H
-#define STOKE_TOOLS_IO_PERFORMANCE_TERM_H
+#ifndef STOKE_SRC_COST_LATENCY_H
+#define STOKE_SRC_COST_LATENCY_H
 
-#include <iostream>
-
-#include "src/cost/performance_term.h"
+#include "src/cost/cost_function.h"
 
 namespace stoke {
 
-struct PerformanceTermReader {
-  void operator()(std::istream& is, PerformanceTerm& pt);
-};
+class LatencyCost : public CostFunction {
 
-struct PerformanceTermWriter {
-  void operator()(std::ostream& os, const PerformanceTerm pt);
+public:
+  LatencyCost& set_nesting_penalty(Cost penalty) {
+    nesting_penalty_ = penalty;
+    return *this;
+  }
+
+  result_type operator()(const Cfg& cfg, Cost max = max_cost);
+
+private:
+
+  Cost nesting_penalty_;
+
 };
 
 } // namespace stoke
 
 #endif
+
+
+
 
