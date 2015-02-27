@@ -14,6 +14,7 @@
 
 #include "src/tunit/tunit.h"
 
+#include <algorithm>
 #include <sstream>
 #include <vector>
 
@@ -106,6 +107,220 @@ bool TUnit::invariant_rip_offsets() const {
   }
 
   return true;
+}
+
+void TUnit::remove(size_t index) {
+	assert(index < code_.size());
+
+	// Some constants
+	const int64_t offset_delta = 0 - hex_size(index);
+
+	// Update offset and size tables
+	for (size_t i = index, ie = hex_sizes_.size()-1; i < ie; ++i) {
+		hex_offsets_[i] = hex_offsets_[i+1] + offset_delta;
+		hex_sizes_[i] = hex_sizes_[i+1];
+	}
+	hex_offsets_.resize(hex_offsets_.size()-1);
+	hex_sizes_.resize(hex_sizes_.size()-1);
+
+	// Delete this instruction
+	code_.erase(code_.begin() + index);
+
+	// Rescale any rips 
+	for (size_t i = index, ie = code_.size(); i < ie; ++i) {
+		if (is_rip(i)) {
+			adjust_rip(i, -offset_delta);
+		}
+	}
+}
+
+void TUnit::insert(size_t index, const x64asm::Instruction& instr, bool rescale_rip) {
+	assert(index <= code_.size());
+
+	// Some constants
+	const auto size = assm_.hex_size(instr);
+	const int64_t offset_delta = size;
+
+	// Update offset and size tables
+	hex_offsets_.resize(hex_offsets_.size()+1);
+	hex_sizes_.resize(hex_sizes_.size()+1);
+	for (int i = hex_offsets_.size()-1, ie = index; i > ie; --i) {
+		hex_offsets_[i] = hex_offsets_[i-1] + offset_delta;
+		hex_sizes_[i] = hex_sizes_[i-1];
+	}
+	// hex_offsets_[index] does't change
+	hex_sizes_[index] = size;
+
+	// Insert this instruction
+	code_.insert(code_.begin() + index, instr);
+
+	// If rescale rip is true, we have to adjust a global rip offset
+	if (rescale_rip && is_rip(index)) {
+		adjust_rip(index, 0 - get_rip_offset() - hex_offset(index) - hex_size(index));
+	}
+	// Now definitely adjust everything else
+	for (size_t i = index+1, ie = code_.size(); i < ie; ++i) {
+		if (is_rip(i)) {
+			adjust_rip(i, -offset_delta);
+		}
+	}
+}
+
+void TUnit::replace(size_t index, const x64asm::Instruction& instr, bool rescale_rip) {
+	assert(index < code_.size());
+
+	// Some constants
+	const auto size = assm_.hex_size(instr);
+	const int64_t offset_delta = size - hex_size(index);
+
+	// Update offset and size tables
+	for (size_t i = index+1, ie = hex_offsets_.size(); i < ie; ++i) {
+		hex_offsets_[i] += offset_delta;
+	}
+	hex_sizes_[index] = size;
+
+	// Replace the instruction
+	code_[index] = instr;
+
+	// If rescale rip is true, we have to adjust a potential global rip offset
+	if (rescale_rip && is_rip(index)) {
+		adjust_rip(index, 0 - get_rip_offset() - hex_offset(index) - hex_size(index));
+	}
+	// Now definitely adjust everything else
+	for (size_t i = index+1, ie = code_.size(); i < ie; ++i) {
+		if (is_rip(i)) {
+			adjust_rip(i, -offset_delta);
+		}
+	}
+}
+
+void TUnit::swap(size_t i, size_t j) {
+	assert(max(i,j) <= code_.size());
+
+	// Corner cases; it's nice to have the invariant that i is the lower index
+	if (i == j) {
+		return;
+	} else if (i > j) {
+		std::swap(i, j);
+	}
+
+	// Some constants
+	const int64_t offset_delta_i = hex_offset(j) + hex_offset(i);
+	const int64_t offset_delta_j = 0 - hex_offset(j) - hex_offset(i);
+	const int64_t offset_delta_inner = hex_size(i) - hex_size(j);
+
+	// Update offset and size tables
+	std::swap(hex_sizes_[i], hex_sizes_[j]);
+	std::swap(hex_offsets_[i], hex_offsets_[j]);
+	hex_offsets_[i] += offset_delta_i;
+	if (offset_delta_inner != 0) {
+		for (size_t idx = i+1; idx < j; ++idx) {
+			hex_offsets_[idx] += offset_delta_inner;
+		}
+	}	
+	hex_offsets_[j] += offset_delta_j;
+
+	// Swap the instructions
+	std::swap(code_[i], code_[j]);
+
+	// Adjust rips
+  if (is_rip(i)) {
+    adjust_rip(i, -offset_delta_i);
+  }
+	if (offset_delta_inner != 0) {
+		for (size_t idx = i+1; idx < j; ++idx) {
+			if (is_rip(idx)) {
+				adjust_rip(idx, -offset_delta_inner);
+			}
+		}
+	}
+  if (is_rip(j)) {
+    adjust_rip(j, -offset_delta_j);
+  }
+}
+
+void TUnit::rotate_left(size_t i, size_t j) {
+	assert(max(i,j) <= code_.size());
+
+	// Corner cases; it's nice to have the invariant that i is the lower index
+	if (i == j) {
+		return;
+	} else if (i > j) {
+		std::swap(i, j);
+	}
+
+	// Some constants
+	const int64_t offset_delta_small = 0 - hex_size(i);
+	const int64_t offset_delta_large = hex_offset(j) - hex_offset(i);
+
+	// Update offset and size tables
+	const auto size = hex_sizes_[i];
+	const auto offset = hex_offsets_[i];
+	for (size_t idx = i; idx < j; ++idx) {
+		hex_sizes_[idx] = hex_sizes_[idx+1];
+		hex_offsets_[idx] = hex_offsets_[idx+1] + offset_delta_small;
+	}
+	hex_sizes_[j] = size;
+	hex_offsets_[j] = offset + offset_delta_large;
+
+	// Rotate instructions 
+	const auto instr = code_[i];
+	for (size_t idx = i; idx < j; ++idx) {
+		code_[idx] = code_[idx+1];
+	}
+	code_[j] = instr;
+
+	// Adjust rips
+	for (size_t idx = i; idx < j; ++idx) {
+		if (is_rip(idx)) {
+			adjust_rip(idx, -offset_delta_small);
+		}
+	}
+	if (is_rip(j)) {
+		adjust_rip(j, -offset_delta_large);
+	}
+}
+
+void TUnit::rotate_right(size_t i, size_t j) {
+	assert(max(i,j) <= code_.size());
+
+	// Corner cases; it's nice to have the invariant that i is the lower index
+	if (i == j) {
+		return;
+	} else if (i > j) {
+		std::swap(i, j);
+	}
+
+	// Some constants
+	const int64_t offset_delta_small = hex_size(j);
+	const int64_t offset_delta_large = 0 - hex_offset(j) + hex_offset(i);
+
+	// Update offset and size tables
+	const auto size = hex_sizes_[j];
+	const auto offset = hex_offsets_[j];
+	for (int idx = j; idx > (int)i; --idx) {
+		hex_sizes_[idx] = hex_sizes_[idx-1];
+		hex_offsets_[idx] = hex_offsets_[idx-1] + offset_delta_small;
+	}
+	hex_sizes_[i] = size;
+	hex_offsets_[i] = offset + offset_delta_large;
+
+	// Rotate instructions 
+	const auto instr = code_[j];
+	for (int idx = j; idx > (int)i; --idx) {
+		code_[idx] = code_[idx-1];
+	}
+	code_[i] = instr;
+
+	// Adjust rips
+	for (int idx = j; idx > (int)i; --idx) {
+		if (is_rip(idx)) {
+			adjust_rip(idx, -offset_delta_small);
+		}
+	}
+	if (is_rip(i)) {
+		adjust_rip(i, -offset_delta_large);
+	}
 }
 
 istream& TUnit::read_text(istream& is) {
@@ -217,7 +432,20 @@ ostream& TUnit::write_text(ostream& os) const {
   return os;
 }
 
-void TUnit::recompute_rip_offset_targets() {
+void TUnit::recompute() {
+	// Recompute hex sizes 
+  hex_sizes_.clear();
+  for (const auto& instr : get_code()) {
+    hex_sizes_.push_back(assm_.hex_size(instr));
+  }
+
+	// Recompute hex offsets
+  hex_offsets_ = {{0}};
+  for (int i = 0, ie = code_.size()-1; i < ie; ++i) {
+    hex_offsets_.push_back(hex_offsets_.back() + hex_size(i));
+  }
+
+	// Recomute rip offset targets
   rip_offset_targets_.clear();
   for (size_t i = 0, ie = get_code().size(); i < ie; ++i) {
     const auto& instr = get_code()[i];
@@ -233,19 +461,25 @@ void TUnit::recompute_rip_offset_targets() {
   }
 }
 
-void TUnit::recompute_hex_offsets() {
-  hex_offsets_ = {{0}};
-  for (int i = 0, ie = code_.size()-1; i < ie; ++i) {
-    hex_offsets_.push_back(hex_offsets_.back() + hex_size(i));
+bool TUnit::is_rip(size_t index) const {
+	const auto& instr = code_[index];
+  if (!instr.is_explicit_memory_dereference()) {
+    return false;
   }
+  const auto mi = instr.mem_index();
+  return instr.get_operand<M8>(mi).rip_offset();
 }
 
-void TUnit::recompute_hex_sizes() {
-  Assembler assm;
-  hex_sizes_.clear();
-  for (const auto& instr : get_code()) {
-    hex_sizes_.push_back(assm.hex_size(instr));
-  }
+void TUnit::adjust_rip(size_t index, int64_t delta) {
+  assert(is_rip(index));
+ 
+	auto& instr = code_[index];
+
+ 	const auto mi = instr.mem_index();
+	auto op = instr.get_operand<M8>(mi);
+  op.set_disp(op.get_disp()+delta);
+
+  instr.set_operand(mi, op);
 }
 
 istream& TUnit::read_formatted_text(istream& is) {
@@ -354,155 +588,5 @@ istream& TUnit::read_naked_text(istream& is) {
 
   return is;
 }
-
-#if 0
-/** Returns true if this instruction uses rip offset addressing */
-bool uses_rip(const Instruction& instr) {
-  if (!instr.is_explicit_memory_dereference() && !instr.is_lea()) {
-    return false;
-  }
-  const auto mi = instr.mem_index();
-  return instr.get_operand<M8>(mi).rip_offset();
-}
-
-/** Returns true if this instruction uses rip offset addressing in this operand */
-bool uses_rip(const Instruction& instr, size_t idx) {
-  if (!instr.is_explicit_memory_dereference()) {
-    return false;
-  }
-  const auto mi = instr.mem_index();
-  if ((size_t)mi != idx) {
-    return false;
-  }
-  return instr.get_operand<M8>(mi).rip_offset();
-}
-
-/** Returns the rip offset for this instruction */
-uint64_t get_offset(const Instruction& instr) {
-  assert(uses_rip(instr));
-  const auto mi = instr.mem_index();
-  return instr.get_operand<M8>(mi).get_disp();
-}
-
-/** Adds an offset to an existing rip offset */
-void rescale_offset(Instruction& instr, int64_t delta) {
-  assert(uses_rip(instr));
-  const auto mi = instr.mem_index();
-  auto m = instr.get_operand<M8>(mi);
-  m.set_disp(m.get_disp()+delta);
-  instr.set_operand(mi, m);
-}
-
-void Transforms::move(Code& code, size_t i, size_t j) const {
-  const auto temp = code[i];
-  if (i < j) {
-    for (size_t k = i; k < j; ++k) {
-      code[k] = code[k + 1];
-    }
-  } else {
-    for (int k = i; k > (int)j; --k) {
-      code[k] = code[k - 1];
-    }
-  }
-  code[j] = temp;
-}
-
-void Transforms::rescale_rip(Code& code, size_t idx) {
-  assert(uses_rip(code[idx]));
-
-  int64_t delta = 0;
-  for (size_t i = 0; i <= idx; ++i) {
-    delta -= assm_.hex_size(code[i]);
-  }
-  rescale_offset(code[idx], delta);
-}
-
-void Transforms::rescale_trailing_rips(Code& code, const Instruction& old_instr, size_t idx, bool ignore_first) {
-  // How much shorter has the new instruction encoding become?
-  const int64_t delta = assm_.hex_size(old_instr) - assm_.hex_size(code[idx]);
-  // Nothing to do if nothing has changed
-  if (delta == 0) {
-    return;
-  }
-  // Otherwise, rip offsets between i and j are increased by this delta
-  for (size_t i = ignore_first ? idx+1 : idx, ie = code.size(); i < ie; ++i) {
-    if (uses_rip(code[i])) {
-      rescale_offset(code[i], delta);
-    }
-  }
-}
-
-void Transforms::rescale_swapped_rips(Code& code, size_t i, size_t j) {
-  // It's easiest to assume that i and j were swapped, so j holds what i used to
-  assert(i < j);
-
-  // Calculate some sizes
-  const int64_t i_size = assm_.hex_size(code[i]);
-  const int64_t j_size = assm_.hex_size(code[j]);
-  // We'll only use this one if either of the outside instructions use rip offsets
-  int64_t span_size = 0;
-  if (uses_rip(code[i]) || uses_rip(code[j])) {
-    for (size_t idx = i+1; idx < j; ++idx) {
-      span_size += assm_.hex_size(code[idx]);
-    }
-  }
-
-  // Update the outer instructions if either was a rip offset
-  if (uses_rip(code[i])) {
-    rescale_offset(code[i], span_size + j_size);
-  }
-  if (uses_rip(code[j])) {
-    rescale_offset(code[j], -span_size - i_size);
-  }
-
-  // Change the interior instructions if the outsides have changed
-  const int64_t delta = j_size - i_size;
-  if (delta != 0) {
-    for (size_t idx = i+1; idx < j; ++idx) {
-      if (uses_rip(code[idx])) {
-        rescale_offset(code[idx], delta);
-      }
-    }
-  }
-}
-
-void Transforms::rescale_rotated_rips(Code& code, size_t i, size_t j) {
-  // Left rotation
-  if (i < j) {
-    const int64_t j_size = assm_.hex_size(code[j]);
-    int64_t span_size = 0;
-    for (size_t idx = i; idx < j; ++idx) {
-      span_size -= assm_.hex_size(code[idx]);
-      if (uses_rip(code[idx])) {
-        rescale_offset(code[idx], j_size);
-      }
-    }
-    if (uses_rip(code[j])) {
-      rescale_offset(code[j], span_size);
-    }
-  }
-
-  // Right rotation
-  else if (j < i) {
-    const int64_t j_size = assm_.hex_size(code[j]);
-    int64_t span_size = 0;
-    for (size_t idx = i; idx > j; --idx) {
-      span_size += assm_.hex_size(code[idx]);
-      if (uses_rip(code[idx])) {
-        rescale_offset(code[idx], -j_size);
-      }
-    }
-    if (uses_rip(code[j])) {
-      rescale_offset(code[j], span_size);
-    }
-  }
-
-  // Control should never reach here
-  else {
-    assert(false);
-  }
-}
-
-#endif
 
 } // namespace stoke
