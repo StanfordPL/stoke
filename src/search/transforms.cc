@@ -237,6 +237,7 @@ namespace stoke {
 Transforms::Transforms() : old_instr_(RET) {
   validator_ = nullptr;
   control_free_.push_back(RET);
+  control_free_type_equiv_.resize((int)XSAVEOPT64_M64 + 1);
   control_free_type_equiv_[RET].push_back(RET);
 }
 
