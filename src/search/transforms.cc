@@ -547,11 +547,11 @@ found_a_nop:
     return false;
   }
 
-	if (instr_idx1_ < instr_idx2_) {
-	  cfg.get_function().rotate_left(instr_idx1_, instr_idx2_);
-	} else {
-		cfg.get_function().rotate_right(instr_idx2_, instr_idx1_);
-	}
+  if (instr_idx1_ < instr_idx2_) {
+    cfg.get_function().rotate_left(instr_idx1_, instr_idx2_);
+  } else {
+    cfg.get_function().rotate_right(instr_idx2_, instr_idx1_);
+  }
   cfg.recompute();
 
   return true;
