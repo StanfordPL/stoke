@@ -30,7 +30,7 @@ namespace stoke {
 
 class Transforms {
 public:
-  /** Creates a new transformation helper; not guaranteed to satisfy invariants. */
+  /** Creates a new transformation helper; guaranteed to pass invariants. */
   Transforms();
 
   /** Sets random seed. */
@@ -43,7 +43,7 @@ public:
     validator_ = v;
     return *this;
   }
-  /** Sets the pool of opcodes to propose from. */
+  /** Sets the pool of opcodes to propose from. Can cause invariants to fail. */
   Transforms& set_opcode_pool(const Cfg& target,
                               const x64asm::FlagSet& fs, size_t call_weight,
                               const x64asm::RegSet& preserve_regs,

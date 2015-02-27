@@ -44,6 +44,19 @@ bool is_prefix(const string& pre, const string& s) {
 
 namespace stoke {
 
+TUnit::TUnit(const Code& code, uint64_t fo, uint64_t ro, size_t c) {
+  code_ = code;
+  if (!invariant_first_instr_is_label()) {
+    code_.insert(code_.begin(), {LABEL_DEFN, {Label(".anonymous_function")}});
+  }
+
+  recompute();
+
+  file_offset_ = fo;
+  rip_offset_ = ro;
+  capacity_ = c;
+}
+
 TUnit::MayMustSets TUnit::get_may_must_sets(const MayMustSets& defaults) const {
   auto res = defaults;
 
