@@ -108,16 +108,16 @@ struct TUnit {
   }
   /** Check that rip offsets all resolve to valid locations */
   bool invariant_rip_offsets() const;
-	/** Check that hex sizes are correct */
-	bool invariant_hex_sizes() const;
-	/** Check that hex offsets are correct */
-	bool invariant_hex_offsets() const;
+  /** Check that hex sizes are correct */
+  bool invariant_hex_sizes() const;
+  /** Check that hex offsets are correct */
+  bool invariant_hex_offsets() const;
   /** Checks that this function statisfies all invariants */
   bool check_invariants() const {
     return invariant_first_instr_is_label() &&
            invariant_encoding_size() &&
-					 invariant_hex_sizes() &&
-					 invariant_hex_offsets() &&
+           invariant_hex_sizes() &&
+           invariant_hex_offsets() &&
            invariant_rip_offsets();
   }
 

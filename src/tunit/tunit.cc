@@ -110,25 +110,25 @@ bool TUnit::invariant_rip_offsets() const {
 }
 
 bool TUnit::invariant_hex_sizes() const {
-	Assembler assm;
-	for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
-		if (hex_size(i) != assm.hex_size(code_[i])) {
-			return false;
-		}
-	}
-	return true;
+  Assembler assm;
+  for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
+    if (hex_size(i) != assm.hex_size(code_[i])) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool TUnit::invariant_hex_offsets() const {
-	Assembler assm;
-	size_t offset = 0;
-	for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
-		if (hex_offset(i) != offset) {
-			return false;
-		}
-		offset += assm.hex_size(code_[i]);
-	}
-	return true;
+  Assembler assm;
+  size_t offset = 0;
+  for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
+    if (hex_offset(i) != offset) {
+      return false;
+    }
+    offset += assm.hex_size(code_[i]);
+  }
+  return true;
 }
 
 void TUnit::remove(size_t index) {
@@ -160,7 +160,7 @@ void TUnit::insert(size_t index, const x64asm::Instruction& instr, bool rescale_
   assert(index <= code_.size());
 
   // Some constants
-	Assembler assm;
+  Assembler assm;
   const auto size = assm.hex_size(instr);
   const int64_t offset_delta = size;
 
@@ -193,7 +193,7 @@ void TUnit::replace(size_t index, const x64asm::Instruction& instr, bool rescale
   assert(index < code_.size());
 
   // Some constants
-	Assembler assm;
+  Assembler assm;
   const auto size = assm.hex_size(instr);
   const int64_t offset_delta = size - hex_size(index);
 
@@ -457,7 +457,7 @@ ostream& TUnit::write_text(ostream& os) const {
 }
 
 void TUnit::recompute() {
-	Assembler assm;
+  Assembler assm;
 
   // Recompute hex sizes
   hex_sizes_.clear();
