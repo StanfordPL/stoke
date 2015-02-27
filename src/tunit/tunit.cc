@@ -229,27 +229,28 @@ void TUnit::swap(size_t i, size_t j) {
   }
 
   // Some constants
-  const int64_t offset_delta_i = hex_offset(j) + hex_offset(i);
-  const int64_t offset_delta_j = 0 - hex_offset(j) - hex_offset(i);
-  const int64_t offset_delta_inner = hex_size(i) - hex_size(j);
+	const int64_t span = hex_offset(j) - hex_offset(i+1);
+  const int64_t offset_delta_i = span + hex_size(j);
+  const int64_t offset_delta_j = 0 - span - hex_size(i);
+  const int64_t offset_delta_inner = hex_size(j) - hex_size(i);
 
   // Update offset and size tables
   std::swap(hex_sizes_[i], hex_sizes_[j]);
   std::swap(hex_offsets_[i], hex_offsets_[j]);
-  hex_offsets_[i] += offset_delta_i;
+  hex_offsets_[i] += offset_delta_j;
   if (offset_delta_inner != 0) {
     for (size_t idx = i+1; idx < j; ++idx) {
       hex_offsets_[idx] += offset_delta_inner;
     }
   }
-  hex_offsets_[j] += offset_delta_j;
+  hex_offsets_[j] += offset_delta_i;
 
   // Swap the instructions
   std::swap(code_[i], code_[j]);
 
   // Adjust rips
   if (is_rip(i)) {
-    adjust_rip(i, -offset_delta_i);
+    adjust_rip(i, -offset_delta_j);
   }
   if (offset_delta_inner != 0) {
     for (size_t idx = i+1; idx < j; ++idx) {
@@ -259,7 +260,7 @@ void TUnit::swap(size_t i, size_t j) {
     }
   }
   if (is_rip(j)) {
-    adjust_rip(j, -offset_delta_j);
+    adjust_rip(j, -offset_delta_i);
   }
 }
 
@@ -274,8 +275,9 @@ void TUnit::rotate_left(size_t i, size_t j) {
   }
 
   // Some constants
+	const int64_t span = hex_offset(j) - hex_offset(i+1);
   const int64_t offset_delta_small = 0 - hex_size(i);
-  const int64_t offset_delta_large = hex_offset(j) - hex_offset(i);
+  const int64_t offset_delta_large = span + hex_size(j);
 
   // Update offset and size tables
   const auto size = hex_sizes_[i];
@@ -316,8 +318,9 @@ void TUnit::rotate_right(size_t i, size_t j) {
   }
 
   // Some constants
+	const int64_t span = hex_offset(j) - hex_offset(i+1);
   const int64_t offset_delta_small = hex_size(j);
-  const int64_t offset_delta_large = 0 - hex_offset(j) + hex_offset(i);
+  const int64_t offset_delta_large = 0 - span - hex_size(i);
 
   // Update offset and size tables
   const auto size = hex_sizes_[j];
