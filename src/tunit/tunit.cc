@@ -605,15 +605,15 @@ istream& TUnit::read_formatted_text(istream& is) {
 istream& TUnit::read_naked_text(istream& is) {
   is >> code_;
 
-  file_offset_ = 0;
-  capacity_ = 0;
-  rip_offset_ = 0;
-
   if (!invariant_first_instr_is_label()) {
     code_.insert(code_.begin(), {LABEL_DEFN, {Label(".anonymous_function")}});
   }
 
   recompute();
+
+  file_offset_ = 0;
+  rip_offset_ = 0;
+  capacity_ = hex_size();
 
   return is;
 }
