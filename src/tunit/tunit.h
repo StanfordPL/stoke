@@ -45,15 +45,8 @@ struct TUnit {
     x64asm::RegSet maybe_undef_set;
   };
 
-  /** Constructs a funtion (not guaranteed to pass check_invariants()) */
-  TUnit(const x64asm::Code& code = {{}}, uint64_t fo = 0, uint64_t ro = 0, size_t c = 0) {
-    code_ = code;
-    file_offset_ = fo;
-    rip_offset_ = ro;
-    capacity_ = c;
-
-    recompute();
-  }
+  /** Constructs a funtion which will pass check_invariants() */
+  TUnit(const x64asm::Code& code = {{}}, uint64_t fo = 0, uint64_t ro = 0, size_t c = 0);
 
   /** Returns the underlying code sequence */
   const x64asm::Code& get_code() const {
@@ -192,24 +185,24 @@ struct TUnit {
     hex_sizes_.clear();
     hex_offsets_.clear();
   }
-  /** Removes this instruction from the underlying code sequence */
+  /** Removes this instruction from the underlying code sequence; can cause invariants to fail */
   void remove(size_t index);
-  /** Inserts a new instruction in the underlying code sequence */
+  /** Inserts a new instruction in the underlying code sequence; can cause invariants to fail */
   void insert(size_t index, const x64asm::Instruction& instr, bool rescale_rip = false);
-  /** Inserts a new instruction at the end of the underlying code sequence */
+  /** Inserts a new instruction in the underlying code sequence; can cause invariants to fail */
   void push_back(const x64asm::Instruction& instr, bool rescale_rip = false) {
     insert(get_code().size(), instr, rescale_rip);
   }
-  /** Replaces an instruction in the underlying code sequence */
+  /** Replaces an instruction in the underlying code sequence; can cause invariants to fail */
   void replace(size_t index, const x64asm::Instruction& instr, bool rescale_rip = false);
-  /** Swaps two instructions in the underlying code sequence */
+  /** Swaps two instructions in the underlying code sequence; can cause invariants to fail */
   void swap(size_t i, size_t j);
-  /** Rotate instructions to the left */
+  /** Rotate instructions to the left; can cause invariants to fail */
   void rotate_left(size_t i, size_t j);
-  /** Rotate instructions to the right */
+  /** Rotate instructions to the right; can cause invariants to fail */
   void rotate_right(size_t i, size_t j);
 
-  /** Read from istream. */
+  /** Read from istream (result will pass invariants unless parsing fails) */
   std::istream& read_text(std::istream& is);
   /** Write to ostream. */
   std::ostream& write_text(std::ostream& os) const;

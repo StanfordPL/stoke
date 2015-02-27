@@ -236,6 +236,8 @@ namespace stoke {
 
 Transforms::Transforms() : old_instr_(RET) {
   validator_ = nullptr;
+	control_free_.push_back(RET);
+	control_free_type_equiv_[RET].push_back(RET);
 }
 
 Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,

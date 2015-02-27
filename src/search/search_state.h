@@ -26,7 +26,7 @@ namespace stoke {
 class SearchState {
 
 public:
-  /** Default construction is disallowed */
+  /** Guaranteed to pass invariants if target.get_function() passes all invariants */
   SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const Cfg& bc,
               Init init, size_t size);
 
