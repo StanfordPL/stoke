@@ -71,7 +71,7 @@ TEST_P(StateGenParamTest, StateGenWorks) {
   sb.set_max_jumps(2)
   .set_abi_check(false);
   sb.insert_input(tc);
-  sb.run({code_, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(code_)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
 }
@@ -147,7 +147,7 @@ TEST(StateGenTest, Issue44WithRetQ) {
   sb.set_max_jumps(2)
   .set_abi_check(false);
   sb.insert_input(tc);
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
 }
@@ -188,7 +188,7 @@ TEST(StateGenTest, Issue51) {
   sb.set_max_jumps(2)
   .set_abi_check(false);
   sb.insert_input(tc);
-  sb.run({c, x64asm::RegSet::empty(), x64asm::RegSet::empty()});
+  sb.run(Cfg(TUnit(c)));
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 
 }

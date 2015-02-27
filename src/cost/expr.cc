@@ -66,6 +66,7 @@ set<CostFunction*> ExprCost::leaf_functions() const {
   }
 
   assert(false);
+  return set<CostFunction*>();
 
 }
 
@@ -153,5 +154,6 @@ Cost ExprCost::run(const std::map<CostFunction*, Cost>& env) const {
     }
   }
   assert(false);
+  return 0;
 }
 

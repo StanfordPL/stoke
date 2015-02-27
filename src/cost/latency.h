@@ -24,6 +24,7 @@ class LatencyCost : public CostFunction {
 public:
   LatencyCost& set_nesting_penalty(Cost penalty) {
     nesting_penalty_ = penalty;
+    return *this;
   }
 
   result_type operator()(const Cfg& cfg, Cost max = max_cost);

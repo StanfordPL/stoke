@@ -46,10 +46,6 @@ ostream& CpuState::write_text(ostream& os) const {
   os << endl;
   os << endl;
 
-  sym_table.write_text(os);
-  os << endl;
-  os << endl;
-
   gp.write_text(os, gps, 5);
   os << endl;
   os << endl;
@@ -85,10 +81,6 @@ istream& CpuState::read_text(istream& is) {
   getline(is, ignore);
   getline(is, ignore);
 
-  sym_table.read_text(is);
-  getline(is, ignore);
-  getline(is, ignore);
-
   gp.read_text(is);
   getline(is, ignore);
   getline(is, ignore);
@@ -118,7 +110,6 @@ istream& CpuState::read_text(istream& is) {
 
 ostream& CpuState::write_bin(ostream& os) const {
   os.write((const char*)&code, sizeof(ErrorCode));
-  sym_table.write_bin(os);
   gp.write_bin(os);
   sse.write_bin(os);
   rf.write_bin(os);
@@ -131,7 +122,6 @@ ostream& CpuState::write_bin(ostream& os) const {
 
 istream& CpuState::read_bin(istream& is) {
   is.read((char*)&code, sizeof(ErrorCode));
-  sym_table.read_bin(is);
   gp.read_bin(is);
   sse.read_bin(is);
   rf.read_bin(is);

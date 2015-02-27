@@ -18,18 +18,41 @@
 #include <sys/time.h>
 
 #include "src/ext/x64asm/include/x64asm.h"
-#include "src/target/cpu_info.h"
 
 namespace stoke {
 
-class ValidatorFuzzTest : public ValidatorTest { };
+bool check(uint64_t a, uint64_t b, const std::string& msg, std::ostream& os) {
+  if (a == b) {
+    return false;
+  }
+  os << msg << std::endl;
+  os << "  In state 1: 0x" << std::hex << a << std::endl;
+  os << "  In state 2: 0x" << std::hex << b << std::endl;
+  return true;
+}
 
-/** This test is vicious.  It picks random instructions, random states, runs
- * the validator on it, runs the sandbox on it, and compares the results.
- * While it's for testing the validator handlers, it implicitly also tests a
- * ton of other functionality. */
-TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
+void report(bool failed, const x64asm::Instruction& instr, const stoke::CpuState& a, const stoke::CpuState& b, const std::string& msg) {
+  if (failed) {
+    std::cout << std::endl << "SpreadsheetReadWriteSetFuzzTest Failed!" << std::endl << std::endl;
+    std::cout << "Instruction: " << instr << std::endl;
+    std::cout << "  Maybe read set: " << instr.maybe_read_set() << std::endl;
+    std::cout << "  Must write set: " << instr.must_write_set() << std::endl << std::endl;
+    std::cout << msg << std::endl;
+    std::cout << "State 1:" << std::endl << std::endl;
+    std::cout << a << std::endl << std::endl;
+    std::cout << "State 2:" << std::endl << std::endl;
+    std::cout << b << std::endl << std::endl;
+    ADD_FAILURE();
+  }
+}
 
+/** This test generates random instructions, and then performs the following
+test:  It generates two random states, that agree in all the registers that
+the instruction reads (but are both random otherwise), and then executes
+the instruction.  The two resulting states are then checked to agree on the
+values the instruction writes.
+For example, this uncovers errors in the must/maybe read/write/undef sets. */
+TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
   uint64_t seed = (uint64_t)tv.tv_usec;
@@ -63,15 +86,28 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   flag_set &= CpuInfo::get_flags();
 
-  // Initialize handler, solver, transforms, stategen, etc.
-  ComboHandler ch;
-  Z3Solver z3;
   Transforms t;
 
   std::set<x64asm::Opcode> blacklist;
   blacklist.insert(x64asm::ENTER_IMM8_IMM16);
   blacklist.insert(x64asm::ENTER_ONE_IMM16);
   blacklist.insert(x64asm::ENTER_ZERO_IMM16);
+
+  // temporarily blacklist these, until #552 is fixed
+  blacklist.insert(x64asm::VGATHERDPD_XMM_M32_XMM);
+  blacklist.insert(x64asm::VGATHERDPD_YMM_M32_YMM);
+  blacklist.insert(x64asm::VGATHERDPS_XMM_M32_XMM);
+  blacklist.insert(x64asm::VGATHERDPS_YMM_M32_YMM);
+  blacklist.insert(x64asm::VGATHERQPD_XMM_M64_XMM);
+  blacklist.insert(x64asm::VGATHERQPD_YMM_M64_YMM);
+  blacklist.insert(x64asm::VGATHERQPS_XMM_M64_XMM);
+  blacklist.insert(x64asm::VPGATHERDD_XMM_M32_XMM);
+  blacklist.insert(x64asm::VPGATHERDD_YMM_M32_YMM);
+  blacklist.insert(x64asm::VPGATHERDQ_XMM_M32_XMM);
+  blacklist.insert(x64asm::VPGATHERDQ_YMM_M32_YMM);
+  blacklist.insert(x64asm::VPGATHERQD_XMM_M64_XMM);
+  blacklist.insert(x64asm::VPGATHERQQ_XMM_M64_XMM);
+  blacklist.insert(x64asm::VPGATHERQQ_YMM_M64_YMM);
 
   // this code is used to provide memory references... big hack.
   std::stringstream sample;
@@ -126,7 +162,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   x64asm::RegSet supported_regs = (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
                                   x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf +
-                                  x64asm::eflags_zf + x64asm::eflags_sf;
+                                  x64asm::eflags_zf + x64asm::eflags_sf + x64asm::eflags_af;
 
   Sandbox sb;
   sb.set_abi_check(false)
@@ -164,38 +200,105 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
       continue;
 
     const auto ins = pre_cfg.get_code()[1];
-    x64asm::RegSet liveouts = supported_regs - ins.maybe_undef_set();
+    x64asm::RegSet liveouts = (ins.must_write_set() - ins.maybe_undef_set()) & supported_regs;
+    x64asm::RegSet reads = ins.maybe_read_set();
     cfg_code[1] = ins;
-    Cfg cfg(cfg_code, ins.maybe_read_set(), liveouts);
+    Cfg cfg(cfg_code, reads, liveouts);
 
     std::cout << "[----------] * " << ins << std::endl;
 
-    // Make sure we support this instruction
-    if(ch.get_support(ins) == Handler::NONE) {
-      std::cout << "[----------]   - No validator support" << std::endl;
+    // check that this instruction only reads supported registers
+    if ((reads & supported_regs) != reads) {
+      std::cout << "[----------]   - Instruction reads unsupported registers: " << (reads - supported_regs) << std::endl;
       continue;
     }
 
-    // Build a state at random, if possible
-    CpuState cs;
-    if(!sg.get(cs, cfg)) {
+    // Build two states at random, if possible
+    CpuState cs1, cs2;
+    if(!sg.get(cs1, cfg) || !sg.get(cs2, cfg)) {
       std::cout << "[----------]   - Could not generate state: " << sg.get_error() << std::endl;
       continue;
     }
+    // cs1 and cs2 should agree on memory
+    cs2.stack = cs1.stack;
+    cs2.heap = cs1.heap;
+    cs2.data = cs1.data;
 
-    // Do the test
-    // If we did the comparison, then we performed the test right
-    target_.clear();
-    target_.str("");
-    target_ << ".target:" << std::endl;
-    target_ << ins << std::endl;
-    target_ << "retq" << std::endl;
+    // cs1 and cs2 should agree on all registers that the instruction might read
+    for(auto it = reads.gp_begin(); it != reads.gp_end(); ++it) {
+      cs2.gp[*it] = cs1.gp[*it];
+    }
+    for(auto it = reads.sse_begin(); it != reads.sse_end(); ++it) {
+      cs2.sse[*it] = cs1.sse[*it];
+    }
+    for(size_t i = 0; i < x64asm::eflags.size(); i++) {
+      auto op = x64asm::eflags[i];
+      if (reads.contains(op)) {
+        cs2.rf.set(op.index(), cs1.rf.is_set(op.index()));
+      }
+    }
 
-    set_def_ins(cfg.def_ins());
-    set_live_outs(cfg.live_outs());
+    // Run the sandbox
+    Sandbox sb;
+    sb.set_abi_check(false)
+    .insert_input(cs1)
+    .insert_input(cs2);
 
-    if(check_circuit(cs))
-      success++;
+    sb.run(cfg);
+
+    CpuState final1 = *sb.get_result(0);
+    CpuState final2 = *sb.get_result(1);
+
+    // test that the two states match on live_out
+    bool failed = false;
+    std::stringstream os;
+    for(auto it = liveouts.gp_begin(); it != liveouts.gp_end(); ++it) {
+      uint16_t bitwidth = (*it).size();
+
+      // Check the lower bitwidth bits of cpustates are equal.
+      uint64_t actual_full = final1.gp[*it].get_fixed_quad(0);
+      uint64_t expected_full = final2.gp[*it].get_fixed_quad(0);
+
+      uint64_t mask = ((uint64_t)1 << bitwidth) - 1;
+      if(bitwidth == 64)
+        mask = -1;
+
+      uint64_t actual_masked = actual_full & mask;
+      uint64_t expected_masked = expected_full & mask;
+
+      std::stringstream ss;
+      ss << "The " << bitwidth << " bits of " << *it << " differ.";
+      failed |= check(expected_masked, actual_masked, ss.str(), os);
+    }
+    for(auto it = liveouts.sse_begin(); it != liveouts.sse_end(); ++it) {
+      uint16_t bitwidth = (*it).size();
+      uint16_t quads = bitwidth/64;
+
+      for(size_t i = 0; i < quads; ++i) {
+        uint64_t actual_v = final1.sse[*it].get_fixed_quad(i);
+        uint64_t expect_v = final2.sse[*it].get_fixed_quad(i);
+        std::stringstream ss;
+        ss << "Bits " << (i*64) <<  ".." << ((i+1)*64) << " of " << *it << " differ.";
+        failed |= check(expect_v, actual_v, ss.str(), os);
+      }
+    }
+    for(size_t i = 0; i < x64asm::eflags.size(); i++) {
+      auto op = x64asm::eflags[i];
+
+      if (liveouts.contains(op)) {
+        uint64_t actual_flag = final1.rf.is_set(op.index());
+        uint64_t expected_flag = final2.rf.is_set(op.index());
+
+        std::stringstream ss;
+        ss << "Value of flag " << op << " differs.";
+        failed |= check(expected_flag, actual_flag, ss.str(), os);
+      }
+    }
+    report(failed, ins, cs1, cs2, os.str());
+#undef EXPECT_EQ_HELPER
+#undef EXPECT_EQ_HEX
+
+    success++;
   }
 
   // Make sure we supported enough of the instructions

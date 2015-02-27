@@ -31,7 +31,7 @@ public:
       }
 
       const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
-      for(size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; i < ie, ++i) {
+      for(size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
         if(!code[i].is_nop() && !code[i].is_label_defn())
           size++;
       }

@@ -187,6 +187,7 @@ protected:
     ss << "Validator final state: " << std::endl << validator_final << std::endl;
     ss << "Sandbox and validator disagree on liveout " << cfg_t_->live_outs() << std::endl;
     expect_cpustate_equal_on_liveout(sandbox_final, validator_final, ss.str());
+    return true;
 
   }
 
@@ -290,7 +291,7 @@ private:
     }
 
 
-    return new Cfg(c, def_ins_, live_outs_);
+    return new Cfg(TUnit(c), def_ins_, live_outs_);
   }
 
   template <typename T>
