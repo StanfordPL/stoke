@@ -185,6 +185,12 @@ struct TUnit {
     return mem_iterator(&code_, false);
   }
 
+	/** Removes all instructions in the underlying code sequence */
+	void clear() {
+		code_.clear();
+		hex_sizes_.clear();
+		hex_offsets_.clear();
+	}
   /** Removes this instruction from the underlying code sequence */
   void remove(size_t index);
   /** Inserts a new instruction in the underlying code sequence */
