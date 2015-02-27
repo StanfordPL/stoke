@@ -197,10 +197,10 @@ struct TUnit {
   void replace(size_t index, const x64asm::Instruction& instr, bool rescale_rip = false);
   /** Swaps two instructions in the underlying code sequence */
   void swap(size_t i, size_t j);
-	/** Rotate instructions to the left */
-	void rotate_left(size_t i, size_t j);
-	/** Rotate instructions to the right */
-	void rotate_right(size_t i, size_t j);
+  /** Rotate instructions to the left */
+  void rotate_left(size_t i, size_t j);
+  /** Rotate instructions to the right */
+  void rotate_right(size_t i, size_t j);
 
   /** Read from istream. */
   std::istream& read_text(std::istream& is);
@@ -210,8 +210,8 @@ struct TUnit {
 private:
   /** The text of the code in this function. */
   x64asm::Code code_;
-	/** No sense always constructing these */
-	x64asm::Assembler assm_;
+  /** No sense always constructing these */
+  x64asm::Assembler assm_;
 
   /** The physical address of this function in a file */
   uint64_t file_offset_;
@@ -243,10 +243,10 @@ private:
   /** Recompute meta data from scratch */
   void recompute();
 
-	/** Is there a rip offset at this index? */
-	bool is_rip(size_t index) const;
-	/** Adjust the rip offset at index i by delta */
-	void adjust_rip(size_t index, int64_t delta);
+  /** Is there a rip offset at this index? */
+  bool is_rip(size_t index) const;
+  /** Adjust the rip offset at index i by delta */
+  void adjust_rip(size_t index, int64_t delta);
 
   /** Read a well-formatted function. */
   std::istream& read_formatted_text(std::istream& is);
