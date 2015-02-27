@@ -15,12 +15,11 @@
 #ifndef STOKE_SRC_SEARCH_TRANSFORMS_H
 #define STOKE_SRC_SEARCH_TRANSFORMS_H
 
-#include <cassert>
-
 #include <algorithm>
+#include <cassert>
 #include <random>
-#include <vector>
 #include <set>
+#include <vector>
 
 #include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
@@ -31,7 +30,7 @@ namespace stoke {
 
 class Transforms {
 public:
-  /** Creates a new transformation helper. */
+  /** Creates a new transformation helper; guaranteed to pass invariants. */
   Transforms();
 
   /** Sets random seed. */
@@ -44,14 +43,14 @@ public:
     validator_ = v;
     return *this;
   }
-  /** Sets the pool of opcodes to propose from. */
-  Transforms& set_opcode_pool(const x64asm::FlagSet& fs, size_t call_weight,
-                              bool use_mem_read, bool use_mem_write,
+  /** Sets the pool of opcodes to propose from. Can cause invariants to fail. */
+  Transforms& set_opcode_pool(const Cfg& target,
+                              const x64asm::FlagSet& fs, size_t call_weight,
                               const x64asm::RegSet& preserve_regs,
                               const std::set<x64asm::Opcode>& opc_blacklist,
                               const std::set<x64asm::Opcode>& opc_whitelist);
   /** Sets the pool operands to propose from. */
-  Transforms& set_operand_pool(const TUnit& target, const x64asm::RegSet& preserve_regs);
+  Transforms& set_operand_pool(const Cfg& target, const x64asm::RegSet& preserve_regs);
   /** Insert a value into the immediate pool */
   Transforms& insert_immediate(const x64asm::Imm64& imm) {
     const auto itr = std::find(imm_pool_.begin(), imm_pool_.end(), imm);
@@ -68,13 +67,20 @@ public:
     }
     return *this;
   }
-  /** Insert a value into the mem pool */
+  /** Insert a value into the mem operand pool */
   Transforms& insert_mem(const x64asm::M8& m)  {
-    // @todo should we warn that rip offset instructions are being ignored?
-    // They don't make sense here... what rip is this relative to?
+    assert(!m.rip_offset());
     const auto itr = std::find(m_pool_.begin(), m_pool_.end(), m);
-    if (itr == m_pool_.end() && !m.rip_offset()) {
+    if (itr == m_pool_.end()) {
       m_pool_.push_back(m);
+    }
+    return *this;
+  }
+  /** Insert a value into the rip offset pool */
+  Transforms& insert_rip(uint64_t addr) {
+    const auto itr = std::find(rip_pool_.begin(), rip_pool_.end(), addr);
+    if (itr == rip_pool_.end()) {
+      rip_pool_.push_back(addr);
     }
     return *this;
   }
@@ -100,58 +106,48 @@ public:
   void undo(Cfg& cfg, Move type);
   /** Undo instruction move, recompute def-in relation. */
   void undo_instruction_move(Cfg& cfg) {
-    const auto undo_instr = cfg.get_code()[instr_index_];
-    cfg.get_code()[instr_index_] = old_instr_;
-    rescale_trailing_rips(cfg.get_code(), undo_instr, instr_index_, true);
+    cfg.get_function().replace(instr_idx1_, old_instr_);
     cfg.recompute_defs();
   }
   /** Undo opcode move, recompute def-in relation. */
   void undo_opcode_move(Cfg& cfg) {
-    const auto undo_instr = cfg.get_code()[instr_index_];
-    cfg.get_code()[instr_index_] = old_instr_;
-    rescale_trailing_rips(cfg.get_code(), undo_instr, instr_index_, true);
+    cfg.get_function().replace(instr_idx1_, old_instr_);
     cfg.recompute_defs();
   }
   /** Undo operand move, recompute def-in relation. */
   void undo_operand_move(Cfg& cfg) {
-    const auto undo_instr = cfg.get_code()[instr_index_];
-    cfg.get_code()[instr_index_] = old_instr_;
-    rescale_trailing_rips(cfg.get_code(), undo_instr, instr_index_, true);
+    cfg.get_function().replace(instr_idx1_, old_instr_);
     cfg.recompute_defs();
   }
   /** Undo resize move, recompute EVERYTHING. */
   void undo_resize_move(Cfg& cfg) {
-    move(cfg.get_code(), move_j_, move_i_);
-    rescale_rotated_rips(cfg.get_code(), move_j_, move_i_);
+    if (instr_idx1_ < instr_idx2_) {
+      cfg.get_function().rotate_right(instr_idx1_, instr_idx2_);
+    } else {
+      cfg.get_function().rotate_left(instr_idx2_, instr_idx1_);
+    }
     cfg.recompute();
   }
   /** Undo local swap move, recompute def-in relation. */
   void undo_local_swap_move(Cfg& cfg) {
-    std::swap(cfg.get_code()[move_i_], cfg.get_code()[move_j_]);
-    rescale_swapped_rips(cfg.get_code(), move_i_, move_j_);
+    cfg.get_function().swap(instr_idx1_, instr_idx2_);
     cfg.recompute_defs();
   }
   /** Undo global swap move, recompute def-in relation. */
   void undo_global_swap_move(Cfg& cfg) {
-    std::swap(cfg.get_code()[move_i_], cfg.get_code()[move_j_]);
-    rescale_swapped_rips(cfg.get_code(), move_i_, move_j_);
+    cfg.get_function().swap(instr_idx1_, instr_idx2_);
     cfg.recompute_defs();
   }
   /** Add user-defined undo implementation here ... */
   void undo_extension_move(Cfg& cfg);
 
-  /* Reports if an error occurred during initialization (e.g. empty opcode pool). */
-  bool has_error() {
-    return error_;
+  /** Can this class perform at least one opcode transformation? */
+  bool invariant_non_empty_opcode_pool() const {
+    return !control_free_.empty();
   }
-  /* Returns the latest error message. */
-  std::string get_error() {
-    return error_message_;
-  }
-  /* Clears any error there might be. */
-  void clear_error() {
-    error_ = false;
-    error_message_ = "";
+  /** Check all invariants */
+  bool check_invariants() const {
+    return invariant_non_empty_opcode_pool();
   }
 
 private:
@@ -188,41 +184,39 @@ private:
   std::vector<x64asm::M8> m_pool_;
   /** Operand pool. */
   std::vector<x64asm::Label> label_pool_;
-  /** Operand pool -- these are relative to the beginning of the function. */
-  std::vector<x64asm::Imm32> offset_pool_;
+  /** Operand pool -- these are global offsets. */
+  std::vector<x64asm::Imm32> rip_pool_;
 
   /** Old instruction for instruction moves. */
   x64asm::Instruction old_instr_;
-  /** Instruction index. */
-  size_t instr_index_;
-  /** Operand index. */
-  size_t operand_index_;
-  /** Indices for swap or code motion moves. */
-  size_t move_i_;
-  size_t move_j_;
+  /** Instruction indices. */
+  size_t instr_idx1_;
+  size_t instr_idx2_;
 
   /** Random generator. */
   std::default_random_engine gen_;
-  // Assembler.
-  x64asm::Assembler assm_;
   /** Validator to check for support. */
-  Validator* validator_ = NULL;
+  Validator* validator_;
 
-  /** Tracks if an error occurred. */
-  bool error_ = false;
-  /* Tracks the last error message. */
-  std::string error_message_;
-
-  /** Get a random control free opcode. */
-  x64asm::Opcode get_control_free() {
-    assert(!control_free_.empty());
-    return control_free_[gen_() % control_free_.size()];
+  /** Sets o to a random opcode; returns true on success */
+  bool get_control_free(x64asm::Opcode& o) {
+    if (control_free_.empty()) {
+      return false;
+    }
+    o = control_free_[gen_() % control_free_.size()];
+    return true;
   }
-  /** Get a random control free opcode that is type equivalent to the input opcode. */
-  x64asm::Opcode get_control_free_type_equiv(x64asm::Opcode o) {
-    assert(!control_free_type_equiv_.empty());
+  /** Sets o to a random opcode of equivalent type; returns true on success */
+  bool get_control_free_type_equiv(x64asm::Opcode& o) {
+    if (control_free_type_equiv_.empty()) {
+      return false;
+    }
     const auto& equiv = control_free_type_equiv_[o];
-    return equiv.empty() ? o : equiv[gen_() % equiv.size()];
+    if (equiv.empty()) {
+      return false;
+    }
+    o = equiv[gen_() % equiv.size()];
+    return true;
   }
 
   /** Sets o to a random lea operand, returns true on success. */
@@ -240,20 +234,6 @@ private:
   /** Sets o to a random operand from the pool of defined values. Returns true on success. */
   bool get_read_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
                    x64asm::Operand& op);
-
-  /** Shifts instructions about a basic block boundary. */
-  void move(x64asm::Code& code, size_t i, size_t j) const;
-  /** Recompute this rip value */
-  void rescale_rip(x64asm::Code& code, size_t i);
-  /** Scale rips between here and the end of the code */
-  void rescale_trailing_rips(x64asm::Code& code, const x64asm::Instruction& old_instr, size_t i, bool ignore_first = false);
-  /** Scale rips between two swapped instructions */
-  void rescale_swapped_rips(x64asm::Code& code, size_t i, size_t j);
-  /** Scale rips for a set of rotated instructions. */
-  void rescale_rotated_rips(x64asm::Code& code, size_t i, size_t j);
-
-  /** Checks that all rip offsets point into offset_pool when scaled to beginning of function */
-  bool check_rips(const x64asm::Code& code);
 };
 
 } // namespace stoke

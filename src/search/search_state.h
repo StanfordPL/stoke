@@ -26,32 +26,9 @@ namespace stoke {
 class SearchState {
 
 public:
-
-  SearchState() :
-    current( {
-    {
-      x64asm::RET
-    }
-  }, x64asm::RegSet::empty(), x64asm::RegSet::empty()),
-  current_cost(0),
-  best_yet({{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()),
-  best_yet_cost(0),
-  best_correct({{x64asm::RET}}, x64asm::RegSet::empty(), x64asm::RegSet::empty()),
-  best_correct_cost(0),
-  success(false),
-  interrupted(false) {
-  }
-
-  SearchState(const SearchState& other) :
-    current(Cfg(other.current)),
-    current_cost(other.current_cost),
-    best_yet(Cfg(other.best_yet)),
-    best_yet_cost(other.best_yet_cost),
-    best_correct(Cfg(other.best_correct)),
-    best_correct_cost(other.best_correct_cost),
-    success(other.success),
-    interrupted(other.interrupted) {
-  }
+  /** Guaranteed to pass invariants if target.get_function() passes all invariants */
+  SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const Cfg& bc,
+              Init init, size_t size);
 
   /** The current rewrite. */
   Cfg current;
@@ -70,31 +47,30 @@ public:
 
   /** Has search discovered at least one new correct rewrite? */
   bool success;
-
   /** Did the search get interrupted? */
   bool interrupted;
 
-  /** Set the current state based on the command line argument. */
-  void configure(Init init, const Cfg& target, size_t size);
-
-  /** Returns a program that is sound for a given def_ins/live_outs combination by initializing
-  registers as necessary. */
-  static x64asm::Code find_sound_code(const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs);
+  /** Search state should agree on boundary conditions wrt target */
+  bool invariant_boundary_conditions(const Cfg& target) const;
+  /** Search state should be composed of well-formed functions */
+  bool invariant_functions() const;
+  /** Check all invariants */
+  bool check_invariants(const Cfg& target) const {
+    return invariant_boundary_conditions(target) && invariant_functions();
+  }
 
 private:
-
   /** Set the current state to be a series of nops. */
   void configure_empty(const Cfg& target, size_t size);
-
   /** Set the current state to zero the live-outs. */
   void configure_zero(const Cfg& target, size_t size);
-
   /** Set the current state to the target. */
   void configure_target(const Cfg& target, size_t size);
-
   /** Set the state in some other way. */
   void configure_extension(const Cfg& target, size_t size);
 
+  /** Returns a program that is sound for a given def_ins/live_outs combination */
+  static x64asm::Code find_sound_code(const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs);
 };
 
 } // namespace stoke

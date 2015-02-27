@@ -58,14 +58,6 @@ int main(int argc, char** argv) {
   tcs.push_back(tc);
   SandboxGadget sb(tcs, aux_fxns);
 
-  if (!target.is_sound()) {
-    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
-  }
-
-  if (!rewrite.is_sound()) {
-    Console::error(1) << "Rewrite reads undefined variables, or leaves live_out undefined: " << rewrite.which_undef_read() << endl;
-  }
-
   sb.run(target);
   const auto target_result = *(sb.result_begin());
   sb.run(rewrite);

@@ -55,22 +55,6 @@ cpputil::ValueArg<size_t>& call_weight_arg =
   .description("Number of additional call opcodes in the opcode pool")
   .default_val(0);
 
-cpputil::FlagArg& force_mem_read_arg =
-  cpputil::FlagArg::create("force_mem_read")
-  .description("Propose moves that read memory, even if the target doesn't.");
-
-cpputil::FlagArg& force_no_mem_read_arg =
-  cpputil::FlagArg::create("force_no_mem_read")
-  .description("Propose no moves that read memory, even if the target does.");
-
-cpputil::FlagArg& force_mem_write_arg =
-  cpputil::FlagArg::create("force_mem_write")
-  .description("Propose moves that write memory, even if the target doesn't.");
-
-cpputil::FlagArg& force_no_mem_write_arg =
-  cpputil::FlagArg::create("force_no_mem_write")
-  .description("Propose no moves that write memory, even if the target does.");
-
 cpputil::FlagArg& callee_save_arg =
   cpputil::FlagArg::create("callee_save")
   .alternate("propose_callee_save")
@@ -87,15 +71,21 @@ cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& preserve_regs_arg
   .default_val(x64asm::RegSet::linux_call_preserved());
 
 cpputil::ValueArg<std::vector<uint64_t>>& immediates_arg =
-                          cpputil::ValueArg<std::vector<uint64_t>>::create("immediates")
-                          .usage("{ imm1 imm2 ... }")
-                          .description("Additional immediates to propose as operands")
-                          .default_val({});
+  cpputil::ValueArg<std::vector<uint64_t>>::create("immediates")
+  .usage("{ imm1 imm2 ... }")
+  .description("Additional immediates to propose as operands")
+  .default_val({});
 
 cpputil::ValueArg<std::set<x64asm::M8>, MemSetReader, MemSetWriter>& mem_ops_arg =
   cpputil::ValueArg<std::set<x64asm::M8>, MemSetReader, MemSetWriter>::create("mem_ops")
   .usage("{ (%rax) (%rdi, %rsp) ... }")
   .description("Additional addresses to propose as operands")
+  .default_val({});
+
+cpputil::ValueArg<std::vector<uint64_t>>& rips_arg =
+  cpputil::ValueArg<std::vector<uint64_t>>::create("rips")
+  .usage("{ rip1 rip2 ... }")
+  .description("Additional global rip offsets to propose as operands")
   .default_val({});
 
 } // namespace stoke
