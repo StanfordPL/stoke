@@ -38,16 +38,15 @@ public:
     seed_ = (std::default_random_engine::result_type)(tv.tv_sec * 1000000 + tv.tv_usec);
     transforms_.set_seed(seed_);
 
+    code_ = GetParam().get_code();
+
     // Note: we only want to do this once.
     if (!transforms_init_) {
-      transforms_.set_opcode_pool(x64asm::FlagSet::universe(), 0, true, true, x64asm::RegSet::empty(), {}, {});
+      transforms_.set_opcode_pool(Cfg(TUnit(code_)), x64asm::FlagSet::universe(), 0, x64asm::RegSet::empty(), {}, {});
       transforms_init_ = true;
     }
 
-    /* set operands based on the target */
-    transforms_.set_operand_pool(GetParam().get_code(), x64asm::RegSet::empty());
-
-    code_ = GetParam().get_code();
+    transforms_.set_operand_pool(Cfg(TUnit(code_)), x64asm::RegSet::empty());
     cfg_ = new Cfg(TUnit(code_), x64asm::RegSet::universe(), x64asm::RegSet::empty());
   }
 

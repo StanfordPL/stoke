@@ -45,20 +45,9 @@ struct TUnit {
     x64asm::RegSet maybe_undef_set;
   };
 
-  /** Constructs a funtion (not guaranteed to pass check_invariants()) */
-  TUnit(const x64asm::Code& code = {{}}, uint64_t fo = 0, uint64_t ro = 0, size_t c = 0) {
-    code_ = code;
-    file_offset_ = fo;
-    rip_offset_ = ro;
-    capacity_ = c;
+  /** Constructs a funtion which will pass check_invariants() */
+  TUnit(const x64asm::Code& code = {{}}, uint64_t fo = 0, uint64_t ro = 0, size_t c = 0);
 
-    recompute();
-  }
-
-  /** Returns the underlying code sequence */
-  x64asm::Code& get_code() {
-    return code_;
-  }
   /** Returns the underlying code sequence */
   const x64asm::Code& get_code() const {
     return code_;
@@ -106,16 +95,17 @@ struct TUnit {
   bool invariant_first_instr_is_label() const {
     return !code_.empty() && code_[0].get_opcode() == x64asm::LABEL_DEFN;
   }
-  /** Check that the hex encoding of this function fits within its capacity */
-  bool invariant_encoding_size() const {
-    return hex_size() <= hex_capacity();
-  }
   /** Check that rip offsets all resolve to valid locations */
   bool invariant_rip_offsets() const;
+  /** Check that hex sizes are correct */
+  bool invariant_hex_sizes() const;
+  /** Check that hex offsets are correct */
+  bool invariant_hex_offsets() const;
   /** Checks that this function statisfies all invariants */
   bool check_invariants() const {
     return invariant_first_instr_is_label() &&
-           invariant_encoding_size() &&
+           invariant_hex_sizes() &&
+           invariant_hex_offsets() &&
            invariant_rip_offsets();
   }
 
@@ -162,7 +152,6 @@ struct TUnit {
     return hex_sizes_.end();
   }
 
-
   /** Iterator over call targets in this function */
   call_target_iterator call_target_begin() const {
     return call_target_iterator(&code_, true);
@@ -190,7 +179,30 @@ struct TUnit {
     return mem_iterator(&code_, false);
   }
 
-  /** Read from istream. */
+  /** Removes all instructions in the underlying code sequence */
+  void clear() {
+    code_.clear();
+    hex_sizes_.clear();
+    hex_offsets_.clear();
+  }
+  /** Removes this instruction from the underlying code sequence; can cause invariants to fail */
+  void remove(size_t index);
+  /** Inserts a new instruction in the underlying code sequence; can cause invariants to fail */
+  void insert(size_t index, const x64asm::Instruction& instr, bool rescale_rip = false);
+  /** Inserts a new instruction in the underlying code sequence; can cause invariants to fail */
+  void push_back(const x64asm::Instruction& instr, bool rescale_rip = false) {
+    insert(get_code().size(), instr, rescale_rip);
+  }
+  /** Replaces an instruction in the underlying code sequence; can cause invariants to fail */
+  void replace(size_t index, const x64asm::Instruction& instr, bool rescale_rip = false);
+  /** Swaps two instructions in the underlying code sequence; can cause invariants to fail */
+  void swap(size_t i, size_t j);
+  /** Rotate instructions to the left; can cause invariants to fail */
+  void rotate_left(size_t i, size_t j);
+  /** Rotate instructions to the right; can cause invariants to fail */
+  void rotate_right(size_t i, size_t j);
+
+  /** Read from istream (result will pass invariants unless parsing fails) */
   std::istream& read_text(std::istream& is);
   /** Write to ostream. */
   std::ostream& write_text(std::ostream& os) const;
@@ -226,18 +238,13 @@ private:
   /** User-provided must undef set. */
   boost::optional<x64asm::RegSet> must_undef_set_;
 
-  /** Compute global rip-offset (assumes hex_offsets_ and hex_sizes_) */
-  void recompute_rip_offset_targets();
-  /** Compute hex offsets for every instruction (assumes hex_sizes_) */
-  void recompute_hex_offsets();
-  /** Compute hex sizes for every instruction */
-  void recompute_hex_sizes();
-  /** Recompute everything from scratch */
-  void recompute() {
-    recompute_hex_sizes();
-    recompute_hex_offsets();
-    recompute_rip_offset_targets();
-  }
+  /** Recompute meta data from scratch */
+  void recompute();
+
+  /** Is there a rip offset at this index? */
+  bool is_rip(size_t index) const;
+  /** Adjust the rip offset at index i by delta */
+  void adjust_rip(size_t index, int64_t delta);
 
   /** Read a well-formatted function. */
   std::istream& read_formatted_text(std::istream& is);

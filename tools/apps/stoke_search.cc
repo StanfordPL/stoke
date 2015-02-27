@@ -255,7 +255,7 @@ int main(int argc, char** argv) {
   TrainingSetGadget training_set(seed);
   SandboxGadget training_sb(training_set, aux_fxns);
 
-  TransformsGadget transforms(target.get_function(), aux_fxns, seed);
+  TransformsGadget transforms(target, aux_fxns, seed);
   SearchGadget search(&transforms, seed);
 
   TestSetGadget test_set(seed);
@@ -264,10 +264,6 @@ int main(int argc, char** argv) {
   SolverGadget smt;
   ValidatorGadget validator(smt);
   VerifierGadget verifier(holdout_fxn, validator);
-
-  if (!target.is_sound()) {
-    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
-  }
 
   ScbArg scb_arg {&Console::msg(), nullptr};
   search.set_progress_callback(pcb, &Console::msg())
@@ -370,8 +366,7 @@ int main(int argc, char** argv) {
   Console::msg() << final_msg << endl;
 
   ofstream ofs(out.value());
-  TUnit result(state.best_correct.get_code());
-  ofs << result;
+  ofs << state.best_correct.get_function();
 
   return 0;
 }

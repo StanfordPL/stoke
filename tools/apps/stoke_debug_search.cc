@@ -38,14 +38,10 @@ int main(int argc, char** argv) {
   SeedGadget seed;
   FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns);
-  TransformsGadget tforms(target.get_function(), aux_fxns, seed);
+  TransformsGadget tforms(target, aux_fxns, seed);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
-
-  if (!target.is_sound()) {
-    Console::error(1) << "Target reads undefined variables, or leaves live_out undefined: " << target.which_undef_read() << endl;
-  }
 
   os << "Original Code:" << endl;
   os << endl;
