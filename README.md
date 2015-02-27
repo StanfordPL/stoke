@@ -27,8 +27,7 @@ Table of Contents
  1. [Code Organization](#code-organization)
  2. [Initial Search State](#initial-search-state)
  3. [Search Transformations](#search-transformations)
- 4. [Performance Term](#performance-term)
- 5. [Correctness Term](#correctness-term)
+ 4. [Cost Function](#cost-function)
  6. [Live-out Error](#computing-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
@@ -716,81 +715,40 @@ critical path, the faster `Cfg::recompute_defs()` method should be used for
 transformations that do not modify control flow structure and only potentially
 invalidate data-flow values.
 
-Performance Term
+Cost Function
 -----
 
-Performance term types are defined in `src/cost/performance_term.h` along with an additional type for user-defined extensions.
+A cost function is specified using the `--cost` command line argument.  It's an
+expression composed using standard unsigned arithmetic operators.  As
+variables, you can use several measurements of the current rewrite.  The most
+important of these is `correctness`.  The value `correctness` is (by default)
+the number of bits that differ in the outputs of the target versus the rewrite
+summed across all testcases.  There are some tunable options for this, for
+example, for floating point computations.  In all cases, lower cost is better.
 
-```c++
-enum class PerformanceTerm {
-  NONE,
-  SIZE,
-  LATENCY,
+Some other important cost-variables you can use are:
 
-  // Add user-defined extensions here ...
-  EXTENSION
-};
-```
+| Name | Description |
+| ---- | ----------- |
+| binsize | The size (in bytes) of the assembled rewrite using the x64asm library. |
+| correctness | How "correct" the rewrite's output appears.  Very configurable. |
+| size | The number of instructions in the assembled rewrite. |
+| latency | A poor-man's estimate of the rewrite latency, in clock cycles, based on the per-opcode latency table in `src/cost/tables`. |
+| measured | An estimate of running time by counting the number of instructions actually executed on the testcases.  Good for algorithmic improvements.  |
+| sseavx |  Returns '1' if both avx and sse instructions are used (this is usually bad!), and '0' otherwise.  Often used with a multiplier like `correctness + 1000*sseavx` |
 
-Performance term type is specified using the `--perf` command line argument.
-This value controls the behavior of the `CostFunction::evaluate_performance()
-  const` method, which dispatches to the family of
-  `CostFunction::xxxxx_performance() const` methods. User-defined extensions
-  should be placed in the `CostFunction::extension_performance() const` method,
-  which can be triggered by specifying `--perf extension`.
+In typical usage, you will combine the value of `correctness` with other values
+you want to optimize for.  A good starting point is `correctness + measured` or
+`correctness + latency` (the latter being default).  Improvements might assign
+an SSE-AVX penalty, like `correctness + latency + 10000*sseavx`.
 
-```c++
-Cost CostFunction::extension_performance(const Cfg& cfg) const { 
-  Cost res = 0;                                                  
-
-  // Add user-defined implementation here ... 
-
-  // Invariant: Return value should not exceed max_performance_cost 
-  assert(res <= max_performance_cost); 
-
-  return res;  
-}
-```
-
-Correctness Term
------
-
-Correctness term types are defined in `src/cost/reduction.h` along with an additional type for user-defined extensions.
-
-```c++
-enum class Reduction {
-  SUM,
-  MAX,
-
-  // Add user-defined extensions here ...
-  EXTENSION
-};
-```
-
-Correctness term type is specified using the `--reduction` command line
-argument. This value controls the behavior of the
-`CostFunction::evaluate_correctness()` method, which dispatches to the family
-of `CostFunction::xxxxx_correctness()` methods, each of which represent a
-method for aggregating errors observed across testcases. User-defined
-extensions should be placed in the `CostFunction::extension_correctness()`
-method, which can be triggered by specifying `--reduction extension`.
-
-```c++
-Cost CostFunction::extension_correctness(const Cfg& cfg, Cost max) {                                             
-  Cost res = 0;                                                                                                  
-
-  // Add user-defined implementation here ... 
-
-  // This method is not required to examine all testcases. Implementations                                       
-  // that compute res iteratively may stop executing and return max once res                                     
-  // equals or exceeds that value.                                                                               
-
-  // Invariant 1: Return value should not exceed max_correctness_cost                                            
-  assert(res <= max_correctness_cost);                                                                           
-    
-  return res;                                                                                                    
-}
-```
+To add a new cost function, drop a file into `src/cost` that subclasses
+`stoke::CostFunction`.  Look at `src/cost/sseavx.h` for a simple example.  It
+comes down to overloading the `operator()` function to return the value you
+want.  Look at `measured.h` for an example of how to use runtime data from the
+sandbox to generate values.  Then, add an entry to the map in
+`tools/gadgets/cost_function.h` so that your new function can be found on the
+command line.
 
 Live-out Error
 -----

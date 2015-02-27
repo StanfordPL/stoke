@@ -1,4 +1,4 @@
-# Copyright 2014 eric schkufza
+# Copyright 2013-2015 Stanford University
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,7 +58,10 @@ SRC_OBJ=\
 	src/cfg/cfg_transforms.o \
 	src/cfg/dot_writer.o \
 	\
-	src/cost/cost_function.o \
+	src/cost/correctness.o \
+	src/cost/cost_parser.o \
+	src/cost/expr.o \
+	src/cost/latency.o \
 	\
 	src/disassembler/disassembler.o \
 	\
@@ -132,7 +135,6 @@ TOOL_NON_ARG_OBJ=\
 	tools/io/mem_set.o \
 	tools/io/move.o \
 	tools/io/reduction.o \
-	tools/io/performance_term.o \
 	tools/io/postprocessing.o \
 	tools/io/solver.o \
 	tools/io/state_diff.o \

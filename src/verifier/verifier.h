@@ -16,7 +16,7 @@
 #define STOKE_SRC_VERIFIER_VERIFIER_H
 
 #include "src/cfg/cfg.h"
-#include "src/cost/cost_function.h"
+#include "src/cost/correctness.h"
 #include "src/solver/cvc4solver.h"
 #include "src/state/cpu_state.h"
 #include "src/validator/validator.h"
@@ -27,7 +27,7 @@ namespace stoke {
 class Verifier {
 public:
   /** Creates a new verifier with a cost function for use in hold-out verification. */
-  Verifier(CostFunction& fxn, Validator& validator) :
+  Verifier(CorrectnessCost& fxn, Validator& validator) :
     counter_example_(), counter_example_available_(false), validator_(validator),
     fxn_(fxn), next_counter_example_(0), strategy_(Strategy::NONE) { }
 
@@ -67,7 +67,7 @@ private:
   bool counter_example_available_;
 
   /** Cost function for use in hold-out verification. */
-  CostFunction fxn_;
+  CorrectnessCost fxn_;
   /** Next counter example returned by hold-out verifier. */
   size_t next_counter_example_;
 
