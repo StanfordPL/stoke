@@ -102,10 +102,6 @@ struct TUnit {
   bool invariant_first_instr_is_label() const {
     return !code_.empty() && code_[0].get_opcode() == x64asm::LABEL_DEFN;
   }
-  /** Check that the hex encoding of this function fits within its capacity */
-  bool invariant_encoding_size() const {
-    return hex_size() <= hex_capacity();
-  }
   /** Check that rip offsets all resolve to valid locations */
   bool invariant_rip_offsets() const;
   /** Check that hex sizes are correct */
@@ -115,7 +111,6 @@ struct TUnit {
   /** Checks that this function statisfies all invariants */
   bool check_invariants() const {
     return invariant_first_instr_is_label() &&
-           invariant_encoding_size() &&
            invariant_hex_sizes() &&
            invariant_hex_offsets() &&
            invariant_rip_offsets();
