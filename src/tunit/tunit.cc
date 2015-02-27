@@ -109,6 +109,28 @@ bool TUnit::invariant_rip_offsets() const {
   return true;
 }
 
+bool TUnit::invariant_hex_sizes() const {
+	Assembler assm;
+	for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
+		if (hex_size(i) != assm.hex_size(code_[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+bool TUnit::invariant_hex_offsets() const {
+	Assembler assm;
+	size_t offset = 0;
+	for (size_t i = 0, ie = code_.size(); i < ie; ++i) {
+		if (hex_offset(i) != offset) {
+			return false;
+		}
+		offset += assm.hex_size(code_[i]);
+	}
+	return true;
+}
+
 void TUnit::remove(size_t index) {
   assert(index < code_.size());
 
@@ -138,7 +160,8 @@ void TUnit::insert(size_t index, const x64asm::Instruction& instr, bool rescale_
   assert(index <= code_.size());
 
   // Some constants
-  const auto size = assm_.hex_size(instr);
+	Assembler assm;
+  const auto size = assm.hex_size(instr);
   const int64_t offset_delta = size;
 
   // Update offset and size tables
@@ -148,7 +171,7 @@ void TUnit::insert(size_t index, const x64asm::Instruction& instr, bool rescale_
     hex_offsets_[i] = hex_offsets_[i-1] + offset_delta;
     hex_sizes_[i] = hex_sizes_[i-1];
   }
-  // hex_offsets_[index] does't change
+  hex_offsets_[index] = index == 0 ? 0 : hex_offsets_[index-1] + hex_sizes_[index-1];
   hex_sizes_[index] = size;
 
   // Insert this instruction
@@ -170,7 +193,8 @@ void TUnit::replace(size_t index, const x64asm::Instruction& instr, bool rescale
   assert(index < code_.size());
 
   // Some constants
-  const auto size = assm_.hex_size(instr);
+	Assembler assm;
+  const auto size = assm.hex_size(instr);
   const int64_t offset_delta = size - hex_size(index);
 
   // Update offset and size tables
@@ -433,10 +457,12 @@ ostream& TUnit::write_text(ostream& os) const {
 }
 
 void TUnit::recompute() {
+	Assembler assm;
+
   // Recompute hex sizes
   hex_sizes_.clear();
   for (const auto& instr : get_code()) {
-    hex_sizes_.push_back(assm_.hex_size(instr));
+    hex_sizes_.push_back(assm.hex_size(instr));
   }
 
   // Recompute hex offsets
