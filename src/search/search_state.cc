@@ -52,7 +52,7 @@ SearchState::SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const C
 void SearchState::configure_empty(const Cfg& target, size_t size) {
   // Start with initial label
   current = target;
-	current.get_function().clear();
+  current.get_function().clear();
   current.get_function().push_back(target.get_code()[0]);
 
   // Pad with nops
@@ -79,7 +79,7 @@ void SearchState::configure_zero(const Cfg& target, size_t size) {
 
   // Start with initial label
   current = target;
-	current.get_function().clear();
+  current.get_function().clear();
   current.get_function().push_back(target.get_code()[0]);
 
   // Insert minimal number of instructions to cover live-outs
