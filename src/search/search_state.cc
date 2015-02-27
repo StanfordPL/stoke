@@ -25,8 +25,8 @@ SearchState::SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const C
   success = false;
   interrupted = false;
 
-	// This constructor is guaranteed sound so long as target satisfies all its invariants
-	assert(target.get_function().check_invariants());
+  // This constructor is guaranteed sound so long as target satisfies all its invariants
+  assert(target.get_function().check_invariants());
 
   switch(init) {
   case Init::TARGET:
