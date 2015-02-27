@@ -229,7 +229,7 @@ void TUnit::swap(size_t i, size_t j) {
   }
 
   // Some constants
-	const int64_t span = hex_offset(j) - hex_offset(i+1);
+  const int64_t span = hex_offset(j) - hex_offset(i+1);
   const int64_t offset_delta_i = span + hex_size(j);
   const int64_t offset_delta_j = 0 - span - hex_size(i);
   const int64_t offset_delta_inner = hex_size(j) - hex_size(i);
@@ -275,7 +275,7 @@ void TUnit::rotate_left(size_t i, size_t j) {
   }
 
   // Some constants
-	const int64_t span = hex_offset(j) - hex_offset(i+1);
+  const int64_t span = hex_offset(j) - hex_offset(i+1);
   const int64_t offset_delta_small = 0 - hex_size(i);
   const int64_t offset_delta_large = span + hex_size(j);
 
@@ -318,7 +318,7 @@ void TUnit::rotate_right(size_t i, size_t j) {
   }
 
   // Some constants
-	const int64_t span = hex_offset(j) - hex_offset(i+1);
+  const int64_t span = hex_offset(j) - hex_offset(i+1);
   const int64_t offset_delta_small = hex_size(j);
   const int64_t offset_delta_large = 0 - span - hex_size(i);
 
