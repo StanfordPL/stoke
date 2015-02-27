@@ -12,21 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_VERIFIER_H
-#define STOKE_TOOLS_GADGETS_VERIFIER_H
+#ifndef STOKE_TOOLS_GADGETS_LATENCY_COST_H
+#define STOKE_TOOLS_GADGETS_LATENCY_COST_H
 
-#include "src/cost/cost_function.h"
-#include "src/solver/cvc4solver.h"
-#include "src/solver/z3solver.h"
-#include "src/verifier/verifier.h"
-#include "tools/args/verifier.inc"
+#include "src/cost/latency.h"
+#include "tools/args/latency.inc"
+#include "tools/args/cost.inc"
 
 namespace stoke {
 
-class VerifierGadget : public Verifier {
+class LatencyCostGadget : public LatencyCost {
 public:
-  VerifierGadget(CorrectnessCost& fxn, Validator& val) : Verifier(fxn, val) {
-    set_strategy(strategy_arg);
+  LatencyCostGadget() : LatencyCost() {
+    set_nesting_penalty(nesting_penalty_arg);
   }
 };
 

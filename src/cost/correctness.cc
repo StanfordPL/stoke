@@ -18,25 +18,17 @@
 #include <array>
 #include <limits>
 
-#include "src/cost/cost_function.h"
+#include "src/cost/correctness.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 using namespace cpputil;
 using namespace std;
 using namespace x64asm;
 
-namespace {
-
-array<stoke::Cost, 3976> latencies_ {{
-#include "src/cost/tables/haswell_latency.h"
-  }
-};
-
-} // namespace
 
 namespace stoke {
 
-CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool heap_out) {
+CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, bool heap_out) {
   assert(sandbox_ != nullptr);
 
   live_out_ = target.live_outs();
@@ -53,117 +45,58 @@ CostFunction& CostFunction::set_target(const Cfg& target, bool stack_out, bool h
   return *this;
 }
 
-void CostFunction::recompute_target_defs(const RegSet& rs) {
+void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
+
   target_gp_out_.clear();
-  for (auto i = rs.any_sub_gp_begin(), ie = rs.any_sub_gp_end(); i != ie; ++i) {
+  for(auto i = rs.any_sub_gp_begin(), ie = rs.any_sub_gp_end(); i != ie; ++i) {
     target_gp_out_.push_back(*i);
   }
 
   target_sse_out_.clear();
-  for (auto i = rs.any_sub_sse_begin(), ie = rs.any_sub_sse_end(); i != ie; ++i) {
+  for(auto i = rs.any_sub_sse_begin(), ie = rs.any_sub_sse_end(); i != ie; ++i) {
     target_sse_out_.push_back(*i);
   }
 
-  // @todo -- An x64asm iterator over these flags would be nice
+  // TODO -- An x64asm iterator over these flags would be nice
   target_rf_out_.clear();
-  for (auto f : {
-         eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
-       }) {
-    if (rs.contains(f)) {
+  for(auto f: {
+        eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
+      }) {
+    if(rs.contains(f)) {
       target_rf_out_.push_back(f);
     }
   }
 }
 
-Cost CostFunction::assembled_size_cost(const Cfg& cfg) {
-  assm_.start(size_buffer_);
-
-  const auto& code = cfg.get_code();
-  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-    if (cfg.is_exit(*b)) {
-      continue;
-    }
-
-    const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-    for (size_t i = 0, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
-      const auto& instr = code[i];
-      if (!instr.is_nop() && !instr.is_ret()) {
-        assm_.assemble(instr);
-      }
-    }
-  }
-
-  assm_.finish();
-
-  uint64_t size = size_buffer_.size();
-  if (size <= max_size_) {
-    return 0;
-  } else {
-    return (Cost)((size - max_size_) * size_incr_penalty_ + size_starting_penalty_);
-  }
-}
-
 /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
   result would equal or exceed that value. */
-CostFunction::result_type CostFunction::operator()(const Cfg& cfg, const Cost max) {
+CorrectnessCost::result_type CorrectnessCost::operator()(const Cfg& cfg, const Cost max) {
 
-  // we need to configure the sandbox differently if we're measuring its performance
-  if(pterm_ == PerformanceTerm::MEASURED) {
-    sandbox_->set_count_instructions(true);
-  } else {
-    sandbox_->set_count_instructions(false);
-  }
-
-  auto cost = k_ * evaluate_correctness(cfg, (max + k_ - 1) / k_);
-  assert(cost <= max_cost);
-
-  const auto correct = cost == 0;
-  if (cost < max && pterm_ != PerformanceTerm::NONE) {
-    cost += evaluate_performance(cfg, max);
-  }
-  assert(cost <= max_cost);
-
+  auto cost = evaluate_correctness(cfg, max);
+  bool correct = cost == 0;
   return result_type(correct, cost);
 }
 
-Cost CostFunction::evaluate_correctness(const Cfg& cfg, const Cost max) {
-  // Apply the size penalty if needed
-  Cost penalty = 0;
-  if (size_starting_penalty_ > 0 || size_incr_penalty_ > 0) {
-    penalty = assembled_size_cost(cfg);
-    if (penalty >= max) {
-      return max;
-    }
-  }
+Cost CorrectnessCost::evaluate_correctness(const Cfg& cfg, const Cost max) {
 
   switch (reduction_) {
   case Reduction::MAX:
-    return penalty + max_correctness(cfg, max - penalty);
+    return max_correctness(cfg, max);
   case Reduction::SUM:
-    return penalty + sum_correctness(cfg, max - penalty);
-  case Reduction::EXTENSION:
-    return penalty + extension_correctness(cfg, max - penalty);
+    return sum_correctness(cfg, max);
   default:
     assert(false);
     return 0;
   }
 }
 
-Cost CostFunction::max_correctness(const Cfg& cfg, const Cost max) {
+Cost CorrectnessCost::max_correctness(const Cfg& cfg, const Cost max) {
   Cost res = 0;
-
-  sandbox_->expert_mode();
-  sandbox_->expert_use_disposable_labels();
-  sandbox_->expert_recompile(cfg);
-  sandbox_->expert_recycle_labels();
 
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
-    sandbox_->run_one(i);
-
     const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)), cfg.def_outs());
     assert(err <= max_testcase_cost);
-
     res = std::max(res, err);
   }
 
@@ -171,18 +104,11 @@ Cost CostFunction::max_correctness(const Cfg& cfg, const Cost max) {
   return res;
 }
 
-Cost CostFunction::sum_correctness(const Cfg& cfg, const Cost max) {
+Cost CorrectnessCost::sum_correctness(const Cfg& cfg, const Cost max) {
   Cost res = 0;
-
-  sandbox_->expert_mode();
-  sandbox_->expert_use_disposable_labels();
-  sandbox_->expert_recompile(cfg);
-  sandbox_->expert_recycle_labels();
 
   size_t i = 0;
   for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
-    sandbox_->run_one(i);
-
     const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)), cfg.def_outs());
     assert(err <= max_testcase_cost);
 
@@ -193,22 +119,7 @@ Cost CostFunction::sum_correctness(const Cfg& cfg, const Cost max) {
   return res;
 }
 
-Cost CostFunction::extension_correctness(const Cfg& cfg, const Cost max) {
-  Cost res = 0;
-
-  // Add user-defined implementation here ...
-
-  // This method is not required to examine all testcases. Implementations
-  // that compute res iteratively may stop executing and return max once res
-  // equals or exceeds that value.
-
-  // Invariant 1: Return value should not exceed max_correctness_cost
-  assert(res <= max_correctness_cost);
-
-  return res;
-}
-
-Cost CostFunction::evaluate_error(const CpuState& t, const CpuState& r, const RegSet& defs) const {
+Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const RegSet& defs) const {
   // Only assess a signal penalty if target and rewrite disagree
   if (t.code != r.code) {
     return sig_penalty_;
@@ -235,7 +146,7 @@ Cost CostFunction::evaluate_error(const CpuState& t, const CpuState& r, const Re
   return cost;
 }
 
-Cost CostFunction::gp_error(const Regs& t, const Regs& r, const RegSet& defs) const {
+Cost CorrectnessCost::gp_error(const Regs& t, const Regs& r, const RegSet& defs) const {
   Cost cost = 0;
 
   for (const auto& r_t : target_gp_out_) {
@@ -258,7 +169,7 @@ Cost CostFunction::gp_error(const Regs& t, const Regs& r, const RegSet& defs) co
   return cost;
 }
 
-Cost CostFunction::sse_error(const Regs& t, const Regs& r, const RegSet& defs) const {
+Cost CorrectnessCost::sse_error(const Regs& t, const Regs& r, const RegSet& defs) const {
   Cost cost = 0;
 
   for (size_t i = 0; i < sse_count_; ++i) {
@@ -317,7 +228,7 @@ Cost CostFunction::sse_error(const Regs& t, const Regs& r, const RegSet& defs) c
   return cost;
 }
 
-Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
+Cost CorrectnessCost::mem_error(const Memory& t, const Memory& r) const {
   Cost cost = 0;
 
   for (auto i = t.valid_begin(), ie = t.valid_end(); i != ie; ++i) {
@@ -336,7 +247,7 @@ Cost CostFunction::mem_error(const Memory& t, const Memory& r) const {
   return cost;
 }
 
-Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Regs& rsse, const RegSet& defs) const {
+Cost CorrectnessCost::block_mem_error(const Memory& t, const Memory& rmem, const Regs& rsse, const RegSet& defs) const {
   Cost cost = 0;
 
   for (size_t i = *t.valid_begin(), ie = t.upper_bound(); i < ie; i += 16) {
@@ -371,8 +282,9 @@ Cost CostFunction::block_mem_error(const Memory& t, const Memory& rmem, const Re
   return cost;
 }
 
-Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r, const RegSet& defs) const {
+Cost CorrectnessCost::rflags_error(const RFlags& t, const RFlags& r, const RegSet& defs) const {
   Cost cost = 0;
+
   for (auto f : target_rf_out_) {
     const auto i = f.index();
     cost += defs.contains(f) ? (t.is_set(i) ^ r.is_set(i)) : 1;
@@ -381,7 +293,7 @@ Cost CostFunction::rflags_error(const RFlags& t, const RFlags& r, const RegSet& 
   return cost;
 }
 
-Cost CostFunction::undef_default(size_t num_bytes) const {
+Cost CorrectnessCost::undef_default(size_t num_bytes) const {
   Cost res = 0;
   switch (distance_) {
   case Distance::HAMMING:
@@ -405,21 +317,19 @@ Cost CostFunction::undef_default(size_t num_bytes) const {
   return res;
 }
 
-Cost CostFunction::evaluate_distance(uint64_t x, uint64_t y) const {
+Cost CorrectnessCost::evaluate_distance(uint64_t x, uint64_t y) const {
   switch (distance_) {
   case Distance::HAMMING:
     return hamming_distance(x, y);
   case Distance::ULP:
     return ulp_distance(x, y);
-  case Distance::EXTENSION:
-    return extension_distance(x, y);
   default:
     assert(false);
     return 0;
   }
 }
 
-Cost CostFunction::ulp_distance(uint64_t x, uint64_t y) const {
+Cost CorrectnessCost::ulp_distance(uint64_t x, uint64_t y) const {
   auto t = *((int64_t*)&x);
   t = t < 0 ? numeric_limits<int64_t>::min() - t : t;
 
@@ -430,122 +340,6 @@ Cost CostFunction::ulp_distance(uint64_t x, uint64_t y) const {
   ulp = ulp < min_ulp_ ? 0 : ulp - min_ulp_;
 
   return ulp > max_error_cost ? max_error_cost : ulp;
-}
-
-Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {
-  Cost res = 0;
-
-  // Add user-defined implementation here ...
-
-  // Invariant 1: Return value should not exceed max_error_cost
-  assert(res <= max_error_cost);
-
-  return res;
-}
-
-Cost CostFunction::evaluate_performance(const Cfg& cfg, const Cost max) const {
-  switch (pterm_) {
-  case PerformanceTerm::SIZE:
-    return size_performance(cfg);
-  case PerformanceTerm::LATENCY:
-    return latency_performance(cfg);
-  case PerformanceTerm::MEASURED:
-    return measured_performance(cfg);
-  case PerformanceTerm::EXTENSION:
-    return extension_performance(cfg);
-  default:
-    assert(false);
-    return 0;
-  }
-}
-
-Cost CostFunction::size_performance(const Cfg& cfg) const {
-  Cost size = 0;
-
-  const auto& code = cfg.get_code();
-  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-    if (cfg.is_exit(*b)) {
-      continue;
-    }
-
-    const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
-    for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
-      if (!code[i].is_nop()) {
-        size++;
-      }
-    }
-  }
-
-  return size;
-}
-
-Cost CostFunction::latency_performance(const Cfg& cfg) const {
-  Cost latency = 0;
-
-  auto uses_sse = false;
-  auto uses_avx = false;
-
-  const auto& code = cfg.get_code();
-  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-    if (cfg.is_exit(*b)) {
-      continue;
-    }
-
-    Cost block_latency = 0;
-    const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
-    for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
-      // Record latency for non nop instructions
-      if (!code[i].is_nop()) {
-        block_latency += latencies_[code[i].get_opcode()];
-      }
-      // Record whether this instruction was sse or avx
-      if (code[i].is_any_sse()) {
-        uses_sse = true;
-      }
-      if (code[i].is_any_avx()) {
-        uses_avx = true;
-      }
-    }
-
-    // Increment latency by block latency scaled by nesting penalty
-    // The call to pow() is expensive, so we hide it behind a faster check
-    const auto nd = cfg.nesting_depth(*b);
-    if (nd > 1) {
-      latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
-    } else {
-      latency += block_latency;
-    }
-  }
-
-  // Apply penalty to codes that mix avx and sse instructions
-  if (uses_sse && uses_avx) {
-    latency += sse_avx_penalty_;
-  }
-
-  return latency;
-}
-
-Cost CostFunction::measured_performance(const Cfg& cfg) const {
-  Cost latency = 0;
-  Cost tc_count = 0;
-
-  for(auto i = sandbox_->output_begin(), ie = sandbox_->output_end(); i != ie; ++i) {
-    latency += i->latency_seen;
-    tc_count++;
-  }
-
-  return latency/tc_count;
-}
-
-Cost CostFunction::extension_performance(const Cfg& cfg) const {
-  Cost res = 0;
-
-  // Add user-defined implementation here ...
-
-  // Invariant: Return value should not exceed max_performance_cost
-  assert(res <= max_performance_cost);
-
-  return res;
 }
 
 } // namespace stoke

@@ -15,31 +15,69 @@
 #ifndef STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 #define STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 
-#include "src/cfg/cfg.h"
-#include "src/cost/cost_function.h"
-#include "src/sandbox/sandbox.h"
-#include "tools/args/correctness.inc"
+#include "src/cost/cost_parser.h"
+#include "src/cost/binsize.h"
+#include "src/cost/measured.h"
+#include "src/cost/size.h"
+#include "src/cost/sseavx.h"
 #include "tools/args/cost.inc"
-#include "tools/args/in_out.inc"
-#include "tools/args/performance.inc"
+#include "tools/gadgets/correctness_cost.h"
+#include "tools/gadgets/latency_cost.h"
+#include "tools/ui/console.h"
 
 namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
 public:
-  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(sb) {
-    set_target(target, stack_out_arg, heap_out_arg);
-
-    set_distance(distance_arg);
-    set_sse(sse_width_arg, sse_count_arg);
-    set_relax(!no_relax_reg_arg, relax_mem_arg, blocked_heap_opt_arg);
-    set_penalty(misalign_penalty_arg, sig_penalty_arg, nesting_penalty_arg, sse_avx_penalty_arg);
-    set_min_ulp(min_ulp_arg);
-    set_k(k_arg);
-    set_reduction(reduction_arg);
-    set_performance_term(perf_arg);
-    set_max_size_penalty(max_size_bytes, max_size_base_penalty, max_size_linear_penalty);
+  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(), fxn_(build_fxn(target, sb)) {
   }
+
+  result_type operator()(const Cfg& cfg, Cost max) {
+    return (*fxn_)(cfg, max);
+  }
+
+  result_type operator()(const Cfg& cfg) {
+    return (*fxn_)(cfg);
+  }
+
+private:
+
+  CostFunction* fxn_;
+
+  static CostFunction* build_fxn(const Cfg& target, Sandbox* sb) {
+
+    CostParser::SymbolTable st;
+    st["binsize"] =      new BinSizeCost();
+    st["correctness"] =  new CorrectnessCostGadget(target, sb);
+    st["latency"] =      new LatencyCostGadget();
+    st["measured"] =     new MeasuredCost();
+    st["size"] =         new SizeCost();
+    st["sseavx"] =       new SseAvxCost();
+
+    CostParser cost_p(cost_function_arg.value(), st);
+    auto cost_fxn = cost_p.run();
+    if(cost_p.get_error().size()) {
+      Console::error(1) << "Error parsing cost function: " << cost_p.get_error() << std::endl;
+    }
+    if(cost_fxn == NULL) {
+      Console::error(1) << "Unknown error parsing cost function." << std::endl;
+    }
+
+    CostParser correct_p(correctness_arg.value(), st);
+    auto correctness_fxn = correct_p.run();
+    if(correct_p.get_error().size()) {
+      Console::error(1) << "Error parsing correctness function: " << correct_p.get_error()
+                        << std::endl;
+    }
+    if(correctness_fxn == NULL) {
+      Console::error(1) << "Unknown error parsing correctness function." << std::endl;
+    }
+
+    (*cost_fxn).set_correctness(correctness_fxn)
+    .setup_sandbox(sb);
+    return cost_fxn;
+  }
+
 };
 
 } // namespace stoke

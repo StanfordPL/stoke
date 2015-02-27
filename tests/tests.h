@@ -23,7 +23,7 @@
  * as you can see in any of the .cc files in this folder.  The
  * only thing the test framework needs is to #include all of
  * these functions into one big compilation unit.  Thus, this
- * file has a list of all the .cc files with tests in them.
+ * file has a list of all the .h files with tests in them.
  * Update this file, and you won't need to touch any makefiles :)
  *
  */
