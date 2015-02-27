@@ -15,6 +15,9 @@
 #ifndef STOKE_SRC_COST_MEASURED_H
 #define STOKE_SRC_COST_MEASURED_H
 
+#include "src/cost/cost_function.h"
+#include "src/cost/latency.h"
+
 namespace stoke {
 
 class MeasuredCost : public CostFunction {
@@ -29,28 +32,39 @@ public:
   /** And we need to set it up. */
   MeasuredCost& setup_sandbox(Sandbox* sb) {
     sandbox_ = sb;
-    sandbox_->set_count_instructions(true);
+    sandbox_->insert_before(measured_callback, this);
     return *this;
   }
 
   /** Measures the "running time" with our latency table */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
-    Cost latency = 0;
-    Cost tc_count = 0;
-
-    for(auto i = sandbox_->output_begin(), ie = sandbox_->output_end(); i != ie; ++i) {
-      latency += i->latency_seen;
-      tc_count++;
+    uint64_t res = latency_;
+    size_t tc_count = sandbox_->size();
+    latency_ = 0;
+    if(tc_count == 0) {
+      LatencyCost lc;
+      return lc(cfg, max);
     }
+    else
+      return result_type(true, res/tc_count);
+  }
 
-    assert(tc_count != 0);
-    return result_type(true, latency/tc_count);
+  /** Add to the measured latency */
+  static void measured_callback(const StateCallbackData& data, void* arg) {
+    MeasuredCost* ptr = (MeasuredCost*)arg;
+    ptr->latency_ += latencies_[data.code[data.line].get_opcode()];
   }
 
 private:
 
   /** The sandbox that has the most recently run target. */
   Sandbox* sandbox_;
+
+  /** The latency seem so far. */
+  uint64_t latency_ = 0;
+
+  /** An array with all the latencies. */
+  static std::array<stoke::Cost, X64ASM_NUM_OPCODES> latencies_;
 
 };
 
