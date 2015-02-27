@@ -12,22 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_COST_PERFORMANCE_TERM_H
-#define STOKE_SRC_COST_PERFORMANCE_TERM_H
+#ifndef STOKE_SRC_COST_SIZE_H
+#define STOKE_SRC_COST_SIZE_H
 
 namespace stoke {
 
-enum class PerformanceTerm {
-  NONE,
-  SIZE,
-  LATENCY,
-  MEASURED,
+class SizeCost : public CostFunction {
 
-  // Add user-defined extensions here ...
-  EXTENSION
+public:
+  result_type operator()(const Cfg& cfg, Cost max = max_cost) {
+
+    Cost size = 0;
+
+    x64asm::Code code = cfg.get_code();
+    for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
+      if(cfg.is_exit(*b)) {
+        continue;
+      }
+
+      const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
+      for(size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
+        if(!code[i].is_nop() && !code[i].is_label_defn())
+          size++;
+      }
+    }
+    return result_type(true, size);
+  }
+
 };
 
 } // namespace stoke
 
 #endif
-
