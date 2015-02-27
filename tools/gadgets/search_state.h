@@ -29,9 +29,9 @@ namespace stoke {
 class SearchStateGadget : public SearchState {
 public:
   SearchStateGadget(const Cfg& target, const std::vector<TUnit>& aux_fxns) {
-    current = CfgGadget(current_arg.value().code, aux_fxns);
-    best_yet = CfgGadget(best_yet_arg.value().code, aux_fxns);
-    best_correct = CfgGadget(best_correct_arg.value().code, aux_fxns);
+    current = CfgGadget(current_arg.value(), aux_fxns);
+    best_yet = CfgGadget(best_yet_arg.value(), aux_fxns);
+    best_correct = CfgGadget(best_correct_arg.value(), aux_fxns);
     configure(init_arg.value(), target, max_instrs_arg.value());
   }
 };

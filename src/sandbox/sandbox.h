@@ -74,6 +74,7 @@ public:
     clear_inputs();
     clear_functions();
     clear_callbacks();
+    return *this;
   }
 
   /** Add a new input. */
@@ -301,10 +302,6 @@ private:
   void* map_addr_;
   /** Address of the main function's entrypoint */
   void* entrypoint_;
-  /** The current test case's symbol table. */
-  void* sym_table_;
-  /** The logical label attached to the first element in the symbol table (stored NEGATIVE). */
-  uint64_t min_label_;
 
   /** The user's current %rsp */
   uint64_t user_rsp_;

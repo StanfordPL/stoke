@@ -64,16 +64,6 @@ bool StateGen::get(CpuState& cs) const {
   cs.data.resize(0x000000000, 0);
   randomize_mem(cs.stack);
 
-  // Set up symbol table beginning at the bottom of the address space
-  cs.sym_table.clear();
-  uint64_t addr = 0x00400000;
-
-  for (auto i = sb_->function_begin(), ie = sb_->function_end(); i != ie; ++i) {
-    const auto& l = i->get_code()[0].get_operand<Label>(0).get_text();
-    cs.sym_table.insert(l, addr);
-    addr += 16 * i->get_code().size();
-  }
-
   return true;
 }
 

@@ -30,15 +30,14 @@ namespace stoke {
 
 class CfgGadget : public Cfg {
 public:
-  CfgGadget(const x64asm::Code& code, const std::vector<TUnit>& aux_fxns)
-    : Cfg(code, def_in(live_out()), live_out()) {
+  CfgGadget(const TUnit& fxn, const std::vector<TUnit>& aux_fxns)
+    : Cfg(fxn, def_in(live_out()), live_out()) {
     // Emit warning if register values were guessed
     reg_warning();
 
     // Check for unsupported instructions and cpu flags
-    flag_check(get_code());
-    sandbox_check(get_code());
-
+    flag_check();
+    sandbox_check();
     // Check that this function can link against auxiliary functions
     linker_check(aux_fxns);
 
@@ -62,30 +61,11 @@ private:
     }
   }
 
-  x64asm::Code fix_code(const x64asm::Code& code) const {
-    // This function adds a retq to a code that doesn't have any
-    // It's causing endless warnings for the time being for search states which are
-    // default constructed to empty functions.
-    // I tried changing that, but ran into segfaults, so for the time being, this is
-    // deactivated.
-    for (const auto& instr : code) {
-      if (instr.is_ret()) {
-        return code;
-      }
-    }
-
-    Console::warn() << "Adding a missing retq instruction to target/rewrite" << std::endl;
-    auto ret = code;
-    ret.push_back({x64asm::RET});
-
-    return ret;
-  }
-
   x64asm::RegSet def_in(const x64asm::RegSet& live_out) const {
     // Always prefer user inputs, otherwise solve for live_ins
     auto def_in = def_in_arg.has_been_provided() ?
                   def_in_arg.value() :
-                  Cfg(target_arg.value().code, x64asm::RegSet::empty(), live_out).live_ins();
+                  Cfg(target_arg.value(), x64asm::RegSet::empty(), live_out).live_ins();
 
     // Add mxcsr[rc] unless otherwise specified
     if (!no_default_mxcsr_arg) {
@@ -102,7 +82,7 @@ private:
     }
 
     // Solve for defined out values
-    Cfg temp(target_arg.value().code, x64asm::RegSet::empty(), x64asm::RegSet::empty());
+    Cfg temp(target_arg.value());
     const auto dos = temp.def_outs();
 
     // If no general purpose registers were written we can guess xmm live out
@@ -133,22 +113,20 @@ private:
   }
 
   /** Checks for unsupported cpu flags */
-  void flag_check(const x64asm::Code& code) const {
+  void flag_check() const {
     const auto cpu_flags = CpuInfo::get_flags();
-    auto code_flags = code.required_flags();
+    auto code_flags = get_function().get_code().required_flags();
 
     if (!cpu_flags.contains(code_flags)) {
       const auto diff = code_flags - cpu_flags;
-      const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
       Console::error(1) << "Target/rewrite requires unavailable cpu flags: " << diff << std::endl;
     }
   }
 
   /** Checks for unsupported sandbox instructions */
-  void sandbox_check(const x64asm::Code& code) const {
-    for (const auto& instr : code) {
+  void sandbox_check() const {
+    for (const auto& instr : get_function().get_code()) {
       if (!Sandbox::is_supported(instr)) {
-        const auto fxn = code[0].get_operand<x64asm::Label>(0).get_text();
         Console::error(1) << "Target/rewrite contains an unsupported instruction: " << instr << std::endl;
       }
     }
@@ -162,7 +140,7 @@ private:
     std::vector<x64asm::Function> hex;
     hex.push_back(assm.assemble(get_code()));
     for (const auto& fxn : aux_fxns) {
-      hex.push_back(assm.assemble(fxn.code));
+      hex.push_back(assm.assemble(fxn.get_code()));
     }
 
     x64asm::Linker lnkr;
@@ -182,8 +160,8 @@ private:
   /** Add dataflow summaries for auxiliary functions */
   void summarize_functions(const std::vector<TUnit>& aux_fxns) {
     for (const auto& fxn : aux_fxns) {
-      auto code = fxn.code;
-      auto lbl = code[0].get_operand<x64asm::Label>(0);
+      auto code = fxn.get_code();
+      auto lbl = fxn.get_leading_label();
       TUnit::MayMustSets mms = {
         code.must_read_set(),
         code.must_write_set(),
@@ -194,7 +172,7 @@ private:
       };
       mms = fxn.get_may_must_sets(mms);
       // check consistency of dataflow information
-      std::string consistency_warning = "Dataflow information is inconsistent for function '" + fxn.name + "'.  The maybe set needs to contain the must set. ";
+      std::string consistency_warning = "Dataflow information is inconsistent for function '" + fxn.get_name() + "'.  The maybe set needs to contain the must set. ";
       if (!mms.maybe_read_set.contains(mms.must_read_set)) {
         Console::error(1) << consistency_warning << "maybe-read: " << mms.maybe_read_set << ". must-read: " << mms.must_read_set << std::endl;
       }

@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
   SeedGadget seed;
   FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns);
-  TransformsGadget tforms(target.get_code(), aux_fxns, seed);
+  TransformsGadget tforms(target.get_function(), aux_fxns, seed);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);

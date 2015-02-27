@@ -17,11 +17,22 @@
 ifndef COMPILERBINARY
 	COMPILERBINARY=g++
 endif
-CXX=ccache ${COMPILERBINARY} -std=c++11 -Werror -Wextra -Wfatal-errors -Wno-deprecated
+CXX=ccache ${COMPILERBINARY} -std=c++11 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-reorder
 
 # number of threads used for compiling
 ifndef NTHREADS
 	NTHREADS=8
+endif
+
+# set defaults (haswell) to allow building things like bin/stoke_search directly
+ifndef OPT
+	OPT=-march=core-avx2 -O3 -DNDEBUG
+endif
+ifndef EXT_OPT
+	EXT_OPT=release
+endif
+ifndef EXT_TARGET
+	EXT_TARGET=-march=core-avx2
 endif
 
 INC_FOLDERS=\
@@ -70,7 +81,6 @@ SRC_OBJ=\
 	src/state/memory.o \
 	src/state/regs.o \
 	src/state/rflags.o \
-	src/state/sym_table.o \
 	\
 	src/stategen/stategen.o \
 	\

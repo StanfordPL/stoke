@@ -255,7 +255,7 @@ int main(int argc, char** argv) {
   TrainingSetGadget training_set(seed);
   SandboxGadget training_sb(training_set, aux_fxns);
 
-  TransformsGadget transforms(target.get_code(), aux_fxns, seed);
+  TransformsGadget transforms(target.get_function(), aux_fxns, seed);
   SearchGadget search(&transforms, seed);
 
   TestSetGadget test_set(seed);
@@ -361,19 +361,17 @@ int main(int argc, char** argv) {
   } else if (postprocessing_arg == Postprocessing::SIMPLE) {
     tforms.remove_unreachable(state.best_correct);
     tforms.remove_nop(state.best_correct);
+  } else {
+    // Do nothing.
   }
 
   auto final_stats = search.get_statistics();
-
-  TUnit rewrite;
-  rewrite.name = target_arg.value().name;
-  rewrite.code = state.best_correct.get_code();
-
   show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed);
   Console::msg() << final_msg << endl;
 
   ofstream ofs(out.value());
-  ofs << rewrite;
+  TUnit result(state.best_correct.get_code());
+  ofs << result;
 
   return 0;
 }

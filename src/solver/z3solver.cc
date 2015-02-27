@@ -90,7 +90,15 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     error_ = "z3 gave up.";
     return false;
   }
+
+  default: {
+    assert(false);
+    return false;
   }
+  }
+
+  assert(false);
+  return false;
 }
 
 /** Get the satisfying assignment for a bit-vector from the model.
@@ -212,6 +220,9 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorFunction * const bv) {
     break;
   }
 
+  assert(false);
+  return z3::function(name, sorts[0], ret_sort)(
+           (*this)(bv->args_[0])); //keep the compiler happy
 }
 
 /** Visit a bit-vector if-then-else */

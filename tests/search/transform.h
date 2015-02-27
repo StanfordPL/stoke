@@ -48,7 +48,7 @@ public:
     transforms_.set_operand_pool(GetParam().get_code(), x64asm::RegSet::empty());
 
     code_ = GetParam().get_code();
-    cfg_ = new Cfg(code_, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+    cfg_ = new Cfg(TUnit(code_), x64asm::RegSet::universe(), x64asm::RegSet::empty());
   }
 
 protected:
@@ -179,7 +179,7 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
 
   code_.push_back(x64asm::Instruction(x64asm::RET));
   x64asm::Code original(code_);
-  cfg_ = new Cfg(code_, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+  cfg_ = new Cfg(TUnit(code_), x64asm::RegSet::universe(), x64asm::RegSet::empty());
 
   Sandbox sb;
   sb.set_max_jumps(30).set_abi_check(false);
@@ -201,7 +201,7 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
 
   stoke::SizeCost size;
 
-  stoke::Cfg original_cfg(original, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+  stoke::Cfg original_cfg(TUnit(original), x64asm::RegSet::universe(), x64asm::RegSet::empty());
   auto correct_orig = correctness(original_cfg);
   auto latency_orig = latency(original_cfg);
   auto size_orig    = size(original_cfg);

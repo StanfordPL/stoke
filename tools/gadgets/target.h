@@ -25,7 +25,7 @@ namespace stoke {
 
 class TargetGadget : public CfgGadget {
 public:
-  TargetGadget(const std::vector<TUnit>& aux_fxns) : CfgGadget(target_arg.value().code, aux_fxns) {}
+  TargetGadget(const std::vector<TUnit>& aux_fxns) : CfgGadget(target_arg.value(), aux_fxns) {}
 };
 
 } // namespace stoke

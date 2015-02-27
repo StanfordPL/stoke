@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "src/disassembler/disassembler.h"
 #include "src/tunit/tunit.h"
 
 namespace stoke {
 
 TEST(DisassemblerTest, SimpleExample) {
-
   /* These are the expected answers */
   std::stringstream tmp;
   tmp << ".sample:" << std::endl;
@@ -34,22 +32,17 @@ TEST(DisassemblerTest, SimpleExample) {
   x64asm::Code sample_code;
   tmp >> sample_code;
 
-  std::vector<uint64_t> sample_offsets
-  { 0x0, 0x3, 0x5, 0x8, 0xb, 0xe, 0x11 };
-
   /* Here's the callback sent to the disassembler */
   bool found_sample = false;
 
   Disassembler::Callback test_tunit =
   [&](const FunctionCallbackData & fcd) {
-
     EXPECT_FALSE(fcd.parse_error);
 
     // There's only one function we're really testing.
-    if (fcd.tunit.name == "sample") {
-      EXPECT_EQ(sample_code, fcd.tunit.code);
-      EXPECT_EQ(sample_offsets, fcd.instruction_offsets);
-      EXPECT_EQ((uint64_t)0x40, fcd.offset);
+    if (fcd.tunit.get_name() == "sample") {
+      EXPECT_EQ(sample_code, fcd.tunit.get_code());
+      EXPECT_EQ((uint64_t)0x40, fcd.tunit.get_file_offset());
       found_sample = true;
     }
   };
@@ -61,14 +54,12 @@ TEST(DisassemblerTest, SimpleExample) {
   EXPECT_TRUE(found_sample);
   EXPECT_FALSE(d.has_error());
   EXPECT_EQ("", d.get_error());
-
 }
 
 /* This is primarily to check that labels are generated
    correctly.  It also checks that offsets are correct
    in the presense of labels. */
 TEST(DisassemblerTest, PopCnt) {
-
   /* These are the expected answers */
   std::stringstream tmp;
   tmp << "._Z6popcntm:" << std::endl;
@@ -93,32 +84,22 @@ TEST(DisassemblerTest, PopCnt) {
   x64asm::Code popcnt_code;
   tmp >> popcnt_code;
 
-  std::vector<uint64_t> popcnt_offsets {
-    0x0, 0x3, 0x5, 0x7,
-    0x10, 0x12, 0x15, 0x17, 0x1a, 0x1c, 0x1e,
-    0x1f, 0x21, 0x22, 0x2c };
-
   /* Here's the callback sent to the disassembler */
   bool found_popcnt = false;
   bool found_main = false;
 
   Disassembler::Callback test_tunit =
   [&](const FunctionCallbackData & pf) {
-
     EXPECT_FALSE(pf.parse_error);
 
     // There's only one function we're really testing.
-    if (pf.tunit.name == "_Z6popcntm") {
-      EXPECT_EQ(popcnt_code, pf.tunit.code);
-      EXPECT_EQ(popcnt_offsets, pf.instruction_offsets);
-      EXPECT_EQ((uint64_t)0x570, pf.offset);
+    if (pf.tunit.get_name() == "_Z6popcntm") {
+      EXPECT_EQ(popcnt_code, pf.tunit.get_code());
+      EXPECT_EQ((uint64_t)0x570, pf.tunit.get_file_offset());
       found_popcnt = true;
     }
 
-    if (pf.tunit.name == "main") {
-      std::map<std::string, std::string> amap = pf.addr_label_map;
-      EXPECT_EQ("atoi_plt", amap["400430"]);
-      EXPECT_EQ("_Z6popcntm", amap["400570"]);
+    if (pf.tunit.get_name() == "main") {
       found_main = true;
     }
   };
@@ -131,18 +112,13 @@ TEST(DisassemblerTest, PopCnt) {
   EXPECT_TRUE(found_main);
   EXPECT_FALSE(d.has_error());
   EXPECT_EQ("", d.get_error());
-
 }
 
 TEST(DisassemblerTest, ParseErrors) {
-  // If this test is failing, it may be because we've fixed a parse error in
-  // x64asm which this test expects to encounter.
-
   size_t errors_found = 0;
 
   Disassembler::Callback test_tunit =
   [&](const FunctionCallbackData & pf) {
-
     if (pf.parse_error) {
       errors_found++;
     }
@@ -159,7 +135,6 @@ TEST(DisassemblerTest, ParseErrors) {
 TEST(DisassemblerTest, NoFileGraceful) {
   Disassembler::Callback  empty =
   [](const FunctionCallbackData & pf) {
-
     EXPECT_TRUE(false) << "The file isn't supposed to exist...";
   };
 
@@ -176,10 +151,8 @@ TEST(DisassemblerTest, NoShellInjection) {
 
   Disassembler::Callback  empty =
   [](const FunctionCallbackData & pf) {
-
     EXPECT_TRUE(false) << "The file isn't supposed to exist...";
   };
-
 
   d.disassemble("/usr/bin/ls && touch ~/pwned");
   d.set_function_callback(&empty);

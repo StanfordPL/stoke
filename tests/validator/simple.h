@@ -353,4 +353,19 @@ TEST_F(ValidatorBaseTest, NopsAndLabelsSupported) {
   assert_equiv();
 }
 
+TEST_F(ValidatorBaseTest, Issue550) {
+
+  target_ << ".foo:" << std::endl;
+  target_ << "pminud %xmm1, %xmm12" << std::endl;
+  target_ << "retq" << std::endl;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+  StateGen sg(&sb);
+  CpuState cs;
+  sg.get(cs);
+
+  check_circuit(cs);
+}
+
 } //namespace stoke

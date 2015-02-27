@@ -30,6 +30,7 @@ public:
   MeasuredCost& setup_sandbox(Sandbox* sb) {
     sandbox_ = sb;
     sandbox_->set_count_instructions(true);
+    return *this;
   }
 
   /** Measures the "running time" with our latency table */

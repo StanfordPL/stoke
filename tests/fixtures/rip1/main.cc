@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Simple test: Can stoke find the code that moves the rip constant into xmm0?
 
-#include "tests/x64asm/assembler.h"
-#include "tests/x64asm/instruction.h"
-#include "tests/x64asm/parsing.h"
-#include "tests/x64asm/r.h"
-#include "tests/x64asm/reg_set.h"
-#include "tests/x64asm/read_write_sets.h"
+double foo() {
+  double x = 5.234;
+  return x;
+}
+
+int main(int argc, char** argv) {
+  const auto x = foo();
+  return x > 10.0;
+}
