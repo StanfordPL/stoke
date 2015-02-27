@@ -454,7 +454,7 @@ bool Transforms::opcode_move(Cfg& cfg) {
   // Try generating a new instruction
   auto instr = old_instr_;
 
-  auto opc = RET;
+  auto opc = old_instr_.get_opcode();
   if (!get_control_free_type_equiv(opc)) {
     return false;
   }
