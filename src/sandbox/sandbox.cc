@@ -678,7 +678,7 @@ bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
     const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
       const auto& instr = cfg.get_code()[i];
-      if (instr.is_implicit_memory_dereference()) {
+      if (instr.is_implicit_memory_dereference() && instr.get_opcode() != RET) {
         return false;
       }
       if (instr.is_explicit_memory_dereference()) {
