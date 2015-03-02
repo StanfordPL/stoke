@@ -19,13 +19,11 @@
 #include <string>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "src/disassembler/disassembler.h"
 #include "src/disassembler/function_callback.h"
-
-#define DEFINE_STOKE_ARGS 1
-#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace stoke;

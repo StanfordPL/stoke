@@ -13,22 +13,19 @@
 // limitations under the License.
 
 #include <cstdlib>
-
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/system/terminal.h"
 
 #include "src/cfg/dot_writer.h"
-
-#define DEFINE_STOKE_ARGS 1
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/target.h"
-#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;

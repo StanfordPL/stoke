@@ -27,9 +27,9 @@
 
 #include "pin.H"
 
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_states.h"
-#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;

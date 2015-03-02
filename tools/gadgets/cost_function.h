@@ -15,6 +15,8 @@
 #ifndef STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 #define STOKE_TOOLS_GADGETS_COST_FUNCTION_H
 
+#include "src/ext/cpputil/include/io/console.h"
+
 #include "src/cost/cost_parser.h"
 #include "src/cost/binsize.h"
 #include "src/cost/measured.h"
@@ -23,7 +25,6 @@
 #include "tools/args/cost.inc"
 #include "tools/gadgets/correctness_cost.h"
 #include "tools/gadgets/latency_cost.h"
-#include "tools/ui/console.h"
 
 namespace stoke {
 
@@ -57,20 +58,20 @@ private:
     CostParser cost_p(cost_function_arg.value(), st);
     auto cost_fxn = cost_p.run();
     if(cost_p.get_error().size()) {
-      Console::error(1) << "Error parsing cost function: " << cost_p.get_error() << std::endl;
+      cpputil::Console::error(1) << "Error parsing cost function: " << cost_p.get_error() << std::endl;
     }
     if(cost_fxn == NULL) {
-      Console::error(1) << "Unknown error parsing cost function." << std::endl;
+      cpputil::Console::error(1) << "Unknown error parsing cost function." << std::endl;
     }
 
     CostParser correct_p(correctness_arg.value(), st);
     auto correctness_fxn = correct_p.run();
     if(correct_p.get_error().size()) {
-      Console::error(1) << "Error parsing correctness function: " << correct_p.get_error()
-                        << std::endl;
+      cpputil::Console::error(1) << "Error parsing correctness function: " << correct_p.get_error()
+                                 << std::endl;
     }
     if(correctness_fxn == NULL) {
-      Console::error(1) << "Unknown error parsing correctness function." << std::endl;
+      cpputil::Console::error(1) << "Unknown error parsing correctness function." << std::endl;
     }
 
     (*cost_fxn).set_correctness(correctness_fxn)
