@@ -16,7 +16,9 @@
 #define STOKE_TOOLS_ARGS_SEARCH_STATE_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/x64asm/include/x64asm.h"
 
+#include "src/cfg/cfg_transforms.h"
 #include "src/tunit/tunit.h"
 #include "tools/io/tunit.h"
 
@@ -28,16 +30,19 @@ cpputil::Heading& search_state_heading =
 cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& current_arg =
   cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("current")
   .usage("<path/to/file.s>")
+	.default_val(CfgTransforms().minimal_correct_cfg().get_function())
   .description("Current rewrite; used with --init previous");
 
 cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_yet_arg =
   cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_yet")
   .usage("<path/to/file.s>")
+	.default_val(CfgTransforms().minimal_correct_cfg().get_function())
   .description("Best rewrite; used with --init previous");
 
 cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_correct_arg =
   cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_correct")
   .usage("<path/to/file.s>")
+	.default_val(CfgTransforms().minimal_correct_cfg().get_function())
   .description("Best correct rewrite; used with --init previous");
 
 } // namespace stoke

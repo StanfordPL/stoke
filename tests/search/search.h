@@ -17,10 +17,7 @@
 #define _STOKE_TEST_SEARCH_SEARCH_H
 
 #include "tests/search/transform.h"
-
-#include "src/ext/x64asm/src/reg_set.h"
-#include "src/search/search.h"
-#include "tools/io/opc_set.h"
+#include "src/cfg/cfg_transforms.h"
 
 namespace stoke {
 
@@ -38,6 +35,10 @@ protected:
   x64asm::RegSet live_out_;
 
   void test(std::string in, std::string out) {
+		// @todo This test used to belong here.
+		// The functionality it exercises has been moved to CfgTransforms
+		// Move whenever it's convenient
+
     std::stringstream ss0;
     std::stringstream ss1;
     ss0 << "{ " << out << " }";
@@ -47,10 +48,9 @@ protected:
 
     TUnit fxn;
     Cfg cfg(fxn, def_in_, live_out_);
-    SearchState ss(cfg, cfg, cfg, cfg, Init::ZERO, 16);
-    cfg = ss.current;
+		CfgTransforms().satisfy_invariants(cfg);
 
-    ASSERT_TRUE(cfg.is_sound()) << "def in:   " << def_in_ << std::endl <<
+    ASSERT_TRUE(cfg.check_invariants()) << "def in:   " << def_in_ << std::endl <<
                                 "live out: " << live_out_ << std::endl <<
                                 "cfg.def_outs(): " << cfg.def_outs() << std::endl <<
                                 "code: " << cfg.get_code() << std::endl;
