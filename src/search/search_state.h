@@ -54,9 +54,13 @@ public:
   bool invariant_boundary_conditions(const Cfg& target) const;
   /** Search state should be composed of well-formed functions */
   bool invariant_functions() const;
+	/** Search state should be composed of well-formed cfgs */
+	bool invariant_cfgs() const;
   /** Check all invariants */
   bool check_invariants(const Cfg& target) const {
-    return invariant_boundary_conditions(target) && invariant_functions();
+    return invariant_boundary_conditions(target) && 
+			invariant_functions() &&
+			invariant_cfgs();
   }
 
 private:
