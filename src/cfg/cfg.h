@@ -70,8 +70,8 @@ public:
   std::unordered_map<x64asm::Label, DataflowSummary> fncs_summary;
 
   /** Creates a new control flow graph; NOT guaranteed to pass invariant check! */
-  explicit Cfg(const TUnit& function, 
-							 const x64asm::RegSet& def_ins = x64asm::RegSet::empty(),
+  explicit Cfg(const TUnit& function,
+               const x64asm::RegSet& def_ins = x64asm::RegSet::empty(),
                const x64asm::RegSet& live_outs = x64asm::RegSet::empty()) :
     function_(function), fxn_def_ins_(def_ins), fxn_live_outs_(live_outs) {
     recompute();
@@ -348,10 +348,10 @@ public:
     return live_ins_[get_index(loc)];
   }
 
-	/** Check that this cfg only reads from defined register locations */
-	bool invariant_no_undef_reads() const;
-	/** Check that this cfg writes to all live out values */
-	bool invariant_no_undef_live_outs() const;
+  /** Check that this cfg only reads from defined register locations */
+  bool invariant_no_undef_reads() const;
+  /** Check that this cfg writes to all live out values */
+  bool invariant_no_undef_live_outs() const;
   /** Returns true if performs_undef_read() returns true. */
   bool check_invariants() const {
     return invariant_no_undef_reads() && invariant_no_undef_live_outs();
@@ -459,14 +459,14 @@ public:
     return instr.maybe_undef_set();
   }
 
-	/** Deprecated: Use invariant_no_undef_reads() and invariant_no_undef_live_outs() */
+  /** Deprecated: Use invariant_no_undef_reads() and invariant_no_undef_live_outs() */
   bool performs_undef_read() const {
-		return !invariant_no_undef_reads() || !invariant_no_undef_live_outs();
-	}
-	/** Deprecated: Use check_invariants() */
-	bool is_sound() const {
-		return check_invariants();
-	}
+    return !invariant_no_undef_reads() || !invariant_no_undef_live_outs();
+  }
+  /** Deprecated: Use check_invariants() */
+  bool is_sound() const {
+    return check_invariants();
+  }
 
 private:
   /** User-specified underlying function. */

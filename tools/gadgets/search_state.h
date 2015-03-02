@@ -35,11 +35,11 @@ public:
                 CfgGadget(best_correct_arg.value(), aux_fxns),
                 init_arg.value(),
                 max_instrs_arg.value()) {
-		// The SearchState constructor should guarantee this property.
-		// Failing this check is a major bug and should be reported by the user
-		if (!check_invariants(target)) {
-			Console::error(1) << "Search State Bug! Please report!" << std::endl;
-		}
+    // The SearchState constructor should guarantee this property.
+    // Failing this check is a major bug and should be reported by the user
+    if (!check_invariants(target)) {
+      Console::error(1) << "Search State Bug! Please report!" << std::endl;
+    }
   }
 };
 

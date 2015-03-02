@@ -48,12 +48,12 @@ bool Cfg::invariant_no_undef_reads() const {
     }
   }
 
-	return true;
+  return true;
 }
 
 bool Cfg::invariant_no_undef_live_outs() const {
   const auto di_end = def_ins_[blocks_[get_exit()]];
-	return (di_end & fxn_live_outs_) == fxn_live_outs_;
+  return (di_end & fxn_live_outs_) == fxn_live_outs_;
 }
 
 string Cfg::which_undef_read() const {
