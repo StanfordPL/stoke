@@ -388,9 +388,9 @@ bool Transforms::modify(Cfg& cfg, Move type) {
     return false;
   }
 
-	// Most if not all of these methods have the potential to break invariants
-	// Make sure that we've left everything back in a valid state before continuing
-	assert(cfg.invariant_no_undef_reads());
+  // Most if not all of these methods have the potential to break invariants
+  // Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
   return ret;
 }
@@ -684,9 +684,9 @@ void Transforms::undo(Cfg& cfg, Move type) {
     break;
   }
 
-	// Most if not all of these methods have the potential to break invariants
-	// Make sure that we've left everything back in a valid state before continuing
-	assert(cfg.invariant_no_undef_reads());
+  // Most if not all of these methods have the potential to break invariants
+  // Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 }
 

@@ -26,7 +26,7 @@ namespace stoke {
 class TargetGadget : public CfgGadget {
 public:
   TargetGadget(const std::vector<TUnit>& aux_fxns) : CfgGadget(target_arg.value(), aux_fxns) {
-		// All invariants checked in Cfg::Cfg()
+    // All invariants checked in Cfg::Cfg()
   }
 };
 
