@@ -83,21 +83,6 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   // Configure initial state
   configure(target, fxn, state, aux_fxns);
 
-  if (!target.is_sound()) {
-    cerr << "ERROR: the target reads undefined values, or leaves live out values undefined!" << endl;
-    exit(1);
-  }
-
-  if (!state.current.is_sound()) {
-    cerr << "ERROR: the initial rewrite reads undefined values, or leaves live out values undefined!" << endl;
-    if (init == Init::EMPTY) {
-      cerr << "Using --init zero will automatically prevent this problem." << endl;
-    } else if (init == Init::ZERO) {
-      cerr << "This is a bug, please report it." << endl;
-    }
-    exit(1);
-  }
-
   // Make sure target and rewrite are sound to begin with
   assert(state.best_yet.is_sound());
   assert(state.best_correct.is_sound());

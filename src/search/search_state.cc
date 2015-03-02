@@ -176,7 +176,7 @@ Code SearchState::find_sound_code(const RegSet& def_ins, const RegSet& live_outs
     for (auto it = code.begin(); it != code.end(); ++it, ++i) {
       vector<Instruction> copy = code;
       copy.erase(copy.begin()+i);
-      if (Cfg(TUnit(Code(copy.begin(), copy.end())), def_ins, live_outs).is_sound()) {
+      if (Cfg(TUnit(Code(copy.begin(), copy.end())), def_ins, live_outs).check_invariants()) {
         code = copy;
         changed = true;
         break;
@@ -222,6 +222,18 @@ bool SearchState::invariant_functions() const {
   } else if (!best_yet.get_function().check_invariants()) {
     return false;
   } else if (!best_correct.get_function().check_invariants()) {
+    return false;
+  }
+
+  return true;
+}
+
+bool SearchState::invariant_cfgs() const {
+  if (!current.check_invariants()) {
+    return false;
+  } else if (!best_yet.check_invariants()) {
+    return false;
+  } else if (!best_correct.check_invariants()) {
     return false;
   }
 

@@ -49,6 +49,9 @@ void CfgTransforms::remove_unreachable(Cfg& cfg) {
       }
     }
   }
+
+	// Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.get_function().check_invariants());
 }
 
 void CfgTransforms::remove_nop(Cfg& cfg) {
@@ -64,6 +67,9 @@ void CfgTransforms::remove_nop(Cfg& cfg) {
       }
     }
   }
+
+	// Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.get_function().check_invariants());
 }
 
 void CfgTransforms::remove_redundant(Cfg& cfg) {
@@ -92,6 +98,9 @@ void CfgTransforms::remove_redundant(Cfg& cfg) {
       }
     }
   }
+
+	// Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.get_function().check_invariants());
 }
 
 } // namespace stoke

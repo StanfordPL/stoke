@@ -35,12 +35,11 @@ public:
                 CfgGadget(best_correct_arg.value(), aux_fxns),
                 init_arg.value(),
                 max_instrs_arg.value()) {
-
-    if (!invariant_boundary_conditions(target)) {
-      Console::error(1) << "Search state and target disagree on def_in/live_out!" << std::endl;
-    } else if (!invariant_functions()) {
-      Console::error(1) << "Search state contains a poorly formed function!" << std::endl;
-    }
+		// The SearchState constructor should guarantee this property.
+		// Failing this check is a major bug and should be reported by the user
+		if (!check_invariants(target)) {
+			Console::error(1) << "Search State Bug! Please report!" << std::endl;
+		}
   }
 };
 
