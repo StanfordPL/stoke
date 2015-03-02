@@ -29,9 +29,9 @@ namespace stoke {
 class CfgTransformsTest : public ::testing::Test {};
 
 TEST_F(CfgTransformsTest, Simple) {
-	// eds -- I commented out the call to callq in this example because 
-	// it was causing a new invariant on CfgTransforms (that a cfg satisfies all invariants
-	// including that it defines all live outs) to fail
+  // eds -- I commented out the call to callq in this example because
+  // it was causing a new invariant on CfgTransforms (that a cfg satisfies all invariants
+  // including that it defines all live outs) to fail
 
   std::stringstream ss;
   ss << ".bar:" << std::endl;

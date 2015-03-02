@@ -38,7 +38,7 @@ public:
     // The SearchState constructor should guarantee this property.
     // Failing this check is a major bug and should be reported by the user
     if (!check_invariants(target)) {
-			cpputil::Console::error(1) << "Search State Bug! Please report!" << std::endl;
+      cpputil::Console::error(1) << "Search State Bug! Please report!" << std::endl;
     }
   }
 };
