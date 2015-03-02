@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "src/ext/x64asm/include/x64asm.h"
+#include "src/ext/cpputil/include/io/console.h"
 
 #include "src/cfg/cfg.h"
 #include "src/search/transforms.h"
@@ -29,7 +30,6 @@
 #include "src/validator/validator.h"
 
 #include "tools/args/transforms.inc"
-#include "tools/ui/console.h"
 
 namespace stoke {
 
@@ -66,7 +66,7 @@ public:
     }
 
     if (!invariant_non_empty_opcode_pool()) {
-      Console::warn() << "No valid opcodes can be proposed; consider modifying black/whitelists" << std::endl;
+			cpputil::Console::warn() << "No valid opcodes can be proposed; consider modifying black/whitelists" << std::endl;
     }
   }
 
@@ -94,8 +94,8 @@ private:
     const auto user_flags = cpu_flags_arg.value();
 
     if (!real_cpu_flags.contains(user_flags)) {
-      Console::warn() << "Some cpu flags are not available on this hardware and will be removed:" << std::endl;
-      Console::warn() << (user_flags - real_cpu_flags) << std::endl;
+			cpputil::Console::warn() << "Some cpu flags are not available on this hardware and will be removed:" << std::endl;
+			cpputil::Console::warn() << (user_flags - real_cpu_flags) << std::endl;
     }
 
     return user_flags & real_cpu_flags;
@@ -106,7 +106,7 @@ private:
     std::vector<x64asm::M8> ms;
     for (const auto& m : mem_ops_arg.value()) {
       if (m.rip_offset()) {
-        Console::warn() << "Ignoring memory operand with rip offset (" << m << ") use --rips" << std::endl;
+				cpputil::Console::warn() << "Ignoring memory operand with rip offset (" << m << ") use --rips" << std::endl;
       } else {
         ms.push_back(m);
       }

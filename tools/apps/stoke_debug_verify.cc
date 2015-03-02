@@ -18,8 +18,8 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/column.h"
+#include "src/ext/cpputil/include/io/console.h"
 
-#define DEFINE_STOKE_ARGS 1
 #include "tools/gadgets/cost_function.h"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/rewrite.h"
@@ -31,7 +31,6 @@
 #include "tools/gadgets/validator.h"
 #include "tools/gadgets/verifier.h"
 #include "tools/io/state_diff.h"
-#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
