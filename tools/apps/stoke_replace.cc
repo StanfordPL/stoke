@@ -19,6 +19,7 @@
 #include <string>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 #include "src/ext/cpputil/include/system/terminal.h"
 #include "src/ext/x64asm/include/x64asm.h"
@@ -29,7 +30,6 @@
 
 #include "tools/args/rewrite.inc"
 #include "tools/io/tunit.h"
-#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;

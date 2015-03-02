@@ -18,9 +18,8 @@
 #include <sstream>
 #include <vector>
 
-#include "tools/ui/console.h"
-
 #include "src/ext/cpputil/include/io/column.h"
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/io/fail.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/indent.h"
