@@ -187,15 +187,15 @@ void Search::configure(const Cfg& target, CostFunction& fxn, SearchState& state,
   state.best_yet.recompute();
   state.best_correct.recompute();
 
-	// We used to add dataflow summaries here, but I think this happens up in the CfgGadget now
+  // We used to add dataflow summaries here, but I think this happens up in the CfgGadget now
 
   state.current_cost = fxn(state.current).second;
   state.best_yet_cost = fxn(state.best_yet).second;
   state.best_correct_cost = fxn(state.best_correct).second;
   state.success = false;
 
-	// @todo -- Let's move these invariants into SearchState
-	// Redirecting the user here to reason about this seems like an opportunity for error
+  // @todo -- Let's move these invariants into SearchState
+  // Redirecting the user here to reason about this seems like an opportunity for error
 
   // Invariant 3: Best correct should be correct with respect to target
   assert(fxn(state.best_correct).first);
