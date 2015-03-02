@@ -17,6 +17,7 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/column.h"
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "tools/args/move.inc"
@@ -24,7 +25,6 @@
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/transforms.h"
-#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;

@@ -18,6 +18,7 @@
 #include <set>
 #include <vector>
 
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/sandbox/sandbox.h"
@@ -25,7 +26,6 @@
 #include "src/tunit/tunit.h"
 #include "tools/args/functions.inc"
 #include "tools/args/target.inc"
-#include "tools/ui/console.h"
 
 namespace stoke {
 
@@ -102,7 +102,7 @@ private:
 
     if (!cpu_flags.contains(code_flags)) {
       const auto diff = code_flags - cpu_flags;
-      Console::error(1) << "Auxiliary function (" << fxn.get_name() << ") requires unavailable cpu flags: " << diff << std::endl;
+      cpputil::Console::error(1) << "Auxiliary function (" << fxn.get_name() << ") requires unavailable cpu flags: " << diff << std::endl;
     }
   }
 
@@ -110,7 +110,7 @@ private:
   void sandbox_check(const TUnit& fxn) const {
     for (const auto& instr : fxn.get_code()) {
       if (!Sandbox::is_supported(instr)) {
-        Console::error(1) << "Auxiliary function (" << fxn.get_name() << ") contains an unsupported instruction: " << instr << std::endl;
+        cpputil::Console::error(1) << "Auxiliary function (" << fxn.get_name() << ") contains an unsupported instruction: " << instr << std::endl;
       }
     }
   }

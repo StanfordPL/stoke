@@ -17,6 +17,7 @@
 
 #include <vector>
 
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/cfg/cfg.h"
@@ -24,7 +25,6 @@
 #include "src/target/cpu_info.h"
 #include "src/tunit/tunit.h"
 #include "tools/args/in_out.inc"
-#include "tools/ui/console.h"
 
 namespace stoke {
 
@@ -53,10 +53,10 @@ private:
     if (!once) {
       once = true;
       if (!live_out_arg.has_been_provided()) {
-        Console::warn() << "No live out values provided, assuming " << live_out() << std::endl;
+        cpputil::Console::warn() << "No live out values provided, assuming " << live_out() << std::endl;
       }
       if (!def_in_arg.has_been_provided()) {
-        Console::warn() << "No def in values provided; assuming " << def_in(live_out()) << std::endl;
+        cpputil::Console::warn() << "No def in values provided; assuming " << def_in(live_out()) << std::endl;
       }
     }
   }
@@ -119,7 +119,7 @@ private:
 
     if (!cpu_flags.contains(code_flags)) {
       const auto diff = code_flags - cpu_flags;
-      Console::error(1) << "Target/rewrite requires unavailable cpu flags: " << diff << std::endl;
+      cpputil::Console::error(1) << "Target/rewrite requires unavailable cpu flags: " << diff << std::endl;
     }
   }
 
@@ -127,7 +127,7 @@ private:
   void sandbox_check() const {
     for (const auto& instr : get_function().get_code()) {
       if (!Sandbox::is_supported(instr)) {
-        Console::error(1) << "Target/rewrite contains an unsupported instruction: " << instr << std::endl;
+        cpputil::Console::error(1) << "Target/rewrite contains an unsupported instruction: " << instr << std::endl;
       }
     }
   }
@@ -151,9 +151,9 @@ private:
     lnkr.finish();
 
     if (lnkr.multiple_def()) {
-      Console::error(1) << "Target/rewrite and functions contain a multiple definition error (" << lnkr.get_multiple_def() << ")!" << std::endl;
+      cpputil::Console::error(1) << "Target/rewrite and functions contain a multiple definition error (" << lnkr.get_multiple_def() << ")!" << std::endl;
     } else if (lnkr.undef_symbol()) {
-      Console::error(1) << "Target/rewrite and functions contain an undefined symbol error (" << lnkr.get_undef_symbol() << ")!" << std::endl;
+      cpputil::Console::error(1) << "Target/rewrite and functions contain an undefined symbol error (" << lnkr.get_undef_symbol() << ")!" << std::endl;
     }
   }
 
@@ -174,13 +174,13 @@ private:
       // check consistency of dataflow information
       std::string consistency_warning = "Dataflow information is inconsistent for function '" + fxn.get_name() + "'.  The maybe set needs to contain the must set. ";
       if (!mms.maybe_read_set.contains(mms.must_read_set)) {
-        Console::error(1) << consistency_warning << "maybe-read: " << mms.maybe_read_set << ". must-read: " << mms.must_read_set << std::endl;
+        cpputil::Console::error(1) << consistency_warning << "maybe-read: " << mms.maybe_read_set << ". must-read: " << mms.must_read_set << std::endl;
       }
       if (!mms.maybe_write_set.contains(mms.must_write_set)) {
-        Console::error(1) << consistency_warning << "maybe-write: " << mms.maybe_write_set << ". must-write: " << mms.must_write_set << std::endl;
+        cpputil::Console::error(1) << consistency_warning << "maybe-write: " << mms.maybe_write_set << ". must-write: " << mms.must_write_set << std::endl;
       }
       if (!mms.maybe_undef_set.contains(mms.must_undef_set)) {
-        Console::error(1) << consistency_warning << "maybe-undef: " << mms.maybe_undef_set << ". must-undef: " << mms.must_undef_set << std::endl;
+        cpputil::Console::error(1) << consistency_warning << "maybe-undef: " << mms.maybe_undef_set << ". must-undef: " << mms.must_undef_set << std::endl;
       }
       add_summary(lbl, mms);
     }
