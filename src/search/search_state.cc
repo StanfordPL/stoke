@@ -26,7 +26,7 @@ SearchState::SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const C
   interrupted = false;
 
   // This constructor is guaranteed sound so long as target satisfies all its invariants
-	assert(target.check_invariants());
+  assert(target.check_invariants());
   assert(target.get_function().check_invariants());
 
   switch(init) {
@@ -85,7 +85,7 @@ void SearchState::configure_zero(const Cfg& target, size_t size) {
   current = target;
   current.get_function().clear();
   current.get_function().push_back(target.get_code()[0]);
-	CfgTransforms().satisfy_invariants(current);
+  CfgTransforms().satisfy_invariants(current);
 
   // Pad with nops
   for (size_t i = current.get_code().size(), ie = size - 1; i < ie; ++i) {

@@ -38,7 +38,7 @@ namespace stoke {
 
 Cfg& CfgTransforms::remove_unreachable(Cfg& cfg) const {
   // Assume that invariants are satisfied on entry
-	assert(cfg.check_invariants());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
 
   // Remove unreachable instructions one at a time
@@ -55,15 +55,15 @@ Cfg& CfgTransforms::remove_unreachable(Cfg& cfg) const {
   }
 
   // Make sure that we've left everything back in a valid state before continuing
-	assert(cfg.check_invariants());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
-	
-	return cfg;
+
+  return cfg;
 }
 
 Cfg& CfgTransforms::remove_nop(Cfg& cfg) const {
   // Assume that invariants are satisfied on entry
-	assert(cfg.check_invariants());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
 
   // Remove nops one at a time
@@ -80,14 +80,14 @@ Cfg& CfgTransforms::remove_nop(Cfg& cfg) const {
   }
 
   // Make sure that we've left everything back in a valid state before continuing
-	assert(cfg.check_invariants());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
-	return cfg;
+  return cfg;
 }
 
 Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
   // Assume that invariants are satisfied on entry
-	assert(cfg.check_invariants());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
 
   // This transformsation subsumes unreachable block removal
@@ -117,14 +117,14 @@ Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
   }
 
   // Make sure that we've left everything back in a valid state before continuing
-	assert(cfg.check_invariants());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
-	return cfg;
+  return cfg;
 }
 
 Cfg& CfgTransforms::satisfy_invariants(Cfg& cfg) const {
-	// Make sure that we enter this method with well-formed code
-	assert(cfg.get_function().check_invariants());
+  // Make sure that we enter this method with well-formed code
+  assert(cfg.get_function().check_invariants());
 
   const auto diff = cfg.live_outs() - cfg.def_outs();
 
@@ -180,12 +180,12 @@ Cfg& CfgTransforms::satisfy_invariants(Cfg& cfg) const {
     }
   }
 
-	cfg.recompute();
+  cfg.recompute();
 
   // Everything should look good now
-	assert(cfg.check_invariants());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
-	return cfg;
+  return cfg;
 }
 
 } // namespace stoke

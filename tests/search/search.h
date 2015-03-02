@@ -35,9 +35,9 @@ protected:
   x64asm::RegSet live_out_;
 
   void test(std::string in, std::string out) {
-		// @todo This test used to belong here.
-		// The functionality it exercises has been moved to CfgTransforms
-		// Move whenever it's convenient
+    // @todo This test used to belong here.
+    // The functionality it exercises has been moved to CfgTransforms
+    // Move whenever it's convenient
 
     std::stringstream ss0;
     std::stringstream ss1;
@@ -48,12 +48,12 @@ protected:
 
     TUnit fxn;
     Cfg cfg(fxn, def_in_, live_out_);
-		CfgTransforms().satisfy_invariants(cfg);
+    CfgTransforms().satisfy_invariants(cfg);
 
     ASSERT_TRUE(cfg.check_invariants()) << "def in:   " << def_in_ << std::endl <<
-                                "live out: " << live_out_ << std::endl <<
-                                "cfg.def_outs(): " << cfg.def_outs() << std::endl <<
-                                "code: " << cfg.get_code() << std::endl;
+                                        "live out: " << live_out_ << std::endl <<
+                                        "cfg.def_outs(): " << cfg.def_outs() << std::endl <<
+                                        "code: " << cfg.get_code() << std::endl;
   }
 
 };
