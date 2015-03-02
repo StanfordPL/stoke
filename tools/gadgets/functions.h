@@ -102,7 +102,7 @@ private:
 
     if (!cpu_flags.contains(code_flags)) {
       const auto diff = code_flags - cpu_flags;
-			cpputil::Console::error(1) << "Auxiliary function (" << fxn.get_name() << ") requires unavailable cpu flags: " << diff << std::endl;
+      cpputil::Console::error(1) << "Auxiliary function (" << fxn.get_name() << ") requires unavailable cpu flags: " << diff << std::endl;
     }
   }
 
@@ -110,7 +110,7 @@ private:
   void sandbox_check(const TUnit& fxn) const {
     for (const auto& instr : fxn.get_code()) {
       if (!Sandbox::is_supported(instr)) {
-				cpputil::Console::error(1) << "Auxiliary function (" << fxn.get_name() << ") contains an unsupported instruction: " << instr << std::endl;
+        cpputil::Console::error(1) << "Auxiliary function (" << fxn.get_name() << ") contains an unsupported instruction: " << instr << std::endl;
       }
     }
   }

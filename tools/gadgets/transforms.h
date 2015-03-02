@@ -66,7 +66,7 @@ public:
     }
 
     if (!invariant_non_empty_opcode_pool()) {
-			cpputil::Console::warn() << "No valid opcodes can be proposed; consider modifying black/whitelists" << std::endl;
+      cpputil::Console::warn() << "No valid opcodes can be proposed; consider modifying black/whitelists" << std::endl;
     }
   }
 
@@ -94,8 +94,8 @@ private:
     const auto user_flags = cpu_flags_arg.value();
 
     if (!real_cpu_flags.contains(user_flags)) {
-			cpputil::Console::warn() << "Some cpu flags are not available on this hardware and will be removed:" << std::endl;
-			cpputil::Console::warn() << (user_flags - real_cpu_flags) << std::endl;
+      cpputil::Console::warn() << "Some cpu flags are not available on this hardware and will be removed:" << std::endl;
+      cpputil::Console::warn() << (user_flags - real_cpu_flags) << std::endl;
     }
 
     return user_flags & real_cpu_flags;
@@ -106,7 +106,7 @@ private:
     std::vector<x64asm::M8> ms;
     for (const auto& m : mem_ops_arg.value()) {
       if (m.rip_offset()) {
-				cpputil::Console::warn() << "Ignoring memory operand with rip offset (" << m << ") use --rips" << std::endl;
+        cpputil::Console::warn() << "Ignoring memory operand with rip offset (" << m << ") use --rips" << std::endl;
       } else {
         ms.push_back(m);
       }
