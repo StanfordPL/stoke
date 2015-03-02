@@ -37,9 +37,9 @@ public:
                 max_instrs_arg.value()) {
 
     if (!invariant_boundary_conditions(target)) {
-      Console::error(1) << "Search state and target disagree on def_in/live_out!" << std::endl;
+      cpputil::Console::error(1) << "Search state and target disagree on def_in/live_out!" << std::endl;
     } else if (!invariant_functions()) {
-      Console::error(1) << "Search state contains a poorly formed function!" << std::endl;
+      cpputil::Console::error(1) << "Search state contains a poorly formed function!" << std::endl;
     }
   }
 };
