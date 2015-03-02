@@ -379,8 +379,8 @@ public:
   x64asm::RegSet must_read_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto lbl = function_.get_leading_label();
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.must_read_set;
@@ -393,8 +393,8 @@ public:
   x64asm::RegSet must_write_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto lbl = function_.get_leading_label();
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.must_write_set;
@@ -407,8 +407,8 @@ public:
   x64asm::RegSet must_undef_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto lbl = function_.get_leading_label();
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.must_undef_set;
@@ -421,8 +421,8 @@ public:
   x64asm::RegSet maybe_read_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto lbl = function_.get_leading_label();
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.maybe_read_set;
@@ -435,8 +435,8 @@ public:
   x64asm::RegSet maybe_write_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto lbl = function_.get_leading_label();
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.maybe_write_set;
@@ -449,8 +449,8 @@ public:
   x64asm::RegSet maybe_undef_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto lbl = function_.get_leading_label();
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.maybe_undef_set;
