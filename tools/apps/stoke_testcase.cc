@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/serialize/line_reader.h"
 #include "src/ext/cpputil/include/serialize/span_reader.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
@@ -34,7 +35,6 @@
 #include "tools/gadgets/sandbox.h"
 #include "tools/gadgets/target.h"
 #include "tools/io/tunit.h"
-#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;

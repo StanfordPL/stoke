@@ -16,6 +16,7 @@
 #include <limits>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
+#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "tools/args/target.inc"
@@ -26,7 +27,6 @@
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
 #include "tools/io/state_diff.h"
-#include "tools/ui/console.h"
 
 using namespace cpputil;
 using namespace std;
