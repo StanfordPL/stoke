@@ -433,7 +433,7 @@ bool Transforms::instruction_move(Cfg& cfg) {
   }
 
   // Success: Any failure beyond here will require undoing the move
-	// Operands come from the global pool so this rip will need rescaling
+  // Operands come from the global pool so this rip will need rescaling
   cfg.get_function().replace(instr_idx1_, instr, false, true);
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
@@ -470,7 +470,7 @@ bool Transforms::opcode_move(Cfg& cfg) {
   }
 
   // Success: Any failure beyond here will require undoing the move
-	// This operand hasn't changed, so the rip only needs local rescaling
+  // This operand hasn't changed, so the rip only needs local rescaling
   cfg.get_function().replace(instr_idx1_, instr, false, false);
   cfg.recompute_defs();
   if (!cfg.is_sound()) {
@@ -517,7 +517,7 @@ bool Transforms::operand_move(Cfg& cfg) {
     return false;
   }
 
-  // If this is a rip operand, it needs global rescaling 
+  // If this is a rip operand, it needs global rescaling
   const auto is_mem = instr.is_explicit_memory_dereference() && ((size_t)instr.mem_index() == operand_idx);
   const auto is_rip = ((M8*)&o)->rip_offset();
 

@@ -189,23 +189,23 @@ void TUnit::insert(size_t index, const x64asm::Instruction& instr, bool rescale_
   code_.insert(code_.begin() + index, instr);
 
   // If rescale rip is true, we have to adjust a global rip offset
-	// Otherwise we'll just use the rip offsets in this instruction as they are given
+  // Otherwise we'll just use the rip offsets in this instruction as they are given
   if (rescale_rip && is_rip(index)) {
     adjust_rip(index, 0 - get_rip_offset() - hex_offset(index) - hex_size(index));
   }
 
-  // If this instruction has non-zero size, adjust everything that follows 
-	if (offset_delta != 0) {
-		for (size_t i = index+1, ie = code_.size(); i < ie; ++i) {
-			if (is_rip(i)) {
-				adjust_rip(i, -offset_delta);
-			}
-		}
-	}
+  // If this instruction has non-zero size, adjust everything that follows
+  if (offset_delta != 0) {
+    for (size_t i = index+1, ie = code_.size(); i < ie; ++i) {
+      if (is_rip(i)) {
+        adjust_rip(i, -offset_delta);
+      }
+    }
+  }
 }
 
 void TUnit::replace(size_t index, const x64asm::Instruction& instr, bool skip_first, bool rescale_rip) {
-	assert(!(skip_first && rescale_rip));
+  assert(!(skip_first && rescale_rip));
   assert(index < code_.size());
 
   // Some constants
@@ -214,30 +214,30 @@ void TUnit::replace(size_t index, const x64asm::Instruction& instr, bool skip_fi
   const int64_t offset_delta = size - hex_size(index);
 
   // If this instruction has a new size, update offset and size tables
-	if (offset_delta != 0) {
-		for (size_t i = index+1, ie = hex_offsets_.size(); i < ie; ++i) {
-			hex_offsets_[i] += offset_delta;
-		}
-		hex_sizes_[index] = size;
-	}
+  if (offset_delta != 0) {
+    for (size_t i = index+1, ie = hex_offsets_.size(); i < ie; ++i) {
+      hex_offsets_[i] += offset_delta;
+    }
+    hex_sizes_[index] = size;
+  }
 
   // Replace the instruction
   code_[index] = instr;
 
   // If rescale rip is true, we have to adjust a potential global rip offset
-	if (!skip_first && is_rip(index) && rescale_rip) {
-		adjust_rip(index, 0 - get_rip_offset() - hex_offset(index) - hex_size(index));
-	}
-	
-  // If this instruction has non-zero size, adjust everything 
-	if (offset_delta != 0) {
-		const auto begin = skip_first || rescale_rip ? index + 1 : index;
-		for (size_t i = begin, ie = code_.size(); i < ie; ++i) {
-			if (is_rip(i)) {
-				adjust_rip(i, -offset_delta);
-			}
-		}
-	}
+  if (!skip_first && is_rip(index) && rescale_rip) {
+    adjust_rip(index, 0 - get_rip_offset() - hex_offset(index) - hex_size(index));
+  }
+
+  // If this instruction has non-zero size, adjust everything
+  if (offset_delta != 0) {
+    const auto begin = skip_first || rescale_rip ? index + 1 : index;
+    for (size_t i = begin, ie = code_.size(); i < ie; ++i) {
+      if (is_rip(i)) {
+        adjust_rip(i, -offset_delta);
+      }
+    }
+  }
 }
 
 void TUnit::swap(size_t i, size_t j) {
@@ -257,17 +257,17 @@ void TUnit::swap(size_t i, size_t j) {
   const int64_t offset_delta_inner = hex_size(j) - hex_size(i);
 
   // If hex sizes have changed update offset and size tables
-	if (offset_delta_inner) {
-		std::swap(hex_sizes_[i], hex_sizes_[j]);
-		std::swap(hex_offsets_[i], hex_offsets_[j]);
-		hex_offsets_[i] += offset_delta_j;
-		if (offset_delta_inner != 0) {
-			for (size_t idx = i+1; idx < j; ++idx) {
-				hex_offsets_[idx] += offset_delta_inner;
-			}
-		}
-		hex_offsets_[j] += offset_delta_i;
-	}
+  if (offset_delta_inner) {
+    std::swap(hex_sizes_[i], hex_sizes_[j]);
+    std::swap(hex_offsets_[i], hex_offsets_[j]);
+    hex_offsets_[i] += offset_delta_j;
+    if (offset_delta_inner != 0) {
+      for (size_t idx = i+1; idx < j; ++idx) {
+        hex_offsets_[idx] += offset_delta_inner;
+      }
+    }
+    hex_offsets_[j] += offset_delta_i;
+  }
 
   // Swap the instructions
   std::swap(code_[i], code_[j]);
