@@ -32,8 +32,8 @@ public:
   Cfg& remove_redundant(Cfg& cfg) const;
 
   /** Returns a minimal Cfg that satisfies all invariants */
-  Cfg minimal_correct_cfg(const x64asm::RegSet& def_in = x64asm::RegSet::empty(), 
-			const x64asm::RegSet& live_out = x64asm::RegSet::universe()) const;
+  Cfg minimal_correct_cfg(const x64asm::RegSet& def_in = x64asm::RegSet::empty(),
+                          const x64asm::RegSet& live_out = x64asm::RegSet::universe()) const;
 };
 
 } // namespace stoke
