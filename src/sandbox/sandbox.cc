@@ -101,7 +101,7 @@ Sandbox& Sandbox::clear_inputs() {
 
 Sandbox& Sandbox::insert_function(const Cfg& cfg) {
   // Look up the name of this function
-  assert(cfg.get_code()[0].is_label_defn());
+  assert(cfg.get_function().invariant_leading_instr_is_label());
   const auto label = cfg.get_function().get_leading_label();
 
   // If this is the first time we've seen this function, allocate state
@@ -261,7 +261,7 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
 
 void Sandbox::recompile(const Cfg& cfg) {
   // Grab the name of this function
-  assert(cfg.get_code()[0].is_label_defn());
+  assert(cfg.get_function().invariant_leading_instr_is_label());
   const auto& label = cfg.get_function().get_leading_label();
 
   // Compile the function and record its source
@@ -276,8 +276,6 @@ void Sandbox::recompile(const Cfg& cfg) {
   }
 
   // Relink everything
-  // @todo This isn't quite right since linking isn't pure.
-  // See x64asm issue #138. Once that's closed, we can remove this comment.
   lnkr_.start();
   for (auto f : fxns_) {
     lnkr_.link(*(f.second));
@@ -710,6 +708,8 @@ bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
 //   <none>
 
 void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
+	assert(cfg.get_function().invariant_first_instr_is_label());
+
   assm_.start(*fxn);
 
   // The label that begins a function must precede instrumentation
@@ -722,33 +722,33 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   const auto label = cfg.get_function().get_leading_label();
   const auto exit = get_label();
 
-  // Keep track of the hex byte offset of every instruction in this function
-  uint64_t hex_offset = 0;
-
   // Assemble instructions and add instrumentation for reachable blocks
   for (Cfg::id_type b = 0, be = cfg.num_blocks(); b < be; ++b) {
-    const auto size = cfg.num_instrs(b);
-    const auto begin = size == 0 ? 0 : cfg.get_index(Cfg::loc_type(b, 0));
-    const auto is_reachable = cfg.is_reachable(b);
-
-    if (is_reachable && count_instructions_) {
+		if (!cfg.is_reachable(b)) {
+			continue;
+		}
+		// Emit code for counting the instructions in this block
+    if (count_instructions_) {
       emit_count_instructions(cfg, b);
     }
+
+    const auto size = cfg.num_instrs(b);
+    const auto begin = size == 0 ? 0 : cfg.get_index(Cfg::loc_type(b, 0));
+
     for (auto i = begin, ie = begin + size; i < ie; ++i) {
-      const auto& instr = cfg.get_code()[i];
+			// Look up instruction and rip that points beyond this instruction
+			const auto& f = cfg.get_function();
+      const auto& instr = f.get_code()[i];
+			const auto hex_offset = f.get_rip_offset() + f.hex_offset(i) + f.hex_size(i);
 
-      // Anything rip offset related is wrt to the next instruction
-      hex_offset += assm_.hex_size(instr);
-
-      if (cfg.is_reachable(b)) {
-        if (global_before_.first != nullptr || !before_.empty()) {
-          emit_before(cfg.get_function().get_leading_label(), i);
-        }
-        emit_instruction(instr, label, hex_offset, exit);
-        if (global_after_.first != nullptr || !after_.empty()) {
-          emit_after(cfg.get_function().get_leading_label(), i);
-        }
-      }
+			// Emit callbacks and instruction
+			if (global_before_.first != nullptr || !before_.empty()) {
+				emit_before(cfg.get_function().get_leading_label(), i);
+			}
+			emit_instruction(instr, label, hex_offset, exit);
+			if (global_after_.first != nullptr || !after_.empty()) {
+				emit_after(cfg.get_function().get_leading_label(), i);
+			}
     }
   }
   // Catch for run-away code
@@ -843,7 +843,7 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
     emit_jump(instr);
     break;
   case DispatchTable::CALL_LABEL:
-    emit_call(instr, fxn, hex_offset);
+    emit_call(instr, hex_offset);
     break;
   case DispatchTable::RET:
     emit_ret(instr, exit);
@@ -861,7 +861,7 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
     emit_mem_bt(instr);
     break;
   case DispatchTable::MEM_INSTR:
-    emit_memory_instruction(instr, fxn, hex_offset);
+    emit_memory_instruction(instr, hex_offset);
     break;
   case DispatchTable::PUSH:
     emit_push(instr);
@@ -904,7 +904,7 @@ void Sandbox::emit_count_instructions(const Cfg& cfg, Cfg::id_type bb) {
   assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
 
-void Sandbox::emit_memory_instruction(const Instruction& instr, const Label& fxn, uint64_t hex_offset) {
+void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_offset) {
   // Grab the memory operand (no sense copying if we can promise to be const)
   const auto mi = instr.mem_index();
   auto* temp = const_cast<Instruction*>(&instr);
@@ -929,11 +929,7 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, const Label& fxn
   // Some special case handling here for rip offset style dereferences.
   // Either way, the effective address is going into rdi
   if (rip_offset) {
-    // Figure out the rip offset at this instruction and add the offset for this instruction.
-    auto offset = fxns_src_[fxn]->get_function().get_rip_offset();
-    offset += hex_offset;
-    offset += old_op.get_disp();
-    assm_.mov(rdi, Imm64(offset));
+    assm_.mov(rdi, Imm64(hex_offset + old_op.get_disp()));
   } else {
     if (uses_rsp) {
       assm_.mov(rsp, Imm64(&user_rsp_));
@@ -1063,27 +1059,17 @@ void Sandbox::emit_jump(const Instruction& instr) {
   assm_.assemble(instr);
 }
 
-void Sandbox::emit_call(const Instruction& instr, const x64asm::Label& fxn, uint64_t hex_offset) {
-  // Use the stoke stack to save a few registers
-  emit_load_stoke_rsp();
-  assm_.push(rax);
-  assm_.push(rbx);
-
-  // Push out the rip offset at this instruction
+void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
+  // Push the rip offset that follows this instruction
   // Sandboxing the memory dereference will catch infinite recursions
-  assm_.mov((R64)rax, Imm64(fxns_src_[fxn]->get_function().get_rip_offset() + hex_offset));
-  emit_load_user_rsp();
+	assm_.mov(Moffs64(&scratch_[rax]), rax);
+	assm_.mov((R64)rax, Imm64(hex_offset));
   emit_push({PUSH_R64, {rax}});
+	assm_.mov(rax, Moffs64(&scratch_[rax]));
 
-  // Restore the STOKE %rsp (emit_push will have left the user's rsp in place)
-  // and put back the values that we saved so the stack is sound
+  // Restore the STOKE %rsp before the call and the user's %rsp following the return
   emit_load_stoke_rsp();
-  assm_.pop(rbx);
-  assm_.pop(rax);
-
-  // Invoke the call (functions assumes stoke rsp in and out)
   assm_.assemble(instr);
-  // Load the user's %rsp
   emit_load_user_rsp();
 
   // Simulate pop %rip; all that matters is moving %rsp
