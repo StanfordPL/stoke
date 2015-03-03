@@ -194,8 +194,8 @@ struct TUnit {
     insert(get_code().size(), instr, rescale_rip);
   }
   /** Replaces an instruction in the underlying code sequence; can cause invariants to fail */
-  void replace(size_t index, const x64asm::Instruction& instr, 
-			bool skip_first = false, bool rescale_rip = false);
+  void replace(size_t index, const x64asm::Instruction& instr,
+               bool skip_first = false, bool rescale_rip = false);
   /** Swaps two instructions in the underlying code sequence; can cause invariants to fail */
   void swap(size_t i, size_t j);
   /** Rotate instructions to the left; can cause invariants to fail */
