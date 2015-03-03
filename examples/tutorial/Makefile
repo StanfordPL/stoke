@@ -29,6 +29,9 @@ testcase:
 search:
 	stoke search --config search.conf
 
+# 'make check' should always work unless there's
+# a bug in 'stoke debug verify' or 'stoke search'
+# or the search just fails.
 check:
 	stoke debug verify --config verify.conf
 
