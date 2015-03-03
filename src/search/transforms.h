@@ -106,17 +106,20 @@ public:
   void undo(Cfg& cfg, Move type);
   /** Undo instruction move, recompute def-in relation. */
   void undo_instruction_move(Cfg& cfg) {
-    cfg.get_function().replace(instr_idx1_, old_instr_);
+    // The old instruction should go back exactly as it was
+    cfg.get_function().replace(instr_idx1_, old_instr_, true);
     cfg.recompute_defs();
   }
   /** Undo opcode move, recompute def-in relation. */
   void undo_opcode_move(Cfg& cfg) {
-    cfg.get_function().replace(instr_idx1_, old_instr_);
+    // The old instruction should go back exactly as it was
+    cfg.get_function().replace(instr_idx1_, old_instr_, true);
     cfg.recompute_defs();
   }
   /** Undo operand move, recompute def-in relation. */
   void undo_operand_move(Cfg& cfg) {
-    cfg.get_function().replace(instr_idx1_, old_instr_);
+    // The old instruction should go back exactly as it was
+    cfg.get_function().replace(instr_idx1_, old_instr_, true);
     cfg.recompute_defs();
   }
   /** Undo resize move, recompute EVERYTHING. */
