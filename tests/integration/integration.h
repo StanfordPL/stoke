@@ -105,6 +105,9 @@ TEST_F(IntegrationTest, TutorialTest) {
   }
   EXPECT_GT(good, (size_t)0);
 
+  // Run make check
+  EXPECT_EQ(0ull, shell("make check"));
+
   // Run make replace
   EXPECT_EQ(0ull, shell("make replace"));
 

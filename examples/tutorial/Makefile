@@ -29,6 +29,9 @@ testcase:
 search:
 	stoke search --config search.conf
 
+check:
+	stoke debug verify --config verify.conf
+
 replace:
 	stoke replace --config replace.conf
 
