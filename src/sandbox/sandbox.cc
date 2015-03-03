@@ -261,7 +261,7 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
 
 void Sandbox::recompile(const Cfg& cfg) {
   // Grab the name of this function
-  assert(cfg.get_function().invariant_leading_instr_is_label());
+  assert(cfg.get_function().invariant_first_instr_is_label());
   const auto& label = cfg.get_function().get_leading_label();
 
   // Compile the function and record its source
