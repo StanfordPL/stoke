@@ -101,7 +101,7 @@ Sandbox& Sandbox::clear_inputs() {
 
 Sandbox& Sandbox::insert_function(const Cfg& cfg) {
   // Look up the name of this function
-  assert(cfg.get_function().invariant_leading_instr_is_label());
+  assert(cfg.get_function().invariant_first_instr_is_label());
   const auto label = cfg.get_function().get_leading_label();
 
   // If this is the first time we've seen this function, allocate state
