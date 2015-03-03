@@ -72,6 +72,8 @@ void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
   result would equal or exceed that value. */
 CorrectnessCost::result_type CorrectnessCost::operator()(const Cfg& cfg, const Cost max) {
 
+  run_sandbox(cfg);
+
   auto cost = evaluate_correctness(cfg, max);
   bool correct = cost == 0;
   return result_type(correct, cost);
