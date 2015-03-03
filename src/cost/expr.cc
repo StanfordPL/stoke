@@ -28,7 +28,7 @@ bool ExprCost::need_sandbox() {
 
 ExprCost& ExprCost::setup_sandbox(Sandbox* sb) {
 
-  sb_ = sb;
+  sandbox_ = sb;
   for(auto cf : all_leaf_functions()) {
     cf->setup_sandbox(sb);
   }
@@ -76,27 +76,15 @@ ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
   auto leaves = all_leaf_functions();
 
   // run the sandbox, if needed
-  for(auto it : leaves) {
-    if(it->need_sandbox()) {
-      assert(sb_);
+  run_sandbox(cfg);
 
-      sb_->expert_mode();
-      sb_->expert_use_disposable_labels();
-      sb_->expert_recompile(cfg);
-      sb_->expert_recycle_labels();
-      sb_->run(cfg);
-
-      break;
-    }
-  }
-
-  // build the environment
+  // build the environment (i.e. run the actual cost functions)
   std::map<CostFunction*, Cost> env;
   for(auto it : leaves) {
     env[it] = (*it)(cfg, max).second;
   }
 
-  // compute cost and correctness
+  // compute cost and correctness (i.e. combine the results together)
   Cost cost = run(env);
 
   bool correct = true;

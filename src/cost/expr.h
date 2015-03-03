@@ -56,6 +56,8 @@ public:
   /** Constructs a reference to a "leaf" cost function.
       (i.e. one that does real work) */
   ExprCost(CostFunction* a1) : a1_(a1), arity_(1), correctness_(NULL) {
+    //we'll handle running the sandbox here.
+    a1->set_run_sandbox(false);
     reset();
   }
   /** Constructs a constant operation */
