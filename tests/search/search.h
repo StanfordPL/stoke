@@ -46,10 +46,7 @@ protected:
     ss1 << "{ " << in << " }";
     ss1 >> def_in_;
 
-    TUnit fxn;
-    Cfg cfg(fxn, def_in_, live_out_);
-    CfgTransforms().satisfy_invariants(cfg);
-
+		const auto cfg = CfgTransforms().minimal_correct_cfg(def_in_, live_out_);
     ASSERT_TRUE(cfg.check_invariants()) << "def in:   " << def_in_ << std::endl <<
                                         "live out: " << live_out_ << std::endl <<
                                         "cfg.def_outs(): " << cfg.def_outs() << std::endl <<

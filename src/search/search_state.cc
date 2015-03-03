@@ -81,11 +81,19 @@ void SearchState::configure_zero(const Cfg& target, size_t size) {
     return;
   }
 
+  // Compute a minimal function that covers live-outs
+  const auto minimal = CfgTransforms().minimal_correct_cfg(target.def_ins(), target.live_outs());
+  const auto& code = minimal.get_code();
+
   // Start with initial label
   current = target;
   current.get_function().clear();
   current.get_function().push_back(target.get_code()[0]);
-  CfgTransforms().satisfy_invariants(current);
+
+  // Append instructions from minimal code
+  for (size_t i = 1; code[i].is_ret(); ++i) {
+    current.get_function().push_back(code[i]);
+  }
 
   // Pad with nops
   for (size_t i = current.get_code().size(), ie = size - 1; i < ie; ++i) {

@@ -122,10 +122,8 @@ Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
   return cfg;
 }
 
-Cfg& CfgTransforms::satisfy_invariants(Cfg& cfg) const {
-  // Make sure that we enter this method with well-formed code
-  assert(cfg.get_function().check_invariants());
-
+Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_out) const {
+  Cfg cfg(TUnit(), def_in, live_out);
   const auto diff = cfg.live_outs() - cfg.def_outs();
 
   // initialize all general purpose registers
@@ -180,11 +178,13 @@ Cfg& CfgTransforms::satisfy_invariants(Cfg& cfg) const {
     }
   }
 
+  cfg.get_function().push_back(RET);
   cfg.recompute();
 
   // Everything should look good now
   assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
+
   return cfg;
 }
 
