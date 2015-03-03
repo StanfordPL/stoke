@@ -45,7 +45,8 @@ public:
   static constexpr auto max_error_cost = (Cost)(0x1ull << 32);
 
   /** Create a new cost function with default values for extended features. */
-  CorrectnessCost(Sandbox* sb) : sandbox_(sb) {
+  CorrectnessCost(Sandbox* sb) : CostFunction() {
+    sandbox_ = sb;
     const x64asm::Code code {
       {x64asm::LABEL_DEFN, {x64asm::Label{".main"}}},
       {x64asm::RET}
@@ -127,9 +128,6 @@ public:
   }
 
 private:
-  /** A sandbox for evaluating target and rewrites. */
-  Sandbox* sandbox_;
-
   /** Method for measuring the distance between two 64-bit values. */
   Distance distance_;
   /** The set of registers that are live-out in the target. */
