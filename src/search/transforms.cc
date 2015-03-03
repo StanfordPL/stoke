@@ -436,7 +436,8 @@ bool Transforms::instruction_move(Cfg& cfg) {
   }
 
   // Success: Any failure beyond here will require undoing the move
-  cfg.get_function().replace(instr_idx1_, instr, true);
+  // Operands come from the global pool so this rip will need rescaling
+  cfg.get_function().replace(instr_idx1_, instr, false, true);
   cfg.recompute_defs();
   if (!cfg.check_invariants()) {
     undo_instruction_move(cfg);
@@ -472,7 +473,8 @@ bool Transforms::opcode_move(Cfg& cfg) {
   }
 
   // Success: Any failure beyond here will require undoing the move
-  cfg.get_function().replace(instr_idx1_, instr);
+  // This operand hasn't changed, so the rip only needs local rescaling
+  cfg.get_function().replace(instr_idx1_, instr, false, false);
   cfg.recompute_defs();
   if (!cfg.check_invariants()) {
     undo_opcode_move(cfg);
@@ -518,13 +520,12 @@ bool Transforms::operand_move(Cfg& cfg) {
     return false;
   }
 
-  // If this is a rip operand, it needs rescaling since it's global
-  // Otherwise, the instruction should be replaced as is
+  // If this is a rip operand, it needs global rescaling
   const auto is_mem = instr.is_explicit_memory_dereference() && ((size_t)instr.mem_index() == operand_idx);
   const auto is_rip = ((M8*)&o)->rip_offset();
 
   // Success: Any failure beyond here will require undoing the move
-  cfg.get_function().replace(instr_idx1_, instr, is_rip);
+  cfg.get_function().replace(instr_idx1_, instr, false, is_rip);
   cfg.recompute_defs();
   if (!cfg.check_invariants()) {
     undo_operand_move(cfg);

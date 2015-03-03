@@ -32,21 +32,82 @@ public:
   /** The maximum cost that any rewrite should produce. */
   static constexpr auto max_cost = (Cost)(0x1ull << 62);
 
+  /** By default, run the sandbox unless we're told otherwise. */
+  CostFunction() {
+    set_run_sandbox(true);
+    sandbox_ = NULL;
+  }
+
   /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
-    result would equal or exceed that value. */
+    result would equal or exceed that value.  When you implement this method, you
+    must call run_sandbox() to ensure that the sandbox was run, either by the client
+    of the CostFunction or by the CostFunction itself.*/
   virtual result_type operator()(const Cfg& cfg, const Cost max = max_cost) = 0;
 
-  /** Does this Cost require the sandbox to be run first? */
+  /** Does this CostFunction require a Sandbox object?
+      Contract for clients:
+
+        If this function returns true, you must call need_sandbox() with a
+        good sandbox before running the cost function.
+
+      Contract for subclasses:
+
+        If this function returns true, you must invoke run_sandbox() inside
+        the operator() function.
+   */
   virtual bool need_sandbox() {
     return false;
   }
 
   /** Perform any one-time setup required using the sandbox (optional).
-      This function must be invoked with a good sandbox if need_sandbox()
-      returns true. */
+      Contract for CostFunction clients:
+
+        This function must be invoked with a good sandbox if need_sandbox()
+        returns true.
+
+      Contract for subclasses:
+
+        For 'run_sandbox()' to work right, the sandbox_ variable *must* be set
+        correctly.  The purpose of being able to override this function is so
+        you can insert a callback or change other settings, for example.  These
+        changes need to be compatible with all the other cost functions, and
+        it's your job to check this!
+   */
   virtual CostFunction& setup_sandbox(Sandbox* sb) {
+    sandbox_ = sb;
     return *this;
   }
+
+  /** Set whether the cost function must run the sandbox itself, or if the
+      client will run the sandbox before calling operator() */
+  CostFunction& set_run_sandbox(bool b) {
+    must_run_sandbox_ = b;
+    return *this;
+  }
+
+protected:
+
+  /** Runs the sandbox if necessary (i.e. it's needed and the client doesn't do
+   * so).  This function should be avoided for performance reasons; so be sure
+   to call set_run_sandbox(false)! */
+  void run_sandbox(const Cfg& cfg) {
+    assert(sandbox_);
+    if (must_run_sandbox_ && need_sandbox()) {
+      sandbox_->expert_mode();
+      sandbox_->expert_use_disposable_labels();
+      sandbox_->expert_recompile(cfg);
+      sandbox_->expert_recycle_labels();
+      sandbox_->run();
+    }
+  }
+
+  /** Keeps a copy of the sandbox, in case we need to run it. */
+  Sandbox* sandbox_;
+
+private:
+
+  /** Do we need to run the sandbox, or will the client do it for us? */
+  bool must_run_sandbox_;
 
 };
 
