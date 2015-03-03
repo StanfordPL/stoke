@@ -31,14 +31,9 @@ public:
   /** Remove instructions that don't produce side effects (assumes cfg and function satisfy invariants) */
   Cfg& remove_redundant(Cfg& cfg) const;
 
-  /** Adds instructions until check_invariants() returns true, assumes function satisfies invariants */
-  Cfg& satisfy_invariants(Cfg& cfg) const;
-
   /** Returns a minimal Cfg that satisfies all invariants */
-  Cfg minimal_correct_cfg() const {
-    Cfg cfg(TUnit(), x64asm::RegSet::universe(), x64asm::RegSet::universe());
-    return satisfy_invariants(cfg);
-  }
+  Cfg minimal_correct_cfg(const x64asm::RegSet& def_in = x64asm::RegSet::empty(), 
+			const x64asm::RegSet& live_out = x64asm::RegSet::universe()) const;
 };
 
 } // namespace stoke
