@@ -17,18 +17,10 @@
 using namespace stoke;
 using namespace std;
 
-bool ExprCost::need_sandbox() {
-
-  for(auto cf : all_leaf_functions()) {
-    if(cf->need_sandbox())
-      return true;
-  }
-  return false;
-}
 
 ExprCost& ExprCost::setup_sandbox(Sandbox* sb) {
 
-  sb_ = sb;
+  sandbox_ = sb;
   for(auto cf : all_leaf_functions()) {
     cf->setup_sandbox(sb);
   }
@@ -76,27 +68,16 @@ ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
   auto leaves = all_leaf_functions();
 
   // run the sandbox, if needed
-  for(auto it : leaves) {
-    if(it->need_sandbox()) {
-      assert(sb_);
+  if(need_sandbox_)
+    run_sandbox(cfg);
 
-      sb_->expert_mode();
-      sb_->expert_use_disposable_labels();
-      sb_->expert_recompile(cfg);
-      sb_->expert_recycle_labels();
-      sb_->run(cfg);
-
-      break;
-    }
-  }
-
-  // build the environment
+  // build the environment (i.e. run the actual cost functions)
   std::map<CostFunction*, Cost> env;
   for(auto it : leaves) {
     env[it] = (*it)(cfg, max).second;
   }
 
-  // compute cost and correctness
+  // compute cost and correctness (i.e. combine the results together)
   Cost cost = run(env);
 
   bool correct = true;
@@ -112,9 +93,12 @@ Cost ExprCost::run(const std::map<CostFunction*, Cost>& env) const {
   if(arity_ == 0) {
     return constant_;
   } else if (arity_ == 1) {
+    assert(a1_);
     assert(env.count(a1_) > 0);
     return env.at(a1_);
   } else if (arity_ == 2) {
+    assert(a1_);
+    assert(a2_);
     auto c1 = static_cast<ExprCost*>(a1_)->run(env);
     auto c2 = static_cast<ExprCost*>(a2_)->run(env);
 
