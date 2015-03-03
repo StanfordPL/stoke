@@ -49,9 +49,8 @@ bool Verifier::hold_out_verify(const Cfg& target, const Cfg& rewrite) {
   error_ = "";
   const auto res = fxn_(rewrite);
   if (!res.first) {
-    counter_example_available_ = next_counter_example_ < fxn_.num_testcases();
-    counter_example_ = fxn_.get_testcase(next_counter_example_);
-    next_counter_example_++;
+    counter_example_available_ = true;
+    counter_example_ = fxn_.get_counter_example();
     return false;
   }
   return true;

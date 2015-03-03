@@ -29,7 +29,7 @@ public:
   /** Creates a new verifier with a cost function for use in hold-out verification. */
   Verifier(CorrectnessCost& fxn, Validator& validator) :
     counter_example_(), counter_example_available_(false), validator_(validator),
-    fxn_(fxn), next_counter_example_(0), strategy_(Strategy::NONE) { }
+    fxn_(fxn), strategy_(Strategy::NONE) { }
 
   /** Sets proof strategy. */
   Verifier& set_strategy(Strategy s) {
@@ -68,8 +68,6 @@ private:
 
   /** Cost function for use in hold-out verification. */
   CorrectnessCost fxn_;
-  /** Next counter example returned by hold-out verifier. */
-  size_t next_counter_example_;
 
   /** The validator for formal validation */
   Validator& validator_;
