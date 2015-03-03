@@ -52,11 +52,20 @@ public:
   ExprCost(ExprCost* a1, ExprCost* a2, Operator op) :
     a1_(a1), a2_(a2), op_(op), arity_(2), correctness_(NULL) {
     reset();
+
+    if(a1_ && a2_) // if there's a parse error, one could be null
+      need_sandbox_ = a1->need_sandbox() || a2->need_sandbox();
   }
   /** Constructs a reference to a "leaf" cost function.
       (i.e. one that does real work) */
   ExprCost(CostFunction* a1) : a1_(a1), arity_(1), correctness_(NULL) {
+    //we'll handle running the sandbox here.
     reset();
+
+    if(a1_) { //could be null if there's a parse error
+      a1->set_run_sandbox(false);
+      need_sandbox_ = a1->need_sandbox();
+    }
   }
   /** Constructs a constant operation */
   ExprCost(Cost constant) : constant_(constant), arity_(0) {
@@ -73,21 +82,25 @@ public:
   }
 
   /** Figure out if we need to do any cost function setup. */
-  bool need_sandbox();
+  bool need_sandbox() {
+    return need_sandbox_;
+  }
+
   /** Do any necessary cost function setup. */
   ExprCost& setup_sandbox(Sandbox* sb);
 
 private:
-  /** Called by all initializers. */
+  /** Called by all constructors. */
   void reset() {
     correctness_ = NULL;
+    need_sandbox_ = false;
   }
 
   /** Compute the cost associated with this node. */
   Cost run(const std::map<CostFunction*, Cost>& environment) const;
 
-  /** The sandbox that we (may) need to run. */
-  Sandbox* sb_;
+  /** Do we need a sandbox? */
+  bool need_sandbox_;
 
   /** Returns the pointers to leaf cost functions used in this expression. */
   std::set<CostFunction*> leaf_functions() const;
