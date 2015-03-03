@@ -708,7 +708,7 @@ bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
 //   <none>
 
 void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
-	assert(cfg.get_function().invariant_first_instr_is_label());
+  assert(cfg.get_function().invariant_first_instr_is_label());
 
   assm_.start(*fxn);
 
@@ -724,10 +724,10 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
 
   // Assemble instructions and add instrumentation for reachable blocks
   for (Cfg::id_type b = 0, be = cfg.num_blocks(); b < be; ++b) {
-		if (!cfg.is_reachable(b)) {
-			continue;
-		}
-		// Emit code for counting the instructions in this block
+    if (!cfg.is_reachable(b)) {
+      continue;
+    }
+    // Emit code for counting the instructions in this block
     if (count_instructions_) {
       emit_count_instructions(cfg, b);
     }
@@ -736,19 +736,19 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
     const auto begin = size == 0 ? 0 : cfg.get_index(Cfg::loc_type(b, 0));
 
     for (auto i = begin, ie = begin + size; i < ie; ++i) {
-			// Look up instruction and rip that points beyond this instruction
-			const auto& f = cfg.get_function();
+      // Look up instruction and rip that points beyond this instruction
+      const auto& f = cfg.get_function();
       const auto& instr = f.get_code()[i];
-			const auto hex_offset = f.get_rip_offset() + f.hex_offset(i) + f.hex_size(i);
+      const auto hex_offset = f.get_rip_offset() + f.hex_offset(i) + f.hex_size(i);
 
-			// Emit callbacks and instruction
-			if (global_before_.first != nullptr || !before_.empty()) {
-				emit_before(cfg.get_function().get_leading_label(), i);
-			}
-			emit_instruction(instr, label, hex_offset, exit);
-			if (global_after_.first != nullptr || !after_.empty()) {
-				emit_after(cfg.get_function().get_leading_label(), i);
-			}
+      // Emit callbacks and instruction
+      if (global_before_.first != nullptr || !before_.empty()) {
+        emit_before(cfg.get_function().get_leading_label(), i);
+      }
+      emit_instruction(instr, label, hex_offset, exit);
+      if (global_after_.first != nullptr || !after_.empty()) {
+        emit_after(cfg.get_function().get_leading_label(), i);
+      }
     }
   }
   // Catch for run-away code
@@ -1062,10 +1062,10 @@ void Sandbox::emit_jump(const Instruction& instr) {
 void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
   // Push the rip offset that follows this instruction
   // Sandboxing the memory dereference will catch infinite recursions
-	assm_.mov(Moffs64(&scratch_[rax]), rax);
-	assm_.mov((R64)rax, Imm64(hex_offset));
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov((R64)rax, Imm64(hex_offset));
   emit_push({PUSH_R64, {rax}});
-	assm_.mov(rax, Moffs64(&scratch_[rax]));
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
 
   // Restore the STOKE %rsp before the call and the user's %rsp following the return
   emit_load_stoke_rsp();
