@@ -7,7 +7,7 @@ testcase:
 	stoke testcase --bin ./test_nibble --fxn nibble_sort_alexander4 -o nibble.tc > /dev/null
 
 sandbox:
-	stoke debug sandbox --target bins/nibble_sort_alexander4.s --testcases nibble.tc > /dev/null
+	stoke debug sandbox --target bins/nibble_sort_alexander4.s --testcases nibble.tc | grep "SIGNAL 0" > /dev/null
 
 clean:
 	rm -rf bins nibble.tc
