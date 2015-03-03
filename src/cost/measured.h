@@ -38,6 +38,9 @@ public:
 
   /** Measures the "running time" with our latency table */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
+
+    run_sandbox(cfg);
+
     uint64_t res = latency_;
     size_t tc_count = sandbox_->size();
     latency_ = 0;
@@ -56,9 +59,6 @@ public:
   }
 
 private:
-
-  /** The sandbox that has the most recently run target. */
-  Sandbox* sandbox_;
 
   /** The latency seem so far. */
   uint64_t latency_ = 0;
