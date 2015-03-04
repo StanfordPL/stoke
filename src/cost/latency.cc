@@ -52,7 +52,7 @@ LatencyCost::result_type LatencyCost::operator()(const Cfg& cfg, Cost max) {
     // Increment latency by block latency scaled by nesting penalty
     // The call to pow() is expensive, so we hide it behind a faster check
     const auto nd = cfg.nesting_depth(*b);
-    if (nd > 1) {
+    if (nd >= 1) {
       latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
     } else {
       latency += block_latency;
