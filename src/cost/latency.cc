@@ -31,6 +31,14 @@ array<stoke::Cost, X64ASM_NUM_OPCODES> latencies_ {{
 
 namespace stoke {
 
+uint64_t LatencyCost::nesting_penalty(size_t nesting_depth) {
+
+  for(size_t i = nesting_lookup_.size(); i <= nesting_depth; ++i) {
+    nesting_lookup_.push_back(nesting_lookup_[i-1]*nesting_penalty_);
+  }
+  return nesting_lookup_[nesting_depth];
+}
+
 LatencyCost::result_type LatencyCost::operator()(const Cfg& cfg, Cost max) {
   Cost latency = 0;
 
@@ -52,10 +60,12 @@ LatencyCost::result_type LatencyCost::operator()(const Cfg& cfg, Cost max) {
     // Increment latency by block latency scaled by nesting penalty
     // The call to pow() is expensive, so we hide it behind a faster check
     const auto nd = cfg.nesting_depth(*b);
-    if (nd > 1) {
-      latency += block_latency * pow(nesting_penalty_, cfg.nesting_depth(*b));
-    } else {
+    if (nd == 0) {
       latency += block_latency;
+    } else if (nd == 1) {
+      latency += block_latency*nesting_penalty_;
+    } else {
+      latency += block_latency*nesting_penalty(nd);
     }
 
     if(latency >= max) {
