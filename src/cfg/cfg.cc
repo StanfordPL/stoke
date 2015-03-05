@@ -42,7 +42,7 @@ bool Cfg::invariant_no_undef_reads() const {
       const auto r = maybe_read_set(get_code()[idx]);
       const auto di = def_ins_[idx];
 
-      if ((r & di) != r) {
+      if (!di.contains(r)) {
         return false;
       }
     }
@@ -53,7 +53,7 @@ bool Cfg::invariant_no_undef_reads() const {
 
 bool Cfg::invariant_no_undef_live_outs() const {
   const auto di_end = def_ins_[blocks_[get_exit()]];
-  return (di_end & fxn_live_outs_) == fxn_live_outs_;
+  return di_end.contains(fxn_live_outs_);
 }
 
 string Cfg::which_undef_read() const {
