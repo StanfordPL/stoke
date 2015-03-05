@@ -29,7 +29,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, a & b);
     ss.set(eflags_cf, SymBool::_false());
     ss.set(eflags_of, SymBool::_false());
-    ss.set(eflags_af, SymBool::var("AF_" + to_string(temp())));
+    ss.set(eflags_af, SymBool::tmp_var());
     ss.set_szp_flags(a & b);
   });
 
@@ -155,7 +155,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, a | b);
     ss.set(eflags_cf, SymBool::_false());
     ss.set(eflags_of, SymBool::_false());
-    ss.set(eflags_af, SymBool::var("AF_" + to_string(temp())));
+    ss.set(eflags_af, SymBool::tmp_var());
     ss.set_szp_flags(a | b);
   });
 
@@ -332,7 +332,7 @@ void SimpleHandler::add_all() {
 
     ss.set(eflags_cf, SymBool::_false());
     ss.set(eflags_of, SymBool::_false());
-    ss.set(eflags_af, SymBool::var("AF_" + to_string(temp())));
+    ss.set(eflags_af, SymBool::tmp_var());
     ss.set_szp_flags(a & b);
   });
 
@@ -381,7 +381,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, a ^ b);
     ss.set(eflags_cf, SymBool::_false());
     ss.set(eflags_of, SymBool::_false());
-    ss.set(eflags_af, SymBool::var("AF_" + to_string(temp())));
+    ss.set(eflags_af, SymBool::tmp_var());
     ss.set_szp_flags(a ^ b);
   });
 

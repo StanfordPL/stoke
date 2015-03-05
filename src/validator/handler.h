@@ -71,11 +71,6 @@ protected:
   /** Returns true if the validator supports all the operands of the instruction. */
   bool operands_supported(const x64asm::Instruction& instr);
 
-  /** Gets a temporary number guaranteed to be unique (e.g. for a temp variable */
-  uint64_t temp() {
-    return ++temporary_;
-  }
-
   /** Returns the overflow flag given the MSB of the two arguments and total for a plus operation */
   SymBool plus_of(SymBool msb1, SymBool msb2, SymBool total_msb) const;
   /** Returns the overflow flag given the MSB of the two arguments and total for a minus operation */
@@ -86,8 +81,6 @@ protected:
 private:
 
   static const std::array<const char*, X64ASM_NUM_OPCODES> att_;
-
-  static uint64_t temporary_;
 };
 
 } //namespace
