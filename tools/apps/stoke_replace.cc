@@ -62,11 +62,9 @@ void callback(const FunctionCallbackData& data, void* arg) {
 }
 
 bool replace(uint64_t offset, size_t size) {
-  // Clean up the new function
-  CfgTransforms tforms;
-  Cfg cfg(rewrite_arg.value().get_code(), RegSet::empty(), RegSet::empty());
-  tforms.remove_unreachable(cfg);
-  tforms.remove_nop(cfg);
+  // def-in/live-out aren't really important here
+  // check_invariants() will fail here, but all we're trying to do is make types match
+  Cfg cfg(rewrite_arg.value(), RegSet::empty(), RegSet::empty());
 
   // Assemble the new function
   Assembler assm;

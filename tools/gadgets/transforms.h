@@ -56,7 +56,7 @@ public:
       insert_immediate(imm);
     }
     for (const auto& fxn : aux_fxns) {
-      insert_label(fxn.get_name());
+      insert_label(fxn.get_leading_label());
     }
     for (const auto& m : mem_ops()) {
       insert_mem(m);
