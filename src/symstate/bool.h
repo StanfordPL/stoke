@@ -80,6 +80,8 @@ public:
   static SymBool _false();
   /** Builds a true value */
   static SymBool _true();
+  /** Creates a bool temporary variable */
+  static SymBool tmp_var();
   /** Builds a boolean */
   static SymBool constant(bool b) {
     return ( b ? _true() : _false() );
@@ -129,6 +131,8 @@ private:
 
   /** Memory Manager */
   static SymMemoryManager* memory_manager_;
+  /** Counter for temporaries. */
+  static uint64_t tmp_counter_;
 
 };
 

@@ -144,7 +144,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
 
     // If not too large, CF is the lsb of extended result
     state.set(eflags_cf, undef_cf.ite(
-                SymBool::var("CF_" + to_string(temp())),
+                SymBool::tmp_var(),
                 operand_nonzero.ite(temp_dest[0], state[eflags_cf])
               ));
 
@@ -180,7 +180,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
 
     // If not too large, CF is the msb of extended result
     state.set(eflags_cf, undef_cf.ite(
-                SymBool::var("CF_" + to_string(temp())),
+                SymBool::tmp_var(),
                 operand_nonzero.ite(temp_dest[dest.size()], state[eflags_cf])
               ));
 
@@ -217,7 +217,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
       of = temp_dest[dest.size() - 1] ^ temp_dest[0];
     }
 
-    state.set(eflags_of, set_of.ite(of, SymBool::var("OF_" + to_string(temp()))));
+    state.set(eflags_of, set_of.ite(of, SymBool::tmp_var()));
 
   } else if (rotate && rotate_cf) {
 
@@ -246,7 +246,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
 
     state.set(eflags_of, set_of.ite(
                 of,
-                operand_nonzero.ite( state[eflags_of], SymBool::var("OF_" + to_string(temp())))
+                operand_nonzero.ite( state[eflags_of], SymBool::tmp_var())
               ));
   }
 
@@ -275,7 +275,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
 
     // SET AF to undefined (fresh variable), unless no shift happened
     state.set(eflags_af, operand_nonzero.ite(
-                SymBool::var("AF_" + to_string(temp())),
+                SymBool::tmp_var(),
                 state[eflags_af]
               ));
   }
