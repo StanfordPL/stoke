@@ -95,6 +95,8 @@ public:
   static SymBitVector constant(uint16_t size, uint64_t constant);
   /** Creates a bitvector variables of specified size and name */
   static SymBitVector var(uint16_t size, std::string name);
+  /** Creates a bitvector temporary variable of given size */
+  static SymBitVector tmp_var(uint16_t size);
   /** Creates a length-1 bitvector from a boolean */
   static SymBitVector from_bool(const SymBool& b);
 
@@ -227,6 +229,8 @@ private:
 
   /** Memory Manager */
   static SymMemoryManager* memory_manager_;
+  /** Counter for temporaries. */
+  static uint64_t tmp_counter_;
 
 };
 

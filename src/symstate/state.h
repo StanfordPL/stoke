@@ -130,13 +130,6 @@ private:
 
   /** The current line number */
   size_t lineno_;
-
-  /** Global counter */
-  static uint64_t temp_;
-  /** Get counter value */
-  static uint64_t temp() {
-    return temp_++;
-  }
 };
 
 }; //namespace stoke

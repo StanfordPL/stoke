@@ -74,14 +74,6 @@ private:
   /** Keep track of all the memory reads */
   std::vector<MemoryAccess> reads_;
 
-
-  /** Track a unique counter value */
-  static uint64_t temp_;
-  /** Return unique counter value */
-  static uint64_t temp() {
-    return temp_++;
-  }
-
   /** Optional aliasing analysis for simplication */
   AliasAnalysis* analysis_;
   /** Reference back to symbolic state */

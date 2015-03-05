@@ -21,6 +21,7 @@ using namespace std;
 using namespace stoke;
 
 SymMemoryManager* SymBool::memory_manager_ = NULL;
+uint64_t SymBool::tmp_counter_ = 0;
 
 /* Bool constructors */
 SymBool SymBool::_false() {
@@ -41,6 +42,12 @@ SymBitVector SymBool::ite(const SymBitVector t, const SymBitVector f) const {
 
 SymBool SymBool::var(std::string name) {
   return SymBool(new SymBoolVar(name));
+}
+SymBool SymBool::tmp_var() {
+  stringstream name;
+  name << "TMP_BOOL_" << tmp_counter_;
+  tmp_counter_++;
+  return SymBool(new SymBoolVar(name.str()));
 }
 
 /* Bool Operators */
