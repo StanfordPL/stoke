@@ -516,7 +516,7 @@ void TUnit::recompute() {
 
 bool TUnit::is_rip(size_t index) const {
   const auto& instr = code_[index];
-  if (!instr.is_explicit_memory_dereference()) {
+  if (!instr.is_explicit_memory_dereference() && !instr.is_lea()) {
     return false;
   }
   const auto mi = instr.mem_index();
