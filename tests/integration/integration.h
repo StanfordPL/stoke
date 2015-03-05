@@ -188,3 +188,10 @@ TEST_F(IntegrationTest, SearchCall) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
+TEST_F(IntegrationTest, SearchRip) {
+  set_working_dir("tests/fixtures/search/rip");
+  set_path("../../../bin");
+  EXPECT_EQ(0ull, shell("make"));
+  EXPECT_EQ(0ull, shell("make clean"));
+}
+
