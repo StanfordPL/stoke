@@ -187,20 +187,20 @@ void Search::configure(const Cfg& target, CostFunction& fxn, SearchState& state,
   state.best_yet.recompute();
   state.best_correct.recompute();
 
-	// add dataflow information about function call targets
-	for (const auto& fxn : aux_fxn) {
-		const auto& code = fxn.get_code();
-		const auto& lbl = fxn.get_leading_label();
-		TUnit::MayMustSets mms = {
-			code.must_read_set(),
-			code.must_write_set(),
-			code.must_undef_set(),
-			code.maybe_read_set(),
-			code.maybe_write_set(),
-			code.maybe_undef_set()
-		};
-		state.current.add_summary(lbl, fxn.get_may_must_sets(mms));
-	}
+  // add dataflow information about function call targets
+  for (const auto& fxn : aux_fxn) {
+    const auto& code = fxn.get_code();
+    const auto& lbl = fxn.get_leading_label();
+    TUnit::MayMustSets mms = {
+      code.must_read_set(),
+      code.must_write_set(),
+      code.must_undef_set(),
+      code.maybe_read_set(),
+      code.maybe_write_set(),
+      code.maybe_undef_set()
+    };
+    state.current.add_summary(lbl, fxn.get_may_must_sets(mms));
+  }
 
   state.current_cost = fxn(state.current).second;
   state.best_yet_cost = fxn(state.best_yet).second;
