@@ -7,4 +7,4 @@ search:
 	stoke search --config search.conf
 
 clean:
-	rm -f tc.tc
+	rm -f tc.tc result.s

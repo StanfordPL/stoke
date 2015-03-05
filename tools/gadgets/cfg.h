@@ -183,8 +183,8 @@ private:
   /** Add dataflow summaries for auxiliary functions */
   void summarize_functions(const std::vector<TUnit>& aux_fxns) {
     for (const auto& fxn : aux_fxns) {
-      auto code = fxn.get_code();
-      auto lbl = fxn.get_leading_label();
+      const auto& code = fxn.get_code();
+      const auto& lbl = fxn.get_leading_label();
       TUnit::MayMustSets mms = {
         code.must_read_set(),
         code.must_write_set(),
