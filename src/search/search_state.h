@@ -26,7 +26,7 @@ namespace stoke {
 class SearchState {
 
 public:
-  /** Guaranteed to pass invariants if target.get_function() passes all invariants */
+  /** Guaranteed to pass invariants if target passes all invariants */
   SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const Cfg& bc,
               Init init, size_t size);
 
@@ -54,9 +54,13 @@ public:
   bool invariant_boundary_conditions(const Cfg& target) const;
   /** Search state should be composed of well-formed functions */
   bool invariant_functions() const;
+  /** Search state should be composed of well-formed cfgs */
+  bool invariant_cfgs() const;
   /** Check all invariants */
   bool check_invariants(const Cfg& target) const {
-    return invariant_boundary_conditions(target) && invariant_functions();
+    return invariant_boundary_conditions(target) &&
+           invariant_functions() &&
+           invariant_cfgs();
   }
 
 private:
@@ -68,9 +72,6 @@ private:
   void configure_target(const Cfg& target, size_t size);
   /** Set the state in some other way. */
   void configure_extension(const Cfg& target, size_t size);
-
-  /** Returns a program that is sound for a given def_ins/live_outs combination */
-  static x64asm::Code find_sound_code(const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs);
 };
 
 } // namespace stoke

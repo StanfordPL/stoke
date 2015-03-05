@@ -21,7 +21,6 @@
 class IntegrationTest : public ::testing::Test {
 
 public:
-
   virtual void SetUp() {
     set_path("../../bin");
   }
@@ -80,8 +79,7 @@ private:
 
 };
 
-TEST_F(IntegrationTest, TutorialTest) {
-
+TEST_F(IntegrationTest, ExamplesTutorial) {
   uint64_t diff_1;
   uint64_t diff_2;
 
@@ -122,13 +120,9 @@ TEST_F(IntegrationTest, TutorialTest) {
 
   // Cleanup
   EXPECT_EQ(0ull, shell("make clean"));
-
 }
 
-
-
-TEST_F(IntegrationTest, ParityTest) {
-
+TEST_F(IntegrationTest, ExamplesParity) {
   uint64_t diff_1;
   uint64_t diff_2;
 
@@ -165,24 +159,39 @@ TEST_F(IntegrationTest, ParityTest) {
 
 }
 
-TEST_F(IntegrationTest, NibbleTest) {
-  set_working_dir("tests/fixtures/nibble");
-  set_path("../../../bin");
-
-  // Extract bins
-  EXPECT_EQ(0ull, shell("stoke extract --config extract.conf"));
-  // Generate testcases
-  EXPECT_EQ(0ull, shell("stoke testcase --config testcase.conf"));
-  // Run stoke testcase
-  EXPECT_EQ(0ull, shell("stoke debug sandbox --config sandbox.conf | grep \"SIGNAL 0\""));
-  // Cleanup
-  EXPECT_EQ(0ull, shell("rm -rf bins nibble.tc"));
-}
-
-TEST_F(IntegrationTest, Issue452) {
-  set_working_dir("tests/fixtures/452");
+TEST_F(IntegrationTest, ReplaceIdempotent) {
+  set_working_dir("tests/fixtures/replace/idem");
   set_path("../../../bin");
   ASSERT_EQ(0ull, shell("make"));
   ASSERT_EQ(0ull, shell("diff new1 new2"));
   ASSERT_EQ(0ull, shell("make clean"));
 }
+
+TEST_F(IntegrationTest, SandboxFib) {
+  set_working_dir("tests/fixtures/sandbox/fib");
+  set_path("../../../bin");
+  EXPECT_EQ(0ull, shell("make"));
+  EXPECT_EQ(0ull, shell("make clean"));
+}
+
+TEST_F(IntegrationTest, SandboxRip) {
+  set_working_dir("tests/fixtures/sandbox/rip");
+  set_path("../../../bin");
+  EXPECT_EQ(0ull, shell("make"));
+  EXPECT_EQ(0ull, shell("make clean"));
+}
+
+TEST_F(IntegrationTest, SearchCall) {
+  set_working_dir("tests/fixtures/search/call");
+  set_path("../../../bin");
+  EXPECT_EQ(0ull, shell("make"));
+  EXPECT_EQ(0ull, shell("make clean"));
+}
+
+TEST_F(IntegrationTest, SearchRip) {
+  set_working_dir("tests/fixtures/search/rip");
+  set_path("../../../bin");
+  EXPECT_EQ(0ull, shell("make"));
+  EXPECT_EQ(0ull, shell("make clean"));
+}
+

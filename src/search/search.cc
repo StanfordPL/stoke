@@ -83,21 +83,6 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   // Configure initial state
   configure(target, fxn, state, aux_fxns);
 
-  if (!target.is_sound()) {
-    cerr << "ERROR: the target reads undefined values, or leaves live out values undefined!" << endl;
-    exit(1);
-  }
-
-  if (!state.current.is_sound()) {
-    cerr << "ERROR: the initial rewrite reads undefined values, or leaves live out values undefined!" << endl;
-    if (init == Init::EMPTY) {
-      cerr << "Using --init zero will automatically prevent this problem." << endl;
-    } else if (init == Init::ZERO) {
-      cerr << "This is a bug, please report it." << endl;
-    }
-    exit(1);
-  }
-
   // Make sure target and rewrite are sound to begin with
   assert(state.best_yet.is_sound());
   assert(state.best_correct.is_sound());
@@ -198,15 +183,14 @@ void Search::stop() {
 }
 
 void Search::configure(const Cfg& target, CostFunction& fxn, SearchState& state, vector<TUnit>& aux_fxn) const {
-
   state.current.recompute();
   state.best_yet.recompute();
   state.best_correct.recompute();
 
   // add dataflow information about function call targets
   for (const auto& fxn : aux_fxn) {
-    auto code = fxn.get_code();
-    auto lbl = code[0].get_operand<x64asm::Label>(0);
+    const auto& code = fxn.get_code();
+    const auto& lbl = fxn.get_leading_label();
     TUnit::MayMustSets mms = {
       code.must_read_set(),
       code.must_write_set(),
@@ -222,6 +206,9 @@ void Search::configure(const Cfg& target, CostFunction& fxn, SearchState& state,
   state.best_yet_cost = fxn(state.best_yet).second;
   state.best_correct_cost = fxn(state.best_correct).second;
   state.success = false;
+
+  // @todo -- Let's move these invariants into SearchState
+  // Redirecting the user here to reason about this seems like an opportunity for error
 
   // Invariant 3: Best correct should be correct with respect to target
   assert(fxn(state.best_correct).first);
