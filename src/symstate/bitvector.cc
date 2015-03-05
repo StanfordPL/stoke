@@ -20,6 +20,7 @@ using namespace std;
 using namespace stoke;
 
 SymMemoryManager* SymBitVector::memory_manager_ = NULL;
+uint64_t SymBitVector::tmp_counter_ = 0;
 
 /* Various constructors */
 SymBitVector SymBitVector::constant(uint16_t size, uint64_t value) {
@@ -27,6 +28,12 @@ SymBitVector SymBitVector::constant(uint16_t size, uint64_t value) {
 }
 SymBitVector SymBitVector::var(uint16_t size, string name) {
   return SymBitVector(new SymBitVectorVar(size, name));
+}
+SymBitVector SymBitVector::tmp_var(uint16_t size) {
+  stringstream name;
+  name << "TMP_BV_" << size << "_" << tmp_counter_;
+  tmp_counter_++;
+  return SymBitVector(new SymBitVectorVar(size, name.str()));
 }
 SymBitVector SymBitVector::from_bool(const SymBool& b) {
   auto c0 = SymBitVector::constant(1,0);

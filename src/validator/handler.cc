@@ -49,5 +49,4 @@ const array<const char*, X64ASM_NUM_OPCODES> Handler::att_ = {{
   }
 };
 
-uint64_t Handler::temporary_ = 0;
 
