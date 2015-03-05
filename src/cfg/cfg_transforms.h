@@ -15,18 +15,25 @@
 #ifndef STOKE_SRC_CFG_CFG_TRANSFORMS_H
 #define STOKE_SRC_CFG_CFG_TRANSFORMS_H
 
+#include "src/ext/x64asm/include/x64asm.h"
+
 #include "src/cfg/cfg.h"
+#include "src/tunit/tunit.h"
 
 namespace stoke {
 
 class CfgTransforms {
 public:
-  /** Removes unreachable basic blocks */
-  void remove_unreachable(Cfg& cfg);
-  /** Removes nops */
-  void remove_nop(Cfg& cfg);
-  /** Removes instructions that do not participate in live-out or hardware side-effects */
-  void remove_redundant(Cfg& cfg);
+  /** Remove unreachable basic blocks (assumes cfg and function satify invariants()) */
+  Cfg& remove_unreachable(Cfg& cfg) const;
+  /** Remove nops (assumes cfg and function satisfy invariants) */
+  Cfg& remove_nop(Cfg& cfg) const;
+  /** Remove instructions that don't produce side effects (assumes cfg and function satisfy invariants) */
+  Cfg& remove_redundant(Cfg& cfg) const;
+
+  /** Returns a minimal Cfg that satisfies all invariants */
+  Cfg minimal_correct_cfg(const x64asm::RegSet& def_in = x64asm::RegSet::empty(),
+                          const x64asm::RegSet& live_out = x64asm::RegSet::universe()) const;
 };
 
 } // namespace stoke

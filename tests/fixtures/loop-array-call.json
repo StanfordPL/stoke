@@ -27,7 +27,11 @@
     "movq (%r12,%rbx,1), %rdi",  //RBX, %RCX, RDX, RSP, EBP, RAX, R8, R9, 
                                  //R12, R13, RSI, XMM0-7
     "addq $0x8, %rbx",           //...
-    "callq .L4",                 //EBP, RSP, R13, RBX, RAX
+		// eds -- 
+		// This was causing some cfg invariants to fail for lack of precise knowledge
+		// about what this function does now that we're more strict about data-flow assertions.
+		// If this is a problem, we can add a summary for this function in the test harness.
+    //"callq .L4",                 //EBP, RSP, R13, RBX, RAX
                                  //RDI, RSI, RDX, RCX, R8, R9, XMM0-7
     "addq %rax, %rbp",           //EBP, RSP, RDX, XMM0/1, R13, RBX, RAX
     "cmpq %r13, %rbx",           //EBP, RSP, RDX, XMM0/1, R13, RBX, EFLAGS

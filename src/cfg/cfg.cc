@@ -32,7 +32,7 @@ Cfg::loc_type Cfg::get_loc(size_t idx) const {
   return loc_type(0, 0);
 }
 
-bool Cfg::performs_undef_read() const {
+bool Cfg::invariant_no_undef_reads() const {
   // NOTE: if this method changes, then which_undef_read must be adapted accordingly!
 
   // No need to check the entry; this will consider the exit, but it will be a nop.
@@ -42,20 +42,18 @@ bool Cfg::performs_undef_read() const {
       const auto r = maybe_read_set(get_code()[idx]);
       const auto di = def_ins_[idx];
 
-      if ((r & di) != r) {
-        return true;
+      if (!di.contains(r)) {
+        return false;
       }
     }
   }
 
-  // Check that the live outs are all defined
-  // i.e. every life_out is also def in at the end
-  const auto di_end = def_ins_[blocks_[get_exit()]];
-  if ((di_end & fxn_live_outs_) != fxn_live_outs_) {
-    return true;
-  }
+  return true;
+}
 
-  return false;
+bool Cfg::invariant_no_undef_live_outs() const {
+  const auto di_end = def_ins_[blocks_[get_exit()]];
+  return di_end.contains(fxn_live_outs_);
 }
 
 string Cfg::which_undef_read() const {

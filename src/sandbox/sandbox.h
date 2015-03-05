@@ -387,11 +387,11 @@ private:
   /** Emit an instruction (and possibly sandbox memory). */
   void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& fxn, uint64_t hex_offset, const x64asm::Label& exit);
   /** Emit a memory instruction. */
-  void emit_memory_instruction(const x64asm::Instruction& instr, const x64asm::Label& fxn = x64asm::Label(".none"), uint64_t hex_offset = 0);
+  void emit_memory_instruction(const x64asm::Instruction& instr, uint64_t hex_offset = 0);
   /** Emit a jump instruction */
   void emit_jump(const x64asm::Instruction& instr);
   /** Emit the CALL LABEL instruction. */
-  void emit_call(const x64asm::Instruction& instr, const x64asm::Label& fxn, uint64_t hex_offset);
+  void emit_call(const x64asm::Instruction& instr, uint64_t hex_offset);
   /** Emit the RET instruction. */
   void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
   /** Emit code to increment the instruction count */
