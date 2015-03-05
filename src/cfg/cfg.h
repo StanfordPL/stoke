@@ -69,16 +69,11 @@ public:
   /** A map from labels to the dataflow summary of that function. */
   std::unordered_map<x64asm::Label, DataflowSummary> fncs_summary;
 
-  /** Creates a new control flow graph with valid internal state. */
-  explicit Cfg(const TUnit& function, const x64asm::RegSet& def_ins = x64asm::RegSet::empty(),
+  /** Creates a new control flow graph; NOT guaranteed to pass invariant check! */
+  explicit Cfg(const TUnit& function,
+               const x64asm::RegSet& def_ins = x64asm::RegSet::empty(),
                const x64asm::RegSet& live_outs = x64asm::RegSet::empty()) :
     function_(function), fxn_def_ins_(def_ins), fxn_live_outs_(live_outs) {
-    recompute();
-  }
-
-  /** Copy constructor. */
-  Cfg(const Cfg& other) :
-    function_(other.function_), fxn_def_ins_(other.fxn_def_ins_), fxn_live_outs_(other.fxn_live_outs_) {
     recompute();
   }
 
@@ -347,12 +342,14 @@ public:
     return live_ins_[get_index(loc)];
   }
 
-  /** Returns true if performs_undef_reach() returns true. */
-  bool is_sound() const {
-    return !performs_undef_read();
+  /** Check that this cfg only reads from defined register locations */
+  bool invariant_no_undef_reads() const;
+  /** Check that this cfg writes to all live out values */
+  bool invariant_no_undef_live_outs() const;
+  /** Check all invariants */
+  bool check_invariants() const {
+    return invariant_no_undef_reads() && invariant_no_undef_live_outs();
   }
-  /** Returns true if an instruction performs a read from a register with an undefined value. */
-  bool performs_undef_read() const;
 
   /** Explains what undefined value is read. */
   std::string which_undef_read() const;
@@ -360,7 +357,7 @@ public:
   /** Adds summary information about a call target to increase precision of the
     dataflow analysis.  The information is about function (callable by the given
     label), and is not meant to change over the lifetime of the Cfg. */
-  void add_summary(x64asm::Label& label, TUnit::MayMustSets mms) {
+  void add_summary(const x64asm::Label& label, const TUnit::MayMustSets& mms) {
     fncs_summary[label] = {
       mms.must_read_set,
       mms.must_write_set,
@@ -376,8 +373,8 @@ public:
   x64asm::RegSet must_read_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto& lbl = instr.get_operand<x64asm::Label>(0);
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.must_read_set;
@@ -390,8 +387,8 @@ public:
   x64asm::RegSet must_write_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto& lbl = instr.get_operand<x64asm::Label>(0);
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.must_write_set;
@@ -404,8 +401,8 @@ public:
   x64asm::RegSet must_undef_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto& lbl = instr.get_operand<x64asm::Label>(0);
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.must_undef_set;
@@ -418,8 +415,8 @@ public:
   x64asm::RegSet maybe_read_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto& lbl = instr.get_operand<x64asm::Label>(0);
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.maybe_read_set;
@@ -432,8 +429,8 @@ public:
   x64asm::RegSet maybe_write_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto& lbl = instr.get_operand<x64asm::Label>(0);
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.maybe_write_set;
@@ -446,14 +443,23 @@ public:
   x64asm::RegSet maybe_undef_set(const x64asm::Instruction& instr) const {
     // do we have more precise information available?
     if (instr.get_opcode() == x64asm::CALL_LABEL) {
-      auto lbl = instr.get_operand<x64asm::Label>(0);
-      auto found = fncs_summary.find(lbl);
+      const auto& lbl = instr.get_operand<x64asm::Label>(0);
+      const auto found = fncs_summary.find(lbl);
       if (found != fncs_summary.end()) {
         // we do: use it, instead of linux calling convention
         return found->second.maybe_undef_set;
       }
     }
     return instr.maybe_undef_set();
+  }
+
+  /** Deprecated: Use invariant_no_undef_reads() and invariant_no_undef_live_outs() */
+  bool performs_undef_read() const {
+    return !invariant_no_undef_reads() || !invariant_no_undef_live_outs();
+  }
+  /** Deprecated: Use check_invariants() */
+  bool is_sound() const {
+    return check_invariants();
   }
 
 private:

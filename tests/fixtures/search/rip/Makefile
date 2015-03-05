@@ -19,4 +19,4 @@ check:
 	./a.out
 
 clean:
-	rm -rf ./a.out bins *.tc *.s
+	rm -rf ./a.out bins *.tc result.s

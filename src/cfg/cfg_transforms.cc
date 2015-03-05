@@ -36,7 +36,11 @@ bool has_side_effects(const x64asm::Instruction& instr) {
 
 namespace stoke {
 
-void CfgTransforms::remove_unreachable(Cfg& cfg) {
+Cfg& CfgTransforms::remove_unreachable(Cfg& cfg) const {
+  // Assume that invariants are satisfied on entry
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+
   // Remove unreachable instructions one at a time
   for (auto removed = true; removed;) {
     removed = false;
@@ -49,9 +53,19 @@ void CfgTransforms::remove_unreachable(Cfg& cfg) {
       }
     }
   }
+
+  // Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+
+  return cfg;
 }
 
-void CfgTransforms::remove_nop(Cfg& cfg) {
+Cfg& CfgTransforms::remove_nop(Cfg& cfg) const {
+  // Assume that invariants are satisfied on entry
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+
   // Remove nops one at a time
   for (auto removed = true; removed;) {
     removed = false;
@@ -64,9 +78,18 @@ void CfgTransforms::remove_nop(Cfg& cfg) {
       }
     }
   }
+
+  // Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+  return cfg;
 }
 
-void CfgTransforms::remove_redundant(Cfg& cfg) {
+Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
+  // Assume that invariants are satisfied on entry
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+
   // This transformsation subsumes unreachable block removal
   remove_unreachable(cfg);
 
@@ -92,6 +115,77 @@ void CfgTransforms::remove_redundant(Cfg& cfg) {
       }
     }
   }
+
+  // Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+  return cfg;
+}
+
+Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_out) const {
+  Cfg cfg(TUnit(), def_in, live_out);
+  const auto diff = cfg.live_outs() - cfg.def_outs();
+
+  // initialize all general purpose registers
+  for (auto rit = diff.gp_begin(); rit != diff.gp_end(); ++rit) {
+    auto reg = *rit;
+    auto type = reg.type();
+    if (type == Type::R_64 || type == Type::RAX) {
+      cfg.get_function().push_back(Instruction(XOR_R64_R64, {reg, reg}));
+    } else if (type == Type::R_32 || type == Type::EAX) {
+      cfg.get_function().push_back(Instruction(XOR_R32_R32, {reg, reg}));
+    } else if (type == Type::R_16 || type == Type::AX || type == Type::DX) {
+      cfg.get_function().push_back(Instruction(XOR_R16_R16, {reg, reg}));
+    } else if (type == Type::RL || type == Type::AL || type == Type::CL) {
+      cfg.get_function().push_back(Instruction(XOR_RL_RL, {reg, reg}));
+    } else if (type == Type::RH) {
+      cfg.get_function().push_back(Instruction(XOR_RH_RH, {reg, reg}));
+    } else if (type == Type::RB) {
+      cfg.get_function().push_back(Instruction(XOR_RB_RB, {reg, reg}));
+    }
+  }
+
+  // initialize sse registers
+  for (auto rit = diff.sse_begin(); rit != diff.sse_end(); ++rit) {
+    auto reg = *rit;
+    auto type = reg.type();
+    if (type == Type::XMM || type == Type::XMM_0) {
+      cfg.get_function().push_back(Instruction(PXOR_XMM_XMM, {reg, reg}));
+    } else if (type == Type::YMM) {
+      cfg.get_function().push_back(Instruction(VPXOR_YMM_YMM_YMM, {reg, reg, reg}));
+    }
+  }
+
+  // initialize mm registers
+  for (auto rit = diff.mm_begin(); rit != diff.mm_end(); ++rit) {
+    auto reg = *rit;
+    cfg.get_function().push_back(Instruction(PXOR_MM_MM, {reg, reg}));
+  }
+
+  // flags
+  auto regular = false;
+  for (auto rit = diff.flags_begin(); rit != diff.flags_end(); ++rit) {
+    auto reg = *rit;
+    if ((reg == Constants::eflags_of() ||
+         reg == Constants::eflags_zf() ||
+         reg == Constants::eflags_sf() ||
+         reg == Constants::eflags_af() ||
+         reg == Constants::eflags_cf() ||
+         reg == Constants::eflags_pf()) && !regular) {
+      regular = true;
+      cfg.get_function().push_back(Instruction(XOR_R32_R32, {Constants::rax(), Constants::rax()}));
+      cfg.get_function().push_back(Instruction(ADD_R32_IMM32, {Constants::rax(), Imm32(0)}));
+    }
+  }
+
+  cfg.get_function().push_back(RET);
+  cfg.recompute();
+
+  // Everything should look good now
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+
+  return cfg;
 }
 
 } // namespace stoke

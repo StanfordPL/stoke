@@ -388,6 +388,9 @@ bool Transforms::modify(Cfg& cfg, Move type) {
     return false;
   }
 
+  // Most if not all of these methods have the potential to break invariants
+  // Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
   return ret;
 }
@@ -436,7 +439,7 @@ bool Transforms::instruction_move(Cfg& cfg) {
   // Operands come from the global pool so this rip will need rescaling
   cfg.get_function().replace(instr_idx1_, instr, false, true);
   cfg.recompute_defs();
-  if (!cfg.is_sound()) {
+  if (!cfg.check_invariants()) {
     undo_instruction_move(cfg);
     return false;
   }
@@ -473,7 +476,7 @@ bool Transforms::opcode_move(Cfg& cfg) {
   // This operand hasn't changed, so the rip only needs local rescaling
   cfg.get_function().replace(instr_idx1_, instr, false, false);
   cfg.recompute_defs();
-  if (!cfg.is_sound()) {
+  if (!cfg.check_invariants()) {
     undo_opcode_move(cfg);
     return false;
   }
@@ -524,7 +527,7 @@ bool Transforms::operand_move(Cfg& cfg) {
   // Success: Any failure beyond here will require undoing the move
   cfg.get_function().replace(instr_idx1_, instr, false, is_rip);
   cfg.recompute_defs();
-  if (!cfg.is_sound()) {
+  if (!cfg.check_invariants()) {
     undo_operand_move(cfg);
     return false;
   }
@@ -594,7 +597,7 @@ bool Transforms::local_swap_move(Cfg& cfg) {
 
   cfg.get_function().swap(instr_idx1_, instr_idx2_);
   cfg.recompute_defs();
-  if (!cfg.is_sound()) {
+  if (!cfg.check_invariants()) {
     undo_local_swap_move(cfg);
     return false;
   }
@@ -624,7 +627,7 @@ bool Transforms::global_swap_move(Cfg& cfg) {
 
   cfg.get_function().swap(instr_idx1_, instr_idx2_);
   cfg.recompute_defs();
-  if (!cfg.is_sound()) {
+  if (!cfg.check_invariants()) {
     undo_global_swap_move(cfg);
     return false;
   }
@@ -682,6 +685,9 @@ void Transforms::undo(Cfg& cfg, Move type) {
     break;
   }
 
+  // Most if not all of these methods have the potential to break invariants
+  // Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 }
 
