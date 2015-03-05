@@ -352,7 +352,7 @@ public:
   bool invariant_no_undef_reads() const;
   /** Check that this cfg writes to all live out values */
   bool invariant_no_undef_live_outs() const;
-  /** Returns true if performs_undef_read() returns true. */
+  /** Check all invariants */
   bool check_invariants() const {
     return invariant_no_undef_reads() && invariant_no_undef_live_outs();
   }
