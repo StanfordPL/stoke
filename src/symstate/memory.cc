@@ -21,7 +21,6 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-uint64_t SymMemory::temp_ = 0;
 
 uint64_t read_quadword(const Memory& m, uint64_t base, uint64_t i) {
 
@@ -38,8 +37,8 @@ SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size
 
   //cout << "Writing " << value << " to " << address << " (size " << size << ")" << endl;
 
-  SymBitVector addr_var = SymBitVector::var(64, "MEMORY_ADDRESS_" + to_string(temp()));
-  SymBitVector value_var = SymBitVector::var(size, "MEMORY_WRITE_" + to_string(temp()));
+  SymBitVector addr_var = SymBitVector::tmp_var(64);
+  SymBitVector value_var = SymBitVector::tmp_var(size);
 
   state_->constraints.push_back(addr_var == address);
   state_->constraints.push_back(value_var == value);
@@ -81,8 +80,8 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size,
 
   //cout << "Reading from " << address << " (size " << size << ")" << endl;
 
-  SymBitVector addr_var = SymBitVector::var(64, "MEMORY_ADDRESS_" + to_string(temp()));
-  SymBitVector value = SymBitVector::var(size, "MEMORY_READ_" + to_string(temp()));
+  SymBitVector addr_var = SymBitVector::tmp_var(64);
+  SymBitVector value = SymBitVector::tmp_var(size);
 
   state_->constraints.push_back(addr_var == address);
 
