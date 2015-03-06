@@ -18,11 +18,7 @@
     "movq   %rbx, %rdi",     //RAX RDX RCX RBX RSI R8-9,12-13 R14D XMM0-7
     "imulq  %rbx, %rdi",     //..
     "shlq   $0x3, %rdi",     //..
-		// eds -- 
-		// This was causing some cfg invariants to fail for lack of precise knowledge
-		// about what this function does now that we're more strict about data-flow assertions.
-		// If this is a problem, we can add a summary for this function in the test harness.
-    // "callq  .L4",//(malloc)  //RAX RDX RCX RBX RDI RSI R8-9,12-13 R14D XMM0-7
+    "callq  .L4",//(malloc)  //RAX RDX RCX RBX RDI RSI R8-9,12-13 R14D XMM0-7
     "testq  %rbx, %rbx",     //RAX RBX R12-13 R14D RBX XMM01 | R9
     "movq   %rax, %rdx",     //RAX R12-13 R14D RBX XMM01 EFLAGS | R9
     "je     .L3",            //RDX R12-13 R14D RBX XMM01 EFLAGS | R9
