@@ -16,4 +16,4 @@ sandbox:
 	stoke debug sandbox --target bins/main.s --functions bins --prune --testcases tc.tc | grep "corrupted" > /dev/null
 
 clean:
-	rm -f ./a.out *.tc
+	rm -rf ./a.out *.tc bins
