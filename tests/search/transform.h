@@ -175,22 +175,22 @@ TEST_P(TransformsTest, GlobalSwapIsReversible) {
 }
 
 TEST_P(TransformsTest, CostInvariantAfterUndo) {
-	// This set can be used to introduce the dataflow fact that function calls don't
-	// perform any reads. This is useful for testcases that used to ignore undefined
-	// reads, which we now check for as an invariant.
-	TUnit::MayMustSets mms = {
-		x64asm::RegSet::empty(),
-		x64asm::Instruction(x64asm::CALL_LABEL).must_write_set(),
-		x64asm::Instruction(x64asm::CALL_LABEL).must_undef_set(),
-		x64asm::RegSet::empty(),
-		x64asm::Instruction(x64asm::CALL_LABEL).maybe_write_set(),
-		x64asm::Instruction(x64asm::CALL_LABEL).maybe_undef_set(),
-	};
+  // This set can be used to introduce the dataflow fact that function calls don't
+  // perform any reads. This is useful for testcases that used to ignore undefined
+  // reads, which we now check for as an invariant.
+  TUnit::MayMustSets mms = {
+    x64asm::RegSet::empty(),
+    x64asm::Instruction(x64asm::CALL_LABEL).must_write_set(),
+    x64asm::Instruction(x64asm::CALL_LABEL).must_undef_set(),
+    x64asm::RegSet::empty(),
+    x64asm::Instruction(x64asm::CALL_LABEL).maybe_write_set(),
+    x64asm::Instruction(x64asm::CALL_LABEL).maybe_undef_set(),
+  };
 
   code_.push_back(x64asm::Instruction(x64asm::RET));
   x64asm::Code original(code_);
   cfg_ = new Cfg(TUnit(code_), x64asm::RegSet::universe(), x64asm::RegSet::empty());
-	cfg_->add_summary(x64asm::Label(".L4"), mms);
+  cfg_->add_summary(x64asm::Label(".L4"), mms);
 
   Sandbox sb;
   sb.set_max_jumps(30).set_abi_check(false);
@@ -213,7 +213,7 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   stoke::SizeCost size;
 
   stoke::Cfg original_cfg(TUnit(original), x64asm::RegSet::universe(), x64asm::RegSet::empty());
-	original_cfg.add_summary(x64asm::Label(".L4"), mms);
+  original_cfg.add_summary(x64asm::Label(".L4"), mms);
 
   auto correct_orig = correctness(original_cfg);
   auto latency_orig = latency(original_cfg);
