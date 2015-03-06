@@ -26,6 +26,7 @@ namespace stoke {
 class RewriteGadget : public CfgGadget {
 public:
   RewriteGadget(const std::vector<TUnit>& aux_fxns) : CfgGadget(rewrite_arg.value(), aux_fxns) {
+    // All invariants checked in Cfg::Cfg()
   }
 };
 

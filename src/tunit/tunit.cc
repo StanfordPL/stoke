@@ -516,7 +516,7 @@ void TUnit::recompute() {
 
 bool TUnit::is_rip(size_t index) const {
   const auto& instr = code_[index];
-  if (!instr.is_explicit_memory_dereference()) {
+  if (!instr.is_explicit_memory_dereference() && !instr.is_lea()) {
     return false;
   }
   const auto mi = instr.mem_index();
@@ -592,7 +592,7 @@ istream& TUnit::read_formatted_text(istream& is) {
       ss >> rs;
       must_undef_set_ = rs;
     } else {
-      // @todo This warning should be packed up inot the stream's warning monad
+      // @todo This warning should be packed up into the stream's warning monad
       if (is_prefix("#!", s)) {
         Console::warn() << "Found a comment that starts with #!, but that is not recognized.  Is it misspelled?" << endl;
       }
