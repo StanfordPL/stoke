@@ -20,8 +20,6 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-uint64_t SymState::temp_ = 0;
-
 void SymState::build_from_cpustate(const CpuState& cs) {
 
   for(size_t i = 0; i < cs.gp.size(); ++i) {
@@ -329,12 +327,12 @@ void SymState::simplify() {
 
   for(size_t i = 0; i < 16; ++i) {
     if(gp[i].type() != SymBitVector::CONSTANT && gp[i].type() != SymBitVector::VAR) {
-      auto var = SymBitVector::var(64, "SIMPLIFY_" + to_string(temp()));
+      auto var = SymBitVector::tmp_var(64);
       constraints.push_back(gp[i] == var);
       gp[i] = var;
     }
-    if(sse[i].type() != SymBitVector::CONSTANT && gp[i].type() != SymBitVector::VAR) {
-      auto var = SymBitVector::var(256, "SIMPLIFY_" + to_string(temp()));
+    if(sse[i].type() != SymBitVector::CONSTANT && sse[i].type() != SymBitVector::VAR) {
+      auto var = SymBitVector::tmp_var(256);
       constraints.push_back(sse[i] == var);
       sse[i] = var;
     }
@@ -343,7 +341,7 @@ void SymState::simplify() {
     if(rf[i].type() != SymBool::TRUE &&
         rf[i].type() != SymBool::FALSE &&
         rf[i].type() != SymBool::VAR) {
-      auto var = SymBool::var("SIMPLIFY_" + to_string(temp()));
+      auto var = SymBool::tmp_var();
       constraints.push_back(rf[i] == var);
       rf[i] = var;
     }
