@@ -33,6 +33,7 @@ enum class ErrorCode {
   SIGCUSTOM_LINKER_ERROR = 258,
   SIGCUSTOM_ABI_VIOLATION = 259,
   SIGCUSTOM_NO_RETURN = 260,
+	SIGCUSTOM_STACK_SMASH = 261,
 };
 
 std::string readable_error_code(ErrorCode ec);
