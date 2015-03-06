@@ -156,7 +156,34 @@ TEST_F(IntegrationTest, ExamplesParity) {
 
   // Cleanup
   EXPECT_EQ(0ull, shell("make clean"));
+}
 
+TEST_F(IntegrationTest, ExamplesExp) {
+  uint64_t diff_1;
+  uint64_t diff_2;
+
+  set_working_dir("examples/exp");
+
+  // Build and test original program
+  EXPECT_EQ(0ull, shell("make orig extract testcase"));
+  EXPECT_EQ(0ull, shell("./a.out 100000000", &diff_1));
+
+  // In 10 tries, search should succeed at least once...
+  size_t good = 0;
+  for(size_t i = 0; i < 10 && good == 0; ++i) {
+		if (!shell("make search replace")) {
+  		EXPECT_EQ(0ull, shell("./a.out 100000000", &diff_2));
+  		// There should have been at least a 10% speedup.
+  		// Note, we're also timing system() here,
+  		if (diff_1*100 > diff_2*110) {
+      	good++;
+    	}
+		}
+  }
+  EXPECT_GT(good, (size_t)0);
+
+  // Cleanup
+  EXPECT_EQ(0ull, shell("make clean"));
 }
 
 TEST_F(IntegrationTest, ReplaceIdempotent) {
