@@ -32,6 +32,13 @@ class CfgGadget : public Cfg {
 public:
   CfgGadget(const TUnit& fxn, const std::vector<TUnit>& aux_fxns)
     : Cfg(fxn, def_in(live_out()), live_out()) {
+
+    // The TUnit constructor and parser should prevent this from ever happening.
+    // This is a major bug and should be reported by the user.
+    if (!get_function().check_invariants()) {
+      cpputil::Console::error(1) << "(" << fxn.get_name() << ") Function bug; please report!" << std::endl;
+    }
+
     // Emit warning if register values were guessed
     reg_warning();
 
@@ -42,7 +49,23 @@ public:
     linker_check(aux_fxns);
 
     // Add summaries for auxiliary functions
+    // @todo At some point, all functions should have summaries for everything else
     summarize_functions(aux_fxns);
+
+    // Check Cfg invariants
+    // These warnings need to be emitted to the user because the Cfg class isn't guaranteed
+    // to catch them during construction
+    if (!invariant_no_undef_reads()) {
+      cpputil::Console::error(1) << "(" << fxn.get_name() << ") Reads from an undefined location: " << which_undef_read() << std::endl;
+    } else if (!invariant_no_undef_live_outs()) {
+      cpputil::Console::error(1) << "(" << fxn.get_name() << ") Leaves a live out undefined. Use --init ZERO if this is an initial rewrite " << which_undef_read() << std::endl;
+    }
+
+    // Control shouldn't ever reach here given the checks above.
+    // This is a major bug and should be reported by the user
+    if (!check_invariants()) {
+      cpputil::Console::error(1) << "(" << fxn.get_name() << ") Cfg bug; please report!" << std::endl;
+    }
   }
 
 private:
@@ -160,8 +183,8 @@ private:
   /** Add dataflow summaries for auxiliary functions */
   void summarize_functions(const std::vector<TUnit>& aux_fxns) {
     for (const auto& fxn : aux_fxns) {
-      auto code = fxn.get_code();
-      auto lbl = fxn.get_leading_label();
+      const auto& code = fxn.get_code();
+      const auto& lbl = fxn.get_leading_label();
       TUnit::MayMustSets mms = {
         code.must_read_set(),
         code.must_write_set(),

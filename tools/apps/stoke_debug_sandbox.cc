@@ -130,11 +130,13 @@ void update_stack(const pair<TUnit, size_t>& frame) {
   const auto& instr = frame.first.get_code()[frame.second];
   if (instr.get_opcode() == CALL_LABEL) {
     const auto dest = instr.get_operand<Label>(0);
-    if (dest == target_arg.value().get_name()) {
+    assert(target_arg.value().invariant_first_instr_is_label());
+    if (dest == target_arg.value().get_leading_label()) {
       program_stack.push_back({target_arg.value(), 0});
     } else {
       for (const auto& fxn : *fg) {
-        if (dest == fxn.get_name()) {
+        assert(fxn.invariant_first_instr_is_label());
+        if (dest == fxn.get_leading_label()) {
           program_stack.push_back({fxn, 0});
         }
       }

@@ -14,7 +14,10 @@
             "movq %rcx, %rsi",  // RDX, RCX, R8, R9, XMM...
             "movq %rcx, %rdi",  // RSI, RDX, RCX, R8, R9, XMM...
             "callq .L2",        // RSI, RDI, RDX, RCX, R8, R9, XMM...
-            "addq $0x10, %rcx", // RAX
+						// This line used to deliberately try to read an undefined %rcx
+						// no undefined reads is an assertion protected invariant now
+						// so this has been replaced by a deterministic write
+            "xorq %rcx, %rcx",  // RAX
                                 // RAX
 
             //BB C
@@ -29,8 +32,7 @@
 
     "is_sound": {
       "live_in": ["%rax", "%rcx"],
-      "live_out": ["%rax"],
-      "result": false //rcx read after call is undefined.
+      "live_out": ["%rax"]
     },
 
     "cfg": {
