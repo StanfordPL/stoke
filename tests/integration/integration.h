@@ -171,14 +171,14 @@ TEST_F(IntegrationTest, ExamplesExp) {
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
   for(size_t i = 0; i < 10 && good == 0; ++i) {
-		if (!shell("make search replace")) {
-  		EXPECT_EQ(0ull, shell("./a.out 100000000", &diff_2));
-  		// There should have been at least a 10% speedup.
-  		// Note, we're also timing system() here,
-  		if (diff_1*100 > diff_2*110) {
-      	good++;
-    	}
-		}
+    if (!shell("make search replace")) {
+      EXPECT_EQ(0ull, shell("./a.out 100000000", &diff_2));
+      // There should have been at least a 10% speedup.
+      // Note, we're also timing system() here,
+      if (diff_1*100 > diff_2*110) {
+        good++;
+      }
+    }
   }
   EXPECT_GT(good, (size_t)0);
 
