@@ -22,16 +22,16 @@ time:
 	time ./a.out 100000000
 
 extract:
-	stoke extract --config extract.conf
+	stoke extract -i ./a.out -o bins
 
 testcase:
-	stoke testcase --config testcase.conf 
+	stoke testcase --bin ./a.out --args 1024 --fxn _Z3expdPm --max_testcases 1024 -o exp.tc
 
 search:
 	stoke search --config search.conf
 
 replace:
-	stoke replace --config replace.conf
+	stoke replace -i ./a.out --rewrite result.s
 
 clean:
 	rm -rf bins ./a.out *.tc *result.s *.o
