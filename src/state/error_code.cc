@@ -44,6 +44,8 @@ string stoke::readable_error_code(ErrorCode ec) {
     return "SIGCUSTOM (abi violation)";
   case ErrorCode::SIGCUSTOM_NO_RETURN:
     return "SIGCUSTOM (no return)";
+  case ErrorCode::SIGCUSTOM_STACK_SMASH:
+    return "SIGCUSTOM (corrupted return address on stack)";
   default:
     assert(false);
     return "STOKE_BUG";

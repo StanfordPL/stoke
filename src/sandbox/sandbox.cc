@@ -1067,14 +1067,35 @@ void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
   emit_push({PUSH_R64, {rax}});
   assm_.mov(rax, Moffs64(&scratch_[rax]));
 
-  // Restore the STOKE %rsp before the call and the user's %rsp following the return
+  // Restore the STOKE %rsp before the call
   emit_load_stoke_rsp();
   assm_.assemble(instr);
-  emit_load_user_rsp();
 
-  // Simulate pop %rip; all that matters is moving %rsp
-  // @todo this is where to put the logic for checking stack smashing segfaults
-  assm_.lea(rsp, M64(rsp, Imm32(8)));
+  // Now that we're back, backup some regs while we still have the stoke rsp
+  assm_.push(rax);
+  assm_.push(rbx);
+  assm_.pushfq();
+
+  // Restore the user's rsp just long enough to pop the return address
+  emit_load_user_rsp();
+  emit_pop({POP_R64, {rax}});
+
+  // Now back to the stoke rsp to check the result and fix up the stack
+  emit_load_stoke_rsp();
+
+  const auto okay = get_label();
+  assm_.mov((R64)rbx, Imm64(hex_offset));
+  assm_.cmp(rax, rbx);
+  assm_.je(okay);
+  emit_signal_trap_call(ErrorCode::SIGCUSTOM_STACK_SMASH);
+
+  assm_.bind(okay);
+  assm_.popfq();
+  assm_.pop(rbx);
+  assm_.pop(rax);
+
+  // Leave with the user's rsp in place
+  emit_load_user_rsp();
 }
 
 void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
