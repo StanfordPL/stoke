@@ -7,7 +7,8 @@
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an AS IS BASIS, // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
@@ -31,6 +32,28 @@ void SimpleHandler::add_all() {
     ss.set(eflags_of, SymBool::_false());
     ss.set(eflags_af, SymBool::tmp_var());
     ss.set_szp_flags(a & b);
+  });
+
+  add_opcode({"cbtw", "cbw"},
+  [this] (SymState& ss) {
+    ss.set(ax, ss[al].extend(16));
+  });
+
+  add_opcode({"cltq", "cdqe"},
+  [this] (SymState& ss) {
+    ss.set(rax, ss[eax].extend(64));
+  });
+
+  add_opcode({"cqto", "cqo"},
+  [this] (SymState& ss) {
+    auto se = ss[rax].extend(128);
+    ss.set(rax, se[63][0]);
+    ss.set(rdx, se[127][64]);
+  });
+
+  add_opcode({"cwtl", "cwde"},
+  [this] (SymState& ss) {
+    ss.set(eax, ss[ax].extend(32));
   });
 
   add_opcode({"decb", "decw", "decl", "decq"},
