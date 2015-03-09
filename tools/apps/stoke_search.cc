@@ -250,7 +250,7 @@ int main(int argc, char** argv) {
 
   SeedGadget seed;
   FunctionsGadget aux_fxns;
-  TargetGadget target(aux_fxns);
+  TargetGadget target(aux_fxns, init_arg == Init::ZERO);
 
   TrainingSetGadget training_set(seed);
   SandboxGadget training_sb(training_set, aux_fxns);

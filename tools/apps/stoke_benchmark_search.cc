@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
 
   SeedGadget seed;
   FunctionsGadget aux_fxns;
-  TargetGadget target(aux_fxns);
+  TargetGadget target(aux_fxns, false);
   TransformsGadget tforms(target, aux_fxns, seed);
 
   Console::msg() << "Transforms::modify()..." << endl;

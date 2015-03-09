@@ -40,7 +40,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   FunctionsGadget aux_fxns;
-  TargetGadget target(aux_fxns);
+  TargetGadget target(aux_fxns, false);
   RewriteGadget rewrite(aux_fxns);
 
   SeedGadget seed;

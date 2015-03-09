@@ -1,0 +1,1 @@
+This tests --init zero (see issue #577).
