@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   FunctionsGadget aux_fxns;
-  TargetGadget target(aux_fxns);
+  TargetGadget target(aux_fxns, false);
   SeedGadget seed;
   TrainingSetGadget tcs(seed);
   SandboxGadget sb(tcs, aux_fxns);
