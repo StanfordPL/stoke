@@ -188,6 +188,7 @@ TEST_F(IntegrationTest, ExamplesExp) {
 
 TEST_F(IntegrationTest, ReplaceIdempotent) {
   set_working_dir("tests/fixtures/replace/idem");
+  set_path("../../../../bin");
   ASSERT_EQ(0ull, shell("make"));
   ASSERT_EQ(0ull, shell("diff new1 new2"));
   ASSERT_EQ(0ull, shell("make clean"));
@@ -195,36 +196,42 @@ TEST_F(IntegrationTest, ReplaceIdempotent) {
 
 TEST_F(IntegrationTest, SandboxFib) {
   set_working_dir("tests/fixtures/sandbox/fib");
+  set_path("../../../../bin");
   EXPECT_EQ(0ull, shell("make"));
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
 TEST_F(IntegrationTest, SandboxRip) {
   set_working_dir("tests/fixtures/sandbox/rip");
+  set_path("../../../../bin");
   EXPECT_EQ(0ull, shell("make"));
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
 TEST_F(IntegrationTest, SandboxStackSmash) {
   set_working_dir("tests/fixtures/sandbox/stack_smash");
+  set_path("../../../../bin");
   EXPECT_EQ(0ull, shell("make"));
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
 TEST_F(IntegrationTest, SearchCall) {
   set_working_dir("tests/fixtures/search/call");
+  set_path("../../../../bin");
   EXPECT_EQ(0ull, shell("make"));
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
 TEST_F(IntegrationTest, SearchRip) {
   set_working_dir("tests/fixtures/search/rip");
+  set_path("../../../../bin");
   EXPECT_EQ(0ull, shell("make"));
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
 TEST_F(IntegrationTest, SearchInitZero) {
   set_working_dir("tests/fixtures/search/init_zero");
+  set_path("../../../../bin");
   EXPECT_EQ(0ull, shell("make"));
   EXPECT_EQ(0ull, shell("make clean"));
 }
