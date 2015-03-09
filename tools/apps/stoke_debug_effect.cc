@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   }
 
   FunctionsGadget aux_fxns;
-  TargetGadget target(aux_fxns);
+  TargetGadget target(aux_fxns, false);
   SeedGadget seed;
   TestcaseGadget tc(seed);
   CpuStates tcs;
