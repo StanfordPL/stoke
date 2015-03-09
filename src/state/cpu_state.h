@@ -19,6 +19,7 @@
 #include <sstream>
 #include <string>
 
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/error_code.h"
 #include "src/state/memory.h"
 #include "src/state/regs.h"
@@ -89,6 +90,12 @@ struct CpuState {
   Memory heap;
   /** Data. */
   Memory data;
+
+  /** Get the memory address corresponding to a memory operand */
+  template <typename T>
+  uint64_t get_addr(x64asm::M<T> ref) const;
+  /** Get the memory address corresponding to an instruction */
+  uint64_t get_addr(x64asm::Instruction instr) const;
 
   /** The number of jumps last spent on this testcase */
   uint64_t jumps_seen;
