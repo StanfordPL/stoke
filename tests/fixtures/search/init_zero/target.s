@@ -1,3 +1,4 @@
-movq $0x0, %rax
+movq $0x1, %rax
 movq %rax, %rcx
+addq $0x0, %rcx
 retq

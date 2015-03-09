@@ -77,6 +77,9 @@ namespace stoke {
 			{x64asm::PXOR_MM_MM, {x64asm::Constants::mm6(), x64asm::Constants::mm6()}}, \
 			{x64asm::PXOR_MM_MM, {x64asm::Constants::mm7(), x64asm::Constants::mm7()}}, \
 			\
+			{x64asm::XOR_R32_R32, {x64asm::Constants::rax(), x64asm::Constants::rax()}}, \
+			{x64asm::ADD_R32_IMM32, {x64asm::Constants::rax(), x64asm::Imm32(0)}}, \
+			\
 			{x64asm::RET} \
 	})
 
