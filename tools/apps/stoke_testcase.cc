@@ -105,7 +105,7 @@ auto& in = ValueArg<string>::create("in")
 
 int auto_gen() {
   FunctionsGadget aux_fxns;
-  TargetGadget target(aux_fxns);
+  TargetGadget target(aux_fxns, false);
   SandboxGadget sb({}, aux_fxns);
 
   StateGen sg(&sb, stack_size.value());

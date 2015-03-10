@@ -30,14 +30,14 @@ class SearchStateGadget : public SearchState {
 public:
   SearchStateGadget(const Cfg& target, const std::vector<TUnit>& aux_fxns) :
     SearchState(target,
-                CfgGadget(current_arg.value(), aux_fxns),
-                CfgGadget(best_yet_arg.value(), aux_fxns),
-                CfgGadget(best_correct_arg.value(), aux_fxns),
+                CfgGadget(current_arg.value(), aux_fxns, init_arg == Init::ZERO),
+                CfgGadget(best_yet_arg.value(), aux_fxns, false),
+                CfgGadget(best_correct_arg.value(), aux_fxns, false),
                 init_arg.value(),
                 max_instrs_arg.value()) {
     // The SearchState constructor should guarantee this property.
     // Failing this check is a major bug and should be reported by the user
-    if (!check_invariants(target)) {
+    if (!check_invariants(current)) {
       cpputil::Console::error(1) << "Search State Bug! Please report!" << std::endl;
     }
   }

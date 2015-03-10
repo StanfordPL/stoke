@@ -91,7 +91,7 @@ void SearchState::configure_zero(const Cfg& target, size_t size) {
   current.get_function().push_back(target.get_code()[0]);
 
   // Append instructions from minimal code
-  for (size_t i = 1; code[i].is_ret(); ++i) {
+  for (size_t i = 1; !code[i].is_ret(); ++i) {
     current.get_function().push_back(code[i]);
   }
 

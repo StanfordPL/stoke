@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigill();
 
   FunctionsGadget aux_fxns;
-  TargetGadget target(aux_fxns);
+  TargetGadget target(aux_fxns, false);
 
   Console::msg() << "Cfg::recompute()..." << endl;
 

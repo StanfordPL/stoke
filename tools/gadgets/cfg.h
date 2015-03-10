@@ -21,6 +21,7 @@
 #include "src/ext/x64asm/include/x64asm.h"
 
 #include "src/cfg/cfg.h"
+#include "src/cfg/cfg_transforms.h"
 #include "src/sandbox/sandbox.h"
 #include "src/target/cpu_info.h"
 #include "src/tunit/tunit.h"
@@ -30,7 +31,7 @@ namespace stoke {
 
 class CfgGadget : public Cfg {
 public:
-  CfgGadget(const TUnit& fxn, const std::vector<TUnit>& aux_fxns)
+  CfgGadget(const TUnit& fxn, const std::vector<TUnit>& aux_fxns, bool is_init_zero)
     : Cfg(fxn, def_in(live_out()), live_out()) {
 
     // The TUnit constructor and parser should prevent this from ever happening.
@@ -57,13 +58,13 @@ public:
     // to catch them during construction
     if (!invariant_no_undef_reads()) {
       cpputil::Console::error(1) << "(" << fxn.get_name() << ") Reads from an undefined location: " << which_undef_read() << std::endl;
-    } else if (!invariant_no_undef_live_outs()) {
+    } else if (!invariant_no_undef_live_outs() && !is_init_zero) {
       cpputil::Console::error(1) << "(" << fxn.get_name() << ") Leaves a live out undefined. Use --init ZERO if this is an initial rewrite " << which_undef_read() << std::endl;
     }
 
     // Control shouldn't ever reach here given the checks above.
     // This is a major bug and should be reported by the user
-    if (!check_invariants()) {
+    if (!check_invariants() && !is_init_zero) {
       cpputil::Console::error(1) << "(" << fxn.get_name() << ") Cfg bug; please report!" << std::endl;
     }
   }
