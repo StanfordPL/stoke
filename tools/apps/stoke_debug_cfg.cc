@@ -67,7 +67,7 @@ void to_dot(const string& dot_file) {
   ofstream ofs(dot_file);
 
   FunctionsGadget aux_fxns;
-  TargetGadget target(aux_fxns);
+  TargetGadget target(aux_fxns, false);
 
   DotWriter dw;
   dw.set_def_in(dib, dii)
