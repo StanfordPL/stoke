@@ -26,8 +26,7 @@ namespace stoke {
 
 
 /** Get the memory address corresponding to a memory operand */
-template <typename T>
-uint64_t CpuState::get_addr(x64asm::M<T> ref) const {
+uint64_t CpuState::get_addr(M8 ref) const {
 
   uint64_t address = 0;
 
@@ -51,21 +50,21 @@ uint64_t CpuState::get_addr(x64asm::M<T> ref) const {
     uint64_t index = gp[ref.get_index()].get_fixed_quad(0);
 
     switch(ref.get_scale()) {
-      case Scale::TIMES_1:
-        address = address + index;
-        break;
-      case Scale::TIMES_2:
-        address = address + (index << 1);
-        break;
-      case Scale::TIMES_4:
-        address = address + (index << 2);
-        break;
-      case Scale::TIMES_8:
-        address = address + (index << 3);
-        break;
-      default:
-        assert(false);
-        break;
+    case Scale::TIMES_1:
+      address = address + index;
+      break;
+    case Scale::TIMES_2:
+      address = address + (index << 1);
+      break;
+    case Scale::TIMES_4:
+      address = address + (index << 2);
+      break;
+    case Scale::TIMES_8:
+      address = address + (index << 3);
+      break;
+    default:
+      assert(false);
+      break;
     }
   }
 
@@ -90,7 +89,7 @@ uint64_t CpuState::get_addr(x64asm::Instruction instr) const {
   } else if (instr.is_pop()) {
     assert(false);
     return 0; //TODO FIXME;
-  } 
+  }
 
   // instruction not supported
   assert(false);

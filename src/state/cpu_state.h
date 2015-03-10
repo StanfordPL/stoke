@@ -92,8 +92,7 @@ struct CpuState {
   Memory data;
 
   /** Get the memory address corresponding to a memory operand */
-  template <typename T>
-  uint64_t get_addr(x64asm::M<T> ref) const;
+  uint64_t get_addr(x64asm::M8 ref) const;
   /** Get the memory address corresponding to an instruction */
   uint64_t get_addr(x64asm::Instruction instr) const;
 
