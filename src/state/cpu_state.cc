@@ -85,7 +85,7 @@ uint64_t CpuState::get_addr(x64asm::Instruction instr) const {
     return get_addr(instr.get_operand<M8>(instr.mem_index()));
   } else if (instr.is_push()) {
     auto arg = instr.get_operand<Operand>(0);
-    return gp[x64asm::rsp].get_fixed_quad(0) - arg.size();
+    return gp[x64asm::rsp].get_fixed_quad(0) - arg.size()/8;
   } else if (instr.is_pop()) {
     return gp[x64asm::rsp].get_fixed_quad(0);
   }
