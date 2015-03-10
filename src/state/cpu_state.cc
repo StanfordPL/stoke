@@ -84,11 +84,10 @@ uint64_t CpuState::get_addr(x64asm::Instruction instr) const {
   if(instr.is_explicit_memory_dereference()) {
     return get_addr(instr.get_operand<M8>(instr.mem_index()));
   } else if (instr.is_push()) {
-    assert(false);
-    return 0; //TODO FIXME
+    auto arg = instr.get_operand<Operand>(0);
+    return gp[x64asm::rsp].get_fixed_quad(0) - arg.size();
   } else if (instr.is_pop()) {
-    assert(false);
-    return 0; //TODO FIXME;
+    return gp[x64asm::rsp].get_fixed_quad(0);
   }
 
   // instruction not supported

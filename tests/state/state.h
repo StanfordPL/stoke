@@ -59,7 +59,7 @@ TEST_F(StateRandomTest, Issue55Text) {
 }
 
 TEST_F(StateRandomTest, GetAddrExplicit) {
-  
+
   // Code for sandbox
   std::stringstream ss;
   ss << ".foo:" << std::endl;
