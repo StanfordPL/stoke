@@ -103,9 +103,10 @@ protected:
       std::stringstream ss;
       ss << (*ceg);
       ASSERT_FALSE(ss.fail()) << "Failed to write the counterexample.";
+      std::string copy = ss.str();
       CpuState state;
       ss >> state;
-      ASSERT_FALSE(ss.fail()) << "Failed to parse the counterexample again";
+      ASSERT_FALSE(ss.fail()) << "Failed to parse the counterexample:" << std::endl << copy << std::endl;
       EXPECT_EQ(*ceg, state) << "Counterexample is not identical after parsing";
     }
   }
