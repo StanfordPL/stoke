@@ -34,9 +34,17 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a & b);
   });
 
+  // to convert between Intel/AT&T mnemonics, see:
+  // https://sourceware.org/binutils/docs/as/i386_002dMnemonics.html
   add_opcode({"cbtw", "cbw"},
   [this] (SymState& ss) {
     ss.set(ax, ss[al].extend(16));
+  });
+
+  add_opcode({"cltd", "cdq"},
+  [this] (SymState& ss) {
+    auto se = ss[eax].extend(64);
+    ss.set(edx, se[63][32]);
   });
 
   add_opcode({"cltq", "cdqe"},
@@ -47,8 +55,13 @@ void SimpleHandler::add_all() {
   add_opcode({"cqto", "cqo"},
   [this] (SymState& ss) {
     auto se = ss[rax].extend(128);
-    ss.set(rax, se[63][0]);
     ss.set(rdx, se[127][64]);
+  });
+
+  add_opcode({"cwtd", "cwd"},
+  [this] (SymState& ss) {
+    auto se = ss[ax].extend(32);
+    ss.set(dx, se[31][16]);
   });
 
   add_opcode({"cwtl", "cwde"},
