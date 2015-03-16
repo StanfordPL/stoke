@@ -170,7 +170,6 @@ TEST_F(IntegrationTest, ExamplesExp) {
   for(size_t i = 0; i < 10 && good == 0; ++i) {
     if (!shell("make search")) {
       const auto res = wc("examples/exp/result.s");
-      std::cout << res << " <? " << ref << std::endl;
       // There should have been a length reduction
       if (res < ref) {
         good++;
