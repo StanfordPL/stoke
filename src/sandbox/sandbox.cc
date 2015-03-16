@@ -714,12 +714,12 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   assm_.start(*fxn);
 
   // The label that begins a function must precede instrumentation .
-	// Inter-function calls should target this label.
+  // Inter-function calls should target this label.
   assm_.assemble(cfg.get_code()[0]);
   // Now load the user's %rsp and emit a hidden label that intra-function jumps should target
   emit_load_user_rsp();
-	const auto entry = get_label();
-	assm_.bind(entry);
+  const auto entry = get_label();
+  assm_.bind(entry);
 
   // Grab the name of this function and make a unique label for representing the end
   const auto label = cfg.get_function().get_leading_label();
@@ -843,11 +843,11 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
     }
     break;
   case DispatchTable::ANY_JUMP:
-		if (instr.get_operand<Label>(0) == fxn) {
-			emit_jump({instr.get_opcode(), {entry}});
-		} else {
-			emit_jump(instr);
-		}
+    if (instr.get_operand<Label>(0) == fxn) {
+      emit_jump({instr.get_opcode(), {entry}});
+    } else {
+      emit_jump(instr);
+    }
     break;
   case DispatchTable::CALL_LABEL:
     if (stack_check_) {
