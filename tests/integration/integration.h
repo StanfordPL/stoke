@@ -163,14 +163,14 @@ TEST_F(IntegrationTest, ExamplesExp) {
 
   // Build and test original program
   EXPECT_EQ(0ull, shell("make orig extract testcase"));
-	const auto ref = wc("examples/exp/bins/_Z3expdPm.s");
+  const auto ref = wc("examples/exp/bins/_Z3expdPm.s");
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
   for(size_t i = 0; i < 10 && good == 0; ++i) {
     if (!shell("make search")) {
       const auto res = wc("examples/exp/result.s");
-			std::cout << res << " <? " << ref << std::endl;
+      std::cout << res << " <? " << ref << std::endl;
       // There should have been a length reduction
       if (res < ref) {
         good++;
