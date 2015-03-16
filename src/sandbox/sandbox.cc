@@ -713,11 +713,13 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
 
   assm_.start(*fxn);
 
-  // The label that begins a function must precede instrumentation
+  // The label that begins a function must precede instrumentation .
+	// Inter-function calls should target this label.
   assm_.assemble(cfg.get_code()[0]);
-
-  // Now load the user's %rsp
+  // Now load the user's %rsp and emit a hidden label that intra-function jumps should target
   emit_load_user_rsp();
+	const auto entry = get_label();
+	assm_.bind(entry);
 
   // Grab the name of this function and make a unique label for representing the end
   const auto label = cfg.get_function().get_leading_label();
@@ -746,7 +748,7 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
       if (global_before_.first != nullptr || !before_.empty()) {
         emit_before(cfg.get_function().get_leading_label(), i);
       }
-      emit_instruction(instr, label, hex_offset, exit);
+      emit_instruction(instr, label, hex_offset, entry, exit);
       if (global_after_.first != nullptr || !after_.empty()) {
         emit_after(cfg.get_function().get_leading_label(), i);
       }
@@ -829,7 +831,7 @@ void Sandbox::emit_after(const Label& label, size_t line) {
   emit_callback(j->second, label, line);
 }
 
-void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint64_t hex_offset, const Label& exit) {
+void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint64_t hex_offset, const Label& entry, const Label& exit) {
   static DispatchTable table;
   switch(table.lookup(instr)) {
   case DispatchTable::SIGILL_:
@@ -841,7 +843,11 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
     }
     break;
   case DispatchTable::ANY_JUMP:
-    emit_jump(instr);
+		if (instr.get_operand<Label>(0) == fxn) {
+			emit_jump({instr.get_opcode(), {entry}});
+		} else {
+			emit_jump(instr);
+		}
     break;
   case DispatchTable::CALL_LABEL:
     if (stack_check_) {
