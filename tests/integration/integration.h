@@ -197,6 +197,13 @@ TEST_F(IntegrationTest, SandboxFib) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
+TEST_F(IntegrationTest, SandboxRecursiveJmp) {
+  set_working_dir("tests/fixtures/sandbox/rec_jmp");
+  set_path("../../../../bin");
+  EXPECT_EQ(0ull, shell("make"));
+  EXPECT_EQ(0ull, shell("make clean"));
+}
+
 TEST_F(IntegrationTest, SandboxRip) {
   set_working_dir("tests/fixtures/sandbox/rip");
   set_path("../../../../bin");
