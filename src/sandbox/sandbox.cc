@@ -1081,7 +1081,7 @@ void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
   // We just want to be able to catch an rsp that was left in a bad location
   assm_.mov(Moffs64(&scratch_[rax]), rax);
   assm_.mov((R64)rax, Imm64(hex_offset));
-  emit_push({POP_R64, {rax}});
+  emit_pop({POP_R64, {rax}});
   assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
 
