@@ -27,8 +27,8 @@
 namespace {
 
 std::set<size_t> create_default_testcase_set() {
-	std::vector<size_t> n(10000);
-	std::iota(n.begin(), n.end(), 0);
+  std::vector<size_t> n(10000);
+  std::iota(n.begin(), n.end(), 0);
   return std::set<size_t>(n.begin(), n.end());
 }
 
@@ -48,21 +48,21 @@ cpputil::FlagArg& shuffle_tc_arg =
   cpputil::FlagArg::create("shuffle_testcases")
   .description("Shuffle testcase ordering");
 
-cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>, 
-		cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>& training_set_arg =
-	cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, 
-		cpputil::Range<size_t, 0, 1024 * 1024>>, cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>::create("training_set")
-  .usage("{ 0 1 ... 9 }")
-  .description("Subset of testcase indices to use for training sets")
-  .default_val(create_default_testcase_set());
+cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>,
+        cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>& training_set_arg =
+          cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>,
+          cpputil::Range<size_t, 0, 1024 * 1024>>, cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>::create("training_set")
+          .usage("{ 0 1 ... 9 }")
+          .description("Subset of testcase indices to use for training sets")
+          .default_val(create_default_testcase_set());
 
-cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>, 
-		cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>& test_set_arg =
-  cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>, 
-		cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>::create("test_set")
-  .usage("{ 0 1 ... 9 }")
-  .description("Subset of testcase indices to use for test sets")
-  .default_val(create_default_testcase_set());
+cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>,
+        cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>& test_set_arg =
+          cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>,
+          cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>::create("test_set")
+          .usage("{ 0 1 ... 9 }")
+          .description("Subset of testcase indices to use for test sets")
+          .default_val(create_default_testcase_set());
 
 cpputil::ValueArg<size_t>& testcase_idx_arg =
   cpputil::ValueArg<size_t>::create("index")
