@@ -26,6 +26,10 @@ cpputil::FlagArg& abi_check_arg =
   cpputil::FlagArg::create("abi_check")
   .description("Report SIGSEGV for abi violations");
 
+cpputil::FlagArg& stack_check_arg =
+  cpputil::FlagArg::create("stack_check")
+  .description("Report SIGSEGV for stack smashing violations");
+
 cpputil::ValueArg<size_t>& max_jumps_arg =
   cpputil::ValueArg<size_t>::create("max_jumps")
   .usage("<int>")

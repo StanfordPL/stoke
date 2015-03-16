@@ -12,8 +12,13 @@ testcase:
 replace:
 	cp _Z3foov.s bins/
 
-sandbox:
-	stoke debug sandbox --target bins/main.s --functions bins --prune --testcases tc.tc | grep "corrupted" > /dev/null
+sandbox: sandbox_with_check sandbox_without_check
+
+sandbox_with_check:
+	stoke debug sandbox --target bins/main.s --functions bins --prune --stack_check --testcases tc.tc | grep "corrupted" > /dev/null
+
+sandbox_without_check:
+	stoke debug sandbox --target bins/main.s --functions bins --prune --testcases tc.tc | grep "normal" > /dev/null
 
 clean:
 	rm -rf ./a.out *.tc bins

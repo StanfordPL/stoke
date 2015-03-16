@@ -32,6 +32,7 @@ class SandboxGadget : public Sandbox {
 public:
   SandboxGadget(const CpuStates& tcs, const std::vector<TUnit>& aux_fxns) {
     set_abi_check(abi_check_arg);
+		set_stack_check(stack_check_arg);
     set_max_jumps(max_jumps_arg);
 
     for (const auto& fxn : aux_fxns) {

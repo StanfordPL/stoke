@@ -51,6 +51,11 @@ public:
     abi_check_ = check;
     return *this;
   }
+  /** Sets whether the sandbox should report sigsegv for stack smashing violations. */
+  Sandbox& set_stack_check(bool check) {
+    stack_check_ = check;
+    return *this;
+  }
   /** Sets the maximum number of jumps taken before raising SIGINT. */
   Sandbox& set_max_jumps(size_t jumps) {
     max_jumps_ = jumps;
@@ -248,6 +253,8 @@ public:
 private:
   /** Should the sandbox report errors for linux abi violations? */
   bool abi_check_;
+	/** Should the sandbox report errors for stack smashing violations? */
+	bool stack_check_;
   /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
   /** Should the sandbox count the number of instructions executed? */
@@ -390,8 +397,10 @@ private:
   void emit_memory_instruction(const x64asm::Instruction& instr, uint64_t hex_offset = 0);
   /** Emit a jump instruction */
   void emit_jump(const x64asm::Instruction& instr);
-  /** Emit the CALL LABEL instruction. */
+  /** Emit the CALL LABEL instruction with no special stack smashing check. */
   void emit_call(const x64asm::Instruction& instr, uint64_t hex_offset);
+  /** Emit the CALL LABEL instruction with special checks for stack smashing errors. */
+  void emit_call_with_stack_check(const x64asm::Instruction& instr, uint64_t hex_offset);
   /** Emit the RET instruction. */
   void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
   /** Emit code to increment the instruction count */
