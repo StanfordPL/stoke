@@ -38,6 +38,15 @@ Class Design
 - Avoid inheritence for the sake of dynamic dispatch. Exceptions are permitted when the alternatives seems equally cumbersome. Inheritence for the sake of implementation sharing (ie: inherriting from an STL container) is encouraged.
 - Most classes require some form of configuration. These methods should be defined using the ```<class>& set_property(const T& value)``` convention to allow for ```<class>.set_x().set_y().set_z()``` usage. Default values for class properties should be set using these methods in class constructors. Classes with properties that require non-trivial value settings should require those values as constructor arguments.
 
+Error Handling
+--------------
+
+- The use of the ```Console``` class should be restricted to code that appears in the ```tools/``` folder. ```Console::warn()``` and ```Console::error()``` are for telling the user that command line options didn't parse or have fatally inconsistent values. ```Console::msg()``` is for handling interaction with the user.
+- The ```fail.h``` header provides a wrapper around iostreams that lets us attach warning/error messages in addition to setting the failbit. This module should be used to catch parse warnings/errors and route them to the top level as described above.
+- Classes with complicated internal state should provide methods of the form ```bool invariant_xxx()``` for checking programming invariants. A method named ```bool check_invariants()``` should check all class invariants.
+- Code in the ```src/``` folder should check invariants with assertions. 
+- Classes with rentrant state should provide methods ```bool has_error()``` and ```string get_error()``` for checking whether a usage error has occurred and the reason for that error. These errors should be routed to invariant checks or the top level as described above.
+
 Namespaces
 ----------
 
