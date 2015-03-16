@@ -392,7 +392,7 @@ private:
   /** Emit all after callbacks */
   void emit_after(const x64asm::Label& fxn, size_t line);
   /** Emit an instruction (and possibly sandbox memory). */
-  void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& fxn, uint64_t hex_offset, const x64asm::Label& exit);
+  void emit_instruction(const x64asm::Instruction& instr, const x64asm::Label& fxn, uint64_t hex_offset, const x64asm::Label& entry, const x64asm::Label& exit);
   /** Emit a memory instruction. */
   void emit_memory_instruction(const x64asm::Instruction& instr, uint64_t hex_offset = 0);
   /** Emit a jump instruction */
