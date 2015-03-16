@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "src/ext/cpputil/include/io/column.h"
-#include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/io/fail.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/io/indent.h"
@@ -592,9 +591,8 @@ istream& TUnit::read_formatted_text(istream& is) {
       ss >> rs;
       must_undef_set_ = rs;
     } else {
-      // @todo This warning should be packed up into the stream's warning monad
       if (is_prefix("#!", s)) {
-        Console::warn() << "Found a comment that starts with #!, but that is not recognized.  Is it misspelled?" << endl;
+        warn(is) << "Found a comment that starts with #!, but that is not recognized. Is it misspelled?";
       }
       lines.push_back(s);
     }
