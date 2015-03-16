@@ -51,6 +51,7 @@ bool Sandbox::is_supported(Opcode o) {
 
 Sandbox::Sandbox() {
   set_abi_check(true);
+  set_stack_check(true);
   set_max_jumps(16);
   set_count_instructions(false);
   set_use_latency(false);
@@ -843,7 +844,11 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
     emit_jump(instr);
     break;
   case DispatchTable::CALL_LABEL:
-    emit_call(instr, hex_offset);
+    if (stack_check_) {
+      emit_call_with_stack_check(instr, hex_offset);
+    } else {
+      emit_call(instr, hex_offset);
+    }
     break;
   case DispatchTable::RET:
     emit_ret(instr, exit);
@@ -1067,11 +1072,32 @@ void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
   emit_push({PUSH_R64, {rax}});
   assm_.mov(rax, Moffs64(&scratch_[rax]));
 
+  // Restore the STOKE %rsp before the call and the user's rsp after
+  emit_load_stoke_rsp();
+  assm_.assemble(instr);
+  emit_load_user_rsp();
+
+  // This pop doesn't actually have to go anywhere.
+  // We just want to be able to catch an rsp that was left in a bad location
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov((R64)rax, Imm64(hex_offset));
+  emit_pop({POP_R64, {rax}});
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
+}
+
+void Sandbox::emit_call_with_stack_check(const Instruction& instr, uint64_t hex_offset) {
+  // Push the rip offset that follows this instruction
+  // Sandboxing the memory dereference will catch infinite recursions
+  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov((R64)rax, Imm64(hex_offset));
+  emit_push({PUSH_R64, {rax}});
+  assm_.mov(rax, Moffs64(&scratch_[rax]));
+
   // Restore the STOKE %rsp before the call
   emit_load_stoke_rsp();
   assm_.assemble(instr);
 
-  // Now that we're back, backup some regs while we still have the stoke rsp
+  // Backup some regs while we still have the stoke rsp
   assm_.push(rax);
   assm_.push(rbx);
   assm_.pushfq();
