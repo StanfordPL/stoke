@@ -253,8 +253,8 @@ public:
 private:
   /** Should the sandbox report errors for linux abi violations? */
   bool abi_check_;
-	/** Should the sandbox report errors for stack smashing violations? */
-	bool stack_check_;
+  /** Should the sandbox report errors for stack smashing violations? */
+  bool stack_check_;
   /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
   /** Should the sandbox count the number of instructions executed? */
