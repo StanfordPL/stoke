@@ -71,10 +71,10 @@ cpputil::ValueArg<x64asm::RegSet, RegSetReader, RegSetWriter>& preserve_regs_arg
   .default_val(x64asm::RegSet::linux_call_preserved());
 
 cpputil::ValueArg<std::vector<uint64_t>>& immediates_arg =
-  cpputil::ValueArg<std::vector<uint64_t>>::create("immediates")
-  .usage("{ imm1 imm2 ... }")
-  .description("Additional immediates to propose as operands")
-  .default_val({});
+                                        cpputil::ValueArg<std::vector<uint64_t>>::create("immediates")
+                                        .usage("{ imm1 imm2 ... }")
+                                        .description("Additional immediates to propose as operands")
+                                        .default_val({});
 
 cpputil::ValueArg<std::set<x64asm::M8>, MemSetReader, MemSetWriter>& mem_ops_arg =
   cpputil::ValueArg<std::set<x64asm::M8>, MemSetReader, MemSetWriter>::create("mem_ops")
@@ -83,10 +83,10 @@ cpputil::ValueArg<std::set<x64asm::M8>, MemSetReader, MemSetWriter>& mem_ops_arg
   .default_val({});
 
 cpputil::ValueArg<std::vector<uint64_t>>& rips_arg =
-  cpputil::ValueArg<std::vector<uint64_t>>::create("rips")
-  .usage("{ rip1 rip2 ... }")
-  .description("Additional global rip offsets to propose as operands")
-  .default_val({});
+                                        cpputil::ValueArg<std::vector<uint64_t>>::create("rips")
+                                        .usage("{ rip1 rip2 ... }")
+                                        .description("Additional global rip offsets to propose as operands")
+                                        .default_val({});
 
 } // namespace stoke
 
