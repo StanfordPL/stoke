@@ -119,7 +119,7 @@ bool StateGen::is_ok(const Sandbox& sb, const Instruction& line) {
     return false;
 
   CpuState cs = *(sb_->get_result(0));
-  const auto addr = get_addr(cs, line);
+  const auto addr = cs.get_addr(line);
   const auto size = get_size(line);
 
   // If the address is already allocated, there's a segfault,
@@ -164,60 +164,6 @@ bool StateGen::is_supported_deref(const Instruction& instr) {
   return true;
 }
 
-uint64_t StateGen::get_addr(const CpuState& cs, const Instruction& instr) const {
-  // Special handling for implicit dereferences
-  if (instr.is_push() || instr.is_call()) {
-    return cs.gp[rsp].get_fixed_quad(0) - 8;
-  } else if (instr.is_pop()) {
-    return cs.gp[rsp].get_fixed_quad(0);
-  } else if (instr.is_any_return()) {
-    return cs.gp[rsp].get_fixed_quad(0);
-  }
-
-  const auto mi = instr.mem_index();
-  const auto op = instr.get_operand<M8>(mi);
-
-  uint64_t addr = 0;
-  if (op.contains_base()) {
-    if (op.addr_or()) {
-      addr += cs.gp[op.get_base()].get_fixed_double(0);
-    } else {
-      addr += cs.gp[op.get_base()].get_fixed_quad(0);
-    }
-  }
-  if (op.contains_index()) {
-    auto scale = 1;
-    switch (op.get_scale()) {
-    case Scale::TIMES_2:
-      scale = 2;
-      break;
-    case Scale::TIMES_4:
-      scale = 4;
-      break;
-    case Scale::TIMES_8:
-      scale = 8;
-      break;
-    default:
-      scale = 1;
-      break;
-    }
-
-    if (op.addr_or()) {
-      addr += (scale * cs.gp[op.get_index()].get_fixed_double(0));
-    } else {
-      addr += (scale * cs.gp[op.get_index()].get_fixed_quad(0));
-    }
-  }
-
-  /* We need to sign-extend the displacement from 32 to 64 bits */
-  uint64_t displacement = (op.get_disp());
-  if (displacement & 0x80000000) {
-    displacement |= 0xffffffff00000000;
-  }
-  addr += displacement;
-
-  return addr;
-}
 
 size_t StateGen::get_size(const Instruction& instr) const {
   // Special handling for implicit dereferences
@@ -302,7 +248,7 @@ bool StateGen::fix_misalignment(const CpuState& cs, CpuState& fixed, const Instr
   const auto mi = instr.mem_index();
   const auto op = instr.get_operand<M8>(mi);
 
-  const auto addr = get_addr(cs, instr);
+  const auto addr = cs.get_addr(instr);
   const auto mask = 0x1f;
   const auto offset = addr & mask;
 
@@ -340,7 +286,7 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Instruction& instr
     return false;
   }
 
-  const auto addr = get_addr(cs, instr);
+  const auto addr = cs.get_addr(instr);
   const auto size = get_size(instr);
 
   // We can't do anything about misaligned memory or pre-allocated memory

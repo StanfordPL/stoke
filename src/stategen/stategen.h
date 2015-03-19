@@ -73,8 +73,6 @@ private:
 
   /** Returns if we've already produced an acceptable state. */
   bool is_ok(const Sandbox&, const x64asm::Instruction& instr);
-  /** Returns the address that was dereferenced on this line. */
-  uint64_t get_addr(const CpuState& cs, const x64asm::Instruction& instr) const;
   /** Returns the number of bytes dereferenced on this line. */
   size_t get_size(const x64asm::Instruction& instr) const;
   /** Returns true if the memory at this address is already allocated. */
