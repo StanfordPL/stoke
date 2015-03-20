@@ -32,8 +32,17 @@ public:
   Cfg& remove_redundant(Cfg& cfg) const;
 
   /** Returns a minimal Cfg that satisfies all invariants */
-  Cfg minimal_correct_cfg(const x64asm::RegSet& def_in = x64asm::RegSet::empty(),
-                          const x64asm::RegSet& live_out = x64asm::RegSet::universe()) const;
+  Cfg minimal_correct_cfg(const x64asm::RegSet& def_in, const x64asm::RegSet& live_out) const;
+  /** Convenience method; returns a minimal cfg that writes all gp, sse, and eflags regs */
+  Cfg minimal_correct_cfg() {
+    constexpr auto def_in = x64asm::RegSet::empty();
+    constexpr auto rfs = x64asm::RegSet::empty() +
+                         x64asm::Constants::eflags_af() + x64asm::Constants::eflags_cf() + x64asm::Constants::eflags_of() +
+                         x64asm::Constants::eflags_pf() + x64asm::Constants::eflags_sf() + x64asm::Constants::eflags_zf();
+    constexpr auto live_out = x64asm::RegSet::empty() |
+                              x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms() | rfs;
+    return minimal_correct_cfg(def_in, live_out);
+  }
 };
 
 } // namespace stoke
