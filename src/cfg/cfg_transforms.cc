@@ -124,7 +124,7 @@ Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
 
 Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_out) const {
   Cfg cfg(TUnit(), def_in, live_out);
-  const auto diff = cfg.live_outs() - cfg.def_outs();
+  const auto diff = live_out;
 
   // initialize all general purpose registers
   for (auto rit = diff.gp_begin(); rit != diff.gp_end(); ++rit) {
