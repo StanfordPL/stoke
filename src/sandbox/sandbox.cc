@@ -107,7 +107,7 @@ Sandbox& Sandbox::insert_function(const Cfg& cfg) {
   // If this is the first time we've seen this function, allocate state
   // Otherwise just replace what's there
   if (!contains_function(label)) {
-    fxns_[label] = new x64asm::Function(256 * cfg.get_code().size() + 4096);
+    fxns_[label] = new x64asm::Function(512 * cfg.get_code().size() + 8192);
     fxns_src_[label] = new Cfg(cfg);
     recompile(cfg);
   } else {
