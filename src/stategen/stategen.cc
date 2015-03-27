@@ -137,7 +137,12 @@ bool StateGen::is_ok(const Sandbox& sb, const Instruction& line) {
 bool StateGen::is_supported_deref(const Instruction& instr) {
   // Special support for push/pop/ret
   if (instr.is_push() || instr.is_pop() || instr.is_any_return() || instr.is_call()) {
-    return true;
+    if(instr.is_explicit_memory_dereference()) {
+      error_message_ = "StateGen does not support push/pop with memory argument.";
+      return false;
+    }  else {
+      return true;
+    }
   }
 
   // No support for implicit memory accesses
