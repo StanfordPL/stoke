@@ -290,7 +290,8 @@ private:
   size_t next_label_;
 
   /** Scratch space used here and there by sandboxing code. */
-  uint64_t scratch_[16];
+  uint64_t scratch_[16+1]; // one per register and one extra
+#define SANDBOX_SCRATCH_EXTRA_1 16
 
   /** How many more jumps can be made before SIGKILL? */
   size_t jumps_remaining_;

@@ -1071,12 +1071,15 @@ void Sandbox::emit_jump(const Instruction& instr) {
 }
 
 void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
+  // TODO: we cannot use scratch_[eax], because emit_push uses that already,
+  // so we use an extra scratch here.  this is ugly, and should be improved.
+
   // Push the rip offset that follows this instruction
   // Sandboxing the memory dereference will catch infinite recursions
-  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]), rax);
   assm_.mov((R64)rax, Imm64(hex_offset));
   emit_push({PUSH_R64, {rax}});
-  assm_.mov(rax, Moffs64(&scratch_[rax]));
+  assm_.mov(rax, Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]));
 
   // Restore the STOKE %rsp before the call and the user's rsp after
   emit_load_stoke_rsp();
@@ -1085,19 +1088,21 @@ void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
 
   // This pop doesn't actually have to go anywhere.
   // We just want to be able to catch an rsp that was left in a bad location
-  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]), rax);
   assm_.mov((R64)rax, Imm64(hex_offset));
   emit_pop({POP_R64, {rax}});
-  assm_.mov(rax, Moffs64(&scratch_[rax]));
+  assm_.mov(rax, Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]));
 }
 
 void Sandbox::emit_call_with_stack_check(const Instruction& instr, uint64_t hex_offset) {
+  // TODO: same comment about scratch space as emit_call
+
   // Push the rip offset that follows this instruction
   // Sandboxing the memory dereference will catch infinite recursions
-  assm_.mov(Moffs64(&scratch_[rax]), rax);
+  assm_.mov(Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]), rax);
   assm_.mov((R64)rax, Imm64(hex_offset));
   emit_push({PUSH_R64, {rax}});
-  assm_.mov(rax, Moffs64(&scratch_[rax]));
+  assm_.mov(rax, Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]));
 
   // Restore the STOKE %rsp before the call
   emit_load_stoke_rsp();
