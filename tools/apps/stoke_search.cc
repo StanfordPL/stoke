@@ -90,6 +90,10 @@ auto& postprocessing_arg =
   .description("Postprocessing of the program found by STOKE (simple removes nops and unreachable blocks, and full additionally removes redundant statements without side-effects)")
   .default_val(Postprocessing::FULL);
 
+auto& no_progress_update_arg =
+  cpputil::FlagArg::create("no_progress_update")
+  .description("Don't show a progress update whenever a new best program is discovered");
+
 void sep(ostream& os, string c = "*") {
   for (size_t i = 0; i < 80; ++i) {
     os << c;
@@ -266,9 +270,11 @@ int main(int argc, char** argv) {
   VerifierGadget verifier(holdout_fxn, validator);
 
   ScbArg scb_arg {&Console::msg(), nullptr};
-  search.set_progress_callback(pcb, &Console::msg())
-  .set_statistics_callback(scb, &scb_arg)
+  search.set_statistics_callback(scb, &scb_arg)
   .set_statistics_interval(stat_int);
+  if (!no_progress_update_arg.value()) {
+    search.set_progress_callback(pcb, &Console::msg());
+  }
 
   size_t total_iterations = 0;
   size_t total_restarts = 0;
