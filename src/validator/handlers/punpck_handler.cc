@@ -60,8 +60,12 @@ const map<string, size_t> PunpckHandler::size_ = {
 
 
 Handler::SupportLevel PunpckHandler::get_support(const Instruction& instr) {
-  string opcode = get_opcode(instr);
 
+  if(!operands_supported(instr)) {
+    return Handler::NONE;
+  }
+
+  string opcode = get_opcode(instr);
 
   if (size_.count(opcode))
     return (Handler::SupportLevel)(SupportLevel::BASIC | SupportLevel::CEG);

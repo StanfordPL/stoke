@@ -57,6 +57,10 @@ const map<string, array<bool, 4>> ShiftHandler::to_right_sign_rotate_cf_ = {
 
 Handler::SupportLevel ShiftHandler::get_support(const x64asm::Instruction& instr) {
 
+  if(!operands_supported(instr)) {
+    return Handler::NONE;
+  }
+
   string opcode = get_opcode(instr);
 
   if(to_right_sign_rotate_cf_.find(opcode) != to_right_sign_rotate_cf_.end())

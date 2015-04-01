@@ -22,6 +22,10 @@ using namespace x64asm;
 
 Handler::SupportLevel ConditionalHandler::get_support(const x64asm::Instruction& instr) {
 
+  if(!operands_supported(instr)) {
+    return Handler::NONE;
+  }
+
   string opcode = get_opcode(instr);
 
   if(opcode.substr(0,3) == "set" || opcode.substr(0,4) == "cmov")
