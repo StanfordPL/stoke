@@ -21,6 +21,10 @@ using namespace x64asm;
 
 Handler::SupportLevel AddHandler::get_support(const x64asm::Instruction& instr) {
 
+  if(!operands_supported(instr)) {
+    return Handler::NONE;
+  }
+
   string opcode = get_opcode(instr);
 
   if(opcode == "adcb" || opcode == "adcw" || opcode == "adcl" || opcode == "adcq")

@@ -39,8 +39,12 @@ const map<string, bool> MoveHandler::sign_extend_ = {
 };
 
 Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
-  string opcode = get_opcode(instr);
 
+  if(!operands_supported(instr)) {
+    return Handler::NONE;
+  }
+
+  string opcode = get_opcode(instr);
 
   if (sign_extend_.find(opcode) == sign_extend_.end())
     return SupportLevel::NONE;

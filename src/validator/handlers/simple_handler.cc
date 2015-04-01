@@ -427,6 +427,10 @@ void SimpleHandler::add_all() {
 
 Handler::SupportLevel SimpleHandler::get_support(const x64asm::Instruction& instr) {
 
+  if(!operands_supported(instr)) {
+    return Handler::NONE;
+  }
+
   auto opcode = get_opcode(instr);
 
   switch(instr.arity()) {
