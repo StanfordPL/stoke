@@ -21,6 +21,10 @@ using namespace std;
 
 Handler::SupportLevel ComboHandler::get_support(const Instruction& instr) {
 
+  if(!operands_supported(instr)) {
+    return Handler::NONE;
+  }
+
   error_ = "";
 
   SupportLevel level;

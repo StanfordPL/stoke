@@ -22,6 +22,10 @@ using namespace x64asm;
 
 Handler::SupportLevel PackedHandler::get_support(const x64asm::Instruction& instr) {
 
+  if(!operands_supported(instr)) {
+    return Handler::NONE;
+  }
+
   auto opcode = get_opcode(instr);
 
   for(size_t i = 0; i < instr.arity(); ++i) {

@@ -150,6 +150,20 @@ TEST_F(ValidatorBaseTest, ReportsSupported) {
 
 }
 
+TEST_F(ValidatorBaseTest, RhUnsupported) {
+
+
+  target_ << ".foo:" << std::endl;
+  target_ << "orb %ah, %al" << std::endl;
+  target_ << "retq" << std::endl;
+
+  rewrite_ << ".foo:" << std::endl;
+  rewrite_ << "orb %ah, %al" << std::endl;
+  rewrite_ << "retq" << std::endl;
+
+  assert_fail();
+}
+
 TEST_F(ValidatorBaseTest, UnimplementedFailsGracefully) {
 
   target_ << ".foo:" << std::endl;
