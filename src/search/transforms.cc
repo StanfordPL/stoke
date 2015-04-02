@@ -61,16 +61,6 @@ bool is_mem_write_only_opcode(Opcode o) {
   return mi != -1 && !instr.maybe_read(mi) && !instr.maybe_undef(mi);
 }
 
-/** Does this instruction take an rh operand? */
-bool is_rh_opcode(Opcode o) {
-  for (size_t i = 0, ie = arity(o); i < ie; ++i) {
-    if (type(o, i) == Type::RH) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /** Does this instruction induce control flow? */
 bool is_control_opcode(Opcode o) {
   const Instruction instr(o);
@@ -91,7 +81,7 @@ bool is_non_deterministic(Opcode o) {
 
 /** Add instructions that should never be proposed to this method. */
 bool is_unsupported(Opcode o) {
-  return is_rh_opcode(o) || !Sandbox::is_supported(o);
+  return !Sandbox::is_supported(o);
 }
 
 /** Is this instruction enabled given this flag set? */
@@ -435,6 +425,11 @@ bool Transforms::instruction_move(Cfg& cfg) {
     return false;
   }
 
+  // Check that the instruction is valid
+  if (!instr.check()) {
+    return false;
+  }
+
   // Success: Any failure beyond here will require undoing the move
   // Operands come from the global pool so this rip will need rescaling
   cfg.get_function().replace(instr_idx1_, instr, false, true);
@@ -469,6 +464,11 @@ bool Transforms::opcode_move(Cfg& cfg) {
 
   // Check for validator support for the new instruction
   if (validator_ && !validator_->is_supported(instr)) {
+    return false;
+  }
+
+  // Check that the instruction is valid
+  if (!instr.check()) {
     return false;
   }
 
@@ -517,6 +517,11 @@ bool Transforms::operand_move(Cfg& cfg) {
 
   // Check for validator support for the new instruction
   if (validator_ && !validator_->is_supported(instr)) {
+    return false;
+  }
+
+  // Check that the instruction is valid
+  if (!instr.check()) {
     return false;
   }
 
