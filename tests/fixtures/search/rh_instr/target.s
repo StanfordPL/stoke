@@ -1,0 +1,2 @@
+xorb %ah, %ch
+retq
