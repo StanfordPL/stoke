@@ -49,10 +49,10 @@ void report(bool failed, const x64asm::Instruction& instr, const stoke::CpuState
 /** Returns the correct index to use when looking up a general purpose register in Regs. */
 size_t gp_reg_index(x64asm::R r) {
   switch (r.type()) {
-    case x64asm::Type::RH:
-      return r-4;
-    default:
-      return r;
+  case x64asm::Type::RH:
+    return r-4;
+  default:
+    return r;
   }
 }
 
