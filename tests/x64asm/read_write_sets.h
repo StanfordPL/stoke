@@ -46,6 +46,16 @@ void report(bool failed, const x64asm::Instruction& instr, const stoke::CpuState
   }
 }
 
+/** Returns the correct index to use when looking up a general purpose register in Regs. */
+size_t gp_reg_index(x64asm::R r) {
+  switch (r.type()) {
+  case x64asm::Type::RH:
+    return r-4;
+  default:
+    return r;
+  }
+}
+
 /** This test generates random instructions, and then performs the following
 test:  It generates two random states, that agree in all the registers that
 the instruction reads (but are both random otherwise), and then executes
@@ -229,7 +239,8 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
 
     // cs1 and cs2 should agree on all registers that the instruction might read
     for(auto it = reads.gp_begin(); it != reads.gp_end(); ++it) {
-      cs2.gp[*it] = cs1.gp[*it];
+      x64asm::R r = *it;
+      cs2.gp[gp_reg_index(r)] = cs1.gp[gp_reg_index(r)];
     }
     for(auto it = reads.sse_begin(); it != reads.sse_end(); ++it) {
       cs2.sse[*it] = cs1.sse[*it];
@@ -259,8 +270,8 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
       uint16_t bitwidth = (*it).size();
 
       // Check the lower bitwidth bits of cpustates are equal.
-      uint64_t actual_full = final1.gp[*it].get_fixed_quad(0);
-      uint64_t expected_full = final2.gp[*it].get_fixed_quad(0);
+      uint64_t actual_full = final1.gp[gp_reg_index(*it)].get_fixed_quad(0);
+      uint64_t expected_full = final2.gp[gp_reg_index(*it)].get_fixed_quad(0);
 
       uint64_t mask = ((uint64_t)1 << bitwidth) - 1;
       if(bitwidth == 64)
