@@ -277,6 +277,10 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
       if(bitwidth == 64)
         mask = -1;
 
+      if ((*it).type() == x64asm::Type::RH) {
+        mask <<= 8;
+      }
+
       uint64_t actual_masked = actual_full & mask;
       uint64_t expected_masked = expected_full & mask;
 
