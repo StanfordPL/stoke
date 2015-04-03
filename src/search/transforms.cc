@@ -79,9 +79,18 @@ bool is_non_deterministic(Opcode o) {
   return Instruction(o).is_rdrand();
 }
 
+bool is_rh_opcode(Opcode o) {
+  for (size_t i = 0, ie = arity(o); i < ie; ++i) {
+    if (type(o, i) == Type::RH) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /** Add instructions that should never be proposed to this method. */
 bool is_unsupported(Opcode o) {
-  return !Sandbox::is_supported(o);
+  return is_rh_opcode(o) || !Sandbox::is_supported(o);
 }
 
 /** Is this instruction enabled given this flag set? */
