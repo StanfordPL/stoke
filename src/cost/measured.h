@@ -63,8 +63,8 @@ private:
   /** The latency seem so far. */
   uint64_t latency_ = 0;
 
-  /** An array with all the latencies. */
-  static std::array<stoke::Cost, X64ASM_NUM_OPCODES> latencies_;
+  /** An array with all the latencies. @todo SEE COMMENT IN measured.cc */
+  static std::array<stoke::Cost, 4000> latencies_;
 
 };
 
