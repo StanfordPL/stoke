@@ -160,11 +160,9 @@ private:
   std::vector<std::vector<x64asm::Opcode>> control_free_type_equiv_;
 
   /** Operand pool. */
-  std::vector<x64asm::Rl> rl_pool_;
-  /** Operand pool. */
   std::vector<x64asm::Rh> rh_pool_;
   /** Operand pool. */
-  std::vector<x64asm::Rb> rb_pool_;
+  std::vector<x64asm::R8> r8_pool_;
   /** Operand pool. */
   std::vector<x64asm::R16> r16_pool_;
   /** Operand pool. */

@@ -240,7 +240,7 @@ src/ext/cpputil:
 	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
 
 src/ext/x64asm:
-	git clone -b develop git://github.com/eschkufz/x64asm.git src/ext/x64asm
+	git clone -b issue-40 git://github.com/eschkufz/x64asm.git src/ext/x64asm
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt

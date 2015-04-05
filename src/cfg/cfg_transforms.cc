@@ -136,13 +136,11 @@ Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_
       cfg.get_function().push_back(Instruction(XOR_R32_R32, {reg, reg}));
     } else if (type == Type::R_16 || type == Type::AX || type == Type::DX) {
       cfg.get_function().push_back(Instruction(XOR_R16_R16, {reg, reg}));
-    } else if (type == Type::RL || type == Type::AL || type == Type::CL) {
-      cfg.get_function().push_back(Instruction(XOR_RL_RL, {reg, reg}));
+    } else if (type == Type::R_8 || type == Type::AL || type == Type::CL) {
+      cfg.get_function().push_back(Instruction(XOR_R8_R8, {reg, reg}));
     } else if (type == Type::RH) {
       cfg.get_function().push_back(Instruction(XOR_RH_RH, {reg, reg}));
-    } else if (type == Type::RB) {
-      cfg.get_function().push_back(Instruction(XOR_RB_RB, {reg, reg}));
-    }
+    } 
   }
 
   // initialize sse registers

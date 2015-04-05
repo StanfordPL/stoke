@@ -22,8 +22,10 @@ using namespace std;
 
 namespace {
 
-array<stoke::Cost, X64ASM_NUM_OPCODES> latencies_ {{
-#include "src/cost/tables/haswell_latency.h"
+// @todo THIS IS A HACK AROUND PORTING OVER THE NEW X64ASM CHANGES
+//       CHANGE SIZE BACK TO SYMBOLIC CONSTANT AND FIX TABLE CONTENTS
+array<stoke::Cost, 4000> latencies_ {{
+    #include "src/cost/tables/haswell_latency.h"
   }
 };
 

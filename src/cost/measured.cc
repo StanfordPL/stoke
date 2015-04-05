@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
 #include "src/cost/measured.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
@@ -21,8 +19,10 @@ using namespace std;
 
 namespace stoke {
 
-array<stoke::Cost, X64ASM_NUM_OPCODES> MeasuredCost::latencies_ {{
-#include "src/cost/tables/haswell_latency.h"
+// @todo THIS IS A HACK AROUND PORTING OVER THE NEW X64ASM CHANGES
+//       CHANGE SIZE BACK TO SYMBOLIC CONSTANT AND FIX TABLE CONTENTS
+array<stoke::Cost, 4000> MeasuredCost::latencies_ {{
+    #include "src/cost/tables/haswell_latency.h"
   }
 };
 
