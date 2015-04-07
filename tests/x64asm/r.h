@@ -18,33 +18,31 @@
 
 namespace x64asm {
 
-
 // In the old code, the Rb class threw an assertion to
-// make sure that it couldn't print al/bl/cl/dl.  Now
-// that the Rl class is a subclass of Rb, this doesn't
-// make sense.  These ensure the assertion is fixed, and
-// that the new code prints the right registers.
+// make sure that it couldn't print al/bl/cl/dl.
+// None of these classes exist anymore, so this test is of
+// questionable value.
 TEST(RegisterPrinting, CanPrintAl) {
   std::stringstream ss;
-  ss << (Rb)Constants::al();
+  ss << (R8)Constants::al();
   ASSERT_EQ("%al", ss.str());
 }
 
 TEST(RegisterPrinting, CanPrintBl) {
   std::stringstream ss;
-  ss << (Rb)Constants::bl();
+  ss << (R8)Constants::bl();
   ASSERT_EQ("%bl", ss.str());
 }
 
 TEST(RegisterPrinting, CanPrintCl) {
   std::stringstream ss;
-  ss << (Rb)Constants::cl();
+  ss << (R8)Constants::cl();
   ASSERT_EQ("%cl", ss.str());
 }
 
 TEST(RegisterPrinting, CanPrintDl) {
   std::stringstream ss;
-  ss << (Rb)Constants::dl();
+  ss << (R8)Constants::dl();
   ASSERT_EQ("%dl", ss.str());
 }
 

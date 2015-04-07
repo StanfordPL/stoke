@@ -31,7 +31,10 @@ bool check(uint64_t a, uint64_t b, const std::string& msg, std::ostream& os) {
   return true;
 }
 
-void report(bool failed, const x64asm::Instruction& instr, const stoke::CpuState& a, const stoke::CpuState& b, const std::string& msg) {
+void report(bool failed, const x64asm::Instruction& instr,
+            const stoke::CpuState& a, const stoke::CpuState& b,
+            const stoke::CpuState& fa, const stoke::CpuState& fb,
+            const std::string& msg) {
   if (failed) {
     std::cout << std::endl << "SpreadsheetReadWriteSetFuzzTest Failed!" << std::endl << std::endl;
     std::cout << "Instruction: " << instr << std::endl;
@@ -42,6 +45,10 @@ void report(bool failed, const x64asm::Instruction& instr, const stoke::CpuState
     std::cout << a << std::endl << std::endl;
     std::cout << "State 2:" << std::endl << std::endl;
     std::cout << b << std::endl << std::endl;
+    std::cout << "Final State 1:" << std::endl << std::endl;
+    std::cout << fa << std::endl << std::endl;
+    std::cout << "Final State 2:" << std::endl << std::endl;
+    std::cout << fb << std::endl << std::endl;
     ADD_FAILURE();
   }
 }
@@ -312,7 +319,7 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
         failed |= check(expected_flag, actual_flag, ss.str(), os);
       }
     }
-    report(failed, ins, cs1, cs2, os.str());
+    report(failed, ins, cs1, cs2, final1, final2, os.str());
 #undef EXPECT_EQ_HELPER
 #undef EXPECT_EQ_HEX
 

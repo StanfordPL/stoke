@@ -311,9 +311,8 @@ Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
 }
 
 Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preserve_regs) {
-  fill_pool(rl_pool_, rls, preserve_regs);
   fill_pool(rh_pool_, rhs, preserve_regs);
-  fill_pool(rb_pool_, rbs, preserve_regs);
+  fill_pool(r8_pool_, r8s, preserve_regs);
   fill_pool(r16_pool_, r16s, preserve_regs);
   fill_pool(r32_pool_, r32s, preserve_regs);
   fill_pool(r64_pool_, r64s, preserve_regs);
@@ -809,16 +808,14 @@ bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& o
   case Type::MOFFS_64:
     return false;
 
-  case Type::RL:
-    return get<Rl>(gen_, rl_pool_, op);
   case Type::RH:
     return get<Rh>(gen_, rh_pool_, op);
-  case Type::RB:
-    return get<Rb>(gen_, rb_pool_, op);
+  case Type::R_8:
+    return get<R8>(gen_, r8_pool_, op);
   case Type::AL:
-    return get<Rl>(rl_pool_, al, op);
+    return get<R8>(r8_pool_, al, op);
   case Type::CL:
-    return get<Rl>(rl_pool_, cl, op);
+    return get<R8>(r8_pool_, cl, op);
   case Type::R_16:
     return get<R16>(gen_, r16_pool_, op);
   case Type::AX:
@@ -956,12 +953,10 @@ bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op
   case Type::MOFFS_64:
     return false;
 
-  case Type::RL:
-    return get<Rl>(gen_, rl_pool_, rs, op);
   case Type::RH:
     return get<Rh>(gen_, rh_pool_, rs, op);
-  case Type::RB:
-    return get<Rb>(gen_, rb_pool_, rs, op);
+  case Type::R_8:
+    return get<R8>(gen_, r8_pool_, rs, op);
   case Type::AL:
     return get<Al>(gen_, {al}, rs, op);
   case Type::CL:
