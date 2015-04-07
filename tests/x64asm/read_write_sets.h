@@ -31,10 +31,10 @@ bool check(uint64_t a, uint64_t b, const std::string& msg, std::ostream& os) {
   return true;
 }
 
-void report(bool failed, const x64asm::Instruction& instr, 
-    const stoke::CpuState& a, const stoke::CpuState& b, 
-    const stoke::CpuState& fa, const stoke::CpuState& fb, 
-    const std::string& msg) {
+void report(bool failed, const x64asm::Instruction& instr,
+            const stoke::CpuState& a, const stoke::CpuState& b,
+            const stoke::CpuState& fa, const stoke::CpuState& fb,
+            const std::string& msg) {
   if (failed) {
     std::cout << std::endl << "SpreadsheetReadWriteSetFuzzTest Failed!" << std::endl << std::endl;
     std::cout << "Instruction: " << instr << std::endl;

@@ -140,7 +140,7 @@ Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_
       cfg.get_function().push_back(Instruction(XOR_R8_R8, {reg, reg}));
     } else if (type == Type::RH) {
       cfg.get_function().push_back(Instruction(XOR_RH_RH, {reg, reg}));
-    } 
+    }
   }
 
   // initialize sse registers

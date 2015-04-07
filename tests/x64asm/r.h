@@ -19,7 +19,7 @@
 namespace x64asm {
 
 // In the old code, the Rb class threw an assertion to
-// make sure that it couldn't print al/bl/cl/dl.  
+// make sure that it couldn't print al/bl/cl/dl.
 // None of these classes exist anymore, so this test is of
 // questionable value.
 TEST(RegisterPrinting, CanPrintAl) {
