@@ -55,17 +55,13 @@ public:
   /** Add to the measured latency */
   static void measured_callback(const StateCallbackData& data, void* arg) {
     MeasuredCost* ptr = (MeasuredCost*)arg;
-    ptr->latency_ += latencies_[data.code[data.line].get_opcode()];
+    ptr->latency_ += data.code[data.line].haswell_latency();
   }
 
 private:
 
   /** The latency seem so far. */
   uint64_t latency_ = 0;
-
-  /** An array with all the latencies. @todo SEE COMMENT IN measured.cc */
-  static std::array<stoke::Cost, 4000> latencies_;
-
 };
 
 } // namespace stoke

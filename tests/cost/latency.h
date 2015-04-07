@@ -51,14 +51,21 @@ private:
 
 TEST_F(LatencyCostTest, Latencies) {
 
-  EXPECT_EQ(1ul, latency("movq %rax, %rdx"));
+  const auto mov = x64asm::Instruction(x64asm::MOV_R64_R64).haswell_latency();
+  const auto xor1 = x64asm::Instruction(x64asm::XOR_RH_R8).haswell_latency();
+  const auto xor2 = x64asm::Instruction(x64asm::XOR_R8_RH).haswell_latency();
+  const auto xor3 = x64asm::Instruction(x64asm::XOR_R8_M8).haswell_latency();
+  const auto xorpd1 = x64asm::Instruction(x64asm::XORPD_XMM_M128).haswell_latency();
+  const auto xorpd2 = x64asm::Instruction(x64asm::XORPD_XMM_XMM).haswell_latency();
 
-  EXPECT_EQ(1ul,   latency("xorb %bl, %ch"));
-  EXPECT_EQ(1ul,   latency("xorb %ch, %bl"));
-  EXPECT_EQ(999ul, latency("xorb (%rdx), %al"));
+  EXPECT_EQ(mov, latency("movq %rax, %rdx"));
 
-  EXPECT_EQ(999ul, latency("xorpd (%rax), %xmm3"));
-  EXPECT_EQ(3ul,   latency("xorpd %xmm1, %xmm2"));
+  EXPECT_EQ(xor1, latency("xorb %bl, %ch"));
+  EXPECT_EQ(xor2, latency("xorb %ch, %bl"));
+  EXPECT_EQ(xor3, latency("xorb (%rdx), %al"));
+
+  EXPECT_EQ(xorpd1, latency("xorpd (%rax), %xmm3"));
+  EXPECT_EQ(xorpd2,   latency("xorpd %xmm1, %xmm2"));
 
 }
 
@@ -74,7 +81,9 @@ TEST_F(LatencyCostTest, NestingDepth0) {
 
   Cfg cfg(c, x64asm::RegSet::empty(), x64asm::RegSet::empty());
 
-  EXPECT_EQ(6ull, fxn_(cfg).second);
+  const auto xorpd = x64asm::Instruction(x64asm::XORPD_XMM_XMM).haswell_latency();
+
+  EXPECT_EQ(2*xorpd, fxn_(cfg).second);
 }
 
 TEST_F(LatencyCostTest, NestingDepth1) {
@@ -88,9 +97,11 @@ TEST_F(LatencyCostTest, NestingDepth1) {
   str << "retq" << std::endl;
   str >> c;
 
+  const auto xorpd = x64asm::Instruction(x64asm::XORPD_XMM_XMM).haswell_latency();
+
   Cfg cfg(c, x64asm::RegSet::empty(), x64asm::RegSet::empty());
 
-  EXPECT_EQ(6*5, fxn_(cfg).second);
+  EXPECT_EQ(5*2*xorpd, fxn_(cfg).second);
 }
 
 TEST_F(LatencyCostTest, NestingDepth2) {
@@ -106,9 +117,11 @@ TEST_F(LatencyCostTest, NestingDepth2) {
   str << "retq" << std::endl;
   str >> c;
 
+  const auto xorpd = x64asm::Instruction(x64asm::XORPD_XMM_XMM).haswell_latency();
+
   Cfg cfg(c, x64asm::RegSet::empty(), x64asm::RegSet::empty());
 
-  EXPECT_EQ(6*5*5, fxn_(cfg).second);
+  EXPECT_EQ(5*5*2*xorpd, fxn_(cfg).second);
 }
 
 TEST_F(LatencyCostTest, NestingDepth3) {
@@ -126,9 +139,11 @@ TEST_F(LatencyCostTest, NestingDepth3) {
   str << "retq" << std::endl;
   str >> c;
 
+  const auto xorpd = x64asm::Instruction(x64asm::XORPD_XMM_XMM).haswell_latency();
+
   Cfg cfg(c, x64asm::RegSet::empty(), x64asm::RegSet::empty());
 
-  EXPECT_EQ(6*5*5*5, fxn_(cfg).second);
+  EXPECT_EQ(5*5*5*2*xorpd, fxn_(cfg).second);
 }
 
 

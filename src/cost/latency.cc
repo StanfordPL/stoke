@@ -20,17 +20,6 @@
 
 using namespace std;
 
-namespace {
-
-// @todo THIS IS A HACK AROUND PORTING OVER THE NEW X64ASM CHANGES
-//       CHANGE SIZE BACK TO SYMBOLIC CONSTANT AND FIX TABLE CONTENTS
-array<stoke::Cost, 4000> latencies_ {{
-    #include "src/cost/tables/haswell_latency.h"
-  }
-};
-
-} // namespace
-
 namespace stoke {
 
 uint64_t LatencyCost::nesting_penalty(size_t nesting_depth) {
@@ -55,7 +44,7 @@ LatencyCost::result_type LatencyCost::operator()(const Cfg& cfg, Cost max) {
     for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
       // Record latency for non nop instructions
       if (!code[i].is_nop()) {
-        block_latency += latencies_[code[i].get_opcode()];
+        block_latency += code[i].haswell_latency();
       }
     }
 
