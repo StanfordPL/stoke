@@ -1454,7 +1454,6 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   // First check whether this instruction is trying to read from some part of rsp
   auto rsp_op = false;
   switch (instr.type(0)) {
-  case Type::RH:
   case Type::R_8:
   case Type::R_16:
   case Type::R_32:
