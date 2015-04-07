@@ -1018,7 +1018,7 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   assm_.call(rax);
 
   // Find an unused register to hold the sandboxed address
-  // Instructions that take Rh operands preclude the use of r8-15. 
+  // Instructions that take Rh operands preclude the use of r8-15.
   const auto rx = get_unused_quad(instr);
   // Backup rx and store the value there
   assm_.mov(rdi, Imm64(&scratch_[rx]));
