@@ -253,11 +253,12 @@ size_t Sandbox::get_unused_reg(const Instruction& instr) const {
   const auto rs = instr.maybe_read_set();
   const auto ws = instr.maybe_write_set();
 
-  size_t idx = 4;
-  for (; idx < 12 && (rs.contains(rbs[idx]) || ws.contains(rbs[idx])); ++idx);
+  // Find a register in (r8,r15) that doesn't have any of its subregisters in use
+  size_t idx = 8;
+  for (; idx < 16 && (rs.contains(r8s[idx]) || ws.contains(r8s[idx])); ++idx);
 
-  assert(idx < 12);
-  return idx + 4;
+  assert(idx < 16);
+  return idx;
 }
 
 void Sandbox::recompile(const Cfg& cfg) {
@@ -1226,8 +1227,8 @@ void Sandbox::emit_mem_div(const Instruction& instr) {
   // Perform the register div on rbx (this will catch a sigfpe)
   switch (instr.get_opcode()) {
   case DIV_M8:
-    emit_memory_instruction({MOV_RL_M8, {bl, instr.get_operand<M8>(0)}});
-    emit_reg_div({DIV_RL, {bl}});
+    emit_memory_instruction({MOV_R8_M8, {bl, instr.get_operand<M8>(0)}});
+    emit_reg_div({DIV_R8, {bl}});
     break;
   case DIV_M16:
     emit_memory_instruction({MOV_R16_M16, {bx, instr.get_operand<M16>(0)}});
@@ -1242,8 +1243,8 @@ void Sandbox::emit_mem_div(const Instruction& instr) {
     emit_reg_div({DIV_R64, {rbx}});
     break;
   case IDIV_M8:
-    emit_memory_instruction({MOV_RL_M8, {bl, instr.get_operand<M8>(0)}});
-    emit_reg_div({IDIV_RL, {bl}});
+    emit_memory_instruction({MOV_R8_M8, {bl, instr.get_operand<M8>(0)}});
+    emit_reg_div({IDIV_R8, {bl}});
     break;
   case IDIV_M16:
     emit_memory_instruction({MOV_R16_M16, {bx, instr.get_operand<M16>(0)}});
@@ -1453,9 +1454,8 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   // First check whether this instruction is trying to read from some part of rsp
   auto rsp_op = false;
   switch (instr.type(0)) {
-  case Type::RL:
   case Type::RH:
-  case Type::RB:
+  case Type::R_8:
   case Type::R_16:
   case Type::R_32:
   case Type::R_64:
