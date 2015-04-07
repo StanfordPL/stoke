@@ -246,9 +246,9 @@ TEST_F(IntegrationTest, SearchInitZero) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
-TEST_F(IntegrationTest, SearchRh) {
-  set_working_dir("tests/fixtures/search/rh_instr");
-  set_path("../../../../bin");
-  EXPECT_EQ(0ull, shell("make"));
-  EXPECT_EQ(0ull, shell("make clean"));
-}
+// TEST_F(IntegrationTest, SearchRh) {
+//   set_working_dir("tests/fixtures/search/rh_instr");
+//   set_path("../../../../bin");
+//   EXPECT_EQ(0ull, shell("make"));
+//   EXPECT_EQ(0ull, shell("make clean"));
+// }
