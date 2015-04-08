@@ -339,6 +339,15 @@ private:
   /** Check for abi violations between input and output states */
   bool check_abi(const IoPair& iop) const;
 
+  /** Returns true if this instruction uses rh */
+  bool uses_rh(const x64asm::Instruction& instr) const {
+    for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
+      if (instr.type(i) == x64asm::Type::RH) {
+        return true;
+      }
+    }
+    return false;
+  }
   /** Returns a register that doesn't appear in an instruction or the scratch space. */
   size_t get_unused_reg(const x64asm::Instruction& instr) const;
   /** Returns an unused word register. */
