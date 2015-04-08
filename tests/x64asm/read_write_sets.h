@@ -274,26 +274,10 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
     bool failed = false;
     std::stringstream os;
     for(auto it = liveouts.gp_begin(); it != liveouts.gp_end(); ++it) {
-      uint16_t bitwidth = (*it).size();
-
-      // Check the lower bitwidth bits of cpustates are equal.
-      uint64_t actual_full = final1.gp[gp_reg_index(*it)].get_fixed_quad(0);
-      uint64_t expected_full = final2.gp[gp_reg_index(*it)].get_fixed_quad(0);
-
-      uint64_t mask = ((uint64_t)1 << bitwidth) - 1;
-      if(bitwidth == 64)
-        mask = -1;
-
-      if ((*it).type() == x64asm::Type::RH) {
-        mask <<= 8;
-      }
-
-      uint64_t actual_masked = actual_full & mask;
-      uint64_t expected_masked = expected_full & mask;
-
+      x64asm::R r = *it;
       std::stringstream ss;
-      ss << "The " << bitwidth << " bits of " << *it << " differ.";
-      failed |= check(expected_masked, actual_masked, ss.str(), os);
+      ss << "The " << r.size() << " bits of " << r << " differ.";
+      failed |= check(final1[r], final2[r], ss.str(), os);
     }
     for(auto it = liveouts.sse_begin(); it != liveouts.sse_end(); ++it) {
       uint16_t bitwidth = (*it).size();
