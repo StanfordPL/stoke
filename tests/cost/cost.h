@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "tests/cost/binsize.h"
 #include "tests/cost/correctness.h"
 #include "tests/cost/latency.h"
 #include "tests/cost/parser.h"
