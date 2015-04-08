@@ -181,7 +181,7 @@ private:
     uint64_t mask = ((uint64_t)1 << width) - 1;
     if (width == 64)
       mask = -1;
-    assert(val & (~mask) == 0);
+    assert((val & (~mask)) == 0);
     mask <<= start;
     full &= (~mask);
     full |= (val << start);
