@@ -177,14 +177,14 @@ private:
   }
   /** Update the general purpose register at index idx to value val. */
   void gp_update(size_t idx, size_t width, uint64_t val, size_t start) {
-    auto& full = gp[idx].get_fixed_quad(0);
+    uint64_t& full = gp[idx].get_fixed_quad(0);
     uint64_t mask = ((uint64_t)1 << width) - 1;
     if (width == 64)
       mask = -1;
     assert(val & (~mask) == 0);
     mask <<= start;
     full &= (~mask);
-    full &= (val << start);
+    full |= (val << start);
   }
 };
 
