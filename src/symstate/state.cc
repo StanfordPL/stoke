@@ -115,6 +115,11 @@ SymBitVector SymState::operator[](const Operand o) {
 
 SymBitVector SymState::lookup(const Operand o) const {
 
+  if(o.type() == Type::RH) {
+    auto& r = reinterpret_cast<const R&>(o);
+    return gp[r-4][15][8];
+  }
+
   if(o.is_gp_register()) {
     auto& r = reinterpret_cast<const R&>(o);
     if (o.size() != 64)
@@ -168,6 +173,12 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     // 64-bit gp register.  easy.
     auto& r = reinterpret_cast<const R&>(o);
     gp[r] = bv;
+    return;
+  } else if (o.type() == Type::RH) {
+    // rh register
+    auto& r = reinterpret_cast<const R&>(o);
+    auto old_value = gp[r-4];
+    gp[r-4] = old_value[63][16] || bv || old_value[7][0];
     return;
   } else if (o.is_gp_register()) {
     // small gp register
