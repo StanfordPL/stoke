@@ -330,22 +330,10 @@ private:
     EXPECT_CPU_EQ_CODE(expect.code, actual.code, "The error codes differ.");
 
     for(auto it = live_outs_.gp_begin(); it != live_outs_.gp_end(); ++it) {
-      uint16_t bitwidth = (*it).size();
-
-      // Check the lower bitwidth bits of cpustates are equal.
-      uint64_t actual_full = actual.gp[*it].get_fixed_quad(0);
-      uint64_t expected_full = expect.gp[*it].get_fixed_quad(0);
-
-      uint64_t mask = ((uint64_t)1 << bitwidth) - 1;
-      if(bitwidth == 64)
-        mask = -1;
-
-      uint64_t actual_masked = actual_full & mask;
-      uint64_t expected_masked = expected_full & mask;
-
+      x64asm::R r = *it;
       std::stringstream tmp;
-      tmp << "Lower " << bitwidth << " of " << *it << " differ.";
-      EXPECT_CPU_EQ_INT(expected_masked, actual_masked, tmp.str());
+      tmp << "The " << r.size() << " bits of " << *it << " differ.";
+      EXPECT_CPU_EQ_INT(actual[r], expect[r], tmp.str());
     }
 
     for(auto it = live_outs_.sse_begin(); it != live_outs_.sse_end(); ++it) {
