@@ -1018,7 +1018,9 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   assm_.call(rax);
 
   // Find an unused register to hold the sandboxed address
-  const auto rx = get_unused_quad(instr);
+  // Instructions that take Rh operands preclude the use of r8-15.
+  // Fortunately, we know apriori that they only use ah-dh so it's easy to find a replacement.
+  const auto rx = uses_rh(instr) ? rbp : get_unused_quad(instr);
   // Backup rx and store the value there
   assm_.mov(rdi, Imm64(&scratch_[rx]));
   assm_.mov(M64(rdi), rx);
@@ -1035,7 +1037,9 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   emit_load_user_rsp();
 
   // Assemble the instruction using the temp operand instead
+  // (Check that we've generated a correct instruction in place of the original)
   temp->set_operand(mi, M8(rx));
+  assert(temp->check());
   assm_.assemble(*temp);
   temp->set_operand(mi, old_op);
 
@@ -1454,7 +1458,6 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   // First check whether this instruction is trying to read from some part of rsp
   auto rsp_op = false;
   switch (instr.type(0)) {
-  case Type::RH:
   case Type::R_8:
   case Type::R_16:
   case Type::R_32:
