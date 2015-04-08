@@ -40,7 +40,7 @@ public:
       }
 
       const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-      for (size_t i = 0, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
+      for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
         const auto& instr = code[i];
         if(!instr.is_nop())
           assm_.assemble(instr);
