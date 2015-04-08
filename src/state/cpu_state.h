@@ -63,6 +63,68 @@ struct CpuState {
     return !(*this == rhs);
   }
 
+  /** Access to a general purpose register. */
+  uint64_t operator[](x64asm::R& reg) const {
+    size_t start = 0;
+    size_t idx = reg;
+    if (reg.type() == x64asm::Type::RH) {
+      start = 8;
+      idx -= 4;
+    }
+    return gp_access(idx, reg.size(), start);
+  }
+  /** Access to Rh register. */
+  uint8_t operator[](x64asm::Rh& reg) const {
+    return (*this)[(x64asm::R&)reg];
+  }
+  /** Access to R8 register. */
+  uint8_t operator[](x64asm::R8& reg) const {
+    return (*this)[(x64asm::R&)reg];
+  }
+  /** Access to R16 register. */
+  uint16_t operator[](x64asm::R16& reg) const {
+    return (*this)[(x64asm::R&)reg];
+  }
+  /** Access to R32 register. */
+  uint32_t operator[](x64asm::R32& reg) const {
+    return (*this)[(x64asm::R&)reg];
+  }
+  /** Access to R64 register. */
+  uint64_t operator[](x64asm::R64& reg) const {
+    return (*this)[(x64asm::R&)reg];
+  }
+
+  /** Update a general purpose register. */
+  void update(x64asm::R& reg, uint64_t val) {
+    size_t start = 0;
+    size_t idx = reg;
+    if (reg.type() == x64asm::Type::RH) {
+      start = 8;
+      idx -= 4;
+    }
+    gp_update(idx, reg.size(), val, start);
+  }
+  /** Update an Rh register. */
+  void update(x64asm::Rh& reg, uint8_t val) {
+    update((x64asm::R&)reg, val);
+  }
+  /** Update an R8 register. */
+  void update(x64asm::R8& reg, uint8_t val) {
+    update((x64asm::R&)reg, val);
+  }
+  /** Update an R16 register. */
+  void update(x64asm::R16& reg, uint16_t val) {
+    update((x64asm::R&)reg, val);
+  }
+  /** Update an R16 register. */
+  void update(x64asm::R16& reg, uint32_t val) {
+    update((x64asm::R&)reg, val);
+  }
+  /** Update an R64 register. */
+  void update(x64asm::R64& reg, uint64_t val) {
+    update((x64asm::R&)reg, val);
+  }
+
   /** Write text. */
   std::ostream& write_text(std::ostream& os) const;
   /** Read text. */
@@ -100,6 +162,30 @@ struct CpuState {
   uint64_t jumps_seen;
   /** The total latency of the last run of this testcase */
   uint64_t latency_seen;
+
+private:
+  /** Read the general purpose register with index idx, a given width that starts at bit `start`. */
+  uint64_t gp_access(size_t idx, size_t width, size_t start) const {
+    auto full = gp[idx].get_fixed_quad(0);
+    uint64_t mask = ((uint64_t)1 << width) - 1;
+    if (width == 64)
+      mask = -1;
+    mask <<= start;
+    auto val = full & mask;
+    val >>= start;
+    return val;
+  }
+  /** Update the general purpose register at index idx to value val. */
+  void gp_update(size_t idx, size_t width, uint64_t val, size_t start) {
+    auto& full = gp[idx].get_fixed_quad(0);
+    uint64_t mask = ((uint64_t)1 << width) - 1;
+    if (width == 64)
+      mask = -1;
+    assert(val & (~mask) == 0);
+    mask <<= start;
+    full &= (~mask);
+    full &= (val << start);
+  }
 };
 
 } // namespace stoke
