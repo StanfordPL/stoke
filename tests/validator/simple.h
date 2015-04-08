@@ -150,7 +150,7 @@ TEST_F(ValidatorBaseTest, ReportsSupported) {
 
 }
 
-TEST_F(ValidatorBaseTest, RhUnsupported) {
+TEST_F(ValidatorBaseTest, RhSupported) {
 
 
   target_ << ".foo:" << std::endl;
@@ -158,10 +158,14 @@ TEST_F(ValidatorBaseTest, RhUnsupported) {
   target_ << "retq" << std::endl;
 
   rewrite_ << ".foo:" << std::endl;
-  rewrite_ << "orb %ah, %al" << std::endl;
+  rewrite_ << "movl %eax, %edx" << std::endl;
+  rewrite_ << "shrl $0x8, %edx" << std::endl;
+  rewrite_ << "orb %dl, %al" << std::endl;
   rewrite_ << "retq" << std::endl;
 
-  assert_fail();
+  set_live_outs(x64asm::RegSet::empty() + x64asm::rax);
+
+  assert_equiv();
 }
 
 TEST_F(ValidatorBaseTest, UnimplementedFailsGracefully) {

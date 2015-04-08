@@ -29,10 +29,6 @@ bool Handler::operands_supported(const Instruction& instr) {
       error_ = "Operand " + to_string(i) + " not supported.";
       return false;
     }
-    if (o.type() == Type::RH) {
-      error_ = "rh operands not supported.";
-      return false;
-    }
   }
 
   return true;
