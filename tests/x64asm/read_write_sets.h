@@ -247,10 +247,15 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
     // cs1 and cs2 should agree on all registers that the instruction might read
     for(auto it = reads.gp_begin(); it != reads.gp_end(); ++it) {
       x64asm::R r = *it;
-      cs2.gp[gp_reg_index(r)] = cs1.gp[gp_reg_index(r)];
+      cs2.update(r, cs1[r]);
     }
     for(auto it = reads.sse_begin(); it != reads.sse_end(); ++it) {
-      cs2.sse[*it] = cs1.sse[*it];
+      uint16_t bitwidth = (*it).size();
+      uint16_t quads = bitwidth/64;
+
+      for(size_t i = 0; i < quads; ++i) {
+        cs2.sse[*it].get_fixed_quad(i) = cs1.sse[*it].get_fixed_quad(i);
+      }
     }
     for(size_t i = 0; i < x64asm::eflags.size(); i++) {
       auto op = x64asm::eflags[i];
