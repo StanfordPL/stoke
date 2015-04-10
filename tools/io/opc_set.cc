@@ -37,7 +37,7 @@ array<const char*, X64ASM_NUM_OPCODES> att_ {{
 #include "src/ext/x64asm/src/opcode.att"
   }};
 
-array<const char*, 59> types_ {{
+array<const char*, (size_t)x64asm::Type::YMM> types_ {{
     "hint",
     "imm8",
     "imm16",
@@ -75,9 +75,8 @@ array<const char*, 59> types_ {{
     "moffs16",
     "moffs32",
     "moffs64",
-    "rl",
+    "r8",
     "rh",
-    "rb",
     "al",
     "cl",
     "r16",
