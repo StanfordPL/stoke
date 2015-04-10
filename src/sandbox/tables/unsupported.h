@@ -19,18 +19,11 @@
 // if they are executed: MOVSX_R16_RH, MOVSX_R32_RH, MOVSX_R64_RH,
 // MOVZX_R16_RH, MOVZX_R32_RH, MOVZX_R64_RH
 
-// See x64asm issue #12
-// These instruction variants don't actually exist. Attempting to emit
-// code for these will cause the cpu to mutate values in registers other
-// than ah,dh,ch,bh.
-CRC32_R32_RH
-, CRC32_R64_RH
-
 // These are instructions that have to do with reading/writing segment
 // registers. For the time being, STOKE has no way of dealing with these
 // so any attempt to modify them from their default values would likely
 // be catastrophic.
-, MOV_SREG_M16
+MOV_SREG_M16
 , MOV_SREG_M64
 , MOV_SREG_R16
 , MOV_SREG_R64
