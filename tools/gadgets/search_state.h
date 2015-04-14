@@ -30,9 +30,7 @@ class SearchStateGadget : public SearchState {
 public:
   SearchStateGadget(const Cfg& target, const std::vector<TUnit>& aux_fxns) :
     SearchState(target,
-                CfgGadget(current_arg.value(), aux_fxns, init_arg == Init::ZERO),
-                CfgGadget(best_yet_arg.value(), aux_fxns, false),
-                CfgGadget(best_correct_arg.value(), aux_fxns, false),
+                CfgGadget(previous_arg.value(), aux_fxns, init_arg == Init::ZERO),
                 init_arg.value(),
                 max_instrs_arg.value()) {
     // The SearchState constructor should guarantee this property.
