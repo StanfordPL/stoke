@@ -40,7 +40,8 @@ SearchState::SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const C
     configure_empty(target, size);
     break;
   case Init::PREVIOUS:
-    // Do nothing; preserve input values
+    best_yet = current;
+    best_correct = target;
     break;
   case Init::EXTENSION:
     configure_extension(target, size);
