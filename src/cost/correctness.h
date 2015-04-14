@@ -171,7 +171,7 @@ private:
   long counter_example_testcase_;
 
   /** The set of general purpose registers live out for the target. */
-  std::vector<x64asm::R64> target_gp_out_;
+  std::vector<x64asm::R> target_gp_out_;
   /** The set of rflags that are live out for the target. */
   std::vector<x64asm::Eflags> target_rf_out_;
   /** The set of sse registers live out for the target. */
@@ -190,7 +190,7 @@ private:
   /** Evaluate error between states. */
   Cost evaluate_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between general purpose registers. */
-  Cost gp_error(const Regs& t, const Regs& r, const x64asm::RegSet& defs) const;
+  Cost gp_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between sse registers. */
   Cost sse_error(const Regs& t, const Regs& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between memories. */
