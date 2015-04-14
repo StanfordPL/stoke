@@ -48,7 +48,7 @@ CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, 
 void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
 
   target_gp_out_.clear();
-  for(auto i = rs.any_sub_gp_begin(), ie = rs.any_sub_gp_end(); i != ie; ++i) {
+  for(auto i = rs.gp_begin(), ie = rs.gp_end(); i != ie; ++i) {
     target_gp_out_.push_back(*i);
   }
 
@@ -144,7 +144,7 @@ Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const
 
   // Otherwise, we can do the usual thing and check results register by register
   Cost cost = 0;
-  cost += gp_error(t.gp, r.gp, defs);
+  cost += gp_error(t, r, defs);
   cost += sse_error(t.sse, r.sse, defs);
   cost += rflags_error(t.rf, r.rf, defs);
   if (stack_out_) {
@@ -157,20 +157,46 @@ Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const
   return cost;
 }
 
-Cost CorrectnessCost::gp_error(const Regs& t, const Regs& r, const RegSet& defs) const {
+
+
+Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSet& defs) const {
   Cost cost = 0;
 
   for (const auto& r_t : target_gp_out_) {
-    auto delta = undef_default(8);
-    const auto val_t = t[r_t].get_fixed_quad(0);
+    auto size = r_t.size();
+    auto bytes = size/8;
+    auto delta = undef_default(bytes);
+    const auto val_t = t[r_t];
+    auto is_t_rh = (r_t).type() == Type::RH;
 
-    for (auto r_r = defs.any_sub_gp_begin(), r_re = defs.any_sub_gp_end(); r_r != r_re; ++r_r) {
+    for (auto r_r = defs.gp_begin(), r_re = defs.gp_end(); r_r != r_re; ++r_r) {
       if (r_t != *r_r && !relax_reg_) {
         continue;
       }
+      if ((*r_r).size() < size) {
+        continue;
+      }
 
-      const auto val_r = r[*r_r].get_fixed_quad(0);
-      const auto eval = evaluate_distance(val_t, val_r) + ((r_t == *r_r) ? 0 : misalign_penalty_);
+      uint64_t val_r;
+      bool is_same = false;
+      auto is_r_rh = (*r_r).type() == Type::RH;
+      if (!(is_t_rh && is_r_rh)) {
+        val_r = r.read_gp(*r_r, size, 0);
+        is_same = ((uint64_t)r_t) == ((uint64_t)*r_r);
+      } else if (is_t_rh) {
+        // make sure that there is a corresponding rh register, and that it's defined
+        if ((*r_r).size() < 16 || *r_r >= 4) {
+          continue;
+        }
+        auto rh = Constants::rhs()[*r_r];
+        is_same = r_t == rh;
+        val_r = r[rh];
+      } else {
+        assert(is_r_rh);
+        continue;
+      }
+
+      const auto eval = evaluate_distance(val_t, val_r) + (is_same ? 0 : misalign_penalty_);
 
       delta = min(delta, eval);
     }
