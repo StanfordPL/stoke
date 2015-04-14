@@ -182,6 +182,13 @@ TEST_F(IntegrationTest, ExamplesExp) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
+TEST_F(IntegrationTest, CostLiveOut) {
+  set_working_dir("tests/fixtures/cost/live_out");
+  set_path("../../../../bin");
+  ASSERT_EQ(0ull, shell("make"));
+  ASSERT_EQ(0ull, shell("make clean"));
+}
+
 TEST_F(IntegrationTest, ReplaceIdempotent) {
   set_working_dir("tests/fixtures/replace/idem");
   set_path("../../../../bin");
