@@ -20,8 +20,7 @@ using namespace x64asm;
 
 namespace stoke {
 
-SearchState::SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const Cfg& bc,
-                         Init init, size_t size) : current(c), best_yet(by), best_correct(bc) {
+SearchState::SearchState(const Cfg& target, const Cfg& previous, Init init, size_t size) : current(previous), best_yet(previous), best_correct(target) {
   success = false;
   interrupted = false;
 
@@ -40,7 +39,8 @@ SearchState::SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const C
     configure_empty(target, size);
     break;
   case Init::PREVIOUS:
-    best_yet = current;
+    current = previous;
+    best_yet = previous;
     best_correct = target;
     break;
   case Init::EXTENSION:
