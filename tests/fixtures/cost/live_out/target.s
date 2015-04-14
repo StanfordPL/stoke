@@ -1,0 +1,2 @@
+movl %ecx, %eax
+retq
