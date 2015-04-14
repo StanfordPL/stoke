@@ -27,23 +27,11 @@ namespace stoke {
 cpputil::Heading& search_state_heading =
   cpputil::Heading::create("Search State Options:");
 
-cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& current_arg =
-  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("current")
+cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& previous_arg =
+  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("previous")
   .usage("<path/to/file.s>")
   .default_val(CfgTransforms().minimal_correct_cfg().get_function())
-  .description("Current rewrite; used with --init previous");
-
-cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_yet_arg =
-  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_yet")
-  .usage("<path/to/file.s>")
-  .default_val(CfgTransforms().minimal_correct_cfg().get_function())
-  .description("Best rewrite; used with --init previous");
-
-cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& best_correct_arg =
-  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("best_correct")
-  .usage("<path/to/file.s>")
-  .default_val(CfgTransforms().minimal_correct_cfg().get_function())
-  .description("Best correct rewrite; used with --init previous");
+  .description("Initial rewrite; used with --init previous");
 
 #undef CODE
 
