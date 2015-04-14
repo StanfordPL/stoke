@@ -31,7 +31,7 @@ cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& previous_arg =
   cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("previous")
   .usage("<path/to/file.s>")
   .default_val(CfgTransforms().minimal_correct_cfg().get_function())
-  .description("Current rewrite; used with --init previous");
+  .description("Initial rewrite; used with --init previous");
 
 #undef CODE
 
