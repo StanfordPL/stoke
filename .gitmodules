@@ -1,0 +1,6 @@
+[submodule "src/ext/x64asm"]
+	path = src/ext/x64asm
+	url = git@github.com:StanfordPL/x64asm.git
+[submodule "src/ext/cpputil"]
+	path = src/ext/cpputil
+	url = git@github.com:StanfordPL/cpputil.git
