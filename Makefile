@@ -354,8 +354,10 @@ stoke_clean:
 	rm -rf $(VALIDATOR_AUTOGEN)
 
 clean: stoke_clean
-	$(MAKE) -C src/ext/x64asm clean
+	./scripts/make/submodule-init.sh src/ext/cpputil
+	./scripts/make/submodule-init.sh src/ext/x64asm
 	$(MAKE) -C src/ext/cpputil clean
+	$(MAKE) -C src/ext/x64asm clean
 
 dist_clean: clean
 	rm -f src/ext/gtest-1.7.0/CMakeCache.txt
