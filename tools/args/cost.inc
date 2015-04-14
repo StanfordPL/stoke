@@ -34,7 +34,14 @@ cpputil::ValueArg<Cost>& max_cost_arg =
 cpputil::ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
       cpputil::ValueArg<std::string, cpputil::LineReader<>>::create("cost")
       .usage("<string>")
-      .description("The cost function")
+      .description(R"(The cost function.  Can be an arbitrary expression involving the following constructs:
+- arithmetic operators: + - * / % == << >> < > >= <= & |
+- binsize: Size of the binary
+- correctness: Correctness according to the testcases
+- latency: Latency of the instructions
+- measured: Measured latency (more precise for loops than 'latency')
+- size: The number of instructions
+- sseavx: 1 if both sse and avx instructions are used, 0 otherwise)")
       .default_val("correctness+latency");
 
 cpputil::ValueArg<std::string, cpputil::LineReader<>>& correctness_arg =
