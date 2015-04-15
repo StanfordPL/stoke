@@ -293,7 +293,7 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
         uint64_t expect_v = final2.sse[*it].get_fixed_quad(i);
         std::stringstream ss;
         ss << "Bits " << (i*64) <<  ".." << ((i+1)*64) << " of " << *it << " differ.";
-        failed |= check(expect_v, actual_v, ss.str(), os);
+        failed |= check(actual_v, expect_v, ss.str(), os);
       }
     }
     for(size_t i = 0; i < x64asm::eflags.size(); i++) {
@@ -305,7 +305,7 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
 
         std::stringstream ss;
         ss << "Value of flag " << op << " differs.";
-        failed |= check(expected_flag, actual_flag, ss.str(), os);
+        failed |= check(actual_flag, expected_flag, ss.str(), os);
       }
     }
     report(failed, ins, cs1, cs2, final1, final2, os.str());
