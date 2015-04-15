@@ -27,8 +27,7 @@ class SearchState {
 
 public:
   /** Guaranteed to pass invariants if target passes all invariants */
-  SearchState(const Cfg& target, const Cfg& c, const Cfg& by, const Cfg& bc,
-              Init init, size_t size);
+  SearchState(const Cfg& target, const Cfg& previous, Init init, size_t size);
 
   /** The current rewrite. */
   Cfg current;

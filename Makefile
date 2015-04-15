@@ -45,6 +45,9 @@ INC_FOLDERS=\
 
 INC=$(addprefix -I./, $(INC_FOLDERS))
 
+DEPS=\
+	src/ext/x64asm/lib/libx64asm.a
+
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
 	-lboost_regex\
@@ -227,19 +230,24 @@ tags:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/astyle src/ext/cpputil src/ext/x64asm src/ext/gtest-1.7.0/libgtest.a
-	$(MAKE) -C src/ext/x64asm $(EXT_OPT) COMPILERBINARY=${COMPILERBINARY}
-	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET=$(EXT_TARGET)
+external: src/ext/astyle cpputil x64asm pintool src/ext/gtest-1.7.0/libgtest.a
 
 src/ext/astyle:
 	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle
 	$(MAKE) -C src/ext/astyle/build/gcc -j$(NTHREADS)
 
-src/ext/cpputil:
-	git clone -b develop git://github.com/eschkufz/cpputil.git src/ext/cpputil
+.PHONY: cpputil
+cpputil:
+	./scripts/make/submodule-init.sh src/ext/cpputil
 
-src/ext/x64asm:
-	git clone -b develop git://github.com/eschkufz/x64asm.git src/ext/x64asm
+.PHONY: x64asm
+x64asm:
+	./scripts/make/submodule-init.sh src/ext/x64asm
+	$(MAKE) -C src/ext/x64asm $(EXT_OPT) COMPILERBINARY=${COMPILERBINARY}
+
+.PHONY: pintool
+pintool:
+	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET=$(EXT_TARGET)
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
@@ -254,43 +262,43 @@ src/validator/handlers.h: .FORCE
 
 ##### BUILD TARGETS
 
-src/cfg/%.o: src/cfg/%.cc src/cfg/%.h
+src/cfg/%.o: src/cfg/%.cc src/cfg/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/cost/%.o: src/cost/%.cc src/cost/%.h
+src/cost/%.o: src/cost/%.cc src/cost/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/disassembler/%.o: src/disassembler/%.cc src/disassembler/%.h
+src/disassembler/%.o: src/disassembler/%.cc src/disassembler/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h
+src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/search/%.o: src/search/%.cc src/search/%.h
+src/search/%.o: src/search/%.cc src/search/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/solver/%.o: src/solver/%.cc src/solver/%.h
+src/solver/%.o: src/solver/%.cc src/solver/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/solver/cvc4solver.o: src/solver/cvc4solver.cc src/solver/cvc4solver.h
+src/solver/cvc4solver.o: src/solver/cvc4solver.cc src/solver/cvc4solver.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/state/%.o: src/state/%.cc src/state/%.h
+src/state/%.o: src/state/%.cc src/state/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/stategen/%.o: src/stategen/%.cc src/stategen/%.h
+src/stategen/%.o: src/stategen/%.cc src/stategen/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/symstate/%.o: src/symstate/%.cc src/symstate/%.h
+src/symstate/%.o: src/symstate/%.cc src/symstate/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/target/%.o: src/target/%.cc src/target/%.h
+src/target/%.o: src/target/%.cc src/target/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/tunit/%.o: src/tunit/%.cc src/tunit/%.h
+src/tunit/%.o: src/tunit/%.cc src/tunit/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/validator/handlers/%.o: src/validator/handlers/%.cc src/validator/handlers/%.h src/validator/handlers.h src/validator/*.h
+src/validator/handlers/%.o: src/validator/handlers/%.cc src/validator/handlers/%.h src/validator/handlers.h src/validator/*.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/validator/%.o: src/validator/%.cc src/validator/%.h src/validator/handlers.h
+src/validator/%.o: src/validator/%.cc src/validator/%.h src/validator/handlers.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/verifier/%.o: src/verifier/%.cc src/verifier/%.h
+src/verifier/%.o: src/verifier/%.cc src/verifier/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
-tools/io/%.o: tools/io/%.cc tools/io/%.h
+tools/io/%.o: tools/io/%.cc tools/io/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
 ##### BINARY TARGETS
 
-bin/%: tools/apps/%.cc $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
+bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB)  
 
 ##### TESTING
@@ -313,7 +321,7 @@ tests/validator/handlers.h: .FORCE
 tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
-bin/stoke_test: tools/apps/stoke_test.cc $(SRC_OBJ) $(TEST_OBJ) $(wildcard src/*/*.h) $(wildcard tests/*.h) $(wildcard tests/*/*.h) $(wildcard tests/*/*/*.h) tests/validator/handlers.h
+bin/stoke_test: tools/apps/stoke_test.cc $(DEPS) $(SRC_OBJ) $(TEST_OBJ) $(wildcard src/*/*.h) $(wildcard tests/*.h) $(wildcard tests/*/*.h) $(wildcard tests/*/*/*.h) tests/validator/handlers.h
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(LIB) $(TEST_LIBS)
 
 ## MISC
@@ -341,13 +349,17 @@ hooks: .git/hooks/pre-commit
 
 ##### CLEAN TARGETS
 
-clean: 
+stoke_clean: 
 	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke bin/stoke.bash
 	rm -rf $(VALIDATOR_AUTOGEN)
 
+clean: stoke_clean
+	./scripts/make/submodule-init.sh src/ext/cpputil
+	./scripts/make/submodule-init.sh src/ext/x64asm
+	$(MAKE) -C src/ext/cpputil clean
+	$(MAKE) -C src/ext/x64asm clean
+
 dist_clean: clean
-	rm -rf src/ext/cpputil
-	rm -rf src/ext/x64asm
 	rm -f src/ext/gtest-1.7.0/CMakeCache.txt
 	- $(MAKE) -C src/ext/gtest-1.7.0 clean
 	- $(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
