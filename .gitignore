@@ -3,5 +3,6 @@ bin/*
 src/tags
 *.swp
 tags
+.depend
 
 aliasing
