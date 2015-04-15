@@ -124,6 +124,8 @@ ipstream* Disassembler::run_objdump(const string& filename, bool only_header) {
   string target = "";
   if (only_header) {
     target = "/usr/bin/objdump -h " + filename;
+  } else if (flat_binary_) {
+    target = "/usr/bin/objdump -D -Msuffix -b binary -m i386:x86-64 " + filename;
   } else {
     target = "/usr/bin/objdump -j .text -Msuffix -d " + filename;
   }
@@ -475,17 +477,24 @@ void Disassembler::disassemble(const std::string& filename) {
   // We're starting out fresh, so reset the error tracker
   clear_error();
 
-  // Get the headers from the objdump
-  auto headers = run_objdump(filename, true);
-  if (has_error()) {
-    return;
-  }
-  // Parse the headers
-  const auto section_offsets = parse_section_offsets(*headers);
-  const auto text_itr = section_offsets.find(".text");
-  if (text_itr == section_offsets.end()) {
-    set_error("Unable to find value for text section offset");
-    return;
+  auto text_offset = 0;
+  if(!flat_binary_) {
+
+    // Get the headers from the objdump
+    auto headers = run_objdump(filename, true);
+    if (has_error()) {
+      return;
+    }
+
+    // Parse the headers
+    const auto section_offsets = parse_section_offsets(*headers);
+    const auto text_itr = section_offsets.find(".text");
+    if (text_itr == section_offsets.end()) {
+      set_error("Unable to find value for text section offset");
+      return;
+    }
+    text_offset = text_itr->second;
+
   }
 
   // Get the disassembly from objdump
@@ -500,7 +509,7 @@ void Disassembler::disassemble(const std::string& filename) {
   }
   // Read the functions and invoke the callback.
   FunctionCallbackData data;
-  while (parse_function(*body, data, text_itr->second)) {
+  while (parse_function(*body, data, text_offset)) {
     if (!callback_closure_) {
       fxn_cb_(data, fxn_cb_arg_);
     } else {

@@ -32,6 +32,7 @@ public:
   /** Constructs a fresh disassembler */
   Disassembler() {
     set_function_callback(nullptr, nullptr);
+    set_flat_binary(false);
     clear_error();
   }
 
@@ -45,6 +46,12 @@ public:
   /** Installs a callback for when functions are parsed. */
   Disassembler& set_function_callback(Callback* cc) {
     callback_closure_ = cc;
+    return *this;
+  }
+
+  /** Tell objdump to parse a flat binary instead of ELF. */
+  Disassembler& set_flat_binary(bool b) {
+    flat_binary_ = b;
     return *this;
   }
 
@@ -73,6 +80,9 @@ private:
   void* fxn_cb_arg_;
   /** Closure-alternative to callback */
   Callback* callback_closure_ = NULL;
+
+  /** Should we tell objdump that we want a flat binary, rather than ELF? */
+  bool flat_binary_;
 
   /** POD struct for recording line info */
   struct LineInfo {
