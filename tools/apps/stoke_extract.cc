@@ -41,6 +41,8 @@ auto& out = ValueArg<string>::create("o")
             .description("Directory to write results to")
             .default_val("out");
 
+auto& flat_binary = FlagArg::create("flat_binary");
+
 bool make_dir() {
   /* The permission is guarded by user's umask, which is why
      we set the mode to 0777.  We ignore the result, because mkdir will fail if
@@ -79,6 +81,7 @@ int main(int argc, char** argv) {
 
   Disassembler d;
   d.set_function_callback(callback, nullptr);
+  d.set_flat_binary(flat_binary);
   d.disassemble(in.value());
 
   if (d.has_error()) {
