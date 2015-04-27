@@ -316,7 +316,7 @@ Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preser
   fill_pool(r16_pool_, r16s, preserve_regs);
   fill_pool(r32_pool_, r32s, preserve_regs);
   fill_pool(r64_pool_, r64s, preserve_regs);
-  
+
   fill_pool(mm_pool_, mms, preserve_regs);
   fill_pool(sreg_pool_, sregs, preserve_regs);
   fill_pool(st_pool_, sts, preserve_regs);
