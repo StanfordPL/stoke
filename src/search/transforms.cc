@@ -316,12 +316,12 @@ Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preser
   fill_pool(r16_pool_, r16s, preserve_regs);
   fill_pool(r32_pool_, r32s, preserve_regs);
   fill_pool(r64_pool_, r64s, preserve_regs);
-
-  mm_pool_.assign(mms.begin(), mms.end());
-  sreg_pool_.assign(sregs.begin(), sregs.end());
-  st_pool_.assign(sts.begin(), sts.end());
-  xmm_pool_.assign(xmms.begin(), xmms.end());
-  ymm_pool_.assign(ymms.begin(), ymms.end());
+  
+  fill_pool(mm_pool_, mms, preserve_regs);
+  fill_pool(sreg_pool_, sregs, preserve_regs);
+  fill_pool(st_pool_, sts, preserve_regs);
+  fill_pool(xmm_pool_, xmms, preserve_regs);
+  fill_pool(ymm_pool_, ymms, preserve_regs);
 
   const auto& fxn = target.get_function();
 
