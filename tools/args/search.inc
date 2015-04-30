@@ -78,11 +78,11 @@ auto& timeout_list_arg =
   cpputil::ValueArg<std::vector<size_t>>::create("timeout_list")
   .usage("{ <int> <int> ... }")
   .description("Number of proposals to execute per round (requires --timeout_action list)")
-  .default_val({
-    10000,10000,10000,10000,10000,10000,10000,
-    100000,100000,100000,
-    1000000,
-  });
+.default_val({
+  10000,10000,10000,10000,10000,10000,10000,
+  100000,100000,100000,
+  1000000,
+});
 
 cpputil::ValueArg<size_t>& timeout_sec_arg =
   cpputil::ValueArg<size_t>::create("timeout_time")
