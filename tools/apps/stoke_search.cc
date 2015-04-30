@@ -69,7 +69,7 @@ auto& stat_int =
 auto& automation_heading = Heading::create("Automation Options:");
 auto& timeout_action_arg =
   ValueArg<Timeout, TimeoutReader, TimeoutWriter>::create("timeout_action")
-  .usage("(quit|restart|testcase)")
+  .usage("(quit|restart|list|testcase)")
   .description("Action to take when search times out")
   .default_val(Timeout::RESTART);
 auto& timeout_cycles_arg =
@@ -279,12 +279,23 @@ int main(int argc, char** argv) {
   size_t total_iterations = 0;
   size_t total_restarts = 0;
 
+  if (timeout_action_arg == Timeout::LIST) {
+    if (timeout_list_arg.value().size() == 0) {
+      Console::error() << "Cannot provide the empty list for --timeout_list." << endl;
+    }
+    timeout_itr_arg.value() = timeout_list_arg.value()[0];
+  }
+
   string final_msg;
   SearchStateGadget state(target, aux_fxns);
   for (size_t i = 0; ; ++i) {
     CostFunctionGadget fxn(target, &training_sb);
 
-    Console::msg() << "Running search:" << endl << endl;
+    Console::msg() << "Running search (timeout is " << timeout_itr_arg.value() << " iterations";
+    if (timeout_sec_arg.value() != 0) {
+      Console::msg() << " / " << timeout_sec_arg.value() << " seconds";
+    }
+    Console::msg() << "):" << endl << endl;
     state = SearchStateGadget(target, aux_fxns);
 
     // Run the initial cost function
@@ -344,6 +355,8 @@ int main(int argc, char** argv) {
         Console::msg() << "Increasing timeout iterations to " << timeout_itr_arg.value() << endl;
       }
       Console::msg() << "Restarting search:" << endl << endl;
+    } else if (timeout_action_arg == Timeout::LIST && i+1 < timeout_list_arg.value().size()) {
+      timeout_itr_arg.value() = timeout_list_arg.value()[i+1];
     } else if ((timeout_action_arg == Timeout::TESTCASE) && (i < timeout_cycles_arg.value())
                && verifier.counter_example_available()) {
       Console::msg() << "Restarting search using new testcase:" << endl << endl;

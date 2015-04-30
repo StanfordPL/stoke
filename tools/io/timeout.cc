@@ -24,9 +24,10 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Timeout>, 3> pts {{
+array<pair<string, Timeout>, 4> pts {{
     {"quit", Timeout::QUIT},
     {"restart", Timeout::RESTART},
+    {"list", Timeout::LIST},
     {"testcase", Timeout::TESTCASE}
   }
 };
