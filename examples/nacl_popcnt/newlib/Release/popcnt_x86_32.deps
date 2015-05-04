@@ -1,0 +1,57 @@
+# Updated by fix_deps.py
+newlib/Release/popcnt_x86_32.o: popcnt.cc \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/instance.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_instance.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_macros.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_stdint.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_resource.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/ppb_console.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_bool.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_var.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/instance_handle.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/view.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/resource.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/pass_ref.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/rect.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_rect.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_point.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_size.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/point.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/size.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/logging.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/module.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_module.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/ppb.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/ppb_core.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_completion_callback.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_time.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/core.h \
+ /home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/var.h
+popcnt.cc:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/instance.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_instance.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_macros.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_stdint.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_resource.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/ppb_console.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_bool.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_var.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/instance_handle.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/view.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/resource.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/pass_ref.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/rect.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_rect.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_point.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_size.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/point.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/size.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/logging.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/module.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_module.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/ppb.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/ppb_core.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_completion_callback.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/c/pp_time.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/core.h:
+/home/berkeley/nacl_sdk/pepper_42/include/ppapi/cpp/var.h:
