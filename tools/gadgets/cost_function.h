@@ -20,6 +20,7 @@
 #include "src/cost/cost_parser.h"
 #include "src/cost/binsize.h"
 #include "src/cost/measured.h"
+#include "src/cost/nacl.h"
 #include "src/cost/size.h"
 #include "src/cost/sseavx.h"
 #include "tools/args/cost.inc"
@@ -52,6 +53,7 @@ private:
     st["correctness"] =  new CorrectnessCostGadget(target, sb);
     st["latency"] =      new LatencyCostGadget();
     st["measured"] =     new MeasuredCost();
+    st["nacl"] =         new NaClCost();
     st["size"] =         new SizeCost();
     st["sseavx"] =       new SseAvxCost();
 
