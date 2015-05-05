@@ -53,12 +53,12 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     Opcode opc = instr.get_opcode();
     if((opc == MOV_R32_IMM32 || opc == MOV_R32_M32 || opc == MOV_R32_R32) &&
         end != 0) {
-      restricted_registers[i+1] = (uint64_t)instr.get_operand<R32>(0) + 1; 
+      restricted_registers[i+1] = (uint64_t)instr.get_operand<R32>(0) + 1;
       //cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
     }
 
     // we're in trouble if, looking at the lower 32 bits of the
-    // start and end addresses, we see a wrap around, and the 
+    // start and end addresses, we see a wrap around, and the
     // lower 32 bits of 'end' are nonzero.
     if(start > end && end != 0) {
       score += end;
@@ -102,32 +102,32 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
   for(auto instr : code) {
     auto opc = instr.get_opcode();
     switch(opc) {
-      case POP_R64:
-      case POP_M64:
-      case PUSH_R64:
-      case PUSH_M64:
-        continue;
-        break;
-      default:
-        break;
+    case POP_R64:
+    case POP_M64:
+    case PUSH_R64:
+    case PUSH_M64:
+      continue;
+      break;
+    default:
+      break;
     }
 
     if(instr.maybe_write_set().contains(rsp)) {
       //cout << instr << " may write rsp" << endl;
       score++;
-    } 
+    }
     if(instr.maybe_undef_set().contains(rsp)) {
       //cout << instr << " may undef rsp" << endl;
       score++;
-    } 
+    }
     if(instr.maybe_write_set().contains(rbp)) {
       //cout << instr << " may write rbp" << endl;
       score++;
-    } 
+    }
     if(instr.maybe_undef_set().contains(rbp)) {
       //cout << instr << " may undef rbp" << endl;
       score++;
-    } 
+    }
   }
 
 
@@ -136,11 +136,11 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     if(instr.maybe_write_set().contains(r15)) {
       //cout << instr << " may write r15" << endl;
       score++;
-    } 
+    }
     if(instr.maybe_undef_set().contains(r15)) {
       //cout << instr << " may undef r15" << endl;
       score++;
-    } 
+    }
   }
 
 
