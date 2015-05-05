@@ -121,6 +121,8 @@ int auto_gen() {
   }
 
   if (tcs.empty()) {
+    Console::warn() << "Last reported error from StateGen: " << endl;
+    Console::warn() << sg.get_error() << endl;
     Console::error(1) << "Unable to generate testcases!" << endl;
   }
 
