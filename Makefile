@@ -120,7 +120,6 @@ TOOL_ARGS_OBJ=\
 	tools/args/functions.o \
 	tools/args/in_out.o \
 	tools/args/move.o \
-	tools/args/performance.o \
 	tools/args/rewrite.o \
 	tools/args/sandbox.o \
 	tools/args/search.o \
@@ -147,6 +146,8 @@ TOOL_NON_ARG_OBJ=\
 
 TOOL_OBJ=$(TOOL_ARGS_OBJ) $(TOOL_NON_ARG_OBJ)
 
+OBJS=$(wildcard tools/apps/*.cc) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ)
+
 BIN=\
 	bin/stoke_extract \
 	bin/stoke_replace \
@@ -171,7 +172,6 @@ BIN=\
 
 # used to force a target to rebuild
 .PHONY: .FORCE
-
 
 ##### TOP LEVEL TARGETS 
 
@@ -229,9 +229,32 @@ nehalem_test: nehalem_debug
 tags:
 	ctags -R src
 
+##### DEPENDENCY MANAGEMENT
+
+.PHONY: depend
+depend:
+	# create depend file (we need to correct the dependencies, because gcc does
+	# not behave correctly for files that are in subdirectories;  we add the
+	# directories manually in the following loop)
+	cp /dev/null ./.depend
+	for F in $(OBJS:.o=.cc); do \
+		D=`dirname $$F | sed "s/^\.\///"`; \
+		echo -n "$$D/" >> ./.depend; \
+		$(CXX) $(TARGET) $(OPT) $(INC) -MM -MG $$F >> ./.depend; \
+	done
+	# for the binaries, the path is wrong (because we don't generate an object
+	# file, and instead generate the binary in 'bin').  use sed to correct this.
+	sed -i 's/tools\/apps\/\(.*\)\.o/bin\/\1/' ./.depend
+
+# pull in dependency info
+-include .depend
+
 ##### EXTERNAL TARGETS
 
 external: src/ext/astyle cpputil x64asm pintool src/ext/gtest-1.7.0/libgtest.a
+	if [ ! -f .depend ]; then \
+		$(MAKE) -C . depend; \
+	fi
 
 src/ext/astyle:
 	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle
@@ -263,44 +286,44 @@ src/validator/handlers.h: .FORCE
 
 ##### BUILD TARGETS
 
-src/cfg/%.o: src/cfg/%.cc src/cfg/%.h $(DEPS)
+src/cfg/%.o: src/cfg/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/cost/%.o: src/cost/%.cc src/cost/%.h $(DEPS)
+src/cost/%.o: src/cost/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/disassembler/%.o: src/disassembler/%.cc src/disassembler/%.h $(DEPS)
+src/disassembler/%.o: src/disassembler/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/sandbox/%.o: src/sandbox/%.cc src/sandbox/%.h $(DEPS)
+src/sandbox/%.o: src/sandbox/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/search/%.o: src/search/%.cc src/search/%.h $(DEPS)
+src/search/%.o: src/search/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/solver/%.o: src/solver/%.cc src/solver/%.h $(DEPS)
+src/solver/%.o: src/solver/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/solver/cvc4solver.o: src/solver/cvc4solver.cc src/solver/cvc4solver.h $(DEPS)
+src/solver/cvc4solver.o: src/solver/cvc4solver.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/state/%.o: src/state/%.cc src/state/%.h $(DEPS)
+src/state/%.o: src/state/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/stategen/%.o: src/stategen/%.cc src/stategen/%.h $(DEPS)
+src/stategen/%.o: src/stategen/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/symstate/%.o: src/symstate/%.cc src/symstate/%.h $(DEPS)
+src/symstate/%.o: src/symstate/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/target/%.o: src/target/%.cc src/target/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/validator/handlers/%.o: src/validator/handlers/%.cc src/validator/handlers/%.h src/validator/handlers.h src/validator/*.h $(DEPS)
+src/validator/handlers/%.o: src/validator/handlers/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/validator/%.o: src/validator/%.cc src/validator/%.h src/validator/handlers.h $(DEPS)
+src/validator/%.o: src/validator/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/verifier/%.o: src/verifier/%.cc src/verifier/%.h $(DEPS)
+src/verifier/%.o: src/verifier/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
-tools/io/%.o: tools/io/%.cc tools/io/%.h $(DEPS)
+tools/io/%.o: tools/io/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 
 ##### BINARY TARGETS
 
 bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB)  
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB)
 
 ##### TESTING
 
@@ -359,6 +382,7 @@ clean: stoke_clean
 	./scripts/make/submodule-init.sh src/ext/x64asm
 	$(MAKE) -C src/ext/cpputil clean
 	$(MAKE) -C src/ext/x64asm clean
+	rm -rf .depend
 
 dist_clean: clean
 	rm -f src/ext/gtest-1.7.0/CMakeCache.txt
