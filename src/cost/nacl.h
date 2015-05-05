@@ -16,6 +16,7 @@
 #define STOKE_SRC_COST_NACL_H
 
 #include "src/cost/cost_function.h"
+#include "src/ext/x64asm/include/x64asm.h"
 
 namespace stoke {
 
@@ -26,6 +27,9 @@ public:
   result_type operator()(const Cfg& cfg, Cost max = max_cost);
 
 private:
+
+  x64asm::Assembler assm_;
+  x64asm::Function buffer_;
 
 
 };

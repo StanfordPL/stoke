@@ -38,6 +38,7 @@
   ja .L_20220              #  25    0x20221  6      
   nop                      #  26    0x20227  1      
 .L_20260:                  #        0x20228  0      
+  retq
   popq %r11                #  27    0x20228  3      
   andl $0xffffffe0, %r11d  #  28    0x2022b  7      
   addq %r15, %r11          #  29    0x20232  3      
@@ -45,6 +46,7 @@
   nop                      #  31    0x20238  1      
   nop                      #  32    0x20239  1      
 .L_20280:                  #        0x2023a  0      
+  retq
   popq %r11                #  33    0x2023a  3      
   andl $0xffffffe0, %r11d  #  34    0x2023d  7      
   addq %r15, %r11          #  35    0x20244  3      
