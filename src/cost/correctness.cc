@@ -235,7 +235,7 @@ Cost CorrectnessCost::mm_error(const Regs& t, const Regs& r, const RegSet& defs)
 
       const auto val_r = r[*r_r].get_fixed_quad(0);
       const auto eval = evaluate_distance(val_t, val_r) + ((r_t == *r_r) ? 0 : misalign_penalty_);
-        delta = min(delta, eval);
+      delta = min(delta, eval);
     }
     cost += delta;
   }
