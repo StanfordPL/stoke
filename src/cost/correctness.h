@@ -176,6 +176,8 @@ private:
   std::vector<x64asm::Eflags> target_rf_out_;
   /** The set of sse registers live out for the target. */
   std::vector<x64asm::Ymm> target_sse_out_;
+  /** The set of sse registers live out for the target. */
+  std::vector<x64asm::Mm> target_mm_out_;
 
   /** Recompute the set of registers that are live out in the target. */
   void recompute_target_defs(const x64asm::RegSet& rs);
@@ -193,6 +195,8 @@ private:
   Cost gp_error(const CpuState& t, const CpuState& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between sse registers. */
   Cost sse_error(const Regs& t, const Regs& r, const x64asm::RegSet& defs) const;
+  /** Evaluate error between mm registers. */
+  Cost mm_error(const Regs& t, const Regs& r, const x64asm::RegSet& defs) const;
   /** Evaluate error between memories. */
   Cost mem_error(const Memory& t, const Memory& r) const;
   /** Evaluate error between memories that are written in 128-bit blocks. */

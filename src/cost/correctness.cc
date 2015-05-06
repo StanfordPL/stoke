@@ -57,6 +57,11 @@ void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
     target_sse_out_.push_back(*i);
   }
 
+  target_mm_out_.clear();
+  for(auto i = rs.mm_begin(), ie = rs.mm_end(); i != ie; ++i) {
+    target_mm_out_.push_back(*i);
+  }
+
   // TODO -- An x64asm iterator over these flags would be nice
   target_rf_out_.clear();
   for(auto f: {
@@ -145,6 +150,7 @@ Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const
   // Otherwise, we can do the usual thing and check results register by register
   Cost cost = 0;
   cost += gp_error(t, r, defs);
+  cost += mm_error(t.sse, r.sse, defs);
   cost += sse_error(t.sse, r.sse, defs);
   cost += rflags_error(t.rf, r.rf, defs);
   if (stack_out_) {
@@ -208,6 +214,28 @@ Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSe
       const auto eval = evaluate_distance(val_t, val_r) + (is_same ? 0 : misalign_penalty_);
 
       delta = min(delta, eval);
+    }
+    cost += delta;
+  }
+
+  return cost;
+}
+
+Cost CorrectnessCost::mm_error(const Regs& t, const Regs& r, const RegSet& defs) const {
+  Cost cost = 0;
+
+  for (const auto& r_t : target_mm_out_) {
+    auto delta = undef_default(8);
+    const auto val_t = t[r_t].get_fixed_quad(0);
+
+    for (auto r_r = defs.mm_begin(), r_re = defs.mm_end(); r_r != r_re; ++r_r) {
+      if (r_t != *r_r && !relax_reg_) {
+        continue;
+      }
+
+      const auto val_r = r[*r_r].get_fixed_quad(0);
+      const auto eval = evaluate_distance(val_t, val_r) + ((r_t == *r_r) ? 0 : misalign_penalty_);
+        delta = min(delta, eval);
     }
     cost += delta;
   }
