@@ -95,6 +95,8 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   // Early corner case bailouts
   if (state.current_cost == 0) {
     state.success = true;
+    state.best_correct = state.current;
+    state.best_correct_cost = 0;
     return;
   } else if (moves_.empty()) {
     state.success = false;
