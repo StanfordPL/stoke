@@ -40,7 +40,7 @@
   nop                                 #  29    0x200eb  1      
   nop                                 #  30    0x200ec  1      
 .L_20100:                             #        0x200ed  0      
-  movl $0x60460, %eax                 #  31    0x200ed  5      
+  movl $0x603c0, %eax                 #  31    0x200ed  5      
   testl %eax, %eax                    #  32    0x200f2  2      
   je .L_20120                         #  33    0x200f4  6      
   movl $0x10027230, %edi              #  34    0x200fa  5      

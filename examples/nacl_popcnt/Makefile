@@ -38,3 +38,15 @@ $(eval $(call NMF_RULE,$(TARGET),))
 
 extract:
 	stoke extract -i newlib/Release/part2_unstripped_x86_64.nexe -o bins
+
+search:
+	stoke search --target bins/_Z7computej.s --testcases popcnt.tc --timeout 1000000 --cost "nacl+correctness+latency" --correctness "nacl+correctness == 0" --def_in "{ %rdi %rsp %rbp %r15 }" --live_out "{ %rax %rsp %rbp %r15 }" --test_set "{ 0 .. 6 }" --training_set "{ 0 .. 100 }" --init target --max_instrs 100 --strategy hold_out --postprocessing none --resize_mass 0 --statistics_interval 100000
+
+sandbox:
+	stoke debug sandbox --target bins/_Z7computej.s --testcases popcnt.tc --def_in "{ %rdi %rsp %rbp %r15 }" --live_out "{ %eax %rsp %rbp %r15 }" --index 0 -d
+
+replace:
+	stoke replace --rewrite result.s -i newlib/Release/part2_unstripped_x86_64.nexe -o newlib/Release/part2_stoke.nexe
+
+test:
+	/home/berkeley/nacl_sdk/pepper_42/tools/httpd.py --no-dir-check

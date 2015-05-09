@@ -9,7 +9,7 @@
 # Text                          #  Line  RIP      Bytes  
 .frame_dummy:                   #        0x20160  0      
   pushq %rbp                    #  1     0x20160  2      
-  movl $0x5dee0, %eax           #  2     0x20162  5      
+  movl $0x5de40, %eax           #  2     0x20162  5      
   testl %eax, %eax              #  3     0x20167  2      
   movq %rsp, %rbp               #  4     0x20169  3      
   je .L_20180                   #  5     0x2016c  6      

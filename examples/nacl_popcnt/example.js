@@ -13,12 +13,14 @@ function moduleDidLoad() {
   // NaCl module's <embed> element.
   //
   // postMessage sends a message to it.
-  common.naclModule.postMessage('hello');
+  common.naclModule.postMessage(100);
+  window.start = Date.now()
 }
 
 // This function is called by common.js when a message is received from the
 // NaCl module.
 function handleMessage(message) {
-  var logEl = document.getElementById('log');
-  logEl.textContent += message.data;
+  var end = Date.now();
+  var diff = end - window.start;
+  alert("Result: " + message.data + " Time: " + diff);
 }

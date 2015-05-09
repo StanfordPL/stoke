@@ -6,7 +6,7 @@
 #include "ppapi/cpp/module.h"
 #include "ppapi/cpp/var.h"
 
-#define N 20000
+#define N 10000000
 
 namespace {
 
@@ -21,14 +21,13 @@ const char* const kReplyString = "hello from NaCl";
 
 size_t compute(size_t input) {
   size_t output = 0;
-  for(size_t i = 0; i < input; ++i) {
-    size_t j = i;
+    size_t j = input;
     while(j) {
       if(j & 1)
         output++;
       j = j >> 1;
     }
-  }
+ 
   return output;
 }
 
@@ -46,7 +45,14 @@ public:
 
     size_t input = (size_t)var_message.AsInt();
 
-    pp::Var var_reply((int)compute(input));
+    size_t result = 0;
+    for(size_t i = 0; i < N; ++i) {
+      for(size_t j = 0; j < input; ++j) {
+        result += compute(j);
+      }
+    }
+
+    pp::Var var_reply((int32_t)result);
     PostMessage(var_reply);
   }
 

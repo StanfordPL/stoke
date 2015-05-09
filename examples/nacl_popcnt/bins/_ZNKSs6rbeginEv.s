@@ -2,48 +2,48 @@
   .globl _ZNKSs6rbeginEv
   .type _ZNKSs6rbeginEv, @function
 
-#! file-offset 0x444c0
-#! rip-offset  0x444c0
+#! file-offset 0x44420
+#! rip-offset  0x44420
 #! capacity    64 bytes
 
 # Text                      #  Line  RIP      Bytes  
-._ZNKSs6rbeginEv:           #        0x444c0  0      
-  movl %esi, %esi           #  1     0x444c0  2      
-  movl %edi, %eax           #  2     0x444c2  2      
-  movl %esi, %esi           #  3     0x444c4  2      
-  movl (%r15,%rsi,1), %edx  #  4     0x444c6  4      
-  leal -0xc(%rdx), %ecx     #  5     0x444ca  3      
-  movl %ecx, %ecx           #  6     0x444cd  2      
-  addl (%r15,%rcx,1), %edx  #  7     0x444cf  4      
-  movl %eax, %eax           #  8     0x444d3  2      
-  movl %edx, (%r15,%rax,1)  #  9     0x444d5  4      
-  popq %r11                 #  10    0x444d9  3      
-  nop                       #  11    0x444dc  1      
-  andl $0xffffffe0, %r11d   #  12    0x444dd  7      
-  addq %r15, %r11           #  13    0x444e4  3      
-  jmpq %r11                 #  14    0x444e7  3      
-  nop                       #  15    0x444ea  1      
-  nop                       #  16    0x444eb  1      
-  nop                       #  17    0x444ec  1      
-  nop                       #  18    0x444ed  1      
-  nop                       #  19    0x444ee  1      
-  nop                       #  20    0x444ef  1      
-  nop                       #  21    0x444f0  1      
-  nop                       #  22    0x444f1  1      
-  nop                       #  23    0x444f2  1      
-  nop                       #  24    0x444f3  1      
-  nop                       #  25    0x444f4  1      
-  nop                       #  26    0x444f5  1      
-  nop                       #  27    0x444f6  1      
-  nop                       #  28    0x444f7  1      
-  nop                       #  29    0x444f8  1      
-  nop                       #  30    0x444f9  1      
-  nop                       #  31    0x444fa  1      
-  nop                       #  32    0x444fb  1      
-  nop                       #  33    0x444fc  1      
-  nop                       #  34    0x444fd  1      
-  nop                       #  35    0x444fe  1      
-  nop                       #  36    0x444ff  1      
+._ZNKSs6rbeginEv:           #        0x44420  0      
+  movl %esi, %esi           #  1     0x44420  2      
+  movl %edi, %eax           #  2     0x44422  2      
+  movl %esi, %esi           #  3     0x44424  2      
+  movl (%r15,%rsi,1), %edx  #  4     0x44426  4      
+  leal -0xc(%rdx), %ecx     #  5     0x4442a  3      
+  movl %ecx, %ecx           #  6     0x4442d  2      
+  addl (%r15,%rcx,1), %edx  #  7     0x4442f  4      
+  movl %eax, %eax           #  8     0x44433  2      
+  movl %edx, (%r15,%rax,1)  #  9     0x44435  4      
+  popq %r11                 #  10    0x44439  3      
+  nop                       #  11    0x4443c  1      
+  andl $0xffffffe0, %r11d   #  12    0x4443d  7      
+  addq %r15, %r11           #  13    0x44444  3      
+  jmpq %r11                 #  14    0x44447  3      
+  nop                       #  15    0x4444a  1      
+  nop                       #  16    0x4444b  1      
+  nop                       #  17    0x4444c  1      
+  nop                       #  18    0x4444d  1      
+  nop                       #  19    0x4444e  1      
+  nop                       #  20    0x4444f  1      
+  nop                       #  21    0x44450  1      
+  nop                       #  22    0x44451  1      
+  nop                       #  23    0x44452  1      
+  nop                       #  24    0x44453  1      
+  nop                       #  25    0x44454  1      
+  nop                       #  26    0x44455  1      
+  nop                       #  27    0x44456  1      
+  nop                       #  28    0x44457  1      
+  nop                       #  29    0x44458  1      
+  nop                       #  30    0x44459  1      
+  nop                       #  31    0x4445a  1      
+  nop                       #  32    0x4445b  1      
+  nop                       #  33    0x4445c  1      
+  nop                       #  34    0x4445d  1      
+  nop                       #  35    0x4445e  1      
+  nop                       #  36    0x4445f  1      
                                                      
 .size _ZNKSs6rbeginEv, .-_ZNKSs6rbeginEv
 
