@@ -21,13 +21,13 @@ const char* const kReplyString = "hello from NaCl";
 
 size_t compute(size_t input) {
   size_t output = 0;
-    size_t j = input;
-    while(j) {
-      if(j & 1)
-        output++;
-      j = j >> 1;
-    }
- 
+  size_t j = input;
+  while(j) {
+    if(j & 1)
+      output++;
+    j = j >> 1;
+  }
+
   return output;
 }
 
