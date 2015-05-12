@@ -8,6 +8,9 @@
 
 #define N 10000000
 
+#define ALWAYS_INLINE inline __attribute__((always_inline)) 
+#define NO_INLINE __attribute ((noinline))
+
 namespace {
 
 // The expected string sent by the browser.
@@ -19,7 +22,7 @@ const char* const kReplyString = "hello from NaCl";
 }  // namespace
 
 
-size_t compute(size_t input) {
+size_t NO_INLINE compute(size_t input) {
   size_t output = 0;
   size_t j = input;
   while(j) {

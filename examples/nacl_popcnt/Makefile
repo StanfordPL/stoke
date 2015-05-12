@@ -46,7 +46,7 @@ sandbox:
 	stoke debug sandbox --target bins/_Z7computej.s --testcases popcnt.tc --def_in "{ %rdi %rsp %rbp %r15 }" --live_out "{ %eax %rsp %rbp %r15 }" --index 0 -d
 
 replace:
-	mkdir -f newlib/Stoke
+	mkdir -p newlib/Stoke
 	stoke replace --rewrite result.s -i newlib/Release/part2_unstripped_x86_64.nexe -o newlib/Stoke/part2_stoke.nexe
 
 test:

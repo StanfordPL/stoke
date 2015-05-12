@@ -23,10 +23,7 @@
   xchgw %ax, %ax           #  12    0x20201  3      
   nop                      #  13    0x20204  1      
 .L_20220:                  #        0x20205  0      
-  popq %r11                #  14    0x20205  3      
-  andl $0xffffffe0, %r11d  #  15    0x20208  7      
-  addq %r15, %r11          #  16    0x2020f  3      
-  jmpq %r11                #  17    0x20212  3      
+  retq
   nop                      #  18    0x20215  1      
   nop                      #  19    0x20216  1      
                                                     

@@ -2,18 +2,18 @@
   .globl NACL_AnnotateEnableRaceDetection
   .type NACL_AnnotateEnableRaceDetection, @function
 
-#! file-offset 0x42240
-#! rip-offset  0x42240
+#! file-offset 0x42260
+#! rip-offset  0x42260
 #! capacity    32 bytes
 
 # Text                              #  Line  RIP      Bytes  
-.NACL_AnnotateEnableRaceDetection:  #        0x42240  0      
-  popq %r11                         #  1     0x42240  3      
-  andl $0xffffffe0, %r11d           #  2     0x42243  7      
-  addq %r15, %r11                   #  3     0x4224a  3      
-  jmpq %r11                         #  4     0x4224d  3      
-  nop                               #  5     0x42250  1      
-  nop                               #  6     0x42251  1      
+.NACL_AnnotateEnableRaceDetection:  #        0x42260  0      
+  popq %r11                         #  1     0x42260  3      
+  andl $0xffffffe0, %r11d           #  2     0x42263  7      
+  addq %r15, %r11                   #  3     0x4226a  3      
+  jmpq %r11                         #  4     0x4226d  3      
+  nop                               #  5     0x42270  1      
+  nop                               #  6     0x42271  1      
                                                              
 .size NACL_AnnotateEnableRaceDetection, .-NACL_AnnotateEnableRaceDetection
 
