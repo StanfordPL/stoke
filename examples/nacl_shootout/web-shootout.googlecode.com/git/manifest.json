@@ -1,0 +1,11 @@
+{
+  "name": "NaCl Benchmarking",
+  "description": "Benchmark Native Client against JavaScript",
+  "version": "2",
+  "app": {
+    "launch": {
+      "local_path": "run.html"
+    }
+  },
+  "icons": { "128": "NaCl128.png", "16": "NaCl16.png" }
+}

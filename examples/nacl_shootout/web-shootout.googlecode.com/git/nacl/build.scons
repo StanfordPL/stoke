@@ -1,0 +1,73 @@
+#! -*- python -*-
+#
+# Copyright (c) 2011 The Native Client Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import make_nacl_env
+import nacl_utils
+import os
+
+def MakeNaClModuleEnv(env, sources, module_name, arch_spec, is_debug=False):
+  ''' Like MakeNaClModuleEnvironment, except that it actually does what I 
+  want it to. '''
+  arch, subarch = nacl_utils.GetArchFromSpec(arch_spec)
+  arch_name = '%s_%s' % (arch, subarch)
+  new_env = env.Clone()
+  new_env.AppendOptCCFlags(is_debug)
+  new_env.AppendArchFlags(arch_spec)
+  new_env.Append(CCFLAGS='-Wno-all')
+  #env.FilterOut(CCFLAGS='-Wall')
+  if not is_debug:
+    new_env.Append(LINKFLAGS=['--strip-all'])
+    new_env.Append(CCFLAGS=['-O3'])
+  new_env.Append(LIBPATH=[os.path.join(os.getcwd(), '..', 'third_party', 'libinstall', subarch, 'lib')])
+  return new_env.NaClProgram('%s%s' % (module_name, subarch), 
+                         sources,
+                         variant_dir=module_name + subarch)
+
+nacl_env = make_nacl_env.NaClEnvironment(use_c_plus_plus_libs=True,
+                                         nacl_platform='.',
+                                         toolchain_arch='x86',
+                                         toolchain_variant='newlib')
+
+nacl_env.Append(CPPPATH=['include'],
+                EXTRA_CCFLAGS=['-mfpmath=sse', '-msse3', '-march=nocona'],
+                LIBS=['fftw3', 'm', 'gmp', 'tcmalloc_minimal', 'pthread'])
+
+
+
+benchmark_sources = ['binarytrees.cc', 'fannkuchredux.c', 'fasta.c',
+                     'revcomp.c', 'knucleotide.c', 'nbody.c',
+                     'pidigits.c', 'spectralnorm.c', 'richards.c',
+                     'deltablue.c', 'fft.c']
+framework_sources = ['bench-framework.c', 'benchstringio.c', 'fasta_10k_ref_output.c']
+sources = benchmark_sources + framework_sources
+
+
+cli32 = MakeNaClModuleEnv(nacl_env, sources + ['cli.c'],
+                          module_name='benchmarks',
+                          arch_spec=nacl_utils.ARCH_SPECS['x86-32'])
+run_cli32 = nacl_env.Alias('run_32', source=cli32,
+                              action='$NACL_SEL_LDR32 -B $NACL_IRT_CORE32 $SOURCE')
+nacl_env.AlwaysBuild(run_cli32)
+
+cli64 = MakeNaClModuleEnv(nacl_env, sources + ['cli.c'],
+                          module_name='benchmarks',
+                          arch_spec=nacl_utils.ARCH_SPECS['x86-64'])
+run_cli64 = nacl_env.Alias('run_64', source=cli64,
+                              action='$NACL_SEL_LDR64 -B $NACL_IRT_CORE64 $SOURCE')
+nacl_env.AlwaysBuild(run_cli64)
+
+browser32 = MakeNaClModuleEnv(nacl_env, sources + ['pepper.c'],
+                              module_name='benchmarks_browser',
+                              arch_spec=nacl_utils.ARCH_SPECS['x86-32'])
+
+browser32 = MakeNaClModuleEnv(nacl_env, sources + ['pepper.c'],
+                              module_name='benchmarks_browser',
+                              arch_spec=nacl_utils.ARCH_SPECS['x86-64'])
+
+#print nacl_env.NaClModules(sources, 'test_cli', is_debug=False)
+
+
+#opt, dbg = nacl_env.AllNaClModules(sources, 'test_cli')

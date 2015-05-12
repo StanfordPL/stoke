@@ -1,0 +1,5 @@
+{
+  "program": {
+    "portable": {"pnacl-translate": {"url": "nacl/benchmarks_browser.pexe"}}
+  }
+}

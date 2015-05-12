@@ -1,0 +1,7 @@
+{
+  "program": {
+    "x86-64": {"url": "nacl/benchmarks_browser_pexe64.nexe"},
+    "x86-32": {"url": "nacl/benchmarks_browser_pexe32.nexe"},
+    "arm": {"url": "nacl/benchmarks_browser-arm.nexe"}
+  }
+}

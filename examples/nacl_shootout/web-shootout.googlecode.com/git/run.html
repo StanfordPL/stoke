@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<title>Native Client Benchmark Suite</title>
+<script type="text/javascript" src="js/base.js"></script>
+<script type="text/javascript" src="js/nacl.js"></script>
+<script type="text/javascript" src="js/js.js"></script>
+<link type="text/css" rel="stylesheet" href="style.css" />
+<script type="text/javascript">
+browserAndVersionOK = false;
+
+function ShowWarningIfObsolete() {
+return;
+  // If anything goes wrong we will just catch the exception and no 
+  // warning is shown, i.e., no harm is done.
+  try {
+    var xmlhttp;
+    var next_version = parseInt(BenchmarkSuite.version) + 1; 
+    var next_version_url = "../v" + next_version + "/run.html";  
+    if (window.XMLHttpRequest) {
+      xmlhttp = new window.XMLHttpRequest();
+    } else if (window.ActiveXObject) {
+      xmlhttp = new window.ActiveXObject("Microsoft.XMLHTTP");
+    }
+    xmlhttp.open('GET', next_version_url, true);
+    xmlhttp.onreadystatechange = function() {
+      if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        document.getElementById('obsolete').style.display="block";
+      }
+    };
+    xmlhttp.send(null);
+  } catch(e) {
+    // Ignore exception if check for next version fails. 
+    // Hence no warning is displayed.
+  }
+}
+
+function checkBrowserIsChrome() {
+    return window.navigator.appVersion.match(/Chrome\/(.*?) /) != null;
+}
+
+function checkChromeVersion() {
+    var ver = parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10);
+    return ver >= 21;
+}
+
+function checkPlugins() {
+  for (var i = 0; i < navigator.plugins.length; i++) {
+    if (navigator.plugins[i].name == "Native Client") {
+      return true;
+    }
+  }
+  return false;
+}
+
+function checkNaclEnabled() {
+  return typeof benchmarkNaClModule[1] !== "undefined" &&
+         typeof benchmarkNaClModule[1].postMessage !== "undefined";
+}
+
+function Load() {
+  setupNaclBenchmark(1);
+  setupNaclBenchmark(2);
+
+  document.getElementById("version").innerHTML = BenchmarkSuite.version;
+
+  var warning = document.getElementById("badBrowserOrVersion");
+  var warning_msg = "";
+
+    browserAndVersionOK = true;
+}
+
+function naclBenchmarksFinished() {
+  pnacl_module = document.getElementById("benchmark_nexe3");
+  if (pnacl_module == null) {
+    document.getElementById("module_wrapper3").innerHTML =
+'<embed name="nacl_module3" id="benchmark_nexe3" width=0 height=0' +
+' src="benchmark-pexe.nmf" type="application/x-nacl" />';
+   setupNaclListeners(document.getElementById("module_wrapper3"), 3)
+   setupNaclBenchmark(3);
+  } else {
+    runJSBenchmarks();
+  }
+}
+
+function jsBenchmarkFinished() {
+}
+
+function naclDoneWaiting() {
+  document.getElementById("benchmark").className = "";
+}
+
+</script>
+</head>
+
+<body onload="Load();">
+
+<div id="module_wrapper1">
+<script type="text/javascript">
+  setupNaclListeners(document.getElementById('module_wrapper1'), 1);
+</script>
+<embed name="nacl_module1"
+       id="benchmark_nexe1"
+       width=0 height=0
+       src="benchmark.nmf"
+       type="application/x-nacl" />
+</div>
+
+<!--
+<div id="module_wrapper2">
+<script type="text/javascript">
+  setupNaclListeners(document.getElementById('module_wrapper2'), 2);
+</script>
+<embed name="nacl_module2"
+       id="benchmark_nexe2"
+       width=0 height=0
+       src="benchmark-pnacl-nexe.nmf"
+       type="application/x-nacl" />
+</div>
+-->
+<!--
+<div id="module_wrapper3">
+
+</div>
+-->
+<div class="title">
+<h1>Native Client Benchmark Suite - version <span id="version">?</span>
+</h1></div>
+
+<div class="warning" id="badBrowserOrVersion"></div>
+
+<div id="benchmark" class="disabled">
+
+<div id="results">
+
+<p>
+<em>Please be patient as these benchmarks may take several minutes to complete.</em>
+</p>
+
+<div id="nacl1" class="run">
+  <h3>Native Client (nacl-gcc)</h3>
+  <div id="nacl_status1" class="status"></div>
+  <div id="nacl_results1" class="results"></div>
+  <div class="spinner">X</div>
+</div>
+<div id="javascript" class="run">
+  <h3>JavaScript</h3>
+  <div id="js_status" class="status"></div>
+  <div id="js_results" class="results"></div>
+  <div class="spinner">X</div>
+</div>
+
+</div>
+
+<div id="contents">
+<div>
+This page contains a suite of benchmarks that have been used to measure the performance
+of Native Client.
+The final score is computed as the geometric mean of
+the individual results to make it independent of the running times of
+the individual benchmarks and of a reference system (score
+1000). Scores are not comparable across benchmark suite versions and
+higher scores means better performance. <em>Bigger is better!</em>
+</div>
+
+<ul>
+<li><b>Fannkuchredux</b><br>Indexed access to tiny integer sequence.</li>
+<li><b>Nbody</b><br>Perform an N-body simulation of the Jovian planets.</li>
+<li><b>Spectralnorm</b><br>Calculate an eigenvalue using the power method.</li>
+<li><b>Fasta</b><br>Generate and write random DNA sequences.</li>
+<li><b>Revcomp</b><br>Read DNA sequences - write their reverse-complement.</li>
+<li><b>Binarytrees</b><br>Allocate and deallocate many many binary trees.</li>
+<li><b>Knucleotide</b><br>Repeatedly update hashtables and k-nucleotide strings.</li>
+<li><b>Pidigits</b><br>Calculate the digits of Pi with streaming arbitrary-precision arithmetic.</li>
+</ul>
+
+<p>
+Note that benchmark results are not comparable unless both results are run 
+with the same revision of the benchmark suite.
+We will be making revisions from time to time in order to fix bugs or expand
+the scope of the benchmark suite.
+For previous revisions and the change log see the <a href="revisions.html">revisions</a> page.
+</p>
+
+<p>
+The benchmarks are derived from the
+<a href="http://shootout.alioth.debian.org">Computer Language Benchmark Game</a>,
+which has implementations of the same tasks in many languages 
+(including C and JavaScript, which are used here).
+The benchmark drivers are derived from the 
+<a href="http://v8.googlecode.com/svn/data/benchmarks/current/run.html">V8 Benchmark Suite</a>.
+You can find the <a href="run.html">source code</a> for this site as well as information about
+important <a href="README.benchmarks">changes to the benchmarks</a> needed to adapt them to run in the browser 
+and <a href="run.html">changes to the benchmark harness</a> needed to adapt to the benchmarks in 
+our <a href="run.html">Google code project</a>.
+</p>
+
+<p>
+<b>Important note:</b>
+Since the C and JavaScript benchmarks are completely different implementations,
+contrasting the benchmark results are a bit of an 
+<a href="http://shootout.alioth.debian.org/dont-jump-to-conclusions.php#comparison">apples and oranges</a>
+comparison.
+Also keep in mind that benchmarks are at best approximate indicators of realistic 
+application performance, and performance is only one of many factors to consider when 
+evaluating Native Client.
+</p>
+
+</div>
+
+</div>
+
+</body>
+</html>

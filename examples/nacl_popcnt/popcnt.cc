@@ -8,7 +8,7 @@
 
 #define N 10000000
 
-#define ALWAYS_INLINE inline __attribute__((always_inline)) 
+#define ALWAYS_INLINE inline __attribute__((always_inline))
 #define NO_INLINE __attribute ((noinline))
 
 namespace {
