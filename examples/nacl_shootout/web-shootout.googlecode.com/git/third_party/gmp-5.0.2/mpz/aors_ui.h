@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* mpz_add_ui, mpz_sub_ui -- Add or subtract an mpz_t and an unsigned
    one-word integer.
 
@@ -54,16 +68,16 @@ FUNCTION (mpz_ptr w, mpz_srcptr u, unsigned long int vval)
 
 #if BITS_PER_ULONG > GMP_NUMB_BITS  /* avoid warnings about shift amount */
   if (vval > GMP_NUMB_MAX)
-    {
-      mpz_t v;
-      mp_limb_t vl[2];
-      PTR(v) = vl;
-      vl[0] = vval & GMP_NUMB_MASK;
-      vl[1] = vval >> GMP_NUMB_BITS;
-      SIZ(v) = 2;
-      FUNCTION2 (w, u, v);
-      return;
-    }
+  {
+    mpz_t v;
+    mp_limb_t vl[2];
+    PTR(v) = vl;
+    vl[0] = vval & GMP_NUMB_MASK;
+    vl[1] = vval >> GMP_NUMB_BITS;
+    SIZ(v) = 2;
+    FUNCTION2 (w, u, v);
+    return;
+  }
 #endif
 
   usize = u->_mp_size;
@@ -79,35 +93,35 @@ FUNCTION (mpz_ptr w, mpz_srcptr u, unsigned long int vval)
   wp = w->_mp_d;
 
   if (abs_usize == 0)
-    {
-      wp[0] = vval;
-      w->_mp_size = VARIATION_NEG (vval != 0);
-      return;
-    }
+  {
+    wp[0] = vval;
+    w->_mp_size = VARIATION_NEG (vval != 0);
+    return;
+  }
 
   if (usize VARIATION_CMP 0)
-    {
-      mp_limb_t cy;
-      cy = mpn_add_1 (wp, up, abs_usize, (mp_limb_t) vval);
-      wp[abs_usize] = cy;
-      wsize = VARIATION_NEG (abs_usize + cy);
-    }
+  {
+    mp_limb_t cy;
+    cy = mpn_add_1 (wp, up, abs_usize, (mp_limb_t) vval);
+    wp[abs_usize] = cy;
+    wsize = VARIATION_NEG (abs_usize + cy);
+  }
   else
+  {
+    /* The signs are different.  Need exact comparison to determine
+    which operand to subtract from which.  */
+    if (abs_usize == 1 && up[0] < vval)
     {
-      /* The signs are different.  Need exact comparison to determine
-	 which operand to subtract from which.  */
-      if (abs_usize == 1 && up[0] < vval)
-	{
-	  wp[0] = vval - up[0];
-	  wsize = VARIATION_NEG 1;
-	}
-      else
-	{
-	  mpn_sub_1 (wp, up, abs_usize, (mp_limb_t) vval);
-	  /* Size can decrease with at most one limb.  */
-	  wsize = VARIATION_UNNEG (abs_usize - (wp[abs_usize - 1] == 0));
-	}
+      wp[0] = vval - up[0];
+      wsize = VARIATION_NEG 1;
     }
+    else
+    {
+      mpn_sub_1 (wp, up, abs_usize, (mp_limb_t) vval);
+      /* Size can decrease with at most one limb.  */
+      wsize = VARIATION_UNNEG (abs_usize - (wp[abs_usize - 1] == 0));
+    }
+  }
 
   w->_mp_size = wsize;
 }

@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* operator>> -- C++-style input of mpf_t.
 
 Copyright 2001, 2003 Free Software Foundation, Inc.
@@ -59,63 +73,63 @@ operator>> (istream &i, mpf_ptr f)
   i.get(c); // start reading
 
   if (i.flags() & ios::skipws) // skip initial whitespace
-    {
-      // C++ isspace
+  {
+    // C++ isspace
 #if HAVE_STD__LOCALE
-      const ctype<char>& ct = use_facet< ctype<char> >(loc);
+    const ctype<char>& ct = use_facet< ctype<char> >(loc);
 #define cxx_isspace(c)  (ct.is(ctype_base::space,(c)))
 #else
 #define cxx_isspace(c)  isspace(c)
 #endif
 
-      while (cxx_isspace(c) && i.get(c))
-        ;
-    }
+    while (cxx_isspace(c) && i.get(c))
+      ;
+  }
 
   if (c == '-' || c == '+') // sign
-    {
-      if (c == '-')
-	s = "-";
-      i.get(c);
-    }
+  {
+    if (c == '-')
+      s = "-";
+    i.get(c);
+  }
 
   base = 10;
   __gmp_istream_set_digits(s, i, c, ok, base); // read the number
 
   // look for the C++ radix point, but put the C one in for mpf_set_str
   if (c == point_char)
-    {
+  {
 #if HAVE_STD__LOCALE
-      i.get(c);
+    i.get(c);
 #else // lconv point can be multi-char
-      for (;;)
-        {
-          i.get(c);
-          point++;
-          if (*point == '\0')
-            break;
-          if (c != *point)
-            goto fail;
-        }
-#endif
-      s += lconv_point;
-      __gmp_istream_set_digits(s, i, c, ok, base); // read the mantissa
+    for (;;)
+    {
+      i.get(c);
+      point++;
+      if (*point == '\0')
+        break;
+      if (c != *point)
+        goto fail;
     }
+#endif
+    s += lconv_point;
+    __gmp_istream_set_digits(s, i, c, ok, base); // read the mantissa
+  }
 
   if (ok && (c == 'e' || c == 'E')) // exponent
+  {
+    s += c;
+    i.get(c);
+    ok = false; // exponent is mandatory
+
+    if (c == '-' || c == '+') // sign
     {
       s += c;
       i.get(c);
-      ok = false; // exponent is mandatory
-
-      if (c == '-' || c == '+') // sign
-	{
-	  s += c;
-	  i.get(c);
-	}
-
-      __gmp_istream_set_digits(s, i, c, ok, base); // read the exponent
     }
+
+    __gmp_istream_set_digits(s, i, c, ok, base); // read the exponent
+  }
 
   if (i.good()) // last character read was non-numeric
     i.putback(c);
@@ -125,10 +139,10 @@ operator>> (istream &i, mpf_ptr f)
   if (ok)
     ASSERT_NOCARRY (mpf_set_str(f, s.c_str(), base)); // extract the number
   else
-    {
-    fail:
-      i.setstate(ios::failbit); // read failed
-    }
+  {
+fail:
+    i.setstate(ios::failbit); // read failed
+  }
 
   return i;
 }

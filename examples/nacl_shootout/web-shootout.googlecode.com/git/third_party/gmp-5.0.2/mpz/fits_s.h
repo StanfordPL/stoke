@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* int mpz_fits_X_p (mpz_t z) -- test whether z fits signed type X.
 
 Copyright 1997, 2000, 2001, 2002 Free Software Foundation, Inc.
@@ -37,13 +51,13 @@ FUNCTION (mpz_srcptr z)
 #if GMP_NAIL_BITS != 0
   {
     if ((p[1] >> GMP_NAIL_BITS) == 0)
-      {
-	limb += p[1] << GMP_NUMB_BITS;
-	if (n == 2)
-	  return limb <= MAXIMUM;
-	if (n == -2)
-	  return limb <= - (mp_limb_t) MINIMUM;
-      }
+    {
+      limb += p[1] << GMP_NUMB_BITS;
+      if (n == 2)
+        return limb <= MAXIMUM;
+      if (n == -2)
+        return limb <= - (mp_limb_t) MINIMUM;
+    }
   }
 #endif
   return 0;

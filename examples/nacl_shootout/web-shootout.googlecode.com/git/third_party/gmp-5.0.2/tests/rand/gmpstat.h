@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* gmpstat.h */
 
 /*
@@ -20,8 +34,8 @@ along with the GNU MP Library.  If not, see http://www.gnu.org/licenses/.  */
 
 /* This file requires the following header files: gmp.h */
 
-#ifndef	__GMPSTAT_H__
-#define	__GMPSTAT_H__
+#ifndef __GMPSTAT_H__
+#define __GMPSTAT_H__
 
 /* Global debug flag.  FIXME: Remove. */
 extern int g_debug;
@@ -33,14 +47,14 @@ extern int g_debug;
 
 void
 mpf_freqt (mpf_t Kp,
-	   mpf_t Km,
-	   mpf_t X[],
-	   const unsigned long int n);
+           mpf_t Km,
+           mpf_t X[],
+           const unsigned long int n);
 unsigned long int
 mpz_freqt (mpf_t V,
-	   mpz_t X[],
-	   unsigned int imax,
-	   const unsigned long int n);
+           mpz_t X[],
+           unsigned int imax,
+           const unsigned long int n);
 
 /* Low level functions. */
 void
@@ -55,7 +69,7 @@ ks_table (mpf_t p, mpf_t val, const unsigned int n);
 
 void
 x2_table (double t[],
-	  unsigned int v);
+          unsigned int v);
 
 void
 spectral_test (mpf_t rop[], unsigned int T, mpz_t a, mpz_t m);

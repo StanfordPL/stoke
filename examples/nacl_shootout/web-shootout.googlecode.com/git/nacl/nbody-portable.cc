@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /*
  * The Computer Language Benchmarks Game
  * http://shootout.alioth.debian.org/
@@ -13,7 +27,7 @@
 namespace
 {
 
-template< typename ...  > struct tuple{};
+template< typename ...  > struct tuple {};
 
 template<typename H, typename... T>
 struct tuple<H,T...>
@@ -24,7 +38,7 @@ struct tuple<H,T...>
   head fst;
   tail snd;
 
-  tuple(const head& a,const tail& b):fst(a),snd(b){}
+  tuple(const head& a,const tail& b):fst(a),snd(b) {}
   tuple() = delete;
 };
 
@@ -38,14 +52,14 @@ template<class H, class...T> tuple<H,T...> construct_tuple(H h, T... a)
   return r;
 }
 
-template<class OP> void FOREACH(OP,tuple<>){}
+template<class OP> void FOREACH(OP,tuple<>) {}
 template<typename OP,class ...T> void FOREACH(OP& op,tuple<T...>& t)
 {
   op(t.fst);
   FOREACH(op,t.snd);
 }
 
-template<class OP> void FOR(OP,tuple<>){}
+template<class OP> void FOR(OP,tuple<>) {}
 
 template<typename OP, class ...T> void FOR(OP& op,tuple<T...>& t)
 {
@@ -75,46 +89,46 @@ const body sun =
 
 const body jupiter =
 {
-   4.84143144246472090e+00,
+  4.84143144246472090e+00,
   -1.16032004402742839e+00,
   -1.03622044471123109e-01,
-   1.66007664274403694e-03 * days_per_year,
-   7.69901118419740425e-03 * days_per_year,
+  1.66007664274403694e-03 * days_per_year,
+  7.69901118419740425e-03 * days_per_year,
   -6.90460016972063023e-05 * days_per_year,
-   9.54791938424326609e-04 * solar_mass
+  9.54791938424326609e-04 * solar_mass
 };
 
 const body saturn =
 {
-   8.34336671824457987e+00,
-   4.12479856412430479e+00,
+  8.34336671824457987e+00,
+  4.12479856412430479e+00,
   -4.03523417114321381e-01,
   -2.76742510726862411e-03 * days_per_year,
-   4.99852801234917238e-03 * days_per_year,
-   2.30417297573763929e-05 * days_per_year,
-   2.85885980666130812e-04 * solar_mass
+  4.99852801234917238e-03 * days_per_year,
+  2.30417297573763929e-05 * days_per_year,
+  2.85885980666130812e-04 * solar_mass
 };
 
 const body uranus =
 {
-   1.28943695621391310e+01,
+  1.28943695621391310e+01,
   -1.51111514016986312e+01,
   -2.23307578892655734e-01,
-   2.96460137564761618e-03 * days_per_year,
-   2.37847173959480950e-03 * days_per_year,
+  2.96460137564761618e-03 * days_per_year,
+  2.37847173959480950e-03 * days_per_year,
   -2.96589568540237556e-05 * days_per_year,
-   4.36624404335156298e-05 * solar_mass
+  4.36624404335156298e-05 * solar_mass
 };
 
 const body neptune =
 {
-   1.53796971148509165e+01,
+  1.53796971148509165e+01,
   -2.59193146099879641e+01,
-   1.79258772950371181e-01,
-   2.68067772490389322e-03 * days_per_year,
-   1.62824170038242295e-03 * days_per_year,
+  1.79258772950371181e-01,
+  2.68067772490389322e-03 * days_per_year,
+  1.62824170038242295e-03 * days_per_year,
   -9.51592254519715870e-05 * days_per_year,
-   5.15138902046611451e-05 * solar_mass
+  5.15138902046611451e-05 * solar_mass
 };
 
 
@@ -145,7 +159,7 @@ struct
       foreach_block<decltype(bodies)> run = {bodies};
       FOREACH(run,bodies.snd);
     }
-  }for_block;
+  } for_block;
 
 
   struct
@@ -156,7 +170,7 @@ struct
       body.y += dt * body.vy;
       body.z += dt * body.vz;
     }
-  }foreach_block;
+  } foreach_block;
 
   template<class T> void operator()(T& bodies)
   {
@@ -164,7 +178,7 @@ struct
     FOREACH(foreach_block,bodies);
   }
 
-}advance;
+} advance;
 
 struct
 {
@@ -202,7 +216,7 @@ struct
     return e;
   }
 
-}energy;
+} energy;
 
 struct
 {
@@ -228,7 +242,7 @@ struct
     bodies.fst.vz = -pz / solar_mass;
   }
 
-}offset;
+} offset;
 
 
 }

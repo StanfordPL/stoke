@@ -1,20 +1,34 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* A Bison parser, made by GNU Bison 2.4.3.  */
 
 /* Skeleton interface for Bison's Yacc-like parsers in C
-   
+
       Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006,
    2009, 2010 Free Software Foundation, Inc.
-   
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
@@ -27,7 +41,7 @@
    special exception, which will cause the skeleton and the resulting
    Bison output files to be licensed under the GNU General Public
    License without this special exception.
-   
+
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
@@ -35,38 +49,38 @@
 /* Tokens.  */
 #ifndef YYTOKENTYPE
 # define YYTOKENTYPE
-   /* Put the tokens into the symbol table, so that GDB and other debuggers
-      know about them.  */
-   enum yytokentype {
-     EOS = 258,
-     BAD = 259,
-     HELP = 260,
-     HEX = 261,
-     DECIMAL = 262,
-     QUIT = 263,
-     ABS = 264,
-     BIN = 265,
-     FIB = 266,
-     GCD = 267,
-     KRON = 268,
-     LCM = 269,
-     LUCNUM = 270,
-     NEXTPRIME = 271,
-     POWM = 272,
-     ROOT = 273,
-     SQRT = 274,
-     NUMBER = 275,
-     VARIABLE = 276,
-     LOR = 277,
-     LAND = 278,
-     GE = 279,
-     LE = 280,
-     NE = 281,
-     EQ = 282,
-     RSHIFT = 283,
-     LSHIFT = 284,
-     UMINUS = 285
-   };
+/* Put the tokens into the symbol table, so that GDB and other debuggers
+   know about them.  */
+enum yytokentype {
+  EOS = 258,
+  BAD = 259,
+  HELP = 260,
+  HEX = 261,
+  DECIMAL = 262,
+  QUIT = 263,
+  ABS = 264,
+  BIN = 265,
+  FIB = 266,
+  GCD = 267,
+  KRON = 268,
+  LCM = 269,
+  LUCNUM = 270,
+  NEXTPRIME = 271,
+  POWM = 272,
+  ROOT = 273,
+  SQRT = 274,
+  NUMBER = 275,
+  VARIABLE = 276,
+  LOR = 277,
+  LAND = 278,
+  GE = 279,
+  LE = 280,
+  NE = 281,
+  EQ = 282,
+  RSHIFT = 283,
+  LSHIFT = 284,
+  UMINUS = 285
+};
 #endif
 /* Tokens.  */
 #define EOS 258
@@ -105,7 +119,7 @@
 typedef union YYSTYPE
 {
 
-/* Line 1685 of yacc.c  */
+  /* Line 1685 of yacc.c  */
 #line 142 "calc.y"
 
   char  *str;
@@ -113,7 +127,7 @@ typedef union YYSTYPE
 
 
 
-/* Line 1685 of yacc.c  */
+  /* Line 1685 of yacc.c  */
 #line 118 "calc.h"
 } YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1

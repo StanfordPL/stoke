@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /*
  * The Computer Language Benchmarks Game
  * http://shootout.alioth.debian.org/
@@ -9,8 +23,30 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #include "bench-framework.h"
+
+typedef unsigned long long uint64_t;
+
+uint64_t counter[2];
+uint64_t last;
+
+
+#ifdef PROFILE
+inline uint64_t now() {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return tv.tv_usec + 1000000*tv.tv_sec;
+}
+
+inline uint64_t diff() {
+  uint64_t current = now();
+  uint64_t diff = current - last;
+  last = current;
+  return diff;
+}
+#endif
 
 inline static int max(int a, int b)
 {
@@ -37,6 +73,10 @@ int fannkuchredux(int n)
         perm1[i] = i;
     int r = n;
 
+#ifdef PROFILE
+    last = now();
+#endif
+
     while (1) {
         while (r != 1) {
             count[r-1] = r;
@@ -59,6 +99,10 @@ int fannkuchredux(int n)
         maxFlipsCount = max(maxFlipsCount, flipsCount);
         checksum += permCount % 2 == 0 ? flipsCount : -flipsCount;
 
+#ifdef PROFILE
+        counter[0] += diff();
+#endif
+
         /* Use incremental change to generate another permutation */
         while (1) {
             if (r == n) {
@@ -80,17 +124,34 @@ int fannkuchredux(int n)
             r++;
         }
         permCount++;
+
+#ifdef PROFILE
+        counter[1] += diff();
+#endif
     }
+    return checksum;
 }
 
-/*
+#ifdef DEFMAIN
 int main(int argc, char *argv[])
 {
+#ifdef PROFILE
+    for(size_t i = 0; i < 2; ++i) {
+      counter[i] = 0;
+    }
+#endif
+
     int n = argc > 1 ? atoi(argv[1]) : 7;
     printf("Pfannkuchen(%d) = %d\n", n, fannkuchredux(n));
+
+#ifdef PROFILE
+    for(int i = 0; i < 2; ++i) {
+      printf("counter[%d] = %llu\n", i, counter[i]);
+    }
+#endif
     return 0;
 }
-*/
+#endif
 
 int run_fannkuch(int n) {
   return fannkuchredux(n);

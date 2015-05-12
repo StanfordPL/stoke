@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* mpf_fits_u*_p -- test whether an mpf fits a C unsigned type.
 
 Copyright 2001, 2002 Free Software Foundation, Inc.
@@ -42,19 +56,19 @@ FUNCTION (mpf_srcptr f)
   fp = PTR(f);
 
   if (exp == 1)
-    {
-      fl = fp[fn-1];
-    }
+  {
+    fl = fp[fn-1];
+  }
 #if GMP_NAIL_BITS != 0
   else if (exp == 2 && MAXIMUM > GMP_NUMB_MAX)
-    {
-      fl = fp[fn-1];
-      if ((fl >> GMP_NAIL_BITS) != 0)
-	return 0;
-      fl = (fl << GMP_NUMB_BITS);
-      if (fn >= 2)
-        fl |= fp[fn-2];
-    }
+  {
+    fl = fp[fn-1];
+    if ((fl >> GMP_NAIL_BITS) != 0)
+      return 0;
+    fl = (fl << GMP_NUMB_BITS);
+    if (fn >= 2)
+      fl |= fp[fn-2];
+  }
 #endif
   else
     return 0;

@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* Test for various Toom functions.
 
 Copyright 2009 Free Software Foundation, Inc.
@@ -62,15 +76,15 @@ main (int argc, char **argv)
   TMP_MARK;
 
   if (argc > 1)
+  {
+    char *end;
+    count = strtol (argv[1], &end, 0);
+    if (*end || count <= 0)
     {
-      char *end;
-      count = strtol (argv[1], &end, 0);
-      if (*end || count <= 0)
-	{
-	  fprintf (stderr, "Invalid test count: %s.\n", argv[1]);
-	  return 1;
-	}
+      fprintf (stderr, "Invalid test count: %s.\n", argv[1]);
+      return 1;
     }
+  }
 
   tests_start ();
   rands = RANDS;
@@ -81,76 +95,84 @@ main (int argc, char **argv)
   pp = 1+TMP_ALLOC_LIMBS (MAX_AN + MAX_BN(MAX_AN)+2);
   scratch
     = 1+TMP_ALLOC_LIMBS (mpn_toomMN_mul_itch (MAX_AN, MAX_BN(MAX_AN))
-			 + 2);
+                         + 2);
 
   for (test = 0; test < count; test++)
+  {
+    unsigned size_min;
+    unsigned size_range;
+    mp_size_t an, bn;
+    mp_size_t itch;
+    mp_limb_t p_before, p_after, s_before, s_after;
+
+    for (size_min = 1; (1L << size_min) < MIN_AN; size_min++)
+      ;
+
+    /* We generate an in the MIN_AN <= an <= (1 << size_range). */
+    size_range = size_min
+                 + gmp_urandomm_ui (rands, SIZE_LOG + 1 - size_min);
+
+    an = MIN_AN
+         + gmp_urandomm_ui (rands, (1L << size_range) + 1 - MIN_AN);
+    bn = MIN_BN(an)
+         + gmp_urandomm_ui (rands, MAX_BN(an) + 1 - MIN_BN(an));
+
+    mpn_random2 (ap, an);
+    mpn_random2 (bp, bn);
+    mpn_random2 (pp-1, an + bn + 2);
+    p_before = pp[-1];
+    p_after = pp[an + bn];
+
+    itch = mpn_toomMN_mul_itch (an, bn);
+    ASSERT_ALWAYS (itch <= mpn_toomMN_mul_itch (MAX_AN, MAX_BN(MAX_AN)));
+    mpn_random2 (scratch-1, itch+2);
+    s_before = scratch[-1];
+    s_after = scratch[itch];
+
+    mpn_toomMN_mul (pp, ap, an, bp, bn, scratch);
+    refmpn_mul (refp, ap, an, bp, bn);
+    if (pp[-1] != p_before || pp[an + bn] != p_after
+        || scratch[-1] != s_before || scratch[itch] != s_after
+        || mpn_cmp (refp, pp, an + bn) != 0)
     {
-      unsigned size_min;
-      unsigned size_range;
-      mp_size_t an, bn;
-      mp_size_t itch;
-      mp_limb_t p_before, p_after, s_before, s_after;
+      printf ("ERROR in test %d, an = %d, bn = %d\n",
+              test, (int) an, (int) bn);
+      if (pp[-1] != p_before)
+      {
+        printf ("before pp:");
+        mpn_dump (pp -1, 1);
+        printf ("keep:   ");
+        mpn_dump (&p_before, 1);
+      }
+      if (pp[an + bn] != p_after)
+      {
+        printf ("after pp:");
+        mpn_dump (pp + an + bn, 1);
+        printf ("keep:   ");
+        mpn_dump (&p_after, 1);
+      }
+      if (scratch[-1] != s_before)
+      {
+        printf ("before scratch:");
+        mpn_dump (scratch-1, 1);
+        printf ("keep:   ");
+        mpn_dump (&s_before, 1);
+      }
+      if (scratch[itch] != s_after)
+      {
+        printf ("after scratch:");
+        mpn_dump (scratch + itch, 1);
+        printf ("keep:   ");
+        mpn_dump (&s_after, 1);
+      }
+      mpn_dump (ap, an);
+      mpn_dump (bp, bn);
+      mpn_dump (pp, an + bn);
+      mpn_dump (refp, an + bn);
 
-      for (size_min = 1; (1L << size_min) < MIN_AN; size_min++)
-	;
-
-      /* We generate an in the MIN_AN <= an <= (1 << size_range). */
-      size_range = size_min
-	+ gmp_urandomm_ui (rands, SIZE_LOG + 1 - size_min);
-
-      an = MIN_AN
-	+ gmp_urandomm_ui (rands, (1L << size_range) + 1 - MIN_AN);
-      bn = MIN_BN(an)
-	+ gmp_urandomm_ui (rands, MAX_BN(an) + 1 - MIN_BN(an));
-
-      mpn_random2 (ap, an);
-      mpn_random2 (bp, bn);
-      mpn_random2 (pp-1, an + bn + 2);
-      p_before = pp[-1];
-      p_after = pp[an + bn];
-
-      itch = mpn_toomMN_mul_itch (an, bn);
-      ASSERT_ALWAYS (itch <= mpn_toomMN_mul_itch (MAX_AN, MAX_BN(MAX_AN)));
-      mpn_random2 (scratch-1, itch+2);
-      s_before = scratch[-1];
-      s_after = scratch[itch];
-
-      mpn_toomMN_mul (pp, ap, an, bp, bn, scratch);
-      refmpn_mul (refp, ap, an, bp, bn);
-      if (pp[-1] != p_before || pp[an + bn] != p_after
-	  || scratch[-1] != s_before || scratch[itch] != s_after
-	  || mpn_cmp (refp, pp, an + bn) != 0)
-	{
-	  printf ("ERROR in test %d, an = %d, bn = %d\n",
-		  test, (int) an, (int) bn);
-	  if (pp[-1] != p_before)
-	    {
-	      printf ("before pp:"); mpn_dump (pp -1, 1);
-	      printf ("keep:   "); mpn_dump (&p_before, 1);
-	    }
-	  if (pp[an + bn] != p_after)
-	    {
-	      printf ("after pp:"); mpn_dump (pp + an + bn, 1);
-	      printf ("keep:   "); mpn_dump (&p_after, 1);
-	    }
-	  if (scratch[-1] != s_before)
-	    {
-	      printf ("before scratch:"); mpn_dump (scratch-1, 1);
-	      printf ("keep:   "); mpn_dump (&s_before, 1);
-	    }
-	  if (scratch[itch] != s_after)
-	    {
-	      printf ("after scratch:"); mpn_dump (scratch + itch, 1);
-	      printf ("keep:   "); mpn_dump (&s_after, 1);
-	    }
-	  mpn_dump (ap, an);
-	  mpn_dump (bp, bn);
-	  mpn_dump (pp, an + bn);
-	  mpn_dump (refp, an + bn);
-
-	  abort();
-	}
+      abort();
     }
+  }
   TMP_FREE;
 
   tests_end ();

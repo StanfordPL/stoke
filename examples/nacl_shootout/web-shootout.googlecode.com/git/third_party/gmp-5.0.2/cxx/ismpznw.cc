@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* __gmpz_operator_in_nowhite -- C++-style input of mpz_t, no whitespace skip.
 
 Copyright 2001, 2003 Free Software Foundation, Inc.
@@ -37,11 +51,11 @@ __gmpz_operator_in_nowhite (istream &i, mpz_ptr z, char c)
   bool ok = false, zero, showbase;
 
   if (c == '-' || c == '+') // sign
-    {
-      if (c == '-') // mpz_set_str doesn't accept '+'
-	s = "-";
-      i.get(c);
-    }
+  {
+    if (c == '-') // mpz_set_str doesn't accept '+'
+      s = "-";
+    i.get(c);
+  }
 
   base = __gmp_istream_set_base(i, c, zero, showbase); // select the base
   __gmp_istream_set_digits(s, i, c, ok, base);         // read the number

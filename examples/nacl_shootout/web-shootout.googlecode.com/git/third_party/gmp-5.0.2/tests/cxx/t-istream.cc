@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* Test istream formatted input.
 
 Copyright 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
@@ -60,11 +74,11 @@ check_putback_tellg (void)
   new_pos = input.tellg();
 
   if (old_pos == new_pos)
-    {
-      cout << "Warning, istringstream has a bug: putback() doesn't update tellg().\n";;
-      cout << "Tests on tellg() will be skipped.\n";
-      putback_tellg_works = 0;
-    }
+  {
+    cout << "Warning, istringstream has a bug: putback() doesn't update tellg().\n";;
+    cout << "Tests on tellg() will be skipped.\n";
+    putback_tellg_works = 0;
+  }
 }
 
 
@@ -140,83 +154,83 @@ check_mpz (void)
   mpz_init (want);
 
   for (size_t i = 0; i < numberof (data); i++)
+  {
+    want_pos = (data[i].want_pos == -1
+                ? strlen (data[i].input) : data[i].want_pos);
+
+    want_ok = (data[i].want != NULL);
+
+    if (data[i].want != NULL)
+      mpz_set_str_or_abort (want, data[i].want, 0);
+    else
+      mpz_set_ui (want, 0L);
+
+    if (option_check_standard && mpz_fits_slong_p (want))
     {
-      want_pos = (data[i].want_pos == -1
-                  ? strlen (data[i].input) : data[i].want_pos);
+      istringstream  input (data[i].input);
+      input.flags (data[i].flags);
+      init_tellg = input.tellg();
+      want_si = mpz_get_si (want);
 
-      want_ok = (data[i].want != NULL);
+      input >> got_si;
+      got_ok = (input ? 1 : 0);
+      input.clear();
+      got_pos = input.tellg() - init_tellg;
 
-      if (data[i].want != NULL)
-        mpz_set_str_or_abort (want, data[i].want, 0);
-      else
-        mpz_set_ui (want, 0L);
-
-      if (option_check_standard && mpz_fits_slong_p (want))
-        {
-          istringstream  input (data[i].input);
-          input.flags (data[i].flags);
-          init_tellg = input.tellg();
-          want_si = mpz_get_si (want);
-
-          input >> got_si;
-          got_ok = (input ? 1 : 0);
-          input.clear();
-          got_pos = input.tellg() - init_tellg;
-
-          if (got_ok != want_ok)
-            {
-              WRONG ("stdc++ operator>> wrong status, check_mpz");
-              cout << "  want_ok: " << want_ok << "\n";
-              cout << "  got_ok:  " << got_ok << "\n";
-            }
-          if (want_ok && got_si != want_si)
-            {
-              WRONG ("stdc++ operator>> wrong result, check_mpz");
-              cout << "  got_si:  " << got_si << "\n";
-              cout << "  want_si: " << want_si << "\n";
-            }
-          if (putback_tellg_works && got_pos != want_pos)
-            {
-              WRONG ("stdc++ operator>> wrong position, check_mpz");
-              cout << "  want_pos: " << want_pos << "\n";
-              cout << "  got_pos:  " << got_pos << "\n";
-            }
-        }
-
+      if (got_ok != want_ok)
       {
-        istringstream  input (data[i].input);
-        input.flags (data[i].flags);
-        init_tellg = input.tellg();
-
-        mpz_set_ui (got, 0xDEAD);
-        input >> got;
-        got_ok = (input ? 1 : 0);
-        input.clear();
-        got_pos = input.tellg() - init_tellg;
-
-        if (got_ok != want_ok)
-          {
-            WRONG ("mpz operator>> wrong status");
-            cout << "  want_ok: " << want_ok << "\n";
-            cout << "  got_ok:  " << got_ok << "\n";
-            abort ();
-          }
-        if (want_ok && mpz_cmp (got, want) != 0)
-          {
-            WRONG ("mpz operator>> wrong result");
-            mpz_trace ("  got ", got);
-            mpz_trace ("  want", want);
-            abort ();
-          }
-        if (putback_tellg_works && got_pos != want_pos)
-          {
-            WRONG ("mpz operator>> wrong position");
-            cout << "  want_pos: " << want_pos << "\n";
-            cout << "  got_pos:  " << got_pos << "\n";
-            abort ();
-          }
+        WRONG ("stdc++ operator>> wrong status, check_mpz");
+        cout << "  want_ok: " << want_ok << "\n";
+        cout << "  got_ok:  " << got_ok << "\n";
+      }
+      if (want_ok && got_si != want_si)
+      {
+        WRONG ("stdc++ operator>> wrong result, check_mpz");
+        cout << "  got_si:  " << got_si << "\n";
+        cout << "  want_si: " << want_si << "\n";
+      }
+      if (putback_tellg_works && got_pos != want_pos)
+      {
+        WRONG ("stdc++ operator>> wrong position, check_mpz");
+        cout << "  want_pos: " << want_pos << "\n";
+        cout << "  got_pos:  " << got_pos << "\n";
       }
     }
+
+    {
+      istringstream  input (data[i].input);
+      input.flags (data[i].flags);
+      init_tellg = input.tellg();
+
+      mpz_set_ui (got, 0xDEAD);
+      input >> got;
+      got_ok = (input ? 1 : 0);
+      input.clear();
+      got_pos = input.tellg() - init_tellg;
+
+      if (got_ok != want_ok)
+      {
+        WRONG ("mpz operator>> wrong status");
+        cout << "  want_ok: " << want_ok << "\n";
+        cout << "  got_ok:  " << got_ok << "\n";
+        abort ();
+      }
+      if (want_ok && mpz_cmp (got, want) != 0)
+      {
+        WRONG ("mpz operator>> wrong result");
+        mpz_trace ("  got ", got);
+        mpz_trace ("  want", want);
+        abort ();
+      }
+      if (putback_tellg_works && got_pos != want_pos)
+      {
+        WRONG ("mpz operator>> wrong position");
+        cout << "  want_pos: " << want_pos << "\n";
+        cout << "  got_pos:  " << got_pos << "\n";
+        abort ();
+      }
+    }
+  }
 
   mpz_clear (got);
   mpz_clear (want);
@@ -282,88 +296,88 @@ check_mpq (void)
   mpq_init (want);
 
   for (size_t i = 0; i < numberof (data); i++)
+  {
+    want_pos = (data[i].want_pos == -1
+                ? strlen (data[i].input) : data[i].want_pos);
+
+    want_ok = (data[i].want != NULL);
+
+    if (data[i].want != NULL)
+      mpq_set_str_or_abort (want, data[i].want, 0);
+    else
+      mpq_set_ui (want, 0L, 1L);
+
+    if (option_check_standard
+        && mpz_fits_slong_p (mpq_numref(want))
+        && mpz_cmp_ui (mpq_denref(want), 1L) == 0)
     {
-      want_pos = (data[i].want_pos == -1
-                  ? strlen (data[i].input) : data[i].want_pos);
+      istringstream  input (data[i].input);
+      input.flags (data[i].flags);
+      init_tellg = input.tellg();
+      want_si = mpz_get_si (mpq_numref(want));
 
-      want_ok = (data[i].want != NULL);
+      input >> got_si;
+      got_ok = (input ? 1 : 0);
+      input.clear();
+      got_pos = input.tellg() - init_tellg;
 
-      if (data[i].want != NULL)
-        mpq_set_str_or_abort (want, data[i].want, 0);
-      else
-        mpq_set_ui (want, 0L, 1L);
-
-      if (option_check_standard
-          && mpz_fits_slong_p (mpq_numref(want))
-          && mpz_cmp_ui (mpq_denref(want), 1L) == 0)
-        {
-          istringstream  input (data[i].input);
-          input.flags (data[i].flags);
-          init_tellg = input.tellg();
-          want_si = mpz_get_si (mpq_numref(want));
-
-          input >> got_si;
-          got_ok = (input ? 1 : 0);
-          input.clear();
-          got_pos = input.tellg() - init_tellg;
-
-          if (got_ok != want_ok)
-            {
-              WRONG ("stdc++ operator>> wrong status, check_mpq");
-              cout << "  want_ok: " << want_ok << "\n";
-              cout << "  got_ok:  " << got_ok << "\n";
-            }
-          if (want_ok && want_si != got_si)
-            {
-              WRONG ("stdc++ operator>> wrong result, check_mpq");
-              cout << "  got_si:  " << got_si << "\n";
-              cout << "  want_si: " << want_si << "\n";
-            }
-          if (putback_tellg_works && got_pos != want_pos)
-            {
-              WRONG ("stdc++ operator>> wrong position, check_mpq");
-              cout << "  want_pos: " << want_pos << "\n";
-              cout << "  got_pos:  " << got_pos << "\n";
-            }
-        }
-
+      if (got_ok != want_ok)
       {
-        istringstream  input (data[i].input);
-        input.flags (data[i].flags);
-        init_tellg = input.tellg();
-        mpq_set_si (got, 0xDEAD, 0xBEEF);
-
-        input >> got;
-        got_ok = (input ? 1 : 0);
-        input.clear();
-        got_pos = input.tellg() - init_tellg;
-
-        if (got_ok != want_ok)
-          {
-            WRONG ("mpq operator>> wrong status");
-            cout << "  want_ok: " << want_ok << "\n";
-            cout << "  got_ok:  " << got_ok << "\n";
-            abort ();
-          }
-        // don't use mpq_equal, since we allow non-normalized values to be
-        // read, which can trigger ASSERTs in mpq_equal
-        if (want_ok && (mpz_cmp (mpq_numref (got), mpq_numref(want)) != 0
-                        || mpz_cmp (mpq_denref (got), mpq_denref(want)) != 0))
-          {
-            WRONG ("mpq operator>> wrong result");
-            mpq_trace ("  got ", got);
-            mpq_trace ("  want", want);
-            abort ();
-          }
-        if (putback_tellg_works && got_pos != want_pos)
-          {
-            WRONG ("mpq operator>> wrong position");
-            cout << "  want_pos: " << want_pos << "\n";
-            cout << "  got_pos:  " << got_pos << "\n";
-            abort ();
-          }
+        WRONG ("stdc++ operator>> wrong status, check_mpq");
+        cout << "  want_ok: " << want_ok << "\n";
+        cout << "  got_ok:  " << got_ok << "\n";
+      }
+      if (want_ok && want_si != got_si)
+      {
+        WRONG ("stdc++ operator>> wrong result, check_mpq");
+        cout << "  got_si:  " << got_si << "\n";
+        cout << "  want_si: " << want_si << "\n";
+      }
+      if (putback_tellg_works && got_pos != want_pos)
+      {
+        WRONG ("stdc++ operator>> wrong position, check_mpq");
+        cout << "  want_pos: " << want_pos << "\n";
+        cout << "  got_pos:  " << got_pos << "\n";
       }
     }
+
+    {
+      istringstream  input (data[i].input);
+      input.flags (data[i].flags);
+      init_tellg = input.tellg();
+      mpq_set_si (got, 0xDEAD, 0xBEEF);
+
+      input >> got;
+      got_ok = (input ? 1 : 0);
+      input.clear();
+      got_pos = input.tellg() - init_tellg;
+
+      if (got_ok != want_ok)
+      {
+        WRONG ("mpq operator>> wrong status");
+        cout << "  want_ok: " << want_ok << "\n";
+        cout << "  got_ok:  " << got_ok << "\n";
+        abort ();
+      }
+      // don't use mpq_equal, since we allow non-normalized values to be
+      // read, which can trigger ASSERTs in mpq_equal
+      if (want_ok && (mpz_cmp (mpq_numref (got), mpq_numref(want)) != 0
+                      || mpz_cmp (mpq_denref (got), mpq_denref(want)) != 0))
+      {
+        WRONG ("mpq operator>> wrong result");
+        mpq_trace ("  got ", got);
+        mpq_trace ("  want", want);
+        abort ();
+      }
+      if (putback_tellg_works && got_pos != want_pos)
+      {
+        WRONG ("mpq operator>> wrong position");
+        cout << "  want_pos: " << want_pos << "\n";
+        cout << "  got_pos:  " << got_pos << "\n";
+        abort ();
+      }
+    }
+  }
 
   mpq_clear (got);
   mpq_clear (want);
@@ -436,83 +450,83 @@ check_mpf (void)
   mpf_init (want);
 
   for (size_t i = 0; i < numberof (data); i++)
+  {
+    want_pos = (data[i].want_pos == -1
+                ? strlen (data[i].input) : data[i].want_pos);
+
+    want_ok = (data[i].want != NULL);
+
+    if (data[i].want != NULL)
+      mpf_set_str_or_abort (want, data[i].want, 0);
+    else
+      mpf_set_ui (want, 0L);
+
+    want_d = mpf_get_d (want);
+    if (option_check_standard && mpf_cmp_d (want, want_d) == 0)
     {
-      want_pos = (data[i].want_pos == -1
-                  ? strlen (data[i].input) : data[i].want_pos);
+      istringstream  input (data[i].input);
+      input.flags (data[i].flags);
+      init_tellg = input.tellg();
 
-      want_ok = (data[i].want != NULL);
+      input >> got_d;
+      got_ok = (input ? 1 : 0);
+      input.clear();
+      got_pos = input.tellg() - init_tellg;
 
-      if (data[i].want != NULL)
-        mpf_set_str_or_abort (want, data[i].want, 0);
-      else
-        mpf_set_ui (want, 0L);
-
-      want_d = mpf_get_d (want);
-      if (option_check_standard && mpf_cmp_d (want, want_d) == 0)
-        {
-          istringstream  input (data[i].input);
-          input.flags (data[i].flags);
-          init_tellg = input.tellg();
-
-          input >> got_d;
-          got_ok = (input ? 1 : 0);
-          input.clear();
-          got_pos = input.tellg() - init_tellg;
-
-          if (got_ok != want_ok)
-            {
-              WRONG ("stdc++ operator>> wrong status, check_mpf");
-              cout << "  want_ok: " << want_ok << "\n";
-              cout << "  got_ok:  " << got_ok << "\n";
-            }
-          if (want_ok && want_d != got_d)
-            {
-              WRONG ("stdc++ operator>> wrong result, check_mpf");
-              cout << "  got:   " << got_d << "\n";
-              cout << "  want:  " << want_d << "\n";
-            }
-          if (putback_tellg_works && got_pos != want_pos)
-            {
-              WRONG ("stdc++ operator>> wrong position, check_mpf");
-              cout << "  want_pos: " << want_pos << "\n";
-              cout << "  got_pos:  " << got_pos << "\n";
-            }
-        }
-
+      if (got_ok != want_ok)
       {
-        istringstream  input (data[i].input);
-        input.flags (data[i].flags);
-        init_tellg = input.tellg();
-
-        mpf_set_ui (got, 0xDEAD);
-        input >> got;
-        got_ok = (input ? 1 : 0);
-        input.clear();
-        got_pos = input.tellg() - init_tellg;
-
-        if (got_ok != want_ok)
-          {
-            WRONG ("mpf operator>> wrong status");
-            cout << "  want_ok: " << want_ok << "\n";
-            cout << "  got_ok:  " << got_ok << "\n";
-            abort ();
-          }
-        if (want_ok && mpf_cmp (got, want) != 0)
-          {
-            WRONG ("mpf operator>> wrong result");
-            mpf_trace ("  got ", got);
-            mpf_trace ("  want", want);
-            abort ();
-          }
-        if (putback_tellg_works && got_pos != want_pos)
-          {
-            WRONG ("mpf operator>> wrong position");
-            cout << "  want_pos: " << want_pos << "\n";
-            cout << "  got_pos:  " << got_pos << "\n";
-            abort ();
-          }
+        WRONG ("stdc++ operator>> wrong status, check_mpf");
+        cout << "  want_ok: " << want_ok << "\n";
+        cout << "  got_ok:  " << got_ok << "\n";
+      }
+      if (want_ok && want_d != got_d)
+      {
+        WRONG ("stdc++ operator>> wrong result, check_mpf");
+        cout << "  got:   " << got_d << "\n";
+        cout << "  want:  " << want_d << "\n";
+      }
+      if (putback_tellg_works && got_pos != want_pos)
+      {
+        WRONG ("stdc++ operator>> wrong position, check_mpf");
+        cout << "  want_pos: " << want_pos << "\n";
+        cout << "  got_pos:  " << got_pos << "\n";
       }
     }
+
+    {
+      istringstream  input (data[i].input);
+      input.flags (data[i].flags);
+      init_tellg = input.tellg();
+
+      mpf_set_ui (got, 0xDEAD);
+      input >> got;
+      got_ok = (input ? 1 : 0);
+      input.clear();
+      got_pos = input.tellg() - init_tellg;
+
+      if (got_ok != want_ok)
+      {
+        WRONG ("mpf operator>> wrong status");
+        cout << "  want_ok: " << want_ok << "\n";
+        cout << "  got_ok:  " << got_ok << "\n";
+        abort ();
+      }
+      if (want_ok && mpf_cmp (got, want) != 0)
+      {
+        WRONG ("mpf operator>> wrong result");
+        mpf_trace ("  got ", got);
+        mpf_trace ("  want", want);
+        abort ();
+      }
+      if (putback_tellg_works && got_pos != want_pos)
+      {
+        WRONG ("mpf operator>> wrong position");
+        cout << "  want_pos: " << want_pos << "\n";
+        cout << "  got_pos:  " << got_pos << "\n";
+        abort ();
+      }
+    }
+  }
 
   mpf_clear (got);
   mpf_clear (want);

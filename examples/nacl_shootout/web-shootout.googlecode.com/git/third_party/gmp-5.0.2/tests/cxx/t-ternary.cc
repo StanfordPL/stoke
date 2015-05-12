@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* Test mp*_class ternary expressions.
 
 Copyright 2001, 2002, 2003 Free Software Foundation, Inc.
@@ -42,12 +56,14 @@ check_mpz_1 (void)
   {
     mpz_class a(1), b(2), c(3);
     mpz_class d;
-    d = a + b * c; ASSERT_ALWAYS(d == 7);
+    d = a + b * c;
+    ASSERT_ALWAYS(d == 7);
   }
   {
     mpz_class a(1), b(2), c(3);
     mpz_class d;
-    d = a - b * c; ASSERT_ALWAYS(d == -5);
+    d = a - b * c;
+    ASSERT_ALWAYS(d == -5);
   }
 }
 
@@ -61,13 +77,15 @@ check_mpz_2 (void)
     mpz_class a(1), b(2);
     signed int c = 3;
     mpz_class d;
-    d = a + b * c; ASSERT_ALWAYS(d == 7);
+    d = a + b * c;
+    ASSERT_ALWAYS(d == 7);
   }
   {
     mpz_class a(1), b(2);
     signed int c = 3;
     mpz_class d;
-    d = a - b * c; ASSERT_ALWAYS(d == -5);
+    d = a - b * c;
+    ASSERT_ALWAYS(d == -5);
   }
 }
 
@@ -81,13 +99,15 @@ check_mpz_3 (void)
     mpz_class a(1), b(2);
     unsigned int c = 3;
     mpz_class d;
-    d = a + c * b; ASSERT_ALWAYS(d == 7);
+    d = a + c * b;
+    ASSERT_ALWAYS(d == 7);
   }
   {
     mpz_class a(1), b(2);
     unsigned int c = 3;
     mpz_class d;
-    d = a - c * b; ASSERT_ALWAYS(d == -5);
+    d = a - c * b;
+    ASSERT_ALWAYS(d == -5);
   }
 }
 
@@ -101,13 +121,15 @@ check_mpz_4 (void)
     mpz_class a(1), b(2), c(3);
     double d = 4.0;
     mpz_class e;
-    e = a + b * (c + d); ASSERT_ALWAYS(e == 15);
+    e = a + b * (c + d);
+    ASSERT_ALWAYS(e == 15);
   }
   {
     mpz_class a(1), b(2), c(3);
     double d = 4.0;
     mpz_class e;
-    e = a - b * (c + d); ASSERT_ALWAYS(e == -13);
+    e = a - b * (c + d);
+    ASSERT_ALWAYS(e == -13);
   }
 }
 
@@ -121,13 +143,15 @@ check_mpz_5 (void)
     mpz_class a(1), b(2), c(3);
     signed int d = 4;
     mpz_class e;
-    e = a + (b - d) * c; ASSERT_ALWAYS(e == -5);
+    e = a + (b - d) * c;
+    ASSERT_ALWAYS(e == -5);
   }
   {
     mpz_class a(1), b(2), c(3);
     signed int d = 4;
     mpz_class e;
-    e = a - (b - d) * c; ASSERT_ALWAYS(e == 7);
+    e = a - (b - d) * c;
+    ASSERT_ALWAYS(e == 7);
   }
 }
 
@@ -141,13 +165,15 @@ check_mpz_6 (void)
     mpz_class a(1), b(2);
     unsigned int c = 3, d = 4;
     mpz_class e;
-    e = a + (b + c) * d; ASSERT_ALWAYS(e == 21);
+    e = a + (b + c) * d;
+    ASSERT_ALWAYS(e == 21);
   }
   {
     mpz_class a(1), b(2);
     unsigned int c = 3, d = 4;
     mpz_class e;
-    e = a - (b + c) * d; ASSERT_ALWAYS(e == -19);
+    e = a - (b + c) * d;
+    ASSERT_ALWAYS(e == -19);
   }
 }
 
@@ -161,13 +187,15 @@ check_mpz_7 (void)
     mpz_class a(1), b(2);
     double c = 3.0, d = 4.0;
     mpz_class e;
-    e = a + c * (b + d); ASSERT_ALWAYS(e == 19);
+    e = a + c * (b + d);
+    ASSERT_ALWAYS(e == 19);
   }
   {
     mpz_class a(1), b(2);
     double c = 3.0, d = 4.0;
     mpz_class e;
-    e = a - c * (b + d); ASSERT_ALWAYS(e == -17);
+    e = a - c * (b + d);
+    ASSERT_ALWAYS(e == -17);
   }
 }
 
@@ -182,13 +210,15 @@ check_mpz_8 (void)
     mpz_class a(1), b(2), c(3);
     signed int d = 4, e = 5;
     mpz_class f;
-    f = a + (b - d) * (c + e); ASSERT_ALWAYS(f == -15);
+    f = a + (b - d) * (c + e);
+    ASSERT_ALWAYS(f == -15);
   }
   {
     mpz_class a(1), b(2), c(3);
     signed int d = 4, e = 5;
     mpz_class f;
-    f = a - (b - d) * (c + e); ASSERT_ALWAYS(f == 17);
+    f = a - (b - d) * (c + e);
+    ASSERT_ALWAYS(f == 17);
   }
 }
 
@@ -202,13 +232,15 @@ check_mpz_9 (void)
     mpz_class a(1), b(2), c(3);
     unsigned int d = 4;
     mpz_class e;
-    e = (a + d) + b * c; ASSERT_ALWAYS(e == 11);
+    e = (a + d) + b * c;
+    ASSERT_ALWAYS(e == 11);
   }
   {
     mpz_class a(1), b(2), c(3);
     unsigned int d = 4;
     mpz_class e;
-    e = (a + d) - b * c; ASSERT_ALWAYS(e == -1);
+    e = (a + d) - b * c;
+    ASSERT_ALWAYS(e == -1);
   }
 }
 
@@ -222,13 +254,15 @@ check_mpz_10 (void)
     mpz_class a(1), b(2);
     double c = 3.0, d = 4.0;
     mpz_class e;
-    e = (a - c) + b * d; ASSERT_ALWAYS(e == 6);
+    e = (a - c) + b * d;
+    ASSERT_ALWAYS(e == 6);
   }
   {
     mpz_class a(1), b(2);
     double c = 3.0, d = 4.0;
     mpz_class e;
-    e = (a - c) - b * d; ASSERT_ALWAYS(e == -10);
+    e = (a - c) - b * d;
+    ASSERT_ALWAYS(e == -10);
   }
 }
 
@@ -242,13 +276,15 @@ check_mpz_11 (void)
     mpz_class a(1), b(2);
     signed int c = 3, d = 4;
     mpz_class e;
-    e = (a - c) + d * b; ASSERT_ALWAYS(e == 6);
+    e = (a - c) + d * b;
+    ASSERT_ALWAYS(e == 6);
   }
   {
     mpz_class a(1), b(2);
     signed int c = 3, d = 4;
     mpz_class e;
-    e = (a - c) - d * b; ASSERT_ALWAYS(e == -10);
+    e = (a - c) - d * b;
+    ASSERT_ALWAYS(e == -10);
   }
 }
 
@@ -262,13 +298,15 @@ check_mpz_12 (void)
     mpz_class a(1), b(2), c(3);
     unsigned int d = 4, e = 5;
     mpz_class f;
-    f = (a + d) + b * (c - e); ASSERT_ALWAYS(f == 1);
+    f = (a + d) + b * (c - e);
+    ASSERT_ALWAYS(f == 1);
   }
   {
     mpz_class a(1), b(2), c(3);
     unsigned int d = 4, e = 5;
     mpz_class f;
-    f = (a + d) - b * (c - e); ASSERT_ALWAYS(f == 9);
+    f = (a + d) - b * (c - e);
+    ASSERT_ALWAYS(f == 9);
   }
 }
 
@@ -282,13 +320,15 @@ check_mpz_13 (void)
     mpz_class a(1), b(2), c(3);
     double d = 4.0, e = 5.0;
     mpz_class f;
-    f = (a - d) + (b + e) * c; ASSERT_ALWAYS(f == 18);
+    f = (a - d) + (b + e) * c;
+    ASSERT_ALWAYS(f == 18);
   }
   {
     mpz_class a(1), b(2), c(3);
     double d = 4.0, e = 5.0;
     mpz_class f;
-    f = (a - d) - (b + e) * c; ASSERT_ALWAYS(f == -24);
+    f = (a - d) - (b + e) * c;
+    ASSERT_ALWAYS(f == -24);
   }
 
 }
@@ -303,13 +343,15 @@ check_mpz_14 (void)
     mpz_class a(1), b(2);
     signed int c = 3, d = 4, e = 5;
     mpz_class f;
-    f = (a + c) + (b + d) * e; ASSERT_ALWAYS(f == 34);
+    f = (a + c) + (b + d) * e;
+    ASSERT_ALWAYS(f == 34);
   }
   {
     mpz_class a(1), b(2);
     signed int c = 3, d = 4, e = 5;
     mpz_class f;
-    f = (a + c) - (b + d) * e; ASSERT_ALWAYS(f == -26);
+    f = (a + c) - (b + d) * e;
+    ASSERT_ALWAYS(f == -26);
   }
 }
 
@@ -323,13 +365,15 @@ check_mpz_15 (void)
     mpz_class a(1), b(2);
     unsigned int c = 3, d = 4, e = 5;
     mpz_class f;
-    f = (a - c) + d * (b - e); ASSERT_ALWAYS(f == -14);
+    f = (a - c) + d * (b - e);
+    ASSERT_ALWAYS(f == -14);
   }
   {
     mpz_class a(1), b(2);
     unsigned int c = 3, d = 4, e = 5;
     mpz_class f;
-    f = (a - c) - d * (b - e); ASSERT_ALWAYS(f == 10);
+    f = (a - c) - d * (b - e);
+    ASSERT_ALWAYS(f == 10);
   }
 
 }
@@ -345,13 +389,15 @@ check_mpz_16 (void)
     mpz_class a(1), b(2), c(3);
     double d = 4.0, e = 5.0, f = 6.0;
     mpz_class g;
-    g = (a + d) + (b - e) * (c + f); ASSERT_ALWAYS(g == -22);
+    g = (a + d) + (b - e) * (c + f);
+    ASSERT_ALWAYS(g == -22);
   }
   {
     mpz_class a(1), b(2), c(3);
     double d = 4.0, e = 5.0, f = 6.0;
     mpz_class g;
-    g = (a + d) - (b - e) * (c + f); ASSERT_ALWAYS(g == 32);
+    g = (a + d) - (b - e) * (c + f);
+    ASSERT_ALWAYS(g == 32);
   }
 }
 
@@ -364,12 +410,14 @@ check_mpz_17 (void)
   {
     mpz_class a(2), b(3), c(4);
     mpz_class d;
-    d = a * b + c; ASSERT_ALWAYS(d == 10);
+    d = a * b + c;
+    ASSERT_ALWAYS(d == 10);
   }
   {
     mpz_class a(2), b(3), c(4);
     mpz_class d;
-    d = a * b - c; ASSERT_ALWAYS(d == 2);
+    d = a * b - c;
+    ASSERT_ALWAYS(d == 2);
   }
 }
 
@@ -383,13 +431,15 @@ check_mpz_18 (void)
     mpz_class a(2), b(3);
     signed int c = 4;
     mpz_class d;
-    d = a * c + b; ASSERT_ALWAYS(d == 11);
+    d = a * c + b;
+    ASSERT_ALWAYS(d == 11);
   }
   {
     mpz_class a(2), b(3);
     signed int c = 4;
     mpz_class d;
-    d = a * c - b; ASSERT_ALWAYS(d == 5);
+    d = a * c - b;
+    ASSERT_ALWAYS(d == 5);
   }
 
 }
@@ -404,13 +454,15 @@ check_mpz_19 (void)
     mpz_class a(2), b(3);
     unsigned int c = 4;
     mpz_class d;
-    d = c * a + b; ASSERT_ALWAYS(d == 11);
+    d = c * a + b;
+    ASSERT_ALWAYS(d == 11);
   }
   {
     mpz_class a(2), b(3);
     unsigned int c = 4;
     mpz_class d;
-    d = c * a - b; ASSERT_ALWAYS(d == 5);
+    d = c * a - b;
+    ASSERT_ALWAYS(d == 5);
   }
 }
 
@@ -424,13 +476,15 @@ check_mpz_20 (void)
     mpz_class a(2), b(3), c(4);
     double d = 5.0;
     mpz_class e;
-    e = a * (b + d) + c; ASSERT_ALWAYS(e == 20);
+    e = a * (b + d) + c;
+    ASSERT_ALWAYS(e == 20);
   }
   {
     mpz_class a(2), b(3), c(4);
     double d = 5.0;
     mpz_class e;
-    e = a * (b + d) - c; ASSERT_ALWAYS(e == 12);
+    e = a * (b + d) - c;
+    ASSERT_ALWAYS(e == 12);
   }
 }
 
@@ -444,13 +498,15 @@ check_mpz_21 (void)
     mpz_class a(2), b(3), c(4);
     signed int d = 5;
     mpz_class e;
-    e = (a - d) * b + c; ASSERT_ALWAYS(e == -5);
+    e = (a - d) * b + c;
+    ASSERT_ALWAYS(e == -5);
   }
   {
     mpz_class a(2), b(3), c(4);
     signed int d = 5;
     mpz_class e;
-    e = (a - d) * b - c; ASSERT_ALWAYS(e == -13);
+    e = (a - d) * b - c;
+    ASSERT_ALWAYS(e == -13);
   }
 }
 
@@ -464,13 +520,15 @@ check_mpz_22 (void)
     mpz_class a(2), b(3);
     unsigned int c = 4, d = 5;
     mpz_class e;
-    e = (a + c) * d + b; ASSERT_ALWAYS(e == 33);
+    e = (a + c) * d + b;
+    ASSERT_ALWAYS(e == 33);
   }
   {
     mpz_class a(2), b(3);
     unsigned int c = 4, d = 5;
     mpz_class e;
-    e = (a + c) * d - b; ASSERT_ALWAYS(e == 27);
+    e = (a + c) * d - b;
+    ASSERT_ALWAYS(e == 27);
   }
 }
 
@@ -484,13 +542,15 @@ check_mpz_23 (void)
     mpz_class a(2), b(3);
     double c = 4.0, d = 5.0;
     mpz_class e;
-    e = c * (a + d) + b; ASSERT_ALWAYS(e == 31);
+    e = c * (a + d) + b;
+    ASSERT_ALWAYS(e == 31);
   }
   {
     mpz_class a(2), b(3);
     double c = 4.0, d = 5.0;
     mpz_class e;
-    e = c * (a + d) - b; ASSERT_ALWAYS(e == 25);
+    e = c * (a + d) - b;
+    ASSERT_ALWAYS(e == 25);
   }
 
 }
@@ -505,13 +565,15 @@ check_mpz_24 (void)
     mpz_class a(2), b(3), c(4);
     signed int d = 5, e = 6;
     mpz_class f;
-    f = (a - d) * (b + e) + c; ASSERT_ALWAYS(f == -23);
+    f = (a - d) * (b + e) + c;
+    ASSERT_ALWAYS(f == -23);
   }
   {
     mpz_class a(2), b(3), c(4);
     signed int d = 5, e = 6;
     mpz_class f;
-    f = (a - d) * (b + e) - c; ASSERT_ALWAYS(f == -31);
+    f = (a - d) * (b + e) - c;
+    ASSERT_ALWAYS(f == -31);
   }
 }
 
@@ -525,13 +587,15 @@ check_mpz_25 (void)
     mpz_class a(2), b(3), c(4);
     unsigned int d = 5;
     mpz_class e;
-    e = a * b + (c - d); ASSERT_ALWAYS(e == 5);
+    e = a * b + (c - d);
+    ASSERT_ALWAYS(e == 5);
   }
   {
     mpz_class a(2), b(3), c(4);
     unsigned int d = 5;
     mpz_class e;
-    e = a * b - (c - d); ASSERT_ALWAYS(e == 7);
+    e = a * b - (c - d);
+    ASSERT_ALWAYS(e == 7);
   }
 }
 
@@ -545,13 +609,15 @@ check_mpz_26 (void)
     mpz_class a(2), b(3);
     double c = 4.0, d = 5.0;
     mpz_class e;
-    e = a * c + (b + d); ASSERT_ALWAYS(e == 16);
+    e = a * c + (b + d);
+    ASSERT_ALWAYS(e == 16);
   }
   {
     mpz_class a(2), b(3);
     double c = 4.0, d = 5.0;
     mpz_class e;
-    e = a * c - (b + d); ASSERT_ALWAYS(e == 0);
+    e = a * c - (b + d);
+    ASSERT_ALWAYS(e == 0);
   }
 }
 
@@ -565,13 +631,15 @@ check_mpz_27 (void)
     mpz_class a(2), b(3);
     signed int c = 4, d = 5;
     mpz_class e;
-    e = c * a + (b - d); ASSERT_ALWAYS(e == 6);
+    e = c * a + (b - d);
+    ASSERT_ALWAYS(e == 6);
   }
   {
     mpz_class a(2), b(3);
     signed int c = 4, d = 5;
     mpz_class e;
-    e = c * a - (b - d); ASSERT_ALWAYS(e == 10);
+    e = c * a - (b - d);
+    ASSERT_ALWAYS(e == 10);
   }
 }
 
@@ -585,13 +653,15 @@ check_mpz_28 (void)
     mpz_class a(2), b(3), c(4);
     unsigned int d = 5, e = 6;
     mpz_class f;
-    f = a * (b - d) + (c + e); ASSERT_ALWAYS(f == 6);
+    f = a * (b - d) + (c + e);
+    ASSERT_ALWAYS(f == 6);
   }
   {
     mpz_class a(2), b(3), c(4);
     unsigned int d = 5, e = 6;
     mpz_class f;
-    f = a * (b - d) - (c + e); ASSERT_ALWAYS(f == -14);
+    f = a * (b - d) - (c + e);
+    ASSERT_ALWAYS(f == -14);
   }
 }
 
@@ -605,13 +675,15 @@ check_mpz_29 (void)
     mpz_class a(2), b(3), c(4);
     double d = 5.0, e = 6.0;
     mpz_class f;
-    f = (a + d) * b + (c - e); ASSERT_ALWAYS(f == 19);
+    f = (a + d) * b + (c - e);
+    ASSERT_ALWAYS(f == 19);
   }
   {
     mpz_class a(2), b(3), c(4);
     double d = 5.0, e = 6.0;
     mpz_class f;
-    f = (a + d) * b - (c - e); ASSERT_ALWAYS(f == 23);
+    f = (a + d) * b - (c - e);
+    ASSERT_ALWAYS(f == 23);
   }
 }
 
@@ -625,13 +697,15 @@ check_mpz_30 (void)
     mpz_class a(2), b(3);
     signed int c = 4, d = 5, e = 6;
     mpz_class f;
-    f = (a + c) * d + (b + e); ASSERT_ALWAYS(f == 39);
+    f = (a + c) * d + (b + e);
+    ASSERT_ALWAYS(f == 39);
   }
   {
     mpz_class a(2), b(3);
     signed int c = 4, d = 5, e = 6;
     mpz_class f;
-    f = (a + c) * d - (b + e); ASSERT_ALWAYS(f == 21);
+    f = (a + c) * d - (b + e);
+    ASSERT_ALWAYS(f == 21);
   }
 }
 
@@ -645,13 +719,15 @@ check_mpz_31 (void)
     mpz_class a(2), b(3);
     unsigned int c = 4, d = 5, e = 6;
     mpz_class f;
-    f = c * (a + d) + (b - e); ASSERT_ALWAYS(f == 25);
+    f = c * (a + d) + (b - e);
+    ASSERT_ALWAYS(f == 25);
   }
   {
     mpz_class a(2), b(3);
     unsigned int c = 4, d = 5, e = 6;
     mpz_class f;
-    f = c * (a + d) - (b - e); ASSERT_ALWAYS(f == 31);
+    f = c * (a + d) - (b - e);
+    ASSERT_ALWAYS(f == 31);
   }
 }
 
@@ -666,13 +742,15 @@ check_mpz_32 (void)
     mpz_class a(2), b(3), c(4);
     double d = 5.0, e = 6.0, f = 7.0;
     mpz_class g;
-    g = (a + d) * (b - e) + (c + f); ASSERT_ALWAYS(g == -10);
+    g = (a + d) * (b - e) + (c + f);
+    ASSERT_ALWAYS(g == -10);
   }
   {
     mpz_class a(2), b(3), c(4);
     double d = 5.0, e = 6.0, f = 7.0;
     mpz_class g;
-    g = (a + d) * (b - e) - (c + f); ASSERT_ALWAYS(g == -32);
+    g = (a + d) * (b - e) - (c + f);
+    ASSERT_ALWAYS(g == -32);
   }
 }
 

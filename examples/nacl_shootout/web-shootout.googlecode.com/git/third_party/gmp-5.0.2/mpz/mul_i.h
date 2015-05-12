@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* mpz_mul_ui/si (product, multiplier, small_multiplicand) -- Set PRODUCT to
    MULTIPLICATOR times SMALL_MULTIPLICAND.
 
@@ -51,45 +65,45 @@ FUNCTION (mpz_ptr prod, mpz_srcptr mult,
   mp_ptr pp;
 
   if (size == 0 || small_mult == 0)
-    {
-      SIZ(prod) = 0;
-      return;
-    }
+  {
+    SIZ(prod) = 0;
+    return;
+  }
 
   size = ABS (size);
 
   sml = MULTIPLICAND_ABS (small_mult);
 
   if (sml <= GMP_NUMB_MAX)
-    {
-      MPZ_REALLOC (prod, size + 1);
-      pp = PTR(prod);
-      cy = mpn_mul_1 (pp, PTR(mult), size, sml & GMP_NUMB_MASK);
-      pp[size] = cy;
-      size += cy != 0;
-    }
+  {
+    MPZ_REALLOC (prod, size + 1);
+    pp = PTR(prod);
+    cy = mpn_mul_1 (pp, PTR(mult), size, sml & GMP_NUMB_MASK);
+    pp[size] = cy;
+    size += cy != 0;
+  }
 #if GMP_NAIL_BITS != 0
   else
-    {
-      /* Operand too large for the current nails size.  Use temporary for
-	 intermediate products, to allow prod and mult being identical.  */
-      mp_ptr tp;
-      TMP_DECL;
-      TMP_MARK;
+  {
+    /* Operand too large for the current nails size.  Use temporary for
+    intermediate products, to allow prod and mult being identical.  */
+    mp_ptr tp;
+    TMP_DECL;
+    TMP_MARK;
 
-      tp = TMP_ALLOC_LIMBS (size + 2);
+    tp = TMP_ALLOC_LIMBS (size + 2);
 
-      cy = mpn_mul_1 (tp, PTR(mult), size, sml & GMP_NUMB_MASK);
-      tp[size] = cy;
-      cy = mpn_addmul_1 (tp + 1, PTR(mult), size, sml >> GMP_NUMB_BITS);
-      tp[size + 1] = cy;
-      size += 2;
-      MPN_NORMALIZE_NOT_ZERO (tp, size); /* too general, need to trim one or two limb */
-      MPZ_REALLOC (prod, size);
-      pp = PTR(prod);
-      MPN_COPY (pp, tp, size);
-      TMP_FREE;
-    }
+    cy = mpn_mul_1 (tp, PTR(mult), size, sml & GMP_NUMB_MASK);
+    tp[size] = cy;
+    cy = mpn_addmul_1 (tp + 1, PTR(mult), size, sml >> GMP_NUMB_BITS);
+    tp[size + 1] = cy;
+    size += 2;
+    MPN_NORMALIZE_NOT_ZERO (tp, size); /* too general, need to trim one or two limb */
+    MPZ_REALLOC (prod, size);
+    pp = PTR(prod);
+    MPN_COPY (pp, tp, size);
+    TMP_FREE;
+  }
 #endif
 
   SIZ(prod) = ((sign_product < 0) ^ (small_mult < 0)) ? -size : size;

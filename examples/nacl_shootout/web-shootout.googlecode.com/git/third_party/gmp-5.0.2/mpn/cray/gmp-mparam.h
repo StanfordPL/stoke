@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* Cray T90 CFP gmp-mparam.h -- Compiler/machine parameter header file.
 
 Copyright 1991, 1993, 1994, 1996, 2000, 2001, 2002, 2003, 2004 Free Software
@@ -22,8 +36,8 @@ along with the GNU MP Library.  If not, see http://www.gnu.org/licenses/.  */
 #define BYTES_PER_MP_LIMB 8
 
 #if 0
-#define UMUL_TIME	 519
-#define UDIV_TIME	2360
+#define UMUL_TIME  519
+#define UDIV_TIME 2360
 #endif
 
 /* T90 Unicos 10.0.X in CFP mode */

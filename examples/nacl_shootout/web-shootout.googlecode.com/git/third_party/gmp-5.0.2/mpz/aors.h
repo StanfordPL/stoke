@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* mpz_add, mpz_sub -- add or subtract integers.
 
 Copyright 1991, 1993, 1994, 1996, 2000, 2001 Free Software Foundation, Inc.
@@ -68,12 +82,12 @@ FUNCTION (ARGUMENTS)
   abs_vsize = ABS (vsize);
 
   if (abs_usize < abs_vsize)
-    {
-      /* Swap U and V. */
-      MPZ_SRCPTR_SWAP (u, v);
-      MP_SIZE_T_SWAP (usize, vsize);
-      MP_SIZE_T_SWAP (abs_usize, abs_vsize);
-    }
+  {
+    /* Swap U and V. */
+    MPZ_SRCPTR_SWAP (u, v);
+    MP_SIZE_T_SWAP (usize, vsize);
+    MP_SIZE_T_SWAP (abs_usize, abs_vsize);
+  }
 
   /* True: ABS_USIZE >= ABS_VSIZE.  */
 
@@ -88,45 +102,45 @@ FUNCTION (ARGUMENTS)
   wp = w->_mp_d;
 
   if ((usize ^ vsize) < 0)
-    {
-      /* U and V have different sign.  Need to compare them to determine
-	 which operand to subtract from which.  */
+  {
+    /* U and V have different sign.  Need to compare them to determine
+    which operand to subtract from which.  */
 
-      /* This test is right since ABS_USIZE >= ABS_VSIZE.  */
-      if (abs_usize != abs_vsize)
-	{
-	  mpn_sub (wp, up, abs_usize, vp, abs_vsize);
-	  wsize = abs_usize;
-	  MPN_NORMALIZE (wp, wsize);
-	  if (usize < 0)
-	    wsize = -wsize;
-	}
-      else if (mpn_cmp (up, vp, abs_usize) < 0)
-	{
-	  mpn_sub_n (wp, vp, up, abs_usize);
-	  wsize = abs_usize;
-	  MPN_NORMALIZE (wp, wsize);
-	  if (usize >= 0)
-	    wsize = -wsize;
-	}
-      else
-	{
-	  mpn_sub_n (wp, up, vp, abs_usize);
-	  wsize = abs_usize;
-	  MPN_NORMALIZE (wp, wsize);
-	  if (usize < 0)
-	    wsize = -wsize;
-	}
-    }
-  else
+    /* This test is right since ABS_USIZE >= ABS_VSIZE.  */
+    if (abs_usize != abs_vsize)
     {
-      /* U and V have same sign.  Add them.  */
-      mp_limb_t cy_limb = mpn_add (wp, up, abs_usize, vp, abs_vsize);
-      wp[abs_usize] = cy_limb;
-      wsize = abs_usize + cy_limb;
+      mpn_sub (wp, up, abs_usize, vp, abs_vsize);
+      wsize = abs_usize;
+      MPN_NORMALIZE (wp, wsize);
       if (usize < 0)
-	wsize = -wsize;
+        wsize = -wsize;
     }
+    else if (mpn_cmp (up, vp, abs_usize) < 0)
+    {
+      mpn_sub_n (wp, vp, up, abs_usize);
+      wsize = abs_usize;
+      MPN_NORMALIZE (wp, wsize);
+      if (usize >= 0)
+        wsize = -wsize;
+    }
+    else
+    {
+      mpn_sub_n (wp, up, vp, abs_usize);
+      wsize = abs_usize;
+      MPN_NORMALIZE (wp, wsize);
+      if (usize < 0)
+        wsize = -wsize;
+    }
+  }
+  else
+  {
+    /* U and V have same sign.  Add them.  */
+    mp_limb_t cy_limb = mpn_add (wp, up, abs_usize, vp, abs_vsize);
+    wp[abs_usize] = cy_limb;
+    wsize = abs_usize + cy_limb;
+    if (usize < 0)
+      wsize = -wsize;
+  }
 
   w->_mp_size = wsize;
 }

@@ -63,12 +63,14 @@ OBJS_NATIVE := $(BENCHMARKS:%=%.native.o) $(OTHER_OBJS:%=%.native.o) nbody.nativ
 OBJS_NACL := $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 OBJS_PNACL := $(BENCHMARKS:%=%.bc) $(OTHER_OBJS:%=%.bc) nbody-portable.bc
 
+NATIVE_FLAGS=-pg -g
+
 all: native nacl 
 
 %.native.o: %.c
-	$(CC) $(ARCH_FLAG) -Iinclude -c $(INC_PATHS) $(CFLAGS) $(CFLAGS_NP) $< -o $@
+	$(CC) $(ARCH_FLAG) -Iinclude -c $(INC_PATHS) $(NATIVE_FLAGS) $(CFLAGS) $(CFLAGS_NP) $< -o $@
 %.native.o: %.cc
-	$(CXX) $(ARCH_FLAG) -Iinclude -c $(INC_PATHS) $(CXXFLAGS) $(CFLAGS_NP) $< -o $@
+	$(CXX) $(ARCH_FLAG) -Iinclude -c $(INC_PATHS) $(NATIVE_FLAGS) $(CXXFLAGS) $(CFLAGS_NP) $< -o $@
 %.nacl.o: %.c
 	$(NACLCC) -c -Iinclude -I$(INC_PATHS) $(CFLAGS) $(CFLAGS_NP) $< -o $@
 %.nacl.o: %.cc
@@ -79,7 +81,7 @@ all: native nacl
 	$(PNACLCXX) -c -Iinclude -I$(INC_PATHS) $(CXXFLAGS) -std=c++11 $< -o $@
 
 native: $(OBJS_NATIVE) cli.native.o
-	$(CXX) $(ARCH_FLAG) $(OBJS_NATIVE) cli.native.o -o \
+	$(CXX) $(ARCH_FLAG) $(NATIVE_FLAGS) $(OBJS_NATIVE) cli.native.o -o \
 	  benchmarks$(BITS) $(LIBS) -lgmp
 
 nacl: benchmarks$(BITS).nexe benchmarks_browser$(BITS).nexe

@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* Implementation specifics for expression evaluation.
 
 Copyright 2000, 2001, 2002, 2004 Free Software Foundation, Inc.
@@ -72,16 +86,16 @@ typedef int  (*mpexpr_fun_i_binary_t) __GMP_PROTO ((mpX_srcptr, mpX_srcptr));
 typedef int  (*mpexpr_fun_i_binary_ui_t) __GMP_PROTO ((mpX_srcptr, unsigned long));
 
 typedef void (*mpexpr_fun_ternary_t)
-     __GMP_PROTO ((mpX_ptr, mpX_srcptr, mpX_srcptr, mpX_srcptr));
+__GMP_PROTO ((mpX_ptr, mpX_srcptr, mpX_srcptr, mpX_srcptr));
 typedef void (*mpexpr_fun_ternary_ui_t)
-     __GMP_PROTO ((mpX_ptr, mpX_srcptr, mpX_srcptr, unsigned long));
+__GMP_PROTO ((mpX_ptr, mpX_srcptr, mpX_srcptr, unsigned long));
 typedef int (*mpexpr_fun_i_ternary_t)
-     __GMP_PROTO ((mpX_srcptr, mpX_srcptr, mpX_srcptr));
+__GMP_PROTO ((mpX_srcptr, mpX_srcptr, mpX_srcptr));
 typedef int (*mpexpr_fun_i_ternary_ui_t)
-     __GMP_PROTO ((mpX_srcptr, mpX_srcptr, unsigned long));
+__GMP_PROTO ((mpX_srcptr, mpX_srcptr, unsigned long));
 
 typedef size_t (*mpexpr_fun_number_t)
-     __GMP_PROTO ((mpX_ptr, __gmp_const char *str, size_t len, int base));
+__GMP_PROTO ((mpX_ptr, __gmp_const char *str, size_t len, int base));
 typedef void (*mpexpr_fun_swap_t) __GMP_PROTO ((mpX_ptr, mpX_ptr));
 typedef unsigned long (*mpexpr_fun_get_ui_t) __GMP_PROTO ((mpX_srcptr));
 typedef void (*mpexpr_fun_set_si_t) __GMP_PROTO ((mpX_srcptr, long));
@@ -132,4 +146,4 @@ struct mpexpr_parse_t {
 int mpexpr_evaluate __GMP_PROTO ((struct mpexpr_parse_t *p));
 int mpexpr_va_to_var __GMP_PROTO ((void *var[], va_list ap));
 size_t mpexpr_mpz_number __GMP_PROTO ((mpz_ptr res,
-                                  __gmp_const char *e, size_t elen, int base));
+                                       __gmp_const char *e, size_t elen, int base));

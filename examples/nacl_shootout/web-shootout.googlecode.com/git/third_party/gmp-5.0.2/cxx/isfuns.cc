@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* Auxiliary functions for C++-style input of GMP types.
 
 Copyright 2001 Free Software Foundation, Inc.
@@ -33,38 +47,38 @@ __gmp_istream_set_base (istream &i, char &c, bool &zero, bool &showbase)
 
   zero = showbase = false;
   switch (i.flags() & ios::basefield)
+  {
+  case ios::dec:
+    base = 10;
+    break;
+  case ios::hex:
+    base = 16;
+    break;
+  case ios::oct:
+    base = 8;
+    break;
+  default:
+    showbase = true; // look for initial "0" or "0x" or "0X"
+    if (c == '0')
     {
-    case ios::dec:
-      base = 10;
-      break;
-    case ios::hex:
-      base = 16;
-      break;
-    case ios::oct:
-      base = 8;
-      break;
-    default:
-      showbase = true; // look for initial "0" or "0x" or "0X"
-      if (c == '0')
-	{
-	  if (! i.get(c))
-	    c = 0; // reset or we might loop indefinitely
+      if (! i.get(c))
+        c = 0; // reset or we might loop indefinitely
 
-	  if (c == 'x' || c == 'X')
-	    {
-	      base = 16;
-	      i.get(c);
-	    }
-	  else
-	    {
-	      base = 8;
-	      zero = true; // if no other digit is read, the "0" counts
-	    }
-	}
+      if (c == 'x' || c == 'X')
+      {
+        base = 16;
+        i.get(c);
+      }
       else
-	base = 10;
-      break;
+      {
+        base = 8;
+        zero = true; // if no other digit is read, the "0" counts
+      }
     }
+    else
+      base = 10;
+    break;
+  }
 
   return base;
 }
@@ -73,33 +87,33 @@ void
 __gmp_istream_set_digits (string &s, istream &i, char &c, bool &ok, int base)
 {
   switch (base)
+  {
+  case 10:
+    while (isdigit(c))
     {
-    case 10:
-      while (isdigit(c))
-	{
-	  ok = true; // at least a valid digit was read
-	  s += c;
-	  if (! i.get(c))
-	    break;
-	}
-      break;
-    case 8:
-      while (isdigit(c) && c != '8' && c != '9')
-	{
-	  ok = true; // at least a valid digit was read
-	  s += c;
-	  if (! i.get(c))
-	    break;
-	}
-      break;
-    case 16:
-      while (isxdigit(c))
-	{
-	  ok = true; // at least a valid digit was read
-	  s += c;
-	  if (! i.get(c))
-	    break;
-	}
-      break;
+      ok = true; // at least a valid digit was read
+      s += c;
+      if (! i.get(c))
+        break;
     }
+    break;
+  case 8:
+    while (isdigit(c) && c != '8' && c != '9')
+    {
+      ok = true; // at least a valid digit was read
+      s += c;
+      if (! i.get(c))
+        break;
+    }
+    break;
+  case 16:
+    while (isxdigit(c))
+    {
+      ok = true; // at least a valid digit was read
+      s += c;
+      if (! i.get(c))
+        break;
+    }
+    break;
+  }
 }

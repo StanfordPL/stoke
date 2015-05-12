@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* Test locale support in C++ functions.
 
 Copyright 2001, 2002, 2003, 2007 Free Software Foundation, Inc.
@@ -35,10 +49,12 @@ extern "C" {
 #if HAVE_STD__LOCALE
 // Like std::numpunct, but with decimal_point coming from point_string[].
 class my_numpunct : public numpunct<char> {
- public:
+public:
   explicit my_numpunct (size_t r = 0) : numpunct<char>(r) { }
- protected:
-  char do_decimal_point() const { return point_string[0]; }
+protected:
+  char do_decimal_point() const {
+    return point_string[0];
+  }
 };
 #endif
 
@@ -84,48 +100,48 @@ check_input (void)
   mpf_init (got);
 
   for (size_t i = 0; i < numberof (point); i++)
+  {
+    set_point (point[i]);
+
+    for (int neg = 0; neg <= 1; neg++)
     {
-      set_point (point[i]);
+      for (size_t j = 0; j < numberof (data); j++)
+      {
+        string str = string(data[j].str1)+point[i]+string(data[j].str2);
+        if (neg)
+          str = "-" + str;
 
-      for (int neg = 0; neg <= 1; neg++)
+        istringstream is (str.c_str());
+
+        mpf_set_ui (got, 123);   // dummy initial value
+
+        if (! (is >> got))
         {
-          for (size_t j = 0; j < numberof (data); j++)
-            {
-              string str = string(data[j].str1)+point[i]+string(data[j].str2);
-              if (neg)
-                str = "-" + str;
-
-              istringstream is (str.c_str());
-
-              mpf_set_ui (got, 123);   // dummy initial value
-
-              if (! (is >> got))
-                {
-                  cout << "istream mpf_t operator>> error\n";
-                  cout << "  point " << point[i] << "\n";
-                  cout << "  str   \"" << str << "\"\n";
-                  cout << "  localeconv point \""
-                       << localeconv()->decimal_point << "\"\n";
-                  abort ();
-                }
-
-              double want = data[j].want;
-              if (neg)
-                want = -want;
-              if (mpf_cmp_d (got, want) != 0)
-                {
-                  cout << "istream mpf_t operator>> wrong\n";
-                  cout << "  point " << point[i] << "\n";
-                  cout << "  str   \"" << str << "\"\n";
-                  cout << "  got   " << got << "\n";
-                  cout << "  want  " << want << "\n";
-                  cout << "  localeconv point \""
-                       << localeconv()->decimal_point << "\"\n";
-                  abort ();
-                }
-            }
+          cout << "istream mpf_t operator>> error\n";
+          cout << "  point " << point[i] << "\n";
+          cout << "  str   \"" << str << "\"\n";
+          cout << "  localeconv point \""
+               << localeconv()->decimal_point << "\"\n";
+          abort ();
         }
+
+        double want = data[j].want;
+        if (neg)
+          want = -want;
+        if (mpf_cmp_d (got, want) != 0)
+        {
+          cout << "istream mpf_t operator>> wrong\n";
+          cout << "  point " << point[i] << "\n";
+          cout << "  str   \"" << str << "\"\n";
+          cout << "  got   " << got << "\n";
+          cout << "  want  " << want << "\n";
+          cout << "  localeconv point \""
+               << localeconv()->decimal_point << "\"\n";
+          abort ();
+        }
+      }
     }
+  }
 
   mpf_clear (got);
 }
@@ -138,27 +154,27 @@ check_output (void)
   };
 
   for (size_t i = 0; i < numberof (point); i++)
+  {
+    set_point (point[i]);
+    ostringstream  got;
+
+    mpf_t  f;
+    mpf_init (f);
+    mpf_set_d (f, 1.5);
+    got << f;
+    mpf_clear (f);
+
+    string  want = string("1") + point[i] + string("5");
+
+    if (want.compare (got.str()) != 0)
     {
-      set_point (point[i]);
-      ostringstream  got;
-
-      mpf_t  f;
-      mpf_init (f);
-      mpf_set_d (f, 1.5);
-      got << f;
-      mpf_clear (f);
-
-      string  want = string("1") + point[i] + string("5");
-
-      if (want.compare (got.str()) != 0)
-        {
-          cout << "ostream mpf_t operator<< doesn't respect locale\n";
-          cout << "  point " << point[i] << "\n";
-          cout << "  got   \"" << got.str() << "\"\n";
-          cout << "  want  \"" << want      << "\"\n";
-          abort ();
-        }
+      cout << "ostream mpf_t operator<< doesn't respect locale\n";
+      cout << "  point " << point[i] << "\n";
+      cout << "  got   \"" << got.str() << "\"\n";
+      cout << "  want  \"" << want      << "\"\n";
+      abort ();
     }
+  }
 }
 
 int
@@ -181,14 +197,14 @@ main (void)
   tests_start ();
 
   if (replacement_works())
-    {
-      check_input ();
-      check_output ();
-    }
+  {
+    check_input ();
+    check_output ();
+  }
   else
-    {
-      cout << "Replacing decimal point didn't work, tests skipped\n";
-    }
+  {
+    cout << "Replacing decimal point didn't work, tests skipped\n";
+  }
 
   tests_end ();
   return 0;

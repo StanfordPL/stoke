@@ -1,3 +1,17 @@
+// Copyright 2013-2015 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 /* Test precision of mpf_class expressions.
 
 Copyright 2001, 2002, 2003, 2008 Free Software Foundation, Inc.
@@ -52,24 +66,24 @@ check_mpf (void)
     mpf_class f(3.0, small_prec);
     mpf_class g(1 / f, very_large_prec);
     ASSERT_ALWAYS_PREC
-      (g, "0.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
-       "     33333 33333 33333 33333 33333 333", very_large_prec);
+    (g, "0.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
+     "     33333 33333 33333 33333 33333 333", very_large_prec);
   }
   {
     mpf_class f(9.0, medium_prec);
     mpf_class g(0.0, very_large_prec);
     g = 1 / f;
     ASSERT_ALWAYS_PREC
-      (g, "0.11111 11111 11111 11111 11111 11111 11111 11111 11111 11111"
-       "     11111 11111 11111 11111 11111 111", very_large_prec);
+    (g, "0.11111 11111 11111 11111 11111 11111 11111 11111 11111 11111"
+     "     11111 11111 11111 11111 11111 111", very_large_prec);
   }
   {
     mpf_class f(15.0, large_prec);
     mpf_class g(0.0, very_large_prec);
     g = 1 / f;
     ASSERT_ALWAYS_PREC
-      (g, "0.06666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
-       "     66666 66666 66666 66666 66666 667", very_large_prec);
+    (g, "0.06666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
+     "     66666 66666 66666 66666 66666 667", very_large_prec);
   }
 
   // compound expressions
@@ -77,47 +91,47 @@ check_mpf (void)
     mpf_class f(3.0, small_prec);
     mpf_class g(-(-(-1 / f)), very_large_prec);
     ASSERT_ALWAYS_PREC
-      (g, "-0.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
-       "      33333 33333 33333 33333 33333 333", very_large_prec);
+    (g, "-0.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
+     "      33333 33333 33333 33333 33333 333", very_large_prec);
   }
   {
     mpf_class f(3.0, small_prec), g(9.0, medium_prec);
     mpf_class h(0.0, very_large_prec);
     h = 1/f + 1/g;
     ASSERT_ALWAYS_PREC
-      (h, "0.44444 44444 44444 44444 44444 44444 44444 44444 44444 44444"
-       "     44444 44444 44444 44444 44444 444", very_large_prec);
+    (h, "0.44444 44444 44444 44444 44444 44444 44444 44444 44444 44444"
+     "     44444 44444 44444 44444 44444 444", very_large_prec);
   }
   {
     mpf_class f(3.0, small_prec), g(9.0, medium_prec), h(15.0, large_prec);
     mpf_class i(0.0, very_large_prec);
     i = f / g + h;
     ASSERT_ALWAYS_PREC
-      (i, "15.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
-       "      33333 33333 33333 33333 33333 3", very_large_prec);
+    (i, "15.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
+     "      33333 33333 33333 33333 33333 3", very_large_prec);
   }
   {
     mpf_class f(3.0, small_prec);
     mpf_class g(-(1 + f) / 3, very_large_prec);
     ASSERT_ALWAYS_PREC
-      (g, "-1.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
-       "      33333 33333 33333 33333 33333 33", very_large_prec);
+    (g, "-1.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
+     "      33333 33333 33333 33333 33333 33", very_large_prec);
   }
   {
     mpf_class f(9.0, medium_prec);
     mpf_class g(0.0, very_large_prec);
     g = sqrt(1 / f);
     ASSERT_ALWAYS_PREC
-      (g, "0.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
-       "     33333 33333 33333 33333 33333 333", very_large_prec);
+    (g, "0.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
+     "     33333 33333 33333 33333 33333 333", very_large_prec);
   }
   {
     mpf_class f(15.0, large_prec);
     mpf_class g(0.0, very_large_prec);
     g = hypot(1 + 5 / f, 1.0);
     ASSERT_ALWAYS_PREC
-      (g, "1.66666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
-       "     66666 66666 66666 66666 66666 67", very_large_prec);
+    (g, "1.66666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
+     "     66666 66666 66666 66666 66666 67", very_large_prec);
   }
 
   // compound assignments
@@ -126,8 +140,8 @@ check_mpf (void)
     mpf_class h(1.0, very_large_prec);
     h -= f / g;
     ASSERT_ALWAYS_PREC
-      (h, "0.66666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
-       "     66666 66666 66666 66666 66666 667", very_large_prec);
+    (h, "0.66666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
+     "     66666 66666 66666 66666 66666 667", very_large_prec);
   }
 
   // construction from expressions
@@ -142,15 +156,15 @@ check_mpf (void)
     mpf_class g(0.0, very_large_prec);
     g = mpf_class(1 / f);
     ASSERT_ALWAYS_PREC
-      (g, "0.11111 11111 11111 11111 11111 11111 11111 1111", medium_prec);
+    (g, "0.11111 11111 11111 11111 11111 11111 11111 1111", medium_prec);
   }
   {
     mpf_class f(15.0, large_prec);
     mpf_class g(0.0, very_large_prec);
     g = mpf_class(1 / f);
     ASSERT_ALWAYS_PREC
-      (g, "0.06666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
-       "     66666 6667", large_prec);
+    (g, "0.06666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
+     "     66666 6667", large_prec);
   }
 
   {
@@ -158,9 +172,9 @@ check_mpf (void)
     mpf_class h(0.0, very_large_prec);
     h = mpf_class(f / g + 1, large_prec);
     ASSERT_ALWAYS_PREC
-      (h, "1.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
-       "     33333 333",
-       large_prec);
+    (h, "1.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
+     "     33333 333",
+     large_prec);
   }
 
   // mixed mpf/mpq expressions
@@ -170,8 +184,8 @@ check_mpf (void)
     mpf_class g(0.0, very_large_prec);
     g = f - q;
     ASSERT_ALWAYS_PREC
-      (g, "2.66666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
-       "     66666 66666 66666 66666 66666 67", very_large_prec);
+    (g, "2.66666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
+     "     66666 66666 66666 66666 66666 67", very_large_prec);
   }
 
   {
@@ -180,9 +194,9 @@ check_mpf (void)
     mpf_class g(0.0, very_large_prec);
     g = mpf_class(f - q, large_prec);
     ASSERT_ALWAYS_PREC
-      (g, "2.66666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
-       "     66666 667",
-       large_prec);
+    (g, "2.66666 66666 66666 66666 66666 66666 66666 66666 66666 66666"
+     "     66666 667",
+     large_prec);
   }
   {
     mpf_class f(3.0, small_prec);
@@ -190,7 +204,7 @@ check_mpf (void)
     mpf_class g(0.0, very_large_prec);
     g = mpf_class(f - q);
     ASSERT_ALWAYS_PREC
-      (g, "2.66666 66666 66666 66666 66666 66666 66666 667", medium_prec);
+    (g, "2.66666 66666 66666 66666 66666 66666 66666 667", medium_prec);
   }
   {
     mpf_class f(15.0, large_prec);
@@ -198,9 +212,9 @@ check_mpf (void)
     mpf_class g(0.0, very_large_prec);
     g = mpf_class(f + q);
     ASSERT_ALWAYS_PREC
-      (g, "15.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
-       "      33333 33",
-       large_prec);
+    (g, "15.33333 33333 33333 33333 33333 33333 33333 33333 33333 33333"
+     "      33333 33",
+     large_prec);
   }
 }
 
