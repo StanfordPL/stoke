@@ -218,6 +218,43 @@ TEST(StateGenTest, Issue232) {
   EXPECT_FALSE(sg.get(tc, cfg_t));
 }
 
+TEST(StateGenTest, MaxValueWorks) {
+
+  // Build example
+  std::stringstream ss;
+
+  ss << ".foo:" << std::endl;
+  ss << "movq %rax, %rcx" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  // Run stategen
+  Sandbox sg_sb;
+  sg_sb.set_max_jumps(2)
+  .set_abi_check(false);
+
+  Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+  StateGen sg(&sg_sb);
+  sg.set_max_attempts(10)
+  .set_max_memory(1000)
+  .set_max_value(x64asm::rax, 0x10);
+
+  CpuState tc;
+  bool encountered_max = false;
+  for(size_t i = 0; i < 200; ++i) {
+    EXPECT_TRUE(sg.get(tc, cfg_t));
+    uint64_t value = tc.gp[x64asm::rax].get_fixed_quad(0);
+    EXPECT_LE(value, 0x10);
+    encountered_max |= (value == 0x10);
+  }
+
+  // with 200 iterations, there's a 99.99945% chance of no false positive
+  // 1 - (16/17)^200
+  EXPECT_TRUE(encountered_max);
+}
+
 TEST(StateGenTest, MisalignedNotAllowed) {
 
   // Build example
