@@ -124,7 +124,8 @@ int auto_gen() {
   // name, or if we're reading something else.  It's a very simple DFA for
   // parsing (there are basically two states, depending on reading_reg).
   string register_max = register_max_arg.value();
-  register_max.append(1, '\n');
+  if(register_max.size())
+    register_max.append(1, '\n');
   string current_reg = "";
   uint64_t current_value = 0;
   bool reading_reg = true;
