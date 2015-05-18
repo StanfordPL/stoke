@@ -31,20 +31,21 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
   const auto& code = cfg.get_code();
   map<size_t, uint64_t> restricted_registers;
 
-  // 1. instructions not allowed (I don't think stoke supports any of these)
+  // 1. instructions not allowed
   // 2. no instructions may cross 32-bit boundaries
   // (also, when we do this, identify restricted registers and populate
   //  the map.  It holds 0 if there are no restricted registers, and holds
   //  r+1 if register r is restricted) (DONE)
 
+  size_t rip_offset = cfg.get_function().get_rip_offset();
   buffer_.reserve(code.size()*32);
   assm_.start(buffer_);
   for(size_t i = 0; i < code.size(); ++i) {
 
     auto instr = code[i];
-    size_t start = buffer_.size() & 0x1f;
+    size_t start = (buffer_.size() + rip_offset) & 0x1f;
     assm_.assemble(instr);
-    size_t end = buffer_.size() & 0x1f;
+    size_t end = (buffer_.size() + rip_offset) & 0x1f;
     //cout << start << "   " << instr << endl;
 
     // if the instruction is a movl to 32-bit register, and it is not at the
