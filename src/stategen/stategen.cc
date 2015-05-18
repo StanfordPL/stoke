@@ -39,8 +39,11 @@ bool StateGen::get(CpuState& cs) const {
   // Randomize registers
   for (size_t i = 0, ie = cs.gp.size(); i < ie; ++i) {
     auto& r = cs.gp[i];
+    auto max = get_max_value(i);
     for (size_t j = 0, je = r.num_fixed_bytes(); j < je; ++j) {
-      r.get_fixed_byte(j) = rand() % 256;
+      auto max_byte = max & 0xff;
+      r.get_fixed_byte(j) = rand() % (max_byte + 1);
+      max = max >> 8;
     }
   }
   for (size_t i = 0, ie = cs.sse.size(); i < ie; ++i) {
