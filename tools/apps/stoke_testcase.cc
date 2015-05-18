@@ -92,6 +92,11 @@ auto& stack_size = ValueArg<size_t>::create("stack_size")
                    .description("The minimum stack size available to the testcase")
                    .default_val(16);
 
+auto& register_max_arg = ValueArg<string>::create("register_max")
+                         .usage("<string>")
+                         .description("Set maximum values for registers.  E.g. \"rax=10,rdx=20\"")
+                         .default_val("");
+
 auto& conv_opt = Heading::create("File conversion options:");
 auto& compress = FlagArg::create("compress")
                  .description("Convert testcase file from text to binary");
@@ -108,10 +113,90 @@ int auto_gen() {
   TargetGadget target(aux_fxns, false);
   SandboxGadget sb({}, aux_fxns);
 
+  // setup the stategen class
   StateGen sg(&sb, stack_size.value());
   sg.set_max_attempts(max_attempts.value())
   .set_max_memory(max_stack.value());
 
+  // parse the register_max argument
+  // We keep track of the register read so far ("current_reg"), the value read
+  // so far ("current_value"), and whether we're still reading the register
+  // name, or if we're reading something else.  It's a very simple DFA for
+  // parsing (there are basically two states, depending on reading_reg).
+  string register_max = register_max_arg.value();
+  register_max.append(1, '\n');
+  string current_reg = "";
+  uint64_t current_value = 0;
+  bool reading_reg = true;
+  for(size_t i = 0; i < register_max.size(); ++i) {
+    char c = register_max[i];
+    if(c >= '0' && c <= '9') {
+      if(!reading_reg)
+        current_value = current_value*10 + (c - '0');
+      else
+        current_reg.append(1, c);
+    } else if (c == ',' || c == '\n') {
+      if(reading_reg) {
+        Console::warn() << "Got ',' or end-of-input but expected '=' or register name." << endl;
+        Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for --register_max" << endl;
+      }
+
+      R64 reg = rax;
+      //parse register
+      if(current_reg == "rax")
+        reg = rax;
+      else if (current_reg == "rcx")
+        reg = rcx;
+      else if (current_reg == "rdx")
+        reg = rdx;
+      else if (current_reg == "rbx")
+        reg = rbx;
+      else if (current_reg == "rsi")
+        reg = rsi;
+      else if (current_reg == "rdi")
+        reg = rdi;
+      else if (current_reg == "rsp")
+        reg = rsp;
+      else if (current_reg == "rbp")
+        reg = rbp;
+      else {
+        bool set=false;
+        for(size_t i = 8; i < 16; ++i) {
+          if(current_reg == "r" + to_string(i)) {
+            reg = r64s[i];
+            set = true;
+            break;
+          }
+        }
+        if(!set) {
+          Console::error(1) << "Could not parse register " << current_reg << "for --register_max" << endl;
+        }
+      }
+      sg.set_max_value(reg, current_value);
+
+      current_reg = "";
+      current_value = 0;
+      reading_reg = true;
+
+    } else if (c >= 'a' && c <= 'z') {
+      if(!reading_reg)
+        Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for --register_max" << endl;
+      current_reg.append(1, c);
+    } else if (c >= 'A' && c <= 'Z') {
+      if(!reading_reg)
+        Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for --register_max" << endl;
+      current_reg.append(1, c - 'A' + 'a');
+    } else if (c == '=') {
+      if(!reading_reg)
+        Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for --register_max" << endl;
+      reading_reg = false;
+    } else {
+      Console::warn() << "Unexpected character " << c << " in --register_max" << endl;
+      Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for --register_max" << endl;
+    }
+  }
+
+  // build the testcases
   CpuStates tcs;
   for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
     CpuState tc;
