@@ -50,6 +50,11 @@ public:
     allow_unaligned_ = b;
     return *this;
   }
+  /** Set maximum value for register */
+  StateGen& set_max_value(x64asm::R64 r, uint64_t value) {
+    max_register_values_[r] = value;
+    return *this;
+  }
 
   /** Tries to generate a state that contains random register values; sensible rsp. */
   bool get(CpuState& cs) const;
@@ -110,6 +115,18 @@ private:
   size_t max_jumps_;
   /** If unaligned memory accesses are OK? */
   bool allow_unaligned_;
+
+  /** Read the maximum allowed value for a register from the map;
+      default to -1 */
+  inline uint64_t get_max_value(size_t r) const {
+    if(max_register_values_.count(r))
+      return max_register_values_.at(r);
+    else
+      return (uint64_t)(-1);
+  }
+
+  /** The maximum allowed value for a given register. */
+  std::map<size_t, uint64_t> max_register_values_;
 
   /** A textual description of the cause of the last failure. */
   std::string error_message_;
