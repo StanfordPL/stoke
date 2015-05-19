@@ -3,7 +3,7 @@ Testcase 0:
 SIGNAL 0 [normal exit]
 
 %rax     cd 29 ec 4a ff 51 73 69
-%rcx     c2 7c 46 e3 fb f2 ab 40
+%rcx     c2 7c 46 e3 fb f2 ab 00
 %rdx     00 00 00 00 00 00 00 28
 %rbx     32 66 9a c9 9f 33 63 00
 %rsp     00 00 00 07 00 00 00 00
