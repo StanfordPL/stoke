@@ -91,7 +91,8 @@ auto& stack_size = ValueArg<size_t>::create("stack_size")
                    .usage("<int>")
                    .description("The minimum stack size available to the testcase")
                    .default_val(16);
-
+auto& allow_unaligned_arg = FlagArg::create("allow_unaligned")
+                            .description("Allow memory accesses to be unaligned");
 auto& register_max_arg = ValueArg<string>::create("register_max")
                          .usage("<string>")
                          .description("Set maximum values for registers.  E.g. \"rax=10,rdx=20\"")
@@ -116,7 +117,9 @@ int auto_gen() {
   // setup the stategen class
   StateGen sg(&sb, stack_size.value());
   sg.set_max_attempts(max_attempts.value())
-  .set_max_memory(max_stack.value());
+  .set_max_memory(max_stack.value())
+  .set_allow_unaligned(allow_unaligned_arg);
+
 
   // parse the register_max argument
   // We keep track of the register read so far ("current_reg"), the value read

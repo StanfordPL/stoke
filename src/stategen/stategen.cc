@@ -70,6 +70,11 @@ bool StateGen::get(CpuState& cs) const {
   return true;
 }
 
+void StateGen::cleanup() {
+  sb_->clear_callbacks();
+  sb_->clear_inputs();
+}
+
 bool StateGen::get(CpuState& cs, const Cfg& cfg) {
   // Insert callbacks before every instruction and compile
   Instruction last_line(RET);
@@ -91,12 +96,14 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
     // won't ever run and set the value of last_line.
     if (sb_->get_result(0)->code == ErrorCode::SIGBUS_) {
       error_message_ = "Linking failed!";
+      cleanup();
       return false;
     }
 
     // If we didn't segfault, or we did due to misalign and it's allowed,
     // then we're done
-    if(is_ok(*sb_, last_line)) {
+    if(is_ok(last_line)) {
+      cleanup();
       return true;
     }
     // Otherwise, try allocating away a segfault and retry
@@ -110,10 +117,11 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
     }
   }
 
+  cleanup();
   return false;
 }
 
-bool StateGen::is_ok(const Sandbox& sb, const Instruction& line) {
+bool StateGen::is_ok(const Instruction& line) {
   if (sb_->get_result(0)->code == ErrorCode::NORMAL) {
     return true;
   }
