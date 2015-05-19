@@ -719,5 +719,52 @@ TEST(SandboxTest, fld_family) {
   ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
 }
 
+TEST(SandboxTest, PUSH_POP2) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "pushq %rax" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+  StateGen sg(&sb);
+  sg.get(tc);
+  sb.insert_input(tc);
+
+  sb.run(Cfg(TUnit(c)));
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
+}
+
+
+
+TEST(SandboxTest, Issue633) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "pushq %rax" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+  auto cfg = Cfg(TUnit(c));
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+  StateGen sg(&sb);
+  EXPECT_TRUE(sg.get(tc, cfg)) << sg.get_error();
+  sb.insert_input(tc);
+
+  sb.run(cfg);
+  ASSERT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
+
+
+}
+
 
 } //namespace
