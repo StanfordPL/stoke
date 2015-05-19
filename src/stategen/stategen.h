@@ -77,7 +77,7 @@ private:
   bool is_supported_deref(const x64asm::Instruction& instr);
 
   /** Returns if we've already produced an acceptable state. */
-  bool is_ok(const Sandbox&, const x64asm::Instruction& instr);
+  bool is_ok(const x64asm::Instruction& instr);
   /** Returns the number of bytes dereferenced on this line. */
   size_t get_size(const x64asm::Instruction& instr) const;
   /** Returns true if the memory at this address is already allocated. */
@@ -115,6 +115,9 @@ private:
   size_t max_jumps_;
   /** If unaligned memory accesses are OK? */
   bool allow_unaligned_;
+
+  /** Used to reset the sandbox to a default state */
+  void cleanup();
 
   /** Read the maximum allowed value for a register from the map;
       default to -1 */
