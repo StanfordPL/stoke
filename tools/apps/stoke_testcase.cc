@@ -95,8 +95,13 @@ auto& allow_unaligned_arg = FlagArg::create("allow_unaligned")
                             .description("Allow memory accesses to be unaligned");
 auto& register_max_arg = ValueArg<string>::create("register_max")
                          .usage("<string>")
-                         .description("Set maximum values for registers.  E.g. \"rax=10,rdx=20\"")
-                         .default_val("");
+                         .description("Set maximum values for registers.  E.g. \"rax=10,rdx=20\"");
+
+auto& register_mask_arg = ValueArg<string>::create("register_mask")
+                          .usage("<string>")
+                          .description("Set mask values for registers.  E.g. \"rax=0x10,rdx=0x20\"");
+
+
 
 auto& conv_opt = Heading::create("File conversion options:");
 auto& compress = FlagArg::create("compress")
@@ -109,40 +114,47 @@ auto& in = ValueArg<string>::create("in")
            .description("Path to testcases file")
            .default_val("in.tc");
 
-int auto_gen() {
-  FunctionsGadget aux_fxns;
-  TargetGadget target(aux_fxns, false);
-  SandboxGadget sb({}, aux_fxns);
+uint64_t string_to_int(std::string s) {
 
-  // setup the stategen class
-  StateGen sg(&sb, stack_size.value());
-  sg.set_max_attempts(max_attempts.value())
-  .set_max_memory(max_stack.value())
-  .set_allow_unaligned(allow_unaligned_arg);
+  if(s.length() > 2) {
+    if(s[0] == '0' && s[1] == 'x') {
+      return stoul(s, nullptr, 16);
+    }
+  }
+  return stoul(s, nullptr, 10);
+}
 
+std::vector<std::pair<R64, uint64_t>> parse_register_value_list(std::string s, std::string option_name) {
 
-  // parse the register_max argument
   // We keep track of the register read so far ("current_reg"), the value read
   // so far ("current_value"), and whether we're still reading the register
   // name, or if we're reading something else.  It's a very simple DFA for
   // parsing (there are basically two states, depending on reading_reg).
-  string register_max = register_max_arg.value();
-  if(register_max.size())
-    register_max.append(1, '\n');
+  // build the testcases
+
+  std::vector<std::pair<R64, uint64_t>> values;
+  s.append(1, '\n');
   string current_reg = "";
-  uint64_t current_value = 0;
+  string current_value = "";
   bool reading_reg = true;
-  for(size_t i = 0; i < register_max.size(); ++i) {
-    char c = register_max[i];
-    if(c >= '0' && c <= '9') {
+  for(size_t i = 0; i < s.size(); ++i) {
+    char c = s[i];
+    if((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z')) {
       if(!reading_reg)
-        current_value = current_value*10 + (c - '0');
+        current_value.append(1, c);
       else
         current_reg.append(1, c);
-    } else if (c == ',' || c == '\n') {
+    } else if (c >= 'A' && c <= 'Z') {
+      if(!reading_reg)
+        current_value.append(1, c - 'A' + 'a');
+      else
+        current_reg.append(1, c - 'A' + 'a');
+    }
+    else if (c == ',' || c == '\n') {
       if(reading_reg) {
         Console::warn() << "Got ',' or end-of-input but expected '=' or register name." << endl;
-        Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for --register_max" << endl;
+        Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for "
+                          << option_name << endl;
       }
 
       R64 reg = rax;
@@ -173,34 +185,59 @@ int auto_gen() {
           }
         }
         if(!set) {
-          Console::error(1) << "Could not parse register " << current_reg << "for --register_max" << endl;
+          Console::error(1) << "Could not parse register " << current_reg << "for"
+                            << option_name << endl;
         }
       }
-      sg.set_max_value(reg, current_value);
+      values.push_back(std::pair<R64,uint64_t>(reg, string_to_int(current_value)));
 
       current_reg = "";
-      current_value = 0;
+      current_value = "";
       reading_reg = true;
 
-    } else if (c >= 'a' && c <= 'z') {
-      if(!reading_reg)
-        Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for --register_max" << endl;
-      current_reg.append(1, c);
-    } else if (c >= 'A' && c <= 'Z') {
-      if(!reading_reg)
-        Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for --register_max" << endl;
-      current_reg.append(1, c - 'A' + 'a');
     } else if (c == '=') {
       if(!reading_reg)
-        Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for --register_max" << endl;
+        Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for "
+                          << option_name << endl;
       reading_reg = false;
     } else {
-      Console::warn() << "Unexpected character " << c << " in --register_max" << endl;
-      Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for --register_max" << endl;
+      Console::warn() << "Unexpected character " << c << " in " << option_name << endl;
+      Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12" << endl;
     }
   }
 
-  // build the testcases
+  return values;
+}
+
+int auto_gen() {
+  FunctionsGadget aux_fxns;
+  TargetGadget target(aux_fxns, false);
+  SandboxGadget sb({}, aux_fxns);
+
+  // setup the stategen class
+  StateGen sg(&sb, stack_size.value());
+  sg.set_max_attempts(max_attempts.value())
+  .set_max_memory(max_stack.value())
+  .set_allow_unaligned(allow_unaligned_arg);
+
+
+  // parse the register maximas and masks argument
+  if(register_max_arg.has_been_provided()) {
+    auto reg_max_vals = parse_register_value_list(register_max_arg, "--register_max");
+    for(auto it : reg_max_vals) {
+      sg.set_max_value(it.first, it.second);
+    }
+  }
+
+  if(register_mask_arg.has_been_provided()) {
+    auto reg_mask_vals = parse_register_value_list(register_mask_arg, "--register_mask");
+    for(auto it : reg_mask_vals) {
+      sg.set_bitmask(it.first, it.second);
+    }
+  }
+
+
+  // generate testcases
   CpuStates tcs;
   for (size_t i = 0, ie = max_tc.value(); i < ie; ++i) {
     CpuState tc;

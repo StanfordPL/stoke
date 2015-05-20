@@ -40,10 +40,13 @@ bool StateGen::get(CpuState& cs) const {
   for (size_t i = 0, ie = cs.gp.size(); i < ie; ++i) {
     auto& r = cs.gp[i];
     auto max = get_max_value(i);
+    auto mask = get_bitmask(i);
     for (size_t j = 0, je = r.num_fixed_bytes(); j < je; ++j) {
       auto max_byte = max & 0xff;
-      r.get_fixed_byte(j) = rand() % (max_byte + 1);
-      max = max >> 8;
+      auto mask_byte = mask & 0xff;
+      r.get_fixed_byte(j) = (rand() % (max_byte + 1)) & mask_byte;
+      max >>= 8;
+      mask >>= 8;
     }
   }
   for (size_t i = 0, ie = cs.sse.size(); i < ie; ++i) {
