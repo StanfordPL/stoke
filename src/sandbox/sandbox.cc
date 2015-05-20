@@ -187,11 +187,11 @@ Sandbox& Sandbox::run(size_t index) {
   }
 
   // Optimization: In read only mem mode, we don't need to reset output memory
-  if (!all_fxns_read_only_) {
+  //if (!all_fxns_read_only_) {
     io->out_.stack.copy(io->in_.stack);
     io->out_.heap.copy(io->in_.heap);
     io->out_.data.copy(io->in_.data);
-  }
+  //}
 
   // Reset error-related variables
   jumps_remaining_ = max_jumps_;

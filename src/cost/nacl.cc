@@ -74,23 +74,30 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
   //    and a restricted register index (DONE)
   for(size_t i = 0; i < code.size(); ++i) {
     auto instr = code[i];
-    if(instr.mem_index() != -1) {
+    if(instr.is_explicit_memory_dereference()) {
       M8 mem = instr.get_operand<M8>(instr.mem_index());
       if(!mem.contains_base() && !mem.rip_offset()) {
         //no good; no base register
-        //cout << "USING MEMORY ACCESS WITHOUT BASE" << endl;
+        //cout << "USING MEMORY ACCESS WITHOUT BASE: " << instr << endl;
         score++;
       } else if (mem.get_base() != r15 && mem.get_base() != rsp &&
                  mem.get_base() != rbp) {
-        //cout << "USING MEMORY ACCESS WITHOUT r15/rsp/rbp/rip base" << endl;
+        //cout << "USING MEMORY ACCESS WITHOUT r15/rsp/rbp/rip base: " << instr << endl;
         score++;
       }
 
       if(mem.contains_index()) {
         if((uint64_t)mem.get_index() + 1 != restricted_registers[i]) {
-          //cout << "USING NON-RESTRICTED REGISTER AS INDEX" << endl;
+          //cout << "USING NON-RESTRICTED REGISTER AS INDEX: " << instr << endl;
           score++;
         }
+      }
+    }
+    if(instr.is_implicit_memory_dereference()) {
+      auto opc = instr.get_opcode();
+      if(opc != POP_R64 && opc != POP_M64 && opc != PUSH_R64 && opc != PUSH_M64 && opc != RET) {
+        //cout << "USING UNSUPPORTED MEMORY OPERATION: " << instr << endl;
+        score++;
       }
     }
   }

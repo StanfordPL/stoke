@@ -43,9 +43,7 @@ LatencyCost::result_type LatencyCost::operator()(const Cfg& cfg, Cost max) {
     const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
       // Record latency for non nop instructions
-      if (!code[i].is_nop()) {
-        block_latency += code[i].haswell_latency();
-      }
+      block_latency += code[i].haswell_latency();
     }
 
     // Increment latency by block latency scaled by nesting penalty
