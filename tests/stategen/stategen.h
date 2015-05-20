@@ -255,6 +255,38 @@ TEST(StateGenTest, MaxValueWorks) {
   EXPECT_TRUE(encountered_max);
 }
 
+TEST(StateGenTest, BitmaskWorks) {
+
+  // Build example
+  std::stringstream ss;
+
+  ss << ".foo:" << std::endl;
+  ss << "movq %rax, %rcx" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  // Run stategen
+  Sandbox sg_sb;
+  sg_sb.set_max_jumps(2)
+  .set_abi_check(false);
+
+  Cfg cfg_t(c, x64asm::RegSet::universe(), x64asm::RegSet::empty());
+  StateGen sg(&sg_sb);
+  sg.set_max_attempts(10)
+  .set_max_memory(1000)
+  .set_bitmask(x64asm::rax, 0xff00);
+
+  CpuState tc;
+  for(size_t i = 0; i < 50; ++i) {
+    EXPECT_TRUE(sg.get(tc, cfg_t));
+    uint64_t value = tc.gp[x64asm::rax].get_fixed_quad(0);
+    EXPECT_EQ(value & 0xff, 0x0);
+    EXPECT_EQ(value, value & 0xff00);
+  }
+}
+
 TEST(StateGenTest, MisalignedNotAllowed) {
 
   // Build example
