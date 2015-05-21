@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <unordered_set>
+
 #include "src/cost/nacl.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
@@ -37,6 +39,7 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
   //  the map.  It holds 0 if there are no restricted registers, and holds
   //  r+1 if register r is restricted) (DONE)
 
+  unordered_set<uint64_t> aligned_labels;
   size_t rip_offset = cfg.get_function().get_rip_offset();
   buffer_.reserve(code.size()*32);
   assm_.start(buffer_);
@@ -65,11 +68,35 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
       score += end;
       //cout << "LOST " << end << " BYTES.  TOTAL " << score << endl;
     }
+
+    // record which labels are at 32-byte boundary
+    if(instr.is_label_defn() && start == 0) {
+      auto label = instr.get_operand<Label>(0);
+      aligned_labels.insert((uint64_t)label);
+    }
   }
 
   // 3. no pseudo instructions may cross 32-bit boundaries (NO)
   // 4. call instructions must be 5 bytes before a 32-byte boundary (NO)
-  // 5. indirect call targets must be 32-byte aligned (NO)
+  // 5. jump/call targets must be 32-byte aligned
+  for(size_t i = 0; i < code.size(); ++i) {
+    auto instr = code[i];
+    if(instr.is_any_jump()) {
+      if(instr.is_any_indirect_jump()) {
+        score++;
+        std::cout << "indirect jumps not supported yet." << endl;
+        assert(false);
+      } else {
+        auto label = instr.get_operand<Label>(0);
+        if(!aligned_labels.count((uint64_t)label)) {
+          score++;
+          cout << "jump target misaligned" << endl;
+        }
+      }
+    }
+  }
+
+
   // 6. all memory accesses must use rip, rbp, rsp or r15 as a base
   //    and a restricted register index (DONE)
   for(size_t i = 0; i < code.size(); ++i) {
