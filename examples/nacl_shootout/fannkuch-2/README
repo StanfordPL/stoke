@@ -1,0 +1,19 @@
+Here's our target:
+
+   // (0x16 = 22 bytes of NOP)
+   20656:       8d 74 8b 04             lea    0x4(%rbx,%rcx,4),%esi
+   2065a:       8d 0c 8b                lea    (%rbx,%rcx,4),%ecx
+   2065d:       31 d2                   xor    %edx,%edx
+   2065f:       90                      nop
+   20660:       89 cf                   mov    %ecx,%edi
+   20662:       41 89 f0                mov    %esi,%r8d
+   20665:       45 89 c0                mov    %r8d,%r8d
+   20668:       f3 43 0f 6f 04 07       movdqu (%r15,%r8,1),%xmm0
+   2066e:       89 ff                   mov    %edi,%edi
+   20670:       66 41 0f 7f 04 3f       movdqa %xmm0,(%r15,%rdi,1)
+   20676:       83 c2 01                add    $0x1,%edx
+   20679:       83 c6 10                add    $0x10,%esi
+   2067c:       83 c1 10                add    $0x10,%ecx
+   2067f:       90                      nop
+   20680:       44 39 ca                cmp    %r9d,%edx
+   20683:       72 db                   jb     20660 <fannkuchredux+0x480>

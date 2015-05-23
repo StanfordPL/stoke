@@ -77,7 +77,7 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
   }
 
   // 3. no pseudo instructions may cross 32-bit boundaries (NO)
-  // 4. call instructions must be 5 bytes before a 32-byte boundary (NO) 
+  // 4. call instructions must be 5 bytes before a 32-byte boundary (NO)
   // 5. jump/call targets must be 32-byte aligned (YEA)
   for(size_t i = 0; i < code.size(); ++i) {
     auto instr = code[i];

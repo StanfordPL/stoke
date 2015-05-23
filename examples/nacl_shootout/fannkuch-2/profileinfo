@@ -1,0 +1,182 @@
+--------------------------------------------------------------------------------
+I1 cache:         32768 B, 64 B, 8-way associative
+D1 cache:         32768 B, 64 B, 8-way associative
+LL cache:         8388608 B, 64 B, 16-way associative
+Command:          ./profile
+Data file:        cachegrind.out.8362
+Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Events shown:     Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Event sort order: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw
+Thresholds:       0.1 100 100 100 100 100 100 100 100
+Include dirs:     
+User annotated:   
+Auto-annotation:  on
+
+--------------------------------------------------------------------------------
+       Ir I1mr ILmr      Dr  D1mr  DLmr      Dw D1mw DLmw 
+--------------------------------------------------------------------------------
+1,193,770  825  819 175,110 1,220 1,051 154,659  507  465  PROGRAM TOTALS
+
+--------------------------------------------------------------------------------
+       Ir I1mr ILmr      Dr D1mr DLmr      Dw D1mw DLmw  file:function
+--------------------------------------------------------------------------------
+1,084,872    5    5 147,597    0    0 141,144    0    0  /home/berkeley/stoke/examples/nacl_shootout/fannkuch-2/fannkuchredux.c:fannkuchredux
+   21,726   13   13   7,010  159  132   3,332    5    0  /build/buildd/eglibc-2.19/elf/dl-lookup.c:do_lookup_x
+   18,032   11   11   3,624   92   88   2,071    6    0  /build/buildd/eglibc-2.19/elf/dl-lookup.c:_dl_lookup_symbol_x
+   16,299   21   21   3,769  556  538   2,018  249  239  /build/buildd/eglibc-2.19/elf/../sysdeps/x86_64/dl-machine.h:_dl_relocate_object
+    9,693    1    1   2,884   23   11       0    0    0  /build/buildd/eglibc-2.19/string/../sysdeps/x86_64/multiarch/../strcmp.S:strcmp
+    8,259   10   10   1,966   85   69     116    3    0  /build/buildd/eglibc-2.19/elf/do-rel.h:_dl_relocate_object
+    4,280    6    6   1,801   27   19     517    2    0  /build/buildd/eglibc-2.19/elf/dl-lookup.c:check_match.9458
+    2,368    3    3     739    0    0       6    0    0  /build/buildd/eglibc-2.19/elf/dl-minimal.c:strsep
+    2,226    1    1      13    0    0   2,148   34   34  /build/buildd/eglibc-2.19/string/../sysdeps/x86_64/rtld-memset.S:memset
+    1,228   13   13     401   12   12     167   13   13  /build/buildd/eglibc-2.19/elf/dl-version.c:_dl_check_map_versions
+
+--------------------------------------------------------------------------------
+-- Auto-annotated source: /home/berkeley/stoke/examples/nacl_shootout/fannkuch-2/fannkuchredux.c
+--------------------------------------------------------------------------------
+     Ir I1mr ILmr     Dr D1mr DLmr     Dw D1mw DLmw 
+
+-- line 45 ----------------------------------------
+      .    .    .      .    .    .      .    .    .    uint64_t diff = current - last;
+      .    .    .      .    .    .      .    .    .    last = current;
+      .    .    .      .    .    .      .    .    .    return diff;
+      .    .    .      .    .    .      .    .    .  }
+      .    .    .      .    .    .      .    .    .  #endif
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .  inline static int max(int a, int b)
+      .    .    .      .    .    .      .    .    .  {
+ 10,080    1    1      0    0    0      0    0    0      return a > b ? a : b;
+      .    .    .      .    .    .      .    .    .  }
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .  //n = 10, pf[0] = 73196, pf[1] = 38
+      .    .    .      .    .    .      .    .    .  //n = 11, pf[0] = 556355, pf[1] = 51
+      .    .    .      .    .    .      .    .    .  int ref_checksum = 73196;
+      .    .    .      .    .    .      .    .    .  int ref_flips = 38;
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .  int fannkuchredux(int n)
+      8    0    0      0    0    0      6    0    0  {
+      5    1    1      0    0    0      0    0    0      int perm[n];
+      2    0    0      0    0    0      0    0    0      int perm1[n];
+      2    0    0      0    0    0      0    0    0      int count[n];
+      .    .    .      .    .    .      .    .    .      int maxFlipsCount = 0;
+      .    .    .      .    .    .      .    .    .      int permCount = 0;
+      .    .    .      .    .    .      .    .    .      int checksum = 0;
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .      int i;
+      .    .    .      .    .    .      .    .    .  
+     32    0    0      0    0    0      7    0    0      for (i=0; i<n; i+=1)
+      .    .    .      .    .    .      .    .    .          perm1[i] = i;
+      .    .    .      .    .    .      .    .    .      int r = n;
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .  #ifdef PROFILE
+      .    .    .      .    .    .      .    .    .      last = now();
+      .    .    .      .    .    .      .    .    .  #endif
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .      while (1) {
+      .    .    .      .    .    .      .    .    .  #ifdef PROFILE
+      .    .    .      .    .    .      .    .    .          counter[0] += diff();
+      .    .    .      .    .    .      .    .    .  #endif
+      .    .    .      .    .    .      .    .    .  
+ 17,320    1    1      0    0    0      0    0    0          while (r != 1) {
+ 10,860    0    0      0    0    0  3,620    0    0              count[r-1] = r;
+  3,624    0    0      0    0    0      1    0    0              r -= 1;
+      .    .    .      .    .    .      .    .    .          }
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .  
+ 90,720    0    0      0    0    0      0    0    0          for (i=0; i<n; i+=1)
+105,840    0    0 35,280    0    0 35,280    0    0              perm[i] = perm1[i];
+      .    .    .      .    .    .      .    .    .          int flipsCount = 0;
+      .    .    .      .    .    .      .    .    .          int k;
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .  
+ 61,496    0    0  5,040    0    0      0    0    0          while ( !((k = perm[0]) == 0) ) {
+ 37,016    1    1      0    0    0      0    0    0              int k2 = (k+1) >> 1;
+378,826    0    0 35,610    0    0      0    0    0              for (i=0; i<k2; i++) {
+106,830    0    0 35,610    0    0 71,220    0    0                  int temp = perm[i]; perm[i] = perm[k-i]; perm[k-i] = temp;
+      .    .    .      .    .    .      .    .    .              }
+ 18,508    0    0      0    0    0      0    0    0              flipsCount += 1;
+      .    .    .      .    .    .      .    .    .          }
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .  #ifdef PROFILE
+      .    .    .      .    .    .      .    .    .          counter[1] += diff();
+      .    .    .      .    .    .      .    .    .  #endif
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .          maxFlipsCount = max(maxFlipsCount, flipsCount);
+ 25,200    0    0  5,040    0    0      0    0    0          checksum += permCount % 2 == 0 ? flipsCount : -flipsCount;
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .          /* Use incremental change to generate another permutation */
+      .    .    .      .    .    .      .    .    .          while (1) {
+ 22,360    0    0      0    0    0      0    0    0              if (r == n) {
+      .    .    .      .    .    .      .    .    .  #ifdef PROFILE
+      .    .    .      .    .    .      .    .    .                  counter[1] += diff();
+      .    .    .      .    .    .      .    .    .  #endif
+      2    0    0      0    0    0      0    0    0                  if (n == 10 && checksum != ref_checksum) return -1;
+      .    .    .      .    .    .      .    .    .                  if (n == 10 && maxFlipsCount != ref_flips) return -1;
+      1    0    0      0    0    0      0    0    0                  return 0;
+      .    .    .      .    .    .      .    .    .              }
+      .    .    .      .    .    .      .    .    .  
+ 17,318    0    0  8,659    0    0      0    0    0              int perm0 = perm1[0];
+  8,659    0    0      0    0    0      0    0    0              i = 0;
+ 27,384    0    0      0    0    0      0    0    0              while (i < r) {
+ 27,384    0    0      0    0    0      0    0    0                  int j = i + 1;
+ 41,076    1    1 13,692    0    0 13,692    0    0                  perm1[i] = perm1[j];
+      .    .    .      .    .    .      .    .    .                  i = j;
+      .    .    .      .    .    .      .    .    .              }
+ 17,318    0    0      0    0    0  8,659    0    0              perm1[r] = perm0;
+ 25,977    0    0  8,659    0    0  8,659    0    0              count[r] = count[r] - 1;
+ 17,318    0    0      0    0    0      0    0    0              if (count[r] > 0) break;
+  3,620    0    0      0    0    0      0    0    0              r++;
+      .    .    .      .    .    .      .    .    .          }
+  5,039    0    0      0    0    0      0    0    0          permCount++;
+      .    .    .      .    .    .      .    .    .  
+  5,039    0    0      0    0    0      0    0    0      }
+      .    .    .      .    .    .      .    .    .  #ifdef PROFILE
+      .    .    .      .    .    .      .    .    .      counter[1] += diff();
+      .    .    .      .    .    .      .    .    .  #endif
+      .    .    .      .    .    .      .    .    .      return checksum;
+      8    0    0      7    0    0      0    0    0  }
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .  #ifdef DEFMAIN
+      .    .    .      .    .    .      .    .    .  int main(int argc, char *argv[])
+      1    0    0      0    0    0      1    0    0  {
+      .    .    .      .    .    .      .    .    .  #ifdef PROFILE
+      .    .    .      .    .    .      .    .    .      for(size_t i = 0; i < 2; ++i) {
+      .    .    .      .    .    .      .    .    .        counter[i] = 0;
+      .    .    .      .    .    .      .    .    .      }
+      .    .    .      .    .    .      .    .    .  #endif
+      .    .    .      .    .    .      .    .    .  
+      3    1    1      0    0    0      0    0    0      int n = argc > 1 ? atoi(argv[1]) : 7;
+      2    0    0      0    0    0      1    0    0      printf("Pfannkuchen(%d) = %d\n", n, fannkuchredux(n));
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .  #ifdef PROFILE
+      .    .    .      .    .    .      .    .    .      uint64_t sum = 0;
+      .    .    .      .    .    .      .    .    .      for(int i = 0; i < 2; ++i) {
+      .    .    .      .    .    .      .    .    .        printf("counter[%d] = %llu\n", i, counter[i]);
+      .    .    .      .    .    .      .    .    .        sum += counter[i];
+      .    .    .      .    .    .      .    .    .      }
+      .    .    .      .    .    .      .    .    .      printf("total = %llu\n", sum);
+      .    .    .      .    .    .      .    .    .  #endif
+      .    .    .      .    .    .      .    .    .      return 0;
+      3    0    0      2    0    0      0    0    0  }
+      .    .    .      .    .    .      .    .    .  #endif
+      .    .    .      .    .    .      .    .    .  
+      .    .    .      .    .    .      .    .    .  int run_fannkuch(int n) {
+      .    .    .      .    .    .      .    .    .    return fannkuchredux(n);
+      .    .    .      .    .    .      .    .    .  }
+
+--------------------------------------------------------------------------------
+The following files chosen for auto-annotation could not be found:
+--------------------------------------------------------------------------------
+  /build/buildd/eglibc-2.19/elf/do-rel.h
+  /build/buildd/eglibc-2.19/string/../sysdeps/x86_64/multiarch/../strcmp.S
+  /build/buildd/eglibc-2.19/elf/dl-minimal.c
+  /build/buildd/eglibc-2.19/string/../sysdeps/x86_64/rtld-memset.S
+  /build/buildd/eglibc-2.19/elf/dl-lookup.c
+  /build/buildd/eglibc-2.19/elf/dl-version.c
+  /build/buildd/eglibc-2.19/elf/../sysdeps/x86_64/dl-machine.h
+
+--------------------------------------------------------------------------------
+Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw 
+--------------------------------------------------------------------------------
+91    1    1 84    0    0 91    0    0  percentage of events annotated
+

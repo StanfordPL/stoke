@@ -168,7 +168,9 @@ BIN=\
 	bin/stoke_benchmark_sandbox \
 	bin/stoke_benchmark_search \
 	bin/stoke_benchmark_state \
-	bin/stoke_benchmark_verify 
+	bin/stoke_benchmark_verify \
+	\
+	bin/fannkuch2_tcs
 
 # used to force a target to rebuild
 .PHONY: .FORCE
