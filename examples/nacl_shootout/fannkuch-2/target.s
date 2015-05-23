@@ -2,8 +2,8 @@
   .globl fannkuchredux
   .type fannkuchredux, @function
 
-#! file-offset 0x601e0
-#! rip-offset  0x201e0
+#! file-offset 0x60490
+#! rip-offset  0x20490
 #! capacity    1632 bytes
 
 # Text                           #  Line  RIP      Bytes  

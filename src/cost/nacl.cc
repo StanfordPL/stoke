@@ -21,6 +21,7 @@ using namespace cpputil;
 using namespace std;
 using namespace x64asm;
 
+#define DEBUG_NACL_COST
 
 namespace stoke {
 
@@ -49,7 +50,9 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     size_t start = (buffer_.size() + rip_offset) & 0x1f;
     assm_.assemble(instr);
     size_t end = (buffer_.size() + rip_offset) & 0x1f;
-    //cout << start << "   " << instr << endl;
+#ifdef DEBUG_NACL_COST
+    cout << start << "   " << instr << endl;
+#endif
 
     // if the instruction is a movl to 32-bit register, and it is not at the
     // end of the 32-byte bundle, then this register is restricted in the next
@@ -58,7 +61,9 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     if((opc == MOV_R32_IMM32 || opc == MOV_R32_M32 || opc == MOV_R32_R32) &&
         end != 0) {
       restricted_registers[i+1] = (uint64_t)instr.get_operand<R32>(0) + 1;
-      //cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
+#ifdef DEBUG_NACL_COST
+      cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
+#endif
     }
 
     // we're in trouble if, looking at the lower 32 bits of the
@@ -66,7 +71,9 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     // lower 32 bits of 'end' are nonzero.
     if(start > end && end != 0) {
       score += end;
-      //cout << "LOST " << end << " BYTES.  TOTAL " << score << endl;
+#ifdef DEBUG_NACL_COST
+      cout << "LOST " << end << " BYTES.  TOTAL " << score << endl;
+#endif
     }
 
     // record which labels are at 32-byte boundary
@@ -84,13 +91,17 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     if(instr.is_any_jump()) {
       if(instr.is_any_indirect_jump()) {
         score++;
-        std::cout << "indirect jumps not supported yet." << endl;
+#ifdef DEBUG_NACL_COST
+        stdcout << "indirect jumps not supported yet." << endl;
+#endif
         assert(false);
       } else {
         auto label = instr.get_operand<Label>(0);
         if(!aligned_labels.count((uint64_t)label)) {
           score++;
-          //cout << "jump target misaligned" << endl;
+#ifdef DEBUG_NACL_COST
+          cout << "jump target misaligned" << endl;
+#endif
         }
       }
     }
@@ -105,17 +116,23 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
       M8 mem = instr.get_operand<M8>(instr.mem_index());
       if(!mem.contains_base() && !mem.rip_offset()) {
         //no good; no base register
-        //cout << "USING MEMORY ACCESS WITHOUT BASE: " << instr << endl;
+#ifdef DEBUG_NACL_COST
+        cout << "USING MEMORY ACCESS WITHOUT BASE: " << instr << endl;
+#endif
         score++;
       } else if (mem.get_base() != r15 && mem.get_base() != rsp &&
                  mem.get_base() != rbp) {
-        //cout << "USING MEMORY ACCESS WITHOUT r15/rsp/rbp/rip base: " << instr << endl;
+#ifdef DEBUG_NACL_COST
+        cout << "USING MEMORY ACCESS WITHOUT r15/rsp/rbp/rip base: " << instr << endl;
+#endif
         score++;
       }
 
       if(mem.contains_index()) {
         if((uint64_t)mem.get_index() + 1 != restricted_registers[i]) {
-          //cout << "USING NON-RESTRICTED REGISTER AS INDEX: " << instr << endl;
+#ifdef DEBUG_NACL_COST
+          cout << "USING NON-RESTRICTED REGISTER AS INDEX: " << instr << endl;
+#endif
           score++;
         }
       }
@@ -123,7 +140,9 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     if(instr.is_implicit_memory_dereference()) {
       auto opc = instr.get_opcode();
       if(opc != POP_R64 && opc != POP_M64 && opc != PUSH_R64 && opc != PUSH_M64 && opc != RET) {
-        //cout << "USING UNSUPPORTED MEMORY OPERATION: " << instr << endl;
+#ifdef DEBUG_NACL_COST
+        cout << "USING UNSUPPORTED MEMORY OPERATION: " << instr << endl;
+#endif
         score++;
       }
     }
@@ -148,19 +167,27 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     }
 
     if(instr.maybe_write_set().contains(rsp)) {
-      //cout << instr << " may write rsp" << endl;
+#ifdef DEBUG_NACL_COST
+      cout << instr << " may write rsp" << endl;
+#endif
       score++;
     }
     if(instr.maybe_undef_set().contains(rsp)) {
-      //cout << instr << " may undef rsp" << endl;
+#ifdef DEBUG_NACL_COST
+      cout << instr << " may undef rsp" << endl;
+#endif
       score++;
     }
     if(instr.maybe_write_set().contains(rbp)) {
-      //cout << instr << " may write rbp" << endl;
+#ifdef DEBUG_NACL_COST
+      cout << instr << " may write rbp" << endl;
+#endif
       score++;
     }
     if(instr.maybe_undef_set().contains(rbp)) {
-      //cout << instr << " may undef rbp" << endl;
+#ifdef DEBUG_NACL_COST
+      cout << instr << " may undef rbp" << endl;
+#endif
       score++;
     }
   }
@@ -169,11 +196,15 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
   // 8. r15 may never be modified
   for(auto instr : code) {
     if(instr.maybe_write_set().contains(r15)) {
-      //cout << instr << " may write r15" << endl;
+#ifdef DEBUG_NACL_COST
+      cout << instr << " may write r15" << endl;
+#endif
       score++;
     }
     if(instr.maybe_undef_set().contains(r15)) {
-      //cout << instr << " may undef r15" << endl;
+#ifdef DEBUG_NACL_COST
+      cout << instr << " may undef r15" << endl;
+#endif
       score++;
     }
   }
