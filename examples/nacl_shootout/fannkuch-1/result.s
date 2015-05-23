@@ -6,24 +6,31 @@
 #! rip-offset  0x20656
 #! capacity    48 bytes
 
-# Text                         #  Line  RIP      Bytes  
-.fannkuch1:                    #        0x20656  0      
-  xorl %edx, %edx              #  1     0x20656  5      
-  leal 0x4(%rbx,%rcx,4), %esi  #  2     0x2065b  4      
-  leal (%rbx,%rcx,4), %ecx     #  4     0x20660  3      
-  nop
-.L_1:                          #        0x20668  0      
-  movl %esi, %r8d              #  5     0x20668  3      
-  movups (%r15,%r8,1), %xmm0   #  6     0x2066b  5      
-  movl %ecx, %edi              #  7     0x20670  2      
-  movups %xmm0, (%r15,%rdi,1)  #  8     0x20672  5      
-  subl $0xfffffff0, %ecx       #  9     0x20677  6      
-  addl $0x1, %edx              #  10    0x2067d  3      
-  addl $0x10, %esi             #  11    0x20680  3      
-  cmpl %r9d, %edx              #  12    0x20683  3      
-  nop
-  nop
-  jb .L_1                      #  13    0x20686  6      
-  retq                         #  14    0x2068c  1      
-                                                        
+# Text                          #  Line  RIP      Bytes  
+.fannkuch1:                     #        0x20656  0      
+  xorl %edx, %edx               #  1     0x20656  2      
+  leal 0x4(%rbx,%rcx,4), %esi   #  2     0x20658  4      
+  leal -0x4(%rdx,%rsi,1), %ecx  #  3     0x2065c  4      
+.L_1:                           #        0x20660  0      
+  movl %esi, %r8d               #  4     0x20660  3      
+  movupd (%r15,%r8,1), %xmm0    #  5     0x20663  6      
+  movl %ecx, %edi               #  6     0x20669  2      
+  movups %xmm0, (%r15,%rdi,1)   #  7     0x2066b  5      
+  addl $0x10, %esi              #  8     0x20670  3      
+  adcl $0x1, %edx               #  9     0x20673  3      
+  setnc %spl                    #  10    0x20676  4      
+  addl $0x10, %ecx              #  11    0x2067a  3      
+  cmpl %r9d, %edx               #  12    0x2067d  3      
+  jb .L_1                       #  13    0x20680  6      
+  retq                          #  14    0x20686  1      
+  comisd %xmm13, %xmm13         #  15    0x20687  5      
+  nop                           #  16    0x2068c  1      
+  shrb $0x1, %ch                #  17    0x2068d  2      
+  punpckhdq %xmm1, %xmm0        #  18    0x2068f  4      
+  pmaxub %xmm2, %xmm2           #  19    0x20693  4      
+  rsqrtps %xmm13, %xmm13        #  20    0x20697  4      
+  pmovzxbd %xmm4, %xmm0         #  21    0x2069b  5      
+  psllq $0x20, %xmm11           #  22    0x206a0  6      
+  pslld $0x0, %xmm0             #  23    0x206a6  5      
+                                                         
 .size fannkuch1, .-fannkuch1

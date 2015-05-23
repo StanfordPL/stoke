@@ -77,8 +77,8 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
   }
 
   // 3. no pseudo instructions may cross 32-bit boundaries (NO)
-  // 4. call instructions must be 5 bytes before a 32-byte boundary (NO)
-  // 5. jump/call targets must be 32-byte aligned
+  // 4. call instructions must be 5 bytes before a 32-byte boundary (NO) 
+  // 5. jump/call targets must be 32-byte aligned (YEA)
   for(size_t i = 0; i < code.size(); ++i) {
     auto instr = code[i];
     if(instr.is_any_jump()) {
@@ -90,7 +90,7 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
         auto label = instr.get_operand<Label>(0);
         if(!aligned_labels.count((uint64_t)label)) {
           score++;
-          cout << "jump target misaligned" << endl;
+          //cout << "jump target misaligned" << endl;
         }
       }
     }
