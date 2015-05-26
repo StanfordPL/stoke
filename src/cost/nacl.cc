@@ -21,7 +21,7 @@ using namespace cpputil;
 using namespace std;
 using namespace x64asm;
 
-#define DEBUG_NACL_COST
+//#define DEBUG_NACL_COST
 
 namespace stoke {
 
@@ -40,7 +40,7 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
   //  the map.  It holds 0 if there are no restricted registers, and holds
   //  r+1 if register r is restricted) (DONE)
 
-  unordered_set<uint64_t> aligned_labels;
+  map<uint64_t, uint64_t> label_align_score;
   size_t rip_offset = cfg.get_function().get_rip_offset();
   buffer_.reserve(code.size()*32);
   assm_.start(buffer_);
@@ -76,10 +76,15 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
 #endif
     }
 
-    // record which labels are at 32-byte boundary
-    if(instr.is_label_defn() && start == 0) {
+    // record "score" for how well each label is aligned
+    if(instr.is_label_defn()) {
+
+      uint64_t score = start;
+      if(32 - start < score)
+        score = 32-start;
+
       auto label = instr.get_operand<Label>(0);
-      aligned_labels.insert((uint64_t)label);
+      label_align_score[(uint64_t)label] = score;
     }
   }
 
@@ -92,17 +97,17 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
       if(instr.is_any_indirect_jump()) {
         score++;
 #ifdef DEBUG_NACL_COST
-        stdcout << "indirect jumps not supported yet." << endl;
+        std::cout << "indirect jumps not supported yet." << endl;
 #endif
         assert(false);
       } else {
         auto label = instr.get_operand<Label>(0);
-        if(!aligned_labels.count((uint64_t)label)) {
-          score++;
+        score += label_align_score[(uint64_t)label];
 #ifdef DEBUG_NACL_COST
-          cout << "jump target misaligned" << endl;
-#endif
+        if(label_align_score[(uint64_t)label]) {
+          cout << "jump target " << label << " misaligned by " << label_align_score[(uint64_t)label] << " bytes." << endl;
         }
+#endif
       }
     }
   }
