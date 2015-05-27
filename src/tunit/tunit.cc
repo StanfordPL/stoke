@@ -615,7 +615,7 @@ istream& TUnit::read_formatted_text(istream& is) {
   } else if (!invariant_first_instr_is_label()) {
     fail(is) << "First instruction is not a label";
   } else if (get_name() != name) {
-    fail(is) << "Label on line one differs from name given in file";
+    fail(is) << "Label on line one differs from name given in file: " + get_name() + " vs. " + name;
   }
 
   recompute();
