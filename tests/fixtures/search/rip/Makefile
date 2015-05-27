@@ -1,4 +1,4 @@
-all: build extract testcase search replace check
+all: build extract testcase search replace
 
 build:
 	g++ -std=c++11 main.cc -O2 -fno-inline
@@ -14,9 +14,6 @@ search:
 
 replace:
 	stoke replace -i ./a.out --rewrite result.s
-
-check:
-	./a.out
 
 clean:
 	rm -rf ./a.out bins *.tc result.s
