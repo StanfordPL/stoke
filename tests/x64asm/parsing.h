@@ -144,8 +144,8 @@ TEST_F(X64AsmParseTest, FuzzTest) {
 
   stoke::Transforms t;
   t.set_opcode_pool(target, flag_set, 0, x64asm::RegSet::empty(), {}, {})
-   .set_operand_pool(target, x64asm::RegSet::empty())
-   .set_seed(seed);
+  .set_operand_pool(target, x64asm::RegSet::empty())
+  .set_seed(seed);
 
   t.insert_immediate(x64asm::Imm64(0x00));
   t.insert_immediate(x64asm::Imm64(0x01));
@@ -172,7 +172,7 @@ TEST_F(X64AsmParseTest, FuzzTest) {
     while(!t.instruction_move(target)) { }
 
     check_code(target.get_code());
-  } 
+  }
 
 
 }
