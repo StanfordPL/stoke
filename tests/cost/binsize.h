@@ -59,7 +59,7 @@ TEST_F(BinSizeCostTest, Issue613) {
   code << "nop" << std::endl;
   code << "nop" << std::endl;
 
-  EXPECT_EQ(29, binsize());
+  EXPECT_EQ((uint64_t)29, binsize());
 
 }
 

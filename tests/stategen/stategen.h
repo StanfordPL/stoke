@@ -246,7 +246,7 @@ TEST(StateGenTest, MaxValueWorks) {
   for(size_t i = 0; i < 200; ++i) {
     EXPECT_TRUE(sg.get(tc, cfg_t));
     uint64_t value = tc.gp[x64asm::rax].get_fixed_quad(0);
-    EXPECT_LE(value, 0x10);
+    EXPECT_LE(value, (uint64_t)0x10);
     encountered_max |= (value == 0x10);
   }
 
@@ -282,7 +282,7 @@ TEST(StateGenTest, BitmaskWorks) {
   for(size_t i = 0; i < 50; ++i) {
     EXPECT_TRUE(sg.get(tc, cfg_t));
     uint64_t value = tc.gp[x64asm::rax].get_fixed_quad(0);
-    EXPECT_EQ(value & 0xff, 0x0);
+    EXPECT_EQ(value & 0xff, (uint64_t)0x0);
     EXPECT_EQ(value, value & 0xff00);
   }
 }
