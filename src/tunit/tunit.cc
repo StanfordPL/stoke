@@ -473,8 +473,16 @@ ostream& TUnit::write_text(ostream& os) const {
   for (auto i = hex_size_begin(), ie = hex_size_end(); i != ie; ++i) {
     col << dec << *i << endl;
   }
+  col.filter().next();
+
+  // Print opcode label
+  col << "Opcode" << endl;
+  for(size_t i = 0, ie = code_.size(); i < ie; ++i) {
+    col << dec << "OPC=" << (uint64_t)code_[i].get_opcode() << endl;
+  }
   col.filter().done();
 
+  // Finish up
   os << endl;
   os << ".size " << get_name() << ", .-" << get_name() << endl;
 
