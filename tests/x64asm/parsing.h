@@ -47,6 +47,33 @@ public:
     }
 
     // Assemble both codes and check for byte-by-byte equivalence
+    x64asm::Assembler assm;
+    x64asm::Function orig;
+    x64asm::Function reparse;
+
+    orig.reserve(c.size()*32);
+    reparse.reserve(d.size()*32);
+
+    assm.start(orig);
+    for(size_t i = 0; i < c.size(); ++i) {
+      assm.assemble(c[i]);
+    }
+    assm.finish();
+
+    assm.start(reparse);
+    for(size_t i = 0; i < d.size(); ++i) {
+      assm.assemble(d[i]);
+    }
+    assm.finish();
+
+    if(orig.size() != reparse.size()) {
+      FAIL() << "Output assembly is different in size" << std::endl;
+      return;
+    }
+
+    for(size_t i = 0; i < orig.size(); ++i) {
+      EXPECT_EQ(orig.get_buffer()[i], reparse.get_buffer()[i]);
+    }
 
   }
 
@@ -127,7 +154,7 @@ TEST_F(X64AsmParseTest, FuzzTest) {
   std::cout << "[----------] * Seed " << seed << std::endl;
 
   // Parameters for the test
-  unsigned long iterations = 10;
+  unsigned long iterations = 10000;
 
   std::stringstream flags;
   flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx avx2 }";
