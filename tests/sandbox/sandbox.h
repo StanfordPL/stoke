@@ -516,9 +516,9 @@ TEST(SandboxTest, PUSH_POP) {
   ss << "pushw %ax" << std::endl;
   ss << "pushq -0x18(%rsp)" << std::endl;
   ss << "pushq %rax" << std::endl;
-  ss << "pushq $0xaa" << std::endl;
-  ss << "pushq $0xaa" << std::endl;
-  ss << "pushq $0xbbbb" << std::endl;
+  ss << "pushq $0xffffffffffffffaa" << std::endl;
+  ss << "pushq $0xffffffffffffffaa" << std::endl;
+  ss << "pushq $0xffffffffffffbbbb" << std::endl;
   ss << "pushq $0xcccccccc" << std::endl;
   ss << "popq %rax" << std::endl;
   ss << "popw %ax" << std::endl;

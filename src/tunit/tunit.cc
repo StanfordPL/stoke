@@ -473,8 +473,16 @@ ostream& TUnit::write_text(ostream& os) const {
   for (auto i = hex_size_begin(), ie = hex_size_end(); i != ie; ++i) {
     col << dec << *i << endl;
   }
+  col.filter().next();
+
+  // Print opcode label
+  col << "Opcode" << endl;
+  for(size_t i = 0, ie = code_.size(); i < ie; ++i) {
+    col << dec << "OPC=" << (uint64_t)code_[i].get_opcode() << endl;
+  }
   col.filter().done();
 
+  // Finish up
   os << endl;
   os << ".size " << get_name() << ", .-" << get_name() << endl;
 
@@ -615,7 +623,7 @@ istream& TUnit::read_formatted_text(istream& is) {
   } else if (!invariant_first_instr_is_label()) {
     fail(is) << "First instruction is not a label";
   } else if (get_name() != name) {
-    fail(is) << "Label on line one differs from name given in file";
+    fail(is) << "Label on line one differs from name given in file: " + get_name() + " vs. " + name;
   }
 
   recompute();
