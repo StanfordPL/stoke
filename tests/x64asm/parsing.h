@@ -34,6 +34,8 @@ public:
     ss >> test;
     Code d = test.get_code();
 
+    ASSERT_FALSE(cpputil::failed(ss)) << cpputil::fail_msg(ss);
+
 
     // Check the codes are equivalent
     EXPECT_EQ(c.size(), d.size());

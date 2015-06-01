@@ -24,6 +24,8 @@ TEST(X64AsmInstructionInfo, FunctionSize) {
   ss << "pushq %rax" << std::endl;
   ss >> c;
 
+  ASSERT_FALSE(cpputil::failed(ss)) << cpputil::fail_msg(ss);
+
   Assembler assm;
   auto fxn = assm.assemble(c);
   Function gxn = fxn; //testing copy constructor
@@ -80,6 +82,8 @@ TEST(X64AsmInstructionInfo, FunctionSize2) {
   ss << "sarb   $0x1, %dil" << std::endl;
   ss << "retq " << std::endl;
   ss >> c;
+
+  ASSERT_FALSE(cpputil::failed(ss)) << cpputil::fail_msg(ss);
 
   Assembler assm;
   auto fxn = assm.assemble(c);
