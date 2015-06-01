@@ -37,12 +37,15 @@ public:
     for(size_t i = 0; i < c.size(); ++i) {
       auto expected_instr = c[i];
       auto actual_instr = d[i];
-      EXPECT_EQ(expected_instr.get_opcode(), actual_instr.get_opcode());
-      EXPECT_EQ(expected_instr.arity(), actual_instr.arity());
+      EXPECT_EQ(expected_instr.get_opcode(), actual_instr.get_opcode())
+          << "Opcodes differ for " << c[i] << " and " << d[i] << std::endl;
+      EXPECT_EQ(expected_instr.arity(), actual_instr.arity())
+          << "Arities differ for " << c[i] << " and " << d[i] << std::endl;
       for(size_t j = 0; j < expected_instr.arity(); ++j) {
         auto expected_operand = expected_instr.get_operand<Imm64>(j);
         auto actual_operand = actual_instr.get_operand<Imm64>(j);
-        EXPECT_EQ(expected_operand, actual_operand);
+        EXPECT_EQ((uint64_t)expected_operand, (uint64_t)actual_operand) <<
+            "Operand " << j << " differs between " << c[i] << " and " << d[i] << std::endl;
       }
     }
 
