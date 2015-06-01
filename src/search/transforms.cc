@@ -705,7 +705,7 @@ void Transforms::undo_extension_move(Cfg& cfg) {
 }
 
 bool Transforms::get_lea_mem(const RegSet& rs, Operand& o) {
-  auto m = *((M8*)(&o));
+  M8 m(Imm32(0));
   m.set_rip_offset(false);
   m.set_addr_or(gen_() % 2);
   m.clear_seg();
@@ -727,7 +727,7 @@ bool Transforms::get_rip_mem(Operand& o) {
     return false;
   }
 
-  auto& m = *((M8*)(&o));
+  M8 m(Imm32(0));
   m.set_rip_offset(true);
   m.clear_seg();
   m.clear_base();
