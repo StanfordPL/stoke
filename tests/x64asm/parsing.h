@@ -26,11 +26,14 @@ public:
   // doesn't change anything
   void check_code(x64asm::Code c) {
 
-    Code d;
+    stoke::TUnit test;
+
     std::stringstream ss;
 
-    ss << c << std::endl;
-    ss >> d;
+    ss << stoke::TUnit(c) << std::endl;
+    ss >> test;
+    Code d = test.get_code();
+
 
     // Check the codes are equivalent
     EXPECT_EQ(c.size(), d.size());
@@ -91,13 +94,14 @@ public:
 // that the new code prints the right registers.
 TEST_F(X64AsmParseTest, Reads64BitMemory) {
   std::stringstream ss;
+  ss << ".foo:" << std::endl;
   ss << "movq %rax, (%rcx)" << std::endl;
 
   Code c;
   ss >> c;
   check_code(c);
 
-  Operand o = c[0].get_operand<Operand>(0);
+  Operand o = c[1].get_operand<Operand>(0);
 
 
   EXPECT_TRUE(o.is_typical_memory());
@@ -106,13 +110,14 @@ TEST_F(X64AsmParseTest, Reads64BitMemory) {
 
 TEST_F(X64AsmParseTest, Reads32BitMemory) {
   std::stringstream ss;
+  ss << ".foo:" << std::endl;
   ss << "movl %eax, (%rcx)" << std::endl;
 
   Code c;
   ss >> c;
   check_code(c);
 
-  Operand o = c[0].get_operand<Operand>(0);
+  Operand o = c[1].get_operand<Operand>(0);
 
 
   EXPECT_TRUE(o.is_typical_memory());
@@ -121,13 +126,14 @@ TEST_F(X64AsmParseTest, Reads32BitMemory) {
 
 TEST_F(X64AsmParseTest, Reads16BitMemory) {
   std::stringstream ss;
+  ss << ".foo:" << std::endl;
   ss << "movw (%rcx), %ax" << std::endl;
 
   Code c;
   ss >> c;
   check_code(c);
 
-  Operand o = c[0].get_operand<Operand>(1);
+  Operand o = c[1].get_operand<Operand>(1);
 
   EXPECT_TRUE(o.is_typical_memory());
   EXPECT_EQ(16, o.size());
@@ -135,13 +141,14 @@ TEST_F(X64AsmParseTest, Reads16BitMemory) {
 
 TEST_F(X64AsmParseTest, Reads8BitMemory) {
   std::stringstream ss;
+  ss << ".foo:" << std::endl;
   ss << "movb (%rcx), %al" << std::endl;
 
   Code c;
   ss >> c;
   check_code(c);
 
-  Operand o = c[0].get_operand<Operand>(1);
+  Operand o = c[1].get_operand<Operand>(1);
 
   EXPECT_TRUE(o.is_typical_memory());
   EXPECT_EQ(8, o.size());
