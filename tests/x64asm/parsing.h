@@ -156,6 +156,24 @@ TEST_F(X64AsmParseTest, Reads8BitMemory) {
   EXPECT_EQ(8, o.size());
 }
 
+TEST_F(X64AsmParseTest, Issue189) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "movl $0, %eax" << std::endl;
+
+  Code c;
+  ss >> c;
+
+  ASSERT_FALSE(cpputil::failed(ss)) << cpputil::fail_msg(ss);
+
+  check_code(c);
+
+  Operand o = c[1].get_operand<Operand>(1);
+  EXPECT_TRUE(o.is_immediate());
+  EXPECT_EQ((uint64_t)0, (uint64_t)*static_cast<Imm64*>(&o));
+
+}
+
 TEST_F(X64AsmParseTest, FuzzTest) {
 
   struct timeval tv;
