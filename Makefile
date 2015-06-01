@@ -386,4 +386,6 @@ clean: stoke_clean
 
 dist_clean: clean
 	rm -f src/ext/gtest-1.7.0/CMakeCache.txt
+	./scripts/make/submodule-reset.sh src/ext/cpputil
+	./scripts/make/submodule-reset.sh src/ext/x64asm
 	- $(MAKE) -C src/ext/gtest-1.7.0 clean
