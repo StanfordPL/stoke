@@ -37,7 +37,7 @@ TEST(DisassemblerTest, SimpleExample) {
 
   Disassembler::Callback test_tunit =
   [&](const FunctionCallbackData & fcd) {
-    EXPECT_FALSE(fcd.parse_error);
+    EXPECT_FALSE(fcd.parse_error) << fcd.parse_error_msg;
 
     // There's only one function we're really testing.
     if (fcd.tunit.get_name() == "sample") {
@@ -90,7 +90,7 @@ TEST(DisassemblerTest, PopCnt) {
 
   Disassembler::Callback test_tunit =
   [&](const FunctionCallbackData & pf) {
-    EXPECT_FALSE(pf.parse_error);
+    EXPECT_FALSE(pf.parse_error) << pf.parse_error_msg;
 
     // There's only one function we're really testing.
     if (pf.tunit.get_name() == "_Z6popcntm") {

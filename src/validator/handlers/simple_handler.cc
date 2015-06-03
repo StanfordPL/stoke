@@ -479,6 +479,17 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     return;
   }
 
+  // BRC -- This is a hack to deal with an intel manual bug.  xchg %eax, %eax
+  // is a nop for some encodings, but with other encodings, it will zero bits
+  // 32..63 of rax.  The right way to solve this would be to setup handlers by
+  // opcode *value* rather than memonic, but that seems like a lot to change
+  // for this one bug.
+  if(opcode == "xchgl" &&
+     (instr.get_opcode() == XCHG_EAX_R32 || instr.get_opcode() == XCHG_R32_EAX) &&
+      instr.get_operand<R32>(0) == eax && instr.get_operand<R32>(1) == eax) {
+    return;
+  }
+
   // Figure out the right arguments
   size_t arity = instr.arity();
   switch(arity) {
