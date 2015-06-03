@@ -170,7 +170,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     cfg_code[1] = ins;
     Cfg cfg(cfg_code, ins.maybe_read_set(), liveouts);
 
-    std::cout << "[----------] * " << ins << std::endl;
+    std::cout << "[----------] * " << ins << " # OPC=" << std::dec << ins.get_opcode() << std::endl;
 
     // Make sure we support this instruction
     if(ch.get_support(ins) == Handler::NONE) {
@@ -190,7 +190,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
     target_.clear();
     target_.str("");
     target_ << ".target:" << std::endl;
-    target_ << ins << std::endl;
+    target_ << ins << " # OPC=" << std::dec << ins.get_opcode() << std::endl;
     target_ << "retq" << std::endl;
 
     set_def_ins(cfg.def_ins());
