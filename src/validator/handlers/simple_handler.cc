@@ -485,7 +485,7 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   // opcode *value* rather than memonic, but that seems like a lot to change
   // for this one bug.
   if(opcode == "xchgl" &&
-     (instr.get_opcode() == XCHG_EAX_R32 || instr.get_opcode() == XCHG_R32_EAX) &&
+      (instr.get_opcode() == XCHG_EAX_R32 || instr.get_opcode() == XCHG_R32_EAX) &&
       instr.get_operand<R32>(0) == eax && instr.get_operand<R32>(1) == eax) {
     return;
   }
