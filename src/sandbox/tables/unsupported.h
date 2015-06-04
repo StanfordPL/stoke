@@ -256,6 +256,9 @@ MOV_SREG_M16
 , SYSRET // SYSRET
 , SYSRET_PREFREXW // SYSRET pw
 
+// This instruction could probably be supported, but isn't working as of June 2015 -- BRC
+, XLATB_1
+
 // See issue #463. I'm not sure why this isn't working correctly,
 // but it's sort of a distinction with a difference whether we support
 // this or not since gcc won't ever emit this instruction
