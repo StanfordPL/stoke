@@ -1332,10 +1332,12 @@ void Sandbox::emit_mem_push(const Instruction& instr) {
 void Sandbox::emit_pop(const Instruction& instr) {
   switch (instr.get_opcode()) {
   case POP_R16:
+  case POP_R16_1:
     assm_.lea(rsp, M64(rsp, Imm32(2)));
     emit_memory_instruction({MOV_R16_M16, {instr.get_operand<R16>(0), M16(rsp, Imm32(-2))}});
     break;
   case POP_R64:
+  case POP_R64_1:
     assm_.lea(rsp, M64(rsp, Imm32(8)));
     emit_memory_instruction({MOV_R64_M64, {instr.get_operand<R64>(0), M64(rsp, Imm32(-8))}});
     break;
@@ -1421,6 +1423,7 @@ void Sandbox::emit_push(const Instruction& instr) {
     assm_.lea(rsp, M64(rsp, Imm32(-2)));
     break;
   case PUSH_R64:
+  case PUSH_R64_1:
     emit_memory_instruction({MOV_M64_R64, {M64(rsp, Imm32(-8)), instr.get_operand<R64>(0)}});
     assm_.lea(rsp, M64(rsp, Imm32(-8)));
     break;

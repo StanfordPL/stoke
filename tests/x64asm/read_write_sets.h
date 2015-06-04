@@ -118,11 +118,13 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   blacklist.insert(x64asm::VGATHERQPD_XMM_M64_XMM);
   blacklist.insert(x64asm::VGATHERQPD_YMM_M64_YMM);
   blacklist.insert(x64asm::VGATHERQPS_XMM_M64_XMM);
+  blacklist.insert(x64asm::VGATHERQPS_XMM_M64_XMM_1);
   blacklist.insert(x64asm::VPGATHERDD_XMM_M32_XMM);
   blacklist.insert(x64asm::VPGATHERDD_YMM_M32_YMM);
   blacklist.insert(x64asm::VPGATHERDQ_XMM_M32_XMM);
   blacklist.insert(x64asm::VPGATHERDQ_YMM_M32_YMM);
   blacklist.insert(x64asm::VPGATHERQD_XMM_M64_XMM);
+  blacklist.insert(x64asm::VPGATHERQD_XMM_M64_XMM_1);
   blacklist.insert(x64asm::VPGATHERQQ_XMM_M64_XMM);
   blacklist.insert(x64asm::VPGATHERQQ_YMM_M64_YMM);
 

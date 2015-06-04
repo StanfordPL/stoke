@@ -56,10 +56,6 @@ TEST_F(CfgTransformsTest, Simple) {
   stoke::CfgTransforms tforms;
   tforms.remove_redundant(cfg);
 
-  ss.clear();
-  ss.str("");
-  ss << cfg.get_code();
-
   std::stringstream expected;
   expected << ".bar:" << std::endl;
   expected << "movq (%r8), %rcx" << std::endl;
@@ -73,7 +69,10 @@ TEST_F(CfgTransformsTest, Simple) {
   //expected << "callq .blah" << std::endl;
   expected << "retq ";
 
-  ASSERT_EQ(expected.str(), ss.str());
+  x64asm::Code exp_code;
+  expected >> exp_code;
+
+  ASSERT_EQ(exp_code, cfg.get_code());
 }
 
 } //namespace stoke

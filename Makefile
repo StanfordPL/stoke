@@ -384,9 +384,11 @@ clean: stoke_clean
 	./scripts/make/submodule-init.sh src/ext/x64asm
 	$(MAKE) -C src/ext/cpputil clean
 	$(MAKE) -C src/ext/x64asm clean
+	- $(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
 	rm -rf .depend
 
 dist_clean: clean
 	rm -f src/ext/gtest-1.7.0/CMakeCache.txt
+	./scripts/make/submodule-reset.sh src/ext/cpputil
+	./scripts/make/submodule-reset.sh src/ext/x64asm
 	- $(MAKE) -C src/ext/gtest-1.7.0 clean
-	- $(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke clean
