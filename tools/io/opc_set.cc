@@ -28,106 +28,18 @@ using namespace cpputil;
 using namespace std;
 using namespace x64asm;
 
-namespace {
-
-array<const char*, X64ASM_NUM_OPCODES> att_ {{
-    // Internal mnemonics
-    "<label definition>"
-    // Auto-generated mnemonics
-#include "src/ext/x64asm/src/opcode.att"
-  }};
-
-array<const char*, (size_t)x64asm::Type::YMM> types_ {{
-    "hint",
-    "imm8",
-    "imm16",
-    "imm32",
-    "imm64",
-    "zero",
-    "one",
-    "three",
-    "label",
-    "m8",
-    "m16",
-    "m32",
-    "m64",
-    "m128",
-    "m256",
-    "m16int",
-    "m32int",
-    "m64int",
-    "m32fp",
-    "m64fp",
-    "m80fp",
-    "m80bcd",
-    "m2byte",
-    "m28byte",
-    "m108byte",
-    "m512byte",
-    "farptr1616",
-    "farptr1632",
-    "farptr1664",
-    "mm",
-    "pref66",
-    "prefrexw",
-    "far",
-    "moffs8",
-    "moffs16",
-    "moffs32",
-    "moffs64",
-    "r8",
-    "rh",
-    "al",
-    "cl",
-    "r16",
-    "ax",
-    "dx",
-    "r32",
-    "eax",
-    "r64",
-    "rax",
-    "rel8",
-    "rel32",
-    "sreg",
-    "fs",
-    "gs",
-    "st",
-    "st0",
-    "xmm",
-    "xmm0",
-    "ymm"
-  }};
-
-vector<pair<Opcode, string>> opcodes;
-
-}
 
 namespace stoke {
 
-int test(const pair<Opcode, string>& a, const pair<Opcode, string>& b) {
-  return b.second.compare(0, a.second.size(), a.second);
-}
-bool cmp(const pair<Opcode, string>& a, const pair<Opcode, string>& b) {
-  return test(a, b) > 0;
-}
-bool binary_search(const string& key, set<Opcode>& os) {
-  if (opcodes.size() == 0) {
-    // initialize sorted opcode list
-    for (int i = ADC_AL_IMM8; i <= XTEST; i++) {
-      opcodes.push_back(pair<Opcode, string>((Opcode) i, opcode_to_string((Opcode) i) + "$"));
-    }
-    sort(opcodes.begin(), opcodes.end(), cmp);
-  }
+std::set<x64asm::Opcode> nacl_whitelist() {
 
-  auto k = pair<Opcode, string>(XTEST, key);
-  auto lower = lower_bound(opcodes.begin(), opcodes.end(), k, cmp);
-  bool found = false;
-  while (lower != opcodes.end() && test(k, *lower) == 0) {
-    found = true;
-    os.insert(lower->first);
-    ++lower;
-  }
-  return found;
+  std::set<x64asm::Opcode> set;
+  std::stringstream ss;
+  ss.str("{ adcb_al_imm8 adcw_ax_imm16 adcl_eax_imm32 adcq_rax_imm32 adcb_r8_imm8 adcw_r16_imm8 adcw_r16_imm16 adcl_r32_imm8 adcl_r32_imm32 adcq_r64_imm8 adcq_r64_imm32 adcb_m8_imm8 adcw_m16_imm8 adcw_m16_imm16 adcl_m32_imm8 adcl_m32_imm32 adcq_m64_imm8 adcq_m64_imm32 adcw_r16_imm8 adcl_r32_imm8 adcq_r64_imm8 adcw_m16_imm8 adcl_m32_imm8 adcq_m64_imm8 adcb_r8_r8 adcb_r8_r8_1 adcw_r16_r16 adcw_r16_r16_1 adcl_r32_r32 adcl_r32_r32_1 adcq_r64_r64 adcq_r64_r64_1 adcb_m8_r8 adcw_m16_r16 adcl_m32_r32 adcq_m64_r64 adcb_r8_r8 adcb_r8_r8_1 adcb_r8_m8 adcw_r16_r16 adcw_r16_r16_1 adcw_r16_m16 adcl_r32_r32 adcl_r32_r32_1 adcl_r32_m32 adcq_r64_r64 adcq_r64_r64_1 adcq_r64_m64 addb_al_imm8 addl_eax_imm32 addb_r8_imm8 addl_r32_imm8 addl_r32_imm32 addb_m8_imm8 addl_m32_imm8 addl_m32_imm32 addl_r32_imm8 addl_m32_imm8 addb_r8_r8 addb_r8_r8_1 addl_r32_r32 addl_r32_r32_1 addb_m8_r8 addl_m32_r32 addb_r8_r8 addb_r8_r8_1 addb_r8_m8 addl_r32_r32 addl_r32_r32_1 addl_r32_m32 andb_al_imm8 andl_eax_imm32 andb_r8_imm8 andl_r32_imm8 andl_r32_imm32 andb_m8_imm8 andl_m32_imm8 andl_m32_imm32 andl_r32_imm8 andl_m32_imm8 andb_r8_r8 andb_r8_r8_1 andl_r32_r32 andl_r32_r32_1 andb_m8_r8 andl_m32_r32 andb_r8_r8 andb_r8_r8_1 andb_r8_m8 andl_r32_r32 andl_r32_r32_1 andl_r32_m32 andnl_r32_r32_r32 andnl_r32_r32_m32 bextrl_r32_r32_r32 bextrl_r32_m32_r32 bextrq_r64_r64_r64 bextrq_r64_m64_r64 blsil_r32_r32 blsil_r32_m32 blsiq_r64_r64 blsiq_r64_m64 blsmskl_r32_r32 blsmskl_r32_m32 blsmskq_r64_r64 blsmskq_r64_m64 blsrl_r32_r32 blsrl_r32_m32 blsrq_r64_r64 blsrq_r64_m64 bsfl_r32_r32 bsfl_r32_m32 bsfq_r64_r64 bsfq_r64_m64 bsrw_r16_r16 bsrw_r16_m16 bsrl_r32_r32 bsrl_r32_m32 bsrq_r64_r64 bsrq_r64_m64 bswap_r32 bswap_r64 btl_r32_r32 btq_r64_r64 btl_m32_r32 btq_m64_r64 btl_r32_imm8 btq_r64_imm8 btl_m32_imm8 btq_m64_imm8 btcw_r16_r16 btcl_r32_r32 btcq_r64_r64 btcw_m16_r16 btcl_m32_r32 btcq_m64_r64 btcw_r16_imm8 btcl_r32_imm8 btcq_r64_imm8 btcw_m16_imm8 btcl_m32_imm8 btcq_m64_imm8 btrw_r16_r16 btrl_r32_r32 btrq_r64_r64 btrw_m16_r16 btrl_m32_r32 btrq_m64_r64 btrw_r16_imm8 btrl_r32_imm8 btrq_r64_imm8 btrw_m16_imm8 btrl_m32_imm8 btrq_m64_imm8 btsw_r16_r16 btsl_r32_r32 btsq_r64_r64 btsw_m16_r16 btsl_m32_r32 btsq_m64_r64 btsw_r16_imm8 btsl_r32_imm8 btsq_r64_imm8 btsw_m16_imm8 btsl_m32_imm8 btsq_m64_imm8 callq_r64 callq_m64 callq_r64 callq_m64 clc cld clflush_m8 cmc cmovaw_r16_r16 cmovaw_r16_m16 cmoval_r32_r32 cmoval_r32_m32 cmovaq_r64_r64 cmovaq_r64_m64 cmovaew_r16_r16 cmovaew_r16_m16 cmovael_r32_r32 cmovael_r32_m32 cmovaeq_r64_r64 cmovaeq_r64_m64 cmovbew_r16_r16 cmovbew_r16_m16 cmovbel_r32_r32 cmovbel_r32_m32 cmovbeq_r64_r64 cmovbeq_r64_m64 cmovbw_r16_r16 cmovbw_r16_m16 cmovbl_r32_r32 cmovbl_r32_m32 cmovbq_r64_r64 cmovbq_r64_m64 cmovew_r16_r16 cmovew_r16_m16 cmovel_r32_r32 cmovel_r32_m32 cmoveq_r64_r64 cmoveq_r64_m64 cmovgw_r16_r16 cmovgw_r16_m16 cmovgl_r32_r32 cmovgl_r32_m32 cmovgq_r64_r64 cmovgq_r64_m64 cmovgew_r16_r16 cmovgew_r16_m16 cmovgel_r32_r32 cmovgel_r32_m32 cmovgeq_r64_r64 cmovgeq_r64_m64 cmovlew_r16_r16 cmovlew_r16_m16 cmovlel_r32_r32 cmovlel_r32_m32 cmovleq_r64_r64 cmovleq_r64_m64 cmovlw_r16_r16 cmovlw_r16_m16 cmovll_r32_r32 cmovll_r32_m32 cmovlq_r64_r64 cmovlq_r64_m64 cmovnew_r16_r16 cmovnew_r16_m16 cmovnel_r32_r32 cmovnel_r32_m32 cmovneq_r64_r64 cmovneq_r64_m64 cmovnow_r16_r16 cmovnow_r16_m16 cmovnol_r32_r32 cmovnol_r32_m32 cmovnoq_r64_r64 cmovnoq_r64_m64 cmovnpw_r16_r16 cmovnpw_r16_m16 cmovnpl_r32_r32 cmovnpl_r32_m32 cmovnpq_r64_r64 cmovnpq_r64_m64 cmovnsw_r16_r16 cmovnsw_r16_m16 cmovnsl_r32_r32 cmovnsl_r32_m32 cmovnsq_r64_r64 cmovnsq_r64_m64 cmovow_r16_r16 cmovow_r16_m16 cmovol_r32_r32 cmovol_r32_m32 cmovoq_r64_r64 cmovoq_r64_m64 cmovpl_r32_r32 cmovpl_r32_m32 cmovsw_r16_r16 cmovsw_r16_m16 cmovsl_r32_r32 cmovsl_r32_m32 cmovsq_r64_r64 cmovsq_r64_m64 cmpb_al_imm8 cmpl_eax_imm32 cmpb_r8_imm8 cmpl_r32_imm8 cmpl_r32_imm32 cmpb_m8_imm8 cmpl_m32_imm8 cmpl_m32_imm32 cmpl_r32_imm8 cmpl_m32_imm8 cmpb_r8_r8 cmpb_r8_r8_1 cmpl_r32_r32 cmpl_r32_r32_1 cmpb_m8_r8 cmpl_m32_r32 cmpb_r8_r8 cmpb_r8_r8_1 cmpb_r8_m8 cmpl_r32_r32 cmpl_r32_r32_1 cmpl_r32_m32 cmpxchgb_r8_r8 cmpxchgb_m8_r8 cmpxchgw_r16_r16 cmpxchgw_m16_r16 cmpxchgw_r16_r16 cmpxchgw_m16_r16 cmpxchgq_r64_r64 cmpxchgq_m64_r64 cmpxchgq_r64_r64 cmpxchgq_m64_r64 cmpxchg8b_m64 cpuid decb_r8 decw_r16 decl_r32 decq_r64 decb_m8 decw_m16 decl_m32 decq_m64 decw_r16 decl_r32 divb_r8 divl_r32 divb_m8 divl_m32 enterq_imm8_imm16 enterq_imm8_imm16 idivb_r8 idivw_r16 idivl_r32 idivq_r64 idivb_m8 idivw_m16 idivl_m32 idivq_m64 imulb_r8 imulw_r16 imull_r32 imulq_r64 imulb_m8 imulw_m16 imull_m32 imulq_m64 imulw_r16_r16 imulw_r16_m16 imull_r32_r32 imull_r32_m32 imulq_r64_r64 imulq_r64_m64 imulw_r16_r16_imm8 imulw_r16_m16_imm8 imull_r32_r32_imm8 imull_r32_m32_imm8 imulq_r64_r64_imm8 imulq_r64_m64_imm8 imulw_r16_r16_imm16 imulw_r16_m16_imm16 imull_r32_r32_imm32 imull_r32_m32_imm32 imulq_r64_r64_imm32 imulq_r64_m64_imm32 inb_al_imm8 incb_r8 incw_r16 incl_r32 incq_r64 incb_m8 incw_m16 incl_m32 incq_m64 incw_r16 incl_r32 int_imm8 jmpq_r64 jmpq_m64 jmpq_r64 jmpq_m64 lahf lahf leal_r32_m16 leal_r32_m32 leal_r32_m64 leaq_r64_m16 leaq_r64_m32 leaq_r64_m64 leaveq leaveq lfence lzcntw_r16_r16 lzcntw_r16_m16 lzcntw_r16_r16 lzcntw_r16_m16 lzcntq_r64_r64 lzcntq_r64_m64 lzcntq_r64_r64 lzcntq_r64_m64 mfence movbew_r16_m16 movbel_r32_m32 movbeq_r64_m64 movbew_m16_r16 movbel_m32_r32 movbeq_m64_r64 movmskpd_r32_xmm movmskpd_r64_xmm movmskps_r32_xmm movmskps_r64_xmm movnti_m32_r32 movnti_m64_r64 mulb_r8 mull_r32 mulb_m8 mull_m32 negb_r8 negw_r16 negl_r32 negq_r64 negb_m8 negw_m16 negl_m32 negq_m64 nop nop nopw_r16 nopw_m16 nopw_r16 nopw_m16 notb_r8 notw_r16 notl_r32 notq_r64 notb_m8 notw_m16 notl_m32 notq_m64 orb_al_imm8 orl_eax_imm32 orb_r8_imm8 orl_r32_imm8 orl_r32_imm32 orb_m8_imm8 orl_m32_imm8 orl_m32_imm32 orl_r32_imm8 orl_m32_imm8 orb_r8_r8 orb_r8_r8_1 orl_r32_r32 orl_r32_r32_1 orb_m8_r8 orl_m32_r32 orb_r8_r8 orb_r8_r8_1 orb_r8_m8 orl_r32_r32 orl_r32_r32_1 orl_r32_m32 outb_imm8_al outl_imm8_eax pause popw_r16 popw_r16_1 popw_m16 popq_r64 popq_r64_1 popq_m64 popq_r64 popq_r64_1 popq_m64 popw_r16 popw_r16_1 popq_r64 popq_r64_1 popcntw_r16_r16 popcntw_r16_m16 popcntw_r16_r16 popcntw_r16_m16 popcntq_r64_r64 popcntq_r64_m64 popcntq_r64_r64 popcntq_r64_m64 popf popf popf popf prefetchnta_m8 prefetcht0_m8 prefetcht1_m8 prefetcht2_m8 pushw_r16 pushw_r16_1 pushw_m16 pushq_r64 pushq_r64_1 pushq_m64 pushq_r64 pushq_r64_1 pushq_m64 pushw_r16 pushw_r16_1 pushq_r64 pushq_r64_1 pushq_imm16 pushq_imm16 pushq_imm16 pushq_imm16 pushq_imm8 pushq_imm8 pushf pushf pushf pushf rclb_r8_cl rclw_r16_cl rcll_r32_cl rclq_r64_cl rclb_m8_cl rclw_m16_cl rcll_m32_cl rclq_m64_cl rclb_r8_imm8 rclw_r16_imm8 rcll_r32_imm8 rclq_r64_imm8 rclb_m8_imm8 rclw_m16_imm8 rcll_m32_imm8 rclq_m64_imm8 rcrb_r8_cl rcrw_r16_cl rcrl_r32_cl rcrq_r64_cl rcrb_m8_cl rcrw_m16_cl rcrl_m32_cl rcrq_m64_cl rcrb_r8_imm8 rcrw_r16_imm8 rcrl_r32_imm8 rcrq_r64_imm8 rcrb_m8_imm8 rcrw_m16_imm8 rcrl_m32_imm8 rcrq_m64_imm8 rolb_r8_cl rolw_r16_cl roll_r32_cl rolq_r64_cl rolb_m8_cl rolw_m16_cl roll_m32_cl rolq_m64_cl rolb_r8_imm8 rolw_r16_imm8 roll_r32_imm8 rolq_r64_imm8 rolb_m8_imm8 rolw_m16_imm8 roll_m32_imm8 rolq_m64_imm8 rorb_r8_imm8 rorw_r16_imm8 rorl_r32_imm8 rorq_r64_imm8 rorb_m8_imm8 rorw_m16_imm8 rorl_m32_imm8 rorq_m64_imm8 rorb_r8_cl rorw_r16_cl rorl_r32_cl rorq_r64_cl rorb_m8_cl rorw_m16_cl rorl_m32_cl rorq_m64_cl sahf sahf shlb_r8_cl shlb_m8_cl shlb_r8_imm8 shlb_m8_imm8 sarb_r8_imm8 sarw_r16_imm8 sarl_r32_imm8 sarq_r64_imm8 sarb_m8_imm8 sarw_m16_imm8 sarl_m32_imm8 sarq_m64_imm8 sarb_r8_cl sarw_r16_cl sarl_r32_cl sarq_r64_cl sarb_m8_cl sarw_m16_cl sarl_m32_cl sarq_m64_cl sbbb_al_imm8 sbbw_ax_imm16 sbbl_eax_imm32 sbbq_rax_imm32 sbbb_r8_imm8 sbbw_r16_imm8 sbbw_r16_imm16 sbbl_r32_imm8 sbbl_r32_imm32 sbbq_r64_imm8 sbbq_r64_imm32 sbbb_m8_imm8 sbbw_m16_imm8 sbbw_m16_imm16 sbbl_m32_imm8 sbbl_m32_imm32 sbbq_m64_imm8 sbbq_m64_imm32 sbbw_r16_imm8 sbbl_r32_imm8 sbbq_r64_imm8 sbbw_m16_imm8 sbbl_m32_imm8 sbbq_m64_imm8 sbbb_r8_r8 sbbb_r8_r8_1 sbbw_r16_r16 sbbw_r16_r16_1 sbbl_r32_r32 sbbl_r32_r32_1 sbbq_r64_r64 sbbq_r64_r64_1 sbbb_m8_r8 sbbw_m16_r16 sbbl_m32_r32 sbbq_m64_r64 sbbb_r8_r8 sbbb_r8_r8_1 sbbb_r8_m8 sbbw_r16_r16 sbbw_r16_r16_1 sbbw_r16_m16 sbbl_r32_r32 sbbl_r32_r32_1 sbbl_r32_m32 sbbq_r64_r64 sbbq_r64_r64_1 sbbq_r64_m64 seta_r8 sm_ymm blendvps_xmm_xmm_xmm0 vblendvps_xmm_xmm_xmm_xmm vblendvps_ymm_ymm_ymm_ymm cmppd_xmm_xmm_imm8 vcmppd_xmm_xmm_xmm_imm8 vcmppd_ymm_ymm_ymm_imm8 cmpps_xmm_xmm_imm8 vcmpps_xmm_xmm_xmm_imm8 vcmpps_ymm_ymm_ymm_imm8 cvtdq2pd_xmm_xmm vcvtdq2pd_xmm_xmm vcvtdq2pd_ymm_ymm cvtdq2ps_xmm_xmm vcvtdq2ps_xmm_xmm vcvtdq2ps_ymm_ymm cvtpd2dq_xmm_xmm vcvtpd2dqx_xmm_xmm vcvtpd2dq_xmm_ymm cvtpd2ps_xmm_xmm vcvtpd2ps_xmm_xmm vcvtpd2ps_xmm_ymm cvtps2dq_xmm_xmm vcvtps2dq_xmm_xmm vcvtps2dq_ymm_ymm cvtps2pd_xmm_xmm vcvtps2pd_xmm_xmm vcvtps2pd_ymm_xmm cvttpd2dq_xmm_xmm vcvttpd2dq_xmm_xmm vcvttpd2dq_xmm_ymm cvttps2dq_xmm_xmm vcvttps2dq_xmm_xmm vcvttps2dq_ymm_ymm divpd_xmm_xmm vdivpd_xmm_xmm_xmm vdivpd_ymm_ymm_ymm divps_xmm_xmm vdivps_xmm_xmm_xmm vdivps_ymm_ymm_ymm dppd_xmm_xmm_imm8 vdppd_xmm_xmm_xmm_imm8 dpps_xmm_xmm_imm8 vdpps_xmm_xmm_xmm_imm8 vdpps_ymm_ymm_ymm_imm8 extractps_r32_xmm_imm8 extractps_r64_xmm_imm8 haddpd_xmm_xmm vhaddpd_xmm_xmm_xmm vhaddpd_ymm_ymm_ymm haddps_xmm_xmm vhaddps_xmm_xmm_xmm vhaddps_ymm_ymm_ymm hsubpd_xmm_xmm vhsubpd_xmm_xmm_xmm vhsubpd_ymm_ymm_ymm hsubps_xmm_xmm vhsubps_xmm_xmm_xmm vhsubps_ymm_ymm_ymm maskmovdqu_xmm_xmm vmaskmovdqu_xmm_xmm maxpd_xmm_xmm vmaxpd_xmm_xmm_xmm vmaxpd_ymm_ymm_ymm maxps_xmm_xmm vmaxps_xmm_xmm_xmm vmaxps_ymm_ymm_ymm minpd_xmm_xmm vminpd_xmm_xmm_xmm vminpd_ymm_ymm_ymm minps_xmm_xmm vminps_xmm_xmm_xmm vminps_ymm_ymm_ymm movapd_xmm_xmm movapd_xmm_xmm_1 movapd_xmm_xmm movapd_xmm_xmm_1 vmovapd_xmm_xmm vmovapd_xmm_xmm_1 vmovapd_ymm_ymm vmovapd_ymm_ymm_1 vmovapd_xmm_xmm vmovapd_xmm_xmm_1 vmovapd_ymm_ymm vmovapd_ymm_ymm_1 movaps_xmm_xmm movaps_xmm_xmm_1 movaps_xmm_xmm movaps_xmm_xmm_1 vmovaps_xmm_xmm vmovaps_xmm_xmm_1 vmovaps_ymm_ymm vmovaps_ymm_ymm_1 vmovaps_xmm_xmm vmovaps_xmm_xmm_1 vmovaps_ymm_ymm vmovaps_ymm_ymm_1 vmovddup_ymm_ymm movdqa_xmm_xmm movdqa_xmm_xmm_1 movdqa_xmm_xmm movdqa_xmm_xmm_1 vmovdqa_xmm_xmm vmovdqa_xmm_xmm_1 vmovdqa_xmm_xmm vmovdqa_xmm_xmm_1 vmovdqa_ymm_ymm vmovdqa_ymm_ymm_1 vmovdqa_ymm_ymm vmovdqa_ymm_ymm_1 movdqu_xmm_xmm movdqu_xmm_xmm_1 movdqu_xmm_xmm movdqu_xmm_xmm_1 vmovdqu_xmm_xmm vmovdqu_xmm_xmm_1 vmovdqu_xmm_xmm vmovdqu_xmm_xmm_1 vmovdqu_ymm_ymm vmovdqu_ymm_ymm_1 vmovdqu_ymm_ymm vmovdqu_ymm_ymm_1 movhlps_xmm_xmm vmovhlps_xmm_xmm_xmm vmovhpd_xmm_xmm_m64 vmovhpd_m64_xmm movhps_xmm_m64 movhps_m64_xmm vmovhps_xmm_xmm_m64 vmovhps_m64_xmm vmovlhps_xmm_xmm_xmm vmovlps_xmm_xmm_m64 vmovlps_m64_xmm movmskpd_r32_xmm movmskpd_r64_xmm movmskps_r32_xmm movmskps_r64_xmm movshdup_xmm_xmm vmovshdup_xmm_xmm vmovshdup_ymm_ymm movsldup_xmm_xmm vmovsldup_xmm_xmm vmovsldup_ymm_ymm movupd_xmm_xmm movupd_xmm_xmm_1 movupd_xmm_xmm movupd_xmm_xmm_1 vmovupd_xmm_xmm vmovupd_xmm_xmm_1 vmovupd_ymm_ymm vmovupd_ymm_ymm_1 vmovupd_xmm_xmm vmovupd_xmm_xmm_1 vmovupd_ymm_ymm vmovupd_ymm_ymm_1 vmovups_xmm_xmm vmovups_xmm_xmm_1 vmovups_ymm_ymm vmovups_ymm_ymm_1 vmovups_xmm_xmm vmovups_xmm_xmm_1 vmovups_ymm_ymm vmovups_ymm_ymm_1 mpsadbw_xmm_xmm_imm8 vmpsadbw_xmm_xmm_xmm_imm8 vmpsadbw_ymm_ymm_ymm_imm8 mulpd_xmm_xmm vmulpd_xmm_xmm_xmm vmulpd_ymm_ymm_ymm mulps_xmm_xmm vmulps_xmm_xmm_xmm vmulps_ymm_ymm_ymm orpd_xmm_xmm vorpd_xmm_xmm_xmm vorpd_ymm_ymm_ymm orps_xmm_xmm vorps_xmm_xmm_xmm vorps_ymm_ymm_ymm pabsb_xmm_xmm vpabsb_xmm_xmm vpabsb_ymm_ymm pabsd_xmm_xmm vpabsd_xmm_xmm vpabsd_ymm_ymm pabsw_xmm_xmm vpabsw_xmm_xmm vpabsw_ymm_ymm packssdw_xmm_xmm vpackssdw_xmm_xmm_xmm vpackssdw_ymm_ymm_ymm packsswb_xmm_xmm vpacksswb_xmm_xmm_xmm vpacksswb_ymm_ymm_ymm packusdw_xmm_xmm vpackusdw_xmm_xmm_xmm vpackusdw_ymm_ymm_ymm packuswb_xmm_xmm vpackuswb_xmm_xmm_xmm vpackuswb_ymm_ymm_ymm paddb_xmm_xmm vpaddb_xmm_xmm_xmm vpaddb_ymm_ymm_ymm paddd_xmm_xmm vpaddd_xmm_xmm_xmm vpaddd_ymm_ymm_ymm paddq_xmm_xmm vpaddq_xmm_xmm_xmm vpaddq_ymm_ymm_ymm paddsb_xmm_xmm vpaddsb_xmm_xmm_xmm vpaddsb_ymm_ymm_ymm paddsw_xmm_xmm vpaddsw_xmm_xmm_xmm vpaddsw_ymm_ymm_ymm paddusb_xmm_xmm vpaddusb_xmm_xmm_xmm vpaddusb_ymm_ymm_ymm paddusw_xmm_xmm vpaddusw_xmm_xmm_xmm vpaddusw_ymm_ymm_ymm paddw_xmm_xmm vpaddw_xmm_xmm_xmm vpaddw_ymm_ymm_ymm palignr_xmm_xmm_imm8 vpalignr_xmm_xmm_xmm_imm8 vpalignr_ymm_ymm_ymm_imm8 vpand_ymm_ymm_ymm vpandn_ymm_ymm_ymm pavgb_xmm_xmm vpavgb_xmm_xmm_xmm vpavgb_ymm_ymm_ymm pavgw_xmm_xmm vpavgw_xmm_xmm_xmm vpavgw_ymm_ymm_ymm vpblendd_xmm_xmm_xmm_imm8 vpblendd_ymm_ymm_ymm_imm8 pblendvb_xmm_xmm_xmm0 vpblendvb_xmm_xmm_xmm_xmm vpblendvb_ymm_ymm_ymm_ymm pblendw_xmm_xmm_imm8 vpblendw_xmm_xmm_xmm_imm8 vpblendw_ymm_ymm_ymm_imm8 pclmulqdq_xmm_xmm_imm8 pcmpeqb_xmm_xmm vpcmpeqb_xmm_xmm_xmm vpcmpeqb_ymm_ymm_ymm pcmpeqd_xmm_xmm vpcmpeqd_xmm_xmm_xmm vpcmpeqd_ymm_ymm_ymm pcmpeqq_xmm_xmm vpcmpeqq_xmm_xmm_xmm vpcmpeqq_ymm_ymm_ymm pcmpeqw_xmm_xmm vpcmpeqw_xmm_xmm_xmm vpcmpeqw_ymm_ymm_ymm pcmpgtb_xmm_xmm vpcmpgtb_xmm_xmm_xmm vpcmpgtb_ymm_ymm_ymm pcmpgtd_xmm_xmm vpcmpgtd_xmm_xmm_xmm vpcmpgtd_ymm_ymm_ymm pcmpgtq_xmm_xmm vpcmpgtq_xmm_xmm_xmm pcmpgtw_xmm_xmm vpcmpgtw_xmm_xmm_xmm vpcmpgtw_ymm_ymm_ymm pextrb_m8_xmm_imm8 pextrb_r32_xmm_imm8 pextrb_r64_xmm_imm8 vpextrb_m8_xmm_imm8 pextrq_r64_xmm_imm8 pextrq_m64_xmm_imm8 vpextrq_r64_xmm_imm8 vpextrq_m64_xmm_imm8 pextrw_r32_xmm_imm8 pextrw_r32_xmm_imm8_1 pextrw_r64_xmm_imm8 pextrw_r64_xmm_imm8_1 pextrw_m16_xmm_imm8 pextrw_r32_xmm_imm8 pextrw_r32_xmm_imm8_1 pextrw_r64_xmm_imm8 pextrw_r64_xmm_imm8_1 vpextrw_m16_xmm_imm8 phaddd_xmm_xmm vphaddd_xmm_xmm_xmm vphaddd_ymm_ymm_ymm phaddsw_xmm_xmm vphaddsw_xmm_xmm_xmm vphaddsw_ymm_ymm_ymm phaddw_xmm_xmm vphaddw_xmm_xmm_xmm vphaddw_ymm_ymm_ymm phminposuw_xmm_xmm phsubd_xmm_xmm vphsubd_xmm_xmm_xmm vphsubd_ymm_ymm_ymm phsubsw_xmm_xmm vphsubsw_xmm_xmm_xmm vphsubsw_ymm_ymm_ymm phsubw_xmm_xmm vphsubw_xmm_xmm_xmm vphsubw_ymm_ymm_ymm pinsrb_xmm_m8_imm8 pinsrb_xmm_r32_imm8 vpinsrb_xmm_xmm_m8_imm8 pinsrw_xmm_m16_imm8 pinsrw_xmm_r32_imm8 vpinsrw_xmm_xmm_m16_imm8 pmaddubsw_xmm_xmm vpmaddubsw_xmm_xmm_xmm vpmaddubsw_ymm_ymm_ymm pmaddwd_xmm_xmm vpmaddwd_xmm_xmm_xmm vpmaddwd_ymm_ymm_ymm pmaxsb_xmm_xmm vpmaxsb_xmm_xmm_xmm vpmaxsb_ymm_ymm_ymm pmaxsd_xmm_xmm vpmaxsd_xmm_xmm_xmm vpmaxsd_ymm_ymm_ymm pmaxsw_xmm_xmm vpmaxsw_xmm_xmm_xmm vpmaxsw_ymm_ymm_ymm pmaxub_xmm_xmm vpmaxub_xmm_xmm_xmm vpmaxub_ymm_ymm_ymm pmaxud_xmm_xmm vpmaxud_xmm_xmm_xmm vpmaxud_ymm_ymm_ymm pmaxuw_xmm_xmm vpmaxuw_xmm_xmm_xmm vpmaxuw_ymm_ymm_ymm pminsb_xmm_xmm vpminsb_xmm_xmm_xmm vpminsb_ymm_ymm_ymm pminsd_xmm_xmm vpminsd_xmm_xmm_xmm vpminsd_ymm_ymm_ymm pminsw_xmm_xmm vpminsw_xmm_xmm_xmm pminub_xmm_xmm vpminub_xmm_xmm_xmm vpminub_ymm_ymm_ymm pminud_xmm_xmm vpminud_xmm_xmm_xmm vpminud_ymm_ymm_ymm pminuw_xmm_xmm vpminuw_xmm_xmm_xmm vpminuw_ymm_ymm_ymm pmovmskb_r32_xmm pmovmskb_r64_xmm pmovsxbd_xmm_xmm vpmovsxbd_xmm_xmm vpmovsxbd_ymm_xmm pmovsxbq_xmm_xmm vpmovsxbq_xmm_xmm vpmovsxbq_ymm_xmm pmovsxbw_xmm_xmm vpmovsxbw_xmm_xmm vpmovsxbw_ymm_xmm pmovsxdq_xmm_xmm vpmovsxdq_xmm_xmm vpmovsxdq_ymm_xmm pmovsxwd_xmm_xmm vpmovsxwd_xmm_xmm vpmovsxwd_ymm_xmm pmovsxwq_xmm_xmm vpmovsxwq_xmm_xmm vpmovsxwq_ymm_xmm pmovzxbd_xmm_xmm vpmovzxbd_xmm_xmm vpmovzxbd_ymm_xmm pmovzxbq_xmm_xmm vpmovzxbq_xmm_xmm vpmovzxbq_ymm_xmm pmovzxbw_xmm_xmm vpmovzxbw_xmm_xmm vpmovzxbw_ymm_xmm pmovzxdq_xmm_xmm vpmovzxdq_xmm_xmm vpmovzxdq_ymm_xmm pmovzxwd_xmm_xmm vpmovzxwd_xmm_xmm vpmovzxwd_ymm_xmm pmovzxwq_xmm_xmm vpmovzxwq_xmm_xmm vpmovzxwq_ymm_xmm pmuldq_xmm_xmm vpmuldq_xmm_xmm_xmm vpmuldq_ymm_ymm_ymm pmulhrsw_xmm_xmm vpmulhrsw_xmm_xmm_xmm vpmulhrsw_ymm_ymm_ymm pmulhuw_xmm_xmm vpmulhuw_xmm_xmm_xmm vpmulhuw_ymm_ymm_ymm pmulhw_xmm_xmm vpmulhw_xmm_xmm_xmm vpmulhw_ymm_ymm_ymm pmulld_xmm_xmm vpmulld_xmm_xmm_xmm vpmulld_ymm_ymm_ymm pmullw_xmm_xmm vpmullw_xmm_xmm_xmm vpmullw_ymm_ymm_ymm pmuludq_xmm_xmm vpmuludq_xmm_xmm_xmm vpmuludq_ymm_ymm_ymm por_xmm_xmm vpor_ymm_ymm_ymm psadbw_xmm_xmm vpsadbw_xmm_xmm_xmm vpsadbw_ymm_ymm_ymm pshufb_xmm_xmm vpshufb_xmm_xmm_xmm vpshufb_ymm_ymm_ymm pshufd_xmm_xmm_imm8 vpshufd_xmm_xmm_imm8 vpshufd_ymm_ymm_imm8 vpshufhw_xmm_xmm_imm8 vpshufhw_ymm_ymm_imm8 vpshuflw_xmm_xmm_imm8 vpshuflw_ymm_ymm_imm8 psignb_xmm_xmm vpsignb_xmm_xmm_xmm psignd_xmm_xmm vpsignd_xmm_xmm_xmm psignw_xmm_xmm vpsignw_xmm_xmm_xmm pslld_xmm_xmm pslld_xmm_imm8 vpslld_xmm_xmm_imm8 vpslld_ymm_ymm_imm8 pslldq_xmm_imm8 vpslldq_xmm_xmm_imm8 psllq_xmm_xmm psllq_xmm_imm8 vpsllq_xmm_xmm_imm8 vpsllq_ymm_ymm_imm8 vpsllvd_xmm_xmm_xmm vpsllvd_ymm_ymm_ymm vpsllvq_xmm_xmm_xmm vpsllvq_ymm_ymm_ymm psllw_xmm_xmm psllw_xmm_imm8 vpsllw_xmm_xmm_imm8 vpsllw_ymm_ymm_imm8 psrad_xmm_xmm psrad_xmm_imm8 vpsrad_xmm_xmm_imm8 vpsrad_ymm_ymm_imm8 vpsrlvd_xmm_xmm_xmm vpsrlvd_ymm_ymm_ymm vpsrlvq_xmm_xmm_xmm vpsrlvq_ymm_ymm_ymm vpsravd_xmm_xmm_xmm vpsravd_ymm_ymm_ymm psraw_xmm_xmm psraw_xmm_imm8 vpsraw_xmm_xmm_imm8 vpsraw_ymm_ymm_imm8 psrld_xmm_xmm psrld_xmm_imm8 vpsrld_xmm_xmm_imm8 vpsrld_ymm_ymm_imm8 psrldq_xmm_imm8 vpsrldq_xmm_xmm_imm8 psrlq_xmm_xmm psrlq_xmm_imm8 vpsrlq_xmm_xmm_imm8 vpsrlq_ymm_ymm_imm8 psrlw_xmm_xmm psrlw_xmm_imm8 vpsrlw_xmm_xmm_imm8 vpsrlw_ymm_ymm_imm8 psubb_xmm_xmm vpsubb_xmm_xmm_xmm vpsubb_ymm_ymm_ymm psubd_xmm_xmm vpsubd_xmm_xmm_xmm vpsubd_ymm_ymm_ymm psubq_xmm_xmm vpsubq_xmm_xmm_xmm vpsubq_ymm_ymm_ymm psubsb_xmm_xmm vpsubsb_xmm_xmm_xmm vpsubsb_ymm_ymm_ymm psubsw_xmm_xmm vpsubsw_xmm_xmm_xmm vpsubsw_ymm_ymm_ymm psubusb_xmm_xmm vpsubusb_xmm_xmm_xmm vpsubusb_ymm_ymm_ymm psubusw_xmm_xmm vpsubusw_xmm_xmm_xmm vpsubusw_ymm_ymm_ymm psubw_xmm_xmm vpsubw_xmm_xmm_xmm vpsubw_ymm_ymm_ymm vptest_ymm_ymm vpunpckhbw_xmm_xmm_xmm vpunpckhbw_ymm_ymm_ymm vpunpckhdq_xmm_xmm_xmm vpunpckhdq_ymm_ymm_ymm vpunpckhqdq_xmm_xmm_xmm vpunpckhqdq_ymm_ymm_ymm vpunpckhwd_xmm_xmm_xmm vpunpckhwd_ymm_ymm_ymm vpunpcklbw_xmm_xmm_xmm vpunpcklbw_ymm_ymm_ymm vpunpckldq_xmm_xmm_xmm vpunpckldq_ymm_ymm_ymm vpunpcklqdq_xmm_xmm_xmm vpunpcklqdq_ymm_ymm_ymm vpunpcklwd_xmm_xmm_xmm vpunpcklwd_ymm_ymm_ymm pxor_xmm_xmm vpxor_ymm_ymm_ymm rcpps_xmm_xmm vrcpps_xmm_xmm vrcpps_ymm_ymm roundpd_xmm_xmm_imm8 vroundpd_xmm_xmm_imm8 vroundpd_ymm_ymm_imm8 roundps_xmm_xmm_imm8 vroundps_xmm_xmm_imm8 vroundps_ymm_ymm_imm8 rsqrtps_xmm_xmm vrsqrtps_xmm_xmm vrsqrtps_ymm_ymm shufpd_xmm_xmm_imm8 vshufpd_xmm_xmm_xmm_imm8 vshufpd_ymm_ymm_ymm_imm8 shufps_xmm_xmm_imm8 vshufps_xmm_xmm_xmm_imm8 vshufps_ymm_ymm_ymm_imm8 sqrtpd_xmm_xmm vsqrtpd_xmm_xmm vsqrtpd_ymm_ymm sqrtps_xmm_xmm vsqrtps_xmm_xmm vsqrtps_ymm_ymm subpd_xmm_xmm vsubpd_xmm_xmm_xmm vsubpd_ymm_ymm_ymm subps_xmm_xmm vsubps_xmm_xmm_xmm vsubps_ymm_ymm_ymm vunpckhpd_xmm_xmm_xmm vunpckhpd_ymm_ymm_ymm unpckhps_xmm_xmm vunpckhps_xmm_xmm_xmm vunpckhps_ymm_ymm_ymm vunpcklpd_xmm_xmm_xmm vunpcklpd_ymm_ymm_ymm unpcklps_xmm_xmm vunpcklps_xmm_xmm_xmm vunpcklps_ymm_ymm_ymm vpbroadcastb_xmm_m8 vpbroadcastb_ymm_m8 vpbroadcastw_xmm_m16 vpbroadcastw_ymm_m16 vpbroadcastq_xmm_m64 vpbroadcastq_ymm_m64 vcvtph2ps_xmm_xmm vcvtph2ps_ymm_xmm vcvtps2ph_xmm_xmm_imm8 vcvtps2ph_xmm_ymm_imm8 vfmadd132pd_xmm_xmm_xmm vfmadd132pd_ymm_ymm_ymm vfmadd213pd_xmm_xmm_xmm vfmadd213pd_ymm_ymm_ymm vfmadd231pd_xmm_xmm_xmm vfmadd231pd_ymm_ymm_ymm vfmadd132ps_xmm_xmm_xmm vfmadd132ps_ymm_ymm_ymm vfmadd213ps_xmm_xmm_xmm vfmadd213ps_ymm_ymm_ymm vfmadd231ps_xmm_xmm_xmm vfmadd231ps_ymm_ymm_ymm vfmaddsub132pd_xmm_xmm_xmm vfmaddsub132pd_ymm_ymm_ymm vfmaddsub213pd_xmm_xmm_xmm vfmaddsub213pd_ymm_ymm_ymm vfmaddsub231pd_xmm_xmm_xmm vfmaddsub231pd_ymm_ymm_ymm vfmaddsub132ps_xmm_xmm_xmm vfmaddsub132ps_ymm_ymm_ymm vfmaddsub213ps_xmm_xmm_xmm vfmaddsub213ps_ymm_ymm_ymm vfmaddsub231ps_xmm_xmm_xmm vfmaddsub231ps_ymm_ymm_ymm vfmsubadd132pd_xmm_xmm_xmm vfmsubadd132pd_ymm_ymm_ymm vfmsubadd213pd_xmm_xmm_xmm vfmsubadd213pd_ymm_ymm_ymm vfmsubadd231pd_xmm_xmm_xmm vfmsubadd231pd_ymm_ymm_ymm vfmsubadd132ps_xmm_xmm_xmm vfmsubadd132ps_ymm_ymm_ymm vfmsubadd213ps_xmm_xmm_xmm vfmsubadd213ps_ymm_ymm_ymm vfmsubadd231ps_xmm_xmm_xmm vfmsubadd231ps_ymm_ymm_ymm vfmsub132pd_xmm_xmm_xmm vfmsub132pd_ymm_ymm_ymm vfmsub213pd_xmm_xmm_xmm vfmsub213pd_ymm_ymm_ymm vfmsub231pd_xmm_xmm_xmm vfmsub231pd_ymm_ymm_ymm vfmsub132ps_xmm_xmm_xmm vfmsub132ps_ymm_ymm_ymm vfmsub213ps_xmm_xmm_xmm vfmsub213ps_ymm_ymm_ymm vfmsub231ps_xmm_xmm_xmm vfmsub231ps_ymm_ymm_ymm vfnmadd132pd_xmm_xmm_xmm vfnmadd132pd_ymm_ymm_ymm vfnmadd213pd_xmm_xmm_xmm vfnmadd213pd_ymm_ymm_ymm vfnmadd231pd_xmm_xmm_xmm vfnmadd231pd_ymm_ymm_ymm vfnmadd132ps_xmm_xmm_xmm vfnmadd132ps_ymm_ymm_ymm vfnmadd213ps_xmm_xmm_xmm vfnmadd213ps_ymm_ymm_ymm vfnmadd231ps_xmm_xmm_xmm vfnmadd231ps_ymm_ymm_ymm vfnmsub132pd_xmm_xmm_xmm vfnmsub132pd_ymm_ymm_ymm vfnmsub213pd_xmm_xmm_xmm vfnmsub213pd_ymm_ymm_ymm vfnmsub231pd_xmm_xmm_xmm vfnmsub231pd_ymm_ymm_ymm vfnmsub132ps_xmm_xmm_xmm vfnmsub132ps_ymm_ymm_ymm vfnmsub213ps_xmm_xmm_xmm vfnmsub213ps_ymm_ymm_ymm vfnmsub231ps_xmm_xmm_xmm vfnmsub231ps_ymm_ymm_ymm vpermd_ymm_ymm_ymm vperm2i128_ymm_ymm_ymm_imm8 vperm2f128_ymm_ymm_ymm_imm8 vpermilpd_xmm_xmm_xmm vpermilpd_ymm_ymm_ymm vpermilpd_xmm_xmm_imm8 vpermilpd_ymm_ymm_imm8 vpermilps_xmm_xmm_xmm vpermilps_ymm_ymm_ymm vpermilps_xmm_xmm_imm8 vpermilps_ymm_ymm_imm8 vpermps_ymm_ymm_ymm vpermpd_ymm_ymm_imm8 vpermq_ymm_ymm_imm8 vtestpd_xmm_xmm vtestpd_ymm_ymm vtestps_xmm_xmm vtestps_ymm_ymm vzeroall vzeroupper xorpd_xmm_xmm vxorpd_xmm_xmm_xmm vxorpd_ymm_ymm_ymm xorps_xmm_xmm vxorps_xmm_xmm_xmm vxorps_ymm_ymm_ymm xgetbv }");
+
+  OpcSetReader osr;
+  osr(ss, set);
+  return set;
 }
 
 void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
@@ -135,10 +47,17 @@ void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
   TextReader<vector<string>>()(is, args);
 
   for (const auto& a : args) {
-    if (!binary_search(a, os)) {
-      is.setstate(ios::failbit);
+    Opcode opc;
+
+    stringstream ss;
+    ss.str(a);
+    ss >> opc;
+
+    if(failed(ss)) {
+      fail(is) << fail_msg(ss);
       return;
     }
+    os.insert(opc);
   }
 }
 
@@ -146,19 +65,9 @@ void OpcSetWriter::operator()(ostream& os, const set<Opcode>& ocs) {
   os << "{";
   set<const char*> result;
   for (auto opc : ocs) {
-    os << " " << opcode_to_string(opc) << "$";
+    os << " " << opc << "$";
   }
   os << " }";
-}
-
-string opcode_to_string(Opcode op) {
-  Instruction instr(op);
-  string result(att_[op]);
-  for (size_t i = 0; i < instr.arity(); i++) {
-    result += "_";
-    result += types_[(int)instr.type(i)-1];
-  }
-  return result;
 }
 
 } // namespace stoke
