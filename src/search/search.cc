@@ -130,7 +130,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     move_statistics[(size_t) move_type].num_succeeded++;
 
     const auto p = prob_(gen_);
-    const auto max = state.current_cost - (log(p) / beta_);
+    const auto max = state.current_cost - 1 - (log(p) / beta_);
 
     const auto new_res = fxn(state.current, max + 1);
     const auto is_correct = new_res.first;
