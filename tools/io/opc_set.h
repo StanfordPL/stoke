@@ -21,6 +21,8 @@
 
 namespace stoke {
 
+std::set<x64asm::Opcode> nacl_whitelist();
+
 struct OpcSetReader {
   void operator()(std::istream& is, std::set<x64asm::Opcode>& os);
 };

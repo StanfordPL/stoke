@@ -47,7 +47,7 @@ cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>& opc_whi
   cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>::create("opc_whitelist")
   .usage("{ opcode1 ... opcoden; e.g., xorl or xorl_r32_r32 }")
   .description("Only proprose instructions from this set (unless they are not proposed for other reasons, e.g. --opc_blacklist, --propose_call, --cpu_flags, --force_mem_read, --force_mem_write, instructions not supported by stoke, etc.); empty whitelist means no whitelist")
-  .default_val({});
+  .default_val(nacl_whitelist());
 
 cpputil::ValueArg<size_t>& call_weight_arg =
   cpputil::ValueArg<size_t>::create("call_weight")
