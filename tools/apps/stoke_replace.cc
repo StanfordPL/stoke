@@ -48,6 +48,9 @@ auto& out = ValueArg<string>::create("o")
             .description("File to write changes to; default is to overwrite")
             .default_val("");
 
+auto& use_file_info_arg = FlagArg::create("use_input_offset")
+                        .description("Use the file offset and capactiy specified in input");
+
 bool found = false;
 uint64_t fxn_offset = 0;
 size_t fxn_size = 0;
@@ -56,8 +59,13 @@ void callback(const FunctionCallbackData& data, void* arg) {
   // Check if we've found the function
   if (data.tunit.get_name() == rewrite_arg.value().get_name()) {
     found = true;
-    fxn_offset = data.tunit.get_file_offset();
-    fxn_size = data.tunit.hex_capacity();
+    if(!use_file_info_arg) {
+      fxn_offset = data.tunit.get_file_offset();
+      fxn_size = data.tunit.hex_capacity();
+    } else {
+      fxn_offset = rewrite_arg.value().get_file_offset();
+      fxn_size = rewrite_arg.value().hex_capacity();
+    }
   }
 }
 

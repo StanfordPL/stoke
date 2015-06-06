@@ -4,7 +4,7 @@
 
 #! file-offset 0x60490
 #! rip-offset  0x20490
-#! capacity    1632 bytes
+#! capacity    272 bytes
 
 # Text                           #  Line  RIP      Bytes  Opcode    
 .fannkuchredux:                  #        0x201e0  0      OPC=0     

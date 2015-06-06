@@ -14,4 +14,4 @@ profile: fannkuchredux.c Makefile
 	gcc -std=c99 -g -O2 -DDEFMAIN fannkuchredux.c -o profile
 
 replace:
-	stoke replace --rewrite result.s -i original.nexe -o new.nexe
+	stoke replace --use_input_offset --rewrite result.s -i original.nexe -o new.nexe
