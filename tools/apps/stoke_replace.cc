@@ -49,7 +49,7 @@ auto& out = ValueArg<string>::create("o")
             .default_val("");
 
 auto& use_file_info_arg = FlagArg::create("use_input_offset")
-                        .description("Use the file offset and capactiy specified in input");
+                          .description("Use the file offset and capactiy specified in input");
 
 bool found = false;
 uint64_t fxn_offset = 0;

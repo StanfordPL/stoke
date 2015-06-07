@@ -15,3 +15,6 @@ profile: fannkuchredux.c Makefile
 
 replace:
 	stoke replace --use_input_offset --rewrite result.s -i original.nexe -o new.nexe
+
+deploy:
+	cp new.nexe /home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.com/git/nacl/fannkuch2.nexe
