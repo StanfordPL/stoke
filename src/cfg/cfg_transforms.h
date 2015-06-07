@@ -30,6 +30,8 @@ public:
   Cfg& remove_nop(Cfg& cfg) const;
   /** Remove instructions that don't produce side effects (assumes cfg and function satisfy invariants) */
   Cfg& remove_redundant(Cfg& cfg) const;
+  /** Do postprocessing for NaCl */
+  Cfg& nacl_transform(Cfg& cfg) const;
 
   /** Returns a minimal Cfg that satisfies all invariants */
   Cfg minimal_correct_cfg(const x64asm::RegSet& def_in, const x64asm::RegSet& live_out) const;

@@ -14,6 +14,7 @@
 
 #include "src/cfg/cfg_transforms.h"
 
+using namespace std;
 using namespace x64asm;
 
 namespace {
@@ -109,6 +110,68 @@ Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
       const auto live_regs_after_instruction = cfg.live_outs(cfg.get_loc(i));
       if ((instr_outputs & live_regs_after_instruction) == RegSet::empty()) {
         cfg.get_function().remove(i);
+        cfg.recompute();
+        removed = true;
+        break;
+      }
+    }
+  }
+
+  // Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+  return cfg;
+}
+
+Code generate_nop(size_t i) {
+
+  switch(i) {
+    case 0:
+      return {};
+    case 1:
+      return {Instruction(NOP)};
+    case 2:
+      return {Instruction(NOP), Instruction(NOP)};
+    case 3:
+      return {Instruction(NOP_R32, {rax})};
+    default:
+      Code start = generate_nop(3);
+      Code rest = generate_nop(i-3);
+      rest.insert(rest.end(), start.begin(), start.end());
+      return rest;
+  }
+
+}
+
+Cfg& CfgTransforms::nacl_transform(Cfg& cfg) const {
+  // Assume that invariants are satisfied on entry
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+
+  Assembler assm;
+
+  // Replace redundant instructions with nops
+  for (auto removed = true; removed;) {
+    removed = false;
+    for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
+      const auto& instr = cfg.get_code()[i];
+
+      // Skip control flow, side effects, or just take up space
+      if (is_control(instr) || has_side_effects(instr) || instr.is_nop()) {
+        continue;
+      }
+
+      // Remove instructions if it doesn't produce a value which is live out afterward
+      const auto instr_outputs = cfg.maybe_write_set(instr);
+      const auto live_regs_after_instruction = cfg.live_outs(cfg.get_loc(i));
+      if ((instr_outputs & live_regs_after_instruction) == RegSet::empty()) {
+        size_t bytes = assm.hex_size(instr);
+        cout << "Replacing " << instr << " with " << bytes << " bytes of nop" << endl;
+        Code nops = generate_nop(bytes);
+        cfg.get_function().remove(i);
+        for(auto nop : nops) {
+          cfg.get_function().insert(i, nop);
+        }
         cfg.recompute();
         removed = true;
         break;

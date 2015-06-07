@@ -23,6 +23,7 @@ enum class Postprocessing {
   NONE,
   SIMPLE,
   FULL,
+  NACL,
 };
 
 } // namespace stoke

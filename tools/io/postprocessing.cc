@@ -24,10 +24,11 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Postprocessing>, 3> rs {{
+array<pair<string, Postprocessing>, 4> rs {{
     {"none", Postprocessing::NONE},
     {"simple", Postprocessing::SIMPLE},
     {"full", Postprocessing::FULL},
+    {"nacl", Postprocessing::NACL},
   }
 };
 
