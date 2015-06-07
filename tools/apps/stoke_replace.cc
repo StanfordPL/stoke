@@ -91,78 +91,78 @@ bool replace(uint64_t offset, size_t size) {
     //assemble these nops
     while(nop_bytes > 0) {
       switch(nop_bytes) {
-        case 1:
-          fxn.emit_byte(0x90);
-          nop_bytes = 0;
-          break;
-        case 2:
-          fxn.emit_byte(0x66);
-          fxn.emit_byte(0x90);
-          nop_bytes = 0;
-          break;
-        case 3:
-          fxn.emit_byte(0x0f);
-          fxn.emit_byte(0x1f);
-          fxn.emit_byte(0x00);
-          nop_bytes = 0;
-          break;
-        case 4:
-          fxn.emit_byte(0x0f);
-          fxn.emit_byte(0x1f);
-          fxn.emit_byte(0x40);
-          fxn.emit_byte(0x00);
-          nop_bytes = 0;
-          break;
-        case 5:
-          fxn.emit_byte(0x0f);
-          fxn.emit_byte(0x1f);
-          fxn.emit_byte(0x44);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          nop_bytes = 0;
-          break;
-        case 6:
-          fxn.emit_byte(0x66);
-          fxn.emit_byte(0x0f);
-          fxn.emit_byte(0x1f);
-          fxn.emit_byte(0x44);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          nop_bytes = 0;
-          break;
-        case 7:
-          fxn.emit_byte(0x0f);
-          fxn.emit_byte(0x1f);
-          fxn.emit_byte(0x80);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          nop_bytes = 0;
-          break;
-        case 8:
-          fxn.emit_byte(0x0f);
-          fxn.emit_byte(0x1f);
-          fxn.emit_byte(0x84);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          nop_bytes = 0;
-          break;
-        default:
-          fxn.emit_byte(0x66);
-          fxn.emit_byte(0x0f);
-          fxn.emit_byte(0x1f);
-          fxn.emit_byte(0x84);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          fxn.emit_byte(0x00);
-          nop_bytes -= 9;
-          break;
+      case 1:
+        fxn.emit_byte(0x90);
+        nop_bytes = 0;
+        break;
+      case 2:
+        fxn.emit_byte(0x66);
+        fxn.emit_byte(0x90);
+        nop_bytes = 0;
+        break;
+      case 3:
+        fxn.emit_byte(0x0f);
+        fxn.emit_byte(0x1f);
+        fxn.emit_byte(0x00);
+        nop_bytes = 0;
+        break;
+      case 4:
+        fxn.emit_byte(0x0f);
+        fxn.emit_byte(0x1f);
+        fxn.emit_byte(0x40);
+        fxn.emit_byte(0x00);
+        nop_bytes = 0;
+        break;
+      case 5:
+        fxn.emit_byte(0x0f);
+        fxn.emit_byte(0x1f);
+        fxn.emit_byte(0x44);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        nop_bytes = 0;
+        break;
+      case 6:
+        fxn.emit_byte(0x66);
+        fxn.emit_byte(0x0f);
+        fxn.emit_byte(0x1f);
+        fxn.emit_byte(0x44);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        nop_bytes = 0;
+        break;
+      case 7:
+        fxn.emit_byte(0x0f);
+        fxn.emit_byte(0x1f);
+        fxn.emit_byte(0x80);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        nop_bytes = 0;
+        break;
+      case 8:
+        fxn.emit_byte(0x0f);
+        fxn.emit_byte(0x1f);
+        fxn.emit_byte(0x84);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        nop_bytes = 0;
+        break;
+      default:
+        fxn.emit_byte(0x66);
+        fxn.emit_byte(0x0f);
+        fxn.emit_byte(0x1f);
+        fxn.emit_byte(0x84);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        nop_bytes -= 9;
+        break;
       }
     }
 

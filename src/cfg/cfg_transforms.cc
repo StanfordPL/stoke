@@ -126,19 +126,19 @@ Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
 Code generate_nop(size_t i) {
 
   switch(i) {
-    case 0:
-      return {};
-    case 1:
-      return {Instruction(NOP)};
-    case 2:
-      return {Instruction(NOP), Instruction(NOP)};
-    case 3:
-      return {Instruction(NOP_R32, {rax})};
-    default:
-      Code start = generate_nop(3);
-      Code rest = generate_nop(i-3);
-      rest.insert(rest.end(), start.begin(), start.end());
-      return rest;
+  case 0:
+    return {};
+  case 1:
+    return {Instruction(NOP)};
+  case 2:
+    return {Instruction(NOP), Instruction(NOP)};
+  case 3:
+    return {Instruction(NOP_R32, {rax})};
+  default:
+    Code start = generate_nop(3);
+    Code rest = generate_nop(i-3);
+    rest.insert(rest.end(), start.begin(), start.end());
+    return rest;
   }
 
 }

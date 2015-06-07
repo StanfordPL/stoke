@@ -377,7 +377,7 @@ int main(int argc, char** argv) {
     tforms.remove_unreachable(state.best_correct);
     tforms.remove_nop(state.best_correct);
   } else if (postprocessing_arg == Postprocessing::NACL) {
-    tforms.nacl_transform(state.best_correct); 
+    tforms.nacl_transform(state.best_correct);
   } else {
     // Do nothing.
   }
