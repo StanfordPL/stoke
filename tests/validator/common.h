@@ -333,7 +333,7 @@ private:
       x64asm::R r = *it;
       std::stringstream tmp;
       tmp << "The " << r.size() << " bits of " << *it << " differ.";
-      EXPECT_CPU_EQ_INT(actual[r], expect[r], tmp.str());
+      EXPECT_CPU_EQ_INT(expect[r], actual[r], tmp.str());
     }
 
     for(auto it = live_outs_.sse_begin(); it != live_outs_.sse_end(); ++it) {

@@ -37,7 +37,7 @@ TEST(DisassemblerTest, SimpleExample) {
 
   Disassembler::Callback test_tunit =
   [&](const FunctionCallbackData & fcd) {
-    EXPECT_FALSE(fcd.parse_error);
+    EXPECT_FALSE(fcd.parse_error) << fcd.parse_error_msg;
 
     // There's only one function we're really testing.
     if (fcd.tunit.get_name() == "sample") {
@@ -65,21 +65,26 @@ TEST(DisassemblerTest, PopCnt) {
   tmp << "._Z6popcntm:" << std::endl;
   tmp << "testq  %rdi,%rdi" << std::endl;
   tmp << "je     .L_40058f" << std::endl;
-  tmp << "xorl   %eax,%eax" << std::endl;
   tmp << "nop" << std::endl;
+  tmp << "nop" << std::endl;
+  tmp << "xorl   %eax,%eax" << std::endl;
+  for(size_t i = 0; i < 9; ++i)
+    tmp << "nop" << std::endl;
   tmp << ".L_400580:" << std::endl;
   tmp << "movl   %edi,%edx" << std::endl;
   tmp << "andl   $0x1,%edx" << std::endl;
   tmp << "addl   %edx,%eax" << std::endl;
   tmp << "shrq   $0x1, %rdi" << std::endl;
   tmp << "jne    .L_400580" << std::endl;
+  tmp << "nop" << std::endl;
+  tmp << "nop" << std::endl;
   tmp << "cltq   " << std::endl;
   tmp << "retq   " << std::endl;
   tmp << ".L_40058f:" << std::endl;
   tmp << "xorl   %eax, %eax" << std::endl;
   tmp << "retq" << std::endl;
-  tmp << "nop" << std::endl;
-  tmp << "nop" << std::endl;
+  for(size_t i = 0; i < 14; ++i)
+    tmp << "nop" << std::endl;
 
   x64asm::Code popcnt_code;
   tmp >> popcnt_code;
@@ -90,7 +95,7 @@ TEST(DisassemblerTest, PopCnt) {
 
   Disassembler::Callback test_tunit =
   [&](const FunctionCallbackData & pf) {
-    EXPECT_FALSE(pf.parse_error);
+    EXPECT_FALSE(pf.parse_error) << pf.parse_error_msg;
 
     // There's only one function we're really testing.
     if (pf.tunit.get_name() == "_Z6popcntm") {
