@@ -445,8 +445,36 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
   // This function inserts missing lines such as labels and splits lock into two instructions
   const auto lines = parse_lines(ips, name);
   stringstream ss;
+
   for (const auto& l : lines) {
-    ss << l.instr << endl;
+
+    // For each line, try encoding it in different sizes, starting with the size that's
+    // found in the disassembly.  If we have to go down, then insert nops to pad it out.
+    // If we have to go up, then we fail.
+
+    bool success = false;
+    for(int attempt = l.hex_bytes; attempt >= 0; attempt--) {
+      stringstream tmp;
+      tmp << l.instr << " # SIZE=" << attempt << endl;
+      Code c;
+      tmp >> c;
+      if(failed(tmp))
+        continue;
+
+      // we've found a match
+      //cout << "Size " << attempt << " worked for " << l.instr << endl;
+      ss << l.instr << " # SIZE=" << attempt << endl;
+      for(size_t i = 0; i < l.hex_bytes - attempt; ++i) {
+        ss << "nop # SIZE=1" << endl;
+      }
+      success = true;
+      break;
+    }
+
+    if(!success) {
+      //cout << "Failing on " << l.instr << " in " << l.hex_bytes << " bytes." << endl;
+      fail(ss) << "Could not encode " << l.instr << " within " << l.hex_bytes << " bytes." << endl;
+    }
   }
 
   // Read code
@@ -467,6 +495,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
 
   // All done; back to the user
   data.parse_error = failed(ss);
+  data.parse_error_msg = (failed(ss) ? fail_msg(ss) : "");
   data.name = name;
   data.tunit = {code, file_offset, rip_offset, capacity};
 
