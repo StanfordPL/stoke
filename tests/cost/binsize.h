@@ -59,7 +59,24 @@ TEST_F(BinSizeCostTest, Issue613) {
   code << "nop" << std::endl;
   code << "nop" << std::endl;
 
-  EXPECT_EQ((uint64_t)29, binsize());
+  EXPECT_EQ((uint64_t)31, binsize());
+
+}
+
+TEST_F(BinSizeCostTest, Issue651) {
+
+  code << ".factorial:" << std::endl;
+  code << "movl $0x2, %edx" << std::endl;
+  code << "movl $0x1, %eax" << std::endl;
+  code << "jmp .foo" << std::endl;
+  code << ".foo:" << std::endl;
+  code << "nop" << std::endl;
+  code << "nop" << std::endl;
+  code << "retq" << std::endl;
+  code << "nop" << std::endl;
+  code << "nop" << std::endl;
+
+  EXPECT_EQ((uint64_t)15, binsize());
 
 }
 
