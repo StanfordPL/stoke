@@ -106,9 +106,10 @@ int fannkuchredux(int n)
         /* Use incremental change to generate another permutation */
         while (1) {
             if (r == n) {
+                //printf("n: %d, checksum: %d\n", n, checksum);
                 if (n == 10 && checksum != ref_checksum) return -1;
                 if (n == 10 && maxFlipsCount != ref_flips) return -1;
-                return 0;
+                return checksum;
             }
 
             int perm0 = perm1[0];
@@ -129,7 +130,8 @@ int fannkuchredux(int n)
         counter[1] += diff();
 #endif
     }
-    return checksum;
+    printf("bad exit checksum: %d\n", checksum);
+    return -1;
 }
 
 #ifdef DEFMAIN
