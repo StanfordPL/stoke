@@ -21,41 +21,25 @@ class BinSizeCost : public CostFunction {
 
 public:
 
-  BinSizeCost() : buffer_(1024) {
-
-  }
-
   /** Return the size, in bytes, of the assembled CFG
       (less unreachable blocks and nops) */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
 
     const auto& code = cfg.get_code();
-    buffer_.reserve(code.size()*32);
 
-    assm_.start(buffer_);
+    x64asm::Function buffer;
+    buffer.reserve(code.size()*15 + 15);
+    assm_.start(buffer);
 
-    for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-      if(cfg.is_exit(*b)) {
-        continue;
-      }
+    for(auto instr : code)
+      assm_.assemble(instr);
 
-      const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-      for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
-        const auto& instr = code[i];
-        if(!instr.is_nop())
-          assm_.assemble(instr);
-      }
-    }
-
-    assm_.finish();
-
-    return result_type(true, buffer_.size());
+    return result_type(true, buffer.size());
   }
 
 private:
 
   x64asm::Assembler assm_;
-  x64asm::Function buffer_;
 
 };
 
