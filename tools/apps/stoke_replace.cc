@@ -170,6 +170,7 @@ bool replace(uint64_t offset, size_t size) {
       assm.assemble(code[i]);
     }
   }
+  assm.finish();
 
   // Fail if the new function is larger than the old
   if (fxn.size() > size) {

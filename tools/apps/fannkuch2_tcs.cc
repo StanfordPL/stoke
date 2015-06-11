@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
     //setup heap
     uint64_t heap_base = rand() & 0x4ffffff0;
     cs.heap.resize(heap_base, heap_size.value());
-    uint64_t offset = (rand() % (heap_size.value() - MAX_LEN*4)) & 0xfffffffffffffff8;
+    uint64_t offset = (rand() % (heap_size.value() - max_permutation_size.value()*4)) & 0xfffffffffffffff8;
     cs.gp[r15].get_fixed_quad(0) = heap_base;
     cs.gp[r14].get_fixed_quad(0) = offset;
 
