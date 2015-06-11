@@ -34,6 +34,18 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a & b);
   });
 
+  add_opcode({"blsrl", "blsrq"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    auto zero = SymBitVector::constant(dst.size(), 0);
+    auto one  = SymBitVector::constant(dst.size(), 1);
+    auto temp = (b - one) & b;
+    ss.set(eflags_zf, temp == zero);
+    ss.set(eflags_sf, temp[dst.size() - 1]);
+    ss.set(eflags_cf, b == zero);
+    ss.set(eflags_of, SymBool::_false());
+    ss.set(dst, temp);
+  });
+
   // to convert between Intel/AT&T mnemonics, see:
   // https://sourceware.org/binutils/docs/as/i386_002dMnemonics.html
   add_opcode({"cbtw", "cbw"},
