@@ -34,6 +34,58 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a & b);
   });
 
+  add_opcode({"andnl", "andnq"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    auto tmp = (!b) & c;
+    ss.set(dst, tmp);
+    ss.set(eflags_sf, tmp[dst.size()-1]);
+    ss.set(eflags_zf, tmp == SymBitVector::constant(dst.size(), 0));
+    ss.set(eflags_of, SymBool::_false());
+    ss.set(eflags_cf, SymBool::_false());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+  });
+
+  add_opcode({"bextrl", "bextrq"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    size_t size = dst.size();
+    auto start = c[7][0];
+    auto len = c[15][8];
+    auto start_zx = SymBitVector::constant(504, 0) || start;
+    auto len_zx = SymBitVector::constant(504, 0) || len;
+    auto temp = SymBitVector::constant(512 - size, 0) || b;
+
+    // compute temp[511:start]
+    auto shift = temp >> start_zx;
+    // create bitmask to get temp[len-1:0]
+    auto bitmask = !((SymBitVector::constant(512, -1) >> len_zx) << len_zx);
+    // finish getting temp[start+len-1:start]; it's already zero extended to length 512!
+    auto extract = shift & bitmask;
+    auto result = extract[size-1][0];
+    ss.set(dst, result);
+
+    ss.set(eflags_zf, result == SymBitVector::constant(size, 0));
+
+    ss.set(eflags_of, SymBool::_false());
+    ss.set(eflags_cf, SymBool::_false());
+
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+  });
+
+  add_opcode({"blsrl", "blsrq"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    auto zero = SymBitVector::constant(dst.size(), 0);
+    auto one  = SymBitVector::constant(dst.size(), 1);
+    auto temp = (b - one) & b;
+    ss.set(eflags_zf, temp == zero);
+    ss.set(eflags_sf, temp[dst.size() - 1]);
+    ss.set(eflags_cf, b == zero);
+    ss.set(eflags_of, SymBool::_false());
+    ss.set(dst, temp);
+  });
+
   // to convert between Intel/AT&T mnemonics, see:
   // https://sourceware.org/binutils/docs/as/i386_002dMnemonics.html
   add_opcode({"cbtw", "cbw"},
