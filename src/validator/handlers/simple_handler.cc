@@ -34,6 +34,34 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a & b);
   });
 
+  add_opcode({"bextrl", "bextrq"},
+  [this] (Operand dst, Operand src2, Operand src1, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    size_t size = dst.size();
+    auto start = c[7][0];
+    auto len = c[15][8];
+    auto start_zx = SymBitVector::constant(504, 0) || start;
+    auto len_zx = SymBitVector::constant(504, 0) || len;
+    auto temp = SymBitVector::constant(512 - size, 0) || b;
+
+    // compute temp[511:start]
+    auto shift = temp >> start_zx;
+    // create bitmask to get temp[len-1:0]
+    auto bitmask = !((SymBitVector::constant(512, -1) >> len_zx) << len_zx);
+    // finish getting temp[start+len-1:start]; it's already zero extended to length 512!
+    auto extract = shift & bitmask;
+    auto result = extract[size-1][0];
+    ss.set(dst, result);
+
+    ss.set(eflags_zf, result == SymBitVector::constant(size, 0));
+
+    ss.set(eflags_of, SymBool::_false());
+    ss.set(eflags_cf, SymBool::_false());
+
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+  });
+
   add_opcode({"blsrl", "blsrq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     auto zero = SymBitVector::constant(dst.size(), 0);
