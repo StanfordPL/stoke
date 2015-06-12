@@ -34,8 +34,20 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a & b);
   });
 
+  add_opcode({"andnl", "andnq"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    auto tmp = (!b) & c;
+    ss.set(dst, tmp);
+    ss.set(eflags_sf, tmp[dst.size()-1]);
+    ss.set(eflags_zf, tmp == SymBitVector::constant(dst.size(), 0));
+    ss.set(eflags_of, SymBool::_false());
+    ss.set(eflags_cf, SymBool::_false());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+  });
+
   add_opcode({"bextrl", "bextrq"},
-  [this] (Operand dst, Operand src2, Operand src1, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     size_t size = dst.size();
     auto start = c[7][0];
     auto len = c[15][8];
