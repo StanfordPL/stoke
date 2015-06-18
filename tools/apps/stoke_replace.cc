@@ -122,11 +122,11 @@ bool replace(uint64_t offset, size_t size) {
         nop_bytes = 0;
         break;
       case 6:
-        fxn.emit_byte(0x66);
         fxn.emit_byte(0x0f);
         fxn.emit_byte(0x1f);
-        fxn.emit_byte(0x44);
         fxn.emit_byte(0x00);
+        fxn.emit_byte(0x0f);
+        fxn.emit_byte(0x1f);
         fxn.emit_byte(0x00);
         nop_bytes = 0;
         break;
