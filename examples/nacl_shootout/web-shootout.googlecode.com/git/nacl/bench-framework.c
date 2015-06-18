@@ -57,24 +57,20 @@ static int RunOne(bench_info *bench, run_data *data) {
   if (run_model == kRunModelRepeated) {
     /* run one iteration to warm up the cache (if v8 can JIT off the clock,
        then we can do this) */
-    int result = bench->run(bench->param);
-    //assert(result == 0);
-    printf("Benchmark %s returned %d\n", bench->name, result);
+    bench->run(bench->param);
   }
   gettimeofday(&start, NULL);
   if (run_model == kRunModelRepeated) {
     for (data->runs = 0; data->elapsed < kMinBenchRuntime || data->runs < 16;
          data->runs++) {
-      //assert(bench->run(bench->param) == 0);
+      assert(bench->run(bench->param) == 0);
       gettimeofday(&end, NULL);
       diff = (end.tv_sec - start.tv_sec) * 1000000 + 
         (end.tv_usec - start.tv_usec);
       data->elapsed = diff;
     }
   } else {
-    int result = bench->run(bench->param);
-    //assert(result == 0);
-    printf("Benchmark %s returned %d\n", bench->name, result);
+    assert(bench->run(bench->param) == 0);
     gettimeofday(&end, NULL);
     diff = (end.tv_sec - start.tv_sec) * 1000000 + 
       (end.tv_usec - start.tv_usec);
