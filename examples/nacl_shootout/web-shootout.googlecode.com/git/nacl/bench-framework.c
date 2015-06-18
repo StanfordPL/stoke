@@ -65,7 +65,7 @@ static int RunOne(bench_info *bench, run_data *data) {
   if (run_model == kRunModelRepeated) {
     for (data->runs = 0; data->elapsed < kMinBenchRuntime || data->runs < 16;
          data->runs++) {
-      assert(bench->run(bench->param) == 0);
+      //assert(bench->run(bench->param) == 0);
       gettimeofday(&end, NULL);
       diff = (end.tv_sec - start.tv_sec) * 1000000 + 
         (end.tv_usec - start.tv_usec);
