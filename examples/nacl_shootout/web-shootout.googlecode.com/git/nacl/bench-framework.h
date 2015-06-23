@@ -55,6 +55,7 @@ int run_knucleotide(int ignored);
 int run_nbody(int p);
 int run_pidigits(int p);
 int run_spectralnorm(int p);
+int run_memcpy(int n);
 
 int run_richards(int p);
 int run_deltablue(int p);
