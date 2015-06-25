@@ -45,11 +45,12 @@ PNACLCC = $(PNACL_PATH)/pnacl-clang
 PNACLCXX = $(PNACL_PATH)/pnacl-clang++
 PNACL_TRANSLATE = $(PNACL_PATH)/pnacl-translate
 
-CFLAGS_NP = -mfpmath=sse
-CCFLAGS ?= -O3 -g -D_GNU_SOURCE
+CFLAGS_NP = -mfpmath=sse -msse3 -march=nocona
+#CCFLAGS ?= -O3 -D_GNU_SOURCE
+CCFLAGS ?= -O2 -D_GNU_SOURCE
 CFLAGS = $(CCFLAGS) -std=gnu99
 CXXFLAGS = $(CCFLAGS)
-LIBS = -Wl,-Bstatic -lgmp -Wl,-Bdynamic -lpthread -lm #-lfftw3
+LIBS = -lgmp -lpthread -lm #-lfftw3
 LIBDIRS = -L../third_party/libinstall/$(BITS)/lib -L$(NACL_SDK_ROOT)/lib/$(NEWLIB_LIBDIR)
 PNACL_LIBDIRS = -L../third_party/libinstall/pnacl/lib -L$(NACL_SDK_ROOT)/lib/pnacl
 IRT_CORE=$(NACL_SDK_ROOT)/tools/irt_core_x86_$(BITS).nexe
@@ -59,11 +60,11 @@ BENCHMARKS := fannkuchredux fasta revcomp binarytrees knucleotide \
 # spectralnorm
 OTHER_OBJS = bench-framework benchstringio fasta_10k_ref_output
 
-OBJS_NATIVE := $(BENCHMARKS:%=%.native.o) $(OTHER_OBJS:%=%.native.o) #nbody.native.o
-OBJS_NACL := $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) #nbody.nacl.o
-OBJS_PNACL := $(BENCHMARKS:%=%.bc) $(OTHER_OBJS:%=%.bc) #nbody-portable.bc
+OBJS_NATIVE := $(BENCHMARKS:%=%.native.o) $(OTHER_OBJS:%=%.native.o) nbody.native.o
+OBJS_NACL := $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
+OBJS_PNACL := $(BENCHMARKS:%=%.bc) $(OTHER_OBJS:%=%.bc) nbody-portable.bc
 
-NATIVE_FLAGS=-g
+NATIVE_FLAGS=
 
 all: native nacl 
 
@@ -121,6 +122,7 @@ clean-nacl:
 clean-pnacl:
 	rm -f *.bc  *.ll *-.o
 clean: clean-native clean-nacl clean-pnacl
+	rm -f benchmarks64 benchmarks_browser64.nexe
 
 
 run-native:

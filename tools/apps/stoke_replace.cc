@@ -87,7 +87,6 @@ bool replace(uint64_t offset, size_t size) {
       i++;
     }
 
-    cout << "Emitting " << nop_bytes << " nop bytes" << endl;
     //assemble these nops
     while(nop_bytes > 0) {
       switch(nop_bytes) {
