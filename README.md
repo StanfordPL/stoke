@@ -736,6 +736,7 @@ Some other important cost-variables you can use are:
 | latency | A poor-man's estimate of the rewrite latency, in clock cycles, based on the per-opcode latency table in `src/cost/tables`. |
 | measured | An estimate of running time by counting the number of instructions actually executed on the testcases.  Good for algorithmic improvements.  |
 | sseavx |  Returns '1' if both avx and sse instructions are used (this is usually bad!), and '0' otherwise.  Often used with a multiplier like `correctness + 1000*sseavx` |
+| nongoal | Returns '1' if the code (after minimization) is found to be equivalent to one in `--non_goal`.  Can also be used with a multiplier. |
 
 In typical usage, you will combine the value of `correctness` with other values
 you want to optimize for.  A good starting point is `correctness + measured` or

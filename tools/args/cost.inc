@@ -41,7 +41,8 @@ cpputil::ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
 # - latency: Latency of the instructions
 # - measured: Measured latency (more precise for loops than 'latency')
 # - size: The number of instructions
-# - sseavx: 1 if both sse and avx instructions are used, 0 otherwise)")
+# - sseavx: 1 if both sse and avx instructions are used, 0 otherwise
+# - nongoal: 1 if the code is exactly the same as one provided via --non_goal)")
       .default_val("correctness+latency");
 
 cpputil::ValueArg<std::string, cpputil::LineReader<>>& correctness_arg =
