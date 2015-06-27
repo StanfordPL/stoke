@@ -30,7 +30,7 @@ cpputil::Heading& search_state_heading =
 cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& previous_arg =
   cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("previous")
   .usage("<path/to/file.s>")
-  .default_val(CfgTransforms().minimal_correct_cfg().get_function())
+  .default_val(CfgTransforms::minimal_correct_cfg().get_function())
   .description("Initial rewrite; used with --init previous");
 
 #undef CODE
