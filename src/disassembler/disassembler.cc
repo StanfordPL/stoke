@@ -403,32 +403,6 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
   return result;
 }
 
-void Disassembler::rescale_offsets(Code& code, const vector<LineInfo>& lines) {
-  // Rescale rip offsets
-  Assembler assm;
-  int64_t delta = 0;
-  for (size_t i = 0, ie = code.size(); i < ie; ++i) {
-    auto& instr = code[i];
-
-    // Record delta between x64asm hex and this hex
-    delta += ((int)lines[i].hex_bytes - (int)assm.hex_size(instr));
-
-    // Nothing to do if this isn't rip dereference
-    if (!instr.is_explicit_memory_dereference()) {
-      continue;
-    }
-    const auto mi = instr.mem_index();
-    auto mem = instr.get_operand<M8>(mi);
-    if (!mem.rip_offset()) {
-      continue;
-    }
-
-    // Rescale displacement
-    mem.set_disp(mem.get_disp() + delta);
-    instr.set_operand(mi, mem);
-  }
-}
-
 bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uint64_t text_offset) {
   if (ips.eof()) {
     return false;
@@ -480,12 +454,8 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
   // Read code
   Code code;
   ss >> code;
-  if (!failed(ss)) {
-    rescale_offsets(code, lines);
-  }
 
   // Record hex metadata
-  // @todo if we've split a lock instruction, we're going to fall out of sync here
   size_t capacity = 0;
   for (const auto& l : lines) {
     capacity += l.hex_bytes;
