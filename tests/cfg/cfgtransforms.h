@@ -53,8 +53,7 @@ TEST_F(CfgTransformsTest, Simple) {
 
   stoke::Cfg cfg(t, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  stoke::CfgTransforms tforms;
-  tforms.remove_redundant(cfg);
+  stoke::CfgTransforms::remove_redundant(cfg);
 
   std::stringstream expected;
   expected << ".bar:" << std::endl;
