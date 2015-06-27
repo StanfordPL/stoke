@@ -36,7 +36,7 @@ bool has_side_effects(const x64asm::Instruction& instr) {
 
 namespace stoke {
 
-Cfg& CfgTransforms::remove_unreachable(Cfg& cfg) const {
+Cfg& CfgTransforms::remove_unreachable(Cfg& cfg) {
   // Assume that invariants are satisfied on entry
   assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
@@ -61,7 +61,7 @@ Cfg& CfgTransforms::remove_unreachable(Cfg& cfg) const {
   return cfg;
 }
 
-Cfg& CfgTransforms::remove_nop(Cfg& cfg) const {
+Cfg& CfgTransforms::remove_nop(Cfg& cfg) {
   // Assume that invariants are satisfied on entry
   assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
@@ -85,7 +85,7 @@ Cfg& CfgTransforms::remove_nop(Cfg& cfg) const {
   return cfg;
 }
 
-Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
+Cfg& CfgTransforms::remove_redundant(Cfg& cfg) {
   // Assume that invariants are satisfied on entry
   assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
@@ -122,7 +122,7 @@ Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
   return cfg;
 }
 
-Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_out) const {
+Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_out) {
   Cfg cfg(TUnit(), def_in, live_out);
   const auto diff = live_out;
 
