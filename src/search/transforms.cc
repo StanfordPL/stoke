@@ -733,6 +733,7 @@ bool Transforms::get_rip_mem(Operand& o) {
   m.clear_base();
   m.clear_index();
   m.set_disp(rip_pool_[gen_() % rip_pool_.size()]);
+  o = m;
 
   return true;
 }
