@@ -268,7 +268,7 @@ TEST_F(IntegrationTest, SearchRh) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
-TEST_F(IntegrationTest, SearchRh) {
+TEST_F(IntegrationTest, SearchNonGoal) {
   set_working_dir("tests/fixtures/search/nongoal");
   set_path("../../../../bin");
   EXPECT_EQ(0ull, shell("make"));
