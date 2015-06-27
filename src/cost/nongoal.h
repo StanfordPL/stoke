@@ -15,6 +15,7 @@
 #ifndef STOKE_SRC_COST_NONGOAL_H
 #define STOKE_SRC_COST_NONGOAL_H
 
+#include "src/cfg/cfg_transforms.h"
 #include "src/cost/cost_function.h"
 
 namespace stoke {
@@ -27,17 +28,26 @@ class NonGoalCost : public CostFunction {
 public:
 
   /** Set the list of non-goals. */
-  NonGoalCost& set_nongoals(std::vector<TUnit> nongoals) {
+  NonGoalCost& set_nongoals(const std::vector<TUnit>& nongoals,
+                            const x64asm::RegSet& def_ins,
+                            const x64asm::RegSet& live_outs) {
     nongoals_.clear();
     for (auto& t : nongoals) {
-      nongoals_.push_back(t.get_code());
+      auto cfg = Cfg(t, def_ins, live_outs);
+      nongoals_.push_back(CfgTransforms::remove_redundant(cfg).get_code());
     }
     return *this;
   }
 
   /** Returns 1 <=> code is equivalent as one in --non_goal. */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
-    const auto& code = cfg.get_code();
+    Cfg tmp(cfg.get_function(), cfg.def_ins(), cfg.live_outs());
+    const auto& code = CfgTransforms::remove_redundant(tmp).get_code();
+    for (auto& ng : nongoals_) {
+      if (code == ng) {
+        return result_type(true, 1);
+      }
+    }
     return result_type(true, 0);
   }
 
