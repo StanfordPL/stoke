@@ -8,7 +8,7 @@
 
 # Text                        #  Line  RIP      Bytes  Opcode    
 .run_memcpy:                  #        0x29720  0      OPC=0     
-  movl $r11d, %edx  #SIZE=3
+  movl %r11d, %edx  #SIZE=3
   movl %r8d, %eax   #SIZE=3
   nop
   nop

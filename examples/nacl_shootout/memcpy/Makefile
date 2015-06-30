@@ -2,15 +2,13 @@
 all:
 
 testcases:
+	memcpy_tcs --number 32 > memcpy.tc
 
 search:
 	stoke search --config search.conf
 
 extract:
 	stoke extract -i original.nexe -o bins
-
-profile: fannkuchredux.c Makefile
-	gcc -std=c99 -g -O2 -DDEFMAIN fannkuchredux.c -o profile
 
 replace:
 	stoke replace --use_input_offset --rewrite result.s -i original.nexe -o new.nexe

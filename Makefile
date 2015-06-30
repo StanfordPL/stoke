@@ -170,7 +170,8 @@ BIN=\
 	bin/stoke_benchmark_state \
 	bin/stoke_benchmark_verify \
 	\
-	bin/fannkuch2_tcs
+	bin/fannkuch2_tcs \
+	bin/memcpy_tcs
 
 # used to force a target to rebuild
 .PHONY: .FORCE
