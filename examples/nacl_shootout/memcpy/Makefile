@@ -3,6 +3,7 @@ all:
 
 testcases:
 	memcpy_tcs --number 32 > memcpy.tc
+	memcpy_tcs --number 32 --max_buffer_size 16 --heap_size 128 >> memcpy.tc
 
 search:
 	stoke search --config search.conf
