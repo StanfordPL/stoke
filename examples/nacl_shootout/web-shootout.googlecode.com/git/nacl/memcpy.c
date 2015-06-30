@@ -29,28 +29,31 @@
 
 typedef unsigned long long uint64_t;
 
+#define COPY_SIZE 1024
+
 uint64_t counter[2];
 uint64_t last;
 
 
 int run_memcpy(int n) {
 
-  char* a = malloc(n);
-  char* b = malloc(n);
+  char* a = malloc(COPY_SIZE);
+  char* b = malloc(COPY_SIZE);
 
   // initialize a
-  for(size_t i = 0; i < n; ++i) {
+  for(size_t i = 0; i < COPY_SIZE; ++i) {
     a[i] = i;
   }
 
   // Run memcpy n times; O(n^2)
-  for(size_t i = 0; i < n; ++i) {
-    memcpy(b, a, n);
-  }
+  for(size_t j = 0; j < n; ++j)
+    for(size_t i = 0; i < COPY_SIZE; ++i) {
+      b[i] = a[i];
+    }
 
   // check the results
   int fail = 0;
-  for(size_t i = 0; i < n; ++i) {
+  for(size_t i = 0; i < COPY_SIZE; ++i) {
     fail |= (a[i] != b[i]);
   }
   return fail;

@@ -25,6 +25,70 @@ using namespace x64asm;
 
 namespace stoke {
 
+bool nacl_ok_index(Opcode op) {
+
+  switch(op) {
+    case MOV_R32_IMM32:
+    case MOV_R32_IMM32_1:
+    case MOV_R32_M32:
+    case MOV_R32_R32:
+    case MOV_R32_R32_1:
+
+    case ADD_R32_IMM32:
+    case ADD_R32_IMM8:
+    case ADD_R32_M32:
+    case ADD_R32_R32:
+    case ADD_R32_R32_1:
+
+    case AND_R32_IMM32:
+    case AND_R32_IMM8:
+    case AND_R32_M32:
+    case AND_R32_R32:
+    case AND_R32_R32_1:
+
+    case IMUL_R32_M32:
+    case IMUL_R32_M32_IMM32:
+    case IMUL_R32_M32_IMM8:
+    case IMUL_R32_R32:
+    case IMUL_R32_R32_IMM32:
+    case IMUL_R32_R32_IMM8:
+
+    case INC_R32:
+
+    case LEA_R32_M16:
+    case LEA_R32_M32:
+    case LEA_R32_M64:
+
+    case NEG_R32:
+
+    case NOT_R32:
+
+    case OR_R32_IMM32:
+    case OR_R32_IMM8:
+    case OR_R32_M32:
+    case OR_R32_R32:
+    case OR_R32_R32_1:
+
+    case SUB_R32_IMM32:
+    case SUB_R32_IMM8:
+    case SUB_R32_M32:
+    case SUB_R32_R32:
+    case SUB_R32_R32_1:
+
+    case XOR_R32_IMM32:
+    case XOR_R32_IMM8:
+    case XOR_R32_M32:
+    case XOR_R32_R32:
+    case XOR_R32_R32_1:
+
+      return true;
+
+    default:
+      return false;
+  }
+
+}
+
 /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
   result would equal or exceed that value. */
 NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
@@ -54,12 +118,11 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     cout << start << "   " << instr << endl;
 #endif
 
-    // if the instruction is a movl to 32-bit register, and it is not at the
-    // end of the 32-byte bundle, then this register is restricted in the next
-    // instruction
+    // if the instruction does a validator-supported zero extend to 32-bit
+    // register, and it is not at the end of the 32-byte bundle, then this
+    // register is restricted in the next instruction
     Opcode opc = instr.get_opcode();
-    if((opc == MOV_R32_IMM32 || opc == MOV_R32_M32 || opc == MOV_R32_R32) &&
-        end != 0) {
+    if(end != 0 && nacl_ok_index(opc)) {
       restricted_registers[i+1] = (uint64_t)instr.get_operand<R32>(0) + 1;
 #ifdef DEBUG_NACL_COST
       cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
