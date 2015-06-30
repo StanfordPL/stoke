@@ -28,63 +28,63 @@ namespace stoke {
 bool nacl_ok_index(Opcode op) {
 
   switch(op) {
-    case MOV_R32_IMM32:
-    case MOV_R32_IMM32_1:
-    case MOV_R32_M32:
-    case MOV_R32_R32:
-    case MOV_R32_R32_1:
+  case MOV_R32_IMM32:
+  case MOV_R32_IMM32_1:
+  case MOV_R32_M32:
+  case MOV_R32_R32:
+  case MOV_R32_R32_1:
 
-    case ADD_R32_IMM32:
-    case ADD_R32_IMM8:
-    case ADD_R32_M32:
-    case ADD_R32_R32:
-    case ADD_R32_R32_1:
+  case ADD_R32_IMM32:
+  case ADD_R32_IMM8:
+  case ADD_R32_M32:
+  case ADD_R32_R32:
+  case ADD_R32_R32_1:
 
-    case AND_R32_IMM32:
-    case AND_R32_IMM8:
-    case AND_R32_M32:
-    case AND_R32_R32:
-    case AND_R32_R32_1:
+  case AND_R32_IMM32:
+  case AND_R32_IMM8:
+  case AND_R32_M32:
+  case AND_R32_R32:
+  case AND_R32_R32_1:
 
-    case IMUL_R32_M32:
-    case IMUL_R32_M32_IMM32:
-    case IMUL_R32_M32_IMM8:
-    case IMUL_R32_R32:
-    case IMUL_R32_R32_IMM32:
-    case IMUL_R32_R32_IMM8:
+  case IMUL_R32_M32:
+  case IMUL_R32_M32_IMM32:
+  case IMUL_R32_M32_IMM8:
+  case IMUL_R32_R32:
+  case IMUL_R32_R32_IMM32:
+  case IMUL_R32_R32_IMM8:
 
-    case INC_R32:
+  case INC_R32:
 
-    case LEA_R32_M16:
-    case LEA_R32_M32:
-    case LEA_R32_M64:
+  case LEA_R32_M16:
+  case LEA_R32_M32:
+  case LEA_R32_M64:
 
-    case NEG_R32:
+  case NEG_R32:
 
-    case NOT_R32:
+  case NOT_R32:
 
-    case OR_R32_IMM32:
-    case OR_R32_IMM8:
-    case OR_R32_M32:
-    case OR_R32_R32:
-    case OR_R32_R32_1:
+  case OR_R32_IMM32:
+  case OR_R32_IMM8:
+  case OR_R32_M32:
+  case OR_R32_R32:
+  case OR_R32_R32_1:
 
-    case SUB_R32_IMM32:
-    case SUB_R32_IMM8:
-    case SUB_R32_M32:
-    case SUB_R32_R32:
-    case SUB_R32_R32_1:
+  case SUB_R32_IMM32:
+  case SUB_R32_IMM8:
+  case SUB_R32_M32:
+  case SUB_R32_R32:
+  case SUB_R32_R32_1:
 
-    case XOR_R32_IMM32:
-    case XOR_R32_IMM8:
-    case XOR_R32_M32:
-    case XOR_R32_R32:
-    case XOR_R32_R32_1:
+  case XOR_R32_IMM32:
+  case XOR_R32_IMM8:
+  case XOR_R32_M32:
+  case XOR_R32_R32:
+  case XOR_R32_R32_1:
 
-      return true;
+    return true;
 
-    default:
-      return false;
+  default:
+    return false;
   }
 
 }
