@@ -106,14 +106,12 @@ static Cost lowest_correct = 0;
 static Cost starting_cost = 0;
 
 void show_state(const SearchState& state, ostream& os) {
-  CfgTransforms tforms;
-
   ofilterstream<Column> ofs(os);
   ofs.filter().padding(5);
 
   auto best_yet = state.best_yet;
-  tforms.remove_unreachable(best_yet);
-  tforms.remove_nop(best_yet);
+  CfgTransforms::remove_unreachable(best_yet);
+  CfgTransforms::remove_nop(best_yet);
 
   lowest_cost = state.best_yet_cost;
   ofs << "Lowest Cost Discovered (" << state.best_yet_cost << ")" << endl;
@@ -122,8 +120,8 @@ void show_state(const SearchState& state, ostream& os) {
   ofs.filter().next();
 
   auto best_correct = state.best_correct;
-  tforms.remove_unreachable(best_correct);
-  tforms.remove_nop(best_correct);
+  CfgTransforms::remove_unreachable(best_correct);
+  CfgTransforms::remove_nop(best_correct);
 
   lowest_correct = state.best_correct_cost;
   ofs << "Lowest Known Correct Cost (" << state.best_correct_cost << ")" << endl;
@@ -368,16 +366,15 @@ int main(int argc, char** argv) {
     }
   }
 
-  CfgTransforms tforms;
   if (postprocessing_arg == Postprocessing::FULL) {
-    tforms.remove_redundant(state.best_correct);
-    tforms.remove_unreachable(state.best_correct);
-    tforms.remove_nop(state.best_correct);
+    CfgTransforms::remove_redundant(state.best_correct);
+    CfgTransforms::remove_unreachable(state.best_correct);
+    CfgTransforms::remove_nop(state.best_correct);
   } else if (postprocessing_arg == Postprocessing::SIMPLE) {
-    tforms.remove_unreachable(state.best_correct);
-    tforms.remove_nop(state.best_correct);
+    CfgTransforms::remove_unreachable(state.best_correct);
+    CfgTransforms::remove_nop(state.best_correct);
   } else if (postprocessing_arg == Postprocessing::NACL) {
-    tforms.nacl_transform(state.best_correct);
+    CfgTransforms::nacl_transform(state.best_correct);
   } else {
     // Do nothing.
   }

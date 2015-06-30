@@ -23,9 +23,11 @@
 #include "src/cost/nacl.h"
 #include "src/cost/size.h"
 #include "src/cost/sseavx.h"
+#include "src/cost/nongoal.h"
 #include "tools/args/cost.inc"
 #include "tools/gadgets/correctness_cost.h"
 #include "tools/gadgets/latency_cost.h"
+#include "tools/gadgets/nongoal_cost.h"
 
 namespace stoke {
 
@@ -56,6 +58,7 @@ private:
     st["nacl"] =         new NaClCost();
     st["size"] =         new SizeCost();
     st["sseavx"] =       new SseAvxCost();
+    st["nongoal"] =      new NonGoalCostGadget(target.def_ins(), target.live_outs());
 
     CostParser cost_p(cost_function_arg.value(), st);
     auto cost_fxn = cost_p.run();
