@@ -1,0 +1,46 @@
+  .text
+  .globl run_memcpy
+  .type run_memcpy, @function
+
+#! file-offset 0x69720
+#! rip-offset  0x29720
+#! capacity    64 bytes
+
+# Text                        #  Line  RIP      Bytes  Opcode    
+.run_memcpy:                  #        0x29720  0      OPC=0     
+  nop                         #  1     0x29720  1      OPC=1343  
+  nop                         #  2     0x29721  1      OPC=1343  
+  movl %r8d, %eax             #  3     0x29722  3      OPC=1157  
+  nop                         #  4     0x29725  1      OPC=1343  
+  nop                         #  5     0x29726  1      OPC=1343  
+  movl %r11d, %edx            #  6     0x29727  3      OPC=1158  
+  nop                         #  7     0x2972a  1      OPC=1343  
+  nop                         #  8     0x2972b  1      OPC=1343  
+  nop                         #  9     0x2972c  1      OPC=1343  
+  nop                         #  10    0x2972d  1      OPC=1343  
+  nop                         #  11    0x2972e  1      OPC=1343  
+  nop                         #  12    0x2972f  1      OPC=1343  
+  nop                         #  13    0x29730  1      OPC=1343  
+  nop                         #  14    0x29731  1      OPC=1343  
+  nop                         #  15    0x29732  1      OPC=1343  
+  nop                         #  16    0x29733  1      OPC=1343  
+  nop                         #  17    0x29734  1      OPC=1343  
+  nop                         #  18    0x29735  1      OPC=1343  
+  nop                         #  19    0x29736  1      OPC=1343  
+  nop                         #  20    0x29737  1      OPC=1343  
+  nop                         #  21    0x29738  1      OPC=1343  
+  nop                         #  22    0x29739  1      OPC=1343  
+  addl $0x1, %r10d            #  23    0x2973a  4      OPC=65    
+  nop                         #  24    0x2973e  1      OPC=1343  
+  nop                         #  25    0x2973f  1      OPC=1343  
+.L_29740:                     #        0x29740  0      OPC=0     
+  movl %eax, %esi             #  26    0x29740  2      OPC=1158  
+  movsbl (%r15,%rsi,1), %esi  #  27    0x29742  5      OPC=1280  
+  movl %edx, %ecx             #  28    0x29747  2      OPC=1158  
+  movb %sil, (%r15,%rcx,1)    #  29    0x29749  4      OPC=1141  
+  addl $0x1, %eax             #  30    0x2974d  3      OPC=65    
+  addl $0x1, %edx             #  31    0x29750  3      OPC=65    
+  cmpw %ax, %di               #  32    0x29753  3      OPC=467   
+  jne .L_29740                #  33    0x29756  6      OPC=963   
+                                                                 
+.size run_memcpy, .-run_memcpy
