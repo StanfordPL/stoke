@@ -25,16 +25,16 @@ namespace stoke {
 class CfgTransforms {
 public:
   /** Remove unreachable basic blocks (assumes cfg and function satify invariants()) */
-  Cfg& remove_unreachable(Cfg& cfg) const;
+  static Cfg& remove_unreachable(Cfg& cfg);
   /** Remove nops (assumes cfg and function satisfy invariants) */
-  Cfg& remove_nop(Cfg& cfg) const;
+  static Cfg& remove_nop(Cfg& cfg);
   /** Remove instructions that don't produce side effects (assumes cfg and function satisfy invariants) */
-  Cfg& remove_redundant(Cfg& cfg) const;
+  static Cfg& remove_redundant(Cfg& cfg);
 
   /** Returns a minimal Cfg that satisfies all invariants */
-  Cfg minimal_correct_cfg(const x64asm::RegSet& def_in, const x64asm::RegSet& live_out) const;
+  static Cfg minimal_correct_cfg(const x64asm::RegSet& def_in, const x64asm::RegSet& live_out);
   /** Convenience method; returns a minimal cfg that writes all gp, sse, and eflags regs */
-  Cfg minimal_correct_cfg() {
+  static Cfg minimal_correct_cfg() {
     constexpr auto def_in = x64asm::RegSet::empty();
     constexpr auto rfs = x64asm::RegSet::empty() +
                          x64asm::Constants::eflags_af() + x64asm::Constants::eflags_cf() + x64asm::Constants::eflags_of() +
@@ -43,6 +43,10 @@ public:
                               x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms() | rfs;
     return minimal_correct_cfg(def_in, live_out);
   }
+
+private:
+  // no need to construct instances of this class
+  CfgTransforms() {}
 };
 
 } // namespace stoke

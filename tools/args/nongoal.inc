@@ -12,28 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_SEARCH_STATE_INC
-#define STOKE_TOOLS_ARGS_SEARCH_STATE_INC
+#ifndef STOKE_TOOLS_ARGS_NONGOAL_INC
+#define STOKE_TOOLS_ARGS_NONGOAL_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
-#include "src/ext/x64asm/include/x64asm.h"
 
-#include "src/cfg/cfg_transforms.h"
-#include "src/tunit/tunit.h"
-#include "tools/io/tunit.h"
+#include "src/cost/cost.h"
 
 namespace stoke {
 
-cpputil::Heading& search_state_heading =
-  cpputil::Heading::create("Search State Options:");
+cpputil::Heading& noncost_heading =
+  cpputil::Heading::create("\"nongoal\" Cost Function Options:");
 
-cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>& previous_arg =
-  cpputil::FileArg<TUnit, TUnitReader, TUnitWriter>::create("previous")
-  .usage("<path/to/file.s>")
-  .default_val(CfgTransforms::minimal_correct_cfg().get_function())
-  .description("Initial rewrite; used with --init previous");
-
-#undef CODE
+cpputil::FolderArg<TUnit, TUnitReader, TUnitWriter>& nongoal_arg =
+  cpputil::FolderArg<TUnit, TUnitReader, TUnitWriter>::create("non_goal")
+  .usage("<path/to/dir>")
+  .description("Directory containing assembly codes that score a value of 1 in the cost-function component 'nongoal'.  Can be used to steer the search towards other codes.")
+  .default_val({});
 
 } // namespace stoke
 
