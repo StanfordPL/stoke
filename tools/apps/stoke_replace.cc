@@ -48,7 +48,7 @@ auto& out = ValueArg<string>::create("o")
             .description("File to write changes to; default is to overwrite")
             .default_val("");
 
-auto& input_offset = FlagArg::create("--input_offset")
+auto& input_offset = FlagArg::create("input_offset")
                      .description("Don't disassemble or look for corresponding function name.  Use offset in input file instead.");
 
 bool found = false;
