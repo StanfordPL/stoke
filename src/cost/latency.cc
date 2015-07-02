@@ -42,7 +42,10 @@ LatencyCost::result_type LatencyCost::operator()(const Cfg& cfg, Cost max) {
     Cost block_latency = 0;
     const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
-      // Record latency for non nop instructions
+      // Record latency for non control flow instructions
+      if(code[i].is_label_defn() || code[i].is_any_jump() || code[i].is_any_return())
+        continue;
+
       if(code[i].haswell_latency() == 0)
         block_latency++;
       else
