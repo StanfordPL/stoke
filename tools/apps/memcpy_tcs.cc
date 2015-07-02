@@ -45,6 +45,12 @@ auto& max_buffer_size = ValueArg<size_t>::create("max_buffer_size")
                         .description("size of array")
                         .default_val(4);
 
+auto& normal_abi = FlagArg::create("normal_abi")
+                   .description("Whether to use the sandard ABI.  Default is odd one for original memcpy experiment.");
+
+auto& native = FlagArg::create("native")
+               .description("Use normal 64-bit pointers rather than NaCl 32-bit");
+
 #define STACK_SPACE 256
 #define MAX_LEN 4
 
@@ -62,6 +68,16 @@ int main(int argc, char** argv) {
   //r15 + eax -> pointer to source
   //r15 + edi -> pointer to end of source
   //r10d, ebx -> any number we want { consider -, +, eq }
+
+  R64 dst_reg= rdi;
+  R64 src_reg= rsi;
+  R64 n_reg= rdx;    //for normal abi only
+  R64 end_reg = rdi; //for "weird" abi only
+
+  if(!normal_abi) {
+    dst_reg = rdx;
+    src_reg = rax;
+  }
 
   for(size_t ct = 0; ct < number.value(); ++ct) {
     CpuState cs;
@@ -85,10 +101,25 @@ int main(int argc, char** argv) {
     uint64_t src_offset = (rand() % (heap_size.value() - buffer_size - 1));
     uint64_t dst_offset = (rand() % (heap_size.value() - buffer_size - 1));
     uint64_t src_end = src_offset + buffer_size;
-    cs.gp[r15].get_fixed_quad(0) = heap_base_bot;
-    cs.gp[r8].get_fixed_quad(0) = heap_diff + src_offset;
-    cs.gp[r11].get_fixed_quad(0) = heap_diff + dst_offset;
-    cs.gp[rdi].get_fixed_quad(0) = heap_diff + src_offset+buffer_size;
+
+    if(!native) {
+      // All addresses are relative to r15
+      cs.gp[r15].get_fixed_quad(0) = heap_base_bot;
+      cs.gp[src_reg].get_fixed_quad(0) = heap_diff + src_offset;
+      cs.gp[dst_reg].get_fixed_quad(0) = heap_diff + dst_offset;
+      if(!normal_abi)
+        cs.gp[end_reg].get_fixed_quad(0) = heap_diff + src_offset+buffer_size;
+      else
+        cs.gp[n_reg].get_fixed_quad(0) = buffer_size;
+    } else {
+      // Addresses are untouched
+      cs.gp[src_reg].get_fixed_quad(0) = heap_base_top + src_offset;
+      cs.gp[dst_reg].get_fixed_quad(0) = heap_base_top + dst_offset;
+      if(!normal_abi)
+        cs.gp[end_reg].get_fixed_quad(0) = heap_base_top + src_offset+buffer_size;
+      else
+        cs.gp[n_reg].get_fixed_quad(0) = buffer_size;
+    }
 
     //fill data
     for(uint64_t i = heap_base_top; i < heap_base_top + heap_size.value(); ++i) {

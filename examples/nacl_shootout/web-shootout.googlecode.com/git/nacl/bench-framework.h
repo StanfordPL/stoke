@@ -56,6 +56,7 @@ int run_nbody(int p);
 int run_pidigits(int p);
 int run_spectralnorm(int p);
 int run_memcpy(int n);
+int run_memcpy2(int n);
 
 int run_richards(int p);
 int run_deltablue(int p);

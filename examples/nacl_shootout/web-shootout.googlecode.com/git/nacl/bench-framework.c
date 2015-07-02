@@ -141,7 +141,8 @@ void SetupSmallBenchmarks() {
                     setup_fft, teardown_fft);*/
   //RegisterBenchmark(strdup("Pidigits"), run_pidigits, 1000, 406976744,
   //                  NULL, NULL);
-  RegisterBenchmark(strdup("Memcpy"), run_memcpy, 1000000, 3000000, NULL, NULL);
+  //RegisterBenchmark(strdup("Memcpy"), run_memcpy, 1000000, 3000000, NULL, NULL);
+  RegisterBenchmark(strdup("Memcpy2"), run_memcpy2, 1000000, 3000000, NULL, NULL);
   run_model = kRunModelRepeated;
 }
 
@@ -166,7 +167,8 @@ void SetupLargeBenchmarks() {
                     setup_fft, teardown_fft);*/
   //RegisterBenchmark(strdup("Pidigits"), run_pidigits, 5000, 406976744,
   //                  NULL, NULL);
-  RegisterBenchmark(strdup("Memcpy"), run_memcpy, 10000000, 30000000, NULL, NULL);
+  //RegisterBenchmark(strdup("Memcpy"), run_memcpy, 10000000, 30000000, NULL, NULL);
+  RegisterBenchmark(strdup("Memcpy2"), run_memcpy2, 10000000, 30000000, NULL, NULL);
   run_model = kRunModelOnce;
 }
 
