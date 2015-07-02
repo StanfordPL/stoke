@@ -48,6 +48,9 @@ auto& out = ValueArg<string>::create("o")
             .description("File to write changes to; default is to overwrite")
             .default_val("");
 
+auto& input_offset = FlagArg::create("--input_offset")
+                     .description("Don't disassemble or look for corresponding function name.  Use offset in input file instead.");
+
 bool found = false;
 uint64_t fxn_offset = 0;
 size_t fxn_size = 0;
@@ -107,17 +110,29 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-  Disassembler d;
-  d.set_function_callback(callback, nullptr);
+  if(input_offset.value()) {
+    // Get offset from input tunit
+    fxn_offset = rewrite_arg.value().get_file_offset();
+    fxn_size = rewrite_arg.value().hex_capacity();
+    found = true;
+  } else {
+    //Disassemble and find matching function
+    Disassembler d;
+    d.set_function_callback(callback, nullptr);
+    found = false;
+    d.disassemble(in.value());
 
-  found = false;
-  d.disassemble(in.value());
+    if(d.has_error()) {
+      Console::error(1) << "disassemble: " << d.get_error() << endl;
+      return 1;
+    }
+    if (!found) {
+      Console::error(1) << "Couldn't find function " << rewrite_arg.value().get_name() << " in the binary." << endl;
+      return 1;
+    }
+  }
 
-  if (d.has_error()) {
-    Console::error(1) << "disassemble: " << d.get_error() << endl;
-  } else if (!found) {
-    Console::error(1) << "Couldn't find function " << rewrite_arg.value().get_name() << " in the binary." << endl;
-  } else if (!replace(fxn_offset, fxn_size)) {
+  if (!replace(fxn_offset, fxn_size)) {
     Console::error(1) << "Unable to replace function text!" << endl;
   }
 
