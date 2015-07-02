@@ -1,0 +1,14 @@
+{
+  "files": {},
+  "program": {
+    "x86-64": {
+      "url": "part2_stoke.nexe"
+    },
+    "arm": {
+      "url": "part2_arm.nexe"
+    },
+    "x86-32": {
+      "url": "part2_x86_32.nexe"
+    }
+  }
+}
