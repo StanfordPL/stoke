@@ -4,7 +4,7 @@
 
 #! file-offset 0x6e82
 #! rip-offset  0x406e82
-#! capacity    64 bytes
+#! capacity    128 bytes
 
 # Text                        #  Line  RIP       Bytes  Opcode    
 .my_memcpy:                   #        0x406e82  0      OPC=0     
@@ -16,9 +16,9 @@
   nop                         #  6     0x406e91  1      OPC=1343  
 .L_406e8c:                    #        0x406e92  0      OPC=0     
   leal (%rsi, %rcx, 1), %r9d
-  movzbl (%r15,%r9d,1), %r8d  #  7     0x406e92  5      OPC=1302  
+  movzbl (%r15,%r9,1), %r8d  #  7     0x406e92  5      OPC=1302  
   leal (%rax, %rcx, 1), %r9d
-  movb %r8b, (%rax,%r9d,1)    #  8     0x406e97  4      OPC=1141  
+  movb %r8b, (%r15,%r9,1)    #  8     0x406e97  4      OPC=1141  
   addq $0x1, %rcx             #  9     0x406e9b  4      OPC=70    
   cmpq %rdx, %rcx             #  10    0x406e9f  3      OPC=477   
   jne .L_406e8c               #  11    0x406ea2  6      OPC=963   
