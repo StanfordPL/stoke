@@ -81,10 +81,6 @@
 .L_29840:                      #        0x2984c  0      OPC=0     
   popq %r11                    #  70    0x2984c  2      OPC=1694  
   andl $0xffffffe0, %r11d      #  71    0x2984e  7      OPC=131   
-  nop                          #  72    0x29855  1      OPC=1343  
-  nop                          #  73    0x29856  1      OPC=1343  
-  nop                          #  74    0x29857  1      OPC=1343  
-  nop                          #  75    0x29858  1      OPC=1343  
   addq %r15, %r11              #  76    0x29859  3      OPC=72    
   jmpq %r11                    #  77    0x2985c  3      OPC=928   
   nop                          #  78    0x2985f  1      OPC=1343  
