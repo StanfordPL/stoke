@@ -1,0 +1,3 @@
+*.tc
+nacl_bins
+native_bins

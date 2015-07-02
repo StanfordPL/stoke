@@ -1,0 +1,5 @@
+a.out
+gmon.out
+benchmarks64
+*callgrind*
+fannkuch
