@@ -13,7 +13,7 @@ extract:
 	stoke extract -i original.nexe -o bins
 
 replace:
-	stoke replace --use_input_offset --rewrite result.s -i original.nexe -o new.nexe
+	stoke replace --input_offset --rewrite result.s -i original.nexe -o new.nexe
 
 cost:
 	stoke debug cost --config cost.config
