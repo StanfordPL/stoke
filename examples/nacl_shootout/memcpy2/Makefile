@@ -22,6 +22,7 @@ search:
 check:
 	ncval nacl.nexe
 	ncval nacl_synth.nexe
+	ncval native_opt.nexe
 
 replace:
 	stoke replace --input_offset --rewrite nacl_result.s -i nacl -o nacl.nexe
@@ -34,10 +35,20 @@ deploy:
 replace_native:
 	stoke replace --input_offset --rewrite native_result.s -i nacl -o nacl_synth.nexe
 
+replace_opt:
+	stoke replace --input_offset --rewrite native_opt.s -i nacl -o native_opt.nexe
+
 deploy_native:
 	cp nacl_synth.nexe $(DEPLOY_PATH)/memcpy2.nexe
 	rm -f $(DEPLOY_PATH)/benchmarks_browser64.nexe
 	ln -s $(DEPLOY_PATH)/memcpy2.nexe $(DEPLOY_PATH)/benchmarks_browser64.nexe
+
+deploy_opt:
+	cp native_opt.nexe $(DEPLOY_PATH)/memcpy2.nexe
+	rm -f $(DEPLOY_PATH)/benchmarks_browser64.nexe
+	ln -s $(DEPLOY_PATH)/memcpy2.nexe $(DEPLOY_PATH)/benchmarks_browser64.nexe
+
+
 
 clean:
 	rm -rf bins_native bins_nacl nacl.tc native.tc

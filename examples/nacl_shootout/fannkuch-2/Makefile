@@ -1,4 +1,6 @@
 
+DEPLOY_PATH=/home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.com/git/nacl
+
 all:
 
 testcases:
@@ -18,7 +20,11 @@ profile: fannkuchredux.c Makefile
 	gcc -std=c99 -g -O2 -DDEFMAIN fannkuchredux.c -o profile
 
 replace:
-	stoke replace --use_input_offset --rewrite result.s -i original.nexe -o new.nexe
+	stoke replace --input_offset --rewrite result.s -i original.nexe -o new.nexe
 
 deploy:
-	cp new.nexe /home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.com/git/nacl/fannkuch2.nexe
+	cp new.nexe $(DEPLOY_PATH)/fannkuch2.nexe
+	rm -f $(DEPLOY_PATH)/benchmarks_browser64.nexe
+	ln -s $(DEPLOY_PATH)/fannkuch2.nexe $(DEPLOY_PATH)/benchmarks_browser64.nexe
+
+

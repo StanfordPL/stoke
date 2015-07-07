@@ -35,9 +35,11 @@ uint64_t counter[2];
 uint64_t last;
 
 char* __attribute__ ((noinline)) my_memcpy(char* dest, const char* src, size_t n) {
-  for(size_t i = 0; i < n; ++i)
+/*  for(size_t i = 0; i < n; ++i)
     dest[i] = src[i];
   return dest;
+  */
+  return memcpy(dest, src,n);
 }
 
 int run_memcpy2(int n) {

@@ -2,12 +2,14 @@
   .globl my_memcpy
   .type my_memcpy, @function
 
-#! file-offset 0x6e82
-#! rip-offset  0x406e82
+#! file-offset 0x697e0
+#! rip-offset  0x297e0
 #! capacity    128 bytes
 
 # Text                           #  Line  RIP       Bytes  Opcode    
 .my_memcpy:                      #        0x406e82  0      OPC=0     
+  nop
+  nop
   movq $0x4, %rcx                #  1     0x406e82  7      OPC=1159  
   crc32l %ecx, %ecx              #  2     0x406e89  5      OPC=532   
   imull $0xfffffff8, %edx, %eax  #  3     0x406e8e  6      OPC=822   
@@ -27,6 +29,9 @@
   decl %edx                      #  16    0x406eb8  2      OPC=602   
   jne .L_406e8c                  #  17    0x406eba  6      OPC=963   
 .L_406e9e:                       #        0x406ec0  0      OPC=0     
-  retq                           #  18    0x406ec0  1      OPC=1978  
+  popq %r11                    #  70    0x2984c  2      OPC=1694  
+  andl $0xe0, %r11d            #  71    0x2984e  4      OPC=132   
+  addq %r15, %r11              #  76    0x29859  3      OPC=72    
+  jmpq %r11                    #  77    0x2985c  3      OPC=928   
                                                                      
 .size my_memcpy, .-my_memcpy
