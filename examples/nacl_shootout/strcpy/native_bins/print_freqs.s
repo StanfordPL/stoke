@@ -1,0 +1,136 @@
+  .text
+  .globl print_freqs
+  .type print_freqs, @function
+
+#! file-offset 0x4941
+#! rip-offset  0x404941
+#! capacity    398 bytes
+
+# Text                          #  Line  RIP       Bytes  Opcode    
+.print_freqs:                   #        0x404941  0      OPC=0     
+  pushq %rbp                    #  1     0x404941  1      OPC=1861  
+  movq %rsp, %rbp               #  2     0x404942  3      OPC=1162  
+  pushq %r15                    #  3     0x404945  2      OPC=1861  
+  pushq %r14                    #  4     0x404947  2      OPC=1861  
+  pushq %r13                    #  5     0x404949  2      OPC=1861  
+  pushq %r12                    #  6     0x40494b  2      OPC=1861  
+  pushq %rbx                    #  7     0x40494d  1      OPC=1861  
+  subq $0x48, %rsp              #  8     0x40494e  4      OPC=2389  
+  movq (%rdi), %rbx             #  9     0x404952  3      OPC=1161  
+  movl 0x8(%rdi), %r12d         #  10    0x404955  4      OPC=1156  
+  movslq 0xc(%rdi), %r15        #  11    0x404959  4      OPC=1288  
+  movq 0x10(%rdi), %rax         #  12    0x40495d  4      OPC=1161  
+  movq %rax, -0x40(%rbp)        #  13    0x404961  4      OPC=1138  
+  movl 0x18(%rdi), %eax         #  14    0x404965  3      OPC=1156  
+  movl %eax, -0x44(%rbp)        #  15    0x404968  3      OPC=1136  
+  movl $0x20, %edi              #  16    0x40496b  5      OPC=1154  
+  callq .ht_create              #  17    0x404970  5      OPC=260   
+  movq %rax, %r14               #  18    0x404975  3      OPC=1162  
+  movq %rax, -0x68(%rbp)        #  19    0x404978  4      OPC=1138  
+  leal 0x1(%r15), %eax          #  20    0x40497c  4      OPC=1066  
+  cltq                          #  21    0x404980  2      OPC=263   
+  addq $0xf, %rax               #  22    0x404982  4      OPC=70    
+  andq $0xf0, %rax              #  23    0x404986  4      OPC=137   
+  subq %rax, %rsp               #  24    0x40498a  3      OPC=2391  
+  movq %rsp, -0x38(%rbp)        #  25    0x40498d  4      OPC=1138  
+  movq %r14, %rcx               #  26    0x404991  3      OPC=1162  
+  movl %r15d, %edx              #  27    0x404994  3      OPC=1157  
+  movl %r12d, %esi              #  28    0x404997  3      OPC=1157  
+  movq %rbx, %rdi               #  29    0x40499a  3      OPC=1162  
+  callq .generate_seqences      #  30    0x40499d  5      OPC=260   
+  movq %r14, %rdi               #  31    0x4049a2  3      OPC=1162  
+  callq .ht_values_as_vector    #  32    0x4049a5  5      OPC=260   
+  movq %rax, -0x60(%rbp)        #  33    0x4049aa  4      OPC=1138  
+  movl 0x20(%r14), %ebx         #  34    0x4049ae  4      OPC=1156  
+  movslq %ebx, %rsi             #  35    0x4049b2  3      OPC=1289  
+  movl $0x4041c5, %ecx          #  36    0x4049b5  5      OPC=1154  
+  movl $0x18, %edx              #  37    0x4049ba  5      OPC=1154  
+  movq %rax, %rdi               #  38    0x4049bf  3      OPC=1162  
+  callq .qsort_plt              #  39    0x4049c2  5      OPC=260   
+  testl %ebx, %ebx              #  40    0x4049c7  2      OPC=2436  
+  jle .L_404aae                 #  41    0x4049c9  6      OPC=919   
+  leal -0x1(%rbx), %eax         #  42    0x4049cf  3      OPC=1066  
+  leaq (%rax,%rax,2), %rax      #  43    0x4049d2  4      OPC=1069  
+  movq -0x60(%rbp), %rdi        #  44    0x4049d6  4      OPC=1161  
+  leaq 0x18(%rdi,%rax,8), %r13  #  45    0x4049da  5      OPC=1069  
+  movq %rdi, %rax               #  46    0x4049df  3      OPC=1162  
+  xorl %ecx, %ecx               #  47    0x4049e2  2      OPC=3758  
+.L_4049e4:                      #        0x4049e4  0      OPC=0     
+  addl 0x8(%rax), %ecx          #  48    0x4049e4  3      OPC=66    
+  addq $0x18, %rax              #  49    0x4049e7  4      OPC=70    
+  cmpq %r13, %rax               #  50    0x4049eb  3      OPC=477   
+  jne .L_4049e4                 #  51    0x4049ee  6      OPC=963   
+  nop                           #  52    0x4049f4  1      OPC=1343  
+  nop                           #  53    0x4049f5  1      OPC=1343  
+  cvtsi2ssl %ecx, %xmm1         #  54    0x4049f6  4      OPC=571   
+  movss %xmm1, -0x48(%rbp)      #  55    0x4049fa  5      OPC=1271  
+  leal -0x1(%r15), %eax         #  56    0x4049ff  4      OPC=1066  
+  movq -0x38(%rbp), %rdi        #  57    0x404a03  4      OPC=1161  
+  addq %rdi, %r15               #  58    0x404a07  3      OPC=72    
+  movq %r15, -0x50(%rbp)        #  59    0x404a0a  4      OPC=1138  
+  movq -0x60(%rbp), %r14        #  60    0x404a0e  4      OPC=1161  
+  xorl %r15d, %r15d             #  61    0x404a12  3      OPC=3758  
+  movl %eax, %ebx               #  62    0x404a15  2      OPC=1157  
+  notq %rbx                     #  63    0x404a17  3      OPC=1354  
+  movslq %eax, %r12             #  64    0x404a1a  3      OPC=1289  
+  addq %rdi, %r12               #  65    0x404a1d  3      OPC=72    
+  movq %r13, -0x58(%rbp)        #  66    0x404a20  4      OPC=1138  
+  movl %r15d, %r13d             #  67    0x404a24  3      OPC=1157  
+  movl %eax, %r15d              #  68    0x404a27  3      OPC=1157  
+.L_404a24:                      #        0x404a2a  0      OPC=0     
+  movq (%r14), %rdx             #  69    0x404a2a  3      OPC=1161  
+  xorl %eax, %eax               #  70    0x404a2d  2      OPC=3758  
+  testl %r15d, %r15d            #  71    0x404a2f  3      OPC=2436  
+  js .L_404a4c                  #  72    0x404a32  6      OPC=1043  
+  nop                           #  73    0x404a38  1      OPC=1343  
+  nop                           #  74    0x404a39  1      OPC=1343  
+.L_404a2e:                      #        0x404a3a  0      OPC=0     
+  movq %rdx, %rcx               #  75    0x404a3a  3      OPC=1162  
+  andl $0x3, %ecx               #  76    0x404a3d  3      OPC=132   
+  movzbl 0x40851a(%rcx), %ecx   #  77    0x404a40  7      OPC=1302  
+  movb %cl, (%r12,%rax,1)       #  78    0x404a47  4      OPC=1141  
+  shrq $0x2, %rdx               #  79    0x404a4b  4      OPC=2315  
+  subq $0x1, %rax               #  80    0x404a4f  4      OPC=2389  
+  cmpq %rbx, %rax               #  81    0x404a53  3      OPC=477   
+  jne .L_404a2e                 #  82    0x404a56  6      OPC=963   
+  nop                           #  83    0x404a5c  1      OPC=1343  
+  nop                           #  84    0x404a5d  1      OPC=1343  
+.L_404a4c:                      #        0x404a5e  0      OPC=0     
+  movq -0x50(%rbp), %rax        #  85    0x404a5e  4      OPC=1161  
+  movb $0x0, (%rax)             #  86    0x404a62  3      OPC=1140  
+  movl 0x8(%r14), %eax          #  87    0x404a65  4      OPC=1156  
+  cvtsi2ssq %rax, %xmm0         #  88    0x404a69  5      OPC=572   
+  mulss 0x3bbc(%rip), %xmm0     #  89    0x404a6e  8      OPC=1327  
+  divss -0x48(%rbp), %xmm0      #  90    0x404a76  5      OPC=621   
+  cvtss2sd %xmm0, %xmm0         #  91    0x404a7b  4      OPC=574   
+  movl -0x44(%rbp), %esi        #  92    0x404a7f  3      OPC=1156  
+  subl %r13d, %esi              #  93    0x404a82  3      OPC=2386  
+  movslq %esi, %rsi             #  94    0x404a85  3      OPC=1289  
+  movslq %r13d, %rdi            #  95    0x404a88  3      OPC=1289  
+  addq -0x40(%rbp), %rdi        #  96    0x404a8b  4      OPC=71    
+  movq -0x38(%rbp), %r9         #  97    0x404a8f  4      OPC=1161  
+  movl $0x40848c, %r8d          #  98    0x404a93  6      OPC=1154  
+  movq $0xffffffff, %rcx        #  99    0x404a99  7      OPC=1159  
+  movl $0x1, %edx               #  100   0x404aa0  5      OPC=1154  
+  movl $0x1, %eax               #  101   0x404aa5  5      OPC=1154  
+  callq .__snprintf_chk_plt     #  102   0x404aaa  5      OPC=260   
+  addl %eax, %r13d              #  103   0x404aaf  3      OPC=67    
+  addq $0x18, %r14              #  104   0x404ab2  4      OPC=70    
+  cmpq -0x58(%rbp), %r14        #  105   0x404ab6  4      OPC=476   
+  jne .L_404a24                 #  106   0x404aba  6      OPC=963   
+.L_404aae:                      #        0x404ac0  0      OPC=0     
+  movq -0x60(%rbp), %rdi        #  107   0x404ac0  4      OPC=1161  
+  callq .free_plt               #  108   0x404ac4  5      OPC=260   
+  movq -0x68(%rbp), %rdi        #  109   0x404ac9  4      OPC=1161  
+  callq .ht_destroy             #  110   0x404acd  5      OPC=260   
+  leaq -0x28(%rbp), %rsp        #  111   0x404ad2  4      OPC=1069  
+  popq %rbx                     #  112   0x404ad6  1      OPC=1694  
+  popq %r12                     #  113   0x404ad7  2      OPC=1694  
+  popq %r13                     #  114   0x404ad9  2      OPC=1694  
+  popq %r14                     #  115   0x404adb  2      OPC=1694  
+  popq %r15                     #  116   0x404add  2      OPC=1694  
+  popq %rbp                     #  117   0x404adf  1      OPC=1694  
+  retq                          #  118   0x404ae0  1      OPC=1978  
+                                                                    
+.size print_freqs, .-print_freqs
+

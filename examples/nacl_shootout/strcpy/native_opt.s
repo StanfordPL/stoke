@@ -1,0 +1,34 @@
+  .text
+  .globl my_strcpy
+  .type my_strcpy, @function
+
+#! file-offset 0x69960
+#! rip-offset  0x29960
+#! capacity    96 bytes
+
+# Text                       #  Line  RIP      Bytes  Opcode    
+.my_strcpy:                  #        0x29960  0      OPC=0     
+  nop                        #  1     0x29960  1      OPC=1343  
+  movq %rdi, %rcx            #  2     0x29961  3      OPC=1162  
+  movq %rdi, %rax            #  3     0x29964  3      OPC=1162  
+  leal (%rsi), %r8d          #  4     0x29967  3      OPC=1066  
+  movsbl (%r15,%r8,1), %edx  #  5     0x2996a  5      OPC=1280  
+  testb %r8b, %dl            #  6     0x2996f  3      OPC=2440  
+  nop                        #  7     0x29972  1      OPC=1343  
+  nop                        #  8     0x29973  1      OPC=1343  
+  nopl %edi                  #  9     0x29974  3      OPC=1347  
+  nopl %edi                  #  10    0x29977  3      OPC=1347  
+  je .L_406f33               #  11    0x2997a  6      OPC=893   
+.L_406f21:                   #        0x29980  0      OPC=0     
+  addq $0x1, %rsi            #  12    0x29980  4      OPC=70    
+  addq $0x1, %rcx            #  13    0x29984  4      OPC=70    
+  leal -0x1(%rcx), %r8d      #  14    0x29988  4      OPC=1066  
+  movb %dl, (%r15,%r8,1)     #  15    0x2998c  4      OPC=1141  
+  leal (%rsi), %r8d          #  16    0x29990  3      OPC=1066  
+  movsbl (%r15,%r8,1), %edx  #  17    0x29993  5      OPC=1280  
+  testb %dl, %dl             #  18    0x29998  2      OPC=2440  
+  jne .L_406f21              #  19    0x2999a  6      OPC=963   
+.L_406f33:                   #        0x299a0  0      OPC=0     
+  retq                       #  20    0x299a0  1      OPC=1978  
+                                                                
+.size my_strcpy, .-my_strcpy
