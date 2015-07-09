@@ -35,7 +35,7 @@
 # Number of proposals to execute before giving up
 # --timeout <int>
 # Default: 1000000000
---timeout 4000000
+--timeout 40000000
 
 # Number of proposals to execute per round (requires --timeout_action list)
 # --timeout_list { <int> <int> ... }
@@ -44,11 +44,12 @@
 # Maximum runtime (in seconds) before giving up
 # --timeout_sec <int>
 # Default: 1800
---timeout_sec 180
+#--timeout_sec 180
 
 # Annealing constant
 # --beta <double>
 # Default: 1
+--lambda 64
 
 # The maximum number of instructions allowed in a rewrite
 # --max_instrs <int>

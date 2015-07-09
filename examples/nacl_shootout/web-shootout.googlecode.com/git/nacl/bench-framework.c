@@ -143,7 +143,8 @@ void SetupSmallBenchmarks() {
   //                  NULL, NULL);
   //RegisterBenchmark(strdup("Memcpy"), run_memcpy, 1000000, 3000000, NULL, NULL);
   //RegisterBenchmark(strdup("Memcpy2"), run_memcpy2, 1000000, 3000000, NULL, NULL);
-  RegisterBenchmark(strdup("strcpy"), run_strcpy, 1000000, 3000000, NULL, NULL);
+  //RegisterBenchmark(strdup("strcpy"), run_strcpy, 1000000, 3000000, NULL, NULL);
+  RegisterBenchmark(strdup("strlen"), run_strlen, 1000000, 3000000, NULL, NULL);
   run_model = kRunModelRepeated;
 }
 
@@ -170,7 +171,8 @@ void SetupLargeBenchmarks() {
   //                  NULL, NULL);
   //RegisterBenchmark(strdup("Memcpy"), run_memcpy, 10000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("Memcpy2"), run_memcpy2, 10000000, 30000000, NULL, NULL);
-  RegisterBenchmark(strdup("strcpy"), run_strcpy, 10000000, 30000000, NULL, NULL);
+  //RegisterBenchmark(strdup("strcpy"), run_strcpy, 10000000, 30000000, NULL, NULL);
+  RegisterBenchmark(strdup("strlen"), run_strlen, 10000000, 30000000, NULL, NULL);
   run_model = kRunModelOnce;
 }
 

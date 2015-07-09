@@ -58,6 +58,7 @@ int run_spectralnorm(int p);
 int run_memcpy(int n);
 int run_memcpy2(int n);
 int run_strcpy(int n);
+int run_strlen(int n);
 
 int run_richards(int p);
 int run_deltablue(int p);
