@@ -29,6 +29,9 @@
   testb %dl, %dl             #  18    0x29998  2      OPC=2440  
   jne .L_406f21              #  19    0x2999a  6      OPC=963   
 .L_406f33:                   #        0x299a0  0      OPC=0     
-  retq                       #  20    0x299a0  1      OPC=1978  
+  popq %r11                    #  70    0x2984c  2      OPC=1694  
+  andl $0xe0, %r11d            #  71    0x2984e  4      OPC=132   
+  addq %r15, %r11              #  76    0x29859  3      OPC=72    
+  jmpq %r11                    #  77    0x2985c  3      OPC=928   
                                                                 
 .size my_strcpy, .-my_strcpy

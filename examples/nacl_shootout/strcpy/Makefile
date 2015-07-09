@@ -15,19 +15,25 @@ testcase:
 search:
 	stoke search --config nacl.search
 
-check:
-	ncval nacl.nexe
-	ncval nacl_synth.nexe
-	ncval native_opt.nexe
+replace_nacl:
+	stoke replace --input_offset --rewrite nacl_result.s -i nacl.nexe -o nacl_opt.nexe
+	ncval nacl_opt.nexe
 
-replace_native:
-	stoke replace --input_offset --rewrite native_result.s -i nacl -o nacl_synth.nexe
+replace_synth:
+	stoke replace --input_offset --rewrite native_result.s -i nacl.nexe -o native_synth.nexe
+	ncval native_synth.nexe
 
 replace_opt:
-	stoke replace --input_offset --rewrite native_opt.s -i nacl -o native_opt.nexe
+	stoke replace --input_offset --rewrite native_opt.s -i nacl.nexe -o native_opt.nexe
+	ncval native_opt.nexe
 
-deploy_native: replace_native
-	cp nacl_synth.nexe $(DEPLOY_PATH)/$(NAME).nexe
+deploy_nacl: replace_nacl
+	cp nacl_opt.nexe $(DEPLOY_PATH)/$(NAME).nexe
+	rm -f $(DEPLOY_PATH)/benchmarks_browser64.nexe
+	ln -s $(DEPLOY_PATH)/$(NAME).nexe $(DEPLOY_PATH)/benchmarks_browser64.nexe
+
+deploy_synth: replace_synth
+	cp native_synth.nexe $(DEPLOY_PATH)/$(NAME).nexe
 	rm -f $(DEPLOY_PATH)/benchmarks_browser64.nexe
 	ln -s $(DEPLOY_PATH)/$(NAME).nexe $(DEPLOY_PATH)/benchmarks_browser64.nexe
 
