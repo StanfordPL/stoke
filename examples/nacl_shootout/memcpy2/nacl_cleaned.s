@@ -23,12 +23,6 @@
   nop                          #  13    0x297f7  1      OPC=1343  
   nop                          #  14    0x297f8  1      OPC=1343  
   nop                          #  15    0x297f9  1      OPC=1343  
-  nop                          #  16    0x297fa  1      OPC=1343  
-  nop                          #  17    0x297fb  1      OPC=1343  
-  nop                          #  18    0x297fc  1      OPC=1343  
-  nop                          #  19    0x297fd  1      OPC=1343  
-  nop                          #  20    0x297fe  1      OPC=1343  
-  nop                          #  21    0x297ff  1      OPC=1343  
   nop                          #  22    0x29800  1      OPC=1343  
   nop                          #  23    0x29801  1      OPC=1343  
   nop                          #  24    0x29802  1      OPC=1343  
@@ -72,12 +66,6 @@
   nop                          #  61    0x29843  1      OPC=1343  
   nop                          #  62    0x29844  1      OPC=1343  
   nop                          #  63    0x29845  1      OPC=1343  
-  nop                          #  64    0x29846  1      OPC=1343  
-  nop                          #  65    0x29847  1      OPC=1343  
-  nop                          #  66    0x29848  1      OPC=1343  
-  nop                          #  67    0x29849  1      OPC=1343  
-  nop                          #  68    0x2984a  1      OPC=1343  
-  nop                          #  69    0x2984b  1      OPC=1343  
 .L_29840:                      #        0x2984c  0      OPC=0     
   retq
   nop                          #  78    0x2985f  1      OPC=1343  
