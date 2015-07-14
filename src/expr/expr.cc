@@ -30,7 +30,7 @@ size_t Expr::operator()(const function<size_t (const string&)>& environment) con
     assert(a2_);
     auto c1 = (*a1_)(environment);
     auto c2 = (*a2_)(environment);
-    
+
     switch(op_) {
     case NONE:
       assert(false);
