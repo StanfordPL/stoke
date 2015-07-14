@@ -12,21 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_IO_TIMEOUT_H
-#define STOKE_TOOLS_IO_TIMEOUT_H
+#ifndef STOKE_TOOLS_IO_FAILED_VERIFICATION_ACTION_H
+#define STOKE_TOOLS_IO_FAILED_VERIFICATION_ACTION_H
 
 #include <iostream>
 
-#include "src/search/timeout.h"
+#include "src/search/failed_verification_action.h"
 
 namespace stoke {
 
-struct TimeoutReader {
-  void operator()(std::istream& is, Timeout& t);
+struct FailedVerificationActionReader {
+  void operator()(std::istream& is, FailedVerificationAction& t);
 };
 
-struct TimeoutWriter {
-  void operator()(std::ostream& os, const Timeout t);
+struct FailedVerificationActionWriter {
+  void operator()(std::ostream& os, const FailedVerificationAction t);
 };
 
 } // namespace stoke

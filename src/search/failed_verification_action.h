@@ -17,11 +17,9 @@
 
 namespace stoke {
 
-enum class Timeout {
+enum class FailedVerificationAction {
   QUIT = 0,
-  RESTART,
-  LIST,
-  TESTCASE
+  ADD_COUNTEREXAMPLE
 };
 
 } // namespace stoke
