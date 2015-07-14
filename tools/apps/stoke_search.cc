@@ -78,7 +78,7 @@ auto& timeout_seconds_arg =
   cpputil::ValueArg<size_t>::create("timeout_seconds")
   .usage("<int>")
   .description("Total number of seconds before giving up (across all cycles)")
-;
+  ;
 auto& failed_verification_action =
   ValueArg<FailedVerificationAction, FailedVerificationActionReader, FailedVerificationActionWriter>::create("failed_verification_action")
   .usage("(quit|add_counterexample)")
