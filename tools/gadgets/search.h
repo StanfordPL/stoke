@@ -30,8 +30,6 @@ public:
     Search(tforms) {
     set_seed(seed);
     set_max_instrs(max_instrs_arg);
-    set_timeout_itr(timeout_itr_arg);
-    set_timeout_sec(timeout_sec_arg);
     set_beta(beta_arg);
     set_mass(Move::OPCODE, opcode_mass_arg);
     set_mass(Move::OPERAND, operand_mass_arg);
