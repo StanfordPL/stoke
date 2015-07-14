@@ -23,6 +23,8 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "src/cfg/cfg_transforms.h"
+#include "src/expr/expr.h"
+#include "src/expr/expr_parser.h"
 #include "src/tunit/tunit.h"
 #include "src/search/progress_callback.h"
 #include "src/search/statistics_callback.h"
