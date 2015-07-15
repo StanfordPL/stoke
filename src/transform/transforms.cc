@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "src/sandbox/sandbox.h"
-#include "src/search/transforms.h"
+#include "src/transform/transforms.h"
 
 using namespace std;
 using namespace stoke;

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_SEARCH_MOVE_H
-#define STOKE_SRC_SEARCH_MOVE_H
+#ifndef STOKE_SRC_TRANSFORMS_MOVE_H
+#define STOKE_SRC_TRANSFORMS_MOVE_H
 
 namespace stoke {
 

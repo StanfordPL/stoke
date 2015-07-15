@@ -20,12 +20,12 @@
 
 #include "src/cost/cost_function.h"
 #include "src/search/init.h"
-#include "src/search/move.h"
 #include "src/search/progress_callback.h"
 #include "src/search/search_state.h"
 #include "src/search/statistics.h"
 #include "src/search/statistics_callback.h"
-#include "src/search/transforms.h"
+#include "src/transform/move.h"
+#include "src/transform/transforms.h"
 #include "src/tunit/tunit.h"
 
 namespace stoke {

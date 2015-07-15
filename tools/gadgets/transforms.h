@@ -23,9 +23,9 @@
 #include "src/ext/cpputil/include/io/console.h"
 
 #include "src/cfg/cfg.h"
-#include "src/search/transforms.h"
 #include "src/solver/z3solver.h"
 #include "src/target/cpu_info.h"
+#include "src/transform/transforms.h"
 #include "src/tunit/tunit.h"
 #include "src/validator/validator.h"
 

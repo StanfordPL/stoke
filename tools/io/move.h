@@ -17,7 +17,7 @@
 
 #include <iostream>
 
-#include "src/search/move.h"
+#include "src/transform/move.h"
 
 namespace stoke {
 
