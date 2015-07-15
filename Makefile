@@ -95,6 +95,7 @@ SRC_OBJ=\
 	\
 	src/target/cpu_info.o	\
 	\
+	src/transform/pools.o \
 	src/transform/transforms.o \
 	\
 	src/tunit/tunit.o \

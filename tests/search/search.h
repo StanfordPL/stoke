@@ -16,7 +16,6 @@
 #ifndef _STOKE_TEST_SEARCH_SEARCH_H
 #define _STOKE_TEST_SEARCH_SEARCH_H
 
-#include "tests/search/transform.h"
 #include "src/cfg/cfg_transforms.h"
 
 namespace stoke {

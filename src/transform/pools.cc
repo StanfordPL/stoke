@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "src/sandbox/sandbox.h"
-#include "src/transform/transforms.h"
+#include "src/transform/pools.h"
 
 using namespace std;
 using namespace stoke;
@@ -192,46 +192,14 @@ bool get_index(default_random_engine& gen, const vector<R32>& r32_pool, const ve
   return false;
 }
 
-bool get_indices(default_random_engine& gen, const Cfg& cfg, Cfg::id_type& bb, size_t& block_idx, size_t& code_idx) {
-  // Corner case: This code could have no reachable blocks
-  if (cfg.num_reachable() < 3) {
-    return false;
-  }
-
-  // Pick a random reachable block
-  auto b = cfg.reachable_begin();
-  for (size_t i = 0, ie = (gen() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
-    ++b;
-  }
-  bb = *b;
-
-  // Pick a random instruction in that block
-  block_idx = gen() % cfg.num_instrs(bb);
-  code_idx = cfg.get_index({bb, block_idx});
-
-  // Corner cases: Is this a control instruction other than a call or the first instruction
-  if (code_idx == 0) {
-    return false;
-  }
-  if (is_control_other_than_call(cfg.get_code()[code_idx].get_opcode())) {
-    return false;
-  }
-
-  return true;
-}
-
 } // namespace
 
 namespace stoke {
 
-Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
+TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet& flags,
                                         size_t call_weight, const RegSet& preserve_regs,
                                         const set<Opcode>& opc_blacklist,
                                         const set<Opcode>& opc_whitelist) {
-
-
-  pools_.set_opcode_pool(target, flags, call_weight, preserve_regs, opc_blacklist, opc_whitelist);
-
   // Determine if we need to read/write memory operands
   auto mem_read = false;
   auto mem_write = false;
@@ -304,11 +272,10 @@ Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
     }
   }
 
-
   return *this;
 }
 
-Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preserve_regs) {
+TransformPools& TransformPools::set_operand_pool(const Cfg& target, const RegSet& preserve_regs) {
   fill_pool(rh_pool_, rhs, preserve_regs);
   fill_pool(r8_pool_, r8s, preserve_regs);
   fill_pool(r16_pool_, r16s, preserve_regs);
@@ -343,373 +310,10 @@ Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preser
   set<uint64_t> rip_ops(fxn.rip_offset_target_begin(), fxn.rip_offset_target_end());
   rip_pool_.assign(rip_ops.begin(), rip_ops.end());
 
-  pools_.set_operand_pool(target, preserve_regs);
-
   return *this;
 }
 
-bool Transforms::modify(Cfg& cfg, Move type) {
-  auto ret = false;
-  switch (type) {
-  case Move::INSTRUCTION:
-    ret = instruction_move(cfg);
-    break;
-  case Move::OPCODE:
-    ret = opcode_move(cfg);
-    break;
-  case Move::OPERAND:
-    ret = operand_move(cfg);
-    break;
-  case Move::RESIZE:
-    ret = resize_move(cfg);
-    break;
-  case Move::LOCAL_SWAP:
-    ret = local_swap_move(cfg);
-    break;
-  case Move::GLOBAL_SWAP:
-    ret = global_swap_move(cfg);
-    break;
-  case Move::EXTENSION:
-    ret = extension_move(cfg);
-    break;
-  default:
-    assert(false);
-    return false;
-  }
-
-  // Most if not all of these methods have the potential to break invariants
-  // Make sure that we've left everything back in a valid state before continuing
-  assert(cfg.invariant_no_undef_reads());
-  assert(cfg.get_function().check_invariants());
-  return ret;
-}
-
-bool Transforms::instruction_move(Cfg& cfg) {
-  // Grab the index of an old instruction
-  Cfg::id_type bb = cfg.get_entry();
-  size_t block_idx = 0;
-  if (!get_indices(gen_, cfg, bb, block_idx, instr_idx1_)) {
-    return false;
-  }
-
-  // Record the old value
-  old_instr_ = cfg.get_code()[instr_idx1_];
-
-  // Try generating a new instruction
-  auto instr = old_instr_;
-
-  auto opc = RET;
-  if (!get_control_free(opc)) {
-    return false;
-  }
-  instr.set_opcode(opc);
-
-  const auto& rs = cfg.def_ins({bb, block_idx});
-  for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
-    Operand o = instr.get_operand<R64>(i);
-    if (instr.maybe_read(i)) {
-      if (!get_read_op(instr.get_opcode(), i, rs, o)) {
-        return false;
-      }
-    } else {
-      if (!get_write_op(instr.get_opcode(), i, rs, o)) {
-        return false;
-      }
-    }
-    instr.set_operand(i, o);
-  }
-
-  // Check for validator support for the new instruction
-  if (validator_ && !validator_->is_supported(instr)) {
-    return false;
-  }
-
-  // Check that the instruction is valid
-  if (!instr.check()) {
-    return false;
-  }
-
-  // Success: Any failure beyond here will require undoing the move
-  // Operands come from the global pool so this rip will need rescaling
-  cfg.get_function().replace(instr_idx1_, instr, false, true);
-  cfg.recompute_defs();
-  if (!cfg.check_invariants()) {
-    undo_instruction_move(cfg);
-    return false;
-  }
-
-  return true;
-}
-
-bool Transforms::opcode_move(Cfg& cfg) {
-  // Grab the index of a random instruction
-  Cfg::id_type bb = cfg.get_entry();
-  size_t block_idx = 0;
-  if (!get_indices(gen_, cfg, bb, block_idx, instr_idx1_)) {
-    return false;
-  }
-
-  // Record the old value
-  old_instr_ = cfg.get_code()[instr_idx1_];
-
-  // Try generating a new instruction
-  auto instr = old_instr_;
-
-  auto opc = old_instr_.get_opcode();
-  if (!get_control_free_type_equiv(opc)) {
-    return false;
-  }
-  instr.set_opcode(opc);
-
-  // Check for validator support for the new instruction
-  if (validator_ && !validator_->is_supported(instr)) {
-    return false;
-  }
-
-  // Check that the instruction is valid
-  if (!instr.check()) {
-    return false;
-  }
-
-  // Success: Any failure beyond here will require undoing the move
-  // This operand hasn't changed, so the rip only needs local rescaling
-  cfg.get_function().replace(instr_idx1_, instr, false, false);
-  cfg.recompute_defs();
-  if (!cfg.check_invariants()) {
-    undo_opcode_move(cfg);
-    return false;
-  }
-
-  return true;
-}
-
-bool Transforms::operand_move(Cfg& cfg) {
-  // Grab the index of a random instruction
-  Cfg::id_type bb = cfg.get_entry();
-  size_t block_idx = 0;
-  if (!get_indices(gen_, cfg, bb, block_idx, instr_idx1_)) {
-    return false;
-  }
-
-  // Corner Cases: Don't try chaning 0-arity opcodes
-  if (cfg.get_code()[instr_idx1_].arity() == 0) {
-    return false;
-  }
-  const auto operand_idx = gen_() % cfg.get_code()[instr_idx1_].arity();
-
-  // Record the old value and generate a new operand
-  old_instr_ = cfg.get_code()[instr_idx1_];
-  auto instr = old_instr_;
-  Operand o = instr.get_operand<R64>(operand_idx);
-
-  const auto& rs = cfg.def_ins({bb, block_idx});
-  if (instr.maybe_read(operand_idx)) {
-    if (!get_read_op(instr.get_opcode(), operand_idx, rs, o)) {
-      return false;
-    }
-  } else {
-    if (!get_write_op(instr.get_opcode(), operand_idx, rs, o)) {
-      return false;
-    }
-  }
-  instr.set_operand(operand_idx, o);
-
-  // Check for validator support for the new instruction
-  if (validator_ && !validator_->is_supported(instr)) {
-    return false;
-  }
-
-  // Check that the instruction is valid
-  if (!instr.check()) {
-    return false;
-  }
-
-  // If this is a rip operand, it needs global rescaling
-  const auto is_mem = instr.is_explicit_memory_dereference() && ((size_t)instr.mem_index() == operand_idx);
-  const auto is_rip = ((M8*)&o)->rip_offset();
-
-  // Success: Any failure beyond here will require undoing the move
-  cfg.get_function().replace(instr_idx1_, instr, false, is_rip);
-  cfg.recompute_defs();
-  if (!cfg.check_invariants()) {
-    undo_operand_move(cfg);
-    return false;
-  }
-
-  return true;
-}
-
-bool Transforms::resize_move(Cfg& cfg) {
-  if (cfg.get_code().size() < 2) {
-    return false;
-  }
-
-  std::vector<size_t> nops;
-
-  instr_idx1_ = 0;
-  for (size_t ie = cfg.get_code().size(); instr_idx1_ < ie; ++instr_idx1_) {
-    if (cfg.get_code()[instr_idx1_].is_nop()) {
-      nops.push_back(instr_idx1_);
-    }
-  }
-
-  if(!nops.size())
-    return false;
-  instr_idx1_ = nops[gen_() % nops.size()];
-
-
-  instr_idx2_ = (gen_() % (cfg.get_code().size()-1)) + 1;
-  if (instr_idx1_ == instr_idx2_) {
-    return false;
-  }
-
-  if (instr_idx1_ < instr_idx2_) {
-    cfg.get_function().rotate_left(instr_idx1_, instr_idx2_);
-  } else {
-    cfg.get_function().rotate_right(instr_idx2_, instr_idx1_);
-  }
-  cfg.recompute();
-
-  return true;
-}
-
-bool Transforms::local_swap_move(Cfg& cfg) {
-  const auto bb = (gen_() % (cfg.num_blocks() - 2)) + 1;
-  if (!cfg.is_reachable(bb)) {
-    return false;
-  }
-  const auto num_instrs = cfg.num_instrs(bb);
-  if (num_instrs < 2) {
-    return false;
-  }
-
-  instr_idx1_ = cfg.get_index({bb, gen_() % num_instrs});
-  if (instr_idx1_ == cfg.get_index({cfg.get_entry()+1,0})) {
-    return false;
-  }
-  instr_idx2_ = cfg.get_index({bb, gen_() % num_instrs});
-  if (instr_idx1_ == instr_idx2_) {
-    return false;
-  }
-  if (instr_idx2_ < instr_idx1_) {
-    swap(instr_idx1_, instr_idx2_);
-  }
-
-  const auto& i = cfg.get_code()[instr_idx1_];
-  if (is_control_other_than_call(i.get_opcode())) {
-    return false;
-  }
-  const auto& j = cfg.get_code()[instr_idx2_];
-  if (is_control_other_than_call(j.get_opcode())) {
-    return false;
-  }
-
-  cfg.get_function().swap(instr_idx1_, instr_idx2_);
-  cfg.recompute_defs();
-  if (!cfg.check_invariants()) {
-    undo_local_swap_move(cfg);
-    return false;
-  }
-
-  return true;
-}
-
-bool Transforms::global_swap_move(Cfg& cfg) {
-  if (cfg.get_code().size() < 3) {
-    return false;
-  }
-
-  instr_idx1_ = (gen_() % (cfg.get_code().size()-1)) + 1;
-  instr_idx2_ = (gen_() % (cfg.get_code().size()-1)) + 1;
-  if (instr_idx1_ == instr_idx2_) {
-    return false;
-  }
-
-  const auto& i = cfg.get_code()[instr_idx1_];
-  if (is_control_other_than_call(i.get_opcode())) {
-    return false;
-  }
-  const auto& j = cfg.get_code()[instr_idx2_];
-  if (is_control_other_than_call(j.get_opcode())) {
-    return false;
-  }
-
-  cfg.get_function().swap(instr_idx1_, instr_idx2_);
-  cfg.recompute_defs();
-  if (!cfg.check_invariants()) {
-    undo_global_swap_move(cfg);
-    return false;
-  }
-
-  return true;
-}
-
-bool Transforms::extension_move(Cfg& cfg) {
-  // Add user-defined implementation here ...
-
-  // Invariant 1:
-  // If this method returns true, it should leave this class in a state such
-  // that calling undo_extension_move() will revert cfg to its original state.
-
-  // Invariant 2:
-  // If this method returns false, it must leave cfg in its original state.
-
-  // Invariant 3:
-  // If validator_ is non-null, validator_->is_sound(instr) must hold true for
-  // all instructions instr upon return.  (You can assume this holds at the
-  // beginning).
-
-  // Invariant 4:
-  // The soundness of the underlying function must be preserved. This can be
-  // checking by calling ...
-  assert(cfg.get_function().check_invariants());
-
-  return false;
-}
-
-void Transforms::undo(Cfg& cfg, Move type) {
-  switch (type) {
-  case Move::INSTRUCTION:
-    undo_instruction_move(cfg);
-    break;
-  case Move::OPCODE:
-    undo_opcode_move(cfg);
-    break;
-  case Move::OPERAND:
-    undo_operand_move(cfg);
-    break;
-  case Move::RESIZE:
-    undo_resize_move(cfg);
-    break;
-  case Move::LOCAL_SWAP:
-    undo_local_swap_move(cfg);
-    break;
-  case Move::GLOBAL_SWAP:
-    undo_global_swap_move(cfg);
-    break;
-    undo_extension_move(cfg);
-    break;
-  default:
-    assert(false);
-    break;
-  }
-
-  // Most if not all of these methods have the potential to break invariants
-  // Make sure that we've left everything back in a valid state before continuing
-  assert(cfg.invariant_no_undef_reads());
-  assert(cfg.get_function().check_invariants());
-}
-
-void Transforms::undo_extension_move(Cfg& cfg) {
-  // Add user-defined implementation here ...
-
-  // Invariant: If the previous invocation of extension_move() returned true, this
-  // method must return cfg to its original state.
-
-  return;
-}
-
-bool Transforms::get_lea_mem(const RegSet& rs, Operand& o) {
+bool TransformPools::get_lea_mem(const RegSet& rs, Operand& o) {
   M8 m(Imm32(0));
   m.set_rip_offset(false);
   m.set_addr_or(gen_() % 2);
@@ -727,7 +331,7 @@ bool Transforms::get_lea_mem(const RegSet& rs, Operand& o) {
   return true;
 }
 
-bool Transforms::get_rip_mem(Operand& o) {
+bool TransformPools::get_rip_mem(Operand& o) {
   if (rip_pool_.empty()) {
     return false;
   }
@@ -743,7 +347,7 @@ bool Transforms::get_rip_mem(Operand& o) {
   return true;
 }
 
-bool Transforms::get_reg_mem(const RegSet& rs, Operand& o) {
+bool TransformPools::get_reg_mem(const RegSet& rs, Operand& o) {
   // Pull an operand out of the mem pool
   if (m_pool_.empty()) {
     return false;
@@ -771,7 +375,7 @@ bool Transforms::get_reg_mem(const RegSet& rs, Operand& o) {
   return true;
 }
 
-bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
+bool TransformPools::get_m(const RegSet& rs, Opcode c, Operand& o) {
   if (is_lea_opcode(c)) {
     return get_lea_mem(rs, o);
   } else if (gen_() % 2) {
@@ -781,7 +385,7 @@ bool Transforms::get_m(const RegSet& rs, Opcode c, Operand& o) {
   }
 }
 
-bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& op) {
+bool TransformPools::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& op) {
   switch (type(o, idx)) {
   case Type::M_8:
   case Type::M_16:
@@ -873,7 +477,7 @@ bool Transforms::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operand& o
   }
 }
 
-bool Transforms::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op) {
+bool TransformPools::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand& op) {
   switch (type(o, idx)) {
   case Type::HINT:
     op = gen_() % 2 ? taken : not_taken;

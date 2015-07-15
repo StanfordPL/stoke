@@ -43,6 +43,7 @@
 #include "tests/state/state.h"
 #include "tests/stategen/stategen.h"
 #include "tests/symstate/bitvector.h"
+#include "tests/transform/transform.h"
 #include "tests/trivial.h"
 #include "tests/tunit/tunit.h"
 #include "tests/validator/validator.h"

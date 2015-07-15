@@ -199,7 +199,8 @@ TEST_F(X64AsmParseTest, FuzzTest) {
   stoke::TUnit fxn(code);
   stoke::Cfg target(fxn);
 
-  stoke::Transforms t;
+  stoke::TransformPools tps;
+  stoke::Transforms t(tps);
   t.set_opcode_pool(target, flag_set, 0, x64asm::RegSet::empty(), {}, {})
   .set_operand_pool(target, x64asm::RegSet::empty())
   .set_seed(seed);

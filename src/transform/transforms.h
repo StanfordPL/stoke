@@ -24,6 +24,7 @@
 #include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/transform/move.h"
+#include "src/transform/pools.h"
 #include "src/validator/validator.h"
 
 namespace stoke {
@@ -31,7 +32,12 @@ namespace stoke {
 class Transforms {
 public:
   /** Creates a new transformation helper; guaranteed to pass invariants. */
-  Transforms();
+  Transforms(TransformPools& pools) : pools_(pools), old_instr_(x64asm::RET) { 
+    validator_ = nullptr;
+    control_free_.push_back(x64asm::RET);
+    control_free_type_equiv_.resize((int)x64asm::XSAVEOPT64_M64 + 1);
+    control_free_type_equiv_[x64asm::RET].push_back(x64asm::RET);
+  }
 
   /** Sets random seed. */
   Transforms& set_seed(std::default_random_engine::result_type seed) {
@@ -57,6 +63,7 @@ public:
     if (itr == imm_pool_.end()) {
       imm_pool_.push_back(imm);
     }
+    pools_.insert_immediate(imm);
     return *this;
   }
   /** Insert a value into the label pool */
@@ -65,6 +72,7 @@ public:
     if (itr == label_pool_.end()) {
       label_pool_.push_back(l);
     }
+    pools_.insert_label(l);
     return *this;
   }
   /** Insert a value into the mem operand pool */
@@ -74,6 +82,7 @@ public:
     if (itr == m_pool_.end()) {
       m_pool_.push_back(m);
     }
+    pools_.insert_mem(m);
     return *this;
   }
   /** Insert a value into the rip offset pool */
@@ -82,6 +91,7 @@ public:
     if (itr == rip_pool_.end()) {
       rip_pool_.push_back(addr);
     }
+    pools_.insert_rip(addr);
     return *this;
   }
 
@@ -235,6 +245,8 @@ private:
   /** Sets o to a random operand from the pool of defined values. Returns true on success. */
   bool get_read_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
                    x64asm::Operand& op);
+
+  TransformPools pools_;
 };
 
 } // namespace stoke
