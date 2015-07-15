@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <sstream>
+#include <iostream>
 
 #include "src/expr/expr_parser.h"
 
@@ -46,10 +47,11 @@ void ExprParser::eat(size_t n) {
 }
 
 void ExprParser::error(std::string m) {
-  if(error_ == "") {
+  if (!has_error_) {
     std::stringstream ss;
     ss << "at or before character at index " << index_ << ": " << m;
     error_ = ss.str();
+    has_error_ = true;
   }
 }
 
@@ -61,7 +63,7 @@ Expr* ExprParser::parse_S() {
     error("trailing characters after expression");
   }
 
-  if(error_ != "")
+  if (has_error_)
     return NULL;
   else
     return result;
@@ -179,7 +181,9 @@ Expr::Operator ExprParser::parse_BINOP(size_t n) {
 
   Expr::Operator op;
 
-  if (var == "|") {
+  if (var == "**") {
+    op = Expr::Operator::EXP;
+  } else if (var == "|") {
     op = Expr::Operator::OR;
   } else if (var == "&") {
     op = Expr::Operator::AND;
@@ -219,6 +223,7 @@ Expr::Operator ExprParser::parse_BINOP(size_t n) {
   // STEP 2: FIGURE OUT ORDER OF OPERATION BUSINESS
 
   switch(n) {
+
   case 1:
     if(op == Expr::Operator::OR) {
       eat(var.size());
@@ -271,6 +276,14 @@ Expr::Operator ExprParser::parse_BINOP(size_t n) {
   case 7:
     if(op == Expr::Operator::TIMES || op == Expr::Operator::DIV ||
         op == Expr::Operator::MOD) {
+      eat(var.size());
+      return op;
+    } else {
+      return Expr::Operator::NONE;
+    }
+
+  case 8:
+    if(op == Expr::Operator::EXP) {
       eat(var.size());
       return op;
     } else {
