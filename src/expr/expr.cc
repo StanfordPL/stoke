@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #include <cassert>
+#include <iostream>
+#include <math.h>
 
 #include "src/expr/expr.h"
 
@@ -34,6 +36,8 @@ size_t Expr::operator()(const function<size_t (const string&)>& environment) con
     switch(op_) {
     case NONE:
       assert(false);
+    case EXP:
+      return (size_t)pow((double)c1, (double)c2);
     case PLUS:
       return c1+c2;
     case MINUS:

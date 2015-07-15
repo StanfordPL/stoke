@@ -25,6 +25,7 @@ public:
 
   enum Operator {
     NONE, //represents error condition in parser
+    EXP,
     PLUS,
     MINUS,
     TIMES,

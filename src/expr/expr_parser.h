@@ -18,6 +18,7 @@
 #include <cassert>
 #include <stdint.h>
 #include <string>
+#include <iostream>
 
 #include "src/expr/expr.h"
 
@@ -31,16 +32,25 @@ public:
       parameter 's' is the string to parse, followed by a function that
       determines if a variable is valid. */
   ExprParser(std::string s, std::function<bool (const std::string&)>& is_var_valid) :
-    s_(s), is_var_valid_(is_var_valid), index_(0), error_() {}
+    s_(s), is_var_valid_(is_var_valid), index_(0), error_(), has_error_(false) {
+    result_ =parse_S();
+  }
 
   /** Takes the string and parses it into an expression.  Returns a pointer which
       the caller must delete. */
-  Expr* run() {
-    return parse_S();
+  Expr* get() {
+    assert(!has_error());
+    return result_;
   }
 
-  /** Gets any error message. */
+  /** Was there an error during parsing? */
+  bool has_error() {
+    return has_error_;
+  }
+
+  /** Gets the error message. */
   std::string get_error() {
+    assert(has_error());
     return error_;
   }
 
@@ -64,6 +74,7 @@ private:
    *    ==           BINOP5
    *    + -          BINOP6
    *    * / %        BINOP7
+   *    **           BINOP8 (exponentiation)
    *    ()
    *
    * Let "N" denote the number of binop classes there are
@@ -127,7 +138,7 @@ private:
    * some cleanup, feel free!
    */
 
-#define EXPR_PARSER_N 7
+#define EXPR_PARSER_N 8
 
   /** Helper used by peek and next() */
   void strip_spaces();
@@ -160,7 +171,9 @@ private:
   /** Used for maintaining parsing state */
   std::string s_;
   size_t index_;
+  bool has_error_;
   std::string error_;
+  Expr* result_;
 
   /** To determine if a variable is valid */
   std::function<bool (const std::string&)>& is_var_valid_;
