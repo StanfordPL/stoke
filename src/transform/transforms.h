@@ -23,7 +23,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
-#include "src/search/move.h"
+#include "src/transform/move.h"
 #include "src/validator/validator.h"
 
 namespace stoke {

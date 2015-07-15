@@ -18,8 +18,8 @@
 #include "src/cost/latency.h"
 #include "src/cost/correctness.h"
 #include "src/cost/size.h"
-#include "src/search/transforms.h"
 #include "src/stategen/stategen.h"
+#include "src/transform/transforms.h"
 
 namespace stoke {
 

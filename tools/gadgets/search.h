@@ -17,9 +17,9 @@
 
 #include <random>
 
-#include "src/search/move.h"
 #include "src/search/search.h"
-#include "src/search/transforms.h"
+#include "src/transform/move.h"
+#include "src/transform/transforms.h"
 #include "tools/args/search.inc"
 
 namespace stoke {
