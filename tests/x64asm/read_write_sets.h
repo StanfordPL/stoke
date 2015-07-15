@@ -103,7 +103,8 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
 
   flag_set &= CpuInfo::get_flags();
 
-  Transforms t;
+  TransformPools tps;
+  Transforms t(tps);
 
   std::set<x64asm::Opcode> blacklist;
   blacklist.insert(x64asm::ENTER_IMM8_IMM16);

@@ -25,6 +25,7 @@
 #include "src/cfg/cfg.h"
 #include "src/solver/z3solver.h"
 #include "src/target/cpu_info.h"
+#include "src/transform/pools.h"
 #include "src/transform/transforms.h"
 #include "src/tunit/tunit.h"
 #include "src/validator/validator.h"
@@ -36,7 +37,7 @@ namespace stoke {
 class TransformsGadget : public Transforms {
 public:
   TransformsGadget(const Cfg& cfg, const std::vector<TUnit>& aux_fxns,
-                   std::default_random_engine::result_type seed) : Transforms() {
+                   std::default_random_engine::result_type seed) : Transforms(*(new TransformPools())) {
     smt_ = nullptr;
     validator_ = nullptr;
 

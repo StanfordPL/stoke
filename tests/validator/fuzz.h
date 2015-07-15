@@ -19,6 +19,7 @@
 
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/target/cpu_info.h"
+#include "src/transform/pools.h"
 
 namespace stoke {
 
@@ -66,7 +67,8 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   // Initialize handler, solver, transforms, stategen, etc.
   ComboHandler ch;
   Z3Solver z3;
-  Transforms t;
+  TransformPools tps;
+  Transforms t(tps);
 
   std::set<x64asm::Opcode> blacklist;
   blacklist.insert(x64asm::ENTER_IMM8_IMM16);
