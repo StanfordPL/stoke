@@ -77,8 +77,8 @@ auto& timeout_iterations_arg =
   .default_val(100000000);
 
 auto& timeout_seconds_arg =
-  cpputil::ValueArg<size_t>::create("timeout_seconds")
-  .usage("<int>")
+  cpputil::ValueArg<double>::create("timeout_seconds")
+  .usage("<double>")
   .description("Total number of seconds before giving up (across all cycles)")
   ;
 auto& failed_verification_action =
@@ -91,7 +91,7 @@ auto& cycle_timeout_arg =
   ValueArg<string>::create("cycle_timeout")
   .usage("<int>")
   .description("The timeout (as number of iterations) per cycle.  Can be a comma-separated list, where the first element is used for the first cycle, and so on.  Can also be an expression involving the variable 'i' that refers to the current cycle (starting at 1).  The last expression in the list is used for all following cycles.")
-  .default_val("10000, 10000, 10000, 10000, 10000, 2^i*1000");
+  .default_val("10000, 10000, 10000, 10000, 10000, 2**i * 1000");
 
 auto& postprocessing_arg =
   ValueArg<Postprocessing, PostprocessingReader, PostprocessingWriter>::create("postprocessing")
@@ -251,6 +251,16 @@ void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
   sep(Console::msg(), "#");
 }
 
+vector<string>& split(string& s, const string& delim, vector<string>& result) {
+  auto pos = string::npos;
+  while ((pos = s.find(delim)) != string::npos) {
+    result.push_back(s.substr(0, pos));
+    s.erase(0, pos + delim.length());
+  }
+  result.push_back(s);
+  return result;
+}
+
 int main(int argc, char** argv) {
   const auto start = steady_clock::now();
   duration<double> search_elapsed;
@@ -288,15 +298,16 @@ int main(int argc, char** argv) {
 
   int xxx = -1;
   // attempt to parse cycle_timeout argument
-  string s = cycle_timeout_arg.value();
-  auto pos = string::npos;
-  while ((pos = s.find(",")) != string::npos) {
-    string token = s.substr(0, pos);
-    cout << token << endl;
-    s.erase(0, pos + 1);
+  vector<string> parts;
+  vector<Expr*> cycle_timeouts;
+  for (auto& part : split(cycle_timeout_arg.value(), ",", parts)) {
+    function<bool (const string&)> f = [](const string& s) -> bool { return s == "i"; };
+    auto parser = ExprParser(part, f);
+    if (parser.has_error()) {
+      Console::error() << "Error parsing cycle timeout expression '" << part << "': " << parser.get_error() << endl;
+    }
+    cycle_timeouts.push_back(parser.get());
   }
-  cout << s << endl;
-  return 1;
 
   if (strategy_arg.value() == Strategy::NONE &&
       failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
@@ -308,9 +319,22 @@ int main(int argc, char** argv) {
   for (size_t i = 0; ; ++i) {
     CostFunctionGadget fxn(target, &training_sb);
 
-    Console::msg() << "Running search (timeout is " << xxx << " iterations";
+    // determine iteration timeout
+    Expr* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
+    function<size_t (const string&)> f2 = [i](const string& s) -> size_t { return i; };
+    size_t cur_timeout = (*timeout_expr)(f2);
+    search.set_timeout_itr(cur_timeout);
+
+    Console::msg() << "Running search (timeout is " << cur_timeout << " iterations";
+    // timeout in seconds
     if (timeout_seconds_arg.value() != 0) {
-      Console::msg() << " / " << timeout_seconds_arg.value() << " seconds";
+      auto time_remaining = duration_cast<duration<double>>(steady_clock::now() - start) + duration<double>(timeout_seconds_arg.value());
+      if (time_remaining <= steady_clock::duration::zero()) {
+        show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
+        Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+      }
+      search.set_timeout_sec(time_remaining);
+      Console::msg() << " / " << time_remaining.count() << " seconds";
     }
     Console::msg() << "):" << endl << endl;
     state = SearchStateGadget(target, aux_fxns);
@@ -329,7 +353,6 @@ int main(int argc, char** argv) {
       lowest_correct = 0;
     }
 
-    search.set_timeout_itr(xxx);
     const auto start_search = steady_clock::now();
     search.run(target, fxn, init_arg, state, aux_fxns);
     search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
@@ -372,7 +395,7 @@ int main(int argc, char** argv) {
       training_sb.insert_input(verifier.get_counter_example());
     } else if (total_iterations < timeout_iterations_arg.value()) {
       Console::msg() << "Restarting search:" << endl << endl;
-    }  else {
+    } else {
       show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
       Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
     }
