@@ -15,17 +15,24 @@
 #ifndef STOKE_SRC_TRANSFORM_INSTRUCTION_H
 #define STOKE_SRC_TRANSFORM_INSTRUCTION_H
 
+#include "src/transform/pools.h"
 #include "src/transform/transform.h"
 
 namespace stoke {
 
 class InstructionTransform : Transform {
+
 public:
+
+  InstructionTransform(TransformPools& pools) : Transform(pools) {
+    //std::cout << "&pools in InstructionTransform(): " << &pools << std::endl;
+    //std::cout << "&pools_ in InstructionTransform(): " << &pools << std::endl;
+  }
 
   /** Attempt to transform the Cfg.  The 'TransformInfo'
     will return success/failure, and also metadata to undo
     the transformation if needed.  */
-  TransformInfo operator()(Cfg& cfg) const;
+  TransformInfo operator()(Cfg& cfg);
 
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */

@@ -230,6 +230,7 @@ Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
                                         const set<Opcode>& opc_whitelist) {
 
 
+  //cout << "Transforms::set_opcode_pool &pools_=" << &pools_ << endl;
   pools_.set_opcode_pool(target, flags, call_weight, preserve_regs, opc_blacklist, opc_whitelist);
 
   // Determine if we need to read/write memory operands
@@ -385,60 +386,19 @@ bool Transforms::modify(Cfg& cfg, Move type) {
 }
 
 bool Transforms::instruction_move(Cfg& cfg) {
-  // Grab the index of an old instruction
-  Cfg::id_type bb = cfg.get_entry();
-  size_t block_idx = 0;
-  if (!get_indices(gen_, cfg, bb, block_idx, instr_idx1_)) {
-    return false;
-  }
 
-  // Record the old value
-  old_instr_ = cfg.get_code()[instr_idx1_];
+  cout << "Cfg before instruction move" << endl << cfg.get_code() << endl;
 
-  // Try generating a new instruction
-  auto instr = old_instr_;
+  info_ = instr_trans_(cfg);
 
-  auto opc = RET;
-  if (!get_control_free(opc)) {
-    return false;
-  }
-  instr.set_opcode(opc);
+  cout << "Successful move? " << info_.success << endl;
+  cout << "Instruction replaced? " << info_.undo_instr << endl;
+  cout << "Instruction index? " << info_.undo_index[0] << endl;
 
-  const auto& rs = cfg.def_ins({bb, block_idx});
-  for (size_t i = 0, ie = instr.arity(); i < ie; ++i) {
-    Operand o = instr.get_operand<R64>(i);
-    if (instr.maybe_read(i)) {
-      if (!get_read_op(instr.get_opcode(), i, rs, o)) {
-        return false;
-      }
-    } else {
-      if (!get_write_op(instr.get_opcode(), i, rs, o)) {
-        return false;
-      }
-    }
-    instr.set_operand(i, o);
-  }
+  cout << "Cfg after instruction move: " << endl << cfg.get_code() << endl;
 
-  // Check for validator support for the new instruction
-  if (validator_ && !validator_->is_supported(instr)) {
-    return false;
-  }
-
-  // Check that the instruction is valid
-  if (!instr.check()) {
-    return false;
-  }
-
-  // Success: Any failure beyond here will require undoing the move
-  // Operands come from the global pool so this rip will need rescaling
-  cfg.get_function().replace(instr_idx1_, instr, false, true);
-  cfg.recompute_defs();
-  if (!cfg.check_invariants()) {
-    undo_instruction_move(cfg);
-    return false;
-  }
-
-  return true;
+  return info_.success;
+   
 }
 
 bool Transforms::opcode_move(Cfg& cfg) {

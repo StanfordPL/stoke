@@ -23,6 +23,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
+#include "src/transform/instruction.h"
 #include "src/transform/move.h"
 #include "src/transform/pools.h"
 #include "src/validator/validator.h"
@@ -32,7 +33,8 @@ namespace stoke {
 class Transforms {
 public:
   /** Creates a new transformation helper; guaranteed to pass invariants. */
-  Transforms(TransformPools& pools) : pools_(pools), old_instr_(x64asm::RET) { 
+  Transforms(TransformPools& pools) : pools_(pools), old_instr_(x64asm::RET), instr_trans_(pools) {
+    //std::cout << "&pools in Transforms(): " << &pools << std::endl;
     validator_ = nullptr;
     control_free_.push_back(x64asm::RET);
     control_free_type_equiv_.resize((int)x64asm::XSAVEOPT64_M64 + 1);
@@ -116,9 +118,7 @@ public:
   void undo(Cfg& cfg, Move type);
   /** Undo instruction move, recompute def-in relation. */
   void undo_instruction_move(Cfg& cfg) {
-    // The old instruction should go back exactly as it was
-    cfg.get_function().replace(instr_idx1_, old_instr_, true);
-    cfg.recompute_defs();
+    instr_trans_.undo(cfg, info_);
   }
   /** Undo opcode move, recompute def-in relation. */
   void undo_opcode_move(Cfg& cfg) {
@@ -246,7 +246,10 @@ private:
   bool get_read_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
                    x64asm::Operand& op);
 
-  TransformPools pools_;
+  TransformPools& pools_;
+  InstructionTransform instr_trans_;
+
+  TransformInfo info_;
 };
 
 } // namespace stoke

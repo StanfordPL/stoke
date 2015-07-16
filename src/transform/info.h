@@ -15,12 +15,17 @@
 #ifndef STOKE_SRC_TRANSFORM_TRANSFORM_INFO_H
 #define STOKE_SRC_TRANSFORM_TRANSFORM_INFO_H
 
-#include "src/ext/x64asm/"
+#include "src/ext/x64asm/include/x64asm.h"
 #include "src/transform/move.h"
 
 namespace stoke {
 
 struct TransformInfo {
+
+  TransformInfo() : success(false), undo_instr(x64asm::NOP) { }
+
+  // Did the transform succeed?
+  bool success;
 
   // Records the type of move performed
   Move move_type;

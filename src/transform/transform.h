@@ -15,27 +15,30 @@
 #ifndef STOKE_SRC_TRANSFORM_TRANSFORM_H
 #define STOKE_SRC_TRANSFORM_TRANSFORM_H
 
-#include "src/transform/transform_info.h"
+#include "src/cfg/cfg.h"
+#include "src/transform/info.h"
+#include "src/transform/pools.h"
 
 namespace stoke {
 
 class Transform {
 public:
 
-  Transform(TransformPools pools) : pools_(pools) {}
+  Transform(TransformPools& pools) : pools_(pools) {}
 
   /** Attempt to transform the Cfg.  The 'TransformInfo'
     will return success/failure, and also metadata to undo
     the transformation if needed.  */
-  virtual TransformInfo operator()(Cfg& cfg) const { }
+  virtual TransformInfo operator()(Cfg& cfg) = 0;
 
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
-  virtual void undo(Cfg& cfg, TransformInfo& transform_info) const { }
+  virtual void undo(Cfg& cfg, TransformInfo& transform_info) const = 0;
 
 protected:
 
-  TransformPools pools_;
+  TransformPools& pools_;
+  std::default_random_engine gen_;
 
 private:
 

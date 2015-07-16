@@ -196,10 +196,19 @@ bool get_index(default_random_engine& gen, const vector<R32>& r32_pool, const ve
 
 namespace stoke {
 
+TransformPools::TransformPools() {
+  control_free_.push_back(x64asm::RET);
+  control_free_type_equiv_.resize((int)x64asm::XSAVEOPT64_M64+1);
+  control_free_type_equiv_[x64asm::RET].push_back(x64asm::RET);
+}
+
 TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet& flags,
-                                        size_t call_weight, const RegSet& preserve_regs,
-                                        const set<Opcode>& opc_blacklist,
-                                        const set<Opcode>& opc_whitelist) {
+    size_t call_weight, const RegSet& preserve_regs,
+    const set<Opcode>& opc_blacklist,
+    const set<Opcode>& opc_whitelist) {
+
+  //cout << this << " TransformPools::set_opcode_pool()" << endl;
+
   // Determine if we need to read/write memory operands
   auto mem_read = false;
   auto mem_write = false;
@@ -220,41 +229,55 @@ TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet
     const auto mw = Instruction(op).implicit_maybe_write_set();
     const auto mu = Instruction(op).implicit_maybe_undef_set();
     if (is_control_other_than_call(op)) {
+      //cout << op << " is control other than call" << endl;
       continue;
     } else if (is_unsupported(op)) {
+      //cout << op << " is unsupported" << endl;
       continue;
     } else if (!is_enabled(op, flags)) {
+      //cout << op << " is not enabled by flags" << endl;
       continue;
     } else if (is_non_deterministic(op)) {
+      //cout << op << " is nondeterministic" << endl;
       continue;
     } else if (opc_blacklist.find(op) != opc_blacklist.end()) {
+      //cout << op << " is blacklisted" << endl;
       continue;
     } else if (use_whitelist && opc_whitelist.find(op) == opc_whitelist.end()) {
+      //cout << op << " isn't whitelisted" << endl;
       continue;
     } else if (preserve_regs.intersects(mw)) {
+      //cout << op << " changes preserved register" << endl;
       continue;
     } else if (preserve_regs.intersects(mu)) {
+      //cout << op << " changes preserved register (undef)" << endl;
       continue;
     } else if (!mem_read) {
       if (!mem_write) {
         //no memory allowed
         if (is_mem_opcode(op)) {
+          //cout << op << ": no memory allowed" << endl;
           continue;
         }
       } else {
         //reads disallowed, writes allowed
         if (is_mem_opcode(op) && !is_mem_write_only_opcode(op)) {
+          //cout << op << ": no memory read allowed" << endl;
           continue;
         }
       }
     } else if (!mem_write) {
       //read allowed, write disallowed
       if (is_mem_opcode(op) && !is_mem_read_only_opcode(op)) {
+        //cout << op << ": no memory write allowed" << endl;
         continue;
       }
     }
+    //cout << op << "OK" << endl;
     control_free_.push_back(op);
   }
+
+  //cout << this << "  control free: " << control_free_.size() << endl;
 
   // Add additional calls depending on weight
   for (size_t i = 0; i < call_weight; ++i) {
@@ -271,6 +294,8 @@ TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet
       }
     }
   }
+
+  //cout << this << "  control free: (done)" << control_free_.size() << endl;
 
   return *this;
 }
