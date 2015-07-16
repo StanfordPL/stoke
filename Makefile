@@ -95,6 +95,7 @@ SRC_OBJ=\
 	\
 	src/target/cpu_info.o	\
 	\
+	src/transform/instruction.o \
 	src/transform/pools.o \
 	src/transform/transforms.o \
 	\

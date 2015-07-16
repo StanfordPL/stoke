@@ -49,6 +49,7 @@ public:
       set_must_validate(validator_);
     }
 
+    std::cout << " *** Setting opcode/operand pools..." << std::endl;
     set_opcode_pool(cfg, cpu_flags(), call_weight_arg, preserve_regs(),
                     opc_blacklist_arg, opc_whitelist_arg);
     set_operand_pool(cfg, preserve_regs_arg);

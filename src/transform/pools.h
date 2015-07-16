@@ -15,17 +15,23 @@
 #ifndef STOKE_SRC_TRANSFORM_POOLS_H
 #define STOKE_SRC_TRANSFORM_POOLS_H
 
+#include "src/cfg/cfg.h"
+#include "src/ext/x64asm/include/x64asm.h"
+
 namespace stoke {
 
 class TransformPools {
 public:
 
+  /** Initializes data structures */
+  TransformPools();
+
   /** Sets the pool of opcodes to propose from. */
   TransformPools& set_opcode_pool(const Cfg& target,
-                              const x64asm::FlagSet& fs, size_t call_weight,
-                              const x64asm::RegSet& preserve_regs,
-                              const std::set<x64asm::Opcode>& opc_blacklist,
-                              const std::set<x64asm::Opcode>& opc_whitelist);
+                                  const x64asm::FlagSet& fs, size_t call_weight,
+                                  const x64asm::RegSet& preserve_regs,
+                                  const std::set<x64asm::Opcode>& opc_blacklist,
+                                  const std::set<x64asm::Opcode>& opc_whitelist);
 
   /** Sets the pool operands to propose from. */
   TransformPools& set_operand_pool(const Cfg& target, const x64asm::RegSet& preserve_regs);
@@ -67,6 +73,7 @@ public:
 
   /** Sets o to a random opcode; returns true on success */
   bool get_control_free(x64asm::Opcode& o) {
+    //std::cout << this << " Control free count: " << control_free_.size() << std::endl;
     if (control_free_.empty()) {
       return false;
     }
