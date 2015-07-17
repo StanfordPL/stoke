@@ -76,6 +76,26 @@ bool Validator::is_supported(Instruction& i) const {
   return false;
 }
 
+bool Validator::is_supported(const Opcode& op) const {
+  return support_table_[(int)op];
+}
+
+void Validator::setup_support_table() {
+
+  vector<string> att_opcodes = handler_.full_support_opcodes();
+
+  for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    Opcode op = (Opcode)i;
+    string att = Handler::att_[op];
+    if(find(att_opcodes.begin(), att_opcodes.end(), att) != att_opcodes.end()) {
+      support_table_[i] = true;
+    } else {
+      support_table_[i] = false;
+    }
+  }
+
+}
+
 
 void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
                                      SymState& f1_final, SymState& f2_final,

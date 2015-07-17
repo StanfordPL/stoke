@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "src/sandbox/sandbox.h"
+#include "src/solver/cvc4solver.h"
 #include "src/transform/transforms.h"
 
 using namespace std;
@@ -231,7 +232,7 @@ Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
 
 
   //cout << "Transforms::set_opcode_pool &pools_=" << &pools_ << endl;
-  pools_.set_opcode_pool(target, flags, call_weight, preserve_regs, opc_blacklist, opc_whitelist);
+  pools_.set_opcode_pool(target, flags, call_weight, preserve_regs, opc_blacklist, opc_whitelist, new Validator(*(new Cvc4Solver())));
 
   // Determine if we need to read/write memory operands
   auto mem_read = false;
@@ -387,18 +388,18 @@ bool Transforms::modify(Cfg& cfg, Move type) {
 
 bool Transforms::instruction_move(Cfg& cfg) {
 
-  cout << "Cfg before instruction move" << endl << cfg.get_code() << endl;
+  //cout << "Cfg before instruction move" << endl << cfg.get_code() << endl;
 
   info_ = instr_trans_(cfg);
 
-  cout << "Successful move? " << info_.success << endl;
-  cout << "Instruction replaced? " << info_.undo_instr << endl;
-  cout << "Instruction index? " << info_.undo_index[0] << endl;
+  //cout << "Successful move? " << info_.success << endl;
+  //cout << "Instruction replaced? " << info_.undo_instr << endl;
+  //cout << "Instruction index? " << info_.undo_index[0] << endl;
 
-  cout << "Cfg after instruction move: " << endl << cfg.get_code() << endl;
+  //cout << "Cfg after instruction move: " << endl << cfg.get_code() << endl;
 
   return info_.success;
-   
+
 }
 
 bool Transforms::opcode_move(Cfg& cfg) {

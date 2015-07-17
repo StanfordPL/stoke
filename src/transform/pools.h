@@ -17,6 +17,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
+#include "src/validator/validator.h"
 
 namespace stoke {
 
@@ -31,7 +32,8 @@ public:
                                   const x64asm::FlagSet& fs, size_t call_weight,
                                   const x64asm::RegSet& preserve_regs,
                                   const std::set<x64asm::Opcode>& opc_blacklist,
-                                  const std::set<x64asm::Opcode>& opc_whitelist);
+                                  const std::set<x64asm::Opcode>& opc_whitelist,
+                                  const Validator *);
 
   /** Sets the pool operands to propose from. */
   TransformPools& set_operand_pool(const Cfg& target, const x64asm::RegSet& preserve_regs);
@@ -74,25 +76,42 @@ public:
   /** Sets o to a random opcode; returns true on success */
   bool get_control_free(x64asm::Opcode& o) {
     //std::cout << this << " Control free count: " << control_free_.size() << std::endl;
-    if (control_free_.empty()) {
+    if (opcode_pool_.empty()) {
       return false;
     }
-    o = control_free_[gen_() % control_free_.size()];
+    o = opcode_pool_[gen_() % opcode_pool_.size()];
     return true;
   }
 
   /** Sets o to a random opcode of equivalent type; returns true on success */
   bool get_control_free_type_equiv(x64asm::Opcode& o) {
-    if (control_free_type_equiv_.empty()) {
+    if (opcodes_type_equiv_.empty()) {
       return false;
     }
-    const auto& equiv = control_free_type_equiv_[o];
+    const auto& equiv = opcodes_type_equiv_[o];
     if (equiv.empty()) {
       return false;
     }
     o = equiv[gen_() % equiv.size()];
     return true;
   }
+
+  TransformPools& insert_opcode(const x64asm::Opcode& op) {
+    if(!opcode_weights_[(int)op])
+      opcode_weights_[(int)op] = 1;
+    return *this;
+  }
+  TransformPools& remove_opcode(const x64asm::Opcode& op) {
+    opcode_weights_[(int)op] = 0;
+    return *this;
+  }
+  TransformPools& set_opcode_weight(const x64asm::Opcode& op, int n) {
+    opcode_weights_[(int)op] = n;
+    return *this;
+  }
+
+  /** Adjusts pools after class configuration has been changed. */
+  void recompute_pools();
 
   /** Sets o to a random lea operand, returns true on success. */
   bool get_lea_mem(const x64asm::RegSet& rs, x64asm::Operand& o);
@@ -117,10 +136,13 @@ public:
 
 private:
 
-  /** The set of control free opcodes. */
-  std::vector<x64asm::Opcode> control_free_;
-  /** The set of control free type equivalent opcodes for each opcode. */
-  std::vector<std::vector<x64asm::Opcode>> control_free_type_equiv_;
+  /** The weighting of each control-free opcode.  Used to generate pool. */
+  std::array<size_t, X64ASM_NUM_OPCODES> opcode_weights_;
+  /** The pool of opcodes. */
+  std::vector<x64asm::Opcode> opcode_pool_;
+
+  /** Weighted pool of opcodes categorized by type */
+  std::vector<std::vector<x64asm::Opcode>> opcodes_type_equiv_;
 
   /** Operand pool. */
   std::vector<x64asm::Rh> rh_pool_;
