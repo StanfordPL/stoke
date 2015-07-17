@@ -184,7 +184,7 @@ private:
 
   /** Parse a S nonterminal */
   Expr<T>* parse_S() {
-      auto result = parse_L(0);
+    auto result = parse_L(0);
 
     if (peek()) {
       //There's more unconsumed stuff
