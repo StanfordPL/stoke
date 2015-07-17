@@ -197,15 +197,13 @@ bool get_index(default_random_engine& gen, const vector<R32>& r32_pool, const ve
 namespace stoke {
 
 TransformPools::TransformPools() {
-  control_free_.push_back(x64asm::RET);
-  control_free_type_equiv_.resize((int)x64asm::XSAVEOPT64_M64+1);
-  control_free_type_equiv_[x64asm::RET].push_back(x64asm::RET);
 }
 
 TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet& flags,
     size_t call_weight, const RegSet& preserve_regs,
     const set<Opcode>& opc_blacklist,
-    const set<Opcode>& opc_whitelist) {
+    const set<Opcode>& opc_whitelist,
+    const Validator* validator) {
 
   //cout << this << " TransformPools::set_opcode_pool()" << endl;
 
@@ -222,9 +220,13 @@ TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet
   // Empty whitelist means no whitelist
   const auto use_whitelist = !opc_whitelist.empty();
 
-  // Refill the opcode pool
-  control_free_.clear();
-  for (auto i = (int)LABEL_DEFN, ie = (int)XSAVEOPT64_M64; i != ie; ++i) {
+
+  // clean out the weight table
+  for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
+    opcode_weights_[i] = 0;
+
+  // Refill the weight table
+  for (size_t i = 0, ie = X64ASM_NUM_OPCODES; i != ie; ++i) {
     const auto op = (Opcode)i;
     const auto mw = Instruction(op).implicit_maybe_write_set();
     const auto mu = Instruction(op).implicit_maybe_undef_set();
@@ -252,6 +254,8 @@ TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet
     } else if (preserve_regs.intersects(mu)) {
       //cout << op << " changes preserved register (undef)" << endl;
       continue;
+    } else if (validator && !validator->is_supported(op)) {
+      continue; 
     } else if (!mem_read) {
       if (!mem_write) {
         //no memory allowed
@@ -274,30 +278,42 @@ TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet
       }
     }
     //cout << op << "OK" << endl;
-    control_free_.push_back(op);
+    //control_free_.push_back(op);
+    insert_opcode(op);
   }
 
-  //cout << this << "  control free: " << control_free_.size() << endl;
+  set_opcode_weight(CALL_LABEL, call_weight+1);
 
-  // Add additional calls depending on weight
-  for (size_t i = 0; i < call_weight; ++i) {
-    control_free_.push_back(CALL_LABEL);
-  }
-
-  // Lift opcode pool to type equivalent pool
-  control_free_type_equiv_.clear();
-  control_free_type_equiv_.resize((int)XSAVEOPT64_M64 + 1);
-  for (const auto i : control_free_) {
-    for (const auto j : control_free_) {
-      if (is_type_equiv(i, j)) {
-        control_free_type_equiv_[i].push_back(j);
-      }
-    }
-  }
-
-  //cout << this << "  control free: (done)" << control_free_.size() << endl;
+  recompute_pools();
 
   return *this;
+}
+
+void TransformPools::recompute_pools() {
+
+  opcode_pool_.clear();
+
+  // Setup opcode pool
+  for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
+    for(size_t j = 0; j < opcode_weights_[i]; ++j)
+      opcode_pool_.push_back((Opcode)i);
+
+  // Build type_equivalent pool
+  opcodes_type_equiv_.clear();
+  opcodes_type_equiv_.resize(X64ASM_NUM_OPCODES);
+
+  for(auto i = 0; i < X64ASM_NUM_OPCODES; ++i)
+    if(opcode_weights_[i]) {
+      for(size_t j = 0; j < X64ASM_NUM_OPCODES; ++j)
+        if (is_type_equiv((Opcode)i, (Opcode)j))
+          for(size_t k = 0; k < opcode_weights_[j]; ++k)
+            opcodes_type_equiv_[i].push_back((Opcode)j);
+    } else {
+      opcodes_type_equiv_[i].clear();
+    }
+
+
+
 }
 
 TransformPools& TransformPools::set_operand_pool(const Cfg& target, const RegSet& preserve_regs) {

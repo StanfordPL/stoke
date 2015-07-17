@@ -30,6 +30,16 @@ public:
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
+  virtual std::vector<std::string> full_support_opcodes() {
+    return {"addb", "addw", "addl", "addq",
+            "adcb", "adcw", "adcl", "adcq",
+            "xaddb", "xaddw", "xaddl", "xaddq",
+            "cmpb", "cmpw", "cmpl", "cmpq",
+            "sbbb", "sbbw", "sbbl", "sbbq",
+            "subb", "subw", "subl", "subq" };
+  }
+
+
 };
 
 } //namespace stoke
