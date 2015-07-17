@@ -63,12 +63,10 @@ SRC_OBJ=\
 	\
 	src/cost/correctness.o \
 	src/cost/cost_parser.o \
-	src/cost/expr.o \
 	src/cost/latency.o \
 	\
 	src/disassembler/disassembler.o \
 	\
-	src/expr/expr_parser.o \
 	src/expr/expr.o \
 	\
 	src/sandbox/dispatch_table.o \
