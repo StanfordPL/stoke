@@ -384,9 +384,8 @@ where `search.conf` contains:
 --max_instrs 8 # The maximum number of instruction allowed in a rewrite
 
 --statistics_interval 100000 # Print statistics every 100k proposals
---timeout 1000000 # Propose 1m modifications before giving up
---timeout_action testcase # Try adding a new testcase from the testset when search times out
---timeout_cycles 16 # Timeout up to 16 times before giving up
+--timeout_iterations 16000000 # Propose 16m modifications total before giving up
+--cycle_timeout 1000000 # Try 1m modifications before restarting
 
 --strategy hold_out # Verify results using a larger hold out testcase set
 ```
