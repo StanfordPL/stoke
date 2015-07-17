@@ -298,10 +298,10 @@ int main(int argc, char** argv) {
 
   // attempt to parse cycle_timeout argument
   vector<string> parts;
-  vector<Expr*> cycle_timeouts;
+  vector<Expr<size_t>*> cycle_timeouts;
   for (auto& part : split(cycle_timeout_arg.value(), ",", parts)) {
     function<bool (const string&)> f = [](const string& s) -> bool { return s == "i"; };
-    auto parser = ExprParser(part, f);
+    auto parser = ExprParser<size_t>(part, f);
     if (parser.has_error()) {
       Console::error() << "Error parsing cycle timeout expression '" << part << "': " << parser.get_error() << endl;
     }
@@ -319,7 +319,7 @@ int main(int argc, char** argv) {
     CostFunctionGadget fxn(target, &training_sb);
 
     // determine iteration timeout
-    Expr* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
+    Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
     function<size_t (const string&)> f2 = [i](const string& s) -> size_t { return i; };
     size_t cur_timeout = (*timeout_expr)(f2);
     search.set_timeout_itr(cur_timeout);

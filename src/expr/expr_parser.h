@@ -24,6 +24,11 @@
 
 namespace stoke {
 
+/**
+A parser for Expr.  Note that T should be some form of non-negative integer,
+as parsing is not implemented for negative numbers or floats/etc.
+*/
+template <class T>
 class ExprParser {
 
 public:
@@ -38,7 +43,7 @@ public:
 
   /** Takes the string and parses it into an expression.  Returns a pointer which
       the caller must delete. */
-  Expr* get() {
+  Expr<T>* get() {
     assert(!has_error());
     return result_;
   }
@@ -141,39 +146,289 @@ private:
 #define EXPR_PARSER_N 8
 
   /** Helper used by peek and next() */
-  void strip_spaces();
+  void strip_spaces() {
+    while(index_ < s_.size() && s_[index_] == ' ') {
+      index_++;
+    }
+  }
   /** Look at a future character */
-  char peek(size_t n = 0);
+  char peek(size_t n = 0) {
+    strip_spaces();
+    if (index_ + n >= s_.size())
+      return 0;
+    return s_[index_ + n];
+  }
   /** Move forward in the string */
-  char next();
+  char next() {
+    strip_spaces();
+    if (index_ >= s_.size())
+      return 0;
+    char c = s_[index_];
+    index_++;
+    return c;
+  }
   /** Remove some characters from the string */
-  void eat(size_t n);
+  void eat(size_t n) {
+    index_ += n;
+  }
 
   /** Report an error */
-  void error(std::string m);
+  void error(std::string m) {
+    if (!has_error_) {
+      std::stringstream ss;
+      ss << "at or before character at index " << index_ << ": " << m;
+      error_ = ss.str();
+      has_error_ = true;
+    }
+  }
 
   /** Parse a S nonterminal */
-  Expr* parse_S();
-  /** Parse an L nonterminal */
-  Expr* parse_L(size_t);
-  /** Parse an L' nonterminal */
-  std::pair<Expr::Operator, Expr*> parse_LP(size_t);
-  /** Parse a T nonterminal */
-  Expr* parse_T();
-  /** Parse a VAR nonterminal */
-  Expr* parse_VAR();
-  /** Parse a NUM nonterminal */
-  Expr* parse_NUM();
+  Expr<T>* parse_S() {
+      auto result = parse_L(0);
 
+    if (peek()) {
+      //There's more unconsumed stuff
+      error("trailing characters after expression");
+    }
+
+    if (has_error_)
+      return NULL;
+    else
+      return result;
+  }
+  /** Parse an L nonterminal */
+  Expr<T>* parse_L(size_t n) {
+    assert(n <= EXPR_PARSER_N - 1);
+
+    // Parse an L(n+1) or T for the LHS
+    Expr<T>* lhs = 0;
+    if (n == EXPR_PARSER_N - 1) {
+      lhs = parse_T();
+    } else {
+      lhs = parse_L(n+1);
+    }
+
+    if(lhs == NULL) {
+      error("could not parse; reason unknown");
+      return 0;
+    }
+
+    // Parse the LP(n), i.e. a binop and the RHS, if possible.
+    auto rhs = parse_LP(n);
+
+    // If there's no binop, return LHS
+    if(rhs.first == Expr<T>::Operator::NONE) {
+      return lhs;
+    } else {
+      auto op = rhs.first;
+      auto arg = rhs.second;
+
+      if (arg == NULL) {
+        error("could not parse; reason unknown.");
+      }
+      return new Expr<T>(lhs, arg, op);
+    }
+  }
+  /** Parse an L' nonterminal */
+  std::pair< typename Expr<T>::Operator, Expr<T>* > parse_LP(size_t n) {
+    assert(n <= EXPR_PARSER_N - 1);
+
+    auto binop = parse_BINOP(n+1);
+    if(binop == Expr<T>::Operator::NONE)
+      return std::pair<typename Expr<T>::Operator, Expr<T>*>(binop, NULL);
+
+    auto rhs = parse_L(n);
+    return std::pair<typename Expr<T>::Operator, Expr<T>*>(binop, rhs);
+  }
+  /** Parse a T nonterminal */
+  Expr<T>* parse_T() {
+    char c = peek();
+    if('a' <= c && c <= 'z') {
+      return parse_VAR();
+    }
+    if('0' <= c && c <= '9') {
+      return parse_NUM();
+    }
+    if(c == '(') {
+      next();
+      auto f = parse_L(0);
+      char d = next();
+      if (d != ')') {
+        error("expected a close-paren");
+      }
+      return f;
+    }
+    error("expected a variable, number, or parenthesized expression");
+    return 0;
+  }
+  /** Parse a VAR nonterminal */
+  Expr<T>* parse_VAR() {
+    std::string var = "";
+
+    while(peek() >= 'a' && peek() <= 'z') {
+      var = var.append(1, next());
+    }
+
+    if(!is_var_valid_(var)) {
+      error("undefined variable: \"" + var + "\"");
+      return NULL;
+    }
+
+    return new Expr<T>(var);
+  }
+  /** Parse a NUM nonterminal */
+  Expr<T>* parse_NUM() {
+    std::string num = "0";
+
+    while(peek() >= '0' && peek() <= '9') {
+      num = num.append(1, next());
+    }
+
+    T value = stol(num);
+    return new Expr<T>(value);
+  }
   /** Parse a BINOP */
-  Expr::Operator parse_BINOP(size_t);
+  typename Expr<T>::Operator parse_BINOP(size_t n) {
+    assert(1ul <= n && n <= EXPR_PARSER_N);
+
+    // STEP 1: TOKENIZATION
+    std::string var = "";
+
+    size_t i;
+    char c;
+    for(i = 0, c = peek();
+        (c == '+' || c == '>' || c == '<' || c == '|' ||
+         c == '^' || c == '=' || c == '*' || c == '-' ||
+         c == '*' || c == '%' || c == '/' || c == '&');
+        c = peek(++i)) {
+
+      var = var.append(1, c);
+    }
+
+    typename Expr<T>::Operator op;
+
+    if (var == "**") {
+      op = Expr<T>::Operator::EXP;
+    } else if (var == "|") {
+      op = Expr<T>::Operator::OR;
+    } else if (var == "&") {
+      op = Expr<T>::Operator::AND;
+    } else if (var == "+") {
+      op = Expr<T>::Operator::PLUS;
+    } else if (var == "-") {
+      op = Expr<T>::Operator::MINUS;
+    } else if (var == "*") {
+      op = Expr<T>::Operator::TIMES;
+    } else if (var == "/") {
+      op = Expr<T>::Operator::DIV;
+    } else if (var == "%") {
+      op = Expr<T>::Operator::MOD;
+    } else if (var == "<") {
+      op = Expr<T>::Operator::LT;
+    } else if (var == "<=" || var == "=<") {
+      op = Expr<T>::Operator::LTE;
+    } else if (var == ">") {
+      op = Expr<T>::Operator::GT;
+    } else if (var == ">=" || var == "=>") {
+      op = Expr<T>::Operator::GTE;
+    } else if (var == ">>") {
+      op = Expr<T>::Operator::SHR;
+    } else if (var == "<<") {
+      op = Expr<T>::Operator::SHL;
+    } else if (var == "==" || var == "=") {
+      op = Expr<T>::Operator::EQ;
+    } else if (var == "") {
+      // there's no binary operator here
+      return Expr<T>::Operator::NONE;
+    } else {
+      // there's a symbol here, but not one we know!
+      error("Operator " + var + " is not supported.");
+      return Expr<T>::Operator::NONE;
+    }
+
+    // STEP 2: FIGURE OUT ORDER OF OPERATION BUSINESS
+
+    switch(n) {
+
+    case 1:
+      if(op == Expr<T>::Operator::OR) {
+        eat(var.size());
+        return op;
+      } else {
+        return Expr<T>::Operator::NONE;
+      }
+
+    case 2:
+      if(op == Expr<T>::Operator::AND) {
+        eat(var.size());
+        return op;
+      } else {
+        return Expr<T>::Operator::NONE;
+      }
+
+    case 3:
+      if(op == Expr<T>::Operator::EQ) {
+        eat(var.size());
+        return op;
+      } else {
+        return Expr<T>::Operator::NONE;
+      }
+
+    case 4:
+      if(op == Expr<T>::Operator::LT || op == Expr<T>::Operator::LTE ||
+          op == Expr<T>::Operator::GT || op == Expr<T>::Operator::GTE) {
+        eat(var.size());
+        return op;
+      } else {
+        return Expr<T>::Operator::NONE;
+      }
+
+    case 5:
+      if(op == Expr<T>::Operator::SHL || op == Expr<T>::Operator::SHR) {
+        eat(var.size());
+        return op;
+      } else {
+        return Expr<T>::Operator::NONE;
+      }
+
+    case 6:
+      if(op == Expr<T>::Operator::PLUS || op == Expr<T>::Operator::MINUS) {
+        eat(var.size());
+        return op;
+      } else {
+        return Expr<T>::Operator::NONE;
+      }
+
+    case 7:
+      if(op == Expr<T>::Operator::TIMES || op == Expr<T>::Operator::DIV ||
+          op == Expr<T>::Operator::MOD) {
+        eat(var.size());
+        return op;
+      } else {
+        return Expr<T>::Operator::NONE;
+      }
+
+    case 8:
+      if(op == Expr<T>::Operator::EXP) {
+        eat(var.size());
+        return op;
+      } else {
+        return Expr<T>::Operator::NONE;
+      }
+
+    default:
+      error("parse_BINOP() internal error.");
+      return Expr<T>::Operator::NONE;
+
+    }
+  }
 
   /** Used for maintaining parsing state */
   std::string s_;
   size_t index_;
   bool has_error_;
   std::string error_;
-  Expr* result_;
+  Expr<T>* result_;
 
   /** To determine if a variable is valid */
   std::function<bool (const std::string&)>& is_var_valid_;
