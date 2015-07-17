@@ -71,7 +71,7 @@ auto& stat_int =
 auto& automation_heading = Heading::create("Automation Options:");
 
 auto& timeout_iterations_arg =
-  cpputil::ValueArg<size_t>::create("timeout_itrations")
+  cpputil::ValueArg<size_t>::create("timeout_iterations")
   .usage("<int>")
   .description("Total number of iterations before giving up (across all cycles)")
   .default_val(100000000);
@@ -296,7 +296,6 @@ int main(int argc, char** argv) {
   size_t total_iterations = 0;
   size_t total_restarts = 0;
 
-  int xxx = -1;
   // attempt to parse cycle_timeout argument
   vector<string> parts;
   vector<Expr*> cycle_timeouts;
