@@ -55,6 +55,13 @@ public:
 
 protected:
 
+  bool check_cfg() {
+    bool b = cfg_->check_invariants();
+    EXPECT_TRUE(b) << "CFG:" << std::endl << cfg_->get_code() << std::endl
+                   << "seed: " << seed_ << std::endl;
+    return b;
+  }
+
   Transforms transforms_;
 
   size_t iterations_;
@@ -77,12 +84,14 @@ TEST_P(TransformsTest, InstructionMoveIsReversible) {
 
     if (transforms_.instruction_move(*cfg_)) {
       success++;
+      ASSERT_TRUE(check_cfg());
       transforms_.undo_instruction_move(*cfg_);
+      ASSERT_TRUE(check_cfg());
     }
+    ASSERT_TRUE(check_cfg());
 
     ASSERT_EQ(original, cfg_->get_code()) <<
                                           "and the seed was: " << seed_ << std::endl;
-
   }
 }
 
@@ -94,9 +103,12 @@ TEST_P(TransformsTest, OpcodeMoveIsReversible) {
   for (size_t i = 0; i < iterations_; ++i) {
 
     if (transforms_.opcode_move(*cfg_)) {
+      ASSERT_TRUE(check_cfg());
       success++;
       transforms_.undo_opcode_move(*cfg_);
+      ASSERT_TRUE(check_cfg());
     }
+    ASSERT_TRUE(check_cfg());
 
     ASSERT_EQ(original, cfg_->get_code()) <<
                                           "and the seed was: " << seed_ << std::endl;
@@ -112,9 +124,12 @@ TEST_P(TransformsTest, OperandMoveIsReversible) {
   for (size_t i = 0; i < iterations_; ++i) {
 
     if (transforms_.operand_move(*cfg_)) {
+      ASSERT_TRUE(check_cfg());
       success++;
       transforms_.undo_operand_move(*cfg_);
+      ASSERT_TRUE(check_cfg());
     }
+    ASSERT_TRUE(check_cfg());
 
     ASSERT_EQ(original, cfg_->get_code()) <<
                                           "and the seed was: " << seed_ << std::endl;
@@ -130,9 +145,12 @@ TEST_P(TransformsTest, ResizeMoveIsReversible) {
   for (size_t i = 0; i < iterations_; ++i) {
 
     if (transforms_.resize_move(*cfg_)) {
+      ASSERT_TRUE(check_cfg());
       success++;
       transforms_.undo_resize_move(*cfg_);
+      ASSERT_TRUE(check_cfg());
     }
+    ASSERT_TRUE(check_cfg());
 
     ASSERT_EQ(original, cfg_->get_code()) <<
                                           "and the seed was: " << seed_ << std::endl;
@@ -148,9 +166,12 @@ TEST_P(TransformsTest, LocalSwapIsReversible) {
   for (size_t i = 0; i < iterations_; ++i) {
 
     if (transforms_.local_swap_move(*cfg_)) {
+      ASSERT_TRUE(check_cfg());
       success++;
       transforms_.undo_local_swap_move(*cfg_);
+      ASSERT_TRUE(check_cfg());
     }
+    ASSERT_TRUE(check_cfg());
 
     ASSERT_EQ(original, cfg_->get_code()) <<
                                           "and the seed was: " << seed_ << std::endl;
@@ -166,9 +187,12 @@ TEST_P(TransformsTest, GlobalSwapIsReversible) {
   for (size_t i = 0; i < iterations_; ++i) {
 
     if (transforms_.global_swap_move(*cfg_)) {
+      ASSERT_TRUE(check_cfg());
       success++;
       transforms_.undo_global_swap_move(*cfg_);
+      ASSERT_TRUE(check_cfg());
     }
+    ASSERT_TRUE(check_cfg());
 
     ASSERT_EQ(original, cfg_->get_code()) <<
                                           "and the seed was: " << seed_ << std::endl;

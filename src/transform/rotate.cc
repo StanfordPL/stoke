@@ -47,7 +47,7 @@ TransformInfo RotateTransform::operator()(Cfg& cfg) {
   if (ti.undo_index[0] < ti.undo_index[1])
     cfg.get_function().rotate_left(ti.undo_index[0], ti.undo_index[1]);
   else
-    cfg.get_function().rotate_right(ti.undo_index[0], ti.undo_index[1]);
+    cfg.get_function().rotate_right(ti.undo_index[1], ti.undo_index[0]);
 
   cfg.recompute();
   if (!cfg.check_invariants()) {
@@ -64,7 +64,7 @@ void RotateTransform::undo(Cfg& cfg, TransformInfo& ti) const {
   if(ti.undo_index[0] < ti.undo_index[1])
     cfg.get_function().rotate_right(ti.undo_index[0], ti.undo_index[1]);
   else
-    cfg.get_function().rotate_right(ti.undo_index[1], ti.undo_index[0]);
+    cfg.get_function().rotate_left(ti.undo_index[1], ti.undo_index[0]);
   cfg.recompute();
 }
 

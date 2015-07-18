@@ -139,12 +139,7 @@ public:
   }
   /** Undo resize move, recompute EVERYTHING. */
   void undo_resize_move(Cfg& cfg) {
-    if (instr_idx1_ < instr_idx2_) {
-      cfg.get_function().rotate_right(instr_idx1_, instr_idx2_);
-    } else {
-      cfg.get_function().rotate_left(instr_idx2_, instr_idx1_);
-    }
-    cfg.recompute();
+    rotate_trans_.undo(cfg, info_);
   }
   /** Undo local swap move, recompute def-in relation. */
   void undo_local_swap_move(Cfg& cfg) {

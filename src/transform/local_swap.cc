@@ -43,9 +43,6 @@ TransformInfo LocalSwapTransform::operator()(Cfg& cfg) {
   if (ti.undo_index[0] == ti.undo_index[1]) {
     return ti;
   }
-  if (ti.undo_index[0] > ti.undo_index[1]) {
-    swap(ti.undo_index[0], ti.undo_index[1]);
-  }
 
   const auto& i = cfg.get_code()[ti.undo_index[0]];
   if (is_control_other_than_call(i.get_opcode())) {
