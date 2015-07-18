@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/transform/local_swap.h"
+#include "src/transform/rotate.h"
 
 using namespace std;
 using namespace stoke;
@@ -21,30 +21,18 @@ using namespace x64asm;
 
 namespace stoke {
 
-TransformInfo LocalSwapTransform::operator()(Cfg& cfg) {
+TransformInfo RotateTransform::operator()(Cfg& cfg) {
 
   TransformInfo ti;
   ti.success = false;
 
-  const auto bb = (gen_() % (cfg.num_blocks() - 2)) + 1;
-  if (!cfg.is_reachable(bb)) {
+  if(cfg.get_code().size() < 3)
     return ti;
-  }
-  const auto num_instrs = cfg.num_instrs(bb);
-  if (num_instrs < 2) {
-    return ti;
-  }
 
-  ti.undo_index[0] = cfg.get_index({bb, gen_() % num_instrs});
-  if (ti.undo_index[0] == cfg.get_index({cfg.get_entry()+1,0})) {
-    return ti;
-  }
-  ti.undo_index[1] = cfg.get_index({bb, gen_() % num_instrs});
+  ti.undo_index[0] = (gen_() % (cfg.get_code().size() - 1)) + 1;
+  ti.undo_index[1] = (gen_() % (cfg.get_code().size() - 1)) + 1;
   if (ti.undo_index[0] == ti.undo_index[1]) {
     return ti;
-  }
-  if (ti.undo_index[0] > ti.undo_index[1]) {
-    swap(ti.undo_index[0], ti.undo_index[1]);
   }
 
   const auto& i = cfg.get_code()[ti.undo_index[0]];
@@ -56,8 +44,12 @@ TransformInfo LocalSwapTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
-  cfg.get_function().swap(ti.undo_index[0], ti.undo_index[1]);
-  cfg.recompute_defs();
+  if (ti.undo_index[0] < ti.undo_index[1])
+    cfg.get_function().rotate_left(ti.undo_index[0], ti.undo_index[1]);
+  else
+    cfg.get_function().rotate_right(ti.undo_index[0], ti.undo_index[1]);
+
+  cfg.recompute();
   if (!cfg.check_invariants()) {
     undo(cfg, ti);
     return ti;
@@ -68,9 +60,12 @@ TransformInfo LocalSwapTransform::operator()(Cfg& cfg) {
 
 }
 
-void LocalSwapTransform::undo(Cfg& cfg, TransformInfo& ti) const {
-  cfg.get_function().swap(ti.undo_index[0], ti.undo_index[1]);
-  cfg.recompute_defs();
+void RotateTransform::undo(Cfg& cfg, TransformInfo& ti) const {
+  if(ti.undo_index[0] < ti.undo_index[1])
+    cfg.get_function().rotate_right(ti.undo_index[0], ti.undo_index[1]);
+  else
+    cfg.get_function().rotate_right(ti.undo_index[1], ti.undo_index[0]);
+  cfg.recompute();
 }
 
 

@@ -99,6 +99,7 @@ SRC_OBJ=\
 	src/transform/instruction.o \
 	src/transform/local_swap.o \
 	src/transform/pools.o \
+	src/transform/rotate.o \
 	src/transform/transform.o \
 	src/transform/transforms.o \
 	\
