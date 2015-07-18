@@ -501,37 +501,8 @@ bool Transforms::operand_move(Cfg& cfg) {
 }
 
 bool Transforms::resize_move(Cfg& cfg) {
-  if (cfg.get_code().size() < 2) {
-    return false;
-  }
-
-  std::vector<size_t> nops;
-
-  instr_idx1_ = 0;
-  for (size_t ie = cfg.get_code().size(); instr_idx1_ < ie; ++instr_idx1_) {
-    if (cfg.get_code()[instr_idx1_].is_nop()) {
-      nops.push_back(instr_idx1_);
-    }
-  }
-
-  if(!nops.size())
-    return false;
-  instr_idx1_ = nops[gen_() % nops.size()];
-
-
-  instr_idx2_ = (gen_() % (cfg.get_code().size()-1)) + 1;
-  if (instr_idx1_ == instr_idx2_) {
-    return false;
-  }
-
-  if (instr_idx1_ < instr_idx2_) {
-    cfg.get_function().rotate_left(instr_idx1_, instr_idx2_);
-  } else {
-    cfg.get_function().rotate_right(instr_idx2_, instr_idx1_);
-  }
-  cfg.recompute();
-
-  return true;
+  info_ = rotate_trans_(cfg);
+  return info_.success;
 }
 
 bool Transforms::local_swap_move(Cfg& cfg) {
