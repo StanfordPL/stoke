@@ -27,16 +27,59 @@ public:
   /** Initializes data structures */
   TransformPools();
 
-  /** Sets the pool of opcodes to propose from. */
-  TransformPools& set_opcode_pool(const Cfg& target,
-                                  const x64asm::FlagSet& fs, size_t call_weight,
-                                  const x64asm::RegSet& preserve_regs,
-                                  const std::set<x64asm::Opcode>& opc_blacklist,
-                                  const std::set<x64asm::Opcode>& opc_whitelist,
-                                  const Validator *);
+  /** Learn memory operands and whether to propose memory reads/writes from this target. */
+  TransformPools& add_target(const Cfg& target);
+  
+  /** Set the collection of flags used to seed opcode pool. */
+  TransformPools& set_flags(const x64asm::FlagSet& fs) { 
+    flags_ = fs;
+    return *this;
+  }
 
-  /** Sets the pool operands to propose from. */
-  TransformPools& set_operand_pool(const Cfg& target, const x64asm::RegSet& preserve_regs);
+  /** Set a collection of registers to always preserve */
+  TransformPools& set_preserve_regs(const x64asm::RegSet& preserve) { 
+    preserve_regs_ = preserve;
+    return *this;
+  }
+
+  /** Add opcode to the pool. */
+  TransformPools& insert_opcode(const x64asm::Opcode& op) {
+    if(!opcode_weights_[(int)op])
+      opcode_weights_[(int)op] = 1;
+    opcode_weights_locked_[(int)op] = true;
+    return *this;
+  }
+  /** Remove opcode. */
+  TransformPools& remove_opcode(const x64asm::Opcode& op) {
+    opcode_weights_[(int)op] = 0;
+    opcode_weights_locked_[(int)op] = true;
+    return *this;
+  }
+  /** Set opcode weight. */
+  TransformPools& set_opcode_weight(const x64asm::Opcode& op, int n) {
+    opcode_weights_[(int)op] = n;
+    opcode_weights_locked_[(int)op] = true;
+    return *this;
+  }
+
+  /** Sets a validator for checking opcode support. */
+  TransformPools& set_validator(const stoke::Validator* validator) {
+    validator_ = validator;
+    return *this;
+  }
+
+  /** Set memeory writes. */
+  TransformPools& set_memory_write(bool b) {
+    memory_write_ = b;
+    return *this;
+  }
+
+  /** Set memeory reads. */
+  TransformPools& set_memory_read(bool b) {
+    memory_read_ = b;
+    return *this;
+  }
+
 
   /** Insert a value into the immediate pool */
   TransformPools& insert_immediate(const x64asm::Imm64& imm) {
@@ -96,20 +139,6 @@ public:
     return true;
   }
 
-  TransformPools& insert_opcode(const x64asm::Opcode& op) {
-    if(!opcode_weights_[(int)op])
-      opcode_weights_[(int)op] = 1;
-    return *this;
-  }
-  TransformPools& remove_opcode(const x64asm::Opcode& op) {
-    opcode_weights_[(int)op] = 0;
-    return *this;
-  }
-  TransformPools& set_opcode_weight(const x64asm::Opcode& op, int n) {
-    opcode_weights_[(int)op] = n;
-    return *this;
-  }
-
   /** Adjusts pools after class configuration has been changed. */
   void recompute_pools();
 
@@ -142,8 +171,25 @@ public:
 
 private:
 
+  /** Blacklist of opcodes. */
+  std::set<x64asm::Opcode> blacklist_;
+  /** Whitelist of opcodes. */
+  std::set<x64asm::Opcode> whitelist_;
+  /** Set of flags. */
+  x64asm::FlagSet flags_;
+  /** Set of registers to preserve. */
+  x64asm::RegSet preserve_regs_;
+  /** If we propose memory reads. */
+  bool memory_read_;
+  /** If we propose memory writes. */
+  bool memory_write_;
+  /** Validator for checking support. */
+  const Validator* validator_;
+
   /** The weighting of each control-free opcode.  Used to generate pool. */
   std::array<size_t, X64ASM_NUM_OPCODES> opcode_weights_;
+  /** Whether the weights have been specified by the user (thus locking them). */
+  std::array<size_t, X64ASM_NUM_OPCODES> opcode_weights_locked_;
   /** The pool of opcodes. */
   std::vector<x64asm::Opcode> opcode_pool_;
 

@@ -197,67 +197,116 @@ bool get_index(default_random_engine& gen, const vector<R32>& r32_pool, const ve
 namespace stoke {
 
 TransformPools::TransformPools() {
+
+  validator_ = NULL;
+  memory_read_ = false;
+  memory_write_ = false;
+
+  imm_pool_.assign({
+    0ul,
+    1ul, -1ul, 2ul, -2ul, 3ul, -3ul, 4ul, -4ul,
+    5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
+    16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
+  });
+
+
+  fill_pool(rh_pool_, rhs, preserve_regs_);
+  fill_pool(r8_pool_, r8s, preserve_regs_);
+  fill_pool(r16_pool_, r16s, preserve_regs_);
+  fill_pool(r32_pool_, r32s, preserve_regs_);
+  fill_pool(r64_pool_, r64s, preserve_regs_);
+
+  fill_pool(mm_pool_, mms, preserve_regs_);
+  fill_pool(sreg_pool_, sregs, preserve_regs_);
+  fill_pool(st_pool_, sts, preserve_regs_);
+  fill_pool(xmm_pool_, xmms, preserve_regs_);
+  fill_pool(ymm_pool_, ymms, preserve_regs_);
+
+  for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    opcode_weights_[i] = 0;
+    opcode_weights_locked_[i] = false;
+  }
 }
 
-TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet& flags,
-    size_t call_weight, const RegSet& preserve_regs,
-    const set<Opcode>& opc_blacklist,
-    const set<Opcode>& opc_whitelist,
-    const Validator* validator) {
-
-  //cout << this << " TransformPools::set_opcode_pool()" << endl;
-
-  // Determine if we need to read/write memory operands
-  auto mem_read = false;
-  auto mem_write = false;
-  for (size_t i = 0, ie = target.get_code().size(); i < ie; ++i) {
+TransformPools& TransformPools::add_target(const Cfg& target) {
+  
+  // Does it read/write memory?
+  memory_read_ = false;
+  memory_write_ = false;
+  for(size_t i = 0, ie = target.get_code().size(); i < ie; ++i) {
     const auto& instr = target.get_code()[i];
-    mem_read |= instr.maybe_read_memory();
-    mem_write |= instr.maybe_write_memory();
-    mem_write |= instr.maybe_undef_memory();
+    memory_read_ |= instr.maybe_read_memory();
+    memory_write_ |= instr.maybe_write_memory();
+    memory_write_ |= instr.maybe_write_memory();
   }
 
-  // Empty whitelist means no whitelist
-  const auto use_whitelist = !opc_whitelist.empty();
+  // Get operands from the target
+  const auto& fxn = target.get_function();
 
+  set<Imm64> imm_ops(fxn.imm_begin(), fxn.imm_end());
+  for (const auto& imm : imm_ops) {
+    insert_immediate(imm);
+  }
+
+  set<M8> mem_ops(fxn.mem_begin(), fxn.mem_end());
+  m_pool_.assign(mem_ops.begin(), mem_ops.end());
+
+  set<Label> call_ops(fxn.call_target_begin(), fxn.call_target_end());
+  label_pool_.assign(call_ops.begin(), call_ops.end());
+
+  set<uint64_t> rip_ops(fxn.rip_offset_target_begin(), fxn.rip_offset_target_end());
+  rip_pool_.assign(rip_ops.begin(), rip_ops.end());
+
+  return *this;
+}
+
+void TransformPools::recompute_pools() {
 
   // clean out the weight table
   for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
-    opcode_weights_[i] = 0;
+    if(!opcode_weights_locked_[i])
+      opcode_weights_[i] = 0;
 
-  // Refill the weight table
+  // rebuild the weight table
   for (size_t i = 0, ie = X64ASM_NUM_OPCODES; i != ie; ++i) {
+
+    // 1. If the user has made a wish, we keep it.
+    if(opcode_weights_locked_[i])
+      continue;
+
     const auto op = (Opcode)i;
     const auto mw = Instruction(op).implicit_maybe_write_set();
     const auto mu = Instruction(op).implicit_maybe_undef_set();
+
+    // 2. No control flow, besides call
     if (is_control_other_than_call(op)) {
-      //cout << op << " is control other than call" << endl;
       continue;
+
+    // 3. No sandbox-unsupported opcodes
     } else if (is_unsupported(op)) {
-      //cout << op << " is unsupported" << endl;
       continue;
-    } else if (!is_enabled(op, flags)) {
-      //cout << op << " is not enabled by flags" << endl;
+
+    // 4. No instructions disabled through flags.
+    } else if (!is_enabled(op, flags_)) {
       continue;
+
+    // 5. No nondeterministic instructions.
     } else if (is_non_deterministic(op)) {
-      //cout << op << " is nondeterministic" << endl;
       continue;
-    } else if (opc_blacklist.find(op) != opc_blacklist.end()) {
-      //cout << op << " is blacklisted" << endl;
+
+    // 6. No instructions that damage preserved registers
+    } else if (preserve_regs_.intersects(mw)) {
       continue;
-    } else if (use_whitelist && opc_whitelist.find(op) == opc_whitelist.end()) {
-      //cout << op << " isn't whitelisted" << endl;
+    } else if (preserve_regs_.intersects(mu)) {
       continue;
-    } else if (preserve_regs.intersects(mw)) {
-      //cout << op << " changes preserved register" << endl;
+
+    // 7. No validator-unsupported instructions
+    } else if (validator_ && !validator_->is_supported(op)) {
       continue;
-    } else if (preserve_regs.intersects(mu)) {
-      //cout << op << " changes preserved register (undef)" << endl;
-      continue;
-    } else if (validator && !validator->is_supported(op)) {
-      continue;
-    } else if (!mem_read) {
-      if (!mem_write) {
+
+    // 8. Check if memory is OK
+    } else if (!memory_read_) {
+      if (!memory_write_) {
         //no memory allowed
         if (is_mem_opcode(op)) {
           //cout << op << ": no memory allowed" << endl;
@@ -270,30 +319,21 @@ TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet
           continue;
         }
       }
-    } else if (!mem_write) {
+    } else if (!memory_write_) {
       //read allowed, write disallowed
       if (is_mem_opcode(op) && !is_mem_read_only_opcode(op)) {
         //cout << op << ": no memory write allowed" << endl;
         continue;
       }
     }
-    //cout << op << "OK" << endl;
-    //control_free_.push_back(op);
-    insert_opcode(op);
+
+    opcode_weights_[i] = 1;
   }
 
-  set_opcode_weight(CALL_LABEL, call_weight+1);
-
-  recompute_pools();
-
-  return *this;
-}
-
-void TransformPools::recompute_pools() {
-
-  opcode_pool_.clear();
 
   // Setup opcode pool
+  opcode_pool_.clear();
+
   for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
     for(size_t j = 0; j < opcode_weights_[i]; ++j)
       opcode_pool_.push_back((Opcode)i);
@@ -313,43 +353,6 @@ void TransformPools::recompute_pools() {
     }
 }
 
-TransformPools& TransformPools::set_operand_pool(const Cfg& target, const RegSet& preserve_regs) {
-  fill_pool(rh_pool_, rhs, preserve_regs);
-  fill_pool(r8_pool_, r8s, preserve_regs);
-  fill_pool(r16_pool_, r16s, preserve_regs);
-  fill_pool(r32_pool_, r32s, preserve_regs);
-  fill_pool(r64_pool_, r64s, preserve_regs);
-
-  fill_pool(mm_pool_, mms, preserve_regs);
-  fill_pool(sreg_pool_, sregs, preserve_regs);
-  fill_pool(st_pool_, sts, preserve_regs);
-  fill_pool(xmm_pool_, xmms, preserve_regs);
-  fill_pool(ymm_pool_, ymms, preserve_regs);
-
-  const auto& fxn = target.get_function();
-
-  imm_pool_.assign({
-    0ul,
-    1ul, -1ul, 2ul, -2ul, 3ul, -3ul, 4ul, -4ul,
-    5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
-    16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
-  });
-  set<Imm64> imm_ops(fxn.imm_begin(), fxn.imm_end());
-  for (const auto& imm : imm_ops) {
-    insert_immediate(imm);
-  }
-
-  set<M8> mem_ops(fxn.mem_begin(), fxn.mem_end());
-  m_pool_.assign(mem_ops.begin(), mem_ops.end());
-
-  set<Label> call_ops(fxn.call_target_begin(), fxn.call_target_end());
-  label_pool_.assign(call_ops.begin(), call_ops.end());
-
-  set<uint64_t> rip_ops(fxn.rip_offset_target_begin(), fxn.rip_offset_target_end());
-  rip_pool_.assign(rip_ops.begin(), rip_ops.end());
-
-  return *this;
-}
 
 bool TransformPools::get_lea_mem(const RegSet& rs, Operand& o) {
   M8 m(Imm32(0));
