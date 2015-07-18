@@ -55,6 +55,10 @@ TransformInfo RotateTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
+  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.get_function().check_invariants());
+
+
   ti.success = true;
   return ti;
 
@@ -66,6 +70,11 @@ void RotateTransform::undo(Cfg& cfg, TransformInfo& ti) const {
   else
     cfg.get_function().rotate_left(ti.undo_index[1], ti.undo_index[0]);
   cfg.recompute();
+
+  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.get_function().check_invariants());
+
+
 }
 
 
