@@ -27,6 +27,7 @@
 #include "src/transform/instruction.h"
 #include "src/transform/local_swap.h"
 #include "src/transform/move.h"
+#include "src/transform/opcode.h"
 #include "src/transform/operand.h"
 #include "src/transform/pools.h"
 #include "src/transform/rotate.h"
@@ -39,7 +40,7 @@ public:
   /** Creates a new transformation helper; guaranteed to pass invariants. */
   Transforms(TransformPools& pools) : pools_(pools), old_instr_(x64asm::RET),
     instr_trans_(pools), local_swap_trans_(pools), global_swap_trans_(pools),
-    rotate_trans_(pools), operand_trans_(pools) {
+    rotate_trans_(pools), operand_trans_(pools), opcode_trans_(pools) {
     //std::cout << "&pools in Transforms(): " << &pools << std::endl;
     validator_ = nullptr;
     control_free_.push_back(x64asm::RET);
@@ -129,8 +130,7 @@ public:
   /** Undo opcode move, recompute def-in relation. */
   void undo_opcode_move(Cfg& cfg) {
     // The old instruction should go back exactly as it was
-    cfg.get_function().replace(instr_idx1_, old_instr_, true);
-    cfg.recompute_defs();
+    opcode_trans_.undo(cfg, info_);
   }
   /** Undo operand move, recompute def-in relation. */
   void undo_operand_move(Cfg& cfg) {
@@ -250,6 +250,7 @@ private:
   GlobalSwapTransform global_swap_trans_;
   RotateTransform rotate_trans_;
   OperandTransform operand_trans_;
+  OpcodeTransform opcode_trans_;
 
 
   TransformInfo info_;
