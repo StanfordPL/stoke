@@ -193,34 +193,6 @@ bool get_index(default_random_engine& gen, const vector<R32>& r32_pool, const ve
   return false;
 }
 
-bool get_indices(default_random_engine& gen, const Cfg& cfg, Cfg::id_type& bb, size_t& block_idx, size_t& code_idx) {
-  // Corner case: This code could have no reachable blocks
-  if (cfg.num_reachable() < 3) {
-    return false;
-  }
-
-  // Pick a random reachable block
-  auto b = cfg.reachable_begin();
-  for (size_t i = 0, ie = (gen() % (cfg.num_reachable() - 2)) + 1; i < ie; ++i) {
-    ++b;
-  }
-  bb = *b;
-
-  // Pick a random instruction in that block
-  block_idx = gen() % cfg.num_instrs(bb);
-  code_idx = cfg.get_index({bb, block_idx});
-
-  // Corner cases: Is this a control instruction other than a call or the first instruction
-  if (code_idx == 0) {
-    return false;
-  }
-  if (is_control_other_than_call(cfg.get_code()[code_idx].get_opcode())) {
-    return false;
-  }
-
-  return true;
-}
-
 } // namespace
 
 namespace stoke {
@@ -403,45 +375,8 @@ bool Transforms::instruction_move(Cfg& cfg) {
 }
 
 bool Transforms::opcode_move(Cfg& cfg) {
-  // Grab the index of a random instruction
-  Cfg::id_type bb = cfg.get_entry();
-  size_t block_idx = 0;
-  if (!get_indices(gen_, cfg, bb, block_idx, instr_idx1_)) {
-    return false;
-  }
-
-  // Record the old value
-  old_instr_ = cfg.get_code()[instr_idx1_];
-
-  // Try generating a new instruction
-  auto instr = old_instr_;
-
-  auto opc = old_instr_.get_opcode();
-  if (!get_control_free_type_equiv(opc)) {
-    return false;
-  }
-  instr.set_opcode(opc);
-
-  // Check for validator support for the new instruction
-  if (validator_ && !validator_->is_supported(instr)) {
-    return false;
-  }
-
-  // Check that the instruction is valid
-  if (!instr.check()) {
-    return false;
-  }
-
-  // Success: Any failure beyond here will require undoing the move
-  // This operand hasn't changed, so the rip only needs local rescaling
-  cfg.get_function().replace(instr_idx1_, instr, false, false);
-  cfg.recompute_defs();
-  if (!cfg.check_invariants()) {
-    undo_opcode_move(cfg);
-    return false;
-  }
-
-  return true;
+  info_ = opcode_trans_(cfg);
+  return info_.success;
 }
 
 bool Transforms::operand_move(Cfg& cfg) {

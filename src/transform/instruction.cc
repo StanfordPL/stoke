@@ -90,6 +90,9 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
 
   ti.success = true;
   //cout << "Primary mission accomplished" << endl;
+  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.get_function().check_invariants());
+
   return ti;
 }
 

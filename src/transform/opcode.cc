@@ -56,6 +56,10 @@ TransformInfo OpcodeTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
+  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.get_function().check_invariants());
+
+
   ti.success = true;
   return ti;
 }
@@ -63,6 +67,11 @@ TransformInfo OpcodeTransform::operator()(Cfg& cfg) {
 void OpcodeTransform::undo(Cfg& cfg, TransformInfo& ti) const {
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
   cfg.recompute_defs();
+
+  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.get_function().check_invariants());
+
+
 }
 
 
