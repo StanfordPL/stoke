@@ -535,74 +535,13 @@ bool Transforms::resize_move(Cfg& cfg) {
 }
 
 bool Transforms::local_swap_move(Cfg& cfg) {
-  const auto bb = (gen_() % (cfg.num_blocks() - 2)) + 1;
-  if (!cfg.is_reachable(bb)) {
-    return false;
-  }
-  const auto num_instrs = cfg.num_instrs(bb);
-  if (num_instrs < 2) {
-    return false;
-  }
-
-  instr_idx1_ = cfg.get_index({bb, gen_() % num_instrs});
-  if (instr_idx1_ == cfg.get_index({cfg.get_entry()+1,0})) {
-    return false;
-  }
-  instr_idx2_ = cfg.get_index({bb, gen_() % num_instrs});
-  if (instr_idx1_ == instr_idx2_) {
-    return false;
-  }
-  if (instr_idx2_ < instr_idx1_) {
-    swap(instr_idx1_, instr_idx2_);
-  }
-
-  const auto& i = cfg.get_code()[instr_idx1_];
-  if (is_control_other_than_call(i.get_opcode())) {
-    return false;
-  }
-  const auto& j = cfg.get_code()[instr_idx2_];
-  if (is_control_other_than_call(j.get_opcode())) {
-    return false;
-  }
-
-  cfg.get_function().swap(instr_idx1_, instr_idx2_);
-  cfg.recompute_defs();
-  if (!cfg.check_invariants()) {
-    undo_local_swap_move(cfg);
-    return false;
-  }
-
-  return true;
+  info_ = local_swap_trans_(cfg);
+  return info_.success;
 }
 
 bool Transforms::global_swap_move(Cfg& cfg) {
-  if (cfg.get_code().size() < 3) {
-    return false;
-  }
-
-  instr_idx1_ = (gen_() % (cfg.get_code().size()-1)) + 1;
-  instr_idx2_ = (gen_() % (cfg.get_code().size()-1)) + 1;
-  if (instr_idx1_ == instr_idx2_) {
-    return false;
-  }
-
-  const auto& i = cfg.get_code()[instr_idx1_];
-  if (is_control_other_than_call(i.get_opcode())) {
-    return false;
-  }
-  const auto& j = cfg.get_code()[instr_idx2_];
-  if (is_control_other_than_call(j.get_opcode())) {
-    return false;
-  }
-
-  cfg.get_function().swap(instr_idx1_, instr_idx2_);
-  cfg.recompute_defs();
-  if (!cfg.check_invariants()) {
-    undo_global_swap_move(cfg);
-    return false;
-  }
-
-  return true;
+  info_ = global_swap_trans_(cfg);
+  return info_.success;
 }
 
 bool Transforms::extension_move(Cfg& cfg) {

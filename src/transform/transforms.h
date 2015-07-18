@@ -23,7 +23,9 @@
 
 #include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
+#include "src/transform/global_swap.h"
 #include "src/transform/instruction.h"
+#include "src/transform/local_swap.h"
 #include "src/transform/move.h"
 #include "src/transform/pools.h"
 #include "src/validator/validator.h"
@@ -33,7 +35,8 @@ namespace stoke {
 class Transforms {
 public:
   /** Creates a new transformation helper; guaranteed to pass invariants. */
-  Transforms(TransformPools& pools) : pools_(pools), old_instr_(x64asm::RET), instr_trans_(pools) {
+  Transforms(TransformPools& pools) : pools_(pools), old_instr_(x64asm::RET), 
+    instr_trans_(pools), local_swap_trans_(pools), global_swap_trans_(pools) {
     //std::cout << "&pools in Transforms(): " << &pools << std::endl;
     validator_ = nullptr;
     control_free_.push_back(x64asm::RET);
@@ -143,13 +146,11 @@ public:
   }
   /** Undo local swap move, recompute def-in relation. */
   void undo_local_swap_move(Cfg& cfg) {
-    cfg.get_function().swap(instr_idx1_, instr_idx2_);
-    cfg.recompute_defs();
+    local_swap_trans_.undo(cfg, info_);
   }
   /** Undo global swap move, recompute def-in relation. */
   void undo_global_swap_move(Cfg& cfg) {
-    cfg.get_function().swap(instr_idx1_, instr_idx2_);
-    cfg.recompute_defs();
+    global_swap_trans_.undo(cfg, info_);
   }
   /** Add user-defined undo implementation here ... */
   void undo_extension_move(Cfg& cfg);
@@ -248,6 +249,9 @@ private:
 
   TransformPools& pools_;
   InstructionTransform instr_trans_;
+  LocalSwapTransform local_swap_trans_;
+  GlobalSwapTransform global_swap_trans_;
+
 
   TransformInfo info_;
 };
