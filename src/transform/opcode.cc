@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/transform/operand.h"
+#include "src/transform/opcode.h"
 
 using namespace std;
 using namespace stoke;
@@ -21,7 +21,7 @@ using namespace x64asm;
 
 namespace stoke {
 
-TransformInfo OperandTransform::operator()(Cfg& cfg) {
+TransformInfo OpcodeTransform::operator()(Cfg& cfg) {
 
   TransformInfo ti;
   ti.success = false;
@@ -33,41 +33,23 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
   if(is_control_other_than_call(ti.undo_instr.get_opcode()))
     return ti;
 
-  // Corner Cases: Don't try chaning 0-arity opcodes
-  if (ti.undo_instr.arity() == 0) {
+  // Try generating a new instruction
+  auto instr = ti.undo_instr;
+
+  auto opc = instr.get_opcode();
+  if (!pools_.get_control_free_type_equiv(opc)) {
     return ti;
   }
-
-  const auto operand_idx = gen_() % ti.undo_instr.arity();
-
-  // Record the old value and generate a new operand
-  auto instr = ti.undo_instr;
-  Operand o = instr.get_operand<R64>(operand_idx);
-
-  const auto& rs = cfg.def_ins(cfg.get_loc(ti.undo_index[0]));
-  if (instr.maybe_read(operand_idx)) {
-    if (!pools_.get_read_op(instr.get_opcode(), operand_idx, rs, o)) {
-      return ti;
-    }
-  } else {
-    if (!pools_.get_write_op(instr.get_opcode(), operand_idx, rs, o)) {
-      return ti;
-    }
-  }
-  instr.set_operand(operand_idx, o);
+  instr.set_opcode(opc);
 
   // Check that the instruction is valid
   if (!instr.check()) {
     return ti;
   }
 
-  // If this is a rip operand, it needs global rescaling
-  const auto is_mem = instr.is_explicit_memory_dereference() &&
-                      ((size_t)instr.mem_index() == operand_idx);
-  const auto is_rip = ((M8*)&o)->rip_offset();
-
   // Success: Any failure beyond here will require undoing the move
-  cfg.get_function().replace(ti.undo_index[0], instr, false, is_rip);
+  // This operand hasn't changed, so the rip only needs local rescaling
+  cfg.get_function().replace(ti.undo_index[0], instr, false, false);
   cfg.recompute_defs();
   if (!cfg.check_invariants()) {
     undo(cfg, ti);
@@ -78,7 +60,7 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
   return ti;
 }
 
-void OperandTransform::undo(Cfg& cfg, TransformInfo& ti) const {
+void OpcodeTransform::undo(Cfg& cfg, TransformInfo& ti) const {
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
   cfg.recompute_defs();
 }
