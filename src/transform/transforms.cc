@@ -445,59 +445,8 @@ bool Transforms::opcode_move(Cfg& cfg) {
 }
 
 bool Transforms::operand_move(Cfg& cfg) {
-  // Grab the index of a random instruction
-  Cfg::id_type bb = cfg.get_entry();
-  size_t block_idx = 0;
-  if (!get_indices(gen_, cfg, bb, block_idx, instr_idx1_)) {
-    return false;
-  }
-
-  // Corner Cases: Don't try chaning 0-arity opcodes
-  if (cfg.get_code()[instr_idx1_].arity() == 0) {
-    return false;
-  }
-  const auto operand_idx = gen_() % cfg.get_code()[instr_idx1_].arity();
-
-  // Record the old value and generate a new operand
-  old_instr_ = cfg.get_code()[instr_idx1_];
-  auto instr = old_instr_;
-  Operand o = instr.get_operand<R64>(operand_idx);
-
-  const auto& rs = cfg.def_ins({bb, block_idx});
-  if (instr.maybe_read(operand_idx)) {
-    if (!get_read_op(instr.get_opcode(), operand_idx, rs, o)) {
-      return false;
-    }
-  } else {
-    if (!get_write_op(instr.get_opcode(), operand_idx, rs, o)) {
-      return false;
-    }
-  }
-  instr.set_operand(operand_idx, o);
-
-  // Check for validator support for the new instruction
-  if (validator_ && !validator_->is_supported(instr)) {
-    return false;
-  }
-
-  // Check that the instruction is valid
-  if (!instr.check()) {
-    return false;
-  }
-
-  // If this is a rip operand, it needs global rescaling
-  const auto is_mem = instr.is_explicit_memory_dereference() && ((size_t)instr.mem_index() == operand_idx);
-  const auto is_rip = ((M8*)&o)->rip_offset();
-
-  // Success: Any failure beyond here will require undoing the move
-  cfg.get_function().replace(instr_idx1_, instr, false, is_rip);
-  cfg.recompute_defs();
-  if (!cfg.check_invariants()) {
-    undo_operand_move(cfg);
-    return false;
-  }
-
-  return true;
+  info_ = operand_trans_(cfg);
+  return info_.success;
 }
 
 bool Transforms::resize_move(Cfg& cfg) {
