@@ -134,6 +134,12 @@ public:
                    x64asm::Operand& op);
 
 
+  /** Seed random number generator */
+  TransformPools& set_seed(std::default_random_engine::result_type seed) {
+    gen_.seed(seed);
+    return *this;
+  }
+
 private:
 
   /** The weighting of each control-free opcode.  Used to generate pool. */

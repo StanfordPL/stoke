@@ -37,7 +37,8 @@ public:
     std::vector<std::string> suffixes = {"a", "nbe", "ae", "nb", "nc", "b", "c", "nae",
                                          "be", "na", "e", "z", "g", "nle", "ge", "nl",
                                          "l", "nge", "le", "ng", "ne", "nz", "no", "np",
-                                         "po", "ns", "o", "p", "pe", "s" };
+                                         "po", "ns", "o", "p", "pe", "s"
+                                        };
 
     for(auto x: prefixes)
       for(auto y : suffixes)

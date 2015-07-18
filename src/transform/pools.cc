@@ -255,7 +255,7 @@ TransformPools& TransformPools::set_opcode_pool(const Cfg& target, const FlagSet
       //cout << op << " changes preserved register (undef)" << endl;
       continue;
     } else if (validator && !validator->is_supported(op)) {
-      continue; 
+      continue;
     } else if (!mem_read) {
       if (!mem_write) {
         //no memory allowed
@@ -311,9 +311,6 @@ void TransformPools::recompute_pools() {
     } else {
       opcodes_type_equiv_[i].clear();
     }
-
-
-
 }
 
 TransformPools& TransformPools::set_operand_pool(const Cfg& target, const RegSet& preserve_regs) {
