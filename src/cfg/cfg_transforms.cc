@@ -188,7 +188,6 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
       const auto live_regs_after_instruction = cfg.live_outs(cfg.get_loc(i));
       if ((instr_outputs & live_regs_after_instruction) == RegSet::empty()) {
         size_t bytes = assm.hex_size(instr);
-        cout << "Replacing " << instr << " with " << bytes << " bytes of nop" << endl;
         Code nops = generate_nop(bytes);
         cfg.get_function().remove(i);
         for(auto nop : nops) {
@@ -200,6 +199,35 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
       }
     }
   }
+
+  // Replace ret with nacl exit code
+  bool found = false;
+  do {
+    found = false;
+    for(size_t i = 0; i < cfg.get_code().size(); ++i) {
+      auto instr = cfg.get_code()[i];
+      if(instr.get_opcode() == RET) {
+
+        auto& func = cfg.get_function();
+
+        auto popq_r11 = Instruction(POP_R64_1, {r11});
+        auto andl_e0_r11 = Instruction(AND_R32_IMM8, { r11d, Imm8(0xe0) });
+        auto addq_r15_r11 = Instruction(ADD_R64_R64, { r11, r15 });
+        auto jmpq_r11 = Instruction(JMP_R64, { r11 });
+
+        func.insert(i, jmpq_r11);
+        func.insert(i, addq_r15_r11);
+        func.insert(i, andl_e0_r11);
+        func.insert(i, popq_r11);
+        func.remove(i+4);
+        cfg.recompute();
+
+
+        found = true;
+        break;
+      }
+    }
+  } while(found);
 
   // Make sure that we've left everything back in a valid state before continuing
   assert(cfg.check_invariants());

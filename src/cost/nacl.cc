@@ -113,6 +113,14 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     auto instr = code[i];
     size_t start = (buffer_.size() + rip_offset) & 0x1f;
     assm_.assemble(instr);
+    if(instr.get_opcode() == RET) {
+      // RET gets translated into a 12-byte return sequence.
+      // so we need to emit 11 more bytes to get the count right.
+      auto nop = Instruction(NOP);
+      for(size_t i = 0; i < 11; ++i) {
+        assm_.assemble(nop);
+      }
+    }
     size_t end = (buffer_.size() + rip_offset) & 0x1f;
 #ifdef DEBUG_NACL_COST
     cout << start << "   " << instr << endl;
