@@ -244,7 +244,7 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
 
       // delete everything that's left.
       if(ok) {
-        for(size_t j = i; j < ie; ++j) { 
+        for(size_t j = i; j < ie; ++j) {
           cfg.get_function().remove(i);
         }
         cfg.recompute();
