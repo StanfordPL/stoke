@@ -292,8 +292,8 @@ Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
   }
 
   // Add additional calls depending on weight
-  for (size_t i = 0; i < call_weight; ++i) {
-    control_free_.push_back(CALL_LABEL);
+  for(size_t i = 0; i < call_weight; ++i) {
+    control_free_.push_back(NOP);
   }
 
   // Lift opcode pool to type equivalent pool
@@ -311,7 +311,7 @@ Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
 }
 
 Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preserve_regs) {
-  fill_pool(rh_pool_, rhs, preserve_regs);
+  //fill_pool(rh_pool_, rhs, preserve_regs);
   fill_pool(r8_pool_, r8s, preserve_regs);
   fill_pool(r16_pool_, r16s, preserve_regs);
   fill_pool(r32_pool_, r32s, preserve_regs);

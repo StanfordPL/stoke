@@ -121,58 +121,58 @@ static double GeometricMean() {
 }
 
 void SetupSmallBenchmarks() {
-  //RegisterBenchmark(strdup("Richards"), run_richards, 10000, 2499257,
-  //                  NULL, NULL);
-  //RegisterBenchmark(strdup("Deltablue"), run_deltablue, 100, 429919,
-  //                  NULL, NULL);
-  //RegisterBenchmark(strdup("Fannkuchredux"), run_fannkuch, 10, 64052288,
-  //                  NULL, NULL);
-  //RegisterBenchmark(strdup("Nbody"), run_nbody, 1000000, 73000000,
-  //                  NULL, NULL);
+  RegisterBenchmark(strdup("Richards"), run_richards, 10000, 2499257,
+                    NULL, NULL);
+  RegisterBenchmark(strdup("Deltablue"), run_deltablue, 100, 429919,
+                    NULL, NULL);
+  RegisterBenchmark(strdup("Fannkuchredux"), run_fannkuch, 10, 64052288,
+                    NULL, NULL);
+  RegisterBenchmark(strdup("Nbody"), run_nbody, 1000000, 73000000,
+                    NULL, NULL);
   /*RegisterBenchmark(strdup("Spectralnorm"), run_spectralnorm, 350, 150020779,
                     NULL, NULL);*/
-  //RegisterBenchmark(strdup("Fasta"), run_fasta, 10000, 51667385, NULL, NULL);
-  //RegisterBenchmark(strdup("Revcomp"), run_revcomp, 0, 23542857, NULL, NULL);
-  //RegisterBenchmark(strdup("Binarytrees"), run_binarytrees, 15, 383306452,
-  //                  NULL, NULL);
-  //RegisterBenchmark(strdup("Knucleotide"), run_knucleotide, 0, 433893130,
-  //                  NULL, NULL);
+  RegisterBenchmark(strdup("Fasta"), run_fasta, 10000, 51667385, NULL, NULL);
+  RegisterBenchmark(strdup("Revcomp"), run_revcomp, 0, 23542857, NULL, NULL);
+  RegisterBenchmark(strdup("Binarytrees"), run_binarytrees, 15, 383306452,
+                    NULL, NULL);
+  RegisterBenchmark(strdup("Knucleotide"), run_knucleotide, 0, 433893130,
+                    NULL, NULL);
   /*RegisterBenchmark(strdup("FFT"), run_fft, 1024, 50000000,
                     setup_fft, teardown_fft);*/
-  //RegisterBenchmark(strdup("Pidigits"), run_pidigits, 1000, 406976744,
-  //                  NULL, NULL);
+  RegisterBenchmark(strdup("Pidigits"), run_pidigits, 1000, 406976744,
+                    NULL, NULL);
   //RegisterBenchmark(strdup("Memcpy"), run_memcpy, 1000000, 3000000, NULL, NULL);
   //RegisterBenchmark(strdup("Memcpy2"), run_memcpy2, 1000000, 3000000, NULL, NULL);
-  //RegisterBenchmark(strdup("strcpy"), run_strcpy, 1000000, 3000000, NULL, NULL);
-  RegisterBenchmark(strdup("strlen"), run_strlen, 1000000, 3000000, NULL, NULL);
+  RegisterBenchmark(strdup("strcpy"), run_strcpy, 1000000, 3000000, NULL, NULL);
+  //RegisterBenchmark(strdup("strlen"), run_strlen, 1000000, 3000000, NULL, NULL);
   run_model = kRunModelRepeated;
 }
 
 void SetupLargeBenchmarks() {
-  //RegisterBenchmark(strdup("Richards"), run_richards, 1000000, 2499257,
-  //                  NULL, NULL);
-  //RegisterBenchmark(strdup("Deltablue"), run_deltablue, 10000, 429919,
-  //                  NULL, NULL);
-  //RegisterBenchmark(strdup("Fannkuchredux"), run_fannkuch, 11, 64052288,
-  //                  NULL, NULL);
-  //RegisterBenchmark(strdup("Nbody"), run_nbody, 10000000, 73000000,
-  //                  NULL, NULL);
+  RegisterBenchmark(strdup("Richards"), run_richards, 1000000, 2499257,
+                    NULL, NULL);
+  RegisterBenchmark(strdup("Deltablue"), run_deltablue, 10000, 429919,
+                    NULL, NULL);
+  RegisterBenchmark(strdup("Fannkuchredux"), run_fannkuch, 11, 64052288,
+                    NULL, NULL);
+  RegisterBenchmark(strdup("Nbody"), run_nbody, 10000000, 73000000,
+                    NULL, NULL);
   /*RegisterBenchmark(strdup("Spectralnorm"), run_spectralnorm, 5500, 150020779,
                      NULL, NULL);*/
-  //RegisterBenchmark(strdup("Fasta"), run_fasta, 3000000, 51667385, NULL, NULL);
-  //RegisterBenchmark(strdup("Revcomp"), run_revcomp, 0, 23542857, NULL, NULL);
-  //RegisterBenchmark(strdup("Binarytrees"), run_binarytrees, 18, 383306452,
-  //                  NULL, NULL);
-  //RegisterBenchmark(strdup("Knucleotide"), run_knucleotide, 0, 433893130,
-  //                  NULL, NULL);
+  RegisterBenchmark(strdup("Fasta"), run_fasta, 3000000, 51667385, NULL, NULL);
+  RegisterBenchmark(strdup("Revcomp"), run_revcomp, 0, 23542857, NULL, NULL);
+  RegisterBenchmark(strdup("Binarytrees"), run_binarytrees, 18, 383306452,
+                    NULL, NULL);
+  RegisterBenchmark(strdup("Knucleotide"), run_knucleotide, 0, 433893130,
+                    NULL, NULL);
   /*RegisterBenchmark(strdup("FFT"), run_fft, 1024*1024, 50000000,
                     setup_fft, teardown_fft);*/
-  //RegisterBenchmark(strdup("Pidigits"), run_pidigits, 5000, 406976744,
-  //                  NULL, NULL);
+  RegisterBenchmark(strdup("Pidigits"), run_pidigits, 5000, 406976744,
+                    NULL, NULL);
   //RegisterBenchmark(strdup("Memcpy"), run_memcpy, 10000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("Memcpy2"), run_memcpy2, 10000000, 30000000, NULL, NULL);
-  //RegisterBenchmark(strdup("strcpy"), run_strcpy, 10000000, 30000000, NULL, NULL);
-  RegisterBenchmark(strdup("strlen"), run_strlen, 10000000, 30000000, NULL, NULL);
+  RegisterBenchmark(strdup("strcpy"), run_strcpy, 10000000, 30000000, NULL, NULL);
+  //RegisterBenchmark(strdup("strlen"), run_strlen, 10000000, 30000000, NULL, NULL);
   run_model = kRunModelOnce;
 }
 

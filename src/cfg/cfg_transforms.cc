@@ -229,6 +229,31 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
     }
   } while(found);
 
+  // Remove unreachable instructions at the end
+  for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
+    if (!cfg.is_reachable(cfg.get_loc(i).first)) {
+      bool ok = true;
+
+      // check to see if future instructions are reachable; if so, abort.
+      for(size_t j = i+1; j < ie; ++j) {
+        if(cfg.is_reachable(cfg.get_loc(j).first)) {
+          ok = false;
+          break;
+        }
+      }
+
+      // delete everything that's left.
+      if(ok) {
+        for(size_t j = i; j < ie; ++j) { 
+          cfg.get_function().remove(i);
+        }
+        cfg.recompute();
+        break;
+      }
+    }
+  }
+
+
   // Make sure that we've left everything back in a valid state before continuing
   assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());

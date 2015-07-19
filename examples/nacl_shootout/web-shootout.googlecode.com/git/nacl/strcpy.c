@@ -55,7 +55,7 @@ int run_strcpy(int n) {
 
   // Run strcpy n times; O(n^2)
   for(size_t j = 0; j < n; ++j) {
-    my_strcpy(b, a);
+    strcpy(b, a);
   }
 
   return 0;
