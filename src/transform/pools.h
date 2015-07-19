@@ -29,15 +29,15 @@ public:
 
   /** Learn memory operands and whether to propose memory reads/writes from this target. */
   TransformPools& add_target(const Cfg& target);
-  
+
   /** Set the collection of flags used to seed opcode pool. */
-  TransformPools& set_flags(const x64asm::FlagSet& fs) { 
+  TransformPools& set_flags(const x64asm::FlagSet& fs) {
     flags_ = fs;
     return *this;
   }
 
   /** Set a collection of registers to always preserve */
-  TransformPools& set_preserve_regs(const x64asm::RegSet& preserve) { 
+  TransformPools& set_preserve_regs(const x64asm::RegSet& preserve) {
     preserve_regs_ = preserve;
     return *this;
   }
@@ -169,7 +169,7 @@ public:
     return *this;
   }
 
-private:
+protected:
 
   /** Blacklist of opcodes. */
   std::set<x64asm::Opcode> blacklist_;

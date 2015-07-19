@@ -41,11 +41,7 @@ public:
   Transforms(TransformPools& pools) : pools_(pools), old_instr_(x64asm::RET),
     instr_trans_(pools), local_swap_trans_(pools), global_swap_trans_(pools),
     rotate_trans_(pools), operand_trans_(pools), opcode_trans_(pools) {
-    //std::cout << "&pools in Transforms(): " << &pools << std::endl;
     validator_ = nullptr;
-    control_free_.push_back(x64asm::RET);
-    control_free_type_equiv_.resize((int)x64asm::XSAVEOPT64_M64 + 1);
-    control_free_type_equiv_[x64asm::RET].push_back(x64asm::RET);
   }
 
   /** Sets random seed. */
@@ -58,14 +54,6 @@ public:
     validator_ = v;
     return *this;
   }
-  /** Sets the pool of opcodes to propose from. Can cause invariants to fail. */
-  Transforms& set_opcode_pool(const Cfg& target,
-                              const x64asm::FlagSet& fs, size_t call_weight,
-                              const x64asm::RegSet& preserve_regs,
-                              const std::set<x64asm::Opcode>& opc_blacklist,
-                              const std::set<x64asm::Opcode>& opc_whitelist);
-  /** Sets the pool operands to propose from. */
-  Transforms& set_operand_pool(const Cfg& target, const x64asm::RegSet& preserve_regs);
   /** Insert a value into the immediate pool */
   Transforms& insert_immediate(const x64asm::Imm64& imm) {
     const auto itr = std::find(imm_pool_.begin(), imm_pool_.end(), imm);

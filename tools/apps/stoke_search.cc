@@ -42,6 +42,7 @@
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
 #include "tools/gadgets/transforms.h"
+#include "tools/gadgets/transform_pools.h"
 #include "tools/gadgets/validator.h"
 #include "tools/gadgets/verifier.h"
 #include "tools/io/postprocessing.h"
@@ -257,7 +258,8 @@ int main(int argc, char** argv) {
   TrainingSetGadget training_set(seed);
   SandboxGadget training_sb(training_set, aux_fxns);
 
-  TransformsGadget transforms(target, aux_fxns, seed);
+  TransformPoolsGadget transform_pools(target, aux_fxns, seed);
+  TransformsGadget transforms(transform_pools, seed);
   SearchGadget search(&transforms, seed);
 
   TestSetGadget test_set(seed);

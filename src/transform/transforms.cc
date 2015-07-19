@@ -23,34 +23,6 @@ using namespace x64asm;
 
 namespace stoke {
 
-Transforms& Transforms::set_opcode_pool(const Cfg& target, const FlagSet& flags,
-                                        size_t call_weight, const RegSet& preserve_regs,
-                                        const set<Opcode>& opc_blacklist,
-                                        const set<Opcode>& opc_whitelist) {
-
-  pools_.add_target(target);
-  pools_.set_flags(flags);
-  pools_.set_opcode_weight(CALL_LABEL, call_weight);
-  pools_.set_preserve_regs(preserve_regs);
-
-  for(auto op : opc_blacklist) {
-    pools_.remove_opcode(op);
-  }
-  for(auto op : opc_whitelist) {
-    pools_.insert_opcode(op);
-  }
-
-  pools_.set_validator(new Validator(*(new Cvc4Solver())));
-  pools_.recompute_pools();
-
-  return *this;
-}
-
-Transforms& Transforms::set_operand_pool(const Cfg& target, const RegSet& preserve_regs) {
-
-  return *this;
-}
-
 bool Transforms::modify(Cfg& cfg, Move type) {
   auto ret = false;
   switch (type) {
