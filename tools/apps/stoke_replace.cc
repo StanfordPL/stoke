@@ -77,7 +77,8 @@ bool replace(uint64_t offset, size_t size) {
   fxn.reserve(fxn.size() + 15*code.size());
   for(size_t i = 0; i < code.size(); ++i) {
     size_t nop_bytes = 0;
-    while(code[i].is_nop() && i < code.size()) {
+    while(code[i].is_nop() && i < code.size() &&
+          (((fxn.size() + nop_bytes + assm.hex_size(code[i])) & 0x1f) >= (fxn.size() & 0x1f))) {
       nop_bytes += assm.hex_size(code[i]);
       i++;
     }

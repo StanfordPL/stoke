@@ -40,6 +40,11 @@ auto& heap_size = ValueArg<size_t>::create("heap_size")
                   .description("Heap size")
                   .default_val(16);
 
+auto& align = ValueArg<size_t>::create("align")
+              .usage("<int>")
+              .description("Align to/from areas to size.")
+              .default_val(1);
+
 auto& max_buffer_size = ValueArg<size_t>::create("max_buffer_size")
                         .usage("<int>")
                         .description("size of array")
@@ -50,6 +55,8 @@ auto& native = FlagArg::create("native")
 
 #define STACK_SPACE 256
 #define MAX_LEN 4
+
+#define ROUND_DOWN(X, Y) ((X) - ((X) % (Y)))
 
 int main(int argc, char** argv) {
 
@@ -77,7 +84,9 @@ int main(int argc, char** argv) {
 
     //setup heap
     uint64_t heap_base_top = rand() & 0x4ffffff0;
+    heap_base_top = ROUND_DOWN(heap_base_top, align.value());
     uint64_t heap_base_bot = (rand() % heap_base_top) & 0x4ffffff0;
+    heap_base_bot = ROUND_DOWN(heap_base_bot, align.value());
     uint64_t heap_diff = heap_base_top - heap_base_bot;
     cs.heap.resize(heap_base_top, heap_size.value());
 
@@ -85,11 +94,13 @@ int main(int argc, char** argv) {
     uint64_t src_offset = 0, dst_offset = 0;
 
     while( (src_offset + buffer_size) > dst_offset ) {
-      src_offset = (rand() % (heap_size.value() - buffer_size - 1));
-      dst_offset = (rand() % (heap_size.value() - buffer_size - 1));
+      src_offset = rand() % (heap_size.value() - buffer_size - 1);
+      dst_offset = rand() % (heap_size.value() - buffer_size - 1);
+      src_offset = ROUND_DOWN(src_offset, align.value());
+      dst_offset = ROUND_DOWN(dst_offset, align.value());
     }
 
-    if(!native) {
+    if(!native.value()) {
       // All addresses are relative to r15
       cs.gp[r15].get_fixed_quad(0) = heap_base_bot;
       cs.gp[src_reg].get_fixed_quad(0) = heap_diff + src_offset;
