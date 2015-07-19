@@ -229,7 +229,7 @@ TransformPools::TransformPools() {
 }
 
 TransformPools& TransformPools::add_target(const Cfg& target) {
-  
+
   // Does it read/write memory?
   memory_read_ = false;
   memory_write_ = false;
@@ -282,29 +282,29 @@ void TransformPools::recompute_pools() {
     if (is_control_other_than_call(op)) {
       continue;
 
-    // 3. No sandbox-unsupported opcodes
+      // 3. No sandbox-unsupported opcodes
     } else if (is_unsupported(op)) {
       continue;
 
-    // 4. No instructions disabled through flags.
+      // 4. No instructions disabled through flags.
     } else if (!is_enabled(op, flags_)) {
       continue;
 
-    // 5. No nondeterministic instructions.
+      // 5. No nondeterministic instructions.
     } else if (is_non_deterministic(op)) {
       continue;
 
-    // 6. No instructions that damage preserved registers
+      // 6. No instructions that damage preserved registers
     } else if (preserve_regs_.intersects(mw)) {
       continue;
     } else if (preserve_regs_.intersects(mu)) {
       continue;
 
-    // 7. No validator-unsupported instructions
+      // 7. No validator-unsupported instructions
     } else if (validator_ && !validator_->is_supported(op)) {
       continue;
 
-    // 8. Check if memory is OK
+      // 8. Check if memory is OK
     } else if (!memory_read_) {
       if (!memory_write_) {
         //no memory allowed

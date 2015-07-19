@@ -25,6 +25,7 @@
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/transforms.h"
+#include "tools/gadgets/transform_pools.h"
 
 using namespace cpputil;
 using namespace std;
@@ -37,8 +38,11 @@ int main(int argc, char** argv) {
 
   SeedGadget seed;
   FunctionsGadget aux_fxns;
+
   TargetGadget target(aux_fxns, false);
-  TransformsGadget tforms(target, aux_fxns, seed);
+
+  TransformPoolsGadget transform_pools(target, aux_fxns, seed);
+  TransformsGadget tforms(transform_pools, seed);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
