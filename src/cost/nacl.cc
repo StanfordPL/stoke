@@ -99,6 +99,19 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
   map<size_t, uint64_t> restricted_registers;
 
   // 1. instructions not allowed
+  for(size_t i = 0; i < code.size(); ++i) {
+    auto instr = code[i];
+
+    // LEA with addr override (32-bit arguments) isn't allowed.
+    if(instr.is_lea()) {
+      M8 mem = instr.get_operand<M8>(1);
+      if(mem.addr_or()) {
+        score++;
+      }
+    }
+  }
+
+
   // 2. no instructions may cross 32-bit boundaries
   // (also, when we do this, identify restricted registers and populate
   //  the map.  It holds 0 if there are no restricted registers, and holds

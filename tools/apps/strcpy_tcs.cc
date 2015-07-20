@@ -57,6 +57,7 @@ auto& native = FlagArg::create("native")
 #define MAX_LEN 4
 
 #define ROUND_DOWN(X, Y) ((X) - ((X) % (Y)))
+#define ROUND_UP(X, Y) ((X) + (Y) - ((X) % (Y)))
 
 int main(int argc, char** argv) {
 
@@ -88,7 +89,7 @@ int main(int argc, char** argv) {
     uint64_t heap_base_bot = (rand() % heap_base_top) & 0x4ffffff0;
     heap_base_bot = ROUND_DOWN(heap_base_bot, align.value());
     uint64_t heap_diff = heap_base_top - heap_base_bot;
-    cs.heap.resize(heap_base_top, heap_size.value());
+    cs.heap.resize(heap_base_top, ROUND_UP(heap_size.value(), align.value()));
 
     uint64_t buffer_size = 1 + (rand() % (max_buffer_size.value()-1));
     uint64_t src_offset = 0, dst_offset = 0;
@@ -112,13 +113,13 @@ int main(int argc, char** argv) {
     }
 
     //fill data
-    for(uint64_t i = heap_base_top; i < heap_base_top + heap_size.value(); ++i) {
+    for(uint64_t i = heap_base_top; i < ROUND_UP(heap_base_top + heap_size.value(), align.value()); ++i) {
       cs.heap[i] = rand() % 256;
       cs.heap.set_valid(i, false);
     }
-    for(uint64_t i = heap_base_top + src_offset; i < heap_base_top + src_offset + buffer_size; ++i)
+    for(uint64_t i = heap_base_top + src_offset; i < ROUND_UP(heap_base_top + src_offset + buffer_size, align.value()); ++i)
       cs.heap.set_valid(i, true);
-    for(uint64_t i = heap_base_top + dst_offset; i < heap_base_top + dst_offset + buffer_size; ++i)
+    for(uint64_t i = heap_base_top + dst_offset; i < ROUND_UP(heap_base_top + dst_offset + buffer_size, align.value()); ++i)
       cs.heap.set_valid(i, true);
 
     // null terminate, yo

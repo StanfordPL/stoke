@@ -15,10 +15,10 @@ testcase:
 	strcpy_tcs $(TC_OPTS) --align 64 --max_buffer_size 1024 --heap_size 4096 >> nacl.tc
 
 check_testcases:
-	stoke debug sandbox --def_in "{ %rsi %rdi %r15 %rbp %rsp }" --live_out "{ %rax }" --target nacl_cleaned.s --testcases nacl.tc --index 0 
-	stoke debug sandbox --def_in "{ %rsi %rdi %r15 %rbp %rsp }" --live_out "{ %rax }" --target nacl_cleaned.s --testcases nacl.tc --index 1
-	stoke debug sandbox --def_in "{ %rsi %rdi %r15 %rbp %rsp }" --live_out "{ %rax }" --target nacl_cleaned.s --testcases nacl.tc --index 20
-	stoke debug sandbox --def_in "{ %rsi %rdi %r15 %rbp %rsp }" --live_out "{ %rax }" --target nacl_cleaned.s --testcases nacl.tc --index 21
+	stoke debug sandbox --def_in "{ %rsi %rdi %r15 %rbp %rsp }" --live_out "{ %rax }" --target native_cleaned.s --testcases nacl.tc --index 0 
+	stoke debug sandbox --def_in "{ %rsi %rdi %r15 %rbp %rsp }" --live_out "{ %rax }" --target native_cleaned.s --testcases nacl.tc --index 1
+	stoke debug sandbox --def_in "{ %rsi %rdi %r15 %rbp %rsp }" --live_out "{ %rax }" --target native_cleaned.s --testcases nacl.tc --index 20
+	stoke debug sandbox --def_in "{ %rsi %rdi %r15 %rbp %rsp }" --live_out "{ %rax }" --target native_cleaned.s --testcases nacl.tc --index 21
 	
 
 search:
