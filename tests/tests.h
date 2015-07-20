@@ -33,6 +33,7 @@
 #include "tests/cfg/cfg.h"
 #include "tests/cfg/cfgtransforms.h"
 #include "tests/cost/cost.h"
+#include "tests/expr/expr.h"
 #include "tests/cpputil/cpputil.h"
 #include "tests/disassembler/disassembler.h"
 #include "tests/fixture.h"
