@@ -67,8 +67,6 @@ SRC_OBJ=\
 	\
 	src/disassembler/disassembler.o \
 	\
-	src/expr/expr.o \
-	\
 	src/sandbox/dispatch_table.o \
 	src/sandbox/sandbox.o \
 	\
@@ -291,8 +289,6 @@ src/cfg/%.o: src/cfg/%.cc $(DEPS)
 src/cost/%.o: src/cost/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/disassembler/%.o: src/disassembler/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
-src/expr/%.o: src/expr/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/sandbox/%.o: src/sandbox/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
