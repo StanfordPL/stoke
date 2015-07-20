@@ -36,7 +36,7 @@ public:
   /** Constructs a parser to parse a string to an expression.  The
       parameter 's' is the string to parse, followed by a function that
       determines if a variable is valid. */
-  ExprParser(std::string s, std::function<bool (const std::string&)>& is_var_valid) :
+  ExprParser(std::string s, const std::function<bool (const std::string&)>& is_var_valid) :
     s_(s), is_var_valid_(is_var_valid), index_(0), error_(), has_error_(false) {
     result_ =parse_S();
   }
@@ -76,7 +76,7 @@ private:
    *    &            BINOP2
    *    < <= > >=    BINOP3
    *    >> <<        BINOP4
-   *    ==           BINOP5
+   *    == !=        BINOP5
    *    + -          BINOP6
    *    * / %        BINOP7
    *    **           BINOP8 (exponentiation)
@@ -299,7 +299,7 @@ private:
     for(i = 0, c = peek();
         (c == '+' || c == '>' || c == '<' || c == '|' ||
          c == '^' || c == '=' || c == '*' || c == '-' ||
-         c == '*' || c == '%' || c == '/' || c == '&');
+         c == '*' || c == '%' || c == '/' || c == '&' || c == '!');
         c = peek(++i)) {
 
       var = var.append(1, c);
@@ -337,6 +337,8 @@ private:
       op = Expr<T>::Operator::SHL;
     } else if (var == "==" || var == "=") {
       op = Expr<T>::Operator::EQ;
+    } else if (var == "!=") {
+      op = Expr<T>::Operator::NEQ;
     } else if (var == "") {
       // there's no binary operator here
       return Expr<T>::Operator::NONE;
@@ -367,7 +369,7 @@ private:
       }
 
     case 3:
-      if(op == Expr<T>::Operator::EQ) {
+      if(op == Expr<T>::Operator::EQ || op == Expr<T>::Operator::NEQ) {
         eat(var.size());
         return op;
       } else {
@@ -431,7 +433,7 @@ private:
   Expr<T>* result_;
 
   /** To determine if a variable is valid */
-  std::function<bool (const std::string&)>& is_var_valid_;
+  const std::function<bool (const std::string&)>& is_var_valid_;
 
 };
 

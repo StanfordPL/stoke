@@ -45,7 +45,8 @@ public:
     GT,
     LTE,
     GTE,
-    EQ
+    EQ,
+    NEQ
   };
 
   /** Constructs a binary operation on two other expressions */
@@ -101,6 +102,8 @@ public:
         return c1 >= c2;
       case EQ:
         return c1 == c2;
+      case NEQ:
+        return c1 != c2;
       default:
         assert(false);
       }
