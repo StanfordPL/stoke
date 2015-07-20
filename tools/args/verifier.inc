@@ -31,7 +31,7 @@ cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg =
   cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
   .usage("(none|hold_out|formal|extension)")
   .description("Verification strategy")
-  .default_val(Strategy::NONE);
+  .default_val(Strategy::HOLD_OUT);
 
 } // namespace stoke
 
