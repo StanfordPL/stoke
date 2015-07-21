@@ -51,8 +51,8 @@ public:
     return *this;
   }
   /** Set the maximum number of seconds to run for before giving up. */
-  Search& set_timeout_sec(size_t timeout) {
-    timeout_sec_ = std::chrono::duration<size_t>(timeout);
+  Search& set_timeout_sec(std::chrono::duration<double> timeout) {
+    timeout_sec_ = timeout;
     return *this;
   }
   /** Set the annealing constant. */
@@ -107,7 +107,7 @@ private:
   /** How many iterations should search run for? */
   size_t timeout_itr_;
   /** How many seconds should search run for? */
-  std::chrono::duration<size_t> timeout_sec_;
+  std::chrono::duration<double> timeout_sec_;
   /** Annealing constant. */
   double beta_;
 

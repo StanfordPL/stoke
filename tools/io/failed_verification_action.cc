@@ -17,18 +17,16 @@
 #include <utility>
 
 #include "tools/io/generic.h"
-#include "tools/io/timeout.h"
+#include "tools/io/failed_verification_action.h"
 
 using namespace std;
 using namespace stoke;
 
 namespace {
 
-array<pair<string, Timeout>, 4> pts {{
-    {"quit", Timeout::QUIT},
-    {"restart", Timeout::RESTART},
-    {"list", Timeout::LIST},
-    {"testcase", Timeout::TESTCASE}
+array<pair<string, FailedVerificationAction>, 4> pts {{
+    {"quit", FailedVerificationAction::QUIT},
+    {"add_counterexample", FailedVerificationAction::ADD_COUNTEREXAMPLE}
   }
 };
 
@@ -36,7 +34,7 @@ array<pair<string, Timeout>, 4> pts {{
 
 namespace stoke {
 
-void TimeoutReader::operator()(std::istream& is, Timeout& t) {
+void FailedVerificationActionReader::operator()(std::istream& is, FailedVerificationAction& t) {
   string s;
   is >> s;
   if (!generic_read(pts, s, t)) {
@@ -44,7 +42,7 @@ void TimeoutReader::operator()(std::istream& is, Timeout& t) {
   }
 }
 
-void TimeoutWriter::operator()(std::ostream& os, const Timeout t) {
+void FailedVerificationActionWriter::operator()(std::ostream& os, const FailedVerificationAction t) {
   string s;
   generic_write(pts, s, t);
   os << s;
