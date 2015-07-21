@@ -42,37 +42,47 @@ protected:
 };
 
 TEST_F(ExprTest, Simple) {
-  EXPECT_EQ(eval("2*3"), 6);
-  EXPECT_EQ(eval("2* 3"), 6);
-  EXPECT_EQ(eval("2 * 3"), 6);
-  EXPECT_EQ(eval("2*3   "), 6);
-  EXPECT_EQ(eval("   2*3   "), 6);
-  EXPECT_EQ(eval(" 2* 3   "), 6);
-  EXPECT_EQ(eval("   2*3   "), 6);
-  EXPECT_EQ(eval(" ( 2* 3  ) "), 6);
+  EXPECT_EQ(eval("2*3"), (size_t)6);
+  EXPECT_EQ(eval("2* 3"), (size_t)6);
+  EXPECT_EQ(eval("2 * 3"), (size_t)6);
+  EXPECT_EQ(eval("2*3   "), (size_t)6);
+  EXPECT_EQ(eval("   2*3   "), (size_t)6);
+  EXPECT_EQ(eval(" 2* 3   "), (size_t)6);
+  EXPECT_EQ(eval("   2*3   "), (size_t)6);
+  EXPECT_EQ(eval(" ( 2* 3  ) "), (size_t)6);
 
-  EXPECT_EQ(eval("1+2"), 3);
-  EXPECT_EQ(eval("1-2"), -1);
-  EXPECT_EQ(eval("0*10"), 0);
-  EXPECT_EQ(eval("1 << 2"), 4);
-  EXPECT_EQ(eval("4 >> 1"), 2);
-  EXPECT_EQ(eval("2 ** 3"), 8);
-  EXPECT_EQ(eval("2 == 3"), 0);
-  EXPECT_EQ(eval("3 != 3"), 0);
-  EXPECT_EQ(eval("11 % 2"), 1);
-  EXPECT_EQ(eval("6 / 3"), 2);
-  EXPECT_EQ(eval("1 | 2"), 3);
-  EXPECT_EQ(eval("1 & 2 & 0"), 0);
-  EXPECT_EQ(eval("1 < 1"), 0);
-  EXPECT_EQ(eval("1 <= 1"), 1);
-  EXPECT_EQ(eval("1 > 1"), 0);
-  EXPECT_EQ(eval("1 >= 1"), 1);
+  EXPECT_EQ(eval("1+2"), (size_t)3);
+  EXPECT_EQ(eval("1-2"), (size_t)-1);
+  EXPECT_EQ(eval("0*10"), (size_t)0);
+  EXPECT_EQ(eval("1 << 2"), (size_t)4);
+  EXPECT_EQ(eval("4 >> 1"), (size_t)2);
+  EXPECT_EQ(eval("2 ** 3"), (size_t)8);
+  EXPECT_EQ(eval("2 == 3"), (size_t)0);
+  EXPECT_EQ(eval("3 != 3"), (size_t)0);
+  EXPECT_EQ(eval("11 % 2"), (size_t)1);
+  EXPECT_EQ(eval("6 / 3"), (size_t)2);
+  EXPECT_EQ(eval("1 | 2"), (size_t)3);
+  EXPECT_EQ(eval("1 & 2 & 0"), (size_t)0);
+  EXPECT_EQ(eval("1 < 1"), (size_t)0);
+  EXPECT_EQ(eval("1 <= 1"), (size_t)1);
+  EXPECT_EQ(eval("1 > 1"), (size_t)0);
+  EXPECT_EQ(eval("1 >= 1"), (size_t)1);
 
-  EXPECT_EQ(eval("1+(2)"), 3);
-  EXPECT_EQ(eval("1+(2)"), 3);
-  EXPECT_EQ(eval("(1+(2))"), 3);
-  EXPECT_EQ(eval("(((1)))+(2)"), 3);
-  EXPECT_EQ(eval("(0) + (1+(2))"), 3);
+  EXPECT_EQ(eval("1+(2)"), (size_t)3);
+  EXPECT_EQ(eval("1+(2)"), (size_t)3);
+  EXPECT_EQ(eval("(1+(2))"), (size_t)3);
+  EXPECT_EQ(eval("(((1)))+(2)"), (size_t)3);
+  EXPECT_EQ(eval("(0) + (1+(2))"), (size_t)3);
+
+  EXPECT_EQ(eval("(1+2)*4"), (size_t)12);
+  EXPECT_EQ(eval("1+2*4"), (size_t)9);
+  EXPECT_EQ(eval("1+(2*4)"), (size_t)9);
+  EXPECT_EQ(eval("4*(1+2)"), (size_t)12);
+  EXPECT_EQ(eval("4*1+2"), (size_t)6);
+  EXPECT_EQ(eval("(2*4)+1"), (size_t)9);
+
+  EXPECT_EQ(eval("(5 > 3)*10"), (size_t)10);
+  EXPECT_EQ(eval("(5 < 3)*10"), (size_t)0);
 }
 
 TEST_F(ExprTest, Variables) {
@@ -84,12 +94,12 @@ TEST_F(ExprTest, Variables) {
   [](const std::string& a) {
     return a == "a" ? 10 : 0;
   };
-  EXPECT_EQ(eval("a", v, e), 10);
-  EXPECT_EQ(eval("b", v, e), 0);
-  EXPECT_EQ(eval("a+b", v, e), 10);
-  EXPECT_EQ(eval("a + b", v, e), 10);
-  EXPECT_EQ(eval("a +  b   ", v, e), 10);
-  EXPECT_EQ(eval("a ** b", v, e), 1);
+  EXPECT_EQ(eval("a", v, e), (size_t)10);
+  EXPECT_EQ(eval("b", v, e), (size_t)0);
+  EXPECT_EQ(eval("a+b", v, e), (size_t)10);
+  EXPECT_EQ(eval("a + b", v, e), (size_t)10);
+  EXPECT_EQ(eval("a +  b   ", v, e), (size_t)10);
+  EXPECT_EQ(eval("a ** b", v, e), (size_t)1);
   eval("c", v, e, false);
   eval("=", v, e, false);
   eval("++", v, e, false);
