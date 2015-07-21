@@ -20,9 +20,13 @@
 
 namespace stoke {
 
-class LocalSwapTransform : Transform {
+class LocalSwapTransform : public Transform {
 
 public:
+
+  std::string get_name() const {
+    return "Local Swap";
+  }
 
   LocalSwapTransform(TransformPools& pools) : Transform(pools) { }
 
@@ -33,7 +37,7 @@ public:
 
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
-  void undo(Cfg& cfg, TransformInfo& transform_info) const;
+  void undo(Cfg& cfg, const TransformInfo& transform_info) const;
 
 protected:
 

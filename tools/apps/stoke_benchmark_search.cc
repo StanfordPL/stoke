@@ -20,12 +20,11 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "tools/args/benchmark.inc"
-#include "tools/args/move.inc"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
-#include "tools/gadgets/transforms.h"
 #include "tools/gadgets/transform_pools.h"
+#include "tools/gadgets/weighted_transform.h"
 
 using namespace cpputil;
 using namespace std;
@@ -41,13 +40,13 @@ int main(int argc, char** argv) {
   FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns, false);
   TransformPoolsGadget transform_pools(target, aux_fxns, seed);
-  TransformsGadget tforms(transform_pools, seed);
+  WeightedTransformGadget transform(transform_pools, seed);
 
   Console::msg() << "Transforms::modify()..." << endl;
 
   const auto start = steady_clock::now();
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
-    tforms.modify(target, move_arg);
+    transform(target);
   }
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto mps = benchmark_itr_arg / dur.count();

@@ -26,6 +26,9 @@ public:
 
   Transform(TransformPools& pools) : pools_(pools) {}
 
+  /** Returns a name for this transform. */
+  virtual std::string get_name() const = 0;
+
   /** Attempt to transform the Cfg.  The 'TransformInfo'
     will return success/failure, and also metadata to undo
     the transformation if needed.  */
@@ -33,7 +36,12 @@ public:
 
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
-  virtual void undo(Cfg& cfg, TransformInfo& transform_info) const = 0;
+  virtual void undo(Cfg& cfg, const TransformInfo& transform_info) const = 0;
+
+  /** Set a seed for the random number generator. */
+  void set_seed(std::default_random_engine::result_type seed) {
+    gen_.seed(seed);
+  }
 
 protected:
 

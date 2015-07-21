@@ -20,9 +20,13 @@
 
 namespace stoke {
 
-class OpcodeTransform : Transform {
+class OpcodeTransform : public Transform {
 
 public:
+
+  std::string get_name() const {
+    return "Opcode";
+  }
 
   OpcodeTransform(TransformPools& pools) : Transform(pools) { }
 
@@ -33,7 +37,7 @@ public:
 
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
-  void undo(Cfg& cfg, TransformInfo& transform_info) const;
+  void undo(Cfg& cfg, const TransformInfo& transform_info) const;
 
 protected:
 

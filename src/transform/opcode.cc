@@ -64,7 +64,7 @@ TransformInfo OpcodeTransform::operator()(Cfg& cfg) {
   return ti;
 }
 
-void OpcodeTransform::undo(Cfg& cfg, TransformInfo& ti) const {
+void OpcodeTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
   cfg.recompute_defs();
 
