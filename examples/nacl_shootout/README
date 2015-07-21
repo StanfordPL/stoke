@@ -1,0 +1,55 @@
+
+To make these experiments repeatable, we'll organize directories as follows:
+
+=== PERMANENT ===
+
+Makefile
+  - testcase: generates all testcases needed for all components
+  - search: runs stoke_search, possibly multiple times if synthesis is needed
+  - replace: runs stoke_replace to copy the new code into a binary
+  - deploy: runs 'replace' and copies the new binary into the NaCl folder
+  - bench: (not yet implemented) runs the binary and measures performance
+  - clean: removes all files that we can (except the ones below)
+
+original.s
+  - a copy of the original code
+
+target.s
+  - a copy of the code for search
+  - may need to be fixed to work-around parsing bugs
+  - manually transformed if working from a non-NaCl toolchain
+  - fix any rip offsets in the header
+
+search.conf
+  - all the config required to do the search
+
+binary and/or binary.o
+  - the original binary with the code to optimize
+
+results/
+  - any saved results from past runs
+
+.gitignore
+  - to hide all the stuff that should be from git.
+
+=== TEMPORARY ===
+
+optbin
+  - the optimized binary
+
+result.s
+  - the fully optimized code produced by the search
+
+testcases
+  - all testcases generated
+
+extract/
+  - the extracted source from the binaries
+  - git ignore'd
+
+debug/
+  - any temporary stuff used in debugging
+  - git ignore'd
+
+
+
