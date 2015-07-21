@@ -67,30 +67,6 @@ cpputil::ValueArg<size_t>& extension_mass_arg =
   .description("Extension move proposal mass")
   .default_val(0);
 
-cpputil::ValueArg<size_t>& timeout_itr_arg =
-  cpputil::ValueArg<size_t>::create("timeout")
-  .alternate("timeout_itr")
-  .usage("<int>")
-  .description("Number of proposals to execute before giving up")
-  .default_val(1000000000);
-
-auto& timeout_list_arg =
-  cpputil::ValueArg<std::vector<size_t>>::create("timeout_list")
-  .usage("{ <int> <int> ... }")
-  .description("Number of proposals to execute per round (requires --timeout_action list)")
-.default_val({
-  10000,10000,10000,10000,10000,10000,10000,
-  100000,100000,100000,
-  1000000,
-});
-
-cpputil::ValueArg<size_t>& timeout_sec_arg =
-  cpputil::ValueArg<size_t>::create("timeout_time")
-  .alternate("timeout_sec")
-  .usage("<int>")
-  .description("Maximum runtime (in seconds) before giving up")
-  .default_val(1800);
-
 cpputil::ValueArg<double>& beta_arg =
   cpputil::ValueArg<double>::create("beta")
   .usage("<double>")

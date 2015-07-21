@@ -39,7 +39,7 @@ Search::Search(Transforms* transforms) : transforms_(transforms) {
   set_max_instrs(16);
   set_seed(0);
   set_timeout_itr(0);
-  set_timeout_sec(0);
+  set_timeout_sec(steady_clock::duration::zero());
   set_beta(1.0);
   set_progress_callback(nullptr, nullptr);
   set_statistics_callback(nullptr, nullptr);
@@ -117,7 +117,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     if (timeout_itr_ > 0 && iterations >= timeout_itr_) {
       break;
     } else if (timeout_sec_ != steady_clock::duration::zero() &&
-               duration_cast<duration<size_t>>(steady_clock::now() - start) >= timeout_sec_) {
+               duration_cast<duration<double>>(steady_clock::now() - start) >= timeout_sec_) {
       break;
     }
 
