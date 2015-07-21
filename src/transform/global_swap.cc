@@ -60,7 +60,7 @@ TransformInfo GlobalSwapTransform::operator()(Cfg& cfg) {
 
 }
 
-void GlobalSwapTransform::undo(Cfg& cfg, TransformInfo& ti) const {
+void GlobalSwapTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   cfg.get_function().swap(ti.undo_index[0], ti.undo_index[1]);
   cfg.recompute_defs();
 

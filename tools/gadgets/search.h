@@ -18,26 +18,17 @@
 #include <random>
 
 #include "src/search/search.h"
-#include "src/transform/move.h"
-#include "src/transform/transforms.h"
+#include "src/transform/transform.h"
 #include "tools/args/search.inc"
 
 namespace stoke {
 
 class SearchGadget : public Search {
 public:
-  SearchGadget(Transforms* tforms, std::default_random_engine::result_type seed) :
-    Search(tforms) {
+  SearchGadget(Transform* transform, std::default_random_engine::result_type seed) :
+    Search(transform) {
     set_seed(seed);
-    set_max_instrs(max_instrs_arg);
     set_beta(beta_arg);
-    set_mass(Move::OPCODE, opcode_mass_arg);
-    set_mass(Move::OPERAND, operand_mass_arg);
-    set_mass(Move::INSTRUCTION, instruction_mass_arg);
-    set_mass(Move::LOCAL_SWAP, local_swap_mass_arg);
-    set_mass(Move::GLOBAL_SWAP, global_swap_mass_arg);
-    set_mass(Move::RESIZE, resize_mass_arg);
-    set_mass(Move::EXTENSION, extension_mass_arg);
   }
 };
 

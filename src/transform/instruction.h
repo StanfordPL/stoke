@@ -20,14 +20,15 @@
 
 namespace stoke {
 
-class InstructionTransform : Transform {
+class InstructionTransform : public Transform {
 
 public:
 
-  InstructionTransform(TransformPools& pools) : Transform(pools) {
-    //std::cout << "&pools in InstructionTransform(): " << &pools << std::endl;
-    //std::cout << "&pools_ in InstructionTransform(): " << &pools << std::endl;
+  std::string get_name() const {
+    return "Instruction";
   }
+
+  InstructionTransform(TransformPools& pools) : Transform(pools) { }
 
   /** Attempt to transform the Cfg.  The 'TransformInfo'
     will return success/failure, and also metadata to undo
@@ -36,7 +37,7 @@ public:
 
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
-  void undo(Cfg& cfg, TransformInfo& transform_info) const;
+  void undo(Cfg& cfg, const TransformInfo& transform_info) const;
 
 protected:
 

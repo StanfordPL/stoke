@@ -24,7 +24,6 @@ namespace stoke {
 TransformInfo InstructionTransform::operator()(Cfg& cfg) {
 
   TransformInfo ti;
-  ti.move_type = Move::INSTRUCTION;
   ti.success = false;
 
   // Grab the index of an old instruction
@@ -96,7 +95,7 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
   return ti;
 }
 
-void InstructionTransform::undo(Cfg& cfg, TransformInfo& ti) const {
+void InstructionTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
   cfg.recompute_defs();

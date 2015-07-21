@@ -24,8 +24,7 @@
 #include "src/search/search_state.h"
 #include "src/search/statistics.h"
 #include "src/search/statistics_callback.h"
-#include "src/transform/move.h"
-#include "src/transform/transforms.h"
+#include "src/transform/transform.h"
 #include "src/tunit/tunit.h"
 
 namespace stoke {
@@ -33,16 +32,11 @@ namespace stoke {
 class Search {
 public:
   /** Create a new search from a transform helper. */
-  Search(Transforms* transforms);
+  Search(Transform* transform);
 
   /** Set the random search seed. */
   Search& set_seed(std::default_random_engine::result_type seed) {
     gen_.seed(seed);
-    return *this;
-  }
-  /** Set the maximum number of instructions. */
-  Search& set_max_instrs(size_t mi) {
-    max_instrs_ = mi;
     return *this;
   }
   /** Set the maximum number of proposals to perform before giving up. */
@@ -60,8 +54,6 @@ public:
     beta_ = beta;
     return *this;
   }
-  /** Set the proposal mass for a transformation type. */
-  Search& set_mass(Move move, size_t mass);
   /** Set progress callback function. */
   Search& set_progress_callback(ProgressCallback cb, void* arg) {
     progress_cb_ = cb;
@@ -95,14 +87,9 @@ private:
   std::uniform_int_distribution<size_t> int_;
   /** For sampling probabilities. */
   std::uniform_real_distribution<double> prob_;
-  /** Move distribution. */
-  std::vector<Move> moves_;
 
   /** Transformation helper class. */
-  Transforms* transforms_;
-
-  /** Maximum number of rewrite instructions. */
-  size_t max_instrs_;
+  Transform* transform_;
 
   /** How many iterations should search run for? */
   size_t timeout_itr_;

@@ -16,7 +16,6 @@
 #define STOKE_SRC_TRANSFORM_TRANSFORM_INFO_H
 
 #include "src/ext/x64asm/include/x64asm.h"
-#include "src/transform/move.h"
 
 namespace stoke {
 
@@ -28,7 +27,7 @@ struct TransformInfo {
   bool success;
 
   // Records the type of move performed
-  Move move_type;
+  size_t move_type;
 
   // Records information to undo the transform
   size_t undo_index[2];

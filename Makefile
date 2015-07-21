@@ -103,7 +103,6 @@ SRC_OBJ=\
 	src/transform/pools.o \
 	src/transform/rotate.o \
 	src/transform/transform.o \
-	src/transform/transforms.o \
 	\
 	src/tunit/tunit.o \
 	\
@@ -127,7 +126,6 @@ TOOL_ARGS_OBJ=\
 	tools/args/cost.o \
 	tools/args/functions.o \
 	tools/args/in_out.o \
-	tools/args/move.o \
 	tools/args/rewrite.o \
 	tools/args/sandbox.o \
 	tools/args/search.o \
@@ -144,7 +142,6 @@ TOOL_NON_ARG_OBJ=\
 	tools/io/opc_set.o \
 	tools/io/init.o \
 	tools/io/mem_set.o \
-	tools/io/move.o \
 	tools/io/reduction.o \
 	tools/io/postprocessing.o \
 	tools/io/solver.o \
