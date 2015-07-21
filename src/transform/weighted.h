@@ -28,7 +28,7 @@ namespace stoke {
 class WeightedTransform : public Transform {
 public:
   /** Creates a new transformation helper; guaranteed to pass invariants. */
-  WeightedTransform(TransformPools& pools) : Transform(pools) { 
+  WeightedTransform(TransformPools& pools) : Transform(pools) {
   }
 
   std::string get_name() const {
