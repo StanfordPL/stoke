@@ -250,7 +250,7 @@ depend:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/astyle cpputil x64asm pintool src/ext/gtest-1.7.0/libgtest.a
+external: src/ext/astyle cpputil x64asm z3 pintool src/ext/gtest-1.7.0/libgtest.a
 	if [ ! -f .depend ]; then \
 		$(MAKE) -C . depend; \
 	fi
@@ -275,6 +275,14 @@ pintool:
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
 	$(MAKE) -C src/ext/gtest-1.7.0 -j$(NTHREADS)
+
+.PHONY: z3
+z3: src/ext/z3/build/Makefile
+	./scripts/make/submodule-init.sh src/ext/z3
+	cd src/ext/z3/build && make
+
+src/ext/z3/build/Makefile:
+	cd src/ext/z3 && python scripts/mk_make.py
 
 ##### VALIDATOR AUTOGEN
 
@@ -388,4 +396,6 @@ dist_clean: clean
 	rm -f src/ext/gtest-1.7.0/CMakeCache.txt
 	./scripts/make/submodule-reset.sh src/ext/cpputil
 	./scripts/make/submodule-reset.sh src/ext/x64asm
+	./scripts/make/submodule-reset.sh src/ext/z3
 	- $(MAKE) -C src/ext/gtest-1.7.0 clean
+	rm -rf src/ext/z3/build
