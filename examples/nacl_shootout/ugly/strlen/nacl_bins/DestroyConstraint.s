@@ -1,0 +1,134 @@
+  .text
+  .globl DestroyConstraint
+  .type DestroyConstraint, @function
+
+#! file-offset 0x67c60
+#! rip-offset  0x27c60
+#! capacity    192 bytes
+
+# Text                            #  Line  RIP      Bytes  Opcode    
+.DestroyConstraint:               #        0x27c60  0      OPC=0     
+  pushq %r14                      #  1     0x27c60  2      OPC=1861  
+  pushq %r13                      #  2     0x27c62  2      OPC=1861  
+  pushq %r12                      #  3     0x27c64  2      OPC=1861  
+  pushq %rbx                      #  4     0x27c66  1      OPC=1861  
+  subl $0x8, %esp                 #  5     0x27c67  3      OPC=2384  
+  addq %r15, %rsp                 #  6     0x27c6a  3      OPC=72    
+  movl %edi, %r13d                #  7     0x27c6d  3      OPC=1157  
+  movl %r13d, %r13d               #  8     0x27c70  3      OPC=1157  
+  cmpb $0xff, 0xc(%r15,%r13,1)    #  9     0x27c73  6      OPC=461   
+  je .L_27ca0                     #  10    0x27c79  6      OPC=893   
+  nop                             #  11    0x27c7f  1      OPC=1343  
+  nop                             #  12    0x27c80  1      OPC=1343  
+  movl %r13d, %edi                #  13    0x27c81  3      OPC=1157  
+  xchgw %ax, %ax                  #  14    0x27c84  2      OPC=3700  
+  nop                             #  15    0x27c86  1      OPC=1343  
+  nop                             #  16    0x27c87  1      OPC=1343  
+  nop                             #  17    0x27c88  1      OPC=1343  
+  nop                             #  18    0x27c89  1      OPC=1343  
+  nop                             #  19    0x27c8a  1      OPC=1343  
+  nop                             #  20    0x27c8b  1      OPC=1343  
+  nop                             #  21    0x27c8c  1      OPC=1343  
+  nop                             #  22    0x27c8d  1      OPC=1343  
+  nop                             #  23    0x27c8e  1      OPC=1343  
+  nop                             #  24    0x27c8f  1      OPC=1343  
+  nop                             #  25    0x27c90  1      OPC=1343  
+  nop                             #  26    0x27c91  1      OPC=1343  
+  nop                             #  27    0x27c92  1      OPC=1343  
+  nop                             #  28    0x27c93  1      OPC=1343  
+  nop                             #  29    0x27c94  1      OPC=1343  
+  nop                             #  30    0x27c95  1      OPC=1343  
+  nop                             #  31    0x27c96  1      OPC=1343  
+  nop                             #  32    0x27c97  1      OPC=1343  
+  nop                             #  33    0x27c98  1      OPC=1343  
+  nop                             #  34    0x27c99  1      OPC=1343  
+  nop                             #  35    0x27c9a  1      OPC=1343  
+  nop                             #  36    0x27c9b  1      OPC=1343  
+  nop                             #  37    0x27c9c  1      OPC=1343  
+  nop                             #  38    0x27c9d  1      OPC=1343  
+  nop                             #  39    0x27c9e  1      OPC=1343  
+  nop                             #  40    0x27c9f  1      OPC=1343  
+  nop                             #  41    0x27ca0  1      OPC=1343  
+  callq .IncrementalRemove        #  42    0x27ca1  5      OPC=260   
+.L_27ca0:                         #        0x27ca6  0      OPC=0     
+  movl %r13d, %r13d               #  43    0x27ca6  3      OPC=1157  
+  movsbl 0xe(%r15,%r13,1), %r12d  #  44    0x27ca9  6      OPC=1280  
+  movl %r12d, %r14d               #  45    0x27caf  3      OPC=1157  
+  subl $0x1, %r14d                #  46    0x27cb2  4      OPC=2384  
+  js .L_27d00                     #  47    0x27cb6  6      OPC=1043  
+  nop                             #  48    0x27cbc  1      OPC=1343  
+  nop                             #  49    0x27cbd  1      OPC=1343  
+  leal 0x14(%r13,%r12,4), %r12d   #  50    0x27cbe  5      OPC=1066  
+  xorl %ebx, %ebx                 #  51    0x27cc3  2      OPC=3758  
+  nop                             #  52    0x27cc5  1      OPC=1343  
+  nop                             #  53    0x27cc6  1      OPC=1343  
+  nop                             #  54    0x27cc7  1      OPC=1343  
+  nop                             #  55    0x27cc8  1      OPC=1343  
+  nop                             #  56    0x27cc9  1      OPC=1343  
+  nop                             #  57    0x27cca  1      OPC=1343  
+  nop                             #  58    0x27ccb  1      OPC=1343  
+.L_27cc0:                         #        0x27ccc  0      OPC=0     
+  movl %r12d, %eax                #  59    0x27ccc  3      OPC=1157  
+  movl %eax, %eax                 #  60    0x27ccf  2      OPC=1157  
+  movl (%r15,%rax,1), %eax        #  61    0x27cd1  4      OPC=1156  
+  movl %eax, %eax                 #  62    0x27cd5  2      OPC=1157  
+  movl 0x4(%r15,%rax,1), %edi     #  63    0x27cd7  5      OPC=1156  
+  movl %r13d, %esi                #  64    0x27cdc  3      OPC=1157  
+  nop                             #  65    0x27cdf  1      OPC=1343  
+  nop                             #  66    0x27ce0  1      OPC=1343  
+  nop                             #  67    0x27ce1  1      OPC=1343  
+  nop                             #  68    0x27ce2  1      OPC=1343  
+  nop                             #  69    0x27ce3  1      OPC=1343  
+  nop                             #  70    0x27ce4  1      OPC=1343  
+  nop                             #  71    0x27ce5  1      OPC=1343  
+  nop                             #  72    0x27ce6  1      OPC=1343  
+  callq .List_Remove              #  73    0x27ce7  5      OPC=260   
+  addl $0x1, %ebx                 #  74    0x27cec  3      OPC=65    
+  subl $0x4, %r12d                #  75    0x27cef  4      OPC=2384  
+  cmpl %ebx, %r14d                #  76    0x27cf3  3      OPC=472   
+  jns .L_27cc0                    #  77    0x27cf6  6      OPC=1005  
+  nop                             #  78    0x27cfc  1      OPC=1343  
+  nop                             #  79    0x27cfd  1      OPC=1343  
+  nop                             #  80    0x27cfe  1      OPC=1343  
+  nop                             #  81    0x27cff  1      OPC=1343  
+  nop                             #  82    0x27d00  1      OPC=1343  
+  nop                             #  83    0x27d01  1      OPC=1343  
+  nop                             #  84    0x27d02  1      OPC=1343  
+  nop                             #  85    0x27d03  1      OPC=1343  
+  nop                             #  86    0x27d04  1      OPC=1343  
+  nop                             #  87    0x27d05  1      OPC=1343  
+  nop                             #  88    0x27d06  1      OPC=1343  
+  nop                             #  89    0x27d07  1      OPC=1343  
+  nop                             #  90    0x27d08  1      OPC=1343  
+  nop                             #  91    0x27d09  1      OPC=1343  
+  nop                             #  92    0x27d0a  1      OPC=1343  
+  nop                             #  93    0x27d0b  1      OPC=1343  
+  nop                             #  94    0x27d0c  1      OPC=1343  
+  nop                             #  95    0x27d0d  1      OPC=1343  
+  nop                             #  96    0x27d0e  1      OPC=1343  
+  nop                             #  97    0x27d0f  1      OPC=1343  
+  nop                             #  98    0x27d10  1      OPC=1343  
+  nop                             #  99    0x27d11  1      OPC=1343  
+.L_27d00:                         #        0x27d12  0      OPC=0     
+  movl %r13d, %edi                #  100   0x27d12  3      OPC=1157  
+  addl $0x8, %esp                 #  101   0x27d15  3      OPC=65    
+  addq %r15, %rsp                 #  102   0x27d18  3      OPC=72    
+  popq %rbx                       #  103   0x27d1b  1      OPC=1694  
+  popq %r12                       #  104   0x27d1c  2      OPC=1694  
+  popq %r13                       #  105   0x27d1e  2      OPC=1694  
+  popq %r14                       #  106   0x27d20  2      OPC=1694  
+  jmpq .Constraint_Destroy        #  107   0x27d22  5      OPC=930   
+  nop                             #  108   0x27d27  1      OPC=1343  
+  nop                             #  109   0x27d28  1      OPC=1343  
+  nop                             #  110   0x27d29  1      OPC=1343  
+  nop                             #  111   0x27d2a  1      OPC=1343  
+  nop                             #  112   0x27d2b  1      OPC=1343  
+  nop                             #  113   0x27d2c  1      OPC=1343  
+  nop                             #  114   0x27d2d  1      OPC=1343  
+  nop                             #  115   0x27d2e  1      OPC=1343  
+  nop                             #  116   0x27d2f  1      OPC=1343  
+  nop                             #  117   0x27d30  1      OPC=1343  
+  nop                             #  118   0x27d31  1      OPC=1343  
+                                                                     
+.size DestroyConstraint, .-DestroyConstraint
+

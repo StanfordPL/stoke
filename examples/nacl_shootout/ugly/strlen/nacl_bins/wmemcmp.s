@@ -1,0 +1,134 @@
+  .text
+  .globl wmemcmp
+  .type wmemcmp, @function
+
+#! file-offset 0x183920
+#! rip-offset  0x143920
+#! capacity    160 bytes
+
+# Text                          #  Line  RIP       Bytes  Opcode    
+.wmemcmp:                       #        0x143920  0      OPC=0     
+  testl %edx, %edx              #  1     0x143920  2      OPC=2436  
+  movl %edi, %edi               #  2     0x143922  2      OPC=1157  
+  movl %esi, %esi               #  3     0x143924  2      OPC=1157  
+  je .L_143980                  #  4     0x143926  6      OPC=893   
+  nop                           #  5     0x14392c  1      OPC=1343  
+  nop                           #  6     0x14392d  1      OPC=1343  
+  movl %edi, %edi               #  7     0x14392e  2      OPC=1157  
+  movl (%r15,%rdi,1), %r8d      #  8     0x143930  4      OPC=1156  
+  movl %esi, %esi               #  9     0x143934  2      OPC=1157  
+  movl (%r15,%rsi,1), %ecx      #  10    0x143936  4      OPC=1156  
+  xorl %eax, %eax               #  11    0x14393a  2      OPC=3758  
+  cmpl %ecx, %r8d               #  12    0x14393c  3      OPC=472   
+  je .L_143960                  #  13    0x14393f  6      OPC=893   
+  nop                           #  14    0x143945  1      OPC=1343  
+  nop                           #  15    0x143946  1      OPC=1343  
+  jmpq .L_1439a0                #  16    0x143947  5      OPC=930   
+  nop                           #  17    0x14394c  1      OPC=1343  
+  nop                           #  18    0x14394d  1      OPC=1343  
+  nop                           #  19    0x14394e  1      OPC=1343  
+  nop                           #  20    0x14394f  1      OPC=1343  
+  nop                           #  21    0x143950  1      OPC=1343  
+.L_143940:                      #        0x143951  0      OPC=0     
+  addl $0x4, %edi               #  22    0x143951  3      OPC=65    
+  addl $0x4, %esi               #  23    0x143954  3      OPC=65    
+  movl %edi, %edi               #  24    0x143957  2      OPC=1157  
+  movl (%r15,%rdi,1), %r8d      #  25    0x143959  4      OPC=1156  
+  movl %esi, %esi               #  26    0x14395d  2      OPC=1157  
+  movl (%r15,%rsi,1), %ecx      #  27    0x14395f  4      OPC=1156  
+  cmpl %ecx, %r8d               #  28    0x143963  3      OPC=472   
+  jne .L_1439a0                 #  29    0x143966  6      OPC=963   
+  nop                           #  30    0x14396c  1      OPC=1343  
+  nop                           #  31    0x14396d  1      OPC=1343  
+  nop                           #  32    0x14396e  1      OPC=1343  
+  nop                           #  33    0x14396f  1      OPC=1343  
+  nop                           #  34    0x143970  1      OPC=1343  
+  nop                           #  35    0x143971  1      OPC=1343  
+  nop                           #  36    0x143972  1      OPC=1343  
+  nop                           #  37    0x143973  1      OPC=1343  
+  nop                           #  38    0x143974  1      OPC=1343  
+  nop                           #  39    0x143975  1      OPC=1343  
+  nop                           #  40    0x143976  1      OPC=1343  
+.L_143960:                      #        0x143977  0      OPC=0     
+  addl $0x1, %eax               #  41    0x143977  3      OPC=65    
+  cmpl %eax, %edx               #  42    0x14397a  2      OPC=472   
+  ja .L_143940                  #  43    0x14397c  6      OPC=863   
+  nop                           #  44    0x143982  1      OPC=1343  
+  nop                           #  45    0x143983  1      OPC=1343  
+  nop                           #  46    0x143984  1      OPC=1343  
+  nop                           #  47    0x143985  1      OPC=1343  
+  nop                           #  48    0x143986  1      OPC=1343  
+  nop                           #  49    0x143987  1      OPC=1343  
+  nop                           #  50    0x143988  1      OPC=1343  
+  nop                           #  51    0x143989  1      OPC=1343  
+  nop                           #  52    0x14398a  1      OPC=1343  
+  nop                           #  53    0x14398b  1      OPC=1343  
+  nop                           #  54    0x14398c  1      OPC=1343  
+  nop                           #  55    0x14398d  1      OPC=1343  
+  nop                           #  56    0x14398e  1      OPC=1343  
+  nop                           #  57    0x14398f  1      OPC=1343  
+  nop                           #  58    0x143990  1      OPC=1343  
+  nop                           #  59    0x143991  1      OPC=1343  
+  nop                           #  60    0x143992  1      OPC=1343  
+  nop                           #  61    0x143993  1      OPC=1343  
+  nop                           #  62    0x143994  1      OPC=1343  
+  nop                           #  63    0x143995  1      OPC=1343  
+  nop                           #  64    0x143996  1      OPC=1343  
+  nop                           #  65    0x143997  1      OPC=1343  
+  nop                           #  66    0x143998  1      OPC=1343  
+  nop                           #  67    0x143999  1      OPC=1343  
+  nop                           #  68    0x14399a  1      OPC=1343  
+  nop                           #  69    0x14399b  1      OPC=1343  
+  nop                           #  70    0x14399c  1      OPC=1343  
+.L_143980:                      #        0x14399d  0      OPC=0     
+  xorl %eax, %eax               #  71    0x14399d  2      OPC=3758  
+  popq %r11                     #  72    0x14399f  2      OPC=1694  
+  andl $0xffffffe0, %r11d       #  73    0x1439a1  7      OPC=131   
+  nop                           #  74    0x1439a8  1      OPC=1343  
+  nop                           #  75    0x1439a9  1      OPC=1343  
+  nop                           #  76    0x1439aa  1      OPC=1343  
+  nop                           #  77    0x1439ab  1      OPC=1343  
+  addq %r15, %r11               #  78    0x1439ac  3      OPC=72    
+  jmpq %r11                     #  79    0x1439af  3      OPC=928   
+  nop                           #  80    0x1439b2  1      OPC=1343  
+  nop                           #  81    0x1439b3  1      OPC=1343  
+  nop                           #  82    0x1439b4  1      OPC=1343  
+  nop                           #  83    0x1439b5  1      OPC=1343  
+  nop                           #  84    0x1439b6  1      OPC=1343  
+  nop                           #  85    0x1439b7  1      OPC=1343  
+  nop                           #  86    0x1439b8  1      OPC=1343  
+  nop                           #  87    0x1439b9  1      OPC=1343  
+  nop                           #  88    0x1439ba  1      OPC=1343  
+  nop                           #  89    0x1439bb  1      OPC=1343  
+  nop                           #  90    0x1439bc  1      OPC=1343  
+  nop                           #  91    0x1439bd  1      OPC=1343  
+  nop                           #  92    0x1439be  1      OPC=1343  
+  nop                           #  93    0x1439bf  1      OPC=1343  
+  nop                           #  94    0x1439c0  1      OPC=1343  
+  nop                           #  95    0x1439c1  1      OPC=1343  
+  nop                           #  96    0x1439c2  1      OPC=1343  
+  nop                           #  97    0x1439c3  1      OPC=1343  
+.L_1439a0:                      #        0x1439c4  0      OPC=0     
+  xorl %eax, %eax               #  98    0x1439c4  2      OPC=3758  
+  cmpl %ecx, %r8d               #  99    0x1439c6  3      OPC=472   
+  setg %al                      #  100   0x1439c9  3      OPC=2181  
+  leal -0x1(%rax,%rax,1), %eax  #  101   0x1439cc  4      OPC=1066  
+  popq %r11                     #  102   0x1439d0  2      OPC=1694  
+  andl $0xffffffe0, %r11d       #  103   0x1439d2  7      OPC=131   
+  nop                           #  104   0x1439d9  1      OPC=1343  
+  nop                           #  105   0x1439da  1      OPC=1343  
+  nop                           #  106   0x1439db  1      OPC=1343  
+  nop                           #  107   0x1439dc  1      OPC=1343  
+  addq %r15, %r11               #  108   0x1439dd  3      OPC=72    
+  jmpq %r11                     #  109   0x1439e0  3      OPC=928   
+  nop                           #  110   0x1439e3  1      OPC=1343  
+  nop                           #  111   0x1439e4  1      OPC=1343  
+  nop                           #  112   0x1439e5  1      OPC=1343  
+  nop                           #  113   0x1439e6  1      OPC=1343  
+  nop                           #  114   0x1439e7  1      OPC=1343  
+  nop                           #  115   0x1439e8  1      OPC=1343  
+  nop                           #  116   0x1439e9  1      OPC=1343  
+  nop                           #  117   0x1439ea  1      OPC=1343  
+                                                                    
+.size wmemcmp, .-wmemcmp
+

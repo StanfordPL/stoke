@@ -1,0 +1,135 @@
+  .text
+  .globl _ZNSt11__timepunctIwEC1Ej
+  .type _ZNSt11__timepunctIwEC1Ej, @function
+
+#! file-offset 0xf5e00
+#! rip-offset  0xb5e00
+#! capacity    192 bytes
+
+# Text                                                      #  Line  RIP      Bytes  Opcode    
+._ZNSt11__timepunctIwEC1Ej:                                 #        0xb5e00  0      OPC=0     
+  pushq %rbx                                                #  1     0xb5e00  1      OPC=1861  
+  xorl %eax, %eax                                           #  2     0xb5e01  2      OPC=3758  
+  movl %edi, %ebx                                           #  3     0xb5e03  2      OPC=1157  
+  subl $0x10, %esp                                          #  4     0xb5e05  3      OPC=2384  
+  addq %r15, %rsp                                           #  5     0xb5e08  3      OPC=72    
+  testl %esi, %esi                                          #  6     0xb5e0b  2      OPC=2436  
+  movl %ebx, %ebx                                           #  7     0xb5e0d  2      OPC=1157  
+  movl $0x1003c148, (%r15,%rbx,1)                           #  8     0xb5e0f  8      OPC=1135  
+  setne %al                                                 #  9     0xb5e17  3      OPC=2208  
+  nop                                                       #  10    0xb5e1a  1      OPC=1343  
+  nop                                                       #  11    0xb5e1b  1      OPC=1343  
+  nop                                                       #  12    0xb5e1c  1      OPC=1343  
+  nop                                                       #  13    0xb5e1d  1      OPC=1343  
+  nop                                                       #  14    0xb5e1e  1      OPC=1343  
+  nop                                                       #  15    0xb5e1f  1      OPC=1343  
+  movl %ebx, %ebx                                           #  16    0xb5e20  2      OPC=1157  
+  movl $0x0, 0x8(%r15,%rbx,1)                               #  17    0xb5e22  9      OPC=1135  
+  movl %ebx, %ebx                                           #  18    0xb5e2b  2      OPC=1157  
+  movl %eax, 0x4(%r15,%rbx,1)                               #  19    0xb5e2d  5      OPC=1136  
+  nop                                                       #  20    0xb5e32  1      OPC=1343  
+  nop                                                       #  21    0xb5e33  1      OPC=1343  
+  nop                                                       #  22    0xb5e34  1      OPC=1343  
+  nop                                                       #  23    0xb5e35  1      OPC=1343  
+  nop                                                       #  24    0xb5e36  1      OPC=1343  
+  nop                                                       #  25    0xb5e37  1      OPC=1343  
+  nop                                                       #  26    0xb5e38  1      OPC=1343  
+  nop                                                       #  27    0xb5e39  1      OPC=1343  
+  nop                                                       #  28    0xb5e3a  1      OPC=1343  
+  callq ._ZNSt6locale5facet13_S_get_c_nameEv                #  29    0xb5e3b  5      OPC=260   
+  movl %ebx, %ebx                                           #  30    0xb5e40  2      OPC=1157  
+  movl %eax, 0x10(%r15,%rbx,1)                              #  31    0xb5e42  5      OPC=1136  
+  xorl %esi, %esi                                           #  32    0xb5e47  2      OPC=3758  
+  movl %ebx, %edi                                           #  33    0xb5e49  2      OPC=1157  
+  nop                                                       #  34    0xb5e4b  1      OPC=1343  
+  nop                                                       #  35    0xb5e4c  1      OPC=1343  
+  nop                                                       #  36    0xb5e4d  1      OPC=1343  
+  nop                                                       #  37    0xb5e4e  1      OPC=1343  
+  nop                                                       #  38    0xb5e4f  1      OPC=1343  
+  nop                                                       #  39    0xb5e50  1      OPC=1343  
+  nop                                                       #  40    0xb5e51  1      OPC=1343  
+  nop                                                       #  41    0xb5e52  1      OPC=1343  
+  nop                                                       #  42    0xb5e53  1      OPC=1343  
+  nop                                                       #  43    0xb5e54  1      OPC=1343  
+  nop                                                       #  44    0xb5e55  1      OPC=1343  
+  nop                                                       #  45    0xb5e56  1      OPC=1343  
+  nop                                                       #  46    0xb5e57  1      OPC=1343  
+  nop                                                       #  47    0xb5e58  1      OPC=1343  
+  nop                                                       #  48    0xb5e59  1      OPC=1343  
+  nop                                                       #  49    0xb5e5a  1      OPC=1343  
+  callq ._ZNSt11__timepunctIwE23_M_initialize_timepunctEPi  #  50    0xb5e5b  5      OPC=260   
+  addl $0x10, %esp                                          #  51    0xb5e60  3      OPC=65    
+  addq %r15, %rsp                                           #  52    0xb5e63  3      OPC=72    
+  popq %rbx                                                 #  53    0xb5e66  1      OPC=1694  
+  popq %r11                                                 #  54    0xb5e67  2      OPC=1694  
+  andl $0xffffffe0, %r11d                                   #  55    0xb5e69  7      OPC=131   
+  nop                                                       #  56    0xb5e70  1      OPC=1343  
+  nop                                                       #  57    0xb5e71  1      OPC=1343  
+  nop                                                       #  58    0xb5e72  1      OPC=1343  
+  nop                                                       #  59    0xb5e73  1      OPC=1343  
+  addq %r15, %r11                                           #  60    0xb5e74  3      OPC=72    
+  jmpq %r11                                                 #  61    0xb5e77  3      OPC=928   
+  nop                                                       #  62    0xb5e7a  1      OPC=1343  
+  nop                                                       #  63    0xb5e7b  1      OPC=1343  
+  nop                                                       #  64    0xb5e7c  1      OPC=1343  
+  nop                                                       #  65    0xb5e7d  1      OPC=1343  
+  nop                                                       #  66    0xb5e7e  1      OPC=1343  
+  nop                                                       #  67    0xb5e7f  1      OPC=1343  
+  nop                                                       #  68    0xb5e80  1      OPC=1343  
+  nop                                                       #  69    0xb5e81  1      OPC=1343  
+  nop                                                       #  70    0xb5e82  1      OPC=1343  
+  nop                                                       #  71    0xb5e83  1      OPC=1343  
+  nop                                                       #  72    0xb5e84  1      OPC=1343  
+  nop                                                       #  73    0xb5e85  1      OPC=1343  
+  nop                                                       #  74    0xb5e86  1      OPC=1343  
+  movl %ebx, %edi                                           #  75    0xb5e87  2      OPC=1157  
+  movl %eax, 0x8(%rsp)                                      #  76    0xb5e89  4      OPC=1136  
+  nop                                                       #  77    0xb5e8d  1      OPC=1343  
+  nop                                                       #  78    0xb5e8e  1      OPC=1343  
+  nop                                                       #  79    0xb5e8f  1      OPC=1343  
+  nop                                                       #  80    0xb5e90  1      OPC=1343  
+  nop                                                       #  81    0xb5e91  1      OPC=1343  
+  nop                                                       #  82    0xb5e92  1      OPC=1343  
+  nop                                                       #  83    0xb5e93  1      OPC=1343  
+  nop                                                       #  84    0xb5e94  1      OPC=1343  
+  nop                                                       #  85    0xb5e95  1      OPC=1343  
+  nop                                                       #  86    0xb5e96  1      OPC=1343  
+  nop                                                       #  87    0xb5e97  1      OPC=1343  
+  nop                                                       #  88    0xb5e98  1      OPC=1343  
+  nop                                                       #  89    0xb5e99  1      OPC=1343  
+  nop                                                       #  90    0xb5e9a  1      OPC=1343  
+  nop                                                       #  91    0xb5e9b  1      OPC=1343  
+  nop                                                       #  92    0xb5e9c  1      OPC=1343  
+  nop                                                       #  93    0xb5e9d  1      OPC=1343  
+  nop                                                       #  94    0xb5e9e  1      OPC=1343  
+  nop                                                       #  95    0xb5e9f  1      OPC=1343  
+  nop                                                       #  96    0xb5ea0  1      OPC=1343  
+  nop                                                       #  97    0xb5ea1  1      OPC=1343  
+  callq ._ZNSt6locale5facetD2Ev                             #  98    0xb5ea2  5      OPC=260   
+  movl 0x8(%rsp), %eax                                      #  99    0xb5ea7  4      OPC=1156  
+  movl %eax, %edi                                           #  100   0xb5eab  2      OPC=1157  
+  nop                                                       #  101   0xb5ead  1      OPC=1343  
+  nop                                                       #  102   0xb5eae  1      OPC=1343  
+  nop                                                       #  103   0xb5eaf  1      OPC=1343  
+  nop                                                       #  104   0xb5eb0  1      OPC=1343  
+  nop                                                       #  105   0xb5eb1  1      OPC=1343  
+  nop                                                       #  106   0xb5eb2  1      OPC=1343  
+  nop                                                       #  107   0xb5eb3  1      OPC=1343  
+  nop                                                       #  108   0xb5eb4  1      OPC=1343  
+  nop                                                       #  109   0xb5eb5  1      OPC=1343  
+  nop                                                       #  110   0xb5eb6  1      OPC=1343  
+  nop                                                       #  111   0xb5eb7  1      OPC=1343  
+  nop                                                       #  112   0xb5eb8  1      OPC=1343  
+  nop                                                       #  113   0xb5eb9  1      OPC=1343  
+  nop                                                       #  114   0xb5eba  1      OPC=1343  
+  nop                                                       #  115   0xb5ebb  1      OPC=1343  
+  nop                                                       #  116   0xb5ebc  1      OPC=1343  
+  nop                                                       #  117   0xb5ebd  1      OPC=1343  
+  nop                                                       #  118   0xb5ebe  1      OPC=1343  
+  nop                                                       #  119   0xb5ebf  1      OPC=1343  
+  nop                                                       #  120   0xb5ec0  1      OPC=1343  
+  nop                                                       #  121   0xb5ec1  1      OPC=1343  
+  callq ._Unwind_Resume                                     #  122   0xb5ec2  5      OPC=260   
+                                                                                               
+.size _ZNSt11__timepunctIwEC1Ej, .-_ZNSt11__timepunctIwEC1Ej
+

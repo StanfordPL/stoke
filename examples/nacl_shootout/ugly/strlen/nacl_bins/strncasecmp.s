@@ -1,0 +1,132 @@
+  .text
+  .globl strncasecmp
+  .type strncasecmp, @function
+
+#! file-offset 0x168c00
+#! rip-offset  0x128c00
+#! capacity    192 bytes
+
+# Text                           #  Line  RIP       Bytes  Opcode    
+.strncasecmp:                    #        0x128c00  0      OPC=0     
+  xorl %eax, %eax                #  1     0x128c00  2      OPC=3758  
+  testl %edx, %edx               #  2     0x128c02  2      OPC=2436  
+  movl %edi, %edi                #  3     0x128c04  2      OPC=1157  
+  movl %esi, %esi                #  4     0x128c06  2      OPC=1157  
+  je .L_128ca0                   #  5     0x128c08  6      OPC=893   
+  movl 0xff47d4b(%rip), %r9d     #  6     0x128c0e  7      OPC=1156  
+  jmpq .L_128c40                 #  7     0x128c15  5      OPC=930   
+  nop                            #  8     0x128c1a  1      OPC=1343  
+  nop                            #  9     0x128c1b  1      OPC=1343  
+  nop                            #  10    0x128c1c  1      OPC=1343  
+  nop                            #  11    0x128c1d  1      OPC=1343  
+  nop                            #  12    0x128c1e  1      OPC=1343  
+  nop                            #  13    0x128c1f  1      OPC=1343  
+  nop                            #  14    0x128c20  1      OPC=1343  
+  nop                            #  15    0x128c21  1      OPC=1343  
+  nop                            #  16    0x128c22  1      OPC=1343  
+  nop                            #  17    0x128c23  1      OPC=1343  
+  nop                            #  18    0x128c24  1      OPC=1343  
+.L_128c20:                       #        0x128c25  0      OPC=0     
+  testl %ecx, %ecx               #  19    0x128c25  2      OPC=2436  
+  je .L_128ca0                   #  20    0x128c27  6      OPC=893   
+  nop                            #  21    0x128c2d  1      OPC=1343  
+  nop                            #  22    0x128c2e  1      OPC=1343  
+  subl $0x1, %edx                #  23    0x128c2f  3      OPC=2384  
+  je .L_128ca0                   #  24    0x128c32  6      OPC=893   
+  nop                            #  25    0x128c38  1      OPC=1343  
+  nop                            #  26    0x128c39  1      OPC=1343  
+  addl $0x1, %esi                #  27    0x128c3a  3      OPC=65    
+  nop                            #  28    0x128c3d  1      OPC=1343  
+  nop                            #  29    0x128c3e  1      OPC=1343  
+  nop                            #  30    0x128c3f  1      OPC=1343  
+  nop                            #  31    0x128c40  1      OPC=1343  
+  nop                            #  32    0x128c41  1      OPC=1343  
+  nop                            #  33    0x128c42  1      OPC=1343  
+  nop                            #  34    0x128c43  1      OPC=1343  
+  nop                            #  35    0x128c44  1      OPC=1343  
+  nop                            #  36    0x128c45  1      OPC=1343  
+  nop                            #  37    0x128c46  1      OPC=1343  
+  nop                            #  38    0x128c47  1      OPC=1343  
+  nop                            #  39    0x128c48  1      OPC=1343  
+  nop                            #  40    0x128c49  1      OPC=1343  
+  nop                            #  41    0x128c4a  1      OPC=1343  
+  nop                            #  42    0x128c4b  1      OPC=1343  
+  nop                            #  43    0x128c4c  1      OPC=1343  
+  nop                            #  44    0x128c4d  1      OPC=1343  
+  nop                            #  45    0x128c4e  1      OPC=1343  
+  nop                            #  46    0x128c4f  1      OPC=1343  
+  nop                            #  47    0x128c50  1      OPC=1343  
+.L_128c40:                       #        0x128c51  0      OPC=0     
+  movl %edi, %edi                #  48    0x128c51  2      OPC=1157  
+  movzbl (%r15,%rdi,1), %eax     #  49    0x128c53  5      OPC=1302  
+  addl $0x1, %edi                #  50    0x128c58  3      OPC=65    
+  movzbl %al, %eax               #  51    0x128c5b  3      OPC=1304  
+  leal (%rax,%r9,1), %ecx        #  52    0x128c5e  4      OPC=1066  
+  leal 0x20(%rax), %r8d          #  53    0x128c62  4      OPC=1066  
+  movl %ecx, %ecx                #  54    0x128c66  2      OPC=1157  
+  movsbl 0x1(%r15,%rcx,1), %ecx  #  55    0x128c68  6      OPC=1280  
+  andl $0x3, %ecx                #  56    0x128c6e  3      OPC=132   
+  cmpl $0x1, %ecx                #  57    0x128c71  3      OPC=470   
+  movl %esi, %esi                #  58    0x128c74  2      OPC=1157  
+  movzbl (%r15,%rsi,1), %ecx     #  59    0x128c76  5      OPC=1302  
+  cmovel %r8d, %eax              #  60    0x128c7b  4      OPC=302   
+  leal (%rcx,%r9,1), %r8d        #  61    0x128c7f  4      OPC=1066  
+  leal 0x20(%rcx), %r10d         #  62    0x128c83  4      OPC=1066  
+  movl %r8d, %r8d                #  63    0x128c87  3      OPC=1157  
+  movsbl 0x1(%r15,%r8,1), %r8d   #  64    0x128c8a  6      OPC=1280  
+  nop                            #  65    0x128c90  1      OPC=1343  
+  andl $0x3, %r8d                #  66    0x128c91  4      OPC=132   
+  cmpl $0x1, %r8d                #  67    0x128c95  4      OPC=470   
+  cmovel %r10d, %ecx             #  68    0x128c99  4      OPC=302   
+  subl %ecx, %eax                #  69    0x128c9d  2      OPC=2386  
+  je .L_128c20                   #  70    0x128c9f  6      OPC=893   
+  nop                            #  71    0x128ca5  1      OPC=1343  
+  nop                            #  72    0x128ca6  1      OPC=1343  
+  nop                            #  73    0x128ca7  1      OPC=1343  
+  nop                            #  74    0x128ca8  1      OPC=1343  
+  nop                            #  75    0x128ca9  1      OPC=1343  
+  nop                            #  76    0x128caa  1      OPC=1343  
+  nop                            #  77    0x128cab  1      OPC=1343  
+  nop                            #  78    0x128cac  1      OPC=1343  
+  nop                            #  79    0x128cad  1      OPC=1343  
+  nop                            #  80    0x128cae  1      OPC=1343  
+  nop                            #  81    0x128caf  1      OPC=1343  
+  nop                            #  82    0x128cb0  1      OPC=1343  
+  nop                            #  83    0x128cb1  1      OPC=1343  
+  nop                            #  84    0x128cb2  1      OPC=1343  
+  nop                            #  85    0x128cb3  1      OPC=1343  
+  nop                            #  86    0x128cb4  1      OPC=1343  
+  nop                            #  87    0x128cb5  1      OPC=1343  
+  nop                            #  88    0x128cb6  1      OPC=1343  
+.L_128ca0:                       #        0x128cb7  0      OPC=0     
+  popq %r11                      #  89    0x128cb7  2      OPC=1694  
+  andl $0xffffffe0, %r11d        #  90    0x128cb9  7      OPC=131   
+  nop                            #  91    0x128cc0  1      OPC=1343  
+  nop                            #  92    0x128cc1  1      OPC=1343  
+  nop                            #  93    0x128cc2  1      OPC=1343  
+  nop                            #  94    0x128cc3  1      OPC=1343  
+  addq %r15, %r11                #  95    0x128cc4  3      OPC=72    
+  jmpq %r11                      #  96    0x128cc7  3      OPC=928   
+  nop                            #  97    0x128cca  1      OPC=1343  
+  nop                            #  98    0x128ccb  1      OPC=1343  
+  nop                            #  99    0x128ccc  1      OPC=1343  
+  nop                            #  100   0x128ccd  1      OPC=1343  
+  nop                            #  101   0x128cce  1      OPC=1343  
+  nop                            #  102   0x128ccf  1      OPC=1343  
+  nop                            #  103   0x128cd0  1      OPC=1343  
+  nop                            #  104   0x128cd1  1      OPC=1343  
+  nop                            #  105   0x128cd2  1      OPC=1343  
+  nop                            #  106   0x128cd3  1      OPC=1343  
+  nop                            #  107   0x128cd4  1      OPC=1343  
+  nop                            #  108   0x128cd5  1      OPC=1343  
+  nop                            #  109   0x128cd6  1      OPC=1343  
+  nop                            #  110   0x128cd7  1      OPC=1343  
+  nop                            #  111   0x128cd8  1      OPC=1343  
+  nop                            #  112   0x128cd9  1      OPC=1343  
+  nop                            #  113   0x128cda  1      OPC=1343  
+  nop                            #  114   0x128cdb  1      OPC=1343  
+  nop                            #  115   0x128cdc  1      OPC=1343  
+  nop                            #  116   0x128cdd  1      OPC=1343  
+                                                                     
+.size strncasecmp, .-strncasecmp
+

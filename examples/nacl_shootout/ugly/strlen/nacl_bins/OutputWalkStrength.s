@@ -1,0 +1,135 @@
+  .text
+  .globl OutputWalkStrength
+  .type OutputWalkStrength, @function
+
+#! file-offset 0x665a0
+#! rip-offset  0x265a0
+#! capacity    192 bytes
+
+# Text                           #  Line  RIP      Bytes  Opcode    
+.OutputWalkStrength:             #        0x265a0  0      OPC=0     
+  movl %edi, %edi                #  1     0x265a0  2      OPC=1157  
+  movl %edi, %edi                #  2     0x265a2  2      OPC=1157  
+  movl 0x8(%r15,%rdi,1), %eax    #  3     0x265a4  5      OPC=1156  
+  movl %edi, %edi                #  4     0x265a9  2      OPC=1157  
+  movsbl 0xc(%r15,%rdi,1), %edx  #  5     0x265ab  6      OPC=1280  
+  movslq %edx, %rdx              #  6     0x265b1  3      OPC=1289  
+  leaq (%rdi,%rdx,1), %rdx       #  7     0x265b4  4      OPC=1069  
+  movl %edx, %edx                #  8     0x265b8  2      OPC=1157  
+  movsbl 0xf(%r15,%rdx,1), %esi  #  9     0x265ba  6      OPC=1280  
+  movl %edi, %edi                #  10    0x265c0  2      OPC=1157  
+  movsbl 0xd(%r15,%rdi,1), %edx  #  11    0x265c2  6      OPC=1280  
+  testl %edx, %edx               #  12    0x265c8  2      OPC=2436  
+  jle .L_26640                   #  13    0x265ca  6      OPC=919   
+  nop                            #  14    0x265d0  1      OPC=1343  
+  nop                            #  15    0x265d1  1      OPC=1343  
+  leal 0xf(%rdx,%rdi,1), %edx    #  16    0x265d2  4      OPC=1066  
+  leal 0xf(%rdi), %r8d           #  17    0x265d6  4      OPC=1066  
+  nop                            #  18    0x265da  1      OPC=1343  
+  nop                            #  19    0x265db  1      OPC=1343  
+  nop                            #  20    0x265dc  1      OPC=1343  
+  nop                            #  21    0x265dd  1      OPC=1343  
+  nop                            #  22    0x265de  1      OPC=1343  
+  nop                            #  23    0x265df  1      OPC=1343  
+  nop                            #  24    0x265e0  1      OPC=1343  
+  nop                            #  25    0x265e1  1      OPC=1343  
+  nop                            #  26    0x265e2  1      OPC=1343  
+  nop                            #  27    0x265e3  1      OPC=1343  
+  nop                            #  28    0x265e4  1      OPC=1343  
+  nop                            #  29    0x265e5  1      OPC=1343  
+.L_265e0:                        #        0x265e6  0      OPC=0     
+  leal -0x1(%rdx), %ecx          #  30    0x265e6  3      OPC=1066  
+  movl %ecx, %ecx                #  31    0x265e9  2      OPC=1157  
+  movsbl (%r15,%rcx,1), %ecx     #  32    0x265eb  5      OPC=1280  
+  cmpl %esi, %ecx                #  33    0x265f0  2      OPC=472   
+  je .L_26620                    #  34    0x265f2  6      OPC=893   
+  nop                            #  35    0x265f8  1      OPC=1343  
+  nop                            #  36    0x265f9  1      OPC=1343  
+  leal 0x10(,%rcx,4), %ecx       #  37    0x265fa  7      OPC=1066  
+  movslq %ecx, %rcx              #  38    0x26601  3      OPC=1289  
+  leaq (%rdi,%rcx,1), %rcx       #  39    0x26604  4      OPC=1069  
+  nop                            #  40    0x26608  1      OPC=1343  
+  nop                            #  41    0x26609  1      OPC=1343  
+  nop                            #  42    0x2660a  1      OPC=1343  
+  nop                            #  43    0x2660b  1      OPC=1343  
+  movl %ecx, %ecx                #  44    0x2660c  2      OPC=1157  
+  movl 0x8(%r15,%rcx,1), %ecx    #  45    0x2660e  5      OPC=1156  
+  movl %ecx, %ecx                #  46    0x26613  2      OPC=1157  
+  movl 0x10(%r15,%rcx,1), %ecx   #  47    0x26615  5      OPC=1156  
+  cmpl %ecx, %eax                #  48    0x2661a  2      OPC=472   
+  cmovbl %ecx, %eax              #  49    0x2661c  3      OPC=284   
+  nop                            #  50    0x2661f  1      OPC=1343  
+  nop                            #  51    0x26620  1      OPC=1343  
+  nop                            #  52    0x26621  1      OPC=1343  
+  nop                            #  53    0x26622  1      OPC=1343  
+  nop                            #  54    0x26623  1      OPC=1343  
+  nop                            #  55    0x26624  1      OPC=1343  
+  nop                            #  56    0x26625  1      OPC=1343  
+  nop                            #  57    0x26626  1      OPC=1343  
+  nop                            #  58    0x26627  1      OPC=1343  
+  nop                            #  59    0x26628  1      OPC=1343  
+  nop                            #  60    0x26629  1      OPC=1343  
+  nop                            #  61    0x2662a  1      OPC=1343  
+  nop                            #  62    0x2662b  1      OPC=1343  
+.L_26620:                        #        0x2662c  0      OPC=0     
+  subl $0x1, %edx                #  63    0x2662c  3      OPC=2384  
+  cmpl %r8d, %edx                #  64    0x2662f  3      OPC=472   
+  jne .L_265e0                   #  65    0x26632  6      OPC=963   
+  nop                            #  66    0x26638  1      OPC=1343  
+  nop                            #  67    0x26639  1      OPC=1343  
+  nop                            #  68    0x2663a  1      OPC=1343  
+  nop                            #  69    0x2663b  1      OPC=1343  
+  nop                            #  70    0x2663c  1      OPC=1343  
+  nop                            #  71    0x2663d  1      OPC=1343  
+  nop                            #  72    0x2663e  1      OPC=1343  
+  nop                            #  73    0x2663f  1      OPC=1343  
+  nop                            #  74    0x26640  1      OPC=1343  
+  nop                            #  75    0x26641  1      OPC=1343  
+  nop                            #  76    0x26642  1      OPC=1343  
+  nop                            #  77    0x26643  1      OPC=1343  
+  nop                            #  78    0x26644  1      OPC=1343  
+  nop                            #  79    0x26645  1      OPC=1343  
+  nop                            #  80    0x26646  1      OPC=1343  
+  nop                            #  81    0x26647  1      OPC=1343  
+  nop                            #  82    0x26648  1      OPC=1343  
+  nop                            #  83    0x26649  1      OPC=1343  
+  nop                            #  84    0x2664a  1      OPC=1343  
+  nop                            #  85    0x2664b  1      OPC=1343  
+  nop                            #  86    0x2664c  1      OPC=1343  
+  nop                            #  87    0x2664d  1      OPC=1343  
+  nop                            #  88    0x2664e  1      OPC=1343  
+  nop                            #  89    0x2664f  1      OPC=1343  
+  nop                            #  90    0x26650  1      OPC=1343  
+  nop                            #  91    0x26651  1      OPC=1343  
+.L_26640:                        #        0x26652  0      OPC=0     
+  popq %r11                      #  92    0x26652  2      OPC=1694  
+  andl $0xffffffe0, %r11d        #  93    0x26654  7      OPC=131   
+  nop                            #  94    0x2665b  1      OPC=1343  
+  nop                            #  95    0x2665c  1      OPC=1343  
+  nop                            #  96    0x2665d  1      OPC=1343  
+  nop                            #  97    0x2665e  1      OPC=1343  
+  addq %r15, %r11                #  98    0x2665f  3      OPC=72    
+  jmpq %r11                      #  99    0x26662  3      OPC=928   
+  nop                            #  100   0x26665  1      OPC=1343  
+  nop                            #  101   0x26666  1      OPC=1343  
+  nop                            #  102   0x26667  1      OPC=1343  
+  nop                            #  103   0x26668  1      OPC=1343  
+  nop                            #  104   0x26669  1      OPC=1343  
+  nop                            #  105   0x2666a  1      OPC=1343  
+  nop                            #  106   0x2666b  1      OPC=1343  
+  nop                            #  107   0x2666c  1      OPC=1343  
+  nop                            #  108   0x2666d  1      OPC=1343  
+  nop                            #  109   0x2666e  1      OPC=1343  
+  nop                            #  110   0x2666f  1      OPC=1343  
+  nop                            #  111   0x26670  1      OPC=1343  
+  nop                            #  112   0x26671  1      OPC=1343  
+  nop                            #  113   0x26672  1      OPC=1343  
+  nop                            #  114   0x26673  1      OPC=1343  
+  nop                            #  115   0x26674  1      OPC=1343  
+  nop                            #  116   0x26675  1      OPC=1343  
+  nop                            #  117   0x26676  1      OPC=1343  
+  nop                            #  118   0x26677  1      OPC=1343  
+  nop                            #  119   0x26678  1      OPC=1343  
+                                                                    
+.size OutputWalkStrength, .-OutputWalkStrength
+

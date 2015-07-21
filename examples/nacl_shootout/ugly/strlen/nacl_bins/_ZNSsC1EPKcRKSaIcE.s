@@ -1,0 +1,137 @@
+  .text
+  .globl _ZNSsC1EPKcRKSaIcE
+  .type _ZNSsC1EPKcRKSaIcE, @function
+
+#! file-offset 0xecf20
+#! rip-offset  0xacf20
+#! capacity    192 bytes
+
+# Text                                                                    #  Line  RIP      Bytes  Opcode    
+._ZNSsC1EPKcRKSaIcE:                                                      #        0xacf20  0      OPC=0     
+  movq %rbx, -0x18(%rsp)                                                  #  1     0xacf20  5      OPC=1138  
+  movl %esi, %ebx                                                         #  2     0xacf25  2      OPC=1157  
+  movq %r12, -0x10(%rsp)                                                  #  3     0xacf27  5      OPC=1138  
+  movq %r13, -0x8(%rsp)                                                   #  4     0xacf2c  5      OPC=1138  
+  subl $0x28, %esp                                                        #  5     0xacf31  3      OPC=2384  
+  addq %r15, %rsp                                                         #  6     0xacf34  3      OPC=72    
+  testq %rbx, %rbx                                                        #  7     0xacf37  3      OPC=2438  
+  movl %edi, %r12d                                                        #  8     0xacf3a  3      OPC=1157  
+  movl %edx, %r13d                                                        #  9     0xacf3d  3      OPC=1157  
+  movl $0xffffffff, %esi                                                  #  10    0xacf40  6      OPC=1155  
+  je .L_acf80                                                             #  11    0xacf46  6      OPC=893   
+  nop                                                                     #  12    0xacf4c  1      OPC=1343  
+  nop                                                                     #  13    0xacf4d  1      OPC=1343  
+  movl %ebx, %edi                                                         #  14    0xacf4e  2      OPC=1157  
+  nop                                                                     #  15    0xacf50  1      OPC=1343  
+  nop                                                                     #  16    0xacf51  1      OPC=1343  
+  nop                                                                     #  17    0xacf52  1      OPC=1343  
+  nop                                                                     #  18    0xacf53  1      OPC=1343  
+  nop                                                                     #  19    0xacf54  1      OPC=1343  
+  nop                                                                     #  20    0xacf55  1      OPC=1343  
+  nop                                                                     #  21    0xacf56  1      OPC=1343  
+  nop                                                                     #  22    0xacf57  1      OPC=1343  
+  nop                                                                     #  23    0xacf58  1      OPC=1343  
+  nop                                                                     #  24    0xacf59  1      OPC=1343  
+  nop                                                                     #  25    0xacf5a  1      OPC=1343  
+  nop                                                                     #  26    0xacf5b  1      OPC=1343  
+  nop                                                                     #  27    0xacf5c  1      OPC=1343  
+  nop                                                                     #  28    0xacf5d  1      OPC=1343  
+  nop                                                                     #  29    0xacf5e  1      OPC=1343  
+  nop                                                                     #  30    0xacf5f  1      OPC=1343  
+  nop                                                                     #  31    0xacf60  1      OPC=1343  
+  nop                                                                     #  32    0xacf61  1      OPC=1343  
+  callq .strlen                                                           #  33    0xacf62  5      OPC=260   
+  leal (%rax,%rbx,1), %esi                                                #  34    0xacf67  3      OPC=1066  
+  nop                                                                     #  35    0xacf6a  1      OPC=1343  
+  nop                                                                     #  36    0xacf6b  1      OPC=1343  
+  nop                                                                     #  37    0xacf6c  1      OPC=1343  
+  nop                                                                     #  38    0xacf6d  1      OPC=1343  
+  nop                                                                     #  39    0xacf6e  1      OPC=1343  
+  nop                                                                     #  40    0xacf6f  1      OPC=1343  
+  nop                                                                     #  41    0xacf70  1      OPC=1343  
+  nop                                                                     #  42    0xacf71  1      OPC=1343  
+  nop                                                                     #  43    0xacf72  1      OPC=1343  
+  nop                                                                     #  44    0xacf73  1      OPC=1343  
+  nop                                                                     #  45    0xacf74  1      OPC=1343  
+  nop                                                                     #  46    0xacf75  1      OPC=1343  
+  nop                                                                     #  47    0xacf76  1      OPC=1343  
+  nop                                                                     #  48    0xacf77  1      OPC=1343  
+  nop                                                                     #  49    0xacf78  1      OPC=1343  
+  nop                                                                     #  50    0xacf79  1      OPC=1343  
+  nop                                                                     #  51    0xacf7a  1      OPC=1343  
+  nop                                                                     #  52    0xacf7b  1      OPC=1343  
+  nop                                                                     #  53    0xacf7c  1      OPC=1343  
+  nop                                                                     #  54    0xacf7d  1      OPC=1343  
+  nop                                                                     #  55    0xacf7e  1      OPC=1343  
+  nop                                                                     #  56    0xacf7f  1      OPC=1343  
+  nop                                                                     #  57    0xacf80  1      OPC=1343  
+  nop                                                                     #  58    0xacf81  1      OPC=1343  
+  nop                                                                     #  59    0xacf82  1      OPC=1343  
+  nop                                                                     #  60    0xacf83  1      OPC=1343  
+  nop                                                                     #  61    0xacf84  1      OPC=1343  
+  nop                                                                     #  62    0xacf85  1      OPC=1343  
+  nop                                                                     #  63    0xacf86  1      OPC=1343  
+.L_acf80:                                                                 #        0xacf87  0      OPC=0     
+  movl %r13d, %edx                                                        #  64    0xacf87  3      OPC=1157  
+  movl %ebx, %edi                                                         #  65    0xacf8a  2      OPC=1157  
+  movb $0x0, (%rsp)                                                       #  66    0xacf8c  4      OPC=1140  
+  nop                                                                     #  67    0xacf90  1      OPC=1343  
+  nop                                                                     #  68    0xacf91  1      OPC=1343  
+  nop                                                                     #  69    0xacf92  1      OPC=1343  
+  nop                                                                     #  70    0xacf93  1      OPC=1343  
+  nop                                                                     #  71    0xacf94  1      OPC=1343  
+  nop                                                                     #  72    0xacf95  1      OPC=1343  
+  nop                                                                     #  73    0xacf96  1      OPC=1343  
+  nop                                                                     #  74    0xacf97  1      OPC=1343  
+  nop                                                                     #  75    0xacf98  1      OPC=1343  
+  nop                                                                     #  76    0xacf99  1      OPC=1343  
+  nop                                                                     #  77    0xacf9a  1      OPC=1343  
+  nop                                                                     #  78    0xacf9b  1      OPC=1343  
+  nop                                                                     #  79    0xacf9c  1      OPC=1343  
+  nop                                                                     #  80    0xacf9d  1      OPC=1343  
+  nop                                                                     #  81    0xacf9e  1      OPC=1343  
+  nop                                                                     #  82    0xacf9f  1      OPC=1343  
+  nop                                                                     #  83    0xacfa0  1      OPC=1343  
+  nop                                                                     #  84    0xacfa1  1      OPC=1343  
+  callq ._ZNSs12_S_constructIPKcEEPcT_S3_RKSaIcESt20forward_iterator_tag  #  85    0xacfa2  5      OPC=260   
+  movq 0x10(%rsp), %rbx                                                   #  86    0xacfa7  5      OPC=1161  
+  movl %r12d, %r12d                                                       #  87    0xacfac  3      OPC=1157  
+  movl %eax, (%r15,%r12,1)                                                #  88    0xacfaf  4      OPC=1136  
+  movq 0x20(%rsp), %r13                                                   #  89    0xacfb3  5      OPC=1161  
+  movq 0x18(%rsp), %r12                                                   #  90    0xacfb8  5      OPC=1161  
+  addl $0x28, %esp                                                        #  91    0xacfbd  3      OPC=65    
+  addq %r15, %rsp                                                         #  92    0xacfc0  3      OPC=72    
+  popq %r11                                                               #  93    0xacfc3  2      OPC=1694  
+  xchgw %ax, %ax                                                          #  94    0xacfc5  2      OPC=3700  
+  andl $0xffffffe0, %r11d                                                 #  95    0xacfc7  7      OPC=131   
+  nop                                                                     #  96    0xacfce  1      OPC=1343  
+  nop                                                                     #  97    0xacfcf  1      OPC=1343  
+  nop                                                                     #  98    0xacfd0  1      OPC=1343  
+  nop                                                                     #  99    0xacfd1  1      OPC=1343  
+  addq %r15, %r11                                                         #  100   0xacfd2  3      OPC=72    
+  jmpq %r11                                                               #  101   0xacfd5  3      OPC=928   
+  nop                                                                     #  102   0xacfd8  1      OPC=1343  
+  nop                                                                     #  103   0xacfd9  1      OPC=1343  
+  nop                                                                     #  104   0xacfda  1      OPC=1343  
+  nop                                                                     #  105   0xacfdb  1      OPC=1343  
+  nop                                                                     #  106   0xacfdc  1      OPC=1343  
+  nop                                                                     #  107   0xacfdd  1      OPC=1343  
+  nop                                                                     #  108   0xacfde  1      OPC=1343  
+  nop                                                                     #  109   0xacfdf  1      OPC=1343  
+  nop                                                                     #  110   0xacfe0  1      OPC=1343  
+  nop                                                                     #  111   0xacfe1  1      OPC=1343  
+  nop                                                                     #  112   0xacfe2  1      OPC=1343  
+  nop                                                                     #  113   0xacfe3  1      OPC=1343  
+  nop                                                                     #  114   0xacfe4  1      OPC=1343  
+  nop                                                                     #  115   0xacfe5  1      OPC=1343  
+  nop                                                                     #  116   0xacfe6  1      OPC=1343  
+  nop                                                                     #  117   0xacfe7  1      OPC=1343  
+  nop                                                                     #  118   0xacfe8  1      OPC=1343  
+  nop                                                                     #  119   0xacfe9  1      OPC=1343  
+  nop                                                                     #  120   0xacfea  1      OPC=1343  
+  nop                                                                     #  121   0xacfeb  1      OPC=1343  
+  nop                                                                     #  122   0xacfec  1      OPC=1343  
+  nop                                                                     #  123   0xacfed  1      OPC=1343  
+                                                                                                             
+.size _ZNSsC1EPKcRKSaIcE, .-_ZNSsC1EPKcRKSaIcE
+

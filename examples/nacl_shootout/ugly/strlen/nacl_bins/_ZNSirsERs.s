@@ -1,0 +1,129 @@
+  .text
+  .globl _ZNSirsERs
+  .type _ZNSirsERs, @function
+
+#! file-offset 0xafea0
+#! rip-offset  0x6fea0
+#! capacity    192 bytes
+
+# Text                                                                #  Line  RIP      Bytes  Opcode    
+._ZNSirsERs:                                                          #        0x6fea0  0      OPC=0     
+  pushq %r12                                                          #  1     0x6fea0  2      OPC=1861  
+  movl %esi, %r12d                                                    #  2     0x6fea2  3      OPC=1157  
+  pushq %rbx                                                          #  3     0x6fea5  1      OPC=1861  
+  movl %edi, %ebx                                                     #  4     0x6fea6  2      OPC=1157  
+  movl %ebx, %edi                                                     #  5     0x6fea8  2      OPC=1157  
+  subl $0x18, %esp                                                    #  6     0x6feaa  3      OPC=2384  
+  addq %r15, %rsp                                                     #  7     0x6fead  3      OPC=72    
+  leal 0xc(%rsp), %esi                                                #  8     0x6feb0  4      OPC=1066  
+  nop                                                                 #  9     0x6feb4  1      OPC=1343  
+  nop                                                                 #  10    0x6feb5  1      OPC=1343  
+  nop                                                                 #  11    0x6feb6  1      OPC=1343  
+  nop                                                                 #  12    0x6feb7  1      OPC=1343  
+  nop                                                                 #  13    0x6feb8  1      OPC=1343  
+  nop                                                                 #  14    0x6feb9  1      OPC=1343  
+  nop                                                                 #  15    0x6feba  1      OPC=1343  
+  callq ._ZNSi10_M_extractIlEERSiRT_                                  #  16    0x6febb  5      OPC=260   
+  movl %ebx, %ebx                                                     #  17    0x6fec0  2      OPC=1157  
+  movl (%r15,%rbx,1), %eax                                            #  18    0x6fec2  4      OPC=1156  
+  subl $0xc, %eax                                                     #  19    0x6fec6  3      OPC=2384  
+  movl %eax, %eax                                                     #  20    0x6fec9  2      OPC=1157  
+  movl (%r15,%rax,1), %edi                                            #  21    0x6fecb  4      OPC=1156  
+  addl %ebx, %edi                                                     #  22    0x6fecf  2      OPC=67    
+  movl %edi, %edi                                                     #  23    0x6fed1  2      OPC=1157  
+  movl 0x14(%r15,%rdi,1), %esi                                        #  24    0x6fed3  5      OPC=1156  
+  testb $0x5, %sil                                                    #  25    0x6fed8  4      OPC=2439  
+  nop                                                                 #  26    0x6fedc  1      OPC=1343  
+  nop                                                                 #  27    0x6fedd  1      OPC=1343  
+  nop                                                                 #  28    0x6fede  1      OPC=1343  
+  nop                                                                 #  29    0x6fedf  1      OPC=1343  
+  jne .L_6ff00                                                        #  30    0x6fee0  6      OPC=963   
+  nop                                                                 #  31    0x6fee6  1      OPC=1343  
+  nop                                                                 #  32    0x6fee7  1      OPC=1343  
+  movl 0xc(%rsp), %eax                                                #  33    0x6fee8  4      OPC=1156  
+  leal 0x8000(%rax), %edx                                             #  34    0x6feec  6      OPC=1066  
+  cmpl $0xffff, %edx                                                  #  35    0x6fef2  6      OPC=469   
+  ja .L_6ff20                                                         #  36    0x6fef8  6      OPC=863   
+  nop                                                                 #  37    0x6fefe  1      OPC=1343  
+  nop                                                                 #  38    0x6feff  1      OPC=1343  
+  movl %r12d, %r12d                                                   #  39    0x6ff00  3      OPC=1157  
+  movw %ax, (%r15,%r12,1)                                             #  40    0x6ff03  5      OPC=1133  
+  nop                                                                 #  41    0x6ff08  1      OPC=1343  
+  nop                                                                 #  42    0x6ff09  1      OPC=1343  
+  nop                                                                 #  43    0x6ff0a  1      OPC=1343  
+  nop                                                                 #  44    0x6ff0b  1      OPC=1343  
+.L_6ff00:                                                             #        0x6ff0c  0      OPC=0     
+  addl $0x18, %esp                                                    #  45    0x6ff0c  3      OPC=65    
+  addq %r15, %rsp                                                     #  46    0x6ff0f  3      OPC=72    
+  movl %ebx, %eax                                                     #  47    0x6ff12  2      OPC=1157  
+  popq %rbx                                                           #  48    0x6ff14  1      OPC=1694  
+  popq %r12                                                           #  49    0x6ff15  2      OPC=1694  
+  popq %r11                                                           #  50    0x6ff17  2      OPC=1694  
+  andl $0xffffffe0, %r11d                                             #  51    0x6ff19  7      OPC=131   
+  nop                                                                 #  52    0x6ff20  1      OPC=1343  
+  nop                                                                 #  53    0x6ff21  1      OPC=1343  
+  nop                                                                 #  54    0x6ff22  1      OPC=1343  
+  nop                                                                 #  55    0x6ff23  1      OPC=1343  
+  addq %r15, %r11                                                     #  56    0x6ff24  3      OPC=72    
+  jmpq %r11                                                           #  57    0x6ff27  3      OPC=928   
+  nop                                                                 #  58    0x6ff2a  1      OPC=1343  
+  nop                                                                 #  59    0x6ff2b  1      OPC=1343  
+  nop                                                                 #  60    0x6ff2c  1      OPC=1343  
+  nop                                                                 #  61    0x6ff2d  1      OPC=1343  
+  nop                                                                 #  62    0x6ff2e  1      OPC=1343  
+  nop                                                                 #  63    0x6ff2f  1      OPC=1343  
+  nop                                                                 #  64    0x6ff30  1      OPC=1343  
+  nop                                                                 #  65    0x6ff31  1      OPC=1343  
+  nop                                                                 #  66    0x6ff32  1      OPC=1343  
+.L_6ff20:                                                             #        0x6ff33  0      OPC=0     
+  orl $0x4, %esi                                                      #  67    0x6ff33  3      OPC=1378  
+  nop                                                                 #  68    0x6ff36  1      OPC=1343  
+  nop                                                                 #  69    0x6ff37  1      OPC=1343  
+  nop                                                                 #  70    0x6ff38  1      OPC=1343  
+  nop                                                                 #  71    0x6ff39  1      OPC=1343  
+  nop                                                                 #  72    0x6ff3a  1      OPC=1343  
+  nop                                                                 #  73    0x6ff3b  1      OPC=1343  
+  nop                                                                 #  74    0x6ff3c  1      OPC=1343  
+  nop                                                                 #  75    0x6ff3d  1      OPC=1343  
+  nop                                                                 #  76    0x6ff3e  1      OPC=1343  
+  nop                                                                 #  77    0x6ff3f  1      OPC=1343  
+  nop                                                                 #  78    0x6ff40  1      OPC=1343  
+  nop                                                                 #  79    0x6ff41  1      OPC=1343  
+  nop                                                                 #  80    0x6ff42  1      OPC=1343  
+  nop                                                                 #  81    0x6ff43  1      OPC=1343  
+  nop                                                                 #  82    0x6ff44  1      OPC=1343  
+  nop                                                                 #  83    0x6ff45  1      OPC=1343  
+  nop                                                                 #  84    0x6ff46  1      OPC=1343  
+  nop                                                                 #  85    0x6ff47  1      OPC=1343  
+  nop                                                                 #  86    0x6ff48  1      OPC=1343  
+  nop                                                                 #  87    0x6ff49  1      OPC=1343  
+  nop                                                                 #  88    0x6ff4a  1      OPC=1343  
+  nop                                                                 #  89    0x6ff4b  1      OPC=1343  
+  nop                                                                 #  90    0x6ff4c  1      OPC=1343  
+  nop                                                                 #  91    0x6ff4d  1      OPC=1343  
+  callq ._ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate  #  92    0x6ff4e  5      OPC=260   
+  addl $0x18, %esp                                                    #  93    0x6ff53  3      OPC=65    
+  addq %r15, %rsp                                                     #  94    0x6ff56  3      OPC=72    
+  movl %ebx, %eax                                                     #  95    0x6ff59  2      OPC=1157  
+  popq %rbx                                                           #  96    0x6ff5b  1      OPC=1694  
+  popq %r12                                                           #  97    0x6ff5c  2      OPC=1694  
+  popq %r11                                                           #  98    0x6ff5e  2      OPC=1694  
+  andl $0xffffffe0, %r11d                                             #  99    0x6ff60  7      OPC=131   
+  nop                                                                 #  100   0x6ff67  1      OPC=1343  
+  nop                                                                 #  101   0x6ff68  1      OPC=1343  
+  nop                                                                 #  102   0x6ff69  1      OPC=1343  
+  nop                                                                 #  103   0x6ff6a  1      OPC=1343  
+  addq %r15, %r11                                                     #  104   0x6ff6b  3      OPC=72    
+  jmpq %r11                                                           #  105   0x6ff6e  3      OPC=928   
+  nop                                                                 #  106   0x6ff71  1      OPC=1343  
+  nop                                                                 #  107   0x6ff72  1      OPC=1343  
+  nop                                                                 #  108   0x6ff73  1      OPC=1343  
+  nop                                                                 #  109   0x6ff74  1      OPC=1343  
+  nop                                                                 #  110   0x6ff75  1      OPC=1343  
+  nop                                                                 #  111   0x6ff76  1      OPC=1343  
+  nop                                                                 #  112   0x6ff77  1      OPC=1343  
+  nop                                                                 #  113   0x6ff78  1      OPC=1343  
+  nop                                                                 #  114   0x6ff79  1      OPC=1343  
+                                                                                                         
+.size _ZNSirsERs, .-_ZNSirsERs
+

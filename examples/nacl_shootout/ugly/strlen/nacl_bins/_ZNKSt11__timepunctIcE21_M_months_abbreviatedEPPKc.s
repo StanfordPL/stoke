@@ -1,0 +1,135 @@
+  .text
+  .globl _ZNKSt11__timepunctIcE21_M_months_abbreviatedEPPKc
+  .type _ZNKSt11__timepunctIcE21_M_months_abbreviatedEPPKc, @function
+
+#! file-offset 0xb7cc0
+#! rip-offset  0x77cc0
+#! capacity    288 bytes
+
+# Text                                                #  Line  RIP      Bytes  Opcode    
+._ZNKSt11__timepunctIcE21_M_months_abbreviatedEPPKc:  #        0x77cc0  0      OPC=0     
+  movl %edi, %edi                                     #  1     0x77cc0  2      OPC=1157  
+  movl %esi, %esi                                     #  2     0x77cc2  2      OPC=1157  
+  movl %edi, %edi                                     #  3     0x77cc4  2      OPC=1157  
+  movl 0x8(%r15,%rdi,1), %eax                         #  4     0x77cc6  5      OPC=1156  
+  popq %r11                                           #  5     0x77ccb  2      OPC=1694  
+  movl %eax, %eax                                     #  6     0x77ccd  2      OPC=1157  
+  movl 0x94(%r15,%rax,1), %edx                        #  7     0x77ccf  8      OPC=1156  
+  movl %esi, %esi                                     #  8     0x77cd7  2      OPC=1157  
+  movl %edx, (%r15,%rsi,1)                            #  9     0x77cd9  4      OPC=1136  
+  nop                                                 #  10    0x77cdd  1      OPC=1343  
+  nop                                                 #  11    0x77cde  1      OPC=1343  
+  nop                                                 #  12    0x77cdf  1      OPC=1343  
+  movl %eax, %eax                                     #  13    0x77ce0  2      OPC=1157  
+  movl 0x98(%r15,%rax,1), %edx                        #  14    0x77ce2  8      OPC=1156  
+  movl %esi, %esi                                     #  15    0x77cea  2      OPC=1157  
+  movl %edx, 0x4(%r15,%rsi,1)                         #  16    0x77cec  5      OPC=1136  
+  movl %eax, %eax                                     #  17    0x77cf1  2      OPC=1157  
+  movl 0x9c(%r15,%rax,1), %edx                        #  18    0x77cf3  8      OPC=1156  
+  nop                                                 #  19    0x77cfb  1      OPC=1343  
+  nop                                                 #  20    0x77cfc  1      OPC=1343  
+  nop                                                 #  21    0x77cfd  1      OPC=1343  
+  nop                                                 #  22    0x77cfe  1      OPC=1343  
+  nop                                                 #  23    0x77cff  1      OPC=1343  
+  movl %esi, %esi                                     #  24    0x77d00  2      OPC=1157  
+  movl %edx, 0x8(%r15,%rsi,1)                         #  25    0x77d02  5      OPC=1136  
+  movl %eax, %eax                                     #  26    0x77d07  2      OPC=1157  
+  movl 0xa0(%r15,%rax,1), %edx                        #  27    0x77d09  8      OPC=1156  
+  movl %esi, %esi                                     #  28    0x77d11  2      OPC=1157  
+  movl %edx, 0xc(%r15,%rsi,1)                         #  29    0x77d13  5      OPC=1136  
+  nop                                                 #  30    0x77d18  1      OPC=1343  
+  nop                                                 #  31    0x77d19  1      OPC=1343  
+  nop                                                 #  32    0x77d1a  1      OPC=1343  
+  nop                                                 #  33    0x77d1b  1      OPC=1343  
+  nop                                                 #  34    0x77d1c  1      OPC=1343  
+  nop                                                 #  35    0x77d1d  1      OPC=1343  
+  nop                                                 #  36    0x77d1e  1      OPC=1343  
+  nop                                                 #  37    0x77d1f  1      OPC=1343  
+  movl %eax, %eax                                     #  38    0x77d20  2      OPC=1157  
+  movl 0xa4(%r15,%rax,1), %edx                        #  39    0x77d22  8      OPC=1156  
+  movl %esi, %esi                                     #  40    0x77d2a  2      OPC=1157  
+  movl %edx, 0x10(%r15,%rsi,1)                        #  41    0x77d2c  5      OPC=1136  
+  movl %eax, %eax                                     #  42    0x77d31  2      OPC=1157  
+  movl 0xa8(%r15,%rax,1), %edx                        #  43    0x77d33  8      OPC=1156  
+  nop                                                 #  44    0x77d3b  1      OPC=1343  
+  nop                                                 #  45    0x77d3c  1      OPC=1343  
+  nop                                                 #  46    0x77d3d  1      OPC=1343  
+  nop                                                 #  47    0x77d3e  1      OPC=1343  
+  nop                                                 #  48    0x77d3f  1      OPC=1343  
+  movl %esi, %esi                                     #  49    0x77d40  2      OPC=1157  
+  movl %edx, 0x14(%r15,%rsi,1)                        #  50    0x77d42  5      OPC=1136  
+  movl %eax, %eax                                     #  51    0x77d47  2      OPC=1157  
+  movl 0xac(%r15,%rax,1), %edx                        #  52    0x77d49  8      OPC=1156  
+  movl %esi, %esi                                     #  53    0x77d51  2      OPC=1157  
+  movl %edx, 0x18(%r15,%rsi,1)                        #  54    0x77d53  5      OPC=1136  
+  nop                                                 #  55    0x77d58  1      OPC=1343  
+  nop                                                 #  56    0x77d59  1      OPC=1343  
+  nop                                                 #  57    0x77d5a  1      OPC=1343  
+  nop                                                 #  58    0x77d5b  1      OPC=1343  
+  nop                                                 #  59    0x77d5c  1      OPC=1343  
+  nop                                                 #  60    0x77d5d  1      OPC=1343  
+  nop                                                 #  61    0x77d5e  1      OPC=1343  
+  nop                                                 #  62    0x77d5f  1      OPC=1343  
+  movl %eax, %eax                                     #  63    0x77d60  2      OPC=1157  
+  movl 0xb0(%r15,%rax,1), %edx                        #  64    0x77d62  8      OPC=1156  
+  movl %esi, %esi                                     #  65    0x77d6a  2      OPC=1157  
+  movl %edx, 0x1c(%r15,%rsi,1)                        #  66    0x77d6c  5      OPC=1136  
+  movl %eax, %eax                                     #  67    0x77d71  2      OPC=1157  
+  movl 0xb4(%r15,%rax,1), %edx                        #  68    0x77d73  8      OPC=1156  
+  nop                                                 #  69    0x77d7b  1      OPC=1343  
+  nop                                                 #  70    0x77d7c  1      OPC=1343  
+  nop                                                 #  71    0x77d7d  1      OPC=1343  
+  nop                                                 #  72    0x77d7e  1      OPC=1343  
+  nop                                                 #  73    0x77d7f  1      OPC=1343  
+  movl %esi, %esi                                     #  74    0x77d80  2      OPC=1157  
+  movl %edx, 0x20(%r15,%rsi,1)                        #  75    0x77d82  5      OPC=1136  
+  movl %eax, %eax                                     #  76    0x77d87  2      OPC=1157  
+  movl 0xb8(%r15,%rax,1), %edx                        #  77    0x77d89  8      OPC=1156  
+  movl %esi, %esi                                     #  78    0x77d91  2      OPC=1157  
+  movl %edx, 0x24(%r15,%rsi,1)                        #  79    0x77d93  5      OPC=1136  
+  nop                                                 #  80    0x77d98  1      OPC=1343  
+  nop                                                 #  81    0x77d99  1      OPC=1343  
+  nop                                                 #  82    0x77d9a  1      OPC=1343  
+  nop                                                 #  83    0x77d9b  1      OPC=1343  
+  nop                                                 #  84    0x77d9c  1      OPC=1343  
+  nop                                                 #  85    0x77d9d  1      OPC=1343  
+  nop                                                 #  86    0x77d9e  1      OPC=1343  
+  nop                                                 #  87    0x77d9f  1      OPC=1343  
+  movl %eax, %eax                                     #  88    0x77da0  2      OPC=1157  
+  movl 0xbc(%r15,%rax,1), %edx                        #  89    0x77da2  8      OPC=1156  
+  movl %esi, %esi                                     #  90    0x77daa  2      OPC=1157  
+  movl %edx, 0x28(%r15,%rsi,1)                        #  91    0x77dac  5      OPC=1136  
+  movl %eax, %eax                                     #  92    0x77db1  2      OPC=1157  
+  movl 0xc0(%r15,%rax,1), %eax                        #  93    0x77db3  8      OPC=1156  
+  nop                                                 #  94    0x77dbb  1      OPC=1343  
+  nop                                                 #  95    0x77dbc  1      OPC=1343  
+  nop                                                 #  96    0x77dbd  1      OPC=1343  
+  nop                                                 #  97    0x77dbe  1      OPC=1343  
+  nop                                                 #  98    0x77dbf  1      OPC=1343  
+  movl %esi, %esi                                     #  99    0x77dc0  2      OPC=1157  
+  movl %eax, 0x2c(%r15,%rsi,1)                        #  100   0x77dc2  5      OPC=1136  
+  andl $0xffffffe0, %r11d                             #  101   0x77dc7  7      OPC=131   
+  nop                                                 #  102   0x77dce  1      OPC=1343  
+  nop                                                 #  103   0x77dcf  1      OPC=1343  
+  nop                                                 #  104   0x77dd0  1      OPC=1343  
+  nop                                                 #  105   0x77dd1  1      OPC=1343  
+  addq %r15, %r11                                     #  106   0x77dd2  3      OPC=72    
+  jmpq %r11                                           #  107   0x77dd5  3      OPC=928   
+  nop                                                 #  108   0x77dd8  1      OPC=1343  
+  nop                                                 #  109   0x77dd9  1      OPC=1343  
+  nop                                                 #  110   0x77dda  1      OPC=1343  
+  nop                                                 #  111   0x77ddb  1      OPC=1343  
+  nop                                                 #  112   0x77ddc  1      OPC=1343  
+  nop                                                 #  113   0x77ddd  1      OPC=1343  
+  nop                                                 #  114   0x77dde  1      OPC=1343  
+  nop                                                 #  115   0x77ddf  1      OPC=1343  
+  nop                                                 #  116   0x77de0  1      OPC=1343  
+  nop                                                 #  117   0x77de1  1      OPC=1343  
+  nop                                                 #  118   0x77de2  1      OPC=1343  
+  nop                                                 #  119   0x77de3  1      OPC=1343  
+  nop                                                 #  120   0x77de4  1      OPC=1343  
+  nop                                                 #  121   0x77de5  1      OPC=1343  
+  nop                                                 #  122   0x77de6  1      OPC=1343  
+                                                                                         
+.size _ZNKSt11__timepunctIcE21_M_months_abbreviatedEPPKc, .-_ZNKSt11__timepunctIcE21_M_months_abbreviatedEPPKc
+

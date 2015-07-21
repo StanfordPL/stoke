@@ -1,0 +1,132 @@
+  .text
+  .globl _ZNSs12_M_leak_hardEv
+  .type _ZNSs12_M_leak_hardEv, @function
+
+#! file-offset 0xee4a0
+#! rip-offset  0xae4a0
+#! capacity    160 bytes
+
+# Text                                #  Line  RIP      Bytes  Opcode    
+._ZNSs12_M_leak_hardEv:               #        0xae4a0  0      OPC=0     
+  pushq %rbx                          #  1     0xae4a0  1      OPC=1861  
+  movl %edi, %ebx                     #  2     0xae4a1  2      OPC=1157  
+  movl %ebx, %ebx                     #  3     0xae4a3  2      OPC=1157  
+  movl (%r15,%rbx,1), %eax            #  4     0xae4a5  4      OPC=1156  
+  subl $0xc, %eax                     #  5     0xae4a9  3      OPC=2384  
+  cmpl $0x10073580, %eax              #  6     0xae4ac  5      OPC=451   
+  je .L_ae520                         #  7     0xae4b1  6      OPC=893   
+  nop                                 #  8     0xae4b7  1      OPC=1343  
+  nop                                 #  9     0xae4b8  1      OPC=1343  
+  movl %eax, %eax                     #  10    0xae4b9  2      OPC=1157  
+  movl 0x8(%r15,%rax,1), %edi         #  11    0xae4bb  5      OPC=1156  
+  testl %edi, %edi                    #  12    0xae4c0  2      OPC=2436  
+  nop                                 #  13    0xae4c2  1      OPC=1343  
+  nop                                 #  14    0xae4c3  1      OPC=1343  
+  nop                                 #  15    0xae4c4  1      OPC=1343  
+  nop                                 #  16    0xae4c5  1      OPC=1343  
+  jle .L_ae500                        #  17    0xae4c6  6      OPC=919   
+  nop                                 #  18    0xae4cc  1      OPC=1343  
+  nop                                 #  19    0xae4cd  1      OPC=1343  
+  xorl %ecx, %ecx                     #  20    0xae4ce  2      OPC=3758  
+  xorl %edx, %edx                     #  21    0xae4d0  2      OPC=3758  
+  xorl %esi, %esi                     #  22    0xae4d2  2      OPC=3758  
+  movl %ebx, %edi                     #  23    0xae4d4  2      OPC=1157  
+  xchgw %ax, %ax                      #  24    0xae4d6  2      OPC=3700  
+  nop                                 #  25    0xae4d8  1      OPC=1343  
+  nop                                 #  26    0xae4d9  1      OPC=1343  
+  nop                                 #  27    0xae4da  1      OPC=1343  
+  nop                                 #  28    0xae4db  1      OPC=1343  
+  nop                                 #  29    0xae4dc  1      OPC=1343  
+  nop                                 #  30    0xae4dd  1      OPC=1343  
+  nop                                 #  31    0xae4de  1      OPC=1343  
+  nop                                 #  32    0xae4df  1      OPC=1343  
+  nop                                 #  33    0xae4e0  1      OPC=1343  
+  nop                                 #  34    0xae4e1  1      OPC=1343  
+  nop                                 #  35    0xae4e2  1      OPC=1343  
+  nop                                 #  36    0xae4e3  1      OPC=1343  
+  nop                                 #  37    0xae4e4  1      OPC=1343  
+  nop                                 #  38    0xae4e5  1      OPC=1343  
+  nop                                 #  39    0xae4e6  1      OPC=1343  
+  callq ._ZNSs9_M_mutateEjjj          #  40    0xae4e7  5      OPC=260   
+  movl %ebx, %ebx                     #  41    0xae4ec  2      OPC=1157  
+  movl (%r15,%rbx,1), %eax            #  42    0xae4ee  4      OPC=1156  
+  subl $0xc, %eax                     #  43    0xae4f2  3      OPC=2384  
+  nop                                 #  44    0xae4f5  1      OPC=1343  
+  nop                                 #  45    0xae4f6  1      OPC=1343  
+  nop                                 #  46    0xae4f7  1      OPC=1343  
+  nop                                 #  47    0xae4f8  1      OPC=1343  
+  nop                                 #  48    0xae4f9  1      OPC=1343  
+  nop                                 #  49    0xae4fa  1      OPC=1343  
+  nop                                 #  50    0xae4fb  1      OPC=1343  
+  nop                                 #  51    0xae4fc  1      OPC=1343  
+  nop                                 #  52    0xae4fd  1      OPC=1343  
+  nop                                 #  53    0xae4fe  1      OPC=1343  
+  nop                                 #  54    0xae4ff  1      OPC=1343  
+  nop                                 #  55    0xae500  1      OPC=1343  
+  nop                                 #  56    0xae501  1      OPC=1343  
+  nop                                 #  57    0xae502  1      OPC=1343  
+  nop                                 #  58    0xae503  1      OPC=1343  
+  nop                                 #  59    0xae504  1      OPC=1343  
+  nop                                 #  60    0xae505  1      OPC=1343  
+  nop                                 #  61    0xae506  1      OPC=1343  
+  nop                                 #  62    0xae507  1      OPC=1343  
+  nop                                 #  63    0xae508  1      OPC=1343  
+  nop                                 #  64    0xae509  1      OPC=1343  
+  nop                                 #  65    0xae50a  1      OPC=1343  
+  nop                                 #  66    0xae50b  1      OPC=1343  
+.L_ae500:                             #        0xae50c  0      OPC=0     
+  movl %eax, %eax                     #  67    0xae50c  2      OPC=1157  
+  movl $0xffffffff, 0x8(%r15,%rax,1)  #  68    0xae50e  9      OPC=1135  
+  nop                                 #  69    0xae517  1      OPC=1343  
+  nop                                 #  70    0xae518  1      OPC=1343  
+  nop                                 #  71    0xae519  1      OPC=1343  
+  nop                                 #  72    0xae51a  1      OPC=1343  
+  nop                                 #  73    0xae51b  1      OPC=1343  
+  nop                                 #  74    0xae51c  1      OPC=1343  
+  nop                                 #  75    0xae51d  1      OPC=1343  
+  nop                                 #  76    0xae51e  1      OPC=1343  
+  nop                                 #  77    0xae51f  1      OPC=1343  
+  nop                                 #  78    0xae520  1      OPC=1343  
+  nop                                 #  79    0xae521  1      OPC=1343  
+  nop                                 #  80    0xae522  1      OPC=1343  
+  nop                                 #  81    0xae523  1      OPC=1343  
+  nop                                 #  82    0xae524  1      OPC=1343  
+  nop                                 #  83    0xae525  1      OPC=1343  
+  nop                                 #  84    0xae526  1      OPC=1343  
+  nop                                 #  85    0xae527  1      OPC=1343  
+  nop                                 #  86    0xae528  1      OPC=1343  
+  nop                                 #  87    0xae529  1      OPC=1343  
+  nop                                 #  88    0xae52a  1      OPC=1343  
+  nop                                 #  89    0xae52b  1      OPC=1343  
+.L_ae520:                             #        0xae52c  0      OPC=0     
+  popq %rbx                           #  90    0xae52c  1      OPC=1694  
+  popq %r11                           #  91    0xae52d  2      OPC=1694  
+  andl $0xffffffe0, %r11d             #  92    0xae52f  7      OPC=131   
+  nop                                 #  93    0xae536  1      OPC=1343  
+  nop                                 #  94    0xae537  1      OPC=1343  
+  nop                                 #  95    0xae538  1      OPC=1343  
+  nop                                 #  96    0xae539  1      OPC=1343  
+  addq %r15, %r11                     #  97    0xae53a  3      OPC=72    
+  jmpq %r11                           #  98    0xae53d  3      OPC=928   
+  nop                                 #  99    0xae540  1      OPC=1343  
+  nop                                 #  100   0xae541  1      OPC=1343  
+  nop                                 #  101   0xae542  1      OPC=1343  
+  nop                                 #  102   0xae543  1      OPC=1343  
+  nop                                 #  103   0xae544  1      OPC=1343  
+  nop                                 #  104   0xae545  1      OPC=1343  
+  nop                                 #  105   0xae546  1      OPC=1343  
+  nop                                 #  106   0xae547  1      OPC=1343  
+  nop                                 #  107   0xae548  1      OPC=1343  
+  nop                                 #  108   0xae549  1      OPC=1343  
+  nop                                 #  109   0xae54a  1      OPC=1343  
+  nop                                 #  110   0xae54b  1      OPC=1343  
+  nop                                 #  111   0xae54c  1      OPC=1343  
+  nop                                 #  112   0xae54d  1      OPC=1343  
+  nop                                 #  113   0xae54e  1      OPC=1343  
+  nop                                 #  114   0xae54f  1      OPC=1343  
+  nop                                 #  115   0xae550  1      OPC=1343  
+  nop                                 #  116   0xae551  1      OPC=1343  
+  nop                                 #  117   0xae552  1      OPC=1343  
+                                                                         
+.size _ZNSs12_M_leak_hardEv, .-_ZNSs12_M_leak_hardEv
+

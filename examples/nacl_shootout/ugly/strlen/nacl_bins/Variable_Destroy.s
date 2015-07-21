@@ -1,0 +1,137 @@
+  .text
+  .globl Variable_Destroy
+  .type Variable_Destroy, @function
+
+#! file-offset 0x676c0
+#! rip-offset  0x276c0
+#! capacity    160 bytes
+
+# Text                         #  Line  RIP      Bytes  Opcode    
+.Variable_Destroy:             #        0x276c0  0      OPC=0     
+  pushq %rbx                   #  1     0x276c0  1      OPC=1861  
+  movl %edi, %ebx              #  2     0x276c1  2      OPC=1157  
+  movl %ebx, %ebx              #  3     0x276c3  2      OPC=1157  
+  movl 0x4(%r15,%rbx,1), %edi  #  4     0x276c5  5      OPC=1156  
+  testq %rdi, %rdi             #  5     0x276ca  3      OPC=2438  
+  je .L_27720                  #  6     0x276cd  6      OPC=893   
+  nop                          #  7     0x276d3  1      OPC=1343  
+  nop                          #  8     0x276d4  1      OPC=1343  
+  xchgw %ax, %ax               #  9     0x276d5  2      OPC=3700  
+  nop                          #  10    0x276d7  1      OPC=1343  
+  nop                          #  11    0x276d8  1      OPC=1343  
+  nop                          #  12    0x276d9  1      OPC=1343  
+  nop                          #  13    0x276da  1      OPC=1343  
+  nop                          #  14    0x276db  1      OPC=1343  
+  nop                          #  15    0x276dc  1      OPC=1343  
+  nop                          #  16    0x276dd  1      OPC=1343  
+  nop                          #  17    0x276de  1      OPC=1343  
+  nop                          #  18    0x276df  1      OPC=1343  
+  nop                          #  19    0x276e0  1      OPC=1343  
+  nop                          #  20    0x276e1  1      OPC=1343  
+  nop                          #  21    0x276e2  1      OPC=1343  
+  nop                          #  22    0x276e3  1      OPC=1343  
+  nop                          #  23    0x276e4  1      OPC=1343  
+  nop                          #  24    0x276e5  1      OPC=1343  
+.L_276e0:                      #        0x276e6  0      OPC=0     
+  nop                          #  25    0x276e6  1      OPC=1343  
+  nop                          #  26    0x276e7  1      OPC=1343  
+  nop                          #  27    0x276e8  1      OPC=1343  
+  nop                          #  28    0x276e9  1      OPC=1343  
+  nop                          #  29    0x276ea  1      OPC=1343  
+  nop                          #  30    0x276eb  1      OPC=1343  
+  nop                          #  31    0x276ec  1      OPC=1343  
+  nop                          #  32    0x276ed  1      OPC=1343  
+  nop                          #  33    0x276ee  1      OPC=1343  
+  nop                          #  34    0x276ef  1      OPC=1343  
+  nop                          #  35    0x276f0  1      OPC=1343  
+  nop                          #  36    0x276f1  1      OPC=1343  
+  nop                          #  37    0x276f2  1      OPC=1343  
+  nop                          #  38    0x276f3  1      OPC=1343  
+  nop                          #  39    0x276f4  1      OPC=1343  
+  nop                          #  40    0x276f5  1      OPC=1343  
+  nop                          #  41    0x276f6  1      OPC=1343  
+  nop                          #  42    0x276f7  1      OPC=1343  
+  nop                          #  43    0x276f8  1      OPC=1343  
+  nop                          #  44    0x276f9  1      OPC=1343  
+  nop                          #  45    0x276fa  1      OPC=1343  
+  nop                          #  46    0x276fb  1      OPC=1343  
+  nop                          #  47    0x276fc  1      OPC=1343  
+  nop                          #  48    0x276fd  1      OPC=1343  
+  nop                          #  49    0x276fe  1      OPC=1343  
+  nop                          #  50    0x276ff  1      OPC=1343  
+  nop                          #  51    0x27700  1      OPC=1343  
+  callq .List_Destroy          #  52    0x27701  5      OPC=260   
+  movl %ebx, %ebx              #  53    0x27706  2      OPC=1157  
+  movl $0x0, 0x4(%r15,%rbx,1)  #  54    0x27708  9      OPC=1135  
+  movl %ebx, %edi              #  55    0x27711  2      OPC=1157  
+  popq %rbx                    #  56    0x27713  1      OPC=1694  
+  jmpq .free                   #  57    0x27714  5      OPC=930   
+  nop                          #  58    0x27719  1      OPC=1343  
+  nop                          #  59    0x2771a  1      OPC=1343  
+  nop                          #  60    0x2771b  1      OPC=1343  
+  nop                          #  61    0x2771c  1      OPC=1343  
+  nop                          #  62    0x2771d  1      OPC=1343  
+  nop                          #  63    0x2771e  1      OPC=1343  
+  nop                          #  64    0x2771f  1      OPC=1343  
+  nop                          #  65    0x27720  1      OPC=1343  
+  nop                          #  66    0x27721  1      OPC=1343  
+  nop                          #  67    0x27722  1      OPC=1343  
+  nop                          #  68    0x27723  1      OPC=1343  
+  nop                          #  69    0x27724  1      OPC=1343  
+  nop                          #  70    0x27725  1      OPC=1343  
+.L_27720:                      #        0x27726  0      OPC=0     
+  movl $0x10020c38, %edi       #  71    0x27726  5      OPC=1154  
+  nop                          #  72    0x2772b  1      OPC=1343  
+  nop                          #  73    0x2772c  1      OPC=1343  
+  nop                          #  74    0x2772d  1      OPC=1343  
+  nop                          #  75    0x2772e  1      OPC=1343  
+  nop                          #  76    0x2772f  1      OPC=1343  
+  nop                          #  77    0x27730  1      OPC=1343  
+  nop                          #  78    0x27731  1      OPC=1343  
+  nop                          #  79    0x27732  1      OPC=1343  
+  nop                          #  80    0x27733  1      OPC=1343  
+  nop                          #  81    0x27734  1      OPC=1343  
+  nop                          #  82    0x27735  1      OPC=1343  
+  nop                          #  83    0x27736  1      OPC=1343  
+  nop                          #  84    0x27737  1      OPC=1343  
+  nop                          #  85    0x27738  1      OPC=1343  
+  nop                          #  86    0x27739  1      OPC=1343  
+  nop                          #  87    0x2773a  1      OPC=1343  
+  nop                          #  88    0x2773b  1      OPC=1343  
+  nop                          #  89    0x2773c  1      OPC=1343  
+  nop                          #  90    0x2773d  1      OPC=1343  
+  nop                          #  91    0x2773e  1      OPC=1343  
+  nop                          #  92    0x2773f  1      OPC=1343  
+  nop                          #  93    0x27740  1      OPC=1343  
+  callq .Error                 #  94    0x27741  5      OPC=260   
+  movl %ebx, %ebx              #  95    0x27746  2      OPC=1157  
+  movl 0x4(%r15,%rbx,1), %edi  #  96    0x27748  5      OPC=1156  
+  jmpq .L_276e0                #  97    0x2774d  5      OPC=930   
+  nop                          #  98    0x27752  1      OPC=1343  
+  nop                          #  99    0x27753  1      OPC=1343  
+  nop                          #  100   0x27754  1      OPC=1343  
+  nop                          #  101   0x27755  1      OPC=1343  
+  nop                          #  102   0x27756  1      OPC=1343  
+  nop                          #  103   0x27757  1      OPC=1343  
+  nop                          #  104   0x27758  1      OPC=1343  
+  nop                          #  105   0x27759  1      OPC=1343  
+  nop                          #  106   0x2775a  1      OPC=1343  
+  nop                          #  107   0x2775b  1      OPC=1343  
+  nop                          #  108   0x2775c  1      OPC=1343  
+  nop                          #  109   0x2775d  1      OPC=1343  
+  nop                          #  110   0x2775e  1      OPC=1343  
+  nop                          #  111   0x2775f  1      OPC=1343  
+  nop                          #  112   0x27760  1      OPC=1343  
+  nop                          #  113   0x27761  1      OPC=1343  
+  nop                          #  114   0x27762  1      OPC=1343  
+  nop                          #  115   0x27763  1      OPC=1343  
+  nop                          #  116   0x27764  1      OPC=1343  
+  nop                          #  117   0x27765  1      OPC=1343  
+  nop                          #  118   0x27766  1      OPC=1343  
+  nop                          #  119   0x27767  1      OPC=1343  
+  nop                          #  120   0x27768  1      OPC=1343  
+  nop                          #  121   0x27769  1      OPC=1343  
+  nop                          #  122   0x2776a  1      OPC=1343  
+                                                                  
+.size Variable_Destroy, .-Variable_Destroy
+

@@ -1,0 +1,129 @@
+  .text
+  .globl mutex_lock
+  .type mutex_lock, @function
+
+#! file-offset 0x6cf40
+#! rip-offset  0x2cf40
+#! capacity    224 bytes
+
+# Text                            #  Line  RIP      Bytes  Opcode    
+.mutex_lock:                      #        0x2cf40  0      OPC=0     
+  movq %rbx, -0x10(%rsp)          #  1     0x2cf40  5      OPC=1138  
+  movl %edi, %ebx                 #  2     0x2cf45  2      OPC=1157  
+  movq %r12, -0x8(%rsp)           #  3     0x2cf47  5      OPC=1138  
+  subl $0x28, %esp                #  4     0x2cf4c  3      OPC=2384  
+  addq %r15, %rsp                 #  5     0x2cf4f  3      OPC=72    
+  movl %ebx, %ebx                 #  6     0x2cf52  2      OPC=1157  
+  movl 0x4(%r15,%rbx,1), %eax     #  7     0x2cf54  5      OPC=1156  
+  movl %edx, %edx                 #  8     0x2cf59  2      OPC=1157  
+  testl %eax, %eax                #  9     0x2cf5b  2      OPC=2436  
+  nop                             #  10    0x2cf5d  1      OPC=1343  
+  nop                             #  11    0x2cf5e  1      OPC=1343  
+  nop                             #  12    0x2cf5f  1      OPC=1343  
+  jne .L_2cf80                    #  13    0x2cf60  6      OPC=963   
+  nop                             #  14    0x2cf66  1      OPC=1343  
+  nop                             #  15    0x2cf67  1      OPC=1343  
+  movl %ebx, %edi                 #  16    0x2cf68  2      OPC=1157  
+  movq 0x20(%rsp), %r12           #  17    0x2cf6a  5      OPC=1161  
+  movq 0x18(%rsp), %rbx           #  18    0x2cf6f  5      OPC=1161  
+  addl $0x28, %esp                #  19    0x2cf74  3      OPC=65    
+  addq %r15, %rsp                 #  20    0x2cf77  3      OPC=72    
+  jmpq .mutex_lock_nonrecursive   #  21    0x2cf7a  5      OPC=930   
+  nop                             #  22    0x2cf7f  1      OPC=1343  
+  nop                             #  23    0x2cf80  1      OPC=1343  
+  nop                             #  24    0x2cf81  1      OPC=1343  
+  nop                             #  25    0x2cf82  1      OPC=1343  
+  nop                             #  26    0x2cf83  1      OPC=1343  
+  nop                             #  27    0x2cf84  1      OPC=1343  
+  nop                             #  28    0x2cf85  1      OPC=1343  
+.L_2cf80:                         #        0x2cf86  0      OPC=0     
+  movq %rdx, (%rsp)               #  29    0x2cf86  4      OPC=1138  
+  movl %esi, 0x8(%rsp)            #  30    0x2cf8a  4      OPC=1136  
+  nop                             #  31    0x2cf8e  1      OPC=1343  
+  nop                             #  32    0x2cf8f  1      OPC=1343  
+  nop                             #  33    0x2cf90  1      OPC=1343  
+  nop                             #  34    0x2cf91  1      OPC=1343  
+  nop                             #  35    0x2cf92  1      OPC=1343  
+  nop                             #  36    0x2cf93  1      OPC=1343  
+  nop                             #  37    0x2cf94  1      OPC=1343  
+  nop                             #  38    0x2cf95  1      OPC=1343  
+  nop                             #  39    0x2cf96  1      OPC=1343  
+  nop                             #  40    0x2cf97  1      OPC=1343  
+  nop                             #  41    0x2cf98  1      OPC=1343  
+  nop                             #  42    0x2cf99  1      OPC=1343  
+  nop                             #  43    0x2cf9a  1      OPC=1343  
+  nop                             #  44    0x2cf9b  1      OPC=1343  
+  nop                             #  45    0x2cf9c  1      OPC=1343  
+  nop                             #  46    0x2cf9d  1      OPC=1343  
+  nop                             #  47    0x2cf9e  1      OPC=1343  
+  nop                             #  48    0x2cf9f  1      OPC=1343  
+  nop                             #  49    0x2cfa0  1      OPC=1343  
+  callq .pthread_self             #  50    0x2cfa1  5      OPC=260   
+  movl %eax, %r12d                #  51    0x2cfa6  3      OPC=1157  
+  movl %ebx, %ebx                 #  52    0x2cfa9  2      OPC=1157  
+  movl 0x8(%r15,%rbx,1), %eax     #  53    0x2cfab  5      OPC=1156  
+  movq (%rsp), %rdx               #  54    0x2cfb0  4      OPC=1161  
+  movl 0x8(%rsp), %esi            #  55    0x2cfb4  4      OPC=1156  
+  cmpl %r12d, %eax                #  56    0x2cfb8  3      OPC=472   
+  je .L_2d000                     #  57    0x2cfbb  6      OPC=893   
+  nop                             #  58    0x2cfc1  1      OPC=1343  
+  nop                             #  59    0x2cfc2  1      OPC=1343  
+  movl %ebx, %edi                 #  60    0x2cfc3  2      OPC=1157  
+  xchgw %ax, %ax                  #  61    0x2cfc5  2      OPC=3700  
+  callq .mutex_lock_nonrecursive  #  62    0x2cfc7  5      OPC=260   
+  testl %eax, %eax                #  63    0x2cfcc  2      OPC=2436  
+  jne .L_2cfe0                    #  64    0x2cfce  6      OPC=963   
+  nop                             #  65    0x2cfd4  1      OPC=1343  
+  nop                             #  66    0x2cfd5  1      OPC=1343  
+  movl %ebx, %ebx                 #  67    0x2cfd6  2      OPC=1157  
+  movl %r12d, 0x8(%r15,%rbx,1)    #  68    0x2cfd8  5      OPC=1136  
+  movl %ebx, %ebx                 #  69    0x2cfdd  2      OPC=1157  
+  movl $0x1, 0xc(%r15,%rbx,1)     #  70    0x2cfdf  9      OPC=1135  
+  nop                             #  71    0x2cfe8  1      OPC=1343  
+  nop                             #  72    0x2cfe9  1      OPC=1343  
+  nop                             #  73    0x2cfea  1      OPC=1343  
+  nop                             #  74    0x2cfeb  1      OPC=1343  
+  nop                             #  75    0x2cfec  1      OPC=1343  
+  nop                             #  76    0x2cfed  1      OPC=1343  
+  nop                             #  77    0x2cfee  1      OPC=1343  
+  nop                             #  78    0x2cfef  1      OPC=1343  
+  nop                             #  79    0x2cff0  1      OPC=1343  
+  nop                             #  80    0x2cff1  1      OPC=1343  
+.L_2cfe0:                         #        0x2cff2  0      OPC=0     
+  movq 0x18(%rsp), %rbx           #  81    0x2cff2  5      OPC=1161  
+  movq 0x20(%rsp), %r12           #  82    0x2cff7  5      OPC=1161  
+  addl $0x28, %esp                #  83    0x2cffc  3      OPC=65    
+  addq %r15, %rsp                 #  84    0x2cfff  3      OPC=72    
+  popq %r11                       #  85    0x2d002  2      OPC=1694  
+  andl $0xffffffe0, %r11d         #  86    0x2d004  7      OPC=131   
+  nop                             #  87    0x2d00b  1      OPC=1343  
+  nop                             #  88    0x2d00c  1      OPC=1343  
+  nop                             #  89    0x2d00d  1      OPC=1343  
+  nop                             #  90    0x2d00e  1      OPC=1343  
+  addq %r15, %r11                 #  91    0x2d00f  3      OPC=72    
+  jmpq %r11                       #  92    0x2d012  3      OPC=928   
+  nop                             #  93    0x2d015  1      OPC=1343  
+  nop                             #  94    0x2d016  1      OPC=1343  
+  nop                             #  95    0x2d017  1      OPC=1343  
+  nop                             #  96    0x2d018  1      OPC=1343  
+.L_2d000:                         #        0x2d019  0      OPC=0     
+  movl %ebx, %ebx                 #  97    0x2d019  2      OPC=1157  
+  cmpl $0x2, 0x4(%r15,%rbx,1)     #  98    0x2d01b  6      OPC=456   
+  movl $0x23, %eax                #  99    0x2d021  5      OPC=1154  
+  je .L_2cfe0                     #  100   0x2d026  6      OPC=893   
+  nop                             #  101   0x2d02c  1      OPC=1343  
+  nop                             #  102   0x2d02d  1      OPC=1343  
+  movl %ebx, %ebx                 #  103   0x2d02e  2      OPC=1157  
+  addl $0x1, 0xc(%r15,%rbx,1)     #  104   0x2d030  6      OPC=51    
+  xorb %al, %al                   #  105   0x2d036  2      OPC=3767  
+  jmpq .L_2cfe0                   #  106   0x2d038  5      OPC=930   
+  nop                             #  107   0x2d03d  1      OPC=1343  
+  nop                             #  108   0x2d03e  1      OPC=1343  
+  nop                             #  109   0x2d03f  1      OPC=1343  
+  nop                             #  110   0x2d040  1      OPC=1343  
+  nop                             #  111   0x2d041  1      OPC=1343  
+  nop                             #  112   0x2d042  1      OPC=1343  
+  nop                             #  113   0x2d043  1      OPC=1343  
+                                                                     
+.size mutex_lock, .-mutex_lock
+

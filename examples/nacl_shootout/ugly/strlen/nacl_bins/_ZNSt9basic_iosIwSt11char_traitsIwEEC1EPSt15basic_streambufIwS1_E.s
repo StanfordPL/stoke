@@ -1,0 +1,136 @@
+  .text
+  .globl _ZNSt9basic_iosIwSt11char_traitsIwEEC1EPSt15basic_streambufIwS1_E
+  .type _ZNSt9basic_iosIwSt11char_traitsIwEEC1EPSt15basic_streambufIwS1_E, @function
+
+#! file-offset 0xa4ec0
+#! rip-offset  0x64ec0
+#! capacity    256 bytes
+
+# Text                                                                         #  Line  RIP      Bytes  Opcode    
+._ZNSt9basic_iosIwSt11char_traitsIwEEC1EPSt15basic_streambufIwS1_E:            #        0x64ec0  0      OPC=0     
+  movq %rbx, -0x10(%rsp)                                                       #  1     0x64ec0  5      OPC=1138  
+  movl %edi, %ebx                                                              #  2     0x64ec5  2      OPC=1157  
+  movq %r12, -0x8(%rsp)                                                        #  3     0x64ec7  5      OPC=1138  
+  movl %ebx, %edi                                                              #  4     0x64ecc  2      OPC=1157  
+  movl %esi, %r12d                                                             #  5     0x64ece  3      OPC=1157  
+  subl $0x18, %esp                                                             #  6     0x64ed1  3      OPC=2384  
+  addq %r15, %rsp                                                              #  7     0x64ed4  3      OPC=72    
+  nop                                                                          #  8     0x64ed7  1      OPC=1343  
+  nop                                                                          #  9     0x64ed8  1      OPC=1343  
+  nop                                                                          #  10    0x64ed9  1      OPC=1343  
+  nop                                                                          #  11    0x64eda  1      OPC=1343  
+  callq ._ZNSt8ios_baseC2Ev                                                    #  12    0x64edb  5      OPC=260   
+  movl %ebx, %ebx                                                              #  13    0x64ee0  2      OPC=1157  
+  movl $0x1003a748, (%r15,%rbx,1)                                              #  14    0x64ee2  8      OPC=1135  
+  movl %ebx, %ebx                                                              #  15    0x64eea  2      OPC=1157  
+  movl $0x0, 0x70(%r15,%rbx,1)                                                 #  16    0x64eec  9      OPC=1135  
+  movl %r12d, %esi                                                             #  17    0x64ef5  3      OPC=1157  
+  nop                                                                          #  18    0x64ef8  1      OPC=1343  
+  nop                                                                          #  19    0x64ef9  1      OPC=1343  
+  nop                                                                          #  20    0x64efa  1      OPC=1343  
+  nop                                                                          #  21    0x64efb  1      OPC=1343  
+  nop                                                                          #  22    0x64efc  1      OPC=1343  
+  nop                                                                          #  23    0x64efd  1      OPC=1343  
+  nop                                                                          #  24    0x64efe  1      OPC=1343  
+  nop                                                                          #  25    0x64eff  1      OPC=1343  
+  movl %ebx, %ebx                                                              #  26    0x64f00  2      OPC=1157  
+  movl $0x0, 0x74(%r15,%rbx,1)                                                 #  27    0x64f02  9      OPC=1135  
+  movl %ebx, %ebx                                                              #  28    0x64f0b  2      OPC=1157  
+  movb $0x0, 0x78(%r15,%rbx,1)                                                 #  29    0x64f0d  6      OPC=1140  
+  movl %ebx, %edi                                                              #  30    0x64f13  2      OPC=1157  
+  movl %ebx, %ebx                                                              #  31    0x64f15  2      OPC=1157  
+  movl $0x0, 0x7c(%r15,%rbx,1)                                                 #  32    0x64f17  9      OPC=1135  
+  movl %ebx, %ebx                                                              #  33    0x64f20  2      OPC=1157  
+  movl $0x0, 0x80(%r15,%rbx,1)                                                 #  34    0x64f22  12     OPC=1135  
+  movl %ebx, %ebx                                                              #  35    0x64f2e  2      OPC=1157  
+  movl $0x0, 0x84(%r15,%rbx,1)                                                 #  36    0x64f30  12     OPC=1135  
+  nop                                                                          #  37    0x64f3c  1      OPC=1343  
+  nop                                                                          #  38    0x64f3d  1      OPC=1343  
+  nop                                                                          #  39    0x64f3e  1      OPC=1343  
+  nop                                                                          #  40    0x64f3f  1      OPC=1343  
+  movl %ebx, %ebx                                                              #  41    0x64f40  2      OPC=1157  
+  movl $0x0, 0x88(%r15,%rbx,1)                                                 #  42    0x64f42  12     OPC=1135  
+  nop                                                                          #  43    0x64f4e  1      OPC=1343  
+  nop                                                                          #  44    0x64f4f  1      OPC=1343  
+  nop                                                                          #  45    0x64f50  1      OPC=1343  
+  nop                                                                          #  46    0x64f51  1      OPC=1343  
+  nop                                                                          #  47    0x64f52  1      OPC=1343  
+  nop                                                                          #  48    0x64f53  1      OPC=1343  
+  nop                                                                          #  49    0x64f54  1      OPC=1343  
+  nop                                                                          #  50    0x64f55  1      OPC=1343  
+  nop                                                                          #  51    0x64f56  1      OPC=1343  
+  nop                                                                          #  52    0x64f57  1      OPC=1343  
+  nop                                                                          #  53    0x64f58  1      OPC=1343  
+  nop                                                                          #  54    0x64f59  1      OPC=1343  
+  nop                                                                          #  55    0x64f5a  1      OPC=1343  
+  callq ._ZNSt9basic_iosIwSt11char_traitsIwEE4initEPSt15basic_streambufIwS1_E  #  56    0x64f5b  5      OPC=260   
+  movq 0x8(%rsp), %rbx                                                         #  57    0x64f60  5      OPC=1161  
+  movq 0x10(%rsp), %r12                                                        #  58    0x64f65  5      OPC=1161  
+  addl $0x18, %esp                                                             #  59    0x64f6a  3      OPC=65    
+  addq %r15, %rsp                                                              #  60    0x64f6d  3      OPC=72    
+  popq %r11                                                                    #  61    0x64f70  2      OPC=1694  
+  andl $0xffffffe0, %r11d                                                      #  62    0x64f72  7      OPC=131   
+  nop                                                                          #  63    0x64f79  1      OPC=1343  
+  nop                                                                          #  64    0x64f7a  1      OPC=1343  
+  nop                                                                          #  65    0x64f7b  1      OPC=1343  
+  nop                                                                          #  66    0x64f7c  1      OPC=1343  
+  addq %r15, %r11                                                              #  67    0x64f7d  3      OPC=72    
+  jmpq %r11                                                                    #  68    0x64f80  3      OPC=928   
+  nop                                                                          #  69    0x64f83  1      OPC=1343  
+  nop                                                                          #  70    0x64f84  1      OPC=1343  
+  nop                                                                          #  71    0x64f85  1      OPC=1343  
+  nop                                                                          #  72    0x64f86  1      OPC=1343  
+  movl %eax, %r12d                                                             #  73    0x64f87  3      OPC=1157  
+  movl %ebx, %edi                                                              #  74    0x64f8a  2      OPC=1157  
+  nop                                                                          #  75    0x64f8c  1      OPC=1343  
+  nop                                                                          #  76    0x64f8d  1      OPC=1343  
+  nop                                                                          #  77    0x64f8e  1      OPC=1343  
+  nop                                                                          #  78    0x64f8f  1      OPC=1343  
+  nop                                                                          #  79    0x64f90  1      OPC=1343  
+  nop                                                                          #  80    0x64f91  1      OPC=1343  
+  nop                                                                          #  81    0x64f92  1      OPC=1343  
+  nop                                                                          #  82    0x64f93  1      OPC=1343  
+  nop                                                                          #  83    0x64f94  1      OPC=1343  
+  nop                                                                          #  84    0x64f95  1      OPC=1343  
+  nop                                                                          #  85    0x64f96  1      OPC=1343  
+  nop                                                                          #  86    0x64f97  1      OPC=1343  
+  nop                                                                          #  87    0x64f98  1      OPC=1343  
+  nop                                                                          #  88    0x64f99  1      OPC=1343  
+  nop                                                                          #  89    0x64f9a  1      OPC=1343  
+  nop                                                                          #  90    0x64f9b  1      OPC=1343  
+  nop                                                                          #  91    0x64f9c  1      OPC=1343  
+  nop                                                                          #  92    0x64f9d  1      OPC=1343  
+  nop                                                                          #  93    0x64f9e  1      OPC=1343  
+  nop                                                                          #  94    0x64f9f  1      OPC=1343  
+  nop                                                                          #  95    0x64fa0  1      OPC=1343  
+  nop                                                                          #  96    0x64fa1  1      OPC=1343  
+  callq ._ZNSt8ios_baseD2Ev                                                    #  97    0x64fa2  5      OPC=260   
+  movl %r12d, %edi                                                             #  98    0x64fa7  3      OPC=1157  
+  nop                                                                          #  99    0x64faa  1      OPC=1343  
+  nop                                                                          #  100   0x64fab  1      OPC=1343  
+  nop                                                                          #  101   0x64fac  1      OPC=1343  
+  nop                                                                          #  102   0x64fad  1      OPC=1343  
+  nop                                                                          #  103   0x64fae  1      OPC=1343  
+  nop                                                                          #  104   0x64faf  1      OPC=1343  
+  nop                                                                          #  105   0x64fb0  1      OPC=1343  
+  nop                                                                          #  106   0x64fb1  1      OPC=1343  
+  nop                                                                          #  107   0x64fb2  1      OPC=1343  
+  nop                                                                          #  108   0x64fb3  1      OPC=1343  
+  nop                                                                          #  109   0x64fb4  1      OPC=1343  
+  nop                                                                          #  110   0x64fb5  1      OPC=1343  
+  nop                                                                          #  111   0x64fb6  1      OPC=1343  
+  nop                                                                          #  112   0x64fb7  1      OPC=1343  
+  nop                                                                          #  113   0x64fb8  1      OPC=1343  
+  nop                                                                          #  114   0x64fb9  1      OPC=1343  
+  nop                                                                          #  115   0x64fba  1      OPC=1343  
+  nop                                                                          #  116   0x64fbb  1      OPC=1343  
+  nop                                                                          #  117   0x64fbc  1      OPC=1343  
+  nop                                                                          #  118   0x64fbd  1      OPC=1343  
+  nop                                                                          #  119   0x64fbe  1      OPC=1343  
+  nop                                                                          #  120   0x64fbf  1      OPC=1343  
+  nop                                                                          #  121   0x64fc0  1      OPC=1343  
+  nop                                                                          #  122   0x64fc1  1      OPC=1343  
+  callq ._Unwind_Resume                                                        #  123   0x64fc2  5      OPC=260   
+                                                                                                                  
+.size _ZNSt9basic_iosIwSt11char_traitsIwEEC1EPSt15basic_streambufIwS1_E, .-_ZNSt9basic_iosIwSt11char_traitsIwEEC1EPSt15basic_streambufIwS1_E
+

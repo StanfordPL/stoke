@@ -1,0 +1,134 @@
+  .text
+  .globl __gmp_assert_fail
+  .type __gmp_assert_fail, @function
+
+#! file-offset 0x77460
+#! rip-offset  0x37460
+#! capacity    160 bytes
+
+# Text                         #  Line  RIP      Bytes  Opcode    
+.__gmp_assert_fail:            #        0x37460  0      OPC=0     
+  pushq %rbx                   #  1     0x37460  1      OPC=1861  
+  movl %edi, %edi              #  2     0x37461  2      OPC=1157  
+  movl %edx, %ebx              #  3     0x37463  2      OPC=1157  
+  nop                          #  4     0x37465  1      OPC=1343  
+  nop                          #  5     0x37466  1      OPC=1343  
+  nop                          #  6     0x37467  1      OPC=1343  
+  nop                          #  7     0x37468  1      OPC=1343  
+  nop                          #  8     0x37469  1      OPC=1343  
+  nop                          #  9     0x3746a  1      OPC=1343  
+  nop                          #  10    0x3746b  1      OPC=1343  
+  nop                          #  11    0x3746c  1      OPC=1343  
+  nop                          #  12    0x3746d  1      OPC=1343  
+  nop                          #  13    0x3746e  1      OPC=1343  
+  nop                          #  14    0x3746f  1      OPC=1343  
+  nop                          #  15    0x37470  1      OPC=1343  
+  nop                          #  16    0x37471  1      OPC=1343  
+  nop                          #  17    0x37472  1      OPC=1343  
+  nop                          #  18    0x37473  1      OPC=1343  
+  nop                          #  19    0x37474  1      OPC=1343  
+  nop                          #  20    0x37475  1      OPC=1343  
+  nop                          #  21    0x37476  1      OPC=1343  
+  nop                          #  22    0x37477  1      OPC=1343  
+  nop                          #  23    0x37478  1      OPC=1343  
+  nop                          #  24    0x37479  1      OPC=1343  
+  nop                          #  25    0x3747a  1      OPC=1343  
+  callq .__gmp_assert_header   #  26    0x3747b  5      OPC=260   
+  nop                          #  27    0x37480  1      OPC=1343  
+  nop                          #  28    0x37481  1      OPC=1343  
+  nop                          #  29    0x37482  1      OPC=1343  
+  nop                          #  30    0x37483  1      OPC=1343  
+  nop                          #  31    0x37484  1      OPC=1343  
+  nop                          #  32    0x37485  1      OPC=1343  
+  nop                          #  33    0x37486  1      OPC=1343  
+  nop                          #  34    0x37487  1      OPC=1343  
+  nop                          #  35    0x37488  1      OPC=1343  
+  nop                          #  36    0x37489  1      OPC=1343  
+  nop                          #  37    0x3748a  1      OPC=1343  
+  nop                          #  38    0x3748b  1      OPC=1343  
+  nop                          #  39    0x3748c  1      OPC=1343  
+  nop                          #  40    0x3748d  1      OPC=1343  
+  nop                          #  41    0x3748e  1      OPC=1343  
+  nop                          #  42    0x3748f  1      OPC=1343  
+  nop                          #  43    0x37490  1      OPC=1343  
+  nop                          #  44    0x37491  1      OPC=1343  
+  nop                          #  45    0x37492  1      OPC=1343  
+  nop                          #  46    0x37493  1      OPC=1343  
+  nop                          #  47    0x37494  1      OPC=1343  
+  nop                          #  48    0x37495  1      OPC=1343  
+  nop                          #  49    0x37496  1      OPC=1343  
+  nop                          #  50    0x37497  1      OPC=1343  
+  nop                          #  51    0x37498  1      OPC=1343  
+  nop                          #  52    0x37499  1      OPC=1343  
+  nop                          #  53    0x3749a  1      OPC=1343  
+  callq .__nacl_read_tp        #  54    0x3749b  5      OPC=260   
+  leaq -0x480(%rax), %rax      #  55    0x374a0  7      OPC=1069  
+  movl %ebx, %edx              #  56    0x374a7  2      OPC=1157  
+  movl $0x10039eee, %esi       #  57    0x374a9  5      OPC=1154  
+  movl %eax, %eax              #  58    0x374ae  2      OPC=1157  
+  movl (%r15,%rax,1), %eax     #  59    0x374b0  4      OPC=1156  
+  movl %eax, %eax              #  60    0x374b4  2      OPC=1157  
+  movl 0xc(%r15,%rax,1), %edi  #  61    0x374b6  5      OPC=1156  
+  xorl %eax, %eax              #  62    0x374bb  2      OPC=3758  
+  nop                          #  63    0x374bd  1      OPC=1343  
+  nop                          #  64    0x374be  1      OPC=1343  
+  nop                          #  65    0x374bf  1      OPC=1343  
+  nop                          #  66    0x374c0  1      OPC=1343  
+  nop                          #  67    0x374c1  1      OPC=1343  
+  nop                          #  68    0x374c2  1      OPC=1343  
+  nop                          #  69    0x374c3  1      OPC=1343  
+  nop                          #  70    0x374c4  1      OPC=1343  
+  nop                          #  71    0x374c5  1      OPC=1343  
+  nop                          #  72    0x374c6  1      OPC=1343  
+  nop                          #  73    0x374c7  1      OPC=1343  
+  nop                          #  74    0x374c8  1      OPC=1343  
+  nop                          #  75    0x374c9  1      OPC=1343  
+  nop                          #  76    0x374ca  1      OPC=1343  
+  nop                          #  77    0x374cb  1      OPC=1343  
+  nop                          #  78    0x374cc  1      OPC=1343  
+  nop                          #  79    0x374cd  1      OPC=1343  
+  nop                          #  80    0x374ce  1      OPC=1343  
+  nop                          #  81    0x374cf  1      OPC=1343  
+  nop                          #  82    0x374d0  1      OPC=1343  
+  nop                          #  83    0x374d1  1      OPC=1343  
+  nop                          #  84    0x374d2  1      OPC=1343  
+  nop                          #  85    0x374d3  1      OPC=1343  
+  nop                          #  86    0x374d4  1      OPC=1343  
+  nop                          #  87    0x374d5  1      OPC=1343  
+  nop                          #  88    0x374d6  1      OPC=1343  
+  nop                          #  89    0x374d7  1      OPC=1343  
+  nop                          #  90    0x374d8  1      OPC=1343  
+  nop                          #  91    0x374d9  1      OPC=1343  
+  nop                          #  92    0x374da  1      OPC=1343  
+  callq .fprintf               #  93    0x374db  5      OPC=260   
+  nop                          #  94    0x374e0  1      OPC=1343  
+  nop                          #  95    0x374e1  1      OPC=1343  
+  nop                          #  96    0x374e2  1      OPC=1343  
+  nop                          #  97    0x374e3  1      OPC=1343  
+  nop                          #  98    0x374e4  1      OPC=1343  
+  nop                          #  99    0x374e5  1      OPC=1343  
+  nop                          #  100   0x374e6  1      OPC=1343  
+  nop                          #  101   0x374e7  1      OPC=1343  
+  nop                          #  102   0x374e8  1      OPC=1343  
+  nop                          #  103   0x374e9  1      OPC=1343  
+  nop                          #  104   0x374ea  1      OPC=1343  
+  nop                          #  105   0x374eb  1      OPC=1343  
+  nop                          #  106   0x374ec  1      OPC=1343  
+  nop                          #  107   0x374ed  1      OPC=1343  
+  nop                          #  108   0x374ee  1      OPC=1343  
+  nop                          #  109   0x374ef  1      OPC=1343  
+  nop                          #  110   0x374f0  1      OPC=1343  
+  nop                          #  111   0x374f1  1      OPC=1343  
+  nop                          #  112   0x374f2  1      OPC=1343  
+  nop                          #  113   0x374f3  1      OPC=1343  
+  nop                          #  114   0x374f4  1      OPC=1343  
+  nop                          #  115   0x374f5  1      OPC=1343  
+  nop                          #  116   0x374f6  1      OPC=1343  
+  nop                          #  117   0x374f7  1      OPC=1343  
+  nop                          #  118   0x374f8  1      OPC=1343  
+  nop                          #  119   0x374f9  1      OPC=1343  
+  nop                          #  120   0x374fa  1      OPC=1343  
+  callq .abort                 #  121   0x374fb  5      OPC=260   
+                                                                  
+.size __gmp_assert_fail, .-__gmp_assert_fail
+

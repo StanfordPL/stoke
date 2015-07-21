@@ -1,0 +1,134 @@
+  .text
+  .globl lseek
+  .type lseek, @function
+
+#! file-offset 0x158140
+#! rip-offset  0x118140
+#! capacity    160 bytes
+
+# Text                        #  Line  RIP       Bytes  Opcode    
+.lseek:                       #        0x118140  0      OPC=0     
+  pushq %rbx                  #  1     0x118140  1      OPC=1861  
+  subl $0x10, %esp            #  2     0x118141  3      OPC=2384  
+  addq %r15, %rsp             #  3     0x118144  3      OPC=72    
+  movl 0xff58807(%rip), %eax  #  4     0x118147  6      OPC=1156  
+  leal 0x8(%rsp), %ecx        #  5     0x11814d  4      OPC=1066  
+  nop                         #  6     0x118151  1      OPC=1343  
+  nop                         #  7     0x118152  1      OPC=1343  
+  nop                         #  8     0x118153  1      OPC=1343  
+  nop                         #  9     0x118154  1      OPC=1343  
+  nop                         #  10    0x118155  1      OPC=1343  
+  nop                         #  11    0x118156  1      OPC=1343  
+  nop                         #  12    0x118157  1      OPC=1343  
+  andl $0xffffffe0, %eax      #  13    0x118158  6      OPC=131   
+  nop                         #  14    0x11815e  1      OPC=1343  
+  nop                         #  15    0x11815f  1      OPC=1343  
+  nop                         #  16    0x118160  1      OPC=1343  
+  addq %r15, %rax             #  17    0x118161  3      OPC=72    
+  callq %rax                  #  18    0x118164  2      OPC=258   
+  testl %eax, %eax            #  19    0x118166  2      OPC=2436  
+  movl %eax, %ebx             #  20    0x118168  2      OPC=1157  
+  jne .L_1181a0               #  21    0x11816a  6      OPC=963   
+  nop                         #  22    0x118170  1      OPC=1343  
+  nop                         #  23    0x118171  1      OPC=1343  
+  movq 0x8(%rsp), %rax        #  24    0x118172  5      OPC=1161  
+  nop                         #  25    0x118177  1      OPC=1343  
+  nop                         #  26    0x118178  1      OPC=1343  
+  nop                         #  27    0x118179  1      OPC=1343  
+  nop                         #  28    0x11817a  1      OPC=1343  
+  nop                         #  29    0x11817b  1      OPC=1343  
+  nop                         #  30    0x11817c  1      OPC=1343  
+  nop                         #  31    0x11817d  1      OPC=1343  
+  nop                         #  32    0x11817e  1      OPC=1343  
+  nop                         #  33    0x11817f  1      OPC=1343  
+  nop                         #  34    0x118180  1      OPC=1343  
+  nop                         #  35    0x118181  1      OPC=1343  
+  nop                         #  36    0x118182  1      OPC=1343  
+  nop                         #  37    0x118183  1      OPC=1343  
+  nop                         #  38    0x118184  1      OPC=1343  
+  nop                         #  39    0x118185  1      OPC=1343  
+  nop                         #  40    0x118186  1      OPC=1343  
+  nop                         #  41    0x118187  1      OPC=1343  
+  nop                         #  42    0x118188  1      OPC=1343  
+  nop                         #  43    0x118189  1      OPC=1343  
+  nop                         #  44    0x11818a  1      OPC=1343  
+  nop                         #  45    0x11818b  1      OPC=1343  
+.L_118180:                    #        0x11818c  0      OPC=0     
+  addl $0x10, %esp            #  46    0x11818c  3      OPC=65    
+  addq %r15, %rsp             #  47    0x11818f  3      OPC=72    
+  popq %rbx                   #  48    0x118192  1      OPC=1694  
+  popq %r11                   #  49    0x118193  2      OPC=1694  
+  andl $0xffffffe0, %r11d     #  50    0x118195  7      OPC=131   
+  nop                         #  51    0x11819c  1      OPC=1343  
+  nop                         #  52    0x11819d  1      OPC=1343  
+  nop                         #  53    0x11819e  1      OPC=1343  
+  nop                         #  54    0x11819f  1      OPC=1343  
+  addq %r15, %r11             #  55    0x1181a0  3      OPC=72    
+  jmpq %r11                   #  56    0x1181a3  3      OPC=928   
+  nop                         #  57    0x1181a6  1      OPC=1343  
+  nop                         #  58    0x1181a7  1      OPC=1343  
+  nop                         #  59    0x1181a8  1      OPC=1343  
+  nop                         #  60    0x1181a9  1      OPC=1343  
+  nop                         #  61    0x1181aa  1      OPC=1343  
+  nop                         #  62    0x1181ab  1      OPC=1343  
+  nop                         #  63    0x1181ac  1      OPC=1343  
+  nop                         #  64    0x1181ad  1      OPC=1343  
+  nop                         #  65    0x1181ae  1      OPC=1343  
+  nop                         #  66    0x1181af  1      OPC=1343  
+  nop                         #  67    0x1181b0  1      OPC=1343  
+  nop                         #  68    0x1181b1  1      OPC=1343  
+  nop                         #  69    0x1181b2  1      OPC=1343  
+.L_1181a0:                    #        0x1181b3  0      OPC=0     
+  nop                         #  70    0x1181b3  1      OPC=1343  
+  nop                         #  71    0x1181b4  1      OPC=1343  
+  nop                         #  72    0x1181b5  1      OPC=1343  
+  nop                         #  73    0x1181b6  1      OPC=1343  
+  nop                         #  74    0x1181b7  1      OPC=1343  
+  nop                         #  75    0x1181b8  1      OPC=1343  
+  nop                         #  76    0x1181b9  1      OPC=1343  
+  nop                         #  77    0x1181ba  1      OPC=1343  
+  nop                         #  78    0x1181bb  1      OPC=1343  
+  nop                         #  79    0x1181bc  1      OPC=1343  
+  nop                         #  80    0x1181bd  1      OPC=1343  
+  nop                         #  81    0x1181be  1      OPC=1343  
+  nop                         #  82    0x1181bf  1      OPC=1343  
+  nop                         #  83    0x1181c0  1      OPC=1343  
+  nop                         #  84    0x1181c1  1      OPC=1343  
+  nop                         #  85    0x1181c2  1      OPC=1343  
+  nop                         #  86    0x1181c3  1      OPC=1343  
+  nop                         #  87    0x1181c4  1      OPC=1343  
+  nop                         #  88    0x1181c5  1      OPC=1343  
+  nop                         #  89    0x1181c6  1      OPC=1343  
+  nop                         #  90    0x1181c7  1      OPC=1343  
+  nop                         #  91    0x1181c8  1      OPC=1343  
+  nop                         #  92    0x1181c9  1      OPC=1343  
+  nop                         #  93    0x1181ca  1      OPC=1343  
+  nop                         #  94    0x1181cb  1      OPC=1343  
+  nop                         #  95    0x1181cc  1      OPC=1343  
+  nop                         #  96    0x1181cd  1      OPC=1343  
+  callq .__errno              #  97    0x1181ce  5      OPC=260   
+  movl %eax, %eax             #  98    0x1181d3  2      OPC=1157  
+  movl %eax, %eax             #  99    0x1181d5  2      OPC=1157  
+  movl %ebx, (%r15,%rax,1)    #  100   0x1181d7  4      OPC=1136  
+  movq $0xffffffff, %rax      #  101   0x1181db  7      OPC=1159  
+  jmpq .L_118180              #  102   0x1181e2  5      OPC=930   
+  nop                         #  103   0x1181e7  1      OPC=1343  
+  nop                         #  104   0x1181e8  1      OPC=1343  
+  nop                         #  105   0x1181e9  1      OPC=1343  
+  nop                         #  106   0x1181ea  1      OPC=1343  
+  nop                         #  107   0x1181eb  1      OPC=1343  
+  nop                         #  108   0x1181ec  1      OPC=1343  
+  nop                         #  109   0x1181ed  1      OPC=1343  
+  nop                         #  110   0x1181ee  1      OPC=1343  
+  nop                         #  111   0x1181ef  1      OPC=1343  
+  nop                         #  112   0x1181f0  1      OPC=1343  
+  nop                         #  113   0x1181f1  1      OPC=1343  
+  nop                         #  114   0x1181f2  1      OPC=1343  
+  nop                         #  115   0x1181f3  1      OPC=1343  
+  nop                         #  116   0x1181f4  1      OPC=1343  
+  nop                         #  117   0x1181f5  1      OPC=1343  
+  nop                         #  118   0x1181f6  1      OPC=1343  
+  nop                         #  119   0x1181f7  1      OPC=1343  
+                                                                  
+.size lseek, .-lseek
+

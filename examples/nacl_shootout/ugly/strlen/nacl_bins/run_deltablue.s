@@ -1,0 +1,137 @@
+  .text
+  .globl run_deltablue
+  .type run_deltablue, @function
+
+#! file-offset 0x695e0
+#! rip-offset  0x295e0
+#! capacity    160 bytes
+
+# Text                     #  Line  RIP      Bytes  Opcode    
+.run_deltablue:            #        0x295e0  0      OPC=0     
+  pushq %rbx               #  1     0x295e0  1      OPC=1861  
+  subl $0x10, %esp         #  2     0x295e1  3      OPC=2384  
+  addq %r15, %rsp          #  3     0x295e4  3      OPC=72    
+  movl %edi, %ebx          #  4     0x295e7  2      OPC=1157  
+  xorl %eax, %eax          #  5     0x295e9  2      OPC=3758  
+  nop                      #  6     0x295eb  1      OPC=1343  
+  nop                      #  7     0x295ec  1      OPC=1343  
+  nop                      #  8     0x295ed  1      OPC=1343  
+  nop                      #  9     0x295ee  1      OPC=1343  
+  nop                      #  10    0x295ef  1      OPC=1343  
+  nop                      #  11    0x295f0  1      OPC=1343  
+  nop                      #  12    0x295f1  1      OPC=1343  
+  nop                      #  13    0x295f2  1      OPC=1343  
+  nop                      #  14    0x295f3  1      OPC=1343  
+  nop                      #  15    0x295f4  1      OPC=1343  
+  nop                      #  16    0x295f5  1      OPC=1343  
+  nop                      #  17    0x295f6  1      OPC=1343  
+  nop                      #  18    0x295f7  1      OPC=1343  
+  nop                      #  19    0x295f8  1      OPC=1343  
+  nop                      #  20    0x295f9  1      OPC=1343  
+  nop                      #  21    0x295fa  1      OPC=1343  
+  callq .Start             #  22    0x295fb  5      OPC=260   
+  movl %ebx, %edi          #  23    0x29600  2      OPC=1157  
+  nop                      #  24    0x29602  1      OPC=1343  
+  nop                      #  25    0x29603  1      OPC=1343  
+  nop                      #  26    0x29604  1      OPC=1343  
+  nop                      #  27    0x29605  1      OPC=1343  
+  nop                      #  28    0x29606  1      OPC=1343  
+  nop                      #  29    0x29607  1      OPC=1343  
+  nop                      #  30    0x29608  1      OPC=1343  
+  nop                      #  31    0x29609  1      OPC=1343  
+  nop                      #  32    0x2960a  1      OPC=1343  
+  nop                      #  33    0x2960b  1      OPC=1343  
+  nop                      #  34    0x2960c  1      OPC=1343  
+  nop                      #  35    0x2960d  1      OPC=1343  
+  nop                      #  36    0x2960e  1      OPC=1343  
+  nop                      #  37    0x2960f  1      OPC=1343  
+  nop                      #  38    0x29610  1      OPC=1343  
+  nop                      #  39    0x29611  1      OPC=1343  
+  nop                      #  40    0x29612  1      OPC=1343  
+  nop                      #  41    0x29613  1      OPC=1343  
+  nop                      #  42    0x29614  1      OPC=1343  
+  nop                      #  43    0x29615  1      OPC=1343  
+  nop                      #  44    0x29616  1      OPC=1343  
+  nop                      #  45    0x29617  1      OPC=1343  
+  nop                      #  46    0x29618  1      OPC=1343  
+  nop                      #  47    0x29619  1      OPC=1343  
+  nop                      #  48    0x2961a  1      OPC=1343  
+  callq .ChainTest         #  49    0x2961b  5      OPC=260   
+  movl %ebx, %edi          #  50    0x29620  2      OPC=1157  
+  nop                      #  51    0x29622  1      OPC=1343  
+  nop                      #  52    0x29623  1      OPC=1343  
+  nop                      #  53    0x29624  1      OPC=1343  
+  nop                      #  54    0x29625  1      OPC=1343  
+  nop                      #  55    0x29626  1      OPC=1343  
+  nop                      #  56    0x29627  1      OPC=1343  
+  nop                      #  57    0x29628  1      OPC=1343  
+  nop                      #  58    0x29629  1      OPC=1343  
+  nop                      #  59    0x2962a  1      OPC=1343  
+  nop                      #  60    0x2962b  1      OPC=1343  
+  nop                      #  61    0x2962c  1      OPC=1343  
+  nop                      #  62    0x2962d  1      OPC=1343  
+  nop                      #  63    0x2962e  1      OPC=1343  
+  nop                      #  64    0x2962f  1      OPC=1343  
+  nop                      #  65    0x29630  1      OPC=1343  
+  nop                      #  66    0x29631  1      OPC=1343  
+  nop                      #  67    0x29632  1      OPC=1343  
+  nop                      #  68    0x29633  1      OPC=1343  
+  nop                      #  69    0x29634  1      OPC=1343  
+  nop                      #  70    0x29635  1      OPC=1343  
+  nop                      #  71    0x29636  1      OPC=1343  
+  nop                      #  72    0x29637  1      OPC=1343  
+  nop                      #  73    0x29638  1      OPC=1343  
+  nop                      #  74    0x29639  1      OPC=1343  
+  nop                      #  75    0x2963a  1      OPC=1343  
+  callq .ProjectionTest    #  76    0x2963b  5      OPC=260   
+  leal 0xc(%rsp), %edi     #  77    0x29640  4      OPC=1066  
+  nop                      #  78    0x29644  1      OPC=1343  
+  nop                      #  79    0x29645  1      OPC=1343  
+  nop                      #  80    0x29646  1      OPC=1343  
+  nop                      #  81    0x29647  1      OPC=1343  
+  nop                      #  82    0x29648  1      OPC=1343  
+  nop                      #  83    0x29649  1      OPC=1343  
+  nop                      #  84    0x2964a  1      OPC=1343  
+  nop                      #  85    0x2964b  1      OPC=1343  
+  nop                      #  86    0x2964c  1      OPC=1343  
+  nop                      #  87    0x2964d  1      OPC=1343  
+  nop                      #  88    0x2964e  1      OPC=1343  
+  nop                      #  89    0x2964f  1      OPC=1343  
+  nop                      #  90    0x29650  1      OPC=1343  
+  nop                      #  91    0x29651  1      OPC=1343  
+  nop                      #  92    0x29652  1      OPC=1343  
+  nop                      #  93    0x29653  1      OPC=1343  
+  nop                      #  94    0x29654  1      OPC=1343  
+  nop                      #  95    0x29655  1      OPC=1343  
+  nop                      #  96    0x29656  1      OPC=1343  
+  nop                      #  97    0x29657  1      OPC=1343  
+  nop                      #  98    0x29658  1      OPC=1343  
+  nop                      #  99    0x29659  1      OPC=1343  
+  nop                      #  100   0x2965a  1      OPC=1343  
+  callq .Finish            #  101   0x2965b  5      OPC=260   
+  xorl %eax, %eax          #  102   0x29660  2      OPC=3758  
+  addl $0x10, %esp         #  103   0x29662  3      OPC=65    
+  addq %r15, %rsp          #  104   0x29665  3      OPC=72    
+  popq %rbx                #  105   0x29668  1      OPC=1694  
+  popq %r11                #  106   0x29669  2      OPC=1694  
+  andl $0xffffffe0, %r11d  #  107   0x2966b  7      OPC=131   
+  nop                      #  108   0x29672  1      OPC=1343  
+  nop                      #  109   0x29673  1      OPC=1343  
+  nop                      #  110   0x29674  1      OPC=1343  
+  nop                      #  111   0x29675  1      OPC=1343  
+  addq %r15, %r11          #  112   0x29676  3      OPC=72    
+  jmpq %r11                #  113   0x29679  3      OPC=928   
+  nop                      #  114   0x2967c  1      OPC=1343  
+  nop                      #  115   0x2967d  1      OPC=1343  
+  nop                      #  116   0x2967e  1      OPC=1343  
+  nop                      #  117   0x2967f  1      OPC=1343  
+  nop                      #  118   0x29680  1      OPC=1343  
+  nop                      #  119   0x29681  1      OPC=1343  
+  nop                      #  120   0x29682  1      OPC=1343  
+  nop                      #  121   0x29683  1      OPC=1343  
+  nop                      #  122   0x29684  1      OPC=1343  
+  nop                      #  123   0x29685  1      OPC=1343  
+  nop                      #  124   0x29686  1      OPC=1343  
+                                                              
+.size run_deltablue, .-run_deltablue
+

@@ -1,0 +1,131 @@
+  .text
+  .globl List_Append
+  .type List_Append, @function
+
+#! file-offset 0x674a0
+#! rip-offset  0x274a0
+#! capacity    160 bytes
+
+# Text                          #  Line  RIP      Bytes  Opcode    
+.List_Append:                   #        0x274a0  0      OPC=0     
+  pushq %r13                    #  1     0x274a0  2      OPC=1861  
+  pushq %r12                    #  2     0x274a2  2      OPC=1861  
+  pushq %rbx                    #  3     0x274a4  1      OPC=1861  
+  movl %edi, %r13d              #  4     0x274a5  3      OPC=1157  
+  movl %esi, %esi               #  5     0x274a8  2      OPC=1157  
+  movl %esi, %esi               #  6     0x274aa  2      OPC=1157  
+  movl (%r15,%rsi,1), %eax      #  7     0x274ac  4      OPC=1156  
+  movl %esi, %esi               #  8     0x274b0  2      OPC=1157  
+  movl 0x8(%r15,%rsi,1), %ebx   #  9     0x274b2  5      OPC=1156  
+  leal (%rax,%rbx,4), %ebx      #  10    0x274b7  3      OPC=1066  
+  nop                           #  11    0x274ba  1      OPC=1343  
+  nop                           #  12    0x274bb  1      OPC=1343  
+  nop                           #  13    0x274bc  1      OPC=1343  
+  nop                           #  14    0x274bd  1      OPC=1343  
+  nop                           #  15    0x274be  1      OPC=1343  
+  nop                           #  16    0x274bf  1      OPC=1343  
+  movl %esi, %esi               #  17    0x274c0  2      OPC=1157  
+  movl 0xc(%r15,%rsi,1), %r12d  #  18    0x274c2  5      OPC=1156  
+  leal (%rax,%r12,4), %r12d     #  19    0x274c7  4      OPC=1066  
+  cmpl %r12d, %ebx              #  20    0x274cb  3      OPC=472   
+  ja .L_27520                   #  21    0x274ce  6      OPC=863   
+  nop                           #  22    0x274d4  1      OPC=1343  
+  nop                           #  23    0x274d5  1      OPC=1343  
+  nop                           #  24    0x274d6  1      OPC=1343  
+  nop                           #  25    0x274d7  1      OPC=1343  
+  nop                           #  26    0x274d8  1      OPC=1343  
+  nop                           #  27    0x274d9  1      OPC=1343  
+  nop                           #  28    0x274da  1      OPC=1343  
+  nop                           #  29    0x274db  1      OPC=1343  
+  nop                           #  30    0x274dc  1      OPC=1343  
+  nop                           #  31    0x274dd  1      OPC=1343  
+  nop                           #  32    0x274de  1      OPC=1343  
+  nop                           #  33    0x274df  1      OPC=1343  
+  nop                           #  34    0x274e0  1      OPC=1343  
+  nop                           #  35    0x274e1  1      OPC=1343  
+  nop                           #  36    0x274e2  1      OPC=1343  
+  nop                           #  37    0x274e3  1      OPC=1343  
+  nop                           #  38    0x274e4  1      OPC=1343  
+  nop                           #  39    0x274e5  1      OPC=1343  
+.L_274e0:                       #        0x274e6  0      OPC=0     
+  movl %ebx, %ebx               #  40    0x274e6  2      OPC=1157  
+  movl (%r15,%rbx,1), %esi      #  41    0x274e8  4      OPC=1156  
+  addl $0x4, %ebx               #  42    0x274ec  3      OPC=65    
+  movl %r13d, %edi              #  43    0x274ef  3      OPC=1157  
+  nop                           #  44    0x274f2  1      OPC=1343  
+  nop                           #  45    0x274f3  1      OPC=1343  
+  nop                           #  46    0x274f4  1      OPC=1343  
+  nop                           #  47    0x274f5  1      OPC=1343  
+  nop                           #  48    0x274f6  1      OPC=1343  
+  nop                           #  49    0x274f7  1      OPC=1343  
+  nop                           #  50    0x274f8  1      OPC=1343  
+  nop                           #  51    0x274f9  1      OPC=1343  
+  nop                           #  52    0x274fa  1      OPC=1343  
+  nop                           #  53    0x274fb  1      OPC=1343  
+  nop                           #  54    0x274fc  1      OPC=1343  
+  nop                           #  55    0x274fd  1      OPC=1343  
+  nop                           #  56    0x274fe  1      OPC=1343  
+  nop                           #  57    0x274ff  1      OPC=1343  
+  nop                           #  58    0x27500  1      OPC=1343  
+  callq .List_Add               #  59    0x27501  5      OPC=260   
+  cmpl %ebx, %r12d              #  60    0x27506  3      OPC=472   
+  jae .L_274e0                  #  61    0x27509  6      OPC=869   
+  nop                           #  62    0x2750f  1      OPC=1343  
+  nop                           #  63    0x27510  1      OPC=1343  
+  nop                           #  64    0x27511  1      OPC=1343  
+  nop                           #  65    0x27512  1      OPC=1343  
+  nop                           #  66    0x27513  1      OPC=1343  
+  nop                           #  67    0x27514  1      OPC=1343  
+  nop                           #  68    0x27515  1      OPC=1343  
+  nop                           #  69    0x27516  1      OPC=1343  
+  nop                           #  70    0x27517  1      OPC=1343  
+  nop                           #  71    0x27518  1      OPC=1343  
+  nop                           #  72    0x27519  1      OPC=1343  
+  nop                           #  73    0x2751a  1      OPC=1343  
+  nop                           #  74    0x2751b  1      OPC=1343  
+  nop                           #  75    0x2751c  1      OPC=1343  
+  nop                           #  76    0x2751d  1      OPC=1343  
+  nop                           #  77    0x2751e  1      OPC=1343  
+  nop                           #  78    0x2751f  1      OPC=1343  
+  nop                           #  79    0x27520  1      OPC=1343  
+  nop                           #  80    0x27521  1      OPC=1343  
+  nop                           #  81    0x27522  1      OPC=1343  
+  nop                           #  82    0x27523  1      OPC=1343  
+  nop                           #  83    0x27524  1      OPC=1343  
+  nop                           #  84    0x27525  1      OPC=1343  
+  nop                           #  85    0x27526  1      OPC=1343  
+  nop                           #  86    0x27527  1      OPC=1343  
+  nop                           #  87    0x27528  1      OPC=1343  
+  nop                           #  88    0x27529  1      OPC=1343  
+  nop                           #  89    0x2752a  1      OPC=1343  
+  nop                           #  90    0x2752b  1      OPC=1343  
+.L_27520:                       #        0x2752c  0      OPC=0     
+  popq %rbx                     #  91    0x2752c  1      OPC=1694  
+  popq %r12                     #  92    0x2752d  2      OPC=1694  
+  popq %r13                     #  93    0x2752f  2      OPC=1694  
+  popq %r11                     #  94    0x27531  2      OPC=1694  
+  andl $0xffffffe0, %r11d       #  95    0x27533  7      OPC=131   
+  nop                           #  96    0x2753a  1      OPC=1343  
+  nop                           #  97    0x2753b  1      OPC=1343  
+  nop                           #  98    0x2753c  1      OPC=1343  
+  nop                           #  99    0x2753d  1      OPC=1343  
+  addq %r15, %r11               #  100   0x2753e  3      OPC=72    
+  jmpq %r11                     #  101   0x27541  3      OPC=928   
+  nop                           #  102   0x27544  1      OPC=1343  
+  nop                           #  103   0x27545  1      OPC=1343  
+  nop                           #  104   0x27546  1      OPC=1343  
+  nop                           #  105   0x27547  1      OPC=1343  
+  nop                           #  106   0x27548  1      OPC=1343  
+  nop                           #  107   0x27549  1      OPC=1343  
+  nop                           #  108   0x2754a  1      OPC=1343  
+  nop                           #  109   0x2754b  1      OPC=1343  
+  nop                           #  110   0x2754c  1      OPC=1343  
+  nop                           #  111   0x2754d  1      OPC=1343  
+  nop                           #  112   0x2754e  1      OPC=1343  
+  nop                           #  113   0x2754f  1      OPC=1343  
+  nop                           #  114   0x27550  1      OPC=1343  
+  nop                           #  115   0x27551  1      OPC=1343  
+  nop                           #  116   0x27552  1      OPC=1343  
+                                                                   
+.size List_Append, .-List_Append
+
