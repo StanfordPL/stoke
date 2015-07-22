@@ -26,6 +26,10 @@
 
 namespace stoke {
 
+
+// TODO: this really should just reuse the functionality in
+// src/expr/expr_parser.h.  Before changing things here, consider reusing
+// that code.
 class CostParser {
 
 public:
