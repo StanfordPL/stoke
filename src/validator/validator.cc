@@ -87,11 +87,50 @@ void Validator::setup_support_table() {
   for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     Opcode op = (Opcode)i;
     string att = Handler::att_[op];
-    if(find(att_opcodes.begin(), att_opcodes.end(), att) != att_opcodes.end()) {
-      support_table_[i] = true;
-    } else {
-      support_table_[i] = false;
+    support_table_[i] = false;
+    if(find(att_opcodes.begin(), att_opcodes.end(), att) == att_opcodes.end()) {
+      continue;
+    } 
+    auto instr = Instruction(op);
+    size_t arity = instr.arity();
+    bool args_ok = true;
+    for(size_t i = 0; i < arity; ++i) {
+      auto type = instr.type(i);
+      switch(type) {
+        case Type::IMM_8:
+        case Type::IMM_16:
+        case Type::IMM_32:
+        case Type::IMM_64:
+        case Type::ZERO:
+        case Type::ONE:
+        case Type::THREE:
+        case Type::M_8:
+        case Type::M_16:
+        case Type::M_32:
+        case Type::M_64:
+        case Type::M_128:
+        case Type::M_256:
+        case Type::R_8:
+        case Type::R_16:
+        case Type::R_32:
+        case Type::R_64:
+        case Type::AL:
+        case Type::CL:
+        case Type::AX:
+        case Type::DX:
+        case Type::EAX:
+        case Type::RAX:
+        case Type::XMM:
+        case Type::XMM_0:
+        case Type::YMM:
+          break;
+        default:
+          args_ok = false;
+          break;
+      }     
     }
+    if(args_ok)
+      support_table_[i] = true;
   }
 
 }
