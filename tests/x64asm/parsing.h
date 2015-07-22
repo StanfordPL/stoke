@@ -174,6 +174,7 @@ TEST_F(X64AsmParseTest, Issue189) {
 
 }
 
+/*
 TEST_F(X64AsmParseTest, FuzzTest) {
 
   struct timeval tv;
@@ -234,6 +235,7 @@ TEST_F(X64AsmParseTest, FuzzTest) {
 
 
 }
+*/
 
 } //namespace x64asm
 
