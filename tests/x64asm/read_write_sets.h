@@ -69,6 +69,7 @@ the instruction reads (but are both random otherwise), and then executes
 the instruction.  The two resulting states are then checked to agree on the
 values the instruction writes.
 For example, this uncovers errors in the must/maybe read/write/undef sets. */
+/*
 TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
@@ -322,6 +323,7 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   EXPECT_GE(success, min_success);
 
 }
+*/
 
 } //namespace stoke
 
