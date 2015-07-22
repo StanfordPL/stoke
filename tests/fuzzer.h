@@ -22,27 +22,27 @@ namespace stoke {
 std::ostream& fuzz_print(size_t i = 2) {
   switch(i) {
   case 0:
-    std::cout << "[----------]   - ";
+    std::cout << "[----------] ";
     break;
   case 1:
     std::cout << "[----------] * ";
     break;
   case 2:
-    std::cout << "[----------]";
+    std::cout << "[----------]   - ";
     break;
   }
   return std::cout;
 }
 
 /** Generates an instruction and invokes the callback on it. */
-void fuzz(TransformPools& pools, size_t iterations, void (callback*)(const Cfg& cfg), void* callback_info, uint64_t seed = 0) {
+void fuzz(TransformPools& pools, size_t iterations, void (*callback)(const Cfg& cfg, void* info), void* callback_info, uint64_t seed = 0) {
 
   // Step 1: get the seed
-  if(!ssed) {
+  if(!seed) {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     seed = tv.tv_usec;
-    fuzz_print(0) << " SEED=" << seed;
+    fuzz_print(0) << "Seed is " << seed << std::endl;
   }
 
   // Step 2: Setup initial state
@@ -56,6 +56,7 @@ void fuzz(TransformPools& pools, size_t iterations, void (callback*)(const Cfg& 
   TransformInfo ti;
 
   // Step 3: Fuzz
+  std::cout << "iterations: " << iterations << std::endl;
   for(size_t i = 0; i < iterations; ++i) {
 
     // (A) mutate
@@ -63,18 +64,22 @@ void fuzz(TransformPools& pools, size_t iterations, void (callback*)(const Cfg& 
     for(size_t j = 0; j < 20; ++j) {
 
       ti = transform(target);
-      if(transform.success) {
+      if(ti.success) {
         found = true;
         break;
       }
     }
     if(!found) {
+      fuzz_print(1) << "Couldn't apply transform." << std::endl;
       continue;
     }
 
     // (B) Print
-    auto ins = cfg.get_code()[1];
+    auto ins = target.get_code()[1];
     fuzz_print(1) << ins << " # OPC=" << std::dec << ins.get_opcode() << std::endl;
+
+    // (C) callback
+    callback(target, callback_info);
 
   }
 
