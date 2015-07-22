@@ -22,6 +22,10 @@
 
 namespace stoke {
 
+
+// TODO: this really should just reuse the functionality in
+// src/expr/expr.h.  Before changing things here, consider reusing
+// that code.
 class ExprCost : public CostFunction {
   friend class CostParserTest;
   FRIEND_TEST(CostParserTest, LeafFunctions);
