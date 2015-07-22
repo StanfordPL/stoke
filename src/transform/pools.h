@@ -118,7 +118,6 @@ public:
 
   /** Sets o to a random opcode; returns true on success */
   bool get_control_free(x64asm::Opcode& o) {
-    //std::cout << this << " Control free count: " << control_free_.size() << std::endl;
     if (opcode_pool_.empty()) {
       return false;
     }

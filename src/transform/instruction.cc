@@ -30,7 +30,6 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
   Cfg::id_type bb = cfg.get_entry();
   size_t block_idx = 0;
   if (!get_indices(cfg, bb, block_idx, ti.undo_index[0])) {
-    //cout << "Couldn't get_indicies" << endl;
     return ti;
   }
 
@@ -42,7 +41,6 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
 
   auto opc = RET;
   if (!pools_.get_control_free(opc)) {
-    //cout << "Couldn't get control free opcode" << endl;
     return ti;
   }
   instr.set_opcode(opc);
@@ -52,28 +50,18 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
     Operand o = instr.get_operand<R64>(i);
     if (instr.maybe_read(i)) {
       if (!pools_.get_read_op(instr.get_opcode(), i, rs, o)) {
-        //cout << "Couldn't maybe-read operand" << endl;
         return ti;
       }
     } else {
       if (!pools_.get_write_op(instr.get_opcode(), i, rs, o)) {
-        //cout << "Couldn't maybe-write operand" << endl;
         return ti;
       }
     }
     instr.set_operand(i, o);
   }
 
-  // Check for validator support for the new instruction
-  /*
-  if (validator_ && !validator_->is_supported(instr)) {
-    return ti;
-  }
-  */
-
   // Check that the instruction is valid
   if (!instr.check()) {
-    //cout << "CHECK failed :(" << endl;
     return ti;
   }
 
@@ -82,13 +70,11 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
   cfg.get_function().replace(ti.undo_index[0], instr, false, true);
   cfg.recompute_defs();
   if (!cfg.check_invariants()) {
-    //cout << "Invariants failed!  Undo! Undo!" << endl;
     undo(cfg, ti);
     return ti;
   }
 
   ti.success = true;
-  //cout << "Primary mission accomplished" << endl;
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 
