@@ -202,12 +202,16 @@ TransformPools::TransformPools() {
   memory_read_ = false;
   memory_write_ = false;
 
-  imm_pool_.assign({
+  auto imms = {
     0ul,
     1ul, -1ul, 2ul, -2ul, 3ul, -3ul, 4ul, -4ul,
     5ul, -5ul, 6ul, -6ul, 7ul, -7ul, 8ul, -8ul,
     16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
-  });
+  };
+
+  for(auto imm : imms) {
+    insert_immediate(imm);
+  }
 
 
   fill_pool(rh_pool_, rhs, preserve_regs_);
@@ -249,13 +253,13 @@ TransformPools& TransformPools::add_target(const Cfg& target) {
   }
 
   set<M8> mem_ops(fxn.mem_begin(), fxn.mem_end());
-  m_pool_.assign(mem_ops.begin(), mem_ops.end());
+  m_pool_.insert(m_pool_.begin(),mem_ops.begin(), mem_ops.end());
 
   set<Label> call_ops(fxn.call_target_begin(), fxn.call_target_end());
-  label_pool_.assign(call_ops.begin(), call_ops.end());
+  label_pool_.insert(label_pool_.begin(), call_ops.begin(), call_ops.end());
 
   set<uint64_t> rip_ops(fxn.rip_offset_target_begin(), fxn.rip_offset_target_end());
-  rip_pool_.assign(rip_ops.begin(), rip_ops.end());
+  rip_pool_.insert(rip_pool_.begin(),rip_ops.begin(), rip_ops.end());
 
   return *this;
 }
@@ -309,20 +313,17 @@ void TransformPools::recompute_pools() {
       if (!memory_write_) {
         //no memory allowed
         if (is_mem_opcode(op)) {
-          //cout << op << ": no memory allowed" << endl;
           continue;
         }
       } else {
         //reads disallowed, writes allowed
         if (is_mem_opcode(op) && !is_mem_write_only_opcode(op)) {
-          //cout << op << ": no memory read allowed" << endl;
           continue;
         }
       }
     } else if (!memory_write_) {
       //read allowed, write disallowed
       if (is_mem_opcode(op) && !is_mem_read_only_opcode(op)) {
-        //cout << op << ": no memory write allowed" << endl;
         continue;
       }
     }
