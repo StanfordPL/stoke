@@ -16,6 +16,8 @@
 #ifndef _STOKE_TEST_X64ASM_PARSING_H
 #define _STOKE_TEST_X64ASM_PARSING_H
 
+#include "tests/fuzzer.h"
+
 namespace x64asm {
 
 class X64AsmParseTest : public ::testing::Test {
@@ -24,7 +26,7 @@ public:
 
   // Check that writing code to string and back
   // doesn't change anything
-  void check_code(x64asm::Code c) {
+  void check_code(x64asm::Code c) const {
 
     stoke::TUnit test;
 
@@ -174,68 +176,40 @@ TEST_F(X64AsmParseTest, Issue189) {
 
 }
 
-/*
+void x64asm_parse_fuzz_callback(const stoke::Cfg& cfg, void* data) {
+  X64AsmParseTest* xpt = (X64AsmParseTest*)data;
+  xpt->check_code(cfg.get_code());
+}
+
 TEST_F(X64AsmParseTest, FuzzTest) {
-
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  uint64_t seed = (uint64_t)tv.tv_usec;
-
-  // Generate a random seed
-  std::cout << "[----------] * Seed " << seed << std::endl;
 
   // Parameters for the test
   unsigned long iterations = 10000;
+  stoke::TransformPools tp = stoke::default_fuzzer_pool();
+
+  //TODO: the 'flags' below are limitting what we are testing.
+  // We should just use all Cpu supported flags and fix the
+  // parser accordingly.
+  x64asm::FlagSet flag_set;
 
   std::stringstream flags;
   flags << "{ popcnt sse sse2 ssse3 sse4_1 sse4_2 avx avx2 }";
-  x64asm::FlagSet flag_set = x64asm::FlagSet::empty();
-  flag_set & stoke::CpuInfo::get_flags();
+  flags >> flag_set;
 
-  x64asm::Code code;
-  std::stringstream nops;
-  for(size_t i = 0; i < 20; ++i)
-    nops << "nop" << std::endl;
-  nops >> code;
-  stoke::TUnit fxn(code);
-  stoke::Cfg target(fxn);
+  flag_set = flag_set & stoke::CpuInfo::get_flags();
+  tp.set_flags(flag_set);
 
-  stoke::TransformPools tps;
-  stoke::Transforms t(tps);
-  t.set_opcode_pool(target, flag_set, 0, x64asm::RegSet::empty(), {}, {})
-  .set_operand_pool(target, x64asm::RegSet::empty())
-  .set_seed(seed);
+  //The following is a work-around for x64asm bug #195
+  tp.clear_mm_pool();
+  tp.clear_st_pool();
+  tp.clear_sreg_pool();
 
-  t.insert_immediate(x64asm::Imm64(0x00));
-  t.insert_immediate(x64asm::Imm64(0x01));
-  t.insert_immediate(x64asm::Imm64(0x64));
-  t.insert_immediate(x64asm::Imm64(0x7f));
-  t.insert_immediate(x64asm::Imm64(0x80));
-  t.insert_immediate(x64asm::Imm64(0xc0));
-  t.insert_immediate(x64asm::Imm64(0xff));
-  t.insert_immediate(x64asm::Imm64(0x7fff));
-  t.insert_immediate(x64asm::Imm64(0x8000));
-  t.insert_immediate(x64asm::Imm64(0xc0de));
-  t.insert_immediate(x64asm::Imm64(0xffff));
-  t.insert_immediate(x64asm::Imm64(0x7fffffff));
-  t.insert_immediate(x64asm::Imm64(0x80000000));
-  t.insert_immediate(x64asm::Imm64(0xc0decafe));
-  t.insert_immediate(x64asm::Imm64(0xffffffff));
-  t.insert_immediate(x64asm::Imm64(0x7fffffffffffffff));
-  t.insert_immediate(x64asm::Imm64(0x8000000000000000));
-  t.insert_immediate(x64asm::Imm64(0xc0decafec0decafe));
-  t.insert_immediate(x64asm::Imm64(0xffffffffffffffff));
+  tp.recompute_pools();
 
-  // Do the moves and test
-  for(size_t i = 0; i < iterations; ++i) {
-    while(!t.instruction_move(target)) { }
 
-    check_code(target.get_code());
-  }
-
+  stoke::fuzz(tp, iterations, &x64asm_parse_fuzz_callback, (void*)this, 20);
 
 }
-*/
 
 } //namespace x64asm
 
