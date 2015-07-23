@@ -35,6 +35,10 @@ public:
     flags_ = fs;
     return *this;
   }
+  /** Gets the collection of flags we're using. */
+  x64asm::FlagSet get_flags() {
+    return flags_;
+  }
 
   /** Set a collection of registers to always preserve */
   TransformPools& set_preserve_regs(const x64asm::RegSet& preserve) {
@@ -161,6 +165,22 @@ public:
   bool get_read_op(x64asm::Opcode o, size_t idx, const x64asm::RegSet& rs,
                    x64asm::Operand& op);
 
+
+  /** Get rid of mm pool. */
+  TransformPools& clear_mm_pool() {
+    mm_pool_.clear();
+    return *this;
+  }
+  /** Get rid of st pool. */
+  TransformPools& clear_st_pool() {
+    st_pool_.clear();
+    return *this;
+  }
+  /** Get rid of sreg pool. */
+  TransformPools& clear_sreg_pool() {
+    sreg_pool_.clear();
+    return *this;
+  }
 
   /** Seed random number generator */
   TransformPools& set_seed(std::default_random_engine::result_type seed) {
