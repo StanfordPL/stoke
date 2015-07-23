@@ -64,11 +64,12 @@ void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
     ss.str(a);
     ss >> opc;
 
-    if(failed(ss) && !found) {
+    if(!failed(ss)) {
+      //cout << "bl: " << opc << endl;
+      os.insert(opc);
+    } else if (!found) {
       fail(is) << fail_msg(ss);
-      return;
     }
-    os.insert(opc);
   }
 }
 
