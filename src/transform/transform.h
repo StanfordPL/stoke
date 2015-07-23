@@ -43,6 +43,8 @@ public:
     gen_.seed(seed);
   }
 
+  virtual ~Transform() {}
+
 protected:
 
 
