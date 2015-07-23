@@ -77,10 +77,22 @@ Choosing a STOKE version
 The entire STOKE code base is available on GitHub under the Apache Software
 License version 2.0 at [github.com/StanfordPL/stoke-release](https://github.com/StanfordPL/stoke-release/).
 
-We provide both releases (packaged versions of STOKE at a particular point in time), as well as our development branch (latest stable development version).  There are different trade-offs in deciding which one to use:
+We provide both stable releases as well as our latest development code (experimental).  There are
+different trade-offs in deciding which one to use:
 
-- **Development branch**:  This is our stable development branch, that we use day-to-day.  It contains the latest bug fixes and features, but also the latest bugs.  We attempt to only merge stable changes into this branch, but every now and then, we break things.  Our infrastructure is set up in a way that this branch will at least always pass all the tests (and this really is the only notion in which the branch is _stable_).  Note that we sometimes make non-backwards compatible changes, such as changing the syntax of command-line arguments.
-- **Release**:  We typically release the version that corresponds to the papers we write.  Most likely this is a version of STOKE that has been used to run the experiments for a paper, and at least worked for that task.  However, we rarely update releases, and so they might contain bugs, some of which may have already been fixed by us.  We also don't tent to release very often, so a release might be considerably out-of-date.
+- **Development (Experimental) branch**:  This is our development branch, that
+we use day-to-day.  It contains the latest bug fixes and features, but also the
+latest bugs.  Sometimes it noticeably breaks, but usually it's okay.  The only
+guarantee is that this branch will always pass our regression tests.  We
+sometimes make non-backwards compatible changes, such as changing the syntax of
+command-line arguments.  We can't promise support for this, but feel free to
+ask.
+- **Release**:  We typically release the version that corresponds to the papers
+we write.  Most likely this is a version of STOKE that has been used to run the
+experiments for a paper, and at least worked for that task.  However, we rarely
+update releases, and so they might contain bugs, some of which may have already
+been fixed by us.  We also don't tend to release very often, so a release might
+be considerably out-of-date.
 
 We leave it to the user to decide which version works best for them.  If you find a bug, please try the development branch first to see if has already been fixed.
 
@@ -595,15 +607,19 @@ The STOKE source is organized into modules, each of which correspond to a
 subdirectory of the `src/` directory:
 
 - `src/analysis`: An aliasing analysis used by the validator.
-- `src/cfg`: Classes for representing and manipulating control flow graphs.
-- `src/cost`: Classes for computing cost functions.
+- `src/cfg`: Control flow graph representation and program analysis.
+- `src/cost`: Different cost functions that can be used in the search.
+- `src/disassembler`: Runs objdump and parses the results into STOKE's format.
+- `src/expr`:  A helper used to parse arithmetic expressions in config files.
 - `src/ext`: External dependencies.
-- `src/sandbox`: Classes for safely executing random code sequences.
-- `src/search`: Classes for performing MCMC sampling.
-- `src/state`: Classes for representing and manipulating hardware machine states.
-- `src/symstate`: Classes for modeling the symbolic state of the hardware, used by the formal validator.
+- `src/sandbox`: A sandbox for testing proposed code on the hardware.
+- `src/search`: An implementation of an MCMC-like algorithm for search.
+- `src/state`: Data structures to represent concrete machine states (testcases).
+- `src/stategen`: Generates concrete machine states (testcaes) for a piece of code.
+- `src/symstate`: Models the symbolic state of the hardware; only used by the formal validator.
 - `src/target`: Code to find which instruction sets the CPU supports.
-- `src/tunit`: Classes for representing translation units (named instruction sequences).
+- `src/transform`: Transforms used during search to mutate the code.
+- `src/tunit`: Classes for representing a function (x86-64 code along with a name and other metadata).
 - `src/verifier`: Wrappers around verification techniques such as testing for formal validation.
 - `src/validator`: The formal validator for proving two codes equivalent.
 
@@ -921,4 +937,4 @@ auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
 Contact
 =====
 
-Questions and comments are encouraged.  You can reach us through our mailing list at `stoke-developers@lists.stanford.edu`, or using the built-in GitHub issue tracker.
+Questions and comments are encouraged.  Please reach us through the GitHub issue tracker, or alternatively at `stoke-developers@lists.stanford.edu`.
