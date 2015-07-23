@@ -16,6 +16,7 @@
 #define STOKE_TEST_FUZZER_H
 
 #include "src/transform/instruction.h"
+#include "src/target/cpu_info.h"
 
 namespace stoke {
 
