@@ -20,18 +20,18 @@ the design of STOKE, see:
 Table of Contents
 =====
 0. [Prerequisites](#prerequisites)
-1. [Downloading and Building STOKE](#downloading-and-building-stoke)
-2. [Using STOKE](#using-stoke)
-3. [Additional Features](#additional-features)
-4. [Extending STOKE](#extending-stoke)
+1. [Choosing a STOKE version](#choosing-a-stoke-version)
+2. [Building STOKE](#building-stoke)
+3. [Using STOKE](#using-stoke)
+4. [Additional Features](#additional-features)
+5. [Extending STOKE](#extending-stoke)
  1. [Code Organization](#code-organization)
  2. [Initial Search State](#initial-search-state)
  3. [Search Transformations](#search-transformations)
  4. [Cost Function](#cost-function)
- 6. [Live-out Error](#computing-error)
+ 6. [Live-out Error](#live-out-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
-5. [Frequently Asked Questions](#frequently-asked-questions)
 6. [Contact](#contact)
 
 Prerequisites
@@ -71,21 +71,43 @@ satisfied by typing:
 The rest of the dependencies will be fetched automatically as part of the build
 process.
 
-Downloading and Building STOKE
+Choosing a STOKE version
 =====
 
-The entire STOKE code base, is available on github under the Apache Software
-License version 2.0. To clone a copy of the source code, type:
+The entire STOKE code base is available on GitHub under the Apache Software
+License version 2.0 at [github.com/StanfordPL/stoke-release](https://github.com/StanfordPL/stoke-release/).
 
-    $ git clone https://github.com/eschkufz/stoke
+We provide both releases (packaged versions of STOKE at a particular point in time), as well as our development branch (latest stable development version).  There are different trade-offs in deciding which one to use:
 
-See the previous section for a list of dependencies, and to check your hardware
+- **Development branch**:  This is our stable development branch, that we use day-to-day.  It contains the latest bug fixes and features, but also the latests bugs.  We attempt to only merge stable changes into this branch, but every now and then, we break things.  Our infrastructure is set up in a way that this branch will at least always pass all the tests (and this really is the only notion in which the branch is _stable_).  Note that we sometimes make non-backwards compatible changes, such as changing the syntax of command-line arguments.
+- **Release**:  We typically release the version that corresponds to the papers we write.  Most likely this is a version of STOKE that has been used to run the experiments for a paper, and at least worked for that task.  However, we rarely update releases, and so they might contain bugs, some of which may have already been fixed by us.  We also don't tent to release very often, so a release might be considerably out-of-date.
+
+We leave it to the user to decide which version works best for them.  If you find a bug, please try the development branch first to see if has already been fixed.
+
+To get the development branch, type:
+
+    $ git clone -b development https://github.com/StanfordPL/stoke-release
+
+The `master` branch always points to the latest release (plus potentially some back-ported bugfixes).  To get it, type:
+
+    $ git clone -b master https://github.com/StanfordPL/stoke-release
+
+or alternatively download it under the releases on GitHub.
+
+
+Building STOKE
+=====
+
+See the previous sections on how to download STOKE, a list of dependencies, and to check your hardware
 support level.  The remainder of STOKE's software dependencies are available on
-github and will be downloaded automatically the first time that STOKE is built.
-To build stoke for a Haswell system type the appropriate command for your
+GitHub and will be downloaded automatically the first time that STOKE is built.
+To build STOKE for a Haswell system type the appropriate command for your
 system (the default is Haswell):
 
     $ make
+
+If you are on a different architecture, use the appropriate target:
+
     $ make sandybridge
     $ make nehalem
 
@@ -93,8 +115,7 @@ To add STOKE and its related components to your path, type:
 
     $ export PATH=$PATH:/<path_to_stoke>/bin
 
-Setting the path is important for the testing tools to run.  To run the tests,
-choose the appropriate command:
+To run the tests, choose the appropriate command:
 
     $ make test
     $ make sandybridge_test
@@ -103,8 +124,8 @@ choose the appropriate command:
 The files generated during the build process can be deleted by typing:
 
     $ make clean
-    
-To delete STOKE's github-hosted software dependencies as well (this is useful if an error occurs during the first build), type:
+
+To delete STOKE's dependencies as well (this is useful if an error occurs during the first build), type:
 
     $ make dist_clean
 
@@ -160,7 +181,7 @@ To measure runtime, type:
     
     real  0m1.046s
     user  0m1.047s
-    sys	  0m0.000s
+    sys   0m0.000s
     
 A profiler will reveal that the runtime of `./a.out` is dominated by calls to
 the `popcnt()` function. STOKE can be used to improve the implementation of
@@ -475,7 +496,7 @@ And runtime can once again be measured by typing:
     
     real  0m0.133s
     user  0m0.109s
-    sys	  0m0.000s    
+    sys   0m0.000s    
 
 As expected, the results are close to an order of magnitude faster than the original.
 
@@ -532,8 +553,8 @@ Shell completion
 
 STOKE also comes with support for bash and zsh completion.  To enable either, type:
 
-	$ make bash_completion
-	$ make zsh_completion
+  $ make bash_completion
+  $ make zsh_completion
 
 Using functions to be proposed by STOKE
 -----
@@ -896,13 +917,8 @@ auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
   .default_val(Complex());
 ```
 
-Frequently Asked Questions
+
+Contact
 =====
 
-To appear.
-
-Feedback
-=====
-
-Questions and comments are encouraged. The best way to contact the developers
-is with the built-in github issue tracker.
+Questions and comments are encouraged.  You can reach us through our mailing list at `stoke-developers@lists.stanford.edu`, or using the built-in GitHub issue tracker.
