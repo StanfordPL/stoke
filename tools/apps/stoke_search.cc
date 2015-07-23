@@ -79,8 +79,9 @@ auto& timeout_iterations_arg =
 auto& timeout_seconds_arg =
   cpputil::ValueArg<double>::create("timeout_seconds")
   .usage("<double>")
-  .description("Total number of seconds before giving up (across all cycles)")
-  ;
+  .description("Total number of seconds before giving up (across all cycles), or 0 for no timeout")
+  .default_val(0);
+
 auto& failed_verification_action =
   ValueArg<FailedVerificationAction, FailedVerificationActionReader, FailedVerificationActionWriter>::create("failed_verification_action")
   .usage("(quit|add_counterexample)")
@@ -388,7 +389,7 @@ int main(int argc, char** argv) {
 
     sep(Console::msg());
 
-    if (!verified && verifier.counter_example_available()) {
+    if (!verified && verifier.counter_example_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
       Console::msg() << "Restarting search using new testcase (counterexample from verifier):" << endl << endl;
       Console::msg() << verifier.get_counter_example() << endl << endl;
       training_sb.insert_input(verifier.get_counter_example());
