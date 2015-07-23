@@ -283,7 +283,7 @@ private:
     x64asm::Code c;
     ss >> c;
     if (ss.fail()) {
-      report_error(OTHER, OTHER, true, "Error parsing instruction: " + ss.str());
+      report_error(OTHER, OTHER, true, "Parse error: " + cpputil::fail_msg(ss));
       return 0;
     }
     if (c.size() == 0) {

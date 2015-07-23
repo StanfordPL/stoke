@@ -36,6 +36,15 @@ public:
         delete it;
   }
 
+  virtual std::vector<std::string> full_support_opcodes() {
+    std::vector<std::string> opcodes;
+    for(auto it : handlers_) {
+      auto children = it->full_support_opcodes();
+      opcodes.insert(opcodes.end(), children.begin(), children.end());
+    }
+    return opcodes;
+  }
+
   /** Get the support level for a particular instruction */
   SupportLevel get_support(const x64asm::Instruction& instr);
 
@@ -69,7 +78,6 @@ private:
   const std::vector<Handler*> handlers_;
   /** Whether we need to free these handlers */
   const bool free_handlers_;
-
 
 };
 

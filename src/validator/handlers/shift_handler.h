@@ -30,6 +30,16 @@ public:
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
+  virtual std::vector<std::string> full_support_opcodes() {
+    std::vector<std::string> opcodes;
+    for(auto it : to_right_sign_rotate_cf_) {
+      opcodes.push_back(it.first);
+    }
+    return opcodes;
+  }
+
+
+
 private:
   const static std::map<std::string, std::array<bool, 4>> to_right_sign_rotate_cf_;
 };

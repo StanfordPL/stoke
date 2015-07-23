@@ -30,6 +30,11 @@ public:
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
+  virtual std::vector<std::string> full_support_opcodes() {
+    return { "leaw", "leal", "leaq"};
+  }
+
+
 };
 
 } //namespace stoke

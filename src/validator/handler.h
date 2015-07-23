@@ -57,7 +57,18 @@ public:
     return error_;
   }
 
+  /** Get list of fully-supported opcodes in att memonic form.
+    NOTE: This function may be **slow**.  You should call the
+    validator to access a fast table of supported opcodes. */
+  virtual std::vector<std::string> full_support_opcodes() {
+    return std::vector<std::string>();
+  }
+
   virtual ~Handler() {}
+
+  /** List of ATT memonics.  */
+  // TODO: make this available to STOKE from x64asm
+  static const std::array<const char*, X64ASM_NUM_OPCODES> att_;
 
 protected:
 
@@ -77,10 +88,6 @@ protected:
   SymBool minus_of(SymBool msb1, SymBool msb2, SymBool total_msb) const;
 
 
-
-private:
-
-  static const std::array<const char*, X64ASM_NUM_OPCODES> att_;
 };
 
 } //namespace

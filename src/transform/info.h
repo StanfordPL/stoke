@@ -12,23 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_SEARCH_MOVE_H
-#define STOKE_SRC_SEARCH_MOVE_H
+#ifndef STOKE_SRC_TRANSFORM_TRANSFORM_INFO_H
+#define STOKE_SRC_TRANSFORM_TRANSFORM_INFO_H
+
+#include "src/ext/x64asm/include/x64asm.h"
 
 namespace stoke {
 
-enum class Move {
-  INSTRUCTION = 0,
-  OPCODE,
-  OPERAND,
-  RESIZE,
-  LOCAL_SWAP,
-  GLOBAL_SWAP,
+struct TransformInfo {
 
-  // Add user-defined extensions here ...
-  EXTENSION,
+  TransformInfo() : success(false), undo_instr(x64asm::NOP) { }
 
-  NUM_MOVES
+  // Did the transform succeed?
+  bool success;
+
+  // Records the type of move performed
+  size_t move_type;
+
+  // Records information to undo the transform
+  size_t undo_index[2];
+  x64asm::Instruction undo_instr;
+
 };
 
 } // namespace stoke

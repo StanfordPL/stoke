@@ -47,7 +47,7 @@ public:
   /** Does this CostFunction require a Sandbox object?
       Contract for clients:
 
-        If this function returns true, you must call need_sandbox() with a
+        If this function returns true, you must call setup_sandbox() with a
         good sandbox before running the cost function.
 
       Contract for subclasses:
