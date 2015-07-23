@@ -20,18 +20,18 @@ the design of STOKE, see:
 Table of Contents
 =====
 0. [Prerequisites](#prerequisites)
-1. [Downloading and Building STOKE](#downloading-and-building-stoke)
-2. [Using STOKE](#using-stoke)
-3. [Additional Features](#additional-features)
-4. [Extending STOKE](#extending-stoke)
+1. [Choosing a STOKE version](#choosing-a-stoke-version)
+2. [Building STOKE](#building-stoke)
+3. [Using STOKE](#using-stoke)
+4. [Additional Features](#additional-features)
+5. [Extending STOKE](#extending-stoke)
  1. [Code Organization](#code-organization)
  2. [Initial Search State](#initial-search-state)
  3. [Search Transformations](#search-transformations)
  4. [Cost Function](#cost-function)
- 6. [Live-out Error](#computing-error)
+ 6. [Live-out Error](#live-out-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
-5. [Frequently Asked Questions](#frequently-asked-questions)
 6. [Contact](#contact)
 
 Prerequisites
@@ -71,21 +71,55 @@ satisfied by typing:
 The rest of the dependencies will be fetched automatically as part of the build
 process.
 
-Downloading and Building STOKE
+Choosing a STOKE version
 =====
 
-The entire STOKE code base, is available on github under the Apache Software
-License version 2.0. To clone a copy of the source code, type:
+The entire STOKE code base is available on GitHub under the Apache Software
+License version 2.0 at [github.com/StanfordPL/stoke-release](https://github.com/StanfordPL/stoke-release/).
 
-    $ git clone https://github.com/eschkufz/stoke
+We provide both stable releases as well as our latest development code (experimental).  There are
+different trade-offs in deciding which one to use:
 
-See the previous section for a list of dependencies, and to check your hardware
+- **Development (Experimental) branch**:  This is our development branch, that
+we use day-to-day.  It contains the latest bug fixes and features, but also the
+latest bugs.  Sometimes it noticeably breaks, but usually it's okay.  The only
+guarantee is that this branch will always pass our regression tests.  We
+sometimes make non-backwards compatible changes, such as changing the syntax of
+command-line arguments.  We can't promise support for this, but feel free to
+ask.
+- **Release**:  We typically release the version that corresponds to the papers
+we write.  Most likely this is a version of STOKE that has been used to run the
+experiments for a paper, and at least worked for that task.  However, we rarely
+update releases, and so they might contain bugs, some of which may have already
+been fixed by us.  We also don't tend to release very often, so a release might
+be considerably out-of-date.
+
+We leave it to the user to decide which version works best for them.  If you find a bug, please try the development branch first to see if has already been fixed.
+
+To get the development branch, type:
+
+    $ git clone -b development https://github.com/StanfordPL/stoke-release
+
+The `master` branch always points to the latest release (plus potentially some back-ported bugfixes).  To get it, type:
+
+    $ git clone -b master https://github.com/StanfordPL/stoke-release
+
+or alternatively download it under the releases on GitHub.
+
+
+Building STOKE
+=====
+
+See the previous sections on how to download STOKE, a list of dependencies, and to check your hardware
 support level.  The remainder of STOKE's software dependencies are available on
-github and will be downloaded automatically the first time that STOKE is built.
-To build stoke for a Haswell system type the appropriate command for your
+GitHub and will be downloaded automatically the first time that STOKE is built.
+To build STOKE for a Haswell system type the appropriate command for your
 system (the default is Haswell):
 
     $ make
+
+If you are on a different architecture, use the appropriate target:
+
     $ make sandybridge
     $ make nehalem
 
@@ -93,8 +127,7 @@ To add STOKE and its related components to your path, type:
 
     $ export PATH=$PATH:/<path_to_stoke>/bin
 
-Setting the path is important for the testing tools to run.  To run the tests,
-choose the appropriate command:
+To run the tests, choose the appropriate command:
 
     $ make test
     $ make sandybridge_test
@@ -103,8 +136,8 @@ choose the appropriate command:
 The files generated during the build process can be deleted by typing:
 
     $ make clean
-    
-To delete STOKE's github-hosted software dependencies as well (this is useful if an error occurs during the first build), type:
+
+To delete STOKE's dependencies as well (this is useful if an error occurs during the first build), type:
 
     $ make dist_clean
 
@@ -160,7 +193,7 @@ To measure runtime, type:
     
     real  0m1.046s
     user  0m1.047s
-    sys	  0m0.000s
+    sys   0m0.000s
     
 A profiler will reveal that the runtime of `./a.out` is dominated by calls to
 the `popcnt()` function. STOKE can be used to improve the implementation of
@@ -434,7 +467,7 @@ Move Type       Proposed     Succeeded     Accepted
 Instruction     16.791%      5.83%         2.009%       
 Opcode          16.646%      8.857%        4.013%       
 Operand         16.593%      10.444%       6.864%       
-Resize          16.611%      0.791%        0.789%       
+Rotate          16.611%      0.791%        0.789%       
 Local Swap      16.597%      1.556%        1.128%       
 Global Swap     16.762%      7.066%        6.08%     
 Extension       0%           0%            0%
@@ -475,7 +508,7 @@ And runtime can once again be measured by typing:
     
     real  0m0.133s
     user  0m0.109s
-    sys	  0m0.000s    
+    sys   0m0.000s    
 
 As expected, the results are close to an order of magnitude faster than the original.
 
@@ -532,8 +565,8 @@ Shell completion
 
 STOKE also comes with support for bash and zsh completion.  To enable either, type:
 
-	$ make bash_completion
-	$ make zsh_completion
+  $ make bash_completion
+  $ make zsh_completion
 
 Using functions to be proposed by STOKE
 -----
@@ -574,15 +607,19 @@ The STOKE source is organized into modules, each of which correspond to a
 subdirectory of the `src/` directory:
 
 - `src/analysis`: An aliasing analysis used by the validator.
-- `src/cfg`: Classes for representing and manipulating control flow graphs.
-- `src/cost`: Classes for computing cost functions.
+- `src/cfg`: Control flow graph representation and program analysis.
+- `src/cost`: Different cost functions that can be used in the search.
+- `src/disassembler`: Runs objdump and parses the results into STOKE's format.
+- `src/expr`:  A helper used to parse arithmetic expressions in config files.
 - `src/ext`: External dependencies.
-- `src/sandbox`: Classes for safely executing random code sequences.
-- `src/search`: Classes for performing MCMC sampling.
-- `src/state`: Classes for representing and manipulating hardware machine states.
-- `src/symstate`: Classes for modeling the symbolic state of the hardware, used by the formal validator.
+- `src/sandbox`: A sandbox for testing proposed code on the hardware.
+- `src/search`: An implementation of an MCMC-like algorithm for search.
+- `src/state`: Data structures to represent concrete machine states (testcases).
+- `src/stategen`: Generates concrete machine states (testcaes) for a piece of code.
+- `src/symstate`: Models the symbolic state of the hardware; only used by the formal validator.
 - `src/target`: Code to find which instruction sets the CPU supports.
-- `src/tunit`: Classes for representing translation units (named instruction sequences).
+- `src/transform`: Transforms used during search to mutate the code.
+- `src/tunit`: Classes for representing a function (x86-64 code along with a name and other metadata).
 - `src/verifier`: Wrappers around verification techniques such as testing for formal validation.
 - `src/validator`: The formal validator for proving two codes equivalent.
 
@@ -644,75 +681,45 @@ void Search::configure_extension(const Cfg& target, SearchState& state) const {
 Search Transformations
 -----
 
-Transformation types are defined in `src/search/move.h` along with an
-additional type for user-defined extensions.
+Transformation types are defined in the `src/transform` directory.  Each
+transform is a subclass of the abstract class `Transform`.  Existing transforms are,
 
-```c++
-enum class Move {
-  INSTRUCTION = 0,
-  OPCODE,
-  OPERAND,
-  RESIZE,
-  LOCAL_SWAP,
-  GLOBAL_SWAP,
+| Name | Description |
+| ---- | ----------- |
+| instruction | Replaces an instruction with another one chosen at random. |
+| opcode | Replaces an instruction's opcode with a new one that takes operands of the same type. |
+| operand | Replaces an operand of one instruction with another. |
+| rotate | Formerly "resize".  Moves an instruction from one basic block to another, and shifts all the instructions in between. |
+| local_swap | Takes two instructions in the same basic block and swaps them. |
+| global_swap |  Takes two instructions in the entire program and swaps them. |
+| weighted | Selects from among several other transforms at random. |
 
-  // Add user-defined extensions here ...
-  EXTENSION,
 
-  NUM_MOVES
-};
-```
+These subclasses each implement `operator()(Cfg& cfg)` to mutate a Cfg.  This
+function returns an object, `TransformInfo` that contains all the information
+needed to undo this transformation, and also whether the transform succeeded
+(transforms are allowed to fail).  It's common for this object to be set with
+indexes of instructions in the code that were modified, for example.  The
+subclass also implements `undo(Cfg& cfg, TransformInfo ti)`.
 
-Transformations are specified using the family of `--xxxxx_mass` command line
-arguments. These values control the distribution of proposals that are made by
-the `Transforms::modify()` method and undone by the `Transforms::undo()`
-method, which dispatch to the family of `Transforms::xxxxx_move()` and
-`Transforms::undo_xxxxx_move()` methods respectively. User-defined extensions
-should be placed in the `Transforms::extension_move()` and
-`Transforms::undo_extension_move()` methods, which can be triggered by
-specifying a non-zero `--extension_mass`.
+Transforms will often want to select from a collection of operands and opcodes,
+and for this purpose they can access the `pools_` protected variable of the
+Transform` superclass.  This is of type `TransformPools` and allows access to
+these collections.  This makes it possible to configure the collection of
+available opcodes and operands independently of the transforms.  Also, the
+`Transform` superclass has a `gen_` member which is used to produce random
+numbers with a known seed.
 
-```c++
-bool Transforms::extension_move(Cfg& cfg) {
-  // Add user-defined implementation here ...
+Transformation weights are specified using the family of `--xxxxx_mass` command
+line arguments. These values control the distribution of proposals that are
+made by the WeightedTransform, which is the transform used by the
+search.
 
-  // Invariant 1:
-  // If this method returns true, it should leave this class in a state such
-  // that calling undo_extension_move() will revert cfg to its original state.
-
-  // Invariant 2:
-  // If this method returns false, it must leave cfg in its original state.
-
-  // Invariant 3:
-  // If validator_ is non-null, validator_->is_sound(instr) must hold true for
-  // all instructions instr upon return.  (You can assume this holds at the
-  // beginning).
-
-  // Invariant 4:
-  // Transformations must preserve the first instruction in a code sequence
-  // which should be a label that represents the name of a function.
-
-  return false;
-}
-```
-
-```c++
-void Transforms::undo_extension_move(Cfg& cfg) {
-  // Add user-defined implementation here ...
-
-  // Invariant: If the previous invocation of extension_move() returned true, this
-  // method must return cfg to its original state. 
-  
-  return;
-}
-```
-
-As above, both performing and undoing a transformation should leave a control
-flow graph in a valid state. In general, this can be performed by invoking the
-`Cfg::recompute()` method. However because these methods are on STOKE's
-critical path, the faster `Cfg::recompute_defs()` method should be used for
-transformations that do not modify control flow structure and only potentially
-invalidate data-flow values.
+A simple example of how to impelement a transform is in
+`src/transform/global_swap.cc`.  Note that all transforms must appropriately
+make a call to recompute any `Cfg` information that needs to be updated and
+ensure that `cfg.check_invariants()` returns true when done (you can assume it
+    returns true at the beginning of the function).
 
 Cost Function
 -----
@@ -896,13 +903,8 @@ auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
   .default_val(Complex());
 ```
 
-Frequently Asked Questions
+
+Contact
 =====
 
-To appear.
-
-Feedback
-=====
-
-Questions and comments are encouraged. The best way to contact the developers
-is with the built-in github issue tracker.
+Questions and comments are encouraged.  Please reach us through the GitHub issue tracker, or alternatively at `stoke-developers@lists.stanford.edu`.
