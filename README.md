@@ -8,7 +8,7 @@ produce a code sequence that is both correct and an improvement over the
 original, the repeated application of millions of transformations is sufficient
 to produce novel and non-obvious code sequences that have been shown to
 outperform the code produced by general-purpose and domain-specific compilers,
-           and in some cases expert hand-written code.
+and in some cases expert hand-written code.
 
 STOKE has appeared in a number of publications. For a thorough introduction to
 the design of STOKE, see:
@@ -20,18 +20,18 @@ the design of STOKE, see:
 Table of Contents
 =====
 0. [Prerequisites](#prerequisites)
-1. [Downloading and Building STOKE](#downloading-and-building-stoke)
-2. [Using STOKE](#using-stoke)
-3. [Additional Features](#additional-features)
-4. [Extending STOKE](#extending-stoke)
+1. [Choosing a STOKE version](#choosing-a-stoke-version)
+2. [Building STOKE](#building-stoke)
+3. [Using STOKE](#using-stoke)
+4. [Additional Features](#additional-features)
+5. [Extending STOKE](#extending-stoke)
  1. [Code Organization](#code-organization)
  2. [Initial Search State](#initial-search-state)
  3. [Search Transformations](#search-transformations)
  4. [Cost Function](#cost-function)
- 6. [Live-out Error](#computing-error)
+ 6. [Live-out Error](#live-out-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
-5. [Frequently Asked Questions](#frequently-asked-questions)
 6. [Contact](#contact)
 
 Prerequisites
@@ -48,7 +48,7 @@ To check what level of hardware support you have, run:
     
 and check if the following cpu flags are present:
 
-    $ flags: ... avx avx2 bmi bmi2 popcnt ...
+    flags: ... avx avx2 bmi bmi2 popcnt ...
 
 If you don't have 'avx' or 'avx2', you will need to compile for nehalem.  If
 you have 'avx', but not avx2, you will compile for 'sandybridge'.  If you have
@@ -71,21 +71,54 @@ satisfied by typing:
 The rest of the dependencies will be fetched automatically as part of the build
 process.
 
-Downloading and Building STOKE
+Choosing a STOKE version
 =====
 
-The entire STOKE code base, is available on github under the Apache Software
-License version 2.0. To clone a copy of the source code, type:
+The entire STOKE code base is available on GitHub under the Apache Software
+License version 2.0 at [github.com/StanfordPL/stoke-release](https://github.com/StanfordPL/stoke-release/).
 
-    $ git clone https://github.com/eschkufz/stoke
+We provide both stable releases as well as our latest development code.  There are different trade-offs in deciding which one to use:
 
-See the previous section for a list of dependencies, and to check your hardware
+- **Development branch**:  This is our development branch, that
+we use day-to-day.  It contains the latest bug fixes and features, but also the
+latest bugs.  Sometimes it noticeably breaks, but usually it's okay.  The only
+guarantee is that this branch will always pass our regression tests.  We
+sometimes make non-backwards compatible changes, such as changing the syntax of
+command-line arguments.  We can't promise support for this, but feel free to
+ask.
+- **Release**:  We typically release the version that corresponds to the papers
+we write.  Most likely this is a version of STOKE that has been used to run the
+experiments for a paper, and at least worked for that task.  However, we rarely
+update releases, and so they might contain bugs, some of which may have already
+been fixed by us.  We also don't tend to release very often, so a release might
+be considerably out-of-date.
+
+We leave it to the user to decide which version works best for them.  If you find a bug, please try the development branch first to see if has already been fixed.
+
+To get the development branch, type:
+
+    $ git clone -b development https://github.com/StanfordPL/stoke-release
+
+The `master` branch always points to the latest release (plus potentially some back-ported bugfixes).  To get it, type:
+
+    $ git clone -b master https://github.com/StanfordPL/stoke-release
+
+or alternatively download it under the releases on GitHub.
+
+
+Building STOKE
+=====
+
+See the previous sections on how to download STOKE, a list of dependencies, and to check your hardware
 support level.  The remainder of STOKE's software dependencies are available on
-github and will be downloaded automatically the first time that STOKE is built.
-To build stoke for a Haswell system type the appropriate command for your
+GitHub and will be downloaded automatically the first time that STOKE is built.
+To build STOKE for a Haswell system type the appropriate command for your
 system (the default is Haswell):
 
     $ make
+
+If you are on a different architecture, use the appropriate target:
+
     $ make sandybridge
     $ make nehalem
 
@@ -93,8 +126,7 @@ To add STOKE and its related components to your path, type:
 
     $ export PATH=$PATH:/<path_to_stoke>/bin
 
-Setting the path is important for the testing tools to run.  To run the tests,
-choose the appropriate command:
+To run the tests, choose the appropriate command:
 
     $ make test
     $ make sandybridge_test
@@ -103,8 +135,8 @@ choose the appropriate command:
 The files generated during the build process can be deleted by typing:
 
     $ make clean
-    
-To delete STOKE's github-hosted software dependencies as well (this is useful if an error occurs during the first build), type:
+
+To delete STOKE's dependencies as well (this is useful if an error occurs during the first build), type:
 
     $ make dist_clean
 
@@ -160,7 +192,7 @@ To measure runtime, type:
     
     real  0m1.046s
     user  0m1.047s
-    sys	  0m0.000s
+    sys   0m0.000s
     
 A profiler will reveal that the runtime of `./a.out` is dominated by calls to
 the `popcnt()` function. STOKE can be used to improve the implementation of
@@ -475,7 +507,7 @@ And runtime can once again be measured by typing:
     
     real  0m0.133s
     user  0m0.109s
-    sys	  0m0.000s    
+    sys   0m0.000s    
 
 As expected, the results are close to an order of magnitude faster than the original.
 
@@ -532,8 +564,8 @@ Shell completion
 
 STOKE also comes with support for bash and zsh completion.  To enable either, type:
 
-	$ make bash_completion
-	$ make zsh_completion
+  $ make bash_completion
+  $ make zsh_completion
 
 Using functions to be proposed by STOKE
 -----
@@ -574,15 +606,19 @@ The STOKE source is organized into modules, each of which correspond to a
 subdirectory of the `src/` directory:
 
 - `src/analysis`: An aliasing analysis used by the validator.
-- `src/cfg`: Classes for representing and manipulating control flow graphs.
-- `src/cost`: Classes for computing cost functions.
+- `src/cfg`: Control flow graph representation and program analysis.
+- `src/cost`: Different cost functions that can be used in the search.
+- `src/disassembler`: Runs objdump and parses the results into STOKE's format.
+- `src/expr`:  A helper used to parse arithmetic expressions in config files.
 - `src/ext`: External dependencies.
-- `src/sandbox`: Classes for safely executing random code sequences.
-- `src/search`: Classes for performing MCMC sampling.
-- `src/state`: Classes for representing and manipulating hardware machine states.
-- `src/symstate`: Classes for modeling the symbolic state of the hardware, used by the formal validator.
+- `src/sandbox`: A sandbox for testing proposed code on the hardware.
+- `src/search`: An implementation of an MCMC-like algorithm for search.
+- `src/state`: Data structures to represent concrete machine states (testcases).
+- `src/stategen`: Generates concrete machine states (testcaes) for a piece of code.
+- `src/symstate`: Models the symbolic state of the hardware; only used by the formal validator.
 - `src/target`: Code to find which instruction sets the CPU supports.
-- `src/tunit`: Classes for representing translation units (named instruction sequences).
+- `src/transform`: Transforms used during search to mutate the code.
+- `src/tunit`: Classes for representing a function (x86-64 code along with a name and other metadata).
 - `src/verifier`: Wrappers around verification techniques such as testing for formal validation.
 - `src/validator`: The formal validator for proving two codes equivalent.
 
@@ -896,13 +932,8 @@ auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
   .default_val(Complex());
 ```
 
-Frequently Asked Questions
+
+Contact
 =====
 
-To appear.
-
-Feedback
-=====
-
-Questions and comments are encouraged. The best way to contact the developers
-is with the built-in github issue tracker.
+Questions and comments are encouraged.  Please reach us through the GitHub issue tracker, or alternatively at `stoke-developers@lists.stanford.edu`.

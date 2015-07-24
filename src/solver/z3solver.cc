@@ -15,7 +15,6 @@
 
 #include <iostream>
 
-#include "src/ext/z3/include/z3++.h"
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
 
