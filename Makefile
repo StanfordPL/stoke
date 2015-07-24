@@ -277,9 +277,11 @@ src/ext/gtest-1.7.0/libgtest.a:
 	$(MAKE) -C src/ext/gtest-1.7.0 -j$(NTHREADS)
 
 .PHONY: z3
-z3: src/ext/z3/build/Makefile
-	./scripts/make/submodule-init.sh src/ext/z3
+z3: z3init src/ext/z3/build/Makefile
 	cd src/ext/z3/build && make
+
+z3init:
+	./scripts/make/submodule-init.sh src/ext/z3
 
 src/ext/z3/build/Makefile:
 	cd src/ext/z3 && python scripts/mk_make.py
