@@ -24,7 +24,7 @@ replace:
 	ncval optbin
 
 deploy: replace
-	cp binary $(DEPLOY_PATH)/$(NAME).nexe
+	cp optbin $(DEPLOY_PATH)/$(NAME).nexe
 	rm -f $(DEPLOY_PATH)/benchmarks_browser64.nexe
 	ln -s $(DEPLOY_PATH)/$(NAME).nexe $(DEPLOY_PATH)/benchmarks_browser64.nexe
 
