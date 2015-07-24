@@ -25,6 +25,12 @@ namespace stoke {
 cpputil::Heading& transform_weight_heading =
   cpputil::Heading::create("Transform Weight Options:");
 
+cpputil::ValueArg<size_t>& add_nops_mass_arg =
+  cpputil::ValueArg<size_t>::create("add_nops_mass")
+  .usage("<int>")
+  .description("Instruction move proposal mass")
+  .default_val(0);
+
 cpputil::ValueArg<size_t>& instruction_mass_arg =
   cpputil::ValueArg<size_t>::create("instruction_mass")
   .usage("<int>")

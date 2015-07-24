@@ -130,6 +130,11 @@ TEST_P(TransformsTest, GlobalSwapMoveIsReversible) {
   check_move_reversible(transform);
 }
 
+TEST_P(TransformsTest, AddNopsMoveIsReversible) {
+  auto transform = AddNopsTransform(tp_);
+  check_move_reversible(transform);
+}
+
 TEST_P(TransformsTest, WeightedIsReversible) {
   auto transform = WeightedTransform(tp_);
 
@@ -140,6 +145,7 @@ TEST_P(TransformsTest, WeightedIsReversible) {
   transforms.push_back(new LocalSwapTransform(tp_));
   transforms.push_back(new GlobalSwapTransform(tp_));
   transforms.push_back(new RotateTransform(tp_));
+  transforms.push_back(new AddNopsTransform(tp_));
 
   for(auto t : transforms)
     transform.insert_transform(t);

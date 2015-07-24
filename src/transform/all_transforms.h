@@ -13,6 +13,7 @@
 // limitations under the License.
 
 
+#include "src/transform/add_nops.h"
 #include "src/transform/global_swap.h"
 #include "src/transform/instruction.h"
 #include "src/transform/local_swap.h"
