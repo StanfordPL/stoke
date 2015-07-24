@@ -18,7 +18,7 @@
 
 #include <map>
 
-#include "src/ext/z3/include/z3++.h"
+#include "src/ext/z3/src/api/c++/z3++.h"
 #include "src/solver/smtsolver.h"
 #include "src/symstate/bitvector.h"
 
