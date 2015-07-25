@@ -28,7 +28,13 @@ cpputil::Heading& transform_weight_heading =
 cpputil::ValueArg<size_t>& add_nops_mass_arg =
   cpputil::ValueArg<size_t>::create("add_nops_mass")
   .usage("<int>")
-  .description("Instruction move proposal mass")
+  .description("Add Nops proposal mass")
+  .default_val(0);
+
+cpputil::ValueArg<size_t>& delete_mass_arg =
+  cpputil::ValueArg<size_t>::create("delete_mass")
+  .usage("<int>")
+  .description("Delete proposal mass")
   .default_val(0);
 
 cpputil::ValueArg<size_t>& instruction_mass_arg =

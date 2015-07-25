@@ -21,6 +21,7 @@
 #include "src/cost/binsize.h"
 #include "src/cost/measured.h"
 #include "src/cost/nacl.h"
+#include "src/cost/nacl2.h"
 #include "src/cost/size.h"
 #include "src/cost/sseavx.h"
 #include "src/cost/nongoal.h"
@@ -56,6 +57,7 @@ private:
     st["latency"] =      new LatencyCostGadget();
     st["measured"] =     new MeasuredCost();
     st["nacl"] =         new NaClCost();
+    st["nacl2"] =        new NaCl2Cost();
     st["size"] =         new SizeCost();
     st["sseavx"] =       new SseAvxCost();
     st["nongoal"] =      new NonGoalCostGadget(target.def_ins(), target.live_outs());

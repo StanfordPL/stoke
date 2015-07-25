@@ -121,8 +121,8 @@ void show_state(const SearchState& state, ostream& os) {
   ofs.filter().padding(5);
 
   auto best_yet = state.best_yet;
-  CfgTransforms::remove_unreachable(best_yet);
-  CfgTransforms::remove_nop(best_yet);
+  //CfgTransforms::remove_unreachable(best_yet);
+  //CfgTransforms::remove_nop(best_yet);
 
   lowest_cost = state.best_yet_cost;
   ofs << "Lowest Cost Discovered (" << state.best_yet_cost << ")" << endl;

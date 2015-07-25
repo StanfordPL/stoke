@@ -12,17 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/transform/add_nops.h"
+#include "src/transform/delete.h"
 
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-#define ROUND_UP(X, Y) (X + Y - (X % Y))
-
 namespace stoke {
 
-TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
+TransformInfo DeleteTransform::operator()(Cfg& cfg) {
 
 
   TransformInfo ti;
@@ -33,26 +31,13 @@ TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
 
   size_t index = (gen_() % (cfg.get_code().size() - 1)) + 1;
   ti.undo_index[0] = index;
+  ti.undo_instr = cfg.get_code()[index];
 
-  size_t new_nops = 1;
-  ti.undo_index[1] = new_nops;
-  /*
-  buffer_.reserve((index+1)*32);
-  assm_.start(buffer_);
-  auto code = cfg.get_code();
-  for(size_t i = 0; i < index; ++i) {
-    assm_.assemble(code[i]);
-  }
-
-  size_t end = buffer_.size() % 0x20;;
-  size_t new_nops = 0x20 - end;
-  ti.undo_index[1] = new_nops;
-  */
+  if(is_control_other_than_call(ti.undo_instr.get_opcode()))
+    return ti;
 
   auto& function = cfg.get_function();
-  for(size_t i = 0; i < new_nops; ++i) {
-    function.insert(index, Instruction(NOP));
-  }
+  function.remove(index);
 
   if (!cfg.check_invariants()) {
     undo(cfg, ti);
@@ -66,12 +51,10 @@ TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
   return ti;
 }
 
-void AddNopsTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
+void DeleteTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   auto& function = cfg.get_function();
-  for(size_t i = 0; i < ti.undo_index[1]; ++i) {
-    function.remove(ti.undo_index[0]);
-  }
+  function.insert(ti.undo_index[0], ti.undo_instr);
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());

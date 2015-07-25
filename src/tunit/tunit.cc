@@ -185,7 +185,9 @@ void TUnit::insert(size_t index, const x64asm::Instruction& instr, bool rescale_
   hex_sizes_[index] = size;
 
   // Insert this instruction
+  //cout << "before insert of " << instr << " into code at " << index << ": " << endl << code_ << std::endl;
   code_.insert(code_.begin() + index, instr);
+  //cout << "after insert into code: " << endl << code_ << std::endl;
 
   // If rescale rip is true, we have to adjust a global rip offset
   // Otherwise we'll just use the rip offsets in this instruction as they are given
