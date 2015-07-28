@@ -93,10 +93,7 @@ protected:
   void run_sandbox(const Cfg& cfg) {
     assert(sandbox_);
     if (must_run_sandbox_ && need_sandbox()) {
-      sandbox_->expert_mode();
-      sandbox_->expert_use_disposable_labels();
-      sandbox_->expert_recompile(cfg);
-      sandbox_->expert_recycle_labels();
+      sandbox_->insert_function(cfg);
       sandbox_->run();
     }
   }

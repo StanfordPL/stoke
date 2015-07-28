@@ -14,6 +14,10 @@
 
 #include "src/transform/delete.h"
 
+#ifndef NDEBUG
+#include "src/cost/latency.h"
+#endif
+
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
@@ -44,13 +48,16 @@ TransformInfo DeleteTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
-  assert(cfg.invariant_no_undef_reads());
-  assert(cfg.get_function().check_invariants());
+
   cfg.recompute();
   if(!cfg.check_invariants()) {
     undo(cfg, ti);
     return ti;
   }
+
+  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.get_function().check_invariants());
+  assert(LatencyCost()(cfg).first);
 
   ti.success = true;
   return ti;
@@ -64,6 +71,7 @@ void DeleteTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
+  assert(LatencyCost()(cfg).first);
 }
 
 

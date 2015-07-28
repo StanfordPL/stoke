@@ -14,11 +14,15 @@
 
 #include "src/transform/add_nops.h"
 
+#ifndef NDEBUG
+#include "src/cost/latency.h"
+#endif
+
+
+
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
-
-#define ROUND_UP(X, Y) (X + Y - (X % Y))
 
 namespace stoke {
 
@@ -54,19 +58,15 @@ TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
     function.insert(index, Instruction(NOP));
   }
 
-  if (!cfg.check_invariants()) {
-    undo(cfg, ti);
-    return ti;
-  }
-
   cfg.recompute();
-  if(!cfg.check_invariants()) {
+  if (!cfg.check_invariants()) {
     undo(cfg, ti);
     return ti;
   }
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
+  assert(LatencyCost()(cfg).first);
 
   ti.success = true;
   return ti;
@@ -82,6 +82,7 @@ void AddNopsTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
+  assert(LatencyCost()(cfg).first);
 }
 
 

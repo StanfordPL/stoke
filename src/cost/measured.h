@@ -55,6 +55,7 @@ public:
   /** Add to the measured latency */
   static void measured_callback(const StateCallbackData& data, void* arg) {
     MeasuredCost* ptr = (MeasuredCost*)arg;
+    assert(data.line < data.code.size());
     ptr->latency_ += data.code[data.line].haswell_latency();
   }
 

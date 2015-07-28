@@ -127,7 +127,7 @@ void show_state(const SearchState& state, ostream& os) {
   lowest_cost = state.best_yet_cost;
   ofs << "Lowest Cost Discovered (" << state.best_yet_cost << ")" << endl;
   ofs << endl;
-  ofs << best_yet.get_code();
+  ofs << TUnit(best_yet.get_code());
   ofs.filter().next();
 
   auto best_correct = state.best_correct;
@@ -137,7 +137,7 @@ void show_state(const SearchState& state, ostream& os) {
   lowest_correct = state.best_correct_cost;
   ofs << "Lowest Known Correct Cost (" << state.best_correct_cost << ")" << endl;
   ofs << endl;
-  ofs << best_correct.get_code();
+  ofs << TUnit(best_correct.get_code());
   ofs.filter().done();
 }
 

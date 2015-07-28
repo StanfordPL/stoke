@@ -745,6 +745,7 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
     const auto begin = size == 0 ? 0 : cfg.get_index(Cfg::loc_type(b, 0));
 
     for (auto i = begin, ie = begin + size; i < ie; ++i) {
+      assert(i < cfg.get_code().size());
       // Look up instruction and rip that points beyond this instruction
       const auto& f = cfg.get_function();
       const auto& instr = f.get_code()[i];
