@@ -17,3 +17,13 @@ Some challenges with this benchmark:
   global-minimum with that loop, and works well :)  Weighting NaCl against
   performance seems to require hand-tuning for now; making NaCl worth 20x the
   efficiency seemed to work.
+
+  - This worked without add_nops, delete moves or nacl2 cost function -- but
+  it's a whole lot better with these.
+
+  - Lastly, for synthesis, we can get a much better rewrite than the original,
+  but only if we allow for a bigger code size than original NaCl.  This is
+  because we can do a loop invariant code motion that the original NaCl code
+  that forces us to use an extra bundle.  It should be possible to avoid doing
+  this, but it doesn't seem important for the effort; we'd need to implement
+  different jump sizes in x64asm, and do some cost function tweaks.

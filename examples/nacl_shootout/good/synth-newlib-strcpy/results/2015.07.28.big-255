@@ -1,0 +1,91 @@
+  .text
+  .globl strcpy
+  .type strcpy, @function
+
+#! file-offset 0x1667e0
+#! rip-offset  0x1267e0
+#! capacity    192 bytes
+
+# Text                            #  Line  RIP       Bytes  Opcode    
+.strcpy:                          #        0x1267e0  0      OPC=0     
+  movq %rdi, %rcx                 #  1     0x1267e0  3      OPC=1162  
+  movq %rdi, %rax                 #  2     0x1267e3  3      OPC=1163  
+  orq %rsi, %rcx                  #  3     0x1267e6  3      OPC=1385  
+  nopl %eax                       #  4     0x1267e9  3      OPC=1347  
+  andl $0x7, %ecx                 #  5     0x1267ec  3      OPC=132   
+  nop                             #  6     0x1267ef  1      OPC=1343  
+  movq %rax, %rdx                 #  7     0x1267f0  3      OPC=1163  
+  nop                             #  8     0x1267f3  1      OPC=1343  
+  jne .L_68                       #  9     0x1267f4  6      OPC=963   
+  nop                             #  10    0x1267fa  1      OPC=1343  
+  nop                             #  11    0x1267fb  1      OPC=1343  
+  nop                             #  12    0x1267fc  1      OPC=1343  
+  nop                             #  13    0x1267fd  1      OPC=1343  
+  nop                             #  14    0x1267fe  1      OPC=1343  
+  nop                             #  15    0x1267ff  1      OPC=1343  
+  nop                             #  16    0x126800  1      OPC=1343  
+  leal (%rsi), %r11d              #  17    0x126801  3      OPC=1066  
+  orq (%r15,%r11,1), %rcx         #  18    0x126804  4      OPC=1384  
+  nop                             #  19    0x126808  1      OPC=1343  
+  nop                             #  20    0x126809  1      OPC=1343  
+  nop                             #  21    0x12680a  1      OPC=1343  
+  nop                             #  22    0x12680b  1      OPC=1343  
+  movq $0xfefefefefefefeff, %r11  #  23    0x12680c  10     OPC=1160  
+  nop                             #  24    0x126816  1      OPC=1343  
+  leaq (%rcx,%r11,1), %rdx        #  25    0x126817  4      OPC=1069  
+  movq %rcx, %rdi                 #  26    0x12681b  3      OPC=1162  
+  nop                             #  27    0x12681e  1      OPC=1343  
+  nop                             #  28    0x12681f  1      OPC=1343  
+  nop                             #  29    0x126820  1      OPC=1343  
+  nop                             #  30    0x126821  1      OPC=1343  
+  movq $0x8080808080808080, %r10  #  31    0x126822  10     OPC=1160  
+  negq %rdi                       #  32    0x12682c  3      OPC=1340  
+  andq %rdi, %rdx                 #  33    0x12682f  3      OPC=140   
+  testq %r10, %rdx                #  34    0x126832  3      OPC=2438  
+  movq %rax, %rdx                 #  35    0x126835  3      OPC=1162  
+  nop                             #  36    0x126838  1      OPC=1343  
+  nop                             #  37    0x126839  1      OPC=1343  
+  jne .L_68                       #  38    0x12683a  6      OPC=963   
+.L_40:                            #        0x126840  0      OPC=0     
+  addq $0x8, %rdx                 #  39    0x126840  4      OPC=70    
+  leal -0x8(%rdx), %r8d           #  40    0x126844  4      OPC=1066  
+  movq %rcx, (%r15,%r8,1)         #  41    0x126848  4      OPC=1138  
+  nop                             #  42    0x12684c  1      OPC=1343  
+  nop                             #  43    0x12684d  1      OPC=1343  
+  addq $0x8, %rsi                 #  44    0x12684e  4      OPC=70    
+  leal (%rsi), %r8d               #  45    0x126852  3      OPC=1066  
+  movq (%r15,%r8,1), %rcx         #  46    0x126855  4      OPC=1161  
+  leaq (%rcx,%r11,1), %r8         #  47    0x126859  4      OPC=1069  
+  movq %rcx, %r9                  #  48    0x12685d  3      OPC=1162  
+  notq %r9                        #  49    0x126860  3      OPC=1354  
+  andq %r9, %r8                   #  50    0x126863  3      OPC=140   
+  testq %r10, %r8                 #  51    0x126866  3      OPC=2438  
+  je .L_40                        #  52    0x126869  6      OPC=893   
+  nop                             #  53    0x12686f  1      OPC=1343  
+  nop                             #  54    0x126870  1      OPC=1343  
+  nop                             #  55    0x126871  1      OPC=1343  
+  nopl %eax                       #  56    0x126872  3      OPC=1347  
+  nop                             #  57    0x126875  1      OPC=1343  
+  nop                             #  58    0x126876  1      OPC=1343  
+  nop                             #  59    0x126877  1      OPC=1343  
+  nop                             #  60    0x126878  1      OPC=1343  
+  nop                             #  61    0x126879  1      OPC=1343  
+  nopl %eax                       #  62    0x12687a  3      OPC=1347  
+  nop                             #  63    0x12687d  1      OPC=1343  
+  nop                             #  64    0x12687e  1      OPC=1343  
+  nop                             #  65    0x12687f  1      OPC=1343  
+.L_68:                            #        0x126880  0      OPC=0     
+  addq $0x1, %rdx                 #  66    0x126880  4      OPC=70    
+  addq $0x1, %rsi                 #  67    0x126884  4      OPC=70    
+  leal -0x1(%rsi), %ecx           #  68    0x126888  3      OPC=1066  
+  movsbl (%r15,%rcx,1), %ecx      #  69    0x12688b  5      OPC=1280  
+  leal -0x1(%rdx), %r8d           #  70    0x126890  4      OPC=1066  
+  movb %cl, (%r15,%r8,1)          #  71    0x126894  4      OPC=1141  
+  sall $0x1, %ecx                 #  72    0x126898  2      OPC=2070  
+  jne .L_68                       #  73    0x12689a  6      OPC=963   
+  popq %r11                       #  74    0x1268a0  2      OPC=1694  
+  andl $0xe0, %r11d               #  75    0x1268a2  4      OPC=132   
+  addq %r15, %r11                 #  76    0x1268a6  3      OPC=72    
+  jmpq %r11                       #  77    0x1268a9  3      OPC=928   
+                                                                      
+.size strcpy, .-strcpy
