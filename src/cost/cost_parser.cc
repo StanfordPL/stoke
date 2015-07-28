@@ -136,7 +136,7 @@ ExprCost* CostParser::parse_T() {
 ExprCost* CostParser::parse_VAR() {
   std::string var = "";
 
-  while(peek() >= 'a' && peek() <= 'z') {
+  while((peek() >= 'a' && peek() <= 'z') || (peek() >= '0' && peek() <= '9')) {
     var = var.append(1, next());
   }
 

@@ -59,6 +59,12 @@ TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
+  cfg.recompute();
+  if(!cfg.check_invariants()) {
+    undo(cfg, ti);
+    return ti;
+  }
+
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 
@@ -72,6 +78,7 @@ void AddNopsTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   for(size_t i = 0; i < ti.undo_index[1]; ++i) {
     function.remove(ti.undo_index[0]);
   }
+  cfg.recompute();
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());

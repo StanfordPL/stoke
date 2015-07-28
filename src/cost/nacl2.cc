@@ -15,6 +15,8 @@
 #include <unordered_set>
 
 #include "src/cost/nacl2.h"
+#include "src/ext/cpputil/include/io/column.h"
+#include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 using namespace cpputil;
@@ -185,6 +187,11 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
     // 4. We're emitting a memory instruction that must match up
     //    with the previous instruction exactly and be in the
     //    same bundle.
+    if(instr.is_nop()) {
+      for(size_t j = 0; j < 32; ++j) {
+        table[j][i+1] = table[j][i];
+      }
+    }
 
     if(instr.is_label_defn()) {
       Label l = instr.get_operand<Label>(0);
@@ -197,23 +204,26 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
         // case 2
         uint64_t min_cost = INFTY;
         for(size_t j = 0; j < 32; ++j) {
-          min_cost = MIN(table[j][i] + ((32 - j) & 0x1f), min_cost);
+          if(table[j][i] != INFTY)
+            min_cost = MIN(table[j][i] + ((32 - j) & 0x1f), min_cost);
         }
         table[0][i+1] = min_cost;
       }
-    } else if (!instr.is_explicit_memory_dereference()){
+    } else if (!instr.is_explicit_memory_dereference()) {
       // case 3
       for(size_t j = 0; j < 32; ++j) {
         // ways to fit in the same frame as the previous
         for(size_t k = j; k + instr_size <= 32; ++k) {
           size_t index = (k+instr_size)&0x1f;
-          table[index][i+1] = MIN(table[index][i+1], table[j][i] + k-j);
+          if(table[j][i] != INFTY)
+            table[index][i+1] = MIN(table[index][i+1], table[j][i] + k-j);
         }
         // ways to fit into the next frame
         // TODO: don't have to do every iteration of this loop
         for(size_t k = 0; k + instr_size <= 32; ++k) {
           size_t index = (k + instr_size) & 0x1f;
-          table[index][i+1] = MIN(table[index][i+1], table[j][i] + (32-j) + k);
+          if(table[j][i] != INFTY)
+            table[index][i+1] = MIN(table[index][i+1], table[j][i] + (32-j) + k);
         }
       }
     } else {
@@ -227,9 +237,45 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
 
   uint64_t min_extra_score = INFTY;
   for(size_t i = 0; i < 32; ++i) {
-    min_extra_score = MIN(min_extra_score, table[i][size+1]);
+    min_extra_score = MIN(min_extra_score, table[i][size]);
   }
   score += min_extra_score;
+
+#ifdef DEBUG_NACL_COST
+  // Let's print the table!
+  cout << "The big bad dynamic programing table." << endl << endl;
+
+  ofilterstream<Column> ofs(cout);
+  ofs.filter().padding(3);
+
+  for(size_t i = 0; i < size; ++i) {
+    ofs << cfg.get_code()[i] << endl;
+  }
+  ofs.filter().next();
+
+  for(size_t i = 0; i < size; ++i) {
+    ofs << assm_.hex_size(cfg.get_code()[i]) << endl;
+  }
+  ofs.filter().next();
+
+  for(size_t i = 0; i < size; ++i) {
+    ofs << "|" << endl;
+  }
+  ofs.filter().next();
+
+  for(size_t i = 0; i < 32; ++i) {
+    for(size_t j = 1; j <= size; ++j) {
+      if(table[i][j] != INFTY)
+        ofs << table[i][j] << endl;
+      else
+        ofs << "X" << endl;
+    }
+    if(i != 31)
+      ofs.filter().next();
+  }
+  ofs.filter().done();
+#endif
+
 
   // 3. no pseudo instructions may cross 32-bit boundaries (NO)
   // 4. call instructions must be 5 bytes before a 32-byte boundary (NO)

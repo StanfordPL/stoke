@@ -72,6 +72,11 @@ Sandbox::Sandbox() {
     const auto res = sigaction(SIGFPE, &sa, 0);
     (void) res;
     assert(res != -1 && "Unable to install sigfpe handler!");
+
+#ifndef NDEBUG
+    sigaction(SIGILL, &sa, 0);
+#endif
+
   }
 }
 

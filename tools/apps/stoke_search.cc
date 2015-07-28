@@ -271,8 +271,10 @@ int main(int argc, char** argv) {
 
   SeedGadget seed;
   FunctionsGadget aux_fxns;
+  cout << "About to make target gadget" << endl;
   TargetGadget target(aux_fxns, init_arg == Init::ZERO);
 
+  cout << "Finished making target gadget" << endl;
   TrainingSetGadget training_set(seed);
   SandboxGadget training_sb(training_set, aux_fxns);
 
@@ -315,7 +317,9 @@ int main(int argc, char** argv) {
   }
 
   string final_msg;
+  cout << "Creating SearchStateGadget" << std::endl;
   SearchStateGadget state(target, aux_fxns);
+  cout << "finished SearchStateGadget" << std::endl;
   for (size_t i = 0; ; ++i) {
     CostFunctionGadget fxn(target, &training_sb);
 

@@ -46,6 +46,11 @@ TransformInfo DeleteTransform::operator()(Cfg& cfg) {
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
+  cfg.recompute();
+  if(!cfg.check_invariants()) {
+    undo(cfg, ti);
+    return ti;
+  }
 
   ti.success = true;
   return ti;
@@ -55,6 +60,7 @@ void DeleteTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   auto& function = cfg.get_function();
   function.insert(ti.undo_index[0], ti.undo_instr);
+  cfg.recompute();
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
