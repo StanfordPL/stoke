@@ -125,7 +125,7 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
   // j-instructions to a 32K+i boundary and follow all the rules.
 
   // initialize the table
-#define INFTY 0xffffffffffffffff
+#define INFTY 0xefffffffffffffff
   size_t size = cfg.get_code().size();
   uint64_t table[32][size+1];
   for(size_t i = 0; i < 32; ++i)
@@ -187,9 +187,13 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
     // 4. We're emitting a memory instruction that must match up
     //    with the previous instruction exactly and be in the
     //    same bundle.
+
     if(instr.is_nop()) {
+      // if we have a nop, then for cost 1, we can keep the
+      // table the same as it previously was.
       for(size_t j = 0; j < 32; ++j) {
-        table[j][i+1] = table[j][i];
+        if(table[j][i] != INFTY)
+          table[j][i+1] = table[j][i]+1;
       }
     }
 
