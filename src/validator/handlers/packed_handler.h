@@ -28,6 +28,7 @@ namespace stoke {
 class PackedHandler : public Handler {
 
 public:
+
   PackedHandler() : Handler() {
 
     add_opcode("addpd", [] (SymBitVector a, SymBitVector b) {
@@ -709,6 +710,10 @@ public:
 
   }
 
+  virtual std::vector<std::string> full_support_opcodes() {
+    return opcode_names_;
+  }
+
   SupportLevel get_support(const x64asm::Instruction& instr);
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
@@ -720,6 +725,7 @@ private:
   /** Represents the operation done in parallel on the bitvectors */
   typedef std::function<SymBitVector (SymBitVector, SymBitVector, SymBitVector, uint16_t)> BinaryOperatorWithConstant;
 
+  std::vector<std::string> opcode_names_;
 
   class PackedOpcode {
 
@@ -837,6 +843,7 @@ private:
 
     opcodes_[opcode] = entry;
     opcodes_["v" + opcode] = entry;
+    opcode_names_.push_back(opcode);
 
     return *entry;
   }
