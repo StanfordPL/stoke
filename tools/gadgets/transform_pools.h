@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_TRANSFORMS_H
-#define STOKE_TOOLS_GADGETS_TRANSFORMS_H
+#ifndef STOKE_TOOLS_GADGETS_TRANSFORM_POOLS_H
+#define STOKE_TOOLS_GADGETS_TRANSFORM_POOLS_H
 
 #include <iostream>
 #include <random>
@@ -23,54 +23,86 @@
 #include "src/ext/cpputil/include/io/console.h"
 
 #include "src/cfg/cfg.h"
-#include "src/search/transforms.h"
-#include "src/solver/z3solver.h"
+#include "src/solver/cvc4solver.h"
 #include "src/target/cpu_info.h"
+#include "src/transform/pools.h"
 #include "src/tunit/tunit.h"
 #include "src/validator/validator.h"
 
-#include "tools/args/transforms.inc"
+#include "tools/args/transform_pool.inc"
 
 namespace stoke {
 
-class TransformsGadget : public Transforms {
+class TransformPoolsGadget : public TransformPools {
 public:
-  TransformsGadget(const Cfg& cfg, const std::vector<TUnit>& aux_fxns,
-                   std::default_random_engine::result_type seed) : Transforms() {
-    smt_ = nullptr;
-    validator_ = nullptr;
+  TransformPoolsGadget(const Cfg& cfg, const std::vector<TUnit>& aux_fxns,
+                       std::default_random_engine::result_type seed) : TransformPools() {
 
     set_seed(seed);
 
-    if (validator_must_support) {
-      smt_ = new Z3Solver();
+    // add a validator if needed
+    smt_ = nullptr;
+    validator_ = nullptr;
+    if (validator_must_support_arg.value()) {
+      smt_ = (SMTSolver*)new Cvc4Solver();
       validator_ = new Validator(*smt_);
-      set_must_validate(validator_);
+      set_validator(validator_);
     }
 
-    set_opcode_pool(cfg, cpu_flags(), call_weight_arg, preserve_regs(),
-                    opc_blacklist_arg, opc_whitelist_arg);
-    set_operand_pool(cfg, preserve_regs_arg);
-
+    // Extra immediates provided by user
     for (const auto& imm : immediates_arg.value()) {
       insert_immediate(imm);
     }
+
+    // Labels for function calls
     for (const auto& fxn : aux_fxns) {
       insert_label(fxn.get_leading_label());
     }
+
+    // Extra memory operands provided by user
     for (const auto& m : mem_ops()) {
       insert_mem(m);
     }
+
+    // RIP offsets provided by user
     for (const auto r : rips_arg.value()) {
       insert_rip(r);
     }
 
-    if (!invariant_non_empty_opcode_pool()) {
+    // Set memory read/write, and add memory opcodes, immediates.
+    add_target(cfg);
+
+    // Set cpu flags to choose opcodes from.
+    set_flags(cpu_flags());
+
+    // Set weight of call opcode
+    set_opcode_weight(x64asm::CALL_LABEL, call_weight_arg);
+
+    // Set registers to be preserved
+    set_preserve_regs(preserve_regs());
+
+    // remove all blacklisted opcodes
+    for(auto op : opc_blacklist_arg.value())
+      remove_opcode(op);
+
+    // if a whitelist was provided, wipe all the opcodes out and
+    // add the ones that were in the whitelist
+    if(!opc_whitelist_arg.value().empty()) {
+      for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
+        remove_opcode((x64asm::Opcode)i);
+      for(auto op : opc_whitelist_arg.value()) {
+        insert_opcode(op);
+      }
+    }
+
+    recompute_pools();
+
+    if(opcode_pool_.empty()) {
       cpputil::Console::warn() << "No valid opcodes can be proposed; consider modifying black/whitelists" << std::endl;
     }
   }
 
-  ~TransformsGadget() {
+  ~TransformPoolsGadget() {
     if (validator_) {
       delete validator_;
     }
@@ -80,7 +112,7 @@ public:
   }
 
 private:
-  Z3Solver* smt_;
+  SMTSolver* smt_;
   Validator* validator_;
 
   /** Overrides the value of --callee_save if necessary */

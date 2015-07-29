@@ -18,6 +18,7 @@
 #include <unistd.h>
 
 #include "src/search/search.h"
+#include "src/transform/weighted.h"
 
 using namespace cpputil;
 using namespace std;
@@ -35,8 +36,7 @@ void handler(int sig, siginfo_t* siginfo, void* context) {
 
 namespace stoke {
 
-Search::Search(Transforms* transforms) : transforms_(transforms) {
-  set_max_instrs(16);
+Search::Search(Transform* transform) : transform_(transform) {
   set_seed(0);
   set_timeout_itr(0);
   set_timeout_sec(steady_clock::duration::zero());
@@ -59,22 +59,6 @@ Search::Search(Transforms* transforms) : transforms_(transforms) {
   }
 }
 
-Search& Search::set_mass(Move move, size_t mass) {
-  vector<Move> new_moves;
-  for (auto m : moves_) {
-    if (m != move) {
-      new_moves.push_back(m);
-    }
-  }
-  for (size_t i = 0; i < mass; ++i) {
-    new_moves.push_back(move);
-  }
-  moves_ = new_moves;
-  int_ = decltype(int_)(0, moves_.size() - 1);
-
-  return *this;
-}
-
 void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxns) {
 
   // Make sure target is correct with respect to itself
@@ -88,7 +72,9 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
   assert(state.best_correct.is_sound());
 
   // Statistics callback variables
-  move_statistics = vector<Statistics>((size_t) Move::NUM_MOVES);
+  // FIXME: Search only works with 'WeightedTransform', because it needs
+  // statistics.
+  move_statistics = vector<Statistics>(static_cast<WeightedTransform*>(transform_)->size());
   num_iterations = 0;
   const auto start = chrono::steady_clock::now();
 
@@ -98,10 +84,9 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     state.best_correct = state.current;
     state.best_correct_cost = 0;
     return;
-  } else if (moves_.empty()) {
-    state.success = false;
-    return;
   }
+
+  TransformInfo ti;
 
   give_up_now = false;
   size_t iterations = 0;
@@ -121,13 +106,13 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       break;
     }
 
-    const auto move_type = moves_[int_(gen_)];
-    move_statistics[(size_t) move_type].num_proposed++;
 
-    if (!transforms_->modify(state.current, move_type)) {
+    ti = (*transform_)(state.current);
+    move_statistics[ti.move_type].num_proposed++;
+    if (!ti.success) {
       continue;
     }
-    move_statistics[(size_t) move_type].num_succeeded++;
+    move_statistics[ti.move_type].num_succeeded++;
 
     const auto p = prob_(gen_);
     const auto max = state.current_cost - (log(p) / beta_);
@@ -137,10 +122,10 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     const auto new_cost = new_res.second;
 
     if (new_cost > max) {
-      transforms_->undo(state.current, move_type);
+      (*transform_).undo(state.current, ti);
       continue;
     }
-    move_statistics[(size_t) move_type].num_accepted++;
+    move_statistics[ti.move_type].num_accepted++;
     state.current_cost = new_cost;
 
     const auto new_best_yet = new_cost < state.best_yet_cost;
@@ -177,7 +162,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
 }
 
 StatisticsCallbackData Search::get_statistics() const {
-  return {move_statistics, num_iterations, elapsed};
+  return {move_statistics, num_iterations, elapsed, transform_};
 }
 
 void Search::stop() {

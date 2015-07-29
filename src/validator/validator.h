@@ -39,10 +39,12 @@ public:
   Validator(SMTSolver& solver) : solver_(solver),
     handler_(*(new ComboHandler())), free_handler_(true) {
     has_error_ = false;
+    setup_support_table();
   }
 
   Validator(SMTSolver& solver, Handler& h) : solver_(solver), handler_(h), free_handler_(false) {
     has_error_ = false;
+    setup_support_table();
   }
 
   ~Validator() {
@@ -91,7 +93,8 @@ public:
   bool is_supported(x64asm::Instruction& i);
   /** Returns whether this instruction is supported.  No error message. */
   bool is_supported(x64asm::Instruction& i) const;
-
+  /** Returns whether an opcode is fully supported.  No error message. */
+  bool is_supported(const x64asm::Opcode& op) const;
 
 
   /** Extracts a counterexample from a model.  Assumes that you've constructed
@@ -131,6 +134,9 @@ private:
       on failure. */
   void build_circuit(const x64asm::Instruction& i, SymState& state) const;
 
+  /** Setup a table of opcodes we support.  Used by constructors only. */
+  void setup_support_table();
+
   /** SMT Solver to use */
   SMTSolver& solver_;
 
@@ -147,6 +153,9 @@ private:
   stoke::Handler& handler_;
   /** Whether we're responsible for freeing the memory of this handler */
   const bool free_handler_;
+
+  /** What opcodes do we fully support? */
+  std::array<bool, X64ASM_NUM_OPCODES> support_table_;
 
   /** Was an error encountered? */
   bool has_error_;
