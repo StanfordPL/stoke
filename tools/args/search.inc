@@ -25,48 +25,6 @@ namespace stoke {
 cpputil::Heading& search_heading =
   cpputil::Heading::create("Search Options:");
 
-cpputil::ValueArg<size_t>& instruction_mass_arg =
-  cpputil::ValueArg<size_t>::create("instruction_mass")
-  .usage("<int>")
-  .description("Instruction move proposal mass")
-  .default_val(1);
-
-cpputil::ValueArg<size_t>& opcode_mass_arg =
-  cpputil::ValueArg<size_t>::create("opcode_mass")
-  .usage("<int>")
-  .description("Opcode move proposal mass")
-  .default_val(1);
-
-cpputil::ValueArg<size_t>& operand_mass_arg =
-  cpputil::ValueArg<size_t>::create("operand_mass")
-  .usage("<int>")
-  .description("Operand move proposal mass")
-  .default_val(1);
-
-cpputil::ValueArg<size_t>& local_swap_mass_arg =
-  cpputil::ValueArg<size_t>::create("local_swap_mass")
-  .usage("<int>")
-  .description("Local swap move proposal mass")
-  .default_val(1);
-
-cpputil::ValueArg<size_t>& global_swap_mass_arg =
-  cpputil::ValueArg<size_t>::create("global_swap_mass")
-  .usage("<int>")
-  .description("Global swap move proposal mass")
-  .default_val(1);
-
-cpputil::ValueArg<size_t>& resize_mass_arg =
-  cpputil::ValueArg<size_t>::create("resize_mass")
-  .usage("<int>")
-  .description("Resize move proposal mass")
-  .default_val(1);
-
-cpputil::ValueArg<size_t>& extension_mass_arg =
-  cpputil::ValueArg<size_t>::create("extension_mass")
-  .usage("<int>")
-  .description("Extension move proposal mass")
-  .default_val(0);
-
 cpputil::ValueArg<double>& beta_arg =
   cpputil::ValueArg<double>::create("beta")
   .usage("<double>")

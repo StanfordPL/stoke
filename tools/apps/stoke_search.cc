@@ -43,9 +43,10 @@
 #include "tools/gadgets/solver.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
-#include "tools/gadgets/transforms.h"
+#include "tools/gadgets/transform_pools.h"
 #include "tools/gadgets/validator.h"
 #include "tools/gadgets/verifier.h"
+#include "tools/gadgets/weighted_transform.h"
 #include "tools/io/postprocessing.h"
 #include "tools/io/failed_verification_action.h"
 
@@ -176,22 +177,20 @@ void show_statistics(const StatisticsCallbackData& data, ostream& os) {
     total += data.move_statistics[i];
   }
 
+  const WeightedTransform* transform = static_cast<const WeightedTransform*>(data.transform);
+
   ofs << "Move Type" << endl;
   ofs << endl;
-  ofs << "Instruction" << endl;
-  ofs << "Opcode" << endl;
-  ofs << "Operand" << endl;
-  ofs << "Resize" << endl;
-  ofs << "Local Swap" << endl;
-  ofs << "Global Swap" << endl;
-  ofs << "Extension" << endl;
+  for(size_t i = 0; i < transform->size(); ++i) {
+    ofs << transform->get_transform(i)->get_name() << endl;
+  }
   ofs << endl;
   ofs << "Total";
   ofs.filter().next();
 
   ofs << "Proposed" << endl;
   ofs << endl;
-  for (size_t i = 0; i < (size_t) Move::NUM_MOVES; ++i) {
+  for (size_t i = 0; i < transform->size(); ++i) {
     ofs << 100 * (double)data.move_statistics[i].num_proposed / data.iterations << "%" << endl;
   }
   ofs << endl;
@@ -200,7 +199,7 @@ void show_statistics(const StatisticsCallbackData& data, ostream& os) {
 
   ofs << "Succeeded" << endl;
   ofs << endl;
-  for (size_t i = 0; i < (size_t) Move::NUM_MOVES; ++i) {
+  for (size_t i = 0; i < transform->size(); ++i) {
     ofs << 100 * (double)data.move_statistics[i].num_succeeded / data.iterations << "%" << endl;
   }
   ofs << endl;
@@ -209,7 +208,7 @@ void show_statistics(const StatisticsCallbackData& data, ostream& os) {
 
   ofs << "Accepted" << endl;
   ofs << endl;
-  for (size_t i = 0; i < (size_t) Move::NUM_MOVES; ++i) {
+  for (size_t i = 0; i < transform->size(); ++i) {
     ofs << 100 * (double)data.move_statistics[i].num_accepted / data.iterations << "%" << endl;
   }
   ofs << endl;
@@ -277,8 +276,9 @@ int main(int argc, char** argv) {
   TrainingSetGadget training_set(seed);
   SandboxGadget training_sb(training_set, aux_fxns);
 
-  TransformsGadget transforms(target, aux_fxns, seed);
-  SearchGadget search(&transforms, seed);
+  TransformPoolsGadget transform_pools(target, aux_fxns, seed);
+  WeightedTransformGadget transform(transform_pools, seed);
+  SearchGadget search(&transform, seed);
 
   TestSetGadget test_set(seed);
   SandboxGadget test_sb(test_set, aux_fxns);

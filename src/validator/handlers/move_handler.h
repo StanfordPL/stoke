@@ -30,6 +30,15 @@ public:
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
+
+  virtual std::vector<std::string> full_support_opcodes() {
+    std::vector<std::string> opcodes;
+    for(auto it : sign_extend_) {
+      opcodes.push_back(it.first);
+    }
+    return opcodes;
+  }
+
 private:
 
   enum MoveSupport {

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_TRANSFORMS_INC
-#define STOKE_TOOLS_ARGS_TRANSFORMS_INC
+#ifndef STOKE_TOOLS_ARGS_TRANSFORM_POOLS_INC
+#define STOKE_TOOLS_ARGS_TRANSFORM_POOLS_INC
 
 #include <set>
 #include <vector>
@@ -29,7 +29,7 @@
 namespace stoke {
 
 cpputil::Heading& transforms_heading =
-  cpputil::Heading::create("Transform Options:");
+  cpputil::Heading::create("Transform Pool Options:");
 
 cpputil::ValueArg<x64asm::FlagSet, FlagSetReader, FlagSetWriter>& cpu_flags_arg =
   cpputil::ValueArg<x64asm::FlagSet, FlagSetReader, FlagSetWriter>::create("cpu_flags")
@@ -60,7 +60,7 @@ cpputil::FlagArg& callee_save_arg =
   .alternate("propose_callee_save")
   .description("Override the value of preserve_regs to the empty set");
 
-cpputil::FlagArg& validator_must_support =
+cpputil::FlagArg& validator_must_support_arg =
   cpputil::FlagArg::create("validator_must_support")
   .description("Only propose rewrites that the STOKE formal validator can support");
 
