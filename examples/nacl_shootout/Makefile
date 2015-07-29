@@ -49,5 +49,7 @@ replace:
 	mkdir -p newlib/Stoke
 	stoke replace --rewrite result.s -i newlib/Release/part2_unstripped_x86_64.nexe -o newlib/Stoke/part2_stoke.nexe
 
-test:
+test: FORCE
 	/home/berkeley/nacl_sdk/pepper_42/tools/httpd.py --no-dir-check
+
+FORCE:
