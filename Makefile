@@ -73,7 +73,6 @@ SRC_OBJ=\
 	\
 	src/search/search.o \
 	src/search/search_state.o \
-	src/search/transforms.o \
 	\
 	src/solver/z3solver.o \
 	src/solver/cvc4solver.o \
@@ -95,6 +94,15 @@ SRC_OBJ=\
 	src/symstate/state.o \
 	\
 	src/target/cpu_info.o	\
+	\
+	src/transform/global_swap.o \
+	src/transform/instruction.o \
+	src/transform/local_swap.o \
+	src/transform/opcode.o \
+	src/transform/operand.o \
+	src/transform/pools.o \
+	src/transform/rotate.o \
+	src/transform/transform.o \
 	\
 	src/tunit/tunit.o \
 	\
@@ -118,7 +126,6 @@ TOOL_ARGS_OBJ=\
 	tools/args/cost.o \
 	tools/args/functions.o \
 	tools/args/in_out.o \
-	tools/args/move.o \
 	tools/args/rewrite.o \
 	tools/args/sandbox.o \
 	tools/args/search.o \
@@ -135,7 +142,6 @@ TOOL_NON_ARG_OBJ=\
 	tools/io/opc_set.o \
 	tools/io/init.o \
 	tools/io/mem_set.o \
-	tools/io/move.o \
 	tools/io/reduction.o \
 	tools/io/postprocessing.o \
 	tools/io/solver.o \
@@ -316,6 +322,8 @@ src/stategen/%.o: src/stategen/%.cc $(DEPS)
 src/symstate/%.o: src/symstate/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/target/%.o: src/target/%.cc src/target/%.h $(DEPS)
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/transform/%.o: src/transform/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@

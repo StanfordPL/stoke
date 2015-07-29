@@ -21,6 +21,7 @@
 #include "src/sandbox/state_callback.h"
 #include "src/state/regs.h"
 
+using namespace std;
 using namespace stoke;
 using namespace x64asm;
 

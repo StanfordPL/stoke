@@ -466,7 +466,7 @@ Move Type       Proposed     Succeeded     Accepted
 Instruction     16.791%      5.83%         2.009%       
 Opcode          16.646%      8.857%        4.013%       
 Operand         16.593%      10.444%       6.864%       
-Resize          16.611%      0.791%        0.789%       
+Rotate          16.611%      0.791%        0.789%       
 Local Swap      16.597%      1.556%        1.128%       
 Global Swap     16.762%      7.066%        6.08%     
 Extension       0%           0%            0%
@@ -680,75 +680,45 @@ void Search::configure_extension(const Cfg& target, SearchState& state) const {
 Search Transformations
 -----
 
-Transformation types are defined in `src/search/move.h` along with an
-additional type for user-defined extensions.
+Transformation types are defined in the `src/transform` directory.  Each
+transform is a subclass of the abstract class `Transform`.  Existing transforms are,
 
-```c++
-enum class Move {
-  INSTRUCTION = 0,
-  OPCODE,
-  OPERAND,
-  RESIZE,
-  LOCAL_SWAP,
-  GLOBAL_SWAP,
+| Name | Description |
+| ---- | ----------- |
+| instruction | Replaces an instruction with another one chosen at random. |
+| opcode | Replaces an instruction's opcode with a new one that takes operands of the same type. |
+| operand | Replaces an operand of one instruction with another. |
+| rotate | Formerly "resize".  Moves an instruction from one basic block to another, and shifts all the instructions in between. |
+| local_swap | Takes two instructions in the same basic block and swaps them. |
+| global_swap |  Takes two instructions in the entire program and swaps them. |
+| weighted | Selects from among several other transforms at random. |
 
-  // Add user-defined extensions here ...
-  EXTENSION,
 
-  NUM_MOVES
-};
-```
+These subclasses each implement `operator()(Cfg& cfg)` to mutate a Cfg.  This
+function returns an object, `TransformInfo` that contains all the information
+needed to undo this transformation, and also whether the transform succeeded
+(transforms are allowed to fail).  It's common for this object to be set with
+indexes of instructions in the code that were modified, for example.  The
+subclass also implements `undo(Cfg& cfg, TransformInfo ti)`.
 
-Transformations are specified using the family of `--xxxxx_mass` command line
-arguments. These values control the distribution of proposals that are made by
-the `Transforms::modify()` method and undone by the `Transforms::undo()`
-method, which dispatch to the family of `Transforms::xxxxx_move()` and
-`Transforms::undo_xxxxx_move()` methods respectively. User-defined extensions
-should be placed in the `Transforms::extension_move()` and
-`Transforms::undo_extension_move()` methods, which can be triggered by
-specifying a non-zero `--extension_mass`.
+Transforms will often want to select from a collection of operands and opcodes,
+and for this purpose they can access the `pools_` protected variable of the
+Transform` superclass.  This is of type `TransformPools` and allows access to
+these collections.  This makes it possible to configure the collection of
+available opcodes and operands independently of the transforms.  Also, the
+`Transform` superclass has a `gen_` member which is used to produce random
+numbers with a known seed.
 
-```c++
-bool Transforms::extension_move(Cfg& cfg) {
-  // Add user-defined implementation here ...
+Transformation weights are specified using the family of `--xxxxx_mass` command
+line arguments. These values control the distribution of proposals that are
+made by the WeightedTransform, which is the transform used by the
+search.
 
-  // Invariant 1:
-  // If this method returns true, it should leave this class in a state such
-  // that calling undo_extension_move() will revert cfg to its original state.
-
-  // Invariant 2:
-  // If this method returns false, it must leave cfg in its original state.
-
-  // Invariant 3:
-  // If validator_ is non-null, validator_->is_sound(instr) must hold true for
-  // all instructions instr upon return.  (You can assume this holds at the
-  // beginning).
-
-  // Invariant 4:
-  // Transformations must preserve the first instruction in a code sequence
-  // which should be a label that represents the name of a function.
-
-  return false;
-}
-```
-
-```c++
-void Transforms::undo_extension_move(Cfg& cfg) {
-  // Add user-defined implementation here ...
-
-  // Invariant: If the previous invocation of extension_move() returned true, this
-  // method must return cfg to its original state. 
-  
-  return;
-}
-```
-
-As above, both performing and undoing a transformation should leave a control
-flow graph in a valid state. In general, this can be performed by invoking the
-`Cfg::recompute()` method. However because these methods are on STOKE's
-critical path, the faster `Cfg::recompute_defs()` method should be used for
-transformations that do not modify control flow structure and only potentially
-invalidate data-flow values.
+A simple example of how to impelement a transform is in
+`src/transform/global_swap.cc`.  Note that all transforms must appropriately
+make a call to recompute any `Cfg` information that needs to be updated and
+ensure that `cfg.check_invariants()` returns true when done (you can assume it
+    returns true at the beginning of the function).
 
 Cost Function
 -----
