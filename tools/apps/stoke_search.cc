@@ -90,8 +90,8 @@ auto& failed_verification_action =
   .default_val(FailedVerificationAction::ADD_COUNTEREXAMPLE);
 
 auto& cycle_timeout_arg =
-  ValueArg<string>::create("cycle_timeout")
-  .usage("<int>")
+  ValueArg<string, cpputil::LineReader<>>::create("cycle_timeout")
+  .usage("<string>")
   .description("The timeout (as number of iterations) per cycle.  Can be a comma-separated list, where the first element is used for the first cycle, and so on.  Can also be an expression involving the variable 'i' that refers to the current cycle (starting at 1).  The last expression in the list is used for all following cycles.")
   .default_val("10000, 10000, 10000, 10000, 10000, 2**i * 1000");
 

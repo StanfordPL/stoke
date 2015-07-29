@@ -4,3 +4,6 @@
 [submodule "src/ext/cpputil"]
 	path = src/ext/cpputil
 	url = git@github.com:StanfordPL/cpputil.git
+[submodule "src/ext/z3"]
+	path = src/ext/z3
+	url = git@github.com:Z3Prover/z3.git
