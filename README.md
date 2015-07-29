@@ -8,7 +8,7 @@ produce a code sequence that is both correct and an improvement over the
 original, the repeated application of millions of transformations is sufficient
 to produce novel and non-obvious code sequences that have been shown to
 outperform the code produced by general-purpose and domain-specific compilers,
-           and in some cases expert hand-written code.
+and in some cases expert hand-written code.
 
 STOKE has appeared in a number of publications. For a thorough introduction to
 the design of STOKE, see:
@@ -48,7 +48,7 @@ To check what level of hardware support you have, run:
     
 and check if the following cpu flags are present:
 
-    $ flags: ... avx avx2 bmi bmi2 popcnt ...
+    flags: ... avx avx2 bmi bmi2 popcnt ...
 
 If you don't have 'avx' or 'avx2', you will need to compile for nehalem.  If
 you have 'avx', but not avx2, you will compile for 'sandybridge'.  If you have
@@ -77,10 +77,9 @@ Choosing a STOKE version
 The entire STOKE code base is available on GitHub under the Apache Software
 License version 2.0 at [github.com/StanfordPL/stoke-release](https://github.com/StanfordPL/stoke-release/).
 
-We provide both stable releases as well as our latest development code (experimental).  There are
-different trade-offs in deciding which one to use:
+We provide both stable releases as well as our latest development code.  There are different trade-offs in deciding which one to use:
 
-- **Development (Experimental) branch**:  This is our development branch, that
+- **Development branch**:  This is our development branch, that
 we use day-to-day.  It contains the latest bug fixes and features, but also the
 latest bugs.  Sometimes it noticeably breaks, but usually it's okay.  The only
 guarantee is that this branch will always pass our regression tests.  We
