@@ -137,8 +137,6 @@ Sandbox& Sandbox::clear_functions() {
 
   fxns_read_only_.clear();
   all_fxns_read_only_ = true;
-  fxns_assemble_ok_.clear();
-  all_fxns_assemble_ok_ = true;
 
   return *this;
 }
@@ -216,8 +214,6 @@ Sandbox& Sandbox::run(size_t index) {
   // Run the code (control exits abnormally for sigfpe or if linking failed)
   if (!lnkr_.good()) {
     io->out_.code = ErrorCode::SIGCUSTOM_LINKER_ERROR;
-  } else if (!all_fxns_assemble_ok_) {
-    io->out_.code = ErrorCode::SIGCUSTOM_ASSEMBLER_ERROR;
   } else if (!sigsetjmp(buf_, 1)) {
     io->out_.code = harness_.call<ErrorCode>();
   } else {
@@ -272,21 +268,7 @@ void Sandbox::recompile(const Cfg& cfg) {
 
   // Compile the function and record its source
   assert(fxns_[label] != 0);
-  bool ok = emit_function(cfg, fxns_[label]);
-  if(!ok) {
-    cout << "Function " << label << " didn't assemble right." << endl;
-    cout << cfg.get_function() << endl;
-    cout << endl;
-    cout << fxns_[label] << endl;
-  }
-
-  // Update whether assembly is ok
-  fxns_assemble_ok_[label] = ok;
-  all_fxns_assemble_ok_ = true;
-  for(const auto& r : fxns_assemble_ok_) {
-    all_fxns_assemble_ok_ &= r.second;
-  }
-
+  emit_function(cfg, fxns_[label]);
 
   // Update the read only memory tracker
   fxns_read_only_[label] = is_mem_read_only(cfg);
@@ -787,7 +769,9 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   // Restore the STOKE %rsp and return
   emit_load_stoke_rsp();
   assm_.ret();
-  return assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
+  return ok;
 }
 
 void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, const Label& fxn, size_t line) {
@@ -1446,6 +1430,7 @@ void Sandbox::emit_push(const Instruction& instr) {
     assm_.lea(rsp, M64(rsp, Imm32(-1)));
     break;
   case PUSH_R16:
+  case PUSH_R16_1:
     emit_memory_instruction({MOV_M16_R16, {M16(rsp, Imm32(-2)), instr.get_operand<R16>(0)}});
     assm_.lea(rsp, M64(rsp, Imm32(-2)));
     break;

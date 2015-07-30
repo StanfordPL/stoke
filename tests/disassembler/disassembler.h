@@ -64,9 +64,7 @@ TEST(DisassemblerTest, PopCnt) {
   std::stringstream tmp;
   tmp << "._Z6popcntm:" << std::endl;
   tmp << "testq  %rdi,%rdi" << std::endl;
-  tmp << "je     .L_40058f" << std::endl;
-  tmp << "nop" << std::endl;
-  tmp << "nop" << std::endl;
+  tmp << "je     .L_40058f #SIZE=2" << std::endl;
   tmp << "xorl   %eax,%eax" << std::endl;
   for(size_t i = 0; i < 9; ++i)
     tmp << "nop" << std::endl;
@@ -75,7 +73,7 @@ TEST(DisassemblerTest, PopCnt) {
   tmp << "andl   $0x1,%edx" << std::endl;
   tmp << "addl   %edx,%eax" << std::endl;
   tmp << "shrq   $0x1, %rdi" << std::endl;
-  tmp << "jne    .L_400580" << std::endl;
+  tmp << "jne    .L_400580 #SIZE=2" << std::endl;
   tmp << "nop" << std::endl;
   tmp << "nop" << std::endl;
   tmp << "cltq   " << std::endl;

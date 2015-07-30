@@ -335,10 +335,6 @@ private:
   std::unordered_map<x64asm::Label, bool> fxns_read_only_;
   /** The logical and of all of the elements in fxns_read_only_ */
   bool all_fxns_read_only_;
-  /** Flags that track if assembly was successful. */
-  std::unordered_map<x64asm::Label, bool> fxns_assemble_ok_;
-  /** The logical and of all of the elements in fxns_assemble_ok_ */
-  bool all_fxns_assemble_ok_;
 
   /** Check for abi violations between input and output states */
   bool check_abi(const IoPair& iop) const;
