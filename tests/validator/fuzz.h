@@ -95,7 +95,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   TransformPools tp = default_fuzzer_pool();
   tp.set_validator(&v);
-  tp.set_memory_write(true);
+  tp.set_memory_write(false);
   tp.recompute_pools();
 
   fuzz(tp, iterations, &validator_fuzz_callback, (void*)this);
