@@ -170,7 +170,7 @@ private:
     hex.push_back(result.second);
 
     for (const auto& fxn : aux_fxns) {
-      result = assm.assemble(fxn.get_code());
+      auto result = assm.assemble(fxn.get_code());
       if(!result.first) {
         cpputil::Console::error(1) << "Auxiliary function " << fxn.get_leading_label() <<
                                    "has jump with 8-bit offset but target is too far away." << std::endl;
