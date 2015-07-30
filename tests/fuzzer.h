@@ -94,7 +94,7 @@ void fuzz(TransformPools& pools, size_t iterations, void (*callback)(const Cfg& 
   if(!seed) {
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    seed = tv.tv_usec;
+    seed = tv.tv_usec + tv.tv_sec*1000000;;
     fuzz_print(0) << "Seed is " << seed << std::endl;
   }
 
@@ -107,6 +107,8 @@ void fuzz(TransformPools& pools, size_t iterations, void (*callback)(const Cfg& 
   Cfg target(fxn, x64asm::RegSet::universe(), x64asm::RegSet::empty());
 
   InstructionTransform transform(pools);
+  pools.set_seed(seed);
+  transform.set_seed(seed);
   TransformInfo ti;
 
   // Step 3: Fuzz
