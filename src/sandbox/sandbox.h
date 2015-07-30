@@ -335,6 +335,10 @@ private:
   std::unordered_map<x64asm::Label, bool> fxns_read_only_;
   /** The logical and of all of the elements in fxns_read_only_ */
   bool all_fxns_read_only_;
+  /** Flags that track if assembly was successful. */
+  std::unordered_map<x64asm::Label, bool> fxns_assemble_ok_;
+  /** The logical and of all of the elements in fxns_assemble_ok_ */
+  bool all_fxns_assemble_ok_;
 
   /** Check for abi violations between input and output states */
   bool check_abi(const IoPair& iop) const;
@@ -393,8 +397,8 @@ private:
 
   /** Check whether a function is read only wrt memory */
   bool is_mem_read_only(const Cfg& cfg) const;
-  /** Assembles the user's function into a buffer */
-  void emit_function(const Cfg& cfg, x64asm::Function* fxn);
+  /** Assembles the user's function into a buffer.  Returns if successful. */
+  bool emit_function(const Cfg& cfg, x64asm::Function* fxn);
   /** Emit a single callback for this line. */
   void emit_callback(const std::pair<StateCallback, void*>& cb, const x64asm::Label& fxn, size_t line);
   /** Emit all before callbacks */
