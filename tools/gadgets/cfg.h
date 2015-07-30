@@ -162,9 +162,20 @@ private:
 
     // We can't let this hex go out of scope before linking
     std::vector<x64asm::Function> hex;
-    hex.push_back(assm.assemble(get_code()));
+    auto result = assm.assemble(get_code());
+
+    if(!result.first) {
+      cpputil::Console::error(1) << "Target/rewrite has jump with 8-bit offset but target is too far away." << std::endl;
+    }
+    hex.push_back(result.second);
+
     for (const auto& fxn : aux_fxns) {
-      hex.push_back(assm.assemble(fxn.get_code()));
+      result = assm.assemble(fxn.get_code());
+      if(!result.first) {
+        cpputil::Console::error(1) << "Auxiliary function " << fxn.get_leading_label() <<
+                                   "has jump with 8-bit offset but target is too far away." << std::endl;
+      }
+      hex.push_back(result.second);
     }
 
     x64asm::Linker lnkr;

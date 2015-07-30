@@ -346,9 +346,14 @@ public:
   bool invariant_no_undef_reads() const;
   /** Check that this cfg writes to all live out values */
   bool invariant_no_undef_live_outs() const;
+  /** Check that it's possible to assemble this code.
+      (i.e. no 8-bit displacement jumps that go too far away) */
+  bool invariant_can_assemble() const;
   /** Check all invariants */
   bool check_invariants() const {
-    return invariant_no_undef_reads() && invariant_no_undef_live_outs();
+    return invariant_no_undef_reads() &&
+           invariant_no_undef_live_outs() &&
+           invariant_can_assemble();
   }
 
   /** Explains what undefined value is read. */
@@ -553,6 +558,14 @@ private:
   void recompute_defs_loop_free();
   /** Recomputes live_outs_ using the generic LFP dataflow algorithm */
   void recompute_liveness();
+
+  /** Used to get sizes of instructions for invariant checks. */
+  static x64asm::Assembler assembler_;
+  /** Buffer for assembler. */
+  static x64asm::Function buffer_;
+
+
+
 };
 
 } // namespace stoke
