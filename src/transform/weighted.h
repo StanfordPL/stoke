@@ -69,6 +69,13 @@ public:
     return transforms_.size();
   }
 
+  /** Set a seed for the random number generator. */
+  virtual void set_seed(std::default_random_engine::result_type seed) {
+    for(auto tform : transforms_)
+      tform->set_seed(seed);
+    gen_.seed(seed);
+  }
+
 protected:
 
   /** Transforms that we have available to use. */
