@@ -28,25 +28,48 @@ using namespace cpputil;
 using namespace std;
 using namespace x64asm;
 
+namespace {
+
+vector<pair<Opcode, string>> opcodes;
+
+}
 
 namespace stoke {
+
+bool cmp(const pair<Opcode, string>& a, const pair<Opcode, string>& b) {
+  return b.second.compare(a.second) > 0;
+}
+bool binary_search(const string& key, set<Opcode>& os) {
+  if (opcodes.size() == 0) {
+    stringstream ss;
+    // initialize sorted opcode list
+    for (int i = ADC_AL_IMM8; i <= XTEST; i++) {
+      ss.clear();
+      ss.str("");
+      ss << ((Opcode) i);
+      opcodes.push_back(pair<Opcode, string>((Opcode) i, ss.str()));
+    }
+    sort(opcodes.begin(), opcodes.end(), cmp);
+  }
+
+  auto k = pair<Opcode, string>(XTEST, key);
+  auto lower = lower_bound(opcodes.begin(), opcodes.end(), k, cmp);
+  if (lower != opcodes.end() && lower->second == key) {
+    os.insert(lower->first);
+    return true;
+  }
+  return false;
+}
 
 void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
   vector<string> args;
   TextReader<vector<string>>()(is, args);
 
   for (const auto& a : args) {
-    Opcode opc;
-
-    stringstream ss;
-    ss.str(a);
-    ss >> opc;
-
-    if(failed(ss)) {
-      fail(is) << fail_msg(ss);
+    if (!binary_search(a, os)) {
+      is.setstate(ios::failbit);
       return;
     }
-    os.insert(opc);
   }
 }
 
@@ -60,3 +83,4 @@ void OpcSetWriter::operator()(ostream& os, const set<Opcode>& ocs) {
 }
 
 } // namespace stoke
+
