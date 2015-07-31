@@ -168,7 +168,7 @@ bool replace(uint64_t offset, size_t size) {
 
   bool ok = assm.finish();
 
-  if (ok) {
+  if (!ok) {
     Console::msg() << "Could not assemble rewrite; ";
     Console::msg() << "Requested 8-bit jump offset but jump target is too far." << endl;
     return false;
