@@ -71,7 +71,14 @@ bool replace(uint64_t offset, size_t size) {
 
   // Assemble the new function
   Assembler assm;
-  auto fxn = assm.assemble(cfg.get_code());
+  auto result = assm.assemble(cfg.get_code());
+  if (!result.first) {
+    Console::msg() << "Could not assemble rewrite; ";
+    Console::msg() << "Requested 8-bit jump offset but jump target is too far." << endl;
+    return false;
+  }
+
+  auto fxn = result.second;
 
   // Fail if the new function is larger than the old
   if (fxn.size() > size) {

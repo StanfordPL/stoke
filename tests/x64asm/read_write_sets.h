@@ -227,6 +227,7 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   tps.remove_opcode(x64asm::VPGATHERQD_XMM_M64_XMM_1);
   tps.remove_opcode(x64asm::VPGATHERQQ_XMM_M64_XMM);
   tps.remove_opcode(x64asm::VPGATHERQQ_YMM_M64_YMM);
+  tps.recompute_pools();
 
 
   auto data = SpreadsheetReadWriteSetFuzzCallbackInfo();

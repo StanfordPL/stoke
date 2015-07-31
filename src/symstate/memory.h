@@ -28,6 +28,8 @@ class SymMemory {
 
 public:
 
+  SymMemory() : state_(NULL), analysis_(NULL) {}
+
   /** Set the parent symbolic state */
   SymMemory& set_parent(SymState* ss) {
     state_ = ss;
