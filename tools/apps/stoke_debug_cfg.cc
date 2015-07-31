@@ -54,6 +54,10 @@ auto& out = ValueArg<string>::create("o")
 auto& view = FlagArg::create("view")
              .alternate("v")
              .description("View cfg immediately");
+auto& no_skip_checks = FlagArg::create("no_skip_checks")
+            .description("Run all the checks for creating a Cfg; don't skip.");
+                          
+
 
 string tempfile(const string& temp) {
   vector<char> v(temp.begin(), temp.end());
@@ -66,15 +70,21 @@ string tempfile(const string& temp) {
 void to_dot(const string& dot_file) {
   ofstream ofs(dot_file);
 
-  FunctionsGadget aux_fxns;
-  TargetGadget target(aux_fxns, false);
+  Cfg* target;
+
+  if(no_skip_checks)  {
+    FunctionsGadget aux_fxns;
+    target = static_cast<Cfg*>(new TargetGadget(aux_fxns, false));
+  } {
+    target = new Cfg(target_arg.value().get_code());
+  }
 
   DotWriter dw;
   dw.set_def_in(dib, dii)
   .set_live_out(lob)
   .set_dom(dom);
 
-  dw(ofs, target);
+  dw(ofs, *target);
 }
 
 bool to_pdf(const string& dot_file, const string& pdf_file) {
