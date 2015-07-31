@@ -55,8 +55,8 @@ auto& view = FlagArg::create("view")
              .alternate("v")
              .description("View cfg immediately");
 auto& no_skip_checks = FlagArg::create("no_skip_checks")
-            .description("Run all the checks for creating a Cfg; don't skip.");
-                          
+                       .description("Run all the checks for creating a Cfg; don't skip.");
+
 
 
 string tempfile(const string& temp) {
