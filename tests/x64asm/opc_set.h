@@ -59,7 +59,7 @@ TEST_F(X64AsmOpcSetTest, Basic) {
 }
 
 TEST_F(X64AsmOpcSetTest, Regex) {
-  test("{ xor_.* }", {
+  test("{ xor._.* }", {
     x64asm::XOR_AL_IMM8 // XOR AL, imm8
     , x64asm::XOR_AX_IMM16 // XOR AX, imm16
     , x64asm::XOR_EAX_IMM32 // XOR EAX, imm32
