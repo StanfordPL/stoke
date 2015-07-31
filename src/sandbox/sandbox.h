@@ -393,8 +393,8 @@ private:
 
   /** Check whether a function is read only wrt memory */
   bool is_mem_read_only(const Cfg& cfg) const;
-  /** Assembles the user's function into a buffer */
-  void emit_function(const Cfg& cfg, x64asm::Function* fxn);
+  /** Assembles the user's function into a buffer.  Returns if successful. */
+  bool emit_function(const Cfg& cfg, x64asm::Function* fxn);
   /** Emit a single callback for this line. */
   void emit_callback(const std::pair<StateCallback, void*>& cb, const x64asm::Label& fxn, size_t line);
   /** Emit all before callbacks */

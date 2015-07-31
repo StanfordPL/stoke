@@ -26,7 +26,7 @@ public:
 
   // Check that writing code to string and back
   // doesn't change anything
-  void check_code(x64asm::Code c) const {
+  void check_code(x64asm::Code c) {
 
     stoke::TUnit test;
 
@@ -37,6 +37,11 @@ public:
     Code d = test.get_code();
 
     ASSERT_FALSE(cpputil::failed(ss)) << cpputil::fail_msg(ss);
+
+    count_++;
+    if(count_ % 25 == 0) {
+      stoke::fuzz_print(1) << "Iteration " << count_ << " / " << total_ << std::endl;
+    }
 
 
     // Check the codes are equivalent
@@ -87,7 +92,14 @@ public:
 
   }
 
+  void set_total(size_t n) {
+    total_ = n;
+    count_ = 0;
+  }
 
+private:
+  size_t count_;
+  size_t total_;
 
 };
 
@@ -184,8 +196,10 @@ void x64asm_parse_fuzz_callback(const stoke::Cfg& cfg, void* data) {
 TEST_F(X64AsmParseTest, FuzzTest) {
 
   // Parameters for the test
-  unsigned long iterations = 10000;
+  unsigned long iterations = 800;
   stoke::TransformPools tp = stoke::default_fuzzer_pool();
+
+  set_total(iterations);
 
   //TODO: the 'flags' below are limitting what we are testing.
   // We should just use all Cpu supported flags and fix the
