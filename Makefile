@@ -40,7 +40,7 @@ INC_FOLDERS=\
 						src/ext/cpputil/ \
 						src/ext/x64asm \
 						src/ext/gtest-1.7.0/include \
-						src/ext/z3/include \
+						src/ext/z3/src/api \
 						src/ext/cvc4-1.4-build/include
 
 INC=$(addprefix -I./, $(INC_FOLDERS))
@@ -54,7 +54,7 @@ LIB=\
 	-pthread\
 	-lcln \
 	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
-	-L src/ext/z3/bin -lz3
+	-L src/ext/z3/build -lz3
 
 SRC_OBJ=\
 	src/cfg/cfg.o \
@@ -207,7 +207,7 @@ haswell_profile:
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
 haswell_test: haswell_debug
 	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
-	LD_LIBRARY_PATH=src/ext/z3/bin:src/ext/cvc4-1.4-build/lib bin/stoke_test
+	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 sandybridge: sandybridge_release
 sandybridge_release:
@@ -221,7 +221,7 @@ sandybridge_profile:
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg"
 sandybridge_test: sandybridge_debug
 	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG"
-	LD_LIBRARY_PATH=src/ext/z3/bin:src/ext/cvc4-1.4-build/lib bin/stoke_test
+	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 nehalem: nehalem_release
 nehalem_release:
@@ -235,7 +235,7 @@ nehalem_profile:
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg"
 nehalem_test: nehalem_debug
 	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG"
-	LD_LIBRARY_PATH=src/ext/z3/bin:src/ext/cvc4-1.4-build/lib bin/stoke_test
+	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 ##### CTAGS TARGETS
 
@@ -264,7 +264,7 @@ depend:
 
 ##### EXTERNAL TARGETS
 
-external: src/ext/astyle cpputil x64asm pintool src/ext/gtest-1.7.0/libgtest.a
+external: src/ext/astyle cpputil x64asm z3 pintool src/ext/gtest-1.7.0/libgtest.a
 	if [ ! -f .depend ]; then \
 		$(MAKE) -C . depend; \
 	fi
@@ -289,6 +289,16 @@ pintool:
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
 	$(MAKE) -C src/ext/gtest-1.7.0 -j$(NTHREADS)
+
+.PHONY: z3
+z3: z3init src/ext/z3/build/Makefile
+	cd src/ext/z3/build && make
+
+z3init:
+	./scripts/make/submodule-init.sh src/ext/z3
+
+src/ext/z3/build/Makefile:
+	cd src/ext/z3 && python scripts/mk_make.py
 
 ##### VALIDATOR AUTOGEN
 
@@ -404,4 +414,6 @@ dist_clean: clean
 	rm -f src/ext/gtest-1.7.0/CMakeCache.txt
 	./scripts/make/submodule-reset.sh src/ext/cpputil
 	./scripts/make/submodule-reset.sh src/ext/x64asm
+	./scripts/make/submodule-reset.sh src/ext/z3
 	- $(MAKE) -C src/ext/gtest-1.7.0 clean
+	rm -rf src/ext/z3/build

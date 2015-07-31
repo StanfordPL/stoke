@@ -77,10 +77,9 @@ void OpcSetWriter::operator()(ostream& os, const set<Opcode>& ocs) {
   os << "{";
   set<const char*> result;
   for (auto opc : ocs) {
-    os << " " << opc << "$";
+    os << " " << opc;
   }
   os << " }";
 }
 
 } // namespace stoke
-

@@ -27,7 +27,8 @@ TEST(X64AsmInstructionInfo, FunctionSize) {
   ASSERT_FALSE(cpputil::failed(ss)) << cpputil::fail_msg(ss);
 
   Assembler assm;
-  auto fxn = assm.assemble(c);
+  auto result = assm.assemble(c);
+  auto fxn = result.second;
   Function gxn = fxn; //testing copy constructor
   EXPECT_EQ(2ul, fxn.size());
   EXPECT_EQ(2ul, gxn.size());
@@ -86,7 +87,7 @@ TEST(X64AsmInstructionInfo, FunctionSize2) {
   ASSERT_FALSE(cpputil::failed(ss)) << cpputil::fail_msg(ss);
 
   Assembler assm;
-  auto fxn = assm.assemble(c);
+  auto fxn = assm.assemble(c).second;
   EXPECT_EQ(150ul, fxn.size());
 
 }

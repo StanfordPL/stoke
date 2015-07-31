@@ -369,7 +369,8 @@ Function Sandbox::emit_harness() {
   assm_.mov(rax, Imm32(0));
   assm_.ret();
 
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
   return fxn;
 }
 
@@ -409,7 +410,8 @@ Function Sandbox::emit_signal_trap() {
   assm_.mov(rax, rdi);
   assm_.ret();
 
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
   return fxn;
 }
 
@@ -456,7 +458,8 @@ Function Sandbox::emit_state2cpu(const CpuState& cs) {
   // Done
   assm_.ret();
 
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
   return fxn;
 }
 
@@ -516,7 +519,8 @@ Function Sandbox::emit_cpu2state(CpuState& cs) {
   // Done
   assm_.ret();
 
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
   return fxn;
 }
 
@@ -550,17 +554,17 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   // Following this check, rsi is free for use as scratch space
   assm_.and_(rsi, rdi);
   assm_.cmp(rsi, rdi);
-  assm_.jne(fail);
+  assm_.jne_1(fail);
 
   // Stack case: Check that this address is inside the stack
   assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
   assm_.cmp(rdi, rax);
-  assm_.jl(heap_case);
+  assm_.jl_1(heap_case);
 
   assm_.sub(rdi, rax);
   assm_.mov((R64)rax, Imm64(cs.stack.size()));
   assm_.cmp(rdi, rax);
-  assm_.jge(fail);
+  assm_.jge_1(fail);
 
   emit_map_addr_cases(cs, fail, done, 0);
 
@@ -568,12 +572,12 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.bind(heap_case);
   assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
   assm_.cmp(rdi, rax);
-  assm_.jl(data_case);
+  assm_.jl_1(data_case);
 
   assm_.sub(rdi, rax);
   assm_.mov((R64)rax, Imm64(cs.heap.size()));
   assm_.cmp(rdi, rax);
-  assm_.jge(fail);
+  assm_.jge_1(fail);
 
   emit_map_addr_cases(cs, fail, done, 1);
 
@@ -581,12 +585,12 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.bind(data_case);
   assm_.mov((R64)rax, Imm64(cs.data.lower_bound()));
   assm_.cmp(rdi, rax);
-  assm_.jl(fail);
+  assm_.jl_1(fail);
 
   assm_.sub(rdi, rax);
   assm_.mov((R64)rax, Imm64(cs.data.size()));
   assm_.cmp(rdi, rax);
-  assm_.jge(fail);
+  assm_.jge_1(fail);
 
   emit_map_addr_cases(cs, fail, done, 2);
 
@@ -598,7 +602,8 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.bind(done);
   assm_.ret();
 
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
   return fxn;
 }
 
@@ -633,7 +638,7 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rdx);
   assm_.cmp(rax, rdx);
-  assm_.jne(fail);
+  assm_.jne_1(fail);
 
   // The write mask shouldn't change when and'ed against the valid mask
   switch (mem) {
@@ -652,7 +657,7 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rcx);
   assm_.cmp(rax, rcx);
-  assm_.jne(fail);
+  assm_.jne_1(fail);
 
   // Do final remapping
   switch (mem) {
@@ -671,7 +676,7 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.add(rax, rdi);
 
   // Get out of here
-  assm_.jmp(done);
+  assm_.jmp_1(done);
 }
 
 bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
@@ -714,7 +719,7 @@ bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
 // Arguments:
 //   <none>
 
-void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
+bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   assert(cfg.get_function().invariant_first_instr_is_label());
 
   assm_.start(*fxn);
@@ -770,7 +775,9 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   // Restore the STOKE %rsp and return
   emit_load_stoke_rsp();
   assm_.ret();
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
+  return ok;
 }
 
 void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, const Label& fxn, size_t line) {
@@ -1067,7 +1074,7 @@ void Sandbox::emit_jump(const Instruction& instr) {
 
   // Jump over the signal trap call if we haven't hit zero yet
   const auto okay = get_label();
-  assm_.jne(okay);
+  assm_.jne_1(okay);
   emit_signal_trap_call(ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS);
   assm_.bind(okay);
 
@@ -1077,8 +1084,12 @@ void Sandbox::emit_jump(const Instruction& instr) {
   // Reload the user's %rsp
   emit_load_user_rsp();
 
+  // If this is a jump to an 8-bit offset, replace with a 32-bit one if possible
+  Instruction copy = instr;
+  copy.label32_transform();
+
   // Go ahead and do the jump
-  assm_.assemble(instr);
+  assm_.assemble(copy);
 }
 
 void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
@@ -1134,7 +1145,7 @@ void Sandbox::emit_call_with_stack_check(const Instruction& instr, uint64_t hex_
   const auto okay = get_label();
   assm_.mov((R64)rbx, Imm64(hex_offset));
   assm_.cmp(rax, rbx);
-  assm_.je(okay);
+  assm_.je_1(okay);
   emit_signal_trap_call(ErrorCode::SIGCUSTOM_STACK_SMASH);
 
   assm_.bind(okay);
@@ -1147,7 +1158,7 @@ void Sandbox::emit_call_with_stack_check(const Instruction& instr, uint64_t hex_
 }
 
 void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
-  assm_.jmp(exit);
+  assm_.jmp_1(exit);
 }
 
 void Sandbox::emit_leave(const Instruction& instr) {
@@ -1386,7 +1397,7 @@ void Sandbox::emit_popf(const Instruction& instr) {
   assm_.and_(r14d, Imm32(reserved_mask));
   // If the value is non-zero (meaning there was a disagreement), trigger a segfault (meaning freak out)
   const auto okay = get_label();
-  assm_.je(okay);
+  assm_.je_1(okay);
   emit_signal_trap_call(ErrorCode::SIGCUSTOM_INVALID_POPF);
   assm_.bind(okay);
 
@@ -1425,6 +1436,7 @@ void Sandbox::emit_push(const Instruction& instr) {
     assm_.lea(rsp, M64(rsp, Imm32(-1)));
     break;
   case PUSH_R16:
+  case PUSH_R16_1:
     emit_memory_instruction({MOV_M16_R16, {M16(rsp, Imm32(-2)), instr.get_operand<R16>(0)}});
     assm_.lea(rsp, M64(rsp, Imm32(-2)));
     break;

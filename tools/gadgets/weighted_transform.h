@@ -37,7 +37,6 @@ class WeightedTransformGadget : public WeightedTransform {
 public:
   WeightedTransformGadget(TransformPools& pools,
                           std::default_random_engine::result_type seed) : WeightedTransform(pools) {
-    set_seed(seed);
 
     insert_transform(new AddNopsTransform(pools), add_nops_mass_arg.value());
     insert_transform(new DeleteTransform(pools), delete_mass_arg.value());
@@ -48,9 +47,7 @@ public:
     insert_transform(new GlobalSwapTransform(pools), global_swap_mass_arg.value());
     insert_transform(new RotateTransform(pools), rotate_mass_arg.value());
 
-    for(auto tform : transforms_) {
-      tform->set_seed(seed);
-    }
+    set_seed(seed);
   }
 
 };

@@ -1,6 +1,9 @@
 [submodule "src/ext/x64asm"]
 	path = src/ext/x64asm
-	url = git@github.com:StanfordPL/x64asm.git
+	url = https://github.com/StanfordPL/x64asm.git
 [submodule "src/ext/cpputil"]
 	path = src/ext/cpputil
-	url = git@github.com:StanfordPL/cpputil.git
+	url = https://github.com/StanfordPL/cpputil.git
+[submodule "src/ext/z3"]
+	path = src/ext/z3
+	url = https://github.com/Z3Prover/z3.git

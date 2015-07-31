@@ -165,7 +165,15 @@ bool replace(uint64_t offset, size_t size) {
       assm.assemble(code[i]);
     }
   }
-  assm.finish();
+
+  bool ok = assm.finish();
+
+  if (ok) {
+    Console::msg() << "Could not assemble rewrite; ";
+    Console::msg() << "Requested 8-bit jump offset but jump target is too far." << endl;
+    return false;
+  }
+
 
   // Fail if the new function is larger than the old
   if (fxn.size() > size) {

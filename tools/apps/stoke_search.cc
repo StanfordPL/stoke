@@ -92,7 +92,7 @@ auto& failed_verification_action =
 auto& cycle_timeout_arg =
   ValueArg<string, cpputil::LineReader<>>::create("cycle_timeout")
   .usage("<string>")
-  .description("The timeout (as number of iterations) per cycle.  Can be a comma-separated list, where the first element is used for the first cycle, and so on.  Can also be an expression involving the variable 'i' that refers to the current cycle (starting at 1).  The last expression in the list is used for all following cycles.")
+  .description("The timeout (as number of iterations) per cycle.  Can be a comma-separated list, where the first element is used for the first cycle, and so on.  Can also be an expression involving the variable 'i' that refers to the current cycle (starting at 1); expressions include integer constants, the variable 'i', and binary operators: +, -, *, /, ** (exponentiation), >>, << (shifts), ==, !=, <=, <, >, >= (comparisons), % (modulo), |, & (binary and/or).  The last expression in the list is used for all following cycles.")
   .default_val("10000, 10000, 10000, 10000, 10000, 2**i * 1000");
 
 auto& postprocessing_arg =

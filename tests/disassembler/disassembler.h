@@ -63,25 +63,21 @@ TEST(DisassemblerTest, PopCnt) {
   /* These are the expected answers */
   std::stringstream tmp;
   tmp << "._Z6popcntm:" << std::endl;
-  tmp << "testq  %rdi,%rdi" << std::endl;
-  tmp << "je     .L_40058f" << std::endl;
-  tmp << "nop" << std::endl;
-  tmp << "nop" << std::endl;
-  tmp << "xorl   %eax,%eax" << std::endl;
+  tmp << "testq  %rdi,%rdi #SIZE=3" << std::endl;
+  tmp << "je     .L_40058f #SIZE=2" << std::endl;
+  tmp << "xorl   %eax,%eax #SIZE=2" << std::endl;
   for(size_t i = 0; i < 9; ++i)
     tmp << "nop" << std::endl;
   tmp << ".L_400580:" << std::endl;
-  tmp << "movl   %edi,%edx" << std::endl;
-  tmp << "andl   $0x1,%edx" << std::endl;
-  tmp << "addl   %edx,%eax" << std::endl;
-  tmp << "shrq   $0x1, %rdi" << std::endl;
-  tmp << "jne    .L_400580" << std::endl;
-  tmp << "nop" << std::endl;
-  tmp << "nop" << std::endl;
+  tmp << "movl   %edi,%edx #SIZE=2" << std::endl;
+  tmp << "andl   $0x1,%edx #SIZE=3" << std::endl;
+  tmp << "addl   %edx,%eax #SIZE=2" << std::endl;
+  tmp << "shrq   $0x1, %rdi #SIZE=3" << std::endl;
+  tmp << "jne    .L_400580 #SIZE=2" << std::endl;
   tmp << "cltq   " << std::endl;
   tmp << "retq   " << std::endl;
   tmp << ".L_40058f:" << std::endl;
-  tmp << "xorl   %eax, %eax" << std::endl;
+  tmp << "xorl   %eax, %eax #SIZE=2" << std::endl;
   tmp << "retq" << std::endl;
   for(size_t i = 0; i < 14; ++i)
     tmp << "nop" << std::endl;
@@ -99,7 +95,7 @@ TEST(DisassemblerTest, PopCnt) {
 
     // There's only one function we're really testing.
     if (pf.tunit.get_name() == "_Z6popcntm") {
-      EXPECT_EQ(popcnt_code, pf.tunit.get_code());
+      EXPECT_EQ(popcnt_code, pf.tunit.get_code()) << "Parsed: " << std::endl << TUnit(popcnt_code) << std::endl << "Disassembly" << std::endl << pf.tunit << std::endl;
       EXPECT_EQ((uint64_t)0x570, pf.tunit.get_file_offset());
       found_popcnt = true;
     }

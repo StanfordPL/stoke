@@ -480,7 +480,7 @@ ostream& TUnit::write_text(ostream& os) const {
   // Print opcode label
   col << "Opcode" << endl;
   for(size_t i = 0, ie = code_.size(); i < ie; ++i) {
-    col << dec << "OPC=" << (uint64_t)code_[i].get_opcode() << endl;
+    col << dec << "OPC=" << code_[i].get_opcode() << endl;
   }
   col.filter().done();
 
