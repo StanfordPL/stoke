@@ -69,7 +69,6 @@
   nop                          #  57    0x12609d  1      OPC=nop              
   nop                          #  58    0x12609e  1      OPC=nop              
   nop                          #  59    0x12609f  1      OPC=nop              
-  nop                          #  60    0x1260a0  1      OPC=nop              
 .L_1260a0:                     #        0x1260a1  0      OPC=<label>          
   addl $0x1, %edi              #  61    0x1260a1  3      OPC=addl_r32_imm8    
   nop                          #  62    0x1260a4  1      OPC=nop              
@@ -127,6 +126,7 @@
   nop                          #  113   0x1260dd  1      OPC=nop              
   nop                          #  114   0x1260de  1      OPC=nop              
   nop                          #  115   0x1260df  1      OPC=nop              
+  nop
 .L_1260e0:                     #        0x1260e1  0      OPC=<label>          
   nop                          #  117   0x1260e1  1      OPC=nop              
   nop                          #  118   0x1260e2  1      OPC=nop              
@@ -154,14 +154,11 @@
   nop                          #  140   0x1260f8  1      OPC=nop              
   nop                          #  141   0x1260f9  1      OPC=nop              
   nop                          #  142   0x1260fa  1      OPC=nop              
-  nop                          #  143   0x1260fb  1      OPC=nop              
+  nop
   callq .strcpy                #  144   0x1260fc  5      OPC=callq_label      
   movl %ebx, %eax              #  145   0x126101  2      OPC=movl_r32_r32     
   popq %rbx                    #  146   0x126103  1      OPC=popq_r64_1       
-  popq %r11                    #  147   0x126104  2      OPC=popq_r64_1       
-  andl $0xe0, %r11d            #  148   0x126106  7      OPC=andl_r32_imm8
-  addq %r15, %r11              #  153   0x126111  3      OPC=addq_r64_r64     
-  jmpq %r11                    #  154   0x126114  3      OPC=jmpq_r64         
+  retq
   nop                          #  155   0x126117  1      OPC=nop              
   nop                          #  156   0x126118  1      OPC=nop              
   nop                          #  157   0x126119  1      OPC=nop              

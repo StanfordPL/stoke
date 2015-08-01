@@ -21,7 +21,7 @@ using namespace cpputil;
 using namespace std;
 using namespace x64asm;
 
-//#define DEBUG_NACL_COST
+//#define DEBUG_NACL_COST 1
 
 namespace stoke {
 
@@ -228,7 +228,8 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     }
     if(instr.is_implicit_memory_dereference()) {
       auto opc = instr.get_opcode();
-      if(opc != POP_R64 && opc != POP_M64 && opc != PUSH_R64 && opc != PUSH_M64 && opc != RET) {
+      if(opc != POP_R64 && opc != POP_M64 && opc != PUSH_R64 && opc != PUSH_M64 && opc != RET
+          && opc != POP_R64_1 && opc != PUSH_R64_1) {
 #ifdef DEBUG_NACL_COST
         cout << "USING UNSUPPORTED MEMORY OPERATION: " << instr << endl;
 #endif
@@ -246,8 +247,10 @@ NaClCost::result_type NaClCost::operator()(const Cfg& cfg, const Cost max) {
     auto opc = instr.get_opcode();
     switch(opc) {
     case POP_R64:
+    case POP_R64_1:
     case POP_M64:
     case PUSH_R64:
+    case PUSH_R64_1:
     case PUSH_M64:
       continue;
       break;

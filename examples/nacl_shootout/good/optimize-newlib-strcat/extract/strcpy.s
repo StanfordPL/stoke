@@ -84,20 +84,7 @@
   addl $0x1, %ecx             #  72    0x1264f0  3      OPC=addl_r32_imm8   
   testb %sil, %sil            #  73    0x1264f3  3      OPC=testb_r8_r8     
   jne .L_1264e0               #  74    0x1264f6  2      OPC=jne_label       
-  popq %r11                   #  75    0x1264f8  2      OPC=popq_r64_1      
-  nop                         #  76    0x1264fa  1      OPC=nop             
-  nop                         #  77    0x1264fb  1      OPC=nop             
-  nop                         #  78    0x1264fc  1      OPC=nop             
-  nop                         #  79    0x1264fd  1      OPC=nop             
-  nop                         #  80    0x1264fe  1      OPC=nop             
-  nop                         #  81    0x1264ff  1      OPC=nop             
-  andl $0xffffffe0, %r11d     #  82    0x126500  7      OPC=andl_r32_imm32  
-  nop                         #  83    0x126507  1      OPC=nop             
-  nop                         #  84    0x126508  1      OPC=nop             
-  nop                         #  85    0x126509  1      OPC=nop             
-  nop                         #  86    0x12650a  1      OPC=nop             
-  addq %r15, %r11             #  87    0x12650b  3      OPC=addq_r64_r64    
-  jmpq %r11                   #  88    0x12650e  3      OPC=jmpq_r64        
+  retq
   nop                         #  89    0x126511  1      OPC=nop             
   nop                         #  90    0x126512  1      OPC=nop             
   nop                         #  91    0x126513  1      OPC=nop             

@@ -53,6 +53,9 @@ auto& max_buffer_size = ValueArg<size_t>::create("max_buffer_size")
 auto& native = FlagArg::create("native")
                .description("Use normal 64-bit pointers rather than NaCl 32-bit");
 
+auto& strcat_arg = FlagArg::create("strcat")
+               .description("Allocates twice as much space for the destination");
+
 #define STACK_SPACE 256
 #define MAX_LEN 4
 
@@ -92,13 +95,22 @@ int main(int argc, char** argv) {
     cs.heap.resize(heap_base_top, ROUND_UP(heap_size.value(), align.value()));
 
     uint64_t buffer_size = 1 + (rand() % (max_buffer_size.value()-1));
+    uint64_t src_buffer_size = buffer_size;
+    uint64_t dst_buffer_size = buffer_size;
+
+    if(strcat_arg.value())
+      dst_buffer_size = 2*dst_buffer_size+1;
+
     uint64_t src_offset = 0, dst_offset = 0;
 
     while( (src_offset + buffer_size) > dst_offset ) {
-      src_offset = rand() % (heap_size.value() - buffer_size - 1);
-      dst_offset = rand() % (heap_size.value() - buffer_size - 1);
+
+      src_offset = rand() % (heap_size.value() - src_buffer_size - dst_buffer_size - 1);
+      dst_offset = rand() % (heap_size.value() - dst_buffer_size - 1);
+
       src_offset = ROUND_DOWN(src_offset, align.value());
       dst_offset = ROUND_DOWN(dst_offset, align.value());
+
     }
 
     if(!native.value()) {
@@ -117,12 +129,12 @@ int main(int argc, char** argv) {
       cs.heap[i] = rand() % 256;
       cs.heap.set_valid(i, false);
     }
-    for(uint64_t i = heap_base_top + src_offset; i < ROUND_UP(heap_base_top + src_offset + buffer_size, align.value()); ++i)
+    for(uint64_t i = heap_base_top + src_offset; i < ROUND_UP(heap_base_top + src_offset + src_buffer_size, align.value()); ++i)
       cs.heap.set_valid(i, true);
-    for(uint64_t i = heap_base_top + dst_offset; i < ROUND_UP(heap_base_top + dst_offset + buffer_size, align.value()); ++i)
+    for(uint64_t i = heap_base_top + dst_offset; i < ROUND_UP(heap_base_top + dst_offset + dst_buffer_size, align.value()); ++i)
       cs.heap.set_valid(i, true);
 
-    // null terminate, yo
+    // null terminate, yo (note: we don't use src_/dst_ buffer size since strcat() is null-terminated sooner, etc.
     cs.heap[heap_base_top + src_offset + buffer_size - 1] = '\0';
     cs.heap[heap_base_top + dst_offset + buffer_size - 1] = '\0';
 
