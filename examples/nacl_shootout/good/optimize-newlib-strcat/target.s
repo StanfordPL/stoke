@@ -158,6 +158,8 @@
   callq .strcpy                #  144   0x1260fc  5      OPC=callq_label      
   movl %ebx, %eax              #  145   0x126101  2      OPC=movl_r32_r32     
   popq %rbx                    #  146   0x126103  1      OPC=popq_r64_1       
+  nop
+  nop
   retq
   nop                          #  155   0x126117  1      OPC=nop              
   nop                          #  156   0x126118  1      OPC=nop              
