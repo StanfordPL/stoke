@@ -1,6 +1,6 @@
 
 DEPLOY_PATH=/home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.com/git/nacl
-NAME=strcpy
+NAME=strat
 TC_OPTS=--number 10 --strcat
 
 all: clean testcase search replace deploy

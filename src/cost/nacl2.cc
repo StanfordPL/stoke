@@ -187,6 +187,8 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
     // 4. We're emitting a memory instruction that must match up
     //    with the previous instruction exactly and be in the
     //    same bundle.
+    // 5. We're emitting a 'call' instruction which must be 5
+    //    bytes before a 32-bit boundary.
 
     if(instr.is_nop()) {
       // if we have a nop, then for cost 1, we can keep the
@@ -213,6 +215,17 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
         }
         table[0][i+1] = min_cost;
       }
+    } else if (instr.is_call()) {
+      uint64_t min_cost = INFTY; 
+      for(size_t j = 0; j <= 32 - 5; ++j) {
+        if(table[j][i] != INFTY)
+          min_cost = MIN(table[j][i] + (32 - 5 - j), min_cost);
+      }
+      for(size_t j = 32-5+1; j < 32; ++j) {
+        if(table[j][i] != INFTY)
+          min_cost = MIN(table[j][i] + (32-j) + (32 - 5), min_cost);
+      }
+      table[32-5][i+1] = min_cost;
     } else if (!instr.is_explicit_memory_dereference()) {
       // case 3
       for(size_t j = 0; j < 32; ++j) {

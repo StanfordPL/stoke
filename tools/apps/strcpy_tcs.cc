@@ -54,7 +54,7 @@ auto& native = FlagArg::create("native")
                .description("Use normal 64-bit pointers rather than NaCl 32-bit");
 
 auto& strcat_arg = FlagArg::create("strcat")
-               .description("Allocates twice as much space for the destination");
+                   .description("Allocates twice as much space for the destination");
 
 #define STACK_SPACE 256
 #define MAX_LEN 4
