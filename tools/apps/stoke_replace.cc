@@ -58,6 +58,7 @@ auto& do_not_link_arg = FlagArg::create("do_not_link")
 bool found = false;
 uint64_t fxn_offset = 0;
 size_t fxn_size = 0;
+uint64_t fxn_rip_offset = 0;
 
 
 void callback(const FunctionCallbackData& data, void* arg) {
@@ -69,8 +70,15 @@ void callback(const FunctionCallbackData& data, void* arg) {
     found = true;
     fxn_offset = data.tunit.get_file_offset();
     fxn_size = data.tunit.hex_capacity();
+    fxn_rip_offset = data.tunit.get_rip_offset();
   } else if (linker) {
-    linker->link(data.tunit.get_name(), data.tunit.get_file_offset());
+    auto label = data.tunit.get_leading_label();
+    if(label.get_text()[0] != '.') {
+      stringstream ss;
+      ss << "." << label.get_text();
+      label = Label(ss.str());
+    }
+    linker->link(label, data.tunit.get_rip_offset());
   }
 }
 
@@ -99,7 +107,7 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
 
   // Perform linking
   if(linker) {
-    linker->link(fxn, offset);
+    linker->link(fxn, fxn_rip_offset);
     linker->finish();
 
     if(linker->multiple_def()) {
