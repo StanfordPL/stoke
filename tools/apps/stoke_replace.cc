@@ -49,22 +49,32 @@ auto& out = ValueArg<string>::create("o")
             .default_val("");
 
 auto& input_offset = FlagArg::create("input_offset")
-                     .description("Don't disassemble or look for corresponding function name.  Use offset in input file instead.");
+                     .description("Don't disassemble or look for corresponding function name.  Use offset in input file instead.  Skips linking.");
+
+auto& do_not_link_arg = FlagArg::create("do_not_link")
+                        .description("Don't run linker.  Could avoid errors if no function calls are being made.");
+
 
 bool found = false;
 uint64_t fxn_offset = 0;
 size_t fxn_size = 0;
 
+
 void callback(const FunctionCallbackData& data, void* arg) {
+
+  auto linker = (Linker*)arg;
+
   // Check if we've found the function
   if (data.tunit.get_name() == rewrite_arg.value().get_name()) {
     found = true;
     fxn_offset = data.tunit.get_file_offset();
     fxn_size = data.tunit.hex_capacity();
+  } else if (linker) {
+    linker->link(data.tunit.get_name(), data.tunit.get_file_offset());
   }
 }
 
-bool replace(uint64_t offset, size_t size) {
+bool replace(uint64_t offset, size_t size, Linker* linker) {
   // def-in/live-out aren't really important here
   // check_invariants() will fail here, but all we're trying to do is make types match
   Cfg cfg(rewrite_arg.value(), RegSet::empty(), RegSet::empty());
@@ -85,6 +95,29 @@ bool replace(uint64_t offset, size_t size) {
     Console::msg() << "New function has " << fxn.size() << " bytes, but the old one had " << size;
     Console::msg() << "." << endl;
     return false;
+  }
+
+  // Perform linking
+  if(linker) {
+    linker->link(fxn, offset);
+    linker->finish();
+
+    if(linker->multiple_def()) {
+      Console::msg() << "Multiple definition error for function \"" << linker->get_multiple_def() << "\"" << endl;
+      return false;
+    }
+    if(linker->undef_symbol()) {
+      Console::msg() << "Undefined symbol \"" << linker->get_undef_symbol() << "\"" << endl;
+      return false;
+    }
+    if(linker->jump_too_far()) {
+      Console::msg() << "Distance for jump exceeded 4-byte offset limit." << endl;
+      return false;
+    }
+    if(!linker->good()) {
+      Console::msg() << "Unexpected linker error." << endl;
+      return false;
+    }
   }
 
   // Copy binary to new destination if path was specified
@@ -121,11 +154,22 @@ int main(int argc, char** argv) {
     // Get offset from input tunit
     fxn_offset = rewrite_arg.value().get_file_offset();
     fxn_size = rewrite_arg.value().hex_capacity();
-    found = true;
+
+    if (!replace(fxn_offset, fxn_size, nullptr)) {
+      Console::error(1) << "Unable to replace function text!" << endl;
+    }
+
+
   } else {
     //Disassemble and find matching function
+
+    Linker linker;
+    Linker* linker_ptr = &linker;
+    if(do_not_link_arg.value())
+      linker_ptr = nullptr;
+
     Disassembler d;
-    d.set_function_callback(callback, nullptr);
+    d.set_function_callback(callback, linker_ptr);
     found = false;
     d.disassemble(in.value());
 
@@ -137,10 +181,11 @@ int main(int argc, char** argv) {
       Console::error(1) << "Couldn't find function " << rewrite_arg.value().get_name() << " in the binary." << endl;
       return 1;
     }
-  }
 
-  if (!replace(fxn_offset, fxn_size)) {
-    Console::error(1) << "Unable to replace function text!" << endl;
+    if (!replace(fxn_offset, fxn_size, linker_ptr)) {
+      Console::error(1) << "Unable to replace function text!" << endl;
+    }
+
   }
 
   return 0;
