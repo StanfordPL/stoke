@@ -23,7 +23,7 @@ using namespace cpputil;
 using namespace std;
 using namespace x64asm;
 
-#define DEBUG_NACL_COST
+//#define DEBUG_NACL_COST
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y))
 
 namespace stoke {
@@ -225,7 +225,7 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
         if(table[j][i] != INFTY)
           min_cost = MIN(table[j][i] + (32-j) + (32 - 5), min_cost);
       }
-      table[32-5][i+1] = min_cost;
+      table[0][i+1] = min_cost;
     } else if (!instr.is_explicit_memory_dereference()) {
       // case 3
       for(size_t j = 0; j < 32; ++j) {

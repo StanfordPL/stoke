@@ -123,6 +123,7 @@ void show_state(const SearchState& state, ostream& os) {
   auto best_yet = state.best_yet;
   //CfgTransforms::remove_unreachable(best_yet);
   //CfgTransforms::remove_nop(best_yet);
+  CfgTransforms::nacl_transform(best_yet);
 
   lowest_cost = state.best_yet_cost;
   ofs << "Lowest Cost Discovered (" << state.best_yet_cost << ")" << endl;
@@ -131,8 +132,9 @@ void show_state(const SearchState& state, ostream& os) {
   ofs.filter().next();
 
   auto best_correct = state.best_correct;
-  CfgTransforms::remove_unreachable(best_correct);
-  CfgTransforms::remove_nop(best_correct);
+  //CfgTransforms::remove_unreachable(best_correct);
+  //CfgTransforms::remove_nop(best_correct);
+  CfgTransforms::nacl_transform(best_correct);
 
   lowest_correct = state.best_correct_cost;
   ofs << "Lowest Known Correct Cost (" << state.best_correct_cost << ")" << endl;
