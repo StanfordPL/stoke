@@ -42,6 +42,7 @@ public:
     insert_transform(new DeleteTransform(pools), delete_mass_arg.value());
     insert_transform(new InstructionTransform(pools), instruction_mass_arg.value());
     insert_transform(new OpcodeTransform(pools), opcode_mass_arg.value());
+    insert_transform(new OpcodeWidthTransform(pools), opcode_width_mass_arg.value());
     insert_transform(new OperandTransform(pools), operand_mass_arg.value());
     insert_transform(new LocalSwapTransform(pools), local_swap_mass_arg.value());
     insert_transform(new GlobalSwapTransform(pools), global_swap_mass_arg.value());
