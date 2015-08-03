@@ -339,6 +339,32 @@ void TransformPools::recompute_pools() {
     for(size_t j = 0; j < opcode_weights_[i]; ++j)
       opcode_pool_.push_back((Opcode)i);
 
+  // Build raw-memonic-equiv pool
+  // (start with string -> [opcode] map)
+  map<string, std::vector<Opcode>> str_to_opcode;
+  for(auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    if(opcode_weights_[i]) {
+      string text = opcode_write_att((Opcode)i);
+      text = text.substr(0, text.size()-1);
+
+      auto vector = str_to_opcode[text];
+      vector.push_back((Opcode)i);
+    }
+  }
+
+  raw_memonic_pool_.resize(X64ASM_NUM_OPCODES);
+  for(auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    if(opcode_weights_[i]) {
+      string text = opcode_write_att((Opcode)i);
+      text = text.substr(0, text.size()-1);
+
+      auto vector = str_to_opcode[text];
+      raw_memonic_pool_[(Opcode)i] = vector;
+    }
+  }
+
+
+
   // Build type_equivalent pool
   opcodes_type_equiv_.clear();
   opcodes_type_equiv_.resize(X64ASM_NUM_OPCODES);
