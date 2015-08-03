@@ -38,6 +38,8 @@ public:
   WeightedTransformGadget(TransformPools& pools,
                           std::default_random_engine::result_type seed) : WeightedTransform(pools) {
 
+    insert_transform(new AddNopsTransform(pools), add_nops_mass_arg.value());
+    insert_transform(new DeleteTransform(pools), delete_mass_arg.value());
     insert_transform(new InstructionTransform(pools), instruction_mass_arg.value());
     insert_transform(new OpcodeTransform(pools), opcode_mass_arg.value());
     insert_transform(new OperandTransform(pools), operand_mass_arg.value());
