@@ -46,6 +46,8 @@ string stoke::readable_error_code(ErrorCode ec) {
     return "SIGCUSTOM (no return)";
   case ErrorCode::SIGCUSTOM_STACK_SMASH:
     return "SIGCUSTOM (corrupted return address on stack)";
+  case ErrorCode::SIGCUSTOM_ASSEMBLER_ERROR:
+    return "SIGCUSTOM (assembler error)";
   default:
     assert(false);
     return "STOKE_BUG";

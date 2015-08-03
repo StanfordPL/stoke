@@ -151,8 +151,15 @@ protected:
     SymState state(cs);
     SymState end("FINAL");
 
-    for(auto it : cfg_t_->get_code())
+    AliasAnalysis analysis(cfg_t_->get_code());
+
+    size_t line = 0;
+    state.memory.set_analysis(&analysis);
+    for(auto it : cfg_t_->get_code()) {
+      state.set_lineno(line);
       ch.build_circuit(it, state);
+      line++;
+    }
 
     for(auto it : state.constraints)
       constraints.push_back(it);
