@@ -38,21 +38,21 @@ using namespace x64asm;
 
 auto& io = Heading::create("I/O options:");
 auto& in = ValueArg<string>::create("i")
-           .alternate("in")
-           .usage("<path/to/bin>")
-           .description("Binary file to extract code from")
-           .default_val("./a.out");
+.alternate("in")
+.usage("<path/to/bin>")
+.description("Binary file to extract code from")
+.default_val("./a.out");
 auto& out = ValueArg<string>::create("o")
-            .alternate("out")
-            .usage("<path/to/dir>")
-            .description("File to write changes to; default is to overwrite")
-            .default_val("");
+.alternate("out")
+.usage("<path/to/dir>")
+.description("File to write changes to; default is to overwrite")
+.default_val("");
 
 auto& input_offset = FlagArg::create("input_offset")
-                     .description("Don't disassemble or look for corresponding function name.  Use offset in input file instead.  Skips linking.");
+.description("Don't disassemble or look for corresponding function name.  Use offset in input file instead.  Skips linking.");
 
 auto& do_not_link_arg = FlagArg::create("do_not_link")
-                        .description("Don't run linker.  Could avoid errors if no function calls are being made.");
+.description("Don't run linker.  Could avoid errors if no function calls are being made.");
 
 
 bool found = false;
@@ -96,14 +96,14 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   for(size_t i = 0; i < code.size(); ++i) {
     size_t nop_bytes = 0;
     while(code[i].is_nop() && i < code.size() &&
-          (((fxn.size() + nop_bytes + assm.hex_size(code[i])) & 0x1f) >= (fxn.size() & 0x1f))) {
+        (((fxn.size() + nop_bytes + assm.hex_size(code[i])) & 0x1f) >= (fxn.size() & 0x1f))) {
       nop_bytes += assm.hex_size(code[i]);
       i++;
     }
 
     //assemble these nops
-    while(nop_bytes > 0) {
-      switch(nop_bytes) {
+    //See https://code.google.com/p/minnacl/source/browse/src/trusted/validator_x86/testdata/64/nops.hex?name=cleanup for hints
+    switch(nop_bytes) {
       case 1:
         fxn.emit_byte(0x90);
         nop_bytes = 0;
@@ -135,11 +135,11 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
         nop_bytes = 0;
         break;
       case 6:
+        fxn.emit_byte(0x66);
         fxn.emit_byte(0x0f);
         fxn.emit_byte(0x1f);
+        fxn.emit_byte(0x44);
         fxn.emit_byte(0x00);
-        fxn.emit_byte(0x0f);
-        fxn.emit_byte(0x1f);
         fxn.emit_byte(0x00);
         nop_bytes = 0;
         break;
@@ -164,7 +164,7 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
         fxn.emit_byte(0x00);
         nop_bytes = 0;
         break;
-      default:
+      case 9:
         fxn.emit_byte(0x66);
         fxn.emit_byte(0x0f);
         fxn.emit_byte(0x1f);
@@ -174,9 +174,20 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
         fxn.emit_byte(0x00);
         fxn.emit_byte(0x00);
         fxn.emit_byte(0x00);
-        nop_bytes -= 9;
+        nop_bytes = 0;
+      default:
+        for(size_t i = 10; i <= nop_bytes; ++i)
+          fxn.emit_byte(0x66);
+        fxn.emit_byte(0x2e);
+        fxn.emit_byte(0x0f);
+        fxn.emit_byte(0x1f);
+        fxn.emit_byte(0x84);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
+        fxn.emit_byte(0x00);
         break;
-      }
     }
 
     if(i < code.size()) {
@@ -206,20 +217,16 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
     linker->finish();
 
     if(linker->multiple_def()) {
-      Console::msg() << "Multiple definition error for function \"" << linker->get_multiple_def() << "\"" << endl;
-      return false;
+      Console::warn() << "Multiple definition error for function \"" << linker->get_multiple_def() << "\"" << endl;
     }
     if(linker->undef_symbol()) {
-      Console::msg() << "Undefined symbol \"" << linker->get_undef_symbol() << "\"" << endl;
-      return false;
+      Console::warn() << "Undefined symbol \"" << linker->get_undef_symbol() << "\"" << endl;
     }
     if(linker->jump_too_far()) {
-      Console::msg() << "Distance for jump exceeded 4-byte offset limit." << endl;
-      return false;
+      Console::warn() << "Distance for jump exceeded 4-byte offset limit." << endl;
     }
     if(!linker->good()) {
-      Console::msg() << "Unexpected linker error." << endl;
-      return false;
+      Console::warn() << "Unexpected linker error." << endl;
     }
   }
 

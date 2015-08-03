@@ -61,7 +61,7 @@ BENCHMARKS := fannkuchredux fasta revcomp binarytrees knucleotide \
 OTHER_OBJS = bench-framework benchstringio fasta_10k_ref_output
 
 OBJS_NATIVE := $(BENCHMARKS:%=%.native.o) $(OTHER_OBJS:%=%.native.o) nbody.native.o
-OBJS_NACL := optstrcat.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
+OBJS_NACL := strcpy-synth-2015.07.28-252.o optstrcat.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 #OBJS_NACL := $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 #OBJS_NACL := strcpy-synth-2015.07.28-252.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 OBJS_PNACL := $(BENCHMARKS:%=%.bc) $(OTHER_OBJS:%=%.bc) nbody-portable.bc

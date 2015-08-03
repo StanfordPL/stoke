@@ -7,7 +7,7 @@
 #! capacity    104 bytes
 
 # Text                           #  Line  RIP   Bytes  Opcode              
-strcat:                         #        0     0      OPC=<label>         
+.strcat:                         #        0     0      OPC=<label>         
   pushq %rbx                     #  1     0     1      OPC=pushq_r64_1     
   nop                            #  2     0x1   1      OPC=nop             
   movq $0xfefefefefefefeff, %r9  #  3     0x2   10     OPC=movq_r64_imm64  
@@ -106,7 +106,7 @@ strcat:                         #        0     0      OPC=<label>
   nop                            #  93    0xb8  1      OPC=nop             
   nop                            #  94    0xb9  1      OPC=nop             
   nop                            #  95    0xba  1      OPC=nop             
-  callq strcpy                  #  96    0xbb  5      OPC=callq_label     
+  callq .strcpy                  #  96    0xbb  5      OPC=callq_label     
   movw %bx, %ax                  #  97    0xc0  3      OPC=movw_r16_r16_1  
   nop                            #  98    0xc3  1      OPC=nop             
   nop                            #  99    0xc4  1      OPC=nop             
@@ -135,5 +135,56 @@ strcat:                         #        0     0      OPC=<label>
   nop                            #  120   0xe5  1      OPC=nop             
   nop                            #  121   0xe6  1      OPC=nop             
   jmpq .L_54                     #  122   0xe7  2      OPC=jmpq_label      
-                                                                           
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+  nop
+    
+
 .size strcat, .-strcat
