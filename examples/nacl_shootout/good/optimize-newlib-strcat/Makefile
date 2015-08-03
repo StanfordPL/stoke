@@ -20,7 +20,7 @@ search:
 	stoke search --config search.conf
 
 replace:
-	stoke replace --input_offset --rewrite result.s -i binary -o optbin
+	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
 
 deploy: replace

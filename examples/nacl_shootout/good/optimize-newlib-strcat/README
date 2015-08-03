@@ -1,0 +1,6 @@
+
+There aren't optimization opportunities in the basic NaCl version.  You can see
+what I did by hand, which I tried several variations on, to minimize the number
+of NOPs that get run, remove extra 'movl X X' statements, etc.  These had no
+effect.  I also tried removing the vectorized code, and that just slowed it
+down.  Oh well.
