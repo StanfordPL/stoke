@@ -12,49 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_COST_NACL2_H
-#define STOKE_SRC_COST_NACL2_H
+#ifndef STOKE_TOOLS_GADGETS_NACL2_COST_H
+#define STOKE_TOOLS_GADGETS_NACL2_COST_H
 
+#include "src/cost/nacl2.h"
 #include "src/cost/cost_function.h"
-#include "src/ext/x64asm/include/x64asm.h"
+#include "tools/args/nacl2.inc"
 
 namespace stoke {
 
 template <bool debug>
-class NaCl2Cost : public CostFunction {
-
+class NaCl2CostGadget : public NaCl2Cost<debug> {
 public:
-
-  NaCl2Cost() {
-    set_restricted_register_penalty(1);
+  NaCl2CostGadget() {
+    this->set_restricted_register_penalty(nacl_restricted_register_arg.value());
+    this->set_bad_instruction_penalty(nacl_bad_penalty_arg.value());
   }
-
-  NaCl2Cost<debug>& set_restricted_register_penalty(uint64_t n) {
-    restricted_register_penalty_ = n;
-    return *this;
-  }
-
-  NaCl2Cost<debug>& set_bad_instruction_penalty(uint64_t n) {
-    bad_instruction_penalty_ = n;
-    return *this;
-  }
-
-  result_type operator()(const Cfg& cfg, Cost max = max_cost);
-
-private:
-
-  uint64_t restricted_register_penalty_;
-  uint64_t bad_instruction_penalty_;
-
-  x64asm::Assembler assm_;
-  x64asm::Function buffer_;
-
 };
 
 } // namespace stoke
 
 #endif
-
-
-
-

@@ -116,7 +116,7 @@ static Cost lowest_cost = 0;
 static Cost lowest_correct = 0;
 static Cost starting_cost = 0;
 
-void show_state(const SearchState& state, ostream& os) {
+void show_state(const SearchState& state, ostream& os, bool sep_columns = false) {
   ofilterstream<Column> ofs(os);
   ofs.filter().padding(5);
 
@@ -129,7 +129,9 @@ void show_state(const SearchState& state, ostream& os) {
   ofs << "Lowest Cost Discovered (" << state.best_yet_cost << ")" << endl;
   ofs << endl;
   ofs << TUnit(best_yet.get_code());
-  ofs.filter().next();
+
+  if(!sep_columns)
+    ofs.filter().next();
 
   auto best_correct = state.best_correct;
   //CfgTransforms::remove_unreachable(best_correct);
@@ -245,7 +247,7 @@ void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
   Console::msg() << endl << "Statistics of last search" << endl << endl;
   // get the state first (because it updates some static variables)
   ostringstream stream;
-  show_state(state, stream);
+  show_state(state, stream, true);
   show_statistics(stats, Console::msg());
   Console::msg() << endl << endl;
   Console::msg() << stream.str();

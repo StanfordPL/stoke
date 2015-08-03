@@ -347,7 +347,7 @@ void TransformPools::recompute_pools() {
       string text = opcode_write_att((Opcode)i);
       text = text.substr(0, text.size()-1);
 
-      auto vector = str_to_opcode[text];
+      auto& vector = str_to_opcode[text];
       vector.push_back((Opcode)i);
     }
   }
@@ -360,6 +360,11 @@ void TransformPools::recompute_pools() {
 
       auto vector = str_to_opcode[text];
       raw_memonic_pool_[(Opcode)i] = vector;
+      cout << (Opcode)i << " --> ";
+      for(auto opc : vector) {
+        cout << " " << opc;
+      }
+      cout << endl;
     }
   }
 

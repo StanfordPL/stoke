@@ -94,7 +94,8 @@ bool nacl_ok_index2(Opcode op) {
 
 /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
   result would equal or exceed that value. */
-NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
+template <bool debug>
+typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& cfg, const Cost max) {
 
   Cost score = 0;
 
@@ -109,7 +110,9 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
     if(instr.is_lea()) {
       M8 mem = instr.get_operand<M8>(1);
       if(mem.addr_or()) {
-        score++;
+        if(debug)
+          cout << "LEA with 32-bit arguments are not allowed" << endl;
+        score+= bad_instruction_penalty_;
       }
     }
   }
@@ -142,9 +145,8 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
     if(instr.is_any_jump()) {
       if(instr.is_any_indirect_jump()) {
         score++;
-#ifdef DEBUG_NACL_COST
-        std::cout << "indirect jumps not supported yet." << endl;
-#endif
+        if(debug)
+          std::cout << "indirect jumps not supported yet." << endl;
         assert(false);
       } else {
         auto label = instr.get_operand<Label>(0);
@@ -169,9 +171,8 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
     Opcode opc = instr.get_opcode();
     if(nacl_ok_index2(opc)) {
       restricted_registers[i+1] = (uint64_t)instr.get_operand<R32>(0) + 1;
-#ifdef DEBUG_NACL_COST
-      cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
-#endif
+      if(debug)
+        cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
     }
 
     // Cases:
@@ -258,40 +259,40 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
   }
   score += min_extra_score;
 
-#ifdef DEBUG_NACL_COST
-  // Let's print the table!
-  cout << "The big bad dynamic programing table." << endl << endl;
+  if(debug) {
+    // Let's print the table!
+    cout << "The big bad dynamic programing table." << endl << endl;
 
-  ofilterstream<Column> ofs(cout);
-  ofs.filter().padding(3);
+    ofilterstream<Column> ofs(cout);
+    ofs.filter().padding(3);
 
-  for(size_t i = 0; i < size; ++i) {
-    ofs << cfg.get_code()[i] << endl;
-  }
-  ofs.filter().next();
-
-  for(size_t i = 0; i < size; ++i) {
-    ofs << assm_.hex_size(cfg.get_code()[i]) << endl;
-  }
-  ofs.filter().next();
-
-  for(size_t i = 0; i < size; ++i) {
-    ofs << "|" << endl;
-  }
-  ofs.filter().next();
-
-  for(size_t i = 0; i < 32; ++i) {
-    for(size_t j = 1; j <= size; ++j) {
-      if(table[i][j] != INFTY)
-        ofs << table[i][j] << endl;
-      else
-        ofs << "X" << endl;
+    for(size_t i = 0; i < size; ++i) {
+      ofs << cfg.get_code()[i] << endl;
     }
-    if(i != 31)
-      ofs.filter().next();
+    ofs.filter().next();
+
+    for(size_t i = 0; i < size; ++i) {
+      ofs << assm_.hex_size(cfg.get_code()[i]) << endl;
+    }
+    ofs.filter().next();
+
+    for(size_t i = 0; i < size; ++i) {
+      ofs << "|" << endl;
+    }
+    ofs.filter().next();
+
+    for(size_t i = 0; i < 32; ++i) {
+      for(size_t j = 1; j <= size; ++j) {
+        if(table[i][j] != INFTY)
+          ofs << table[i][j] << endl;
+        else
+          ofs << "X" << endl;
+      }
+      if(i != 31)
+        ofs.filter().next();
+    }
+    ofs.filter().done();
   }
-  ofs.filter().done();
-#endif
 
 
   // 3. no pseudo instructions may cross 32-bit boundaries (NO)
@@ -306,24 +307,21 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
       M8 mem = instr.get_operand<M8>(instr.mem_index());
       if(!mem.contains_base() && !mem.rip_offset()) {
         //no good; no base register
-#ifdef DEBUG_NACL_COST
-        cout << "USING MEMORY ACCESS WITHOUT BASE: " << instr << endl;
-#endif
-        score++;
+        if(debug)
+          cout << "USING MEMORY ACCESS WITHOUT BASE: " << instr << endl;
+        score+= bad_instruction_penalty_;
       } else if (mem.get_base() != r15 && mem.get_base() != rsp &&
                  mem.get_base() != rbp) {
-#ifdef DEBUG_NACL_COST
-        cout << "USING MEMORY ACCESS WITHOUT r15/rsp/rbp/rip base: " << instr << endl;
-#endif
-        score++;
+        if(debug)
+          cout << "USING MEMORY ACCESS WITHOUT r15/rsp/rbp/rip base: " << instr << endl;
+        score+= bad_instruction_penalty_;
       }
 
       if(mem.contains_index()) {
         if((uint64_t)mem.get_index() + 1 != restricted_registers[i]) {
-#ifdef DEBUG_NACL_COST
-          cout << "USING NON-RESTRICTED REGISTER AS INDEX: " << instr << endl;
-#endif
-          score++;
+          if(debug)
+            cout << "USING NON-RESTRICTED REGISTER AS INDEX: " << instr << endl;
+          score += restricted_register_penalty_;
         }
       }
     }
@@ -331,10 +329,9 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
       auto opc = instr.get_opcode();
       if(opc != POP_R64 && opc != POP_M64 && opc != PUSH_R64 && opc != PUSH_M64 && opc != RET
           && opc != POP_R64_1 && opc != PUSH_R64_1) {
-#ifdef DEBUG_NACL_COST
-        cout << "USING UNSUPPORTED MEMORY OPERATION: " << instr << endl;
-#endif
-        score++;
+        if(debug)
+          cout << "USING UNSUPPORTED MEMORY OPERATION: " << instr << endl;
+        score+= bad_instruction_penalty_;
       }
     }
   }
@@ -360,28 +357,24 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
     }
 
     if(instr.maybe_write_set().contains(rsp)) {
-#ifdef DEBUG_NACL_COST
-      cout << instr << " may write rsp" << endl;
-#endif
-      score++;
+      if(debug)
+        cout << instr << " may write rsp" << endl;
+      score+= bad_instruction_penalty_;
     }
     if(instr.maybe_undef_set().contains(rsp)) {
-#ifdef DEBUG_NACL_COST
-      cout << instr << " may undef rsp" << endl;
-#endif
-      score++;
+      if(debug)
+        cout << instr << " may undef rsp" << endl;
+      score+= bad_instruction_penalty_;
     }
     if(instr.maybe_write_set().contains(rbp)) {
-#ifdef DEBUG_NACL_COST
-      cout << instr << " may write rbp" << endl;
-#endif
-      score++;
+      if(debug)
+        cout << instr << " may write rbp" << endl;
+      score+= bad_instruction_penalty_;
     }
     if(instr.maybe_undef_set().contains(rbp)) {
-#ifdef DEBUG_NACL_COST
-      cout << instr << " may undef rbp" << endl;
-#endif
-      score++;
+      if(debug)
+        cout << instr << " may undef rbp" << endl;
+      score+= bad_instruction_penalty_;
     }
   }
 
@@ -389,21 +382,22 @@ NaCl2Cost::result_type NaCl2Cost::operator()(const Cfg& cfg, const Cost max) {
   // 8. r15 may never be modified
   for(auto instr : code) {
     if(instr.maybe_write_set().contains(r15)) {
-#ifdef DEBUG_NACL_COST
-      cout << instr << " may write r15" << endl;
-#endif
-      score++;
+      if(debug)
+        cout << instr << " may write r15" << endl;
+      score+= bad_instruction_penalty_;
     }
     if(instr.maybe_undef_set().contains(r15)) {
-#ifdef DEBUG_NACL_COST
-      cout << instr << " may undef r15" << endl;
-#endif
-      score++;
+      if(debug)
+        cout << instr << " may undef r15" << endl;
+      score+= bad_instruction_penalty_;
     }
   }
 
 
   return result_type(true, score);
 }
+
+template class NaCl2Cost<true>;
+template class NaCl2Cost<false>;
 
 } // namespace stoke

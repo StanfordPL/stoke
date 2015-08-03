@@ -27,6 +27,7 @@
 #include "src/cost/nongoal.h"
 #include "tools/args/cost.inc"
 #include "tools/gadgets/correctness_cost.h"
+#include "tools/gadgets/nacl2_cost.h"
 #include "tools/gadgets/latency_cost.h"
 #include "tools/gadgets/nongoal_cost.h"
 
@@ -57,7 +58,8 @@ private:
     st["latency"] =      new LatencyCostGadget();
     st["measured"] =     new MeasuredCost();
     st["nacl"] =         new NaClCost();
-    st["nacl2"] =        new NaCl2Cost();
+    st["nacl2"] =        new NaCl2CostGadget<false>();
+    st["nacl2debug"] =   new NaCl2CostGadget<true>();
     st["size"] =         new SizeCost();
     st["sseavx"] =       new SseAvxCost();
     st["nongoal"] =      new NonGoalCostGadget(target.def_ins(), target.live_outs());
