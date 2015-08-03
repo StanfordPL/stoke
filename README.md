@@ -58,9 +58,8 @@ section.
 STOKE is supported on the latest Ubuntu LTS release; in practice, it will also
 run on Ubuntu 13.10+ and on debian testing.  If you're trying to get STOKE to
 work on another linux distribution, having the right version of g++ is key.
-STOKE is supported on 4.8.2 only (this is the current version in Ubuntu 14.04).
-It should also work on 4.9.1, but in the past this has required minor tweaks
-(4.9.1 is the current version in Debian testing).  g++ 4.7.x and older
+STOKE is supported on 4.9 only.
+It should also work on later versions, but it will not work with g++ 4.8.x (missing regular expression support), and  g++ 4.7.x and older
 definitely will not work.
 
 Most of STOKE's software dependencies are available through apt. These can be
