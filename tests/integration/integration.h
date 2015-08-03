@@ -198,6 +198,13 @@ TEST_F(IntegrationTest, ReplaceIdempotent) {
   ASSERT_EQ(0ull, shell("make clean"));
 }
 
+TEST_F(IntegrationTest, ReplaceFunctions) {
+  set_working_dir("tests/fixtures/replace/functions");
+  set_path("../../../../bin");
+  ASSERT_EQ(0ull, shell("make clean"));
+  ASSERT_EQ(0ull, shell("make"));
+}
+
 TEST_F(IntegrationTest, SandboxFib) {
   set_working_dir("tests/fixtures/sandbox/fib");
   set_path("../../../../bin");

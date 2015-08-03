@@ -21,7 +21,6 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-
 uint64_t read_quadword(const Memory& m, uint64_t base, uint64_t i) {
 
   uint64_t result = 0;
