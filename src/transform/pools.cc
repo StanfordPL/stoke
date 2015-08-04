@@ -360,15 +360,8 @@ void TransformPools::recompute_pools() {
 
       auto vector = str_to_opcode[text];
       raw_memonic_pool_[(Opcode)i] = vector;
-      cout << (Opcode)i << " --> ";
-      for(auto opc : vector) {
-        cout << " " << opc;
-      }
-      cout << endl;
     }
   }
-
-
 
   // Build type_equivalent pool
   opcodes_type_equiv_.clear();
