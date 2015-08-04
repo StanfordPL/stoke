@@ -95,10 +95,13 @@ SRC_OBJ=\
 	\
 	src/target/cpu_info.o	\
 	\
+	src/transform/add_nops.o \
+	src/transform/delete.o \
 	src/transform/global_swap.o \
 	src/transform/instruction.o \
 	src/transform/local_swap.o \
 	src/transform/opcode.o \
+	src/transform/opcode_width.o \
 	src/transform/operand.o \
 	src/transform/pools.o \
 	src/transform/rotate.o \
