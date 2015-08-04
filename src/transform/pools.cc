@@ -431,22 +431,22 @@ bool TransformPools::get_write_op(Opcode o, size_t idx, const RegSet& rs, Operan
   switch (type(o, idx)) {
   case Type::M_8:
   case Type::M_16:
-  case Type::M_16_INT:
   case Type::M_32:
-  case Type::M_32_INT:
-  case Type::M_32_FP:
   case Type::M_64:
-  case Type::M_64_INT:
-  case Type::M_64_FP:
   case Type::M_128:
   case Type::M_256:
-  case Type::M_80_FP:
-  case Type::M_80_BCD:
     return get_m(rs, o, op);
 
   case Type::MM:
     return get<Mm>(gen_, mm_pool_, op);
 
+  case Type::M_80_FP:
+  case Type::M_80_BCD:
+  case Type::M_16_INT:
+  case Type::M_32_INT:
+  case Type::M_64_INT:
+  case Type::M_64_FP:
+  case Type::M_32_FP:
   case Type::MOFFS_8:
   case Type::MOFFS_16:
   case Type::MOFFS_32:
@@ -570,20 +570,6 @@ bool TransformPools::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand
   case Type::M_64:
   case Type::M_128:
   case Type::M_256:
-  case Type::M_16_INT:
-  case Type::M_32_INT:
-  case Type::M_64_INT:
-  case Type::M_32_FP:
-  case Type::M_64_FP:
-  case Type::M_80_FP:
-  case Type::M_80_BCD:
-  case Type::M_2_BYTE:
-  case Type::M_28_BYTE:
-  case Type::M_108_BYTE:
-  case Type::M_512_BYTE:
-  case Type::FAR_PTR_16_16:
-  case Type::FAR_PTR_16_32:
-  case Type::FAR_PTR_16_64:
     return get_m(rs, o, op);
 
   case Type::MM:
@@ -599,6 +585,20 @@ bool TransformPools::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand
     op = far;
     return true;
 
+  case Type::M_16_INT:
+  case Type::M_32_INT:
+  case Type::M_64_INT:
+  case Type::M_32_FP:
+  case Type::M_64_FP:
+  case Type::M_80_FP:
+  case Type::M_80_BCD:
+  case Type::M_2_BYTE:
+  case Type::M_28_BYTE:
+  case Type::M_108_BYTE:
+  case Type::M_512_BYTE:
+  case Type::FAR_PTR_16_16:
+  case Type::FAR_PTR_16_32:
+  case Type::FAR_PTR_16_64:
   case Type::MOFFS_8:
   case Type::MOFFS_16:
   case Type::MOFFS_32:
