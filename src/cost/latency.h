@@ -22,6 +22,10 @@ namespace stoke {
 class LatencyCost : public CostFunction {
 
 public:
+  LatencyCost() {
+    set_nesting_penalty(5);
+  }
+
   LatencyCost& set_nesting_penalty(Cost penalty) {
     nesting_penalty_ = penalty;
 
