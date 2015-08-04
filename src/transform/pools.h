@@ -131,13 +131,22 @@ public:
 
   /** Sets o to a random opcode of equivalent type; returns true on success */
   bool get_control_free_type_equiv(x64asm::Opcode& o) {
-    if (opcodes_type_equiv_.empty()) {
-      return false;
-    }
+    assert(!opcodes_type_equiv_.empty());
     const auto& equiv = opcodes_type_equiv_[o];
     if (equiv.empty()) {
       return false;
     }
+    o = equiv[gen_() % equiv.size()];
+    return true;
+  }
+
+  /** Sets o to a random opcode with the same raw memonic.
+    (i.e. a 'movl' could turn into a 'movq') */
+  bool get_equivalent_raw_memonic(x64asm::Opcode& o) {
+    assert(!raw_memonic_pool_.empty());
+    const auto& equiv = raw_memonic_pool_[o];
+    if(equiv.empty())
+      return false;
     o = equiv[gen_() % equiv.size()];
     return true;
   }
@@ -211,6 +220,8 @@ protected:
   std::array<size_t, X64ASM_NUM_OPCODES> opcode_weights_locked_;
   /** The pool of opcodes. */
   std::vector<x64asm::Opcode> opcode_pool_;
+  /** Pool with same raw memonic. */
+  std::vector<std::vector<x64asm::Opcode>> raw_memonic_pool_;
 
   /** Weighted pool of opcodes categorized by type */
   std::vector<std::vector<x64asm::Opcode>> opcodes_type_equiv_;
