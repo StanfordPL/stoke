@@ -2,3 +2,5 @@
 *.tc
 *.nexe
 testcases
+test.s
+optbin

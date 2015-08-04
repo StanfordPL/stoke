@@ -135,56 +135,5 @@
   nop                            #  120   0xe5  1      OPC=nop             
   nop                            #  121   0xe6  1      OPC=nop             
   jmpq .L_54                     #  122   0xe7  2      OPC=jmpq_label      
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-  nop
-    
-
+                                                                           
 .size strcat, .-strcat
