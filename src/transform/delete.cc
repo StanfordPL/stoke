@@ -43,12 +43,6 @@ TransformInfo DeleteTransform::operator()(Cfg& cfg) {
   auto& function = cfg.get_function();
   function.remove(index);
 
-  if (!cfg.check_invariants()) {
-    undo(cfg, ti);
-    return ti;
-  }
-
-
   cfg.recompute();
   if(!cfg.check_invariants()) {
     undo(cfg, ti);

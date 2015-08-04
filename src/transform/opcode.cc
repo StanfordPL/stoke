@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/transform/opcode_width.h"
+#include "src/transform/opcode.h"
 
 using namespace std;
 using namespace stoke;
@@ -21,7 +21,7 @@ using namespace x64asm;
 
 namespace stoke {
 
-TransformInfo OpcodeWidthTransform::operator()(Cfg& cfg) {
+TransformInfo OpcodeTransform::operator()(Cfg& cfg) {
 
   TransformInfo ti;
   ti.success = false;
@@ -64,7 +64,7 @@ TransformInfo OpcodeWidthTransform::operator()(Cfg& cfg) {
   return ti;
 }
 
-void OpcodeWidthTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
+void OpcodeTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
   cfg.recompute_defs();
 
