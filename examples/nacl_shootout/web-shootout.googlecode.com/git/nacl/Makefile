@@ -39,15 +39,15 @@ endif
 
 PNACL_PATH = $(NACL_SDK_ROOT)/toolchain/$(OS_SUBDIR)_x86_pnacl/newlib/bin
 
-NACLCC = $(NACL_CC_PATH)/$(NACL_CC_BASE)-gcc -falign-functions=32 -fno-builtin
-NACLCXX = $(NACL_CC_PATH)/$(NACL_CC_BASE)-g++ -falign-functions=32 -fno-builtin
+NACLCC = $(NACL_CC_PATH)/$(NACL_CC_BASE)-gcc
+NACLCXX = $(NACL_CC_PATH)/$(NACL_CC_BASE)-g++
 PNACLCC = $(PNACL_PATH)/pnacl-clang
 PNACLCXX = $(PNACL_PATH)/pnacl-clang++
 PNACL_TRANSLATE = $(PNACL_PATH)/pnacl-translate
 
 CFLAGS_NP = -mfpmath=sse -msse3 -march=nocona
-#CCFLAGS ?= -O3 -D_GNU_SOURCE
-CCFLAGS ?= -O2 -D_GNU_SOURCE
+CCFLAGS ?= -O3 -D_GNU_SOURCE
+#CCFLAGS ?= -O2 -D_GNU_SOURCE
 CFLAGS = $(CCFLAGS) -std=gnu99
 CXXFLAGS = $(CCFLAGS)
 LIBS = -lgmp -lpthread -lm #-lfftw3
@@ -61,8 +61,8 @@ BENCHMARKS := fannkuchredux fasta revcomp binarytrees knucleotide \
 OTHER_OBJS = bench-framework benchstringio fasta_10k_ref_output
 
 OBJS_NATIVE := $(BENCHMARKS:%=%.native.o) $(OTHER_OBJS:%=%.native.o) nbody.native.o
-OBJS_NACL := dummy_strcat.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
-#OBJS_NACL := $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
+#OBJS_NACL := dummy_strcat.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
+OBJS_NACL := $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 #OBJS_NACL := strcpy-synth-2015.07.28-252.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 OBJS_PNACL := $(BENCHMARKS:%=%.bc) $(OTHER_OBJS:%=%.bc) nbody-portable.bc
 
