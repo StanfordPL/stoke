@@ -53,7 +53,7 @@ cpputil::ValueArg<size_t>& opcode_width_mass_arg =
   cpputil::ValueArg<size_t>::create("opcode_width_mass")
   .usage("<int>")
   .description("Opcode width move proposal mass")
-  .default_val(0);
+  .default_val(1);
 
 cpputil::ValueArg<size_t>& operand_mass_arg =
   cpputil::ValueArg<size_t>::create("operand_mass")
