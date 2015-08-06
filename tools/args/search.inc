@@ -32,9 +32,9 @@ cpputil::ValueArg<double>& beta_arg =
   .default_val(1.0);
 
 cpputil::ValueArg<size_t>& max_instrs_arg =
-  cpputil::ValueArg<size_t>::create("max_instrs")
+  cpputil::ValueArg<size_t>::create("initial_instruction_number")
   .usage("<int>")
-  .description("The maximum number of instructions allowed in a rewrite")
+  .description("The initial number of instructions in the rewrite.  If the rewrite does not already ahve this many instructions, than NOPs will be added to pad to this number.  Note that some transformations can chance the number of instructions, while many others do not.")
   .default_val(16);
 
 cpputil::ValueArg<Init, InitReader, InitWriter>& init_arg =
