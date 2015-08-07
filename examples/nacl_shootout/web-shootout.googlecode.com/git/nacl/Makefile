@@ -56,13 +56,14 @@ PNACL_LIBDIRS = -L../third_party/libinstall/pnacl/lib -L$(NACL_SDK_ROOT)/lib/pna
 IRT_CORE=$(NACL_SDK_ROOT)/tools/irt_core_x86_$(BITS).nexe
 
 BENCHMARKS := fannkuchredux fasta revcomp binarytrees knucleotide \
-		pidigits richards deltablue memcpy memcpy2 strcpy strlen strcat #fft
+		pidigits richards deltablue memcpy memcpy2 strcpy strlen strcat \
+    wmemcmp #fft
 # spectralnorm
 OTHER_OBJS = bench-framework benchstringio fasta_10k_ref_output
 
 OBJS_NATIVE := $(BENCHMARKS:%=%.native.o) $(OTHER_OBJS:%=%.native.o) nbody.native.o
-#OBJS_NACL := dummy_strcat.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 OBJS_NACL := $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
+#OBJS_NACL := dummy_strcat.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 #OBJS_NACL := strcpy-synth-2015.07.28-252.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 OBJS_PNACL := $(BENCHMARKS:%=%.bc) $(OTHER_OBJS:%=%.bc) nbody-portable.bc
 

@@ -23,7 +23,7 @@ using namespace cpputil;
 using namespace std;
 using namespace x64asm;
 
-//#define DEBUG_NACL_COST
+#define DEBUG_NACL_COST
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y))
 
 namespace stoke {
