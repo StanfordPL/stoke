@@ -27,6 +27,7 @@ public:
 
   NaCl2Cost() {
     set_restricted_register_penalty(1);
+    set_bad_instruction_penalty(100);
   }
 
   NaCl2Cost<debug>& set_restricted_register_penalty(uint64_t n) {

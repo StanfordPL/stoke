@@ -25,7 +25,7 @@ class NaCl2CostTest : public ::testing::Test {
 
 protected:
 
-  NaCl2Cost fxn;
+  NaCl2Cost<false> fxn;
   uint64_t bad_penalty;
   uint64_t reg_penalty;
 
@@ -33,22 +33,38 @@ private:
   void SetUp() {
     bad_penalty = 7;
     reg_penalty = 11;
-    fxn_.set_bad_instruction_penalty(bad_penalty);
-    fxn_.set_restricted_register_penalty(reg_penalty);
+    fxn.set_bad_instruction_penalty(bad_penalty);
+    fxn.set_restricted_register_penalty(reg_penalty);
   }
 };
 
-TEST_F(NaCl2Cost, ModifySpPenalty) {
+TEST_F(NaCl2CostTest, ModifySpPenalty) {
 
   std::stringstream ss;
-  ss << "movw $0x10, %sp" << endl;
-  ss << "retq" << endl;
+  ss << "movw $0x10, %sp" << std::endl;
 
-  x64asm::Code c;
+  x64asm::Code code;
   ss >> code;
 
-  EXPECT_EQ(bad_penalty, fxn(c));
+  auto cfg = Cfg(code);
 
+  EXPECT_EQ(bad_penalty, fxn(cfg).second);
 
 }
+
+TEST_F(NaCl2CostTest, ModifyRspPenalty) {
+
+  std::stringstream ss;
+  ss << "movq $0x10, %rsp" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  auto cfg = Cfg(code);
+
+  EXPECT_EQ(bad_penalty, fxn(cfg).second);
+
+}
+
+} //namepsace stoke
 
