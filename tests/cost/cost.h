@@ -16,3 +16,4 @@
 #include "tests/cost/correctness.h"
 #include "tests/cost/latency.h"
 #include "tests/cost/parser.h"
+#include "tests/cost/nacl2.h"
