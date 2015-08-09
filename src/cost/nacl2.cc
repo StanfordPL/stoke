@@ -356,33 +356,33 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
       break;
     }
 
-    if(instr.maybe_write_set().contains(rsp)) {
+    if(instr.maybe_write_set().contains(spl)) {
       if(debug)
         cout << instr << " may write rsp" << endl;
       score+= bad_instruction_penalty_;
     }
-    if(instr.maybe_undef_set().contains(rsp)) {
+    if(instr.maybe_undef_set().contains(spl)) {
       if(debug)
         cout << instr << " may undef rsp" << endl;
       score+= bad_instruction_penalty_;
     }
-    if(instr.maybe_write_set().contains(rbp)) {
+    if(instr.maybe_write_set().contains(bpl)) {
       if(debug)
         cout << instr << " may write rbp" << endl;
       score+= bad_instruction_penalty_;
     }
-    if(instr.maybe_undef_set().contains(rbp)) {
+    if(instr.maybe_undef_set().contains(bpl)) {
       if(debug)
         cout << instr << " may undef rbp" << endl;
       score+= bad_instruction_penalty_;
     }
 
-    if(instr.maybe_write_set().contains(r15)) {
+    if(instr.maybe_write_set().contains(r15b)) {
       if(debug)
         cout << instr << " may write r15" << endl;
       score+= bad_instruction_penalty_;
     }
-    if(instr.maybe_undef_set().contains(r15)) {
+    if(instr.maybe_undef_set().contains(r15b)) {
       if(debug)
         cout << instr << " may undef r15" << endl;
       score+= bad_instruction_penalty_;
