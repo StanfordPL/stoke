@@ -376,11 +376,7 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
         cout << instr << " may undef rbp" << endl;
       score+= bad_instruction_penalty_;
     }
-  }
 
-
-  // 8. r15 may never be modified
-  for(auto instr : code) {
     if(instr.maybe_write_set().contains(r15)) {
       if(debug)
         cout << instr << " may write r15" << endl;

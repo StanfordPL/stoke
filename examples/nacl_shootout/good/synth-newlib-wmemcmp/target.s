@@ -27,7 +27,7 @@
   leal (%rdi,%rax,4), %r8d
   movl (%r15,%r8), %r8d      #  14    0x18  4      OPC=movl_r32_m32   
   leal (%rsi,%rax,4), %ecx
-  movl (%r15,%r8), %ecx      #  15    0x1c  3      OPC=movl_r32_m32   
+  movl (%r15,%rcx), %ecx      #  15    0x1c  3      OPC=movl_r32_m32   
   cmpl %ecx, %r8d               #  16    0x1f  3      OPC=cmpl_r32_r32   
   jne .L_30                     #  17    0x22  2      OPC=jne_label      
 .L_24:                          #        0x24  0      OPC=<label>        
