@@ -55,7 +55,7 @@ TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
 
   auto& function = cfg.get_function();
   for(size_t i = 0; i < new_nops; ++i) {
-    function.insert(index, Instruction(NOP));
+    function.insert(index, Instruction(NOP), false);
   }
 
   cfg.recompute();
