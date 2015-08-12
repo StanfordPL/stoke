@@ -42,12 +42,14 @@ bool nacl_ok_index2(Opcode op) {
   case ADD_R32_M32:
   case ADD_R32_R32:
   case ADD_R32_R32_1:
+  case ADD_EAX_IMM32:
 
   case AND_R32_IMM32:
   case AND_R32_IMM8:
   case AND_R32_M32:
   case AND_R32_R32:
   case AND_R32_R32_1:
+  case AND_EAX_IMM32:
 
   case IMUL_R32_M32:
   case IMUL_R32_M32_IMM32:
@@ -71,18 +73,21 @@ bool nacl_ok_index2(Opcode op) {
   case OR_R32_M32:
   case OR_R32_R32:
   case OR_R32_R32_1:
+  case OR_EAX_IMM32:
 
   case SUB_R32_IMM32:
   case SUB_R32_IMM8:
   case SUB_R32_M32:
   case SUB_R32_R32:
   case SUB_R32_R32_1:
+  case SUB_EAX_IMM32:
 
   case XOR_R32_IMM32:
   case XOR_R32_IMM8:
   case XOR_R32_M32:
   case XOR_R32_R32:
   case XOR_R32_R32_1:
+  case XOR_EAX_IMM32:
 
     return true;
 
@@ -130,6 +135,7 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
   // initialize the table
 #define INFTY 0xefffffffffffffff
   size_t size = cfg.get_code().size();
+  auto function = cfg.get_function();
   uint64_t table[32][size+1];
   for(size_t i = 0; i < 32; ++i)
     for(size_t j = 0; j < size+1; ++j)
@@ -156,12 +162,10 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
   }
 
   // Start iterating throught the code
-  buffer_.reserve(code.size()*32);
-  assm_.start(buffer_);
   for(size_t i = 0; i < code.size(); ++i) {
 
     auto instr = code[i];
-    size_t instr_size = assm_.hex_size(instr);
+    size_t instr_size = function.hex_size(i);
     if(instr.get_opcode() == RET)
       instr_size = 12;
 
@@ -272,7 +276,7 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
     ofs.filter().next();
 
     for(size_t i = 0; i < size; ++i) {
-      ofs << assm_.hex_size(cfg.get_code()[i]) << endl;
+      ofs << function.hex_size(i) << endl;
     }
     ofs.filter().next();
 

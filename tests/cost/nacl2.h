@@ -66,5 +66,119 @@ TEST_F(NaCl2CostTest, ModifyRspPenalty) {
 
 }
 
+TEST_F(NaCl2CostTest, AcrossBoundariesTooManyNops) {
+
+  std::stringstream ss;
+  for(size_t i = 0; i < 29; ++i) {
+    ss << "nop" << std::endl;
+  }
+  ss << "movl $0x10, %eax  #SIZE=5" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  auto cfg = Cfg(code);
+
+  // to fix this, we would need to remove 2 nop bytes
+  EXPECT_EQ(2ul, fxn(cfg).second);
+
+}
+
+TEST_F(NaCl2CostTest, AcrossBoundariesTooFewNops) {
+
+  std::stringstream ss;
+  for(size_t i = 0; i < 31; ++i) {
+    ss << "nop" << std::endl;
+  }
+  ss << "movl $0x10, %eax  #SIZE=5" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  auto cfg = Cfg(code);
+
+  // to fix this, we would need to add 1 nop bytes
+  EXPECT_EQ(1ul, fxn(cfg).second);
+}
+
+TEST_F(NaCl2CostTest, MisalignedJumpTarget) {
+
+  std::stringstream ss;
+  ss << "nop" << std::endl;
+  ss << ".target:" << std::endl;
+  ss << "jmpq .target" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  auto cfg = Cfg(code);
+
+  // to fix this, we would need to remove 1 nop bytes
+  EXPECT_EQ(1ul, fxn(cfg).second);
+}
+
+TEST_F(NaCl2CostTest, RestrictedRegisterOk) {
+
+  std::stringstream ss;
+  ss << ".target:" << std::endl;
+  ss << "movl $0x10, %eax" << std::endl;
+  ss << "movq (%r15, %rax, 1), %rdx" << std::endl;
+  ss << "jmpq .target" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  auto cfg = Cfg(code);
+
+  // to fix this, we would need to remove 1 nop bytes
+  EXPECT_EQ(0ul, fxn(cfg).second);
+}
+
+TEST_F(NaCl2CostTest, RestrictedRegisterBad) {
+
+  std::stringstream ss;
+  ss << ".target:" << std::endl;
+  ss << "movl $0x10, %eax" << std::endl;
+  ss << "movq (%r15, %rcx, 1), %rdx" << std::endl;
+  ss << "jmpq .target" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  auto cfg = Cfg(code);
+
+  // to fix this, we would need to remove 1 nop bytes
+  EXPECT_EQ(reg_penalty, fxn(cfg).second);
+}
+
+TEST_F(NaCl2CostTest, Benchmark) {
+
+  std::stringstream ss;
+  ss << ".target:" << std::endl;
+  ss << "andl $0x1, %eax" << std::endl;
+  ss << "movq (%r15, %rax, 1), %rdx" << std::endl;
+  ss << "cmpl %eax, %ecx" << std::endl;
+  ss << "je .target" << std::endl;
+  for(size_t i = 0; i < 10; ++i)
+    ss << "nop" << std::endl;
+  ss << "jmpq .target" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  auto cfg = Cfg(code);
+  ASSERT_EQ(0ul, fxn(cfg).second);
+
+
+  Cost sum = 0;
+  for(size_t i = 0; i < 30000; ++i) {
+    sum += fxn(cfg).second;
+  }
+
+  EXPECT_EQ(0ul, sum);
+
+}
+
 } //namepsace stoke
 
