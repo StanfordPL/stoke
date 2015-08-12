@@ -1,4 +1,4 @@
-all: search replace
+all: build search replace
 
 build:
 	g++ -std=c++11 main.cc -O2 -fno-inline
