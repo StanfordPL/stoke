@@ -6,7 +6,7 @@ TC_OPTS=--number 40 --width_of_char 1 --null_terminate --different_size_ok
 all: clean testcase search replace deploy
 
 generate_data: generate_data.c
-	gcc -std=c99 liba-ctype_.o binary.o generate_data.c -o generate_data
+	gcc -std=c99 lib_a-ctype_.o binary.o generate_data.c -o generate_data
 
 data.tc: generate_data
 	stoke testcase --bin ./generate_data --fxn go -o data.tc
