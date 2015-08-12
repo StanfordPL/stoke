@@ -57,7 +57,7 @@ IRT_CORE=$(NACL_SDK_ROOT)/tools/irt_core_x86_$(BITS).nexe
 
 BENCHMARKS := fannkuchredux fasta revcomp binarytrees knucleotide \
 		pidigits richards deltablue memcpy memcpy2 strcpy strlen strcat \
-    wmemcmp #fft
+    wmemcmp strcasecmp #fft
 # spectralnorm
 OTHER_OBJS = bench-framework benchstringio fasta_10k_ref_output
 
