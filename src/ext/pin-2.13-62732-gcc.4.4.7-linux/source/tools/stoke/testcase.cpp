@@ -193,6 +193,7 @@ VOID record_deref(VOID* addr, UINT32 size, bool rip_deref, bool read) {
     const auto ptr = (uint64_t)addr + i;
 		if (rip_deref) {
 			if (data_vals_.find(ptr) == data_vals_.end()) {
+        cout << "RIP access at " << hex << ptr << endl;
 				data_vals_[ptr] = read ? *((uint8_t*)(ptr)) : 0;
 			}
 		} else if (ptr >= (stack_frame_ - KnobMaxStack.Value())) {
@@ -213,17 +214,29 @@ VOID record_mem(uint64_t default_base, const unordered_map<uint64_t, uint8_t>& v
 	// Compute bounds
   uint64_t min_addr = 0xffffffffffffffff;
   uint64_t max_addr = 0;
+  cout << "Iterating over list..." << endl;
   for (const auto& val : vals) {
     min_addr = min(min_addr, val.first);
     max_addr = max(max_addr, val.first);
   }
 
-	// Resize memory
+  if(max_addr - min_addr > (1 << 20)) {
+    cout << "There as a memory access at " << hex << max_addr
+         << " and one at " << min_addr << endl;
+    cout << "This difference is too big. @ " << __FILE__ << ":" << dec << __LINE__ << endl;
+    exit(1);
+  }
+
+  cout << "max_addr = " << max_addr << endl;
+  cout << "min_addr = " << min_addr << endl;
+	// Resize memoy
 	const auto base = vals.empty() ? default_base : min_addr;
 	const auto size = vals.empty() ? 0 : max_addr - min_addr + 1;
+  cout << "Resizing memory... " << base << ", " << size << endl;
 	mem.resize(base, size);
 
 	// Set valid bits and values
+  cout << "Setting values..." << endl;
   for (const auto& val : vals) {
     mem.set_valid(val.first, true);
     mem[val.first] = val.second;
@@ -245,8 +258,11 @@ VOID end_tc() {
 
 	// Otherwise, we're done. Finish recording this testcase	
 	auto& tc = tcs_.back();
+  cout << "-> STACK" << endl;
 	record_mem(0x700000000, stack_vals_, tc.stack);
+  cout << "-> HEAP" << endl;
 	record_mem(0x100000000, heap_vals_, tc.heap);
+  cout << "-> DATA" << endl;
 	record_mem(0x000000000, data_vals_, tc.data);
 
 	// Stop recording and decrement the quota

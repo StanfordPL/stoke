@@ -29,7 +29,7 @@ PIN_DEF=\
 	-DHOST_IA32E \
 	-DTARGET_LINUX  
 
-PIN_CC=g++ -std=c++11 -fPIC $(TARGET)
+PIN_CC=g++ -rdynamic -std=c++11 -fPIC $(TARGET)
 
 PIN_OPT=-O3
 

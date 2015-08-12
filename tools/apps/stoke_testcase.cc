@@ -270,23 +270,29 @@ int trace(const string& argv0) {
   const string pin_path = here + "../src/ext/pin-2.13-62732-gcc.4.4.7-linux/";
   const string so_path = pin_path + "source/tools/stoke/obj-intel64/";
 
-  Terminal term;
-  term << pin_path << "pin -injection child -t " << so_path << "testcase.so ";
+  stringstream command;
+  command << pin_path << "pin -injection child -t " << so_path << "testcase.so ";
 
-  term << "-f " << fxn.value() << " ";
+  command << "-f " << fxn.value() << " ";
   if (out.has_been_provided()) {
-    term << "-o " << out.value() << " ";
+    command << "-o " << out.value() << " ";
   }
-  term << "-x " << max_stack.value() << " ";
-  term << "-n " << max_tc.value() << " ";
-  term << "-b " << begin_line.value() << " ";
-  term << "-e \" ";
+  command << "-x " << max_stack.value() << " ";
+  command << "-n " << max_tc.value() << " ";
+  command << "-b " << begin_line.value() << " ";
+  command << "-e \" ";
   for (auto e : end_lines.value()) {
-    term << e << " ";
+    command << e << " ";
   }
-  term << "\" ";
+  command << "\" ";
 
-  term << " -- " << bin.value() << " " << args.value() << endl;
+  command << " -- " << bin.value() << " " << args.value() << endl;
+
+
+  Console::msg() << "Running: " << command.str() << endl;
+
+  Terminal term;
+  term << command.str();
 
   // Don't return term.result() because it computes it mod 256 in the shell,
   // and this sometimes hides errors from pin -- Berkeley
