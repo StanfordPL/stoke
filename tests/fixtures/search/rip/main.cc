@@ -14,12 +14,12 @@
 
 // Simple test: Can stoke find the code that moves the rip constant into xmm0?
 
-double foo() {
+double __attribute__((noinline)) foo(double y) {
   double x = 5.234;
-  return x;
+  return x + y;
 }
 
 int main(int argc, char** argv) {
-  const auto x = foo();
+  const auto x = foo(2.4);
   return x > 10.0;
 }

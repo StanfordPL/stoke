@@ -1,7 +1,7 @@
 all: build extract testcase search replace
 
 build:
-	g++ -std=c++11 main.cc -O2 -fno-inline
+	g++ -std=c++11 main.cc -O0 -fno-inline
 
 extract:
 	stoke extract -i ./a.out -o bins

@@ -353,7 +353,8 @@ public:
   bool check_invariants() const {
     return invariant_no_undef_reads() &&
            invariant_no_undef_live_outs() &&
-           invariant_can_assemble();
+           invariant_can_assemble() &&
+           function_.check_invariants();
   }
 
   /** Explains what undefined value is read. */
