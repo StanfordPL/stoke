@@ -46,20 +46,23 @@ public:
     return *this;
   }
 
-  /** Add opcode to the pool. */
+  /** Add opcode to the pool. This *forces* the opcode to be included.
+    Takes precedence over previous calls to insert/remove opcode or set_opcode_weight. */
   TransformPools& insert_opcode(const x64asm::Opcode& op) {
     if(!opcode_weights_[(int)op])
       opcode_weights_[(int)op] = 1;
     opcode_weights_locked_[(int)op] = true;
     return *this;
   }
-  /** Remove opcode. */
+  /** Remove opcode. This *forces* the opcode to be removed.
+    Takes precedence over previous calls to insert/remove opcode or set_opcode_weight. */
   TransformPools& remove_opcode(const x64asm::Opcode& op) {
     opcode_weights_[(int)op] = 0;
     opcode_weights_locked_[(int)op] = true;
     return *this;
   }
-  /** Set opcode weight. */
+  /** Set opcode weight. Forces opcode to have a certain weight.
+    Takes precedence over previous calls to insert/remove opcode or set_opcode_weight. */
   TransformPools& set_opcode_weight(const x64asm::Opcode& op, int n) {
     opcode_weights_[(int)op] = n;
     opcode_weights_locked_[(int)op] = true;
@@ -199,10 +202,6 @@ public:
 
 protected:
 
-  /** Blacklist of opcodes. */
-  std::set<x64asm::Opcode> blacklist_;
-  /** Whitelist of opcodes. */
-  std::set<x64asm::Opcode> whitelist_;
   /** Set of flags. */
   x64asm::FlagSet flags_;
   /** Set of registers to preserve. */

@@ -40,6 +40,21 @@ public:
 
     set_seed(seed);
 
+    // The semantics of the --whitelist command line argument is to say "only
+    // include opcodes if they're in this list, and not contradicted by any of
+    // the other options".  Via the contract of TransformPools, this means
+    // *blacklisting* everything that's not on the whitelist, but not
+    // whitelisting anything (since that would force the opcode to be included
+    // nomatter what).
+    auto whitelist = opc_whitelist_arg.value();
+    if(!whitelist.empty()) {
+      for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+        if(find(whitelist.begin(), whitelist.end(), (x64asm::Opcode)i) == whitelist.end()) {
+          remove_opcode((x64asm::Opcode)i);
+        }
+      }
+    }
+
     // add a validator if needed
     smt_ = nullptr;
     validator_ = nullptr;
@@ -76,7 +91,8 @@ public:
     set_flags(cpu_flags());
 
     // Set weight of call opcode
-    set_opcode_weight(x64asm::CALL_LABEL, call_weight_arg);
+    if(call_weight_arg.value())
+      set_opcode_weight(x64asm::CALL_LABEL, call_weight_arg.value());
 
     // Set registers to be preserved
     set_preserve_regs(preserve_regs());
@@ -84,16 +100,6 @@ public:
     // remove all blacklisted opcodes
     for(auto op : opc_blacklist_arg.value())
       remove_opcode(op);
-
-    // if a whitelist was provided, wipe all the opcodes out and
-    // add the ones that were in the whitelist
-    if(!opc_whitelist_arg.value().empty()) {
-      for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
-        remove_opcode((x64asm::Opcode)i);
-      for(auto op : opc_whitelist_arg.value()) {
-        insert_opcode(op);
-      }
-    }
 
     recompute_pools();
 
