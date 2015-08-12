@@ -48,8 +48,7 @@ TransformInfo OpcodeWidthTransform::operator()(Cfg& cfg) {
   }
 
   // Success: Any failure beyond here will require undoing the move
-  // This operand hasn't changed, so the rip only needs local rescaling
-  cfg.get_function().replace(ti.undo_index[0], instr, false, false);
+  cfg.get_function().replace(ti.undo_index[0], instr, false, true);
   cfg.recompute_defs();
   if (!cfg.check_invariants()) {
     undo(cfg, ti);

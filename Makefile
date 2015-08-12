@@ -171,6 +171,7 @@ BIN=\
 	bin/stoke_debug_sandbox \
 	bin/stoke_debug_search \
 	bin/stoke_debug_state \
+	bin/stoke_debug_tunit \
 	bin/stoke_debug_verify \
 	\
 	bin/stoke_benchmark_cfg \
