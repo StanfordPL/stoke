@@ -31,20 +31,13 @@ typedef unsigned long long uint64_t;
 
 #define COPY_SIZE 1024
 
-uint64_t counter[2];
-uint64_t last;
-
-size_t __attribute__ ((noinline)) my_strlen(const char* src) {
-  size_t count = 0;
-  while(*src++) {
-    count++;
-  }
-  return count;
+int __attribute__((noinline)) my_strlen(char* a) {
+  return strlen(a);
 }
 
 int run_strlen(int n) {
 
-  char* a = malloc(COPY_SIZE);
+  char a[COPY_SIZE];
 
   // initialize a
   for(size_t i = 0; i < COPY_SIZE; ++i) {
@@ -53,9 +46,14 @@ int run_strlen(int n) {
   a[COPY_SIZE-1] = '\0';
 
   // Run strlen n times; O(n^2)
-  for(size_t j = 0; j < n; ++j) {
-    my_strlen(a);
+  uint64_t sum = 0;
+  int m = 0;
+  for(size_t j = 0; j < n; j++) {
+    m = my_strlen(a);
+    if(m)
+      sum += m;
   }
 
-  return 0;
+  printf("sum=%d\n", sum);
+  return sum == 0;
 }

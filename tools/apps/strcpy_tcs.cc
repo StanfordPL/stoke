@@ -56,6 +56,11 @@ auto& native = FlagArg::create("native")
 auto& strcat_arg = FlagArg::create("strcat")
                    .description("Allocates twice as much space for the destination");
 
+auto& char_width = ValueArg<size_t>::create("char_width")
+                   .usage("<int>")
+                   .description("Width of characters.")
+                   .default_val(1);
+
 #define STACK_SPACE 256
 #define MAX_LEN 4
 
@@ -95,6 +100,7 @@ int main(int argc, char** argv) {
     cs.heap.resize(heap_base_top, ROUND_UP(heap_size.value(), align.value()));
 
     uint64_t buffer_size = 1 + (rand() % (max_buffer_size.value()-1));
+    buffer_size = ROUND_UP(buffer_size, char_width.value());
     uint64_t src_buffer_size = buffer_size;
     uint64_t dst_buffer_size = buffer_size;
 
@@ -135,8 +141,10 @@ int main(int argc, char** argv) {
       cs.heap.set_valid(i, true);
 
     // null terminate, yo (note: we don't use src_/dst_ buffer size since strcat() is null-terminated sooner, etc.
-    cs.heap[heap_base_top + src_offset + buffer_size - 1] = '\0';
-    cs.heap[heap_base_top + dst_offset + buffer_size - 1] = '\0';
+    for(size_t j = 0; j < char_width.value(); ++j) {
+      cs.heap[heap_base_top + src_offset + buffer_size - 1 - j] = '\0';
+      cs.heap[heap_base_top + dst_offset + buffer_size - 1 - j] = '\0';
+    }
 
     std::cout << cs << endl << endl;
   }

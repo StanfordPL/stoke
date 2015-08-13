@@ -60,6 +60,7 @@ int run_memcpy2(int n);
 int run_strcpy(int n);
 int run_strcat(int n);
 int run_strlen(int n);
+int run_wcslen(int n);
 int run_wmemcmp(int n);
 int run_strcasecmp(int n);
 
