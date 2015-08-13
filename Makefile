@@ -97,10 +97,13 @@ SRC_OBJ=\
 	\
 	src/target/cpu_info.o	\
 	\
+	src/transform/add_nops.o \
+	src/transform/delete.o \
 	src/transform/global_swap.o \
 	src/transform/instruction.o \
 	src/transform/local_swap.o \
 	src/transform/opcode.o \
+	src/transform/opcode_width.o \
 	src/transform/operand.o \
 	src/transform/pools.o \
 	src/transform/rotate.o \
@@ -169,6 +172,7 @@ BIN=\
 	bin/stoke_debug_sandbox \
 	bin/stoke_debug_search \
 	bin/stoke_debug_state \
+	bin/stoke_debug_tunit \
 	bin/stoke_debug_verify \
 	bin/stoke_debug_simplify \
 	\

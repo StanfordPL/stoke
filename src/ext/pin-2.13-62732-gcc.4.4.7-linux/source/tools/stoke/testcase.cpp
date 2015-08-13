@@ -218,7 +218,14 @@ VOID record_mem(uint64_t default_base, const unordered_map<uint64_t, uint8_t>& v
     max_addr = max(max_addr, val.first);
   }
 
-	// Resize memory
+  if(!vals.empty() && max_addr - min_addr > (1 << 20)) {
+    cout << "There as a memory access at " << hex << max_addr
+         << " and one at " << min_addr << endl;
+    cout << "This difference is too big. @ " << __FILE__ << ":" << dec << __LINE__ << endl;
+    exit(1);
+  }
+
+	// Resize memoy
 	const auto base = vals.empty() ? default_base : min_addr;
 	const auto size = vals.empty() ? 0 : max_addr - min_addr + 1;
 	mem.resize(base, size);
