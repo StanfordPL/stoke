@@ -29,7 +29,7 @@
 
 typedef unsigned long long uint64_t;
 
-#define COPY_SIZE 1024
+#define COPY_SIZE 2048
 
 uint64_t counter[2];
 uint64_t last;
@@ -37,7 +37,7 @@ uint64_t last;
 int run_strcat(int n) {
 
   char* a = malloc(COPY_SIZE);
-  char* b = malloc(COPY_SIZE*2);
+  char* b = malloc(COPY_SIZE+5);
 
   // initialize a
   for(size_t i = 0; i < COPY_SIZE; ++i) {
@@ -49,7 +49,7 @@ int run_strcat(int n) {
   // Run strcpy n times; O(n^2)
   for(size_t j = 0; j < n; ++j) {
     strcat(b, a);
-    b[COPY_SIZE >> 4] = '\0';
+    b[0] = '\0';
   }
 
   return 0;

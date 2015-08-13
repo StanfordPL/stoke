@@ -1,0 +1,134 @@
+  .text
+  .globl spin_acquire_lock
+  .type spin_acquire_lock, @function
+
+#! file-offset 0x1513c0
+#! rip-offset  0x1113c0
+#! capacity    160 bytes
+
+# Text                       #  Line  RIP       Bytes  Opcode              
+.spin_acquire_lock:          #        0x1113c0  0      OPC=<label>         
+  pushq %r13                 #  1     0x1113c0  2      OPC=pushq_r64_1     
+  movl $0x1, %r13d           #  2     0x1113c2  6      OPC=movl_r32_imm32  
+  pushq %r12                 #  3     0x1113c8  2      OPC=pushq_r64_1     
+  movl %edi, %r12d           #  4     0x1113ca  3      OPC=movl_r32_r32    
+  pushq %rbx                 #  5     0x1113cd  1      OPC=pushq_r64_1     
+  xorl %ebx, %ebx            #  6     0x1113ce  2      OPC=xorl_r32_r32    
+  nop                        #  7     0x1113d0  1      OPC=nop             
+  nop                        #  8     0x1113d1  1      OPC=nop             
+  nop                        #  9     0x1113d2  1      OPC=nop             
+  nop                        #  10    0x1113d3  1      OPC=nop             
+  nop                        #  11    0x1113d4  1      OPC=nop             
+  nop                        #  12    0x1113d5  1      OPC=nop             
+  nop                        #  13    0x1113d6  1      OPC=nop             
+  nop                        #  14    0x1113d7  1      OPC=nop             
+  nop                        #  15    0x1113d8  1      OPC=nop             
+  nop                        #  16    0x1113d9  1      OPC=nop             
+  nop                        #  17    0x1113da  1      OPC=nop             
+  nop                        #  18    0x1113db  1      OPC=nop             
+  nop                        #  19    0x1113dc  1      OPC=nop             
+  nop                        #  20    0x1113dd  1      OPC=nop             
+  nop                        #  21    0x1113de  1      OPC=nop             
+  nop                        #  22    0x1113df  1      OPC=nop             
+.L_1113e0:                   #        0x1113e0  0      OPC=<label>         
+  movl %r12d, %r12d          #  23    0x1113e0  3      OPC=movl_r32_r32    
+  movl (%r15,%r12,1), %eax   #  24    0x1113e3  4      OPC=movl_r32_m32    
+  testl %eax, %eax           #  25    0x1113e7  2      OPC=testl_r32_r32   
+  jne .L_111400              #  26    0x1113e9  2      OPC=jne_label       
+  movl %r13d, %eax           #  27    0x1113eb  3      OPC=movl_r32_r32    
+  movl %r12d, %r12d          #  28    0x1113ee  3      OPC=movl_r32_r32    
+  xchgl %eax, (%r15,%r12,1)  #  29    0x1113f1  4      OPC=xchgl_m32_r32   
+  testl %eax, %eax           #  30    0x1113f5  2      OPC=testl_r32_r32   
+  je .L_111440               #  31    0x1113f7  2      OPC=je_label        
+  nop                        #  32    0x1113f9  1      OPC=nop             
+  nop                        #  33    0x1113fa  1      OPC=nop             
+  nop                        #  34    0x1113fb  1      OPC=nop             
+  nop                        #  35    0x1113fc  1      OPC=nop             
+  nop                        #  36    0x1113fd  1      OPC=nop             
+  nop                        #  37    0x1113fe  1      OPC=nop             
+  nop                        #  38    0x1113ff  1      OPC=nop             
+.L_111400:                   #        0x111400  0      OPC=<label>         
+  addl $0x1, %ebx            #  39    0x111400  3      OPC=addl_r32_imm8   
+  testb $0x3f, %bl           #  40    0x111403  3      OPC=testb_r8_imm8   
+  jne .L_1113e0              #  41    0x111406  2      OPC=jne_label       
+  nop                        #  42    0x111408  1      OPC=nop             
+  nop                        #  43    0x111409  1      OPC=nop             
+  nop                        #  44    0x11140a  1      OPC=nop             
+  nop                        #  45    0x11140b  1      OPC=nop             
+  nop                        #  46    0x11140c  1      OPC=nop             
+  nop                        #  47    0x11140d  1      OPC=nop             
+  nop                        #  48    0x11140e  1      OPC=nop             
+  nop                        #  49    0x11140f  1      OPC=nop             
+  nop                        #  50    0x111410  1      OPC=nop             
+  nop                        #  51    0x111411  1      OPC=nop             
+  nop                        #  52    0x111412  1      OPC=nop             
+  nop                        #  53    0x111413  1      OPC=nop             
+  nop                        #  54    0x111414  1      OPC=nop             
+  nop                        #  55    0x111415  1      OPC=nop             
+  nop                        #  56    0x111416  1      OPC=nop             
+  nop                        #  57    0x111417  1      OPC=nop             
+  nop                        #  58    0x111418  1      OPC=nop             
+  nop                        #  59    0x111419  1      OPC=nop             
+  nop                        #  60    0x11141a  1      OPC=nop             
+  callq .sched_yield         #  61    0x11141b  5      OPC=callq_label     
+  jmpq .L_1113e0             #  62    0x111420  2      OPC=jmpq_label      
+  nop                        #  63    0x111422  1      OPC=nop             
+  nop                        #  64    0x111423  1      OPC=nop             
+  nop                        #  65    0x111424  1      OPC=nop             
+  nop                        #  66    0x111425  1      OPC=nop             
+  nop                        #  67    0x111426  1      OPC=nop             
+  nop                        #  68    0x111427  1      OPC=nop             
+  nop                        #  69    0x111428  1      OPC=nop             
+  nop                        #  70    0x111429  1      OPC=nop             
+  nop                        #  71    0x11142a  1      OPC=nop             
+  nop                        #  72    0x11142b  1      OPC=nop             
+  nop                        #  73    0x11142c  1      OPC=nop             
+  nop                        #  74    0x11142d  1      OPC=nop             
+  nop                        #  75    0x11142e  1      OPC=nop             
+  nop                        #  76    0x11142f  1      OPC=nop             
+  nop                        #  77    0x111430  1      OPC=nop             
+  nop                        #  78    0x111431  1      OPC=nop             
+  nop                        #  79    0x111432  1      OPC=nop             
+  nop                        #  80    0x111433  1      OPC=nop             
+  nop                        #  81    0x111434  1      OPC=nop             
+  nop                        #  82    0x111435  1      OPC=nop             
+  nop                        #  83    0x111436  1      OPC=nop             
+  nop                        #  84    0x111437  1      OPC=nop             
+  nop                        #  85    0x111438  1      OPC=nop             
+  nop                        #  86    0x111439  1      OPC=nop             
+  nop                        #  87    0x11143a  1      OPC=nop             
+  nop                        #  88    0x11143b  1      OPC=nop             
+  nop                        #  89    0x11143c  1      OPC=nop             
+  nop                        #  90    0x11143d  1      OPC=nop             
+  nop                        #  91    0x11143e  1      OPC=nop             
+  nop                        #  92    0x11143f  1      OPC=nop             
+.L_111440:                   #        0x111440  0      OPC=<label>         
+  popq %rbx                  #  93    0x111440  1      OPC=popq_r64_1      
+  popq %r12                  #  94    0x111441  2      OPC=popq_r64_1      
+  popq %r13                  #  95    0x111443  2      OPC=popq_r64_1      
+  popq %r11                  #  96    0x111445  2      OPC=popq_r64_1      
+  andl $0xffffffe0, %r11d    #  97    0x111447  7      OPC=andl_r32_imm32  
+  nop                        #  98    0x11144e  1      OPC=nop             
+  nop                        #  99    0x11144f  1      OPC=nop             
+  nop                        #  100   0x111450  1      OPC=nop             
+  nop                        #  101   0x111451  1      OPC=nop             
+  addq %r15, %r11            #  102   0x111452  3      OPC=addq_r64_r64    
+  jmpq %r11                  #  103   0x111455  3      OPC=jmpq_r64        
+  nop                        #  104   0x111458  1      OPC=nop             
+  nop                        #  105   0x111459  1      OPC=nop             
+  nop                        #  106   0x11145a  1      OPC=nop             
+  nop                        #  107   0x11145b  1      OPC=nop             
+  nop                        #  108   0x11145c  1      OPC=nop             
+  nop                        #  109   0x11145d  1      OPC=nop             
+  nop                        #  110   0x11145e  1      OPC=nop             
+  nop                        #  111   0x11145f  1      OPC=nop             
+  nop                        #  112   0x111460  1      OPC=nop             
+  nop                        #  113   0x111461  1      OPC=nop             
+  nop                        #  114   0x111462  1      OPC=nop             
+  nop                        #  115   0x111463  1      OPC=nop             
+  nop                        #  116   0x111464  1      OPC=nop             
+  nop                        #  117   0x111465  1      OPC=nop             
+  nop                        #  118   0x111466  1      OPC=nop             
+                                                                           
+.size spin_acquire_lock, .-spin_acquire_lock
+

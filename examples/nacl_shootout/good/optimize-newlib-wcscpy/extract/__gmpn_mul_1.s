@@ -1,0 +1,131 @@
+  .text
+  .globl __gmpn_mul_1
+  .type __gmpn_mul_1, @function
+
+#! file-offset 0x72700
+#! rip-offset  0x32700
+#! capacity    224 bytes
+
+# Text                       #  Line  RIP      Bytes  Opcode              
+.__gmpn_mul_1:               #        0x32700  0      OPC=<label>         
+  pushq %r12                 #  1     0x32700  2      OPC=pushq_r64_1     
+  movl %esi, %esi            #  2     0x32702  2      OPC=movl_r32_r32    
+  movl %edi, %edi            #  3     0x32704  2      OPC=movl_r32_r32    
+  xorl %eax, %eax            #  4     0x32706  2      OPC=xorl_r32_r32    
+  pushq %rbx                 #  5     0x32708  1      OPC=pushq_r64_1     
+  movzwl %cx, %ebx           #  6     0x32709  3      OPC=movzwl_r32_r16  
+  movl %esi, %esi            #  7     0x3270c  2      OPC=movl_r32_r32    
+  movl (%r15,%rsi,1), %r8d   #  8     0x3270e  4      OPC=movl_r32_m32    
+  shrl $0x10, %ecx           #  9     0x32712  3      OPC=shrl_r32_imm8   
+  jmpq .L_32740              #  10    0x32715  2      OPC=jmpq_label      
+  nop                        #  11    0x32717  1      OPC=nop             
+  nop                        #  12    0x32718  1      OPC=nop             
+  nop                        #  13    0x32719  1      OPC=nop             
+  nop                        #  14    0x3271a  1      OPC=nop             
+  nop                        #  15    0x3271b  1      OPC=nop             
+  nop                        #  16    0x3271c  1      OPC=nop             
+  nop                        #  17    0x3271d  1      OPC=nop             
+  nop                        #  18    0x3271e  1      OPC=nop             
+  nop                        #  19    0x3271f  1      OPC=nop             
+.L_32720:                    #        0x32720  0      OPC=<label>         
+  addl $0x4, %esi            #  20    0x32720  3      OPC=addl_r32_imm8   
+  addl $0x4, %edi            #  21    0x32723  3      OPC=addl_r32_imm8   
+  movl %esi, %esi            #  22    0x32726  2      OPC=movl_r32_r32    
+  movl (%r15,%rsi,1), %r8d   #  23    0x32728  4      OPC=movl_r32_m32    
+  nop                        #  24    0x3272c  1      OPC=nop             
+  nop                        #  25    0x3272d  1      OPC=nop             
+  nop                        #  26    0x3272e  1      OPC=nop             
+  nop                        #  27    0x3272f  1      OPC=nop             
+  nop                        #  28    0x32730  1      OPC=nop             
+  nop                        #  29    0x32731  1      OPC=nop             
+  nop                        #  30    0x32732  1      OPC=nop             
+  nop                        #  31    0x32733  1      OPC=nop             
+  nop                        #  32    0x32734  1      OPC=nop             
+  nop                        #  33    0x32735  1      OPC=nop             
+  nop                        #  34    0x32736  1      OPC=nop             
+  nop                        #  35    0x32737  1      OPC=nop             
+  nop                        #  36    0x32738  1      OPC=nop             
+  nop                        #  37    0x32739  1      OPC=nop             
+  nop                        #  38    0x3273a  1      OPC=nop             
+  nop                        #  39    0x3273b  1      OPC=nop             
+  nop                        #  40    0x3273c  1      OPC=nop             
+  nop                        #  41    0x3273d  1      OPC=nop             
+  nop                        #  42    0x3273e  1      OPC=nop             
+  nop                        #  43    0x3273f  1      OPC=nop             
+.L_32740:                    #        0x32740  0      OPC=<label>         
+  movzwl %r8w, %r9d          #  44    0x32740  4      OPC=movzwl_r32_r16  
+  shrl $0x10, %r8d           #  45    0x32744  4      OPC=shrl_r32_imm8   
+  movl %r9d, %r10d           #  46    0x32748  3      OPC=movl_r32_r32    
+  movl %r8d, %r11d           #  47    0x3274b  3      OPC=movl_r32_r32    
+  imull %ebx, %r10d          #  48    0x3274e  4      OPC=imull_r32_r32   
+  imull %ebx, %r11d          #  49    0x32752  4      OPC=imull_r32_r32   
+  movl %r10d, %r12d          #  50    0x32756  3      OPC=movl_r32_r32    
+  imull %ecx, %r9d           #  51    0x32759  4      OPC=imull_r32_r32   
+  nop                        #  52    0x3275d  1      OPC=nop             
+  nop                        #  53    0x3275e  1      OPC=nop             
+  nop                        #  54    0x3275f  1      OPC=nop             
+  shrl $0x10, %r12d          #  55    0x32760  4      OPC=shrl_r32_imm8   
+  imull %ecx, %r8d           #  56    0x32764  4      OPC=imull_r32_r32   
+  leal (%r11,%r9,1), %r9d    #  57    0x32768  4      OPC=leal_r32_m16    
+  addl %r12d, %r9d           #  58    0x3276c  3      OPC=addl_r32_r32    
+  leal 0x10000(%r8), %r12d   #  59    0x3276f  7      OPC=leal_r32_m16    
+  cmpl %r9d, %r11d           #  60    0x32776  3      OPC=cmpl_r32_r32    
+  movl %r9d, %r11d           #  61    0x32779  3      OPC=movl_r32_r32    
+  cmoval %r12d, %r8d         #  62    0x3277c  4      OPC=cmoval_r32_r32  
+  andl $0xffff, %r10d        #  63    0x32780  7      OPC=andl_r32_imm32  
+  shll $0x10, %r11d          #  64    0x32787  4      OPC=shll_r32_imm8   
+  addl %eax, %r10d           #  65    0x3278b  3      OPC=addl_r32_r32    
+  addl %r11d, %r10d          #  66    0x3278e  3      OPC=addl_r32_r32    
+  cmpl %eax, %r10d           #  67    0x32791  3      OPC=cmpl_r32_r32    
+  movl %edi, %edi            #  68    0x32794  2      OPC=movl_r32_r32    
+  movl %r10d, (%r15,%rdi,1)  #  69    0x32796  4      OPC=movl_m32_r32    
+  setb %al                   #  70    0x3279a  3      OPC=setb_r8         
+  nop                        #  71    0x3279d  1      OPC=nop             
+  nop                        #  72    0x3279e  1      OPC=nop             
+  nop                        #  73    0x3279f  1      OPC=nop             
+  shrl $0x10, %r9d           #  74    0x327a0  4      OPC=shrl_r32_imm8   
+  movzbl %al, %eax           #  75    0x327a4  3      OPC=movzbl_r32_r8   
+  addl %r9d, %eax            #  76    0x327a7  3      OPC=addl_r32_r32    
+  addl %r8d, %eax            #  77    0x327aa  3      OPC=addl_r32_r32    
+  subl $0x1, %edx            #  78    0x327ad  3      OPC=subl_r32_imm8   
+  jne .L_32720               #  79    0x327b0  6      OPC=jne_label_1     
+  popq %rbx                  #  80    0x327b6  1      OPC=popq_r64_1      
+  popq %r12                  #  81    0x327b7  2      OPC=popq_r64_1      
+  popq %r11                  #  82    0x327b9  2      OPC=popq_r64_1      
+  nop                        #  83    0x327bb  1      OPC=nop             
+  nop                        #  84    0x327bc  1      OPC=nop             
+  nop                        #  85    0x327bd  1      OPC=nop             
+  nop                        #  86    0x327be  1      OPC=nop             
+  nop                        #  87    0x327bf  1      OPC=nop             
+  andl $0xffffffe0, %r11d    #  88    0x327c0  7      OPC=andl_r32_imm32  
+  nop                        #  89    0x327c7  1      OPC=nop             
+  nop                        #  90    0x327c8  1      OPC=nop             
+  nop                        #  91    0x327c9  1      OPC=nop             
+  nop                        #  92    0x327ca  1      OPC=nop             
+  addq %r15, %r11            #  93    0x327cb  3      OPC=addq_r64_r64    
+  jmpq %r11                  #  94    0x327ce  3      OPC=jmpq_r64        
+  nop                        #  95    0x327d1  1      OPC=nop             
+  nop                        #  96    0x327d2  1      OPC=nop             
+  nop                        #  97    0x327d3  1      OPC=nop             
+  nop                        #  98    0x327d4  1      OPC=nop             
+  nop                        #  99    0x327d5  1      OPC=nop             
+  nop                        #  100   0x327d6  1      OPC=nop             
+  nop                        #  101   0x327d7  1      OPC=nop             
+  nop                        #  102   0x327d8  1      OPC=nop             
+  nop                        #  103   0x327d9  1      OPC=nop             
+  nop                        #  104   0x327da  1      OPC=nop             
+  nop                        #  105   0x327db  1      OPC=nop             
+  nop                        #  106   0x327dc  1      OPC=nop             
+  nop                        #  107   0x327dd  1      OPC=nop             
+  nop                        #  108   0x327de  1      OPC=nop             
+  nop                        #  109   0x327df  1      OPC=nop             
+  nop                        #  110   0x327e0  1      OPC=nop             
+  nop                        #  111   0x327e1  1      OPC=nop             
+  nop                        #  112   0x327e2  1      OPC=nop             
+  nop                        #  113   0x327e3  1      OPC=nop             
+  nop                        #  114   0x327e4  1      OPC=nop             
+  nop                        #  115   0x327e5  1      OPC=nop             
+  nop                        #  116   0x327e6  1      OPC=nop             
+                                                                          
+.size __gmpn_mul_1, .-__gmpn_mul_1
+

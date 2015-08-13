@@ -35,36 +35,20 @@
   andq %rcx, %rdx                #  24    0x4e  3      OPC=andq_r64_r64    
   testq %r8, %rdx                #  25    0x51  3      OPC=testq_r64_r64   
   je .L_30                       #  26    0x54  2      OPC=je_label        
-  jmpq .L_54                     #  27    0x56  5      OPC=jmpq_label_1    
+  nop
+  nop
+  nop
+  nop
+  nop
   nop                            #  28    0x5b  1      OPC=nop             
   nop                            #  29    0x5c  1      OPC=nop             
   nop                            #  30    0x5d  1      OPC=nop             
   nop                            #  31    0x5e  1      OPC=nop             
   nop                            #  32    0x5f  1      OPC=nop             
-.L_50:                           #        0x60  0      OPC=<label>         
-  nop                            #  33    0x60  1      OPC=nop             
-  nop                            #  34    0x61  1      OPC=nop             
-  nop                            #  35    0x62  1      OPC=nop             
-  nopl %eax                      #  36    0x63  3      OPC=nopl_r32        
-  nop                            #  37    0x66  1      OPC=nop             
-  subw %bp, %di                  #  38    0x67  3      OPC=subw_r16_r16    
-  nop                            #  39    0x6a  1      OPC=nop             
-  nop                            #  40    0x6b  1      OPC=nop             
-  nopl %eax                      #  41    0x6c  3      OPC=nopl_r32        
-  nopl %eax                      #  42    0x6f  3      OPC=nopl_r32        
-  nopl %eax                      #  43    0x72  3      OPC=nopl_r32        
-  nop                            #  44    0x75  1      OPC=nop             
-  nop                            #  45    0x76  1      OPC=nop             
-  nop                            #  46    0x77  1      OPC=nop             
-  addq $0x1, %rdi                #  47    0x78  4      OPC=addq_r64_imm8   
-  nop                            #  48    0x7c  1      OPC=nop             
-  nop                            #  49    0x7d  1      OPC=nop             
-  nop                            #  50    0x7e  1      OPC=nop             
-  nop                            #  51    0x7f  1      OPC=nop             
 .L_54:                           #        0x80  0      OPC=<label>         
-  leal (%rdi), %edi              #  52    0x80  2      OPC=leal_r32_m32    
-  cmpb $0x0, (%r15,%rdi,1)       #  53    0x82  5      OPC=cmpb_m8_imm8    
-  jne .L_50                      #  54    0x87  2      OPC=jne_label       
+  addl $0x1, %edi              
+  cmpb $0x0, -0x1(%r15,%rdi,1)       #  53    0x82  5      OPC=cmpb_m8_imm8    
+  jne .L_54                      #  54    0x87  2      OPC=jne_label       
   nop                            #  55    0x89  1      OPC=nop             
   nop                            #  56    0x8a  1      OPC=nop             
   nop                            #  57    0x8b  1      OPC=nop             
@@ -80,8 +64,6 @@
   nop                            #  67    0x95  1      OPC=nop             
   nop                            #  68    0x96  1      OPC=nop             
   nop                            #  69    0x97  1      OPC=nop             
-  nop                            #  70    0x98  1      OPC=nop             
-  nop                            #  71    0x99  1      OPC=nop             
   nop                            #  72    0x9a  1      OPC=nop             
   callq .strcpy                  #  73    0x9b  5      OPC=callq_label     
 .L_5e:                           #        0xa0  0      OPC=<label>         

@@ -61,8 +61,9 @@ int run_strcpy(int n);
 int run_strcat(int n);
 int run_strlen(int n);
 int run_wcslen(int n);
-int run_wmemcmp(int n);
 int run_strcasecmp(int n);
+int run_wmemcmp(int n);
+int run_wcscpy(int n);
 
 int run_richards(int p);
 int run_deltablue(int p);

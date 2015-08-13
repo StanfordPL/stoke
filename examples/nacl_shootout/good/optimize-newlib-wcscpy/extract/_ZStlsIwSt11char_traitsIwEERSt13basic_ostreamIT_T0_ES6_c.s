@@ -1,0 +1,137 @@
+  .text
+  .globl _ZStlsIwSt11char_traitsIwEERSt13basic_ostreamIT_T0_ES6_c
+  .type _ZStlsIwSt11char_traitsIwEERSt13basic_ostreamIT_T0_ES6_c, @function
+
+#! file-offset 0xe7340
+#! rip-offset  0xa7340
+#! capacity    192 bytes
+
+# Text                                                                                  #  Line  RIP      Bytes  Opcode              
+._ZStlsIwSt11char_traitsIwEERSt13basic_ostreamIT_T0_ES6_c:                              #        0xa7340  0      OPC=<label>         
+  pushq %rbx                                                                            #  1     0xa7340  1      OPC=pushq_r64_1     
+  movl %edi, %ebx                                                                       #  2     0xa7341  2      OPC=movl_r32_r32    
+  subl $0x10, %esp                                                                      #  3     0xa7343  3      OPC=subl_r32_imm8   
+  addq %r15, %rsp                                                                       #  4     0xa7346  3      OPC=addq_r64_r64    
+  movl %ebx, %ebx                                                                       #  5     0xa7349  2      OPC=movl_r32_r32    
+  movl (%r15,%rbx,1), %eax                                                              #  6     0xa734b  4      OPC=movl_r32_m32    
+  subl $0xc, %eax                                                                       #  7     0xa734f  3      OPC=subl_r32_imm8   
+  movl %eax, %eax                                                                       #  8     0xa7352  2      OPC=movl_r32_r32    
+  movl (%r15,%rax,1), %eax                                                              #  9     0xa7354  4      OPC=movl_r32_m32    
+  addl %ebx, %eax                                                                       #  10    0xa7358  2      OPC=addl_r32_r32    
+  nop                                                                                   #  11    0xa735a  1      OPC=nop             
+  nop                                                                                   #  12    0xa735b  1      OPC=nop             
+  nop                                                                                   #  13    0xa735c  1      OPC=nop             
+  nop                                                                                   #  14    0xa735d  1      OPC=nop             
+  nop                                                                                   #  15    0xa735e  1      OPC=nop             
+  nop                                                                                   #  16    0xa735f  1      OPC=nop             
+  movl %eax, %eax                                                                       #  17    0xa7360  2      OPC=movl_r32_r32    
+  movl 0x80(%r15,%rax,1), %edi                                                          #  18    0xa7362  8      OPC=movl_r32_m32    
+  testq %rdi, %rdi                                                                      #  19    0xa736a  3      OPC=testq_r64_r64   
+  je .L_a73e0                                                                           #  20    0xa736d  2      OPC=je_label        
+  movl %edi, %edi                                                                       #  21    0xa736f  2      OPC=movl_r32_r32    
+  movl (%r15,%rdi,1), %eax                                                              #  22    0xa7371  4      OPC=movl_r32_m32    
+  movsbl %sil, %esi                                                                     #  23    0xa7375  4      OPC=movsbl_r32_r8   
+  movl %eax, %eax                                                                       #  24    0xa7379  2      OPC=movl_r32_r32    
+  movl 0x28(%r15,%rax,1), %eax                                                          #  25    0xa737b  5      OPC=movl_r32_m32    
+  nop                                                                                   #  26    0xa7380  1      OPC=nop             
+  nop                                                                                   #  27    0xa7381  1      OPC=nop             
+  nop                                                                                   #  28    0xa7382  1      OPC=nop             
+  nop                                                                                   #  29    0xa7383  1      OPC=nop             
+  nop                                                                                   #  30    0xa7384  1      OPC=nop             
+  nop                                                                                   #  31    0xa7385  1      OPC=nop             
+  nop                                                                                   #  32    0xa7386  1      OPC=nop             
+  nop                                                                                   #  33    0xa7387  1      OPC=nop             
+  nop                                                                                   #  34    0xa7388  1      OPC=nop             
+  nop                                                                                   #  35    0xa7389  1      OPC=nop             
+  nop                                                                                   #  36    0xa738a  1      OPC=nop             
+  nop                                                                                   #  37    0xa738b  1      OPC=nop             
+  nop                                                                                   #  38    0xa738c  1      OPC=nop             
+  nop                                                                                   #  39    0xa738d  1      OPC=nop             
+  nop                                                                                   #  40    0xa738e  1      OPC=nop             
+  nop                                                                                   #  41    0xa738f  1      OPC=nop             
+  nop                                                                                   #  42    0xa7390  1      OPC=nop             
+  nop                                                                                   #  43    0xa7391  1      OPC=nop             
+  nop                                                                                   #  44    0xa7392  1      OPC=nop             
+  nop                                                                                   #  45    0xa7393  1      OPC=nop             
+  nop                                                                                   #  46    0xa7394  1      OPC=nop             
+  nop                                                                                   #  47    0xa7395  1      OPC=nop             
+  nop                                                                                   #  48    0xa7396  1      OPC=nop             
+  nop                                                                                   #  49    0xa7397  1      OPC=nop             
+  andl $0xffffffe0, %eax                                                                #  50    0xa7398  6      OPC=andl_r32_imm32  
+  nop                                                                                   #  51    0xa739e  1      OPC=nop             
+  nop                                                                                   #  52    0xa739f  1      OPC=nop             
+  nop                                                                                   #  53    0xa73a0  1      OPC=nop             
+  addq %r15, %rax                                                                       #  54    0xa73a1  3      OPC=addq_r64_r64    
+  callq %rax                                                                            #  55    0xa73a4  2      OPC=callq_r64       
+  leal 0xc(%rsp), %esi                                                                  #  56    0xa73a6  4      OPC=leal_r32_m16    
+  movl %ebx, %edi                                                                       #  57    0xa73aa  2      OPC=movl_r32_r32    
+  movl $0x1, %edx                                                                       #  58    0xa73ac  5      OPC=movl_r32_imm32  
+  movl %eax, 0xc(%rsp)                                                                  #  59    0xa73b1  4      OPC=movl_m32_r32    
+  nop                                                                                   #  60    0xa73b5  1      OPC=nop             
+  nop                                                                                   #  61    0xa73b6  1      OPC=nop             
+  nop                                                                                   #  62    0xa73b7  1      OPC=nop             
+  nop                                                                                   #  63    0xa73b8  1      OPC=nop             
+  nop                                                                                   #  64    0xa73b9  1      OPC=nop             
+  nop                                                                                   #  65    0xa73ba  1      OPC=nop             
+  nop                                                                                   #  66    0xa73bb  1      OPC=nop             
+  nop                                                                                   #  67    0xa73bc  1      OPC=nop             
+  nop                                                                                   #  68    0xa73bd  1      OPC=nop             
+  nop                                                                                   #  69    0xa73be  1      OPC=nop             
+  nop                                                                                   #  70    0xa73bf  1      OPC=nop             
+  nop                                                                                   #  71    0xa73c0  1      OPC=nop             
+  callq ._ZSt16__ostream_insertIwSt11char_traitsIwEERSt13basic_ostreamIT_T0_ES6_PKS3_i  #  72    0xa73c1  5      OPC=callq_label     
+  addl $0x10, %esp                                                                      #  73    0xa73c6  3      OPC=addl_r32_imm8   
+  addq %r15, %rsp                                                                       #  74    0xa73c9  3      OPC=addq_r64_r64    
+  movl %eax, %eax                                                                       #  75    0xa73cc  2      OPC=movl_r32_r32    
+  popq %rbx                                                                             #  76    0xa73ce  1      OPC=popq_r64_1      
+  popq %r11                                                                             #  77    0xa73cf  2      OPC=popq_r64_1      
+  andl $0xffffffe0, %r11d                                                               #  78    0xa73d1  7      OPC=andl_r32_imm32  
+  nop                                                                                   #  79    0xa73d8  1      OPC=nop             
+  nop                                                                                   #  80    0xa73d9  1      OPC=nop             
+  nop                                                                                   #  81    0xa73da  1      OPC=nop             
+  nop                                                                                   #  82    0xa73db  1      OPC=nop             
+  addq %r15, %r11                                                                       #  83    0xa73dc  3      OPC=addq_r64_r64    
+  jmpq %r11                                                                             #  84    0xa73df  3      OPC=jmpq_r64        
+  nop                                                                                   #  85    0xa73e2  1      OPC=nop             
+  nop                                                                                   #  86    0xa73e3  1      OPC=nop             
+  nop                                                                                   #  87    0xa73e4  1      OPC=nop             
+  nop                                                                                   #  88    0xa73e5  1      OPC=nop             
+  nop                                                                                   #  89    0xa73e6  1      OPC=nop             
+  nop                                                                                   #  90    0xa73e7  1      OPC=nop             
+  nop                                                                                   #  91    0xa73e8  1      OPC=nop             
+  nop                                                                                   #  92    0xa73e9  1      OPC=nop             
+  nop                                                                                   #  93    0xa73ea  1      OPC=nop             
+  nop                                                                                   #  94    0xa73eb  1      OPC=nop             
+  nop                                                                                   #  95    0xa73ec  1      OPC=nop             
+.L_a73e0:                                                                               #        0xa73ed  0      OPC=<label>         
+  nop                                                                                   #  96    0xa73ed  1      OPC=nop             
+  nop                                                                                   #  97    0xa73ee  1      OPC=nop             
+  nop                                                                                   #  98    0xa73ef  1      OPC=nop             
+  nop                                                                                   #  99    0xa73f0  1      OPC=nop             
+  nop                                                                                   #  100   0xa73f1  1      OPC=nop             
+  nop                                                                                   #  101   0xa73f2  1      OPC=nop             
+  nop                                                                                   #  102   0xa73f3  1      OPC=nop             
+  nop                                                                                   #  103   0xa73f4  1      OPC=nop             
+  nop                                                                                   #  104   0xa73f5  1      OPC=nop             
+  nop                                                                                   #  105   0xa73f6  1      OPC=nop             
+  nop                                                                                   #  106   0xa73f7  1      OPC=nop             
+  nop                                                                                   #  107   0xa73f8  1      OPC=nop             
+  nop                                                                                   #  108   0xa73f9  1      OPC=nop             
+  nop                                                                                   #  109   0xa73fa  1      OPC=nop             
+  nop                                                                                   #  110   0xa73fb  1      OPC=nop             
+  nop                                                                                   #  111   0xa73fc  1      OPC=nop             
+  nop                                                                                   #  112   0xa73fd  1      OPC=nop             
+  nop                                                                                   #  113   0xa73fe  1      OPC=nop             
+  nop                                                                                   #  114   0xa73ff  1      OPC=nop             
+  nop                                                                                   #  115   0xa7400  1      OPC=nop             
+  nop                                                                                   #  116   0xa7401  1      OPC=nop             
+  nop                                                                                   #  117   0xa7402  1      OPC=nop             
+  nop                                                                                   #  118   0xa7403  1      OPC=nop             
+  nop                                                                                   #  119   0xa7404  1      OPC=nop             
+  nop                                                                                   #  120   0xa7405  1      OPC=nop             
+  nop                                                                                   #  121   0xa7406  1      OPC=nop             
+  nop                                                                                   #  122   0xa7407  1      OPC=nop             
+  callq ._ZSt16__throw_bad_castv                                                        #  123   0xa7408  5      OPC=callq_label     
+                                                                                                                                     
+.size _ZStlsIwSt11char_traitsIwEERSt13basic_ostreamIT_T0_ES6_c, .-_ZStlsIwSt11char_traitsIwEERSt13basic_ostreamIT_T0_ES6_c
+
