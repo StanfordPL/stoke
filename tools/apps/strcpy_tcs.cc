@@ -57,14 +57,14 @@ auto& strcat_arg = FlagArg::create("strcat")
                    .description("Allocates twice as much space for the destination");
 
 auto& char_width = ValueArg<size_t>::create("char_width")
-<<<<<<< HEAD
+                   <<<<<<< HEAD
                    .usage("<int>")
                    .description("Width of characters.")
                    .default_val(1);
 =======
-                  .usage("<int>")
-                  .description("Width of characters.")
-                  .default_val(1);
+  .usage("<int>")
+  .description("Width of characters.")
+  .default_val(1);
 >>>>>>> 8126c559ebd5740ce19eb997b4d9cbbabffc8d08
 
 #define STACK_SPACE 256
