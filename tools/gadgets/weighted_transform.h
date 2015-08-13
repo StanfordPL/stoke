@@ -46,6 +46,7 @@ public:
     insert_transform(new OperandTransform(pools), operand_mass_arg.value());
     insert_transform(new LocalSwapTransform(pools), local_swap_mass_arg.value());
     insert_transform(new GlobalSwapTransform(pools), global_swap_mass_arg.value());
+    insert_transform(new ReplaceNopTransform(pools), replace_nop_mass_arg.value());
     insert_transform(new RotateTransform(pools), rotate_mass_arg.value());
 
     set_seed(seed);

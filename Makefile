@@ -106,6 +106,7 @@ SRC_OBJ=\
 	src/transform/opcode_width.o \
 	src/transform/operand.o \
 	src/transform/pools.o \
+	src/transform/replace_nop.o \
 	src/transform/rotate.o \
 	src/transform/transform.o \
 	\

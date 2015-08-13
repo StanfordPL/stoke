@@ -41,7 +41,7 @@ TransformInfo ReplaceNopTransform::operator()(Cfg& cfg) {
     return ti;
 
   auto& function = cfg.get_function();
-  size_t bytes = function.hex_bytes(index);
+  size_t bytes = function.hex_size(index);
   function.remove(index);
   for(size_t i = 0; i < bytes; ++i) {
     function.insert(index, Instruction(NOP), false);

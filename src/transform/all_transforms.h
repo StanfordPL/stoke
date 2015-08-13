@@ -21,5 +21,6 @@
 #include "src/transform/opcode.h"
 #include "src/transform/opcode_width.h"
 #include "src/transform/operand.h"
+#include "src/transform/replace_nop.h"
 #include "src/transform/rotate.h"
 #include "src/transform/weighted.h"
