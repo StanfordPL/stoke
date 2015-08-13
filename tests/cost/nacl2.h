@@ -147,7 +147,7 @@ TEST_F(NaCl2CostTest, RestrictedRegisterBad) {
 
   auto cfg = Cfg(code);
 
-  // to fix this, we would need to remove 1 nop bytes
+  // this should incur the no-restricted register penalty
   EXPECT_EQ(reg_penalty, fxn(cfg).second);
 }
 
@@ -167,8 +167,8 @@ TEST_F(NaCl2CostTest, RestrictedRegisterBadBoundary) {
 
   auto cfg = Cfg(code);
 
-  // to fix this, we would need to remove 1 nop bytes
-  EXPECT_EQ(reg_penalty, fxn(cfg).second);
+  // to fix this, we should move the packet of instructions 4 earlier
+  EXPECT_EQ(4ul, fxn(cfg).second);
 }
 
 

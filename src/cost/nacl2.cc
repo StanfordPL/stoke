@@ -166,9 +166,40 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
 
     auto instr = code[i];
     size_t instr_size = function.hex_size(i);
+
+    /**** STEP 1: Identify pseudo instructions ****/
     if(instr.get_opcode() == RET)
       instr_size = 12;
 
+    // if the instruction does a validator-supported zero extend to 32-bit
+    // register, and the next instruction uses this in a memory operand, we
+    // need to record that this is a restricted register and place these two
+    // instructions as one.
+    Opcode opc = instr.get_opcode();
+    if(nacl_ok_index2(opc)) {
+      restricted_registers[i+1] = (uint64_t)instr.get_operand<R32>(0) + 1;
+      if(debug)
+        cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
+
+      if(i + 1 < code.size()) {
+        auto next_instr = code[i+1];
+        if(next_instr.is_explicit_memory_dereference()) {
+          auto mem = next_instr.get_operand<M8>(next_instr.mem_index());
+          if(mem.contains_index() && (uint64_t)mem.get_index() == (uint64_t)instr.get_operand<R32>(0)) {
+            // found pseudo-instruction
+            instr_size += function.hex_size(i+1);
+
+            for(size_t j = 0; j < 32; ++j) {
+              table[j][i+1] = table[j][i];
+            }
+            i++;
+          }
+        }
+      }
+    }
+
+
+    /**** STEP 2: Update the table appropriately. ****/
 
     // Cases:
     // 1. We're emitting a label that's not a jump target;
@@ -247,15 +278,6 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
       }
     }
 
-    // if the instruction does a validator-supported zero extend to 32-bit
-    // register, and it is not at the end of the 32-byte bundle, then this
-    // register is restricted in the next instruction
-    Opcode opc = instr.get_opcode();
-    if(nacl_ok_index2(opc) && table[0][i+1] != 0) {
-      restricted_registers[i+1] = (uint64_t)instr.get_operand<R32>(0) + 1;
-      if(debug)
-        cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
-    }
   }
 
   uint64_t min_extra_score = INFTY;
