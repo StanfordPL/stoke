@@ -98,7 +98,15 @@ protected:
 };
 
 
+TEST_P(TransformsTest, AddNopsMoveIsReversible) {
+  auto transform = AddNopsTransform(tp_);
+  check_move_reversible(transform);
+}
 
+TEST_P(TransformsTest, DeleteMoveIsReversible) {
+  auto transform = DeleteTransform(tp_);
+  check_move_reversible(transform);
+}
 
 TEST_P(TransformsTest, InstructionMoveIsReversible) {
   auto transform = InstructionTransform(tp_);
@@ -107,6 +115,11 @@ TEST_P(TransformsTest, InstructionMoveIsReversible) {
 
 TEST_P(TransformsTest, OpcodeMoveIsReversible) {
   auto transform = OpcodeTransform(tp_);
+  check_move_reversible(transform);
+}
+
+TEST_P(TransformsTest, OpcodeWidthMoveIsReversible) {
+  auto transform = OpcodeWidthTransform(tp_);
   check_move_reversible(transform);
 }
 
@@ -134,8 +147,11 @@ TEST_P(TransformsTest, WeightedIsReversible) {
   auto transform = WeightedTransform(tp_);
 
   std::vector<Transform*> transforms;
+  transforms.push_back(new AddNopsTransform(tp_));
+  transforms.push_back(new DeleteTransform(tp_));
   transforms.push_back(new InstructionTransform(tp_));
   transforms.push_back(new OpcodeTransform(tp_));
+  transforms.push_back(new OpcodeWidthTransform(tp_));
   transforms.push_back(new OperandTransform(tp_));
   transforms.push_back(new LocalSwapTransform(tp_));
   transforms.push_back(new GlobalSwapTransform(tp_));

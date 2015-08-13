@@ -52,7 +52,7 @@ cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>& opc_whi
 cpputil::ValueArg<size_t>& call_weight_arg =
   cpputil::ValueArg<size_t>::create("call_weight")
   .usage("<int>")
-  .description("Number of additional call opcodes in the opcode pool")
+  .description("Number of call opcodes in the opcode pool.  If non-zero, takes precedence over --opc_whitelist and --opc_blacklist.")
   .default_val(0);
 
 cpputil::FlagArg& callee_save_arg =

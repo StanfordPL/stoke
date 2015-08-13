@@ -46,20 +46,23 @@ public:
     return *this;
   }
 
-  /** Add opcode to the pool. */
+  /** Add opcode to the pool. This *forces* the opcode to be included.
+    Takes precedence over previous calls to insert/remove opcode or set_opcode_weight. */
   TransformPools& insert_opcode(const x64asm::Opcode& op) {
     if(!opcode_weights_[(int)op])
       opcode_weights_[(int)op] = 1;
     opcode_weights_locked_[(int)op] = true;
     return *this;
   }
-  /** Remove opcode. */
+  /** Remove opcode. This *forces* the opcode to be removed.
+    Takes precedence over previous calls to insert/remove opcode or set_opcode_weight. */
   TransformPools& remove_opcode(const x64asm::Opcode& op) {
     opcode_weights_[(int)op] = 0;
     opcode_weights_locked_[(int)op] = true;
     return *this;
   }
-  /** Set opcode weight. */
+  /** Set opcode weight. Forces opcode to have a certain weight.
+    Takes precedence over previous calls to insert/remove opcode or set_opcode_weight. */
   TransformPools& set_opcode_weight(const x64asm::Opcode& op, int n) {
     opcode_weights_[(int)op] = n;
     opcode_weights_locked_[(int)op] = true;
@@ -131,13 +134,22 @@ public:
 
   /** Sets o to a random opcode of equivalent type; returns true on success */
   bool get_control_free_type_equiv(x64asm::Opcode& o) {
-    if (opcodes_type_equiv_.empty()) {
-      return false;
-    }
+    assert(!opcodes_type_equiv_.empty());
     const auto& equiv = opcodes_type_equiv_[o];
     if (equiv.empty()) {
       return false;
     }
+    o = equiv[gen_() % equiv.size()];
+    return true;
+  }
+
+  /** Sets o to a random opcode with the same raw memonic.
+    (i.e. a 'movl' could turn into a 'movq') */
+  bool get_equivalent_raw_memonic(x64asm::Opcode& o) {
+    assert(!raw_memonic_pool_.empty());
+    const auto& equiv = raw_memonic_pool_[o];
+    if(equiv.empty())
+      return false;
     o = equiv[gen_() % equiv.size()];
     return true;
   }
@@ -190,10 +202,6 @@ public:
 
 protected:
 
-  /** Blacklist of opcodes. */
-  std::set<x64asm::Opcode> blacklist_;
-  /** Whitelist of opcodes. */
-  std::set<x64asm::Opcode> whitelist_;
   /** Set of flags. */
   x64asm::FlagSet flags_;
   /** Set of registers to preserve. */
@@ -211,6 +219,8 @@ protected:
   std::array<size_t, X64ASM_NUM_OPCODES> opcode_weights_locked_;
   /** The pool of opcodes. */
   std::vector<x64asm::Opcode> opcode_pool_;
+  /** Pool with same raw memonic. */
+  std::vector<std::vector<x64asm::Opcode>> raw_memonic_pool_;
 
   /** Weighted pool of opcodes categorized by type */
   std::vector<std::vector<x64asm::Opcode>> opcodes_type_equiv_;

@@ -13,10 +13,13 @@
 // limitations under the License.
 
 
+#include "src/transform/add_nops.h"
+#include "src/transform/delete.h"
 #include "src/transform/global_swap.h"
 #include "src/transform/instruction.h"
 #include "src/transform/local_swap.h"
 #include "src/transform/opcode.h"
+#include "src/transform/opcode_width.h"
 #include "src/transform/operand.h"
 #include "src/transform/rotate.h"
 #include "src/transform/weighted.h"

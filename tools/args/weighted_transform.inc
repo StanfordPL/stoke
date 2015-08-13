@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #ifndef STOKE_TOOLS_ARGS_WEIGHTED_TRANSFORM_INC
-#define STOKE_TOOLS_ARGS_WEIGHTED__INC
+#define STOKE_TOOLS_ARGS_WEIGHTED_TRANSFORM_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
@@ -25,6 +25,18 @@ namespace stoke {
 cpputil::Heading& transform_weight_heading =
   cpputil::Heading::create("Transform Weight Options:");
 
+cpputil::ValueArg<size_t>& add_nops_mass_arg =
+  cpputil::ValueArg<size_t>::create("add_nops_mass")
+  .usage("<int>")
+  .description("Add Nops proposal mass")
+  .default_val(0);
+
+cpputil::ValueArg<size_t>& delete_mass_arg =
+  cpputil::ValueArg<size_t>::create("delete_mass")
+  .usage("<int>")
+  .description("Delete proposal mass")
+  .default_val(0);
+
 cpputil::ValueArg<size_t>& instruction_mass_arg =
   cpputil::ValueArg<size_t>::create("instruction_mass")
   .usage("<int>")
@@ -35,6 +47,12 @@ cpputil::ValueArg<size_t>& opcode_mass_arg =
   cpputil::ValueArg<size_t>::create("opcode_mass")
   .usage("<int>")
   .description("Opcode move proposal mass")
+  .default_val(1);
+
+cpputil::ValueArg<size_t>& opcode_width_mass_arg =
+  cpputil::ValueArg<size_t>::create("opcode_width_mass")
+  .usage("<int>")
+  .description("Opcode width move proposal mass")
   .default_val(1);
 
 cpputil::ValueArg<size_t>& operand_mass_arg =

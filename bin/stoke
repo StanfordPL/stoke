@@ -36,6 +36,7 @@ then
 	echo "  debug sandbox       step through a function execution"
 	echo "  debug search        perform a program transformation"
 	echo "  debug state         check bit-wise operations"
+	echo "  debug tunit         show the instruction sizes and RIP-offsets for a code"
 	echo "  debug verify        check the equivalence of two functions"
 	echo ""
 	echo "  benchmark cfg       benchmark Cfg::recompute() kernel"
@@ -70,6 +71,9 @@ then
 	elif [ "$SCMD" == "search" ]
 	then
 		$HERE/stoke_debug_search "$@"
+	elif [ "$SCMD" == "tunit" ]
+	then
+		$HERE/stoke_debug_tunit "$@"
 	elif [ "$SCMD" == "verify" ]
 	then
 		$HERE/stoke_debug_verify "$@"
