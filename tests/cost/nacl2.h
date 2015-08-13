@@ -151,6 +151,27 @@ TEST_F(NaCl2CostTest, RestrictedRegisterBad) {
   EXPECT_EQ(reg_penalty, fxn(cfg).second);
 }
 
+TEST_F(NaCl2CostTest, RestrictedRegisterBadBoundary) {
+
+  std::stringstream ss;
+  ss << ".target:" << std::endl;
+  for(size_t i = 0; i < 27; ++i) {
+    ss << "nop" << std::endl;
+  }
+  ss << "movl $0x10, %eax" << std::endl;
+  ss << "movq (%r15, %rax, 1), %rdx" << std::endl;
+  ss << "jmpq .target" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  auto cfg = Cfg(code);
+
+  // to fix this, we would need to remove 1 nop bytes
+  EXPECT_EQ(reg_penalty, fxn(cfg).second);
+}
+
+
 TEST_F(NaCl2CostTest, Benchmark) {
 
   std::stringstream ss;

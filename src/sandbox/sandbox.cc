@@ -561,10 +561,12 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.cmp(rdi, rax);
   assm_.jl_1(heap_case);
 
-  assm_.sub(rdi, rax);
-  assm_.mov((R64)rax, Imm64(cs.stack.size()));
+  assm_.mov((R64)rax, Imm64(cs.stack.upper_bound()));
   assm_.cmp(rdi, rax);
-  assm_.jge_1(fail);
+  assm_.jg_1(heap_case);
+
+  assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
+  assm_.sub(rdi, rax);
 
   emit_map_addr_cases(cs, fail, done, 0);
 
@@ -574,10 +576,12 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.cmp(rdi, rax);
   assm_.jl_1(data_case);
 
-  assm_.sub(rdi, rax);
-  assm_.mov((R64)rax, Imm64(cs.heap.size()));
+  assm_.mov((R64)rax, Imm64(cs.heap.upper_bound()));
   assm_.cmp(rdi, rax);
-  assm_.jge_1(fail);
+  assm_.jg_1(data_case);
+
+  assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
+  assm_.sub(rdi, rax);
 
   emit_map_addr_cases(cs, fail, done, 1);
 

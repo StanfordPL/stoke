@@ -176,8 +176,6 @@ istream& CpuState::read_text(istream& is) {
 
   data.read_text(is);
 
-  check(is);
-
   return is;
 }
 

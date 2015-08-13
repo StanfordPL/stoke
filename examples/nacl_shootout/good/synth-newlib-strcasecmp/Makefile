@@ -1,15 +1,17 @@
 
 DEPLOY_PATH=/home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.com/git/nacl
-NAME=wmemcmp
-TC_OPTS=--number 40 --width_of_char 1 --null_terminate --different_size_ok
+NAME=strcasecmp
+TC_OPTS=--number 40 --width_of_char 1 --null_terminate --different_size_ok --data_from_tc data.tc
 
-all: clean testcase search replace deploy
+all: testcase search replace deploy
 
+## This is to extract the table out of newlib
 generate_data: generate_data.c
 	gcc -std=c99 lib_a-ctype_.o binary.o generate_data.c -o generate_data
 
 data.tc: generate_data
 	stoke testcase --bin ./generate_data --fxn go -o data.tc
+
 
 testcase:
 	memcmp_tcs $(TC_OPTS) > testcases

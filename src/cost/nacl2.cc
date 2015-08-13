@@ -169,15 +169,6 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
     if(instr.get_opcode() == RET)
       instr_size = 12;
 
-    // if the instruction does a validator-supported zero extend to 32-bit
-    // register, and it is not at the end of the 32-byte bundle, then this
-    // register is restricted in the next instruction
-    Opcode opc = instr.get_opcode();
-    if(nacl_ok_index2(opc)) {
-      restricted_registers[i+1] = (uint64_t)instr.get_operand<R32>(0) + 1;
-      if(debug)
-        cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
-    }
 
     // Cases:
     // 1. We're emitting a label that's not a jump target;
@@ -255,6 +246,16 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
         table[index][i+1] = table[j][i];
       }
     }
+
+    // if the instruction does a validator-supported zero extend to 32-bit
+    // register, and it is not at the end of the 32-byte bundle, then this
+    // register is restricted in the next instruction
+    Opcode opc = instr.get_opcode();
+    if(nacl_ok_index2(opc) && table[0][i+1] != 0) {
+      restricted_registers[i+1] = (uint64_t)instr.get_operand<R32>(0) + 1;
+      if(debug)
+        cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
+    }
   }
 
   uint64_t min_extra_score = INFTY;
@@ -315,7 +316,7 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
           cout << "USING MEMORY ACCESS WITHOUT BASE: " << instr << endl;
         score+= bad_instruction_penalty_;
       } else if (mem.get_base() != r15 && mem.get_base() != rsp &&
-                 mem.get_base() != rbp) {
+                 mem.get_base() != rbp && !mem.rip_offset()) {
         if(debug)
           cout << "USING MEMORY ACCESS WITHOUT r15/rsp/rbp/rip base: " << instr << endl;
         score+= bad_instruction_penalty_;
