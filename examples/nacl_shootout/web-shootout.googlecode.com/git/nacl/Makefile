@@ -46,8 +46,8 @@ PNACLCXX = $(PNACL_PATH)/pnacl-clang++
 PNACL_TRANSLATE = $(PNACL_PATH)/pnacl-translate
 
 CFLAGS_NP = -mfpmath=sse -msse3 -march=nocona
-CCFLAGS ?= -O3 -D_GNU_SOURCE
-#CCFLAGS ?= -O2 -D_GNU_SOURCE
+CCFLAGS ?= -O2 -D_GNU_SOURCE
+#CCFLAGS ?= -O3 -D_GNU_SOURCE
 CFLAGS = $(CCFLAGS) -std=gnu99
 CXXFLAGS = $(CCFLAGS)
 LIBS = -lgmp -lpthread -lm #-lfftw3
@@ -56,7 +56,7 @@ PNACL_LIBDIRS = -L../third_party/libinstall/pnacl/lib -L$(NACL_SDK_ROOT)/lib/pna
 IRT_CORE=$(NACL_SDK_ROOT)/tools/irt_core_x86_$(BITS).nexe
 
 BENCHMARKS := fannkuchredux fasta revcomp binarytrees knucleotide \
-		pidigits richards deltablue memcpy memcpy2 strcpy strlen strcat \
+		pidigits richards deltablue memcpy memcpy2 strcpy wcslen strlen strcat \
     wmemcmp strcasecmp #fft
 # spectralnorm
 OTHER_OBJS = bench-framework benchstringio fasta_10k_ref_output
