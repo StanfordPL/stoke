@@ -43,6 +43,12 @@ cpputil::ValueArg<size_t>& instruction_mass_arg =
   .description("Instruction move proposal mass")
   .default_val(1);
 
+cpputil::ValueArg<size_t>& multi_mass_arg =
+  cpputil::ValueArg<size_t>::create("multi_mass")
+  .usage("<int>")
+  .description("Two transforms together mass")
+  .default_val(1);
+
 cpputil::ValueArg<size_t>& opcode_mass_arg =
   cpputil::ValueArg<size_t>::create("opcode_mass")
   .usage("<int>")

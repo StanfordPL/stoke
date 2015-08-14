@@ -38,16 +38,29 @@ public:
   WeightedTransformGadget(TransformPools& pools,
                           std::default_random_engine::result_type seed) : WeightedTransform(pools) {
 
-    insert_transform(new AddNopsTransform(pools), add_nops_mass_arg.value());
-    insert_transform(new DeleteTransform(pools), delete_mass_arg.value());
-    insert_transform(new InstructionTransform(pools), instruction_mass_arg.value());
-    insert_transform(new OpcodeTransform(pools), opcode_mass_arg.value());
-    insert_transform(new OpcodeWidthTransform(pools), opcode_width_mass_arg.value());
-    insert_transform(new OperandTransform(pools), operand_mass_arg.value());
-    insert_transform(new LocalSwapTransform(pools), local_swap_mass_arg.value());
-    insert_transform(new GlobalSwapTransform(pools), global_swap_mass_arg.value());
-    insert_transform(new ReplaceNopTransform(pools), replace_nop_mass_arg.value());
-    insert_transform(new RotateTransform(pools), rotate_mass_arg.value());
+    std::map<Transform*, size_t> transform_list;
+
+    transform_list[new AddNopsTransform(pools)] = add_nops_mass_arg.value();
+    transform_list[new DeleteTransform(pools)] = delete_mass_arg.value();
+    transform_list[new InstructionTransform(pools)] = instruction_mass_arg.value();
+    transform_list[new OpcodeTransform(pools)] = opcode_mass_arg.value();
+    transform_list[new OpcodeWidthTransform(pools)] = opcode_width_mass_arg.value();
+    transform_list[new OperandTransform(pools)] = operand_mass_arg.value();
+    transform_list[new LocalSwapTransform(pools)] = local_swap_mass_arg.value();
+    transform_list[new GlobalSwapTransform(pools)] = global_swap_mass_arg.value();
+    transform_list[new ReplaceNopTransform(pools)] = replace_nop_mass_arg.value();
+    transform_list[new RotateTransform(pools)] = rotate_mass_arg.value();
+
+
+    WeightedTransform* sub_transform = new WeightedTransform(pools);
+
+    for(auto pair : transform_list) {
+      sub_transform->insert_transform(pair.first, pair.second);
+      insert_transform(pair.first, pair.second);
+    }
+
+    Transform* multi_transform = new MultiTransform(pools, *sub_transform, 2);
+    insert_transform(multi_transform, multi_mass_arg.value());
 
     set_seed(seed);
   }
