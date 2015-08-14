@@ -102,6 +102,7 @@ SRC_OBJ=\
 	src/transform/global_swap.o \
 	src/transform/instruction.o \
 	src/transform/local_swap.o \
+	src/transform/multi.o \
 	src/transform/opcode.o \
 	src/transform/opcode_width.o \
 	src/transform/operand.o \

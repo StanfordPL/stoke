@@ -12,11 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/transform/delete.h"
-
-#ifndef NDEBUG
-#include "src/cost/latency.h"
-#endif
+#include "src/transform/multi.h"
 
 using namespace std;
 using namespace stoke;
@@ -62,7 +58,7 @@ TransformInfo MultiTransform::operator()(Cfg& cfg) {
 
 void MultiTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
-  TransformInfo* info = ti->undo_next;
+  TransformInfo* info = ti.undo_next;
   while(info) {
     transform_.undo(cfg, *info);
     info = info->undo_next;

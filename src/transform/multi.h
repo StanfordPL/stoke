@@ -26,7 +26,7 @@ public:
 
   std::string get_name() const {
     std::stringstream ss;
-    ss << count << "x" << transform_.get_name();
+    ss << count_ << "x" << transform_.get_name();
     return ss.str();
   }
 
@@ -46,7 +46,7 @@ protected:
 
 private:
   // Number of transforms to perform
-  size_t count;
+  size_t count_;
 
   // Underlying transform to repeat
   Transform& transform_;

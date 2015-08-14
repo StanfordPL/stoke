@@ -174,10 +174,38 @@ TEST_P(TransformsTest, WeightedIsReversible) {
   }
 }
 
+TEST_P(TransformsTest, MultiIsReversible) {
+  auto wtransform = WeightedTransform(tp_);
+
+  std::vector<Transform*> transforms;
+  transforms.push_back(new AddNopsTransform(tp_));
+  transforms.push_back(new DeleteTransform(tp_));
+  transforms.push_back(new InstructionTransform(tp_));
+  transforms.push_back(new OpcodeTransform(tp_));
+  transforms.push_back(new OpcodeWidthTransform(tp_));
+  transforms.push_back(new OperandTransform(tp_));
+  transforms.push_back(new LocalSwapTransform(tp_));
+  transforms.push_back(new GlobalSwapTransform(tp_));
+  transforms.push_back(new ReplaceNopTransform(tp_));
+  transforms.push_back(new RotateTransform(tp_));
+
+  for(auto t : transforms)
+    wtransform.insert_transform(t);
+
+  auto transform = MultiTransform(tp_, wtransform, 2);
+  check_move_reversible(transform);
+
+  for(auto t : transforms) {
+    delete t;
+  }
+}
+
+
 TEST_P(TransformsTest, CostInvariantAfterUndo) {
 
   // Setup weighted transform
   auto transform = WeightedTransform(tp_);
+  auto sub_transform = WeightedTransform(tp_);
 
   std::vector<Transform*> transforms;
   transforms.push_back(new InstructionTransform(tp_));
@@ -188,8 +216,14 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   transforms.push_back(new RotateTransform(tp_));
   transforms.push_back(new AddNopsTransform(tp_));
 
-  for(auto t : transforms)
+  for(auto t : transforms) {
     transform.insert_transform(t);
+    sub_transform.insert_transform(t);
+  }
+
+  auto dual_transform = new MultiTransform(tp_, sub_transform, 2);
+  transform.insert_transform(dual_transform);
+
 
   // This set can be used to introduce the dataflow fact that function calls don't
   // perform any reads. This is useful for testcases that used to ignore undefined
