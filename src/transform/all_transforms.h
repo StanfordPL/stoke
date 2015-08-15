@@ -18,6 +18,7 @@
 #include "src/transform/global_swap.h"
 #include "src/transform/instruction.h"
 #include "src/transform/local_swap.h"
+#include "src/transform/memory.h"
 #include "src/transform/multi.h"
 #include "src/transform/opcode.h"
 #include "src/transform/opcode_width.h"

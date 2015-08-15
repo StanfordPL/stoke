@@ -200,6 +200,32 @@ TEST_P(TransformsTest, MultiIsReversible) {
   }
 }
 
+TEST_P(TransformsTest, MemoryIsReversible) {
+  auto wtransform = WeightedTransform(tp_);
+
+  std::vector<Transform*> transforms;
+  transforms.push_back(new AddNopsTransform(tp_));
+  transforms.push_back(new DeleteTransform(tp_));
+  transforms.push_back(new InstructionTransform(tp_));
+  transforms.push_back(new OpcodeTransform(tp_));
+  transforms.push_back(new OpcodeWidthTransform(tp_));
+  transforms.push_back(new OperandTransform(tp_));
+  transforms.push_back(new LocalSwapTransform(tp_));
+  transforms.push_back(new GlobalSwapTransform(tp_));
+  transforms.push_back(new ReplaceNopTransform(tp_));
+  transforms.push_back(new RotateTransform(tp_));
+
+  for(auto t : transforms)
+    wtransform.insert_transform(t);
+
+  auto transform = MemoryTransform(tp_, wtransform);
+  check_move_reversible(transform);
+
+  for(auto t : transforms) {
+    delete t;
+  }
+}
+
 
 TEST_P(TransformsTest, CostInvariantAfterUndo) {
 
@@ -222,7 +248,9 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   }
 
   auto dual_transform = new MultiTransform(tp_, sub_transform, 2);
+  auto mem_transform = new MemoryTransform(tp_, sub_transform);
   transform.insert_transform(dual_transform);
+  transform.insert_transform(mem_transform);
 
 
   // This set can be used to introduce the dataflow fact that function calls don't

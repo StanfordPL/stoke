@@ -61,6 +61,15 @@ auto& char_width = ValueArg<size_t>::create("char_width")
                    .description("Width of characters.")
                    .default_val(1);
 
+auto& different_size_ok = FlagArg::create("different_size_ok")
+                          .description("Source and destination buffers may be of different sizes.");
+
+auto& randomize_stack = FlagArg::create("randomize_stack")
+                        .description("Place the stack in a random location.");
+
+auto& record_dst_size = FlagArg::create("record_dst_size")
+                        .description("Records size of destination buffer in rdx");
+
 #define STACK_SPACE 256
 #define MAX_LEN 4
 
@@ -87,6 +96,9 @@ int main(int argc, char** argv) {
 
 
     //setup stack
+    if(randomize_stack)
+      cs.gp[rsp].get_fixed_quad(0) = (rand() & 0xffffffffffff) + 0x700000000;
+
     uint64_t max = cs.gp[rsp].get_fixed_quad(0);
     uint64_t min = cs.gp[rsp].get_fixed_quad(0) - stack_size.value();
     cs.gp[rbp].get_fixed_quad(0) = max;
@@ -104,8 +116,12 @@ int main(int argc, char** argv) {
     uint64_t src_buffer_size = buffer_size;
     uint64_t dst_buffer_size = buffer_size;
 
-    if(strcat_arg.value())
+    if(strcat_arg.value()) {
       dst_buffer_size = 2*dst_buffer_size+1;
+    } else if(different_size_ok) {
+      dst_buffer_size = 1 + (rand() % (max_buffer_size.value()-1));
+      dst_buffer_size = ROUND_UP(dst_buffer_size, char_width.value());
+    }
 
     uint64_t src_offset = 0, dst_offset = 0;
 
@@ -129,6 +145,10 @@ int main(int argc, char** argv) {
       cs.gp[src_reg].get_fixed_quad(0) = heap_base_top + src_offset;
       cs.gp[dst_reg].get_fixed_quad(0) = heap_base_top + dst_offset;
     }
+
+    if(record_dst_size)
+      cs.gp[rdx].get_fixed_quad(0) = dst_buffer_size;
+
 
     //fill data
     for(uint64_t i = heap_base_top; i < ROUND_UP(heap_base_top + heap_size.value(), align.value()); ++i) {

@@ -44,6 +44,7 @@ public:
     uint64_t res = latency_;
     size_t tc_count = sandbox_->size();
     latency_ = 0;
+    nops_emitted_ = 0;
     if(tc_count == 0) {
       LatencyCost lc;
       return lc(cfg, max);
@@ -56,13 +57,29 @@ public:
   static void measured_callback(const StateCallbackData& data, void* arg) {
     MeasuredCost* ptr = (MeasuredCost*)arg;
     assert(data.line < data.code.size());
-    ptr->latency_ += data.code[data.line].haswell_latency();
+
+    auto instr = data.code[data.line];
+    if(instr.is_nop()) {
+      if(ptr->nops_emitted_ >= 14) {
+        ptr->nops_emitted_ = 0;
+      } else if (ptr->nops_emitted_ == 0) {
+        ptr->latency_ += 1;
+        ptr->nops_emitted_++;
+      } else {
+        ptr->nops_emitted_++;
+      }
+    } else {
+      ptr->latency_ += data.code[data.line].haswell_latency();
+      ptr->nops_emitted_ = 0;
+    }
+
   }
 
 private:
 
   /** The latency seem so far. */
   uint64_t latency_ = 0;
+  size_t nops_emitted_ = 0;
 };
 
 } // namespace stoke
