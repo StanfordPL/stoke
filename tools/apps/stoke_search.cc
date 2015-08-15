@@ -172,12 +172,12 @@ void show_statistics(const StatisticsCallbackData& data, ostream& os) {
   ofilterstream<Column> ofs(os);
   ofs.filter().padding(5);
 
+  const WeightedTransform* transform = static_cast<const WeightedTransform*>(data.transform);
+
   Statistics total;
-  for (size_t i = 0; i < 6; ++i) {
+  for (size_t i = 0; i < transform->size(); ++i) {
     total += data.move_statistics[i];
   }
-
-  const WeightedTransform* transform = static_cast<const WeightedTransform*>(data.transform);
 
   ofs << "Move Type" << endl;
   ofs << endl;
