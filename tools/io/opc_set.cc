@@ -30,6 +30,7 @@ using namespace x64asm;
 
 namespace {
 
+// sorted opcode list (for performance)
 vector<pair<Opcode, string>> opcodes;
 
 }
