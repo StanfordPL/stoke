@@ -39,13 +39,13 @@ cpputil::ValueArg<x64asm::FlagSet, FlagSetReader, FlagSetWriter>& cpu_flags_arg 
 
 cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>& opc_blacklist_arg =
   cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>::create("opc_blacklist")
-  .usage("{ opcode1 ... opcoden; e.g., xorl_r32_r32 or xor.* }")
+  .usage("{ opcode1 ... opcoden; e.g., xorl_r32_r32 or xor.* (a string for full string matching, or a regular expression) }")
   .description("Don't propose any instructions from this set (takes precedence over --opc_whitelist)")
   .default_val({});
 
 cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>& opc_whitelist_arg =
   cpputil::ValueArg<std::set<x64asm::Opcode>, OpcSetReader, OpcSetWriter>::create("opc_whitelist")
-  .usage("{ opcode1 ... opcoden; e.g., xorl_r32_r32 or xor.* }")
+  .usage("{ opcode1 ... opcoden; e.g., xorl_r32_r32 or xor.* (a string for full string matching, or a regular expression) }")
   .description("Only proprose instructions from this set (unless they are not proposed for other reasons, e.g. --opc_blacklist, --propose_call, --cpu_flags, --force_mem_read, --force_mem_write, instructions not supported by stoke, etc.); empty whitelist means no whitelist")
   .default_val({});
 
