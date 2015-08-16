@@ -46,6 +46,58 @@ void callback_wrapper(StateCallback cb, Code* code, size_t line, CpuState* curre
 namespace stoke {
 
 bool Sandbox::is_supported(Opcode o) {
+
+  // check that the type of each operand is ok
+  // TODO: this could be boiled down to a table lookup, but I don't
+  // think any performance-critical pieces of code depend on this.
+  Instruction instr(o);
+  for(size_t i = 0; i < instr.arity(); ++i) {
+    switch(instr.type(i)) {
+    case Type::HINT:
+    case Type::IMM_8:
+    case Type::IMM_16:
+    case Type::IMM_32:
+    case Type::IMM_64:
+    case Type::ZERO:
+    case Type::ONE:
+    case Type::THREE:
+    case Type::LABEL:
+    case Type::M_8:
+    case Type::M_16:
+    case Type::M_16_INT:
+    case Type::M_32:
+    case Type::M_32_INT:
+    case Type::M_32_FP:
+    case Type::M_64:
+    case Type::M_64_INT:
+    case Type::M_64_FP:
+    case Type::M_128:
+    case Type::M_256:
+    case Type::M_80_BCD:
+    case Type::M_80_FP:
+    case Type::MM:
+    case Type::R_8:
+    case Type::RH:
+    case Type::AL:
+    case Type::CL:
+    case Type::R_16:
+    case Type::AX:
+    case Type::DX:
+    case Type::R_32:
+    case Type::EAX:
+    case Type::R_64:
+    case Type::RAX:
+    case Type::XMM:
+    case Type::XMM_0:
+    case Type::YMM:
+      continue;
+      break;
+    default:
+      return false;
+      break;
+    }
+  }
+
   return unsupported_.find(o) == unsupported_.end();
 }
 
