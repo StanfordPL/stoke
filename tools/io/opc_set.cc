@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <array>
+#include <regex>
 #include <string>
 #include <utility>
 
@@ -44,7 +45,7 @@ bool binary_search(const string& key, set<Opcode>& os) {
   if (opcodes.size() == 0) {
     stringstream ss;
     // initialize sorted opcode list
-    for (int i = ADC_AL_IMM8; i <= XTEST; i++) {
+    for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
       ss.clear();
       ss.str("");
       ss << ((Opcode) i);
@@ -62,12 +63,43 @@ bool binary_search(const string& key, set<Opcode>& os) {
   return false;
 }
 
+bool no_regex_needed(const string& pattern) {
+  for (auto& c : pattern) {
+    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c == '_')) {
+      // this is fine
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
+
 void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
   vector<string> args;
   TextReader<vector<string>>()(is, args);
 
   for (const auto& a : args) {
-    if (!binary_search(a, os)) {
+
+    bool found = false;
+
+    if (no_regex_needed(a)) {
+      found = binary_search(a, os);
+    } else {
+      regex pattern(a);
+      stringstream ss;
+      for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+        Opcode opc = (Opcode) i;
+        ss.clear();
+        ss.str("");
+        ss << opc;
+        if (regex_match(ss.str(), pattern)) {
+          found = true;
+          os.insert(opc);
+        }
+      }
+    }
+
+    if (!found) {
       is.setstate(ios::failbit);
       return;
     }
