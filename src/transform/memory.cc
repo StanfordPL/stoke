@@ -29,10 +29,12 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
   vector<size_t> memory_instruction_indexes;
   auto code = cfg.get_code();
   size_t instr_index = 0;
+  Instruction instr(NOP);
   bool found = false;
   for(size_t i = 0, ie = code.size(); i < ie; ++i) {
     instr_index = gen_() % ie;
-    if(code[instr_index].is_explicit_memory_dereference()) {
+    instr = code[instr_index];
+    if(instr.is_explicit_memory_dereference()) {
       found = true;
       break;
     }
@@ -41,7 +43,6 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
     return ti;
 
   ti.undo_index[0] = instr_index;
-  auto instr = code[instr_index];
   ti.undo_instr = instr;
 
   // Replace the memory operand
@@ -54,6 +55,10 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
   instr.set_operand(operand_index, mem);
   //cout << "New: " << instr << endl;
   cfg.get_function().replace(instr_index, instr, false, false);
+  cfg.recompute();
+  if(!cfg.check_invariants()) {
+    undo(cfg, ti);
+  }
 
   // Perform some other transform
   TransformInfo* ti_second = new TransformInfo();
@@ -76,7 +81,6 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
-  assert(LatencyCost()(cfg).first);
 
   return ti;
 }
@@ -91,7 +95,6 @@ void MemoryTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
-  assert(LatencyCost()(cfg).first);
 }
 
 

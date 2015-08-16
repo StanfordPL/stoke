@@ -184,8 +184,9 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
       }
 
       // Remove instructions if it doesn't produce a value which is live out afterward
-      const auto instr_outputs = cfg.maybe_write_set(instr);
-      const auto live_regs_after_instruction = cfg.live_outs(cfg.get_loc(i));
+      bool reachable = cfg.is_reachable(cfg.get_loc(i).first);
+      const auto instr_outputs = reachable ? cfg.maybe_write_set(instr) : RegSet::empty();
+      const auto live_regs_after_instruction = reachable ? cfg.live_outs(cfg.get_loc(i)) : RegSet::empty();
       if ((instr_outputs & live_regs_after_instruction) == RegSet::empty()) {
         size_t bytes = assm.hex_size(instr);
         Code nops = generate_nop(bytes);

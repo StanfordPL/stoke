@@ -50,7 +50,6 @@ TransformInfo MultiTransform::operator()(Cfg& cfg) {
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
-  assert(LatencyCost()(cfg).first);
 
   finished_ti.success = true;
   return finished_ti;
@@ -66,7 +65,6 @@ void MultiTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
-  assert(LatencyCost()(cfg).first);
 }
 
 
