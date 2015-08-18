@@ -36,11 +36,16 @@ public:
   }
 
   TransformInfo operator()(Cfg& cfg) {
+    assert(cfg.check_invariants());
+
     size_t pool_index = gen_() % transform_pool_.size();
     size_t tform_index = transform_pool_[pool_index];
     Transform* tr = transforms_[tform_index];
     auto ti = (*tr)(cfg);
     ti.move_type = tform_index;
+
+    assert(cfg.check_invariants());
+
     return ti;
   }
 

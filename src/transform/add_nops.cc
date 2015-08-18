@@ -40,18 +40,6 @@ TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
 
   size_t new_nops = 1;
   ti.undo_index[1] = new_nops;
-  /*
-  buffer_.reserve((index+1)*32);
-  assm_.start(buffer_);
-  auto code = cfg.get_code();
-  for(size_t i = 0; i < index; ++i) {
-    assm_.assemble(code[i]);
-  }
-
-  size_t end = buffer_.size() % 0x20;;
-  size_t new_nops = 0x20 - end;
-  ti.undo_index[1] = new_nops;
-  */
 
   auto& function = cfg.get_function();
   for(size_t i = 0; i < new_nops; ++i) {
@@ -64,6 +52,7 @@ TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
   assert(LatencyCost()(cfg).first);
@@ -80,6 +69,7 @@ void AddNopsTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   }
   cfg.recompute();
 
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
   assert(LatencyCost()(cfg).first);

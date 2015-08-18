@@ -122,6 +122,9 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       (*transform_).undo(state.current, ti);
       continue;
     }
+
+    assert(state.current.check_invariants());
+
     move_statistics[ti.move_type].num_accepted++;
     state.current_cost = new_cost;
 

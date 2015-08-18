@@ -54,6 +54,7 @@ using namespace cpputil;
 using namespace std;
 using namespace stoke;
 using namespace chrono;
+using namespace x64asm;
 
 auto& io = Heading::create("Output Options:");
 auto& out = ValueArg<string>::create("out")
@@ -121,6 +122,7 @@ void show_state(const SearchState& state, ostream& os, bool sep_columns = false)
   ofs.filter().padding(5);
 
   Cfg to_print = state.best_yet;
+  to_print.recompute();
   CfgTransforms::nacl_transform(to_print);
 
   lowest_cost = state.best_yet_cost;
@@ -132,6 +134,7 @@ void show_state(const SearchState& state, ostream& os, bool sep_columns = false)
     ofs.filter().next();
 
   to_print = state.best_correct;
+  to_print.recompute();
   CfgTransforms::nacl_transform(to_print);
 
   lowest_correct = state.best_correct_cost;
@@ -147,6 +150,8 @@ void pcb(const ProgressCallbackData& data, void* arg) {
   os << "Progress Update: " << endl;
   os << endl;
 
+  assert(data.state.best_correct.check_invariants());
+  assert(data.state.best_yet.check_invariants());
   show_state(data.state, os);
 
   os << endl << endl;
