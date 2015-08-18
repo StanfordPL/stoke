@@ -50,7 +50,9 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
   auto mem = instr.get_operand<M8>(operand_index);
 
   bool ok = pools_.get_reg_mem(RegSet::universe(), mem);
-  assert(ok);
+  if(!ok)
+    return ti;
+
   //cout << "Old: " << instr << endl;
   instr.set_operand(operand_index, mem);
   //cout << "New: " << instr << endl;

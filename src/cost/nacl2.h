@@ -44,6 +44,11 @@ public:
 
 private:
 
+  /** A cost associated for using this opcode to compute an index.
+    0 if it's valid in the NaCl validator.  1 if an OpcodeWidth move could fix
+    it.  The penalty if there's not a chance. */
+  Cost index_cost(x64asm::Opcode op) const;
+
   uint64_t restricted_register_penalty_;
   uint64_t bad_instruction_penalty_;
 

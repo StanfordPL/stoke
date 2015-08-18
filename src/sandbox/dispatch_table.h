@@ -31,6 +31,7 @@ public:
   enum Entry {
     SIGILL_ = 0,
     LABEL_DEFN,
+    NOP,
     ANY_JUMP,
     CALL_LABEL,
     RET,

@@ -151,6 +151,41 @@ TEST_F(NaCl2CostTest, RestrictedRegisterBad) {
   EXPECT_EQ(reg_penalty, fxn(cfg).second);
 }
 
+TEST_F(NaCl2CostTest, RestrictedRegisterBad2) {
+
+  std::stringstream ss;
+  ss << ".target:" << std::endl;
+  ss << "cmpb $0x0, (%r15, %r8, 1)" << std::endl;
+  ss << "jmpq .target" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  auto cfg = Cfg(code);
+
+  // this should incur the no-restricted register penalty
+  EXPECT_EQ(reg_penalty, fxn(cfg).second);
+}
+
+
+
+TEST_F(NaCl2CostTest, RestrictedRegisterWrongWidth) {
+
+  std::stringstream ss;
+  ss << ".target:" << std::endl;
+  ss << "movq $0x10, %rcx" << std::endl;
+  ss << "movq (%r15, %rcx, 1), %rdx" << std::endl;
+  ss << "jmpq .target" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  auto cfg = Cfg(code);
+
+  // this should incur the no-restricted register penalty
+  EXPECT_EQ(1ul, fxn(cfg).second);
+}
+
 TEST_F(NaCl2CostTest, RestrictedRegisterBadBoundary) {
 
   std::stringstream ss;

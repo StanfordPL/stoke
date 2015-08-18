@@ -28,7 +28,8 @@ using namespace x64asm;
 
 namespace stoke {
 
-bool nacl_ok_index2(Opcode op) {
+template <bool debug>
+Cost NaCl2Cost<debug>::index_cost(Opcode op) const {
 
   switch(op) {
   case MOV_R32_IMM32:
@@ -51,6 +52,7 @@ bool nacl_ok_index2(Opcode op) {
   case AND_R32_R32_1:
   case AND_EAX_IMM32:
 
+  case IMUL_R32:
   case IMUL_R32_M32:
   case IMUL_R32_M32_IMM32:
   case IMUL_R32_M32_IMM8:
@@ -88,11 +90,131 @@ bool nacl_ok_index2(Opcode op) {
   case XOR_R32_R32:
   case XOR_R32_R32_1:
   case XOR_EAX_IMM32:
+    return 0;
 
-    return true;
+  //64-bit versions
+  case MOV_R64_IMM32:
+  case MOV_R64_M64:
+  case MOV_R64_R64:
+  case MOV_R64_R64_1:
+
+  case ADD_R64_IMM32:
+  case ADD_R64_IMM8:
+  case ADD_R64_M64:
+  case ADD_R64_R64:
+  case ADD_R64_R64_1:
+  case ADD_RAX_IMM32:
+
+  case AND_R64_IMM32:
+  case AND_R64_IMM8:
+  case AND_R64_M64:
+  case AND_R64_R64:
+  case AND_R64_R64_1:
+  case AND_RAX_IMM32:
+
+  case IMUL_R64:
+  case IMUL_R64_M64:
+  case IMUL_R64_M64_IMM32:
+  case IMUL_R64_M64_IMM8:
+  case IMUL_R64_R64:
+  case IMUL_R64_R64_IMM32:
+  case IMUL_R64_R64_IMM8:
+
+  case INC_R64:
+
+  case LEA_R64_M16:
+  case LEA_R64_M32:
+  case LEA_R64_M64:
+
+  case NEG_R64:
+
+  case NOT_R64:
+
+  case OR_R64_IMM32:
+  case OR_R64_IMM8:
+  case OR_R64_M64:
+  case OR_R64_R64:
+  case OR_R64_R64_1:
+  case OR_RAX_IMM32:
+
+  case SUB_R64_IMM32:
+  case SUB_R64_IMM8:
+  case SUB_R64_M64:
+  case SUB_R64_R64:
+  case SUB_R64_R64_1:
+  case SUB_RAX_IMM32:
+
+  case XOR_R64_IMM32:
+  case XOR_R64_IMM8:
+  case XOR_R64_M64:
+  case XOR_R64_R64:
+  case XOR_R64_R64_1:
+  case XOR_RAX_IMM32:
+    return 1;
+
+  //16-bit versions
+  case MOV_R16_IMM16:
+  case MOV_R16_IMM16_1:
+  case MOV_R16_M16:
+  case MOV_R16_R16:
+  case MOV_R16_R16_1:
+
+  case ADD_R16_IMM16:
+  case ADD_R16_IMM8:
+  case ADD_R16_M16:
+  case ADD_R16_R16:
+  case ADD_R16_R16_1:
+  case ADD_AX_IMM16:
+
+  case AND_R16_IMM16:
+  case AND_R16_IMM8:
+  case AND_R16_M16:
+  case AND_R16_R16:
+  case AND_R16_R16_1:
+  case AND_AX_IMM16:
+
+  case IMUL_R16:
+  case IMUL_R16_M16:
+  case IMUL_R16_M16_IMM16:
+  case IMUL_R16_M16_IMM8:
+  case IMUL_R16_R16:
+  case IMUL_R16_R16_IMM16:
+  case IMUL_R16_R16_IMM8:
+
+  case INC_R16:
+
+  case LEA_R16_M16:
+  case LEA_R16_M32:
+  case LEA_R16_M64:
+
+  case NEG_R16:
+
+  case NOT_R16:
+
+  case OR_R16_IMM16:
+  case OR_R16_IMM8:
+  case OR_R16_M16:
+  case OR_R16_R16:
+  case OR_R16_R16_1:
+  case OR_AX_IMM16:
+
+  case SUB_R16_IMM16:
+  case SUB_R16_IMM8:
+  case SUB_R16_M16:
+  case SUB_R16_R16:
+  case SUB_R16_R16_1:
+  case SUB_AX_IMM16:
+
+  case XOR_R16_IMM16:
+  case XOR_R16_IMM8:
+  case XOR_R16_M16:
+  case XOR_R16_R16:
+  case XOR_R16_R16_1:
+  case XOR_AX_IMM16:
+    return 1;
 
   default:
-    return false;
+    return -1;
   }
 
 }
@@ -106,6 +228,8 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
 
   const auto& code = cfg.get_code();
   map<size_t, uint64_t> restricted_registers;
+  map<size_t, Cost> restricted_register_cost;
+  map<size_t, size_t> restricted_register_start_index;
 
   // 1. instructions not allowed
   for(size_t i = 0; i < code.size(); ++i) {
@@ -176,11 +300,11 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
     // need to record that this is a restricted register and place these two
     // instructions as one.
     Opcode opc = instr.get_opcode();
-    if(nacl_ok_index2(opc)) {
+    if(index_cost(opc) != (Cost)(-1)) {
       restricted_registers[i+1] = (uint64_t)instr.get_operand<R32>(0) + 1;
+      restricted_register_cost[i+1] = index_cost(opc);
       if(debug)
         cout << "RESTRICTED REGISTER: " << (uint64_t)restricted_registers[i+1] << endl;
-
       if(i + 1 < code.size()) {
         auto next_instr = code[i+1];
         if(next_instr.is_explicit_memory_dereference()) {
@@ -196,8 +320,7 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
           }
         }
       }
-    }
-
+    } 
 
     /**** STEP 2: Update the table appropriately. ****/
 
@@ -349,6 +472,8 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
           if(debug)
             cout << "USING NON-RESTRICTED REGISTER AS INDEX: " << instr << endl;
           score += restricted_register_penalty_;
+        } else {
+          score += restricted_register_cost[i];
         }
       }
     }

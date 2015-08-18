@@ -57,6 +57,7 @@ public:
     a1_(a1), a2_(a2), op_(op), arity_(2), correctness_(NULL) {
     reset();
 
+    leaves_ = all_leaf_functions();
     if(a1_ && a2_) // if there's a parse error, one could be null
       need_sandbox_ = a1->need_sandbox() || a2->need_sandbox();
   }
@@ -66,6 +67,7 @@ public:
     //we'll handle running the sandbox here.
     reset();
 
+    leaves_ = all_leaf_functions();
     if(a1_) { //could be null if there's a parse error
       a1->set_run_sandbox(false);
       need_sandbox_ = a1->need_sandbox();
@@ -74,6 +76,7 @@ public:
   /** Constructs a constant operation */
   ExprCost(Cost constant) : constant_(constant), arity_(0) {
     reset();
+    leaves_ = all_leaf_functions();
   }
 
   /** Compute the cost of this expression. */
@@ -105,6 +108,9 @@ private:
 
   /** Do we need a sandbox? */
   bool need_sandbox_;
+
+  // Get the cached list of leaf functions
+  std::set<CostFunction*> leaves_;
 
   /** Returns the pointers to leaf cost functions used in this expression. */
   std::set<CostFunction*> leaf_functions() const;

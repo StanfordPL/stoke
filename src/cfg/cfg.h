@@ -351,6 +351,15 @@ public:
   bool invariant_can_assemble() const;
   /** Check all invariants */
   bool check_invariants() const {
+    /*
+    if(!invariant_no_undef_reads()) {
+      std::cout << "BAD CODE: " << std::endl;
+      std::cout << "DEF IN: " << def_ins() << std::endl;
+      std::cout << "LIVE OUT: " << live_outs() << std::endl; 
+      std::cout << get_code() << std::endl;
+      std::cout << "INFO: " << which_undef_read() << std::endl;
+    }
+    */
     return invariant_no_undef_reads() &&
            invariant_no_undef_live_outs() &&
            invariant_can_assemble() &&

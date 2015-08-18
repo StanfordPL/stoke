@@ -120,28 +120,24 @@ void show_state(const SearchState& state, ostream& os, bool sep_columns = false)
   ofilterstream<Column> ofs(os);
   ofs.filter().padding(5);
 
-  auto best_yet = state.best_yet;
-  //CfgTransforms::remove_unreachable(best_yet);
-  //CfgTransforms::remove_nop(best_yet);
-  CfgTransforms::nacl_transform(best_yet);
+  Cfg to_print = state.best_yet;
+  CfgTransforms::nacl_transform(to_print);
 
   lowest_cost = state.best_yet_cost;
-  ofs << "Lowest Cost Discovered (" << state.best_yet_cost << ")" << endl;
+  ofs << "Lowest Cost Discovered (" << lowest_cost << ")" << endl;
   ofs << endl;
-  ofs << TUnit(best_yet.get_code());
+  ofs << TUnit(to_print.get_code());
 
   if(!sep_columns)
     ofs.filter().next();
 
-  auto best_correct = state.best_correct;
-  //CfgTransforms::remove_unreachable(best_correct);
-  //CfgTransforms::remove_nop(best_correct);
-  CfgTransforms::nacl_transform(best_correct);
+  to_print = state.best_correct;
+  CfgTransforms::nacl_transform(to_print);
 
   lowest_correct = state.best_correct_cost;
-  ofs << "Lowest Known Correct Cost (" << state.best_correct_cost << ")" << endl;
+  ofs << "Lowest Known Correct Cost (" << lowest_correct << ")" << endl;
   ofs << endl;
-  ofs << TUnit(best_correct.get_code());
+  ofs << TUnit(to_print.get_code());
   ofs.filter().done();
 }
 

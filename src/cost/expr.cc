@@ -64,8 +64,6 @@ set<CostFunction*> ExprCost::leaf_functions() const {
 
 ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
 
-  // Get the full list of leaf functions
-  auto leaves = all_leaf_functions();
 
   // run the sandbox, if needed
   if(need_sandbox_)
@@ -73,7 +71,7 @@ ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
 
   // build the environment (i.e. run the actual cost functions)
   std::map<CostFunction*, Cost> env;
-  for(auto it : leaves) {
+  for(auto it : leaves_) {
     env[it] = (*it)(cfg, max).second;
   }
 

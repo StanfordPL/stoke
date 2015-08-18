@@ -165,7 +165,7 @@ Sandbox& Sandbox::insert_function(const Cfg& cfg) {
   // If this is the first time we've seen this function, allocate state
   // Otherwise just replace what's there
   if (!contains_function(label)) {
-    fxns_[label] = new x64asm::Function(512 * cfg.get_code().size() + 8192);
+    fxns_[label] = new x64asm::Function(20 * 512 * cfg.get_code().size() + 8192);
     fxns_src_[label] = new Cfg(cfg);
     recompile(cfg);
   } else {
@@ -778,6 +778,15 @@ bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
 bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   assert(cfg.get_function().invariant_first_instr_is_label());
 
+  //fxn->reserve(cfg.get_code().size()*1024 + 1024);
+  /*
+  cout << "original size: " << hex << fxn->capacity() << endl;
+  fxn->reserve(1024*cfg.get_code().size());
+  cout << "attempting to get: " << 1024*cfg.get_code().size() << endl;
+  cout << "fxn size: " << hex << fxn->capacity() << endl;
+  cout << "fxn pos : " << hex << fxn->data() << endl;
+  */
+  assert(fxn->good());
   assm_.start(*fxn);
 
   // The label that begins a function must precede instrumentation .
@@ -906,6 +915,8 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
   switch(table.lookup(instr)) {
   case DispatchTable::SIGILL_:
     emit_signal_trap_call(ErrorCode::SIGILL_);
+    break;
+  case DispatchTable::NOP:
     break;
   case DispatchTable::LABEL_DEFN:
     if (instr.get_operand<Label>(0) != fxn) {
