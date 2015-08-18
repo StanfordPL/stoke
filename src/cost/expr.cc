@@ -64,6 +64,9 @@ set<CostFunction*> ExprCost::leaf_functions() const {
 
 ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
 
+  if(leaves_.empty()) {
+    leaves_ = all_leaf_functions();
+  }
 
   // run the sandbox, if needed
   if(need_sandbox_)

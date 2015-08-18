@@ -1,0 +1,47 @@
+Old: movzbl (%r15,%rsi,1), %ecx
+New: movzbl -0x1(%r15,%rsi,1), %ecx
+Original Code:               After Successful Transform:      After Undo:                  
+                                                                                           
+.strxfrm:                    .strxfrm:                        .strxfrm:                    
+xorl %eax, %eax              xorl %eax, %eax                  xorl %eax, %eax              
+testl %edx, %edx             testl %edx, %edx                 testl %edx, %edx             
+movl %edi, %edi              movl %edi, %edi                  movl %edi, %edi              
+movl %esi, %esi              movl %esi, %esi                  movl %esi, %esi              
+jne .L_12c260                jne .L_12c260                    jne .L_12c260                
+jmpq .L_12c2a0               jmpq .L_12c2a0                   jmpq .L_12c2a0               
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+.L_12c240:                   nop                              .L_12c240:                   
+addl $0x1, %eax              .L_12c240:                       addl $0x1, %eax              
+addl $0x1, %edi              addl $0x1, %eax                  addl $0x1, %edi              
+addl $0x1, %esi              addl $0x1, %edi                  addl $0x1, %esi              
+cmpl %eax, %edx              addl $0x1, %esi                  cmpl %eax, %edx              
+je .L_12c2a0                 cmpl %eax, %edx                  je .L_12c2a0                 
+nop                          je .L_12c2a0                     nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                              nop                          
+nop                          nop                

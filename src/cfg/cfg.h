@@ -355,7 +355,7 @@ public:
     if(!invariant_no_undef_reads()) {
       std::cout << "BAD CODE: " << std::endl;
       std::cout << "DEF IN: " << def_ins() << std::endl;
-      std::cout << "LIVE OUT: " << live_outs() << std::endl; 
+      std::cout << "LIVE OUT: " << live_outs() << std::endl;
       std::cout << get_code() << std::endl;
       std::cout << "INFO: " << which_undef_read() << std::endl;
     }

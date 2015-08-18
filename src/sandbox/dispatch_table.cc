@@ -28,7 +28,7 @@ DispatchTable::DispatchTable() {
     if (!Sandbox::is_supported(instr)) {
       table_[i] = SIGILL_;
     } else if (instr.is_nop()) {
-      table_[i] = NOP; 
+      table_[i] = NOP;
     } else if (instr.is_label_defn()) {
       table_[i] = LABEL_DEFN;
     } else if (instr.is_any_jump()) {

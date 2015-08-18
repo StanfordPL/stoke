@@ -320,7 +320,7 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
           }
         }
       }
-    } 
+    }
 
     /**** STEP 2: Update the table appropriately. ****/
 

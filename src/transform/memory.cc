@@ -53,33 +53,48 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
   if(!ok)
     return ti;
 
-  //cout << "Old: " << instr << endl;
+  // if it's the first instruction, we can't replace the previous one
+  if(instr_index == 0)
+    return ti;
+
+  // Find index of instruction to swap with
+  size_t other_index = gen_() % code.size();
+
+  for(size_t j = 0, je=code.size(); j < je; ++j) {
+    if(other_index == instr_index ||
+        other_index == instr_index - 1) {
+      other_index = gen_() % je;
+      continue;
+    }
+    auto other_instr = code[other_index];
+    if (is_control_other_than_call(other_instr.get_opcode()) || other_instr.is_nop()) {
+      other_index = gen_() % je;
+      continue;
+    }
+  }
+  if(other_index == instr_index ||
+      other_index == instr_index - 1) {
+    return ti;
+  }
+  auto other_instr = code[other_index];
+  if (is_control_other_than_call(other_instr.get_opcode()) || other_instr.is_nop()) {
+    return ti;
+  }
+
+  ti.undo_index[1] = other_index;
+
+  // Replace the new memory operand
   instr.set_operand(operand_index, mem);
-  //cout << "New: " << instr << endl;
-  cfg.get_function().replace(instr_index, instr, false, false);
+  cfg.get_function().replace(instr_index, instr, false, true);
+  cfg.get_function().swap(instr_index - 1, ti.undo_index[1]);
+
   cfg.recompute();
   if(!cfg.check_invariants()) {
     undo(cfg, ti);
-  }
-
-  // Perform some other transform
-  TransformInfo* ti_second = new TransformInfo();
-  ti_second->success = false;
-  *ti_second = transform_(cfg);
-
-  if(ti_second->success) {
-    //add to record
-    ti.success = true;
-    ti.undo_next = ti_second;
-    return ti;
-  } else {
-    //undo everything!
-    ti.undo_next = NULL;
-    undo(cfg, ti);
-    ti.success = false;
-    delete ti_second;
     return ti;
   }
+
+  ti.success = true;
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
@@ -89,11 +104,9 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
 
 void MemoryTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
-  TransformInfo* info = ti.undo_next;
-  if(info) {
-    transform_.undo(cfg, *info);
-  }
-  cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
+  cfg.get_function().swap(ti.undo_index[0] - 1, ti.undo_index[1]);
+  cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, false, true);
+  cfg.recompute();
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
