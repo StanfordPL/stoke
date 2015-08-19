@@ -88,6 +88,9 @@ cpputil::ValueArg<std::vector<uint64_t>>& rips_arg =
                                         .description("Additional global rip offsets to propose as operands")
                                         .default_val({});
 
+cpputil::FlagArg& change_control_flow_arg =
+  cpputil::FlagArg::create("change_control_flow")
+  .description("Allow changes to jump targets");
 } // namespace stoke
 
 #endif

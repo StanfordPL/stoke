@@ -101,6 +101,17 @@ public:
     for(auto op : opc_blacklist_arg.value())
       remove_opcode(op);
 
+    // Add labels that appear in target
+    if(change_control_flow_arg.value()) {
+      for(auto instr : cfg.get_code()) {
+        if(instr.is_label_defn()) {
+          auto label = instr.get_operand<x64asm::Label>(0);
+          insert_label(label);
+        }
+      } 
+    }
+
+    // Finish the configuration
     recompute_pools();
 
     if(opcode_pool_.empty()) {

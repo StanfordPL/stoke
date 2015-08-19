@@ -27,16 +27,28 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
   ti.success = false;
 
   // Grab the index of a random instruction
-  ti.undo_index[0] = (gen_() % (cfg.get_code().size() - 1)) + 1;
+  auto code = cfg.get_code();
+  size_t index = (gen_() % (code.size() - 1)) + 1;
+
+  for(size_t i = 0, ie = code.size(); i < ie; ++i) {
+    index = (gen_() % (ie - 1)) + 1;
+    if(code[index].is_nop() || !cfg.is_reachable(cfg.get_loc(index).first)) {
+      continue;
+    } else {
+      break;
+    }
+  }
+
+  ti.undo_index[0] = index;
 
   // If not reachable, don't bother
   if(!cfg.is_reachable(cfg.get_loc(ti.undo_index[0]).first)) {
     return ti;
   }
 
-  ti.undo_instr = cfg.get_code()[ti.undo_index[0]];
-  if(is_control_other_than_call(ti.undo_instr.get_opcode()))
-    return ti;
+  ti.undo_instr = code[ti.undo_index[0]];
+  //if(is_control_other_than_call(ti.undo_instr.get_opcode()))
+  //  return ti;
 
   // Corner Cases: Don't try chaning 0-arity opcodes
   if (ti.undo_instr.arity() == 0) {
@@ -73,7 +85,7 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
 
   // Success: Any failure beyond here will require undoing the move
   cfg.get_function().replace(ti.undo_index[0], instr, false, is_rip);
-  cfg.recompute_defs();
+  cfg.recompute();
   if (!cfg.check_invariants()) {
     undo(cfg, ti);
     return ti;
@@ -89,7 +101,7 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
 
 void OperandTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
-  cfg.recompute_defs();
+  cfg.recompute();
 
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
