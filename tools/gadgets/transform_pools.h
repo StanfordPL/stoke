@@ -108,7 +108,7 @@ public:
           auto label = instr.get_operand<x64asm::Label>(0);
           insert_label(label);
         }
-      } 
+      }
     }
 
     // Finish the configuration
