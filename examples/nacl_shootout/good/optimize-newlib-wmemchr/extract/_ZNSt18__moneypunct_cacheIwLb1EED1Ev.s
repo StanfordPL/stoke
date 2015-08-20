@@ -1,0 +1,136 @@
+  .text
+  .globl _ZNSt18__moneypunct_cacheIwLb1EED1Ev
+  .type _ZNSt18__moneypunct_cacheIwLb1EED1Ev, @function
+
+#! file-offset 0xf4ce0
+#! rip-offset  0xb4ce0
+#! capacity    192 bytes
+
+# Text                                  #  Line  RIP      Bytes  Opcode              
+._ZNSt18__moneypunct_cacheIwLb1EED1Ev:  #        0xb4ce0  0      OPC=<label>         
+  pushq %rbx                            #  1     0xb4ce0  1      OPC=pushq_r64_1     
+  movl %edi, %ebx                       #  2     0xb4ce1  2      OPC=movl_r32_r32    
+  movl %ebx, %ebx                       #  3     0xb4ce3  2      OPC=movl_r32_r32    
+  cmpb $0x0, 0x6c(%r15,%rbx,1)          #  4     0xb4ce5  6      OPC=cmpb_m8_imm8    
+  movl %ebx, %ebx                       #  5     0xb4ceb  2      OPC=movl_r32_r32    
+  movl $0x1003be68, (%r15,%rbx,1)       #  6     0xb4ced  8      OPC=movl_m32_imm32  
+  je .L_b4d80                           #  7     0xb4cf5  6      OPC=je_label_1      
+  nop                                   #  8     0xb4cfb  1      OPC=nop             
+  nop                                   #  9     0xb4cfc  1      OPC=nop             
+  nop                                   #  10    0xb4cfd  1      OPC=nop             
+  nop                                   #  11    0xb4cfe  1      OPC=nop             
+  nop                                   #  12    0xb4cff  1      OPC=nop             
+  movl %ebx, %ebx                       #  13    0xb4d00  2      OPC=movl_r32_r32    
+  movl 0x8(%r15,%rbx,1), %edi           #  14    0xb4d02  5      OPC=movl_r32_m32    
+  testq %rdi, %rdi                      #  15    0xb4d07  3      OPC=testq_r64_r64   
+  je .L_b4d20                           #  16    0xb4d0a  2      OPC=je_label        
+  nop                                   #  17    0xb4d0c  1      OPC=nop             
+  nop                                   #  18    0xb4d0d  1      OPC=nop             
+  nop                                   #  19    0xb4d0e  1      OPC=nop             
+  nop                                   #  20    0xb4d0f  1      OPC=nop             
+  nop                                   #  21    0xb4d10  1      OPC=nop             
+  nop                                   #  22    0xb4d11  1      OPC=nop             
+  nop                                   #  23    0xb4d12  1      OPC=nop             
+  nop                                   #  24    0xb4d13  1      OPC=nop             
+  nop                                   #  25    0xb4d14  1      OPC=nop             
+  nop                                   #  26    0xb4d15  1      OPC=nop             
+  nop                                   #  27    0xb4d16  1      OPC=nop             
+  nop                                   #  28    0xb4d17  1      OPC=nop             
+  nop                                   #  29    0xb4d18  1      OPC=nop             
+  nop                                   #  30    0xb4d19  1      OPC=nop             
+  nop                                   #  31    0xb4d1a  1      OPC=nop             
+  callq ._ZdaPv                         #  32    0xb4d1b  5      OPC=callq_label     
+.L_b4d20:                               #        0xb4d20  0      OPC=<label>         
+  movl %ebx, %ebx                       #  33    0xb4d20  2      OPC=movl_r32_r32    
+  movl 0x1c(%r15,%rbx,1), %edi          #  34    0xb4d22  5      OPC=movl_r32_m32    
+  testq %rdi, %rdi                      #  35    0xb4d27  3      OPC=testq_r64_r64   
+  je .L_b4d40                           #  36    0xb4d2a  2      OPC=je_label        
+  nop                                   #  37    0xb4d2c  1      OPC=nop             
+  nop                                   #  38    0xb4d2d  1      OPC=nop             
+  nop                                   #  39    0xb4d2e  1      OPC=nop             
+  nop                                   #  40    0xb4d2f  1      OPC=nop             
+  nop                                   #  41    0xb4d30  1      OPC=nop             
+  nop                                   #  42    0xb4d31  1      OPC=nop             
+  nop                                   #  43    0xb4d32  1      OPC=nop             
+  nop                                   #  44    0xb4d33  1      OPC=nop             
+  nop                                   #  45    0xb4d34  1      OPC=nop             
+  nop                                   #  46    0xb4d35  1      OPC=nop             
+  nop                                   #  47    0xb4d36  1      OPC=nop             
+  nop                                   #  48    0xb4d37  1      OPC=nop             
+  nop                                   #  49    0xb4d38  1      OPC=nop             
+  nop                                   #  50    0xb4d39  1      OPC=nop             
+  nop                                   #  51    0xb4d3a  1      OPC=nop             
+  callq ._ZdaPv                         #  52    0xb4d3b  5      OPC=callq_label     
+.L_b4d40:                               #        0xb4d40  0      OPC=<label>         
+  movl %ebx, %ebx                       #  53    0xb4d40  2      OPC=movl_r32_r32    
+  movl 0x24(%r15,%rbx,1), %edi          #  54    0xb4d42  5      OPC=movl_r32_m32    
+  testq %rdi, %rdi                      #  55    0xb4d47  3      OPC=testq_r64_r64   
+  je .L_b4d60                           #  56    0xb4d4a  2      OPC=je_label        
+  nop                                   #  57    0xb4d4c  1      OPC=nop             
+  nop                                   #  58    0xb4d4d  1      OPC=nop             
+  nop                                   #  59    0xb4d4e  1      OPC=nop             
+  nop                                   #  60    0xb4d4f  1      OPC=nop             
+  nop                                   #  61    0xb4d50  1      OPC=nop             
+  nop                                   #  62    0xb4d51  1      OPC=nop             
+  nop                                   #  63    0xb4d52  1      OPC=nop             
+  nop                                   #  64    0xb4d53  1      OPC=nop             
+  nop                                   #  65    0xb4d54  1      OPC=nop             
+  nop                                   #  66    0xb4d55  1      OPC=nop             
+  nop                                   #  67    0xb4d56  1      OPC=nop             
+  nop                                   #  68    0xb4d57  1      OPC=nop             
+  nop                                   #  69    0xb4d58  1      OPC=nop             
+  nop                                   #  70    0xb4d59  1      OPC=nop             
+  nop                                   #  71    0xb4d5a  1      OPC=nop             
+  callq ._ZdaPv                         #  72    0xb4d5b  5      OPC=callq_label     
+.L_b4d60:                               #        0xb4d60  0      OPC=<label>         
+  movl %ebx, %ebx                       #  73    0xb4d60  2      OPC=movl_r32_r32    
+  movl 0x2c(%r15,%rbx,1), %edi          #  74    0xb4d62  5      OPC=movl_r32_m32    
+  testq %rdi, %rdi                      #  75    0xb4d67  3      OPC=testq_r64_r64   
+  je .L_b4d80                           #  76    0xb4d6a  2      OPC=je_label        
+  nop                                   #  77    0xb4d6c  1      OPC=nop             
+  nop                                   #  78    0xb4d6d  1      OPC=nop             
+  nop                                   #  79    0xb4d6e  1      OPC=nop             
+  nop                                   #  80    0xb4d6f  1      OPC=nop             
+  nop                                   #  81    0xb4d70  1      OPC=nop             
+  nop                                   #  82    0xb4d71  1      OPC=nop             
+  nop                                   #  83    0xb4d72  1      OPC=nop             
+  nop                                   #  84    0xb4d73  1      OPC=nop             
+  nop                                   #  85    0xb4d74  1      OPC=nop             
+  nop                                   #  86    0xb4d75  1      OPC=nop             
+  nop                                   #  87    0xb4d76  1      OPC=nop             
+  nop                                   #  88    0xb4d77  1      OPC=nop             
+  nop                                   #  89    0xb4d78  1      OPC=nop             
+  nop                                   #  90    0xb4d79  1      OPC=nop             
+  nop                                   #  91    0xb4d7a  1      OPC=nop             
+  callq ._ZdaPv                         #  92    0xb4d7b  5      OPC=callq_label     
+.L_b4d80:                               #        0xb4d80  0      OPC=<label>         
+  movl %ebx, %edi                       #  93    0xb4d80  2      OPC=movl_r32_r32    
+  popq %rbx                             #  94    0xb4d82  1      OPC=popq_r64_1      
+  jmpq ._ZNSt6locale5facetD2Ev          #  95    0xb4d83  5      OPC=jmpq_label_1    
+  nop                                   #  96    0xb4d88  1      OPC=nop             
+  nop                                   #  97    0xb4d89  1      OPC=nop             
+  nop                                   #  98    0xb4d8a  1      OPC=nop             
+  nop                                   #  99    0xb4d8b  1      OPC=nop             
+  nop                                   #  100   0xb4d8c  1      OPC=nop             
+  nop                                   #  101   0xb4d8d  1      OPC=nop             
+  nop                                   #  102   0xb4d8e  1      OPC=nop             
+  nop                                   #  103   0xb4d8f  1      OPC=nop             
+  nop                                   #  104   0xb4d90  1      OPC=nop             
+  nop                                   #  105   0xb4d91  1      OPC=nop             
+  nop                                   #  106   0xb4d92  1      OPC=nop             
+  nop                                   #  107   0xb4d93  1      OPC=nop             
+  nop                                   #  108   0xb4d94  1      OPC=nop             
+  nop                                   #  109   0xb4d95  1      OPC=nop             
+  nop                                   #  110   0xb4d96  1      OPC=nop             
+  nop                                   #  111   0xb4d97  1      OPC=nop             
+  nop                                   #  112   0xb4d98  1      OPC=nop             
+  nop                                   #  113   0xb4d99  1      OPC=nop             
+  nop                                   #  114   0xb4d9a  1      OPC=nop             
+  nop                                   #  115   0xb4d9b  1      OPC=nop             
+  nop                                   #  116   0xb4d9c  1      OPC=nop             
+  nop                                   #  117   0xb4d9d  1      OPC=nop             
+  nop                                   #  118   0xb4d9e  1      OPC=nop             
+  nop                                   #  119   0xb4d9f  1      OPC=nop             
+                                                                                     
+.size _ZNSt18__moneypunct_cacheIwLb1EED1Ev, .-_ZNSt18__moneypunct_cacheIwLb1EED1Ev
+

@@ -1,0 +1,133 @@
+  .text
+  .globl sysconf
+  .type sysconf, @function
+
+#! file-offset 0x159420
+#! rip-offset  0x119420
+#! capacity    160 bytes
+
+# Text                        #  Line  RIP       Bytes  Opcode                
+.sysconf:                     #        0x119420  0      OPC=<label>           
+  pushq %rbx                  #  1     0x119420  1      OPC=pushq_r64_1       
+  subl $0x10, %esp            #  2     0x119421  3      OPC=subl_r32_imm8     
+  addq %r15, %rsp             #  3     0x119424  3      OPC=addq_r64_r64      
+  movl 0xff5fe37(%rip), %eax  #  4     0x119427  6      OPC=movl_r32_m32      
+  leal 0xc(%rsp), %esi        #  5     0x11942d  4      OPC=leal_r32_m16      
+  nop                         #  6     0x119431  1      OPC=nop               
+  nop                         #  7     0x119432  1      OPC=nop               
+  nop                         #  8     0x119433  1      OPC=nop               
+  nop                         #  9     0x119434  1      OPC=nop               
+  nop                         #  10    0x119435  1      OPC=nop               
+  nop                         #  11    0x119436  1      OPC=nop               
+  nop                         #  12    0x119437  1      OPC=nop               
+  andl $0xffffffe0, %eax      #  13    0x119438  6      OPC=andl_r32_imm32    
+  nop                         #  14    0x11943e  1      OPC=nop               
+  nop                         #  15    0x11943f  1      OPC=nop               
+  nop                         #  16    0x119440  1      OPC=nop               
+  addq %r15, %rax             #  17    0x119441  3      OPC=addq_r64_r64      
+  callq %rax                  #  18    0x119444  2      OPC=callq_r64         
+  testl %eax, %eax            #  19    0x119446  2      OPC=testl_r32_r32     
+  movl %eax, %ebx             #  20    0x119448  2      OPC=movl_r32_r32      
+  jne .L_119480               #  21    0x11944a  2      OPC=jne_label         
+  movl 0xc(%rsp), %eax        #  22    0x11944c  4      OPC=movl_r32_m32      
+  nop                         #  23    0x119450  1      OPC=nop               
+  nop                         #  24    0x119451  1      OPC=nop               
+  nop                         #  25    0x119452  1      OPC=nop               
+  nop                         #  26    0x119453  1      OPC=nop               
+  nop                         #  27    0x119454  1      OPC=nop               
+  nop                         #  28    0x119455  1      OPC=nop               
+  nop                         #  29    0x119456  1      OPC=nop               
+  nop                         #  30    0x119457  1      OPC=nop               
+  nop                         #  31    0x119458  1      OPC=nop               
+  nop                         #  32    0x119459  1      OPC=nop               
+  nop                         #  33    0x11945a  1      OPC=nop               
+  nop                         #  34    0x11945b  1      OPC=nop               
+  nop                         #  35    0x11945c  1      OPC=nop               
+  nop                         #  36    0x11945d  1      OPC=nop               
+  nop                         #  37    0x11945e  1      OPC=nop               
+  nop                         #  38    0x11945f  1      OPC=nop               
+  nop                         #  39    0x119460  1      OPC=nop               
+  nop                         #  40    0x119461  1      OPC=nop               
+  nop                         #  41    0x119462  1      OPC=nop               
+  nop                         #  42    0x119463  1      OPC=nop               
+  nop                         #  43    0x119464  1      OPC=nop               
+  nop                         #  44    0x119465  1      OPC=nop               
+.L_119460:                    #        0x119466  0      OPC=<label>           
+  addl $0x10, %esp            #  45    0x119466  3      OPC=addl_r32_imm8     
+  addq %r15, %rsp             #  46    0x119469  3      OPC=addq_r64_r64      
+  popq %rbx                   #  47    0x11946c  1      OPC=popq_r64_1        
+  popq %r11                   #  48    0x11946d  2      OPC=popq_r64_1        
+  andl $0xffffffe0, %r11d     #  49    0x11946f  7      OPC=andl_r32_imm32    
+  nop                         #  50    0x119476  1      OPC=nop               
+  nop                         #  51    0x119477  1      OPC=nop               
+  nop                         #  52    0x119478  1      OPC=nop               
+  nop                         #  53    0x119479  1      OPC=nop               
+  addq %r15, %r11             #  54    0x11947a  3      OPC=addq_r64_r64      
+  jmpq %r11                   #  55    0x11947d  3      OPC=jmpq_r64          
+  nop                         #  56    0x119480  1      OPC=nop               
+  nop                         #  57    0x119481  1      OPC=nop               
+  nop                         #  58    0x119482  1      OPC=nop               
+  nop                         #  59    0x119483  1      OPC=nop               
+  nop                         #  60    0x119484  1      OPC=nop               
+  nop                         #  61    0x119485  1      OPC=nop               
+  nop                         #  62    0x119486  1      OPC=nop               
+  nop                         #  63    0x119487  1      OPC=nop               
+  nop                         #  64    0x119488  1      OPC=nop               
+  nop                         #  65    0x119489  1      OPC=nop               
+  nop                         #  66    0x11948a  1      OPC=nop               
+  nop                         #  67    0x11948b  1      OPC=nop               
+  nop                         #  68    0x11948c  1      OPC=nop               
+.L_119480:                    #        0x11948d  0      OPC=<label>           
+  nop                         #  69    0x11948d  1      OPC=nop               
+  nop                         #  70    0x11948e  1      OPC=nop               
+  nop                         #  71    0x11948f  1      OPC=nop               
+  nop                         #  72    0x119490  1      OPC=nop               
+  nop                         #  73    0x119491  1      OPC=nop               
+  nop                         #  74    0x119492  1      OPC=nop               
+  nop                         #  75    0x119493  1      OPC=nop               
+  nop                         #  76    0x119494  1      OPC=nop               
+  nop                         #  77    0x119495  1      OPC=nop               
+  nop                         #  78    0x119496  1      OPC=nop               
+  nop                         #  79    0x119497  1      OPC=nop               
+  nop                         #  80    0x119498  1      OPC=nop               
+  nop                         #  81    0x119499  1      OPC=nop               
+  nop                         #  82    0x11949a  1      OPC=nop               
+  nop                         #  83    0x11949b  1      OPC=nop               
+  nop                         #  84    0x11949c  1      OPC=nop               
+  nop                         #  85    0x11949d  1      OPC=nop               
+  nop                         #  86    0x11949e  1      OPC=nop               
+  nop                         #  87    0x11949f  1      OPC=nop               
+  nop                         #  88    0x1194a0  1      OPC=nop               
+  nop                         #  89    0x1194a1  1      OPC=nop               
+  nop                         #  90    0x1194a2  1      OPC=nop               
+  nop                         #  91    0x1194a3  1      OPC=nop               
+  nop                         #  92    0x1194a4  1      OPC=nop               
+  nop                         #  93    0x1194a5  1      OPC=nop               
+  nop                         #  94    0x1194a6  1      OPC=nop               
+  nop                         #  95    0x1194a7  1      OPC=nop               
+  callq .__errno              #  96    0x1194a8  5      OPC=callq_label       
+  movl %eax, %eax             #  97    0x1194ad  2      OPC=movl_r32_r32      
+  movl %eax, %eax             #  98    0x1194af  2      OPC=movl_r32_r32      
+  movl %ebx, (%r15,%rax,1)    #  99    0x1194b1  4      OPC=movl_m32_r32      
+  movl $0xffffffff, %eax      #  100   0x1194b5  6      OPC=movl_r32_imm32_1  
+  jmpq .L_119460              #  101   0x1194bb  2      OPC=jmpq_label        
+  nop                         #  102   0x1194bd  1      OPC=nop               
+  nop                         #  103   0x1194be  1      OPC=nop               
+  nop                         #  104   0x1194bf  1      OPC=nop               
+  nop                         #  105   0x1194c0  1      OPC=nop               
+  nop                         #  106   0x1194c1  1      OPC=nop               
+  nop                         #  107   0x1194c2  1      OPC=nop               
+  nop                         #  108   0x1194c3  1      OPC=nop               
+  nop                         #  109   0x1194c4  1      OPC=nop               
+  nop                         #  110   0x1194c5  1      OPC=nop               
+  nop                         #  111   0x1194c6  1      OPC=nop               
+  nop                         #  112   0x1194c7  1      OPC=nop               
+  nop                         #  113   0x1194c8  1      OPC=nop               
+  nop                         #  114   0x1194c9  1      OPC=nop               
+  nop                         #  115   0x1194ca  1      OPC=nop               
+  nop                         #  116   0x1194cb  1      OPC=nop               
+  nop                         #  117   0x1194cc  1      OPC=nop               
+  nop                         #  118   0x1194cd  1      OPC=nop               
+                                                                              
+.size sysconf, .-sysconf
+

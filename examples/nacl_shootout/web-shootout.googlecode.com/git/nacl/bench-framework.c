@@ -149,8 +149,9 @@ void SetupSmallBenchmarks() {
   //RegisterBenchmark(strdup("strxfrm"), run_strxfrm, 1000000, 3000000, NULL, NULL);
   //RegisterBenchmark(strdup("strlen"), run_strlen, 100000000, 3000000, NULL, NULL);
   //RegisterBenchmark(strdup("wmemcmp"), run_wmemcmp, 1000000, 3000000, NULL, NULL);
-  RegisterBenchmark(strdup("wcscmp"), run_wmemcmp, 500000, 3000000, NULL, NULL);
-  //RegisterBenchmark(strdup("wcslen"), run_wmemcmp, 1000000, 3000000, NULL, NULL);
+  //RegisterBenchmark(strdup("wcscmp"), run_wcscmp, 500000, 3000000, NULL, NULL);
+  //RegisterBenchmark(strdup("wcslen"), run_wcslen, 1000000, 3000000, NULL, NULL);
+  RegisterBenchmark(strdup("wmemchr"), run_wmemchr, 1000000, 3000000, NULL, NULL);
   //RegisterBenchmark(strdup("strcasecmp"), run_strcasecmp, 1000000, 3000000, NULL, NULL);
   run_model = kRunModelRepeated;
 }
@@ -184,7 +185,8 @@ void SetupLargeBenchmarks() {
   //RegisterBenchmark(strdup("strxfrm"), run_strxfrm, 10000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("strlen"), run_strlen, 1000000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("wmemcmp"), run_wmemcmp, 10000000, 30000000, NULL, NULL);
-  RegisterBenchmark(strdup("wcscmp"), run_wcscmp, 5000000, 30000000, NULL, NULL);
+  //RegisterBenchmark(strdup("wcscmp"), run_wcscmp, 5000000, 30000000, NULL, NULL);
+  RegisterBenchmark(strdup("wmemchr"), run_wmemchr, 5000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("wcslen"), run_wcslen, 10000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("strcasecmp"), run_strcasecmp, 10000000, 30000000, NULL, NULL);
   run_model = kRunModelOnce;

@@ -187,7 +187,8 @@ BIN=\
 	bin/fannkuch2_tcs \
 	bin/memcpy_tcs \
 	bin/strcpy_tcs \
-	bin/memcmp_tcs
+	bin/memcmp_tcs \
+	bin/memchr_tcs
 
 # used to force a target to rebuild
 .PHONY: .FORCE

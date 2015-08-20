@@ -43,8 +43,6 @@ protected:
 
 
 private:
-  x64asm::Assembler assm_;
-  x64asm::Function buffer_;
 
 };
 

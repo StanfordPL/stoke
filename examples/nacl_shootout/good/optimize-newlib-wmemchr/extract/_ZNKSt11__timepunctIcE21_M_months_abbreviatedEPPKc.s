@@ -1,0 +1,135 @@
+  .text
+  .globl _ZNKSt11__timepunctIcE21_M_months_abbreviatedEPPKc
+  .type _ZNKSt11__timepunctIcE21_M_months_abbreviatedEPPKc, @function
+
+#! file-offset 0xb8500
+#! rip-offset  0x78500
+#! capacity    288 bytes
+
+# Text                                                #  Line  RIP      Bytes  Opcode              
+._ZNKSt11__timepunctIcE21_M_months_abbreviatedEPPKc:  #        0x78500  0      OPC=<label>         
+  movl %edi, %edi                                     #  1     0x78500  2      OPC=movl_r32_r32    
+  movl %esi, %esi                                     #  2     0x78502  2      OPC=movl_r32_r32    
+  movl %edi, %edi                                     #  3     0x78504  2      OPC=movl_r32_r32    
+  movl 0x8(%r15,%rdi,1), %eax                         #  4     0x78506  5      OPC=movl_r32_m32    
+  popq %r11                                           #  5     0x7850b  2      OPC=popq_r64_1      
+  movl %eax, %eax                                     #  6     0x7850d  2      OPC=movl_r32_r32    
+  movl 0x94(%r15,%rax,1), %edx                        #  7     0x7850f  8      OPC=movl_r32_m32    
+  movl %esi, %esi                                     #  8     0x78517  2      OPC=movl_r32_r32    
+  movl %edx, (%r15,%rsi,1)                            #  9     0x78519  4      OPC=movl_m32_r32    
+  nop                                                 #  10    0x7851d  1      OPC=nop             
+  nop                                                 #  11    0x7851e  1      OPC=nop             
+  nop                                                 #  12    0x7851f  1      OPC=nop             
+  movl %eax, %eax                                     #  13    0x78520  2      OPC=movl_r32_r32    
+  movl 0x98(%r15,%rax,1), %edx                        #  14    0x78522  8      OPC=movl_r32_m32    
+  movl %esi, %esi                                     #  15    0x7852a  2      OPC=movl_r32_r32    
+  movl %edx, 0x4(%r15,%rsi,1)                         #  16    0x7852c  5      OPC=movl_m32_r32    
+  movl %eax, %eax                                     #  17    0x78531  2      OPC=movl_r32_r32    
+  movl 0x9c(%r15,%rax,1), %edx                        #  18    0x78533  8      OPC=movl_r32_m32    
+  nop                                                 #  19    0x7853b  1      OPC=nop             
+  nop                                                 #  20    0x7853c  1      OPC=nop             
+  nop                                                 #  21    0x7853d  1      OPC=nop             
+  nop                                                 #  22    0x7853e  1      OPC=nop             
+  nop                                                 #  23    0x7853f  1      OPC=nop             
+  movl %esi, %esi                                     #  24    0x78540  2      OPC=movl_r32_r32    
+  movl %edx, 0x8(%r15,%rsi,1)                         #  25    0x78542  5      OPC=movl_m32_r32    
+  movl %eax, %eax                                     #  26    0x78547  2      OPC=movl_r32_r32    
+  movl 0xa0(%r15,%rax,1), %edx                        #  27    0x78549  8      OPC=movl_r32_m32    
+  movl %esi, %esi                                     #  28    0x78551  2      OPC=movl_r32_r32    
+  movl %edx, 0xc(%r15,%rsi,1)                         #  29    0x78553  5      OPC=movl_m32_r32    
+  nop                                                 #  30    0x78558  1      OPC=nop             
+  nop                                                 #  31    0x78559  1      OPC=nop             
+  nop                                                 #  32    0x7855a  1      OPC=nop             
+  nop                                                 #  33    0x7855b  1      OPC=nop             
+  nop                                                 #  34    0x7855c  1      OPC=nop             
+  nop                                                 #  35    0x7855d  1      OPC=nop             
+  nop                                                 #  36    0x7855e  1      OPC=nop             
+  nop                                                 #  37    0x7855f  1      OPC=nop             
+  movl %eax, %eax                                     #  38    0x78560  2      OPC=movl_r32_r32    
+  movl 0xa4(%r15,%rax,1), %edx                        #  39    0x78562  8      OPC=movl_r32_m32    
+  movl %esi, %esi                                     #  40    0x7856a  2      OPC=movl_r32_r32    
+  movl %edx, 0x10(%r15,%rsi,1)                        #  41    0x7856c  5      OPC=movl_m32_r32    
+  movl %eax, %eax                                     #  42    0x78571  2      OPC=movl_r32_r32    
+  movl 0xa8(%r15,%rax,1), %edx                        #  43    0x78573  8      OPC=movl_r32_m32    
+  nop                                                 #  44    0x7857b  1      OPC=nop             
+  nop                                                 #  45    0x7857c  1      OPC=nop             
+  nop                                                 #  46    0x7857d  1      OPC=nop             
+  nop                                                 #  47    0x7857e  1      OPC=nop             
+  nop                                                 #  48    0x7857f  1      OPC=nop             
+  movl %esi, %esi                                     #  49    0x78580  2      OPC=movl_r32_r32    
+  movl %edx, 0x14(%r15,%rsi,1)                        #  50    0x78582  5      OPC=movl_m32_r32    
+  movl %eax, %eax                                     #  51    0x78587  2      OPC=movl_r32_r32    
+  movl 0xac(%r15,%rax,1), %edx                        #  52    0x78589  8      OPC=movl_r32_m32    
+  movl %esi, %esi                                     #  53    0x78591  2      OPC=movl_r32_r32    
+  movl %edx, 0x18(%r15,%rsi,1)                        #  54    0x78593  5      OPC=movl_m32_r32    
+  nop                                                 #  55    0x78598  1      OPC=nop             
+  nop                                                 #  56    0x78599  1      OPC=nop             
+  nop                                                 #  57    0x7859a  1      OPC=nop             
+  nop                                                 #  58    0x7859b  1      OPC=nop             
+  nop                                                 #  59    0x7859c  1      OPC=nop             
+  nop                                                 #  60    0x7859d  1      OPC=nop             
+  nop                                                 #  61    0x7859e  1      OPC=nop             
+  nop                                                 #  62    0x7859f  1      OPC=nop             
+  movl %eax, %eax                                     #  63    0x785a0  2      OPC=movl_r32_r32    
+  movl 0xb0(%r15,%rax,1), %edx                        #  64    0x785a2  8      OPC=movl_r32_m32    
+  movl %esi, %esi                                     #  65    0x785aa  2      OPC=movl_r32_r32    
+  movl %edx, 0x1c(%r15,%rsi,1)                        #  66    0x785ac  5      OPC=movl_m32_r32    
+  movl %eax, %eax                                     #  67    0x785b1  2      OPC=movl_r32_r32    
+  movl 0xb4(%r15,%rax,1), %edx                        #  68    0x785b3  8      OPC=movl_r32_m32    
+  nop                                                 #  69    0x785bb  1      OPC=nop             
+  nop                                                 #  70    0x785bc  1      OPC=nop             
+  nop                                                 #  71    0x785bd  1      OPC=nop             
+  nop                                                 #  72    0x785be  1      OPC=nop             
+  nop                                                 #  73    0x785bf  1      OPC=nop             
+  movl %esi, %esi                                     #  74    0x785c0  2      OPC=movl_r32_r32    
+  movl %edx, 0x20(%r15,%rsi,1)                        #  75    0x785c2  5      OPC=movl_m32_r32    
+  movl %eax, %eax                                     #  76    0x785c7  2      OPC=movl_r32_r32    
+  movl 0xb8(%r15,%rax,1), %edx                        #  77    0x785c9  8      OPC=movl_r32_m32    
+  movl %esi, %esi                                     #  78    0x785d1  2      OPC=movl_r32_r32    
+  movl %edx, 0x24(%r15,%rsi,1)                        #  79    0x785d3  5      OPC=movl_m32_r32    
+  nop                                                 #  80    0x785d8  1      OPC=nop             
+  nop                                                 #  81    0x785d9  1      OPC=nop             
+  nop                                                 #  82    0x785da  1      OPC=nop             
+  nop                                                 #  83    0x785db  1      OPC=nop             
+  nop                                                 #  84    0x785dc  1      OPC=nop             
+  nop                                                 #  85    0x785dd  1      OPC=nop             
+  nop                                                 #  86    0x785de  1      OPC=nop             
+  nop                                                 #  87    0x785df  1      OPC=nop             
+  movl %eax, %eax                                     #  88    0x785e0  2      OPC=movl_r32_r32    
+  movl 0xbc(%r15,%rax,1), %edx                        #  89    0x785e2  8      OPC=movl_r32_m32    
+  movl %esi, %esi                                     #  90    0x785ea  2      OPC=movl_r32_r32    
+  movl %edx, 0x28(%r15,%rsi,1)                        #  91    0x785ec  5      OPC=movl_m32_r32    
+  movl %eax, %eax                                     #  92    0x785f1  2      OPC=movl_r32_r32    
+  movl 0xc0(%r15,%rax,1), %eax                        #  93    0x785f3  8      OPC=movl_r32_m32    
+  nop                                                 #  94    0x785fb  1      OPC=nop             
+  nop                                                 #  95    0x785fc  1      OPC=nop             
+  nop                                                 #  96    0x785fd  1      OPC=nop             
+  nop                                                 #  97    0x785fe  1      OPC=nop             
+  nop                                                 #  98    0x785ff  1      OPC=nop             
+  movl %esi, %esi                                     #  99    0x78600  2      OPC=movl_r32_r32    
+  movl %eax, 0x2c(%r15,%rsi,1)                        #  100   0x78602  5      OPC=movl_m32_r32    
+  andl $0xffffffe0, %r11d                             #  101   0x78607  7      OPC=andl_r32_imm32  
+  nop                                                 #  102   0x7860e  1      OPC=nop             
+  nop                                                 #  103   0x7860f  1      OPC=nop             
+  nop                                                 #  104   0x78610  1      OPC=nop             
+  nop                                                 #  105   0x78611  1      OPC=nop             
+  addq %r15, %r11                                     #  106   0x78612  3      OPC=addq_r64_r64    
+  jmpq %r11                                           #  107   0x78615  3      OPC=jmpq_r64        
+  nop                                                 #  108   0x78618  1      OPC=nop             
+  nop                                                 #  109   0x78619  1      OPC=nop             
+  nop                                                 #  110   0x7861a  1      OPC=nop             
+  nop                                                 #  111   0x7861b  1      OPC=nop             
+  nop                                                 #  112   0x7861c  1      OPC=nop             
+  nop                                                 #  113   0x7861d  1      OPC=nop             
+  nop                                                 #  114   0x7861e  1      OPC=nop             
+  nop                                                 #  115   0x7861f  1      OPC=nop             
+  nop                                                 #  116   0x78620  1      OPC=nop             
+  nop                                                 #  117   0x78621  1      OPC=nop             
+  nop                                                 #  118   0x78622  1      OPC=nop             
+  nop                                                 #  119   0x78623  1      OPC=nop             
+  nop                                                 #  120   0x78624  1      OPC=nop             
+  nop                                                 #  121   0x78625  1      OPC=nop             
+  nop                                                 #  122   0x78626  1      OPC=nop             
+                                                                                                   
+.size _ZNKSt11__timepunctIcE21_M_months_abbreviatedEPPKc, .-_ZNKSt11__timepunctIcE21_M_months_abbreviatedEPPKc
+
