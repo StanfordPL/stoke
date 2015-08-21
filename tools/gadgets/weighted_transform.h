@@ -47,6 +47,7 @@ public:
     transform_list[new OperandTransform(pools)] = operand_mass_arg.value();
     transform_list[new LocalSwapTransform(pools)] = local_swap_mass_arg.value();
     transform_list[new GlobalSwapTransform(pools)] = global_swap_mass_arg.value();
+    transform_list[new GlobalCopyTransform(pools)] = global_copy_mass_arg.value();
     transform_list[new ReplaceNopTransform(pools)] = replace_nop_mass_arg.value();
     transform_list[new RotateTransform(pools)] = rotate_mass_arg.value();
 

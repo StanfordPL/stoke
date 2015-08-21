@@ -67,6 +67,7 @@ int run_wcscmp(int n);
 int run_wcscpy(int n);
 int run_strxfrm(int n);
 int run_wmemchr(int n);
+int run_wcschr(int n);
 
 int run_richards(int p);
 int run_deltablue(int p);

@@ -25,9 +25,7 @@ class MemoryTransform : public Transform {
 public:
 
   std::string get_name() const {
-    std::stringstream ss;
-    ss << "Memory+" << transform_.get_name();
-    return ss.str();
+    return "Memory+Swap";
   }
 
   MemoryTransform(TransformPools& pools, Transform& transform) :

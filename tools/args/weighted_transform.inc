@@ -85,6 +85,12 @@ cpputil::ValueArg<size_t>& global_swap_mass_arg =
   .description("Global swap move proposal mass")
   .default_val(1);
 
+cpputil::ValueArg<size_t>& global_copy_mass_arg =
+  cpputil::ValueArg<size_t>::create("global_copy_mass")
+  .usage("<int>")
+  .description("Global copy move proposal mass")
+  .default_val(1);
+
 cpputil::ValueArg<size_t>& replace_nop_mass_arg =
   cpputil::ValueArg<size_t>::create("replace_nop_mass")
   .usage("<int>")
