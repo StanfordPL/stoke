@@ -1,0 +1,133 @@
+  .text
+  .globl iswblank
+  .type iswblank, @function
+
+#! file-offset 0x18a0c0
+#! rip-offset  0x14a0c0
+#! capacity    192 bytes
+
+# Text                      #  Line  RIP       Bytes  Opcode              
+.iswblank:                  #        0x14a0c0  0      OPC=<label>         
+  subl $0x8, %esp           #  1     0x14a0c0  3      OPC=subl_r32_imm8   
+  addq %r15, %rsp           #  2     0x14a0c3  3      OPC=addq_r64_r64    
+  nop                       #  3     0x14a0c6  1      OPC=nop             
+  nop                       #  4     0x14a0c7  1      OPC=nop             
+  nop                       #  5     0x14a0c8  1      OPC=nop             
+  nop                       #  6     0x14a0c9  1      OPC=nop             
+  nop                       #  7     0x14a0ca  1      OPC=nop             
+  nop                       #  8     0x14a0cb  1      OPC=nop             
+  nop                       #  9     0x14a0cc  1      OPC=nop             
+  nop                       #  10    0x14a0cd  1      OPC=nop             
+  nop                       #  11    0x14a0ce  1      OPC=nop             
+  nop                       #  12    0x14a0cf  1      OPC=nop             
+  nop                       #  13    0x14a0d0  1      OPC=nop             
+  nop                       #  14    0x14a0d1  1      OPC=nop             
+  nop                       #  15    0x14a0d2  1      OPC=nop             
+  nop                       #  16    0x14a0d3  1      OPC=nop             
+  nop                       #  17    0x14a0d4  1      OPC=nop             
+  nop                       #  18    0x14a0d5  1      OPC=nop             
+  nop                       #  19    0x14a0d6  1      OPC=nop             
+  nop                       #  20    0x14a0d7  1      OPC=nop             
+  nop                       #  21    0x14a0d8  1      OPC=nop             
+  nop                       #  22    0x14a0d9  1      OPC=nop             
+  nop                       #  23    0x14a0da  1      OPC=nop             
+  callq ._jp2uc             #  24    0x14a0db  5      OPC=callq_label     
+  cmpl $0x20, %eax          #  25    0x14a0e0  3      OPC=cmpl_r32_imm8   
+  je .L_14a120              #  26    0x14a0e3  2      OPC=je_label        
+  cmpl $0x9, %eax           #  27    0x14a0e5  3      OPC=cmpl_r32_imm8   
+  je .L_14a120              #  28    0x14a0e8  2      OPC=je_label        
+  cmpl $0x180e, %eax        #  29    0x14a0ea  5      OPC=cmpl_eax_imm32  
+  je .L_14a120              #  30    0x14a0ef  2      OPC=je_label        
+  cmpl $0x1680, %eax        #  31    0x14a0f1  5      OPC=cmpl_eax_imm32  
+  je .L_14a120              #  32    0x14a0f6  2      OPC=je_label        
+  leal -0x2000(%rax), %edx  #  33    0x14a0f8  6      OPC=leal_r32_m16    
+  xchgw %ax, %ax            #  34    0x14a0fe  2      OPC=xchgw_ax_r16    
+  cmpl $0x6, %edx           #  35    0x14a100  3      OPC=cmpl_r32_imm8   
+  jbe .L_14a120             #  36    0x14a103  2      OPC=jbe_label       
+  leal -0x2008(%rax), %edx  #  37    0x14a105  6      OPC=leal_r32_m16    
+  cmpl $0x2, %edx           #  38    0x14a10b  3      OPC=cmpl_r32_imm8   
+  ja .L_14a140              #  39    0x14a10e  2      OPC=ja_label        
+  nop                       #  40    0x14a110  1      OPC=nop             
+  nop                       #  41    0x14a111  1      OPC=nop             
+  nop                       #  42    0x14a112  1      OPC=nop             
+  nop                       #  43    0x14a113  1      OPC=nop             
+  nop                       #  44    0x14a114  1      OPC=nop             
+  nop                       #  45    0x14a115  1      OPC=nop             
+  nop                       #  46    0x14a116  1      OPC=nop             
+  nop                       #  47    0x14a117  1      OPC=nop             
+  nop                       #  48    0x14a118  1      OPC=nop             
+  nop                       #  49    0x14a119  1      OPC=nop             
+  nop                       #  50    0x14a11a  1      OPC=nop             
+  nop                       #  51    0x14a11b  1      OPC=nop             
+  nop                       #  52    0x14a11c  1      OPC=nop             
+  nop                       #  53    0x14a11d  1      OPC=nop             
+  nop                       #  54    0x14a11e  1      OPC=nop             
+  nop                       #  55    0x14a11f  1      OPC=nop             
+.L_14a120:                  #        0x14a120  0      OPC=<label>         
+  addl $0x8, %esp           #  56    0x14a120  3      OPC=addl_r32_imm8   
+  addq %r15, %rsp           #  57    0x14a123  3      OPC=addq_r64_r64    
+  movl $0x1, %eax           #  58    0x14a126  5      OPC=movl_r32_imm32  
+  popq %r11                 #  59    0x14a12b  2      OPC=popq_r64_1      
+  andl $0xffffffe0, %r11d   #  60    0x14a12d  7      OPC=andl_r32_imm32  
+  nop                       #  61    0x14a134  1      OPC=nop             
+  nop                       #  62    0x14a135  1      OPC=nop             
+  nop                       #  63    0x14a136  1      OPC=nop             
+  nop                       #  64    0x14a137  1      OPC=nop             
+  addq %r15, %r11           #  65    0x14a138  3      OPC=addq_r64_r64    
+  jmpq %r11                 #  66    0x14a13b  3      OPC=jmpq_r64        
+  nop                       #  67    0x14a13e  1      OPC=nop             
+  nop                       #  68    0x14a13f  1      OPC=nop             
+  nop                       #  69    0x14a140  1      OPC=nop             
+  nop                       #  70    0x14a141  1      OPC=nop             
+  nop                       #  71    0x14a142  1      OPC=nop             
+  nop                       #  72    0x14a143  1      OPC=nop             
+  nop                       #  73    0x14a144  1      OPC=nop             
+  nop                       #  74    0x14a145  1      OPC=nop             
+  nop                       #  75    0x14a146  1      OPC=nop             
+.L_14a140:                  #        0x14a147  0      OPC=<label>         
+  cmpl $0x205f, %eax        #  76    0x14a147  5      OPC=cmpl_eax_imm32  
+  je .L_14a120              #  77    0x14a14c  2      OPC=je_label        
+  cmpl $0x3000, %eax        #  78    0x14a14e  5      OPC=cmpl_eax_imm32  
+  sete %al                  #  79    0x14a153  3      OPC=sete_r8         
+  addl $0x8, %esp           #  80    0x14a156  3      OPC=addl_r32_imm8   
+  addq %r15, %rsp           #  81    0x14a159  3      OPC=addq_r64_r64    
+  popq %r11                 #  82    0x14a15c  2      OPC=popq_r64_1      
+  movzbl %al, %eax          #  83    0x14a15e  3      OPC=movzbl_r32_r8   
+  nop                       #  84    0x14a161  1      OPC=nop             
+  nop                       #  85    0x14a162  1      OPC=nop             
+  nop                       #  86    0x14a163  1      OPC=nop             
+  nop                       #  87    0x14a164  1      OPC=nop             
+  nop                       #  88    0x14a165  1      OPC=nop             
+  nop                       #  89    0x14a166  1      OPC=nop             
+  andl $0xffffffe0, %r11d   #  90    0x14a167  7      OPC=andl_r32_imm32  
+  nop                       #  91    0x14a16e  1      OPC=nop             
+  nop                       #  92    0x14a16f  1      OPC=nop             
+  nop                       #  93    0x14a170  1      OPC=nop             
+  nop                       #  94    0x14a171  1      OPC=nop             
+  addq %r15, %r11           #  95    0x14a172  3      OPC=addq_r64_r64    
+  jmpq %r11                 #  96    0x14a175  3      OPC=jmpq_r64        
+  nop                       #  97    0x14a178  1      OPC=nop             
+  nop                       #  98    0x14a179  1      OPC=nop             
+  nop                       #  99    0x14a17a  1      OPC=nop             
+  nop                       #  100   0x14a17b  1      OPC=nop             
+  nop                       #  101   0x14a17c  1      OPC=nop             
+  nop                       #  102   0x14a17d  1      OPC=nop             
+  nop                       #  103   0x14a17e  1      OPC=nop             
+  nop                       #  104   0x14a17f  1      OPC=nop             
+  nop                       #  105   0x14a180  1      OPC=nop             
+  nop                       #  106   0x14a181  1      OPC=nop             
+  nop                       #  107   0x14a182  1      OPC=nop             
+  nop                       #  108   0x14a183  1      OPC=nop             
+  nop                       #  109   0x14a184  1      OPC=nop             
+  nop                       #  110   0x14a185  1      OPC=nop             
+  nop                       #  111   0x14a186  1      OPC=nop             
+  nop                       #  112   0x14a187  1      OPC=nop             
+  nop                       #  113   0x14a188  1      OPC=nop             
+  nop                       #  114   0x14a189  1      OPC=nop             
+  nop                       #  115   0x14a18a  1      OPC=nop             
+  nop                       #  116   0x14a18b  1      OPC=nop             
+  nop                       #  117   0x14a18c  1      OPC=nop             
+  nop                       #  118   0x14a18d  1      OPC=nop             
+                                                                          
+.size iswblank, .-iswblank
+

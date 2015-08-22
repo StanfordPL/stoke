@@ -1,0 +1,135 @@
+  .text
+  .globl _ZN9__gnu_cxx18stdio_sync_filebufIcSt11char_traitsIcEE7seekoffExSt12_Ios_SeekdirSt13_Ios_Openmode
+  .type _ZN9__gnu_cxx18stdio_sync_filebufIcSt11char_traitsIcEE7seekoffExSt12_Ios_SeekdirSt13_Ios_Openmode, @function
+
+#! file-offset 0xdc560
+#! rip-offset  0x9c560
+#! capacity    192 bytes
+
+# Text                                                                                               #  Line  RIP      Bytes  Opcode              
+._ZN9__gnu_cxx18stdio_sync_filebufIcSt11char_traitsIcEE7seekoffExSt12_Ios_SeekdirSt13_Ios_Openmode:  #        0x9c560  0      OPC=<label>         
+  pushq %rbx                                                                                         #  1     0x9c560  1      OPC=pushq_r64_1     
+  movl %edx, %eax                                                                                    #  2     0x9c561  2      OPC=movl_r32_r32    
+  xorl %edx, %edx                                                                                    #  3     0x9c563  2      OPC=xorl_r32_r32    
+  movl %edi, %ebx                                                                                    #  4     0x9c565  2      OPC=movl_r32_r32    
+  subl $0x40, %esp                                                                                   #  5     0x9c567  3      OPC=subl_r32_imm8   
+  addq %r15, %rsp                                                                                    #  6     0x9c56a  3      OPC=addq_r64_r64    
+  testl %eax, %eax                                                                                   #  7     0x9c56d  2      OPC=testl_r32_r32   
+  movq $0x0, 0x38(%rsp)                                                                              #  8     0x9c56f  9      OPC=movq_m64_imm32  
+  je .L_9c5a0                                                                                        #  9     0x9c578  2      OPC=je_label        
+  xorl %edx, %edx                                                                                    #  10    0x9c57a  2      OPC=xorl_r32_r32    
+  cmpl $0x1, %eax                                                                                    #  11    0x9c57c  3      OPC=cmpl_r32_imm8   
+  nop                                                                                                #  12    0x9c57f  1      OPC=nop             
+  setne %dl                                                                                          #  13    0x9c580  3      OPC=setne_r8        
+  addl $0x1, %edx                                                                                    #  14    0x9c583  3      OPC=addl_r32_imm8   
+  nop                                                                                                #  15    0x9c586  1      OPC=nop             
+  nop                                                                                                #  16    0x9c587  1      OPC=nop             
+  nop                                                                                                #  17    0x9c588  1      OPC=nop             
+  nop                                                                                                #  18    0x9c589  1      OPC=nop             
+  nop                                                                                                #  19    0x9c58a  1      OPC=nop             
+  nop                                                                                                #  20    0x9c58b  1      OPC=nop             
+  nop                                                                                                #  21    0x9c58c  1      OPC=nop             
+  nop                                                                                                #  22    0x9c58d  1      OPC=nop             
+  nop                                                                                                #  23    0x9c58e  1      OPC=nop             
+  nop                                                                                                #  24    0x9c58f  1      OPC=nop             
+  nop                                                                                                #  25    0x9c590  1      OPC=nop             
+  nop                                                                                                #  26    0x9c591  1      OPC=nop             
+  nop                                                                                                #  27    0x9c592  1      OPC=nop             
+  nop                                                                                                #  28    0x9c593  1      OPC=nop             
+  nop                                                                                                #  29    0x9c594  1      OPC=nop             
+  nop                                                                                                #  30    0x9c595  1      OPC=nop             
+  nop                                                                                                #  31    0x9c596  1      OPC=nop             
+  nop                                                                                                #  32    0x9c597  1      OPC=nop             
+  nop                                                                                                #  33    0x9c598  1      OPC=nop             
+  nop                                                                                                #  34    0x9c599  1      OPC=nop             
+  nop                                                                                                #  35    0x9c59a  1      OPC=nop             
+  nop                                                                                                #  36    0x9c59b  1      OPC=nop             
+  nop                                                                                                #  37    0x9c59c  1      OPC=nop             
+  nop                                                                                                #  38    0x9c59d  1      OPC=nop             
+  nop                                                                                                #  39    0x9c59e  1      OPC=nop             
+  nop                                                                                                #  40    0x9c59f  1      OPC=nop             
+.L_9c5a0:                                                                                            #        0x9c5a0  0      OPC=<label>         
+  movl %ebx, %ebx                                                                                    #  41    0x9c5a0  2      OPC=movl_r32_r32    
+  movl 0x20(%r15,%rbx,1), %edi                                                                       #  42    0x9c5a2  5      OPC=movl_r32_m32    
+  nop                                                                                                #  43    0x9c5a7  1      OPC=nop             
+  nop                                                                                                #  44    0x9c5a8  1      OPC=nop             
+  nop                                                                                                #  45    0x9c5a9  1      OPC=nop             
+  nop                                                                                                #  46    0x9c5aa  1      OPC=nop             
+  nop                                                                                                #  47    0x9c5ab  1      OPC=nop             
+  nop                                                                                                #  48    0x9c5ac  1      OPC=nop             
+  nop                                                                                                #  49    0x9c5ad  1      OPC=nop             
+  nop                                                                                                #  50    0x9c5ae  1      OPC=nop             
+  nop                                                                                                #  51    0x9c5af  1      OPC=nop             
+  nop                                                                                                #  52    0x9c5b0  1      OPC=nop             
+  nop                                                                                                #  53    0x9c5b1  1      OPC=nop             
+  nop                                                                                                #  54    0x9c5b2  1      OPC=nop             
+  nop                                                                                                #  55    0x9c5b3  1      OPC=nop             
+  nop                                                                                                #  56    0x9c5b4  1      OPC=nop             
+  nop                                                                                                #  57    0x9c5b5  1      OPC=nop             
+  nop                                                                                                #  58    0x9c5b6  1      OPC=nop             
+  nop                                                                                                #  59    0x9c5b7  1      OPC=nop             
+  nop                                                                                                #  60    0x9c5b8  1      OPC=nop             
+  nop                                                                                                #  61    0x9c5b9  1      OPC=nop             
+  nop                                                                                                #  62    0x9c5ba  1      OPC=nop             
+  callq .fseek                                                                                       #  63    0x9c5bb  5      OPC=callq_label     
+  movl %eax, %edx                                                                                    #  64    0x9c5c0  2      OPC=movl_r32_r32    
+  movq $0xffffffff, %rax                                                                             #  65    0x9c5c2  7      OPC=movq_r64_imm32  
+  testl %edx, %edx                                                                                   #  66    0x9c5c9  2      OPC=testl_r32_r32   
+  jne .L_9c600                                                                                       #  67    0x9c5cb  2      OPC=jne_label       
+  movl %ebx, %ebx                                                                                    #  68    0x9c5cd  2      OPC=movl_r32_r32    
+  movl 0x20(%r15,%rbx,1), %edi                                                                       #  69    0x9c5cf  5      OPC=movl_r32_m32    
+  nop                                                                                                #  70    0x9c5d4  1      OPC=nop             
+  nop                                                                                                #  71    0x9c5d5  1      OPC=nop             
+  nop                                                                                                #  72    0x9c5d6  1      OPC=nop             
+  nop                                                                                                #  73    0x9c5d7  1      OPC=nop             
+  nop                                                                                                #  74    0x9c5d8  1      OPC=nop             
+  nop                                                                                                #  75    0x9c5d9  1      OPC=nop             
+  nop                                                                                                #  76    0x9c5da  1      OPC=nop             
+  callq .ftell                                                                                       #  77    0x9c5db  5      OPC=callq_label     
+  movq $0x0, 0x38(%rsp)                                                                              #  78    0x9c5e0  9      OPC=movq_m64_imm32  
+  cltq                                                                                               #  79    0x9c5e9  2      OPC=cltq            
+  nop                                                                                                #  80    0x9c5eb  1      OPC=nop             
+  nop                                                                                                #  81    0x9c5ec  1      OPC=nop             
+  nop                                                                                                #  82    0x9c5ed  1      OPC=nop             
+  nop                                                                                                #  83    0x9c5ee  1      OPC=nop             
+  nop                                                                                                #  84    0x9c5ef  1      OPC=nop             
+  nop                                                                                                #  85    0x9c5f0  1      OPC=nop             
+  nop                                                                                                #  86    0x9c5f1  1      OPC=nop             
+  nop                                                                                                #  87    0x9c5f2  1      OPC=nop             
+  nop                                                                                                #  88    0x9c5f3  1      OPC=nop             
+  nop                                                                                                #  89    0x9c5f4  1      OPC=nop             
+  nop                                                                                                #  90    0x9c5f5  1      OPC=nop             
+  nop                                                                                                #  91    0x9c5f6  1      OPC=nop             
+  nop                                                                                                #  92    0x9c5f7  1      OPC=nop             
+  nop                                                                                                #  93    0x9c5f8  1      OPC=nop             
+  nop                                                                                                #  94    0x9c5f9  1      OPC=nop             
+  nop                                                                                                #  95    0x9c5fa  1      OPC=nop             
+  nop                                                                                                #  96    0x9c5fb  1      OPC=nop             
+  nop                                                                                                #  97    0x9c5fc  1      OPC=nop             
+  nop                                                                                                #  98    0x9c5fd  1      OPC=nop             
+  nop                                                                                                #  99    0x9c5fe  1      OPC=nop             
+  nop                                                                                                #  100   0x9c5ff  1      OPC=nop             
+.L_9c600:                                                                                            #        0x9c600  0      OPC=<label>         
+  movq 0x38(%rsp), %rdx                                                                              #  101   0x9c600  5      OPC=movq_r64_m64    
+  addl $0x40, %esp                                                                                   #  102   0x9c605  3      OPC=addl_r32_imm8   
+  addq %r15, %rsp                                                                                    #  103   0x9c608  3      OPC=addq_r64_r64    
+  popq %rbx                                                                                          #  104   0x9c60b  1      OPC=popq_r64_1      
+  popq %r11                                                                                          #  105   0x9c60c  2      OPC=popq_r64_1      
+  andl $0xffffffe0, %r11d                                                                            #  106   0x9c60e  7      OPC=andl_r32_imm32  
+  nop                                                                                                #  107   0x9c615  1      OPC=nop             
+  nop                                                                                                #  108   0x9c616  1      OPC=nop             
+  nop                                                                                                #  109   0x9c617  1      OPC=nop             
+  nop                                                                                                #  110   0x9c618  1      OPC=nop             
+  addq %r15, %r11                                                                                    #  111   0x9c619  3      OPC=addq_r64_r64    
+  jmpq %r11                                                                                          #  112   0x9c61c  3      OPC=jmpq_r64        
+  nop                                                                                                #  113   0x9c61f  1      OPC=nop             
+  nop                                                                                                #  114   0x9c620  1      OPC=nop             
+  nop                                                                                                #  115   0x9c621  1      OPC=nop             
+  nop                                                                                                #  116   0x9c622  1      OPC=nop             
+  nop                                                                                                #  117   0x9c623  1      OPC=nop             
+  nop                                                                                                #  118   0x9c624  1      OPC=nop             
+  nop                                                                                                #  119   0x9c625  1      OPC=nop             
+  nop                                                                                                #  120   0x9c626  1      OPC=nop             
+                                                                                                                                                  
+.size _ZN9__gnu_cxx18stdio_sync_filebufIcSt11char_traitsIcEE7seekoffExSt12_Ios_SeekdirSt13_Ios_Openmode, .-_ZN9__gnu_cxx18stdio_sync_filebufIcSt11char_traitsIcEE7seekoffExSt12_Ios_SeekdirSt13_Ios_Openmode
+

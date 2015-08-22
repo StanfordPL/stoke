@@ -1,0 +1,132 @@
+  .text
+  .globl workfn
+  .type workfn, @function
+
+#! file-offset 0x659c0
+#! rip-offset  0x259c0
+#! capacity    224 bytes
+
+# Text                                 #  Line  RIP      Bytes  Opcode              
+.workfn:                               #        0x259c0  0      OPC=<label>         
+  movl %edi, %edi                      #  1     0x259c0  2      OPC=movl_r32_r32    
+  testq %rdi, %rdi                     #  2     0x259c2  3      OPC=testq_r64_r64   
+  je .L_25a80                          #  3     0x259c5  6      OPC=je_label_1      
+  movl $0x7, %eax                      #  4     0x259cb  5      OPC=movl_r32_imm32  
+  subl 0x100537d6(%rip), %eax          #  5     0x259d0  6      OPC=subl_r32_m32    
+  movl %eax, 0x100537d0(%rip)          #  6     0x259d6  6      OPC=movl_m32_r32    
+  nop                                  #  7     0x259dc  1      OPC=nop             
+  nop                                  #  8     0x259dd  1      OPC=nop             
+  nop                                  #  9     0x259de  1      OPC=nop             
+  nop                                  #  10    0x259df  1      OPC=nop             
+  movl %edi, %edi                      #  11    0x259e0  2      OPC=movl_r32_r32    
+  movl %eax, 0x4(%r15,%rdi,1)          #  12    0x259e2  5      OPC=movl_m32_r32    
+  movl %edi, %edi                      #  13    0x259e7  2      OPC=movl_r32_r32    
+  movl $0x0, 0xc(%r15,%rdi,1)          #  14    0x259e9  9      OPC=movl_m32_imm32  
+  movl 0x100537b8(%rip), %esi          #  15    0x259f2  6      OPC=movl_r32_m32    
+  movl %edi, %ecx                      #  16    0x259f8  2      OPC=movl_r32_r32    
+  xorl %edx, %edx                      #  17    0x259fa  2      OPC=xorl_r32_r32    
+  nop                                  #  18    0x259fc  1      OPC=nop             
+  nop                                  #  19    0x259fd  1      OPC=nop             
+  nop                                  #  20    0x259fe  1      OPC=nop             
+  nop                                  #  21    0x259ff  1      OPC=nop             
+.L_25a00:                              #        0x25a00  0      OPC=<label>         
+  leal 0x1(%rsi), %eax                 #  22    0x25a00  3      OPC=leal_r32_m16    
+  cmpl $0x1a, %eax                     #  23    0x25a03  3      OPC=cmpl_r32_imm8   
+  jg .L_25a60                          #  24    0x25a06  2      OPC=jg_label        
+  movl %eax, %esi                      #  25    0x25a08  2      OPC=movl_r32_r32    
+  nop                                  #  26    0x25a0a  1      OPC=nop             
+  nop                                  #  27    0x25a0b  1      OPC=nop             
+  nop                                  #  28    0x25a0c  1      OPC=nop             
+  nop                                  #  29    0x25a0d  1      OPC=nop             
+  nop                                  #  30    0x25a0e  1      OPC=nop             
+  nop                                  #  31    0x25a0f  1      OPC=nop             
+  nop                                  #  32    0x25a10  1      OPC=nop             
+  nop                                  #  33    0x25a11  1      OPC=nop             
+  nop                                  #  34    0x25a12  1      OPC=nop             
+  nop                                  #  35    0x25a13  1      OPC=nop             
+  nop                                  #  36    0x25a14  1      OPC=nop             
+  nop                                  #  37    0x25a15  1      OPC=nop             
+  nop                                  #  38    0x25a16  1      OPC=nop             
+  nop                                  #  39    0x25a17  1      OPC=nop             
+  nop                                  #  40    0x25a18  1      OPC=nop             
+  nop                                  #  41    0x25a19  1      OPC=nop             
+  nop                                  #  42    0x25a1a  1      OPC=nop             
+  nop                                  #  43    0x25a1b  1      OPC=nop             
+  nop                                  #  44    0x25a1c  1      OPC=nop             
+  nop                                  #  45    0x25a1d  1      OPC=nop             
+  nop                                  #  46    0x25a1e  1      OPC=nop             
+  nop                                  #  47    0x25a1f  1      OPC=nop             
+.L_25a20:                              #        0x25a20  0      OPC=<label>         
+  movl %ecx, %r8d                      #  48    0x25a20  3      OPC=movl_r32_r32    
+  movslq %esi, %r9                     #  49    0x25a23  3      OPC=movslq_r64_r32  
+  movl %r9d, %r9d                      #  50    0x25a26  3      OPC=movl_r32_r32    
+  movzbl 0x10070600(%r15,%r9,1), %r9d  #  51    0x25a29  9      OPC=movzbl_r32_m8   
+  movl %r8d, %r8d                      #  52    0x25a32  3      OPC=movl_r32_r32    
+  movb %r9b, 0x10(%r15,%r8,1)          #  53    0x25a35  5      OPC=movb_m8_r8      
+  addl $0x1, %edx                      #  54    0x25a3a  3      OPC=addl_r32_imm8   
+  addl $0x1, %ecx                      #  55    0x25a3d  3      OPC=addl_r32_imm8   
+  cmpl $0x4, %edx                      #  56    0x25a40  3      OPC=cmpl_r32_imm8   
+  jne .L_25a00                         #  57    0x25a43  2      OPC=jne_label       
+  movl %eax, 0x10053765(%rip)          #  58    0x25a45  6      OPC=movl_m32_r32    
+  jmpq .qpkt                           #  59    0x25a4b  5      OPC=jmpq_label_1    
+  nop                                  #  60    0x25a50  1      OPC=nop             
+  nop                                  #  61    0x25a51  1      OPC=nop             
+  nop                                  #  62    0x25a52  1      OPC=nop             
+  nop                                  #  63    0x25a53  1      OPC=nop             
+  nop                                  #  64    0x25a54  1      OPC=nop             
+  nop                                  #  65    0x25a55  1      OPC=nop             
+  nop                                  #  66    0x25a56  1      OPC=nop             
+  nop                                  #  67    0x25a57  1      OPC=nop             
+  nop                                  #  68    0x25a58  1      OPC=nop             
+  nop                                  #  69    0x25a59  1      OPC=nop             
+  nop                                  #  70    0x25a5a  1      OPC=nop             
+  nop                                  #  71    0x25a5b  1      OPC=nop             
+  nop                                  #  72    0x25a5c  1      OPC=nop             
+  nop                                  #  73    0x25a5d  1      OPC=nop             
+  nop                                  #  74    0x25a5e  1      OPC=nop             
+  nop                                  #  75    0x25a5f  1      OPC=nop             
+.L_25a60:                              #        0x25a60  0      OPC=<label>         
+  movl $0x1, %eax                      #  76    0x25a60  5      OPC=movl_r32_imm32  
+  movl $0x1, %esi                      #  77    0x25a65  5      OPC=movl_r32_imm32  
+  jmpq .L_25a20                        #  78    0x25a6a  2      OPC=jmpq_label      
+  nop                                  #  79    0x25a6c  1      OPC=nop             
+  nop                                  #  80    0x25a6d  1      OPC=nop             
+  nop                                  #  81    0x25a6e  1      OPC=nop             
+  nop                                  #  82    0x25a6f  1      OPC=nop             
+  nop                                  #  83    0x25a70  1      OPC=nop             
+  nop                                  #  84    0x25a71  1      OPC=nop             
+  nop                                  #  85    0x25a72  1      OPC=nop             
+  nop                                  #  86    0x25a73  1      OPC=nop             
+  nop                                  #  87    0x25a74  1      OPC=nop             
+  nop                                  #  88    0x25a75  1      OPC=nop             
+  nop                                  #  89    0x25a76  1      OPC=nop             
+  nop                                  #  90    0x25a77  1      OPC=nop             
+  nop                                  #  91    0x25a78  1      OPC=nop             
+  nop                                  #  92    0x25a79  1      OPC=nop             
+  nop                                  #  93    0x25a7a  1      OPC=nop             
+  nop                                  #  94    0x25a7b  1      OPC=nop             
+  nop                                  #  95    0x25a7c  1      OPC=nop             
+  nop                                  #  96    0x25a7d  1      OPC=nop             
+  nop                                  #  97    0x25a7e  1      OPC=nop             
+  nop                                  #  98    0x25a7f  1      OPC=nop             
+.L_25a80:                              #        0x25a80  0      OPC=<label>         
+  movl 0x10053722(%rip), %eax          #  99    0x25a80  6      OPC=movl_r32_m32    
+  movl %eax, %eax                      #  100   0x25a86  2      OPC=movl_r32_r32    
+  orl $0x2, 0x10(%r15,%rax,1)          #  101   0x25a88  6      OPC=orl_m32_imm8    
+  popq %r11                            #  102   0x25a8e  2      OPC=popq_r64_1      
+  andl $0xffffffe0, %r11d              #  103   0x25a90  7      OPC=andl_r32_imm32  
+  nop                                  #  104   0x25a97  1      OPC=nop             
+  nop                                  #  105   0x25a98  1      OPC=nop             
+  nop                                  #  106   0x25a99  1      OPC=nop             
+  nop                                  #  107   0x25a9a  1      OPC=nop             
+  addq %r15, %r11                      #  108   0x25a9b  3      OPC=addq_r64_r64    
+  jmpq %r11                            #  109   0x25a9e  3      OPC=jmpq_r64        
+  nop                                  #  110   0x25aa1  1      OPC=nop             
+  nop                                  #  111   0x25aa2  1      OPC=nop             
+  nop                                  #  112   0x25aa3  1      OPC=nop             
+  nop                                  #  113   0x25aa4  1      OPC=nop             
+  nop                                  #  114   0x25aa5  1      OPC=nop             
+  nop                                  #  115   0x25aa6  1      OPC=nop             
+                                                                                    
+.size workfn, .-workfn
+

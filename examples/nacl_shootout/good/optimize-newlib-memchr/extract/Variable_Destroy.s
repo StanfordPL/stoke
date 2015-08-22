@@ -1,0 +1,133 @@
+  .text
+  .globl Variable_Destroy
+  .type Variable_Destroy, @function
+
+#! file-offset 0x67c40
+#! rip-offset  0x27c40
+#! capacity    160 bytes
+
+# Text                         #  Line  RIP      Bytes  Opcode              
+.Variable_Destroy:             #        0x27c40  0      OPC=<label>         
+  pushq %rbx                   #  1     0x27c40  1      OPC=pushq_r64_1     
+  movl %edi, %ebx              #  2     0x27c41  2      OPC=movl_r32_r32    
+  movl %ebx, %ebx              #  3     0x27c43  2      OPC=movl_r32_r32    
+  movl 0x4(%r15,%rbx,1), %edi  #  4     0x27c45  5      OPC=movl_r32_m32    
+  testq %rdi, %rdi             #  5     0x27c4a  3      OPC=testq_r64_r64   
+  je .L_27ca0                  #  6     0x27c4d  2      OPC=je_label        
+  xchgw %ax, %ax               #  7     0x27c4f  2      OPC=xchgw_ax_r16    
+  nop                          #  8     0x27c51  1      OPC=nop             
+  nop                          #  9     0x27c52  1      OPC=nop             
+  nop                          #  10    0x27c53  1      OPC=nop             
+  nop                          #  11    0x27c54  1      OPC=nop             
+  nop                          #  12    0x27c55  1      OPC=nop             
+  nop                          #  13    0x27c56  1      OPC=nop             
+  nop                          #  14    0x27c57  1      OPC=nop             
+  nop                          #  15    0x27c58  1      OPC=nop             
+  nop                          #  16    0x27c59  1      OPC=nop             
+  nop                          #  17    0x27c5a  1      OPC=nop             
+  nop                          #  18    0x27c5b  1      OPC=nop             
+  nop                          #  19    0x27c5c  1      OPC=nop             
+  nop                          #  20    0x27c5d  1      OPC=nop             
+  nop                          #  21    0x27c5e  1      OPC=nop             
+  nop                          #  22    0x27c5f  1      OPC=nop             
+.L_27c60:                      #        0x27c60  0      OPC=<label>         
+  nop                          #  23    0x27c60  1      OPC=nop             
+  nop                          #  24    0x27c61  1      OPC=nop             
+  nop                          #  25    0x27c62  1      OPC=nop             
+  nop                          #  26    0x27c63  1      OPC=nop             
+  nop                          #  27    0x27c64  1      OPC=nop             
+  nop                          #  28    0x27c65  1      OPC=nop             
+  nop                          #  29    0x27c66  1      OPC=nop             
+  nop                          #  30    0x27c67  1      OPC=nop             
+  nop                          #  31    0x27c68  1      OPC=nop             
+  nop                          #  32    0x27c69  1      OPC=nop             
+  nop                          #  33    0x27c6a  1      OPC=nop             
+  nop                          #  34    0x27c6b  1      OPC=nop             
+  nop                          #  35    0x27c6c  1      OPC=nop             
+  nop                          #  36    0x27c6d  1      OPC=nop             
+  nop                          #  37    0x27c6e  1      OPC=nop             
+  nop                          #  38    0x27c6f  1      OPC=nop             
+  nop                          #  39    0x27c70  1      OPC=nop             
+  nop                          #  40    0x27c71  1      OPC=nop             
+  nop                          #  41    0x27c72  1      OPC=nop             
+  nop                          #  42    0x27c73  1      OPC=nop             
+  nop                          #  43    0x27c74  1      OPC=nop             
+  nop                          #  44    0x27c75  1      OPC=nop             
+  nop                          #  45    0x27c76  1      OPC=nop             
+  nop                          #  46    0x27c77  1      OPC=nop             
+  nop                          #  47    0x27c78  1      OPC=nop             
+  nop                          #  48    0x27c79  1      OPC=nop             
+  nop                          #  49    0x27c7a  1      OPC=nop             
+  callq .List_Destroy          #  50    0x27c7b  5      OPC=callq_label     
+  movl %ebx, %ebx              #  51    0x27c80  2      OPC=movl_r32_r32    
+  movl $0x0, 0x4(%r15,%rbx,1)  #  52    0x27c82  9      OPC=movl_m32_imm32  
+  movl %ebx, %edi              #  53    0x27c8b  2      OPC=movl_r32_r32    
+  popq %rbx                    #  54    0x27c8d  1      OPC=popq_r64_1      
+  jmpq .free                   #  55    0x27c8e  5      OPC=jmpq_label_1    
+  nop                          #  56    0x27c93  1      OPC=nop             
+  nop                          #  57    0x27c94  1      OPC=nop             
+  nop                          #  58    0x27c95  1      OPC=nop             
+  nop                          #  59    0x27c96  1      OPC=nop             
+  nop                          #  60    0x27c97  1      OPC=nop             
+  nop                          #  61    0x27c98  1      OPC=nop             
+  nop                          #  62    0x27c99  1      OPC=nop             
+  nop                          #  63    0x27c9a  1      OPC=nop             
+  nop                          #  64    0x27c9b  1      OPC=nop             
+  nop                          #  65    0x27c9c  1      OPC=nop             
+  nop                          #  66    0x27c9d  1      OPC=nop             
+  nop                          #  67    0x27c9e  1      OPC=nop             
+  nop                          #  68    0x27c9f  1      OPC=nop             
+.L_27ca0:                      #        0x27ca0  0      OPC=<label>         
+  movl $0x10020c38, %edi       #  69    0x27ca0  5      OPC=movl_r32_imm32  
+  nop                          #  70    0x27ca5  1      OPC=nop             
+  nop                          #  71    0x27ca6  1      OPC=nop             
+  nop                          #  72    0x27ca7  1      OPC=nop             
+  nop                          #  73    0x27ca8  1      OPC=nop             
+  nop                          #  74    0x27ca9  1      OPC=nop             
+  nop                          #  75    0x27caa  1      OPC=nop             
+  nop                          #  76    0x27cab  1      OPC=nop             
+  nop                          #  77    0x27cac  1      OPC=nop             
+  nop                          #  78    0x27cad  1      OPC=nop             
+  nop                          #  79    0x27cae  1      OPC=nop             
+  nop                          #  80    0x27caf  1      OPC=nop             
+  nop                          #  81    0x27cb0  1      OPC=nop             
+  nop                          #  82    0x27cb1  1      OPC=nop             
+  nop                          #  83    0x27cb2  1      OPC=nop             
+  nop                          #  84    0x27cb3  1      OPC=nop             
+  nop                          #  85    0x27cb4  1      OPC=nop             
+  nop                          #  86    0x27cb5  1      OPC=nop             
+  nop                          #  87    0x27cb6  1      OPC=nop             
+  nop                          #  88    0x27cb7  1      OPC=nop             
+  nop                          #  89    0x27cb8  1      OPC=nop             
+  nop                          #  90    0x27cb9  1      OPC=nop             
+  nop                          #  91    0x27cba  1      OPC=nop             
+  callq .Error                 #  92    0x27cbb  5      OPC=callq_label     
+  movl %ebx, %ebx              #  93    0x27cc0  2      OPC=movl_r32_r32    
+  movl 0x4(%r15,%rbx,1), %edi  #  94    0x27cc2  5      OPC=movl_r32_m32    
+  jmpq .L_27c60                #  95    0x27cc7  2      OPC=jmpq_label      
+  nop                          #  96    0x27cc9  1      OPC=nop             
+  nop                          #  97    0x27cca  1      OPC=nop             
+  nop                          #  98    0x27ccb  1      OPC=nop             
+  nop                          #  99    0x27ccc  1      OPC=nop             
+  nop                          #  100   0x27ccd  1      OPC=nop             
+  nop                          #  101   0x27cce  1      OPC=nop             
+  nop                          #  102   0x27ccf  1      OPC=nop             
+  nop                          #  103   0x27cd0  1      OPC=nop             
+  nop                          #  104   0x27cd1  1      OPC=nop             
+  nop                          #  105   0x27cd2  1      OPC=nop             
+  nop                          #  106   0x27cd3  1      OPC=nop             
+  nop                          #  107   0x27cd4  1      OPC=nop             
+  nop                          #  108   0x27cd5  1      OPC=nop             
+  nop                          #  109   0x27cd6  1      OPC=nop             
+  nop                          #  110   0x27cd7  1      OPC=nop             
+  nop                          #  111   0x27cd8  1      OPC=nop             
+  nop                          #  112   0x27cd9  1      OPC=nop             
+  nop                          #  113   0x27cda  1      OPC=nop             
+  nop                          #  114   0x27cdb  1      OPC=nop             
+  nop                          #  115   0x27cdc  1      OPC=nop             
+  nop                          #  116   0x27cdd  1      OPC=nop             
+  nop                          #  117   0x27cde  1      OPC=nop             
+  nop                          #  118   0x27cdf  1      OPC=nop             
+                                                                            
+.size Variable_Destroy, .-Variable_Destroy
+

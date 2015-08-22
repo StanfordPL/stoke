@@ -1,0 +1,133 @@
+  .text
+  .globl _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate
+  .type _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate, @function
+
+#! file-offset 0xa6200
+#! rip-offset  0x66200
+#! capacity    160 bytes
+
+# Text                                                         #  Line  RIP      Bytes  Opcode              
+._ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate:  #        0x66200  0      OPC=<label>         
+  movl %edi, %edi                                              #  1     0x66200  2      OPC=movl_r32_r32    
+  subl $0x8, %esp                                              #  2     0x66202  3      OPC=subl_r32_imm8   
+  addq %r15, %rsp                                              #  3     0x66205  3      OPC=addq_r64_r64    
+  movl %edi, %edi                                              #  4     0x66208  2      OPC=movl_r32_r32    
+  movl 0x78(%r15,%rdi,1), %r8d                                 #  5     0x6620a  5      OPC=movl_r32_m32    
+  testl %r8d, %r8d                                             #  6     0x6620f  3      OPC=testl_r32_r32   
+  je .L_66260                                                  #  7     0x66212  2      OPC=je_label        
+  nop                                                          #  8     0x66214  1      OPC=nop             
+  nop                                                          #  9     0x66215  1      OPC=nop             
+  nop                                                          #  10    0x66216  1      OPC=nop             
+  nop                                                          #  11    0x66217  1      OPC=nop             
+  nop                                                          #  12    0x66218  1      OPC=nop             
+  nop                                                          #  13    0x66219  1      OPC=nop             
+  nop                                                          #  14    0x6621a  1      OPC=nop             
+  nop                                                          #  15    0x6621b  1      OPC=nop             
+  nop                                                          #  16    0x6621c  1      OPC=nop             
+  nop                                                          #  17    0x6621d  1      OPC=nop             
+  nop                                                          #  18    0x6621e  1      OPC=nop             
+  nop                                                          #  19    0x6621f  1      OPC=nop             
+.L_66220:                                                      #        0x66220  0      OPC=<label>         
+  movl %edi, %edi                                              #  20    0x66220  2      OPC=movl_r32_r32    
+  testl %esi, 0x10(%r15,%rdi,1)                                #  21    0x66222  5      OPC=testl_m32_r32   
+  movl %edi, %edi                                              #  22    0x66227  2      OPC=movl_r32_r32    
+  movl %esi, 0x14(%r15,%rdi,1)                                 #  23    0x66229  5      OPC=movl_m32_r32    
+  jne .L_66280                                                 #  24    0x6622e  2      OPC=jne_label       
+  addl $0x8, %esp                                              #  25    0x66230  3      OPC=addl_r32_imm8   
+  addq %r15, %rsp                                              #  26    0x66233  3      OPC=addq_r64_r64    
+  popq %r11                                                    #  27    0x66236  2      OPC=popq_r64_1      
+  nop                                                          #  28    0x66238  1      OPC=nop             
+  nop                                                          #  29    0x66239  1      OPC=nop             
+  nop                                                          #  30    0x6623a  1      OPC=nop             
+  nop                                                          #  31    0x6623b  1      OPC=nop             
+  nop                                                          #  32    0x6623c  1      OPC=nop             
+  nop                                                          #  33    0x6623d  1      OPC=nop             
+  nop                                                          #  34    0x6623e  1      OPC=nop             
+  nop                                                          #  35    0x6623f  1      OPC=nop             
+  andl $0xffffffe0, %r11d                                      #  36    0x66240  7      OPC=andl_r32_imm32  
+  nop                                                          #  37    0x66247  1      OPC=nop             
+  nop                                                          #  38    0x66248  1      OPC=nop             
+  nop                                                          #  39    0x66249  1      OPC=nop             
+  nop                                                          #  40    0x6624a  1      OPC=nop             
+  addq %r15, %r11                                              #  41    0x6624b  3      OPC=addq_r64_r64    
+  jmpq %r11                                                    #  42    0x6624e  3      OPC=jmpq_r64        
+  nop                                                          #  43    0x66251  1      OPC=nop             
+  nop                                                          #  44    0x66252  1      OPC=nop             
+  nop                                                          #  45    0x66253  1      OPC=nop             
+  nop                                                          #  46    0x66254  1      OPC=nop             
+  nop                                                          #  47    0x66255  1      OPC=nop             
+  nop                                                          #  48    0x66256  1      OPC=nop             
+  nop                                                          #  49    0x66257  1      OPC=nop             
+  nop                                                          #  50    0x66258  1      OPC=nop             
+  nop                                                          #  51    0x66259  1      OPC=nop             
+  nop                                                          #  52    0x6625a  1      OPC=nop             
+  nop                                                          #  53    0x6625b  1      OPC=nop             
+  nop                                                          #  54    0x6625c  1      OPC=nop             
+  nop                                                          #  55    0x6625d  1      OPC=nop             
+  nop                                                          #  56    0x6625e  1      OPC=nop             
+  nop                                                          #  57    0x6625f  1      OPC=nop             
+  nop                                                          #  58    0x66260  1      OPC=nop             
+  nop                                                          #  59    0x66261  1      OPC=nop             
+  nop                                                          #  60    0x66262  1      OPC=nop             
+  nop                                                          #  61    0x66263  1      OPC=nop             
+  nop                                                          #  62    0x66264  1      OPC=nop             
+  nop                                                          #  63    0x66265  1      OPC=nop             
+  nop                                                          #  64    0x66266  1      OPC=nop             
+.L_66260:                                                      #        0x66267  0      OPC=<label>         
+  orl $0x1, %esi                                               #  65    0x66267  3      OPC=orl_r32_imm8    
+  jmpq .L_66220                                                #  66    0x6626a  2      OPC=jmpq_label      
+  nop                                                          #  67    0x6626c  1      OPC=nop             
+  nop                                                          #  68    0x6626d  1      OPC=nop             
+  nop                                                          #  69    0x6626e  1      OPC=nop             
+  nop                                                          #  70    0x6626f  1      OPC=nop             
+  nop                                                          #  71    0x66270  1      OPC=nop             
+  nop                                                          #  72    0x66271  1      OPC=nop             
+  nop                                                          #  73    0x66272  1      OPC=nop             
+  nop                                                          #  74    0x66273  1      OPC=nop             
+  nop                                                          #  75    0x66274  1      OPC=nop             
+  nop                                                          #  76    0x66275  1      OPC=nop             
+  nop                                                          #  77    0x66276  1      OPC=nop             
+  nop                                                          #  78    0x66277  1      OPC=nop             
+  nop                                                          #  79    0x66278  1      OPC=nop             
+  nop                                                          #  80    0x66279  1      OPC=nop             
+  nop                                                          #  81    0x6627a  1      OPC=nop             
+  nop                                                          #  82    0x6627b  1      OPC=nop             
+  nop                                                          #  83    0x6627c  1      OPC=nop             
+  nop                                                          #  84    0x6627d  1      OPC=nop             
+  nop                                                          #  85    0x6627e  1      OPC=nop             
+  nop                                                          #  86    0x6627f  1      OPC=nop             
+  nop                                                          #  87    0x66280  1      OPC=nop             
+  nop                                                          #  88    0x66281  1      OPC=nop             
+  nop                                                          #  89    0x66282  1      OPC=nop             
+  nop                                                          #  90    0x66283  1      OPC=nop             
+  nop                                                          #  91    0x66284  1      OPC=nop             
+  nop                                                          #  92    0x66285  1      OPC=nop             
+  nop                                                          #  93    0x66286  1      OPC=nop             
+.L_66280:                                                      #        0x66287  0      OPC=<label>         
+  movl $0x1003a720, %edi                                       #  94    0x66287  5      OPC=movl_r32_imm32  
+  nop                                                          #  95    0x6628c  1      OPC=nop             
+  nop                                                          #  96    0x6628d  1      OPC=nop             
+  nop                                                          #  97    0x6628e  1      OPC=nop             
+  nop                                                          #  98    0x6628f  1      OPC=nop             
+  nop                                                          #  99    0x66290  1      OPC=nop             
+  nop                                                          #  100   0x66291  1      OPC=nop             
+  nop                                                          #  101   0x66292  1      OPC=nop             
+  nop                                                          #  102   0x66293  1      OPC=nop             
+  nop                                                          #  103   0x66294  1      OPC=nop             
+  nop                                                          #  104   0x66295  1      OPC=nop             
+  nop                                                          #  105   0x66296  1      OPC=nop             
+  nop                                                          #  106   0x66297  1      OPC=nop             
+  nop                                                          #  107   0x66298  1      OPC=nop             
+  nop                                                          #  108   0x66299  1      OPC=nop             
+  nop                                                          #  109   0x6629a  1      OPC=nop             
+  nop                                                          #  110   0x6629b  1      OPC=nop             
+  nop                                                          #  111   0x6629c  1      OPC=nop             
+  nop                                                          #  112   0x6629d  1      OPC=nop             
+  nop                                                          #  113   0x6629e  1      OPC=nop             
+  nop                                                          #  114   0x6629f  1      OPC=nop             
+  nop                                                          #  115   0x662a0  1      OPC=nop             
+  nop                                                          #  116   0x662a1  1      OPC=nop             
+  callq ._ZSt19__throw_ios_failurePKc                          #  117   0x662a2  5      OPC=callq_label     
+                                                                                                            
+.size _ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate, .-_ZNSt9basic_iosIcSt11char_traitsIcEE5clearESt12_Ios_Iostate
+
