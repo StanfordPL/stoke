@@ -62,6 +62,7 @@ int main(int argc, char** argv) {
   Console::msg() << "Sandbox::run()..." << endl;
 
   const auto start = steady_clock::now();
+
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
     // These could be moved out of the loop; but in the real search
     // they are called frequently, so for benchmarking, keep them in.

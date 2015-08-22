@@ -72,13 +72,12 @@ public:
     return *this;
   }
 
-  /** Resets the sandbox to a consistent state. Clears all inputs and resets the label pool */
+  /** Resets the sandbox to a consistent state. Clears all inputs, functions and callbacks. */
   Sandbox& reset() {
-    expert_mode_ = false;
-    init_labels();
     clear_inputs();
     clear_functions();
     clear_callbacks();
+    clear_label_pools();
     return *this;
   }
 
@@ -168,31 +167,6 @@ public:
   /** Run a main function for all inputs. */
   Sandbox& run();
 
-  /** Enter expert mode. Gain performance improvment but give up safety guarantees in api. */
-  Sandbox& expert_mode() {
-    expert_mode_ = true;
-    return *this;
-  }
-
-  /** Expert mode: Flag all subsequent labels as disposable. */
-  Sandbox& expert_use_disposable_labels() {
-    assert(expert_mode_);
-    label_checkpoint_ = next_label_;
-    return *this;
-  }
-  /** Expert mode: Invalidate and start reusing disposable labels. */
-  Sandbox& expert_recycle_labels() {
-    assert(expert_mode_);
-    next_label_ = label_checkpoint_;
-    return *this;
-  }
-  /** Expert mode: Recompile a function without allocating a buffer or saving its source */
-  Sandbox& expert_recompile(const Cfg& cfg) {
-    assert(expert_mode_);
-    recompile(cfg);
-    return *this;
-  }
-
   /** @deprecated */
   size_t size() const {
     return num_inputs();
@@ -262,9 +236,6 @@ private:
   /** Should the sandbox use latency to weight the instructions? */
   bool use_latency_;
 
-  /** Is the sandbox in expert mode? */
-  bool expert_mode_;
-
   /** Assembler, no sense in always creating these. */
   x64asm::Assembler assm_;
   /** Linker, no sense in always creating these either. */
@@ -282,10 +253,10 @@ private:
   /** After callbacks on a per-line basis */
   std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>> after_;
 
-  /** Reusable labels... if left unchecked, endless sandboxing will deplete memory */
-  std::vector<x64asm::Label> labels_;
-  /** The label that was available the last time start_reusing_labels() was called */
-  size_t label_checkpoint_;
+  /** Each function gets a pool of anonymous labels to use. */
+  std::unordered_map<x64asm::Label, std::vector<x64asm::Label>*> label_pools_;
+  /** The current pool of labels in use */
+  std::vector<x64asm::Label>* current_label_pool_;
   /** The next label to pull out of the pool. */
   size_t next_label_;
 
@@ -359,18 +330,27 @@ private:
     return x64asm::r64s[get_unused_reg(instr)];
   }
 
-  /** Initialize the reusable label pool */
-  void init_labels() {
-    labels_.resize(16);
-    label_checkpoint_ = 0;
+  /** Set which pool of labels to use. */
+  void set_label_pool(x64asm::Label function_label) {
+    if(!label_pools_[function_label]) {
+      label_pools_[function_label] = new std::vector<x64asm::Label>();
+      label_pools_[function_label]->resize(4);
+    }
     next_label_ = 0;
+    current_label_pool_ = label_pools_[function_label];
   }
   /** Take a label from the pool. */
   const x64asm::Label& get_label() {
-    if (next_label_ == labels_.size()) {
-      labels_.resize(labels_.size()*2);
+    if (next_label_ == current_label_pool_->size()) {
+      current_label_pool_->resize(current_label_pool_->size()*2);
     }
-    return labels_[next_label_++];
+    return (*current_label_pool_)[next_label_++];
+  }
+  /** Empties all the labels. */
+  void clear_label_pools() {
+    for(auto p : label_pools_) {
+      delete p.second;
+    }
   }
 
   /** Recompiles a function */
