@@ -783,7 +783,7 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
 
   assm_.start(*fxn);
 
-  // Grab the name of this function 
+  // Grab the name of this function
   const auto label = cfg.get_function().get_leading_label();
   set_label_pool(label);
 
