@@ -136,6 +136,8 @@ Sandbox& Sandbox::insert_input(const CpuState& input) {
   io_pairs_.push_back(new IoPair());
   auto io = io_pairs_.back();
 
+  set_label_pool(x64asm::Label("GLOBAL_LABEL_POOL"));
+
   // Use this input as both input AND output
   io->in_ = input;
   io->out_ = input;
@@ -169,8 +171,7 @@ Sandbox& Sandbox::insert_function(const Cfg& cfg) {
     fxns_src_[label] = new Cfg(cfg);
     recompile(cfg);
   } else {
-    delete fxns_src_[label];
-    fxns_src_[label] = new Cfg(cfg);
+    *fxns_src_[label] = cfg;
     recompile(cfg);
   }
 
@@ -271,6 +272,17 @@ Sandbox& Sandbox::run(size_t index) {
   // Run the code (control exits abnormally for sigfpe or if linking failed)
   if (!lnkr_.good()) {
     io->out_.code = ErrorCode::SIGCUSTOM_LINKER_ERROR;
+#ifndef NDEBUG
+    if(lnkr_.multiple_def()) {
+      cerr << "LINKER: Multiple definitions: " << lnkr_.get_multiple_def() << endl;
+    }
+    if(lnkr_.undef_symbol()) {
+      cerr << "LINKER: Undefined symbol: " << lnkr_.get_undef_symbol() << endl;
+    }
+    if(lnkr_.jump_too_far()) {
+      cerr << "LINKER: Jump too far." << endl;
+    }
+#endif
   } else if (!sigsetjmp(buf_, 1)) {
     io->out_.code = harness_.call<ErrorCode>();
   } else {
@@ -789,6 +801,10 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   assert(fxn->good());
   assm_.start(*fxn);
 
+  // Grab the name of this function
+  const auto label = cfg.get_function().get_leading_label();
+  set_label_pool(label);
+
   // The label that begins a function must precede instrumentation .
   // Inter-function calls should target this label.
   assm_.assemble(cfg.get_code()[0]);
@@ -797,8 +813,7 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   const auto entry = get_label();
   assm_.bind(entry);
 
-  // Grab the name of this function and make a unique label for representing the end
-  const auto label = cfg.get_function().get_leading_label();
+  // Make a unique label for representing the end
   const auto exit = get_label();
 
   // Assemble instructions and add instrumentation for reachable blocks
@@ -840,6 +855,7 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   // Restore the STOKE %rsp and return
   emit_load_stoke_rsp();
   assm_.ret();
+
   bool ok = assm_.finish();
   assert(ok);
   return ok;
