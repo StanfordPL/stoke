@@ -63,7 +63,13 @@ int main(int argc, char** argv) {
 
   const auto start = steady_clock::now();
   for (size_t i = 0; i < benchmark_itr_arg; ++i) {
-    sb.run(target);
+    // These could be moved out of the loop; but in the real search
+    // they are called frequently, so for benchmarking, keep them in.
+    sb.insert_function(target);
+    sb.set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
+
+    // Run the sandbox
+    sb.run();
   }
   const auto dur = duration_cast<duration<double>>(steady_clock::now() - start);
   const auto rps = tcs.size() * benchmark_itr_arg / dur.count();

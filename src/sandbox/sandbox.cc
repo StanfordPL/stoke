@@ -164,8 +164,7 @@ Sandbox& Sandbox::insert_function(const Cfg& cfg) {
     fxns_src_[label] = new Cfg(cfg);
     recompile(cfg);
   } else {
-    delete fxns_src_[label];
-    fxns_src_[label] = new Cfg(cfg);
+    *fxns_src_[label] = cfg;
     recompile(cfg);
   }
 
@@ -768,6 +767,8 @@ bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
 
 bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   assert(cfg.get_function().invariant_first_instr_is_label());
+  expert_mode();
+  expert_use_disposable_labels();
 
   assm_.start(*fxn);
 
@@ -821,6 +822,9 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   // Restore the STOKE %rsp and return
   emit_load_stoke_rsp();
   assm_.ret();
+
+  expert_recycle_labels();
+
   bool ok = assm_.finish();
   assert(ok);
   return ok;

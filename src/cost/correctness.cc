@@ -38,7 +38,9 @@ CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, 
   reference_out_.clear();
   recompute_target_defs(target.live_outs());
 
-  sandbox_->run(target);
+  sandbox_->insert_function(target);
+  sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
+  sandbox_->run();
   for (auto i = sandbox_->result_begin(), ie = sandbox_->result_end(); i != ie; ++i) {
     reference_out_.push_back(*i);
   }
