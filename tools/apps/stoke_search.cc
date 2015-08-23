@@ -180,7 +180,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
     }
 
     if(verified) {
-      os << "Verified!" << endl; 
+      os << "Verified!" << endl;
     } else {
       os << "Oops!  Found a counterexample.  Restarting." << endl;
       pcb_arg->search->stop();

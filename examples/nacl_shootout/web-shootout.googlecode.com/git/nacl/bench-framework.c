@@ -81,20 +81,24 @@ static int RunOne(bench_info *bench, run_data *data) {
   return 0;
 }
 
+#define RUNS 10
+
 static void RunAll() {
   int i;
   for (i = 0; i < benchmark_count; i++) {
-    run_data *rd = &bench_run_data[i];
-    bench_info *bi = &bench_info_list[i];
-    double usec_per_run;
-    printf("Running %s\n", bi->name);
-    ++started;
-    ReportStatus("Running %s (%d/%d)\n", bi->name, started, benchmark_count);
-    RunOne(bi, rd);
-    usec_per_run = (double)rd->elapsed / (double)rd->runs;
-    rd->score = 100.0 * bi->time_ref / usec_per_run;
-    printf("usec_per_run %f\n", usec_per_run);
-    ReportStatus("%s: %d", bi->name, (int)rd->score);
+    for(size_t j = 0; j < RUNS; ++j) {
+      run_data *rd = &bench_run_data[i];
+      bench_info *bi = &bench_info_list[i];
+      double usec_per_run;
+      printf("Running %s (%u/%d)\n", bi->name, j, RUNS);
+      ++started;
+      ReportStatus("Running %s (%d/%d) (%d/%d)\n", bi->name, j, RUNS, started, benchmark_count);
+      RunOne(bi, rd);
+      usec_per_run = (double)rd->elapsed / (double)rd->runs;
+      rd->score = 100.0 * bi->time_ref / usec_per_run;
+      printf("usec_per_run %f\n", usec_per_run);
+      ReportStatus("%s (%d/%d): %d", bi->name, j, RUNS, (int)rd->score);
+    }
   }
   started = 0;
 }

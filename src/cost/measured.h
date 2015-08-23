@@ -69,7 +69,7 @@ public:
         ptr->nops_emitted_++;
       }
     } /* else if (instr.is_any_jump()) {
-      ptr->latency_ += 5; 
+      ptr->latency_ += 5;
       ptr->nops_emitted_ = 0;
     } */ else {
       ptr->latency_ += data.code[data.line].haswell_latency();
