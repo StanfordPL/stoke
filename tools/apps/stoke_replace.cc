@@ -95,111 +95,112 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   auto code = cfg.get_code();
   fxn.reserve(fxn.size() + 16*code.size());
   for(size_t i = 0; i < code.size(); ++i) {
-    size_t nop_bytes = 0;
-    while(i < code.size() && code[i].is_nop() &&
-          (((fxn.size() + nop_bytes + assm.hex_size(code[i])) & 0x1f) >= (fxn.size() & 0x1f))) {
-      nop_bytes += assm.hex_size(code[i]);
-      i++;
-    }
-
-    //assemble these nops
-    //See https://code.google.com/p/minnacl/source/browse/src/trusted/validator_x86/testdata/64/nops.hex?name=cleanup for hints
-    while (nop_bytes) {
-      switch(nop_bytes) {
-      case 0:
-        break;
-      case 1:
-        fxn.emit_byte(0x90);
-        nop_bytes = 0;
-        break;
-      case 2:
-        fxn.emit_byte(0x66);
-        fxn.emit_byte(0x90);
-        nop_bytes = 0;
-        break;
-      case 3:
-        fxn.emit_byte(0x0f);
-        fxn.emit_byte(0x1f);
-        fxn.emit_byte(0x00);
-        nop_bytes = 0;
-        break;
-      case 4:
-        fxn.emit_byte(0x0f);
-        fxn.emit_byte(0x1f);
-        fxn.emit_byte(0x40);
-        fxn.emit_byte(0x00);
-        nop_bytes = 0;
-        break;
-      case 5:
-        fxn.emit_byte(0x0f);
-        fxn.emit_byte(0x1f);
-        fxn.emit_byte(0x44);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        nop_bytes = 0;
-        break;
-      case 6:
-        fxn.emit_byte(0x66);
-        fxn.emit_byte(0x0f);
-        fxn.emit_byte(0x1f);
-        fxn.emit_byte(0x44);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        nop_bytes = 0;
-        break;
-      case 7:
-        fxn.emit_byte(0x0f);
-        fxn.emit_byte(0x1f);
-        fxn.emit_byte(0x80);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        nop_bytes = 0;
-        break;
-      case 8:
-        fxn.emit_byte(0x0f);
-        fxn.emit_byte(0x1f);
-        fxn.emit_byte(0x84);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        nop_bytes = 0;
-        break;
-      case 9:
-        fxn.emit_byte(0x66);
-        fxn.emit_byte(0x0f);
-        fxn.emit_byte(0x1f);
-        fxn.emit_byte(0x84);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        nop_bytes = 0;
-        break;
-      default:
-        for(size_t j = 0; j < 6 && nop_bytes > 9; ++j) {
-          fxn.emit_byte(0x66);
-          nop_bytes--;
-        }
-        fxn.emit_byte(0x2e);
-        fxn.emit_byte(0x0f);
-        fxn.emit_byte(0x1f);
-        fxn.emit_byte(0x84);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        fxn.emit_byte(0x00);
-        nop_bytes -= 9;
-        break;
+    if(code[i].is_nop()) {
+      size_t start_pos = fxn.size() & 0x1f;
+      size_t max_size = 0x20 - start_pos;
+      size_t nop_bytes = 0;
+      for(; i < code.size() && code[i].is_nop() && nop_bytes + assm.hex_size(code[i]) <= max_size; ++i) {
+        nop_bytes += assm.hex_size(code[i]);
       }
-    }
+      i--;
 
-    if(i < code.size()) {
+      //assemble these nops
+      //See https://code.google.com/p/minnacl/source/browse/src/trusted/validator_x86/testdata/64/nops.hex?name=cleanup for hints
+      while (nop_bytes) {
+        switch(nop_bytes) {
+        case 0:
+          break;
+        case 1:
+          fxn.emit_byte(0x90);
+          nop_bytes = 0;
+          break;
+        case 2:
+          fxn.emit_byte(0x66);
+          fxn.emit_byte(0x90);
+          nop_bytes = 0;
+          break;
+        case 3:
+          fxn.emit_byte(0x0f);
+          fxn.emit_byte(0x1f);
+          fxn.emit_byte(0x00);
+          nop_bytes = 0;
+          break;
+        case 4:
+          fxn.emit_byte(0x0f);
+          fxn.emit_byte(0x1f);
+          fxn.emit_byte(0x40);
+          fxn.emit_byte(0x00);
+          nop_bytes = 0;
+          break;
+        case 5:
+          fxn.emit_byte(0x0f);
+          fxn.emit_byte(0x1f);
+          fxn.emit_byte(0x44);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          nop_bytes = 0;
+          break;
+        case 6:
+          fxn.emit_byte(0x66);
+          fxn.emit_byte(0x0f);
+          fxn.emit_byte(0x1f);
+          fxn.emit_byte(0x44);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          nop_bytes = 0;
+          break;
+        case 7:
+          fxn.emit_byte(0x0f);
+          fxn.emit_byte(0x1f);
+          fxn.emit_byte(0x80);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          nop_bytes = 0;
+          break;
+        case 8:
+          fxn.emit_byte(0x0f);
+          fxn.emit_byte(0x1f);
+          fxn.emit_byte(0x84);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          nop_bytes = 0;
+          break;
+        case 9:
+          fxn.emit_byte(0x66);
+          fxn.emit_byte(0x0f);
+          fxn.emit_byte(0x1f);
+          fxn.emit_byte(0x84);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          nop_bytes = 0;
+          break;
+        default:
+          for(size_t j = 0; j < 6 && nop_bytes > 9; ++j) {
+            fxn.emit_byte(0x66);
+            nop_bytes--;
+          }
+          fxn.emit_byte(0x2e);
+          fxn.emit_byte(0x0f);
+          fxn.emit_byte(0x1f);
+          fxn.emit_byte(0x84);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          fxn.emit_byte(0x00);
+          nop_bytes -= 9;
+          break;
+        }
+      }
+    } else {
       assm.assemble(code[i]);
     }
   }

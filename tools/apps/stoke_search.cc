@@ -106,6 +106,10 @@ auto& no_progress_update_arg =
   cpputil::FlagArg::create("no_progress_update")
   .description("Don't show a progress update whenever a new best program is discovered");
 
+auto& verify_all =
+  cpputil::FlagArg::create("verify_all")
+  .description("Verify whenever a presumably correct rewrite is found");
+
 void sep(ostream& os, string c = "*") {
   for (size_t i = 0; i < 80; ++i) {
     os << c;
@@ -144,8 +148,17 @@ void show_state(const SearchState& state, ostream& os, bool sep_columns = false)
   ofs.filter().done();
 }
 
+struct PcbArg {
+  ostream& os;
+  Search* search;
+  Verifier* verifier;
+  Cfg* target;
+  Sandbox* sb;
+};
+
 void pcb(const ProgressCallbackData& data, void* arg) {
-  ostream& os = *((ostream*)arg);
+  PcbArg* pcb_arg = (PcbArg*)arg;
+  ostream& os = pcb_arg->os;
 
   os << "Progress Update: " << endl;
   os << endl;
@@ -156,6 +169,24 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 
   os << endl << endl;
   sep(os);
+
+  if(verify_all) {
+    os << "Validating \"best correct\"" << endl;
+    const auto verified = pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_correct);
+
+    if(pcb_arg->verifier->has_error()) {
+      os << "The verifier encountered an error:" << endl;
+      os << pcb_arg->verifier->error() << endl;
+    }
+
+    if(verified) {
+      os << "Verified!" << endl; 
+    } else {
+      os << "Oops!  Found a counterexample.  Restarting." << endl;
+      pcb_arg->search->stop();
+      //pcb_arg->sandbox.insert_input(verifier.get_counter_example());
+    }
+  }
 }
 
 struct ScbArg {
@@ -295,8 +326,9 @@ int main(int argc, char** argv) {
   ScbArg scb_arg {&Console::msg(), nullptr};
   search.set_statistics_callback(scb, &scb_arg)
   .set_statistics_interval(stat_int);
+  PcbArg pcb_arg {Console::msg(), &search, &verifier, &target, &training_sb};
   if (!no_progress_update_arg.value()) {
-    search.set_progress_callback(pcb, &Console::msg());
+    search.set_progress_callback(pcb, &pcb_arg);
   }
 
   size_t total_iterations = 0;
@@ -365,7 +397,7 @@ int main(int argc, char** argv) {
     total_iterations += search.get_statistics().iterations;
     total_restarts++;
 
-    if (state.interrupted) {
+    if (state.interrupted && !verify_all) {
       Console::msg() << endl;
       show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
       Console::msg() << "Search interrupted!" << endl;

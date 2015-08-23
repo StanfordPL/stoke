@@ -80,7 +80,6 @@ void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
 
   for (const auto& a : args) {
 
-<<<<<<< HEAD
     //cout << "Found " << a << endl;
 
     bool found = false;
@@ -103,6 +102,7 @@ void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
       }
     }
 
+    Opcode opc;
     stringstream ss;
     ss.str(a);
     ss >> opc;
@@ -112,30 +112,6 @@ void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
       os.insert(opc);
     } else if (!found) {
       fail(is) << fail_msg(ss);
-=======
-    bool found = false;
-
-    if (no_regex_needed(a)) {
-      found = binary_search(a, os);
-    } else {
-      regex pattern(a);
-      stringstream ss;
-      for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
-        Opcode opc = (Opcode) i;
-        ss.clear();
-        ss.str("");
-        ss << opc;
-        if (regex_match(ss.str(), pattern)) {
-          found = true;
-          os.insert(opc);
-        }
-      }
-    }
-
-    if (!found) {
-      is.setstate(ios::failbit);
-      return;
->>>>>>> develop
     }
   }
 }
