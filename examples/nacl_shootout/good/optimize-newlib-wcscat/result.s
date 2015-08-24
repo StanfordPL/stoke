@@ -1,0 +1,121 @@
+  .text
+  .globl wcscat
+  .type wcscat, @function
+
+#! file-offset 0x181040
+#! rip-offset  0x141040
+#! capacity    160 bytes
+
+# Text                        #  Line  RIP       Bytes  Opcode              
+.wcscat:                      #        0x141040  0      OPC=<label>         
+  nop                         #  1     0x141040  1      OPC=nop             
+  nop                         #  2     0x141041  1      OPC=nop             
+  nop                         #  3     0x141042  1      OPC=nop             
+  nop                         #  4     0x141043  1      OPC=nop             
+  nop                         #  5     0x141044  1      OPC=nop             
+  nop                         #  6     0x141045  1      OPC=nop             
+  nop                         #  7     0x141046  1      OPC=nop             
+  nop                         #  8     0x141047  1      OPC=nop             
+  movl %edi, %eax             #  9     0x141048  2      OPC=movl_r32_r32_1  
+  movl (%r15,%rax,1), %edi    #  10    0x14104a  4      OPC=movl_r32_m32    
+  nop                         #  11    0x14104e  1      OPC=nop             
+  nop                         #  12    0x14104f  1      OPC=nop             
+  nop                         #  13    0x141050  1      OPC=nop             
+  nop                         #  14    0x141051  1      OPC=nop             
+  nop                         #  15    0x141052  1      OPC=nop             
+  nop                         #  16    0x141053  1      OPC=nop             
+  nop                         #  17    0x141054  1      OPC=nop             
+  nop                         #  18    0x141055  1      OPC=nop             
+  nop                         #  19    0x141056  1      OPC=nop             
+  testl %eax, %edi            #  20    0x141057  2      OPC=testl_r32_r32   
+  movq %rax, %rcx             #  21    0x141059  3      OPC=movq_r64_r64_1  
+  je .L_1410c0                #  22    0x14105c  2      OPC=je_label        
+  nop                         #  23    0x14105e  1      OPC=nop             
+  nop                         #  24    0x14105f  1      OPC=nop             
+.L_141060:                    #        0x141060  0      OPC=<label>         
+  addl $0x4, %ecx             #  25    0x141060  3      OPC=addl_r32_imm8   
+  movl (%r15,%rcx,1), %edx    #  26    0x141063  4      OPC=movl_r32_m32    
+  testl %edi, %edx            #  27    0x141067  2      OPC=testl_r32_r32   
+  jne .L_141060               #  28    0x141069  2      OPC=jne_label       
+  orq %rcx, %rdx              #  29    0x14106b  3      OPC=orq_r64_r64_1   
+  nop                         #  30    0x14106e  1      OPC=nop             
+  nop                         #  31    0x14106f  1      OPC=nop             
+  nop                         #  32    0x141070  1      OPC=nop             
+  nop                         #  33    0x141071  1      OPC=nop             
+  nop                         #  34    0x141072  1      OPC=nop             
+  nop                         #  35    0x141073  1      OPC=nop             
+  nop                         #  36    0x141074  1      OPC=nop             
+  nop                         #  37    0x141075  1      OPC=nop             
+  nop                         #  38    0x141076  1      OPC=nop             
+  nop                         #  39    0x141077  1      OPC=nop             
+  orl %esi, %esi              #  40    0x141078  2      OPC=orl_r32_r32     
+  movl (%r15,%rsi,1), %ecx    #  41    0x14107a  4      OPC=movl_r32_m32    
+  je .L_141060                #  42    0x14107e  2      OPC=je_label        
+.L_141080:                    #        0x141080  0      OPC=<label>         
+  orl %edx, %edx              #  43    0x141080  2      OPC=orl_r32_r32_1   
+  movnti %rcx, (%r15,%rdx,1)  #  44    0x141082  5      OPC=movnti_m64_r64  
+  addl $0x4, %esi             #  45    0x141087  3      OPC=addl_r32_imm8   
+  addq $0x4, %rdx             #  46    0x14108a  7      OPC=addq_r64_imm32  
+  nop                         #  47    0x141091  1      OPC=nop             
+  nop                         #  48    0x141092  1      OPC=nop             
+  nop                         #  49    0x141093  1      OPC=nop             
+  nop                         #  50    0x141094  1      OPC=nop             
+  nop                         #  51    0x141095  1      OPC=nop             
+  nop                         #  52    0x141096  1      OPC=nop             
+  nop                         #  53    0x141097  1      OPC=nop             
+  nop                         #  54    0x141098  1      OPC=nop             
+  nop                         #  55    0x141099  1      OPC=nop             
+  nop                         #  56    0x14109a  1      OPC=nop             
+  nop                         #  57    0x14109b  1      OPC=nop             
+  nop                         #  58    0x14109c  1      OPC=nop             
+  nop                         #  59    0x14109d  1      OPC=nop             
+  nop                         #  60    0x14109e  1      OPC=nop             
+  nop                         #  61    0x14109f  1      OPC=nop             
+.L_1410c0:                    #        0x1410a0  0      OPC=<label>         
+  orl %esi, %esi              #  62    0x1410a0  2      OPC=orl_r32_r32_1   
+  movl (%r15,%rsi,1), %ecx    #  63    0x1410a2  4      OPC=movl_r32_m32    
+  testl %ecx, %edi            #  64    0x1410a6  2      OPC=testl_r32_r32   
+  jne .L_141080               #  65    0x1410a8  2      OPC=jne_label       
+  nop                         #  66    0x1410aa  1      OPC=nop             
+  nop                         #  67    0x1410ab  1      OPC=nop             
+  nop                         #  68    0x1410ac  1      OPC=nop             
+  nop                         #  69    0x1410ad  1      OPC=nop             
+  nop                         #  70    0x1410ae  1      OPC=nop             
+  nop                         #  71    0x1410af  1      OPC=nop             
+  nop                         #  72    0x1410b0  1      OPC=nop             
+  nop                         #  73    0x1410b1  1      OPC=nop             
+  nop                         #  74    0x1410b2  1      OPC=nop             
+  nop                         #  75    0x1410b3  1      OPC=nop             
+  nop                         #  76    0x1410b4  1      OPC=nop             
+  nop                         #  77    0x1410b5  1      OPC=nop             
+  nop                         #  78    0x1410b6  1      OPC=nop             
+.L_1410a0:                    #        0x1410b7  0      OPC=<label>         
+  nop                         #  79    0x1410b7  1      OPC=nop             
+  nop                         #  80    0x1410b8  1      OPC=nop             
+  nop                         #  81    0x1410b9  1      OPC=nop             
+  nop                         #  82    0x1410ba  1      OPC=nop             
+  nop                         #  83    0x1410bb  1      OPC=nop             
+  nop                         #  84    0x1410bc  1      OPC=nop             
+  nop                         #  85    0x1410bd  1      OPC=nop             
+  nop                         #  86    0x1410be  1      OPC=nop             
+  nop                         #  87    0x1410bf  1      OPC=nop             
+  nop                         #  88    0x1410c0  1      OPC=nop             
+  nop                         #  89    0x1410c1  1      OPC=nop             
+  nop                         #  90    0x1410c2  1      OPC=nop             
+  nop                         #  91    0x1410c3  1      OPC=nop             
+  nop                         #  92    0x1410c4  1      OPC=nop             
+  nop                         #  93    0x1410c5  1      OPC=nop             
+  nop                         #  94    0x1410c6  1      OPC=nop             
+  nop                         #  95    0x1410c7  1      OPC=nop             
+  nop                         #  96    0x1410c8  1      OPC=nop             
+  nop                         #  97    0x1410c9  1      OPC=nop             
+  nop                         #  98    0x1410ca  1      OPC=nop             
+  nop                         #  99    0x1410cb  1      OPC=nop             
+  nop                         #  100   0x1410cc  1      OPC=nop             
+  nop                         #  101   0x1410cd  1      OPC=nop             
+  popq %r11                   #  102   0x1410ce  2      OPC=popq_r64_1      
+  andl $0xe0, %r11d           #  103   0x1410d0  4      OPC=andl_r32_imm8   
+  addq %r15, %r11             #  104   0x1410d4  3      OPC=addq_r64_r64    
+  jmpq %r11                   #  105   0x1410d7  3      OPC=jmpq_r64        
+                                                                            
+.size wcscat, .-wcscat

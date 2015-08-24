@@ -71,6 +71,7 @@ int run_wmemchr(int n);
 int run_memchr(int n);
 int run_wcschr(int n);
 int run_wcsrchr(int n);
+int run_wcscat(int n);
 
 int run_richards(int p);
 int run_deltablue(int p);

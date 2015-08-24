@@ -31,26 +31,24 @@ typedef unsigned long long uint64_t;
 
 #define COPY_SIZE 2048
 
-uint64_t counter[2];
-uint64_t last;
-
 int run_strcat(int n) {
 
-  char* a = malloc(COPY_SIZE);
-  char* b = malloc(COPY_SIZE+5);
+  char a[COPY_SIZE];
+  char b[2*COPY_SIZE+1];
 
   // initialize a
   for(size_t i = 0; i < COPY_SIZE; ++i) {
     a[i] = 'a';
+    b[i] = 'b';
   }
-  a[COPY_SIZE-1] = '\0';
-  b[0] = '\0';
+  a[3] = '\0';  //only copy 3 bytes of a
+  b[COPY_SIZE-1] = '\0';
 
   // Run strcpy n times; O(n^2)
   for(size_t j = 0; j < n; ++j) {
     strcat(b, a);
-    b[0] = '\0';
+    b[COPY_SIZE-1] = '\0';
   }
 
-  return 0;
+  return !(b[COPY_SIZE] == 'a');
 }
