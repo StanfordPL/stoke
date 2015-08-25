@@ -55,6 +55,7 @@ TransformInfo OpcodeWidthTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 
@@ -67,6 +68,7 @@ void OpcodeWidthTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
   cfg.recompute_defs();
 
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 

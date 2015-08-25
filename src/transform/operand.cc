@@ -47,6 +47,8 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
   }
 
   ti.undo_instr = code[ti.undo_index[0]];
+  if(ti.undo_instr.is_call() || is_control_other_than_call(ti.undo_instr.get_opcode()))
+    return ti;
   //if(is_control_other_than_call(ti.undo_instr.get_opcode()))
   //  return ti;
 
@@ -91,6 +93,7 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 
@@ -103,6 +106,7 @@ void OperandTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
   cfg.recompute();
 
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 

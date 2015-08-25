@@ -48,7 +48,7 @@ TransformInfo MultiTransform::operator()(Cfg& cfg) {
     }
   }
 
-  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
 
   finished_ti.success = true;
@@ -63,7 +63,7 @@ void MultiTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
     info = info->undo_next;
   }
 
-  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
 }
 

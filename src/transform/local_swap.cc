@@ -60,6 +60,7 @@ TransformInfo LocalSwapTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 
@@ -74,6 +75,7 @@ void LocalSwapTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   cfg.recompute_defs();
 
   assert(cfg.invariant_no_undef_reads());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
 
 

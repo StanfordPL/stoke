@@ -75,6 +75,7 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
   }
 
   ti.success = true;
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 
@@ -87,6 +88,7 @@ void InstructionTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   cfg.recompute_defs();
 
 
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
 }

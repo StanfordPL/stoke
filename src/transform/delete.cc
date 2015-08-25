@@ -26,6 +26,7 @@ namespace stoke {
 
 TransformInfo DeleteTransform::operator()(Cfg& cfg) {
 
+  assert(cfg.check_invariants());
 
   TransformInfo ti;
   ti.success = false;
@@ -37,7 +38,7 @@ TransformInfo DeleteTransform::operator()(Cfg& cfg) {
   ti.undo_index[0] = index;
   ti.undo_instr = cfg.get_code()[index];
 
-  if(is_control_other_than_call(ti.undo_instr.get_opcode()))
+  if(is_control_other_than_call(ti.undo_instr.get_opcode()) || ti.undo_instr.is_call())
     return ti;
 
   auto& function = cfg.get_function();
@@ -49,7 +50,7 @@ TransformInfo DeleteTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
-  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
   assert(LatencyCost()(cfg).first);
 
@@ -59,11 +60,13 @@ TransformInfo DeleteTransform::operator()(Cfg& cfg) {
 
 void DeleteTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
+  assert(cfg.check_invariants());
+
   auto& function = cfg.get_function();
   function.insert(ti.undo_index[0], ti.undo_instr, false);
   cfg.recompute();
 
-  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
   assert(LatencyCost()(cfg).first);
 }

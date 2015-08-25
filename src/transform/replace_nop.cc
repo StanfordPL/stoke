@@ -54,6 +54,7 @@ TransformInfo ReplaceNopTransform::operator()(Cfg& cfg) {
     return ti;
   }
 
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
   assert(LatencyCost()(cfg).first);
@@ -71,6 +72,7 @@ void ReplaceNopTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   function.insert(ti.undo_index[0], ti.undo_instr, false);
   cfg.recompute();
 
+  assert(cfg.check_invariants());
   assert(cfg.invariant_no_undef_reads());
   assert(cfg.get_function().check_invariants());
   assert(LatencyCost()(cfg).first);

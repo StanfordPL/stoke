@@ -67,7 +67,7 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
       continue;
     }
     auto other_instr = code[other_index];
-    if (is_control_other_than_call(other_instr.get_opcode()) || other_instr.is_nop()) {
+    if (is_control_other_than_call(other_instr.get_opcode()) || other_instr.is_nop() || other_instr.is_call()) {
       other_index = gen_() % je;
       continue;
     }
@@ -77,7 +77,7 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
     return ti;
   }
   auto other_instr = code[other_index];
-  if (is_control_other_than_call(other_instr.get_opcode()) || other_instr.is_nop()) {
+  if (is_control_other_than_call(other_instr.get_opcode()) || other_instr.is_nop() || other_instr.is_call()) {
     return ti;
   }
 
@@ -96,7 +96,7 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
 
   ti.success = true;
 
-  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
 
   return ti;
@@ -108,7 +108,7 @@ void MemoryTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, false, true);
   cfg.recompute();
 
-  assert(cfg.invariant_no_undef_reads());
+  assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
 }
 
