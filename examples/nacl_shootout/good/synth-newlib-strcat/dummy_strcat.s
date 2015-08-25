@@ -1,9 +1,6 @@
 .global strcat
 .align 32
 strcat:
-  addq %rdi, %rsi
-  movq %rsi, %rax
-  retq
   nop
   nop
   nop

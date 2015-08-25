@@ -1,7 +1,7 @@
 
 DEPLOY_PATH=/home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.com/git/nacl
 NAME=strcat
-TC_OPTS=--number 10 --strcat
+TC_OPTS=--number 20 --strcat
 
 all: clean testcase search replace deploy
 
@@ -26,6 +26,9 @@ search:
 replace:
 	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
+
+benchmark: replace
+	sel_ldr.py optbin
 
 deploy: replace
 	cp optbin $(DEPLOY_PATH)/$(NAME).nexe

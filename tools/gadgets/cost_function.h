@@ -30,6 +30,7 @@
 #include "tools/gadgets/nacl2_cost.h"
 #include "tools/gadgets/latency_cost.h"
 #include "tools/gadgets/nongoal_cost.h"
+#include "tools/gadgets/preserve_control_cost.h"
 
 namespace stoke {
 
@@ -60,6 +61,7 @@ private:
     st["nacl"] =         new NaClCost();
     st["nacl2"] =        new NaCl2CostGadget<false>();
     st["nacl2debug"] =   new NaCl2CostGadget<true>();
+    st["preserveflow"] = new PreserveControlCostGadget(target, sb);
     st["size"] =         new SizeCost();
     st["sseavx"] =       new SseAvxCost();
     st["nongoal"] =      new NonGoalCostGadget(target.def_ins(), target.live_outs());

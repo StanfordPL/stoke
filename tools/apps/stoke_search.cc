@@ -172,7 +172,14 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 
   if(verify_all) {
     os << "Validating \"best correct\"" << endl;
-    const auto verified = pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_correct);
+    bool verified = pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_correct);
+
+    if(pcb_arg->verifier->has_error()) {
+      os << "The verifier encountered an error:" << endl;
+      os << pcb_arg->verifier->error() << endl;
+    }
+
+    verified &= pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_yet);
 
     if(pcb_arg->verifier->has_error()) {
       os << "The verifier encountered an error:" << endl;
