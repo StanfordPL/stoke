@@ -115,7 +115,7 @@ TEST_F(PreserveControlCostTest, WrongLabelNoControl) {
   auto cost = fxn_(cfg_r);
 
   EXPECT_EQ(1ul, cost.second);
-} 
+}
 
 TEST_F(PreserveControlCostTest, ExtraLabelNoControl) {
 

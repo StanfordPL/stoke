@@ -407,6 +407,9 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
   for(size_t i = 0; i < 32; ++i) {
     min_extra_score = MIN(min_extra_score, table[i][size]);
   }
+  if(debug) {
+    cout << "Score from dynamic programing table: " << min_extra_score << endl;
+  }
   score += min_extra_score;
 
   if(debug) {
@@ -473,6 +476,8 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
             cout << "USING NON-RESTRICTED REGISTER AS INDEX: " << instr << endl;
           score += restricted_register_penalty_;
         } else {
+          if(debug && restricted_register_cost[i]) 
+            cout << "Assessing penalty of " << restricted_register_cost[i] << " for not-quite-right restricted register" << endl;
           score += restricted_register_cost[i];
         }
       }

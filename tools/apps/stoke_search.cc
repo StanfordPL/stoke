@@ -117,6 +117,7 @@ void sep(ostream& os, string c = "*") {
   os << endl << endl;
 }
 
+static bool verify_interrupt = false;
 static Cost lowest_cost = 0;
 static Cost lowest_correct = 0;
 static Cost starting_cost = 0;
@@ -179,17 +180,11 @@ void pcb(const ProgressCallbackData& data, void* arg) {
       os << pcb_arg->verifier->error() << endl;
     }
 
-    verified &= pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_yet);
-
-    if(pcb_arg->verifier->has_error()) {
-      os << "The verifier encountered an error:" << endl;
-      os << pcb_arg->verifier->error() << endl;
-    }
-
     if(verified) {
       os << "Verified!" << endl;
     } else {
       os << "Oops!  Found a counterexample.  Restarting." << endl;
+      verify_interrupt = true;
       pcb_arg->search->stop();
       //pcb_arg->sandbox.insert_input(verifier.get_counter_example());
     }
@@ -361,6 +356,7 @@ int main(int argc, char** argv) {
   string final_msg;
   SearchStateGadget state(target, aux_fxns);
   for (size_t i = 0; ; ++i) {
+    verify_interrupt = false;
     CostFunctionGadget fxn(target, &training_sb);
 
     // determine iteration timeout
@@ -404,7 +400,7 @@ int main(int argc, char** argv) {
     total_iterations += search.get_statistics().iterations;
     total_restarts++;
 
-    if (state.interrupted && !verify_all) {
+    if (state.interrupted && !(verify_all && verify_interrupt)) {
       Console::msg() << endl;
       show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
       Console::msg() << "Search interrupted!" << endl;

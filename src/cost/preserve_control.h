@@ -63,8 +63,8 @@ public:
     sandbox_->insert_function(cfg);
     sandbox_->set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
     sandbox_->insert_before(check_control_callback, this);
-    sandbox_->run();
     difference_found_ = false;
+    //std::cout << "Evaluating cost function" << std::endl;
     for(size_t i = 0, ie = sandbox_->size(); i < ie && !difference_found_; ++i) {
       current_pos_ = 0;
       current_list_ = &reference_outs_[i];
@@ -73,7 +73,8 @@ public:
         difference_found_ = true;
       }
     }
-
+    //std::cout << "Done evaluating cost function" << std::endl;
+    sandbox_->clear_callbacks();
     return std::pair<bool,Cost>(true, difference_found_);
 
   }
@@ -82,6 +83,8 @@ public:
   static void check_control_callback(const StateCallbackData& data, void* arg) {
     PreserveControlCost* ptr = (PreserveControlCost*)arg;
     assert(data.line < data.code.size());
+
+    //std::cout << "  check_control_callback" << std::endl;
 
     if(ptr->difference_found_)
       return;
