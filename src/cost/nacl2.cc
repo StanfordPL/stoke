@@ -476,7 +476,7 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
             cout << "USING NON-RESTRICTED REGISTER AS INDEX: " << instr << endl;
           score += restricted_register_penalty_;
         } else {
-          if(debug && restricted_register_cost[i]) 
+          if(debug && restricted_register_cost[i])
             cout << "Assessing penalty of " << restricted_register_cost[i] << " for not-quite-right restricted register" << endl;
           score += restricted_register_cost[i];
         }

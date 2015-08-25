@@ -47,8 +47,8 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
   }
 
   ti.undo_instr = code[ti.undo_index[0]];
-  if(ti.undo_instr.is_call() || is_control_other_than_call(ti.undo_instr.get_opcode()))
-    return ti;
+  //if(ti.undo_instr.is_call() || is_control_other_than_call(ti.undo_instr.get_opcode()))
+  //  return ti;
   //if(is_control_other_than_call(ti.undo_instr.get_opcode()))
   //  return ti;
 

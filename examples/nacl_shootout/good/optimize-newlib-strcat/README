@@ -1,0 +1,2 @@
+
+For this benchmark, one needs to change the code in OperandTransform to *not* replace labels on calls/jumps, or else you'll segfault.
