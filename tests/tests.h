@@ -30,8 +30,7 @@
 
 
 #include "tests/analysis/analysis.h"
-#include "tests/cfg/cfg.h"
-#include "tests/cfg/cfgtransforms.h"
+#include "tests/cfg/cfg_tests.h"
 #include "tests/cost/cost.h"
 #include "tests/expr/expr.h"
 #include "tests/cpputil/cpputil.h"
