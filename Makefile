@@ -110,8 +110,8 @@ SRC_OBJ=\
 	\
 	src/tunit/tunit.o \
 	\
-	src/validator/bounded_validator.o \
 	src/validator/handler.o \
+	src/validator/straight_line.o \
 	src/validator/validator.o \
 	\
 	src/validator/handlers/add_handler.o \
@@ -124,7 +124,8 @@ SRC_OBJ=\
 	src/validator/handlers/shift_handler.o \
 	src/validator/handlers/simple_handler.o \
 	\
-	src/verifier/verifier.o
+	src/verifier/hold_out.o
+
 
 TOOL_ARGS_OBJ=\
 	tools/args/benchmark.o \

@@ -18,16 +18,68 @@
 #include "src/cost/cost_function.h"
 #include "src/solver/cvc4solver.h"
 #include "src/solver/z3solver.h"
+#include "src/verifier/hold_out.h"
+#include "src/verifier/strategy.h"
 #include "src/verifier/verifier.h"
+#include "src/validator/straight_line.h"
+
+#include "tools/args/in_out.inc"
 #include "tools/args/verifier.inc"
 
 namespace stoke {
 
 class VerifierGadget : public Verifier {
 public:
-  VerifierGadget(CorrectnessCost& fxn, Validator& val) : Verifier(fxn, val) {
-    set_strategy(strategy_arg);
+  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn) : Verifier() {
+
+    switch(strategy_arg) {
+    case Strategy::HOLD_OUT:
+      verifier_ = new HoldOutVerifier(fxn);
+      break;
+
+    case Strategy::STRAIGHT_LINE:
+      solver_ = new SolverGadget();
+      verifier_ = new StraightLineValidator(*solver_);
+      break;
+
+    case Strategy::NONE:
+      verifier_ = new Verifier();
+      break;
+    }
+    verifier_->set_sandbox(&sandbox);
+    verifier_->set_heap_out(heap_out_arg);
+    verifier_->set_stack_out(stack_out_arg);
   }
+
+  Verifier& set_sandbox(Sandbox* sb) {
+    verifier_->set_sandbox(sb);
+    return *this;
+  }
+
+  inline bool verify(const Cfg& target, const Cfg& rewrite) {
+    return verifier_->verify(target, rewrite);
+  }
+
+  inline size_t counter_examples_available() {
+    return verifier_->counter_examples_available();
+  }
+
+  std::vector<CpuState> get_counter_examples() {
+    return verifier_->get_counter_examples();
+  }
+
+  bool has_error() {
+    return verifier_->has_error();
+  }
+
+  std::string error() {
+    return verifier_->error();
+  }
+
+private:
+
+  Verifier* verifier_;
+  SMTSolver* solver_;
 };
 
 } // namespace stoke

@@ -38,6 +38,8 @@ public:
     sandbox_ = NULL;
   }
 
+  virtual ~CostFunction() { }
+
   /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
     result would equal or exceed that value.  When you implement this method, you
     must call run_sandbox() to ensure that the sandbox was run, either by the client

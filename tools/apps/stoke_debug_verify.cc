@@ -56,9 +56,7 @@ int main(int argc, char** argv) {
   TestSetGadget test_set(seed);
   SandboxGadget sb(test_set, aux_fxns);
   CorrectnessCostGadget fxn(target, &sb);
-  SolverGadget smt;
-  ValidatorGadget validator(smt);
-  VerifierGadget verifier(fxn, validator);
+  VerifierGadget verifier(sb, fxn);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
@@ -90,15 +88,15 @@ int main(int argc, char** argv) {
 
   Console::msg() << "Equivalent: " << (res ? "yes" : "no") << endl;
 
-  if (!res && verifier.counter_example_available()) {
-    Console::msg() << endl << "Counterexample:" << endl;
+  if (!res && verifier.counter_examples_available()) {
+    Console::msg() << endl << verifier.counter_examples_available() << " Counterexamples." << endl;
     Console::msg() << endl;
-    Console::msg() << verifier.get_counter_example();
+    Console::msg() << verifier.get_counter_examples()[0];
     Console::msg() << endl << endl;
     Console::msg() << "Difference of running target and rewrite on the counterexample:";
     Console::msg() << endl << endl;
     CpuStates tcs;
-    tcs.push_back(verifier.get_counter_example());
+    tcs.push_back(verifier.get_counter_examples()[0]);
     SandboxGadget sb(tcs, aux_fxns);
     sb.run(target);
     const auto target_result = *(sb.result_begin());

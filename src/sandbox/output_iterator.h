@@ -22,7 +22,7 @@
 
 namespace stoke {
 
-class output_iterator {
+class output_iterator : public std::iterator<std::input_iterator_tag, CpuState> {
   /** Needs access to constructor. */
   friend class Sandbox;
 
