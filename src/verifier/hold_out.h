@@ -39,6 +39,11 @@ public:
 
 private:
 
+  /** Returns if two states are equal on a set of registers. */
+  bool states_equivalent(CpuState s1, CpuState s2, x64asm::RegSet rs);
+
+  static x64asm::RegSet supported_regset();
+
   std::vector<CpuState> counter_examples_;
 };
 
