@@ -77,13 +77,6 @@ public:
     return rewrite_final_state_;
   }
 
-  /** Returns whether this instruction is supported.  Sets error message. */
-  bool is_supported(x64asm::Instruction& i);
-  /** Returns whether this instruction is supported.  No error message. */
-  bool is_supported(x64asm::Instruction& i) const;
-  /** Returns whether an opcode is fully supported.  No error message. */
-  bool is_supported(const x64asm::Opcode& op) const;
-
 
   /** Extracts a counterexample from a model.  Assumes that you've constructed
    * constraints the same way the validator does and know what you're doing.

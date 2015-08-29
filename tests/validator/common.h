@@ -19,22 +19,22 @@
 #include "src/ext/cpputil/include/io/fail.h"
 
 #include "src/sandbox/sandbox.h"
-#include "src/validator/validator.h"
+#include "src/validator/straight_line.h"
 #include "src/validator/handlers/combo_handler.h"
 #include "tests/solver/test_solver.h"
 
 namespace stoke {
 
-class ValidatorTest : public ::testing::Test {
+class StraightLineValidatorTest : public ::testing::Test {
 
 public:
 
-  ValidatorTest() : v_(make_validator()) {
+  StraightLineValidatorTest() : v_(make_validator()) {
     cfg_t_ = 0;
     cfg_r_ = 0;
   }
 
-  ~ValidatorTest() {
+  ~StraightLineValidatorTest() {
     if (cfg_t_)
       delete cfg_t_;
     if (cfg_r_)
@@ -97,7 +97,7 @@ protected:
 
     check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE);
     if(ceg != NULL) {
-      *ceg = v_.get_counterexample();
+      *ceg = v_.get_counter_examples()[0];
 
       // write out the counter-example, and then parse it back in
       std::stringstream ss;
@@ -119,7 +119,7 @@ protected:
 
     check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE, false);
     if(ceg != NULL)
-      *ceg = v_.get_counterexample();
+      *ceg = v_.get_counter_examples()[0];
   }
 
   /** Check that the validator encounters an error on these two rewrite s */
@@ -176,7 +176,7 @@ protected:
     if(!s_.has_model())
       return false;
 
-    CpuState validator_final = Validator::state_from_model(s_, "_FINAL");
+    CpuState validator_final = StraightLineValidator::state_from_model(s_, "_FINAL");
 
     // Run the sandbox
     Sandbox sb;
@@ -192,7 +192,7 @@ protected:
     std::stringstream ss;
     ss << "Counterexample: " << std::endl << cs << std::endl;
     ss << "Sandbox final state: " << std::endl << sandbox_final << std::endl;
-    ss << "Validator final state: " << std::endl << validator_final << std::endl;
+    ss << "StraightLineValidator final state: " << std::endl << validator_final << std::endl;
     ss << "Sandbox and validator disagree on liveout " << cfg_t_->live_outs() << std::endl;
     expect_cpustate_equal_on_liveout(sandbox_final, validator_final, ss.str());
     return true;
@@ -282,7 +282,10 @@ private:
   /* Run the validator and produce a counterexample */
   bool validate(CpuState& tc) {
 
-    return v_.validate(*cfg_t_, *cfg_r_, tc);
+    bool b = v_.verify(*cfg_t_, *cfg_r_);
+    if(!b && v_.counter_examples_available())
+      tc = v_.get_counter_examples()[0];
+    return b;
   }
 
   /* Gets a CFG from astd::string stream */
@@ -313,7 +316,7 @@ private:
 
       if(!ceg_shown_) {
         std::cout << "Counterexample:" << std::endl;
-        std::cout << v_.get_counterexample() << std::endl;
+        std::cout << v_.get_counter_examples()[0] << std::endl;
         ceg_shown_ = true;
       }
 
@@ -379,11 +382,11 @@ private:
   void check_ceg(CpuState& ceg) {
 
     // Make sure that a counterexample was intended.
-    if(!v_.is_counterexample_valid()) {
+    if(!v_.counter_examples_available())
       return;
-    }
 
-    ASSERT_EQ(ceg, v_.get_counterexample());
+    auto other_ceg = v_.get_counter_examples()[0];
+    ASSERT_EQ(ceg, other_ceg);
 
     // Setup a sandbox with testcase
     Sandbox sb;
@@ -391,7 +394,7 @@ private:
     .set_max_jumps(2);
 
 
-    CpuState s1(v_.get_counterexample());
+    CpuState s1(ceg);
     sb.insert_input(s1);
 
     // Run the sandbox and check the results for each.
@@ -406,8 +409,7 @@ private:
       expect_cpustate_equal_on_liveout(sandbox_target_state,
                                        v_.get_target_final_state(),
                                        tmp.str());
-    } else {
-    }
+    } 
 
 
     if(cfg_r_->is_sound()) {
@@ -419,14 +421,13 @@ private:
       expect_cpustate_equal_on_liveout(sandbox_rewrite_state,
                                        v_.get_rewrite_final_state(),
                                        tmp.str());
-    } else {
-    }
+    } 
 
   }
 
   void report_error(int expected, Outcome actual, bool fatal=false, std::string message="") {
     if(!codes_shown_) {
-      std::cout << "=== Validator Test Failed ====================" << std::endl;
+      std::cout << "=== StraightLineValidator Test Failed ====================" << std::endl;
       if (cfg_t_ != 0) {
         std::cout << "--Target--" << std::endl;
         std::cout << cfg_t_->get_code() << std::endl << std::endl;
@@ -466,7 +467,7 @@ private:
       ADD_FAILURE() << "Unexpected counterexample found" << expected_string.str() << std::endl;
 
       std::cout << "Counterexample:" << std::endl;
-      std::cout << v_.get_counterexample() << std::endl << std::endl;
+      std::cout << v_.get_counter_examples()[0] << std::endl << std::endl;
       ceg_shown_ = true;
 
       std::cout << "Target final state:" << std::endl;
@@ -487,7 +488,7 @@ private:
       size_t line = 0;
       std::string file;
       std::string message = v_.get_error(&line, &file);
-      ADD_FAILURE_AT(message.c_str(), line) << "Validator reported unexpected error"
+      ADD_FAILURE_AT(message.c_str(), line) << "StraightLineValidator reported unexpected error"
                                             << expected_string.str()
                                             << std::endl << "Message: " << message << std::endl;
       break;
@@ -520,11 +521,13 @@ private:
     Outcome outcome = OTHER;
 
     // Check for equivalence
-    bool equiv = v_.validate(*cfg_t_, *cfg_r_, ceg);
+    bool equiv = v_.verify(*cfg_t_, *cfg_r_);
     // See if an error occurred
     bool error = v_.has_error();
     // See if a counterexample is available
-    bool got_ceg = v_.is_counterexample_valid();
+    bool got_ceg = v_.counter_examples_available();
+    if(got_ceg)
+      ceg = v_.get_counter_examples()[0];
     // Later, we'll check if CFG is valid
     bool ceg_is_ok = false;
 
@@ -532,18 +535,18 @@ private:
     if (equiv) {
       if(error) {
         report_error(expected, OTHER, true,
-                     "Validator says codes are equivalent, but also returned an error.");
+                     "StraightLineValidator says codes are equivalent, but also returned an error.");
       }
       if(got_ceg) {
         report_error(expected, OTHER, true,
-                     "Validator says codes are equivalent, but also returned counterexample.");
+                     "StraightLineValidator says codes are equivalent, but also returned counterexample.");
       }
       outcome = EQUIVALENT;
     } else {
       if(got_ceg) {
         if(error) {
           report_error(expected, OTHER, true,
-                       "Validator produced counterexample, but also returned an error.");
+                       "StraightLineValidator produced counterexample, but also returned an error.");
         } else {
           outcome = COUNTEREXAMPLE;
         }
@@ -596,8 +599,8 @@ private:
   }
 
   /* Used to build a validator */
-  Validator make_validator() {
-    Validator v(s_);
+  StraightLineValidator make_validator() {
+    StraightLineValidator v(s_);
     return v;
   }
 
@@ -606,7 +609,7 @@ private:
   bool ceg_shown_;
 
   /* The validator we're using */
-  Validator v_;
+  StraightLineValidator v_;
   /* The solver we're using */
   TestSolver s_;
 

@@ -14,7 +14,7 @@
 
 namespace stoke {
 
-class ValidatorPcmpeqbTest : public ValidatorTest {};
+class ValidatorPcmpeqbTest : public StraightLineValidatorTest {};
 
 TEST_F(ValidatorPcmpeqbTest, AllZeros) {
 
