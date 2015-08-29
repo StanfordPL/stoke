@@ -49,9 +49,7 @@ int main(int argc, char** argv) {
   TestSetGadget test_set(seed);
   SandboxGadget sb(test_set, aux_fxns);
   CorrectnessCostGadget fxn(target, &sb);
-  SolverGadget smt;
-  ValidatorGadget validator(smt);
-  VerifierGadget verifier(fxn, validator);
+  VerifierGadget verifier(sb);
 
   Console::msg() << "Verifier::verify()..." << endl;
 

@@ -58,25 +58,13 @@ public:
   }
 
   /** Returns whether the last counterexample made sense */
-  size_t counter_examples_available() {
+  virtual size_t counter_examples_available() {
     return 0;
   }
   /** Gets the counterexample */
-  std::vector<CpuState> get_counter_examples() {
+  virtual std::vector<CpuState> get_counter_examples() {
     return std::vector<CpuState>();
   }
-  /** Gets the target's final state in counterexample. */
-  /*
-  CpuState get_target_final_state() {
-    return target_final_state_;
-  }
-  */
-  /** Gets the rewrite's final state in counterexample. */
-  /*
-  CpuState get_rewrite_final_state() {
-    return rewrite_final_state_;
-  }
-  */
 
   /** Returns whether this instruction is supported.  No error message. */
   bool is_supported(x64asm::Instruction& i) const;
