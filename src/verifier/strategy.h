@@ -19,6 +19,7 @@ namespace stoke {
 
 enum class Strategy {
   NONE,
+  BOUNDED,
   HOLD_OUT,
   STRAIGHT_LINE
 };

@@ -21,6 +21,7 @@
 #include "src/verifier/hold_out.h"
 #include "src/verifier/strategy.h"
 #include "src/verifier/verifier.h"
+#include "src/validator/bounded.h"
 #include "src/validator/straight_line.h"
 
 #include "tools/args/in_out.inc"
@@ -33,6 +34,11 @@ public:
   VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn) : Verifier() {
 
     switch(strategy_arg) {
+    case Strategy::BOUNDED:
+      solver_ = new SolverGadget();
+      verifier_ = new BoundedValidator(*solver_);
+      break;
+
     case Strategy::HOLD_OUT:
       verifier_ = new HoldOutVerifier(fxn);
       break;
