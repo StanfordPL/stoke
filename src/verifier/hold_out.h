@@ -23,6 +23,8 @@ namespace stoke {
 class HoldOutVerifier : public Verifier {
 public:
 
+  HoldOutVerifier(CorrectnessCost& ccf) : Verifier(), fxn_(ccf) { }
+
   /** Returns true iff these two functions are identical. Sets counter_example_ for failed
     proofs. */
   bool verify(const Cfg& target, const Cfg& rewrite);
@@ -39,10 +41,8 @@ public:
 
 private:
 
-  /** Returns if two states are equal on a set of registers. */
-  bool states_equivalent(CpuState s1, CpuState s2, x64asm::RegSet rs);
-
-  static x64asm::RegSet supported_regset();
+  /** Correctness cost function */
+  CorrectnessCost& fxn_;
 
   std::vector<CpuState> counter_examples_;
 };

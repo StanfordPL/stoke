@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
   TestSetGadget test_set(seed);
   SandboxGadget sb(test_set, aux_fxns);
   CorrectnessCostGadget fxn(target, &sb);
-  VerifierGadget verifier(sb);
+  VerifierGadget verifier(sb, fxn);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);

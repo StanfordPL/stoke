@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
   TestSetGadget test_set(seed);
   SandboxGadget test_sb(test_set, aux_fxns);
   CorrectnessCostGadget holdout_fxn(target, &test_sb);
-  VerifierGadget verifier(test_sb);
+  VerifierGadget verifier(test_sb, holdout_fxn);
 
   ScbArg scb_arg {&Console::msg(), nullptr};
   search.set_statistics_callback(scb, &scb_arg)

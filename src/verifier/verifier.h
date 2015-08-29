@@ -38,6 +38,18 @@ public:
     return *this;
   }
 
+  /** Set if the heap is live out */
+  Verifier& set_heap_out(bool b) {
+    heap_out_ = b;
+    return *this;
+  }
+
+  /** Set if the stack is live out */
+  Verifier& set_stack_out(bool b) {
+    stack_out_ = b;
+    return *this;
+  }
+
   /** Returns true iff these two functions are identical. Sets counter_example_ for failed
     proofs. */
   virtual bool verify(const Cfg& target, const Cfg& rewrite) {
@@ -66,6 +78,11 @@ protected:
 
   /** Sandbox for verification to use. */
   Sandbox* sandbox_;
+
+  /** Do we need to validate heap correctness? */
+  bool heap_out_;
+  /** Do we need to validate stack correctness? */
+  bool stack_out_;
 
   /** Did an error occur? */
   std::string error_;
