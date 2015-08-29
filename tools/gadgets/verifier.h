@@ -31,18 +31,18 @@ public:
   VerifierGadget(Sandbox& sandbox) : Verifier() {
 
     switch(strategy_arg) {
-      case Strategy::HOLD_OUT:
-        verifier_ = new HoldOutVerifier();
-        break;
+    case Strategy::HOLD_OUT:
+      verifier_ = new HoldOutVerifier();
+      break;
 
-      case Strategy::STRAIGHT_LINE:
-        solver_ = new SolverGadget();
-        verifier_ = new StraightLineValidator(*solver_);
-        break;
+    case Strategy::STRAIGHT_LINE:
+      solver_ = new SolverGadget();
+      verifier_ = new StraightLineValidator(*solver_);
+      break;
 
-      case Strategy::NONE:
-        verifier_ = new Verifier();
-        break;
+    case Strategy::NONE:
+      verifier_ = new Verifier();
+      break;
     }
     verifier_->set_sandbox(&sandbox);
   }
