@@ -14,7 +14,7 @@
 
 namespace stoke {
 
-class ValidatorCmovSetCCTest : public ValidatorTest {
+class ValidatorCmovSetCCTest : public StraightLineValidatorTest {
 
 protected:
   const std::vector<std::string> ccs
@@ -30,7 +30,7 @@ protected:
 private:
 
   void SetUp() {
-    ValidatorTest::SetUp();
+    StraightLineValidatorTest::SetUp();
 
     const std::vector<int> flag_indexes
     { 0, 2, 4, 6, 7, 11 };

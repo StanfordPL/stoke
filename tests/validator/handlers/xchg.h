@@ -14,7 +14,7 @@
 
 namespace stoke {
 
-class ValidatorXchgTest : public ValidatorTest {};
+class ValidatorXchgTest : public StraightLineValidatorTest {};
 
 TEST_F(ValidatorXchgTest, SameAsSwap64) {
 
