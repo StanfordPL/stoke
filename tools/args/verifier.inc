@@ -29,7 +29,7 @@ cpputil::Heading& verifier_heading =
 
 cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg =
   cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
-  .usage("(none|hold_out|formal|extension)")
+  .usage("(none|hold_out|straight_line)")
   .description("Verification strategy")
   .default_val(Strategy::HOLD_OUT);
 
