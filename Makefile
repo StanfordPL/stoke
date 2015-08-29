@@ -110,6 +110,7 @@ SRC_OBJ=\
 	\
 	src/tunit/tunit.o \
 	\
+	src/validator/bounded_validator.o \
 	src/validator/handler.o \
 	src/validator/validator.o \
 	\

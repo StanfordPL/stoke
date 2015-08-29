@@ -57,6 +57,9 @@ public:
     return error_;
   }
 
+  /** What RegSets does the handler support? */
+  virtual bool regset_is_supported(x64asm::RegSet rs) const;
+
   /** Get list of fully-supported opcodes in att memonic form.
     NOTE: This function may be **slow**.  You should call the
     validator to access a fast table of supported opcodes. */

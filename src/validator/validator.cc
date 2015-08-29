@@ -30,34 +30,6 @@ using namespace stoke;
 using namespace x64asm;
 
 
-bool regset_is_supported(x64asm::RegSet rs) {
-
-  /* Check to make sure all liveout are supported. */
-  /* Right now we support gps, xmms, ACOPSZ eflags */
-  RegSet supported = (RegSet::all_gps() | RegSet::all_ymms()) +
-                     eflags_cf + eflags_of +
-                     eflags_pf + eflags_sf + eflags_zf;
-
-  // TODO mxcsr's presense here is a bug.  See #339.
-  for(size_t i = 0; i < mxcsr.size(); ++i) {
-    supported = supported + mxcsr[i];
-  }
-
-  // Do the check.
-  if((supported & rs) != rs) {
-    stringstream tmp;
-    tmp << (rs - supported);
-
-    string message =
-      string("Validator only supports gps, xmms and eflags COPSZ in live out.") +
-      string("  Not supported: ") + tmp.str();
-
-    throw VALIDATOR_ERROR(message);
-    return false;
-  }
-  return true;
-}
-
 bool Validator::is_supported(Instruction& i) {
 
   return handler_.get_support(i);
@@ -148,8 +120,12 @@ void Validator::generate_constraints(const stoke::Cfg& f1, const stoke::Cfg& f2,
     throw VALIDATOR_ERROR("Live-outs of the two CFGs differ");
   }
   // Check that the regsets are supported, throw an error otherwise
-  regset_is_supported(f1.def_ins());
-  regset_is_supported(f1.live_outs());
+  if(!handler_.regset_is_supported(f1.def_ins())) {
+    throw VALIDATOR_ERROR("Target def-in not supported.");
+  }
+  if(!handler_.regset_is_supported(f1.live_outs())) {
+    throw VALIDATOR_ERROR("Target live-out not supported.");
+  }
 
   // Create starting symbolic states
   SymState init("");

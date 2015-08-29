@@ -19,6 +19,23 @@ using namespace stoke;
 using namespace x64asm;
 using namespace std;
 
+
+bool Handler::regset_is_supported(RegSet rs) const {
+  /* Check to make sure all liveout are supported. */
+  /* Right now we support gps, xmms, ACOPSZ eflags */
+  RegSet supported = (RegSet::all_gps() | RegSet::all_ymms()) +
+                     eflags_cf + eflags_of +
+                     eflags_pf + eflags_sf + eflags_zf;
+
+  // TODO mxcsr's presense here is a bug.  See #339.
+  for(size_t i = 0; i < mxcsr.size(); ++i) {
+    supported = supported + mxcsr[i];
+  }
+
+  // Do the check.
+  return (supported & rs) == rs;
+}
+
 /* Returns true if the validator supports all the operands of the instruction. */
 bool Handler::operands_supported(const Instruction& instr) {
 
