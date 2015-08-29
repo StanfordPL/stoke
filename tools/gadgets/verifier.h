@@ -22,17 +22,19 @@
 #include "src/verifier/strategy.h"
 #include "src/verifier/verifier.h"
 #include "src/validator/straight_line.h"
+
+#include "tools/args/in_out.inc"
 #include "tools/args/verifier.inc"
 
 namespace stoke {
 
 class VerifierGadget : public Verifier {
 public:
-  VerifierGadget(Sandbox& sandbox) : Verifier() {
+  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn) : Verifier() {
 
     switch(strategy_arg) {
     case Strategy::HOLD_OUT:
-      verifier_ = new HoldOutVerifier();
+      verifier_ = new HoldOutVerifier(fxn);
       break;
 
     case Strategy::STRAIGHT_LINE:
@@ -45,6 +47,8 @@ public:
       break;
     }
     verifier_->set_sandbox(&sandbox);
+    verifier_->set_heap_out(heap_out_arg);
+    verifier_->set_stack_out(stack_out_arg);
   }
 
   Verifier& set_sandbox(Sandbox* sb) {
