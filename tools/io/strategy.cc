@@ -26,11 +26,9 @@ namespace {
 
 array<pair<string, Strategy>, 4> pts {{
     {"none", Strategy::NONE},
+    {"formal", Strategy::STRAIGHT_LINE },
     {"hold_out", Strategy::HOLD_OUT},
-    {"formal", Strategy::FORMAL },
-
-    // Add user-defined extensions here ...
-    {"extension", Strategy::EXTENSION}
+    {"straight_line", Strategy::STRAIGHT_LINE }
   }
 };
 

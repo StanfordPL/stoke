@@ -47,6 +47,7 @@
 #include "tests/trivial.h"
 #include "tests/tunit/tunit.h"
 #include "tests/validator/validator.h"
+#include "tests/verifier/verifier.h"
 #include "tests/x64asm/x64asm.h"
 
 

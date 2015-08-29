@@ -21,7 +21,7 @@
 
 namespace stoke {
 
-class ValidatorFuzzTest : public ValidatorTest {
+class ValidatorFuzzTest : public StraightLineValidatorTest {
 
 public:
 
