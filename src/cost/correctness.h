@@ -45,7 +45,7 @@ public:
   static constexpr auto max_error_cost = (Cost)(0x1ull << 32);
 
   /** Create a new cost function with default values for extended features. */
-  CorrectnessCost(Sandbox* sb) : CostFunction(), counter_example_testcase_(-1) {
+  CorrectnessCost(Sandbox* sb) : CostFunction() {
     sandbox_ = sb;
     const x64asm::Code code {
       {x64asm::LABEL_DEFN, {x64asm::Label{".main"}}},
@@ -111,12 +111,6 @@ public:
     return *(sandbox_->get_input(i));
   }
 
-  /** Returns a counter-example (i.e., a testcase with non-zero cost). */
-  const CpuState& get_counter_example() const {
-    assert(counter_example_testcase_ >= 0);
-    return get_testcase(counter_example_testcase_);
-  }
-
   /** We need the sandbox! */
   bool need_sandbox() {
     return true;
@@ -166,9 +160,6 @@ private:
 
   /** The results produced by executing the target on testcases. */
   std::vector<CpuState> reference_out_;
-
-  /** A test-case (index) that has non-zero cost (or -1). */
-  long counter_example_testcase_;
 
   /** The set of general purpose registers live out for the target. */
   std::vector<x64asm::R> target_gp_out_;
