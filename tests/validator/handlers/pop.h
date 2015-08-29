@@ -14,7 +14,7 @@
 
 namespace stoke {
 
-class ValidatorPopTest : public ValidatorTest {};
+class ValidatorPopTest : public StraightLineValidatorTest {};
 
 TEST_F(ValidatorPopTest, PopSp) {
 

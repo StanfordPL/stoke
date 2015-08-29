@@ -63,6 +63,10 @@ struct CpuState {
     return !(*this == rhs);
   }
 
+  // TODO: we can improve the performance of these functions by implementing
+  // specialized versions of operator[] for specific register types, rather
+  // than always calling the generic method and looking up the type.  Not that
+  // we care.  -- Berkeley
   /** Access to a general purpose register. */
   uint64_t operator[](const x64asm::R& reg) const {
     size_t start = 0;
@@ -74,23 +78,23 @@ struct CpuState {
     return read_gp(idx, reg.size(), start);
   }
   /** Access to Rh register. */
-  uint8_t operator[](const x64asm::Rh& reg) const {
+  uint8_t inline operator[](const x64asm::Rh& reg) const {
     return (*this)[(x64asm::R&)reg];
   }
   /** Access to R8 register. */
-  uint8_t operator[](const x64asm::R8& reg) const {
+  uint8_t inline operator[](const x64asm::R8& reg) const {
     return (*this)[(x64asm::R&)reg];
   }
   /** Access to R16 register. */
-  uint16_t operator[](const x64asm::R16& reg) const {
+  uint16_t inline operator[](const x64asm::R16& reg) const {
     return (*this)[(x64asm::R&)reg];
   }
   /** Access to R32 register. */
-  uint32_t operator[](const x64asm::R32& reg) const {
+  uint32_t inline operator[](const x64asm::R32& reg) const {
     return (*this)[(x64asm::R&)reg];
   }
   /** Access to R64 register. */
-  uint64_t operator[](const x64asm::R64& reg) const {
+  uint64_t inline operator[](const x64asm::R64& reg) const {
     return (*this)[(x64asm::R&)reg];
   }
   /** Read the general purpose register with index idx, a given width that starts at bit `start`. */
@@ -116,24 +120,29 @@ struct CpuState {
     gp_update(idx, reg.size(), val, start);
   }
   /** Update an Rh register. */
-  void update(const x64asm::Rh& reg, uint8_t val) {
+  inline void update(const x64asm::Rh& reg, uint8_t val) {
     update((x64asm::R&)reg, val);
   }
   /** Update an R8 register. */
-  void update(const x64asm::R8& reg, uint8_t val) {
+  inline void update(const x64asm::R8& reg, uint8_t val) {
     update((x64asm::R&)reg, val);
   }
   /** Update an R16 register. */
-  void update(const x64asm::R16& reg, uint16_t val) {
+  inline void update(const x64asm::R16& reg, uint16_t val) {
     update((x64asm::R&)reg, val);
   }
   /** Update an R16 register. */
-  void update(const x64asm::R16& reg, uint32_t val) {
+  inline void update(const x64asm::R16& reg, uint32_t val) {
     update((x64asm::R&)reg, val);
   }
   /** Update an R64 register. */
-  void update(const x64asm::R64& reg, uint64_t val) {
+  inline void update(const x64asm::R64& reg, uint64_t val) {
     update((x64asm::R&)reg, val);
+  }
+
+  /** Access Eflags */
+  inline bool operator[](const x64asm::Eflags& f) const {
+    return rf.is_set(f.index());
   }
 
   /** Write text. */

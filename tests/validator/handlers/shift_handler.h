@@ -16,7 +16,7 @@ namespace stoke {
 
 #include "src/symstate/bitvector.h"
 
-class ValidatorShiftTest : public ValidatorTest {};
+class ValidatorShiftTest : public StraightLineValidatorTest {};
 
 
 TEST_F(ValidatorShiftTest, IdentitySalb) {
