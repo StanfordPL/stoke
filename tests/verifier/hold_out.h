@@ -11,34 +11,42 @@ class HoldOutVerifierTest : public ::testing::Test {
 
 public:
 
-  HoldOutVerifierTest() : fxn_(&sb), hov(fxn_) {
-    hov.set_sandbox(&sb_);
+  HoldOutVerifierTest() {
+    sb_ = new Sandbox();
+    fxn_ = new CorrectnessCost(sb_);
+    hov = new HoldOutVerifier(*fxn_);
+  }
+
+  ~HoldOutVerifierTest() {
+    delete sb_;
+    delete fxn_;
+    delete hov;
   }
 
 protected:
 
   void add_testcases(int count) {
     for (int i = 0; i < count; ++i) {
-      sb_.insert_input(get_state());
+      sb_->insert_input(get_state());
     }
   }
 
   void add_testcases(int count, const Cfg& cfg) {
     for (int i = 0; i < count; ++i) {
-      sb_.insert_input(get_state(cfg));
+      sb_->insert_input(get_state(cfg));
     }
   }
 
   CpuState get_state() {
     CpuState cs;
-    StateGen sg(&sb_);
+    StateGen sg(sb_);
     sg.get(cs);
     return cs;
   }
 
   CpuState get_state(const Cfg& cfg) {
     CpuState cs;
-    StateGen sg(&sb_);
+    StateGen sg(sb_);
     sg.get(cs, cfg);
     return cs;
   }
@@ -49,9 +57,9 @@ protected:
   }
 
 
-  HoldOutVerifier& hov;
-  CorrectnessCost& fxn_;
-  Sandbox sb_;
+  HoldOutVerifier* hov;
+  CorrectnessCost* fxn_;
+  Sandbox* sb_;
 
 
 };
@@ -82,10 +90,10 @@ TEST_F(HoldOutVerifierTest, TrivialPass) {
   auto cfg_r = make_cfg(rewrite, live_out);
 
   add_testcases(4);
-  fxn_.set_target(cfg_t);
+  fxn_->set_target(cfg_t, false, false);
 
-  EXPECT_TRUE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_TRUE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 }
 
 TEST_F(HoldOutVerifierTest, TrivialFail) {
@@ -113,10 +121,10 @@ TEST_F(HoldOutVerifierTest, TrivialFail) {
   auto cfg_r = make_cfg(rewrite, live_out);
 
   add_testcases(4);
-  fxn_.set_target(cfg_t);
+  fxn_->set_target(cfg_t, false, false);
 
-  EXPECT_FALSE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_FALSE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 }
 
 TEST_F(HoldOutVerifierTest, TrivialPassWithSse) {
@@ -144,17 +152,17 @@ TEST_F(HoldOutVerifierTest, TrivialPassWithSse) {
   auto cfg_r = make_cfg(rewrite, live_out);
 
   add_testcases(4);
-  fxn_.set_target(cfg_t);
+  fxn_->set_target(cfg_t, false, false);
 
-  EXPECT_TRUE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_TRUE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 
   live_out = x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms();
   cfg_t = make_cfg(target, live_out);
   cfg_r = make_cfg(rewrite, live_out);
 
-  EXPECT_TRUE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_TRUE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 }
 
 TEST_F(HoldOutVerifierTest, TrivialPassMoveXmm) {
@@ -184,17 +192,17 @@ TEST_F(HoldOutVerifierTest, TrivialPassMoveXmm) {
   auto cfg_r = make_cfg(rewrite, live_out);
 
   add_testcases(4);
-  fxn_.set_target(cfg_t);
+  fxn_->set_target(cfg_t, false, false);
 
-  EXPECT_TRUE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_TRUE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 
   live_out = x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms();
   cfg_t = make_cfg(target, live_out);
   cfg_r = make_cfg(rewrite, live_out);
 
-  EXPECT_TRUE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_TRUE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 }
 
 TEST_F(HoldOutVerifierTest, TrivialFailMoveXmm) {
@@ -223,17 +231,17 @@ TEST_F(HoldOutVerifierTest, TrivialFailMoveXmm) {
   auto cfg_r = make_cfg(rewrite, live_out);
 
   add_testcases(1);
-  fxn_.set_target(cfg_t);
+  fxn_->set_target(cfg_t, false, false);
 
-  EXPECT_FALSE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_FALSE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 
   live_out = x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms();
   cfg_t = make_cfg(target, live_out);
   cfg_r = make_cfg(rewrite, live_out);
 
-  EXPECT_FALSE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_FALSE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 }
 
 
@@ -265,10 +273,10 @@ TEST_F(HoldOutVerifierTest, PassMoveXmmAlternateLiveOut) {
   auto cfg_r = make_cfg(rewrite, live_out);
 
   add_testcases(1);
-  fxn_.set_target(cfg_t);
+  fxn_->set_target(cfg_t, false, false);
 
-  EXPECT_TRUE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_TRUE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 }
 
 TEST_F(HoldOutVerifierTest, PassMoveXmm1AlternateLiveOut) {
@@ -297,10 +305,10 @@ TEST_F(HoldOutVerifierTest, PassMoveXmm1AlternateLiveOut) {
   auto cfg_r = make_cfg(rewrite, live_out);
 
   add_testcases(1);
-  fxn_.set_target(cfg_t);
+  fxn_->set_target(cfg_t, false, false);
 
-  EXPECT_TRUE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_TRUE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 }
 
 TEST_F(HoldOutVerifierTest, MemoryFail) {
@@ -329,15 +337,14 @@ TEST_F(HoldOutVerifierTest, MemoryFail) {
   auto cfg_r = make_cfg(rewrite, live_out);
 
   add_testcases(4, cfg_t);
-  fxn_.set_target(cfg_t);
+  fxn_->set_target(cfg_t, true, true);
 
-  hov.set_heap_out(true);
-  EXPECT_FALSE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  EXPECT_FALSE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 
-  hov.set_heap_out(false);
-  EXPECT_TRUE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  fxn_->set_target(cfg_t, false, false);
+  EXPECT_TRUE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 }
 
 TEST_F(HoldOutVerifierTest, MemoryPass) {
@@ -367,15 +374,14 @@ TEST_F(HoldOutVerifierTest, MemoryPass) {
   auto cfg_r = make_cfg(rewrite, live_out);
 
   add_testcases(4, cfg_t);
-  fxn_.set_target(cfg_t);
 
-  hov.set_heap_out(true);
-  EXPECT_TRUE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  fxn_->set_target(cfg_t, true, true);
+  EXPECT_TRUE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 
-  hov.set_heap_out(false);
-  EXPECT_TRUE(hov.verify(cfg_t, cfg_r));
-  EXPECT_FALSE(hov.has_error()) << hov.error() << std::endl;
+  fxn_->set_target(cfg_t, false, false);
+  EXPECT_TRUE(hov->verify(cfg_t, cfg_r));
+  EXPECT_FALSE(hov->has_error()) << hov->error() << std::endl;
 }
 
 
