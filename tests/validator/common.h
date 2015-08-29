@@ -409,7 +409,7 @@ private:
       expect_cpustate_equal_on_liveout(sandbox_target_state,
                                        v_.get_target_final_state(),
                                        tmp.str());
-    } 
+    }
 
 
     if(cfg_r_->is_sound()) {
@@ -421,7 +421,7 @@ private:
       expect_cpustate_equal_on_liveout(sandbox_rewrite_state,
                                        v_.get_rewrite_final_state(),
                                        tmp.str());
-    } 
+    }
 
   }
 
