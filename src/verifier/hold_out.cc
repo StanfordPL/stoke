@@ -42,8 +42,13 @@ bool HoldOutVerifier::states_equivalent(CpuState s1, CpuState s2, RegSet rs) {
   }
 
   for(auto r = rs.sse_begin(), re = rs.sse_end(); r != re; ++r) {
-    if(s1[*r] != s2[*r])
-      return false;
+    auto v1 = s1.sse[*r];
+    auto v2 = s2.sse[*r];
+    for(size_t i = 0; i < (*r).size()/64; ++i) {
+      if(v1.get_fixed_quad(i) != v2.get_fixed_quad(i)) {
+        return false;
+      }
+    }
   }
 
   for(auto r = rs.flags_begin(), re = rs.flags_end(); r != re; ++r) {
@@ -77,10 +82,7 @@ bool HoldOutVerifier::verify(const Cfg& target, const Cfg& rewrite) {
   sandbox_->insert_function(target);
   sandbox_->set_entrypoint(target_label);
   sandbox_->run();
-  for(size_t i = 0; i < sandbox_->num_inputs(); ++i) {
-    reference_outs.push_back(*(sandbox_->get_output(i)));
-  }
-  //reference_outs.insert(reference_outs.begin(), sandbox_->output_begin(), sandbox_->output_end());
+  reference_outs.insert(reference_outs.begin(), sandbox_->output_begin(), sandbox_->output_end());
 
   // Compute outputs of rewrite
   sandbox_->insert_function(rewrite);

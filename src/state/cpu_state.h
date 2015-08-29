@@ -140,28 +140,6 @@ struct CpuState {
     update((x64asm::R&)reg, val);
   }
 
-  /** Access an SSE register. */
-  inline cpputil::BitVector operator[](const x64asm::Sse& reg) const {
-    return read_sse(reg, reg.size());
-  }
-  inline cpputil::BitVector operator[](const x64asm::Xmm& reg) const {
-    auto full = sse[reg];
-    full.resize_for_bits(128);
-    return full;
-  }
-  inline cpputil::BitVector operator[](const x64asm::Ymm& reg) const {
-    return sse[reg];
-  }
-
-  /** Read an SSE register with index idx, with given width. */
-  cpputil::BitVector read_sse(size_t idx, size_t width) const {
-    auto full = sse[idx];
-    if(width < 256) {
-      full.resize_for_bits(width);
-    }
-    return full;
-  }
-
   /** Access Eflags */
   inline bool operator[](const x64asm::Eflags& f) const {
     return rf.is_set(f.index());

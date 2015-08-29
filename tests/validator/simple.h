@@ -319,7 +319,7 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
   x64asm::Code d(code);
 
   Z3Solver s;
-  Validator v(s);
+  StraightLineValidator v(s);
   CpuState ceg;
 
   x64asm::RegSet rs = ValidatorBaseTest::get_default_regset();
@@ -329,6 +329,7 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
 
 
   EXPECT_TRUE(v.verify(cfg_t, cfg_r));
+  EXPECT_FALSE(v.has_error()) << v.error() << std::endl;
 
 }
 
