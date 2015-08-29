@@ -30,8 +30,10 @@ public:
     has_error_ = false;
   }
 
+  virtual ~Verifier() { }
+
   /** Add a sandbox for this verifier to use. */
-  virtual Verifier& add_sandbox(Sandbox* sb) {
+  virtual Verifier& set_sandbox(Sandbox* sb) {
     sandbox_ = sb;
     return *this;
   }
