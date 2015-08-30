@@ -69,6 +69,9 @@ void BoundedValidator::sandbox_aliasing_callback(const StateCallbackData& data, 
 
 void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump, SymState& state) {
 
+  if(cfg.num_instrs(bb) == 0)
+    return;
+
   size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(bb, 0));
   size_t end_index = start_index + cfg.num_instrs(bb);
 
@@ -168,7 +171,6 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     for(size_t i = 0; i < P.size(); ++i)
       build_circuit(target, P[i], is_jump(target,P,i), state_t);
-
     for(size_t i = 0; i < Q.size(); ++i)
       build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r);
 
@@ -184,7 +186,6 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     // Step 4: Invoke the solver
     bool is_sat = solver_.is_sat(constraints);
-    cout << "CONSTRAINTS: " << constraints.size() << " SAT? " << is_sat << endl << endl;
     if(solver_.has_error())
       throw VALIDATOR_ERROR("solver: " + solver_.get_error());
 
@@ -215,7 +216,9 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
   // Step 0: Background checks
   // - all the instructions are supported in target/rewrite
-  for(const auto& cfg : { target, rewrite }) {
+  for(const auto& cfg : {
+  target, rewrite
+}) {
     for(auto instr : cfg.get_code()) {
       if(instr.is_label_defn() || instr.is_any_jump() || instr.is_ret()) {
         continue;
@@ -255,9 +258,9 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
   // Step 1: get all the paths from the enumerator
   for(auto path : PathEnumerator::find_paths(target, bound_))
-    paths_[false].push_back(path); 
+    paths_[false].push_back(path);
   for(auto path : PathEnumerator::find_paths(rewrite, bound_))
-    paths_[true].push_back(path); 
+    paths_[true].push_back(path);
 
   // Step 2: get the paths taken by every testcase
   learn_paths(target, false);
@@ -270,7 +273,7 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   for(auto target_path : paths_[false]) {
     for(auto rewrite_path : paths_[true]) {
       count++;
-      cout << "Verifying pair " << count << "/" << total << endl;
+      //cout << "Verifying pair " << count << "/" << total << endl;
       ok &= verify_pair(target, rewrite, target_path, rewrite_path);
     }
   }
