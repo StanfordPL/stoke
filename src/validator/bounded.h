@@ -32,9 +32,16 @@ class BoundedValidator : public Validator {
 
 public:
 
-  BoundedValidator(SMTSolver& solver) : Validator(solver) {}
+  BoundedValidator(SMTSolver& solver) : Validator(solver) {
+    set_bound(4);
+  }
 
   ~BoundedValidator() {}
+
+  BoundedValidator& set_bound(size_t n) {
+    bound_ = n;
+    return *this;
+  }
 
   /** Evalue if the target and rewrite are the same */
   bool verify(const Cfg& target, const Cfg& rewrite);
@@ -53,6 +60,9 @@ private:
     FALL_THROUGH,
     JUMP
   };
+
+  /** The bound on iterations */
+  size_t bound_;
 
   /** Run cfg on all testcases, learn the paths, and store them.*/
   void learn_paths(const Cfg&, bool is_rewrite);

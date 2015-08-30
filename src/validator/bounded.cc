@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "src/cfg/cfg.h"
+#include "src/cfg/path_enumerator.h"
 #include "src/validator/bounded.h"
 
 using namespace std;
@@ -30,8 +31,20 @@ void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
 
     sandbox_->run(i);
 
-    paths_[is_rewrite].push_back(p);
-    path_to_testcase_[is_rewrite][p].push_back(i);
+    // check the path to see if it's in the bound
+    std::map<Cfg::id_type, size_t> counts;
+    bool keep = true;
+    for(auto node : p) {
+      counts[node]++;
+      if(counts[node] > bound_) {
+        keep = false;
+        break;
+      }
+    }
+
+    if(keep) {
+      path_to_testcase_[is_rewrite][p].push_back(i);
+    }
   }
 }
 
@@ -200,11 +213,14 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   // State
   has_error_ = false;
 
-  // Step 0: check that:
+  // Step 0: Background checks
   // - all the instructions are supported in target/rewrite
-  for(const auto& cfg : {target, rewrite}) {
+  for(const auto& cfg : { target, rewrite }) {
     for(auto instr : cfg.get_code()) {
-      if(!is_supported(instr)) {
+      if(instr.is_label_defn() || instr.is_any_jump() || instr.is_ret()) {
+        continue;
+      }
+      else if(!is_supported(instr)) {
         stringstream ss;
         ss << "Instruction " << instr << " is unsupported.";
         SET_ERROR(ss.str());
@@ -224,7 +240,9 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   }
 
   // - def-in/live-out are supported
-  for(const auto& cfg : {target, rewrite}) {
+  for(const auto& cfg : {
+  target, rewrite
+}) {
     if(!handler_.regset_is_supported(cfg.def_ins())) {
       SET_ERROR("Def-ins are not supported");
       return false;
@@ -235,11 +253,17 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     }
   }
 
-  // Step 1: get the paths taken by every testcase
+  // Step 1: get all the paths from the enumerator
+  for(auto path : PathEnumerator::find_paths(target, bound_))
+    paths_[false].push_back(path); 
+  for(auto path : PathEnumerator::find_paths(rewrite, bound_))
+    paths_[true].push_back(path); 
+
+  // Step 2: get the paths taken by every testcase
   learn_paths(target, false);
   learn_paths(rewrite, true);
 
-  // Step 3: check each pair of feastible paths
+  // Step 3: check each pair of paths
   bool ok = true;
   size_t total = paths_[false].size() * paths_[true].size();
   size_t count = 0;
@@ -250,8 +274,6 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
       ok &= verify_pair(target, rewrite, target_path, rewrite_path);
     }
   }
-
-  // Step 4: check each pair of infeasible paths
 
   return ok;
 }

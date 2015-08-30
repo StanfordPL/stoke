@@ -33,6 +33,12 @@ cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg =
   .description("Verification strategy")
   .default_val(Strategy::HOLD_OUT);
 
+cpputil::ValueArg<size_t>& bound_arg =
+  cpputil::ValueArg<size_t>::create("bound")
+  .usage("<int>")
+  .description("For bounded verification, maximum loop iterations")
+  .default_val(4);
+
 } // namespace stoke
 
 #endif

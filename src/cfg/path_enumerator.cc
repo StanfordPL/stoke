@@ -74,10 +74,10 @@ void PathEnumerator::find_paths_helper(const Cfg& cfg,
     if(this_count > max_count) {
       counts[*it]--;
 #ifdef DEBUG_PATH_ENUM
-    for(size_t i = 0; i < len; ++i) {
-      cout << "  ";
-    }
-    cout << "* Successor dead end: " << *it << endl;
+      for(size_t i = 0; i < len; ++i) {
+        cout << "  ";
+      }
+      cout << "* Successor dead end: " << *it << endl;
 #endif
       continue;
     }
