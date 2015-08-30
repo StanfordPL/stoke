@@ -47,9 +47,7 @@ public:
     return opcodes;
   }
 
-
-private:
-
+  /** Returns the condition associated with an instruction */
   static SymBool condition_predicate(const std::string& cc, const SymState& ss);
 
 };
