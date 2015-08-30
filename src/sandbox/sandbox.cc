@@ -263,17 +263,6 @@ Sandbox& Sandbox::run(size_t index) {
   // Run the code (control exits abnormally for sigfpe or if linking failed)
   if (!lnkr_.good()) {
     io->out_.code = ErrorCode::SIGCUSTOM_LINKER_ERROR;
-#ifndef NDEBUG
-    if(lnkr_.multiple_def()) {
-      cerr << "LINKER: Multiple definitions: " << lnkr_.get_multiple_def() << endl;
-    }
-    if(lnkr_.undef_symbol()) {
-      cerr << "LINKER: Undefined symbol: " << lnkr_.get_undef_symbol() << endl;
-    }
-    if(lnkr_.jump_too_far()) {
-      cerr << "LINKER: Jump too far." << endl;
-    }
-#endif
   } else if (!sigsetjmp(buf_, 1)) {
     io->out_.code = harness_.call<ErrorCode>();
   } else {
