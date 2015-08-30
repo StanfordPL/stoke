@@ -34,10 +34,13 @@ public:
   VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn) : Verifier() {
 
     switch(strategy_arg) {
-    case Strategy::BOUNDED:
+    case Strategy::BOUNDED: {
       solver_ = new SolverGadget();
-      verifier_ = new BoundedValidator(*solver_);
+      auto bv = new BoundedValidator(*solver_);
+      bv->set_bound(bound_arg.value());
+      verifier_ = bv;
       break;
+    }
 
     case Strategy::HOLD_OUT:
       verifier_ = new HoldOutVerifier(fxn);

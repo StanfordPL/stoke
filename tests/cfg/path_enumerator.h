@@ -221,8 +221,8 @@ TEST_F(PathEnumeratorTest, VectorizationExample) {
   //  └───┘                      │            └───┘
   //    ∧                        │
   //    └────────────────────────┘
-  //  
-  //  
+  //
+  //
 
   std::stringstream ss;
   ss << ".A:" << std::endl;
