@@ -240,6 +240,13 @@ TEST_F(IntegrationTest, SandboxFunctionCall) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
+TEST_F(IntegrationTest, SandboxLbls) {
+  set_working_dir("tests/fixtures/sandbox/lbls");
+  set_path("../../../../bin");
+  EXPECT_EQ(0ull, shell("make"));
+  EXPECT_EQ(0ull, shell("make clean"));
+}
+
 TEST_F(IntegrationTest, SearchCall) {
   set_working_dir("tests/fixtures/search/call");
   set_path("../../../../bin");
