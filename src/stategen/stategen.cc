@@ -36,7 +36,7 @@ void callback(const StateCallbackData& data, void* arg) {
 
 namespace stoke {
 
-bool StateGen::get(CpuState& cs) const {
+bool StateGen::get(CpuState& cs) {
   // Randomize registers
   for (size_t i = 0, ie = cs.gp.size(); i < ie; ++i) {
     auto& r = cs.gp[i];
@@ -45,7 +45,7 @@ bool StateGen::get(CpuState& cs) const {
     for (size_t j = 0, je = r.num_fixed_bytes(); j < je; ++j) {
       auto max_byte = max & 0xff;
       auto mask_byte = mask & 0xff;
-      r.get_fixed_byte(j) = (rand() % (max_byte + 1)) & mask_byte;
+      r.get_fixed_byte(j) = (gen_() % (max_byte + 1)) & mask_byte;
       max >>= 8;
       mask >>= 8;
     }
@@ -53,12 +53,12 @@ bool StateGen::get(CpuState& cs) const {
   for (size_t i = 0, ie = cs.sse.size(); i < ie; ++i) {
     auto& s = cs.sse[i];
     for (size_t j = 0, je = s.num_fixed_bytes(); j < je; ++j) {
-      s.get_fixed_byte(j) = rand() % 256;
+      s.get_fixed_byte(j) = gen_() % 256;
     }
   }
   for (size_t i = 0, ie = cs.rf.size(); i < ie; ++i) {
     if (!cs.rf.is_fixed(i)) {
-      cs.rf.set(i, rand() % 2);
+      cs.rf.set(i, gen_() % 2);
     }
   }
 
@@ -196,7 +196,7 @@ size_t StateGen::get_size(const Instruction& instr) const {
   return instr.get_operand<M8>(mi).size()/8;
 }
 
-bool StateGen::resize_within(Memory& mem, uint64_t addr, size_t size) const {
+bool StateGen::resize_within(Memory& mem, uint64_t addr, size_t size) {
   // This should always be true, otherwise there'd be no work to do
   // * See the previous check against already_allocated() one level up
   assert((addr + size) > mem.upper_bound());
@@ -211,7 +211,7 @@ bool StateGen::resize_within(Memory& mem, uint64_t addr, size_t size) const {
   return true;
 }
 
-bool StateGen::resize_below(Memory& mem, uint64_t addr, size_t size) const {
+bool StateGen::resize_below(Memory& mem, uint64_t addr, size_t size) {
   size_t new_size = 0;
   if (addr + size > mem.upper_bound()) {
     new_size = size;
@@ -228,7 +228,7 @@ bool StateGen::resize_below(Memory& mem, uint64_t addr, size_t size) const {
   return true;
 }
 
-bool StateGen::resize_above(Memory& mem, uint64_t addr, size_t size) const {
+bool StateGen::resize_above(Memory& mem, uint64_t addr, size_t size) {
   const auto delta = addr + size - mem.upper_bound();
   if (mem.size() + delta > max_memory_) {
     return false;
@@ -239,16 +239,16 @@ bool StateGen::resize_above(Memory& mem, uint64_t addr, size_t size) const {
   return true;
 }
 
-void StateGen::randomize_mem(Memory& mem) const {
+void StateGen::randomize_mem(Memory& mem) {
   for (auto i = mem.lower_bound(), ie = mem.upper_bound(); i < ie; ++i) {
     if (!mem.is_valid(i)) {
       mem.set_valid(i, true);
-      mem[i] = rand() % 256;
+      mem[i] = gen_() % 256;
     }
   }
 }
 
-bool StateGen::resize_mem(Memory& mem, uint64_t addr, size_t size) const {
+bool StateGen::resize_mem(Memory& mem, uint64_t addr, size_t size) {
   if (mem.size() == 0) {
     mem.resize(addr, size);
     randomize_mem(mem);
