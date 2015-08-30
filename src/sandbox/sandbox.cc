@@ -105,8 +105,6 @@ Sandbox::Sandbox() {
   set_abi_check(true);
   set_stack_check(true);
   set_max_jumps(16);
-  set_count_instructions(false);
-  set_use_latency(false);
 
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
@@ -248,8 +246,6 @@ Sandbox& Sandbox::run(size_t index) {
 
   // Reset error-related variables
   jumps_remaining_ = max_jumps_;
-  // Reset instruction count
-  instruction_count_ = 0;
 
   // Initialize input-specific state that the instrumented function relies on
   // State that doesn't vary on a per-input basis (ie: entrypoint_) is set elsewhere
@@ -287,9 +283,6 @@ Sandbox& Sandbox::run(size_t index) {
   // Finalize output state
   if (abi_check_ && !check_abi(*io)) {
     io->out_.code = ErrorCode::SIGCUSTOM_ABI_VIOLATION;
-  }
-  if (count_instructions_) {
-    io->out_.latency_seen = instruction_count_;
   }
 
   return *this;
@@ -803,10 +796,6 @@ bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
     if (!cfg.is_reachable(b)) {
       continue;
     }
-    // Emit code for counting the instructions in this block
-    if (count_instructions_) {
-      emit_count_instructions(cfg, b);
-    }
 
     const auto size = cfg.num_instrs(b);
     const auto begin = size == 0 ? 0 : cfg.get_index(Cfg::loc_type(b, 0));
@@ -974,21 +963,6 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
   default:
     assert(false);
   }
-}
-
-void Sandbox::emit_count_instructions(const Cfg& cfg, Cfg::id_type bb) {
-  size_t count = 0;
-  for (auto i = cfg.instr_begin(bb), ie = cfg.instr_end(bb); i != ie; ++i) {
-    if(i->is_label_defn() || i->is_nop())
-      continue;
-    count++;
-  }
-
-  assm_.mov(Moffs64(&scratch_[rax]), rax);
-  assm_.mov(rax, Moffs64(&instruction_count_));
-  assm_.lea(rax, M64(rax, Imm32(count)));
-  assm_.mov(Moffs64(&instruction_count_), rax);
-  assm_.mov(rax, Moffs64(&scratch_[rax]));
 }
 
 void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_offset) {
