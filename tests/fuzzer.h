@@ -93,7 +93,7 @@ TransformPools default_fuzzer_pool() {
 }
 
 /** Generates an instruction and invokes the callback on it. */
-void fuzz(TransformPools& pools, size_t iterations, void (*callback)(const Cfg& cfg, void* info), void* callback_info, size_t instr_count = 1, uint64_t seed = 0) {
+uint64_t fuzz(TransformPools& pools, size_t iterations, void (*callback)(const Cfg& cfg, void* info), void* callback_info, size_t instr_count = 1, uint64_t seed = 0) {
 
   // Step 1: get the seed
   if(!seed) {
@@ -145,6 +145,7 @@ void fuzz(TransformPools& pools, size_t iterations, void (*callback)(const Cfg& 
 
   }
 
+  return seed;
 }
 
 } //namespace stoke
