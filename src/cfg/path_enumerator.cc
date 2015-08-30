@@ -18,7 +18,7 @@
 using namespace stoke;
 using namespace std;
 
-#define DEBUG_PATH_ENUM 0
+//#define DEBUG_PATH_ENUM 1
 
 
 vector<vector<Cfg::id_type>> PathEnumerator::find_paths(const Cfg& cfg, size_t max_len) {
@@ -28,21 +28,24 @@ vector<vector<Cfg::id_type>> PathEnumerator::find_paths(const Cfg& cfg, size_t m
   vector<Cfg::id_type> path_so_far;
   path_so_far.push_back(cfg.get_entry());
 
+  std::map<Cfg::id_type, size_t> node_counts;
+
   if(max_len > 0)
-    find_paths_helper(cfg, path_so_far, max_len - 1, results);
+    find_paths_helper(cfg, path_so_far, max_len, node_counts, results);
 
   return results;
 }
 
 void PathEnumerator::find_paths_helper(const Cfg& cfg,
                                        std::vector<Cfg::id_type> path_so_far,
-                                       size_t remaining,
+                                       size_t max_count,
+                                       std::map<Cfg::id_type, size_t> counts,
                                        std::vector<std::vector<Cfg::id_type>>& results) {
 
   size_t len = path_so_far.size();
-  Cfg::id_type last_block = path_so_far[path_so_far.size() - 1];
+  Cfg::id_type last_block = path_so_far[len - 1];
 
-#ifndef DEBUG_PATH_ENUM
+#ifdef DEBUG_PATH_ENUM
   for(size_t i = 0; i < len; ++i) {
     cout << "  ";
   }
@@ -55,7 +58,7 @@ void PathEnumerator::find_paths_helper(const Cfg& cfg,
 
   // check for end
   if(last_block == cfg.get_exit()) {
-#ifndef DEBUG_PATH_ENUM
+#ifdef DEBUG_PATH_ENUM
     for(size_t i = 0; i < len; ++i) {
       cout << "  ";
     }
@@ -64,28 +67,32 @@ void PathEnumerator::find_paths_helper(const Cfg& cfg,
     results.push_back(path_so_far);
   }
 
-  if(remaining == 0) {
-#ifndef DEBUG_PATH_ENUM
-    for(size_t i = 0; i < len; ++i) {
-      cout << "  ";
-    }
-    cout << "* Dead end!" << endl;
-#endif
-    return;
-  }
-
   // iterate
   for(auto it = cfg.succ_begin(last_block), ie = cfg.succ_end(last_block); it != ie; ++it) {
-#ifndef DEBUG_PATH_ENUM
+
+    size_t this_count = ++counts[*it];
+    if(this_count > max_count) {
+      counts[*it]--;
+#ifdef DEBUG_PATH_ENUM
     for(size_t i = 0; i < len; ++i) {
       cout << "  ";
     }
-    cout << "* Exploring successor " << *it << endl;
+    cout << "* Successor dead end: " << *it << endl;
+#endif
+      continue;
+    }
+
+#ifdef DEBUG_PATH_ENUM
+    for(size_t i = 0; i < len; ++i) {
+      cout << "  ";
+    }
+    cout << "* Exploring successor: " << *it << endl;
 #endif
 
     path_so_far.push_back(*it);
-    find_paths_helper(cfg, path_so_far, remaining-1, results);
+    find_paths_helper(cfg, path_so_far, max_count, counts, results);
     path_so_far.erase(path_so_far.begin() + path_so_far.size()-1);
+    counts[*it]--;
   }
 
 }

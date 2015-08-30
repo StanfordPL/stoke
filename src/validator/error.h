@@ -21,6 +21,7 @@
 #include <sstream>
 
 #define VALIDATOR_ERROR(X) validator_error(__FILE__, __LINE__, X);
+#define SET_ERROR(X) { error_=(X); has_error_=true; error_file_=__FILE__; error_line_=__LINE__; }
 
 class validator_error : public std::exception {
 
