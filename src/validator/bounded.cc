@@ -71,25 +71,25 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
       // figure out if its this condition (jump case) or negation (fallthrough)
       //cout << "INSTR: " << instr << endl;
       switch(jump) {
-        case JumpType::JUMP:
-          state.constraints.push_back(constraint);
-          //cout << "Constraint: (jump) " << constraint << endl;
-          break;
-        case JumpType::FALL_THROUGH:
-          constraint = !constraint;
-          state.constraints.push_back(constraint);
-          //cout << "Constraint: (ft) " << constraint << endl;
-          break;
-        case JumpType::NONE:
-          break;
-        default:
-          assert(false);
+      case JumpType::JUMP:
+        state.constraints.push_back(constraint);
+        //cout << "Constraint: (jump) " << constraint << endl;
+        break;
+      case JumpType::FALL_THROUGH:
+        constraint = !constraint;
+        state.constraints.push_back(constraint);
+        //cout << "Constraint: (ft) " << constraint << endl;
+        break;
+      case JumpType::NONE:
+        break;
+      default:
+        assert(false);
       }
 
     } else if (instr.is_label_defn() || instr.is_nop() || instr.is_any_jump()) {
-      continue;  
+      continue;
     } else if (instr.is_ret()) {
-      return; 
+      return;
     } else {
       handler_.build_circuit(instr, state);
 
@@ -150,7 +150,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     constraints.push_back(it);
   for(auto it : state_r.equality_constraints(init, rewrite.def_ins()))
     constraints.push_back(it);
-  
+
   try {
 
     for(size_t i = 0; i < P.size(); ++i)
@@ -183,7 +183,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     error_ = e.get_message();
     error_file_ = e.get_file();
     error_line_ = e.get_line();
-    
+
     stop_mm();
     return false;
   }
@@ -202,26 +202,44 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
   // Step 0: check that:
   // - all the instructions are supported in target/rewrite
+  for(const auto& cfg : {target, rewrite}) {
+    for(auto instr : cfg.get_code()) {
+      if(!is_supported(instr)) {
+        stringstream ss;
+        ss << "Instruction " << instr << " is unsupported.";
+        SET_ERROR(ss.str());
+        return false;
+      }
+    }
+  }
+
   // - def-ins/live-outs match
+  if(target.def_ins() != rewrite.def_ins()) {
+    SET_ERROR("Target def-ins do not match rewrite def-ins");
+    return false;
+  }
+  if(target.live_outs() != target.live_outs()) {
+    SET_ERROR("Target live-outs do not match rewrite live-outs");
+    return false;
+  }
+
   // - def-in/live-out are supported
+  for(const auto& cfg : {target, rewrite}) {
+    if(!handler_.regset_is_supported(cfg.def_ins())) {
+      SET_ERROR("Def-ins are not supported");
+      return false;
+    }
+    if(!handler_.regset_is_supported(cfg.live_outs())) {
+      SET_ERROR("Live outs are not supported");
+      return false;
+    }
+  }
 
   // Step 1: get the paths taken by every testcase
   learn_paths(target, false);
   learn_paths(rewrite, true);
 
-  /*
-  for(auto pair : path_to_testcase_[0]) {
-    auto path = pair.first;
-    cout << "PATH: ";
-    for(auto index : path) {
-      cout << index << "  ";
-    }
-    cout << endl;
-    cout << "  ( " << pair.second.size() << " testcases )" << endl;
-  }
-  */
-
-  // Step 2: check each pair of feastible paths
+  // Step 3: check each pair of feastible paths
   bool ok = true;
   size_t total = paths_[false].size() * paths_[true].size();
   size_t count = 0;
@@ -233,7 +251,7 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     }
   }
 
-  // Step 3: check each pair of infeasible paths
+  // Step 4: check each pair of infeasible paths
 
   return ok;
 }

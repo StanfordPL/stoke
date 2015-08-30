@@ -25,13 +25,14 @@ namespace stoke {
 class PathEnumerator {
 public:
 
-  static std::vector<std::vector<Cfg::id_type>> find_paths(const Cfg& cfg, size_t max_len);
+  static std::vector<std::vector<Cfg::id_type>> find_paths(const Cfg& cfg, size_t max_loops);
 
 private:
 
   static void find_paths_helper(const Cfg& cfg,
                                 std::vector<Cfg::id_type> path_so_far,
-                                size_t remaining,
+                                size_t max_count,
+                                std::map<Cfg::id_type, size_t> counts,
                                 std::vector<std::vector<Cfg::id_type>>& results);
 
   // no need to construct instances of this class
