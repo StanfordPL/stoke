@@ -17,76 +17,76 @@
 
 namespace stoke {
 
-class BoundedValidatorBaseTest : public ::testing::Test { 
+class BoundedValidatorBaseTest : public ::testing::Test {
 
-  public:
+public:
 
-    BoundedValidatorBaseTest() {
-      solver = new Cvc4Solver();
-      sandbox = new Sandbox();
-      validator = new BoundedValidator(*solver);
-      validator->set_bound(8);
-      validator->set_sandbox(sandbox);
+  BoundedValidatorBaseTest() {
+    solver = new Cvc4Solver();
+    sandbox = new Sandbox();
+    validator = new BoundedValidator(*solver);
+    validator->set_bound(8);
+    validator->set_sandbox(sandbox);
+  }
+
+  ~BoundedValidatorBaseTest() {
+    delete validator;
+    delete solver;
+    delete sandbox;
+  }
+
+protected:
+
+  static x64asm::RegSet all() {
+    auto rs = x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms();
+    rs = rs + x64asm::eflags_cf + x64asm::eflags_zf + x64asm::eflags_pf + x64asm::eflags_of + x64asm::eflags_sf;
+    return rs;
+  }
+
+  void fail() {
+    FAIL();
+  }
+
+  Cfg make_cfg(std::stringstream& ss, x64asm::RegSet di = all(), x64asm::RegSet lo = all()) {
+    x64asm::Code c;
+    ss >> c;
+    if(ss.fail()) {
+      std::cerr << "Parsing error!" << std::endl;
+      std::cerr << cpputil::fail_msg(ss) << std::endl;
+      fail();
     }
+    return Cfg(c, di, lo);
+  }
 
-    ~BoundedValidatorBaseTest() {
-      delete validator;
-      delete solver;
-      delete sandbox;
+  void add_testcases(int count) {
+    for (int i = 0; i < count; ++i) {
+      sandbox->insert_input(get_state());
     }
+  }
 
-  protected:
-
-    static x64asm::RegSet all() {
-      auto rs = x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms();
-      rs = rs + x64asm::eflags_cf + x64asm::eflags_zf + x64asm::eflags_pf + x64asm::eflags_of + x64asm::eflags_sf;
-      return rs;
+  void add_testcases(int count, const Cfg& cfg) {
+    for (int i = 0; i < count; ++i) {
+      sandbox->insert_input(get_state(cfg));
     }
+  }
 
-    void fail() {
-      FAIL();
-    }
+  CpuState get_state() {
+    CpuState cs;
+    StateGen sg(sandbox);
+    sg.get(cs);
+    return cs;
+  }
 
-    Cfg make_cfg(std::stringstream& ss, x64asm::RegSet di = all(), x64asm::RegSet lo = all()) {
-      x64asm::Code c;
-      ss >> c;
-      if(ss.fail()) {
-        std::cerr << "Parsing error!" << std::endl;
-        std::cerr << cpputil::fail_msg(ss) << std::endl;
-        fail();
-      }
-      return Cfg(c, di, lo);
-    }
+  CpuState get_state(const Cfg& cfg) {
+    CpuState cs;
+    StateGen sg(sandbox);
+    sg.get(cs, cfg);
+    return cs;
+  }
 
-    void add_testcases(int count) {
-      for (int i = 0; i < count; ++i) {
-        sandbox->insert_input(get_state());
-      }
-    }
-
-    void add_testcases(int count, const Cfg& cfg) {
-      for (int i = 0; i < count; ++i) {
-        sandbox->insert_input(get_state(cfg));
-      }
-    }
-
-    CpuState get_state() {
-      CpuState cs;
-      StateGen sg(sandbox);
-      sg.get(cs);
-      return cs;
-    }
-
-    CpuState get_state(const Cfg& cfg) {
-      CpuState cs;
-      StateGen sg(sandbox);
-      sg.get(cs, cfg);
-      return cs;
-    }
-
-    SMTSolver* solver;
-    BoundedValidator* validator;
-    Sandbox* sandbox;
+  SMTSolver* solver;
+  BoundedValidator* validator;
+  Sandbox* sandbox;
 };
 
 TEST_F(BoundedValidatorBaseTest, NoLoopsPasses) {
