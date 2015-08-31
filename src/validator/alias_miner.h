@@ -46,7 +46,7 @@ public:
 
   ~AliasMiner() {
     delete sandbox_;
-  } 
+  }
 
   /** This is a sandbox that *will be reset*.  But, if you want to configure
     a sandbox with special options, you can do that here. The class will delete
