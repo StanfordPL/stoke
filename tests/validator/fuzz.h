@@ -98,7 +98,9 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   tp.set_memory_write(false);
   tp.recompute_pools();
 
-  fuzz(tp, iterations, &validator_fuzz_callback, (void*)this);
+  uint64_t seed = fuzz(tp, iterations, &validator_fuzz_callback, (void*)this);
+
+  sg_.set_seed(seed);
 
 
   // Make sure we supported enough of the instructions

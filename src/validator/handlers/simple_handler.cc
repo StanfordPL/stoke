@@ -133,6 +133,20 @@ void SimpleHandler::add_all() {
 
   });
 
+  add_opcode({"imulq", "imull", "imulw"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    ss.set(dst, a*b);
+
+    ss.set(eflags_zf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+
+    //TODO make these right
+    ss.set(eflags_of, SymBool::tmp_var());
+    ss.set(eflags_cf, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
+  });
+
   add_opcode({"incb", "incw", "incl", "incq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     SymBitVector one = SymBitVector::constant(dst.size(), 1);
