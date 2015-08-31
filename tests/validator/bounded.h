@@ -24,6 +24,7 @@ public:
   BoundedValidatorBaseTest() {
     solver = new Cvc4Solver();
     sandbox = new Sandbox();
+    sandbox->set_max_jumps(4096);
     validator = new BoundedValidator(*solver);
     validator->set_bound(8);
     validator->set_sandbox(sandbox);
@@ -80,7 +81,12 @@ protected:
   CpuState get_state(const Cfg& cfg) {
     CpuState cs;
     StateGen sg(sandbox);
-    sg.get(cs, cfg);
+    bool b = sg.get(cs, cfg);
+    if(!b) {
+      std::cerr << "Couldn't generate a state!" << std::endl;
+      std::cerr << sg.get_error() << std::endl;
+      fail();
+    }
     return cs;
   }
 
@@ -235,5 +241,31 @@ TEST_F(BoundedValidatorBaseTest, PopcntWrongBeyondBound) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
+
+TEST_F(BoundedValidatorBaseTest, EasyMemory) {
+
+  auto live_outs = all();
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "incq %rax" << std::endl;
+  sst << "addl $0x5, (%rax)" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, live_outs, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "incq %rax" << std::endl;
+  ssr << "addl $0x4, (%rax)" << std::endl;
+  ssr << "addl $0x1, (%rax)" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, live_outs, live_outs);
+
+  add_testcases(3, target);
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
 
 } //namespace stoke
