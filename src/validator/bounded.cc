@@ -20,6 +20,31 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite, 
+                                  const Path& P, const Path& Q, CpuState& tc) {
+
+  auto target_tcs = path_to_testcase_[0][P];
+  auto rewrite_tcs = path_to_testcase_[1][Q];
+
+  // Do they have something in common?  if so, we're done.
+  // Both of these vectors are sorted --> O(n) time.
+  size_t j = 0;
+  size_t winner = (size_t)-1;
+  for(size_t i : target_tcs) {
+    while(j < rewrite_tcs.size() && rewrite_tcs[j] < i) {
+      j++;
+    }
+    if(rewrite_tcs[j] == i) {
+      // we're done!
+      tc = *(sandbox_->get_input(i));
+      return true;
+    } 
+  }
+
+  // Couldn't find anything
+  return false;
+
+}
 
 void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
   sandbox_->insert_function(cfg);
@@ -62,10 +87,6 @@ void BoundedValidator::sandbox_path_callback(const StateCallbackData& data, void
 
 }
 
-void BoundedValidator::sandbox_aliasing_callback(const StateCallbackData& data, void* arg) {
-
-
-}
 
 void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump, SymState& state) {
 
@@ -149,7 +170,37 @@ BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const Path&
 
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const Path& P, const Path& Q) {
 
+  // Step 0: Check if there's any memory access
+  bool memory = false;
+  for(size_t i = 0; i < 2; ++i) {
+    auto& path = i ? P : Q;
+    auto& cfg = i ? target : rewrite;
+    for(auto bb : path) {
+      if(!cfg.num_instrs(bb)) 
+        continue;
+      size_t start = cfg.get_index(std::pair<Cfg::id_type, size_t>(bb, 0));
+      size_t end = start + cfg.num_instrs(bb);
+      for(size_t j = start; j < end; ++j) {
+        auto instr = cfg.get_code()[j];
+        if(instr.is_memory_dereference() && !instr.is_ret()) {
+          memory = true;
+          break;
+        }
+      }
+      if(memory)
+        break;
+    }
+    if(memory)
+      break;
+  }
+
   // Step 1: Learn aliasing relationships
+  if(memory) {
+    CpuState testcase;
+    if(!find_pair_testcase(target, rewrite, P, Q, testcase)) {
+      return false;
+    }
+  }
 
   // Step 2: Setup memory cells
 

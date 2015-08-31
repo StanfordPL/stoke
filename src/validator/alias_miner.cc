@@ -22,7 +22,7 @@ using namespace x64asm;
 /** Takes a Cfg and a testcase; runs the Cfg on the testcase and tracks
   all memory reads/writes.  Then builds a list of all memory accesses in
   order. */
-vector<AliasMiner::MemoryAccess> 
+vector<AliasMiner::MemoryAccess>
 AliasMiner::mine_concrete_data(const Cfg& cfg, const CpuState& tc) {
 
   sandbox_->reset();
@@ -35,7 +35,7 @@ AliasMiner::mine_concrete_data(const Cfg& cfg, const CpuState& tc) {
 
   sandbox_->insert_input(tc);
   sandbox_->run();
-  
+
   return trace;
 
 }
@@ -67,8 +67,8 @@ void AliasMiner::mine_concrete_callback(const StateCallbackData& data, void* arg
       ma.width = instr.get_operand<Operand>(index).size();
       ma.write = instr.maybe_write(index);
     } else if (instr.is_ret()) {
-      return; 
-    } else { 
+      return;
+    } else {
       assert(false);
       return;
     }

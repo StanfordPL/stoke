@@ -22,6 +22,7 @@
 #include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/solver/smtsolver.h"
+#include "src/validator/alias_miner.h"
 #include "src/validator/error.h"
 #include "src/validator/validator.h"
 
@@ -49,9 +50,6 @@ public:
   /** Sandbox callback to record path */
   static void sandbox_path_callback(const StateCallbackData& data, void* arg);
 
-  /** Sandbox callback to record aliasing data */
-  static void sandbox_aliasing_callback(const StateCallbackData& data, void* arg);
-
 private:
   typedef std::vector<Cfg::id_type> Path;
 
@@ -72,6 +70,11 @@ private:
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&);
   /** Is there a jump in the path following this basic block? */
   static JumpType is_jump(const Cfg&, const Path& P, size_t i);
+  /** Find or create a testcase for a pair of paths. */
+  bool find_pair_testcase(const Cfg& target, const Cfg& rewrite, const Path& p, const Path& q, CpuState& tc);
+
+  /** For learning aliasing relationships */
+  AliasMiner am;
 
   /** Traces for the target/rewrite. */
   std::vector<Path> paths_[2];
