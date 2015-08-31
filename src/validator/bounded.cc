@@ -20,8 +20,8 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite, 
-                                  const Path& P, const Path& Q, CpuState& tc) {
+bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
+    const Path& P, const Path& Q, CpuState& tc) {
 
   auto target_tcs = path_to_testcase_[0][P];
   auto rewrite_tcs = path_to_testcase_[1][Q];
@@ -38,7 +38,7 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
       // we're done!
       tc = *(sandbox_->get_input(i));
       return true;
-    } 
+    }
   }
 
   // Couldn't find anything
@@ -176,7 +176,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     auto& path = i ? P : Q;
     auto& cfg = i ? target : rewrite;
     for(auto bb : path) {
-      if(!cfg.num_instrs(bb)) 
+      if(!cfg.num_instrs(bb))
         continue;
       size_t start = cfg.get_index(std::pair<Cfg::id_type, size_t>(bb, 0));
       size_t end = start + cfg.num_instrs(bb);

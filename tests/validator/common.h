@@ -154,7 +154,7 @@ protected:
     AliasAnalysis analysis(cfg_t_->get_code());
 
     size_t line = 0;
-    state.memory.set_analysis(&analysis);
+    static_cast<DeprecatedMemory*>(state.memory)->set_analysis(&analysis);
     for(auto it : cfg_t_->get_code()) {
       state.set_lineno(line);
       ch.build_circuit(it, state);
