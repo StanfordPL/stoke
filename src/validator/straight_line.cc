@@ -357,9 +357,9 @@ bool StraightLineValidator::verify(const Cfg& target, const Cfg& rewrite) {
     if (is_sat && solver_.has_model()) {
 
       counterexample_valid_ = true;
-      counterexample_ =      state_from_model(solver_, "_", 
-            static_cast<DeprecatedMemory*>(target_final.memory), 
-            static_cast<DeprecatedMemory*>(rewrite_final.memory));
+      counterexample_ =      state_from_model(solver_, "_",
+                                              static_cast<DeprecatedMemory*>(target_final.memory),
+                                              static_cast<DeprecatedMemory*>(rewrite_final.memory));
       target_final_state_  = state_from_model(solver_, "_1_FINAL");
       rewrite_final_state_ = state_from_model(solver_, "_2_FINAL");
 
