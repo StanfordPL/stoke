@@ -65,8 +65,12 @@ void StraightLineValidator::generate_constraints(const stoke::Cfg& f1, const sto
   AliasAnalysis first_analysis(f1.get_code());
   AliasAnalysis second_analysis(f2.get_code());
 
-  first.memory.set_analysis(&first_analysis);
-  second.memory.set_analysis(&second_analysis);
+  first.memory = new DeprecatedMemory();
+  second.memory = new DeprecatedMemory();
+  static_cast<DeprecatedMemory*>(first.memory)->set_analysis(&first_analysis);
+  static_cast<DeprecatedMemory*>(second.memory)->set_analysis(&second_analysis);
+  first.memory->set_parent(&first);
+  second.memory->set_parent(&second);
 
   // Build the circuits
   build_circuit(f1, first);
@@ -201,7 +205,7 @@ bool compute_split(vector<pair<uint64_t, uint16_t>> addresses, size_t pos,
 }
 
 CpuState StraightLineValidator::state_from_model(SMTSolver& smt, const string& name_suffix,
-    const SymMemory* memory, const SymMemory* memory2) {
+    const DeprecatedMemory* memory, const DeprecatedMemory* memory2) {
 
   CpuState cs;
 
@@ -353,7 +357,9 @@ bool StraightLineValidator::verify(const Cfg& target, const Cfg& rewrite) {
     if (is_sat && solver_.has_model()) {
 
       counterexample_valid_ = true;
-      counterexample_ =      state_from_model(solver_, "_", &target_final.memory, &rewrite_final.memory);
+      counterexample_ =      state_from_model(solver_, "_", 
+            static_cast<DeprecatedMemory*>(target_final.memory), 
+            static_cast<DeprecatedMemory*>(rewrite_final.memory));
       target_final_state_  = state_from_model(solver_, "_1_FINAL");
       rewrite_final_state_ = state_from_model(solver_, "_2_FINAL");
 

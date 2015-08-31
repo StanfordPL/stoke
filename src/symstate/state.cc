@@ -14,6 +14,7 @@
 
 
 #include "src/symstate/state.h"
+#include "src/symstate/memory/deprecated.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 using namespace std;
@@ -41,8 +42,11 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   set(eflags_sf, SymBool::constant(cs.rf.is_set(eflags_sf.index())));
   set(eflags_of, SymBool::constant(cs.rf.is_set(eflags_of.index())));
 
-  memory.init_concrete(cs.stack, cs.heap);
-  memory.set_parent(this);
+  auto dm = new DeprecatedMemory();
+  dm->init_concrete(cs.stack, cs.heap);
+  dm->set_parent(this);
+  memory = dm;
+  delete_memory_ = true;
 
   sigbus = SymBool::_false();
   sigfpe = SymBool::_false();
@@ -69,8 +73,6 @@ void SymState::build_with_suffix(const string& suffix) {
   set(eflags_zf, SymBool::var("%zf_" + suffix));
   set(eflags_sf, SymBool::var("%sf_" + suffix));
   set(eflags_of, SymBool::var("%of_" + suffix));
-
-  memory.set_parent(this);
 
   sigbus = SymBool::var("sigbus_" + suffix);
   sigfpe = SymBool::var("sigfpe_" + suffix);
@@ -103,10 +105,15 @@ SymBitVector SymState::operator[](const Operand o) {
     uint16_t size = o.size();
     auto addr = get_addr(m);
 
-    auto p = memory.read(addr, size, lineno_);
-    set_sigsegv(p.second);
+    if(memory) {
+      auto p = memory->read(addr, size, lineno_);
+      set_sigsegv(p.second);
+      return p.first;
+    } else {
+      set_sigsegv(SymBool::tmp_var());
+      return SymBitVector::tmp_var(size);
+    }
 
-    return p.first;
   } else {
     return lookup(o);
   }
@@ -207,8 +214,13 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto& m = reinterpret_cast<const M8&>(o);
     auto addr = get_addr(m);
 
-    auto segv = memory.write(addr, bv, width, lineno_);
-    set_sigsegv(segv);
+    if(memory) {
+      auto segv = memory->write(addr, bv, width, lineno_);
+      set_sigsegv(segv);
+    } else {
+      set_sigsegv(SymBool::tmp_var());
+    }
+
     return;
   }
 

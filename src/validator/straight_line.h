@@ -23,6 +23,7 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
 #include "src/solver/smtsolver.h"
+#include "src/symstate/memory/deprecated.h"
 #include "src/symstate/memory_manager.h"
 #include "src/symstate/state.h"
 #include "src/validator/error.h"
@@ -83,7 +84,8 @@ public:
    * This would be private were it not for the need to be accessible from
    * testing classes (where friendship doesn't work properly).*/
   static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
-                                   const SymMemory* memory = NULL, const SymMemory* memory2 = NULL);
+                                   const DeprecatedMemory* memory = NULL, 
+                                   const DeprecatedMemory* memory2 = NULL);
 
 private:
 
