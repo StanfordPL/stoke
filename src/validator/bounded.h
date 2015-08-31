@@ -67,7 +67,7 @@ private:
   /** Verify a pair of paths. */
   bool verify_pair(const Cfg& target, const Cfg& rewrite, const Path& p, const Path& q);
   /** Build the circuit for a single basic block */
-  void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&);
+  void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
   /** Is there a jump in the path following this basic block? */
   static JumpType is_jump(const Cfg&, const Path& P, size_t i);
   /** Find or create a testcase for a pair of paths. */

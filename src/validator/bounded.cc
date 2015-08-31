@@ -26,6 +26,7 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
   auto target_tcs = path_to_testcase_[0][P];
   auto rewrite_tcs = path_to_testcase_[1][Q];
 
+
   // Do they have something in common?  if so, we're done.
   // Both of these vectors are sorted --> O(n) time.
   size_t j = 0;
@@ -53,6 +54,7 @@ void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
   for(size_t i = 0; i < sandbox_->num_inputs(); ++i) {
     Path p;
     current_path_ = &p;
+    p.push_back(cfg.get_entry());
 
     sandbox_->run(i);
 
@@ -68,6 +70,7 @@ void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
     }
 
     if(keep) {
+      p.push_back(cfg.get_exit());
       path_to_testcase_[is_rewrite][p].push_back(i);
     }
   }
@@ -88,7 +91,7 @@ void BoundedValidator::sandbox_path_callback(const StateCallbackData& data, void
 }
 
 
-void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump, SymState& state) {
+void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump, SymState& state, size_t& line_no) {
 
   if(cfg.num_instrs(bb) == 0)
     return;
@@ -97,6 +100,7 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
   size_t end_index = start_index + cfg.num_instrs(bb);
 
   for(size_t i = start_index; i < end_index; ++i) {
+    line_no++;
     auto instr = cfg.get_code()[i];
 
     if(instr.is_jcc()) {
@@ -128,6 +132,7 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
     } else if (instr.is_ret()) {
       return;
     } else {
+      state.set_lineno(line_no-1);
       handler_.build_circuit(instr, state);
 
       if(handler_.has_error()) {
@@ -195,14 +200,21 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   }
 
   // Step 1: Learn aliasing relationships
+  auto memories = std::pair<CellMemory*, CellMemory*>(NULL, NULL);
   if(memory) {
     CpuState testcase;
     if(!find_pair_testcase(target, rewrite, P, Q, testcase)) {
+      cout << "DEBUG Could not find testcase for this path" << endl;
+      return false;
+    }
+
+    memories = am.build_cell_model(target, rewrite, testcase);
+    if(memories.first == NULL || memories.second == NULL) {
+      has_error_ = true;
+      error_ = "Overlapping memory accesses found.";
       return false;
     }
   }
-
-  // Step 2: Setup memory cells
 
   // Step 3: Build circuits
   init_mm();
@@ -213,17 +225,26 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   SymState state_t("1_INIT");
   SymState state_r("2_INIT");
 
-  for(auto it : state_t.equality_constraints(init, target.def_ins()))
-    constraints.push_back(it);
-  for(auto it : state_r.equality_constraints(init, rewrite.def_ins()))
-    constraints.push_back(it);
-
   try {
 
+    for(auto it : state_t.equality_constraints(init, target.def_ins()))
+      constraints.push_back(it);
+    for(auto it : state_r.equality_constraints(init, rewrite.def_ins()))
+      constraints.push_back(it);
+
+    if(memory) {
+      state_t.memory = memories.first;
+      state_r.memory = memories.second;
+      cout << "Start memory constraint: " << (memories.first->equality_constraint(*memories.second)) << endl;
+      constraints.push_back(memories.first->equality_constraint(*memories.second));
+    }
+
+    size_t line_no = 0;
     for(size_t i = 0; i < P.size(); ++i)
-      build_circuit(target, P[i], is_jump(target,P,i), state_t);
+      build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
+    line_no = 0;
     for(size_t i = 0; i < Q.size(); ++i)
-      build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r);
+      build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
 
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
@@ -231,6 +252,10 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     SymBool inequality = SymBool::_false();
     for(auto it : state_t.equality_constraints(state_r, target.live_outs())) {
       inequality = inequality | !it;
+    }
+    if(memory) {
+      cout << "End memory constraint: " << memories.first->equality_constraint(*memories.second) << endl;
+      inequality = inequality | !memories.first->equality_constraint(*memories.second);
     }
 
     constraints.push_back(inequality);

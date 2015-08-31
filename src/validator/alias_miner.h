@@ -21,6 +21,7 @@
 #include "src/cfg/cfg.h"
 #include "src/sandbox/sandbox.h"
 #include "src/state/cpu_state.h"
+#include "src/symstate/memory/cell.h"
 
 namespace stoke {
 
@@ -55,6 +56,10 @@ public:
     sandbox_ = sb;
     return *this;
   }
+
+  /** Takes a target/rewrite pair and builds CellMemory objects to represent their
+    memory use.  Returns a pair of nulls on failure. */
+  std::pair<CellMemory*, CellMemory*> build_cell_model(const Cfg& target, const Cfg& rewrite, const CpuState& tc);
 
   /** Takes a Cfg and a testcase; runs the Cfg on the testcase and tracks
     all memory reads/writes.  Then builds a list of all memory accesses in
