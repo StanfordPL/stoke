@@ -98,7 +98,6 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
   auto target_tcs = path_to_testcase_[0][P];
   auto rewrite_tcs = path_to_testcase_[1][Q];
 
-  /*
   cout << "We're looking for TCs for these paths" << endl;
   cout << "P: " << print(P) << endl;
   cout << "Q: " << print(Q) << endl;
@@ -109,7 +108,6 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
   for(auto it : path_to_testcase_[0]) {
     cout << print(it.first) << " : " << it.second.size() << endl;
   }
-  */
 
   // Do they have something in common?  if so, we're done.
   // Both of these vectors are sorted --> O(n) time.
@@ -119,7 +117,7 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
     while(j < rewrite_tcs.size() && rewrite_tcs[j] < i) {
       j++;
     }
-    if(rewrite_tcs[j] == i) {
+    if(j < rewrite_tcs.size() && rewrite_tcs[j] == i) {
       // we're done!
       tc = *(sandbox_->get_input(i));
       return true;
@@ -151,6 +149,8 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
 void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
   auto code = cfg.get_code();
   auto label = code[0].get_operand<x64asm::Label>(0);
+  sandbox_->clear_functions();
+  sandbox_->clear_callbacks();
   sandbox_->insert_function(cfg);
   sandbox_->set_entrypoint(label);
 
