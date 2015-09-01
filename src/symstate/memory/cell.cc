@@ -43,7 +43,7 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
     for(auto q : other.cells_) {
       if(p.first == q.first) {
         condition = condition & (p.second == q.second);
-        found = true; 
+        found = true;
       }
     }
     if(!found) {

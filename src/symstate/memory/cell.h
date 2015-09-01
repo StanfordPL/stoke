@@ -31,7 +31,7 @@ public:
   CellMemory(std::map<size_t, std::pair<size_t, size_t>>& memory_map) : map_(memory_map) {
     for(auto p : memory_map) {
       if(!cells_.count(p.second.first)) {
-        cells_[p.second.first] = SymBitVector::tmp_var(p.second.second); 
+        cells_[p.second.first] = SymBitVector::tmp_var(p.second.second);
       }
     }
   }

@@ -47,6 +47,15 @@ public:
   /** Evalue if the target and rewrite are the same */
   bool verify(const Cfg& target, const Cfg& rewrite);
 
+  /** Returns whether the last counterexample made sense */
+  size_t counter_examples_available() {
+    return counterexamples_.size();
+  }
+  /** Gets the counterexample */
+  virtual std::vector<CpuState> get_counter_examples() {
+    return counterexamples_;
+  }
+
   /** Sandbox callback to record path */
   static void sandbox_path_callback(const StateCallbackData& data, void* arg);
 
@@ -73,6 +82,11 @@ private:
   /** Find or create a testcase for a pair of paths. */
   bool find_pair_testcase(const Cfg& target, const Cfg& rewrite, const Path& p, const Path& q, CpuState& tc);
 
+  /** Generate a testcase from SMT solver */
+  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
+                                   const CellMemory* target_mem = NULL,
+                                   const CellMemory* rewrite_mem = NULL);
+
   /** For learning aliasing relationships */
   AliasMiner am;
 
@@ -85,6 +99,9 @@ private:
   Path* current_path_;
   /** The current trace of memory addresses we're adding in the aliasing callback */
   std::vector<uint64_t>* current_memory_trace_;
+
+  /** The set of counterexamples (one per pair) that we've found. */
+  std::vector<CpuState> counterexamples_;
 
 
   /** File where error occurred */

@@ -20,6 +20,50 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+
+CpuState BoundedValidator::state_from_model(SMTSolver& smt, const string& name_suffix,
+    const CellMemory* memory, const CellMemory* memory2) {
+
+  CpuState cs;
+
+  // Get the values of registers
+  for(size_t i = 0; i < r64s.size(); ++i) {
+    stringstream name;
+    name << r64s[i] << name_suffix;
+    cs.gp[r64s[i]] = smt.get_model_bv(name.str(), 1);
+  }
+
+  for(size_t i = 0; i < ymms.size(); ++i) {
+    stringstream name;
+    name << ymms[i] << name_suffix;
+    cs.sse[ymms[i]] = smt.get_model_bv(name.str(), 4);
+  }
+
+  for(size_t i = 0; i < eflags.size(); ++i) {
+    if(!cs.rf.is_status(eflags[i].index()))
+      continue;
+
+    stringstream name;
+    name << eflags[i] << name_suffix;
+    cs.rf.set(eflags[i].index(), smt.get_model_bool(name.str()));
+  }
+
+  // Figure out error code
+  if(smt.get_model_bool("sigbus" + name_suffix)) {
+    cs.code = ErrorCode::SIGBUS_;
+  } else if (smt.get_model_bool("sigfpe" + name_suffix)) {
+    cs.code = ErrorCode::SIGFPE_;
+  } else if (smt.get_model_bool("sigsegv" + name_suffix)) {
+    cs.code = ErrorCode::SIGSEGV_;
+  } else {
+    cs.code = ErrorCode::NORMAL;
+  }
+
+  return cs;
+}
+
+
+
 bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
     const Path& P, const Path& Q, CpuState& tc) {
 
@@ -235,8 +279,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     if(memory) {
       state_t.memory = memories.first;
       state_r.memory = memories.second;
-      cout << "Start memory constraint: " << (memories.first->equality_constraint(*memories.second)) << endl;
-      constraints.push_back(memories.first->equality_constraint(*memories.second));
+      auto mem_const = memories.first->equality_constraint(*memories.second);
+      cout << "Start memory constraint: " << mem_const << endl;
+      constraints.push_back(mem_const);
     }
 
     size_t line_no = 0;
@@ -249,21 +294,34 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
 
+    cout << endl << "CONSTRAINTS" << endl << endl;;
+    for(auto it : constraints) {
+      cout << it << endl;
+    }
+
     SymBool inequality = SymBool::_false();
     for(auto it : state_t.equality_constraints(state_r, target.live_outs())) {
       inequality = inequality | !it;
+      cout << "INEQUALITY: " << it << endl;
     }
     if(memory) {
-      cout << "End memory constraint: " << memories.first->equality_constraint(*memories.second) << endl;
-      inequality = inequality | !memories.first->equality_constraint(*memories.second);
+      auto mem_const = memories.first->equality_constraint(*memories.second);
+      cout << "End memory constraint: " << mem_const << endl;
+      inequality = inequality | !mem_const;
     }
 
     constraints.push_back(inequality);
 
     // Step 4: Invoke the solver
     bool is_sat = solver_.is_sat(constraints);
-    if(solver_.has_error())
+    if(solver_.has_error()) {
       throw VALIDATOR_ERROR("solver: " + solver_.get_error());
+    }
+
+    if(is_sat) {
+      auto ceg = state_from_model(solver_, "_");
+      counterexamples_.push_back(ceg);
+    }
 
     stop_mm();
     return !is_sat;
@@ -284,10 +342,12 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
 bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
+
 #ifdef DEBUG_VALIDATOR
   std::cout << "Enter the dragon!" << std::endl;
 #endif
   // State
+  counterexamples_.clear();
   has_error_ = false;
 
   // Step 0: Background checks
