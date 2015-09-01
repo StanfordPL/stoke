@@ -14,6 +14,7 @@
 
 #include "src/symstate/memory/cell.h"
 
+using namespace std;
 using namespace stoke;
 
 /** Updates the memory with a write.
@@ -44,13 +45,34 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
       if(p.first == q.first) {
         condition = condition & (p.second == q.second);
         found = true;
+        break;
       }
     }
     if(!found) {
-      // one cell has an address the other doesn't; they can't be equal
-      return SymBool::_false();
+      // need to add new, unconstrained cell to self.
+      other.cells_[p.first] = SymBitVector::tmp_var(cell_sizes_[p.first]);
+      other.cell_sizes_[p.first] = cell_sizes_[p.first];
+      condition = condition & (other.cells_[p.first] == p.second);
     }
   }
+
+  // We need to look for cells of other that aren't found in self.
+  for(auto q : other.cells_) {
+    bool found = false;
+    for(auto p : cells_) {
+      if(p.first == q.first) {
+        found = true;
+        break;
+      }
+    }
+    if(!found) {
+      // need to add new, unconstrained cell to self.
+      cells_[q.first] = SymBitVector::tmp_var(other.cell_sizes_[q.first]);
+      cell_sizes_[q.first] = other.cell_sizes_[q.first];
+      condition = condition & (cells_[q.first] == q.second);
+    }
+  }
+
   return condition;
 
 }

@@ -32,6 +32,7 @@ public:
     for(auto p : memory_map) {
       if(!cells_.count(p.second.first)) {
         cells_[p.second.first] = SymBitVector::tmp_var(p.second.second);
+        cell_sizes_[p.second.first] = p.second.second;
       }
     }
   }
@@ -53,6 +54,8 @@ private:
 
   /** The memory cells we're using */
   std::map<size_t, SymBitVector> cells_;
+  /** The size of the cells. */
+  std::map<size_t, size_t> cell_sizes_;
 
 };
 
