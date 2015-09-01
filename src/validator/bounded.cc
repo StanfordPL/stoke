@@ -137,7 +137,7 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
     const Path& P, const Path& Q, CpuState& tc) {
 
   //if(paths_infeasible_[P][Q])
-    return false;
+  return false;
 
   // STEP 1: see if there's any bootstrap testcase that nearly makes it up to P/Q
 
@@ -363,8 +363,6 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       state_t.memory = memories.first;
       state_r.memory = memories.second;
       auto mem_const = memories.first->equality_constraint(*memories.second);
-
-      // if these memories can *never* start equal, then the memory system will return 'false' here.
       constraints.push_back(mem_const);
     }
 
@@ -378,19 +376,22 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
 
+    /*
     cout << endl << "CONSTRAINTS" << endl << endl;;
     for(auto it : constraints) {
       cout << it << endl;
     }
+    */
 
     SymBool inequality = SymBool::_false();
     for(auto it : state_t.equality_constraints(state_r, target.live_outs())) {
       inequality = inequality | !it;
-      cout << "INEQUALITY: " << it << endl;
+      //cout << "INEQUALITY: " << it << endl;
     }
+
     if(memory) {
       auto mem_const = memories.first->equality_constraint(*memories.second);
-      cout << "End memory constraint: " << mem_const << endl;
+      //cout << "End memory constraint: " << mem_const << endl;
       inequality = inequality | !mem_const;
     }
 
