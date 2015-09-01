@@ -50,7 +50,7 @@ TEST_F(PathEnumeratorTest, OnePath) {
 
   // Step 2: Check this is the right path.
   auto path = paths[0];
-  EXPECT_EQ(5ul, path.size());
+  EXPECT_EQ(3ul, path.size());
   for(size_t i = 0; i < path.size() - 1; ++i) {
     EXPECT_LE(path[i], path[i+1]);
   }
@@ -89,8 +89,8 @@ TEST_F(PathEnumeratorTest, TwoPaths) {
   auto& shorter = (paths[0].size() < paths[1].size()) ? paths[0] : paths[1];
   auto& longer = (paths[0].size() < paths[1].size()) ? paths[1] : paths[0];
 
-  EXPECT_EQ(4ul, shorter.size());
-  EXPECT_EQ(5ul, longer.size());
+  EXPECT_EQ(2ul, shorter.size());
+  EXPECT_EQ(3ul, longer.size());
 
   /*
   for(size_t i = 0; i < paths.size(); ++i) {

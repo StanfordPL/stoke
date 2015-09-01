@@ -73,8 +73,6 @@ void AliasMiner::mine_concrete_callback(const StateCallbackData& data, void* arg
       return;
     }
 
-    cout << "ACCESS " << ma.line << ", " << ma.address << ", " << ma.width << ", " << ma.write << endl;
-
     AliasMiner* me = (AliasMiner*)arg;
     me->current_concrete_trace_->push_back(ma);
   }

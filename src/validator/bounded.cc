@@ -62,7 +62,22 @@ CpuState BoundedValidator::state_from_model(SMTSolver& smt, const string& name_s
   return cs;
 }
 
+Cfg BoundedValidator::path_cfg(const Cfg& cfg, const Path& p) {
 
+  Code code;
+  for(auto node : p) {
+    if(cfg.num_instrs(node) == 0)
+      continue;
+
+    size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(node, 0));
+    size_t end_index = start_index + cfg.num_instrs(node);
+    for(size_t i = start_index; i < end_index; ++i)
+      code.push_back(cfg.get_code()[i]);
+  }
+
+  Cfg new_cfg(code, cfg.def_ins(), cfg.live_outs());
+  return new_cfg;
+}
 
 bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
     const Path& P, const Path& Q, CpuState& tc) {
@@ -70,6 +85,16 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
   auto target_tcs = path_to_testcase_[0][P];
   auto rewrite_tcs = path_to_testcase_[1][Q];
 
+  cout << "We're looking for TCs for these paths" << endl;
+  cout << "P: " << print(P) << endl;
+  cout << "Q: " << print(Q) << endl;
+  cout << "Target has " << target_tcs.size() << endl;
+  cout << "Rewrite has " << rewrite_tcs.size() << endl;
+
+  cout << "TARGET PATHS:" << endl;
+  for(auto it : path_to_testcase_[0]) {
+    cout << print(it.first) << " : " << it.second.size() << endl;
+  }
 
   // Do they have something in common?  if so, we're done.
   // Both of these vectors are sorted --> O(n) time.
@@ -92,13 +117,40 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
 }
 
 void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
+  auto code = cfg.get_code();
+  auto label = code[0].get_operand<x64asm::Label>(0);
   sandbox_->insert_function(cfg);
-  sandbox_->set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
-  sandbox_->insert_after(BoundedValidator::sandbox_path_callback, this);
+  sandbox_->set_entrypoint(label);
+
+  /** Insert code either before or after the first instruction in a block to
+   * record the path took */
+  vector<pair<BoundedValidator*, Cfg::id_type>*> to_delete;
+  for(size_t i = 0; i < code.size(); ++i) {
+    // figure out if we're at the beginning of a block
+    auto loc = cfg.get_loc(i);
+    auto steps = loc.second;
+    if(steps > 0)
+      continue;
+
+    // build a pair with a pointer to our object and the basic block of this
+    // instruction
+    auto pair = new std::pair<BoundedValidator*, Cfg::id_type>(this, loc.first);
+    to_delete.push_back(pair);
+
+    // insert callback after labels (so jumps don't skip them), but before
+    // returns and everything else (so if segfault or exit we still get
+    // called).
+    auto instr = code[i];
+    if(instr.is_label_defn()) {
+      sandbox_->insert_after(label, i, sandbox_path_callback, pair);
+    } else {
+      sandbox_->insert_before(label, i, sandbox_path_callback, pair);
+    }
+  }
+
   for(size_t i = 0; i < sandbox_->num_inputs(); ++i) {
     Path p;
     current_path_ = &p;
-    p.push_back(cfg.get_entry());
 
     sandbox_->run(i);
 
@@ -114,23 +166,21 @@ void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
     }
 
     if(keep) {
-      p.push_back(cfg.get_exit());
       path_to_testcase_[is_rewrite][p].push_back(i);
+      cout << "FOUND PATH: rewrite=" << is_rewrite << " p=" << print(p) << endl;
     }
   }
+
+  for(auto it : to_delete)
+    delete it;
 }
 
 void BoundedValidator::sandbox_path_callback(const StateCallbackData& data, void* arg) {
 
-  auto ptr = (BoundedValidator*)arg;
+  auto pair = (std::pair<BoundedValidator*, Cfg::id_type>*)arg;
 
-  // Record whenever a basic block is entered
-  auto cfg = Cfg(data.code, RegSet::universe(), RegSet::universe());
-  auto location = cfg.get_loc(data.line);
-  if(location.second == 0) {
-    auto bb = location.first;
-    ptr->current_path_->push_back(bb);
-  }
+  auto bb = pair->second;
+  pair->first->current_path_->push_back(bb);
 
 }
 
@@ -187,7 +237,6 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
       }
     }
   }
-
 }
 
 BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const Path& P, size_t i) {
@@ -252,7 +301,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       return false;
     }
 
-    memories = am.build_cell_model(target, rewrite, testcase);
+    memories = am.build_cell_model(path_cfg(target, P), path_cfg(rewrite, Q), testcase);
     if(memories.first == NULL || memories.second == NULL) {
       has_error_ = true;
       error_ = "Overlapping memory accesses found.";
@@ -280,7 +329,6 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       state_t.memory = memories.first;
       state_r.memory = memories.second;
       auto mem_const = memories.first->equality_constraint(*memories.second);
-      cout << "Start memory constraint: " << mem_const << endl;
       constraints.push_back(mem_const);
     }
 
@@ -294,19 +342,21 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
 
+    /*
     cout << endl << "CONSTRAINTS" << endl << endl;;
     for(auto it : constraints) {
       cout << it << endl;
     }
+    */
 
     SymBool inequality = SymBool::_false();
     for(auto it : state_t.equality_constraints(state_r, target.live_outs())) {
       inequality = inequality | !it;
-      cout << "INEQUALITY: " << it << endl;
+      //cout << "INEQUALITY: " << it << endl;
     }
     if(memory) {
       auto mem_const = memories.first->equality_constraint(*memories.second);
-      cout << "End memory constraint: " << mem_const << endl;
+      //cout << "End memory constraint: " << mem_const << endl;
       inequality = inequality | !mem_const;
     }
 
