@@ -83,6 +83,10 @@ private:
   static JumpType is_jump(const Cfg&, const Path& P, size_t i);
   /** Find or create a testcase for a pair of paths. */
   bool find_pair_testcase(const Cfg& target, const Cfg& rewrite, const Path& p, const Path& q, CpuState& tc);
+  /** Synthesize a testcase for a pair of paths. */
+  bool brute_force_testcase(const Cfg& target, const Cfg& rewrite, const Path& p, const Path& q, CpuState& tc);
+
+
 
   /** Generate a testcase from SMT solver */
   static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
@@ -96,6 +100,8 @@ private:
   std::vector<Path> paths_[2];
   /** Map taking a path in the target/rewrite to testcases that work with it. */
   std::map<Path, std::vector<size_t>> path_to_testcase_[2];
+  /** Map marking if we've discovered a pair of paths (P,Q) infeasible. */
+  std::map<Path, std::map<Path, bool>> paths_infeasible_;
 
   /** The current path we're adding to in the callback */
   Path* current_path_;
@@ -112,13 +118,13 @@ private:
   size_t error_line_;
 
   // This is to print out Cfg paths easily (for debugging purposes).
-  std::string print(const Path& p) {
+  static std::string print(const Path& p) {
     std::stringstream os;
     for(size_t i = 0; i < p.size(); ++i) {
       os << p[i];
       if(i != p.size() - 1)
         os << " ";
-    } 
+    }
     return os.str();
   }
 

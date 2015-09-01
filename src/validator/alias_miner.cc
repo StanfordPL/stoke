@@ -86,6 +86,22 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   auto target_trace = mine_concrete_data(target, tc);
   auto rewrite_trace = mine_concrete_data(rewrite, tc);
 
+  /*
+  cout << "TARGET: " << endl;
+  cout << target.get_code() << endl;
+  cout << "REWRITE: " << endl;
+  cout << rewrite.get_code() << endl;
+
+  cout << "target_trace_length: " << target_trace.size() << endl;
+  for(auto it : target_trace) {
+    cout << "@" << it.line << "  " << it.address << " / " << it.width << endl;
+  }
+  cout << "rewrite_trace_length: " << rewrite_trace.size() << endl;
+  for(auto it : rewrite_trace) {
+    cout << "@" << it.line << "  " << it.address << " / " << it.width << endl;
+  }
+  */
+
   // Build map from address -> (cell number, size)
   // As we add to the map, we need to check for any possible partial overlaps.
   std::map<uint64_t, std::pair<size_t, size_t>> addr_cell_map;
@@ -97,6 +113,7 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
       if(addr_cell_map.count(access.address)) {
         if(access.width != addr_cell_map[access.address].second) {
           // two accesses of the same address of different sizes
+          cout << "CASE iii" << endl;
           return std::pair<CellMemory*, CellMemory*>(NULL, NULL);
         } else {
           // all done with this one :)
@@ -107,12 +124,14 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
       // loop through existing cells and check for overlap
       for(auto cell : addr_cell_map) {
         if(cell.first < access.address) {
-          if(cell.first + cell.second.second > access.address) {
+          if(cell.first + cell.second.second/8 > access.address) {
             // two accesses overlap
+            cout << "CASE i" << endl;
             return std::pair<CellMemory*, CellMemory*>(NULL, NULL);
           }
         } else if (cell.first > access.address) {
-          if(access.address + access.width > cell.first) {
+          if(access.address + access.width/8 > cell.first) {
+            cout << "CASE ii" << endl;
             // two accesses overlap
             return std::pair<CellMemory*, CellMemory*>(NULL, NULL);
           }
