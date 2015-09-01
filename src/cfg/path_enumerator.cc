@@ -33,6 +33,17 @@ vector<vector<Cfg::id_type>> PathEnumerator::find_paths(const Cfg& cfg, size_t m
   if(max_len > 0)
     find_paths_helper(cfg, path_so_far, max_len, node_counts, results);
 
+  // Remove all blocks with zero instructions
+  for(auto& path : results) {
+    for(auto iter = path.begin(); iter != path.end(); ) {
+      if(!cfg.num_instrs(*iter)) {
+        iter = path.erase(iter);
+      } else {
+        ++iter;
+      }
+    }
+  }
+
   return results;
 }
 

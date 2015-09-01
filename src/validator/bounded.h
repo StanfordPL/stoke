@@ -75,6 +75,8 @@ private:
   void learn_paths(const Cfg&, bool is_rewrite);
   /** Verify a pair of paths. */
   bool verify_pair(const Cfg& target, const Cfg& rewrite, const Path& p, const Path& q);
+  /** Generate a loop-free CFG from a loopy CFG and a path */
+  static Cfg path_cfg(const Cfg& cfg, const Path& p);
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
   /** Is there a jump in the path following this basic block? */
@@ -109,13 +111,21 @@ private:
   /** Line where error occurred */
   size_t error_line_;
 
+  // This is to print out Cfg paths easily (for debugging purposes).
+  std::string print(const Path& p) {
+    std::stringstream os;
+    for(size_t i = 0; i < p.size(); ++i) {
+      os << p[i];
+      if(i != p.size() - 1)
+        os << " ";
+    } 
+    return os.str();
+  }
+
 };
 
 
 
-
 } // namespace stoke
-
-
 
 #endif
