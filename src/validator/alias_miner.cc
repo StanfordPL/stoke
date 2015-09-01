@@ -81,8 +81,8 @@ void AliasMiner::mine_concrete_callback(const StateCallbackData& data, void* arg
 
 }
 
-  /** Takes a target/rewrite pair and builds CellMemory objects to represent their
-    memory use.  Returns a pair of nulls on failure. */
+/** Takes a target/rewrite pair and builds CellMemory objects to represent their
+  memory use.  Returns a pair of nulls on failure. */
 std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& target, const Cfg& rewrite, const CpuState& tc) {
 
   auto target_trace = mine_concrete_data(target, tc);
@@ -117,7 +117,7 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
           if(access.address + access.width > cell.first) {
             // two accesses overlap
             return std::pair<CellMemory*, CellMemory*>(NULL, NULL);
-          } 
+          }
         }
       }
 
@@ -131,7 +131,7 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   }
 
 
-  // Build maps of (line -> (cell number, size)) 
+  // Build maps of (line -> (cell number, size))
   std::map<size_t, std::pair<size_t, size_t>> target_map;
   std::map<size_t, std::pair<size_t, size_t>> rewrite_map;
   for(size_t i = 0; i < 2; ++i) {

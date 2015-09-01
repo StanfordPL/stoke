@@ -32,8 +32,8 @@ public:
 
   ~BoundedValidatorBaseTest() {
     delete validator;
-    delete solver;
     delete sandbox;
+    delete solver;
   }
 
 protected:
@@ -244,7 +244,7 @@ TEST_F(BoundedValidatorBaseTest, PopcntWrongBeyondBound) {
 
 TEST_F(BoundedValidatorBaseTest, EasyMemory) {
 
-  auto live_outs = all();
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
   std::stringstream sst;
   sst << ".foo:" << std::endl;
@@ -263,7 +263,7 @@ TEST_F(BoundedValidatorBaseTest, EasyMemory) {
 
   add_testcases(3, target);
 
-  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_TRUE(validator->verify(target, rewrite)) << "CEGS:" << std::endl << validator->get_counter_examples()[0] << std::endl;
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
