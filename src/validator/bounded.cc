@@ -64,6 +64,7 @@ CpuState BoundedValidator::state_from_model(SMTSolver& smt, const string& name_s
 
 Cfg BoundedValidator::path_cfg(const Cfg& cfg, const Path& p) {
 
+
   Code code;
   for(auto node : p) {
     if(cfg.num_instrs(node) == 0)
@@ -71,20 +72,33 @@ Cfg BoundedValidator::path_cfg(const Cfg& cfg, const Path& p) {
 
     size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(node, 0));
     size_t end_index = start_index + cfg.num_instrs(node);
-    for(size_t i = start_index; i < end_index; ++i)
-      code.push_back(cfg.get_code()[i]);
+    for(size_t i = start_index; i < end_index; ++i) {
+      if(cfg.get_code()[i].is_jump()) {
+        code.push_back(Instruction(NOP));
+      } else {
+        code.push_back(cfg.get_code()[i]);
+      }
+    }
   }
 
   Cfg new_cfg(code, cfg.def_ins(), cfg.live_outs());
+
+  //cout << "path cfg for " << print(p) << " is " << endl;
+  //cout << TUnit(code) << endl;
+
   return new_cfg;
 }
 
 bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
     const Path& P, const Path& Q, CpuState& tc) {
 
+  if(paths_infeasible_[P][Q])
+    return false;
+
   auto target_tcs = path_to_testcase_[0][P];
   auto rewrite_tcs = path_to_testcase_[1][Q];
 
+  /*
   cout << "We're looking for TCs for these paths" << endl;
   cout << "P: " << print(P) << endl;
   cout << "Q: " << print(Q) << endl;
@@ -95,6 +109,7 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
   for(auto it : path_to_testcase_[0]) {
     cout << print(it.first) << " : " << it.second.size() << endl;
   }
+  */
 
   // Do they have something in common?  if so, we're done.
   // Both of these vectors are sorted --> O(n) time.
@@ -111,9 +126,26 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
     }
   }
 
-  // Couldn't find anything
-  return false;
+  // Roll your sleaves up: we're gonna try to brute force a new testcase.
+  return brute_force_testcase(target, rewrite, P, Q, tc);
 
+}
+
+// Find a testcase that takes paths (P,Q) or prove that one doesn't exist.
+// We're assuming that a "gentle" search of known testcases failed here.
+bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrite,
+    const Path& P, const Path& Q, CpuState& tc) {
+
+  //if(paths_infeasible_[P][Q])
+    return false;
+
+  // STEP 1: see if there's any bootstrap testcase that nearly makes it up to P/Q
+
+  // STEP 2: if not, we need to synthesize one of those -- or get a guarantee none can exit.  (recursive call)
+
+  // STEP 3: use the bootstrap testcase to get aliasing relationships and setup memory
+
+  // STEP 4: build constraints and solve for a new TC, or prove infeasibility
 }
 
 void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
@@ -167,7 +199,6 @@ void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
 
     if(keep) {
       path_to_testcase_[is_rewrite][p].push_back(i);
-      cout << "FOUND PATH: rewrite=" << is_rewrite << " p=" << print(p) << endl;
     }
   }
 
@@ -227,6 +258,7 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
       return;
     } else {
       state.set_lineno(line_no-1);
+      //cout << "LINE=" << line_no-1 << ": " << instr << endl;
       handler_.build_circuit(instr, state);
 
       if(handler_.has_error()) {
@@ -298,7 +330,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     CpuState testcase;
     if(!find_pair_testcase(target, rewrite, P, Q, testcase)) {
       cout << "DEBUG Could not find testcase for this path" << endl;
-      return false;
+      cout << "RESULT IS UNSOUND" << endl;
+      //return false;
+      return true;
     }
 
     memories = am.build_cell_model(path_cfg(target, P), path_cfg(rewrite, Q), testcase);
@@ -329,6 +363,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       state_t.memory = memories.first;
       state_r.memory = memories.second;
       auto mem_const = memories.first->equality_constraint(*memories.second);
+
+      // if these memories can *never* start equal, then the memory system will return 'false' here.
       constraints.push_back(mem_const);
     }
 
@@ -342,21 +378,19 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
 
-    /*
     cout << endl << "CONSTRAINTS" << endl << endl;;
     for(auto it : constraints) {
       cout << it << endl;
     }
-    */
 
     SymBool inequality = SymBool::_false();
     for(auto it : state_t.equality_constraints(state_r, target.live_outs())) {
       inequality = inequality | !it;
-      //cout << "INEQUALITY: " << it << endl;
+      cout << "INEQUALITY: " << it << endl;
     }
     if(memory) {
       auto mem_const = memories.first->equality_constraint(*memories.second);
-      //cout << "End memory constraint: " << mem_const << endl;
+      cout << "End memory constraint: " << mem_const << endl;
       inequality = inequality | !mem_const;
     }
 
@@ -371,6 +405,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     if(is_sat) {
       auto ceg = state_from_model(solver_, "_");
       counterexamples_.push_back(ceg);
+      cout << "  (Got counterexample)" << endl;
+    } else {
+      cout << "  (This case verified)" << endl;
     }
 
     stop_mm();

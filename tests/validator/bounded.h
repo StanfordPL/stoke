@@ -298,6 +298,45 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
 
 TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
 
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "incl %eax" << std::endl;
+  sst << "movl %ecx, (%rdx, %rax, 4)" << std::endl;
+  sst << "cmpl $0x10, %eax" << std::endl;
+  sst << "jne .foo" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "movl %ecx, 0x4(%rdx, %rax, 4)" << std::endl;
+  ssr << "incl %eax" << std::endl;
+  ssr << "cmpl $0x10, %eax" << std::endl;
+  ssr << "jne .foo" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  StateGen sg(sg_sandbox);
+  sg.set_max_value(x64asm::rax, 0x10);
+  sg.set_max_memory(1024);
+  sg.set_max_attempts(64);
+
+  for(size_t i = 0; i < 256; ++i) {
+    CpuState tc;
+    bool b = sg.get(tc, target);
+    ASSERT_TRUE(b);
+    sandbox->insert_input(tc);
+  }
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
+TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
+
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
   std::stringstream sst;
@@ -311,7 +350,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  ssr << "movl %eax, 0x4(%rdx, %rax, 4)" << std::endl;
+  ssr << "movl %eax, (%rdx, %rax, 4)" << std::endl;
   ssr << "incl %eax" << std::endl;
   ssr << "cmpl $0x10, %eax" << std::endl;
   ssr << "jne .foo" << std::endl;
