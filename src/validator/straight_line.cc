@@ -34,20 +34,8 @@ void StraightLineValidator::generate_constraints(const stoke::Cfg& f1, const sto
     SymState& f1_final, SymState& f2_final,
     vector<SymBool>& constraints) const {
 
-  // Check to make sure def-ins/live-outs agree
-  if (f1.def_ins() != f2.def_ins()) {
-    throw VALIDATOR_ERROR("Def-ins of the two CFGs differ");
-  }
-  if (f1.live_outs() != f2.live_outs()) {
-    throw VALIDATOR_ERROR("Live-outs of the two CFGs differ");
-  }
-  // Check that the regsets are supported, throw an error otherwise
-  if(!handler_.regset_is_supported(f1.def_ins())) {
-    throw VALIDATOR_ERROR("Target def-in not supported.");
-  }
-  if(!handler_.regset_is_supported(f1.live_outs())) {
-    throw VALIDATOR_ERROR("Target live-out not supported.");
-  }
+  // Verify def-ins, live-outs, support for instructions
+  sanity_checks(f1, f2);
 
   // Create starting symbolic states
   SymState init("");

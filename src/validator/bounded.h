@@ -24,7 +24,6 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/solver/smtsolver.h"
 #include "src/validator/alias_miner.h"
-#include "src/validator/error.h"
 #include "src/validator/validator.h"
 
 
@@ -102,12 +101,6 @@ private:
 
   /** The set of counterexamples (one per pair) that we've found. */
   std::vector<CpuState> counterexamples_;
-
-
-  /** File where error occurred */
-  std::string error_file_;
-  /** Line where error occurred */
-  size_t error_line_;
 
   // This is to print out Cfg paths easily (for debugging purposes).
   static std::string print(const CfgPath& p) {

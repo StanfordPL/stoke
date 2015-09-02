@@ -121,7 +121,7 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
 void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
 
   for(size_t i = 0; i < sandbox_->num_inputs(); ++i) {
-  
+
     auto tc = *sandbox_->get_input(i);
 
     CfgPath p = cfg_paths.learn_path(cfg, tc);
@@ -373,46 +373,7 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   has_error_ = false;
 
   // Step 0: Background checks
-  // - all the instructions are supported in target/rewrite
-  for(const auto& cfg : {
-  target, rewrite
-}) {
-    for(auto instr : cfg.get_code()) {
-      if(instr.is_label_defn() || instr.is_any_jump() || instr.is_ret()) {
-        continue;
-      }
-      else if(!is_supported(instr)) {
-        stringstream ss;
-        ss << "Instruction " << instr << " is unsupported.";
-        SET_ERROR(ss.str());
-        return false;
-      }
-    }
-  }
-
-  // - def-ins/live-outs match
-  if(target.def_ins() != rewrite.def_ins()) {
-    SET_ERROR("Target def-ins do not match rewrite def-ins");
-    return false;
-  }
-  if(target.live_outs() != target.live_outs()) {
-    SET_ERROR("Target live-outs do not match rewrite live-outs");
-    return false;
-  }
-
-  // - def-in/live-out are supported
-  for(const auto& cfg : {
-  target, rewrite
-}) {
-    if(!handler_.regset_is_supported(cfg.def_ins())) {
-      SET_ERROR("Def-ins are not supported");
-      return false;
-    }
-    if(!handler_.regset_is_supported(cfg.live_outs())) {
-      SET_ERROR("Live outs are not supported");
-      return false;
-    }
-  }
+  sanity_checks(target, rewrite);
 
   // Step 1: get all the paths from the enumerator
   for(auto path : CfgPaths::enumerate_paths(target, bound_))
