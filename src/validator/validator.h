@@ -19,6 +19,7 @@
 #include <vector>
 #include <string>
 
+#include "src/ext/cpputil/include/container/bit_vector.h"
 #include "src/solver/smtsolver.h"
 #include "src/validator/error.h"
 #include "src/validator/handler.h"
@@ -71,6 +72,15 @@ public:
   bool is_supported(x64asm::Instruction& i) const;
   /** Returns whether an opcode is fully supported.  No error message. */
   bool is_supported(const x64asm::Opcode& op) const;
+
+  /** Generally useful helper function: take a map of <address,value> pairs
+    and stick them into the memory of a testcase.  Returns true on success. */
+  static bool memory_map_to_testcase(std::map<uint64_t, cpputil::BitVector> map, CpuState& tc);
+
+  /** Useful helper.  Extracts a counterexample from a model.  Assumes that
+   * you've constructed constraints the same way the validator does and know
+   * what you're doing.  Ignores memory. */
+  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix);
 
 protected:
 

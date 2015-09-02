@@ -73,16 +73,11 @@ public:
     return rewrite_final_state_;
   }
 
-
-  /** Extracts a counterexample from a model.  Assumes that you've constructed
-   * constraints the same way the validator does and know what you're doing.
-   * This would be private were it not for the need to be accessible from
-   * testing classes (where friendship doesn't work properly).*/
-  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
-                                   const DeprecatedMemory* memory = NULL,
-                                   const DeprecatedMemory* memory2 = NULL);
-
 private:
+
+  /** Generates counterexample with memory. */
+  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
+                                  const DeprecatedMemory*, const DeprecatedMemory*);
 
   /** Take two codes and generate constraints asserting their equivalence.
    * Also return final symbolic states (that have information about memory

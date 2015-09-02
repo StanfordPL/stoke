@@ -599,7 +599,13 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
   auto ceg = validator->get_counter_examples()[0];
 
   /** rdi is pointing to 0x40000000 */
-  EXPECT_EQ(0x40, ceg.heap[ceg[x64asm::rdi]+3] & 0x40);
+  uint64_t addr = ceg[x64asm::rdi]+3;
+  if(ceg.heap.in_range(addr))
+    EXPECT_EQ(0x40, ceg.heap[ceg[x64asm::rdi]+3] & 0x40);
+  else if(ceg.stack.in_range(addr))
+    EXPECT_EQ(0x40, ceg.stack[ceg[x64asm::rdi]+3] & 0x40);
+  else
+    FAIL() << "Address " << addr << " not mapped in testcase" << std::endl;
 
   /** check the counterexample runs */
   Sandbox sb;

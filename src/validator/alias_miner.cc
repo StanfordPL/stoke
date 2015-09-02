@@ -13,6 +13,7 @@
 // limitations under the License.
 
 
+#include "src/validator/validator.h"
 #include "src/validator/alias_miner.h"
 
 using namespace cpputil;
@@ -175,40 +176,8 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   return std::pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem);
 }
 
-void memory_map_to_state(map<uint64_t, BitVector> addr_value_pairs, CpuState& ceg) {
-  // find the bounds on the memory
-  uint64_t min = (uint64_t)(-1);
-  uint64_t max = 0;
 
-  for(auto p : addr_value_pairs) {
-    if(p.first < min)
-      min = p.first;
-    if(p.first + p.second.num_fixed_bytes() > max)
-      max = p.first + p.second.num_fixed_bytes();
-  }
-
-  // fill in the memory
-  if(min > max) {
-    ceg.heap.resize(0,0);
-    return;
-  }
-
-  // TODO: split into heap and stack
-  ceg.heap.resize(min, max-min);
-  for(auto p : addr_value_pairs) {
-    size_t bytes = p.second.num_fixed_bytes();
-    //yay, little endian!
-    for(size_t i = 0; i < bytes; ++i) {
-      ceg.heap.set_valid(p.first + i, true);
-      // (I don't understand why this isn't reversed, but this seems to work)
-      ceg.heap[p.first + i] = p.second.get_fixed_byte(i);
-    }
-  }
-
-
-}
-
-void AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory& target_memory, const CellMemory& rewrite_memory, const Cfg& target, const Cfg& rewrite) {
+bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory& target_memory, const CellMemory& rewrite_memory, const Cfg& target, const Cfg& rewrite) {
 
   // this map keeps track of whether we've initialized a given memory cell yet
   std::map<size_t, bool> cell_set;
@@ -250,13 +219,15 @@ void AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
         cell_set[cell] = true;
 
         // rebuild the testcase for the next run
-        memory_map_to_state(addr_value_pairs, ceg);
+        if(!Validator::memory_map_to_testcase(addr_value_pairs, ceg))
+          return false;
         sandbox_->clear_inputs();
         sandbox_->insert_input(ceg);
       }
     }
   }
 
+  return true;
 }
 
 void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* arg) {
