@@ -27,6 +27,7 @@ public:
     sandbox->set_max_jumps(4096);
     sg_sandbox = new Sandbox();
     sg_sandbox->set_max_jumps(4096);
+    sg_sandbox->set_abi_check(false);
     validator = new BoundedValidator(*solver);
     validator->set_bound(4);
     validator->set_sandbox(sandbox);
@@ -562,6 +563,65 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
+TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "movl (%rdi), %eax" << std::endl;
+  sst << "shll $0x2, %eax" << std::endl;
+  sst << "shrl $0x1, %eax" << std::endl;
+  sst << "leaq 0x10(%rdi), %rsp" << std::endl;
+  sst << "pushq %rax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "movl (%rdi), %eax" << std::endl;
+  ssr << "shll $0x1, %eax" << std::endl;
+  ssr << "leaq 0x10(%rdi), %rsp" << std::endl;
+  ssr << "pushq %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  add_testcases(4, target);
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+  ASSERT_LE(1ul, validator->counter_examples_available());
+
+  auto ceg = validator->get_counter_examples()[0];
+  std::cout << ceg << std::endl;
+
+  /** rdi is pointing to 0x40000000 */
+  EXPECT_EQ(0x40, ceg.heap[ceg[x64asm::rdi]+3] & 0x40);
+
+  /** check the counterexample runs */
+  Sandbox sb;
+  sb.set_max_jumps(4);
+  sb.set_abi_check(false);
+  sb.insert_function(target);
+  sb.insert_input(ceg);
+  sb.set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
+  sb.run();
+
+  auto target_output = *sb.get_output(0);
+
+  sb.insert_function(rewrite);
+  sb.set_entrypoint(rewrite.get_code()[0].get_operand<x64asm::Label>(0));
+  sb.run();
+
+  auto rewrite_output = *sb.get_output(0);
+
+  EXPECT_EQ(ErrorCode::NORMAL, target_output.code);
+  EXPECT_EQ(ErrorCode::NORMAL, rewrite_output.code);
+  EXPECT_NE(target_output[x64asm::rax], rewrite_output[x64asm::rax]);
 }
 
 

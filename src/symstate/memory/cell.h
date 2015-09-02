@@ -23,6 +23,7 @@ namespace stoke {
 
 /** Keeps track of a fixed, finite number of symbolic memory locations ("cells") */
 class CellMemory : public SymMemory {
+  friend class AliasMiner;
 
 public:
 
@@ -32,6 +33,7 @@ public:
     for(auto p : memory_map) {
       if(!cells_.count(p.second.first)) {
         cells_[p.second.first] = SymBitVector::tmp_var(p.second.second);
+        init_cells_[p.second.first] = cells_[p.second.first];
         cell_sizes_[p.second.first] = p.second.second;
       }
     }
@@ -52,6 +54,8 @@ private:
   /** Map from line# -> (cell index, write size) */
   std::map<size_t, std::pair<size_t, size_t>> map_;
 
+  /** The values initially allocated (used for extracting from model later) */
+  std::map<size_t, SymBitVector> init_cells_;
   /** The memory cells we're using */
   std::map<size_t, SymBitVector> cells_;
   /** The size of the cells. */

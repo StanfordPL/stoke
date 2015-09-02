@@ -20,6 +20,7 @@
 
 #include "src/cfg/cfg.h"
 #include "src/sandbox/sandbox.h"
+#include "src/solver/smtsolver.h"
 #include "src/state/cpu_state.h"
 #include "src/symstate/memory/cell.h"
 
@@ -61,6 +62,12 @@ public:
     memory use.  Returns a pair of nulls on failure. */
   std::pair<CellMemory*, CellMemory*> build_cell_model(const Cfg& target, const Cfg& rewrite, const CpuState& tc);
 
+  /** Takes a testcase with all the registers/flags set correctly for a
+   * counterexample, the a CellMemory for each the target/rewrite, and the
+   * target/rewrite code.  Then it fills the testcase with the memory
+   * locations. */
+  void build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory& target_mem, const CellMemory& rewrite_memory, const Cfg& target, const Cfg& rewrite);
+
   /** Takes a Cfg and a testcase; runs the Cfg on the testcase and tracks
     all memory reads/writes.  Then builds a list of all memory accesses in
     order. */
@@ -68,11 +75,15 @@ public:
 
   static void mine_concrete_callback(const StateCallbackData& data, void* arg);
 
+  static void build_testcase_callback(const StateCallbackData& data, void* arg);
+
 private:
 
   Sandbox* sandbox_;
 
   std::vector<MemoryAccess>* current_concrete_trace_;
+
+  uint64_t build_testcase_address_;
 };
 
 } //namespace

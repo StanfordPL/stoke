@@ -21,8 +21,7 @@ using namespace stoke;
 using namespace x64asm;
 
 
-CpuState BoundedValidator::state_from_model(SMTSolver& smt, const string& name_suffix,
-    const CellMemory* memory, const CellMemory* memory2) {
+CpuState BoundedValidator::state_from_model(SMTSolver& smt, const string& name_suffix) {
 
   CpuState cs;
 
@@ -30,13 +29,13 @@ CpuState BoundedValidator::state_from_model(SMTSolver& smt, const string& name_s
   for(size_t i = 0; i < r64s.size(); ++i) {
     stringstream name;
     name << r64s[i] << name_suffix;
-    cs.gp[r64s[i]] = smt.get_model_bv(name.str(), 1);
+    cs.gp[r64s[i]] = smt.get_model_bv(name.str(), 64);
   }
 
   for(size_t i = 0; i < ymms.size(); ++i) {
     stringstream name;
     name << ymms[i] << name_suffix;
-    cs.sse[ymms[i]] = smt.get_model_bv(name.str(), 4);
+    cs.sse[ymms[i]] = smt.get_model_bv(name.str(), 256);
   }
 
   for(size_t i = 0; i < eflags.size(); ++i) {
@@ -405,6 +404,10 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     if(is_sat) {
       auto ceg = state_from_model(solver_, "_");
+      if(memory)
+        am.build_testcase_memory(ceg, solver_, 
+                                *static_cast<CellMemory*>(state_t.memory), 
+                                *static_cast<CellMemory*>(state_r.memory), target, rewrite);
       counterexamples_.push_back(ceg);
       cout << "  (Got counterexample)" << endl;
     } else {

@@ -104,8 +104,8 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     NOTE: This function is very brittle right now.  If you pass in the wrong
     variable/size, there's no way to know and the result you get back is
     undefined. */
-cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t octs) {
-  auto bits = octs*64;
+cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t bits) {
+  auto octs = (bits+63)/64;
 
   auto type = context_.bv_sort(bits);
   auto v = z3::expr(context_, Z3_mk_const(context_, get_symbol(var), type));
@@ -115,7 +115,8 @@ cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t octs)
   for(int i = 0; i < octs; ++i) {
     uint64_t oct;
 
-    expr extract = to_expr(context_, Z3_mk_extract(context_, i*64+63, i*64, v));
+    size_t max_bits = i*64+63 > bits ? bits : i*64+63;
+    expr extract = to_expr(context_, Z3_mk_extract(context_, max_bits, i*64, v));
     expr number = to_expr(context_, Z3_mk_bv2int(context_, extract, true));
     expr eval = model_->eval(number, true);
     Z3_get_numeral_int64(context_, eval, (long long int*)&oct);
