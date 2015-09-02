@@ -73,6 +73,7 @@ void Validator::setup_support_table() {
       case Type::R_16:
       case Type::R_32:
       case Type::R_64:
+      case Type::RH:
       case Type::AL:
       case Type::CL:
       case Type::AX:
