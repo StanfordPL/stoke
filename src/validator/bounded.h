@@ -82,11 +82,6 @@ private:
   /** Synthesize a testcase for a pair of paths. */
   bool brute_force_testcase(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q, CpuState& tc);
 
-
-
-  /** Generate a testcase from SMT solver */
-  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix);
-
   /** For learning aliasing relationships */
   AliasMiner am;
   /** For learning paths */

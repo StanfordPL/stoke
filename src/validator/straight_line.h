@@ -77,7 +77,7 @@ private:
 
   /** Generates counterexample with memory. */
   static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
-                                  const DeprecatedMemory*, const DeprecatedMemory*);
+                                   const DeprecatedMemory*, const DeprecatedMemory*);
 
   /** Take two codes and generate constraints asserting their equivalence.
    * Also return final symbolic states (that have information about memory
