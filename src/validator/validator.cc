@@ -258,7 +258,7 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
   }
 
   return true;
- 
+
 }
 
 CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) {

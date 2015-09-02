@@ -21,46 +21,6 @@ using namespace stoke;
 using namespace x64asm;
 
 
-CpuState BoundedValidator::state_from_model(SMTSolver& smt, const string& name_suffix) {
-
-  CpuState cs;
-
-  // Get the values of registers
-  for(size_t i = 0; i < r64s.size(); ++i) {
-    stringstream name;
-    name << r64s[i] << name_suffix;
-    cs.gp[r64s[i]] = smt.get_model_bv(name.str(), 64);
-  }
-
-  for(size_t i = 0; i < ymms.size(); ++i) {
-    stringstream name;
-    name << ymms[i] << name_suffix;
-    cs.sse[ymms[i]] = smt.get_model_bv(name.str(), 256);
-  }
-
-  for(size_t i = 0; i < eflags.size(); ++i) {
-    if(!cs.rf.is_status(eflags[i].index()))
-      continue;
-
-    stringstream name;
-    name << eflags[i] << name_suffix;
-    cs.rf.set(eflags[i].index(), smt.get_model_bool(name.str()));
-  }
-
-  // Figure out error code
-  if(smt.get_model_bool("sigbus" + name_suffix)) {
-    cs.code = ErrorCode::SIGBUS_;
-  } else if (smt.get_model_bool("sigfpe" + name_suffix)) {
-    cs.code = ErrorCode::SIGFPE_;
-  } else if (smt.get_model_bool("sigsegv" + name_suffix)) {
-    cs.code = ErrorCode::SIGSEGV_;
-  } else {
-    cs.code = ErrorCode::NORMAL;
-  }
-
-  return cs;
-}
-
 bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
     const CfgPath& P, const CfgPath& Q, CpuState& tc) {
 
@@ -334,11 +294,11 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     }
 
     if(is_sat) {
-      auto ceg = state_from_model(solver_, "_");
+      auto ceg = Validator::state_from_model(solver_, "_");
       if(memory) {
         bool ok = am.build_testcase_memory(ceg, solver_,
-                                 *static_cast<CellMemory*>(state_t.memory),
-                                 *static_cast<CellMemory*>(state_r.memory), target, rewrite);
+                                           *static_cast<CellMemory*>(state_t.memory),
+                                           *static_cast<CellMemory*>(state_r.memory), target, rewrite);
         if(ok)
           counterexamples_.push_back(ceg);
       } else {
@@ -377,6 +337,7 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   has_error_ = false;
 
   // Step 0: Background checks
+  //TODO: wrap this in a try-catch block
   sanity_checks(target, rewrite);
 
   // Step 1: get all the paths from the enumerator
