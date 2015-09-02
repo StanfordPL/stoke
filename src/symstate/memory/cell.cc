@@ -49,8 +49,9 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
       }
     }
     if(!found) {
-      // need to add new, unconstrained cell to self.
+      // need to add new, unconstrained cell to other.
       other.cells_[p.first] = SymBitVector::tmp_var(cell_sizes_[p.first]);
+      other.init_cells_[p.first] = other.cells_[p.first];
       other.cell_sizes_[p.first] = cell_sizes_[p.first];
       condition = condition & (other.cells_[p.first] == p.second);
     }
@@ -68,6 +69,7 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
     if(!found) {
       // need to add new, unconstrained cell to self.
       cells_[q.first] = SymBitVector::tmp_var(other.cell_sizes_[q.first]);
+      init_cells_[q.first] = cells_[q.first];
       cell_sizes_[q.first] = other.cell_sizes_[q.first];
       condition = condition & (cells_[q.first] == q.second);
     }

@@ -89,9 +89,7 @@ private:
 
 
   /** Generate a testcase from SMT solver */
-  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
-                                   const CellMemory* target_mem = NULL,
-                                   const CellMemory* rewrite_mem = NULL);
+  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix);
 
   /** For learning aliasing relationships */
   AliasMiner am;

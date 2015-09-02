@@ -213,13 +213,13 @@ CpuState StraightLineValidator::state_from_model(SMTSolver& smt, const string& n
   for(size_t i = 0; i < r64s.size(); ++i) {
     stringstream name;
     name << r64s[i] << name_suffix;
-    cs.gp[r64s[i]] = smt.get_model_bv(name.str(), 1);
+    cs.gp[r64s[i]] = smt.get_model_bv(name.str(), 64);
   }
 
   for(size_t i = 0; i < ymms.size(); ++i) {
     stringstream name;
     name << ymms[i] << name_suffix;
-    cs.sse[ymms[i]] = smt.get_model_bv(name.str(), 4);
+    cs.sse[ymms[i]] = smt.get_model_bv(name.str(), 256);
   }
 
   for(size_t i = 0; i < eflags.size(); ++i) {
@@ -262,12 +262,12 @@ CpuState StraightLineValidator::state_from_model(SMTSolver& smt, const string& n
   auto concrete = vector<pair<uint64_t, uint16_t>>();
   if(memory) {
     for(auto p : memory->get_address_vars()) {
-      concrete.push_back(pair<uint64_t, uint16_t>(smt.get_model_bv(p.first, 1).get_fixed_quad(0), p.second));
+      concrete.push_back(pair<uint64_t, uint16_t>(smt.get_model_bv(p.first, 64).get_fixed_quad(0), p.second));
     }
   }
   if(memory2) {
     for(auto p : memory2->get_address_vars()) {
-      concrete.push_back(pair<uint64_t, uint16_t>(smt.get_model_bv(p.first, 1).get_fixed_quad(0), p.second));
+      concrete.push_back(pair<uint64_t, uint16_t>(smt.get_model_bv(p.first, 64).get_fixed_quad(0), p.second));
     }
   }
 

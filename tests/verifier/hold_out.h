@@ -44,10 +44,19 @@ protected:
     return cs;
   }
 
+  void fail() {
+    FAIL();
+  }
+
   CpuState get_state(const Cfg& cfg) {
     CpuState cs;
     StateGen sg(sb_);
-    sg.get(cs, cfg);
+    bool b = sg.get(cs, cfg);
+    if(!b)  {
+      std::cerr << "Could not generate state" << std::endl;
+      std::cerr << sg.get_error();
+      fail();
+    }
     return cs;
   }
 

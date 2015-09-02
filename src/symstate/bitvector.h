@@ -617,6 +617,14 @@ public:
     return SymBitVector::Type::VAR;
   }
 
+  std::string get_name() const {
+    return name_;
+  }
+
+  uint16_t get_size() const {
+    return size_;
+  }
+
   bool equals(const SymBitVectorAbstract * const other) const {
     if(other->type() != SymBitVector::Type::VAR) return false;
     auto cast = static_cast<const SymBitVectorVar * const>(other);
