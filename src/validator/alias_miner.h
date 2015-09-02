@@ -26,9 +26,9 @@
 
 namespace stoke {
 
-/* This class is used to mine aliasing relationships from a testcase.  You
- * shouldn't frequently allocate these because they, in turn, each allocate
- * their own sandbox.  */
+/* This class is used to mine aliasing relationships from a testcase.
+   It also will setup a pair of CellMemory objects, and later extract the
+   memory from a testcase if need be. */
 class AliasMiner {
 
 public:
@@ -54,6 +54,7 @@ public:
     a sandbox with special options, you can do that here. The class will delete
     this sandbox upon destruction.  Use with care. */
   AliasMiner& set_sandbox(Sandbox* sb) {
+    delete sandbox_;
     sandbox_ = sb;
     return *this;
   }

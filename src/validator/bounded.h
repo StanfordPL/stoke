@@ -20,6 +20,7 @@
 #include <string>
 
 #include "src/cfg/cfg.h"
+#include "src/cfg/paths.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/solver/smtsolver.h"
 #include "src/validator/alias_miner.h"
@@ -56,11 +57,7 @@ public:
     return counterexamples_;
   }
 
-  /** Sandbox callback to record path */
-  static void sandbox_path_callback(const StateCallbackData& data, void* arg);
-
 private:
-  typedef std::vector<Cfg::id_type> Path;
 
   enum JumpType {
     NONE, // jump target is the fallthrough
@@ -74,17 +71,17 @@ private:
   /** Run cfg on all testcases, learn the paths, and store them.*/
   void learn_paths(const Cfg&, bool is_rewrite);
   /** Verify a pair of paths. */
-  bool verify_pair(const Cfg& target, const Cfg& rewrite, const Path& p, const Path& q);
+  bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
   /** Generate a loop-free CFG from a loopy CFG and a path */
-  static Cfg path_cfg(const Cfg& cfg, const Path& p);
+  static Cfg path_cfg(const Cfg& cfg, const CfgPath& p);
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
   /** Is there a jump in the path following this basic block? */
-  static JumpType is_jump(const Cfg&, const Path& P, size_t i);
+  static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
   /** Find or create a testcase for a pair of paths. */
-  bool find_pair_testcase(const Cfg& target, const Cfg& rewrite, const Path& p, const Path& q, CpuState& tc);
+  bool find_pair_testcase(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q, CpuState& tc);
   /** Synthesize a testcase for a pair of paths. */
-  bool brute_force_testcase(const Cfg& target, const Cfg& rewrite, const Path& p, const Path& q, CpuState& tc);
+  bool brute_force_testcase(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q, CpuState& tc);
 
 
 
@@ -93,18 +90,15 @@ private:
 
   /** For learning aliasing relationships */
   AliasMiner am;
+  /** For learning paths */
+  CfgPaths cfg_paths;
 
   /** Traces for the target/rewrite. */
-  std::vector<Path> paths_[2];
+  std::vector<CfgPath> paths_[2];
   /** Map taking a path in the target/rewrite to testcases that work with it. */
-  std::map<Path, std::vector<size_t>> path_to_testcase_[2];
+  std::map<CfgPath, std::vector<size_t>> path_to_testcase_[2];
   /** Map marking if we've discovered a pair of paths (P,Q) infeasible. */
-  std::map<Path, std::map<Path, bool>> paths_infeasible_;
-
-  /** The current path we're adding to in the callback */
-  Path* current_path_;
-  /** The current trace of memory addresses we're adding in the aliasing callback */
-  std::vector<uint64_t>* current_memory_trace_;
+  std::map<CfgPath, std::map<CfgPath, bool>> paths_infeasible_;
 
   /** The set of counterexamples (one per pair) that we've found. */
   std::vector<CpuState> counterexamples_;
@@ -116,7 +110,7 @@ private:
   size_t error_line_;
 
   // This is to print out Cfg paths easily (for debugging purposes).
-  static std::string print(const Path& p) {
+  static std::string print(const CfgPath& p) {
     std::stringstream os;
     for(size_t i = 0; i < p.size(); ++i) {
       os << p[i];

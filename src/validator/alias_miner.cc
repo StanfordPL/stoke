@@ -237,7 +237,6 @@ void AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
           continue;
 
         // we need to find the address at which this dereference happens
-        cout << "preparing callback for " << instr << " at line " << i << endl;
         build_testcase_address_ = 0;
         sandbox_->clear_callbacks();
         sandbox_->insert_before(label, i, build_testcase_callback, this);
@@ -248,8 +247,6 @@ void AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
         auto var = static_cast<const SymBitVectorVar*>(v->ptr);
         auto bv = solver.get_model_bv(var->get_name(), var->get_size());
         addr_value_pairs[build_testcase_address_] = bv;
-        cout << "line " << i << " of " << (k ? "target" : "rewrite") << endl;
-        cout << "adding " << build_testcase_address_ << " -> " << bv.get_fixed_quad(0) << " (of size " << var->get_size() << ")" << endl;
         cell_set[cell] = true;
 
         // rebuild the testcase for the next run
@@ -266,9 +263,6 @@ void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* ar
 
   AliasMiner* ptr = (AliasMiner*)arg;
   ptr->build_testcase_address_ = data.state.get_addr(data.code[data.line]);
-  cout << "CALLBACK line=" << data.line << " instr=" << data.code[data.line] << endl;
-  cout << "STATE:" << endl << data.state << endl;
-  cout << "callback ran; got address " << ptr->build_testcase_address_ << endl;
 }
 
 

@@ -597,7 +597,6 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
   ASSERT_LE(1ul, validator->counter_examples_available());
 
   auto ceg = validator->get_counter_examples()[0];
-  std::cout << ceg << std::endl;
 
   /** rdi is pointing to 0x40000000 */
   EXPECT_EQ(0x40, ceg.heap[ceg[x64asm::rdi]+3] & 0x40);

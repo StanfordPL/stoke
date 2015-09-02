@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "src/cfg/cfg.h"
-#include "src/cfg/path_enumerator.h"
+#include "src/cfg/paths.h"
 #include "src/validator/bounded.h"
 
 using namespace std;
@@ -61,35 +61,8 @@ CpuState BoundedValidator::state_from_model(SMTSolver& smt, const string& name_s
   return cs;
 }
 
-Cfg BoundedValidator::path_cfg(const Cfg& cfg, const Path& p) {
-
-
-  Code code;
-  for(auto node : p) {
-    if(cfg.num_instrs(node) == 0)
-      continue;
-
-    size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(node, 0));
-    size_t end_index = start_index + cfg.num_instrs(node);
-    for(size_t i = start_index; i < end_index; ++i) {
-      if(cfg.get_code()[i].is_jump()) {
-        code.push_back(Instruction(NOP));
-      } else {
-        code.push_back(cfg.get_code()[i]);
-      }
-    }
-  }
-
-  Cfg new_cfg(code, cfg.def_ins(), cfg.live_outs());
-
-  //cout << "path cfg for " << print(p) << " is " << endl;
-  //cout << TUnit(code) << endl;
-
-  return new_cfg;
-}
-
 bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
-    const Path& P, const Path& Q, CpuState& tc) {
+    const CfgPath& P, const CfgPath& Q, CpuState& tc) {
 
   if(paths_infeasible_[P][Q])
     return false;
@@ -131,7 +104,7 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
 // Find a testcase that takes paths (P,Q) or prove that one doesn't exist.
 // We're assuming that a "gentle" search of known testcases failed here.
 bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrite,
-    const Path& P, const Path& Q, CpuState& tc) {
+    const CfgPath& P, const CfgPath& Q, CpuState& tc) {
 
   //if(paths_infeasible_[P][Q])
   return false;
@@ -146,44 +119,12 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
 }
 
 void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
-  auto code = cfg.get_code();
-  auto label = code[0].get_operand<x64asm::Label>(0);
-  sandbox_->clear_functions();
-  sandbox_->clear_callbacks();
-  sandbox_->insert_function(cfg);
-  sandbox_->set_entrypoint(label);
-
-  /** Insert code either before or after the first instruction in a block to
-   * record the path took */
-  vector<pair<BoundedValidator*, Cfg::id_type>*> to_delete;
-  for(size_t i = 0; i < code.size(); ++i) {
-    // figure out if we're at the beginning of a block
-    auto loc = cfg.get_loc(i);
-    auto steps = loc.second;
-    if(steps > 0)
-      continue;
-
-    // build a pair with a pointer to our object and the basic block of this
-    // instruction
-    auto pair = new std::pair<BoundedValidator*, Cfg::id_type>(this, loc.first);
-    to_delete.push_back(pair);
-
-    // insert callback after labels (so jumps don't skip them), but before
-    // returns and everything else (so if segfault or exit we still get
-    // called).
-    auto instr = code[i];
-    if(instr.is_label_defn()) {
-      sandbox_->insert_after(label, i, sandbox_path_callback, pair);
-    } else {
-      sandbox_->insert_before(label, i, sandbox_path_callback, pair);
-    }
-  }
 
   for(size_t i = 0; i < sandbox_->num_inputs(); ++i) {
-    Path p;
-    current_path_ = &p;
+  
+    auto tc = *sandbox_->get_input(i);
 
-    sandbox_->run(i);
+    CfgPath p = cfg_paths.learn_path(cfg, tc);
 
     // check the path to see if it's in the bound
     std::map<Cfg::id_type, size_t> counts;
@@ -200,18 +141,6 @@ void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
       path_to_testcase_[is_rewrite][p].push_back(i);
     }
   }
-
-  for(auto it : to_delete)
-    delete it;
-}
-
-void BoundedValidator::sandbox_path_callback(const StateCallbackData& data, void* arg) {
-
-  auto pair = (std::pair<BoundedValidator*, Cfg::id_type>*)arg;
-
-  auto bb = pair->second;
-  pair->first->current_path_->push_back(bb);
-
 }
 
 
@@ -270,7 +199,7 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
   }
 }
 
-BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const Path& P, size_t i) {
+BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const CfgPath& P, size_t i) {
 
   if(i == P.size() - 1)
     return JumpType::NONE;
@@ -297,7 +226,7 @@ BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const Path&
     return JumpType::JUMP;
 }
 
-bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const Path& P, const Path& Q) {
+bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
   // Step 0: Check if there's any memory access
   bool memory = false;
@@ -334,7 +263,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       return true;
     }
 
-    memories = am.build_cell_model(path_cfg(target, P), path_cfg(rewrite, Q), testcase);
+    auto target_path = CfgPaths::rewrite_cfg_with_path(target, P);
+    auto rewrite_path = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
+    memories = am.build_cell_model(target_path, rewrite_path, testcase);
     if(memories.first == NULL || memories.second == NULL) {
       has_error_ = true;
       error_ = "Overlapping memory accesses found.";
@@ -405,9 +336,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     if(is_sat) {
       auto ceg = state_from_model(solver_, "_");
       if(memory)
-        am.build_testcase_memory(ceg, solver_, 
-                                *static_cast<CellMemory*>(state_t.memory), 
-                                *static_cast<CellMemory*>(state_r.memory), target, rewrite);
+        am.build_testcase_memory(ceg, solver_,
+                                 *static_cast<CellMemory*>(state_t.memory),
+                                 *static_cast<CellMemory*>(state_r.memory), target, rewrite);
       counterexamples_.push_back(ceg);
       cout << "  (Got counterexample)" << endl;
     } else {
@@ -484,9 +415,9 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   }
 
   // Step 1: get all the paths from the enumerator
-  for(auto path : PathEnumerator::find_paths(target, bound_))
+  for(auto path : CfgPaths::enumerate_paths(target, bound_))
     paths_[false].push_back(path);
-  for(auto path : PathEnumerator::find_paths(rewrite, bound_))
+  for(auto path : CfgPaths::enumerate_paths(rewrite, bound_))
     paths_[true].push_back(path);
 
   // Step 2: get the paths taken by every testcase
