@@ -94,7 +94,38 @@ void Validator::setup_support_table() {
 
 }
 
+void Validator::sanity_checks(const Cfg& target, const Cfg& rewrite) const {
+  // Check to make sure def-ins/live-outs agree
+  if (target.def_ins() != rewrite.def_ins()) {
+    throw VALIDATOR_ERROR("Def-ins of target/rewrite CFGs differ");
+  }
+  if (target.live_outs() != rewrite.live_outs()) {
+    throw VALIDATOR_ERROR("Live-outs of target/rewrite CFGs differ");
+  }
+  // Check that the regsets are supported, throw an error otherwise
+  if(!handler_.regset_is_supported(target.def_ins())) {
+    throw VALIDATOR_ERROR("Target def-in not supported.");
+  }
+  if(!handler_.regset_is_supported(target.live_outs())) {
+    throw VALIDATOR_ERROR("Target live-out not supported.");
+  }
 
+  // Check that all the instructions are supported in target/rewrite
+  for(size_t i = 0; i < 2; ++i) {
+    auto& cfg = i ? target : rewrite;
+    for(auto instr : cfg.get_code()) {
+      if(instr.is_label_defn() || instr.is_any_jump() || instr.is_ret()) {
+        continue;
+      }
+      else if(!is_supported(instr)) {
+        stringstream ss;
+        ss << "Instruction " << instr << " is unsupported.";
+        throw VALIDATOR_ERROR(ss.str());
+      }
+    }
+  }
+
+}
 
 
 

@@ -19,14 +19,9 @@
 #include <vector>
 #include <string>
 
-#include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
-#include "src/state/cpu_state.h"
-#include "src/solver/smtsolver.h"
 #include "src/symstate/memory/deprecated.h"
-#include "src/symstate/memory_manager.h"
 #include "src/symstate/state.h"
-#include "src/validator/error.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers.h"
 #include "src/validator/validator.h"
@@ -111,10 +106,6 @@ private:
   /** If a counterexample existed, what was final state of rewrite? */
   CpuState rewrite_final_state_;
 
-  /** File where error occurred */
-  std::string error_file_;
-  /** Line where error occurred */
-  size_t error_line_;
 };
 
 

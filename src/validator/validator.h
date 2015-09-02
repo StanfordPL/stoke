@@ -20,6 +20,7 @@
 #include <string>
 
 #include "src/solver/smtsolver.h"
+#include "src/validator/error.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers.h"
 #include "src/verifier/verifier.h"
@@ -73,6 +74,10 @@ public:
 
 protected:
 
+  /** Check that def-ins, live-outs match, and that non-control flow
+   * instructions are supported.  Throws exception on error.*/
+  void sanity_checks(const Cfg&, const Cfg&) const;
+
   /** Setup the memory manager (on invocation of the validator) */
   void init_mm() {
     memory_manager_ = SymMemoryManager();
@@ -101,6 +106,10 @@ protected:
   /** Code to setup the table to find support levels */
   void setup_support_table();
 
+  /** File where error occurred */
+  std::string error_file_;
+  /** Line where error occurred */
+  size_t error_line_;
 
 };
 
