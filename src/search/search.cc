@@ -61,9 +61,6 @@ Search::Search(Transform* transform) : transform_(transform) {
 
 void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& state, vector<TUnit>& aux_fxns) {
 
-  // Make sure target is correct with respect to itself
-  assert(fxn(target).first);
-
   // Configure initial state
   configure(target, fxn, state, aux_fxns);
 

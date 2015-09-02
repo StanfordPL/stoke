@@ -39,7 +39,7 @@ public:
                                          "po", "ns", "o", "p", "pe", "s"
                                         };
     std::vector<std::string> suffix2 =  {"b", "w", "l", "q"};
- 
+
     for(auto y : suffixes)
       opcodes.push_back("set"+y);
 

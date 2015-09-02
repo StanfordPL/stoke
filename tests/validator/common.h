@@ -176,7 +176,7 @@ protected:
     if(!s_.has_model())
       return false;
 
-    CpuState validator_final = StraightLineValidator::state_from_model(s_, "_FINAL");
+    CpuState validator_final = Validator::state_from_model(s_, "_FINAL");
 
     // Run the sandbox
     Sandbox sb;

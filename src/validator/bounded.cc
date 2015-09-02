@@ -335,11 +335,15 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     if(is_sat) {
       auto ceg = state_from_model(solver_, "_");
-      if(memory)
-        am.build_testcase_memory(ceg, solver_,
+      if(memory) {
+        bool ok = am.build_testcase_memory(ceg, solver_,
                                  *static_cast<CellMemory*>(state_t.memory),
                                  *static_cast<CellMemory*>(state_r.memory), target, rewrite);
-      counterexamples_.push_back(ceg);
+        if(ok)
+          counterexamples_.push_back(ceg);
+      } else {
+        counterexamples_.push_back(ceg);
+      }
       cout << "  (Got counterexample)" << endl;
     } else {
       cout << "  (This case verified)" << endl;
