@@ -844,6 +844,7 @@ private:
     opcodes_[opcode] = entry;
     opcodes_["v" + opcode] = entry;
     opcode_names_.push_back(opcode);
+    opcode_names_.push_back("v" + opcode);
 
     return *entry;
   }
