@@ -22,6 +22,7 @@ using namespace stoke;
 SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
   if(!map_.count(line_no)) {
     //something is missing from the map
+    cout << "WARNING!  (write) Memory map missing entry for line " << line_no << endl;
     return SymBool::_false();
   }
 
@@ -34,6 +35,7 @@ SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
 std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
   if(!map_.count(line_no)) {
     //something is missing from the map
+    cout << "WARNING!  (read) Memory map missing entry for line " << line_no << endl;
     return pair<SymBitVector,SymBool>(SymBitVector::tmp_var(size), SymBool::_false());
   }
 
