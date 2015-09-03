@@ -155,9 +155,6 @@ struct CpuState {
   /** Read binary. */
   std::istream& read_bin(std::istream& is);
 
-  /** Perform sanity checks on the contents of this cpu state. */
-  void check(std::istream& is) const;
-
   /** The error code associated with this state. */
   ErrorCode code;
   /** General purpose register buffer. */
