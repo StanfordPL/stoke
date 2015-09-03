@@ -94,8 +94,8 @@ private:
   //from https://github.com/trikitrok/StringCalculatorAdditionUsingGoogleMock
   std::vector<std::string> split(const std::string& str, std::regex rgx) {
     std::sregex_token_iterator
-      first{begin(str), end(str), rgx, -1},
-      last;
+    first{begin(str), end(str), rgx, -1},
+          last;
     return{first, last};
   }
 
