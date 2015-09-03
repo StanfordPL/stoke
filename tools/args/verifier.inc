@@ -18,20 +18,18 @@
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
 #include "src/solver/solver.h"
-#include "src/verifier/strategy.h"
 #include "tools/io/solver.h"
-#include "tools/io/strategy.h"
 
 namespace stoke {
 
 cpputil::Heading& verifier_heading =
   cpputil::Heading::create("Verifier Options:");
 
-cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>& strategy_arg =
-  cpputil::ValueArg<Strategy, StrategyReader, StrategyWriter>::create("strategy")
+cpputil::ValueArg<std::string>& strategy_arg =
+  cpputil::ValueArg<std::string>::create("strategy")
   .usage("(none|hold_out|straight_line)")
   .description("Verification strategy")
-  .default_val(Strategy::HOLD_OUT);
+  .default_val("hold_out");
 
 } // namespace stoke
 
