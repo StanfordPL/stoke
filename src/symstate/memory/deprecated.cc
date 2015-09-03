@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-#include "src/symstate/memory.h"
+#include "src/symstate/memory/deprecated.h"
 #include "src/symstate/state.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
@@ -32,7 +32,7 @@ uint64_t read_quadword(const Memory& m, uint64_t base, uint64_t i) {
   return result;
 }
 
-SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
+SymBool DeprecatedMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
 
   //cout << "Writing " << value << " to " << address << " (size " << size << ")" << endl;
 
@@ -53,7 +53,7 @@ SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size
   }
 }
 
-void SymMemory::init_concrete(const Memory& stack, const Memory& heap) {
+void DeprecatedMemory::init_concrete(const Memory& stack, const Memory& heap) {
 
   Memory my_mem;
   if(heap.size()) {
@@ -75,7 +75,7 @@ void SymMemory::init_concrete(const Memory& stack, const Memory& heap) {
 
 }
 
-pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
+pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
 
   //cout << "Reading from " << address << " (size " << size << ")" << endl;
 
@@ -255,7 +255,7 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size,
 }
 
 
-vector<pair<string, uint16_t>> SymMemory::get_address_vars() const {
+vector<pair<string, uint16_t>> DeprecatedMemory::get_address_vars() const {
   vector<pair<string, uint16_t>> list;
   for(size_t i = 0; i < writes_.size(); ++i) {
     assert(writes_[i].value.ptr->type() == SymBitVector::VAR);

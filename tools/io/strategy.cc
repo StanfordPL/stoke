@@ -24,8 +24,9 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Strategy>, 4> pts {{
+array<pair<string, Strategy>, 5> pts {{
     {"none", Strategy::NONE},
+    {"bounded", Strategy::BOUNDED },
     {"formal", Strategy::STRAIGHT_LINE },
     {"hold_out", Strategy::HOLD_OUT},
     {"straight_line", Strategy::STRAIGHT_LINE }

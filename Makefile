@@ -60,7 +60,7 @@ SRC_OBJ=\
 	src/cfg/cfg.o \
 	src/cfg/cfg_transforms.o \
 	src/cfg/dot_writer.o \
-	src/cfg/path_enumerator.o \
+	src/cfg/paths.o \
 	\
 	src/cost/correctness.o \
 	src/cost/cost_parser.o \
@@ -92,9 +92,11 @@ SRC_OBJ=\
 	src/symstate/bitvector.o \
 	src/symstate/bool.o \
 	src/symstate/function.o \
-	src/symstate/memory.o \
 	src/symstate/memory_manager.o \
 	src/symstate/state.o \
+	\
+	src/symstate/memory/cell.o \
+	src/symstate/memory/deprecated.o \
 	\
 	src/target/cpu_info.o	\
 	\
@@ -116,6 +118,8 @@ SRC_OBJ=\
 	\
 	src/tunit/tunit.o \
 	\
+	src/validator/alias_miner.o \
+	src/validator/bounded.o \
 	src/validator/handler.o \
 	src/validator/straight_line.o \
 	src/validator/validator.o \

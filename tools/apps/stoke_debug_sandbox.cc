@@ -93,16 +93,19 @@ void print_frame(size_t idx, const pair<TUnit, size_t>& frame) {
   Console::msg() << endl;
 }
 
-bool user_loop() {
+bool user_loop(CpuState& tc) {
   auto key = ' ';
   auto idx = program_stack.size()-1;
 
   while (true) {
-    Console::msg() << "(l)ist, (u)p, (d)own, (s)tep, (c)ontinue, or (q)uit: ";
+    Console::msg() << "(l)ist, (u)p, (d)own, (s)tep, (c)ontinue, (w)ipe heap or (q)uit: ";
     cin >> key;
     Console::msg() << endl;
 
     switch (key) {
+    case 'w':
+      tc.heap ^= tc.heap;
+      break;
     case 'u':
       idx = idx == 0 ? idx : idx-1;
       print_frame(idx, program_stack[idx]);
@@ -163,7 +166,7 @@ void callback(const StateCallbackData& data, void* arg) {
   // User interaction loop
   auto stepping = (bool*) arg;
   if (*stepping) {
-    *stepping = user_loop();
+    *stepping = user_loop(data.state);
   }
 
   // Update the stack based on the current instruction

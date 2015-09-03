@@ -72,8 +72,8 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
     NOTE: This function is very brittle right now.  If you pass in the wrong
     variable/size, there's no way to know and the result you get back is
     undefined. */
-cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t octs) {
-  cpputil::BitVector bv(octs*64);
+cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t bits) {
+  cpputil::BitVector bv(bits);
 
   if(!variables_.count(var))
     return bv;
@@ -82,7 +82,7 @@ cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t oct
   auto expr = smt_->getValue(val);
   auto ret = expr.getConst<BitVector>();
 
-  for(size_t i = 0; i < octs*64; ++i) {
+  for(size_t i = 0; i < bits; ++i) {
     bv[i] = ret.isBitSet(i);
   }
 

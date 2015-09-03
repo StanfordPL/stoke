@@ -30,14 +30,19 @@ class SymState {
 public:
 
   /** Returns a new symbolic CPU state filled with 0s*/
-  SymState() : gp(16, 64), sse(16, 256) { }
+  SymState() : gp(16, 64), sse(16, 256), memory(NULL), delete_memory_(false) { }
   /** Builds a symbolic CPU state from a concrete one */
   SymState(const CpuState& cs) : gp(16, 64), sse(16, 256) {
     build_from_cpustate(cs);
   }
   /** Builds a symbolic CPU state with variable name suffix */
-  SymState(const std::string& suffix) : gp(16, 64), sse(16, 256) {
+  SymState(const std::string& suffix) : gp(16, 64), sse(16, 256), memory(NULL), delete_memory_(false) {
     build_with_suffix(suffix);
+  }
+
+  ~SymState() {
+    if(delete_memory_)
+      delete memory;
   }
 
   /** Symbolic general purpose registers */
@@ -45,7 +50,7 @@ public:
   /** Symbolic SSE registers */
   SymRegs sse;
   /** Memory */
-  SymMemory memory;
+  SymMemory* memory;
   /** Symbolic rflags: CF, PF, AF, ZF, SF, OF */
   std::array<SymBool, 6> rf;
   /** Has a #NP, #SS or #AC exception occurred? (These trigger SIGBUG on linux)*/
@@ -58,6 +63,8 @@ public:
   /** Get the address corresponding to a memory location */
   template <typename T>
   SymBitVector get_addr(x64asm::M<T> ref) const;
+  /** Get the address corresponding to an instruction */
+  SymBitVector get_addr(const x64asm::Instruction& instr) const;
 
   /** Lookup the symbolic representation of a generic operand.
     * Can modify state if you lookup memory and it causes segfault. */
@@ -113,7 +120,7 @@ public:
   std::vector<SymBool> equality_constraints(const SymState& other,
       const x64asm::RegSet& rs = x64asm::RegSet::universe()) const;
 
-  /** Set the line number.  Used for memory aliasing analysis. */
+  /** Set the line number.  Used as a parameter to access memory. */
   void set_lineno(size_t line) {
     lineno_ = line;
   }
@@ -127,6 +134,9 @@ private:
   void build_from_cpustate(const CpuState& cs);
   /** Builds a symbolic CPU state with variables */
   void build_with_suffix(const std::string& str);
+
+  /** Do we need to delete the SymMemory we allocated earlier? */
+  bool delete_memory_;
 
   /** The current line number */
   size_t lineno_;
