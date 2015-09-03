@@ -15,37 +15,37 @@
 #ifndef STOKE_TOOLS_GADGETS_VERIFIER_H
 #define STOKE_TOOLS_GADGETS_VERIFIER_H
 
+#include <regex>
+
 #include "src/cost/cost_function.h"
-#include "src/solver/cvc4solver.h"
-#include "src/solver/z3solver.h"
 #include "src/verifier/hold_out.h"
-#include "src/verifier/strategy.h"
+#include "src/verifier/none.h"
+#include "src/verifier/sequence.h"
 #include "src/verifier/verifier.h"
 #include "src/validator/straight_line.h"
 
 #include "tools/args/in_out.inc"
 #include "tools/args/verifier.inc"
+#include "tools/gadgets/solver.h"
 
 namespace stoke {
 
 class VerifierGadget : public Verifier {
 public:
-  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn) : Verifier() {
 
-    switch(strategy_arg) {
-    case Strategy::HOLD_OUT:
-      verifier_ = new HoldOutVerifier(fxn);
-      break;
 
-    case Strategy::STRAIGHT_LINE:
-      solver_ = new SolverGadget();
-      verifier_ = new StraightLineValidator(*solver_);
-      break;
+  VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn) : Verifier(), verifier_(NULL), solver_(NULL) {
 
-    case Strategy::NONE:
-      verifier_ = new Verifier();
-      break;
+    solver_ = new SolverGadget();
+
+    std::vector<Verifier*> verifiers;
+    std::vector<std::string> splits = split(strategy_arg.value(), std::regex("[ ,+]"));
+    for(auto it : splits) {
+      verifiers.push_back(make_by_name(it, sandbox, fxn));
     }
+
+    verifier_ = new SequenceVerifier(verifiers);
+
     verifier_->set_sandbox(&sandbox);
     verifier_->set_heap_out(heap_out_arg);
     verifier_->set_stack_out(stack_out_arg);
@@ -77,6 +77,27 @@ public:
   }
 
 private:
+
+  Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn) {
+    if(s == "hold_out") {
+      return new HoldOutVerifier(fxn);
+    } else if (s == "straight_line" || s == "formal") {
+      return new StraightLineValidator(*solver_);
+    } else if (s == "none") {
+      return new NoneVerifier();
+    } else {
+      std::cerr << "Unrecognized verifier name \"" << s << "\"" << std::endl;
+      exit(1);
+    }
+  }
+
+  //from https://github.com/trikitrok/StringCalculatorAdditionUsingGoogleMock
+  std::vector<std::string> split(const std::string& str, std::regex rgx) {
+    std::sregex_token_iterator
+    first{begin(str), end(str), rgx, -1},
+          last;
+    return{first, last};
+  }
 
   Verifier* verifier_;
   SMTSolver* solver_;
