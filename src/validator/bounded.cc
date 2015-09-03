@@ -331,38 +331,42 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
       continue;
     } else if (instr.is_ret()) {
       return;
-    } else if (instr.is_memory_dereference()) {
-      if(line_cell_map.count(line_no-1)) {
-        // we need to add a constraint for the aliasing relationship that
-        // we assumed.
-        size_t cell = line_cell_map.at(line_no-1).first;
-        size_t width = line_cell_map.at(line_no-1).second;
-        auto address = state.get_addr(instr);
+    } else {
+      if(instr.is_memory_dereference()) {
+        if(line_cell_map.count(line_no-1)) {
+          // we need to add a constraint for the aliasing relationship that
+          // we assumed.
+          size_t cell = line_cell_map.at(line_no-1).first;
+          size_t width = line_cell_map.at(line_no-1).second;
+          auto address = state.get_addr(instr);
 
-        // assert equality with other writes to the same cell
-        if(cell_addr_map.count(cell)) {
-          state.constraints.push_back(cell_addr_map[cell].first == address);
-        } else {
-          cell_addr_map[cell] = pair<SymBitVector,size_t>(address, width);
+          // assert equality with other writes to the same cell
+          if(cell_addr_map.count(cell)) {
+            state.constraints.push_back(cell_addr_map[cell].first == address);
+          } else {
+            cell_addr_map[cell] = pair<SymBitVector,size_t>(address, width);
 
-          // by the way, don't go past address 0xffffffffffffffff.  Idiot.
-          state.constraints.push_back(address <= SymBitVector::constant(64, 0-width));
+            // by the way, don't go past address 0xffffffffffffffff.  Idiot.
+            state.constraints.push_back(address <= SymBitVector::constant(64, 0-width));
 
-          // assert difference with previous writes to other cells
-          for(auto p : cell_addr_map) {
-            if(p.first != cell) {
-              size_t other_cell = p.first;
-              auto other_address = p.second.first;
-              size_t other_width = p.second.second;
+            // assert difference with previous writes to other cells
+            for(auto p : cell_addr_map) {
+              if(p.first != cell) {
+                size_t other_cell = p.first;
+                auto other_address = p.second.first;
+                size_t other_width = p.second.second;
 
-              auto curr_lt_other = address + SymBitVector::constant(64, width) <= other_address;
-              auto other_lt_curr = other_address + SymBitVector::constant(64, other_width) <= address;
-              state.constraints.push_back(curr_lt_other | other_lt_curr);
+                auto curr_lt_other = address + SymBitVector::constant(64, width) <= other_address;
+                auto other_lt_curr = other_address + SymBitVector::constant(64, other_width) <= address;
+                state.constraints.push_back(curr_lt_other | other_lt_curr);
+              }
             }
           }
         }
       }
-    } else {
+
+      // Build the handler for the instruction
+
       state.set_lineno(line_no-1);
       //cout << "LINE=" << line_no-1 << ": " << instr << endl;
       handler_.build_circuit(instr, state);
