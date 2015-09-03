@@ -59,7 +59,6 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
       }
 
       auto constraint = ec(it);
-      cout << "CONVERTED: " << constraint << endl;
       if(ec.has_error()) {
         error_ = ec.error();
         return false;

@@ -20,6 +20,23 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+bool vectors_have_common(std::vector<size_t> left, std::vector<size_t> right, size_t& value) {
+
+  size_t j = 0;
+  for(size_t i : left) {
+    while(j < right.size() && right[j] < i) {
+      j++;
+    }
+    if(j < right.size() && right[j] == i) {
+      // we're done!
+      value = i;
+      return true;
+    }
+  }
+
+  return false;
+}
+
 
 bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
     const CfgPath& P, const CfgPath& Q, CpuState& tc) {
@@ -44,6 +61,7 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
 
   // Do they have something in common?  if so, we're done.
   // Both of these vectors are sorted --> O(n) time.
+  /*
   size_t j = 0;
   size_t winner = (size_t)-1;
   for(size_t i : target_tcs) {
@@ -56,9 +74,16 @@ bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
       return true;
     }
   }
-
-  // Roll your sleaves up: we're gonna try to brute force a new testcase.
-  return brute_force_testcase(target, rewrite, P, Q, tc);
+  */
+  size_t index;
+  bool found_one = vectors_have_common(target_tcs, rewrite_tcs, index);
+  if(found_one) {
+    tc = *(sandbox_->get_input(index));
+    return true;
+  } else {
+    // Roll your sleaves up: we're gonna try to brute force a new testcase.
+    return brute_force_testcase(target, rewrite, P, Q, tc);
+  }
 
 }
 
@@ -76,6 +101,7 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
   // STEP 1: see if there's any bootstrap testcase that nearly makes it up to P/Q
 
   // find the prefix we need, i.e., the path P' short of P where the gap (nodes in P but not P') doesn't contain any memory access
+
   CfgPath P_prefix;
   CfgPath Q_prefix;
   for(size_t k = 0; k < 2; ++k) {
@@ -84,7 +110,7 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
     auto& prefix = k ? P_prefix : Q_prefix;
 
     CfgPath buffer;
-    for(size_t i = 0; i < path.size() - 1; ++i) {
+    for(size_t i = 0; path.size() && i < path.size() - 1; ++i) {
       auto node = path[i];
       if(cfg.num_instrs(node) == 0)
         continue;
@@ -104,7 +130,7 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
       buffer.push_back(node);
 
       if(deref) {
-        prefix.insert(prefix.end(), buffer.begin(), buffer.end());  
+        prefix.insert(prefix.end(), buffer.begin(), buffer.end());
         buffer.clear();
       }
     }
@@ -113,27 +139,39 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
   cout << "Prefix for Q: " << print(Q_prefix) << endl;
 
   // search testcases for these prefixes
-  CpuState prefix_tc;
-  bool found_tc = false;
-  for(size_t i = 0; i < paths_[0].size(); ++i) {
-    auto& target_path = paths_[0][i];
-    auto& rewrite_path = paths_[1][i];
+  vector<size_t> target_tcs;
+  vector<size_t> rewrite_tcs;
 
-    if(!CfgPaths::is_prefix(P_prefix, target_path))
-      continue;
-    if(!CfgPaths::is_prefix(Q_prefix, rewrite_path))
-      continue;
+  for(size_t k = 0; k < 2; ++k) {
+    auto& tc_list = k ? rewrite_tcs : target_tcs;
+    auto& prefix = k ? Q_prefix : P_prefix;
+    
+    for(auto& path : paths_[k]) {
 
-    //aha!  found one!
-    found_tc = true;
-    prefix_tc = *(sandbox_->get_input(i));
-    cout << "Found prefix TC :)" << endl;
-    break;
+      if(!CfgPaths::is_prefix(prefix, path))
+        continue;
+
+      auto& testcases = path_to_testcase_[k][path];
+      cout << "Found " << testcases.size() << " for path " << print(path) << " working on " << (k ? "rewrite" : "target") << endl;
+      for(size_t i = 0; i < testcases.size(); ++i) {
+        cout << testcases[i] << " ";
+      }
+      cout << endl;
+      tc_list.insert(tc_list.begin(), testcases.begin(), testcases.end());
+    }
   }
 
-  // STEP 2: if not, we need to synthesize one of those -- or get a guarantee none can exit.  (recursive call)
-
-  if(!found_tc) {
+  CpuState prefix_tc;
+  size_t tc_index;
+  sort(target_tcs.begin(), target_tcs.end());
+  sort(rewrite_tcs.begin(), rewrite_tcs.end());
+  bool found_tc = vectors_have_common(target_tcs, rewrite_tcs, tc_index);
+  if(found_tc) {
+    prefix_tc = *sandbox_->get_input(tc_index);
+    cout << "Found existing TC :)" << endl;
+    cout << "Sanity check target: " << print(cfg_paths.learn_path(target, prefix_tc)) << endl;
+    cout << "Sanity check rewrite: " << print(cfg_paths.learn_path(rewrite, prefix_tc)) << endl;
+  } else {
     found_tc = brute_force_testcase(target, rewrite, P_prefix, Q_prefix, prefix_tc);
   }
 
@@ -144,7 +182,7 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
     return false;
   }
 
-  // STEP 3: build constraints and solve for a new TC, or prove infeasibility
+  // STEP 2: build constraints and solve for a new TC, or prove infeasibility
 
   cout << "***** Checking for feasibility *****" << endl;
 
@@ -176,19 +214,19 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
   constraints.push_back(mem_const);
 
   size_t line_no = 0;
-  for(size_t i = 0; i < P.size() - 1; ++i)
+  for(size_t i = 0; P.size() && i < P.size() - 1; ++i)
     build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
   line_no = 0;
-  for(size_t i = 0; i < Q.size() - 1; ++i)
+  for(size_t i = 0; Q.size() && i < Q.size() - 1; ++i)
     build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
 
   constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
 
-   cout << endl << "CONSTRAINTS" << endl << endl;;
-   for(auto it : constraints) {
-     cout << it << endl;
-   }
+  cout << endl << "CONSTRAINTS" << endl << endl;;
+  for(auto it : constraints) {
+    cout << it << endl;
+  }
 
   // Step 4: Invoke the solver
   bool is_sat = solver_.is_sat(constraints);
@@ -200,10 +238,10 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
     cout << "Feasible!" << endl;
     auto ceg = Validator::state_from_model(solver_, "_");
     bool ok = am.build_testcase_memory(ceg, solver_,
-        *static_cast<CellMemory*>(state_t.memory),
-        *static_cast<CellMemory*>(state_r.memory), 
-        CfgPaths::rewrite_cfg_with_path(target, P),
-        CfgPaths::rewrite_cfg_with_path(rewrite, Q));
+                                       *static_cast<CellMemory*>(state_t.memory),
+                                       *static_cast<CellMemory*>(state_r.memory),
+                                       CfgPaths::rewrite_cfg_with_path(target, P),
+                                       CfgPaths::rewrite_cfg_with_path(rewrite, Q));
     if(!ok)
       throw VALIDATOR_ERROR("Built counterexample for unexplored path; could not instantiate");
   } else {
@@ -263,19 +301,19 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
       // figure out if its this condition (jump case) or negation (fallthrough)
       //cout << "INSTR: " << instr << endl;
       switch(jump) {
-        case JumpType::JUMP:
-          state.constraints.push_back(constraint);
-          //cout << "Constraint: (jump) " << constraint << endl;
-          break;
-        case JumpType::FALL_THROUGH:
-          constraint = !constraint;
-          state.constraints.push_back(constraint);
-          //cout << "Constraint: (ft) " << constraint << endl;
-          break;
-        case JumpType::NONE:
-          break;
-        default:
-          assert(false);
+      case JumpType::JUMP:
+        state.constraints.push_back(constraint);
+        //cout << "Constraint: (jump) " << constraint << endl;
+        break;
+      case JumpType::FALL_THROUGH:
+        constraint = !constraint;
+        state.constraints.push_back(constraint);
+        //cout << "Constraint: (ft) " << constraint << endl;
+        break;
+      case JumpType::NONE:
+        break;
+      default:
+        assert(false);
       }
 
     } else if (instr.is_label_defn() || instr.is_nop() || instr.is_any_jump()) {
@@ -304,15 +342,15 @@ BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const CfgPa
 
   auto block = P[i];
 
-  auto first = cfg.succ_begin(block);
-  if(first == cfg.succ_end(block)) {
+  auto itr = cfg.succ_begin(block);
+  if(itr == cfg.succ_end(block)) {
     // there are no successors
     cout << "is_jump " << block << " NONE" << endl;
     return JumpType::NONE;
   }
 
-  auto second = first++;
-  if(second == cfg.succ_end(block)) {
+  itr++;
+  if(itr == cfg.succ_end(block)) {
     // there is only only successor
     cout << "is_jump " << block << " NONE" << endl;
     return JumpType::NONE;
@@ -332,6 +370,7 @@ BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const CfgPa
 
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
+  cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;
   // Step 0: Check if there's any memory access
   bool memory = false;
   for(size_t i = 0; i < 2; ++i) {
@@ -439,8 +478,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     auto ceg = Validator::state_from_model(solver_, "_");
     if(memory) {
       bool ok = am.build_testcase_memory(ceg, solver_,
-          *static_cast<CellMemory*>(state_t.memory),
-          *static_cast<CellMemory*>(state_r.memory), target, rewrite);
+                                         *static_cast<CellMemory*>(state_t.memory),
+                                         *static_cast<CellMemory*>(state_r.memory), target, rewrite);
       if(ok)
         counterexamples_.push_back(ceg);
     } else {
@@ -474,10 +513,15 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     sanity_checks(target, rewrite);
 
     // Step 1: get all the paths from the enumerator
-    for(auto path : CfgPaths::enumerate_paths(target, bound_))
+    for(auto path : CfgPaths::enumerate_paths(target, bound_)) {
+      cout << "adding TP: " << print(path) << endl;
       paths_[false].push_back(path);
-    for(auto path : CfgPaths::enumerate_paths(rewrite, bound_))
+    }
+    cout << "REWRITE: " << endl << rewrite.get_code() << endl;
+    for(auto path : CfgPaths::enumerate_paths(rewrite, bound_)) {
+      cout << "adding RP: " << print(path) << endl;
       paths_[true].push_back(path);
+    }
 
     // Step 2: get the paths taken by every testcase
     learn_paths(target, false);
@@ -491,6 +535,8 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
       for(auto rewrite_path : paths_[true]) {
         count++;
         //cout << "Verifying pair " << count << "/" << total << endl;
+        cout << "target path: " << print(target_path) << endl;
+        cout << "rewrite path: " << print(rewrite_path) << endl;
         ok &= verify_pair(target, rewrite, target_path, rewrite_path);
       }
     }
