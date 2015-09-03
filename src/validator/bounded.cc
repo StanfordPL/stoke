@@ -93,8 +93,6 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
     const CfgPath& P, const CfgPath& Q, CpuState& tc) {
 
   cout << "*************** ATTEMPTING TC BRUTEFORCE ***************" << endl;
-  cout << "P=" << print(P) << endl;
-  cout << "Q=" << print(Q) << endl;
   if(paths_infeasible_[P][Q])
     return false;
 
@@ -185,6 +183,8 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
   // STEP 2: build constraints and solve for a new TC, or prove infeasibility
 
   cout << "***** Checking for feasibility *****" << endl;
+  cout << "P=" << print(P) << endl;
+  cout << "Q=" << print(Q) << endl;
 
   init_mm();
 
@@ -303,13 +303,19 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
       //cout << "INSTR: " << instr << endl;
       switch(jump) {
       case JumpType::JUMP:
+        cout << "Assuming jump for " << instr << endl;
+        cout << "  rcx=" << state[rcx] << endl;
+        cout << "  rdx=" << state[rdx] << endl;
         state.constraints.push_back(constraint);
         //cout << "Constraint: (jump) " << constraint << endl;
         break;
       case JumpType::FALL_THROUGH:
+        cout << "Assuming fall-through for " << instr << endl;
+        cout << "  rcx=" << state[rcx] << endl;
+        cout << "  rdx=" << state[rdx] << endl;
         constraint = !constraint;
         state.constraints.push_back(constraint);
-        //cout << "Constraint: (ft) " << constraint << endl;
+        cout << "Constraint: (ft) " << constraint << endl;
         break;
       case JumpType::NONE:
         break;
@@ -402,8 +408,6 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     CpuState testcase;
     if(!find_pair_testcase(target, rewrite, P, Q, testcase)) {
       cout << "DEBUG Could not find testcase for this path" << endl;
-      cout << "RESULT IS UNSOUND" << endl;
-      //return false;
       return true;
     }
 
@@ -411,8 +415,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     auto rewrite_repath = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
     memories = am.build_cell_model(target_repath, rewrite_repath, testcase);
     if(memories.first == NULL || memories.second == NULL) {
-      has_error_ = true;
-      error_ = "Overlapping memory accesses found.";
+      throw VALIDATOR_ERROR("Overlapping memory accesses found.");
       return false;
     }
   }
