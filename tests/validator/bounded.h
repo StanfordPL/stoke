@@ -529,7 +529,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
   sst << "movl %eax, (%rsi, %rcx, 4)" << std::endl;
   sst << "incl %ecx" << std::endl;
   sst << "cmpl %ecx, %edx" << std::endl;
-  sst << "jne .top" << std::endl;
+  sst << "jb .top" << std::endl;
   sst << ".exit:" << std::endl;
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, def_ins, live_outs);
@@ -542,7 +542,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
   ssr << "addl $0x1, %ecx" << std::endl;
   ssr << "movl %r8d, -0x4(%rsi, %rcx, 4)" << std::endl;
   ssr << "cmpl %ecx, %edx" << std::endl;
-  ssr << "jne .top" << std::endl;
+  ssr << "jb .top" << std::endl;
   ssr << ".exit:" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
