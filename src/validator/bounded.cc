@@ -213,12 +213,17 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
   auto mem_const = memories.first->equality_constraint(*memories.second);
   constraints.push_back(mem_const);
 
+  auto target_line_cell_map = memories.first->get_line_cell_map();
+  auto rewrite_line_cell_map = memories.second->get_line_cell_map();
+
+  map<size_t, pair<SymBitVector, size_t>> cell_addr_map;
+
   size_t line_no = 0;
   for(size_t i = 0; P.size() && i < P.size() - 1; ++i)
-    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
+    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no, target_line_cell_map, cell_addr_map);
   line_no = 0;
   for(size_t i = 0; Q.size() && i < Q.size() - 1; ++i)
-    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
+    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no, rewrite_line_cell_map, cell_addr_map);
 
   constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
@@ -283,7 +288,10 @@ void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
 }
 
 
-void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump, SymState& state, size_t& line_no) {
+void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump, 
+    SymState& state, size_t& line_no, 
+    const map<size_t, pair<size_t, size_t>>& line_cell_map, 
+    map<size_t, pair<SymBitVector, size_t>>& cell_addr_map) {
 
   if(cfg.num_instrs(bb) == 0)
     return;
@@ -306,18 +314,12 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
       switch(jump) {
       case JumpType::JUMP:
         cout << "Assuming jump for " << instr << endl;
-        cout << "  rcx=" << state[rcx] << endl;
-        cout << "  rdx=" << state[rdx] << endl;
         state.constraints.push_back(constraint);
-        //cout << "Constraint: (jump) " << constraint << endl;
         break;
       case JumpType::FALL_THROUGH:
         cout << "Assuming fall-through for " << instr << endl;
-        cout << "  rcx=" << state[rcx] << endl;
-        cout << "  rdx=" << state[rdx] << endl;
         constraint = !constraint;
         state.constraints.push_back(constraint);
-        cout << "Constraint: (ft) " << constraint << endl;
         break;
       case JumpType::NONE:
         break;
@@ -329,6 +331,37 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
       continue;
     } else if (instr.is_ret()) {
       return;
+    } else if (instr.is_memory_dereference()) {
+      if(line_cell_map.count(line_no-1)) {
+        // we need to add a constraint for the aliasing relationship that
+        // we assumed.
+        size_t cell = line_cell_map.at(line_no-1).first;
+        size_t width = line_cell_map.at(line_no-1).second;
+        auto address = state.get_addr(instr);
+
+        // assert equality with other writes to the same cell
+        if(cell_addr_map.count(cell)) {
+          state.constraints.push_back(cell_addr_map[cell].first == address); 
+        } else {
+          cell_addr_map[cell] = pair<SymBitVector,size_t>(address, width);
+
+          // by the way, don't go past address 0xffffffffffffffff.  Idiot.
+          state.constraints.push_back(address <= SymBitVector::constant(64, 0-width));
+
+          // assert difference with previous writes to other cells
+          for(auto p : cell_addr_map) {
+            if(p.first != cell) {
+              size_t other_cell = p.first;
+              auto other_address = p.second.first;
+              size_t other_width = p.second.second;
+
+              auto curr_lt_other = address + SymBitVector::constant(64, width) <= other_address;
+              auto other_lt_curr = other_address + SymBitVector::constant(64, other_width) <= address;
+              state.constraints.push_back(curr_lt_other | other_lt_curr);
+            }
+          }
+        }
+      }
     } else {
       state.set_lineno(line_no-1);
       //cout << "LINE=" << line_no-1 << ": " << instr << endl;
@@ -379,6 +412,7 @@ BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const CfgPa
 
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
+  cout << "===========================================" << endl;
   cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;
   // Step 0: Check if there's any memory access
   bool memory = false;
@@ -436,19 +470,27 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   for(auto it : state_r.equality_constraints(init, rewrite.def_ins()))
     constraints.push_back(it);
 
+  map<size_t, pair<SymBitVector, size_t>> cell_addr_map;
+  map<size_t, pair<size_t, size_t>> target_line_cell_map;
+  map<size_t, pair<size_t, size_t>> rewrite_line_cell_map;;
+
   if(memory) {
     state_t.memory = memories.first;
     state_r.memory = memories.second;
     auto mem_const = memories.first->equality_constraint(*memories.second);
+    cout << "Start memory constraint: " << mem_const << endl;
     constraints.push_back(mem_const);
+
+    target_line_cell_map = memories.first->get_line_cell_map();
+    rewrite_line_cell_map = memories.second->get_line_cell_map();
   }
 
   size_t line_no = 0;
   for(size_t i = 0; i < P.size(); ++i)
-    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
+    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no, target_line_cell_map, cell_addr_map);
   line_no = 0;
   for(size_t i = 0; i < Q.size(); ++i)
-    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
+    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no, rewrite_line_cell_map, cell_addr_map);
 
   constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
@@ -468,8 +510,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   if(memory) {
     auto mem_const = memories.first->equality_constraint(*memories.second);
-    //cout << "End memory constraint: " << mem_const << endl;
-    inequality = inequality | !mem_const;
+    mem_const = !mem_const;
+    inequality = inequality | mem_const;
+    cout << "End memory constraint: " << mem_const << endl;
   }
 
   constraints.push_back(inequality);

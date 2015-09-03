@@ -63,6 +63,8 @@ public:
   /** Get the address corresponding to a memory location */
   template <typename T>
   SymBitVector get_addr(x64asm::M<T> ref) const;
+  /** Get the address corresponding to an instruction */
+  SymBitVector get_addr(const x64asm::Instruction& instr) const;
 
   /** Lookup the symbolic representation of a generic operand.
     * Can modify state if you lookup memory and it causes segfault. */

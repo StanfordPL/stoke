@@ -39,6 +39,11 @@ public:
     }
   }
 
+  /** Retrieve the map of line -> (cell#, size) */
+  std::map<size_t, std::pair<size_t, size_t>> get_line_cell_map() {
+    return map_;
+  }
+
   /** Updates the memory with a write.
    *  Returns condition for segmentation fault */
   SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no);
