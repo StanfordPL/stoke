@@ -288,10 +288,10 @@ void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
 }
 
 
-void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump, 
-    SymState& state, size_t& line_no, 
-    const map<size_t, pair<size_t, size_t>>& line_cell_map, 
-    map<size_t, pair<SymBitVector, size_t>>& cell_addr_map) {
+void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
+                                     SymState& state, size_t& line_no,
+                                     const map<size_t, pair<size_t, size_t>>& line_cell_map,
+                                     map<size_t, pair<SymBitVector, size_t>>& cell_addr_map) {
 
   if(cfg.num_instrs(bb) == 0)
     return;
@@ -341,7 +341,7 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
 
         // assert equality with other writes to the same cell
         if(cell_addr_map.count(cell)) {
-          state.constraints.push_back(cell_addr_map[cell].first == address); 
+          state.constraints.push_back(cell_addr_map[cell].first == address);
         } else {
           cell_addr_map[cell] = pair<SymBitVector,size_t>(address, width);
 

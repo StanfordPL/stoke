@@ -176,6 +176,10 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   return std::pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem);
 }
 
+void help_me_God_callback(const StateCallbackData& data, void* arg) {
+  cout << "Made it through " << data.code[data.line] << endl;
+}
+
 
 bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory& target_memory, const CellMemory& rewrite_memory, const Cfg& target, const Cfg& rewrite) {
 
@@ -216,6 +220,9 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
         build_testcase_width_ = 0;
         sandbox_->clear_callbacks();
         sandbox_->insert_before(label, i, build_testcase_callback, this);
+        for(size_t j = i+1; j < code.size(); ++j) {
+          sandbox_->insert_before(label, j, help_me_God_callback, this);
+        }
         sandbox_->run();
 
         auto code = sandbox_->get_output(0)->code;
@@ -230,7 +237,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
           auto var = static_cast<const SymBitVectorVar*>(v->ptr);
           auto bv = solver.get_model_bv(var->get_name(), var->get_size());
           addr_value_pairs[build_testcase_address_] = bv;
-          cout << " * cell with bv: " << bv.get_fixed_byte(0) << endl;
+          cout << " * cell with bv: " << (size_t)bv.get_fixed_byte(0) << endl;
           cell_set[cell] = true;
         } else {
           cout << " * no cell; using 0" << endl;
@@ -251,16 +258,24 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
 void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* arg) {
 
+  cout << "HELLO!" << endl;
   auto& instr = data.code[data.line];
 
   AliasMiner* ptr = (AliasMiner*)arg;
+
   ptr->build_testcase_address_ = data.state.get_addr(instr);
 
+  /*
   size_t index = 0;
   if(!instr.is_push() && !instr.is_pop())
     index = instr.mem_index();
   ptr->build_testcase_width_ = instr.get_operand<x64asm::Operand>(index).size();
+  */
+  cout << "address = " << ptr->build_testcase_address_ << endl;
+  cout << "width = " << ptr->build_testcase_width_ << endl;
+  cout << "Goodbyte!" << endl;
 }
+
 
 
 
