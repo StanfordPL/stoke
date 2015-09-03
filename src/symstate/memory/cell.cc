@@ -20,7 +20,10 @@ using namespace stoke;
 /** Updates the memory with a write.
  *  Returns condition for segmentation fault */
 SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
-  assert(map_.count(line_no));
+  if(!map_.count(line_no)) {
+    //something is missing from the map
+    return SymBool::_false();
+  }
 
   auto cell_pair = map_[line_no];
   cells_[cell_pair.first] = value;
@@ -29,7 +32,10 @@ SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
 
 /** Reads from the memory.  Returns value and segv condition. */
 std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
-  assert(map_.count(line_no));
+  if(!map_.count(line_no)) {
+    //something is missing from the map
+    return pair<SymBitVector,SymBool>(SymBitVector::tmp_var(size), SymBool::_false());
+  }
 
   auto cell_pair = map_[line_no];
   return std::pair<SymBitVector,SymBool>(cells_[cell_pair.first], SymBool::_false());
