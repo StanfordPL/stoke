@@ -141,7 +141,7 @@ TEST_F(IntegrationTest, ExamplesParity) {
   size_t good = 0;
   for(size_t i = 0; i < 10; ++i) {
     if(!shell("make search")) {
-      if(wc("examples/parity/result.s") < 35) {
+      if(wc("examples/parity/result.s") <= 40) {
         good++;
         break;
       }
