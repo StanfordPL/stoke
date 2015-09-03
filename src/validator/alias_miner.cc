@@ -207,6 +207,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
         // we need to find the address at which this dereference happens
         build_testcase_address_ = 0;
+        build_testcase_width_ = 0;
         sandbox_->clear_callbacks();
         sandbox_->insert_before(label, i, build_testcase_callback, this);
         sandbox_->run();
@@ -214,8 +215,12 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
         //extract the symbolic value
         const SymBitVector* v = &memory.init_cells_.at(cell);
         auto var = static_cast<const SymBitVectorVar*>(v->ptr);
-        auto bv = solver.get_model_bv(var->get_name(), var->get_size());
-        addr_value_pairs[build_testcase_address_] = bv;
+        if(var) {
+          auto bv = solver.get_model_bv(var->get_name(), var->get_size());
+          addr_value_pairs[build_testcase_address_] = bv;
+        } else {
+          addr_value_pairs[build_testcase_address_] = BitVector(build_testcase_width_);
+        }
         cell_set[cell] = true;
 
         // rebuild the testcase for the next run
@@ -232,8 +237,15 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
 void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* arg) {
 
+  auto& instr = data.code[data.line];
+
   AliasMiner* ptr = (AliasMiner*)arg;
-  ptr->build_testcase_address_ = data.state.get_addr(data.code[data.line]);
+  ptr->build_testcase_address_ = data.state.get_addr(instr);
+
+  size_t index = 0;
+  if(!instr.is_push() && !instr.is_pop())
+    index = instr.mem_index();
+  ptr->build_testcase_width_ = instr.get_operand<x64asm::Operand>(index).size();
 }
 
 

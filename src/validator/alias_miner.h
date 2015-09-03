@@ -85,6 +85,7 @@ private:
   std::vector<MemoryAccess>* current_concrete_trace_;
 
   uint64_t build_testcase_address_;
+  size_t build_testcase_width_;
 };
 
 } //namespace
