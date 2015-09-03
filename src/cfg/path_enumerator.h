@@ -12,15 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_VERIFIER_STRATEGY_H
-#define STOKE_SRC_VERIFIER_STRATEGY_H
+
+#ifndef STOKE_SRC_CFG_PATH_ENUMERATOR_H
+#define  STOKE_SRC_CFG_PATH_ENUMERATOR_H
+
+#include "src/ext/x64asm/include/x64asm.h"
+
+#include "src/cfg/cfg.h"
 
 namespace stoke {
 
-enum class Strategy {
-  NONE,
-  HOLD_OUT,
-  STRAIGHT_LINE
+class PathEnumerator {
+public:
+
+  static std::vector<std::vector<Cfg::id_type>> find_paths(const Cfg& cfg, size_t max_len);
+
+private:
+
+  static void find_paths_helper(const Cfg& cfg,
+                                std::vector<Cfg::id_type> path_so_far,
+                                size_t remaining,
+                                std::vector<std::vector<Cfg::id_type>>& results);
+
+  // no need to construct instances of this class
+  PathEnumerator() {}
 };
 
 } // namespace stoke

@@ -33,6 +33,7 @@
 #include "tools/args/target.inc"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/sandbox.h"
+#include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/io/tunit.h"
 
@@ -213,12 +214,14 @@ int auto_gen() {
   FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns, false);
   SandboxGadget sb({}, aux_fxns);
+  SeedGadget seed;
 
   // setup the stategen class
   StateGen sg(&sb, stack_size.value());
   sg.set_max_attempts(max_attempts.value())
   .set_max_memory(max_stack.value())
-  .set_allow_unaligned(allow_unaligned_arg);
+  .set_allow_unaligned(allow_unaligned_arg)
+  .set_seed(seed);
 
 
   // parse the register maximas and masks argument

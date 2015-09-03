@@ -61,16 +61,6 @@ public:
     max_jumps_ = jumps;
     return *this;
   }
-  /** Sets whether the sandbox should count the number of instructions executed. */
-  Sandbox& set_count_instructions(bool b) {
-    count_instructions_ = b;
-    return *this;
-  }
-  /** Sets whether the sandbox should additionally weight counted instructions by latency? */
-  Sandbox& set_use_latency(bool b) {
-    use_latency_ = b;
-    return *this;
-  }
 
   /** Resets the sandbox to a consistent state. Clears all inputs, functions and callbacks. */
   Sandbox& reset() {
@@ -231,10 +221,6 @@ private:
   bool stack_check_;
   /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
-  /** Should the sandbox count the number of instructions executed? */
-  bool count_instructions_;
-  /** Should the sandbox use latency to weight the instructions? */
-  bool use_latency_;
 
   /** Assembler, no sense in always creating these. */
   x64asm::Assembler assm_;
@@ -266,8 +252,6 @@ private:
 
   /** How many more jumps can be made before SIGKILL? */
   size_t jumps_remaining_;
-  /** How many instructions/cycles have passed? */
-  uint64_t instruction_count_;
 
   /** Pointer to the user's state */
   void* out_;
@@ -393,8 +377,6 @@ private:
   void emit_call_with_stack_check(const x64asm::Instruction& instr, uint64_t hex_offset);
   /** Emit the RET instruction. */
   void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
-  /** Emit code to increment the instruction count */
-  void emit_count_instructions(const Cfg& cfg, Cfg::id_type bb);
 
   /** Special case for emitting leave instructions. */
   void emit_leave(const x64asm::Instruction& instr);

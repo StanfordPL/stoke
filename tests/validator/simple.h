@@ -14,7 +14,7 @@
 
 namespace stoke {
 
-class ValidatorBaseTest : public ValidatorTest { };
+class ValidatorBaseTest : public StraightLineValidatorTest { };
 
 TEST_F(ValidatorBaseTest, SimpleExampleTrue) {
 
@@ -319,7 +319,7 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
   x64asm::Code d(code);
 
   Z3Solver s;
-  Validator v(s);
+  StraightLineValidator v(s);
   CpuState ceg;
 
   x64asm::RegSet rs = ValidatorBaseTest::get_default_regset();
@@ -328,7 +328,8 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
   Cfg cfg_r(d, rs, rs);
 
 
-  EXPECT_TRUE(v.validate(cfg_t, cfg_r, ceg));
+  EXPECT_TRUE(v.verify(cfg_t, cfg_r));
+  EXPECT_FALSE(v.has_error()) << v.error() << std::endl;
 
 }
 

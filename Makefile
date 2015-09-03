@@ -60,6 +60,7 @@ SRC_OBJ=\
 	src/cfg/cfg.o \
 	src/cfg/cfg_transforms.o \
 	src/cfg/dot_writer.o \
+	src/cfg/path_enumerator.o \
 	\
 	src/cost/correctness.o \
 	src/cost/cost_parser.o \
@@ -116,6 +117,7 @@ SRC_OBJ=\
 	src/tunit/tunit.o \
 	\
 	src/validator/handler.o \
+	src/validator/straight_line.o \
 	src/validator/validator.o \
 	\
 	src/validator/handlers/add_handler.o \
@@ -128,7 +130,8 @@ SRC_OBJ=\
 	src/validator/handlers/shift_handler.o \
 	src/validator/handlers/simple_handler.o \
 	\
-	src/verifier/verifier.o
+	src/verifier/hold_out.o
+
 
 TOOL_ARGS_OBJ=\
 	tools/args/benchmark.o \

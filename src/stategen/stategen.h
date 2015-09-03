@@ -15,6 +15,8 @@
 #ifndef STOKE_SRC_STATEGEN_STATEGEN_H
 #define STOKE_SRC_STATEGEN_STATEGEN_H
 
+#include <chrono>
+#include <random>
 #include <stdint.h>
 #include <string>
 
@@ -33,6 +35,10 @@ public:
     set_max_attempts(16);
     set_max_memory(1024);
     set_allow_unaligned(false);
+
+    // use the time for a seed; can be manually specified with set_seed()
+    const auto time = std::chrono::system_clock::now().time_since_epoch().count();
+    set_seed(time);
   }
 
   /** Sets the maximum number of attempts to make when generating a state. */
@@ -60,9 +66,14 @@ public:
     bitmask_values_[r] = value;
     return *this;
   }
+  /** Set seed */
+  StateGen& set_seed(std::default_random_engine::result_type seed) {
+    gen_.seed(seed);
+    return *this;
+  }
 
   /** Tries to generate a state that contains random register values; sensible rsp. */
-  bool get(CpuState& cs) const;
+  bool get(CpuState& cs);
   /** Tries to generate a state in which cfg can execute without signaling. */
   bool get(CpuState& cs, const Cfg& cfg);
 
@@ -95,15 +106,15 @@ private:
   }
 
   /** Returns true if a memory can be resized for an address inside it. */
-  bool resize_within(Memory& mem, uint64_t addr, size_t size) const;
+  bool resize_within(Memory& mem, uint64_t addr, size_t size);
   /** Returns true if a memory can be resized for an address below it. */
-  bool resize_below(Memory& mem, uint64_t addr, size_t size) const;
+  bool resize_below(Memory& mem, uint64_t addr, size_t size);
   /** Returns true if a memory can be resized for an address above it. */
-  bool resize_above(Memory& mem, uint64_t addr, size_t size) const;
+  bool resize_above(Memory& mem, uint64_t addr, size_t size);
   /** Randomizes and defines previously invalid memory. */
-  void randomize_mem(Memory& mem) const;
+  void randomize_mem(Memory& mem);
   /** Returns true if a memory can be resized to accommadate an access. */
-  bool resize_mem(Memory& mem, uint64_t addr, size_t size) const;
+  bool resize_mem(Memory& mem, uint64_t addr, size_t size);
   /** Returns true if the memory access on this line was fixable. */
   bool fix(const CpuState& cs, CpuState& fixed, const x64asm::Instruction& instr);
   /** Returns true if we think we've adjusted registers to make memory align. */
@@ -141,6 +152,8 @@ private:
       return (uint64_t)(-1);
   }
 
+  /** Random number generator */
+  std::default_random_engine gen_;
 
   /** The maximum allowed value for a given register. */
   std::map<size_t, uint64_t> max_register_values_;

@@ -135,12 +135,13 @@ TEST_F(IntegrationTest, ExamplesParity) {
 
   // Run make extract
   EXPECT_EQ(0ull, shell("make extract"));
+  EXPECT_EQ(0ull, shell("make testcases"));
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
   for(size_t i = 0; i < 10; ++i) {
     if(!shell("make search")) {
-      if(wc("examples/parity/result.s") < 20) {
+      if(wc("examples/parity/result.s") < 35) {
         good++;
         break;
       }
@@ -235,6 +236,13 @@ TEST_F(IntegrationTest, SandboxStackSmash) {
 
 TEST_F(IntegrationTest, SandboxFunctionCall) {
   set_working_dir("tests/fixtures/sandbox/function_call");
+  set_path("../../../../bin");
+  EXPECT_EQ(0ull, shell("make"));
+  EXPECT_EQ(0ull, shell("make clean"));
+}
+
+TEST_F(IntegrationTest, SandboxLbls) {
+  set_working_dir("tests/fixtures/sandbox/lbls");
   set_path("../../../../bin");
   EXPECT_EQ(0ull, shell("make"));
   EXPECT_EQ(0ull, shell("make clean"));
