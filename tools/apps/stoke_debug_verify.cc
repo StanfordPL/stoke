@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 
   Console::msg() << endl;
 
-  if (strategy_arg.value() == Strategy::NONE) {
+  if (strategy_arg.value() == "none") {
     Console::warn() << "'--stragegy none' passed, so no verification is done." << endl;
     return 0;
   }
