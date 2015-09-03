@@ -141,12 +141,10 @@ bool compute_split(vector<pair<uint64_t, BitVector>> addresses, size_t pos,
 
   size_t count = addresses.size();
 
-  /*
   cout << "Splitting: @ " << pos << endl;
   for(auto it : addresses) {
     cout << it.first << " -> " << it.second.num_fixed_bytes() << endl;
   }
-  */
 
   // Compute heap bounds
   if(pos) {
@@ -166,23 +164,27 @@ bool compute_split(vector<pair<uint64_t, BitVector>> addresses, size_t pos,
     stack_size = addresses[count-1].first + addresses[count-1].second.num_fixed_bytes() - stack_min;
   }
 
-  /*
-  cout << "Initial heap: " << heap_min << "+" << heap_size << " stack: " << stack_min << "+" << stack_size << endl;
-  */
+  cout << "Initial heap: " << hex << heap_min << "+" << heap_size << " stack: " << stack_min << "+" << stack_size << endl;
 
   // Check the bounds work
   for(auto p : addresses) {
-    if (p.first >= heap_min && (p.first + p.second.num_fixed_bytes()) <= (heap_min + heap_size - 1))
+    if (p.first >= heap_min && (p.first + p.second.num_fixed_bytes()) <= (heap_min + heap_size))
       continue;
-    if (p.first >= stack_min && (p.first + p.second.num_fixed_bytes()) <= (stack_min + stack_size - 1))
+    if (p.first >= stack_min && (p.first + p.second.num_fixed_bytes()) <= (stack_min + stack_size))
       continue;
 
+    cout << "A: " << (p.first >= heap_min) << endl;
+    cout << "B: " << ((p.first + p.second.num_fixed_bytes() <= heap_min + heap_size)) << endl;
+    cout << "C: " << ((p.first >= stack_min)) << endl;
+    cout << "D: " << ((p.first + p.second.num_fixed_bytes()) <= (stack_min + stack_size)) << endl;
+    cout << "p.first + p.second.num_fixed_bytes() = " << (p.first + p.second.num_fixed_bytes()) << endl;
+    cout << "heap_min + heap_size = " << (heap_min + heap_size) << endl;
+    cout << "stack_min + stack_size = " << (stack_min + stack_size) << endl;
+    cout << "Address " << p.first << " of size " << p.second.num_fixed_bytes() << " didn't fit." << endl;
     return false;
   }
 
-  /*
   cout << "Final heap: " << heap_min << "+" << heap_size << " stack: " << stack_min << "+" << stack_size << endl;
-  */
 
   return true;
 }
@@ -238,6 +240,12 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
 
   if(stack_size > 4096 || heap_size > 4096) {
     // Failed to allocate memory, oh well.
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
+    cout << "Allocating heap/stack failed for these addresses:" << endl;
+    for(auto pair : concrete_vector) {
+      cout << pair.first << " (of size " << pair.second.num_fixed_bytes() << ")" << endl;
+    }
+    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
     return false;
   }
 

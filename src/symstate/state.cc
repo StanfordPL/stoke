@@ -346,6 +346,22 @@ SymBitVector SymState::get_addr(M<T> memory) const {
   return address;
 }
 
+/** Get address corresponding to a memory reference */
+SymBitVector SymState::get_addr(const Instruction& instr) const {
+
+  if(instr.is_explicit_memory_dereference()) {
+    return get_addr(instr.get_operand<M8>(instr.mem_index()));
+  } else if (instr.is_push()) {
+    auto arg = instr.get_operand<Operand>(0);
+    return lookup(rsp) - SymBitVector::constant(64, arg.size()/8);
+  } else if (instr.is_pop() || instr.is_ret()) {
+    return lookup(rsp);
+  } else {
+    assert(false);
+    return SymBitVector::tmp_var(64);
+  }
+}
+
 void SymState::simplify() {
 
   for(size_t i = 0; i < 16; ++i) {
