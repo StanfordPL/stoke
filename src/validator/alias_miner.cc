@@ -200,12 +200,15 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
     for(size_t i = 0, ie = code.size(); i < ie; ++i) {
       auto instr = code[i];
       if(instr.is_memory_dereference() && !instr.is_ret()) {
+        cout << "BTM: Working on " << instr << " of " << ( k ? "target" : "rewrite") << endl;
         // which cell?
         size_t cell = -1;
         if(memory.map_.count(i)) {
           cell = memory.map_.at(i).first;
-          if(cell_set[cell])
+          if(cell_set[cell]) {
+            cout << "  * cell set" << endl;
             continue;
+          }
         }
 
         // we need to find the address at which this dereference happens
@@ -215,14 +218,22 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
         sandbox_->insert_before(label, i, build_testcase_callback, this);
         sandbox_->run();
 
+        auto code = sandbox_->get_output(0)->code;
+
+        cout << "  * addr=" << build_testcase_address_ << endl;
+        cout << "  * width=" << build_testcase_width_ << endl;
+        cout << "  * error=" << readable_error_code(code) << endl;
+
         //extract the symbolic value
         if(cell != (size_t)-1) {
           const SymBitVector* v = &memory.init_cells_.at(cell);
           auto var = static_cast<const SymBitVectorVar*>(v->ptr);
           auto bv = solver.get_model_bv(var->get_name(), var->get_size());
           addr_value_pairs[build_testcase_address_] = bv;
+          cout << " * cell with bv: " << bv.get_fixed_byte(0) << endl;
           cell_set[cell] = true;
         } else {
+          cout << " * no cell; using 0" << endl;
           addr_value_pairs[build_testcase_address_] = BitVector(build_testcase_width_);
         }
 

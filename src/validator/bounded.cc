@@ -244,6 +244,8 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
                                        CfgPaths::rewrite_cfg_with_path(rewrite, Q));
     if(!ok)
       throw VALIDATOR_ERROR("Built counterexample for unexplored path; could not instantiate");
+    cout << "Here's the counterexample:" << endl << ceg << endl;
+    tc = ceg;
   } else {
     cout << "Infeasible!" << endl;
   }
