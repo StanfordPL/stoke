@@ -346,7 +346,7 @@ int main(int argc, char** argv) {
     cycle_timeouts.push_back(parser.get());
   }
 
-  if (strategy_arg.value() == Strategy::NONE &&
+  if (strategy_arg.value() == "none" &&
       failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
     Console::error() << "No verification is performed, thus no counterexample can be added (--failed_verification_action add_counterexample and --strategy none are not compatible)." << endl;
   }
@@ -417,7 +417,7 @@ int main(int argc, char** argv) {
     } else if (!verified) {
       Console::msg() << "Unable to verify new rewrite..." << endl << endl;
     } else {
-      if (strategy_arg.value() == Strategy::NONE) {
+      if (strategy_arg.value() == "none") {
         final_msg = "Search terminated successfully (but no verification was performed)!";
       } else {
         final_msg = "Search terminated successfully with a verified rewrite!";
