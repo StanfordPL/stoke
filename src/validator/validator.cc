@@ -141,10 +141,12 @@ bool compute_split(vector<pair<uint64_t, BitVector>> addresses, size_t pos,
 
   size_t count = addresses.size();
 
+  /*
   cout << "Splitting: @ " << pos << endl;
   for(auto it : addresses) {
     cout << it.first << " -> " << it.second.num_fixed_bytes() << endl;
   }
+  */
 
   // Compute heap bounds
   if(pos) {
@@ -164,7 +166,7 @@ bool compute_split(vector<pair<uint64_t, BitVector>> addresses, size_t pos,
     stack_size = addresses[count-1].first + addresses[count-1].second.num_fixed_bytes() - stack_min;
   }
 
-  cout << "Initial heap: " << hex << heap_min << "+" << heap_size << " stack: " << stack_min << "+" << stack_size << endl;
+// cout << "Initial heap: " << hex << heap_min << "+" << heap_size << " stack: " << stack_min << "+" << stack_size << endl;
 
   // Check the bounds work
   for(auto p : addresses) {
@@ -184,7 +186,7 @@ bool compute_split(vector<pair<uint64_t, BitVector>> addresses, size_t pos,
     return false;
   }
 
-  cout << "Final heap: " << heap_min << "+" << heap_size << " stack: " << stack_min << "+" << stack_size << endl;
+  //cout << "Final heap: " << heap_min << "+" << heap_size << " stack: " << stack_min << "+" << stack_size << endl;
 
   return true;
 }

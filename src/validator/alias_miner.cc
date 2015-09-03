@@ -258,22 +258,17 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
 void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* arg) {
 
-  cout << "HELLO!" << endl;
   auto& instr = data.code[data.line];
 
   AliasMiner* ptr = (AliasMiner*)arg;
 
   ptr->build_testcase_address_ = data.state.get_addr(instr);
 
-  /*
   size_t index = 0;
   if(!instr.is_push() && !instr.is_pop())
     index = instr.mem_index();
   ptr->build_testcase_width_ = instr.get_operand<x64asm::Operand>(index).size();
-  */
-  cout << "address = " << ptr->build_testcase_address_ << endl;
-  cout << "width = " << ptr->build_testcase_width_ << endl;
-  cout << "Goodbyte!" << endl;
+
 }
 
 

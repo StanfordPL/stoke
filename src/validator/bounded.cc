@@ -228,10 +228,12 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
   constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
 
+  /*
   cout << endl << "CONSTRAINTS" << endl << endl;;
   for(auto it : constraints) {
     cout << it << endl;
   }
+  */
 
   // Step 4: Invoke the solver
   bool is_sat = solver_.is_sat(constraints);
@@ -313,11 +315,11 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
       //cout << "INSTR: " << instr << endl;
       switch(jump) {
       case JumpType::JUMP:
-        cout << "Assuming jump for " << instr << endl;
+        //cout << "Assuming jump for " << instr << endl;
         state.constraints.push_back(constraint);
         break;
       case JumpType::FALL_THROUGH:
-        cout << "Assuming fall-through for " << instr << endl;
+        //cout << "Assuming fall-through for " << instr << endl;
         constraint = !constraint;
         state.constraints.push_back(constraint);
         break;
@@ -391,25 +393,25 @@ BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const CfgPa
   auto itr = cfg.succ_begin(block);
   if(itr == cfg.succ_end(block)) {
     // there are no successors
-    cout << "is_jump " << block << " NONE" << endl;
+    //cout << "is_jump " << block << " NONE" << endl;
     return JumpType::NONE;
   }
 
   itr++;
   if(itr == cfg.succ_end(block)) {
     // there is only only successor
-    cout << "is_jump " << block << " NONE" << endl;
+    //cout << "is_jump " << block << " NONE" << endl;
     return JumpType::NONE;
   }
 
   // ok, there are at least 2 successors
   auto next_block = P[i+1];
   if(next_block == block + 1) {
-    cout << "is_jump " << block << " FALL" << endl;
+    //cout << "is_jump " << block << " FALL" << endl;
     return JumpType::FALL_THROUGH;
   }
   else {
-    cout << "is_jump " << block << " JUMP" << endl;
+    //cout << "is_jump " << block << " JUMP" << endl;
     return JumpType::JUMP;
   }
 }
