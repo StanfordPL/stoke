@@ -201,9 +201,12 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
       auto instr = code[i];
       if(instr.is_memory_dereference() && !instr.is_ret()) {
         // which cell?
-        size_t cell = memory.map_.at(i).first;
-        if(cell_set[cell])
-          continue;
+        size_t cell = -1;
+        if(memory.map_.count(i)) {
+          cell = memory.map_.at(i).first;
+          if(cell_set[cell])
+            continue;
+        }
 
         // we need to find the address at which this dereference happens
         build_testcase_address_ = 0;
@@ -213,15 +216,15 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
         sandbox_->run();
 
         //extract the symbolic value
-        const SymBitVector* v = &memory.init_cells_.at(cell);
-        auto var = static_cast<const SymBitVectorVar*>(v->ptr);
-        if(var) {
+        if(cell != (size_t)-1) {
+          const SymBitVector* v = &memory.init_cells_.at(cell);
+          auto var = static_cast<const SymBitVectorVar*>(v->ptr);
           auto bv = solver.get_model_bv(var->get_name(), var->get_size());
           addr_value_pairs[build_testcase_address_] = bv;
+          cell_set[cell] = true;
         } else {
           addr_value_pairs[build_testcase_address_] = BitVector(build_testcase_width_);
         }
-        cell_set[cell] = true;
 
         // rebuild the testcase for the next run
         if(!Validator::memory_map_to_testcase(addr_value_pairs, ceg))

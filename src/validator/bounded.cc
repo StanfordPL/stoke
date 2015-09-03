@@ -145,7 +145,7 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
   for(size_t k = 0; k < 2; ++k) {
     auto& tc_list = k ? rewrite_tcs : target_tcs;
     auto& prefix = k ? Q_prefix : P_prefix;
-    
+
     for(auto& path : paths_[k]) {
 
       if(!CfgPaths::is_prefix(prefix, path))
@@ -249,7 +249,7 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
   }
 
   stop_mm();
-  return !is_sat;
+  return is_sat;
 
 
 }
@@ -274,6 +274,7 @@ void BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
     }
 
     if(keep) {
+      cout << "  " << print(p) << endl;
       path_to_testcase_[is_rewrite][p].push_back(i);
     }
   }
@@ -524,8 +525,11 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     }
 
     // Step 2: get the paths taken by every testcase
+    cout << "=== LEARNING TARGET TESTCASE PATHS" << endl;
     learn_paths(target, false);
+    cout << "=== LEARNING REWRITE TESTCASE PATHS" << endl;
     learn_paths(rewrite, true);
+    cout << "=== DONE LEARNING PATHS" << endl;
 
     // Step 3: check each pair of paths
     bool ok = true;
