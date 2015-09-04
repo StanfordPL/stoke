@@ -242,6 +242,9 @@ Sandbox& Sandbox::run(size_t index) {
     io->out_.stack.copy(io->in_.stack);
     io->out_.heap.copy(io->in_.heap);
     io->out_.data.copy(io->in_.data);
+    for(size_t i = 0, ie=io->out_.segments.size(); i < ie; ++i) {
+      io->out_.segments[i].copy(io->in_.segments[i]);
+    }
   }
 
   // Reset error-related variables
@@ -640,59 +643,6 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
 
   }
 
-  // Stack case: Check that this address is inside the stack
-/*
-  if(cs.stack.size()) {
-    assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
-    assm_.cmp(rdi, rax);
-    assm_.jl_1(heap_case);
-
-    assm_.mov((R64)rax, Imm64(cs.stack.upper_bound()));
-    assm_.cmp(rdi, rax);
-    assm_.jg_1(heap_case);
-
-    assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
-    assm_.sub(rdi, rax);
-
-    emit_map_addr_cases(cs, fail, done, 0);
-  }
-
-  // Heap case: Check that the address is inside the heap
-  assm_.bind(heap_case);
-
-  if(cs.heap.size()) { 
-    assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
-    assm_.cmp(rdi, rax);
-    assm_.jl_1(data_case);
-
-    assm_.mov((R64)rax, Imm64(cs.heap.upper_bound()));
-    assm_.cmp(rdi, rax);
-    assm_.jg_1(data_case);
-
-    assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
-    assm_.sub(rdi, rax);
-
-    emit_map_addr_cases(cs, fail, done, 1);
-  }
-
-  // Data case: Check that the address is inside the data section
-  assm_.bind(data_case);
-
-  if(cs.data.size()) {
-    assm_.mov((R64)rax, Imm64(cs.data.lower_bound()));
-    assm_.cmp(rdi, rax);
-    assm_.jl_1(other_case);
-
-    assm_.mov((R64)rax, Imm64(cs.data.upper_bound()));
-    assm_.cmp(rdi, rax);
-    assm_.jge_1(other_case);
-
-    assm_.mov((R64)rax, Imm64(cs.data.lower_bound()));
-    assm_.sub(rdi, rax);
-
-    emit_map_addr_cases(cs, fail, done, 2);
-  }
-*/
   // If control reaches here, invoke the signal_trap handler for sigsegv
   assm_.bind(fail);
   emit_signal_trap_call(ErrorCode::SIGSEGV_);
@@ -706,6 +656,11 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   return fxn;
 }
 
+/** Back in the day, this function did a switch() statement to choose between
+ * the stack/heap/data segments, rather than receiving a pointer to memory.
+ * Hence "cases" in the name.  It could, probably, be
+ * renamed/removed/refactored.  And we can do that.  But for now, as a tribute
+ * to Eric's work on the Sandbox, it's gonna stick around here. -- BRC */
 void Sandbox::emit_map_addr_cases(const Label& fail, const Label& done, Memory* mem) {
   // Save rcx (we need to use it for the shift instruction below)
   assm_.mov(rax, rcx);
