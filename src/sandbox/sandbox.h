@@ -353,7 +353,7 @@ private:
   /** Returns a function that maps virtual addresses to physical addresses. */
   x64asm::Function emit_map_addr(CpuState& cs);
   /** Returns code to check memory for validity and then toggle def bits. */
-  void emit_map_addr_cases(CpuState& cs, const x64asm::Label& fail, const x64asm::Label& done, size_t mem);
+  void emit_map_addr_cases(const x64asm::Label& fail, const x64asm::Label& done, Memory* mem);
 
   /** Check whether a function is read only wrt memory */
   bool is_mem_read_only(const Cfg& cfg) const;

@@ -585,11 +585,29 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   Function fxn;
   assm_.start(fxn);
 
-  // Define labels
-  const auto fail = get_label();
-  const auto done = get_label();
-  const auto heap_case = get_label();
-  const auto data_case = get_label();
+  // Populate a list of memory segments we need to emit code for
+  vector<Memory*> segments;
+  vector<Label> segment_cases;
+
+  if(cs.stack.size())
+    segments.push_back(&cs.stack);
+  if(cs.heap.size())
+    segments.push_back(&cs.heap);
+  if(cs.data.size())
+    segments.push_back(&cs.data);
+  for(auto seg : cs.segments)
+    if(seg.size())
+      segments.push_back(&seg);
+
+  // get labels
+  auto done = get_label();
+  auto fail = get_label();
+
+  if(segments.size()) {
+    for(size_t i = 0; i < segments.size() - 1; ++i)
+      segment_cases.push_back(get_label());
+  }
+  segment_cases.push_back(fail);
 
   // Check alignment: A well aligned address won't change
   // Following this check, rsi is free for use as scratch space
@@ -597,48 +615,84 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.cmp(rsi, rdi);
   assm_.jne_1(fail);
 
+  // emit the code to figure out which segment we're writing to.
+  for(size_t i = 0; i < segments.size(); ++i) {
+    Memory* segment = segments[i];
+
+    if(i > 0)
+      assm_.bind(segment_cases[i-1]);
+
+    // compare the address (rdi) with the upper bound of the segment (rax)
+    assm_.mov((R64)rax, Imm64(segment->upper_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jg_1(segment_cases[i]);
+
+    // compare the address (rdi) with the lower bound of the segment (rax)
+    assm_.mov((R64)rax, Imm64(segment->lower_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jl_1(segment_cases[i]);
+
+    // subtract the lower bound from rdi to get the offset into the segment
+    assm_.sub(rdi, rax);
+
+    // emit the memory access
+    emit_map_addr_cases(fail, done, segment);
+
+  }
+
   // Stack case: Check that this address is inside the stack
-  assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jl_1(heap_case);
+/*
+  if(cs.stack.size()) {
+    assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jl_1(heap_case);
 
-  assm_.mov((R64)rax, Imm64(cs.stack.upper_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jg_1(heap_case);
+    assm_.mov((R64)rax, Imm64(cs.stack.upper_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jg_1(heap_case);
 
-  assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
-  assm_.sub(rdi, rax);
+    assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
+    assm_.sub(rdi, rax);
 
-  emit_map_addr_cases(cs, fail, done, 0);
+    emit_map_addr_cases(cs, fail, done, 0);
+  }
 
   // Heap case: Check that the address is inside the heap
   assm_.bind(heap_case);
-  assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jl_1(data_case);
 
-  assm_.mov((R64)rax, Imm64(cs.heap.upper_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jg_1(data_case);
+  if(cs.heap.size()) { 
+    assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jl_1(data_case);
 
-  assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
-  assm_.sub(rdi, rax);
+    assm_.mov((R64)rax, Imm64(cs.heap.upper_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jg_1(data_case);
 
-  emit_map_addr_cases(cs, fail, done, 1);
+    assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
+    assm_.sub(rdi, rax);
+
+    emit_map_addr_cases(cs, fail, done, 1);
+  }
 
   // Data case: Check that the address is inside the data section
   assm_.bind(data_case);
-  assm_.mov((R64)rax, Imm64(cs.data.lower_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jl_1(fail);
 
-  assm_.sub(rdi, rax);
-  assm_.mov((R64)rax, Imm64(cs.data.size()));
-  assm_.cmp(rdi, rax);
-  assm_.jge_1(fail);
+  if(cs.data.size()) {
+    assm_.mov((R64)rax, Imm64(cs.data.lower_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jl_1(other_case);
 
-  emit_map_addr_cases(cs, fail, done, 2);
+    assm_.mov((R64)rax, Imm64(cs.data.upper_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jge_1(other_case);
 
+    assm_.mov((R64)rax, Imm64(cs.data.lower_bound()));
+    assm_.sub(rdi, rax);
+
+    emit_map_addr_cases(cs, fail, done, 2);
+  }
+*/
   // If control reaches here, invoke the signal_trap handler for sigsegv
   assm_.bind(fail);
   emit_signal_trap_call(ErrorCode::SIGSEGV_);
@@ -652,7 +706,7 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   return fxn;
 }
 
-void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& done, size_t mem) {
+void Sandbox::emit_map_addr_cases(const Label& fail, const Label& done, Memory* mem) {
   // Save rcx (we need to use it for the shift instruction below)
   assm_.mov(rax, rcx);
   // We have a valid address, divide by to find the corresponding address in the mask array
@@ -667,57 +721,21 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.mov(rcx, rax);
 
   // The read mask shouldn't change when and'ed against the valid mask
-  switch (mem) {
-  case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
-    break;
-  case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
-    break;
-  case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.valid_mask()));
-    break;
-  default:
-    assert(false);
-  }
+  assm_.mov((R64)rax, Imm64(mem->valid_mask()));
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rdx);
   assm_.cmp(rax, rdx);
   assm_.jne_1(fail);
 
   // The write mask shouldn't change when and'ed against the valid mask
-  switch (mem) {
-  case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
-    break;
-  case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
-    break;
-  case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.valid_mask()));
-    break;
-  default:
-    assert(false);
-  }
+  assm_.mov((R64)rax, Imm64(mem->valid_mask()));
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rcx);
   assm_.cmp(rax, rcx);
   assm_.jne_1(fail);
 
   // Do final remapping
-  switch (mem) {
-  case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.data()));
-    break;
-  case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.data()));
-    break;
-  case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.data()));
-    break;
-  default:
-    assert(false);
-  }
+  assm_.mov((R64)rax, Imm64(mem->data()));
   assm_.add(rax, rdi);
 
   // Get out of here
