@@ -140,8 +140,43 @@ ostream& CpuState::write_text(ostream& os) const {
   os << endl;
 
   data.write_text(os);
+  os << endl;
+  os << endl;
+
+  os << segments.size() << " more segment(s)" << endl;
+  os << endl;
+  os << endl;
+
+  for(auto seg: segments) {
+    seg.write_text(os);
+    os << endl;
+    os << endl;
+  }
 
   return os;
+}
+
+// This reads the rest of the memory of the testcase.  We only do this if the
+// segments are listed for backward compatibility.  One day someone can merge
+// this code into the main algorithm, once we no longer need old files -- BRC.
+istream& CpuState::read_text_segments(istream& is) {
+  string ignore;
+
+  getline(is, ignore);
+  getline(is, ignore);
+
+  int n;
+  is >> n;
+  getline(is, ignore);
+  for(int i = 0; i < n; ++i) {
+    Memory m;
+    m.read_text(is);
+    getline(is, ignore);
+    getline(is, ignore);
+    segments.push_back(m);
+  }
+
+  return is;
 }
 
 istream& CpuState::read_text(istream& is) {
@@ -176,6 +211,17 @@ istream& CpuState::read_text(istream& is) {
 
   data.read_text(is);
 
+  // Figure out of we're reading an old version of the testcase format (in
+  // which case we're done), or if there's more to do.
+  auto checkpoint = is.tellg();
+  is.seekg(3, is.cur);
+  char future = is.peek();
+  if(future >= '0' && future <= '9') {
+    read_text_segments(is);
+  } else {
+    is.seekg(checkpoint);
+  }
+
   return is;
 }
 
@@ -188,6 +234,12 @@ ostream& CpuState::write_bin(ostream& os) const {
   heap.write_bin(os);
   data.write_bin(os);
 
+  // Write other segments
+  size_t seg_count = segments.size();
+  os.write((const char*)&seg_count, sizeof(size_t));
+  for(auto seg : segments)
+    seg.write_bin(os);
+
   return os;
 }
 
@@ -199,6 +251,16 @@ istream& CpuState::read_bin(istream& is) {
   stack.read_bin(is);
   heap.read_bin(is);
   data.read_bin(is);
+
+  // Read other segments
+  size_t seg_count;
+  is.read((char*)&seg_count, sizeof(size_t));
+  for(size_t i = 0; i < seg_count; ++i) {
+    Memory seg;
+    seg.read_bin(is);
+    segments.push_back(seg);
+  }
+
 
   return is;
 }
