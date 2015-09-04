@@ -4,7 +4,8 @@ NAME=wcslen
 TC_OPTS=--char_width 4 --number 40
 
 testcase:
-	strcpy_tcs $(TC_OPTS) > testcases
+	cat empty_string.tc > testcases
+	strcpy_tcs $(TC_OPTS) >> testcases
 	strcpy_tcs $(TC_OPTS) --max_buffer_size 16 --heap_size 128 >> testcases
 	strcpy_tcs $(TC_OPTS) --max_buffer_size 512 --heap_size 2048 >> testcases
 	strcpy_tcs $(TC_OPTS) --max_buffer_size 1024 --heap_size 4096 >> testcases
@@ -15,6 +16,9 @@ search:
 replace:
 	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
+
+benchmark: replace
+	sel_ldr.py optbin
 
 deploy: replace
 	cp optbin $(DEPLOY_PATH)/$(NAME).nexe

@@ -312,6 +312,7 @@ int main(int argc, char** argv) {
   TargetGadget target(aux_fxns, init_arg == Init::ZERO);
 
   TrainingSetGadget training_set(seed);
+  cout << "Training TCs: " << training_set.size() << endl;
   SandboxGadget training_sb(training_set, aux_fxns);
 
   TransformPoolsGadget transform_pools(target, aux_fxns, seed);
