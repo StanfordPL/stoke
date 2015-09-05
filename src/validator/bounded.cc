@@ -167,8 +167,8 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
   if(found_tc) {
     prefix_tc = *sandbox_->get_input(tc_index);
     cout << "Found existing TC :)" << endl;
-    cout << "Sanity check target: " << print(cfg_paths.learn_path(target, prefix_tc)) << endl;
-    cout << "Sanity check rewrite: " << print(cfg_paths.learn_path(rewrite, prefix_tc)) << endl;
+    //cout << "Sanity check target: " << print(cfg_paths.learn_path(target, prefix_tc)) << endl;
+    //cout << "Sanity check rewrite: " << print(cfg_paths.learn_path(rewrite, prefix_tc)) << endl;
   } else {
     found_tc = brute_force_testcase(target, rewrite, P_prefix, Q_prefix, prefix_tc);
   }
