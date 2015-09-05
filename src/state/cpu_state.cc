@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <algorithm>
+#include <regex>
 
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/state/cpu_state.h"
@@ -142,41 +143,106 @@ ostream& CpuState::write_text(ostream& os) const {
   os << endl;
 
   data.write_text(os);
+  os << endl;
+  os << endl;
+
+  os << segments.size() << " more segment(s)" << endl;
+
+  for(auto seg: segments) {
+    os << endl;
+    os << endl;
+    seg.write_text(os);
+  }
 
   return os;
 }
 
+// This reads the rest of the memory of the testcase.  We only do this if the
+// segments are listed for backward compatibility.  One day someone can merge
+// this code into the main algorithm, once we no longer need old files -- BRC.
+istream& CpuState::read_text_segments(istream& is) {
+  string s;
+
+  int n;
+  is >> n;
+  getline(is, s);
+  if(s != " more segment(s)") {
+    fail(is) << "Expected segment count.  Got \"" << s << "\"." << endl;
+    return is;
+  }
+
+  for(int i = 0; i < n; ++i) {
+    Memory m;
+    is >> ws;
+    m.read_text(is);
+    segments.push_back(m);
+  }
+  is >> ws;
+
+  return is;
+}
+
 istream& CpuState::read_text(istream& is) {
-  string ignore;
+  const char* gps[] = {
+    "%rax", "%rcx", "%rdx", "%rbx", "%rsp", "%rbp", "%rsi", "%rdi",
+    "%r8", "%r9", "%r10", "%r11", "%r12", "%r13", "%r14", "%r15"
+  };
 
+  // SSE register names will vary depending on target
+  const char* sses[] = {
+    "%ymm0", "%ymm1", "%ymm2", "%ymm3", "%ymm4", "%ymm5", "%ymm6", "%ymm7",
+    "%ymm8", "%ymm9", "%ymm10", "%ymm11", "%ymm12", "%ymm13", "%ymm14", "%ymm15"
+  };
+
+  const char* rflags[] = {
+    "%cf", "%1", "%pf", "%0", "%af", "%0", "%zf", "%sf", "%tf", "%if",
+    "%df", "%of", "%iopl[0]", "%iopl[1]", "%nt", "%0", "%rf", "%vm", "%ac", "%vif",
+    "%vip", "%id"
+  };
+
+  string s;
   int temp;
-  is >> ignore >> temp;
+
+  is >> s >> temp;
+  if(!regex_match(s, regex("SIGNAL"))) {
+    fail(is) << "Expected \"SIGNAL\" but got \"" << s << "\"" << endl;
+    return is;
+  }
+  getline(is, s);
+  if(!regex_match(s, regex(" *\\[.*\\]"))) {
+    fail(is) << "Expected '[" << readable_error_code(code) << "]' (or similar) but got "
+             << "'" << s << "'" << endl;
+    return is;
+  }
+
   code = static_cast<ErrorCode>(temp);
-  while (is.peek() != 10 && is.good()) is.get();
-  getline(is, ignore);
-  getline(is, ignore);
+  is >> ws;
 
-  gp.read_text(is);
-  getline(is, ignore);
-  getline(is, ignore);
+  gp.read_text(is, gps);
+  is >> ws;
 
-  sse.read_text(is);
-  getline(is, ignore);
-  getline(is, ignore);
+  sse.read_text(is, sses);
+  is >> ws;
 
-  rf.read_text(is);
-  getline(is, ignore);
-  getline(is, ignore);
+  rf.read_text(is, rflags);
+  is >> ws;
 
   stack.read_text(is);
-  getline(is, ignore);
-  getline(is, ignore);
+  is >> ws;
 
   heap.read_text(is);
-  getline(is, ignore);
-  getline(is, ignore);
+  is >> ws;
 
   data.read_text(is);
+  is >> ws;
+
+  // Figure out of we're reading an old version of the testcase format (in
+  // which case we're done), or if there's more to do.  One day we can skip the
+  // check and just assume the new version. -- BRC
+  char future = is.peek();
+  if(future >= '0' && future <= '9') {
+    read_text_segments(is);
+  }
 
   return is;
 }
@@ -190,6 +256,12 @@ ostream& CpuState::write_bin(ostream& os) const {
   heap.write_bin(os);
   data.write_bin(os);
 
+  // Write other segments
+  size_t seg_count = segments.size();
+  os.write((const char*)&seg_count, sizeof(size_t));
+  for(auto seg : segments)
+    seg.write_bin(os);
+
   return os;
 }
 
@@ -201,6 +273,16 @@ istream& CpuState::read_bin(istream& is) {
   stack.read_bin(is);
   heap.read_bin(is);
   data.read_bin(is);
+
+  // Read other segments
+  size_t seg_count;
+  is.read((char*)&seg_count, sizeof(size_t));
+  for(size_t i = 0; i < seg_count; ++i) {
+    Memory seg;
+    seg.read_bin(is);
+    segments.push_back(seg);
+  }
+
 
   return is;
 }

@@ -14,9 +14,11 @@
 
 #include "src/state/rflags.h"
 
+#include <cstring>
 #include <string>
 
 #include "src/ext/cpputil/include/io/column.h"
+#include "src/ext/cpputil/include/io/fail.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 
 using namespace cpputil;
@@ -47,11 +49,16 @@ ostream& RFlags::write_text(ostream& os, const char** names, size_t padding) con
   return os;
 }
 
-istream& RFlags::read_text(istream& is) {
+istream& RFlags::read_text(istream& is, const char** names) {
   for (size_t i = 0, ie = size(); i < ie; ++i) {
     string name;
     bool val;
-    is >> name >> val;
+    is >> ws >> name >> val >> ws;
+
+    if(strcmp(names[i], name.c_str())) {
+      fail(is) << "Expected register '" << names[i] << "' but got '" << name << "'" << endl;
+      return is;
+    }
 
     set(i, val);
   }

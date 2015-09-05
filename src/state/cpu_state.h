@@ -147,8 +147,10 @@ struct CpuState {
 
   /** Write text. */
   std::ostream& write_text(std::ostream& os) const;
-  /** Read text. */
+  /** Read text (backward compatible if no segments exist). */
   std::istream& read_text(std::istream& is);
+  /** Read additional segments. */
+  std::istream& read_text_segments(std::istream& is);
 
   /** Write binary. */
   std::ostream& write_bin(std::ostream& os) const;
@@ -169,6 +171,8 @@ struct CpuState {
   Memory heap;
   /** Data. */
   Memory data;
+  /** Other memory segments */
+  std::vector<Memory> segments;
 
   /** Get the memory address corresponding to a memory operand */
   uint64_t get_addr(x64asm::M8 ref) const;
