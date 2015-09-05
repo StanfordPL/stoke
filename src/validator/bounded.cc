@@ -634,9 +634,6 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     for(auto target_path : paths_[false]) {
       for(auto rewrite_path : paths_[true]) {
         count++;
-        //cout << "Verifying pair " << count << "/" << total << endl;
-        cout << "target path: " << print(target_path) << endl;
-        cout << "rewrite path: " << print(rewrite_path) << endl;
         ok &= verify_pair(target, rewrite, target_path, rewrite_path);
       }
     }

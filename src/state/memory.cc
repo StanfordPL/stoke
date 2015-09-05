@@ -110,12 +110,14 @@ void Memory::write_text_contents(ostream& os) const {
   if (vc != 0) {
     os << endl;
   }
-  for (uint64_t i = upper_bound()-8, ie = lower_bound()-8; i > ie; i -= 8) {
-    if (!valid_row(i)) {
+
+  //BEWARE OF OVERFLOWS; don't use upper_bound().
+  for (uint64_t i = size(); i > 0; i -= 8) {
+    if (!valid_row(lower_bound() + i - 8)) {
       continue;
     }
     os << endl;
-    write_text_row(os, i);
+    write_text_row(os, lower_bound() + i - 8);
   }
 }
 
@@ -209,7 +211,7 @@ bool Memory::valid_row(uint64_t addr) const {
 
 size_t Memory::valid_count() const {
   size_t res = 0;
-  for (size_t i = lower_bound(); i - lower_bound() < size(); i += 8) {
+  for (uint64_t i = lower_bound(); i - lower_bound() < size(); i += 8) {
     if (valid_row(i)) {
       res++;
     }
