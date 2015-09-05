@@ -731,6 +731,12 @@ TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
+
+  ASSERT_LE(1ul, validator->counter_examples_available());
+
+  auto ceg = validator->get_counter_examples()[0];
+  std::cout << ceg << std::endl;
+
 }
 
 
