@@ -629,5 +629,109 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
   EXPECT_NE(target_output[x64asm::rax], rewrite_output[x64asm::rax]);
 }
 
+TEST_F(BoundedValidatorBaseTest, StrlenCorrect) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rdi;
+
+  std::stringstream sst;
+  sst << ".strlen:" << std::endl;
+  sst << "movzbl (%rdi), %eax" << std::endl;
+  sst << "testl %eax, %eax" << std::endl;
+  sst << "je .exit" << std::endl;
+  sst << "addq $0x1, %rdi" << std::endl;
+  sst << "jmpq .strlen" << std::endl;
+  sst << ".exit:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".strlen:" << std::endl;
+  ssr << "addq $0x1, %rdi" << std::endl;
+  ssr << "movzbl -0x1(%rdi), %eax" << std::endl;
+  ssr << "cmpl $0x0, %eax" << std::endl;
+  ssr << "jne .strlen" << std::endl;
+  ssr << "subq $0x1, %rdi" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+
+  for(size_t i = 0; i < 20; ++i) {
+    CpuState tc = get_state();
+    size_t count = rand() % 10;
+    uint64_t start = tc[x64asm::rdi];
+    tc.heap.resize(start, count+1);
+    for(size_t i = 0; i < count; ++i) {
+      tc.heap.set_valid(start + i, true);
+      tc.heap[start+i] = rand() % 256;
+    }
+    tc.heap.set_valid(start+count, true);
+    tc.heap[start+count] = 0;
+
+    uint64_t stack_start = tc[x64asm::rsp] - 8;
+    tc.stack.resize(stack_start, 16);
+    for(size_t i = stack_start; i < stack_start+16; ++i) {
+      tc.stack.set_valid(i, true);
+      tc.stack[i] = rand() % 256;
+    }
+    sandbox->insert_input(tc);
+  }
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
+TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rdi;
+
+  std::stringstream sst;
+  sst << ".strlen:" << std::endl;
+  sst << "movzbl (%rdi), %eax" << std::endl;
+  sst << "testl %eax, %eax" << std::endl;
+  sst << "je .exit" << std::endl;
+  sst << "addq $0x1, %rdi" << std::endl;
+  sst << "jmpq .strlen" << std::endl;
+  sst << ".exit:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".strlen:" << std::endl;
+  ssr << "addq $0x1, %rdi" << std::endl;
+  ssr << "movzbl -0x1(%rdi), %eax" << std::endl;
+  ssr << "shrl $0x1, %eax" << std::endl;
+  ssr << "jnz .strlen" << std::endl;
+  ssr << "subq $0x1, %rdi" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+
+  for(size_t i = 0; i < 20; ++i) {
+    CpuState tc = get_state();
+    size_t count = rand() % 10;
+    uint64_t start = tc[x64asm::rdi];
+    tc.heap.resize(start, count+1);
+    for(size_t i = 0; i < count; ++i) {
+      tc.heap.set_valid(start + i, true);
+      tc.heap[start+i] = rand() % 256;
+    }
+    tc.heap.set_valid(start+count, true);
+    tc.heap[start+count] = 0;
+
+    uint64_t stack_start = tc[x64asm::rsp] - 8;
+    tc.stack.resize(stack_start, 16);
+    for(size_t i = stack_start; i < stack_start+16; ++i) {
+      tc.stack.set_valid(i, true);
+      tc.stack[i] = rand() % 256;
+    }
+    sandbox->insert_input(tc);
+  }
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
 
 } //namespace stoke

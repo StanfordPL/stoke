@@ -67,8 +67,9 @@ private:
   /** The bound on iterations */
   size_t bound_;
 
-  /** Run cfg on all testcases, learn the paths, and store them.*/
-  void learn_paths(const Cfg&, bool is_rewrite);
+  /** Run cfg on all testcases, learn the paths, and store them.
+    Returns true if it finds at least one good path. */
+  bool learn_paths(const Cfg&, bool is_rewrite);
   /** Verify a pair of paths. */
   bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
   /** Generate a loop-free CFG from a loopy CFG and a path */

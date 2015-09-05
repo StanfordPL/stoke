@@ -245,7 +245,7 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
     cout << "Allocating heap/stack failed for these addresses:" << endl;
     for(auto pair : concrete_vector) {
-      cout << pair.first << " (of size " << pair.second.num_fixed_bytes() << ")" << endl;
+      cout << hex << pair.first << " (of size 0x" << pair.second.num_fixed_bytes() << ")" << endl;
     }
     cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
     return false;
