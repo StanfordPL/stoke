@@ -608,7 +608,15 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     found_paths &= learn_paths(rewrite, true);
     cout << "=== DONE LEARNING PATHS" << endl;
 
-    if(!found_paths) {
+    bool has_memory = false;
+    for(auto it : target.get_code())
+      if(it.is_memory_dereference() && !it.is_ret())
+        has_memory = true;
+    for(auto it : rewrite.get_code())
+      if(it.is_memory_dereference() && !it.is_ret())
+        has_memory = true;
+
+    if(!found_paths && has_memory) {
       throw VALIDATOR_ERROR("No testcases terminated without segfault within bounds.");
     }
 

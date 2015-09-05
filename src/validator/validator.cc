@@ -220,55 +220,67 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
   };
   sort(concrete_vector.begin(), concrete_vector.end(), compare);
 
-  uint64_t heap_min, heap_size, stack_min, stack_size;
-  bool ok = compute_split(concrete_vector, 0, heap_min, heap_size, stack_min, stack_size);
-  assert(ok);
+  vector<Memory> segments;
 
-  uint64_t best = heap_size + stack_size;
-  size_t best_index = 0;
-  for (size_t i = 1; i <= concrete_vector.size(); ++i) {
-    ok = compute_split(concrete_vector, i, heap_min, heap_size, stack_min, stack_size);
-    if(!ok)
-      continue;
-    uint64_t quality = heap_size + stack_size;
-    if(quality < best && heap_size < quality && stack_size < quality) {
-      best = quality;
-      best_index = i;
-    }
+  // Create memory segments as needed so that there's no 16-byte invalid gap.
+  Memory* last_segment = NULL;
+  uint64_t max_addr = 0;
+
+  // Build the first segment
+  Memory first_segment;
+  uint64_t first_address = concrete_vector[0].first;
+  size_t size = concrete_vector[0].second.num_fixed_bytes();
+
+  first_segment.resize(first_address, size);
+  for(size_t i = 0; i < size; ++i) {
+    first_segment.set_valid(first_address + i, true);
+    first_segment[first_address + i] = concrete_vector[0].second.get_fixed_byte(i);
   }
 
-  ok = compute_split(concrete_vector, best_index, heap_min, heap_size, stack_min, stack_size);
-  assert(ok);
+  max_addr = first_address + size;
+  segments.push_back(first_segment);
+  last_segment = &segments[0];
 
-  if(stack_size > 4096 || heap_size > 4096) {
-    // Failed to allocate memory, oh well.
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    cout << "Allocating heap/stack failed for these addresses:" << endl;
-    for(auto pair : concrete_vector) {
-      cout << hex << pair.first << " (of size 0x" << pair.second.num_fixed_bytes() << ")" << endl;
+  // Build remaining segments
+  for(size_t i = 1; i < concrete_vector.size(); ++i) {
+    auto pair = concrete_vector[i];
+    uint64_t address = pair.first;
+    size_t size = pair.second.num_fixed_bytes();
+
+    if(address <= max_addr + 32) {
+      uint64_t new_size = address + size - last_segment->lower_bound();
+      last_segment->resize(last_segment->lower_bound(), new_size);
+    } else {
+      Memory m;
+      m.resize(address, size);
+      segments.push_back(m);
+      last_segment = &segments[segments.size()-1];
     }
-    cout << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << endl;
-    return false;
+
+    for(size_t i = 0; i < size; ++i) {
+      last_segment->set_valid(address + i, true);
+      (*last_segment)[address + i] = pair.second.get_fixed_byte(i);
+    }
+    max_addr = address+size;
   }
 
-  cs.stack.resize(stack_min, stack_size); //base, size
-  cs.heap.resize(heap_min, heap_size);  //base, size
+  // If there's no segment corresponding to the stack, create one.
+  switch(segments.size()) {
+    case 3:
+      cs.data = segments[2];
+    case 2:
+      cs.stack = segments[1];
+    case 1:
+      cs.heap = segments[0];
+    default:
+      break;
+  }
 
-  // Now set the defined bits
-  for(auto p : concrete) {
-    for(size_t k = 0; k < 2; ++k) {
-      auto& mem = k ? cs.stack : cs.heap;
-      if(mem.in_range(p.first) && mem.in_range(p.first + p.second.num_fixed_bytes() - 1)) {
-        for(size_t i = 0; i < p.second.num_fixed_bytes(); ++i) {
-          mem.set_valid(p.first + i, true);
-          mem[p.first+i] = p.second.get_fixed_byte(i);
-        }
-      }
-    }
+  for(size_t i = 3; i < segments.size(); ++i) {
+    cs.segments.push_back(segments[i]);
   }
 
   return true;
-
 }
 
 CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) {
