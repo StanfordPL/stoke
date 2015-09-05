@@ -129,67 +129,6 @@ void Validator::sanity_checks(const Cfg& target, const Cfg& rewrite) const {
 
 }
 
-/** Takes a *sorted* list of addresses along with the size of the read/write.
- * Determines the stack/heap bounds if we put the first 'pos' addresses in the
- * heap and the remaining 'count - pos' addresses in the stack.  Also checks
- * that the split is "valid", i.e. no read is both in the stack/heap; this
- * check is needed because the sorting doesn't account for overlapping reads
- * (this is the boolean returned). */
-bool compute_split(vector<pair<uint64_t, BitVector>> addresses, size_t pos,
-                   uint64_t& heap_min, uint64_t& heap_size,
-                   uint64_t& stack_min, uint64_t& stack_size) {
-
-  size_t count = addresses.size();
-
-  /*
-  cout << "Splitting: @ " << pos << endl;
-  for(auto it : addresses) {
-    cout << it.first << " -> " << it.second.num_fixed_bytes() << endl;
-  }
-  */
-
-  // Compute heap bounds
-  if(pos) {
-    heap_min = addresses[0].first;
-    heap_size = addresses[pos-1].first + addresses[pos-1].second.num_fixed_bytes() - heap_min;
-  } else {
-    heap_min = 0;
-    heap_size = 0;
-  }
-
-  // Compute stack bounds
-  if(pos == count) {
-    stack_min = 0;
-    stack_size = 0;
-  } else {
-    stack_min = addresses[pos].first;
-    stack_size = addresses[count-1].first + addresses[count-1].second.num_fixed_bytes() - stack_min;
-  }
-
-// cout << "Initial heap: " << hex << heap_min << "+" << heap_size << " stack: " << stack_min << "+" << stack_size << endl;
-
-  // Check the bounds work
-  for(auto p : addresses) {
-    if (p.first >= heap_min && (p.first + p.second.num_fixed_bytes()) <= (heap_min + heap_size))
-      continue;
-    if (p.first >= stack_min && (p.first + p.second.num_fixed_bytes()) <= (stack_min + stack_size))
-      continue;
-
-    cout << "A: " << (p.first >= heap_min) << endl;
-    cout << "B: " << ((p.first + p.second.num_fixed_bytes() <= heap_min + heap_size)) << endl;
-    cout << "C: " << ((p.first >= stack_min)) << endl;
-    cout << "D: " << ((p.first + p.second.num_fixed_bytes()) <= (stack_min + stack_size)) << endl;
-    cout << "p.first + p.second.num_fixed_bytes() = " << (p.first + p.second.num_fixed_bytes()) << endl;
-    cout << "heap_min + heap_size = " << (heap_min + heap_size) << endl;
-    cout << "stack_min + stack_size = " << (stack_min + stack_size) << endl;
-    cout << "Address " << p.first << " of size " << p.second.num_fixed_bytes() << " didn't fit." << endl;
-    return false;
-  }
-
-  //cout << "Final heap: " << heap_min << "+" << heap_size << " stack: " << stack_min << "+" << stack_size << endl;
-
-  return true;
-}
 
 bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, CpuState& cs) {
 
@@ -231,7 +170,7 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
   uint64_t first_address = concrete_vector[0].first;
   size_t size = concrete_vector[0].second.num_fixed_bytes();
 
-  first_segment.resize(first_address, size);
+  first_segment.resize(first_address, size+1);
   for(size_t i = 0; i < size; ++i) {
     first_segment.set_valid(first_address + i, true);
     first_segment[first_address + i] = concrete_vector[0].second.get_fixed_byte(i);
@@ -246,18 +185,24 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     auto pair = concrete_vector[i];
     uint64_t address = pair.first;
     size_t size = pair.second.num_fixed_bytes();
+    cout << "Scheduling " << hex << address << " of size " << size << endl;
+    cout << "max_addr = " << max_addr << endl;
 
-    if(address <= max_addr + 32) {
-      uint64_t new_size = address + size - last_segment->lower_bound();
+    if(address - max_addr < 32) {
+      uint64_t new_size = address + size - last_segment->lower_bound() + 1;
+      cout << "Resizing existing segment from " << last_segment->lower_bound() << "+"
+           << last_segment->upper_bound() << " to size " << new_size << endl;
       last_segment->resize(last_segment->lower_bound(), new_size);
     } else {
+      cout << "Allocating new segment" << endl;
       Memory m;
-      m.resize(address, size);
+      m.resize(address, size + 1);
       segments.push_back(m);
       last_segment = &segments[segments.size()-1];
     }
 
     for(size_t i = 0; i < size; ++i) {
+      cout << "Writing address " << address + i << endl;
       last_segment->set_valid(address + i, true);
       (*last_segment)[address + i] = pair.second.get_fixed_byte(i);
     }
@@ -266,14 +211,14 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
 
   // If there's no segment corresponding to the stack, create one.
   switch(segments.size()) {
-    case 3:
-      cs.data = segments[2];
-    case 2:
-      cs.stack = segments[1];
-    case 1:
-      cs.heap = segments[0];
-    default:
-      break;
+  case 3:
+    cs.data = segments[2];
+  case 2:
+    cs.stack = segments[1];
+  case 1:
+    cs.heap = segments[0];
+  default:
+    break;
   }
 
   for(size_t i = 3; i < segments.size(); ++i) {

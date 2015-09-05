@@ -86,6 +86,7 @@ private:
 
   uint64_t build_testcase_address_;
   size_t build_testcase_width_;
+  bool build_testcase_ran_;
 };
 
 } //namespace
