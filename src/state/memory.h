@@ -42,6 +42,9 @@ public:
     // Round size up to align to an 8 byte boundary.
     size = (size + 7) & 0xfffffffffffffff8;
 
+    // Make sure that we don't overflow past the 64-bit address space
+    assert(base_ + size > base_ || base_ + size == 0 || base_ + size == 0x20);
+
     contents_.resize_for_fixed_bytes(size);
     valid_.resize_for_bits(size);
 

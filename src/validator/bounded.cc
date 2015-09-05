@@ -212,8 +212,8 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
     constraints.push_back(it);
 
 
-  auto target_repath = CfgPaths::rewrite_cfg_with_path(target, P_prefix);
-  auto rewrite_repath = CfgPaths::rewrite_cfg_with_path(rewrite, Q_prefix);
+  auto target_repath = CfgPaths::rewrite_cfg_with_path(target, P);
+  auto rewrite_repath = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
   auto memories = am.build_cell_model(target_repath, rewrite_repath, prefix_tc);
   if(memories.first == NULL || memories.second == NULL) {
     throw VALIDATOR_ERROR("Overlapping memory accesses found.");
@@ -262,7 +262,8 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
                                        CfgPaths::rewrite_cfg_with_path(target, P),
                                        CfgPaths::rewrite_cfg_with_path(rewrite, Q));
     if(!ok)
-      throw VALIDATOR_ERROR("Built counterexample for unexplored path; could not instantiate");
+      cout << "WARNING: build counterexample for unexplored path; segfaults." << endl;
+//      throw VALIDATOR_ERROR("Built counterexample for unexplored path; could not instantiate");
     cout << "Here's the counterexample:" << endl << ceg << endl;
     tc = ceg;
   } else {
@@ -555,8 +556,11 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       bool ok = am.build_testcase_memory(ceg, solver_,
                                          *static_cast<CellMemory*>(state_t.memory),
                                          *static_cast<CellMemory*>(state_r.memory), target_repath, rewrite_repath);
-      if(ok)
+      if(ok) {
         counterexamples_.push_back(ceg);
+      } else {
+        throw VALIDATOR_ERROR("Instantiated counterexample segfault!");
+      }
     } else {
       counterexamples_.push_back(ceg);
     }

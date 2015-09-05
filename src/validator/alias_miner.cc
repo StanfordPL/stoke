@@ -262,6 +262,11 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
     }
   }
 
+  // Run sandbox on target to see if we did well.
+  sandbox_->clear_callbacks();
+  sandbox_->run();
+  last_err = sandbox_->get_output(0)->code;
+
   return last_err == ErrorCode::NORMAL;
 }
 
