@@ -176,9 +176,6 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   return std::pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem);
 }
 
-void help_me_God_callback(const StateCallbackData& data, void* arg) {
-  cout << "Made it through " << data.code[data.line] << endl;
-}
 
 
 bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory& target_memory, const CellMemory& rewrite_memory, const Cfg& target, const Cfg& rewrite) {
@@ -187,6 +184,9 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   std::map<size_t, bool> cell_set;
   // this map tracks (address, value) pairs for memory
   std::map<uint64_t, BitVector> addr_value_pairs;
+
+  // check if the last sandbox run was a success
+  ErrorCode last_err = ErrorCode::NORMAL;
 
   // loop through target and rewrite memory dereferences and resolve them
   for(size_t k = 0; k < 2; ++k) {
@@ -201,10 +201,13 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
     sandbox_->insert_input(ceg);
     sandbox_->set_entrypoint(label);
 
+    cout << "Building testcase memory for: " << endl << code << endl;
+
     for(size_t i = 0, ie = code.size(); i < ie; ++i) {
       auto instr = code[i];
       if(instr.is_memory_dereference() && !instr.is_ret()) {
         cout << "BTM: Working on " << instr << " of " << ( k ? "target" : "rewrite") << endl;
+        cout << "  (line " << i << ")" << endl;
         // which cell?
         size_t cell = -1;
         if(memory.map_.count(i)) {
@@ -218,18 +221,17 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
         // we need to find the address at which this dereference happens
         build_testcase_address_ = 0;
         build_testcase_width_ = 0;
+        build_testcase_ran_ = false;
         sandbox_->clear_callbacks();
         sandbox_->insert_before(label, i, build_testcase_callback, this);
-        for(size_t j = i+1; j < code.size(); ++j) {
-          sandbox_->insert_before(label, j, help_me_God_callback, this);
-        }
         sandbox_->run();
 
-        auto code = sandbox_->get_output(0)->code;
+        last_err = sandbox_->get_output(0)->code;
 
-        cout << "  * addr=" << build_testcase_address_ << endl;
+        cout << "  * addr=" << hex << build_testcase_address_ << endl;
         cout << "  * width=" << build_testcase_width_ << endl;
-        cout << "  * error=" << readable_error_code(code) << endl;
+        cout << "  * ran=" << build_testcase_ran_ << endl;
+        cout << "  * error=" << readable_error_code(last_err) << endl;
 
         //extract the symbolic value
         if(cell != (size_t)-1) {
@@ -238,22 +240,29 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
           auto bv = solver.get_model_bv(var->get_name(), var->get_size());
           addr_value_pairs[build_testcase_address_] = bv;
           cout << " * cell with bv: " << (size_t)bv.get_fixed_byte(0) << endl;
+          cout << " * size of bv: " << bv.num_fixed_bytes() << endl;
           cell_set[cell] = true;
         } else {
           cout << " * no cell; using 0" << endl;
           addr_value_pairs[build_testcase_address_] = BitVector(build_testcase_width_);
+          cout << " * size of bv: " << BitVector(build_testcase_width_).num_fixed_bytes() << endl;
         }
 
         // rebuild the testcase for the next run
+        cout << "MAP:" << endl;
+        for(auto p : addr_value_pairs) {
+          cout << hex << p.first << dec << " (of size " << p.second.num_fixed_bytes() << ")" << endl;
+        }
         if(!Validator::memory_map_to_testcase(addr_value_pairs, ceg))
           return false;
+        cout << "Testcase so far: " << endl << ceg << endl;
         sandbox_->clear_inputs();
         sandbox_->insert_input(ceg);
       }
     }
   }
 
-  return true;
+  return last_err == ErrorCode::NORMAL;
 }
 
 void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* arg) {
@@ -268,6 +277,7 @@ void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* ar
   if(!instr.is_push() && !instr.is_pop())
     index = instr.mem_index();
   ptr->build_testcase_width_ = instr.get_operand<x64asm::Operand>(index).size();
+  ptr->build_testcase_ran_ = true;
 
 }
 
