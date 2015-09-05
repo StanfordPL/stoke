@@ -35,10 +35,11 @@ ostream& Memory::write_text(ostream& os) const {
 }
 
 istream& Memory::read_text(istream& is) {
+  is >> ws;
   read_text_summary(is);
-  string ignore;
-  getline(is, ignore);
+  is >> ws;
   read_text_contents(is);
+  is >> ws;
 
   return is;
 }
@@ -119,21 +120,21 @@ void Memory::write_text_contents(ostream& os) const {
 }
 
 void Memory::read_text_summary(istream& is) {
-  is.get();
-  is.get();
+  is.get();  // '['
+  is.get();  // ' '
 
   uint64_t upper = 0;
   HexReader<uint64_t, 8>()(is, upper);
 
-  is.get();
-  is.get();
-  is.get();
+  is.get(); // ' '
+  is.get(); // '-'
+  is.get(); // ' '
 
   uint64_t lower = 0;
   HexReader<uint64_t, 8>()(is, lower);
 
-  is.get();
-  is.get();
+  is.get(); // ' '
+  is.get(); // ']'
 
   // Fail for memories that are larger than 100 KB
   if (upper - lower > 100*1024) {
@@ -155,20 +156,20 @@ void Memory::read_text_row(istream& is) {
     return;
   }
 
-  is.get();
-  is.get();
-  is.get();
+  is.get(); // ' '
+  is.get(); // ' '
+  is.get(); // ' '
 
   for (int j = 7; j >= 0; --j) {
     is >> s;
     set_valid(addr + j, s == "v");
   }
 
-  is.get();
-  is.get();
+  is.get(); // ' '
+  is.get(); // ' '
 
   for (int j = 7; j >= 0; --j) {
-    is.get();
+    is.get(); // ' '
 
     uint8_t val = 0;
     HexReader<uint8_t, 2>()(is, val);
@@ -177,6 +178,7 @@ void Memory::read_text_row(istream& is) {
       (*this)[addr + j] = val;
     }
   }
+  is >> ws;
 }
 
 void Memory::read_text_contents(istream& is) {
@@ -188,13 +190,11 @@ void Memory::read_text_contents(istream& is) {
 
   getline(is, s, ']');
 
-  if (rows != 0) {
-    getline(is, s);
-  }
   for (size_t i = 0; i < rows; ++i) {
-    getline(is, s);
+    is >> ws;
     read_text_row(is);
   }
+  is >> ws;
 }
 
 bool Memory::valid_row(uint64_t addr) const {
