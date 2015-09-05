@@ -15,7 +15,9 @@
 #include "src/state/regs.h"
 
 #include <string>
+#include <cstring>
 
+#include "src/ext/cpputil/include/io/fail.h"
 #include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/io/filterstream.h"
 #include "src/ext/cpputil/include/serialize/hex_reader.h"
@@ -56,12 +58,14 @@ ostream& Regs::write_text(ostream& os, const char** names, size_t padding) const
   return os;
 }
 
-istream& Regs::read_text(istream& is) {
+istream& Regs::read_text(istream& is, const char** names) {
   for (size_t i = 0, ie = size(); i < ie; ++i) {
     string name;
-    is >> name;
-    while (isspace(is.peek())) {
-      is.get();
+    is >> ws >> name >> ws;
+
+    if(strcmp(names[i], name.c_str())) {
+      fail(is) << "Expected register '" << names[i] << "' but got '" << name << "'" << endl;
+      return is;
     }
 
     auto& r = (*this)[i];
@@ -70,6 +74,7 @@ istream& Regs::read_text(istream& is) {
       if (j != 0) is.get();
     }
   }
+  is >> ws;
 
   return is;
 }
