@@ -242,6 +242,9 @@ Sandbox& Sandbox::run(size_t index) {
     io->out_.stack.copy(io->in_.stack);
     io->out_.heap.copy(io->in_.heap);
     io->out_.data.copy(io->in_.data);
+    for(size_t i = 0, ie=io->out_.segments.size(); i < ie; ++i) {
+      io->out_.segments[i].copy(io->in_.segments[i]);
+    }
   }
 
   // Reset error-related variables
@@ -585,11 +588,29 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   Function fxn;
   assm_.start(fxn);
 
-  // Define labels
-  const auto fail = get_label();
-  const auto done = get_label();
-  const auto heap_case = get_label();
-  const auto data_case = get_label();
+  // Populate a list of memory segments we need to emit code for
+  vector<Memory*> segments;
+  vector<Label> segment_cases;
+
+  if(cs.stack.size())
+    segments.push_back(&cs.stack);
+  if(cs.heap.size())
+    segments.push_back(&cs.heap);
+  if(cs.data.size())
+    segments.push_back(&cs.data);
+  for(auto seg : cs.segments)
+    if(seg.size())
+      segments.push_back(&seg);
+
+  // get labels
+  auto done = get_label();
+  auto fail = get_label();
+
+  if(segments.size()) {
+    for(size_t i = 0; i < segments.size() - 1; ++i)
+      segment_cases.push_back(get_label());
+  }
+  segment_cases.push_back(fail);
 
   // Check alignment: A well aligned address won't change
   // Following this check, rsi is free for use as scratch space
@@ -597,47 +618,30 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.cmp(rsi, rdi);
   assm_.jne_1(fail);
 
-  // Stack case: Check that this address is inside the stack
-  assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jl_1(heap_case);
+  // emit the code to figure out which segment we're writing to.
+  for(size_t i = 0; i < segments.size(); ++i) {
+    Memory* segment = segments[i];
 
-  assm_.mov((R64)rax, Imm64(cs.stack.upper_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jg_1(heap_case);
+    if(i > 0)
+      assm_.bind(segment_cases[i-1]);
 
-  assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
-  assm_.sub(rdi, rax);
+    // compare the address (rdi) with the upper bound of the segment (rax)
+    assm_.mov((R64)rax, Imm64(segment->upper_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jg_1(segment_cases[i]);
 
-  emit_map_addr_cases(cs, fail, done, 0);
+    // compare the address (rdi) with the lower bound of the segment (rax)
+    assm_.mov((R64)rax, Imm64(segment->lower_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jl_1(segment_cases[i]);
 
-  // Heap case: Check that the address is inside the heap
-  assm_.bind(heap_case);
-  assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jl_1(data_case);
+    // subtract the lower bound from rdi to get the offset into the segment
+    assm_.sub(rdi, rax);
 
-  assm_.mov((R64)rax, Imm64(cs.heap.upper_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jg_1(data_case);
+    // emit the memory access
+    emit_map_addr_cases(fail, done, segment);
 
-  assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
-  assm_.sub(rdi, rax);
-
-  emit_map_addr_cases(cs, fail, done, 1);
-
-  // Data case: Check that the address is inside the data section
-  assm_.bind(data_case);
-  assm_.mov((R64)rax, Imm64(cs.data.lower_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jl_1(fail);
-
-  assm_.sub(rdi, rax);
-  assm_.mov((R64)rax, Imm64(cs.data.size()));
-  assm_.cmp(rdi, rax);
-  assm_.jge_1(fail);
-
-  emit_map_addr_cases(cs, fail, done, 2);
+  }
 
   // If control reaches here, invoke the signal_trap handler for sigsegv
   assm_.bind(fail);
@@ -652,7 +656,12 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   return fxn;
 }
 
-void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& done, size_t mem) {
+/** Back in the day, this function did a switch() statement to choose between
+ * the stack/heap/data segments, rather than receiving a pointer to memory.
+ * Hence "cases" in the name.  It could, probably, be
+ * renamed/removed/refactored.  And we can do that.  But for now, as a tribute
+ * to Eric's work on the Sandbox, it's gonna stick around here. -- BRC */
+void Sandbox::emit_map_addr_cases(const Label& fail, const Label& done, Memory* mem) {
   // Save rcx (we need to use it for the shift instruction below)
   assm_.mov(rax, rcx);
   // We have a valid address, divide by to find the corresponding address in the mask array
@@ -667,57 +676,21 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.mov(rcx, rax);
 
   // The read mask shouldn't change when and'ed against the valid mask
-  switch (mem) {
-  case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
-    break;
-  case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
-    break;
-  case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.valid_mask()));
-    break;
-  default:
-    assert(false);
-  }
+  assm_.mov((R64)rax, Imm64(mem->valid_mask()));
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rdx);
   assm_.cmp(rax, rdx);
   assm_.jne_1(fail);
 
   // The write mask shouldn't change when and'ed against the valid mask
-  switch (mem) {
-  case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
-    break;
-  case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
-    break;
-  case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.valid_mask()));
-    break;
-  default:
-    assert(false);
-  }
+  assm_.mov((R64)rax, Imm64(mem->valid_mask()));
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rcx);
   assm_.cmp(rax, rcx);
   assm_.jne_1(fail);
 
   // Do final remapping
-  switch (mem) {
-  case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.data()));
-    break;
-  case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.data()));
-    break;
-  case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.data()));
-    break;
-  default:
-    assert(false);
-  }
+  assm_.mov((R64)rax, Imm64(mem->data()));
   assm_.add(rax, rdi);
 
   // Get out of here

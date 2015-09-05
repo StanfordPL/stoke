@@ -14,6 +14,7 @@
 
 #include "src/state/cpu_states.h"
 
+#include <regex>
 #include <string>
 
 using namespace cpputil;
@@ -37,12 +38,19 @@ ostream& CpuStates::write_text(std::ostream& os) const {
 
 istream& CpuStates::read_text(std::istream& is) {
   this->clear();
-  for (string s; is >> s >> s;) {
-    CpuState t;
-    t.read_text(is);
 
+  for(string s; is.good();) {
+
+    is >> ws;
     getline(is, s);
-    getline(is, s);
+    if(!regex_match(s, regex("Testcase [0-9]+:"))) {
+      fail(is) << "Expected \"Testcase n\" but found \"" << s << "\"" << endl;
+      return is;
+    }
+
+    CpuState t;
+    is >> ws;
+    t.read_text(is);
 
     this->emplace_back(t);
   }
