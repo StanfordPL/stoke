@@ -178,6 +178,9 @@ for(auto p : rewrite_map) {
   return std::pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem);
 }
 
+void tracer_callback(const StateCallbackData& data, void* arg) {
+  cout << "TRACE: " << data.code[data.line] << endl;
+}
 
 
 bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory& target_memory, const CellMemory& rewrite_memory, const Cfg& target, const Cfg& rewrite) {
@@ -269,9 +272,14 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   }
 
   // Run sandbox on target to see if we did well.
+  cout << "Running sandbox with tc: " << endl << *(sandbox_->get_input(0)) << endl;
   sandbox_->clear_callbacks();
+  sandbox_->insert_function(target);
+  sandbox_->insert_before(tracer_callback, this);
+  sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
   sandbox_->run();
   last_err = sandbox_->get_output(0)->code;
+  cout << "Ran sandbox; got " << readable_error_code(last_err) << endl;
 
   return last_err == ErrorCode::NORMAL;
 }

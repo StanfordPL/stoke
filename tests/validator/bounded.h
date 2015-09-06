@@ -337,6 +337,29 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
 
 }
 
+TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "movl $0xc0decafe, (%rax)" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, live_outs, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "movw $0xcafe, (%rax)" << std::endl;
+  ssr << "movq $0xc0de, 0x2(%rax)" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, live_outs, live_outs);
+
+  add_testcases(3, target);
+
+  EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
 TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx;
