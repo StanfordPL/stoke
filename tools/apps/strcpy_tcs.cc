@@ -50,8 +50,8 @@ auto& max_buffer_size = ValueArg<size_t>::create("max_buffer_size")
                         .description("size of array")
                         .default_val(4);
 
-auto& native = FlagArg::create("native")
-               .description("Use normal 64-bit pointers rather than NaCl 32-bit");
+auto& dst_only = FlagArg::create("dst_only")
+                 .description("Just emit one buffer");
 
 auto& strcat_arg = FlagArg::create("strcat")
                    .description("Allocates twice as much space for the destination");
@@ -135,16 +135,10 @@ int main(int argc, char** argv) {
 
     }
 
-    if(!native.value()) {
-      // All addresses are relative to r15
-      cs.gp[r15].get_fixed_quad(0) = heap_base_bot;
-      cs.gp[src_reg].get_fixed_quad(0) = heap_diff + src_offset;
-      cs.gp[dst_reg].get_fixed_quad(0) = heap_diff + dst_offset;
-    } else {
-      // Addresses are untouched
-      cs.gp[src_reg].get_fixed_quad(0) = heap_base_top + src_offset;
-      cs.gp[dst_reg].get_fixed_quad(0) = heap_base_top + dst_offset;
-    }
+    // All addresses are relative to r15
+    cs.gp[r15].get_fixed_quad(0) = heap_base_bot;
+    cs.gp[src_reg].get_fixed_quad(0) = heap_diff + src_offset;
+    cs.gp[dst_reg].get_fixed_quad(0) = heap_diff + dst_offset;
 
     if(record_dst_size)
       cs.gp[rdx].get_fixed_quad(0) = dst_buffer_size;
@@ -155,16 +149,25 @@ int main(int argc, char** argv) {
       cs.heap[i] = rand() % 256;
       cs.heap.set_valid(i, false);
     }
-    for(uint64_t i = heap_base_top + src_offset; i < ROUND_UP(heap_base_top + src_offset + src_buffer_size, align.value()); ++i)
-      cs.heap.set_valid(i, true);
-    for(uint64_t i = heap_base_top + dst_offset; i < ROUND_UP(heap_base_top + dst_offset + dst_buffer_size, align.value()); ++i)
+
+    auto src_end = heap_base_top + src_offset + ROUND_UP(src_buffer_size, char_width.value());
+    auto dst_end = heap_base_top + dst_offset + ROUND_UP(dst_buffer_size, char_width.value());
+
+    if(!dst_only) {
+      for(uint64_t i = heap_base_top + src_offset; i < src_end; ++i)
+        cs.heap.set_valid(i, true);
+    }
+    for(uint64_t i = heap_base_top + dst_offset; i < dst_end; ++i)
       cs.heap.set_valid(i, true);
 
     // null terminate, yo (note: we don't use src_/dst_ buffer size since strcat() is null-terminated sooner, etc.
     for(size_t j = 0; j < char_width.value(); ++j) {
-      cs.heap[heap_base_top + src_offset + buffer_size - 1 - j] = '\0';
-      cs.heap[heap_base_top + dst_offset + buffer_size - 1 - j] = '\0';
+      if(!dst_only)
+        cs.heap[src_end - j - 1] = '\0';
+      cs.heap[dst_end - j - 1] = '\0';
     }
+
+    //cout << hex << "dst_offset=" << dst_offset << "  dst_end=" << dst_end << "  dst_buffer_size=" << dst_buffer_size << " buffer_size=" << buffer_size << " heap_base_top=" << heap_base_top << endl;
 
     std::cout << cs << endl << endl;
   }
