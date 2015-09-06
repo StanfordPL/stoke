@@ -631,10 +631,16 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
     if(i > 0)
       assm_.bind(segment_cases[i-1]);
 
-    // compare the address (rdi) with the upper bound of the segment (rax)
-    assm_.mov((R64)rax, Imm64(segment->upper_bound()));
-    assm_.cmp(rdi, rax);
-    assm_.jg_1(segment_cases[i]);
+    // Compare the address (rdi) with the upper bound of the segment (rax).
+    // Look out for overflow!  upper_bound() could be zero at the end of the
+    // address space!  In which case, we skip this check.  This is safe because
+    // we're only emitting code for segments with non-zero size, and the lower
+    // bound check will make sure things are sane.
+    if(segment->upper_bound()) {
+      assm_.mov((R64)rax, Imm64(segment->upper_bound()));
+      assm_.cmp(rdi, rax);
+      assm_.jg_1(segment_cases[i]);
+    }
 
     // compare the address (rdi) with the lower bound of the segment (rax)
     assm_.mov((R64)rax, Imm64(segment->lower_bound()));
