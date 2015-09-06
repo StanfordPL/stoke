@@ -1,7 +1,7 @@
 #!/bin/bash
 
 bms=`ls -d examples/hacker/p*`
-bms=$bms" examples/saxpy"
+#bms=$bms" examples/saxpy" # See issue-707.  This is a bug.
 bms=$bms" examples/montmul"
 
 PATH=bin:$PATH
