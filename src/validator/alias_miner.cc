@@ -21,8 +21,8 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-#define DEBUG_BUILD_TC(X) { }
-#define DEBUG_MEM_SETUP(X) { }
+#define DEBUG_BUILD_TC(X) {X}
+#define DEBUG_MEM_SETUP(X) {X}
 
 /** Takes a Cfg and a testcase; runs the Cfg on the testcase and tracks
   all memory reads/writes.  Then builds a list of all memory accesses in

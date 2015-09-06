@@ -464,6 +464,130 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
 
 }
 
+TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsPass) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".wcslen:" << std::endl;
+  sst << "movq %rdi, %rsi" << std::endl;
+  sst << ".head:" << std::endl;
+  sst << "movl (%rdi), %ecx" << std::endl;
+  sst << "addq $0x4, %rdi" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "jnz .head" << std::endl;
+  sst << "subq %rsi, %rdi" << std::endl;
+  sst << "subq $0x4, %rdi" << std::endl;
+  sst << "movq %rdi, %rax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".wcslen:" << std::endl;
+  ssr << "movq %rdi, %rsi" << std::endl;
+  ssr << "movl (%rdi), %ecx" << std::endl;
+  ssr << "cmpl $0x0, %ecx" << std::endl;
+  ssr << "je .exit" << std::endl;
+  ssr << ".head:" << std::endl;
+  ssr << "addq $0x4, %rdi" << std::endl;
+  ssr << "movl (%rdi), %ecx" << std::endl;
+  ssr << "testl %ecx, %ecx" << std::endl;
+  ssr << "jnz .head" << std::endl;
+  ssr << "subq %rsi, %rdi" << std::endl;
+  ssr << "movq %rdi, %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  ssr << ".exit:" << std::endl;
+  ssr << "xorl %eax, %eax" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  for(size_t i = 0; i < 10; ++i) {
+    CpuState tc;
+    uint64_t base = rand();
+    tc.gp[x64asm::rdi].get_fixed_quad(0) = base;
+    tc.heap.resize(base, (i+1)*4 + 1);
+    for(size_t j = base; j < base + i*4; ++j) {
+      tc.heap.set_valid(j, true);
+      tc.heap[j] = rand() % 256;
+    }
+    for(size_t j = base+i*4; j < base+(i+1)*4; ++j) {
+      tc.heap.set_valid(j, true);
+      tc.heap[j] = 0;
+    }
+    std::cout << tc << std::endl;
+    sandbox->insert_input(tc);
+  }
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+}
+
+TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".wcslen:" << std::endl;
+  sst << "movq %rdi, %rsi" << std::endl;
+  sst << ".head:" << std::endl;
+  sst << "movl (%rdi), %ecx" << std::endl;
+  sst << "addq $0x4, %rdi" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "jnz .head" << std::endl;
+  sst << "subq %rsi, %rdi" << std::endl;
+  // missing sutract statement
+  sst << "movq %rdi, %rax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".wcslen:" << std::endl;
+  ssr << "movq %rdi, %rsi" << std::endl;
+  ssr << "movl (%rdi), %ecx" << std::endl;
+  ssr << "cmpl $0x0, %ecx" << std::endl;
+  ssr << "je .exit" << std::endl;
+  ssr << ".head:" << std::endl;
+  ssr << "addq $0x4, %rdi" << std::endl;
+  ssr << "movl (%rdi), %ecx" << std::endl;
+  ssr << "testl %ecx, %ecx" << std::endl;
+  ssr << "jnz .head" << std::endl;
+  ssr << "subq %rsi, %rdi" << std::endl;
+  ssr << "movq %rdi, %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  ssr << ".exit:" << std::endl;
+  ssr << "xorl %eax, %eax" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  for(size_t i = 0; i < 10; ++i) {
+    CpuState tc;
+    uint64_t base = rand();
+    tc.gp[x64asm::rdi].get_fixed_quad(0) = base;
+    tc.heap.resize(base, (i+1)*4 + 1);
+    for(size_t j = base; j < base + i*4; ++j) {
+      tc.heap.set_valid(j, true);
+      tc.heap[j] = rand() % 256;
+    }
+    for(size_t j = base+i*4; j < base+(i+1)*4; ++j) {
+      tc.heap.set_valid(j, true);
+      tc.heap[j] = 0;
+    }
+    std::cout << tc << std::endl;
+    sandbox->insert_input(tc);
+  }
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for(auto ceg : validator->get_counter_examples())
+    check_ceg(ceg, target, rewrite);
+
+}
+
 TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx;
