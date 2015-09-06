@@ -91,7 +91,6 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   auto target_trace = mine_concrete_data(target, tc);
   auto rewrite_trace = mine_concrete_data(rewrite, tc);
 
-  /*
   cout << "TARGET: " << endl;
   cout << target.get_code() << endl;
   cout << "REWRITE: " << endl;
@@ -105,73 +104,77 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   for(auto it : rewrite_trace) {
     cout << "@" << it.line << "  " << it.address << " / " << it.width << endl;
   }
-  */
 
-  // Build map from address -> (cell number, size)
-  // As we add to the map, we need to check for any possible partial overlaps.
-  std::map<uint64_t, std::pair<size_t, size_t>> addr_cell_map;
-  size_t no_cells = 0;
-  for(size_t i = 0; i < 2; ++i) {
-    auto& trace = i ? target_trace : rewrite_trace;
-    for(auto access : trace) {
+  // order traces by start position, and then largest to smallest
+  auto compare = [] (const MemoryAccess& m1, const MemoryAccess& m2) {
+    if(m1.address == m2.address)
+      return m1.width > m2.width;    
+    else
+      return m1.address < m2.address;
+  };
+  vector<MemoryAccess> all_trace;
+  all_trace.insert(all_trace.begin(), target_trace.begin(), target_trace.end());
+  all_trace.insert(all_trace.begin(), rewrite_trace.begin(), rewrite_trace.end());
+  sort(all_trace.begin(), all_trace.end(), compare);
 
-      if(addr_cell_map.count(access.address)) {
-        if(access.width != addr_cell_map[access.address].second) {
-          // two accesses of the same address of different sizes
-          return std::pair<CellMemory*, CellMemory*>(NULL, NULL);
-        } else {
-          // all done with this one :)
-          continue;
-        }
+  // cells in form (starting_address, size)
+  vector<pair<uint64_t, size_t>> cell_list;
+
+  // Build a list of all cells
+  for(auto access : all_trace) {
+    uint64_t lower_bound = access.address;
+    uint64_t upper_bound = access.address+access.width/8;
+    cout << hex << "scheduling " << lower_bound << "->" << upper_bound << endl;
+
+    if(cell_list.size()) {
+      auto& last_cell = cell_list[cell_list.size()-1];
+      assert(last_cell.first <= lower_bound);
+      cout << "last_cell: " << last_cell.first << "+" <<  last_cell.second << endl;
+      if(last_cell.first <= lower_bound - last_cell.second) {
+        // allocate a new cell
+        cout << "Allocating cell " << lower_bound << "+" << access.width/8 << endl;
+        cell_list.push_back(pair<uint64_t, size_t>(lower_bound, access.width/8));
+      } else if (last_cell.first < upper_bound - last_cell.second){
+        // expand the last existing cell
+        cout << "Resizing cell " << last_cell.first << "+" << (upper_bound-last_cell.first) << endl;
+        last_cell.second = upper_bound - last_cell.first;
       }
-
-      // loop through existing cells and check for overlap
-      for(auto cell : addr_cell_map) {
-        if(cell.first < access.address) {
-          if(cell.first + cell.second.second/8 > access.address) {
-            // two accesses overlap
-            return std::pair<CellMemory*, CellMemory*>(NULL, NULL);
-          }
-        } else if (cell.first > access.address) {
-          if(access.address + access.width/8 > cell.first) {
-            // two accesses overlap
-            return std::pair<CellMemory*, CellMemory*>(NULL, NULL);
-          }
-        }
-      }
-
-      // Ok, looks good: adding a new cell :)
-      addr_cell_map[access.address] = std::pair<size_t, size_t>(no_cells++, access.width);
+    } else {
+      cout << "Allocating cell " << lower_bound << "+" << access.width/8 << endl;
+      cell_list.push_back(pair<uint64_t, size_t>(lower_bound, access.width/8));
     }
   }
-  DEBUG_MEM_SETUP(
-    cout << "addr_cell_map" << endl;
-  for(auto p : addr_cell_map) {
-  cout << p.first << " -> (" << p.second.first << ", " << p.second.second << ")" << endl;
-})
 
 
   // Build maps of (line -> (cell number, size))
-  std::map<size_t, std::pair<size_t, size_t>> target_map;
-  std::map<size_t, std::pair<size_t, size_t>> rewrite_map;
+  std::map<size_t, CellMemory::SymbolicAccess> target_map;
+  std::map<size_t, CellMemory::SymbolicAccess> rewrite_map;
   for(size_t i = 0; i < 2; ++i) {
-    auto& map = i ? target_map : rewrite_map;
-    auto& trace = i ? target_trace : rewrite_trace;
+    auto& map = i ? rewrite_map : target_map;
+    auto& trace = i ? rewrite_trace : target_trace;
     for(auto access : trace) {
-      map[access.line] = addr_cell_map[access.address];
+      CellMemory::SymbolicAccess sa;
+      sa.line = access.line;
+      sa.size = access.width/8;
+
+      bool found = false;
+      for(size_t j = 0; j < cell_list.size(); ++j) {
+        auto cell = cell_list[j];
+        // cells are in ascending order, so only need to check the lower bound
+        if(j == cell_list.size() - 1 || cell_list[j+1].first > access.address) {
+          sa.cell = j;
+          sa.cell_size = cell.second;
+          sa.cell_offset = access.address - cell.first;
+          assert(sa.cell_offset + sa.size <= sa.cell_size);
+          found = true;
+          break;
+        }        
+      }
+      assert(found);
+
+      map[sa.line] = sa;
     }
   }
-
-  DEBUG_MEM_SETUP(
-    cout << "Target cell map:" << endl;
-  for(auto p : target_map) {
-  cout << p.first << " -> (" << p.second.first << ", " << p.second.second << ")" << endl;
-}
-cout << "Rewrite cell map:" << endl;
-for(auto p : rewrite_map) {
-  cout << p.first << " -> (" << p.second.first << ", " << p.second.second << ")" << endl;
-})
-
 
   CellMemory* target_mem = new CellMemory(target_map);
   CellMemory* rewrite_mem = new CellMemory(rewrite_map);
@@ -197,6 +200,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   for(size_t k = 0; k < 2; ++k) {
     auto& cfg = k ? target : rewrite;
     auto& memory = k ? target_memory : rewrite_memory;
+    auto map = memory.get_line_cell_map();
 
     auto& code = cfg.get_code();
     auto label = code[0].get_operand<x64asm::Label>(0);
@@ -215,8 +219,8 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
         DEBUG_BUILD_TC(cout << "  (line " << i << ")" << endl;)
         // which cell?
         size_t cell = -1;
-        if(memory.map_.count(i)) {
-          cell = memory.map_.at(i).first;
+        if(map.count(i)) {
+          cell = map[i].cell;
           if(cell_set[cell]) {
             DEBUG_BUILD_TC(cout << "  * cell set" << endl;)
             continue;

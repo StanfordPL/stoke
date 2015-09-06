@@ -191,7 +191,7 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
       last_segment->resize(last_segment->lower_bound(), new_size);
     } else {
       Memory m;
-      m.resize(address, size + 1);
+      m.resize(address, size);
       segments.push_back(m);
       last_segment = &segments[segments.size()-1];
     }
