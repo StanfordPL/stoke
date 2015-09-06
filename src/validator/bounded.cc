@@ -16,8 +16,8 @@
 #include "src/cfg/paths.h"
 #include "src/validator/bounded.h"
 
-#define BOUNDED_DEBUG(X) {}
-//#define BOUNDED_DEBUG(X) {X}
+//#define BOUNDED_DEBUG(X) {}
+#define BOUNDED_DEBUG(X) {X}
 
 using namespace std;
 using namespace stoke;
