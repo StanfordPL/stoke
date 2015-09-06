@@ -42,6 +42,9 @@ public:
     // Round size up to align to an 8 byte boundary.
     size = (size + 7) & 0xfffffffffffffff8;
 
+    // Make sure that we don't overflow past the 64-bit address space
+    assert(base_ + size > base_ || base_ + size == 0 || base_ + size == 0x20);
+
     contents_.resize_for_fixed_bytes(size);
     valid_.resize_for_bits(size);
 
@@ -72,13 +75,16 @@ public:
   uint64_t lower_bound() const {
     return base_;
   }
+
   /** Upper bound on valid addresses; doesn't include headroom. */
+  // WARNING IMPORTANT: uint64_t overflow risk when, e.g. addr=0xffffffffffffffe0, size=0x20
+  // do not compare to upper_bound()!!
   uint64_t upper_bound() const {
     return base_ + size();
   }
   /** Returns true if a virtual address is contained in this memory; does not include headroom. */
   bool in_range(uint64_t addr) const {
-    return addr >= lower_bound() && addr < upper_bound();
+    return addr >= lower_bound() && addr - base_ < size();
   }
 
   /** Element access; undefined for invalid bytes */

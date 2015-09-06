@@ -110,12 +110,14 @@ void Memory::write_text_contents(ostream& os) const {
   if (vc != 0) {
     os << endl;
   }
-  for (uint64_t i = upper_bound(), ie = lower_bound(); i > ie; i -= 8) {
-    if (!valid_row(i - 8)) {
+
+  //BEWARE OF OVERFLOWS; don't use upper_bound().
+  for (uint64_t i = size(); i > 0; i -= 8) {
+    if (!valid_row(lower_bound() + i - 8)) {
       continue;
     }
     os << endl;
-    write_text_row(os, i - 8);
+    write_text_row(os, lower_bound() + i - 8);
   }
 }
 
@@ -151,7 +153,7 @@ void Memory::read_text_row(istream& is) {
   HexReader<uint64_t, 8>()(is, addr);
 
   // Watch out for rows that are outside the range given in summary
-  if (addr < lower_bound() || addr >= upper_bound()) {
+  if (!in_range(addr)) {
     fail(is) << "Memory row is outside of the given range";
     return;
   }
@@ -209,7 +211,7 @@ bool Memory::valid_row(uint64_t addr) const {
 
 size_t Memory::valid_count() const {
   size_t res = 0;
-  for (size_t i = lower_bound(), ie = upper_bound(); i < ie; i += 8) {
+  for (uint64_t i = lower_bound(); i - lower_bound() < size(); i += 8) {
     if (valid_row(i)) {
       res++;
     }
