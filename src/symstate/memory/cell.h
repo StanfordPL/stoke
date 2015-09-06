@@ -27,20 +27,30 @@ class CellMemory : public SymMemory {
 
 public:
 
+  struct SymbolicAccess {
+    size_t line;          // line number?
+    size_t size;          // how many bytes are we accessing?
+    size_t cell;          // which bitvector do we hold the value in?
+    size_t cell_offset;   // do we need to take an offset into the cell?
+    size_t cell_size;     // tracks the total size of the cell
+  };
+
   /** Takes a map from the line number of a target/rewrite to a "cell number" along with
     the size of the write. */
-  CellMemory(std::map<size_t, std::pair<size_t, size_t>>& memory_map) : map_(memory_map) {
+  CellMemory(std::map<size_t, SymbolicAccess>& memory_map) : map_(memory_map) {
     for(auto p : memory_map) {
-      if(!cells_.count(p.second.first)) {
-        cells_[p.second.first] = SymBitVector::tmp_var(p.second.second);
-        init_cells_[p.second.first] = cells_[p.second.first];
-        cell_sizes_[p.second.first] = p.second.second;
+      auto access = p.second;
+      if(!cells_.count(access.cell)) {
+        auto new_cell = SymBitVector::tmp_var(access.cell_size*8);
+        cells_[access.cell] = new_cell;
+        init_cells_[access.cell] = new_cell;
+        cell_sizes_[access.cell] = access.cell_size;
       }
     }
   }
 
   /** Retrieve the map of line -> (cell#, size) */
-  std::map<size_t, std::pair<size_t, size_t>> get_line_cell_map() {
+  std::map<size_t, SymbolicAccess> get_line_cell_map() const {
     return map_;
   }
 
@@ -57,7 +67,7 @@ public:
 private:
 
   /** Map from line# -> (cell index, write size) */
-  std::map<size_t, std::pair<size_t, size_t>> map_;
+  std::map<size_t, SymbolicAccess> map_;
 
   /** The values initially allocated (used for extracting from model later) */
   std::map<size_t, SymBitVector> init_cells_;

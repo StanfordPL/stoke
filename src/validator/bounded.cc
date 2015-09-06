@@ -288,7 +288,7 @@ bool BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
 
 void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
                                      SymState& state, size_t& line_no,
-                                     const map<size_t, pair<size_t, size_t>>& line_cell_map,
+                                     const map<size_t, CellMemory::SymbolicAccess>& line_cell_map,
                                      map<size_t, pair<SymBitVector, size_t>>& cell_addr_map) {
 
   if(cfg.num_instrs(bb) == 0)
@@ -334,15 +334,17 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
         if(line_cell_map.count(line_no-1)) {
           // we need to add a constraint for the aliasing relationship that
           // we assumed.
-          size_t cell = line_cell_map.at(line_no-1).first;
-          size_t width = line_cell_map.at(line_no-1).second;
+          auto access = line_cell_map.at(line_no-1);
+          size_t cell = access.cell;
+          size_t width = access.size;
           auto address = state.get_addr(instr);
+          auto cell_start_addr = address - SymBitVector::constant(64, access.cell_offset);
 
-          // assert equality with other writes to the same cell
+          // assert with other writes to the same cell use same cell start address
           if(cell_addr_map.count(cell)) {
-            state.constraints.push_back(cell_addr_map[cell].first == address);
+            state.constraints.push_back(cell_addr_map[cell].first == cell_start_addr);
           } else {
-            cell_addr_map[cell] = pair<SymBitVector,size_t>(address, width);
+            cell_addr_map[cell] = pair<SymBitVector,size_t>(cell_start_addr, access.cell_size);
 
             // by the way, don't go past address 0xffffffffffffffff.  Idiot.
             state.constraints.push_back(address <= SymBitVector::constant(64, 0-width));
@@ -354,8 +356,8 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
                 auto other_address = p.second.first;
                 size_t other_width = p.second.second;
 
-                auto curr_lt_other = address + SymBitVector::constant(64, width) <= other_address;
-                auto other_lt_curr = other_address + SymBitVector::constant(64, other_width) <= address;
+                auto curr_lt_other = cell_start_addr + SymBitVector::constant(64, access.cell_size) <= other_address;
+                auto other_lt_curr = other_address + SymBitVector::constant(64, other_width) <= cell_start_addr;
                 state.constraints.push_back(curr_lt_other | other_lt_curr);
               }
             }
@@ -473,8 +475,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     constraints.push_back(it);
 
   map<size_t, pair<SymBitVector, size_t>> cell_addr_map;
-  map<size_t, pair<size_t, size_t>> target_line_cell_map;
-  map<size_t, pair<size_t, size_t>> rewrite_line_cell_map;;
+  map<size_t, CellMemory::SymbolicAccess> target_line_cell_map;
+  map<size_t, CellMemory::SymbolicAccess> rewrite_line_cell_map;;
 
   if(memory) {
     state_t.memory = memories.first;

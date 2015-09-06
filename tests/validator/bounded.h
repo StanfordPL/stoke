@@ -303,7 +303,7 @@ TEST_F(BoundedValidatorBaseTest, EasyMemory) {
 
   add_testcases(3, target);
 
-  EXPECT_TRUE(validator->verify(target, rewrite)) << "CEGS:" << std::endl << validator->get_counter_examples()[0] << std::endl;
+  EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 

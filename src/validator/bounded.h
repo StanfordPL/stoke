@@ -76,7 +76,7 @@ private:
   static Cfg path_cfg(const Cfg& cfg, const CfgPath& p);
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no,
-                     const std::map<size_t, std::pair<size_t, size_t>>&,
+                     const std::map<size_t, CellMemory::SymbolicAccess>&,
                      std::map<size_t, std::pair<SymBitVector, size_t>>&);
   /** Is there a jump in the path following this basic block? */
   static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
