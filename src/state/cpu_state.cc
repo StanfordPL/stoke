@@ -89,6 +89,8 @@ uint64_t CpuState::get_addr(x64asm::Instruction instr) const {
     return gp[x64asm::rsp].get_fixed_quad(0) - arg.size()/8;
   } else if (instr.is_pop()) {
     return gp[x64asm::rsp].get_fixed_quad(0);
+  } else if (instr.is_ret()) {
+    return gp[x64asm::rsp].get_fixed_quad(0);
   }
 
   // instruction not supported
