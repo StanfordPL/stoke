@@ -185,16 +185,11 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     auto pair = concrete_vector[i];
     uint64_t address = pair.first;
     size_t size = pair.second.num_fixed_bytes();
-    cout << "Scheduling " << hex << address << " of size " << size << endl;
-    cout << "max_addr = " << max_addr << endl;
 
     if(address - max_addr < 32) {
       uint64_t new_size = address + size - last_segment->lower_bound() + 1;
-      cout << "Resizing existing segment from " << last_segment->lower_bound() << "+"
-           << last_segment->upper_bound() << " to size " << new_size << endl;
       last_segment->resize(last_segment->lower_bound(), new_size);
     } else {
-      cout << "Allocating new segment" << endl;
       Memory m;
       m.resize(address, size + 1);
       segments.push_back(m);
@@ -202,7 +197,6 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     }
 
     for(size_t i = 0; i < size; ++i) {
-      cout << "Writing address " << address + i << endl;
       last_segment->set_valid(address + i, true);
       (*last_segment)[address + i] = pair.second.get_fixed_byte(i);
     }
