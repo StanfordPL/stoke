@@ -108,7 +108,7 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   // order traces by start position, and then largest to smallest
   auto compare = [] (const MemoryAccess& m1, const MemoryAccess& m2) {
     if(m1.address == m2.address)
-      return m1.width > m2.width;    
+      return m1.width > m2.width;
     else
       return m1.address < m2.address;
   };
@@ -130,11 +130,11 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
       auto& last_cell = cell_list[cell_list.size()-1];
       assert(last_cell.first <= lower_bound);
       cout << "last_cell: " << last_cell.first << "+" <<  last_cell.second << endl;
-      if(last_cell.first <= lower_bound - last_cell.second) {
+      if(lower_bound - last_cell.first > last_cell.second) {
         // allocate a new cell
         cout << "Allocating cell " << lower_bound << "+" << access.width/8 << endl;
         cell_list.push_back(pair<uint64_t, size_t>(lower_bound, access.width/8));
-      } else if (last_cell.first < upper_bound - last_cell.second){
+      } else if (upper_bound - last_cell.first > last_cell.second) {
         // expand the last existing cell
         cout << "Resizing cell " << last_cell.first << "+" << (upper_bound-last_cell.first) << endl;
         last_cell.second = upper_bound - last_cell.first;
@@ -168,7 +168,7 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
           assert(sa.cell_offset + sa.size <= sa.cell_size);
           found = true;
           break;
-        }        
+        }
       }
       assert(found);
 
@@ -188,15 +188,11 @@ void tracer_callback(const StateCallbackData& data, void* arg) {
 
 bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory& target_memory, const CellMemory& rewrite_memory, const Cfg& target, const Cfg& rewrite) {
 
-  // this map keeps track of whether we've initialized a given memory cell yet
-  std::map<size_t, bool> cell_set;
-  // this map tracks (address, value) pairs for memory
-  std::map<uint64_t, BitVector> addr_value_pairs;
 
-  // check if the last sandbox run was a success
-  ErrorCode last_err = ErrorCode::NORMAL;
 
   // loop through target and rewrite memory dereferences and resolve them
+  /*
+  // this map tracks (address, value) pairs for memory
   for(size_t k = 0; k < 2; ++k) {
     auto& cfg = k ? target : rewrite;
     auto& memory = k ? target_memory : rewrite_memory;
@@ -217,16 +213,6 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
       if(instr.is_memory_dereference() && !instr.is_ret()) {
         DEBUG_BUILD_TC(cout << "BTM: Working on " << instr << " of " << ( k ? "target" : "rewrite") << endl;)
         DEBUG_BUILD_TC(cout << "  (line " << i << ")" << endl;)
-        // which cell?
-        size_t cell = -1;
-        if(map.count(i)) {
-          cell = map[i].cell;
-          if(cell_set[cell]) {
-            DEBUG_BUILD_TC(cout << "  * cell set" << endl;)
-            continue;
-          }
-        }
-
         // we need to find the address at which this dereference happens
         build_testcase_address_ = 0;
         build_testcase_width_ = 0;
@@ -242,17 +228,31 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
                        cout << "  * ran=" << build_testcase_ran_ << endl;
                        cout << "  * error=" << readable_error_code(last_err) << endl;)
 
+        // which cell?
+        size_t cell = -1;
+        if(map.count(i)) {
+          cell = map[i].cell;
+        }
+
         //extract the symbolic value
         if(cell != (size_t)-1) {
           const SymBitVector* v = &memory.init_cells_.at(cell);
           auto var = static_cast<const SymBitVectorVar*>(v->ptr);
           auto bv = solver.get_model_bv(var->get_name(), var->get_size());
-          addr_value_pairs[build_testcase_address_] = bv;
-          cell_set[cell] = true;
+
+          assert(bv.num_fixed_bytes() == map[i].cell_size);
+          assert(build_testcase_width_/8 == map[i].size);
+
+          auto extract = BitVector(map[i].size*8);
+          for(size_t i = map[i].cell_offset; i < map[i].cell_offset + map[i].size; ++i) {
+            extract.get_fixed_byte(i - map[i].cell_offset) = bv.get_fixed_byte(i);
+          }
+
+          addr_value_pairs[build_testcase_address_] = extract;
 
           DEBUG_BUILD_TC(
-            cout << " * cell with bv: " << (size_t)bv.get_fixed_byte(0) << endl;
-            cout << " * size of bv: " << bv.num_fixed_bytes() << endl;)
+            cout << " * cell with bv: " << (size_t)extract.get_fixed_byte(0) << endl;
+            cout << " * size of bv: " << extract.num_fixed_bytes() << endl;)
         } else {
           addr_value_pairs[build_testcase_address_] = BitVector(build_testcase_width_);
           DEBUG_BUILD_TC(
@@ -266,14 +266,37 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
         for(auto p : addr_value_pairs) {
         cout << hex << p.first << dec << " (of size " << p.second.num_fixed_bytes() << ")" << endl;
         })
-        if(!Validator::memory_map_to_testcase(addr_value_pairs, ceg))
-          return false;
+           return false;
         DEBUG_BUILD_TC(cout << "Testcase so far: " << endl << ceg << endl;)
         sandbox_->clear_inputs();
         sandbox_->insert_input(ceg);
       }
     }
+  }*/
+
+  auto access_map = target_memory.get_line_cell_map();  
+  std::map<uint64_t, BitVector> addr_value_pairs;
+
+  for(auto pair : access_map) {
+    auto access = pair.second;
+    auto cell = access.cell;
+  
+    stringstream ss;
+    ss << "CELL_" << cell << "_ADDR";
+
+    auto addr_bv = solver.get_model_bv(ss.str(), 64);
+    auto address = addr_bv.get_fixed_quad(0);
+
+    const SymBitVector* v = &target_memory.init_cells_.at(cell);
+    auto value_var = static_cast<const SymBitVectorVar*>(v->ptr);
+    auto value_bv = solver.get_model_bv(value_var->get_name(), value_var->get_size());
+
+    addr_value_pairs[address] = value_bv;
   }
+
+  if(!Validator::memory_map_to_testcase(addr_value_pairs, ceg))
+    return false;
+
 
   // Run sandbox on target to see if we did well.
   cout << "Running sandbox with tc: " << endl << *(sandbox_->get_input(0)) << endl;
@@ -282,7 +305,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   sandbox_->insert_before(tracer_callback, this);
   sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
   sandbox_->run();
-  last_err = sandbox_->get_output(0)->code;
+  auto last_err = sandbox_->get_output(0)->code;
   cout << "Ran sandbox; got " << readable_error_code(last_err) << endl;
 
   return last_err == ErrorCode::NORMAL;

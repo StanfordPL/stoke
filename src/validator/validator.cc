@@ -186,14 +186,16 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     uint64_t address = pair.first;
     size_t size = pair.second.num_fixed_bytes();
 
-    if(address - max_addr < 32) {
-      uint64_t new_size = address + size - last_segment->lower_bound();
-      last_segment->resize(last_segment->lower_bound(), new_size);
-    } else {
-      Memory m;
-      m.resize(address, size);
-      segments.push_back(m);
-      last_segment = &segments[segments.size()-1];
+    if(address >= max_addr - size) {
+      if(address - max_addr < 32) {
+        uint64_t new_size = address + size - last_segment->lower_bound();
+        last_segment->resize(last_segment->lower_bound(), new_size);
+      } else {
+        Memory m;
+        m.resize(address, size);
+        segments.push_back(m);
+        last_segment = &segments[segments.size()-1];
+      }
     }
 
     for(size_t i = 0; i < size; ++i) {
@@ -218,6 +220,12 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
   for(size_t i = 3; i < segments.size(); ++i) {
     cs.segments.push_back(segments[i]);
   }
+
+  cout << "Filling up memory using this map..." << endl;
+  for(auto p : concrete) {
+    cout << hex << p.first << "+" << p.second.num_fixed_bytes() << endl; 
+  }
+  cout << "Here's the testcase: " << endl << cs << endl;
 
   return true;
 }
