@@ -291,7 +291,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
     auto value_var = static_cast<const SymBitVectorVar*>(v->ptr);
     auto value_bv = solver.get_model_bv(value_var->get_name(), value_var->get_size());
 
-    cout << "Cell " << cell << " address = " << hex << address 
+    cout << "Cell " << cell << " address = " << hex << address
          << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;
 
     addr_value_pairs[address] = value_bv;
