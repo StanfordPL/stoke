@@ -77,24 +77,24 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   /* Run the solver and see */
   try {
     switch (s.check()) {
-      case unsat: {
-        return false;
-      }
+    case unsat: {
+      return false;
+    }
 
-      case sat: {
-        model_ = new z3::model(s.get_model());
-        return true;
-      }
+    case sat: {
+      model_ = new z3::model(s.get_model());
+      return true;
+    }
 
-      case unknown: {
-        error_ = "z3 gave up.";
-        return false;
-      }
+    case unknown: {
+      error_ = "z3 gave up.";
+      return false;
+    }
 
-      default: {
-        assert(false);
-        return false;
-      }
+    default: {
+      assert(false);
+      return false;
+    }
     }
   } catch (std::exception e) {
     std::stringstream ss;
