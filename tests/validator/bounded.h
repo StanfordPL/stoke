@@ -1064,41 +1064,121 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect) {
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
   std::stringstream sst;
-  sst << ".wcslen:" << std::endl;
+  sst << ".wcslen:" << std::endl; // BB 1
   sst << "leal (%rdi), %ecx" << std::endl;
   sst << "movl (%r15, %rcx), %ecx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
   sst << "je .L_22" << std::endl;
-  sst << "movq %rdi, %rax" << std::endl;
-  sst << ".L_10:" << std::endl;
+  sst << "movq %rdi, %rax" << std::endl; //BB 2
+  sst << ".L_10:" << std::endl; // BB3
   sst << "addq $0x4, %rax" << std::endl;
   sst << "leal (%rax), %edx" << std::endl;
   sst << "movl (%r15, %rdx), %edx" << std::endl;
   sst << "jne .L_10" << std::endl;
-  sst << "subq %rdi, %rax" << std::endl;
+  sst << "subq %rdi, %rax" << std::endl; // BB4
   sst << "sarq $0x2, %rax" << std::endl;
   sst << "retq" << std::endl;
-  sst << ".L_22:" << std::endl;
+  sst << ".L_22:" << std::endl; // BB5
   sst << "xorl %eax, %eax" << std::endl;
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, def_ins, live_outs);
 
   std::stringstream ssr;
-  ssr << ".wcslen:" << std::endl;
+  ssr << ".wcslen:" << std::endl; //BB1
   ssr << "movl %edi, %eax" << std::endl;
   ssr << "movl (%r15, %rax, 1), %ecx" << std::endl;
   ssr << "testl %ecx, %ecx" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
   ssr << "je .L_22" << std::endl;
-  ssr << ".L_10:" << std::endl;
+  ssr << ".L_10:" << std::endl; //BB2
   ssr << "addl $0x4, %eax" << std::endl;
   ssr << "movl (%r15, %rax, 1), %edx" << std::endl;
   ssr << "testl %edx, %edx" << std::endl;
   ssr << "jne .L_10" << std::endl;
-  ssr << "subl %edi, %eax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "subl %edi, %eax" << std::endl; //BB3
   ssr << "sarq $0x2, %rax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
   ssr << "retq" << std::endl;
-  ssr << ".L_22:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << ".L_22:" << std::endl; //BB4
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
   ssr << "addb $0x80, %al" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
   ssr << "andl %ecx, %eax" << std::endl;
+  ssr << "nopl %eax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nopl %eax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
@@ -1123,7 +1203,76 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect) {
       tc.stack.set_valid(j, true);
       tc.stack[j] = rand() % 256;
     }
-    std::cout << "INSERTING TC" << std::endl << tc << std::endl;
+    sandbox->insert_input(tc);
+  }
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_EQ(0ul, validator->counter_examples_available());
+}
+
+TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".wcslen:" << std::endl; // BB 1
+  sst << "leal (%rdi), %ecx" << std::endl;
+  sst << "movl (%r15, %rcx), %ecx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "je .L_22" << std::endl;
+  sst << "movq %rdi, %rax" << std::endl; //BB 2
+  sst << ".L_10:" << std::endl; // BB3
+  sst << "addq $0x4, %rax" << std::endl;
+  sst << "leal (%rax), %edx" << std::endl;
+  sst << "movl (%r15, %rdx), %edx" << std::endl;
+  sst << "jne .L_10" << std::endl;
+  sst << "subq %rdi, %rax" << std::endl; // BB4
+  sst << "sarq $0x2, %rax" << std::endl;
+  sst << "retq" << std::endl;
+  sst << ".L_22:" << std::endl; // BB5
+  sst << "xorl %eax, %eax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".wcslen:" << std::endl;
+  ssr << "movl %edi, %edi" << std::endl;
+  ssr << "addq %r15, %rdi" << std::endl;
+  ssr << "movq %rdi, %rsi" << std::endl;
+  ssr << ".head:" << std::endl;
+  ssr << "movl (%rdi), %ecx" << std::endl;
+  ssr << "addq $0x4, %rdi" << std::endl;
+  ssr << "testl %ecx, %ecx" << std::endl;
+  ssr << "jnz .head" << std::endl;
+  ssr << "subq %rsi, %rdi" << std::endl;
+  ssr << "subq $0x4, %rdi" << std::endl;
+  ssr << "movq %rdi, %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  for(size_t i = 0; i < 20; ++i) {
+    CpuState tc = get_state();
+    size_t count = rand() % 6;
+    uint64_t start = tc[x64asm::edi] + tc[x64asm::r15];
+    tc.heap.resize(start, (count+1)*4);
+    for(size_t j = 0; j < count*4; j++) {
+      tc.heap.set_valid(start + j, true);
+      tc.heap[start + j] = rand() % 256;
+    }
+    for(size_t j = count*4; j < count*4+4; ++j) {
+      tc.heap.set_valid(start + j, true);
+      tc.heap[start + j] = 0;
+    }
+
+    uint64_t stack_start = tc[x64asm::rsp] - 8;
+    tc.stack.resize(stack_start, 16);
+    for(size_t j = stack_start; j < stack_start+16; ++j) {
+      tc.stack.set_valid(j, true);
+      tc.stack[j] = rand() % 256;
+    }
     sandbox->insert_input(tc);
   }
 
