@@ -156,8 +156,8 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
       CellMemory::SymbolicAccess sa;
       sa.line = access.line;
       sa.size = access.width/8;
+      sa.cell_size = -1;
 
-      bool found = false;
       for(size_t j = 0; j < cell_list.size(); ++j) {
         auto cell = cell_list[j];
         // cells are in ascending order, so only need to check the lower bound
@@ -166,11 +166,10 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
           sa.cell_size = cell.second;
           sa.cell_offset = access.address - cell.first;
           assert(sa.cell_offset + sa.size <= sa.cell_size);
-          found = true;
           break;
         }
       }
-      assert(found);
+      assert(sa.cell_size != -1);
 
       map[sa.line] = sa;
     }
