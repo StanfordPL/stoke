@@ -639,13 +639,13 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
     if(segment->upper_bound()) {
       assm_.mov((R64)rax, Imm64(segment->upper_bound()));
       assm_.cmp(rdi, rax);
-      assm_.jg_1(segment_cases[i]);
+      assm_.ja_1(segment_cases[i]);
     }
 
     // compare the address (rdi) with the lower bound of the segment (rax)
     assm_.mov((R64)rax, Imm64(segment->lower_bound()));
     assm_.cmp(rdi, rax);
-    assm_.jl_1(segment_cases[i]);
+    assm_.jb_1(segment_cases[i]);
 
     // subtract the lower bound from rdi to get the offset into the segment
     assm_.sub(rdi, rax);

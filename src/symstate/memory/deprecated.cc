@@ -41,13 +41,14 @@ SymBool DeprecatedMemory::write(SymBitVector address, SymBitVector value, uint16
 
   state_->constraints.push_back(addr_var == address);
   state_->constraints.push_back(value_var == value);
+  state_->constraints.push_back(address < SymBitVector::constant(64, 0-size/8-1));
 
   MemoryAccess mw({ addr_var, value_var, size, line_no });
   writes_.push_back(mw);
 
   if(heap_.type()) {
     return (addr_var < SymBitVector::constant(64, heap_start_)) |
-           (addr_var > SymBitVector::constant(64, heap_start_ + heap_size_ - size));
+           (addr_var > SymBitVector::constant(64, heap_start_ + heap_size_ - size/8));
   } else {
     return SymBool::_false();
   }
@@ -84,6 +85,9 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
 
   state_->constraints.push_back(addr_var == address);
 
+  state_->constraints.push_back(address < SymBitVector::constant(64, 0-size/8-1));
+
+
   MemoryAccess mw({ addr_var, value, size, line_no });
   reads_.push_back(mw);
 
@@ -93,7 +97,7 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
   // Check if this value was concretely initialized in heap.
   if(heap_.type() != SymBitVector::NONE) {
     segv = (address < SymBitVector::constant(64, heap_start_)) |
-           (address > SymBitVector::constant(64, heap_start_ + heap_size_ - size));
+           (address > SymBitVector::constant(64, heap_start_ + heap_size_ - size/8));
 
     auto offset = (address - SymBitVector::constant(64, heap_start_)) <<
                   SymBitVector::constant(64, 3);
@@ -259,12 +263,12 @@ vector<pair<string, uint16_t>> DeprecatedMemory::get_address_vars() const {
   vector<pair<string, uint16_t>> list;
   for(size_t i = 0; i < writes_.size(); ++i) {
     assert(writes_[i].value.ptr->type() == SymBitVector::VAR);
-    const auto* var = static_cast<const SymBitVectorVar*>(writes_[i].value.ptr);
+    const auto* var = static_cast<const SymBitVectorVar*>(writes_[i].address.ptr);
     list.push_back(std::pair<std::string, uint16_t>(var->name_, var->size_));
   }
   for(size_t i = 0; i < reads_.size(); ++i) {
     assert(reads_[i].value.ptr->type() == SymBitVector::VAR);
-    const auto* var = static_cast<const SymBitVectorVar*>(reads_[i].value.ptr);
+    const auto* var = static_cast<const SymBitVectorVar*>(reads_[i].address.ptr);
     list.push_back(std::pair<std::string, uint16_t>(var->name_, var->size_));
   }
   return list;

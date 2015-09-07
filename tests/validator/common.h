@@ -337,7 +337,8 @@ private:
 
     bool same = true;
 
-    EXPECT_CPU_EQ_CODE(expect.code, actual.code, "The error codes differ.");
+    // BRC -- I don't think we can/should rely on the validator to get this right.
+    //EXPECT_CPU_EQ_CODE(expect.code, actual.code, "The error codes differ.");
 
     for(auto it = live_outs_.gp_begin(); it != live_outs_.gp_end(); ++it) {
       x64asm::R r = *it;

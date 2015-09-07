@@ -26,8 +26,27 @@ SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
     return SymBool::_false();
   }
 
-  auto cell_pair = map_[line_no];
-  cells_[cell_pair.first] = value;
+  auto access = map_[line_no];
+
+  assert(access.cell_offset + access.size <= access.cell_size);
+
+  if(access.size == access.cell_size) {
+    assert(access.cell_offset == 0);
+    cells_[access.cell] = value;
+  } else {
+    auto old_value = cells_[access.cell];
+
+    if(access.cell_offset == 0) {
+      cells_[access.cell] = old_value[access.cell_size*8-1][access.size*8] || value;
+    } else if(access.cell_offset == access.cell_size - access.size) {
+      cells_[access.cell] = value || old_value[access.cell_offset*8-1][0];
+    } else {
+      cells_[access.cell] = old_value[access.cell_size*8-1][access.size*8 + access.cell_offset*8] ||
+                            value ||
+                            old_value[access.cell_offset*8-1][0];
+    }
+  }
+
   return SymBool::_false();
 }
 
@@ -39,8 +58,19 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
     return pair<SymBitVector,SymBool>(SymBitVector::tmp_var(size), SymBool::_false());
   }
 
-  auto cell_pair = map_[line_no];
-  return std::pair<SymBitVector,SymBool>(cells_[cell_pair.first], SymBool::_false());
+  auto access = map_[line_no];
+
+  SymBitVector value;
+
+  if(access.size == access.cell_size) {
+    assert(access.cell_offset == 0);
+    value = cells_[access.cell];
+  } else {
+    SymBitVector cell_value = cells_[access.cell];
+    value = cell_value[access.size*8 + access.cell_offset*8 - 1][access.cell_offset*8];
+  }
+
+  return std::pair<SymBitVector,SymBool>(value, SymBool::_false());
 }
 
 /** Create a constraint expressing these memory cells with another set. */
@@ -58,7 +88,7 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
     }
     if(!found) {
       // need to add new, unconstrained cell to other.
-      other.cells_[p.first] = SymBitVector::tmp_var(cell_sizes_[p.first]);
+      other.cells_[p.first] = SymBitVector::tmp_var(cell_sizes_[p.first]*8);
       other.init_cells_[p.first] = other.cells_[p.first];
       other.cell_sizes_[p.first] = cell_sizes_[p.first];
       condition = condition & (other.cells_[p.first] == p.second);
@@ -76,7 +106,7 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
     }
     if(!found) {
       // need to add new, unconstrained cell to self.
-      cells_[q.first] = SymBitVector::tmp_var(other.cell_sizes_[q.first]);
+      cells_[q.first] = SymBitVector::tmp_var(other.cell_sizes_[q.first]*8);
       init_cells_[q.first] = cells_[q.first];
       cell_sizes_[q.first] = other.cell_sizes_[q.first];
       condition = condition & (cells_[q.first] == q.second);
