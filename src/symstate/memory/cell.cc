@@ -60,14 +60,14 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
 
   auto access = map_[line_no];
 
-  SymBitVector value;  
+  SymBitVector value;
 
   if(access.size == access.cell_size) {
     assert(access.cell_offset == 0);
     value = cells_[access.cell];
   } else {
     SymBitVector cell_value = cells_[access.cell];
-    value = cell_value[access.size*8 + access.cell_offset*8][access.cell_offset*8-1];
+    value = cell_value[access.size*8 + access.cell_offset*8 - 1][access.cell_offset*8];
   }
 
   return std::pair<SymBitVector,SymBool>(value, SymBool::_false());

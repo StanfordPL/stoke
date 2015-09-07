@@ -346,8 +346,22 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
           } else {
             cell_addr_map[cell] = pair<SymBitVector,size_t>(cell_start_addr, access.cell_size);
 
-            // by the way, don't go past address 0xffffffffffffffff.  Idiot.
-            state.constraints.push_back(address <= SymBitVector::constant(64, 0-width));
+            // Let's get that cell start address into a variable to use later
+            stringstream ss;
+            ss << "CELL_" << cell << "_ADDR";
+            auto cell_addr_var = SymBitVector::var(64, ss.str());
+            state.constraints.push_back(cell_addr_var == cell_start_addr);
+
+            // By the way, don't go past address 0xffffffffffffffff.  Idiot.
+            // In fact, for my sanity, let's keep it under 0xffffffffffffffc0,
+            // except in debug mode where we want to find all the issues.
+#ifdef NDEBUG
+            state.constraints.push_back(
+                cell_start_addr <= SymBitVector::constant(64, -access.cell_size-0x3f));
+#else
+            state.constraints.push_back(
+                cell_start_addr <= SymBitVector::constant(64, -access.cell_size));
+#endif
 
             // assert difference with previous writes to other cells
             for(auto p : cell_addr_map) {

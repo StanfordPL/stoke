@@ -350,13 +350,61 @@ TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv) {
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
   ssr << "movw $0xcafe, (%rax)" << std::endl;
-  ssr << "movq $0xc0de, 0x2(%rax)" << std::endl;
+  ssr << "movw $0xc0de, 0x2(%rax)" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 
   add_testcases(3, target);
 
   EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
+TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv2) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "movl $0xc0decafe, (%rax)" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, live_outs, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "movb $0xfe, (%rax)" << std::endl;
+  ssr << "movb $0xca, 0x1(%rax)" << std::endl;
+  ssr << "movw $0xc0de, 0x2(%rax)" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, live_outs, live_outs);
+
+  add_testcases(3, target);
+
+  EXPECT_TRUE(validator->verify(target, rewrite)) << std::endl;
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
+TEST_F(BoundedValidatorBaseTest, MemoryOverlapBad) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "movl $0xc0decafe, (%rax)" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, live_outs, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "movb $0xfe, -0x1(%rax)" << std::endl;
+  ssr << "movb $0xca, 0x0(%rax)" << std::endl;
+  ssr << "movw $0xc0de, 0x1(%rax)" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, live_outs, live_outs);
+
+  add_testcases(3, target);
+
+  EXPECT_FALSE(validator->verify(target, rewrite)) << std::endl;
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
@@ -691,6 +739,66 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrect) {
   ssr << "movl %r8d, -0x4(%rsi, %rcx, 4)" << std::endl;
   ssr << "cmpl %ecx, %edx" << std::endl;
   ssr << "jne .top" << std::endl;
+  ssr << ".exit:" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  StateGen sg(sg_sandbox);
+  sg.set_max_value(x64asm::rdx, 0xa);
+  sg.set_bitmask(x64asm::rsi, 0x3f00);
+  sg.set_bitmask(x64asm::rdi, 0x3f00);
+  sg.set_max_memory(1024);
+  sg.set_max_attempts(64);
+
+  for(size_t i = 0; i < 32; ++i) {
+    CpuState tc;
+    bool b = sg.get(tc, target);
+    ASSERT_TRUE(b);
+    sandbox->insert_input(tc);
+  }
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
+TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedCorrect) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
+  auto live_outs = x64asm::RegSet::empty();
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "xorl %ecx, %ecx" << std::endl;
+  sst << "testl %edx, %edx" << std::endl;
+  sst << "je .exit" << std::endl;
+  sst << ".top:" << std::endl;
+  sst << "movl (%rdi, %rcx, 4), %eax" << std::endl;
+  sst << "movl %eax, (%rsi, %rcx, 4)" << std::endl;
+  sst << "incl %ecx" << std::endl;
+  sst << "cmpl %ecx, %edx" << std::endl;
+  sst << "jne .top" << std::endl;
+  sst << ".exit:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "xorl %ecx, %ecx" << std::endl;
+  ssr << "jmpq .enter" << std::endl;
+  ssr << ".double:" << std::endl;
+  ssr << "movq (%rdi, %rcx, 4), %rax" << std::endl;
+  ssr << "movq %rax, (%rsi, %rcx, 4)" << std::endl;
+  ssr << "addl $0x2, %ecx" << std::endl;
+  ssr << "subl $0x2, %edx" << std::endl;
+  ssr << ".enter:" << std::endl;
+  ssr << "cmpl $0x1, %edx" << std::endl;
+  ssr << "je .one_more" << std::endl;
+  ssr << "cmpl $0x0, %edx" << std::endl;
+  ssr << "je .exit" << std::endl;
+  ssr << "jmpq .double" << std::endl;
+  ssr << ".one_more:" << std::endl;
+  ssr << "movl (%rdi, %rcx, 4), %eax" << std::endl;
+  ssr << "movl %eax, (%rsi, %rcx, 4)" << std::endl;
   ssr << ".exit:" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
