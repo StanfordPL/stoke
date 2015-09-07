@@ -274,13 +274,13 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
     }
   }*/
 
-  auto access_map = target_memory.get_line_cell_map();  
+  auto access_map = target_memory.get_line_cell_map();
   std::map<uint64_t, BitVector> addr_value_pairs;
 
   for(auto pair : access_map) {
     auto access = pair.second;
     auto cell = access.cell;
-  
+
     stringstream ss;
     ss << "CELL_" << cell << "_ADDR";
 
@@ -291,6 +291,9 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
     auto value_var = static_cast<const SymBitVectorVar*>(v->ptr);
     auto value_bv = solver.get_model_bv(value_var->get_name(), value_var->get_size());
 
+    cout << "Cell " << cell << " address = " << hex << address 
+         << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;
+
     addr_value_pairs[address] = value_bv;
   }
 
@@ -299,11 +302,12 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
 
   // Run sandbox on target to see if we did well.
-  cout << "Running sandbox with tc: " << endl << *(sandbox_->get_input(0)) << endl;
-  sandbox_->clear_callbacks();
+  cout << "Running sandbox with tc: " << endl << ceg << endl;
+  sandbox_->reset();
   sandbox_->insert_function(target);
   sandbox_->insert_before(tracer_callback, this);
   sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
+  sandbox_->insert_input(ceg);
   sandbox_->run();
   auto last_err = sandbox_->get_output(0)->code;
   cout << "Ran sandbox; got " << readable_error_code(last_err) << endl;

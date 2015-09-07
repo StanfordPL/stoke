@@ -352,15 +352,18 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
             auto cell_addr_var = SymBitVector::var(64, ss.str());
             state.constraints.push_back(cell_addr_var == cell_start_addr);
 
+            auto x = cell_addr_var == cell_start_addr;
+            cout << "ADDR CONST: " << x << endl;
+
             // By the way, don't go past address 0xffffffffffffffff.  Idiot.
             // In fact, for my sanity, let's keep it under 0xffffffffffffffc0,
             // except in debug mode where we want to find all the issues.
 #ifdef NDEBUG
             state.constraints.push_back(
-                cell_start_addr <= SymBitVector::constant(64, -access.cell_size-0x3f));
+              cell_start_addr <= SymBitVector::constant(64, -access.cell_size-0x3f));
 #else
             state.constraints.push_back(
-                cell_start_addr <= SymBitVector::constant(64, -access.cell_size));
+              cell_start_addr <= SymBitVector::constant(64, -access.cell_size));
 #endif
 
             // assert difference with previous writes to other cells

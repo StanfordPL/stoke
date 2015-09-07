@@ -221,11 +221,13 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     cs.segments.push_back(segments[i]);
   }
 
+  /*
   cout << "Filling up memory using this map..." << endl;
   for(auto p : concrete) {
-    cout << hex << p.first << "+" << p.second.num_fixed_bytes() << endl; 
+    cout << hex << p.first << "+" << p.second.num_fixed_bytes() << endl;
   }
   cout << "Here's the testcase: " << endl << cs << endl;
+  */
 
   return true;
 }
@@ -238,6 +240,7 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) 
     stringstream name;
     name << r64s[i] << name_suffix;
     cs.gp[r64s[i]] = smt.get_model_bv(name.str(), 64);
+    cout << "Var " << name.str() << " has value " << hex << cs.gp[r64s[i]].get_fixed_quad(0) << endl;
   }
 
   for(size_t i = 0; i < ymms.size(); ++i) {

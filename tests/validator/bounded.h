@@ -22,7 +22,7 @@ class BoundedValidatorBaseTest : public ::testing::Test {
 public:
 
   BoundedValidatorBaseTest() {
-    solver = new Cvc4Solver();
+    solver = new Z3Solver();
     sandbox = new Sandbox();
     sandbox->set_max_jumps(4096);
     sandbox->set_abi_check(false);
@@ -410,7 +410,7 @@ TEST_F(BoundedValidatorBaseTest, MemoryOverlapBad) {
 
 TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
 
-  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx;
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
   std::stringstream sst;
@@ -449,7 +449,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
 
 TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
 
-  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax + x64asm::rdx;
 
   std::stringstream sst;
   sst << ".foo:" << std::endl;
@@ -491,7 +491,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
 
 TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
 
-  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx;
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
   std::stringstream sst;
@@ -661,7 +661,7 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
 
 TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
 
-  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx;
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
   std::stringstream sst;
@@ -861,10 +861,13 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
   sg.set_max_memory(1024);
   sg.set_max_attempts(64);
 
-  for(size_t i = 0; i < 64; ++i) {
+  for(size_t i = 0; i < 32; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
     ASSERT_TRUE(b);
+    if(i < 8) {
+      tc.gp[x64asm::rdx].get_fixed_quad(0) = 0;
+    }
     sandbox->insert_input(tc);
   }
 
