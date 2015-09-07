@@ -95,7 +95,7 @@ void StraightLineValidator::generate_constraints(const stoke::Cfg& f1, const sto
   cout << "============= CONSTRAINTS =====================" << endl;
   for(auto it : constraints)
     cout << it << endl;
-  */
+    */
 }
 
 void StraightLineValidator::build_circuit(const Instruction& instr, SymState& state) const {
@@ -165,12 +165,19 @@ CpuState StraightLineValidator::state_from_model(SMTSolver& smt, const string& n
     if(!mem)
       continue;
     for(auto p : mem->get_address_vars()) {
-      concrete[smt.get_model_bv(p.first, 64).get_fixed_quad(0)] = BitVector(p.second);
+      auto address = smt.get_model_bv(p.first, 64).get_fixed_quad(0);
+      concrete[address] = BitVector(p.second);
+      //cout << "memory var name: " << p.first << " of size " << p.second << endl;
+      //cout << "  address: " << hex << address << endl;
     }
   }
 
   // add to testcase
   memory_map_to_testcase(concrete, cs);
+  /*
+  cout << "Generated TC: " << endl;
+  cout << cs << endl;
+  */
 
   return cs;
 
