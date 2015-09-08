@@ -73,15 +73,21 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
   return std::pair<SymBitVector,SymBool>(value, SymBool::_false());
 }
 
-/** Create a constraint expressing these memory cells with another set. */
-SymBool CellMemory::equality_constraint(CellMemory& other) {
+SymBool CellMemory::aliasing_formula(CellMemory& other) {
 
+  equalize_cells(other);
   SymBool condition = SymBool::_true();
+
+  return condition;
+
+}
+
+void CellMemory::equalize_cells(CellMemory& other) {
+
   for(auto p : cells_) {
     bool found = false;
     for(auto q : other.cells_) {
       if(p.first == q.first) {
-        condition = condition & (p.second == q.second);
         found = true;
         break;
       }
@@ -91,7 +97,7 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
       other.cells_[p.first] = SymBitVector::tmp_var(cell_sizes_[p.first]*8);
       other.init_cells_[p.first] = other.cells_[p.first];
       other.cell_sizes_[p.first] = cell_sizes_[p.first];
-      condition = condition & (other.cells_[p.first] == p.second);
+      other.cell_addrs_[p.first] = SymBitVector::tmp_var(64);
     }
   }
 
@@ -109,8 +115,23 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
       cells_[q.first] = SymBitVector::tmp_var(other.cell_sizes_[q.first]*8);
       init_cells_[q.first] = cells_[q.first];
       cell_sizes_[q.first] = other.cell_sizes_[q.first];
-      condition = condition & (cells_[q.first] == q.second);
+      cell_addrs_[q.first] = SymBitVector::tmp_var(64);
     }
+  }
+
+
+}
+
+/** Create a constraint expressing these memory cells with another set. */
+SymBool CellMemory::equality_constraint(CellMemory& other) {
+
+  SymBool condition = SymBool::_true();
+  equalize_cells(other);
+
+  for(auto p : cells_) {
+    size_t cell = p.first;
+    assert(other.cells_.count(cell));
+    condition = condition & (p.second == other.cells_[cell]);
   }
 
   return condition;
