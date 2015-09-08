@@ -17,7 +17,7 @@
 #include "src/validator/bounded.h"
 
 //#define BOUNDED_DEBUG(X) {}
-#define BOUNDED_DEBUG(X) {X}
+#define BOUNDED_DEBUG(X) { }
 
 using namespace std;
 using namespace stoke;
@@ -40,34 +40,37 @@ bool vectors_have_common(std::vector<size_t> left, std::vector<size_t> right, si
   return false;
 }
 
-/*
 vector<size_t> enumerate_accesses(const Cfg& cfg, const CfgPath& P) {
   vector<size_t> result;
   auto rewrite = CfgPaths::rewrite_cfg_with_path(cfg, P);
-  for(size_t i = 0; i < rewrite.size(); ++i) {
-    auto instr = rewrite[i];
+  for(size_t i = 0, ie = rewrite.get_code().size(); i < ie; ++i) {
+    auto instr = rewrite.get_code()[i];
     if(instr.is_memory_dereference()) {
-      result.back_back(i);
+      result.push_back(i);
     }
   }
   return result;
 }
 
-vector<pair<CellMemory*, CellMemory*>> enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
+vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
                                     const CfgPath& P, const CfgPath& Q,
                                     const vector<size_t>& target_con_access,
                                     const vector<size_t>& rewrite_con_access,
-                                    const vector<SymbolicAccess>& target_sym_access,
-const vector<SymbolicAccess>& rewrite_sym_access) {
+                                    const vector<CellMemory::SymbolicAccess>& target_sym_access,
+                                    const vector<CellMemory::SymbolicAccess>& rewrite_sym_access) {
 
+  return vector<pair<CellMemory*, CellMemory*>>();
 }
 
 // ASSUMPTION: the target and rewrite both use memory
-vector<pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
   auto target_concrete_accesses = enumerate_accesses(target, P);
-  auto rewrite_concrete_accesses = enumerate_accesses(target, Q);
+  auto rewrite_concrete_accesses = enumerate_accesses(rewrite, Q);
 
+  // TODO: think about this
+  if(target_concrete_accesses.size() == 0 || rewrite_concrete_accesses.size() == 0)
+    return vector<pair<CellMemory*, CellMemory*>>();
   assert(target_concrete_accesses.size());
   assert(rewrite_concrete_accesses.size());
 
@@ -76,10 +79,11 @@ vector<pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, con
   first.line = target_concrete_accesses[0];
   first.cell = 0;
   first.cell_offset = 0;
-  first.cell_size = size;
+  first.cell_size = target.get_code()[first.line].mem_dereference_size();
+
+  return vector<pair<CellMemory*, CellMemory*>>();
 
 }
-*/
 
 bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
     const CfgPath& P, const CfgPath& Q, CpuState& tc) {
@@ -391,8 +395,7 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
             auto cell_addr_var = SymBitVector::var(64, ss.str());
             state.constraints.push_back(cell_addr_var == cell_start_addr);
 
-            auto x = cell_addr_var == cell_start_addr;
-            cout << "ADDR CONST: " << x << endl;
+            cell_addr_var == cell_start_addr;
 
             // By the way, don't go past address 0xffffffffffffffff.  Idiot.
             // In fact, for my sanity, let's keep it under 0xffffffffffffffc0,
@@ -400,6 +403,8 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
 #ifdef NDEBUG
             state.constraints.push_back(
               cell_start_addr <= SymBitVector::constant(64, -access.cell_size-0x3f));
+            state.constraints.push_back(
+              cell_start_addr >= SymBitVector::constant(64, 0x40));
 #else
             state.constraints.push_back(
               cell_start_addr <= SymBitVector::constant(64, -access.cell_size));
@@ -472,6 +477,7 @@ BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const CfgPa
 
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
+
   BOUNDED_DEBUG(cout << "===========================================" << endl;)
   BOUNDED_DEBUG(cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;)
   // Step 0: Check if there's any memory access
@@ -497,6 +503,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     if(memory)
       break;
   }
+
+  if(memory)
+    enumerate_aliasing(target, rewrite, P, Q);
 
   // Step 1: Learn aliasing relationships
   auto memories = std::pair<CellMemory*, CellMemory*>(NULL, NULL);

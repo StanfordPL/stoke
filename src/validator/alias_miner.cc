@@ -21,8 +21,8 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-#define DEBUG_BUILD_TC(X) {X}
-#define DEBUG_MEM_SETUP(X) {X}
+#define DEBUG_BUILD_TC(X) {}
+#define DEBUG_MEM_SETUP(X) {}
 
 /** Takes a Cfg and a testcase; runs the Cfg on the testcase and tracks
   all memory reads/writes.  Then builds a list of all memory accesses in
@@ -68,6 +68,7 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   auto target_trace = mine_concrete_data(target, tc);
   auto rewrite_trace = mine_concrete_data(rewrite, tc);
 
+  DEBUG_MEM_SETUP(
   cout << "TARGET: " << endl;
   cout << target.get_code() << endl;
   cout << "REWRITE: " << endl;
@@ -80,7 +81,7 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   cout << "rewrite_trace_length: " << rewrite_trace.size() << endl;
   for(auto it : rewrite_trace) {
     cout << "@" << it.line << "  " << it.address << " / " << it.width << endl;
-  }
+  })
 
   // order traces by start position, and then largest to smallest
   auto compare = [] (const MemoryAccess& m1, const MemoryAccess& m2) {
@@ -101,23 +102,23 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   for(auto access : all_trace) {
     uint64_t lower_bound = access.address;
     uint64_t upper_bound = access.address+access.width/8;
-    cout << hex << "scheduling " << lower_bound << "->" << upper_bound << endl;
+    DEBUG_MEM_SETUP(cout << hex << "scheduling " << lower_bound << "->" << upper_bound << endl;)
 
     if(cell_list.size()) {
       auto& last_cell = cell_list[cell_list.size()-1];
       assert(last_cell.first <= lower_bound);
-      cout << "last_cell: " << last_cell.first << "+" <<  last_cell.second << endl;
+      DEBUG_MEM_SETUP(cout << "last_cell: " << last_cell.first << "+" <<  last_cell.second << endl;)
       if(lower_bound - last_cell.first > last_cell.second) {
         // allocate a new cell
-        cout << "Allocating cell " << lower_bound << "+" << access.width/8 << endl;
+        DEBUG_MEM_SETUP(cout << "Allocating cell " << lower_bound << "+" << access.width/8 << endl;)
         cell_list.push_back(pair<uint64_t, size_t>(lower_bound, access.width/8));
       } else if (upper_bound - last_cell.first > last_cell.second) {
         // expand the last existing cell
-        cout << "Resizing cell " << last_cell.first << "+" << (upper_bound-last_cell.first) << endl;
+        DEBUG_MEM_SETUP(cout << "Resizing cell " << last_cell.first << "+" << (upper_bound-last_cell.first) << endl;)
         last_cell.second = upper_bound - last_cell.first;
       }
     } else {
-      cout << "Allocating cell " << lower_bound << "+" << access.width/8 << endl;
+      DEBUG_MEM_SETUP(cout << "Allocating cell " << lower_bound << "+" << access.width/8 << endl;)
       cell_list.push_back(pair<uint64_t, size_t>(lower_bound, access.width/8));
     }
   }
@@ -267,8 +268,8 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
     auto value_var = static_cast<const SymBitVectorVar*>(v->ptr);
     auto value_bv = solver.get_model_bv(value_var->get_name(), value_var->get_size());
 
-    cout << "Cell " << cell << " address = " << hex << address
-         << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;
+    DEBUG_BUILD_TC(cout << "Cell " << cell << " address = " << hex << address
+                   << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;)
 
     addr_value_pairs[address] = value_bv;
   }
@@ -278,7 +279,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
 
   // Run sandbox on target to see if we did well.
-  cout << "Running sandbox with tc: " << endl << ceg << endl;
+  DEBUG_BUILD_TC(cout << "Running sandbox with tc: " << endl << ceg << endl;)
   sandbox_->reset();
   sandbox_->insert_function(target);
   sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
@@ -286,7 +287,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   sandbox_->run();
   auto& target_output = *(sandbox_->get_output(0));
   auto last_err = target_output.code;
-  cout << "Ran sandbox on target; got " << readable_error_code(last_err) << endl;
+  DEBUG_BUILD_TC(cout << "Ran sandbox on target; got " << readable_error_code(last_err) << endl;)
 
   sandbox_->insert_function(rewrite);
   sandbox_->set_entrypoint(rewrite.get_code()[0].get_operand<x64asm::Label>(0));
@@ -294,12 +295,12 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   auto& rewrite_output = *(sandbox_->get_output(0));
 
   if(last_err != ErrorCode::NORMAL) {
-    cout << "Sandbox encountered error on target." << endl;
+    DEBUG_BUILD_TC(cout << "Sandbox encountered error on target." << endl;)
     return false;
   }
 
   if(target_output != rewrite_output) {
-    cout << "Got a counterexample -- but it did the same thing on target/rewrite." << endl;
+    DEBUG_BUILD_TC(cout << "Got a counterexample -- but it did the same thing on target/rewrite." << endl;)
     return false;
   }
 
