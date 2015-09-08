@@ -40,6 +40,44 @@ bool vectors_have_common(std::vector<size_t> left, std::vector<size_t> right, si
   return false;
 }
 
+vector<size_t> enumerate_accesses(const Cfg& cfg, const CfgPath& P) {
+  vector<size_t> result;
+  auto rewrite = CfgPaths::rewrite_cfg_with_path(cfg, P);
+  for(size_t i = 0; i < rewrite.size(); ++i) {
+    auto instr = rewrite[i];
+    if(instr.is_memory_dereference()) {
+      result.back_back(i);
+    }
+  }
+  return result;
+}
+
+vector<pair<CellMemory*, CellMemory*>> enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
+                                    const CfgPath& P, const CfgPath& Q,
+                                    const vector<size_t>& target_con_access,
+                                    const vector<size_t>& rewrite_con_access,
+                                    const vector<SymbolicAccess>& target_sym_access,
+const vector<SymbolicAccess>& rewrite_sym_access) {
+
+}
+
+// ASSUMPTION: the target and rewrite both use memory
+vector<pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+
+  auto target_concrete_accesses = enumerate_accesses(target, P);
+  auto rewrite_concrete_accesses = enumerate_accesses(target, Q);
+
+  assert(target_concrete_accesses.size());
+  assert(rewrite_concrete_accesses.size());
+
+  // Create first symbolic access
+  CellMemory::SymbolicAccess first;
+  first.line = target_concrete_accesses[0];
+  first.cell = 0;
+  first.cell_offset = 0;
+  first.cell_size = size;
+
+}
 
 bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
     const CfgPath& P, const CfgPath& Q, CpuState& tc) {
@@ -545,7 +583,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     if(memory) {
       bool ok = am.build_testcase_memory(ceg, solver_,
                                          *static_cast<CellMemory*>(state_t.memory),
-                                         *static_cast<CellMemory*>(state_r.memory), 
+                                         *static_cast<CellMemory*>(state_r.memory),
                                          target, rewrite);
       if(ok) {
         counterexamples_.push_back(ceg);

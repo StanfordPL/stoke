@@ -199,9 +199,9 @@ TEST_F(BoundedValidatorBaseTest, UnsupportedInstruction) {
   EXPECT_FALSE(validator->verify(target, rewrite));
   ASSERT_TRUE(validator->has_error());
 
-  EXPECT_TRUE(std::regex_match(validator->error(), 
-        std::regex(".*unsupported.*", std::regex_constants::icase)))
-        << "Error message: " << validator->error();
+  EXPECT_TRUE(std::regex_match(validator->error(),
+                               std::regex(".*unsupported.*", std::regex_constants::icase)))
+      << "Error message: " << validator->error();
 
 }
 
@@ -1274,13 +1274,13 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
   ssr << "movq %rdi, %rsi" << std::endl;
   ssr << ".head:" << std::endl;
   ssr << "movl (%rdi), %ecx" << std::endl;
-  ssr << "addq $0x4, %rdi" << std::endl;
+  ssr << "addl $0x4, %edi" << std::endl;
   ssr << "testl %ecx, %ecx" << std::endl;
   ssr << "jnz .head" << std::endl;
   ssr << "subq %rsi, %rdi" << std::endl;
   ssr << "subq $0x4, %rdi" << std::endl;
+  ssr << "sarq $0x2, %rdi" << std::endl;
   ssr << "movq %rdi, %rax" << std::endl;
-  ssr << "retq" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
