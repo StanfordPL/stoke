@@ -231,9 +231,9 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
   }
 
   DEBUG_MAP_TC(
-  cout << "Filling up memory using this map..." << endl;
+    cout << "Filling up memory using this map..." << endl;
   for(auto p : concrete) {
-    cout << hex << p.first << "+" << p.second.num_fixed_bytes() << endl;
+  cout << hex << p.first << "+" << p.second.num_fixed_bytes() << endl;
   }
   cout << "Here's the testcase: " << endl << cs << endl;)
 

@@ -52,6 +52,15 @@ vector<size_t> enumerate_accesses(const Cfg& cfg, const CfgPath& P) {
   return result;
 }
 
+CellMemory* make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
+  map<size_t, CellMemory::SymbolicAccess> map;
+  for(auto sa : vector) {
+    map[sa.line] = sa;
+    cout << sa.line << " --> " << sa.cell << " (offset " << sa.cell_offset << " / size " << sa.size << " / cell size " << sa.cell_size << ")" << endl;
+  }
+  return new CellMemory(map);
+}
+
 vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
                                     const CfgPath& P, const CfgPath& Q,
                                     const vector<size_t>& target_con_access,
@@ -59,11 +68,57 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_help
                                     const vector<CellMemory::SymbolicAccess>& target_sym_access,
                                     const vector<CellMemory::SymbolicAccess>& rewrite_sym_access) {
 
+  cout << "===================== RECURSIVE STEP ==============================" << endl;
+
+  vector<pair<CellMemory*, CellMemory*>> result;
+  // Step 0: check for feasibility.  if not, stop here.
+
+  // (i) build circuits for each path, including jump constraints
+  // (ii) assert equal starting states
+  // (iii) assert aliasing relations
+
+  // Step 1: if we've processed all the concrete accesses, we're done.  Generate CellMemories and return.
+  if(target_sym_access.size() == target_con_access.size() &&
+      rewrite_sym_access.size() == rewrite_sym_access.size()) {
+    cout << " REACHED BASE CASE :D" << endl;
+
+    cout << "  target map: " << endl;
+    auto t = make_cell_memory(target_sym_access);
+    cout << "  rewrite map: " << endl;
+    auto r = make_cell_memory(rewrite_sym_access);
+
+    result.push_back(pair<CellMemory*, CellMemory*>(t, r));
+    return result;
+  }
+
+  // Step 2: choose a memory access to add
+  bool work_on_rewrite = target_sym_access.size() == target_con_access.size();
+  auto& cfg = work_on_rewrite ? rewrite : target;
+  auto& conc = work_on_rewrite ? rewrite_con_access : target_con_access;
+  auto symb = work_on_rewrite ? rewrite_sym_access : target_sym_access;
+
+  vector<CellMemory::SymbolicAccess> all_accesses;
+  all_accesses.insert(all_accesses.begin(), target_sym_access.begin(), target_sym_access.end());
+  all_accesses.insert(all_accesses.begin(), rewrite_sym_access.begin(), rewrite_sym_access.end());
+
+  // Step 3: consider all the ways it can overlap with all the existing cells
+      // -> for each one, produce a new target_sym_access / rewrite_sym_access
+      // -> then do the recursive call
+      // -> concatenate all the results
+
   return vector<pair<CellMemory*, CellMemory*>>();
 }
 
 // ASSUMPTION: the target and rewrite both use memory
 vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+
+
+  cout << "********************* NEW TASK ******************************" << endl;
+  cout << "TARGET:" << endl;
+  cout << target.get_code() << endl;
+  cout << "REWRITE:" << endl;
+  cout << rewrite.get_code() << endl;
+   
 
   auto target_concrete_accesses = enumerate_accesses(target, P);
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite, Q);
@@ -77,11 +132,19 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
   // Create first symbolic access
   CellMemory::SymbolicAccess first;
   first.line = target_concrete_accesses[0];
+  first.size = target.get_code()[first.line].mem_dereference_size();
   first.cell = 0;
   first.cell_offset = 0;
-  first.cell_size = target.get_code()[first.line].mem_dereference_size();
+  first.cell_size = first.size;
 
-  return vector<pair<CellMemory*, CellMemory*>>();
+  vector<CellMemory::SymbolicAccess> target_symbolic_accesses;
+  vector<CellMemory::SymbolicAccess> rewrite_symbolic_accesses;
+
+  target_symbolic_accesses.push_back(first);
+
+  return enumerate_aliasing_helper(target, rewrite, P, Q, 
+                                   target_concrete_accesses, rewrite_concrete_accesses, 
+                                   target_symbolic_accesses, rewrite_symbolic_accesses);
 
 }
 

@@ -69,19 +69,19 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
   auto rewrite_trace = mine_concrete_data(rewrite, tc);
 
   DEBUG_MEM_SETUP(
-  cout << "TARGET: " << endl;
-  cout << target.get_code() << endl;
-  cout << "REWRITE: " << endl;
-  cout << rewrite.get_code() << endl;
+    cout << "TARGET: " << endl;
+    cout << target.get_code() << endl;
+    cout << "REWRITE: " << endl;
+    cout << rewrite.get_code() << endl;
 
-  cout << "target_trace_length: " << target_trace.size() << endl;
+    cout << "target_trace_length: " << target_trace.size() << endl;
   for(auto it : target_trace) {
-    cout << "@" << it.line << "  " << it.address << " / " << it.width << endl;
-  }
-  cout << "rewrite_trace_length: " << rewrite_trace.size() << endl;
-  for(auto it : rewrite_trace) {
-    cout << "@" << it.line << "  " << it.address << " / " << it.width << endl;
-  })
+  cout << "@" << it.line << "  " << it.address << " / " << it.width << endl;
+}
+cout << "rewrite_trace_length: " << rewrite_trace.size() << endl;
+for(auto it : rewrite_trace) {
+  cout << "@" << it.line << "  " << it.address << " / " << it.width << endl;
+})
 
   // order traces by start position, and then largest to smallest
   auto compare = [] (const MemoryAccess& m1, const MemoryAccess& m2) {
