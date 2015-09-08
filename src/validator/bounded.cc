@@ -66,7 +66,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_help
                                     const vector<size_t>& target_con_access,
                                     const vector<size_t>& rewrite_con_access,
                                     const vector<CellMemory::SymbolicAccess>& target_sym_access,
-                                    const vector<CellMemory::SymbolicAccess>& rewrite_sym_access) {
+const vector<CellMemory::SymbolicAccess>& rewrite_sym_access) {
 
   cout << "===================== RECURSIVE STEP ==============================" << endl;
 
@@ -102,9 +102,9 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_help
   all_accesses.insert(all_accesses.begin(), rewrite_sym_access.begin(), rewrite_sym_access.end());
 
   // Step 3: consider all the ways it can overlap with all the existing cells
-      // -> for each one, produce a new target_sym_access / rewrite_sym_access
-      // -> then do the recursive call
-      // -> concatenate all the results
+  // -> for each one, produce a new target_sym_access / rewrite_sym_access
+  // -> then do the recursive call
+  // -> concatenate all the results
 
   return vector<pair<CellMemory*, CellMemory*>>();
 }
@@ -118,7 +118,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
   cout << target.get_code() << endl;
   cout << "REWRITE:" << endl;
   cout << rewrite.get_code() << endl;
-   
+
 
   auto target_concrete_accesses = enumerate_accesses(target, P);
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite, Q);
@@ -142,8 +142,8 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
 
   target_symbolic_accesses.push_back(first);
 
-  return enumerate_aliasing_helper(target, rewrite, P, Q, 
-                                   target_concrete_accesses, rewrite_concrete_accesses, 
+  return enumerate_aliasing_helper(target, rewrite, P, Q,
+                                   target_concrete_accesses, rewrite_concrete_accesses,
                                    target_symbolic_accesses, rewrite_symbolic_accesses);
 
 }
