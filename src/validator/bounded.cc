@@ -40,6 +40,7 @@ bool vectors_have_common(std::vector<size_t> left, std::vector<size_t> right, si
   return false;
 }
 
+/*
 vector<size_t> enumerate_accesses(const Cfg& cfg, const CfgPath& P) {
   vector<size_t> result;
   auto rewrite = CfgPaths::rewrite_cfg_with_path(cfg, P);
@@ -78,6 +79,7 @@ vector<pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, con
   first.cell_size = size;
 
 }
+*/
 
 bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
     const CfgPath& P, const CfgPath& Q, CpuState& tc) {

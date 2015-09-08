@@ -48,36 +48,13 @@ AliasMiner::mine_concrete_data(const Cfg& cfg, const CpuState& tc) {
 void AliasMiner::mine_concrete_callback(const StateCallbackData& data, void* arg) {
 
   auto& instr = data.code[data.line];
-  if(instr.is_memory_dereference()) {
+  if(instr.is_memory_dereference() && !instr.is_ret()) {
 
     MemoryAccess ma;
 
     ma.line = data.line;
     ma.address = data.state.get_addr(instr);
-
-    if(instr.is_push()) {
-      ma.write = true;
-      ma.width = instr.get_operand<Operand>(0).size();
-
-      // don't handle push/pop of memory
-      assert(!instr.is_explicit_memory_dereference());
-    } else if (instr.is_pop()) {
-      ma.write = false;
-      ma.width = instr.get_operand<Operand>(0).size();
-
-      // don't handle push/pop of memory
-      assert(!instr.is_explicit_memory_dereference());
-    } else if (instr.is_explicit_memory_dereference()) {
-      size_t index = instr.mem_index();
-      ma.width = instr.get_operand<Operand>(index).size();
-      ma.write = instr.maybe_write(index);
-    } else if (instr.is_ret()) {
-      return;
-    } else {
-      assert(false);
-      return;
-    }
-
+    ma.width = instr.mem_dereference_size();
     AliasMiner* me = (AliasMiner*)arg;
     me->current_concrete_trace_->push_back(ma);
   }
