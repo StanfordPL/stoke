@@ -18,17 +18,30 @@
 
 namespace x64asm {
 
-TEST(X64AsmInstructionInfo, PushIsMaybeReadWrite) {
+TEST(X64AsmInstructionInfo, PushIsWrite) {
   Code c;
   std::stringstream ss;
   ss << "pushq %rax" << std::endl;
   ss >> c;
   EXPECT_FALSE(c[0].is_explicit_memory_dereference());
   EXPECT_TRUE(c[0].is_implicit_memory_dereference());
-  EXPECT_TRUE(c[0].maybe_read_memory());
   EXPECT_TRUE(c[0].maybe_write_memory());
+  EXPECT_TRUE(c[0].must_write_memory());
+  EXPECT_TRUE(c[0].maybe_read_memory());
   EXPECT_FALSE(c[0].must_read_memory());
+}
+
+TEST(X64AsmInstructionInfo, PopIsRead) {
+  Code c;
+  std::stringstream ss;
+  ss << "popq %rax" << std::endl;
+  ss >> c;
+  EXPECT_FALSE(c[0].is_explicit_memory_dereference());
+  EXPECT_TRUE(c[0].is_implicit_memory_dereference());
+  EXPECT_TRUE(c[0].maybe_write_memory());
   EXPECT_FALSE(c[0].must_write_memory());
+  EXPECT_TRUE(c[0].maybe_read_memory());
+  EXPECT_TRUE(c[0].must_read_memory());
 }
 
 TEST(X64AsmInstructionInfo, ExplicitReadIsMustRead) {
