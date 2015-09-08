@@ -156,8 +156,8 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
       CellMemory::SymbolicAccess sa;
       sa.line = access.line;
       sa.size = access.width/8;
+      sa.cell = -1;
 
-      bool found = false;
       for(size_t j = 0; j < cell_list.size(); ++j) {
         auto cell = cell_list[j];
         // cells are in ascending order, so only need to check the lower bound
@@ -166,11 +166,10 @@ std::pair<CellMemory*, CellMemory*> AliasMiner::build_cell_model(const Cfg& targ
           sa.cell_size = cell.second;
           sa.cell_offset = access.address - cell.first;
           assert(sa.cell_offset + sa.size <= sa.cell_size);
-          found = true;
           break;
         }
       }
-      assert(found);
+      assert(sa.cell != (size_t)(-1));
 
       map[sa.line] = sa;
     }
@@ -305,14 +304,29 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   cout << "Running sandbox with tc: " << endl << ceg << endl;
   sandbox_->reset();
   sandbox_->insert_function(target);
-  sandbox_->insert_before(tracer_callback, this);
   sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
   sandbox_->insert_input(ceg);
   sandbox_->run();
-  auto last_err = sandbox_->get_output(0)->code;
-  cout << "Ran sandbox; got " << readable_error_code(last_err) << endl;
+  auto& target_output = *(sandbox_->get_output(0));
+  auto last_err = target_output.code;
+  cout << "Ran sandbox on target; got " << readable_error_code(last_err) << endl;
 
-  return last_err == ErrorCode::NORMAL;
+  sandbox_->insert_function(rewrite);
+  sandbox_->set_entrypoint(rewrite.get_code()[0].get_operand<x64asm::Label>(0));
+  sandbox_->run();
+  auto& rewrite_output = *(sandbox_->get_output(0));
+
+  if(last_err != ErrorCode::NORMAL) {
+    cout << "Sandbox encountered error on target." << endl;
+    return false;
+  }
+
+  if(target_output != rewrite_output) {
+    cout << "Got a counterexample -- but it did the same thing on target/rewrite." << endl;
+    return false;
+  }
+
+  return true;
 }
 
 void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* arg) {
