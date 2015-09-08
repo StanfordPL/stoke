@@ -30,6 +30,8 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+#define DEBUG_MAP_TC(X) {}
+
 
 bool Validator::is_supported(Instruction& i) const {
 
@@ -228,11 +230,12 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     cs.segments.push_back(segments[i]);
   }
 
+  DEBUG_MAP_TC(
   cout << "Filling up memory using this map..." << endl;
   for(auto p : concrete) {
     cout << hex << p.first << "+" << p.second.num_fixed_bytes() << endl;
   }
-  cout << "Here's the testcase: " << endl << cs << endl;
+  cout << "Here's the testcase: " << endl << cs << endl;)
 
   return true;
 }

@@ -615,7 +615,6 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsPass) {
       tc.heap.set_valid(j, true);
       tc.heap[j] = 0;
     }
-    std::cout << tc << std::endl;
     sandbox->insert_input(tc);
   }
 
@@ -675,7 +674,6 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
       tc.heap.set_valid(j, true);
       tc.heap[j] = 0;
     }
-    std::cout << tc << std::endl;
     sandbox->insert_input(tc);
   }
 

@@ -111,6 +111,16 @@ private:
     return os.str();
   }
 
+
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
+                                    const CfgPath& P, const CfgPath& Q,
+                                    const std::vector<size_t>& target_con_access,
+                                    const std::vector<size_t>& rewrite_con_access,
+                                    const std::vector<CellMemory::SymbolicAccess>& target_sym_access,
+                                    const std::vector<CellMemory::SymbolicAccess>& rewrite_sym_access);
+
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q);
+
 };
 
 
