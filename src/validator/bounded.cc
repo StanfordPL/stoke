@@ -235,8 +235,7 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
     bool ok = am.build_testcase_memory(ceg, solver_,
                                        *static_cast<CellMemory*>(state_t.memory),
                                        *static_cast<CellMemory*>(state_r.memory),
-                                       CfgPaths::rewrite_cfg_with_path(target, P),
-                                       CfgPaths::rewrite_cfg_with_path(rewrite, Q));
+                                       target, rewrite);
     BOUNDED_DEBUG(if(!ok)
                   cout << "WARNING: build counterexample for unexplored path; segfaults." << endl;)
       BOUNDED_DEBUG(cout << "Here's the counterexample:" << endl << ceg << endl;)
@@ -471,10 +470,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     auto target_repath = CfgPaths::rewrite_cfg_with_path(target, P);
     auto rewrite_repath = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
     memories = am.build_cell_model(target_repath, rewrite_repath, testcase);
-    if(memories.first == NULL || memories.second == NULL) {
-      throw VALIDATOR_ERROR("Overlapping memory accesses found.");
-      return false;
-    }
+    assert(memories.first);
+    assert(memories.second);
   }
 
   // Step 3: Build circuits
@@ -546,15 +543,14 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   if(is_sat) {
     auto ceg = Validator::state_from_model(solver_, "_");
     if(memory) {
-      auto target_repath = CfgPaths::rewrite_cfg_with_path(target, P);
-      auto rewrite_repath = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
       bool ok = am.build_testcase_memory(ceg, solver_,
                                          *static_cast<CellMemory*>(state_t.memory),
-                                         *static_cast<CellMemory*>(state_r.memory), target_repath, rewrite_repath);
+                                         *static_cast<CellMemory*>(state_r.memory), 
+                                         target, rewrite);
       if(ok) {
         counterexamples_.push_back(ceg);
       } else {
-        throw VALIDATOR_ERROR("Instantiated counterexample segfault!");
+        throw VALIDATOR_ERROR("Couldn't build counterexample!  This is a BOUNDED VALIDATOR BUG.");
       }
     } else {
       counterexamples_.push_back(ceg);
