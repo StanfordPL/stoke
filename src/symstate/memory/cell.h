@@ -41,11 +41,15 @@ public:
     for(auto p : memory_map) {
       auto access = p.second;
       if(!cells_.count(access.cell)) {
+
+        std::stringstream addr_name;
+        addr_name << "CELL_" << access.cell << "_ADDR";
+
         auto new_cell = SymBitVector::tmp_var(access.cell_size*8);
         cells_[access.cell] = new_cell;
         init_cells_[access.cell] = new_cell;
         cell_sizes_[access.cell] = access.cell_size;
-        cell_addrs_[access.cell] = SymBitVector::tmp_var(64);
+        cell_addrs_[access.cell] = SymBitVector::var(64, addr_name.str());
       }
     }
   }
@@ -64,7 +68,7 @@ public:
 
   /** Create a formula expressing these memory cells with another set. */
   SymBool equality_constraint(CellMemory& other);
-  
+
   /** Create a formula expressing that the aliasing rules were followed. */
   SymBool aliasing_formula(CellMemory& other);
 

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/symstate/state.h"
 #include "src/symstate/memory/cell.h"
 
 using namespace std;
@@ -29,6 +30,9 @@ SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
   auto access = map_[line_no];
 
   assert(access.cell_offset + access.size <= access.cell_size);
+
+  auto addr_constraint = (address == cell_addrs_[access.cell] + SymBitVector::constant(64, access.cell_offset));
+  state_->constraints.push_back(addr_constraint);
 
   if(access.size == access.cell_size) {
     assert(access.cell_offset == 0);
@@ -60,6 +64,9 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
 
   auto access = map_[line_no];
 
+  auto addr_constraint = (address == cell_addrs_[access.cell] - SymBitVector::constant(64, access.cell_offset));
+  state_->constraints.push_back(addr_constraint);
+
   SymBitVector value;
 
   if(access.size == access.cell_size) {
@@ -69,22 +76,19 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
     SymBitVector cell_value = cells_[access.cell];
     value = cell_value[access.size*8 + access.cell_offset*8 - 1][access.cell_offset*8];
   }
-
+  
   return std::pair<SymBitVector,SymBool>(value, SymBool::_false());
 }
 
-SymBool CellMemory::aliasing_formula(CellMemory& other) {
 
-  equalize_cells(other);
-  SymBool condition = SymBool::_true();
-
-  return condition;
-
-}
 
 void CellMemory::equalize_cells(CellMemory& other) {
+  
+  cout << "EQUALIZE CELLS CALLED" << endl;
+  cout << "cells_.size() = " << cells_.size() << endl;
 
   for(auto p : cells_) {
+    cout << "checking out cell " << p.first << endl;
     bool found = false;
     for(auto q : other.cells_) {
       if(p.first == q.first) {
@@ -97,7 +101,7 @@ void CellMemory::equalize_cells(CellMemory& other) {
       other.cells_[p.first] = SymBitVector::tmp_var(cell_sizes_[p.first]*8);
       other.init_cells_[p.first] = other.cells_[p.first];
       other.cell_sizes_[p.first] = cell_sizes_[p.first];
-      other.cell_addrs_[p.first] = SymBitVector::tmp_var(64);
+      other.cell_addrs_[p.first] = cell_addrs_[p.first];
     }
   }
 
@@ -115,10 +119,53 @@ void CellMemory::equalize_cells(CellMemory& other) {
       cells_[q.first] = SymBitVector::tmp_var(other.cell_sizes_[q.first]*8);
       init_cells_[q.first] = cells_[q.first];
       cell_sizes_[q.first] = other.cell_sizes_[q.first];
-      cell_addrs_[q.first] = SymBitVector::tmp_var(64);
+      cell_addrs_[q.first] = other.cell_addrs_[q.first];
     }
   }
 
+
+}
+
+SymBool CellMemory::aliasing_formula(CellMemory& other) {
+
+  equalize_cells(other);
+  SymBool condition = SymBool::_true();
+
+  for(auto p : cells_) {
+    size_t cell = p.first;
+    size_t cell_size = cell_sizes_[cell];
+    auto cell_addr = cell_addrs_[cell];
+
+    assert(other.cells_.count(cell));
+    assert(other.cell_sizes_[cell] == cell_size);
+
+    // By the way, don't overlap address 0xffffffffffffffff.  Idiot.
+    // In fact, for my sanity, let's keep it under 0xffffffffffffffc0,
+    // except in debug mode where we want to find all the issues.
+#ifdef NDEBUG
+    condition = condition & (cell_addr <= SymBitVector::constant(64, -cell_size-0x3f));
+    condition = condition & (cell_addr >= SymBitVector::constant(64, 0x40));
+#else
+    condition = condition & (cell_addr <= SymBitVector::constant(64, -cell_size));
+#endif
+
+    // Assert no overlaps with other cells
+    for(auto q : cells_) {
+      if(q.first > cell) {
+        // we want to assert that these don't overlap
+        size_t other_cell = q.first;
+        auto other_addr = cell_addrs_[other_cell];
+        size_t other_size = cell_sizes_[other_cell];
+
+        auto curr_lt_other = cell_addr + SymBitVector::constant(64, cell_size) <= other_addr;
+        auto other_lt_curr = other_addr + SymBitVector::constant(64, other_size) <= cell_addr;
+        condition = condition & (curr_lt_other | other_lt_curr);
+      }
+    }
+
+  }
+
+  return condition;
 
 }
 
