@@ -17,7 +17,7 @@
 #include "src/validator/bounded.h"
 
 #define BOUNDED_DEBUG(X) { }
-#define ALIAS_DEBUG(X) { }
+#define ALIAS_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 
@@ -82,6 +82,13 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
 
   auto target_sym = split_sym_accesses(sym_list, false);
   auto rewrite_sym = split_sym_accesses(sym_list, true);
+
+  {
+    ALIAS_DEBUG(cout << "-> ORIGINAL target map" << endl;)
+    const auto target_mem = make_cell_memory(target_sym);
+    ALIAS_DEBUG(cout << "-> ORIGINAL rewrite map" << endl;)
+    const auto rewrite_mem = make_cell_memory(rewrite_sym);
+  }
 
   // create unconstrainted cells for the rest of memory accesses
   size_t top_cell = 0;
@@ -255,7 +262,7 @@ size_t accesses_done) {
   // (i)   new cell
   {
     ALIAS_DEBUG(cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target")
-         << " line " << sa.line << " size " << sa.size << endl;)
+                << " line " << sa.line << " size " << sa.size << endl;)
 
     ALIAS_DEBUG(cout << "Option (i): new cell" << endl;)
     sa.cell = cell_max + 1;
@@ -278,7 +285,7 @@ size_t accesses_done) {
     //            <- j bytes ->|--- other cell --|
     for(size_t j = 1; j < sa.size; ++j) {
       ALIAS_DEBUG(cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target")
-           << " line " << sa.line << " size " << sa.size << endl;)
+                  << " line " << sa.line << " size " << sa.size << endl;)
 
       ALIAS_DEBUG(cout << "Option (ii) / A: access overlaps " << j << " bytes with start of existing cell " << i << endl;)
 
@@ -307,7 +314,7 @@ size_t accesses_done) {
     //           |--- other cell --|      |----- other cell ----|      |--- other cell ---|
     {
       ALIAS_DEBUG(cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target")
-           << " line " << sa.line << " size " << sa.size << endl;)
+                  << " line " << sa.line << " size " << sa.size << endl;)
 
       ALIAS_DEBUG(cout << "Option (ii) / A: access aligns with existing cell " << i << endl;)
 
@@ -351,38 +358,37 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
   auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
 
   ALIAS_DEBUG(cout << "********************* NEW TASK ******************************" << endl;
-  cout << "TARGET:" << endl;
-  cout << target.get_code() << endl;
-  cout << "REWRITE:" << endl;
-  cout << rewrite.get_code() << endl;)
+              cout << "TARGET:" << endl;
+              cout << target.get_code() << endl;
+              cout << "REWRITE:" << endl;
+              cout << rewrite.get_code() << endl;)
 
 
-  auto target_concrete_accesses = enumerate_accesses(target);
-  auto rewrite_concrete_accesses = enumerate_accesses(rewrite);
+  auto target_concrete_accesses = enumerate_accesses(target_unroll);
+  auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
 
-  if(target_concrete_accesses.size() == 0) { 
-    if(rewrite_concrete_accesses.size() == 0) {
-      auto null_pair = pair<CellMemory*, CellMemory*>(NULL, NULL);
-      auto v = vector<pair<CellMemory*, CellMemory*>>();
-      v.push_back(null_pair);
-      return v;
-    } else {
-      // TODO: improve this case
-      throw VALIDATOR_ERROR("Target doesn't access memory but rewrite does.");
-    }
-  }
-
-  assert(target_concrete_accesses.size());
-  assert(rewrite_concrete_accesses.size());
+  if(target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
+    auto null_pair = pair<CellMemory*, CellMemory*>(NULL, NULL);
+    auto v = vector<pair<CellMemory*, CellMemory*>>();
+    v.push_back(null_pair);
+    return v;
+  } 
 
   // Create first symbolic access
   CellMemory::SymbolicAccess first;
-  first.line = target_concrete_accesses[0];
-  first.size = target.get_code()[first.line].mem_dereference_size()/8;
+  if(target_concrete_accesses.size()) {
+    first.line = target_concrete_accesses[0];
+    first.size = target_unroll.get_code()[first.line].mem_dereference_size()/8;
+    first.is_rewrite = false;
+  } else {
+    first.line = rewrite_concrete_accesses[0];
+    first.size = rewrite_unroll.get_code()[first.line].mem_dereference_size()/8;
+    first.is_rewrite = true;
+  }
   first.cell = 0;
   first.cell_offset = 0;
   first.cell_size = first.size;
-  first.is_rewrite = false;
+
 
   vector<CellMemory::SymbolicAccess> symbolic_accesses;
 
@@ -501,18 +507,18 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   for(auto memories : memory_list) {
     BOUNDED_DEBUG(cout << "------ NEXT ALIASING CASE -----" << endl;)
     BOUNDED_DEBUG(
-      if(memories.first) {
-        cout << "TARGET MAP:" << endl;
-        for(auto q : memories.first->get_line_cell_map()) {
-          auto p = q.second;
-          cout << p.line << " -> " << p.cell << " (size " << p.size << " / cell size " << p.cell_size << " / offset " << p.cell_offset << endl;
-        }
-        cout << "REWRITE MAP:" << endl;
-        for(auto q : memories.second->get_line_cell_map()) {
-          auto p = q.second;
-          cout << p.line << " -> " << p.cell << " (size " << p.size << " / cell size " << p.cell_size << " / offset " << p.cell_offset << endl;
-        }
+    if(memories.first) {
+    cout << "TARGET MAP:" << endl;
+    for(auto q : memories.first->get_line_cell_map()) {
+        auto p = q.second;
+        cout << p.line << " -> " << p.cell << " (size " << p.size << " / cell size " << p.cell_size << " / offset " << p.cell_offset << endl;
       }
+      cout << "REWRITE MAP:" << endl;
+      for(auto q : memories.second->get_line_cell_map()) {
+        auto p = q.second;
+        cout << p.line << " -> " << p.cell << " (size " << p.size << " / cell size " << p.cell_size << " / offset " << p.cell_offset << endl;
+      }
+    }
     )
     // Step 3: Build circuits
     init_mm();
