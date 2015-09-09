@@ -32,7 +32,7 @@ public:
     sg_sandbox->set_max_jumps(4096);
     sg_sandbox->set_abi_check(false);
     validator = new BoundedValidator(*solver);
-    validator->set_bound(4);
+    validator->set_bound(2);
     validator->set_sandbox(sandbox);
   }
 
