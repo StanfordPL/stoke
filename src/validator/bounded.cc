@@ -151,20 +151,17 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
     throw VALIDATOR_ERROR("solver: " + solver_.get_error());
   }
 
-  stop_mm();
-
   cout << "FEASIBLE: " << is_sat << endl;
   if(is_sat) {
     cout << "HERE'S A CEG:" << endl;
     auto ceg = Validator::state_from_model(solver_, "_");
-    bool ok = am.build_testcase_memory(ceg, solver_,
-                                       *static_cast<CellMemory*>(state_t.memory),
-                                       *static_cast<CellMemory*>(state_r.memory),
-                                       target, rewrite);
+    bool ok = am.build_testcase_memory(ceg, solver_, *target_mem, *rewrite_mem, target, rewrite);
 
     cout << "ok=" << ok << endl;
     cout << ceg << endl;
   }
+
+  stop_mm();
 
   return is_sat;
 
@@ -223,9 +220,12 @@ const vector<CellMemory::SymbolicAccess>& rewrite_sym_access) {
   sa.line = conc[symb.size()];
   sa.size = cfg_unroll.get_code()[sa.line].mem_dereference_size()/8;
 
+  cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target") 
+       << " line " << sa.line << " size " << sa.size << endl;
   // Options:
   // (i)   new cell
   {
+    cout << "Option (i): new cell" << endl;
     sa.cell = cell_max + 1;
     sa.cell_size = sa.size;
     sa.cell_offset = 0;
