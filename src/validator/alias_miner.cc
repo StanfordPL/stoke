@@ -251,27 +251,32 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
     }
   }*/
 
-  auto access_map = target_memory.get_line_cell_map();
   std::map<uint64_t, BitVector> addr_value_pairs;
 
-  for(auto pair : access_map) {
-    auto access = pair.second;
-    auto cell = access.cell;
+  for(size_t k = 0; k < 2; ++k) {
+    auto& memory = k ? rewrite_memory : target_memory;
+    auto access_map = memory.get_line_cell_map();
 
-    stringstream ss;
-    ss << "CELL_" << cell << "_ADDR";
 
-    auto addr_bv = solver.get_model_bv(ss.str(), 64);
-    auto address = addr_bv.get_fixed_quad(0);
+    for(auto pair : access_map) {
+      auto access = pair.second;
+      auto cell = access.cell;
 
-    const SymBitVector* v = &target_memory.init_cells_.at(cell);
-    auto value_var = static_cast<const SymBitVectorVar*>(v->ptr);
-    auto value_bv = solver.get_model_bv(value_var->get_name(), value_var->get_size());
+      stringstream ss;
+      ss << "CELL_" << cell << "_ADDR";
 
-    DEBUG_BUILD_TC(cout << "Cell " << cell << " address = " << hex << address
-                   << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;)
+      auto addr_bv = solver.get_model_bv(ss.str(), 64);
+      auto address = addr_bv.get_fixed_quad(0);
 
-    addr_value_pairs[address] = value_bv;
+      const SymBitVector* v = &memory.init_cells_.at(cell);
+      auto value_var = static_cast<const SymBitVectorVar*>(v->ptr);
+      auto value_bv = solver.get_model_bv(value_var->get_name(), value_var->get_size());
+
+      DEBUG_BUILD_TC(cout << "Cell " << cell << " address = " << hex << address
+                     << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;)
+
+      addr_value_pairs[address] = value_bv;
+    }
   }
 
   if(!Validator::memory_map_to_testcase(addr_value_pairs, ceg))

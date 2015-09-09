@@ -21,11 +21,7 @@ using namespace stoke;
 /** Updates the memory with a write.
  *  Returns condition for segmentation fault */
 SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
-  if(!map_.count(line_no)) {
-    //something is missing from the map
-    //cout << "WARNING!  (write) Memory map missing entry for line " << line_no << endl;
-    return SymBool::_false();
-  }
+  assert(map_.count(line_no));
 
   auto access = map_[line_no];
 
@@ -56,15 +52,11 @@ SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
 
 /** Reads from the memory.  Returns value and segv condition. */
 std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
-  if(!map_.count(line_no)) {
-    //something is missing from the map
-    //cout << "WARNING!  (read) Memory map missing entry for line " << line_no << endl;
-    return pair<SymBitVector,SymBool>(SymBitVector::tmp_var(size), SymBool::_false());
-  }
+  assert(map_.count(line_no));
 
   auto access = map_[line_no];
 
-  auto addr_constraint = (address == cell_addrs_[access.cell] - SymBitVector::constant(64, access.cell_offset));
+  auto addr_constraint = (address == cell_addrs_[access.cell] + SymBitVector::constant(64, access.cell_offset));
   state_->constraints.push_back(addr_constraint);
 
   SymBitVector value;
@@ -76,14 +68,14 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
     SymBitVector cell_value = cells_[access.cell];
     value = cell_value[access.size*8 + access.cell_offset*8 - 1][access.cell_offset*8];
   }
-  
+
   return std::pair<SymBitVector,SymBool>(value, SymBool::_false());
 }
 
 
 
 void CellMemory::equalize_cells(CellMemory& other) {
-  
+
   cout << "EQUALIZE CELLS CALLED" << endl;
   cout << "cells_.size() = " << cells_.size() << endl;
 
@@ -141,13 +133,11 @@ SymBool CellMemory::aliasing_formula(CellMemory& other) {
 
     // By the way, don't overlap address 0xffffffffffffffff.  Idiot.
     // In fact, for my sanity, let's keep it under 0xffffffffffffffc0,
-    // except in debug mode where we want to find all the issues.
-#ifdef NDEBUG
+    // to prevent overflow conditions.
     condition = condition & (cell_addr <= SymBitVector::constant(64, -cell_size-0x3f));
     condition = condition & (cell_addr >= SymBitVector::constant(64, 0x40));
-#else
-    condition = condition & (cell_addr <= SymBitVector::constant(64, -cell_size));
-#endif
+
+    condition = condition & (cell_addr == other.cell_addrs_[cell]);
 
     // Assert no overlaps with other cells
     for(auto q : cells_) {

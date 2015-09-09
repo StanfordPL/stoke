@@ -44,7 +44,7 @@ vector<size_t> enumerate_accesses(const Cfg& cfg, const CfgPath& P) {
   auto rewrite = CfgPaths::rewrite_cfg_with_path(cfg, P);
   for(size_t i = 0, ie = rewrite.get_code().size(); i < ie; ++i) {
     auto instr = rewrite.get_code()[i];
-    if(instr.is_memory_dereference()) {
+    if(instr.is_memory_dereference() && !instr.is_ret()) {
       result.push_back(i);
     }
   }
@@ -60,21 +60,131 @@ CellMemory* make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
   return new CellMemory(map);
 }
 
-vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
-                                    const CfgPath& P, const CfgPath& Q,
-                                    const vector<size_t>& target_con_access,
-                                    const vector<size_t>& rewrite_con_access,
-                                    const vector<CellMemory::SymbolicAccess>& target_sym_access,
-const vector<CellMemory::SymbolicAccess>& rewrite_sym_access) {
+/** Check if it's possible for there to be a testcase where target/rewrite
+  take given paths with given aliasing relationships. */
+bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
+                                         const CfgPath& P, const CfgPath& Q,
+                                         vector<CellMemory::SymbolicAccess> target_sym, 
+                                         vector<CellMemory::SymbolicAccess> rewrite_sym) {
+
+  cout << "~~~~~~~~~~~~~ ALIASING FEASIBILITY CHECKER ~~~~~~~~~~~~~~~~" << endl;
+
+  // create unconstrainted cells for the rest of memory accesses
+  size_t top_cell = 0;
+  for(auto it : target_sym) {
+    if(it.cell > top_cell)
+      top_cell = it.cell;
+  }
+  for(auto it : rewrite_sym) {
+    if(it.cell > top_cell)
+      top_cell = it.cell;
+  }
+  top_cell++;
+
+  for(size_t k = 0; k < 2; ++k) {
+    auto& cfg = k ? rewrite : target;
+    auto& path = k ? Q : P;
+    auto& symb = k ? rewrite_sym : target_sym;
+
+    auto expand = CfgPaths::rewrite_cfg_with_path(cfg, path);
+    auto accesses = enumerate_accesses(cfg, path);
+    for(size_t i = symb.size(); i < accesses.size(); ++i) {
+      CellMemory::SymbolicAccess sa;
+      sa.line = accesses[i];
+      sa.size = expand.get_code()[sa.line].mem_dereference_size()/8;
+      sa.cell = top_cell++;
+      sa.cell_size = sa.size;
+      sa.cell_offset = 0;
+      symb.push_back(sa);
+    }
+  }
+
+  // Now build the memories and make the constraints
+  cout << "-> target map" << endl;
+  const auto target_mem = make_cell_memory(target_sym);
+  cout << "-> rewrite map" << endl;
+  const auto rewrite_mem = make_cell_memory(rewrite_sym);
+
+
+  init_mm();
+
+  vector<SymBool> constraints;
+
+  SymState init("");
+
+  SymState state_t("1_INIT");
+  state_t.memory = target_mem;
+  target_mem->set_parent(&state_t);
+
+  SymState state_r("2_INIT");
+  state_r.memory = rewrite_mem;
+  rewrite_mem->set_parent(&state_r);
+
+  for(auto it : state_t.equality_constraints(init, target.def_ins()))
+    constraints.push_back(it);
+  for(auto it : state_r.equality_constraints(init, rewrite.def_ins()))
+    constraints.push_back(it);
+
+  auto mem_const = target_mem->equality_constraint(*rewrite_mem);
+  constraints.push_back(mem_const);
+
+  size_t line_no = 0;
+  for(size_t i = 0; i < P.size(); ++i)
+    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
+  line_no = 0;
+  for(size_t i = 0; i < Q.size(); ++i)
+    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
+  constraints.push_back(target_mem->aliasing_formula(*rewrite_mem));
+
+
+  constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
+  constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
+
+  BOUNDED_DEBUG(
+    cout << endl << "CONSTRAINTS" << endl << endl;;
+  for(auto it : constraints) {
+  cout << it << endl;
+})
+
+  // Step 4: Invoke the solver
+  bool is_sat = solver_.is_sat(constraints);
+  if(solver_.has_error()) {
+    throw VALIDATOR_ERROR("solver: " + solver_.get_error());
+  }
+
+  stop_mm();
+
+  cout << "FEASIBLE: " << is_sat << endl;
+  if(is_sat) {
+    cout << "HERE'S A CEG:" << endl;
+    auto ceg = Validator::state_from_model(solver_, "_");
+    bool ok = am.build_testcase_memory(ceg, solver_,
+                                       *static_cast<CellMemory*>(state_t.memory),
+                                       *static_cast<CellMemory*>(state_r.memory),
+                                       target, rewrite);
+
+    cout << "ok=" << ok << endl;
+    cout << ceg << endl;
+  }
+
+  return is_sat;
+
+}
+
+vector<pair<CellMemory*, CellMemory*>> 
+BoundedValidator::enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
+                                            const CfgPath& P, const CfgPath& Q,
+                                            const vector<size_t>& target_con_access,
+                                            const vector<size_t>& rewrite_con_access,
+                                            vector<CellMemory::SymbolicAccess> target_sym_access,
+                                            vector<CellMemory::SymbolicAccess> rewrite_sym_access) {
 
   cout << "===================== RECURSIVE STEP ==============================" << endl;
 
   vector<pair<CellMemory*, CellMemory*>> result;
   // Step 0: check for feasibility.  if not, stop here.
-
-  // (i) build circuits for each path, including jump constraints
-  // (ii) assert equal starting states
-  // (iii) assert aliasing relations
+  if(!check_feasibility(target, rewrite, P, Q, target_sym_access, rewrite_sym_access))
+    return result;
 
   // Step 1: if we've processed all the concrete accesses, we're done.  Generate CellMemories and return.
   if(target_sym_access.size() == target_con_access.size() &&
@@ -131,7 +241,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
   // Create first symbolic access
   CellMemory::SymbolicAccess first;
   first.line = target_concrete_accesses[0];
-  first.size = target.get_code()[first.line].mem_dereference_size();
+  first.size = target.get_code()[first.line].mem_dereference_size()/8;
   first.cell = 0;
   first.cell_offset = 0;
   first.cell_size = first.size;
@@ -310,17 +420,12 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
   auto mem_const = memories.first->equality_constraint(*memories.second);
   constraints.push_back(mem_const);
 
-  auto target_line_cell_map = memories.first->get_line_cell_map();
-  auto rewrite_line_cell_map = memories.second->get_line_cell_map();
-
-  map<size_t, pair<SymBitVector, size_t>> cell_addr_map;
-
   size_t line_no = 0;
   for(size_t i = 0; P.size() && i < P.size() - 1; ++i)
-    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no, target_line_cell_map, cell_addr_map);
+    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
   line_no = 0;
   for(size_t i = 0; Q.size() && i < Q.size() - 1; ++i)
-    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no, rewrite_line_cell_map, cell_addr_map);
+    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
 
   constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
@@ -395,9 +500,7 @@ bool BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
 
 
 void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
-                                     SymState& state, size_t& line_no,
-                                     const map<size_t, CellMemory::SymbolicAccess>& line_cell_map,
-                                     map<size_t, pair<SymBitVector, size_t>>& cell_addr_map) {
+                                     SymState& state, size_t& line_no) {
 
   if(cfg.num_instrs(bb) == 0)
     return;
@@ -548,9 +651,6 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   for(auto it : state_r.equality_constraints(init, rewrite.def_ins()))
     constraints.push_back(it);
 
-  map<size_t, pair<SymBitVector, size_t>> cell_addr_map;
-  map<size_t, CellMemory::SymbolicAccess> target_line_cell_map;
-  map<size_t, CellMemory::SymbolicAccess> rewrite_line_cell_map;;
 
   if(memory) {
     state_t.memory = memories.first;
@@ -561,17 +661,14 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     auto mem_const = memories.first->equality_constraint(*memories.second);
     BOUNDED_DEBUG(cout << "Start memory constraint: " << mem_const << endl;)
     constraints.push_back(mem_const);
-
-    target_line_cell_map = memories.first->get_line_cell_map();
-    rewrite_line_cell_map = memories.second->get_line_cell_map();
   }
 
   size_t line_no = 0;
   for(size_t i = 0; i < P.size(); ++i)
-    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no, target_line_cell_map, cell_addr_map);
+    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
   line_no = 0;
   for(size_t i = 0; i < Q.size(); ++i)
-    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no, rewrite_line_cell_map, cell_addr_map);
+    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
   if(memory)
     constraints.push_back(memories.first->aliasing_formula(*memories.second));
 
@@ -672,17 +769,6 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     found_paths &= learn_paths(rewrite, true);
     BOUNDED_DEBUG(cout << "=== DONE LEARNING PATHS" << endl;)
 
-    bool has_memory = false;
-    for(auto it : target.get_code())
-      if(it.is_memory_dereference() && !it.is_ret())
-        has_memory = true;
-    for(auto it : rewrite.get_code())
-      if(it.is_memory_dereference() && !it.is_ret())
-        has_memory = true;
-
-    if(!found_paths && has_memory) {
-      throw VALIDATOR_ERROR("No testcases terminated without segfault within bounds.");
-    }
 
     // Step 3: check each pair of paths
     bool ok = true;
