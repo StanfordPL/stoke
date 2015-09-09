@@ -268,8 +268,12 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
       auto addr_bv = solver.get_model_bv(ss.str(), 64);
       auto address = addr_bv.get_fixed_quad(0);
 
+      assert(memory.init_cells_.count(cell));
       const SymBitVector* v = &memory.init_cells_.at(cell);
-      auto value_var = static_cast<const SymBitVectorVar*>(v->ptr);
+      cout << "TYPE: " << v->type() << endl;
+      auto value_var = dynamic_cast<const SymBitVectorVar*>(v->ptr);
+      /*cout << "VAR NAME: " << value_var->get_name() << endl;
+      cout << "VAR SIZE: " << value_var->get_size() << endl;*/
       auto value_bv = solver.get_model_bv(value_var->get_name(), value_var->get_size());
 
       DEBUG_BUILD_TC(cout << "Cell " << cell << " address = " << hex << address
