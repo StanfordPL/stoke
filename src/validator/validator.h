@@ -88,20 +88,34 @@ protected:
    * instructions are supported.  Throws exception on error.*/
   void sanity_checks(const Cfg&, const Cfg&) const;
 
-  /** Setup the memory manager (on invocation of the validator) */
+  /** Push a new memory manager onto the stack. */
   void init_mm() {
-    memory_manager_ = SymMemoryManager();
-    SymBitVector::set_memory_manager(&memory_manager_);
-    SymBool::set_memory_manager(&memory_manager_);
+    auto manager = new SymMemoryManager();
+    SymBitVector::set_memory_manager(manager);
+    SymBool::set_memory_manager(manager);
+    memory_manager_.push(manager);
   }
-  /** Clean up the memory */
+  /** Pop a memory manager off the stack */
   void stop_mm() {
-    memory_manager_.collect();
-    SymBitVector::set_memory_manager(NULL);
-    SymBool::set_memory_manager(NULL);
+    auto manager = memory_manager_.top();
+    manager->collect();
+    delete manager;
+
+    memory_manager_.pop();
+
+    if(memory_manager_.size()) {
+      auto manager = memory_manager_.top();
+      SymBitVector::set_memory_manager(manager);
+      SymBool::set_memory_manager(manager);
+    }
+  }
+  /** Discard and reset all memory managers. */
+  void reset_mm() {
+    while(memory_manager_.size())
+      stop_mm();
   }
   /** The memory manager */
-  SymMemoryManager memory_manager_;
+  std::stack<SymMemoryManager*> memory_manager_;
 
   /** SMT Solver to use */
   SMTSolver& solver_;

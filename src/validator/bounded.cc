@@ -138,9 +138,6 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   ALIAS_DEBUG(cout << "-> rewrite map" << endl;)
   const auto rewrite_mem = make_cell_memory(rewrite_sym);
 
-
-  init_mm();
-
   vector<SymBool> constraints;
 
   SymState init("");
@@ -194,8 +191,6 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
     cout << "ok=" << ok << endl;
     cout << ceg << endl;
   }
-
-  stop_mm();
 
   return is_sat;
 
@@ -504,6 +499,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   BOUNDED_DEBUG(cout << "===========================================" << endl;)
   BOUNDED_DEBUG(cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;)
+  init_mm();
 
   // Get a list of all aliasing cases.
   auto memory_list =  enumerate_aliasing(target, rewrite, P, Q);
@@ -527,7 +523,6 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     }
     )
     // Step 3: Build circuits
-    init_mm();
 
     vector<SymBool> constraints;
 
@@ -609,14 +604,16 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       }
       BOUNDED_DEBUG(cout << "  (Got counterexample)" << endl;)
       BOUNDED_DEBUG(cout << ceg << endl;)
+
+      stop_mm();
       return false;
     } else {
       BOUNDED_DEBUG(cout << "  (This case verified)" << endl;)
     }
 
-    stop_mm();
   }
 
+  stop_mm();
   return true;
 
 }
@@ -630,15 +627,12 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   // State
   counterexamples_.clear();
   has_error_ = false;
+  init_mm();
 
   try {
 
     // Step 0: Background checks
     sanity_checks(target, rewrite);
-
-    if(sandbox_->num_inputs() == 0) {
-      throw VALIDATOR_ERROR("Sandbox has no testcases.  Bounded verification requires at least one to learn aliasing constraints.  It should run within the bound and not segfault.");
-    }
 
     // Step 1: get all the paths from the enumerator
     for(auto path : CfgPaths::enumerate_paths(target, bound_)) {
@@ -662,6 +656,7 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
       }
     }
 
+    stop_mm();
     return ok;
 
   } catch (validator_error e) {
@@ -670,10 +665,11 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     error_file_ = e.get_file();
     error_line_ = e.get_line();
 
-    // TODO: this might be buggy if init_mm() is not called first.
-    stop_mm();
+    reset_mm();
     return false;
   }
+
+  reset_mm();
 
   has_error_ = true;
   error_ = "Internal error!  Unexpected control flow.";
