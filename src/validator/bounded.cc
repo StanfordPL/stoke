@@ -16,8 +16,7 @@
 #include "src/cfg/paths.h"
 #include "src/validator/bounded.h"
 
-//#define BOUNDED_DEBUG(X) {}
-#define BOUNDED_DEBUG(X) { }
+#define BOUNDED_DEBUG(X) { X }
 
 using namespace std;
 using namespace stoke;
@@ -305,6 +304,9 @@ bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrit
 
   state_t.memory = memories.first;
   state_r.memory = memories.second;
+  state_t.memory->set_parent(&state_t);
+  state_r.memory->set_parent(&state_r);
+
   auto mem_const = memories.first->equality_constraint(*memories.second);
   constraints.push_back(mem_const);
 
@@ -436,61 +438,7 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
     } else if (instr.is_ret()) {
       return;
     } else {
-      if(instr.is_memory_dereference()) {
-        if(line_cell_map.count(line_no-1)) {
-          // we need to add a constraint for the aliasing relationship that
-          // we assumed.
-          auto access = line_cell_map.at(line_no-1);
-          size_t cell = access.cell;
-          size_t width = access.size;
-          auto address = state.get_addr(instr);
-          auto cell_start_addr = address - SymBitVector::constant(64, access.cell_offset);
-
-          // assert with other writes to the same cell use same cell start address
-          if(cell_addr_map.count(cell)) {
-            state.constraints.push_back(cell_addr_map[cell].first == cell_start_addr);
-          } else {
-            cell_addr_map[cell] = pair<SymBitVector,size_t>(cell_start_addr, access.cell_size);
-
-            // Let's get that cell start address into a variable to use later
-            stringstream ss;
-            ss << "CELL_" << cell << "_ADDR";
-            auto cell_addr_var = SymBitVector::var(64, ss.str());
-            state.constraints.push_back(cell_addr_var == cell_start_addr);
-
-            cell_addr_var == cell_start_addr;
-
-            // By the way, don't go past address 0xffffffffffffffff.  Idiot.
-            // In fact, for my sanity, let's keep it under 0xffffffffffffffc0,
-            // except in debug mode where we want to find all the issues.
-#ifdef NDEBUG
-            state.constraints.push_back(
-              cell_start_addr <= SymBitVector::constant(64, -access.cell_size-0x3f));
-            state.constraints.push_back(
-              cell_start_addr >= SymBitVector::constant(64, 0x40));
-#else
-            state.constraints.push_back(
-              cell_start_addr <= SymBitVector::constant(64, -access.cell_size));
-#endif
-
-            // assert difference with previous writes to other cells
-            for(auto p : cell_addr_map) {
-              if(p.first != cell) {
-                size_t other_cell = p.first;
-                auto other_address = p.second.first;
-                size_t other_width = p.second.second;
-
-                auto curr_lt_other = cell_start_addr + SymBitVector::constant(64, access.cell_size) <= other_address;
-                auto other_lt_curr = other_address + SymBitVector::constant(64, other_width) <= cell_start_addr;
-                state.constraints.push_back(curr_lt_other | other_lt_curr);
-              }
-            }
-          }
-        }
-      }
-
       // Build the handler for the instruction
-
       state.set_lineno(line_no-1);
       //cout << "LINE=" << line_no-1 << ": " << instr << endl;
       handler_.build_circuit(instr, state);
@@ -606,7 +554,10 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   if(memory) {
     state_t.memory = memories.first;
+    state_t.memory->set_parent(&state_t);
     state_r.memory = memories.second;
+    state_r.memory->set_parent(&state_r);
+
     auto mem_const = memories.first->equality_constraint(*memories.second);
     BOUNDED_DEBUG(cout << "Start memory constraint: " << mem_const << endl;)
     constraints.push_back(mem_const);
@@ -621,6 +572,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   line_no = 0;
   for(size_t i = 0; i < Q.size(); ++i)
     build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no, rewrite_line_cell_map, cell_addr_map);
+  if(memory)
+    constraints.push_back(memories.first->aliasing_formula(*memories.second));
+
 
   constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
   constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
