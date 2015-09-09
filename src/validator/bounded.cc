@@ -80,13 +80,17 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   auto target_sym = split_sym_accesses(sym_list, false);
   auto rewrite_sym = split_sym_accesses(sym_list, true);
 
+  // Now build the memories and make the constraints
+  {
+  cout << "-> ORIGINAL target map" << endl;
+  const auto target_mem = make_cell_memory(target_sym);
+  cout << "-> ORIGINAL rewrite map" << endl;
+  const auto rewrite_mem = make_cell_memory(rewrite_sym);
+  }
+
   // create unconstrainted cells for the rest of memory accesses
   size_t top_cell = 0;
-  for(auto it : target_sym) {
-    if(it.cell > top_cell)
-      top_cell = it.cell;
-  }
-  for(auto it : rewrite_sym) {
+  for(auto it : sym_list) {
     if(it.cell > top_cell)
       top_cell = it.cell;
   }
@@ -98,13 +102,24 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
     auto& symb = k ? rewrite_sym : target_sym;
 
     auto accesses = enumerate_accesses(cfg);
-    for(size_t i = symb.size(); i < accesses.size(); ++i) {
+    map<size_t, bool> found_access;
+    for(auto it : sym_list) {
+      if(it.is_rewrite == k ) {
+        found_access[it.line] = true;
+      }
+    }
+
+    for(auto line : accesses) {
+      if(found_access[line])
+        continue;
+
       CellMemory::SymbolicAccess sa;
-      sa.line = accesses[i];
+      sa.line = line;
       sa.size = cfg.get_code()[sa.line].mem_dereference_size()/8;
       sa.cell = top_cell++;
       sa.cell_size = sa.size;
       sa.cell_offset = 0;
+      sa.is_rewrite = k;
       symb.push_back(sa);
     }
   }
@@ -163,6 +178,7 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   }
 
   cout << "FEASIBLE: " << is_sat << endl;
+  /*
   if(is_sat) {
     cout << "HERE'S A CEG:" << endl;
     auto ceg = Validator::state_from_model(solver_, "_");
@@ -171,6 +187,7 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
     cout << "ok=" << ok << endl;
     cout << ceg << endl;
   }
+  */
 
   stop_mm();
 
@@ -226,9 +243,6 @@ size_t accesses_done) {
   }
   sa.size = cfg_unroll.get_code()[sa.line].mem_dereference_size()/8;
 
-  cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target")
-       << " line " << sa.line << " size " << sa.size << endl;
-
 
   // find the index of the maximum cell
   map<size_t, size_t> cell_size_map;
@@ -245,6 +259,9 @@ size_t accesses_done) {
   // Options:
   // (i)   new cell
   {
+    cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target")
+         << " line " << sa.line << " size " << sa.size << endl;
+
     cout << "Option (i): new cell" << endl;
     sa.cell = cell_max + 1;
     sa.cell_size = sa.size;
@@ -265,6 +282,10 @@ size_t accesses_done) {
     // CASE (A)   |--- this cell ---|
     //            <- j bytes ->|--- other cell --|
     for(size_t j = 1; j < sa.size; ++j) {
+      cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target")
+           << " line " << sa.line << " size " << sa.size << endl;
+
+      cout << "Option (ii) / A: access overlaps start of existing cell " << j << endl;
 
       auto recursive_accesses = sym_access;
 
@@ -330,6 +351,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
   first.cell = 0;
   first.cell_offset = 0;
   first.cell_size = first.size;
+  first.is_rewrite = false;
 
   vector<CellMemory::SymbolicAccess> symbolic_accesses;
 
@@ -704,6 +726,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   if(memory)
     enumerate_aliasing(target, rewrite, P, Q);
+
+  return false;
 
   // Step 1: Learn aliasing relationships
   auto memories = std::pair<CellMemory*, CellMemory*>(NULL, NULL);
