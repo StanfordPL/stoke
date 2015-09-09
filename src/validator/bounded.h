@@ -75,9 +75,7 @@ private:
   /** Generate a loop-free CFG from a loopy CFG and a path */
   static Cfg path_cfg(const Cfg& cfg, const CfgPath& p);
   /** Build the circuit for a single basic block */
-  void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no,
-                     const std::map<size_t, CellMemory::SymbolicAccess>&,
-                     std::map<size_t, std::pair<SymBitVector, size_t>>&);
+  void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
   /** Is there a jump in the path following this basic block? */
   static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
   /** Find or create a testcase for a pair of paths. */
@@ -116,10 +114,15 @@ private:
       const CfgPath& P, const CfgPath& Q,
       const std::vector<size_t>& target_con_access,
       const std::vector<size_t>& rewrite_con_access,
-      const std::vector<CellMemory::SymbolicAccess>& target_sym_access,
-      const std::vector<CellMemory::SymbolicAccess>& rewrite_sym_access);
+      std::vector<CellMemory::SymbolicAccess> target_sym_access,
+      std::vector<CellMemory::SymbolicAccess> rewrite_sym_access);
 
   std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q);
+
+  bool check_feasibility(const Cfg& target, const Cfg& rewrite,
+                         const CfgPath& P, const CfgPath& Q,
+                         std::vector<CellMemory::SymbolicAccess> target_sym, 
+                         std::vector<CellMemory::SymbolicAccess> rewrite_sym);
 
 };
 

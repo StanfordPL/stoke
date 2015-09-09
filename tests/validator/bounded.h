@@ -366,6 +366,35 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
 
 }
 
+TEST_F(BoundedValidatorBaseTest, WriteDifferentPointers) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax + x64asm::rdx;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "incq %rax" << std::endl;
+  sst << "addl $0x5, (%rax)" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, live_outs, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "incq %rdx" << std::endl;
+  ssr << "addl $0x5, (%rdx)" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, live_outs, live_outs);
+
+  add_testcases(3, target);
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for(auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
+}
+
 TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
