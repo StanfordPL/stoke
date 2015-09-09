@@ -76,11 +76,7 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
 
 void CellMemory::equalize_cells(CellMemory& other) {
 
-  cout << "EQUALIZE CELLS CALLED" << endl;
-  cout << "cells_.size() = " << cells_.size() << endl;
-
   for(auto p : cells_) {
-    cout << "checking out cell " << p.first << endl;
     bool found = false;
     for(auto q : other.cells_) {
       if(p.first == q.first) {
