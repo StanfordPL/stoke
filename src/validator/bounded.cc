@@ -187,7 +187,7 @@ vector<pair<CellMemory*, CellMemory*>>
                                         const vector<size_t>& target_con_access,
                                         const vector<size_t>& rewrite_con_access,
                                         const vector<CellMemory::SymbolicAccess>& sym_access,
-                                        size_t accesses_done) {
+size_t accesses_done) {
 
   cout << "===================== RECURSIVE STEP ==============================" << endl;
 
@@ -212,9 +212,9 @@ vector<pair<CellMemory*, CellMemory*>>
   }
 
   // Step 2: choose a memory access to add
-    // whether we're taking an access from the target or the rewrite
+  // whether we're taking an access from the target or the rewrite
   bool work_on_rewrite = (accesses_done >= target_con_access.size());
-    // reference to the unrolled cfg we're working on 
+  // reference to the unrolled cfg we're working on
   auto& cfg_unroll = work_on_rewrite ? rewrite_unroll : target_unroll;
 
   CellMemory::SymbolicAccess sa;
@@ -230,7 +230,7 @@ vector<pair<CellMemory*, CellMemory*>>
        << " line " << sa.line << " size " << sa.size << endl;
 
 
-    // find the index of the maximum cell
+  // find the index of the maximum cell
   map<size_t, size_t> cell_size_map;
   int tmp_cell_max = -1;
   for(auto it : sym_access) {
@@ -259,7 +259,6 @@ vector<pair<CellMemory*, CellMemory*>>
   }
 
   // (ii)  overlaps with 1 existing cell
-  /*
   for(size_t i; i <= cell_max; ++i) {
     size_t other_size = cell_size_map[i];
 
@@ -267,28 +266,27 @@ vector<pair<CellMemory*, CellMemory*>>
     //            <- j bytes ->|--- other cell --|
     for(size_t j = 1; j < sa.size; ++j) {
 
-      auto new_sym_target = target_sym_access;
-      auto new_sym_rewrite = rewrite_sym_access;
+      auto recursive_accesses = sym_access;
 
-      // Go through all the memory writes and resize cell i.
+      // Go through all the memory writes and resize/reposition cell i.
       size_t new_cell_size = j + other_size;
-      for(size_t k = 0; k < 2; ++k) {
-        auto& access_list = k ? new_sym_rewrite : new_sym_target;
-        for(auto& it : access_list) {
-          if(it.cell == i) {
-            it.cell_size = new_cell_size;
-            it.cell_offset += j;
-          }
+      for(auto& it : recursive_accesses) {
+        if(it.cell == i) {
+          it.cell_size = new_cell_size;
+          it.cell_offset += j;
         }
       }
 
+      sa.cell = i;
+      sa.cell_size = new_cell_size;
+      sa.cell_offset = 0;
+      recursive_accesses.push_back(sa);
+
       auto new_results = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll,
-                         P, Q, target_con_access, rewrite_con_access,
-                         new_sym_target, new_sym_rewrite);
+                         P, Q, target_con_access, rewrite_con_access, recursive_accesses, accesses_done+1);
       result.insert(result.begin(), new_results.begin(), new_results.end());
     }
   }
-  */
 
   // (iii) overlaps with 2 existing cells
   // (iv)  overlaps with 2 existing cells and includes others in the middle
