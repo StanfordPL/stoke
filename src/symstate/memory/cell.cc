@@ -24,6 +24,9 @@ SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
   assert(map_.count(line_no));
 
   auto access = map_[line_no];
+  if(access.unconstrained) {
+    return SymBool::_false();
+  }
 
   assert(access.cell_offset + access.size <= access.cell_size);
 
@@ -55,6 +58,10 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
   assert(map_.count(line_no));
 
   auto access = map_[line_no];
+  if(access.unconstrained) {
+    // It's an unconstrained access.  We're done.
+    return std::pair<SymBitVector,SymBool>(SymBitVector::tmp_var(size), SymBool::_false());
+  }
 
   auto addr_constraint = (address == cell_addrs_[access.cell] + SymBitVector::constant(64, access.cell_offset));
   state_->constraints.push_back(addr_constraint);
@@ -90,6 +97,7 @@ void CellMemory::equalize_cells(CellMemory& other) {
       other.init_cells_[p.first] = other.cells_[p.first];
       other.cell_sizes_[p.first] = cell_sizes_[p.first];
       other.cell_addrs_[p.first] = cell_addrs_[p.first];
+      other.cell_unconstrained_[p.first] = cell_unconstrained_[p.first];
     }
   }
 
@@ -108,6 +116,7 @@ void CellMemory::equalize_cells(CellMemory& other) {
       init_cells_[q.first] = cells_[q.first];
       cell_sizes_[q.first] = other.cell_sizes_[q.first];
       cell_addrs_[q.first] = other.cell_addrs_[q.first];
+      cell_unconstrained_[q.first] = other.cell_unconstrained_[q.first];
     }
   }
 
@@ -120,6 +129,9 @@ SymBool CellMemory::aliasing_formula(CellMemory& other) {
   SymBool condition = SymBool::_true();
 
   for(auto p : cells_) {
+    if(cell_unconstrained_[p.first])
+      continue;
+
     size_t cell = p.first;
     size_t cell_size = cell_sizes_[cell];
     auto cell_addr = cell_addrs_[cell];
@@ -133,10 +145,11 @@ SymBool CellMemory::aliasing_formula(CellMemory& other) {
     condition = condition & (cell_addr <= SymBitVector::constant(64, -cell_size-0x3f));
     condition = condition & (cell_addr >= SymBitVector::constant(64, 0x40));
 
-    condition = condition & (cell_addr == other.cell_addrs_[cell]);
-
     // Assert no overlaps with other cells
     for(auto q : cells_) {
+      if(cell_unconstrained_[q.first])
+        continue;
+
       if(q.first > cell) {
         // we want to assert that these don't overlap
         size_t other_cell = q.first;
