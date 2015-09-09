@@ -60,10 +60,10 @@ CellMemory* make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
     ALIAS_DEBUG(
       cout << sa.line << " --> " << sa.cell << " (offset " << sa.cell_offset << " / size " << sa.size << " / cell size " << sa.cell_size << ")";
       if(sa.unconstrained)
-        cout << " (UNCONSTRAINED)";
+      cout << " (UNCONSTRAINED)";
       cout << endl;
     )
-  }
+    }
   return new CellMemory(map);
 }
 
@@ -186,7 +186,6 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   }
 
   ALIAS_DEBUG(cout << "FEASIBLE: " << is_sat << endl;);
-  /*
   if(is_sat) {
     cout << "HERE'S A CEG:" << endl;
     auto ceg = Validator::state_from_model(solver_, "_");
@@ -195,7 +194,6 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
     cout << "ok=" << ok << endl;
     cout << ceg << endl;
   }
-  */
 
   stop_mm();
 

@@ -473,7 +473,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
 
   std::stringstream sst;
   sst << ".foo:" << std::endl;
-  sst << "incl %eax" << std::endl;
+  sst << "incq %rax" << std::endl;
   sst << "movl %ecx, (%rdx, %rax, 4)" << std::endl;
   sst << "cmpl $0x10, %eax" << std::endl;
   sst << "jne .foo" << std::endl;
@@ -483,7 +483,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
   ssr << "movl %ecx, 0x4(%rdx, %rax, 4)" << std::endl;
-  ssr << "incl %eax" << std::endl;
+  ssr << "incq %rax" << std::endl;
   ssr << "cmpl $0x10, %eax" << std::endl;
   ssr << "jne .foo" << std::endl;
   ssr << "retq" << std::endl;

@@ -129,8 +129,6 @@ SymBool CellMemory::aliasing_formula(CellMemory& other) {
   SymBool condition = SymBool::_true();
 
   for(auto p : cells_) {
-    if(cell_unconstrained_[p.first])
-      continue;
 
     size_t cell = p.first;
     size_t cell_size = cell_sizes_[cell];
@@ -144,6 +142,10 @@ SymBool CellMemory::aliasing_formula(CellMemory& other) {
     // to prevent overflow conditions.
     condition = condition & (cell_addr <= SymBitVector::constant(64, -cell_size-0x3f));
     condition = condition & (cell_addr >= SymBitVector::constant(64, 0x40));
+
+    // Do aliasing constraints
+    if(cell_unconstrained_[cell])
+      continue;
 
     // Assert no overlaps with other cells
     for(auto q : cells_) {
