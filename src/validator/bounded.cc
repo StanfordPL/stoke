@@ -57,7 +57,12 @@ CellMemory* make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
   map<size_t, CellMemory::SymbolicAccess> map;
   for(auto sa : vector) {
     map[sa.line] = sa;
-    ALIAS_DEBUG(cout << sa.line << " --> " << sa.cell << " (offset " << sa.cell_offset << " / size " << sa.size << " / cell size " << sa.cell_size << ")" << endl;)
+    ALIAS_DEBUG(
+      cout << sa.line << " --> " << sa.cell << " (offset " << sa.cell_offset << " / size " << sa.size << " / cell size " << sa.cell_size << ")";
+      if(sa.unconstrained)
+        cout << " (UNCONSTRAINED)";
+      cout << endl;
+    )
   }
   return new CellMemory(map);
 }
@@ -122,6 +127,7 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
       sa.cell_size = sa.size;
       sa.cell_offset = 0;
       sa.is_rewrite = k;
+      sa.unconstrained = true;
       symb.push_back(sa);
     }
   }
@@ -244,9 +250,10 @@ size_t accesses_done) {
     sa.line = target_con_access[accesses_done];
   }
   sa.size = cfg_unroll.get_code()[sa.line].mem_dereference_size()/8;
+  sa.unconstrained = false;
 
 
-  // find the index of the maximum cell
+  // find the size of each cell
   map<size_t, size_t> cell_size_map;
   int tmp_cell_max = -1;
   for(auto it : sym_access) {
@@ -372,7 +379,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
     auto v = vector<pair<CellMemory*, CellMemory*>>();
     v.push_back(null_pair);
     return v;
-  } 
+  }
 
   // Create first symbolic access
   CellMemory::SymbolicAccess first;
@@ -388,6 +395,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
   first.cell = 0;
   first.cell_offset = 0;
   first.cell_size = first.size;
+  first.unconstrained = false;
 
 
   vector<CellMemory::SymbolicAccess> symbolic_accesses;
