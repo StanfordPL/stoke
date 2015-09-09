@@ -89,15 +89,19 @@ protected:
   }
 
   void add_testcases(int count) {
+    /*
     for (int i = 0; i < count; ++i) {
       sandbox->insert_input(get_state());
     }
+    */
   }
 
   void add_testcases(int count, const Cfg& cfg) {
+    /*
     for (int i = 0; i < count; ++i) {
       sandbox->insert_input(get_state(cfg));
     }
+    */
   }
 
   CpuState get_state() {
@@ -489,6 +493,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rax, 0x10);
   sg.set_max_memory(1024);
@@ -500,6 +505,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -527,17 +533,21 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rax, 0x10);
   sg.set_max_memory(1024);
   sg.set_max_attempts(64);
+  */
 
+  /*
   for(size_t i = 0; i < 32; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -572,6 +582,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rax, 0x10);
   sg.set_max_memory(1024);
@@ -583,6 +594,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -743,6 +755,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rax, 0x10);
   sg.set_max_memory(1024);
@@ -754,6 +767,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -799,6 +813,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrect) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rdx, 0xa);
   sg.set_bitmask(x64asm::rsi, 0x3f00);
@@ -812,6 +827,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrect) {
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -859,6 +875,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedCorrect) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rdx, 0xa);
   sg.set_bitmask(x64asm::rsi, 0x3f00);
@@ -872,6 +889,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedCorrect) {
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -910,6 +928,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rdx, 0x6);
   sg.set_bitmask(x64asm::rsi, 0x3f00);
@@ -926,6 +945,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
     }
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
