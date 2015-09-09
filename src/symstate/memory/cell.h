@@ -33,6 +33,7 @@ public:
     size_t cell;          // which bitvector do we hold the value in?
     size_t cell_offset;   // do we need to take an offset into the cell?
     size_t cell_size;     // tracks the total size of the cell
+    bool is_rewrite;      // not used by CellMemory -- useful field for client
   };
 
   /** Takes a map from the line number of a target/rewrite to a "cell number" along with
