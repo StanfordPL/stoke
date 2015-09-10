@@ -281,8 +281,8 @@ size_t accesses_done) {
   for(size_t i; i <= cell_max; ++i) {
     size_t other_size = cell_size_map[i];
 
-    // CASE (A)   |--- this cell ---|
-    //            <- j bytes ->|--- other cell --|
+    // CASE (A)   |--- this cell ---|                 OR  |------- this cell -------|
+    //            <- j bytes ->|--- other cell --|        <- j ->|- other cell -|
     for(size_t j = 1; j < sa.size; ++j) {
       ALIAS_DEBUG(cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target")
                   << " line " << sa.line << " size " << sa.size << endl;)
@@ -292,7 +292,7 @@ size_t accesses_done) {
       auto recursive_accesses = sym_access;
 
       // Go through all the memory writes and resize/reposition cell i.
-      size_t new_cell_size = j + other_size;
+      size_t new_cell_size = MAX(j + other_size, sa.size);
       for(auto& it : recursive_accesses) {
         if(it.cell == i) {
           it.cell_size = new_cell_size;
