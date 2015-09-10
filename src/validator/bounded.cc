@@ -16,14 +16,79 @@
 #include "src/cfg/paths.h"
 #include "src/validator/bounded.h"
 
-#define BOUNDED_DEBUG(X) { X }
+#define BOUNDED_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
+#define ALIAS_CASE_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
+
+struct OverlapDescriptor {
+  bool is_empty;
+  size_t size;
+  size_t cell;
+};
+
+typedef vector<OverlapDescriptor> CellArrangement;
+
+vector<CellArrangement> find_arrangements(vector<OverlapDescriptor*>& start, vector<OverlapDescriptor>& available_cells, size_t max_size) {
+
+  vector<CellArrangement> results;
+  // Check for termination.
+  size_t size_so_far = 0;
+  for(auto& descr : start) {
+    assert(descr->size > 0);
+    size_so_far += descr->size;
+  }
+  if(size_so_far >= max_size) {
+    CellArrangement a;
+    for(auto it : start)
+      a.push_back(*it);
+    results.push_back(a);
+    return results;
+  }
+
+  // Option 1: pad the cell with an empty space
+  OverlapDescriptor od;
+  start.push_back(&od);
+  od.is_empty = true;
+  od.size = 1;
+  od.cell = (size_t)(-1);
+  {
+    auto rec_results = find_arrangements(start, available_cells, max_size);
+    results.insert(results.begin(), rec_results.begin(), rec_results.end());
+  }
+
+  // Option 2: add an available cell
+  od.is_empty = false;
+  for(size_t i = 0; i < available_cells.size(); ++i) {
+    auto descr = available_cells[i];
+    od.cell = descr.cell;
+    if(size_so_far == 0) {
+      // we can place this cell with any size we like
+      // this way, 'j' bytes are not overlapping before the overlapping region
+      for(size_t j = 1; j < descr.size; ++j) {
+        od.size = j;
+        available_cells.erase(available_cells.begin() + i);
+        auto rec_results = find_arrangements(start, available_cells, max_size);
+        results.insert(results.begin(), rec_results.begin(), rec_results.end());
+        available_cells.insert(available_cells.begin() + i, descr);
+      }
+    }
+    od.size = descr.size;
+    available_cells.erase(available_cells.begin() + i);
+    auto rec_results = find_arrangements(start, available_cells, max_size);
+    results.insert(results.begin(), rec_results.begin(), rec_results.end());
+    available_cells.insert(available_cells.begin() + i, descr);
+  }
+
+  start.erase(start.end() - 1);
+  return results;
+
+}
 
 bool vectors_have_common(std::vector<size_t> left, std::vector<size_t> right, size_t& value) {
 
@@ -258,8 +323,81 @@ size_t accesses_done) {
   assert(tmp_cell_max >= 0);
   size_t cell_max = (size_t)tmp_cell_max;
 
+  // Build list of available cells
+  vector<OverlapDescriptor> available_cells;
+  for(auto p : cell_size_map) {
+    OverlapDescriptor od;
+    od.cell = p.first;
+    od.size = p.second;
+    od.is_empty = false;
+    available_cells.push_back(od);
+  }
+  vector<OverlapDescriptor*> start;
+  auto overlap_options = find_arrangements(start, available_cells, sa.size);
+  ALIAS_CASE_DEBUG(cout << "Overlap options for size " << sa.size << ":" << endl;
+  for(auto& option : overlap_options) {
+  for(auto& it : option) {
+      if(it.is_empty)
+        cout << "(E) ";
+      else
+        cout << "(" << it.cell << " sz. " << it.size << ") ";
+    }
+    cout << endl;
+  })
+
+  // For each overlap option, rewrite the cell map and recurse
+  for(auto& option : overlap_options) {
+
+    // first compute the total size of the new cell
+    size_t new_cell_size = 0;
+    for(auto descr : option)
+      new_cell_size += descr.size;
+
+    size_t offset_from_cell_start = 0;
+
+    // check if the first cell in the option is shorter than the
+    // actual cell; if so, that means that our offset from the
+    // start of the cell is actually non-zero.
+    if(!option[0].is_empty && (option[0].size < cell_size_map[option[0].cell])) {
+      offset_from_cell_start = cell_size_map[option[0].cell] - option[0].size;
+      new_cell_size += offset_from_cell_start;
+    }
+
+    sa.cell = cell_max+1;
+    sa.cell_size = new_cell_size;
+    sa.cell_offset = offset_from_cell_start;
+
+    auto recursive_accesses = sym_access;
+    for(size_t i = 0; i < option.size(); ++i) {
+      if(option[i].is_empty) {
+        offset_from_cell_start += option[i].size;
+        continue;
+      }
+
+      // Go through the map and rewrite every occurrence of cell[i] as
+      // with the new cell.
+      for(auto& it : recursive_accesses) {
+        if(it.cell == option[i].cell) {
+          it.cell = sa.cell;
+          if(i == 0) //special case when offset_from_cell_start doesn't begin at 0.
+            it.cell_offset = 0;
+          else
+            it.cell_offset = offset_from_cell_start;
+          it.cell_size = new_cell_size;
+        }
+      }
+
+      offset_from_cell_start += option[i].size;
+    }
+    recursive_accesses.push_back(sa);
+
+    auto new_results = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll,
+                       P, Q, target_con_access, rewrite_con_access, recursive_accesses, accesses_done+1);
+    result.insert(result.begin(), new_results.begin(), new_results.end());
+  }
 
 
+  /*
   // Options:
   // (i)   new cell
   {
@@ -339,9 +477,7 @@ size_t accesses_done) {
       result.insert(result.begin(), new_results.begin(), new_results.end());
     }
   }
-
-  // (iii) overlaps with 2 existing cells
-  // (iv)  overlaps with 2 existing cells and includes others in the middle
+  */
 
 
   // Step 3: consider all the ways it can overlap with all the existing cells
