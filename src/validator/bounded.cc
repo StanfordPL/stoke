@@ -18,6 +18,7 @@
 
 #define BOUNDED_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
+#define ALIAS_CASE_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 
@@ -57,8 +58,8 @@ vector<CellArrangement> find_arrangements(vector<OverlapDescriptor*>& start, vec
   od.size = 1;
   od.cell = (size_t)(-1);
   {
-  auto rec_results = find_arrangements(start, available_cells, max_size);
-  results.insert(results.begin(), rec_results.begin(), rec_results.end());
+    auto rec_results = find_arrangements(start, available_cells, max_size);
+    results.insert(results.begin(), rec_results.begin(), rec_results.end());
   }
 
   // Option 2: add an available cell
@@ -333,16 +334,16 @@ size_t accesses_done) {
   }
   vector<OverlapDescriptor*> start;
   auto overlap_options = find_arrangements(start, available_cells, sa.size);
-  cout << "Overlap options for size " << sa.size << ":" << endl;
+  ALIAS_CASE_DEBUG(cout << "Overlap options for size " << sa.size << ":" << endl;
   for(auto& option : overlap_options) {
-    for(auto& it : option) {
+  for(auto& it : option) {
       if(it.is_empty)
         cout << "(E) ";
       else
         cout << "(" << it.cell << " sz. " << it.size << ") ";
     }
     cout << endl;
-  }
+  })
 
   // For each overlap option, rewrite the cell map and recurse
   for(auto& option : overlap_options) {
@@ -365,7 +366,7 @@ size_t accesses_done) {
     sa.cell = cell_max+1;
     sa.cell_size = new_cell_size;
     sa.cell_offset = offset_from_cell_start;
-    
+
     auto recursive_accesses = sym_access;
     for(size_t i = 0; i < option.size(); ++i) {
       if(option[i].is_empty) {
@@ -385,13 +386,13 @@ size_t accesses_done) {
           it.cell_size = new_cell_size;
         }
       }
-      
+
       offset_from_cell_start += option[i].size;
     }
     recursive_accesses.push_back(sa);
 
     auto new_results = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll,
-                         P, Q, target_con_access, rewrite_con_access, recursive_accesses, accesses_done+1);
+                       P, Q, target_con_access, rewrite_con_access, recursive_accesses, accesses_done+1);
     result.insert(result.begin(), new_results.begin(), new_results.end());
   }
 
