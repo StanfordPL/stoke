@@ -30,6 +30,8 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+#define DEBUG_MAP_TC(X) {}
+
 
 bool Validator::is_supported(Instruction& i) const {
 
@@ -186,7 +188,14 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     uint64_t address = pair.first;
     size_t size = pair.second.num_fixed_bytes();
 
-    if(address >= max_addr - size) {
+    // Three cases:
+    // Case 1: address + size < max_addr, and neither has overflowed
+    // (do nothing)
+    // Case 2: address - max_addr < 32
+    // (expand existing region)
+    // Case 3: address - max_addr >= 32
+    // (create new region)
+    if(!(address < max_addr && address + size <= max_addr)) {
       if(address - max_addr < 32) {
         uint64_t new_size = address + size - last_segment->lower_bound();
         last_segment->resize(last_segment->lower_bound(), new_size);
@@ -221,13 +230,12 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     cs.segments.push_back(segments[i]);
   }
 
-  /*
-  cout << "Filling up memory using this map..." << endl;
+  DEBUG_MAP_TC(
+    cout << "Filling up memory using this map..." << endl;
   for(auto p : concrete) {
-    cout << hex << p.first << "+" << p.second.num_fixed_bytes() << endl;
+  cout << hex << p.first << "+" << p.second.num_fixed_bytes() << endl;
   }
-  cout << "Here's the testcase: " << endl << cs << endl;
-  */
+  cout << "Here's the testcase: " << endl << cs << endl;)
 
   return true;
 }

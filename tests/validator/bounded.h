@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <regex>
+
 #include "src/sandbox/sandbox.h"
 #include "src/validator/bounded.h"
 
@@ -30,7 +32,7 @@ public:
     sg_sandbox->set_max_jumps(4096);
     sg_sandbox->set_abi_check(false);
     validator = new BoundedValidator(*solver);
-    validator->set_bound(4);
+    validator->set_bound(2);
     validator->set_sandbox(sandbox);
   }
 
@@ -87,15 +89,19 @@ protected:
   }
 
   void add_testcases(int count) {
+    /*
     for (int i = 0; i < count; ++i) {
       sandbox->insert_input(get_state());
     }
+    */
   }
 
   void add_testcases(int count, const Cfg& cfg) {
+    /*
     for (int i = 0; i < count; ++i) {
       sandbox->insert_input(get_state(cfg));
     }
+    */
   }
 
   CpuState get_state() {
@@ -173,6 +179,33 @@ TEST_F(BoundedValidatorBaseTest, NoLoopsFails) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for(auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
+
+}
+
+TEST_F(BoundedValidatorBaseTest, UnsupportedInstruction) {
+
+  auto live_outs = all();
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "cpuid" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, live_outs, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "cpuid" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, live_outs, live_outs);
+
+  add_testcases(3, target);
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  ASSERT_TRUE(validator->has_error());
+
+  EXPECT_TRUE(std::regex_match(validator->error(),
+                               std::regex(".*unsupported.*", std::regex_constants::icase)))
+      << "Error message: " << validator->error();
 
 }
 
@@ -337,6 +370,35 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
 
 }
 
+TEST_F(BoundedValidatorBaseTest, WriteDifferentPointers) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax + x64asm::rdx;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "incq %rax" << std::endl;
+  sst << "addl $0x5, (%rax)" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, live_outs, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "incq %rdx" << std::endl;
+  ssr << "addl $0x5, (%rdx)" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, live_outs, live_outs);
+
+  add_testcases(3, target);
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for(auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
+}
+
 TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -415,7 +477,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
 
   std::stringstream sst;
   sst << ".foo:" << std::endl;
-  sst << "incl %eax" << std::endl;
+  sst << "incq %rax" << std::endl;
   sst << "movl %ecx, (%rdx, %rax, 4)" << std::endl;
   sst << "cmpl $0x10, %eax" << std::endl;
   sst << "jne .foo" << std::endl;
@@ -425,12 +487,13 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
   ssr << "movl %ecx, 0x4(%rdx, %rax, 4)" << std::endl;
-  ssr << "incl %eax" << std::endl;
+  ssr << "incq %rax" << std::endl;
   ssr << "cmpl $0x10, %eax" << std::endl;
   ssr << "jne .foo" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rax, 0x10);
   sg.set_max_memory(1024);
@@ -442,6 +505,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -469,17 +533,21 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rax, 0x10);
   sg.set_max_memory(1024);
   sg.set_max_attempts(64);
+  */
 
+  /*
   for(size_t i = 0; i < 32; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -514,6 +582,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rax, 0x10);
   sg.set_max_memory(1024);
@@ -525,6 +594,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -586,7 +656,6 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsPass) {
       tc.heap.set_valid(j, true);
       tc.heap[j] = 0;
     }
-    std::cout << tc << std::endl;
     sandbox->insert_input(tc);
   }
 
@@ -646,7 +715,6 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
       tc.heap.set_valid(j, true);
       tc.heap[j] = 0;
     }
-    std::cout << tc << std::endl;
     sandbox->insert_input(tc);
   }
 
@@ -687,6 +755,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rax, 0x10);
   sg.set_max_memory(1024);
@@ -698,6 +767,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -743,6 +813,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrect) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rdx, 0xa);
   sg.set_bitmask(x64asm::rsi, 0x3f00);
@@ -756,6 +827,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrect) {
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -803,6 +875,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedCorrect) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rdx, 0xa);
   sg.set_bitmask(x64asm::rsi, 0x3f00);
@@ -816,6 +889,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedCorrect) {
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -854,6 +928,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  /*
   StateGen sg(sg_sandbox);
   sg.set_max_value(x64asm::rdx, 0x6);
   sg.set_bitmask(x64asm::rsi, 0x3f00);
@@ -870,6 +945,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
     }
     sandbox->insert_input(tc);
   }
+  */
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -1074,6 +1150,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect) {
   sst << "addq $0x4, %rax" << std::endl;
   sst << "leal (%rax), %edx" << std::endl;
   sst << "movl (%r15, %rdx), %edx" << std::endl;
+  sst << "testl %edx, %edx" << std::endl;
   sst << "jne .L_10" << std::endl;
   sst << "subq %rdi, %rax" << std::endl; // BB4
   sst << "sarq $0x2, %rax" << std::endl;
@@ -1227,6 +1304,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
   sst << "addq $0x4, %rax" << std::endl;
   sst << "leal (%rax), %edx" << std::endl;
   sst << "movl (%r15, %rdx), %edx" << std::endl;
+  sst << "testl %edx, %edx" << std::endl;
   sst << "jne .L_10" << std::endl;
   sst << "subq %rdi, %rax" << std::endl; // BB4
   sst << "sarq $0x2, %rax" << std::endl;
@@ -1243,13 +1321,13 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
   ssr << "movq %rdi, %rsi" << std::endl;
   ssr << ".head:" << std::endl;
   ssr << "movl (%rdi), %ecx" << std::endl;
-  ssr << "addq $0x4, %rdi" << std::endl;
+  ssr << "addl $0x4, %edi" << std::endl;
   ssr << "testl %ecx, %ecx" << std::endl;
   ssr << "jnz .head" << std::endl;
   ssr << "subq %rsi, %rdi" << std::endl;
   ssr << "subq $0x4, %rdi" << std::endl;
+  ssr << "sarq $0x2, %rdi" << std::endl;
   ssr << "movq %rdi, %rax" << std::endl;
-  ssr << "retq" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
@@ -1279,6 +1357,91 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
+}
+
+TEST_F(BoundedValidatorBaseTest, WcslenWrong1) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".wcslen:" << std::endl; // BB 1
+  sst << "leal (%rdi), %ecx" << std::endl;
+  sst << "movl (%r15, %rcx), %ecx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "je .L_22" << std::endl;
+  sst << "movq %rdi, %rax" << std::endl; //BB 2
+  sst << ".L_10:" << std::endl; // BB3
+  sst << "addq $0x4, %rax" << std::endl;
+  sst << "leal (%rax), %edx" << std::endl;
+  sst << "movl (%r15, %rdx), %edx" << std::endl;
+  sst << "testl %edx, %edx" << std::endl;
+  sst << "jne .L_10" << std::endl;
+  sst << "subq %rdi, %rax" << std::endl; // BB4
+  sst << "sarq $0x2, %rax" << std::endl;
+  sst << "retq" << std::endl;
+  sst << ".L_22:" << std::endl; // BB5
+  sst << "xorl %eax, %eax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".wcslen:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movl %edi, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %ecx" << std::endl;
+  ssr << "testl %ecx, %ecx" << std::endl;
+  ssr << "je .L_22" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << ".L_10:" << std::endl;
+  ssr << "addl $0x4, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %edx" << std::endl;
+  ssr << "shrq $0x2, %rdx" << std::endl;
+  ssr << "jne .L_10" << std::endl;
+  ssr << "subq %rdi, %rax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "sarl $0x2, %eax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "retq" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << ".L_22:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nopl %eax" << std::endl;
+  ssr << "shrq $0xfd, %rax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  for(size_t i = 0; i < 20; ++i) {
+    CpuState tc = get_state();
+    size_t count = rand() % 6;
+    uint64_t start = tc[x64asm::edi] + tc[x64asm::r15];
+    tc.heap.resize(start, (count+1)*4);
+    for(size_t j = 0; j < count*4; j++) {
+      tc.heap.set_valid(start + j, true);
+      tc.heap[start + j] = rand() % 256;
+    }
+    for(size_t j = count*4; j < count*4+4; ++j) {
+      tc.heap.set_valid(start + j, true);
+      tc.heap[start + j] = 0;
+    }
+
+    uint64_t stack_start = tc[x64asm::rsp] - 8;
+    tc.stack.resize(stack_start, 16);
+    for(size_t j = stack_start; j < stack_start+16; ++j) {
+      tc.stack.set_valid(j, true);
+      tc.stack[j] = rand() % 256;
+    }
+    sandbox->insert_input(tc);
+  }
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for(auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
+
 }
 
 
