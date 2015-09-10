@@ -76,10 +76,12 @@ protected:
     EXPECT_EQ(ErrorCode::NORMAL, target_output.code);
     EXPECT_NE(target_output, rewrite_output);
 
+    /*
     if(target_output != rewrite_output) {
       std::cout << "TARGET OUTPUT: " << std::endl << target_output << std::endl;
       std::cout << "REWRITE OUTPUT: " << std::endl << rewrite_output << std::endl;
     }
+    */
   }
 
   Cfg make_cfg(std::stringstream& ss, x64asm::RegSet di = all(), x64asm::RegSet lo = all()) {
