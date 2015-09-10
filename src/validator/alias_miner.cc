@@ -206,21 +206,21 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
   sandbox_->insert_input(ceg);
   sandbox_->run();
-  auto& target_output = *(sandbox_->get_output(0));
+  auto target_output = *(sandbox_->get_output(0));
   auto last_err = target_output.code;
   DEBUG_BUILD_TC(cout << "Ran sandbox on target; got " << readable_error_code(last_err) << endl;)
 
   sandbox_->insert_function(rewrite);
   sandbox_->set_entrypoint(rewrite.get_code()[0].get_operand<x64asm::Label>(0));
   sandbox_->run();
-  auto& rewrite_output = *(sandbox_->get_output(0));
+  auto rewrite_output = *(sandbox_->get_output(0));
 
   if(last_err != ErrorCode::NORMAL) {
     DEBUG_BUILD_TC(cout << "Sandbox encountered error on target." << endl;)
     return false;
   }
 
-  if(target_output != rewrite_output) {
+  if(target_output == rewrite_output) {
     DEBUG_BUILD_TC(cout << "Got a counterexample -- but it did the same thing on target/rewrite." << endl;)
     return false;
   }
