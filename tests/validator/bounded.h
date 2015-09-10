@@ -75,6 +75,11 @@ protected:
 
     EXPECT_EQ(ErrorCode::NORMAL, target_output.code);
     EXPECT_NE(target_output, rewrite_output);
+
+    if(target_output != rewrite_output) {
+      std::cout << "TARGET OUTPUT: " << std::endl << target_output << std::endl;
+      std::cout << "REWRITE OUTPUT: " << std::endl << rewrite_output << std::endl;
+    }
   }
 
   Cfg make_cfg(std::stringstream& ss, x64asm::RegSet di = all(), x64asm::RegSet lo = all()) {
@@ -1296,17 +1301,18 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
   std::stringstream sst;
   sst << ".wcslen:" << std::endl; // BB 1
   sst << "leal (%rdi), %ecx" << std::endl;
-  sst << "movl (%r15, %rcx), %ecx" << std::endl;
+  sst << "leaq (%r15, %rcx), %rdx" << std::endl;
+  sst << "movl (%rdx), %ecx" << std::endl;
   sst << "testl %ecx, %ecx" << std::endl;
   sst << "je .L_22" << std::endl;
-  sst << "movq %rdi, %rax" << std::endl; //BB 2
+  sst << "movq %rdx, %rsi" << std::endl;
   sst << ".L_10:" << std::endl; // BB3
-  sst << "addq $0x4, %rax" << std::endl;
-  sst << "leal (%rax), %edx" << std::endl;
-  sst << "movl (%r15, %rdx), %edx" << std::endl;
-  sst << "testl %edx, %edx" << std::endl;
+  sst << "addq $0x4, %rdx" << std::endl;
+  sst << "movl (%rdx), %ecx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
   sst << "jne .L_10" << std::endl;
-  sst << "subq %rdi, %rax" << std::endl; // BB4
+  sst << "subq %rsi, %rdx" << std::endl; // BB4
+  sst << "movq %rdx, %rax" << std::endl;
   sst << "sarq $0x2, %rax" << std::endl;
   sst << "retq" << std::endl;
   sst << ".L_22:" << std::endl; // BB5
@@ -1321,12 +1327,12 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
   ssr << "movq %rdi, %rsi" << std::endl;
   ssr << ".head:" << std::endl;
   ssr << "movl (%rdi), %ecx" << std::endl;
-  ssr << "addl $0x4, %edi" << std::endl;
+  ssr << "addq $0x4, %rdi" << std::endl;
   ssr << "testl %ecx, %ecx" << std::endl;
   ssr << "jnz .head" << std::endl;
   ssr << "subq %rsi, %rdi" << std::endl;
   ssr << "subq $0x4, %rdi" << std::endl;
-  ssr << "sarq $0x2, %rdi" << std::endl;
+  ssr << "shrq $0x2, %rdi" << std::endl;
   ssr << "movq %rdi, %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
@@ -1357,6 +1363,11 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
+
+  for(auto it : validator->get_counter_examples()) {
+    std::cout << "CEG: " << std::endl << it << std::endl;
+    check_ceg(it, target, rewrite);
+  }
 }
 
 TEST_F(BoundedValidatorBaseTest, WcslenWrong1) {
