@@ -1425,28 +1425,69 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong1) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-  for(size_t i = 0; i < 20; ++i) {
-    CpuState tc = get_state();
-    size_t count = rand() % 6;
-    uint64_t start = tc[x64asm::edi] + tc[x64asm::r15];
-    tc.heap.resize(start, (count+1)*4);
-    for(size_t j = 0; j < count*4; j++) {
-      tc.heap.set_valid(start + j, true);
-      tc.heap[start + j] = rand() % 256;
-    }
-    for(size_t j = count*4; j < count*4+4; ++j) {
-      tc.heap.set_valid(start + j, true);
-      tc.heap[start + j] = 0;
-    }
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for(auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
 
-    uint64_t stack_start = tc[x64asm::rsp] - 8;
-    tc.stack.resize(stack_start, 16);
-    for(size_t j = stack_start; j < stack_start+16; ++j) {
-      tc.stack.set_valid(j, true);
-      tc.stack[j] = rand() % 256;
-    }
-    sandbox->insert_input(tc);
-  }
+
+}
+
+TEST_F(BoundedValidatorBaseTest, WcslenWrong2) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".wcslen:" << std::endl; // BB 1
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "xorl %eax, %eax" << std::endl;
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "movl (%r15,%rdi,1), %ecx" << std::endl;
+  sst << "movq %rdi, %rdx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "je .L_142ce0" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_142cc0:" << std::endl;
+  sst << "addl $0x4, %edx" << std::endl;
+  sst << "movl %edx, %edx" << std::endl;
+  sst << "movl (%r15,%rdx,1), %eax" << std::endl;
+  sst << "testl %eax, %eax" << std::endl;
+  sst << "jne .L_142cc0" << std::endl;
+  sst << "movl %edx, %eax" << std::endl;
+  sst << "subl %edi, %eax" << std::endl;
+  sst << "sarl $0x2, %eax" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_142ce0:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".wcslen:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movslq %edi, %rcx" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movl %ecx, %eax" << std::endl;
+  ssr << "andl (%r15,%rax,1), %edi" << std::endl;
+  ssr << "je .L_22" << std::endl;
+  ssr << ".L_10:" << std::endl;
+  ssr << "subl $0xffffffc, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %edx" << std::endl;
+  ssr << "andq $0xfffffffe, %rdx" << std::endl;
+  ssr << "jne .L_10" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "subl %ecx, %eax" << std::endl;
+  ssr << "shrq $0x2, %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << ".L_22:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "sall $0xfb, %eax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -1454,6 +1495,273 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong1) {
   for(auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
+}
+
+TEST_F(BoundedValidatorBaseTest, WcslenCorrect3) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".wcslen:" << std::endl; // BB 1
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "xorl %eax, %eax" << std::endl;
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "movl (%r15,%rdi,1), %ecx" << std::endl;
+  sst << "movq %rdi, %rdx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "je .L_142ce0" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_142cc0:" << std::endl;
+  sst << "addl $0x4, %edx" << std::endl;
+  sst << "movl %edx, %edx" << std::endl;
+  sst << "movl (%r15,%rdx,1), %eax" << std::endl;
+  sst << "testl %eax, %eax" << std::endl;
+  sst << "jne .L_142cc0" << std::endl;
+  sst << "movl %edx, %eax" << std::endl;
+  sst << "subl %edi, %eax" << std::endl;
+  sst << "sarl $0x2, %eax" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_142ce0:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".wcslen:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movslq %edi, %rcx" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movl %ecx, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %edi" << std::endl;
+  ssr << "testl %edi, %edi" << std::endl;
+  ssr << "je .L_22" << std::endl;
+  ssr << ".L_10:" << std::endl;
+  //ssr << "subl $0xffffffc, %eax" << std::endl;
+  ssr << "addl $0x4, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %edx" << std::endl;
+  //ssr << "andq $0xfffffffe, %rdx" << std::endl;
+  ssr << "andq $0xffffffff, %rdx" << std::endl;
+  ssr << "jne .L_10" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "subl %ecx, %eax" << std::endl;
+  ssr << "shrq $0x2, %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << ".L_22:" << std::endl;
+  ssr << "nop" << std::endl;
+  //ssr << "sall $0xfb, %eax" << std::endl;
+  ssr << "xorl %eax, %eax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_EQ(0ul, validator->counter_examples_available());
+  for(auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
+}
+
+TEST_F(BoundedValidatorBaseTest, WcslenWrong3) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".wcslen:" << std::endl; // BB 1
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "xorl %eax, %eax" << std::endl;
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "movl (%r15,%rdi,1), %ecx" << std::endl;
+  sst << "movq %rdi, %rdx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "je .L_142ce0" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_142cc0:" << std::endl;
+  sst << "addl $0x4, %edx" << std::endl;
+  sst << "movl %edx, %edx" << std::endl;
+  sst << "movl (%r15,%rdx,1), %eax" << std::endl;
+  sst << "testl %eax, %eax" << std::endl;
+  sst << "jne .L_142cc0" << std::endl;
+  sst << "movl %edx, %eax" << std::endl;
+  sst << "subl %edi, %eax" << std::endl;
+  sst << "sarl $0x2, %eax" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_142ce0:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".wcslen:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movslq %edi, %rcx" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movl %ecx, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %edi" << std::endl;
+  ssr << "testl %edi, %edi" << std::endl;
+  ssr << "je .L_22" << std::endl;
+  ssr << ".L_10:" << std::endl;
+  ssr << "subl $0xffffffc, %eax" << std::endl;
+  //ssr << "addl $0x4, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %edx" << std::endl;
+  //ssr << "andq $0xfffffffe, %rdx" << std::endl;
+  ssr << "andq $0xffffffff, %rdx" << std::endl;
+  ssr << "jne .L_10" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "subl %ecx, %eax" << std::endl;
+  ssr << "shrq $0x2, %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << ".L_22:" << std::endl;
+  ssr << "nop" << std::endl;
+  //ssr << "sall $0xfb, %eax" << std::endl;
+  ssr << "xorl %eax, %eax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for(auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
+}
+
+TEST_F(BoundedValidatorBaseTest, WcslenWrong4) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".wcslen:" << std::endl; // BB 1
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "xorl %eax, %eax" << std::endl;
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "movl (%r15,%rdi,1), %ecx" << std::endl;
+  sst << "movq %rdi, %rdx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "je .L_142ce0" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_142cc0:" << std::endl;
+  sst << "addl $0x4, %edx" << std::endl;
+  sst << "movl %edx, %edx" << std::endl;
+  sst << "movl (%r15,%rdx,1), %eax" << std::endl;
+  sst << "testl %eax, %eax" << std::endl;
+  sst << "jne .L_142cc0" << std::endl;
+  sst << "movl %edx, %eax" << std::endl;
+  sst << "subl %edi, %eax" << std::endl;
+  sst << "sarl $0x2, %eax" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_142ce0:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".wcslen:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movslq %edi, %rcx" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movl %ecx, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %edi" << std::endl;
+  ssr << "testl %edi, %edi" << std::endl;
+  ssr << "je .L_22" << std::endl;
+  ssr << ".L_10:" << std::endl;
+  //ssr << "subl $0xffffffc, %eax" << std::endl;
+  ssr << "addl $0x4, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %edx" << std::endl;
+  ssr << "andq $0xfffffffe, %rdx" << std::endl;
+  //ssr << "andq $0xffffffff, %rdx" << std::endl;
+  ssr << "jne .L_10" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "subl %ecx, %eax" << std::endl;
+  ssr << "shrq $0x2, %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << ".L_22:" << std::endl;
+  ssr << "nop" << std::endl;
+  //ssr << "sall $0xfb, %eax" << std::endl;
+  ssr << "xorl %eax, %eax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for(auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
+}
+
+TEST_F(BoundedValidatorBaseTest, WcslenWrong5) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".wcslen:" << std::endl; // BB 1
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "xorl %eax, %eax" << std::endl;
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "movl (%r15,%rdi,1), %ecx" << std::endl;
+  sst << "movq %rdi, %rdx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "je .L_142ce0" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_142cc0:" << std::endl;
+  sst << "addl $0x4, %edx" << std::endl;
+  sst << "movl %edx, %edx" << std::endl;
+  sst << "movl (%r15,%rdx,1), %eax" << std::endl;
+  sst << "testl %eax, %eax" << std::endl;
+  sst << "jne .L_142cc0" << std::endl;
+  sst << "movl %edx, %eax" << std::endl;
+  sst << "subl %edi, %eax" << std::endl;
+  sst << "sarl $0x2, %eax" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_142ce0:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".wcslen:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movslq %edi, %rcx" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movl %ecx, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %edi" << std::endl;
+  ssr << "testl %edi, %edi" << std::endl;
+  ssr << "je .L_22" << std::endl;
+  ssr << ".L_10:" << std::endl;
+  //ssr << "subl $0xffffffc, %eax" << std::endl;
+  ssr << "addl $0x4, %eax" << std::endl;
+  ssr << "movl (%r15,%rax,1), %edx" << std::endl;
+  //ssr << "andq $0xfffffffe, %rdx" << std::endl;
+  ssr << "andq $0xffffffff, %rdx" << std::endl;
+  ssr << "jne .L_10" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "subl %ecx, %eax" << std::endl;
+  ssr << "shrq $0x2, %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << ".L_22:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "sall $0xfb, %eax" << std::endl;
+  //ssr << "xorl %eax, %eax" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for(auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
 
 }
 
