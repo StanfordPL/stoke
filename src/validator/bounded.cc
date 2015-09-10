@@ -600,6 +600,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
           counterexamples_.push_back(ceg);
         } else {
           throw VALIDATOR_ERROR("Couldn't build counterexample!  This is a BOUNDED VALIDATOR BUG.");
+          return false;
         }
       } else {
         counterexamples_.push_back(ceg);
