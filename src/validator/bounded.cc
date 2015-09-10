@@ -16,8 +16,8 @@
 #include "src/cfg/paths.h"
 #include "src/validator/bounded.h"
 
-#define BOUNDED_DEBUG(X) { }
-#define ALIAS_DEBUG(X) { X }
+#define BOUNDED_DEBUG(X) { X }
+#define ALIAS_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 
@@ -183,6 +183,7 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   }
 
   ALIAS_DEBUG(cout << "FEASIBLE: " << is_sat << endl;);
+  /*
   if(is_sat) {
     cout << "HERE'S A CEG:" << endl;
     auto ceg = Validator::state_from_model(solver_, "_");
@@ -191,6 +192,7 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
     cout << "ok=" << ok << endl;
     cout << ceg << endl;
   }
+  */
 
   return is_sat;
 

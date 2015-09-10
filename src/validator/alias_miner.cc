@@ -21,8 +21,8 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-#define DEBUG_BUILD_TC(X) { X }
-#define DEBUG_MEM_SETUP(X) { X }
+#define DEBUG_BUILD_TC(X) { }
+#define DEBUG_MEM_SETUP(X) { }
 
 /** Takes a Cfg and a testcase; runs the Cfg on the testcase and tracks
   all memory reads/writes.  Then builds a list of all memory accesses in
@@ -166,91 +166,6 @@ void tracer_callback(const StateCallbackData& data, void* arg) {
 bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory& target_memory, const CellMemory& rewrite_memory, const Cfg& target, const Cfg& rewrite) {
 
 
-
-  // loop through target and rewrite memory dereferences and resolve them
-  /*
-  // this map tracks (address, value) pairs for memory
-  for(size_t k = 0; k < 2; ++k) {
-    auto& cfg = k ? target : rewrite;
-    auto& memory = k ? target_memory : rewrite_memory;
-    auto map = memory.get_line_cell_map();
-
-    auto& code = cfg.get_code();
-    auto label = code[0].get_operand<x64asm::Label>(0);
-
-    sandbox_->reset();
-    sandbox_->insert_function(cfg);
-    sandbox_->insert_input(ceg);
-    sandbox_->set_entrypoint(label);
-
-    DEBUG_BUILD_TC(cout << "Building testcase memory for: " << endl << code << endl;)
-
-    for(size_t i = 0, ie = code.size(); i < ie; ++i) {
-      auto instr = code[i];
-      if(instr.is_memory_dereference() && !instr.is_ret()) {
-        DEBUG_BUILD_TC(cout << "BTM: Working on " << instr << " of " << ( k ? "target" : "rewrite") << endl;)
-        DEBUG_BUILD_TC(cout << "  (line " << i << ")" << endl;)
-        // we need to find the address at which this dereference happens
-        build_testcase_address_ = 0;
-        build_testcase_width_ = 0;
-        build_testcase_ran_ = false;
-        sandbox_->clear_callbacks();
-        sandbox_->insert_before(label, i, build_testcase_callback, this);
-        sandbox_->run();
-
-        DEBUG_BUILD_TC(last_err = sandbox_->get_output(0)->code;
-
-                       cout << "  * addr=" << hex << build_testcase_address_ << endl;
-                       cout << "  * width=" << build_testcase_width_ << endl;
-                       cout << "  * ran=" << build_testcase_ran_ << endl;
-                       cout << "  * error=" << readable_error_code(last_err) << endl;)
-
-        // which cell?
-        size_t cell = -1;
-        if(map.count(i)) {
-          cell = map[i].cell;
-        }
-
-        //extract the symbolic value
-        if(cell != (size_t)-1) {
-          const SymBitVector* v = &memory.init_cells_.at(cell);
-          auto var = static_cast<const SymBitVectorVar*>(v->ptr);
-          auto bv = solver.get_model_bv(var->get_name(), var->get_size());
-
-          assert(bv.num_fixed_bytes() == map[i].cell_size);
-          assert(build_testcase_width_/8 == map[i].size);
-
-          auto extract = BitVector(map[i].size*8);
-          for(size_t i = map[i].cell_offset; i < map[i].cell_offset + map[i].size; ++i) {
-            extract.get_fixed_byte(i - map[i].cell_offset) = bv.get_fixed_byte(i);
-          }
-
-          addr_value_pairs[build_testcase_address_] = extract;
-
-          DEBUG_BUILD_TC(
-            cout << " * cell with bv: " << (size_t)extract.get_fixed_byte(0) << endl;
-            cout << " * size of bv: " << extract.num_fixed_bytes() << endl;)
-        } else {
-          addr_value_pairs[build_testcase_address_] = BitVector(build_testcase_width_);
-          DEBUG_BUILD_TC(
-            cout << " * no cell; using 0" << endl;
-            cout << " * size of bv: " << BitVector(build_testcase_width_).num_fixed_bytes() << endl;
-          )
-        }
-
-        // rebuild the testcase for the next run
-        DEBUG_BUILD_TC(cout << "MAP:" << endl;
-        for(auto p : addr_value_pairs) {
-        cout << hex << p.first << dec << " (of size " << p.second.num_fixed_bytes() << ")" << endl;
-        })
-           return false;
-        DEBUG_BUILD_TC(cout << "Testcase so far: " << endl << ceg << endl;)
-        sandbox_->clear_inputs();
-        sandbox_->insert_input(ceg);
-      }
-    }
-  }*/
-
   std::map<uint64_t, BitVector> addr_value_pairs;
 
   for(size_t k = 0; k < 2; ++k) {
@@ -270,10 +185,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
       assert(memory.init_cells_.count(cell));
       const SymBitVector* v = &memory.init_cells_.at(cell);
-      cout << "TYPE: " << v->type() << endl;
       auto value_var = dynamic_cast<const SymBitVectorVar*>(v->ptr);
-      /*cout << "VAR NAME: " << value_var->get_name() << endl;
-      cout << "VAR SIZE: " << value_var->get_size() << endl;*/
       auto value_bv = solver.get_model_bv(value_var->get_name(), value_var->get_size());
 
       DEBUG_BUILD_TC(cout << "Cell " << cell << " address = " << hex << address
