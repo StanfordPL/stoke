@@ -221,7 +221,7 @@ bool StraightLineValidator::verify(const Cfg& target, const Cfg& rewrite) {
       counterexample_valid_ = false;
     }
 
-    stop_mm();
+    reset_mm();
     return !is_sat;
 
   } catch(validator_error e) {
@@ -232,12 +232,12 @@ bool StraightLineValidator::verify(const Cfg& target, const Cfg& rewrite) {
     error_line_ = e.get_line();
     counterexample_valid_ = false;
 
-    stop_mm();
+    reset_mm();
     return false;
   }
 
   assert(false);
-  stop_mm();
+  reset_mm();
   return false;
 }
 
