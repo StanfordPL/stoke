@@ -107,7 +107,11 @@ protected:
       auto manager = memory_manager_.top();
       SymBitVector::set_memory_manager(manager);
       SymBool::set_memory_manager(manager);
+    } else {
+      SymBitVector::set_memory_manager(NULL);
+      SymBool::set_memory_manager(NULL);
     }
+
   }
   /** Discard and reset all memory managers. */
   void reset_mm() {
