@@ -147,7 +147,11 @@ Using STOKE
 =====
 
 The following toy example shows a typical workflow for using STOKE. All of the
-following code can be found in the `examples/tutorial/` directory. Consider a
+following code can be found in the `examples/tutorial/` directory.  As this
+code is tested using our continuous integration system, the code there will
+always be up-to-date, but this README can fall behind.
+
+Consider a
 C++ program that repeatedly counts the number of bits (population count) in the
 64-bit representation of an integer. (Keeping track of a running sum prevents
 `g++` from eliminating the calls to `popcnt()` altogether.)
@@ -268,6 +272,7 @@ where `testcase.conf` contains:
 
 --bin ./a.out # The name of the binary to use to generate testcases 
 --args 10000000 # Command line arguments that should be passed to ./a.out
+--functions bins # Disassembly directory created by stoke extract
 
 -o popcnt.tc # Path to file to write testcases to
 
@@ -344,26 +349,43 @@ Testcase 0:
 
 [ 00000000 00000000 - 00000000 00000000 ]
 [ 0 valid rows shown ]
+
+[ 00000000 00000000 - 00000000 00000000 ]
+[ 0 valid rows shown ]
+
+0 more segment(s)
 ```
 
 Each entry corresponds to the hardware state that was observed just prior to an
 execution of the `popcnt()` function. The first 60 rows represent the contents
-of general purpose, sse, and eflags registers, and the remaining rows represent 
-the contents of memory, both on the stack and the heap. Memory is shown eight bytes
-at a time, where a block of eight bytes appears only if the target dereferenced
-at least one of those bytes. Each row contains values and state flags. Bytes
-are flagged as either (v)alid (the target dereferenced this byte), (d)efined
-(the target read this byte prior to reading its value), or (.)invalid (the
-    target did not dereference this byte). 
+of general purpose, sse, and eflags registers, and the remaining rows represent
+the contents of memory, both on the stack and the heap. Memory is shown eight
+bytes at a time, where a block of eight bytes appears only if the target
+dereferenced at least one of those bytes. Each row contains values and state
+flags. Bytes are flagged as either (v)alid (the target dereferenced this byte),
+  or (.)invalid (the target did not dereference this byte). 
 
 Each of the random transformations performed by STOKE are evaluated with
 respect to the contents of this file. Rewrites are compiled into a sandbox and
 executed beginning from the machine state represented by each entry. Rewrites
 are only permitted to dereference defined locations. This includes registers
 that are flagged as `def_in` (see `search.conf`, below), memory locations that
-are flagged as 'd', or locations that were written previously. Rewrites are
+are flagged as 'v', or locations that were written previously. Rewrites are
 permitted to write values to all registers and to any memory location that is
 flagged as valid. 
+
+STOKE will produce optimal code that works on the testcases.  The testcases
+need to be selected to help ensure that STOKE doesn't produce an incorrect
+rewrite.  In our main.cc file in `examples/tutorial` we choose arguments to the
+`popcnt` function to make sure that it sometimes provides arguments that use
+more than 32 bits.  Otherwise, STOKE will sometimes produce a rewrite using the
+`popcntl` instruction, which only operates on the bottom half of the register,
+instead of the `popcntq` instruction, which operates on the whole thing.
+  Alternatively you can use the formal validator in bounded mode with a large
+  bound (over 32).  This large bound is tractable because this example doesn't
+  has a small number of cases for memory aliasing (namely, none at all!).  If a
+  counterexample is found it can be automatically added to the search so STOKE
+  won't make this mistake again.
 
 The STOKE sandbox will safely halt the execution of rewrites that perform
 undefined behavior. This includes leaving registers in a state that violates
@@ -394,27 +416,21 @@ where `search.conf` contains:
 --test_set "{ 8 ... 1023 }"  # Testcases to use as holdout set for checking correctness
 
 --distance hamming # Metric for measuring error between live-outs
---relax_reg # Allow partial credit for results that appear in wrong locations
 --misalign_penalty 1 # Penalty for results that appear in the wrong location
 --reduction sum # Method for summing errors across testcases
 --sig_penalty 9999 # Score to assign to rewrites that produce non-zero signals
 
---perf latency # Measure performance by summing instruction latencies
-
---cpu_flags "{ popcnt }" # cpuid flags to use when proposing instructions
---mem_read # Propose instructions that read memory
---mem_write # Propose instructions that write memory
+--cost "correctness + latency" # Measure performance by summing instruction latencies
 
 --global_swap_mass 0 # Proposal mass
 --instruction_mass 1 # Proposal mass
 --local_swap_mass 1 # Proposal mass
 --opcode_mass 1 # Proposal mass
 --operand_mass 1 # Proposal mass
---resize_mass 0 # Proposal mass
+--rotate_mass 0 # Proposal mass
 
---nop_percent 80 # Percent of instruction moves that produce nop
 --beta 1 # Search annealing constant
---initial_instruction_number 8 # The number of nops to start with
+--initial_instruction_number 5 # The number of nops to start with
 
 --statistics_interval 100000 # Print statistics every 100k proposals
 --timeout_iterations 16000000 # Propose 16m modifications total before giving up
