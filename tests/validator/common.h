@@ -154,7 +154,7 @@ protected:
     AliasAnalysis analysis(cfg_t_->get_code());
 
     size_t line = 0;
-    state.memory.set_analysis(&analysis);
+    static_cast<DeprecatedMemory*>(state.memory)->set_analysis(&analysis);
     for(auto it : cfg_t_->get_code()) {
       state.set_lineno(line);
       ch.build_circuit(it, state);
@@ -176,7 +176,7 @@ protected:
     if(!s_.has_model())
       return false;
 
-    CpuState validator_final = StraightLineValidator::state_from_model(s_, "_FINAL");
+    CpuState validator_final = Validator::state_from_model(s_, "_FINAL");
 
     // Run the sandbox
     Sandbox sb;
@@ -337,7 +337,8 @@ private:
 
     bool same = true;
 
-    EXPECT_CPU_EQ_CODE(expect.code, actual.code, "The error codes differ.");
+    // BRC -- I don't think we can/should rely on the validator to get this right.
+    //EXPECT_CPU_EQ_CODE(expect.code, actual.code, "The error codes differ.");
 
     for(auto it = live_outs_.gp_begin(); it != live_outs_.gp_end(); ++it) {
       x64asm::R r = *it;

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-#include "src/symstate/memory.h"
+#include "src/symstate/memory/deprecated.h"
 #include "src/symstate/state.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
@@ -32,7 +32,7 @@ uint64_t read_quadword(const Memory& m, uint64_t base, uint64_t i) {
   return result;
 }
 
-SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
+SymBool DeprecatedMemory::write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) {
 
   //cout << "Writing " << value << " to " << address << " (size " << size << ")" << endl;
 
@@ -41,19 +41,20 @@ SymBool SymMemory::write(SymBitVector address, SymBitVector value, uint16_t size
 
   state_->constraints.push_back(addr_var == address);
   state_->constraints.push_back(value_var == value);
+  state_->constraints.push_back(address < SymBitVector::constant(64, 0-size/8-1));
 
   MemoryAccess mw({ addr_var, value_var, size, line_no });
   writes_.push_back(mw);
 
   if(heap_.type()) {
     return (addr_var < SymBitVector::constant(64, heap_start_)) |
-           (addr_var > SymBitVector::constant(64, heap_start_ + heap_size_ - size));
+           (addr_var > SymBitVector::constant(64, heap_start_ + heap_size_ - size/8));
   } else {
     return SymBool::_false();
   }
 }
 
-void SymMemory::init_concrete(const Memory& stack, const Memory& heap) {
+void DeprecatedMemory::init_concrete(const Memory& stack, const Memory& heap) {
 
   Memory my_mem;
   if(heap.size()) {
@@ -75,7 +76,7 @@ void SymMemory::init_concrete(const Memory& stack, const Memory& heap) {
 
 }
 
-pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
+pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
 
   //cout << "Reading from " << address << " (size " << size << ")" << endl;
 
@@ -83,6 +84,9 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size,
   SymBitVector value = SymBitVector::tmp_var(size);
 
   state_->constraints.push_back(addr_var == address);
+
+  state_->constraints.push_back(address < SymBitVector::constant(64, 0-size/8-1));
+
 
   MemoryAccess mw({ addr_var, value, size, line_no });
   reads_.push_back(mw);
@@ -93,7 +97,7 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size,
   // Check if this value was concretely initialized in heap.
   if(heap_.type() != SymBitVector::NONE) {
     segv = (address < SymBitVector::constant(64, heap_start_)) |
-           (address > SymBitVector::constant(64, heap_start_ + heap_size_ - size));
+           (address > SymBitVector::constant(64, heap_start_ + heap_size_ - size/8));
 
     auto offset = (address - SymBitVector::constant(64, heap_start_)) <<
                   SymBitVector::constant(64, 3);
@@ -255,16 +259,16 @@ pair<SymBitVector, SymBool> SymMemory::read(SymBitVector address, uint16_t size,
 }
 
 
-vector<pair<string, uint16_t>> SymMemory::get_address_vars() const {
+vector<pair<string, uint16_t>> DeprecatedMemory::get_address_vars() const {
   vector<pair<string, uint16_t>> list;
   for(size_t i = 0; i < writes_.size(); ++i) {
     assert(writes_[i].value.ptr->type() == SymBitVector::VAR);
-    const auto* var = static_cast<const SymBitVectorVar*>(writes_[i].value.ptr);
+    const auto* var = static_cast<const SymBitVectorVar*>(writes_[i].address.ptr);
     list.push_back(std::pair<std::string, uint16_t>(var->name_, var->size_));
   }
   for(size_t i = 0; i < reads_.size(); ++i) {
     assert(reads_[i].value.ptr->type() == SymBitVector::VAR);
-    const auto* var = static_cast<const SymBitVectorVar*>(reads_[i].value.ptr);
+    const auto* var = static_cast<const SymBitVectorVar*>(reads_[i].address.ptr);
     list.push_back(std::pair<std::string, uint16_t>(var->name_, var->size_));
   }
   return list;

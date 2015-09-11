@@ -241,7 +241,7 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(-a);
   });
 
-  add_opcode({"nop"},
+  add_opcode({"nop", "nopb", "nopw", "nopl", "nopq"},
   [] (SymState& ss) {});
 
   add_opcode({"notb", "notw", "notl", "notq"},
@@ -553,6 +553,12 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   if(opcode == "xchgl" &&
       (instr.get_opcode() == XCHG_EAX_R32 || instr.get_opcode() == XCHG_R32_EAX) &&
       instr.get_operand<R32>(0) == eax && instr.get_operand<R32>(1) == eax) {
+    return;
+  }
+
+  // This is a hack to deal with all no-op cases.  We don't want to enumerate
+  // all the opcodes and so forth just to find we've missed one.
+  if(instr.is_nop()) {
     return;
   }
 

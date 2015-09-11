@@ -33,23 +33,26 @@ public:
   std::vector<std::string> full_support_opcodes() {
     std::vector<std::string> opcodes;
 
-    std::vector<std::string> prefixes = {"cmov", "set"};
     std::vector<std::string> suffixes = {"a", "nbe", "ae", "nb", "nc", "b", "c", "nae",
                                          "be", "na", "e", "z", "g", "nle", "ge", "nl",
                                          "l", "nge", "le", "ng", "ne", "nz", "no", "np",
                                          "po", "ns", "o", "p", "pe", "s"
                                         };
+    std::vector<std::string> suffix2 =  {"b", "w", "l", "q"};
 
-    for(auto x: prefixes)
-      for(auto y : suffixes)
-        opcodes.push_back(x+y);
+    for(auto y : suffixes)
+      opcodes.push_back("set"+y);
+
+    for(auto y : suffixes)
+      for(auto z : suffix2)
+        opcodes.push_back("cmov"+y+z);
+
+
 
     return opcodes;
   }
 
-
-private:
-
+  /** Returns the condition associated with an instruction */
   static SymBool condition_predicate(const std::string& cc, const SymState& ss);
 
 };
