@@ -795,7 +795,7 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
       }
     }
 
-    stop_mm();
+    reset_mm();
     return ok;
 
   } catch (validator_error e) {

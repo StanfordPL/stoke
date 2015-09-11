@@ -106,7 +106,7 @@ There are five main components to the validator:
 - The validator classes that build the constraints and handle the logic (/validator)
 
 The overall structure of the code is as follows.  The symbolic bitvectors
-(`SymBitVector1`) and bools (`SymBool`) are self-explanatory; these contain
+(`SymBitVector`) and bools (`SymBool`) are self-explanatory; these contain
 ASTs of bit-vector circuits.  The symbolic state (`SymState`) is the symbolic
 analog of a `CpuState`: it contains a symbolic bitvector for each supported
 register and symbolic bool for each flag.  These have the responsibility for
