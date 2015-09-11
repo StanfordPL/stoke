@@ -22,13 +22,15 @@ Table of Contents
 0. [Prerequisites](#prerequisites)
 1. [Choosing a STOKE version](#choosing-a-stoke-version)
 2. [Building STOKE](#building-stoke)
+ 1. [Using the formal validator](#using-the-formal-validator)
 3. [Using STOKE](#using-stoke)
 4. [Additional Features](#additional-features)
 5. [Extending STOKE](#extending-stoke)
  1. [Code Organization](#code-organization)
- 2. [Initial Search State](#initial-search-state)
- 3. [Search Transformations](#search-transformations)
- 4. [Cost Function](#cost-function)
+ 2. [Gadgets](#gadgets)
+ 3. [Initial Search State](#initial-search-state)
+ 4. [Search Transformations](#search-transformations)
+ 5. [Cost Function](#cost-function)
  6. [Live-out Error](#live-out-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
@@ -145,7 +147,11 @@ Using STOKE
 =====
 
 The following toy example shows a typical workflow for using STOKE. All of the
-following code can be found in the `examples/tutorial/` directory. Consider a
+following code can be found in the `examples/tutorial/` directory.  As this
+code is tested using our continuous integration system, the code there will
+always be up-to-date, but this README can fall behind.
+
+Consider a
 C++ program that repeatedly counts the number of bits (population count) in the
 64-bit representation of an integer. (Keeping track of a running sum prevents
 `g++` from eliminating the calls to `popcnt()` altogether.)
@@ -266,6 +272,7 @@ where `testcase.conf` contains:
 
 --bin ./a.out # The name of the binary to use to generate testcases 
 --args 10000000 # Command line arguments that should be passed to ./a.out
+--functions bins # Disassembly directory created by stoke extract
 
 -o popcnt.tc # Path to file to write testcases to
 
@@ -342,26 +349,43 @@ Testcase 0:
 
 [ 00000000 00000000 - 00000000 00000000 ]
 [ 0 valid rows shown ]
+
+[ 00000000 00000000 - 00000000 00000000 ]
+[ 0 valid rows shown ]
+
+0 more segment(s)
 ```
 
 Each entry corresponds to the hardware state that was observed just prior to an
 execution of the `popcnt()` function. The first 60 rows represent the contents
-of general purpose, sse, and eflags registers, and the remaining rows represent 
-the contents of memory, both on the stack and the heap. Memory is shown eight bytes
-at a time, where a block of eight bytes appears only if the target dereferenced
-at least one of those bytes. Each row contains values and state flags. Bytes
-are flagged as either (v)alid (the target dereferenced this byte), (d)efined
-(the target read this byte prior to reading its value), or (.)invalid (the
-    target did not dereference this byte). 
+of general purpose, sse, and eflags registers, and the remaining rows represent
+the contents of memory, both on the stack and the heap. Memory is shown eight
+bytes at a time, where a block of eight bytes appears only if the target
+dereferenced at least one of those bytes. Each row contains values and state
+flags. Bytes are flagged as either (v)alid (the target dereferenced this byte),
+  or (.)invalid (the target did not dereference this byte). 
 
 Each of the random transformations performed by STOKE are evaluated with
 respect to the contents of this file. Rewrites are compiled into a sandbox and
 executed beginning from the machine state represented by each entry. Rewrites
 are only permitted to dereference defined locations. This includes registers
 that are flagged as `def_in` (see `search.conf`, below), memory locations that
-are flagged as 'd', or locations that were written previously. Rewrites are
+are flagged as 'v', or locations that were written previously. Rewrites are
 permitted to write values to all registers and to any memory location that is
 flagged as valid. 
+
+STOKE will produce optimal code that works on the testcases.  The testcases
+need to be selected to help ensure that STOKE doesn't produce an incorrect
+rewrite.  In our main.cc file in `examples/tutorial` we choose arguments to the
+`popcnt` function to make sure that it sometimes provides arguments that use
+more than 32 bits.  Otherwise, STOKE will sometimes produce a rewrite using the
+`popcntl` instruction, which only operates on the bottom half of the register,
+instead of the `popcntq` instruction, which operates on the whole thing.
+  Alternatively you can use the formal validator in bounded mode with a large
+  bound (over 32).  This large bound is tractable because this example doesn't
+  has a small number of cases for memory aliasing (namely, none at all!).  If a
+  counterexample is found it can be automatically added to the search so STOKE
+  won't make this mistake again.
 
 The STOKE sandbox will safely halt the execution of rewrites that perform
 undefined behavior. This includes leaving registers in a state that violates
@@ -392,27 +416,21 @@ where `search.conf` contains:
 --test_set "{ 8 ... 1023 }"  # Testcases to use as holdout set for checking correctness
 
 --distance hamming # Metric for measuring error between live-outs
---relax_reg # Allow partial credit for results that appear in wrong locations
 --misalign_penalty 1 # Penalty for results that appear in the wrong location
 --reduction sum # Method for summing errors across testcases
 --sig_penalty 9999 # Score to assign to rewrites that produce non-zero signals
 
---perf latency # Measure performance by summing instruction latencies
-
---cpu_flags "{ popcnt }" # cpuid flags to use when proposing instructions
---mem_read # Propose instructions that read memory
---mem_write # Propose instructions that write memory
+--cost "correctness + latency" # Measure performance by summing instruction latencies
 
 --global_swap_mass 0 # Proposal mass
 --instruction_mass 1 # Proposal mass
 --local_swap_mass 1 # Proposal mass
 --opcode_mass 1 # Proposal mass
 --operand_mass 1 # Proposal mass
---resize_mass 0 # Proposal mass
+--rotate_mass 0 # Proposal mass
 
---nop_percent 80 # Percent of instruction moves that produce nop
 --beta 1 # Search annealing constant
---max_instrs 8 # The maximum number of instruction allowed in a rewrite
+--initial_instruction_number 5 # The number of nops to start with
 
 --statistics_interval 100000 # Print statistics every 100k proposals
 --timeout_iterations 16000000 # Propose 16m modifications total before giving up
@@ -514,9 +532,10 @@ Using the Formal Validator
 -----
 
 This release of STOKE includes a formal validator.  It's design and interface
-are detailed in the `src/validator/README.md` file.  To use the formal validator
-instead of hold out testing, specify `--strategy formal` for any
-STOKE binary that you use.
+are detailed in the `src/validator/README.md` file.  To use the formal
+validator instead of hold out testing, specify `--strategy bounded` for any
+STOKE binary that you use.  For code with loops, all paths will be explored up
+to a certain depth, specified using the --bound argument, which defaults to 2.
 
 An example of using the validator can be found in the `examples/pairity`
 folder; this example has a Makefile much like the tutorial's and should be easy
@@ -531,12 +550,7 @@ There are some important limitations to keep in mind while using the validator:
 can be used to only propose instructions that can be validated.
 - Only the general purpose registers, SSE registers (`ymm0`-`ymm15`) and five of
 the status flags (`CF`, `SF`, `PF`, `ZF`, `OF`) are supported.
-- There is basic, experimental support for memory.  **Memory is not supported
-for input or output; the validator will check equivalence of codes that use
-memory, but will not check that they leave the machine's memory in the same
-state. **.  For example, if a program writes to memory and then later reads
-it, the validator supports this.  But, if two programs manipulate memory,
-the validator will not check if their modifications are equivalent.
+- Memory is now fully supported, even in the presence of complex aliasing.
 
 
 Additional Features
@@ -621,6 +635,38 @@ subdirectory of the `src/` directory:
 - `src/verifier`: Wrappers around verification techniques such as testing for formal validation.
 - `src/validator`: The formal validator for proving two codes equivalent.
 
+The `tools/` directory has the code that performs application logic and reads
+command line arguments.
+
+- `tools/apps`: The application logic for stoke binaries
+- `tools/args`: Lists of command line arguments used by a gadget (see below).
+- `tools/gadgets`: Modules used by applications to configure internal APIs with command line arguments.
+- `tools/io`: Code to read/write certain kinds of command line arguments.
+- `tools/scripts`: Where we put stuff when we don't have a better place.  Nothing to see here.
+- `tools/target`: Arbitrarily named directory with code to read CPU features from cpuinfo.
+
+Gadgets
+-----
+
+The stoke codebase is setup in a very modular way.  We have components like the
+`Sandbox`, which emulates execution of a rewrite on hardware.  Or, we have
+subclasses of `CostFunction` which evaluate the quality of a rewrite.  Or, we
+have an `SMTSolver` which is used by the formal validator to query a backend
+like Z3 or CVC4.  
+
+Often, several stoke applications will wish to configure one of these modules
+in the same way, depending on command line arguments.  Thus, we have "Gadgets".
+A "Gadget" is a subclass of the class you wish to configure which takes care of
+extracting all the appropriate command line arguments.  Some Gadgets, like
+`SandboxGadget` just define a constructor so that modifies the object's
+configuration.  More involved ones, like `CostFunctionGadget` actually do work
+to create a new `CostFunction` object and define methods that act as a wrapper.
+
+Therefore, if you want to add a command line option to an existing component of
+stoke, you normally are going to want to modify the gadget for that component
+in `tools/gadgets` and add the argument in `tools/args`.  Once you do that, it
+should show up uniformly in all of the stoke tools that use that module.
+
 Initial Search State
 -----
 
@@ -684,6 +730,8 @@ transform is a subclass of the abstract class `Transform`.  Existing transforms 
 
 | Name | Description |
 | ---- | ----------- |
+| add_nops | Adds one extra nop instruction into the rewrite. |
+| delete | Deletes one instruction at random. |
 | instruction | Replaces an instruction with another one chosen at random. |
 | opcode | Replaces an instruction's opcode with a new one that takes operands of the same type. |
 | operand | Replaces an operand of one instruction with another. |
@@ -738,7 +786,7 @@ Some other important cost-variables you can use are:
 | correctness | How "correct" the rewrite's output appears.  Very configurable. |
 | size | The number of instructions in the assembled rewrite. |
 | latency | A poor-man's estimate of the rewrite latency, in clock cycles, based on the per-opcode latency table in `src/cost/tables`. |
-| measured | An estimate of running time by counting the number of instructions actually executed on the testcases.  Good for algorithmic improvements.  |
+| measured | An estimate of running time by counting the number of instructions actually executed on the testcases.  Good for loops and algorithmic improvements.  |
 | sseavx |  Returns '1' if both avx and sse instructions are used (this is usually bad!), and '0' otherwise.  Often used with a multiplier like `correctness + 1000*sseavx` |
 | nongoal | Returns '1' if the code (after minimization) is found to be equivalent to one in `--non_goal`.  Can also be used with a multiplier. |
 
@@ -771,12 +819,12 @@ enum class Distance {
 ```
 
 Measurement type is specified using the `--distance` command line argument.
-This value controls the behavior of the `CostFunction::evaluate_distance()
-  const` method, which dispatches to the family of
-  `CostFunction::xxxxx_distance() const` methods, each of which represent a
-  method computing the distance between 64-bit values. User-defined extensions
-  should be placed in the `CostFunction::extension_distance() const` method,
-  which can be triggered by specifying `--distance extension`.
+This value controls the behavior of the `CorrectnessCost::evaluate_distance()
+const` method, which dispatches to the family of
+`CorrectnessCost::xxxxx_distance() const` methods, each of which represent a
+method computing the distance between 64-bit values. User-defined extensions
+should be placed in the `CostFunction::extension_distance() const` method,
+which can be triggered by specifying `--distance extension`.
 
 ```c++
 Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {                                            
@@ -794,46 +842,9 @@ Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {
 Verification Strategy
 -----
 
-Verification strategy types are defined in `src/verifier/strategy.h` along with
-an additional type for user-defined extensions.
-
-```c++
-enum class Strategy {
-  NONE,
-  HOLD_OUT,
-  FORMAL,
-
-  // Add user-defined extensions here ...
-  EXTENSION
-};
-```
-
-Strategy type is specified using the `--strategy` command line argument. This
-value controls the behavior of the `Verifier::verify()` method, which
-dispatches to the family of `Verifier::xxxxx_verify() const` methods, each of
-which represent a method for verifying correctness. User-defined extensions
-should be placed in the `Verifier::extension_verify()` method, which can be
-triggered by specifying `--strategy extension`.
-
-```c++
-bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {                                         
-  // Add user-defined implementation here ...
-
-  // Invariant 1. If this method returns false and is able to produce a
-  // counter example explaining why, counter_example_available_ should be
-  // set to true.
-
-  // Invariant 2. If this method returns false, and it is able (see above),
-  // counter_example_ should be set to a CpuState that will cause target and
-  // rewrite to produce different values.
-
-  // Invariant 3.  If this method encounters an error, it should set the
-  // error_ member variable to a non-empty string; otherwise the error_
-  // member should be empty.
-
-  return true;
-} 
-``` 
+The verification strategy specifies what kind of verification to do on the
+rewrite.  It's controlled using the `--strategy` command line argument.  Right
+now, the options are 'hold_out', 'straight_line' or 'bounded'.
 
 Command Line Args
 -----
