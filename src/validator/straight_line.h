@@ -19,13 +19,9 @@
 #include <vector>
 #include <string>
 
-#include "src/cfg/cfg.h"
 #include "src/ext/x64asm/include/x64asm.h"
-#include "src/state/cpu_state.h"
-#include "src/solver/smtsolver.h"
-#include "src/symstate/memory_manager.h"
+#include "src/symstate/memory/deprecated.h"
 #include "src/symstate/state.h"
-#include "src/validator/error.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers.h"
 #include "src/validator/validator.h"
@@ -77,15 +73,11 @@ public:
     return rewrite_final_state_;
   }
 
-
-  /** Extracts a counterexample from a model.  Assumes that you've constructed
-   * constraints the same way the validator does and know what you're doing.
-   * This would be private were it not for the need to be accessible from
-   * testing classes (where friendship doesn't work properly).*/
-  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
-                                   const SymMemory* memory = NULL, const SymMemory* memory2 = NULL);
-
 private:
+
+  /** Generates counterexample with memory. */
+  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
+                                   const DeprecatedMemory*, const DeprecatedMemory*);
 
   /** Take two codes and generate constraints asserting their equivalence.
    * Also return final symbolic states (that have information about memory
@@ -109,10 +101,6 @@ private:
   /** If a counterexample existed, what was final state of rewrite? */
   CpuState rewrite_final_state_;
 
-  /** File where error occurred */
-  std::string error_file_;
-  /** Line where error occurred */
-  size_t error_line_;
 };
 
 

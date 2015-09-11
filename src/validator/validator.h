@@ -19,7 +19,9 @@
 #include <vector>
 #include <string>
 
+#include "src/ext/cpputil/include/container/bit_vector.h"
 #include "src/solver/smtsolver.h"
+#include "src/validator/error.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers.h"
 #include "src/verifier/verifier.h"
@@ -71,22 +73,49 @@ public:
   /** Returns whether an opcode is fully supported.  No error message. */
   bool is_supported(const x64asm::Opcode& op) const;
 
+  /** Generally useful helper function: take a map of <address,value> pairs
+    and stick them into the memory of a testcase.  Returns true on success. */
+  static bool memory_map_to_testcase(std::map<uint64_t, cpputil::BitVector> map, CpuState& tc);
+
+  /** Useful helper.  Extracts a counterexample from a model.  Assumes that
+   * you've constructed constraints the same way the validator does and know
+   * what you're doing.  Ignores memory. */
+  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix);
+
 protected:
 
-  /** Setup the memory manager (on invocation of the validator) */
+  /** Check that def-ins, live-outs match, and that non-control flow
+   * instructions are supported.  Throws exception on error.*/
+  void sanity_checks(const Cfg&, const Cfg&) const;
+
+  /** Push a new memory manager onto the stack. */
   void init_mm() {
-    memory_manager_ = SymMemoryManager();
-    SymBitVector::set_memory_manager(&memory_manager_);
-    SymBool::set_memory_manager(&memory_manager_);
+    auto manager = new SymMemoryManager();
+    SymBitVector::set_memory_manager(manager);
+    SymBool::set_memory_manager(manager);
+    memory_manager_.push(manager);
   }
-  /** Clean up the memory */
+  /** Pop a memory manager off the stack */
   void stop_mm() {
-    memory_manager_.collect();
-    SymBitVector::set_memory_manager(NULL);
-    SymBool::set_memory_manager(NULL);
+    auto manager = memory_manager_.top();
+    manager->collect();
+    delete manager;
+
+    memory_manager_.pop();
+
+    if(memory_manager_.size()) {
+      auto manager = memory_manager_.top();
+      SymBitVector::set_memory_manager(manager);
+      SymBool::set_memory_manager(manager);
+    }
+  }
+  /** Discard and reset all memory managers. */
+  void reset_mm() {
+    while(memory_manager_.size())
+      stop_mm();
   }
   /** The memory manager */
-  SymMemoryManager memory_manager_;
+  std::stack<SymMemoryManager*> memory_manager_;
 
   /** SMT Solver to use */
   SMTSolver& solver_;
@@ -101,6 +130,10 @@ protected:
   /** Code to setup the table to find support levels */
   void setup_support_table();
 
+  /** File where error occurred */
+  std::string error_file_;
+  /** Line where error occurred */
+  size_t error_line_;
 
 };
 

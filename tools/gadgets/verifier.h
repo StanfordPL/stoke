@@ -22,6 +22,7 @@
 #include "src/verifier/none.h"
 #include "src/verifier/sequence.h"
 #include "src/verifier/verifier.h"
+#include "src/validator/bounded.h"
 #include "src/validator/straight_line.h"
 
 #include "tools/args/in_out.inc"
@@ -32,7 +33,6 @@ namespace stoke {
 
 class VerifierGadget : public Verifier {
 public:
-
 
   VerifierGadget(Sandbox& sandbox, CorrectnessCost& fxn) : Verifier(), verifier_(NULL), solver_(NULL) {
 
@@ -79,7 +79,11 @@ public:
 private:
 
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn) {
-    if(s == "hold_out") {
+    if(s == "bounded") {
+      auto bv = new BoundedValidator(*solver_);
+      bv->set_bound(bound_arg.value());
+      return bv;
+    } else if(s == "hold_out") {
       return new HoldOutVerifier(fxn);
     } else if (s == "straight_line" || s == "formal") {
       return new StraightLineValidator(*solver_);
