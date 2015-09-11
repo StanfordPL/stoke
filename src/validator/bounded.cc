@@ -26,15 +26,10 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-struct OverlapDescriptor {
-  bool is_empty;
-  size_t size;
-  size_t cell;
-};
-
-typedef vector<OverlapDescriptor> CellArrangement;
-
-vector<CellArrangement> find_arrangements(vector<OverlapDescriptor*>& start, vector<OverlapDescriptor>& available_cells, size_t max_size) {
+vector<BoundedValidator::CellArrangement>
+BoundedValidator::find_arrangements(
+  vector<BoundedValidator::OverlapDescriptor*>& start,
+  vector<BoundedValidator::OverlapDescriptor>& available_cells, size_t max_size) {
 
   vector<CellArrangement> results;
   // Check for termination.
@@ -154,10 +149,12 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   auto rewrite_sym = split_sym_accesses(sym_list, true);
 
   {
-    ALIAS_DEBUG(cout << "-> ORIGINAL target map" << endl;)
-    const auto target_mem = make_cell_memory(target_sym);
-    ALIAS_DEBUG(cout << "-> ORIGINAL rewrite map" << endl;)
-    const auto rewrite_mem = make_cell_memory(rewrite_sym);
+    ALIAS_DEBUG(cout << "-> ORIGINAL target map" << endl;
+                const auto target_mem = make_cell_memory(target_sym);
+                delete target_mem;)
+    ALIAS_DEBUG(cout << "-> ORIGINAL rewrite map" << endl;
+                const auto rewrite_mem = make_cell_memory(rewrite_sym);
+                delete rewrite_mem;)
   }
 
   // create unconstrainted cells for the rest of memory accesses
@@ -243,6 +240,10 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
 
   // Step 4: Invoke the solver
   bool is_sat = solver_.is_sat(constraints);
+
+  delete target_mem;
+  delete rewrite_mem;
+
   if(solver_.has_error()) {
     throw VALIDATOR_ERROR("solver: " + solver_.get_error());
   }
@@ -397,94 +398,6 @@ size_t accesses_done) {
   }
 
 
-  /*
-  // Options:
-  // (i)   new cell
-  {
-    ALIAS_DEBUG(cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target")
-                << " line " << sa.line << " size " << sa.size << endl;)
-
-    ALIAS_DEBUG(cout << "Option (i): new cell" << endl;)
-    sa.cell = cell_max + 1;
-    sa.cell_size = sa.size;
-    sa.cell_offset = 0;
-
-    auto rec_symb = sym_access;
-    rec_symb.push_back(sa);
-
-    auto new_results = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll,
-                       P, Q, target_con_access, rewrite_con_access, rec_symb, accesses_done+1);
-    result.insert(result.begin(), new_results.begin(), new_results.end());
-  }
-
-  // (ii)  overlaps with 1 existing cell
-  for(size_t i; i <= cell_max; ++i) {
-    size_t other_size = cell_size_map[i];
-
-    // CASE (A)   |--- this cell ---|                 OR  |------- this cell -------|
-    //            <- j bytes ->|--- other cell --|        <- j ->|- other cell -|
-    for(size_t j = 1; j < sa.size; ++j) {
-      ALIAS_DEBUG(cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target")
-                  << " line " << sa.line << " size " << sa.size << endl;)
-
-      ALIAS_DEBUG(cout << "Option (ii) / A: access overlaps " << j << " bytes with start of existing cell " << i << endl;)
-
-      auto recursive_accesses = sym_access;
-
-      // Go through all the memory writes and resize/reposition cell i.
-      size_t new_cell_size = MAX(j + other_size, sa.size);
-      for(auto& it : recursive_accesses) {
-        if(it.cell == i) {
-          it.cell_size = new_cell_size;
-          it.cell_offset += j;
-        }
-      }
-
-      sa.cell = i;
-      sa.cell_size = new_cell_size;
-      sa.cell_offset = 0;
-      recursive_accesses.push_back(sa);
-
-      auto new_results = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll,
-                         P, Q, target_con_access, rewrite_con_access, recursive_accesses, accesses_done+1);
-      result.insert(result.begin(), new_results.begin(), new_results.end());
-    }
-
-    // CASE (B)  |--- this cell ---|  OR  |--- this cell --|        OR |------ this cell --------|
-    //           |--- other cell --|      |----- other cell ----|      |--- other cell ---|
-    {
-      ALIAS_DEBUG(cout << "Working on memory access of " << (work_on_rewrite ? "rewrite" : "target")
-                  << " line " << sa.line << " size " << sa.size << endl;)
-
-      ALIAS_DEBUG(cout << "Option (ii) / A: access aligns with existing cell " << i << endl;)
-
-      auto recursive_accesses = sym_access;
-      size_t new_cell_size = MAX(sa.size, cell_size_map[i]);
-      // Go through all the memory writes and resize cell i.
-      for(auto& it : recursive_accesses) {
-        if(it.cell == i) {
-          it.cell_size = new_cell_size;
-        }
-      }
-
-      sa.cell = i;
-      sa.cell_size = new_cell_size;
-      sa.cell_offset = 0;
-      recursive_accesses.push_back(sa);
-
-      auto new_results = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll,
-                         P, Q, target_con_access, rewrite_con_access, recursive_accesses, accesses_done+1);
-      result.insert(result.begin(), new_results.begin(), new_results.end());
-    }
-  }
-  */
-
-
-  // Step 3: consider all the ways it can overlap with all the existing cells
-  // -> for each one, produce a new target_sym_access / rewrite_sym_access
-  // -> then do the recursive call
-  // -> concatenate all the results
-
   return result;
 }
 
@@ -632,6 +545,13 @@ BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const CfgPa
   }
 }
 
+void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories) {
+  for(auto p : memories) {
+    delete p.first;
+    delete p.second;
+  }
+}
+
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
 
@@ -735,6 +655,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
         if(ok) {
           counterexamples_.push_back(ceg);
         } else {
+          delete_memories(memory_list);
           throw VALIDATOR_ERROR("Couldn't build counterexample!  This is a BOUNDED VALIDATOR BUG.");
           return false;
         }
@@ -744,6 +665,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       BOUNDED_DEBUG(cout << "  (Got counterexample)" << endl;)
       BOUNDED_DEBUG(cout << ceg << endl;)
 
+      delete_memories(memory_list);
       stop_mm();
       return false;
     } else {
@@ -752,6 +674,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   }
 
+  delete_memories(memory_list);
   stop_mm();
   return true;
 
@@ -816,250 +739,3 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
 }
 
-
-
-
-//+++++++++++=+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// SHOULDN'T NEED THIS STUFF
-//+++++++++++=+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-bool BoundedValidator::find_pair_testcase(const Cfg& target, const Cfg& rewrite,
-    const CfgPath& P, const CfgPath& Q, CpuState& tc) {
-
-  if(paths_infeasible_[P][Q])
-    return false;
-
-  auto target_tcs = path_to_testcase_[0][P];
-  auto rewrite_tcs = path_to_testcase_[1][Q];
-
-  BOUNDED_DEBUG(cout << "===========================================" << endl;)
-  BOUNDED_DEBUG(cout << "We're looking for TCs for these paths" << endl;)
-
-  size_t index;
-  bool found_one = vectors_have_common(target_tcs, rewrite_tcs, index);
-  if(found_one) {
-    tc = *(sandbox_->get_input(index));
-    BOUNDED_DEBUG(cout << "  -> found a testcase, no problem." << endl;)
-    return true;
-  } else {
-    // Roll your sleaves up: we're gonna try to brute force a new testcase.
-    BOUNDED_DEBUG(cout << "  -> no testcase found, brute forcing one." << endl;)
-    return brute_force_testcase(target, rewrite, P, Q, tc);
-  }
-
-}
-
-// Find a testcase that takes paths (P,Q) or prove that one doesn't exist.
-// We're assuming that a "gentle" search of known testcases failed here.
-bool BoundedValidator::brute_force_testcase(const Cfg& target, const Cfg& rewrite,
-    const CfgPath& P, const CfgPath& Q, CpuState& tc) {
-
-  BOUNDED_DEBUG(cout << "** ATTEMPTING TC BRUTEFORCE **" << endl;)
-  if(paths_infeasible_[P][Q]) {
-    BOUNDED_DEBUG(cout << "  -> Path already known to be infeasible.";)
-    return false;
-  }
-
-  // STEP 1: see if there's any bootstrap testcase that nearly makes it up to P/Q
-
-  // find the prefix we need, i.e., the path P' short of P where the gap (nodes in P but not P') doesn't contain any memory access
-
-  CfgPath P_prefix;
-  CfgPath Q_prefix;
-  for(size_t k = 0; k < 2; ++k) {
-    auto& cfg = k ? target : rewrite;
-    auto& path = k ? P : Q;
-    auto& prefix = k ? P_prefix : Q_prefix;
-
-    CfgPath buffer;
-    for(size_t i = 0; path.size() && i < path.size() - 1; ++i) {
-      auto node = path[i];
-      if(cfg.num_instrs(node) == 0)
-        continue;
-
-      // does this node have a memory dereference?
-      bool deref = false;
-      size_t start_instr = cfg.get_loc(i).first;
-      size_t end_instr = start_instr + cfg.num_instrs(node);
-      for(size_t j = start_instr; j < end_instr; ++j) {
-        if(cfg.get_code()[j].is_memory_dereference()) {
-          deref = true;
-          break;
-        }
-      }
-
-      buffer.push_back(node);
-
-      if(deref) {
-        prefix.insert(prefix.end(), buffer.begin(), buffer.end());
-        buffer.clear();
-      }
-    }
-  }
-  BOUNDED_DEBUG(cout << "  -> Prefix for P: " << print(P_prefix) << endl;)
-  BOUNDED_DEBUG(cout << "  -> Prefix for Q: " << print(Q_prefix) << endl;)
-
-  // search testcases for these prefixes
-  vector<size_t> target_tcs;
-  vector<size_t> rewrite_tcs;
-
-  for(size_t k = 0; k < 2; ++k) {
-    auto& tc_list = k ? rewrite_tcs : target_tcs;
-    auto& prefix = k ? Q_prefix : P_prefix;
-
-    for(auto& path : paths_[k]) {
-
-      if(!CfgPaths::is_prefix(prefix, path))
-        continue;
-
-      auto& testcases = path_to_testcase_[k][path];
-      tc_list.insert(tc_list.begin(), testcases.begin(), testcases.end());
-    }
-  }
-
-  CpuState prefix_tc;
-  size_t tc_index;
-  sort(target_tcs.begin(), target_tcs.end());
-  sort(rewrite_tcs.begin(), rewrite_tcs.end());
-  bool found_tc = vectors_have_common(target_tcs, rewrite_tcs, tc_index);
-  if(found_tc) {
-    prefix_tc = *sandbox_->get_input(tc_index);
-    BOUNDED_DEBUG(cout << "  -> Found existing TC :)" << endl;)
-    /*
-    CfgPath a;
-    CfgPath b;
-    cfg_paths.learn_path(a, target, prefix_tc);
-    cfg_paths.learn_path(b, rewrite, prefix_tc);
-    cout << "Sanity check target: " << print(a) << endl;
-    cout << "Sanity check rewrite: " << print(b) << endl;
-    */
-  } else {
-    // sometimes there's a bug and we loop infinitely with two null prefixes
-    if(P_prefix.size() == 0 && Q_prefix.size() == 0) {
-      //we either have *no* testcases, or something funny is going on
-      throw VALIDATOR_ERROR("Could not find any testcases that match null control flow prefix.  This is a bug.");
-    }
-
-    found_tc = brute_force_testcase(target, rewrite, P_prefix, Q_prefix, prefix_tc);
-  }
-
-  if(!found_tc) {
-    // yay, it's infeasible!
-    BOUNDED_DEBUG(cout << "  -> PATH INFEASIBLE :) " << endl;)
-    paths_infeasible_[P][Q] = true;
-    return false;
-  }
-
-  // STEP 2: build constraints and solve for a new TC, or prove infeasibility
-
-  BOUNDED_DEBUG(cout << "***** Checking for feasibility *****" << endl;)
-  BOUNDED_DEBUG(cout << "P=" << print(P) << endl;)
-  BOUNDED_DEBUG(cout << "Q=" << print(Q) << endl;)
-
-  init_mm();
-
-  vector<SymBool> constraints;
-
-  SymState init("");
-  SymState state_t("1_INIT");
-  SymState state_r("2_INIT");
-
-  for(auto it : state_t.equality_constraints(init, target.def_ins()))
-    constraints.push_back(it);
-  for(auto it : state_r.equality_constraints(init, rewrite.def_ins()))
-    constraints.push_back(it);
-
-
-  auto target_repath = CfgPaths::rewrite_cfg_with_path(target, P);
-  auto rewrite_repath = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
-  auto memories = am.build_cell_model(target_repath, rewrite_repath, prefix_tc);
-  if(memories.first == NULL || memories.second == NULL) {
-    throw VALIDATOR_ERROR("Overlapping memory accesses found.");
-    return false;
-  }
-
-  state_t.memory = memories.first;
-  state_r.memory = memories.second;
-  state_t.memory->set_parent(&state_t);
-  state_r.memory->set_parent(&state_r);
-
-  auto mem_const = memories.first->equality_constraint(*memories.second);
-  constraints.push_back(mem_const);
-
-  size_t line_no = 0;
-  for(size_t i = 0; P.size() && i < P.size() - 1; ++i)
-    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
-  line_no = 0;
-  for(size_t i = 0; Q.size() && i < Q.size() - 1; ++i)
-    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
-
-  constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
-  constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
-
-  /*
-  cout << endl << "CONSTRAINTS" << endl << endl;;
-  for(auto it : constraints) {
-    cout << it << endl;
-  }
-  */
-
-  // Step 4: Invoke the solver
-  bool is_sat = solver_.is_sat(constraints);
-  if(solver_.has_error()) {
-    throw VALIDATOR_ERROR("solver: " + solver_.get_error());
-  }
-
-  if(is_sat) {
-    BOUNDED_DEBUG(cout << "  -> Feasible!" << endl;)
-    auto ceg = Validator::state_from_model(solver_, "_");
-    bool ok = am.build_testcase_memory(ceg, solver_,
-                                       *static_cast<CellMemory*>(state_t.memory),
-                                       *static_cast<CellMemory*>(state_r.memory),
-                                       target, rewrite);
-    BOUNDED_DEBUG(if(!ok)
-                  cout << "WARNING: build counterexample for unexplored path; segfaults." << endl;)
-      BOUNDED_DEBUG(cout << "Here's the counterexample:" << endl << ceg << endl;)
-      tc = ceg;
-  } else {
-    BOUNDED_DEBUG(cout << "Infeasible!" << endl;)
-  }
-
-  stop_mm();
-  return is_sat;
-
-
-}
-
-bool BoundedValidator::learn_paths(const Cfg& cfg, bool is_rewrite) {
-
-  bool found_one = false;
-
-  for(size_t i = 0; i < sandbox_->num_inputs(); ++i) {
-
-    auto tc = *sandbox_->get_input(i);
-
-    CfgPath p;
-    bool keep = cfg_paths.learn_path(p, cfg, tc);
-
-    if(!keep)
-      continue;
-
-    // check the path to see if it's in the bound
-    std::map<Cfg::id_type, size_t> counts;
-    for(auto node : p) {
-      counts[node]++;
-      if(counts[node] > bound_) {
-        keep = false;
-        break;
-      }
-    }
-
-    if(keep) {
-      found_one = true;
-      BOUNDED_DEBUG(cout << "  " << print(p) << endl;)
-      path_to_testcase_[is_rewrite][p].push_back(i);
-    }
-  }
-
-  return found_one;
-}
