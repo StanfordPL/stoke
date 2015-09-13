@@ -46,11 +46,13 @@ public:
   bool get_model_bool(const std::string& var);
 
   void reset() {
+    /*
     if(smt_) {
       delete smt_;
     }
 
     smt_ = new CVC4::SmtEngine(&em_);
+    */
 
     variables_ = std::map<std::string, CVC4::Expr>();
     uninterpreted_ = false;

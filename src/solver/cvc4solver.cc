@@ -26,15 +26,20 @@ using namespace CVC4;
 bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
 
   reset();
-  smt_->setOption("incremental", true);
-  smt_->setOption("produce-assignments", true);
-  smt_->setTimeLimit(timeout_, true);
-  smt_->setLogic("QF_UFBV");
+  if(!smt_) {
+    smt_ = new CVC4::SmtEngine(&em_);
+    smt_->setOption("incremental", true);
+    smt_->setOption("produce-assignments", true);
+    smt_->setTimeLimit(timeout_, true);
+    smt_->setLogic("QF_UFBV");
+  }
 
   error_ = "";
 
   SymTypecheckVisitor tc;
   ExprConverter ec(this);
+
+  smt_->push();
 
   for(auto it : constraints) {
 
@@ -59,6 +64,8 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
   }
 
   auto result = smt_->checkSat(em_.mkConst(true));
+
+  smt_->pop();
 
   if(result.isUnknown()) { // || result.isSat() == Result::SAT_UNKNOWN) {
     error_ = "CVC4 returned unknown: " + result.whyUnknown();
