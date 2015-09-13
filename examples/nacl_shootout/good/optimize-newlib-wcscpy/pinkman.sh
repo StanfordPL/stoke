@@ -7,7 +7,7 @@ if [ "X$INDEX" == "X" ]; then
   # we get to launch the jobs
   for i in 1 2 3 4; do
     cat search.conf | sed "s/result.s/result.s.$i/" > search.conf.$i
-    srun ./pinkman.sh $i
+    srun ./pinkman.sh $i &
   done
   echo "Done with launch :)"
 else
