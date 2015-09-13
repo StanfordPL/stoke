@@ -82,6 +82,8 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     }
 
     case sat: {
+      if(model_ != NULL)
+        delete model_;
       model_ = new z3::model(s.get_model());
       return true;
     }

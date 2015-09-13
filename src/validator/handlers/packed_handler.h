@@ -710,6 +710,23 @@ public:
 
   }
 
+  ~PackedHandler() {
+    for(auto it : opcodes_) {
+      if(it.second != NULL) {
+        delete it.second;
+      }
+      if(opcodes_.count(it.first))
+        opcodes_[it.first] = NULL;
+      if(opcodes_.count("v" + it.first))
+        opcodes_["v" + it.first] = NULL;
+      if(it.first[0] == 'v') {
+        auto substr = it.first.substr(1);
+        if(opcodes_.count(substr))
+          opcodes_[substr] = NULL;
+      }
+    }
+  }
+
   virtual std::vector<std::string> full_support_opcodes() {
     return opcode_names_;
   }

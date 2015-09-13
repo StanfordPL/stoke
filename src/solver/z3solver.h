@@ -33,6 +33,11 @@ public:
     model_ = NULL;
   }
 
+  ~Z3Solver() {
+    if(model_ != NULL)
+      delete model_;
+  }
+
   /** Check if a query is satisfiable given constraints */
   bool is_sat(const std::vector<SymBool>& constraints);
 
