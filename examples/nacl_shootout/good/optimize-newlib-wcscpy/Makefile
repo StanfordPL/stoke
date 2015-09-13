@@ -23,4 +23,4 @@ pinkman:
 	./pinkman.sh
 
 clean:
-	rm -f testcases optbin
+	rm -f optbin
