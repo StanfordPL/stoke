@@ -24,7 +24,7 @@ class BoundedValidatorBaseTest : public ::testing::Test {
 public:
 
   BoundedValidatorBaseTest() {
-    solver = new Cvc4Solver();
+    solver = new Z3Solver();
     sandbox = new Sandbox();
     sandbox->set_max_jumps(4096);
     sandbox->set_abi_check(false);
