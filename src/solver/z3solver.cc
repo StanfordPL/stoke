@@ -27,7 +27,10 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 
   /* Reset state. */
   error_ = "";
-  model_ = 0;
+  if(model_ != NULL)
+    delete model_;
+  model_ = NULL;
+
   solver_.pop();
   solver_.push();
 
@@ -35,14 +38,13 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   SymTypecheckVisitor tc;
 
   const vector<SymBool>* current = &constraints;
-  vector<SymBool>* new_constraints = 0;
-  bool free_it = false;
+  vector<SymBool> new_constraints;
 
   while(current->size() != 0) {
 
-    new_constraints = new vector<SymBool>();
+    new_constraints.clear();
 
-    ExprConverter ec(context_, *new_constraints);
+    ExprConverter ec(context_, new_constraints);
 
     for(auto it : *current) {
       if (tc(it) != 1) {
@@ -64,13 +66,8 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
       solver_.add(constraint);
     }
 
-    if(free_it)
-      delete current;
-    free_it = true;
-
-    current = new_constraints;
+    current = &new_constraints;
   }
-  delete current;
 
   /* Run the solver and see */
   try {

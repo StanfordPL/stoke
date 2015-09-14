@@ -29,7 +29,7 @@ cpputil::ValueArg<Solver, SolverReader, SolverWriter>& solver_arg =
   cpputil::ValueArg<Solver, SolverReader, SolverWriter>::create("solver")
   .usage("(cvc4|z3)")
   .description("SMT Solver backend")
-  .default_val(Solver::CVC4);
+  .default_val(Solver::Z3);
 
 cpputil::ValueArg<uint64_t>& timeout_arg =
   cpputil::ValueArg<uint64_t>::create("solver_timeout")
