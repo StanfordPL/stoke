@@ -690,7 +690,7 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   // State
   counterexamples_.clear();
   paths_[false].clear();
-  paths_[true].clear(); 
+  paths_[true].clear();
   has_error_ = false;
   init_mm();
 

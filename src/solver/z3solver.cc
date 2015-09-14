@@ -122,13 +122,18 @@ cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t bits)
   for(int i = 0; i < octs; ++i) {
     uint64_t oct;
 
-    size_t max_bits = i*64+63 > bits ? bits : i*64+63;
+    size_t max_bits = i*64+63 > bits ? bits-1 : i*64+63;
     expr extract = to_expr(context_, Z3_mk_extract(context_, max_bits, i*64, v));
     expr number = to_expr(context_, Z3_mk_bv2int(context_, extract, true));
     expr eval = model_->eval(number, true);
     Z3_get_numeral_int64(context_, eval, (long long int*)&oct);
 
-    result.get_fixed_quad(i) = oct;
+    assert((max_bits + 1) % 8 == 0);
+    size_t k = 0;
+    for(size_t j = i*8; j < (max_bits+1)/8; ++j) {
+      result.get_fixed_byte(j) = (oct >> (k*8)) & 0xff;
+      k++;
+    }
   }
 
   return result;
