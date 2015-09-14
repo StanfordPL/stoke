@@ -656,7 +656,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
           counterexamples_.push_back(ceg);
         } else {
           delete_memories(memory_list);
-          throw VALIDATOR_ERROR("Couldn't build counterexample!  This is a BOUNDED VALIDATOR BUG.");
+          //throw VALIDATOR_ERROR("Couldn't build counterexample!  This is a BOUNDED VALIDATOR BUG.");
+          cout << "Couldn't build counterexample!  This is probably a bug!" << endl;
           return false;
         }
       } else {
@@ -715,7 +716,11 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
       for(auto rewrite_path : paths_[true]) {
         count++;
         ok &= verify_pair(target, rewrite, target_path, rewrite_path);
+        if(!ok)
+          break;
       }
+      if(!ok)
+        break;
     }
 
     reset_mm();
