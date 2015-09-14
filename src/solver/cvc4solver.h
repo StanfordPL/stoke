@@ -27,12 +27,16 @@ namespace stoke {
 class Cvc4Solver : public SMTSolver {
 
 public:
-  Cvc4Solver() : smt_(NULL), uninterpreted_(false) {}
+  Cvc4Solver() : smt_(NULL), uninterpreted_(false) {
+    smt_ = new CVC4::SmtEngine(&em_);
+    smt_->setOption("incremental", true);
+    smt_->setOption("produce-assignments", true);
+    smt_->setTimeLimit(timeout_, true);
+    smt_->setLogic("QF_UFBV");
+    smt_->push();
+  }
   ~Cvc4Solver() {
-    if(smt_) {
-      smt_->pop();
-      delete smt_;
-    }
+    delete smt_;
   }
 
   SMTSolver& set_timeout(uint64_t ms) {
