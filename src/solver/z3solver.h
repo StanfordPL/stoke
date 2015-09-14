@@ -29,8 +29,22 @@ class Z3Solver : public SMTSolver {
 
 public:
   /** Instantiate a new Z3 solver */
-  Z3Solver() : SMTSolver() {
+  Z3Solver() : solver_(context_), SMTSolver() {
     model_ = NULL;
+
+    context_.set("timeout", (int)timeout_);
+    solver_.push();
+  }
+
+  SMTSolver& set_timeout(uint64_t ms) {
+    timeout_ = ms;
+    context_.set("timeout", (int)timeout_);
+    return *this;
+  }
+
+  ~Z3Solver() {
+    if(model_ != NULL)
+      delete model_;
   }
 
   /** Check if a query is satisfiable given constraints */
@@ -49,7 +63,8 @@ private:
 
   /** The Z3 context we're working with */
   z3::context context_;
-
+  /** The Z3 solver. */
+  z3::solver solver_;
   /** Stores the most recent satisfying assignment */
   z3::model* model_;
 

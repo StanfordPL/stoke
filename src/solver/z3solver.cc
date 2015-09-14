@@ -28,10 +28,8 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   /* Reset state. */
   error_ = "";
   model_ = 0;
-
-  /* Context for Z3 solver */
-  solver s(context_);
-  context_.set("timeout", (int)timeout_);
+  solver_.pop();
+  solver_.push();
 
   /* Convert constraints and query to z3 object */
   SymTypecheckVisitor tc;
@@ -63,7 +61,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
         error_ = ec.error();
         return false;
       }
-      s.add(constraint);
+      solver_.add(constraint);
     }
 
     if(free_it)
@@ -76,13 +74,15 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 
   /* Run the solver and see */
   try {
-    switch (s.check()) {
+    switch (solver_.check()) {
     case unsat: {
       return false;
     }
 
     case sat: {
-      model_ = new z3::model(s.get_model());
+      if(model_ != NULL)
+        delete model_;
+      model_ = new z3::model(solver_.get_model());
       return true;
     }
 

@@ -285,7 +285,6 @@ TEST_F(BoundedValidatorBaseTest, PopcntWrong) {
   for(auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
-  validator->set_bound(4);
 }
 
 TEST_F(BoundedValidatorBaseTest, PopcntWrongBeyondBound) {
@@ -1754,6 +1753,71 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong5) {
   //ssr << "xorl %eax, %eax" << std::endl;
   ssr << "nop" << std::endl;
   ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for(auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
+}
+
+TEST_F(BoundedValidatorBaseTest, WcscpyWrong1) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::rsi + x64asm::r15;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".wcscpy:" << std::endl;
+  sst << "movl %edi, %eax" << std::endl;
+  sst << "movl %esi, %esi" << std::endl;
+  sst << "movl %eax, %eax" << std::endl;
+  sst << "movl $0x0, (%r15,%rax,1)" << std::endl;
+  sst << "movl %esi, %esi" << std::endl;
+  sst << "movl (%r15,%rsi,1), %ecx" << std::endl;
+  sst << "movq %rax, %rdx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "je .L_140f20" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_140f00:" << std::endl;
+  sst << "addl $0x4, %esi" << std::endl;
+  sst << "movl %edx, %edx" << std::endl;
+  sst << "movl %ecx, (%r15,%rdx,1)" << std::endl;
+  sst << "addl $0x4, %edx" << std::endl;
+  sst << "movl %esi, %esi" << std::endl;
+  sst << "movl (%r15,%rsi,1), %ecx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "jne .L_140f00" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_140f20:" << std::endl;
+  sst << "movl %edx, %edx" << std::endl;
+  sst << "movl $0x0, (%r15,%rdx,1)" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  sst << ".wcscpy:" << std::endl;
+  sst << "movl %esi, %edx" << std::endl;
+  sst << "movl (%r15,%rdx,1), %ecx" << std::endl;
+  sst << "movq %rdi, %rax" << std::endl;
+  sst << "testl %edx, %ecx" << std::endl;
+  sst << "nop" << std::endl;
+  sst << "movw %ax, %dx" << std::endl;
+  sst << "je .L_140f20" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_140f00:" << std::endl;
+  sst << "orl %esp, %edx" << std::endl;
+  sst << "movq %rcx, (%r15,%rdx,1)" << std::endl;
+  sst << "addl $0x4, %esi" << std::endl;
+  sst << "movl (%r15,%rsi,1), %ecx" << std::endl;
+  sst << "addl $0x4, %edx" << std::endl;
+  sst << "testl %ecx, %ecx" << std::endl;
+  sst << "jne .L_140f00" << std::endl;
+  sst << "nop" << std::endl;
+  sst << ".L_140f20:" << std::endl;
+  sst << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
 
