@@ -52,6 +52,8 @@ LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
 	-lboost_regex\
 	-pthread\
+	-lboost_thread -lboost_system\
+	-lboost_regex -lboost_filesystem\
 	-lcln \
 	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
 	-L src/ext/z3/build -lz3
@@ -123,6 +125,7 @@ SRC_OBJ=\
 	src/validator/handlers/conditional_handler.o \
 	src/validator/handlers/lea_handler.o   \
 	src/validator/handlers/move_handler.o  \
+	src/validator/handlers/pseudo_handler.o  \
 	src/validator/handlers/packed_handler.o \
 	src/validator/handlers/punpck_handler.o \
 	src/validator/handlers/shift_handler.o \
@@ -177,13 +180,17 @@ BIN=\
 	bin/stoke_debug_state \
 	bin/stoke_debug_tunit \
 	bin/stoke_debug_verify \
+	bin/stoke_debug_simplify \
 	\
 	bin/stoke_benchmark_cfg \
 	bin/stoke_benchmark_cost \
 	bin/stoke_benchmark_sandbox \
 	bin/stoke_benchmark_search \
 	bin/stoke_benchmark_state \
-	bin/stoke_benchmark_verify 
+	bin/stoke_benchmark_verify \
+	bin/specgen_analyse \
+	bin/specgen_init \
+	bin/specgen_setup
 
 # used to force a target to rebuild
 .PHONY: .FORCE
@@ -349,8 +356,8 @@ tools/io/%.o: tools/io/%.cc $(DEPS)
 
 ##### BINARY TARGETS
 
-bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB)
+bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/apps/*.h tools/gadgets/*.h
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB)  
 
 ##### TESTING
 

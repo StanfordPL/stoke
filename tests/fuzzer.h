@@ -93,7 +93,7 @@ TransformPools default_fuzzer_pool() {
 }
 
 /** Generates an instruction and invokes the callback on it. */
-uint64_t fuzz(TransformPools& pools, size_t iterations, void (*callback)(const Cfg& cfg, void* info), void* callback_info, size_t instr_count = 1, uint64_t seed = 0) {
+uint64_t fuzz(TransformPools& pools, size_t iterations, void (*callback)(const Cfg& cfg, void* info), void* callback_info, size_t instr_count = 1, std::vector<TUnit> aux_fxns = {}, uint64_t seed = 0) {
 
   // Step 1: get the seed
   if(!seed) {
@@ -115,6 +115,21 @@ uint64_t fuzz(TransformPools& pools, size_t iterations, void (*callback)(const C
   pools.set_seed(seed);
   transform.set_seed(seed);
   TransformInfo ti;
+
+  // insert function summaries
+  for (const auto& fxn : aux_fxns) {
+    auto lbl = fxn.get_code()[0].get_operand<x64asm::Label>(0);
+    auto code = fxn.get_code();
+    stoke::TUnit::MayMustSets mms = {
+      code.must_read_set(),
+      code.must_write_set(),
+      code.must_undef_set(),
+      code.maybe_read_set(),
+      code.maybe_write_set(),
+      code.maybe_undef_set()
+    };
+    target.add_summary(lbl, fxn.get_may_must_sets(mms));
+  }
 
   // Step 3: Fuzz
   for(size_t i = 0; i < iterations; ++i) {

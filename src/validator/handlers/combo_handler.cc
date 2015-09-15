@@ -21,7 +21,7 @@ using namespace std;
 
 Handler::SupportLevel ComboHandler::get_support(const Instruction& instr) {
 
-  if(!operands_supported(instr)) {
+  if(!operands_supported(instr) && instr.get_opcode() != CALL_LABEL) {
     return Handler::NONE;
   }
 

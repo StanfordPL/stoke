@@ -138,7 +138,7 @@ protected:
   /** Runs the target on the given CpuState in a sandbox, and compares
       with the validator output.  Returns false if the validator failed to
       build a model (which means that passing the test is useless). */
-  bool check_circuit(CpuState cs) {
+  bool check_circuit(stoke::CpuState cs, std::vector<stoke::TUnit> aux_fxns = {}) {
     if(!reset_state(true))
       return false;
     ceg_shown_ = true;
@@ -181,8 +181,11 @@ protected:
     // Run the sandbox
     Sandbox sb;
     sb.set_abi_check(false)
-    .set_max_jumps(1)
+    .set_max_jumps(100)
     .insert_input(cs);
+    for (const auto& fxn : aux_fxns) {
+      sb.insert_function(Cfg(fxn, x64asm::RegSet::empty(), x64asm::RegSet::empty()));
+    }
 
     sb.run(*cfg_t_);
 
@@ -190,13 +193,12 @@ protected:
 
     // Check sandbox and state equivalent
     std::stringstream ss;
-    ss << "Counterexample: " << std::endl << cs << std::endl;
-    ss << "Sandbox final state: " << std::endl << sandbox_final << std::endl;
-    ss << "StraightLineValidator final state: " << std::endl << validator_final << std::endl;
-    ss << "Sandbox and validator disagree on liveout " << cfg_t_->live_outs() << std::endl;
+    // ss << "Counterexample: " << std::endl << cs << std::endl;
+    // ss << "Sandbox final state: " << std::endl << sandbox_final << std::endl;
+    // ss << "StraightLineValidator final state: " << std::endl << validator_final << std::endl;
+    // ss << "Sandbox and validator disagree on liveout " << cfg_t_->live_outs() << std::endl;
     expect_cpustate_equal_on_liveout(sandbox_final, validator_final, ss.str());
     return true;
-
   }
 
   /** Runs the target and rewrite against the sandbox.
@@ -467,15 +469,15 @@ private:
 
       ADD_FAILURE() << "Unexpected counterexample found" << expected_string.str() << std::endl;
 
-      std::cout << "Counterexample:" << std::endl;
-      std::cout << v_.get_counter_examples()[0] << std::endl << std::endl;
-      ceg_shown_ = true;
+      // std::cout << "Counterexample:" << std::endl;
+      // std::cout << v_.get_counterexample()[0] << std::endl << std::endl;
+      // ceg_shown_ = true;
 
-      std::cout << "Target final state:" << std::endl;
-      std::cout << v_.get_target_final_state() << std::endl << std::endl;
+      // std::cout << "Target final state:" << std::endl;
+      // std::cout << v_.get_target_final_state() << std::endl << std::endl;
 
-      std::cout << "Rewrite final state:" << std::endl;
-      std::cout << v_.get_rewrite_final_state() << std::endl;
+      // std::cout << "Rewrite final state:" << std::endl;
+      // std::cout << v_.get_rewrite_final_state() << std::endl;
 
       break;
     }

@@ -20,9 +20,9 @@ namespace {
 
 /** Returns true for instructions that induce control flow */
 bool is_control(const Instruction& instr) {
-  return instr.is_label_defn() || instr.is_any_jump() ||
-         instr.is_any_call() || instr.is_any_return() ||
-         instr.is_any_loop();
+  return (instr.is_label_defn() || instr.is_any_jump() ||
+          instr.is_any_call() || instr.is_any_return() ||
+          instr.is_any_loop()) && instr.get_opcode() != CALL_LABEL;
 }
 
 /** Returns true for instructions that have non-register side effects */

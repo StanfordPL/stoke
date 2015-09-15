@@ -70,6 +70,7 @@ private:
     v.push_back(new MoveHandler());
     v.push_back(new PunpckHandler());
     v.push_back(new ShiftHandler());
+    v.push_back(new PseudoHandler());
 
     return v;
   }

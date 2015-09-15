@@ -91,12 +91,23 @@ int main(int argc, char** argv) {
   if (!res && verifier.counter_examples_available()) {
     Console::msg() << endl << verifier.counter_examples_available() << " Counterexamples." << endl;
     Console::msg() << endl;
-    Console::msg() << verifier.get_counter_examples()[0];
+    auto cs = verifier.get_counter_example()[0];
+    // hack for specgen: generate a stack
+    cs.stack.resize(0x700000000-128, 128);
+    for (auto i = cs.stack.lower_bound(), ie = cs.stack.upper_bound(); i < ie; ++i) {
+      if (!cs.stack.is_valid(i)) {
+        cs.stack.set_valid(i, true);
+        cs.stack[i] = rand() % 256;
+      }
+    }
+    cs.gp[rsp].get_fixed_quad(0) = 0x700000000;
+    // end hack
+    Console::msg() << cs;
     Console::msg() << endl << endl;
     Console::msg() << "Difference of running target and rewrite on the counterexample:";
     Console::msg() << endl << endl;
     CpuStates tcs;
-    tcs.push_back(verifier.get_counter_examples()[0]);
+    tcs.push_back(cs);
     SandboxGadget sb(tcs, aux_fxns);
     sb.run(target);
     const auto target_result = *(sb.result_begin());
