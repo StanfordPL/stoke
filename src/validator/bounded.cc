@@ -16,8 +16,8 @@
 #include "src/cfg/paths.h"
 #include "src/validator/bounded.h"
 
-#define BOUNDED_DEBUG(X) { }
-#define ALIAS_DEBUG(X) { }
+#define BOUNDED_DEBUG(X) { X }
+#define ALIAS_DEBUG(X) { X }
 #define ALIAS_CASE_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
@@ -239,13 +239,18 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
 })
 
   // Step 4: Invoke the solver
+  uint64_t old_timeout = solver_.get_timeout();
+  solver_.set_timeout(60000); // 1 minute max for this
   bool is_sat = solver_.is_sat(constraints);
+  solver_.set_timeout(old_timeout);
 
   delete target_mem;
   delete rewrite_mem;
 
   if(solver_.has_error()) {
-    throw VALIDATOR_ERROR("solver: " + solver_.get_error());
+    //throw VALIDATOR_ERROR("solver: " + solver_.get_error());
+    ALIAS_DEBUG(cout << "SMT Solver had error: " << solver_.get_error();)
+    return true; // it's possible that we timed out, but there's still a solution here.  keep looking.
   }
 
   ALIAS_DEBUG(cout << "FEASIBLE: " << is_sat << endl;);
@@ -718,10 +723,15 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
       for(auto rewrite_path : paths_[true]) {
         count++;
         ok &= verify_pair(target, rewrite, target_path, rewrite_path);
-        if(!ok)
+
+        // Case 1: verify failed and we have ceg; return false
+        // Case 2: verify failed and no counterexampe: keep going
+        // Case 3: verify worked: keep going
+
+        if(!ok && counterexamples_.size() > 0)
           break;
       }
-      if(!ok)
+      if(!ok && counterexamples_.size() > 0)
         break;
     }
 
