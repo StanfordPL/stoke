@@ -17,7 +17,7 @@ if [ "X$INDEX" == "X" ]; then
   cp target.s $DIR
   cp binary $DIR
   for i in 1 2 3 4; do
-    cat search.conf | sed "s/result.s/$DIR\/result.s.$i/" > $DIR/search.conf.$i
+    cat search.conf | sed "s/result.s/result.s.$i/" > $DIR/search.conf.$i
     srun ./pinkman.sh $i $DIR &
   done
   echo "Done with launch :)"
