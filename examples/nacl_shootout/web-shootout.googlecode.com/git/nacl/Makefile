@@ -66,8 +66,8 @@ OBJS_NATIVE := $(BENCHMARKS:%=%.native.o) $(OTHER_OBJS:%=%.native.o) nbody.nativ
 #OBJS_NACL := $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 #OBJS_NACL := dummy_wmemchr.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 #OBJS_NACL := dummy_wcschr.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
-OBJS_NACL := dummy_wcsrchr.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
-#OBJS_NACL := dummy_memchr.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
+#OBJS_NACL := dummy_wcsrchr.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
+OBJS_NACL := dummy_memchr.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 #OBJS_NACL := dummy_strxfrm.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 #OBJS_NACL := dummy_wcscpy.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
 #OBJS_NACL := dummy_wcslen.o $(BENCHMARKS:%=%.nacl.o) $(OTHER_OBJS:%=%.nacl.o) nbody.nacl.o
