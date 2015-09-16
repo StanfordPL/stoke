@@ -4,7 +4,7 @@ NAME=memchr
 TC_OPTS=--number 40 --width_of_char 1
 TC_BIN=memchr_tcs
 
-all: clean testcase search replace deploy
+all: search
 
 testcase:
 	$(TC_BIN) $(TC_OPTS) > testcases
