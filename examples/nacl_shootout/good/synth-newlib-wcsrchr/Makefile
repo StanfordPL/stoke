@@ -5,7 +5,7 @@ TC_OPTS=--number 100 --width_of_char 4 --null_terminate
 TC_EXTRA_OPTS=--number 400 --width_of_char 4 --null_terminate
 TC_BIN=memchr_tcs
 
-all: clean testcase search replace deploy
+all: search
 
 testcase: extra_testcases
 	$(TC_BIN) $(TC_OPTS) > testcases
@@ -34,10 +34,8 @@ replace:
 	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
 
-deploy: replace
-	cp optbin $(DEPLOY_PATH)/$(NAME).nexe
-	rm -f $(DEPLOY_PATH)/benchmarks_browser64.nexe
-	ln -s $(DEPLOY_PATH)/$(NAME).nexe $(DEPLOY_PATH)/benchmarks_browser64.nexe
+pinkman:
+	./pinkman.sh
 
 clean:
 	rm -f testcases optbin

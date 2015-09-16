@@ -5,7 +5,7 @@ TC_OPTS=--number 100 --width_of_char 4 --null_terminate
 TC_EXTRA_OPTS=--number 400 --width_of_char 4 --null_terminate
 TC_BIN=memchr_tcs
 
-all: clean testcase search replace deploy
+all: search
 
 testcase:
 	$(TC_BIN) $(TC_OPTS) > testcases
