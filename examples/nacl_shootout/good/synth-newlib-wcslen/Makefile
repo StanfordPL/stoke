@@ -3,6 +3,8 @@ DEPLOY_PATH=/home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.
 NAME=wcslen
 TC_OPTS=--char_width 4 --number 40 --dst_only
 
+all: search
+
 testcase:
 	cat empty_string.tc > testcases
 	strcpy_tcs $(TC_OPTS) --max_buffer_size 16 --heap_size 128 >> testcases
@@ -21,10 +23,8 @@ replace:
 benchmark: replace
 	sel_ldr.py optbin
 
-deploy: replace
-	cp optbin $(DEPLOY_PATH)/$(NAME).nexe
-	rm -f $(DEPLOY_PATH)/benchmarks_browser64.nexe
-	ln -s $(DEPLOY_PATH)/$(NAME).nexe $(DEPLOY_PATH)/benchmarks_browser64.nexe
+pinkman:
+	./pinkman.sh
 
 clean:
 	rm -f testcases optbin
