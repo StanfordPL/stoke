@@ -102,7 +102,6 @@ int main(int argc, char** argv) {
   }
 
   int n_funcs = std::distance(boost::filesystem::directory_iterator(workdir + "/functions"), boost::filesystem::directory_iterator());
-  int n_funcs_tpl = std::distance(boost::filesystem::directory_iterator(workdir + "/../functions"), boost::filesystem::directory_iterator());
 
   int total = 0;
   int memory = 0;
@@ -285,8 +284,7 @@ int main(int argc, char** argv) {
     cout << "-----------------------------------------------" << endl;
     cout << "Base instructions:                        " << base << endl;
     cout << "  Supported by validator:                 " << (base-base_and_no_validator_support) << endl;
-    cout << "Pseudo instructions templates:            " << n_funcs_tpl << endl;
-    cout << "  -> total pseudo instructions:           " << n_funcs << endl;
+    cout << "Total pseudo instructions:                " << n_funcs << endl;
     cout << "-----------------------------------------------" << endl;
     cout << "Remaining instructions:                   " << (total - sys - crypto - x87 - base) << endl;
     cout << "Reasons why we ignore some of those:" << endl;
