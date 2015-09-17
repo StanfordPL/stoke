@@ -41,35 +41,14 @@ using namespace boost;
 
 auto& io_opt = Heading::create("Main option:");
 
-auto& out_arg = ValueArg<string>::create("out")
-                .alternate("o")
-                .usage("<path/to/dir>")
-                .description("Directory where to set up environment")
-                .default_val("./a.out");
-
-auto& num_funcs_arg = ValueArg<int>::create("num_funcs")
-                      .usage("<int>")
-                      .description("Number of pseudo opcodes")
-                      .required();
-
-auto& opc_arg = ValueArg<string>::create("opc")
-                .description("The opcode for which to find a program")
-                .required();
-
-auto& timeout_arg = ValueArg<size_t>::create("timeout")
-                    .description("The number of iterations before giving up")
+auto& workdir_arg = ValueArg<string>::create("workdir")
+                    .usage("<path/to/dir>")
+                    .description("The working directory")
                     .required();
 
-auto& allowed_opc_arg = ValueArg<set<Opcode>, OpcSetReader, OpcSetWriter>::create("allowed_opc")
-                        .usage("{ opcode1 opcode2 ... opcoden; e.g., xorl or xorl_r32_r32 }")
-                        .description("The set of opcodes allowed to be used")
-                        .default_val({});
-
-auto& no_del_dir_arg = FlagArg::create("no_del_dir")
-                       .description("Don't delete the directory first.");
-
-auto& allow_all_arg = FlagArg::create("allow_all")
-                      .description("Allow the use of all instructions (except the one we are searching for)");
+auto& opc_arg = ValueArg<string>::create("opc")
+                .description("The opcode to consider;  use opcode_number to indicate an imm8 argument")
+                .required();
 
 void write_file(string fname, string content) {
   ofstream f;
@@ -83,6 +62,7 @@ int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
   // parse opcode
+  // we use opc_8 to indicate that we want to use 8 as the imm8 argument
   smatch result;
   regex reg("(.*?)(_([0-9]+))?");
   string opc_str;
@@ -102,13 +82,13 @@ int main(int argc, char** argv) {
   stringstream ss(opc_arg.value());
   ss >> opc;
   if (opc == LABEL_DEFN) {
-    cerr << "ERROR: could not parse opc: " << opc_arg.value() << endl;
+    cerr << "ERROR: could not parse opcoce: " << opc_arg.value() << endl;
     exit(1);
   }
 
   auto instr = get_instruction(opc, num);
 
-  string out = out_arg.value();
+  string workdir = workdir_arg.value();
 
   auto def_in = instr.maybe_read_set();
   auto live_out = instr.maybe_write_set();
@@ -122,235 +102,29 @@ int main(int argc, char** argv) {
     live_out -= instr.maybe_undef_set();
   }
 
-  stream.str("");
-  stream << def_in;
-  string def_in_str = stream.str();
-
-  stream.str("");
-  stream << live_out;
-  string live_out_str = stream.str();
-
   auto af = RegSet::empty() + Constants::eflags_af();
   auto def_in_formal = def_in - af;
-  stream.str("");
-  stream << def_in_formal;
-  string def_in_formal_str = stream.str();
-
   auto live_out_formal = live_out - af;
-  stream.str("");
-  stream << live_out_formal;
-  string live_out_formal_str = stream.str();
 
-  stream.str("");
-  stream << instr;
-  string instr_str = stream.str();
-
-  stream.str("");
-  OpcSetWriter()(stream, allowed_opc_arg);
-  string whitelist = stream.str();
-
+  auto full_opc_str = opc_arg.value();
+  auto out = workdir + "/instructions/" + full_opc_str;
   boost::filesystem::path dir(out);
-  if (!no_del_dir_arg.value()) {
-    boost::filesystem::remove_all(dir);
-  }
   boost::filesystem::create_directories(dir);
 
-  std::string timeout_str = to_string(timeout_arg.value());
+  ofstream f_code;
+  f_code.open(out + "/" + full_opc_str + ".s");
+  f_code << "target:" << endl;
+  f_code << "  " << instr << endl;
+  f_code.close();
 
-  int num_funcs = num_funcs_arg.value();
-
-  int num_tests = 5;
-
-  write_file(out + "/Makefile", R"STR(
-all: search formal
-
-search:
-	stoke search --config search.config
-
-verify:
-	stoke debug verify --config verify.config --rewrite result.s
-
-verify_alt:
-	stoke debug verify --config verify.config --rewrite alt.s
-
-formal:
-	stoke debug verify --config formal.config --rewrite result.s
-
-formal_alt:
-	stoke debug verify --config formal.config --rewrite alt.s
-
-diff:
-	stoke debug diff --target target.s --rewrite alt.s --testcases tc.tc --functions ../../functions --def_in ")STR" + def_in_str + R"STR(" --live_out ")STR" + live_out_str + R"STR("
-
-)STR");
-
-  write_file(out + "/target.s", R"STR(
-.target:
-  )STR" + instr_str + R"STR(
-  retq
-)STR");
-
-  write_file(out + "/search.config", R"STR(
-
---no_progress_update
-
-##### Output Options:
---out result.s
-
-##### Statistics Options:
-# Place to put files with cost function data
-# --statistics_directory <path/to/dir>
---statistics_interval 5000000000
-# Maximum cost to record when collecting statistics
-# --statistics_max_cost <int>
-
-##### Correctness Options:
---distance hamming
---misalign_penalty 1
---reduction sum
-# --no-relax_mem 
-# --relax_reg 
---sig_penalty 10000
---sse_count 4
---sse_width 8
-
-##### Cost Function Evaluation Options:
---cost correctness + nongoal
-
-)STR" + (allow_all_arg.value()?"--non_goal ../../avoid/" + opc_arg.value():"") + R"STR(
-
-##### Search Options:
-# --beta <double>
---init zero
---max_instrs 15
---cycle_timeout "10000,10000,10000,10000,10000,10000,10000,10000,10000,10000,100000,100000,100000,100000,1000000,1000000,1000000,1000000,1000000,10000000,10000000,10000000,50000000,50000000,50000000,50000000"
---timeout_iterations )STR" + timeout_str + R"STR(
-
-##### Random Seed Options:
-#--seed <int>
-
-##### Sandbox Options:
-# --abi_check 
-
-##### Target Options:
---def_in ")STR" + def_in_str + R"STR("
---live_out ")STR" + live_out_str + R"STR("
---functions ../../functions
-# --heap_out 
-# --stack_out 
---target target.s
-
-##### Testcase Options:
-# --index <int>
-# --shuffle_testcases 
-#--test_set "{ ... }"
---testcases ../../../testcases/tc.tc
---training_set "{ 0 ... )STR" + to_string(num_tests-1) + R"STR( }"
-
-##### Transform Options:
---callee_save 
---cpu_flags "{ fpu tsc msr cx8 sep cmov clflush mmx fxsr sse sse2 syscall rdtscp rep_good nopl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm abm xsaveopt fsgsbase bmi1  avx2 bmi2 erms invpcid }" # not included rtm hle
-# --immediates "{ imm1 imm2 ... }"
-# --mem_read 
-# --mem_write 
---opc_blacklist "{ )STR" + opc_arg.value() + R"STR( }"
---opc_whitelist ")STR" + whitelist + R"STR("
---preserve_regs "{ %r14 %r15 %ymm14 %ymm15 %rsp %rbp }"
---call_weight ")STR" + to_string(num_funcs) + R"STR("
-
-##### Verifier Options:
---strategy hold_out
-)STR");
-
-  write_file(out + "/verify.config", R"STR(
-##### Correctness Options:
---distance hamming
---misalign_penalty 1
---reduction sum
-# --relax_mem 
-# --relax_reg 
---sig_penalty 10000
---sse_count 4
---sse_width 8
-
-##### Cost Function Evaluation Options:
-# --max_cost <int>
-# -k <int>
-
-##### Performance Options:
-# --nesting_penalty <int>
---cost correctness
-
-##### Rewrite Options:
-#--rewrite alt.s
-
-##### Sandbox Options:
-# --abi_check 
-# --max_jumps <int>
-
-##### Random Seed Options:
-# --seed <int>
-
-##### Target Options:
---def_in ")STR" + def_in_str + R"STR("
---live_out ")STR" + live_out_str + R"STR("
---functions ../../functions
-# --heap_out 
-# --stack_out 
---target target.s
-
-##### Testcase Options:
-# --index <int>
-# --shuffle_testcases 
-# --test_set "{ ... }"
---testcases ../../../testcases/tc.tc
-#--training_set "{ ... }"
-
-##### Verifier Options:
---strategy hold_out
-)STR");
-
-  write_file(out + "/formal.config", R"STR(
-##### Correctness Options:
---distance hamming
---misalign_penalty 1
---reduction sum
-# --relax_mem 
-# --relax_reg 
---sig_penalty 10000
---sse_count 4
---sse_width 8
-
-##### Cost Function Evaluation Options:
-# --max_cost <int>
-# -k <int>
-
-##### Performance Options:
-# --nesting_penalty <int>
-
-##### Rewrite Options:
-#--rewrite result.s
-
-##### Sandbox Options:
-# --abi_check 
-# --max_jumps <int>
-
-##### Random Seed Options:
-# --seed <int>
-
-##### Target Options:
---def_in ")STR" + def_in_formal_str + R"STR("
---live_out ")STR" + live_out_formal_str + R"STR("
---functions ../../functions
-# --heap_out 
-# --stack_out 
---target target.s
-
-##### Testcase Options:
-# --index <int>
-# --shuffle_testcases 
-
-##### Verifier Options:
---strategy formal
-)STR");
+  ofstream f_meta;
+  f_meta.open(out + "/" + full_opc_str + ".meta.json");
+  f_meta << "{" << endl;
+  f_meta << "  \"def_in\": \"" << def_in << "\"," << endl;
+  f_meta << "  \"live_out\": \"" << live_out << "\"," << endl;
+  f_meta << "  \"def_in_formal\": \"" << def_in_formal << "\"," << endl;
+  f_meta << "  \"live_out_formal\": \"" << live_out_formal << "\"," << endl;
+  f_meta << "  \"delim\": 0" << endl;
+  f_meta << "}" << endl;
+  f_meta.close();
 }
