@@ -195,7 +195,8 @@ BIN=\
 	bin/memcpy_tcs \
 	bin/strcpy_tcs \
 	bin/memcmp_tcs \
-	bin/memchr_tcs
+	bin/memchr_tcs \
+	bin/wcsnlen_tcs
 
 # used to force a target to rebuild
 .PHONY: .FORCE

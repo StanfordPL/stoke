@@ -61,6 +61,7 @@ int run_strcpy(int n);
 int run_strcat(int n);
 int run_strlen(int n);
 int run_wcslen(int n);
+int run_wcsnlen(int n);
 int run_strcasecmp(int n);
 int run_wmemcmp(int n);
 int run_memcmp(int n);
