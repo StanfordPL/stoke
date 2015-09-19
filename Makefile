@@ -222,7 +222,7 @@ sandybridge_profile:
 	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=corei7-avx"
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg -DSANDYBRIDGE_BUILD"
 sandybridge_test: sandybridge_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG -DSANDYBRIDGE_BUILD_BUILD"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG -DSANDYBRIDGE_BUILD"
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 nehalem: nehalem_release
