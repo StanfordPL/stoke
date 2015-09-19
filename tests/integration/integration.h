@@ -79,7 +79,7 @@ private:
 
 };
 
-#if !defined(NEHALEM_BUILD) && defined(NEHALEM_BUILD)
+#if !defined(NEHALEM_BUILD) && !defined(SANDYBRIDGE_BUILD)
 TEST_F(IntegrationTest, ExamplesTutorial) {
   uint64_t diff_1;
   uint64_t diff_2;
@@ -222,7 +222,7 @@ TEST_F(IntegrationTest, SandboxRecursiveJmp) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
-#if !defined(NEHALEM_BUILD) && defined(NEHALEM_BUILD)
+#if !defined(NEHALEM_BUILD) && !defined(SANDYBRIDGE_BUILD)
 TEST_F(IntegrationTest, SandboxRip) {
   set_working_dir("tests/fixtures/sandbox/rip");
   set_path("../../../../bin");
@@ -252,7 +252,7 @@ TEST_F(IntegrationTest, SandboxLbls) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
-#if !defined(NEHALEM_BUILD) && defined(NEHALEM_BUILD)
+#if !defined(NEHALEM_BUILD) && !defined(SANDYBRIDGE_BUILD)
 TEST_F(IntegrationTest, SearchCall) {
   set_working_dir("tests/fixtures/search/call");
   set_path("../../../../bin");
@@ -283,7 +283,7 @@ TEST_F(IntegrationTest, SearchPrevious) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
-#if !defined(NEHALEM_BUILD) && defined(NEHALEM_BUILD)
+#if !defined(NEHALEM_BUILD) && !defined(SANDYBRIDGE_BUILD)
 TEST_F(IntegrationTest, SearchRh) {
   set_working_dir("tests/fixtures/search/rh_instr");
   set_path("../../../../bin");
