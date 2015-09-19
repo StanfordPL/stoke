@@ -162,6 +162,16 @@ FlagSet CpuInfo::get_flags() {
   // TODO: correctly detect REP_GOOD
   result += Flag::REP_GOOD;
 
+#if defined(NEHALEM_BUILD) || defined(NEHALEM_BUILD)
+  result -= Flag::AVX2;
+  result -= Flag::BMI1;
+  result -= Flag::BMI2;
+  result -= Flag::FMA;
+#endif
+#ifdef NEHALEM_BUILD
+  result -= Flag::AVX;
+#endif
+
   return result;
 }
 
