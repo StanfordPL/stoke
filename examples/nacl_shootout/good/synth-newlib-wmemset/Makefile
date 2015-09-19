@@ -17,9 +17,15 @@ testcase:
 search:
 	stoke search --config search.conf
 
+optbin: result.s
+	make replace
+
 replace:
 	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
+
+benchmark: optbin
+	sel_ldr.py optbin
 
 pinkman:
 	./pinkman.sh
