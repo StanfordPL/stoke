@@ -1,1 +1,1 @@
-/home/berkeley/stoke/examples/nacl_shootout/good/pinkman.sh
+../pinkman.sh
