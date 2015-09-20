@@ -213,30 +213,30 @@ haswell_test: haswell_debug
 
 sandybridge: sandybridge_release
 sandybridge_release:
-	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7-avx"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG"
+	$(MAKE) -C . external EXT_OPT="release -DSANDYBRIDGE_BUILD" EXT_TARGET="-march=corei7-avx"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -DSANDYBRIDGE_BUILD"
 sandybridge_debug:
 	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7-avx"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -g"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -g -DSANDYBRIDGE_BUILD"
 sandybridge_profile:
 	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=corei7-avx"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg -DSANDYBRIDGE_BUILD"
 sandybridge_test: sandybridge_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG -DSANDYBRIDGE_BUILD"
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 nehalem: nehalem_release
 nehalem_release:
-	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG"
+	$(MAKE) -C . external EXT_OPT="release -DNEHALEM_BUILD" EXT_TARGET="-march=corei7"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -DNEHALEM_BUILD"
 nehalem_debug:
 	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -g"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -g -DNEHALEM_BUILD"
 nehalem_profile:
-	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg"
+	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=corei7"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg -DNEHALEM_BUILD"
 nehalem_test: nehalem_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG -DNEHALEM_BUILD"
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 ##### CTAGS TARGETS
