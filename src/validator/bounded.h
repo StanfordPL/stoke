@@ -33,14 +33,25 @@ class BoundedValidator : public Validator {
 
 public:
 
+  enum AliasStrategy {
+    BASIC,   // enumerate all cases, attempt to bound it
+    STRING  // look for continugous memory accesses and combine them
+  };
+
   BoundedValidator(SMTSolver& solver) : Validator(solver) {
-    set_bound(4);
+    set_bound(2);
+    set_alias_strategy(AliasStrategy::STRING);
   }
 
   ~BoundedValidator() {}
 
   BoundedValidator& set_bound(size_t n) {
     bound_ = n;
+    return *this;
+  }
+
+  BoundedValidator& set_alias_strategy(AliasStrategy as) {
+    alias_strategy_ = as;
     return *this;
   }
 
@@ -77,6 +88,9 @@ private:
   /** For learning aliasing relationships */
   AliasMiner am;
 
+  /** How to handle aliasing */
+  AliasStrategy alias_strategy_;
+
   /** Traces for the target/rewrite. */
   std::vector<CfgPath> paths_[2];
 
@@ -97,6 +111,8 @@ private:
 
   /** Given target, rewrite, and two paths, returns CellMemory* pairs for every way that aliasing can occur. */
   std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_basic(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q);
 
   /** Recursive helper function for enumerate_aliasing.  target_con_access and
    * rewrite_con_access list the lines of code where target_unroll and
