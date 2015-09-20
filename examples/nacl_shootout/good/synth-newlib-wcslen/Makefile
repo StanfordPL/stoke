@@ -20,7 +20,10 @@ replace:
 	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
 
-benchmark: replace
+optbin: result.s
+	make replace
+
+benchmark: optbin
 	sel_ldr.py optbin
 
 pinkman:

@@ -6,3 +6,4 @@ v8/
 *.so.0
 #*
 *.nexe
+binary
