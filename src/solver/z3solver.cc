@@ -28,8 +28,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   /* Reset state. */
   error_ = "";
   model_ = 0;
-  solver_.pop();
-  solver_.push();
+  solver_.reset();
 
   /* Convert constraints and query to z3 object */
   SymTypecheckVisitor tc;

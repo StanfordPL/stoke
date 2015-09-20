@@ -35,7 +35,7 @@ cpputil::ValueArg<size_t>& bound_arg =
   cpputil::ValueArg<size_t>::create("bound")
   .usage("<int>")
   .description("For bounded verification, maximum loop iterations")
-  .default_val(4);
+  .default_val(2);
 
 } // namespace stoke
 

@@ -14,10 +14,11 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
+#include "src/symstate/memory/trivial.h"
 #include "src/validator/bounded.h"
 
-#define BOUNDED_DEBUG(X) { X }
-#define ALIAS_DEBUG(X) { X }
+#define BOUNDED_DEBUG(X) { }
+#define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
@@ -406,8 +407,161 @@ size_t accesses_done) {
   return result;
 }
 
-// ASSUMPTION: the target and rewrite both use memory
 vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+  switch(alias_strategy_) {
+  case AliasStrategy::BASIC:
+    return enumerate_aliasing_basic(target, rewrite, P, Q);
+  case AliasStrategy::STRING:
+    return enumerate_aliasing_string(target, rewrite, P, Q);
+  default:
+    assert(false);
+    return enumerate_aliasing_basic(target, rewrite, P, Q);
+  }
+}
+
+vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+
+  auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
+  auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
+
+  auto target_concrete_accesses = enumerate_accesses(target_unroll);
+  auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
+
+  if(target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
+    auto null_pair = pair<CellMemory*, CellMemory*>(NULL, NULL);
+    auto v = vector<pair<CellMemory*, CellMemory*>>();
+    v.push_back(null_pair);
+    return v;
+  }
+
+
+  // Symbolically execute target/rewrite to get memory accesses
+  init_mm();
+
+  TrivialMemory target_mem;
+  TrivialMemory rewrite_mem;
+
+  SymState target_state("1");
+  target_state.memory = &target_mem;
+  SymState rewrite_state("2");
+  rewrite_state.memory = &rewrite_mem;
+
+  auto constraints = target_state.equality_constraints(rewrite_state, target.def_ins());
+
+  size_t line_no = 0;
+  for(size_t i = 0; i < P.size(); ++i)
+    build_circuit(target, P[i], JumpType::NONE, target_state, line_no);
+  line_no = 0;
+  for(size_t i = 0; i < Q.size(); ++i)
+    build_circuit(rewrite, Q[i], JumpType::NONE, rewrite_state, line_no);
+
+  for(auto& it : target_state.constraints)
+    constraints.push_back(it);
+  for(auto& it : rewrite_state.constraints)
+    constraints.push_back(it);
+
+  vector<TrivialMemory::SymbolicAccess> sym_accesses;
+  for(size_t k = 0; k < 2; ++k) {
+    auto& mem = k ? rewrite_mem : target_mem;
+    size_t line = -1;
+    for(auto it : mem.get_all()) {
+      if(line == it.line)
+        continue; //avoid duplicates from read+write operations, like add
+      line = it.line;
+      it.is_rewrite = k;
+      sym_accesses.push_back(it);
+    }
+  }
+
+  cout << "TARGET: " << endl << target_unroll.get_code() << endl;
+  cout << "REWRITE: " << endl << rewrite_unroll.get_code() << endl;
+
+  size_t total_accesses = sym_accesses.size();
+  cout << "Total accesses: " << total_accesses << endl;
+
+  bool same_address[total_accesses][total_accesses];
+  bool next_address[total_accesses][total_accesses];
+
+  //We're going to use the same constraints vector for all the queries.
+  // Can be much more performant if stoke #716 is done.
+  for(size_t i = 0; i < total_accesses; ++i) {
+    for(size_t j = i+1; j < total_accesses; ++j) {
+      cout << "working on i=" << i << " j=" << j << endl;
+      // (i) Are these two accesses to the same memory locations?
+      auto equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
+      constraints.push_back(!equal_addrs);
+      same_address[i][j] = !solver_.is_sat(constraints);
+      constraints.erase(--constraints.end());
+
+      cout << "  * equal? " << same_address[i][j] << endl;
+
+      if(same_address[i][j]) {
+        next_address[i][j] = false;
+        continue;
+      }
+
+      // (ii) Are these two accesses in sequence?
+      auto next_addrs =
+        sym_accesses[i].address + SymBitVector::constant(64, sym_accesses[i].size) ==
+        sym_accesses[j].address;
+      constraints.push_back(!next_addrs);
+      next_address[i][j] = !solver_.is_sat(constraints);
+      constraints.erase(--constraints.end());
+
+      cout << "  * next? " << next_address[i][j] << endl;
+    }
+  }
+
+  stop_mm();
+
+
+  // For each pair of accesses we have run two queries:
+  // (i) Are these to the same memory locations?
+  //     -> if so: associate both with the same cell
+  //        CASE 1: both have same cell already
+  //                ... just move on
+  //        CASE 2: one has a cell, the other doesn't
+  //                ... just replicate the info, but expand the cell if necessary
+  //        CASE 3: neither has a cell
+  //                ... assign a new cell to both of them, with the size being
+  //                    the larger of the two.  Offsets at 0.
+  //        CASE 4: they both have a cell already, and they're different
+  //                ... take the lower cell, expand it if necessary, find the
+  //                    offset with the higher cell, and rename all the higher
+  //                    cell offsets to use the lower one.
+  // (ii) Are these to sequential memory locations?
+  //      -> if so: associate the sequential one with the cell of the first
+  //        CASE 1: both have same cell already
+  //                ... do a sanity check and move on
+  //        CASE 2: one has a cell, the other doesn't
+  //                ... just replicate the info, but expand the cell if necessary;
+  //                    be sure to set the offset correctly
+  //        CASE 3: neither has a cell
+  //                ... assign a new cell to both of them, with the size being
+  //                    the larger of the two.  Set offsets.
+  //        CASE 4: they both have a cell already, and they're different
+  //                ... take the lower cell, expand it if necessary, find the
+  //                    offset with the higher cell, and rename all the higher
+  //                    cell offsets to use the lower one.
+
+  //vector<CellMemory::SymbolicAccess> cell_accesses;
+
+  // Operations to support:
+  //   combine_cells(symbolic access list, cell1, cell2, offset_of_cell2)
+
+
+  /*
+  return enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q,
+                                 target_concrete_accesses, rewrite_concrete_accesses,
+                                 symbolic_accesses, 0);
+                                 */
+
+
+  return enumerate_aliasing_basic(target, rewrite, P, Q);
+}
+
+// ASSUMPTION: the target and rewrite both use memory
+vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basic(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
 
   auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
