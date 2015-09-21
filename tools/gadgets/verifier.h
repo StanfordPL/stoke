@@ -25,6 +25,7 @@
 #include "src/validator/bounded.h"
 #include "src/validator/straight_line.h"
 
+#include "tools/args/bounded_validator.inc"
 #include "tools/args/in_out.inc"
 #include "tools/args/verifier.inc"
 #include "tools/gadgets/solver.h"
@@ -82,6 +83,19 @@ private:
     if(s == "bounded") {
       auto bv = new BoundedValidator(*solver_);
       bv->set_bound(bound_arg.value());
+
+      std::string alias = alias_strategy_arg.value();
+      if(alias == "basic") {
+        bv->set_alias_strategy(BoundedValidator::AliasStrategy::BASIC);
+      } else if (alias == "string") {
+        bv->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
+      } else if (alias == "string_antialias") {
+        bv->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
+      } else {
+        std::cerr << "Unrecognized alias strategy \"" << alias << "\"" << std::endl;
+        exit(1);
+      }
+
       return bv;
     } else if(s == "hold_out") {
       return new HoldOutVerifier(fxn);

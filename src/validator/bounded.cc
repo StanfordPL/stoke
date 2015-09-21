@@ -20,6 +20,7 @@
 #define BOUNDED_DEBUG(X) { }
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) { }
+#define ALIAS_STRING_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 
@@ -114,6 +115,7 @@ vector<size_t> enumerate_accesses(const Cfg& cfg) {
   return result;
 }
 
+/** Takes vector of symbolic accesses, builds a map, and allocates a CellMemory to use. */
 CellMemory* make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
   map<size_t, CellMemory::SymbolicAccess> map;
   for(auto sa : vector) {
@@ -128,6 +130,7 @@ CellMemory* make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
   return new CellMemory(map);
 }
 
+/** Filter a list of symbolic accesses to find the ones that are for target/rewrite. */
 vector<CellMemory::SymbolicAccess> split_sym_accesses(const vector<CellMemory::SymbolicAccess>& big_list, bool rewrite) {
   vector<CellMemory::SymbolicAccess> v;
   for(auto& sa : big_list) {
@@ -412,6 +415,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
   case AliasStrategy::BASIC:
     return enumerate_aliasing_basic(target, rewrite, P, Q);
   case AliasStrategy::STRING:
+  case AliasStrategy::STRING_NO_ALIAS:
     return enumerate_aliasing_string(target, rewrite, P, Q);
   default:
     assert(false);
@@ -473,11 +477,12 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
     }
   }
 
-  cout << "TARGET: " << endl << target_unroll.get_code() << endl;
-  cout << "REWRITE: " << endl << rewrite_unroll.get_code() << endl;
-
   size_t total_accesses = sym_accesses.size();
-  cout << "Total accesses: " << total_accesses << endl;
+
+  ALIAS_STRING_DEBUG(
+    cout << "TARGET: " << endl << target_unroll.get_code() << endl;
+    cout << "REWRITE: " << endl << rewrite_unroll.get_code() << endl;
+    cout << "Total accesses: " << total_accesses << endl;);
 
   bool same_address[total_accesses][total_accesses];
   bool next_address[total_accesses][total_accesses];
@@ -486,14 +491,11 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   // Can be much more performant if stoke #716 is done.
   for(size_t i = 0; i < total_accesses; ++i) {
     for(size_t j = i+1; j < total_accesses; ++j) {
-      cout << "working on i=" << i << " j=" << j << endl;
       // (i) Are these two accesses to the same memory locations?
       auto equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
       constraints.push_back(!equal_addrs);
       same_address[i][j] = !solver_.is_sat(constraints);
       constraints.erase(--constraints.end());
-
-      cout << "  * equal? " << same_address[i][j] << endl;
 
       if(same_address[i][j]) {
         next_address[i][j] = false;
@@ -501,63 +503,221 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
       }
 
       // (ii) Are these two accesses in sequence?
-      auto next_addrs =
-        sym_accesses[i].address + SymBitVector::constant(64, sym_accesses[i].size) ==
-        sym_accesses[j].address;
+      SymBool next_addrs;
+      if(nacl_) {
+        next_addrs = sym_accesses[i].address[31][0] + SymBitVector::constant(32, sym_accesses[i].size) ==
+                     sym_accesses[j].address[31][0];
+      } else {
+        next_addrs = sym_accesses[i].address + SymBitVector::constant(64, sym_accesses[i].size) ==
+                     sym_accesses[j].address;
+
+      }
       constraints.push_back(!next_addrs);
       next_address[i][j] = !solver_.is_sat(constraints);
       constraints.erase(--constraints.end());
-
-      cout << "  * next? " << next_address[i][j] << endl;
     }
   }
 
+  ALIAS_STRING_DEBUG(
+    cout << "SAME MAP" << endl;
+    cout << "    ";
+  for(size_t i = 0; i < total_accesses; ++i) {
+  cout << i << " ";
+}
+cout << endl << "------------------" << endl;
+for(size_t i = 0; i < total_accesses; ++i) {
+  cout << i << " | ";
+  for(size_t j = 0; j < total_accesses; ++j) {
+      if(j <= i) {
+        cout << "  ";
+      } else {
+        cout << same_address[i][j] << " ";
+      }
+    }
+    cout << endl;
+  }
+  cout << endl;
+
+       cout << "NEXT MAP" << endl;
+       cout << "    ";
+  for(size_t i = 0; i < total_accesses; ++i) {
+  cout << i << " ";
+}
+cout << endl << "------------------" << endl;
+for(size_t i = 0; i < total_accesses; ++i) {
+  cout << i << " | ";
+  for(size_t j = 0; j < total_accesses; ++j) {
+      if(j <= i) {
+        cout << "  ";
+      } else {
+        cout << next_address[i][j] << " ";
+      }
+    }
+    cout << endl;
+  }
+  cout << endl;);
+
+
+
+
   stop_mm();
 
+  int cell[total_accesses];
+  size_t offset[total_accesses];
+  size_t max_cell = 0;
+  size_t cell_sizes[total_accesses];
 
-  // For each pair of accesses we have run two queries:
-  // (i) Are these to the same memory locations?
-  //     -> if so: associate both with the same cell
-  //        CASE 1: both have same cell already
-  //                ... just move on
-  //        CASE 2: one has a cell, the other doesn't
-  //                ... just replicate the info, but expand the cell if necessary
-  //        CASE 3: neither has a cell
-  //                ... assign a new cell to both of them, with the size being
-  //                    the larger of the two.  Offsets at 0.
-  //        CASE 4: they both have a cell already, and they're different
-  //                ... take the lower cell, expand it if necessary, find the
-  //                    offset with the higher cell, and rename all the higher
-  //                    cell offsets to use the lower one.
-  // (ii) Are these to sequential memory locations?
-  //      -> if so: associate the sequential one with the cell of the first
-  //        CASE 1: both have same cell already
-  //                ... do a sanity check and move on
-  //        CASE 2: one has a cell, the other doesn't
-  //                ... just replicate the info, but expand the cell if necessary;
-  //                    be sure to set the offset correctly
-  //        CASE 3: neither has a cell
-  //                ... assign a new cell to both of them, with the size being
-  //                    the larger of the two.  Set offsets.
-  //        CASE 4: they both have a cell already, and they're different
-  //                ... take the lower cell, expand it if necessary, find the
-  //                    offset with the higher cell, and rename all the higher
-  //                    cell offsets to use the lower one.
+  for(size_t i = 0; i < total_accesses; ++i) {
+    cell[i] = -1;
+  }
 
-  //vector<CellMemory::SymbolicAccess> cell_accesses;
+  for(size_t i = 0; i < total_accesses; ++i) {
+    if(cell[i] == -1) {
+      cell_sizes[max_cell] = sym_accesses[i].size;
+      cell[i] = max_cell++;
+      offset[i] = 0;
+    }
 
-  // Operations to support:
-  //   combine_cells(symbolic access list, cell1, cell2, offset_of_cell2)
+    for(size_t j = i+1; j < total_accesses; ++j) {
+      if(same_address[i][j]) {
+        cell[j] = cell[i];
+        offset[j] = offset[i];
+        cell_sizes[cell[i]] = MAX(cell_sizes[cell[i]], sym_accesses[j].size);
+      } else if(next_address[i][j]) {
+        cell[j] = cell[i];
+        offset[j] = offset[i] + sym_accesses[i].size;
+        cell_sizes[cell[i]] += sym_accesses[j].size;
+      }
+    }
+  }
 
+  ALIAS_STRING_DEBUG(
+    cout << "TOTAL CELLS: " << max_cell << endl;
+  for(size_t i = 0; i < total_accesses; ++i) {
+  cout << "Access " << i << " cell " << cell[i] << " offset " << offset[i]
+         << " (cell size " << cell_sizes[cell[i]] << ")" << endl;
+  });
 
-  /*
-  return enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q,
-                                 target_concrete_accesses, rewrite_concrete_accesses,
-                                 symbolic_accesses, 0);
-                                 */
+  if(max_cell > 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
+    // For simplicity, I don't want to handle this case explicitly; just fallback
+    // a nicer implementation could rewrite the other recursive functions to do this well
+    return enumerate_aliasing_basic(target, rewrite, P, Q);
+  }
 
+  assert(max_cell > 0);
 
-  return enumerate_aliasing_basic(target, rewrite, P, Q);
+  vector<pair<CellMemory*, CellMemory*>> result;
+
+  {
+    // EASY CASE!  The mega-cells don't overlap.
+    map<size_t, CellMemory::SymbolicAccess> target_map;
+    map<size_t, CellMemory::SymbolicAccess> rewrite_map;
+
+    for(size_t i = 0; i < total_accesses; ++i) {
+      CellMemory::SymbolicAccess sa;
+      sa.line = sym_accesses[i].line;
+      sa.size = sym_accesses[i].size;
+      sa.cell = cell[i];
+      sa.cell_offset = offset[i];
+      sa.cell_size = cell_sizes[cell[i]];
+      sa.unconstrained = false;
+
+      if(sym_accesses[i].is_rewrite) {
+        rewrite_map[sa.line] = sa;
+      } else {
+        target_map[sa.line] = sa;
+      }
+    }
+
+    auto target_mem = new CellMemory(target_map);
+    auto rewrite_mem = new CellMemory(rewrite_map);
+    result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
+  }
+
+  if(max_cell == 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
+
+    {
+      // Case 1: the two mega-cells overlap exactly
+      map<size_t, CellMemory::SymbolicAccess> target_map;
+      map<size_t, CellMemory::SymbolicAccess> rewrite_map;
+
+      for(size_t i = 0; i < total_accesses; ++i) {
+        CellMemory::SymbolicAccess sa;
+        sa.line = sym_accesses[i].line;
+        sa.size = sym_accesses[i].size;
+        sa.cell = 0;
+        sa.cell_offset = offset[i];
+        sa.cell_size = MAX(cell_sizes[0], cell_sizes[1]);
+        sa.unconstrained = false;
+
+        if(sym_accesses[i].is_rewrite) {
+          rewrite_map[sa.line] = sa;
+        } else {
+          target_map[sa.line] = sa;
+        }
+      }
+
+      auto target_mem = new CellMemory(target_map);
+      auto rewrite_mem = new CellMemory(rewrite_map);
+      result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
+    }
+
+    for(size_t k = 1; k < cell_sizes[0]; ++k) {
+      // Case 2: cell 0 comes first by k, 1 <= k < cell_sizes[0]
+      map<size_t, CellMemory::SymbolicAccess> target_map;
+      map<size_t, CellMemory::SymbolicAccess> rewrite_map;
+
+      for(size_t i = 0; i < total_accesses; ++i) {
+        CellMemory::SymbolicAccess sa;
+        sa.line = sym_accesses[i].line;
+        sa.size = sym_accesses[i].size;
+        sa.cell = 0;
+        sa.cell_offset = cell[i] == 0 ? offset[i] : offset[i] + k;
+        sa.cell_size = MAX(k+cell_sizes[1], cell_sizes[0]);
+        sa.unconstrained = false;
+
+        if(sym_accesses[i].is_rewrite) {
+          rewrite_map[sa.line] = sa;
+        } else {
+          target_map[sa.line] = sa;
+        }
+      }
+
+      auto target_mem = new CellMemory(target_map);
+      auto rewrite_mem = new CellMemory(rewrite_map);
+      result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
+    }
+
+    for(size_t k = 1; k < cell_sizes[1]; ++k) {
+      // Case 2: cell 1 comes first by k, 1 <= k < cell_sizes[1]
+      map<size_t, CellMemory::SymbolicAccess> target_map;
+      map<size_t, CellMemory::SymbolicAccess> rewrite_map;
+
+      for(size_t i = 0; i < total_accesses; ++i) {
+        CellMemory::SymbolicAccess sa;
+        sa.line = sym_accesses[i].line;
+        sa.size = sym_accesses[i].size;
+        sa.cell = 0;
+        sa.cell_offset = cell[i] == 0 ? offset[i] + k : offset[i];
+        sa.cell_size = MAX(k+cell_sizes[0], cell_sizes[1]);
+        sa.unconstrained = false;
+
+        if(sym_accesses[i].is_rewrite) {
+          rewrite_map[sa.line] = sa;
+        } else {
+          target_map[sa.line] = sa;
+        }
+      }
+
+      auto target_mem = new CellMemory(target_map);
+      auto rewrite_mem = new CellMemory(rewrite_map);
+      result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
+    }
+  }
+
+  ALIAS_STRING_DEBUG(cout << "ALIASING CASES: " << result.size() << endl;)
+  return result;
+
 }
 
 // ASSUMPTION: the target and rewrite both use memory

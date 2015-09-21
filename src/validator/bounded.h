@@ -34,24 +34,37 @@ class BoundedValidator : public Validator {
 public:
 
   enum AliasStrategy {
-    BASIC,   // enumerate all cases, attempt to bound it
-    STRING  // look for continugous memory accesses and combine them
+    BASIC,            // enumerate all cases, attempt to bound it (SOUND)
+    STRING,           // look for continugous memory accesses and combine them (SOUND)
+    STRING_NO_ALIAS   // assume strings don't overlap (UNSOUND)
   };
 
   BoundedValidator(SMTSolver& solver) : Validator(solver) {
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
+#ifdef NACL
+    set_nacl(true);
+#else
+    set_nacl(false);
+#endif
   }
 
   ~BoundedValidator() {}
 
+  /** Set bound. */
   BoundedValidator& set_bound(size_t n) {
     bound_ = n;
     return *this;
   }
-
+  /** Set strategy for aliasing */
   BoundedValidator& set_alias_strategy(AliasStrategy as) {
     alias_strategy_ = as;
+    return *this;
+  }
+  /** If set to true, weakens process to learn aliasing constraints
+    with assumption of a 32-bit address space. */
+  BoundedValidator& set_nacl(bool b) {
+    nacl_ = b;
     return *this;
   }
 
@@ -77,6 +90,11 @@ private:
 
   /** The bound on iterations */
   size_t bound_;
+  /** How to handle aliasing */
+  AliasStrategy alias_strategy_;
+  /** Add NaCl constraint for memory? */
+  bool nacl_;
+
 
   /** Verify a pair of paths. */
   bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
@@ -87,9 +105,6 @@ private:
 
   /** For learning aliasing relationships */
   AliasMiner am;
-
-  /** How to handle aliasing */
-  AliasStrategy alias_strategy_;
 
   /** Traces for the target/rewrite. */
   std::vector<CfgPath> paths_[2];
