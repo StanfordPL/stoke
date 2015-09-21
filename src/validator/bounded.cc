@@ -17,10 +17,10 @@
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/bounded.h"
 
-#define BOUNDED_DEBUG(X) { }
+#define BOUNDED_DEBUG(X) { X }
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) { }
-#define ALIAS_STRING_DEBUG(X) { }
+#define ALIAS_STRING_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 
