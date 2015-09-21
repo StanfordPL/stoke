@@ -21,7 +21,7 @@ replace:
 	ncval optbin
 
 optbin: result.s
-  make replace
+	make replace
 
 benchmark: optbin
 	sel_ldr.py optpin
