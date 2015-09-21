@@ -20,10 +20,14 @@ replace:
 	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
 
-deploy: replace
-	cp optbin $(DEPLOY_PATH)/$(NAME).nexe
-	rm -f $(DEPLOY_PATH)/benchmarks_browser64.nexe
-	ln -s $(DEPLOY_PATH)/$(NAME).nexe $(DEPLOY_PATH)/benchmarks_browser64.nexe
+optbin: result.s
+  make replace
+
+benchmark: optbin
+	sel_ldr.py optpin
+
+pinkman:
+	./pinkman.sh
 
 clean:
 	rm -f testcases optbin
