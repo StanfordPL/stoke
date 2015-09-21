@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_ARGS_VERIFIER_INC
-#define STOKE_TOOLS_ARGS_VERIFIER_INC
+#ifndef STOKE_TOOLS_ARGS_BOUNDED_VALIDATOR_INC
+#define STOKE_TOOLS_ARGS_BOUNDED_VALIDATOR_INC
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
@@ -22,14 +22,20 @@
 
 namespace stoke {
 
-cpputil::Heading& verifier_heading =
-  cpputil::Heading::create("Verifier Options:");
+cpputil::Heading& bounded_validator_options =
+  cpputil::Heading::create("Bounded Verifier Options:");
 
-cpputil::ValueArg<std::string>& strategy_arg =
-  cpputil::ValueArg<std::string>::create("strategy")
-  .usage("(none|bounded|hold_out|straight_line)")
-  .description("Verification strategy")
-  .default_val("hold_out");
+cpputil::ValueArg<size_t>& bound_arg =
+  cpputil::ValueArg<size_t>::create("bound")
+  .usage("<int>")
+  .description("Maximum iterations through a loop")
+  .default_val(2);
+
+cpputil::ValueArg<std::string>& alias_strategy_arg =
+  cpputil::ValueArg<std::string>::create("alias_strategy")
+  .usage("(basic|string|string_antialias)")
+  .description("How to handle aliasing")
+  .default_val("string");
 
 } // namespace stoke
 

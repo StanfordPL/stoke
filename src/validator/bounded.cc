@@ -14,11 +14,13 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
+#include "src/symstate/memory/trivial.h"
 #include "src/validator/bounded.h"
 
-#define BOUNDED_DEBUG(X) { X }
-#define ALIAS_DEBUG(X) { X }
+#define BOUNDED_DEBUG(X) { }
+#define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) { }
+#define ALIAS_STRING_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 
@@ -113,6 +115,7 @@ vector<size_t> enumerate_accesses(const Cfg& cfg) {
   return result;
 }
 
+/** Takes vector of symbolic accesses, builds a map, and allocates a CellMemory to use. */
 CellMemory* make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
   map<size_t, CellMemory::SymbolicAccess> map;
   for(auto sa : vector) {
@@ -127,6 +130,7 @@ CellMemory* make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
   return new CellMemory(map);
 }
 
+/** Filter a list of symbolic accesses to find the ones that are for target/rewrite. */
 vector<CellMemory::SymbolicAccess> split_sym_accesses(const vector<CellMemory::SymbolicAccess>& big_list, bool rewrite) {
   vector<CellMemory::SymbolicAccess> v;
   for(auto& sa : big_list) {
@@ -406,8 +410,318 @@ size_t accesses_done) {
   return result;
 }
 
-// ASSUMPTION: the target and rewrite both use memory
 vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+  switch(alias_strategy_) {
+  case AliasStrategy::BASIC:
+    return enumerate_aliasing_basic(target, rewrite, P, Q);
+  case AliasStrategy::STRING:
+  case AliasStrategy::STRING_NO_ALIAS:
+    return enumerate_aliasing_string(target, rewrite, P, Q);
+  default:
+    assert(false);
+    return enumerate_aliasing_basic(target, rewrite, P, Q);
+  }
+}
+
+vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+
+  auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
+  auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
+
+  auto target_concrete_accesses = enumerate_accesses(target_unroll);
+  auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
+
+  if(target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
+    auto null_pair = pair<CellMemory*, CellMemory*>(NULL, NULL);
+    auto v = vector<pair<CellMemory*, CellMemory*>>();
+    v.push_back(null_pair);
+    return v;
+  }
+
+
+  // Symbolically execute target/rewrite to get memory accesses
+  init_mm();
+
+  TrivialMemory target_mem;
+  TrivialMemory rewrite_mem;
+
+  SymState target_state("1");
+  target_state.memory = &target_mem;
+  SymState rewrite_state("2");
+  rewrite_state.memory = &rewrite_mem;
+
+  auto constraints = target_state.equality_constraints(rewrite_state, target.def_ins());
+
+  size_t line_no = 0;
+  for(size_t i = 0; i < P.size(); ++i)
+    build_circuit(target, P[i], JumpType::NONE, target_state, line_no);
+  line_no = 0;
+  for(size_t i = 0; i < Q.size(); ++i)
+    build_circuit(rewrite, Q[i], JumpType::NONE, rewrite_state, line_no);
+
+  for(auto& it : target_state.constraints)
+    constraints.push_back(it);
+  for(auto& it : rewrite_state.constraints)
+    constraints.push_back(it);
+
+  vector<TrivialMemory::SymbolicAccess> sym_accesses;
+  for(size_t k = 0; k < 2; ++k) {
+    auto& mem = k ? rewrite_mem : target_mem;
+    size_t line = -1;
+    for(auto it : mem.get_all()) {
+      if(line == it.line)
+        continue; //avoid duplicates from read+write operations, like add
+      line = it.line;
+      it.is_rewrite = k;
+      sym_accesses.push_back(it);
+    }
+  }
+
+  size_t total_accesses = sym_accesses.size();
+
+  ALIAS_STRING_DEBUG(
+    cout << "TARGET: " << endl << target_unroll.get_code() << endl;
+    cout << "REWRITE: " << endl << rewrite_unroll.get_code() << endl;
+    cout << "Total accesses: " << total_accesses << endl;);
+
+  bool same_address[total_accesses][total_accesses];
+  bool next_address[total_accesses][total_accesses];
+
+  //We're going to use the same constraints vector for all the queries.
+  // Can be much more performant if stoke #716 is done.
+  for(size_t i = 0; i < total_accesses; ++i) {
+    for(size_t j = i+1; j < total_accesses; ++j) {
+      // (i) Are these two accesses to the same memory locations?
+      auto equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
+      constraints.push_back(!equal_addrs);
+      same_address[i][j] = !solver_.is_sat(constraints);
+      constraints.erase(--constraints.end());
+
+      if(same_address[i][j]) {
+        next_address[i][j] = false;
+        continue;
+      }
+
+      // (ii) Are these two accesses in sequence?
+      SymBool next_addrs;
+      if(nacl_) {
+        next_addrs = sym_accesses[i].address[31][0] + SymBitVector::constant(32, sym_accesses[i].size) ==
+                     sym_accesses[j].address[31][0];
+      } else {
+        next_addrs = sym_accesses[i].address + SymBitVector::constant(64, sym_accesses[i].size) ==
+                     sym_accesses[j].address;
+
+      }
+      constraints.push_back(!next_addrs);
+      next_address[i][j] = !solver_.is_sat(constraints);
+      constraints.erase(--constraints.end());
+    }
+  }
+
+  ALIAS_STRING_DEBUG(
+    cout << "SAME MAP" << endl;
+    cout << "    ";
+  for(size_t i = 0; i < total_accesses; ++i) {
+  cout << i << " ";
+}
+cout << endl << "------------------" << endl;
+for(size_t i = 0; i < total_accesses; ++i) {
+  cout << i << " | ";
+  for(size_t j = 0; j < total_accesses; ++j) {
+      if(j <= i) {
+        cout << "  ";
+      } else {
+        cout << same_address[i][j] << " ";
+      }
+    }
+    cout << endl;
+  }
+  cout << endl;
+
+       cout << "NEXT MAP" << endl;
+       cout << "    ";
+  for(size_t i = 0; i < total_accesses; ++i) {
+  cout << i << " ";
+}
+cout << endl << "------------------" << endl;
+for(size_t i = 0; i < total_accesses; ++i) {
+  cout << i << " | ";
+  for(size_t j = 0; j < total_accesses; ++j) {
+      if(j <= i) {
+        cout << "  ";
+      } else {
+        cout << next_address[i][j] << " ";
+      }
+    }
+    cout << endl;
+  }
+  cout << endl;);
+
+
+
+
+  stop_mm();
+
+  int cell[total_accesses];
+  size_t offset[total_accesses];
+  size_t max_cell = 0;
+  size_t cell_sizes[total_accesses];
+
+  for(size_t i = 0; i < total_accesses; ++i) {
+    cell[i] = -1;
+  }
+
+  for(size_t i = 0; i < total_accesses; ++i) {
+    if(cell[i] == -1) {
+      cell_sizes[max_cell] = sym_accesses[i].size;
+      cell[i] = max_cell++;
+      offset[i] = 0;
+    }
+
+    for(size_t j = i+1; j < total_accesses; ++j) {
+      if(same_address[i][j]) {
+        cell[j] = cell[i];
+        offset[j] = offset[i];
+        cell_sizes[cell[i]] = MAX(cell_sizes[cell[i]], sym_accesses[j].size);
+      } else if(next_address[i][j]) {
+        cell[j] = cell[i];
+        offset[j] = offset[i] + sym_accesses[i].size;
+        cell_sizes[cell[i]] += sym_accesses[j].size;
+      }
+    }
+  }
+
+  ALIAS_STRING_DEBUG(
+    cout << "TOTAL CELLS: " << max_cell << endl;
+  for(size_t i = 0; i < total_accesses; ++i) {
+  cout << "Access " << i << " cell " << cell[i] << " offset " << offset[i]
+         << " (cell size " << cell_sizes[cell[i]] << ")" << endl;
+  });
+
+  if(max_cell > 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
+    // For simplicity, I don't want to handle this case explicitly; just fallback
+    // a nicer implementation could rewrite the other recursive functions to do this well
+    return enumerate_aliasing_basic(target, rewrite, P, Q);
+  }
+
+  assert(max_cell > 0);
+
+  vector<pair<CellMemory*, CellMemory*>> result;
+
+  {
+    // EASY CASE!  The mega-cells don't overlap.
+    map<size_t, CellMemory::SymbolicAccess> target_map;
+    map<size_t, CellMemory::SymbolicAccess> rewrite_map;
+
+    for(size_t i = 0; i < total_accesses; ++i) {
+      CellMemory::SymbolicAccess sa;
+      sa.line = sym_accesses[i].line;
+      sa.size = sym_accesses[i].size;
+      sa.cell = cell[i];
+      sa.cell_offset = offset[i];
+      sa.cell_size = cell_sizes[cell[i]];
+      sa.unconstrained = false;
+
+      if(sym_accesses[i].is_rewrite) {
+        rewrite_map[sa.line] = sa;
+      } else {
+        target_map[sa.line] = sa;
+      }
+    }
+
+    auto target_mem = new CellMemory(target_map);
+    auto rewrite_mem = new CellMemory(rewrite_map);
+    result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
+  }
+
+  if(max_cell == 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
+
+    {
+      // Case 1: the two mega-cells overlap exactly
+      map<size_t, CellMemory::SymbolicAccess> target_map;
+      map<size_t, CellMemory::SymbolicAccess> rewrite_map;
+
+      for(size_t i = 0; i < total_accesses; ++i) {
+        CellMemory::SymbolicAccess sa;
+        sa.line = sym_accesses[i].line;
+        sa.size = sym_accesses[i].size;
+        sa.cell = 0;
+        sa.cell_offset = offset[i];
+        sa.cell_size = MAX(cell_sizes[0], cell_sizes[1]);
+        sa.unconstrained = false;
+
+        if(sym_accesses[i].is_rewrite) {
+          rewrite_map[sa.line] = sa;
+        } else {
+          target_map[sa.line] = sa;
+        }
+      }
+
+      auto target_mem = new CellMemory(target_map);
+      auto rewrite_mem = new CellMemory(rewrite_map);
+      result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
+    }
+
+    for(size_t k = 1; k < cell_sizes[0]; ++k) {
+      // Case 2: cell 0 comes first by k, 1 <= k < cell_sizes[0]
+      map<size_t, CellMemory::SymbolicAccess> target_map;
+      map<size_t, CellMemory::SymbolicAccess> rewrite_map;
+
+      for(size_t i = 0; i < total_accesses; ++i) {
+        CellMemory::SymbolicAccess sa;
+        sa.line = sym_accesses[i].line;
+        sa.size = sym_accesses[i].size;
+        sa.cell = 0;
+        sa.cell_offset = cell[i] == 0 ? offset[i] : offset[i] + k;
+        sa.cell_size = MAX(k+cell_sizes[1], cell_sizes[0]);
+        sa.unconstrained = false;
+
+        if(sym_accesses[i].is_rewrite) {
+          rewrite_map[sa.line] = sa;
+        } else {
+          target_map[sa.line] = sa;
+        }
+      }
+
+      auto target_mem = new CellMemory(target_map);
+      auto rewrite_mem = new CellMemory(rewrite_map);
+      result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
+    }
+
+    for(size_t k = 1; k < cell_sizes[1]; ++k) {
+      // Case 2: cell 1 comes first by k, 1 <= k < cell_sizes[1]
+      map<size_t, CellMemory::SymbolicAccess> target_map;
+      map<size_t, CellMemory::SymbolicAccess> rewrite_map;
+
+      for(size_t i = 0; i < total_accesses; ++i) {
+        CellMemory::SymbolicAccess sa;
+        sa.line = sym_accesses[i].line;
+        sa.size = sym_accesses[i].size;
+        sa.cell = 0;
+        sa.cell_offset = cell[i] == 0 ? offset[i] + k : offset[i];
+        sa.cell_size = MAX(k+cell_sizes[0], cell_sizes[1]);
+        sa.unconstrained = false;
+
+        if(sym_accesses[i].is_rewrite) {
+          rewrite_map[sa.line] = sa;
+        } else {
+          target_map[sa.line] = sa;
+        }
+      }
+
+      auto target_mem = new CellMemory(target_map);
+      auto rewrite_mem = new CellMemory(rewrite_map);
+      result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
+    }
+  }
+
+  ALIAS_STRING_DEBUG(cout << "ALIASING CASES: " << result.size() << endl;)
+  return result;
+
+}
+
+// ASSUMPTION: the target and rewrite both use memory
+vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basic(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
 
   auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);

@@ -33,7 +33,6 @@ public:
     model_ = NULL;
 
     context_.set("timeout", (int)timeout_);
-    solver_.push();
   }
 
   SMTSolver& set_timeout(uint64_t ms) {
