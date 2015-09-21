@@ -24,7 +24,7 @@ optbin: result.s
 	make replace
 
 benchmark: optbin
-	sel_ldr.py optpin
+	sel_ldr.py optbin
 
 pinkman:
 	./pinkman.sh

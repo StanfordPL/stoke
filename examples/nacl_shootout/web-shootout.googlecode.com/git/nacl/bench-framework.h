@@ -67,6 +67,7 @@ int run_wmemcmp(int n);
 int run_memcmp(int n);
 int run_wcscmp(int n);
 int run_wcscpy(int n);
+int run_wcpcpy(int n);
 int run_strxfrm(int n);
 int run_wmemchr(int n);
 int run_wmemset(int n);

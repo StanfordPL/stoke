@@ -1,0 +1,19 @@
+
+Some challenges with this benchmark:
+  - It's of moderate size, with two tightly nested loops.
+  - Of the two loops, one is critical for correctness, which does a
+  byte-by-byte copy of src to dest;  however, the preceeding loop is only
+  required for efficiently.  It's vectorized and does the same thing.  If using
+  a 'latency' or 'size' cost function, stoke will wipe out the "unnecessary"
+  loop.  Thus, the 'measured' cost function needs to be used, and sufficient
+  test cases need to be provided so stoke realizes this loop is important.
+
+  Moreover, in 'synthesis mode', stoke has no indication that it needs to
+  preserve the first loop at all.  It'll just wipe it out.  In a
+  'synthesis+optimization' mode, where stoke needs to discover a NaCl-correct
+  and efficient rewrite simultaneously, it sometimes falls into the
+  local-minimum without the performant loop -- especially if the cost function
+  weights NaCl-correctness hightly.  Other times it falls into the
+  global-minimum with that loop, and works well :)  Weighting NaCl against
+  performance seems to require hand-tuning for now; making NaCl worth 20x the
+  efficiency seemed to work.

@@ -1,0 +1,1 @@
+../pinkman.sh
