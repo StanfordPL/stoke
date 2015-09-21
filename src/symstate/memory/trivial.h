@@ -50,7 +50,6 @@ public:
     write_list_.push_back(sa);
     all_list_.push_back(sa);
 
-    std::cout << "write called " << sa.address.ptr << std::endl;
     return SymBool::_false();
   }
 
@@ -68,7 +67,6 @@ public:
     read_list_.push_back(sa);
     all_list_.push_back(sa);
 
-    std::cout << "read called" << sa.address.ptr << std::endl;
     return std::pair<SymBitVector, SymBool>(value, SymBool::_false());
   }
 
