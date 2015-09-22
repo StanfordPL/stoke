@@ -3,7 +3,7 @@ DEPLOY_PATH=/home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.
 NAME=wmemcmp
 TC_OPTS=--number 40 --width_of_char 4
 
-all: clean testcase search replace deploy
+all: search
 
 testcase:
 	memcmp_tcs $(TC_OPTS) > testcases
