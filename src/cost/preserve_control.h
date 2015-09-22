@@ -65,11 +65,11 @@ public:
     sandbox_->insert_before(check_control_callback, this);
     difference_found_ = false;
     //std::cout << "Evaluating cost function" << std::endl;
-    for(size_t i = 0, ie = sandbox_->size(); i < ie && !difference_found_; ++i) {
+    for (size_t i = 0, ie = sandbox_->size(); i < ie && !difference_found_; ++i) {
       current_pos_ = 0;
       current_list_ = &reference_outs_[i];
       sandbox_->run(i);
-      if(current_pos_ != current_list_->size()) {
+      if (current_pos_ != current_list_->size()) {
         difference_found_ = true;
       }
     }
@@ -86,16 +86,16 @@ public:
 
     //std::cout << "  check_control_callback" << std::endl;
 
-    if(ptr->difference_found_)
+    if (ptr->difference_found_)
       return;
 
     auto instr = data.code[data.line];
-    if(instr.is_label_defn() || instr.is_jump()) {
-      if(ptr->current_pos_ < ptr->current_list_->size()) {
+    if (instr.is_label_defn() || instr.is_jump()) {
+      if (ptr->current_pos_ < ptr->current_list_->size()) {
         auto actual_label = instr.get_operand<x64asm::Label>(0);
         auto expected_label = (*(ptr->current_list_))[ptr->current_pos_];
         ptr->current_pos_++;
-        if(actual_label != expected_label)
+        if (actual_label != expected_label)
           ptr->difference_found_ = 1;
       } else {
         ptr->difference_found_ = 1;
@@ -110,7 +110,7 @@ public:
     assert(data.line < data.code.size());
 
     auto instr = data.code[data.line];
-    if(instr.is_label_defn() || instr.is_jump()) {
+    if (instr.is_label_defn() || instr.is_jump()) {
       ptr->current_list_->push_back(instr.get_operand<x64asm::Label>(0));
     }
   }

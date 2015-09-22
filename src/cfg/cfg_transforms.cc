@@ -147,7 +147,7 @@ Cfg& CfgTransforms::remove_redundant(Cfg& cfg) {
 
 Code generate_nop(size_t i) {
 
-  switch(i) {
+  switch (i) {
   case 0:
     return {};
   case 1:
@@ -191,7 +191,7 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
         size_t bytes = assm.hex_size(instr);
         Code nops = generate_nop(bytes);
         cfg.get_function().remove(i);
-        for(auto nop : nops) {
+        for (auto nop : nops) {
           cfg.get_function().insert(i, nop);
         }
         cfg.recompute();
@@ -205,9 +205,9 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
   bool found = false;
   do {
     found = false;
-    for(size_t i = 0; i < cfg.get_code().size(); ++i) {
+    for (size_t i = 0; i < cfg.get_code().size(); ++i) {
       auto instr = cfg.get_code()[i];
-      if(instr.get_opcode() == RET) {
+      if (instr.get_opcode() == RET) {
 
         auto& func = cfg.get_function();
 
@@ -228,7 +228,7 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
         break;
       }
     }
-  } while(found);
+  } while (found);
 
   // Remove unreachable instructions at the end
   for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
@@ -236,16 +236,16 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
       bool ok = true;
 
       // check to see if future instructions are reachable; if so, abort.
-      for(size_t j = i+1; j < ie; ++j) {
-        if(cfg.is_reachable(cfg.get_loc(j).first)) {
+      for (size_t j = i+1; j < ie; ++j) {
+        if (cfg.is_reachable(cfg.get_loc(j).first)) {
           ok = false;
           break;
         }
       }
 
       // delete everything that's left.
-      if(ok) {
-        for(size_t j = i; j < ie; ++j) {
+      if (ok) {
+        for (size_t j = i; j < ie; ++j) {
           cfg.get_function().remove(i);
         }
         cfg.recompute();

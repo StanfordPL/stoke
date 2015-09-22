@@ -37,7 +37,7 @@ public:
 
   /* Visit a symbolic bit vector */
   virtual T operator()(const SymBitVectorAbstract * const bv) {
-    switch(bv->type()) {
+    switch (bv->type()) {
     case SymBitVector::AND:
       return visit(static_cast<const SymBitVectorAnd * const>(bv));
     case SymBitVector::CONCAT:
@@ -102,7 +102,7 @@ public:
 
   /** Visit a symbolic bool */
   virtual T operator()(const SymBoolAbstract * const b) {
-    switch(b->type()) {
+    switch (b->type()) {
     case SymBool::AND:
       return visit(static_cast<const SymBoolAnd * const>(b));
     case SymBool::EQ:

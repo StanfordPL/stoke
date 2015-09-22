@@ -62,7 +62,7 @@ bool make_dir() {
 }
 
 void callback(const FunctionCallbackData& data, void* arg) {
-  if(!data.parse_error) {
+  if (!data.parse_error) {
     ofstream ofs(out.value() + "/" + data.tunit.get_name() + ".s");
     ofs << data.tunit << endl;
   } else {

@@ -52,11 +52,11 @@ public:
          x64asm::eflags_cf + x64asm::eflags_of +
          x64asm::eflags_pf + x64asm::eflags_sf + x64asm::eflags_zf;
 
-    for(size_t i = 0; i < x64asm::r64s.size(); ++i) {
+    for (size_t i = 0; i < x64asm::r64s.size(); ++i) {
       rs += x64asm::r64s[i];
     }
 
-    for(size_t i = 0; i < x64asm::xmms.size(); ++i) {
+    for (size_t i = 0; i < x64asm::xmms.size(); ++i) {
       rs += x64asm::xmms[i];
     }
 
@@ -70,7 +70,7 @@ protected:
 
   /** Check the two codes are equivalent */
   void assert_equiv() {
-    if(!reset_state())
+    if (!reset_state())
       return;
 
     check_codes(EQUIVALENT);
@@ -78,7 +78,7 @@ protected:
 
   /** Check the two codes are equivalent or have an error*/
   void assert_equiv_or_error() {
-    if(!reset_state())
+    if (!reset_state())
       return;
 
     check_codes(EQUIVALENT | ERROR);
@@ -92,11 +92,11 @@ protected:
   /** Check that the validator returns false; check the counterexample
       if given */
   void assert_ceg(CpuState* ceg = NULL) {
-    if(!reset_state())
+    if (!reset_state())
       return;
 
     check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE);
-    if(ceg != NULL) {
+    if (ceg != NULL) {
       *ceg = v_.get_counter_examples()[0];
 
       // write out the counter-example, and then parse it back in
@@ -114,17 +114,17 @@ protected:
   /** Check that the validator returns false, but don't look
       at the counterexample or lack thereof */
   void assert_ceg_nocheck(CpuState* ceg = NULL) {
-    if(!reset_state())
+    if (!reset_state())
       return;
 
     check_codes(COUNTEREXAMPLE | NO_COUNTEREXAMPLE, false);
-    if(ceg != NULL)
+    if (ceg != NULL)
       *ceg = v_.get_counter_examples()[0];
   }
 
   /** Check that the validator encounters an error on these two rewrite s */
   std::string assert_fail() {
-    if(!reset_state())
+    if (!reset_state())
       return "";
 
     CpuState ceg;
@@ -139,7 +139,7 @@ protected:
       with the validator output.  Returns false if the validator failed to
       build a model (which means that passing the test is useless). */
   bool check_circuit(CpuState cs) {
-    if(!reset_state(true))
+    if (!reset_state(true))
       return false;
     ceg_shown_ = true;
 
@@ -155,25 +155,25 @@ protected:
 
     size_t line = 0;
     static_cast<DeprecatedMemory*>(state.memory)->set_analysis(&analysis);
-    for(auto it : cfg_t_->get_code()) {
+    for (auto it : cfg_t_->get_code()) {
       state.set_lineno(line);
       ch.build_circuit(it, state);
       line++;
     }
 
-    for(auto it : state.constraints)
+    for (auto it : state.constraints)
       constraints.push_back(it);
-    for(auto it : state.equality_constraints(end))
+    for (auto it : state.equality_constraints(end))
       constraints.push_back(it);
 
     // Check that we can generate a state
     bool b = s_.is_sat(constraints);
     EXPECT_TRUE(b) << "Circuit not satisfiable";
     EXPECT_FALSE(s_.has_error()) << "Solver encountered: " << s_.get_error();
-    if(!b || s_.has_error())
+    if (!b || s_.has_error())
       return true;
 
-    if(!s_.has_model())
+    if (!s_.has_model())
       return false;
 
     CpuState validator_final = Validator::state_from_model(s_, "_FINAL");
@@ -203,7 +203,7 @@ protected:
      If they are the same for all inputs, expect them to be equivalent.
      Otherwise, expect validator to come up with a correct counterexample. */
   void assert_sandbox(Sandbox& sb) {
-    if(!reset_state())
+    if (!reset_state())
       return;
 
     // Run the sandbox on the inputs
@@ -223,8 +223,8 @@ protected:
     ASSERT_EQ(target_results.size(), rewrite_results.size());
 
     bool sandbox_equiv = true;
-    for(size_t i = 0; i < target_results.size(); ++i) {
-      if(target_results[i] != rewrite_results[i]) {
+    for (size_t i = 0; i < target_results.size(); ++i) {
+      if (target_results[i] != rewrite_results[i]) {
         sandbox_equiv = false;
       }
     }
@@ -283,7 +283,7 @@ private:
   bool validate(CpuState& tc) {
 
     bool b = v_.verify(*cfg_t_, *cfg_r_);
-    if(!b && v_.counter_examples_available())
+    if (!b && v_.counter_examples_available())
       tc = v_.get_counter_examples()[0];
     return b;
   }
@@ -311,10 +311,10 @@ private:
     if (actual == expect)
       return;
 
-    if(same) {
+    if (same) {
       report_error(OTHER, OTHER, false, global);
 
-      if(!ceg_shown_) {
+      if (!ceg_shown_) {
         std::cout << "Counterexample:" << std::endl;
         std::cout << v_.get_counter_examples()[0] << std::endl;
         ceg_shown_ = true;
@@ -340,18 +340,18 @@ private:
     // BRC -- I don't think we can/should rely on the validator to get this right.
     //EXPECT_CPU_EQ_CODE(expect.code, actual.code, "The error codes differ.");
 
-    for(auto it = live_outs_.gp_begin(); it != live_outs_.gp_end(); ++it) {
+    for (auto it = live_outs_.gp_begin(); it != live_outs_.gp_end(); ++it) {
       x64asm::R r = *it;
       std::stringstream tmp;
       tmp << "The " << r.size() << " bits of " << *it << " differ.";
       EXPECT_CPU_EQ_INT(expect[r], actual[r], tmp.str());
     }
 
-    for(auto it = live_outs_.sse_begin(); it != live_outs_.sse_end(); ++it) {
+    for (auto it = live_outs_.sse_begin(); it != live_outs_.sse_end(); ++it) {
       uint16_t bitwidth = (*it).size();
       uint16_t quads = bitwidth/64;
 
-      for(size_t i = 0; i < quads; ++i) {
+      for (size_t i = 0; i < quads; ++i) {
         std::stringstream tmp;
         tmp << "Bits " << (i*64) <<  ".." << ((i+1)*64) << " of " << *it << " differ.";
         uint64_t actual_v = actual.sse[*it].get_fixed_quad(i);
@@ -360,11 +360,11 @@ private:
       }
     }
 
-    for(size_t i = 0; i < x64asm::eflags.size(); i++)
+    for (size_t i = 0; i < x64asm::eflags.size(); i++)
     {
       auto op = x64asm::eflags[i];
 
-      if(live_outs_.contains(op)) {
+      if (live_outs_.contains(op)) {
         uint64_t actual_flag = actual.rf.is_set(op.index());
         uint64_t expected_flag = expect.rf.is_set(op.index());
 
@@ -383,7 +383,7 @@ private:
   void check_ceg(CpuState& ceg) {
 
     // Make sure that a counterexample was intended.
-    if(!v_.counter_examples_available())
+    if (!v_.counter_examples_available())
       return;
 
     auto other_ceg = v_.get_counter_examples()[0];
@@ -400,7 +400,7 @@ private:
 
     // Run the sandbox and check the results for each.
     // We only want to do this check if the state isn't undefined.
-    if(cfg_t_->is_sound()) {
+    if (cfg_t_->is_sound()) {
 
       sb.run(*cfg_t_);
       CpuState sandbox_target_state = *sb.get_result(0);
@@ -413,7 +413,7 @@ private:
     }
 
 
-    if(cfg_r_->is_sound()) {
+    if (cfg_r_->is_sound()) {
       sb.run(*cfg_r_);
       CpuState sandbox_rewrite_state = *sb.get_result(0);
 
@@ -427,7 +427,7 @@ private:
   }
 
   void report_error(int expected, Outcome actual, bool fatal=false, std::string message="") {
-    if(!codes_shown_) {
+    if (!codes_shown_) {
       std::cout << "=== StraightLineValidator Test Failed ====================" << std::endl;
       if (cfg_t_ != 0) {
         std::cout << "--Target--" << std::endl;
@@ -457,7 +457,7 @@ private:
       expected_string << "nonequivalent  ";
 
 
-    switch(actual) {
+    switch (actual) {
 
     case EQUIVALENT:
       ADD_FAILURE() << "Codes found equivalent" << expected_string.str() << std::endl;
@@ -503,7 +503,7 @@ private:
       FAIL() << "Internal error in validator's testing system.";
     }
 
-    if(fatal)
+    if (fatal)
       FAIL() << "(Encountered errors were fatal)";
 
   }
@@ -527,32 +527,32 @@ private:
     bool error = v_.has_error();
     // See if a counterexample is available
     bool got_ceg = v_.counter_examples_available();
-    if(got_ceg)
+    if (got_ceg)
       ceg = v_.get_counter_examples()[0];
     // Later, we'll check if CFG is valid
     bool ceg_is_ok = false;
 
     // See if it all checks out
     if (equiv) {
-      if(error) {
+      if (error) {
         report_error(expected, OTHER, true,
                      "StraightLineValidator says codes are equivalent, but also returned an error.");
       }
-      if(got_ceg) {
+      if (got_ceg) {
         report_error(expected, OTHER, true,
                      "StraightLineValidator says codes are equivalent, but also returned counterexample.");
       }
       outcome = EQUIVALENT;
     } else {
-      if(got_ceg) {
-        if(error) {
+      if (got_ceg) {
+        if (error) {
           report_error(expected, OTHER, true,
                        "StraightLineValidator produced counterexample, but also returned an error.");
         } else {
           outcome = COUNTEREXAMPLE;
         }
       } else {
-        if(error)
+        if (error)
           outcome = ERROR;
         else
           outcome = NO_COUNTEREXAMPLE;
@@ -562,10 +562,10 @@ private:
 
     // See what we need to report.
     // If outcome exceeds expected, we're in trouble
-    if((outcome & expected) != outcome)
+    if ((outcome & expected) != outcome)
       report_error(expected, outcome, false);
 
-    if(got_ceg && do_check_ceg) {
+    if (got_ceg && do_check_ceg) {
       check_ceg(ceg);
     }
   }
@@ -574,12 +574,12 @@ private:
      target/rewrite the user wants to test, and reset our state for tracking
      what we've reported to the user. */
   bool reset_state(bool target_only = false) {
-    if(cfg_t_) {
+    if (cfg_t_) {
       delete cfg_t_;
       cfg_t_ = 0;
     }
 
-    if(cfg_r_) {
+    if (cfg_r_) {
       delete cfg_r_;
       cfg_r_ = 0;
     }
@@ -591,7 +591,7 @@ private:
     // Build the Cfgs from the given instructions
     cfg_t_ = get_cfg(target_);
 
-    if(target_only) {
+    if (target_only) {
       return cfg_t_;
     }
 

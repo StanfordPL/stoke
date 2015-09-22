@@ -31,15 +31,15 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
   size_t instr_index = 0;
   Instruction instr(NOP);
   bool found = false;
-  for(size_t i = 0, ie = code.size(); i < ie; ++i) {
+  for (size_t i = 0, ie = code.size(); i < ie; ++i) {
     instr_index = gen_() % ie;
     instr = code[instr_index];
-    if(instr.is_explicit_memory_dereference()) {
+    if (instr.is_explicit_memory_dereference()) {
       found = true;
       break;
     }
   }
-  if(!found)
+  if (!found)
     return ti;
 
   ti.undo_index[0] = instr_index;
@@ -50,18 +50,18 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
   auto mem = instr.get_operand<M8>(operand_index);
 
   bool ok = pools_.get_reg_mem(RegSet::universe(), mem);
-  if(!ok)
+  if (!ok)
     return ti;
 
   // if it's the first instruction, we can't replace the previous one
-  if(instr_index == 0)
+  if (instr_index == 0)
     return ti;
 
   // Find index of instruction to swap with
   size_t other_index = gen_() % code.size();
 
-  for(size_t j = 0, je=code.size(); j < je; ++j) {
-    if(other_index == instr_index ||
+  for (size_t j = 0, je=code.size(); j < je; ++j) {
+    if (other_index == instr_index ||
         other_index == instr_index - 1) {
       other_index = gen_() % je;
       continue;
@@ -72,7 +72,7 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
       continue;
     }
   }
-  if(other_index == instr_index ||
+  if (other_index == instr_index ||
       other_index == instr_index - 1) {
     return ti;
   }
@@ -89,7 +89,7 @@ TransformInfo MemoryTransform::operator()(Cfg& cfg) {
   cfg.get_function().swap(instr_index - 1, ti.undo_index[1]);
 
   cfg.recompute();
-  if(!cfg.check_invariants()) {
+  if (!cfg.check_invariants()) {
     undo(cfg, ti);
     return ti;
   }

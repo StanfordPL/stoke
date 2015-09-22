@@ -42,7 +42,7 @@ public:
   }
 
   ~Z3Solver() {
-    if(model_ != NULL)
+    if (model_ != NULL)
       delete model_;
   }
 

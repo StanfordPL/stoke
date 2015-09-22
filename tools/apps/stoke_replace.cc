@@ -74,7 +74,7 @@ void callback(const FunctionCallbackData& data, void* arg) {
     cout << "Found fxn with capactiy " << fxn_size << endl;
   } else if (linker) {
     auto label = data.tunit.get_leading_label();
-    if(label.get_text()[0] != '.') {
+    if (label.get_text()[0] != '.') {
       stringstream ss;
       ss << "." << label.get_text();
       label = Label(ss.str());
@@ -94,12 +94,12 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   assm.start(fxn);
   auto code = cfg.get_code();
   fxn.reserve(fxn.size() + 16*code.size());
-  for(size_t i = 0; i < code.size(); ++i) {
-    if(code[i].is_nop()) {
+  for (size_t i = 0; i < code.size(); ++i) {
+    if (code[i].is_nop()) {
       size_t start_pos = fxn.size() & 0x1f;
       size_t max_size = 0x20 - start_pos;
       size_t nop_bytes = 0;
-      for(; i < code.size() && code[i].is_nop() && nop_bytes + assm.hex_size(code[i]) <= max_size; ++i) {
+      for (; i < code.size() && code[i].is_nop() && nop_bytes + assm.hex_size(code[i]) <= max_size; ++i) {
         nop_bytes += assm.hex_size(code[i]);
       }
       i--;
@@ -107,7 +107,7 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
       //assemble these nops
       //See https://code.google.com/p/minnacl/source/browse/src/trusted/validator_x86/testdata/64/nops.hex?name=cleanup for hints
       while (nop_bytes) {
-        switch(nop_bytes) {
+        switch (nop_bytes) {
         case 0:
           break;
         case 1:
@@ -183,7 +183,7 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
           nop_bytes = 0;
           break;
         default:
-          for(size_t j = 0; j < 6 && nop_bytes > 9; ++j) {
+          for (size_t j = 0; j < 6 && nop_bytes > 9; ++j) {
             fxn.emit_byte(0x66);
             nop_bytes--;
           }
@@ -222,20 +222,20 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   }
 
   // Perform linking
-  if(linker) {
+  if (linker) {
     linker->link(fxn, fxn_rip_offset);
     linker->finish();
 
-    if(linker->multiple_def()) {
+    if (linker->multiple_def()) {
       Console::warn() << "Multiple definition error for function \"" << linker->get_multiple_def() << "\"" << endl;
     }
-    if(linker->undef_symbol()) {
+    if (linker->undef_symbol()) {
       Console::warn() << "Undefined symbol \"" << linker->get_undef_symbol() << "\"" << endl;
     }
-    if(linker->jump_too_far()) {
+    if (linker->jump_too_far()) {
       Console::warn() << "Distance for jump exceeded 4-byte offset limit." << endl;
     }
-    if(!linker->good()) {
+    if (!linker->good()) {
       Console::warn() << "Unexpected linker error." << endl;
     }
   }
@@ -270,7 +270,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-  if(input_offset.value()) {
+  if (input_offset.value()) {
     // Get offset from input tunit
     fxn_offset = rewrite_arg.value().get_file_offset();
     fxn_size = rewrite_arg.value().hex_capacity();
@@ -285,7 +285,7 @@ int main(int argc, char** argv) {
 
     Linker linker;
     Linker* linker_ptr = &linker;
-    if(do_not_link_arg.value())
+    if (do_not_link_arg.value())
       linker_ptr = nullptr;
 
     Disassembler d;
@@ -293,7 +293,7 @@ int main(int argc, char** argv) {
     found = false;
     d.disassemble(in.value());
 
-    if(d.has_error()) {
+    if (d.has_error()) {
       Console::error(1) << "disassemble: " << d.get_error() << endl;
       return 1;
     }

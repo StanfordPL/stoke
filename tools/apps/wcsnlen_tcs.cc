@@ -77,7 +77,7 @@ int main(int argc, char** argv) {
   Sandbox sb;
   StateGen sg(&sb, stack_size.value());
 
-  for(size_t ct = 0; ct < number.value(); ++ct) {
+  for (size_t ct = 0; ct < number.value(); ++ct) {
     CpuState cs;
     sg.get(cs);
 
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
 
     //setup stack
     cs.gp[rsp].get_fixed_quad(0) = (rand() % 0xffffffffffffff) + 0x700000000;
-    if(rand() % 16)
+    if (rand() % 16)
       cs.gp[rsp].get_fixed_quad(0) = 0x700000000;
     uint64_t max = cs.gp[rsp].get_fixed_quad(0);
     uint64_t min = cs.gp[rsp].get_fixed_quad(0) - stack_size.value();
@@ -109,22 +109,22 @@ int main(int argc, char** argv) {
     // All addresses are relative to r15
     cs.gp[r15].get_fixed_quad(0) = heap_base_bot;
     cs.gp[rdi].get_fixed_quad(0) = heap_diff + dst_offset;
-    if(add_size_arg.value())
+    if (add_size_arg.value())
       cs.gp[rsi].get_fixed_quad(0) = rand() % (buffer_size/char_width.value() + 4);
     else
       cs.gp[rsi].get_fixed_quad(0) = rand() | ((uint64_t)rand() << 32);
 
     //fill data
-    for(uint64_t i = heap_base_top; i < ROUND_UP(heap_base_top + heap_size.value(), align.value()); ++i) {
+    for (uint64_t i = heap_base_top; i < ROUND_UP(heap_base_top + heap_size.value(), align.value()); ++i) {
       cs.heap[i] = rand() % 256;
       cs.heap.set_valid(i, false);
     }
 
-    for(uint64_t i = heap_base_top + dst_offset; i < heap_base_top + dst_offset + dst_buffer_size; ++i)
+    for (uint64_t i = heap_base_top + dst_offset; i < heap_base_top + dst_offset + dst_buffer_size; ++i)
       cs.heap.set_valid(i, true);
 
-    if(null_terminate) {
-      for(size_t i = 1; i <= char_width.value(); ++i) {
+    if (null_terminate) {
+      for (size_t i = 1; i <= char_width.value(); ++i) {
         cs.heap[heap_base_top + dst_offset + dst_buffer_size - i] = '\0';
       }
     }

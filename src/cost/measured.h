@@ -45,7 +45,7 @@ public:
     size_t tc_count = sandbox_->size();
     latency_ = 0;
     nops_emitted_ = 0;
-    if(tc_count == 0) {
+    if (tc_count == 0) {
       LatencyCost lc;
       return lc(cfg, max);
     }
@@ -59,8 +59,8 @@ public:
     assert(data.line < data.code.size());
 
     auto instr = data.code[data.line];
-    if(instr.is_nop()) {
-      if(ptr->nops_emitted_ >= 14) {
+    if (instr.is_nop()) {
+      if (ptr->nops_emitted_ >= 14) {
         ptr->nops_emitted_ = 0;
       } else if (ptr->nops_emitted_ == 0) {
         ptr->latency_ += 1;
@@ -68,10 +68,7 @@ public:
       } else {
         ptr->nops_emitted_++;
       }
-    } /* else if (instr.is_any_jump()) {
-      ptr->latency_ += 5;
-      ptr->nops_emitted_ = 0;
-    } */ else {
+    } else {
       ptr->latency_ += data.code[data.line].haswell_latency();
       ptr->nops_emitted_ = 0;
     }

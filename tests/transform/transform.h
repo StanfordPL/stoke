@@ -59,7 +59,7 @@ protected:
     transform.set_seed(seed_);
     TransformInfo ti;
 
-    if(!cfg_->check_invariants()) {
+    if (!cfg_->check_invariants()) {
       std::cout << "[----------] Invaraints failed at beginning; can't check this one." << std::endl;
       return;
     }
@@ -67,7 +67,7 @@ protected:
     for (size_t i = 0; i < iterations_; ++i) {
 
       ti = transform(*cfg_);
-      if(ti.success) {
+      if (ti.success) {
         success++;
         ASSERT_TRUE(check_cfg());
         transform.undo(*cfg_, ti);
@@ -171,12 +171,12 @@ TEST_P(TransformsTest, WeightedIsReversible) {
   transforms.push_back(new ReplaceNopTransform(tp_));
   transforms.push_back(new RotateTransform(tp_));
 
-  for(auto t : transforms)
+  for (auto t : transforms)
     transform.insert_transform(t);
 
   check_move_reversible(transform);
 
-  for(auto t : transforms) {
+  for (auto t : transforms) {
     delete t;
   }
 }
@@ -197,13 +197,13 @@ TEST_P(TransformsTest, MultiIsReversible) {
   transforms.push_back(new ReplaceNopTransform(tp_));
   transforms.push_back(new RotateTransform(tp_));
 
-  for(auto t : transforms)
+  for (auto t : transforms)
     wtransform.insert_transform(t);
 
   auto transform = MultiTransform(tp_, wtransform, 2);
   check_move_reversible(transform);
 
-  for(auto t : transforms) {
+  for (auto t : transforms) {
     delete t;
   }
 }
@@ -224,13 +224,13 @@ TEST_P(TransformsTest, MemoryIsReversible) {
   transforms.push_back(new ReplaceNopTransform(tp_));
   transforms.push_back(new RotateTransform(tp_));
 
-  for(auto t : transforms)
+  for (auto t : transforms)
     wtransform.insert_transform(t);
 
   auto transform = MemoryTransform(tp_, wtransform);
   check_move_reversible(transform);
 
-  for(auto t : transforms) {
+  for (auto t : transforms) {
     delete t;
   }
 }
@@ -252,94 +252,94 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   transforms.push_back(new AddNopsTransform(tp_));
   transforms.push_back(new GlobalCopyTransform(tp_));
 
-  for(auto t : transforms) {
+  for (auto t : transforms)
     transform.insert_transform(t);
-    sub_transform.insert_transform(t);
+  sub_transform.insert_transform(t);
+}
+
+auto dual_transform = new MultiTransform(tp_, sub_transform, 2);
+auto mem_transform = new MemoryTransform(tp_, sub_transform);
+transform.insert_transform(dual_transform);
+transform.insert_transform(mem_transform);
+
+
+// This set can be used to introduce the dataflow fact that function calls don't
+// perform any reads. This is useful for testcases that used to ignore undefined
+// reads, which we now check for as an invariant.
+TUnit::MayMustSets mms = {
+  x64asm::RegSet::empty(),
+  x64asm::Instruction(x64asm::CALL_LABEL).must_write_set(),
+  x64asm::Instruction(x64asm::CALL_LABEL).must_undef_set(),
+  x64asm::RegSet::empty(),
+  x64asm::Instruction(x64asm::CALL_LABEL).maybe_write_set(),
+  x64asm::Instruction(x64asm::CALL_LABEL).maybe_undef_set(),
+};
+
+code_.push_back(x64asm::Instruction(x64asm::RET));
+x64asm::Code original(code_);
+cfg_ = new Cfg(TUnit(code_), x64asm::RegSet::universe(), x64asm::RegSet::empty());
+cfg_->add_summary(x64asm::Label(".L4"), mms);
+
+Sandbox sb;
+sb.set_max_jumps(30).set_abi_check(false);
+
+//attempt to make a testcase
+// there's an underlying bug here in stoke testcase.
+CpuState tc;
+StateGen sg(&sb);
+sb.insert_input(tc);
+
+//make cost functions
+std::vector<CostFunction*> functions;
+std::vector<stoke::CostFunction::result_type> original_costs;
+
+stoke::CorrectnessCost correctness(&sb);
+correctness.set_target(*cfg_, true, true)
+.set_relax(true, false, false)
+.set_penalty(3,5);
+functions.push_back(&correctness);
+
+stoke::LatencyCost latency;
+latency.set_nesting_penalty(7);
+functions.push_back(&latency);
+
+stoke::SizeCost size;
+functions.push_back(&size);
+
+stoke::BinSizeCost binsize;
+functions.push_back(&binsize);
+
+stoke::Cfg original_cfg(TUnit(original), x64asm::RegSet::universe(), x64asm::RegSet::empty());
+original_cfg.add_summary(x64asm::Label(".L4"), mms);
+
+for (auto fxn : functions) {
+  original_costs.push_back((*fxn)(original_cfg));
+}
+
+//loop and check
+for (size_t i = 0; i < iterations_; ++i) {
+
+  TransformInfo ti;
+  ti = transform(*cfg_);
+  if (ti.success) {
+    transform.undo(*cfg_, ti);
   }
 
-  auto dual_transform = new MultiTransform(tp_, sub_transform, 2);
-  auto mem_transform = new MemoryTransform(tp_, sub_transform);
-  transform.insert_transform(dual_transform);
-  transform.insert_transform(mem_transform);
+  for (size_t i = 0; i < functions.size(); ++i) {
+    auto orig_cost = original_costs[i];
+    auto fxn = functions[i];
+    ASSERT_EQ(orig_cost, (*fxn)(*cfg_)) <<
+                                        "the original code: " << std::endl << original << std::endl <<
+                                        "the modified code: " << std::endl << cfg_->get_code() << std::endl <<
+                                        "and the seed was: " << seed_ << std::endl;
 
-
-  // This set can be used to introduce the dataflow fact that function calls don't
-  // perform any reads. This is useful for testcases that used to ignore undefined
-  // reads, which we now check for as an invariant.
-  TUnit::MayMustSets mms = {
-    x64asm::RegSet::empty(),
-    x64asm::Instruction(x64asm::CALL_LABEL).must_write_set(),
-    x64asm::Instruction(x64asm::CALL_LABEL).must_undef_set(),
-    x64asm::RegSet::empty(),
-    x64asm::Instruction(x64asm::CALL_LABEL).maybe_write_set(),
-    x64asm::Instruction(x64asm::CALL_LABEL).maybe_undef_set(),
-  };
-
-  code_.push_back(x64asm::Instruction(x64asm::RET));
-  x64asm::Code original(code_);
-  cfg_ = new Cfg(TUnit(code_), x64asm::RegSet::universe(), x64asm::RegSet::empty());
-  cfg_->add_summary(x64asm::Label(".L4"), mms);
-
-  Sandbox sb;
-  sb.set_max_jumps(30).set_abi_check(false);
-
-  //attempt to make a testcase
-  // there's an underlying bug here in stoke testcase.
-  CpuState tc;
-  StateGen sg(&sb);
-  sb.insert_input(tc);
-
-  //make cost functions
-  std::vector<CostFunction*> functions;
-  std::vector<stoke::CostFunction::result_type> original_costs;
-
-  stoke::CorrectnessCost correctness(&sb);
-  correctness.set_target(*cfg_, true, true)
-  .set_relax(true, false, false)
-  .set_penalty(3,5);
-  functions.push_back(&correctness);
-
-  stoke::LatencyCost latency;
-  latency.set_nesting_penalty(7);
-  functions.push_back(&latency);
-
-  stoke::SizeCost size;
-  functions.push_back(&size);
-
-  stoke::BinSizeCost binsize;
-  functions.push_back(&binsize);
-
-  stoke::Cfg original_cfg(TUnit(original), x64asm::RegSet::universe(), x64asm::RegSet::empty());
-  original_cfg.add_summary(x64asm::Label(".L4"), mms);
-
-  for(auto fxn : functions) {
-    original_costs.push_back((*fxn)(original_cfg));
+    ASSERT_EQ((*fxn)(*cfg_), (*fxn)(*cfg_)) << "evaluating cost twice failed.";
   }
+}
 
-  //loop and check
-  for (size_t i = 0; i < iterations_; ++i) {
-
-    TransformInfo ti;
-    ti = transform(*cfg_);
-    if (ti.success) {
-      transform.undo(*cfg_, ti);
-    }
-
-    for(size_t i = 0; i < functions.size(); ++i) {
-      auto orig_cost = original_costs[i];
-      auto fxn = functions[i];
-      ASSERT_EQ(orig_cost, (*fxn)(*cfg_)) <<
-                                          "the original code: " << std::endl << original << std::endl <<
-                                          "the modified code: " << std::endl << cfg_->get_code() << std::endl <<
-                                          "and the seed was: " << seed_ << std::endl;
-
-      ASSERT_EQ((*fxn)(*cfg_), (*fxn)(*cfg_)) << "evaluating cost twice failed.";
-    }
-  }
-
-  for(auto t : transforms) {
-    delete t;
-  }
+for (auto t : transforms) {
+  delete t;
+}
 
 }
 

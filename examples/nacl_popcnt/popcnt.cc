@@ -25,8 +25,8 @@ const char* const kReplyString = "hello from NaCl";
 size_t NO_INLINE compute(size_t input) {
   size_t output = 0;
   size_t j = input;
-  while(j) {
-    if(j & 1)
+  while (j) {
+    if (j & 1)
       output++;
     j = j >> 1;
   }
@@ -49,8 +49,8 @@ public:
     size_t input = (size_t)var_message.AsInt();
 
     size_t result = 0;
-    for(size_t i = 0; i < N; ++i) {
-      for(size_t j = 0; j < input; ++j) {
+    for (size_t i = 0; i < N; ++i) {
+      for (size_t j = 0; j < input; ++j) {
         result += compute(j);
       }
     }

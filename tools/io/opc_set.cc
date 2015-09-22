@@ -45,7 +45,7 @@ bool binary_search(const string& key, set<Opcode>& os) {
   if (opcodes.size() == 0) {
     stringstream ss;
     // initialize sorted opcode list
-    for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
       ss.clear();
       ss.str("");
       ss << ((Opcode) i);
@@ -84,17 +84,17 @@ void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
 
     bool found = false;
 
-    if(a[a.size() - 1] == '*') {
-      for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
-        if(opcode_write_att((Opcode)i).find(a.substr(0, a.size()-1)) == 0) {
+    if (a[a.size() - 1] == '*') {
+      for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+        if (opcode_write_att((Opcode)i).find(a.substr(0, a.size()-1)) == 0) {
           os.insert((Opcode)i);
           //cout << "  bl: " << (Opcode)i << endl;
           found = true;
         }
       }
     } else {
-      for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
-        if(opcode_write_att((Opcode)i) == a) {
+      for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+        if (opcode_write_att((Opcode)i) == a) {
           os.insert((Opcode)i);
           //cout << "  bl: " << (Opcode)i << endl;
           found = true;
@@ -107,7 +107,7 @@ void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
     ss.str(a);
     ss >> opc;
 
-    if(!failed(ss)) {
+    if (!failed(ss)) {
       //cout << "bl: " << opc << endl;
       os.insert(opc);
     } else if (!found) {

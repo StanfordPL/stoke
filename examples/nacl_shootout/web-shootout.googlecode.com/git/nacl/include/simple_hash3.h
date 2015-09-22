@@ -189,7 +189,7 @@ ht_find_new(struct ht_ht *ht, ui64 key)
   while (node)
   {
     if (key == node->key)
-      return(node);
+      return (node);
 
     prev = node;
     node = node->next;
@@ -205,7 +205,7 @@ ht_find_new(struct ht_ht *ht, ui64 key)
   }
   else
   {
-    return(ht->tbl[hash_code] = ht_node_create(key));
+    return (ht->tbl[hash_code] = ht_node_create(key));
   }
 }
 
@@ -232,7 +232,7 @@ ht_next(struct ht_ht *ht)
       if (ht->tbl[index])
       {
         ht->iter_next = ht->tbl[index]->next;
-        return(ht->tbl[index]);
+        return (ht->tbl[index]);
       }
     }
   }

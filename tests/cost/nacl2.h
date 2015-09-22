@@ -69,7 +69,7 @@ TEST_F(NaCl2CostTest, ModifyRspPenalty) {
 TEST_F(NaCl2CostTest, AcrossBoundariesTooManyNops) {
 
   std::stringstream ss;
-  for(size_t i = 0; i < 29; ++i) {
+  for (size_t i = 0; i < 29; ++i) {
     ss << "nop" << std::endl;
   }
   ss << "movl $0x10, %eax  #SIZE=5" << std::endl;
@@ -87,7 +87,7 @@ TEST_F(NaCl2CostTest, AcrossBoundariesTooManyNops) {
 TEST_F(NaCl2CostTest, AcrossBoundariesTooFewNops) {
 
   std::stringstream ss;
-  for(size_t i = 0; i < 31; ++i) {
+  for (size_t i = 0; i < 31; ++i) {
     ss << "nop" << std::endl;
   }
   ss << "movl $0x10, %eax  #SIZE=5" << std::endl;
@@ -190,7 +190,7 @@ TEST_F(NaCl2CostTest, RestrictedRegisterBadBoundary) {
 
   std::stringstream ss;
   ss << ".target:" << std::endl;
-  for(size_t i = 0; i < 27; ++i) {
+  for (size_t i = 0; i < 27; ++i) {
     ss << "nop" << std::endl;
   }
   ss << "movl $0x10, %eax" << std::endl;
@@ -215,7 +215,7 @@ TEST_F(NaCl2CostTest, Benchmark) {
   ss << "movq (%r15, %rax, 1), %rdx" << std::endl;
   ss << "cmpl %eax, %ecx" << std::endl;
   ss << "je .target" << std::endl;
-  for(size_t i = 0; i < 10; ++i)
+  for (size_t i = 0; i < 10; ++i)
     ss << "nop" << std::endl;
   ss << "jmpq .target" << std::endl;
   ss << "retq" << std::endl;
@@ -228,7 +228,7 @@ TEST_F(NaCl2CostTest, Benchmark) {
 
 
   Cost sum = 0;
-  for(size_t i = 0; i < 30000; ++i) {
+  for (size_t i = 0; i < 30000; ++i) {
     sum += fxn(cfg).second;
   }
 

@@ -47,9 +47,9 @@ public:
     // whitelisting anything (since that would force the opcode to be included
     // nomatter what).
     auto whitelist = opc_whitelist_arg.value();
-    if(!whitelist.empty()) {
-      for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
-        if(find(whitelist.begin(), whitelist.end(), (x64asm::Opcode)i) == whitelist.end()) {
+    if (!whitelist.empty()) {
+      for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+        if (find(whitelist.begin(), whitelist.end(), (x64asm::Opcode)i) == whitelist.end()) {
           remove_opcode((x64asm::Opcode)i);
         }
       }
@@ -91,20 +91,20 @@ public:
     set_flags(cpu_flags());
 
     // Set weight of call opcode
-    if(call_weight_arg.value())
+    if (call_weight_arg.value())
       set_opcode_weight(x64asm::CALL_LABEL, call_weight_arg.value());
 
     // Set registers to be preserved
     set_preserve_regs(preserve_regs());
 
     // remove all blacklisted opcodes
-    for(auto op : opc_blacklist_arg.value())
+    for (auto op : opc_blacklist_arg.value())
       remove_opcode(op);
 
     // Add labels that appear in target
-    if(change_control_flow_arg.value()) {
-      for(auto instr : cfg.get_code()) {
-        if(instr.is_label_defn()) {
+    if (change_control_flow_arg.value()) {
+      for (auto instr : cfg.get_code()) {
+        if (instr.is_label_defn()) {
           auto label = instr.get_operand<x64asm::Label>(0);
           insert_label(label);
         }
@@ -114,7 +114,7 @@ public:
     // Finish the configuration
     recompute_pools();
 
-    if(opcode_pool_.empty()) {
+    if (opcode_pool_.empty()) {
       cpputil::Console::warn() << "No valid opcodes can be proposed; consider modifying black/whitelists" << std::endl;
     }
   }

@@ -24,7 +24,7 @@ namespace stoke {
 
 uint64_t LatencyCost::nesting_penalty(size_t nesting_depth) {
 
-  for(size_t i = nesting_lookup_.size(); i <= nesting_depth; ++i) {
+  for (size_t i = nesting_lookup_.size(); i <= nesting_depth; ++i) {
     nesting_lookup_.push_back(nesting_lookup_[i-1]*nesting_penalty_);
   }
   return nesting_lookup_[nesting_depth];
@@ -43,10 +43,10 @@ LatencyCost::result_type LatencyCost::operator()(const Cfg& cfg, Cost max) {
     const auto first = cfg.get_index(Cfg::loc_type(*b, 0));
     for (size_t i = first, ie = first + cfg.num_instrs(*b); i < ie; ++i) {
       // Record latency for non control flow instructions
-      if(code[i].is_label_defn() || code[i].is_any_jump() || code[i].is_any_return())
+      if (code[i].is_label_defn() || code[i].is_any_jump() || code[i].is_any_return())
         continue;
 
-      if(code[i].haswell_latency() == 0)
+      if (code[i].haswell_latency() == 0)
         block_latency++;
       else
         block_latency += code[i].haswell_latency();
@@ -63,7 +63,7 @@ LatencyCost::result_type LatencyCost::operator()(const Cfg& cfg, Cost max) {
       latency += block_latency*nesting_penalty(nd);
     }
 
-    if(latency >= max) {
+    if (latency >= max) {
       return result_type(true, max);
     }
   }

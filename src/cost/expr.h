@@ -57,7 +57,7 @@ public:
     a1_(a1), a2_(a2), op_(op), arity_(2), correctness_(NULL) {
     reset();
 
-    if(a1_ && a2_) // if there's a parse error, one could be null
+    if (a1_ && a2_) // if there's a parse error, one could be null
       need_sandbox_ = a1->need_sandbox() || a2->need_sandbox();
   }
   /** Constructs a reference to a "leaf" cost function.
@@ -66,7 +66,7 @@ public:
     //we'll handle running the sandbox here.
     reset();
 
-    if(a1_) { //could be null if there's a parse error
+    if (a1_) { //could be null if there's a parse error
       a1->set_run_sandbox(false);
       need_sandbox_ = a1->need_sandbox();
     }

@@ -68,20 +68,20 @@ private:
 
     CostParser cost_p(cost_function_arg.value(), st);
     auto cost_fxn = cost_p.run();
-    if(cost_p.get_error().size()) {
+    if (cost_p.get_error().size()) {
       cpputil::Console::error(1) << "Error parsing cost function: " << cost_p.get_error() << std::endl;
     }
-    if(cost_fxn == NULL) {
+    if (cost_fxn == NULL) {
       cpputil::Console::error(1) << "Unknown error parsing cost function." << std::endl;
     }
 
     CostParser correct_p(correctness_arg.value(), st);
     auto correctness_fxn = correct_p.run();
-    if(correct_p.get_error().size()) {
+    if (correct_p.get_error().size()) {
       cpputil::Console::error(1) << "Error parsing correctness function: " << correct_p.get_error()
                                  << std::endl;
     }
-    if(correctness_fxn == NULL) {
+    if (correctness_fxn == NULL) {
       cpputil::Console::error(1) << "Unknown error parsing correctness function." << std::endl;
     }
 

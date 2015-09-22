@@ -26,7 +26,7 @@ class SolverGadget : public SMTSolver {
 public:
   SolverGadget() : SMTSolver() {
 
-    switch(solver_arg) {
+    switch (solver_arg) {
     case Solver::Z3:
       solver_ = new Z3Solver();
       break;

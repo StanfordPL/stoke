@@ -46,19 +46,19 @@ void Validator::setup_support_table() {
 
   vector<string> att_opcodes = handler_.full_support_opcodes();
 
-  for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     Opcode op = (Opcode)i;
     string att = Handler::att_[op];
     support_table_[i] = false;
-    if(find(att_opcodes.begin(), att_opcodes.end(), att) == att_opcodes.end()) {
+    if (find(att_opcodes.begin(), att_opcodes.end(), att) == att_opcodes.end()) {
       continue;
     }
     auto instr = Instruction(op);
     size_t arity = instr.arity();
     bool args_ok = true;
-    for(size_t i = 0; i < arity; ++i) {
+    for (size_t i = 0; i < arity; ++i) {
       auto type = instr.type(i);
-      switch(type) {
+      switch (type) {
       case Type::IMM_8:
       case Type::IMM_16:
       case Type::IMM_32:
@@ -92,7 +92,7 @@ void Validator::setup_support_table() {
         break;
       }
     }
-    if(args_ok)
+    if (args_ok)
       support_table_[i] = true;
   }
 
@@ -107,21 +107,21 @@ void Validator::sanity_checks(const Cfg& target, const Cfg& rewrite) const {
     throw VALIDATOR_ERROR("Live-outs of target/rewrite CFGs differ");
   }
   // Check that the regsets are supported, throw an error otherwise
-  if(!handler_.regset_is_supported(target.def_ins())) {
+  if (!handler_.regset_is_supported(target.def_ins())) {
     throw VALIDATOR_ERROR("Target def-in not supported.");
   }
-  if(!handler_.regset_is_supported(target.live_outs())) {
+  if (!handler_.regset_is_supported(target.live_outs())) {
     throw VALIDATOR_ERROR("Target live-out not supported.");
   }
 
   // Check that all the instructions are supported in target/rewrite
-  for(size_t i = 0; i < 2; ++i) {
+  for (size_t i = 0; i < 2; ++i) {
     auto& cfg = i ? target : rewrite;
-    for(auto instr : cfg.get_code()) {
-      if(instr.is_label_defn() || instr.is_any_jump() || instr.is_ret()) {
+    for (auto instr : cfg.get_code()) {
+      if (instr.is_label_defn() || instr.is_any_jump() || instr.is_ret()) {
         continue;
       }
-      else if(!is_supported(instr)) {
+      else if (!is_supported(instr)) {
         stringstream ss;
         ss << "Instruction " << instr << " is unsupported.";
         throw VALIDATOR_ERROR(ss.str());
@@ -155,7 +155,7 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
   concrete_vector.insert(concrete_vector.begin(), concrete.begin(), concrete.end());
 
   auto compare = [] (const pair<uint64_t, BitVector>& p1, const pair<uint64_t, BitVector>& p2) {
-    if(p1.first == p2.first)
+    if (p1.first == p2.first)
       return p1.second.num_fixed_bytes() < p2.second.num_fixed_bytes();
     return p1.first < p2.first;
   };
@@ -173,7 +173,7 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
   size_t size = concrete_vector[0].second.num_fixed_bytes();
 
   first_segment.resize(first_address, size);
-  for(size_t i = 0; i < size; ++i) {
+  for (size_t i = 0; i < size; ++i) {
     first_segment.set_valid(first_address + i, true);
     first_segment[first_address + i] = concrete_vector[0].second.get_fixed_byte(i);
   }
@@ -183,7 +183,7 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
   last_segment = &segments[0];
 
   // Build remaining segments
-  for(size_t i = 1; i < concrete_vector.size(); ++i) {
+  for (size_t i = 1; i < concrete_vector.size(); ++i) {
     auto pair = concrete_vector[i];
     uint64_t address = pair.first;
     size_t size = pair.second.num_fixed_bytes();
@@ -195,8 +195,8 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     // (expand existing region)
     // Case 3: address - max_addr >= 32
     // (create new region)
-    if(!(address < max_addr && address + size <= max_addr)) {
-      if(address - max_addr < 32) {
+    if (!(address < max_addr && address + size <= max_addr)) {
+      if (address - max_addr < 32) {
         uint64_t new_size = address + size - last_segment->lower_bound();
         last_segment->resize(last_segment->lower_bound(), new_size);
       } else {
@@ -207,7 +207,7 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
       }
     }
 
-    for(size_t i = 0; i < size; ++i) {
+    for (size_t i = 0; i < size; ++i) {
       last_segment->set_valid(address + i, true);
       (*last_segment)[address + i] = pair.second.get_fixed_byte(i);
     }
@@ -215,7 +215,7 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
   }
 
   // If there's no segment corresponding to the stack, create one.
-  switch(segments.size()) {
+  switch (segments.size()) {
   case 3:
     cs.data = segments[2];
   case 2:
@@ -226,13 +226,13 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
     break;
   }
 
-  for(size_t i = 3; i < segments.size(); ++i) {
+  for (size_t i = 3; i < segments.size(); ++i) {
     cs.segments.push_back(segments[i]);
   }
 
   DEBUG_MAP_TC(
     cout << "Filling up memory using this map..." << endl;
-  for(auto p : concrete) {
+  for (auto p : concrete) {
   cout << hex << p.first << "+" << p.second.num_fixed_bytes() << endl;
   }
   cout << "Here's the testcase: " << endl << cs << endl;)
@@ -244,21 +244,21 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) 
   CpuState cs;
 
   // Get the values of registers
-  for(size_t i = 0; i < r64s.size(); ++i) {
+  for (size_t i = 0; i < r64s.size(); ++i) {
     stringstream name;
     name << r64s[i] << name_suffix;
     cs.gp[r64s[i]] = smt.get_model_bv(name.str(), 64);
     //cout << "Var " << name.str() << " has value " << hex << cs.gp[r64s[i]].get_fixed_quad(0) << endl;
   }
 
-  for(size_t i = 0; i < ymms.size(); ++i) {
+  for (size_t i = 0; i < ymms.size(); ++i) {
     stringstream name;
     name << ymms[i] << name_suffix;
     cs.sse[ymms[i]] = smt.get_model_bv(name.str(), 256);
   }
 
-  for(size_t i = 0; i < eflags.size(); ++i) {
-    if(!cs.rf.is_status(eflags[i].index()))
+  for (size_t i = 0; i < eflags.size(); ++i) {
+    if (!cs.rf.is_status(eflags[i].index()))
       continue;
 
     stringstream name;
@@ -267,7 +267,7 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) 
   }
 
   // Figure out error code
-  if(smt.get_model_bool("sigbus" + name_suffix)) {
+  if (smt.get_model_bool("sigbus" + name_suffix)) {
     cs.code = ErrorCode::SIGBUS_;
   } else if (smt.get_model_bool("sigfpe" + name_suffix)) {
     cs.code = ErrorCode::SIGFPE_;

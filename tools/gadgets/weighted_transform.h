@@ -51,7 +51,7 @@ public:
     transform_list[new ReplaceNopTransform(pools)] = replace_nop_mass_arg.value();
     transform_list[new RotateTransform(pools)] = rotate_mass_arg.value();
 
-    for(auto pair : transform_list) {
+    for (auto pair : transform_list) {
       sub_memory_transform->insert_transform(pair.first, pair.second);
     }
 
@@ -61,7 +61,7 @@ public:
     transform_list[new AddNopsTransform(pools)] = add_nops_mass_arg.value();
     transform_list[new DeleteTransform(pools)] = delete_mass_arg.value();
 
-    for(auto pair : transform_list) {
+    for (auto pair : transform_list) {
       sub_multi_transform->insert_transform(pair.first, pair.second);
       insert_transform(pair.first, pair.second);
     }

@@ -784,7 +784,7 @@ TEST(SandboxTest, Issue709_1) {
   uint64_t base = 0x7ffffffffffffffc;
   tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
   tc.heap.resize(base, 0x8);
-  for(uint64_t i = base; i < base + 4; ++i) {
+  for (uint64_t i = base; i < base + 4; ++i) {
     tc.heap.set_valid(i, true);
     tc.heap[i] = 0x10;
   }
@@ -814,7 +814,7 @@ TEST(SandboxTest, Issue709_2) {
   uint64_t base = 0xfffffffffffffffc;
   tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
   tc.heap.resize(base, 0x4);
-  for(uint64_t i = 0; i < 4; ++i) {
+  for (uint64_t i = 0; i < 4; ++i) {
     tc.heap.set_valid(base + i, true);
     tc.heap[base+i] = 0x10;
   }
@@ -844,7 +844,7 @@ TEST(SandboxTest, Issue709_3) {
   uint64_t base = 0x0;
   tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
   tc.heap.resize(base, 0x4);
-  for(uint64_t i = base; i < base + 4; ++i) {
+  for (uint64_t i = base; i < base + 4; ++i) {
     tc.heap.set_valid(i, true);
     tc.heap[i] = 0x10;
   }
@@ -873,7 +873,7 @@ TEST(SandboxTest, Issue709_4) {
   uint64_t base = 0x7ffffffffffffffc;
   tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
   tc.heap.resize(base, 0x8);
-  for(uint64_t i = base; i < base + 8; ++i) {
+  for (uint64_t i = base; i < base + 8; ++i) {
     tc.heap.set_valid(i, true);
     tc.heap[i] = 0x10;
   }
@@ -903,7 +903,7 @@ TEST(SandboxTest, Issue709_5) {
   uint64_t base = 0xfffffffffffffffc;
   tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
   tc.heap.resize(base, 0x4);
-  for(uint64_t i = base; i < base + 4; ++i) {
+  for (uint64_t i = base; i < base + 4; ++i) {
     tc.heap.set_valid(i, true);
     tc.heap[i] = 0x10;
   }
@@ -932,7 +932,7 @@ TEST(SandboxTest, CannotReadInvalidAddress) {
   uint64_t base = 0x0;
   tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
   tc.heap.resize(base, 0x4);
-  for(uint64_t i = base; i < base + 4; ++i) {
+  for (uint64_t i = base; i < base + 4; ++i) {
     tc.heap.set_valid(i, true);
     tc.heap[i] = 0x10;
   }

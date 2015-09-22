@@ -26,7 +26,7 @@ TransformInfo GlobalSwapTransform::operator()(Cfg& cfg) {
   TransformInfo ti;
   ti.success = false;
 
-  if(cfg.get_code().size() < 3)
+  if (cfg.get_code().size() < 3)
     return ti;
 
   ti.undo_index[0] = (gen_() % (cfg.get_code().size() - 1)) + 1;

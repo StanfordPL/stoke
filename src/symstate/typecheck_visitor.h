@@ -115,14 +115,14 @@ public:
     auto lhs = apply(bv->a_);
     auto rhs = apply(bv->b_);
 
-    if(lhs && rhs)
+    if (lhs && rhs)
       return lhs + rhs;
     else {
       std::stringstream e;
       SymPrintVisitor pv(e);
       e << "In concatenation: ";
       pv(bv);
-      if(!lhs)
+      if (!lhs)
         e << " the left hand side didn't typecheck";
       else if (!rhs)
         e << " the right hand side didn't typecheck";
@@ -149,7 +149,7 @@ public:
   /** Visit a bit-vector extract */
   uint16_t visit(const SymBitVectorExtract * const bv) {
     auto parent = apply(bv->bv_);
-    if(bv->low_bit_ > bv->high_bit_) {
+    if (bv->low_bit_ > bv->high_bit_) {
       std::stringstream e;
       SymPrintVisitor pv(e);
       e << "In bitvector extract ";
@@ -159,7 +159,7 @@ public:
       set_error(e);
       return 0;
     }
-    if(bv->high_bit_ >= parent) {
+    if (bv->high_bit_ >= parent) {
       std::stringstream e;
       SymPrintVisitor pv(e);
       e << "In bitvector extract ";
@@ -181,25 +181,25 @@ public:
 
     // Check if we've seen this function before
     auto p = functions_[name];
-    if(p.first) {
+    if (p.first) {
       // Verify the same type as before
       if (type != p) {
         std::stringstream e;
         SymPrintVisitor pv(e);
         e << "The function " << name << " declared with two different types.  "
           << "The first time it had type (";
-        for(size_t i = 0; i < p.second.size(); ++i) {
+        for (size_t i = 0; i < p.second.size(); ++i) {
           e << p.second[i];
-          if(i != p.second.size() - 1)
+          if (i != p.second.size() - 1)
             e << ", ";
         }
         e << ") -> " << p.first << std::endl;
         e << "while in ";
         pv(bv);
         e << " it has type (";
-        for(size_t i = 0; i < type.second.size(); ++i) {
+        for (size_t i = 0; i < type.second.size(); ++i) {
           e << type.second[i];
-          if(i != type.second.size() - 1)
+          if (i != type.second.size() - 1)
             e << ", ";
         }
         e << ") => " << type.first;
@@ -212,7 +212,7 @@ public:
     }
 
     // Check there are the right number of arguments.
-    if(bv->args_.size() != type.second.size()) {
+    if (bv->args_.size() != type.second.size()) {
       std::stringstream e;
       SymPrintVisitor pv(e);
       e << "In ";
@@ -224,7 +224,7 @@ public:
     }
 
     // Check the arguments are of the right type
-    for(size_t i = 0; i < type.second.size(); ++i) {
+    for (size_t i = 0; i < type.second.size(); ++i) {
       auto t = apply(bv->args_[i]);
       if (t != type.second[i]) {
         std::stringstream e;
@@ -347,12 +347,12 @@ private:
 
   /** Sets the error message, *unless* it was already set. */
   void set_error(const std::string& e) {
-    if(error_.size() == 0)
+    if (error_.size() == 0)
       error_ = e;
   }
   /** Sets the error message, *unless* it was already set. */
   void set_error(const std::stringstream& e) {
-    if(error_.size() == 0)
+    if (error_.size() == 0)
       error_ = e.str();
   }
 

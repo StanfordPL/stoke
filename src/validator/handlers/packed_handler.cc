@@ -22,23 +22,23 @@ using namespace x64asm;
 
 Handler::SupportLevel PackedHandler::get_support(const x64asm::Instruction& instr) {
 
-  if(!operands_supported(instr)) {
+  if (!operands_supported(instr)) {
     return Handler::NONE;
   }
 
   auto opcode = get_opcode(instr);
 
-  for(size_t i = 0; i < instr.arity(); ++i) {
+  for (size_t i = 0; i < instr.arity(); ++i) {
     Operand o = instr.get_operand<Operand>(i);
-    if(!o.is_gp_register() && !o.is_typical_memory() && !o.is_sse_register() &&
+    if (!o.is_gp_register() && !o.is_typical_memory() && !o.is_sse_register() &&
         !o.is_immediate())
       return Handler::NONE;
   }
 
-  if(!opcodes_[opcode])
+  if (!opcodes_[opcode])
     return Handler::NONE;
 
-  if(opcodes_[opcode]->get_uninterpreted()) {
+  if (opcodes_[opcode]->get_uninterpreted()) {
     return Handler::BASIC;
   } else {
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
@@ -50,7 +50,7 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 
   error_ = "";
 
-  if(!get_support(instr)) {
+  if (!get_support(instr)) {
     error_ = "Instruction not supported.";
     return;
   }
@@ -64,19 +64,19 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 
   size_t arity = instr.arity();
 
-  if(arity < 2 || arity > 4)
+  if (arity < 2 || arity > 4)
     throw VALIDATOR_ERROR("Only arity 2/3/4 instructions supported by PackedHandler");
 
   bool has_immediate;
   Operand last = instr.get_operand<Operand>(arity-1);
   has_immediate = last.is_immediate();
   SymBitVector immediate;
-  if(has_immediate) {
+  if (has_immediate) {
     immediate = state[last];
     arity--;
   }
 
-  if(arity == 2) {
+  if (arity == 2) {
     op1 = instr.get_operand<Operand>(0);
     op2 = instr.get_operand<Operand>(1);
   } else if (arity == 3) {
@@ -93,20 +93,20 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   // Do the loop to build the result
   auto& entry = *opcodes_[opcode];
   uint16_t input_width = entry.get_input_width();
-  if(input_width == 0)
+  if (input_width == 0)
     input_width = op1.size();
   uint16_t output_width = entry.get_output_width();
-  if(output_width == 0)
+  if (output_width == 0)
     output_width = input_width;
   bool limit = entry.get_only_one();
   bool clear = entry.get_clear();
   bool avx_alignment = entry.get_avx_alignment();
 
   // Check for memory alignment problems
-  if(avx_alignment) {
-    for(size_t i = 0; i < arity; ++i) {
+  if (avx_alignment) {
+    for (size_t i = 0; i < arity; ++i) {
       Operand operand = instr.get_operand<Operand>(i);
-      if(operand.is_typical_memory()) {
+      if (operand.is_typical_memory()) {
         auto addr = state.get_addr(*(reinterpret_cast<M8*>(&operand)));
         uint64_t bits = (dest.size() == 128 ? 4 : 5);
         state.set_sigsegv(addr[bits-1][0] != SymBitVector::constant(bits, 0));
@@ -117,17 +117,17 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   // Compute the result
   SymBitVector result;
 
-  if(limit) {
+  if (limit) {
     // Only apply binop to lower bits.  Useful for scalar operations.
     auto arg1_bits = min(input_width, op1.size());
     auto arg2_bits = min(input_width, op2.size());
 
-    if(has_immediate) {
+    if (has_immediate) {
       result = entry(op1, arg1[arg1_bits-1][0], op2, arg2[arg2_bits-1][0], state, immediate, 0);
     } else {
       result = entry(op1, arg1[arg1_bits-1][0], op2, arg2[arg2_bits-1][0], state);
     }
-    if(clear)
+    if (clear)
       result = SymBitVector::constant(dest.size() - output_width, 0) || result;
     else
       result = state[dest][dest.size() - 1][output_width] || result;
@@ -136,17 +136,17 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     // Loop through sets of 'input_width' in the input and apply the binary
     // operator in a pairwise way.  Stop when we get to the end of the input/output
     // and clear or preserve the remaining bits.
-    if(has_immediate) {
+    if (has_immediate) {
       result = entry(op1, arg1[input_width-1][0], op2, arg2[input_width-1][0], state, immediate, 0);
     } else {
       result = entry(op1, arg1[input_width-1][0], op2, arg2[input_width-1][0], state);
     }
 
     size_t i,j,k;
-    for(i = input_width, j = output_width, k = 1;
-        i < op1.size() && i < op2.size() && j < dest.size();
-        i = i + input_width, j = j + output_width, ++k) {
-      if(has_immediate) {
+    for (i = input_width, j = output_width, k = 1;
+         i < op1.size() && i < op2.size() && j < dest.size();
+         i = i + input_width, j = j + output_width, ++k) {
+      if (has_immediate) {
         result = entry(op1, arg1[i + input_width - 1][i],
                        op2, arg2[i + input_width - 1][i], state, immediate, k) || result;
       } else {
@@ -155,8 +155,8 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
       }
     }
 
-    if(j + output_width < dest.size()) {
-      if(clear)
+    if (j + output_width < dest.size()) {
+      if (clear)
         result = SymBitVector::constant(dest.size() - j, 0) || result;
       else
         result = state[dest][dest.size() - 1][j] || result;

@@ -74,12 +74,12 @@ int main(int argc, char** argv) {
   R64 n_reg= rdx;    //for normal abi only
   R64 end_reg = rdi; //for "weird" abi only
 
-  if(!normal_abi) {
+  if (!normal_abi) {
     dst_reg = rdx;
     src_reg = rax;
   }
 
-  for(size_t ct = 0; ct < number.value(); ++ct) {
+  for (size_t ct = 0; ct < number.value(); ++ct) {
     CpuState cs;
     sg.get(cs);
 
@@ -102,12 +102,12 @@ int main(int argc, char** argv) {
     uint64_t dst_offset = (rand() % (heap_size.value() - buffer_size - 1));
     uint64_t src_end = src_offset + buffer_size;
 
-    if(!native) {
+    if (!native) {
       // All addresses are relative to r15
       cs.gp[r15].get_fixed_quad(0) = heap_base_bot;
       cs.gp[src_reg].get_fixed_quad(0) = heap_diff + src_offset;
       cs.gp[dst_reg].get_fixed_quad(0) = heap_diff + dst_offset;
-      if(!normal_abi)
+      if (!normal_abi)
         cs.gp[end_reg].get_fixed_quad(0) = heap_diff + src_offset+buffer_size;
       else
         cs.gp[n_reg].get_fixed_quad(0) = buffer_size;
@@ -115,20 +115,20 @@ int main(int argc, char** argv) {
       // Addresses are untouched
       cs.gp[src_reg].get_fixed_quad(0) = heap_base_top + src_offset;
       cs.gp[dst_reg].get_fixed_quad(0) = heap_base_top + dst_offset;
-      if(!normal_abi)
+      if (!normal_abi)
         cs.gp[end_reg].get_fixed_quad(0) = heap_base_top + src_offset+buffer_size;
       else
         cs.gp[n_reg].get_fixed_quad(0) = buffer_size;
     }
 
     //fill data
-    for(uint64_t i = heap_base_top; i < heap_base_top + heap_size.value(); ++i) {
+    for (uint64_t i = heap_base_top; i < heap_base_top + heap_size.value(); ++i) {
       cs.heap[i] = rand() % 256;
       cs.heap.set_valid(i, false);
     }
-    for(uint64_t i = heap_base_top + src_offset; i < heap_base_top + src_offset + buffer_size; ++i)
+    for (uint64_t i = heap_base_top + src_offset; i < heap_base_top + src_offset + buffer_size; ++i)
       cs.heap.set_valid(i, true);
-    for(uint64_t i = heap_base_top + dst_offset; i < heap_base_top + dst_offset + buffer_size; ++i)
+    for (uint64_t i = heap_base_top + dst_offset; i < heap_base_top + dst_offset + buffer_size; ++i)
       cs.heap.set_valid(i, true);
 
     std::cout << cs << endl << endl;

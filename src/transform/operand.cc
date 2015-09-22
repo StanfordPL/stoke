@@ -30,9 +30,9 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
   auto code = cfg.get_code();
   size_t index = (gen_() % (code.size() - 1)) + 1;
 
-  for(size_t i = 0, ie = code.size(); i < ie; ++i) {
+  for (size_t i = 0, ie = code.size(); i < ie; ++i) {
     index = (gen_() % (ie - 1)) + 1;
-    if(code[index].is_nop() || !cfg.is_reachable(cfg.get_loc(index).first)) {
+    if (code[index].is_nop() || !cfg.is_reachable(cfg.get_loc(index).first)) {
       continue;
     } else {
       break;
@@ -42,7 +42,7 @@ TransformInfo OperandTransform::operator()(Cfg& cfg) {
   ti.undo_index[0] = index;
 
   // If not reachable, don't bother
-  if(!cfg.is_reachable(cfg.get_loc(ti.undo_index[0]).first)) {
+  if (!cfg.is_reachable(cfg.get_loc(ti.undo_index[0]).first)) {
     return ti;
   }
 

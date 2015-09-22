@@ -64,7 +64,7 @@ int main(int argc, char** argv) {
   //r14 -> offset from bottom of values
   //r15+r14...r15+r14+n-1 -> permutation of {0...n-1}
 
-  for(size_t ct = 0; ct < number.value(); ++ct) {
+  for (size_t ct = 0; ct < number.value(); ++ct) {
     CpuState cs;
     sg.get(cs);
 
@@ -86,12 +86,12 @@ int main(int argc, char** argv) {
     //add permutation
     size_t perm_size = 1 + (rand() % (max_permutation_size.value() - 1));
     bool value_used[perm_size];
-    for(size_t i = 0; i < perm_size; ++i)
+    for (size_t i = 0; i < perm_size; ++i)
       value_used[i] = false;
 
-    for(size_t i = 0; i < perm_size; ++i) {
+    for (size_t i = 0; i < perm_size; ++i) {
       size_t j = rand() % perm_size;
-      while(value_used[j])
+      while (value_used[j])
         j = rand() % perm_size;
       value_used[j] = true;
 
@@ -102,11 +102,11 @@ int main(int argc, char** argv) {
     }
 
     //set which bits in the heap are valid
-    for(uint64_t i = heap_base; i < heap_base+offset; ++i)
+    for (uint64_t i = heap_base; i < heap_base+offset; ++i)
       cs.heap.set_valid(i, false);
-    for(uint64_t i = heap_base+offset; i < heap_base+offset+4*perm_size; ++i)
+    for (uint64_t i = heap_base+offset; i < heap_base+offset+4*perm_size; ++i)
       cs.heap.set_valid(i, true);
-    for(uint64_t i = heap_base+offset+4*perm_size; i < heap_base+heap_size.value(); ++i)
+    for (uint64_t i = heap_base+offset+4*perm_size; i < heap_base+heap_size.value(); ++i)
       cs.heap.set_valid(i, false);
 
 

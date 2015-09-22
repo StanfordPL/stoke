@@ -26,16 +26,16 @@ TransformInfo MultiTransform::operator()(Cfg& cfg) {
   TransformInfo finished_ti;
   finished_ti.success = false;
 
-  for(size_t i = 0; i < count_; ++i) {
+  for (size_t i = 0; i < count_; ++i) {
     TransformInfo* ti = new TransformInfo();
     ti->success = false;
-    for(size_t j = 0; j < 4; ++j) {
+    for (size_t j = 0; j < 4; ++j) {
       *ti = transform_(cfg);
-      if(ti->success)
+      if (ti->success)
         break;
     }
 
-    if(ti->success) {
+    if (ti->success) {
       //add to record
       ti->undo_next = finished_ti.undo_next;
       finished_ti.undo_next = ti;
@@ -58,7 +58,7 @@ TransformInfo MultiTransform::operator()(Cfg& cfg) {
 void MultiTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   TransformInfo* info = ti.undo_next;
-  while(info) {
+  while (info) {
     transform_.undo(cfg, *info);
     info = info->undo_next;
   }

@@ -59,7 +59,7 @@ public:
 
   /** Compute the value of this expression. */
   T operator()(const std::function<T (const std::string&)>& environment) const {
-    if(arity_ == 0) {
+    if (arity_ == 0) {
       return constant_;
     } else if (arity_ == 1) {
       return environment(var_);
@@ -69,7 +69,7 @@ public:
       auto c1 = (*a1_)(environment);
       auto c2 = (*a2_)(environment);
 
-      switch(op_) {
+      switch (op_) {
       case NONE:
         assert(false);
       case EXP:

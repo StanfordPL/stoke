@@ -21,7 +21,7 @@ using namespace std;
 ExprCost& ExprCost::setup_sandbox(Sandbox* sb) {
 
   sandbox_ = sb;
-  for(auto cf : all_leaf_functions()) {
+  for (auto cf : all_leaf_functions()) {
     cf->setup_sandbox(sb);
   }
   return *this;
@@ -30,7 +30,7 @@ ExprCost& ExprCost::setup_sandbox(Sandbox* sb) {
 set<CostFunction*> ExprCost::all_leaf_functions() const {
 
   auto leaves = leaf_functions();
-  if(correctness_) {
+  if (correctness_) {
     auto more_leaves = correctness_->leaf_functions();
     leaves.insert(more_leaves.begin(), more_leaves.end());
   }
@@ -40,17 +40,17 @@ set<CostFunction*> ExprCost::all_leaf_functions() const {
 
 set<CostFunction*> ExprCost::leaf_functions() const {
 
-  if(arity_ == 0) {
+  if (arity_ == 0) {
     return set<CostFunction*>();
   }
 
-  if(arity_ == 1) {
+  if (arity_ == 1) {
     auto s = set<CostFunction*>();
     s.insert(a1_);
     return s;
   }
 
-  if(arity_ == 2) {
+  if (arity_ == 2) {
     auto lhs = (static_cast<ExprCost*>(a1_))->leaf_functions();
     auto rhs = (static_cast<ExprCost*>(a2_))->leaf_functions();
     lhs.insert(rhs.begin(), rhs.end());
@@ -64,17 +64,17 @@ set<CostFunction*> ExprCost::leaf_functions() const {
 
 ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
 
-  if(leaves_.empty()) {
+  if (leaves_.empty()) {
     leaves_ = all_leaf_functions();
   }
 
   // run the sandbox, if needed
-  if(need_sandbox_)
+  if (need_sandbox_)
     run_sandbox(cfg);
 
   // build the environment (i.e. run the actual cost functions)
   std::map<CostFunction*, Cost> env;
-  for(auto it : leaves_) {
+  for (auto it : leaves_) {
     env[it] = (*it)(cfg, max).second;
   }
 
@@ -82,7 +82,7 @@ ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
   Cost cost = run(env);
 
   bool correct = true;
-  if(correctness_) {
+  if (correctness_) {
     correct = (correctness_->run(env) != 0);
   }
 
@@ -91,7 +91,7 @@ ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
 
 Cost ExprCost::run(const std::map<CostFunction*, Cost>& env) const {
 
-  if(arity_ == 0) {
+  if (arity_ == 0) {
     return constant_;
   } else if (arity_ == 1) {
     assert(a1_);
@@ -103,7 +103,7 @@ Cost ExprCost::run(const std::map<CostFunction*, Cost>& env) const {
     auto c1 = static_cast<ExprCost*>(a1_)->run(env);
     auto c2 = static_cast<ExprCost*>(a2_)->run(env);
 
-    switch(op_) {
+    switch (op_) {
     case NONE:
       assert(false);
     case PLUS:

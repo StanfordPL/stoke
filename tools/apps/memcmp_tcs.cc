@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   R64 src_reg= rsi;
   R64 size_reg = rdx;
 
-  for(size_t ct = 0; ct < number.value(); ++ct) {
+  for (size_t ct = 0; ct < number.value(); ++ct) {
     CpuState cs;
     sg.get(cs);
 
@@ -103,10 +103,10 @@ int main(int argc, char** argv) {
 
     //setup fixed data in memory
     auto data_tcs = data_from_tc.value();
-    if(!data_tcs.empty()) {
+    if (!data_tcs.empty()) {
       auto data = data_tcs[0].data;
       cs.data.resize(data.lower_bound(), data.size());
-      for(uint64_t i = data.lower_bound(); i < data.upper_bound(); ++i) {
+      for (uint64_t i = data.lower_bound(); i < data.upper_bound(); ++i) {
         cs.data.set_valid(i, data.is_valid(i));
         cs.data[i] = data[i];
       }
@@ -116,7 +116,7 @@ int main(int argc, char** argv) {
     uint64_t heap_base_top = rand() & 0x4ffffff0;
     heap_base_top = ROUND_DOWN(heap_base_top, align.value());
     uint64_t heap_base_bot = (rand() % heap_base_top) & 0x4ffffff0;
-    if(data_from_tc.value().size()) {
+    if (data_from_tc.value().size()) {
       heap_base_bot = 0;
     } else {
       heap_base_bot = ROUND_DOWN(heap_base_bot, align.value());
@@ -130,8 +130,8 @@ int main(int argc, char** argv) {
     uint64_t dst_buffer_size = buffer_size;
     uint64_t src_offset = 0, dst_offset = 0;
 
-    if(different_size_ok) {
-      switch(rand() % 4) {
+    if (different_size_ok) {
+      switch (rand() % 4) {
       case 0:
       case 1:
         break;
@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
       }
     }
 
-    while( (src_offset + src_buffer_size) > dst_offset ) {
+    while ( (src_offset + src_buffer_size) > dst_offset ) {
 
       src_offset = rand() % (heap_size.value() - src_buffer_size - dst_buffer_size - 1);
       dst_offset = rand() % (heap_size.value() - dst_buffer_size - 1);
@@ -161,18 +161,18 @@ int main(int argc, char** argv) {
     cs.gp[size_reg].get_fixed_quad(0) = buffer_size/char_width.value();
 
     //fill data
-    for(uint64_t i = heap_base_top; i < ROUND_UP(heap_base_top + heap_size.value(), align.value()); ++i) {
+    for (uint64_t i = heap_base_top; i < ROUND_UP(heap_base_top + heap_size.value(), align.value()); ++i) {
       cs.heap[i] = rand() % 256;
       cs.heap.set_valid(i, false);
     }
 
-    for(uint64_t i = heap_base_top + src_offset; i < heap_base_top + src_offset + src_buffer_size; ++i)
+    for (uint64_t i = heap_base_top + src_offset; i < heap_base_top + src_offset + src_buffer_size; ++i)
       cs.heap.set_valid(i, true);
-    for(uint64_t i = heap_base_top + dst_offset; i < heap_base_top + dst_offset + dst_buffer_size; ++i)
+    for (uint64_t i = heap_base_top + dst_offset; i < heap_base_top + dst_offset + dst_buffer_size; ++i)
       cs.heap.set_valid(i, true);
 
-    if(null_terminate) {
-      for(size_t i = 1; i <= char_width.value(); ++i) {
+    if (null_terminate) {
+      for (size_t i = 1; i <= char_width.value(); ++i) {
         cs.heap[heap_base_top + src_offset + src_buffer_size - i] = '\0';
         cs.heap[heap_base_top + dst_offset + dst_buffer_size - i] = '\0';
       }
@@ -185,8 +185,8 @@ int main(int argc, char** argv) {
     double max_p = p*RAND_MAX;
     size_t same = 0;
     size_t diff = 0;
-    for(size_t i = 0; i < MIN(src_buffer_size, dst_buffer_size); ++i) {
-      if((double)rand() < max_p) {
+    for (size_t i = 0; i < MIN(src_buffer_size, dst_buffer_size); ++i) {
+      if ((double)rand() < max_p) {
         same++;
         cs.heap[heap_base_top + src_offset + i] = cs.heap[heap_base_top + dst_offset + i];
       } else {

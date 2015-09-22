@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
   R64 dst_reg= rdi;
   R64 src_reg= rsi;
 
-  for(size_t ct = 0; ct < number.value(); ++ct) {
+  for (size_t ct = 0; ct < number.value(); ++ct) {
     CpuState cs;
     sg.get(cs);
 
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 
 
     //setup stack
-    if(randomize_stack)
+    if (randomize_stack)
       cs.gp[rsp].get_fixed_quad(0) = (rand() & 0xffffffffffff) + 0x700000000;
 
     uint64_t max = cs.gp[rsp].get_fixed_quad(0);
@@ -116,16 +116,16 @@ int main(int argc, char** argv) {
     uint64_t src_buffer_size = buffer_size;
     uint64_t dst_buffer_size = buffer_size;
 
-    if(strcat_arg.value()) {
+    if (strcat_arg.value()) {
       dst_buffer_size = 2*dst_buffer_size+1;
-    } else if(different_size_ok) {
+    } else if (different_size_ok) {
       dst_buffer_size = 1 + (rand() % (max_buffer_size.value()-1));
       dst_buffer_size = ROUND_UP(dst_buffer_size, char_width.value());
     }
 
     uint64_t src_offset = 0, dst_offset = 0;
 
-    while( (src_offset + buffer_size) > dst_offset ) {
+    while ( (src_offset + buffer_size) > dst_offset ) {
 
       src_offset = rand() % (heap_size.value() - src_buffer_size - dst_buffer_size - 1);
       dst_offset = rand() % (heap_size.value() - dst_buffer_size - 1);
@@ -140,12 +140,12 @@ int main(int argc, char** argv) {
     cs.gp[src_reg].get_fixed_quad(0) = heap_diff + src_offset;
     cs.gp[dst_reg].get_fixed_quad(0) = heap_diff + dst_offset;
 
-    if(record_dst_size)
+    if (record_dst_size)
       cs.gp[rdx].get_fixed_quad(0) = dst_buffer_size;
 
 
     //fill data
-    for(uint64_t i = heap_base_top; i < ROUND_UP(heap_base_top + heap_size.value(), align.value()); ++i) {
+    for (uint64_t i = heap_base_top; i < ROUND_UP(heap_base_top + heap_size.value(), align.value()); ++i) {
       cs.heap[i] = rand() % 256;
       cs.heap.set_valid(i, false);
     }
@@ -153,16 +153,16 @@ int main(int argc, char** argv) {
     auto src_end = heap_base_top + src_offset + ROUND_UP(src_buffer_size, char_width.value());
     auto dst_end = heap_base_top + dst_offset + ROUND_UP(dst_buffer_size, char_width.value());
 
-    if(!dst_only) {
-      for(uint64_t i = heap_base_top + src_offset; i < src_end; ++i)
+    if (!dst_only) {
+      for (uint64_t i = heap_base_top + src_offset; i < src_end; ++i)
         cs.heap.set_valid(i, true);
     }
-    for(uint64_t i = heap_base_top + dst_offset; i < dst_end; ++i)
+    for (uint64_t i = heap_base_top + dst_offset; i < dst_end; ++i)
       cs.heap.set_valid(i, true);
 
     // null terminate, yo (note: we don't use src_/dst_ buffer size since strcat() is null-terminated sooner, etc.
-    for(size_t j = 0; j < char_width.value(); ++j) {
-      if(!dst_only)
+    for (size_t j = 0; j < char_width.value(); ++j) {
+      if (!dst_only)
         cs.heap[src_end - j - 1] = '\0';
       cs.heap[dst_end - j - 1] = '\0';
     }

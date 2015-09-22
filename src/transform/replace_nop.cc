@@ -30,26 +30,26 @@ TransformInfo ReplaceNopTransform::operator()(Cfg& cfg) {
   TransformInfo ti;
   ti.success = false;
 
-  if(cfg.get_code().size() < 3)
+  if (cfg.get_code().size() < 3)
     return ti;
 
   size_t index = (gen_() % (cfg.get_code().size() - 1)) + 1;
   ti.undo_index[0] = index;
   ti.undo_instr = cfg.get_code()[index];
 
-  if(is_control_other_than_call(ti.undo_instr.get_opcode()))
+  if (is_control_other_than_call(ti.undo_instr.get_opcode()))
     return ti;
 
   auto& function = cfg.get_function();
   size_t bytes = function.hex_size(index);
   function.remove(index);
-  for(size_t i = 0; i < bytes; ++i) {
+  for (size_t i = 0; i < bytes; ++i) {
     function.insert(index, Instruction(NOP), false);
   }
   ti.undo_index[1] = bytes;
 
   cfg.recompute();
-  if(!cfg.check_invariants()) {
+  if (!cfg.check_invariants()) {
     undo(cfg, ti);
     return ti;
   }
@@ -66,7 +66,7 @@ TransformInfo ReplaceNopTransform::operator()(Cfg& cfg) {
 void ReplaceNopTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   auto& function = cfg.get_function();
-  for(size_t i = 0; i < ti.undo_index[1]; ++i) {
+  for (size_t i = 0; i < ti.undo_index[1]; ++i) {
     function.remove(ti.undo_index[0]);
   }
   function.insert(ti.undo_index[0], ti.undo_instr, false);
