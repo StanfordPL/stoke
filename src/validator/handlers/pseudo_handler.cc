@@ -162,7 +162,7 @@ Handler::SupportLevel PseudoHandler::get_support(const Instruction& instr) {
 void PseudoHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   error_ = "";
-  if(!get_support(instr)) {
+  if (!get_support(instr)) {
     error_ = "Instruction not supported by pseudo handler";
     return;
   }

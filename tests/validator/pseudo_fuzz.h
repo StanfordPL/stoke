@@ -37,11 +37,11 @@ public:
     stoke::TUnit tunit;
     const char* dirname = "specgen/workdir/functions";
     DIR *dp = opendir(dirname);
-    if(dp == NULL) {
+    if (dp == NULL) {
       assert(false);// << "functions folder not found";
     }
     struct dirent *dirp;
-    while((dirp = readdir(dp))) {
+    while ((dirp = readdir(dp))) {
       std::string filepath = std::string(dirname) + "/" + dirp->d_name;
 
       struct stat filestat;
@@ -71,7 +71,7 @@ public:
 
     // Build a state at random, if possible
     CpuState cs;
-    if(!sg_.get(cs, cfg)) {
+    if (!sg_.get(cs, cfg)) {
       fuzz_print() << "Could not generate state: " << sg_.get_error() << std::endl;
       return;
     }
@@ -88,7 +88,7 @@ public:
     set_def_ins(cfg.def_ins());
     set_live_outs(cfg.live_outs());
 
-    if(check_circuit(cs, aux_fxns_))
+    if (check_circuit(cs, aux_fxns_))
       success_count_++;
   }
 
@@ -113,9 +113,9 @@ TEST_F(ValidatorPseudoFuzzTest, RandomInstructionRandomState) {
   // Parameters for the test
   unsigned long iterations = 100;
   const char * iterations_str = getenv("TEST_VALIDATOR_FUZZ_COUNT_PSEUDO");
-  if(iterations_str != NULL)
+  if (iterations_str != NULL)
     iterations = strtol(iterations_str, NULL, 10);
-  if(iterations == 0)
+  if (iterations == 0)
     iterations = 100;
 
   const size_t min_success = iterations/4;
@@ -134,7 +134,7 @@ TEST_F(ValidatorPseudoFuzzTest, RandomInstructionRandomState) {
   }
 
   // remove everything but calls
-  for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     tp.remove_opcode((x64asm::Opcode)i);
   }
   tp.insert_opcode(x64asm::CALL_LABEL);

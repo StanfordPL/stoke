@@ -68,16 +68,16 @@ int main(int argc, char** argv) {
     auto instr = target.get_code()[1];
     size_t n = 0;
     auto regs = instr.maybe_write_set();
-    for(auto it = regs.gp_begin(); it != regs.gp_end(); ++it) {
+    for (auto it = regs.gp_begin(); it != regs.gp_end(); ++it) {
       n += (*it).size();
     }
-    for(auto it = regs.mm_begin(); it != regs.mm_end(); ++it) {
+    for (auto it = regs.mm_begin(); it != regs.mm_end(); ++it) {
       n += (*it).size();
     }
-    for(auto it = regs.sse_begin(); it != regs.sse_end(); ++it) {
+    for (auto it = regs.sse_begin(); it != regs.sse_end(); ++it) {
       n += (*it).size();
     }
-    for(auto it = regs.flags_begin(); it != regs.flags_end(); ++it) {
+    for (auto it = regs.flags_begin(); it != regs.flags_end(); ++it) {
       n += 1;
     }
     cout << n << endl;
