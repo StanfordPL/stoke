@@ -45,7 +45,7 @@ bool binary_search(const string& key, set<Opcode>& os) {
   if (opcodes.size() == 0) {
     stringstream ss;
     // initialize sorted opcode list
-    for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
       ss.clear();
       ss.str("");
       ss << ((Opcode) i);
@@ -87,7 +87,7 @@ void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
     } else {
       regex pattern(a);
       stringstream ss;
-      for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+      for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
         Opcode opc = (Opcode) i;
         ss.clear();
         ss.str("");

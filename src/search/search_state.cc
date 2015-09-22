@@ -28,7 +28,7 @@ SearchState::SearchState(const Cfg& target, const Cfg& previous, Init init, size
   assert(target.check_invariants());
   assert(target.get_function().check_invariants());
 
-  switch(init) {
+  switch (init) {
   case Init::TARGET:
     configure_target(target, size);
     break;

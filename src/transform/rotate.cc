@@ -26,7 +26,7 @@ TransformInfo RotateTransform::operator()(Cfg& cfg) {
   TransformInfo ti;
   ti.success = false;
 
-  if(cfg.get_code().size() < 3)
+  if (cfg.get_code().size() < 3)
     return ti;
 
   ti.undo_index[0] = (gen_() % (cfg.get_code().size() - 1)) + 1;
@@ -65,7 +65,7 @@ TransformInfo RotateTransform::operator()(Cfg& cfg) {
 }
 
 void RotateTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
-  if(ti.undo_index[0] < ti.undo_index[1])
+  if (ti.undo_index[0] < ti.undo_index[1])
     cfg.get_function().rotate_right(ti.undo_index[0], ti.undo_index[1]);
   else
     cfg.get_function().rotate_left(ti.undo_index[1], ti.undo_index[0]);

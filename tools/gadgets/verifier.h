@@ -41,7 +41,7 @@ public:
 
     std::vector<Verifier*> verifiers;
     std::vector<std::string> splits = split(strategy_arg.value(), std::regex("[ ,+]"));
-    for(auto it : splits) {
+    for (auto it : splits) {
       verifiers.push_back(make_by_name(it, sandbox, fxn));
     }
 
@@ -80,12 +80,12 @@ public:
 private:
 
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn) {
-    if(s == "bounded") {
+    if (s == "bounded") {
       auto bv = new BoundedValidator(*solver_);
       bv->set_bound(bound_arg.value());
 
       std::string alias = alias_strategy_arg.value();
-      if(alias == "basic") {
+      if (alias == "basic") {
         bv->set_alias_strategy(BoundedValidator::AliasStrategy::BASIC);
       } else if (alias == "string") {
         bv->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
@@ -97,7 +97,7 @@ private:
       }
 
       return bv;
-    } else if(s == "hold_out") {
+    } else if (s == "hold_out") {
       return new HoldOutVerifier(fxn);
     } else if (s == "straight_line" || s == "formal") {
       return new StraightLineValidator(*solver_);

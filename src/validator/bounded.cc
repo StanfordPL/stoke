@@ -36,13 +36,13 @@ BoundedValidator::find_arrangements(
   vector<CellArrangement> results;
   // Check for termination.
   size_t size_so_far = 0;
-  for(auto& descr : start) {
+  for (auto& descr : start) {
     assert(descr->size > 0);
     size_so_far += descr->size;
   }
-  if(size_so_far >= max_size) {
+  if (size_so_far >= max_size) {
     CellArrangement a;
-    for(auto it : start)
+    for (auto it : start)
       a.push_back(*it);
     results.push_back(a);
     return results;
@@ -61,13 +61,13 @@ BoundedValidator::find_arrangements(
 
   // Option 2: add an available cell
   od.is_empty = false;
-  for(size_t i = 0; i < available_cells.size(); ++i) {
+  for (size_t i = 0; i < available_cells.size(); ++i) {
     auto descr = available_cells[i];
     od.cell = descr.cell;
-    if(size_so_far == 0) {
+    if (size_so_far == 0) {
       // we can place this cell with any size we like
       // this way, 'j' bytes are not overlapping before the overlapping region
-      for(size_t j = 1; j < descr.size; ++j) {
+      for (size_t j = 1; j < descr.size; ++j) {
         od.size = j;
         available_cells.erase(available_cells.begin() + i);
         auto rec_results = find_arrangements(start, available_cells, max_size);
@@ -90,11 +90,11 @@ BoundedValidator::find_arrangements(
 bool vectors_have_common(std::vector<size_t> left, std::vector<size_t> right, size_t& value) {
 
   size_t j = 0;
-  for(size_t i : left) {
-    while(j < right.size() && right[j] < i) {
+  for (size_t i : left) {
+    while (j < right.size() && right[j] < i) {
       j++;
     }
-    if(j < right.size() && right[j] == i) {
+    if (j < right.size() && right[j] == i) {
       // we're done!
       value = i;
       return true;
@@ -106,9 +106,9 @@ bool vectors_have_common(std::vector<size_t> left, std::vector<size_t> right, si
 
 vector<size_t> enumerate_accesses(const Cfg& cfg) {
   vector<size_t> result;
-  for(size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
+  for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
     auto instr = cfg.get_code()[i];
-    if(instr.is_memory_dereference() && !instr.is_ret()) {
+    if (instr.is_memory_dereference() && !instr.is_ret()) {
       result.push_back(i);
     }
   }
@@ -118,11 +118,11 @@ vector<size_t> enumerate_accesses(const Cfg& cfg) {
 /** Takes vector of symbolic accesses, builds a map, and allocates a CellMemory to use. */
 CellMemory* make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
   map<size_t, CellMemory::SymbolicAccess> map;
-  for(auto sa : vector) {
+  for (auto sa : vector) {
     map[sa.line] = sa;
     ALIAS_DEBUG(
       cout << sa.line << " --> " << sa.cell << " (offset " << sa.cell_offset << " / size " << sa.size << " / cell size " << sa.cell_size << ")";
-      if(sa.unconstrained)
+      if (sa.unconstrained)
       cout << " (UNCONSTRAINED)";
       cout << endl;
     )
@@ -133,8 +133,8 @@ CellMemory* make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
 /** Filter a list of symbolic accesses to find the ones that are for target/rewrite. */
 vector<CellMemory::SymbolicAccess> split_sym_accesses(const vector<CellMemory::SymbolicAccess>& big_list, bool rewrite) {
   vector<CellMemory::SymbolicAccess> v;
-  for(auto& sa : big_list) {
-    if(sa.is_rewrite == rewrite)
+  for (auto& sa : big_list) {
+    if (sa.is_rewrite == rewrite)
       v.push_back(sa);
   }
   return v;
@@ -163,27 +163,27 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
 
   // create unconstrainted cells for the rest of memory accesses
   size_t top_cell = 0;
-  for(auto it : sym_list) {
-    if(it.cell > top_cell)
+  for (auto it : sym_list) {
+    if (it.cell > top_cell)
       top_cell = it.cell;
   }
   top_cell++;
 
-  for(size_t k = 0; k < 2; ++k) {
+  for (size_t k = 0; k < 2; ++k) {
     auto& cfg = k ? rewrite_unroll : target_unroll;
     auto& path = k ? Q : P;
     auto& symb = k ? rewrite_sym : target_sym;
 
     auto accesses = enumerate_accesses(cfg);
     map<size_t, bool> found_access;
-    for(auto it : sym_list) {
-      if(it.is_rewrite == k ) {
+    for (auto it : sym_list) {
+      if (it.is_rewrite == k ) {
         found_access[it.line] = true;
       }
     }
 
-    for(auto line : accesses) {
-      if(found_access[line])
+    for (auto line : accesses) {
+      if (found_access[line])
         continue;
 
       CellMemory::SymbolicAccess sa;
@@ -216,19 +216,19 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   state_r.memory = rewrite_mem;
   rewrite_mem->set_parent(&state_r);
 
-  for(auto it : state_t.equality_constraints(init, target.def_ins()))
+  for (auto it : state_t.equality_constraints(init, target.def_ins()))
     constraints.push_back(it);
-  for(auto it : state_r.equality_constraints(init, rewrite.def_ins()))
+  for (auto it : state_r.equality_constraints(init, rewrite.def_ins()))
     constraints.push_back(it);
 
   auto mem_const = target_mem->equality_constraint(*rewrite_mem);
   constraints.push_back(mem_const);
 
   size_t line_no = 0;
-  for(size_t i = 0; i < P.size(); ++i)
+  for (size_t i = 0; i < P.size(); ++i)
     build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
   line_no = 0;
-  for(size_t i = 0; i < Q.size(); ++i)
+  for (size_t i = 0; i < Q.size(); ++i)
     build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
   constraints.push_back(target_mem->aliasing_formula(*rewrite_mem));
 
@@ -238,7 +238,7 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
 
   ALIAS_DEBUG(
     cout << endl << "CONSTRAINTS" << endl << endl;;
-  for(auto it : constraints) {
+  for (auto it : constraints) {
   cout << it << endl;
 })
 
@@ -251,7 +251,7 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   delete target_mem;
   delete rewrite_mem;
 
-  if(solver_.has_error()) {
+  if (solver_.has_error()) {
     //throw VALIDATOR_ERROR("solver: " + solver_.get_error());
     ALIAS_DEBUG(cout << "SMT Solver had error: " << solver_.get_error();)
     return true; // it's possible that we timed out, but there's still a solution here.  keep looking.
@@ -288,11 +288,11 @@ size_t accesses_done) {
 
   vector<pair<CellMemory*, CellMemory*>> result;
   // Step 0: check for feasibility.  if not, stop here.
-  if(!check_feasibility(target, rewrite, target_unroll, rewrite_unroll, P, Q, sym_access))
+  if (!check_feasibility(target, rewrite, target_unroll, rewrite_unroll, P, Q, sym_access))
     return result;
 
   // Step 1: if we've processed all the concrete accesses, we're done.  Generate CellMemories and return.
-  if(target_con_access.size() + rewrite_con_access.size() == accesses_done) {
+  if (target_con_access.size() + rewrite_con_access.size() == accesses_done) {
     ALIAS_DEBUG(cout << " REACHED BASE CASE :D" << endl;)
 
     ALIAS_DEBUG(cout << "  target map: " << endl;)
@@ -314,7 +314,7 @@ size_t accesses_done) {
 
   CellMemory::SymbolicAccess sa;
   sa.is_rewrite = work_on_rewrite;
-  if(sa.is_rewrite) {
+  if (sa.is_rewrite) {
     sa.line = rewrite_con_access[accesses_done - target_con_access.size()];
   } else {
     sa.line = target_con_access[accesses_done];
@@ -326,7 +326,7 @@ size_t accesses_done) {
   // find the size of each cell
   map<size_t, size_t> cell_size_map;
   int tmp_cell_max = -1;
-  for(auto it : sym_access) {
+  for (auto it : sym_access) {
     cell_size_map[it.cell] = it.cell_size;
     tmp_cell_max = tmp_cell_max > (int)it.cell ? tmp_cell_max : it.cell;
   }
@@ -335,7 +335,7 @@ size_t accesses_done) {
 
   // Build list of available cells
   vector<OverlapDescriptor> available_cells;
-  for(auto p : cell_size_map) {
+  for (auto p : cell_size_map) {
     OverlapDescriptor od;
     od.cell = p.first;
     od.size = p.second;
@@ -345,9 +345,9 @@ size_t accesses_done) {
   vector<OverlapDescriptor*> start;
   auto overlap_options = find_arrangements(start, available_cells, sa.size);
   ALIAS_CASE_DEBUG(cout << "Overlap options for size " << sa.size << ":" << endl;
-  for(auto& option : overlap_options) {
-  for(auto& it : option) {
-      if(it.is_empty)
+  for (auto& option : overlap_options) {
+  for (auto& it : option) {
+      if (it.is_empty)
         cout << "(E) ";
       else
         cout << "(" << it.cell << " sz. " << it.size << ") ";
@@ -356,11 +356,11 @@ size_t accesses_done) {
   })
 
   // For each overlap option, rewrite the cell map and recurse
-  for(auto& option : overlap_options) {
+  for (auto& option : overlap_options) {
 
     // first compute the total size of the new cell
     size_t new_cell_size = 0;
-    for(auto descr : option)
+    for (auto descr : option)
       new_cell_size += descr.size;
 
     size_t offset_from_cell_start = 0;
@@ -368,7 +368,7 @@ size_t accesses_done) {
     // check if the first cell in the option is shorter than the
     // actual cell; if so, that means that our offset from the
     // start of the cell is actually non-zero.
-    if(!option[0].is_empty && (option[0].size < cell_size_map[option[0].cell])) {
+    if (!option[0].is_empty && (option[0].size < cell_size_map[option[0].cell])) {
       offset_from_cell_start = cell_size_map[option[0].cell] - option[0].size;
       new_cell_size += offset_from_cell_start;
     }
@@ -378,18 +378,18 @@ size_t accesses_done) {
     sa.cell_offset = offset_from_cell_start;
 
     auto recursive_accesses = sym_access;
-    for(size_t i = 0; i < option.size(); ++i) {
-      if(option[i].is_empty) {
+    for (size_t i = 0; i < option.size(); ++i) {
+      if (option[i].is_empty) {
         offset_from_cell_start += option[i].size;
         continue;
       }
 
       // Go through the map and rewrite every occurrence of cell[i] as
       // with the new cell.
-      for(auto& it : recursive_accesses) {
-        if(it.cell == option[i].cell) {
+      for (auto& it : recursive_accesses) {
+        if (it.cell == option[i].cell) {
           it.cell = sa.cell;
-          if(i == 0) //special case when offset_from_cell_start doesn't begin at 0.
+          if (i == 0) //special case when offset_from_cell_start doesn't begin at 0.
             it.cell_offset = 0;
           else
             it.cell_offset = offset_from_cell_start;
@@ -411,7 +411,7 @@ size_t accesses_done) {
 }
 
 vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
-  switch(alias_strategy_) {
+  switch (alias_strategy_) {
   case AliasStrategy::BASIC:
     return enumerate_aliasing_basic(target, rewrite, P, Q);
   case AliasStrategy::STRING:
@@ -431,7 +431,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   auto target_concrete_accesses = enumerate_accesses(target_unroll);
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
 
-  if(target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
+  if (target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
     auto null_pair = pair<CellMemory*, CellMemory*>(NULL, NULL);
     auto v = vector<pair<CellMemory*, CellMemory*>>();
     v.push_back(null_pair);
@@ -453,23 +453,23 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   auto constraints = target_state.equality_constraints(rewrite_state, target.def_ins());
 
   size_t line_no = 0;
-  for(size_t i = 0; i < P.size(); ++i)
+  for (size_t i = 0; i < P.size(); ++i)
     build_circuit(target, P[i], JumpType::NONE, target_state, line_no);
   line_no = 0;
-  for(size_t i = 0; i < Q.size(); ++i)
+  for (size_t i = 0; i < Q.size(); ++i)
     build_circuit(rewrite, Q[i], JumpType::NONE, rewrite_state, line_no);
 
-  for(auto& it : target_state.constraints)
+  for (auto& it : target_state.constraints)
     constraints.push_back(it);
-  for(auto& it : rewrite_state.constraints)
+  for (auto& it : rewrite_state.constraints)
     constraints.push_back(it);
 
   vector<TrivialMemory::SymbolicAccess> sym_accesses;
-  for(size_t k = 0; k < 2; ++k) {
+  for (size_t k = 0; k < 2; ++k) {
     auto& mem = k ? rewrite_mem : target_mem;
     size_t line = -1;
-    for(auto it : mem.get_all()) {
-      if(line == it.line)
+    for (auto it : mem.get_all()) {
+      if (line == it.line)
         continue; //avoid duplicates from read+write operations, like add
       line = it.line;
       it.is_rewrite = k;
@@ -489,22 +489,22 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
 
   //We're going to use the same constraints vector for all the queries.
   // Can be much more performant if stoke #716 is done.
-  for(size_t i = 0; i < total_accesses; ++i) {
-    for(size_t j = i+1; j < total_accesses; ++j) {
+  for (size_t i = 0; i < total_accesses; ++i) {
+    for (size_t j = i+1; j < total_accesses; ++j) {
       // (i) Are these two accesses to the same memory locations?
       auto equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
       constraints.push_back(!equal_addrs);
       same_address[i][j] = !solver_.is_sat(constraints);
       constraints.erase(--constraints.end());
 
-      if(same_address[i][j]) {
+      if (same_address[i][j]) {
         next_address[i][j] = false;
         continue;
       }
 
       // (ii) Are these two accesses in sequence?
       SymBool next_addrs;
-      if(nacl_) {
+      if (nacl_) {
         next_addrs = sym_accesses[i].address[31][0] + SymBitVector::constant(32, sym_accesses[i].size) ==
                      sym_accesses[j].address[31][0];
       } else {
@@ -521,14 +521,14 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   ALIAS_STRING_DEBUG(
     cout << "SAME MAP" << endl;
     cout << "    ";
-  for(size_t i = 0; i < total_accesses; ++i) {
+  for (size_t i = 0; i < total_accesses; ++i) {
   cout << i << " ";
 }
 cout << endl << "------------------" << endl;
-for(size_t i = 0; i < total_accesses; ++i) {
+for (size_t i = 0; i < total_accesses; ++i) {
   cout << i << " | ";
-  for(size_t j = 0; j < total_accesses; ++j) {
-      if(j <= i) {
+  for (size_t j = 0; j < total_accesses; ++j) {
+      if (j <= i) {
         cout << "  ";
       } else {
         cout << same_address[i][j] << " ";
@@ -540,14 +540,14 @@ for(size_t i = 0; i < total_accesses; ++i) {
 
        cout << "NEXT MAP" << endl;
        cout << "    ";
-  for(size_t i = 0; i < total_accesses; ++i) {
+  for (size_t i = 0; i < total_accesses; ++i) {
   cout << i << " ";
 }
 cout << endl << "------------------" << endl;
-for(size_t i = 0; i < total_accesses; ++i) {
+for (size_t i = 0; i < total_accesses; ++i) {
   cout << i << " | ";
-  for(size_t j = 0; j < total_accesses; ++j) {
-      if(j <= i) {
+  for (size_t j = 0; j < total_accesses; ++j) {
+      if (j <= i) {
         cout << "  ";
       } else {
         cout << next_address[i][j] << " ";
@@ -567,23 +567,23 @@ for(size_t i = 0; i < total_accesses; ++i) {
   size_t max_cell = 0;
   size_t cell_sizes[total_accesses];
 
-  for(size_t i = 0; i < total_accesses; ++i) {
+  for (size_t i = 0; i < total_accesses; ++i) {
     cell[i] = -1;
   }
 
-  for(size_t i = 0; i < total_accesses; ++i) {
-    if(cell[i] == -1) {
+  for (size_t i = 0; i < total_accesses; ++i) {
+    if (cell[i] == -1) {
       cell_sizes[max_cell] = sym_accesses[i].size;
       cell[i] = max_cell++;
       offset[i] = 0;
     }
 
-    for(size_t j = i+1; j < total_accesses; ++j) {
-      if(same_address[i][j]) {
+    for (size_t j = i+1; j < total_accesses; ++j) {
+      if (same_address[i][j]) {
         cell[j] = cell[i];
         offset[j] = offset[i];
         cell_sizes[cell[i]] = MAX(cell_sizes[cell[i]], sym_accesses[j].size);
-      } else if(next_address[i][j]) {
+      } else if (next_address[i][j]) {
         cell[j] = cell[i];
         offset[j] = offset[i] + sym_accesses[i].size;
         cell_sizes[cell[i]] += sym_accesses[j].size;
@@ -593,12 +593,12 @@ for(size_t i = 0; i < total_accesses; ++i) {
 
   ALIAS_STRING_DEBUG(
     cout << "TOTAL CELLS: " << max_cell << endl;
-  for(size_t i = 0; i < total_accesses; ++i) {
+  for (size_t i = 0; i < total_accesses; ++i) {
   cout << "Access " << i << " cell " << cell[i] << " offset " << offset[i]
          << " (cell size " << cell_sizes[cell[i]] << ")" << endl;
   });
 
-  if(max_cell > 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
+  if (max_cell > 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
     // For simplicity, I don't want to handle this case explicitly; just fallback
     // a nicer implementation could rewrite the other recursive functions to do this well
     return enumerate_aliasing_basic(target, rewrite, P, Q);
@@ -613,7 +613,7 @@ for(size_t i = 0; i < total_accesses; ++i) {
     map<size_t, CellMemory::SymbolicAccess> target_map;
     map<size_t, CellMemory::SymbolicAccess> rewrite_map;
 
-    for(size_t i = 0; i < total_accesses; ++i) {
+    for (size_t i = 0; i < total_accesses; ++i) {
       CellMemory::SymbolicAccess sa;
       sa.line = sym_accesses[i].line;
       sa.size = sym_accesses[i].size;
@@ -622,7 +622,7 @@ for(size_t i = 0; i < total_accesses; ++i) {
       sa.cell_size = cell_sizes[cell[i]];
       sa.unconstrained = false;
 
-      if(sym_accesses[i].is_rewrite) {
+      if (sym_accesses[i].is_rewrite) {
         rewrite_map[sa.line] = sa;
       } else {
         target_map[sa.line] = sa;
@@ -634,14 +634,14 @@ for(size_t i = 0; i < total_accesses; ++i) {
     result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
   }
 
-  if(max_cell == 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
+  if (max_cell == 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
 
     {
       // Case 1: the two mega-cells overlap exactly
       map<size_t, CellMemory::SymbolicAccess> target_map;
       map<size_t, CellMemory::SymbolicAccess> rewrite_map;
 
-      for(size_t i = 0; i < total_accesses; ++i) {
+      for (size_t i = 0; i < total_accesses; ++i) {
         CellMemory::SymbolicAccess sa;
         sa.line = sym_accesses[i].line;
         sa.size = sym_accesses[i].size;
@@ -650,7 +650,7 @@ for(size_t i = 0; i < total_accesses; ++i) {
         sa.cell_size = MAX(cell_sizes[0], cell_sizes[1]);
         sa.unconstrained = false;
 
-        if(sym_accesses[i].is_rewrite) {
+        if (sym_accesses[i].is_rewrite) {
           rewrite_map[sa.line] = sa;
         } else {
           target_map[sa.line] = sa;
@@ -662,12 +662,12 @@ for(size_t i = 0; i < total_accesses; ++i) {
       result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
     }
 
-    for(size_t k = 1; k < cell_sizes[0]; ++k) {
+    for (size_t k = 1; k < cell_sizes[0]; ++k) {
       // Case 2: cell 0 comes first by k, 1 <= k < cell_sizes[0]
       map<size_t, CellMemory::SymbolicAccess> target_map;
       map<size_t, CellMemory::SymbolicAccess> rewrite_map;
 
-      for(size_t i = 0; i < total_accesses; ++i) {
+      for (size_t i = 0; i < total_accesses; ++i) {
         CellMemory::SymbolicAccess sa;
         sa.line = sym_accesses[i].line;
         sa.size = sym_accesses[i].size;
@@ -676,7 +676,7 @@ for(size_t i = 0; i < total_accesses; ++i) {
         sa.cell_size = MAX(k+cell_sizes[1], cell_sizes[0]);
         sa.unconstrained = false;
 
-        if(sym_accesses[i].is_rewrite) {
+        if (sym_accesses[i].is_rewrite) {
           rewrite_map[sa.line] = sa;
         } else {
           target_map[sa.line] = sa;
@@ -688,12 +688,12 @@ for(size_t i = 0; i < total_accesses; ++i) {
       result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
     }
 
-    for(size_t k = 1; k < cell_sizes[1]; ++k) {
+    for (size_t k = 1; k < cell_sizes[1]; ++k) {
       // Case 2: cell 1 comes first by k, 1 <= k < cell_sizes[1]
       map<size_t, CellMemory::SymbolicAccess> target_map;
       map<size_t, CellMemory::SymbolicAccess> rewrite_map;
 
-      for(size_t i = 0; i < total_accesses; ++i) {
+      for (size_t i = 0; i < total_accesses; ++i) {
         CellMemory::SymbolicAccess sa;
         sa.line = sym_accesses[i].line;
         sa.size = sym_accesses[i].size;
@@ -702,7 +702,7 @@ for(size_t i = 0; i < total_accesses; ++i) {
         sa.cell_size = MAX(k+cell_sizes[0], cell_sizes[1]);
         sa.unconstrained = false;
 
-        if(sym_accesses[i].is_rewrite) {
+        if (sym_accesses[i].is_rewrite) {
           rewrite_map[sa.line] = sa;
         } else {
           target_map[sa.line] = sa;
@@ -737,7 +737,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basi
   auto target_concrete_accesses = enumerate_accesses(target_unroll);
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
 
-  if(target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
+  if (target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
     auto null_pair = pair<CellMemory*, CellMemory*>(NULL, NULL);
     auto v = vector<pair<CellMemory*, CellMemory*>>();
     v.push_back(null_pair);
@@ -746,7 +746,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basi
 
   // Create first symbolic access
   CellMemory::SymbolicAccess first;
-  if(target_concrete_accesses.size()) {
+  if (target_concrete_accesses.size()) {
     first.line = target_concrete_accesses[0];
     first.size = target_unroll.get_code()[first.line].mem_dereference_size()/8;
     first.is_rewrite = false;
@@ -777,17 +777,17 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basi
 void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
                                      SymState& state, size_t& line_no) {
 
-  if(cfg.num_instrs(bb) == 0)
+  if (cfg.num_instrs(bb) == 0)
     return;
 
   size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(bb, 0));
   size_t end_index = start_index + cfg.num_instrs(bb);
 
-  for(size_t i = start_index; i < end_index; ++i) {
+  for (size_t i = start_index; i < end_index; ++i) {
     line_no++;
     auto instr = cfg.get_code()[i];
 
-    if(instr.is_jcc()) {
+    if (instr.is_jcc()) {
       // get the name of the condition
       string name = opcode_write_att(instr.get_opcode());
       string condition = name.substr(1);
@@ -795,7 +795,7 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
 
       // figure out if its this condition (jump case) or negation (fallthrough)
       //cout << "INSTR: " << instr << endl;
-      switch(jump) {
+      switch (jump) {
       case JumpType::JUMP:
         //cout << "Assuming jump for " << instr << endl;
         state.constraints.push_back(constraint);
@@ -821,7 +821,7 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
       //cout << "LINE=" << line_no-1 << ": " << instr << endl;
       handler_.build_circuit(instr, state);
 
-      if(handler_.has_error()) {
+      if (handler_.has_error()) {
         stringstream ss;
         ss << "Error building circuit for: " << instr << ".";
         ss << "Handler says: " << handler_.error();
@@ -833,20 +833,20 @@ void BoundedValidator::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType j
 
 BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const CfgPath& P, size_t i) {
 
-  if(i == P.size() - 1)
+  if (i == P.size() - 1)
     return JumpType::NONE;
 
   auto block = P[i];
 
   auto itr = cfg.succ_begin(block);
-  if(itr == cfg.succ_end(block)) {
+  if (itr == cfg.succ_end(block)) {
     // there are no successors
     //cout << "is_jump " << block << " NONE" << endl;
     return JumpType::NONE;
   }
 
   itr++;
-  if(itr == cfg.succ_end(block)) {
+  if (itr == cfg.succ_end(block)) {
     // there is only only successor
     //cout << "is_jump " << block << " NONE" << endl;
     return JumpType::NONE;
@@ -854,7 +854,7 @@ BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const CfgPa
 
   // ok, there are at least 2 successors
   auto next_block = P[i+1];
-  if(next_block == block + 1) {
+  if (next_block == block + 1) {
     //cout << "is_jump " << block << " FALL" << endl;
     return JumpType::FALL_THROUGH;
   }
@@ -865,7 +865,7 @@ BoundedValidator::JumpType BoundedValidator::is_jump(const Cfg& cfg, const CfgPa
 }
 
 void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories) {
-  for(auto p : memories) {
+  for (auto p : memories) {
     delete p.first;
     delete p.second;
   }
@@ -883,17 +883,17 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   BOUNDED_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
 
-  for(auto memories : memory_list) {
+  for (auto memories : memory_list) {
     BOUNDED_DEBUG(cout << "------ NEXT ALIASING CASE -----" << endl;)
     BOUNDED_DEBUG(
-    if(memories.first) {
+    if (memories.first) {
     cout << "TARGET MAP:" << endl;
-    for(auto q : memories.first->get_line_cell_map()) {
+    for (auto q : memories.first->get_line_cell_map()) {
         auto p = q.second;
         cout << p.line << " -> " << p.cell << " (size " << p.size << " / cell size " << p.cell_size << " / offset " << p.cell_offset << endl;
       }
       cout << "REWRITE MAP:" << endl;
-      for(auto q : memories.second->get_line_cell_map()) {
+      for (auto q : memories.second->get_line_cell_map()) {
         auto p = q.second;
         cout << p.line << " -> " << p.cell << " (size " << p.size << " / cell size " << p.cell_size << " / offset " << p.cell_offset << endl;
       }
@@ -907,13 +907,13 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     SymState state_t("1_INIT");
     SymState state_r("2_INIT");
 
-    for(auto it : state_t.equality_constraints(init, target.def_ins()))
+    for (auto it : state_t.equality_constraints(init, target.def_ins()))
       constraints.push_back(it);
-    for(auto it : state_r.equality_constraints(init, rewrite.def_ins()))
+    for (auto it : state_r.equality_constraints(init, rewrite.def_ins()))
       constraints.push_back(it);
 
 
-    if(memories.first) {
+    if (memories.first) {
       state_t.memory = memories.first;
       state_t.memory->set_parent(&state_t);
       state_r.memory = memories.second;
@@ -925,13 +925,13 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     }
 
     size_t line_no = 0;
-    for(size_t i = 0; i < P.size(); ++i)
+    for (size_t i = 0; i < P.size(); ++i)
       build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
     line_no = 0;
-    for(size_t i = 0; i < Q.size(); ++i)
+    for (size_t i = 0; i < Q.size(); ++i)
       build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
 
-    if(memories.first)
+    if (memories.first)
       constraints.push_back(memories.first->aliasing_formula(*memories.second));
 
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
@@ -939,17 +939,17 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     BOUNDED_DEBUG(
       cout << endl << "CONSTRAINTS" << endl << endl;;
-    for(auto it : constraints) {
+    for (auto it : constraints) {
     cout << it << endl;
   })
 
     SymBool inequality = SymBool::_false();
-    for(auto it : state_t.equality_constraints(state_r, target.live_outs())) {
+    for (auto it : state_t.equality_constraints(state_r, target.live_outs())) {
       inequality = inequality | !it;
       BOUNDED_DEBUG(cout << "INEQUALITY: " << it << endl;)
     }
 
-    if(memories.first) {
+    if (memories.first) {
       auto mem_const = memories.first->equality_constraint(*memories.second);
       mem_const = !mem_const;
       inequality = inequality | mem_const;
@@ -960,18 +960,18 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     // Step 4: Invoke the solver
     bool is_sat = solver_.is_sat(constraints);
-    if(solver_.has_error()) {
+    if (solver_.has_error()) {
       throw VALIDATOR_ERROR("solver: " + solver_.get_error());
     }
 
-    if(is_sat) {
+    if (is_sat) {
       auto ceg = Validator::state_from_model(solver_, "_");
-      if(memories.first) {
+      if (memories.first) {
         bool ok = am.build_testcase_memory(ceg, solver_,
                                            *static_cast<CellMemory*>(state_t.memory),
                                            *static_cast<CellMemory*>(state_r.memory),
                                            target, rewrite);
-        if(ok) {
+        if (ok) {
           counterexamples_.push_back(ceg);
         } else {
           delete_memories(memory_list);
@@ -1019,12 +1019,12 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     sanity_checks(target, rewrite);
 
     // Step 1: get all the paths from the enumerator
-    for(auto path : CfgPaths::enumerate_paths(target, bound_)) {
+    for (auto path : CfgPaths::enumerate_paths(target, bound_)) {
       //cout << "adding TP: " << print(path) << endl;
       paths_[false].push_back(path);
     }
     //cout << "REWRITE: " << endl << rewrite.get_code() << endl;
-    for(auto path : CfgPaths::enumerate_paths(rewrite, bound_)) {
+    for (auto path : CfgPaths::enumerate_paths(rewrite, bound_)) {
       //cout << "adding RP: " << print(path) << endl;
       paths_[true].push_back(path);
     }
@@ -1033,8 +1033,8 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
     bool ok = true;
     size_t total = paths_[false].size() * paths_[true].size();
     size_t count = 0;
-    for(auto target_path : paths_[false]) {
-      for(auto rewrite_path : paths_[true]) {
+    for (auto target_path : paths_[false]) {
+      for (auto rewrite_path : paths_[true]) {
         count++;
         ok &= verify_pair(target, rewrite, target_path, rewrite_path);
 
@@ -1042,10 +1042,10 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
         // Case 2: verify failed and no counterexampe: keep going
         // Case 3: verify worked: keep going
 
-        if(!ok && counterexamples_.size() > 0)
+        if (!ok && counterexamples_.size() > 0)
           break;
       }
-      if(!ok && counterexamples_.size() > 0)
+      if (!ok && counterexamples_.size() > 0)
         break;
     }
 
@@ -1069,4 +1069,5 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   return false;
 
 }
+
 

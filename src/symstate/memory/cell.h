@@ -40,10 +40,10 @@ public:
   /** Takes a map from the line number of a target/rewrite to a "cell number" along with
     the size of the write. */
   CellMemory(std::map<size_t, SymbolicAccess> memory_map) : map_(memory_map) {
-    for(auto p : memory_map) {
+    for (auto p : memory_map) {
       auto access = p.second;
 
-      if(!cells_.count(access.cell)) {
+      if (!cells_.count(access.cell)) {
 
         std::stringstream addr_name;
         addr_name << "CELL_" << access.cell << "_ADDR";

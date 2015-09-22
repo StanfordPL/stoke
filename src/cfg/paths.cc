@@ -31,13 +31,13 @@ vector<vector<Cfg::id_type>> CfgPaths::enumerate_paths(const Cfg& cfg, size_t ma
 
   std::map<Cfg::id_type, size_t> node_counts;
 
-  if(max_len > 0)
+  if (max_len > 0)
     enumerate_paths_helper(cfg, path_so_far, max_len, node_counts, results);
 
   // Remove all blocks with zero instructions
-  for(auto& path : results) {
-    for(auto iter = path.begin(); iter != path.end(); ) {
-      if(!cfg.num_instrs(*iter)) {
+  for (auto& path : results) {
+    for (auto iter = path.begin(); iter != path.end(); ) {
+      if (!cfg.num_instrs(*iter)) {
         iter = path.erase(iter);
       } else {
         ++iter;
@@ -58,20 +58,20 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
   Cfg::id_type last_block = path_so_far[len - 1];
 
 #ifdef DEBUG_PATH_ENUM
-  for(size_t i = 0; i < len; ++i) {
+  for (size_t i = 0; i < len; ++i) {
     cout << "  ";
   }
   cout << "Path: ";
-  for(size_t i = 0; i < len; ++i) {
+  for (size_t i = 0; i < len; ++i) {
     cout << path_so_far[i] << " ";
   }
   cout << endl;
 #endif
 
   // check for end
-  if(last_block == cfg.get_exit()) {
+  if (last_block == cfg.get_exit()) {
 #ifdef DEBUG_PATH_ENUM
-    for(size_t i = 0; i < len; ++i) {
+    for (size_t i = 0; i < len; ++i) {
       cout << "  ";
     }
     cout << "* Adding solution!" << endl;
@@ -80,13 +80,13 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
   }
 
   // iterate
-  for(auto it = cfg.succ_begin(last_block), ie = cfg.succ_end(last_block); it != ie; ++it) {
+  for (auto it = cfg.succ_begin(last_block), ie = cfg.succ_end(last_block); it != ie; ++it) {
 
     size_t this_count = ++counts[*it];
-    if(this_count > max_count) {
+    if (this_count > max_count) {
       counts[*it]--;
 #ifdef DEBUG_PATH_ENUM
-      for(size_t i = 0; i < len; ++i) {
+      for (size_t i = 0; i < len; ++i) {
         cout << "  ";
       }
       cout << "* Successor dead end: " << *it << endl;
@@ -95,7 +95,7 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
     }
 
 #ifdef DEBUG_PATH_ENUM
-    for(size_t i = 0; i < len; ++i) {
+    for (size_t i = 0; i < len; ++i) {
       cout << "  ";
     }
     cout << "* Exploring successor: " << *it << endl;
@@ -113,14 +113,14 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
 Cfg CfgPaths::rewrite_cfg_with_path(const Cfg& cfg, const CfgPath& p) {
 
   Code code;
-  for(auto node : p) {
-    if(cfg.num_instrs(node) == 0)
+  for (auto node : p) {
+    if (cfg.num_instrs(node) == 0)
       continue;
 
     size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(node, 0));
     size_t end_index = start_index + cfg.num_instrs(node);
-    for(size_t i = start_index; i < end_index; ++i) {
-      if(cfg.get_code()[i].is_jump()) {
+    for (size_t i = start_index; i < end_index; ++i) {
+      if (cfg.get_code()[i].is_jump()) {
         code.push_back(Instruction(NOP));
       } else {
         code.push_back(cfg.get_code()[i]);
@@ -151,11 +151,11 @@ bool CfgPaths::learn_path(CfgPath& path, const Cfg& cfg, const CpuState& tc) {
   /** Insert code either before or after the first instruction in a block to
    * record the path took */
   vector<pair<CfgPaths*, Cfg::id_type>*> to_delete;
-  for(size_t i = 0; i < code.size(); ++i) {
+  for (size_t i = 0; i < code.size(); ++i) {
     // figure out if we're at the beginning of a block
     auto loc = cfg.get_loc(i);
     auto steps = loc.second;
-    if(steps > 0)
+    if (steps > 0)
       continue;
 
     // build a pair with a pointer to our object and the basic block of this
@@ -167,7 +167,7 @@ bool CfgPaths::learn_path(CfgPath& path, const Cfg& cfg, const CpuState& tc) {
     // returns and everything else (so if segfault or exit we still get
     // called).
     auto instr = code[i];
-    if(instr.is_label_defn()) {
+    if (instr.is_label_defn()) {
       sandbox_->insert_after(label, i, learn_path_callback, pair);
     } else {
       sandbox_->insert_before(label, i, learn_path_callback, pair);
@@ -178,7 +178,7 @@ bool CfgPaths::learn_path(CfgPath& path, const Cfg& cfg, const CpuState& tc) {
   current_path_ = &path;
   sandbox_->run();
 
-  for(auto it : to_delete)
+  for (auto it : to_delete)
     delete it;
 
   auto err = sandbox_->get_output(0)->code;
@@ -189,11 +189,11 @@ bool CfgPaths::learn_path(CfgPath& path, const Cfg& cfg, const CpuState& tc) {
 
 /** Returns true if first path is a prefix of the second. */
 bool CfgPaths::is_prefix(const CfgPath& p, const CfgPath& q) {
-  if(q.size() < p.size())
+  if (q.size() < p.size())
     return false;
 
-  for(size_t i = 0; i < p.size(); ++i) {
-    if(p[i] != q[i])
+  for (size_t i = 0; i < p.size(); ++i) {
+    if (p[i] != q[i])
       return false;
   }
   return true;

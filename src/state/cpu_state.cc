@@ -35,14 +35,14 @@ uint64_t CpuState::get_addr(M8 ref) const {
   uint32_t displacement = ref.get_disp();
 
   // sign extend to 64 bits
-  if(displacement & 0x80000000) {
+  if (displacement & 0x80000000) {
     address = 0xffffffff00000000 | (uint64_t)displacement;
   } else {
     address = (uint64_t) displacement;
   }
 
   // check if memory has base
-  if(ref.contains_base()) {
+  if (ref.contains_base()) {
     address = address + gp[ref.get_base()].get_fixed_quad(0);
   }
 
@@ -50,7 +50,7 @@ uint64_t CpuState::get_addr(M8 ref) const {
   if (ref.contains_index()) {
     uint64_t index = gp[ref.get_index()].get_fixed_quad(0);
 
-    switch(ref.get_scale()) {
+    switch (ref.get_scale()) {
     case Scale::TIMES_1:
       address = address + index;
       break;
@@ -70,7 +70,7 @@ uint64_t CpuState::get_addr(M8 ref) const {
   }
 
   // check for 32-bit override
-  if(ref.addr_or()) {
+  if (ref.addr_or()) {
     address = address & 0xffffffff;
   }
 
@@ -82,7 +82,7 @@ uint64_t CpuState::get_addr(M8 ref) const {
 uint64_t CpuState::get_addr(x64asm::Instruction instr) const {
   assert(instr.is_memory_dereference());
 
-  if(instr.is_explicit_memory_dereference()) {
+  if (instr.is_explicit_memory_dereference()) {
     return get_addr(instr.get_operand<M8>(instr.mem_index()));
   } else if (instr.is_push()) {
     auto arg = instr.get_operand<Operand>(0);
@@ -148,7 +148,7 @@ ostream& CpuState::write_text(ostream& os) const {
 
   os << segments.size() << " more segment(s)" << endl;
 
-  for(auto seg: segments) {
+  for (auto seg: segments) {
     os << endl;
     os << endl;
     seg.write_text(os);
@@ -166,12 +166,12 @@ istream& CpuState::read_text_segments(istream& is) {
   int n;
   is >> n;
   getline(is, s);
-  if(s != " more segment(s)") {
+  if (s != " more segment(s)") {
     fail(is) << "Expected segment count.  Got \"" << s << "\"." << endl;
     return is;
   }
 
-  for(int i = 0; i < n; ++i) {
+  for (int i = 0; i < n; ++i) {
     Memory m;
     is >> ws;
     m.read_text(is);
@@ -204,12 +204,12 @@ istream& CpuState::read_text(istream& is) {
   int temp;
 
   is >> s >> temp;
-  if(!regex_match(s, regex("SIGNAL"))) {
+  if (!regex_match(s, regex("SIGNAL"))) {
     fail(is) << "Expected \"SIGNAL\" but got \"" << s << "\"" << endl;
     return is;
   }
   getline(is, s);
-  if(!regex_match(s, regex(" *\\[.*\\]"))) {
+  if (!regex_match(s, regex(" *\\[.*\\]"))) {
     fail(is) << "Expected '[" << readable_error_code(code) << "]' (or similar) but got "
              << "'" << s << "'" << endl;
     return is;
@@ -240,7 +240,7 @@ istream& CpuState::read_text(istream& is) {
   // which case we're done), or if there's more to do.  One day we can skip the
   // check and just assume the new version. -- BRC
   char future = is.peek();
-  if(future >= '0' && future <= '9') {
+  if (future >= '0' && future <= '9') {
     read_text_segments(is);
   }
 
@@ -259,7 +259,7 @@ ostream& CpuState::write_bin(ostream& os) const {
   // Write other segments
   size_t seg_count = segments.size();
   os.write((const char*)&seg_count, sizeof(size_t));
-  for(auto seg : segments)
+  for (auto seg : segments)
     seg.write_bin(os);
 
   return os;
@@ -277,7 +277,7 @@ istream& CpuState::read_bin(istream& is) {
   // Read other segments
   size_t seg_count;
   is.read((char*)&seg_count, sizeof(size_t));
-  for(size_t i = 0; i < seg_count; ++i) {
+  for (size_t i = 0; i < seg_count; ++i) {
     Memory seg;
     seg.read_bin(is);
     segments.push_back(seg);

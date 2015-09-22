@@ -30,21 +30,21 @@ TransformInfo DeleteTransform::operator()(Cfg& cfg) {
   TransformInfo ti;
   ti.success = false;
 
-  if(cfg.get_code().size() < 3)
+  if (cfg.get_code().size() < 3)
     return ti;
 
   size_t index = (gen_() % (cfg.get_code().size() - 1)) + 1;
   ti.undo_index[0] = index;
   ti.undo_instr = cfg.get_code()[index];
 
-  if(is_control_other_than_call(ti.undo_instr.get_opcode()))
+  if (is_control_other_than_call(ti.undo_instr.get_opcode()))
     return ti;
 
   auto& function = cfg.get_function();
   function.remove(index);
 
   cfg.recompute();
-  if(!cfg.check_invariants()) {
+  if (!cfg.check_invariants()) {
     undo(cfg, ti);
     return ti;
   }

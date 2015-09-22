@@ -164,14 +164,14 @@ private:
     std::vector<x64asm::Function> hex;
     auto result = assm.assemble(get_code());
 
-    if(!result.first) {
+    if (!result.first) {
       cpputil::Console::error(1) << "Target/rewrite has jump with 8-bit offset but target is too far away." << std::endl;
     }
     hex.push_back(result.second);
 
     for (const auto& fxn : aux_fxns) {
       auto result = assm.assemble(fxn.get_code());
-      if(!result.first) {
+      if (!result.first) {
         cpputil::Console::error(1) << "Auxiliary function " << fxn.get_leading_label() <<
                                    "has jump with 8-bit offset but target is too far away." << std::endl;
       }

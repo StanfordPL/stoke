@@ -50,21 +50,21 @@ CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, 
 void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
 
   target_gp_out_.clear();
-  for(auto i = rs.gp_begin(), ie = rs.gp_end(); i != ie; ++i) {
+  for (auto i = rs.gp_begin(), ie = rs.gp_end(); i != ie; ++i) {
     target_gp_out_.push_back(*i);
   }
 
   target_sse_out_.clear();
-  for(auto i = rs.any_sub_sse_begin(), ie = rs.any_sub_sse_end(); i != ie; ++i) {
+  for (auto i = rs.any_sub_sse_begin(), ie = rs.any_sub_sse_end(); i != ie; ++i) {
     target_sse_out_.push_back(*i);
   }
 
   // TODO -- An x64asm iterator over these flags would be nice
   target_rf_out_.clear();
-  for(auto f: {
-        eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
-      }) {
-    if(rs.contains(f)) {
+  for (auto f: {
+         eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
+       }) {
+    if (rs.contains(f)) {
       target_rf_out_.push_back(f);
     }
   }
