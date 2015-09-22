@@ -191,10 +191,10 @@ void SetupLargeBenchmarks() {
   //RegisterBenchmark(strdup("Memcpy"), run_memcpy, 10000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("Memcpy2"), run_memcpy2, 10000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("strcat"), run_strcat, 10000000, 30000000, NULL, NULL);
-  //RegisterBenchmark(strdup("strcpy"), run_strcpy, 10000000, 30000000, NULL, NULL);
+  RegisterBenchmark(strdup("strcpy"), run_strcpy, 10000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("wcscpy"), run_wcscpy, 1000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("wcpcpy"), run_wcpcpy, 1000000, 30000000, NULL, NULL);
-  RegisterBenchmark(strdup("strxfrm"), run_strxfrm, 10000000, 30000000, NULL, NULL);
+  //RegisterBenchmark(strdup("strxfrm"), run_strxfrm, 10000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("strlen"), run_strlen, 1000000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("wmemcmp"), run_wmemcmp, 10000000, 30000000, NULL, NULL);
   //RegisterBenchmark(strdup("wcscmp"), run_wcscmp, 5000000, 30000000, NULL, NULL);
