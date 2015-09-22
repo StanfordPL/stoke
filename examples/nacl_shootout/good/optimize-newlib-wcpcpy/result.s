@@ -41,12 +41,12 @@
   nop                           #  31    0x140ade  1      OPC=nop            
   nop                           #  32    0x140adf  1      OPC=nop            
 .L_140ae0:                      #        0x140ae0  0      OPC=<label>        
-  movq %rdi, %rax               #  33    0x140ae0  3      OPC=movq_r64_r64   
-  addl $0x4, %esi               #  34    0x140ae3  3      OPC=addl_r32_imm8  
-  movl -0x4(%r15,%rsi,1), %edx  #  35    0x140ae6  5      OPC=movl_r32_m32   
+  addl $0x4, %esi               #  33    0x140ae0  3      OPC=addl_r32_imm8  
+  movl -0x4(%r15,%rsi,1), %edx  #  34    0x140ae3  5      OPC=movl_r32_m32   
+  movq %rdi, %rax               #  35    0x140ae8  3      OPC=movq_r64_r64   
   addl $0x4, %edi               #  36    0x140aeb  3      OPC=addl_r32_imm8  
   movl %edx, -0x4(%r15,%rdi,1)  #  37    0x140aee  5      OPC=movl_m32_r32   
-  negl %edx                     #  38    0x140af3  2      OPC=negl_r32       
+  testl %edx, %edx              #  38    0x140af3  2      OPC=testl_r32_r32  
   jne .L_140ae0                 #  39    0x140af5  2      OPC=jne_label      
   nop                           #  40    0x140af7  1      OPC=nop            
   nop                           #  41    0x140af8  1      OPC=nop            
@@ -57,15 +57,9 @@
   nop                           #  46    0x140afd  1      OPC=nop            
   nop                           #  47    0x140afe  1      OPC=nop            
   nop                           #  48    0x140aff  1      OPC=nop            
-  nop                           #  49    0x140b00  1      OPC=nop            
-  nop                           #  50    0x140b01  1      OPC=nop            
-  nop                           #  51    0x140b02  1      OPC=nop            
-  nop                           #  52    0x140b03  1      OPC=nop            
-  nop                           #  53    0x140b04  1      OPC=nop            
-  nop                           #  54    0x140b05  1      OPC=nop            
-  popq %r11                     #  55    0x140b06  2      OPC=popq_r64_1     
-  andl $0xe0, %r11d             #  56    0x140b08  4      OPC=andl_r32_imm8  
-  addq %r15, %r11               #  57    0x140b0c  3      OPC=addq_r64_r64   
-  jmpq %r11                     #  58    0x140b0f  3      OPC=jmpq_r64       
+  popq %r11                     #  49    0x140b00  2      OPC=popq_r64_1     
+  andl $0xe0, %r11d             #  50    0x140b02  4      OPC=andl_r32_imm8  
+  addq %r15, %r11               #  51    0x140b06  3      OPC=addq_r64_r64   
+  jmpq %r11                     #  52    0x140b09  3      OPC=jmpq_r64       
                                                                              
 .size wcpcpy, .-wcpcpy
