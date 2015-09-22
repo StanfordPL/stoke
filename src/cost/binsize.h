@@ -31,7 +31,7 @@ public:
     buffer.reserve(code.size()*15 + 15);
     assm_.start(buffer);
 
-    for(auto instr : code)
+    for (auto instr : code)
       assm_.assemble(instr);
 
     return result_type(true, buffer.size());

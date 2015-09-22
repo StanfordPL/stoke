@@ -25,7 +25,7 @@ uint64_t read_quadword(const Memory& m, uint64_t base, uint64_t i) {
 
   uint64_t result = 0;
 
-  for(uint64_t j = 0; j < 8; ++j) {
+  for (uint64_t j = 0; j < 8; ++j) {
     result = ((uint64_t)m[base+8*i+j] << j*8) | result;
   }
 
@@ -46,7 +46,7 @@ SymBool DeprecatedMemory::write(SymBitVector address, SymBitVector value, uint16
   MemoryAccess mw({ addr_var, value_var, size, line_no });
   writes_.push_back(mw);
 
-  if(heap_.type()) {
+  if (heap_.type()) {
     return (addr_var < SymBitVector::constant(64, heap_start_)) |
            (addr_var > SymBitVector::constant(64, heap_start_ + heap_size_ - size/8));
   } else {
@@ -57,7 +57,7 @@ SymBool DeprecatedMemory::write(SymBitVector address, SymBitVector value, uint16
 void DeprecatedMemory::init_concrete(const Memory& stack, const Memory& heap) {
 
   Memory my_mem;
-  if(heap.size()) {
+  if (heap.size()) {
     my_mem = heap;
   } else {
     my_mem = stack;
@@ -66,11 +66,11 @@ void DeprecatedMemory::init_concrete(const Memory& stack, const Memory& heap) {
   heap_start_ = my_mem.lower_bound();
   heap_size_  = 8*my_mem.size();
 
-  if(!heap_size_)
+  if (!heap_size_)
     return;
 
   heap_ = SymBitVector::constant(64, read_quadword(my_mem, heap_start_, 0));
-  for(size_t i = 1; i < my_mem.size()/8; ++i) {
+  for (size_t i = 1; i < my_mem.size()/8; ++i) {
     heap_ = SymBitVector::constant(64, read_quadword(my_mem, heap_start_, i)) || heap_;
   }
 
@@ -95,14 +95,14 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
 
 
   // Check if this value was concretely initialized in heap.
-  if(heap_.type() != SymBitVector::NONE) {
+  if (heap_.type() != SymBitVector::NONE) {
     segv = (address < SymBitVector::constant(64, heap_start_)) |
            (address > SymBitVector::constant(64, heap_start_ + heap_size_ - size/8));
 
     auto offset = (address - SymBitVector::constant(64, heap_start_)) <<
                   SymBitVector::constant(64, 3);
 
-    if(heap_size_ > 64) {
+    if (heap_size_ > 64) {
       auto zeros = SymBitVector::constant(heap_size_ - 64, 0);
       value = (heap_ >> (zeros || offset))[size-1][0];
     } else {
@@ -119,14 +119,14 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
 
     bool must_overlap = false;
 
-    if(analysis_) {
-      if(!analysis_->may_overlap(write.line_no, line_no)) {
+    if (analysis_) {
+      if (!analysis_->may_overlap(write.line_no, line_no)) {
         //cout << "Write @" << write.address << " on line " << write.line_no << " cannot overlap" << std::endl;
         continue;
       }
 
       must_overlap = analysis_->must_overlap(write.line_no, line_no);
-      if(must_overlap && write.size == size) {
+      if (must_overlap && write.size == size) {
         value = write.value;
         //cout << "Write @" << write.address << " on line " << write.line_no << " must overlap" << std::endl;
         continue;
@@ -138,7 +138,7 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
     // Case 0:
     // Write and read are the same address
     // (but possibly a different size)
-    if(size == write.size) {
+    if (size == write.size) {
       // Case 0A: write and read are the same size.  Easy!
       // W: __________
       // R: __________
@@ -148,7 +148,7 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
       // Case 0B: read is bigger than the write
       // W: __________
       // R: _________________
-      if(must_overlap) {
+      if (must_overlap) {
         value = value[size-1][write.size] || write.value[write.size - 1][0];
         continue;
       }
@@ -161,7 +161,7 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
       // Case 0C: write is bigger than the read
       // W: _________________
       // R: __________
-      if(must_overlap) {
+      if (must_overlap) {
         value = write.value[size-1][0];
         continue;
       }
@@ -179,7 +179,7 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
     // W:         _____________
     // R: _____________
     uint16_t min_size = min(write.size, size);
-    for(uint16_t i = 8; i < min_size; i = i + 8) {
+    for (uint16_t i = 8; i < min_size; i = i + 8) {
       value = (address + SymBitVector::constant(64, (size-i)/8) == write.address).ite(
                 write.value[i-1][0] || value[size - i - 1][0],
                 value);
@@ -202,7 +202,7 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
     // W:         _____________
     // R:               _____________
     //            a     b     c     d
-    for(uint16_t i = 8; i < min_size; i += 8) {
+    for (uint16_t i = 8; i < min_size; i += 8) {
       value = (address == write.address + SymBitVector::constant(64, (write.size - i)/8)).ite(
                 value[size-1][i] || write.value[write.size-1][write.size-i],
                 value);
@@ -229,7 +229,7 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
     if (size < write.size - 8) {
       uint16_t min_x = 8;
       uint16_t max_x = write.size - 1 - size;
-      for(uint16_t i = min_x; i <= max_x; i = i + 8) {
+      for (uint16_t i = min_x; i <= max_x; i = i + 8) {
         value = (write.address + SymBitVector::constant(64, i/8) == address).ite(
                   write.value[i + size - 1][i],
                   value
@@ -245,7 +245,7 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
     if (write.size < size - 8) {
       int min_x = 8;
       int max_x = size - 1 - write.size;
-      for(uint16_t i = min_x; i <= max_x; i = i + 8) {
+      for (uint16_t i = min_x; i <= max_x; i = i + 8) {
         value = (address + SymBitVector::constant(64, i/8) == write.address).ite(
                   value[size - 1][i + write.size] || write.value[write.size-1][0] || value[i-1][0],
                   value
@@ -261,12 +261,12 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
 
 vector<pair<string, uint16_t>> DeprecatedMemory::get_address_vars() const {
   vector<pair<string, uint16_t>> list;
-  for(size_t i = 0; i < writes_.size(); ++i) {
+  for (size_t i = 0; i < writes_.size(); ++i) {
     assert(writes_[i].value.ptr->type() == SymBitVector::VAR);
     const auto* var = static_cast<const SymBitVectorVar*>(writes_[i].address.ptr);
     list.push_back(std::pair<std::string, uint16_t>(var->name_, var->size_));
   }
-  for(size_t i = 0; i < reads_.size(); ++i) {
+  for (size_t i = 0; i < reads_.size(); ++i) {
     assert(reads_[i].value.ptr->type() == SymBitVector::VAR);
     const auto* var = static_cast<const SymBitVectorVar*>(reads_[i].address.ptr);
     list.push_back(std::pair<std::string, uint16_t>(var->name_, var->size_));

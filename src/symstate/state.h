@@ -41,7 +41,7 @@ public:
   }
 
   ~SymState() {
-    if(delete_memory_)
+    if (delete_memory_)
       delete memory;
   }
 

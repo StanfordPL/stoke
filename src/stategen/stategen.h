@@ -138,7 +138,7 @@ private:
   /** Read the maximum allowed value for a register from the map;
       default to -1 */
   inline uint64_t get_max_value(size_t r) const {
-    if(max_register_values_.count(r))
+    if (max_register_values_.count(r))
       return max_register_values_.at(r);
     else
       return (uint64_t)(-1);
@@ -146,7 +146,7 @@ private:
   /** Read the maximum allowed value for a register from the map;
       default to -1 */
   inline uint64_t get_bitmask(size_t r) const {
-    if(bitmask_values_.count(r))
+    if (bitmask_values_.count(r))
       return bitmask_values_.at(r);
     else
       return (uint64_t)(-1);

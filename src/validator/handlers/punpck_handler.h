@@ -32,7 +32,7 @@ public:
 
   virtual std::vector<std::string> full_support_opcodes() {
     std::vector<std::string> opcodes;
-    for(auto it : is_low_) {
+    for (auto it : is_low_) {
       opcodes.push_back(it.first);
     }
     return opcodes;

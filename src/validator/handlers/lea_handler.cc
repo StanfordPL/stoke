@@ -21,13 +21,13 @@ using namespace x64asm;
 
 Handler::SupportLevel LeaHandler::get_support(const x64asm::Instruction& instr) {
 
-  if(!operands_supported(instr)) {
+  if (!operands_supported(instr)) {
     return Handler::NONE;
   }
 
   string opcode = get_opcode(instr);
 
-  if(opcode == "leaw" || opcode == "leal" || opcode == "leaq")
+  if (opcode == "leaw" || opcode == "leal" || opcode == "leaq")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG);
 
   return Handler::NONE;
@@ -39,7 +39,7 @@ void LeaHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   // Sanity check for support
   error_ = "";
 
-  if(!get_support(instr)) {
+  if (!get_support(instr)) {
     error_ = "Instruction not supported.";
     return;
   }

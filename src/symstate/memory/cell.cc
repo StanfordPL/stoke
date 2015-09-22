@@ -24,7 +24,7 @@ SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
   assert(map_.count(line_no));
 
   auto access = map_[line_no];
-  if(access.unconstrained) {
+  if (access.unconstrained) {
     return SymBool::_false();
   }
 
@@ -33,15 +33,15 @@ SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
   auto addr_constraint = (address == cell_addrs_[access.cell] + SymBitVector::constant(64, access.cell_offset));
   state_->constraints.push_back(addr_constraint);
 
-  if(access.size == access.cell_size) {
+  if (access.size == access.cell_size) {
     assert(access.cell_offset == 0);
     cells_[access.cell] = value;
   } else {
     auto old_value = cells_[access.cell];
 
-    if(access.cell_offset == 0) {
+    if (access.cell_offset == 0) {
       cells_[access.cell] = old_value[access.cell_size*8-1][access.size*8] || value;
-    } else if(access.cell_offset == access.cell_size - access.size) {
+    } else if (access.cell_offset == access.cell_size - access.size) {
       cells_[access.cell] = value || old_value[access.cell_offset*8-1][0];
     } else {
       cells_[access.cell] = old_value[access.cell_size*8-1][access.size*8 + access.cell_offset*8] ||
@@ -58,7 +58,7 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
   assert(map_.count(line_no));
 
   auto access = map_[line_no];
-  if(access.unconstrained) {
+  if (access.unconstrained) {
     // It's an unconstrained access.  We're done.
     return std::pair<SymBitVector,SymBool>(SymBitVector::tmp_var(size), SymBool::_false());
   }
@@ -68,7 +68,7 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
 
   SymBitVector value;
 
-  if(access.size == access.cell_size) {
+  if (access.size == access.cell_size) {
     assert(access.cell_offset == 0);
     value = cells_[access.cell];
   } else {
@@ -83,15 +83,15 @@ std::pair<SymBitVector,SymBool> CellMemory::read(SymBitVector address, uint16_t 
 
 void CellMemory::equalize_cells(CellMemory& other) {
 
-  for(auto p : cells_) {
+  for (auto p : cells_) {
     bool found = false;
-    for(auto q : other.cells_) {
-      if(p.first == q.first) {
+    for (auto q : other.cells_) {
+      if (p.first == q.first) {
         found = true;
         break;
       }
     }
-    if(!found) {
+    if (!found) {
       // need to add new, unconstrained cell to other.
       other.cells_[p.first] = SymBitVector::tmp_var(cell_sizes_[p.first]*8);
       other.init_cells_[p.first] = other.cells_[p.first];
@@ -102,15 +102,15 @@ void CellMemory::equalize_cells(CellMemory& other) {
   }
 
   // We need to look for cells of other that aren't found in self.
-  for(auto q : other.cells_) {
+  for (auto q : other.cells_) {
     bool found = false;
-    for(auto p : cells_) {
-      if(p.first == q.first) {
+    for (auto p : cells_) {
+      if (p.first == q.first) {
         found = true;
         break;
       }
     }
-    if(!found) {
+    if (!found) {
       // need to add new, unconstrained cell to self.
       cells_[q.first] = SymBitVector::tmp_var(other.cell_sizes_[q.first]*8);
       init_cells_[q.first] = cells_[q.first];
@@ -128,7 +128,7 @@ SymBool CellMemory::aliasing_formula(CellMemory& other) {
   equalize_cells(other);
   SymBool condition = SymBool::_true();
 
-  for(auto p : cells_) {
+  for (auto p : cells_) {
 
     size_t cell = p.first;
     size_t cell_size = cell_sizes_[cell];
@@ -144,15 +144,15 @@ SymBool CellMemory::aliasing_formula(CellMemory& other) {
     condition = condition & (cell_addr >= SymBitVector::constant(64, 0x40));
 
     // Do aliasing constraints
-    if(cell_unconstrained_[cell])
+    if (cell_unconstrained_[cell])
       continue;
 
     // Assert no overlaps with other cells
-    for(auto q : cells_) {
-      if(cell_unconstrained_[q.first])
+    for (auto q : cells_) {
+      if (cell_unconstrained_[q.first])
         continue;
 
-      if(q.first > cell) {
+      if (q.first > cell) {
         // we want to assert that these don't overlap
         size_t other_cell = q.first;
         auto other_addr = cell_addrs_[other_cell];
@@ -176,7 +176,7 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
   SymBool condition = SymBool::_true();
   equalize_cells(other);
 
-  for(auto p : cells_) {
+  for (auto p : cells_) {
     size_t cell = p.first;
     assert(other.cells_.count(cell));
     condition = condition & (p.second == other.cells_[cell]);
