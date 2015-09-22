@@ -57,13 +57,13 @@ const map<string, array<bool, 4>> ShiftHandler::to_right_sign_rotate_cf_ = {
 
 Handler::SupportLevel ShiftHandler::get_support(const x64asm::Instruction& instr) {
 
-  if(!operands_supported(instr)) {
+  if (!operands_supported(instr)) {
     return Handler::NONE;
   }
 
   string opcode = get_opcode(instr);
 
-  if(to_right_sign_rotate_cf_.find(opcode) != to_right_sign_rotate_cf_.end())
+  if (to_right_sign_rotate_cf_.find(opcode) != to_right_sign_rotate_cf_.end())
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG);
 
   return Handler::NONE;
@@ -75,7 +75,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
   // Sanity check for support
   error_ = "";
 
-  if(!get_support(instr)) {
+  if (!get_support(instr)) {
     error_ = "Instruction not supported.";
     return;
   }
@@ -106,15 +106,15 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
   // Compute shift amount, and the right number of zeros for typechecking.
   SymBitVector shift_amt = state[shift][7][0] & SymBitVector::constant(8, mask);
 
-  if(rotate && !rotate_cf) {
-    if(dest.size() > 8)
+  if (rotate && !rotate_cf) {
+    if (dest.size() > 8)
       shift_amt = SymBitVector::constant(dest.size() - 8, 0) || shift_amt;
   } else {
     shift_amt = SymBitVector::constant(dest.size() - 7, 0) || shift_amt;
   }
 
   // When rotating cf, need to do modulous
-  if(rotate && rotate_cf)
+  if (rotate && rotate_cf)
     shift_amt = shift_amt % SymBitVector::constant(dest.size() + 1, dest.size() + 1);
 
   // If the shift is length 0, we don't set SF/ZF/PF
@@ -122,7 +122,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
 
   // We need to compute a shift on a slightly larger register to get the carry flag.  so:
   SymBitVector extended_src;
-  if(right && !rotate)
+  if (right && !rotate)
     extended_src = state[dest] || SymBitVector::constant(1,0);
   else if (!right && !rotate)
     extended_src = SymBitVector::constant(1,0) || state[dest];
@@ -140,7 +140,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
   // Note that the computation of CF/OF depends on instruction variant
   SymBitVector temp_dest;
   SymBitVector result;
-  if(!rotate && right && !sign) {
+  if (!rotate && right && !sign) {
     temp_dest = extended_src >> shift_amt;
     result = temp_dest[dest.size()][1];
 
@@ -197,7 +197,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
 
     // Do the shift and store the result
     int last_bit_shifted;
-    if(right) {
+    if (right) {
       temp_dest = extended_src.ror(shift_amt);
       last_bit_shifted = dest.size() - 1;
     } else {
@@ -215,7 +215,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     // Set OF (if needed) to xor of two MSB (for right shifts)
     // or xor of MSB, LSB (for left shifts)
     SymBool of;
-    if(right) {
+    if (right) {
       of = temp_dest[dest.size() - 1] ^ temp_dest[dest.size() - 2];
     } else {
       of = temp_dest[dest.size() - 1] ^ temp_dest[0];
@@ -226,7 +226,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
   } else if (rotate && rotate_cf) {
 
     // Do the rotate and store the result
-    if(right) {
+    if (right) {
       temp_dest = extended_src.ror(shift_amt);
     } else {
       temp_dest = extended_src.rol(shift_amt);
@@ -243,7 +243,7 @@ void ShiftHandler::build_circuit(const x64asm::Instruction& instr, SymState& sta
     //         xor MSB, LSB when shifting left)
     // Otherwise, OF is undefined.
     SymBool of;
-    if(right)
+    if (right)
       of = temp_dest[dest.size() - 1] ^ temp_dest[dest.size() - 2];
     else
       of = temp_dest[dest.size()] ^ temp_dest[dest.size() - 1];

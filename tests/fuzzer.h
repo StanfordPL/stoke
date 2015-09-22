@@ -21,7 +21,7 @@
 namespace stoke {
 
 std::ostream& fuzz_print(size_t i = 2) {
-  switch(i) {
+  switch (i) {
   case 0:
     std::cout << "[----------] ";
     break;
@@ -51,7 +51,7 @@ TransformPools default_fuzzer_pool() {
     0x8080808080808080, 0x1010101010101010,
     0x0404040404040404, 0x2222222222222222
   };
-  for(auto imm : extra_imms)
+  for (auto imm : extra_imms)
     tp.insert_immediate(x64asm::Imm64(imm));
 
   tp.set_flags(CpuInfo::get_flags());
@@ -72,7 +72,7 @@ TransformPools default_fuzzer_pool() {
   memory.push_back("-0x7(%r11d, %ebx, 4)");
   memory.push_back("0x30(%r11d)");
 
-  for(auto mem_str : memory) {
+  for (auto mem_str : memory) {
     std::stringstream ss;
     ss.str(mem_str);
     x64asm::M8 m8(x64asm::rax);
@@ -96,7 +96,7 @@ TransformPools default_fuzzer_pool() {
 uint64_t fuzz(TransformPools& pools, size_t iterations, void (*callback)(const Cfg& cfg, void* info), void* callback_info, size_t instr_count = 1, std::vector<TUnit> aux_fxns = {}, uint64_t seed = 0) {
 
   // Step 1: get the seed
-  if(!seed) {
+  if (!seed) {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     seed = tv.tv_usec + tv.tv_sec*1000000;;
@@ -105,7 +105,7 @@ uint64_t fuzz(TransformPools& pools, size_t iterations, void (*callback)(const C
 
   // Step 2: Setup initial state
   x64asm::Code code;
-  for(size_t i = 0; i < instr_count; ++i)
+  for (size_t i = 0; i < instr_count; ++i)
     code.push_back(x64asm::Instruction(x64asm::NOP));
   code.push_back(x64asm::Instruction(x64asm::RET));
   TUnit fxn(code);
@@ -132,25 +132,25 @@ uint64_t fuzz(TransformPools& pools, size_t iterations, void (*callback)(const C
   }
 
   // Step 3: Fuzz
-  for(size_t i = 0; i < iterations; ++i) {
+  for (size_t i = 0; i < iterations; ++i) {
 
     // (A) mutate
     bool found = false;
-    for(size_t j = 0; j < 20; ++j) {
+    for (size_t j = 0; j < 20; ++j) {
 
       ti = transform(target);
-      if(ti.success) {
+      if (ti.success) {
         found = true;
         break;
       }
     }
-    if(!found) {
+    if (!found) {
       fuzz_print(1) << "Couldn't apply transform." << std::endl;
       continue;
     }
 
     // (B) Print
-    if(instr_count == 1) {
+    if (instr_count == 1) {
       auto ins = target.get_code()[1];
       fuzz_print(1) << ins << " # OPC=" << std::dec << ins.get_opcode() << std::endl;
     }

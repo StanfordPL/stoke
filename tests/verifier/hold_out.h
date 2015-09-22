@@ -52,7 +52,7 @@ protected:
     CpuState cs;
     StateGen sg(sb_);
     bool b = sg.get(cs, cfg);
-    if(!b)  {
+    if (!b)  {
       std::cerr << "Could not generate state" << std::endl;
       std::cerr << sg.get_error();
       fail();

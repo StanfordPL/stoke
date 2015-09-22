@@ -44,10 +44,10 @@ public:
 
     std::stringstream ss;
 
-    if(working_directory_ != "")
+    if (working_directory_ != "")
       ss << "cd " << working_directory_ << "; ";
 
-    if(path_ != "")
+    if (path_ != "")
       ss << "PATH=" << path_ << ":$PATH ";
 
     ss << code;
@@ -57,7 +57,7 @@ public:
 
     gettimeofday(&finish, NULL);
 
-    if(time) {
+    if (time) {
       *time = (finish.tv_sec - start.tv_sec)*1000000 +
               (finish.tv_usec - start.tv_usec);
     }
@@ -79,6 +79,7 @@ private:
 
 };
 
+#if !defined(NEHALEM_BUILD) && !defined(SANDYBRIDGE_BUILD)
 TEST_F(IntegrationTest, ExamplesTutorial) {
   uint64_t diff_1;
   uint64_t diff_2;
@@ -96,8 +97,8 @@ TEST_F(IntegrationTest, ExamplesTutorial) {
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
-  for(size_t i = 0; i < 10; ++i) {
-    if(!shell("make search")) {
+  for (size_t i = 0; i < 10; ++i) {
+    if (!shell("make search")) {
       good++;
       break;
     }
@@ -139,9 +140,9 @@ TEST_F(IntegrationTest, ExamplesParity) {
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
-  for(size_t i = 0; i < 10; ++i) {
-    if(!shell("make search")) {
-      if(wc("examples/parity/result.s") <= 40) {
+  for (size_t i = 0; i < 10; ++i) {
+    if (!shell("make search")) {
+      if (wc("examples/parity/result.s") <= 40) {
         good++;
         break;
       }
@@ -168,7 +169,7 @@ TEST_F(IntegrationTest, ExamplesExp) {
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
-  for(size_t i = 0; i < 10 && good == 0; ++i) {
+  for (size_t i = 0; i < 10 && good == 0; ++i) {
     if (!shell("make search")) {
       const auto res = wc("examples/exp/result.s");
       // There should have been a length reduction
@@ -182,6 +183,7 @@ TEST_F(IntegrationTest, ExamplesExp) {
   // Cleanup
   EXPECT_EQ(0ull, shell("make clean"));
 }
+#endif
 
 TEST_F(IntegrationTest, CostLiveOut) {
   set_working_dir("tests/fixtures/cost/live_out");
@@ -220,12 +222,14 @@ TEST_F(IntegrationTest, SandboxRecursiveJmp) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
+#if !defined(NEHALEM_BUILD) && !defined(SANDYBRIDGE_BUILD)
 TEST_F(IntegrationTest, SandboxRip) {
   set_working_dir("tests/fixtures/sandbox/rip");
   set_path("../../../../bin");
   EXPECT_EQ(0ull, shell("make"));
   EXPECT_EQ(0ull, shell("make clean"));
 }
+#endif
 
 TEST_F(IntegrationTest, SandboxStackSmash) {
   set_working_dir("tests/fixtures/sandbox/stack_smash");
@@ -248,6 +252,7 @@ TEST_F(IntegrationTest, SandboxLbls) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
+#if !defined(NEHALEM_BUILD) && !defined(SANDYBRIDGE_BUILD)
 TEST_F(IntegrationTest, SearchCall) {
   set_working_dir("tests/fixtures/search/call");
   set_path("../../../../bin");
@@ -269,6 +274,7 @@ TEST_F(IntegrationTest, SearchInitZero) {
   EXPECT_EQ(0ull, shell("make"));
   EXPECT_EQ(0ull, shell("make clean"));
 }
+#endif
 
 TEST_F(IntegrationTest, SearchPrevious) {
   set_working_dir("tests/fixtures/search/previous");
@@ -277,6 +283,7 @@ TEST_F(IntegrationTest, SearchPrevious) {
   EXPECT_EQ(0ull, shell("make clean"));
 }
 
+#if !defined(NEHALEM_BUILD) && !defined(SANDYBRIDGE_BUILD)
 TEST_F(IntegrationTest, SearchRh) {
   set_working_dir("tests/fixtures/search/rh_instr");
   set_path("../../../../bin");
@@ -290,3 +297,4 @@ TEST_F(IntegrationTest, SearchNonGoal) {
   EXPECT_EQ(0ull, shell("make"));
   EXPECT_EQ(0ull, shell("make clean"));
 }
+#endif

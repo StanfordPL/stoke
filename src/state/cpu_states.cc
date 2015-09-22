@@ -39,11 +39,11 @@ ostream& CpuStates::write_text(std::ostream& os) const {
 istream& CpuStates::read_text(std::istream& is) {
   this->clear();
 
-  for(string s; is.good();) {
+  for (string s; is.good();) {
 
     is >> ws;
     getline(is, s);
-    if(!regex_match(s, regex("Testcase [0-9]+:"))) {
+    if (!regex_match(s, regex("Testcase [0-9]+:"))) {
       fail(is) << "Expected \"Testcase n\" but found \"" << s << "\"" << endl;
       return is;
     }

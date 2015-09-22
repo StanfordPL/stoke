@@ -87,7 +87,7 @@ protected:
   Cfg make_cfg(std::stringstream& ss, x64asm::RegSet di = all(), x64asm::RegSet lo = all()) {
     x64asm::Code c;
     ss >> c;
-    if(ss.fail()) {
+    if (ss.fail()) {
       std::cerr << "Parsing error!" << std::endl;
       std::cerr << cpputil::fail_msg(ss) << std::endl;
       fail();
@@ -122,7 +122,7 @@ protected:
     CpuState cs;
     StateGen sg(sg_sandbox);
     bool b = sg.get(cs, cfg);
-    if(!b) {
+    if (!b) {
       std::cerr << "Couldn't generate a state!" << std::endl;
       std::cerr << sg.get_error() << std::endl;
       fail();
@@ -184,7 +184,7 @@ TEST_F(BoundedValidatorBaseTest, NoLoopsFails) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }
@@ -282,7 +282,7 @@ TEST_F(BoundedValidatorBaseTest, PopcntWrong) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
   validator->set_bound(4);
@@ -372,7 +372,7 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }
@@ -401,7 +401,7 @@ TEST_F(BoundedValidatorBaseTest, WriteDifferentPointers) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }
@@ -560,7 +560,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 }
 
@@ -607,7 +607,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }
@@ -650,16 +650,16 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsPass) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-  for(size_t i = 0; i < 10; ++i) {
+  for (size_t i = 0; i < 10; ++i) {
     CpuState tc;
     uint64_t base = rand();
     tc.gp[x64asm::rdi].get_fixed_quad(0) = base;
     tc.heap.resize(base, (i+1)*4 + 1);
-    for(size_t j = base; j < base + i*4; ++j) {
+    for (size_t j = base; j < base + i*4; ++j) {
       tc.heap.set_valid(j, true);
       tc.heap[j] = rand() % 256;
     }
-    for(size_t j = base+i*4; j < base+(i+1)*4; ++j) {
+    for (size_t j = base+i*4; j < base+(i+1)*4; ++j) {
       tc.heap.set_valid(j, true);
       tc.heap[j] = 0;
     }
@@ -709,16 +709,16 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-  for(size_t i = 0; i < 10; ++i) {
+  for (size_t i = 0; i < 10; ++i) {
     CpuState tc;
     uint64_t base = rand();
     tc.gp[x64asm::rdi].get_fixed_quad(0) = base;
     tc.heap.resize(base, (i+1)*4 + 1);
-    for(size_t j = base; j < base + i*4; ++j) {
+    for (size_t j = base; j < base + i*4; ++j) {
       tc.heap.set_valid(j, true);
       tc.heap[j] = rand() % 256;
     }
-    for(size_t j = base+i*4; j < base+(i+1)*4; ++j) {
+    for (size_t j = base+i*4; j < base+(i+1)*4; ++j) {
       tc.heap.set_valid(j, true);
       tc.heap[j] = 0;
     }
@@ -729,7 +729,7 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto ceg : validator->get_counter_examples())
+  for (auto ceg : validator->get_counter_examples())
     check_ceg(ceg, target, rewrite);
 
 }
@@ -780,7 +780,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }
@@ -958,7 +958,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }
@@ -996,14 +996,14 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
 
   auto ceg = validator->get_counter_examples()[0];
 
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
   /** rdi is pointing to 0x40000000 */
   uint64_t addr = ceg[x64asm::rdi]+3;
-  if(ceg.heap.in_range(addr))
+  if (ceg.heap.in_range(addr))
     EXPECT_EQ(0x40, ceg.heap[ceg[x64asm::rdi]+3] & 0x40);
-  else if(ceg.stack.in_range(addr))
+  else if (ceg.stack.in_range(addr))
     EXPECT_EQ(0x40, ceg.stack[ceg[x64asm::rdi]+3] & 0x40);
   else
     FAIL() << "Address " << addr << " not mapped in testcase" << std::endl;
@@ -1057,12 +1057,12 @@ TEST_F(BoundedValidatorBaseTest, StrlenCorrect) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
 
-  for(size_t i = 0; i < 20; ++i) {
+  for (size_t i = 0; i < 20; ++i) {
     CpuState tc = get_state();
     size_t count = rand() % 10;
     uint64_t start = tc[x64asm::rdi];
     tc.heap.resize(start, count+1);
-    for(size_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; ++i) {
       tc.heap.set_valid(start + i, true);
       tc.heap[start+i] = rand() % 256;
     }
@@ -1071,7 +1071,7 @@ TEST_F(BoundedValidatorBaseTest, StrlenCorrect) {
 
     uint64_t stack_start = tc[x64asm::rsp] - 8;
     tc.stack.resize(stack_start, 16);
-    for(size_t i = stack_start; i < stack_start+16; ++i) {
+    for (size_t i = stack_start; i < stack_start+16; ++i) {
       tc.stack.set_valid(i, true);
       tc.stack[i] = rand() % 256;
     }
@@ -1109,12 +1109,12 @@ TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
 
-  for(size_t i = 0; i < 20; ++i) {
+  for (size_t i = 0; i < 20; ++i) {
     CpuState tc = get_state();
     size_t count = rand() % 10;
     uint64_t start = tc[x64asm::rdi];
     tc.heap.resize(start, count+1);
-    for(size_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; ++i) {
       tc.heap.set_valid(start + i, true);
       tc.heap[start+i] = rand() % 256;
     }
@@ -1123,7 +1123,7 @@ TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
 
     uint64_t stack_start = tc[x64asm::rsp] - 8;
     tc.stack.resize(stack_start, 16);
-    for(size_t i = stack_start; i < stack_start+16; ++i) {
+    for (size_t i = stack_start; i < stack_start+16; ++i) {
       tc.stack.set_valid(i, true);
       tc.stack[i] = rand() % 256;
     }
@@ -1135,7 +1135,7 @@ TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
 
   ASSERT_LE(1ul, validator->counter_examples_available());
 
-  for(auto ceg : validator->get_counter_examples()) {
+  for (auto ceg : validator->get_counter_examples()) {
     check_ceg(ceg, target, rewrite);
   }
 
@@ -1267,23 +1267,23 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
 
-  for(size_t i = 0; i < 20; ++i) {
+  for (size_t i = 0; i < 20; ++i) {
     CpuState tc = get_state();
     size_t count = rand() % 6;
     uint64_t start = tc[x64asm::edi] + tc[x64asm::r15];
     tc.heap.resize(start, (count+1)*4);
-    for(size_t j = 0; j < count*4; j++) {
+    for (size_t j = 0; j < count*4; j++) {
       tc.heap.set_valid(start + j, true);
       tc.heap[start + j] = rand() % 256;
     }
-    for(size_t j = count*4; j < count*4+4; ++j) {
+    for (size_t j = count*4; j < count*4+4; ++j) {
       tc.heap.set_valid(start + j, true);
       tc.heap[start + j] = 0;
     }
 
     uint64_t stack_start = tc[x64asm::rsp] - 8;
     tc.stack.resize(stack_start, 16);
-    for(size_t j = stack_start; j < stack_start+16; ++j) {
+    for (size_t j = stack_start; j < stack_start+16; ++j) {
       tc.stack.set_valid(j, true);
       tc.stack[j] = rand() % 256;
     }
@@ -1339,23 +1339,23 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-  for(size_t i = 0; i < 20; ++i) {
+  for (size_t i = 0; i < 20; ++i) {
     CpuState tc = get_state();
     size_t count = rand() % 6;
     uint64_t start = tc[x64asm::edi] + tc[x64asm::r15];
     tc.heap.resize(start, (count+1)*4);
-    for(size_t j = 0; j < count*4; j++) {
+    for (size_t j = 0; j < count*4; j++) {
       tc.heap.set_valid(start + j, true);
       tc.heap[start + j] = rand() % 256;
     }
-    for(size_t j = count*4; j < count*4+4; ++j) {
+    for (size_t j = count*4; j < count*4+4; ++j) {
       tc.heap.set_valid(start + j, true);
       tc.heap[start + j] = 0;
     }
 
     uint64_t stack_start = tc[x64asm::rsp] - 8;
     tc.stack.resize(stack_start, 16);
-    for(size_t j = stack_start; j < stack_start+16; ++j) {
+    for (size_t j = stack_start; j < stack_start+16; ++j) {
       tc.stack.set_valid(j, true);
       tc.stack[j] = rand() % 256;
     }
@@ -1366,7 +1366,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
 
-  for(auto it : validator->get_counter_examples()) {
+  for (auto it : validator->get_counter_examples()) {
     std::cout << "CEG: " << std::endl << it << std::endl;
     check_ceg(it, target, rewrite);
   }
@@ -1428,7 +1428,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong1) {
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 
@@ -1492,7 +1492,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong2) {
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }
@@ -1559,7 +1559,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect3) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }
@@ -1626,7 +1626,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong3) {
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }
@@ -1693,7 +1693,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong4) {
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }
@@ -1760,7 +1760,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong5) {
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_LE(1ul, validator->counter_examples_available());
-  for(auto it : validator->get_counter_examples())
+  for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
 }

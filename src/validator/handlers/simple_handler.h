@@ -40,15 +40,15 @@ public:
   virtual std::vector<std::string> full_support_opcodes() {
     std::vector<std::string> opcodes;
 
-    for(auto it : operator_0_)
+    for (auto it : operator_0_)
       opcodes.push_back(it.first);
-    for(auto it : operator_1_)
+    for (auto it : operator_1_)
       opcodes.push_back(it.first);
-    for(auto it : operator_2_)
+    for (auto it : operator_2_)
       opcodes.push_back(it.first);
-    for(auto it : operator_3_)
+    for (auto it : operator_3_)
       opcodes.push_back(it.first);
-    for(auto it : operator_4_)
+    for (auto it : operator_4_)
       opcodes.push_back(it.first);
 
     return opcodes;

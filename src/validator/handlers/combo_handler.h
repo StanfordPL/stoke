@@ -31,14 +31,14 @@ public:
   ComboHandler(std::vector<Handler*>& handlers) : handlers_(handlers), free_handlers_(false) {}
   /** Destruct object.  Frees handlers if set by default. */
   ~ComboHandler() {
-    if(free_handlers_)
-      for(auto it : handlers_)
+    if (free_handlers_)
+      for (auto it : handlers_)
         delete it;
   }
 
   virtual std::vector<std::string> full_support_opcodes() {
     std::vector<std::string> opcodes;
-    for(auto it : handlers_) {
+    for (auto it : handlers_) {
       auto children = it->full_support_opcodes();
       opcodes.insert(opcodes.end(), children.begin(), children.end());
     }

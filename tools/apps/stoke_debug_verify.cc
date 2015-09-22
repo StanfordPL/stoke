@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 
   const auto res = verifier.verify(target, rewrite);
 
-  if(verifier.has_error()) {
+  if (verifier.has_error()) {
     Console::msg() << "Encountered error: " << endl;
     Console::msg() << verifier.error() << endl;
     return 1;

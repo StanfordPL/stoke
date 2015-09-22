@@ -31,7 +31,7 @@ public:
 
     auto p1 = line_to_reference(line_1);
     auto p2 = line_to_reference(line_2);
-    if(!p1.first || !p2.first)
+    if (!p1.first || !p2.first)
       return false;
 
     return must_overlap(line_1, p1.second, line_2, p2.second);
@@ -42,7 +42,7 @@ public:
 
     auto p1 = line_to_reference(line_1);
     auto p2 = line_to_reference(line_2);
-    if(!p1.first || !p2.first)
+    if (!p1.first || !p2.first)
       return true;
 
     return may_overlap(line_1, p1.second, line_2, p2.second);
@@ -52,19 +52,19 @@ public:
   template <class T1, class T2>
   bool must_overlap(size_t line_1, x64asm::M<T1> ref_1, size_t line_2, x64asm::M<T2> ref_2) {
 
-    if(!references_comparable(ref_1, ref_2))
+    if (!references_comparable(ref_1, ref_2))
       return false; /* We don't know */
-    if(ref_1.size() != ref_2.size())
+    if (ref_1.size() != ref_2.size())
       return false;
 
     int32_t displacement = 0;
 
     x64asm::RegSet modified = x64asm::RegSet::empty();
-    for(size_t i = line_1; i < line_2; ++i) {
-      if(code_[i].is_push() && ref_1.get_base() == x64asm::rsp) {
+    for (size_t i = line_1; i < line_2; ++i) {
+      if (code_[i].is_push() && ref_1.get_base() == x64asm::rsp) {
         displacement -= code_[i].get_operand<x64asm::Operand>(0).size()/8;
       } else if (code_[i].is_pop() && ref_1.get_base() == x64asm::rsp) {
-        if(code_[i].get_operand<x64asm::Operand>(0).is_typical_memory() &&
+        if (code_[i].get_operand<x64asm::Operand>(0).is_typical_memory() &&
             code_[i].get_operand<x64asm::M8>(0).get_base() == x64asm::rsp)
           modified = modified | code_[i].maybe_write_set();
         displacement += code_[i].get_operand<x64asm::Operand>(0).size()/8;
@@ -74,12 +74,12 @@ public:
       }
     }
 
-    if(ref_1.contains_base() && modified.contains(ref_1.get_base()))
+    if (ref_1.contains_base() && modified.contains(ref_1.get_base()))
       return false; /* We don't know. */
-    if(ref_1.contains_index() && modified.contains(ref_1.get_index()))
+    if (ref_1.contains_index() && modified.contains(ref_1.get_index()))
       return false; /* We don't know */
 
-    if((int32_t)ref_1.get_disp() != (int32_t)ref_2.get_disp() + displacement)
+    if ((int32_t)ref_1.get_disp() != (int32_t)ref_2.get_disp() + displacement)
       return false; /* We don't know */
 
     return true; /* The must be exactly the same */
@@ -89,7 +89,7 @@ public:
   template <class T1, class T2>
   bool may_overlap(size_t line_1, x64asm::M<T1> ref_1, size_t line_2, x64asm::M<T2> ref_2) {
 
-    if(!references_comparable(ref_1, ref_2)) {
+    if (!references_comparable(ref_1, ref_2)) {
 #ifdef DEBUG_ALIASING
       std::cout << "Non-comparable" << std::endl;
 #endif
@@ -102,11 +102,11 @@ public:
 
     int32_t displacement = 0;
 
-    for(size_t i = min_line; i < max_line; ++i) {
-      if(code_[i].is_push() && ref_1.get_base() == x64asm::rsp) {
+    for (size_t i = min_line; i < max_line; ++i) {
+      if (code_[i].is_push() && ref_1.get_base() == x64asm::rsp) {
         displacement -= code_[i].get_operand<x64asm::Operand>(0).size()/8;
       } else if (code_[i].is_pop() && ref_1.get_base() == x64asm::rsp) {
-        if(code_[i].get_operand<x64asm::Operand>(0).is_typical_memory() &&
+        if (code_[i].get_operand<x64asm::Operand>(0).is_typical_memory() &&
             code_[i].get_operand<x64asm::M8>(0).get_base() == x64asm::rsp)
           modified = modified | code_[i].maybe_write_set();
         displacement += code_[i].get_operand<x64asm::Operand>(0).size()/8;
@@ -116,22 +116,22 @@ public:
       }
     }
 
-    if(ref_1.contains_base() && modified.contains(ref_1.get_base())) {
+    if (ref_1.contains_base() && modified.contains(ref_1.get_base())) {
 #ifdef DEBUG_ALIASING
       std::cout << "Modified base" << std::endl;
 #endif
       return true; /* We don't know */
     }
-    if(ref_1.contains_index() && modified.contains(ref_1.get_index())) {
+    if (ref_1.contains_index() && modified.contains(ref_1.get_index())) {
 #ifdef DEBUG_ALIASING
       std::cout << "Modified index" << std::endl;
 #endif
       return true; /* We don't know */
     }
 
-    if((int32_t)ref_1.get_disp() + (int32_t)ref_1.size()/8 <= (int32_t)ref_2.get_disp() + displacement)
+    if ((int32_t)ref_1.get_disp() + (int32_t)ref_1.size()/8 <= (int32_t)ref_2.get_disp() + displacement)
       return false; /* Victory!  No overlap. */
-    if((int32_t)ref_2.get_disp() + displacement + (int32_t)ref_2.size()/8 <= (int32_t)ref_1.get_disp())
+    if ((int32_t)ref_2.get_disp() + displacement + (int32_t)ref_2.size()/8 <= (int32_t)ref_1.get_disp())
       return false; /* Victory!  No overlap. */
 
     return true;
@@ -144,9 +144,9 @@ private:
     x64asm::M64 dummy(x64asm::rax);
 
     auto instr = code_[line];
-    if(instr.is_explicit_memory_dereference()) {
+    if (instr.is_explicit_memory_dereference()) {
       // usually good, unless there's a push/pop too
-      if(instr.is_push() || instr.is_pop())
+      if (instr.is_push() || instr.is_pop())
         return std::pair<bool, x64asm::M64>(false, dummy);
 
       return std::pair<bool, x64asm::M64>(true, instr.get_operand<x64asm::M64>(instr.mem_index()));

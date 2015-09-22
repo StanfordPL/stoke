@@ -63,7 +63,7 @@ istream& Regs::read_text(istream& is, const char** names) {
     string name;
     is >> ws >> name >> ws;
 
-    if(strcmp(names[i], name.c_str())) {
+    if (strcmp(names[i], name.c_str())) {
       fail(is) << "Expected register '" << names[i] << "' but got '" << name << "'" << endl;
       return is;
     }
