@@ -387,15 +387,18 @@ int main(int argc, char** argv) {
 
     sep(Console::msg());
 
+
+    if (timeout_iterations_arg.value() && total_iterations > timeout_iterations_arg.value()) {
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
+      Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+    }
+
     if (!verified && verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
       Console::msg() << "Restarting search using new testcase (counterexample from verifier):" << endl << endl;
       Console::msg() << verifier.get_counter_examples()[0] << endl << endl;
       training_sb.insert_input(verifier.get_counter_examples()[0]);
-    } else if (total_iterations < timeout_iterations_arg.value()) {
-      Console::msg() << "Restarting search:" << endl << endl;
     } else {
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
-      Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+      Console::msg() << "Restarting search" << endl;
     }
   }
 
