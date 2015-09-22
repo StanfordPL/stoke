@@ -37,7 +37,7 @@ public:
     if (name != other.name) return false;
     if (return_type != other.return_type) return false;
     if (args.size() != other.args.size()) return false;
-    for(size_t i = 0; i < args.size(); ++i)
+    for (size_t i = 0; i < args.size(); ++i)
       if (args[i] != other.args[i])
         return false;
     return true;

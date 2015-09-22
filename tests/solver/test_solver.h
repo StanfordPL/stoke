@@ -26,12 +26,12 @@ public:
   }
 
   ~TestSolver() {
-    for(auto it : solvers_)
+    for (auto it : solvers_)
       delete it;
   }
 
   SMTSolver& set_timeout(uint64_t timeout) {
-    for(auto it : solvers_) {
+    for (auto it : solvers_) {
       it->set_timeout(timeout);
     }
     return *this;
@@ -43,24 +43,24 @@ public:
     bool success = false;
     bool last = false;
     std::vector<bool> results;
-    for(auto it : solvers_) {
+    for (auto it : solvers_) {
 
       // Is it SAT?
       last = it->is_sat(c);
 
       // If there's an error, skip entirely
-      if(!it->has_error()) {
+      if (!it->has_error()) {
 
         // Record answer if it's the first one OK
-        if(!success) {
+        if (!success) {
           first = last;
           success = true;
         }
 
         // Check it's not different from previous answers
-        for(auto ij : results) {
+        for (auto ij : results) {
           EXPECT_EQ(last, ij);
-          if(last != ij) {
+          if (last != ij) {
             first = false;
             error_ = "Validators don't agree with each other.";
           }
@@ -70,9 +70,9 @@ public:
         results.push_back(last);
       }
     }
-    if(!success) {
+    if (!success) {
       error_ = "All solvers encountered an error.";
-      for(auto it : solvers_) {
+      for (auto it : solvers_) {
         error_ = error_ + "\n\n" + it->get_error();
       }
     }
@@ -80,16 +80,16 @@ public:
   }
 
   bool has_model() const {
-    for(auto it : solvers_) {
-      if(it->has_model() && !it->has_error())
+    for (auto it : solvers_) {
+      if (it->has_model() && !it->has_error())
         return true;
     }
     return false;
   }
 
   bool get_model_bool(const std::string& s) {
-    for(auto it : solvers_) {
-      if(it->has_model() && !it->has_error()) {
+    for (auto it : solvers_) {
+      if (it->has_model() && !it->has_error()) {
         return it->get_model_bool(s);
       }
     }
@@ -97,8 +97,8 @@ public:
   }
 
   cpputil::BitVector get_model_bv(const std::string& s, uint16_t n) {
-    for(auto it : solvers_) {
-      if(it->has_model() && !it->has_error()) {
+    for (auto it : solvers_) {
+      if (it->has_model() && !it->has_error()) {
         return it->get_model_bv(s, n);
       }
     }

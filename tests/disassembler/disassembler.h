@@ -66,7 +66,7 @@ TEST(DisassemblerTest, PopCnt) {
   tmp << "testq  %rdi,%rdi #SIZE=3" << std::endl;
   tmp << "je     .L_40058f #SIZE=2" << std::endl;
   tmp << "xorl   %eax,%eax #SIZE=2" << std::endl;
-  for(size_t i = 0; i < 9; ++i)
+  for (size_t i = 0; i < 9; ++i)
     tmp << "nop" << std::endl;
   tmp << ".L_400580:" << std::endl;
   tmp << "movl   %edi,%edx #SIZE=2" << std::endl;
@@ -79,7 +79,7 @@ TEST(DisassemblerTest, PopCnt) {
   tmp << ".L_40058f:" << std::endl;
   tmp << "xorl   %eax, %eax #SIZE=2" << std::endl;
   tmp << "retq" << std::endl;
-  for(size_t i = 0; i < 14; ++i)
+  for (size_t i = 0; i < 14; ++i)
     tmp << "nop" << std::endl;
 
   x64asm::Code popcnt_code;

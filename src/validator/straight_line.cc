@@ -44,10 +44,10 @@ void StraightLineValidator::generate_constraints(const stoke::Cfg& f1, const sto
   SymState first("1_INIT");
   SymState second("2_INIT");
 
-  for(auto it : first.equality_constraints(init, f1.def_ins()))
+  for (auto it : first.equality_constraints(init, f1.def_ins()))
     constraints.push_back(it);
 
-  for(auto it : second.equality_constraints(init, f1.def_ins()))
+  for (auto it : second.equality_constraints(init, f1.def_ins()))
     constraints.push_back(it);
 
   // Setup aliasing analyses
@@ -65,14 +65,14 @@ void StraightLineValidator::generate_constraints(const stoke::Cfg& f1, const sto
   build_circuit(f1, first);
   build_circuit(f2, second);
 
-  for(auto it : first.constraints)
+  for (auto it : first.constraints)
     constraints.push_back(it);
-  for(auto it : second.constraints)
+  for (auto it : second.constraints)
     constraints.push_back(it);
 
   // Assert inequality of the final states
   SymBool inequality = SymBool::_false();
-  for(auto it : first.equality_constraints(second, f1.live_outs())) {
+  for (auto it : first.equality_constraints(second, f1.live_outs())) {
     inequality = inequality | !it;
   }
 
@@ -85,9 +85,9 @@ void StraightLineValidator::generate_constraints(const stoke::Cfg& f1, const sto
   SymState first_outputs("1_FINAL");
   SymState second_outputs("2_FINAL");
 
-  for(auto it : first_outputs.equality_constraints(first, f1.live_outs()))
+  for (auto it : first_outputs.equality_constraints(first, f1.live_outs()))
     constraints.push_back(it);
-  for(auto it : second_outputs.equality_constraints(second, f1.live_outs()))
+  for (auto it : second_outputs.equality_constraints(second, f1.live_outs()))
     constraints.push_back(it);
 
   /*
@@ -101,18 +101,18 @@ void StraightLineValidator::generate_constraints(const stoke::Cfg& f1, const sto
 void StraightLineValidator::build_circuit(const Instruction& instr, SymState& state) const {
 
   /* No need to do anything for labels/nops */
-  if(instr.is_label_defn() || instr.is_nop())
+  if (instr.is_label_defn() || instr.is_nop())
     return;
 
   /* For now, we don't handle any control flow */
-  if(instr.is_any_jump() || instr.is_any_call() || instr.is_any_return()) {
+  if (instr.is_any_jump() || instr.is_any_call() || instr.is_any_return()) {
     stringstream ss;
     ss << "Control flow unsupported: " << instr;
     throw VALIDATOR_ERROR(ss.str());
   }
 
   /* Otherwise, run the handler and check for errors */
-  if(!handler_.get_support(instr)) {
+  if (!handler_.get_support(instr)) {
     stringstream ss;
     ss << "Instruction not supported: " << instr;
     throw VALIDATOR_ERROR(ss.str());
@@ -120,7 +120,7 @@ void StraightLineValidator::build_circuit(const Instruction& instr, SymState& st
 
   handler_.build_circuit(instr, state);
 
-  if(handler_.has_error()) {
+  if (handler_.has_error()) {
     stringstream ss;
     ss << "Error building circuit for: " << instr << ".";
     ss << "Handler says: " << handler_.error();
@@ -140,9 +140,9 @@ void StraightLineValidator::build_circuit(const Cfg& cfg, SymState& state) const
 
   Code code = cfg.get_code();
 
-  for(size_t i = 0; i < code.size(); ++i) {
+  for (size_t i = 0; i < code.size(); ++i) {
 
-    if(code[i].is_any_return())
+    if (code[i].is_any_return())
       break;
 
     state.set_lineno(i);
@@ -160,11 +160,11 @@ CpuState StraightLineValidator::state_from_model(SMTSolver& smt, const string& n
   // populate address map
   auto concrete = map<uint64_t, BitVector>();
 
-  for(size_t i = 0; i < 2; ++i) {
+  for (size_t i = 0; i < 2; ++i) {
     auto mem = i ? memory : memory2;
-    if(!mem)
+    if (!mem)
       continue;
-    for(auto p : mem->get_address_vars()) {
+    for (auto p : mem->get_address_vars()) {
       auto address = smt.get_model_bv(p.first, 64).get_fixed_quad(0);
       concrete[address] = BitVector(p.second);
       //cout << "memory var name: " << p.first << " of size " << p.second << endl;
@@ -204,7 +204,7 @@ bool StraightLineValidator::verify(const Cfg& target, const Cfg& rewrite) {
     // Run the solver
     bool is_sat = solver_.is_sat(constraints);
 
-    if(solver_.has_error())
+    if (solver_.has_error())
       throw VALIDATOR_ERROR("solver: " + solver_.get_error());
 
     // Do we have a counterexample?
@@ -224,7 +224,7 @@ bool StraightLineValidator::verify(const Cfg& target, const Cfg& rewrite) {
     reset_mm();
     return !is_sat;
 
-  } catch(validator_error e) {
+  } catch (validator_error e) {
 
     has_error_ = true;
     error_= e.get_message();

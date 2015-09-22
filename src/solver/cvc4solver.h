@@ -29,7 +29,7 @@ class Cvc4Solver : public SMTSolver {
 public:
   Cvc4Solver() : smt_(NULL), uninterpreted_(false) {}
   ~Cvc4Solver() {
-    if(smt_)
+    if (smt_)
       delete smt_;
   }
 
@@ -46,7 +46,7 @@ public:
   bool get_model_bool(const std::string& var);
 
   void reset() {
-    if(smt_) {
+    if (smt_) {
       delete smt_;
     }
 

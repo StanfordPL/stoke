@@ -38,7 +38,7 @@ public:
 
     // Build a state at random, if possible
     CpuState cs;
-    if(!sg_.get(cs, cfg)) {
+    if (!sg_.get(cs, cfg)) {
       fuzz_print() << "Could not generate state: " << sg_.get_error() << std::endl;
       return;
     }
@@ -55,7 +55,7 @@ public:
     set_def_ins(cfg.def_ins());
     set_live_outs(cfg.live_outs());
 
-    if(check_circuit(cs))
+    if (check_circuit(cs))
       success_count_++;
   }
 
@@ -82,9 +82,9 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   // Parameters for the test
   unsigned long iterations = 100;
   const char * iterations_str = getenv("TEST_VALIDATOR_FUZZ_COUNT");
-  if(iterations_str != NULL)
+  if (iterations_str != NULL)
     iterations = strtol(iterations_str, NULL, 10);
-  if(iterations == 0)
+  if (iterations == 0)
     iterations = 100;
 
   const size_t min_success = iterations/4;

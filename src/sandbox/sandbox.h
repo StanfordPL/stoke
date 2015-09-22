@@ -316,7 +316,7 @@ private:
 
   /** Set which pool of labels to use. */
   void set_label_pool(x64asm::Label function_label) {
-    if(!label_pools_.count(function_label)) {
+    if (!label_pools_.count(function_label)) {
       label_pools_[function_label] = new std::vector<x64asm::Label>();
       label_pools_[function_label]->resize(4);
     }
@@ -334,7 +334,7 @@ private:
   }
   /** Empties all the labels. */
   void clear_label_pools() {
-    for(auto p : label_pools_) {
+    for (auto p : label_pools_) {
       delete p.second;
     }
     label_pools_.clear();

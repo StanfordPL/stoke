@@ -52,7 +52,7 @@ public:
   void insert_transform(Transform* tr, size_t weight = 1) {
     size_t label = transforms_.size();
     transforms_.push_back(tr);
-    for(size_t i = 0; i < weight; ++i)
+    for (size_t i = 0; i < weight; ++i)
       transform_pool_.push_back(label);
   }
 
@@ -71,7 +71,7 @@ public:
 
   /** Set a seed for the random number generator. */
   virtual void set_seed(std::default_random_engine::result_type seed) {
-    for(auto tform : transforms_)
+    for (auto tform : transforms_)
       tform->set_seed(seed);
     gen_.seed(seed);
   }

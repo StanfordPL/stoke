@@ -61,7 +61,7 @@ const map<string, size_t> PunpckHandler::size_ = {
 
 Handler::SupportLevel PunpckHandler::get_support(const Instruction& instr) {
 
-  if(!operands_supported(instr)) {
+  if (!operands_supported(instr)) {
     return Handler::NONE;
   }
 
@@ -77,7 +77,7 @@ void PunpckHandler::build_circuit(const Instruction& instr, SymState& state) {
 
   error_ = "";
 
-  if(!get_support(instr)) {
+  if (!get_support(instr)) {
     error_ = "Instruction not supported.";
     return;
   }
@@ -91,7 +91,7 @@ void PunpckHandler::build_circuit(const Instruction& instr, SymState& state) {
 
   size_t arity = instr.arity();
 
-  if(arity == 2) {
+  if (arity == 2) {
     op1 = instr.get_operand<Operand>(0);
     op2 = instr.get_operand<Operand>(1);
   } else if (arity == 3) {
@@ -112,13 +112,13 @@ void PunpckHandler::build_circuit(const Instruction& instr, SymState& state) {
 
   SymBitVector output;
 
-  if(dest.size() < 256) {
+  if (dest.size() < 256) {
     size_t start_index = (low ? 0 : dest.size()/2);
     size_t end_index = (low ? dest.size()/2 : dest.size());
 
     output = arg2[start_index+size-1][start_index] ||
              arg1[start_index+size-1][start_index];
-    for(size_t i = start_index+size; i < end_index; i += size) {
+    for (size_t i = start_index+size; i < end_index; i += size) {
       output = arg2[i+size-1][i] || arg1[i+size-1][i] || output;
     }
   } else if (dest.size() == 256) {
@@ -128,14 +128,14 @@ void PunpckHandler::build_circuit(const Instruction& instr, SymState& state) {
 
     output = arg2[start_index+size-1][start_index] ||
              arg1[start_index+size-1][start_index];
-    for(size_t i = start_index+size; i < end_index; i += size) {
+    for (size_t i = start_index+size; i < end_index; i += size) {
       output = arg2[i+size-1][i] || arg1[i+size-1][i] || output;
     }
 
     start_index = (low ? 128 : 192);
     end_index = (low ? 192 : 256);
 
-    for(size_t i = start_index; i < end_index; i += size) {
+    for (size_t i = start_index; i < end_index; i += size) {
       output = arg2[i+size-1][i] || arg1[i+size-1][i] || output;
     }
   } else {
