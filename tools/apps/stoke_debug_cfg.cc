@@ -72,7 +72,7 @@ void to_dot(const string& dot_file) {
 
   Cfg* target;
 
-  if(no_skip_checks)  {
+  if (no_skip_checks)  {
     FunctionsGadget aux_fxns;
     target = static_cast<Cfg*>(new TargetGadget(aux_fxns, false));
   } {

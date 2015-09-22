@@ -59,7 +59,7 @@ protected:
     transform.set_seed(seed_);
     TransformInfo ti;
 
-    if(!cfg_->check_invariants()) {
+    if (!cfg_->check_invariants()) {
       std::cout << "[----------] Invaraints failed at beginning; can't check this one." << std::endl;
       return;
     }
@@ -67,7 +67,7 @@ protected:
     for (size_t i = 0; i < iterations_; ++i) {
 
       ti = transform(*cfg_);
-      if(ti.success) {
+      if (ti.success) {
         success++;
         ASSERT_TRUE(check_cfg());
         transform.undo(*cfg_, ti);
@@ -157,12 +157,12 @@ TEST_P(TransformsTest, WeightedIsReversible) {
   transforms.push_back(new GlobalSwapTransform(tp_));
   transforms.push_back(new RotateTransform(tp_));
 
-  for(auto t : transforms)
+  for (auto t : transforms)
     transform.insert_transform(t);
 
   check_move_reversible(transform);
 
-  for(auto t : transforms) {
+  for (auto t : transforms) {
     delete t;
   }
 }
@@ -180,7 +180,7 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   transforms.push_back(new GlobalSwapTransform(tp_));
   transforms.push_back(new RotateTransform(tp_));
 
-  for(auto t : transforms)
+  for (auto t : transforms)
     transform.insert_transform(t);
 
   // This set can be used to introduce the dataflow fact that function calls don't
@@ -232,7 +232,7 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   stoke::Cfg original_cfg(TUnit(original), x64asm::RegSet::universe(), x64asm::RegSet::empty());
   original_cfg.add_summary(x64asm::Label(".L4"), mms);
 
-  for(auto fxn : functions) {
+  for (auto fxn : functions) {
     original_costs.push_back((*fxn)(original_cfg));
   }
 
@@ -245,7 +245,7 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
       transform.undo(*cfg_, ti);
     }
 
-    for(size_t i = 0; i < functions.size(); ++i) {
+    for (size_t i = 0; i < functions.size(); ++i) {
       auto orig_cost = original_costs[i];
       auto fxn = functions[i];
       ASSERT_EQ(orig_cost, (*fxn)(*cfg_)) <<
@@ -257,7 +257,7 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
     }
   }
 
-  for(auto t : transforms) {
+  for (auto t : transforms) {
     delete t;
   }
 

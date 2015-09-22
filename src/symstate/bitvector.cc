@@ -47,10 +47,10 @@ SymBitVector SymBitVector::operator&(const SymBitVector& other) const {
 }
 
 SymBitVector SymBitVector::operator||(const SymBitVector& other) const {
-  if(!other.ptr) {
+  if (!other.ptr) {
     return *this;
   }
-  if(!ptr) {
+  if (!ptr) {
     return other;
   }
   return SymBitVector(new SymBitVectorConcat(ptr, other.ptr));
@@ -149,7 +149,7 @@ SymBool SymBitVector::parity() const {
 
   // Step 2: iterate over my bits and xor them together
   SymBool parity = (*this)[0];
-  for(size_t i = 1; i < size; ++i) {
+  for (size_t i = 1; i < size; ++i) {
     parity = parity ^ (*this)[i];
   }
 
@@ -209,7 +209,7 @@ SymBool SymBitVector::s_lt(const SymBitVector& other) const {
 
 /** Get the type */
 SymBitVector::Type SymBitVector::type() const {
-  if(ptr)
+  if (ptr)
     return ptr->type();
   else
     return NONE;

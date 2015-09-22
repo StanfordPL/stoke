@@ -22,13 +22,13 @@ using namespace x64asm;
 
 Handler::SupportLevel ConditionalHandler::get_support(const x64asm::Instruction& instr) {
 
-  if(!operands_supported(instr)) {
+  if (!operands_supported(instr)) {
     return Handler::NONE;
   }
 
   string opcode = get_opcode(instr);
 
-  if(opcode.substr(0,3) == "set" || opcode.substr(0,4) == "cmov")
+  if (opcode.substr(0,3) == "set" || opcode.substr(0,4) == "cmov")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG);
 
   return Handler::NONE;
@@ -128,7 +128,7 @@ void ConditionalHandler::build_circuit(const x64asm::Instruction& instr, SymStat
   string opcode = get_opcode(instr);
 
   error_ = "";
-  if(!get_support(instr)) {
+  if (!get_support(instr)) {
     error_ = "Instruction not supported";
     return;
   }
@@ -141,7 +141,7 @@ void ConditionalHandler::build_circuit(const x64asm::Instruction& instr, SymStat
 
   // Get condition predicate
   string predicate;
-  if(cmov)
+  if (cmov)
     predicate = opcode.substr(4, opcode.size() - 5);
   else
     predicate = opcode.substr(3, opcode.size() - 3);
@@ -150,7 +150,7 @@ void ConditionalHandler::build_circuit(const x64asm::Instruction& instr, SymStat
 
   // Perform the action
 
-  if(cmov) {
+  if (cmov) {
     state.set(dest, doit.ite(state[src], state[dest]));
   } else {
     state.set(dest, doit.ite(SymBitVector::constant(8, 1),

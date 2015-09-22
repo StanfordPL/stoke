@@ -40,7 +40,7 @@ void andHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   auto E_result = vc_bvAndExpr(E_src1, E_src2 );
   SymBool retval = E_dest == E_result;
 
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -65,13 +65,13 @@ void bsfHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
 
   //  auto E_result = SymBitVector::var(bitWidth, ("BSFTEMP"+d.pre_suffix+to_string(d.instr_no)).c_str());
   auto E_result = SymBitVector::constant(bitWidth, 0);
-  for(int i = (int)bitWidth - 1; i>=0; i-- )
+  for (int i = (int)bitWidth - 1; i>=0; i-- )
   {
     E_result = vc_iteExpr(E_src[i], SymBitVector::constant(bitWidth, i), E_result);
   }
   SymBool retval = E_dest == E_result;
 
-  if(bitWidth < V_UNITSIZE)
+  if (bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -94,13 +94,13 @@ void bsrHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
 
   //  auto E_result = SymBitVector::var(bitWidth, ("BSRTEMP"+d.pre_suffix+to_string(d.instr_no)).c_str());
   auto E_result = SymBitVector::constant(bitWidth, 0);
-  for(unsigned int i = 0 ; i<bitWidth; i++ )
+  for (unsigned int i = 0 ; i<bitWidth; i++ )
   {
     E_result = vc_iteExpr(E_src[i], SymBitVector::constant(bitWidth, i), E_result);
   }
   SymBool retval = E_dest == E_result;
 
-  if(bitWidth < V_UNITSIZE)
+  if (bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -117,12 +117,12 @@ void bswapHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src) {
 
   unsigned int ratio = bitWidth/8;
   SymBool retval = SymBool::_true();
-  for(unsigned int i = 0; i<ratio; i++)
+  for (unsigned int i = 0; i<ratio; i++)
   {
     retval = retval & vc_eqExpr(E_dest[((i+1)*8)-1][i*8], E_src[(ratio - i)*8-1][(ratio -i -1)*8]);
   }
 
-  if(bitWidth < V_UNITSIZE)
+  if (bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -139,7 +139,7 @@ void btHandler(v_data d, unsigned int bitWidth, Expr E_operand, Expr E_offset) {
 
   auto E_idx = vc_bvAndExpr(SymBitVector::constant(bitWidth, bitWidth -1), E_offset);
   SymBool E_result = SymBool::_true();
-  for(unsigned int i = 0; i<bitWidth; i++)
+  for (unsigned int i = 0; i<bitWidth; i++)
   {
     E_result = vc_iteExpr(E_idx == SymBitVector::constant(bitWidth, i), E_operand[i], E_result);
   }
@@ -153,7 +153,7 @@ void btcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, Ex
   SymBool E_carry = getBoolExpr(V_CF, d.post_suffix, d.Vnprime);
   auto E_idx = SymBitVector::constant(bitWidth, bitWidth -1) & E_offset;
   SymBool retval = SymBool::_true();
-  for(unsigned int i = 0; i<bitWidth; i++)
+  for (unsigned int i = 0; i<bitWidth; i++)
   {
     retval = vc_iteExpr(vc_eqExpr(E_idx, SymBitVector::constant(bitWidth, i)),
                         (E_carry == E_operand[i]) &
@@ -161,7 +161,7 @@ void btcHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, Ex
                         ,
                         retval);
   }
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -178,7 +178,7 @@ void btvalHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, 
   SymBool E_carry = getBoolExpr(V_CF, d.post_suffix, d.Vnprime);
   auto E_idx = vc_bvAndExpr(SymBitVector::constant(bitWidth, bitWidth -1), E_offset);
   SymBool retval = SymBool::_true();
-  for(unsigned int i = 0; i<bitWidth; i++)
+  for (unsigned int i = 0; i<bitWidth; i++)
   {
     retval = vc_iteExpr(vc_eqExpr(E_idx, SymBitVector::constant(bitWidth, i)),
                         ( E_carry == E_operand[i]) &
@@ -186,7 +186,7 @@ void btvalHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_operand, 
                         ,
                         retval);
   }
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -266,7 +266,7 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
   imm =imm &0x7;
   if (imm != 1 && imm != 2)
     throw VALIDATOR_ERROR("cmpps is only implemented for immediate of 1 or 2");
-  if(imm==1)
+  if (imm==1)
   {
     SymFunction fcmp = SymFunction("cmpf", 2, {32, 32});
     SymBool retval = SymBool::_true();
@@ -283,7 +283,7 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
 #endif
     d.constraints.push_back(retval);
   }
-  if(imm==2)
+  if (imm==2)
   {
     SymFunction fcmp = SymFunction("cmpf", 2, {32, 32});
     SymBool retval = SymBool::_true();
@@ -305,7 +305,7 @@ void cmppsHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, E
 
 void convert_e_Handler(v_data d, unsigned int bitWidth) {
 
-  if(bitWidth >= 64)
+  if (bitWidth >= 64)
     throw VALIDATOR_ERROR("Internal error: bitWidth should be for the source, not the destination");
 
   SS_Id id_dest = rax;
@@ -313,7 +313,7 @@ void convert_e_Handler(v_data d, unsigned int bitWidth) {
   auto E_src = (regExprWVN(id_dest, d.pre_suffix, d.Vn, V_UNITSIZE))[bitWidth - 1][0];
   auto E_result = vc_bvSignExtend(E_src, 2*bitWidth);
   SymBool retval = E_dest == E_result;
-  if(2*bitWidth < V_UNITSIZE)
+  if (2*bitWidth < V_UNITSIZE)
     retval = retval & UnmodifiedBitsPreserve(id_dest, d, 2*bitWidth);
 #ifdef DEBUG_VALIDATOR
   //cout << "Adding constraint " << retval << endl;
@@ -340,7 +340,7 @@ void cwd_cdq_cqoHandler(v_data d, int width) {
   auto last_bit_of_src = rax_expr[width - 1][width - 1];
 
   // Constrain all the bits of the destination register.
-  for(int i = 0; i < width; ++i) {
+  for (int i = 0; i < width; ++i) {
     auto bit_of_dst = rdx_end_expr[i][i];
     auto equal = bit_of_dst == last_bit_of_src;
     d.constraints.push_back(equal);
@@ -368,7 +368,7 @@ void decHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
   auto E_result = E_src - SymBitVector::constant(bitWidth, 1);
   d.constraints.push_back(E_dest == E_result);
 
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     d.constraints.push_back(UnmodifiedBitsPreserve(id_dest, d, bitWidth));
@@ -393,7 +393,7 @@ void divHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
 
   //  SS_Id rdx = rdx;
   //  SS_Id rax = rax;
-  if(bitWidth > 8)
+  if (bitWidth > 8)
   {
     auto E_src1 = (regExprWVN(rdx, d.pre_suffix, d.Vn, V_UNITSIZE))[bitWidth - 1][0] ||
                   (regExprWVN(rax, d.pre_suffix, d.Vn, V_UNITSIZE))[bitWidth - 1][0];
@@ -403,7 +403,7 @@ void divHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
     auto E_quot_dest = (regExprWVN(rax, d.post_suffix, d.Vnprime, V_UNITSIZE))[bitWidth - 1][0];
 
     SymBool retval = (E_quot_dest == E_quotient) & (E_rem_dest == E_remainder);
-    if( bitWidth < V_UNITSIZE)
+    if ( bitWidth < V_UNITSIZE)
     {
       retval = retval &  UnmodifiedBitsPreserve(rdx, d, bitWidth);
       retval = retval &  UnmodifiedBitsPreserve(rax, d, bitWidth);
@@ -442,24 +442,24 @@ void dppdHandler(v_data d, int imm, Expr E_dest, Expr E_dest_pre, Expr E_src, Ex
   auto E_temp2 = SymBitVector::var(V_UNITSIZE, ("DPPD_TEMP2"+d.pre_suffix+to_string(d.instr_no)).c_str());
   SymBool retval = SymBool::_true();
 
-  if(imm & 0x10)
+  if (imm & 0x10)
     retval = retval & dmul(E_temp1[63][0], E_dest_pre[63][0], E_src[63][0]);
   else
     retval = retval & vc_eqExpr(E_temp1[63][0], SymBitVector::constant(64, 0));
 
-  if(imm & 0x20)
+  if (imm & 0x20)
     retval = retval & dmul(E_temp1[127][64], E_dest_pre[127][64], E_src[127][64]);
   else
     retval = retval & vc_eqExpr(E_temp1[127][64], SymBitVector::constant(64, 0));
 
   retval = retval & dadd(E_temp2, E_temp1[127][64], E_temp1[63][0]);
 
-  if( imm & 0x1)
+  if ( imm & 0x1)
     retval = retval & E_dest[63][0] == E_temp2;
   else
     retval = retval & vc_eqExpr(E_dest[63][0], SymBitVector::constant(64, 0) );
 
-  if( imm & 0x2)
+  if ( imm & 0x2)
     retval = retval & E_dest[127][64] == E_temp2;
   else
     retval = retval & vc_eqExpr(E_dest[127][64], SymBitVector::constant(64, 0) );
@@ -476,7 +476,7 @@ void idivHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
 
   //  SS_Id rdx = rdx;
   //  SS_Id rax = rax;
-  if(bitWidth > 8)
+  if (bitWidth > 8)
   {
     auto E_src1 = (regExprWVN(rdx, d.pre_suffix, d.Vn, V_UNITSIZE))[bitWidth - 1][0] ||
                   (regExprWVN(rax, d.pre_suffix, d.Vn, V_UNITSIZE))[bitWidth - 1][0];
@@ -487,7 +487,7 @@ void idivHandler(v_data d, unsigned int bitWidth, Expr E_src2) {
     auto E_quot_dest = (regExprWVN(rax, d.post_suffix, d.Vnprime, V_UNITSIZE))[bitWidth - 1][0];
 
     SymBool retval = (E_quot_dest == E_quotient) & (E_rem_dest == E_remainder) ;
-    if( bitWidth < V_UNITSIZE)
+    if ( bitWidth < V_UNITSIZE)
     {
       retval = retval &  UnmodifiedBitsPreserve(rdx, d, bitWidth);
       retval = retval &  UnmodifiedBitsPreserve(rax, d, bitWidth);
@@ -522,7 +522,7 @@ void incHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
                   (SymBitVector::constant(1, 0) || SymBitVector::constant(bitWidth, 1));
 
   SymBool retval = E_dest == E_result[bitWidth - 1][0];
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -574,18 +574,18 @@ void movHandler(v_data d, unsigned int bitWidthTarget, unsigned int bitWidthSour
 
 
   E_dest = E_dest[bitWidthTarget-1][0]; //Noop except for xmm
-  if(signExtend && bitWidthTarget>bitWidthSource)
+  if (signExtend && bitWidthTarget>bitWidthSource)
     E_src = vc_bvSignExtend(E_src, bitWidthTarget);
-  else if(bitWidthTarget > bitWidthSource)
+  else if (bitWidthTarget > bitWidthSource)
     E_src = SymBitVector::constant(bitWidthTarget-bitWidthSource, 0) || E_src;
   else if ( bitWidthSource > bitWidthTarget)
     E_src = E_src[bitWidthTarget-1][0];
   SymBool retval = E_dest == E_src;
-  if(dest_is_reg /*&& bitWidthTarget < full_size*/)
+  if (dest_is_reg /*&& bitWidthTarget < full_size*/)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
     uint full_size = (is_dest_xmm(E_dest) ? 128 : 64);
-    if(bitWidthTarget<full_size)
+    if (bitWidthTarget<full_size)
       retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidthTarget);
   }
 #ifdef DEBUG_VALIDATOR
@@ -599,7 +599,7 @@ void movhHandler(v_data d, Expr E_dest, Expr E_src, bool dest_is_reg=true) {
 
 
   SymBool retval = SymBool::_true();
-  if(dest_is_reg)
+  if (dest_is_reg)
   {
     retval = retval & E_dest[127][64] == E_src[63][0];
     SS_Id id_dest = getRegisterFromInstr(d.instr,0) + (is_dest_xmm(E_dest) ? XMM_BEG : 0);
@@ -621,7 +621,7 @@ void negHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
 
   auto E_result = vc_bvUMinusExpr(E_src );
   SymBool retval = E_dest == E_result;
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -638,7 +638,7 @@ void notHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src, bool d
 
   auto E_result = vc_bvNotExpr(E_src );
   SymBool retval = E_dest == E_result;
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -652,7 +652,7 @@ void orHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr E
 
 
   SymBool retval = vc_eqExpr(E_dest, vc_bvOrExpr(E_src1, E_src2));
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -954,7 +954,7 @@ void pshufhwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr
   // DEST[95:80] <- (SRC >> (imm[3:2]*16))[79:64]
   // DEST[111:96] <- (SRC >> (imm[5:4]*16))[79:64]
   // DEST[127:112] <- (SRC >> (imm[7:6]*16))[79:64]
-  for(int i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; i++) {
 
     int first_bit  = (1 << (2*i));
     int second_bit = (1 << (2*i + 1));
@@ -987,7 +987,7 @@ void pshuflwHandler(v_data d, int bitWidth, bool avx, int imm, Expr E_dest, Expr
   // DEST[31:16] <- (SRC >> (imm[3:2]*16))[31:16]
   // DEST[47:32] <- (SRC >> (imm[5:4]*16))[47:32]
   // DEST[63:48] <- (SRC >> (imm[7:6]*16))[63:48]
-  for(int i = 0; i < 4; i++) {
+  for (int i = 0; i < 4; i++) {
 
     int first_bit  = (1 << (2*i));
     int second_bit = (1 << (2*i + 1));
@@ -1078,7 +1078,7 @@ void sbbHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   retval = retval & (E_result = E_arg1 + E_arg2 + E_carry);
   retval = retval & E_dest == E_result[bitWidth-1][0];
 
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -1126,7 +1126,7 @@ void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_src1, Expr E_src2, Exp
 
 
   // Implemented following intel manual's case statement
-  switch(imm & 0x3) {
+  switch (imm & 0x3) {
   case 0:
     SHUFPS_CON(E_dest, 31, 0, E_src1, 31, 0);
     break;
@@ -1143,7 +1143,7 @@ void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_src1, Expr E_src2, Exp
     throw VALIDATOR_ERROR("internal error in shufps");
   }
 
-  switch((imm >> 2) & 0x3) {
+  switch ((imm >> 2) & 0x3) {
   case 0:
     SHUFPS_CON(E_dest, 63, 32, E_src1, 31, 0);
     break;
@@ -1160,7 +1160,7 @@ void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_src1, Expr E_src2, Exp
     throw VALIDATOR_ERROR("internal error in shufps");
   }
 
-  switch((imm >> 4) & 0x3) {
+  switch ((imm >> 4) & 0x3) {
   case 0:
     SHUFPS_CON(E_dest, 95, 64, E_src2, 31, 0);
     break;
@@ -1177,7 +1177,7 @@ void shufpsHandler(v_data d, int imm, Expr E_dest, Expr E_src1, Expr E_src2, Exp
     throw VALIDATOR_ERROR("internal error in shufps");
   }
 
-  switch((imm >> 6) & 0x3) {
+  switch ((imm >> 6) & 0x3) {
   case 0:
     SHUFPS_CON(E_dest, 127, 96, E_src2, 31, 0);
     break;
@@ -1205,7 +1205,7 @@ void subHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   auto E_arg2 = SymBitVector::constant(1,0) || E_src2;
 
   SymBool retval = E_dest == (E_arg1 - E_arg2)[bitWidth - 1][0];
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);
@@ -1265,7 +1265,7 @@ void ucomisdHandler(v_data d, Expr E_src1, Expr E_src2) {
 void umul1Handler(v_data d, unsigned int bitWidth, Expr E_src2) {
 
 
-  if(bitWidth > 8)
+  if (bitWidth > 8)
   {
     E_src2 = SymBitVector::constant(bitWidth, 0) || E_src2 ;
     auto E_src1 = SymBitVector::constant(bitWidth, 0) || (regExprWVN(rax, d.pre_suffix, d.Vn, V_UNITSIZE))[bitWidth - 1][0];
@@ -1276,7 +1276,7 @@ void umul1Handler(v_data d, unsigned int bitWidth, Expr E_src2) {
     auto E_result = vc_bvMultExpr(2*bitWidth, E_src1, E_src2 );
     SymBool retval = E_dest == E_result;
 
-    if( bitWidth < V_UNITSIZE)
+    if ( bitWidth < V_UNITSIZE)
     {
       retval = retval &  UnmodifiedBitsPreserve(rdx, d, bitWidth);
       retval = retval &  UnmodifiedBitsPreserve(rax, d, bitWidth);
@@ -1373,7 +1373,7 @@ void xorHandler(v_data d, unsigned int bitWidth, Expr E_dest, Expr E_src1, Expr 
   auto E_result = E_src1 ^ E_src2;
   SymBool retval = E_dest == E_result;
 
-  if(dest_is_reg && bitWidth < V_UNITSIZE)
+  if (dest_is_reg && bitWidth < V_UNITSIZE)
   {
     SS_Id id_dest = getRegisterFromInstr(d.instr,0);
     retval = retval &  UnmodifiedBitsPreserve(id_dest, d, bitWidth);

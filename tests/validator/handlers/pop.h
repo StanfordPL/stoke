@@ -26,7 +26,7 @@ TEST_F(ValidatorPopTest, PopSp) {
   cs.gp[x64asm::rsp].get_fixed_quad(0) = 0x7fffffff9a2f6800;
   uint64_t lower = 0x7fffffff9a2f67e0;
   cs.stack.resize(lower, 40);
-  for(uint64_t i = lower; i < lower + 40; ++i) {
+  for (uint64_t i = lower; i < lower + 40; ++i) {
     cs.stack.set_valid(i, true);
   }
 
@@ -43,7 +43,7 @@ TEST_F(ValidatorPopTest, PopRsp) {
   cs.gp[x64asm::rsp].get_fixed_quad(0) = 0x7fffffff9a2f6800;
   uint64_t lower = 0x7fffffff9a2f67e0;
   cs.stack.resize(lower, 40);
-  for(uint64_t i = lower; i < lower + 40; ++i) {
+  for (uint64_t i = lower; i < lower + 40; ++i) {
     cs.stack.set_valid(i, true);
   }
 

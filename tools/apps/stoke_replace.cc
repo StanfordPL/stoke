@@ -73,7 +73,7 @@ void callback(const FunctionCallbackData& data, void* arg) {
     fxn_rip_offset = data.tunit.get_rip_offset();
   } else if (linker) {
     auto label = data.tunit.get_leading_label();
-    if(label.get_text()[0] != '.') {
+    if (label.get_text()[0] != '.') {
       stringstream ss;
       ss << "." << label.get_text();
       label = Label(ss.str());
@@ -106,23 +106,23 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   }
 
   // Perform linking
-  if(linker) {
+  if (linker) {
     linker->link(fxn, fxn_rip_offset);
     linker->finish();
 
-    if(linker->multiple_def()) {
+    if (linker->multiple_def()) {
       Console::msg() << "Multiple definition error for function \"" << linker->get_multiple_def() << "\"" << endl;
       return false;
     }
-    if(linker->undef_symbol()) {
+    if (linker->undef_symbol()) {
       Console::msg() << "Undefined symbol \"" << linker->get_undef_symbol() << "\"" << endl;
       return false;
     }
-    if(linker->jump_too_far()) {
+    if (linker->jump_too_far()) {
       Console::msg() << "Distance for jump exceeded 4-byte offset limit." << endl;
       return false;
     }
-    if(!linker->good()) {
+    if (!linker->good()) {
       Console::msg() << "Unexpected linker error." << endl;
       return false;
     }
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
-  if(input_offset.value()) {
+  if (input_offset.value()) {
     // Get offset from input tunit
     fxn_offset = rewrite_arg.value().get_file_offset();
     fxn_size = rewrite_arg.value().hex_capacity();
@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
 
     Linker linker;
     Linker* linker_ptr = &linker;
-    if(do_not_link_arg.value())
+    if (do_not_link_arg.value())
       linker_ptr = nullptr;
 
     Disassembler d;
@@ -181,7 +181,7 @@ int main(int argc, char** argv) {
     found = false;
     d.disassemble(in.value());
 
-    if(d.has_error()) {
+    if (d.has_error()) {
       Console::error(1) << "disassemble: " << d.get_error() << endl;
       return 1;
     }

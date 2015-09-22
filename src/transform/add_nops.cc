@@ -32,7 +32,7 @@ TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
   TransformInfo ti;
   ti.success = false;
 
-  if(cfg.get_code().size() < 3)
+  if (cfg.get_code().size() < 3)
     return ti;
 
   size_t index = (gen_() % (cfg.get_code().size() - 1)) + 1;
@@ -54,7 +54,7 @@ TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
   */
 
   auto& function = cfg.get_function();
-  for(size_t i = 0; i < new_nops; ++i) {
+  for (size_t i = 0; i < new_nops; ++i) {
     function.insert(index, Instruction(NOP), false);
   }
 
@@ -75,7 +75,7 @@ TransformInfo AddNopsTransform::operator()(Cfg& cfg) {
 void AddNopsTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   auto& function = cfg.get_function();
-  for(size_t i = 0; i < ti.undo_index[1]; ++i) {
+  for (size_t i = 0; i < ti.undo_index[1]; ++i) {
     function.remove(ti.undo_index[0]);
   }
   cfg.recompute();

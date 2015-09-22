@@ -101,9 +101,9 @@ private:
   // This is to print out Cfg paths easily (for debugging purposes).
   static std::string print(const CfgPath& p) {
     std::stringstream os;
-    for(size_t i = 0; i < p.size(); ++i) {
+    for (size_t i = 0; i < p.size(); ++i) {
       os << p[i];
-      if(i != p.size() - 1)
+      if (i != p.size() - 1)
         os << " ";
     }
     return os.str();

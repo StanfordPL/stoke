@@ -42,12 +42,12 @@ public:
 
   /** Get the error message, and optionally metadata */
   std::string get_error(size_t* line_no = NULL, std::string* file = NULL) {
-    if(!has_error_)
+    if (!has_error_)
       return "";
 
-    if(line_no)
+    if (line_no)
       *line_no = error_line_;
-    if(file)
+    if (file)
       *file = error_file_;
     return error_;
   }
@@ -59,7 +59,7 @@ public:
   /** Gets the counterexample */
   std::vector<CpuState> get_counter_examples() {
     std::vector<CpuState> cegs;
-    if(counter_examples_available()) {
+    if (counter_examples_available()) {
       cegs.push_back(counterexample_);
     }
     return cegs;
