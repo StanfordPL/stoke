@@ -49,7 +49,7 @@ public:
   /** Add opcode to the pool. This *forces* the opcode to be included.
     Takes precedence over previous calls to insert/remove opcode or set_opcode_weight. */
   TransformPools& insert_opcode(const x64asm::Opcode& op) {
-    if(!opcode_weights_[(int)op])
+    if (!opcode_weights_[(int)op])
       opcode_weights_[(int)op] = 1;
     opcode_weights_locked_[(int)op] = true;
     return *this;
@@ -148,7 +148,7 @@ public:
   bool get_equivalent_raw_memonic(x64asm::Opcode& o) {
     assert(!raw_memonic_pool_.empty());
     const auto& equiv = raw_memonic_pool_[o];
-    if(equiv.empty())
+    if (equiv.empty())
       return false;
     o = equiv[gen_() % equiv.size()];
     return true;

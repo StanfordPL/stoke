@@ -34,13 +34,12 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
   SymTypecheckVisitor tc;
   ExprConverter ec(this);
 
+  for (auto it : constraints) {
 
-  for(auto it : constraints) {
-
-    if(tc(it) != 1) {
+    if (tc(it) != 1) {
       stringstream ss;
       ss << "Typechecking failed for constraint: " << it << endl;
-      if(tc.has_error())
+      if (tc.has_error())
         ss << "error: " << tc.error() << endl;
       else
         ss << "(no typechecking error message given)" << endl;
@@ -49,7 +48,7 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
     }
 
     auto converted = ec(it);
-    if(ec.has_error()) {
+    if (ec.has_error()) {
       error_ = ec.error();
       return false;
     }
@@ -59,7 +58,7 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
 
   auto result = smt_->checkSat(em_.mkConst(true));
 
-  if(result.isUnknown()) { // || result.isSat() == Result::SAT_UNKNOWN) {
+  if (result.isUnknown()) { // || result.isSat() == Result::SAT_UNKNOWN) {
     error_ = "CVC4 returned unknown: " + result.whyUnknown();
     return false;
   }
@@ -74,14 +73,14 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
 cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t bits) {
   cpputil::BitVector bv(bits);
 
-  if(!variables_.count(var))
+  if (!variables_.count(var))
     return bv;
 
   auto val = variables_[var];
   auto expr = smt_->getValue(val);
   auto ret = expr.getConst<BitVector>();
 
-  for(size_t i = 0; i < bits; ++i) {
+  for (size_t i = 0; i < bits; ++i) {
     bv[i] = ret.isBitSet(i);
   }
 
@@ -94,7 +93,7 @@ cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t bit
     undefined. */
 bool Cvc4Solver::get_model_bool(const std::string& var) {
 
-  if(!variables_.count(var))
+  if (!variables_.count(var))
     return false;
 
   auto val = variables_[var];
@@ -121,7 +120,7 @@ Expr Cvc4Solver::ExprConverter::generic_rot(bool left,
   // Repeat the source one time
   Expr rept = em_.mkExpr(kind::BITVECTOR_CONCAT, a, a);
 
-  if(left) {
+  if (left) {
     Expr tmp = em_.mkExpr(kind::BITVECTOR_SHL, rept, amt_ext);
     return em_.mkExpr(kind::BITVECTOR_EXTRACT, em_.mkConst(BitVectorExtract(2*size-1, size)), tmp);
   } else {
@@ -135,7 +134,7 @@ Expr Cvc4Solver::ExprConverter::visit_binop(const SymBitVectorBinop * const bino
   auto left = (*this)(binop->a_);
   auto right = (*this)(binop->b_);
 
-  switch(binop->type()) {
+  switch (binop->type()) {
   case SymBitVector::AND:
     return em_.mkExpr(kind::BITVECTOR_AND, left, right);
   case SymBitVector::CONCAT:
@@ -180,7 +179,7 @@ Expr Cvc4Solver::ExprConverter::visit_binop(const SymBitVectorBinop * const bino
 Expr Cvc4Solver::ExprConverter::visit_unop(const SymBitVectorUnop * const unop) {
   auto left = (*this)(unop->bv_);
 
-  switch(unop->type()) {
+  switch (unop->type()) {
   case SymBitVector::U_MINUS:
     return em_.mkExpr(kind::BITVECTOR_NEG, left);
   case SymBitVector::NOT:
@@ -198,7 +197,7 @@ Expr Cvc4Solver::ExprConverter::visit_binop(const SymBoolBinop * const binop) {
   auto left = (*this)(binop->a_);
   auto right = (*this)(binop->b_);
 
-  switch(binop->type()) {
+  switch (binop->type()) {
   case SymBool::AND:
     return em_.mkExpr(kind::AND, left, right);
   case SymBool::IFF:
@@ -222,7 +221,7 @@ Expr Cvc4Solver::ExprConverter::visit_compare(const SymBoolCompare * const compa
   auto left = (*this)(compare->a_);
   auto right = (*this)(compare->b_);
 
-  switch(compare->type()) {
+  switch (compare->type()) {
   case SymBool::EQ:
     return em_.mkExpr(kind::EQUAL, left, right);
   case SymBool::GE:
@@ -270,17 +269,17 @@ Expr Cvc4Solver::ExprConverter::build_function(const SymBitVectorFunction * cons
 
   // get CVC4 representation of the argument/return types
   vector<CVC4::Type> sorts;
-  for(uint16_t it : args) {
+  for (uint16_t it : args) {
     sorts.push_back(em_.mkBitVectorType(it));
   }
   auto ret_sort = em_.mkBitVectorType(ret);
 
-  if(sorts.size() == 0) {
+  if (sorts.size() == 0) {
     error_ = "Function " + f.name + " has no arguments: " + to_string(sorts.size());
     assert(false);
   }
 
-  if(sorts.size() > 3) {
+  if (sorts.size() > 3) {
     error_ = "Function " + f.name + " has too many arguments: " + to_string(sorts.size());
     assert(false);
   }
@@ -293,14 +292,14 @@ Expr Cvc4Solver::ExprConverter::build_function(const SymBitVectorFunction * cons
 /** Visit an uninterpreted function */
 Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorFunction * const bv) {
 
-  if(!variables_.count(bv->f_.name)) {
+  if (!variables_.count(bv->f_.name)) {
     auto g = build_function(bv);
     variables_[bv->f_.name] = g;
   }
   auto f = variables_[bv->f_.name];
 
   std::vector<Expr> args;
-  for(auto it : bv->args_) {
+  for (auto it : bv->args_) {
     args.push_back((*this)(it));
   }
 
@@ -323,7 +322,7 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorSignExtend * const bv) {
 
 /** Visit a bit-vector variable */
 Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorVar * const bv) {
-  if(!variables_.count(bv->name_)) {
+  if (!variables_.count(bv->name_)) {
     auto type = em_.mkBitVectorType(bv->size_);
     auto var = em_.mkVar(bv->name_, type);
     variables_[bv->name_] = var;
@@ -350,7 +349,7 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBoolTrue * const b) {
 
 /** Visit a boolean VAR */
 Expr Cvc4Solver::ExprConverter::visit(const SymBoolVar * const b) {
-  if(!variables_.count(b->name_)) {
+  if (!variables_.count(b->name_)) {
     auto var = em_.mkVar(b->name_, em_.booleanType());
     variables_[b->name_] = var;
     return var;

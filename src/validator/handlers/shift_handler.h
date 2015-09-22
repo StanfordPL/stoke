@@ -32,7 +32,7 @@ public:
 
   virtual std::vector<std::string> full_support_opcodes() {
     std::vector<std::string> opcodes;
-    for(auto it : to_right_sign_rotate_cf_) {
+    for (auto it : to_right_sign_rotate_cf_) {
       opcodes.push_back(it.first);
     }
     return opcodes;

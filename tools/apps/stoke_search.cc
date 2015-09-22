@@ -181,7 +181,7 @@ void show_statistics(const StatisticsCallbackData& data, ostream& os) {
 
   ofs << "Move Type" << endl;
   ofs << endl;
-  for(size_t i = 0; i < transform->size(); ++i) {
+  for (size_t i = 0; i < transform->size(); ++i) {
     ofs << transform->get_transform(i)->get_name() << endl;
   }
   ofs << endl;
@@ -340,12 +340,12 @@ int main(int argc, char** argv) {
     // Run the initial cost function
     // Used by statistics output and a sanity check
     auto initial_cost = fxn(state.current);
-    if(!initial_cost.first && init_arg == Init::TARGET) {
+    if (!initial_cost.first && init_arg == Init::TARGET) {
       Console::warn() << "Initial state has non-zero correctness cost with --init target.";
     }
     starting_cost = initial_cost.second;
     lowest_cost = initial_cost.second;
-    if(initial_cost.first) {
+    if (initial_cost.first) {
       lowest_correct = initial_cost.second;
     } else {
       lowest_correct = 0;
@@ -367,7 +367,7 @@ int main(int argc, char** argv) {
 
     const auto verified = verifier.verify(target, state.best_correct);
 
-    if(verifier.has_error()) {
+    if (verifier.has_error()) {
       Console::msg() << "The verifier encountered an error:" << endl;
       Console::msg() << verifier.error() << endl;
     }
@@ -387,15 +387,18 @@ int main(int argc, char** argv) {
 
     sep(Console::msg());
 
+
+    if (timeout_iterations_arg.value() && total_iterations > timeout_iterations_arg.value()) {
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
+      Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+    }
+
     if (!verified && verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
       Console::msg() << "Restarting search using new testcase (counterexample from verifier):" << endl << endl;
       Console::msg() << verifier.get_counter_examples()[0] << endl << endl;
       training_sb.insert_input(verifier.get_counter_examples()[0]);
-    } else if (total_iterations < timeout_iterations_arg.value()) {
-      Console::msg() << "Restarting search:" << endl << endl;
     } else {
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
-      Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+      Console::msg() << "Restarting search" << endl;
     }
   }
 

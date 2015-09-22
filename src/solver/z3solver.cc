@@ -37,17 +37,17 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   vector<SymBool>* new_constraints = 0;
   bool free_it = false;
 
-  while(current->size() != 0) {
+  while (current->size() != 0) {
 
     new_constraints = new vector<SymBool>();
 
     ExprConverter ec(context_, *new_constraints);
 
-    for(auto it : *current) {
+    for (auto it : *current) {
       if (tc(it) != 1) {
         stringstream ss;
         ss << "Typechecking failed for constraint: " << it << endl;
-        if(tc.has_error())
+        if (tc.has_error())
           ss << "error: " << tc.error() << endl;
         else
           ss << "(no typechecking error message given)" << endl;
@@ -56,14 +56,14 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
       }
 
       auto constraint = ec(it);
-      if(ec.has_error()) {
+      if (ec.has_error()) {
         error_ = ec.error();
         return false;
       }
       solver_.add(constraint);
     }
 
-    if(free_it)
+    if (free_it)
       delete current;
     free_it = true;
 
@@ -79,7 +79,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     }
 
     case sat: {
-      if(model_ != NULL)
+      if (model_ != NULL)
         delete model_;
       model_ = new z3::model(solver_.get_model());
       return true;
@@ -118,7 +118,7 @@ cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t bits)
 
   cpputil::BitVector result(bits);
 
-  for(int i = 0; i < octs; ++i) {
+  for (int i = 0; i < octs; ++i) {
     uint64_t oct;
 
     size_t max_bits = i*64+63 > bits ? bits-1 : i*64+63;
@@ -129,7 +129,7 @@ cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t bits)
 
     assert((max_bits + 1) % 8 == 0);
     size_t k = 0;
-    for(size_t j = i*8; j < (max_bits+1)/8; ++j) {
+    for (size_t j = i*8; j < (max_bits+1)/8; ++j) {
       result.get_fixed_byte(j) = (oct >> (k*8)) & 0xff;
       k++;
     }
@@ -197,14 +197,14 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorFunction * const bv) {
 
   // get z3 representation of the argument/return types
   vector<z3::sort> sorts;
-  for(uint16_t it : args) {
+  for (uint16_t it : args) {
     sorts.push_back(context_.bv_sort(it));
   }
 
   z3::sort ret_sort = context_.bv_sort(ret);
 
   // create z3 function declaration
-  switch(sorts.size()) {
+  switch (sorts.size()) {
   case 0:
     error_ = "Function " + f.name + " has no arguments: " + to_string(sorts.size());
     assert(false);

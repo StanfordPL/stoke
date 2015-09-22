@@ -27,7 +27,7 @@ public:
 
   void visit_binop(const SymBitVectorBinop * const bv) {
 
-    switch(bv->type()) {
+    switch (bv->type()) {
     case SymBitVector::AND:
       os_ << "(and ";
       break;
@@ -90,7 +90,7 @@ public:
   /* Visit a binop on a bool */
   void visit_binop(const SymBoolBinop * const b) {
 
-    switch(b->type()) {
+    switch (b->type()) {
     case SymBool::AND:
       os_ << "(and ";
       break;
@@ -120,7 +120,7 @@ public:
 
   void visit_unop(const SymBitVectorUnop * const bv) {
 
-    switch(bv->type()) {
+    switch (bv->type()) {
     case SymBitVector::NOT:
       os_ << "!";
       break;
@@ -138,7 +138,7 @@ public:
 
   void visit_compare(const SymBoolCompare * const b) {
 
-    switch(b->type()) {
+    switch (b->type()) {
     case SymBool::EQ:
       os_ << "(== ";
       break;
@@ -185,7 +185,7 @@ public:
   void visit(const SymBitVectorFunction * const bv) {
     os_ << bv->f_.name << "(";
 
-    for(size_t i = 0; i < bv->args_.size(); ++i) {
+    for (size_t i = 0; i < bv->args_.size(); ++i) {
       (*this)(bv->args_[i]);
       if (i != bv->args_.size() - 1)
         os_ << ", ";

@@ -427,25 +427,25 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
     // If we have to go up, then we fail.
 
     bool success = false;
-    for(int attempt = l.hex_bytes; attempt >= 0; attempt--) {
+    for (int attempt = l.hex_bytes; attempt >= 0; attempt--) {
       stringstream tmp;
       tmp << l.instr << " # SIZE=" << attempt << endl;
       Code c;
       tmp >> c;
-      if(failed(tmp))
+      if (failed(tmp))
         continue;
 
       // we've found a match
       //cout << "Size " << attempt << " worked for " << l.instr << endl;
       ss << l.instr << " # SIZE=" << attempt << endl;
-      for(size_t i = 0; i < l.hex_bytes - attempt; ++i) {
+      for (size_t i = 0; i < l.hex_bytes - attempt; ++i) {
         ss << "nop # SIZE=1" << endl;
       }
       success = true;
       break;
     }
 
-    if(!success) {
+    if (!success) {
       //cout << "Failing on " << l.instr << " in " << l.hex_bytes << " bytes." << endl;
       fail(ss) << "Could not encode " << l.instr << " within " << l.hex_bytes << " bytes." << endl;
     }
@@ -477,7 +477,7 @@ void Disassembler::disassemble(const std::string& filename) {
   clear_error();
 
   auto text_offset = 0;
-  if(!flat_binary_) {
+  if (!flat_binary_) {
 
     // Get the headers from the objdump
     auto headers = run_objdump(filename, true);

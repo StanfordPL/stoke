@@ -216,7 +216,7 @@ public:
   SymBitVector() : ptr(NULL) {}
   /** Constructs a new SymBitVector from a pointer to the AST hierarchy */
   SymBitVector(const SymBitVectorAbstract * ptr_) : ptr(ptr_) {
-    if(memory_manager_)
+    if (memory_manager_)
       memory_manager_->add(ptr_);
   }
 
@@ -255,7 +255,7 @@ public:
   const SymBitVectorAbstract * const b_;
 
   bool equals(const SymBitVectorAbstract * other) const {
-    if(other->type() != this->type()) return false;
+    if (other->type() != this->type()) return false;
     auto cast = static_cast<const SymBitVectorBinop * const>(other);
     return a_->equals(cast->a_) && b_->equals(cast->b_);
   }
@@ -273,7 +273,7 @@ public:
   const SymBitVectorAbstract * const bv_;
 
   bool equals(const SymBitVectorAbstract * other) const {
-    if(other->type() != this->type()) return false;
+    if (other->type() != this->type()) return false;
     auto cast = static_cast<const SymBitVectorUnop * const>(other);
     return bv_->equals(cast->bv_);
   }
@@ -328,7 +328,7 @@ public:
   }
 
   bool equals(const SymBitVectorAbstract * const other) const {
-    if(other->type() != SymBitVector::Type::CONSTANT) return false;
+    if (other->type() != SymBitVector::Type::CONSTANT) return false;
     auto cast = static_cast<const SymBitVectorConstant * const>(other);
     return constant_ == cast->constant_ && size_ == cast->size_;
   }
@@ -352,7 +352,7 @@ public:
   }
 
   bool equals(const SymBitVectorAbstract * const other) const {
-    if(other->type() != SymBitVector::Type::EXTRACT) return false;
+    if (other->type() != SymBitVector::Type::EXTRACT) return false;
     auto cast = static_cast<const SymBitVectorExtract * const>(other);
     return low_bit_ == cast->low_bit_ && high_bit_ == cast->high_bit_ && bv_->equals(cast->bv_);
   }
@@ -375,14 +375,14 @@ public:
   const std::vector<const SymBitVectorAbstract *> args_;
 
   bool equals(const SymBitVectorAbstract * const other) const {
-    if(other->type() != SymBitVector::Type::FUNCTION) return false;
+    if (other->type() != SymBitVector::Type::FUNCTION) return false;
 
     auto cast = static_cast<const SymBitVectorFunction * const>(other);
 
     if (f_ != cast->f_) return false;
     if (args_.size() != cast->args_.size()) return false;
 
-    for(size_t i = 0; i < args_.size(); ++i) {
+    for (size_t i = 0; i < args_.size(); ++i) {
       if (!args_[i]->equals(cast->args_[i]))
         return false;
     }
@@ -434,7 +434,7 @@ public:
   }
 
   bool equals(const SymBitVectorAbstract * const other) const {
-    if(other->type() != SymBitVector::Type::ITE) return false;
+    if (other->type() != SymBitVector::Type::ITE) return false;
     auto cast = static_cast<const SymBitVectorIte * const>(other);
     return cond_->equals(cast->cond_) && a_->equals(cast->a_) && b_->equals(cast->b_);
   }
@@ -566,7 +566,7 @@ public:
   }
 
   bool equals(const SymBitVectorAbstract * const other) const {
-    if(other->type() != SymBitVector::Type::SIGN_EXTEND) return false;
+    if (other->type() != SymBitVector::Type::SIGN_EXTEND) return false;
     auto cast = static_cast<const SymBitVectorSignExtend * const>(other);
     return bv_->equals(cast->bv_) && size_ == cast->size_;
   }
@@ -626,7 +626,7 @@ public:
   }
 
   bool equals(const SymBitVectorAbstract * const other) const {
-    if(other->type() != SymBitVector::Type::VAR) return false;
+    if (other->type() != SymBitVector::Type::VAR) return false;
     auto cast = static_cast<const SymBitVectorVar * const>(other);
     return name_ == cast->name_ && size_ == cast->size_;
   }

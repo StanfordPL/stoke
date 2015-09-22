@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
 
   Cfg* target;
 
-  if(no_skip_checks)  {
+  if (no_skip_checks)  {
     FunctionsGadget aux_fxns;
     target = static_cast<Cfg*>(new TargetGadget(aux_fxns, false));
   } {

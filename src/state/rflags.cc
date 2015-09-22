@@ -55,7 +55,7 @@ istream& RFlags::read_text(istream& is, const char** names) {
     bool val;
     is >> ws >> name >> val >> ws;
 
-    if(strcmp(names[i], name.c_str())) {
+    if (strcmp(names[i], name.c_str())) {
       fail(is) << "Expected register '" << names[i] << "' but got '" << name << "'" << endl;
       return is;
     }

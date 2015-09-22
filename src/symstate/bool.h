@@ -118,7 +118,7 @@ public:
   SymBool() : ptr(NULL) {}
   /** Constructs a new SymBool from a pointer to the AST hierarchy */
   SymBool(const SymBoolAbstract * ptr_) : ptr(ptr_) {
-    if(memory_manager_)
+    if (memory_manager_)
       memory_manager_->add(ptr_);
   }
 
@@ -169,7 +169,7 @@ public:
   const SymBoolAbstract * const b_;
 
   bool equals(const SymBoolAbstract * const other) const {
-    if(type() != other->type()) return false;
+    if (type() != other->type()) return false;
     auto cast = static_cast<const SymBoolBinop * const>(other);
     return a_->equals(cast->a_) && b_->equals(cast->b_);
   }
@@ -288,7 +288,7 @@ public:
   }
 
   bool equals(const SymBoolAbstract * const other) const {
-    if(other->type() != SymBool::Type::NOT) return false;
+    if (other->type() != SymBool::Type::NOT) return false;
     auto cast = static_cast<const SymBoolNot * const>(other);
     return b_->equals(cast->b_);
   }
@@ -375,7 +375,7 @@ public:
   }
 
   bool equals(const SymBoolAbstract * const other) const {
-    if(other->type() != SymBool::Type::VAR) return false;
+    if (other->type() != SymBool::Type::VAR) return false;
     auto cast = static_cast<const SymBoolVar * const>(other);
     return name_ == cast->name_;
   }

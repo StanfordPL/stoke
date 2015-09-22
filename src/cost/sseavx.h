@@ -38,7 +38,7 @@ public:
     bool sse = false;
 
     const auto& code = cfg.get_code();
-    for(auto it : code) {
+    for (auto it : code) {
       avx |= it.is_avx();
       sse |= it.is_sse();
       if (avx && sse)

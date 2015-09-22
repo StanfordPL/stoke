@@ -21,7 +21,7 @@ using namespace std;
 
 Handler::SupportLevel ComboHandler::get_support(const Instruction& instr) {
 
-  if(!operands_supported(instr)) {
+  if (!operands_supported(instr)) {
     return Handler::NONE;
   }
 
@@ -38,7 +38,7 @@ void ComboHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   SupportLevel level;
   Handler* h = get_handler(instr, level);
-  if(level == Handler::NONE) {
+  if (level == Handler::NONE) {
     error_ = "Instruction not supported";
   } else {
     assert(h != 0);
@@ -52,10 +52,10 @@ Handler* ComboHandler::get_handler(const Instruction& instr, Handler::SupportLev
   /* Find the best handler for this instruction */
   Handler* best_handler = NULL;
   sl = Handler::SupportLevel::NONE;
-  for(auto h : handlers_) {
+  for (auto h : handlers_) {
     auto cur_level = h->get_support(instr);
 
-    if(cur_level != sl && ((cur_level | sl) == cur_level)) {
+    if (cur_level != sl && ((cur_level | sl) == cur_level)) {
       best_handler = h;
       sl = cur_level;
     }

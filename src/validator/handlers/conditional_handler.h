@@ -40,11 +40,11 @@ public:
                                         };
     std::vector<std::string> suffix2 =  {"b", "w", "l", "q"};
 
-    for(auto y : suffixes)
+    for (auto y : suffixes)
       opcodes.push_back("set"+y);
 
-    for(auto y : suffixes)
-      for(auto z : suffix2)
+    for (auto y : suffixes)
+      for (auto z : suffix2)
         opcodes.push_back("cmov"+y+z);
 
 

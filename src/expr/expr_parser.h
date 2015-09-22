@@ -147,7 +147,7 @@ private:
 
   /** Helper used by peek and next() */
   void strip_spaces() {
-    while(index_ < s_.size() && s_[index_] == ' ') {
+    while (index_ < s_.size() && s_[index_] == ' ') {
       index_++;
     }
   }
@@ -208,7 +208,7 @@ private:
       lhs = parse_L(n+1);
     }
 
-    if(lhs == NULL) {
+    if (lhs == NULL) {
       error("could not parse; reason unknown");
       return 0;
     }
@@ -217,7 +217,7 @@ private:
     auto rhs = parse_LP(n);
 
     // If there's no binop, return LHS
-    if(rhs.first == Expr<T>::Operator::NONE) {
+    if (rhs.first == Expr<T>::Operator::NONE) {
       return lhs;
     } else {
       auto op = rhs.first;
@@ -234,7 +234,7 @@ private:
     assert(n <= EXPR_PARSER_N - 1);
 
     auto binop = parse_BINOP(n+1);
-    if(binop == Expr<T>::Operator::NONE)
+    if (binop == Expr<T>::Operator::NONE)
       return std::pair<typename Expr<T>::Operator, Expr<T>*>(binop, NULL);
 
     auto rhs = parse_L(n);
@@ -243,13 +243,13 @@ private:
   /** Parse a T nonterminal */
   Expr<T>* parse_T() {
     char c = peek();
-    if('a' <= c && c <= 'z') {
+    if ('a' <= c && c <= 'z') {
       return parse_VAR();
     }
-    if('0' <= c && c <= '9') {
+    if ('0' <= c && c <= '9') {
       return parse_NUM();
     }
-    if(c == '(') {
+    if (c == '(') {
       next();
       auto f = parse_L(0);
       char d = next();
@@ -265,11 +265,11 @@ private:
   Expr<T>* parse_VAR() {
     std::string var = "";
 
-    while(peek() >= 'a' && peek() <= 'z') {
+    while (peek() >= 'a' && peek() <= 'z') {
       var = var.append(1, next());
     }
 
-    if(!is_var_valid_(var)) {
+    if (!is_var_valid_(var)) {
       error("undefined variable: \"" + var + "\"");
       return NULL;
     }
@@ -280,7 +280,7 @@ private:
   Expr<T>* parse_NUM() {
     std::string num = "0";
 
-    while(peek() >= '0' && peek() <= '9') {
+    while (peek() >= '0' && peek() <= '9') {
       num = num.append(1, next());
     }
 
@@ -296,11 +296,11 @@ private:
 
     size_t i;
     char c;
-    for(i = 0, c = peek();
-        (c == '+' || c == '>' || c == '<' || c == '|' ||
-         c == '^' || c == '=' || c == '*' || c == '-' ||
-         c == '*' || c == '%' || c == '/' || c == '&' || c == '!');
-        c = peek(++i)) {
+    for (i = 0, c = peek();
+         (c == '+' || c == '>' || c == '<' || c == '|' ||
+          c == '^' || c == '=' || c == '*' || c == '-' ||
+          c == '*' || c == '%' || c == '/' || c == '&' || c == '!');
+         c = peek(++i)) {
 
       var = var.append(1, c);
     }
@@ -350,10 +350,10 @@ private:
 
     // STEP 2: FIGURE OUT ORDER OF OPERATION BUSINESS
 
-    switch(n) {
+    switch (n) {
 
     case 1:
-      if(op == Expr<T>::Operator::OR) {
+      if (op == Expr<T>::Operator::OR) {
         eat(var.size());
         return op;
       } else {
@@ -361,7 +361,7 @@ private:
       }
 
     case 2:
-      if(op == Expr<T>::Operator::AND) {
+      if (op == Expr<T>::Operator::AND) {
         eat(var.size());
         return op;
       } else {
@@ -369,7 +369,7 @@ private:
       }
 
     case 3:
-      if(op == Expr<T>::Operator::EQ || op == Expr<T>::Operator::NEQ) {
+      if (op == Expr<T>::Operator::EQ || op == Expr<T>::Operator::NEQ) {
         eat(var.size());
         return op;
       } else {
@@ -377,7 +377,7 @@ private:
       }
 
     case 4:
-      if(op == Expr<T>::Operator::LT || op == Expr<T>::Operator::LTE ||
+      if (op == Expr<T>::Operator::LT || op == Expr<T>::Operator::LTE ||
           op == Expr<T>::Operator::GT || op == Expr<T>::Operator::GTE) {
         eat(var.size());
         return op;
@@ -386,7 +386,7 @@ private:
       }
 
     case 5:
-      if(op == Expr<T>::Operator::SHL || op == Expr<T>::Operator::SHR) {
+      if (op == Expr<T>::Operator::SHL || op == Expr<T>::Operator::SHR) {
         eat(var.size());
         return op;
       } else {
@@ -394,7 +394,7 @@ private:
       }
 
     case 6:
-      if(op == Expr<T>::Operator::PLUS || op == Expr<T>::Operator::MINUS) {
+      if (op == Expr<T>::Operator::PLUS || op == Expr<T>::Operator::MINUS) {
         eat(var.size());
         return op;
       } else {
@@ -402,7 +402,7 @@ private:
       }
 
     case 7:
-      if(op == Expr<T>::Operator::TIMES || op == Expr<T>::Operator::DIV ||
+      if (op == Expr<T>::Operator::TIMES || op == Expr<T>::Operator::DIV ||
           op == Expr<T>::Operator::MOD) {
         eat(var.size());
         return op;
@@ -411,7 +411,7 @@ private:
       }
 
     case 8:
-      if(op == Expr<T>::Operator::EXP) {
+      if (op == Expr<T>::Operator::EXP) {
         eat(var.size());
         return op;
       } else {

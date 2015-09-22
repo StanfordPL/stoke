@@ -28,7 +28,7 @@ bool Handler::regset_is_supported(RegSet rs) const {
                      eflags_pf + eflags_sf + eflags_zf;
 
   // TODO mxcsr's presense here is a bug.  See #339.
-  for(size_t i = 0; i < mxcsr.size(); ++i) {
+  for (size_t i = 0; i < mxcsr.size(); ++i) {
     supported = supported + mxcsr[i];
   }
 
@@ -39,7 +39,7 @@ bool Handler::regset_is_supported(RegSet rs) const {
 /* Returns true if the validator supports all the operands of the instruction. */
 bool Handler::operands_supported(const Instruction& instr) {
 
-  for(size_t i = 0; i < instr.arity(); ++i) {
+  for (size_t i = 0; i < instr.arity(); ++i) {
     auto& o = instr.get_operand<Operand>(i);
     if (!o.is_gp_register() && !o.is_sse_register() && !o.is_immediate() &&
         !o.is_typical_memory()) {
