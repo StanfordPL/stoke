@@ -7,7 +7,8 @@ TC_BIN=memchr_tcs
 all: search
 
 testcase:
-	$(TC_BIN) $(TC_OPTS) > testcases
+	cat rsi0.tc > testcases
+	$(TC_BIN) $(TC_OPTS) >> testcases
 	$(TC_BIN) $(TC_OPTS) --max_buffer_size 16 --heap_size 128 >> testcases
 	$(TC_BIN) $(TC_OPTS) --max_buffer_size 64 --heap_size 256 >> testcases
 	$(TC_BIN) $(TC_OPTS) --max_buffer_size 512 --heap_size 2048 >> testcases
