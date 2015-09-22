@@ -3,7 +3,7 @@ DEPLOY_PATH=/home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.
 NAME=strxfrm
 TC_OPTS=--number 40 --record_dst_size --different_size_ok --randomize_stack
 
-all: clean testcase search replace deploy
+all: search
 
 testcase:
 	cat empty.tc one.tc one-alt.tc two.tc > testcases
@@ -20,10 +20,14 @@ replace:
 	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
 
-deploy: replace
-	cp optbin $(DEPLOY_PATH)/$(NAME).nexe
-	rm -f $(DEPLOY_PATH)/benchmarks_browser64.nexe
-	ln -s $(DEPLOY_PATH)/$(NAME).nexe $(DEPLOY_PATH)/benchmarks_browser64.nexe
+optbin: result.s
+	make replace
+
+benchmark: optbin
+	sel_ldr.py optbin
+
+pinkman:
+	./pinkman.sh
 
 clean:
 	rm -f testcases optbin
