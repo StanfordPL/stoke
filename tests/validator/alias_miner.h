@@ -48,7 +48,7 @@ protected:
   Cfg make_cfg(std::stringstream& ss, x64asm::RegSet di = all(), x64asm::RegSet lo = all()) {
     x64asm::Code c;
     ss >> c;
-    if(ss.fail()) {
+    if (ss.fail()) {
       std::cerr << "Parsing error!" << std::endl;
       std::cerr << cpputil::fail_msg(ss) << std::endl;
       fail();
@@ -65,7 +65,7 @@ protected:
   CpuState get_state(const Cfg& cfg) {
     CpuState cs;
     bool b = sg->get(cs, cfg);
-    if(!b) {
+    if (!b) {
       std::cerr << "StateGen: " << sg->get_error() << std::endl;
       fail();
     }
@@ -131,7 +131,7 @@ TEST_F(AliasMinerTest, Loop) {
 
   EXPECT_EQ(0x10ul, accesses.size());
 
-  for(size_t i = 0; i < accesses.size(); ++i) {
+  for (size_t i = 0; i < accesses.size(); ++i) {
     auto& access = accesses[i];
     EXPECT_EQ(5ul, access.line);
     EXPECT_EQ(0xc0decafe + 8*i, access.address);

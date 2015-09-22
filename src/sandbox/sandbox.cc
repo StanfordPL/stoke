@@ -51,8 +51,8 @@ bool Sandbox::is_supported(Opcode o) {
   // TODO: this could be boiled down to a table lookup, but I don't
   // think any performance-critical pieces of code depend on this.
   Instruction instr(o);
-  for(size_t i = 0; i < instr.arity(); ++i) {
-    switch(instr.type(i)) {
+  for (size_t i = 0; i < instr.arity(); ++i) {
+    switch (instr.type(i)) {
     case Type::HINT:
     case Type::IMM_8:
     case Type::IMM_16:
@@ -242,7 +242,7 @@ Sandbox& Sandbox::run(size_t index) {
     io->out_.stack.copy(io->in_.stack);
     io->out_.heap.copy(io->in_.heap);
     io->out_.data.copy(io->in_.data);
-    for(size_t i = 0, ie=io->out_.segments.size(); i < ie; ++i) {
+    for (size_t i = 0, ie=io->out_.segments.size(); i < ie; ++i) {
       io->out_.segments[i].copy(io->in_.segments[i]);
     }
   }
@@ -592,22 +592,22 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   vector<Memory*> segments;
   vector<Label> segment_cases;
 
-  if(cs.stack.size())
+  if (cs.stack.size())
     segments.push_back(&cs.stack);
-  if(cs.heap.size())
+  if (cs.heap.size())
     segments.push_back(&cs.heap);
-  if(cs.data.size())
+  if (cs.data.size())
     segments.push_back(&cs.data);
-  for(auto seg : cs.segments)
-    if(seg.size())
+  for (auto seg : cs.segments)
+    if (seg.size())
       segments.push_back(&seg);
 
   // get labels
   auto done = get_label();
   auto fail = get_label();
 
-  if(segments.size()) {
-    for(size_t i = 0; i < segments.size() - 1; ++i)
+  if (segments.size()) {
+    for (size_t i = 0; i < segments.size() - 1; ++i)
       segment_cases.push_back(get_label());
   }
   segment_cases.push_back(fail);
@@ -619,10 +619,10 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.jne_1(fail);
 
   // emit the code to figure out which segment we're writing to.
-  for(size_t i = 0; i < segments.size(); ++i) {
+  for (size_t i = 0; i < segments.size(); ++i) {
     Memory* segment = segments[i];
 
-    if(i > 0)
+    if (i > 0)
       assm_.bind(segment_cases[i-1]);
 
     // Compare the address (rdi) with the upper bound of the segment (rax).
@@ -630,7 +630,7 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
     // address space!  In which case, we skip this check.  This is safe because
     // we're only emitting code for segments with non-zero size, and the lower
     // bound check will make sure things are sane.
-    if(segment->upper_bound()) {
+    if (segment->upper_bound()) {
       assm_.mov((R64)rax, Imm64(segment->upper_bound()));
       assm_.cmp(rdi, rax);
       assm_.ja_1(segment_cases[i]);
@@ -871,7 +871,7 @@ void Sandbox::emit_after(const Label& label, size_t line) {
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint64_t hex_offset, const Label& entry, const Label& exit) {
   static DispatchTable table;
-  switch(table.lookup(instr)) {
+  switch (table.lookup(instr)) {
   case DispatchTable::SIGILL_:
     emit_signal_trap_call(ErrorCode::SIGILL_);
     break;

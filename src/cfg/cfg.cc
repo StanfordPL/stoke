@@ -62,15 +62,15 @@ bool Cfg::invariant_no_undef_live_outs() const {
 bool Cfg::invariant_can_assemble() const {
   bool need_check = false;
   auto code = get_code();
-  for(auto instr : code) {
+  for (auto instr : code) {
     Opcode op = instr.get_opcode();
-    if(label32_transform(op) != op) {
+    if (label32_transform(op) != op) {
       need_check = true;
       break;
     }
   }
 
-  if(!need_check)
+  if (!need_check)
     return true;
 
   buffer_.clear();

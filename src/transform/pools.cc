@@ -209,7 +209,7 @@ TransformPools::TransformPools() {
     16ul, -16ul, 32ul, -32ul, 64ul, -64ul, 128ul, -128ul
   };
 
-  for(auto imm : imms) {
+  for (auto imm : imms) {
     insert_immediate(imm);
   }
 
@@ -226,7 +226,7 @@ TransformPools::TransformPools() {
   fill_pool(xmm_pool_, xmms, preserve_regs_);
   fill_pool(ymm_pool_, ymms, preserve_regs_);
 
-  for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     opcode_weights_[i] = 0;
     opcode_weights_locked_[i] = false;
   }
@@ -237,7 +237,7 @@ TransformPools& TransformPools::add_target(const Cfg& target) {
   // Does it read/write memory?
   memory_read_ = false;
   memory_write_ = false;
-  for(size_t i = 0, ie = target.get_code().size(); i < ie; ++i) {
+  for (size_t i = 0, ie = target.get_code().size(); i < ie; ++i) {
     const auto& instr = target.get_code()[i];
     memory_read_ |= instr.maybe_read_memory();
     memory_write_ |= instr.maybe_write_memory();
@@ -267,15 +267,15 @@ TransformPools& TransformPools::add_target(const Cfg& target) {
 void TransformPools::recompute_pools() {
 
   // clean out the weight table
-  for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
-    if(!opcode_weights_locked_[i])
+  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
+    if (!opcode_weights_locked_[i])
       opcode_weights_[i] = 0;
 
   // rebuild the weight table
   for (size_t i = 0, ie = X64ASM_NUM_OPCODES; i != ie; ++i) {
 
     // 1. If the user has made a wish, we keep it.
-    if(opcode_weights_locked_[i])
+    if (opcode_weights_locked_[i])
       continue;
 
     const auto op = (Opcode)i;
@@ -335,15 +335,15 @@ void TransformPools::recompute_pools() {
   // Setup opcode pool
   opcode_pool_.clear();
 
-  for(size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
-    for(size_t j = 0; j < opcode_weights_[i]; ++j)
+  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i)
+    for (size_t j = 0; j < opcode_weights_[i]; ++j)
       opcode_pool_.push_back((Opcode)i);
 
   // Build raw-memonic-equiv pool
   // (start with string -> [opcode] map)
   map<string, std::vector<Opcode>> str_to_opcode;
-  for(auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
-    if(opcode_weights_[i]) {
+  for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    if (opcode_weights_[i]) {
       string text = opcode_write_att((Opcode)i);
       text = text.substr(0, text.size()-1);
 
@@ -353,8 +353,8 @@ void TransformPools::recompute_pools() {
   }
 
   raw_memonic_pool_.resize(X64ASM_NUM_OPCODES);
-  for(auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
-    if(opcode_weights_[i]) {
+  for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    if (opcode_weights_[i]) {
       string text = opcode_write_att((Opcode)i);
       text = text.substr(0, text.size()-1);
 
@@ -367,11 +367,11 @@ void TransformPools::recompute_pools() {
   opcodes_type_equiv_.clear();
   opcodes_type_equiv_.resize(X64ASM_NUM_OPCODES);
 
-  for(auto i = 0; i < X64ASM_NUM_OPCODES; ++i)
-    if(opcode_weights_[i]) {
-      for(size_t j = 0; j < X64ASM_NUM_OPCODES; ++j)
+  for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i)
+    if (opcode_weights_[i]) {
+      for (size_t j = 0; j < X64ASM_NUM_OPCODES; ++j)
         if (is_type_equiv((Opcode)i, (Opcode)j))
-          for(size_t k = 0; k < opcode_weights_[j]; ++k)
+          for (size_t k = 0; k < opcode_weights_[j]; ++k)
             opcodes_type_equiv_[i].push_back((Opcode)j);
     } else {
       opcodes_type_equiv_[i].clear();

@@ -44,10 +44,10 @@ public:
 
     std::stringstream ss;
 
-    if(working_directory_ != "")
+    if (working_directory_ != "")
       ss << "cd " << working_directory_ << "; ";
 
-    if(path_ != "")
+    if (path_ != "")
       ss << "PATH=" << path_ << ":$PATH ";
 
     ss << code;
@@ -57,7 +57,7 @@ public:
 
     gettimeofday(&finish, NULL);
 
-    if(time) {
+    if (time) {
       *time = (finish.tv_sec - start.tv_sec)*1000000 +
               (finish.tv_usec - start.tv_usec);
     }
@@ -97,8 +97,8 @@ TEST_F(IntegrationTest, ExamplesTutorial) {
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
-  for(size_t i = 0; i < 10; ++i) {
-    if(!shell("make search")) {
+  for (size_t i = 0; i < 10; ++i) {
+    if (!shell("make search")) {
       good++;
       break;
     }
@@ -140,9 +140,9 @@ TEST_F(IntegrationTest, ExamplesParity) {
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
-  for(size_t i = 0; i < 10; ++i) {
-    if(!shell("make search")) {
-      if(wc("examples/parity/result.s") <= 40) {
+  for (size_t i = 0; i < 10; ++i) {
+    if (!shell("make search")) {
+      if (wc("examples/parity/result.s") <= 40) {
         good++;
         break;
       }
@@ -169,7 +169,7 @@ TEST_F(IntegrationTest, ExamplesExp) {
 
   // In 10 tries, search should succeed at least once...
   size_t good = 0;
-  for(size_t i = 0; i < 10 && good == 0; ++i) {
+  for (size_t i = 0; i < 10 && good == 0; ++i) {
     if (!shell("make search")) {
       const auto res = wc("examples/exp/result.s");
       // There should have been a length reduction

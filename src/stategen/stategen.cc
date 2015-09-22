@@ -106,7 +106,7 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
 
     // If we didn't segfault, or we did due to misalign and it's allowed,
     // then we're done
-    if(is_ok(last_line)) {
+    if (is_ok(last_line)) {
       cleanup();
       return true;
     }
@@ -130,7 +130,7 @@ bool StateGen::is_ok(const Instruction& line) {
     return true;
   }
 
-  if(!is_supported_deref(line))
+  if (!is_supported_deref(line))
     return false;
 
   CpuState cs = *(sb_->get_result(0));
@@ -139,7 +139,7 @@ bool StateGen::is_ok(const Instruction& line) {
 
   // If the address is already allocated, there's a segfault,
   // it's misaligned and we allow misaligned, then we're ok.
-  if(allow_unaligned_ && is_misaligned(addr, size) &&
+  if (allow_unaligned_ && is_misaligned(addr, size) &&
       cs.code == ErrorCode::SIGSEGV_ &&
       (already_allocated(cs.stack, addr, size) ||
        already_allocated(cs.heap, addr, size))) {
@@ -152,7 +152,7 @@ bool StateGen::is_ok(const Instruction& line) {
 bool StateGen::is_supported_deref(const Instruction& instr) {
   // Special support for push/pop/ret
   if (instr.is_push() || instr.is_pop() || instr.is_any_return() || instr.is_call()) {
-    if(instr.is_explicit_memory_dereference()) {
+    if (instr.is_explicit_memory_dereference()) {
       error_message_ = "StateGen does not support push/pop with memory argument.";
       return false;
     }  else {
@@ -274,7 +274,7 @@ bool StateGen::fix_misalignment(const CpuState& cs, CpuState& fixed, const Instr
 
   if (op.contains_base()) {
     const auto current = cs.gp[op.get_base()].get_fixed_quad(0);
-    if(((current - offset) & mask) && !tried_to_fix_misalign_) {
+    if (((current - offset) & mask) && !tried_to_fix_misalign_) {
       const auto new_byte = (current & mask) - offset;
       fixed.gp[op.get_base()].get_fixed_byte(0) = new_byte;
       tried_to_fix_misalign_ = true;

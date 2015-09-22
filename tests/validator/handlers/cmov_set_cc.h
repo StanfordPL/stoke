@@ -41,14 +41,14 @@ private:
     // six status eflags. 0b00111111 = 0x3f.
     StateGen sg(sb_);
 
-    for(size_t i = 0; i <= 0x3f; ++i) {
+    for (size_t i = 0; i <= 0x3f; ++i) {
 
       // Initialize state to random
       CpuState tc;
       sg.get(tc);
 
       // Set the appropriate flags
-      for(size_t j = 0; j < 6; ++j) {
+      for (size_t j = 0; j < 6; ++j) {
         if (i & (1 << j)) {
           tc.rf.set(flag_indexes[j], 1);
         } else {
@@ -60,7 +60,7 @@ private:
     }
 
     // Add the testcases to the sandbox
-    for(auto tc : testcases_) {
+    for (auto tc : testcases_) {
       sb_->insert_input(tc);
     }
   }
@@ -70,7 +70,7 @@ private:
 
 TEST_F(ValidatorCmovSetCCTest, SetCCIdentity) {
 
-  for(auto cc : ccs) {
+  for (auto cc : ccs) {
     target_.clear();
     rewrite_.clear();
     std::string instr = "set" + cc + " %al";
@@ -90,7 +90,7 @@ TEST_F(ValidatorCmovSetCCTest, SetCCIdentity) {
 
 TEST_F(ValidatorCmovSetCCTest, CmovCCIdentity) {
 
-  for(auto cc : ccs) {
+  for (auto cc : ccs) {
     target_.clear();
     rewrite_.clear();
     std::string instr = "cmov" + cc + "w %cx, %dx";
@@ -110,7 +110,7 @@ TEST_F(ValidatorCmovSetCCTest, CmovCCIdentity) {
 
 TEST_F(ValidatorCmovSetCCTest, CmovZeroToZeroDoesNothing) {
 
-  for(auto cc : ccs) {
+  for (auto cc : ccs) {
     target_.clear();
     rewrite_.clear();
     std::string instr = "cmov" + cc + "q %rax, %rax";
@@ -130,7 +130,7 @@ TEST_F(ValidatorCmovSetCCTest, CmovZeroToZeroDoesNothing) {
 
 TEST_F(ValidatorCmovSetCCTest, CmovSetEquivalent) {
 
-  for(auto cc : ccs) {
+  for (auto cc : ccs) {
     target_.clear();
     rewrite_.clear();
     std::string instr = "cmov" + cc + "q %rax, %rax";
@@ -154,8 +154,8 @@ TEST_F(ValidatorCmovSetCCTest, CmovSetEquivalent) {
 
 TEST_F(ValidatorCmovSetCCTest, DISABLED_TestSetccAgainstItself) {
 
-  for(auto cc1 : ccs) {
-    for(auto cc2 : ccs) {
+  for (auto cc1 : ccs) {
+    for (auto cc2 : ccs) {
       if (cc1 <= cc2) // we check identity elsewhere
         continue;
 
@@ -177,8 +177,8 @@ TEST_F(ValidatorCmovSetCCTest, DISABLED_TestSetccAgainstItself) {
 
 TEST_F(ValidatorCmovSetCCTest, DISABLED_TestCmovccAgainstItself) {
 
-  for(auto cc1 : ccs) {
-    for(auto cc2 : ccs) {
+  for (auto cc1 : ccs) {
+    for (auto cc2 : ccs) {
       if (cc1 <= cc2) //we check identity elsewhere
         continue;
 

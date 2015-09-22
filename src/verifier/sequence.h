@@ -36,21 +36,21 @@ public:
 
   /** Add a sandbox for this verifier to use. */
   SequenceVerifier& set_sandbox(Sandbox* sb) {
-    for(auto it : verifiers_)
+    for (auto it : verifiers_)
       it->set_sandbox(sb);
     return *this;
   }
 
   /** Set if the heap is live out */
   SequenceVerifier& set_heap_out(bool b) {
-    for(auto it : verifiers_)
+    for (auto it : verifiers_)
       it->set_heap_out(b);
     return *this;
   }
 
   /** Set if the stack is live out */
   Verifier& set_stack_out(bool b) {
-    for(auto it : verifiers_)
+    for (auto it : verifiers_)
       it->set_stack_out(b);
     return *this;
   }
@@ -58,17 +58,17 @@ public:
   /** Returns true iff these two functions are identical. Sets counter_example_ for failed
     proofs. */
   bool verify(const Cfg& target, const Cfg& rewrite) {
-    for(auto it : verifiers_) {
+    for (auto it : verifiers_) {
       bool good = it->verify(target, rewrite);
 
-      if(it->has_error()) {
+      if (it->has_error()) {
         assert(!good);
         has_error_ = true;
         error_ = it->error();
         return false;
       }
 
-      if(!good) {
+      if (!good) {
         counterexamples_ = it->get_counter_examples();
         return false;
       }

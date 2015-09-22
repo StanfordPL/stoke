@@ -103,7 +103,7 @@ protected:
 
     memory_manager_.pop();
 
-    if(memory_manager_.size()) {
+    if (memory_manager_.size()) {
       auto manager = memory_manager_.top();
       SymBitVector::set_memory_manager(manager);
       SymBool::set_memory_manager(manager);
@@ -115,7 +115,7 @@ protected:
   }
   /** Discard and reset all memory managers. */
   void reset_mm() {
-    while(memory_manager_.size())
+    while (memory_manager_.size())
       stop_mm();
   }
   /** The memory manager */

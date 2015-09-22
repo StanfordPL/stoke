@@ -110,7 +110,7 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
 
   // Build two states at random, if possible
   CpuState cs1, cs2;
-  if(!sg.get(cs1, cfg) || !sg.get(cs2, cfg)) {
+  if (!sg.get(cs1, cfg) || !sg.get(cs2, cfg)) {
     fuzz_print() << "Could not generate state: " << sg.get_error() << std::endl;
     return;
   }
@@ -121,19 +121,19 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
   cs2.data = cs1.data;
 
   // cs1 and cs2 should agree on all registers that the instruction might read
-  for(auto it = reads.gp_begin(); it != reads.gp_end(); ++it) {
+  for (auto it = reads.gp_begin(); it != reads.gp_end(); ++it) {
     x64asm::R r = *it;
     cs2.update(r, cs1[r]);
   }
-  for(auto it = reads.sse_begin(); it != reads.sse_end(); ++it) {
+  for (auto it = reads.sse_begin(); it != reads.sse_end(); ++it) {
     uint16_t bitwidth = (*it).size();
     uint16_t quads = bitwidth/64;
 
-    for(size_t i = 0; i < quads; ++i) {
+    for (size_t i = 0; i < quads; ++i) {
       cs2.sse[*it].get_fixed_quad(i) = cs1.sse[*it].get_fixed_quad(i);
     }
   }
-  for(size_t i = 0; i < x64asm::eflags.size(); i++) {
+  for (size_t i = 0; i < x64asm::eflags.size(); i++) {
     auto op = x64asm::eflags[i];
     if (reads.contains(op)) {
       cs2.rf.set(op.index(), cs1.rf.is_set(op.index()));
@@ -154,17 +154,17 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
   // test that the two states match on live_out
   bool failed = false;
   std::stringstream os;
-  for(auto it = liveouts.gp_begin(); it != liveouts.gp_end(); ++it) {
+  for (auto it = liveouts.gp_begin(); it != liveouts.gp_end(); ++it) {
     x64asm::R r = *it;
     std::stringstream ss;
     ss << "The " << r.size() << " bits of " << r << " differ.";
     failed |= check(final1[r], final2[r], ss.str(), os);
   }
-  for(auto it = liveouts.sse_begin(); it != liveouts.sse_end(); ++it) {
+  for (auto it = liveouts.sse_begin(); it != liveouts.sse_end(); ++it) {
     uint16_t bitwidth = (*it).size();
     uint16_t quads = bitwidth/64;
 
-    for(size_t i = 0; i < quads; ++i) {
+    for (size_t i = 0; i < quads; ++i) {
       uint64_t actual_v = final1.sse[*it].get_fixed_quad(i);
       uint64_t expect_v = final2.sse[*it].get_fixed_quad(i);
       std::stringstream ss;
@@ -172,7 +172,7 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
       failed |= check(actual_v, expect_v, ss.str(), os);
     }
   }
-  for(size_t i = 0; i < x64asm::eflags.size(); i++) {
+  for (size_t i = 0; i < x64asm::eflags.size(); i++) {
     auto op = x64asm::eflags[i];
 
     if (liveouts.contains(op)) {
@@ -185,7 +185,7 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
     }
   }
   report(failed, ins, cs1, cs2, final1, final2, os.str());
-  if(!failed) {
+  if (!failed) {
     data->success_count++;
   }
 
@@ -196,9 +196,9 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   // Parameters for the test
   unsigned long iterations = 100;
   const char * iterations_str = getenv("TEST_VALIDATOR_FUZZ_COUNT");
-  if(iterations_str != NULL)
+  if (iterations_str != NULL)
     iterations = strtol(iterations_str, NULL, 10);
-  if(iterations == 0)
+  if (iterations == 0)
     iterations = 100;
 
   const size_t min_success = iterations/4;
