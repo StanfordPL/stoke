@@ -5,7 +5,7 @@ TC_OPTS=--number 40 --char_width 4 --different_size_ok --randomize_stack
 TC_EXTRA_OPTS=--number 400 --char_width 4 --different_size_ok --randomize_stack
 TC_BIN=strcpy_tcs
 
-all: clean testcase search replace deploy
+all: search
 
 testcase:
 	$(TC_BIN) $(TC_OPTS) > testcases
@@ -26,15 +26,18 @@ extra_testcases:
 search:
 	stoke search --config search.conf
 
-verify: extra_testcases
-	stoke debug verify --strategy hold_out --test_set "{ 1 .. 2000 }" --training_set "{ 1 .. 2000 }" --testcases extra_testcases --target target.s --rewrite result.s
-
 replace:
 	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
 
-benchmark: replace
+optbin: result.s
+	make replace
+
+benchmark: optbin
 	sel_ldr.py optbin
+
+pinkman:
+	./pinkman.sh
 
 clean:
 	rm -f testcases optbin
