@@ -598,7 +598,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
          << " (cell size " << cell_sizes[cell[i]] << ")" << endl;
   });
 
-  if (max_cell > 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
+  if (max_cell > 2) {
     // For simplicity, I don't want to handle this case explicitly; just fallback
     // a nicer implementation could rewrite the other recursive functions to do this well
     return enumerate_aliasing_basic(target, rewrite, P, Q);
