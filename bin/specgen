@@ -1,0 +1,44 @@
+#!/bin/bash
+
+# http://stackoverflow.com/questions/4774054/
+#   reliable-way-for-a-bash-script-to-get-the-full-path-to-itself
+
+pushd `dirname $0` > /dev/null
+HERE=`pwd`
+popd > /dev/null
+
+if [ $# -eq 0 ] 
+then
+  echo "Type 'specgen --help' for usage."
+  exit 1
+fi
+
+SCMD=$1
+shift
+
+# This is to make sure we link the the right copy of z3.
+export LD_LIBRARY_PATH="$HERE/../src/ext/z3/build:$HERE/../src/ext/cvc4-1.4-build/lib"
+
+if [ "$SCMD" == "--help" ] || [ "$SCMD" == "-h" ]
+then
+  echo "Usage: specgen <subcommand> [options]"
+  echo "Type 'specgen <subcommand> --help' for help on a specific subcommand."
+  echo ""
+  echo "  init         initialize the working directory"
+  echo "  setup        setup a single opcode"
+  echo "  analyse      run some analyses"
+  exit 0
+elif [ "$SCMD" == "init" ]
+then
+  exec $HERE/specgen_init "$@"
+elif [ "$SCMD" == "setup" ]
+then
+  exec $HERE/specgen_setup "$@"
+elif [ "$SCMD" == "analyse" ]
+then
+  exec $HERE/specgen_analyse "$@"
+else
+  echo "Unknown command: '"$SCMD"'"
+  echo "Type 'specgen --help' for usage."
+  exit 1
+fi
