@@ -52,31 +52,31 @@ then
 	shift
 	if [ "$SCMD" == "cfg" ]
 	then
-		$HERE/stoke_debug_cfg "$@"
+		exec $HERE/stoke_debug_cfg "$@"
 	elif [ "$SCMD" == "cost" ]
 	then
-		$HERE/stoke_debug_cost "$@"
+		exec $HERE/stoke_debug_cost "$@"
 	elif [ "$SCMD" == "diff" ]
 	then
-		$HERE/stoke_debug_diff "$@"
+		exec $HERE/stoke_debug_diff "$@"
 	elif [ "$SCMD" == "effect" ]
 	then
-		$HERE/stoke_debug_effect "$@"
+		exec $HERE/stoke_debug_effect "$@"
 	elif [ "$SCMD" == "sandbox" ]
 	then
-		$HERE/stoke_debug_sandbox "$@"
+		exec $HERE/stoke_debug_sandbox "$@"
 	elif [ "$SCMD" == "state" ]
 	then
-		$HERE/stoke_debug_state "$@"
+		exec $HERE/stoke_debug_state "$@"
 	elif [ "$SCMD" == "search" ]
 	then
-		$HERE/stoke_debug_search "$@"
+		exec $HERE/stoke_debug_search "$@"
 	elif [ "$SCMD" == "tunit" ]
 	then
-		$HERE/stoke_debug_tunit "$@"
+		exec $HERE/stoke_debug_tunit "$@"
 	elif [ "$SCMD" == "verify" ]
 	then
-		$HERE/stoke_debug_verify "$@"
+		exec $HERE/stoke_debug_verify "$@"
 	else
 		echo "Unknown command: '"$SCMD"'"
 		echo "Type 'stoke --help' for usage."
@@ -88,22 +88,22 @@ then
   shift
   if [ "$SCMD" == "cfg" ]
   then
- 	  $HERE/stoke_benchmark_cfg "$@"
+ 	  exec $HERE/stoke_benchmark_cfg "$@"
 	elif [ "$SCMD" == "cost" ]
 	then
-		$HERE/stoke_benchmark_cost "$@"
+		exec $HERE/stoke_benchmark_cost "$@"
 	elif [ "$SCMD" == "sandbox" ]
 	then
-		$HERE/stoke_benchmark_sandbox "$@"
+		exec $HERE/stoke_benchmark_sandbox "$@"
 	elif [ "$SCMD" == "search" ]
 	then
-		$HERE/stoke_benchmark_search "$@"
+		exec $HERE/stoke_benchmark_search "$@"
 	elif [ "$SCMD" == "state" ]
 	then
-		$HERE/stoke_benchmark_state "$@"
+		exec $HERE/stoke_benchmark_state "$@"
 	elif [ "$SCMD" == "verify" ]
 	then
-		$HERE/stoke_benchmark_verify "$@"
+		exec $HERE/stoke_benchmark_verify "$@"
   else
  	  echo "Unknown command: '"$SCMD"'"
     echo "Type 'stoke --help' for usage."
@@ -111,19 +111,19 @@ then
   fi
 elif [ "$SCMD" == "extract" ]
 then
-	$HERE/stoke_extract "$@"
+	exec $HERE/stoke_extract "$@"
 elif [ "$SCMD" == "replace" ]
 then
-	$HERE/stoke_replace "$@"
+	exec $HERE/stoke_replace "$@"
 elif [ "$SCMD" == "search" ]
 then
-	$HERE/stoke_search "$@"
+	exec $HERE/stoke_search "$@"
 elif [ "$SCMD" == "testcase" ]
 then
-	$HERE/stoke_testcase "$@"
+	exec $HERE/stoke_testcase "$@"
 elif [ "$SCMD" == "test" ]
 then
-	$HERE/stoke_test "$@"
+	exec $HERE/stoke_test "$@"
 else
 	echo "Unknown command: '"$SCMD"'"
 	echo "Type 'stoke --help' for usage."
