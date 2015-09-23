@@ -17,6 +17,8 @@
 
 #include <regex>
 
+#include "src/ext/cpputil/include/io/console.h"
+
 #include "src/cost/cost_function.h"
 #include "src/verifier/hold_out.h"
 #include "src/verifier/none.h"
@@ -26,6 +28,7 @@
 #include "src/validator/straight_line.h"
 
 #include "tools/args/in_out.inc"
+#include "tools/args/testcases.inc"
 #include "tools/args/verifier.inc"
 #include "tools/gadgets/solver.h"
 
@@ -41,6 +44,10 @@ public:
     std::vector<Verifier*> verifiers;
     std::vector<std::string> splits = split(strategy_arg.value(), std::regex("[ ,+]"));
     for (auto it : splits) {
+      std::cout << test_set_arg.value().size() << std::endl;
+      if (it == "hold_out" && (test_set_arg.value().size() == 0 || testcases_arg.value().size() == 0)) {
+        cpputil::Console::error() << "No test-cases given for hold_out verification." << std::endl;
+      }
       verifiers.push_back(make_by_name(it, sandbox, fxn));
     }
 
