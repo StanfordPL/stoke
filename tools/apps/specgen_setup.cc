@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
 
   ofstream f_code;
   f_code.open(out + "/" + full_opc_str + ".s");
-  f_code << "target:" << endl;
+  f_code << ".target:" << endl;
   f_code << "  " << instr << endl;
   f_code.close();
 
