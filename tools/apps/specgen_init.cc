@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
   bool quiet = quiet_arg.value();
 
   auto workdir = workdir_arg.value();
-  auto configdir = workdir + "/state";
+  auto configdir = workdir + "/information";
   boost::filesystem::path config_path(configdir);
   boost::filesystem::create_directories(config_path);
 
