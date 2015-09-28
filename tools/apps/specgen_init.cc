@@ -19,8 +19,7 @@
 #include <string>
 #include <vector>
 #include <streambuf>
-
-#include <boost/regex.hpp>
+#include <regex>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 
@@ -34,6 +33,7 @@
 #include "tools/apps/specgen.h"
 #include "tools/apps/support.h"
 
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
 
 using namespace cpputil;
@@ -74,6 +74,12 @@ auto& imm_count = ValueArg<size_t>::create("imm_count")
                   .default_val(10)
                   .description("How many random variants should be explored?");
 
+void create_file(string name) {
+  ofstream file;
+  file.open(name);
+  file.close();
+}
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
@@ -85,14 +91,15 @@ int main(int argc, char** argv) {
   boost::filesystem::create_directories(config_path);
 
   ofstream f_goal;
-  f_goal.open(configdir + "/goal.txt");
+  string goal_path = configdir + "/initial_goal.instrs";
+  f_goal.open(goal_path);
   ofstream f_goal2;
-  f_goal2.open(configdir + "/potential_goal.txt");
+  f_goal2.open(configdir + "/potential_goal.instrs");
   ofstream f_all;
-  f_all.open(configdir + "/all.txt");
+  f_all.open(configdir + "/all.instrs");
 
   ofstream f_base;
-  f_base.open(configdir + "/base.txt");
+  f_base.open(configdir + "/initial_base.instrs");
 
   string imm8_data;
   if (only_imm_arg) {
@@ -308,4 +315,10 @@ int main(int argc, char** argv) {
   f_base.close();
   f_goal.close();
   f_all.close();
+
+  // additional files
+  create_file(configdir + "/success.instrs");
+  create_file(configdir + "/partial_success.instrs");
+  create_file(configdir + "/worklist.instrs");
+  filesystem::copy_file(goal_path, configdir + "/remaining_goal.instrs");
 }

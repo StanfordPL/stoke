@@ -20,8 +20,7 @@
 #include <string>
 #include <vector>
 #include <cassert>
-
-#include <boost/regex.hpp>
+#include <regex>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 

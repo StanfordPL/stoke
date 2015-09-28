@@ -50,7 +50,6 @@ DEPS=\
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
-	-lboost_regex\
 	-pthread\
 	-lboost_thread -lboost_system\
 	-lboost_regex -lboost_filesystem\
