@@ -176,6 +176,140 @@ TEST_F(CorrectnessCostTest, ChecksRAX) {
   EXPECT_EQ(expected, cost.second);
 }
 
+TEST_F(CorrectnessCostTest, DoublewordDistanceCorrect) {
+
+  // Add one testcases
+  add_testcases(1);
+
+  // Setup
+  std::stringstream ss;
+  x64asm::Code target, rewrite;
+
+  // Target
+  ss.clear();
+  ss << ".foo:" << std::endl;
+  ss << "retq" << std::endl;
+  ss >> target;
+
+  // Rewrite
+  ss.clear();
+  ss << ".foo:" << std::endl;
+  ss << "retq" << std::endl;
+  ss >> rewrite;
+
+  auto cfg_t = make_cfg(target,  x64asm::RegSet::empty() + x64asm::rax);
+  auto cfg_r = make_cfg(rewrite, x64asm::RegSet::empty() + x64asm::rax);
+
+  fxn_.set_distance(Distance::DOUBLEWORD);
+  fxn_.set_target(cfg_t, false, false);
+  sb_.run(cfg_r);
+  auto cost = fxn_(cfg_r);
+
+  EXPECT_EQ(0ul, cost.second);
+}
+
+TEST_F(CorrectnessCostTest, DoublewordDistanceOne) {
+
+  // Add one testcases
+  add_testcases(1);
+
+  // Setup
+  std::stringstream ss;
+  x64asm::Code target, rewrite;
+
+  // Target
+  ss.clear();
+  ss << ".foo:" << std::endl;
+  ss << "movq $0x10, %rax" << std::endl;
+  ss << "retq" << std::endl;
+  ss >> target;
+
+  // Rewrite
+  ss.clear();
+  ss << ".foo:" << std::endl;
+  ss << "movq $0xf00, %rax" << std::endl;
+  ss << "retq" << std::endl;
+  ss >> rewrite;
+
+  auto cfg_t = make_cfg(target,  x64asm::RegSet::empty() + x64asm::rax);
+  auto cfg_r = make_cfg(rewrite, x64asm::RegSet::empty() + x64asm::rax);
+
+  fxn_.set_distance(Distance::DOUBLEWORD);
+  fxn_.set_target(cfg_t, false, false);
+  sb_.run(cfg_r);
+  auto cost = fxn_(cfg_r);
+
+  EXPECT_EQ(1ul, cost.second);
+}
+
+TEST_F(CorrectnessCostTest, DoublewordDistanceOneAlt) {
+
+  // Add one testcases
+  add_testcases(1);
+
+  // Setup
+  std::stringstream ss;
+  x64asm::Code target, rewrite;
+
+  // Target
+  ss.clear();
+  ss << ".foo:" << std::endl;
+  ss << "movq $0x10, %rax" << std::endl;
+  ss << "retq" << std::endl;
+  ss >> target;
+
+  // Rewrite
+  ss.clear();
+  ss << ".foo:" << std::endl;
+  ss << "movq $0x4000000000000010, %rax" << std::endl;
+  ss << "retq" << std::endl;
+  ss >> rewrite;
+
+  auto cfg_t = make_cfg(target,  x64asm::RegSet::empty() + x64asm::rax);
+  auto cfg_r = make_cfg(rewrite, x64asm::RegSet::empty() + x64asm::rax);
+
+  fxn_.set_distance(Distance::DOUBLEWORD);
+  fxn_.set_target(cfg_t, false, false);
+  sb_.run(cfg_r);
+  auto cost = fxn_(cfg_r);
+
+  EXPECT_EQ(1ul, cost.second);
+}
+
+TEST_F(CorrectnessCostTest, DoublewordDistanceTwo) {
+
+  // Add one testcases
+  add_testcases(1);
+
+  // Setup
+  std::stringstream ss;
+  x64asm::Code target, rewrite;
+
+  // Target
+  ss.clear();
+  ss << ".foo:" << std::endl;
+  ss << "movq $0xdeadbeef, %rax" << std::endl;
+  ss << "retq" << std::endl;
+  ss >> target;
+
+  // Rewrite
+  ss.clear();
+  ss << ".foo:" << std::endl;
+  ss << "movq $0x4000000000000010, %rax" << std::endl;
+  ss << "retq" << std::endl;
+  ss >> rewrite;
+
+  auto cfg_t = make_cfg(target,  x64asm::RegSet::empty() + x64asm::rax);
+  auto cfg_r = make_cfg(rewrite, x64asm::RegSet::empty() + x64asm::rax);
+
+  fxn_.set_distance(Distance::DOUBLEWORD);
+  fxn_.set_target(cfg_t, false, false);
+  sb_.run(cfg_r);
+  auto cost = fxn_(cfg_r);
+
+  EXPECT_EQ(2ul, cost.second);
+}
+
 TEST_F(CorrectnessCostTest, SignalPenalty) {
 
   // Add 10 testcases
