@@ -347,6 +347,9 @@ Cost CorrectnessCost::undef_default(size_t num_bytes) const {
   case Distance::HAMMING:
     res = 8*num_bytes;
     break;
+  case Distance::DOUBLEWORD:
+    res = (num_bytes + 3)/4;
+    break;
   case Distance::ULP:
     res = max_error_cost;
     break;
@@ -371,6 +374,8 @@ Cost CorrectnessCost::evaluate_distance(uint64_t x, uint64_t y) const {
     return hamming_distance(x, y);
   case Distance::ULP:
     return ulp_distance(x, y);
+  case Distance::DOUBLEWORD:
+    return doubleword_distance(x,y);
   default:
     assert(false);
     return 0;
