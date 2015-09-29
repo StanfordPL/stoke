@@ -99,7 +99,8 @@ int main(int argc, char** argv) {
   f_all.open(configdir + "/all.instrs");
 
   ofstream f_base;
-  f_base.open(configdir + "/initial_base.instrs");
+  string base_path = configdir + "/initial_base.instrs";
+  f_base.open(base_path);
 
   string imm8_data;
   if (only_imm_arg) {
@@ -321,4 +322,5 @@ int main(int argc, char** argv) {
   create_file(configdir + "/partial_success.instrs");
   create_file(configdir + "/worklist.instrs");
   filesystem::copy_file(goal_path, configdir + "/remaining_goal.instrs");
+  filesystem::copy_file(base_path, configdir + "/success.instrs");
 }
