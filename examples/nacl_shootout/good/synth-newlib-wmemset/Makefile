@@ -17,6 +17,9 @@ testcase:
 search:
 	stoke search --config search.conf
 
+verify:
+	time stoke debug verify --config verify.conf
+
 optbin: result.s
 	make replace
 

@@ -1,0 +1,154 @@
+Testcase 0:
+
+SIGNAL 0 [normal exit]
+
+%rax     83 e0 09 39 c6 70 dd 93
+%rcx     7d b5 5e 7f 31 3b e4 e5
+%rdx     00 00 00 00 00 00 00 01
+%rbx     29 14 1b 96 af 8b 93 21
+%rsp     00 00 00 07 54 97 3d 8a
+%rbp     00 00 00 07 54 97 3d 8a
+%rsi     00 00 00 00 00 00 00 00
+%rdi     00 00 00 00 0e e6 27 b8
+%r8      fb 5e 2f 46 eb 7a 76 5d
+%r9      bd f8 df 5b 6f 2e 02 20
+%r10     1c 23 cd 56 0d 23 24 19
+%r11     1f 9c ff c1 53 79 e8 02
+%r12     66 b6 68 46 bb 0a 16 75
+%r13     dd 82 cd c4 c5 d5 e5 6a
+%r14     74 64 0e 72 48 eb a5 f1
+%r15     00 00 00 00 00 85 30 a0
+
+%ymm0    2b 72 cb b1 20 f3 4d 44 3b 86 66 44 11 02 35 9f ba 4a fa c8 6d 78 fb a8 b3 26 c3 49 c0 0d e1 7a
+%ymm1    c2 7d cd 15 52 5b 4a a1 3b 57 53 f7 1c cd 90 d8 bc 8e a2 1c d4 58 22 0c eb a9 11 42 f6 eb 7f ac
+%ymm2    20 e1 ed d3 1f 70 06 0a 1e aa bf 7d 6f 68 29 78 4c 5c e8 74 a0 59 d2 83 85 7a 61 79 8f b8 68 4c
+%ymm3    f1 20 ef 9c 00 0d af 2d ee 3f 27 e4 21 7c 24 a4 0d bc 7a 94 6f 1e ac fb 7e 53 29 fb ce af 99 55
+%ymm4    9a db 51 12 ea 31 23 4e 30 15 9f 03 27 60 dc 43 3f 60 1f 9b 53 63 20 be f3 02 12 f8 83 bf cf 88
+%ymm5    d1 df 2c b0 44 51 5f 32 67 2e 0f 19 fd fa 7a fa d2 1a 1d 8f db bd 70 40 6a 0d 20 ac 19 1e 9a 21
+%ymm6    93 be 29 cd ed 4a a0 3c 05 4f dd d3 e7 af c3 ce b2 c9 53 b8 f7 39 9a 68 5d dd f8 1d 72 eb fd c6
+%ymm7    ff 32 5c d9 9f 9e b0 d2 b1 66 31 74 60 e2 97 8d fb e7 ca 2d 35 00 d9 7d 09 a0 e3 a1 43 06 a9 26
+%ymm8    73 57 9b 6d 58 69 10 7f ca 72 cf f8 c1 69 c6 4d 09 e4 b6 7b e9 ce b1 bc 99 b1 e2 1b a7 42 38 06
+%ymm9    66 7e 6a 92 0b 12 f6 9e ba 8d 8e 3a c3 1b 6b cb 5a 01 05 0d f8 21 57 7d 38 88 cb 7c ef 1a 99 d4
+%ymm10   bb e8 6e b7 82 ef 4d f0 e4 3b fa 45 81 6c b7 46 a9 9c db dd 42 da d8 35 e1 b7 de 64 7f 55 99 03
+%ymm11   74 c5 13 6d 0a 2a ff 52 a8 10 05 b7 2c ca bd e6 49 51 2f 02 a8 93 27 ca 51 4d f2 1c 6b 3a 3e 07
+%ymm12   60 84 90 0f 0f cb fc a2 c1 d2 a2 6e 2a 92 69 72 66 9f b5 80 56 64 51 54 bc be 2d f1 6d e0 ff 51
+%ymm13   5e 31 2d cf d0 a9 3f c1 9a 74 c4 f8 b3 f2 55 44 c8 c3 db 56 5c 3b a1 dc e5 3d 8b 91 81 cd 64 8f
+%ymm14   d6 f6 55 44 97 24 17 c8 54 6d 89 93 d3 15 ce db 62 dc 86 1e 13 c3 43 bd 66 07 1c 8a 22 df fe 91
+%ymm15   22 db b8 ce 05 c2 79 c1 2b 54 aa 62 00 3c d9 6d 69 c3 9f 8d 61 c3 07 43 af 44 00 f2 de f8 d5 54
+
+%cf      0 
+%1       1 
+%pf      0 
+%0       0 
+%af      0 
+%0       0 
+%zf      0 
+%sf      0 
+%tf      0 
+%if      1 
+%df      0 
+%of      1 
+%iopl[0] 0 
+%iopl[1] 0 
+%nt      0 
+%0       0 
+%rf      0 
+%vm      0 
+%ac      0 
+%vif     0 
+%vip     0 
+%id      0 
+
+[ 00000007 00000000 - 00000006 ffffffe0 ]
+[ 4 valid rows shown ]
+
+00000006 fffffff8   v v v v v v v v   5a 03 73 2b be 9f ab be 
+00000006 fffffff0   v v v v v v v v   cb 1d 9b f0 64 cd ea a2 
+00000006 ffffffe8   v v v v v v v v   54 29 77 ff 7f 14 ff 43 
+00000006 ffffffe0   v v v v v v v v   3b 91 da 78 f2 4c 17 2f 
+
+[ 00000000 0f6b5868 - 00000000 0f6b5840 ]
+[ 1 valid rows shown ]
+
+00000000 0f6b5858   . . . . v v v v   00 00 00 00 fe 00 6b 31 
+
+[ 00000000 00000000 - 00000000 00000000 ]
+[ 0 valid rows shown ]
+
+Testcase 1:
+
+SIGNAL 0 [normal exit]
+
+%rax     59 1d 19 cf c3 16 5b 98
+%rcx     26 00 9a 49 93 5c 6a 69
+%rdx     00 00 00 00 00 00 00 01
+%rbx     76 23 b0 de cc f4 f1 32
+%rsp     00 00 00 07 50 77 24 a5
+%rbp     00 00 00 07 50 77 24 a5
+%rsi     00 00 00 00 00 00 00 00
+%rdi     00 00 00 00 3c 23 0b 58
+%r8      86 d4 02 c5 17 ce 6e c4
+%r9      b2 d2 c2 74 bc 91 24 92
+%r10     6c fb 36 8d 5f f2 9f f6
+%r11     b2 4a 5f ed 56 2a 62 6e
+%r12     ac 18 9d 1a 92 c9 18 cd
+%r13     62 e8 3a 6b 36 68 a9 c1
+%r14     7f d3 bc 11 66 c1 da d9
+%r15     00 00 00 00 0e b7 2c d0
+
+%ymm0    9e 37 b3 66 0d f4 46 b1 e8 70 b3 c9 f0 e0 0c df 7a 4b 05 a0 e9 1d 66 7d e7 fe d4 25 52 bb 88 38
+%ymm1    18 f3 f8 dd 55 c1 2a ef b3 35 a9 02 4d 39 4f 84 49 6e 78 69 f4 2d 64 54 44 47 ee c6 60 f0 f2 3b
+%ymm2    31 c0 f2 46 a8 ff 4e cb a9 8d a1 ba da 6c 10 d7 1e d7 88 9a 8e 1a 22 24 25 f5 c0 d1 b1 78 e3 ea
+%ymm3    be 74 f3 e8 43 33 f5 fd 8a f6 ae bf 4d 21 1d 93 47 b1 82 6f 93 ab e7 f9 1d cd d7 f9 a7 e2 39 d6
+%ymm4    25 e3 54 f8 25 e0 05 3d 9c d2 47 9f 47 51 f1 88 04 d0 6b 71 89 b9 ee 19 26 43 32 2d 25 65 56 2c
+%ymm5    fa e8 ce 4f c3 eb fa ca c6 1a c5 89 7e f3 42 de ac f1 ed 23 ed 1d b8 7c 94 ff 8d 7b d8 4a 48 ab
+%ymm6    7d ec 88 66 f2 a0 97 a3 dd ac a8 12 e5 8e 4d 5c 10 59 1a 31 ad 29 44 8a 3c 26 d1 c0 92 d2 32 17
+%ymm7    40 61 72 85 e4 86 fd 7e 94 5d e7 f1 80 3b 49 6e 55 bb 21 f9 ab c7 df 79 1a b6 35 90 7a 0f be ba
+%ymm8    7e d2 86 4d 92 24 db 0d 40 54 0f c1 c0 b2 da ce 31 9f 85 c3 4a ca a2 50 1f db 71 a6 c1 ba 70 31
+%ymm9    b5 96 e5 be 17 13 38 ca 80 14 ef 73 d4 9a 64 12 da b2 38 0c 80 98 86 bd 4e bc 1a fe 9c 3f 8d f6
+%ymm10   a2 36 7b 30 81 e5 4a c2 ce 37 8a 04 b7 76 15 43 a2 7a df 8f a0 2d 57 94 ad bf 0d f0 70 51 d5 72
+%ymm11   dc 4a d4 8b a7 9e 10 77 1d 2a 2d 5b 5c f5 d1 58 3e 5b 43 fb b9 c9 1b 29 29 ee d2 95 41 13 87 51
+%ymm12   85 7e ec 29 a1 a2 54 16 fa b6 06 83 98 db 56 3d 7f 60 6c 26 22 11 e3 27 58 1a 0b 2f f1 1d 5d 5c
+%ymm13   fb dd 2f b2 58 b1 c6 2f 10 24 da fa 29 24 f4 a6 8c 18 50 4e 99 f0 e2 73 ce d0 90 a7 78 76 9b 49
+%ymm14   b2 e7 63 e7 ec 86 b7 3a 2e 06 74 ff f6 50 24 fc 27 00 08 80 74 ef 30 25 56 40 43 e3 72 73 53 cb
+%ymm15   28 2f 0f 72 7d 27 0f 96 3b 89 de 00 5b d8 8c 5c e2 3b 37 e6 14 37 de 94 c3 ef 64 9e 99 24 5a b6
+
+%cf      1 
+%1       1 
+%pf      1 
+%0       0 
+%af      1 
+%0       0 
+%zf      1 
+%sf      1 
+%tf      0 
+%if      1 
+%df      0 
+%of      0 
+%iopl[0] 0 
+%iopl[1] 0 
+%nt      0 
+%0       0 
+%rf      0 
+%vm      0 
+%ac      0 
+%vif     0 
+%vip     0 
+%id      0 
+
+[ 00000007 00000000 - 00000006 ffffffe0 ]
+[ 4 valid rows shown ]
+
+00000006 fffffff8   v v v v v v v v   d5 94 5a 0a e4 a3 02 23 
+00000006 fffffff0   v v v v v v v v   50 99 fb 21 8a 89 a4 62 
+00000006 ffffffe8   v v v v v v v v   7a 0e 27 f1 30 27 96 57 
+00000006 ffffffe0   v v v v v v v v   9b 3a 75 5f 02 8e 4b cb 
+
+[ 00000000 4ada3838 - 00000000 4ada3820 ]
+[ 1 valid rows shown ]
+
+00000000 4ada3828   . . . . v v v v   00 00 00 00 00 00 00 00 
+
+[ 00000000 00000000 - 00000000 00000000 ]
+[ 0 valid rows shown ]
+

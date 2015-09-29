@@ -492,7 +492,12 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   for (size_t i = 0; i < total_accesses; ++i) {
     for (size_t j = i+1; j < total_accesses; ++j) {
       // (i) Are these two accesses to the same memory locations?
-      auto equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
+      SymBool equal_addrs;
+      if (nacl_) {
+        equal_addrs = sym_accesses[i].address[31][0] == sym_accesses[j].address[31][0];
+      } else {
+        equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
+      }
       constraints.push_back(!equal_addrs);
       same_address[i][j] = !solver_.is_sat(constraints);
       constraints.erase(--constraints.end());

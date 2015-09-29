@@ -19,11 +19,14 @@ testcase:
 search:
 	stoke search --config search.conf
 
+verify:
+	time stoke debug verify --config verify.conf
+
 replace:
-	stoke replace --input_offset --rewrite result.s -i binary -o optbin
+	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
 
-optpin: result.s
+optbin: result.s
 	make replace
 
 benchmark: optbin
