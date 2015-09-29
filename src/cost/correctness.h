@@ -209,6 +209,12 @@ private:
   Cost hamming_distance(uint64_t t, uint64_t r) const {
     return cpputil::BitManip<uint64_t>::pop_count(t ^ r);
   }
+  /** Counts the number of 32-bit chunks that aren't equal. */
+  Cost doubleword_distance(uint64_t t, uint64_t r) const {
+    bool low = (t & 0xffffffff) != (r & 0xffffffff);
+    bool high = (t >> 32) != (r >> 32);
+    return (Cost)low + (Cost)high;
+  }
   /** Returns the ULP error between two values. */
   Cost ulp_distance(uint64_t t, uint64_t r) const;
 
