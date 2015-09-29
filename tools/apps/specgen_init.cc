@@ -318,7 +318,6 @@ int main(int argc, char** argv) {
   f_all.close();
 
   // additional files
-  create_file(configdir + "/success.instrs");
   create_file(configdir + "/partial_success.instrs");
   create_file(configdir + "/worklist.instrs");
   filesystem::copy_file(goal_path, configdir + "/remaining_goal.instrs");
