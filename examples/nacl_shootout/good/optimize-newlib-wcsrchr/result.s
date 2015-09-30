@@ -171,6 +171,9 @@
   nop                       #  156   0x14397c  1      OPC=nop             
   xorq %rax, %rax           #  157   0x14397d  3      OPC=xorq_r64_r64    
 .L_1439a0:                  #        0x143980  0      OPC=<label>         
-  retq
+  popq %r11                 #  158   0x143980  2      OPC=popq_r64_1      
+  andl $0xe0, %r11d         #  159   0x143982  4      OPC=andl_r32_imm8   
+  addq %r15, %r11           #  160   0x143986  3      OPC=addq_r64_r64    
+  jmpq %r11                 #  161   0x143989  3      OPC=jmpq_r64        
                                                                           
 .size wcsrchr, .-wcsrchr

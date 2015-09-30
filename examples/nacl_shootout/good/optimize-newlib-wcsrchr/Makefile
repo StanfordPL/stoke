@@ -26,12 +26,18 @@ extra_testcases:
 search:
 	stoke search --config search.conf
 
-verify: extra_testcases
-	stoke debug verify --strategy hold_out --test_set "{ 1 .. 2000 }" --training_set "{ 1 .. 2000 }" --testcases extra_testcases --target target.s --rewrite result.s
+verify:
+	time stoke debug verify --config verify.conf
 
 replace:
 	stoke replace --rewrite result.s -i binary -o optbin
 	ncval optbin
+
+optbin: result.s
+	make replace
+
+benchmark: optbin
+	sel_ldr.py optbin
 
 pinkman:
 	./pinkman.sh
