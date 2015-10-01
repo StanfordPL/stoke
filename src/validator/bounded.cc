@@ -446,7 +446,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
 vector<vector<int>> compute_offset_vectors(size_t* cell_sizes, size_t cell_count, size_t debug_size = 0) {
 
   stringstream spaces;
-  for(size_t i = 0; i < debug_size*2; ++i)
+  for (size_t i = 0; i < debug_size*2; ++i)
     spaces << " ";
   string ss = spaces.str();
 
@@ -459,7 +459,7 @@ vector<vector<int>> compute_offset_vectors(size_t* cell_sizes, size_t cell_count
 
   assert(cell_count > 0);
 
-  if(cell_count == 1) {
+  if (cell_count == 1) {
     // If there's only one cell, there's only one offset it can exist at (0)
     vector<int> single_cell;
     single_cell.push_back(0); //minimum index;
@@ -475,7 +475,7 @@ vector<vector<int>> compute_offset_vectors(size_t* cell_sizes, size_t cell_count
   auto old_results = compute_offset_vectors(cell_sizes, cell_count - 1, debug_size+1);
   vector<vector<int>> new_results;
 
-  for(auto old_result : old_results) {
+  for (auto old_result : old_results) {
     // get the min/max indexes.
     int min_index = old_result[0];
     int max_index = old_result[1];
@@ -489,7 +489,7 @@ vector<vector<int>> compute_offset_vectors(size_t* cell_sizes, size_t cell_count
     // starting index.
     //cout << ss << "answers!" << endl;
     old_result.push_back(0);
-    for(int i = min_index - (int)cell_size; i <= max_index; ++i) {
+    for (int i = min_index - (int)cell_size; i <= max_index; ++i) {
       old_result.erase(old_result.end() - 1);
       old_result[0] = MIN(i, min_index);
       old_result[1] = MAX(i + (int)cell_size - 1, max_index);
@@ -577,7 +577,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   // Can be much more performant if stoke #716 is done.
   for (size_t i = 0; i < total_accesses; ++i) {
     for (size_t j = 0; j < total_accesses; ++j) {
-      if(i == j)
+      if (i == j)
         continue;
 
       // (i) Are these two accesses to the same memory locations?
@@ -683,13 +683,13 @@ for (size_t i = 0; i < total_accesses; ++i) {
         cell_sizes[cell[i]] = MAX(offset[j] + sym_accesses[j].size, cell_sizes[cell[j]]);
       } else if (next_address[j][i]) {
         cell[j] = cell[i];
-        if(offset[i] < sym_accesses[j].size) {
+        if (offset[i] < sym_accesses[j].size) {
           size_t difference = sym_accesses[j].size - offset[i];
           // go through every sym_access whose cell is set to i, and add the difference to the offset
-          for(size_t k = 0; k < total_accesses; ++k) {
-            if(k == j)
+          for (size_t k = 0; k < total_accesses; ++k) {
+            if (k == j)
               continue;
-            if(cell[k] == cell[i]) {
+            if (cell[k] == cell[i]) {
               offset[k] += difference;
             }
           }
@@ -740,7 +740,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
     return enumerate_aliasing_basic(target, rewrite, P, Q);
   }
 
- 
+
 
   assert(max_cell > 0);
 
