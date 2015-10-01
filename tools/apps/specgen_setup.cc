@@ -114,6 +114,7 @@ int main(int argc, char** argv) {
   f_code.open(out + "/" + full_opc_str + ".s");
   f_code << ".target:" << endl;
   f_code << "  " << instr << endl;
+  f_code << "  retq" << endl;
   f_code.close();
 
   ofstream f_meta;
