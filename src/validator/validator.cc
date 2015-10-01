@@ -17,7 +17,7 @@
 #include <sstream>
 #include <vector>
 #include <map>
-#include <list> 
+#include <list>
 #include <cassert>
 #include <initializer_list>
 
@@ -287,9 +287,9 @@ Cfg Validator::inline_functions(const Cfg& cfg) const {
 
   size_t unique_id = 0;
 
-  for(size_t i = 0; i < old_code.size(); ++i) {
-    if(old_code[i].is_call()) {
-      
+  for (size_t i = 0; i < old_code.size(); ++i) {
+    if (old_code[i].is_call()) {
+
       auto label = old_code[i].get_operand<x64asm::Label>(0);
       auto to_inline = sandbox_->get_function(label);
 
@@ -300,14 +300,14 @@ Cfg Validator::inline_functions(const Cfg& cfg) const {
       auto end_label = x64asm::Label(elss.str());
 
       auto inline_code = to_inline->get_code();
-      for(size_t j = 0; j < inline_code.size(); ++j) {
-        Instruction instr = inline_code[j]; 
-        if(instr.is_ret()) {
+      for (size_t j = 0; j < inline_code.size(); ++j) {
+        Instruction instr = inline_code[j];
+        if (instr.is_ret()) {
           new_code.push_back(Instruction(x64asm::JMP_LABEL_1, { end_label }));
-        } else { 
+        } else {
           //rename all label operands
-          for(size_t k = 0; k < instr.arity(); ++k) {
-            if(instr.type(k) == Type::LABEL) {
+          for (size_t k = 0; k < instr.arity(); ++k) {
+            if (instr.type(k) == Type::LABEL) {
               auto old_label = instr.get_operand<x64asm::Label>(k);
 
               stringstream ss;

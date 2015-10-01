@@ -48,7 +48,7 @@ public:
   }
 
   ~AliasMiner() {
-    if(free_sandbox_)
+    if (free_sandbox_)
       delete sandbox_;
   }
 
@@ -56,7 +56,7 @@ public:
     a sandbox with special options, you can do that here. The class will delete
     this sandbox upon destruction.  Use with care. */
   AliasMiner& set_sandbox(Sandbox* sb) {
-    if(free_sandbox_)
+    if (free_sandbox_)
       delete sandbox_;
     free_sandbox_ = false;
     sandbox_ = sb;

@@ -532,7 +532,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
 cout << endl << "------------------" << endl;
 for (size_t i = 0; i < total_accesses; ++i) {
   cout << i << (i < 10 ? " " : "") << " | ";
-  for (size_t j = 0; j < total_accesses; ++j) {
+    for (size_t j = 0; j < total_accesses; ++j) {
       if (j <= i) {
         cout << "  ";
       } else {
@@ -551,7 +551,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
 cout << endl << "------------------" << endl;
 for (size_t i = 0; i < total_accesses; ++i) {
   cout << i << (i < 10 ? " " : "") << " | ";
-  for (size_t j = 0; j < total_accesses; ++j) {
+    for (size_t j = 0; j < total_accesses; ++j) {
       if (j <= i) {
         cout << "  ";
       } else {
@@ -600,8 +600,8 @@ for (size_t i = 0; i < total_accesses; ++i) {
     cout << "TOTAL CELLS: " << max_cell << endl;
   for (size_t i = 0; i < total_accesses; ++i) {
   cout << "Access " << i << " cell " << cell[i] << " offset " << offset[i]
-       << " size " << sym_accesses[i].size
-       << " (cell size " << cell_sizes[cell[i]] << ")" << endl;
+         << " size " << sym_accesses[i].size
+         << " (cell size " << cell_sizes[cell[i]] << ")" << endl;
   });
 
   if (max_cell > 2) {
