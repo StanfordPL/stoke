@@ -17,10 +17,10 @@
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/bounded.h"
 
-#define BOUNDED_DEBUG(X) { }
+#define BOUNDED_DEBUG(X) { X }
 #define ALIAS_DEBUG(X) {  }
 #define ALIAS_CASE_DEBUG(X) { }
-#define ALIAS_STRING_DEBUG(X) { }
+#define ALIAS_STRING_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 
@@ -492,7 +492,12 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   for (size_t i = 0; i < total_accesses; ++i) {
     for (size_t j = i+1; j < total_accesses; ++j) {
       // (i) Are these two accesses to the same memory locations?
-      auto equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
+      SymBool equal_addrs;
+      if (nacl_) {
+        equal_addrs = sym_accesses[i].address[31][0] == sym_accesses[j].address[31][0];
+      } else {
+        equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
+      }
       constraints.push_back(!equal_addrs);
       same_address[i][j] = !solver_.is_sat(constraints);
       constraints.erase(--constraints.end());
@@ -520,14 +525,14 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
 
   ALIAS_STRING_DEBUG(
     cout << "SAME MAP" << endl;
-    cout << "    ";
+    cout << "     ";
   for (size_t i = 0; i < total_accesses; ++i) {
   cout << i << " ";
 }
 cout << endl << "------------------" << endl;
 for (size_t i = 0; i < total_accesses; ++i) {
-  cout << i << " | ";
-  for (size_t j = 0; j < total_accesses; ++j) {
+  cout << i << (i < 10 ? " " : "") << " | ";
+    for (size_t j = 0; j < total_accesses; ++j) {
       if (j <= i) {
         cout << "  ";
       } else {
@@ -539,14 +544,14 @@ for (size_t i = 0; i < total_accesses; ++i) {
   cout << endl;
 
        cout << "NEXT MAP" << endl;
-       cout << "    ";
+       cout << "     ";
   for (size_t i = 0; i < total_accesses; ++i) {
   cout << i << " ";
 }
 cout << endl << "------------------" << endl;
 for (size_t i = 0; i < total_accesses; ++i) {
-  cout << i << " | ";
-  for (size_t j = 0; j < total_accesses; ++j) {
+  cout << i << (i < 10 ? " " : "") << " | ";
+    for (size_t j = 0; j < total_accesses; ++j) {
       if (j <= i) {
         cout << "  ";
       } else {
@@ -582,11 +587,11 @@ for (size_t i = 0; i < total_accesses; ++i) {
       if (same_address[i][j]) {
         cell[j] = cell[i];
         offset[j] = offset[i];
-        cell_sizes[cell[i]] = MAX(cell_sizes[cell[i]], sym_accesses[j].size);
+        cell_sizes[cell[i]] = MAX(offset[j] + sym_accesses[j].size, cell_sizes[cell[j]]);
       } else if (next_address[i][j]) {
         cell[j] = cell[i];
         offset[j] = offset[i] + sym_accesses[i].size;
-        cell_sizes[cell[i]] += sym_accesses[j].size;
+        cell_sizes[cell[i]] = MAX(offset[j] + sym_accesses[j].size, cell_sizes[cell[j]]);
       }
     }
   }
@@ -595,10 +600,11 @@ for (size_t i = 0; i < total_accesses; ++i) {
     cout << "TOTAL CELLS: " << max_cell << endl;
   for (size_t i = 0; i < total_accesses; ++i) {
   cout << "Access " << i << " cell " << cell[i] << " offset " << offset[i]
+         << " size " << sym_accesses[i].size
          << " (cell size " << cell_sizes[cell[i]] << ")" << endl;
   });
 
-  if (max_cell > 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
+  if (max_cell > 2) {
     // For simplicity, I don't want to handle this case explicitly; just fallback
     // a nicer implementation could rewrite the other recursive functions to do this well
     return enumerate_aliasing_basic(target, rewrite, P, Q);
@@ -873,7 +879,6 @@ void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories)
 
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
-
   BOUNDED_DEBUG(cout << "===========================================" << endl;)
   BOUNDED_DEBUG(cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;)
   init_mm();
@@ -1000,7 +1005,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
 }
 
-bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
+bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
 
 #ifdef DEBUG_VALIDATOR
@@ -1012,6 +1017,10 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
   paths_[true].clear();
   has_error_ = false;
   init_mm();
+
+  auto target = inline_functions(init_target);
+  auto rewrite = inline_functions(init_rewrite);
+  am.set_sandbox(sandbox_);
 
   try {
 
@@ -1028,6 +1037,14 @@ bool BoundedValidator::verify(const Cfg& target, const Cfg& rewrite) {
       //cout << "adding RP: " << print(path) << endl;
       paths_[true].push_back(path);
     }
+
+    // Handle the shorter paths first, please
+    // [helps find counterexamples sooner]
+    auto by_length = [](const CfgPath& lhs, const CfgPath& rhs) {
+      return lhs.size() < rhs.size();
+    };
+    sort(paths_[false].begin(), paths_[false].end(), by_length);
+    sort(paths_[true].begin(), paths_[true].end(), by_length);
 
     // Step 2: check each pair of paths
     bool ok = true;

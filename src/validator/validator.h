@@ -88,6 +88,9 @@ protected:
    * instructions are supported.  Throws exception on error.*/
   void sanity_checks(const Cfg&, const Cfg&) const;
 
+  /** Inline all the function calls using the sources in the sandbox. */
+  Cfg inline_functions(const Cfg&) const;
+
   /** Push a new memory manager onto the stack. */
   void init_mm() {
     auto manager = new SymMemoryManager();
