@@ -133,12 +133,11 @@ private:
    * find_arrangements() to come up with all the ways the next symbolic memory
    * access can be added to this list.  Once the list is full, we can generate
    * a CellMemory object. */
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
+  std::vector<std::vector<CellMemory::SymbolicAccess>> enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
       const Cfg& target_unroll, const Cfg& rewrite_unroll,
       const CfgPath& P, const CfgPath& Q,
-      const std::vector<size_t>& target_con_access,
-      const std::vector<size_t>& rewrite_con_access,
-      const std::vector<CellMemory::SymbolicAccess>& symbolic_access_list,
+      const std::vector<CellMemory::SymbolicAccess>& todo,
+      const std::vector<CellMemory::SymbolicAccess>& done,
       size_t sym_accesses_done);
 
 

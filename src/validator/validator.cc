@@ -293,7 +293,7 @@ Cfg Validator::inline_functions(const Cfg& cfg) const {
       auto label = old_code[i].get_operand<x64asm::Label>(0);
       auto to_inline = sandbox_->get_function(label);
 
-      assert(to_inline != cfg.function_end());
+      assert(to_inline != sandbox_->function_end());
 
       stringstream elss;
       elss << "%%END%%_" << unique_id;

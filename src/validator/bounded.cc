@@ -276,58 +276,39 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
 
 
 
-vector<pair<CellMemory*, CellMemory*>>
-                                    BoundedValidator::enumerate_aliasing_helper(const Cfg& target, const Cfg& rewrite,
+vector<vector<CellMemory::SymbolicAccess>> BoundedValidator::enumerate_aliasing_helper(
+                                        const Cfg& target, const Cfg& rewrite,
                                         const Cfg& target_unroll, const Cfg& rewrite_unroll,
                                         const CfgPath& P, const CfgPath& Q,
-                                        const vector<size_t>& target_con_access,
-                                        const vector<size_t>& rewrite_con_access,
-                                        const vector<CellMemory::SymbolicAccess>& sym_access,
-size_t accesses_done) {
+                                        const vector<CellMemory::SymbolicAccess>& todo,
+                                        const vector<CellMemory::SymbolicAccess>& done,
+                                        size_t accesses_done) {
 
   ALIAS_DEBUG(cout << "===================== RECURSIVE STEP ==============================" << endl;)
 
-  vector<pair<CellMemory*, CellMemory*>> result;
+  vector<vector<CellMemory::SymbolicAccess>> result;
   // Step 0: check for feasibility.  if not, stop here.
-  if (!check_feasibility(target, rewrite, target_unroll, rewrite_unroll, P, Q, sym_access))
+  if (!check_feasibility(target, rewrite, target_unroll, rewrite_unroll, P, Q, done))
     return result;
 
   // Step 1: if we've processed all the concrete accesses, we're done.  Generate CellMemories and return.
-  if (target_con_access.size() + rewrite_con_access.size() == accesses_done) {
+  if (todo.size() == accesses_done) {
     ALIAS_DEBUG(cout << " REACHED BASE CASE :D" << endl;)
 
-    ALIAS_DEBUG(cout << "  target map: " << endl;)
-    auto target_accesses = split_sym_accesses(sym_access, false);
-    auto t = make_cell_memory(target_accesses);
-    ALIAS_DEBUG(cout << "  rewrite map: " << endl;)
-    auto rewrite_accesses = split_sym_accesses(sym_access, true);
-    auto r = make_cell_memory(rewrite_accesses);
-
-    result.push_back(pair<CellMemory*, CellMemory*>(t, r));
+    result.push_back(done);
     return result;
   }
 
   // Step 2: choose a memory access to add
   // whether we're taking an access from the target or the rewrite
-  bool work_on_rewrite = (accesses_done >= target_con_access.size());
-  // reference to the unrolled cfg we're working on
-  auto& cfg_unroll = work_on_rewrite ? rewrite_unroll : target_unroll;
 
-  CellMemory::SymbolicAccess sa;
-  sa.is_rewrite = work_on_rewrite;
-  if (sa.is_rewrite) {
-    sa.line = rewrite_con_access[accesses_done - target_con_access.size()];
-  } else {
-    sa.line = target_con_access[accesses_done];
-  }
-  sa.size = cfg_unroll.get_code()[sa.line].mem_dereference_size()/8;
+  CellMemory::SymbolicAccess sa = todo[accesses_done];
   sa.unconstrained = false;
-
 
   // find the size of each cell
   map<size_t, size_t> cell_size_map;
   int tmp_cell_max = -1;
-  for (auto it : sym_access) {
+  for (auto it : done) {
     cell_size_map[it.cell] = it.cell_size;
     tmp_cell_max = tmp_cell_max > (int)it.cell ? tmp_cell_max : it.cell;
   }
@@ -378,7 +359,7 @@ size_t accesses_done) {
     sa.cell_size = new_cell_size;
     sa.cell_offset = offset_from_cell_start;
 
-    auto recursive_accesses = sym_access;
+    auto recursive_accesses = done;
     for (size_t i = 0; i < option.size(); ++i) {
       if (option[i].is_empty) {
         offset_from_cell_start += option[i].size;
@@ -406,7 +387,7 @@ size_t accesses_done) {
     recursive_accesses.push_back(sa);
 
     auto new_results = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll,
-                       P, Q, target_con_access, rewrite_con_access, recursive_accesses, accesses_done+1);
+                       P, Q, todo, recursive_accesses, accesses_done+1);
     result.insert(result.begin(), new_results.begin(), new_results.end());
   }
 
@@ -882,31 +863,51 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basi
     return v;
   }
 
-  // Create first symbolic access
-  CellMemory::SymbolicAccess first;
-  if (target_concrete_accesses.size()) {
-    first.line = target_concrete_accesses[0];
-    first.size = target_unroll.get_code()[first.line].mem_dereference_size()/8;
-    first.is_rewrite = false;
-  } else {
-    first.line = rewrite_concrete_accesses[0];
-    first.size = rewrite_unroll.get_code()[first.line].mem_dereference_size()/8;
-    first.is_rewrite = true;
+  // Build the list of all memory accesses
+
+  vector<CellMemory::SymbolicAccess> todo;
+
+  for(auto line : target_concrete_accesses) {
+    CellMemory::SymbolicAccess sa;
+    sa.line = line;
+    sa.size = target_unroll.get_code()[line].mem_dereference_size()/8;
+    sa.is_rewrite = false;
+    todo.push_back(sa);
   }
+  for(auto line : rewrite_concrete_accesses) {
+    CellMemory::SymbolicAccess sa;
+    sa.line = line;
+    sa.size = rewrite_unroll.get_code()[line].mem_dereference_size()/8;
+    sa.is_rewrite = true;
+    todo.push_back(sa);
+  }
+
+  // Place the first memory access.
+  vector<CellMemory::SymbolicAccess> done;
+  auto first = todo[0];
   first.cell = 0;
   first.cell_offset = 0;
   first.cell_size = first.size;
   first.unconstrained = false;
+  done.push_back(first);
 
 
-  vector<CellMemory::SymbolicAccess> symbolic_accesses;
+  auto options =  enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q,
+                                            todo, done, 1);
 
-  symbolic_accesses.push_back(first);
+  vector<pair<CellMemory*, CellMemory*>> result;
 
-  return enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q,
-                                   target_concrete_accesses, rewrite_concrete_accesses,
-                                   symbolic_accesses, 1);
+  for(auto& option : options) {
+    ALIAS_DEBUG(cout << "  target map: " << endl;)
+    auto target_accesses = split_sym_accesses(option, false);
+    auto t = make_cell_memory(target_accesses);
+    ALIAS_DEBUG(cout << "  rewrite map: " << endl;)
+    auto rewrite_accesses = split_sym_accesses(option, true);
+    auto r = make_cell_memory(rewrite_accesses);
+    result.push_back(pair<CellMemory*, CellMemory*>(t, r));
+  }
 
+  return result;
 }
 
 
