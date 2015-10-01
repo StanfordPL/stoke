@@ -17,12 +17,13 @@
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/bounded.h"
 
-#define BOUNDED_DEBUG(X) { X }
-#define ALIAS_DEBUG(X) {  }
+#define BOUNDED_DEBUG(X) { }
+#define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
-#define ALIAS_STRING_DEBUG(X) { X }
+#define ALIAS_STRING_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
+#define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
 
 using namespace std;
 using namespace stoke;
@@ -389,10 +390,13 @@ size_t accesses_done) {
       for (auto& it : recursive_accesses) {
         if (it.cell == option[i].cell) {
           it.cell = sa.cell;
-          if (i == 0) //special case when offset_from_cell_start doesn't begin at 0.
-            it.cell_offset = 0;
-          else
-            it.cell_offset = offset_from_cell_start;
+
+          // when i is 0, we keep the cell offset the same, because this is the
+          // first part of the new cell.  if we were to remove the
+          // if-statement, offset_from_cell_start would be the wrong value
+          // because it's already counting the "hangover" of this new
+          if (i != 0)
+            it.cell_offset = it.cell_offset + offset_from_cell_start;
           it.cell_size = new_cell_size;
         }
       }
@@ -422,6 +426,88 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
     return enumerate_aliasing_basic(target, rewrite, P, Q);
   }
 }
+
+// At this point we have mega-cells 0...max_cell-1
+// mega-cell i has size given by cell_sizes[i]
+// Also, we have accesses sym_accesses[0]...sym_accesses[total_accesses-1]
+//   these each have a cell[i], offset[i].
+
+// What we need to do is find every way these mega-cells could possibly
+// overlap.  Essentially, each of these mega-cells will have a certain fixed
+// offset into a big symbolic memory.  An "offset vector" will specify the
+// offsets for each mega-cell into this memory.  We need a function to
+// compute all possible offset vectors.
+
+// Hence, a function 'compute_offset_vectors'.  It takes as input:
+// - an array of all the cell sizes
+// - the number of cells to work on
+// and it returns
+// - a vector of vectors of offsets; begins with two extra values: the 'min' and 'max' indexes.
+vector<vector<int>> compute_offset_vectors(size_t* cell_sizes, size_t cell_count, size_t debug_size = 0) {
+
+  stringstream spaces;
+  for(size_t i = 0; i < debug_size*2; ++i)
+    spaces << " ";
+  string ss = spaces.str();
+
+  //cout << ss << "***********************************" << endl;
+  //cout << ss << "** compute_offset_vectors() *******" << endl;
+  //cout << ss << "***********************************" << endl << ss;
+  //for(size_t i = 0; i < cell_count; ++i)
+  //  cout << "  " << cell_sizes[i];
+  //cout << "  (count=" << cell_count << ")" << endl;
+
+  assert(cell_count > 0);
+
+  if(cell_count == 1) {
+    // If there's only one cell, there's only one offset it can exist at (0)
+    vector<int> single_cell;
+    single_cell.push_back(0); //minimum index;
+    single_cell.push_back(cell_sizes[0]-1); //maximum index;
+    single_cell.push_back(0); //index of cell 0.
+
+    vector<vector<int>> results;
+    results.push_back(single_cell);
+    return results;
+  }
+
+  // Do the recursive call
+  auto old_results = compute_offset_vectors(cell_sizes, cell_count - 1, debug_size+1);
+  vector<vector<int>> new_results;
+
+  for(auto old_result : old_results) {
+    // get the min/max indexes.
+    int min_index = old_result[0];
+    int max_index = old_result[1];
+
+    // we're going to 'schedule' cell 'cell_count-1'.
+    size_t cell_size = cell_sizes[cell_count-1];
+    assert(cell_size > 0);
+
+    // We can schedule it anywhere between "totally before" the existing cells
+    // and "totally after" the existing cells.  In the loop below, 'i' is the
+    // starting index.
+    //cout << ss << "answers!" << endl;
+    old_result.push_back(0);
+    for(int i = min_index - (int)cell_size; i <= max_index; ++i) {
+      old_result.erase(old_result.end() - 1);
+      old_result[0] = MIN(i, min_index);
+      old_result[1] = MAX(i + (int)cell_size - 1, max_index);
+      old_result.push_back(i);
+      new_results.push_back(old_result);
+
+      //cout << ss;
+      //for(auto it : old_result) {
+      //  cout << "  " << it;
+      //i}
+      //cout << endl;
+    }
+  }
+
+  return new_results;
+}
+
+
 
 vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
@@ -490,7 +576,10 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   //We're going to use the same constraints vector for all the queries.
   // Can be much more performant if stoke #716 is done.
   for (size_t i = 0; i < total_accesses; ++i) {
-    for (size_t j = i+1; j < total_accesses; ++j) {
+    for (size_t j = 0; j < total_accesses; ++j) {
+      if(i == j)
+        continue;
+
       // (i) Are these two accesses to the same memory locations?
       SymBool equal_addrs;
       if (nacl_) {
@@ -592,6 +681,26 @@ for (size_t i = 0; i < total_accesses; ++i) {
         cell[j] = cell[i];
         offset[j] = offset[i] + sym_accesses[i].size;
         cell_sizes[cell[i]] = MAX(offset[j] + sym_accesses[j].size, cell_sizes[cell[j]]);
+      } else if (next_address[j][i]) {
+        cell[j] = cell[i];
+        if(offset[i] < sym_accesses[j].size) {
+          size_t difference = sym_accesses[j].size - offset[i];
+          // go through every sym_access whose cell is set to i, and add the difference to the offset
+          for(size_t k = 0; k < total_accesses; ++k) {
+            if(k == j)
+              continue;
+            if(cell[k] == cell[i]) {
+              offset[k] += difference;
+            }
+          }
+          cell_sizes[cell[i]] += difference;
+          offset[j] = 0;
+        } else {
+          offset[j] = offset[i] - sym_accesses[j].size;
+        }
+
+        cell_sizes[cell[i]] = MAX(cell_sizes[cell[j]], offset[j] + sym_accesses[j].size);
+        cell_sizes[cell[i]] = MAX(cell_sizes[cell[j]], offset[i] + sym_accesses[i].size);
       }
     }
   }
@@ -604,11 +713,34 @@ for (size_t i = 0; i < total_accesses; ++i) {
          << " (cell size " << cell_sizes[cell[i]] << ")" << endl;
   });
 
+  // At this point we have mega-cells 0...max_cell-1
+  // mega-cell i has size given by cell_sizes[i]
+  // Also, we have accesses sym_accesses[0]...sym_accesses[total_accesses-1]
+  //   these each have a cell[i], offset[i].
+
+  // What we need to do is find every way these mega-cells could possibly
+  // overlap.  Essentially, each of these mega-cells will have a certain fixed
+  // offset into a big symbolic memory.  An "offset vector" will specify the
+  // offsets for each mega-cell into this memory.  We need a function to
+  // compute all possible offset vectors.
+
+  // Hence, a function 'compute_offset_vectors'.  It takes as input:
+  // - an array of all the cell sizes
+  // - a table showing anti-alias relations (e.g. no aliasing stack-traffic,
+  //   strings in antialias mode, etc.)
+  // - the number of cells to "schedule"
+  // - the minimum and maximum indexes of previously-"scheduled" cells, or 0.
+  // and it returns
+  // - a vector of vectors of offsets
+  //auto offset_vectors = compute_offset_vectors(cell_sizes, max_cell);
+
   if (max_cell > 2) {
     // For simplicity, I don't want to handle this case explicitly; just fallback
     // a nicer implementation could rewrite the other recursive functions to do this well
     return enumerate_aliasing_basic(target, rewrite, P, Q);
   }
+
+ 
 
   assert(max_cell > 0);
 

@@ -56,7 +56,7 @@ protected:
     FAIL();
   }
 
-  void check_ceg(const CpuState& tc, const Cfg& target, const Cfg& rewrite) {
+  void check_ceg(const CpuState& tc, const Cfg& target, const Cfg& rewrite, bool print = false) {
     Sandbox sb;
     sb.set_max_jumps(4096);
     sb.set_abi_check(false);
@@ -77,6 +77,11 @@ protected:
     EXPECT_EQ(ErrorCode::NORMAL, target_output.code);
     EXPECT_NE(target_output, rewrite_output);
 
+    if(print) {
+      std::cout << "Counterexample:" << std::endl << tc << std::endl;
+      std::cout << "Target state:" << std::endl << target_output << std::endl;
+      std::cout << "Rewrite state:" << std::endl << rewrite_output << std::endl;
+    }
     /*
     if(target_output != rewrite_output) {
       std::cout << "TARGET OUTPUT: " << std::endl << target_output << std::endl;
@@ -824,6 +829,8 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrect) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
+
+
 TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedWrongWithAliasing) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
@@ -870,7 +877,59 @@ TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedWrongWithAliasing) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
   for (auto it : validator->get_counter_examples()) {
-    check_ceg(it, target, rewrite);
+    check_ceg(it, target, rewrite, true);
+  }
+
+}
+
+TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedWrongWithBasicAliasing) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
+  auto live_outs = x64asm::RegSet::empty();
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "xorl %ecx, %ecx" << std::endl;
+  sst << "testl %edx, %edx" << std::endl;
+  sst << "je .exit" << std::endl;
+  sst << ".top:" << std::endl;
+  sst << "movl (%rdi, %rcx, 4), %eax" << std::endl;
+  sst << "movl %eax, (%rsi, %rcx, 4)" << std::endl;
+  sst << "incl %ecx" << std::endl;
+  sst << "cmpl %ecx, %edx" << std::endl;
+  sst << "jne .top" << std::endl;
+  sst << ".exit:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "xorl %ecx, %ecx" << std::endl;
+  ssr << "jmpq .enter" << std::endl;
+  ssr << ".double:" << std::endl;
+  ssr << "movq (%rdi, %rcx, 4), %rax" << std::endl;
+  ssr << "movq %rax, (%rsi, %rcx, 4)" << std::endl;
+  ssr << "addl $0x2, %ecx" << std::endl;
+  ssr << "subl $0x2, %edx" << std::endl;
+  ssr << ".enter:" << std::endl;
+  ssr << "cmpl $0x1, %edx" << std::endl;
+  ssr << "je .one_more" << std::endl;
+  ssr << "cmpl $0x0, %edx" << std::endl;
+  ssr << "je .exit" << std::endl;
+  ssr << "jmpq .double" << std::endl;
+  ssr << ".one_more:" << std::endl;
+  ssr << "movl (%rdi, %rcx, 4), %eax" << std::endl;
+  ssr << "movl %eax, (%rsi, %rcx, 4)" << std::endl;
+  ssr << ".exit:" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::BASIC);
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+  for (auto it : validator->get_counter_examples()) {
+    check_ceg(it, target, rewrite, true);
   }
 
 }
@@ -1793,6 +1852,55 @@ TEST_F(BoundedValidatorBaseTest, WcscpyWrong1) {
     check_ceg(it, target, rewrite);
 
 }
+
+/*
+TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushes) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx + x64asm::rsp;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rsp;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "pushq %rbx" << std::endl;
+  sst << "pushq %r10" << std::endl;
+  sst << "xorl %ecx, %ecx" << std::endl;
+  sst << "testl %edx, %edx" << std::endl;
+  sst << "je .exit" << std::endl;
+  sst << ".top:" << std::endl;
+  sst << "movl (%rdi, %rcx, 4), %eax" << std::endl;
+  sst << "movl %eax, (%rsi, %rcx, 4)" << std::endl;
+  sst << "incl %ecx" << std::endl;
+  sst << "cmpl %ecx, %edx" << std::endl;
+  sst << "jne .top" << std::endl;
+  sst << ".exit:" << std::endl;
+  sst << "popq %r10" << std::endl;
+  sst << "popq %rbx" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "pushq %rbx" << std::endl;
+  ssr << "pushq %r10" << std::endl;
+  ssr << "movl $0x0, %ecx" << std::endl;
+  ssr << "testl %edx, %edx" << std::endl;
+  ssr << "je .exit" << std::endl;
+  ssr << ".top:" << std::endl;
+  ssr << "movl (%rdi, %rcx, 4), %r8d" << std::endl;
+  ssr << "addl $0x1, %ecx" << std::endl;
+  ssr << "movl %r8d, -0x4(%rsi, %rcx, 4)" << std::endl;
+  ssr << "cmpl %ecx, %edx" << std::endl;
+  ssr << "jne .top" << std::endl;
+  ssr << ".exit:" << std::endl;
+  ssr << "popq %r10" << std::endl;
+  ssr << "popq %rbx" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+*/
 
 
 } //namespace stoke
