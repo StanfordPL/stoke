@@ -303,7 +303,7 @@ vector<string>& split(string& s, const string& delim, vector<string>& result) {
 
 int main(int argc, char** argv) {
   const auto start = steady_clock::now();
-  duration<double> search_elapsed;
+  duration<double> search_elapsed = duration<double>(0.0);
 
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
@@ -361,7 +361,11 @@ int main(int argc, char** argv) {
     Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
     function<size_t (const string&)> f2 = [i](const string& s) -> size_t { return i; };
     size_t cur_timeout = (*timeout_expr)(f2);
-    search.set_timeout_itr(cur_timeout);
+    size_t timeout_left = cur_timeout;
+    if (timeout_iterations_arg.value()) {
+      timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
+    }
+    search.set_timeout_itr(std::min(cur_timeout, timeout_left));
 
     Console::msg() << "Running search (timeout is " << cur_timeout << " iterations";
     // timeout in seconds
@@ -428,7 +432,7 @@ int main(int argc, char** argv) {
     sep(Console::msg());
 
 
-    if (timeout_iterations_arg.value() && total_iterations > timeout_iterations_arg.value()) {
+    if (timeout_iterations_arg.value() && total_iterations >= timeout_iterations_arg.value()) {
       show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, verified, true);
       Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
     }
