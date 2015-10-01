@@ -67,7 +67,7 @@ definitely will not work.
 Most of STOKE's software dependencies are available through apt. These can be
 satisfied by typing:
 
-    $ sudo apt-get install git subversion flex bison ccache doxygen g++ g++-multilib ghc libghc-regex-tdfa-dev libghc-regex-compat-dev libghc-split-dev cmake libghc-regex-compat-dev libjsoncpp-dev libcln-dev
+    $ sudo apt-get install bison ccache cmake doxygen exuberant-ctags flex g++-4.9 g++-multilib gcc-4.9 ghc git libantlr3c-dev libboost-dev libboost-filesystem-dev libboost-thread-dev libcln-dev libghc-regex-compat-dev libghc-regex-tdfa-dev libghc-split-dev libjsoncpp-dev python subversion
 
 The rest of the dependencies will be fetched automatically as part of the build
 process.
