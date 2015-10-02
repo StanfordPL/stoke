@@ -60,8 +60,6 @@ TransformInfo DeleteTransform::operator()(Cfg& cfg) {
 
 void DeleteTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
-  assert(cfg.check_invariants());
-
   auto& function = cfg.get_function();
   function.insert(ti.undo_index[0], ti.undo_instr, false);
   cfg.recompute();

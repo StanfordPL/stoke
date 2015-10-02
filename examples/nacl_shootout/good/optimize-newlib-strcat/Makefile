@@ -3,7 +3,7 @@ DEPLOY_PATH=/home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.
 NAME=strat
 TC_OPTS=--number 10 --strcat
 
-all: clean testcase search replace deploy
+all: search
 
 testcase:
 	strcpy_tcs $(TC_OPTS) > testcases
