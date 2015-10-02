@@ -97,13 +97,22 @@ public:
     return *this;
   }
   /** Insert a value into the label pool */
-  TransformPools& insert_label(const x64asm::Label& l) {
-    const auto itr = std::find(label_pool_.begin(), label_pool_.end(), l);
-    if (itr == label_pool_.end()) {
-      label_pool_.push_back(l);
+  TransformPools& insert_call_label(const x64asm::Label& l) {
+    const auto itr = std::find(call_label_pool_.begin(), call_label_pool_.end(), l);
+    if (itr == call_label_pool_.end()) {
+      call_label_pool_.push_back(l);
     }
     return *this;
   }
+  /** Insert a value into the label pool */
+  TransformPools& insert_jump_label(const x64asm::Label& l) {
+    const auto itr = std::find(jump_label_pool_.begin(), jump_label_pool_.end(), l);
+    if (itr == jump_label_pool_.end()) {
+      jump_label_pool_.push_back(l);
+    }
+    return *this;
+  }
+
   /** Insert a value into the mem operand pool */
   TransformPools& insert_mem(const x64asm::M8& m)  {
     assert(!m.rip_offset());
@@ -250,7 +259,9 @@ protected:
   /** Operand pool. */
   std::vector<x64asm::M8> m_pool_;
   /** Operand pool. */
-  std::vector<x64asm::Label> label_pool_;
+  std::vector<x64asm::Label> jump_label_pool_;
+  /** Operand pool. */
+  std::vector<x64asm::Label> call_label_pool_;
   /** Operand pool -- these are global offsets. */
   std::vector<x64asm::Imm32> rip_pool_;
 

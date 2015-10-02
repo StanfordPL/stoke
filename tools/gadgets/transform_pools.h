@@ -71,7 +71,7 @@ public:
 
     // Labels for function calls
     for (const auto& fxn : aux_fxns) {
-      insert_label(fxn.get_leading_label());
+      insert_call_label(fxn.get_leading_label());
     }
 
     // Extra memory operands provided by user
