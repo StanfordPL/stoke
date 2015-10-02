@@ -39,12 +39,29 @@ public:
   /** Measures the "running time" with our latency table */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
 
-    run_sandbox(cfg);
+    sandbox_->insert_function(cfg);
+    sandbox_->set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
 
-    uint64_t res = latency_;
+    uint64_t res = 0;
     size_t tc_count = sandbox_->size();
+    uint64_t average_size = 0;
     latency_ = 0;
-    nops_emitted_ = 0;
+
+    for(size_t i = 0; i < tc_count; ++i) {
+      auto tc = *(sandbox_->get_input(i));
+      average_size += tc.heap.size();
+    }
+    average_size /= tc_count;
+
+    for(size_t i = 0; i < tc_count; ++i) {
+      auto tc = *(sandbox_->get_input(i));
+      if(tc.heap.size() > average_size) {
+        nops_emitted_ = 0;
+        sandbox_->run(i);
+      }
+    }
+
+    res = latency_;
     if (tc_count == 0) {
       LatencyCost lc;
       return lc(cfg, max);
