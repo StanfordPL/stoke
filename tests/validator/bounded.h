@@ -34,7 +34,7 @@ public:
     validator = new BoundedValidator(*solver);
     validator->set_bound(2);
     validator->set_sandbox(sandbox);
-    validator->set_alias_strategy(BoundedValidator::AliasStrategy::BASIC);
+    validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
   }
 
   ~BoundedValidatorBaseTest() {
@@ -1809,10 +1809,9 @@ TEST_F(BoundedValidatorBaseTest, WcscpyWrong1) {
 
 }
 
-/*
 TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushes) {
 
-  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx + x64asm::rsp;
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx + x64asm::rsp + x64asm::r10 + x64asm::rbx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rsp;
 
   std::stringstream sst;
@@ -1856,7 +1855,54 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushes) {
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
-*/
+
+TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushesAntialias) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx + x64asm::rsp + x64asm::r10 + x64asm::rbx;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rsp;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "pushq %rbx" << std::endl;
+  sst << "pushq %r10" << std::endl;
+  sst << "xorl %ecx, %ecx" << std::endl;
+  sst << "testl %edx, %edx" << std::endl;
+  sst << "je .exit" << std::endl;
+  sst << ".top:" << std::endl;
+  sst << "movl (%rdi, %rcx, 4), %eax" << std::endl;
+  sst << "movl %eax, (%rsi, %rcx, 4)" << std::endl;
+  sst << "incl %ecx" << std::endl;
+  sst << "cmpl %ecx, %edx" << std::endl;
+  sst << "jne .top" << std::endl;
+  sst << ".exit:" << std::endl;
+  sst << "popq %r10" << std::endl;
+  sst << "popq %rbx" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "pushq %rbx" << std::endl;
+  ssr << "pushq %r10" << std::endl;
+  ssr << "movl $0x0, %ecx" << std::endl;
+  ssr << "testl %edx, %edx" << std::endl;
+  ssr << "je .exit" << std::endl;
+  ssr << ".top:" << std::endl;
+  ssr << "movl (%rdi, %rcx, 4), %r8d" << std::endl;
+  ssr << "addl $0x1, %ecx" << std::endl;
+  ssr << "movl %r8d, -0x4(%rsi, %rcx, 4)" << std::endl;
+  ssr << "cmpl %ecx, %edx" << std::endl;
+  ssr << "jne .top" << std::endl;
+  ssr << ".exit:" << std::endl;
+  ssr << "popq %r10" << std::endl;
+  ssr << "popq %rbx" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
 
 
 } //namespace stoke
