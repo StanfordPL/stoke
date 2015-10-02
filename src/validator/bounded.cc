@@ -277,12 +277,12 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
 
 
 vector<vector<CellMemory::SymbolicAccess>> BoundedValidator::enumerate_aliasing_helper(
-                                        const Cfg& target, const Cfg& rewrite,
-                                        const Cfg& target_unroll, const Cfg& rewrite_unroll,
-                                        const CfgPath& P, const CfgPath& Q,
-                                        const vector<CellMemory::SymbolicAccess>& todo,
-                                        const vector<CellMemory::SymbolicAccess>& done,
-                                        size_t accesses_done) {
+    const Cfg& target, const Cfg& rewrite,
+    const Cfg& target_unroll, const Cfg& rewrite_unroll,
+    const CfgPath& P, const CfgPath& Q,
+    const vector<CellMemory::SymbolicAccess>& todo,
+    const vector<CellMemory::SymbolicAccess>& done,
+size_t accesses_done) {
 
   ALIAS_DEBUG(cout << "===================== RECURSIVE STEP ==============================" << endl;)
 
@@ -694,41 +694,74 @@ for (size_t i = 0; i < total_accesses; ++i) {
          << " (cell size " << cell_sizes[cell[i]] << ")" << endl;
   });
 
-  // At this point we have mega-cells 0...max_cell-1
-  // mega-cell i has size given by cell_sizes[i]
-  // Also, we have accesses sym_accesses[0]...sym_accesses[total_accesses-1]
-  //   these each have a cell[i], offset[i].
-
-  // What we need to do is find every way these mega-cells could possibly
-  // overlap.  Essentially, each of these mega-cells will have a certain fixed
-  // offset into a big symbolic memory.  An "offset vector" will specify the
-  // offsets for each mega-cell into this memory.  We need a function to
-  // compute all possible offset vectors.
-
-  // Hence, a function 'compute_offset_vectors'.  It takes as input:
-  // - an array of all the cell sizes
-  // - a table showing anti-alias relations (e.g. no aliasing stack-traffic,
-  //   strings in antialias mode, etc.)
-  // - the number of cells to "schedule"
-  // - the minimum and maximum indexes of previously-"scheduled" cells, or 0.
-  // and it returns
-  // - a vector of vectors of offsets
-  //auto offset_vectors = compute_offset_vectors(cell_sizes, max_cell);
-
-  if (max_cell > 2) {
-    // For simplicity, I don't want to handle this case explicitly; just fallback
-    // a nicer implementation could rewrite the other recursive functions to do this well
-    return enumerate_aliasing_basic(target, rewrite, P, Q);
-  }
-
-
-
   assert(max_cell > 0);
 
   vector<pair<CellMemory*, CellMemory*>> result;
 
+  if (max_cell > 1 && alias_strategy_ == AliasStrategy::STRING) {
+
+    auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
+    auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
+
+    // We'll use the helper to compute all overlaps of the mega-cells we found.
+    // Typically, you give it a list of SymbolicAccesses, one per memory
+    // access.  Here, we're giving it "fake" accesses, one per mega-cell we've
+    // created.  The "line-number" will represent this "mega-cell".
+    vector<CellMemory::SymbolicAccess> cell_list;
+    for (size_t i = 0; i < max_cell; ++i) {
+      CellMemory::SymbolicAccess sa;
+      sa.line = i;
+      sa.size = cell_sizes[i];
+      sa.is_rewrite = false;
+      cell_list.push_back(sa);
+    }
+
+    vector<CellMemory::SymbolicAccess> done;
+    auto sa = cell_list[0];
+    sa.cell = 0;
+    sa.cell_offset = 0;
+    sa.cell_size = cell_sizes[0];
+    sa.unconstrained = false;
+    done.push_back(sa);
+
+    auto options = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q, cell_list, done, 1);
+
+    for (auto option : options) {
+      map<size_t, CellMemory::SymbolicAccess> target_map;
+      map<size_t, CellMemory::SymbolicAccess> rewrite_map;
+
+      for (size_t i = 0; i < total_accesses; ++i) {
+        size_t my_cell = cell[i];
+        assert(option[my_cell].line == my_cell);
+
+        CellMemory::SymbolicAccess sa;
+        sa.line = sym_accesses[i].line;
+        sa.size = sym_accesses[i].size;
+        sa.cell = option[my_cell].cell;
+        sa.cell_offset = offset[i] + option[my_cell].cell_offset;
+        sa.cell_size = option[my_cell].cell_size;
+        sa.is_rewrite = sym_accesses[i].is_rewrite;
+        sa.unconstrained = false;
+
+        assert(sa.cell_offset + sa.size <= sa.cell_size);
+
+        if (sym_accesses[i].is_rewrite) {
+          rewrite_map[sa.line] = sa;
+        } else {
+          target_map[sa.line] = sa;
+        }
+      }
+
+      auto target_mem = new CellMemory(target_map);
+      auto rewrite_mem = new CellMemory(rewrite_map);
+      result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
+    }
+
+    return result;
+  }
+
+  // EASY CASE!  The mega-cells don't overlap.
   {
-    // EASY CASE!  The mega-cells don't overlap.
     map<size_t, CellMemory::SymbolicAccess> target_map;
     map<size_t, CellMemory::SymbolicAccess> rewrite_map;
 
@@ -753,6 +786,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
     result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
   }
 
+  /*
   if (max_cell == 2 && alias_strategy_ != AliasStrategy::STRING_NO_ALIAS) {
 
     {
@@ -833,6 +867,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
       result.push_back(pair<CellMemory*, CellMemory*>(target_mem, rewrite_mem));
     }
   }
+  */
 
   ALIAS_STRING_DEBUG(cout << "ALIASING CASES: " << result.size() << endl;)
   return result;
@@ -867,14 +902,14 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basi
 
   vector<CellMemory::SymbolicAccess> todo;
 
-  for(auto line : target_concrete_accesses) {
+  for (auto line : target_concrete_accesses) {
     CellMemory::SymbolicAccess sa;
     sa.line = line;
     sa.size = target_unroll.get_code()[line].mem_dereference_size()/8;
     sa.is_rewrite = false;
     todo.push_back(sa);
   }
-  for(auto line : rewrite_concrete_accesses) {
+  for (auto line : rewrite_concrete_accesses) {
     CellMemory::SymbolicAccess sa;
     sa.line = line;
     sa.size = rewrite_unroll.get_code()[line].mem_dereference_size()/8;
@@ -893,11 +928,11 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basi
 
 
   auto options =  enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q,
-                                            todo, done, 1);
+                  todo, done, 1);
 
   vector<pair<CellMemory*, CellMemory*>> result;
 
-  for(auto& option : options) {
+  for (auto& option : options) {
     ALIAS_DEBUG(cout << "  target map: " << endl;)
     auto target_accesses = split_sym_accesses(option, false);
     auto t = make_cell_memory(target_accesses);
