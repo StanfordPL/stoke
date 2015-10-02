@@ -106,7 +106,7 @@ public:
       for (auto instr : cfg.get_code()) {
         if (instr.is_label_defn()) {
           auto label = instr.get_operand<x64asm::Label>(0);
-          insert_label(label);
+          insert_jump_label(label);
         }
       }
     }
