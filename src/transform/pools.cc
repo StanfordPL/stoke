@@ -256,7 +256,7 @@ TransformPools& TransformPools::add_target(const Cfg& target) {
   m_pool_.insert(m_pool_.begin(),mem_ops.begin(), mem_ops.end());
 
   set<Label> call_ops(fxn.call_target_begin(), fxn.call_target_end());
-  label_pool_.insert(label_pool_.begin(), call_ops.begin(), call_ops.end());
+  call_label_pool_.insert(call_label_pool_.begin(), call_ops.begin(), call_ops.end());
 
   set<uint64_t> rip_ops(fxn.rip_offset_target_begin(), fxn.rip_offset_target_end());
   rip_pool_.insert(rip_pool_.begin(),rip_ops.begin(), rip_ops.end());
@@ -586,7 +586,10 @@ bool TransformPools::get_read_op(Opcode o, size_t idx, const RegSet& rs, Operand
     return true;
 
   case Type::LABEL:
-    return get<Label>(gen_, label_pool_, op);
+    if (Instruction(o).is_call())
+      return get<Label>(gen_, call_label_pool_, op);
+    else
+      return get<Label>(gen_, jump_label_pool_, op);
 
   case Type::M_8:
   case Type::M_16:
