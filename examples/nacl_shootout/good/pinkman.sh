@@ -16,6 +16,7 @@ if [ "X$INDEX" == "X" ]; then
   cp testcases $DIR
   cp target.s $DIR
   cp binary $DIR
+  cp -r extract $DIR
   if [ -f verification_target.s ]; then
     cp verification_target.s $DIR
   fi
