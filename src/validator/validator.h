@@ -88,6 +88,9 @@ protected:
    * instructions are supported.  Throws exception on error.*/
   void sanity_checks(const Cfg&, const Cfg&) const;
 
+  /** Inline all the function calls using the sources in the sandbox. */
+  Cfg inline_functions(const Cfg&) const;
+
   /** Push a new memory manager onto the stack. */
   void init_mm() {
     auto manager = new SymMemoryManager();
@@ -97,6 +100,7 @@ protected:
   }
   /** Pop a memory manager off the stack */
   void stop_mm() {
+    assert(memory_manager_.size());
     auto manager = memory_manager_.top();
     manager->collect();
     delete manager;

@@ -26,10 +26,8 @@ using namespace CVC4;
 bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
 
   reset();
-  smt_->setOption("incremental", true);
-  smt_->setOption("produce-assignments", true);
-  smt_->setTimeLimit(timeout_, true);
-  smt_->setLogic("QF_UFBV");
+  smt_->pop();
+  smt_->push();
 
   error_ = "";
 

@@ -30,7 +30,8 @@ using namespace x64asm;
 vector<AliasMiner::MemoryAccess>
 AliasMiner::mine_concrete_data(const Cfg& cfg, const CpuState& tc) {
 
-  sandbox_->reset();
+  sandbox_->clear_callbacks();
+  sandbox_->clear_inputs();
   sandbox_->insert_function(cfg);
   sandbox_->insert_before(mine_concrete_callback, this);
   sandbox_->set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
@@ -201,7 +202,8 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
   // Run sandbox on target to see if we did well.
   DEBUG_BUILD_TC(cout << "Running sandbox with tc: " << endl << ceg << endl;)
-  sandbox_->reset();
+  sandbox_->clear_callbacks();
+  sandbox_->clear_inputs();
   sandbox_->insert_function(target);
   sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
   sandbox_->insert_input(ceg);

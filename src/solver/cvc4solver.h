@@ -27,10 +27,22 @@ namespace stoke {
 class Cvc4Solver : public SMTSolver {
 
 public:
-  Cvc4Solver() : smt_(NULL), uninterpreted_(false) {}
+  Cvc4Solver() : smt_(NULL), uninterpreted_(false) {
+    smt_ = new CVC4::SmtEngine(&em_);
+    smt_->setOption("incremental", true);
+    smt_->setOption("produce-assignments", true);
+    smt_->setTimeLimit(timeout_, true);
+    smt_->setLogic("QF_UFBV");
+    smt_->push();
+  }
   ~Cvc4Solver() {
-    if (smt_)
-      delete smt_;
+    delete smt_;
+  }
+
+  SMTSolver& set_timeout(uint64_t ms) {
+    timeout_ = ms;
+    smt_->setTimeLimit(timeout_, true);
+    return *this;
   }
 
   /** Check if a query is satisfiable given constraints */
@@ -46,12 +58,6 @@ public:
   bool get_model_bool(const std::string& var);
 
   void reset() {
-    if (smt_) {
-      delete smt_;
-    }
-
-    smt_ = new CVC4::SmtEngine(&em_);
-
     variables_ = std::map<std::string, CVC4::Expr>();
     uninterpreted_ = false;
   }
