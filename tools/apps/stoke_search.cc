@@ -63,8 +63,8 @@ auto& out = ValueArg<string>::create("out")
             .default_val("result.s");
 
 auto& machine_output_arg = ValueArg<string>::create("machine_output")
-  .usage("<path/to/file.s>")
-  .description("Machine-readable output (result and statistics)");
+                           .usage("<path/to/file.s>")
+                           .description("Machine-readable output (result and statistics)");
 
 auto& stats = Heading::create("Statistics Options:");
 auto& stat_int =

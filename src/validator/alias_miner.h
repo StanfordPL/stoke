@@ -44,17 +44,21 @@ public:
     sandbox_ = new Sandbox();
     sandbox_->set_abi_check(false);
     sandbox_->set_max_jumps(4096);
+    free_sandbox_ = true;
   }
 
   ~AliasMiner() {
-    delete sandbox_;
+    if (free_sandbox_)
+      delete sandbox_;
   }
 
   /** This is a sandbox that *will be reset*.  But, if you want to configure
     a sandbox with special options, you can do that here. The class will delete
     this sandbox upon destruction.  Use with care. */
   AliasMiner& set_sandbox(Sandbox* sb) {
-    delete sandbox_;
+    if (free_sandbox_)
+      delete sandbox_;
+    free_sandbox_ = false;
     sandbox_ = sb;
     return *this;
   }
@@ -87,6 +91,8 @@ private:
   uint64_t build_testcase_address_;
   size_t build_testcase_width_;
   bool build_testcase_ran_;
+
+  bool free_sandbox_;
 };
 
 } //namespace
