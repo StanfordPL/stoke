@@ -290,6 +290,8 @@ Cfg Validator::inline_functions(const Cfg& cfg) const {
   for (size_t i = 0; i < old_code.size(); ++i) {
     if (old_code[i].is_call()) {
 
+      new_code.push_back(Instruction(PUSH_R64, { rbp }));
+
       auto label = old_code[i].get_operand<x64asm::Label>(0);
       auto to_inline = sandbox_->get_function(label);
 
@@ -320,6 +322,7 @@ Cfg Validator::inline_functions(const Cfg& cfg) const {
         }
       }
       new_code.push_back(Instruction(LABEL_DEFN, { end_label }));
+      new_code.push_back(Instruction(POP_R64, { rbp }));
 
       unique_id++;
     } else {
