@@ -18,7 +18,7 @@
 #include "src/validator/bounded.h"
 #include "src/validator/invariants/true.h"
 
-#define BOUNDED_DEBUG(X) { }
+#define BOUNDED_DEBUG(X) { X }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
@@ -1128,7 +1128,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     // Build inequality constraint
     SymBool inequality = SymBool::_false();
 
-    if(check_equality) {
+    if (check_equality) {
       for (auto it : state_t.equality_constraints(state_r, target.live_outs())) {
         inequality = inequality | !it;
         BOUNDED_DEBUG(cout << "INEQUALITY: " << it << endl;)
@@ -1142,7 +1142,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       BOUNDED_DEBUG(cout << "End memory constraint: " << mem_const << endl;)
     }
 
-    inequality = inequality | !prove(state_t, state_r);
+    auto prove_constraint = !prove(state_t, state_r);
+    BOUNDED_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
+    inequality = inequality | prove_constraint;
 
     constraints.push_back(inequality);
 
