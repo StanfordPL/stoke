@@ -19,17 +19,24 @@
 #include <vector>
 #include <string>
 
+#include "gtest/gtest_prod.h"
+
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/solver/smtsolver.h"
 #include "src/validator/alias_miner.h"
+#include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 
 
 namespace stoke {
 
 class BoundedValidator : public Validator {
+  friend class DdecValidator;
+  FRIEND_TEST(BoundedValidatorBaseTest, WcpcpyA);
+  FRIEND_TEST(BoundedValidatorBaseTest, WcpcpyB);
+  FRIEND_TEST(BoundedValidatorBaseTest, WcpcpyC);
 
 public:
 
@@ -94,6 +101,9 @@ private:
 
   /** Verify a pair of paths. */
   bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
+  /** Verify a pair of paths, assuming an initial invariant true, and proving another. */
+  bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q,
+                   const Invariant& assume, const Invariant& prove, bool check_equality);
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
   /** Is there a jump in the path following this basic block? */
