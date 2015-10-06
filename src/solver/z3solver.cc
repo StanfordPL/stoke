@@ -28,10 +28,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   /* Reset state. */
   error_ = "";
   model_ = 0;
-
-  /* Context for Z3 solver */
-  solver s(context_);
-  context_.set("timeout", (int)timeout_);
+  solver_.reset();
 
   /* Convert constraints and query to z3 object */
   SymTypecheckVisitor tc;
@@ -63,7 +60,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
         error_ = ec.error();
         return false;
       }
-      s.add(constraint);
+      solver_.add(constraint);
     }
 
     if (free_it)
@@ -76,13 +73,15 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 
   /* Run the solver and see */
   try {
-    switch (s.check()) {
+    switch (solver_.check()) {
     case unsat: {
       return false;
     }
 
     case sat: {
-      model_ = new z3::model(s.get_model());
+      if (model_ != NULL)
+        delete model_;
+      model_ = new z3::model(solver_.get_model());
       return true;
     }
 
@@ -122,13 +121,18 @@ cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t bits)
   for (int i = 0; i < octs; ++i) {
     uint64_t oct;
 
-    size_t max_bits = i*64+63 > bits ? bits : i*64+63;
+    size_t max_bits = i*64+63 > bits ? bits-1 : i*64+63;
     expr extract = to_expr(context_, Z3_mk_extract(context_, max_bits, i*64, v));
     expr number = to_expr(context_, Z3_mk_bv2int(context_, extract, true));
     expr eval = model_->eval(number, true);
     Z3_get_numeral_int64(context_, eval, (long long int*)&oct);
 
-    result.get_fixed_quad(i) = oct;
+    assert((max_bits + 1) % 8 == 0);
+    size_t k = 0;
+    for (size_t j = i*8; j < (max_bits+1)/8; ++j) {
+      result.get_fixed_byte(j) = (oct >> (k*8)) & 0xff;
+      k++;
+    }
   }
 
   return result;

@@ -25,6 +25,6 @@ void SymMemoryManager::collect() {
   for (const SymBoolAbstract* b : bools_) {
     delete b;
   }
-  bitvectors_ = set<const SymBitVectorAbstract*>();
-  bools_ = set<const SymBoolAbstract*>();
+  bitvectors_.clear();
+  bools_.clear();
 }

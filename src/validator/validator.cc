@@ -280,3 +280,56 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) 
   return cs;
 }
 
+Cfg Validator::inline_functions(const Cfg& cfg) const {
+
+  auto& old_code = cfg.get_code();
+  Code new_code;
+
+  size_t unique_id = 0;
+
+  for (size_t i = 0; i < old_code.size(); ++i) {
+    if (old_code[i].is_call()) {
+
+      new_code.push_back(Instruction(PUSH_R64, { rbp }));
+
+      auto label = old_code[i].get_operand<x64asm::Label>(0);
+      auto to_inline = sandbox_->get_function(label);
+
+      assert(to_inline != sandbox_->function_end());
+
+      stringstream elss;
+      elss << "%%END%%_" << unique_id;
+      auto end_label = x64asm::Label(elss.str());
+
+      auto inline_code = to_inline->get_code();
+      for (size_t j = 0; j < inline_code.size(); ++j) {
+        Instruction instr = inline_code[j];
+        if (instr.is_ret()) {
+          new_code.push_back(Instruction(x64asm::JMP_LABEL_1, { end_label }));
+        } else {
+          //rename all label operands
+          for (size_t k = 0; k < instr.arity(); ++k) {
+            if (instr.type(k) == Type::LABEL) {
+              auto old_label = instr.get_operand<x64asm::Label>(k);
+
+              stringstream ss;
+              ss << "%%INLINE%%_" << unique_id << "_" << old_label.get_text();
+              auto new_label = x64asm::Label(ss.str());
+              instr.set_operand(k, new_label);
+            }
+          }
+          new_code.push_back(instr);
+        }
+      }
+      new_code.push_back(Instruction(LABEL_DEFN, { end_label }));
+      new_code.push_back(Instruction(POP_R64, { rbp }));
+
+      unique_id++;
+    } else {
+      new_code.push_back(old_code[i]);
+    }
+  }
+
+  return Cfg(new_code, cfg.def_ins(), cfg.live_outs());
+
+}
