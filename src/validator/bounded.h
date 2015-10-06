@@ -103,7 +103,7 @@ private:
   bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
   /** Verify a pair of paths, assuming an initial invariant true, and proving another. */
   bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q,
-                   const Invariant& assume, const Invariant& prove, bool check_equality);
+                   const Invariant& assume, const Invariant& prove, bool assume_equality, bool prove_equality);
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
   /** Is there a jump in the path following this basic block? */
@@ -131,9 +131,9 @@ private:
 
 
   /** Given target, rewrite, and two paths, returns CellMemory* pairs for every way that aliasing can occur. */
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q);
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_basic(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q);
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, bool assume_equality);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_basic(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, bool assume_equality);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, bool assume_equality);
 
   /** Recursive helper function for enumerate_aliasing.  target_con_access and
    * rewrite_con_access list the lines of code where target_unroll and
@@ -148,7 +148,9 @@ private:
       const CfgPath& P, const CfgPath& Q,
       const std::vector<CellMemory::SymbolicAccess>& todo,
       const std::vector<CellMemory::SymbolicAccess>& done,
-      size_t sym_accesses_done);
+      size_t sym_accesses_done,
+      const Invariant& assume,
+      bool assume_equality);
 
 
   /** Helper for enumerate_aliasing_helper.  Builds CellMemory objects for
@@ -157,7 +159,8 @@ private:
   bool check_feasibility(const Cfg& target, const Cfg& rewrite,
                          const Cfg& target_unroll, const Cfg& rewrite_unroll,
                          const CfgPath& P, const CfgPath& Q,
-                         const std::vector<CellMemory::SymbolicAccess>& symbolic_access_list);
+                         const std::vector<CellMemory::SymbolicAccess>& symbolic_access_list,
+                         const Invariant& assume, bool assume_equality);
 
 
   /** Used for CellArrangement (see below) */

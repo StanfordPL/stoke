@@ -29,47 +29,31 @@ public:
   }
 
   SymBool operator()(const SymState& left, const SymState& right) const {
-    int count64 = 0;
     SymBitVector sum = SymBitVector::constant(64, 0);
 
     for (size_t i = 0; i < x64asm::r64s.size(); ++i) {
       x64asm::R reg = x64asm::r64s[i];
 
       if (target_r64_multipliers_.count(reg)) {
-        count64++;
         sum = sum + SymBitVector::constant(64, target_r64_multipliers_.at(reg))*left.gp[reg];
       }
       if (rewrite_r64_multipliers_.count(reg)) {
-        count64++;
         sum = sum + SymBitVector::constant(64, rewrite_r64_multipliers_.at(reg))*right.gp[reg];
       }
     }
 
-    SymBool result;
-    if (count64) {
-      result = sum == SymBitVector::constant(64, constant_);
-    } else {
-      result = SymBool::_true();
-    }
-
-    SymBitVector sum32 = SymBitVector::constant(32, 0);
-    int count32 = 0;
     for (size_t i = 0; i < x64asm::r64s.size(); ++i) {
       x64asm::R reg = x64asm::r32s[i];
 
       if (target_r64_multipliers_.count(reg)) {
-        sum32 = sum32 + SymBitVector::constant(32, target_r64_multipliers_.at(reg))*(left.gp[reg][31][0]);
-        count32++;
+        sum = sum + SymBitVector::constant(64, target_r64_multipliers_.at(reg))*(left.gp[reg][31][0].sign_extend(64));
       }
       if (rewrite_r64_multipliers_.count(reg)) {
-        sum32 = sum32 + SymBitVector::constant(32, rewrite_r64_multipliers_.at(reg))*(right.gp[reg][31][0]);
-        count32++;
+        sum = sum + SymBitVector::constant(64, rewrite_r64_multipliers_.at(reg))*(right.gp[reg][31][0].sign_extend(64));
       }
     }
-    if (count32)
-      result = result & (sum32 == SymBitVector::constant(32, constant_));
 
-    return result;
+    return sum == SymBitVector::constant(64, constant_);
   }
 
 private:

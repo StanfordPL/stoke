@@ -18,6 +18,8 @@
 #include "src/validator/bounded.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
+#include "src/validator/invariants/no_signals.h"
+#include "src/validator/invariants/top_zero.h"
 #include "src/validator/invariants/true.h"
 
 namespace stoke {
@@ -1909,7 +1911,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushesAntialias) {
 
 TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
 
-  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::rax;
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::r15 + x64asm::rax;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
   std::stringstream sst;
@@ -1918,6 +1920,16 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
   sst << "movl %esi, %esi" << std::endl;
   sst << "nop" << std::endl;
   sst << "nop" << std::endl;
+  sst << ".L_top:" << std::endl;
+  sst << "movl %esi, %esi" << std::endl;
+  sst << "movl (%r15,%rsi,1), %edx" << std::endl;
+  sst << "movq %rdi, %rax" << std::endl;
+  sst << "addl $0x4, %esi" << std::endl;
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "movl %edx, (%r15, %rdi, 1)" << std::endl;
+  sst << "addl $0x4, %edi" << std::endl;
+  sst << "testl %edx, %edx" << std::endl;
+  sst << "jne .L_top" << std::endl;
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, def_ins, live_outs);
 
@@ -1925,6 +1937,16 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
   ssr << ".foo:" << std::endl;
   ssr << "nop" << std::endl;
   ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << ".L_top:" << std::endl;
+  ssr << "addl $0x4, %esi" << std::endl;
+  ssr << "movl -0x4(%r15,%rsi,1), %edx" << std::endl;
+  ssr << "movl %edi, %eax" << std::endl;
+  ssr << "addl $0x4, %edi" << std::endl;
+  ssr << "movl %edx, -0x4(%r15,%rdi,1)" << std::endl;
+  ssr << "testl %edx, %edx" << std::endl;
+  ssr << "jne .L_top" << std::endl;
   ssr << "nop" << std::endl;
   ssr << "nop" << std::endl;
   ssr << "retq" << std::endl;
@@ -1944,6 +1966,9 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
   r2[x64asm::edi] = -1;
   EqualityInvariant inv_rdi(t2, r2, 0);
 
+  // top 32 bits of rdi are 0.
+  TopZeroInvariant target_edi_0(x64asm::rdi, false);
+
   // esi = esi'
   std::map<x64asm::R, int> t3;
   std::map<x64asm::R, int> r3;
@@ -1951,14 +1976,40 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
   r3[x64asm::esi] = -1;
   EqualityInvariant inv_rsi(t3, r3, 0);
 
+  // r15 = r15'
+  std::map<x64asm::R, int> t4;
+  std::map<x64asm::R, int> r4;
+  t4[x64asm::r15] = 1;
+  r4[x64asm::r15] = -1;
+  EqualityInvariant inv_r15(t4, r4, 0);
+
+  // no signals
+  NoSignalsInvariant no_signals;
+
+  // conjunction
   ConjunctionInvariant inv_all;
   inv_all.add_invariant(&inv_rax);
   inv_all.add_invariant(&inv_rdi);
   inv_all.add_invariant(&inv_rsi);
+  inv_all.add_invariant(&inv_r15);
+  inv_all.add_invariant(&target_edi_0);
+  inv_all.add_invariant(&no_signals);
 
   auto path = CfgPaths::enumerate_paths(target, 1)[0];
 
-  EXPECT_TRUE(validator->verify_pair(target, rewrite, path, path, TrueInvariant(), inv_all, false));
+  std::vector<Cfg::id_type> top_segment;
+  top_segment.push_back(path[0]);
+
+  std::vector<Cfg::id_type> middle_segment;
+  middle_segment.push_back(path[1]);
+
+  std::vector<Cfg::id_type> end_segment;
+  end_segment.push_back(path[2]);
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
+  ASSERT_TRUE(validator->verify_pair(target, rewrite, top_segment, top_segment, no_signals, inv_all, true, false));
+  ASSERT_TRUE(validator->verify_pair(target, rewrite, middle_segment, middle_segment, inv_all, inv_all, false, false));
+  ASSERT_TRUE(validator->verify_pair(target, rewrite, end_segment, end_segment, inv_all, TrueInvariant(), false, true));
 
   for (auto it : validator->get_counter_examples()) {
     std::cout << it << std::endl;

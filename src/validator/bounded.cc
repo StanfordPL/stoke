@@ -147,7 +147,9 @@ vector<CellMemory::SymbolicAccess> split_sym_accesses(const vector<CellMemory::S
 bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
     const Cfg& target_unroll, const Cfg& rewrite_unroll,
     const CfgPath& P, const CfgPath& Q,
-    const vector<CellMemory::SymbolicAccess>& sym_list) {
+    const vector<CellMemory::SymbolicAccess>& sym_list,
+    const Invariant& assume,
+    bool assume_equality) {
 
   ALIAS_DEBUG(cout << "~~~~~~~~~~~~~ ALIASING FEASIBILITY CHECKER ~~~~~~~~~~~~~~~~" << endl;)
 
@@ -218,10 +220,13 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   state_r.memory = rewrite_mem;
   rewrite_mem->set_parent(&state_r);
 
-  for (auto it : state_t.equality_constraints(init, target.def_ins()))
-    constraints.push_back(it);
-  for (auto it : state_r.equality_constraints(init, rewrite.def_ins()))
-    constraints.push_back(it);
+  if(assume_equality) {
+    for (auto it : state_t.equality_constraints(init, target.def_ins()))
+      constraints.push_back(it);
+    for (auto it : state_r.equality_constraints(init, rewrite.def_ins()))
+      constraints.push_back(it);
+  }
+  constraints.push_back(assume(state_t, state_r));
 
   auto mem_const = target_mem->equality_constraint(*rewrite_mem);
   constraints.push_back(mem_const);
@@ -283,13 +288,15 @@ vector<vector<CellMemory::SymbolicAccess>> BoundedValidator::enumerate_aliasing_
     const CfgPath& P, const CfgPath& Q,
     const vector<CellMemory::SymbolicAccess>& todo,
     const vector<CellMemory::SymbolicAccess>& done,
-size_t accesses_done) {
+    size_t accesses_done,
+    const Invariant& assume,
+    bool assume_equality) {
 
   ALIAS_DEBUG(cout << "===================== RECURSIVE STEP ==============================" << endl;)
 
   vector<vector<CellMemory::SymbolicAccess>> result;
   // Step 0: check for feasibility.  if not, stop here.
-  if (!check_feasibility(target, rewrite, target_unroll, rewrite_unroll, P, Q, done))
+  if (!check_feasibility(target, rewrite, target_unroll, rewrite_unroll, P, Q, done, assume, assume_equality))
     return result;
 
   // Step 1: if we've processed all the concrete accesses, we're done.  Generate CellMemories and return.
@@ -388,7 +395,7 @@ size_t accesses_done) {
     recursive_accesses.push_back(sa);
 
     auto new_results = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll,
-                       P, Q, todo, recursive_accesses, accesses_done+1);
+                       P, Q, todo, recursive_accesses, accesses_done+1, assume, assume_equality);
     result.insert(result.begin(), new_results.begin(), new_results.end());
   }
 
@@ -396,16 +403,16 @@ size_t accesses_done) {
   return result;
 }
 
-vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, bool assume_equality) {
   switch (alias_strategy_) {
   case AliasStrategy::BASIC:
-    return enumerate_aliasing_basic(target, rewrite, P, Q);
+    return enumerate_aliasing_basic(target, rewrite, P, Q, assume, assume_equality);
   case AliasStrategy::STRING:
   case AliasStrategy::STRING_NO_ALIAS:
-    return enumerate_aliasing_string(target, rewrite, P, Q);
+    return enumerate_aliasing_string(target, rewrite, P, Q, assume, assume_equality);
   default:
     assert(false);
-    return enumerate_aliasing_basic(target, rewrite, P, Q);
+    return enumerate_aliasing_basic(target, rewrite, P, Q, assume, assume_equality);
   }
 }
 
@@ -491,7 +498,7 @@ vector<vector<int>> compute_offset_vectors(size_t* cell_sizes, size_t cell_count
 
 
 
-vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, bool assume_equality) {
 
   auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
   auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
@@ -518,7 +525,12 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   SymState rewrite_state("2");
   rewrite_state.memory = &rewrite_mem;
 
-  auto constraints = target_state.equality_constraints(rewrite_state, target.def_ins());
+  vector<SymBool> constraints;
+  if(assume_equality) {
+    auto equality_constraints = target_state.equality_constraints(rewrite_state, target.def_ins());
+    constraints.insert(constraints.begin(), equality_constraints.begin(), equality_constraints.end());
+  }
+  constraints.push_back(assume(target_state, rewrite_state));
 
   size_t line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
@@ -725,7 +737,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
     sa.unconstrained = false;
     done.push_back(sa);
 
-    auto options = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q, cell_list, done, 1);
+    auto options = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q, cell_list, done, 1, assume, assume_equality);
 
     for (auto option : options) {
       map<size_t, CellMemory::SymbolicAccess> target_map;
@@ -876,7 +888,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
 }
 
 // ASSUMPTION: the target and rewrite both use memory
-vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basic(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basic(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, bool assume_equality) {
 
 
   auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
@@ -900,7 +912,6 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basi
   }
 
   // Build the list of all memory accesses
-
   vector<CellMemory::SymbolicAccess> todo;
 
   for (auto line : target_concrete_accesses) {
@@ -929,7 +940,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basi
 
 
   auto options =  enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q,
-                  todo, done, 1);
+                  todo, done, 1, assume, assume_equality);
 
   vector<pair<CellMemory*, CellMemory*>> result;
 
@@ -1047,17 +1058,17 @@ void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories)
 }
 
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
-  return verify_pair(target, rewrite, P, Q, TrueInvariant(), TrueInvariant(), true);
+  return verify_pair(target, rewrite, P, Q, TrueInvariant(), TrueInvariant(), true, true);
 }
 
-bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, bool check_equality) {
+bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, bool assume_equality, bool prove_equality) {
 
   BOUNDED_DEBUG(cout << "===========================================" << endl;)
   BOUNDED_DEBUG(cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;)
   init_mm();
 
   // Get a list of all aliasing cases.
-  auto memory_list =  enumerate_aliasing(target, rewrite, P, Q);
+  auto memory_list =  enumerate_aliasing(target, rewrite, P, Q, assume, assume_equality);
 
   BOUNDED_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
 
@@ -1086,10 +1097,15 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     SymState state_r("2_INIT");
 
     // Force equality of initial states
-    for (auto it : state_t.equality_constraints(init, target.def_ins()))
-      constraints.push_back(it);
-    for (auto it : state_r.equality_constraints(init, rewrite.def_ins()))
-      constraints.push_back(it);
+    if(assume_equality) {
+      for (auto it : state_t.equality_constraints(init, target.def_ins()))
+        constraints.push_back(it);
+      for (auto it : state_r.equality_constraints(init, rewrite.def_ins()))
+        constraints.push_back(it);
+    } else {
+      for (auto it : state_t.equality_constraints(init, target.def_ins()))
+        constraints.push_back(it);
+    }
 
     if (memories.first) {
       state_t.memory = memories.first;
@@ -1103,7 +1119,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     }
 
     // Add given assumptions
-    constraints.push_back(assume(state_t, state_r));
+    auto assumption = assume(state_t, state_r);
+    BOUNDED_DEBUG(cout << "Assuming " << assumption << endl;);
+    constraints.push_back(assumption);
 
     // Build the circuits
     size_t line_no = 0;
@@ -1128,7 +1146,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     // Build inequality constraint
     SymBool inequality = SymBool::_false();
 
-    if (check_equality) {
+    if (prove_equality) {
       for (auto it : state_t.equality_constraints(state_r, target.live_outs())) {
         inequality = inequality | !it;
         BOUNDED_DEBUG(cout << "INEQUALITY: " << it << endl;)
@@ -1156,6 +1174,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     if (is_sat) {
       auto ceg = Validator::state_from_model(solver_, "_");
+      auto ceg2 = Validator::state_from_model(solver_, "_2_INIT");
       if (memories.first) {
         bool ok = am.build_testcase_memory(ceg, solver_,
                                            *static_cast<CellMemory*>(state_t.memory),
@@ -1163,6 +1182,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
                                            target, rewrite);
         if (ok) {
           counterexamples_.push_back(ceg);
+          counterexamples_.push_back(ceg2);
         } else {
           delete_memories(memory_list);
           //throw VALIDATOR_ERROR("Couldn't build counterexample!  This is a BOUNDED VALIDATOR BUG.");
@@ -1171,9 +1191,11 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
         }
       } else {
         counterexamples_.push_back(ceg);
+        counterexamples_.push_back(ceg2);
       }
       BOUNDED_DEBUG(cout << "  (Got counterexample)" << endl;)
       BOUNDED_DEBUG(cout << ceg << endl;)
+      BOUNDED_DEBUG(cout << ceg2 << endl;)
 
       delete_memories(memory_list);
       stop_mm();
