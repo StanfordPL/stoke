@@ -132,8 +132,10 @@ public:
   SymBitVector ror(const SymBitVector& other) const;
   /** Creates a bitvector representing signed division */
   SymBitVector s_div(const SymBitVector& other) const;
-  /** Creates a sign-extended version of this bitvector */
+  /** Creates a sign-extended version of this bitvector DEPRECATED. */
   SymBitVector extend(uint16_t size) const;
+  /** Creates a sign-extended version of this bitvector */
+  SymBitVector sign_extend(uint16_t size) const;
   /** Creates a bitvector representing signed modulus */
   SymBitVector s_mod(const SymBitVector& other) const;
   /** Creates a bitvector representing signed shift right */

@@ -16,6 +16,7 @@
 #include "src/cfg/paths.h"
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/bounded.h"
+#include "src/validator/invariants/true.h"
 
 #define BOUNDED_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
@@ -1046,6 +1047,10 @@ void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories)
 }
 
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
+  return verify_pair(target, rewrite, P, Q, TrueInvariant(), TrueInvariant(), true);
+}
+
+bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, bool check_equality) {
 
   BOUNDED_DEBUG(cout << "===========================================" << endl;)
   BOUNDED_DEBUG(cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;)
@@ -1080,11 +1085,11 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     SymState state_t("1_INIT");
     SymState state_r("2_INIT");
 
+    // Force equality of initial states
     for (auto it : state_t.equality_constraints(init, target.def_ins()))
       constraints.push_back(it);
     for (auto it : state_r.equality_constraints(init, rewrite.def_ins()))
       constraints.push_back(it);
-
 
     if (memories.first) {
       state_t.memory = memories.first;
@@ -1097,6 +1102,10 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       constraints.push_back(mem_const);
     }
 
+    // Add given assumptions
+    constraints.push_back(assume(state_t, state_r));
+
+    // Build the circuits
     size_t line_no = 0;
     for (size_t i = 0; i < P.size(); ++i)
       build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
@@ -1116,10 +1125,14 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     cout << it << endl;
   })
 
+    // Build inequality constraint
     SymBool inequality = SymBool::_false();
-    for (auto it : state_t.equality_constraints(state_r, target.live_outs())) {
-      inequality = inequality | !it;
-      BOUNDED_DEBUG(cout << "INEQUALITY: " << it << endl;)
+
+    if(check_equality) {
+      for (auto it : state_t.equality_constraints(state_r, target.live_outs())) {
+        inequality = inequality | !it;
+        BOUNDED_DEBUG(cout << "INEQUALITY: " << it << endl;)
+      }
     }
 
     if (memories.first) {
@@ -1128,6 +1141,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       inequality = inequality | mem_const;
       BOUNDED_DEBUG(cout << "End memory constraint: " << mem_const << endl;)
     }
+
+    inequality = inequality | !prove(state_t, state_r);
 
     constraints.push_back(inequality);
 

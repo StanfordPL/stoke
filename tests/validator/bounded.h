@@ -16,6 +16,9 @@
 
 #include "src/sandbox/sandbox.h"
 #include "src/validator/bounded.h"
+#include "src/validator/invariants/conjunction.h"
+#include "src/validator/invariants/equality.h"
+#include "src/validator/invariants/true.h"
 
 namespace stoke {
 
@@ -1902,6 +1905,64 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushesAntialias) {
   validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
+TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::rax;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "movl %edi, %edi" << std::endl;
+  sst << "movl %esi, %esi" << std::endl;
+  sst << "nop" << std::endl;
+  sst << "nop" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  // rax = rax'
+  std::map<x64asm::R, int> t1;
+  std::map<x64asm::R, int> r1;
+  t1[x64asm::rax] = 1;
+  r1[x64asm::rax] = -1;
+  EqualityInvariant inv_rax(t1, r1, 0);
+
+  // edi = edi'
+  std::map<x64asm::R, int> t2;
+  std::map<x64asm::R, int> r2;
+  t2[x64asm::edi] = 1;
+  r2[x64asm::edi] = -1;
+  EqualityInvariant inv_rdi(t2, r2, 0);
+
+  // esi = esi'
+  std::map<x64asm::R, int> t3;
+  std::map<x64asm::R, int> r3;
+  t3[x64asm::esi] = 1;
+  r3[x64asm::esi] = -1;
+  EqualityInvariant inv_rsi(t3, r3, 0);
+
+  ConjunctionInvariant inv_all;
+  inv_all.add_invariant(&inv_rax);
+  inv_all.add_invariant(&inv_rdi);
+  inv_all.add_invariant(&inv_rsi);
+
+  auto path = CfgPaths::enumerate_paths(target, 1)[0];
+
+  EXPECT_TRUE(validator->verify_pair(target, rewrite, path, path, TrueInvariant(), inv_all, false));
+
+  for (auto it : validator->get_counter_examples()) {
+    std::cout << it << std::endl;
+  }
 }
 
 
