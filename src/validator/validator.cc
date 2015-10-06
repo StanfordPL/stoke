@@ -248,7 +248,7 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) 
     stringstream name;
     name << r64s[i] << name_suffix;
     cs.gp[r64s[i]] = smt.get_model_bv(name.str(), 64);
-    //cout << "Var " << name.str() << " has value " << hex << cs.gp[r64s[i]].get_fixed_quad(0) << endl;
+    cout << "Var " << name.str() << " has value " << hex << cs.gp[r64s[i]].get_fixed_quad(0) << endl;
   }
 
   for (size_t i = 0; i < ymms.size(); ++i) {
