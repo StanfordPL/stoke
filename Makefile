@@ -198,12 +198,12 @@ src/ext/astyle:
 	$(MAKE) -C src/ext/astyle/build/gcc -j8
 
 src/ext/cpputil:
-	git clone git://github.com/eschkufz/cpputil.git src/ext/cpputil && \
+	git clone git://github.com/StanfordPL/cpputil.git src/ext/cpputil && \
 	cd src/ext/cpputil && \
 	git checkout e7b99c1
 
 src/ext/x64asm:
-	git clone git://github.com/eschkufz/x64asm.git src/ext/x64asm && \
+	git clone git://github.com/StanfordPL/x64asm.git src/ext/x64asm && \
 	cd src/ext/x64asm && \
 	git checkout c7c714411 
 

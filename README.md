@@ -78,7 +78,7 @@ Downloading and Building STOKE
 The entire STOKE code base, is available on github under the Apache Software
 License version 2.0. To clone a copy of the source code, type:
 
-    $ git clone https://github.com/eschkufz/stoke
+    $ git clone https://github.com/StanfordPL/stoke
 
 The remainder of STOKE's software dependencies are available on github and will
 be downloaded automatically the first time that STOKE is built. To build stoke for a Haswell system
