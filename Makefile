@@ -188,6 +188,7 @@ BIN=\
 	bin/stoke_benchmark_state \
 	bin/stoke_benchmark_verify \
 	bin/specgen_analyse \
+	bin/specgen_augment_tests \
 	bin/specgen_init \
 	bin/specgen_setup
 
