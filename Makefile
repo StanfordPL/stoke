@@ -114,6 +114,8 @@ SRC_OBJ=\
 	\
 	src/validator/alias_miner.o \
 	src/validator/bounded.o \
+	src/validator/cutpoints.o \
+	src/validator/ddec.o \
 	src/validator/handler.o \
 	src/validator/straight_line.o \
 	src/validator/validator.o \

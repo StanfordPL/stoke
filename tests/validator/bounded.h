@@ -1999,6 +1999,7 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
 
   std::vector<Cfg::id_type> top_segment;
   top_segment.push_back(path[0]);
+  top_segment.push_back(path[1]);
 
   std::vector<Cfg::id_type> middle_segment;
   middle_segment.push_back(path[1]);

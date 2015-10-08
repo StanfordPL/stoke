@@ -12,36 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_VALIDATOR_DDEC_H
-#define STOKE_SRC_VALIDATOR_DDEC_H
+#ifndef STOKE_SRC_VALIDATOR_INVARIANT_FLAG_H
+#define STOKE_SRC_VALIDATOR_INVARIANT_FLAG_H
 
-#include "src/validator/cutpoints.h"
-#include "src/validator/validator.h"
+#include "src/symstate/state.h"
+
 
 namespace stoke {
 
-class DdecValidator : public Validator {
+class FlagInvariant : public Invariant {
 
 public:
 
-  DdecValidator(SMTSolver& solver) : Validator(solver) {
-    cutpoints_ = NULL;
+  FlagInvariant(RFlags f1, RFlags f2, bool is_rewrite1, bool is_rewrite2) : reg_(reg) {
   }
 
-  ~DdecValidator() {
-    if(cutpoints_)
-      delete cutpoints_;
+  SymBool operator()(const SymState& left, const SymState& right) const {
   }
-
-  /** Verify if target and rewrite are equivalent. */
-  bool verify(const Cfg& target, const Cfg& rewrite);
 
 private:
-
-  Cutpoints* cutpoints_;
 
 };
 
 } // namespace stoke
+
+
 
 #endif
