@@ -25,6 +25,7 @@
 #include "src/verifier/sequence.h"
 #include "src/verifier/verifier.h"
 #include "src/validator/bounded.h"
+#include "src/validator/ddec.h"
 #include "src/validator/straight_line.h"
 
 #include "tools/args/bounded_validator.inc"
@@ -104,6 +105,8 @@ private:
       }
 
       return bv;
+    } else if (s == "ddec") {
+      return new DdecValidator(*solver_);
     } else if (s == "hold_out") {
       return new HoldOutVerifier(fxn);
     } else if (s == "straight_line" || s == "formal") {

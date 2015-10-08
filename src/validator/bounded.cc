@@ -220,7 +220,7 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   state_r.memory = rewrite_mem;
   rewrite_mem->set_parent(&state_r);
 
-  if(assume_equality) {
+  if (assume_equality) {
     for (auto it : state_t.equality_constraints(init, target.def_ins()))
       constraints.push_back(it);
     for (auto it : state_r.equality_constraints(init, rewrite.def_ins()))
@@ -290,7 +290,7 @@ vector<vector<CellMemory::SymbolicAccess>> BoundedValidator::enumerate_aliasing_
     const vector<CellMemory::SymbolicAccess>& done,
     size_t accesses_done,
     const Invariant& assume,
-    bool assume_equality) {
+bool assume_equality) {
 
   ALIAS_DEBUG(cout << "===================== RECURSIVE STEP ==============================" << endl;)
 
@@ -526,7 +526,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   rewrite_state.memory = &rewrite_mem;
 
   vector<SymBool> constraints;
-  if(assume_equality) {
+  if (assume_equality) {
     auto equality_constraints = target_state.equality_constraints(rewrite_state, target.def_ins());
     constraints.insert(constraints.begin(), equality_constraints.begin(), equality_constraints.end());
   }
@@ -1097,7 +1097,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     SymState state_r("2_INIT");
 
     // Force equality of initial states
-    if(assume_equality) {
+    if (assume_equality) {
       for (auto it : state_t.equality_constraints(init, target.def_ins()))
         constraints.push_back(it);
       for (auto it : state_r.equality_constraints(init, rewrite.def_ins()))

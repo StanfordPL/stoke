@@ -12,36 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_VALIDATOR_DDEC_H
-#define STOKE_SRC_VALIDATOR_DDEC_H
+#include "src/validator/ddec.h"
 
-#include "src/validator/cutpoints.h"
-#include "src/validator/validator.h"
+using namespace std;
+using namespace stoke;
+using namespace x64asm;
 
-namespace stoke {
+bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
-class DdecValidator : public Validator {
+  cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
 
-public:
+  return false;
 
-  DdecValidator(SMTSolver& solver) : Validator(solver) {
-    cutpoints_ = NULL;
-  }
-
-  ~DdecValidator() {
-    if(cutpoints_)
-      delete cutpoints_;
-  }
-
-  /** Verify if target and rewrite are equivalent. */
-  bool verify(const Cfg& target, const Cfg& rewrite);
-
-private:
-
-  Cutpoints* cutpoints_;
-
-};
-
-} // namespace stoke
-
-#endif
+}

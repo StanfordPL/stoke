@@ -30,9 +30,9 @@ public:
 
   SymBool operator()(const SymState& left, const SymState& right) const {
 
-    if(is_rewrite_) {
+    if (is_rewrite_) {
       return right.gp[reg_][63][32] == SymBitVector::constant(32, 0);
-    } else { 
+    } else {
       return left.gp[reg_][63][32] == SymBitVector::constant(32, 0);
     }
   }
