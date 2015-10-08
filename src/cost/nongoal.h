@@ -29,11 +29,12 @@ public:
 
   /** Set the list of non-goals. */
   NonGoalCost& set_nongoals(const std::vector<TUnit>& nongoals,
-                            const x64asm::RegSet& def_ins,
-                            const x64asm::RegSet& live_outs) {
+                            const Cfg& target) {
     nongoals_.clear();
     for (auto& t : nongoals) {
-      auto cfg = Cfg(t, def_ins, live_outs);
+      auto cfg = Cfg(t, target.def_ins(), target.live_outs());
+      cfg.fncs_summary = target.fncs_summary;
+      cfg.recompute();
       nongoals_.push_back(CfgTransforms::remove_redundant(cfg).get_code());
     }
     return *this;
@@ -42,6 +43,8 @@ public:
   /** Returns 1 <=> code is equivalent as one in --non_goal. */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
     Cfg tmp(cfg.get_function(), cfg.def_ins(), cfg.live_outs());
+    tmp.fncs_summary = cfg.fncs_summary;
+    tmp.recompute();
     const auto& code = CfgTransforms::remove_redundant(tmp).get_code();
     for (auto& ng : nongoals_) {
       if (code == ng) {
