@@ -24,9 +24,10 @@ then
   echo "Usage: specgen <subcommand> [options]"
   echo "Type 'specgen <subcommand> --help' for help on a specific subcommand."
   echo ""
-  echo "  init         initialize the working directory"
-  echo "  setup        setup a single opcode"
-  echo "  analyse      run some analyses"
+  echo "  init            initialize the working directory"
+  echo "  setup           setup a single opcode"
+  echo "  analyse         run some analyses"
+  echo "  augment_tests   add more testcases"
   exit 0
 elif [ "$SCMD" == "init" ]
 then
@@ -37,6 +38,9 @@ then
 elif [ "$SCMD" == "analyse" ]
 then
   exec $HERE/specgen_analyse "$@"
+elif [ "$SCMD" == "augment_tests" ]
+then
+  exec $HERE/specgen_augment_tests "$@"
 else
   echo "Unknown command: '"$SCMD"'"
   echo "Type 'specgen --help' for usage."
