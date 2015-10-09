@@ -176,6 +176,7 @@ int main(int argc, char** argv) {
       if (could_be_inferred) {
         Instruction our = get_instruction(op);
         if (!validator.is_supported(our)) {
+          // cout << op << endl;
           base_and_no_validator_support++;
         }
       }
