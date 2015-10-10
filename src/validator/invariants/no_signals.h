@@ -37,6 +37,13 @@ public:
            (right.sigsegv == SymBool::_false());
   }
 
+  std::ostream& write(std::ostream& os) const {
+    os << "no signals";
+    return os;
+  }
+
+
+
 private:
 
 };

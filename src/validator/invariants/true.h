@@ -30,6 +30,11 @@ public:
     return SymBool::_true();
   }
 
+  std::ostream& write(std::ostream& os) const {
+    os << "true";
+    return os;
+  }
+
 };
 
 } // namespace stoke

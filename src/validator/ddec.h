@@ -16,6 +16,7 @@
 #define STOKE_SRC_VALIDATOR_DDEC_H
 
 #include "src/validator/cutpoints.h"
+#include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 
 namespace stoke {
@@ -29,15 +30,20 @@ public:
   }
 
   ~DdecValidator() {
-    if(cutpoints_)
+    if (cutpoints_)
       delete cutpoints_;
   }
+
 
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
 
 private:
 
+  /** Learn invariants from CpuStates */
+  Invariant* learn_invariant(std::vector<CpuState> states, std::vector<CpuState> states2);
+
+  /** Whatever cutpoints we've generated. */
   Cutpoints* cutpoints_;
 
 };

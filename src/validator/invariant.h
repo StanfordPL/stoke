@@ -17,7 +17,6 @@
 
 #include "src/symstate/state.h"
 
-
 namespace stoke {
 
 class Invariant {
@@ -28,10 +27,16 @@ public:
 
   virtual SymBool operator()(const SymState& left, const SymState& right) const = 0;
 
+  virtual std::ostream& write(std::ostream& out) const = 0;
+
 };
 
 } // namespace stoke
 
+namespace std {
 
+ostream& operator<<(ostream& os, const stoke::Invariant& inv);
+
+}
 
 #endif

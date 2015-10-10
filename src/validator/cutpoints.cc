@@ -21,25 +21,55 @@ using namespace x64asm;
 void Cutpoints::compute() {
 
   // For each basic block of target/rewrite, we have a cutpoint at the end
-  for(size_t i = 0; i < target_.num_blocks(); ++i) {
-    if(target_.is_reachable(i)) {
+  for (size_t i = 0; i < target_.num_blocks(); ++i) {
+    if (target_.is_reachable(i) && !target_.is_exit(i)) {
       target_cutpoints_.push_back(i);
       target_cutpoint_ends_with_jump_.push_back(ends_with_jump(target_, i));
     }
 
-    if(rewrite_.is_reachable(i)) {
+    if (rewrite_.is_reachable(i) && !rewrite_.is_exit(i)) {
       rewrite_cutpoints_.push_back(i);
       rewrite_cutpoint_ends_with_jump_.push_back(ends_with_jump(rewrite_, i));
     }
   }
 
-  for(size_t i = 0; i < target_cutpoints_.size(); ++i) {
+  for (size_t i = 0; i < target_cutpoints_.size(); ++i) {
     cout << "Cutpoint " << target_cutpoints_[i] << "; has jump? " << target_cutpoint_ends_with_jump_[i] << endl;
   }
 
-  for(size_t i = 0; i < rewrite_cutpoints_.size(); ++i) {
+  for (size_t i = 0; i < rewrite_cutpoints_.size(); ++i) {
     cout << "Cutpoint " << rewrite_cutpoints_[i] << "; has jump? " << rewrite_cutpoint_ends_with_jump_[i] << endl;
   }
+
+  for (size_t k = 0; k < 2; ++k) {
+    bool is_rewrite = k;
+    auto& cfg = is_rewrite ? rewrite_ : target_;
+
+    // setup callbacks for each cutpoint
+    auto& cutpoint_list = is_rewrite ? rewrite_cutpoints_ : target_cutpoints_;
+    auto& jump_list = is_rewrite ? rewrite_cutpoint_ends_with_jump_ : target_cutpoint_ends_with_jump_;
+    auto& index_list = is_rewrite ? rewrite_cutpoint_indexes_ : target_cutpoint_indexes_;
+
+    index_list.clear();
+
+    for (size_t j = 0; j < cutpoint_list.size(); ++j) {
+      bool ends_with_jump = jump_list[j];
+      auto bb = cutpoint_list[j];
+
+      size_t index;
+      if (bb == cfg.get_entry()) {
+        index = 0;
+      } else if (ends_with_jump) {
+        index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
+      } else {
+        index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1)) + 1;
+      }
+      index_list.push_back(index);
+    }
+  }
+
+
+  
 
   bool okay = check();
   assert(okay);
@@ -52,7 +82,7 @@ bool Cutpoints::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {
   size_t instrs = cfg.num_instrs(block);
   auto loc = Cfg::loc_type(block, instrs-1);
   auto instr = cfg.get_instr(loc);
-  return instr.is_any_jump();
+  return instr.is_any_jump() || instr.is_ret();
 }
 
 void Cutpoints::callback(const StateCallbackData& data, void* arg) {
@@ -89,7 +119,7 @@ bool Cutpoints::check() {
 
   cout << "Sandbox size: " << sandbox_.size() << endl;
 
-  for(size_t i = 0; i < sandbox_.size(); ++i) {
+  for (size_t i = 0; i < sandbox_.size(); ++i) {
 
 
     callback_target_trace_.clear();
@@ -98,7 +128,7 @@ bool Cutpoints::check() {
     callback_rewrite_states_.clear();
 
 
-    for(size_t k = 0; k < 2; ++k) {
+    for (size_t k = 0; k < 2; ++k) {
       bool is_rewrite = k;
       auto& cfg = is_rewrite ? rewrite_ : target_;
       auto label = cfg.get_code()[0].get_operand<Label>(0);
@@ -108,15 +138,12 @@ bool Cutpoints::check() {
       sandbox_.clear_callbacks();
 
       // setup callbacks for each cutpoint
-      auto& cutpoint_list = is_rewrite ? rewrite_cutpoints_ : target_cutpoints_;
-      auto& jump_list = is_rewrite ? rewrite_cutpoint_ends_with_jump_ : target_cutpoint_ends_with_jump_;
+      auto& index_list = is_rewrite ? rewrite_cutpoint_indexes_ : target_cutpoint_indexes_;
 
       std::vector<CallbackParam*> to_free;
 
-      for(size_t j = 0; j < cutpoint_list.size(); ++j) {
-        bool ends_with_jump = jump_list[j];
-        auto bb = cutpoint_list[j];
-        auto index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
+      for (size_t j = 0; j < index_list.size(); ++j) {
+        auto index = index_list[i];
 
         CallbackParam* cp = new CallbackParam();
         cp->self = this;
@@ -124,64 +151,44 @@ bool Cutpoints::check() {
         cp->is_rewrite = is_rewrite;
         to_free.push_back(cp);
 
-        if(ends_with_jump) {
-          sandbox_.insert_before(label, index, callback, cp);
-        } else {
-          sandbox_.insert_after(label, index, callback, cp);
-        }
+        sandbox_.insert_before(label, index, callback, cp);
       }
 
       sandbox_.run(i);
 
-      for(auto it : to_free)
+      for (auto it : to_free)
         delete it;
     }
 
     // (i), (iii) traces are the same
-    if(callback_target_trace_.size() != callback_rewrite_trace_.size()) {
+    if (callback_target_trace_.size() != callback_rewrite_trace_.size()) {
       return false;
     }
-    for(size_t j = 0; j < callback_target_trace_.size(); ++j) {
-      if(callback_target_trace_[j] != callback_rewrite_trace_[j])
+    for (size_t j = 0; j < callback_target_trace_.size(); ++j) {
+      if (callback_target_trace_[j] != callback_rewrite_trace_[j])
         return false;
     }
     // (ii) memory is equal
-    for(size_t j = 0; j < callback_target_states_.size(); ++j) {
+    for (size_t j = 0; j < callback_target_states_.size(); ++j) {
       auto ts = callback_target_states_[j];
       auto rs = callback_rewrite_states_[j];
-      if(ts.heap != rs.heap)
+      if (ts.heap != rs.heap)
         return false;
-      if(ts.stack != rs.stack)
+      if (ts.stack != rs.stack)
         return false;
-      if(ts.data != rs.data)
+      if (ts.data != rs.data)
         return false;
-      for(size_t k = 0; k < ts.segments.size(); ++k) {
-        if(ts.segments[k] != rs.segments[k])
+      for (size_t k = 0; k < ts.segments.size(); ++k) {
+        if (ts.segments[k] != rs.segments[k])
           return false;
       }
     }
-    
+
   }
   // TODO: check that each SCC has a cutpoint
 
   return true;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
