@@ -38,6 +38,8 @@ auto& only_live_out_arg = FlagArg::create("only_live_outs")
                        .description("Only show live out registers");
 auto& show_unchanged_arg = FlagArg::create("show_unchanged")
                        .description("Show the formula for unchanged registers");
+auto& use_smtlib_format_arg = FlagArg::create("smtlib_format")
+                       .description("Show circuits in smtlib format");
 
 template <typename T>
 string out_padded(T t, size_t min_length, char pad = ' ') {
@@ -89,6 +91,8 @@ int main(int argc, char** argv) {
   ComboHandler ch;
   SymState state("");
 
+  // TODO: doesn't handle memory
+
   // compute circuit
   size_t line = 0;
   for (auto it : code) {
@@ -99,6 +103,17 @@ int main(int argc, char** argv) {
 
   Console::msg() << "Circuits:" << endl;
   Console::msg() << endl;
+
+  SymPrettyVisitor pretty(Console::msg());
+  SymPrintVisitor smtlib(Console::msg());
+
+  auto print = [&smtlib, &pretty](const auto c) {
+    if (use_smtlib_format_arg.value()) {
+      smtlib(c);
+    } else {
+      pretty(c);
+    }
+  };
 
   // print symbolic state
   bool printed = false;
@@ -115,7 +130,8 @@ int main(int argc, char** argv) {
     auto val = state.lookup(*gp_it);
     if (!show_unchanged_arg.value() && !has_changed(gp_it, val)) continue;
     Console::msg() << out_padded(gp_it, 7) << "= ";
-    Console::msg() << val << endl;
+    print(val);
+    Console::msg() << endl;
     printed = true;
   }
   if (printed) cout << endl;
@@ -124,7 +140,8 @@ int main(int argc, char** argv) {
     auto val = state.lookup(*sse_it);
     if (!show_unchanged_arg.value() && !has_changed(sse_it, val)) continue;
     Console::msg() << out_padded(sse_it, 7) << "= ";
-    Console::msg() << val << endl;
+    print(val);
+    Console::msg() << endl;
     printed = true;
   }
   if (printed) cout << endl;
@@ -133,15 +150,22 @@ int main(int argc, char** argv) {
     SymBool val = state[*flag_it];
     if (!show_unchanged_arg.value() && !has_changed(flag_it, val)) continue;
     Console::msg() << out_padded(flag_it, 7) << "= ";
-    Console::msg() << val << endl;
+    print(val);
+    Console::msg() << endl;
     printed = true;
   }
   if (printed) cout << endl;
   printed = false;
 
-  Console::msg() << "sigfpe  = " << state.sigfpe << endl;
-  Console::msg() << "sigbus  = " << state.sigbus << endl;
-  Console::msg() << "sigsegv = " << state.sigsegv << endl;
+  Console::msg() << "sigfpe  = ";
+  print(state.sigfpe);
+  Console::msg() << endl;
+  Console::msg() << "sigbus  = ";
+  print(state.sigbus);
+  Console::msg() << endl;
+  Console::msg() << "sigsegv = ";
+  print(state.sigsegv);
+  Console::msg() << endl;
 
   return 0;
 }
