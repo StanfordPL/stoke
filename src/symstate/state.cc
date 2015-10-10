@@ -57,26 +57,32 @@ void SymState::build_with_suffix(const string& suffix) {
 
   for (size_t i = 0; i < gp.size(); ++i) {
     stringstream name;
-    name << r64s[i] << "_" << suffix;
+    name << r64s[i];
+    if (suffix != "") {
+      name << "_" << suffix;
+    }
     gp[i] = SymBitVector::var(64, name.str());
   }
 
   for (size_t i = 0; i < sse.size(); ++i) {
     stringstream name;
-    name << ymms[i] << "_" << suffix;
+    name << ymms[i];
+    if (suffix != "") {
+      name << "_" << suffix;
+    }
     sse[i] = SymBitVector::var(256, name.str());
   }
 
-  set(eflags_cf, SymBool::var("%cf_" + suffix));
-  set(eflags_pf, SymBool::var("%pf_" + suffix));
-  set(eflags_af, SymBool::var("%af_" + suffix));
-  set(eflags_zf, SymBool::var("%zf_" + suffix));
-  set(eflags_sf, SymBool::var("%sf_" + suffix));
-  set(eflags_of, SymBool::var("%of_" + suffix));
+  set(eflags_cf, SymBool::var("%cf" + (suffix == "" ? "" : "_" + suffix)));
+  set(eflags_pf, SymBool::var("%pf" + (suffix == "" ? "" : "_" + suffix)));
+  set(eflags_af, SymBool::var("%af" + (suffix == "" ? "" : "_" + suffix)));
+  set(eflags_zf, SymBool::var("%zf" + (suffix == "" ? "" : "_" + suffix)));
+  set(eflags_sf, SymBool::var("%sf" + (suffix == "" ? "" : "_" + suffix)));
+  set(eflags_of, SymBool::var("%of" + (suffix == "" ? "" : "_" + suffix)));
 
-  sigbus = SymBool::var("sigbus_" + suffix);
-  sigfpe = SymBool::var("sigfpe_" + suffix);
-  sigsegv = SymBool::var("sigsegv_" + suffix);
+  sigbus = SymBool::var("sigbus" + (suffix == "" ? "" : "_" + suffix));
+  sigfpe = SymBool::var("sigfpe" + (suffix == "" ? "" : "_" + suffix));
+  sigsegv = SymBool::var("sigsegv" + (suffix == "" ? "" : "_" + suffix));
 }
 
 SymBool SymState::operator[](const Eflags f) const {

@@ -34,9 +34,9 @@ using namespace stoke;
 using namespace x64asm;
 
 auto& dbg = Heading::create("Circuit Printing Options:");
-auto& only_live_out_arg = FlagArg::create("only_live_out")
+auto& only_live_out_arg = FlagArg::create("only_live_outs")
                        .description("Only show live out registers");
-auto& show_unchanged = FlagArg::create("show_unchanged")
+auto& show_unchanged_arg = FlagArg::create("show_unchanged")
                        .description("Show the formula for unchanged registers");
 
 template <typename T>
@@ -48,6 +48,28 @@ string out_padded(T t, size_t min_length, char pad = ' ') {
     ss << pad;
   }
   return ss.str();
+}
+
+template <typename T>
+bool has_changed(T reg, SymBitVector& sym) {
+  stringstream ss;
+  ss << (*reg);
+  if (sym.type() == SymBitVector::Type::VAR) {
+    const SymBitVectorVar* const var = static_cast<const SymBitVectorVar* const>(sym.ptr);
+    if (var->get_name() == ss.str()) return false;
+  }
+  return true;
+}
+
+template <typename T>
+bool has_changed(T reg, SymBool& sym) {
+  stringstream ss;
+  ss << (*reg);
+  if (sym.type() == SymBool::Type::VAR) {
+    const SymBoolVar* const var = static_cast<const SymBoolVar* const>(sym.ptr);
+    if (var->get_name() == ss.str()) return false;
+  }
+  return true;
 }
 
 int main(int argc, char** argv) {
@@ -65,7 +87,7 @@ int main(int argc, char** argv) {
   Console::msg() << endl;
 
   ComboHandler ch;
-  SymState state("in");
+  SymState state("");
 
   // compute circuit
   size_t line = 0;
@@ -75,26 +97,51 @@ int main(int argc, char** argv) {
     line++;
   }
 
+  Console::msg() << "Circuits:" << endl;
+  Console::msg() << endl;
+
   // print symbolic state
+  bool printed = false;
   RegSet rs = (RegSet::all_gps() | RegSet::all_ymms()) +
     Constants::eflags_cf() + 
     Constants::eflags_sf() + 
     Constants::eflags_zf() + 
     Constants::eflags_of() + 
     Constants::eflags_pf();
+  if (only_live_out_arg.value()) {
+    rs &= target.live_outs();
+  }
   for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
-    cout << out_padded(gp_it, 7) << "= ";
-    cout << state.lookup(*gp_it) << endl;
+    auto val = state.lookup(*gp_it);
+    if (!show_unchanged_arg.value() && !has_changed(gp_it, val)) continue;
+    Console::msg() << out_padded(gp_it, 7) << "= ";
+    Console::msg() << val << endl;
+    printed = true;
   }
+  if (printed) cout << endl;
+  printed = false;
   for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
-    cout << out_padded(sse_it, 7) << "= ";
-    cout << state.lookup(*sse_it) << endl;
+    auto val = state.lookup(*sse_it);
+    if (!show_unchanged_arg.value() && !has_changed(sse_it, val)) continue;
+    Console::msg() << out_padded(sse_it, 7) << "= ";
+    Console::msg() << val << endl;
+    printed = true;
   }
+  if (printed) cout << endl;
+  printed = false;
   for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
-    cout << out_padded(flag_it, 7) << "= ";
-    SymBool flag = state[*flag_it];
-    cout << flag << endl;
+    SymBool val = state[*flag_it];
+    if (!show_unchanged_arg.value() && !has_changed(flag_it, val)) continue;
+    Console::msg() << out_padded(flag_it, 7) << "= ";
+    Console::msg() << val << endl;
+    printed = true;
   }
+  if (printed) cout << endl;
+  printed = false;
+
+  Console::msg() << "sigfpe  = " << state.sigfpe << endl;
+  Console::msg() << "sigbus  = " << state.sigbus << endl;
+  Console::msg() << "sigsegv = " << state.sigsegv << endl;
 
   return 0;
 }
