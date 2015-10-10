@@ -51,8 +51,10 @@ public:
   }
 
   /** Enumerate all paths through a CFG that don't pass through any basic block
-    more than 'max_loops' times. */
-  static std::vector<CfgPath> enumerate_paths(const Cfg& cfg, size_t max_loops);
+   * more than 'max_loops' times.  They will begin at 'start' and stop at 'end'.  
+   * 'nopass' (optionally) has a vector of blocks that may not be passed through. */
+
+  static std::vector<CfgPath> enumerate_paths(const Cfg& cfg, size_t max_loops, Cfg::id_type start = -1, Cfg::id_type end = -1, std::vector<Cfg::id_type>* nopass = NULL);
 
   /** Rewrite a CFG so that it always executes a particular path, replacing
     jumps with NOPs. */
@@ -75,12 +77,16 @@ private:
   Sandbox* sandbox_;
   CfgPath* current_path_;
 
+  static void cleanup_path(CfgPath& p);
+
   /** Used as a recursive call for enumerate_paths */
   static void enumerate_paths_helper(const Cfg& cfg,
                                      std::vector<Cfg::id_type> path_so_far,
+                                     Cfg::id_type end_block,
                                      size_t max_count,
                                      std::map<Cfg::id_type, size_t> counts,
-                                     std::vector<std::vector<Cfg::id_type>>& results);
+                                     std::vector<std::vector<Cfg::id_type>>& results,
+                                     std::vector<Cfg::id_type>*);
 
 };
 

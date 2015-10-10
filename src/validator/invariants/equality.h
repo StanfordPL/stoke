@@ -59,36 +59,36 @@ public:
   std::ostream& write(std::ostream& os) const {
     os << std::dec;
     bool not_first = false;
-    for(size_t i = 0; i < x64asm::r64s.size(); ++i) {
-      for(size_t j = 0; j < 2; ++j) {
+    for (size_t i = 0; i < x64asm::r64s.size(); ++i) {
+      for (size_t j = 0; j < 2; ++j) {
         x64asm::R reg = x64asm::r32s[i];
-        if(j)
+        if (j)
           reg = x64asm::r64s[i];
         //std::cout << "Looking for " << reg << std::endl;
-        if(target_multipliers_.count(reg)) {
+        if (target_multipliers_.count(reg)) {
           auto mult = target_multipliers_.at(reg);
           //std::cout << "  ... found it in target " << mult << std::endl;
-          if(mult != 0) {
-            if(not_first)
+          if (mult != 0) {
+            if (not_first)
               os << " + ";
             else
               not_first = true;
-            if(mult == 1) {
+            if (mult == 1) {
               os << reg;
             } else {
               os << mult << "*" << reg;
             }
           }
-        } 
-        if(rewrite_multipliers_.count(reg)) {
+        }
+        if (rewrite_multipliers_.count(reg)) {
           auto mult = rewrite_multipliers_.at(reg);
           //std::cout << "  ... found it in rewrite " << mult << std::endl;
-          if(mult != 0) {
-            if(not_first)
+          if (mult != 0) {
+            if (not_first)
               os << " + ";
             else
               not_first = true;
-            if(mult == 1) {
+            if (mult == 1) {
               os << reg << "'";
             } else {
               os << mult << "*" << reg << "'";
@@ -98,8 +98,8 @@ public:
       }
     }
 
-    if(!not_first) {
-      if(constant_ == 0)
+    if (!not_first) {
+      if (constant_ == 0)
         os << "true";
       else
         os << "false";
