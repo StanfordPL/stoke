@@ -1174,7 +1174,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     if (is_sat) {
       auto ceg = Validator::state_from_model(solver_, "_");
-      auto ceg2 = Validator::state_from_model(solver_, "_2_INIT");
+      //auto ceg2 = Validator::state_from_model(solver_, "_2_INIT");
       if (memories.first) {
         bool ok = am.build_testcase_memory(ceg, solver_,
                                            *static_cast<CellMemory*>(state_t.memory),
@@ -1182,7 +1182,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
                                            target, rewrite);
         if (ok) {
           counterexamples_.push_back(ceg);
-          counterexamples_.push_back(ceg2);
+          //counterexamples_.push_back(ceg2);
         } else {
           delete_memories(memory_list);
           //throw VALIDATOR_ERROR("Couldn't build counterexample!  This is a BOUNDED VALIDATOR BUG.");
@@ -1191,11 +1191,11 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
         }
       } else {
         counterexamples_.push_back(ceg);
-        counterexamples_.push_back(ceg2);
+        //counterexamples_.push_back(ceg2);
       }
       BOUNDED_DEBUG(cout << "  (Got counterexample)" << endl;)
       BOUNDED_DEBUG(cout << ceg << endl;)
-      BOUNDED_DEBUG(cout << ceg2 << endl;)
+      //BOUNDED_DEBUG(cout << ceg2 << endl;)
 
       delete_memories(memory_list);
       stop_mm();

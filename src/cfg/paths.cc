@@ -23,10 +23,10 @@ using namespace x64asm;
 
 vector<vector<Cfg::id_type>> CfgPaths::enumerate_paths(const Cfg& cfg, size_t max_len, Cfg::id_type start, Cfg::id_type end, std::vector<Cfg::id_type>* nopass) {
 
-  if(start == (Cfg::id_type)-1)
+  if (start == (Cfg::id_type)-1)
     start = cfg.get_entry();
 
-  if(end == (Cfg::id_type)-1)
+  if (end == (Cfg::id_type)-1)
     end = cfg.get_exit();
 
   vector<vector<Cfg::id_type>> results;
@@ -86,7 +86,7 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
     results.push_back(path_so_far);
   }
 
-  if(nopass && path_so_far.size() > 1 && find(nopass->begin(), nopass->end(), last_block) != nopass->end()) {
+  if (nopass && path_so_far.size() > 1 && find(nopass->begin(), nopass->end(), last_block) != nopass->end()) {
     return;
   }
 

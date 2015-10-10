@@ -51,7 +51,7 @@ public:
   }
 
   /** Enumerate all paths through a CFG that don't pass through any basic block
-   * more than 'max_loops' times.  They will begin at 'start' and stop at 'end'.  
+   * more than 'max_loops' times.  They will begin at 'start' and stop at 'end'.
    * 'nopass' (optionally) has a vector of blocks that may not be passed through. */
 
   static std::vector<CfgPath> enumerate_paths(const Cfg& cfg, size_t max_loops, Cfg::id_type start = -1, Cfg::id_type end = -1, std::vector<Cfg::id_type>* nopass = NULL);
