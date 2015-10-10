@@ -1953,15 +1953,15 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
   // rax = rax'
-  std::map<x64asm::R, int> t1;
-  std::map<x64asm::R, int> r1;
+  std::map<x64asm::R, long> t1;
+  std::map<x64asm::R, long> r1;
   t1[x64asm::rax] = 1;
   r1[x64asm::rax] = -1;
   EqualityInvariant inv_rax(t1, r1, 0);
 
   // edi = edi'
-  std::map<x64asm::R, int> t2;
-  std::map<x64asm::R, int> r2;
+  std::map<x64asm::R, long> t2;
+  std::map<x64asm::R, long> r2;
   t2[x64asm::edi] = 1;
   r2[x64asm::edi] = -1;
   EqualityInvariant inv_rdi(t2, r2, 0);
@@ -1970,15 +1970,15 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
   TopZeroInvariant target_edi_0(x64asm::rdi, false);
 
   // esi = esi'
-  std::map<x64asm::R, int> t3;
-  std::map<x64asm::R, int> r3;
+  std::map<x64asm::R, long> t3;
+  std::map<x64asm::R, long> r3;
   t3[x64asm::esi] = 1;
   r3[x64asm::esi] = -1;
   EqualityInvariant inv_rsi(t3, r3, 0);
 
   // r15 = r15'
-  std::map<x64asm::R, int> t4;
-  std::map<x64asm::R, int> r4;
+  std::map<x64asm::R, long> t4;
+  std::map<x64asm::R, long> r4;
   t4[x64asm::r15] = 1;
   r4[x64asm::r15] = -1;
   EqualityInvariant inv_r15(t4, r4, 0);

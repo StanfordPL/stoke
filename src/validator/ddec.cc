@@ -49,8 +49,8 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
     cout << *inv << endl;
   }
 
-  for(size_t i = 0; i < target_cuts_.size(); ++i) {
-    for(size_t j = 0; j < rewrite_cuts_.size(); ++j) {
+  for (size_t i = 0; i < target_cuts_.size(); ++i) {
+    for (size_t j = 0; j < rewrite_cuts_.size(); ++j) {
       // For each pair of cutpoints i, j, we need to do the following four checks:
       // 1. Paths_T(i, j) finite, Paths_R(i,j) finite
       // 2. Paths_T(i, j) empty => Q \in Paths_R(i, j) never taken
@@ -68,18 +68,18 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
       auto rewrite_paths_ij_more = CfgPaths::enumerate_paths(rewrite, 2, rewrite_cuts_[i], rewrite_cuts_[j], &rewrite_cuts_);
 
       cout << "i=" << i << ", j=" << j << " " << target_paths_ij.size() << " / " << target_paths_ij_more.size() << endl;
-      if(target_paths_ij.size() != target_paths_ij_more.size()) {
+      if (target_paths_ij.size() != target_paths_ij_more.size()) {
         cout << "Infinitely many paths found between target cutpoints " << i << " and " << j << endl;
         //return false;
       }
       cout << "i=" << i << ", j=" << j << " " << rewrite_paths_ij.size() << " / " << rewrite_paths_ij_more.size() << endl;
-      if(rewrite_paths_ij.size() != rewrite_paths_ij_more.size()) {
+      if (rewrite_paths_ij.size() != rewrite_paths_ij_more.size()) {
         cout << "Infinitely many paths found between rewrite cutpoints " << i << " and " << j << endl;
         //return false;
       }
 
       // 2. Paths_T(i, j) empty => Q \in Paths_R(i, j) never taken
-      for(auto q : rewrite_paths_ij) {
+      for (auto q : rewrite_paths_ij) {
         vector<Cfg::id_type> empty_path;
       }
 
