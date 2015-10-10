@@ -188,35 +188,36 @@ public:
 
   /** Visit a bit-vector function */
   void visit(const SymBitVectorFunction * const bv) {
-    os_ << bv->f_.name << "(";
-
-    for (size_t i = 0; i < bv->args_.size(); ++i) {
-      (*this)(bv->args_[i]);
-      if (i != bv->args_.size() - 1)
-        os_ << ", ";
-    }
-
-    os_ << ")";
+    function(level_, bv, bv->f_.name, bv->args_);
     reset();
   }
 
   /** Visit a bit-vector if-then-else */
   void visit(const SymBitVectorIte * const bv) {
-    os_ << "(if ";
-    (*this)(bv->cond_);
-    os_ << " then ";
-    (*this)(bv->a_);
-    os_ << " else ";
-    (*this)(bv->b_);
-    os_ << ")";
+
+    int l = get_level(bv);
+    if (level_ <= l) {
+      parens(l, bv);
+    } else {
+      pretty(l, bv->cond_);
+      os_ << " ? ";
+      pretty(l, bv->a_);
+      os_ << " : ";
+      pretty(l, bv->b_);
+    }
     reset();
   }
 
   /** Visit a bit-vector sign-extend */
   void visit(const SymBitVectorSignExtend * const bv) {
-    os_ << "(sign-extend-" << bv->size_ << " ";
-    (*this)(bv->bv_);
-    os_ << ")";
+    int l = get_level(bv);
+    if (level_ < l) {
+      parens(l, bv);
+    } else {
+      os_ << "sign-extend-" << bv->size_ << "(";
+      pretty(SYMSTATE_PRETTY_MAX_LEVEL, bv->bv_);
+      os_ << ")";
+    }
     reset();
   }
 
@@ -291,7 +292,7 @@ private:
   }
 
   template <typename T, typename S>
-  void function(int level, T e, std::string name, std::vector<S> args) {
+  void function(int level, T e, std::string name, const std::vector<S>& args) {
     int l = get_level(e);
     if (level < l) {
       parens(l, e);
