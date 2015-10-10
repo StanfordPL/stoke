@@ -30,6 +30,7 @@ then
 	echo "  testcase            generate a STOKE testcase file"
 	echo ""
 	echo "  debug cfg           generate the control flow graph for a function"
+	echo "  debug circuit       show the SMT formula (circuit) for a straight-line piece of code"
 	echo "  debug cost          evaluate a function using a STOKE cost function"
 	echo "  debug diff          diff the resulting state of two functions"
 	echo "  debug effect        show the effect of a function on the state"
@@ -53,6 +54,9 @@ then
 	if [ "$SCMD" == "cfg" ]
 	then
 		exec $HERE/stoke_debug_cfg "$@"
+	elif [ "$SCMD" == "circuit" ]
+	then
+		exec $HERE/stoke_debug_circuit "$@"
 	elif [ "$SCMD" == "cost" ]
 	then
 		exec $HERE/stoke_debug_cost "$@"
