@@ -45,12 +45,12 @@ public:
   }
 
   /** Get cutpoint locations. */
-  std::vector<size_t> target_cutpoint_indexes() {
-    return target_cutpoint_indexes_;
+  std::vector<Cfg::id_type> target_cutpoint_locations() {
+    return target_cutpoints_;
   }
   /** Get cutpoint locations. */
-  std::vector<size_t> rewrite_cutpoint_indexes() {
-    return rewrite_cutpoint_indexes_;
+  std::vector<Cfg::id_type> rewrite_cutpoint_locations() {
+    return rewrite_cutpoints_;
   }
 
 
@@ -88,11 +88,6 @@ private:
   std::map<size_t, std::vector<CpuState>> target_cutpoint_data;
   /** Data collected from rewrite cutpoints. */
   std::map<size_t, std::vector<CpuState>> rewrite_cutpoint_data;
-
-  /** Target cutpoint indexes. */
-  std::vector<size_t> target_cutpoint_indexes_;
-  /** Rewrite cutpoint indexes. */
-  std::vector<size_t> rewrite_cutpoint_indexes_;
 
   /** Does a given basic block end in a jump? */
   bool ends_with_jump(const Cfg& cfg, Cfg::id_type block);

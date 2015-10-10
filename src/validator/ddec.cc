@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/cfg/paths.h"
 #include "src/validator/ddec.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
@@ -28,22 +29,62 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
   cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
 
-  auto target_cuts_ = cutpoints_->target_count();
-  auto rewrite_cuts_ = cutpoints_->rewrite_count();
+  auto target_cuts_ = cutpoints_->target_cutpoint_locations();
+  auto rewrite_cuts_ = cutpoints_->rewrite_cutpoint_locations();
 
-  for(size_t i = 0; i < target_cuts_; ++i) {
+  for (size_t i = 0; i < target_cuts_.size(); ++i) {
     auto data = cutpoints_->data_at(i, false);
     std::cout << "Target cutpoint " << i << " has " << data.size() << " states." << std::endl;
   }
-  for(size_t i = 0; i < rewrite_cuts_; ++i) {
+  for (size_t i = 0; i < rewrite_cuts_.size(); ++i) {
     auto data = cutpoints_->data_at(i, true);
     std::cout << "Rewrite cutpoint " << i << " has " << data.size() << " states." << std::endl;
   }
 
-  for(size_t i = 0; i < target_cuts_; ++i) {
+  vector<Invariant*> invariants_;
+  for (size_t i = 0; i < target_cuts_.size(); ++i) {
     auto inv = learn_invariant(cutpoints_->data_at(i, false), cutpoints_->data_at(i, true));
+    invariants_.push_back(inv);
     cout << "Learned invariant @ i=" << i << endl;
     cout << *inv << endl;
+  }
+
+  for(size_t i = 0; i < target_cuts_.size(); ++i) {
+    for(size_t j = 0; j < rewrite_cuts_.size(); ++j) {
+      // For each pair of cutpoints i, j, we need to do the following four checks:
+      // 1. Paths_T(i, j) finite, Paths_R(i,j) finite
+      // 2. Paths_T(i, j) empty => Q \in Paths_R(i, j) never taken
+      // 3. Paths_R(i, j) empty => P \in Paths_T(i, j) never taken
+      // 4. P \in Paths_T(i, j), Q \in Paths_R(i, j) =>
+      //    inv(i) { P ; Q } inv(j)
+      // 5. P \in Paths_T(i, j), Q \in Paths_R(i, k) =>
+      //    inv(i) { P ; Q } false
+
+      auto target_paths_ij = CfgPaths::enumerate_paths(target, 1, target_cuts_[i], target_cuts_[j], &target_cuts_);
+      auto rewrite_paths_ij = CfgPaths::enumerate_paths(rewrite, 1, rewrite_cuts_[i], rewrite_cuts_[j], &rewrite_cuts_);
+
+      // 1. Paths_T(i, j) finite, Paths_R(i,j) finite
+      auto target_paths_ij_more = CfgPaths::enumerate_paths(target, 2, target_cuts_[i], target_cuts_[j], &target_cuts_);
+      auto rewrite_paths_ij_more = CfgPaths::enumerate_paths(rewrite, 2, rewrite_cuts_[i], rewrite_cuts_[j], &rewrite_cuts_);
+
+      cout << "i=" << i << ", j=" << j << " " << target_paths_ij.size() << " / " << target_paths_ij_more.size() << endl;
+      if(target_paths_ij.size() != target_paths_ij_more.size()) {
+        cout << "Infinitely many paths found between target cutpoints " << i << " and " << j << endl;
+        //return false;
+      }
+      cout << "i=" << i << ", j=" << j << " " << rewrite_paths_ij.size() << " / " << rewrite_paths_ij_more.size() << endl;
+      if(rewrite_paths_ij.size() != rewrite_paths_ij_more.size()) {
+        cout << "Infinitely many paths found between rewrite cutpoints " << i << " and " << j << endl;
+        //return false;
+      }
+
+      // 2. Paths_T(i, j) empty => Q \in Paths_R(i, j) never taken
+      for(auto q : rewrite_paths_ij) {
+        vector<Cfg::id_type> empty_path;
+      }
+
+
+    }
   }
 
   return false;
@@ -63,19 +104,19 @@ Invariant* DdecValidator::learn_invariant(std::vector<CpuState> target_states, s
   ConjunctionInvariant* conj = new ConjunctionInvariant();
 
   // TopZero invariants
-  for(size_t k = 0; k < 2; ++k) {
+  for (size_t k = 0; k < 2; ++k) {
     auto& states = k ? rewrite_states : target_states;
 
-    for(size_t i = 0; i < r64s.size(); ++i) {
+    for (size_t i = 0; i < r64s.size(); ++i) {
       bool all_zero = true;
-      for(auto state : states) {
-        if(state.gp[i].get_fixed_double(1) != 0) {
+      for (auto state : states) {
+        if (state.gp[i].get_fixed_double(1) != 0) {
           all_zero = false;
           break;
         }
       }
 
-      if(all_zero) {
+      if (all_zero) {
         auto tzi = new TopZeroInvariant(r64s[i], k);
         conj->add_invariant(tzi);
       }
@@ -94,7 +135,7 @@ Invariant* DdecValidator::learn_invariant(std::vector<CpuState> target_states, s
   }
   */
   vector<R> v = {esi, edi, rax, r15};
-  for(auto r : v) {
+  for (auto r : v) {
     columns.push_back(pair<R,bool>(r, false));
     columns.push_back(pair<R,bool>(r, true));
   }
@@ -104,18 +145,18 @@ Invariant* DdecValidator::learn_invariant(std::vector<CpuState> target_states, s
 
   // Build the nullspace matrix
   long matrix[tc_count*num_columns];
-  for(size_t i = 0; i < tc_count; ++i) {
+  for (size_t i = 0; i < tc_count; ++i) {
     auto target_state = target_states[i];
     auto rewrite_state = rewrite_states[i];
-    for(size_t j = 0; j < columns.size(); ++j) {
+    for (size_t j = 0; j < columns.size(); ++j) {
       auto column = columns[j];
       auto reg = column.first;
       auto is_rewrite = column.second;
       long value;
-      if(is_rewrite) {
-        value = rewrite_state[reg]; 
+      if (is_rewrite) {
+        value = rewrite_state[reg];
       } else {
-        value = target_state[reg]; 
+        value = target_state[reg];
       }
       matrix[i*num_columns + j] = value;
     }
@@ -135,34 +176,34 @@ Invariant* DdecValidator::learn_invariant(std::vector<CpuState> target_states, s
   size_t dim = nullspaceLong(tc_count, num_columns, matrix, &mp_result);
 
   // For each row of the nullspace, find the gcd and divide by it.
-  for(size_t i = 0; i < dim; ++i) {
+  for (size_t i = 0; i < dim; ++i) {
     mpz_t gcd;
     mpz_init_set(gcd, mp_result[0*dim+i]);
-    for(size_t j = 1; j < num_columns; ++j) {
+    for (size_t j = 1; j < num_columns; ++j) {
       mpz_gcd(gcd, gcd, mp_result[j*dim+i]);
     }
 
     mpz_t val;
     mpz_init(val);
-    for(size_t j = 0; j < num_columns; ++j) {
+    for (size_t j = 0; j < num_columns; ++j) {
       mpz_divexact(val, mp_result[j*dim+i], gcd);
       mpz_set(mp_result[j*dim+i], val);
     }
   }
 
   // Extract the data from the nullspace
-  for(size_t i = 0; i < dim; ++i) {
+  for (size_t i = 0; i < dim; ++i) {
     bool ok = true;
     map<R, long> target_map;
     map<R, long> rewrite_map;
-    for(size_t j = 0; j < num_columns - 1; ++j) {
+    for (size_t j = 0; j < num_columns - 1; ++j) {
       auto column = columns[j];
-      if(!mpz_fits_slong_p(mp_result[j*dim + i])) {
+      if (!mpz_fits_slong_p(mp_result[j*dim + i])) {
         ok = false;
         break;
       }
 
-      if(column.second) {
+      if (column.second) {
         //cout << "rewrite " << column.first << endl;
         rewrite_map[column.first] = mpz_get_si(mp_result[j*dim + i]);
         //cout << "  " << rewrite_map[column.first] << endl;
@@ -178,7 +219,7 @@ Invariant* DdecValidator::learn_invariant(std::vector<CpuState> target_states, s
     //gmp_fprintf(stdout , "  %Zd\n", mp_result[(num_columns-1)*dim + i]);
     //cout << endl;
 
-    if(ok) {
+    if (ok) {
       EqualityInvariant ei(target_map, rewrite_map, -mpz_get_si(mp_result[(num_columns-1)*dim + i]));
       cout << ei << endl;
     } else {

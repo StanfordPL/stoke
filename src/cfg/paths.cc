@@ -21,18 +21,23 @@ using namespace x64asm;
 
 //#define DEBUG_PATH_ENUM 1
 
+vector<vector<Cfg::id_type>> CfgPaths::enumerate_paths(const Cfg& cfg, size_t max_len, Cfg::id_type start, Cfg::id_type end, std::vector<Cfg::id_type>* nopass) {
 
-vector<vector<Cfg::id_type>> CfgPaths::enumerate_paths(const Cfg& cfg, size_t max_len) {
+  if(start == (Cfg::id_type)-1)
+    start = cfg.get_entry();
+
+  if(end == (Cfg::id_type)-1)
+    end = cfg.get_exit();
 
   vector<vector<Cfg::id_type>> results;
 
   vector<Cfg::id_type> path_so_far;
-  path_so_far.push_back(cfg.get_entry());
+  path_so_far.push_back(start);
 
   std::map<Cfg::id_type, size_t> node_counts;
 
   if (max_len > 0)
-    enumerate_paths_helper(cfg, path_so_far, max_len, node_counts, results);
+    enumerate_paths_helper(cfg, path_so_far, end, max_len, node_counts, results, nopass);
 
   // Remove all blocks with zero instructions
   for (auto& path : results) {
@@ -50,9 +55,11 @@ vector<vector<Cfg::id_type>> CfgPaths::enumerate_paths(const Cfg& cfg, size_t ma
 
 void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
                                       std::vector<Cfg::id_type> path_so_far,
+                                      Cfg::id_type end_block,
                                       size_t max_count,
                                       std::map<Cfg::id_type, size_t> counts,
-                                      std::vector<std::vector<Cfg::id_type>>& results) {
+                                      std::vector<std::vector<Cfg::id_type>>& results,
+                                      std::vector<Cfg::id_type>* nopass) {
 
   size_t len = path_so_far.size();
   Cfg::id_type last_block = path_so_far[len - 1];
@@ -69,7 +76,7 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
 #endif
 
   // check for end
-  if (last_block == cfg.get_exit()) {
+  if (last_block == end_block && path_so_far.size() > 1) {
 #ifdef DEBUG_PATH_ENUM
     for (size_t i = 0; i < len; ++i) {
       cout << "  ";
@@ -77,6 +84,10 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
     cout << "* Adding solution!" << endl;
 #endif
     results.push_back(path_so_far);
+  }
+
+  if(nopass && path_so_far.size() > 1 && find(nopass->begin(), nopass->end(), last_block) != nopass->end()) {
+    return;
   }
 
   // iterate
@@ -102,7 +113,7 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
 #endif
 
     path_so_far.push_back(*it);
-    enumerate_paths_helper(cfg, path_so_far, max_count, counts, results);
+    enumerate_paths_helper(cfg, path_so_far, end_block, max_count, counts, results, nopass);
     path_so_far.erase(path_so_far.begin() + path_so_far.size()-1);
     counts[*it]--;
   }

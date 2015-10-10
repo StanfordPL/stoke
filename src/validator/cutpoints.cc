@@ -41,35 +41,6 @@ void Cutpoints::compute() {
     cout << "Cutpoint " << rewrite_cutpoints_[i] << "; has jump? " << rewrite_cutpoint_ends_with_jump_[i] << endl;
   }
 
-  for (size_t k = 0; k < 2; ++k) {
-    bool is_rewrite = k;
-    auto& cfg = is_rewrite ? rewrite_ : target_;
-
-    // setup callbacks for each cutpoint
-    auto& cutpoint_list = is_rewrite ? rewrite_cutpoints_ : target_cutpoints_;
-    auto& jump_list = is_rewrite ? rewrite_cutpoint_ends_with_jump_ : target_cutpoint_ends_with_jump_;
-    auto& index_list = is_rewrite ? rewrite_cutpoint_indexes_ : target_cutpoint_indexes_;
-
-    index_list.clear();
-
-    for (size_t j = 0; j < cutpoint_list.size(); ++j) {
-      bool ends_with_jump = jump_list[j];
-      auto bb = cutpoint_list[j];
-
-      size_t index;
-      if (bb == cfg.get_entry()) {
-        index = 0;
-      } else if (ends_with_jump) {
-        index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
-      } else {
-        index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1)) + 1;
-      }
-      index_list.push_back(index);
-    }
-  }
-
-
-  
 
   bool okay = check();
   assert(okay);
@@ -133,17 +104,19 @@ bool Cutpoints::check() {
       auto& cfg = is_rewrite ? rewrite_ : target_;
       auto label = cfg.get_code()[0].get_operand<Label>(0);
 
+      auto& cutpoint_list = is_rewrite ? rewrite_cutpoints_ : target_cutpoints_;
+      auto& jump_list = is_rewrite ? rewrite_cutpoint_ends_with_jump_ : target_cutpoint_ends_with_jump_;
+
       sandbox_.insert_function(cfg);
       sandbox_.set_entrypoint(label);
       sandbox_.clear_callbacks();
 
       // setup callbacks for each cutpoint
-      auto& index_list = is_rewrite ? rewrite_cutpoint_indexes_ : target_cutpoint_indexes_;
-
       std::vector<CallbackParam*> to_free;
 
-      for (size_t j = 0; j < index_list.size(); ++j) {
-        auto index = index_list[i];
+      for (size_t j = 0; j < cutpoint_list.size(); ++j) {
+        bool ends_with_jump = cutpoint_list[j];
+        auto bb = cutpoint_list[j];
 
         CallbackParam* cp = new CallbackParam();
         cp->self = this;
@@ -151,7 +124,16 @@ bool Cutpoints::check() {
         cp->is_rewrite = is_rewrite;
         to_free.push_back(cp);
 
-        sandbox_.insert_before(label, index, callback, cp);
+        size_t index;
+        if (bb == cfg.get_entry()) {
+          sandbox_.insert_before(label, 0, callback, cp);
+        } else if (ends_with_jump) {
+          index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
+          sandbox_.insert_before(label, index, callback, cp);
+        } else {
+          index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
+          sandbox_.insert_after(label, index, callback, cp);
+        }
       }
 
       sandbox_.run(i);

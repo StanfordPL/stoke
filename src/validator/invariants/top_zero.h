@@ -39,7 +39,7 @@ public:
 
   std::ostream& write(std::ostream& os) const {
     os << reg_;
-    if(is_rewrite_)
+    if (is_rewrite_)
       os << "'";
     os << "[63][32] == 0";
     return os;
