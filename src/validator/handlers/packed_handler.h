@@ -134,6 +134,16 @@ public:
       return f(b);
     }, 32, 32, true);
 
+    add_opcode("cvtss2si", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer_Truncate", 32, {32});
+      return f(b);
+    }, 32, 32, true, true);
+
+    add_opcode("cvtsd2si", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer_Truncate", 64, {64});
+      return f(b);
+    }, 64, 64, true, true);
+
     add_opcode("divpd", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("div_double", 64, {64, 64});
       return f(a, b);
