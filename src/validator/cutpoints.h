@@ -28,12 +28,14 @@ class Cutpoints {
 public:
 
   /** Initiates computation of the cutpoints for target/rewrite. */
-  Cutpoints(const Cfg& target, const Cfg& rewrite, Sandbox& sandbox) : 
-    target_(target), rewrite_(rewrite), sandbox_(sandbox) { compute(); }
+  Cutpoints(const Cfg& target, const Cfg& rewrite, Sandbox& sandbox) :
+    target_(target), rewrite_(rewrite), sandbox_(sandbox) {
+    compute();
+  }
 
   /** Get testcases representing the data at a given cutpoint. */
   std::vector<CpuState> data_at(size_t i, bool is_rewrite) {
-    if(is_rewrite) {
+    if (is_rewrite) {
       assert(i < rewrite_count());
       return rewrite_cutpoint_data[i];
     } else {
@@ -42,10 +44,21 @@ public:
     }
   }
 
+  /** Get cutpoint locations. */
+  std::vector<size_t> target_cutpoint_indexes() {
+    return target_cutpoint_indexes_;
+  }
+  /** Get cutpoint locations. */
+  std::vector<size_t> rewrite_cutpoint_indexes() {
+    return rewrite_cutpoint_indexes_;
+  }
+
+
   /** Get the number of cutpoints found. */
   size_t target_count() {
     return target_cutpoints_.size();
   }
+  /** Get the number of cutpoints found. */
   size_t rewrite_count() {
     return rewrite_cutpoints_.size();
   }
@@ -76,6 +89,10 @@ private:
   /** Data collected from rewrite cutpoints. */
   std::map<size_t, std::vector<CpuState>> rewrite_cutpoint_data;
 
+  /** Target cutpoint indexes. */
+  std::vector<size_t> target_cutpoint_indexes_;
+  /** Rewrite cutpoint indexes. */
+  std::vector<size_t> rewrite_cutpoint_indexes_;
 
   /** Does a given basic block end in a jump? */
   bool ends_with_jump(const Cfg& cfg, Cfg::id_type block);

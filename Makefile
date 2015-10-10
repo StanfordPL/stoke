@@ -53,6 +53,7 @@ LIB=\
 	-lboost_regex\
 	-pthread\
 	-lcln \
+	-liml -lgmp \
 	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
 	-L src/ext/z3/build -lz3
 
@@ -117,6 +118,7 @@ SRC_OBJ=\
 	src/validator/cutpoints.o \
 	src/validator/ddec.o \
 	src/validator/handler.o \
+	src/validator/invariant.o \
 	src/validator/straight_line.o \
 	src/validator/validator.o \
 	\

@@ -30,6 +30,12 @@ public:
   SymBool operator()(const SymState& left, const SymState& right) const {
   }
 
+  std::ostream& write(std::ostream& os) const {
+    return os;
+  }
+
+
+
 private:
 
 };
