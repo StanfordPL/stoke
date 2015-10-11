@@ -43,6 +43,23 @@ auto& show_unchanged = FlagArg::create("show_unchanged")
 auto& show_all_registers = FlagArg::create("diff_all_registers")
                            .description("Show changes in all registers, not just the ones from live_out and def_in");
 
+auto& machine_output_arg = ValueArg<string>::create("machine_output")
+                           .usage("<path/to/file.s>")
+                           .description("Machine-readable output (result and counterexample)");
+
+
+void print_machine_output(bool verified, string error, string counterexample, bool has_counterexample) {
+  ofstream f;
+  f.open(machine_output_arg.value());
+  f << "{" << endl;
+  f << "  \"verified\": " << (verified ? "true" : "false") << "," << endl;
+  f << "  \"counter_examples_available\": " << (has_counterexample ? "true" : "false") << "," << endl;
+  f << "  \"counterexample\": \"" << counterexample << "\"," << endl;
+  f << "  \"error\": \"" << error << "\"" << endl;
+  f << "}" << endl;
+  f.close();
+}
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
@@ -83,6 +100,7 @@ int main(int argc, char** argv) {
   if (verifier.has_error()) {
     Console::msg() << "Encountered error: " << endl;
     Console::msg() << verifier.error() << endl;
+    print_machine_output(false, verifier.error(), "", false);
     return 1;
   }
 
@@ -117,6 +135,23 @@ int main(int argc, char** argv) {
     Console::msg() << endl;
   } else if (!res) {
     Console::msg() << endl << "No counterexample available." << endl;
+  }
+
+  // output machine-readable result
+  if (machine_output_arg.has_been_provided()) {
+    auto cpustate_to_string = [](CpuState cs) {
+      stringstream ss;
+      ss << cs;
+      auto res = regex_replace(ss.str(), regex("\n"), "\\n");
+      return res;
+    };
+
+    string counterexample = "";
+    if (verifier.counter_examples_available()) {
+      counterexample = cpustate_to_string(verifier.get_counter_examples()[0]);
+    }
+
+    print_machine_output(res, "", counterexample, verifier.counter_examples_available());
   }
 
   return 0;
