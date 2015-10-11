@@ -33,6 +33,23 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+struct CodeReader {
+  void operator()(std::istream& is, Code& t) {
+    is >> t;
+  }
+};
+
+struct CodeWriter {
+  void operator()(std::ostream& os, const Code& t) {
+    os << t;
+  }
+};
+
+auto& input_header = Heading::create("More Input Formats:");
+
+auto& code_arg = ValueArg<Code, CodeReader, CodeWriter>::create("code")
+                       .description("Input code directly");
+
 auto& dbg = Heading::create("Circuit Printing Options:");
 auto& only_live_out_arg = FlagArg::create("only_live_outs")
                           .description("Only show live out registers");
@@ -75,17 +92,32 @@ bool has_changed(T reg, SymBool& sym) {
 }
 
 int main(int argc, char** argv) {
+
+  // not actually required here
+  target_arg.required(false);
+  
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
 
+  if (!code_arg.has_been_provided() && !target_arg.has_been_provided()) {
+    Console::error() << "Either --code or --target required." << endl;
+  }
+
+  if (code_arg.has_been_provided() && target_arg.has_been_provided()) {
+    Console::error() << "At most one of --code and --target can be provided." << endl;
+  }
+
   FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns, false);
-  auto code = target.get_code();
+  Code code = target.get_code();
+  if (code_arg.has_been_provided()) {
+    code = code_arg.value();
+  }
 
   Console::msg() << "Target" << endl;
   Console::msg() << endl;
-  Console::msg() << target_arg.value().get_code() << endl;
+  Console::msg() << code << endl;
   Console::msg() << endl;
 
   ComboHandler ch;
