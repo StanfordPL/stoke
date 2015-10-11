@@ -36,8 +36,8 @@ public:
     build_from_cpustate(cs);
   }
   /** Builds a symbolic CPU state with variable name suffix */
-  SymState(const std::string& suffix) : gp(16, 64), sse(16, 256), memory(NULL), delete_memory_(false) {
-    build_with_suffix(suffix);
+  SymState(const std::string& suffix, bool no_suffix = false) : gp(16, 64), sse(16, 256), memory(NULL), delete_memory_(false) {
+    build_with_suffix(suffix, no_suffix);
   }
 
   ~SymState() {
@@ -133,7 +133,7 @@ private:
   /** Builds a symbolic CPU state from a concerete one */
   void build_from_cpustate(const CpuState& cs);
   /** Builds a symbolic CPU state with variables */
-  void build_with_suffix(const std::string& str);
+  void build_with_suffix(const std::string& str, bool no_suffix);
 
   /** Do we need to delete the SymMemory we allocated earlier? */
   bool delete_memory_;
