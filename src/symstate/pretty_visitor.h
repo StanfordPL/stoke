@@ -370,30 +370,54 @@ private:
   }
   int get_level(const SymBitVectorAbstract * const bv) {
     switch (bv->type()) {
-    case SymBitVector::CONSTANT: return 0;
-    case SymBitVector::VAR: return 0;
-    case SymBitVector::FUNCTION: return 10;
-    case SymBitVector::SIGN_EXTEND: return 10;
-    case SymBitVector::EXTRACT: return 20;
-    case SymBitVector::NOT: return 30;
-    case SymBitVector::U_MINUS: return 30;
-    case SymBitVector::DIV: return 40;
-    case SymBitVector::MOD: return 40;
-    case SymBitVector::MULT: return 40;
-    case SymBitVector::SIGN_DIV: return 40;
-    case SymBitVector::SIGN_MOD: return 40;
-    case SymBitVector::MINUS: return 50;
-    case SymBitVector::PLUS: return 50;
-    case SymBitVector::ROTATE_LEFT: return 60;
-    case SymBitVector::ROTATE_RIGHT: return 60;
-    case SymBitVector::SHIFT_RIGHT: return 60;
-    case SymBitVector::SHIFT_LEFT: return 60;
-    case SymBitVector::SIGN_SHIFT_RIGHT: return 60;
-    case SymBitVector::AND: return 90;
-    case SymBitVector::XOR: return 100;
-    case SymBitVector::OR: return 110;
-    case SymBitVector::CONCAT: return 35; // 140
-    case SymBitVector::ITE: return 150;
+    case SymBitVector::CONSTANT:
+      return 0;
+    case SymBitVector::VAR:
+      return 0;
+    case SymBitVector::FUNCTION:
+      return 10;
+    case SymBitVector::SIGN_EXTEND:
+      return 10;
+    case SymBitVector::EXTRACT:
+      return 20;
+    case SymBitVector::NOT:
+      return 30;
+    case SymBitVector::U_MINUS:
+      return 30;
+    case SymBitVector::DIV:
+      return 40;
+    case SymBitVector::MOD:
+      return 40;
+    case SymBitVector::MULT:
+      return 40;
+    case SymBitVector::SIGN_DIV:
+      return 40;
+    case SymBitVector::SIGN_MOD:
+      return 40;
+    case SymBitVector::MINUS:
+      return 50;
+    case SymBitVector::PLUS:
+      return 50;
+    case SymBitVector::ROTATE_LEFT:
+      return 60;
+    case SymBitVector::ROTATE_RIGHT:
+      return 60;
+    case SymBitVector::SHIFT_RIGHT:
+      return 60;
+    case SymBitVector::SHIFT_LEFT:
+      return 60;
+    case SymBitVector::SIGN_SHIFT_RIGHT:
+      return 60;
+    case SymBitVector::AND:
+      return 90;
+    case SymBitVector::XOR:
+      return 100;
+    case SymBitVector::OR:
+      return 110;
+    case SymBitVector::CONCAT:
+      return 35; // 140
+    case SymBitVector::ITE:
+      return 150;
     default:
       std::cerr << "Unexpected bitvector type " << bv->type()
                 << " in " << __FILE__ << ":" << __LINE__ << std::endl;
@@ -407,24 +431,42 @@ private:
   }
   int get_level(const SymBoolAbstract * const b) {
     switch (b->type()) {
-    case SymBool::FALSE: return 0;
-    case SymBool::TRUE: return 0;
-    case SymBool::VAR: return 0;
-    case SymBool::NOT: return 30;
-    case SymBool::GE: return 70;
-    case SymBool::GT: return 70;
-    case SymBool::LE: return 70;
-    case SymBool::LT: return 70;
-    case SymBool::SIGN_GE: return 70;
-    case SymBool::SIGN_GT: return 70;
-    case SymBool::SIGN_LE: return 70;
-    case SymBool::SIGN_LT: return 70;
-    case SymBool::EQ: return 80;
-    case SymBool::AND: return 90;
-    case SymBool::XOR: return 100;
-    case SymBool::OR: return 110;
-    case SymBool::IMPLIES: return 120;
-    case SymBool::IFF: return 130;
+    case SymBool::FALSE:
+      return 0;
+    case SymBool::TRUE:
+      return 0;
+    case SymBool::VAR:
+      return 0;
+    case SymBool::NOT:
+      return 30;
+    case SymBool::GE:
+      return 70;
+    case SymBool::GT:
+      return 70;
+    case SymBool::LE:
+      return 70;
+    case SymBool::LT:
+      return 70;
+    case SymBool::SIGN_GE:
+      return 70;
+    case SymBool::SIGN_GT:
+      return 70;
+    case SymBool::SIGN_LE:
+      return 70;
+    case SymBool::SIGN_LT:
+      return 70;
+    case SymBool::EQ:
+      return 80;
+    case SymBool::AND:
+      return 90;
+    case SymBool::XOR:
+      return 100;
+    case SymBool::OR:
+      return 110;
+    case SymBool::IMPLIES:
+      return 120;
+    case SymBool::IFF:
+      return 130;
     default:
       std::cerr << "Unexpected bool type " << b->type()
                 << " in " << __FILE__ << ":" << __LINE__ << std::endl;

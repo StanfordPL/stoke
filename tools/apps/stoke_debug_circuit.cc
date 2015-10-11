@@ -35,11 +35,11 @@ using namespace x64asm;
 
 auto& dbg = Heading::create("Circuit Printing Options:");
 auto& only_live_out_arg = FlagArg::create("only_live_outs")
-                       .description("Only show live out registers");
+                          .description("Only show live out registers");
 auto& show_unchanged_arg = FlagArg::create("show_unchanged")
-                       .description("Show the formula for unchanged registers");
+                           .description("Show the formula for unchanged registers");
 auto& use_smtlib_format_arg = FlagArg::create("smtlib_format")
-                       .description("Show circuits in smtlib format");
+                              .description("Show circuits in smtlib format");
 
 template <typename T>
 string out_padded(T t, size_t min_length, char pad = ' ') {
@@ -133,11 +133,11 @@ int main(int argc, char** argv) {
   // print symbolic state
   bool printed = false;
   RegSet rs = (RegSet::all_gps() | RegSet::all_ymms()) +
-    Constants::eflags_cf() + 
-    Constants::eflags_sf() + 
-    Constants::eflags_zf() + 
-    Constants::eflags_of() + 
-    Constants::eflags_pf();
+              Constants::eflags_cf() +
+              Constants::eflags_sf() +
+              Constants::eflags_zf() +
+              Constants::eflags_of() +
+              Constants::eflags_pf();
   if (only_live_out_arg.value()) {
     rs &= target.live_outs();
   }
