@@ -656,6 +656,7 @@ std::ostream& operator<< (std::ostream& out, const stoke::SymBitVector& bv);
 /* We need to include these to make sure templates instantiate, but not
    before SymBitVector is declared! */
 #include "src/symstate/print_visitor.h"
+#include "src/symstate/pretty_visitor.h"
 #include "src/symstate/typecheck_visitor.h"
 
 #endif
