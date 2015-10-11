@@ -45,7 +45,6 @@ public:
     std::vector<Verifier*> verifiers;
     std::vector<std::string> splits = split(strategy_arg.value(), std::regex("[ ,+]"));
     for (auto it : splits) {
-      std::cout << test_set_arg.value().size() << std::endl;
       if (it == "hold_out" && (test_set_arg.value().size() == 0 || testcases_arg.value().size() == 0)) {
         cpputil::Console::error() << "No test-cases given for hold_out verification." << std::endl;
       }
