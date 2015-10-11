@@ -59,6 +59,7 @@ void Validator::setup_support_table() {
     for (size_t i = 0; i < arity; ++i) {
       auto type = instr.type(i);
       switch (type) {
+      case Type::LABEL:
       case Type::IMM_8:
       case Type::IMM_16:
       case Type::IMM_32:

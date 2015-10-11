@@ -105,7 +105,7 @@ void StraightLineValidator::build_circuit(const Instruction& instr, SymState& st
     return;
 
   /* For now, we don't handle any control flow */
-  if (instr.is_any_jump() || instr.is_any_call() || instr.is_any_return()) {
+  if ((instr.is_any_jump() || instr.is_any_call() || instr.is_any_return()) && instr.get_opcode() != Opcode::CALL_LABEL) {
     stringstream ss;
     ss << "Control flow unsupported: " << instr;
     throw VALIDATOR_ERROR(ss.str());
