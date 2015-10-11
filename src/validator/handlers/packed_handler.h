@@ -85,7 +85,7 @@ public:
     }, 32, 64, true);
 
     add_opcode("cvtdq2ps", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Integer_To_Single_Precision_Floating_Point", 32, {32});
+      SymFunction f("Convert_Integer32_To_Single_Precision_Floating_Point", 32, {32});
       return f(b);
     }, 32, 32, true);
 
@@ -105,7 +105,7 @@ public:
     }, 32, 64, true);
 
     add_opcode("cvtpi2ps", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Integer_To_Single_Precision_Floating_Point", 32, {32});
+      SymFunction f("Convert_Integer32_To_Single_Precision_Floating_Point", 32, {32});
       return f(b);
     }, 32, 32, true);
 
@@ -194,7 +194,7 @@ public:
       return f(b);
     }, 32, 32, true);
 
-    add_opcode("cvttsd2si", [] (SymBitVector a, SymBitVector b) {
+    add_opcode("cvttsd2sil", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("Convert_Double_Precision_Floating_Point_To_Integer32_Truncate", 32, {64});
         return f(b);
     }, 64, 32, true, true);
@@ -204,7 +204,7 @@ public:
       return f(b);
     }, 64, 64, true, true);
 
-    add_opcode("cvttss2si", [] (SymBitVector a, SymBitVector b) {
+    add_opcode("cvttss2sil", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer32_Truncate", 32, {32});
         return f(b);
     }, 32, 32, true, true);
