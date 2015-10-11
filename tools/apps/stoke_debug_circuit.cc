@@ -89,9 +89,11 @@ int main(int argc, char** argv) {
   Console::msg() << endl;
 
   ComboHandler ch;
-  SymState state("");
+  SymState state("", true);
 
   // TODO: doesn't handle memory
+
+  // TODO test validator support
 
   // compute circuit
   size_t line = 0;
@@ -99,6 +101,10 @@ int main(int argc, char** argv) {
     state.set_lineno(line);
     ch.build_circuit(it, state);
     line++;
+  }
+
+  if (ch.has_error()) {
+    Console::error() << "Symbolic execution failed: " << ch.error() << endl;
   }
 
   Console::msg() << "Circuits:" << endl;
@@ -129,7 +135,7 @@ int main(int argc, char** argv) {
   for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
     auto val = state.lookup(*gp_it);
     if (!show_unchanged_arg.value() && !has_changed(gp_it, val)) continue;
-    Console::msg() << out_padded(gp_it, 7) << "= ";
+    Console::msg() << out_padded(gp_it, 7) << ": ";
     print(val);
     Console::msg() << endl;
     printed = true;
@@ -139,7 +145,7 @@ int main(int argc, char** argv) {
   for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
     auto val = state.lookup(*sse_it);
     if (!show_unchanged_arg.value() && !has_changed(sse_it, val)) continue;
-    Console::msg() << out_padded(sse_it, 7) << "= ";
+    Console::msg() << out_padded(sse_it, 7) << ": ";
     print(val);
     Console::msg() << endl;
     printed = true;
@@ -149,7 +155,7 @@ int main(int argc, char** argv) {
   for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
     SymBool val = state[*flag_it];
     if (!show_unchanged_arg.value() && !has_changed(flag_it, val)) continue;
-    Console::msg() << out_padded(flag_it, 7) << "= ";
+    Console::msg() << out_padded(flag_it, 7) << ": ";
     print(val);
     Console::msg() << endl;
     printed = true;
@@ -157,13 +163,13 @@ int main(int argc, char** argv) {
   if (printed) cout << endl;
   printed = false;
 
-  Console::msg() << "sigfpe  = ";
+  Console::msg() << "sigfpe  : ";
   print(state.sigfpe);
   Console::msg() << endl;
-  Console::msg() << "sigbus  = ";
+  Console::msg() << "sigbus  : ";
   print(state.sigbus);
   Console::msg() << endl;
-  Console::msg() << "sigsegv = ";
+  Console::msg() << "sigsegv : ";
   print(state.sigsegv);
   Console::msg() << endl;
 

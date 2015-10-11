@@ -53,12 +53,12 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   sigsegv = SymBool::_false();
 }
 
-void SymState::build_with_suffix(const string& suffix) {
+void SymState::build_with_suffix(const string& suffix, bool no_suffix) {
 
   for (size_t i = 0; i < gp.size(); ++i) {
     stringstream name;
     name << r64s[i];
-    if (suffix != "") {
+    if (!no_suffix) {
       name << "_" << suffix;
     }
     gp[i] = SymBitVector::var(64, name.str());
@@ -67,22 +67,22 @@ void SymState::build_with_suffix(const string& suffix) {
   for (size_t i = 0; i < sse.size(); ++i) {
     stringstream name;
     name << ymms[i];
-    if (suffix != "") {
+    if (!no_suffix) {
       name << "_" << suffix;
     }
     sse[i] = SymBitVector::var(256, name.str());
   }
 
-  set(eflags_cf, SymBool::var("%cf" + (suffix == "" ? "" : "_" + suffix)));
-  set(eflags_pf, SymBool::var("%pf" + (suffix == "" ? "" : "_" + suffix)));
-  set(eflags_af, SymBool::var("%af" + (suffix == "" ? "" : "_" + suffix)));
-  set(eflags_zf, SymBool::var("%zf" + (suffix == "" ? "" : "_" + suffix)));
-  set(eflags_sf, SymBool::var("%sf" + (suffix == "" ? "" : "_" + suffix)));
-  set(eflags_of, SymBool::var("%of" + (suffix == "" ? "" : "_" + suffix)));
+  set(eflags_cf, SymBool::var("%cf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_pf, SymBool::var("%pf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_af, SymBool::var("%af" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_zf, SymBool::var("%zf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_sf, SymBool::var("%sf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_of, SymBool::var("%of" + (no_suffix ? "" : "_" + suffix)));
 
-  sigbus = SymBool::var("sigbus" + (suffix == "" ? "" : "_" + suffix));
-  sigfpe = SymBool::var("sigfpe" + (suffix == "" ? "" : "_" + suffix));
-  sigsegv = SymBool::var("sigsegv" + (suffix == "" ? "" : "_" + suffix));
+  sigbus = SymBool::var("sigbus" + (no_suffix ? "" : "_" + suffix));
+  sigfpe = SymBool::var("sigfpe" + (no_suffix ? "" : "_" + suffix));
+  sigsegv = SymBool::var("sigsegv" + (no_suffix ? "" : "_" + suffix));
 }
 
 SymBool SymState::operator[](const Eflags f) const {
