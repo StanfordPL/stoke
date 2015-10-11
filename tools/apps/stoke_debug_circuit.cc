@@ -93,11 +93,20 @@ int main(int argc, char** argv) {
 
   // TODO: doesn't handle memory
 
-  // TODO test validator support
+  // test validator support
+  for (auto it : code) {
+    if (it.get_opcode() == Opcode::LABEL_DEFN) continue;
+    if (it.get_opcode() == Opcode::RET) break; // only go until first break
+    if (ch.get_support(it) == Handler::SupportLevel::NONE) {
+      Console::error() << "Instruction unsupported: " << it << endl;
+    }
+  }
 
   // compute circuit
   size_t line = 0;
   for (auto it : code) {
+    if (it.get_opcode() == Opcode::LABEL_DEFN) continue;
+    if (it.get_opcode() == Opcode::RET) break;
     state.set_lineno(line);
     ch.build_circuit(it, state);
     line++;
