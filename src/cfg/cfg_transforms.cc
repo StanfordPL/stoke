@@ -152,35 +152,25 @@ Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_
   for (auto rit = diff.gp_begin(); rit != diff.gp_end(); ++rit) {
     auto reg = *rit;
     auto type = reg.type();
-    if (type == Type::R_64 || type == Type::RAX) {
-      cfg.get_function().push_back(Instruction(XOR_R64_R64, {reg, reg}));
-    } else if (type == Type::R_32 || type == Type::EAX) {
-      cfg.get_function().push_back(Instruction(XOR_R32_R32, {reg, reg}));
-    } else if (type == Type::R_16 || type == Type::AX || type == Type::DX) {
-      cfg.get_function().push_back(Instruction(XOR_R16_R16, {reg, reg}));
-    } else if (type == Type::R_8 || type == Type::AL || type == Type::CL) {
-      cfg.get_function().push_back(Instruction(XOR_R8_R8, {reg, reg}));
-    } else if (type == Type::RH) {
-      cfg.get_function().push_back(Instruction(XOR_RH_RH, {reg, reg}));
+    if (type == Type::RH) {
+      auto correct_reg = Constants::r8s()[reg-4];
+      cfg.get_function().push_back(Instruction(MOV_R64_IMM64, {correct_reg, Imm64(0)}));
+    } else {
+      cfg.get_function().push_back(Instruction(MOV_R64_IMM64, {reg, Imm64(0)}));
     }
   }
 
   // initialize sse registers
   for (auto rit = diff.sse_begin(); rit != diff.sse_end(); ++rit) {
-    auto reg = *rit;
-    auto type = reg.type();
-    if (type == Type::XMM || type == Type::XMM_0) {
-      cfg.get_function().push_back(Instruction(PXOR_XMM_XMM, {reg, reg}));
-    } else if (type == Type::YMM) {
-      cfg.get_function().push_back(Instruction(VPXOR_YMM_YMM_YMM, {reg, reg, reg}));
-    }
+    cfg.get_function().push_back(Instruction(VZEROALL, {}));
+    break;
   }
 
   // initialize mm registers
-  for (auto rit = diff.mm_begin(); rit != diff.mm_end(); ++rit) {
-    auto reg = *rit;
-    cfg.get_function().push_back(Instruction(PXOR_MM_MM, {reg, reg}));
-  }
+  // for (auto rit = diff.mm_begin(); rit != diff.mm_end(); ++rit) {
+  //   auto reg = *rit;
+  //   cfg.get_function().push_back(Instruction(PXOR_MM_MM, {reg, reg}));
+  // }
 
   // flags
   auto regular = false;
@@ -193,8 +183,8 @@ Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_
          reg == Constants::eflags_cf() ||
          reg == Constants::eflags_pf()) && !regular) {
       regular = true;
-      cfg.get_function().push_back(Instruction(XOR_R32_R32, {Constants::rax(), Constants::rax()}));
-      cfg.get_function().push_back(Instruction(ADD_R32_IMM32, {Constants::rax(), Imm32(0)}));
+      cfg.get_function().push_back(Instruction(XOR_R8_R8, {Constants::al(), Constants::al()}));
+      cfg.get_function().push_back(Instruction(ADC_R8_R8, {Constants::al(), Constants::al()}));
     }
   }
 
