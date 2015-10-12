@@ -48,7 +48,7 @@ struct CodeWriter {
 auto& input_header = Heading::create("More Input Formats:");
 
 auto& code_arg = ValueArg<Code, CodeReader, CodeWriter>::create("code")
-                       .description("Input code directly");
+                 .description("Input code directly");
 
 auto& dbg = Heading::create("Circuit Printing Options:");
 auto& only_live_out_arg = FlagArg::create("only_live_outs")
@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
 
   // not actually required here
   target_arg.required(false);
-  
+
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
   DebugHandler::install_sigill();
