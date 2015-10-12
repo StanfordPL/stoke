@@ -1186,8 +1186,9 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   has_error_ = false;
   init_mm();
 
-  auto target = inline_functions(init_target);
-  auto rewrite = inline_functions(init_rewrite);
+  // no inlining for denali
+  auto target = init_target; //inline_functions(init_target);
+  auto rewrite = init_rewrite; //inline_functions(init_rewrite);
   am.set_sandbox(sandbox_);
 
   try {
