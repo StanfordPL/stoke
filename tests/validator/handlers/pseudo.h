@@ -24,7 +24,7 @@
 
 namespace stoke {
 
-class ValidatorPseudoTest : public ValidatorTest {};
+class ValidatorPseudoTest : public StraightLineValidatorTest {};
 
 
 TEST_F(ValidatorPseudoTest, Move_128) {
