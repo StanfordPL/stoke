@@ -199,7 +199,7 @@ Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSe
         }
         // get rh register that corresponds to r
         auto rh = Constants::rhs()[*r_r];
-        is_same = false;
+        is_same = rh == r_t;
         val_r = r[rh];
       } else {
         // r is an rh register, but t is not, so no match
