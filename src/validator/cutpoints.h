@@ -30,6 +30,7 @@ public:
   /** Initiates computation of the cutpoints for target/rewrite. */
   Cutpoints(const Cfg& target, const Cfg& rewrite, Sandbox& sandbox) :
     target_(target), rewrite_(rewrite), sandbox_(sandbox) {
+    error_ = "";
     compute();
   }
 
@@ -61,6 +62,13 @@ public:
   /** Get the number of cutpoints found. */
   size_t rewrite_count() {
     return rewrite_cutpoints_.size();
+  }
+
+  bool has_error() {
+    return error_ != "";
+  }
+  std::string get_error() {
+    return error_;
   }
 
 private:
@@ -97,6 +105,9 @@ private:
 
   /** Check if the current set of cutpoints is okay. */
   bool check();
+
+  /** Have we encountered an error? */
+  std::string error_;
 
   ////////////////////////////// CALLBACKS //////////////////////////////////
 
