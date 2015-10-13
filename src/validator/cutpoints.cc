@@ -28,7 +28,7 @@ void Cutpoints::compute() {
     }
   }
 
-  for(size_t i = 0; i < rewrite_.num_blocks(); ++i) {
+  for (size_t i = 0; i < rewrite_.num_blocks(); ++i) {
     if (rewrite_.is_reachable(i) && !rewrite_.is_exit(i)) {
       rewrite_cutpoints_.push_back(i);
       rewrite_cutpoint_ends_with_jump_.push_back(ends_with_jump(rewrite_, i));
@@ -53,7 +53,7 @@ void Cutpoints::compute() {
 
 bool Cutpoints::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {
   size_t instrs = cfg.num_instrs(block);
-  if(instrs == 0)
+  if (instrs == 0)
     return false;
 
   auto loc = Cfg::loc_type(block, instrs-1);

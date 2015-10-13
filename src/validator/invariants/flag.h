@@ -15,6 +15,8 @@
 #ifndef STOKE_SRC_VALIDATOR_INVARIANT_FLAG_H
 #define STOKE_SRC_VALIDATOR_INVARIANT_FLAG_H
 
+#include "src/validator/handler.h"
+#include "src/validator/handlers/conditional_handler.h"
 #include "src/validator/invariant.h"
 
 
@@ -25,10 +27,40 @@ class FlagInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  FlagInvariant(RFlags f1, RFlags f2, bool is_rewrite1, bool is_rewrite2) : reg_(reg) {
+  FlagInvariant(const x64asm::Instruction& instr, bool is_rewrite, bool fallthrough) {
+    fallthrough_ = fallthrough;
+    is_rewrite_ = is_rewrite_;
+
+    if(instr.is_jump()) {
+      // we always jump (never fallthrough)
+      predicate_ == "";
+      fallthrough_ = !fallthrough_;
+    } else if (instr.is_jcc()) {
+      // we sometimes jump
+      std::string opcode = Handler::get_opcode(instr);
+      predicate_ = opcode.substr(3, opcode.size() - 3);
+    } else {
+      // we never jump (always fallthrough)
+      predicate_ == "";
+    }
   }
 
   SymBool operator()(const SymState& left, const SymState& right) const {
+    if(predicate_ == "") {
+      // fallthrough is aways taken
+      if(fallthrough_)
+        return SymBool::_true();
+      else {
+        assert(false);  // I don't think this case should happen irl -- BRC
+        return SymBool::_false();
+      }
+    }
+
+    auto& state = is_rewrite_ ? right : left;
+    auto pred = ConditionalHandler::condition_predicate(predicate_, state);
+    if(fallthrough_)
+      pred = !pred;
+    return pred;
   }
 
   std::ostream& write(std::ostream& os) const {
@@ -36,6 +68,10 @@ public:
   }
 
 private:
+
+  std::string predicate_;
+  bool fallthrough_;
+  bool is_rewrite_;
 
 };
 

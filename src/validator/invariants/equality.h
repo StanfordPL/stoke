@@ -35,11 +35,11 @@ public:
       x64asm::R reg = x64asm::r64s[i];
 
       if (target_multipliers_.count(reg)) {
-        if(target_multipliers_.at(reg))
+        if (target_multipliers_.at(reg))
           sum = sum + SymBitVector::constant(64, target_multipliers_.at(reg))*left.gp[reg];
       }
       if (rewrite_multipliers_.count(reg)) {
-        if(rewrite_multipliers_.at(reg))
+        if (rewrite_multipliers_.at(reg))
           sum = sum + SymBitVector::constant(64, rewrite_multipliers_.at(reg))*right.gp[reg];
       }
     }
@@ -48,11 +48,11 @@ public:
       x64asm::R reg = x64asm::r32s[i];
 
       if (target_multipliers_.count(reg)) {
-        if(target_multipliers_.at(reg))
+        if (target_multipliers_.at(reg))
           sum = sum + SymBitVector::constant(64, target_multipliers_.at(reg))*(SymBitVector::constant(32, 0) || left.gp[reg][31][0]);
       }
       if (rewrite_multipliers_.count(reg)) {
-        if(rewrite_multipliers_.at(reg))
+        if (rewrite_multipliers_.at(reg))
           sum = sum + SymBitVector::constant(64, rewrite_multipliers_.at(reg))*(SymBitVector::constant(32, 0) || right.gp[reg][31][0]);
       }
     }
@@ -67,11 +67,11 @@ public:
       x64asm::R reg = x64asm::r64s[i];
 
       if (target_multipliers_.count(reg)) {
-        if(target_multipliers_.at(reg))
+        if (target_multipliers_.at(reg))
           sum = sum + target_multipliers_.at(reg)*zero_extend(target, reg);
       }
       if (rewrite_multipliers_.count(reg)) {
-        if(rewrite_multipliers_.at(reg))
+        if (rewrite_multipliers_.at(reg))
           sum = sum + rewrite_multipliers_.at(reg)*zero_extend(rewrite, reg);
       }
     }
@@ -80,11 +80,11 @@ public:
       x64asm::R reg = x64asm::r32s[i];
 
       if (target_multipliers_.count(reg)) {
-        if(target_multipliers_.at(reg))
+        if (target_multipliers_.at(reg))
           sum = sum + target_multipliers_.at(reg)*zero_extend(target, reg);
       }
       if (rewrite_multipliers_.count(reg)) {
-        if(rewrite_multipliers_.at(reg))
+        if (rewrite_multipliers_.at(reg))
           sum = sum + rewrite_multipliers_.at(reg)*zero_extend(rewrite, reg);
       }
     }
@@ -154,7 +154,7 @@ private:
     size_t width = r.size();
     std::cout << "SIGN EXTENDING " << std::dec << "width=" << width
               << " r=" << r << " " << std::hex << value << std::endl;
-    if(width == 64)
+    if (width == 64)
       return value;
 
     uint64_t value_mask = ((uint64_t)1 << width) - 1;
@@ -162,7 +162,7 @@ private:
     std::cout << "MASK=" << value_mask << " VALUE=" << value << std::endl;
 
     uint64_t sign_mask = ((uint64_t)1 << width);
-    if(value & sign_mask) {
+    if (value & sign_mask) {
       uint64_t ones = (uint64_t)(-1);
       ones = ones << width;
       std::cout << (value | ones) << std::endl;
@@ -177,7 +177,7 @@ private:
   static uint64_t zero_extend(const CpuState& cs, x64asm::R& r) {
     uint64_t value = cs.gp[r].get_fixed_quad(0);
     size_t width = r.size();
-    if(width == 64)
+    if (width == 64)
       return value;
 
     uint64_t value_mask = ((uint64_t)1 << width) - 1;

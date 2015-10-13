@@ -53,8 +53,8 @@ public:
   }
 
   bool check (const CpuState& target, const CpuState& rewrite) const {
-    for(auto it : invariants_) {
-      if(!it->check(target, rewrite))
+    for (auto it : invariants_) {
+      if (!it->check(target, rewrite))
         return false;
     }
     return true;
