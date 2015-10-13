@@ -47,7 +47,7 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
 
   cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
-  if(cutpoints_->has_error()) {
+  if (cutpoints_->has_error()) {
     return false;
   }
 
@@ -117,13 +117,13 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
           for(size_t k = 0; k < end_inv->size(); ++k) {
             auto my_inv = (*end_inv)[k];
             cout << endl << endl << "WORKING ON " << *my_inv << endl << endl;
-            bool ok = bv.verify_pair(target, rewrite, p, q, *invariants_[i], *my_inv, false, false);
+            bool ok = bv.verify_pair(target, rewrite, p, q, *invariants_[i], *my_inv);
             if(!ok)
               return false;
           }
           */
           cout << endl << endl << "WORKING ON " << *end_inv << endl << endl;
-          bool ok = bv.verify_pair(target, rewrite, p, q, *invariants_[i], *end_inv, false, false);
+          bool ok = bv.verify_pair(target, rewrite, p, q, *invariants_[i], *end_inv);
           if (!ok)
             return false;
 
@@ -154,7 +154,7 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
             cout << "Checking " << copy << " { " << BoundedValidator::print(p)
                  << " ; " << BoundedValidator::print(q) << " } false " << endl;
             FalseInvariant fi;
-            bool ok = bv.verify_pair(target, rewrite, p, q, copy, fi, false, false);
+            bool ok = bv.verify_pair(target, rewrite, p, q, copy, fi);
             if (!ok)
               return false;
           }

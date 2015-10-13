@@ -19,6 +19,7 @@
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/no_signals.h"
+#include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/top_zero.h"
 #include "src/validator/invariants/true.h"
 
@@ -1995,6 +1996,17 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
   inv_all.add_invariant(&target_edi_0);
   inv_all.add_invariant(&no_signals);
 
+  StateEqualityInvariant start_same(def_ins);
+  StateEqualityInvariant exit_same(live_outs);
+
+  ConjunctionInvariant inv_entry;
+  inv_entry.add_invariant(&no_signals);
+  inv_entry.add_invariant(&start_same);
+
+  ConjunctionInvariant inv_exit;
+  inv_exit.add_invariant(&no_signals);
+  inv_exit.add_invariant(&exit_same);
+
   auto path = CfgPaths::enumerate_paths(target, 1)[0];
 
   std::vector<Cfg::id_type> top_segment;
@@ -2008,9 +2020,9 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
   end_segment.push_back(path[2]);
 
   validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
-  ASSERT_TRUE(validator->verify_pair(target, rewrite, top_segment, top_segment, no_signals, inv_all, true, false));
-  ASSERT_TRUE(validator->verify_pair(target, rewrite, middle_segment, middle_segment, inv_all, inv_all, false, false));
-  ASSERT_TRUE(validator->verify_pair(target, rewrite, end_segment, end_segment, inv_all, TrueInvariant(), false, true));
+  ASSERT_TRUE(validator->verify_pair(target, rewrite, top_segment, top_segment, inv_entry, inv_all));
+  ASSERT_TRUE(validator->verify_pair(target, rewrite, middle_segment, middle_segment, inv_all, inv_all));
+  ASSERT_TRUE(validator->verify_pair(target, rewrite, end_segment, end_segment, inv_all, inv_exit));
 
   for (auto it : validator->get_counter_examples()) {
     std::cout << it << std::endl;

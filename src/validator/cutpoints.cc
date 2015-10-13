@@ -45,7 +45,7 @@ void Cutpoints::compute() {
 
 
   bool okay = check();
-  if(!okay) {
+  if (!okay) {
     error_ = "Could not compute cutpoints";
   }
 
