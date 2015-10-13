@@ -182,7 +182,7 @@ Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSe
       uint64_t val_r;
       bool is_same = false;
       auto is_r_rh = (*r_r).type() == Type::RH;
-      if (!(is_t_rh && is_r_rh)) {
+      if (!is_t_rh && !is_r_rh) {
         // normal case, we are looking at two non-rh registers
         val_r = r.read_gp(*r_r, size, 0);
         is_same = ((uint64_t)r_t) == ((uint64_t)*r_r);
@@ -199,7 +199,7 @@ Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSe
         }
         // get rh register that corresponds to r
         auto rh = Constants::rhs()[*r_r];
-        is_same = false;
+        is_same = rh == r_t;
         val_r = r[rh];
       } else {
         // r is an rh register, but t is not, so no match
