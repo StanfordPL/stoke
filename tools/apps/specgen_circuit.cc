@@ -70,13 +70,18 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
 
   auto opcode = instr.get_opcode();
 
+  // base instruction: use handwritten formula
   if (find(instr_cat_base_.begin(), instr_cat_base_.end(), opcode) != instr_cat_base_.end()) {
-    // base instruction, use handwritten formula
     ch.build_circuit(instr, start);
     if (ch.has_error()) {
       Console::error() << "Symbolic execution failed: " << ch.error() << endl;
     }
     return;
+  }
+
+  // unknown instruction
+  else {
+    Console::error() << "Unknown instruction '" << instr << "'." << endl;
   }
 }
 
