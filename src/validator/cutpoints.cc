@@ -45,7 +45,9 @@ void Cutpoints::compute() {
 
 
   bool okay = check();
-  assert(okay);
+  if(!okay) {
+    error_ = "Could not compute cutpoints";
+  }
 
   cout << "Cutpoints worked? " << okay << endl;
 

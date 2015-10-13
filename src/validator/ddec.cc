@@ -47,6 +47,9 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
 
   cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
+  if(cutpoints_->has_error()) {
+    return false;
+  }
 
   auto target_cuts_ = cutpoints_->target_cutpoint_locations();
   auto rewrite_cuts_ = cutpoints_->rewrite_cutpoint_locations();
@@ -77,36 +80,36 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
       // 3. P \in Paths_T(i, j), Q \in Paths_R(i, k) =>
       //    inv(i) { P ; Q } false
 
-      auto target_paths_ij = 
+      auto target_paths_ij =
         CfgPaths::enumerate_paths(target, 1, target_cuts_[i], target_cuts_[j], &target_cuts_);
-      auto rewrite_paths_ij = 
+      auto rewrite_paths_ij =
         CfgPaths::enumerate_paths(rewrite, 1, rewrite_cuts_[i], rewrite_cuts_[j], &rewrite_cuts_);
 
       // 1. Paths_T(i, j) finite, Paths_R(i,j) finite
-      auto target_paths_ij_more = 
+      auto target_paths_ij_more =
         CfgPaths::enumerate_paths(target, 2, target_cuts_[i], target_cuts_[j], &target_cuts_);
-      auto rewrite_paths_ij_more = 
+      auto rewrite_paths_ij_more =
         CfgPaths::enumerate_paths(rewrite, 2, rewrite_cuts_[i], rewrite_cuts_[j], &rewrite_cuts_);
 
-      cout << "i=" << i << ", j=" << j 
+      cout << "i=" << i << ", j=" << j
            << " " << target_paths_ij.size() << " / " << target_paths_ij_more.size() << endl;
       if (target_paths_ij.size() != target_paths_ij_more.size()) {
         cout << "Infinitely many paths found between target cutpoints " << i << " and " << j << endl;
         //return false;
       }
-      cout << "i=" << i << ", j=" << j 
+      cout << "i=" << i << ", j=" << j
            << " " << rewrite_paths_ij.size() << " / " << rewrite_paths_ij_more.size() << endl;
       if (rewrite_paths_ij.size() != rewrite_paths_ij_more.size()) {
         cout << "Infinitely many paths found between rewrite cutpoints " << i << " and " << j << endl;
         //return false;
       }
 
-      // 2. P in Paths_T(i, j), Q in Paths_R(i, j) => inv(i) { P; Q } inv(j) 
+      // 2. P in Paths_T(i, j), Q in Paths_R(i, j) => inv(i) { P; Q } inv(j)
       for (auto p : target_paths_ij) {
         p.erase(p.begin());
         for (auto q : rewrite_paths_ij) {
           q.erase(q.begin());
-          cout << "Checking " << (*invariants_[i]) << " { " << BoundedValidator::print(p) 
+          cout << "Checking " << (*invariants_[i]) << " { " << BoundedValidator::print(p)
                << " ; " << BoundedValidator::print(q) << " } " << (*invariants_[j]) << endl;
 
           auto end_inv = static_cast<ConjunctionInvariant*>(invariants_[j]);
@@ -121,38 +124,38 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
           */
           cout << endl << endl << "WORKING ON " << *end_inv << endl << endl;
           bool ok = bv.verify_pair(target, rewrite, p, q, *invariants_[i], *end_inv, false, false);
-          if(!ok)
+          if (!ok)
             return false;
 
         }
       }
 
       // 3. P \in Paths_T(i, j), Q \in Paths_R(i, k) => inv(i) { P ; Q } false
-      for(size_t k = 0; k < rewrite_cuts_.size(); ++k) {
-        if(j == k)
+      for (size_t k = 0; k < rewrite_cuts_.size(); ++k) {
+        if (j == k)
           continue;
 
-        auto rewrite_paths_ik = 
+        auto rewrite_paths_ik =
           CfgPaths::enumerate_paths(target, 1, rewrite_cuts_[i], rewrite_cuts_[k], &target_cuts_);
 
-        for(auto p : target_paths_ij) {
-          auto target_jump_inv = get_jump_inv(target, p, false);         
+        for (auto p : target_paths_ij) {
+          auto target_jump_inv = get_jump_inv(target, p, false);
           p.erase(p.begin());
 
 
-          for(auto q : rewrite_paths_ik) {
-            auto rewrite_jump_inv = get_jump_inv(rewrite, p, true);         
+          for (auto q : rewrite_paths_ik) {
+            auto rewrite_jump_inv = get_jump_inv(rewrite, p, true);
             q.erase(q.begin());
 
             auto copy = *static_cast<ConjunctionInvariant*>(invariants_[i]);
             copy.add_invariant(target_jump_inv);
             copy.add_invariant(rewrite_jump_inv);
 
-            cout << "Checking " << copy << " { " << BoundedValidator::print(p) 
+            cout << "Checking " << copy << " { " << BoundedValidator::print(p)
                  << " ; " << BoundedValidator::print(q) << " } false " << endl;
             FalseInvariant fi;
             bool ok = bv.verify_pair(target, rewrite, p, q, copy, fi, false, false);
-            if(!ok)
+            if (!ok)
               return false;
           }
         }
@@ -164,7 +167,7 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
 }
 
- 
+
 
 long mpz_to_long(mpz_t z)
 {
@@ -193,7 +196,7 @@ Invariant* DdecValidator::learn_invariant(std::vector<CpuState> target_states, s
 
       if (all_zero) {
         auto tzi = new TopZeroInvariant(r64s[i], k);
-        if(tzi->check(target_states, rewrite_states)) {
+        if (tzi->check(target_states, rewrite_states)) {
           conj->add_invariant(tzi);
         } else {
           cout << "GOT BAD INVARIANT " << *tzi << endl;
@@ -223,12 +226,12 @@ Invariant* DdecValidator::learn_invariant(std::vector<CpuState> target_states, s
   */
   vector<R> v = {esi, edi, rax, r15};
   for (auto r : v) {
-    for(size_t k = 0; k < 2; ++k) {
+    for (size_t k = 0; k < 2; ++k) {
       Column c;
       c.reg = r;
       c.is_rewrite = k;
       //if(r.width() == 64) {
-        columns.push_back(c);
+      columns.push_back(c);
       /*} else {
         c.zero_extend = true;
         columns.push_back(c);
@@ -319,7 +322,7 @@ Invariant* DdecValidator::learn_invariant(std::vector<CpuState> target_states, s
 
     if (ok) {
       auto ei = new EqualityInvariant(target_map, rewrite_map, -mpz_get_si(mp_result[(num_columns-1)*dim + i]));
-      if(ei->check(target_states, rewrite_states)) {
+      if (ei->check(target_states, rewrite_states)) {
         conj->add_invariant(ei);
         cout << *ei << endl;
       } else {

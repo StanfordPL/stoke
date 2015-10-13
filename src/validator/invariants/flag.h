@@ -31,7 +31,7 @@ public:
     fallthrough_ = fallthrough;
     is_rewrite_ = is_rewrite_;
 
-    if(instr.is_jump()) {
+    if (instr.is_jump()) {
       // we always jump (never fallthrough)
       predicate_ == "";
       fallthrough_ = !fallthrough_;
@@ -46,9 +46,9 @@ public:
   }
 
   SymBool operator()(const SymState& left, const SymState& right) const {
-    if(predicate_ == "") {
+    if (predicate_ == "") {
       // fallthrough is aways taken
-      if(fallthrough_)
+      if (fallthrough_)
         return SymBool::_true();
       else {
         assert(false);  // I don't think this case should happen irl -- BRC
@@ -58,7 +58,7 @@ public:
 
     auto& state = is_rewrite_ ? right : left;
     auto pred = ConditionalHandler::condition_predicate(predicate_, state);
-    if(fallthrough_)
+    if (fallthrough_)
       pred = !pred;
     return pred;
   }
