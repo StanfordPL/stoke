@@ -19,6 +19,7 @@
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/false.h"
 #include "src/validator/invariants/flag.h"
+#include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/top_zero.h"
 
 #include "gmp.h"
@@ -65,10 +66,17 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
   vector<Invariant*> invariants_;
   for (size_t i = 0; i < target_cuts_.size(); ++i) {
-    auto inv = learn_invariant(cutpoints_->data_at(i, false), cutpoints_->data_at(i, true));
-    invariants_.push_back(inv);
-    cout << "Learned invariant @ i=" << i << endl;
-    cout << *inv << endl;
+
+    if(i == 0) {
+      // Entry
+      auto inv = new StateEqualityInvariant(target.def_ins());
+      invariants_.push_back(inv);
+    } else {
+      auto inv = learn_invariant(cutpoints_->data_at(i, false), cutpoints_->data_at(i, true));
+      invariants_.push_back(inv);
+      cout << "Learned invariant @ i=" << i << endl;
+      cout << *inv << endl;
+    }
   }
 
   for (size_t i = 0; i < target_cuts_.size(); ++i) {
@@ -104,11 +112,16 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
         //return false;
       }
 
+      cout << "cutpoint blocks: " << target_cuts_[i] << "  (and)  " << rewrite_cuts_[j] << endl;
+
       // 2. P in Paths_T(i, j), Q in Paths_R(i, j) => inv(i) { P; Q } inv(j)
       for (auto p : target_paths_ij) {
-        p.erase(p.begin());
+        if(target.num_instrs(target_cuts_[i]))
+          p.erase(p.begin());
+
         for (auto q : rewrite_paths_ij) {
-          q.erase(q.begin());
+          if(rewrite.num_instrs(rewrite_cuts_[i]))
+            q.erase(q.begin());
           cout << "Checking " << (*invariants_[i]) << " { " << BoundedValidator::print(p)
                << " ; " << BoundedValidator::print(q) << " } " << (*invariants_[j]) << endl;
 
@@ -140,12 +153,14 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
         for (auto p : target_paths_ij) {
           auto target_jump_inv = get_jump_inv(target, p, false);
-          p.erase(p.begin());
+          if(target.num_instrs(target_cuts_[i]))
+            p.erase(p.begin());
 
 
           for (auto q : rewrite_paths_ik) {
             auto rewrite_jump_inv = get_jump_inv(rewrite, p, true);
-            q.erase(q.begin());
+            if(rewrite.num_instrs(rewrite_cuts_[i]))
+              q.erase(q.begin());
 
             auto copy = *static_cast<ConjunctionInvariant*>(invariants_[i]);
             copy.add_invariant(target_jump_inv);
