@@ -83,13 +83,16 @@ public:
     return counterexamples_;
   }
 
-private:
-
   enum JumpType {
     NONE, // jump target is the fallthrough
     FALL_THROUGH,
     JUMP
   };
+  /** Is there a jump in the path following this basic block? */
+  static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
+
+
+private:
 
   /** The bound on iterations */
   size_t bound_;
@@ -106,9 +109,6 @@ private:
                    const Invariant& assume, const Invariant& prove, bool assume_equality, bool prove_equality);
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
-  /** Is there a jump in the path following this basic block? */
-  static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
-
   /** For learning aliasing relationships */
   AliasMiner am;
 

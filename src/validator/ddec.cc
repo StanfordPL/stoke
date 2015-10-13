@@ -18,6 +18,7 @@
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/false.h"
+#include "src/validator/invariants/flag.h"
 #include "src/validator/invariants/top_zero.h"
 
 #include "gmp.h"
@@ -26,6 +27,19 @@
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
+
+/** Returns an invariant representing the fact that the first state transition in the path is taken. */
+Invariant* get_jump_inv(const Cfg& cfg, const CfgPath& p, bool is_rewrite) {
+  auto jump_type = BoundedValidator::is_jump(cfg, p, 0);
+  auto start_block = p[0];
+  auto start_bs = cfg.num_instrs(start_block);
+  assert(start_bs > 0);
+  auto jump_instr = cfg.get_code()[cfg.get_index(Cfg::loc_type(start_block, start_bs - 1))];
+  bool is_fallthrough = jump_type == BoundedValidator::JumpType::FALL_THROUGH ||
+                        jump_type == BoundedValidator::JumpType::NONE;
+  auto jump_inv = new FlagInvariant(jump_instr, is_rewrite, is_fallthrough);
+  return jump_inv;
+}
 
 bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
@@ -96,6 +110,7 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
                << " ; " << BoundedValidator::print(q) << " } " << (*invariants_[j]) << endl;
 
           auto end_inv = static_cast<ConjunctionInvariant*>(invariants_[j]);
+          /*
           for(size_t k = 0; k < end_inv->size(); ++k) {
             auto my_inv = (*end_inv)[k];
             cout << endl << endl << "WORKING ON " << *my_inv << endl << endl;
@@ -103,6 +118,12 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
             if(!ok)
               return false;
           }
+          */
+          cout << endl << endl << "WORKING ON " << *end_inv << endl << endl;
+          bool ok = bv.verify_pair(target, rewrite, p, q, *invariants_[i], *end_inv, false, false);
+          if(!ok)
+            return false;
+
         }
       }
 
@@ -115,13 +136,22 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
           CfgPaths::enumerate_paths(target, 1, rewrite_cuts_[i], rewrite_cuts_[k], &target_cuts_);
 
         for(auto p : target_paths_ij) {
+          auto target_jump_inv = get_jump_inv(target, p, false);         
           p.erase(p.begin());
+
+
           for(auto q : rewrite_paths_ik) {
+            auto rewrite_jump_inv = get_jump_inv(rewrite, p, true);         
             q.erase(q.begin());
-            cout << "Checking " << (*invariants_[i]) << " { " << BoundedValidator::print(p) 
+
+            auto copy = *static_cast<ConjunctionInvariant*>(invariants_[i]);
+            copy.add_invariant(target_jump_inv);
+            copy.add_invariant(rewrite_jump_inv);
+
+            cout << "Checking " << copy << " { " << BoundedValidator::print(p) 
                  << " ; " << BoundedValidator::print(q) << " } false " << endl;
             FalseInvariant fi;
-            bool ok = bv.verify_pair(target, rewrite, p, q, *invariants_[i], fi, false, false);
+            bool ok = bv.verify_pair(target, rewrite, p, q, copy, fi, false, false);
             if(!ok)
               return false;
           }
@@ -133,6 +163,8 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
   return true;
 
 }
+
+ 
 
 long mpz_to_long(mpz_t z)
 {

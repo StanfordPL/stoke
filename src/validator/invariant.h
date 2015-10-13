@@ -36,8 +36,8 @@ public:
 
   bool check(const std::vector<CpuState>& target_tcs, const std::vector<CpuState>& rewrite_tcs) const {
     assert(target_tcs.size() == rewrite_tcs.size());
-    for(size_t i = 0; i < target_tcs.size(); ++i) {
-      if(!check(target_tcs[i], rewrite_tcs[i]))
+    for (size_t i = 0; i < target_tcs.size(); ++i) {
+      if (!check(target_tcs[i], rewrite_tcs[i]))
         return false;
     }
     return true;
