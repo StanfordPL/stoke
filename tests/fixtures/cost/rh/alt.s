@@ -1,3 +1,4 @@
 .target:
-setz %ah
+xorb %ah, %ah
+setae %spl
 retq
