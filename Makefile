@@ -405,8 +405,7 @@ hooks: .git/hooks/pre-commit
 
 .git/hooks/pre-commit: scripts/git/pre-commit.sh src/ext/astyle
 	chmod +x "scripts/git/pre-commit.sh"
-	scripts/git/pre-commit.sh
-	#ln -sf $(shell pwd)/scripts/git/pre-commit.sh .git/hooks/pre-commit
+	ln -sf $(shell pwd)/scripts/git/pre-commit.sh .git/hooks/pre-commit
 
 ##### CLEAN TARGETS
 
