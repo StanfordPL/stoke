@@ -15,13 +15,14 @@
 #ifndef STOKE_SRC_VALIDATOR_INVARIANT_CONJUNCTION_H
 #define STOKE_SRC_VALIDATOR_INVARIANT_CONJUNCTION_H
 
-#include "src/symstate/state.h"
+#include "src/validator/invariant.h"
 
 namespace stoke {
 
 class ConjunctionInvariant : public Invariant {
 
 public:
+  using Invariant::check;
 
   ConjunctionInvariant() : invariants_() { }
 
@@ -40,6 +41,23 @@ public:
     }
 
     return b;
+  }
+
+  Invariant* operator[](size_t n) {
+    assert(n < invariants_.size());
+    return invariants_[n];
+  }
+
+  size_t size() {
+    return invariants_.size();
+  }
+
+  bool check (const CpuState& target, const CpuState& rewrite) const {
+    for(auto it : invariants_) {
+      if(!it->check(target, rewrite))
+        return false;
+    }
+    return true;
   }
 
   std::ostream& write(std::ostream& os) const {
