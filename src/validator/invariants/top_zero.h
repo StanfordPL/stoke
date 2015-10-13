@@ -15,14 +15,14 @@
 #ifndef STOKE_SRC_VALIDATOR_INVARIANT_TOPZERO_H
 #define STOKE_SRC_VALIDATOR_INVARIANT_TOPZERO_H
 
-#include "src/symstate/state.h"
-
+#include "src/validator/invariant.h"
 
 namespace stoke {
 
 class TopZeroInvariant : public Invariant {
 
 public:
+  using Invariant::check;
 
   TopZeroInvariant(const x64asm::R64& reg, bool is_rewrite) : reg_(reg) {
     is_rewrite_ = is_rewrite;
@@ -34,6 +34,14 @@ public:
       return right.gp[reg_][63][32] == SymBitVector::constant(32, 0);
     } else {
       return left.gp[reg_][63][32] == SymBitVector::constant(32, 0);
+    }
+  }
+
+  bool check(const CpuState& target, const CpuState& rewrite) const {
+    if (is_rewrite_) {
+      return rewrite.gp[reg_].get_fixed_double(1) == 0;
+    } else {
+      return target.gp[reg_].get_fixed_double(1) == 0;
     }
   }
 

@@ -12,39 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_SRC_VALIDATOR_INVARIANT_NOSIGNALS_H
-#define STOKE_SRC_VALIDATOR_INVARIANT_NOSIGNALS_H
+#ifndef STOKE_SRC_VALIDATOR_INVARIANT_FALSE_H
+#define STOKE_SRC_VALIDATOR_INVARIANT_FALSE_H
 
 #include "src/validator/invariant.h"
 
 
 namespace stoke {
 
-class NoSignalsInvariant : public Invariant {
+class FalseInvariant : public Invariant {
 
 public:
   using Invariant::check;
 
-  NoSignalsInvariant() {
-  }
+  FalseInvariant() {}
 
   SymBool operator()(const SymState& left, const SymState& right) const {
-
-    return (left.sigbus == SymBool::_false()) &
-           (left.sigfpe == SymBool::_false()) &
-           (left.sigsegv == SymBool::_false()) &
-           (right.sigbus == SymBool::_false()) &
-           (right.sigfpe == SymBool::_false()) &
-           (right.sigsegv == SymBool::_false());
+    return SymBool::_false();
   }
 
   std::ostream& write(std::ostream& os) const {
-    os << "no signals";
+    os << "false";
     return os;
   }
 
-
-private:
+  bool check(const CpuState& target, const CpuState& rewrite) const {
+    return true;
+  }
 
 };
 

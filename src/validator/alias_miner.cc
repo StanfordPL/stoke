@@ -217,6 +217,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   sandbox_->run();
   auto rewrite_output = *(sandbox_->get_output(0));
 
+  /*
   if (last_err != ErrorCode::NORMAL) {
     DEBUG_BUILD_TC(cout << "Sandbox encountered error on target." << endl;)
     return false;
@@ -226,6 +227,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
     DEBUG_BUILD_TC(cout << "Got a counterexample -- but it did the same thing on target/rewrite." << endl;)
     return false;
   }
+  */
 
   return true;
 }

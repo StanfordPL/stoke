@@ -15,6 +15,7 @@
 #ifndef STOKE_SRC_VALIDATOR_INVARIANT_H
 #define STOKE_SRC_VALIDATOR_INVARIANT_H
 
+#include "src/state/cpu_state.h"
 #include "src/symstate/state.h"
 
 namespace stoke {
@@ -28,6 +29,19 @@ public:
   virtual SymBool operator()(const SymState& left, const SymState& right) const = 0;
 
   virtual std::ostream& write(std::ostream& out) const = 0;
+
+  virtual bool check(const CpuState& target, const CpuState& rewrite) const {
+    return true;
+  }
+
+  bool check(const std::vector<CpuState>& target_tcs, const std::vector<CpuState>& rewrite_tcs) const {
+    assert(target_tcs.size() == rewrite_tcs.size());
+    for(size_t i = 0; i < target_tcs.size(); ++i) {
+      if(!check(target_tcs[i], rewrite_tcs[i]))
+        return false;
+    }
+    return true;
+  }
 
 };
 

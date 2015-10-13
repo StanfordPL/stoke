@@ -23,6 +23,7 @@ namespace stoke {
 class TrueInvariant : public Invariant {
 
 public:
+  using Invariant::check;
 
   TrueInvariant() {}
 
@@ -33,6 +34,10 @@ public:
   std::ostream& write(std::ostream& os) const {
     os << "true";
     return os;
+  }
+
+  bool check(const CpuState& target, const CpuState& rewrite) const {
+    return true;
   }
 
 };

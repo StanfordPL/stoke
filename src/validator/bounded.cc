@@ -19,9 +19,9 @@
 #include "src/validator/invariants/true.h"
 
 #define BOUNDED_DEBUG(X) { X }
-#define ALIAS_DEBUG(X) { }
+#define ALIAS_DEBUG(X) { X }
 #define ALIAS_CASE_DEBUG(X) { }
-#define ALIAS_STRING_DEBUG(X) { }
+#define ALIAS_STRING_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -502,6 +502,9 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
 
   auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
   auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
+
+  cout << "TARGET UNROLL: " << endl << target_unroll.get_code() << endl << endl;
+  cout << "REWRITE UNROLL: " << endl << rewrite_unroll.get_code() << endl << endl;
 
   auto target_concrete_accesses = enumerate_accesses(target_unroll);
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
@@ -1166,6 +1169,15 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     constraints.push_back(inequality);
 
+    // Extract the final states of target/rewrite
+    SymState state_t_final("1_FINAL");
+    SymState state_r_final("2_FINAL");
+
+    for (auto it : state_t.equality_constraints(state_t_final, RegSet::universe()))
+      constraints.push_back(it);
+    for (auto it : state_r.equality_constraints(state_r_final, RegSet::universe()))
+      constraints.push_back(it);
+
     // Step 4: Invoke the solver
     bool is_sat = solver_.is_sat(constraints);
     if (solver_.has_error()) {
@@ -1173,16 +1185,30 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     }
 
     if (is_sat) {
-      auto ceg = Validator::state_from_model(solver_, "_");
-      //auto ceg2 = Validator::state_from_model(solver_, "_2_INIT");
+      auto ceg = Validator::state_from_model(solver_, "_1_INIT");
+      auto ceg2 = Validator::state_from_model(solver_, "_2_INIT");
+      auto ceg_tf = Validator::state_from_model(solver_, "_1_FINAL");
+      auto ceg_rf = Validator::state_from_model(solver_, "_2_FINAL");
       if (memories.first) {
         bool ok = am.build_testcase_memory(ceg, solver_,
                                            *static_cast<CellMemory*>(state_t.memory),
                                            *static_cast<CellMemory*>(state_r.memory),
                                            target, rewrite);
+        am.build_testcase_memory(ceg2, solver_,
+                                 *static_cast<CellMemory*>(state_t.memory),
+                                 *static_cast<CellMemory*>(state_r.memory),
+                                 target, rewrite);
+        am.build_testcase_memory(ceg_tf, solver_,
+                                 *static_cast<CellMemory*>(state_t.memory),
+                                 *static_cast<CellMemory*>(state_r.memory),
+                                 target, rewrite);
+        am.build_testcase_memory(ceg_rf, solver_,
+                                 *static_cast<CellMemory*>(state_t.memory),
+                                 *static_cast<CellMemory*>(state_r.memory),
+                                 target, rewrite);
+
         if (ok) {
           counterexamples_.push_back(ceg);
-          //counterexamples_.push_back(ceg2);
         } else {
           delete_memories(memory_list);
           //throw VALIDATOR_ERROR("Couldn't build counterexample!  This is a BOUNDED VALIDATOR BUG.");
@@ -1194,8 +1220,14 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
         //counterexamples_.push_back(ceg2);
       }
       BOUNDED_DEBUG(cout << "  (Got counterexample)" << endl;)
+      BOUNDED_DEBUG(cout << "TARGET START STATE" << endl;)
       BOUNDED_DEBUG(cout << ceg << endl;)
-      //BOUNDED_DEBUG(cout << ceg2 << endl;)
+      BOUNDED_DEBUG(cout << "REWRITE START STATE" << endl;)
+      BOUNDED_DEBUG(cout << ceg2 << endl;)
+      BOUNDED_DEBUG(cout << "TARGET END STATE" << endl;)
+      BOUNDED_DEBUG(cout << ceg_tf << endl;)
+      BOUNDED_DEBUG(cout << "REWRITE END STATE" << endl;)
+      BOUNDED_DEBUG(cout << ceg_rf << endl;)
 
       delete_memories(memory_list);
       stop_mm();
