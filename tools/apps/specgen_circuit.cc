@@ -59,10 +59,24 @@ struct CodeWriter {
   }
 };
 
+template <typename T>
+string out_padded(const T& t, size_t min_length, char pad = ' ') {
+  stringstream ss;
+  ss << t;
+  size_t len = ss.str().size();
+  for (size_t i = 0; i < (min_length - len); i++) {
+    ss << pad;
+  }
+  return ss.str();
+}
+
 auto& input_header = Heading::create("More Input Formats:");
 
 auto& code_arg = ValueArg<Code, CodeReader, CodeWriter>::create("code")
                  .description("Input code directly");
+
+
+const auto formula_dir = string(getenv("HOME")) + "/dev/formulas";
 
 
 void build_circuit(const x64asm::Instruction& instr, SymState& start) {
@@ -85,46 +99,11 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
   }
 }
 
-
-
-template <typename T>
-string out_padded(const T& t, size_t min_length, char pad = ' ') {
-  stringstream ss;
-  ss << t;
-  size_t len = ss.str().size();
-  for (size_t i = 0; i < (min_length - len); i++) {
-    ss << pad;
-  }
-  return ss.str();
-}
-
-template <typename T>
-bool has_changed(T reg, SymBitVector& sym) {
-  stringstream ss;
-  ss << (*reg);
-  if (sym.type() == SymBitVector::Type::VAR) {
-    const SymBitVectorVar* const var = static_cast<const SymBitVectorVar* const>(sym.ptr);
-    if (var->get_name() == ss.str()) return false;
-  }
-  return true;
-}
-
-template <typename T>
-bool has_changed(T reg, SymBool& sym) {
-  stringstream ss;
-  ss << (*reg);
-  if (sym.type() == SymBool::Type::VAR) {
-    const SymBoolVar* const var = static_cast<const SymBoolVar* const>(sym.ptr);
-    if (var->get_name() == ss.str()) return false;
-  }
-  return true;
-}
-
-
-
 int main(int argc, char** argv) {
   // not actually required here
   target_arg.required(false);
+
+  cout << formula_dir << endl;
 
   CommandLineConfig::strict_with_convenience(argc, argv);
 
