@@ -1189,7 +1189,9 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
         }
       } else {
         counterexamples_.push_back(ceg);
-        //counterexamples_.push_back(ceg2);
+        if(ceg != ceg2) {
+          counterexamples_.push_back(ceg2);
+        }
       }
       BOUNDED_DEBUG(cout << "  (Got counterexample)" << endl;)
       BOUNDED_DEBUG(cout << "TARGET START STATE" << endl;)

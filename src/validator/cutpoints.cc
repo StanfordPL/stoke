@@ -95,7 +95,7 @@ bool Cutpoints::check() {
 
   // Second, it adds it to a vector of cpustates *for this testcase*.
 
-  cout << "Sandbox size: " << sandbox_.size() << endl;
+  cout << "Sandbox size: " << dec << sandbox_.size() << endl;
 
   for (size_t i = 0; i < sandbox_.size(); ++i) {
 
