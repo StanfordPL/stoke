@@ -27,6 +27,8 @@
 #include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/io/console.h"
 
+#include "src/symstate/simplify.h"
+
 #include "src/validator/straight_line.h"
 #include "src/validator/handlers/combo_handler.h"
 
@@ -137,7 +139,11 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
 }
 
 void print_state(RegSet regs, SymState& state) {
-  SymPrettyVisitor print(Console::msg());
+  SymPrettyVisitor pretty(Console::msg());
+
+  auto print = [&pretty](const auto c) {
+    pretty(SymSimplify::simplify(c));
+  };
 
   // print symbolic state
   bool printed = false;
