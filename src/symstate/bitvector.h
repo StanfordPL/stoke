@@ -657,6 +657,7 @@ std::ostream& operator<< (std::ostream& out, const stoke::SymBitVector& bv);
    before SymBitVector is declared! */
 #include "src/symstate/print_visitor.h"
 #include "src/symstate/pretty_visitor.h"
+// #include "src/symstate/transform_visitor.h"
 #include "src/symstate/typecheck_visitor.h"
 
 #endif

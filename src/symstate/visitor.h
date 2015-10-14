@@ -25,18 +25,18 @@ namespace stoke {
 
 /** This abstract class is used to visit SymBitVector and SymBool classes to
  * perform operations on the AST.  To use, implement a subclass. */
-template <typename T>
+template <typename TBool, typename TBits>
 class SymVisitor {
 
 public:
 
   /** Visit a symbolic bit vector (encapsulated) */
-  virtual T operator()(const SymBitVector& bv) {
+  virtual TBits operator()(const SymBitVector& bv) {
     return (*this)(bv.ptr);
   }
 
   /* Visit a symbolic bit vector */
-  virtual T operator()(const SymBitVectorAbstract * const bv) {
+  virtual TBits operator()(const SymBitVectorAbstract * const bv) {
     switch (bv->type()) {
     case SymBitVector::AND:
       return visit(static_cast<const SymBitVectorAnd * const>(bv));
@@ -96,12 +96,12 @@ public:
   }
 
   /** Visit a symbolic bool (encapsulated) */
-  virtual T operator()(const SymBool& b) {
+  virtual TBool operator()(const SymBool& b) {
     return (*this)(b.ptr);
   }
 
   /** Visit a symbolic bool */
-  virtual T operator()(const SymBoolAbstract * const b) {
+  virtual TBool operator()(const SymBoolAbstract * const b) {
     switch (b->type()) {
     case SymBool::AND:
       return visit(static_cast<const SymBoolAnd * const>(b));
@@ -150,167 +150,167 @@ public:
 
   /** Visit a generic bin-op.  Used to make implementing visitors more
    * concise.  Can be deleted if need be. */
-  virtual T visit_binop(const SymBitVectorBinop * const bv) = 0;
+  virtual TBits visit_binop(const SymBitVectorBinop * const bv) = 0;
   /** Visit a boolean binop */
-  virtual T visit_binop(const SymBoolBinop * const bv) = 0;
+  virtual TBool visit_binop(const SymBoolBinop * const bv) = 0;
   /** Visit a generic unary operator */
-  virtual T visit_unop(const SymBitVectorUnop * const bv) = 0;
+  virtual TBits visit_unop(const SymBitVectorUnop * const bv) = 0;
   /** Visit a generic comparison operator. */
-  virtual T visit_compare(const SymBoolCompare * const b) = 0;
+  virtual TBool visit_compare(const SymBoolCompare * const b) = 0;
 
 
   /** Visit a bit-vector AND */
-  virtual T visit(const SymBitVectorAnd * const bv) {
+  virtual TBits visit(const SymBitVectorAnd * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector concatenation */
-  virtual T visit(const SymBitVectorConcat * const bv) {
+  virtual TBits visit(const SymBitVectorConcat * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector concatenation */
-  virtual T visit(const SymBitVectorDiv * const bv) {
+  virtual TBits visit(const SymBitVectorDiv * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector minus */
-  virtual T visit(const SymBitVectorMinus * const bv) {
+  virtual TBits visit(const SymBitVectorMinus * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector mod */
-  virtual T visit(const SymBitVectorMod * const bv) {
+  virtual TBits visit(const SymBitVectorMod * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector mult */
-  virtual T visit(const SymBitVectorMult * const bv) {
+  virtual TBits visit(const SymBitVectorMult * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector not */
-  virtual T visit(const SymBitVectorNot * const bv) {
+  virtual TBits visit(const SymBitVectorNot * const bv) {
     return visit_unop(bv);
   }
   /** Visit a bit-vector OR */
-  virtual T visit(const SymBitVectorOr * const bv) {
+  virtual TBits visit(const SymBitVectorOr * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector plus */
-  virtual T visit(const SymBitVectorPlus * const bv) {
+  virtual TBits visit(const SymBitVectorPlus * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector plus */
-  virtual T visit(const SymBitVectorRotateLeft * const bv) {
+  virtual TBits visit(const SymBitVectorRotateLeft * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector plus */
-  virtual T visit(const SymBitVectorRotateRight * const bv) {
+  virtual TBits visit(const SymBitVectorRotateRight * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector shift-left */
-  virtual T visit(const SymBitVectorShiftLeft * const bv) {
+  virtual TBits visit(const SymBitVectorShiftLeft * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector shift-right */
-  virtual T visit(const SymBitVectorShiftRight * const bv) {
+  virtual TBits visit(const SymBitVectorShiftRight * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector signed division */
-  virtual T visit(const SymBitVectorSignDiv * const bv) {
+  virtual TBits visit(const SymBitVectorSignDiv * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector signed mod */
-  virtual T visit(const SymBitVectorSignMod * const bv) {
+  virtual TBits visit(const SymBitVectorSignMod * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector signed shift-right */
-  virtual T visit(const SymBitVectorSignShiftRight * const bv) {
+  virtual TBits visit(const SymBitVectorSignShiftRight * const bv) {
     return visit_binop(bv);
   }
   /** Visit a bit-vector unary minus */
-  virtual T visit(const SymBitVectorUMinus * const bv) {
+  virtual TBits visit(const SymBitVectorUMinus * const bv) {
     return visit_unop(bv);
   }
   /** Visit a bit-vector XOR */
-  virtual T visit(const SymBitVectorXor * const bv) {
+  virtual TBits visit(const SymBitVectorXor * const bv) {
     return visit_binop(bv);
   }
 
 
   /** Visit a bit-vector constant */
-  virtual T visit(const SymBitVectorConstant * const bv) = 0;
+  virtual TBits visit(const SymBitVectorConstant * const bv) = 0;
   /** Visit a bit-vector extract */
-  virtual T visit(const SymBitVectorExtract * const bv) = 0;
+  virtual TBits visit(const SymBitVectorExtract * const bv) = 0;
   /** Visit a bit-vector extract */
-  virtual T visit(const SymBitVectorFunction * const bv) = 0;
+  virtual TBits visit(const SymBitVectorFunction * const bv) = 0;
   /** Visit a bit-vector if-then-else */
-  virtual T visit(const SymBitVectorIte * const bv) = 0;
+  virtual TBits visit(const SymBitVectorIte * const bv) = 0;
   /** Visit a bit-vector extract */
-  virtual T visit(const SymBitVectorSignExtend * const bv) = 0;
+  virtual TBits visit(const SymBitVectorSignExtend * const bv) = 0;
   /** Visit a bit-vector variable */
-  virtual T visit(const SymBitVectorVar * const bv) = 0;
+  virtual TBits visit(const SymBitVectorVar * const bv) = 0;
 
   /** Visit a boolean AND */
-  virtual T visit(const SymBoolAnd * const b) {
+  virtual TBool visit(const SymBoolAnd * const b) {
     return visit_binop(b);
   }
   /** Visit a bit-vector EQ */
-  virtual T visit(const SymBoolEq * const b) {
+  virtual TBool visit(const SymBoolEq * const b) {
     return visit_compare(b);
   }
   /** Visit a boolean Iff */
-  virtual T visit(const SymBoolIff * const b) {
+  virtual TBool visit(const SymBoolIff * const b) {
     return visit_binop(b);
   }
   /** Visit a bit-vector GE */
-  virtual T visit(const SymBoolGe * const b) {
+  virtual TBool visit(const SymBoolGe * const b) {
     return visit_compare(b);
   }
   /** Visit a bit-vector GT */
-  virtual T visit(const SymBoolGt * const b) {
+  virtual TBool visit(const SymBoolGt * const b) {
     return visit_compare(b);
   }
   /** Visit a boolean implies */
-  virtual T visit(const SymBoolImplies * const b) {
+  virtual TBool visit(const SymBoolImplies * const b) {
     return visit_binop(b);
   }
   /** Visit a bit-vector LE */
-  virtual T visit(const SymBoolLe * const b) {
+  virtual TBool visit(const SymBoolLe * const b) {
     return visit_compare(b);
   }
   /** Visit a bit-vector LT */
-  virtual T visit(const SymBoolLt * const b) {
+  virtual TBool visit(const SymBoolLt * const b) {
     return visit_compare(b);
   }
   /** Visit a boolean implies */
-  virtual T visit(const SymBoolOr * const b) {
+  virtual TBool visit(const SymBoolOr * const b) {
     return visit_binop(b);
   }
   /** Visit a bit-vector signed GE */
-  virtual T visit(const SymBoolSignGe * const b) {
+  virtual TBool visit(const SymBoolSignGe * const b) {
     return visit_compare(b);
   }
   /** Visit a bit-vector signed GT */
-  virtual T visit(const SymBoolSignGt * const b) {
+  virtual TBool visit(const SymBoolSignGt * const b) {
     return visit_compare(b);
   }
   /** Visit a bit-vector signed LE */
-  virtual T visit(const SymBoolSignLe * const b) {
+  virtual TBool visit(const SymBoolSignLe * const b) {
     return visit_compare(b);
   }
   /** Visit a bit-vector signed LT */
-  virtual T visit(const SymBoolSignLt * const b) {
+  virtual TBool visit(const SymBoolSignLt * const b) {
     return visit_compare(b);
   }
   /** Visit a boolean implies */
-  virtual T visit(const SymBoolXor * const b) {
+  virtual TBool visit(const SymBoolXor * const b) {
     return visit_binop(b);
   }
 
   /** Visit a boolean FALSE */
-  virtual T visit(const SymBoolFalse * const b) = 0;
+  virtual TBool visit(const SymBoolFalse * const b) = 0;
   /** Visit a boolean NOT */
-  virtual T visit(const SymBoolNot * const b) = 0;
+  virtual TBool visit(const SymBoolNot * const b) = 0;
   /** Visit a boolean TRUE */
-  virtual T visit(const SymBoolTrue * const b) = 0;
+  virtual TBool visit(const SymBoolTrue * const b) = 0;
   /** Visit a boolean VAR */
-  virtual T visit(const SymBoolVar * const b) = 0;
+  virtual TBool visit(const SymBoolVar * const b) = 0;
 
 };
 

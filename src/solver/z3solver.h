@@ -74,7 +74,7 @@ private:
 
 
   /** This class converts symbolic bit-vectors into Z3's format. */
-  class ExprConverter : public SymVisitor<z3::expr> {
+  class ExprConverter : public SymVisitor<z3::expr, z3::expr> {
 
   public:
     ExprConverter(z3::context& cntx, std::vector<SymBool>& constraints)
@@ -108,12 +108,12 @@ private:
     /** Visit some bit vector */
     z3::expr operator()(const SymBitVector& bv) {
       error_ = "";
-      return SymVisitor<z3::expr>::operator()(bv.ptr);
+      return SymVisitor<z3::expr, z3::expr>::operator()(bv.ptr);
     }
     /** Visit some bit bool */
     z3::expr operator()(const SymBool& b) {
       error_ = "";
-      return SymVisitor<z3::expr>::operator()(b.ptr);
+      return SymVisitor<z3::expr, z3::expr>::operator()(b.ptr);
     }
 
     /** Visit a bit-vector AND */
