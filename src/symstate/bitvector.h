@@ -91,6 +91,9 @@ public:
   /** Get the type of this bitvector expression; helps for recursive algorithms on the tree. */
   Type type() const;
 
+  /** The width of this bitvector (number of bits). */
+  uint16_t width() const;
+
   /** Creates a constant bitvector of specified size and value */
   static SymBitVector constant(uint16_t size, uint64_t constant);
   /** Creates a bitvector variables of specified size and name */
@@ -242,6 +245,11 @@ public:
   virtual bool equals(const SymBitVectorAbstract * const other) const = 0;
 
   virtual ~SymBitVectorAbstract() = 0;
+
+  /** The width of this bitvector (number of bits). */
+  const uint16_t width_ = 0;
+
+  SymBitVectorAbstract(uint16_t width): width_(width) {}
 };
 
 inline SymBitVectorAbstract::~SymBitVectorAbstract() {}
@@ -261,7 +269,7 @@ public:
   }
 
 protected:
-  SymBitVectorBinop(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : a_(a), b_(b) {}
+  SymBitVectorBinop(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b, uint16_t width) : SymBitVectorAbstract(width), a_(a), b_(b) {}
 };
 
 
@@ -279,7 +287,7 @@ public:
   }
 
 protected:
-  SymBitVectorUnop(const SymBitVectorAbstract * const bv) : bv_(bv) {}
+  SymBitVectorUnop(const SymBitVectorAbstract * const bv, uint16_t width) : SymBitVectorAbstract(width), bv_(bv) {}
 };
 
 
@@ -287,6 +295,9 @@ protected:
 class SymBitVectorAnd : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
+
+private:
+  SymBitVectorAnd(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
 
 public:
   SymBitVector::Type type() const {
@@ -298,6 +309,9 @@ class SymBitVectorConcat : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
 
+private:
+  SymBitVectorConcat(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_ + b->width_) {}
+
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::CONCAT;
@@ -307,6 +321,9 @@ public:
 class SymBitVectorDiv : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
+
+private:
+  SymBitVectorDiv(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
 
 public:
   SymBitVector::Type type() const {
@@ -319,7 +336,7 @@ class SymBitVectorConstant : public SymBitVectorAbstract {
 
 private:
   SymBitVectorConstant(uint16_t size, uint64_t constant)
-    : constant_(constant), size_(size) {
+    : SymBitVectorAbstract(size), constant_(constant), size_(size) {
   }
 
 public:
@@ -343,7 +360,7 @@ class SymBitVectorExtract : public SymBitVectorAbstract {
 private:
   /* Extracts bits low_bit,low_bit+1,...,low_bit+n-1 from a
      bitvector of length m */
-  SymBitVectorExtract(const SymBitVectorAbstract * const bv, uint16_t high_bit, uint16_t low_bit) :
+  SymBitVectorExtract(const SymBitVectorAbstract * const bv, uint16_t high_bit, uint16_t low_bit) : SymBitVectorAbstract(high_bit - low_bit + 1),
     bv_(bv), low_bit_(low_bit), high_bit_(high_bit) { }
 
 public:
@@ -392,20 +409,20 @@ public:
 
 private:
   SymBitVectorFunction(const SymFunction& f,
-                       const SymBitVectorAbstract * const a) : f_(f), args_( {
+                       const SymBitVectorAbstract * const a) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a
   }) {}
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
-                       const SymBitVectorAbstract * const b) : f_(f), args_( {
+                       const SymBitVectorAbstract * const b) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a, b
   }) {}
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
                        const SymBitVectorAbstract * const b,
-                       const SymBitVectorAbstract * const c) : f_(f), args_( {
+                       const SymBitVectorAbstract * const c) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a, b, c
   } ) {}
 
@@ -413,7 +430,7 @@ private:
                        const SymBitVectorAbstract * const a,
                        const SymBitVectorAbstract * const b,
                        const SymBitVectorAbstract * const c,
-                       const SymBitVectorAbstract * const d) : f_(f), args_( {
+                       const SymBitVectorAbstract * const d) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a, b, c, d
   }) {}
 
@@ -425,7 +442,7 @@ class SymBitVectorIte : public SymBitVectorAbstract {
 
 private:
   SymBitVectorIte(const SymBoolAbstract * const cond, const SymBitVectorAbstract * const a,
-                  const SymBitVectorAbstract * const b) : cond_(cond), a_(a), b_(b) {}
+                  const SymBitVectorAbstract * const b) : SymBitVectorAbstract(a->width_), cond_(cond), a_(a), b_(b) {}
 
 public:
 
@@ -448,6 +465,9 @@ class SymBitVectorMinus : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
 
+private:
+  SymBitVectorMinus(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
+
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::MINUS;
@@ -457,6 +477,9 @@ public:
 class SymBitVectorMod : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
+
+private:
+  SymBitVectorMod(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
 
 public:
   SymBitVector::Type type() const {
@@ -468,6 +491,9 @@ class SymBitVectorMult : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
 
+private:
+  SymBitVectorMult(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
+
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::MULT;
@@ -477,6 +503,9 @@ public:
 class SymBitVectorNot : public SymBitVectorUnop {
   friend class SymBitVector;
   using SymBitVectorUnop::SymBitVectorUnop;
+
+private:
+  SymBitVectorNot(const SymBitVectorAbstract * const a) : SymBitVectorUnop(a, a->width_) {}
 
 public:
   SymBitVector::Type type() const {
@@ -488,6 +517,9 @@ class SymBitVectorOr : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
 
+private:
+  SymBitVectorOr(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
+
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::OR;
@@ -497,6 +529,9 @@ public:
 class SymBitVectorPlus : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
+
+private:
+  SymBitVectorPlus(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
 
 public:
   SymBitVector::Type type() const {
@@ -508,6 +543,9 @@ class SymBitVectorRotateLeft : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
 
+private:
+  SymBitVectorRotateLeft(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
+
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::ROTATE_LEFT;
@@ -517,6 +555,9 @@ public:
 class SymBitVectorRotateRight : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
+
+private:
+  SymBitVectorRotateRight(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
 
 public:
   SymBitVector::Type type() const {
@@ -528,6 +569,9 @@ class SymBitVectorShiftLeft : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
 
+private:
+  SymBitVectorShiftLeft(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
+
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::SHIFT_LEFT;
@@ -537,6 +581,9 @@ public:
 class SymBitVectorShiftRight : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
+
+private:
+  SymBitVectorShiftRight(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
 
 public:
   SymBitVector::Type type() const {
@@ -548,6 +595,9 @@ class SymBitVectorSignDiv : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
 
+private:
+  SymBitVectorSignDiv(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
+
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::SIGN_DIV;
@@ -558,7 +608,7 @@ class SymBitVectorSignExtend : public SymBitVectorAbstract {
   friend class SymBitVector;
 
 private:
-  SymBitVectorSignExtend(const SymBitVectorAbstract * const bv, uint16_t size) : bv_(bv), size_(size) {}
+  SymBitVectorSignExtend(const SymBitVectorAbstract * const bv, uint16_t size) : SymBitVectorAbstract(size), bv_(bv), size_(size) {}
 
 public:
   SymBitVector::Type type() const {
@@ -579,6 +629,9 @@ class SymBitVectorSignMod : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
 
+private:
+  SymBitVectorSignMod(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
+
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::SIGN_MOD;
@@ -589,6 +642,9 @@ class SymBitVectorSignShiftRight : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
 
+private:
+  SymBitVectorSignShiftRight(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
+
 public:
   SymBitVector::Type type() const {
     return SymBitVector::Type::SIGN_SHIFT_RIGHT;
@@ -598,6 +654,9 @@ public:
 class SymBitVectorUMinus : public SymBitVectorUnop {
   friend class SymBitVector;
   using SymBitVectorUnop::SymBitVectorUnop;
+
+private:
+  SymBitVectorUMinus(const SymBitVectorAbstract * const a) : SymBitVectorUnop(a, a->width_) {}
 
 public:
   SymBitVector::Type type() const {
@@ -610,7 +669,7 @@ class SymBitVectorVar : public SymBitVectorAbstract {
   friend class SymBitVector;
 
 private:
-  SymBitVectorVar(uint16_t size, const std::string name) : name_(name), size_(size) {}
+  SymBitVectorVar(uint16_t size, const std::string name) : SymBitVectorAbstract(size), name_(name), size_(size) {}
 
 public:
   SymBitVector::Type type() const {
@@ -640,6 +699,9 @@ public:
 class SymBitVectorXor : public SymBitVectorBinop {
   friend class SymBitVector;
   using SymBitVectorBinop::SymBitVectorBinop;
+
+private:
+  SymBitVectorXor(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b) : SymBitVectorBinop(a, b, a->width_) {}
 
 public:
   SymBitVector::Type type() const {
