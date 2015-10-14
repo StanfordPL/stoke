@@ -43,7 +43,7 @@ private:
   /** Find all invariants with CEGAR-style search. */
   std::vector<Invariant*> find_invariants(const Cfg& target, const Cfg& rewrite);
   /** Learn invariants from CpuStates */
-  Invariant* learn_invariant(std::vector<CpuState> states, std::vector<CpuState> states2);
+  Invariant* learn_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, std::vector<CpuState> states, std::vector<CpuState> states2);
   /** Use bounded validator to check the invariants. */
   std::vector<CpuState> check_invariants(const Cfg& target, const Cfg& rewrite, std::vector<Invariant*> invariants);
 

@@ -122,7 +122,7 @@ bool Cutpoints::check() {
       std::vector<CallbackParam*> to_free;
 
       for (size_t j = 0; j < cutpoint_list.size(); ++j) {
-        bool ends_with_jump = cutpoint_list[j];
+        bool ends_with_jump = jump_list[j];
         auto bb = cutpoint_list[j];
 
         CallbackParam* cp = new CallbackParam();
@@ -135,7 +135,7 @@ bool Cutpoints::check() {
         if (bb == cfg.get_entry()) {
           sandbox_.insert_before(label, 0, callback, cp);
         } else if (bb == cfg.get_exit()) {
-          // no need to collect data at exit 
+          // no need to collect data at exit
         } else if (ends_with_jump) {
           index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
           sandbox_.insert_before(label, index, callback, cp);
