@@ -16,6 +16,7 @@
 #include "src/validator/bounded.h"
 #include "src/validator/ddec.h"
 #include "src/validator/invariants/conjunction.h"
+#include "src/validator/invariants/disjunction.h"
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/false.h"
 #include "src/validator/invariants/flag.h"
@@ -37,13 +38,18 @@ void print_summary(vector<Invariant*> invariants) {
   cout << endl << "*********************************************************************";
   cout << endl;
 
-  for(size_t i = 0; i < invariants.size(); ++i) {
+  for (size_t i = 0; i < invariants.size(); ++i) {
     cout << "Cutpoint " << i << ": " << endl;
     auto invs = static_cast<ConjunctionInvariant*>(invariants[i]);
-    for(size_t j = 0; j < invs->size(); ++j) {
+    for (size_t j = 0; j < invs->size(); ++j) {
       cout << "    " << *(*invs)[j] << endl;
     }
   }
+}
+
+Instruction get_last_instr(const Cfg& cfg, Cfg::id_type block) {
+  auto start_bs = cfg.num_instrs(block);
+  return cfg.get_code()[cfg.get_index(Cfg::loc_type(block, start_bs - 1))];
 }
 
 /** Returns an invariant representing the fact that the first state transition in the path is taken. */
@@ -59,6 +65,7 @@ Invariant* get_jump_inv(const Cfg& cfg, const CfgPath& p, bool is_rewrite) {
   return jump_inv;
 }
 
+/** Go through the invariants and see that we can verify them using the bounded verifier. */
 vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& rewrite, vector<Invariant*> invariants) {
 
   vector<CpuState> results;
@@ -144,7 +151,7 @@ vector<Invariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& 
       } else {
         auto target_regs = target.def_outs(target_cuts[i]);
         auto rewrite_regs = rewrite.def_outs(rewrite_cuts[i]);
-        auto inv = learn_invariant(target_regs, rewrite_regs, cutpoints_->data_at(i, false), cutpoints_->data_at(i, true));
+        auto inv = learn_disjunction_invariant(target_regs, rewrite_regs, cutpoints_->data_at(i, false), cutpoints_->data_at(i, true), get_last_instr(target, target_cuts[i]), get_last_instr(rewrite, rewrite_cuts[i]));
         invariants.push_back(inv);
         cout << "Learned invariant @ i=" << i << endl;
         cout << *inv << endl;
@@ -223,14 +230,20 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
       // 2. P in Paths_T(i, j), Q in Paths_R(i, j) => inv(i) { P; Q } inv(j)
       for (auto p : target_paths_ij) {
+        auto target_jump_inv = get_jump_inv(target, p, false);
         if (target.num_instrs(target_cuts[i]))
           p.erase(p.begin());
 
         for (auto q : rewrite_paths_ij) {
+          auto rewrite_jump_inv = get_jump_inv(rewrite, q, true);
           if (rewrite.num_instrs(rewrite_cuts[i]))
             q.erase(q.begin());
           cout << "Checking " << (*invariants[i]) << " { " << BoundedValidator::print(p)
                << " ; " << BoundedValidator::print(q) << " } " << (*invariants[j]) << endl;
+
+          auto copy = *static_cast<ConjunctionInvariant*>(invariants[i]);
+          copy.add_invariant(target_jump_inv);
+          copy.add_invariant(rewrite_jump_inv);
 
           auto end_inv = static_cast<ConjunctionInvariant*>(invariants[j]);
           /*
@@ -243,7 +256,7 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
           }
           */
           cout << endl << endl << "WORKING ON " << *end_inv << endl << endl;
-          bool ok = bv.verify_pair(target, rewrite, p, q, *invariants[i], *end_inv);
+          bool ok = bv.verify_pair(target, rewrite, p, q, copy, *end_inv);
           if (!ok) {
             print_summary(invariants);
             return false;
@@ -267,7 +280,7 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
 
 
           for (auto q : rewrite_paths_ik) {
-            auto rewrite_jump_inv = get_jump_inv(rewrite, p, true);
+            auto rewrite_jump_inv = get_jump_inv(rewrite, q, true);
             if (rewrite.num_instrs(rewrite_cuts[i]))
               q.erase(q.begin());
 
@@ -305,7 +318,166 @@ long mpz_to_long(mpz_t z)
   return result;
 }
 
-Invariant* DdecValidator::learn_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, std::vector<CpuState> target_states, std::vector<CpuState> rewrite_states) {
+Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states, const Instruction& last_target_instr, const Instruction& last_rewrite_instr) {
+
+  bool target_has_jcc = last_target_instr.is_jcc();
+  string target_opcode = Handler::get_opcode(last_target_instr);
+  cout << "TARGET OPC: " << target_opcode << endl;
+  string target_cc = target_opcode.substr(1, target_opcode.size() - 1);
+  cout << "TARGET CC: " << target_cc << endl;
+
+  bool rewrite_has_jcc = last_target_instr.is_jcc();
+  string rewrite_opcode = Handler::get_opcode(last_rewrite_instr);
+  cout << "REWRITE OPC: " << rewrite_opcode << endl;
+  string rewrite_cc = rewrite_opcode.substr(1, rewrite_opcode.size() - 1);
+  cout << "REWRITE CC: " << rewrite_cc << endl;
+
+  /** Case 1: there's no conditional jump */
+  if(!target_has_jcc && !rewrite_has_jcc) {
+    return learn_simple_invariant(target_regs, rewrite_regs, target_states, rewrite_states);
+  } else if (target_has_jcc && !rewrite_has_jcc) {
+
+    vector<CpuState> jump_states;
+    vector<CpuState> fall_states;
+    for(auto it : target_states) {
+      if(ConditionalHandler::condition_satisfied(target_cc, it))
+        jump_states.push_back(it);
+      else
+        fall_states.push_back(it);
+    }
+
+    auto jump_inv = new ConjunctionInvariant();
+    auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, jump_states, rewrite_states);
+    jump_inv->add_invariant(jump_simple);
+    jump_inv->add_invariant(new FlagInvariant(last_target_instr, false, false));
+
+    auto fall_inv = new ConjunctionInvariant();
+    auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, fall_states, rewrite_states);
+    fall_inv->add_invariant(fall_simple);
+    fall_inv->add_invariant(new FlagInvariant(last_target_instr, false, true));
+
+    auto disj = new DisjunctionInvariant();
+    disj->add_invariant(jump_inv);
+    disj->add_invariant(fall_inv);
+
+    auto conj = new ConjunctionInvariant();
+    conj->add_invariant(disj);
+
+    return conj;
+  } else if (!target_has_jcc && rewrite_has_jcc) {
+
+    vector<CpuState> jump_states;
+    vector<CpuState> fall_states;
+    for(auto it : rewrite_states) {
+      if(ConditionalHandler::condition_satisfied(rewrite_cc, it))
+        jump_states.push_back(it);
+      else
+        fall_states.push_back(it);
+    }
+
+    auto jump_inv = new ConjunctionInvariant();
+    auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, rewrite_states, jump_states);
+    jump_inv->add_invariant(jump_simple);
+    jump_inv->add_invariant(new FlagInvariant(last_rewrite_instr, true, false));
+
+    auto fall_inv = new ConjunctionInvariant();
+    auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, rewrite_states, jump_states);
+    fall_inv->add_invariant(fall_simple);
+    fall_inv->add_invariant(new FlagInvariant(last_rewrite_instr, true, true));
+
+    auto disj = new DisjunctionInvariant();
+    disj->add_invariant(jump_inv);
+    disj->add_invariant(fall_inv);
+
+    auto conj = new ConjunctionInvariant();
+    conj->add_invariant(disj);
+
+    return conj;
+  } else {
+    // Both have jumps!
+    vector<CpuState> jump_jump_states_target;
+    vector<CpuState> jump_fall_states_target;
+    vector<CpuState> fall_jump_states_target;
+    vector<CpuState> fall_fall_states_target;
+
+    vector<CpuState> jump_jump_states_rewrite;
+    vector<CpuState> jump_fall_states_rewrite;
+    vector<CpuState> fall_jump_states_rewrite;
+    vector<CpuState> fall_fall_states_rewrite;
+
+    for(size_t i = 0; i < target_states.size(); ++i) {
+      if( ConditionalHandler::condition_satisfied( target_cc, target_states[i])) {
+        if( ConditionalHandler::condition_satisfied( rewrite_cc, rewrite_states[i])) {
+          jump_jump_states_target.push_back(target_states[i]);
+          jump_jump_states_rewrite.push_back(rewrite_states[i]);
+        } else {
+          jump_fall_states_target.push_back(target_states[i]);
+          jump_fall_states_rewrite.push_back(rewrite_states[i]);
+        }
+      } else {
+        if( ConditionalHandler::condition_satisfied( rewrite_cc, rewrite_states[i])) {
+          fall_jump_states_target.push_back(target_states[i]);
+          fall_jump_states_rewrite.push_back(rewrite_states[i]);
+        } else {
+          fall_fall_states_target.push_back(target_states[i]);
+          fall_fall_states_rewrite.push_back(rewrite_states[i]);
+        }
+      }
+    }
+
+    auto S1_simple = learn_simple_invariant(target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
+    auto S1_target_path = new FlagInvariant(last_target_instr, false, false);
+    auto S1_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
+    auto S1 = new ConjunctionInvariant();
+    S1->add_invariant(S1_simple);
+    S1->add_invariant(S1_target_path);
+    S1->add_invariant(S1_rewrite_path);
+
+    auto S2_simple = learn_simple_invariant(target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
+    auto S2_target_path = new FlagInvariant(last_target_instr, false, false);
+    auto S2_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
+    auto S2 = new ConjunctionInvariant();
+    S2->add_invariant(S2_simple);
+    S2->add_invariant(S2_target_path);
+    S2->add_invariant(S2_rewrite_path);
+
+    auto S3_simple = learn_simple_invariant(target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
+    auto S3_target_path = new FlagInvariant(last_target_instr, false, true);
+    auto S3_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
+    auto S3 = new ConjunctionInvariant();
+    S3->add_invariant(S3_simple);
+    S3->add_invariant(S3_target_path);
+    S3->add_invariant(S3_rewrite_path);
+
+    auto S4_simple = learn_simple_invariant(target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
+    auto S4_target_path = new FlagInvariant(last_target_instr, false, true);
+    auto S4_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
+    auto S4 = new ConjunctionInvariant();
+    S4->add_invariant(S4_simple);
+    S4->add_invariant(S4_target_path);
+    S4->add_invariant(S4_rewrite_path);
+
+    auto disj = new DisjunctionInvariant();
+    disj->add_invariant(S1);
+    disj->add_invariant(S2);
+    disj->add_invariant(S3);
+    disj->add_invariant(S4);
+
+    auto conj = new ConjunctionInvariant();
+    conj->add_invariant(disj);
+
+    return conj;
+  }
+
+  assert(false);
+  return NULL;
+
+}
+
+Invariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states) {
+
+  if(target_states.size() == 0 || rewrite_states.size() == 0)
+    return new FalseInvariant();
 
   NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
 
@@ -349,7 +521,7 @@ Invariant* DdecValidator::learn_invariant(x64asm::RegSet target_regs, x64asm::Re
   //   its 64-bit value (if not guaranteed zero)
   //   its zero-extended 32-bit value
   //   its sign-extended 32-bit value
-  // 
+  //
   // We need a 'constant' column with the value '1'.
   vector<Column> columns;
 
@@ -361,8 +533,8 @@ Invariant* DdecValidator::learn_invariant(x64asm::RegSet target_regs, x64asm::Re
       c.is_rewrite = k;
       c.zero_extend = true;
       columns.push_back(c);
-      if((*r).size() == 64) {
-        c.reg = r32s[*r]; 
+      if ((*r).size() == 64) {
+        c.reg = r32s[*r];
         columns.push_back(c);
       }
 

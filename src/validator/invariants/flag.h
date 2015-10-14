@@ -29,19 +29,20 @@ public:
 
   FlagInvariant(const x64asm::Instruction& instr, bool is_rewrite, bool fallthrough) {
     fallthrough_ = fallthrough;
-    is_rewrite_ = is_rewrite_;
+    is_rewrite_ = is_rewrite;
 
-    if (instr.is_jump()) {
+    if (instr.is_jmp()) {
       // we always jump (never fallthrough)
-      predicate_ == "";
+      predicate_ = "";
       fallthrough_ = !fallthrough_;
     } else if (instr.is_jcc()) {
       // we sometimes jump
       std::string opcode = Handler::get_opcode(instr);
-      predicate_ = opcode.substr(3, opcode.size() - 3);
+      predicate_ = opcode.substr(1, opcode.size() - 1);
+      std::cout << "OPCODE=" << opcode << "  pred=" << predicate_ << std::endl;
     } else {
       // we never jump (always fallthrough)
-      predicate_ == "";
+      predicate_ = "";
     }
   }
 
@@ -64,6 +65,14 @@ public:
   }
 
   std::ostream& write(std::ostream& os) const {
+    std::string neg = fallthrough_ ? "!" : "";
+
+    if(is_rewrite_) {
+      os << "( rewrite " << neg << predicate_ << ")";
+    } else {
+      os << "( target " << neg << predicate_ << ")";
+    }
+
     return os;
   }
 
