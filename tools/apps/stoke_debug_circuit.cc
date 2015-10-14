@@ -20,6 +20,8 @@
 #include "src/ext/cpputil/include/io/column.h"
 #include "src/ext/cpputil/include/io/console.h"
 
+#include "src/symstate/simplify.h"
+
 #include "src/validator/straight_line.h"
 #include "src/validator/handlers/combo_handler.h"
 
@@ -156,9 +158,9 @@ int main(int argc, char** argv) {
 
   auto print = [&smtlib, &pretty](const auto c) {
     if (use_smtlib_format_arg.value()) {
-      smtlib(c);
+      smtlib(SymSimplify::simplify(c));
     } else {
-      pretty(c);
+      pretty(SymSimplify::simplify(c));
     }
   };
 
