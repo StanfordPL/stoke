@@ -126,7 +126,7 @@ public:
   static void set_memory_manager(SymMemoryManager* mm) {
     memory_manager_ = mm;
   }
-  
+
   /** Get the memory manager */
   static SymMemoryManager* get_memory_manager() {
     return memory_manager_;
