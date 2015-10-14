@@ -214,6 +214,15 @@ SymBitVector::Type SymBitVector::type() const {
   else
     return NONE;
 }
+
+/** Get the bit width. */
+uint16_t SymBitVector::width() const {
+  if (ptr)
+    return ptr->width_;
+  else
+    return 0;
+}
+
 /* equality */
 bool SymBitVector::equals(const SymBitVector& other) const {
   if (ptr && other.ptr)
