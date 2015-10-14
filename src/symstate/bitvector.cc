@@ -101,16 +101,14 @@ SymBitVector SymBitVector::operator>>(const SymBitVector& other) const {
 }
 
 SymBitVector SymBitVector::operator<<(uint64_t shift) const {
-  SymTypecheckVisitor tc;
-  auto size = tc(ptr);
+  auto size = ptr->width_;
 
   auto constant = SymBitVector::constant(size, shift);
   return (*this << constant);
 }
 
 SymBitVector SymBitVector::operator>>(uint64_t shift) const {
-  SymTypecheckVisitor tc;
-  auto size = tc(ptr);
+  auto size = ptr->width_;
 
   auto constant = SymBitVector::constant(size, shift);
   return (*this >> constant);
@@ -144,8 +142,7 @@ SymBitVector SymBitVector::operator^(const SymBitVector& other) const {
 SymBool SymBitVector::parity() const {
 
   // Step 1: get my size
-  SymTypecheckVisitor tc;
-  uint16_t size = tc(*this);
+  uint16_t size = (*this).width();
 
   // Step 2: iterate over my bits and xor them together
   SymBool parity = (*this)[0];
