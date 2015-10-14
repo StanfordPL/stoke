@@ -20,7 +20,7 @@
 
 namespace stoke {
 
-class SymPrintVisitor : public SymVisitor<void> {
+class SymPrintVisitor : public SymVisitor<void, void> {
 
 public:
   SymPrintVisitor(std::ostream& os) : os_(os) {}
