@@ -49,18 +49,18 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
   BoundedValidator bv(solver_);
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
 
-  auto target_cuts_ = cutpoints_->target_cutpoint_locations();
-  auto rewrite_cuts_ = cutpoints_->rewrite_cutpoint_locations();
+  auto target_cuts = cutpoints_->target_cutpoint_locations();
+  auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
 
   // For each non-entry cutpoint, check that it actually holds
-  for(size_t i = 1; i < target_cuts_.size(); ++i) {
-    auto target_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target_cuts_[i]);
-    auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1, rewrite.get_entry(), rewrite_cuts_[i]);
+  for (size_t i = 1; i < target_cuts.size(); ++i) {
+    auto target_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target_cuts[i]);
+    auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1, rewrite.get_entry(), rewrite_cuts[i]);
 
-    for(auto p : target_paths) {
-      for(auto q : rewrite_paths) {
+    for (auto p : target_paths) {
+      for (auto q : rewrite_paths) {
         bool success = bv.verify_pair(target, rewrite, p, q, *invariants[0], *invariants[i]);
-        if(bv.counter_examples_available()) {
+        if (bv.counter_examples_available()) {
           auto cegs = bv.get_counter_examples();
           results.insert(results.begin(), cegs.begin(), cegs.end());
           return results;
@@ -85,7 +85,7 @@ vector<Invariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& 
     return vector<Invariant*>();
   }
 
-  while(true) {
+  while (true) {
 
     // Recompute the cutpoints
     auto target_cuts = cutpoints_->target_cutpoint_locations();
@@ -105,9 +105,17 @@ vector<Invariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& 
     invariants.clear();
     for (size_t i = 0; i < target_cuts.size(); ++i) {
 
-      if (i == 0) {
+      if (target_cuts[i] == target.get_entry()) {
         // Entry
+        assert(rewrite_cuts[i] == rewrite.get_entry());
+
         auto inv = new StateEqualityInvariant(x64asm::RegSet::universe());
+        invariants.push_back(inv);
+      } else if (target_cuts[i] == target.get_exit()) {
+        // Exit
+        assert(rewrite_cuts[i] == rewrite.get_exit());
+
+        auto inv = new StateEqualityInvariant(target.live_outs());
         invariants.push_back(inv);
       } else {
         auto inv = learn_invariant(cutpoints_->data_at(i, false), cutpoints_->data_at(i, true));
@@ -120,16 +128,16 @@ vector<Invariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& 
     // See if said invariants are correct
     cout << endl << "CHECKING INVARIANTS WITH BOUNDED VALIDATOR" << endl << endl;
     auto new_tests = check_invariants(target, rewrite, invariants);
-    if(new_tests.size() == 0)
+    if (new_tests.size() == 0)
       return invariants;
 
     // Get the testcases and try again
-    for(auto tc : new_tests)
+    for (auto tc : new_tests)
       sandbox_->insert_input(tc);
 
     delete cutpoints_;
     cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
-    if(cutpoints_->has_error()) {
+    if (cutpoints_->has_error()) {
       return vector<Invariant*>();
     }
   }
@@ -144,7 +152,7 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
 
   vector<Invariant*> invariants = find_invariants(target, rewrite);
-  if(!invariants.size()) {
+  if (!invariants.size()) {
     cout << "Could not find cutpoints/invariants" << endl;
     return false;
   }
