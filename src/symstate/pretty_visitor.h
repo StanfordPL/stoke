@@ -23,7 +23,7 @@
 namespace stoke {
 
 /** A class to print symbolic formulas in a nicely readable way. */
-class SymPrettyVisitor : public SymVisitor<void> {
+class SymPrettyVisitor : public SymVisitor<void, void> {
 
 // the implementation loosely follows https://gist.github.com/kputnam/5625856
 
