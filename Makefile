@@ -91,6 +91,7 @@ SRC_OBJ=\
 	src/symstate/bool.o \
 	src/symstate/function.o \
 	src/symstate/memory_manager.o \
+	src/symstate/simplify.o \
 	src/symstate/state.o \
 	\
 	src/symstate/memory/cell.o \
