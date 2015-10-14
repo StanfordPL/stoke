@@ -265,7 +265,7 @@ public:
     }
     return make_binop(bv->type(), lhs, rhs);
   }
-  
+
   SymBoolAbstract* visit_binop(const SymBoolBinop * const bv) {
     auto lhs = (*this)(bv->a_);
     auto rhs = (*this)(bv->b_);
@@ -274,7 +274,7 @@ public:
     }
     return make_binop(bv->type(), lhs, rhs);
   }
-  
+
   SymBitVectorAbstract* visit_unop(const SymBitVectorUnop * const bv) {
     auto lhs = (*this)(bv->bv_);
     if (lhs == bv->bv_) {
@@ -282,7 +282,7 @@ public:
     }
     return make_upop(bv->type(), lhs);
   }
-  
+
   SymBoolAbstract* visit_compare(const SymBoolCompare * const bv) {
     auto lhs = (*this)(bv->a_);
     auto rhs = (*this)(bv->b_);

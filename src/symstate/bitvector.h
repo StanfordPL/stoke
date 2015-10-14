@@ -176,7 +176,7 @@ public:
 
   class IndexHelper {
     friend class SymBitVector;
-  friend class SymTransformVisitor;
+    friend class SymTransformVisitor;
 
   public:
     SymBitVector operator[](uint16_t index) const;
