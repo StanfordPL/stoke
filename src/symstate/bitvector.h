@@ -176,6 +176,7 @@ public:
 
   class IndexHelper {
     friend class SymBitVector;
+  friend class SymTransformVisitor;
 
   public:
     SymBitVector operator[](uint16_t index) const;
@@ -228,6 +229,11 @@ public:
     memory_manager_ = mm;
   }
 
+  /** Get the memory manager */
+  static SymMemoryManager* get_memory_manager() {
+    return memory_manager_;
+  }
+
 private:
 
   /** Memory Manager */
@@ -239,6 +245,7 @@ private:
 
 class SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
 
 public:
   virtual SymBitVector::Type type() const = 0;
@@ -257,6 +264,7 @@ inline SymBitVectorAbstract::~SymBitVectorAbstract() {}
 /* Abstract class that has contains a left and right argument to a binary operator. */
 class SymBitVectorBinop : public SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
 
 public:
   const SymBitVectorAbstract * const a_;
@@ -276,6 +284,7 @@ protected:
 /* Abstract class that has contains an argument to a unary operator. */
 class SymBitVectorUnop : public SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
 
 public:
   const SymBitVectorAbstract * const bv_;
@@ -294,6 +303,7 @@ protected:
 
 class SymBitVectorAnd : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -307,6 +317,7 @@ public:
 
 class SymBitVectorConcat : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -320,6 +331,7 @@ public:
 
 class SymBitVectorDiv : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -333,6 +345,7 @@ public:
 
 class SymBitVectorConstant : public SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
 
 private:
   SymBitVectorConstant(uint16_t size, uint64_t constant)
@@ -356,6 +369,7 @@ public:
 
 class SymBitVectorExtract : public SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
 
 private:
   /* Extracts bits low_bit,low_bit+1,...,low_bit+n-1 from a
@@ -381,6 +395,7 @@ public:
 
 class SymBitVectorFunction : public SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   friend class SymFunction;
 
 public:
@@ -438,6 +453,7 @@ private:
 
 class SymBitVectorIte : public SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   friend class SymBool;
 
 private:
@@ -463,6 +479,7 @@ public:
 
 class SymBitVectorMinus : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -476,6 +493,7 @@ public:
 
 class SymBitVectorMod : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -489,6 +507,7 @@ public:
 
 class SymBitVectorMult : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -502,6 +521,7 @@ public:
 
 class SymBitVectorNot : public SymBitVectorUnop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorUnop::SymBitVectorUnop;
 
 private:
@@ -515,6 +535,7 @@ public:
 
 class SymBitVectorOr : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -528,6 +549,7 @@ public:
 
 class SymBitVectorPlus : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -541,6 +563,7 @@ public:
 
 class SymBitVectorRotateLeft : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -554,6 +577,7 @@ public:
 
 class SymBitVectorRotateRight : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -567,6 +591,7 @@ public:
 
 class SymBitVectorShiftLeft : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -580,6 +605,7 @@ public:
 
 class SymBitVectorShiftRight : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -593,6 +619,7 @@ public:
 
 class SymBitVectorSignDiv : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -606,6 +633,7 @@ public:
 
 class SymBitVectorSignExtend : public SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
 
 private:
   SymBitVectorSignExtend(const SymBitVectorAbstract * const bv, uint16_t size) : SymBitVectorAbstract(size), bv_(bv), size_(size) {}
@@ -627,6 +655,7 @@ public:
 
 class SymBitVectorSignMod : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -640,6 +669,7 @@ public:
 
 class SymBitVectorSignShiftRight : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -653,6 +683,7 @@ public:
 
 class SymBitVectorUMinus : public SymBitVectorUnop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorUnop::SymBitVectorUnop;
 
 private:
@@ -667,6 +698,7 @@ public:
 
 class SymBitVectorVar : public SymBitVectorAbstract {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
 
 private:
   SymBitVectorVar(uint16_t size, const std::string name) : SymBitVectorAbstract(size), name_(name), size_(size) {}
@@ -698,6 +730,7 @@ public:
 
 class SymBitVectorXor : public SymBitVectorBinop {
   friend class SymBitVector;
+  friend class SymTransformVisitor;
   using SymBitVectorBinop::SymBitVectorBinop;
 
 private:
@@ -719,7 +752,7 @@ std::ostream& operator<< (std::ostream& out, const stoke::SymBitVector& bv);
    before SymBitVector is declared! */
 #include "src/symstate/print_visitor.h"
 #include "src/symstate/pretty_visitor.h"
-// #include "src/symstate/transform_visitor.h"
+#include "src/symstate/transform_visitor.h"
 #include "src/symstate/typecheck_visitor.h"
 
 #endif
