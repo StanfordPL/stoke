@@ -19,6 +19,7 @@
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/false.h"
 #include "src/validator/invariants/flag.h"
+#include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/top_zero.h"
 
@@ -28,6 +29,22 @@
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
+
+void print_summary(vector<Invariant*> invariants) {
+  cout << endl;
+  cout << endl << "*********************************************************************";
+  cout << endl << "****************************   SUMMARY   ****************************";
+  cout << endl << "*********************************************************************";
+  cout << endl;
+
+  for(size_t i = 0; i < invariants.size(); ++i) {
+    cout << "Cutpoint " << i << ": " << endl;
+    auto invs = static_cast<ConjunctionInvariant*>(invariants[i]);
+    for(size_t j = 0; j < invs->size(); ++j) {
+      cout << "    " << *(*invs)[j] << endl;
+    }
+  }
+}
 
 /** Returns an invariant representing the fact that the first state transition in the path is taken. */
 Invariant* get_jump_inv(const Cfg& cfg, const CfgPath& p, bool is_rewrite) {
@@ -78,6 +95,7 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
   produced by the bounded validator and feed it into the next search iteration.*/
 vector<Invariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& rewrite) {
 
+  NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
   vector<Invariant*> invariants;
 
   cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
@@ -109,16 +127,24 @@ vector<Invariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& 
         // Entry
         assert(rewrite_cuts[i] == rewrite.get_entry());
 
-        auto inv = new StateEqualityInvariant(x64asm::RegSet::universe());
-        invariants.push_back(inv);
+        auto begin = new ConjunctionInvariant();
+        auto inv = new StateEqualityInvariant(target.def_ins());
+        begin->add_invariant(inv);
+        begin->add_invariant(no_sigs);
+        invariants.push_back(begin);
       } else if (target_cuts[i] == target.get_exit()) {
         // Exit
         assert(rewrite_cuts[i] == rewrite.get_exit());
 
+        auto end = new ConjunctionInvariant();
         auto inv = new StateEqualityInvariant(target.live_outs());
-        invariants.push_back(inv);
+        end->add_invariant(inv);
+        end->add_invariant(no_sigs);
+        invariants.push_back(end);
       } else {
-        auto inv = learn_invariant(cutpoints_->data_at(i, false), cutpoints_->data_at(i, true));
+        auto target_regs = target.def_outs(target_cuts[i]);
+        auto rewrite_regs = rewrite.def_outs(rewrite_cuts[i]);
+        auto inv = learn_invariant(target_regs, rewrite_regs, cutpoints_->data_at(i, false), cutpoints_->data_at(i, true));
         invariants.push_back(inv);
         cout << "Learned invariant @ i=" << i << endl;
         cout << *inv << endl;
@@ -218,8 +244,10 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
           */
           cout << endl << endl << "WORKING ON " << *end_inv << endl << endl;
           bool ok = bv.verify_pair(target, rewrite, p, q, *invariants[i], *end_inv);
-          if (!ok)
+          if (!ok) {
+            print_summary(invariants);
             return false;
+          }
 
         }
       }
@@ -251,13 +279,18 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
                  << " ; " << BoundedValidator::print(q) << " } false " << endl;
             FalseInvariant fi;
             bool ok = bv.verify_pair(target, rewrite, p, q, copy, fi);
-            if (!ok)
+            if (!ok) {
+              print_summary(invariants);
               return false;
+            }
           }
         }
       }
     }
   }
+
+
+  print_summary(invariants);
 
   return true;
 
@@ -272,10 +305,13 @@ long mpz_to_long(mpz_t z)
   return result;
 }
 
-Invariant* DdecValidator::learn_invariant(std::vector<CpuState> target_states, std::vector<CpuState> rewrite_states) {
+Invariant* DdecValidator::learn_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, std::vector<CpuState> target_states, std::vector<CpuState> rewrite_states) {
+
+  NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
 
   //TODO leaks memory
   ConjunctionInvariant* conj = new ConjunctionInvariant();
+  conj->add_invariant(no_sigs);
 
   // TopZero invariants
   for (size_t k = 0; k < 2; ++k) {
@@ -309,25 +345,28 @@ Invariant* DdecValidator::learn_invariant(std::vector<CpuState> target_states, s
     Column() : reg(rax), is_rewrite(false), zero_extend(false) { }
   };
 
-  // For each live register, we need its column, its 32-bit subcolumn zero-extended
+  // For each live register, we need columns for:
+  //   its 64-bit value (if not guaranteed zero)
+  //   its zero-extended 32-bit value
+  //   its sign-extended 32-bit value
+  // 
   // We need a 'constant' column with the value '1'.
   vector<Column> columns;
-  /*
-  for(size_t i = 0; i < r64s.size(); ++i) {
-    columns.push_back(pair<R,bool>(r64s[i], false));
-    columns.push_back(pair<R,bool>(r32s[i], false));
-    columns.push_back(pair<R,bool>(r64s[i], true));
-    columns.push_back(pair<R,bool>(r32s[i], true));
-  }
-  */
-  vector<R> v = {esi, edi, rax, r15};
-  for (auto r : v) {
-    for (size_t k = 0; k < 2; ++k) {
+
+  for (size_t k = 0; k < 2; ++k) {
+    auto def_ins = k ? rewrite_regs : target_regs;
+    for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {
       Column c;
-      c.reg = r;
+      c.reg = *r;
       c.is_rewrite = k;
-      //if(r.width() == 64) {
+      c.zero_extend = true;
       columns.push_back(c);
+      if((*r).size() == 64) {
+        c.reg = r32s[*r]; 
+        columns.push_back(c);
+      }
+
+      //if(r.width() == 64) {
       /*} else {
         c.zero_extend = true;
         columns.push_back(c);
