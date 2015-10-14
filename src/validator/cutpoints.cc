@@ -22,14 +22,14 @@ void Cutpoints::compute() {
 
   // For each basic block of target/rewrite, we have a cutpoint at the end
   for (size_t i = 0; i < target_.num_blocks(); ++i) {
-    if (target_.is_reachable(i) && !target_.is_exit(i)) {
+    if (target_.is_reachable(i)) {
       target_cutpoints_.push_back(i);
       target_cutpoint_ends_with_jump_.push_back(ends_with_jump(target_, i));
     }
   }
 
   for (size_t i = 0; i < rewrite_.num_blocks(); ++i) {
-    if (rewrite_.is_reachable(i) && !rewrite_.is_exit(i)) {
+    if (rewrite_.is_reachable(i)) {
       rewrite_cutpoints_.push_back(i);
       rewrite_cutpoint_ends_with_jump_.push_back(ends_with_jump(rewrite_, i));
     }
@@ -134,6 +134,8 @@ bool Cutpoints::check() {
         size_t index;
         if (bb == cfg.get_entry()) {
           sandbox_.insert_before(label, 0, callback, cp);
+        } else if (bb == cfg.get_exit()) {
+          // no need to collect data at exit 
         } else if (ends_with_jump) {
           index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
           sandbox_.insert_before(label, index, callback, cp);

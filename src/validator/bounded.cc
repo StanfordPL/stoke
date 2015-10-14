@@ -1189,7 +1189,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
         }
       } else {
         counterexamples_.push_back(ceg);
-        if(ceg != ceg2) {
+        if (ceg != ceg2) {
           counterexamples_.push_back(ceg2);
         }
       }
