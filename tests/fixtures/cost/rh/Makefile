@@ -13,4 +13,4 @@ sandbox:
 	rm a.out b.out
 
 clean:
-	rm -f tc.tc result.s
+	rm -f result.s
