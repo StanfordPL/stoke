@@ -127,7 +127,7 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
     // rename variables in the tmp state to the values in start
 
     // update the start state with the circuits from tmp
-    
+
   }
 
   // unknown instruction
