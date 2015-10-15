@@ -123,8 +123,6 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
     file >> t;
     auto specgen_instr = get_instruction(opcode);
 
-    cout << "Found a program for '" << specgen_instr << "'" << endl;
-
     // build formula for program
     SymState tmp(opcode_str);
     auto code = t.get_code();
@@ -134,19 +132,8 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
       build_circuit(code[i], tmp);
     }
 
-    cout << "--------------" << endl << endl;
-    print_state(specgen_instr.maybe_write_set(), tmp);
-    cout << "--------------" << endl << endl;
-
     // take a register and return it's 64 bit variant
-    auto to_r64 = [](const R& reg) {
-      size_t idx = reg;
-      if (reg.type() == Type::RH) {
-        return Constants::r64s()[idx - 4];
-      }
-      return Constants::r64s()[idx];
-    };
-    auto op_to_r64 = [](const Instruction& instr, size_t i) {
+    auto get_r64_operand = [](const Instruction& instr, size_t i) {
       if (instr.type(i) == Type::RH) {
         size_t idx = instr.get_operand<Rh>(i) - 4;
         return Constants::r64s()[idx];
@@ -154,51 +141,49 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
       return instr.get_operand<R64>(i);
     };
 
-    // function to translate a name from the instr to specgen_instr
-    auto translate_i_to_si = [&instr, &specgen_instr, &op_to_r64, &to_r64](const auto& operand_from, const Instruction& instr_from, const Instruction& instr_to) -> Operand {
+    // given two instructions with the same opcode, and a register from the context
+    // of one of these instructions, translate it into a register in the context
+    // of instr_to.
+    auto translate_register = [&instr, &specgen_instr, &get_r64_operand](const auto& operand_from, const Instruction& instr_from, const Instruction& instr_to) -> Operand {
       for (size_t i = 0; i < instr_from.arity(); i++) {
         if (!instr_from.get_operand<Operand>(i).is_gp_register()) continue;
-        // direct match
+        // direct match?
         if (operand_from == instr_from.get_operand<Operand>(i)) {
           return instr_to.get_operand<Operand>(i);
         }
-        // same 64bit reg
-        if (to_r64(operand_from) == op_to_r64(instr_from, i)) {
-          return op_to_r64(instr_to, i);
+        // same 64bit reg?
+        size_t idx = operand_from;
+        auto operand_from_r64 = Constants::r64s()[idx];
+        if (operand_from.type() == Type::RH) {
+          operand_from_r64 = Constants::r64s()[idx - 4];
+        }
+        if (operand_from_r64 == get_r64_operand(instr_from, i)) {
+          return get_r64_operand(instr_to, i);
         }
       }
+      // no translation necessary
       return operand_from;
     };
     // take a formula for specgen_instr in state tmp, and convert it to one that
     // makes sense for instr in state
-    SymRenamer translate_circuit_si_to_i([&instr, &specgen_instr, &start, &opcode_str, &translate_i_to_si](string name) -> SymBitVectorAbstract* {
+    SymRenamer translate_circuit([&instr, &specgen_instr, &start, &opcode_str, &translate_register](string name) -> SymBitVectorAbstract* {
       assert(name.substr(name.size() - opcode_str.size()) == opcode_str);
       R64 reg = Constants::rax();
       stringstream(name.substr(0, name.size() - opcode_str.size() - 1)) >> reg;
-      auto translated_reg = translate_i_to_si((R)reg, specgen_instr, instr);
-      cout << reg << " -> " << translated_reg << endl;
+      auto translated_reg = translate_register((R)reg, specgen_instr, instr);
       return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
     });
 
     // loop over all live outs
-    SymPrettyVisitor ppp(Console::msg());
     auto liveouts = instr.maybe_write_set();
     for (auto gp_it = liveouts.gp_begin(); gp_it != liveouts.gp_end(); ++gp_it) {
-      //auto val = tmp[*gp_it];
-      cout << "live out: " << (*gp_it) << endl;
-      cout << "look up formula for " << translate_i_to_si(*gp_it, instr, specgen_instr) << endl;
-      auto val = tmp[translate_i_to_si(*gp_it, instr, specgen_instr)];
-      cout << "before: ";
-      ppp(val);
-      cout << endl;
-      cout << "after: ";
-      ppp(translate_circuit_si_to_i(val));
-      cout << endl;
-      start.set(*gp_it, translate_circuit_si_to_i(val), false, true);
+      // look up live out in tmp state (after translating operators as necessary)
+      auto val = tmp[translate_register(*gp_it, instr, specgen_instr)];
+      // rename variables in the tmp state to the values in start
+      auto val_renamed = translate_circuit(val);
+      // update the start state with the circuits from tmp
+      start.set(*gp_it, val_renamed, false, true);
     }
-    // rename variables in the tmp state to the values in start
-
-    // update the start state with the circuits from tmp
 
   }
 
