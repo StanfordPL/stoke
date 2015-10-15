@@ -102,9 +102,6 @@
 .L_1410c0:                  #        0x1410c2  0      OPC=<label>         
   movl %edx, %edx           #  89    0x1410c2  2      OPC=movl_r32_r32    
   movl $0x0, (%r15,%rdx,1)  #  90    0x1410c4  8      OPC=movl_m32_imm32  
-  popq %r11                 #  91    0x1410cc  2      OPC=popq_r64_1      
-  andl $0xe0, %r11d         #  92    0x1410ce  4      OPC=andl_r32_imm8   
-  addq %r15, %r11           #  93    0x1410d2  3      OPC=addq_r64_r64    
-  jmpq %r11                 #  94    0x1410d5  3      OPC=jmpq_r64        
+  retq
                                                                           
 .size wcscat, .-wcscat

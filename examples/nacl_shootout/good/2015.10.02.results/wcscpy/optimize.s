@@ -52,9 +52,6 @@
 .L_140f20:                      #        0x140f20  0      OPC=<label>         
   orl %edx, %edx                #  41    0x140f20  2      OPC=orl_r32_r32     
   movl $0x0, (%r15,%rdx,1)      #  42    0x140f22  8      OPC=movl_m32_imm32  
-  popq %r11                     #  43    0x140f2a  2      OPC=popq_r64_1      
-  andl $0xe0, %r11d             #  44    0x140f2c  4      OPC=andl_r32_imm8   
-  addq %r15, %r11               #  45    0x140f30  3      OPC=addq_r64_r64    
-  jmpq %r11                     #  46    0x140f33  3      OPC=jmpq_r64        
+  retq
                                                                               
 .size wcscpy, .-wcscpy

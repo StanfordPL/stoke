@@ -78,9 +78,6 @@
   nop                            #  66    0x126889  1      OPC=nop             
   nop                            #  67    0x12688a  1      OPC=nop             
   nop                            #  68    0x12688b  1      OPC=nop             
-  popq %r11                      #  69    0x12688c  2      OPC=popq_r64_1      
-  andl $0xe0, %r11d              #  70    0x12688e  4      OPC=andl_r32_imm8   
-  addq %r15, %r11                #  71    0x126892  3      OPC=addq_r64_r64    
-  jmpq %r11                      #  72    0x126895  3      OPC=jmpq_r64        
+  retq
                                                                                
 .size strcpy, .-strcpy

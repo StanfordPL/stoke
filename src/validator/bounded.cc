@@ -19,10 +19,10 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define BOUNDED_DEBUG(X) { X }
+#define BOUNDED_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { X }
 #define ALIAS_CASE_DEBUG(X) { }
-#define ALIAS_STRING_DEBUG(X) { X }
+#define ALIAS_STRING_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -495,9 +495,6 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
 
   auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
   auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
-
-  cout << "TARGET UNROLL: " << endl << target_unroll.get_code() << endl << endl;
-  cout << "REWRITE UNROLL: " << endl << rewrite_unroll.get_code() << endl << endl;
 
   auto target_concrete_accesses = enumerate_accesses(target_unroll);
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
