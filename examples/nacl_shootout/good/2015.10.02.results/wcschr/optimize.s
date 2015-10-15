@@ -91,9 +91,6 @@
   nop                       #  79    0x1412de  1      OPC=nop             
   nop                       #  80    0x1412df  1      OPC=nop             
 .L_1412e0:                  #        0x1412e0  0      OPC=<label>         
-  popq %r11                 #  81    0x1412e0  2      OPC=popq_r64_1      
-  andl $0xe0, %r11d         #  82    0x1412e2  4      OPC=andl_r32_imm8   
-  addq %r15, %r11           #  83    0x1412e6  3      OPC=addq_r64_r64    
-  jmpq %r11                 #  84    0x1412e9  3      OPC=jmpq_r64        
+  retq
                                                                           
 .size wcschr, .-wcschr

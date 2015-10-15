@@ -643,9 +643,6 @@ Invariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64
 
   cout << "Nullspace dimension:" << dec << dim << endl;
   cout << "Column count: " << dec << num_columns << endl;
-  cout << "sizeof(long): " << sizeof(long) << endl;
-
-
 
   return conj;
 }
