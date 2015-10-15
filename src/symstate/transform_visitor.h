@@ -136,7 +136,7 @@ public:
     return res;
   }
 
-  SymBitVectorUnop* make_upop(SymBitVector::Type type, SymBitVectorAbstract* lhs) {
+  SymBitVectorUnop* make_unop(SymBitVector::Type type, SymBitVectorAbstract* lhs) {
     SymBitVectorUnop* res = NULL;
     switch (type) {
     case SymBitVector::NOT:
@@ -203,7 +203,7 @@ public:
     add_to_memory_manager(res);
     return res;
   }
-  SymBitVectorFunction* make_bitvector_function(const SymFunction f, const std::vector<const SymBitVectorAbstract *> args) {
+  SymBitVectorFunction* make_bitvector_function(const SymFunction& f, const std::vector<SymBitVectorAbstract *>& args) {
     SymBitVectorFunction* res = NULL;
     if (args.size() == 1) {
       res = new SymBitVectorFunction(f, args[0]);
@@ -280,7 +280,7 @@ public:
     if (lhs == bv->bv_) {
       return (SymBitVectorAbstract*)bv;
     }
-    return make_upop(bv->type(), lhs);
+    return make_unop(bv->type(), lhs);
   }
 
   SymBoolAbstract* visit_compare(const SymBoolCompare * const bv) {
@@ -301,8 +301,7 @@ public:
     if (lhs == bv->bv_) {
       return (SymBitVectorExtract*)bv;
     }
-    auto res = new SymBitVectorExtract(lhs, bv->high_bit_, bv->low_bit_);
-    return res;
+    return make_bitvector_extract(lhs, bv->high_bit_, bv->low_bit_);
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorFunction * const bv) {
@@ -316,19 +315,7 @@ public:
 
     if (same) return (SymBitVectorFunction*) bv;
 
-    SymBitVectorFunction* res = NULL;
-    if (args.size() == 1) {
-      res = new SymBitVectorFunction(bv->f_, args[0]);
-    } else if (args.size() == 2) {
-      res = new SymBitVectorFunction(bv->f_, args[0], args[1]);
-    } else if (args.size() == 3) {
-      res = new SymBitVectorFunction(bv->f_, args[0], args[1], args[2]);
-    } else if (args.size() == 4) {
-      res = new SymBitVectorFunction(bv->f_, args[0], args[1], args[2], args[3]);
-    } else {
-      assert(false);
-    }
-    return res;
+    return make_bitvector_function(bv->f_, args);
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorIte * const bv) {
@@ -339,8 +326,7 @@ public:
       return (SymBitVectorIte*)bv;
     }
     SymBitVectorIte* res = NULL;
-    res = new SymBitVectorIte(c, lhs, rhs);
-    return res;
+    return make_bitvector_ite(c, lhs, rhs);
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorSignExtend * const bv) {
@@ -348,8 +334,7 @@ public:
     if (lhs == bv->bv_) {
       return (SymBitVectorSignExtend*)bv;
     }
-    auto res = new SymBitVectorSignExtend(lhs, bv->size_);
-    return res;
+    return make_bitvector_sign_extend(lhs, bv->size_);
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorVar * const bv) {
@@ -365,8 +350,7 @@ public:
     if (lhs == b->b_) {
       return (SymBoolNot*)b;
     }
-    auto res = new SymBoolNot(lhs);
-    return res;
+    return make_bool_not(lhs);
   }
 
   SymBoolAbstract* visit(const SymBoolTrue * const b) {
