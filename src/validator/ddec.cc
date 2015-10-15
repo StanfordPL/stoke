@@ -107,6 +107,7 @@ vector<Invariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& 
 
   cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
   if (cutpoints_->has_error()) {
+    cout << "Cutpoint system encountered: " << cutpoints_->get_error();
     return vector<Invariant*>();
   }
 
