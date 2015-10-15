@@ -196,7 +196,7 @@ public:
 
     add_opcode("cvttsd2sil", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("Convert_Double_Precision_Floating_Point_To_Integer32_Truncate", 32, {64});
-        return f(b);
+      return f(b);
     }, 64, 32, true, true);
 
     add_opcode("cvttsd2siq", [] (SymBitVector a, SymBitVector b) {
@@ -206,7 +206,7 @@ public:
 
     add_opcode("cvttss2sil", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer32_Truncate", 32, {32});
-        return f(b);
+      return f(b);
     }, 32, 32, true, true);
 
     add_opcode("cvttss2siq", [] (SymBitVector a, SymBitVector b) {
@@ -274,7 +274,7 @@ public:
       return (f(a,b)[0]).ite(a, b);
     }, 32, 32, true);
 
-    
+
     add_opcode("maxsd", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("maxpd_compare_double", 1, {64, 64});
       return (f(a,b)[0]).ite(a, b);
@@ -284,7 +284,7 @@ public:
       SymFunction f("maxps_compare_single", 1, {32, 32});
       return (f(a,b)[0]).ite(a, b);
     }, 32, 32, true, true);
-    
+
 
     add_opcode("minpd", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("minpd_compare_double", 1, {64, 64});
@@ -296,7 +296,7 @@ public:
       return (f(a,b)[0]).ite(a, b);
     }, 32, 32, true);
 
-    
+
     add_opcode("minsd", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("minpd_compare_double", 1, {64, 64});
       return (f(a,b)[0]).ite(a, b);
@@ -306,7 +306,7 @@ public:
       SymFunction f("minps_compare_single", 1, {32, 32});
       return (f(a,b)[0]).ite(a, b);
     }, 32, 32, true, true);
-    
+
 
     add_opcode("movapd", [] (SymBitVector a, SymBitVector b) {
       return b;
