@@ -54,6 +54,8 @@ using namespace std::chrono;
 using namespace boost;
 using namespace boost::filesystem;
 
+#define ASSERT(s) do { if (!(s)) { Console::error() << "Failed at in " << __FILE__ << ":" << __LINE__ << std::endl; } } while (false)
+
 auto& io_opt = Heading::create("Main option:");
 
 struct CodeReader {
@@ -86,16 +88,34 @@ auto& code_arg = ValueArg<Code, CodeReader, CodeWriter>::create("code")
 
 class SymRenamer : public SymTransformVisitor {
 public:
-  SymRenamer(function<SymBitVectorAbstract*(string)> renameing) : renameing_(renameing) {}
+  SymRenamer(const function<SymBitVectorAbstract*(string)>& bv_rename, const function<SymBoolAbstract*(string)>& b_rename) : bv_rename_(bv_rename), b_rename_(b_rename) {}
+
   SymBitVectorAbstract* visit(const SymBitVectorVar * const bv) {
-    return renameing_(bv->name_);
+    return bv_rename_(bv->name_);
   }
-  const std::function<SymBitVectorAbstract*(string)> renameing_;
+
+  SymBoolAbstract* visit(const SymBoolVar * const bv) {
+    return b_rename_(bv->name_);
+  }
+
+  const function<SymBitVectorAbstract*(string)> bv_rename_;
+  const function<SymBoolAbstract*(string)> b_rename_;
 };
 
 const auto circuit_dir = string(getenv("HOME")) + "/dev/circuits/";
 
 void print_state(RegSet regs, SymState& state);
+
+template <typename T>
+void print_circuit(const T& c) {
+  SymPrettyVisitor pretty(Console::msg());
+  // cout << "normal: ";
+  // pretty((c));
+  // cout << endl;
+  // cout << "simple: ";
+  pretty(SymSimplify::simplify(c));
+  // cout << endl;
+}
 
 void build_circuit(const x64asm::Instruction& instr, SymState& start) {
   ComboHandler ch;
@@ -144,7 +164,7 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
     // given two instructions with the same opcode, and a register from the context
     // of one of these instructions, translate it into a register in the context
     // of instr_to.
-    auto translate_register = [&instr, &specgen_instr, &get_r64_operand](const auto& operand_from, const Instruction& instr_from, const Instruction& instr_to) -> Operand {
+    auto translate_gp_register = [&instr, &specgen_instr, &get_r64_operand](const auto& operand_from, const Instruction& instr_from, const Instruction& instr_to) -> Operand {
       for (size_t i = 0; i < instr_from.arity(); i++) {
         if (!instr_from.get_operand<Operand>(i).is_gp_register()) continue;
         // direct match?
@@ -164,21 +184,62 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
       // no translation necessary
       return operand_from;
     };
+    // same for sse
+    auto translate_sse_register = [&instr, &specgen_instr, &get_r64_operand](const auto& operand_from, const Instruction& instr_from, const Instruction& instr_to) -> Operand {
+      for (size_t i = 0; i < instr_from.arity(); i++) {
+        if (!instr_from.get_operand<Operand>(i).is_sse_register()) continue;
+        // direct match?
+        if (operand_from == instr_from.get_operand<Operand>(i)) {
+          return instr_to.get_operand<Operand>(i);
+        }
+        // same ymm reg?
+        if (Constants::ymms()[(size_t) operand_from] == instr_from.get_operand<Ymm>(i)) {
+          return instr_to.get_operand<Ymm>(i);
+        }
+      }
+      // no translation necessary
+      return operand_from;
+    };
     // take a formula for specgen_instr in state tmp, and convert it to one that
     // makes sense for instr in state
-    SymRenamer translate_circuit([&instr, &specgen_instr, &start, &opcode_str, &translate_register](string name) -> SymBitVectorAbstract* {
-      assert(name.substr(name.size() - opcode_str.size()) == opcode_str);
-      R64 reg = Constants::rax();
-      stringstream(name.substr(0, name.size() - opcode_str.size() - 1)) >> reg;
-      auto translated_reg = translate_register((R)reg, specgen_instr, instr);
-      return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
+    SymRenamer translate_circuit([&instr, &specgen_instr, &start, &opcode_str, &translate_gp_register, &translate_sse_register](string name) -> SymBitVectorAbstract* {
+      ASSERT(name.substr(name.size() - opcode_str.size()) == opcode_str);
+      auto real_name = name.substr(0, name.size() - opcode_str.size() - 1);
+      R64 gp = Constants::rax();
+      Ymm ymm = Constants::ymm0();
+      if (stringstream(real_name) >> gp) {
+        auto translated_reg = translate_gp_register((R)gp, specgen_instr, instr);
+        return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
+      } else if (stringstream(real_name) >> ymm) {
+        auto translated_reg = translate_sse_register((Sse)ymm, specgen_instr, instr);
+        return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
+      }
+      ASSERT(false);
+      return NULL;
+    }, [&start, &opcode_str](string name) -> SymBoolAbstract* {
+      ASSERT(name.substr(name.size() - opcode_str.size()) == opcode_str);
+      auto real_name = name.substr(0, name.size() - opcode_str.size() - 1);
+      Eflags reg = Constants::eflags_cf();
+      if (stringstream(real_name) >> reg) {
+        return (SymBoolAbstract*)start[reg].ptr;
+      }
+      ASSERT(false);
+      return NULL;
     });
 
     // loop over all live outs
     auto liveouts = instr.maybe_write_set();
     for (auto gp_it = liveouts.gp_begin(); gp_it != liveouts.gp_end(); ++gp_it) {
       // look up live out in tmp state (after translating operators as necessary)
-      auto val = tmp[translate_register(*gp_it, instr, specgen_instr)];
+      auto val = tmp[translate_gp_register(*gp_it, instr, specgen_instr)];
+      // rename variables in the tmp state to the values in start
+      auto val_renamed = translate_circuit(val);
+      // update the start state with the circuits from tmp
+      start.set(*gp_it, val_renamed, false, true);
+    }
+    for (auto gp_it = liveouts.sse_begin(); gp_it != liveouts.sse_end(); ++gp_it) {
+      // look up live out in tmp state (after translating operators as necessary)
+      auto val = tmp[translate_sse_register(*gp_it, instr, specgen_instr)];
       // rename variables in the tmp state to the values in start
       auto val_renamed = translate_circuit(val);
       // update the start state with the circuits from tmp
@@ -194,11 +255,6 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
 }
 
 void print_state(RegSet regs, SymState& state) {
-  SymPrettyVisitor pretty(Console::msg());
-
-  auto print = [&pretty](const auto c) {
-    pretty(SymSimplify::simplify(c));
-  };
 
   // print symbolic state
   bool printed = false;
@@ -213,7 +269,7 @@ void print_state(RegSet regs, SymState& state) {
     auto val = state.lookup(fullreg);
     // if (!has_changed(gp_it, val)) continue;
     Console::msg() << out_padded(fullreg, pad) << ": ";
-    print(val);
+    print_circuit(val);
     Console::msg() << endl;
     printed = true;
   }
@@ -224,7 +280,7 @@ void print_state(RegSet regs, SymState& state) {
     auto val = state.lookup(fullreg);
     // if (!has_changed(sse_it, val)) continue;
     Console::msg() << out_padded(fullreg, pad) << ": ";
-    print(val);
+    print_circuit(val);
     Console::msg() << endl;
     printed = true;
   }
@@ -234,7 +290,7 @@ void print_state(RegSet regs, SymState& state) {
     SymBool val = state[*flag_it];
     // if (!has_changed(flag_it, val)) continue;
     Console::msg() << out_padded(*flag_it, pad) << ": ";
-    print(val);
+    print_circuit(val);
     Console::msg() << endl;
     printed = true;
   }
@@ -242,13 +298,13 @@ void print_state(RegSet regs, SymState& state) {
   printed = false;
 
   Console::msg() << "sigfpe :     ";
-  print(state.sigfpe);
+  print_circuit(state.sigfpe);
   Console::msg() << endl;
   Console::msg() << "sigbus :     ";
-  print(state.sigbus);
+  print_circuit(state.sigbus);
   Console::msg() << endl;
   Console::msg() << "sigsegv:     ";
-  print(state.sigsegv);
+  print_circuit(state.sigsegv);
   Console::msg() << endl;
 }
 

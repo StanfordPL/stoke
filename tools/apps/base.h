@@ -3600,8 +3600,8 @@ vector<Opcode> instr_cat_base_ = {
 // , VXORPS_XMM_XMM_XMM // VXORPS xmm, xmm, xmm
 // , VXORPS_YMM_YMM_M256 // VXORPS ymm, ymm, m256
 // , VXORPS_YMM_YMM_YMM // VXORPS ymm, ymm, ymm
-// , VZEROALL // VZEROALL
-  , VZEROUPPER // VZEROUPPER
+  , VZEROALL // VZEROALL
+// , VZEROUPPER // VZEROUPPER
 // , WAIT // WAIT
 // , WRFSBASE_R32 // WRFSBASE r32
 // , WRFSBASE_R64 // WRFSBASE r64
