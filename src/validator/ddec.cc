@@ -271,7 +271,7 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
           continue;
 
         auto rewrite_paths_ik =
-          CfgPaths::enumerate_paths(target, 1, rewrite_cuts[i], rewrite_cuts[k], &target_cuts);
+          CfgPaths::enumerate_paths(rewrite, 1, rewrite_cuts[i], rewrite_cuts[k], &rewrite_cuts);
 
         for (auto p : target_paths_ij) {
           auto target_jump_inv = get_jump_inv(target, p, false);

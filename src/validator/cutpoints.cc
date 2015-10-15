@@ -22,25 +22,25 @@ using namespace x64asm;
 Cfg::id_type find_cutpoint(const Cfg& cfg, Cfg::id_type node, int scc, const CfgSccs& sccs,
                            map<Cfg::id_type, bool>& visited) {
 
-  if(visited[node])
+  if (visited[node])
     return 0;
   visited[node] = true;
 
   bool our_scc = sccs.get_scc(node) == scc;
 
-  if(our_scc) {
+  if (our_scc) {
     // Check to see if we're done
-    for(auto it = cfg.succ_begin(node); it != cfg.succ_end(node); ++it) {
-      if(sccs.get_scc(*it) != scc) {
+    for (auto it = cfg.succ_begin(node); it != cfg.succ_end(node); ++it) {
+      if (sccs.get_scc(*it) != scc) {
         return node;
       }
     }
   }
 
-  for(auto it = cfg.succ_begin(node); it != cfg.succ_end(node); ++it) {
+  for (auto it = cfg.succ_begin(node); it != cfg.succ_end(node); ++it) {
     auto res = find_cutpoint(cfg, *it, scc, sccs, visited);
-    if(res)
-      return res; 
+    if (res)
+      return res;
   }
 
   return 0;
@@ -54,12 +54,12 @@ void Cutpoints::compute() {
   target_cutpoints_.push_back(target_.get_entry());
   rewrite_cutpoints_.push_back(rewrite_.get_entry());
 
-  if(target_sccs.count() != rewrite_sccs.count()) {
+  if (target_sccs.count() != rewrite_sccs.count()) {
     error_ = "Target/Rewrite have different number of SCCs";
     return;
   }
 
-  for(size_t i = 0; i < target_sccs.count(); ++i) {
+  for (size_t i = 0; i < target_sccs.count(); ++i) {
     map<Cfg::id_type, bool> empty_map;
     auto target_cp = find_cutpoint(target_, target_.get_entry(), i, target_sccs, empty_map);
     target_cutpoints_.push_back(target_cp);
@@ -68,7 +68,7 @@ void Cutpoints::compute() {
     auto rewrite_cp = find_cutpoint(rewrite_, rewrite_.get_entry(), i, rewrite_sccs, empty_map);
     rewrite_cutpoints_.push_back(rewrite_cp);
 
-    if(target_cp == 0 || rewrite_cp == 0) {
+    if (target_cp == 0 || rewrite_cp == 0) {
       error_ = "Internal: couldn't find SCC exits for target or rewrite";
       return;
     }
@@ -77,10 +77,13 @@ void Cutpoints::compute() {
   target_cutpoints_.push_back(target_.get_exit());
   rewrite_cutpoints_.push_back(rewrite_.get_exit());
 
-  for(auto it : target_cutpoints_) {
+  cout << "target exit: " << target_.get_exit() << endl;
+  cout << "rewrite exit: " << rewrite_.get_exit() << endl;
+
+  for (auto it : target_cutpoints_) {
     target_cutpoint_ends_with_jump_.push_back(ends_with_jump(target_, it));
   }
-  for(auto it : rewrite_cutpoints_) {
+  for (auto it : rewrite_cutpoints_) {
     rewrite_cutpoint_ends_with_jump_.push_back(ends_with_jump(rewrite_, it));
   }
 

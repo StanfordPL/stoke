@@ -52,7 +52,6 @@ public:
       if (fallthrough_)
         return SymBool::_true();
       else {
-        assert(false);  // I don't think this case should happen irl -- BRC
         return SymBool::_false();
       }
     }
