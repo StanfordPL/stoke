@@ -171,17 +171,14 @@ void build_circuit(const x64asm::Instruction& instr, SymState& start) {
     };
     // take a formula for specgen_instr in state tmp, and convert it to one that
     // makes sense for instr in state
-    auto translate_circuit_si_to_i = [&instr, &specgen_instr, &tmp, &start, &opcode_str, &translate_i_to_si](auto circuit) {
-      SymRenamer renamer([&instr, &specgen_instr, &start, &opcode_str, &translate_i_to_si](string name) -> SymBitVectorAbstract* {
-        assert(name.substr(name.size() - opcode_str.size()) == opcode_str);
-        R64 reg = Constants::rax();
-        stringstream(name.substr(0, name.size() - opcode_str.size() - 1)) >> reg;
-        auto translated_reg = translate_i_to_si((R)reg, specgen_instr, instr);
-        cout << reg << " -> " << translated_reg << endl;
-        return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
-      });
-      return renamer(circuit);
-    };
+    SymRenamer translate_circuit_si_to_i([&instr, &specgen_instr, &start, &opcode_str, &translate_i_to_si](string name) -> SymBitVectorAbstract* {
+      assert(name.substr(name.size() - opcode_str.size()) == opcode_str);
+      R64 reg = Constants::rax();
+      stringstream(name.substr(0, name.size() - opcode_str.size() - 1)) >> reg;
+      auto translated_reg = translate_i_to_si((R)reg, specgen_instr, instr);
+      cout << reg << " -> " << translated_reg << endl;
+      return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
+    });
 
     // loop over all live outs
     SymPrettyVisitor ppp(Console::msg());
