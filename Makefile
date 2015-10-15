@@ -91,6 +91,7 @@ SRC_OBJ=\
 	src/symstate/bool.o \
 	src/symstate/function.o \
 	src/symstate/memory_manager.o \
+	src/symstate/simplify.o \
 	src/symstate/state.o \
 	\
 	src/symstate/memory/cell.o \
@@ -397,7 +398,7 @@ hooks: .git/hooks/pre-commit
 
 .git/hooks/pre-commit: scripts/git/pre-commit.sh src/ext/astyle
 	chmod +x "scripts/git/pre-commit.sh"
-	ln -sf $(shell pwd)/scripts/git/pre-commit.sh .git/hooks/pre-commit
+	ln -sf $(shell pwd)/scripts/git/pre-commit.sh `git rev-parse --git-dir`/hooks/pre-commit
 
 ##### CLEAN TARGETS
 

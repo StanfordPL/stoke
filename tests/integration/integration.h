@@ -192,6 +192,13 @@ TEST_F(IntegrationTest, CostLiveOut) {
   ASSERT_EQ(0ull, shell("make clean"));
 }
 
+TEST_F(IntegrationTest, CostRh) {
+  set_working_dir("tests/fixtures/cost/rh");
+  set_path("../../../../bin");
+  ASSERT_EQ(0ull, shell("make"));
+  ASSERT_EQ(0ull, shell("make clean"));
+}
+
 TEST_F(IntegrationTest, ReplaceIdempotent) {
   set_working_dir("tests/fixtures/replace/idem");
   set_path("../../../../bin");
