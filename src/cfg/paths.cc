@@ -90,6 +90,9 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
     return;
   }
 
+  if(last_block == cfg.get_exit())
+    return;
+
   // iterate
   for (auto it = cfg.succ_begin(last_block), ie = cfg.succ_end(last_block); it != ie; ++it) {
 
