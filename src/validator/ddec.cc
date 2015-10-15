@@ -217,13 +217,13 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
            << " " << target_paths_ij.size() << " / " << target_paths_ij_more.size() << endl;
       if (target_paths_ij.size() != target_paths_ij_more.size()) {
         cout << "Infinitely many paths found between target cutpoints " << i << " and " << j << endl;
-        //return false;
+        return false;
       }
       cout << "i=" << i << ", j=" << j
            << " " << rewrite_paths_ij.size() << " / " << rewrite_paths_ij_more.size() << endl;
       if (rewrite_paths_ij.size() != rewrite_paths_ij_more.size()) {
         cout << "Infinitely many paths found between rewrite cutpoints " << i << " and " << j << endl;
-        //return false;
+        return false;
       }
 
       cout << "cutpoint blocks: " << target_cuts[i] << "  (and)  " << rewrite_cuts[j] << endl;

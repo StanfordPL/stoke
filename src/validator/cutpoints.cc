@@ -12,15 +12,81 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/cfg/sccs.h"
 #include "src/validator/cutpoints.h"
 
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+Cfg::id_type find_cutpoint(const Cfg& cfg, Cfg::id_type node, int scc, const CfgSccs& sccs,
+                           map<Cfg::id_type, bool>& visited) {
+
+  if(visited[node])
+    return 0;
+  visited[node] = true;
+
+  bool our_scc = sccs.get_scc(node) == scc;
+
+  if(our_scc) {
+    // Check to see if we're done
+    for(auto it = cfg.succ_begin(node); it != cfg.succ_end(node); ++it) {
+      if(sccs.get_scc(*it) != scc) {
+        return node;
+      }
+    }
+  }
+
+  for(auto it = cfg.succ_begin(node); it != cfg.succ_end(node); ++it) {
+    auto res = find_cutpoint(cfg, *it, scc, sccs, visited);
+    if(res)
+      return res; 
+  }
+
+  return 0;
+}
+
 void Cutpoints::compute() {
 
+  CfgSccs target_sccs(target_);
+  CfgSccs rewrite_sccs(rewrite_);
+
+  target_cutpoints_.push_back(target_.get_entry());
+  rewrite_cutpoints_.push_back(rewrite_.get_entry());
+
+  if(target_sccs.count() != rewrite_sccs.count()) {
+    error_ = "Target/Rewrite have different number of SCCs";
+    return;
+  }
+
+  for(size_t i = 0; i < target_sccs.count(); ++i) {
+    map<Cfg::id_type, bool> empty_map;
+    auto target_cp = find_cutpoint(target_, target_.get_entry(), i, target_sccs, empty_map);
+    target_cutpoints_.push_back(target_cp);
+
+    empty_map.clear();
+    auto rewrite_cp = find_cutpoint(rewrite_, rewrite_.get_entry(), i, rewrite_sccs, empty_map);
+    rewrite_cutpoints_.push_back(rewrite_cp);
+
+    if(target_cp == 0 || rewrite_cp == 0) {
+      error_ = "Internal: couldn't find SCC exits for target or rewrite";
+      return;
+    }
+  }
+
+  target_cutpoints_.push_back(target_.get_exit());
+  rewrite_cutpoints_.push_back(rewrite_.get_exit());
+
+  for(auto it : target_cutpoints_) {
+    target_cutpoint_ends_with_jump_.push_back(ends_with_jump(target_, it));
+  }
+  for(auto it : rewrite_cutpoints_) {
+    rewrite_cutpoint_ends_with_jump_.push_back(ends_with_jump(rewrite_, it));
+  }
+
+
   // For each basic block of target/rewrite, we have a cutpoint at the end
+  /*
   for (size_t i = 0; i < target_.num_blocks(); ++i) {
     if (target_.is_reachable(i)) {
       target_cutpoints_.push_back(i);
@@ -34,6 +100,7 @@ void Cutpoints::compute() {
       rewrite_cutpoint_ends_with_jump_.push_back(ends_with_jump(rewrite_, i));
     }
   }
+  */
 
   for (size_t i = 0; i < target_cutpoints_.size(); ++i) {
     cout << "Cutpoint " << target_cutpoints_[i] << "; has jump? " << target_cutpoint_ends_with_jump_[i] << endl;

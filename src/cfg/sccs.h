@@ -28,7 +28,7 @@ public:
 
   /** You only need to construct an object of this type if you want to 'learn'
    * a path. */
-  CfgSccs(Cfg& cfg) : cfg_(cfg) {
+  CfgSccs(const Cfg& cfg) : cfg_(cfg) {
     recompute();
   }
 
@@ -42,13 +42,13 @@ public:
   }
 
   /** Is this basic block in any loop at all? */
-  bool in_scc(Cfg::id_type b) {
-    return sccs_[b] != -1;
+  bool in_scc(Cfg::id_type b) const {
+    return sccs_.at(b) != -1;
   }
 
   /** Which scc is this block in?  Returns -1 if !in_scc(b). */
-  int get_scc(Cfg::id_type b) {
-    return sccs_[b];
+  int get_scc(Cfg::id_type b) const {
+    return sccs_.at(b);
   }
 
 private:
@@ -64,7 +64,7 @@ private:
   size_t next_index_;
 
   /** The CFG */
-  Cfg& cfg_;
+  const Cfg& cfg_;
   /** Map from basic block -> SCC.  (-1) if loop-free singleton. */
   std::map<Cfg::id_type, int> sccs_;
   /** Number of SCCs, excluding loop-free singletons. */
