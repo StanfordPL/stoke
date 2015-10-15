@@ -62,6 +62,7 @@ SRC_OBJ=\
 	src/cfg/cfg_transforms.o \
 	src/cfg/dot_writer.o \
 	src/cfg/paths.o \
+	src/cfg/sccs.o \
 	\
 	src/cost/correctness.o \
 	src/cost/cost_parser.o \
