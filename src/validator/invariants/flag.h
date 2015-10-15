@@ -67,7 +67,7 @@ public:
   std::ostream& write(std::ostream& os) const {
     std::string neg = fallthrough_ ? "!" : "";
 
-    if(is_rewrite_) {
+    if (is_rewrite_) {
       os << "( rewrite " << neg << predicate_ << ")";
     } else {
       os << "( target " << neg << predicate_ << ")";
