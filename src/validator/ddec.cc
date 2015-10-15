@@ -333,14 +333,14 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
   cout << "REWRITE CC: " << rewrite_cc << endl;
 
   /** Case 1: there's no conditional jump */
-  if(!target_has_jcc && !rewrite_has_jcc) {
+  if (!target_has_jcc && !rewrite_has_jcc) {
     return learn_simple_invariant(target_regs, rewrite_regs, target_states, rewrite_states);
   } else if (target_has_jcc && !rewrite_has_jcc) {
 
     vector<CpuState> jump_states;
     vector<CpuState> fall_states;
-    for(auto it : target_states) {
-      if(ConditionalHandler::condition_satisfied(target_cc, it))
+    for (auto it : target_states) {
+      if (ConditionalHandler::condition_satisfied(target_cc, it))
         jump_states.push_back(it);
       else
         fall_states.push_back(it);
@@ -368,8 +368,8 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
 
     vector<CpuState> jump_states;
     vector<CpuState> fall_states;
-    for(auto it : rewrite_states) {
-      if(ConditionalHandler::condition_satisfied(rewrite_cc, it))
+    for (auto it : rewrite_states) {
+      if (ConditionalHandler::condition_satisfied(rewrite_cc, it))
         jump_states.push_back(it);
       else
         fall_states.push_back(it);
@@ -405,9 +405,9 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
     vector<CpuState> fall_jump_states_rewrite;
     vector<CpuState> fall_fall_states_rewrite;
 
-    for(size_t i = 0; i < target_states.size(); ++i) {
-      if( ConditionalHandler::condition_satisfied( target_cc, target_states[i])) {
-        if( ConditionalHandler::condition_satisfied( rewrite_cc, rewrite_states[i])) {
+    for (size_t i = 0; i < target_states.size(); ++i) {
+      if ( ConditionalHandler::condition_satisfied( target_cc, target_states[i])) {
+        if ( ConditionalHandler::condition_satisfied( rewrite_cc, rewrite_states[i])) {
           jump_jump_states_target.push_back(target_states[i]);
           jump_jump_states_rewrite.push_back(rewrite_states[i]);
         } else {
@@ -415,7 +415,7 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
           jump_fall_states_rewrite.push_back(rewrite_states[i]);
         }
       } else {
-        if( ConditionalHandler::condition_satisfied( rewrite_cc, rewrite_states[i])) {
+        if ( ConditionalHandler::condition_satisfied( rewrite_cc, rewrite_states[i])) {
           fall_jump_states_target.push_back(target_states[i]);
           fall_jump_states_rewrite.push_back(rewrite_states[i]);
         } else {
@@ -476,7 +476,7 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
 
 Invariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states) {
 
-  if(target_states.size() == 0 || rewrite_states.size() == 0)
+  if (target_states.size() == 0 || rewrite_states.size() == 0)
     return new FalseInvariant();
 
   NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
