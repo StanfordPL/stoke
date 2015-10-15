@@ -90,7 +90,7 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
     return;
   }
 
-  if(last_block == cfg.get_exit())
+  if (last_block == cfg.get_exit())
     return;
 
   // iterate
