@@ -130,6 +130,7 @@ SRC_OBJ=\
 	src/validator/handlers/punpck_handler.o \
 	src/validator/handlers/shift_handler.o \
 	src/validator/handlers/simple_handler.o \
+	src/validator/handlers/strata_handler.o \
 	\
 	src/verifier/hold_out.o
 

@@ -31,6 +31,12 @@ cpputil::ValueArg<std::string>& strategy_arg =
   .description("Verification strategy")
   .default_val("hold_out");
 
+cpputil::ValueArg<std::string>& strata_path_arg =
+  cpputil::ValueArg<std::string>::create("strata_path")
+  .usage("<path/to/dir>")
+  .description("The path to the directory with the strata circuits (a collection of .s files)")
+  .default_val("");
+
 } // namespace stoke
 
 #endif

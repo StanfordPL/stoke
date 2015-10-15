@@ -39,7 +39,7 @@ public:
     STRING_NO_ALIAS   // assume strings don't overlap (UNSOUND)
   };
 
-  BoundedValidator(SMTSolver& solver) : Validator(solver) {
+  BoundedValidator(SMTSolver& solver, const std::string& strata_path = "") : Validator(solver, strata_path) {
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(true);

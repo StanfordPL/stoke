@@ -33,8 +33,8 @@ class Validator : public Verifier {
 
 public:
 
-  Validator(SMTSolver& solver) : solver_(solver),
-    handler_(*(new ComboHandler())), free_handler_(true) {
+  Validator(SMTSolver& solver, const std::string& strata_path = "") : solver_(solver),
+    handler_(*(new ComboHandler(strata_path))), free_handler_(true) {
     has_error_ = false;
     setup_support_table();
   }

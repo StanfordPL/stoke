@@ -26,9 +26,9 @@ class ComboHandler : public Handler {
 
 public:
   /** Uses a predefined and prioritized list of handlers to build circuits */
-  ComboHandler() : handlers_(default_handler_list()), free_handlers_(true) {}
+  ComboHandler(const std::string& strata_path = "") : handlers_(default_handler_list()), free_handlers_(true), strata_path_(strata_path) {}
   /** Set the prioritized list of handlers used to build circuits */
-  ComboHandler(std::vector<Handler*>& handlers) : handlers_(handlers), free_handlers_(false) {}
+  ComboHandler(std::vector<Handler*>& handlers) : handlers_(handlers), free_handlers_(false), strata_path_("") {}
   /** Destruct object.  Frees handlers if set by default. */
   ~ComboHandler() {
     if (free_handlers_)
@@ -60,6 +60,10 @@ private:
   std::vector<Handler*> default_handler_list() const {
     std::vector<Handler*> v;
 
+    if (strata_path_ != "") {
+      v.push_back(new StrataHandler(strata_path_));
+    }
+
     // New Handlers
     v.push_back(new PackedHandler());
     v.push_back(new SimpleHandler());
@@ -79,6 +83,8 @@ private:
   const std::vector<Handler*> handlers_;
   /** Whether we need to free these handlers */
   const bool free_handlers_;
+  /** The path to the strata circuits. */
+  const std::string strata_path_;
 
 };
 
