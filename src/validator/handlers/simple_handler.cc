@@ -487,7 +487,21 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a ^ b);
   });
 
+  add_opcode({"vzeroall"},
+  [this] (SymState& ss) {
+    for (auto ymm : Constants::ymms()) {
+      ss.set(ymm, SymBitVector::constant(256, 0));
+    }
+  });
 
+  add_opcode({"vzeroupper"},
+  [this] (SymState& ss) {
+    size_t i = 0;
+    for (auto ymm : Constants::ymms()) {
+      ss.set(ymm, SymBitVector::constant(128, 0) || ss[Constants::xmms()[i]]);
+      i += 1;
+    }
+  });
 
 }
 
