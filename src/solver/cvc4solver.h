@@ -72,7 +72,7 @@ private:
 
 
   /** This class converts symbolic bit-vectors into Z3's format. */
-  class ExprConverter : public SymVisitor<CVC4::Expr> {
+  class ExprConverter : public SymVisitor<CVC4::Expr, CVC4::Expr> {
 
   public:
     ExprConverter(Cvc4Solver* parent) : em_(parent->em_), variables_(parent->variables_),
@@ -81,12 +81,12 @@ private:
     /** Visit some bit vector */
     CVC4::Expr operator()(const SymBitVector& bv) {
       error_ = "";
-      return SymVisitor<CVC4::Expr>::operator()(bv.ptr);
+      return SymVisitor<CVC4::Expr, CVC4::Expr>::operator()(bv.ptr);
     }
     /** Visit some bit bool */
     CVC4::Expr operator()(const SymBool& b) {
       error_ = "";
-      return SymVisitor<CVC4::Expr>::operator()(b.ptr);
+      return SymVisitor<CVC4::Expr, CVC4::Expr>::operator()(b.ptr);
     }
 
     /** Visit bit-vector binop */
