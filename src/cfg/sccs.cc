@@ -25,7 +25,7 @@ using namespace std;
 /** This follows the pseudocode on Wikipedia for Tarjan's algorithm almost exactly. */
 
 void CfgSccs::tarjan(Cfg::id_type node) {
-  DEBUG_SCC("Exploring " << node);
+  DEBUG_SCC("Exploring " << node << " (i.e. index " << next_index_ << ")");
 
   index_[node] = next_index_;
   lowlink_[node] = next_index_;
@@ -37,6 +37,7 @@ void CfgSccs::tarjan(Cfg::id_type node) {
   bool self_loop = false;
 
   for (auto succ = cfg_.succ_begin(node); succ != cfg_.succ_end(node); ++succ) {
+    DEBUG_SCC("  Searching " << node << " -> " << *succ);
 
     if (*succ == node) {
       DEBUG_SCC("Found self-loop for " << node);
@@ -47,9 +48,11 @@ void CfgSccs::tarjan(Cfg::id_type node) {
       // index is undefined: we haven't visited yet
       tarjan(*succ);
       lowlink_[node] = MIN(lowlink_[node], lowlink_[*succ]);
+      DEBUG_SCC("  Updating lowlink (i) for " << node << " via " << *succ << " -> " << lowlink_[node]);
     } else if (on_stack_[*succ]) {
       // on the stack: already visited, but not committed to SCC
-      lowlink_[node] = MIN(lowlink_[node], lowlink_[*succ]);
+      lowlink_[node] = MIN(lowlink_[node], index_[*succ]);
+      DEBUG_SCC("  Updating lowlink (ii) for " << node << " via " << *succ << " -> " << lowlink_[node]);
     }
   }
 
@@ -65,6 +68,7 @@ void CfgSccs::tarjan(Cfg::id_type node) {
         // No self-loop
         sccs_[node] = -1;
       }
+      on_stack_[stack_.top()] = false;
       stack_.pop();
 
     } else {
@@ -74,9 +78,11 @@ void CfgSccs::tarjan(Cfg::id_type node) {
       while (stack_.top() != node) {
         sccs_[stack_.top()] = count_;
         DEBUG_SCC("  " << stack_.top());
+        on_stack_[stack_.top()] = false;
         stack_.pop();
       }
       DEBUG_SCC("  " << node);
+      on_stack_[stack_.top()] = false;
       stack_.pop();
       sccs_[node] = count_;
       count_++;
@@ -102,8 +108,10 @@ void CfgSccs::recompute() {
 
   /** Make sure tarjan is called on every node */
   for (auto it = cfg_.reachable_begin(); it != cfg_.reachable_end(); ++it) {
-    if (index_.count(*it) == 0)
+    if (index_.count(*it) == 0) {
+      DEBUG_SCC("**** Initiating search rooted at " << *it);
       tarjan(*it);
+    }
   }
 
 }
