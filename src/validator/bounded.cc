@@ -20,9 +20,10 @@
 #include "src/validator/invariants/true.h"
 
 #define BOUNDED_DEBUG(X) { }
-#define ALIAS_DEBUG(X) { X }
+#define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
+#define CEG_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -1190,21 +1191,21 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
           counterexamples_.push_back(ceg2);
         }
       }
-      BOUNDED_DEBUG(cout << "  (Got counterexample)" << endl;)
-      BOUNDED_DEBUG(cout << "TARGET START STATE" << endl;)
-      BOUNDED_DEBUG(cout << ceg << endl;)
-      BOUNDED_DEBUG(cout << "REWRITE START STATE" << endl;)
-      BOUNDED_DEBUG(cout << ceg2 << endl;)
-      BOUNDED_DEBUG(cout << "TARGET END STATE" << endl;)
-      BOUNDED_DEBUG(cout << ceg_tf << endl;)
-      BOUNDED_DEBUG(cout << "REWRITE END STATE" << endl;)
-      BOUNDED_DEBUG(cout << ceg_rf << endl;)
+      CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
+      CEG_DEBUG(cout << "TARGET START STATE" << endl;)
+      CEG_DEBUG(cout << ceg << endl;)
+      CEG_DEBUG(cout << "REWRITE START STATE" << endl;)
+      CEG_DEBUG(cout << ceg2 << endl;)
+      CEG_DEBUG(cout << "TARGET END STATE" << endl;)
+      CEG_DEBUG(cout << ceg_tf << endl;)
+      CEG_DEBUG(cout << "REWRITE END STATE" << endl;)
+      CEG_DEBUG(cout << ceg_rf << endl;)
 
       delete_memories(memory_list);
       stop_mm();
       return false;
     } else {
-      BOUNDED_DEBUG(cout << "  (This case verified)" << endl;)
+      CEG_DEBUG(cout << "  (This case verified)" << endl;)
     }
 
   }
