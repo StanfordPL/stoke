@@ -145,6 +145,43 @@ TEST(SccTest, TwoLoops) {
   }
 }
 
+TEST(SccTest, TwoLoopsWcslen) {
+
+  std::stringstream ss;
+  ss << ".wcslen:" << std::endl;        // BB1
+  ss << "nop" << std::endl;
+  ss << "je .L22" << std::endl;
+  ss << ".L10:" << std::endl;           // BB2
+  ss << "nop" << std::endl;
+  ss << "jne .L10" << std::endl;
+  ss << "nop" << std::endl;             // BB3
+  ss << "nop" << std::endl;
+  ss << "retq" << std::endl;
+  ss << "nop" << std::endl;             // BB4
+  ss << "nop" << std::endl;
+  ss << ".L22:" << std::endl;           // BB5
+  ss << "nop" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+
+  Cfg cfg(c);
+  CfgSccs sccs(cfg);
+
+  EXPECT_EQ(1ul, sccs.count());
+
+  for (auto it = cfg.reachable_begin(); it != cfg.reachable_end(); ++it) {
+    if (*it == 2) {
+      EXPECT_EQ(0, sccs.get_scc(*it));
+      EXPECT_TRUE(sccs.in_scc(*it));
+    } else {
+      EXPECT_EQ(-1, sccs.get_scc(*it));
+      EXPECT_FALSE(sccs.in_scc(*it));
+    }
+  }
+}
+
 
 } //namespace stoke
 #endif
