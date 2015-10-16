@@ -1045,6 +1045,48 @@ void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories)
   }
 }
 
+void BoundedValidator::remove_spurious_counterexamples(const Cfg& target, const Cfg& rewrite) {
+  if (!counter_examples_available()) return;
+  if (sandbox_ == NULL) return;
+
+  auto live_outs = target.live_outs();
+
+  auto candidates = counterexamples_;
+  counterexamples_.clear();
+  for (auto ceg : candidates) {
+    sandbox_->clear_inputs();
+    sandbox_->insert_input(ceg);
+    sandbox_->run(target);
+    const auto target_result = *(sandbox_->result_begin());
+    sandbox_->run(rewrite);
+    const auto rewrite_result = *(sandbox_->result_begin());
+
+    // make sure there is any difference
+    bool different = false;
+    if (target_result.code != rewrite_result.code) different = true;
+
+    for (auto iter = live_outs.gp_begin(); !different && iter != live_outs.gp_end(); ++iter) {
+      if (target_result[*iter] != rewrite_result[*iter]) {
+        different = true;
+      }
+    }
+    for (auto iter = live_outs.sse_begin(); !different && iter != live_outs.sse_end(); ++iter) {
+      if (target_result.sse[*iter] != rewrite_result.sse[*iter]) {
+        different = true;
+      }
+    }
+    for (auto iter = live_outs.flags_begin(); !different && iter != live_outs.flags_end(); ++iter) {
+      if (target_result[*iter] != rewrite_result[*iter]) {
+        different = true;
+      }
+    }
+
+    if (different) {
+      counterexamples_.push_back(ceg);
+    }
+  }
+}
+
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
 
   BOUNDED_DEBUG(cout << "===========================================" << endl;)
@@ -1160,6 +1202,10 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
       delete_memories(memory_list);
       stop_mm();
+
+      // make sure we got actual counterexamples, not spurious ones
+      remove_spurious_counterexamples(target, rewrite);
+
       return false;
     } else {
       BOUNDED_DEBUG(cout << "  (This case verified)" << endl;)
