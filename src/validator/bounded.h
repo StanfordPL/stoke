@@ -39,7 +39,7 @@ public:
     STRING_NO_ALIAS   // assume strings don't overlap (UNSOUND)
   };
 
-  BoundedValidator(SMTSolver& solver, const std::string& strata_path = "") : Validator(solver, strata_path) {
+  BoundedValidator(SMTSolver& solver, const std::string& strata_path = "", Sandbox* sandbox = NULL) : Validator(solver, strata_path), sandbox_(sandbox) {
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(true);
@@ -98,6 +98,8 @@ private:
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
   /** Is there a jump in the path following this basic block? */
   static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
+  /** Remove spurious counterexamples. */
+  void remove_spurious_counterexamples(const Cfg& target, const Cfg& rewrite);
 
   /** For learning aliasing relationships */
   AliasMiner am;
@@ -107,6 +109,9 @@ private:
 
   /** The set of counterexamples (one per pair) that we've found. */
   std::vector<CpuState> counterexamples_;
+
+  /** A sandbox (to refute spurious counterexamples) */
+  Sandbox* sandbox_;
 
   // This is to print out Cfg paths easily (for debugging purposes).
   static std::string print(const CfgPath& p) {

@@ -87,7 +87,7 @@ private:
 
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn) {
     if (s == "bounded") {
-      auto bv = new BoundedValidator(*solver_, strata_path_arg.value());
+      auto bv = new BoundedValidator(*solver_, strata_path_arg.value(), &sandbox);
       bv->set_bound(bound_arg.value());
 
       std::string alias = alias_strategy_arg.value();
