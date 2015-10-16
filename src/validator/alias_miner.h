@@ -71,7 +71,7 @@ public:
    * counterexample, the a CellMemory for each the target/rewrite, and the
    * target/rewrite code.  Then it fills the testcase with the memory
    * locations. Returns if successful. */
-  bool build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory& target_mem, const CellMemory& rewrite_memory, const Cfg& target, const Cfg& rewrite);
+  bool build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory* target_mem, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite);
 
   /** Takes a Cfg and a testcase; runs the Cfg on the testcase and tracks
     all memory reads/writes.  Then builds a list of all memory accesses in
