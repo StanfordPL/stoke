@@ -30,7 +30,7 @@
 #include "src/solver/z3solver.h"
 
 #include "tools/apps/base.h"
-#include "tools/apps/specgen.h"
+#include "src/specgen/specgen.h"
 #include "tools/apps/support.h"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS

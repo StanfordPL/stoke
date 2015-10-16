@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_APPS_SPECGEN_H
-#define STOKE_TOOLS_APPS_SPECGEN_H
-
 #include <chrono>
 #include <fstream>
 #include <iostream>
@@ -22,18 +19,10 @@
 #include <string>
 #include <vector>
 
+#include "src/specgen/specgen.h"
+
 
 namespace stoke {
-
-enum class SupportedReason {
-  SUPPORTED,
-  MEMORY,
-  IMMEDIATE,
-  LABEL,
-  MM,
-  HARD_CODED_REG,
-  OTHER
-};
 
 SupportedReason is_supported_type_reason(x64asm::Type t) {
   switch (t) {
@@ -131,7 +120,7 @@ std::map<x64asm::Type, std::vector<x64asm::Operand>> operands_ = {
 };
 std::map<x64asm::Type, int> operands_idx_ = {
 };
-x64asm::Operand get_next_operand(x64asm::Type t, uint8_t imm8_val = 0) {
+x64asm::Operand get_next_operand(x64asm::Type t, uint8_t imm8_val) {
   if (t == x64asm::Type::IMM_8) {
     return x64asm::Imm8(imm8_val);
   }
@@ -178,7 +167,7 @@ x64asm::Operand get_next_operand(x64asm::Type t, uint8_t imm8_val = 0) {
   return operands_[t][operands_idx_[t] - 1];
 }
 
-x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val = 0) {
+x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
   operands_idx_ = {};
   x64asm::Instruction instr(opc);
   for (size_t i = 0; i < instr.arity(); i++) {
@@ -202,5 +191,3 @@ x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val = 0) {
 
 
 } // namespace stoke
-
-#endif

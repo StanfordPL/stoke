@@ -26,7 +26,7 @@ class ComboHandler : public Handler {
 
 public:
   /** Uses a predefined and prioritized list of handlers to build circuits */
-  ComboHandler(const std::string& strata_path = "") : strata_path_(strata_path), handlers_(default_handler_list(strata_path)), free_handlers_(true) {}
+  ComboHandler(const std::string& strata_path = "") : strata_path_(strata_path), handlers_(default_handler_list()), free_handlers_(true) {}
   /** Set the prioritized list of handlers used to build circuits */
   ComboHandler(std::vector<Handler*>& handlers) : strata_path_(""), handlers_(handlers), free_handlers_(false) {}
   /** Destruct object.  Frees handlers if set by default. */
@@ -57,11 +57,11 @@ private:
   Handler* get_handler(const x64asm::Instruction& instr, SupportLevel& sl);
 
   /** Default prioritized list of handlers */
-  std::vector<Handler*> default_handler_list(const std::string& strata_path = "") const {
+  std::vector<Handler*> default_handler_list() const {
     std::vector<Handler*> v;
 
-    if (strata_path.size() != 0) {
-      v.push_back(new StrataHandler(strata_path));
+    if (strata_path_.size() != 0) {
+      v.push_back(new StrataHandler(strata_path_));
     }
 
     // New Handlers
@@ -79,12 +79,12 @@ private:
     return v;
   }
 
+  /** The path to the strata circuits. */
+  const std::string strata_path_;
   /** Internal list of handlers that we use */
   const std::vector<Handler*> handlers_;
   /** Whether we need to free these handlers */
   const bool free_handlers_;
-  /** The path to the strata circuits. */
-  const std::string strata_path_;
 
 };
 

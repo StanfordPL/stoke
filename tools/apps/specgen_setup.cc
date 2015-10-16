@@ -26,7 +26,7 @@
 
 #include "tools/io/opc_set.h"
 
-#include "tools/apps/specgen.h"
+#include "src/specgen/specgen.h"
 #include "tools/apps/support.h"
 
 #include <boost/filesystem.hpp>

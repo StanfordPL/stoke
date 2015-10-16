@@ -40,7 +40,7 @@
 #include "tools/gadgets/validator.h"
 
 #include "tools/apps/base.h"
-#include "tools/apps/specgen.h"
+#include "src/specgen/specgen.h"
 #include "tools/apps/support.h"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
@@ -170,13 +170,19 @@ Operand translate_sse_register(const Sse& operand_from, const Instruction& instr
 };
 
 void build_circuit(const x64asm::Instruction& instr, SymState& final) {
-  ComboHandler ch;
+  ComboHandler ch(circuit_dir);
 
   auto opcode = instr.get_opcode();
   stringstream ss;
   ss << opcode;
   auto opcode_str = ss.str();
   auto candidate_file = circuit_dir + opcode_str + ".s";
+
+  ch.build_circuit(instr, final);
+  if (ch.has_error()) {
+    Console::error() << "Symbolic execution failed: " << ch.error() << endl;
+  }
+  return;
 
   // base instruction: use handwritten formula
   if (find(instr_cat_base_.begin(), instr_cat_base_.end(), opcode) != instr_cat_base_.end()) {
@@ -246,7 +252,7 @@ void build_circuit(const x64asm::Instruction& instr, SymState& final) {
       return NULL;
     });
 
-    // loop over all live outs
+    // loop over all live outs and update the final state
     auto liveouts = instr.maybe_write_set();
     for (auto iter = liveouts.gp_begin(); iter != liveouts.gp_end(); ++iter) {
       // look up live out in tmp state (after translating operators as necessary)

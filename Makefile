@@ -79,6 +79,8 @@ SRC_OBJ=\
 	src/solver/z3solver.o \
 	src/solver/cvc4solver.o \
 	\
+	src/specgen/specgen.o \
+	\
 	src/state/cpu_state.o \
 	src/state/cpu_states.o \
 	src/state/error_code.o \
@@ -341,6 +343,8 @@ src/state/%.o: src/state/%.cc $(DEPS)
 src/stategen/%.o: src/stategen/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/symstate/%.o: src/symstate/%.cc $(DEPS)
+	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+src/specgen/%.o: src/specgen/%.cc $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
 src/target/%.o: src/target/%.cc src/target/%.h $(DEPS)
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
