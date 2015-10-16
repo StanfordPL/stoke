@@ -16,6 +16,7 @@
 #include "src/validator/handlers/strata_handler.h"
 #include "src/tunit/tunit.h"
 #include "src/specgen/specgen.h"
+#include "src/validator/handlers.h"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
@@ -114,12 +115,13 @@ Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& inst
   if (filesystem::exists(candidate_file)) {
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
   }
-
   return Handler::NONE;
 
 }
 
 void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& final) {
+  ComboHandler ch_;
+
   auto opcode = instr.get_opcode();
   stringstream ss;
   ss << opcode;
@@ -149,7 +151,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   assert(code[0].get_opcode() == Opcode::LABEL_DEFN);
   assert(code[code.size() - 1].get_opcode() == Opcode::RET);
   for (size_t i = 1; i < code.size()-1; i++) {
-    build_circuit(code[i], tmp);
+    ch_.build_circuit(code[i], tmp);
   }
 
   // take a formula for specgen_instr in state tmp, and convert it to one that
