@@ -114,12 +114,13 @@ void Cutpoints::compute() {
   }
 
 
+  /** check() will set error codes. */
   bool okay = check();
-  if (!okay) {
-    error_ = "Could not compute cutpoints";
-  }
-
   cout << "Cutpoints worked? " << okay << endl;
+
+  if(!okay && error_ == "") {
+    error_ = "Unknown error";
+  }
 
 }
 
@@ -169,6 +170,7 @@ bool Cutpoints::check() {
 
   for (size_t i = 0; i < sandbox_.size(); ++i) {
 
+    auto tc = *sandbox_.get_input(i);
 
     callback_target_trace_.clear();
     callback_rewrite_trace_.clear();
@@ -203,7 +205,21 @@ bool Cutpoints::check() {
 
         size_t index;
         if (bb == cfg.get_entry()) {
-          sandbox_.insert_before(label, 0, callback, cp);
+          // Don't run sandbox; callback manually.  This is to avoid repeated calls to the callback for jumps back to the 
+          // beginning of the loop... which is not what we want in general.
+
+          // Step 1: store the state into the permanent cache
+          auto& the_map = is_rewrite ? rewrite_cutpoint_data : target_cutpoint_data;
+          the_map[j].push_back(tc);
+
+          // Step 2: store the state into the temporary per-run cache
+          auto& the_list = is_rewrite ? callback_rewrite_states_ : callback_target_states_;
+          the_list.push_back(tc);
+
+          // Step 3: store the id number into the trace
+          auto& the_trace = is_rewrite ? callback_rewrite_trace_ : callback_target_trace_;
+          the_trace.push_back(j);
+
         } else if (bb == cfg.get_exit()) {
           // no need to collect data at exit
         } else if (ends_with_jump) {
@@ -223,25 +239,54 @@ bool Cutpoints::check() {
 
     // (i), (iii) traces are the same
     if (callback_target_trace_.size() != callback_rewrite_trace_.size()) {
+
+      cout << endl;
+      cout << endl;
+      cout << "target cutpoint trace: ";
+      for(auto it : callback_target_trace_) {
+        cout << it << "  ";
+      }
+      cout << endl;
+      cout << "( size " << callback_target_trace_.size() << " )" << endl;
+      cout << "rewrite cutpoint trace: ";
+      for(auto it : callback_rewrite_trace_) {
+        cout << it << "  ";
+      }
+      cout << endl;
+      cout << "( size " << callback_rewrite_trace_.size() << " )" << endl;
+
+      cout << endl;
+      cout << tc << endl;
+      error_ = "trace sizes not equal";
       return false;
     }
     for (size_t j = 0; j < callback_target_trace_.size(); ++j) {
-      if (callback_target_trace_[j] != callback_rewrite_trace_[j])
+      if (callback_target_trace_[j] != callback_rewrite_trace_[j]) {
+        error_ = "Traces differ";
         return false;
+      }
     }
     // (ii) memory is equal
     for (size_t j = 0; j < callback_target_states_.size(); ++j) {
       auto ts = callback_target_states_[j];
       auto rs = callback_rewrite_states_[j];
-      if (ts.heap != rs.heap)
+      if (ts.heap != rs.heap) {
+        error_ = "Heap states not equal";
         return false;
-      if (ts.stack != rs.stack)
+      }
+      if (ts.stack != rs.stack) {
+        error_ = "Stack states not equal";
         return false;
-      if (ts.data != rs.data)
+      }
+      if (ts.data != rs.data) {
+        error_ = "Data state not equal";
         return false;
+      }
       for (size_t k = 0; k < ts.segments.size(); ++k) {
-        if (ts.segments[k] != rs.segments[k])
+        if (ts.segments[k] != rs.segments[k]) {
+          error_ = "Other segment not equal";
           return false;
+        }
       }
     }
 
