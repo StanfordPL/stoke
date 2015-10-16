@@ -170,19 +170,13 @@ Operand translate_sse_register(const Sse& operand_from, const Instruction& instr
 };
 
 void build_circuit(const x64asm::Instruction& instr, SymState& final) {
-  ComboHandler ch(circuit_dir);
+  ComboHandler ch;
 
   auto opcode = instr.get_opcode();
   stringstream ss;
   ss << opcode;
   auto opcode_str = ss.str();
   auto candidate_file = circuit_dir + opcode_str + ".s";
-
-  ch.build_circuit(instr, final);
-  if (ch.has_error()) {
-    Console::error() << "Symbolic execution failed: " << ch.error() << endl;
-  }
-  return;
 
   // base instruction: use handwritten formula
   if (find(instr_cat_base_.begin(), instr_cat_base_.end(), opcode) != instr_cat_base_.end()) {

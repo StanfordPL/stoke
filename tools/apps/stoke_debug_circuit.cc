@@ -60,6 +60,12 @@ auto& show_unchanged_arg = FlagArg::create("show_unchanged")
 auto& use_smtlib_format_arg = FlagArg::create("smtlib_format")
                               .description("Show circuits in smtlib format");
 
+cpputil::ValueArg<std::string>& strata_path_arg =
+  cpputil::ValueArg<std::string>::create("strata_path")
+  .usage("<path/to/dir>")
+  .description("The path to the directory with the strata circuits (a collection of .s files)")
+  .default_val("");
+
 template <typename T>
 string out_padded(T t, size_t min_length, char pad = ' ') {
   stringstream ss;
@@ -122,7 +128,7 @@ int main(int argc, char** argv) {
   Console::msg() << code << endl;
   Console::msg() << endl;
 
-  ComboHandler ch;
+  ComboHandler ch(strata_path_arg.value());
   SymState state("", true);
 
   // TODO: doesn't handle memory

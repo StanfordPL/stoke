@@ -112,7 +112,7 @@ Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& inst
   auto candidate_file = strata_path_ + "/" + opcode_str + ".s";
 
   if (filesystem::exists(candidate_file)) {
-    return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG);
+    return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
   }
 
   return Handler::NONE;
@@ -120,7 +120,6 @@ Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& inst
 }
 
 void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& final) {
-
   auto opcode = instr.get_opcode();
   stringstream ss;
   ss << opcode;
