@@ -17,7 +17,7 @@
 ifndef COMPILERBINARY
 	COMPILERBINARY=g++
 endif
-CXX=ccache ${COMPILERBINARY} -std=c++11 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-reorder
+CXX=ccache ${COMPILERBINARY} -std=c++14 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-reorder -Wno-vla
 
 # number of threads used for compiling
 ifndef NTHREADS
@@ -91,6 +91,7 @@ SRC_OBJ=\
 	src/symstate/bool.o \
 	src/symstate/function.o \
 	src/symstate/memory_manager.o \
+	src/symstate/simplify.o \
 	src/symstate/state.o \
 	\
 	src/symstate/memory/cell.o \
@@ -169,6 +170,7 @@ BIN=\
 	bin/stoke_testcase \
 	\
 	bin/stoke_debug_cfg \
+	bin/stoke_debug_circuit \
 	bin/stoke_debug_cost \
 	bin/stoke_debug_diff \
 	bin/stoke_debug_effect \
@@ -396,7 +398,7 @@ hooks: .git/hooks/pre-commit
 
 .git/hooks/pre-commit: scripts/git/pre-commit.sh src/ext/astyle
 	chmod +x "scripts/git/pre-commit.sh"
-	ln -sf $(shell pwd)/scripts/git/pre-commit.sh .git/hooks/pre-commit
+	ln -sf $(shell pwd)/scripts/git/pre-commit.sh `git rev-parse --git-dir`/hooks/pre-commit
 
 ##### CLEAN TARGETS
 
