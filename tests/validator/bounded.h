@@ -1904,5 +1904,31 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushesAntialias) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
+TEST_F(BoundedValidatorBaseTest, NoSpuriousCeg) {
+
+  auto def_ins = x64asm::RegSet::empty();
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  // These won't validate because def_ins are empty, but it can't get a
+  // counterexample either.
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_EQ(0ul, validator->counter_examples_available());
+}
+
 
 } //namespace stoke
