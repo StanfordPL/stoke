@@ -287,7 +287,7 @@ cpputil:
 .PHONY: x64asm
 x64asm:
 	./scripts/make/submodule-init.sh src/ext/x64asm
-	$(MAKE) -C src/ext/x64asm $(EXT_OPT) COMPILERBINARY=${COMPILERBINARY}
+	$(MAKE) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" COMPILERBINARY=${COMPILERBINARY}
 
 .PHONY: pintool
 pintool:
