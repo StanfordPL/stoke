@@ -6,3 +6,7 @@ tags
 .depend
 
 aliasing
+
+target.s
+alt.s
+
