@@ -196,7 +196,7 @@ public:
   void visit(const SymBitVectorIte * const bv) {
 
     int l = get_level(bv);
-    if (level_ <= l) {
+    if (level_ < l) {
       parens(l, bv);
     } else {
       pretty(l, bv->cond_);

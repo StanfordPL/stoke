@@ -20,21 +20,37 @@ namespace stoke {
 
 namespace {
 
-/** Merges two consecutive extracts.  E.g., b[12:10][1:0] becomes b[11:10]. */
+/**
+ * Merges two consecutive extracts.
+ * Handles bit extracts of constants.
+ * Handles "full" bit extracts, where all bits are used.
+ *
+ * E.g., b[12:10][1:0] becomes b[11:10].
+ * E.g., 0x0[1:0] becomes 0x0
+ * E.g., f_returns_32_bits(0x0)[31:0] becomes f_returns_32_bits(0x0)
+ */
 class SymMergeExtracts : public SymTransformVisitor {
 
 public:
 
   SymBitVectorAbstract* visit(const SymBitVectorExtract * const bv) {
     auto lhs = (*this)(bv->bv_);
+    if (lhs->width_ == bv->width_) return lhs;
     if (lhs->type() == SymBitVector::EXTRACT) {
       auto inner = static_cast<const SymBitVectorExtract * const>(lhs);
       auto low = bv->low_bit_ + inner->low_bit_;
       auto high = low + (bv->high_bit_ - bv->low_bit_);
-      auto res = make_bitvector_extract(inner->bv_, high, low);
-      return res;
+      return make_bitvector_extract(inner->bv_, high, low);
     }
-    return (SymBitVectorExtract*) bv;
+    if (lhs->type() == SymBitVector::CONSTANT) {
+      auto inner = static_cast<const SymBitVectorConstant * const>(lhs);
+      auto size = inner->size_;
+      auto constant = inner->constant_;
+      auto newsize = bv->high_bit_ - bv->low_bit_ + 1;
+      auto newconstant = constant >> bv->low_bit_;
+      return make_bitvector_constant(newsize, newconstant);
+    }
+    return SymTransformVisitor::visit(bv);
   }
 
 };
@@ -71,16 +87,23 @@ public:
         return make_bitvector_extract(rhs, bv->high_bit_, bv->low_bit_);
       }
       // there is overlap
-      auto a = make_bitvector_extract(lhs, bv->high_bit_, rhs->width_);
+      auto a = make_bitvector_extract(lhs, bv->high_bit_ - rhs->width_, 0);
       auto b = make_bitvector_extract(rhs, rhs->width_ - 1, bv->low_bit_);
       return make_binop(SymBitVector::CONCAT, a, b);
     }
-    // case SymBitVector::ITE:
-    //   return visit(static_cast<const SymBitVectorIte * const>(bv));
-    // case SymBitVector::NOT:
-    //   return visit(static_cast<const SymBitVectorNot * const>(bv));
+    case SymBitVector::ITE: {
+      SymBitVectorIte* ite = (SymBitVectorIte*)inner;
+      auto a = make_bitvector_extract(ite->a_, bv->high_bit_, bv->low_bit_);
+      auto b = make_bitvector_extract(ite->b_, bv->high_bit_, bv->low_bit_);
+      return make_bitvector_ite(ite->cond_, a, b);
+    }
+    case SymBitVector::NOT: {
+      SymBitVectorNot* n = (SymBitVectorNot*)inner;
+      auto a = make_bitvector_extract(n->bv_, bv->high_bit_, bv->low_bit_);
+      return make_unop(n->type(), a);
+    }
     default:
-      return (SymBitVectorExtract*) bv;
+      return SymTransformVisitor::visit(bv);
     }
   }
 
@@ -102,7 +125,11 @@ SymBitVector SymSimplify::simplify(const SymBitVector& b) {
 
   // then attempt to remove bit extracts
   SymMergeExtracts merger;
-  ptr = merger(ptr);
+  while (true) {
+    auto old = ptr;
+    ptr = merger(ptr);
+    if (old == ptr) break;
+  }
 
   return SymBitVector(ptr);
 }
@@ -120,7 +147,11 @@ SymBool SymSimplify::simplify(const SymBool& b) {
 
   // then attempt to remove bit extracts
   SymMergeExtracts merger;
-  ptr = merger(ptr);
+  while (true) {
+    auto old = ptr;
+    ptr = merger(ptr);
+    if (old == ptr) break;
+  }
 
   return SymBool(ptr);
 }
