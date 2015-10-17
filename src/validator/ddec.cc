@@ -323,15 +323,11 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
 
   bool target_has_jcc = last_target_instr.is_jcc();
   string target_opcode = Handler::get_opcode(last_target_instr);
-  cout << "TARGET OPC: " << target_opcode << endl;
   string target_cc = target_opcode.substr(1, target_opcode.size() - 1);
-  cout << "TARGET CC: " << target_cc << endl;
 
   bool rewrite_has_jcc = last_target_instr.is_jcc();
   string rewrite_opcode = Handler::get_opcode(last_rewrite_instr);
-  cout << "REWRITE OPC: " << rewrite_opcode << endl;
   string rewrite_cc = rewrite_opcode.substr(1, rewrite_opcode.size() - 1);
-  cout << "REWRITE CC: " << rewrite_cc << endl;
 
   /** Case 1: there's no conditional jump */
   if (!target_has_jcc && !rewrite_has_jcc) {
@@ -553,6 +549,7 @@ Invariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64
   size_t tc_count = target_states.size();
 
   // Build the nullspace matrix
+  cout << "allocating the matrix of size " << tc_count << " x " << num_columns << endl;
   long matrix[tc_count*num_columns];
   for (size_t i = 0; i < tc_count; ++i) {
     auto target_state = target_states[i];
@@ -582,7 +579,9 @@ Invariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64
   */
 
   mpz_t *mp_result;
+  cout << "computing the nullspace" << endl;
   size_t dim = nullspaceLong(tc_count, num_columns, matrix, &mp_result);
+  cout << "nullspace computation complete" << endl;
 
   // For each row of the nullspace, find the gcd and divide by it.
   for (size_t i = 0; i < dim; ++i) {
