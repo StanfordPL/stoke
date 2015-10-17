@@ -550,7 +550,7 @@ Invariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64
 
   // Build the nullspace matrix
   cout << "allocating the matrix of size " << tc_count << " x " << num_columns << endl;
-  long matrix[tc_count*num_columns];
+  long* matrix = new long[tc_count*num_columns];
   for (size_t i = 0; i < tc_count; ++i) {
     auto target_state = target_states[i];
     auto rewrite_state = rewrite_states[i];
@@ -582,6 +582,8 @@ Invariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64
   cout << "computing the nullspace" << endl;
   size_t dim = nullspaceLong(tc_count, num_columns, matrix, &mp_result);
   cout << "nullspace computation complete" << endl;
+
+  delete matrix;
 
   // For each row of the nullspace, find the gcd and divide by it.
   for (size_t i = 0; i < dim; ++i) {
@@ -639,6 +641,8 @@ Invariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64
       cout << "(bad)" << endl;
     }
   }
+
+  free(mp_result);
 
   cout << "Nullspace dimension:" << dec << dim << endl;
   cout << "Column count: " << dec << num_columns << endl;
