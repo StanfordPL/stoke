@@ -20,6 +20,7 @@
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/false.h"
 #include "src/validator/invariants/flag.h"
+#include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/top_zero.h"
@@ -31,7 +32,7 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-void print_summary(vector<Invariant*> invariants) {
+void print_summary(vector<ConjunctionInvariant*> invariants) {
   cout << endl;
   cout << endl << "*********************************************************************";
   cout << endl << "****************************   SUMMARY   ****************************";
@@ -40,7 +41,7 @@ void print_summary(vector<Invariant*> invariants) {
 
   for (size_t i = 0; i < invariants.size(); ++i) {
     cout << "Cutpoint " << i << ": " << endl;
-    auto invs = static_cast<ConjunctionInvariant*>(invariants[i]);
+    auto invs = invariants[i];
     for (size_t j = 0; j < invs->size(); ++j) {
       cout << "    " << *(*invs)[j] << endl;
     }
@@ -61,13 +62,12 @@ Invariant* get_jump_inv(const Cfg& cfg, const CfgPath& p, bool is_rewrite) {
   auto jump_instr = cfg.get_code()[cfg.get_index(Cfg::loc_type(start_block, start_bs - 1))];
   bool is_fallthrough = jump_type == BoundedValidator::JumpType::FALL_THROUGH ||
                         jump_type == BoundedValidator::JumpType::NONE;
-  cout << "ASSUMING fallthrough=" << is_fallthrough << endl;
   auto jump_inv = new FlagInvariant(jump_instr, is_rewrite, is_fallthrough);
   return jump_inv;
 }
 
 /** Go through the invariants and see that we can verify them using the bounded verifier. */
-vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& rewrite, vector<Invariant*> invariants) {
+vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& rewrite, vector<ConjunctionInvariant*> invariants) {
 
   vector<CpuState> results;
 
@@ -101,15 +101,15 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
   We learn using what testcases we have.  Then, we check that they actually
   hold using a bounded validation approach.  If we don't, we take the testcases
   produced by the bounded validator and feed it into the next search iteration.*/
-vector<Invariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& rewrite) {
+vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& rewrite) {
 
   NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
-  vector<Invariant*> invariants;
+  vector<ConjunctionInvariant*> invariants;
 
   cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
   if (cutpoints_->has_error()) {
     cout << "Cutpoint system encountered: " << cutpoints_->get_error() << endl;
-    return vector<Invariant*>();
+    return vector<ConjunctionInvariant*>();
   }
 
   while (true) {
@@ -173,7 +173,7 @@ vector<Invariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& 
     delete cutpoints_;
     cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
     if (cutpoints_->has_error()) {
-      return vector<Invariant*>();
+      return vector<ConjunctionInvariant*>();
     }
   }
 
@@ -186,7 +186,7 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
   BoundedValidator bv(solver_);
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
 
-  vector<Invariant*> invariants = find_invariants(target, rewrite);
+  auto invariants = find_invariants(target, rewrite);
   if (!invariants.size()) {
     cout << "Could not find cutpoints/invariants" << endl;
     return false;
@@ -240,9 +240,6 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
           auto rewrite_jump_inv = get_jump_inv(rewrite, q, true);
           if (rewrite.num_instrs(rewrite_cuts[i]))
             q.erase(q.begin());
-          cout << "Checking " << (*invariants[i]) << " { " << BoundedValidator::print(p)
-               << " ; " << BoundedValidator::print(q) << " } " << (*invariants[j]) << endl;
-
           auto copy = *static_cast<ConjunctionInvariant*>(invariants[i]);
           copy.add_invariant(target_jump_inv);
           copy.add_invariant(rewrite_jump_inv);
@@ -257,11 +254,17 @@ bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
               return false;
           }
           */
-          cout << endl << endl << "WORKING ON " << *end_inv << endl << endl;
-          bool ok = bv.verify_pair(target, rewrite, p, q, copy, *end_inv);
-          if (!ok) {
-            print_summary(invariants);
-            return false;
+
+          for(size_t m = 0; m < end_inv->size(); ++m) {
+
+            cout << "Checking " << copy << " { " << BoundedValidator::print(p)
+                 << " ; " << BoundedValidator::print(q) << " } " << *(*end_inv)[m] << endl;
+
+            bool ok = bv.verify_pair(target, rewrite, p, q, copy, *(*end_inv)[m]);
+            if (!ok) {
+              print_summary(invariants);
+              return false;
+            }
           }
 
         }
@@ -320,7 +323,86 @@ long mpz_to_long(mpz_t z)
   return result;
 }
 
-Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states, const Instruction& last_target_instr, const Instruction& last_rewrite_instr) {
+/** Assumption: given a disjunction of conjuncts.
+    Returns a conjunction which *may* include disjuncts. */
+ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
+
+  cout << "SIMPLIFYING DISJUNCTS" << endl;
+  cout << disjs << endl << endl;
+
+  FalseInvariant _false;
+    
+  // Go through disjunctions and throw out any that have a conjunction involving false...
+  for(size_t i = 0; i < disjs.size(); ++i) {
+    auto& conj = *static_cast<ConjunctionInvariant*>(disjs[i]);
+    for(size_t j = 0; j < conj.size(); ++j) {
+      if (*conj[j] == _false) {
+        cout << "Removing disjunct " << i << " due to index " << j << endl;
+        disjs.remove(i);
+        i--;
+        break;
+      }
+    }
+  }
+
+  cout << "Finished removing dumb disjuncts" << endl;
+
+  // Take the conjunctions in the first disjunct.
+  // If they're in the rest, then of the disjuncts, we remove it from all of them
+  auto common_conjunctions = new ConjunctionInvariant();
+
+  auto& first_conjunct = *static_cast<ConjunctionInvariant*>(disjs[0]);
+  for(size_t i = 0; i < first_conjunct.size(); ++i) {
+    auto leaf = first_conjunct[i];
+    cout << "Looking for " << *leaf << " in all disjuncts" << endl;
+
+    bool contained_in_all = true;
+    for(size_t j = 1; j < disjs.size(); j++) {
+      auto& other_conjunct = *static_cast<ConjunctionInvariant*>(disjs[j]);
+      bool contained = false;
+      for(size_t k = 0; k < other_conjunct.size(); ++k) {
+        if(*other_conjunct[k] == *leaf) {
+          contained = true;
+          break;
+        }
+      }
+      contained_in_all &= contained;
+    }
+
+    // remove the leaf from the conjunction
+    if(contained_in_all) {
+      cout << "  found in all :)" << endl;
+      common_conjunctions->add_invariant(leaf);
+      for(size_t j = 0; j < disjs.size(); j++) {
+        auto& other_conjunct = *static_cast<ConjunctionInvariant*>(disjs[j]);
+        bool contained = false;
+        for(size_t k = 0; k < other_conjunct.size(); ++k) {
+          if(*other_conjunct[k] == *leaf) {
+            if(contained && j == 0) {
+              //we're in trouble
+              cout << "OOPS!  Simplified and found same thing twice!  WARNING" << endl;
+            }
+            other_conjunct.remove(k);
+            contained = true;
+            k--;
+          }
+        }
+      }
+      i--;
+    } else {
+      cout << "  not found" << endl;
+    }
+  }
+
+  common_conjunctions->add_invariant(&disjs);
+
+  cout << "ALL DONE W/ SIMPLIFY" << endl;
+
+  return common_conjunctions;
+
+}
+
+ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states, const Instruction& last_target_instr, const Instruction& last_rewrite_instr) {
 
   bool target_has_jcc = last_target_instr.is_jcc();
   string target_opcode = Handler::get_opcode(last_target_instr);
@@ -344,24 +426,22 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
         fall_states.push_back(it);
     }
 
-    auto jump_inv = new ConjunctionInvariant();
     auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, jump_states, rewrite_states);
-    jump_inv->add_invariant(jump_simple);
-    jump_inv->add_invariant(new FlagInvariant(last_target_instr, false, false));
+    jump_simple->add_invariant(jump_simple);
 
-    auto fall_inv = new ConjunctionInvariant();
     auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, fall_states, rewrite_states);
-    fall_inv->add_invariant(fall_simple);
-    fall_inv->add_invariant(new FlagInvariant(last_target_instr, false, true));
+    fall_simple->add_invariant(new FlagInvariant(last_target_instr, false, true));
 
     auto disj = new DisjunctionInvariant();
-    disj->add_invariant(jump_inv);
-    disj->add_invariant(fall_inv);
+    disj->add_invariant(jump_simple);
+    disj->add_invariant(fall_simple);
 
+/*
     auto conj = new ConjunctionInvariant();
     conj->add_invariant(disj);
+    */
 
-    return conj;
+    return simplify_disjunction(*disj);
   } else if (!target_has_jcc && rewrite_has_jcc) {
 
     vector<CpuState> jump_states;
@@ -373,24 +453,22 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
         fall_states.push_back(it);
     }
 
-    auto jump_inv = new ConjunctionInvariant();
     auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, rewrite_states, jump_states);
-    jump_inv->add_invariant(jump_simple);
-    jump_inv->add_invariant(new FlagInvariant(last_rewrite_instr, true, false));
+    jump_simple->add_invariant(new FlagInvariant(last_rewrite_instr, true, false));
 
-    auto fall_inv = new ConjunctionInvariant();
     auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, rewrite_states, jump_states);
-    fall_inv->add_invariant(fall_simple);
-    fall_inv->add_invariant(new FlagInvariant(last_rewrite_instr, true, true));
+    fall_simple->add_invariant(new FlagInvariant(last_rewrite_instr, true, true));
 
     auto disj = new DisjunctionInvariant();
-    disj->add_invariant(jump_inv);
-    disj->add_invariant(fall_inv);
+    disj->add_invariant(jump_simple);
+    disj->add_invariant(fall_simple);
 
+/*
     auto conj = new ConjunctionInvariant();
     conj->add_invariant(disj);
+    */
 
-    return conj;
+    return simplify_disjunction(*disj);
   } else {
     // Both have jumps!
     vector<CpuState> jump_jump_states_target;
@@ -423,35 +501,27 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
       }
     }
 
-    auto S1_simple = learn_simple_invariant(target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
+    auto S1 = learn_simple_invariant(target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
     auto S1_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S1_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
-    auto S1 = new ConjunctionInvariant();
-    S1->add_invariant(S1_simple);
     S1->add_invariant(S1_target_path);
     S1->add_invariant(S1_rewrite_path);
 
-    auto S2_simple = learn_simple_invariant(target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
+    auto S2 = learn_simple_invariant(target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
     auto S2_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S2_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
-    auto S2 = new ConjunctionInvariant();
-    S2->add_invariant(S2_simple);
     S2->add_invariant(S2_target_path);
     S2->add_invariant(S2_rewrite_path);
 
-    auto S3_simple = learn_simple_invariant(target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
+    auto S3 = learn_simple_invariant(target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
     auto S3_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S3_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
-    auto S3 = new ConjunctionInvariant();
-    S3->add_invariant(S3_simple);
     S3->add_invariant(S3_target_path);
     S3->add_invariant(S3_rewrite_path);
 
-    auto S4_simple = learn_simple_invariant(target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
+    auto S4 = learn_simple_invariant(target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
     auto S4_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S4_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
-    auto S4 = new ConjunctionInvariant();
-    S4->add_invariant(S4_simple);
     S4->add_invariant(S4_target_path);
     S4->add_invariant(S4_rewrite_path);
 
@@ -461,10 +531,13 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
     disj->add_invariant(S3);
     disj->add_invariant(S4);
 
+    return simplify_disjunction(*disj);
+    /*
     auto conj = new ConjunctionInvariant();
     conj->add_invariant(disj);
 
     return conj;
+    */
   }
 
   assert(false);
@@ -472,36 +545,58 @@ Invariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs
 
 }
 
-Invariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states) {
-
-  if (target_states.size() == 0 || rewrite_states.size() == 0)
-    return new FalseInvariant();
-
-  NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
+ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states) {
 
   //TODO leaks memory
+
+  NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
   ConjunctionInvariant* conj = new ConjunctionInvariant();
   conj->add_invariant(no_sigs);
 
-  // TopZero invariants
+  if (target_states.size() == 0 || rewrite_states.size() == 0) {
+    conj->add_invariant(new FalseInvariant());
+    return conj;
+  }
+
+
+  // TopZero and NonZero invariants
   for (size_t k = 0; k < 2; ++k) {
     auto& states = k ? rewrite_states : target_states;
 
     for (size_t i = 0; i < r64s.size(); ++i) {
-      bool all_zero = true;
+      bool all_topzero = true;
+      bool all_nonzero = true;
+      bool found_one = false;
+
       for (auto state : states) {
         if (state.gp[i].get_fixed_double(1) != 0) {
-          all_zero = false;
-          break;
+          all_topzero = false;
+        } 
+        if (state.gp[i].get_fixed_quad(0) == 0) {
+          all_nonzero = false;
+        }
+        if (state.gp[i].get_fixed_quad(0) == 1) {
+          found_one = true;
         }
       }
 
-      if (all_zero) {
+      if (all_topzero) {
         auto tzi = new TopZeroInvariant(r64s[i], k);
         if (tzi->check(target_states, rewrite_states)) {
           conj->add_invariant(tzi);
         } else {
           cout << "GOT BAD INVARIANT " << *tzi << endl;
+          delete tzi;
+        }
+      }
+
+      if(all_nonzero && found_one) {
+        auto nz = new NonzeroInvariant(r64s[i], k);
+        if (nz->check(target_states, rewrite_states)) {
+          conj->add_invariant(nz);
+        } else {
+          cout << "GOT BAD INVARIANT " << *nz << endl;
+          delete nz;
         }
       }
     }
