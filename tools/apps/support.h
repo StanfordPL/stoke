@@ -617,6 +617,11 @@ vector<Opcode> instr_cat_system_ = {
   , PUSHFQ // PUSHFQ
   , STI // STI
 
+  , POP_R16 // POP r16
+  , POP_R64 // POP r64
+  , PUSH_R16 // PUSH r16
+  , PUSH_R64 // PUSH r64
+
   , LDMXCSR_M32 // LDMXCSR m32
 
   , LEAVE // LEAVE
