@@ -111,7 +111,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     }
     move_statistics[ti.move_type].num_succeeded++;
 
-    cout << endl << state.current.get_code() << endl << endl;
+    //cout << endl << state.current.get_code() << endl << endl;
 
     const auto p = prob_(gen_);
     const auto max = state.current_cost - (log(p) / beta_);
