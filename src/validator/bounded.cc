@@ -1054,6 +1054,17 @@ void BoundedValidator::remove_spurious_counterexamples(const Cfg& target, const 
   auto candidates = counterexamples_;
   counterexamples_.clear();
   for (auto ceg : candidates) {
+    // hack for specgen: generate a stack
+    ceg.stack.resize(0x700000000-128, 128);
+    for (auto i = ceg.stack.lower_bound(), ie = ceg.stack.upper_bound(); i < ie; ++i) {
+      if (!ceg.stack.is_valid(i)) {
+        ceg.stack.set_valid(i, true);
+        ceg.stack[i] = rand() % 256;
+      }
+    }
+    ceg.gp[rsp].get_fixed_quad(0) = 0x700000000;
+    // end hack
+
     sandbox_->clear_inputs();
     sandbox_->insert_input(ceg);
     sandbox_->run(target);
@@ -1063,7 +1074,9 @@ void BoundedValidator::remove_spurious_counterexamples(const Cfg& target, const 
 
     // make sure there is any difference
     bool different = false;
-    if (target_result.code != rewrite_result.code) different = true;
+    if (target_result.code != rewrite_result.code) {
+      different = true;
+    }
 
     for (auto iter = live_outs.gp_begin(); !different && iter != live_outs.gp_end(); ++iter) {
       if (target_result[*iter] != rewrite_result[*iter]) {
