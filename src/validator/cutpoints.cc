@@ -118,7 +118,7 @@ void Cutpoints::compute() {
   bool okay = check();
   cout << "Cutpoints worked? " << okay << endl;
 
-  if(!okay && error_ == "") {
+  if (!okay && error_ == "") {
     error_ = "Unknown error";
   }
 
@@ -205,7 +205,7 @@ bool Cutpoints::check() {
 
         size_t index;
         if (bb == cfg.get_entry()) {
-          // Don't run sandbox; callback manually.  This is to avoid repeated calls to the callback for jumps back to the 
+          // Don't run sandbox; callback manually.  This is to avoid repeated calls to the callback for jumps back to the
           // beginning of the loop... which is not what we want in general.
 
           // Step 1: store the state into the permanent cache
@@ -243,13 +243,13 @@ bool Cutpoints::check() {
       cout << endl;
       cout << endl;
       cout << "target cutpoint trace: ";
-      for(auto it : callback_target_trace_) {
+      for (auto it : callback_target_trace_) {
         cout << it << "  ";
       }
       cout << endl;
       cout << "( size " << callback_target_trace_.size() << " )" << endl;
       cout << "rewrite cutpoint trace: ";
-      for(auto it : callback_rewrite_trace_) {
+      for (auto it : callback_rewrite_trace_) {
         cout << it << "  ";
       }
       cout << endl;
