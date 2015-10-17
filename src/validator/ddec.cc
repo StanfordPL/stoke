@@ -61,6 +61,7 @@ Invariant* get_jump_inv(const Cfg& cfg, const CfgPath& p, bool is_rewrite) {
   auto jump_instr = cfg.get_code()[cfg.get_index(Cfg::loc_type(start_block, start_bs - 1))];
   bool is_fallthrough = jump_type == BoundedValidator::JumpType::FALL_THROUGH ||
                         jump_type == BoundedValidator::JumpType::NONE;
+  cout << "ASSUMING fallthrough=" << is_fallthrough << endl;
   auto jump_inv = new FlagInvariant(jump_instr, is_rewrite, is_fallthrough);
   return jump_inv;
 }
