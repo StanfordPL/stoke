@@ -1177,7 +1177,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       BOUNDED_DEBUG(cout << "INEQUALITY: " << it << endl;)
     }
 
-    if (memories.first) {
+    if (memories.first && (heap_out_ || stack_out_)) {
       auto mem_const = memories.first->equality_constraint(*memories.second);
       mem_const = !mem_const;
       inequality = inequality | mem_const;

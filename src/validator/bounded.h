@@ -42,7 +42,7 @@ public:
   BoundedValidator(SMTSolver& solver, const std::string& strata_path = "", Sandbox* sandbox = NULL) : Validator(solver, strata_path), sandbox_(sandbox) {
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
-    set_nacl(true);
+    set_nacl(false);
   }
 
   ~BoundedValidator() {}
