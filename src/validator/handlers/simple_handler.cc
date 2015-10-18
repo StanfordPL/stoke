@@ -363,6 +363,72 @@ void SimpleHandler::add_all() {
 
   });
 
+  // for min/max|ss/sd: can't be done with packed handler because the upper 96/64 bits are from src1, not dest in the v variant
+
+  add_opcode({"minsd"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("minpd_compare_double", 1, {64, 64});
+    auto aa = a[63][0];
+    auto bb = b[63][0];
+    ss.set(dst, a[127][64] || (f(aa, bb)[0]).ite(aa, bb));
+  });
+
+  add_opcode({"vminsd"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("minpd_compare_double", 1, {64, 64});
+    auto bb = b[63][0];
+    auto cc = c[63][0];
+    ss.set(dst, b[127][64] || (f(bb, cc)[0]).ite(bb, cc), true);
+  });
+
+  add_opcode({"minss"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("minps_compare_single", 1, {32, 32});
+    auto aa = a[32][0];
+    auto bb = b[32][0];
+    ss.set(dst, a[127][32] || (f(aa, bb)[0]).ite(aa, bb));
+  });
+
+  add_opcode({"vminss"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("minps_compare_single", 1, {32, 32});
+    auto bb = b[32][0];
+    auto cc = c[32][0];
+    ss.set(dst, b[127][32] || (f(bb, cc)[0]).ite(bb, cc), true);
+  });
+
+  add_opcode({"maxsd"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("maxpd_compare_double", 1, {64, 64});
+    auto aa = a[63][0];
+    auto bb = b[63][0];
+    ss.set(dst, a[127][64] || (f(aa, bb)[0]).ite(aa, bb));
+  });
+
+  add_opcode({"vmaxsd"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("maxpd_compare_double", 1, {64, 64});
+    auto bb = b[63][0];
+    auto cc = c[63][0];
+    ss.set(dst, b[127][64] || (f(bb, cc)[0]).ite(bb, cc), true);
+  });
+
+  add_opcode({"maxss"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("maxps_compare_single", 1, {32, 32});
+    auto aa = a[32][0];
+    auto bb = b[32][0];
+    ss.set(dst, a[127][32] || (f(aa, bb)[0]).ite(aa, bb));
+  });
+
+  add_opcode({"vmaxss"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("maxps_compare_single", 1, {32, 32});
+    auto bb = b[32][0];
+    auto cc = c[32][0];
+    ss.set(dst, b[127][32] || (f(bb, cc)[0]).ite(bb, cc), true);
+  });
+
   // can't be done with packed handler because of special case for memory
   add_opcode({"movsd"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
