@@ -49,6 +49,10 @@ private:
   ConjunctionInvariant* learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, std::vector<CpuState> states, std::vector<CpuState> states2);
   /** Use bounded validator to check the invariants. */
   std::vector<CpuState> check_invariants(const Cfg& target, const Cfg& rewrite, std::vector<ConjunctionInvariant*> invariants);
+  /** Use bounded validator to check the cutpoints. */
+  std::vector<CpuState> check_cutpoints(const Cfg& target, const Cfg& rewrite, std::vector<Cfg::id_type>&, std::vector<Cfg::id_type>&);
+
+
 
 
 
