@@ -61,7 +61,7 @@
   nop                       #  50    0x3f  1      OPC=nop             
   nop                       #  51    0x40  1      OPC=nop             
   nop                       #  52    0x41  1      OPC=nop             
-  sarl $0x2, %eax           # CHANGED
+  shrq $0x2, %rax           #  53    0x42  4      OPC=shrq_r64_imm8   
   retq
   nop                       #  58    0x52  1      OPC=nop             
   nop                       #  59    0x53  1      OPC=nop             

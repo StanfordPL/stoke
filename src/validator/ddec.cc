@@ -32,15 +32,18 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-void print_summary(vector<ConjunctionInvariant*> invariants) {
+void DdecValidator::print_summary(vector<ConjunctionInvariant*>& invariants) {
   cout << endl;
   cout << endl << "*********************************************************************";
   cout << endl << "****************************   SUMMARY   ****************************";
   cout << endl << "*********************************************************************";
   cout << endl;
 
+  auto target_cuts = cutpoints_->target_cutpoint_locations();
+  auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
+
   for (size_t i = 0; i < invariants.size(); ++i) {
-    cout << "Cutpoint " << i << ": " << endl;
+    cout << "Cutpoint " << i << " at blocks " << target_cuts[i] << " / " << rewrite_cuts[i] << endl;
     auto invs = invariants[i];
     for (size_t j = 0; j < invs->size(); ++j) {
       cout << "    " << *(*invs)[j] << endl;
@@ -195,18 +198,48 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
     }
   }
 
-
-
 }
+
+
+void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite, BoundedValidator& bv) {
+  auto target_paths = CfgPaths::enumerate_paths(target, 1);
+  auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1);
+
+  StateEqualityInvariant assume(target.def_ins());
+  FalseInvariant _false;
+
+  for(auto p : target_paths) {
+    for(auto q : rewrite_paths) {
+      cout << "Trying pair " << p << " ; " << q << endl;
+      bv.verify_pair(target, rewrite, p, q, assume, _false);
+      for(auto it : bv.get_counter_examples()) {
+        sandbox_->insert_input(it); 
+      }
+    }
+  }
+}
+
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   auto target = inline_functions(init_target);
   auto rewrite = inline_functions(init_rewrite);
 
+  try {
+
+    sanity_checks(target, rewrite);
+
+  } catch (validator_error e) {
+    has_error_ = true;
+    error_ = e.get_message();
+    error_file_ = e.get_file();
+    error_line_ = e.get_line();
+  }
 
   BoundedValidator bv(solver_);
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
+
+  make_tcs(target, rewrite, bv);
 
   auto invariants = find_invariants(target, rewrite);
   if (!invariants.size()) {

@@ -81,7 +81,7 @@
   nop                       #  69    0x5f  1      OPC=nop             
 .L_20:                      #        0x60  0      OPC=<label>         //8
   subl %edi, %eax           #  70    0x60  2      OPC=subl_r32_r32_1  
-  sarl $0x2, %eax           #  CHANGED
+  sarq $0x2, %rax           #  71    0x62  4      OPC=sarq_r64_imm8   
   retq
   nop                       #  76    0x72  1      OPC=nop             //9
   nop                       #  77    0x73  1      OPC=nop             
