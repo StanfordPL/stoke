@@ -183,7 +183,11 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
 
 }
 
-bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
+bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
+
+  auto target = inline_functions(init_target);
+  auto rewrite = inline_functions(init_rewrite);
+
 
   BoundedValidator bv(solver_);
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
