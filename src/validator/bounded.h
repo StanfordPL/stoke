@@ -39,7 +39,7 @@ public:
     STRING_NO_ALIAS   // assume strings don't overlap (UNSOUND)
   };
 
-  BoundedValidator(SMTSolver& solver, const std::string& strata_path = "", Sandbox* sandbox = NULL) : Validator(solver, strata_path), sandbox_(sandbox) {
+  BoundedValidator(SMTSolver& solver, const std::string& strata_path = "") : Validator(solver, strata_path) {
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(false);
@@ -109,9 +109,6 @@ private:
 
   /** The set of counterexamples (one per pair) that we've found. */
   std::vector<CpuState> counterexamples_;
-
-  /** A sandbox (to refute spurious counterexamples) */
-  Sandbox* sandbox_;
 
   // This is to print out Cfg paths easily (for debugging purposes).
   static std::string print(const CfgPath& p) {

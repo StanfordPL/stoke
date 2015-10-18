@@ -1047,7 +1047,7 @@ void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories)
 
 void BoundedValidator::remove_spurious_counterexamples(const Cfg& target, const Cfg& rewrite) {
   if (!counter_examples_available()) return;
-  if (sandbox_ == NULL) return;
+  if (!sandbox_) return;
 
   auto live_outs = target.live_outs();
 
