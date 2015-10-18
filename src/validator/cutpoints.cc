@@ -166,14 +166,18 @@ bool Cutpoints::get_cutpoints() {
     CfgPath rewrite_path;
     cfg_paths.learn_path(rewrite_path, rewrite_, tc);
 
+    if(target_path.size() > 16 || rewrite_path.size() > 16)
+      continue;
+
     auto seen_key = pair<CfgPath,CfgPath>(target_path, rewrite_path);
     if(seen.find(seen_key) != seen.end())
       continue;
 
     seen.insert(seen_key);
 
-    if(target_path.size() > 16 || rewrite_path.size() > 16)
-      continue;
+    auto last_target_block = target_path[target_path.size() - 1];
+    auto last_rewrite_block = rewrite_path[rewrite_path.size() - 1];
+
     cout << "Processing TC " << i << " / " << sandbox_.size() << endl;
     cout << "  target: " << target_path << endl;
     cout << "  rewrite: " << rewrite_path << endl;

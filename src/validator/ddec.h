@@ -51,8 +51,10 @@ private:
   std::vector<CpuState> check_invariants(const Cfg& target, const Cfg& rewrite, std::vector<ConjunctionInvariant*> invariants);
   /** Use bounded validator to check the cutpoints. */
   std::vector<CpuState> check_cutpoints(const Cfg& target, const Cfg& rewrite, std::vector<Cfg::id_type>&, std::vector<Cfg::id_type>&);
-
-
+  /** Generate some extra testcases, for funsies. */
+  void make_tcs(const Cfg& target, const Cfg& rewrite, BoundedValidator& bv);
+  /** Print a summary of what we've done */
+  void print_summary(std::vector<ConjunctionInvariant*>&);
 
 
 
