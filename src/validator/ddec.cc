@@ -99,6 +99,18 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
   return results;
 }
 
+vector<CpuState> DdecValidator::check_cutpoints(const Cfg& target, const Cfg& rewrite, vector<Cfg::id_type>& target_cuts, vector<Cfg::id_type>& rewrite_cuts) {
+
+  // We want to check the simulation relation.
+  // Choose a path through target cutpoints,
+  //   and a different path through rewrite cutpoints,
+  // Check that this isn't feasible in practice.
+  // If it is, generate a counterexample
+
+  vector<CpuState> results;
+  return results;
+}
+
 /** This combines learning and checking invariants with a CEGAR-style search.
   We learn using what testcases we have.  Then, we check that they actually
   hold using a bounded validation approach.  If we don't, we take the testcases
@@ -108,28 +120,30 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
   NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
   vector<ConjunctionInvariant*> invariants;
 
-  init_mm();
-  cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
-  stop_mm();
-  if (cutpoints_->has_error()) {
-    cout << "Cutpoint system encountered: " << cutpoints_->get_error() << endl;
-    return vector<ConjunctionInvariant*>();
-  }
-
   while (true) {
 
     // Recompute the cutpoints
+    if(cutpoints_)
+      delete cutpoints_;
+    init_mm();
+    cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
+    stop_mm();
+
+    if (cutpoints_->has_error()) {
+      cout << "Cutpoint system encountered: " << cutpoints_->get_error() << endl;
+      return vector<ConjunctionInvariant*>();
+    }
+
     auto target_cuts = cutpoints_->target_cutpoint_locations();
     auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
 
-    // Debug Cutpoints
-    for (size_t i = 0; i < target_cuts.size(); ++i) {
-      auto data = cutpoints_->data_at(i, false);
-      std::cout << "Target cutpoint " << i << " has " << data.size() << " states." << std::endl;
-    }
-    for (size_t i = 0; i < rewrite_cuts.size(); ++i) {
-      auto data = cutpoints_->data_at(i, true);
-      std::cout << "Rewrite cutpoint " << i << " has " << data.size() << " states." << std::endl;
+    // Check cutpoints
+    auto new_cutpoint_tcs = check_cutpoints(target, rewrite, target_cuts, rewrite_cuts);
+    if(new_cutpoint_tcs.size()) {
+      for(auto it : new_cutpoint_tcs) {
+        sandbox_->insert_input(it);
+      }
+      continue;
     }
 
     // Learn invariants based on the data we have
