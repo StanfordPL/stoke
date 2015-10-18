@@ -106,7 +106,9 @@ vector<Invariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& 
   NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
   vector<Invariant*> invariants;
 
+  init_mm();
   cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
+  stop_mm();
   if (cutpoints_->has_error()) {
     cout << "Cutpoint system encountered: " << cutpoints_->get_error() << endl;
     return vector<Invariant*>();

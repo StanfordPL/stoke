@@ -13,7 +13,9 @@
 // limitations under the License.
 
 #include "src/cfg/sccs.h"
+#include "src/symstate/bitvector.h"
 #include "src/validator/cutpoints.h"
+
 
 using namespace std;
 using namespace stoke;
@@ -46,6 +48,60 @@ Cfg::id_type find_cutpoint(const Cfg& cfg, Cfg::id_type node, int scc, const Cfg
   return 0;
 }
 
+bool Cutpoints::get_cutpoints() {
+
+  CfgSccs target_sccs(target_);
+  CfgSccs rewrite_sccs(rewrite_);
+
+  if(target_sccs.count() != rewrite_sccs.count()) {
+    error_ = "T/R have different number of SCCs";
+    return false;
+  }
+
+  // We're going to build a big SAT solver to pick some good places for cutpoints.
+  // Each basic block in T/R will have a variable expressing whether it will be a
+  // cutpoint.  For each SCC there will be a "cutpoint number".  Then we have the
+  // following constraints:
+  //
+  // (i)   Each SCC must have at least one cutpoint
+  // (ii)  Each trace must have the target/rewrite cutpoints line up by number
+  //
+
+  vector<SymBool> target_block_is_cutpoint;
+  vector<SymBool> rewrite_block_is_cutpoint;
+  vector<SymBitVector> target_scc_cutpoint_no;
+  vector<SymBitVector> rewrite_scc_cutpoint_no;
+
+  // Allocate variables for use.
+  size_t scc_count = target_sccs.count();
+  size_t scc_bitwidth = 0;
+  while(scc_count) {
+    scc_count >>= 1;
+    scc_bitwidth++;
+  }
+
+  for(size_t i = 0; i < target_.num_blocks(); ++i) {
+    target_block_is_cutpoint.push_back(SymBool::tmp_var());
+  }
+  for(size_t i = 0; i < rewrite_.num_blocks(); ++i) {
+    rewrite_block_is_cutpoint.push_back(SymBool::tmp_var());
+  }
+  for(size_t i = 0; i < target_sccs.count(); ++i) {
+    target_scc_cutpoint_no.push_back(SymBitVector::tmp_var(scc_bitwidth));
+    rewrite_scc_cutpoint_no.push_back(SymBitVector::tmp_var(scc_bitwidth));
+  }
+
+
+
+  // Find SCCs in target/rewrite
+
+  // Collect all the data on paths taken through the CFG.
+    // For each pair of traces, we generate constraints expressing
+    // that the cutpoints in each trace must be the same.
+
+  return true;
+}
+
 void Cutpoints::compute() {
 
   CfgSccs target_sccs(target_);
@@ -72,6 +128,14 @@ void Cutpoints::compute() {
       error_ = "Internal: couldn't find SCC exits for target or rewrite";
       return;
     }
+  }
+
+  bool okay = get_cutpoints();
+  if(!okay) {
+    if(error_ == "") {
+      error_ = "Unexpected error computing cutpoints";
+    }
+    return;
   }
 
   target_cutpoints_.push_back(target_.get_exit());
@@ -115,7 +179,7 @@ void Cutpoints::compute() {
 
 
   /** check() will set error codes. */
-  bool okay = check();
+  okay = check();
   cout << "Cutpoints worked? " << okay << endl;
 
   if (!okay && error_ == "") {
@@ -134,7 +198,7 @@ bool Cutpoints::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {
   return instr.is_any_jump() || instr.is_ret();
 }
 
-void Cutpoints::callback(const StateCallbackData& data, void* arg) {
+void Cutpoints::check_callback(const StateCallbackData& data, void* arg) {
   auto args = *((CallbackParam*)arg);
 
   // Step 1: store the state into the permanent cache
@@ -224,10 +288,10 @@ bool Cutpoints::check() {
           // no need to collect data at exit
         } else if (ends_with_jump) {
           index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
-          sandbox_.insert_before(label, index, callback, cp);
+          sandbox_.insert_before(label, index, check_callback, cp);
         } else {
           index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
-          sandbox_.insert_after(label, index, callback, cp);
+          sandbox_.insert_after(label, index, check_callback, cp);
         }
       }
 
