@@ -164,40 +164,41 @@ void tracer_callback(const StateCallbackData& data, void* arg) {
 }
 
 
-bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory& target_memory, const CellMemory& rewrite_memory, const Cfg& target, const Cfg& rewrite) {
+bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) {
 
 
-  std::map<uint64_t, BitVector> addr_value_pairs;
+  if (target_memory && rewrite_memory) {
+    std::map<uint64_t, BitVector> addr_value_pairs;
 
-  for (size_t k = 0; k < 2; ++k) {
-    auto& memory = k ? rewrite_memory : target_memory;
-    auto access_map = memory.get_line_cell_map();
+    for (size_t k = 0; k < 2; ++k) {
+      auto& memory = k ? *rewrite_memory : *target_memory;
+      auto access_map = memory.get_line_cell_map();
 
+      for (auto pair : access_map) {
+        auto access = pair.second;
+        auto cell = access.cell;
 
-    for (auto pair : access_map) {
-      auto access = pair.second;
-      auto cell = access.cell;
+        stringstream ss;
+        ss << "CELL_" << cell << "_ADDR";
 
-      stringstream ss;
-      ss << "CELL_" << cell << "_ADDR";
+        auto addr_bv = solver.get_model_bv(ss.str(), 64);
+        auto address = addr_bv.get_fixed_quad(0);
 
-      auto addr_bv = solver.get_model_bv(ss.str(), 64);
-      auto address = addr_bv.get_fixed_quad(0);
+        assert(memory.init_cells_.count(cell));
+        const SymBitVector* v = &memory.init_cells_.at(cell);
+        auto value_var = dynamic_cast<const SymBitVectorVar*>(v->ptr);
+        auto value_bv = solver.get_model_bv(value_var->get_name(), value_var->get_size());
 
-      assert(memory.init_cells_.count(cell));
-      const SymBitVector* v = &memory.init_cells_.at(cell);
-      auto value_var = dynamic_cast<const SymBitVectorVar*>(v->ptr);
-      auto value_bv = solver.get_model_bv(value_var->get_name(), value_var->get_size());
+        DEBUG_BUILD_TC(cout << "Cell " << cell << " address = " << hex << address
+                       << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;)
 
-      DEBUG_BUILD_TC(cout << "Cell " << cell << " address = " << hex << address
-                     << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;)
-
-      addr_value_pairs[address] = value_bv;
+        addr_value_pairs[address] = value_bv;
+      }
     }
-  }
 
-  if (!Validator::memory_map_to_testcase(addr_value_pairs, ceg))
-    return false;
+    if (!Validator::memory_map_to_testcase(addr_value_pairs, ceg))
+      return false;
+  }
 
 
   // Run sandbox on target to see if we did well.

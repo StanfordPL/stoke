@@ -41,6 +41,8 @@ public:
     validator->set_bound(2);
     validator->set_sandbox(sandbox);
     validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
+    validator->set_heap_out(true);
+    validator->set_stack_out(true);
   }
 
   ~BoundedValidatorBaseTest() {
@@ -385,6 +387,64 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
   EXPECT_LE(1ul, validator->counter_examples_available());
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
+
+}
+
+TEST_F(BoundedValidatorBaseTest, CanTurnOffMemoryChecking) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "incq %rax" << std::endl;
+  sst << "addl $0x5, (%rax)" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, live_outs, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "incq %rax" << std::endl;
+  ssr << "addl $0x4, (%rax)" << std::endl;
+  ssr << "addl $0x2, (%rax)" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, live_outs, live_outs);
+
+  add_testcases(3, target);
+
+  validator->set_heap_out(false);
+  validator->set_stack_out(false);
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_EQ(0ul, validator->counter_examples_available());
+}
+
+TEST_F(BoundedValidatorBaseTest, NoHeapOutStackOutStillSensitiveToReads) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "movl (%rax), %eax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, live_outs, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  sst << "movq (%rax), %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, live_outs, live_outs);
+
+  add_testcases(3, target);
+
+  validator->set_heap_out(false);
+  validator->set_stack_out(false);
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_LE(1ul, validator->counter_examples_available());
+
+  for (auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
+
 
 }
 
@@ -2027,6 +2087,32 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
   for (auto it : validator->get_counter_examples()) {
     std::cout << it << std::endl;
   }
+}
+
+TEST_F(BoundedValidatorBaseTest, NoSpuriousCeg) {
+
+  auto def_ins = x64asm::RegSet::empty();
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  // These won't validate because def_ins are empty, but it can't get a
+  // counterexample either.
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+  EXPECT_EQ(0ul, validator->counter_examples_available());
 }
 
 

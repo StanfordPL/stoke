@@ -55,6 +55,7 @@ bool Cfg::invariant_no_undef_reads() const {
 }
 
 bool Cfg::invariant_no_undef_live_outs() const {
+  // NOTE: if this method changes, then which_undef_read must be adapted accordingly!
   const auto di_end = def_ins_[blocks_[get_exit()]];
   return di_end.contains(fxn_live_outs_);
 }
@@ -89,10 +90,10 @@ string Cfg::which_undef_read() const {
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
-      const auto r = must_read_set(get_code()[idx]);
+      const auto r = maybe_read_set(get_code()[idx]);
       const auto di = def_ins_[idx];
 
-      if ((r & di) != r) {
+      if (!di.contains(r)) {
         ss << (empty ? "" : ". ") << "Instruction '" << get_code()[idx] << "' reads " << r << " but only " << di << " are defined.";
         empty = false;
         return ss.str();
@@ -103,7 +104,7 @@ string Cfg::which_undef_read() const {
   // Check that the live outs are all defined
   // i.e. every life_out is also def in at the end
   const auto di_end = def_ins_[blocks_[get_exit()]];
-  if ((di_end & fxn_live_outs_) != fxn_live_outs_) {
+  if (!di_end.contains(fxn_live_outs_)) {
     ss << (empty ? "" : ". ") << "At the end, " << fxn_live_outs_ << " should be defined, but only " << di_end << " are.";
     empty = false;
   }

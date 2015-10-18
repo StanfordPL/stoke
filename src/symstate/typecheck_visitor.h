@@ -26,7 +26,7 @@ namespace stoke {
 /* This visitor returns the size of a bitvector, and also checks
    that it's well-formed.  If it's not well-formed, it returns
    size 0. */
-class SymTypecheckVisitor : public SymVisitor<uint16_t> {
+class SymTypecheckVisitor : public SymVisitor<uint16_t, uint16_t> {
 
 public:
 
@@ -34,13 +34,13 @@ public:
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBitVector& bv) {
     error_ = "";
-    return SymVisitor<uint16_t>::operator()(bv);
+    return SymVisitor<uint16_t, uint16_t>::operator()(bv);
   }
   /** Typecheck this abstract symbolic bool */
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBool& b) {
     error_ = "";
-    return SymVisitor<uint16_t>::operator()(b);
+    return SymVisitor<uint16_t, uint16_t>::operator()(b);
   }
 
   /* Visit a generic binary operator */
@@ -330,16 +330,16 @@ private:
 
   /** Recurse without clearing error message */
   uint16_t apply(const SymBitVector& bv) {
-    return SymVisitor<uint16_t>::operator()(bv);
+    return SymVisitor<uint16_t, uint16_t>::operator()(bv);
   }
   uint16_t apply(const SymBool& b) {
-    return SymVisitor<uint16_t>::operator()(b);
+    return SymVisitor<uint16_t, uint16_t>::operator()(b);
   }
   uint16_t apply(const SymBitVectorAbstract * const bv) {
-    return SymVisitor<uint16_t>::operator()(bv);
+    return SymVisitor<uint16_t, uint16_t>::operator()(bv);
   }
   uint16_t apply(const SymBoolAbstract * const b) {
-    return SymVisitor<uint16_t>::operator()(b);
+    return SymVisitor<uint16_t, uint16_t>::operator()(b);
   }
 
   /** Tracks the first error that occurred in typechecking */
