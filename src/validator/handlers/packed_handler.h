@@ -296,18 +296,6 @@ public:
       return (f(a,b)[0]).ite(a, b);
     }, 32, 32, true);
 
-
-    add_opcode("minsd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("minpd_compare_double", 1, {64, 64});
-      return (f(a,b)[0]).ite(a, b);
-    }, 64, 64, true, true);
-
-    add_opcode("minss", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("minps_compare_single", 1, {32, 32});
-      return (f(a,b)[0]).ite(a, b);
-    }, 32, 32, true, true);
-
-
     add_opcode("movapd", [] (SymBitVector a, SymBitVector b) {
       return b;
     }, 0)
