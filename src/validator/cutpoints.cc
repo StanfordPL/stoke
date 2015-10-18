@@ -152,12 +152,13 @@ bool Cutpoints::get_cutpoints() {
     }
   }
 
+  set<std::pair<CfgPath, CfgPath>> seen;
+
   // Collect all the data on paths taken through the CFG.
   // For each pair of traces, we generate constraints expressing
   // that the cutpoints in each trace must be the same.
   for(size_t i = 0; i < sandbox_.size(); ++i) {
     auto tc = *sandbox_.get_input(i);
-    cout << "Processing TC " << i << " / " << sandbox_.size() << endl;
 
     CfgPath target_path;
     cfg_paths.learn_path(target_path, target_, tc);
@@ -165,8 +166,17 @@ bool Cutpoints::get_cutpoints() {
     CfgPath rewrite_path;
     cfg_paths.learn_path(rewrite_path, rewrite_, tc);
 
-    if(target_path.size() > 128 || rewrite_path.size() > 128)
+    auto seen_key = pair<CfgPath,CfgPath>(target_path, rewrite_path);
+    if(seen.find(seen_key) != seen.end())
       continue;
+
+    seen.insert(seen_key);
+
+    if(target_path.size() > 16 || rewrite_path.size() > 16)
+      continue;
+    cout << "Processing TC " << i << " / " << sandbox_.size() << endl;
+    cout << "  target: " << target_path << endl;
+    cout << "  rewrite: " << rewrite_path << endl;
 
     size_t max_str_size = scc_bitwidth*MAX(target_path.size(), rewrite_path.size());
     auto symbolic_target_trace = SymBitVector::constant(max_str_size, 0);
@@ -175,11 +185,11 @@ bool Cutpoints::get_cutpoints() {
     for(size_t j = 0; j < target_path.size(); ++j) {
       auto block = target_path[j];
       if(target_sccs.in_scc(block)) {
-        auto cutpoint_no = target_scc_cutpoint_no[target_sccs.get_scc(block)];
+        auto cutpoint_no = SymBitVector::constant(scc_bitwidth, 1) + 
+                           target_scc_cutpoint_no[target_sccs.get_scc(block)];
         auto cutpoint_ext = SymBitVector::constant(max_str_size - scc_bitwidth, 0) || cutpoint_no;
 
-        symbolic_target_trace = 
-          (target_block_is_cutpoint[block]).ite(
+        symbolic_target_trace = (target_block_is_cutpoint[block]).ite(
               (symbolic_target_trace << scc_bitwidth) | cutpoint_ext,
               symbolic_target_trace);
       }
@@ -188,11 +198,11 @@ bool Cutpoints::get_cutpoints() {
     for(size_t j = 0; j < rewrite_path.size(); ++j) {
       auto block = rewrite_path[j];
       if(rewrite_sccs.in_scc(block)) {
-        auto cutpoint_no = rewrite_scc_cutpoint_no[rewrite_sccs.get_scc(block)];
+        auto cutpoint_no = SymBitVector::constant(scc_bitwidth, 1) + 
+                           rewrite_scc_cutpoint_no[rewrite_sccs.get_scc(block)];
         auto cutpoint_ext = SymBitVector::constant(max_str_size - scc_bitwidth, 0) || cutpoint_no;
 
-        symbolic_rewrite_trace = 
-          (rewrite_block_is_cutpoint[block]).ite(
+        symbolic_rewrite_trace = (rewrite_block_is_cutpoint[block]).ite(
               (symbolic_rewrite_trace << scc_bitwidth) | cutpoint_ext,
               symbolic_rewrite_trace);
       }
@@ -203,11 +213,15 @@ bool Cutpoints::get_cutpoints() {
 
 
   // QUERY!
+  /*
   for(auto it : constraints) {
     cout << it << endl;
   }
+  */
+  cout << "RUNNING THE SOLVER" << endl;
   bool sat = z3.is_sat(constraints);
   if(sat) {
+    cout << "GETTING MODEL" << endl;
     if(!z3.has_model()) {
       error_ = "Z3 doesn't have model...";
       return false;
@@ -241,7 +255,6 @@ bool Cutpoints::get_cutpoints() {
           if(is_cutpoint) {
             cout << "TARGET HAS CUTPOINT " << *it << endl;
             target_cutpoints_.push_back(*it);
-            break;
           }
         }
       }
@@ -253,7 +266,6 @@ bool Cutpoints::get_cutpoints() {
           if(is_cutpoint) {
             cout << "REWRITE HAS CUTPOINT " << *it << endl;
             rewrite_cutpoints_.push_back(*it);
-            break;
           }
         }
       }
