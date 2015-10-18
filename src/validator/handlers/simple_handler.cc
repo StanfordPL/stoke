@@ -201,6 +201,51 @@ void SimpleHandler::add_all() {
     ss.set(eflags_cf, of);
   });
 
+  add_opcode({"imulq", "imull", "imulw", "imulb"},
+  [this] (Operand src, SymBitVector a, SymState& ss) {
+    auto n = a.width();
+
+    SymBitVector b;
+    if (n == 8) {
+      b = ss[Constants::al()];
+    } else if (n == 16) {
+      b = ss[Constants::ax()];
+    } else if (n == 32) {
+      b = ss[Constants::eax()];
+    } else if (n == 64) {
+      b = ss[Constants::rax()];
+    } else {
+      assert(false);
+    }
+
+    auto a_ext = a.extend(2*n);
+    auto b_ext = b.extend(2*n);
+
+    auto full_res = a_ext * b_ext;
+    auto of = full_res != full_res[n-1][0].extend(2*n);
+
+    if (n == 8) {
+      ss.set(Constants::ax(), full_res);
+    } else if (n == 16) {
+      ss.set(Constants::dx(), full_res[2*n-1][n]);
+      ss.set(Constants::ax(), full_res[n-1][0]);
+    } else if (n == 32) {
+      ss.set(Constants::edx(), full_res[2*n-1][n]);
+      ss.set(Constants::eax(), full_res[n-1][0]);
+    } else if (n == 64) {
+      ss.set(Constants::rdx(), full_res[2*n-1][n]);
+      ss.set(Constants::rax(), full_res[n-1][0]);
+    }
+
+    ss.set(eflags_zf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+
+    ss.set(eflags_sf, full_res[n-1]);
+    ss.set(eflags_of, of);
+    ss.set(eflags_cf, of);
+  });
+
   add_opcode({"incb", "incw", "incl", "incq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     SymBitVector one = SymBitVector::constant(dst.size(), 1);
