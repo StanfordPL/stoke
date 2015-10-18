@@ -374,6 +374,10 @@ public:
     return SymBool::Type::VAR;
   }
 
+  std::string get_name() const {
+    return name_;
+  }
+
   bool equals(const SymBoolAbstract * const other) const {
     if (other->type() != SymBool::Type::VAR) return false;
     auto cast = static_cast<const SymBoolVar * const>(other);

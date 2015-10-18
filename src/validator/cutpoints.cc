@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/cfg/paths.h"
 #include "src/cfg/sccs.h"
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
 #include "src/validator/cutpoints.h"
+
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 
 using namespace std;
@@ -51,6 +54,7 @@ Cfg::id_type find_cutpoint(const Cfg& cfg, Cfg::id_type node, int scc, const Cfg
 
 bool Cutpoints::get_cutpoints() {
 
+  CfgPaths cfg_paths;
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
 
@@ -151,6 +155,51 @@ bool Cutpoints::get_cutpoints() {
   // Collect all the data on paths taken through the CFG.
   // For each pair of traces, we generate constraints expressing
   // that the cutpoints in each trace must be the same.
+  for(size_t i = 0; i < sandbox_.size(); ++i) {
+    auto tc = *sandbox_.get_input(i);
+    cout << "Processing TC " << i << " / " << sandbox_.size() << endl;
+
+    CfgPath target_path;
+    cfg_paths.learn_path(target_path, target_, tc);
+
+    CfgPath rewrite_path;
+    cfg_paths.learn_path(rewrite_path, rewrite_, tc);
+
+    if(target_path.size() > 128 || rewrite_path.size() > 128)
+      continue;
+
+    size_t max_str_size = scc_bitwidth*MAX(target_path.size(), rewrite_path.size());
+    auto symbolic_target_trace = SymBitVector::constant(max_str_size, 0);
+    auto symbolic_rewrite_trace = SymBitVector::constant(max_str_size, 0);
+
+    for(size_t j = 0; j < target_path.size(); ++j) {
+      auto block = target_path[j];
+      if(target_sccs.in_scc(block)) {
+        auto cutpoint_no = target_scc_cutpoint_no[target_sccs.get_scc(block)];
+        auto cutpoint_ext = SymBitVector::constant(max_str_size - scc_bitwidth, 0) || cutpoint_no;
+
+        symbolic_target_trace = 
+          (target_block_is_cutpoint[block]).ite(
+              (symbolic_target_trace << scc_bitwidth) | cutpoint_ext,
+              symbolic_target_trace);
+      }
+    }
+
+    for(size_t j = 0; j < rewrite_path.size(); ++j) {
+      auto block = rewrite_path[j];
+      if(rewrite_sccs.in_scc(block)) {
+        auto cutpoint_no = rewrite_scc_cutpoint_no[rewrite_sccs.get_scc(block)];
+        auto cutpoint_ext = SymBitVector::constant(max_str_size - scc_bitwidth, 0) || cutpoint_no;
+
+        symbolic_rewrite_trace = 
+          (rewrite_block_is_cutpoint[block]).ite(
+              (symbolic_rewrite_trace << scc_bitwidth) | cutpoint_ext,
+              symbolic_rewrite_trace);
+      }
+    }
+
+    constraints.push_back(symbolic_target_trace == symbolic_rewrite_trace);
+  }
 
 
   // QUERY!
@@ -164,26 +213,54 @@ bool Cutpoints::get_cutpoints() {
       return false;
     }
 
-    vector<size_t> final_target_scc_cutpoint_no;
-    vector<size_t> final_rewrite_scc_cutpoint_no;
+    map<size_t,size_t> target_cutpoint_to_scc;
+    map<size_t,size_t> rewrite_cutpoint_to_scc;
 
     // Get the cutpoint numbers for each SCC
     for(size_t i = 0; i < scc_count; ++i) {
       auto t_name = static_cast<const SymBitVectorVar*>(target_scc_cutpoint_no[i].ptr)->get_name();
-      cout << "t_name = " << t_name << endl;
       size_t target_ctpt = z3.get_model_bv(t_name, scc_bitwidth).get_fixed_byte(0);
       auto r_name = static_cast<const SymBitVectorVar*>(rewrite_scc_cutpoint_no[i].ptr)->get_name();
-      cout << "r_name = " << r_name << endl;
       size_t rewrite_ctpt = z3.get_model_bv(r_name, scc_bitwidth).get_fixed_byte(0);
-      final_target_scc_cutpoint_no.push_back(target_ctpt);
-      final_rewrite_scc_cutpoint_no.push_back(rewrite_ctpt);
+      target_cutpoint_to_scc[target_ctpt] = i;
+      rewrite_cutpoint_to_scc[rewrite_ctpt] = i;
 
       cout << "Target SCC " << i << " has cutpoint number " << target_ctpt << endl;
       cout << "Rewrite SCC " << i << " has cutpoint number " << rewrite_ctpt << endl;
     }
 
-    
-    return false;
+    // For each cutpoint, check basic blocks of SCC
+    for(size_t i = 0; i < scc_count; ++i) {
+      size_t target_scc = target_cutpoint_to_scc[i];
+      size_t rewrite_scc = rewrite_cutpoint_to_scc[i];
+      
+      for(auto it = target_.reachable_begin(); it != target_.reachable_end(); ++it) {
+        if((size_t)target_sccs.get_scc(*it) == target_scc) {
+          auto name = static_cast<const SymBoolVar*>(target_block_is_cutpoint[*it].ptr)->get_name();
+          auto is_cutpoint = z3.get_model_bool(name);
+          if(is_cutpoint) {
+            cout << "TARGET HAS CUTPOINT " << *it << endl;
+            target_cutpoints_.push_back(*it);
+            break;
+          }
+        }
+      }
+
+      for(auto it = rewrite_.reachable_begin(); it != rewrite_.reachable_end(); ++it) {
+        if((size_t)rewrite_sccs.get_scc(*it) == rewrite_scc) {
+          auto name = static_cast<const SymBoolVar*>(rewrite_block_is_cutpoint[*it].ptr)->get_name();
+          auto is_cutpoint = z3.get_model_bool(name);
+          if(is_cutpoint) {
+            cout << "REWRITE HAS CUTPOINT " << *it << endl;
+            rewrite_cutpoints_.push_back(*it);
+            break;
+          }
+        }
+      }
+
+    }
+
+    return true;
   } else {
     error_ = "Cutpoint constraints unsat";
     return false;
@@ -204,6 +281,7 @@ void Cutpoints::compute() {
     return;
   }
 
+  /*
   for (size_t i = 0; i < target_sccs.count(); ++i) {
     map<Cfg::id_type, bool> empty_map;
     auto target_cp = find_cutpoint(target_, target_.get_entry(), i, target_sccs, empty_map);
@@ -218,6 +296,7 @@ void Cutpoints::compute() {
       return;
     }
   }
+  */
 
   bool okay = get_cutpoints();
   if (!okay) {
@@ -239,24 +318,6 @@ void Cutpoints::compute() {
   for (auto it : rewrite_cutpoints_) {
     rewrite_cutpoint_ends_with_jump_.push_back(ends_with_jump(rewrite_, it));
   }
-
-
-  // For each basic block of target/rewrite, we have a cutpoint at the end
-  /*
-  for (size_t i = 0; i < target_.num_blocks(); ++i) {
-    if (target_.is_reachable(i)) {
-      target_cutpoints_.push_back(i);
-      target_cutpoint_ends_with_jump_.push_back(ends_with_jump(target_, i));
-    }
-  }
-
-  for (size_t i = 0; i < rewrite_.num_blocks(); ++i) {
-    if (rewrite_.is_reachable(i)) {
-      rewrite_cutpoints_.push_back(i);
-      rewrite_cutpoint_ends_with_jump_.push_back(ends_with_jump(rewrite_, i));
-    }
-  }
-  */
 
   for (size_t i = 0; i < target_cutpoints_.size(); ++i) {
     cout << "Cutpoint " << target_cutpoints_[i] << "; has jump? " << target_cutpoint_ends_with_jump_[i] << endl;
