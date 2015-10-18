@@ -372,7 +372,7 @@ void SimpleHandler::add_all() {
     auto bb = b[63][0];
     ss.set(dst, a[127][64] || (f(aa, bb)[0]).ite(aa, bb));
   });
-  
+
   add_opcode({"vminsd"},
   [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("minpd_compare_double", 1, {64, 64});
@@ -388,7 +388,7 @@ void SimpleHandler::add_all() {
     auto bb = b[32][0];
     ss.set(dst, a[127][32] || (f(aa, bb)[0]).ite(aa, bb));
   });
-  
+
   add_opcode({"vminss"},
   [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("minps_compare_single", 1, {32, 32});
@@ -404,7 +404,7 @@ void SimpleHandler::add_all() {
     auto bb = b[63][0];
     ss.set(dst, a[127][64] || (f(aa, bb)[0]).ite(aa, bb));
   });
-  
+
   add_opcode({"vmaxsd"},
   [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("maxpd_compare_double", 1, {64, 64});
@@ -420,7 +420,7 @@ void SimpleHandler::add_all() {
     auto bb = b[32][0];
     ss.set(dst, a[127][32] || (f(aa, bb)[0]).ite(aa, bb));
   });
-  
+
   add_opcode({"vmaxss"},
   [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("maxps_compare_single", 1, {32, 32});
