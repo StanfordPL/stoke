@@ -8,7 +8,7 @@
 
 # Text                      #  Line  RIP       Bytes  Opcode              
 .wcscat:                    #        0x141040  0      OPC=<label>         
-  movl %edi, %eax           #  1     0x141040  2      OPC=movl_r32_r32    
+  movl %edi, %eax           #  1     0x141040  2      OPC=movl_r32_r32    //1
   movl %esi, %esi           #  2     0x141042  2      OPC=movl_r32_r32    
   movl %eax, %eax           #  3     0x141044  2      OPC=movl_r32_r32    
   movl (%r15,%rax,1), %edi  #  4     0x141046  4      OPC=movl_r32_m32    
@@ -16,7 +16,7 @@
   movq %rax, %rdx           #  6     0x14104d  3      OPC=movq_r64_r64    
   testl %edi, %edi          #  7     0x141050  2      OPC=testl_r32_r32   
   je .L_1410a0              #  8     0x141052  2      OPC=je_label        
-  nop                       #  9     0x141054  1      OPC=nop             
+  nop                       #  9     0x141054  1      OPC=nop             //2
   nop                       #  10    0x141055  1      OPC=nop             
   nop                       #  11    0x141056  1      OPC=nop             
   nop                       #  12    0x141057  1      OPC=nop             
@@ -28,24 +28,24 @@
   nop                       #  18    0x14105d  1      OPC=nop             
   nop                       #  19    0x14105e  1      OPC=nop             
   nop                       #  20    0x14105f  1      OPC=nop             
-.L_141060:                  #        0x141060  0      OPC=<label>         
+.L_141060:                  #        0x141060  0      OPC=<label>         //3
   addl $0x4, %ecx           #  21    0x141060  3      OPC=addl_r32_imm8   
   movl %ecx, %ecx           #  22    0x141063  2      OPC=movl_r32_r32    
   movl (%r15,%rcx,1), %edx  #  23    0x141065  4      OPC=movl_r32_m32    
   testl %edx, %edx          #  24    0x141069  2      OPC=testl_r32_r32   
-  jne .L_141060             #  25    0x14106b  2      OPC=jne_label       
+  jne .L_141060             #  25    0x14106b  2      OPC=jne_label       //4
   movq %rcx, %rdx           #  26    0x14106d  3      OPC=movq_r64_r64    
   movl %esi, %esi           #  27    0x141070  2      OPC=movl_r32_r32    
   movl (%r15,%rsi,1), %ecx  #  28    0x141072  4      OPC=movl_r32_m32    
   testl %ecx, %ecx          #  29    0x141076  2      OPC=testl_r32_r32   
   je .L_1410c0              #  30    0x141078  2      OPC=je_label        
-  nop                       #  31    0x14107a  1      OPC=nop             
+  nop                       #  31    0x14107a  1      OPC=nop             //5
   nop                       #  32    0x14107b  1      OPC=nop             
   nop                       #  33    0x14107c  1      OPC=nop             
   nop                       #  34    0x14107d  1      OPC=nop             
   nop                       #  35    0x14107e  1      OPC=nop             
   nop                       #  36    0x14107f  1      OPC=nop             
-.L_141080:                  #        0x141080  0      OPC=<label>         
+.L_141080:                  #        0x141080  0      OPC=<label>         //6
   movl %edx, %edx           #  37    0x141080  2      OPC=movl_r32_r32    
   movl %ecx, (%r15,%rdx,1)  #  38    0x141082  4      OPC=movl_m32_r32    
   addl $0x4, %esi           #  39    0x141086  3      OPC=addl_r32_imm8   
@@ -70,12 +70,12 @@
   nop                       #  58    0x14109d  1      OPC=nop             
   nop                       #  59    0x14109e  1      OPC=nop             
   nop                       #  60    0x14109f  1      OPC=nop             
-.L_1410a0:                  #        0x1410a0  0      OPC=<label>         
+.L_1410a0:                  #        0x1410a0  0      OPC=<label>         //7
   movl %esi, %esi           #  61    0x1410a0  2      OPC=movl_r32_r32    
   movl (%r15,%rsi,1), %ecx  #  62    0x1410a2  4      OPC=movl_r32_m32    
   testl %ecx, %ecx          #  63    0x1410a6  2      OPC=testl_r32_r32   
   jne .L_141080             #  64    0x1410a8  2      OPC=jne_label       
-  nop                       #  65    0x1410aa  1      OPC=nop             
+  nop                       #  65    0x1410aa  1      OPC=nop             //8
   nop                       #  66    0x1410ab  1      OPC=nop             
   nop                       #  67    0x1410ac  1      OPC=nop             
   nop                       #  68    0x1410ad  1      OPC=nop             
@@ -97,12 +97,12 @@
   nop                       #  84    0x1410bd  1      OPC=nop             
   nop                       #  85    0x1410be  1      OPC=nop             
   nop                       #  86    0x1410bf  1      OPC=nop             
-.L_1410c0:                  #        0x1410c0  0      OPC=<label>         
+.L_1410c0:                  #        0x1410c0  0      OPC=<label>         //9
   movl %edx, %edx           #  87    0x1410c0  2      OPC=movl_r32_r32    
   movl $0x0, (%r15,%rdx,1)  #  88    0x1410c2  8      OPC=movl_m32_imm32  
   retq
   nop                       #  97    0x1410dd  1      OPC=nop             
-  nop                       #  98    0x1410de  1      OPC=nop             
+  nop                       #  98    0x1410de  1      OPC=nop             //10
   nop                       #  99    0x1410df  1      OPC=nop             
   nop                       #  100   0x1410e0  1      OPC=nop             
   nop                       #  101   0x1410e1  1      OPC=nop             
