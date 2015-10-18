@@ -310,6 +310,47 @@ void SimpleHandler::add_all() {
     ss.set(eflags_cf, SymBool::tmp_var());
   });
 
+  add_opcode({"divb", "divw", "divl", "divq"},
+  [this] (Operand src, SymBitVector a, SymState& ss) {
+    auto n = a.width();
+
+    SymBitVector numerator;
+    if (n == 8) {
+      SymFunction f_quot("div_quotient_int8", 8, {16, 8});
+      SymFunction f_rem("div_remainder_int8", 8, {16, 8});
+      numerator = ss[Constants::ax()];
+      ss.set(Constants::al(), f_quot(numerator, a));
+      ss.set(Constants::ah(), f_rem(numerator, a));
+    } else if (n == 16) {
+      SymFunction f_quot("div_quotient_int16", 16, {32, 16});
+      SymFunction f_rem("div_remainder_int16", 16, {32, 16});
+      numerator = ss[Constants::dx()] || ss[Constants::ax()];
+      ss.set(Constants::dx(), f_rem(numerator, a));
+      ss.set(Constants::ax(), f_quot(numerator, a));
+    } else if (n == 32) {
+      SymFunction f_quot("div_quotient_int32", 32, {64, 32});
+      SymFunction f_rem("div_remainder_int32", 32, {64, 32});
+      numerator = ss[Constants::edx()] || ss[Constants::eax()];
+      ss.set(Constants::edx(), f_rem(numerator, a));
+      ss.set(Constants::eax(), f_quot(numerator, a));
+    } else if (n == 64) {
+      SymFunction f_quot("div_quotient_int64", 64, {128, 64});
+      SymFunction f_rem("div_remainder_int64", 64, {128, 64});
+      numerator = ss[Constants::rdx()] || ss[Constants::rax()];
+      ss.set(Constants::rdx(), f_rem(numerator, a));
+      ss.set(Constants::rax(), f_quot(numerator, a));
+    } else {
+      assert(false);
+    }
+
+    ss.set(eflags_zf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
+    ss.set(eflags_of, SymBool::tmp_var());
+    ss.set(eflags_cf, SymBool::tmp_var());
+  });
+
   add_opcode({"incb", "incw", "incl", "incq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     SymBitVector one = SymBitVector::constant(dst.size(), 1);
