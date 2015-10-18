@@ -1126,7 +1126,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     // Build inequality constraint
     SymBool inequality = SymBool::_false();
 
-    if (memories.first && (heap_out_ || stack_out_)) {
+//    if (memories.first && (heap_out_ || stack_out_)) {
+    if(memories.first) {
       auto mem_const = memories.first->equality_constraint(*memories.second);
       mem_const = !mem_const;
       inequality = inequality | mem_const;
@@ -1155,7 +1156,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     }
 
     if (is_sat) {
-      auto ceg = Validator::state_from_model(solver_, "_");
+      auto ceg = Validator::state_from_model(solver_, "_1_INIT");
       auto ceg2 = Validator::state_from_model(solver_, "_2_INIT");
       auto ceg_tf = Validator::state_from_model(solver_, "_1_FINAL");
       auto ceg_rf = Validator::state_from_model(solver_, "_2_FINAL");

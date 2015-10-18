@@ -92,4 +92,10 @@ private:
 
 } // namespace stoke
 
+namespace std {
+
+ostream& operator<<(ostream& os, stoke::CfgPath& path);
+
+}
+
 #endif
