@@ -39,7 +39,6 @@ public:
       // we sometimes jump
       std::string opcode = Handler::get_opcode(instr);
       predicate_ = opcode.substr(1, opcode.size() - 1);
-      std::cout << "OPCODE=" << opcode << "  pred=" << predicate_ << std::endl;
     } else {
       // we never jump (always fallthrough)
       predicate_ = "";

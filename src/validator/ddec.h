@@ -17,6 +17,7 @@
 
 #include "src/validator/cutpoints.h"
 #include "src/validator/invariant.h"
+#include "src/validator/invariants/conjunction.h"
 #include "src/validator/validator.h"
 
 namespace stoke {
@@ -41,13 +42,13 @@ public:
 private:
 
   /** Find all invariants with CEGAR-style search. */
-  std::vector<Invariant*> find_invariants(const Cfg& target, const Cfg& rewrite);
+  std::vector<ConjunctionInvariant*> find_invariants(const Cfg& target, const Cfg& rewrite);
   /** Learn invariants from CpuStates */
-  Invariant* learn_disjunction_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, std::vector<CpuState> states, std::vector<CpuState> states2, const x64asm::Instruction& target_instr, const x64asm::Instruction& rewrite_instr);
+  ConjunctionInvariant* learn_disjunction_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, std::vector<CpuState> states, std::vector<CpuState> states2, const x64asm::Instruction& target_instr, const x64asm::Instruction& rewrite_instr);
   /** Learn invariants from CpuStates */
-  Invariant* learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, std::vector<CpuState> states, std::vector<CpuState> states2);
+  ConjunctionInvariant* learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, std::vector<CpuState> states, std::vector<CpuState> states2);
   /** Use bounded validator to check the invariants. */
-  std::vector<CpuState> check_invariants(const Cfg& target, const Cfg& rewrite, std::vector<Invariant*> invariants);
+  std::vector<CpuState> check_invariants(const Cfg& target, const Cfg& rewrite, std::vector<ConjunctionInvariant*> invariants);
 
 
 

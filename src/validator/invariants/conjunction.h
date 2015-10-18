@@ -52,6 +52,10 @@ public:
     return invariants_.size();
   }
 
+  void remove(size_t i) {
+    invariants_.erase(invariants_.begin() + i);
+  }
+
   bool check (const CpuState& target, const CpuState& rewrite) const {
     for (auto it : invariants_) {
       if (!it->check(target, rewrite))
