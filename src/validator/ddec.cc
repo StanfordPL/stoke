@@ -82,6 +82,8 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
     auto target_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target_cuts[i]);
     auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1, rewrite.get_entry(), rewrite_cuts[i]);
 
+    cout << "cutpoint " << i << ": " << target_paths.size()*rewrite_paths.size() << " cases" << endl;
+
     for (auto p : target_paths) {
       for (auto q : rewrite_paths) {
         bool success = bv.verify_pair(target, rewrite, p, q, *invariants[0], *invariants[i]);
