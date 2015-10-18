@@ -156,6 +156,29 @@ void SimpleHandler::add_all() {
     ss.set(eflags_sf, res[n-1]);
   });
 
+  add_opcode({"imulq", "imull", "imulw"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    auto n = a.width();
+
+    auto a_ext = b.extend(2*n);
+    auto b_ext = c.extend(2*n);
+
+    auto full_res = a_ext * b_ext;
+    auto res = full_res[n-1][0];
+    auto truncated_res = res.extend(2*n);
+    auto of = full_res != truncated_res;
+
+    ss.set(dst, res);
+
+    ss.set(eflags_zf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+
+    ss.set(eflags_of, of);
+    ss.set(eflags_cf, of);
+    ss.set(eflags_sf, res[n-1]);
+  });
+
   add_opcode({"mulq", "mull", "mulw", "mulb"},
   [this] (Operand src, SymBitVector a, SymState& ss) {
     auto n = a.width();
