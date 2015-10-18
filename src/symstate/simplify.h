@@ -12,19 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef STOKE_TOOLS_GADGETS_NONGOAL_COST_H
-#define STOKE_TOOLS_GADGETS_NONGOAL_COST_H
+#ifndef STOKE_SRC_SYMSTATE_SIMPLIFY_H
+#define STOKE_SRC_SYMSTATE_SIMPLIFY_H
 
-#include "src/cost/nongoal.h"
-#include "tools/args/nongoal.inc"
+#include "src/symstate/bitvector.h"
+#include "src/symstate/bool.h"
 
 namespace stoke {
 
-class NonGoalCostGadget : public NonGoalCost {
+class SymSimplify {
 public:
-  NonGoalCostGadget(const Cfg& target) : NonGoalCost() {
-    set_nongoals(nongoal_arg.value(), target);
-  }
+  /** Simplify a given bit vector */
+  static SymBitVector simplify(const SymBitVector& b);
+  /** Simplify a given bool */
+  static SymBool simplify(const SymBool& b);
+
+private:
+  // no need to construct instances of this class
+  SymSimplify() {}
 };
 
 } // namespace stoke

@@ -1126,7 +1126,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     // Build inequality constraint
     SymBool inequality = SymBool::_false();
 
-    if (memories.first) {
+    if (memories.first && (heap_out_ || stack_out_)) {
       auto mem_const = memories.first->equality_constraint(*memories.second);
       mem_const = !mem_const;
       inequality = inequality | mem_const;
@@ -1155,42 +1155,31 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
     }
 
     if (is_sat) {
-      auto ceg = Validator::state_from_model(solver_, "_1_INIT");
+      auto ceg = Validator::state_from_model(solver_, "_");
       auto ceg2 = Validator::state_from_model(solver_, "_2_INIT");
       auto ceg_tf = Validator::state_from_model(solver_, "_1_FINAL");
       auto ceg_rf = Validator::state_from_model(solver_, "_2_FINAL");
-      if (memories.first) {
-        bool ok = am.build_testcase_memory(ceg, solver_,
-                                           *static_cast<CellMemory*>(state_t.memory),
-                                           *static_cast<CellMemory*>(state_r.memory),
-                                           target, rewrite);
-        am.build_testcase_memory(ceg2, solver_,
-                                 *static_cast<CellMemory*>(state_t.memory),
-                                 *static_cast<CellMemory*>(state_r.memory),
-                                 target, rewrite);
-        am.build_testcase_memory(ceg_tf, solver_,
-                                 *static_cast<CellMemory*>(state_t.memory),
-                                 *static_cast<CellMemory*>(state_r.memory),
-                                 target, rewrite);
-        am.build_testcase_memory(ceg_rf, solver_,
-                                 *static_cast<CellMemory*>(state_t.memory),
-                                 *static_cast<CellMemory*>(state_r.memory),
-                                 target, rewrite);
 
-        if (ok) {
-          counterexamples_.push_back(ceg);
-        } else {
-          delete_memories(memory_list);
-          //throw VALIDATOR_ERROR("Couldn't build counterexample!  This is a BOUNDED VALIDATOR BUG.");
-          cout << "Couldn't build counterexample!  This is probably a bug!" << endl;
-          return false;
-        }
-      } else {
+      bool ok = am.build_testcase_memory(ceg, solver_,
+                                         static_cast<CellMemory*>(state_t.memory),
+                                         static_cast<CellMemory*>(state_r.memory),
+                                         target, rewrite);
+      am.build_testcase_memory(ceg2, solver_,
+                               static_cast<CellMemory*>(state_t.memory),
+                               static_cast<CellMemory*>(state_r.memory),
+                               target, rewrite);
+      am.build_testcase_memory(ceg_tf, solver_,
+                               static_cast<CellMemory*>(state_t.memory),
+                               static_cast<CellMemory*>(state_r.memory),
+                               target, rewrite);
+      am.build_testcase_memory(ceg_rf, solver_,
+                               static_cast<CellMemory*>(state_t.memory),
+                               static_cast<CellMemory*>(state_r.memory),
+                               target, rewrite);
+
+      if (ok)
         counterexamples_.push_back(ceg);
-        if (ceg != ceg2) {
-          counterexamples_.push_back(ceg2);
-        }
-      }
+
       CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
       CEG_DEBUG(cout << "TARGET START STATE" << endl;)
       CEG_DEBUG(cout << ceg << endl;)
