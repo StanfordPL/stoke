@@ -100,7 +100,7 @@ void OpcSetReader::operator()(istream& is, set<Opcode>& os) {
     }
 
     if (!found) {
-      is.setstate(ios::failbit);
+      fail(is) << "No match found for '" << a << "'.  Using " << (no_regex_needed(a) ? "string matching." : "regex matching.") <<endl;
       return;
     }
   }

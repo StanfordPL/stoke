@@ -108,7 +108,9 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
   NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
   vector<ConjunctionInvariant*> invariants;
 
+  init_mm();
   cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
+  stop_mm();
   if (cutpoints_->has_error()) {
     cout << "Cutpoint system encountered: " << cutpoints_->get_error() << endl;
     return vector<ConjunctionInvariant*>();
@@ -183,7 +185,11 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
 
 }
 
-bool DdecValidator::verify(const Cfg& target, const Cfg& rewrite) {
+bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
+
+  auto target = inline_functions(init_target);
+  auto rewrite = inline_functions(init_rewrite);
+
 
   BoundedValidator bv(solver_);
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);

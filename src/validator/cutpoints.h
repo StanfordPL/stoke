@@ -102,6 +102,7 @@ private:
 
   /** Find the cutpoints for the target/rewrite. */
   void compute();
+  bool get_cutpoints();
 
   /** Check if the current set of cutpoints is okay. */
   bool check();
@@ -109,7 +110,7 @@ private:
   /** Have we encountered an error? */
   std::string error_;
 
-  ////////////////////////////// CALLBACKS //////////////////////////////////
+  ////////////////////////////// CHECK CALLBACKS //////////////////////////////////
 
   struct CallbackParam {
     Cutpoints* self;
@@ -118,7 +119,7 @@ private:
   };
 
   /** The callback used for gathering data from each of the cutpoints */
-  static void callback(const StateCallbackData& data, void* arg);
+  static void check_callback(const StateCallbackData& data, void* arg);
 
   /** The list of cutpoint-memory states in the target. */
   std::vector<CpuState> callback_target_states_;
