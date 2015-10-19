@@ -35,7 +35,7 @@ public:
 
     // get functions
     stoke::TUnit tunit;
-    const char* dirname = "specgen/workdir/functions";
+    const char* dirname = "../tmp-workdir/functions";
     DIR *dp = opendir(dirname);
     if (dp == NULL) {
       assert(false);// << "functions folder not found";
