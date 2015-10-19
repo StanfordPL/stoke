@@ -354,7 +354,7 @@ TEST_F(BoundedValidatorBaseTest, EasyMemory) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
-TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_EasyMemoryFail) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -613,7 +613,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
     check_ceg(it, target, rewrite);
 }
 
-TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong2) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_LoopMemoryWrong2) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -769,7 +769,7 @@ TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsFail1) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong3) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_LoopMemoryWrong3) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1803,7 +1803,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong5) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, WcscpyWrong1) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_WcscpyWrong1) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::rsi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
