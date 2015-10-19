@@ -75,7 +75,7 @@ INSTANTIATE_TEST_CASE_P(Sse0, SearchTest, ::testing::Values(
                           "%ymm0", "%ymm1", "%ymm2", "%ymm3", "%ymm4", "%ymm5","%ymm6", "%ymm7", "%ymm8", "%ymm9", "%ymm10", "%ymm11", "%ymm12", "%ymm13", "%ymm14", "%ymm15"
                         ));
 
-INSTANTIATE_TEST_CASE_P(Sse1, SearchTest, ::testing::Values(
+INSTANTIATE_TEST_CASE_P(DISABLED_Sse1, SearchTest, ::testing::Values(
                           "%mm0", "%mm1", "%mm2", "%mm3", "%mm4", "%mm5","%mm6", "%mm7"
                         ));
 
