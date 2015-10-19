@@ -50,7 +50,6 @@ DEPS=\
 
 LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
-	-lboost_regex\
 	-pthread\
 	-lcln \
 	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
@@ -185,18 +184,18 @@ BIN=\
 	bin/stoke_benchmark_sandbox \
 	bin/stoke_benchmark_search \
 	bin/stoke_benchmark_state \
-	bin/stoke_benchmark_verify 
+	bin/stoke_benchmark_verify
 
 # used to force a target to rebuild
 .PHONY: .FORCE
 
-##### TOP LEVEL TARGETS 
+##### TOP LEVEL TARGETS
 
 all: release hooks
 
 release: haswell_release
-debug: haswell_debug 
-profile: haswell_profile 
+debug: haswell_debug
+profile: haswell_profile
 test: haswell_test
 
 haswell: haswell_release
@@ -402,7 +401,7 @@ hooks: .git/hooks/pre-commit
 
 ##### CLEAN TARGETS
 
-stoke_clean: 
+stoke_clean:
 	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke bin/stoke.bash
 	rm -rf $(VALIDATOR_AUTOGEN)
 
