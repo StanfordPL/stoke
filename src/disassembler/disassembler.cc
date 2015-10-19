@@ -16,6 +16,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <regex>
 
 #include "src/ext/cpputil/include/io/fail.h"
 #include "src/ext/x64asm/include/x64asm.h"
@@ -25,10 +26,6 @@ using namespace cpputil;
 using namespace redi;
 using namespace std;
 using namespace x64asm;
-
-// This is a stop-gap until g++-4.9 which will support c++11 regex
-#include "boost/regex.hpp"
-using namespace boost;
 
 namespace {
 
