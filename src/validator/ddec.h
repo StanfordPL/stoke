@@ -26,7 +26,7 @@ class DdecValidator : public Validator {
 
 public:
 
-  DdecValidator(SMTSolver& solver) : Validator(solver) {
+  DdecValidator(SMTSolver& solver) : Validator(solver), bv_(solver) {
     cutpoints_ = NULL;
   }
 
@@ -51,13 +51,17 @@ private:
   std::vector<CpuState> check_invariants(const Cfg& target, const Cfg& rewrite, std::vector<ConjunctionInvariant*> invariants);
   /** Use bounded validator to check the cutpoints. */
   std::vector<CpuState> check_cutpoints(const Cfg& target, const Cfg& rewrite, std::vector<Cfg::id_type>&, std::vector<Cfg::id_type>&);
+  /** Check that all the invariants work. */
+  bool check_proof(const Cfg& target, const Cfg& rewrite, const std::vector<ConjunctionInvariant*>& invariants, std::map<size_t, std::vector<size_t>>& failed_invariants);
   /** Generate some extra testcases, for funsies. */
-  void make_tcs(const Cfg& target, const Cfg& rewrite, BoundedValidator& bv);
+  void make_tcs(const Cfg& target, const Cfg& rewrite);
   /** Print a summary of what we've done */
-  void print_summary(std::vector<ConjunctionInvariant*>&);
+  void print_summary(const std::vector<ConjunctionInvariant*>&);
 
 
 
+  /** Bounded Validator */
+  BoundedValidator bv_;
 
   /** Whatever cutpoints we've generated. */
   Cutpoints* cutpoints_;
