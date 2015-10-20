@@ -44,7 +44,7 @@ public:
     reg_warning();
 
     // Check for unsupported instructions and cpu flags
-    flag_check();
+    //flag_check();
     sandbox_check();
     // Check that this function can link against auxiliary functions
     linker_check(aux_fxns);
@@ -140,6 +140,7 @@ private:
   void flag_check() const {
     const auto cpu_flags = CpuInfo::get_flags();
     auto code_flags = get_function().get_code().required_flags();
+    std::cout << "code flags: " << code_flags << std::endl;
 
     if (!cpu_flags.contains(code_flags)) {
       const auto diff = code_flags - cpu_flags;
