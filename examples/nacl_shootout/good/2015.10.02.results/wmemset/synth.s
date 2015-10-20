@@ -8,7 +8,7 @@
 
 # Text                      #  Line  RIP   Bytes  Opcode              
 .wmemset:                   #        0     0      OPC=<label>         
-  nop                       #  1     0     1      OPC=nop             
+  nop                       #  1     0     1      OPC=nop             //1
   nop                       #  2     0x1   1      OPC=nop             
   nop                       #  3     0x2   1      OPC=nop             
   nop                       #  4     0x3   1      OPC=nop             
@@ -33,13 +33,13 @@
   nop                       #  23    0x18  1      OPC=nop             
   nop                       #  24    0x19  1      OPC=nop             
   nop                       #  25    0x1a  1      OPC=nop             
-  testq %rdx, %rdx          #  26    0x1b  3      OPC=testq_r64_r64   
+  testl %edx, %edx          #  CHANGED
   je .L_1c                  #  27    0x1e  2      OPC=je_label        
-.L_10:                      #        0x20  0      OPC=<label>         
+.L_10:                      #        0x20  0      OPC=<label>         //2
   leal (%rax,%rcx,4), %r8d  #  28    0x20  4      OPC=leal_r32_m32    
   movl %esi, (%r15,%r8,1)   #  29    0x24  4      OPC=movl_m32_r32    
-  addq $0x1, %rcx           #  30    0x28  4      OPC=addq_r64_imm8   
-  cmpq %rdx, %rcx           #  31    0x2c  3      OPC=cmpq_r64_r64    
+  addq $0x1, %rcx           #  CHANGED
+  cmpl %edx, %ecx           #  CHANGED
   jne .L_10                 #  32    0x2f  2      OPC=jne_label       
   nop                       #  33    0x31  1      OPC=nop             
   nop                       #  34    0x32  1      OPC=nop             

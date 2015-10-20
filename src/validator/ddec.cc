@@ -32,7 +32,7 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-void DdecValidator::print_summary(vector<ConjunctionInvariant*>& invariants) {
+void DdecValidator::print_summary(const vector<ConjunctionInvariant*>& invariants) {
   cout << endl;
   cout << endl << "*********************************************************************";
   cout << endl << "****************************   SUMMARY   ****************************";
@@ -90,7 +90,7 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
     for (auto p : target_paths) {
       for (auto q : rewrite_paths) {
         bool success = bv.verify_pair(target, rewrite, p, q, *invariants[0], *invariants[i]);
-        if (bv.counter_examples_available()) {
+        if (!success && bv.counter_examples_available()) {
           auto cegs = bv.get_counter_examples();
           results.insert(results.begin(), cegs.begin(), cegs.end());
           return results;
@@ -201,7 +201,7 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
 }
 
 
-void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite, BoundedValidator& bv) {
+void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
   auto target_paths = CfgPaths::enumerate_paths(target, 1);
   auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1);
 
@@ -211,8 +211,8 @@ void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite, BoundedValid
   for(auto p : target_paths) {
     for(auto q : rewrite_paths) {
       cout << "Trying pair " << p << " ; " << q << endl;
-      bv.verify_pair(target, rewrite, p, q, assume, _false);
-      for(auto it : bv.get_counter_examples()) {
+      bv_.verify_pair(target, rewrite, p, q, assume, _false);
+      for(auto it : bv_.get_counter_examples()) {
         sandbox_->insert_input(it); 
       }
     }
@@ -236,16 +236,47 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     error_line_ = e.get_line();
   }
 
-  BoundedValidator bv(solver_);
-  bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
+  bv_.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
 
-  make_tcs(target, rewrite, bv);
+  make_tcs(target, rewrite);
 
   auto invariants = find_invariants(target, rewrite);
+  cout << "Got initial invariants " << invariants.size() << endl;
   if (!invariants.size()) {
     cout << "Could not find cutpoints/invariants" << endl;
     return false;
   }
+
+  map<size_t, vector<size_t>> failed_invariants;
+  while(true) {
+
+    failed_invariants.clear();
+    bool success = check_proof(target, rewrite, invariants, failed_invariants);
+    if(success)
+      return true;
+
+    // otherwise, remove invariants that failed to validate and try again...
+    // we want to be sure not to change the start/end invariants
+    cout << "Validation failed; attempting to remove failed invariants" << endl;
+    bool made_a_change = false;
+    for(size_t i = 1; i < invariants.size() - 1; ++i) {
+      auto to_remove = failed_invariants[i]; 
+      for(auto it = to_remove.rbegin(); it != to_remove.rend(); ++it) {
+        cout << "Removing " << *(*invariants[i])[*it] << endl;
+        invariants[i]->remove(*it);
+        made_a_change = true;
+      }
+    }
+
+    if(!made_a_change) {
+      cout << "Could not remove failed invariants.  Programs not proven equivalent." << endl;
+      // got a fixed point, we really can't validate this
+      return false;
+    }
+  }
+}
+
+bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vector<ConjunctionInvariant*>& invariants, map<size_t, vector<size_t>>& failed_invariants) {
 
   auto target_cuts = cutpoints_->target_cutpoint_locations();
   auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
@@ -286,6 +317,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
       cout << "cutpoint blocks: " << target_cuts[i] << "  (and)  " << rewrite_cuts[j] << endl;
 
       // 2. P in Paths_T(i, j), Q in Paths_R(i, j) => inv(i) { P; Q } inv(j)
+      bool success = true;
       for (auto p : target_paths_ij) {
         auto target_jump_inv = get_jump_inv(target, p, false);
         if (target.num_instrs(target_cuts[i]))
@@ -315,14 +347,18 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
             cout << "Checking " << copy << " { " << BoundedValidator::print(p)
                  << " ; " << BoundedValidator::print(q) << " } " << *(*end_inv)[m] << endl;
 
-            bool ok = bv.verify_pair(target, rewrite, p, q, copy, *(*end_inv)[m]);
+            bool ok = bv_.verify_pair(target, rewrite, p, q, copy, *(*end_inv)[m]);
             if (!ok) {
-              print_summary(invariants);
-              return false;
+              failed_invariants[j].push_back(m);
+              success = false;
             }
           }
 
         }
+      }
+      if(!success) {
+        print_summary(invariants);
+        return false;
       }
 
       // 3. P \in Paths_T(i, j), Q \in Paths_R(i, k) => inv(i) { P ; Q } false
@@ -351,7 +387,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
             cout << "Checking " << copy << " { " << BoundedValidator::print(p)
                  << " ; " << BoundedValidator::print(q) << " } false " << endl;
             FalseInvariant fi;
-            bool ok = bv.verify_pair(target, rewrite, p, q, copy, fi);
+            bool ok = bv_.verify_pair(target, rewrite, p, q, copy, fi);
             if (!ok) {
               print_summary(invariants);
               return false;
@@ -491,11 +527,6 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
     disj->add_invariant(jump_simple);
     disj->add_invariant(fall_simple);
 
-/*
-    auto conj = new ConjunctionInvariant();
-    conj->add_invariant(disj);
-    */
-
     return simplify_disjunction(*disj);
   } else if (!target_has_jcc && rewrite_has_jcc) {
 
@@ -508,20 +539,15 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
         fall_states.push_back(it);
     }
 
-    auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, rewrite_states, jump_states);
+    auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, target_states, jump_states);
     jump_simple->add_invariant(new FlagInvariant(last_rewrite_instr, true, false));
 
-    auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, rewrite_states, jump_states);
+    auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, target_states, fall_states);
     fall_simple->add_invariant(new FlagInvariant(last_rewrite_instr, true, true));
 
     auto disj = new DisjunctionInvariant();
     disj->add_invariant(jump_simple);
     disj->add_invariant(fall_simple);
-
-/*
-    auto conj = new ConjunctionInvariant();
-    conj->add_invariant(disj);
-    */
 
     return simplify_disjunction(*disj);
   } else {
@@ -587,12 +613,6 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
     disj->add_invariant(S4);
 
     return simplify_disjunction(*disj);
-    /*
-    auto conj = new ConjunctionInvariant();
-    conj->add_invariant(disj);
-
-    return conj;
-    */
   }
 
   assert(false);
@@ -613,6 +633,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
     return conj;
   }
 
+  RegSet r64_exclude = RegSet::empty();
 
   // TopZero and NonZero invariants
   for (size_t k = 0; k < 2; ++k) {
@@ -639,6 +660,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
         auto tzi = new TopZeroInvariant(r64s[i], k);
         if (tzi->check(target_states, rewrite_states)) {
           conj->add_invariant(tzi);
+          r64_exclude = r64_exclude + r64s[i];
         } else {
           cout << "GOT BAD INVARIANT " << *tzi << endl;
           delete tzi;
@@ -680,19 +702,21 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
       c.reg = *r;
       c.is_rewrite = k;
       c.zero_extend = true;
-      columns.push_back(c);
-      if ((*r).size() == 64) {
-        c.reg = r32s[*r];
-        columns.push_back(c);
+
+      R reg = *r;
+
+      if(reg.size() == 64) {
+        if(!r64_exclude.contains(*static_cast<R64*>(&reg))) {
+          columns.push_back(c);
+        }
       }
 
-      //if(r.width() == 64) {
-      /*} else {
-        c.zero_extend = true;
-        columns.push_back(c);
-        c.zero_extend = false;
-        columns.push_back(c);
-      }*/
+      c.reg = r32s[reg];
+      columns.push_back(c);
+
+      c.zero_extend = false;
+      columns.push_back(c);
+
     }
   }
 
@@ -715,6 +739,13 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
       } else {
         value = target_state[reg];
       }
+
+      if(reg.size() == 32 && !column.zero_extend) {
+        if((uint64_t)value & 0x80000000) {
+          value = value | 0xffffffff00000000;
+        }
+      }
+
       matrix[i*num_columns + j] = value;
     }
     matrix[i*num_columns + num_columns - 1] = 1;
@@ -755,8 +786,8 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
   // Extract the data from the nullspace
   for (size_t i = 0; i < dim; ++i) {
     bool ok = true;
-    map<R, long> target_map;
-    map<R, long> rewrite_map;
+    EqualityInvariant::CoefficientMap target_map;
+    EqualityInvariant::CoefficientMap rewrite_map;
     for (size_t j = 0; j < num_columns - 1; ++j) {
       auto column = columns[j];
       if (!mpz_fits_slong_p(mp_result[j*dim + i])) {
@@ -764,14 +795,16 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
         break;
       }
 
+      auto p = pair<R,bool>(column.reg, !column.zero_extend);
+
       if (column.is_rewrite) {
         //cout << "rewrite " << column.first << endl;
-        rewrite_map[column.reg] = mpz_get_si(mp_result[j*dim + i]);
+        rewrite_map[p] = mpz_get_si(mp_result[j*dim + i]);
         //cout << "  " << rewrite_map[column.first] << endl;
       } else {
         //cout << "target " << column.first << endl;
         //target_map[column.first] = mpz_to_long(mp_result[j*dim + i]);
-        target_map[column.reg] = mpz_get_si(mp_result[j*dim + i]);
+        target_map[p] = mpz_get_si(mp_result[j*dim + i]);
         //cout << "  " << target_map[column.first] << endl;
       }
       //gmp_fprintf(stdout, "  %Zd\n", mp_result[j*dim + i]);
