@@ -101,7 +101,7 @@ bool Sandbox::is_supported(Opcode o) {
   return unsupported_.find(o) == unsupported_.end();
 }
 
-Sandbox::Sandbox() {
+void Sandbox::init() {
   set_abi_check(true);
   set_stack_check(true);
   set_max_jumps(16);
