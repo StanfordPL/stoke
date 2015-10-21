@@ -40,7 +40,35 @@ public:
   static bool is_supported(x64asm::Opcode o);
 
   /** Creates a sandbox. */
-  Sandbox();
+  Sandbox() {
+    init();
+  }
+  /** Create a sandbox, copying the settings and added functions/inputs from another. */
+  Sandbox(const Sandbox& sb) {
+    init();
+
+    // "Simple" settings
+    set_abi_check(sb.abi_check_);
+    set_stack_check(sb.stack_check_);
+    set_max_jumps(sb.max_jumps_);
+
+    // Inputs
+    for (size_t i = 0; i < sb.size(); ++i) {
+      insert_input(*sb.get_input(i));
+    }
+
+    // Functions
+    bool has_fxn = false;
+    for (auto it : sb.fxns_src_) {
+      insert_function(*it.second);
+      has_fxn = true;
+    }
+
+    // Entrypoint
+    if (has_fxn) {
+      set_entrypoint(sb.main_fxn_);
+    }
+  }
   /** Deletes a sandbox. */
   ~Sandbox() {
     reset();
@@ -290,6 +318,9 @@ private:
   std::unordered_map<x64asm::Label, bool> fxns_read_only_;
   /** The logical and of all of the elements in fxns_read_only_ */
   bool all_fxns_read_only_;
+
+  /** Do setup in constructor. */
+  void init();
 
   /** Check for abi violations between input and output states */
   bool check_abi(const IoPair& iop) const;
