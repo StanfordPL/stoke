@@ -127,10 +127,14 @@ void PackedHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
     } else {
       result = entry(op1, arg1[arg1_bits-1][0], op2, arg2[arg2_bits-1][0], state);
     }
-    if (clear)
+    if (clear) {
       result = SymBitVector::constant(dest.size() - output_width, 0) || result;
-    else
-      result = state[dest][dest.size() - 1][output_width] || result;
+    }
+    else {
+      if (dest.size() != output_width) {
+        result = state[dest][dest.size() - 1][output_width] || result;
+      }
+    }
 
   } else {
     // Loop through sets of 'input_width' in the input and apply the binary

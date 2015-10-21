@@ -29,7 +29,7 @@ class Z3Solver : public SMTSolver {
 
 public:
   /** Instantiate a new Z3 solver */
-  Z3Solver() : solver_(context_), SMTSolver() {
+  Z3Solver() : SMTSolver(), solver_(context_) {
     model_ = NULL;
 
     context_.set("timeout", (int)timeout_);
@@ -74,11 +74,11 @@ private:
 
 
   /** This class converts symbolic bit-vectors into Z3's format. */
-  class ExprConverter : public SymVisitor<z3::expr> {
+  class ExprConverter : public SymVisitor<z3::expr, z3::expr> {
 
   public:
     ExprConverter(z3::context& cntx, std::vector<SymBool>& constraints)
-      : context_(cntx), constraints_(constraints) {}
+      : constraints_(constraints), context_(cntx) {}
 
     z3::expr visit_binop(const SymBitVectorBinop * const bv) {
       // We can't support anything generically.  Error!
@@ -108,12 +108,12 @@ private:
     /** Visit some bit vector */
     z3::expr operator()(const SymBitVector& bv) {
       error_ = "";
-      return SymVisitor<z3::expr>::operator()(bv.ptr);
+      return SymVisitor<z3::expr, z3::expr>::operator()(bv.ptr);
     }
     /** Visit some bit bool */
     z3::expr operator()(const SymBool& b) {
       error_ = "";
-      return SymVisitor<z3::expr>::operator()(b.ptr);
+      return SymVisitor<z3::expr, z3::expr>::operator()(b.ptr);
     }
 
     /** Visit a bit-vector AND */

@@ -53,30 +53,36 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   sigsegv = SymBool::_false();
 }
 
-void SymState::build_with_suffix(const string& suffix) {
+void SymState::build_with_suffix(const string& suffix, bool no_suffix) {
 
   for (size_t i = 0; i < gp.size(); ++i) {
     stringstream name;
-    name << r64s[i] << "_" << suffix;
+    name << r64s[i];
+    if (!no_suffix) {
+      name << "_" << suffix;
+    }
     gp[i] = SymBitVector::var(64, name.str());
   }
 
   for (size_t i = 0; i < sse.size(); ++i) {
     stringstream name;
-    name << ymms[i] << "_" << suffix;
+    name << ymms[i];
+    if (!no_suffix) {
+      name << "_" << suffix;
+    }
     sse[i] = SymBitVector::var(256, name.str());
   }
 
-  set(eflags_cf, SymBool::var("%cf_" + suffix));
-  set(eflags_pf, SymBool::var("%pf_" + suffix));
-  set(eflags_af, SymBool::var("%af_" + suffix));
-  set(eflags_zf, SymBool::var("%zf_" + suffix));
-  set(eflags_sf, SymBool::var("%sf_" + suffix));
-  set(eflags_of, SymBool::var("%of_" + suffix));
+  set(eflags_cf, SymBool::var("%cf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_pf, SymBool::var("%pf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_af, SymBool::var("%af" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_zf, SymBool::var("%zf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_sf, SymBool::var("%sf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_of, SymBool::var("%of" + (no_suffix ? "" : "_" + suffix)));
 
-  sigbus = SymBool::var("sigbus_" + suffix);
-  sigfpe = SymBool::var("sigfpe_" + suffix);
-  sigsegv = SymBool::var("sigsegv_" + suffix);
+  sigbus = SymBool::var("sigbus" + (no_suffix ? "" : "_" + suffix));
+  sigfpe = SymBool::var("sigfpe" + (no_suffix ? "" : "_" + suffix));
+  sigsegv = SymBool::var("sigsegv" + (no_suffix ? "" : "_" + suffix));
 }
 
 SymBool SymState::operator[](const Eflags f) const {

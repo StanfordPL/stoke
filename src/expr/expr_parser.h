@@ -37,7 +37,7 @@ public:
       parameter 's' is the string to parse, followed by a function that
       determines if a variable is valid. */
   ExprParser(std::string s, const std::function<bool (const std::string&)>& is_var_valid) :
-    s_(s), is_var_valid_(is_var_valid), index_(0), error_(), has_error_(false) {
+    is_var_valid_(is_var_valid), s_(s), index_(0), error_(), has_error_(false) {
     result_ =parse_S();
   }
 
@@ -425,15 +425,15 @@ private:
     }
   }
 
+  /** To determine if a variable is valid */
+  const std::function<bool (const std::string&)>& is_var_valid_;
+
   /** Used for maintaining parsing state */
   std::string s_;
   size_t index_;
-  bool has_error_;
   std::string error_;
+  bool has_error_;
   Expr<T>* result_;
-
-  /** To determine if a variable is valid */
-  const std::function<bool (const std::string&)>& is_var_valid_;
 
 };
 

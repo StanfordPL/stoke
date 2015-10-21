@@ -1122,7 +1122,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       BOUNDED_DEBUG(cout << "INEQUALITY: " << it << endl;)
     }
 
-    if (memories.first) {
+    if (memories.first && (heap_out_ || stack_out_)) {
       auto mem_const = memories.first->equality_constraint(*memories.second);
       mem_const = !mem_const;
       inequality = inequality | mem_const;
@@ -1139,22 +1139,13 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     if (is_sat) {
       auto ceg = Validator::state_from_model(solver_, "_");
-      if (memories.first) {
-        bool ok = am.build_testcase_memory(ceg, solver_,
-                                           *static_cast<CellMemory*>(state_t.memory),
-                                           *static_cast<CellMemory*>(state_r.memory),
-                                           target, rewrite);
-        if (ok) {
-          counterexamples_.push_back(ceg);
-        } else {
-          delete_memories(memory_list);
-          //throw VALIDATOR_ERROR("Couldn't build counterexample!  This is a BOUNDED VALIDATOR BUG.");
-          cout << "Couldn't build counterexample!  This is probably a bug!" << endl;
-          return false;
-        }
-      } else {
+      bool ok = am.build_testcase_memory(ceg, solver_,
+                                         static_cast<CellMemory*>(state_t.memory),
+                                         static_cast<CellMemory*>(state_r.memory),
+                                         target, rewrite);
+      if (ok)
         counterexamples_.push_back(ceg);
-      }
+
       BOUNDED_DEBUG(cout << "  (Got counterexample)" << endl;)
       BOUNDED_DEBUG(cout << ceg << endl;)
 

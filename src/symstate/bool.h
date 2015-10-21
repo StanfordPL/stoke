@@ -127,6 +127,11 @@ public:
     memory_manager_ = mm;
   }
 
+  /** Get the memory manager */
+  static SymMemoryManager* get_memory_manager() {
+    return memory_manager_;
+  }
+
 private:
 
   /** Memory Manager */
@@ -180,6 +185,7 @@ public:
 
 class SymBoolAnd : public SymBoolBinop {
   friend class SymBool;
+  friend class SymTransformVisitor;
   using SymBoolBinop::SymBoolBinop;
 
 public:
@@ -190,6 +196,7 @@ public:
 
 class SymBoolEq : public SymBoolCompare {
   friend class SymBool;
+  friend class SymTransformVisitor;
   friend class SymBitVector;
   using SymBoolCompare::SymBoolCompare;
 
@@ -201,6 +208,7 @@ public:
 
 class SymBoolFalse : public SymBoolAbstract {
   friend class SymBool;
+  friend class SymTransformVisitor;
 
 public:
   SymBool::Type type() const {
@@ -214,6 +222,7 @@ public:
 
 class SymBoolGe : public SymBoolCompare {
   friend class SymBool;
+  friend class SymTransformVisitor;
   friend class SymBitVector;
   using SymBoolCompare::SymBoolCompare;
 
@@ -225,6 +234,7 @@ public:
 
 class SymBoolGt : public SymBoolCompare {
   friend class SymBool;
+  friend class SymTransformVisitor;
   friend class SymBitVector;
   using SymBoolCompare::SymBoolCompare;
 
@@ -236,6 +246,7 @@ public:
 
 class SymBoolIff : public SymBoolBinop {
   friend class SymBool;
+  friend class SymTransformVisitor;
   using SymBoolBinop::SymBoolBinop;
 
 public:
@@ -246,6 +257,7 @@ public:
 
 class SymBoolImplies : public SymBoolBinop {
   friend class SymBool;
+  friend class SymTransformVisitor;
   using SymBoolBinop::SymBoolBinop;
 
 public:
@@ -256,6 +268,7 @@ public:
 
 class SymBoolLe : public SymBoolCompare {
   friend class SymBool;
+  friend class SymTransformVisitor;
   friend class SymBitVector;
   using SymBoolCompare::SymBoolCompare;
 
@@ -267,6 +280,7 @@ public:
 
 class SymBoolLt : public SymBoolCompare {
   friend class SymBool;
+  friend class SymTransformVisitor;
   friend class SymBitVector;
   using SymBoolCompare::SymBoolCompare;
 
@@ -278,6 +292,7 @@ public:
 
 class SymBoolNot : public SymBoolAbstract {
   friend class SymBool;
+  friend class SymTransformVisitor;
 
 private:
   SymBoolNot(const SymBoolAbstract * const b) : b_(b) {}
@@ -298,6 +313,7 @@ public:
 
 class SymBoolOr : public SymBoolBinop {
   friend class SymBool;
+  friend class SymTransformVisitor;
   using SymBoolBinop::SymBoolBinop;
 
 public:
@@ -308,6 +324,7 @@ public:
 
 class SymBoolSignGe : public SymBoolCompare {
   friend class SymBool;
+  friend class SymTransformVisitor;
   friend class SymBitVector;
   using SymBoolCompare::SymBoolCompare;
 
@@ -319,6 +336,7 @@ public:
 
 class SymBoolSignGt : public SymBoolCompare {
   friend class SymBool;
+  friend class SymTransformVisitor;
   friend class SymBitVector;
   using SymBoolCompare::SymBoolCompare;
 
@@ -330,6 +348,7 @@ public:
 
 class SymBoolSignLe : public SymBoolCompare {
   friend class SymBool;
+  friend class SymTransformVisitor;
   friend class SymBitVector;
   using SymBoolCompare::SymBoolCompare;
 
@@ -341,6 +360,7 @@ public:
 
 class SymBoolSignLt : public SymBoolCompare {
   friend class SymBool;
+  friend class SymTransformVisitor;
   friend class SymBitVector;
   using SymBoolCompare::SymBoolCompare;
 
@@ -352,6 +372,7 @@ public:
 
 class SymBoolTrue : public SymBoolAbstract {
   friend class SymBool;
+  friend class SymTransformVisitor;
 
 public:
   SymBool::Type type() const {
@@ -365,6 +386,7 @@ public:
 
 class SymBoolVar : public SymBoolAbstract {
   friend class SymBool;
+  friend class SymTransformVisitor;
 
 private:
   SymBoolVar(const std::string name) : name_(name) {}
@@ -372,6 +394,10 @@ private:
 public:
   SymBool::Type type() const {
     return SymBool::Type::VAR;
+  }
+
+  std::string get_name() const {
+    return name_;
   }
 
   bool equals(const SymBoolAbstract * const other) const {
@@ -386,6 +412,7 @@ public:
 
 class SymBoolXor : public SymBoolBinop {
   friend class SymBool;
+  friend class SymTransformVisitor;
   using SymBoolBinop::SymBoolBinop;
 
 public:
