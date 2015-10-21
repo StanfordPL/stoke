@@ -899,11 +899,12 @@ private:
       set_avx_alignment(false);
     }
 
+    std::string opcode_;
+
     BinaryOperator binop_;
     BinaryOperatorWithConstant binop_with_constant_;
     bool has_constant_;
 
-    std::string opcode_;
     bool uninterpreted_;
     bool only_one_;
     bool clear_unset_;
