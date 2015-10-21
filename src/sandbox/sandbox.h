@@ -53,17 +53,21 @@ public:
     set_max_jumps(sb.max_jumps_);
 
     // Inputs
-    for(size_t i = 0; i < sb.size(); ++i) {
+    for (size_t i = 0; i < sb.size(); ++i) {
       insert_input(*sb.get_input(i));
     }
 
     // Functions
-    for(auto it : sb.fxns_src_) {
+    bool has_fxn = false;
+    for (auto it : sb.fxns_src_) {
       insert_function(*it.second);
+      has_fxn = true;
     }
 
     // Entrypoint
-    set_entrypoint(sb.main_fxn_);
+    if (has_fxn) {
+      set_entrypoint(sb.main_fxn_);
+    }
   }
   /** Deletes a sandbox. */
   ~Sandbox() {

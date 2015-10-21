@@ -30,14 +30,14 @@ public:
     has_error_ = false;
   }
 
-  virtual ~Verifier() { 
-    if(sandbox_)
+  virtual ~Verifier() {
+    if (sandbox_)
       delete sandbox_;
   }
 
   /** Add a sandbox for this verifier to use. */
   virtual Verifier& set_sandbox(Sandbox* sb) {
-    sandbox_ = new Sandbox(sb);
+    sandbox_ = new Sandbox(*sb);
     return *this;
   }
 
