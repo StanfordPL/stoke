@@ -40,7 +40,7 @@ public:
       parameter 's' is the string to parse, and the symbol_table is a
       mapping from strings to CostFunctions. */
   CostParser(std::string s, SymbolTable& symbol_table) :
-    s_(s), symbol_table_(symbol_table), index_(0), error_() {}
+    symbol_table_(symbol_table), s_(s), index_(0), error_() {}
 
   /** Takes the string and parses it into a cost function.  Returns a pointer which
       the caller must delete. */
@@ -166,13 +166,13 @@ private:
   /** Parse a BINOP */
   ExprCost::Operator parse_BINOP(size_t);
 
+  /** Used for constructing correctness cost function */
+  SymbolTable& symbol_table_;
+
   /** Used for maintaining parsing state */
   std::string s_;
   size_t index_;
   std::string error_;
-
-  /** Used for constructing correctness cost function */
-  SymbolTable& symbol_table_;
 
 };
 

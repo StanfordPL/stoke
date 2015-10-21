@@ -111,11 +111,6 @@ private:
   /** Like leaf_functions(), but also inspects correctness term. */
   std::set<CostFunction*> all_leaf_functions() const;
 
-  /** How many operands does this cost expression take? */
-  size_t arity_;
-  /** Set the correctness term */
-  ExprCost* correctness_;
-
   /** A constant (for arity 0) */
   Cost constant_;
   /** The LHS cost function */
@@ -124,6 +119,13 @@ private:
   CostFunction* a2_;
   /** The chosen operator */
   Operator op_;
+
+  /** How many operands does this cost expression take? */
+  size_t arity_;
+  /** Set the correctness term */
+  ExprCost* correctness_;
+
+
 
 };
 
