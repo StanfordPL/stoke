@@ -96,6 +96,10 @@ int main(int argc, char** argv) {
 
   SolverGadget solver;
 
+  auto col_reset = "\033[0m";
+  auto col_red = "\033[31m";
+  auto col_green = "\033[32m";
+
   auto strata_path = circuits_arg.value();
 
   cout << "Comparing strata circuits with hand-written circuits" << endl;
@@ -119,14 +123,21 @@ int main(int argc, char** argv) {
     auto instr = get_instruction(opcode);
     cout << "Circuit for '" << instr << "' (opcode " << opcode << "): ";
 
+    // build circuits for strata and stoke
     SymState strata_state("", true);
     SymState stoke_state("", true);
     strata_handler.build_circuit(instr, strata_state);
     stoke_handler.build_circuit(instr, stoke_state);
 
+    // assert inequality of the final states
     std::vector<SymBool> constraints;
-    for (auto it : strata_state.equality_constraints(stoke_state))
-      constraints.push_back(it);
+    SymBool inequality = SymBool::_false();
+    for (auto it : strata_state.equality_constraints(stoke_state, instr.must_write_set())) {
+      inequality = inequality | !it;
+    }
+    constraints.push_back(inequality);
+
+    // try to find a satisfiable input
     bool b = solver.is_sat(constraints);
     if (solver.has_error()) {
       cout << "✗" << endl;
@@ -135,10 +146,10 @@ int main(int argc, char** argv) {
       continue;
     }
 
-    if (b) {
-      cout << "✓" << endl;
+    if (!b) {
+      cout << col_green << "✓" << col_reset << endl;
     } else {
-      cout << "✗" << endl;
+      cout << col_red << "✗" << col_reset << endl;
       cout << "  circuits are not equivalent" << endl;
       errors += 1;
     }
@@ -148,10 +159,11 @@ int main(int argc, char** argv) {
 
   cout << endl;
   if (errors == 0) {
-    cout << "SUCCESS: Compared " << n << " circuits without error!" << endl;
+    cout << col_green << "SUCCESS: Compared " << n << " circuits without error!";
   } else {
-    cout << "ERROR: Compared " << n << " circuits with " << errors << " error!" << endl;
+    cout << col_red << "ERROR: Compared " << n << " circuits with " << errors << " error!";
   }
+  cout << col_reset << endl;
 
   FunctionsGadget aux_fxns;
   // Code code = target.get_code();
