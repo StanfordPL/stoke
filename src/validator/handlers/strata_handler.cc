@@ -91,7 +91,7 @@ Operand translate_sse_register(const Sse& operand_from, const Instruction& instr
     }
     // same ymm reg?
     if (Constants::ymms()[(size_t) operand_from] == instr_from.get_operand<Ymm>(i)) {
-      return instr_to.get_operand<Ymm>(i);
+      return Constants::ymms()[(size_t) instr_to.get_operand<Ymm>(i)];
     }
   }
   // no translation necessary
