@@ -85,6 +85,9 @@ public:
     return all_list_;
   }
 
+  std::string get_type() const {
+    return "trivial";
+  }
 
 private:
 

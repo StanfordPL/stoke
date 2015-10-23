@@ -697,6 +697,8 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
   // We need a 'constant' column with the value '1'.
   vector<Column> columns;
 
+  cout << "try sign extend: " << try_sign_extend_ << endl;
+
   for (size_t k = 0; k < 2; ++k) {
     auto def_ins = k ? rewrite_regs : target_regs;
     for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {
@@ -716,8 +718,10 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
       c.reg = r32s[reg];
       columns.push_back(c);
 
-      c.zero_extend = false;
-      columns.push_back(c);
+      if(try_sign_extend_) {
+        c.zero_extend = false;
+        columns.push_back(c);
+      }
 
     }
   }
@@ -751,6 +755,8 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
       matrix[i*num_columns + j] = value;
     }
     matrix[i*num_columns + num_columns - 1] = 1;
+    if(ns_ok)
+      ns << 1 << endl;
   }
 
   /*

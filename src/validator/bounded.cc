@@ -16,10 +16,12 @@
 #include "src/cfg/paths.h"
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/bounded.h"
+#include "src/validator/invariants/conjunction.h"
+#include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define BOUNDED_DEBUG(X) { }
+#define BOUNDED_DEBUG(X) { X }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
@@ -222,9 +224,6 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   rewrite_mem->set_parent(&state_r);
 
   constraints.push_back(assume(state_t, state_r));
-
-  auto mem_const = target_mem->equality_constraint(*rewrite_mem);
-  constraints.push_back(mem_const);
 
   size_t line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
@@ -944,6 +943,8 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basi
     result.push_back(pair<CellMemory*, CellMemory*>(t, r));
   }
 
+  cout << "Found " << result.size() << " basic aliasing cases" << endl;
+
   return result;
 }
 
@@ -1048,9 +1049,24 @@ void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories)
 }
 
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
-  StateEqualityInvariant assume(target.def_ins());
-  StateEqualityInvariant prove(target.live_outs());
-  return verify_pair(target, rewrite, P, Q, assume, prove);
+  StateEqualityInvariant assume_state(target.def_ins());
+  StateEqualityInvariant prove_state(target.live_outs());
+
+  MemoryEqualityInvariant memory_equal;
+
+  ConjunctionInvariant assume;
+  assume.add_invariant(&assume_state);
+  assume.add_invariant(&memory_equal);
+
+  ConjunctionInvariant prove;
+  prove.add_invariant(&prove_state);
+  prove.add_invariant(&memory_equal);
+
+  if(heap_out_ || stack_out_) {
+    return verify_pair(target, rewrite, P, Q, assume, prove);
+  } else {
+    return verify_pair(target, rewrite, P, Q, assume, prove_state);
+  }
 }
 
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
@@ -1092,10 +1108,6 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       state_t.memory->set_parent(&state_t);
       state_r.memory = memories.second;
       state_r.memory->set_parent(&state_r);
-
-      auto mem_const = memories.first->equality_constraint(*memories.second);
-      BOUNDED_DEBUG(cout << "Start memory constraint: " << mem_const << endl;)
-      constraints.push_back(mem_const);
     }
 
     // Add given assumptions
@@ -1125,14 +1137,6 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     // Build inequality constraint
     SymBool inequality = SymBool::_false();
-
-//    if (memories.first && (heap_out_ || stack_out_)) {
-    if(memories.first) {
-      auto mem_const = memories.first->equality_constraint(*memories.second);
-      mem_const = !mem_const;
-      inequality = inequality | mem_const;
-      BOUNDED_DEBUG(cout << "End memory constraint: " << mem_const << endl;)
-    }
 
     auto prove_constraint = !prove(state_t, state_r);
     BOUNDED_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)

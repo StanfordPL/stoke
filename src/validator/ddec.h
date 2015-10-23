@@ -28,11 +28,17 @@ public:
 
   DdecValidator(SMTSolver& solver) : Validator(solver), bv_(solver) {
     cutpoints_ = NULL;
+    try_sign_extend_ = true;
   }
 
   ~DdecValidator() {
     if (cutpoints_)
       delete cutpoints_;
+  }
+
+  DdecValidator& set_try_sign_extend(bool b) {
+    try_sign_extend_ = b;
+    return *this;
   }
 
 
@@ -65,6 +71,9 @@ private:
 
   /** Whatever cutpoints we've generated. */
   Cutpoints* cutpoints_;
+
+  /** Try to sign extend values? */
+  bool try_sign_extend_;
 
 };
 
