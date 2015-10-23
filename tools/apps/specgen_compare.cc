@@ -32,6 +32,7 @@
 #include "src/symstate/simplify.h"
 
 #include "src/validator/straight_line.h"
+#include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
 
 #include "tools/gadgets/functions.h"
@@ -68,6 +69,21 @@ auto& opcode_arg =
   .description("The opcode to check.")
   .required();
 
+/**
+
+Exit codes:
+
+1 - unexpected error (likely command-line parse issue)
+2 - STOKE does not support the instruction
+3 - strata does not support the instruction
+4 - the circuits where not the same
+5 - STOKE handler encountered an error
+6 - strata handler encountered an error
+
+0 - everything is OK, circuits are proven equivalent
+
+*/
+
 int main(int argc, char** argv) {
 
   // not actually required here
@@ -94,11 +110,29 @@ int main(int argc, char** argv) {
   }
   auto instr = get_instruction(opcode);
 
+  if (stoke_handler.get_support(instr) == Handler::SupportLevel::NONE) {
+    cout << "STOKE does not support '" << instr << "'." << endl;
+    exit(2);
+  }
+  if (strata_handler.get_support(instr) == Handler::SupportLevel::NONE) {
+    cout << "strata does not support '" << instr << "'." << endl;
+    exit(3);
+  }
+
   // build circuits for strata and stoke
   SymState strata_state("", true);
   SymState stoke_state("", true);
   strata_handler.build_circuit(instr, strata_state);
   stoke_handler.build_circuit(instr, stoke_state);
+
+  if (stoke_handler.has_error()) {
+    cout << "STOKE handler produced an error: " << stoke_handler.error() << endl;
+    exit(5);
+  }
+  if (strata_handler.has_error()) {
+    cout << "strata handler produced an error: " << strata_handler.error() << endl;
+    exit(6);
+  }
 
   // check equivalence of two circuits for a given register
   auto is_eq = [&solver](auto& reg, auto a, auto b, stringstream& explanation) {
@@ -124,6 +158,8 @@ int main(int argc, char** argv) {
   };
 
   auto rs = instr.must_write_set();
+  // the base circuits don't have %af at the moment
+  rs -= (RegSet::empty() + Constants::eflags_af());
   auto eq = true;
   stringstream ss;
   for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
@@ -139,7 +175,7 @@ int main(int argc, char** argv) {
     cout << "Circuit for '" << instr << "' (opcode " << opcode << ")" << endl;
     cout << ss.str();
     cout << endl << endl;
-    exit(1);
+    exit(4);
   }
 
   cout << "Equivalent." << endl;
