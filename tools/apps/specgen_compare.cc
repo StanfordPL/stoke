@@ -115,13 +115,13 @@ int main(int argc, char** argv) {
     auto file = itr->path().filename().string();
     assert(file.size() > 2);
     auto opcode_str = file.substr(0, file.size()-2);
+    if (opcode_str == "cltd") continue;
     Opcode opcode;
     if (!(stringstream(opcode_str) >> opcode)) {
       assert(false);
       continue;
     }
     auto instr = get_instruction(opcode);
-    cout << "Circuit for '" << instr << "' (opcode " << opcode << "): ";
 
     // build circuits for strata and stoke
     SymState strata_state("", true);
@@ -130,29 +130,78 @@ int main(int argc, char** argv) {
     stoke_handler.build_circuit(instr, stoke_state);
 
     // assert inequality of the final states
-    std::vector<SymBool> constraints;
-    SymBool inequality = SymBool::_false();
-    for (auto it : strata_state.equality_constraints(stoke_state, instr.must_write_set())) {
-      inequality = inequality | !it;
-    }
-    constraints.push_back(inequality);
+    // std::vector<SymBool> constraints;
+    // SymBool inequality = SymBool::_false();
+    // for (auto it : strata_state.equality_constraints(stoke_state, )) {
+    //   inequality = inequality | !it;
+    // }
+    // constraints.push_back(inequality);
 
-    // try to find a satisfiable input
-    bool b = solver.is_sat(constraints);
-    if (solver.has_error()) {
-      cout << "✗" << endl;
-      cout << "  solver encountered error: " << solver.get_error() << endl;
-      errors += 1;
-      continue;
-    }
+    auto is_eq = [&solver](auto& reg, auto a, auto b, stringstream& explanation) {
+      SymBool eq = a == b;
+      SymPrettyVisitor pretty(explanation);
+      bool res = solver.is_sat({ !eq });
+      if (solver.has_error()) {
+        explanation << "  solver encountered error: " << solver.get_error() << endl;
+        return false;
+      }
+      if (!res) {
+        return true;
+      } else {
+        explanation << "  not equivalent for '" << (*reg) << "':" << endl;
+        explanation << "    strata: ";
+        pretty(SymSimplify::simplify(a));
+        explanation << endl;
+        explanation << "    stoke:  ";
+        pretty(SymSimplify::simplify(b));
+        explanation << endl;
+        return false;
+      }
+    };
 
-    if (!b) {
-      cout << col_green << "✓" << col_reset << endl;
-    } else {
-      cout << col_red << "✗" << col_reset << endl;
-      cout << "  circuits are not equivalent" << endl;
-      errors += 1;
+    auto rs = instr.must_write_set();
+    auto eq = true;
+    stringstream ss;
+    for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
+      eq = eq && is_eq(gp_it, strata_state.lookup(*gp_it), stoke_state.lookup(*gp_it), ss);
     }
+    for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
+      eq = eq && is_eq(sse_it, strata_state.lookup(*sse_it), stoke_state.lookup(*sse_it), ss);
+    }
+    for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
+      eq = eq && is_eq(flag_it, strata_state[*flag_it], stoke_state[*flag_it], ss);
+    }
+    if (!eq) {
+      errors += 1;
+      cout << "Circuit for '" << instr << "' (opcode " << opcode << ")" << endl;
+      cout << ss.str();
+      cout << endl << endl;
+    }
+    // for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
+    //   constraints.push_back(lookup(*sse_it) == other.lookup(*sse_it));
+    // }
+    // for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
+    //   constraints.push_back((*this)[*flag_it] == other[*flag_it]);
+    // }
+
+    // // try to find a satisfiable input
+    // bool b = solver.is_sat(constraints);
+    // if (solver.has_error()) {
+    //   cout << "Circuit for '" << instr << "' (opcode " << opcode << "): ";
+    //   cout << "✗" << endl;
+    //   cout << "  solver encountered error: " << solver.get_error() << endl;
+    //   errors += 1;
+    //   continue;
+    // }
+
+    // if (!b) {
+    //   // cout << "Circuit for '" << instr << "' (opcode " << opcode << "): ";
+    //   // cout << col_green << "✓" << col_reset << endl;
+    // } else {
+    //   cout << "Circuit for '" << instr << "' (opcode " << opcode << "): ";
+    //   cout << col_red << "✗" << col_reset << endl;
+    //   errors += 1;
+    // }
 
     n += 1;
   }

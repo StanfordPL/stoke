@@ -52,7 +52,7 @@ R64 get_r64_operand(const Instruction& instr, size_t i) {
     size_t idx = instr.get_operand<Rh>(i) - 4;
     return Constants::r64s()[idx];
   }
-  return instr.get_operand<R64>(i);
+  return Constants::r64s()[(size_t)instr.get_operand<R64>(i)];
 };
 
 /**
