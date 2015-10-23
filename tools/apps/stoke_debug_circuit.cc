@@ -123,9 +123,16 @@ int main(int argc, char** argv) {
     code = code_arg.value();
   }
 
-  Console::msg() << "Target" << endl;
-  Console::msg() << endl;
-  Console::msg() << code << endl;
+  Console::msg() << "Target" << endl << endl;
+  Console::msg() << code << endl << endl;
+  Console::msg() << "  maybe read:      " << code.maybe_read_set() << endl;
+  Console::msg() << "  must read:       " << code.must_read_set() << endl;
+  Console::msg() << "  maybe write:     " << code.maybe_write_set() << endl;
+  Console::msg() << "  must write:      " << code.must_write_set() << endl;
+  Console::msg() << "  maybe undef:     " << code.maybe_undef_set() << endl;
+  Console::msg() << "  must undef:      " << code.must_undef_set() << endl;
+  Console::msg() << "  required flags:  " << code.required_flags() << endl;
+
   Console::msg() << endl;
 
   ComboHandler ch(strata_path_arg.value());

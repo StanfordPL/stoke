@@ -1240,6 +1240,8 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   auto target = init_target; //inline_functions(init_target);
   auto rewrite = init_rewrite; //inline_functions(init_rewrite);
   am.set_sandbox(sandbox_);
+  if (sandbox_)
+    am.set_sandbox(sandbox_);
 
   try {
 

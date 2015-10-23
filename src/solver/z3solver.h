@@ -29,7 +29,7 @@ class Z3Solver : public SMTSolver {
 
 public:
   /** Instantiate a new Z3 solver */
-  Z3Solver() : solver_(context_), SMTSolver() {
+  Z3Solver() : SMTSolver(), solver_(context_) {
     model_ = NULL;
 
     context_.set("timeout", (int)timeout_);
@@ -78,7 +78,7 @@ private:
 
   public:
     ExprConverter(z3::context& cntx, std::vector<SymBool>& constraints)
-      : context_(cntx), constraints_(constraints) {}
+      : constraints_(constraints), context_(cntx) {}
 
     z3::expr visit_binop(const SymBitVectorBinop * const bv) {
       // We can't support anything generically.  Error!

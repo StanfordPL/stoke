@@ -17,7 +17,7 @@
 ifndef COMPILERBINARY
 	COMPILERBINARY=g++
 endif
-CXX=ccache ${COMPILERBINARY} -std=c++14 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-reorder -Wno-vla
+CXX=ccache ${COMPILERBINARY} -std=c++14 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla
 
 # number of threads used for compiling
 ifndef NTHREADS
@@ -198,16 +198,17 @@ BIN=\
 	bin/specgen_init \
 	bin/specgen_setup
 
+
 # used to force a target to rebuild
 .PHONY: .FORCE
 
-##### TOP LEVEL TARGETS 
+##### TOP LEVEL TARGETS
 
 all: release hooks
 
 release: haswell_release
-debug: haswell_debug 
-profile: haswell_profile 
+debug: haswell_debug
+profile: haswell_profile
 test: haswell_test
 
 haswell: haswell_release
@@ -415,7 +416,7 @@ hooks: .git/hooks/pre-commit
 
 ##### CLEAN TARGETS
 
-stoke_clean: 
+stoke_clean:
 	rm -rf $(SRC_OBJ) $(TOOL_OBJ) $(TEST_OBJ) $(BIN) $(TEST_BIN) tags bin/stoke_* bin/_stoke bin/stoke.bash
 	rm -rf $(VALIDATOR_AUTOGEN)
 
