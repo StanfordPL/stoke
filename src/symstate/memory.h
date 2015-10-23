@@ -43,6 +43,9 @@ public:
   /** Reads from the memory.  Returns value and segv condition. */
   virtual std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no) = 0;
 
+  /** Returns the self-defined "type" of the memory. */
+  virtual std::string get_type() const = 0;
+
 protected:
 
   SymState* state_;
