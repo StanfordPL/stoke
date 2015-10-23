@@ -96,6 +96,9 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
   x64asm::RegSet liveouts = (ins.must_write_set() - ins.maybe_undef_set()) & supported_regs;
   x64asm::RegSet reads = ins.maybe_read_set();
 
+  // we can ignore mxcsr::rc here
+  reads = reads - (x64asm::RegSet::empty() + x64asm::Constants::mxcsr_rc());
+
   x64asm::Code cfg_code;
   cfg_code.push_back(x64asm::Instruction(x64asm::LABEL_DEFN, { x64asm::Label(".foo") }));
   cfg_code.push_back(ins);
