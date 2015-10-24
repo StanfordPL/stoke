@@ -24,10 +24,12 @@ namespace {
  * Merges two consecutive extracts.
  * Handles bit extracts of constants.
  * Handles "full" bit extracts, where all bits are used.
+ * Handles selection immediately followed by concatenation.
  *
  * E.g., b[12:10][1:0] becomes b[11:10].
  * E.g., 0x0[1:0] becomes 0x0
  * E.g., f_returns_32_bits(0x0)[31:0] becomes f_returns_32_bits(0x0)
+ * E.g., a[63:32] || a[31:0] becomes a[63:0]
  */
 class SymMergeExtracts : public SymTransformVisitor {
 
@@ -53,11 +55,29 @@ public:
     return SymTransformVisitor::visit(bv);
   }
 
+  SymBitVectorAbstract* visit(const SymBitVectorConcat * const bv) {
+    auto lhs = (*this)(bv->a_);
+    auto rhs = (*this)(bv->b_);
+    if (lhs->type() == SymBitVector::EXTRACT && rhs->type() == SymBitVector::EXTRACT) {
+      auto l = static_cast<const SymBitVectorExtract * const>(lhs);
+      auto r = static_cast<const SymBitVectorExtract * const>(rhs);
+      cout << (l->bv_->equals(r->bv_)) << " - " << l->low_bit_ << " " << r->high_bit_+1 << endl;
+      printf("%p\n", (void *)l->bv_);
+      printf("%p\n", (void *)r->bv_);
+      if (l->bv_->equals(r->bv_) && l->low_bit_ == r->high_bit_+1) {
+        return (*this)(make_bitvector_extract(l->bv_, l->high_bit_, r->low_bit_));
+      }
+    }
+    return SymTransformVisitor::visit_binop(bv);
+  }
+
 };
 
 /**
  * Moves bit extracts over other operators (where save).
- * E.g. (a | b)[5:2] becomes (a[5:2] | [5:2])
+ * Also moves bit extracts over concatenation, possibly throwing away one side.
+ *
+ * E.g. (a | b)[5:2] becomes (a[5:2] | b[5:2])
  */
 class SymMoveExtractsInside : public SymTransformVisitor {
 
