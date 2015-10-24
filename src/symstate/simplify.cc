@@ -61,9 +61,6 @@ public:
     if (lhs->type() == SymBitVector::EXTRACT && rhs->type() == SymBitVector::EXTRACT) {
       auto l = static_cast<const SymBitVectorExtract * const>(lhs);
       auto r = static_cast<const SymBitVectorExtract * const>(rhs);
-      cout << (l->bv_->equals(r->bv_)) << " - " << l->low_bit_ << " " << r->high_bit_+1 << endl;
-      printf("%p\n", (void *)l->bv_);
-      printf("%p\n", (void *)r->bv_);
       if (l->bv_->equals(r->bv_) && l->low_bit_ == r->high_bit_+1) {
         return (*this)(make_bitvector_extract(l->bv_, l->high_bit_, r->low_bit_));
       }
