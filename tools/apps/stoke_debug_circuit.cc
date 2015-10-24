@@ -184,7 +184,8 @@ int main(int argc, char** argv) {
               Constants::eflags_sf() +
               Constants::eflags_zf() +
               Constants::eflags_of() +
-              Constants::eflags_pf();
+              Constants::eflags_pf() +
+              Constants::eflags_af();
   if (only_live_out_arg.value()) {
     rs &= target.live_outs();
   }
