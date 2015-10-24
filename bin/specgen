@@ -27,6 +27,7 @@ then
   echo "  init            initialize the working directory"
   echo "  setup           setup a single opcode"
   echo "  compare         compare strata circuits with the handwritten circuits"
+  echo "  evaluate        evaluate the goodness of a circuit based on several heuristics"
   echo "  analyse         run some analyses"
   echo "  augment_tests   add more testcases"
   exit 0
@@ -39,6 +40,9 @@ then
 elif [ "$SCMD" == "compare" ]
 then
   exec $HERE/specgen_compare "$@"
+elif [ "$SCMD" == "evaluate" ]
+then
+  exec $HERE/specgen_evaluate "$@"
 elif [ "$SCMD" == "analyse" ]
 then
   exec $HERE/specgen_analyse "$@"
