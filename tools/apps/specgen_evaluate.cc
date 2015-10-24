@@ -165,9 +165,9 @@ int main(int argc, char** argv) {
   }
 
   x64asm::RegSet rs =
-      (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
-      x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf +
-      x64asm::eflags_zf + x64asm::eflags_sf;// + x64asm::eflags_af;
+    (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
+    x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf +
+    x64asm::eflags_zf + x64asm::eflags_sf;// + x64asm::eflags_af;
 
   NodeCounter node_counter;
   size_t nodes = 0;
