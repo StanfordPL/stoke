@@ -17,6 +17,8 @@
 #include "src/tunit/tunit.h"
 #include "src/specgen/specgen.h"
 #include "src/validator/handlers.h"
+#include "src/symstate/simplify.h"
+#include "src/ext/cpputil/include/io/console.h"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
@@ -98,6 +100,100 @@ Operand translate_sse_register(const Sse& operand_from, const Instruction& instr
   return operand_from;
 };
 
+// #define DEBUG_STRATA_HANDLER
+#ifdef DEBUG_STRATA_HANDLER
+template <typename T>
+string out_padded(T t, size_t min_length, char pad = ' ') {
+  stringstream ss;
+  ss << (*t);
+  size_t len = ss.str().size();
+  for (size_t i = 0; i < (min_length - len); i++) {
+    ss << pad;
+  }
+  return ss.str();
+}
+
+template <typename T>
+bool has_changed(T reg, SymBitVector& sym) {
+  stringstream ss;
+  ss << (*reg);
+  if (sym.type() == SymBitVector::Type::VAR) {
+    const SymBitVectorVar* const var = static_cast<const SymBitVectorVar* const>(sym.ptr);
+    if (var->get_name() == ss.str()) return false;
+  }
+  return true;
+}
+
+template <typename T>
+bool has_changed(T reg, SymBool& sym) {
+  stringstream ss;
+  ss << (*reg);
+  if (sym.type() == SymBool::Type::VAR) {
+    const SymBoolVar* const var = static_cast<const SymBoolVar* const>(sym.ptr);
+    if (var->get_name() == ss.str()) return false;
+  }
+  return true;
+}
+
+void print_state(SymState& state) {
+  SymPrettyVisitor pretty(cout);
+
+  auto print = [&pretty](const auto c) {
+    pretty(SymSimplify::simplify(c));
+  };
+
+  // print symbolic state
+  bool printed = false;
+  RegSet rs = (RegSet::all_gps() | RegSet::all_ymms()) +
+              Constants::eflags_cf() +
+              Constants::eflags_sf() +
+              Constants::eflags_zf() +
+              Constants::eflags_of() +
+              Constants::eflags_pf() +
+              Constants::eflags_af();
+  for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
+    auto val = state.lookup(*gp_it);
+    if (!has_changed(gp_it, val)) continue;
+    Console::msg() << out_padded(gp_it, 7) << ": ";
+    print(val);
+    Console::msg() << endl;
+    printed = true;
+  }
+  if (printed) cout << endl;
+  printed = false;
+  for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
+    auto val = state.lookup(*sse_it);
+    if (!has_changed(sse_it, val)) continue;
+    Console::msg() << out_padded(sse_it, 7) << ": ";
+    print(val);
+    Console::msg() << endl;
+    printed = true;
+  }
+  if (printed) cout << endl;
+  printed = false;
+  for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
+    SymBool val = state[*flag_it];
+    if (!has_changed(flag_it, val)) continue;
+    Console::msg() << out_padded(flag_it, 7) << ": ";
+    print(val);
+    Console::msg() << endl;
+    printed = true;
+  }
+  if (printed) cout << endl;
+  printed = false;
+
+  Console::msg() << "sigfpe  : ";
+  print(state.sigfpe);
+  Console::msg() << endl;
+  Console::msg() << "sigbus  : ";
+  print(state.sigbus);
+  Console::msg() << endl;
+  Console::msg() << "sigsegv : ";
+  print(state.sigsegv);
+  Console::msg() << endl;
+}
+#endif
+
 } // end namespace
 
 Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& instr) {
@@ -132,7 +228,8 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   error_ = "";
 
   if (!get_support(instr)) {
-    error_ = "Instruction not supported.";
+    // assume it's from the base set
+    ch_.build_circuit(instr, final);
     return;
   }
 
@@ -151,8 +248,18 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   assert(code[0].get_opcode() == Opcode::LABEL_DEFN);
   assert(code[code.size() - 1].get_opcode() == Opcode::RET);
   for (size_t i = 1; i < code.size()-1; i++) {
-    ch_.build_circuit(code[i], tmp);
+    build_circuit(code[i], tmp);
   }
+
+#ifdef DEBUG_STRATA_HANDLER
+  cout << "=====================================" << endl;
+  cout << "Computing circuit for " << instr << endl << endl;
+  cout << "Initial state:" << endl;
+  print_state(start);
+  cout << endl;
+  cout << "State for specgen instruction: " << specgen_instr << ":" << endl;
+  print_state(tmp);
+#endif
 
   // take a formula for specgen_instr in state tmp, and convert it to one that
   // makes sense for instr in state
@@ -189,6 +296,12 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     return NULL;
   });
 
+#ifdef DEBUG_STRATA_HANDLER
+  cout << endl;
+  cout << "State for specgen instruction (after renaming): " << specgen_instr << ":" << endl;
+  print_state(tmp);
+#endif
+
   // loop over all live outs and update the final state
   auto liveouts = instr.maybe_write_set();
   for (auto iter = liveouts.gp_begin(); iter != liveouts.gp_end(); ++iter) {
@@ -215,6 +328,13 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     // update the start state with the circuits from tmp
     final.set(*iter, val_renamed);
   }
+
+#ifdef DEBUG_STRATA_HANDLER
+  cout << endl;
+  cout << "Final state" << endl;
+  print_state(final);
+  cout << "=====================================" << endl;
+#endif
 }
 
 vector<string> StrataHandler::full_support_opcodes() {

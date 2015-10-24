@@ -42,7 +42,7 @@ bool Handler::operands_supported(const Instruction& instr) {
   for (size_t i = 0; i < instr.arity(); ++i) {
     auto& o = instr.get_operand<Operand>(i);
     if (!o.is_gp_register() && !o.is_sse_register() && !o.is_immediate() &&
-        !o.is_typical_memory()) {
+        !o.is_typical_memory() && o.type() != Type::LABEL) {
       error_ = "Operand " + to_string(i) + " not supported.";
       return false;
     }
