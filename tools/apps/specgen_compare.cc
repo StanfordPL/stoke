@@ -135,7 +135,9 @@ int main(int argc, char** argv) {
   }
 
   // check equivalence of two circuits for a given register
-  auto is_eq = [&solver](auto& reg, auto a, auto b, stringstream& explanation) {
+  auto is_eq = [&solver](auto& reg, auto a_in, auto b_in, stringstream& explanation) {
+    auto a = SymSimplify::simplify(a_in);
+    auto b = SymSimplify::simplify(b_in);
     SymBool eq = a == b;
     SymPrettyVisitor pretty(explanation);
     bool res = solver.is_sat({ !eq });
@@ -148,10 +150,10 @@ int main(int argc, char** argv) {
     } else {
       explanation << "  not equivalent for '" << (*reg) << "':" << endl;
       explanation << "    strata: ";
-      pretty(SymSimplify::simplify(a));
+      pretty(a);
       explanation << endl;
       explanation << "    stoke:  ";
-      pretty(SymSimplify::simplify(b));
+      pretty(b);
       explanation << endl;
       return false;
     }
