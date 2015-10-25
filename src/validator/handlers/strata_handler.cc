@@ -123,12 +123,12 @@ void print_state(SymState& state, RegSet rs) {
   // print symbolic state
   bool printed = false;
   rs = rs & ((RegSet::all_gps() | RegSet::all_ymms()) +
-              Constants::eflags_cf() +
-              Constants::eflags_sf() +
-              Constants::eflags_zf() +
-              Constants::eflags_of() +
-              Constants::eflags_pf() +
-              Constants::eflags_af());
+             Constants::eflags_cf() +
+             Constants::eflags_sf() +
+             Constants::eflags_zf() +
+             Constants::eflags_of() +
+             Constants::eflags_pf() +
+             Constants::eflags_af());
   for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
     auto val = state.lookup(*gp_it);
     Console::msg() << out_padded(gp_it, 7) << ": ";
