@@ -19,6 +19,7 @@
 #include "src/validator/handlers.h"
 #include "src/symstate/simplify.h"
 #include "src/ext/cpputil/include/io/console.h"
+#include "src/validator/error.h"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
@@ -204,6 +205,10 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   if (!get_support(instr)) {
     // assume it's from the base set
     ch_.build_circuit(instr, final);
+    if (ch_.has_error()) {
+      error_ = "ComboHandler encountered an error: " + ch_.error();
+      return;
+    }
     return;
   }
 
