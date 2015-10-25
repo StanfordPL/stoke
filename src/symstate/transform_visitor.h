@@ -44,6 +44,35 @@ protected:
       SymBool::get_memory_manager()->add(ptr);
   }
 
+  SymBitVectorAbstract* cache(const SymBitVectorAbstract* const bv, SymBitVectorAbstract* res) {
+    cache_bits_[(SymBitVectorAbstract*)bv] = res;
+    return res;
+  }
+
+  bool is_cached(const SymBitVectorAbstract* const bv) {
+    return cache_bits_.find((SymBitVectorAbstract*)bv) != cache_bits_.end();
+  }
+
+  SymBitVectorAbstract* get_cached(const SymBitVectorAbstract* const bv) {
+    return (*cache_bits_.find((SymBitVectorAbstract*)bv)).second;
+  }
+
+  SymBoolAbstract* cache(const SymBoolAbstract* const bv, SymBoolAbstract* res) {
+    cache_bool_[(SymBoolAbstract*)bv] = res;
+    return res;
+  }
+
+  bool is_cached(const SymBoolAbstract* const bv) {
+    return cache_bool_.find((SymBoolAbstract*)bv) != cache_bool_.end();
+  }
+
+  SymBoolAbstract* get_cached(const SymBoolAbstract* const bv) {
+    return (*cache_bool_.find((SymBoolAbstract*)bv)).second;
+  }
+
+  std::map<SymBoolAbstract*, SymBoolAbstract*> cache_bool_;
+  std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits_;
+
 public:
 
   // The make_* functions allow the creation of new bit vectors and bools, and takes
@@ -258,38 +287,42 @@ public:
 
 
   SymBitVectorAbstract* visit_binop(const SymBitVectorBinop * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
     auto lhs = (*this)(bv->a_);
     auto rhs = (*this)(bv->b_);
     if (lhs == bv->a_ && rhs == bv->b_) {
-      return (SymBitVectorBinop*)bv;
+      return cache(bv, (SymBitVectorBinop*)bv);
     }
-    return make_binop(bv->type(), lhs, rhs);
+    return cache(bv, make_binop(bv->type(), lhs, rhs));
   }
 
   SymBoolAbstract* visit_binop(const SymBoolBinop * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
     auto lhs = (*this)(bv->a_);
     auto rhs = (*this)(bv->b_);
     if (lhs == bv->a_ && rhs == bv->b_) {
-      return (SymBoolBinop*)bv;
+      return cache(bv, (SymBoolBinop*)bv);
     }
-    return make_binop(bv->type(), lhs, rhs);
+    return cache(bv, make_binop(bv->type(), lhs, rhs));
   }
 
   SymBitVectorAbstract* visit_unop(const SymBitVectorUnop * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
     auto lhs = (*this)(bv->bv_);
     if (lhs == bv->bv_) {
-      return (SymBitVectorAbstract*)bv;
+      return cache(bv, (SymBitVectorAbstract*)bv);
     }
-    return make_unop(bv->type(), lhs);
+    return cache(bv, make_unop(bv->type(), lhs));
   }
 
   SymBoolAbstract* visit_compare(const SymBoolCompare * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
     auto lhs = (*this)(bv->a_);
     auto rhs = (*this)(bv->b_);
     if (lhs == bv->a_ && rhs == bv->b_) {
-      return (SymBoolCompare*)bv;
+      return cache(bv, (SymBoolCompare*)bv);
     }
-    return make_compare(bv->type(), lhs, rhs);
+    return cache(bv, make_compare(bv->type(), lhs, rhs));
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorConstant * const bv) {
@@ -297,14 +330,16 @@ public:
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorExtract * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
     auto lhs = (*this)(bv->bv_);
     if (lhs == bv->bv_) {
-      return (SymBitVectorExtract*)bv;
+      return cache(bv, (SymBitVectorExtract*)bv);
     }
-    return make_bitvector_extract(lhs, bv->high_bit_, bv->low_bit_);
+    return cache(bv, make_bitvector_extract(lhs, bv->high_bit_, bv->low_bit_));
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorFunction * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
     std::vector<SymBitVectorAbstract*> args;
     bool same = true;
     for (size_t i = 0; i < bv->args_.size(); ++i) {
@@ -313,28 +348,30 @@ public:
       if (arg != bv->args_[i]) same = false;
     }
 
-    if (same) return (SymBitVectorFunction*) bv;
+    if (same) return cache(bv, (SymBitVectorFunction*) bv);
 
-    return make_bitvector_function(bv->f_, args);
+    return cache(bv, make_bitvector_function(bv->f_, args));
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorIte * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
     auto c = (*this)(bv->cond_);
     auto lhs = (*this)(bv->a_);
     auto rhs = (*this)(bv->b_);
     if (lhs == bv->a_ && rhs == bv->b_ && c == bv->cond_) {
-      return (SymBitVectorIte*)bv;
+      return cache(bv, (SymBitVectorIte*)bv);
     }
     SymBitVectorIte* res = NULL;
-    return make_bitvector_ite(c, lhs, rhs);
+    return cache(bv, make_bitvector_ite(c, lhs, rhs));
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorSignExtend * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
     auto lhs = (*this)(bv->bv_);
     if (lhs == bv->bv_) {
-      return (SymBitVectorSignExtend*)bv;
+      return cache(bv, (SymBitVectorSignExtend*)bv);
     }
-    return make_bitvector_sign_extend(lhs, bv->size_);
+    return cache(bv, make_bitvector_sign_extend(lhs, bv->size_));
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorVar * const bv) {
@@ -346,11 +383,12 @@ public:
   }
 
   SymBoolAbstract* visit(const SymBoolNot * const b) {
+    if (is_cached(b)) return get_cached(b);
     auto lhs = (*this)(b->b_);
     if (lhs == b->b_) {
-      return (SymBoolNot*)b;
+      return cache(b, (SymBoolNot*)b);
     }
-    return make_bool_not(lhs);
+    return cache(b, make_bool_not(lhs));
   }
 
   SymBoolAbstract* visit(const SymBoolTrue * const b) {

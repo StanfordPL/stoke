@@ -52,7 +52,10 @@ public:
       auto newconstant = constant >> bv->low_bit_;
       return make_bitvector_constant(newsize, newconstant);
     }
-    return SymTransformVisitor::visit(bv);
+    if (lhs == bv->bv_) {
+      return (SymBitVectorExtract*)bv;
+    }
+    return make_bitvector_extract(lhs, bv->high_bit_, bv->low_bit_);
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorConcat * const bv) {
@@ -62,10 +65,13 @@ public:
       auto l = static_cast<const SymBitVectorExtract * const>(lhs);
       auto r = static_cast<const SymBitVectorExtract * const>(rhs);
       if (l->bv_->equals(r->bv_) && l->low_bit_ == r->high_bit_+1) {
-        return (*this)(make_bitvector_extract(l->bv_, l->high_bit_, r->low_bit_));
+        return make_bitvector_extract(l->bv_, l->high_bit_, r->low_bit_);
       }
     }
-    return SymTransformVisitor::visit_binop(bv);
+    if (lhs == bv->a_ && rhs == bv->b_) {
+      return (SymBitVectorConcat*)bv;
+    }
+    return make_binop(bv->type(), lhs, rhs);
   }
 
 };
@@ -73,6 +79,7 @@ public:
 /**
  * Moves bit extracts over other operators (where save).
  * Also moves bit extracts over concatenation, possibly throwing away one side.
+ * Also moves bit extracts over sign-extends, possibly removing them all together
  *
  * E.g. (a | b)[5:2] becomes (a[5:2] | b[5:2])
  */
@@ -108,6 +115,19 @@ public:
       auto b = make_bitvector_extract(rhs, rhs->width_ - 1, bv->low_bit_);
       return make_binop(SymBitVector::CONCAT, a, b);
     }
+    case SymBitVector::SIGN_EXTEND: {
+      SymBitVectorSignExtend* sext = (SymBitVectorSignExtend*)inner;
+      auto lhs = sext->bv_;
+      if (bv->high_bit_ < lhs->width_) {
+        return make_bitvector_extract(lhs, bv->high_bit_, bv->low_bit_);
+      }
+      // cout << bv->high_bit_ << " >= " << lhs->width_ << endl;
+      // SymPrettyVisitor pretty(cout);
+      // pretty(bv);
+      // cout << endl;
+      // TODO: there are some more cases that could be handled
+      break;
+    }
     case SymBitVector::ITE: {
       SymBitVectorIte* ite = (SymBitVectorIte*)inner;
       auto a = make_bitvector_extract(ite->a_, bv->high_bit_, bv->low_bit_);
@@ -120,8 +140,12 @@ public:
       return make_unop(n->type(), a);
     }
     default:
-      return SymTransformVisitor::visit(bv);
+      break;
     }
+    if (inner == bv->bv_) {
+      return (SymBitVectorExtract*)bv;
+    }
+    return make_bitvector_extract(inner, bv->high_bit_, bv->low_bit_);
   }
 
 };
@@ -132,18 +156,13 @@ public:
 SymBitVector SymSimplify::simplify(const SymBitVector& b) {
   auto ptr = b.ptr;
 
-  // first move all bit extracts inside
+  SymMergeExtracts merger;
   SymMoveExtractsInside mover;
+
+  // apply transformations until no further simplifications are possible
   while (true) {
     auto old = ptr;
     ptr = mover(ptr);
-    if (old == ptr) break;
-  }
-
-  // then attempt to remove bit extracts
-  SymMergeExtracts merger;
-  while (true) {
-    auto old = ptr;
     ptr = merger(ptr);
     if (old == ptr) break;
   }
