@@ -18,7 +18,7 @@
 
 namespace stoke {
 
-TEST(SymBitvectorTest, CanPrintConstantsAtWidth) {
+TEST(SymBitvectorTest, DISABLED_CanPrintConstantsAtWidth) {
 
   auto a = SymBitVector::constant(3, 5);
 
@@ -28,7 +28,7 @@ TEST(SymBitvectorTest, CanPrintConstantsAtWidth) {
   EXPECT_EQ("<0x5|3>", ss.str());
 }
 
-TEST(SymBitvectorTest, CanPrintConstantsOverWidth) {
+TEST(SymBitvectorTest, DISABLED_CanPrintConstantsOverWidth) {
 
   auto a = SymBitVector::constant(4, 5);
 
@@ -38,7 +38,7 @@ TEST(SymBitvectorTest, CanPrintConstantsOverWidth) {
   EXPECT_EQ("<0x5|4>", ss.str());
 }
 
-TEST(SymBitvectorTest, CanPrintExpressions) {
+TEST(SymBitvectorTest, DISABLED_CanPrintExpressions) {
 
   auto x = SymBitVector::var(3, "x");
   auto y = SymBitVector::var(3, "y");
