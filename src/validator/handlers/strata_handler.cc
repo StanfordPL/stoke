@@ -235,7 +235,6 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   cout << "Computing circuit for " << instr << endl << endl;
   cout << "Initial state:" << endl;
   print_state(start, instr.maybe_write_set());
-  cout << endl;
   cout << "State for specgen instruction: " << specgen_instr << ":" << endl;
   print_state(tmp, specgen_instr.maybe_write_set());
 #endif
@@ -275,19 +274,24 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     return NULL;
   });
 
-#ifdef DEBUG_STRATA_HANDLER
-  cout << endl;
-  cout << "State for specgen instruction (after renaming): " << specgen_instr << ":" << endl;
-  print_state(tmp, specgen_instr.maybe_write_set());
-#endif
-
   // loop over all live outs and update the final state
   auto liveouts = instr.maybe_write_set();
   for (auto iter = liveouts.gp_begin(); iter != liveouts.gp_end(); ++iter) {
     // look up live out in tmp state (after translating operators as necessary)
     auto val = tmp[translate_gp_register(*iter, instr, specgen_instr)];
+#ifdef DEBUG_STRATA_HANDLER
+    cout << "Requiring value for    -> " << (*iter) << endl;
+    cout << "  looking up value for => ";
+    cout << translate_gp_register(*iter, instr, specgen_instr) << endl;
+#endif
     // rename variables in the tmp state to the values in start
     auto val_renamed = translate_circuit(val);
+#ifdef DEBUG_STRATA_HANDLER
+    cout << "Value is               -> " << SymSimplify::simplify(val_renamed) << endl;
+    cout << "  after renaming from  => ";
+    cout << SymSimplify::simplify(val) << endl;
+    cout << endl;
+#endif
     // update the start state with the circuits from tmp
     final.set(*iter, val_renamed, false, true);
   }
@@ -309,7 +313,6 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   }
 
 #ifdef DEBUG_STRATA_HANDLER
-  cout << endl;
   cout << "Final state" << endl;
   print_state(final, instr.maybe_write_set());
   cout << "=====================================" << endl;
