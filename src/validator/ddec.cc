@@ -820,7 +820,6 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
       auto column = columns[j];
       if (!mpz_fits_slong_p(mp_result[j*dim + i])) {
         ok = false;
-        break;
       }
 
       auto p = pair<R,bool>(column.reg, !column.zero_extend);
@@ -841,16 +840,14 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
     //gmp_fprintf(stdout , "  %Zd\n", mp_result[(num_columns-1)*dim + i]);
     //cout << endl;
 
-    if (ok) {
-      auto ei = new EqualityInvariant(target_map, rewrite_map, -mpz_get_si(mp_result[(num_columns-1)*dim + i]));
-      if (ei->check(target_states, rewrite_states)) {
-        conj->add_invariant(ei);
-        cout << *ei << endl;
-      } else {
-        cout << "GOT BAD INVARIANT " << *ei << endl;
-      }
+    if(!ok)
+      cout << "(reduced 2^64) ";
+    auto ei = new EqualityInvariant(target_map, rewrite_map, -mpz_get_si(mp_result[(num_columns-1)*dim + i]));
+    if (ei->check(target_states, rewrite_states)) {
+      conj->add_invariant(ei);
+      cout << *ei << endl;
     } else {
-      cout << "(bad)" << endl;
+      cout << "GOT BAD INVARIANT " << *ei << endl;
     }
   }
 
