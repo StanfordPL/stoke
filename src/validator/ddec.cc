@@ -148,6 +148,12 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
     auto new_cutpoint_tcs = check_cutpoints(target, rewrite, target_cuts, rewrite_cuts);
     if(new_cutpoint_tcs.size()) {
       for(auto it : new_cutpoint_tcs) {
+        for(size_t i = 0; i < sandbox_->size(); ++i) {
+          if(*sandbox_->get_input(i) == it) {
+            cout << "CEGAR fixedpoint @ cutpoint" << endl;
+            return vector<ConjunctionInvariant*>();
+          }
+        }
         sandbox_->insert_input(it);
       }
       continue;
@@ -194,8 +200,15 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
       return invariants;
 
     // Get the testcases and try again
-    for (auto tc : new_tests)
+    for (auto tc : new_tests) {
+      for(size_t i = 0; i < sandbox_->size(); ++i) {
+        if(*sandbox_->get_input(i) == tc) {
+          cout << "CEGAR fixedpoint @ invariants" << endl;
+          return vector<ConjunctionInvariant*>();
+        }
+      }
       sandbox_->insert_input(tc);
+    }
 
     delete cutpoints_;
     cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
