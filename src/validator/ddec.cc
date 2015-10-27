@@ -76,6 +76,7 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
 
   BoundedValidator bv(solver_);
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
+  bv.set_nacl(true);
 
   auto target_cuts = cutpoints_->target_cutpoint_locations();
   auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
@@ -237,6 +238,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   }
 
   bv_.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
+  bv_.set_nacl(true);
 
   make_tcs(target, rewrite);
 

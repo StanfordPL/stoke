@@ -2014,34 +2014,34 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
   // rax = rax'
-  std::map<x64asm::R, long> t1;
-  std::map<x64asm::R, long> r1;
-  t1[x64asm::rax] = 1;
-  r1[x64asm::rax] = -1;
+  std::map<std::pair<x64asm::R, bool>, long> t1;
+  std::map<std::pair<x64asm::R, bool>, long> r1;
+  t1[std::pair<x64asm::R, bool>(x64asm::rax, false)] = 1;
+  r1[std::pair<x64asm::R, bool>(x64asm::rax, false)] = -1;
   EqualityInvariant inv_rax(t1, r1, 0);
 
   // edi = edi'
-  std::map<x64asm::R, long> t2;
-  std::map<x64asm::R, long> r2;
-  t2[x64asm::edi] = 1;
-  r2[x64asm::edi] = -1;
+  std::map<std::pair<x64asm::R, bool>, long> t2;
+  std::map<std::pair<x64asm::R, bool>, long> r2;
+  t2[std::pair<x64asm::R, bool>(x64asm::edi, false)] = 1;
+  r2[std::pair<x64asm::R, bool>(x64asm::edi, false)] = -1;
   EqualityInvariant inv_rdi(t2, r2, 0);
 
   // top 32 bits of rdi are 0.
   TopZeroInvariant target_edi_0(x64asm::rdi, false);
 
   // esi = esi'
-  std::map<x64asm::R, long> t3;
-  std::map<x64asm::R, long> r3;
-  t3[x64asm::esi] = 1;
-  r3[x64asm::esi] = -1;
+  std::map<std::pair<x64asm::R, bool>, long> t3;
+  std::map<std::pair<x64asm::R, bool>, long> r3;
+  t3[std::pair<x64asm::R, bool>(x64asm::esi, false)] = 1;
+  r3[std::pair<x64asm::R, bool>(x64asm::esi, false)] = -1;
   EqualityInvariant inv_rsi(t3, r3, 0);
 
   // r15 = r15'
-  std::map<x64asm::R, long> t4;
-  std::map<x64asm::R, long> r4;
-  t4[x64asm::r15] = 1;
-  r4[x64asm::r15] = -1;
+  std::map<std::pair<x64asm::R, bool>, long> t4;
+  std::map<std::pair<x64asm::R, bool>, long> r4;
+  t4[std::pair<x64asm::R, bool>(x64asm::r15, false)] = 1;
+  r4[std::pair<x64asm::R, bool>(x64asm::r15, false)] = -1;
   EqualityInvariant inv_r15(t4, r4, 0);
 
   // no signals
