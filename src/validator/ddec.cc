@@ -20,6 +20,7 @@
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/false.h"
 #include "src/validator/invariants/flag.h"
+#include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/state_equality.h"
@@ -77,6 +78,7 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
   BoundedValidator bv(solver_);
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
   bv.set_nacl(true);
+  bv.set_heap_out(true);
 
   auto target_cuts = cutpoints_->target_cutpoint_locations();
   auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
@@ -122,6 +124,7 @@ vector<CpuState> DdecValidator::check_cutpoints(const Cfg& target, const Cfg& re
 vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, const Cfg& rewrite) {
 
   NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
+  MemoryEqualityInvariant* mem_equ = new MemoryEqualityInvariant();
   vector<ConjunctionInvariant*> invariants;
 
   while (true) {
@@ -162,6 +165,7 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
         auto inv = new StateEqualityInvariant(target.def_ins());
         begin->add_invariant(inv);
         begin->add_invariant(no_sigs);
+        begin->add_invariant(mem_equ);
         invariants.push_back(begin);
       } else if (target_cuts[i] == target.get_exit()) {
         // Exit
@@ -171,6 +175,7 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
         auto inv = new StateEqualityInvariant(target.live_outs());
         end->add_invariant(inv);
         end->add_invariant(no_sigs);
+        end->add_invariant(mem_equ);
         invariants.push_back(end);
       } else {
         auto target_regs = target.def_outs(target_cuts[i]);
@@ -239,6 +244,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   bv_.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
   bv_.set_nacl(true);
+  bv_.set_heap_out(true);
 
   make_tcs(target, rewrite);
 
@@ -626,9 +632,12 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
 
   //TODO leaks memory
 
+  MemoryEqualityInvariant* mem_equ = new MemoryEqualityInvariant();
+
   NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
   ConjunctionInvariant* conj = new ConjunctionInvariant();
   conj->add_invariant(no_sigs);
+  conj->add_invariant(mem_equ);
 
   if (target_states.size() == 0 || rewrite_states.size() == 0) {
     conj->add_invariant(new FalseInvariant());
@@ -755,8 +764,6 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
       matrix[i*num_columns + j] = value;
     }
     matrix[i*num_columns + num_columns - 1] = 1;
-    if(ns_ok)
-      ns << 1 << endl;
   }
 
   /*
