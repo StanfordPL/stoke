@@ -113,8 +113,6 @@ public:
   }
 
 private:
-  /** How many operands does this expression take? */
-  size_t arity_;
   /** Set the correctness term */
   Expr* correctness_;
   /** The variable (for arity 1) */
@@ -129,6 +127,8 @@ private:
   /** The chosen operator */
   Operator op_;
 
+  /** How many operands does this expression take? */
+  size_t arity_;
 };
 
 } // namespace stoke

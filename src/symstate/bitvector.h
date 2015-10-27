@@ -206,8 +206,8 @@ public:
   private:
     IndexHelper(const SymBitVector& bv, uint16_t index) : bv_(bv), index_(index) {}
 
-    uint16_t index_;
     const SymBitVector& bv_;
+    uint16_t index_;
   };
 
   /** Extracts a single bit from the bitvector (or a range of bits, via IndexHelper). */
