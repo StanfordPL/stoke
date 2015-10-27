@@ -58,6 +58,14 @@ R64 get_r64_operand(const Instruction& instr, size_t i) {
   return Constants::r64s()[(size_t)instr.get_operand<R64>(i)];
 };
 
+R64 reg_to_r64(const R& reg) {
+  size_t idx = reg;
+  if (reg.type() == Type::RH) {
+    return Constants::r64s()[idx - 4];
+  }
+  return Constants::r64s()[idx];
+}
+
 /**
  * Given two instructions with the same opcode, and a register from the context
  * of one of these instructions, translate it into a register in the context
@@ -77,6 +85,8 @@ Operand translate_gp_register(const R& operand_from, const Instruction& instr_fr
       operand_from_r64 = Constants::r64s()[idx - 4];
     }
     if (operand_from_r64 == get_r64_operand(instr_from, i)) {
+      // cout << "from: " << operand_from << " vs " << instr_from.get_operand<Operand>(i) << endl;
+      // cout << (size_t)operand_from.type() << " <> " << (size_t)instr_from.get_operand<Operand>(i).type() << endl;
       return get_r64_operand(instr_to, i);
     }
   }
@@ -101,18 +111,8 @@ Operand translate_sse_register(const Sse& operand_from, const Instruction& instr
   return operand_from;
 };
 
-// #define DEBUG_STRATA_HANDLER
+#define DEBUG_STRATA_HANDLER
 #ifdef DEBUG_STRATA_HANDLER
-template <typename T>
-string out_padded(T t, size_t min_length, char pad = ' ') {
-  stringstream ss;
-  ss << (*t);
-  size_t len = ss.str().size();
-  for (size_t i = 0; i < (min_length - len); i++) {
-    ss << pad;
-  }
-  return ss.str();
-}
 
 void print_state(SymState& state, RegSet rs) {
   SymPrettyVisitor pretty(cout);
@@ -131,8 +131,9 @@ void print_state(SymState& state, RegSet rs) {
              Constants::eflags_pf() +
              Constants::eflags_af());
   for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
-    auto val = state.lookup(*gp_it);
-    Console::msg() << out_padded(gp_it, 7) << ": ";
+    auto widened = reg_to_r64(*gp_it);
+    auto val = state.lookup(widened);
+    Console::msg() << widened << "/" << (*gp_it) << ": ";
     print(val);
     Console::msg() << endl;
     printed = true;
@@ -141,7 +142,7 @@ void print_state(SymState& state, RegSet rs) {
   printed = false;
   for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
     auto val = state.lookup(*sse_it);
-    Console::msg() << out_padded(sse_it, 7) << ": ";
+    Console::msg() << (*sse_it) << ": ";
     print(val);
     Console::msg() << endl;
     printed = true;
@@ -150,7 +151,7 @@ void print_state(SymState& state, RegSet rs) {
   printed = false;
   for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
     SymBool val = state[*flag_it];
-    Console::msg() << out_padded(flag_it, 7) << ": ";
+    Console::msg() << (*flag_it) << ": ";
     print(val);
     Console::msg() << endl;
     printed = true;
@@ -209,6 +210,13 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
       error_ = "ComboHandler encountered an error: " + ch_.error();
       return;
     }
+#ifdef DEBUG_STRATA_HANDLER
+    cout << "-------------------------------------" << endl;
+    cout << "Getting base circuit for " << instr << endl << endl;
+    cout << "Final state:" << endl;
+    print_state(final, instr.maybe_write_set());
+    cout << "-------------------------------------" << endl;
+#endif
     return;
   }
 
@@ -233,6 +241,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 #ifdef DEBUG_STRATA_HANDLER
   cout << "=====================================" << endl;
   cout << "Computing circuit for " << instr << endl << endl;
+  cout << t.get_code() << endl << endl;
   cout << "Initial state:" << endl;
   print_state(start, instr.maybe_write_set());
   cout << "State for specgen instruction: " << specgen_instr << ":" << endl;
