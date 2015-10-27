@@ -5,11 +5,22 @@ require 'fileutils'
 
 tcs=ARGV[0].to_i
 print "TCs=#{tcs}"
-combination = [1..90].combination(tcs).to_a.sample
+available = []
+combination = []
+
+(1..90).each do |n|
+  available.push(n)
+end
+
+(1..tcs).each do |m|
+  item = available.sample
+  available.delete(item)
+  combination.push(item)
+end
 
 @training_set="\"{ #{combination.join(" ")} }\""
 
-dir_name="ts_runs/#{tcs}_#{rand(10000)}"
+dir_name="ts_runs/#{tcs}_#{rand(100000000)}"
 
 
 Dir.mkdir(dir_name);

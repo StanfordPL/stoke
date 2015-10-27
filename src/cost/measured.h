@@ -51,11 +51,12 @@ public:
       auto tc = *(sandbox_->get_input(i));
       average_size += tc.heap.size();
     }
+    average_size += tc_count - 1;
     average_size /= tc_count;
 
     for (size_t i = 0; i < tc_count; ++i) {
       auto tc = *(sandbox_->get_input(i));
-      if (tc.heap.size() > average_size) {
+      if (tc.heap.size() >= average_size) {
         nops_emitted_ = 0;
         sandbox_->run(i);
       }
