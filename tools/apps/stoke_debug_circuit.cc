@@ -165,6 +165,9 @@ int main(int argc, char** argv) {
     if (it.get_opcode() == Opcode::RET) break;
     state.set_lineno(line);
     ch.build_circuit(it, state);
+    if (ch.has_error()) {
+      break;
+    }
     line++;
   }
 
