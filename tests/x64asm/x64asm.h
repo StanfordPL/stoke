@@ -19,4 +19,5 @@
 #include "tests/x64asm/r.h"
 #include "tests/x64asm/reg_set.h"
 #include "tests/x64asm/read_write_sets.h"
+#include "tests/x64asm/pseudo_read_write_sets.h"
 #include "tests/x64asm/opc_set.h"
