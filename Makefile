@@ -175,6 +175,7 @@ BIN=\
 	bin/stoke_debug_effect \
 	bin/stoke_debug_sandbox \
 	bin/stoke_debug_search \
+	bin/stoke_debug_simplify \
 	bin/stoke_debug_state \
 	bin/stoke_debug_tunit \
 	bin/stoke_debug_verify \
