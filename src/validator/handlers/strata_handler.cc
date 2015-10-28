@@ -58,14 +58,6 @@ R64 get_r64_operand(const Instruction& instr, size_t i) {
   return Constants::r64s()[(size_t)instr.get_operand<R64>(i)];
 };
 
-// R64 reg_to_r64(const R& reg) {
-//   size_t idx = reg;
-//   if (reg.type() == Type::RH) {
-//     return Constants::r64s()[idx - 4];
-//   }
-//   return Constants::r64s()[idx];
-// }
-
 /**
  * Given two instructions with the same opcode, and a register from the context
  * of one of these instructions, translate it into a register in the context
@@ -85,8 +77,6 @@ Operand translate_gp_register(const R& operand_from, const Instruction& instr_fr
       operand_from_r64 = Constants::r64s()[idx - 4];
     }
     if (operand_from_r64 == get_r64_operand(instr_from, i)) {
-      // cout << "from: " << operand_from << " vs " << instr_from.get_operand<Operand>(i) << endl;
-      // cout << (size_t)operand_from.type() << " <> " << (size_t)instr_from.get_operand<Operand>(i).type() << endl;
       return get_r64_operand(instr_to, i);
     }
   }
@@ -113,6 +103,14 @@ Operand translate_sse_register(const Sse& operand_from, const Instruction& instr
 
 // #define DEBUG_STRATA_HANDLER
 #ifdef DEBUG_STRATA_HANDLER
+
+R64 reg_to_r64(const R& reg) {
+  size_t idx = reg;
+  if (reg.type() == Type::RH) {
+    return Constants::r64s()[idx - 4];
+  }
+  return Constants::r64s()[idx];
+}
 
 void print_state(SymState& state, RegSet rs) {
   SymPrettyVisitor pretty(cout);
@@ -294,7 +292,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     cout << translate_gp_register(*iter, instr, specgen_instr) << endl;
 #endif
     // rename variables in the tmp state to the values in start
-    auto val_renamed = translate_circuit(val);
+    auto val_renamed = SymSimplify::simplify(translate_circuit(val));
 #ifdef DEBUG_STRATA_HANDLER
     cout << "Value is               -> " << SymSimplify::simplify(val_renamed) << endl;
     cout << "  after renaming from  => ";
@@ -308,7 +306,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     // look up live out in tmp state (after translating operators as necessary)
     auto val = tmp[translate_sse_register(*iter, instr, specgen_instr)];
     // rename variables in the tmp state to the values in start
-    auto val_renamed = translate_circuit(val);
+    auto val_renamed = SymSimplify::simplify(translate_circuit(val));
     // update the start state with the circuits from tmp
     final.set(*iter, val_renamed, false, true);
   }
@@ -316,7 +314,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     // look up live out in tmp state (no translation necessary for flags)
     auto val = tmp[*iter];
     // rename variables in the tmp state to the values in start
-    auto val_renamed = translate_circuit(val);
+    auto val_renamed = SymSimplify::simplify(translate_circuit(val));
     // update the start state with the circuits from tmp
     final.set(*iter, val_renamed);
   }
