@@ -38,10 +38,10 @@ int main(int argc, char** argv) {
   TargetGadget target(aux_fxns, false);
 
   cout << "Original program:" << endl << endl;
-  cout << target.get_function() << endl;
+  cout << target.get_function().get_code() << endl;
 
   cout << endl << "Simplified program:" << endl << endl;
-  cout << CfgTransforms::remove_redundant(target).get_function() << endl;
+  cout << CfgTransforms::remove_redundant(target).get_function().get_code() << endl;
 
   return 0;
 }
