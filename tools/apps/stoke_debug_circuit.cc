@@ -125,12 +125,21 @@ int main(int argc, char** argv) {
 
   Console::msg() << "Target" << endl << endl;
   Console::msg() << code << endl << endl;
-  Console::msg() << "  maybe read:      " << code.maybe_read_set() << endl;
-  Console::msg() << "  must read:       " << code.must_read_set() << endl;
-  Console::msg() << "  maybe write:     " << code.maybe_write_set() << endl;
-  Console::msg() << "  must write:      " << code.must_write_set() << endl;
-  Console::msg() << "  maybe undef:     " << code.maybe_undef_set() << endl;
-  Console::msg() << "  must undef:      " << code.must_undef_set() << endl;
+  if (code.size() == 1) {
+    Console::msg() << "  maybe read:      " << target.maybe_read_set(code[0]) << endl;
+    Console::msg() << "  must read:       " << target.must_read_set(code[0]) << endl;
+    Console::msg() << "  maybe write:     " << target.maybe_write_set(code[0]) << endl;
+    Console::msg() << "  must write:      " << target.must_write_set(code[0]) << endl;
+    Console::msg() << "  maybe undef:     " << target.maybe_undef_set(code[0]) << endl;
+    Console::msg() << "  must undef:      " << target.must_undef_set(code[0]) << endl;
+  } else {
+    Console::msg() << "  maybe read:      " << code.maybe_read_set() << endl;
+    Console::msg() << "  must read:       " << code.must_read_set() << endl;
+    Console::msg() << "  maybe write:     " << code.maybe_write_set() << endl;
+    Console::msg() << "  must write:      " << code.must_write_set() << endl;
+    Console::msg() << "  maybe undef:     " << code.maybe_undef_set() << endl;
+    Console::msg() << "  must undef:      " << code.must_undef_set() << endl;
+  }
   Console::msg() << "  required flags:  " << code.required_flags() << endl;
 
   Console::msg() << endl;
