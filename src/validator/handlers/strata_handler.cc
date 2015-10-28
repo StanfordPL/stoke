@@ -305,21 +305,21 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   for (auto iter = liveouts.gp_begin(); iter != liveouts.gp_end(); ++iter) {
     // look up live out in tmp state (after translating operators as necessary)
     auto val = tmp[translate_gp_register(*iter, instr, specgen_instr)];
-    if (!typecheck(val, (*iter).size())) return;
 #ifdef DEBUG_STRATA_HANDLER
     cout << "Requiring value for    -> " << (*iter) << endl;
     cout << "  looking up value for => ";
     cout << translate_gp_register(*iter, instr, specgen_instr) << endl;
 #endif
+    if (!typecheck(val, (*iter).size())) return;
     // rename variables in the tmp state to the values in start
     auto val_renamed = SymSimplify::simplify(translate_circuit(val));
-    if (!typecheck(val_renamed, (*iter).size())) return;
 #ifdef DEBUG_STRATA_HANDLER
     cout << "Value is               -> " << SymSimplify::simplify(val_renamed) << endl;
     cout << "  after renaming from  => ";
     cout << SymSimplify::simplify(val) << endl;
     cout << endl;
 #endif
+    if (!typecheck(val_renamed, (*iter).size())) return;
     // update the start state with the circuits from tmp
     final.set(*iter, val_renamed, false, true);
   }
