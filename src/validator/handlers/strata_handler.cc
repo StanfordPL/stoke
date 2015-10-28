@@ -58,13 +58,13 @@ R64 get_r64_operand(const Instruction& instr, size_t i) {
   return Constants::r64s()[(size_t)instr.get_operand<R64>(i)];
 };
 
-R64 reg_to_r64(const R& reg) {
-  size_t idx = reg;
-  if (reg.type() == Type::RH) {
-    return Constants::r64s()[idx - 4];
-  }
-  return Constants::r64s()[idx];
-}
+// R64 reg_to_r64(const R& reg) {
+//   size_t idx = reg;
+//   if (reg.type() == Type::RH) {
+//     return Constants::r64s()[idx - 4];
+//   }
+//   return Constants::r64s()[idx];
+// }
 
 /**
  * Given two instructions with the same opcode, and a register from the context
@@ -111,7 +111,7 @@ Operand translate_sse_register(const Sse& operand_from, const Instruction& instr
   return operand_from;
 };
 
-#define DEBUG_STRATA_HANDLER
+// #define DEBUG_STRATA_HANDLER
 #ifdef DEBUG_STRATA_HANDLER
 
 void print_state(SymState& state, RegSet rs) {
