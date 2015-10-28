@@ -49,68 +49,64 @@ public:
   const function<SymBoolAbstract*(SymBoolVar*)> b_rename_;
 };
 
-/** Take the i-th operand (assumed to be a GP register) and return it's 64 bit variant. */
-R64 get_r64_operand(const Instruction& instr, size_t i) {
-  if (instr.type(i) == Type::RH) {
-    size_t idx = instr.get_operand<Rh>(i) - 4;
-    return Constants::r64s()[idx];
-  }
-  return Constants::r64s()[(size_t)instr.get_operand<R64>(i)];
-};
-
-/**
- * Given two instructions with the same opcode, and a register from the context
- * of one of these instructions, translate it into a register in the context
- * of instr_to.
- */
-Operand translate_gp_register(const R& operand_from, const Instruction& instr_from, const Instruction& instr_to) {
-  for (size_t i = 0; i < instr_from.arity(); i++) {
-    if (!instr_from.get_operand<Operand>(i).is_gp_register()) continue;
-    // direct match?
-    if (operand_from == instr_from.get_operand<Operand>(i)) {
-      return instr_to.get_operand<Operand>(i);
-    }
-    // same 64bit reg?
-    size_t idx = operand_from;
-    auto operand_from_r64 = Constants::r64s()[idx];
-    if (operand_from.type() == Type::RH) {
-      operand_from_r64 = Constants::r64s()[idx - 4];
-    }
-    if (operand_from_r64 == get_r64_operand(instr_from, i)) {
-      return get_r64_operand(instr_to, i);
-    }
-  }
-  // no translation necessary
-  return operand_from;
-};
-
-/** Like translate_gp_register, but for sse registers */
-Operand translate_sse_register(const Sse& operand_from, const Instruction& instr_from, const Instruction& instr_to) {
-  for (size_t i = 0; i < instr_from.arity(); i++) {
-    if (!instr_from.get_operand<Operand>(i).is_sse_register()) continue;
-    // direct match?
-    if (operand_from == instr_from.get_operand<Operand>(i)) {
-      return instr_to.get_operand<Operand>(i);
-    }
-    // same ymm reg?
-    if (Constants::ymms()[(size_t) operand_from] == instr_from.get_operand<Ymm>(i)) {
-      return Constants::ymms()[(size_t) instr_to.get_operand<Ymm>(i)];
-    }
-  }
-  // no translation necessary
-  return operand_from;
-};
-
-// #define DEBUG_STRATA_HANDLER
-#ifdef DEBUG_STRATA_HANDLER
-
-R64 reg_to_r64(const R& reg) {
+/** Take a gp register and convert it into a 64 bit register. */
+R64 r_to_r64(const R& reg) {
   size_t idx = reg;
   if (reg.type() == Type::RH) {
     return Constants::r64s()[idx - 4];
   }
   return Constants::r64s()[idx];
 }
+/** Take an sse register and convert it into a 256 bit register. */
+Ymm sse_to_ymm(const Sse& reg) {
+  size_t idx = reg;
+  return Constants::ymms()[idx];
+}
+
+/**
+ * Given two instructions with the same opcode, and a register from the context
+ * of one of these instructions, translate it into a register in the context
+ * of instr_to (translates operands, but leaves other registers).
+ */
+template <typename T>
+const T translate_register(const T& operand_from, const Instruction& instr_from, const Instruction& instr_to) {
+  for (size_t i = 0; i < instr_from.arity(); i++) {
+    // direct match?
+    if (operand_from == instr_from.get_operand<Operand>(i)) {
+      return instr_to.get_operand<T>(i);
+    }
+  }
+  // no translation necessary
+  return operand_from;
+};
+
+/**
+ * Like translate_register, but the operand_from is a ymm/r64 register that may
+ * correspond to one of the operands.
+ */
+Operand translate_max_register(const Operand& operand_from, const Instruction& instr_from, const Instruction& instr_to) {
+  for (size_t i = 0; i < instr_from.arity(); i++) {
+    // same 64 bit register?
+    if (operand_from.type() == Type::R_64 || operand_from.type() == Type::RAX) {
+      if (operand_from == r_to_r64(instr_from.get_operand<R>(i))) {
+        return r_to_r64(instr_to.get_operand<R>(i));
+      }
+    } else
+
+    // same 256 bit register?
+    if (operand_from.type() == Type::YMM) {
+      if (operand_from == sse_to_ymm(instr_from.get_operand<Sse>(i))) {
+        return sse_to_ymm(instr_to.get_operand<Sse>(i));
+      }
+    }
+  }
+  // no translation necessary
+  return operand_from;
+};
+
+
+// #define DEBUG_STRATA_HANDLER
+#ifdef DEBUG_STRATA_HANDLER
 
 void print_state(SymState& state, RegSet rs) {
   SymPrettyVisitor pretty(cout);
@@ -129,7 +125,7 @@ void print_state(SymState& state, RegSet rs) {
              Constants::eflags_pf() +
              Constants::eflags_af());
   for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
-    auto widened = reg_to_r64(*gp_it);
+    auto widened = r_to_r64(*gp_it);
     auto val = state.lookup(widened);
     Console::msg() << widened << "/" << (*gp_it) << ": ";
     print(val);
@@ -277,10 +273,10 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     R64 gp = Constants::rax();
     Ymm ymm = Constants::ymm0();
     if (stringstream(real_name) >> gp) {
-      auto translated_reg = translate_gp_register((R)gp, specgen_instr, instr);
+      auto translated_reg = translate_max_register(gp, specgen_instr, instr);
       return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
     } else if (stringstream(real_name) >> ymm) {
-      auto translated_reg = translate_sse_register((Sse)ymm, specgen_instr, instr);
+      auto translated_reg = translate_max_register(ymm, specgen_instr, instr);
       return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
     }
     assert(false);
@@ -301,39 +297,40 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   });
 
   // loop over all live outs and update the final state
-  auto liveouts = instr.maybe_write_set();
+  auto liveouts = specgen_instr.maybe_write_set();
   for (auto iter = liveouts.gp_begin(); iter != liveouts.gp_end(); ++iter) {
-    // look up live out in tmp state (after translating operators as necessary)
-    auto val = tmp[translate_gp_register(*iter, instr, specgen_instr)];
+    auto iter_translated = translate_register<R>(*iter, specgen_instr, instr);
+    // look up live out in tmp state
+    auto val = tmp[*iter];
 #ifdef DEBUG_STRATA_HANDLER
-    cout << "Requiring value for    -> " << (*iter) << endl;
-    cout << "  looking up value for => ";
-    cout << translate_gp_register(*iter, instr, specgen_instr) << endl;
+    cout << "Register        -> " << (*iter) << endl;
+    cout << "  translates to => " << iter_translated << endl;
 #endif
     if (!typecheck(val, (*iter).size())) return;
     // rename variables in the tmp state to the values in start
     auto val_renamed = SymSimplify::simplify(translate_circuit(val));
 #ifdef DEBUG_STRATA_HANDLER
-    cout << "Value is               -> " << SymSimplify::simplify(val_renamed) << endl;
-    cout << "  after renaming from  => ";
-    cout << SymSimplify::simplify(val) << endl;
+    cout << "Value is               -> " << SymSimplify::simplify(val) << endl;
+    cout << "  after renaming it is => " << SymSimplify::simplify(val_renamed) << endl;
     cout << endl;
 #endif
     if (!typecheck(val_renamed, (*iter).size())) return;
     // update the start state with the circuits from tmp
-    final.set(*iter, val_renamed, false, true);
+    final.set(iter_translated, val_renamed, false, true);
   }
   for (auto iter = liveouts.sse_begin(); iter != liveouts.sse_end(); ++iter) {
+    auto iter_translated = translate_register<Sse>(*iter, specgen_instr, instr);
     // look up live out in tmp state (after translating operators as necessary)
-    auto val = tmp[translate_sse_register(*iter, instr, specgen_instr)];
+    auto val = tmp[*iter];
     if (!typecheck(val, (*iter).size())) return;
     // rename variables in the tmp state to the values in start
     auto val_renamed = SymSimplify::simplify(translate_circuit(val));
     if (!typecheck(val_renamed, (*iter).size())) return;
     // update the start state with the circuits from tmp
-    final.set(*iter, val_renamed, false, true);
+    final.set(iter_translated, val_renamed, false, true);
   }
   for (auto iter = liveouts.flags_begin(); iter != liveouts.flags_end(); ++iter) {
+    auto iter_translated = *iter;
     // look up live out in tmp state (no translation necessary for flags)
     auto val = tmp[*iter];
     if (!typecheck(val, 1)) return;
@@ -341,7 +338,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     auto val_renamed = SymSimplify::simplify(translate_circuit(val));
     if (!typecheck(val_renamed, 1)) return;
     // update the start state with the circuits from tmp
-    final.set(*iter, val_renamed);
+    final.set(iter_translated, val_renamed);
   }
 
 #ifdef DEBUG_STRATA_HANDLER
