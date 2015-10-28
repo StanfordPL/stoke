@@ -70,6 +70,9 @@ then
 	elif [ "$SCMD" == "sandbox" ]
 	then
 		exec $HERE/stoke_debug_sandbox "$@"
+	elif [ "$SCMD" == "simplify" ]
+	then
+		exec $HERE/stoke_debug_simplify "$@"
 	elif [ "$SCMD" == "state" ]
 	then
 		exec $HERE/stoke_debug_state "$@"
