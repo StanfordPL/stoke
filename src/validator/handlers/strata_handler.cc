@@ -191,6 +191,7 @@ Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& inst
 
 void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& final) {
   ComboHandler ch_;
+  SymTypecheckVisitor tc;
 
   auto opcode = instr.get_opcode();
   stringstream ss;
@@ -198,9 +199,9 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   auto opcode_str = ss.str();
   auto candidate_file = strata_path_ + "/" + opcode_str + ".s";
 
-  // Sanity check for support
   error_ = "";
 
+  // Sanity check for support
   if (!get_support(instr)) {
     // assume it's from the base set
     ch_.build_circuit(instr, final);
@@ -217,6 +218,24 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 #endif
     return;
   }
+
+  auto typecheck = [&tc, this](auto circuit, size_t exptected_size) {
+    auto actual = tc(circuit);
+    if (tc.has_error()) {
+      error_ = "Encountered error during type-checking of: " + tc.error();
+      return false;
+    }
+    if (actual != exptected_size) {
+      stringstream ss;
+      ss << "Expected " << exptected_size << " bits, but got " << actual << " instead for ";
+      SymPrettyVisitor pretty(ss);
+      pretty(SymSimplify::simplify(circuit));
+      ss << ".";
+      error_ = ss.str();
+      return false;
+    }
+    return true;
+  };
 
   // keep a copy of the start state
   SymState start = final;
@@ -286,6 +305,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   for (auto iter = liveouts.gp_begin(); iter != liveouts.gp_end(); ++iter) {
     // look up live out in tmp state (after translating operators as necessary)
     auto val = tmp[translate_gp_register(*iter, instr, specgen_instr)];
+    if (!typecheck(val, (*iter).size())) return;
 #ifdef DEBUG_STRATA_HANDLER
     cout << "Requiring value for    -> " << (*iter) << endl;
     cout << "  looking up value for => ";
@@ -293,6 +313,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 #endif
     // rename variables in the tmp state to the values in start
     auto val_renamed = SymSimplify::simplify(translate_circuit(val));
+    if (!typecheck(val_renamed, (*iter).size())) return;
 #ifdef DEBUG_STRATA_HANDLER
     cout << "Value is               -> " << SymSimplify::simplify(val_renamed) << endl;
     cout << "  after renaming from  => ";
@@ -305,16 +326,20 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   for (auto iter = liveouts.sse_begin(); iter != liveouts.sse_end(); ++iter) {
     // look up live out in tmp state (after translating operators as necessary)
     auto val = tmp[translate_sse_register(*iter, instr, specgen_instr)];
+    if (!typecheck(val, (*iter).size())) return;
     // rename variables in the tmp state to the values in start
     auto val_renamed = SymSimplify::simplify(translate_circuit(val));
+    if (!typecheck(val_renamed, (*iter).size())) return;
     // update the start state with the circuits from tmp
     final.set(*iter, val_renamed, false, true);
   }
   for (auto iter = liveouts.flags_begin(); iter != liveouts.flags_end(); ++iter) {
     // look up live out in tmp state (no translation necessary for flags)
     auto val = tmp[*iter];
+    if (!typecheck(val, 1)) return;
     // rename variables in the tmp state to the values in start
     auto val_renamed = SymSimplify::simplify(translate_circuit(val));
+    if (!typecheck(val_renamed, 1)) return;
     // update the start state with the circuits from tmp
     final.set(*iter, val_renamed);
   }
