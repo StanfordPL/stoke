@@ -93,12 +93,12 @@ Operand translate_max_register(const Operand& operand_from, const Instruction& i
       }
     } else
 
-    // same 256 bit register?
-    if (operand_from.type() == Type::YMM) {
-      if (operand_from == sse_to_ymm(instr_from.get_operand<Sse>(i))) {
-        return sse_to_ymm(instr_to.get_operand<Sse>(i));
+      // same 256 bit register?
+      if (operand_from.type() == Type::YMM) {
+        if (operand_from == sse_to_ymm(instr_from.get_operand<Sse>(i))) {
+          return sse_to_ymm(instr_to.get_operand<Sse>(i));
+        }
       }
-    }
   }
   // no translation necessary
   return operand_from;
