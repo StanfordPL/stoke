@@ -43,6 +43,9 @@ void ComboHandler::build_circuit(const Instruction& instr, SymState& ss) {
   } else {
     assert(h != 0);
     h->build_circuit(instr, ss);
+    if (h->has_error()) {
+      error_ = h->error();
+    }
   }
 
 }
