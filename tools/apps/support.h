@@ -713,6 +713,11 @@ vector<Opcode> instr_cat_system_ = {
 
   , UD2 // UD2
 
+  , VERR_M16 // VERR m16
+  , VERR_R16 // VERR r16
+  , VERW_M16 // VERW m16
+  , VERW_R16 // VERW r16
+
   , WAIT // WAIT
   , WRFSBASE_R32 // WRFSBASE r32
   , WRFSBASE_R64 // WRFSBASE r64
