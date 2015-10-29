@@ -68,12 +68,33 @@ Ymm sse_to_ymm(const Sse& reg) {
  * of one of these instructions, translate it into a register in the context
  * of instr_to (translates operands, but leaves other registers).
  */
-template <typename T>
-const T translate_register(const T& operand_from, const Instruction& instr_from, const Instruction& instr_to) {
+const R translate_gp_register(const R& operand_from, const Instruction& instr_from, const Instruction& instr_to) {
   for (size_t i = 0; i < instr_from.arity(); i++) {
     // direct match?
     if (operand_from == instr_from.get_operand<Operand>(i)) {
-      return instr_to.get_operand<T>(i);
+      return instr_to.get_operand<R>(i);
+    }
+    // same full register?
+    if (instr_from.get_operand<Operand>(i).is_gp_register()) {
+      if (r_to_r64(operand_from) == r_to_r64(instr_from.get_operand<R>(i))) {
+        return r_to_r64(instr_to.get_operand<R>(i));
+      }
+    }
+  }
+  // no translation necessary
+  return operand_from;
+};
+const Sse translate_sse_register(const Sse& operand_from, const Instruction& instr_from, const Instruction& instr_to) {
+  for (size_t i = 0; i < instr_from.arity(); i++) {
+    // direct match?
+    if (operand_from == instr_from.get_operand<Operand>(i)) {
+      return instr_to.get_operand<Sse>(i);
+    }
+    // same full register?
+    if (instr_from.get_operand<Operand>(i).is_sse_register()) {
+      if (sse_to_ymm(operand_from) == sse_to_ymm(instr_from.get_operand<Sse>(i))) {
+        return sse_to_ymm(instr_to.get_operand<Sse>(i));
+      }
     }
   }
   // no translation necessary
@@ -88,6 +109,7 @@ Operand translate_max_register(const Operand& operand_from, const Instruction& i
   for (size_t i = 0; i < instr_from.arity(); i++) {
     // same 64 bit register?
     if (operand_from.type() == Type::R_64 || operand_from.type() == Type::RAX) {
+      cout << "?" << operand_from << "=" << r_to_r64(instr_from.get_operand<R>(i)) << endl;
       if (operand_from == r_to_r64(instr_from.get_operand<R>(i))) {
         return r_to_r64(instr_to.get_operand<R>(i));
       }
@@ -274,6 +296,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     Ymm ymm = Constants::ymm0();
     if (stringstream(real_name) >> gp) {
       auto translated_reg = translate_max_register(gp, specgen_instr, instr);
+      cout << "max-translate " << gp << " to " << translated_reg << endl;
       return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
     } else if (stringstream(real_name) >> ymm) {
       auto translated_reg = translate_max_register(ymm, specgen_instr, instr);
@@ -299,7 +322,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   // loop over all live outs and update the final state
   auto liveouts = specgen_instr.maybe_write_set();
   for (auto iter = liveouts.gp_begin(); iter != liveouts.gp_end(); ++iter) {
-    auto iter_translated = translate_register<R>(*iter, specgen_instr, instr);
+    auto iter_translated = translate_gp_register(*iter, specgen_instr, instr);
     // look up live out in tmp state
     auto val = tmp[*iter];
 #ifdef DEBUG_STRATA_HANDLER
@@ -319,7 +342,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     final.set(iter_translated, val_renamed, false, true);
   }
   for (auto iter = liveouts.sse_begin(); iter != liveouts.sse_end(); ++iter) {
-    auto iter_translated = translate_register<Sse>(*iter, specgen_instr, instr);
+    auto iter_translated = translate_sse_register(*iter, specgen_instr, instr);
     // look up live out in tmp state (after translating operators as necessary)
     auto val = tmp[*iter];
     if (!typecheck(val, (*iter).size())) return;
