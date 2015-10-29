@@ -1,5 +1,5 @@
 
-ARGS=--solver z3 --no_try_sign_extend
+ARGS=--solver z3 --no_ddec_bv
 DEF_IN="{ %r15 %rdi %rsi }"
 LIVE_OUT="{ %rax }" 
 

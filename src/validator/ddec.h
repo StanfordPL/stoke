@@ -29,6 +29,7 @@ public:
   DdecValidator(SMTSolver& solver) : Validator(solver), bv_(solver) {
     cutpoints_ = NULL;
     try_sign_extend_ = true;
+    set_no_bv(false);
   }
 
   ~DdecValidator() {
@@ -36,11 +37,18 @@ public:
       delete cutpoints_;
   }
 
+  /** Turn on/off invariants that sign-extend the 32-bit registers.
+      Good for some benchmarks, bad for others.  --no_try_sign_extend */
   DdecValidator& set_try_sign_extend(bool b) {
     try_sign_extend_ = b;
     return *this;
   }
-
+  /** Turn off the bounded validator.  This is a terribly silly thing to do, except
+    to demonstrate that most benchmarks don't work without it. --no_ddec_bv */
+  DdecValidator& set_no_bv(bool b) {
+    no_bv_ = b;
+    return *this;
+  }
 
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
@@ -74,6 +82,9 @@ private:
 
   /** Try to sign extend values? */
   bool try_sign_extend_;
+
+  /** Skip the bounded validator? */
+  bool no_bv_;
 
 };
 
