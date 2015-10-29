@@ -3,7 +3,8 @@
 require 'erb'
 require 'fileutils'
 
-tcs=ARGV[0].to_i
+dir=ARGV[0]
+tcs=ARGV[1].to_i
 print "TCs=#{tcs}"
 
 while true do
@@ -22,8 +23,9 @@ while true do
   end
 
   @training_set="\"{ #{combination.join(" ")} }\""
+  @size = tcs
 
-  dir_name="ts_runs/#{tcs}_#{rand(100000000)}"
+  dir_name="#{dir}/#{tcs}_#{rand(100000000)}"
 
 
   Dir.mkdir(dir_name);
@@ -36,15 +38,17 @@ while true do
     f.write(config)
   end
 
+  FileUtils.cp("Makefile", dir_name)
   FileUtils.cp("target.s", dir_name)
   FileUtils.cp("testcases", dir_name)
+  FileUtils.cp("binary", dir_name)
 
   Dir.chdir(dir_name);
 
   system "stoke_search --config search.conf >trace 2>err_trace"
+  system "make benchmark > benchmark_data"
 
   Dir.chdir("../..");
-
 
 
 end
