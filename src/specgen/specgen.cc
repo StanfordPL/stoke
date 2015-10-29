@@ -21,6 +21,10 @@
 
 #include "src/specgen/specgen.h"
 
+using namespace std;
+using namespace stoke;
+using namespace x64asm;
+using namespace cpputil;
 
 namespace stoke {
 
@@ -164,24 +168,109 @@ x64asm::Operand get_next_operand(x64asm::Type t, uint8_t imm8_val) {
   std::vector<x64asm::Operand> candidates = operands_[t];
   assert((int)operands_[t].size() > operands_idx_[t]);
   operands_idx_[t] += 1;
+  // increment other counters, too, so that we don't reuse the same register id multiple times
+  if (t == x64asm::Type::R_64) {
+    if (operands_idx_.find(x64asm::Type::R_8) == operands_idx_.end())
+      operands_idx_[x64asm::Type::R_8] = 0;
+    operands_idx_[x64asm::Type::R_8] += 1;
+    if (operands_idx_.find(x64asm::Type::R_16) == operands_idx_.end())
+      operands_idx_[x64asm::Type::R_16] = 0;
+    operands_idx_[x64asm::Type::R_16] += 1;
+    if (operands_idx_.find(x64asm::Type::R_32) == operands_idx_.end())
+      operands_idx_[x64asm::Type::R_32] = 0;
+    operands_idx_[x64asm::Type::R_32] += 1;
+  }
+  if (t == x64asm::Type::R_32) {
+    if (operands_idx_.find(x64asm::Type::R_8) == operands_idx_.end())
+      operands_idx_[x64asm::Type::R_8] = 0;
+    operands_idx_[x64asm::Type::R_8] += 1;
+    if (operands_idx_.find(x64asm::Type::R_16) == operands_idx_.end())
+      operands_idx_[x64asm::Type::R_16] = 0;
+    operands_idx_[x64asm::Type::R_16] += 1;
+  }
+  if (t == x64asm::Type::R_16) {
+    if (operands_idx_.find(x64asm::Type::R_8) == operands_idx_.end())
+      operands_idx_[x64asm::Type::R_8] = 0;
+    operands_idx_[x64asm::Type::R_8] += 1;
+  }
+  if (t == x64asm::Type::YMM) {
+    if (operands_idx_.find(x64asm::Type::XMM) == operands_idx_.end())
+      operands_idx_[x64asm::Type::XMM] = 0;
+    operands_idx_[x64asm::Type::XMM] += 1;
+  }
   return operands_[t][operands_idx_[t] - 1];
 }
 
 x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
   operands_idx_ = {};
   x64asm::Instruction instr(opc);
-  for (size_t i = 0; i < instr.arity(); i++) {
-    auto t = instr.type(i);
-    if (is_supported_type(t) || is_supported_type_reason(t) == SupportedReason::MM || is_supported_type_reason(t) == SupportedReason::IMMEDIATE) {
-      instr.set_operand(i, get_next_operand(t, imm8_val));
-    } else {
-      std::cout << "unsupported type: " << (int) t << std::endl;
-      std::cout << (int) opc << std::endl;
-      std::cout << opc << std::endl;
-      std::cout << instr << std::endl;
-      exit(1);
+
+  // special case for shld/shrd (versions with cl register)
+  if (opc == SHLD_R16_R16_CL) {
+    instr.set_operand(0, Constants::bx());
+    instr.set_operand(1, Constants::dx());
+    instr.set_operand(2, Constants::cl());
+  } else if (opc == SHLD_R32_R32_CL) {
+    instr.set_operand(0, Constants::ebx());
+    instr.set_operand(1, Constants::edx());
+    instr.set_operand(2, Constants::cl());
+  } else if (opc == SHLD_R64_R64_CL) {
+    instr.set_operand(0, Constants::rbx());
+    instr.set_operand(1, Constants::rdx());
+    instr.set_operand(2, Constants::cl());
+  } else if (opc == SHRD_R16_R16_CL) {
+    instr.set_operand(0, Constants::bx());
+    instr.set_operand(1, Constants::dx());
+    instr.set_operand(2, Constants::cl());
+  } else if (opc == SHRD_R32_R32_CL) {
+    instr.set_operand(0, Constants::ebx());
+    instr.set_operand(1, Constants::edx());
+    instr.set_operand(2, Constants::cl());
+  } else if (opc == SHRD_R64_R64_CL) {
+    instr.set_operand(0, Constants::rbx());
+    instr.set_operand(1, Constants::rdx());
+    instr.set_operand(2, Constants::cl());
+  }
+
+  // special case for mulb/divb/idivb/imulb
+  else if (opc == IMUL_RH) {
+    instr.set_operand(0, Constants::bh());
+  } else if (opc == MUL_RH) {
+    instr.set_operand(0, Constants::bh());
+  } else if (opc == IDIV_RH) {
+    instr.set_operand(0, Constants::bh());
+  } else if (opc == DIV_RH) {
+    instr.set_operand(0, Constants::bh());
+  }
+
+  // special case for cmpxchg with an RH register
+  else if (opc == CMPXCHG_R8_RH) {
+    instr.set_operand(0, Constants::cl());
+    instr.set_operand(1, Constants::bh());
+  } else if (opc == CMPXCHG_RH_RH) {
+    instr.set_operand(0, Constants::bh());
+    instr.set_operand(1, Constants::ch());
+  } else if (opc == CMPXCHG_RH_R8) {
+    instr.set_operand(0, Constants::bh());
+    instr.set_operand(1, Constants::cl());
+  }
+
+  // normal case
+  else {
+    for (size_t i = 0; i < instr.arity(); i++) {
+      auto t = instr.type(i);
+      if (is_supported_type(t) || is_supported_type_reason(t) == SupportedReason::MM || is_supported_type_reason(t) == SupportedReason::IMMEDIATE) {
+        instr.set_operand(i, get_next_operand(t, imm8_val));
+      } else {
+        std::cout << "unsupported type: " << (int) t << std::endl;
+        std::cout << (int) opc << std::endl;
+        std::cout << opc << std::endl;
+        std::cout << instr << std::endl;
+        exit(1);
+      }
     }
   }
+
   if (!instr.check()) {
     std::cout << "instruction not valid:" << instr << std::endl;
     exit(1);
