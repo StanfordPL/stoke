@@ -109,7 +109,6 @@ Operand translate_max_register(const Operand& operand_from, const Instruction& i
   for (size_t i = 0; i < instr_from.arity(); i++) {
     // same 64 bit register?
     if (operand_from.type() == Type::R_64 || operand_from.type() == Type::RAX) {
-      cout << "?" << operand_from << "=" << r_to_r64(instr_from.get_operand<R>(i)) << endl;
       if (operand_from == r_to_r64(instr_from.get_operand<R>(i))) {
         return r_to_r64(instr_to.get_operand<R>(i));
       }
@@ -296,7 +295,6 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     Ymm ymm = Constants::ymm0();
     if (stringstream(real_name) >> gp) {
       auto translated_reg = translate_max_register(gp, specgen_instr, instr);
-      cout << "max-translate " << gp << " to " << translated_reg << endl;
       return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
     } else if (stringstream(real_name) >> ymm) {
       auto translated_reg = translate_max_register(ymm, specgen_instr, instr);
