@@ -79,6 +79,8 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
   bv.set_nacl(true);
   bv.set_heap_out(true);
+  bv.set_sandbox(new Sandbox(*sandbox_));
+  bv.am.set_sandbox(new Sandbox(*sandbox_));
 
   auto target_cuts = cutpoints_->target_cutpoint_locations();
   auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
@@ -244,6 +246,9 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   auto target = inline_functions(init_target);
   auto rewrite = inline_functions(init_rewrite);
 
+  cout << "INLINED TARGET: " << endl << target.get_code() << endl;
+  cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;
+
   try {
 
     sanity_checks(target, rewrite);
@@ -258,7 +263,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   bv_.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
   bv_.set_nacl(true);
   bv_.set_heap_out(true);
-
+  bv_.set_sandbox(new Sandbox(*sandbox_));
+  bv_.am.set_sandbox(new Sandbox(*sandbox_));
   make_tcs(target, rewrite);
 
   auto invariants = find_invariants(target, rewrite);
@@ -834,10 +840,10 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
         target_map[p] = mpz_get_si(mp_result[j*dim + i]);
         //cout << "  " << target_map[column.first] << endl;
       }
-      //gmp_fprintf(stdout, "  %Zd\n", mp_result[j*dim + i]);
+      gmp_fprintf(stdout, "  %Zd\n", mp_result[j*dim + i]);
     }
     //cout << "Constant" << endl;
-    //gmp_fprintf(stdout , "  %Zd\n", mp_result[(num_columns-1)*dim + i]);
+    gmp_fprintf(stdout , "  %Zd\n", mp_result[(num_columns-1)*dim + i]);
     //cout << endl;
 
     if(!ok)

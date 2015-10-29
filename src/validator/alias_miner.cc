@@ -202,6 +202,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
 
   // Run sandbox on target to see if we did well.
+  /*
   DEBUG_BUILD_TC(cout << "Running sandbox with tc: " << endl << ceg << endl;)
   sandbox_->clear_callbacks();
   sandbox_->clear_inputs();
@@ -217,6 +218,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   sandbox_->set_entrypoint(rewrite.get_code()[0].get_operand<x64asm::Label>(0));
   sandbox_->run();
   auto rewrite_output = *(sandbox_->get_output(0));
+  */
 
   /*
   if (last_err != ErrorCode::NORMAL) {
