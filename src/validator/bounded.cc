@@ -1165,10 +1165,12 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       auto ceg_tf = Validator::state_from_model(solver_, "_1_FINAL");
       auto ceg_rf = Validator::state_from_model(solver_, "_2_FINAL");
 
+      cout << "Calling am" << endl;
       bool ok = am.build_testcase_memory(ceg, solver_,
                                          static_cast<CellMemory*>(state_t.memory),
                                          static_cast<CellMemory*>(state_r.memory),
                                          target, rewrite);
+      cout << "Calling am2" << endl;
       am.build_testcase_memory(ceg2, solver_,
                                static_cast<CellMemory*>(state_t.memory),
                                static_cast<CellMemory*>(state_r.memory),
@@ -1182,6 +1184,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
                                static_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
 
+      cout << "done calling am" << endl;
       if (ok)
         counterexamples_.push_back(ceg);
 
