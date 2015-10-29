@@ -1,7 +1,7 @@
 
 DEF_IN="{ %r15 %rdi %rsi }"
 LIVE_OUT="{ %rax }"
-ARGS=--def_in $(DEF_IN) --live_out $(LIVE_OUT) --solver z3
+ARGS=--def_in $(DEF_IN) --live_out $(LIVE_OUT) --solver z3 --no_ddec_bv
 
 opt:
 	time stoke debug verify --target target.s --rewrite optimize.s --testcases testcases --strategy ddec $(ARGS)

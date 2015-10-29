@@ -75,6 +75,11 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
 
   vector<CpuState> results;
 
+  if(no_bv_) {
+    // Don't do this if the user tells us not to
+    return results;
+  }
+
   BoundedValidator bv(solver_);
   bv.set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
   bv.set_nacl(true);
@@ -223,6 +228,10 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
 
 
 void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
+
+  if(no_bv_) //if not using the bounded validator for testcases, skip this entirely.
+    return;
+
   auto target_paths = CfgPaths::enumerate_paths(target, 1);
   auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1);
 
@@ -840,10 +849,10 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
         target_map[p] = mpz_get_si(mp_result[j*dim + i]);
         //cout << "  " << target_map[column.first] << endl;
       }
-      gmp_fprintf(stdout, "  %Zd\n", mp_result[j*dim + i]);
+      //gmp_fprintf(stdout, "  %Zd\n", mp_result[j*dim + i]);
     }
     //cout << "Constant" << endl;
-    gmp_fprintf(stdout , "  %Zd\n", mp_result[(num_columns-1)*dim + i]);
+    //gmp_fprintf(stdout , "  %Zd\n", mp_result[(num_columns-1)*dim + i]);
     //cout << endl;
 
     if(!ok)
