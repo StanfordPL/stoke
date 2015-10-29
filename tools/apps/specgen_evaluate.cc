@@ -17,6 +17,7 @@
 #include <iostream>
 #include <random>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 #include <cassert>
@@ -70,97 +71,53 @@ auto& opcode_arg =
   .required();
 
 
-class NodeCounter : public SymVisitor<size_t, size_t> {
-public:
-  size_t visit_binop(const SymBitVectorBinop * const bv) {
-    auto lhs = (*this)(bv->a_);
-    auto rhs = (*this)(bv->b_);
-    return lhs + rhs + 1;
-  }
-  size_t visit_binop(const SymBoolBinop * const bv) {
-    auto lhs = (*this)(bv->a_);
-    auto rhs = (*this)(bv->b_);
-    return lhs + rhs + 1;
-  }
-  size_t visit_unop(const SymBitVectorUnop * const bv) {
-    auto lhs = (*this)(bv->bv_);
-    return lhs + 1;
-  }
-  size_t visit_compare(const SymBoolCompare * const bv) {
-    auto lhs = (*this)(bv->a_);
-    auto rhs = (*this)(bv->b_);
-    return lhs + rhs + 1;
-  }
-  size_t visit(const SymBitVectorConstant * const bv) {
-    return 1;
-  }
-  size_t visit(const SymBitVectorExtract * const bv) {
-    auto lhs = (*this)(bv->bv_);
-    return lhs + 1;
-  }
-  size_t visit(const SymBitVectorFunction * const bv) {
-    size_t res = 0;
-    for (size_t i = 0; i < bv->args_.size(); ++i) {
-      auto arg = (*this)(bv->args_[i]);
-      res += arg;
-    }
-    return res + 1;
-  }
-  size_t visit(const SymBitVectorIte * const bv) {
-    auto c = (*this)(bv->cond_);
-    auto lhs = (*this)(bv->a_);
-    auto rhs = (*this)(bv->b_);
-    return c + lhs + rhs + 1;
-  }
-  size_t visit(const SymBitVectorSignExtend * const bv) {
-    auto lhs = (*this)(bv->bv_);
-    return lhs + 1;
-  }
-  size_t visit(const SymBitVectorVar * const bv) {
-    return 1;
-  }
-  size_t visit(const SymBoolFalse * const b) {
-    return 1;
-  }
-  size_t visit(const SymBoolNot * const b) {
-    auto lhs = (*this)(b->b_);
-    return lhs + 1;
-  }
-  size_t visit(const SymBoolTrue * const b) {
-    return 1;
-  }
-  size_t visit(const SymBoolVar * const b) {
-    return 1;
-  }
-};
-
 class Counter : public SymVisitor<size_t, size_t> {
 public:
+  Counter(size_t c) : constant_(c) {}
+  Counter() : constant_(0) {}
+  virtual size_t operator()(const SymBitVector& bv) {
+    return SymVisitor<size_t, size_t>::operator()(bv.ptr);
+  }
+  virtual size_t operator()(const SymBool& bv) {
+    return SymVisitor<size_t, size_t>::operator()(bv.ptr);
+  }
+  virtual size_t operator()(const SymBitVectorAbstract * const bv) {
+    // return 0 if we have already seen this one
+    if (seen_bits_.find((SymBitVectorAbstract*)bv) != seen_bits_.end()) return 0;
+    seen_bits_.insert((SymBitVectorAbstract*)bv);
+    return SymVisitor<size_t, size_t>::operator()(bv);
+  }
+  virtual size_t operator()(const SymBoolAbstract * const bv) {
+    // return 0 if we have already seen this one
+    if (seen_bool_.find((SymBoolAbstract*)bv) != seen_bool_.end()) return 0;
+    seen_bool_.insert((SymBoolAbstract*)bv);
+    return SymVisitor<size_t, size_t>::operator()(bv);
+  }
   size_t visit_binop(const SymBitVectorBinop * const bv) {
     auto lhs = (*this)(bv->a_);
     auto rhs = (*this)(bv->b_);
-    return lhs + rhs;
+    return lhs + rhs + constant_;
   }
   size_t visit_binop(const SymBoolBinop * const bv) {
     auto lhs = (*this)(bv->a_);
     auto rhs = (*this)(bv->b_);
-    return lhs + rhs;
+    return lhs + rhs + constant_;
   }
   size_t visit_unop(const SymBitVectorUnop * const bv) {
     auto lhs = (*this)(bv->bv_);
-    return lhs;
+    return lhs + constant_;
   }
   size_t visit_compare(const SymBoolCompare * const bv) {
     auto lhs = (*this)(bv->a_);
     auto rhs = (*this)(bv->b_);
-    return lhs + rhs;
+    return lhs + rhs + constant_;
   }
   size_t visit(const SymBitVectorConstant * const bv) {
-    return 0;
+    return constant_;
   }
   size_t visit(const SymBitVectorExtract * const bv) {
     auto lhs = (*this)(bv->bv_);
-    return lhs;
+    return lhs + constant_;
   }
   size_t visit(const SymBitVectorFunction * const bv) {
     size_t res = 0;
@@ -168,34 +125,44 @@ public:
       auto arg = (*this)(bv->args_[i]);
       res += arg;
     }
-    return res;
+    return res + constant_;
   }
   size_t visit(const SymBitVectorIte * const bv) {
     auto c = (*this)(bv->cond_);
     auto lhs = (*this)(bv->a_);
     auto rhs = (*this)(bv->b_);
-    return c + lhs + rhs;
+    return c + lhs + rhs + constant_;
   }
   size_t visit(const SymBitVectorSignExtend * const bv) {
     auto lhs = (*this)(bv->bv_);
-    return lhs;
+    return lhs + constant_;
   }
   size_t visit(const SymBitVectorVar * const bv) {
-    return 0;
+    return constant_;
   }
   size_t visit(const SymBoolFalse * const b) {
-    return 0;
+    return constant_;
   }
   size_t visit(const SymBoolNot * const b) {
     auto lhs = (*this)(b->b_);
     return lhs;
   }
   size_t visit(const SymBoolTrue * const b) {
-    return 0;
+    return constant_;
   }
   size_t visit(const SymBoolVar * const b) {
-    return 0;
+    return constant_;
   }
+
+private:
+  size_t constant_;
+  std::set<SymBoolAbstract*> seen_bool_;
+  std::set<SymBitVectorAbstract*> seen_bits_;
+};
+
+class NodeCounter : public Counter {
+public:
+  NodeCounter() : Counter(1) {}
 };
 
 class UninterpretedFunctionCounter : public Counter {
