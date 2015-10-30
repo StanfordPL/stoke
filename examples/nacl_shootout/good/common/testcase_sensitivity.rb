@@ -7,7 +7,7 @@ dir=ARGV[0]
 tcs=ARGV[1].to_i
 print "TCs=#{tcs}"
 
-while true do
+(1..10).each do
 
   available = []
   combination = []
@@ -45,10 +45,18 @@ while true do
 
   Dir.chdir(dir_name);
 
+  t1 = Time.new
+
   system "stoke_search --config search.conf >trace 2>err_trace"
   system "make benchmark > benchmark_data"
 
-  Dir.chdir("../..");
+  t2 = Time.new
 
+  if(t2.to_i - t1.to_i < 5)
+    print "Time for search too small ; aborting."
+    exit 1
+  end
+
+  Dir.chdir("../../..");
 
 end
