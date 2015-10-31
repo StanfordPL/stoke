@@ -757,9 +757,9 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
       R reg = *r;
 
       if(reg.size() == 64) {
-        if(!r64_exclude.contains(*static_cast<R64*>(&reg))) {
+        //if(!r64_exclude.contains(*static_cast<R64*>(&reg))) {
           columns.push_back(c);
-        }
+        //}
       }
 
       c.reg = r32s[reg];
