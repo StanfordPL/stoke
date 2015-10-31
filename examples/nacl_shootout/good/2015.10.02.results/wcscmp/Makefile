@@ -1,5 +1,5 @@
 
-ARGS=--solver z3 --no_ddec_bv
+ARGS=--solver z3 --no_ddec_bv --test_set "{ 0 .. 50 }"
 DEF_IN="{ %r15 %rdi %rsi }"
 LIVE_OUT="{ %rax }" 
 
