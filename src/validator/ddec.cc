@@ -109,11 +109,14 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
 
     for (auto p : target_paths) {
       for (auto q : rewrite_paths) {
-        bool success = bv.verify_pair(target, rewrite, p, q, *invariants[0], *invariants[i]);
-        if (!success && bv.counter_examples_available()) {
-          auto cegs = bv.get_counter_examples();
-          results.insert(results.begin(), cegs.begin(), cegs.end());
-          return results;
+        for(size_t j = 0; j < invariants[i]->size(); ++j) {
+          cout << "  on paths " << p << " ; " << q << " : " << *(*invariants[i])[j] << endl;
+          bool success = bv.verify_pair(target, rewrite, p, q, *invariants[0], *(*invariants[i])[j]);
+          if (!success && bv.counter_examples_available()) {
+            auto cegs = bv.get_counter_examples();
+            results.insert(results.begin(), cegs.begin(), cegs.end());
+            return results;
+          }
         }
       }
     }
@@ -687,29 +690,37 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
   // TopZero and NonZero invariants
   for (size_t k = 0; k < 2; ++k) {
     auto& states = k ? rewrite_states : target_states;
+    auto& regs = k ? rewrite_regs : target_regs;
 
-    for (size_t i = 0; i < r64s.size(); ++i) {
+    for (auto it = regs.gp_begin(); it != regs.gp_end(); ++it) {
       bool all_topzero = true;
       bool all_nonzero = true;
       bool found_one = false;
 
+      if((*it).size() == 64) {
+        for(auto state : states) {
+          if (state.gp[*it].get_fixed_double(1) != 0) {
+            all_topzero = false;
+          } 
+        }
+      } else {
+        all_topzero = false;
+      }
+
       for (auto state : states) {
-        if (state.gp[i].get_fixed_double(1) != 0) {
-          all_topzero = false;
-        } 
-        if (state.gp[i].get_fixed_quad(0) == 0) {
+        if (state.gp[*it].get_fixed_quad(0) == 0) {
           all_nonzero = false;
         }
-        if (state.gp[i].get_fixed_quad(0) == 1) {
+        if (state.gp[*it].get_fixed_quad(0) == 1) {
           found_one = true;
         }
       }
 
       if (all_topzero) {
-        auto tzi = new TopZeroInvariant(r64s[i], k);
+        auto tzi = new TopZeroInvariant(r64s[*it], k);
         if (tzi->check(target_states, rewrite_states)) {
           conj->add_invariant(tzi);
-          r64_exclude = r64_exclude + r64s[i];
+          r64_exclude = r64_exclude + r64s[*it];
         } else {
           cout << "GOT BAD INVARIANT " << *tzi << endl;
           delete tzi;
@@ -717,7 +728,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
       }
 
       if(all_nonzero && found_one) {
-        auto nz = new NonzeroInvariant(r64s[i], k);
+        auto nz = new NonzeroInvariant(r64s[*it], k);
         if (nz->check(target_states, rewrite_states)) {
           conj->add_invariant(nz);
         } else {
