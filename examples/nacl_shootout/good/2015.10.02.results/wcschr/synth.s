@@ -9,14 +9,14 @@
 # Text                     #  Line  RIP   Bytes  Opcode             
 .wcschr:                   #        0     0      OPC=<label>        
 .L_1412c0:                 #        0     0      OPC=<label>        
-  leal (%rdi), %r8d        #  1     0     3      OPC=leal_r32_m64   
+  leal (%rdi), %r8d        #  1     0     3      OPC=leal_r32_m64   //1
   movl (%r15,%r8,1), %eax  #  2     0x3   4      OPC=movl_r32_m32   
   cmpl %esi, %eax          #  3     0x7   2      OPC=cmpl_r32_r32   
   je .L_18                 #  4     0x9   2      OPC=je_label       
-  addq $0x4, %rdi          #  5     0xb   4      OPC=addq_r64_imm8  
+  addq $0x4, %rdi          #  5     0xb   4      OPC=addq_r64_imm8  //2
   testl %eax, %eax         #  6     0xf   2      OPC=testl_r32_r32  
   jne .L_1412c0            #  7     0x11  2      OPC=jne_label      
-  nop                      #  8     0x13  1      OPC=nop            
+  nop                      #  8     0x13  1      OPC=nop            //3
   nop                      #  9     0x14  1      OPC=nop            
   nop                      #  10    0x15  1      OPC=nop            
   nop                      #  11    0x16  1      OPC=nop            
@@ -30,7 +30,7 @@
   nop                      #  19    0x1e  1      OPC=nop            
   nop                      #  20    0x1f  1      OPC=nop            
   retq
-  nop                      #  25    0x2c  1      OPC=nop            
+  nop                      #  25    0x2c  1      OPC=nop            //4
   nop                      #  26    0x2d  1      OPC=nop            
   nop                      #  27    0x2e  1      OPC=nop            
   nop                      #  28    0x2f  1      OPC=nop            
@@ -50,7 +50,7 @@
   nop                      #  42    0x3d  1      OPC=nop            
   nop                      #  43    0x3e  1      OPC=nop            
   nop                      #  44    0x3f  1      OPC=nop            
-.L_18:                     #        0x40  0      OPC=<label>        
+.L_18:                     #        0x40  0      OPC=<label>        //5
   nop                      #  45    0x40  1      OPC=nop            
   nop                      #  46    0x41  1      OPC=nop            
   nop                      #  47    0x42  1      OPC=nop            

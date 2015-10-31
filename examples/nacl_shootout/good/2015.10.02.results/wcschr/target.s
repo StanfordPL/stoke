@@ -8,9 +8,9 @@
 
 # Text                      #  Line  RIP       Bytes  Opcode              
 .wcschr:                    #        0x141280  0      OPC=<label>         
-  movl %edi, %eax           #  1     0x141280  2      OPC=movl_r32_r32    
+  movl %edi, %eax           #  1     0x141280  2      OPC=movl_r32_r32    //1
   jmpq .L_1412c0            #  2     0x141282  2      OPC=jmpq_label      
-  nop                       #  3     0x141284  1      OPC=nop             
+  nop                       #  3     0x141284  1      OPC=nop             //2
   nop                       #  4     0x141285  1      OPC=nop             
   nop                       #  5     0x141286  1      OPC=nop             
   nop                       #  6     0x141287  1      OPC=nop             
@@ -39,7 +39,7 @@
   nop                       #  29    0x14129e  1      OPC=nop             
   nop                       #  30    0x14129f  1      OPC=nop             
 .L_1412a0:                  #        0x1412a0  0      OPC=<label>         
-  addl $0x4, %eax           #  31    0x1412a0  3      OPC=addl_r32_imm8   
+  addl $0x4, %eax           #  31    0x1412a0  3      OPC=addl_r32_imm8   //3
   nop                       #  32    0x1412a3  1      OPC=nop             
   nop                       #  33    0x1412a4  1      OPC=nop             
   nop                       #  34    0x1412a5  1      OPC=nop             
@@ -70,11 +70,11 @@
   nop                       #  59    0x1412be  1      OPC=nop             
   nop                       #  60    0x1412bf  1      OPC=nop             
 .L_1412c0:                  #        0x1412c0  0      OPC=<label>         
-  movl %eax, %eax           #  61    0x1412c0  2      OPC=movl_r32_r32    
+  movl %eax, %eax           #  61    0x1412c0  2      OPC=movl_r32_r32    //4
   movl (%r15,%rax,1), %edx  #  62    0x1412c2  4      OPC=movl_r32_m32    
   cmpl %esi, %edx           #  63    0x1412c6  2      OPC=cmpl_r32_r32    
   je .L_1412e0              #  64    0x1412c8  2      OPC=je_label        
-  testl %edx, %edx          #  65    0x1412ca  2      OPC=testl_r32_r32   
+  testl %edx, %edx          #  65    0x1412ca  2      OPC=testl_r32_r32   //5
   jne .L_1412a0             #  66    0x1412cc  2      OPC=jne_label       
   xorl %eax, %eax           #  67    0x1412ce  2      OPC=xorl_r32_r32    
   nop                       #  68    0x1412d0  1      OPC=nop             

@@ -25,6 +25,7 @@
 #include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/top_zero.h"
+#include "src/validator/invariants/true.h"
 
 #include "gmp.h"
 #include "iml.h"
@@ -60,12 +61,21 @@ Instruction get_last_instr(const Cfg& cfg, Cfg::id_type block) {
 /** Returns an invariant representing the fact that the first state transition in the path is taken. */
 Invariant* get_jump_inv(const Cfg& cfg, const CfgPath& p, bool is_rewrite) {
   auto jump_type = BoundedValidator::is_jump(cfg, p, 0);
+
+  if(jump_type == BoundedValidator::JumpType::NONE) {
+    return new TrueInvariant();
+  }
+
   auto start_block = p[0];
   auto start_bs = cfg.num_instrs(start_block);
   assert(start_bs > 0);
   auto jump_instr = cfg.get_code()[cfg.get_index(Cfg::loc_type(start_block, start_bs - 1))];
-  bool is_fallthrough = jump_type == BoundedValidator::JumpType::FALL_THROUGH ||
-                        jump_type == BoundedValidator::JumpType::NONE;
+
+  if(!jump_instr.is_jcc()) {
+    return new TrueInvariant();
+  }
+
+  bool is_fallthrough = jump_type == BoundedValidator::JumpType::FALL_THROUGH;
   auto jump_inv = new FlagInvariant(jump_instr, is_rewrite, is_fallthrough);
   return jump_inv;
 }
