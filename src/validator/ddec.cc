@@ -27,6 +27,8 @@
 #include "src/validator/invariants/top_zero.h"
 #include "src/validator/invariants/true.h"
 
+#include <algorithm>
+
 #include "gmp.h"
 #include "iml.h"
 
@@ -310,7 +312,12 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     bool made_a_change = false;
     for(size_t i = 1; i < invariants.size() - 1; ++i) {
       auto to_remove = failed_invariants[i]; 
+      sort(to_remove.begin(), to_remove.end());
+      size_t last = (size_t)-1;
       for(auto it = to_remove.rbegin(); it != to_remove.rend(); ++it) {
+        if(last == *it)
+          continue;
+        last = *it;
         cout << "Removing " << *(*invariants[i])[*it] << endl;
         invariants[i]->remove(*it);
         made_a_change = true;
