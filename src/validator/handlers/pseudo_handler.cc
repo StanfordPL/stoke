@@ -32,6 +32,7 @@ const vector<string> PseudoHandler::supported_regex_ = {
   "^\\.move_([^_]*)_to_byte_([0-9]+)_of_([^_]*)$",
   "^\\.write_([^_]*)_to_(af|of|sf|zf|cf|pf)$",
   "^\\.move_(128|032)_(128|032)_([^_]*)_([^_]*)_([^_]*)_([^_]*)_([^_]*)$",
+  "^\\.move_(128|64)_(128|64)_([^_]*)_([^_]*)_([^_]*)$",
 };
 
 const map<string, Eflags> eflag_map_ = {
@@ -296,6 +297,28 @@ void PseudoHandler::build_circuit(const Instruction& instr, SymState& ss) {
       assert(r3.size() == 128);
       assert(r4.size() == 128);
       ss.set(r4, ss[r3][from-1][0] || ss[r2][from-1][0] || ss[r1][from-1][0] || ss[r0][from-1][0]);
+      return;
+    }
+  }
+
+  // 2 way split of vector register
+  regex split_move_2x_r(supported_regex_[9]);
+  if (regex_match(lbl, result, split_move_2x_r)) {
+    auto from = stoi(result[1]);
+    auto to = stoi(result[2]);
+    auto r0 = reg_map_.at(result[3]);
+    auto r1 = reg_map_.at(result[4]);
+    auto r2 = reg_map_.at(result[5]);
+    if (from > to) {
+      assert(from == 128);
+      assert(to == 64);
+      ss.set(r2, ss[r1][from-1][to] || ss[r0][1*to-1][0*to]);
+      ss.set(r1, ss[r2][from-1][to] || ss[r0][2*to-1][1*to]);
+      return;
+    } else {
+      assert(from == 64);
+      assert(to == 128);
+      ss.set(r2, ss[r0][from-1][0] || ss[r1][from-1][0]);
       return;
     }
   }
