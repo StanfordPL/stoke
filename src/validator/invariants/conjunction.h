@@ -28,6 +28,11 @@ public:
 
   ConjunctionInvariant(std::vector<Invariant*> invariants) : invariants_(invariants) { }
 
+  ConjunctionInvariant& add_invariants(ConjunctionInvariant* invs) {
+    for(size_t i = 0; i < invs->size(); ++i)
+      add_invariant((*invs)[i]);
+    return *this;
+  }
   ConjunctionInvariant& add_invariant(Invariant* inv) {
     invariants_.push_back(inv);
     return *this;
