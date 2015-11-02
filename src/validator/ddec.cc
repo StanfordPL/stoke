@@ -21,6 +21,7 @@
 #include "src/validator/invariants/equality.h"
 #include "src/validator/invariants/false.h"
 #include "src/validator/invariants/flag.h"
+#include "src/validator/invariants/implication.h"
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/no_signals.h"
@@ -135,6 +136,18 @@ vector<CpuState> DdecValidator::check_cutpoints(const Cfg& target, const Cfg& re
 
   vector<CpuState> results;
   return results;
+}
+
+ConjunctionInvariant* transform_with_assumption(Invariant* assume, ConjunctionInvariant* conjunction) {
+
+  ConjunctionInvariant* output = new ConjunctionInvariant();
+  
+  for(size_t i = 0; i < conjunction->size(); ++i) {
+    output->add_invariant(new ImplicationInvariant(assume, (*conjunction)[i]));
+  }
+
+  delete conjunction;
+  return output;
 }
 
 /** This combines learning and checking invariants with a CEGAR-style search.
@@ -566,17 +579,18 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
         fall_states.push_back(it);
     }
 
+    auto jump_inv = new FlagInvariant(last_target_instr, false, false);
     auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, jump_states, rewrite_states);
-    jump_simple->add_invariant(jump_simple);
+    jump_simple = transform_with_assumption(jump_inv, jump_simple);
 
+    auto fall_inv = new FlagInvariant(last_target_instr, false, true);
     auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, fall_states, rewrite_states);
-    fall_simple->add_invariant(new FlagInvariant(last_target_instr, false, true));
+    fall_simple = transform_with_assumption(fall_inv, fall_simple);
 
-    auto disj = new DisjunctionInvariant();
-    disj->add_invariant(jump_simple);
-    disj->add_invariant(fall_simple);
+    fall_simple->add_invariants(jump_simple);
 
-    return simplify_disjunction(*disj);
+    return fall_simple;
+
   } else if (!target_has_jcc && rewrite_has_jcc) {
 
     vector<CpuState> jump_states;
@@ -588,17 +602,17 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
         fall_states.push_back(it);
     }
 
+    auto jump_inv = new FlagInvariant(last_rewrite_instr, true, false);
     auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, target_states, jump_states);
-    jump_simple->add_invariant(new FlagInvariant(last_rewrite_instr, true, false));
+    jump_simple = transform_with_assumption(jump_inv, jump_simple);
 
+    auto fall_inv = new FlagInvariant(last_rewrite_instr, true, true);
     auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, target_states, fall_states);
-    fall_simple->add_invariant(new FlagInvariant(last_rewrite_instr, true, true));
+    fall_simple = transform_with_assumption(fall_inv, fall_simple);
 
-    auto disj = new DisjunctionInvariant();
-    disj->add_invariant(jump_simple);
-    disj->add_invariant(fall_simple);
+    fall_simple->add_invariants(jump_simple);
 
-    return simplify_disjunction(*disj);
+    return fall_simple;
   } else {
     // Both have jumps!
     vector<CpuState> jump_jump_states_target;
@@ -634,34 +648,32 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
     auto S1 = learn_simple_invariant(target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
     auto S1_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S1_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
-    S1->add_invariant(S1_target_path);
-    S1->add_invariant(S1_rewrite_path);
+    S1 = transform_with_assumption(S1_target_path, S1);
+    S1 = transform_with_assumption(S1_rewrite_path, S1);
 
     auto S2 = learn_simple_invariant(target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
     auto S2_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S2_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
-    S2->add_invariant(S2_target_path);
-    S2->add_invariant(S2_rewrite_path);
+    S2 = transform_with_assumption(S2_target_path, S2);
+    S2 = transform_with_assumption(S2_rewrite_path, S2);
 
     auto S3 = learn_simple_invariant(target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
     auto S3_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S3_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
-    S3->add_invariant(S3_target_path);
-    S3->add_invariant(S3_rewrite_path);
+    S3 = transform_with_assumption(S3_target_path, S3);
+    S3 = transform_with_assumption(S3_rewrite_path, S3);
 
     auto S4 = learn_simple_invariant(target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
     auto S4_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S4_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
-    S4->add_invariant(S4_target_path);
-    S4->add_invariant(S4_rewrite_path);
+    S4 = transform_with_assumption(S4_target_path, S4);
+    S4 = transform_with_assumption(S4_rewrite_path, S4);
 
-    auto disj = new DisjunctionInvariant();
-    disj->add_invariant(S1);
-    disj->add_invariant(S2);
-    disj->add_invariant(S3);
-    disj->add_invariant(S4);
+    S1->add_invariants(S2);
+    S1->add_invariants(S3);
+    S1->add_invariants(S4);
 
-    return simplify_disjunction(*disj);
+    return S1;
   }
 
   assert(false);
