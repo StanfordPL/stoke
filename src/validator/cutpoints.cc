@@ -274,6 +274,7 @@ bool Cutpoints::get_cutpoints() {
 
     return true;
   } else {
+    cout << "(cutpoints) UNSAT" << endl;
     error_ = "Cutpoint constraints unsat";
     return false;
   }
