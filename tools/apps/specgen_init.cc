@@ -241,6 +241,7 @@ int main(int argc, char** argv) {
 
     if (is_goal || (only_imm_arg && is_imm8)) {
       if (!only_mm_arg && !only_imm_arg && !allow_all_arg) {
+        f_goal << op << endl;
         goal++;
         Instruction our = get_instruction(op);
         if (validator.is_supported(our)) {
