@@ -1306,9 +1306,9 @@ vector<Opcode> instr_cat_base_ = {
 // , MULPS_XMM_M128 // MULPS xmm, m128
 // , MULPS_XMM_XMM // MULPS xmm, xmm
 // , MULSD_XMM_M64 // MULSD xmm, m64
-// , MULSD_XMM_XMM // MULSD xmm, xmm
+  , MULSD_XMM_XMM // MULSD xmm, xmm
 // , MULSS_XMM_M32 // MULSS xmm, m32
-// , MULSS_XMM_XMM // MULSS xmm, xmm
+  , MULSS_XMM_XMM // MULSS xmm, xmm
 // , MULX_R32_R32_M32 // MULX r32, r32, m32
 // , MULX_R32_R32_R32 // MULX r32, r32, r32
 // , MULX_R64_R64_M64 // MULX r64, r64, m64
