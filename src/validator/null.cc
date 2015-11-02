@@ -4,7 +4,64 @@
 #include <malloc.h>
 #include <assert.h>
 
+#include "src/validator/null.h"
+
+#include "gmp.h"
+#include "iml.h"
+
+
 using namespace std;
+
+namespace stoke {
+
+long mpz_to_long(mpz_t z)
+{
+  long result = 0;
+  mpz_export(&result, 0, -1, sizeof result, 0, 0, z);
+  return result;
+}
+
+size_t Nullspace::z_nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t*** output) {
+
+  mpz_t *mp_result;
+  cout << "computing the nullspace" << endl;
+  size_t dim = nullspaceLong(rows, cols, (long*)inputs, &mp_result);
+  cout << "nullspace computation complete" << endl;
+
+  // For each row of the nullspace, find the gcd and divide by it.
+  for (size_t i = 0; i < dim; ++i) {
+    mpz_t gcd;
+    mpz_init_set(gcd, mp_result[0*dim+i]);
+    for (size_t j = 1; j < cols; ++j) {
+      mpz_gcd(gcd, gcd, mp_result[j*dim+i]);
+    }
+
+    mpz_t val;
+    mpz_init(val);
+    for (size_t j = 0; j < cols; ++j) {
+      mpz_divexact(val, mp_result[j*dim+i], gcd);
+      mpz_set(mp_result[j*dim+i], val);
+    }
+  }
+
+  // Allocate the output matrix
+  *output = new uint64_t*[dim];
+  for(size_t i = 0; i < dim; ++i) {
+    cout << "can I have values? " << i << ": " << (*output)[i] << endl;
+    (*output)[i] = new uint64_t[cols];
+  }
+  
+  // Fill the output matrix
+  for(size_t i = 0; i < dim; ++i) {
+    for(size_t j = 0; j < cols; ++j) {
+      (*output)[i][j] = (uint64_t)mpz_get_si(mp_result[j*dim + i]);
+    }
+  }
+
+  return dim;
+}
+
+}
 
 namespace BitvectorNullspace {
 
@@ -52,7 +109,7 @@ uint64_t invert(uint64_t b)
 //Create [A^T|I]^T
 uint64_t* augmentIdentity(uint64_t* inputs, size_t rows, size_t cols)
 {
-  uint64_t* augmented = (uint64_t*)malloc(sizeof(uint64_t)*(rows+cols)*cols);
+  uint64_t* augmented = new uint64_t[(rows+cols)*cols];
   for(size_t i=0;i<rows;i++)
     for(size_t j=0; j<cols;j++)
       augmented[i*cols+j]=inputs[i*cols+j];
@@ -105,18 +162,18 @@ uint64_t rowGcd(uint64_t* vec, size_t num)
   return retval;
 }
 //for prettier output
-void makePretty(uint64_t** output,size_t rows,size_t cols)
+void makePretty(uint64_t*** output,size_t rows,size_t cols)
 {
 /*
   for(size_t i=0;i<rows;i++)
   {
-    uint64_t g = rowGcd(output[i],cols);
+    uint64_t g = rowGcd(*output[i],cols);
     assert(g!=0 && "NULL ROW");
     for(size_t j=0;j<cols;j++)
     {
-      int64_t l = ((int64_t)output[i][j]);
+      int64_t l = ((int64_t)*output[i][j]);
       l = l/((int64_t)g);
-      output[i][j]= (uint64_t)(l);
+      *output[i][j]= (uint64_t)(l);
     }
   }
 */
@@ -150,10 +207,10 @@ size_t rank(uint64_t a)
 #define SUB(X,Y) augmented[(X)*cols+(Y)]
 
 //rowspace of output is nullspace of input
-size_t nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t** output)
+size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
 {
   size_t rowrank = 0;
-  uint64_t* augmented = augmentIdentity(inputs,rows, cols);
+  uint64_t* augmented = augmentIdentity((uint64_t*)inputs,rows, cols);
   //cout << "STARTING" << endl;
   //printMat(augmented,rows+cols,cols);
   size_t currcol=0;
@@ -215,16 +272,17 @@ size_t nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t** output)
   }
   size_t nullity = cols-rowrank;
   //cout << "Nullity is " << nullity << endl;
+  *output = new uint64_t*[nullity];
   for(size_t i=cols-nullity;i<cols;i++)
   {
-    output[i-cols+nullity]=(uint64_t*)malloc(sizeof(uint64_t)*cols);
+    *output[i-cols+nullity]= new uint64_t[cols];
     for(size_t j=rows;j<rows+cols;j++)
     {
-      output[i-cols+nullity][j-rows]=SUB(j,i);
+      *output[i-cols+nullity][j-rows]=SUB(j,i);
     }
   }
   makePretty(output,nullity,cols);
-  free(augmented);
+  delete augmented;
   return nullity;
 }
 

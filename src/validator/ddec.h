@@ -28,8 +28,9 @@ public:
 
   DdecValidator(SMTSolver& solver) : Validator(solver), bv_(solver) {
     cutpoints_ = NULL;
-    try_sign_extend_ = true;
     set_no_bv(false);
+    set_sound_nullspace(false);
+    set_try_sign_extend(true);
   }
 
   ~DdecValidator() {
@@ -47,6 +48,11 @@ public:
     to demonstrate that most benchmarks don't work without it. --no_ddec_bv */
   DdecValidator& set_no_bv(bool b) {
     no_bv_ = b;
+    return *this;
+  }
+  /** Choose whether to use sound nullspace computation */
+  DdecValidator& set_sound_nullspace(bool b) {
+    sound_nullspace_ = b;
     return *this;
   }
 
@@ -82,9 +88,10 @@ private:
 
   /** Try to sign extend values? */
   bool try_sign_extend_;
-
   /** Skip the bounded validator? */
   bool no_bv_;
+  /** Use the sound nullspace computation? */
+  bool sound_nullspace_;
 
 };
 

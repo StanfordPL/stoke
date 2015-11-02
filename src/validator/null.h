@@ -15,10 +15,29 @@
 #ifndef STOKE_SRC_VALIDATOR_NULL_H
 #define STOKE_SRC_VALIDATOR_NULL_H
 
+/** Sound nullspace computation */
 namespace BitvectorNullspace {
 
-size_t nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t** output);
+size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output);
 
 }
+
+/** Nullspace wrapper */
+namespace stoke {
+
+class Nullspace {
+
+  public:
+
+    static size_t bv_nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t*** output) {
+      return BitvectorNullspace::nullspace((long*)inputs, rows, cols, output);
+    }
+
+    static size_t z_nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t*** output);
+};
+
+}
+
+
 
 #endif
