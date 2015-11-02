@@ -283,10 +283,10 @@ void PseudoHandler::build_circuit(const Instruction& instr, SymState& ss) {
       assert(r2.size() == 128);
       assert(r3.size() == 128);
       assert(r4.size() == 128);
-      ss.set(r1, ss[r1][from-1][to] || ss[r0][1*to-1][0*to]);
-      ss.set(r2, ss[r2][from-1][to] || ss[r0][2*to-1][1*to]);
-      ss.set(r3, ss[r3][from-1][to] || ss[r0][3*to-1][2*to]);
-      ss.set(r4, ss[r4][from-1][to] || ss[r0][4*to-1][3*to]);
+      ss.set(r1, SymBitVector::constant(to*3, 0) || ss[r0][1*to-1][0*to]);
+      ss.set(r2, SymBitVector::constant(to*3, 0) || ss[r0][2*to-1][1*to]);
+      ss.set(r3, SymBitVector::constant(to*3, 0) || ss[r0][3*to-1][2*to]);
+      ss.set(r4, SymBitVector::constant(to*3, 0) || ss[r0][4*to-1][3*to]);
       return;
     } else {
       assert(from == 32);
@@ -312,8 +312,8 @@ void PseudoHandler::build_circuit(const Instruction& instr, SymState& ss) {
     if (from > to) {
       assert(from == 128);
       assert(to == 64);
-      ss.set(r2, ss[r1][from-1][to] || ss[r0][1*to-1][0*to]);
-      ss.set(r1, ss[r2][from-1][to] || ss[r0][2*to-1][1*to]);
+      ss.set(r2, SymBitVector::constant(to, 0) || ss[r0][1*to-1][0*to]);
+      ss.set(r1, SymBitVector::constant(to, 0) || ss[r0][2*to-1][1*to]);
       return;
     } else {
       assert(from == 64);
