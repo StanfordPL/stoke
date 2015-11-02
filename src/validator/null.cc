@@ -179,6 +179,19 @@ void makePretty(uint64_t*** output,size_t rows,size_t cols)
 */
 }
 
+void printOutput(uint64_t** output,size_t rows,size_t cols)
+{
+  for(size_t i=0;i<rows;i++)
+  {
+          for(size_t j=0;j<cols;j++)
+          {
+                  cout << output[i][j] << " " ;
+          }
+          cout << endl;
+  }
+}
+
+
 bool checkInvariants(uint64_t* augmented,size_t rows,size_t cols)
 {
   for(size_t i=rows;i<rows+cols;i++)
@@ -204,15 +217,40 @@ size_t rank(uint64_t a)
   return rank;
 }
 
+uint64_t multiplyRow(uint64_t* r1, uint64_t* r2, size_t num)
+{
+  uint64_t acc = 0;
+  for(size_t i=0; i< num; i++)
+    acc += r1[i]*r2[i];
+  return acc;
+}
+
+bool checkOutput(uint64_t** output, uint64_t* inputs, size_t nullity, size_t rows, size_t cols)
+{
+  assert(nullity > 0);
+  for(size_t i = 0; i< nullity; i++)
+    for(size_t j=0; j< rows;j++)
+      if(multiplyRow(output[i],inputs+j*cols,cols))
+      {
+        cout << "!!!!!!!!!NULLSPACE WRONG!!!!!!!!" << endl;
+        return false;
+      }
+  return true;
+}
+
+
 #define SUB(X,Y) augmented[(X)*cols+(Y)]
 
 //rowspace of output is nullspace of input
-size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
+//rowspace of output is nullspace of input
+size_t nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t** output)
 {
   size_t rowrank = 0;
-  uint64_t* augmented = augmentIdentity((uint64_t*)inputs,rows, cols);
-  //cout << "STARTING" << endl;
-  //printMat(augmented,rows+cols,cols);
+  uint64_t* augmented = augmentIdentity(inputs,rows, cols);
+  #ifdef RSDEBUG
+  cout << "STARTING" << endl;
+  printMat(augmented,rows+cols,cols);
+  #endif
   size_t currcol=0;
   for(size_t i=0;i<rows;i++)
   {
@@ -223,16 +261,18 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
       size_t val = rank(SUB(i,j));
       if(val<minrank)
       {
-      minrank = val;
-      idx = j;
+            minrank = val;
+            idx = j;
       }
     }
     if(minrank==64)
     {
-      i++;
       continue;
     }
     rowrank++;
+    #ifdef RSDEBUG
+    cout << "Rank " << rowrank << endl;
+    #endif
     assert(rowrank<cols);
     //We have found the column with the pivot
     for(size_t j=i;j<rows+cols;j++)
@@ -241,9 +281,11 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
       SUB(j,idx)=SUB(j,currcol);
       SUB(j,currcol)=temp;
     }
-    //cout << "Swap column" << currcol << " and " << idx << endl;
-    //printMat(augmented,rows+cols,cols);
-    uint64_t pivot = SUB(i,currcol);
+    #ifdef RSDEBUG
+    cout << "Swap column" << currcol << " and " << idx << endl;
+    printMat(augmented,rows+cols,cols);
+    #endif
+ uint64_t pivot = SUB(i,currcol);
     assert(pivot!=0);
     uint64_t odd = getOdd(pivot);
     uint64_t twopow = pivot/odd;
@@ -252,8 +294,10 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
     {
       SUB(j,currcol) = SUB(j,currcol)*oddinv;
     }
-    //cout << "The pivot at column " << currcol << " is now a power of 2" << endl;
-    //printMat(augmented,rows+cols,cols);
+    #ifdef RSDEBUG
+    cout << "The pivot at column " << currcol << " is now a power of 2" << endl;
+    printMat(augmented,rows+cols,cols);
+    #endif
     assert(SUB(i,currcol)==twopow && "inversion failed");
     for(size_t k=currcol+1;k<cols;k++)
     {
@@ -262,8 +306,10 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
       {
          SUB(j,k) = SUB(j,k) - initval*SUB(j,currcol);
       }
-     // cout << "Column" << k << " - " << initval << " times column " << currcol << endl;
-      //printMat(augmented,rows+cols,cols);
+      #ifdef RSDEBUG
+      cout << "Column" << k << " - " << initval << " times column " << currcol << endl;
+      printMat(augmented,rows+cols,cols);
+      #endif
       assert(SUB(i,k)==0);
       assert(checkInvariants(augmented,rows,cols));
     }
@@ -271,19 +317,26 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
 
   }
   size_t nullity = cols-rowrank;
-  //cout << "Nullity is " << nullity << endl;
-  *output = new uint64_t*[nullity];
+  #ifdef RSDEBUG
+  cout << "Nullity is " << nullity << endl;
+  #endif
   for(size_t i=cols-nullity;i<cols;i++)
   {
-    (*output)[i-cols+nullity]= new uint64_t[cols];
+    output[i-cols+nullity]=(uint64_t*)malloc(sizeof(uint64_t)*cols);
     for(size_t j=rows;j<rows+cols;j++)
     {
-      (*output)[i-cols+nullity][j-rows]=SUB(j,i);
+      output[i-cols+nullity][j-rows]=SUB(j,i);
     }
   }
   makePretty(output,nullity,cols);
-  delete augmented;
+  #ifdef RSDEBUG
+  printOutput(output, nullity, cols);
+  #endif
+  assert(checkOutput(output,inputs,nullity,rows,cols));
+  free(augmented);
   return nullity;
 }
+
+#undef SUB
 
 }
