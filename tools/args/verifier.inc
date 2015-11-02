@@ -31,15 +31,6 @@ cpputil::ValueArg<std::string>& strategy_arg =
   .description("Verification strategy")
   .default_val("hold_out");
 
-cpputil::FlagArg& no_try_sign_extend_arg =
-  cpputil::FlagArg::create("no_try_sign_extend")
-  .description("Do not try to find invariants using sign extension");
-
-cpputil::FlagArg& no_ddec_bv_arg =
-  cpputil::FlagArg::create("no_ddec_bv")
-  .description("Do not use the bounded validator to refine DDEC invariants.");
-
-
 
 } // namespace stoke
 

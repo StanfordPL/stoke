@@ -29,6 +29,7 @@
 #include "src/validator/straight_line.h"
 
 #include "tools/args/bounded_validator.inc"
+#include "tools/args/ddec_validator.inc"
 #include "tools/args/in_out.inc"
 #include "tools/args/testcases.inc"
 #include "tools/args/verifier.inc"
@@ -109,6 +110,7 @@ private:
       std::cout << "no try sign extend arg: " << no_try_sign_extend_arg.value() << std::endl;
       ddec->set_try_sign_extend(!no_try_sign_extend_arg.value());
       ddec->set_no_bv(no_ddec_bv_arg.value());
+      ddec->set_sound_nullspace(sound_nullspace_arg.value());
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(fxn);
