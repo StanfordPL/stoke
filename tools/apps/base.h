@@ -563,27 +563,27 @@ vector<Opcode> instr_cat_base_ = {
 // , CVTPS2PI_MM_M64 // CVTPS2PI mm, m64
 // , CVTPS2PI_MM_XMM // CVTPS2PI mm, xmm
 // , CVTSD2SI_R32_M64 // CVTSD2SI r32, m64
-  , CVTSD2SI_R32_XMM // CVTSD2SI r32, xmm
+  , CVTSD2SI_R32_XMM // CVTSD2SI r32, xmm cvt_double_to_int32
 // , CVTSD2SI_R64_M64 // CVTSD2SI r64, m64
-  , CVTSD2SI_R64_XMM // CVTSD2SI r64, xmm
+  , CVTSD2SI_R64_XMM // CVTSD2SI r64, xmm cvt_double_to_int64
 // , CVTSD2SS_XMM_M64 // CVTSD2SS xmm, m64
-  , CVTSD2SS_XMM_XMM // CVTSD2SS xmm, xmm
+  , CVTSD2SS_XMM_XMM // CVTSD2SS xmm, xmm cvt_double_to_single
 // , CVTSI2SD_XMM_M32 // CVTSI2SD xmm, m32
 // , CVTSI2SD_XMM_M64 // CVTSI2SD xmm, m64
-// , CVTSI2SD_XMM_R32 // CVTSI2SD xmm, r32
-  , CVTSI2SD_XMM_R64 // CVTSI2SD xmm, r64
+// , CVTSI2SD_XMM_R32 // CVTSI2SD xmm, r32 cvt_int32_to_double
+  , CVTSI2SD_XMM_R64 // CVTSI2SD xmm, r64 cvt_int64_to_double
 // , CVTSI2SS_XMM_M32 // CVTSI2SS xmm, m32
 // , CVTSI2SS_XMM_M64 // CVTSI2SS xmm, m64
-// , CVTSI2SS_XMM_R32 // CVTSI2SS xmm, r32
-  , CVTSI2SS_XMM_R64 // CVTSI2SS xmm, r64
+// , CVTSI2SS_XMM_R32 // CVTSI2SS xmm, r32 cvt_int32_to_single
+  , CVTSI2SS_XMM_R64 // CVTSI2SS xmm, r64 cvt_int64_to_single
 // , CVTSS2SD_XMM_M32 // CVTSS2SD xmm, m32
-  , CVTSS2SD_XMM_XMM // CVTSS2SD xmm, xmm
+  , CVTSS2SD_XMM_XMM // CVTSS2SD xmm, xmm cvt_single_to_double
 // , CVTSS2SI_R32_M32 // CVTSS2SI r32, m32
-  , CVTSS2SI_R32_XMM // CVTSS2SI r32, xmm
+  , CVTSS2SI_R32_XMM // CVTSS2SI r32, xmm cvt_single_to_int32
 // , CVTSS2SI_R64_M32 // CVTSS2SI r64, m32
-  , CVTSS2SI_R64_XMM // CVTSS2SI r64, xmm
+  , CVTSS2SI_R64_XMM // CVTSS2SI r64, xmm cvt_single_to_int64
 // , CVTTPD2DQ_XMM_M128 // CVTTPD2DQ xmm, m128
-  , CVTTPD2DQ_XMM_XMM // CVTTPD2DQ xmm, xmm
+// , CVTTPD2DQ_XMM_XMM // CVTTPD2DQ xmm, xmm
 // , CVTTPD2PI_MM_M128 // CVTTPD2PI mm, m128
 // , CVTTPD2PI_MM_XMM // CVTTPD2PI mm, xmm
 // , CVTTPS2DQ_XMM_M128 // CVTTPS2DQ xmm, m128
@@ -591,9 +591,9 @@ vector<Opcode> instr_cat_base_ = {
 // , CVTTPS2PI_MM_M64 // CVTTPS2PI mm, m64
 // , CVTTPS2PI_MM_XMM // CVTTPS2PI mm, xmm
 // , CVTTSD2SI_R32_M64 // CVTTSD2SI r32, m64
-// , CVTTSD2SI_R32_XMM // CVTTSD2SI r32, xmm
+  , CVTTSD2SI_R32_XMM // CVTTSD2SI r32, xmm cvt_double_to_int32_truncate
 // , CVTTSD2SI_R64_M64 // CVTTSD2SI r64, m64
-// , CVTTSD2SI_R64_XMM // CVTTSD2SI r64, xmm
+  , CVTTSD2SI_R64_XMM // CVTTSD2SI r64, xmm cvt_double_to_int64_truncate
 // , CVTTSS2SI_R32_M32 // CVTTSS2SI r32, m32
 // , CVTTSS2SI_R32_XMM // CVTTSS2SI r32, xmm
 // , CVTTSS2SI_R64_M32 // CVTTSS2SI r64, m32
