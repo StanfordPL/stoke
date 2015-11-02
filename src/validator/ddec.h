@@ -58,7 +58,7 @@ public:
   /** Set the aliasing strategy for bounded validator */
   DdecValidator& set_alias_strategy(BoundedValidator::AliasStrategy as) {
     //alias_strategy_ = as;
-    alias_strategy_ = BoundedValidator::AliasStategy::STRING_NO_ALIAS;
+    alias_strategy_ = BoundedValidator::AliasStrategy::STRING_NO_ALIAS;
     return *this;
   }
  
