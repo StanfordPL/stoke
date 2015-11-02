@@ -30,7 +30,7 @@ using namespace x64asm;
 namespace stoke {
 
 vector<Opcode> instr_cat_base_ = {
-  CALL_LABEL
+// CALL_LABEL
 // , ADC_AL_IMM8 // ADC AL, imm8
 // , ADC_AX_IMM16 // ADC AX, imm16
 // , ADC_EAX_IMM32 // ADC EAX, imm32
@@ -49,7 +49,7 @@ vector<Opcode> instr_cat_base_ = {
 // , ADC_R16_IMM16 // ADC r16, imm16
 // , ADC_R16_IMM8 // ADC r16, imm8
 // , ADC_R16_M16 // ADC r16, m16
-  , ADC_R16_R16 // ADC r16, r16
+  ADC_R16_R16 // ADC r16, r16
 // , ADC_R32_IMM32 // ADC r32, imm32
 // , ADC_R32_IMM8 // ADC r32, imm8
 // , ADC_R32_M32 // ADC r32, m32
@@ -615,7 +615,7 @@ vector<Opcode> instr_cat_base_ = {
 // , DIV_M8 // DIV m8
 // , DIV_R16 // DIV r16
 // , DIV_R32 // DIV r32
-  , DIV_R64 // DIV r64
+// , DIV_R64 // DIV r64
 // , DIV_R8 // DIV r8
 // , DIV_RH // DIV rh
 // , DIVPD_XMM_M128 // DIVPD xmm, m128
@@ -806,35 +806,35 @@ vector<Opcode> instr_cat_base_ = {
 // , IDIV_M8 // IDIV m8
 // , IDIV_R16 // IDIV r16
 // , IDIV_R32 // IDIV r32
-  , IDIV_R64 // IDIV r64
+// , IDIV_R64 // IDIV r64
 // , IDIV_R8 // IDIV r8
 // , IDIV_RH // IDIV rh
 // , IMUL_M16 // IMUL m16
 // , IMUL_M32 // IMUL m32
 // , IMUL_M64 // IMUL m64
 // , IMUL_M8 // IMUL m8
-  , IMUL_R16 // IMUL r16
+// , IMUL_R16 // IMUL r16
 // , IMUL_R16_M16 // IMUL r16, m16
 // , IMUL_R16_M16_IMM16 // IMUL r16, m16, imm16
 // , IMUL_R16_M16_IMM8 // IMUL r16, m16, imm8
-  , IMUL_R16_R16 // IMUL r16, r16
+// , IMUL_R16_R16 // IMUL r16, r16
 // , IMUL_R16_R16_IMM16 // IMUL r16, r16, imm16
 // , IMUL_R16_R16_IMM8 // IMUL r16, r16, imm8
-  , IMUL_R32 // IMUL r32
+// , IMUL_R32 // IMUL r32
 // , IMUL_R32_M32 // IMUL r32, m32
 // , IMUL_R32_M32_IMM32 // IMUL r32, m32, imm32
 // , IMUL_R32_M32_IMM8 // IMUL r32, m32, imm8
-  , IMUL_R32_R32 // IMUL r32, r32
+// , IMUL_R32_R32 // IMUL r32, r32
 // , IMUL_R32_R32_IMM32 // IMUL r32, r32, imm32
 // , IMUL_R32_R32_IMM8 // IMUL r32, r32, imm8
   , IMUL_R64 // IMUL r64
 // , IMUL_R64_M64 // IMUL r64, m64
 // , IMUL_R64_M64_IMM32 // IMUL r64, m64, imm32
 // , IMUL_R64_M64_IMM8 // IMUL r64, m64, imm8
-  , IMUL_R64_R64 // IMUL r64, r64
+// , IMUL_R64_R64 // IMUL r64, r64
 // , IMUL_R64_R64_IMM32 // IMUL r64, r64, imm32
 // , IMUL_R64_R64_IMM8 // IMUL r64, r64, imm8
-  , IMUL_R8 // IMUL r8
+// , IMUL_R8 // IMUL r8
 // , IMUL_RH // IMUL rh
 // , IN_AL_DX // IN AL, DX
 // , IN_AL_IMM8 // IN AL, imm8
@@ -1296,10 +1296,10 @@ vector<Opcode> instr_cat_base_ = {
 // , MUL_M32 // MUL m32
 // , MUL_M64 // MUL m64
 // , MUL_M8 // MUL m8
-  , MUL_R16 // MUL r16
-  , MUL_R32 // MUL r32
+  // , MUL_R16 // MUL r16
+  // , MUL_R32 // MUL r32
   , MUL_R64 // MUL r64
-  , MUL_R8 // MUL r8
+  // , MUL_R8 // MUL r8
 // , MUL_RH // MUL rh
 // , MULPD_XMM_M128 // MULPD xmm, m128
 // , MULPD_XMM_XMM // MULPD xmm, xmm
@@ -1359,7 +1359,7 @@ vector<Opcode> instr_cat_base_ = {
 // , OR_R32_IMM32 // OR r32, imm32
 // , OR_R32_IMM8 // OR r32, imm8
 // , OR_R32_M32 // OR r32, m32
-  , OR_R32_R32 // OR r32, r32
+// , OR_R32_R32 // OR r32, r32
 // , OR_R64_IMM32 // OR r64, imm32
 // , OR_R64_IMM8 // OR r64, imm8
 // , OR_R64_M64 // OR r64, m64
@@ -2087,18 +2087,18 @@ vector<Opcode> instr_cat_base_ = {
 // , SBB_R16_IMM16 // SBB r16, imm16
 // , SBB_R16_IMM8 // SBB r16, imm8
 // , SBB_R16_M16 // SBB r16, m16
-  , SBB_R16_R16 // SBB r16, r16
+// , SBB_R16_R16 // SBB r16, r16
 // , SBB_R32_IMM32 // SBB r32, imm32
 // , SBB_R32_IMM8 // SBB r32, imm8
 // , SBB_R32_M32 // SBB r32, m32
-  , SBB_R32_R32 // SBB r32, r32
+// , SBB_R32_R32 // SBB r32, r32
 // , SBB_R64_IMM32 // SBB r64, imm32
 // , SBB_R64_IMM8 // SBB r64, imm8
 // , SBB_R64_M64 // SBB r64, m64
   , SBB_R64_R64 // SBB r64, r64
 // , SBB_R8_IMM8 // SBB r8, imm8
 // , SBB_R8_M8 // SBB r8, m8
-  , SBB_R8_R8 // SBB r8, r8
+// , SBB_R8_R8 // SBB r8, r8
 // , SBB_R8_RH // SBB r8, rh
 // , SBB_RAX_IMM32 // SBB RAX, imm32
 // , SBB_RH_IMM8 // SBB rh, imm8
@@ -3672,7 +3672,7 @@ vector<Opcode> instr_cat_base_ = {
 // , XOR_R32_IMM32 // XOR r32, imm32
 // , XOR_R32_IMM8 // XOR r32, imm8
 // , XOR_R32_M32 // XOR r32, m32
-  , XOR_R32_R32 // XOR r32, r32
+// , XOR_R32_R32 // XOR r32, r32
 // , XOR_R64_IMM32 // XOR r64, imm32
 // , XOR_R64_IMM8 // XOR r64, imm8
 // , XOR_R64_M64 // XOR r64, m64
