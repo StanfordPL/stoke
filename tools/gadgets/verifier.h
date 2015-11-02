@@ -87,23 +87,26 @@ public:
 
 private:
 
+  BoundedValidator::AliasStategy parse_alias() {
+    std::string alias = alias_strategy_arg.value();
+
+    if (alias == "basic") {
+      return BoundedValidator::AliasStrategy::BASIC;
+    } else if (alias == "string") {
+      return BoundedValidator::AliasStrategy::STRING;
+    } else if (alias == "string_antialias") {
+      return BoundedValidator::AliasStrategy::STRING_NO_ALIAS;
+    } else {
+      std::cerr << "Unrecognized alias strategy \"" << alias << "\"" << std::endl;
+      exit(1);
+    }
+  }
+
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn) {
     if (s == "bounded") {
       auto bv = new BoundedValidator(*solver_);
       bv->set_bound(bound_arg.value());
-
-      std::string alias = alias_strategy_arg.value();
-      if (alias == "basic") {
-        bv->set_alias_strategy(BoundedValidator::AliasStrategy::BASIC);
-      } else if (alias == "string") {
-        bv->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
-      } else if (alias == "string_antialias") {
-        bv->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
-      } else {
-        std::cerr << "Unrecognized alias strategy \"" << alias << "\"" << std::endl;
-        exit(1);
-      }
-
+      bv->set_alias_strategy(parse_alias());
       return bv;
     } else if (s == "ddec") {
       auto ddec = new DdecValidator(*solver_);
@@ -111,6 +114,7 @@ private:
       ddec->set_try_sign_extend(!no_try_sign_extend_arg.value());
       ddec->set_no_bv(no_ddec_bv_arg.value());
       ddec->set_sound_nullspace(sound_nullspace_arg.value());
+      ddec->set_alias_strategy(parse_alias());
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(fxn);
