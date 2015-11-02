@@ -70,7 +70,8 @@ vector<Opcode> instr_cat_crypto_ = {
 };
 
 vector<Opcode> instr_cat_duplicates_ = {
-  ADC_R16_R16_1 // ADC r16, r16
+  ADC_R8_R8_1 // ADC r8, r8
+  , ADC_R16_R16_1 // ADC r16, r16
   , ADC_R32_R32_1 // ADC r32, r32
   , ADC_R64_R64_1 // ADC r64, r64
   , ADC_R8_RH_1 // ADC r8, rh
