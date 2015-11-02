@@ -825,7 +825,13 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
   */
 
   uint64_t** nullspace_out;
-  size_t dim = Nullspace::z_nullspace(matrix, tc_count, num_columns, &nullspace_out);
+  size_t dim;
+
+  if(sound_nullspace_) {
+    dim = Nullspace::bv_nullspace(matrix, tc_count, num_columns, &nullspace_out);
+  } else {
+    dim = Nullspace::z_nullspace(matrix, tc_count, num_columns, &nullspace_out);
+  }
 
   delete matrix;
 

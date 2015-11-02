@@ -275,10 +275,10 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
   *output = new uint64_t*[nullity];
   for(size_t i=cols-nullity;i<cols;i++)
   {
-    *output[i-cols+nullity]= new uint64_t[cols];
+    (*output)[i-cols+nullity]= new uint64_t[cols];
     for(size_t j=rows;j<rows+cols;j++)
     {
-      *output[i-cols+nullity][j-rows]=SUB(j,i);
+      (*output)[i-cols+nullity][j-rows]=SUB(j,i);
     }
   }
   makePretty(output,nullity,cols);

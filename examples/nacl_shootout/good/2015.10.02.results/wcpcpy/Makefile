@@ -1,10 +1,15 @@
 
 DEF_IN="{ %r15 %rdi %rsi }"
 LIVE_OUT="{ %rax }"
-ARGS=--solver z3 --no_ddec_bv --test_set "{ 0 .. 50 }"
+ARGS=--solver z3 --no_ddec_bv --test_set "{ 0 .. 50 }" --sound_nullspace
 
 opt:
 	time stoke debug verify --target target.s --rewrite optimize.s --testcases testcases --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS)
+
+opt_debug:
+	gdb --args stoke_debug_verify --target target.s --rewrite optimize.s --testcases testcases --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS)
+
+
 
 synth:
 	time stoke debug verify --target target.s --rewrite synth.s --testcases testcases --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS)
