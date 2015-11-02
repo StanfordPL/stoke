@@ -87,7 +87,7 @@ public:
 
 private:
 
-  BoundedValidator::AliasStategy parse_alias() {
+  BoundedValidator::AliasStrategy parse_alias() {
     std::string alias = alias_strategy_arg.value();
 
     if (alias == "basic") {
