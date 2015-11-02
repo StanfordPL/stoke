@@ -104,7 +104,7 @@ int main(int argc, char** argv) {
 
   string imm8_data;
   if (only_imm_arg) {
-    ifstream t(workdir + "/../imm8-data.txt");
+    ifstream t("../resources/imm8.data");
     string tmp((istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
     imm8_data = tmp;
   }
@@ -176,7 +176,6 @@ int main(int argc, char** argv) {
       if (could_be_inferred) {
         Instruction our = get_instruction(op);
         if (!validator.is_supported(our)) {
-          // cout << op << endl;
           base_and_no_validator_support++;
         }
       }
@@ -242,7 +241,6 @@ int main(int argc, char** argv) {
 
     if (is_goal || (only_imm_arg && is_imm8)) {
       if (!only_mm_arg && !only_imm_arg && !allow_all_arg) {
-        f_goal << op << endl;
         goal++;
         Instruction our = get_instruction(op);
         if (validator.is_supported(our)) {
@@ -250,12 +248,18 @@ int main(int argc, char** argv) {
         }
       } else if (only_imm_arg) {
         if (is_imm8) {
-          set<uint8_t> vals;
-          while (vals.size() < imm_count) {
-            vals.insert(distribution(mt));
-          }
-          for (auto v : vals) {
-            f_goal << op << "_" << (int)v << endl;
+          if (imm_count < 256) {
+            set<uint8_t> vals;
+            while (vals.size() < imm_count) {
+              vals.insert(distribution(mt));
+            }
+            for (auto v : vals) {
+              f_goal << op << "_" << (int)v << endl;
+            }
+          } else {
+            for (int v = 0; v < 256; v++) {
+              f_goal << op << "_" << v << endl;
+            }
           }
           goal++;
         } else {
