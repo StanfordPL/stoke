@@ -8,6 +8,7 @@
 
 # Text                      #  Line  RIP   Bytes  Opcode              
 .wmemset:                   #        0     0      OPC=<label>         
+  movl %edx, %edx
   nop                       #  1     0     1      OPC=nop             
   nop                       #  2     0x1   1      OPC=nop             
   nop                       #  3     0x2   1      OPC=nop             
