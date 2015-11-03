@@ -985,7 +985,9 @@ TEST(SandboxTest, DivideBySpl1) {
 
   auto code_2 = sb.result_begin()->code;
 
-  ASSERT_EQ(code_1, code_2);
+  EXPECT_NE(ErrorCode::NORMAL, code_1);
+  EXPECT_NE(ErrorCode::NORMAL, code_2);
+  EXPECT_EQ(code_1, code_2);
 
 }
 

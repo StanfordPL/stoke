@@ -80,7 +80,7 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
 
   Sandbox sb;
   sb.set_abi_check(false)
-  .set_max_jumps(1);
+  .set_max_jumps(10);
 
   StateGen sg(&sb);
   sg.set_max_memory(1024)
@@ -157,6 +157,16 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
   // test that the two states match on live_out
   bool failed = false;
   std::stringstream os;
+  if (final1.code != final2.code) {
+    os << "Error codes differ.";
+    failed = true;
+    report(failed, ins, cs1, cs2, final1, final2, os.str());
+    return;
+  }
+  if (final1.code != stoke::ErrorCode::NORMAL) {
+    fuzz_print() << "Error code not normal; cannot check" << std::endl;
+    return;
+  }
   for (auto it = liveouts.gp_begin(); it != liveouts.gp_end(); ++it) {
     x64asm::R r = *it;
     std::stringstream ss;
