@@ -1489,8 +1489,14 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   auto rsp_op = false;
   switch (instr.type(0)) {
   case Type::R_8:
+    rsp_op = instr.get_operand<R8>(0) == spl;
+    break;
   case Type::R_16:
+    rsp_op = instr.get_operand<R16>(0) == sp;
+    break;
   case Type::R_32:
+    rsp_op = instr.get_operand<R32>(0) == esp;
+    break;
   case Type::R_64:
     rsp_op = instr.get_operand<R64>(0) == rsp;
     break;

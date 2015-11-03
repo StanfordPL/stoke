@@ -88,6 +88,8 @@ TransformPools default_fuzzer_pool() {
   // Usually floating point stuff or control-flow that we don't handle
   // whatsoever.
   tp.remove_opcode(x64asm::FLD_M80FP);
+  tp.remove_opcode(x64asm::DIV_R8);
+  tp.remove_opcode(x64asm::IDIV_R8);
 
   return tp;
 }
