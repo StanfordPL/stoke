@@ -248,7 +248,7 @@ vector<Opcode> instr_cat_duplicates_ = {
   , XCHG_R8_RH_1 // XCHG r8, rh
   , XCHG_RH_R8_1 // XCHG rh, r8
   , XCHG_RH_RH_1 // XCHG rh, rh
-  , XLATB_1 // XLATB 
+  , XLATB_1 // XLATB
   , XOR_R16_R16_1 // XOR r16, r16
   , XOR_R32_R32_1 // XOR r32, r32
   , XOR_R64_R64_1 // XOR r64, r64
@@ -606,7 +606,7 @@ vector<Opcode> instr_cat_system_ = {
   , XGETBV // XGETBV
   , XLAT_M8 // XLAT m8
   , XLATB // XLATB
-  , XLATB_1 // XLATB 
+  , XLATB_1 // XLATB
 
   , XRELEASE // XRELEASE
   , XRSTOR_M16 // XRSTOR m16
