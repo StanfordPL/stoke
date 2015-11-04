@@ -124,6 +124,7 @@ int main(int argc, char** argv) {
   f_meta << "  \"live_out\": \"" << live_out << "\"," << endl;
   f_meta << "  \"def_in_formal\": \"" << def_in_formal << "\"," << endl;
   f_meta << "  \"live_out_formal\": \"" << live_out_formal << "\"," << endl;
+  f_meta << "  \"search_without_uif\": false," << endl;
   f_meta << "  \"delim\": 0" << endl;
   f_meta << "}" << endl;
   f_meta.close();
