@@ -595,9 +595,9 @@ vector<Opcode> instr_cat_base_ = {
 // , CVTTSD2SI_R64_M64 // CVTTSD2SI r64, m64
   , CVTTSD2SI_R64_XMM // CVTTSD2SI r64, xmm cvt_double_to_int64_truncate
 // , CVTTSS2SI_R32_M32 // CVTTSS2SI r32, m32
-// , CVTTSS2SI_R32_XMM // CVTTSS2SI r32, xmm
+  , CVTTSS2SI_R32_XMM // CVTTSS2SI r32, xmm cvt_single_to_int32_truncate
 // , CVTTSS2SI_R64_M32 // CVTTSS2SI r64, m32
-// , CVTTSS2SI_R64_XMM // CVTTSS2SI r64, xmm
+  , CVTTSS2SI_R64_XMM // CVTTSS2SI r64, xmm cvt_single_to_int64_truncate
 // , CWD // CWD
 // , CWDE // CWDE
 // , DEC_M16 // DEC m16
