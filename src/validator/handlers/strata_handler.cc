@@ -321,7 +321,9 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   auto liveouts = specgen_instr.maybe_write_set();
   if (opcode_str.size() > 4 && opcode_str.substr(0, 4) == "xadd") {
     // for xadd, we need to hard-code the order of registers
-    for (auto iter : {specgen_instr.get_operand<R>(1), specgen_instr.get_operand<R>(0)}) {
+    for (auto iter : {
+           specgen_instr.get_operand<R>(1), specgen_instr.get_operand<R>(0)
+         }) {
       auto iter_translated = translate_gp_register(iter, specgen_instr, instr);
       // look up live out in tmp state
       auto val = tmp[iter];
@@ -338,16 +340,16 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
       // look up live out in tmp state
       auto val = tmp[*iter];
 #ifdef DEBUG_STRATA_HANDLER
-    cout << "Register        -> " << (*iter) << endl;
-    cout << "  translates to => " << iter_translated << endl;
+      cout << "Register        -> " << (*iter) << endl;
+      cout << "  translates to => " << iter_translated << endl;
 #endif
       if (!typecheck(val, (*iter).size())) return;
       // rename variables in the tmp state to the values in start
       auto val_renamed = SymSimplify::simplify(translate_circuit(val));
 #ifdef DEBUG_STRATA_HANDLER
-    cout << "Value is               -> " << SymSimplify::simplify(val) << endl;
-    cout << "  after renaming it is => " << SymSimplify::simplify(val_renamed) << endl;
-    cout << endl;
+      cout << "Value is               -> " << SymSimplify::simplify(val) << endl;
+      cout << "  after renaming it is => " << SymSimplify::simplify(val_renamed) << endl;
+      cout << endl;
 #endif
       if (!typecheck(val_renamed, (*iter).size())) return;
       // update the start state with the circuits from tmp
