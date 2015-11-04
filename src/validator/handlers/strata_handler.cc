@@ -324,7 +324,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     auto op0 = specgen_instr.get_operand<R>(0);
     auto op1 = specgen_instr.get_operand<R>(1);
     if (opcode == Opcode::XADD_R32_R32) {
-       // 64 bit extension
+      // 64 bit extension
       op0 = Constants::r64s()[(size_t)op0];
       op1 = Constants::r64s()[(size_t)op1];
     }
