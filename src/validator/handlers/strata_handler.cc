@@ -319,25 +319,40 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 
   // loop over all live outs and update the final state
   auto liveouts = specgen_instr.maybe_write_set();
-  for (auto iter = liveouts.gp_begin(); iter != liveouts.gp_end(); ++iter) {
-    auto iter_translated = translate_gp_register(*iter, specgen_instr, instr);
-    // look up live out in tmp state
-    auto val = tmp[*iter];
+  if (opcode_str.size() > 4 && opcode_str.substr(0, 4) == "xadd") {
+    // for xadd, we need to hard-code the order of registers
+    for (auto iter : {specgen_instr.get_operand<R>(1), specgen_instr.get_operand<R>(0)}) {
+      auto iter_translated = translate_gp_register(iter, specgen_instr, instr);
+      // look up live out in tmp state
+      auto val = tmp[iter];
+      if (!typecheck(val, (iter).size())) return;
+      // rename variables in the tmp state to the values in start
+      auto val_renamed = SymSimplify::simplify(translate_circuit(val));
+      if (!typecheck(val_renamed, (iter).size())) return;
+      // update the start state with the circuits from tmp
+      final.set(iter_translated, val_renamed, false, true);
+    }
+  } else {
+    for (auto iter = liveouts.gp_begin(); iter != liveouts.gp_end(); ++iter) {
+      auto iter_translated = translate_gp_register(*iter, specgen_instr, instr);
+      // look up live out in tmp state
+      auto val = tmp[*iter];
 #ifdef DEBUG_STRATA_HANDLER
     cout << "Register        -> " << (*iter) << endl;
     cout << "  translates to => " << iter_translated << endl;
 #endif
-    if (!typecheck(val, (*iter).size())) return;
-    // rename variables in the tmp state to the values in start
-    auto val_renamed = SymSimplify::simplify(translate_circuit(val));
+      if (!typecheck(val, (*iter).size())) return;
+      // rename variables in the tmp state to the values in start
+      auto val_renamed = SymSimplify::simplify(translate_circuit(val));
 #ifdef DEBUG_STRATA_HANDLER
     cout << "Value is               -> " << SymSimplify::simplify(val) << endl;
     cout << "  after renaming it is => " << SymSimplify::simplify(val_renamed) << endl;
     cout << endl;
 #endif
-    if (!typecheck(val_renamed, (*iter).size())) return;
-    // update the start state with the circuits from tmp
-    final.set(iter_translated, val_renamed, false, true);
+      if (!typecheck(val_renamed, (*iter).size())) return;
+      // update the start state with the circuits from tmp
+      final.set(iter_translated, val_renamed, false, true);
+    }
   }
   for (auto iter = liveouts.sse_begin(); iter != liveouts.sse_end(); ++iter) {
     auto iter_translated = translate_sse_register(*iter, specgen_instr, instr);
