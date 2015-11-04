@@ -70,10 +70,10 @@ vector<Opcode> instr_cat_crypto_ = {
 };
 
 vector<Opcode> instr_cat_duplicates_ = {
-  ADC_R8_R8_1 // ADC r8, r8
-  , ADC_R16_R16_1 // ADC r16, r16
+  ADC_R16_R16_1 // ADC r16, r16
   , ADC_R32_R32_1 // ADC r32, r32
   , ADC_R64_R64_1 // ADC r64, r64
+  , ADC_R8_R8_1 // ADC r8, r8
   , ADC_R8_RH_1 // ADC r8, rh
   , ADC_RH_R8_1 // ADC rh, r8
   , ADC_RH_RH_1 // ADC rh, rh
@@ -98,6 +98,67 @@ vector<Opcode> instr_cat_duplicates_ = {
   , CMP_R8_RH_1 // CMP r8, rh
   , CMP_RH_R8_1 // CMP rh, r8
   , CMP_RH_RH_1 // CMP rh, rh
+  , JA_LABEL_1 // JA label32
+  , JA_LABEL_HINT_1 // JA label32, hint
+  , JAE_LABEL_1 // JAE label32
+  , JAE_LABEL_HINT_1 // JAE label32, hint
+  , JB_LABEL_1 // JB label32
+  , JB_LABEL_HINT_1 // JB label32, hint
+  , JBE_LABEL_1 // JBE label32
+  , JBE_LABEL_HINT_1 // JBE label32, hint
+  , JC_LABEL_1 // JC label32
+  , JC_LABEL_HINT_1 // JC label32, hint
+  , JE_LABEL_1 // JE label32
+  , JE_LABEL_HINT_1 // JE label32, hint
+  , JG_LABEL_1 // JG label32
+  , JG_LABEL_HINT_1 // JG label32, hint
+  , JGE_LABEL_1 // JGE label32
+  , JGE_LABEL_HINT_1 // JGE label32, hint
+  , JL_LABEL_1 // JL label32
+  , JL_LABEL_HINT_1 // JL label32, hint
+  , JLE_LABEL_1 // JLE label32
+  , JLE_LABEL_HINT_1 // JLE label32, hint
+  , JMP_LABEL_1 // JMP label32
+  , JNA_LABEL_1 // JNA label32
+  , JNA_LABEL_HINT_1 // JNA label32, hint
+  , JNAE_LABEL_1 // JNAE label32
+  , JNAE_LABEL_HINT_1 // JNAE label32, hint
+  , JNB_LABEL_1 // JNB label32
+  , JNB_LABEL_HINT_1 // JNB label32, hint
+  , JNBE_LABEL_1 // JNBE label32
+  , JNBE_LABEL_HINT_1 // JNBE label32, hint
+  , JNC_LABEL_1 // JNC label32
+  , JNC_LABEL_HINT_1 // JNC label32, hint
+  , JNE_LABEL_1 // JNE label32
+  , JNE_LABEL_HINT_1 // JNE label32, hint
+  , JNG_LABEL_1 // JNG label32
+  , JNG_LABEL_HINT_1 // JNG label32, hint
+  , JNGE_LABEL_1 // JNGE label32
+  , JNGE_LABEL_HINT_1 // JNGE label32, hint
+  , JNL_LABEL_1 // JNL label32
+  , JNL_LABEL_HINT_1 // JNL label32, hint
+  , JNLE_LABEL_1 // JNLE label32
+  , JNLE_LABEL_HINT_1 // JNLE label32, hint
+  , JNO_LABEL_1 // JNO label32
+  , JNO_LABEL_HINT_1 // JNO label32, hint
+  , JNP_LABEL_1 // JNP label32
+  , JNP_LABEL_HINT_1 // JNP label32, hint
+  , JNS_LABEL_1 // JNS label32
+  , JNS_LABEL_HINT_1 // JNS label32, hint
+  , JNZ_LABEL_1 // JNZ label32
+  , JNZ_LABEL_HINT_1 // JNZ label32, hint
+  , JO_LABEL_1 // JO label32
+  , JO_LABEL_HINT_1 // JO label32, hint
+  , JP_LABEL_1 // JP label32
+  , JP_LABEL_HINT_1 // JP label32, hint
+  , JPE_LABEL_1 // JPE label32
+  , JPE_LABEL_HINT_1 // JPE label32, hint
+  , JPO_LABEL_1 // JPO label32
+  , JPO_LABEL_HINT_1 // JPO label32, hint
+  , JS_LABEL_1 // JS label32
+  , JS_LABEL_HINT_1 // JS label32, hint
+  , JZ_LABEL_1 // JZ label32
+  , JZ_LABEL_HINT_1 // JZ label32, hint
   , MOV_R16_IMM16_1 // MOV r16, imm16
   , MOV_R16_R16_1 // MOV r16, r16
   , MOV_R32_IMM32_1 // MOV r32, imm32
@@ -187,7 +248,7 @@ vector<Opcode> instr_cat_duplicates_ = {
   , XCHG_R8_RH_1 // XCHG r8, rh
   , XCHG_RH_R8_1 // XCHG rh, r8
   , XCHG_RH_RH_1 // XCHG rh, rh
-  , XLATB_1 // XLATB
+  , XLATB_1 // XLATB 
   , XOR_R16_R16_1 // XOR r16, r16
   , XOR_R32_R32_1 // XOR r32, r32
   , XOR_R64_R64_1 // XOR r64, r64
@@ -410,199 +471,6 @@ vector<Opcode> instr_cat_system_ = {
   , IRETD // IRETD
   , IRETQ // IRETQ
 
-  , JA_REL32 // JA rel32
-  , JA_LABEL // JA label
-  , JA_REL32_HINT // JA rel32, hint
-  , JA_LABEL_HINT // JA label, hint
-  , JA_REL8 // JA rel8
-  , JA_REL8_HINT // JA rel8, hint
-  , JAE_REL32 // JAE rel32
-  , JAE_LABEL // JAE label
-  , JAE_REL32_HINT // JAE rel32, hint
-  , JAE_LABEL_HINT // JAE label, hint
-  , JAE_REL8 // JAE rel8
-  , JAE_REL8_HINT // JAE rel8, hint
-  , JB_REL32 // JB rel32
-  , JB_LABEL // JB label
-  , JB_REL32_HINT // JB rel32, hint
-  , JB_LABEL_HINT // JB label, hint
-  , JB_REL8 // JB rel8
-  , JB_REL8_HINT // JB rel8, hint
-  , JBE_REL32 // JBE rel32
-  , JBE_LABEL // JBE label
-  , JBE_REL32_HINT // JBE rel32, hint
-  , JBE_LABEL_HINT // JBE label, hint
-  , JBE_REL8 // JBE rel8
-  , JBE_REL8_HINT // JBE rel8, hint
-  , JC_REL32 // JC rel32
-  , JC_LABEL // JC label
-  , JC_REL32_HINT // JC rel32, hint
-  , JC_LABEL_HINT // JC label, hint
-  , JC_REL8 // JC rel8
-  , JC_REL8_HINT // JC rel8, hint
-  , JE_REL32 // JE rel32
-  , JE_LABEL // JE label
-  , JE_REL32_HINT // JE rel32, hint
-  , JE_LABEL_HINT // JE label, hint
-  , JE_REL8 // JE rel8
-  , JE_REL8_HINT // JE rel8, hint
-  , JECXZ_REL8 // JECXZ rel8
-  , JECXZ_REL8_HINT // JECXZ rel8, hint
-  , JG_REL32 // JG rel32
-  , JG_LABEL // JG label
-  , JG_REL32_HINT // JG rel32, hint
-  , JG_LABEL_HINT // JG label, hint
-  , JG_REL8 // JG rel8
-  , JG_REL8_HINT // JG rel8, hint
-  , JGE_REL32 // JGE rel32
-  , JGE_LABEL // JGE label
-  , JGE_REL32_HINT // JGE rel32, hint
-  , JGE_LABEL_HINT // JGE label, hint
-  , JGE_REL8 // JGE rel8
-  , JGE_REL8_HINT // JGE rel8, hint
-  , JL_REL32 // JL rel32
-  , JL_LABEL // JL label
-  , JL_REL32_HINT // JL rel32, hint
-  , JL_LABEL_HINT // JL label, hint
-  , JL_REL8 // JL rel8
-  , JL_REL8_HINT // JL rel8, hint
-  , JLE_REL32 // JLE rel32
-  , JLE_LABEL // JLE label
-  , JLE_REL32_HINT // JLE rel32, hint
-  , JLE_LABEL_HINT // JLE label, hint
-  , JLE_REL8 // JLE rel8
-  , JLE_REL8_HINT // JLE rel8, hint
-  , JMP_FARPTR1616 // JMP m16:16
-  , JMP_FARPTR1632 // JMP m16:32
-  , JMP_FARPTR1664 // JMP m16:64
-  , JMP_M64 // JMP m64
-  , JMP_R64 // JMP r64
-  , JMP_REL32 // JMP rel32
-  , JMP_LABEL // JMP label
-  , JMP_REL8 // JMP rel8
-  , JNA_REL32 // JNA rel32
-  , JNA_LABEL // JNA label
-  , JNA_REL32_HINT // JNA rel32, hint
-  , JNA_LABEL_HINT // JNA label, hint
-  , JNA_REL8 // JNA rel8
-  , JNA_REL8_HINT // JNA rel8, hint
-  , JNAE_REL32 // JNAE rel32
-  , JNAE_LABEL // JNAE label
-  , JNAE_REL32_HINT // JNAE rel32, hint
-  , JNAE_LABEL_HINT // JNAE label, hint
-  , JNAE_REL8 // JNAE rel8
-  , JNAE_REL8_HINT // JNAE rel8, hint
-  , JNB_REL32 // JNB rel32
-  , JNB_LABEL // JNB label
-  , JNB_REL32_HINT // JNB rel32, hint
-  , JNB_LABEL_HINT // JNB label, hint
-  , JNB_REL8 // JNB rel8
-  , JNB_REL8_HINT // JNB rel8, hint
-  , JNBE_REL32 // JNBE rel32
-  , JNBE_LABEL // JNBE label
-  , JNBE_REL32_HINT // JNBE rel32, hint
-  , JNBE_LABEL_HINT // JNBE label, hint
-  , JNBE_REL8 // JNBE rel8
-  , JNBE_REL8_HINT // JNBE rel8, hint
-  , JNC_REL32 // JNC rel32
-  , JNC_LABEL // JNC label
-  , JNC_REL32_HINT // JNC rel32, hint
-  , JNC_LABEL_HINT // JNC label, hint
-  , JNC_REL8 // JNC rel8
-  , JNC_REL8_HINT // JNC rel8, hint
-  , JNE_REL32 // JNE rel32
-  , JNE_LABEL // JNE label
-  , JNE_REL32_HINT // JNE rel32, hint
-  , JNE_LABEL_HINT // JNE label, hint
-  , JNE_REL8 // JNE rel8
-  , JNE_REL8_HINT // JNE rel8, hint
-  , JNG_REL32 // JNG rel32
-  , JNG_LABEL // JNG label
-  , JNG_REL32_HINT // JNG rel32, hint
-  , JNG_LABEL_HINT // JNG label, hint
-  , JNG_REL8 // JNG rel8
-  , JNG_REL8_HINT // JNG rel8, hint
-  , JNGE_REL32 // JNGE rel32
-  , JNGE_LABEL // JNGE label
-  , JNGE_REL32_HINT // JNGE rel32, hint
-  , JNGE_LABEL_HINT // JNGE label, hint
-  , JNGE_REL8 // JNGE rel8
-  , JNGE_REL8_HINT // JNGE rel8, hint
-  , JNL_REL32 // JNL rel32
-  , JNL_LABEL // JNL label
-  , JNL_REL32_HINT // JNL rel32, hint
-  , JNL_LABEL_HINT // JNL label, hint
-  , JNL_REL8 // JNL rel8
-  , JNL_REL8_HINT // JNL rel8, hint
-  , JNLE_REL32 // JNLE rel32
-  , JNLE_LABEL // JNLE label
-  , JNLE_REL32_HINT // JNLE rel32, hint
-  , JNLE_LABEL_HINT // JNLE label, hint
-  , JNLE_REL8 // JNLE rel8
-  , JNLE_REL8_HINT // JNLE rel8, hint
-  , JNO_REL32 // JNO rel32
-  , JNO_LABEL // JNO label
-  , JNO_REL32_HINT // JNO rel32, hint
-  , JNO_LABEL_HINT // JNO label, hint
-  , JNO_REL8 // JNO rel8
-  , JNO_REL8_HINT // JNO rel8, hint
-  , JNP_REL32 // JNP rel32
-  , JNP_LABEL // JNP label
-  , JNP_REL32_HINT // JNP rel32, hint
-  , JNP_LABEL_HINT // JNP label, hint
-  , JNP_REL8 // JNP rel8
-  , JNP_REL8_HINT // JNP rel8, hint
-  , JNS_REL32 // JNS rel32
-  , JNS_LABEL // JNS label
-  , JNS_REL32_HINT // JNS rel32, hint
-  , JNS_LABEL_HINT // JNS label, hint
-  , JNS_REL8 // JNS rel8
-  , JNS_REL8_HINT // JNS rel8, hint
-  , JNZ_REL32 // JNZ rel32
-  , JNZ_LABEL // JNZ label
-  , JNZ_REL32_HINT // JNZ rel32, hint
-  , JNZ_LABEL_HINT // JNZ label, hint
-  , JNZ_REL8 // JNZ rel8
-  , JNZ_REL8_HINT // JNZ rel8, hint
-  , JO_REL32 // JO rel32
-  , JO_LABEL // JO label
-  , JO_REL32_HINT // JO rel32, hint
-  , JO_LABEL_HINT // JO label, hint
-  , JO_REL8 // JO rel8
-  , JO_REL8_HINT // JO rel8, hint
-  , JP_REL32 // JP rel32
-  , JP_LABEL // JP label
-  , JP_REL32_HINT // JP rel32, hint
-  , JP_LABEL_HINT // JP label, hint
-  , JP_REL8 // JP rel8
-  , JP_REL8_HINT // JP rel8, hint
-  , JPE_REL32 // JPE rel32
-  , JPE_LABEL // JPE label
-  , JPE_REL32_HINT // JPE rel32, hint
-  , JPE_LABEL_HINT // JPE label, hint
-  , JPE_REL8 // JPE rel8
-  , JPE_REL8_HINT // JPE rel8, hint
-  , JPO_REL32 // JPO rel32
-  , JPO_LABEL // JPO label
-  , JPO_REL32_HINT // JPO rel32, hint
-  , JPO_LABEL_HINT // JPO label, hint
-  , JPO_REL8 // JPO rel8
-  , JPO_REL8_HINT // JPO rel8, hint
-  , JRCXZ_REL8 // JRCXZ rel8
-  , JRCXZ_REL8_HINT // JRCXZ rel8, hint
-  , JS_REL32 // JS rel32
-  , JS_LABEL // JS label
-  , JS_REL32_HINT // JS rel32, hint
-  , JS_LABEL_HINT // JS label, hint
-  , JS_REL8 // JS rel8
-  , JS_REL8_HINT // JS rel8, hint
-  , JZ_REL32 // JZ rel32
-  , JZ_LABEL // JZ label
-  , JZ_REL32_HINT // JZ rel32, hint
-  , JZ_LABEL_HINT // JZ label, hint
-  , JZ_REL8 // JZ rel8
-  , JZ_REL8_HINT // JZ rel8, hint
-
   , LAR_R16_M16 // LAR r16, m16
   , LAR_R16_R16 // LAR r16, r16
   , LAR_R32_M16 // LAR r32, m16
@@ -622,6 +490,10 @@ vector<Opcode> instr_cat_system_ = {
   , POP_R64 // POP r64
   , PUSH_R16 // PUSH r16
   , PUSH_R64 // PUSH r64
+  , POP_R16_1 // POP r16
+  , POP_R64_1 // POP r64
+  , PUSH_R16_1 // PUSH r16
+  , PUSH_R64_1 // PUSH r64
 
   , LDMXCSR_M32 // LDMXCSR m32
 
@@ -734,6 +606,7 @@ vector<Opcode> instr_cat_system_ = {
   , XGETBV // XGETBV
   , XLAT_M8 // XLAT m8
   , XLATB // XLATB
+  , XLATB_1 // XLATB 
 
   , XRELEASE // XRELEASE
   , XRSTOR_M16 // XRSTOR m16
@@ -755,6 +628,272 @@ vector<Opcode> instr_cat_system_ = {
   , XSAVEOPT64_M32 // XSAVEOPT64 m32
   , XSAVEOPT64_M64 // XSAVEOPT64 m64
   , XTEST // XTEST
+};
+
+vector<Opcode> instr_cat_jump_ = {
+  JA_LABEL // JA label8
+  , JA_LABEL_1 // JA label32
+  , JA_LABEL_HINT // JA label8, hint
+  , JA_LABEL_HINT_1 // JA label32, hint
+  , JA_REL32 // JA rel32
+  , JA_REL32_HINT // JA rel32, hint
+  , JA_REL8 // JA rel8
+  , JA_REL8_HINT // JA rel8, hint
+  , JAE_LABEL // JAE label8
+  , JAE_LABEL_1 // JAE label32
+  , JAE_LABEL_HINT // JAE label8, hint
+  , JAE_LABEL_HINT_1 // JAE label32, hint
+  , JAE_REL32 // JAE rel32
+  , JAE_REL32_HINT // JAE rel32, hint
+  , JAE_REL8 // JAE rel8
+  , JAE_REL8_HINT // JAE rel8, hint
+  , JB_LABEL // JB label8
+  , JB_LABEL_1 // JB label32
+  , JB_LABEL_HINT // JB label8, hint
+  , JB_LABEL_HINT_1 // JB label32, hint
+  , JB_REL32 // JB rel32
+  , JB_REL32_HINT // JB rel32, hint
+  , JB_REL8 // JB rel8
+  , JB_REL8_HINT // JB rel8, hint
+  , JBE_LABEL // JBE label8
+  , JBE_LABEL_1 // JBE label32
+  , JBE_LABEL_HINT // JBE label8, hint
+  , JBE_LABEL_HINT_1 // JBE label32, hint
+  , JBE_REL32 // JBE rel32
+  , JBE_REL32_HINT // JBE rel32, hint
+  , JBE_REL8 // JBE rel8
+  , JBE_REL8_HINT // JBE rel8, hint
+  , JC_LABEL // JC label8
+  , JC_LABEL_1 // JC label32
+  , JC_LABEL_HINT // JC label8, hint
+  , JC_LABEL_HINT_1 // JC label32, hint
+  , JC_REL32 // JC rel32
+  , JC_REL32_HINT // JC rel32, hint
+  , JC_REL8 // JC rel8
+  , JC_REL8_HINT // JC rel8, hint
+  , JE_LABEL // JE label8
+  , JE_LABEL_1 // JE label32
+  , JE_LABEL_HINT // JE label8, hint
+  , JE_LABEL_HINT_1 // JE label32, hint
+  , JE_REL32 // JE rel32
+  , JE_REL32_HINT // JE rel32, hint
+  , JE_REL8 // JE rel8
+  , JE_REL8_HINT // JE rel8, hint
+  , JECXZ_LABEL // JECXZ label8
+  , JECXZ_LABEL_HINT // JECXZ label8, hint
+  , JECXZ_REL8 // JECXZ rel8
+  , JECXZ_REL8_HINT // JECXZ rel8, hint
+  , JG_LABEL // JG label8
+  , JG_LABEL_1 // JG label32
+  , JG_LABEL_HINT // JG label8, hint
+  , JG_LABEL_HINT_1 // JG label32, hint
+  , JG_REL32 // JG rel32
+  , JG_REL32_HINT // JG rel32, hint
+  , JG_REL8 // JG rel8
+  , JG_REL8_HINT // JG rel8, hint
+  , JGE_LABEL // JGE label8
+  , JGE_LABEL_1 // JGE label32
+  , JGE_LABEL_HINT // JGE label8, hint
+  , JGE_LABEL_HINT_1 // JGE label32, hint
+  , JGE_REL32 // JGE rel32
+  , JGE_REL32_HINT // JGE rel32, hint
+  , JGE_REL8 // JGE rel8
+  , JGE_REL8_HINT // JGE rel8, hint
+  , JL_LABEL // JL label8
+  , JL_LABEL_1 // JL label32
+  , JL_LABEL_HINT // JL label8, hint
+  , JL_LABEL_HINT_1 // JL label32, hint
+  , JL_REL32 // JL rel32
+  , JL_REL32_HINT // JL rel32, hint
+  , JL_REL8 // JL rel8
+  , JL_REL8_HINT // JL rel8, hint
+  , JLE_LABEL // JLE label8
+  , JLE_LABEL_1 // JLE label32
+  , JLE_LABEL_HINT // JLE label8, hint
+  , JLE_LABEL_HINT_1 // JLE label32, hint
+  , JLE_REL32 // JLE rel32
+  , JLE_REL32_HINT // JLE rel32, hint
+  , JLE_REL8 // JLE rel8
+  , JLE_REL8_HINT // JLE rel8, hint
+  , JMP_FARPTR1616 // JMP m16:16
+  , JMP_FARPTR1632 // JMP m16:32
+  , JMP_FARPTR1664 // JMP m16:64
+  , JMP_LABEL // JMP label8
+  , JMP_LABEL_1 // JMP label32
+  , JMP_M64 // JMP m64
+  , JMP_R64 // JMP r64
+  , JMP_REL32 // JMP rel32
+  , JMP_REL8 // JMP rel8
+  , JNA_LABEL // JNA label8
+  , JNA_LABEL_1 // JNA label32
+  , JNA_LABEL_HINT // JNA label8, hint
+  , JNA_LABEL_HINT_1 // JNA label32, hint
+  , JNA_REL32 // JNA rel32
+  , JNA_REL32_HINT // JNA rel32, hint
+  , JNA_REL8 // JNA rel8
+  , JNA_REL8_HINT // JNA rel8, hint
+  , JNAE_LABEL // JNAE label8
+  , JNAE_LABEL_1 // JNAE label32
+  , JNAE_LABEL_HINT // JNAE label8, hint
+  , JNAE_LABEL_HINT_1 // JNAE label32, hint
+  , JNAE_REL32 // JNAE rel32
+  , JNAE_REL32_HINT // JNAE rel32, hint
+  , JNAE_REL8 // JNAE rel8
+  , JNAE_REL8_HINT // JNAE rel8, hint
+  , JNB_LABEL // JNB label8
+  , JNB_LABEL_1 // JNB label32
+  , JNB_LABEL_HINT // JNB label8, hint
+  , JNB_LABEL_HINT_1 // JNB label32, hint
+  , JNB_REL32 // JNB rel32
+  , JNB_REL32_HINT // JNB rel32, hint
+  , JNB_REL8 // JNB rel8
+  , JNB_REL8_HINT // JNB rel8, hint
+  , JNBE_LABEL // JNBE label8
+  , JNBE_LABEL_1 // JNBE label32
+  , JNBE_LABEL_HINT // JNBE label8, hint
+  , JNBE_LABEL_HINT_1 // JNBE label32, hint
+  , JNBE_REL32 // JNBE rel32
+  , JNBE_REL32_HINT // JNBE rel32, hint
+  , JNBE_REL8 // JNBE rel8
+  , JNBE_REL8_HINT // JNBE rel8, hint
+  , JNC_LABEL // JNC label8
+  , JNC_LABEL_1 // JNC label32
+  , JNC_LABEL_HINT // JNC label8, hint
+  , JNC_LABEL_HINT_1 // JNC label32, hint
+  , JNC_REL32 // JNC rel32
+  , JNC_REL32_HINT // JNC rel32, hint
+  , JNC_REL8 // JNC rel8
+  , JNC_REL8_HINT // JNC rel8, hint
+  , JNE_LABEL // JNE label8
+  , JNE_LABEL_1 // JNE label32
+  , JNE_LABEL_HINT // JNE label8, hint
+  , JNE_LABEL_HINT_1 // JNE label32, hint
+  , JNE_REL32 // JNE rel32
+  , JNE_REL32_HINT // JNE rel32, hint
+  , JNE_REL8 // JNE rel8
+  , JNE_REL8_HINT // JNE rel8, hint
+  , JNG_LABEL // JNG label8
+  , JNG_LABEL_1 // JNG label32
+  , JNG_LABEL_HINT // JNG label8, hint
+  , JNG_LABEL_HINT_1 // JNG label32, hint
+  , JNG_REL32 // JNG rel32
+  , JNG_REL32_HINT // JNG rel32, hint
+  , JNG_REL8 // JNG rel8
+  , JNG_REL8_HINT // JNG rel8, hint
+  , JNGE_LABEL // JNGE label8
+  , JNGE_LABEL_1 // JNGE label32
+  , JNGE_LABEL_HINT // JNGE label8, hint
+  , JNGE_LABEL_HINT_1 // JNGE label32, hint
+  , JNGE_REL32 // JNGE rel32
+  , JNGE_REL32_HINT // JNGE rel32, hint
+  , JNGE_REL8 // JNGE rel8
+  , JNGE_REL8_HINT // JNGE rel8, hint
+  , JNL_LABEL // JNL label8
+  , JNL_LABEL_1 // JNL label32
+  , JNL_LABEL_HINT // JNL label8, hint
+  , JNL_LABEL_HINT_1 // JNL label32, hint
+  , JNL_REL32 // JNL rel32
+  , JNL_REL32_HINT // JNL rel32, hint
+  , JNL_REL8 // JNL rel8
+  , JNL_REL8_HINT // JNL rel8, hint
+  , JNLE_LABEL // JNLE label8
+  , JNLE_LABEL_1 // JNLE label32
+  , JNLE_LABEL_HINT // JNLE label8, hint
+  , JNLE_LABEL_HINT_1 // JNLE label32, hint
+  , JNLE_REL32 // JNLE rel32
+  , JNLE_REL32_HINT // JNLE rel32, hint
+  , JNLE_REL8 // JNLE rel8
+  , JNLE_REL8_HINT // JNLE rel8, hint
+  , JNO_LABEL // JNO label8
+  , JNO_LABEL_1 // JNO label32
+  , JNO_LABEL_HINT // JNO label8, hint
+  , JNO_LABEL_HINT_1 // JNO label32, hint
+  , JNO_REL32 // JNO rel32
+  , JNO_REL32_HINT // JNO rel32, hint
+  , JNO_REL8 // JNO rel8
+  , JNO_REL8_HINT // JNO rel8, hint
+  , JNP_LABEL // JNP label8
+  , JNP_LABEL_1 // JNP label32
+  , JNP_LABEL_HINT // JNP label8, hint
+  , JNP_LABEL_HINT_1 // JNP label32, hint
+  , JNP_REL32 // JNP rel32
+  , JNP_REL32_HINT // JNP rel32, hint
+  , JNP_REL8 // JNP rel8
+  , JNP_REL8_HINT // JNP rel8, hint
+  , JNS_LABEL // JNS label8
+  , JNS_LABEL_1 // JNS label32
+  , JNS_LABEL_HINT // JNS label8, hint
+  , JNS_LABEL_HINT_1 // JNS label32, hint
+  , JNS_REL32 // JNS rel32
+  , JNS_REL32_HINT // JNS rel32, hint
+  , JNS_REL8 // JNS rel8
+  , JNS_REL8_HINT // JNS rel8, hint
+  , JNZ_LABEL // JNZ label8
+  , JNZ_LABEL_1 // JNZ label32
+  , JNZ_LABEL_HINT // JNZ label8, hint
+  , JNZ_LABEL_HINT_1 // JNZ label32, hint
+  , JNZ_REL32 // JNZ rel32
+  , JNZ_REL32_HINT // JNZ rel32, hint
+  , JNZ_REL8 // JNZ rel8
+  , JNZ_REL8_HINT // JNZ rel8, hint
+  , JO_LABEL // JO label8
+  , JO_LABEL_1 // JO label32
+  , JO_LABEL_HINT // JO label8, hint
+  , JO_LABEL_HINT_1 // JO label32, hint
+  , JO_REL32 // JO rel32
+  , JO_REL32_HINT // JO rel32, hint
+  , JO_REL8 // JO rel8
+  , JO_REL8_HINT // JO rel8, hint
+  , JP_LABEL // JP label8
+  , JP_LABEL_1 // JP label32
+  , JP_LABEL_HINT // JP label8, hint
+  , JP_LABEL_HINT_1 // JP label32, hint
+  , JP_REL32 // JP rel32
+  , JP_REL32_HINT // JP rel32, hint
+  , JP_REL8 // JP rel8
+  , JP_REL8_HINT // JP rel8, hint
+  , JPE_LABEL // JPE label8
+  , JPE_LABEL_1 // JPE label32
+  , JPE_LABEL_HINT // JPE label8, hint
+  , JPE_LABEL_HINT_1 // JPE label32, hint
+  , JPE_REL32 // JPE rel32
+  , JPE_REL32_HINT // JPE rel32, hint
+  , JPE_REL8 // JPE rel8
+  , JPE_REL8_HINT // JPE rel8, hint
+  , JPO_LABEL // JPO label8
+  , JPO_LABEL_1 // JPO label32
+  , JPO_LABEL_HINT // JPO label8, hint
+  , JPO_LABEL_HINT_1 // JPO label32, hint
+  , JPO_REL32 // JPO rel32
+  , JPO_REL32_HINT // JPO rel32, hint
+  , JPO_REL8 // JPO rel8
+  , JPO_REL8_HINT // JPO rel8, hint
+  , JRCXZ_LABEL // JRCXZ label8
+  , JRCXZ_LABEL_HINT // JRCXZ label8, hint
+  , JRCXZ_REL8 // JRCXZ rel8
+  , JRCXZ_REL8_HINT // JRCXZ rel8, hint
+  , JS_LABEL // JS label8
+  , JS_LABEL_1 // JS label32
+  , JS_LABEL_HINT // JS label8, hint
+  , JS_LABEL_HINT_1 // JS label32, hint
+  , JS_REL32 // JS rel32
+  , JS_REL32_HINT // JS rel32, hint
+  , JS_REL8 // JS rel8
+  , JS_REL8_HINT // JS rel8, hint
+  , JZ_LABEL // JZ label8
+  , JZ_LABEL_1 // JZ label32
+  , JZ_LABEL_HINT // JZ label8, hint
+  , JZ_LABEL_HINT_1 // JZ label32, hint
+  , JZ_REL32 // JZ rel32
+  , JZ_REL32_HINT // JZ rel32, hint
+  , JZ_REL8 // JZ rel8
+  , JZ_REL8_HINT // JZ rel8, hint
+  , LOOP_LABEL // LOOP label8
+  , LOOP_REL8 // LOOP rel8
+  , LOOPE_LABEL // LOOPE label8
+  , LOOPE_REL8 // LOOPE rel8
+  , LOOPNE_LABEL // LOOPNE label8
+  , LOOPNE_REL8 // LOOPNE rel8
 };
 
 

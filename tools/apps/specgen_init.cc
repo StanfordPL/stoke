@@ -117,6 +117,7 @@ int main(int argc, char** argv) {
   int goal = 0;
   int duplicates = 0;
   int crypto = 0;
+  int jump = 0;
   int x87 = 0;
   int sys = 0;
   int label = 0;
@@ -147,20 +148,20 @@ int main(int argc, char** argv) {
     //   cout << instr.get_opcode() << endl;
     // }
 
-    if (find(instr_cat_duplicates_.begin(), instr_cat_duplicates_.end(), op) != instr_cat_duplicates_.end()) {
-      duplicates++;
-      is_goal = false;
-    }
     if (find(instr_cat_crypto_.begin(), instr_cat_crypto_.end(), op) != instr_cat_crypto_.end()) {
       crypto++;
       is_goal = false;
-    }
-    if (find(instr_cat_system_.begin(), instr_cat_system_.end(), op) != instr_cat_system_.end()) {
+    } else if (find(instr_cat_jump_.begin(), instr_cat_jump_.end(), op) != instr_cat_jump_.end()) {
+      jump++;
+      is_goal = false;
+    } else if (find(instr_cat_system_.begin(), instr_cat_system_.end(), op) != instr_cat_system_.end()) {
       sys++;
       is_goal = false;
-    }
-    if (find(instr_cat_float_.begin(), instr_cat_float_.end(), op) != instr_cat_float_.end()) {
+    } else if (find(instr_cat_float_.begin(), instr_cat_float_.end(), op) != instr_cat_float_.end()) {
       x87++;
+      is_goal = false;
+    } else if (find(instr_cat_duplicates_.begin(), instr_cat_duplicates_.end(), op) != instr_cat_duplicates_.end()) {
+      duplicates++;
       is_goal = false;
     }
     if (find(instr_cat_base_.begin(), instr_cat_base_.end(), op) != instr_cat_base_.end() && !allow_all_arg) {
@@ -226,7 +227,8 @@ int main(int argc, char** argv) {
           break;
 
         case SupportedReason::OTHER:
-          other++;
+          // let's group them in with the unsupported ones
+          unsupported++;
           break;
         }
         if (!is_ok) {
@@ -294,18 +296,19 @@ int main(int argc, char** argv) {
     cout << "Crypto instructions:                      " << crypto << endl;
     cout << "x87 instructions:                         " << x87 << endl;
     cout << "unsupported by sandbox:                   " << unsupported << endl;
-    cout << "duplicate instructions (*_1)              " << duplicates << endl;
+    cout << "jump instructions                         " << jump << endl;
+    cout << "mm operand                                " << mm << endl;
     cout << "-----------------------------------------------" << endl;
     cout << "Base instructions:                        " << base << endl;
     cout << "  Supported by validator:                 " << (base-base_and_no_validator_support) << endl;
     cout << "Total pseudo instructions:                " << n_funcs << endl;
     cout << "-----------------------------------------------" << endl;
-    cout << "Remaining instructions:                   " << (total - sys - crypto - x87 - base) << endl;
+    cout << "Remaining instructions:                   " << (total - mm - unsupported - jump - sys - crypto - x87 - base) << endl;
     cout << "Reasons why we ignore some of those:" << endl;
+    cout << "  duplicate instructions (*_1)            " << duplicates << endl;
     cout << "  Memory operand:                         " << memory << endl;
     cout << "  Immediate operand:                      " << immediate << endl;
     cout << "  Label operand:                          " << label << endl;
-    cout << "  mm operand:                             " << mm << endl;
     cout << "  Hard-coded register:                    " << hardreg << endl;
     cout << "  Other/unknown operand:                  " << other << endl;
     cout << "-----------------------------------------------" << endl;
