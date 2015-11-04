@@ -321,8 +321,15 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   auto liveouts = specgen_instr.maybe_write_set();
   if (opcode_str.size() > 4 && opcode_str.substr(0, 4) == "xadd") {
     // for xadd, we need to hard-code the order of registers
+    auto op0 = specgen_instr.get_operand<R>(0);
+    auto op1 = specgen_instr.get_operand<R>(1);
+    if (opcode == Opcode::XADD_R32_R32) {
+       // 64 bit extension
+      op0 = Constants::r64s()[(size_t)op0];
+      op1 = Constants::r64s()[(size_t)op1];
+    }
     for (auto iter : {
-           specgen_instr.get_operand<R>(1), specgen_instr.get_operand<R>(0)
+           op1, op0
          }) {
       auto iter_translated = translate_gp_register(iter, specgen_instr, instr);
       // look up live out in tmp state
