@@ -255,6 +255,18 @@ x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
     instr.set_operand(1, Constants::cl());
   }
 
+  // special case for mulx
+  else if (opc == MULX_R32_R32_R32) {
+    instr.set_operand(0, Constants::eax());
+    instr.set_operand(1, Constants::ebx());
+    instr.set_operand(2, Constants::ecx());
+  }
+  else if (opc == MULX_R64_R64_R64) {
+    instr.set_operand(0, Constants::rax());
+    instr.set_operand(1, Constants::rbx());
+    instr.set_operand(2, Constants::rcx());
+  }
+
   // normal case
   else {
     for (size_t i = 0; i < instr.arity(); i++) {
