@@ -325,7 +325,7 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
   for(size_t i=0;i< rows+cols;i++)
 	  for(size_t j=0;j<cols;j++)
 		  SUB(i,j) = SUB(i,j)*(((uint64_t)1)<<32);
-  for(size_t i=0;i<cols-nullity;i++)
+  for(size_t i=0;i<cols;i++)
   {
 	  bool flag = true;
 	  for(size_t j=0;j<rows;j++)
