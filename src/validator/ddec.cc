@@ -784,14 +784,14 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
           columns.push_back(c);
         //}
       }
-
-      c.reg = r32s[reg];
+//XXX:add only 64 bit columns
+      /*c.reg = r32s[reg];
       columns.push_back(c);
 
       if(try_sign_extend_) {
         c.zero_extend = false;
         columns.push_back(c);
-      }
+      }*/
 
     }
   }
@@ -871,7 +871,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
       conj->add_invariant(ei);
       cout << *ei << endl;
     } else {
-      cout << "GOT BAD INVARIANT " << *ei << endl;
+      cout << "GOT BAD INVARIANT ? " << *ei << endl;
     }
   }
 
