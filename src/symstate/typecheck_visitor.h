@@ -320,7 +320,7 @@ public:
   uint16_t visit(const SymArrayStore * const a) {
     // Check that key size is correct
     auto ks = apply(a->key_);
-    if(ks != a->a_->key_size_) {
+    if (ks != a->a_->key_size_) {
       std::stringstream e;
       SymPrintVisitor pv(e);
       e << "In array store: ";
@@ -330,9 +330,9 @@ public:
       set_error(e);
       return 0;
     }
-    // Check that value size is correct 
+    // Check that value size is correct
     auto vs = apply(a->value_);
-    if(vs != a->a_->value_size_) {
+    if (vs != a->a_->value_size_) {
       std::stringstream e;
       SymPrintVisitor pv(e);
       e << "In array store: ";
