@@ -205,11 +205,7 @@ public:
   const SymArrayAbstract * const a_;
   const SymArrayAbstract * const b_;
 
-  bool equals(const SymBoolAbstract * const other) const {
-    if (type() != other->type()) return false;
-    auto cast = static_cast<const SymBoolArrayEq * const>(other);
-    return a_->equals(cast->a_) && b_->equals(cast->b_);
-  }
+  bool equals(const SymBoolAbstract * const other) const;
 
   SymBool::Type type() const {
     return SymBool::Type::ARRAY_EQ;

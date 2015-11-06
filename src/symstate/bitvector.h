@@ -19,6 +19,7 @@
 #include <iostream>
 #include <vector>
 
+#include "src/symstate/array.h"
 #include "src/symstate/bool.h"
 #include "src/symstate/function.h"
 #include "src/symstate/memory_manager.h"
@@ -317,18 +318,14 @@ public:
   }
 };
 
-class SymBitVectorArrayLookup : public SymBitVectorBinop {
+class SymBitVectorArrayLookup : public SymBitVectorAbstract {
   friend class SymArray;
 
 public:
-  const SymArrayAbstract* const a_;
   const SymBitVectorAbstract* const key_;
+  const SymArrayAbstract* const a_;
 
-  bool equals(const SymBitVectorAbstract * other) const {
-    if (other->type() != this->type()) return false;
-    auto cast = satic_cast<const SymBitVectorArrayLookup * const>(other);
-    return a_->equals(cast->a_) && key_->equals(cast->key_);
-  }
+  bool equals(const SymBitVectorAbstract * other);
 
   SymBitVector::Type type() const {
     return SymBitVector::Type::ARRAY_LOOKUP;
@@ -336,7 +333,7 @@ public:
 
 private:
   SymBitVectorArrayLookup(const SymArrayAbstract* a, const SymBitVectorAbstract * key) :
-    key_(key), a_(a) { }
+    SymBitVectorAbstract(a->value_size_), key_(key), a_(a) { }
 };
 
 

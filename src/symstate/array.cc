@@ -64,3 +64,13 @@ std::ostream& operator<< (std::ostream& out, const stoke::SymArray& bv) {
   spv(bv);
   return out;
 }
+
+bool SymArrayStore::equals(const SymArrayAbstract * other) const {
+  if (other->type() != this->type()) return false;
+  auto cast = static_cast<const SymArrayStore * const>(other);
+  return a_->equals(cast->a_) &&
+         key_->equals(cast->key_) &&
+         value_->equals(cast->value_);
+}
+
+
