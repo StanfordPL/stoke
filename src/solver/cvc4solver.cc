@@ -358,5 +358,14 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBoolVar * const b) {
   }
 }
 
+Expr Cvc4Solver::ExprConverter::visit(const SymArrayStore * const b) {
+  error_ = "STOKE doesn't support CVC4's arrays";
+  return em_.mkConst(false);
+}
+
+Expr Cvc4Solver::ExprConverter::visit(const SymArrayVar * const b) {
+  error_ = "STOKE doesn't support CVC4's arrays";
+  return em_.mkConst(false);
+}
 
 

@@ -58,7 +58,7 @@ public:
   /** Get the satisfying assignment for a bit from the model. */
   bool get_model_bool(const std::string& var);
 
-  std::map<cpputil::BitVector, cpputil::BitVector> get_model_array(const std::string& var, size_t key_bits, size_t value_bits) {
+  std::map<cpputil::BitVector, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) {
     std::cout << "Arrays not yet supported for Z3! (limitation of stoke, not Z3)"  << std::endl;
     error_ = "Arrays not yet supported for Z3! (limitation of stoke, not Z3)";
     return std::map<cpputil::BitVector, cpputil::BitVector>();
@@ -80,7 +80,7 @@ private:
 
 
   /** This class converts symbolic bit-vectors into Z3's format. */
-  class ExprConverter : public SymVisitor<z3::expr, z3::expr> {
+  class ExprConverter : public SymVisitor<z3::expr, z3::expr, z3::expr> {
 
   public:
     ExprConverter(z3::context& cntx, std::vector<SymBool>& constraints)
@@ -114,12 +114,17 @@ private:
     /** Visit some bit vector */
     z3::expr operator()(const SymBitVector& bv) {
       error_ = "";
-      return SymVisitor<z3::expr, z3::expr>::operator()(bv.ptr);
+      return SymVisitor<z3::expr, z3::expr, z3::expr>::operator()(bv.ptr);
     }
     /** Visit some bit bool */
     z3::expr operator()(const SymBool& b) {
       error_ = "";
-      return SymVisitor<z3::expr, z3::expr>::operator()(b.ptr);
+      return SymVisitor<z3::expr, z3::expr, z3::expr>::operator()(b.ptr);
+    }
+    /** Visit some bit bool */
+    z3::expr operator()(const SymArray& a) {
+      error_ = "";
+      return SymVisitor<z3::expr, z3::expr, z3::expr>::operator()(a.ptr);
     }
 
     /** Visit a bit-vector AND */

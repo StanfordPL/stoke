@@ -23,7 +23,7 @@
 namespace stoke {
 
 /** A class to print symbolic formulas in a nicely readable way. */
-class SymPrettyVisitor : public SymVisitor<void, void> {
+class SymPrettyVisitor : public SymVisitor<void, void, void> {
 
 // the implementation loosely follows https://gist.github.com/kputnam/5625856
 
@@ -251,6 +251,22 @@ public:
     reset();
   }
 
+  /** Visit an array STORE */
+  void visit(const SymArrayStore * const a) {
+    pretty(SYMSTATE_PRETTY_MAX_LEVEL, a->a_);
+    os_ << "*"; 
+    // Each star denotes one update.  This hides
+    // details in the printout, but keeps it prettier.
+
+    reset();
+  }
+
+  /** Visit an array VAR */
+  void visit(const SymArrayVar * const a) {
+    os_ << a->name_;
+    reset();
+  }
+
 private:
   std::ostream& os_;
   int level_;
@@ -374,6 +390,8 @@ private:
       return 0;
     case SymBitVector::VAR:
       return 0;
+    case SymBitVector::ARRAY_LOOKUP:
+      return 5;
     case SymBitVector::FUNCTION:
       return 10;
     case SymBitVector::SIGN_EXTEND:

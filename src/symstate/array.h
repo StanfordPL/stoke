@@ -48,14 +48,14 @@ public:
   Type type() const;
 
   /** Creates a bitvector variables of specified size and name */
-  static SymArray var(uint64_t key_width, uint16_t value_width, std::string name);
+  static SymArray var(uint16_t key_width, uint16_t value_width, std::string name);
   /** Creates a bitvector temporary variable of given size */
   static SymArray tmp_var(uint16_t key_width, uint16_t value_width);
 
   /** Update an array with a store */
   SymArray update(SymBitVector key, SymBitVector value);
   /** Select a bitvector from an array */
-  SymBitVector operator[](SymBitVector key);
+  SymBitVector operator[](SymBitVector key) const;
 
   /** Returns a bool indicating if the arguments are equal */
   SymBool operator==(const SymArray& other) const;
@@ -101,7 +101,7 @@ public:
   const uint16_t value_size_;
 
 protected:
-  SymArrayAbstract(uint16_t key_size, uint16_t value_size) : 
+  SymArrayAbstract(uint16_t key_size, uint16_t value_size) :
     key_size_(key_size), value_size_(value_size) { }
 
 };
@@ -123,7 +123,7 @@ public:
     return SymArray::Type::STORE;
   }
 
-  SymArrayStore(const SymArrayAbstract* const a, const SymBitVectorAbstract * const key, const SymBitVectorAbstract * const value) : 
+  SymArrayStore(const SymArrayAbstract* const a, const SymBitVectorAbstract * const key, const SymBitVectorAbstract * const value) :
     SymArrayAbstract(a->key_size_, a->value_size_), a_(a), key_(key), value_(value) { }
 
 };

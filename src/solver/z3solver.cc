@@ -440,7 +440,7 @@ z3::expr Z3Solver::ExprConverter::visit(const SymArrayStore * const a) {
 /** Visit an array variable */
 z3::expr Z3Solver::ExprConverter::visit(const SymArrayVar * const a) {
   auto key_sort = context_.bv_sort(a->key_size_);
-  auto val_sort = context_.bv_sort(a->val_size_);
+  auto val_sort = context_.bv_sort(a->value_size_);
   auto type = Z3_mk_array_sort(context_, key_sort, val_sort);
   return z3::expr(context_, Z3_mk_const(context_, get_symbol(a->name_), type));
 }
