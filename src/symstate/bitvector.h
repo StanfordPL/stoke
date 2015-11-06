@@ -325,7 +325,7 @@ public:
   const SymBitVectorAbstract* const key_;
 
   bool equals(const SymBitVectorAbstract * other) const {
-    if(other->type() != this->type()) return false;
+    if (other->type() != this->type()) return false;
     auto cast = satic_cast<const SymBitVectorArrayLookup * const>(other);
     return a_->equals(cast->a_) && key_->equals(cast->key_);
   }
