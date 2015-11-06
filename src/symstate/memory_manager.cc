@@ -19,16 +19,16 @@ using namespace std;
 using namespace stoke;
 
 void SymMemoryManager::collect() {
-  for(const SymBitVectorAbstract* bv : bitvectors_) {
+  for (const SymBitVectorAbstract* bv : bitvectors_) {
     delete bv;
   }
-  for(const SymBoolAbstract* b : bools_) {
+  for (const SymBoolAbstract* b : bools_) {
     delete b;
   }
-  for(const SymArrayAbstract* a : bools_) {
+  for(const SymArrayAbstract* a : arrays_) {
     delete a;
   }
-  bitvectors_ = set<const SymBitVectorAbstract*>();
-  bools_ = set<const SymBoolAbstract*>();
-  arrays_ = set<const SymArrayAbstract*>();
+  bitvectors_.clear();
+  bools_.clear();
+  arrays_.clear();
 }

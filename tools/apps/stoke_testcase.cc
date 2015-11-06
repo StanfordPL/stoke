@@ -33,6 +33,7 @@
 #include "tools/args/target.inc"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/sandbox.h"
+#include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
 #include "tools/io/tunit.h"
 
@@ -116,8 +117,8 @@ auto& in = ValueArg<string>::create("in")
 
 uint64_t string_to_int(std::string s) {
 
-  if(s.length() > 2) {
-    if(s[0] == '0' && s[1] == 'x') {
+  if (s.length() > 2) {
+    if (s[0] == '0' && s[1] == 'x') {
       return stoul(s, nullptr, 16);
     }
   }
@@ -137,21 +138,21 @@ std::vector<std::pair<R64, uint64_t>> parse_register_value_list(std::string s, s
   string current_reg = "";
   string current_value = "";
   bool reading_reg = true;
-  for(size_t i = 0; i < s.size(); ++i) {
+  for (size_t i = 0; i < s.size(); ++i) {
     char c = s[i];
-    if((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z')) {
-      if(!reading_reg)
+    if ((c >= '0' && c <= '9') || (c >= 'a' && c <= 'z')) {
+      if (!reading_reg)
         current_value.append(1, c);
       else
         current_reg.append(1, c);
     } else if (c >= 'A' && c <= 'Z') {
-      if(!reading_reg)
+      if (!reading_reg)
         current_value.append(1, c - 'A' + 'a');
       else
         current_reg.append(1, c - 'A' + 'a');
     }
     else if (c == ',' || c == '\n') {
-      if(reading_reg) {
+      if (reading_reg) {
         Console::warn() << "Got ',' or end-of-input but expected '=' or register name." << endl;
         Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for "
                           << option_name << endl;
@@ -159,7 +160,7 @@ std::vector<std::pair<R64, uint64_t>> parse_register_value_list(std::string s, s
 
       R64 reg = rax;
       //parse register
-      if(current_reg == "rax")
+      if (current_reg == "rax")
         reg = rax;
       else if (current_reg == "rcx")
         reg = rcx;
@@ -177,14 +178,14 @@ std::vector<std::pair<R64, uint64_t>> parse_register_value_list(std::string s, s
         reg = rbp;
       else {
         bool set=false;
-        for(size_t i = 8; i < 16; ++i) {
-          if(current_reg == "r" + to_string(i)) {
+        for (size_t i = 8; i < 16; ++i) {
+          if (current_reg == "r" + to_string(i)) {
             reg = r64s[i];
             set = true;
             break;
           }
         }
-        if(!set) {
+        if (!set) {
           Console::error(1) << "Could not parse register " << current_reg << "for"
                             << option_name << endl;
         }
@@ -196,7 +197,7 @@ std::vector<std::pair<R64, uint64_t>> parse_register_value_list(std::string s, s
       reading_reg = true;
 
     } else if (c == '=') {
-      if(!reading_reg)
+      if (!reading_reg)
         Console::error(1) << "Expecting comma-separated list like rax=10,rdx=12 for "
                           << option_name << endl;
       reading_reg = false;
@@ -213,25 +214,27 @@ int auto_gen() {
   FunctionsGadget aux_fxns;
   TargetGadget target(aux_fxns, false);
   SandboxGadget sb({}, aux_fxns);
+  SeedGadget seed;
 
   // setup the stategen class
   StateGen sg(&sb, stack_size.value());
   sg.set_max_attempts(max_attempts.value())
   .set_max_memory(max_stack.value())
-  .set_allow_unaligned(allow_unaligned_arg);
+  .set_allow_unaligned(allow_unaligned_arg)
+  .set_seed(seed);
 
 
   // parse the register maximas and masks argument
-  if(register_max_arg.has_been_provided()) {
+  if (register_max_arg.has_been_provided()) {
     auto reg_max_vals = parse_register_value_list(register_max_arg, "--register_max");
-    for(auto it : reg_max_vals) {
+    for (auto it : reg_max_vals) {
       sg.set_max_value(it.first, it.second);
     }
   }
 
-  if(register_mask_arg.has_been_provided()) {
+  if (register_mask_arg.has_been_provided()) {
     auto reg_mask_vals = parse_register_value_list(register_mask_arg, "--register_mask");
-    for(auto it : reg_mask_vals) {
+    for (auto it : reg_mask_vals) {
       sg.set_bitmask(it.first, it.second);
     }
   }

@@ -30,8 +30,29 @@ public:
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
-private:
+  std::vector<std::string> full_support_opcodes() {
+    std::vector<std::string> opcodes;
 
+    std::vector<std::string> suffixes = {"a", "nbe", "ae", "nb", "nc", "b", "c", "nae",
+                                         "be", "na", "e", "z", "g", "nle", "ge", "nl",
+                                         "l", "nge", "le", "ng", "ne", "nz", "no", "np",
+                                         "po", "ns", "o", "p", "pe", "s"
+                                        };
+    std::vector<std::string> suffix2 =  {"b", "w", "l", "q"};
+
+    for (auto y : suffixes)
+      opcodes.push_back("set"+y);
+
+    for (auto y : suffixes)
+      for (auto z : suffix2)
+        opcodes.push_back("cmov"+y+z);
+
+
+
+    return opcodes;
+  }
+
+  /** Returns the condition associated with an instruction */
   static SymBool condition_predicate(const std::string& cc, const SymState& ss);
 
 };

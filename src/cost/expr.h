@@ -22,6 +22,10 @@
 
 namespace stoke {
 
+
+// TODO: this really should just reuse the functionality in
+// src/expr/expr.h.  Before changing things here, consider reusing
+// that code.
 class ExprCost : public CostFunction {
   friend class CostParserTest;
   FRIEND_TEST(CostParserTest, LeafFunctions);
@@ -53,7 +57,7 @@ public:
     a1_(a1), a2_(a2), op_(op), arity_(2), correctness_(NULL) {
     reset();
 
-    if(a1_ && a2_) // if there's a parse error, one could be null
+    if (a1_ && a2_) // if there's a parse error, one could be null
       need_sandbox_ = a1->need_sandbox() || a2->need_sandbox();
   }
   /** Constructs a reference to a "leaf" cost function.
@@ -62,7 +66,7 @@ public:
     //we'll handle running the sandbox here.
     reset();
 
-    if(a1_) { //could be null if there's a parse error
+    if (a1_) { //could be null if there's a parse error
       a1->set_run_sandbox(false);
       need_sandbox_ = a1->need_sandbox();
     }
@@ -107,11 +111,6 @@ private:
   /** Like leaf_functions(), but also inspects correctness term. */
   std::set<CostFunction*> all_leaf_functions() const;
 
-  /** How many operands does this cost expression take? */
-  size_t arity_;
-  /** Set the correctness term */
-  ExprCost* correctness_;
-
   /** A constant (for arity 0) */
   Cost constant_;
   /** The LHS cost function */
@@ -120,6 +119,13 @@ private:
   CostFunction* a2_;
   /** The chosen operator */
   Operator op_;
+
+  /** How many operands does this cost expression take? */
+  size_t arity_;
+  /** Set the correctness term */
+  ExprCost* correctness_;
+
+
 
 };
 

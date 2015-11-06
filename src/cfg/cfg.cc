@@ -21,6 +21,9 @@ using namespace x64asm;
 
 namespace stoke {
 
+Assembler Cfg::assembler_ = Assembler();
+Function Cfg::buffer_ = Function();
+
 Cfg::loc_type Cfg::get_loc(size_t idx) const {
   assert(idx < get_code().size());
   for (auto i = get_exit() - 1; i > get_entry(); --i)
@@ -52,8 +55,28 @@ bool Cfg::invariant_no_undef_reads() const {
 }
 
 bool Cfg::invariant_no_undef_live_outs() const {
+  // NOTE: if this method changes, then which_undef_read must be adapted accordingly!
   const auto di_end = def_ins_[blocks_[get_exit()]];
   return di_end.contains(fxn_live_outs_);
+}
+
+bool Cfg::invariant_can_assemble() const {
+  bool need_check = false;
+  auto code = get_code();
+  for (auto instr : code) {
+    Opcode op = instr.get_opcode();
+    if (label32_transform(op) != op) {
+      need_check = true;
+      break;
+    }
+  }
+
+  if (!need_check)
+    return true;
+
+  buffer_.clear();
+  buffer_.reserve(code.size()*32);
+  return assembler_.assemble(buffer_, code);
 }
 
 string Cfg::which_undef_read() const {
@@ -67,10 +90,10 @@ string Cfg::which_undef_read() const {
   for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
     for (size_t j = 0, je = num_instrs(*i); j < je; ++j) {
       const auto idx = get_index({*i, j});
-      const auto r = must_read_set(get_code()[idx]);
+      const auto r = maybe_read_set(get_code()[idx]);
       const auto di = def_ins_[idx];
 
-      if ((r & di) != r) {
+      if (!di.contains(r)) {
         ss << (empty ? "" : ". ") << "Instruction '" << get_code()[idx] << "' reads " << r << " but only " << di << " are defined.";
         empty = false;
         return ss.str();
@@ -81,7 +104,7 @@ string Cfg::which_undef_read() const {
   // Check that the live outs are all defined
   // i.e. every life_out is also def in at the end
   const auto di_end = def_ins_[blocks_[get_exit()]];
-  if ((di_end & fxn_live_outs_) != fxn_live_outs_) {
+  if (!di_end.contains(fxn_live_outs_)) {
     ss << (empty ? "" : ". ") << "At the end, " << fxn_live_outs_ << " should be defined, but only " << di_end << " are.";
     empty = false;
   }

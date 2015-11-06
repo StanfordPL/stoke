@@ -46,15 +46,65 @@ void callback_wrapper(StateCallback cb, Code* code, size_t line, CpuState* curre
 namespace stoke {
 
 bool Sandbox::is_supported(Opcode o) {
+
+  // check that the type of each operand is ok
+  // TODO: this could be boiled down to a table lookup, but I don't
+  // think any performance-critical pieces of code depend on this.
+  Instruction instr(o);
+  for (size_t i = 0; i < instr.arity(); ++i) {
+    switch (instr.type(i)) {
+    case Type::HINT:
+    case Type::IMM_8:
+    case Type::IMM_16:
+    case Type::IMM_32:
+    case Type::IMM_64:
+    case Type::ZERO:
+    case Type::ONE:
+    case Type::THREE:
+    case Type::LABEL:
+    case Type::M_8:
+    case Type::M_16:
+    case Type::M_16_INT:
+    case Type::M_32:
+    case Type::M_32_INT:
+    case Type::M_32_FP:
+    case Type::M_64:
+    case Type::M_64_INT:
+    case Type::M_64_FP:
+    case Type::M_128:
+    case Type::M_256:
+    case Type::M_80_BCD:
+    case Type::M_80_FP:
+    case Type::MM:
+    case Type::R_8:
+    case Type::RH:
+    case Type::AL:
+    case Type::CL:
+    case Type::R_16:
+    case Type::AX:
+    case Type::DX:
+    case Type::R_32:
+    case Type::EAX:
+    case Type::R_64:
+    case Type::RAX:
+    case Type::XMM:
+    case Type::XMM_0:
+    case Type::YMM:
+      continue;
+      break;
+    default:
+      return false;
+      break;
+    }
+  }
+
   return unsupported_.find(o) == unsupported_.end();
 }
 
-Sandbox::Sandbox() {
+void Sandbox::init() {
   set_abi_check(true);
   set_stack_check(true);
   set_max_jumps(16);
-  set_count_instructions(false);
-  set_use_latency(false);
 
   harness_ = emit_harness();
   signal_trap_ = emit_signal_trap();
@@ -78,6 +128,8 @@ Sandbox::Sandbox() {
 Sandbox& Sandbox::insert_input(const CpuState& input) {
   io_pairs_.push_back(new IoPair());
   auto io = io_pairs_.back();
+
+  set_label_pool(x64asm::Label("GLOBAL_LABEL_POOL"));
 
   // Use this input as both input AND output
   io->in_ = input;
@@ -112,8 +164,7 @@ Sandbox& Sandbox::insert_function(const Cfg& cfg) {
     fxns_src_[label] = new Cfg(cfg);
     recompile(cfg);
   } else {
-    delete fxns_src_[label];
-    fxns_src_[label] = new Cfg(cfg);
+    *fxns_src_[label] = cfg;
     recompile(cfg);
   }
 
@@ -191,12 +242,13 @@ Sandbox& Sandbox::run(size_t index) {
     io->out_.stack.copy(io->in_.stack);
     io->out_.heap.copy(io->in_.heap);
     io->out_.data.copy(io->in_.data);
+    for (size_t i = 0, ie=io->out_.segments.size(); i < ie; ++i) {
+      io->out_.segments[i].copy(io->in_.segments[i]);
+    }
   }
 
   // Reset error-related variables
   jumps_remaining_ = max_jumps_;
-  // Reset instruction count
-  instruction_count_ = 0;
 
   // Initialize input-specific state that the instrumented function relies on
   // State that doesn't vary on a per-input basis (ie: entrypoint_) is set elsewhere
@@ -223,9 +275,6 @@ Sandbox& Sandbox::run(size_t index) {
   // Finalize output state
   if (abi_check_ && !check_abi(*io)) {
     io->out_.code = ErrorCode::SIGCUSTOM_ABI_VIOLATION;
-  }
-  if (count_instructions_) {
-    io->out_.latency_seen = instruction_count_;
   }
 
   return *this;
@@ -317,12 +366,12 @@ Function Sandbox::emit_harness() {
 
   // Almost immediately, all bets will be off.
   // Backup ALL callee-saved registers right away
-  assm_.push(rbx);
-  assm_.push(rbp);
-  assm_.push(r12);
-  assm_.push(r13);
-  assm_.push(r14);
-  assm_.push(r15);
+  assm_.push_1(rbx);
+  assm_.push_1(rbp);
+  assm_.push_1(r12);
+  assm_.push_1(r13);
+  assm_.push_1(r14);
+  assm_.push_1(r15);
 
   // Save the %rsp for this stack frame
   // If control ever traps an exception, we'll restore the %rsp here
@@ -338,7 +387,7 @@ Function Sandbox::emit_harness() {
   // Load the main function onto the stack and invoke it
   // At this point %rsp is all we have to work with
   // The rest of the user's state must be restored prior to the call
-  assm_.push(rax);
+  assm_.push_1(rax);
   assm_.mov(rax, Moffs64(&entrypoint_));
   assm_.xchg(rax, M64(rsp));
   assm_.call(M64(rsp));
@@ -346,25 +395,26 @@ Function Sandbox::emit_harness() {
 
   // Now load the function that reads user state and invoke it
   // The same restrictions apply here; we can't disturb the user's state
-  assm_.push(rax);
+  assm_.push_1(rax);
   assm_.mov(rax, Moffs64(&cpu2out_));
   assm_.xchg(rax, M64(rsp));
   assm_.call(M64(rsp));
   assm_.lea(rsp, M64(rsp, Imm32(8)));
 
   // Restore callee-save state
-  assm_.pop(r15);
-  assm_.pop(r14);
-  assm_.pop(r13);
-  assm_.pop(r12);
-  assm_.pop(rbp);
-  assm_.pop(rbx);
+  assm_.pop_1(r15);
+  assm_.pop_1(r14);
+  assm_.pop_1(r13);
+  assm_.pop_1(r12);
+  assm_.pop_1(rbp);
+  assm_.pop_1(rbx);
 
   // If control has made it back here, we've exited normally; return 0
   assm_.mov(rax, Imm32(0));
   assm_.ret();
 
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
   return fxn;
 }
 
@@ -393,18 +443,19 @@ Function Sandbox::emit_signal_trap() {
   assm_.mov(rsp, rax);
 
   // Pop off the callee-saved register state we left in the harness
-  assm_.pop(r15);
-  assm_.pop(r14);
-  assm_.pop(r13);
-  assm_.pop(r12);
-  assm_.pop(rbp);
-  assm_.pop(rbx);
+  assm_.pop_1(r15);
+  assm_.pop_1(r14);
+  assm_.pop_1(r13);
+  assm_.pop_1(r12);
+  assm_.pop_1(rbp);
+  assm_.pop_1(rbx);
 
   // Return the error code and go back to STOKE
   assm_.mov(rax, rdi);
   assm_.ret();
 
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
   return fxn;
 }
 
@@ -428,7 +479,7 @@ Function Sandbox::emit_state2cpu(const CpuState& cs) {
   // We can skip that check here because this method is only ever called to load
   // the cpu with known good state,
   assm_.mov(rax, Moffs64(cs.rf.data()));
-  assm_.push(rax);
+  assm_.push_1(rax);
   assm_.popfq();
   // Write SSE regs (width is target dependent)
   for (const auto& s : xmms) {
@@ -451,7 +502,8 @@ Function Sandbox::emit_state2cpu(const CpuState& cs) {
   // Done
   assm_.ret();
 
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
   return fxn;
 }
 
@@ -473,7 +525,7 @@ Function Sandbox::emit_cpu2state(CpuState& cs) {
   assm_.start(fxn);
 
   // Backup scratch registers no matter what
-  assm_.push(rax);
+  assm_.push_1(rax);
 
   // Read non-rsp GP regs
   for (const auto& r : r64s) {
@@ -506,12 +558,13 @@ Function Sandbox::emit_cpu2state(CpuState& cs) {
   assm_.popfq();
 
   // Restore scratch regs
-  assm_.pop(rax);
+  assm_.pop_1(rax);
 
   // Done
   assm_.ret();
 
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
   return fxn;
 }
 
@@ -535,55 +588,66 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   Function fxn;
   assm_.start(fxn);
 
-  // Define labels
-  const auto fail = get_label();
-  const auto done = get_label();
-  const auto heap_case = get_label();
-  const auto data_case = get_label();
+  // Populate a list of memory segments we need to emit code for
+  vector<Memory*> segments;
+  vector<Label> segment_cases;
+
+  if (cs.stack.size())
+    segments.push_back(&cs.stack);
+  if (cs.heap.size())
+    segments.push_back(&cs.heap);
+  if (cs.data.size())
+    segments.push_back(&cs.data);
+  for (auto seg : cs.segments)
+    if (seg.size())
+      segments.push_back(&seg);
+
+  // get labels
+  auto done = get_label();
+  auto fail = get_label();
+
+  if (segments.size()) {
+    for (size_t i = 0; i < segments.size() - 1; ++i)
+      segment_cases.push_back(get_label());
+  }
+  segment_cases.push_back(fail);
 
   // Check alignment: A well aligned address won't change
   // Following this check, rsi is free for use as scratch space
   assm_.and_(rsi, rdi);
   assm_.cmp(rsi, rdi);
-  assm_.jne(fail);
+  assm_.jne_1(fail);
 
-  // Stack case: Check that this address is inside the stack
-  assm_.mov((R64)rax, Imm64(cs.stack.lower_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jl(heap_case);
+  // emit the code to figure out which segment we're writing to.
+  for (size_t i = 0; i < segments.size(); ++i) {
+    Memory* segment = segments[i];
 
-  assm_.sub(rdi, rax);
-  assm_.mov((R64)rax, Imm64(cs.stack.size()));
-  assm_.cmp(rdi, rax);
-  assm_.jge(fail);
+    if (i > 0)
+      assm_.bind(segment_cases[i-1]);
 
-  emit_map_addr_cases(cs, fail, done, 0);
+    // Compare the address (rdi) with the upper bound of the segment (rax).
+    // Look out for overflow!  upper_bound() could be zero at the end of the
+    // address space!  In which case, we skip this check.  This is safe because
+    // we're only emitting code for segments with non-zero size, and the lower
+    // bound check will make sure things are sane.
+    if (segment->upper_bound()) {
+      assm_.mov((R64)rax, Imm64(segment->upper_bound()));
+      assm_.cmp(rdi, rax);
+      assm_.ja_1(segment_cases[i]);
+    }
 
-  // Heap case: Check that the address is inside the heap
-  assm_.bind(heap_case);
-  assm_.mov((R64)rax, Imm64(cs.heap.lower_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jl(data_case);
+    // compare the address (rdi) with the lower bound of the segment (rax)
+    assm_.mov((R64)rax, Imm64(segment->lower_bound()));
+    assm_.cmp(rdi, rax);
+    assm_.jb_1(segment_cases[i]);
 
-  assm_.sub(rdi, rax);
-  assm_.mov((R64)rax, Imm64(cs.heap.size()));
-  assm_.cmp(rdi, rax);
-  assm_.jge(fail);
+    // subtract the lower bound from rdi to get the offset into the segment
+    assm_.sub(rdi, rax);
 
-  emit_map_addr_cases(cs, fail, done, 1);
+    // emit the memory access
+    emit_map_addr_cases(fail, done, segment);
 
-  // Data case: Check that the address is inside the data section
-  assm_.bind(data_case);
-  assm_.mov((R64)rax, Imm64(cs.data.lower_bound()));
-  assm_.cmp(rdi, rax);
-  assm_.jl(fail);
-
-  assm_.sub(rdi, rax);
-  assm_.mov((R64)rax, Imm64(cs.data.size()));
-  assm_.cmp(rdi, rax);
-  assm_.jge(fail);
-
-  emit_map_addr_cases(cs, fail, done, 2);
+  }
 
   // If control reaches here, invoke the signal_trap handler for sigsegv
   assm_.bind(fail);
@@ -593,11 +657,17 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
   assm_.bind(done);
   assm_.ret();
 
-  assm_.finish();
+  bool ok = assm_.finish();
+  assert(ok);
   return fxn;
 }
 
-void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& done, size_t mem) {
+/** Back in the day, this function did a switch() statement to choose between
+ * the stack/heap/data segments, rather than receiving a pointer to memory.
+ * Hence "cases" in the name.  It could, probably, be
+ * renamed/removed/refactored.  And we can do that.  But for now, as a tribute
+ * to Eric's work on the Sandbox, it's gonna stick around here. -- BRC */
+void Sandbox::emit_map_addr_cases(const Label& fail, const Label& done, Memory* mem) {
   // Save rcx (we need to use it for the shift instruction below)
   assm_.mov(rax, rcx);
   // We have a valid address, divide by to find the corresponding address in the mask array
@@ -612,61 +682,25 @@ void Sandbox::emit_map_addr_cases(CpuState& cs, const Label& fail, const Label& 
   assm_.mov(rcx, rax);
 
   // The read mask shouldn't change when and'ed against the valid mask
-  switch (mem) {
-  case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
-    break;
-  case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
-    break;
-  case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.valid_mask()));
-    break;
-  default:
-    assert(false);
-  }
+  assm_.mov((R64)rax, Imm64(mem->valid_mask()));
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rdx);
   assm_.cmp(rax, rdx);
-  assm_.jne(fail);
+  assm_.jne_1(fail);
 
   // The write mask shouldn't change when and'ed against the valid mask
-  switch (mem) {
-  case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.valid_mask()));
-    break;
-  case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.valid_mask()));
-    break;
-  case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.valid_mask()));
-    break;
-  default:
-    assert(false);
-  }
+  assm_.mov((R64)rax, Imm64(mem->valid_mask()));
   assm_.mov(rax, M64(rax, rsi, Scale::TIMES_1));
   assm_.and_(rax, rcx);
   assm_.cmp(rax, rcx);
-  assm_.jne(fail);
+  assm_.jne_1(fail);
 
   // Do final remapping
-  switch (mem) {
-  case 0:
-    assm_.mov((R64)rax, Imm64(cs.stack.data()));
-    break;
-  case 1:
-    assm_.mov((R64)rax, Imm64(cs.heap.data()));
-    break;
-  case 2:
-    assm_.mov((R64)rax, Imm64(cs.data.data()));
-    break;
-  default:
-    assert(false);
-  }
+  assm_.mov((R64)rax, Imm64(mem->data()));
   assm_.add(rax, rdi);
 
   // Get out of here
-  assm_.jmp(done);
+  assm_.jmp_1(done);
 }
 
 bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
@@ -709,10 +743,14 @@ bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
 // Arguments:
 //   <none>
 
-void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
+bool Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   assert(cfg.get_function().invariant_first_instr_is_label());
 
   assm_.start(*fxn);
+
+  // Grab the name of this function
+  const auto label = cfg.get_function().get_leading_label();
+  set_label_pool(label);
 
   // The label that begins a function must precede instrumentation .
   // Inter-function calls should target this label.
@@ -722,8 +760,7 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   const auto entry = get_label();
   assm_.bind(entry);
 
-  // Grab the name of this function and make a unique label for representing the end
-  const auto label = cfg.get_function().get_leading_label();
+  // Make a unique label for representing the end
   const auto exit = get_label();
 
   // Assemble instructions and add instrumentation for reachable blocks
@@ -731,15 +768,12 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
     if (!cfg.is_reachable(b)) {
       continue;
     }
-    // Emit code for counting the instructions in this block
-    if (count_instructions_) {
-      emit_count_instructions(cfg, b);
-    }
 
     const auto size = cfg.num_instrs(b);
     const auto begin = size == 0 ? 0 : cfg.get_index(Cfg::loc_type(b, 0));
 
     for (auto i = begin, ie = begin + size; i < ie; ++i) {
+      assert(i < cfg.get_code().size());
       // Look up instruction and rip that points beyond this instruction
       const auto& f = cfg.get_function();
       const auto& instr = f.get_code()[i];
@@ -764,7 +798,10 @@ void Sandbox::emit_function(const Cfg& cfg, Function* fxn) {
   // Restore the STOKE %rsp and return
   emit_load_stoke_rsp();
   assm_.ret();
-  assm_.finish();
+
+  bool ok = assm_.finish();
+  assert(ok);
+  return ok;
 }
 
 void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, const Label& fxn, size_t line) {
@@ -772,7 +809,7 @@ void Sandbox::emit_callback(const pair<StateCallback, void*>& cb, const Label& f
   emit_load_stoke_rsp();
 
   // Read the user's state without disturbing any state in the process
-  assm_.push(rax);
+  assm_.push_1(rax);
   assm_.mov(rax, Moffs64(&cpu2out_));
   assm_.xchg(rax, M64(rsp));
   assm_.call(M64(rsp));
@@ -834,7 +871,7 @@ void Sandbox::emit_after(const Label& label, size_t line) {
 
 void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint64_t hex_offset, const Label& entry, const Label& exit) {
   static DispatchTable table;
-  switch(table.lookup(instr)) {
+  switch (table.lookup(instr)) {
   case DispatchTable::SIGILL_:
     emit_signal_trap_call(ErrorCode::SIGILL_);
     break;
@@ -901,21 +938,6 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
   }
 }
 
-void Sandbox::emit_count_instructions(const Cfg& cfg, Cfg::id_type bb) {
-  size_t count = 0;
-  for (auto i = cfg.instr_begin(bb), ie = cfg.instr_end(bb); i != ie; ++i) {
-    if(i->is_label_defn() || i->is_nop())
-      continue;
-    count++;
-  }
-
-  assm_.mov(Moffs64(&scratch_[rax]), rax);
-  assm_.mov(rax, Moffs64(&instruction_count_));
-  assm_.lea(rax, M64(rax, Imm32(count)));
-  assm_.mov(Moffs64(&instruction_count_), rax);
-  assm_.mov(rax, Moffs64(&scratch_[rax]));
-}
-
 void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_offset) {
   // Grab the memory operand (no sense copying if we can promise to be const)
   const auto mi = instr.mem_index();
@@ -925,11 +947,11 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   // We'll be doing some function calls, and need some scratch, so load STOKE's rsp
   emit_load_stoke_rsp();
   // Backup some scratch values and the rflags register
-  assm_.push(rax);
-  assm_.push(rcx);
-  assm_.push(rdx);
-  assm_.push(rdi);
-  assm_.push(rsi);
+  assm_.push_1(rax);
+  assm_.push_1(rcx);
+  assm_.push_1(rdx);
+  assm_.push_1(rdi);
+  assm_.push_1(rsi);
   assm_.pushfq();
 
   // Does this address use rsp or rip offset indexing?
@@ -1028,11 +1050,11 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
 
   // Restore the scratch space
   assm_.popfq();
-  assm_.pop(rsi);
-  assm_.pop(rdi);
-  assm_.pop(rdx);
-  assm_.pop(rcx);
-  assm_.pop(rax);
+  assm_.pop_1(rsi);
+  assm_.pop_1(rdi);
+  assm_.pop_1(rdx);
+  assm_.pop_1(rcx);
+  assm_.pop_1(rax);
   // Along with the user's rsp
   emit_load_user_rsp();
 
@@ -1052,7 +1074,7 @@ void Sandbox::emit_jump(const Instruction& instr) {
   // Load the STOKE %rsp, we'll need to do some pushing here
   emit_load_stoke_rsp();
   // Backup rax and rflags
-  assm_.push(rax);
+  assm_.push_1(rax);
   assm_.pushfq();
 
   // Decrement the jump counter
@@ -1061,18 +1083,22 @@ void Sandbox::emit_jump(const Instruction& instr) {
 
   // Jump over the signal trap call if we haven't hit zero yet
   const auto okay = get_label();
-  assm_.jne(okay);
+  assm_.jne_1(okay);
   emit_signal_trap_call(ErrorCode::SIGCUSTOM_EXCEEDED_MAX_JUMPS);
   assm_.bind(okay);
 
   // Restore rflags and rax
   assm_.popfq();
-  assm_.pop(rax);
+  assm_.pop_1(rax);
   // Reload the user's %rsp
   emit_load_user_rsp();
 
+  // If this is a jump to an 8-bit offset, replace with a 32-bit one if possible
+  Instruction copy = instr;
+  copy.label32_transform();
+
   // Go ahead and do the jump
-  assm_.assemble(instr);
+  assm_.assemble(copy);
 }
 
 void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
@@ -1083,7 +1109,7 @@ void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
   // Sandboxing the memory dereference will catch infinite recursions
   assm_.mov(Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]), rax);
   assm_.mov((R64)rax, Imm64(hex_offset));
-  emit_push({PUSH_R64, {rax}});
+  emit_push({PUSH_R64_1, {rax}});
   assm_.mov(rax, Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]));
 
   // Restore the STOKE %rsp before the call and the user's rsp after
@@ -1095,7 +1121,7 @@ void Sandbox::emit_call(const Instruction& instr, uint64_t hex_offset) {
   // We just want to be able to catch an rsp that was left in a bad location
   assm_.mov(Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]), rax);
   assm_.mov((R64)rax, Imm64(hex_offset));
-  emit_pop({POP_R64, {rax}});
+  emit_pop({POP_R64_1, {rax}});
   assm_.mov(rax, Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]));
 }
 
@@ -1106,7 +1132,7 @@ void Sandbox::emit_call_with_stack_check(const Instruction& instr, uint64_t hex_
   // Sandboxing the memory dereference will catch infinite recursions
   assm_.mov(Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]), rax);
   assm_.mov((R64)rax, Imm64(hex_offset));
-  emit_push({PUSH_R64, {rax}});
+  emit_push({PUSH_R64_1, {rax}});
   assm_.mov(rax, Moffs64(&scratch_[SANDBOX_SCRATCH_EXTRA_1]));
 
   // Restore the STOKE %rsp before the call
@@ -1114,13 +1140,13 @@ void Sandbox::emit_call_with_stack_check(const Instruction& instr, uint64_t hex_
   assm_.assemble(instr);
 
   // Backup some regs while we still have the stoke rsp
-  assm_.push(rax);
-  assm_.push(rbx);
+  assm_.push_1(rax);
+  assm_.push_1(rbx);
   assm_.pushfq();
 
   // Restore the user's rsp just long enough to pop the return address
   emit_load_user_rsp();
-  emit_pop({POP_R64, {rax}});
+  emit_pop({POP_R64_1, {rax}});
 
   // Now back to the stoke rsp to check the result and fix up the stack
   emit_load_stoke_rsp();
@@ -1128,34 +1154,34 @@ void Sandbox::emit_call_with_stack_check(const Instruction& instr, uint64_t hex_
   const auto okay = get_label();
   assm_.mov((R64)rbx, Imm64(hex_offset));
   assm_.cmp(rax, rbx);
-  assm_.je(okay);
+  assm_.je_1(okay);
   emit_signal_trap_call(ErrorCode::SIGCUSTOM_STACK_SMASH);
 
   assm_.bind(okay);
   assm_.popfq();
-  assm_.pop(rbx);
-  assm_.pop(rax);
+  assm_.pop_1(rbx);
+  assm_.pop_1(rax);
 
   // Leave with the user's rsp in place
   emit_load_user_rsp();
 }
 
 void Sandbox::emit_ret(const Instruction& instr, const Label& exit) {
-  assm_.jmp(exit);
+  assm_.jmp_1(exit);
 }
 
 void Sandbox::emit_leave(const Instruction& instr) {
   assm_.mov(rsp, rbp);
-  emit_pop({POP_R64, {rbp}});
+  emit_pop({POP_R64_1, {rbp}});
 }
 
 void Sandbox::emit_mem_bt(const Instruction& instr) {
   // We're going to need to compute some values and modify eflags in the process.
   // Grab the STOKE rsp to back them up along with some registers while we have it.
   emit_load_stoke_rsp();
-  assm_.push(rdi);
-  assm_.push(rsi);
-  assm_.push(r8);
+  assm_.push_1(rdi);
+  assm_.push_1(rsi);
+  assm_.push_1(r8);
   assm_.pushfq();
   emit_load_user_rsp();
 
@@ -1210,9 +1236,9 @@ void Sandbox::emit_mem_bt(const Instruction& instr) {
 
   // None of these variants write registers. Restore the values we saved.
   emit_load_stoke_rsp();
-  assm_.pop(r8);
-  assm_.pop(rsi);
-  assm_.pop(rdi);
+  assm_.pop_1(r8);
+  assm_.pop_1(rsi);
+  assm_.pop_1(rdi);
   emit_load_user_rsp();
 }
 
@@ -1356,17 +1382,17 @@ void Sandbox::emit_popf(const Instruction& instr) {
 
   // Backup some scratch space
   emit_load_stoke_rsp();
-  assm_.push(r15);
-  assm_.push(r14);
+  assm_.push_1(r15);
+  assm_.push_1(r14);
   emit_load_user_rsp();
 
   // Restore the user's rsp and try to take some bits off of his stack
   // If a segv were going to happen, we would catch it here
   if (instr.get_opcode() == POPFQ) {
-    emit_pop({POP_R64, {r15}});
+    emit_pop({POP_R64_1, {r15}});
   } else {
     assm_.lea(r15, M64(Imm32(0)));
-    emit_pop({POP_R16, {r15w}});
+    emit_pop({POP_R16_1, {r15w}});
   }
 
   // Now back to stoke to do some real work
@@ -1380,7 +1406,7 @@ void Sandbox::emit_popf(const Instruction& instr) {
   assm_.and_(r14d, Imm32(reserved_mask));
   // If the value is non-zero (meaning there was a disagreement), trigger a segfault (meaning freak out)
   const auto okay = get_label();
-  assm_.je(okay);
+  assm_.je_1(okay);
   emit_signal_trap_call(ErrorCode::SIGCUSTOM_INVALID_POPF);
   assm_.bind(okay);
 
@@ -1393,14 +1419,14 @@ void Sandbox::emit_popf(const Instruction& instr) {
   assm_.or_(r15, r14);
 
   // Load this value onto the stack and pop into rflags
-  assm_.push(r15);
+  assm_.push_1(r15);
   assm_.popfq();
   // One more pop to put the stack back where it was (we can clobber r14)
-  assm_.pop(r14);
+  assm_.pop_1(r14);
 
   // Restore everything and reload the user's rsp
-  assm_.pop(r14);
-  assm_.pop(r15);
+  assm_.pop_1(r14);
+  assm_.pop_1(r15);
   emit_load_user_rsp();
 }
 
@@ -1419,6 +1445,7 @@ void Sandbox::emit_push(const Instruction& instr) {
     assm_.lea(rsp, M64(rsp, Imm32(-1)));
     break;
   case PUSH_R16:
+  case PUSH_R16_1:
     emit_memory_instruction({MOV_M16_R16, {M16(rsp, Imm32(-2)), instr.get_operand<R16>(0)}});
     assm_.lea(rsp, M64(rsp, Imm32(-2)));
     break;
@@ -1438,22 +1465,22 @@ void Sandbox::emit_pushf(const Instruction& instr) {
   // We need to do some pushing and popping, so reload the stoke rsp
   emit_load_stoke_rsp();
   // Backup the value of r15, which we're going to clobber and move rflags there
-  assm_.push(r15);
+  assm_.push_1(r15);
   assm_.pushfq();
-  assm_.pop(r15);
+  assm_.pop_1(r15);
 
   // Now restore the user's rsp and try pushing r15 onto the user's stack
   // If a segfault were going to happen, we would catch it here.
   emit_load_user_rsp();
   if (instr.get_opcode() == PUSHFQ) {
-    emit_push({PUSH_R64, {r15}});
+    emit_push({PUSH_R64_1, {r15}});
   } else {
-    emit_push({PUSH_R16, {r15w}});
+    emit_push({PUSH_R16_1, {r15w}});
   }
 
   // Now switch back to stoke's rsp just long enough to restore the original r15
   emit_load_stoke_rsp();
-  assm_.pop(r15);
+  assm_.pop_1(r15);
   emit_load_user_rsp();
 }
 
@@ -1462,8 +1489,14 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   auto rsp_op = false;
   switch (instr.type(0)) {
   case Type::R_8:
+    rsp_op = instr.get_operand<R8>(0) == spl;
+    break;
   case Type::R_16:
+    rsp_op = instr.get_operand<R16>(0) == sp;
+    break;
   case Type::R_32:
+    rsp_op = instr.get_operand<R32>(0) == esp;
+    break;
   case Type::R_64:
     rsp_op = instr.get_operand<R64>(0) == rsp;
     break;
@@ -1476,13 +1509,13 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   if (rsp_op) {
     // If the user's rsp is the operand, we'll need to move it someplace where we can use it
     // div implicitly reads/writes rax, so we'll need to use rdi instead.
-    assm_.push(rdi);
+    assm_.push_1(rdi);
     assm_.mov(rdi, Imm64(&user_rsp_));
     assm_.mov(rdi, M64(rdi));
     // Emit the instruction (with rdi substituted for rsp)
     assm_.assemble({instr.get_opcode(), {rdi}});
     // Restore rdi.
-    assm_.pop(rdi);
+    assm_.pop_1(rdi);
   } else {
     // This is the easy case... just go for it, man
     assm_.assemble(instr);

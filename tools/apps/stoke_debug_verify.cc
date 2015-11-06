@@ -43,6 +43,23 @@ auto& show_unchanged = FlagArg::create("show_unchanged")
 auto& show_all_registers = FlagArg::create("diff_all_registers")
                            .description("Show changes in all registers, not just the ones from live_out and def_in");
 
+auto& machine_output_arg = ValueArg<string>::create("machine_output")
+                           .usage("<path/to/file.s>")
+                           .description("Machine-readable output (result and counterexample)");
+
+
+void print_machine_output(bool verified, string error, string counterexample, bool has_counterexample) {
+  ofstream f;
+  f.open(machine_output_arg.value());
+  f << "{" << endl;
+  f << "  \"verified\": " << (verified ? "true" : "false") << "," << endl;
+  f << "  \"counter_examples_available\": " << (has_counterexample ? "true" : "false") << "," << endl;
+  f << "  \"counterexample\": \"" << counterexample << "\"," << endl;
+  f << "  \"error\": \"" << error << "\"" << endl;
+  f << "}" << endl;
+  f.close();
+}
+
 int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
@@ -56,9 +73,7 @@ int main(int argc, char** argv) {
   TestSetGadget test_set(seed);
   SandboxGadget sb(test_set, aux_fxns);
   CorrectnessCostGadget fxn(target, &sb);
-  SolverGadget smt;
-  ValidatorGadget validator(smt);
-  VerifierGadget verifier(fxn, validator);
+  VerifierGadget verifier(sb, fxn);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
@@ -75,30 +90,31 @@ int main(int argc, char** argv) {
 
   Console::msg() << endl;
 
-  if (strategy_arg.value() == Strategy::NONE) {
+  if (strategy_arg.value() == "none") {
     Console::warn() << "'--stragegy none' passed, so no verification is done." << endl;
     return 0;
   }
 
   const auto res = verifier.verify(target, rewrite);
 
-  if(verifier.has_error()) {
+  if (verifier.has_error()) {
     Console::msg() << "Encountered error: " << endl;
     Console::msg() << verifier.error() << endl;
+    print_machine_output(false, verifier.error(), "", false);
     return 1;
   }
 
   Console::msg() << "Equivalent: " << (res ? "yes" : "no") << endl;
 
-  if (!res && verifier.counter_example_available()) {
-    Console::msg() << endl << "Counterexample:" << endl;
+  if (!res && verifier.counter_examples_available()) {
+    Console::msg() << endl << verifier.counter_examples_available() << " Counterexamples." << endl;
     Console::msg() << endl;
-    Console::msg() << verifier.get_counter_example();
+    Console::msg() << verifier.get_counter_examples()[0];
     Console::msg() << endl << endl;
     Console::msg() << "Difference of running target and rewrite on the counterexample:";
     Console::msg() << endl << endl;
     CpuStates tcs;
-    tcs.push_back(verifier.get_counter_example());
+    tcs.push_back(verifier.get_counter_examples()[0]);
     SandboxGadget sb(tcs, aux_fxns);
     sb.run(target);
     const auto target_result = *(sb.result_begin());
@@ -108,6 +124,23 @@ int main(int argc, char** argv) {
     Console::msg() << endl;
   } else if (!res) {
     Console::msg() << endl << "No counterexample available." << endl;
+  }
+
+  // output machine-readable result
+  if (machine_output_arg.has_been_provided()) {
+    auto cpustate_to_string = [](CpuState cs) {
+      stringstream ss;
+      ss << cs;
+      auto res = regex_replace(ss.str(), regex("\n"), "\\n");
+      return res;
+    };
+
+    string counterexample = "";
+    if (verifier.counter_examples_available()) {
+      counterexample = cpustate_to_string(verifier.get_counter_examples()[0]);
+    }
+
+    print_machine_output(res, "", counterexample, verifier.counter_examples_available());
   }
 
   return 0;

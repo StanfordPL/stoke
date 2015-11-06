@@ -69,10 +69,13 @@ public:
     return contents_ != rhs.contents_;
   }
 
+  // TODO: we should really move the register names to make them part of the
+  // class and assign them on construction.  This will simplify the parser
+  // slightly and make things more consistent. -- BRC
   /** Write text. */
   std::ostream& write_text(std::ostream& os, const char** names, size_t padding) const;
   /** Read text. */
-  std::istream& read_text(std::istream& is);
+  std::istream& read_text(std::istream& is, const char** names);
 
   /** Write binary. */
   std::ostream& write_bin(std::ostream& os) const {

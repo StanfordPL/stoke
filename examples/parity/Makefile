@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-all: orig extract search replace
+all: orig extract testcases search replace
 
 orig:
 	g++ -std=c++11 -fno-inline -O3 main.cc
@@ -22,6 +22,9 @@ time:
 
 extract:
 	stoke extract --config extract.conf
+
+testcases:
+	stoke testcase --target bins/_Z6paritym.s > parity.tc
 
 search:
 	stoke search --config search.conf

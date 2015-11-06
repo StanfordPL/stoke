@@ -26,9 +26,10 @@ using namespace stoke;
 
 namespace {
 
-array<pair<string, Distance>, 3> ds {{
+array<pair<string, Distance>, 4> ds {{
     {"hamming", Distance::HAMMING},
     {"ulp", Distance::ULP},
+    {"doubleword", Distance::DOUBLEWORD},
 
     // Add user-defined extensions here ...
     {"extension", Distance::EXTENSION}

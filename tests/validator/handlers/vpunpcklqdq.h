@@ -15,7 +15,7 @@
 
 namespace stoke {
 
-class ValidatorVpunpcklqdqTest : public ValidatorTest {};
+class ValidatorVpunpcklqdqTest : public StraightLineValidatorTest {};
 
 TEST_F(ValidatorVpunpcklqdqTest, DISABLED_Identity) {
 

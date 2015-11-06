@@ -14,7 +14,7 @@
 
 namespace stoke {
 
-class ValidatorMemoryTest : public ValidatorTest { };
+class ValidatorMemoryTest : public StraightLineValidatorTest { };
 
 TEST_F(ValidatorMemoryTest, ReadAfterSameWrite) {
 

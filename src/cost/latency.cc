@@ -24,7 +24,7 @@ namespace stoke {
 
 uint64_t LatencyCost::nesting_penalty(size_t nesting_depth) {
 
-  for(size_t i = nesting_lookup_.size(); i <= nesting_depth; ++i) {
+  for (size_t i = nesting_lookup_.size(); i <= nesting_depth; ++i) {
     nesting_lookup_.push_back(nesting_lookup_[i-1]*nesting_penalty_);
   }
   return nesting_lookup_[nesting_depth];
@@ -59,7 +59,7 @@ LatencyCost::result_type LatencyCost::operator()(const Cfg& cfg, Cost max) {
       latency += block_latency*nesting_penalty(nd);
     }
 
-    if(latency >= max) {
+    if (latency >= max) {
       return result_type(true, max);
     }
   }
