@@ -254,7 +254,7 @@ public:
   /** Visit an array STORE */
   void visit(const SymArrayStore * const a) {
     pretty(SYMSTATE_PRETTY_MAX_LEVEL, a->a_);
-    os_ << "*"; 
+    os_ << "*";
     // Each star denotes one update.  This hides
     // details in the printout, but keeps it prettier.
 
