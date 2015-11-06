@@ -23,10 +23,12 @@
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
 #include "src/cfg/cfg_transforms.h"
+#include "src/expr/expr.h"
+#include "src/expr/expr_parser.h"
 #include "src/tunit/tunit.h"
 #include "src/search/progress_callback.h"
 #include "src/search/statistics_callback.h"
-#include "src/search/timeout.h"
+#include "src/search/failed_verification_action.h"
 #include "src/search/postprocessing.h"
 
 #include "tools/args/search.inc"
@@ -41,11 +43,12 @@
 #include "tools/gadgets/solver.h"
 #include "tools/gadgets/target.h"
 #include "tools/gadgets/testcases.h"
-#include "tools/gadgets/transforms.h"
+#include "tools/gadgets/transform_pools.h"
 #include "tools/gadgets/validator.h"
 #include "tools/gadgets/verifier.h"
+#include "tools/gadgets/weighted_transform.h"
 #include "tools/io/postprocessing.h"
-#include "tools/io/timeout.h"
+#include "tools/io/failed_verification_action.h"
 
 using namespace cpputil;
 using namespace std;
@@ -59,6 +62,10 @@ auto& out = ValueArg<string>::create("out")
             .description("File to write successful results to")
             .default_val("result.s");
 
+auto& machine_output_arg = ValueArg<string>::create("machine_output")
+                           .usage("<path/to/file.s>")
+                           .description("Machine-readable output (result and statistics)");
+
 auto& stats = Heading::create("Statistics Options:");
 auto& stat_int =
   ValueArg<size_t>::create("statistics_interval")
@@ -67,22 +74,30 @@ auto& stat_int =
   .default_val(1000000);
 
 auto& automation_heading = Heading::create("Automation Options:");
-auto& timeout_action_arg =
-  ValueArg<Timeout, TimeoutReader, TimeoutWriter>::create("timeout_action")
-  .usage("(quit|restart|list|testcase)")
-  .description("Action to take when search times out")
-  .default_val(Timeout::RESTART);
-auto& timeout_cycles_arg =
-  ValueArg<size_t>::create("timeout_cycles")
-  .usage("<int>")
-  .description("Number of timeout cycles to attempt before giving up")
-  .default_val(16);
 
-ValueArg<double>& exp_scaling_arg =
-  ValueArg<double>::create("exp_scaling")
+auto& timeout_iterations_arg =
+  cpputil::ValueArg<size_t>::create("timeout_iterations")
+  .usage("<int>")
+  .description("Total number of iterations before giving up (across all cycles)")
+  .default_val(100000000);
+
+auto& timeout_seconds_arg =
+  cpputil::ValueArg<double>::create("timeout_seconds")
   .usage("<double>")
-  .description("Exponential scaling factor of timeout iterations per cycle (requires timeout_action==restart)")
-  .default_val(1.0);
+  .description("Total number of seconds before giving up (across all cycles), or 0 for no timeout")
+  .default_val(0);
+
+auto& failed_verification_action =
+  ValueArg<FailedVerificationAction, FailedVerificationActionReader, FailedVerificationActionWriter>::create("failed_verification_action")
+  .usage("(quit|add_counterexample)")
+  .description("Action to take when the verification at the end fails")
+  .default_val(FailedVerificationAction::ADD_COUNTEREXAMPLE);
+
+auto& cycle_timeout_arg =
+  ValueArg<string, cpputil::LineReader<>>::create("cycle_timeout")
+  .usage("<string>")
+  .description("The timeout (as number of iterations) per cycle.  Can be a comma-separated list, where the first element is used for the first cycle, and so on.  Can also be an expression involving the variable 'i' that refers to the current cycle (starting at 1); expressions include integer constants, the variable 'i', and binary operators: +, -, *, /, ** (exponentiation), >>, << (shifts), ==, !=, <=, <, >, >= (comparisons), % (modulo), |, & (binary and/or).  The last expression in the list is used for all following cycles.")
+  .default_val("10000, 10000, 10000, 10000, 10000, 2**i * 1000");
 
 auto& postprocessing_arg =
   ValueArg<Postprocessing, PostprocessingReader, PostprocessingWriter>::create("postprocessing")
@@ -161,27 +176,25 @@ void show_statistics(const StatisticsCallbackData& data, ostream& os) {
   ofilterstream<Column> ofs(os);
   ofs.filter().padding(5);
 
+  const WeightedTransform* transform = static_cast<const WeightedTransform*>(data.transform);
+
   Statistics total;
-  for (size_t i = 0; i < 6; ++i) {
+  for (size_t i = 0; i < transform->size(); ++i) {
     total += data.move_statistics[i];
   }
 
   ofs << "Move Type" << endl;
   ofs << endl;
-  ofs << "Instruction" << endl;
-  ofs << "Opcode" << endl;
-  ofs << "Operand" << endl;
-  ofs << "Resize" << endl;
-  ofs << "Local Swap" << endl;
-  ofs << "Global Swap" << endl;
-  ofs << "Extension" << endl;
+  for (size_t i = 0; i < transform->size(); ++i) {
+    ofs << transform->get_transform(i)->get_name() << endl;
+  }
   ofs << endl;
   ofs << "Total";
   ofs.filter().next();
 
   ofs << "Proposed" << endl;
   ofs << endl;
-  for (size_t i = 0; i < (size_t) Move::NUM_MOVES; ++i) {
+  for (size_t i = 0; i < transform->size(); ++i) {
     ofs << 100 * (double)data.move_statistics[i].num_proposed / data.iterations << "%" << endl;
   }
   ofs << endl;
@@ -190,7 +203,7 @@ void show_statistics(const StatisticsCallbackData& data, ostream& os) {
 
   ofs << "Succeeded" << endl;
   ofs << endl;
-  for (size_t i = 0; i < (size_t) Move::NUM_MOVES; ++i) {
+  for (size_t i = 0; i < transform->size(); ++i) {
     ofs << 100 * (double)data.move_statistics[i].num_succeeded / data.iterations << "%" << endl;
   }
   ofs << endl;
@@ -199,7 +212,7 @@ void show_statistics(const StatisticsCallbackData& data, ostream& os) {
 
   ofs << "Accepted" << endl;
   ofs << endl;
-  for (size_t i = 0; i < (size_t) Move::NUM_MOVES; ++i) {
+  for (size_t i = 0; i < transform->size(); ++i) {
     ofs << 100 * (double)data.move_statistics[i].num_accepted / data.iterations << "%" << endl;
   }
   ofs << endl;
@@ -223,7 +236,9 @@ void scb(const StatisticsCallbackData& data, void* arg) {
 void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
                        size_t total_restarts,
                        size_t total_iterations, time_point<steady_clock> start,
-                       duration<double> search_elapsed) {
+                       duration<double> search_elapsed,
+                       bool verified,
+                       bool timeout) {
   auto total_elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
   sep(Console::msg(), "#");
   Console::msg() << "Final update:" << endl << endl;
@@ -240,11 +255,55 @@ void show_final_update(const StatisticsCallbackData& stats, SearchState& state,
   Console::msg() << stream.str();
   Console::msg() << endl << endl;
   sep(Console::msg(), "#");
+
+  // output machine-readable result
+  if (machine_output_arg.has_been_provided()) {
+    auto code_to_string = [](x64asm::Code code) {
+      stringstream ss;
+      ss << code;
+      auto res = regex_replace(ss.str(), regex("\n"), "\\n");
+      return res;
+    };
+
+    ofstream f;
+    f.open(machine_output_arg.value());
+    f << "{" << endl;
+    f << "  \"success\": " << (state.success ? "true" : "false") << "," << endl;
+    f << "  \"interrupted\": " << (state.interrupted ? "true" : "false") << "," << endl;
+    f << "  \"timeout\": " << (timeout ? "true" : "false") << "," << endl;
+    f << "  \"verified\": " << (verified ? "true" : "false") << "," << endl;
+    f << "  \"statistics\": {" << endl;
+    f << "    \"total_iterations\": " << total_iterations << "," << endl;
+    f << "    \"total_attempted_searches\": " << total_restarts << "," << endl;
+    f << "    \"total_search_time\": " << search_elapsed.count() << "," << endl;
+    f << "    \"total_time\": " << total_elapsed.count() << endl;
+    f << "  }," << endl;
+    f << "  \"best_yet\": {" << endl;
+    f << "    \"cost\": " << state.best_yet_cost << "," << endl;
+    f << "    \"code\": \"" << code_to_string(state.best_yet.get_code()) << "\"" << endl;
+    f << "  }," << endl;
+    f << "  \"best_correct\": {" << endl;
+    f << "    \"cost\": " << state.best_correct_cost << "," << endl;
+    f << "    \"code\": \"" << code_to_string(state.best_correct.get_code()) << "\"" << endl;
+    f << "  }" << endl;
+    f << "}" << endl;
+    f.close();
+  }
+}
+
+vector<string>& split(string& s, const string& delim, vector<string>& result) {
+  auto pos = string::npos;
+  while ((pos = s.find(delim)) != string::npos) {
+    result.push_back(s.substr(0, pos));
+    s.erase(0, pos + delim.length());
+  }
+  result.push_back(s);
+  return result;
 }
 
 int main(int argc, char** argv) {
   const auto start = steady_clock::now();
-  duration<double> search_elapsed;
+  duration<double> search_elapsed = duration<double>(0.0);
 
   CommandLineConfig::strict_with_convenience(argc, argv);
   DebugHandler::install_sigsegv();
@@ -257,15 +316,14 @@ int main(int argc, char** argv) {
   TrainingSetGadget training_set(seed);
   SandboxGadget training_sb(training_set, aux_fxns);
 
-  TransformsGadget transforms(target, aux_fxns, seed);
-  SearchGadget search(&transforms, seed);
+  TransformPoolsGadget transform_pools(target, aux_fxns, seed);
+  WeightedTransformGadget transform(transform_pools, seed);
+  SearchGadget search(&transform, seed);
 
   TestSetGadget test_set(seed);
   SandboxGadget test_sb(test_set, aux_fxns);
   CorrectnessCostGadget holdout_fxn(target, &test_sb);
-  SolverGadget smt;
-  ValidatorGadget validator(smt);
-  VerifierGadget verifier(holdout_fxn, validator);
+  VerifierGadget verifier(test_sb, holdout_fxn);
 
   ScbArg scb_arg {&Console::msg(), nullptr};
   search.set_statistics_callback(scb, &scb_arg)
@@ -277,11 +335,21 @@ int main(int argc, char** argv) {
   size_t total_iterations = 0;
   size_t total_restarts = 0;
 
-  if (timeout_action_arg == Timeout::LIST) {
-    if (timeout_list_arg.value().size() == 0) {
-      Console::error() << "Cannot provide the empty list for --timeout_list." << endl;
+  // attempt to parse cycle_timeout argument
+  vector<string> parts;
+  vector<Expr<size_t>*> cycle_timeouts;
+  for (auto& part : split(cycle_timeout_arg.value(), ",", parts)) {
+    function<bool (const string&)> f = [](const string& s) -> bool { return s == "i"; };
+    auto parser = ExprParser<size_t>(part, f);
+    if (parser.has_error()) {
+      Console::error() << "Error parsing cycle timeout expression '" << part << "': " << parser.get_error() << endl;
     }
-    timeout_itr_arg.value() = timeout_list_arg.value()[0];
+    cycle_timeouts.push_back(parser.get());
+  }
+
+  if (strategy_arg.value() == "none" &&
+      failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
+    Console::error() << "No verification is performed, thus no counterexample can be added (--failed_verification_action add_counterexample and --strategy none are not compatible)." << endl;
   }
 
   string final_msg;
@@ -289,9 +357,26 @@ int main(int argc, char** argv) {
   for (size_t i = 0; ; ++i) {
     CostFunctionGadget fxn(target, &training_sb);
 
-    Console::msg() << "Running search (timeout is " << timeout_itr_arg.value() << " iterations";
-    if (timeout_sec_arg.value() != 0) {
-      Console::msg() << " / " << timeout_sec_arg.value() << " seconds";
+    // determine iteration timeout
+    Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
+    function<size_t (const string&)> f2 = [i](const string& s) -> size_t { return i; };
+    size_t cur_timeout = (*timeout_expr)(f2);
+    size_t timeout_left = cur_timeout;
+    if (timeout_iterations_arg.value()) {
+      timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
+    }
+    search.set_timeout_itr(std::min(cur_timeout, timeout_left));
+
+    Console::msg() << "Running search (timeout is " << cur_timeout << " iterations";
+    // timeout in seconds
+    if (timeout_seconds_arg.value() != 0) {
+      auto time_remaining = duration_cast<duration<double>>(steady_clock::now() - start) + duration<double>(timeout_seconds_arg.value());
+      if (time_remaining <= steady_clock::duration::zero()) {
+        show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, true);
+        Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+      }
+      search.set_timeout_sec(time_remaining);
+      Console::msg() << " / " << time_remaining.count() << " seconds";
     }
     Console::msg() << "):" << endl << endl;
     state = SearchStateGadget(target, aux_fxns);
@@ -299,18 +384,17 @@ int main(int argc, char** argv) {
     // Run the initial cost function
     // Used by statistics output and a sanity check
     auto initial_cost = fxn(state.current);
-    if(!initial_cost.first && init_arg == Init::TARGET) {
+    if (!initial_cost.first && init_arg == Init::TARGET) {
       Console::warn() << "Initial state has non-zero correctness cost with --init target.";
     }
     starting_cost = initial_cost.second;
     lowest_cost = initial_cost.second;
-    if(initial_cost.first) {
+    if (initial_cost.first) {
       lowest_correct = initial_cost.second;
     } else {
       lowest_correct = 0;
     }
 
-    search.set_timeout_itr(timeout_itr_arg);
     const auto start_search = steady_clock::now();
     search.run(target, fxn, init_arg, state, aux_fxns);
     search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
@@ -320,14 +404,14 @@ int main(int argc, char** argv) {
 
     if (state.interrupted) {
       Console::msg() << endl;
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, false);
       Console::msg() << "Search interrupted!" << endl;
       exit(1);
     }
 
     const auto verified = verifier.verify(target, state.best_correct);
 
-    if(verifier.has_error()) {
+    if (verifier.has_error()) {
       Console::msg() << "The verifier encountered an error:" << endl;
       Console::msg() << verifier.error() << endl;
     }
@@ -337,7 +421,7 @@ int main(int argc, char** argv) {
     } else if (!verified) {
       Console::msg() << "Unable to verify new rewrite..." << endl << endl;
     } else {
-      if (strategy_arg.value() == Strategy::NONE) {
+      if (strategy_arg.value() == "none") {
         final_msg = "Search terminated successfully (but no verification was performed)!";
       } else {
         final_msg = "Search terminated successfully with a verified rewrite!";
@@ -347,22 +431,18 @@ int main(int argc, char** argv) {
 
     sep(Console::msg());
 
-    if ((timeout_action_arg == Timeout::RESTART) && (i < timeout_cycles_arg.value())) {
-      if (exp_scaling_arg.value() != 1.0) {
-        timeout_itr_arg.value() = (size_t)ceil(timeout_itr_arg.value() * exp_scaling_arg.value());
-        Console::msg() << "Increasing timeout iterations to " << timeout_itr_arg.value() << endl;
-      }
-      Console::msg() << "Restarting search:" << endl << endl;
-    } else if (timeout_action_arg == Timeout::LIST && i+1 < timeout_list_arg.value().size()) {
-      timeout_itr_arg.value() = timeout_list_arg.value()[i+1];
-    } else if ((timeout_action_arg == Timeout::TESTCASE) && (i < timeout_cycles_arg.value())
-               && verifier.counter_example_available()) {
-      Console::msg() << "Restarting search using new testcase:" << endl << endl;
-      Console::msg() << verifier.get_counter_example() << endl << endl;
-      training_sb.insert_input(verifier.get_counter_example());
-    } else {
-      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed);
+
+    if (timeout_iterations_arg.value() && total_iterations >= timeout_iterations_arg.value()) {
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, verified, true);
       Console::error(1) << "Search terminated unsuccessfully; unable to discover a new rewrite!" << endl;
+    }
+
+    if (!verified && verifier.counter_examples_available() && failed_verification_action.value() == FailedVerificationAction::ADD_COUNTEREXAMPLE) {
+      Console::msg() << "Restarting search using new testcase (counterexample from verifier):" << endl << endl;
+      Console::msg() << verifier.get_counter_examples()[0] << endl << endl;
+      training_sb.insert_input(verifier.get_counter_examples()[0]);
+    } else {
+      Console::msg() << "Restarting search" << endl;
     }
   }
 
@@ -378,7 +458,7 @@ int main(int argc, char** argv) {
   }
 
   auto final_stats = search.get_statistics();
-  show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed);
+  show_final_update(final_stats, state, total_restarts, total_iterations, start, search_elapsed, true, false);
   Console::msg() << final_msg << endl;
 
   ofstream ofs(out.value());

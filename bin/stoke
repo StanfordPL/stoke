@@ -17,7 +17,7 @@ SCMD=$1
 shift
 
 # This is to make sure we link the the right copy of z3.
-export LD_LIBRARY_PATH="$HERE/../src/ext/z3/bin:$HERE/../src/ext/cvc4-1.4-build/lib"
+export LD_LIBRARY_PATH="$HERE/../src/ext/z3/build:$HERE/../src/ext/cvc4-1.4-build/lib"
 
 if [ "$SCMD" == "--help" ] || [ "$SCMD" == "-h" ]
 then
@@ -30,12 +30,15 @@ then
 	echo "  testcase            generate a STOKE testcase file"
 	echo ""
 	echo "  debug cfg           generate the control flow graph for a function"
+	echo "  debug circuit       show the SMT formula (circuit) for a straight-line piece of code"
 	echo "  debug cost          evaluate a function using a STOKE cost function"
 	echo "  debug diff          diff the resulting state of two functions"
 	echo "  debug effect        show the effect of a function on the state"
 	echo "  debug sandbox       step through a function execution"
 	echo "  debug search        perform a program transformation"
+	echo "  debug simplify      take an x86 program and simplify it (by removing redundant instructions)"
 	echo "  debug state         check bit-wise operations"
+	echo "  debug tunit         show the instruction sizes and RIP-offsets for a code"
 	echo "  debug verify        check the equivalence of two functions"
 	echo ""
 	echo "  benchmark cfg       benchmark Cfg::recompute() kernel"
@@ -51,28 +54,37 @@ then
 	shift
 	if [ "$SCMD" == "cfg" ]
 	then
-		$HERE/stoke_debug_cfg "$@"
+		exec $HERE/stoke_debug_cfg "$@"
+	elif [ "$SCMD" == "circuit" ]
+	then
+		exec $HERE/stoke_debug_circuit "$@"
 	elif [ "$SCMD" == "cost" ]
 	then
-		$HERE/stoke_debug_cost "$@"
+		exec $HERE/stoke_debug_cost "$@"
 	elif [ "$SCMD" == "diff" ]
 	then
-		$HERE/stoke_debug_diff "$@"
+		exec $HERE/stoke_debug_diff "$@"
 	elif [ "$SCMD" == "effect" ]
 	then
-		$HERE/stoke_debug_effect "$@"
+		exec $HERE/stoke_debug_effect "$@"
 	elif [ "$SCMD" == "sandbox" ]
 	then
-		$HERE/stoke_debug_sandbox "$@"
+		exec $HERE/stoke_debug_sandbox "$@"
+	elif [ "$SCMD" == "simplify" ]
+	then
+		exec $HERE/stoke_debug_simplify "$@"
 	elif [ "$SCMD" == "state" ]
 	then
-		$HERE/stoke_debug_state "$@"
+		exec $HERE/stoke_debug_state "$@"
 	elif [ "$SCMD" == "search" ]
 	then
-		$HERE/stoke_debug_search "$@"
+		exec $HERE/stoke_debug_search "$@"
+	elif [ "$SCMD" == "tunit" ]
+	then
+		exec $HERE/stoke_debug_tunit "$@"
 	elif [ "$SCMD" == "verify" ]
 	then
-		$HERE/stoke_debug_verify "$@"
+		exec $HERE/stoke_debug_verify "$@"
 	else
 		echo "Unknown command: '"$SCMD"'"
 		echo "Type 'stoke --help' for usage."
@@ -84,22 +96,22 @@ then
   shift
   if [ "$SCMD" == "cfg" ]
   then
- 	  $HERE/stoke_benchmark_cfg "$@"
+ 	  exec $HERE/stoke_benchmark_cfg "$@"
 	elif [ "$SCMD" == "cost" ]
 	then
-		$HERE/stoke_benchmark_cost "$@"
+		exec $HERE/stoke_benchmark_cost "$@"
 	elif [ "$SCMD" == "sandbox" ]
 	then
-		$HERE/stoke_benchmark_sandbox "$@"
+		exec $HERE/stoke_benchmark_sandbox "$@"
 	elif [ "$SCMD" == "search" ]
 	then
-		$HERE/stoke_benchmark_search "$@"
+		exec $HERE/stoke_benchmark_search "$@"
 	elif [ "$SCMD" == "state" ]
 	then
-		$HERE/stoke_benchmark_state "$@"
+		exec $HERE/stoke_benchmark_state "$@"
 	elif [ "$SCMD" == "verify" ]
 	then
-		$HERE/stoke_benchmark_verify "$@"
+		exec $HERE/stoke_benchmark_verify "$@"
   else
  	  echo "Unknown command: '"$SCMD"'"
     echo "Type 'stoke --help' for usage."
@@ -107,19 +119,19 @@ then
   fi
 elif [ "$SCMD" == "extract" ]
 then
-	$HERE/stoke_extract "$@"
+	exec $HERE/stoke_extract "$@"
 elif [ "$SCMD" == "replace" ]
 then
-	$HERE/stoke_replace "$@"
+	exec $HERE/stoke_replace "$@"
 elif [ "$SCMD" == "search" ]
 then
-	$HERE/stoke_search "$@"
+	exec $HERE/stoke_search "$@"
 elif [ "$SCMD" == "testcase" ]
 then
-	$HERE/stoke_testcase "$@"
+	exec $HERE/stoke_testcase "$@"
 elif [ "$SCMD" == "test" ]
 then
-	$HERE/stoke_test "$@"
+	exec $HERE/stoke_test "$@"
 else
 	echo "Unknown command: '"$SCMD"'"
 	echo "Type 'stoke --help' for usage."

@@ -766,5 +766,229 @@ TEST(SandboxTest, Issue633) {
 
 }
 
+TEST(SandboxTest, Issue709_1) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "movl (%rdi), %ecx" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+  auto cfg = Cfg(TUnit(c));
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+
+  uint64_t base = 0x7ffffffffffffffc;
+  tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
+  tc.heap.resize(base, 0x8);
+  for (uint64_t i = base; i < base + 4; ++i) {
+    tc.heap.set_valid(i, true);
+    tc.heap[i] = 0x10;
+  }
+
+  sb.insert_input(tc);
+  sb.run(cfg);
+  EXPECT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
+  EXPECT_EQ(0x10101010ul, (*sb.result_begin())[x64asm::ecx]);
+
+}
+
+TEST(SandboxTest, Issue709_2) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "movl (%rdi), %ecx" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+  auto cfg = Cfg(TUnit(c));
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+
+  uint64_t base = 0xfffffffffffffffc;
+  tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
+  tc.heap.resize(base, 0x4);
+  for (uint64_t i = 0; i < 4; ++i) {
+    tc.heap.set_valid(base + i, true);
+    tc.heap[base+i] = 0x10;
+  }
+  ASSERT_TRUE(tc.heap.is_valid(0xffffffffffffffff));
+
+  sb.insert_input(tc);
+  sb.run(cfg);
+  EXPECT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
+  EXPECT_EQ(0x10101010ul, (*sb.result_begin())[x64asm::ecx]);
+}
+
+TEST(SandboxTest, Issue709_3) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "movl (%rdi), %ecx" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+  auto cfg = Cfg(TUnit(c));
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+
+  uint64_t base = 0x0;
+  tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
+  tc.heap.resize(base, 0x4);
+  for (uint64_t i = base; i < base + 4; ++i) {
+    tc.heap.set_valid(i, true);
+    tc.heap[i] = 0x10;
+  }
+
+  sb.insert_input(tc);
+  sb.run(cfg);
+  EXPECT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
+  EXPECT_EQ(0x10101010ul, (*sb.result_begin())[x64asm::ecx]);
+}
+
+TEST(SandboxTest, Issue709_4) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "movq (%rdi), %rcx" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+  auto cfg = Cfg(TUnit(c));
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+
+  uint64_t base = 0x7ffffffffffffffc;
+  tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
+  tc.heap.resize(base, 0x8);
+  for (uint64_t i = base; i < base + 8; ++i) {
+    tc.heap.set_valid(i, true);
+    tc.heap[i] = 0x10;
+  }
+
+  sb.insert_input(tc);
+  sb.run(cfg);
+  EXPECT_EQ(ErrorCode::NORMAL, sb.result_begin()->code);
+  EXPECT_EQ(0x1010101010101010ul, (*sb.result_begin())[x64asm::rcx]);
+
+}
+
+TEST(SandboxTest, Issue709_5) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "movq (%rdi), %rcx" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+  auto cfg = Cfg(TUnit(c));
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+
+  uint64_t base = 0xfffffffffffffffc;
+  tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
+  tc.heap.resize(base, 0x4);
+  for (uint64_t i = base; i < base + 4; ++i) {
+    tc.heap.set_valid(i, true);
+    tc.heap[i] = 0x10;
+  }
+
+  sb.insert_input(tc);
+  sb.run(cfg);
+  EXPECT_EQ(ErrorCode::SIGSEGV_, sb.result_begin()->code);
+
+}
+
+TEST(SandboxTest, CannotReadInvalidAddress) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "movq (%rdi), %rcx" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+  auto cfg = Cfg(TUnit(c));
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+
+  uint64_t base = 0x0;
+  tc.gp[x64asm::rdi].get_fixed_quad(0) =  base;
+  tc.heap.resize(base, 0x4);
+  for (uint64_t i = base; i < base + 4; ++i) {
+    tc.heap.set_valid(i, true);
+    tc.heap[i] = 0x10;
+  }
+  tc.heap.set_valid(3, false);
+
+  sb.insert_input(tc);
+  sb.run(cfg);
+  EXPECT_EQ(ErrorCode::SIGSEGV_, sb.result_begin()->code);
+
+}
+
+TEST(SandboxTest, DivideBySpl1) {
+
+  std::stringstream st;
+  st << ".foo:" << std::endl;
+  st << "movl $0x0, %edx" << std::endl;
+  st << "divb %dl" << std::endl;
+  st << "retq" << std::endl;
+
+  x64asm::Code d;
+  st >> d;
+  auto cfg_2 = Cfg(TUnit(d));
+
+
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "movl $0x0, %esp" << std::endl;
+  ss << "divb %spl" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+  auto cfg = Cfg(TUnit(c));
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+
+  uint64_t base = 0x10;
+  tc.gp[x64asm::rax].get_fixed_quad(0) = base;
+  tc.gp[x64asm::rdx].get_fixed_quad(0) = base;
+
+  sb.insert_input(tc);
+  sb.run(cfg);
+
+  auto code_1 = sb.result_begin()->code;
+
+  sb.run(cfg_2);
+
+  auto code_2 = sb.result_begin()->code;
+
+  EXPECT_NE(ErrorCode::NORMAL, code_1);
+  EXPECT_NE(ErrorCode::NORMAL, code_2);
+  EXPECT_EQ(code_1, code_2);
+
+}
 
 } //namespace

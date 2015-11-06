@@ -24,7 +24,7 @@ void SimpleHandler::add_all() {
 
   add_opcode({"andb", "andw", "andl", "andq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
-    if(src.size() < dst.size())
+    if (src.size() < dst.size())
       b = b.extend(dst.size());
 
     ss.set(dst, a & b);
@@ -133,6 +133,224 @@ void SimpleHandler::add_all() {
 
   });
 
+  add_opcode({"imulq", "imull", "imulw"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    auto n = a.width();
+
+    auto a_ext = a.extend(2*n);
+    auto b_ext = b.extend(2*n);
+
+    auto full_res = a_ext * b_ext;
+    auto res = full_res[n-1][0];
+    auto truncated_res = res.extend(2*n);
+    auto of = full_res != truncated_res;
+
+    ss.set(dst, res);
+
+    ss.set(eflags_zf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+
+    ss.set(eflags_of, of);
+    ss.set(eflags_cf, of);
+    ss.set(eflags_sf, res[n-1]);
+  });
+
+  add_opcode({"imulq", "imull", "imulw"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    auto n = a.width();
+
+    auto a_ext = b.extend(2*n);
+    auto b_ext = c.extend(2*n);
+
+    auto full_res = a_ext * b_ext;
+    auto res = full_res[n-1][0];
+    auto truncated_res = res.extend(2*n);
+    auto of = full_res != truncated_res;
+
+    ss.set(dst, res);
+
+    ss.set(eflags_zf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+
+    ss.set(eflags_of, of);
+    ss.set(eflags_cf, of);
+    ss.set(eflags_sf, res[n-1]);
+  });
+
+  add_opcode({"mulq", "mull", "mulw", "mulb"},
+  [this] (Operand src, SymBitVector a, SymState& ss) {
+    auto n = a.width();
+
+    SymBitVector b;
+    if (n == 8) {
+      b = ss[Constants::al()];
+    } else if (n == 16) {
+      b = ss[Constants::ax()];
+    } else if (n == 32) {
+      b = ss[Constants::eax()];
+    } else if (n == 64) {
+      b = ss[Constants::rax()];
+    } else {
+      assert(false);
+    }
+
+    auto a_ext = SymBitVector::constant(n, 0) || a;
+    auto b_ext = SymBitVector::constant(n, 0) || b;
+
+    auto full_res = a_ext * b_ext;
+    auto of = full_res[2*n-1][n] != SymBitVector::constant(n, 0);
+
+    if (n == 8) {
+      ss.set(Constants::ax(), full_res);
+    } else if (n == 16) {
+      ss.set(Constants::dx(), full_res[2*n-1][n]);
+      ss.set(Constants::ax(), full_res[n-1][0]);
+    } else if (n == 32) {
+      ss.set(Constants::edx(), full_res[2*n-1][n]);
+      ss.set(Constants::eax(), full_res[n-1][0]);
+    } else if (n == 64) {
+      ss.set(Constants::rdx(), full_res[2*n-1][n]);
+      ss.set(Constants::rax(), full_res[n-1][0]);
+    }
+
+    ss.set(eflags_zf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
+
+    ss.set(eflags_of, of);
+    ss.set(eflags_cf, of);
+  });
+
+  add_opcode({"imulq", "imull", "imulw", "imulb"},
+  [this] (Operand src, SymBitVector a, SymState& ss) {
+    auto n = a.width();
+
+    SymBitVector b;
+    if (n == 8) {
+      b = ss[Constants::al()];
+    } else if (n == 16) {
+      b = ss[Constants::ax()];
+    } else if (n == 32) {
+      b = ss[Constants::eax()];
+    } else if (n == 64) {
+      b = ss[Constants::rax()];
+    } else {
+      assert(false);
+    }
+
+    auto a_ext = a.extend(2*n);
+    auto b_ext = b.extend(2*n);
+
+    auto full_res = a_ext * b_ext;
+    auto of = full_res != full_res[n-1][0].extend(2*n);
+
+    if (n == 8) {
+      ss.set(Constants::ax(), full_res);
+    } else if (n == 16) {
+      ss.set(Constants::dx(), full_res[2*n-1][n]);
+      ss.set(Constants::ax(), full_res[n-1][0]);
+    } else if (n == 32) {
+      ss.set(Constants::edx(), full_res[2*n-1][n]);
+      ss.set(Constants::eax(), full_res[n-1][0]);
+    } else if (n == 64) {
+      ss.set(Constants::rdx(), full_res[2*n-1][n]);
+      ss.set(Constants::rax(), full_res[n-1][0]);
+    }
+
+    ss.set(eflags_zf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+
+    ss.set(eflags_sf, full_res[n-1]);
+    ss.set(eflags_of, of);
+    ss.set(eflags_cf, of);
+  });
+
+  add_opcode({"idivb", "idivw", "idivl", "idivq"},
+  [this] (Operand src, SymBitVector a, SymState& ss) {
+    auto n = a.width();
+
+    SymBitVector numerator;
+    if (n == 8) {
+      SymFunction f_quot("idiv_quotient_int8", 8, {16, 8});
+      SymFunction f_rem("idiv_remainder_int8", 8, {16, 8});
+      numerator = ss[Constants::ax()];
+      ss.set(Constants::al(), f_quot(numerator, a));
+      ss.set(Constants::ah(), f_rem(numerator, a));
+    } else if (n == 16) {
+      SymFunction f_quot("idiv_quotient_int16", 16, {32, 16});
+      SymFunction f_rem("idiv_remainder_int16", 16, {32, 16});
+      numerator = ss[Constants::dx()] || ss[Constants::ax()];
+      ss.set(Constants::dx(), f_rem(numerator, a));
+      ss.set(Constants::ax(), f_quot(numerator, a));
+    } else if (n == 32) {
+      SymFunction f_quot("idiv_quotient_int32", 32, {64, 32});
+      SymFunction f_rem("idiv_remainder_int32", 32, {64, 32});
+      numerator = ss[Constants::edx()] || ss[Constants::eax()];
+      ss.set(Constants::edx(), f_rem(numerator, a));
+      ss.set(Constants::eax(), f_quot(numerator, a));
+    } else if (n == 64) {
+      SymFunction f_quot("idiv_quotient_int64", 64, {128, 64});
+      SymFunction f_rem("idiv_remainder_int64", 64, {128, 64});
+      numerator = ss[Constants::rdx()] || ss[Constants::rax()];
+      ss.set(Constants::rdx(), f_rem(numerator, a));
+      ss.set(Constants::rax(), f_quot(numerator, a));
+    } else {
+      assert(false);
+    }
+
+    ss.set(eflags_zf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
+    ss.set(eflags_of, SymBool::tmp_var());
+    ss.set(eflags_cf, SymBool::tmp_var());
+  });
+
+  add_opcode({"divb", "divw", "divl", "divq"},
+  [this] (Operand src, SymBitVector a, SymState& ss) {
+    auto n = a.width();
+
+    SymBitVector numerator;
+    if (n == 8) {
+      SymFunction f_quot("div_quotient_int8", 8, {16, 8});
+      SymFunction f_rem("div_remainder_int8", 8, {16, 8});
+      numerator = ss[Constants::ax()];
+      ss.set(Constants::al(), f_quot(numerator, a));
+      ss.set(Constants::ah(), f_rem(numerator, a));
+    } else if (n == 16) {
+      SymFunction f_quot("div_quotient_int16", 16, {32, 16});
+      SymFunction f_rem("div_remainder_int16", 16, {32, 16});
+      numerator = ss[Constants::dx()] || ss[Constants::ax()];
+      ss.set(Constants::dx(), f_rem(numerator, a));
+      ss.set(Constants::ax(), f_quot(numerator, a));
+    } else if (n == 32) {
+      SymFunction f_quot("div_quotient_int32", 32, {64, 32});
+      SymFunction f_rem("div_remainder_int32", 32, {64, 32});
+      numerator = ss[Constants::edx()] || ss[Constants::eax()];
+      ss.set(Constants::edx(), f_rem(numerator, a));
+      ss.set(Constants::eax(), f_quot(numerator, a));
+    } else if (n == 64) {
+      SymFunction f_quot("div_quotient_int64", 64, {128, 64});
+      SymFunction f_rem("div_remainder_int64", 64, {128, 64});
+      numerator = ss[Constants::rdx()] || ss[Constants::rax()];
+      ss.set(Constants::rdx(), f_rem(numerator, a));
+      ss.set(Constants::rax(), f_quot(numerator, a));
+    } else {
+      assert(false);
+    }
+
+    ss.set(eflags_zf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
+    ss.set(eflags_of, SymBool::tmp_var());
+    ss.set(eflags_cf, SymBool::tmp_var());
+  });
+
   add_opcode({"incb", "incw", "incl", "incq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     SymBitVector one = SymBitVector::constant(dst.size(), 1);
@@ -145,11 +363,77 @@ void SimpleHandler::add_all() {
 
   });
 
+  // for min/max|ss/sd: can't be done with packed handler because the upper 96/64 bits are from src1, not dest in the v variant
+
+  add_opcode({"minsd"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("mincmp_double", 1, {64, 64});
+    auto aa = a[63][0];
+    auto bb = b[63][0];
+    ss.set(dst, a[127][64] || (f(aa, bb)[0]).ite(aa, bb));
+  });
+
+  add_opcode({"vminsd"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("mincmp_double", 1, {64, 64});
+    auto bb = b[63][0];
+    auto cc = c[63][0];
+    ss.set(dst, b[127][64] || (f(bb, cc)[0]).ite(bb, cc), true);
+  });
+
+  add_opcode({"minss"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("mincmp_single", 1, {32, 32});
+    auto aa = a[31][0];
+    auto bb = b[31][0];
+    ss.set(dst, a[127][32] || (f(aa, bb)[0]).ite(aa, bb));
+  });
+
+  add_opcode({"vminss"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("mincmp_single", 1, {32, 32});
+    auto bb = b[31][0];
+    auto cc = c[31][0];
+    ss.set(dst, b[127][32] || (f(bb, cc)[0]).ite(bb, cc), true);
+  });
+
+  add_opcode({"maxsd"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("maxcmp_double", 1, {64, 64});
+    auto aa = a[63][0];
+    auto bb = b[63][0];
+    ss.set(dst, a[127][64] || (f(aa, bb)[0]).ite(aa, bb));
+  });
+
+  add_opcode({"vmaxsd"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("maxcmp_double", 1, {64, 64});
+    auto bb = b[63][0];
+    auto cc = c[63][0];
+    ss.set(dst, b[127][64] || (f(bb, cc)[0]).ite(bb, cc), true);
+  });
+
+  add_opcode({"maxss"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("maxcmp_single", 1, {32, 32});
+    auto aa = a[31][0];
+    auto bb = b[31][0];
+    ss.set(dst, a[127][32] || (f(aa, bb)[0]).ite(aa, bb));
+  });
+
+  add_opcode({"vmaxss"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("maxcmp_single", 1, {32, 32});
+    auto bb = b[31][0];
+    auto cc = c[31][0];
+    ss.set(dst, b[127][32] || (f(bb, cc)[0]).ite(bb, cc), true);
+  });
+
   // can't be done with packed handler because of special case for memory
   add_opcode({"movsd"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
-    if(src.is_sse_register()) {
-      if(dst.is_typical_memory()) {
+    if (src.is_sse_register()) {
+      if (dst.is_typical_memory()) {
         ss.set(dst, b[63][0]);
       } else {
         ss.set(dst, a[127][64] || b[63][0]);
@@ -164,7 +448,7 @@ void SimpleHandler::add_all() {
   add_opcode({"vmovsd"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     assert(src.is_typical_memory() || dst.is_typical_memory());
-    if(src.is_typical_memory()) {
+    if (src.is_typical_memory()) {
       // memory to register
       auto zeros = SymBitVector::constant(128 - 64, 0);
       ss.set(dst, zeros || b[63][0], true);
@@ -184,8 +468,8 @@ void SimpleHandler::add_all() {
   // can't be done with packed handler because of special case for memory
   add_opcode({"movss"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
-    if(src.is_sse_register()) {
-      if(dst.is_typical_memory()) {
+    if (src.is_sse_register()) {
+      if (dst.is_typical_memory()) {
         ss.set(dst, b[31][0]);
       } else {
         ss.set(dst, a[127][32] || b[31][0]);
@@ -200,7 +484,7 @@ void SimpleHandler::add_all() {
   add_opcode({"vmovss"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     assert(src.is_typical_memory() || dst.is_typical_memory());
-    if(src.is_typical_memory()) {
+    if (src.is_typical_memory()) {
       // memory to register
       auto zeros = SymBitVector::constant(128 - 32, 0);
       ss.set(dst, zeros || b[31][0], true);
@@ -227,7 +511,7 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(-a);
   });
 
-  add_opcode({"nop"},
+  add_opcode({"nop", "nopb", "nopw", "nopl", "nopq"},
   [] (SymState& ss) {});
 
   add_opcode({"notb", "notw", "notl", "notq"},
@@ -237,7 +521,7 @@ void SimpleHandler::add_all() {
 
   add_opcode({"orb", "orw", "orl", "orq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
-    if(src.size() < dst.size())
+    if (src.size() < dst.size())
       b = b.extend(dst.size());
 
     ss.set(dst, a | b);
@@ -251,7 +535,7 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     M64 target = M64(rsp);
     ss.set(dst, ss[target]);
-    if(dst != rsp) {
+    if (dst != rsp) {
       ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 8));
     }
   });
@@ -260,7 +544,7 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     M16 target = M16(rsp);
     ss.set(dst, ss[target]);
-    if(dst != sp) {
+    if (dst != sp) {
       ss.set(rsp, ss[rsp] + SymBitVector::constant(64, 2));
     }
   });
@@ -270,7 +554,7 @@ void SimpleHandler::add_all() {
 
     std::function<SymBitVector (SymBitVector, uint16_t)> helper =
     [&] (SymBitVector src, uint16_t size) {
-      if(size == 1) {
+      if (size == 1) {
         return src;
       } else {
         uint16_t half = size/2;
@@ -296,7 +580,7 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, Operand src, Operand i, SymBitVector a, SymBitVector b, SymBitVector imm, SymState &ss) {
     uint64_t constant = (static_cast<const SymBitVectorConstant*>(imm.ptr))->constant_;
     SymBitVector result;
-    for(size_t i = 0; i < 4; ++i) {
+    for (size_t i = 0; i < 4; ++i) {
       auto amt = SymBitVector::constant(128, ((constant & (0x3 << 2*i)) >> 2*i) << 4);
       result = (b >> amt)[15][0] || result;
     }
@@ -308,13 +592,13 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, Operand src, Operand i, SymBitVector a, SymBitVector b, SymBitVector imm, SymState &ss) {
     uint64_t constant = (static_cast<const SymBitVectorConstant*>(imm.ptr))->constant_;
     SymBitVector result;
-    for(size_t i = 0; i < 4; ++i) {
+    for (size_t i = 0; i < 4; ++i) {
       auto amt = SymBitVector::constant(dst.size(), ((constant & (0x3 << 2*i)) >> 2*i) << 4);
       result = (b >> amt)[15][0] || result;
     }
     result = b[127][64] || result;
-    if(dst.size() == 256) {
-      for(size_t i = 0; i < 4; ++i) {
+    if (dst.size() == 256) {
+      for (size_t i = 0; i < 4; ++i) {
         auto amt = SymBitVector::constant(dst.size(), ((constant & (0x3 << 2*i)) >> 2*i) << 4);
         result = (b >> amt)[143][128] || result;
       }
@@ -363,7 +647,7 @@ void SimpleHandler::add_all() {
     output = (imm[0]).ite(arg1[127][64], arg1[63][0]);
     output = (imm[1]).ite(arg2[127][64], arg2[63][0]) || output;
 
-    if(dst.size() == 256) {
+    if (dst.size() == 256) {
       output = (imm[2]).ite(arg1[255][192], arg1[191][128]) || output;
       output = (imm[3]).ite(arg2[255][192], arg2[191][128]) || output;
     }
@@ -376,7 +660,7 @@ void SimpleHandler::add_all() {
   SymBitVector arg1, SymBitVector arg2, SymBitVector imm, SymState& ss) {
 
     SymBitVector output;
-    for(size_t i = 0; i < 4; ++i) {
+    for (size_t i = 0; i < 4; ++i) {
       SymBitVector target = (i < 2 ? arg1 : arg2);
       output = imm[2*i].ite(
                  imm[2*i + 1].ite(target[127][96], target[63][32]),
@@ -392,16 +676,16 @@ void SimpleHandler::add_all() {
   SymState& ss) {
 
     SymBitVector output;
-    for(size_t i = 0; i < 4; ++i) {
+    for (size_t i = 0; i < 4; ++i) {
       SymBitVector target = (i < 2 ? arg1 : arg2);
       output = imm[2*i].ite(
                  imm[2*i + 1].ite(target[127][96], target[63][32]),
                  imm[2*i + 1].ite(target[95][64],  target[31][0])) || output;
     }
 
-    if(dst.size() == 256) {
+    if (dst.size() == 256) {
 
-      for(size_t i = 0; i < 4; ++i) {
+      for (size_t i = 0; i < 4; ++i) {
         SymBitVector target = (i < 2 ? arg1 : arg2);
         output = imm[2*i].ite(
                    imm[2*i + 1].ite(target[255][224], target[191][160]),
@@ -415,7 +699,7 @@ void SimpleHandler::add_all() {
 
   add_opcode({"testb", "testw", "testl", "testq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
-    if(src.size() < dst.size())
+    if (src.size() < dst.size())
       b = b.extend(dst.size());
 
     ss.set(eflags_cf, SymBool::_false());
@@ -428,7 +712,7 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     uint16_t size = 128;
     SymBitVector output = b[size-1][0];
-    for(uint16_t i = size; i < dst.size(); i += size) {
+    for (uint16_t i = size; i < dst.size(); i += size) {
       output = output || b[size-1][0];
     }
     ss.set(dst, output, true);
@@ -438,7 +722,7 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     uint16_t size = 64;
     SymBitVector output = b[size-1][0];
-    for(uint16_t i = size; i < dst.size(); i += size) {
+    for (uint16_t i = size; i < dst.size(); i += size) {
       output = output || b[size-1][0];
     }
     ss.set(dst, output, true);
@@ -448,7 +732,7 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     uint16_t size = 32;
     SymBitVector output = b[size-1][0];
-    for(uint16_t i = size; i < dst.size(); i += size) {
+    for (uint16_t i = size; i < dst.size(); i += size) {
       output = output || b[size-1][0];
     }
     ss.set(dst, output, true);
@@ -463,7 +747,7 @@ void SimpleHandler::add_all() {
 
   add_opcode({"xorb", "xorw", "xorl", "xorq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
-    if(src.size() < dst.size())
+    if (src.size() < dst.size())
       b = b.extend(dst.size());
 
     ss.set(dst, a ^ b);
@@ -473,19 +757,47 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a ^ b);
   });
 
+  add_opcode({"vzeroall"},
+  [this] (SymState& ss) {
+    for (auto ymm : Constants::ymms()) {
+      ss.set(ymm, SymBitVector::constant(256, 0));
+    }
+  });
 
+  add_opcode({"vzeroupper"},
+  [this] (SymState& ss) {
+    size_t i = 0;
+    for (auto ymm : Constants::ymms()) {
+      ss.set(ymm, SymBitVector::constant(128, 0) || ss[Constants::xmms()[i]]);
+      i += 1;
+    }
+  });
+
+  add_opcode({"vfmadd132ss"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmadd132_single", 32, {32, 32});
+    auto res = f(b[31][0], c[31][0]);
+    ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
+  });
+
+  add_opcode({"vfmadd132sd"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmadd132_double", 64, {64, 64});
+    auto res = f(b[63][0], c[63][0]);
+    ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][64] || res, true);
+  });
 
 }
 
 Handler::SupportLevel SimpleHandler::get_support(const x64asm::Instruction& instr) {
 
-  if(!operands_supported(instr)) {
+  if (!operands_supported(instr)) {
     return Handler::NONE;
   }
 
   auto opcode = get_opcode(instr);
 
-  switch(instr.arity()) {
+  switch (instr.arity()) {
   case 0:
     if (!operator_0_.count(opcode))
       return Handler::NONE;
@@ -510,9 +822,9 @@ Handler::SupportLevel SimpleHandler::get_support(const x64asm::Instruction& inst
     return Handler::NONE;
   }
 
-  for(size_t i = 0; i < instr.arity(); ++i) {
+  for (size_t i = 0; i < instr.arity(); ++i) {
     Operand o = instr.get_operand<Operand>(i);
-    if(!o.is_gp_register() && !o.is_typical_memory() &&
+    if (!o.is_gp_register() && !o.is_typical_memory() &&
         !o.is_sse_register() && !o.is_immediate())
       return Handler::NONE;
   }
@@ -526,7 +838,7 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   auto opcode = get_opcode(instr);
 
   error_ = "";
-  if(!get_support(instr)) {
+  if (!get_support(instr)) {
     error_ = "No support for this instruction.";
     return;
   }
@@ -536,15 +848,21 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   // 32..63 of rax.  The right way to solve this would be to setup handlers by
   // opcode *value* rather than memonic, but that seems like a lot to change
   // for this one bug.
-  if(opcode == "xchgl" &&
+  if (opcode == "xchgl" &&
       (instr.get_opcode() == XCHG_EAX_R32 || instr.get_opcode() == XCHG_R32_EAX) &&
       instr.get_operand<R32>(0) == eax && instr.get_operand<R32>(1) == eax) {
     return;
   }
 
+  // This is a hack to deal with all no-op cases.  We don't want to enumerate
+  // all the opcodes and so forth just to find we've missed one.
+  if (instr.is_nop()) {
+    return;
+  }
+
   // Figure out the right arguments
   size_t arity = instr.arity();
-  switch(arity) {
+  switch (arity) {
   case 0: {
     auto f = operator_0_.at(opcode);
     f(state);
@@ -605,27 +923,27 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 }
 
 void SimpleHandler::add_opcode(vector<string> opcodes, ConstantOperator op) {
-  for(auto it : opcodes) {
+  for (auto it : opcodes) {
     operator_0_[it] = op;
   }
 }
 void SimpleHandler::add_opcode(vector<string> opcodes, UnaryOperator op) {
-  for(auto it : opcodes) {
+  for (auto it : opcodes) {
     operator_1_[it] = op;
   }
 }
 void SimpleHandler::add_opcode(vector<string> opcodes, BinaryOperator op) {
-  for(auto it : opcodes) {
+  for (auto it : opcodes) {
     operator_2_[it] = op;
   }
 }
 void SimpleHandler::add_opcode(vector<string> opcodes, TrinaryOperator op) {
-  for(auto it : opcodes) {
+  for (auto it : opcodes) {
     operator_3_[it] = op;
   }
 }
 void SimpleHandler::add_opcode(vector<string> opcodes, QuadOperator op) {
-  for(auto it : opcodes) {
+  for (auto it : opcodes) {
     operator_4_[it] = op;
   }
 }

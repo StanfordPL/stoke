@@ -14,7 +14,7 @@
 
 namespace stoke {
 
-class ValidatorSbbTest : public ValidatorTest {};
+class ValidatorSbbTest : public StraightLineValidatorTest {};
 
 TEST_F(ValidatorSbbTest, Identity) {
 

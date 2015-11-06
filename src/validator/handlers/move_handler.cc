@@ -40,7 +40,7 @@ const map<string, bool> MoveHandler::sign_extend_ = {
 
 Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
 
-  if(!operands_supported(instr)) {
+  if (!operands_supported(instr)) {
     return Handler::NONE;
   }
 
@@ -55,7 +55,7 @@ Handler::SupportLevel MoveHandler::get_support(const Instruction& instr) {
 void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   error_ = "";
-  if(!get_support(instr)) {
+  if (!get_support(instr)) {
     error_ = "Instruction not supported by move handler";
     return;
   }
@@ -70,7 +70,7 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   bool sign_extend = sign_extend_.at(opcode);
 
-  if(dst.is_sse_register() && opcode == "movq") {
+  if (dst.is_sse_register() && opcode == "movq") {
     // handles movq m/64, xmm and movq xmm, xmm
     // all sse operands for this handler should be xmm
     assert(dst.size() == 128);
@@ -85,7 +85,7 @@ void MoveHandler::build_circuit(const Instruction& instr, SymState& ss) {
 
   } else if (dst.size() > src.size()) {
     // Case 1: we need to extend the source (sign or not)
-    if(sign_extend) {
+    if (sign_extend) {
       to_move = ss[src].extend(dst.size());
     } else {
       to_move = SymBitVector::constant(dst.size() - src.size(), 0) || ss[src];

@@ -22,8 +22,8 @@ namespace stoke {
 
 class NonGoalCostGadget : public NonGoalCost {
 public:
-  NonGoalCostGadget(const x64asm::RegSet& def_ins, const x64asm::RegSet& live_outs) : NonGoalCost() {
-    set_nongoals(nongoal_arg.value(), def_ins, live_outs);
+  NonGoalCostGadget(const Cfg& target) : NonGoalCost() {
+    set_nongoals(nongoal_arg.value(), target);
   }
 };
 

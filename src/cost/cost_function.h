@@ -38,6 +38,8 @@ public:
     sandbox_ = NULL;
   }
 
+  virtual ~CostFunction() { }
+
   /** Evaluate a rewrite. This method may shortcircuit and return max as soon as its
     result would equal or exceed that value.  When you implement this method, you
     must call run_sandbox() to ensure that the sandbox was run, either by the client
@@ -47,7 +49,7 @@ public:
   /** Does this CostFunction require a Sandbox object?
       Contract for clients:
 
-        If this function returns true, you must call need_sandbox() with a
+        If this function returns true, you must call setup_sandbox() with a
         good sandbox before running the cost function.
 
       Contract for subclasses:
@@ -93,10 +95,8 @@ protected:
   void run_sandbox(const Cfg& cfg) {
     assert(sandbox_);
     if (must_run_sandbox_ && need_sandbox()) {
-      sandbox_->expert_mode();
-      sandbox_->expert_use_disposable_labels();
-      sandbox_->expert_recompile(cfg);
-      sandbox_->expert_recycle_labels();
+      sandbox_->insert_function(cfg);
+      sandbox_->set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
       sandbox_->run();
     }
   }

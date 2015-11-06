@@ -34,6 +34,7 @@ enum class ErrorCode {
   SIGCUSTOM_ABI_VIOLATION = 259,
   SIGCUSTOM_NO_RETURN = 260,
   SIGCUSTOM_STACK_SMASH = 261,
+  SIGCUSTOM_ASSEMBLER_ERROR = 262,
 };
 
 std::string readable_error_code(ErrorCode ec);

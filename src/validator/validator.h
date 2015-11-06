@@ -19,143 +19,130 @@
 #include <vector>
 #include <string>
 
-#include "src/cfg/cfg.h"
-#include "src/ext/x64asm/include/x64asm.h"
-#include "src/state/cpu_state.h"
+#include "src/ext/cpputil/include/container/bit_vector.h"
 #include "src/solver/smtsolver.h"
-#include "src/symstate/memory_manager.h"
-#include "src/symstate/state.h"
 #include "src/validator/error.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers.h"
+#include "src/verifier/verifier.h"
 
 
 namespace stoke {
 
-class Validator {
+class Validator : public Verifier {
 
 public:
 
   Validator(SMTSolver& solver) : solver_(solver),
     handler_(*(new ComboHandler())), free_handler_(true) {
     has_error_ = false;
+    setup_support_table();
   }
 
   Validator(SMTSolver& solver, Handler& h) : solver_(solver), handler_(h), free_handler_(false) {
     has_error_ = false;
+    setup_support_table();
   }
 
-  ~Validator() {
+  virtual ~Validator() {
     if (free_handler_)
       delete &handler_;
   }
 
   /** Evalue if the target and rewrite are the same */
-  bool validate(const Cfg& target, const Cfg& rewrite,
-                CpuState& counter_example);
+  virtual bool verify(const Cfg& target, const Cfg& rewrite) {
+    return false;
+  };
 
-  /** Check for an error in the last operation */
-  bool has_error() {
-    return has_error_;
-  }
   /** Get the error message, and optionally metadata */
-  std::string get_error(size_t* line_no = NULL, std::string* file = NULL) {
-    if(!has_error_)
-      return "";
-
-    if(line_no)
-      *line_no = error_line_;
-    if(file)
-      *file = error_file_;
-    return error_message_;
+  virtual std::string get_error(size_t* line_no = NULL, std::string* file = NULL) {
+    return "This is a default implementation";
   }
 
   /** Returns whether the last counterexample made sense */
-  bool is_counterexample_valid() {
-    return counterexample_valid_;
+  virtual size_t counter_examples_available() {
+    return 0;
   }
   /** Gets the counterexample */
-  CpuState get_counterexample() {
-    return counterexample_;
-  }
-  /** Gets the target's final state in counterexample. */
-  CpuState get_target_final_state() {
-    return target_final_state_;
-  }
-  /** Gets the rewrite's final state in counterexample. */
-  CpuState get_rewrite_final_state() {
-    return rewrite_final_state_;
+  virtual std::vector<CpuState> get_counter_examples() {
+    return std::vector<CpuState>();
   }
 
-  /** Returns whether this instruction is supported.  Sets error message. */
-  bool is_supported(x64asm::Instruction& i);
   /** Returns whether this instruction is supported.  No error message. */
   bool is_supported(x64asm::Instruction& i) const;
+  /** Returns whether an opcode is fully supported.  No error message. */
+  bool is_supported(const x64asm::Opcode& op) const;
 
+  /** Generally useful helper function: take a map of <address,value> pairs
+    and stick them into the memory of a testcase.  Returns true on success. */
+  static bool memory_map_to_testcase(std::map<uint64_t, cpputil::BitVector> map, CpuState& tc);
 
+  /** Useful helper.  Extracts a counterexample from a model.  Assumes that
+   * you've constructed constraints the same way the validator does and know
+   * what you're doing.  Ignores memory. */
+  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix);
 
-  /** Extracts a counterexample from a model.  Assumes that you've constructed
-   * constraints the same way the validator does and know what you're doing.
-   * This would be private were it not for the need to be accessible from
-   * testing classes (where friendship doesn't work properly).*/
-  static CpuState state_from_model(SMTSolver& smt, const std::string& name_suffix,
-                                   const SymMemory* memory = NULL, const SymMemory* memory2 = NULL);
+protected:
 
-private:
+  /** Check that def-ins, live-outs match, and that non-control flow
+   * instructions are supported.  Throws exception on error.*/
+  void sanity_checks(const Cfg&, const Cfg&) const;
 
-  /** Setup the memory manager (on invocation of the validator) */
+  /** Inline all the function calls using the sources in the sandbox. */
+  Cfg inline_functions(const Cfg&) const;
+
+  /** Push a new memory manager onto the stack. */
   void init_mm() {
-    memory_manager_ = SymMemoryManager();
-    SymBitVector::set_memory_manager(&memory_manager_);
-    SymBool::set_memory_manager(&memory_manager_);
+    auto manager = new SymMemoryManager();
+    SymBitVector::set_memory_manager(manager);
+    SymBool::set_memory_manager(manager);
+    memory_manager_.push(manager);
   }
-  /** Clean up the memory */
+  /** Pop a memory manager off the stack */
   void stop_mm() {
-    memory_manager_.collect();
-    SymBitVector::set_memory_manager(NULL);
-    SymBool::set_memory_manager(NULL);
+    assert(memory_manager_.size());
+    auto manager = memory_manager_.top();
+    manager->collect();
+    delete manager;
+
+    memory_manager_.pop();
+
+    if (memory_manager_.size()) {
+      auto manager = memory_manager_.top();
+      SymBitVector::set_memory_manager(manager);
+      SymBool::set_memory_manager(manager);
+    } else {
+      SymBitVector::set_memory_manager(NULL);
+      SymBool::set_memory_manager(NULL);
+    }
+
+  }
+  /** Discard and reset all memory managers. */
+  void reset_mm() {
+    while (memory_manager_.size())
+      stop_mm();
   }
   /** The memory manager */
-  SymMemoryManager memory_manager_;
-
-  /** Take two codes and generate constraints asserting their equivalence.
-   * Also return final symbolic states (that have information about memory
-   * which is useful for generating counterexamples) */
-  void generate_constraints(const stoke::Cfg&, const stoke::Cfg&,
-                            SymState&, SymState&, std::vector<SymBool>&) const;
-
-  /** Get the 'result' cpustate (including constraints) from a piece of code.  Throws an error
-      on failure. */
-  void build_circuit(const Cfg& cfg, SymState& state) const;
-  /** Build a circuit for a single instruction (trashing the starting state).  Throws an error
-      on failure. */
-  void build_circuit(const x64asm::Instruction& i, SymState& state) const;
+  std::stack<SymMemoryManager*> memory_manager_;
 
   /** SMT Solver to use */
   SMTSolver& solver_;
+  /** The handler */
+  Handler& handler_;
+  /** Do we need to free the handler? */
+  bool free_handler_;
 
-  /** Was the last counterexample sensible? */
-  bool counterexample_valid_;
-  /** The counterexample */
-  CpuState counterexample_;
-  /** If a counterexample existed, what was final state of target? */
-  CpuState target_final_state_;
-  /** If a counterexample existed, what was final state of rewrite? */
-  CpuState rewrite_final_state_;
+  /** What opcodes do we fully support? */
+  std::array<bool, X64ASM_NUM_OPCODES> support_table_;
 
-  /** This is the handler used */
-  stoke::Handler& handler_;
-  /** Whether we're responsible for freeing the memory of this handler */
-  const bool free_handler_;
+  /** Code to setup the table to find support levels */
+  void setup_support_table();
 
-  /** Was an error encountered? */
-  bool has_error_;
-  /** What was the message? */
-  std::string error_message_;
   /** File where error occurred */
   std::string error_file_;
   /** Line where error occurred */
   size_t error_line_;
+
 };
 
 

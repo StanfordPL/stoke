@@ -21,7 +21,7 @@ namespace stoke {
                            << "Expected: " << (X) << std::endl \
                            << "Actual:   " << (Y) << std::endl
 
-class ValidatorMoveTest : public ValidatorTest {};
+class ValidatorMoveTest : public StraightLineValidatorTest {};
 
 
 

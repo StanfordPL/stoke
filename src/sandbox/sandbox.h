@@ -40,7 +40,35 @@ public:
   static bool is_supported(x64asm::Opcode o);
 
   /** Creates a sandbox. */
-  Sandbox();
+  Sandbox() {
+    init();
+  }
+  /** Create a sandbox, copying the settings and added functions/inputs from another. */
+  Sandbox(const Sandbox& sb) {
+    init();
+
+    // "Simple" settings
+    set_abi_check(sb.abi_check_);
+    set_stack_check(sb.stack_check_);
+    set_max_jumps(sb.max_jumps_);
+
+    // Inputs
+    for (size_t i = 0; i < sb.size(); ++i) {
+      insert_input(*sb.get_input(i));
+    }
+
+    // Functions
+    bool has_fxn = false;
+    for (auto it : sb.fxns_src_) {
+      insert_function(*it.second);
+      has_fxn = true;
+    }
+
+    // Entrypoint
+    if (has_fxn) {
+      set_entrypoint(sb.main_fxn_);
+    }
+  }
   /** Deletes a sandbox. */
   ~Sandbox() {
     reset();
@@ -61,24 +89,13 @@ public:
     max_jumps_ = jumps;
     return *this;
   }
-  /** Sets whether the sandbox should count the number of instructions executed. */
-  Sandbox& set_count_instructions(bool b) {
-    count_instructions_ = b;
-    return *this;
-  }
-  /** Sets whether the sandbox should additionally weight counted instructions by latency? */
-  Sandbox& set_use_latency(bool b) {
-    use_latency_ = b;
-    return *this;
-  }
 
-  /** Resets the sandbox to a consistent state. Clears all inputs and resets the label pool */
+  /** Resets the sandbox to a consistent state. Clears all inputs, functions and callbacks. */
   Sandbox& reset() {
-    expert_mode_ = false;
-    init_labels();
     clear_inputs();
     clear_functions();
     clear_callbacks();
+    clear_label_pools();
     return *this;
   }
 
@@ -168,31 +185,6 @@ public:
   /** Run a main function for all inputs. */
   Sandbox& run();
 
-  /** Enter expert mode. Gain performance improvment but give up safety guarantees in api. */
-  Sandbox& expert_mode() {
-    expert_mode_ = true;
-    return *this;
-  }
-
-  /** Expert mode: Flag all subsequent labels as disposable. */
-  Sandbox& expert_use_disposable_labels() {
-    assert(expert_mode_);
-    label_checkpoint_ = next_label_;
-    return *this;
-  }
-  /** Expert mode: Invalidate and start reusing disposable labels. */
-  Sandbox& expert_recycle_labels() {
-    assert(expert_mode_);
-    next_label_ = label_checkpoint_;
-    return *this;
-  }
-  /** Expert mode: Recompile a function without allocating a buffer or saving its source */
-  Sandbox& expert_recompile(const Cfg& cfg) {
-    assert(expert_mode_);
-    recompile(cfg);
-    return *this;
-  }
-
   /** @deprecated */
   size_t size() const {
     return num_inputs();
@@ -257,13 +249,6 @@ private:
   bool stack_check_;
   /** The maximum number of jumps to take before raising SIGINT. */
   size_t max_jumps_;
-  /** Should the sandbox count the number of instructions executed? */
-  bool count_instructions_;
-  /** Should the sandbox use latency to weight the instructions? */
-  bool use_latency_;
-
-  /** Is the sandbox in expert mode? */
-  bool expert_mode_;
 
   /** Assembler, no sense in always creating these. */
   x64asm::Assembler assm_;
@@ -282,10 +267,10 @@ private:
   /** After callbacks on a per-line basis */
   std::unordered_map<x64asm::Label, std::unordered_map<size_t, std::pair<StateCallback, void*>>> after_;
 
-  /** Reusable labels... if left unchecked, endless sandboxing will deplete memory */
-  std::vector<x64asm::Label> labels_;
-  /** The label that was available the last time start_reusing_labels() was called */
-  size_t label_checkpoint_;
+  /** Each function gets a pool of anonymous labels to use. */
+  std::unordered_map<x64asm::Label, std::vector<x64asm::Label>*> label_pools_;
+  /** The current pool of labels in use */
+  std::vector<x64asm::Label>* current_label_pool_;
   /** The next label to pull out of the pool. */
   size_t next_label_;
 
@@ -295,8 +280,6 @@ private:
 
   /** How many more jumps can be made before SIGKILL? */
   size_t jumps_remaining_;
-  /** How many instructions/cycles have passed? */
-  uint64_t instruction_count_;
 
   /** Pointer to the user's state */
   void* out_;
@@ -336,6 +319,9 @@ private:
   /** The logical and of all of the elements in fxns_read_only_ */
   bool all_fxns_read_only_;
 
+  /** Do setup in constructor. */
+  void init();
+
   /** Check for abi violations between input and output states */
   bool check_abi(const IoPair& iop) const;
 
@@ -359,18 +345,32 @@ private:
     return x64asm::r64s[get_unused_reg(instr)];
   }
 
-  /** Initialize the reusable label pool */
-  void init_labels() {
-    labels_.resize(16);
-    label_checkpoint_ = 0;
+  /** Set which pool of labels to use. */
+  void set_label_pool(x64asm::Label function_label) {
+    if (!label_pools_.count(function_label)) {
+      label_pools_[function_label] = new std::vector<x64asm::Label>();
+      label_pools_[function_label]->resize(4);
+    }
     next_label_ = 0;
+    current_label_pool_ = label_pools_[function_label];
   }
   /** Take a label from the pool. */
   const x64asm::Label& get_label() {
-    if (next_label_ == labels_.size()) {
-      labels_.resize(labels_.size()*2);
+    assert(current_label_pool_ != NULL);
+    assert(current_label_pool_->size() > 0);
+    if (next_label_ >= current_label_pool_->size()) {
+      current_label_pool_->resize(current_label_pool_->size()*2);
     }
-    return labels_[next_label_++];
+    return (*current_label_pool_)[next_label_++];
+  }
+  /** Empties all the labels. */
+  void clear_label_pools() {
+    for (auto p : label_pools_) {
+      delete p.second;
+    }
+    label_pools_.clear();
+    next_label_ = 0;
+    current_label_pool_ = NULL;
   }
 
   /** Recompiles a function */
@@ -389,12 +389,12 @@ private:
   /** Returns a function that maps virtual addresses to physical addresses. */
   x64asm::Function emit_map_addr(CpuState& cs);
   /** Returns code to check memory for validity and then toggle def bits. */
-  void emit_map_addr_cases(CpuState& cs, const x64asm::Label& fail, const x64asm::Label& done, size_t mem);
+  void emit_map_addr_cases(const x64asm::Label& fail, const x64asm::Label& done, Memory* mem);
 
   /** Check whether a function is read only wrt memory */
   bool is_mem_read_only(const Cfg& cfg) const;
-  /** Assembles the user's function into a buffer */
-  void emit_function(const Cfg& cfg, x64asm::Function* fxn);
+  /** Assembles the user's function into a buffer.  Returns if successful. */
+  bool emit_function(const Cfg& cfg, x64asm::Function* fxn);
   /** Emit a single callback for this line. */
   void emit_callback(const std::pair<StateCallback, void*>& cb, const x64asm::Label& fxn, size_t line);
   /** Emit all before callbacks */
@@ -413,8 +413,6 @@ private:
   void emit_call_with_stack_check(const x64asm::Instruction& instr, uint64_t hex_offset);
   /** Emit the RET instruction. */
   void emit_ret(const x64asm::Instruction& instr, const x64asm::Label& exit);
-  /** Emit code to increment the instruction count */
-  void emit_count_instructions(const Cfg& cfg, Cfg::id_type bb);
 
   /** Special case for emitting leave instructions. */
   void emit_leave(const x64asm::Instruction& instr);

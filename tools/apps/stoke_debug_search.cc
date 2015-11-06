@@ -20,11 +20,11 @@
 #include "src/ext/cpputil/include/io/console.h"
 #include "src/ext/cpputil/include/signal/debug_handler.h"
 
-#include "tools/args/move.inc"
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/seed.h"
 #include "tools/gadgets/target.h"
-#include "tools/gadgets/transforms.h"
+#include "tools/gadgets/weighted_transform.h"
+#include "tools/gadgets/transform_pools.h"
 
 using namespace cpputil;
 using namespace std;
@@ -37,8 +37,11 @@ int main(int argc, char** argv) {
 
   SeedGadget seed;
   FunctionsGadget aux_fxns;
+
   TargetGadget target(aux_fxns, false);
-  TransformsGadget tforms(target, aux_fxns, seed);
+
+  TransformPoolsGadget transform_pools(target, aux_fxns, seed);
+  WeightedTransformGadget transform(transform_pools, seed);
 
   ofilterstream<Column> os(Console::msg());
   os.filter().padding(3);
@@ -48,15 +51,15 @@ int main(int argc, char** argv) {
   os << target.get_code() << endl;
   os.filter().next();
 
-  const auto res = tforms.modify(target, move_arg);
+  const auto res = transform(target);
 
-  os << "After " << (res ? "Successful" : "Failed") << " Transform:" << endl;
+  os << "After " << (res.success ? "Successful" : "Failed") << " Transform:" << endl;
   os << endl;
   os << target.get_code() << endl;
   os.filter().next();
 
-  if (res) {
-    tforms.undo(target, move_arg);
+  if (res.success) {
+    transform.undo(target, res);
   }
 
   os << "After Undo:" << endl;

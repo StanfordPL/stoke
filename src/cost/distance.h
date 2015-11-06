@@ -20,6 +20,7 @@ namespace stoke {
 enum class Distance {
   HAMMING,
   ULP,
+  DOUBLEWORD,
 
   // Add user-defined extensions here ...
   EXTENSION

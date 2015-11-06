@@ -82,24 +82,6 @@ cpputil::ValueArg<Cost>& min_ulp_arg =
   .description("Minimum ULP value to record")
   .default_val(0);
 
-cpputil::ValueArg<size_t>& max_size_bytes =
-  cpputil::ValueArg<size_t>::create("max_size_bytes")
-  .usage("<int>")
-  .description("Add penalty if assembled rewrite exceeds this size. (when non-zero)")
-  .default_val(0);
-
-cpputil::ValueArg<Cost>& max_size_base_penalty =
-  cpputil::ValueArg<Cost>::create("max_size_base_penalty")
-  .usage("<int>")
-  .description("The one-time cost for having a rewrite too large.")
-  .default_val(0);
-
-cpputil::ValueArg<Cost>& max_size_linear_penalty =
-  cpputil::ValueArg<Cost>::create("max_size_linear_penalty")
-  .usage("<int>")
-  .description("The cost per bytes for having a rewrite too large.")
-  .default_val(0);
-
 } // namespace stoke
 
 #endif
