@@ -20,7 +20,7 @@
 
 namespace stoke {
 
-class SymPrintVisitor : public SymVisitor<void, void> {
+class SymPrintVisitor : public SymVisitor<void, void, void> {
 
 public:
   SymPrintVisitor(std::ostream& os) : os_(os) {}
@@ -237,6 +237,22 @@ public:
   /** Visit a boolean VAR */
   void visit(const SymBoolVar * const b) {
     os_ << "<" << b->name_ << ">";
+  }
+
+  /** Visit an array STORE */
+  void visit(const SymArrayStore * const a) {
+    os_ << "(";
+    (*this)(a->a_);
+    os_ << " update ";
+    (*this)(a->key_);
+    os_ << " -> ";
+    (*this)(a->value_);
+    os_ << ")";
+  }
+
+  /** Visit an array VAR */
+  void visit(const SymArrayVar * const a) {
+    os_ << "<" << a->name_ << "|" << a->key_size_ << "|" << a->value_size_ << ">";
   }
 
 private:

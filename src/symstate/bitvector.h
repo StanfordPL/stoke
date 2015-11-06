@@ -325,14 +325,14 @@ public:
   const SymBitVectorAbstract* const key_;
   const SymArrayAbstract* const a_;
 
-  bool equals(const SymBitVectorAbstract * other);
+  bool equals(const SymBitVectorAbstract * other) const;
 
   SymBitVector::Type type() const {
     return SymBitVector::Type::ARRAY_LOOKUP;
   }
 
 private:
-  SymBitVectorArrayLookup(const SymArrayAbstract* a, const SymBitVectorAbstract * key) :
+  SymBitVectorArrayLookup(const SymArrayAbstract * const a, const SymBitVectorAbstract * const key) :
     SymBitVectorAbstract(a->value_size_), key_(key), a_(a) { }
 };
 

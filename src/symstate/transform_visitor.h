@@ -30,7 +30,7 @@ namespace stoke {
  * of all types (and takes care of memory management by adding them to the
  * current memory manager).
  */
-class SymTransformVisitor : public SymVisitor<SymBoolAbstract*, SymBitVectorAbstract*> {
+class SymTransformVisitor : public SymVisitor<SymBoolAbstract*, SymBitVectorAbstract*, SymArrayAbstract*> {
 
 protected:
 
@@ -397,6 +397,13 @@ public:
 
   SymBoolAbstract* visit(const SymBoolVar * const b) {
     return (SymBoolAbstract*) b;
+  }
+
+  SymArrayAbstract* visit(const SymArrayStore * const a) {
+    return const_cast<SymArrayAbstract*>(static_cast<const SymArrayAbstract * const>(a));
+  }
+  SymArrayAbstract* visit(const SymArrayVar * const a) {
+    return const_cast<SymArrayAbstract*>(static_cast<const SymArrayAbstract * const>(a));
   }
 
 };

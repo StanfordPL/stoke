@@ -12,9 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
+#include <sstream>
 
 #include "src/symstate/array.h"
+#include "src/symstate/bitvector.h"
 
 using namespace std;
 using namespace stoke;
@@ -28,14 +29,14 @@ SymArray SymArray::var(uint16_t key_size, uint16_t val_size, string name) {
 }
 SymArray SymArray::tmp_var(uint16_t key_size, uint16_t val_size) {
   stringstream name;
-  name << "TMP_ARR_" << size << "_" << tmp_counter_;
+  name << "TMP_ARR_" << key_size << "_" << val_size << "_" << tmp_counter_;
   tmp_counter_++;
-  return SymArray(new SymArrayVar(key_size, var_size, name.str()));
+  return SymArray(new SymArrayVar(key_size, val_size, name.str()));
 }
 
 /* Indexing */
-SymBitVector SymArray::IndexHelper::operator[](SymBitVector key) const {
-  return SymBitVector(new SymBitvectorArrayLookup(ptr, key));
+SymBitVector SymArray::operator[](SymBitVector key) const {
+  return SymBitVector(new SymBitVectorArrayLookup(ptr, key.ptr));
 }
 
 /* Array Comparison Operators */

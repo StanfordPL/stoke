@@ -26,7 +26,7 @@ namespace stoke {
 /* This visitor returns the size of a bitvector, and also checks
    that it's well-formed.  If it's not well-formed, it returns
    size 0. */
-class SymTypecheckVisitor : public SymVisitor<uint16_t, uint16_t> {
+class SymTypecheckVisitor : public SymVisitor<uint16_t, uint16_t, uint16_t> {
 
 public:
 
@@ -34,13 +34,13 @@ public:
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBitVector& bv) {
     error_ = "";
-    return SymVisitor<uint16_t, uint16_t>::operator()(bv);
+    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(bv);
   }
   /** Typecheck this abstract symbolic bool */
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBool& b) {
     error_ = "";
-    return SymVisitor<uint16_t, uint16_t>::operator()(b);
+    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(b);
   }
 
   /* Visit a generic binary operator */
@@ -316,6 +316,40 @@ public:
     return 1;
   }
 
+  /** Visit an array STORE.  Return 1 if ok, 0 otherwise. */
+  uint16_t visit(const SymArrayStore * const a) {
+    // Check that key size is correct
+    auto ks = apply(a->key_);
+    if(ks != a->a_->key_size_) {
+      std::stringstream e;
+      SymPrintVisitor pv(e);
+      e << "In array store: ";
+      pv(a);
+      e << " the key width is " << ks
+        << " but array takes keys of width " << a->a_->key_size_;
+      set_error(e);
+      return 0;
+    }
+    // Check that value size is correct 
+    auto vs = apply(a->value_);
+    if(vs != a->a_->value_size_) {
+      std::stringstream e;
+      SymPrintVisitor pv(e);
+      e << "In array store: ";
+      pv(a);
+      e << " the value width is " << vs
+        << " but array takes values of width " << a->a_->value_size_;
+      set_error(e);
+      return 0;
+    }
+    return 1;
+  }
+
+  /** Visit an array VAR */
+  uint16_t visit(const SymArrayVar * const a) {
+    return 1;
+  }
+
 
   /** Check if an error message was recorded on the last typecheck */
   bool has_error() const {
@@ -330,16 +364,16 @@ private:
 
   /** Recurse without clearing error message */
   uint16_t apply(const SymBitVector& bv) {
-    return SymVisitor<uint16_t, uint16_t>::operator()(bv);
+    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(bv);
   }
   uint16_t apply(const SymBool& b) {
-    return SymVisitor<uint16_t, uint16_t>::operator()(b);
+    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(b);
   }
   uint16_t apply(const SymBitVectorAbstract * const bv) {
-    return SymVisitor<uint16_t, uint16_t>::operator()(bv);
+    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(bv);
   }
   uint16_t apply(const SymBoolAbstract * const b) {
-    return SymVisitor<uint16_t, uint16_t>::operator()(b);
+    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(b);
   }
 
   /** Tracks the first error that occurred in typechecking */

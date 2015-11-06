@@ -197,6 +197,7 @@ public:
 };
 
 class SymBoolArrayEq : public SymBoolAbstract {
+  friend class SymArray;
 
 protected:
   SymBoolArrayEq(const SymArrayAbstract * const a, const SymArrayAbstract * const b) : a_(a), b_(b) {}

@@ -25,7 +25,7 @@ namespace stoke {
 
 /** This abstract class is used to visit SymBitVector and SymBool classes to
  * perform operations on the AST.  To use, implement a subclass. */
-template <typename TBool, typename TBits>
+template <typename TBool, typename TBits, typename TArray>
 class SymVisitor {
 
 public:
@@ -146,6 +146,27 @@ public:
     }
     assert(false);
     return visit(static_cast<const SymBoolAnd * const>(b)); //keep compiler happy
+  }
+
+  /** Visit a symbolic array (encapsulated) */
+  virtual TArray operator()(const SymArray& a) {
+    return (*this)(a.ptr);
+  }
+
+  /** Visit a symbolic bool */
+  virtual TArray operator()(const SymArrayAbstract * const a) {
+    switch (a->type()) {
+    case SymArray::STORE:
+      return visit(static_cast<const SymArrayStore * const>(a));
+    case SymArray::VAR:
+      return visit(static_cast<const SymArrayVar * const>(a));
+    default:
+      std::cerr << "Unexpected array type " << a->type()
+                << " in " << __FILE__ << ":" << __LINE__ << std::endl;
+      assert(false);
+    }
+    assert(false);
+    return visit(static_cast<const SymArrayVar * const>(a)); //keep compiler happy
   }
 
   /** Visit a generic bin-op.  Used to make implementing visitors more
@@ -312,6 +333,10 @@ public:
   /** Visit a boolean VAR */
   virtual TBool visit(const SymBoolVar * const b) = 0;
 
+  /** Visit an array STORE */
+  virtual TArray visit(const SymArrayStore * const a) = 0;
+  /** Visit an array VAR */
+  virtual TArray visit(const SymArrayVar * const a) = 0;
 };
 
 
