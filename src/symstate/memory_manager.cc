@@ -25,6 +25,10 @@ void SymMemoryManager::collect() {
   for(const SymBoolAbstract* b : bools_) {
     delete b;
   }
+  for(const SymArrayAbstract* a : bools_) {
+    delete a;
+  }
   bitvectors_ = set<const SymBitVectorAbstract*>();
   bools_ = set<const SymBoolAbstract*>();
+  arrays_ = set<const SymArrayAbstract*>();
 }

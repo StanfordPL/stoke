@@ -28,6 +28,7 @@ namespace stoke {
 class SymBitVectorAbstract;
 
 class SymBitVectorAnd;
+class SymBitVectorArrayLookup;
 class SymBitVectorConcat;
 class SymBitVectorConstant;
 class SymBitVectorDiv;
@@ -62,6 +63,7 @@ public:
   enum Type {
     NONE,
     AND,
+    ARRAY_LOOKUP,
     CONCAT,
     CONSTANT,
     DIV,
@@ -293,6 +295,30 @@ public:
     return SymBitVector::Type::AND;
   }
 };
+
+class SymBitVectorArrayLookup : public SymBitVectorBinop {
+  friend class SymArray;
+
+public:
+  const SymArrayAbstract* const a_;
+  const SymBitVectorAbstract* const key_;
+
+  bool equals(const SymBitVectorAbstract * other) const {
+    if(other->type() != this->type()) return false;
+    auto cast = satic_cast<const SymBitVectorArrayLookup * const>(other);
+    return a_->equals(cast->a_) && key_->equals(cast->key_);
+  }
+
+  SymBitVector::Type type() const {
+    return SymBitVector::Type::ARRAY_LOOKUP;
+  }
+
+private:
+  SymBitVectorArrayLookup(const SymArrayAbstract* a, const SymBitVectorAbstract * key) :
+    key_(key), a_(a) { }
+};
+
+
 
 class SymBitVectorConcat : public SymBitVectorBinop {
   friend class SymBitVector;
