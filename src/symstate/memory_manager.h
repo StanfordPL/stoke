@@ -21,6 +21,7 @@
 
 namespace stoke {
 
+class SymArrayAbstract;
 class SymBitVectorAbstract;
 class SymBoolAbstract;
 
@@ -56,7 +57,7 @@ private:
 
   std::set<const SymBitVectorAbstract*> bitvectors_;
   std::set<const SymBoolAbstract*> bools_;
-  std::set<const SymArrayAbstract*> bools_;
+  std::set<const SymArrayAbstract*> arrays_;
 
 };
 

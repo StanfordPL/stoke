@@ -19,12 +19,16 @@
 #include <iostream>
 #include <vector>
 
-#include "src/symstate/bitvector.h"
 #include "src/symstate/memory_manager.h"
 
 namespace stoke {
 
+class SymBitVector;
+class SymBool;
+
 class SymArrayAbstract;
+class SymBitVectorAbstract;
+class SymBoolAbstract;
 
 class SymArrayStore;
 class SymArrayVar;
@@ -92,6 +96,14 @@ public:
   virtual bool equals(const SymArrayAbstract * const other) const = 0;
 
   virtual ~SymArrayAbstract() = 0;
+
+  const uint16_t key_size_;
+  const uint16_t value_size_;
+
+protected:
+  SymArrayAbstract(uint16_t key_size, uint16_t value_size) : 
+    key_size_(key_size), value_size_(value_size) { }
+
 };
 
 inline SymArrayAbstract::~SymArrayAbstract() {}
@@ -102,20 +114,17 @@ class SymArrayStore : public SymArrayAbstract {
 
 public:
   const SymArrayAbstract * const a_;
-  const SymBitvectorAbstract * const key_;
-  const SymBitvectorAbstract * const value_;
+  const SymBitVectorAbstract * const key_;
+  const SymBitVectorAbstract * const value_;
 
-  bool equals(const SymArrayAbstract * other) const {
-    if (other->type() != this->type()) return false;
-    auto cast = static_cast<const SymArrayStore * const>(other);
-    return a_->equals(cast->a_) &&
-           key_->equals(cast->key_) &&
-           value_->equals(cast->value_);
-  }
+  bool equals(const SymArrayAbstract * other) const;
 
   SymArray::Type type() const {
     return SymArray::Type::STORE;
   }
+
+  SymArrayStore(const SymArrayAbstract* const a, const SymBitVectorAbstract * const key, const SymBitVectorAbstract * const value) : 
+    SymArrayAbstract(a->key_size_, a->value_size_), a_(a), key_(key), value_(value) { }
 
 };
 
@@ -124,7 +133,7 @@ class SymArrayVar : public SymArrayAbstract {
 
 private:
   SymArrayVar(uint16_t key_size, uint16_t value_size, const std::string name) :
-    name_(name), key_size_(key_size), value_size_(value_size) {}
+    SymArrayAbstract(key_size_, value_size_), name_(name) {}
 
 public:
   SymArray::Type type() const {
@@ -140,8 +149,6 @@ public:
   }
 
   const std::string name_;
-  const uint16_t key_size_;
-  const uint16_t value_size_;
 };
 
 

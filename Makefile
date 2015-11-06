@@ -86,6 +86,7 @@ SRC_OBJ=\
 	\
 	src/stategen/stategen.o \
 	\
+	src/symstate/array.o \
 	src/symstate/bitvector.o \
 	src/symstate/bool.o \
 	src/symstate/function.o \

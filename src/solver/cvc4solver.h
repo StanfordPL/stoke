@@ -59,7 +59,7 @@ public:
 
   std::map<cpputil::BitVector, cpputil::BitVector> get_model_array(const std::string& var, size_t key_bits, size_t value_bits) {
     std::cout << "Arrays not yet supported for CVC4! (limitation of stoke, not CVC4)"  << std::endl;
-    error_ = "Arrays not yet supported for CVC4! (limitation of stoke, not CVC4)" << std::endl;
+    error_ = "Arrays not yet supported for CVC4! (limitation of stoke, not CVC4)";
     return std::map<cpputil::BitVector, cpputil::BitVector>();
   }
 

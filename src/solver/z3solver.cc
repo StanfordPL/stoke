@@ -434,8 +434,9 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBoolXor * const b) {
 
 /** Visit an array store */
 z3::expr Z3Solver::ExprConverter::visit(const SymArrayStore * const a) {
-
+  return z3::expr(context_, Z3_mk_store(context_, (*this)(a->a_), (*this)(a->key_), (*this)(a->value_)));
 }
+
 /** Visit an array variable */
 z3::expr Z3Solver::ExprConverter::visit(const SymArrayVar * const a) {
   auto key_sort = context_.bv_sort(a->key_size_);
