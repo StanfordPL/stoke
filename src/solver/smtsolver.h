@@ -52,6 +52,8 @@ public:
   virtual cpputil::BitVector get_model_bv(const std::string& var, uint16_t octs) = 0;
   /** Get the satisfying assignment for a bit from the model. */
   virtual bool get_model_bool(const std::string& var) = 0;
+  /** Get the satisfying assignment for an array */
+  virtual std::map<cpputil::BitVector, cpputil::BitVector> get_model_array(const std::string& var, size_t key_bits, size_t value_bits) = 0;
 
   /** Check if the last query trivvered an error. */
   virtual bool has_error() {

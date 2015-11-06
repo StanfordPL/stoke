@@ -41,6 +41,12 @@ public:
     assert(b);
     bools_.insert(b);
   }
+  /** Collect array */
+  void add(const SymArrayAbstract* b) {
+    assert(b);
+    arrays_.insert(b);
+  }
+
 
 
   /** Free all the junk */
@@ -50,6 +56,7 @@ private:
 
   std::set<const SymBitVectorAbstract*> bitvectors_;
   std::set<const SymBoolAbstract*> bools_;
+  std::set<const SymArrayAbstract*> bools_;
 
 };
 

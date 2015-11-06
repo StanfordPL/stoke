@@ -45,6 +45,12 @@ public:
   /** Get the satisfying assignment for a bit from the model. */
   bool get_model_bool(const std::string& var);
 
+  std::map<cpputil::BitVector, cpputil::BitVector> get_model_array(const std::string& var, size_t key_bits, size_t value_bits) {
+    std::cout << "Arrays not yet supported for Z3! (limitation of stoke, not Z3)"  << std::endl;
+    error_ = "Arrays not yet supported for Z3! (limitation of stoke, not Z3)" << std::endl;
+    return std::map<cpputil::BitVector, cpputil::BitVector>();
+  }
+
 private:
 
   /** The Z3 context we're working with */
@@ -189,6 +195,11 @@ private:
     z3::expr visit(const SymBoolVar * const b);
     /** Visit a boolean XOR */
     z3::expr visit(const SymBoolXor * const b);
+
+    /** Visit an array store */
+    z3::expr visit(const SymArrayStore * const a);
+    /** Visit an array variable */
+    z3::expr visit(const SymArrayVar * const a);
 
     /** See if there's an error */
     bool has_error() {
