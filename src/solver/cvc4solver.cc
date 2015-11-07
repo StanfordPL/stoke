@@ -248,6 +248,13 @@ Expr Cvc4Solver::ExprConverter::visit_compare(const SymBoolCompare * const compa
   return em_.mkExpr(kind::EQUAL, left, right);
 }
 
+/** Visit a bit-vector array lookup */
+Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorArrayLookup * const bv) {
+  error_ = "Arrays not supported by STOKE's CVC4 interface";
+  assert(false);
+  return em_.mkConst(BitVector(bv->a_->value_size_, (uint64_t)0));
+}
+
 /** Visit a bit-vector constant */
 Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorConstant * const bv) {
   return em_.mkConst(BitVector(bv->size_, bv->constant_));

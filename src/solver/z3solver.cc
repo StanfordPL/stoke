@@ -335,6 +335,11 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorVar * const bv) {
   return z3::expr(context_, Z3_mk_const(context_, get_symbol(bv->name_), type));
 }
 
+/** Visit a bit-vector array access */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorArrayLookup * const bv) {
+  return z3::expr(context_, Z3_mk_select(context_, (*this)(bv->a_), (*this)(bv->key_)));
+}
+
 /** Visit a bit-vector XOR */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorXor * const bv) {
   return z3::expr(context_, Z3_mk_bvxor(context_, (*this)(bv->a_), (*this)(bv->b_)));

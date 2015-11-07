@@ -299,6 +299,24 @@ public:
   uint16_t visit(const SymBitVectorVar * const bv) {
     return bv->size_;
   }
+  /** Visit an array lookup */
+  uint16_t visit(const SymBitVectorArrayLookup * const bv) {
+    // check the key size matches the array
+    auto array_key_size = bv->a_->key_size_;
+    auto key_size = apply(bv->key_);
+
+    if(key_size != array_key_size) {
+      std::stringstream e;
+      SymPrintVisitor pv(e);
+      e << "In array lookup: ";
+      pv(bv);
+      e << " the key size didn't match the array's key width.";
+      set_error(e);
+      return 0;
+    }
+
+    return bv->a_->value_size_;
+  }
   /** Visit a boolean FALSE */
   uint16_t visit(const SymBoolFalse * const b) {
     return 1;
