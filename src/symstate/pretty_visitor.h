@@ -223,7 +223,7 @@ public:
 
   /** Visit a bit-vector variable */
   void visit(const SymBitVectorVar * const bv) {
-    os_ << bv->name_ << small_num(bv->size_);
+    os_ << bv->name_;// << small_num(bv->size_);
     reset();
   }
 

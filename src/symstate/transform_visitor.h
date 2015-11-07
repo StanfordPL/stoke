@@ -34,6 +34,17 @@ class SymTransformVisitor : public SymVisitor<SymBoolAbstract*, SymBitVectorAbst
 
 protected:
 
+  SymTransformVisitor() : cache_bool_(*(new std::map<SymBoolAbstract*, SymBoolAbstract*>())), cache_bits_(*(new std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>())), delete_caches_(true) {}
+
+  SymTransformVisitor(std::map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits) : cache_bool_(cache_bool), cache_bits_(cache_bits), delete_caches_(false) {}
+
+  ~SymTransformVisitor() {
+    if (delete_caches_) {
+      delete &cache_bool_;
+      delete &cache_bits_;
+    }
+  }
+
   void add_to_memory_manager(const SymBitVectorAbstract* ptr) {
     if (SymBitVector::get_memory_manager())
       SymBitVector::get_memory_manager()->add(ptr);
@@ -70,8 +81,9 @@ protected:
     return (*cache_bool_.find((SymBoolAbstract*)bv)).second;
   }
 
-  std::map<SymBoolAbstract*, SymBoolAbstract*> cache_bool_;
-  std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits_;
+  std::map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool_;
+  std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits_;
+  bool delete_caches_;
 
 public:
 
