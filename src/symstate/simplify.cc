@@ -35,6 +35,8 @@ class SymMergeExtracts : public SymTransformVisitor {
 
 public:
 
+  SymMergeExtracts(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits) : SymTransformVisitor(cache_bool, cache_bits) {}
+
   SymBitVectorAbstract* visit(const SymBitVectorExtract * const bv) {
     if (is_cached(bv)) return get_cached(bv);
     auto lhs = (*this)(bv->bv_);
@@ -88,6 +90,8 @@ public:
 class SymMoveExtractsInside : public SymTransformVisitor {
 
 public:
+
+  SymMoveExtractsInside(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits) : SymTransformVisitor(cache_bool, cache_bits) {}
 
   SymBitVectorAbstract* visit(const SymBitVectorExtract * const bv) {
     if (is_cached(bv)) return get_cached(bv);
@@ -155,8 +159,8 @@ public:
 SymBitVector SymSimplify::simplify(const SymBitVector& b) {
   auto ptr = b.ptr;
 
-  SymMergeExtracts merger;
-  SymMoveExtractsInside mover;
+  SymMergeExtracts merger(cache_bool1_, cache_bits1_);
+  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_);
 
   // apply transformations until no further simplifications are possible
   while (true) {
@@ -172,18 +176,13 @@ SymBitVector SymSimplify::simplify(const SymBitVector& b) {
 SymBool SymSimplify::simplify(const SymBool& b) {
   auto ptr = b.ptr;
 
-  // first move all bit extracts inside
-  SymMoveExtractsInside mover;
+  SymMergeExtracts merger(cache_bool1_, cache_bits1_);
+  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_);
+
+  // apply transformations until no further simplifications are possible
   while (true) {
     auto old = ptr;
     ptr = mover(ptr);
-    if (old == ptr) break;
-  }
-
-  // then attempt to remove bit extracts
-  SymMergeExtracts merger;
-  while (true) {
-    auto old = ptr;
     ptr = merger(ptr);
     if (old == ptr) break;
   }
