@@ -35,6 +35,7 @@ public:
 
   enum AliasStrategy {
     BASIC,            // enumerate all cases, attempt to bound it (SOUND)
+    FLAT,             // model memory as an array in the SMT solver (SOUND)
     STRING,           // look for continugous memory accesses and combine them (SOUND)
     STRING_NO_ALIAS   // assume strings don't overlap (UNSOUND)
   };

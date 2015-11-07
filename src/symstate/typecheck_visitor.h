@@ -306,7 +306,7 @@ public:
     auto key_size = apply(bv->key_);
 
     auto array_ok = apply(bv->a_);
-    if(!array_ok)
+    if (!array_ok)
       return 0;
 
     if (key_size != array_key_size) {
@@ -325,14 +325,14 @@ public:
   /** Visit a boolean ARRAY_EQ */
   uint16_t visit(const SymBoolArrayEq * const b) {
     auto a_ok = apply(b->a_);
-    if(!a_ok)
+    if (!a_ok)
       return 0;
 
     auto b_ok = apply(b->b_);
-    if(!b_ok)
+    if (!b_ok)
       return 0;
 
-    if(b->a_->key_size_ != b->b_->key_size_) {
+    if (b->a_->key_size_ != b->b_->key_size_) {
       std::stringstream e;
       SymPrintVisitor pv(e);
       e << "In array compare: ";
@@ -341,7 +341,7 @@ public:
       set_error(e);
       return 0;
     }
-    if(b->a_->value_size_ != b->b_->value_size_) {
+    if (b->a_->value_size_ != b->b_->value_size_) {
       std::stringstream e;
       SymPrintVisitor pv(e);
       e << "In array compare: ";
@@ -374,7 +374,7 @@ public:
   uint16_t visit(const SymArrayStore * const a) {
     // Check the array
     auto a_ok = apply(a->a_);
-    if(!a_ok)
+    if (!a_ok)
       return 0;
 
     // Check that key size is correct
