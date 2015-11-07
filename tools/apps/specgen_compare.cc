@@ -136,8 +136,8 @@ int main(int argc, char** argv) {
 
   // check equivalence of two circuits for a given register
   auto is_eq = [&solver](auto& reg, auto a_in, auto b_in, stringstream& explanation) {
-    auto a = SymSimplify::simplify(a_in);
-    auto b = SymSimplify::simplify(b_in);
+    auto a = (a_in);
+    auto b = (b_in);
     SymBool eq = a == b;
     SymPrettyVisitor pretty(explanation);
     bool res = solver.is_sat({ !eq });
