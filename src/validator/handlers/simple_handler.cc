@@ -787,6 +787,48 @@ void SimpleHandler::add_all() {
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][64] || res, true);
   });
 
+  add_opcode({"vfmsub132ss"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmsub132_single", 32, {32, 32});
+    auto res = f(b[31][0], c[31][0]);
+    ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
+  });
+
+  add_opcode({"vfmsub132sd"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmsub132_double", 64, {64, 64});
+    auto res = f(b[63][0], c[63][0]);
+    ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][64] || res, true);
+  });
+
+  add_opcode({"vfnmadd132ss"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfnmadd132_single", 32, {32, 32});
+    auto res = f(b[31][0], c[31][0]);
+    ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
+  });
+
+  add_opcode({"vfnmadd132sd"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfnmadd132_double", 64, {64, 64});
+    auto res = f(b[63][0], c[63][0]);
+    ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][64] || res, true);
+  });
+
+  add_opcode({"vfnmsub132ss"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfnmsub132_single", 32, {32, 32});
+    auto res = f(b[31][0], c[31][0]);
+    ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
+  });
+
+  add_opcode({"vfnmsub132sd"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vnfmsub132_double", 64, {64, 64});
+    auto res = f(b[63][0], c[63][0]);
+    ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][64] || res, true);
+  });
+
 }
 
 Handler::SupportLevel SimpleHandler::get_support(const x64asm::Instruction& instr) {
