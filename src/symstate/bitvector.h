@@ -19,6 +19,7 @@
 #include <iostream>
 #include <vector>
 
+#include "src/symstate/array.h"
 #include "src/symstate/bool.h"
 #include "src/symstate/function.h"
 #include "src/symstate/memory_manager.h"
@@ -28,6 +29,7 @@ namespace stoke {
 class SymBitVectorAbstract;
 
 class SymBitVectorAnd;
+class SymBitVectorArrayLookup;
 class SymBitVectorConcat;
 class SymBitVectorConstant;
 class SymBitVectorDiv;
@@ -62,6 +64,7 @@ public:
   enum Type {
     NONE,
     AND,
+    ARRAY_LOOKUP,
     CONCAT,
     CONSTANT,
     DIV,
@@ -316,6 +319,27 @@ public:
     return SymBitVector::Type::AND;
   }
 };
+
+class SymBitVectorArrayLookup : public SymBitVectorAbstract {
+  friend class SymArray;
+  friend class SymTransformVisitor;
+
+public:
+  const SymBitVectorAbstract* const key_;
+  const SymArrayAbstract* const a_;
+
+  bool equals(const SymBitVectorAbstract * other) const;
+
+  SymBitVector::Type type() const {
+    return SymBitVector::Type::ARRAY_LOOKUP;
+  }
+
+private:
+  SymBitVectorArrayLookup(const SymArrayAbstract * const a, const SymBitVectorAbstract * const key) :
+    SymBitVectorAbstract(a->value_size_), key_(key), a_(a) { }
+};
+
+
 
 class SymBitVectorConcat : public SymBitVectorBinop {
   friend class SymBitVector;

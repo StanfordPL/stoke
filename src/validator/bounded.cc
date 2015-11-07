@@ -403,6 +403,10 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
   case AliasStrategy::STRING:
   case AliasStrategy::STRING_NO_ALIAS:
     return enumerate_aliasing_string(target, rewrite, P, Q, assume);
+  case AliasStrategy::FLAT:
+    auto res = vector<pair<CellMemory*, CellMemory*>>();
+    res.push_back(pair<CellMemory*,CellMemory*>(NULL, NULL));
+    return res;
   default:
     assert(false);
     return enumerate_aliasing_basic(target, rewrite, P, Q, assume);
@@ -1077,6 +1081,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   // Get a list of all aliasing cases.
   auto memory_list =  enumerate_aliasing(target, rewrite, P, Q, assume);
+  bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
 
   BOUNDED_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
 
@@ -1108,6 +1113,10 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       state_t.memory->set_parent(&state_t);
       state_r.memory = memories.second;
       state_r.memory->set_parent(&state_r);
+    } else if (flat_model) {
+      FlatMemory* flat = new FlatMemory();
+      state_t.memory = &flat;
+      state_r.memory = &flat;
     }
 
     // Add given assumptions
@@ -1166,20 +1175,20 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       auto ceg_rf = Validator::state_from_model(solver_, "_2_FINAL");
 
       bool ok = am.build_testcase_memory(ceg, solver_,
-                                         static_cast<CellMemory*>(state_t.memory),
-                                         static_cast<CellMemory*>(state_r.memory),
+                                         dynamic_cast<CellMemory*>(state_t.memory),
+                                         dynamic_cast<CellMemory*>(state_r.memory),
                                          target, rewrite);
       am.build_testcase_memory(ceg2, solver_,
-                               static_cast<CellMemory*>(state_t.memory),
-                               static_cast<CellMemory*>(state_r.memory),
+                               dynamic_cast<CellMemory*>(state_t.memory),
+                               dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
       am.build_testcase_memory(ceg_tf, solver_,
-                               static_cast<CellMemory*>(state_t.memory),
-                               static_cast<CellMemory*>(state_r.memory),
+                               dynamic_cast<CellMemory*>(state_t.memory),
+                               dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
       am.build_testcase_memory(ceg_rf, solver_,
-                               static_cast<CellMemory*>(state_t.memory),
-                               static_cast<CellMemory*>(state_r.memory),
+                               dynamic_cast<CellMemory*>(state_t.memory),
+                               dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
 
       if (ok)

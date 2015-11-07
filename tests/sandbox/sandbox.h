@@ -944,4 +944,51 @@ TEST(SandboxTest, CannotReadInvalidAddress) {
 
 }
 
+TEST(SandboxTest, DivideBySpl1) {
+
+  std::stringstream st;
+  st << ".foo:" << std::endl;
+  st << "movl $0x0, %edx" << std::endl;
+  st << "divb %dl" << std::endl;
+  st << "retq" << std::endl;
+
+  x64asm::Code d;
+  st >> d;
+  auto cfg_2 = Cfg(TUnit(d));
+
+
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "movl $0x0, %esp" << std::endl;
+  ss << "divb %spl" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code c;
+  ss >> c;
+  auto cfg = Cfg(TUnit(c));
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+
+  uint64_t base = 0x10;
+  tc.gp[x64asm::rax].get_fixed_quad(0) = base;
+  tc.gp[x64asm::rdx].get_fixed_quad(0) = base;
+
+  sb.insert_input(tc);
+  sb.run(cfg);
+
+  auto code_1 = sb.result_begin()->code;
+
+  sb.run(cfg_2);
+
+  auto code_2 = sb.result_begin()->code;
+
+  EXPECT_NE(ErrorCode::NORMAL, code_1);
+  EXPECT_NE(ErrorCode::NORMAL, code_2);
+  EXPECT_EQ(code_1, code_2);
+
+}
+
 } //namespace

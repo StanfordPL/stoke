@@ -16,8 +16,9 @@
 #define STOKE_SRC_VALIDATOR_INVARIANT_MEMORY_EQUALITY_H
 
 #include "src/ext/x64asm/include/x64asm.h"
+#include "src/symstate/memory/cell.h"
+#include "src/symstate/memory/flat.h"
 #include "src/validator/invariant.h"
-
 
 namespace stoke {
 
@@ -32,13 +33,19 @@ public:
     if (left.memory == 0 && right.memory == 0)
       return SymBool::_true();
 
-    assert(left.memory != 0);
-    assert(right.memory != 0);
+    auto new_left = dynamic_cast<CellMemory*>(left.memory);
+    if(new_left != 0) {
+      assert(dynamic_cast<CellMemory*>(right.memory) != 0);
+      return new_left->equality_constraint(*static_cast<CellMemory*>(right.memory));
+    }
 
-    if(left.memory->get_type() != "cell") //hacky... we don't want to interfere unless needed.
-      return SymBool::_true();
+    new_left = dynamic_cast<FlatMemory*>(left.memory);
+    if(new_left != 0) {
+      assert(dynamic_cast<FlatMemory*>(right.memory) != 0);
+      return new_left->equality_constraint(*static_cast<FlatMemory*>(right.memory));
+    }
 
-    return static_cast<CellMemory*>(left.memory)->equality_constraint(*static_cast<CellMemory*>(right.memory));
+    return SymBool::_true();
   }
 
   std::ostream& write(std::ostream& os) const {

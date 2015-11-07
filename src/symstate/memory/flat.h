@@ -13,39 +13,37 @@
 // limitations under the License.
 
 
-#ifndef _STOKE_SRC_SYMSTATE_SYM_MEMORY_H
-#define _STOKE_SRC_SYMSTATE_SYM_MEMORY_H
+#ifndef STOKE_SRC_SYMSTATE_MEMORY_CELL_H
+#define STOKE_SRC_SYMSTATE_MEMORY_CELL_H
 
 #include "src/symstate/bitvector.h"
+#include "src/symstate/memory.h"
 
 namespace stoke {
 
-class SymState;
-
-class SymMemory {
+/** Models memory as a giant array */
+class FlatMemory : public SymMemory {
 
 public:
 
-  SymMemory() : state_(NULL) {}
-
-  virtual ~SymMemory() { }
-
-  /** Set the parent symbolic state */
-  SymMemory& set_parent(SymState* ss) {
-    state_ = ss;
-    return *this;
+  FlatMemory() {
+    heap_ = SymArray::tmp_var(64, 8);
   }
 
   /** Updates the memory with a write.
    *  Returns condition for segmentation fault */
-  virtual SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no) = 0;
+  SymBool write(SymBitVector address, SymBitVector value, uint16_t size, size_t line_no);
 
   /** Reads from the memory.  Returns value and segv condition. */
-  virtual std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no) = 0;
+  std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no);
 
-protected:
+  /** Create a formula expressing these memory cells with another set. */
+  SymBool equality_constraint(FlatMemory& other);
 
-  SymState* state_;
+
+private:
+
+  SymArray heap_;
 
 };
 
