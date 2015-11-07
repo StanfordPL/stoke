@@ -325,6 +325,10 @@ public:
     return cache(bv, make_compare(bv->type(), lhs, rhs));
   }
 
+  SymBitVectorAbstract* visit(const SymBitVectorArrayLookup * const bv) {
+    return (SymBitVectorAbstract*)bv;
+  }
+
   SymBitVectorAbstract* visit(const SymBitVectorConstant * const bv) {
     return (SymBitVectorAbstract*)bv;
   }
