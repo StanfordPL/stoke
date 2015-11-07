@@ -1363,10 +1363,10 @@ vector<Opcode> instr_cat_base_ = {
 // , OR_R64_IMM32 // OR r64, imm32
 // , OR_R64_IMM8 // OR r64, imm8
 // , OR_R64_M64 // OR r64, m64
-// , OR_R64_R64 // OR r64, r64
+  , OR_R64_R64 // OR r64, r64
 // , OR_R8_IMM8 // OR r8, imm8
 // , OR_R8_M8 // OR r8, m8
-  , OR_R8_R8 // OR r8, r8
+// , OR_R8_R8 // OR r8, r8
 // , OR_R8_RH // OR r8, rh
 // , OR_RAX_IMM32 // OR RAX, imm32
 // , OR_RH_IMM8 // OR rh, imm8
@@ -3676,10 +3676,10 @@ vector<Opcode> instr_cat_base_ = {
 // , XOR_R64_IMM32 // XOR r64, imm32
 // , XOR_R64_IMM8 // XOR r64, imm8
 // , XOR_R64_M64 // XOR r64, m64
-// , XOR_R64_R64 // XOR r64, r64
+  , XOR_R64_R64 // XOR r64, r64
 // , XOR_R8_IMM8 // XOR r8, imm8
 // , XOR_R8_M8 // XOR r8, m8
-  , XOR_R8_R8 // XOR r8, r8
+// , XOR_R8_R8 // XOR r8, r8
 // , XOR_R8_RH // XOR r8, rh
 // , XOR_RAX_IMM32 // XOR RAX, imm32
 // , XOR_RH_IMM8 // XOR rh, imm8
