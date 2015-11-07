@@ -79,6 +79,7 @@ auto& compare_to_stoke =
   .description("Also compute the score for STOKE.");
 
 void compute_score(SymState& state, RegSet& rs, size_t& nodes, size_t& uifs, size_t& muls);
+void show_circuits(SymState& state, RegSet& rs);
 
 int main(int argc, char** argv) {
 
@@ -114,13 +115,13 @@ int main(int argc, char** argv) {
     (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
     x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf +
     x64asm::eflags_zf + x64asm::eflags_sf;// + x64asm::eflags_af;
+  rs &= instr.maybe_write_set();
 
   size_t nodes = 0;
   size_t uifs = 0;
   size_t muls = 0;
 
   compute_score(strata_state, rs, nodes, uifs, muls);
-  cout << dec << uifs << "," << muls << "," << nodes << endl;
 
   if (compare_to_stoke.value()) {
     ComboHandler stoke_handler;
@@ -138,7 +139,19 @@ int main(int argc, char** argv) {
       exit(1);
     }
 
-    compute_score(stoke_state, rs, nodes, uifs, muls);
+    show_circuits(strata_state, rs);
+    cout << endl;
+    show_circuits(stoke_state, rs);
+    cout << endl;
+
+    size_t s_nodes = 0;
+    size_t s_uifs = 0;
+    size_t s_muls = 0;
+    compute_score(stoke_state, rs, s_nodes, s_uifs, s_muls);
+
+    cout << dec << uifs << "," << muls << "," << nodes << endl;
+    cout << dec << s_uifs << "," << s_muls << "," << s_nodes << endl;
+  } else {
     cout << dec << uifs << "," << muls << "," << nodes << endl;
   }
 }
@@ -183,4 +196,19 @@ void compute_score(SymState& state, RegSet& rs, size_t& nodes, size_t& uifs, siz
   // nodes += node_counter(circuit);
   // uifs += uif_counter(circuit);
   // muls += mul_counter(circuit);
+}
+
+void show_circuits(SymState& state, RegSet& rs) {
+  for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
+    auto circuit = (state.lookup(*gp_it));
+    cout << (*gp_it) << ": " << circuit << endl;
+  }
+  for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
+    auto circuit = (state.lookup(*sse_it));
+    cout << (*sse_it) << ": " << circuit << endl;
+  }
+  for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
+    auto circuit = (state[*flag_it]);
+    cout << (*flag_it) << ": " << circuit << endl;
+  }
 }
