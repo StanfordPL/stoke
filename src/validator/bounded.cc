@@ -1052,7 +1052,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   init_mm();
 
   // Get a list of all aliasing cases.
-  auto memory_list =  enumerate_aliasing(target, rewrite, P, Q);
+  auto memory_list = enumerate_aliasing(target, rewrite, P, Q);
 
   BOUNDED_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
 

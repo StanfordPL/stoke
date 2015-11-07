@@ -335,7 +335,7 @@ public:
   SymBitVectorAbstract* visit(const SymBitVectorArrayLookup * const bv) {
     if (is_cached(bv)) return get_cached(bv);
     auto key = (*this)(bv->key_);
-    if(key == bv->key_) {
+    if (key == bv->key_) {
       return cache(bv, (SymBitVectorArrayLookup*)bv);
     }
     return cache(bv, make_bitvector_array_lookup(bv->a_, key));
