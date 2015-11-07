@@ -167,18 +167,10 @@ int main(int argc, char** argv) {
     if (find(instr_cat_base_.begin(), instr_cat_base_.end(), op) != instr_cat_base_.end() && !allow_all_arg) {
       base++;
       is_goal = false;
-      bool could_be_inferred = true;
-      for (size_t i = 0; i < instr.arity(); i++) {
-        auto t = instr.type(i);
-        if (!is_supported_type(t)) {
-          could_be_inferred = false;
-        }
-      }
-      if (could_be_inferred) {
-        Instruction our = get_instruction(op);
-        if (!validator.is_supported(our)) {
-          base_and_no_validator_support++;
-        }
+      Instruction our = get_instruction(op);
+      if (!validator.is_supported(our)) {
+        cout << op << endl;
+        base_and_no_validator_support++;
       }
     }
     if (is_goal && !is_supported(op)) {
@@ -288,6 +280,11 @@ int main(int argc, char** argv) {
         }
       }
     }
+  }
+
+  if (base_and_no_validator_support > 0) {
+    cout << "Some base instructions are not supported!" << endl;
+    return 1;
   }
 
   if (!quiet) {

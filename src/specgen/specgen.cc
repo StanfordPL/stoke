@@ -128,6 +128,9 @@ x64asm::Operand get_next_operand(x64asm::Type t, uint8_t imm8_val) {
   if (t == x64asm::Type::IMM_8) {
     return x64asm::Imm8(imm8_val);
   }
+  if (t == x64asm::Type::IMM_64) {
+    return x64asm::Imm64(0);
+  }
   if (t == x64asm::Type::AL) {
     return x64asm::Constants::al();
   }
