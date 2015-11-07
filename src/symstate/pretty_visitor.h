@@ -174,6 +174,20 @@ public:
     reset();
   }
 
+  /** Visit a bit-vector variable */
+  void visit(const SymBitVectorArrayLookup * const bv) {
+    auto l = get_level(bv->a_);
+    if(l < level_) {
+      parens(l, bv->a_); 
+    } else {
+      pretty(l, bv->a_);
+    }
+    os_ << "[";
+    pretty(SYMSTATE_PRETTY_MAX_LEVEL, bv->key_);
+    os_ << "]";
+    reset();
+  }
+
   /** Visit a bit-vector constant */
   void visit(const SymBitVectorConstant * const bv) {
     os_ << "0x" << std::hex << bv->constant_ << small_num(bv->size_);
@@ -253,10 +267,18 @@ public:
 
   /** Visit an array STORE */
   void visit(const SymArrayStore * const a) {
-    pretty(SYMSTATE_PRETTY_MAX_LEVEL, a->a_);
-    os_ << "*";
-    // Each star denotes one update.  This hides
-    // details in the printout, but keeps it prettier.
+    auto l = get_level(a->a_);
+
+    if(l < level_) {
+      parens(l, a->a_);
+    } else {
+      // a->a_ is a store too
+      pretty(l, a->a_);
+    }
+    os_ << " / ";
+    pretty(get_level(SymBitVector::NOT), a->key_);
+    os_ << " ↦ ";
+    pretty(get_level(SymBitVector::NOT), a->value_);
 
     reset();
   }
@@ -385,13 +407,16 @@ private:
     return get_level(bv.ptr);
   }
   int get_level(const SymBitVectorAbstract * const bv) {
-    switch (bv->type()) {
+    return get_level(bv->type());
+  }
+  int get_level(SymBitVector::Type type) {
+    switch (type) {
     case SymBitVector::CONSTANT:
       return 0;
     case SymBitVector::VAR:
       return 0;
     case SymBitVector::ARRAY_LOOKUP:
-      return 5;
+      return 0;
     case SymBitVector::FUNCTION:
       return 10;
     case SymBitVector::SIGN_EXTEND:
@@ -437,7 +462,7 @@ private:
     case SymBitVector::ITE:
       return 150;
     default:
-      std::cerr << "Unexpected bitvector type " << bv->type()
+      std::cerr << "Unexpected bitvector type " << type
                 << " in " << __FILE__ << ":" << __LINE__ << std::endl;
       assert(false);
     }
@@ -448,7 +473,10 @@ private:
     return get_level(b.ptr);
   }
   int get_level(const SymBoolAbstract * const b) {
-    switch (b->type()) {
+    return get_level(b->type());
+  }
+  int get_level(SymBool::Type type) {
+    switch (type) {
     case SymBool::FALSE:
       return 0;
     case SymBool::TRUE:
@@ -486,7 +514,27 @@ private:
     case SymBool::IFF:
       return 130;
     default:
-      std::cerr << "Unexpected bool type " << b->type()
+      std::cerr << "Unexpected bool type " << type
+                << " in " << __FILE__ << ":" << __LINE__ << std::endl;
+      assert(false);
+    }
+    assert(false);
+    return 0;
+  }
+  int get_level(const SymArray& b) {
+    return get_level(b.ptr);
+  }
+  int get_level(const SymArrayAbstract * const b) {
+    return get_level(b->type());
+  }
+  int get_level(SymArray::Type type) {
+    switch (type) {
+    case SymArray::VAR:
+      return 0;
+    case SymArray::STORE:
+      return 140;
+    default:
+      std::cerr << "Unexpected array type " << type
                 << " in " << __FILE__ << ":" << __LINE__ << std::endl;
       assert(false);
     }

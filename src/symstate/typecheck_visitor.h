@@ -305,7 +305,7 @@ public:
     auto array_key_size = bv->a_->key_size_;
     auto key_size = apply(bv->key_);
 
-    if(key_size != array_key_size) {
+    if (key_size != array_key_size) {
       std::stringstream e;
       SymPrintVisitor pv(e);
       e << "In array lookup: ";

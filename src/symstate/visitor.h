@@ -323,7 +323,8 @@ public:
     return visit_compare(b);
   }
   /** Visit a boolean implies */
-  virtual TBool visit(const SymBoolXor * const b) { return visit_binop(b);
+  virtual TBool visit(const SymBoolXor * const b) {
+    return visit_binop(b);
   }
 
   /** Visit a boolean FALSE */
