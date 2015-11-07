@@ -17,7 +17,7 @@
 ifndef COMPILERBINARY
 	COMPILERBINARY=g++
 endif
-CXX=ccache ${COMPILERBINARY} -std=c++14 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla
+CXX=ccache ${COMPILERBINARY} -std=c++14 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla -fdiagnostics-color=always
 
 # number of threads used for compiling
 ifndef NTHREADS
@@ -88,6 +88,7 @@ SRC_OBJ=\
 	\
 	src/stategen/stategen.o \
 	\
+	src/symstate/array.o \
 	src/symstate/bitvector.o \
 	src/symstate/bool.o \
 	src/symstate/function.o \
@@ -181,6 +182,7 @@ BIN=\
 	bin/stoke_debug_effect \
 	bin/stoke_debug_sandbox \
 	bin/stoke_debug_search \
+	bin/stoke_debug_simplify \
 	bin/stoke_debug_state \
 	bin/stoke_debug_tunit \
 	bin/stoke_debug_verify \
@@ -220,7 +222,7 @@ haswell_test: haswell_debug
 
 sandybridge: sandybridge_release
 sandybridge_release:
-	$(MAKE) -C . external EXT_OPT="release -DSANDYBRIDGE_BUILD" EXT_TARGET="-march=corei7-avx"
+	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7-avx"
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -DSANDYBRIDGE_BUILD"
 sandybridge_debug:
 	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7-avx"
@@ -234,7 +236,7 @@ sandybridge_test: sandybridge_debug
 
 nehalem: nehalem_release
 nehalem_release:
-	$(MAKE) -C . external EXT_OPT="release -DNEHALEM_BUILD" EXT_TARGET="-march=corei7"
+	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7"
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -DNEHALEM_BUILD"
 nehalem_debug:
 	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7"

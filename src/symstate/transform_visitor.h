@@ -29,8 +29,10 @@ namespace stoke {
  * nodes.  The class also provides make_* methods to create bit vectors and bools
  * of all types (and takes care of memory management by adding them to the
  * current memory manager).
+ *
+ * TODO: doesn't allow for any transforms on arrays!
  */
-class SymTransformVisitor : public SymVisitor<SymBoolAbstract*, SymBitVectorAbstract*> {
+class SymTransformVisitor : public SymVisitor<SymBoolAbstract*, SymBitVectorAbstract*, SymArrayAbstract*> {
 
 protected:
 
@@ -222,6 +224,11 @@ public:
     return res;
   }
 
+  SymBitVectorArrayLookup* make_bitvector_array_lookup(const SymArrayAbstract * const a, const SymBitVectorAbstract  * const bv) {
+    auto res = new SymBitVectorArrayLookup(a, bv);
+    add_to_memory_manager(res);
+    return res;
+  }
   SymBitVectorConstant* make_bitvector_constant(uint16_t size, uint64_t constant) {
     auto res = new SymBitVectorConstant(size, constant);
     add_to_memory_manager(res);
@@ -325,6 +332,15 @@ public:
     return cache(bv, make_compare(bv->type(), lhs, rhs));
   }
 
+  SymBitVectorAbstract* visit(const SymBitVectorArrayLookup * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
+    auto key = (*this)(bv->key_);
+    if (key == bv->key_) {
+      return cache(bv, (SymBitVectorArrayLookup*)bv);
+    }
+    return cache(bv, make_bitvector_array_lookup(bv->a_, key));
+  }
+
   SymBitVectorAbstract* visit(const SymBitVectorConstant * const bv) {
     return (SymBitVectorAbstract*)bv;
   }
@@ -378,6 +394,10 @@ public:
     return (SymBitVectorAbstract*) bv;
   }
 
+  SymBoolAbstract* visit(const SymBoolArrayEq * const b) {
+    return (SymBoolAbstract*) b;
+  }
+
   SymBoolAbstract* visit(const SymBoolFalse * const b) {
     return (SymBoolAbstract*) b;
   }
@@ -397,6 +417,13 @@ public:
 
   SymBoolAbstract* visit(const SymBoolVar * const b) {
     return (SymBoolAbstract*) b;
+  }
+
+  SymArrayAbstract* visit(const SymArrayStore * const a) {
+    return const_cast<SymArrayAbstract*>(static_cast<const SymArrayAbstract * const>(a));
+  }
+  SymArrayAbstract* visit(const SymArrayVar * const a) {
+    return const_cast<SymArrayAbstract*>(static_cast<const SymArrayAbstract * const>(a));
   }
 
 };

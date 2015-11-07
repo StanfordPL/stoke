@@ -231,6 +231,12 @@ bool SymBitVector::equals(const SymBitVector& other) const {
     return ptr == other.ptr;
 }
 
+bool SymBitVectorArrayLookup::equals(const SymBitVectorAbstract * other) const {
+  if (other->type() != this->type()) return false;
+  auto cast = static_cast<const SymBitVectorArrayLookup * const>(other);
+  return a_->equals(cast->a_) && key_->equals(cast->key_);
+}
+
 
 
 /* Output overload */

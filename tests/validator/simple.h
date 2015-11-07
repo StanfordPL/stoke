@@ -387,4 +387,36 @@ TEST_F(ValidatorBaseTest, Issue550) {
   check_circuit(cs);
 }
 
+TEST_F(ValidatorBaseTest, Issue764) {
+
+  target_ << ".foo:" << std::endl;
+  target_ << "idivb %spl" << std::endl;
+  target_ << "retq" << std::endl;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+  StateGen sg(&sb);
+  CpuState cs;
+  sg.get(cs);
+  cs.gp[x64asm::rsp].get_fixed_quad(0) = 0x700000000;
+
+  check_circuit(cs);
+}
+
+TEST_F(ValidatorBaseTest, Issue764_2) {
+
+  target_ << ".foo:" << std::endl;
+  target_ << "divb %spl" << std::endl;
+  target_ << "retq" << std::endl;
+
+  Sandbox sb;
+  sb.set_abi_check(false);
+  StateGen sg(&sb);
+  CpuState cs;
+  sg.get(cs);
+  cs.gp[x64asm::rsp].get_fixed_quad(0) = 0x700000000;
+
+  check_circuit(cs);
+}
+
 } //namespace stoke
