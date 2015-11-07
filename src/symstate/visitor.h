@@ -40,6 +40,8 @@ public:
     switch (bv->type()) {
     case SymBitVector::AND:
       return visit(static_cast<const SymBitVectorAnd * const>(bv));
+    case SymBitVector::ARRAY_LOOKUP:
+      return visit(static_cast<const SymBitVectorArrayLookup * const>(bv));
     case SymBitVector::CONCAT:
       return visit(static_cast<const SymBitVectorConcat * const>(bv));
     case SymBitVector::DIV:
@@ -179,7 +181,6 @@ public:
   /** Visit a generic comparison operator. */
   virtual TBool visit_compare(const SymBoolCompare * const b) = 0;
 
-
   /** Visit a bit-vector AND */
   virtual TBits visit(const SymBitVectorAnd * const bv) {
     return visit_binop(bv);
@@ -266,6 +267,8 @@ public:
   virtual TBits visit(const SymBitVectorSignExtend * const bv) = 0;
   /** Visit a bit-vector variable */
   virtual TBits visit(const SymBitVectorVar * const bv) = 0;
+  /** Visit an array lookup */
+  virtual TBits visit(const SymBitVectorArrayLookup * const bv) = 0;
 
   /** Visit a boolean AND */
   virtual TBool visit(const SymBoolAnd * const b) {
@@ -320,8 +323,7 @@ public:
     return visit_compare(b);
   }
   /** Visit a boolean implies */
-  virtual TBool visit(const SymBoolXor * const b) {
-    return visit_binop(b);
+  virtual TBool visit(const SymBoolXor * const b) { return visit_binop(b);
   }
 
   /** Visit a boolean FALSE */

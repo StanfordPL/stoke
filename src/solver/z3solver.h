@@ -175,6 +175,8 @@ private:
     z3::expr visit(const SymBitVectorVar * const bv);
     /** Visit a bit-vector XOR */
     z3::expr visit(const SymBitVectorXor * const bv);
+    /** Visit a bit-vector array access */
+    z3::expr visit(const SymBitVectorArrayLookup * const bv);
 
     /** Visit a bit-vector EQ */
     z3::expr visit(const SymBoolEq * const b);

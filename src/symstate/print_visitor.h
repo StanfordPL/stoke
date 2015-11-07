@@ -217,6 +217,15 @@ public:
     os_ << "<" << bv->name_ << "|" << bv->size_ << ">";
   }
 
+  /** Visit an array lookup */
+  void visit(const SymBitVectorArrayLookup * const bv) {
+    os_ << "(";
+    (*this)(bv->a_);
+    os_ << ")[";
+    (*this)(bv->key_);
+    os_ << "]";
+  }
+
   /** Visit a boolean FALSE */
   void visit(const SymBoolFalse * const b) {
     os_ << "FALSE";

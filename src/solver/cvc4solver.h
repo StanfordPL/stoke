@@ -105,6 +105,8 @@ private:
     /** Visit bit-vector compare */
     CVC4::Expr visit_compare(const SymBoolCompare * const bv);
 
+    /** Visit a bit-vector array lookup */
+    CVC4::Expr visit(const SymBitVectorArrayLookup * const bv);
     /** Visit a bit-vector constant */
     CVC4::Expr visit(const SymBitVectorConstant * const bv);
     /** Visit a bit-vector extract */
