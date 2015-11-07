@@ -345,6 +345,10 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorXor * const bv) {
   return z3::expr(context_, Z3_mk_bvxor(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
+/** Visit a bit-vector ARRAY_EQ */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolArrayEq * const b) {
+  return z3::expr(context_, Z3_mk_eq(context_, (*this)(b->a_), (*this)(b->b_)));
+}
 
 /** Visit a bit-vector EQ */
 z3::expr Z3Solver::ExprConverter::visit(const SymBoolEq * const b) {

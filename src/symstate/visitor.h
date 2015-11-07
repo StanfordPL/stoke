@@ -107,6 +107,8 @@ public:
     switch (b->type()) {
     case SymBool::AND:
       return visit(static_cast<const SymBoolAnd * const>(b));
+    case SymBool::ARRAY_EQ:
+      return visit(static_cast<const SymBoolArrayEq * const>(b));
     case SymBool::EQ:
       return visit(static_cast<const SymBoolEq * const>(b));
     case SymBool::FALSE:
@@ -327,6 +329,8 @@ public:
     return visit_binop(b);
   }
 
+  /** Visit a boolean ARRAY_EQ */
+  virtual TBool visit(const SymBoolArrayEq * const b) = 0;
   /** Visit a boolean FALSE */
   virtual TBool visit(const SymBoolFalse * const b) = 0;
   /** Visit a boolean NOT */

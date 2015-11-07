@@ -226,6 +226,15 @@ public:
     os_ << "]";
   }
 
+  /** Visit a boolean ARRAY EQ */
+  void visit(const SymBoolArrayEq * const b) {
+    os_ << "(== ";
+    (*this)(b->a_);
+    os_ << " ";
+    (*this)(b->b_);
+    os_ << ")";
+  }
+
   /** Visit a boolean FALSE */
   void visit(const SymBoolFalse * const b) {
     os_ << "FALSE";

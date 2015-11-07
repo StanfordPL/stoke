@@ -53,7 +53,7 @@ public:
   static SymArray tmp_var(uint16_t key_width, uint16_t value_width);
 
   /** Update an array with a store */
-  SymArray update(SymBitVector key, SymBitVector value);
+  SymArray update(SymBitVector key, SymBitVector value) const;
   /** Select a bitvector from an array */
   SymBitVector operator[](SymBitVector key) const;
 
@@ -133,7 +133,7 @@ class SymArrayVar : public SymArrayAbstract {
 
 private:
   SymArrayVar(uint16_t key_size, uint16_t value_size, const std::string name) :
-    SymArrayAbstract(key_size_, value_size_), name_(name) {}
+    SymArrayAbstract(key_size, value_size), name_(name) {}
 
 public:
   SymArray::Type type() const {
