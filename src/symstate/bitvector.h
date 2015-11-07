@@ -320,6 +320,7 @@ public:
 
 class SymBitVectorArrayLookup : public SymBitVectorAbstract {
   friend class SymArray;
+  friend class SymTransformVisitor;
 
 public:
   const SymBitVectorAbstract* const key_;

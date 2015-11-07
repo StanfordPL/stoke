@@ -84,18 +84,6 @@ private:
     ExprConverter(Cvc4Solver* parent) : em_(parent->em_), variables_(parent->variables_),
       uninterpreted_(&(parent->uninterpreted_)) {}
 
-    // TODO: if not needed, delete these comments (11/6/15 BRC)
-    /*
-    CVC4::Expr operator()(const SymBitVector& bv) {
-      error_ = "";
-      return SymVisitor<CVC4::Expr, CVC4::Expr, CVC>::operator()(bv.ptr);
-    }
-    CVC4::Expr operator()(const SymBool& b) {
-      error_ = "";
-      return SymVisitor<CVC4::Expr, CVC4::Expr>::operator()(b.ptr);
-    }
-    */
-
     /** Visit bit-vector binop */
     CVC4::Expr visit_binop(const SymBitVectorBinop * const bv);
     /** Visit bool binop */
@@ -120,6 +108,8 @@ private:
     /** Visit a bit-vector variable */
     CVC4::Expr visit(const SymBitVectorVar * const bv);
 
+    /** Visit a boolean FALSE */
+    CVC4::Expr visit(const SymBoolArrayEq * const b);
     /** Visit a boolean FALSE */
     CVC4::Expr visit(const SymBoolFalse * const b);
     /** Visit a boolean NOT */

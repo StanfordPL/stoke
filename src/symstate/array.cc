@@ -39,6 +39,11 @@ SymBitVector SymArray::operator[](SymBitVector key) const {
   return SymBitVector(new SymBitVectorArrayLookup(ptr, key.ptr));
 }
 
+/* Update */
+SymArray SymArray::update(SymBitVector key, SymBitVector value) const {
+  return SymArray(new SymArrayStore(ptr, key.ptr, value.ptr));
+}
+
 /* Array Comparison Operators */
 SymBool SymArray::operator==(const SymArray& other) const {
   return SymBool(new SymBoolArrayEq(ptr, other.ptr));

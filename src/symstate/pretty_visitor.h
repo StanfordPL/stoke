@@ -177,8 +177,8 @@ public:
   /** Visit a bit-vector variable */
   void visit(const SymBitVectorArrayLookup * const bv) {
     auto l = get_level(bv->a_);
-    if(l < level_) {
-      parens(l, bv->a_); 
+    if (l < level_) {
+      parens(l, bv->a_);
     } else {
       pretty(l, bv->a_);
     }
@@ -241,6 +241,12 @@ public:
     reset();
   }
 
+  /** Visit a boolean ARRAY_EQ */
+  void visit(const SymBoolArrayEq * const b) {
+    left_assoc(level_, b, "=", b->a_, b->b_);
+    reset();
+  }
+
   /** Visit a boolean FALSE */
   void visit(const SymBoolFalse * const b) {
     os_ << "false";
@@ -269,7 +275,7 @@ public:
   void visit(const SymArrayStore * const a) {
     auto l = get_level(a->a_);
 
-    if(l < level_) {
+    if (l < level_) {
       parens(l, a->a_);
     } else {
       // a->a_ is a store too

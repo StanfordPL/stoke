@@ -339,6 +339,14 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorVar * const bv) {
   }
 }
 
+/** Visit a boolean ARRAY EQ */
+Expr Cvc4Solver::ExprConverter::visit(const SymBoolArrayEq * const b) {
+  auto left = (*this)(b->a_);
+  auto right = (*this)(b->b_);
+
+  return em_.mkExpr(kind::EQUAL, left, right);
+}
+
 /** Visit a boolean FALSE */
 Expr Cvc4Solver::ExprConverter::visit(const SymBoolFalse * const b) {
   return em_.mkConst(false);

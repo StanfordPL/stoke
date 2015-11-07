@@ -129,6 +129,8 @@ private:
 
     /** Visit a bit-vector AND */
     z3::expr visit(const SymBitVectorAnd * const bv);
+    /** Visit a bit-vector array access */
+    z3::expr visit(const SymBitVectorArrayLookup * const bv);
     /** Visit a bit-vector concatenation */
     z3::expr visit(const SymBitVectorConcat * const bv);
     /** Visit a bit-vector constant */
@@ -175,9 +177,9 @@ private:
     z3::expr visit(const SymBitVectorVar * const bv);
     /** Visit a bit-vector XOR */
     z3::expr visit(const SymBitVectorXor * const bv);
-    /** Visit a bit-vector array access */
-    z3::expr visit(const SymBitVectorArrayLookup * const bv);
 
+    /** Visit a bit-vector ARRAY EQ */
+    z3::expr visit(const SymBoolArrayEq * const b);
     /** Visit a bit-vector EQ */
     z3::expr visit(const SymBoolEq * const b);
     /** Visit a bit-vector Ge */

@@ -305,6 +305,10 @@ public:
     auto array_key_size = bv->a_->key_size_;
     auto key_size = apply(bv->key_);
 
+    auto array_ok = apply(bv->a_);
+    if(!array_ok)
+      return 0;
+
     if (key_size != array_key_size) {
       std::stringstream e;
       SymPrintVisitor pv(e);
@@ -317,6 +321,38 @@ public:
 
     return bv->a_->value_size_;
   }
+
+  /** Visit a boolean ARRAY_EQ */
+  uint16_t visit(const SymBoolArrayEq * const b) {
+    auto a_ok = apply(b->a_);
+    if(!a_ok)
+      return 0;
+
+    auto b_ok = apply(b->b_);
+    if(!b_ok)
+      return 0;
+
+    if(b->a_->key_size_ != b->b_->key_size_) {
+      std::stringstream e;
+      SymPrintVisitor pv(e);
+      e << "In array compare: ";
+      pv(b);
+      e << " the key sizes don't match.";
+      set_error(e);
+      return 0;
+    }
+    if(b->a_->value_size_ != b->b_->value_size_) {
+      std::stringstream e;
+      SymPrintVisitor pv(e);
+      e << "In array compare: ";
+      pv(b);
+      e << " the value sizes don't match.";
+      set_error(e);
+      return 0;
+    }
+    return 1;
+  }
+
   /** Visit a boolean FALSE */
   uint16_t visit(const SymBoolFalse * const b) {
     return 1;
@@ -336,6 +372,11 @@ public:
 
   /** Visit an array STORE.  Return 1 if ok, 0 otherwise. */
   uint16_t visit(const SymArrayStore * const a) {
+    // Check the array
+    auto a_ok = apply(a->a_);
+    if(!a_ok)
+      return 0;
+
     // Check that key size is correct
     auto ks = apply(a->key_);
     if (ks != a->a_->key_size_) {
@@ -381,17 +422,13 @@ public:
 private:
 
   /** Recurse without clearing error message */
-  uint16_t apply(const SymBitVector& bv) {
-    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(bv);
+  template <typename T>
+  uint16_t apply(const T& t) {
+    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(t);
   }
-  uint16_t apply(const SymBool& b) {
-    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(b);
-  }
-  uint16_t apply(const SymBitVectorAbstract * const bv) {
-    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(bv);
-  }
-  uint16_t apply(const SymBoolAbstract * const b) {
-    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(b);
+  template <typename T>
+  uint16_t apply(const T * const t) {
+    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(t);
   }
 
   /** Tracks the first error that occurred in typechecking */
