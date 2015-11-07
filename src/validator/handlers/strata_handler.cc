@@ -133,7 +133,7 @@ void print_state(SymState& state, RegSet rs) {
   SymPrettyVisitor pretty(cout);
 
   auto print = [&pretty](const auto c) {
-    pretty(SymSimplify::simplify(c));
+    pretty(c);
   };
 
   // print symbolic state
@@ -210,6 +210,8 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   ComboHandler ch_;
   SymTypecheckVisitor tc;
 
+  SymSimplify simplifier;
+
   auto opcode = instr.get_opcode();
   stringstream ss;
   ss << opcode;
@@ -246,7 +248,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
       stringstream ss;
       ss << "Expected " << exptected_size << " bits, but got " << actual << " instead for ";
       SymPrettyVisitor pretty(ss);
-      pretty(SymSimplify::simplify(circuit));
+      pretty(circuit);
       ss << ".";
       error_ = ss.str();
       return false;
@@ -336,7 +338,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
       auto val = tmp[iter];
       if (!typecheck(val, (iter).size())) return;
       // rename variables in the tmp state to the values in start
-      auto val_renamed = SymSimplify::simplify(translate_circuit(val));
+      auto val_renamed = simplifier.simplify(translate_circuit(val));
       if (!typecheck(val_renamed, (iter).size())) return;
       // update the start state with the circuits from tmp
       final.set(iter_translated, val_renamed, false, true);
@@ -352,10 +354,10 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 #endif
       if (!typecheck(val, (*iter).size())) return;
       // rename variables in the tmp state to the values in start
-      auto val_renamed = SymSimplify::simplify(translate_circuit(val));
+      auto val_renamed = simplifier.simplify(translate_circuit(val));
 #ifdef DEBUG_STRATA_HANDLER
-      cout << "Value is               -> " << SymSimplify::simplify(val) << endl;
-      cout << "  after renaming it is => " << SymSimplify::simplify(val_renamed) << endl;
+      cout << "Value is               -> " << simplifier.simplify(val) << endl;
+      cout << "  after renaming it is => " << simplifier.simplify(val_renamed) << endl;
       cout << endl;
 #endif
       if (!typecheck(val_renamed, (*iter).size())) return;
@@ -369,7 +371,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     auto val = tmp[*iter];
     if (!typecheck(val, (*iter).size())) return;
     // rename variables in the tmp state to the values in start
-    auto val_renamed = SymSimplify::simplify(translate_circuit(val));
+    auto val_renamed = simplifier.simplify(translate_circuit(val));
     if (!typecheck(val_renamed, (*iter).size())) return;
     // update the start state with the circuits from tmp
     final.set(iter_translated, val_renamed, false, true);
@@ -380,7 +382,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     auto val = tmp[*iter];
     if (!typecheck(val, 1)) return;
     // rename variables in the tmp state to the values in start
-    auto val_renamed = SymSimplify::simplify(translate_circuit(val));
+    auto val_renamed = simplifier.simplify(translate_circuit(val));
     if (!typecheck(val_renamed, 1)) return;
     // update the start state with the circuits from tmp
     final.set(iter_translated, val_renamed);
