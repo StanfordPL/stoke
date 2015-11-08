@@ -221,7 +221,30 @@ bool is_imm_type(const Type& t) {
   case x64asm::Type::IMM_64:
     return true;
   default:
-    return false;
+    break;
+  }
+  return false;
+}
+
+bool is_sse_type(const Type& t) {
+  switch (t) {
+  case x64asm::Type::XMM_0:
+  case x64asm::Type::XMM:
+  case x64asm::Type::YMM:
+    return true;
+  default:
+    break;
+  }
+  return false;
+}
+
+bool is_sse_mem_type(const Type& t) {
+  switch (t) {
+  case x64asm::Type::M_32:
+  case x64asm::Type::M_64:
+    return true;
+  default:
+    break;
   }
   return false;
 }
@@ -235,7 +258,6 @@ void StrataHandler::init() {
   for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     auto opcode = (Opcode)i;
     string text = opcode_write_att(opcode);
-    text = text.substr(0, text.size()-1);
 
     if (is_register_only(opcode)) {
       auto& vector = str_to_opcode[text];
@@ -250,7 +272,6 @@ void StrataHandler::init() {
     if (is_register_only(opcode)) continue;
 
     string text = opcode_write_att(opcode);
-    text = text.substr(0, text.size()-1);
     auto& options = str_to_opcode[text];
     Instruction instr(opcode);
 
@@ -275,7 +296,7 @@ void StrataHandler::init() {
     }
 
     if (!found) {
-      // check for one with larger width
+      // check for an imm instruction that has one with larger width
       for (auto& option : options) {
         Instruction alt(option);
         if (alt.arity() != instr.arity()) continue;
@@ -293,7 +314,32 @@ void StrataHandler::init() {
         if (larger_widths) {
           found = true;
           // cout << opcode << " -> " << option << endl;
-          // reg_only_alternative_[opcode] = option;
+          reg_only_alternative_[opcode] = option;
+          break;
+        }
+      }
+    }
+
+    if (!found) {
+      // check for an float memory instruction
+      for (auto& option : options) {
+        Instruction alt(option);
+        if (alt.arity() != instr.arity()) continue;
+        bool larger_widths = true;
+        for (size_t j = 0; j < instr.arity(); j++) {
+          bool same = bit_width_of_type(instr.type(j)) == bit_width_of_type(alt.type(j));
+          bool ymm_type = is_sse_type(alt.type(j));
+          bool float_mem_type = is_sse_mem_type(instr.type(j));
+          if (!(same || (ymm_type && float_mem_type))) {
+            larger_widths = false;
+            break;
+          }
+        }
+
+        if (larger_widths) {
+          found = true;
+          // cout << opcode << " -> " << option << endl;
+          reg_only_alternative_[opcode] = option;
           break;
         }
       }
