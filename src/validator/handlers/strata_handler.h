@@ -27,16 +27,26 @@ class StrataHandler : public Handler {
 
 public:
 
-  StrataHandler(const std::string& strata_path): strata_path_(strata_path) {}
+  StrataHandler(const std::string& strata_path): strata_path_(strata_path) {
+    init();
+  }
 
   SupportLevel get_support(const x64asm::Instruction& instr);
+
+  bool is_supported(const x64asm::Opcode& opcode);
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
   std::vector<std::string> full_support_opcodes();
 
 private:
+
+  void init();
+
   const std::string& strata_path_;
+
+  /** A map that gives the equivalent, register-only variant for an opcode. */
+  std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_;
 
 };
 

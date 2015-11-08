@@ -187,23 +187,110 @@ void print_state(SymState& state, RegSet rs) {
 
 } // end namespace
 
-Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& instr) {
+bool is_register_only(Opcode opcode) {
+  Instruction instr(opcode);
+  for (size_t j = 0; j < instr.arity(); j++) {
+    switch (instr.type(j)) {
+    case x64asm::Type::RH:
+    case x64asm::Type::AL:
+    case x64asm::Type::CL:
+    case x64asm::Type::R_8:
+    case x64asm::Type::AX:
+    case x64asm::Type::DX:
+    case x64asm::Type::R_16:
+    case x64asm::Type::EAX:
+    case x64asm::Type::R_32:
+    case x64asm::Type::RAX:
+    case x64asm::Type::R_64:
+    case x64asm::Type::XMM_0:
+    case x64asm::Type::XMM:
+    case x64asm::Type::YMM:
+      break;
+    default:
+      return false;
+    }
+  }
+  return true;
+}
 
-  if (!operands_supported(instr)) {
-    return Handler::NONE;
+void StrataHandler::init() {
+
+  reg_only_alternative_.clear();
+
+  // map from mnenomic to all register-only instructions
+  map<string, vector<Opcode>> str_to_opcode;
+  for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    auto opcode = (Opcode)i;
+    string text = opcode_write_att(opcode);
+    text = text.substr(0, text.size()-1);
+
+    if (is_register_only(opcode)) {
+      auto& vector = str_to_opcode[text];
+      vector.push_back(opcode);
+    }
   }
 
-  auto opcode = instr.get_opcode();
+  // now determine for every instruction the corresponding reg-only opcode
+  for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    auto opcode = (Opcode)i;
+
+    if (is_register_only(opcode)) continue;
+
+    string text = opcode_write_att(opcode);
+    text = text.substr(0, text.size()-1);
+    auto& options = str_to_opcode[text];
+    Instruction instr(opcode);
+    
+    for (auto& option : options) {
+      Instruction alt(option);
+      if (alt.arity() != instr.arity()) continue;
+      bool same_widths = true;
+      for (size_t j = 0; j < instr.arity(); j++) {
+        if (instr.get_operand<Operand>(j).size() != alt.get_operand<Operand>(j).size()) {
+          same_widths = false;
+          break;
+        }
+      }
+
+      if (same_widths) {
+        cout << opcode << " -> " << option << endl;
+        for (size_t j = 0; j < instr.arity(); j++)
+        cout << instr.get_operand<Operand>(j).size() << " - " << alt.get_operand<Operand>(j).size() << endl;
+        reg_only_alternative_[opcode] = option;
+        break;
+      }
+    }
+  }
+}
+
+bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
+  Instruction instr(opcode);
+
+  if (!operands_supported(instr)) {
+    return false;
+  }
+
   stringstream ss;
   ss << opcode;
   auto opcode_str = ss.str();
   auto candidate_file = strata_path_ + "/" + opcode_str + ".s";
 
+  // we have a learned circuit
   if (filesystem::exists(candidate_file)) {
+    return true;
+  }
+
+  // can we convert this into a register only instruction?
+
+  return false;
+}
+
+Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& instr) {
+  auto opcode = instr.get_opcode();
+  if (is_supported(opcode)) {
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
   }
   return Handler::NONE;
-
 }
 
 void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& final) {
@@ -237,6 +324,8 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 #endif
     return;
   }
+
+  // handle imm instructions
 
   auto typecheck = [&tc, this](auto circuit, size_t exptected_size) {
     auto actual = tc(circuit);

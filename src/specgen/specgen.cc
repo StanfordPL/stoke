@@ -293,18 +293,57 @@ x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
   return instr;
 }
 
+template <typename T>
+Operand choice(const T& input, default_random_engine gen) {
+  assert(input.size() > 0);
+  return input[gen() % input.size()];
+}
 
-
-x64asm::Operand get_random_operand(x64asm::Type t) {
+x64asm::Operand get_random_operand(x64asm::Type t, default_random_engine gen) {
   switch (t) {
   case Type::IMM_8:
-    return Imm8(rand() % (1ULL << 8));
+    return Imm8(gen() % (1ULL << 8));
   case Type::IMM_16:
-    return Imm16(rand() % (1ULL << 16));
+    return Imm16(gen() % (1ULL << 16));
   case Type::IMM_32:
-    return Imm32(rand() % (1ULL << 32));
+    return Imm32(gen() % (1ULL << 32));
   case Type::IMM_64:
-    return Imm64(rand());
+    return Imm64(gen());
+  case Type::RH:
+    return choice(Constants::rhs(), gen);
+  case Type::AL:
+    return Constants::al();
+  case Type::CL:
+    return Constants::cl();
+  case Type::R_8:
+    return choice(Constants::r8s(), gen);
+  case Type::AX:
+    return Constants::ax();
+  case Type::DX:
+    return Constants::dx();
+  case Type::R_16:
+    return choice(Constants::r16s(), gen);
+  case Type::EAX:
+    return Constants::eax();
+  case Type::R_32:
+    return choice(Constants::r32s(), gen);
+  case Type::RAX:
+    return Constants::rax();
+  case Type::R_64:
+    return choice(Constants::r64s(), gen);
+  case Type::XMM_0:
+    return Constants::xmm0();
+  case Type::XMM:
+    return choice(Constants::xmms(), gen);
+  case Type::YMM:
+    return choice(Constants::ymms(), gen);
+  case Type::REL_8:
+  case Type::REL_32:
+  case Type::FS:
+  case Type::GS:
+  case Type::SREG:
+  case Type::ST_0:
+  case Type::ST:
   case Type::ZERO:
   case Type::HINT:
   case Type::ONE:
@@ -338,27 +377,6 @@ x64asm::Operand get_random_operand(x64asm::Type t) {
   case Type::PREF_66:
   case Type::PREF_REX_W:
   case Type::FAR:
-  case Type::RH:
-  case Type::AL:
-  case Type::CL:
-  case Type::R_8:
-  case Type::AX:
-  case Type::DX:
-  case Type::R_16:
-  case Type::EAX:
-  case Type::R_32:
-  case Type::RAX:
-  case Type::R_64:
-  case Type::REL_8:
-  case Type::REL_32:
-  case Type::FS:
-  case Type::GS:
-  case Type::SREG:
-  case Type::ST_0:
-  case Type::ST:
-  case Type::XMM_0:
-  case Type::XMM:
-  case Type::YMM:
     cout << "unsupported type: " << t << endl;
     exit(1);
     break;
@@ -369,13 +387,13 @@ x64asm::Operand get_random_operand(x64asm::Type t) {
   return Imm8(0); // make the compiler happy
 }
 
-x64asm::Instruction get_random_instruction(x64asm::Opcode opc) {
+x64asm::Instruction get_random_instruction(x64asm::Opcode opc, default_random_engine gen) {
   operands_idx_ = {};
   x64asm::Instruction instr(opc);
 
   for (size_t i = 0; i < instr.arity(); i++) {
     auto t = instr.type(i);
-    instr.set_operand(i, get_random_operand(t));
+    instr.set_operand(i, get_random_operand(t, gen));
   }
 
   if (!instr.check()) {

@@ -29,6 +29,10 @@
 
 #include "src/ext/x64asm/src/reg_set.h"
 
+#include "src/state/cpu_states.h"
+#include "src/stategen/stategen.h"
+#include "src/tunit/tunit.h"
+
 #include "src/symstate/simplify.h"
 
 #include "src/validator/straight_line.h"
@@ -37,7 +41,9 @@
 
 #include "tools/gadgets/functions.h"
 #include "tools/gadgets/solver.h"
+#include "tools/gadgets/seed.h"
 #include "tools/gadgets/validator.h"
+#include "tools/gadgets/sandbox.h"
 
 #include "tools/apps/base.h"
 #include "src/specgen/specgen.h"
@@ -71,7 +77,19 @@ int main(int argc, char** argv) {
 
   CommandLineConfig::strict_with_convenience(argc, argv);
 
+  SeedGadget seed;
+  FunctionsGadget aux_fxns;
+  SandboxGadget sb({}, aux_fxns);
+
+  // setup the stategen class
+  StateGen sg(&sb, 30);
+  sg.set_max_attempts(10)
+  .set_max_memory(30)
+  .set_allow_unaligned(false)
+  .set_seed(seed);
+
   SolverGadget solver;
+  default_random_engine gen((size_t)seed);
 
   auto col_reset = "\033[0m";
   auto col_red = "\033[31m";
@@ -84,9 +102,60 @@ int main(int argc, char** argv) {
   auto strata_handler = StrataHandler(strata_path);
 
   Opcode opcode = Opcode::XOR_R8_IMM8;
-  auto instr = get_random_instruction(opcode);
+  auto instr = get_random_instruction(opcode, gen);
 
   cout << instr << endl;
+
+  // set up cfg for stategen
+  Code code;
+  code.push_back(instr);
+  code.push_back(Instruction(RET));
+  TUnit fxn(code);
+  Cfg cfg(fxn, RegSet::universe(), RegSet::empty());
+
+  CpuState cs;
+  if (!sg.get(cs, cfg)) {
+    cout << "Could not generate state: " << sg.get_error() << endl;
+    return 1;
+  }
+
+  Sandbox sb2(sb);
+  sb2.insert_input(cs);
+  sb2.run(cfg);
+  CpuState concrete = *sb2.get_result(0);
+
+  if (concrete.code != stoke::ErrorCode::NORMAL) {
+    cout << "Error code not normal: " << (int)concrete.code << endl;
+    return 1;
+  }
+
+  if (strata_handler.get_support(instr) == Handler::SupportLevel::NONE) {
+    cout << "strata does not support '" << instr << "'." << endl;
+    exit(1);
+  }
+
+  // build circuits
+  SymState strata_state("", true);
+  SymState concrete_sym(concrete);
+  strata_handler.build_circuit(instr, strata_state);
+
+  vector<SymBool> constraints;
+  for (auto it : strata_state.constraints)
+    constraints.push_back(it);
+  for (auto it : strata_state.equality_constraints(concrete_sym))
+    constraints.push_back(it);
+
+  bool res = solver.is_sat(constraints);
+  if (solver.has_error()) {
+    cout << "Solver encountered error: " << solver.get_error() << endl;
+    exit(1);
+  }
+  if (!res) {
+    cout << "Concrete and symbolic state disagree!" << endl;
+    exit(1);
+  } else {
+    cout << "OK" << endl;
+  }
 
   // if (strata_handler.get_support(instr) == Handler::SupportLevel::NONE) {
   //   cout << "strata does not support '" << instr << "'." << endl;
