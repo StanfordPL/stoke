@@ -240,7 +240,7 @@ void StrataHandler::init() {
     text = text.substr(0, text.size()-1);
     auto& options = str_to_opcode[text];
     Instruction instr(opcode);
-    
+
     for (auto& option : options) {
       Instruction alt(option);
       if (alt.arity() != instr.arity()) continue;
@@ -255,7 +255,7 @@ void StrataHandler::init() {
       if (same_widths) {
         cout << opcode << " -> " << option << endl;
         for (size_t j = 0; j < instr.arity(); j++)
-        cout << instr.get_operand<Operand>(j).size() << " - " << alt.get_operand<Operand>(j).size() << endl;
+          cout << instr.get_operand<Operand>(j).size() << " - " << alt.get_operand<Operand>(j).size() << endl;
         reg_only_alternative_[opcode] = option;
         break;
       }
