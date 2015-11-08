@@ -1115,9 +1115,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       state_r.memory = memories.second;
       state_r.memory->set_parent(&state_r);
     } else if (flat_model) {
-      FlatMemory* flat = new FlatMemory();
-      state_t.memory = flat;
-      state_r.memory = flat;
+      state_t.memory = new FlatMemory();
+      state_r.memory = new FlatMemory();
     }
 
     // Add given assumptions
@@ -1205,15 +1204,25 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       CEG_DEBUG(cout << "REWRITE END STATE" << endl;)
       CEG_DEBUG(cout << ceg_rf << endl;)
 
+      if(flat_model) {
+        delete state_t.memory;
+        delete state_r.memory;
+      }
+
       delete_memories(memory_list);
       stop_mm();
       return false;
     } else {
+
+      if(flat_model) {
+        delete state_t.memory;
+        delete state_r.memory;
+      }
+
       CEG_DEBUG(cout << "  (This case verified)" << endl;)
     }
 
   }
-
   delete_memories(memory_list);
   stop_mm();
   return true;

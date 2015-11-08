@@ -276,12 +276,12 @@ public:
     auto l = get_level(a->a_);
 
     if (l < level_) {
-      parens(l, a->a_);
+      parens(l, a);
     } else {
       // a->a_ is a store too
       pretty(l, a->a_);
     }
-    os_ << " / ";
+    os_ << " ; ";
     pretty(get_level(SymBitVector::NOT), a->key_);
     os_ << " ↦ ";
     pretty(get_level(SymBitVector::NOT), a->value_);

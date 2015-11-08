@@ -198,6 +198,8 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
     if (!Validator::memory_map_to_testcase(addr_value_pairs, ceg))
       return false;
+
+    return true;
   }
 
 
@@ -232,7 +234,7 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   }
   */
 
-  return true;
+  return false;
 }
 
 void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* arg) {

@@ -96,7 +96,7 @@ bool SymBool::equals(const SymBool other) const {
 
 /* Output overload */
 std::ostream& operator<< (std::ostream& out, stoke::SymBool& b) {
-  SymPrintVisitor spv(out);
+  SymPrettyVisitor spv(out);
   spv(b);
   return out;
 }
