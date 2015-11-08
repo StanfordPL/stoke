@@ -294,4 +294,95 @@ x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
 }
 
 
+
+x64asm::Operand get_random_operand(x64asm::Type t) {
+  switch (t) {
+  case Type::IMM_8:
+    return Imm8(rand() % (1ULL << 8));
+  case Type::IMM_16:
+    return Imm16(rand() % (1ULL << 16));
+  case Type::IMM_32:
+    return Imm32(rand() % (1ULL << 32));
+  case Type::IMM_64:
+    return Imm64(rand());
+  case Type::ZERO:
+  case Type::HINT:
+  case Type::ONE:
+  case Type::THREE:
+  case Type::LABEL:
+  case Type::M_8:
+  case Type::M_16:
+  case Type::M_32:
+  case Type::M_64:
+  case Type::M_128:
+  case Type::M_256:
+  case Type::M_16_INT:
+  case Type::M_32_INT:
+  case Type::M_64_INT:
+  case Type::M_32_FP:
+  case Type::M_64_FP:
+  case Type::M_80_FP:
+  case Type::M_80_BCD:
+  case Type::M_2_BYTE:
+  case Type::M_28_BYTE:
+  case Type::M_108_BYTE:
+  case Type::M_512_BYTE:
+  case Type::FAR_PTR_16_16:
+  case Type::FAR_PTR_16_32:
+  case Type::FAR_PTR_16_64:
+  case Type::MM:
+  case Type::MOFFS_8:
+  case Type::MOFFS_16:
+  case Type::MOFFS_32:
+  case Type::MOFFS_64:
+  case Type::PREF_66:
+  case Type::PREF_REX_W:
+  case Type::FAR:
+  case Type::RH:
+  case Type::AL:
+  case Type::CL:
+  case Type::R_8:
+  case Type::AX:
+  case Type::DX:
+  case Type::R_16:
+  case Type::EAX:
+  case Type::R_32:
+  case Type::RAX:
+  case Type::R_64:
+  case Type::REL_8:
+  case Type::REL_32:
+  case Type::FS:
+  case Type::GS:
+  case Type::SREG:
+  case Type::ST_0:
+  case Type::ST:
+  case Type::XMM_0:
+  case Type::XMM:
+  case Type::YMM:
+    cout << "unsupported type: " << t << endl;
+    exit(1);
+    break;
+
+  default:
+    assert(false);
+  }
+  return Imm8(0); // make the compiler happy
+}
+
+x64asm::Instruction get_random_instruction(x64asm::Opcode opc) {
+  operands_idx_ = {};
+  x64asm::Instruction instr(opc);
+
+  for (size_t i = 0; i < instr.arity(); i++) {
+    auto t = instr.type(i);
+    instr.set_operand(i, get_random_operand(t));
+  }
+
+  if (!instr.check()) {
+    std::cout << "instruction not valid:" << instr << std::endl;
+    exit(1);
+  }
+  return instr;
+}
+
 } // namespace stoke

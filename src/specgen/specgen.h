@@ -44,6 +44,9 @@ bool is_supported_type(x64asm::Type t);
 x64asm::Operand get_next_operand(x64asm::Type t, uint8_t imm8_val);
 x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val = 0);
 
+x64asm::Operand get_random_operand(x64asm::Type t);
+x64asm::Instruction get_random_instruction(x64asm::Opcode opc);
+
 } // namespace stoke
 
 #endif

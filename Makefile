@@ -197,6 +197,7 @@ BIN=\
 	bin/specgen_compare \
 	bin/specgen_evaluate \
 	bin/specgen_augment_tests \
+	bin/specgen_random_test \
 	bin/specgen_init \
 	bin/specgen_setup
 
