@@ -246,7 +246,7 @@ void StrataHandler::init() {
       if (alt.arity() != instr.arity()) continue;
       bool same_widths = true;
       for (size_t j = 0; j < instr.arity(); j++) {
-        if (instr.get_operand<Operand>(j).size() != alt.get_operand<Operand>(j).size()) {
+        if (bit_width_of_type(instr.type(j)) != bit_width_of_type(alt.type(j))) {
           same_widths = false;
           break;
         }
@@ -254,8 +254,6 @@ void StrataHandler::init() {
 
       if (same_widths) {
         cout << opcode << " -> " << option << endl;
-        for (size_t j = 0; j < instr.arity(); j++)
-          cout << instr.get_operand<Operand>(j).size() << " - " << alt.get_operand<Operand>(j).size() << endl;
         reg_only_alternative_[opcode] = option;
         break;
       }
