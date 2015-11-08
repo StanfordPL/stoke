@@ -4617,7 +4617,8 @@ bool specgen_is_system(const x64asm::Opcode& op) {
     case Type::MOFFS_32:
     case Type::MOFFS_64:
       return true;
-    default: break;
+    default:
+      break;
     }
   }
   return false;
@@ -4635,8 +4636,10 @@ bool specgen_is_mm(const x64asm::Opcode& opcode) {
   Instruction instr(opcode);
   for (size_t i = 0; i < instr.arity(); i++) {
     switch (instr.type(i)) {
-    case Type::MM: return true;
-    default: break;
+    case Type::MM:
+      return true;
+    default:
+      break;
     }
   }
   return false;
@@ -4667,7 +4670,8 @@ bool specgen_uses_memory(const x64asm::Opcode& opcode) {
     case Type::FAR_PTR_16_32:
     case Type::FAR_PTR_16_64:
       return true;
-    default: break;
+    default:
+      break;
     }
   }
   return false;
@@ -4681,7 +4685,8 @@ bool specgen_uses_imm(const x64asm::Opcode& opcode) {
     case Type::IMM_32:
     case Type::IMM_64:
       return true;
-    default: break;
+    default:
+      break;
     }
   }
   return false;

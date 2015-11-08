@@ -348,10 +348,10 @@ void StrataHandler::init() {
 
     if (!found) {
       if (!specgen_is_system(opcode) &&
-        !specgen_is_float(opcode) &&
-        !specgen_is_jump(opcode) &&
-        !specgen_is_crypto(opcode) &&
-        !specgen_is_sandbox_unsupported(opcode)) {
+          !specgen_is_float(opcode) &&
+          !specgen_is_jump(opcode) &&
+          !specgen_is_crypto(opcode) &&
+          !specgen_is_sandbox_unsupported(opcode)) {
         // cout << opcode << endl;
       }
     }

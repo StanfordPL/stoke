@@ -103,17 +103,29 @@ int main(int argc, char** argv) {
 
   int strata_count = 0;
   int stoke_count = 0;
+  int only_strata = 0;
+  int only_stoke = 0;
   for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     auto opcode = (Opcode)i;
-    if (strata_handler.is_supported(opcode)) {
+    auto strata_support = strata_handler.is_supported(opcode);
+    auto stoke_support = validator.is_supported(opcode);
+    if (strata_support) {
       strata_count++;
     }
-    if (validator.is_supported(opcode)) {
+    if (stoke_support) {
       stoke_count++;
+    }
+    if (stoke_support && !strata_support) {
+      only_stoke++;
+    }
+    if (strata_support && !stoke_support) {
+      only_strata++;
     }
   }
   cout << "strata supports " << strata_count << " instructions" << endl;
+  cout << "  only strata: " << only_strata << endl;
   cout << "stoke supports " << stoke_count << " instructions" << endl;
+  cout << "  only stoke: " << only_stoke << endl;
 
   Opcode opcode = Opcode::XOR_R8_IMM8;
   auto instr = get_random_instruction(opcode, gen);
