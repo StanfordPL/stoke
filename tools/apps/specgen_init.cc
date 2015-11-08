@@ -29,9 +29,8 @@
 #include "src/validator/validator.h"
 #include "src/solver/z3solver.h"
 
-#include "tools/apps/base.h"
 #include "src/specgen/specgen.h"
-#include "tools/apps/support.h"
+#include "src/specgen/support.h"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
@@ -41,14 +40,6 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 using namespace boost;
-
-set<Opcode> unsupported_ {{
-#include "src/sandbox/tables/unsupported.h"
-  }
-};
-bool is_supported(Opcode o) {
-  return unsupported_.find(o) == unsupported_.end();
-}
 
 auto& io_opt = Heading::create("Main option:");
 
@@ -136,7 +127,6 @@ int main(int argc, char** argv) {
   for (auto i = (int)LABEL_DEFN + 1, ie = (int)XTEST; i != ie; ++i) {
     total++;
     auto op = (Opcode) i;
-    auto instr = Instruction(op);
     auto is_goal = true;
     stringstream ss;
     ss << op;
@@ -148,23 +138,23 @@ int main(int argc, char** argv) {
     //   cout << instr.get_opcode() << endl;
     // }
 
-    if (find(instr_cat_crypto_.begin(), instr_cat_crypto_.end(), op) != instr_cat_crypto_.end()) {
+    if (specgen_is_crypto(op)) {
       crypto++;
       is_goal = false;
-    } else if (find(instr_cat_jump_.begin(), instr_cat_jump_.end(), op) != instr_cat_jump_.end()) {
+    } else if (specgen_is_jump(op)) {
       jump++;
       is_goal = false;
-    } else if (find(instr_cat_system_.begin(), instr_cat_system_.end(), op) != instr_cat_system_.end()) {
+    } else if (specgen_is_system(op)) {
       sys++;
       is_goal = false;
-    } else if (find(instr_cat_float_.begin(), instr_cat_float_.end(), op) != instr_cat_float_.end()) {
+    } else if (specgen_is_float(op)) {
       x87++;
       is_goal = false;
-    } else if (find(instr_cat_duplicates_.begin(), instr_cat_duplicates_.end(), op) != instr_cat_duplicates_.end()) {
+    } else if (specgen_is_duplicate(op)) {
       duplicates++;
       is_goal = false;
     }
-    if (find(instr_cat_base_.begin(), instr_cat_base_.end(), op) != instr_cat_base_.end() && !allow_all_arg) {
+    if (specgen_is_base(op) && !allow_all_arg) {
       base++;
       is_goal = false;
       Instruction our = get_instruction(op);
@@ -173,7 +163,7 @@ int main(int argc, char** argv) {
         base_and_no_validator_support++;
       }
     }
-    if (is_goal && !is_supported(op)) {
+    if (is_goal && specgen_is_sandbox_unsupported(op)) {
       unsupported++;
       is_goal = false;
     }
@@ -186,51 +176,18 @@ int main(int argc, char** argv) {
     }
     if (may_be_goal) {
       f_goal2 << op << endl;
-      for (size_t i = 0; i < instr.arity(); i++) {
-        auto type = instr.type(i);
-        auto supported = is_supported_type_reason(type);
-        auto is_ok = false;
-        switch (supported) {
-        case SupportedReason::SUPPORTED:
-          is_ok = true;
-          break;
 
-        case SupportedReason::MEMORY:
-          memory++;
-          break;
-
-        case SupportedReason::IMMEDIATE:
-          immediate++;
-          break;
-
-        case SupportedReason::LABEL:
-          label++;
-          break;
-
-        case SupportedReason::MM:
-          if (only_mm_arg) {
-            is_ok = true;
-          }
-          is_mm = true;
-          break;
-
-        case SupportedReason::HARD_CODED_REG:
-          hardreg++;
-          break;
-
-        case SupportedReason::OTHER:
-          // let's group them in with the unsupported ones
-          unsupported++;
-          break;
-        }
-        if (!is_ok) {
-          is_goal = false;
-          break;
-        }
+      if (specgen_is_mm(op)) {
+        mm++;
+        is_mm = true;
+        is_goal = false;
+      } else if (specgen_uses_memory(op)) {
+        memory++;
+        is_goal = false;
+      } else if (specgen_uses_imm(op)) {
+        immediate++;
+        is_goal = false;
       }
-    }
-    if (is_mm) {
-      mm++;
     }
 
     if (is_goal || (only_imm_arg && is_imm8)) {
@@ -315,8 +272,11 @@ int main(int argc, char** argv) {
   }
 
   if (!allow_all_arg) {
-    for (auto it = instr_cat_base_.begin(); it != instr_cat_base_.end(); ++it) {
-      f_base << (*it) << endl;
+    for (auto i = (int)LABEL_DEFN + 1, ie = (int)XTEST; i != ie; ++i) {
+      auto op = (Opcode) i;
+      if (specgen_is_base(op)) {
+        f_base << op << endl;
+      }
     }
   }
   f_base.close();

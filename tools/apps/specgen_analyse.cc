@@ -29,7 +29,7 @@
 #include "tools/io/tunit.h"
 
 #include "src/specgen/specgen.h"
-#include "tools/apps/support.h"
+#include "src/specgen/support.h"
 
 #include <boost/filesystem.hpp>
 

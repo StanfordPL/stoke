@@ -80,6 +80,7 @@ SRC_OBJ=\
 	src/solver/cvc4solver.o \
 	\
 	src/specgen/specgen.o \
+	src/specgen/support.o \
 	\
 	src/state/cpu_state.o \
 	src/state/cpu_states.o \

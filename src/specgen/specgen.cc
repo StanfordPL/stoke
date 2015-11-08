@@ -162,7 +162,7 @@ x64asm::Operand get_next_operand(x64asm::Type t, uint8_t imm8_val) {
     return x64asm::Constants::three();
   }
   if (operands_.find(t) == operands_.end()) {
-    std::cout << "ERROR: unsupported operand: " << (int)t << std::endl;
+    std::cout << "ERROR: unsupported operand: " << t << std::endl;
     exit(1);
   }
   if (operands_idx_.find(t) == operands_idx_.end()) {
@@ -277,7 +277,7 @@ x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
       if (is_supported_type(t) || is_supported_type_reason(t) == SupportedReason::MM || is_supported_type_reason(t) == SupportedReason::IMMEDIATE) {
         instr.set_operand(i, get_next_operand(t, imm8_val));
       } else {
-        std::cout << "unsupported type: " << (int) t << std::endl;
+        std::cout << "unsupported type: " << t << std::endl;
         std::cout << (int) opc << std::endl;
         std::cout << opc << std::endl;
         std::cout << instr << std::endl;

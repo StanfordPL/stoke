@@ -16,6 +16,7 @@
 #include "src/validator/handlers/strata_handler.h"
 #include "src/tunit/tunit.h"
 #include "src/specgen/specgen.h"
+#include "src/specgen/support.h"
 #include "src/validator/handlers.h"
 #include "src/symstate/simplify.h"
 #include "src/ext/cpputil/include/io/console.h"
@@ -346,7 +347,13 @@ void StrataHandler::init() {
     }
 
     if (!found) {
-      // cout << opcode << endl;
+      if (!specgen_is_system(opcode) &&
+        !specgen_is_float(opcode) &&
+        !specgen_is_jump(opcode) &&
+        !specgen_is_crypto(opcode) &&
+        !specgen_is_sandbox_unsupported(opcode)) {
+        // cout << opcode << endl;
+      }
     }
   }
 }
@@ -364,7 +371,9 @@ bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
 
   // can we convert this into a register only instruction?
   if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
-    return is_supported(reg_only_alternative_[opcode]);
+    auto alt = reg_only_alternative_[opcode];
+    if (specgen_is_base(alt)) return true;
+    return is_supported(alt);
   }
 
   return false;
@@ -395,9 +404,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 
   error_ = "";
 
-  // Sanity check for support
-  if (!get_support(instr)) {
-    // assume it's from the base set
+  if (specgen_is_base(opcode)) {
     ch_.build_circuit(instr, final);
     if (ch_.has_error()) {
       error_ = "ComboHandler encountered an error: " + ch_.error();

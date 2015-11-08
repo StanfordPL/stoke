@@ -29,9 +29,7 @@
 #include "src/validator/validator.h"
 #include "src/solver/z3solver.h"
 
-#include "tools/apps/base.h"
 #include "src/specgen/specgen.h"
-#include "tools/apps/support.h"
 
 #include "src/state/cpu_states.h"
 #include "tools/io/cpu_states.h"

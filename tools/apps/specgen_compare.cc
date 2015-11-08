@@ -39,9 +39,8 @@
 #include "tools/gadgets/solver.h"
 #include "tools/gadgets/validator.h"
 
-#include "tools/apps/base.h"
 #include "src/specgen/specgen.h"
-#include "tools/apps/support.h"
+#include "src/specgen/support.h"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>

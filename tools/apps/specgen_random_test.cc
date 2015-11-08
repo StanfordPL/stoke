@@ -45,9 +45,8 @@
 #include "tools/gadgets/validator.h"
 #include "tools/gadgets/sandbox.h"
 
-#include "tools/apps/base.h"
 #include "src/specgen/specgen.h"
-#include "tools/apps/support.h"
+#include "src/specgen/support.h"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
@@ -100,15 +99,21 @@ int main(int argc, char** argv) {
   auto errors = 0;
   auto n = 0;
   auto strata_handler = StrataHandler(strata_path);
+  auto validator = StraightLineValidator(solver);
 
-  int c = 0;
+  int strata_count = 0;
+  int stoke_count = 0;
   for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     auto opcode = (Opcode)i;
     if (strata_handler.is_supported(opcode)) {
-      c++;
+      strata_count++;
+    }
+    if (validator.is_supported(opcode)) {
+      stoke_count++;
     }
   }
-  cout << c << endl;
+  cout << "strata supports " << strata_count << " instructions" << endl;
+  cout << "stoke supports " << stoke_count << " instructions" << endl;
 
   Opcode opcode = Opcode::XOR_R8_IMM8;
   auto instr = get_random_instruction(opcode, gen);
