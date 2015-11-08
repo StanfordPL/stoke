@@ -90,12 +90,14 @@ private:
   BoundedValidator::AliasStrategy parse_alias() {
     std::string alias = alias_strategy_arg.value();
 
-    if (alias == "basic") {
+    if (alias == "basic" || alias == "tree" || alias == "prune" || alias == "treeprune") {
       return BoundedValidator::AliasStrategy::BASIC;
     } else if (alias == "string") {
       return BoundedValidator::AliasStrategy::STRING;
     } else if (alias == "string_antialias") {
       return BoundedValidator::AliasStrategy::STRING_NO_ALIAS;
+    } else if (alias == "flat" || alias == "array") {
+      return BoundedValidator::AliasStrategy::FLAT;
     } else {
       std::cerr << "Unrecognized alias strategy \"" << alias << "\"" << std::endl;
       exit(1);
