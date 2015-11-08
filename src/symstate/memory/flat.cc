@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/symstate/cell.h"
+#include "src/symstate/memory/flat.h"
 
 using namespace stoke;
 using namespace std;
@@ -26,6 +26,8 @@ SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
   for (size_t i = 0; i < size; ++i) {
     heap_ = heap_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
   }
+
+  return SymBool::_false();
 }
 
 /** Reads from the memory.  Returns value and segv condition. */
@@ -34,14 +36,14 @@ std::pair<SymBitVector,SymBool> FlatMemory::read(SymBitVector address, uint16_t 
   SymBitVector value = heap_[address];
 
   for (size_t i = 1; i < size; ++i) {
-    value = heap_[address + SymBitVector::constant(64, i)] || value
+    value = heap_[address + SymBitVector::constant(64, i)] || value;
   }
 
   return pair<SymBitVector,SymBool>(value, SymBool::_false());
 }
 
 /** Create a formula expressing these memory cells with another set. */
-SymBool equality_constraint(FlatMemory& other) {
+SymBool FlatMemory::equality_constraint(FlatMemory& other) {
   return (heap_ == other.heap_);
 }
 
