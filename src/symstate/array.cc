@@ -66,7 +66,7 @@ bool SymArray::equals(const SymArray& other) const {
 
 /* Output overload */
 std::ostream& operator<< (std::ostream& out, const stoke::SymArray& bv) {
-  SymPrintVisitor spv(out);
+  SymPrettyVisitor spv(out);
   spv(bv);
   return out;
 }
