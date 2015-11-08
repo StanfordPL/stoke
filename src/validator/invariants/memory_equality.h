@@ -33,16 +33,16 @@ public:
     if (left.memory == 0 && right.memory == 0)
       return SymBool::_true();
 
-    auto new_left = dynamic_cast<CellMemory*>(left.memory);
-    if(new_left != 0) {
+    auto cell_left = dynamic_cast<CellMemory*>(left.memory);
+    if(cell_left != 0) {
       assert(dynamic_cast<CellMemory*>(right.memory) != 0);
-      return new_left->equality_constraint(*static_cast<CellMemory*>(right.memory));
+      return cell_left->equality_constraint(*static_cast<CellMemory*>(right.memory));
     }
 
-    new_left = dynamic_cast<FlatMemory*>(left.memory);
-    if(new_left != 0) {
+    auto flat_left = dynamic_cast<FlatMemory*>(left.memory);
+    if(flat_left != 0) {
       assert(dynamic_cast<FlatMemory*>(right.memory) != 0);
-      return new_left->equality_constraint(*static_cast<FlatMemory*>(right.memory));
+      return flat_left->equality_constraint(*static_cast<FlatMemory*>(right.memory));
     }
 
     return SymBool::_true();

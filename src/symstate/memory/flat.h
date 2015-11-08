@@ -13,8 +13,8 @@
 // limitations under the License.
 
 
-#ifndef STOKE_SRC_SYMSTATE_MEMORY_CELL_H
-#define STOKE_SRC_SYMSTATE_MEMORY_CELL_H
+#ifndef STOKE_SRC_SYMSTATE_MEMORY_FLAT_H
+#define STOKE_SRC_SYMSTATE_MEMORY_FLAT_H
 
 #include "src/symstate/bitvector.h"
 #include "src/symstate/memory.h"

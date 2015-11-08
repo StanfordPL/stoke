@@ -403,10 +403,11 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing(cons
   case AliasStrategy::STRING:
   case AliasStrategy::STRING_NO_ALIAS:
     return enumerate_aliasing_string(target, rewrite, P, Q, assume);
-  case AliasStrategy::FLAT:
+  case AliasStrategy::FLAT: {
     auto res = vector<pair<CellMemory*, CellMemory*>>();
     res.push_back(pair<CellMemory*,CellMemory*>(NULL, NULL));
     return res;
+  }
   default:
     assert(false);
     return enumerate_aliasing_basic(target, rewrite, P, Q, assume);
@@ -1115,8 +1116,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       state_r.memory->set_parent(&state_r);
     } else if (flat_model) {
       FlatMemory* flat = new FlatMemory();
-      state_t.memory = &flat;
-      state_r.memory = &flat;
+      state_t.memory = flat;
+      state_r.memory = flat;
     }
 
     // Add given assumptions
