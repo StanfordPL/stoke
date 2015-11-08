@@ -101,6 +101,15 @@ int main(int argc, char** argv) {
   auto n = 0;
   auto strata_handler = StrataHandler(strata_path);
 
+  int c = 0;
+  for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    auto opcode = (Opcode)i;
+    if (strata_handler.is_supported(opcode)) {
+      c++;
+    }
+  }
+  cout << c << endl;
+
   Opcode opcode = Opcode::XOR_R8_IMM8;
   auto instr = get_random_instruction(opcode, gen);
 

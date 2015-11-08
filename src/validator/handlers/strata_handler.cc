@@ -213,6 +213,19 @@ bool is_register_only(Opcode opcode) {
   return true;
 }
 
+bool is_imm_type(const Type& t) {
+  switch (t) {
+  case x64asm::Type::IMM_8:
+  case x64asm::Type::IMM_16:
+  case x64asm::Type::IMM_32:
+  case x64asm::Type::IMM_64:
+    return true;
+  default:
+    return false;
+  }
+  return false;
+}
+
 void StrataHandler::init() {
 
   reg_only_alternative_.clear();
@@ -241,6 +254,8 @@ void StrataHandler::init() {
     auto& options = str_to_opcode[text];
     Instruction instr(opcode);
 
+    // check if there is an opcode with the same width operands
+    bool found = false;
     for (auto& option : options) {
       Instruction alt(option);
       if (alt.arity() != instr.arity()) continue;
@@ -253,21 +268,44 @@ void StrataHandler::init() {
       }
 
       if (same_widths) {
-        cout << opcode << " -> " << option << endl;
+        found = true;
         reg_only_alternative_[opcode] = option;
         break;
       }
+    }
+
+    if (!found) {
+      // check for one with larger width
+      for (auto& option : options) {
+        Instruction alt(option);
+        if (alt.arity() != instr.arity()) continue;
+        bool larger_widths = true;
+        for (size_t j = 0; j < instr.arity(); j++) {
+          bool larger = bit_width_of_type(instr.type(j)) <= bit_width_of_type(alt.type(j));
+          bool same = bit_width_of_type(instr.type(j)) == bit_width_of_type(alt.type(j));
+          bool imm_type = is_imm_type(instr.type(j));
+          if (!(same || (larger && imm_type))) {
+            larger_widths = false;
+            break;
+          }
+        }
+
+        if (larger_widths) {
+          found = true;
+          // cout << opcode << " -> " << option << endl;
+          // reg_only_alternative_[opcode] = option;
+          break;
+        }
+      }
+    }
+
+    if (!found) {
+      // cout << opcode << endl;
     }
   }
 }
 
 bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
-  Instruction instr(opcode);
-
-  if (!operands_supported(instr)) {
-    return false;
-  }
-
   stringstream ss;
   ss << opcode;
   auto opcode_str = ss.str();
@@ -279,11 +317,17 @@ bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
   }
 
   // can we convert this into a register only instruction?
+  if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+    return is_supported(reg_only_alternative_[opcode]);
+  }
 
   return false;
 }
 
 Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& instr) {
+  if (!operands_supported(instr)) {
+    return Handler::NONE;
+  }
   auto opcode = instr.get_opcode();
   if (is_supported(opcode)) {
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
