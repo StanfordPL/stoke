@@ -312,13 +312,13 @@ void PseudoHandler::build_circuit(const Instruction& instr, SymState& ss) {
     if (from > to) {
       assert(from == 128);
       assert(to == 64);
-      ss.set(r2, SymBitVector::constant(to, 0) || ss[r0][1*to-1][0*to]);
-      ss.set(r1, SymBitVector::constant(to, 0) || ss[r0][2*to-1][1*to]);
+      ss.set(r1, SymBitVector::constant(to, 0) || ss[r0][1*to-1][0*to]);
+      ss.set(r2, SymBitVector::constant(to, 0) || ss[r0][2*to-1][1*to]);
       return;
     } else {
       assert(from == 64);
       assert(to == 128);
-      ss.set(r2, ss[r0][from-1][0] || ss[r1][from-1][0]);
+      ss.set(r2, ss[r1][from-1][0] || ss[r0][from-1][0]);
       return;
     }
   }
