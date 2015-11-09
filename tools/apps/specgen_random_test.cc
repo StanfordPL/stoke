@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
   int only_stoke = 0;
   for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     auto opcode = (Opcode)i;
-    auto strata_support = strata_handler.is_supported(opcode);
+    auto strata_support = strata_handler.is_supported(opcode) || specgen_is_base(opcode);
     auto stoke_support = validator.is_supported(opcode);
     if (strata_support) {
       strata_count++;
@@ -117,9 +117,20 @@ int main(int argc, char** argv) {
     }
     if (stoke_support && !strata_support) {
       only_stoke++;
+      cout << opcode << endl;
     }
     if (strata_support && !stoke_support) {
       only_strata++;
+    }
+    if (!strata_support) {
+      if (!specgen_is_system(opcode) &&
+          !specgen_is_float(opcode) &&
+          !specgen_is_jump(opcode) &&
+          !specgen_is_mm(opcode) &&
+          !specgen_is_crypto(opcode) &&
+          !specgen_is_sandbox_unsupported(opcode)) {
+        // cout << opcode << endl;
+      }
     }
   }
   cout << "strata supports " << strata_count << " instructions" << endl;

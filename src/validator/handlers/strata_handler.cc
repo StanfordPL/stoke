@@ -250,6 +250,13 @@ bool is_sse_mem_type(const Type& t) {
   return false;
 }
 
+bool both_or_none_rh(const Type& t0, const Type& t1) {
+  if (t0 == Type::RH || t1 == Type::RH) {
+    return t0 == t1;
+  }
+  return true;
+}
+
 void StrataHandler::init() {
 
   reg_only_alternative_.clear();
@@ -263,6 +270,32 @@ void StrataHandler::init() {
     if (is_register_only(opcode)) {
       auto& vector = str_to_opcode[text];
       vector.push_back(opcode);
+    }
+  }
+
+  // first map duplicates to their _1 version
+  for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    auto opcode = (Opcode)i;
+    if (specgen_is_duplicate(opcode)) {
+      string text = opcode_write_att(opcode);
+      auto& options = str_to_opcode[text];
+      Instruction instr(opcode);
+      for (auto& option : options) {
+        Instruction alt(option);
+        if (alt.arity() != instr.arity()) continue;
+        bool all_same = true;
+        for (size_t j = 0; j < instr.arity(); j++) {
+          if (instr.type(j) != alt.type(j)) {
+            all_same = false;
+            break;
+          }
+        }
+
+        if (all_same) {
+          reg_only_alternative_[opcode] = option;
+          break;
+        }
+      }
     }
   }
 
@@ -283,7 +316,9 @@ void StrataHandler::init() {
       if (alt.arity() != instr.arity()) continue;
       bool same_widths = true;
       for (size_t j = 0; j < instr.arity(); j++) {
-        if (bit_width_of_type(instr.type(j)) != bit_width_of_type(alt.type(j))) {
+        auto notsame = bit_width_of_type(instr.type(j)) != bit_width_of_type(alt.type(j));
+        auto rhok = both_or_none_rh(instr.type(j), alt.type(j));
+        if (notsame || !rhok) {
           same_widths = false;
           break;
         }
@@ -306,7 +341,8 @@ void StrataHandler::init() {
           bool larger = bit_width_of_type(instr.type(j)) <= bit_width_of_type(alt.type(j));
           bool same = bit_width_of_type(instr.type(j)) == bit_width_of_type(alt.type(j));
           bool imm_type = is_imm_type(instr.type(j));
-          if (!(same || (larger && imm_type))) {
+          auto rhok = both_or_none_rh(instr.type(j), alt.type(j));
+          if (!(same || (larger && imm_type)) || !rhok) {
             larger_widths = false;
             break;
           }
@@ -331,7 +367,8 @@ void StrataHandler::init() {
           bool same = bit_width_of_type(instr.type(j)) == bit_width_of_type(alt.type(j));
           bool ymm_type = is_sse_type(alt.type(j));
           bool float_mem_type = is_sse_mem_type(instr.type(j));
-          if (!(same || (ymm_type && float_mem_type))) {
+          auto rhok = both_or_none_rh(instr.type(j), alt.type(j));
+          if (!(same || (ymm_type && float_mem_type)) || !rhok) {
             larger_widths = false;
             break;
           }
@@ -356,6 +393,15 @@ void StrataHandler::init() {
       }
     }
   }
+
+  // for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+  //   auto opcode = (Opcode)i;
+  //   if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+  //     //cout << opcode << " -> " << reg_only_alternative_[opcode] << endl;
+  //     cout << "-> " << opcode << endl;
+  //     cout << "   " << reg_only_alternative_[opcode] << endl;
+  //   }
+  // }
 }
 
 bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
