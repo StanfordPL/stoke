@@ -121,6 +121,7 @@ int main(int argc, char** argv) {
   // build circuits for strata and stoke
   SymState strata_state("", true);
   SymState stoke_state("", true);
+  
   strata_handler.build_circuit(instr, strata_state);
   stoke_handler.build_circuit(instr, stoke_state);
 

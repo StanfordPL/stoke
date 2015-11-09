@@ -404,7 +404,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 
   error_ = "";
 
-  if (specgen_is_base(opcode)) {
+  if (specgen_is_base(opcode) || opcode == Opcode::CALL_LABEL) {
     ch_.build_circuit(instr, final);
     if (ch_.has_error()) {
       error_ = "ComboHandler encountered an error: " + ch_.error();
