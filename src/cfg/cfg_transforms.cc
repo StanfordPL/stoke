@@ -183,7 +183,7 @@ Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_
          reg == Constants::eflags_cf() ||
          reg == Constants::eflags_pf()) && !regular) {
       regular = true;
-      cfg.get_function().push_back(Instruction(XOR_R8_R8, {Constants::al(), Constants::al()}));
+      cfg.get_function().push_back(Instruction(XOR_R64_R64, {Constants::rax(), Constants::rax()}));
       cfg.get_function().push_back(Instruction(ADC_R8_R8, {Constants::al(), Constants::al()}));
     }
   }
