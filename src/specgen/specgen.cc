@@ -294,12 +294,12 @@ x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
 }
 
 template <typename T>
-Operand choice(const T& input, default_random_engine gen) {
+Operand choice(const T& input, default_random_engine& gen) {
   assert(input.size() > 0);
   return input[gen() % input.size()];
 }
 
-x64asm::Operand get_random_operand(x64asm::Type t, default_random_engine gen) {
+x64asm::Operand get_random_operand(x64asm::Type t, default_random_engine& gen) {
   switch (t) {
   case Type::IMM_8:
     return Imm8(gen() % (1ULL << 8));
@@ -387,20 +387,27 @@ x64asm::Operand get_random_operand(x64asm::Type t, default_random_engine gen) {
   return Imm8(0); // make the compiler happy
 }
 
-x64asm::Instruction get_random_instruction(x64asm::Opcode opc, default_random_engine gen) {
-  operands_idx_ = {};
+Instruction get_random_instruction_helper(x64asm::Opcode opc, default_random_engine& gen, int tries_left) {
+
   x64asm::Instruction instr(opc);
 
   for (size_t i = 0; i < instr.arity(); i++) {
     auto t = instr.type(i);
     instr.set_operand(i, get_random_operand(t, gen));
   }
-
   if (!instr.check()) {
-    std::cout << "instruction not valid:" << instr << std::endl;
-    exit(1);
+    if (tries_left == 0) {
+      std::cout << "no valid instruction found: " << instr << std::endl;
+      exit(1);
+    } else {
+      return get_random_instruction_helper(opc, gen, tries_left-1);
+    }
   }
-  return instr;
+  return instr; // make compiler happy
+}
+
+x64asm::Instruction get_random_instruction(x64asm::Opcode opc, default_random_engine& gen) {
+  return get_random_instruction_helper(opc, gen, 200);
 }
 
 } // namespace stoke

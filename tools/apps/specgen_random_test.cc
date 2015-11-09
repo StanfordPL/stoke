@@ -117,7 +117,6 @@ int main(int argc, char** argv) {
     }
     if (stoke_support && !strata_support) {
       only_stoke++;
-      cout << opcode << endl;
     }
     if (strata_support && !stoke_support) {
       only_strata++;
@@ -138,7 +137,7 @@ int main(int argc, char** argv) {
   cout << "stoke supports " << stoke_count << " instructions" << endl;
   cout << "  only stoke: " << only_stoke << endl;
 
-  Opcode opcode = Opcode::XOR_R8_IMM8;
+  Opcode opcode = Opcode::ADC_R8_RH;
   auto instr = get_random_instruction(opcode, gen);
 
   cout << instr << endl;
@@ -150,14 +149,14 @@ int main(int argc, char** argv) {
   TUnit fxn(code);
   Cfg cfg(fxn, RegSet::universe(), RegSet::empty());
 
-  CpuState cs;
-  if (!sg.get(cs, cfg)) {
+  CpuState initial_concrete;
+  if (!sg.get(initial_concrete, cfg)) {
     cout << "Could not generate state: " << sg.get_error() << endl;
     return 1;
   }
 
   Sandbox sb2(sb);
-  sb2.insert_input(cs);
+  sb2.insert_input(initial_concrete);
   sb2.run(cfg);
   CpuState concrete = *sb2.get_result(0);
 
@@ -172,15 +171,16 @@ int main(int argc, char** argv) {
   }
 
   // build circuits
-  SymState strata_state("", true);
+  SymState strata_state(initial_concrete);
   SymState concrete_sym(concrete);
   strata_handler.build_circuit(instr, strata_state);
 
   vector<SymBool> constraints;
   for (auto it : strata_state.constraints)
     constraints.push_back(it);
-  for (auto it : strata_state.equality_constraints(concrete_sym))
+  for (auto it : strata_state.equality_constraints(concrete_sym, RegSet::universe())) {
     constraints.push_back(it);
+  }
 
   bool res = solver.is_sat(constraints);
   if (solver.has_error()) {
