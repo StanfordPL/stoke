@@ -120,8 +120,8 @@ int main(int argc, char** argv) {
   ofstream f_meta;
   f_meta.open(out + "/" + full_opc_str + ".meta.json");
   f_meta << "{" << endl;
-  f_meta << "  \"def_in\": \"" << def_in << "\"," << endl;
-  f_meta << "  \"live_out\": \"" << live_out << "\"," << endl;
+  f_meta << "  \"def_in\": \"" << def_in_formal << "\"," << endl;
+  f_meta << "  \"live_out\": \"" << live_out_formal << "\"," << endl;
   f_meta << "  \"def_in_formal\": \"" << def_in_formal << "\"," << endl;
   f_meta << "  \"live_out_formal\": \"" << live_out_formal << "\"," << endl;
   f_meta << "  \"search_without_uif\": false," << endl;
