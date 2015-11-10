@@ -94,13 +94,8 @@ int main(int argc, char** argv) {
   string base_path = configdir + "/initial_base.instrs";
   f_base.open(base_path);
 
-  string imm8_data;
   vector<Opcode> imm8_baseset;
   if (only_imm_arg) {
-    ifstream t("resources/imm8.data");
-    string tmp((istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
-    imm8_data = tmp;
-
     filesystem::directory_iterator itr("resources/imm8_baseset"), eod;
     for (; itr != eod; ++itr) {
       auto file = *itr;
@@ -185,8 +180,7 @@ int main(int argc, char** argv) {
     auto is_mm = false;
     auto is_imm8 = false;
     if (only_imm_arg) {
-      regex r(op_s + " [01]{8}");
-      is_imm8 = regex_search(imm8_data, r);
+      is_imm8 = specgen_is_imm8(op);
     }
     if (may_be_goal) {
       f_goal2 << op << endl;

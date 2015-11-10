@@ -18,6 +18,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <regex>
 
 #include "src/specgen/specgen.h"
 
@@ -408,6 +409,34 @@ Instruction get_random_instruction_helper(x64asm::Opcode opc, default_random_eng
 
 x64asm::Instruction get_random_instruction(x64asm::Opcode opc, default_random_engine& gen) {
   return get_random_instruction_helper(opc, gen, 200);
+}
+
+x64asm::Instruction get_instruction_from_string(std::string xopcode) {
+  // parse opcode
+  // we use opc_8 to indicate that we want to use 8 as the imm8 argument
+  smatch result;
+  regex reg("(.*?)(_([0-9]+))?");
+  string opc_str;
+  uint8_t num;
+  if (regex_match(xopcode, result, reg)) {
+    if (result[2] == "") {
+      num = 0;
+    } else {
+      string t = result[3];
+      num = stoi(t);
+    }
+    opc_str = result[1];
+  } else {
+    exit(3);
+  }
+  Opcode opc;
+  stringstream ss(opc_str);
+  ss >> opc;
+  if (opc == LABEL_DEFN) {
+    cerr << "ERROR: could not parse the extended opcoce: " << xopcode << endl;
+    exit(1);
+  }
+  return get_instruction(opc, num);
 }
 
 } // namespace stoke

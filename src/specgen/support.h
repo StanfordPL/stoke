@@ -25,6 +25,7 @@ bool specgen_is_float(const x64asm::Opcode& opcode);
 bool specgen_is_duplicate(const x64asm::Opcode& opcode);
 bool specgen_is_sandbox_unsupported(const x64asm::Opcode& op);
 bool specgen_is_mm(const x64asm::Opcode& opcode);
+bool specgen_is_imm8(const x64asm::Opcode& opcode);
 
 bool specgen_uses_memory(const x64asm::Opcode& opcode);
 bool specgen_uses_imm(const x64asm::Opcode& opcode);

@@ -42,10 +42,13 @@ SupportedReason is_supported_type_reason(x64asm::Type t);
 /** Can specgen currently handle this x64asm::Type? */
 bool is_supported_type(x64asm::Type t);
 x64asm::Operand get_next_operand(x64asm::Type t, uint8_t imm8_val);
+// deprecated, should not be used anymore probably
 x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val = 0);
 
 x64asm::Operand get_random_operand(x64asm::Type t, std::default_random_engine& gen);
 x64asm::Instruction get_random_instruction(x64asm::Opcode opc, std::default_random_engine& gen);
+
+x64asm::Instruction get_instruction_from_string(std::string xopcode);
 
 } // namespace stoke
 

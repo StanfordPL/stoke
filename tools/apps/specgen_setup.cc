@@ -60,32 +60,7 @@ int main(int argc, char** argv) {
   ostringstream stream;
   CommandLineConfig::strict_with_convenience(argc, argv);
 
-  // parse opcode
-  // we use opc_8 to indicate that we want to use 8 as the imm8 argument
-  smatch result;
-  regex reg("(.*?)(_([0-9]+))?");
-  string opc_str;
-  uint8_t num;
-  if (regex_match(opc_arg.value(), result, reg)) {
-    if (result[2] == "") {
-      num = 0;
-    } else {
-      string t = result[3];
-      num = stoi(t);
-    }
-    opc_str = result[1];
-  } else {
-    exit(3);
-  }
-  Opcode opc;
-  stringstream ss(opc_str);
-  ss >> opc;
-  if (opc == LABEL_DEFN) {
-    cerr << "ERROR: could not parse opcoce: " << opc_arg.value() << endl;
-    exit(1);
-  }
-
-  auto instr = get_instruction(opc, num);
+  auto instr = get_instruction_from_string(opc_arg);
 
   string workdir = workdir_arg.value();
 

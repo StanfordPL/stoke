@@ -454,14 +454,32 @@ bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
   return false;
 }
 
+uint8_t specgen_get_imm8(const Instruction& instr) {
+  return instr.get_operand<Imm8>(instr.arity() - 1);
+}
+
 Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& instr) {
+  auto yes = (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
   if (!operands_supported(instr)) {
     return Handler::NONE;
   }
   auto opcode = instr.get_opcode();
   if (is_supported(opcode)) {
-    return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
+    return yes;
   }
+
+  // check for imm8 support
+  if (specgen_is_imm8(opcode)) {
+    stringstream ss;
+    ss << opcode << "_" << dec << specgen_get_imm8(instr);
+    auto candidate_file = strata_path_ + "/" + ss.str() + ".s";
+
+    // we have a learned circuit
+    if (filesystem::exists(candidate_file)) {
+      return yes;
+    }
+  }
+
   return Handler::NONE;
 }
 
@@ -671,12 +689,8 @@ vector<string> StrataHandler::full_support_opcodes() {
     auto file = itr->path().filename().string();
     assert(file.size() > 2);
     auto opcode_str = file.substr(0, file.size()-2);
-    Opcode opcode;
-    if (!(stringstream(opcode_str) >> opcode)) {
-      assert(false);
-      continue;
-    }
-    res.push_back(get_opcode(opcode));
+    auto instr = get_instruction_from_string(opcode_str);
+    res.push_back(get_opcode(instr.get_opcode()));
   }
   return res;
 }

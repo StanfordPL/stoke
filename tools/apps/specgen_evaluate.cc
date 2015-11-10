@@ -90,11 +90,8 @@ int main(int argc, char** argv) {
   auto strata_path = circuits_arg.value();
   auto strata_handler = StrataHandler(strata_path);
 
-  Opcode opcode;
-  if (!(stringstream(opcode_arg.value()) >> opcode)) {
-    Console::error(1) << "Failed to parse opcode '" << opcode_arg.value() << "'." << endl;
-  }
-  auto instr = get_instruction(opcode);
+  auto instr = get_instruction_from_string(opcode_arg.value());
+  Opcode opcode = instr.get_opcode();
 
   if (strata_handler.get_support(instr) == Handler::SupportLevel::NONE) {
     cout << "strata does not support '" << instr << "'." << endl;
