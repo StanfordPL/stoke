@@ -15,6 +15,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <algorithm>
 #include <random>
 #include <string>
 #include <vector>
@@ -94,10 +95,22 @@ int main(int argc, char** argv) {
   f_base.open(base_path);
 
   string imm8_data;
+  vector<Opcode> imm8_baseset;
   if (only_imm_arg) {
-    ifstream t("../resources/imm8.data");
+    ifstream t("resources/imm8.data");
     string tmp((istreambuf_iterator<char>(t)), istreambuf_iterator<char>());
     imm8_data = tmp;
+
+    filesystem::directory_iterator itr("resources/imm8_baseset"), eod;
+    for (; itr != eod; ++itr) {
+      auto file = *itr;
+      if (is_regular_file(file)) {
+        auto filename = file.path().filename().string();
+        Opcode op;
+        stringstream(filename.substr(0, filename.size()-2)) >> op;
+        imm8_baseset.push_back(op);
+      }
+    }
   }
 
   int n_funcs = std::distance(boost::filesystem::directory_iterator(workdir + "/functions"), boost::filesystem::directory_iterator());
@@ -162,6 +175,7 @@ int main(int argc, char** argv) {
         cout << op << endl;
         base_and_no_validator_support++;
       }
+      f_base << op << endl;
     }
     if (is_goal && specgen_is_sandbox_unsupported(op)) {
       unsupported++;
@@ -215,8 +229,10 @@ int main(int argc, char** argv) {
           }
           goal++;
         } else {
-          base++;
-          f_base << op << endl; // we add everything else to the baseset
+          if (find(imm8_baseset.begin(), imm8_baseset.end(), op) != imm8_baseset.end()) {
+            base++;
+            f_base << op << endl;
+          }
         }
       } else if (allow_all_arg) {
         // add everything to the goal and base
@@ -271,14 +287,6 @@ int main(int argc, char** argv) {
     cout << " (" << std::setprecision(3) << (100.0 * ((double)validator_support) / ((double)goal)) << "%)" << endl;
   }
 
-  if (!allow_all_arg) {
-    for (auto i = (int)LABEL_DEFN + 1, ie = (int)XTEST; i != ie; ++i) {
-      auto op = (Opcode) i;
-      if (specgen_is_base(op)) {
-        f_base << op << endl;
-      }
-    }
-  }
   f_base.close();
   f_goal.close();
   f_all.close();
