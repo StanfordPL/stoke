@@ -33,155 +33,155 @@ namespace stoke {
 
 vector<Opcode> instr_cat_imm8_ = {
   BLENDPD_XMM_XMM_IMM8 // BLENDPD xmm, xmm, imm8
-, BLENDPS_XMM_XMM_IMM8 // BLENDPS xmm, xmm, imm8
-, CMPPD_XMM_XMM_IMM8 // CMPPD xmm, xmm, imm8
-, CMPPS_XMM_XMM_IMM8 // CMPPS xmm, xmm, imm8
-, CMPSD_XMM_XMM_IMM8 // CMPSD xmm, xmm, imm8
-, CMPSS_XMM_XMM_IMM8 // CMPSS xmm, xmm, imm8
-, DPPD_XMM_XMM_IMM8 // DPPD xmm, xmm, imm8
-, DPPS_XMM_XMM_IMM8 // DPPS xmm, xmm, imm8
-, EXTRACTPS_R32_XMM_IMM8 // EXTRACTPS r32, xmm, imm8
-, EXTRACTPS_R64_XMM_IMM8 // EXTRACTPS r64, xmm, imm8
-, INSERTPS_XMM_XMM_IMM8 // INSERTPS xmm, xmm, imm8
-, MPSADBW_XMM_XMM_IMM8 // MPSADBW xmm, xmm, imm8
+  , BLENDPS_XMM_XMM_IMM8 // BLENDPS xmm, xmm, imm8
+  , CMPPD_XMM_XMM_IMM8 // CMPPD xmm, xmm, imm8
+  , CMPPS_XMM_XMM_IMM8 // CMPPS xmm, xmm, imm8
+  , CMPSD_XMM_XMM_IMM8 // CMPSD xmm, xmm, imm8
+  , CMPSS_XMM_XMM_IMM8 // CMPSS xmm, xmm, imm8
+  , DPPD_XMM_XMM_IMM8 // DPPD xmm, xmm, imm8
+  , DPPS_XMM_XMM_IMM8 // DPPS xmm, xmm, imm8
+  , EXTRACTPS_R32_XMM_IMM8 // EXTRACTPS r32, xmm, imm8
+  , EXTRACTPS_R64_XMM_IMM8 // EXTRACTPS r64, xmm, imm8
+  , INSERTPS_XMM_XMM_IMM8 // INSERTPS xmm, xmm, imm8
+  , MPSADBW_XMM_XMM_IMM8 // MPSADBW xmm, xmm, imm8
 // , PALIGNR_MM_MM_IMM8 // PALIGNR mm, mm, imm8
-, PALIGNR_XMM_XMM_IMM8 // PALIGNR xmm, xmm, imm8
-, PBLENDW_XMM_XMM_IMM8 // PBLENDW xmm, xmm, imm8
-, PCLMULQDQ_XMM_XMM_IMM8 // PCLMULQDQ xmm, xmm, imm8
-, PCMPESTRI_XMM_XMM_IMM8 // PCMPESTRI xmm, xmm, imm8
-, PCMPESTRM_XMM_XMM_IMM8 // PCMPESTRM xmm, xmm, imm8
-, PCMPISTRI_XMM_XMM_IMM8 // PCMPISTRI xmm, xmm, imm8
-, PCMPISTRM_XMM_XMM_IMM8 // PCMPISTRM xmm, xmm, imm8
-, PEXTRB_R32_XMM_IMM8 // PEXTRB r32, xmm, imm8
-, PEXTRB_R64_XMM_IMM8 // PEXTRB r64, xmm, imm8
-, PEXTRD_R32_XMM_IMM8 // PEXTRD r32, xmm, imm8
-, PEXTRQ_R64_XMM_IMM8 // PEXTRQ r64, xmm, imm8
+  , PALIGNR_XMM_XMM_IMM8 // PALIGNR xmm, xmm, imm8
+  , PBLENDW_XMM_XMM_IMM8 // PBLENDW xmm, xmm, imm8
+  , PCLMULQDQ_XMM_XMM_IMM8 // PCLMULQDQ xmm, xmm, imm8
+  , PCMPESTRI_XMM_XMM_IMM8 // PCMPESTRI xmm, xmm, imm8
+  , PCMPESTRM_XMM_XMM_IMM8 // PCMPESTRM xmm, xmm, imm8
+  , PCMPISTRI_XMM_XMM_IMM8 // PCMPISTRI xmm, xmm, imm8
+  , PCMPISTRM_XMM_XMM_IMM8 // PCMPISTRM xmm, xmm, imm8
+  , PEXTRB_R32_XMM_IMM8 // PEXTRB r32, xmm, imm8
+  , PEXTRB_R64_XMM_IMM8 // PEXTRB r64, xmm, imm8
+  , PEXTRD_R32_XMM_IMM8 // PEXTRD r32, xmm, imm8
+  , PEXTRQ_R64_XMM_IMM8 // PEXTRQ r64, xmm, imm8
 // , PEXTRW_R32_MM_IMM8 // PEXTRW r32, mm, imm8
-, PEXTRW_R32_XMM_IMM8 // PEXTRW r32, xmm, imm8
-, PEXTRW_R32_XMM_IMM8_1 // PEXTRW r32, xmm, imm8
+  , PEXTRW_R32_XMM_IMM8 // PEXTRW r32, xmm, imm8
+  , PEXTRW_R32_XMM_IMM8_1 // PEXTRW r32, xmm, imm8
 // , PEXTRW_R64_MM_IMM8 // PEXTRW r64, mm, imm8
-, PEXTRW_R64_XMM_IMM8 // PEXTRW r64, xmm, imm8
-, PEXTRW_R64_XMM_IMM8_1 // PEXTRW r64, xmm, imm8
-, PINSRB_XMM_R32_IMM8 // PINSRB xmm, r32, imm8
-, PINSRD_XMM_R32_IMM8 // PINSRD xmm, r32, imm8
+  , PEXTRW_R64_XMM_IMM8 // PEXTRW r64, xmm, imm8
+  , PEXTRW_R64_XMM_IMM8_1 // PEXTRW r64, xmm, imm8
+  , PINSRB_XMM_R32_IMM8 // PINSRB xmm, r32, imm8
+  , PINSRD_XMM_R32_IMM8 // PINSRD xmm, r32, imm8
 // , PINSRW_MM_R32_IMM8 // PINSRW mm, r32, imm8
-, PINSRW_XMM_R32_IMM8 // PINSRW xmm, r32, imm8
-, PSHUFD_XMM_XMM_IMM8 // PSHUFD xmm, xmm, imm8
-, PSHUFHW_XMM_XMM_IMM8 // PSHUFHW xmm, xmm, imm8
-, PSHUFLW_XMM_XMM_IMM8 // PSHUFLW xmm, xmm, imm8
+  , PINSRW_XMM_R32_IMM8 // PINSRW xmm, r32, imm8
+  , PSHUFD_XMM_XMM_IMM8 // PSHUFD xmm, xmm, imm8
+  , PSHUFHW_XMM_XMM_IMM8 // PSHUFHW xmm, xmm, imm8
+  , PSHUFLW_XMM_XMM_IMM8 // PSHUFLW xmm, xmm, imm8
 // , PSHUFW_MM_MM_IMM8 // PSHUFW mm, mm, imm8
 // , PSLLD_MM_IMM8 // PSLLD mm, imm8
-, PSLLD_XMM_IMM8 // PSLLD xmm, imm8
-, PSLLDQ_XMM_IMM8 // PSLLDQ xmm, imm8
+  , PSLLD_XMM_IMM8 // PSLLD xmm, imm8
+  , PSLLDQ_XMM_IMM8 // PSLLDQ xmm, imm8
 // , PSLLQ_MM_IMM8 // PSLLQ mm, imm8
-, PSLLQ_XMM_IMM8 // PSLLQ xmm, imm8
+  , PSLLQ_XMM_IMM8 // PSLLQ xmm, imm8
 // , PSLLW_MM_IMM8 // PSLLW mm, imm8
-, PSLLW_XMM_IMM8 // PSLLW xmm, imm8
+  , PSLLW_XMM_IMM8 // PSLLW xmm, imm8
 // , PSRAD_MM_IMM8 // PSRAD mm, imm8
-, PSRAD_XMM_IMM8 // PSRAD xmm, imm8
+  , PSRAD_XMM_IMM8 // PSRAD xmm, imm8
 // , PSRAW_MM_IMM8 // PSRAW mm, imm8
-, PSRAW_XMM_IMM8 // PSRAW xmm, imm8
+  , PSRAW_XMM_IMM8 // PSRAW xmm, imm8
 // , PSRLD_MM_IMM8 // PSRLD mm, imm8
-, PSRLD_XMM_IMM8 // PSRLD xmm, imm8
-, PSRLDQ_XMM_IMM8 // PSRLDQ xmm, imm8
+  , PSRLD_XMM_IMM8 // PSRLD xmm, imm8
+  , PSRLDQ_XMM_IMM8 // PSRLDQ xmm, imm8
 // , PSRLQ_MM_IMM8 // PSRLQ mm, imm8
-, PSRLQ_XMM_IMM8 // PSRLQ xmm, imm8
+  , PSRLQ_XMM_IMM8 // PSRLQ xmm, imm8
 // , PSRLW_MM_IMM8 // PSRLW mm, imm8
-, PSRLW_XMM_IMM8 // PSRLW xmm, imm8
-, ROUNDPD_XMM_XMM_IMM8 // ROUNDPD xmm, xmm, imm8
-, ROUNDPS_XMM_XMM_IMM8 // ROUNDPS xmm, xmm, imm8
-, ROUNDSD_XMM_XMM_IMM8 // ROUNDSD xmm, xmm, imm8
-, ROUNDSS_XMM_XMM_IMM8 // ROUNDSS xmm, xmm, imm8
-, SHUFPD_XMM_XMM_IMM8 // SHUFPD xmm, xmm, imm8
-, SHUFPS_XMM_XMM_IMM8 // SHUFPS xmm, xmm, imm8
-, VBLENDPD_XMM_XMM_XMM_IMM8 // VBLENDPD xmm, xmm, xmm, imm8
-, VBLENDPD_YMM_YMM_YMM_IMM8 // VBLENDPD ymm, ymm, ymm, imm8
-, VBLENDPS_XMM_XMM_XMM_IMM8 // VBLENDPS xmm, xmm, xmm, imm8
-, VBLENDPS_YMM_YMM_YMM_IMM8 // VBLENDPS ymm, ymm, ymm, imm8
-, VCMPPD_XMM_XMM_XMM_IMM8 // VCMPPD xmm, xmm, xmm, imm8
-, VCMPPD_YMM_YMM_YMM_IMM8 // VCMPPD ymm, ymm, ymm, imm8
-, VCMPPS_XMM_XMM_XMM_IMM8 // VCMPPS xmm, xmm, xmm, imm8
-, VCMPPS_YMM_YMM_YMM_IMM8 // VCMPPS ymm, ymm, ymm, imm8
-, VCMPSD_XMM_XMM_XMM_IMM8 // VCMPSD xmm, xmm, xmm, imm8
-, VCMPSS_XMM_XMM_XMM_IMM8 // VCMPSS xmm, xmm, xmm, imm8
-, VCVTPS2PH_XMM_XMM_IMM8 // VCVTPS2PH xmm, xmm, imm8
-, VCVTPS2PH_XMM_YMM_IMM8 // VCVTPS2PH xmm, ymm, imm8
-, VDPPD_XMM_XMM_XMM_IMM8 // VDPPD xmm, xmm, xmm, imm8
-, VDPPS_XMM_XMM_XMM_IMM8 // VDPPS xmm, xmm, xmm, imm8
-, VDPPS_YMM_YMM_YMM_IMM8 // VDPPS ymm, ymm, ymm, imm8
-, VEXTRACTF128_XMM_YMM_IMM8 // VEXTRACTF128 xmm, ymm, imm8
-, VEXTRACTI128_XMM_YMM_IMM8 // VEXTRACTI128 xmm, ymm, imm8
-, VEXTRACTPS_R32_XMM_IMM8 // VEXTRACTPS r32, xmm, imm8
-, VINSERTF128_YMM_YMM_XMM_IMM8 // VINSERTF128 ymm, ymm, xmm, imm8
-, VINSERTI128_YMM_YMM_XMM_IMM8 // VINSERTI128 ymm, ymm, xmm, imm8
-, VINSERTPS_XMM_XMM_XMM_IMM8 // VINSERTPS xmm, xmm, xmm, imm8
-, VMPSADBW_XMM_XMM_XMM_IMM8 // VMPSADBW xmm, xmm, xmm, imm8
-, VMPSADBW_YMM_YMM_YMM_IMM8 // VMPSADBW ymm, ymm, ymm, imm8
-, VPALIGNR_XMM_XMM_XMM_IMM8 // VPALIGNR xmm, xmm, xmm, imm8
-, VPALIGNR_YMM_YMM_YMM_IMM8 // VPALIGNR ymm, ymm, ymm, imm8
-, VPBLENDD_XMM_XMM_XMM_IMM8 // VPBLENDD xmm, xmm, xmm, imm8
-, VPBLENDD_YMM_YMM_YMM_IMM8 // VPBLENDD ymm, ymm, ymm, imm8
-, VPBLENDW_XMM_XMM_XMM_IMM8 // VPBLENDW xmm, xmm, xmm, imm8
-, VPBLENDW_YMM_YMM_YMM_IMM8 // VPBLENDW ymm, ymm, ymm, imm8
-, VPCLMULQDQ_XMM_XMM_XMM_IMM8 // VPCLMULQDQ xmm, xmm, xmm, imm8
-, VPCMPESTRI_XMM_XMM_IMM8 // VPCMPESTRI xmm, xmm, imm8
-, VPCMPESTRM_XMM_XMM_IMM8 // VPCMPESTRM xmm, xmm, imm8
-, VPCMPISTRI_XMM_XMM_IMM8 // VPCMPISTRI xmm, xmm, imm8
-, VPCMPISTRM_XMM_XMM_IMM8 // VPCMPISTRM xmm, xmm, imm8
-, VPERM2F128_YMM_YMM_YMM_IMM8 // VPERM2F128 ymm, ymm, ymm, imm8
-, VPERM2I128_YMM_YMM_YMM_IMM8 // VPERM2I128 ymm, ymm, ymm, imm8
-, VPERMILPD_XMM_XMM_IMM8 // VPERMILPD xmm, xmm, imm8
-, VPERMILPD_YMM_YMM_IMM8 // VPERMILPD ymm, ymm, imm8
-, VPERMILPS_XMM_XMM_IMM8 // VPERMILPS xmm, xmm, imm8
-, VPERMILPS_YMM_YMM_IMM8 // VPERMILPS ymm, ymm, imm8
-, VPERMPD_YMM_YMM_IMM8 // VPERMPD ymm, ymm, imm8
-, VPERMQ_YMM_YMM_IMM8 // VPERMQ ymm, ymm, imm8
-, VPEXTRB_R32_XMM_IMM8 // VPEXTRB r32, xmm, imm8
-, VPEXTRB_R64_XMM_IMM8 // VPEXTRB r64, xmm, imm8
-, VPEXTRD_R32_XMM_IMM8 // VPEXTRD r32, xmm, imm8
-, VPEXTRQ_R64_XMM_IMM8 // VPEXTRQ r64, xmm, imm8
-, VPEXTRW_R32_XMM_IMM8 // VPEXTRW r32, xmm, imm8
-, VPEXTRW_R64_XMM_IMM8 // VPEXTRW r64, xmm, imm8
-, VPINSRB_XMM_XMM_R32_IMM8 // VPINSRB xmm, xmm, r32, imm8
-, VPINSRD_XMM_XMM_R32_IMM8 // VPINSRD xmm, xmm, r32, imm8
-, VPINSRQ_XMM_XMM_R64_IMM8 // VPINSRQ xmm, xmm, r64, imm8
-, VPINSRW_XMM_XMM_R32_IMM8 // VPINSRW xmm, xmm, r32, imm8
-, VPSHUFD_XMM_XMM_IMM8 // VPSHUFD xmm, xmm, imm8
-, VPSHUFD_YMM_YMM_IMM8 // VPSHUFD ymm, ymm, imm8
-, VPSHUFHW_XMM_XMM_IMM8 // VPSHUFHW xmm, xmm, imm8
-, VPSHUFHW_YMM_YMM_IMM8 // VPSHUFHW ymm, ymm, imm8
-, VPSHUFLW_XMM_XMM_IMM8 // VPSHUFLW xmm, xmm, imm8
-, VPSHUFLW_YMM_YMM_IMM8 // VPSHUFLW ymm, ymm, imm8
-, VPSLLD_XMM_XMM_IMM8 // VPSLLD xmm, xmm, imm8
-, VPSLLD_YMM_YMM_IMM8 // VPSLLD ymm, ymm, imm8
-, VPSLLDQ_XMM_XMM_IMM8 // VPSLLDQ xmm, xmm, imm8
-, VPSLLDQ_YMM_YMM_IMM8 // VPSLLDQ ymm, ymm, imm8
-, VPSLLQ_XMM_XMM_IMM8 // VPSLLQ xmm, xmm, imm8
-, VPSLLQ_YMM_YMM_IMM8 // VPSLLQ ymm, ymm, imm8
-, VPSLLW_XMM_XMM_IMM8 // VPSLLW xmm, xmm, imm8
-, VPSLLW_YMM_YMM_IMM8 // VPSLLW ymm, ymm, imm8
-, VPSRAD_XMM_XMM_IMM8 // VPSRAD xmm, xmm, imm8
-, VPSRAD_YMM_YMM_IMM8 // VPSRAD ymm, ymm, imm8
-, VPSRAW_XMM_XMM_IMM8 // VPSRAW xmm, xmm, imm8
-, VPSRAW_YMM_YMM_IMM8 // VPSRAW ymm, ymm, imm8
-, VPSRLD_XMM_XMM_IMM8 // VPSRLD xmm, xmm, imm8
-, VPSRLD_YMM_YMM_IMM8 // VPSRLD ymm, ymm, imm8
-, VPSRLDQ_XMM_XMM_IMM8 // VPSRLDQ xmm, xmm, imm8
-, VPSRLDQ_YMM_YMM_IMM8 // VPSRLDQ ymm, ymm, imm8
-, VPSRLQ_XMM_XMM_IMM8 // VPSRLQ xmm, xmm, imm8
-, VPSRLQ_YMM_YMM_IMM8 // VPSRLQ ymm, ymm, imm8
-, VPSRLW_XMM_XMM_IMM8 // VPSRLW xmm, xmm, imm8
-, VPSRLW_YMM_YMM_IMM8 // VPSRLW ymm, ymm, imm8
-, VROUNDPD_XMM_XMM_IMM8 // VROUNDPD xmm, xmm, imm8
-, VROUNDPD_YMM_YMM_IMM8 // VROUNDPD ymm, ymm, imm8
-, VROUNDPS_XMM_XMM_IMM8 // VROUNDPS xmm, xmm, imm8
-, VROUNDPS_YMM_YMM_IMM8 // VROUNDPS ymm, ymm, imm8
-, VROUNDSD_XMM_XMM_XMM_IMM8 // VROUNDSD xmm, xmm, xmm, imm8
-, VROUNDSS_XMM_XMM_XMM_IMM8 // VROUNDSS xmm, xmm, xmm, imm8
-, VSHUFPD_XMM_XMM_XMM_IMM8 // VSHUFPD xmm, xmm, xmm, imm8
-, VSHUFPD_YMM_YMM_YMM_IMM8 // VSHUFPD ymm, ymm, ymm, imm8
-, VSHUFPS_XMM_XMM_XMM_IMM8 // VSHUFPS xmm, xmm, xmm, imm8
-, VSHUFPS_YMM_YMM_YMM_IMM8 // VSHUFPS ymm, ymm, ymm, imm8
+  , PSRLW_XMM_IMM8 // PSRLW xmm, imm8
+  , ROUNDPD_XMM_XMM_IMM8 // ROUNDPD xmm, xmm, imm8
+  , ROUNDPS_XMM_XMM_IMM8 // ROUNDPS xmm, xmm, imm8
+  , ROUNDSD_XMM_XMM_IMM8 // ROUNDSD xmm, xmm, imm8
+  , ROUNDSS_XMM_XMM_IMM8 // ROUNDSS xmm, xmm, imm8
+  , SHUFPD_XMM_XMM_IMM8 // SHUFPD xmm, xmm, imm8
+  , SHUFPS_XMM_XMM_IMM8 // SHUFPS xmm, xmm, imm8
+  , VBLENDPD_XMM_XMM_XMM_IMM8 // VBLENDPD xmm, xmm, xmm, imm8
+  , VBLENDPD_YMM_YMM_YMM_IMM8 // VBLENDPD ymm, ymm, ymm, imm8
+  , VBLENDPS_XMM_XMM_XMM_IMM8 // VBLENDPS xmm, xmm, xmm, imm8
+  , VBLENDPS_YMM_YMM_YMM_IMM8 // VBLENDPS ymm, ymm, ymm, imm8
+  , VCMPPD_XMM_XMM_XMM_IMM8 // VCMPPD xmm, xmm, xmm, imm8
+  , VCMPPD_YMM_YMM_YMM_IMM8 // VCMPPD ymm, ymm, ymm, imm8
+  , VCMPPS_XMM_XMM_XMM_IMM8 // VCMPPS xmm, xmm, xmm, imm8
+  , VCMPPS_YMM_YMM_YMM_IMM8 // VCMPPS ymm, ymm, ymm, imm8
+  , VCMPSD_XMM_XMM_XMM_IMM8 // VCMPSD xmm, xmm, xmm, imm8
+  , VCMPSS_XMM_XMM_XMM_IMM8 // VCMPSS xmm, xmm, xmm, imm8
+  , VCVTPS2PH_XMM_XMM_IMM8 // VCVTPS2PH xmm, xmm, imm8
+  , VCVTPS2PH_XMM_YMM_IMM8 // VCVTPS2PH xmm, ymm, imm8
+  , VDPPD_XMM_XMM_XMM_IMM8 // VDPPD xmm, xmm, xmm, imm8
+  , VDPPS_XMM_XMM_XMM_IMM8 // VDPPS xmm, xmm, xmm, imm8
+  , VDPPS_YMM_YMM_YMM_IMM8 // VDPPS ymm, ymm, ymm, imm8
+  , VEXTRACTF128_XMM_YMM_IMM8 // VEXTRACTF128 xmm, ymm, imm8
+  , VEXTRACTI128_XMM_YMM_IMM8 // VEXTRACTI128 xmm, ymm, imm8
+  , VEXTRACTPS_R32_XMM_IMM8 // VEXTRACTPS r32, xmm, imm8
+  , VINSERTF128_YMM_YMM_XMM_IMM8 // VINSERTF128 ymm, ymm, xmm, imm8
+  , VINSERTI128_YMM_YMM_XMM_IMM8 // VINSERTI128 ymm, ymm, xmm, imm8
+  , VINSERTPS_XMM_XMM_XMM_IMM8 // VINSERTPS xmm, xmm, xmm, imm8
+  , VMPSADBW_XMM_XMM_XMM_IMM8 // VMPSADBW xmm, xmm, xmm, imm8
+  , VMPSADBW_YMM_YMM_YMM_IMM8 // VMPSADBW ymm, ymm, ymm, imm8
+  , VPALIGNR_XMM_XMM_XMM_IMM8 // VPALIGNR xmm, xmm, xmm, imm8
+  , VPALIGNR_YMM_YMM_YMM_IMM8 // VPALIGNR ymm, ymm, ymm, imm8
+  , VPBLENDD_XMM_XMM_XMM_IMM8 // VPBLENDD xmm, xmm, xmm, imm8
+  , VPBLENDD_YMM_YMM_YMM_IMM8 // VPBLENDD ymm, ymm, ymm, imm8
+  , VPBLENDW_XMM_XMM_XMM_IMM8 // VPBLENDW xmm, xmm, xmm, imm8
+  , VPBLENDW_YMM_YMM_YMM_IMM8 // VPBLENDW ymm, ymm, ymm, imm8
+  , VPCLMULQDQ_XMM_XMM_XMM_IMM8 // VPCLMULQDQ xmm, xmm, xmm, imm8
+  , VPCMPESTRI_XMM_XMM_IMM8 // VPCMPESTRI xmm, xmm, imm8
+  , VPCMPESTRM_XMM_XMM_IMM8 // VPCMPESTRM xmm, xmm, imm8
+  , VPCMPISTRI_XMM_XMM_IMM8 // VPCMPISTRI xmm, xmm, imm8
+  , VPCMPISTRM_XMM_XMM_IMM8 // VPCMPISTRM xmm, xmm, imm8
+  , VPERM2F128_YMM_YMM_YMM_IMM8 // VPERM2F128 ymm, ymm, ymm, imm8
+  , VPERM2I128_YMM_YMM_YMM_IMM8 // VPERM2I128 ymm, ymm, ymm, imm8
+  , VPERMILPD_XMM_XMM_IMM8 // VPERMILPD xmm, xmm, imm8
+  , VPERMILPD_YMM_YMM_IMM8 // VPERMILPD ymm, ymm, imm8
+  , VPERMILPS_XMM_XMM_IMM8 // VPERMILPS xmm, xmm, imm8
+  , VPERMILPS_YMM_YMM_IMM8 // VPERMILPS ymm, ymm, imm8
+  , VPERMPD_YMM_YMM_IMM8 // VPERMPD ymm, ymm, imm8
+  , VPERMQ_YMM_YMM_IMM8 // VPERMQ ymm, ymm, imm8
+  , VPEXTRB_R32_XMM_IMM8 // VPEXTRB r32, xmm, imm8
+  , VPEXTRB_R64_XMM_IMM8 // VPEXTRB r64, xmm, imm8
+  , VPEXTRD_R32_XMM_IMM8 // VPEXTRD r32, xmm, imm8
+  , VPEXTRQ_R64_XMM_IMM8 // VPEXTRQ r64, xmm, imm8
+  , VPEXTRW_R32_XMM_IMM8 // VPEXTRW r32, xmm, imm8
+  , VPEXTRW_R64_XMM_IMM8 // VPEXTRW r64, xmm, imm8
+  , VPINSRB_XMM_XMM_R32_IMM8 // VPINSRB xmm, xmm, r32, imm8
+  , VPINSRD_XMM_XMM_R32_IMM8 // VPINSRD xmm, xmm, r32, imm8
+  , VPINSRQ_XMM_XMM_R64_IMM8 // VPINSRQ xmm, xmm, r64, imm8
+  , VPINSRW_XMM_XMM_R32_IMM8 // VPINSRW xmm, xmm, r32, imm8
+  , VPSHUFD_XMM_XMM_IMM8 // VPSHUFD xmm, xmm, imm8
+  , VPSHUFD_YMM_YMM_IMM8 // VPSHUFD ymm, ymm, imm8
+  , VPSHUFHW_XMM_XMM_IMM8 // VPSHUFHW xmm, xmm, imm8
+  , VPSHUFHW_YMM_YMM_IMM8 // VPSHUFHW ymm, ymm, imm8
+  , VPSHUFLW_XMM_XMM_IMM8 // VPSHUFLW xmm, xmm, imm8
+  , VPSHUFLW_YMM_YMM_IMM8 // VPSHUFLW ymm, ymm, imm8
+  , VPSLLD_XMM_XMM_IMM8 // VPSLLD xmm, xmm, imm8
+  , VPSLLD_YMM_YMM_IMM8 // VPSLLD ymm, ymm, imm8
+  , VPSLLDQ_XMM_XMM_IMM8 // VPSLLDQ xmm, xmm, imm8
+  , VPSLLDQ_YMM_YMM_IMM8 // VPSLLDQ ymm, ymm, imm8
+  , VPSLLQ_XMM_XMM_IMM8 // VPSLLQ xmm, xmm, imm8
+  , VPSLLQ_YMM_YMM_IMM8 // VPSLLQ ymm, ymm, imm8
+  , VPSLLW_XMM_XMM_IMM8 // VPSLLW xmm, xmm, imm8
+  , VPSLLW_YMM_YMM_IMM8 // VPSLLW ymm, ymm, imm8
+  , VPSRAD_XMM_XMM_IMM8 // VPSRAD xmm, xmm, imm8
+  , VPSRAD_YMM_YMM_IMM8 // VPSRAD ymm, ymm, imm8
+  , VPSRAW_XMM_XMM_IMM8 // VPSRAW xmm, xmm, imm8
+  , VPSRAW_YMM_YMM_IMM8 // VPSRAW ymm, ymm, imm8
+  , VPSRLD_XMM_XMM_IMM8 // VPSRLD xmm, xmm, imm8
+  , VPSRLD_YMM_YMM_IMM8 // VPSRLD ymm, ymm, imm8
+  , VPSRLDQ_XMM_XMM_IMM8 // VPSRLDQ xmm, xmm, imm8
+  , VPSRLDQ_YMM_YMM_IMM8 // VPSRLDQ ymm, ymm, imm8
+  , VPSRLQ_XMM_XMM_IMM8 // VPSRLQ xmm, xmm, imm8
+  , VPSRLQ_YMM_YMM_IMM8 // VPSRLQ ymm, ymm, imm8
+  , VPSRLW_XMM_XMM_IMM8 // VPSRLW xmm, xmm, imm8
+  , VPSRLW_YMM_YMM_IMM8 // VPSRLW ymm, ymm, imm8
+  , VROUNDPD_XMM_XMM_IMM8 // VROUNDPD xmm, xmm, imm8
+  , VROUNDPD_YMM_YMM_IMM8 // VROUNDPD ymm, ymm, imm8
+  , VROUNDPS_XMM_XMM_IMM8 // VROUNDPS xmm, xmm, imm8
+  , VROUNDPS_YMM_YMM_IMM8 // VROUNDPS ymm, ymm, imm8
+  , VROUNDSD_XMM_XMM_XMM_IMM8 // VROUNDSD xmm, xmm, xmm, imm8
+  , VROUNDSS_XMM_XMM_XMM_IMM8 // VROUNDSS xmm, xmm, xmm, imm8
+  , VSHUFPD_XMM_XMM_XMM_IMM8 // VSHUFPD xmm, xmm, xmm, imm8
+  , VSHUFPD_YMM_YMM_YMM_IMM8 // VSHUFPD ymm, ymm, ymm, imm8
+  , VSHUFPS_XMM_XMM_XMM_IMM8 // VSHUFPS xmm, xmm, xmm, imm8
+  , VSHUFPS_YMM_YMM_YMM_IMM8 // VSHUFPS ymm, ymm, ymm, imm8
 };
 
 vector<Opcode> instr_cat_crypto_ = {

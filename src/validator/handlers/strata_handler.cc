@@ -454,8 +454,8 @@ bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
   return false;
 }
 
-uint8_t specgen_get_imm8(const Instruction& instr) {
-  return instr.get_operand<Imm8>(instr.arity() - 1);
+int specgen_get_imm8(const Instruction& instr) {
+  return (int)instr.get_operand<Imm8>(instr.arity() - 1);
 }
 
 Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& instr) {
@@ -471,9 +471,8 @@ Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& inst
   // check for imm8 support
   if (specgen_is_imm8(opcode)) {
     stringstream ss;
-    ss << opcode << "_" << dec << specgen_get_imm8(instr);
+    ss << opcode << "_" << specgen_get_imm8(instr);
     auto candidate_file = strata_path_ + "/" + ss.str() + ".s";
-
     // we have a learned circuit
     if (filesystem::exists(candidate_file)) {
       return yes;
@@ -494,6 +493,11 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   ss << opcode;
   auto opcode_str = ss.str();
   auto candidate_file = strata_path_ + "/" + opcode_str + ".s";
+  if (specgen_is_imm8(opcode)) {
+    stringstream ss;
+    ss << opcode << "_" << dec << specgen_get_imm8(instr);
+    candidate_file = strata_path_ + "/" + ss.str() + ".s";
+  }
 
   error_ = "";
 
