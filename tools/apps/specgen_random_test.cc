@@ -137,7 +137,7 @@ int main(int argc, char** argv) {
   cout << "stoke supports " << stoke_count << " instructions" << endl;
   cout << "  only stoke: " << only_stoke << endl;
 
-  Opcode opcode = Opcode::ADC_R8_RH;
+  Opcode opcode = Opcode::ADC_R8_IMM8;
   auto instr = get_random_instruction(opcode, gen);
 
   cout << instr << endl;
@@ -149,19 +149,19 @@ int main(int argc, char** argv) {
   TUnit fxn(code);
   Cfg cfg(fxn, RegSet::universe(), RegSet::empty());
 
-  CpuState initial_concrete;
-  if (!sg.get(initial_concrete, cfg)) {
+  CpuState initial;
+  if (!sg.get(initial, cfg)) {
     cout << "Could not generate state: " << sg.get_error() << endl;
     return 1;
   }
 
   Sandbox sb2(sb);
-  sb2.insert_input(initial_concrete);
+  sb2.insert_input(initial);
   sb2.run(cfg);
-  CpuState concrete = *sb2.get_result(0);
+  CpuState final = *sb2.get_result(0);
 
-  if (concrete.code != stoke::ErrorCode::NORMAL) {
-    cout << "Error code not normal: " << (int)concrete.code << endl;
+  if (final.code != stoke::ErrorCode::NORMAL) {
+    cout << "Error code not normal: " << (int)final.code << endl;
     return 1;
   }
 
@@ -171,94 +171,44 @@ int main(int argc, char** argv) {
   }
 
   // build circuits
-  SymState strata_state(initial_concrete);
-  SymState concrete_sym(concrete);
-  strata_handler.build_circuit(instr, strata_state);
+  SymState final_strata(initial);
+  SymState final_sym(final);
+  strata_handler.build_circuit(instr, final_strata);
 
-  vector<SymBool> constraints;
-  for (auto it : strata_state.constraints)
-    constraints.push_back(it);
-  for (auto it : strata_state.equality_constraints(concrete_sym, RegSet::universe())) {
-    constraints.push_back(it);
+  // check equivalence of two symbolic states for a given register
+  auto is_eq = [&solver](auto& reg, auto a, auto b, stringstream& explanation) {
+    SymBool eq = a == b;
+    bool res = solver.is_sat({ eq });
+    if (solver.has_error()) {
+      explanation << "  solver encountered error: " << solver.get_error() << endl;
+      return false;
+    }
+    if (!res) {
+      explanation << "  states do not agree for '" << (*reg) << "':" << endl;
+      explanation << "    strata: " << a << endl;
+      explanation << "    stoke:  " << b << endl;
+      return false;
+    } else {
+      return true;
+    }
+  };
+
+  auto rs = RegSet::universe() - (RegSet::empty() + Constants::eflags_af());
+  auto eq = true;
+  stringstream ss;
+  for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
+    eq = eq && is_eq(gp_it, final_strata.lookup(*gp_it), final_sym.lookup(*gp_it), ss);
   }
-
-  bool res = solver.is_sat(constraints);
-  if (solver.has_error()) {
-    cout << "Solver encountered error: " << solver.get_error() << endl;
+  for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
+    eq = eq && is_eq(sse_it, final_strata.lookup(*sse_it), final_sym.lookup(*sse_it), ss);
+  }
+  for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
+    eq = eq && is_eq(flag_it, final_strata[*flag_it], final_sym[*flag_it], ss);
+  }
+  if (!eq) {
+    cout << "States do not agree for '" << instr << "' (opcode " << opcode << ")" << endl;
+    cout << ss.str();
+    cout << endl << endl;
     exit(1);
   }
-  if (!res) {
-    cout << "Concrete and symbolic state disagree!" << endl;
-    exit(1);
-  } else {
-    cout << "OK" << endl;
-  }
-
-  // if (strata_handler.get_support(instr) == Handler::SupportLevel::NONE) {
-  //   cout << "strata does not support '" << instr << "'." << endl;
-  //   exit(3);
-  // }
-
-  // // build circuits for strata and stoke
-  // SymState strata_state("", true);
-  // SymState stoke_state("", true);
-  // strata_handler.build_circuit(instr, strata_state);
-  // stoke_handler.build_circuit(instr, stoke_state);
-
-  // if (stoke_handler.has_error()) {
-  //   cout << "STOKE handler produced an error: " << stoke_handler.error() << endl;
-  //   exit(5);
-  // }
-  // if (strata_handler.has_error()) {
-  //   cout << "strata handler produced an error: " << strata_handler.error() << endl;
-  //   exit(6);
-  // }
-
-  // // check equivalence of two circuits for a given register
-  // auto is_eq = [&solver](auto& reg, auto a_in, auto b_in, stringstream& explanation) {
-  //   auto a = (a_in);
-  //   auto b = (b_in);
-  //   SymBool eq = a == b;
-  //   SymPrettyVisitor pretty(explanation);
-  //   bool res = solver.is_sat({ !eq });
-  //   if (solver.has_error()) {
-  //     explanation << "  solver encountered error: " << solver.get_error() << endl;
-  //     return false;
-  //   }
-  //   if (!res) {
-  //     return true;
-  //   } else {
-  //     explanation << "  not equivalent for '" << (*reg) << "':" << endl;
-  //     explanation << "    strata: ";
-  //     pretty(a);
-  //     explanation << endl;
-  //     explanation << "    stoke:  ";
-  //     pretty(b);
-  //     explanation << endl;
-  //     return false;
-  //   }
-  // };
-
-  // auto rs = instr.must_write_set();
-  // // the base circuits don't have %af at the moment
-  // rs -= (RegSet::empty() + Constants::eflags_af());
-  // auto eq = true;
-  // stringstream ss;
-  // for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
-  //   eq = eq && is_eq(gp_it, strata_state.lookup(*gp_it), stoke_state.lookup(*gp_it), ss);
-  // }
-  // for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
-  //   eq = eq && is_eq(sse_it, strata_state.lookup(*sse_it), stoke_state.lookup(*sse_it), ss);
-  // }
-  // for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
-  //   eq = eq && is_eq(flag_it, strata_state[*flag_it], stoke_state[*flag_it], ss);
-  // }
-  // if (!eq) {
-  //   cout << "Circuit for '" << instr << "' (opcode " << opcode << ")" << endl;
-  //   cout << ss.str();
-  //   cout << endl << endl;
-  //   exit(4);
-  // }
-
-  // cout << "Equivalent." << endl;
 }

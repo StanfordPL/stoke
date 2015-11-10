@@ -206,10 +206,38 @@ bool is_register_only(Opcode opcode) {
     case x64asm::Type::XMM_0:
     case x64asm::Type::XMM:
     case x64asm::Type::YMM:
+
+    // also allow some non-register but fixed operands
+    case x64asm::Type::ZERO:
+    case x64asm::Type::ONE:
+    case x64asm::Type::THREE:
       break;
     default:
       return false;
     }
+  }
+  return true;
+}
+
+bool is_register_type(const Type& t) {
+  switch (t) {
+  case x64asm::Type::RH:
+  case x64asm::Type::AL:
+  case x64asm::Type::CL:
+  case x64asm::Type::R_8:
+  case x64asm::Type::AX:
+  case x64asm::Type::DX:
+  case x64asm::Type::R_16:
+  case x64asm::Type::EAX:
+  case x64asm::Type::R_32:
+  case x64asm::Type::RAX:
+  case x64asm::Type::R_64:
+  case x64asm::Type::XMM_0:
+  case x64asm::Type::XMM:
+  case x64asm::Type::YMM:
+    break;
+  default:
+    return false;
   }
   return true;
 }
@@ -326,6 +354,7 @@ void StrataHandler::init() {
 
       if (same_widths) {
         found = true;
+        // cout << opcode << "->" << option << endl;
         reg_only_alternative_[opcode] = option;
         break;
       }
@@ -351,7 +380,7 @@ void StrataHandler::init() {
         if (larger_widths) {
           found = true;
           // cout << opcode << " -> " << option << endl;
-          reg_only_alternative_[opcode] = option;
+          // reg_only_alternative_[opcode] = option;
           break;
         }
       }
@@ -377,7 +406,7 @@ void StrataHandler::init() {
         if (larger_widths) {
           found = true;
           // cout << opcode << " -> " << option << endl;
-          reg_only_alternative_[opcode] = option;
+          // reg_only_alternative_[opcode] = option;
           break;
         }
       }
@@ -466,7 +495,19 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     return;
   }
 
+  // keep a copy of the start state
+  SymState start = final;
+
   // handle imm instructions
+  if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+    // get circuit for register only opcode
+    Instruction alt = get_instruction(reg_only_alternative_[opcode]);
+    ch_.build_circuit(alt, start);
+    if (ch_.has_error()) {
+      error_ = "StrataHandler encountered an error: " + ch_.error();
+      return;
+    }
+  }
 
   auto typecheck = [&tc, this](auto circuit, size_t exptected_size) {
     auto actual = tc(circuit);
@@ -485,9 +526,6 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     }
     return true;
   };
-
-  // keep a copy of the start state
-  SymState start = final;
 
   // read program
   ifstream file(candidate_file);
