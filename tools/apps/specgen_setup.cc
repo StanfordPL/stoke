@@ -78,7 +78,7 @@ int main(int argc, char** argv) {
     exit(3);
   }
   Opcode opc;
-  stringstream ss(opc_arg.value());
+  stringstream ss(opc_str);
   ss >> opc;
   if (opc == LABEL_DEFN) {
     cerr << "ERROR: could not parse opcoce: " << opc_arg.value() << endl;
