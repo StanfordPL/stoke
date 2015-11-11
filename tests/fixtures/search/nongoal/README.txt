@@ -1,0 +1,1 @@
+This tests --non_goal (see issue #639).

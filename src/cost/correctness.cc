@@ -38,7 +38,9 @@ CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, 
   reference_out_.clear();
   recompute_target_defs(target.live_outs());
 
-  sandbox_->run(target);
+  sandbox_->insert_function(target);
+  sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
+  sandbox_->run();
   for (auto i = sandbox_->result_begin(), ie = sandbox_->result_end(); i != ie; ++i) {
     reference_out_.push_back(*i);
   }
@@ -48,12 +50,12 @@ CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, 
 void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
 
   target_gp_out_.clear();
-  for(auto i = rs.gp_begin(), ie = rs.gp_end(); i != ie; ++i) {
+  for (auto i = rs.gp_begin(), ie = rs.gp_end(); i != ie; ++i) {
     target_gp_out_.push_back(*i);
   }
 
   target_sse_out_.clear();
-  for(auto i = rs.any_sub_sse_begin(), ie = rs.any_sub_sse_end(); i != ie; ++i) {
+  for (auto i = rs.any_sub_sse_begin(), ie = rs.any_sub_sse_end(); i != ie; ++i) {
     target_sse_out_.push_back(*i);
   }
 
@@ -64,10 +66,10 @@ void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
 
   // TODO -- An x64asm iterator over these flags would be nice
   target_rf_out_.clear();
-  for(auto f: {
-        eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
-      }) {
-    if(rs.contains(f)) {
+  for (auto f: {
+         eflags_cf, eflags_pf, eflags_af, eflags_zf, eflags_of, eflags_sf
+       }) {
+    if (rs.contains(f)) {
       target_rf_out_.push_back(f);
     }
   }
@@ -186,7 +188,7 @@ Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSe
       uint64_t val_r;
       bool is_same = false;
       auto is_r_rh = (*r_r).type() == Type::RH;
-      if (!(is_t_rh && is_r_rh)) {
+      if (!is_t_rh && !is_r_rh) {
         // normal case, we are looking at two non-rh registers
         val_r = r.read_gp(*r_r, size, 0);
         is_same = ((uint64_t)r_t) == ((uint64_t)*r_r);
@@ -203,7 +205,7 @@ Cost CorrectnessCost::gp_error(const CpuState& t, const CpuState& r, const RegSe
         }
         // get rh register that corresponds to r
         auto rh = Constants::rhs()[*r_r];
-        is_same = r_t == rh;
+        is_same = rh == r_t;
         val_r = r[rh];
       } else {
         // r is an rh register, but t is not, so no match
@@ -373,6 +375,9 @@ Cost CorrectnessCost::undef_default(size_t num_bytes) const {
   case Distance::HAMMING:
     res = 8*num_bytes;
     break;
+  case Distance::DOUBLEWORD:
+    res = (num_bytes + 3)/4;
+    break;
   case Distance::ULP:
     res = max_error_cost;
     break;
@@ -397,6 +402,8 @@ Cost CorrectnessCost::evaluate_distance(uint64_t x, uint64_t y) const {
     return hamming_distance(x, y);
   case Distance::ULP:
     return ulp_distance(x, y);
+  case Distance::DOUBLEWORD:
+    return doubleword_distance(x,y);
   default:
     assert(false);
     return 0;

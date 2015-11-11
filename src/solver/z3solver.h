@@ -18,7 +18,7 @@
 
 #include <map>
 
-#include "src/ext/z3/include/z3++.h"
+#include "src/ext/z3/src/api/c++/z3++.h"
 #include "src/solver/smtsolver.h"
 #include "src/symstate/bitvector.h"
 
@@ -29,8 +29,21 @@ class Z3Solver : public SMTSolver {
 
 public:
   /** Instantiate a new Z3 solver */
-  Z3Solver() : SMTSolver() {
+  Z3Solver() : SMTSolver(), solver_(context_) {
     model_ = NULL;
+
+    context_.set("timeout", (int)timeout_);
+  }
+
+  SMTSolver& set_timeout(uint64_t ms) {
+    timeout_ = ms;
+    context_.set("timeout", (int)timeout_);
+    return *this;
+  }
+
+  ~Z3Solver() {
+    if (model_ != NULL)
+      delete model_;
   }
 
   /** Check if a query is satisfiable given constraints */
@@ -49,7 +62,8 @@ private:
 
   /** The Z3 context we're working with */
   z3::context context_;
-
+  /** The Z3 solver. */
+  z3::solver solver_;
   /** Stores the most recent satisfying assignment */
   z3::model* model_;
 
@@ -60,11 +74,11 @@ private:
 
 
   /** This class converts symbolic bit-vectors into Z3's format. */
-  class ExprConverter : public SymVisitor<z3::expr> {
+  class ExprConverter : public SymVisitor<z3::expr, z3::expr> {
 
   public:
     ExprConverter(z3::context& cntx, std::vector<SymBool>& constraints)
-      : context_(cntx), constraints_(constraints) {}
+      : constraints_(constraints), context_(cntx) {}
 
     z3::expr visit_binop(const SymBitVectorBinop * const bv) {
       // We can't support anything generically.  Error!
@@ -94,12 +108,12 @@ private:
     /** Visit some bit vector */
     z3::expr operator()(const SymBitVector& bv) {
       error_ = "";
-      return SymVisitor<z3::expr>::operator()(bv.ptr);
+      return SymVisitor<z3::expr, z3::expr>::operator()(bv.ptr);
     }
     /** Visit some bit bool */
     z3::expr operator()(const SymBool& b) {
       error_ = "";
-      return SymVisitor<z3::expr>::operator()(b.ptr);
+      return SymVisitor<z3::expr, z3::expr>::operator()(b.ptr);
     }
 
     /** Visit a bit-vector AND */

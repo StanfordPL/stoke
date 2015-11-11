@@ -117,7 +117,7 @@ public:
   /** Write text. */
   std::ostream& write_text(std::ostream& os, const char** names, size_t padding) const;
   /** Read text. */
-  std::istream& read_text(std::istream& is);
+  std::istream& read_text(std::istream& is, const char** names);
 
   /** Write binary. */
   std::ostream& write_bin(std::ostream& os) const {

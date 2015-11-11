@@ -28,7 +28,7 @@ SearchState::SearchState(const Cfg& target, const Cfg& previous, Init init, size
   assert(target.check_invariants());
   assert(target.get_function().check_invariants());
 
-  switch(init) {
+  switch (init) {
   case Init::TARGET:
     configure_target(target, size);
     break;
@@ -83,7 +83,7 @@ void SearchState::configure_zero(const Cfg& target, size_t size) {
   }
 
   // Compute a minimal function that covers live-outs
-  const auto minimal = CfgTransforms().minimal_correct_cfg(target.def_ins(), target.live_outs());
+  const auto minimal = CfgTransforms::minimal_correct_cfg(target.def_ins(), target.live_outs());
   const auto& code = minimal.get_code();
 
   // Start with initial label

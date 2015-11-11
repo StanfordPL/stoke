@@ -21,28 +21,28 @@ using namespace x64asm;
 
 Handler::SupportLevel AddHandler::get_support(const x64asm::Instruction& instr) {
 
-  if(!operands_supported(instr)) {
+  if (!operands_supported(instr)) {
     return Handler::NONE;
   }
 
   string opcode = get_opcode(instr);
 
-  if(opcode == "adcb" || opcode == "adcw" || opcode == "adcl" || opcode == "adcq")
+  if (opcode == "adcb" || opcode == "adcw" || opcode == "adcl" || opcode == "adcq")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
 
-  if(opcode == "addb" || opcode == "addw" || opcode == "addl" || opcode == "addq")
+  if (opcode == "addb" || opcode == "addw" || opcode == "addl" || opcode == "addq")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
 
-  if(opcode == "cmpb" || opcode == "cmpw" || opcode == "cmpl" || opcode == "cmpq")
+  if (opcode == "cmpb" || opcode == "cmpw" || opcode == "cmpl" || opcode == "cmpq")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
 
-  if(opcode == "sbbb" || opcode == "sbbw" || opcode == "sbbl" || opcode == "sbbq")
+  if (opcode == "sbbb" || opcode == "sbbw" || opcode == "sbbl" || opcode == "sbbq")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
 
-  if(opcode == "subb" || opcode == "subw" || opcode == "subl" || opcode == "subq")
+  if (opcode == "subb" || opcode == "subw" || opcode == "subl" || opcode == "subq")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
 
-  if(opcode == "xaddb" || opcode == "xaddw" || opcode == "xaddl" || opcode == "xaddq")
+  if (opcode == "xaddb" || opcode == "xaddw" || opcode == "xaddl" || opcode == "xaddq")
     return (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
 
   return Handler::NONE;
@@ -54,7 +54,7 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   // Sanity check for support
   error_ = "";
 
-  if(!get_support(instr)) {
+  if (!get_support(instr)) {
     error_ = "Instruction not supported.";
     return;
   }
@@ -81,7 +81,7 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   Operand src  = instr.get_operand<Operand>(1);
 
   // Do the exchange if need be
-  if(exchange) {
+  if (exchange) {
     SymBitVector tmp = state[src];
     state.set(src, state[dest]);
     state.set(dest, tmp);
@@ -97,7 +97,7 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
     src_bv = src_bv.extend(dest.size());
   }
 
-  if(subtract) {
+  if (subtract) {
     src_bv = !src_bv;
   }
 
@@ -105,12 +105,12 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   SymBitVector ext_src = SymBitVector::constant(1, 0) || src_bv;
   SymBitVector ext_dst = SymBitVector::constant(1, 0) || dst_bv;
 
-  if(subtract) {
+  if (subtract) {
     // This addition takes care of two things at once; on one hand,
     // if finishes the two's complement negation started earlier.
     // On the other, it adds one to the src if the carry flag is
     // set.  These are accomplished simultaneously here.
-    if(!carry)
+    if (!carry)
       ext_src = ext_src + SymBitVector::constant(width + 1, 1);
     else
       ext_src = state[eflags_cf].ite( ext_src,
@@ -118,7 +118,7 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
 
   }
 
-  if(carry && !subtract) {
+  if (carry && !subtract) {
     ext_src = state[eflags_cf].ite(
                 ext_src + SymBitVector::constant(width + 1, 1),
                 ext_src);
@@ -132,12 +132,12 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
 
   // Set the destination value; takes care of perserving
   // other bits and setting other bits to zero
-  if(!compare)
+  if (!compare)
     state.set(dest, total[width-1][0]);
 
   state.set(eflags_of, plus_of(src_bv[width-1], dst_bv[width-1], total[width-1]));
 
-  if(!subtract)
+  if (!subtract)
     state.set(eflags_cf, total[width]);
   else
     state.set(eflags_cf, !total[width]);

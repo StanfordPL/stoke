@@ -22,9 +22,11 @@
 #include "src/cost/measured.h"
 #include "src/cost/size.h"
 #include "src/cost/sseavx.h"
+#include "src/cost/nongoal.h"
 #include "tools/args/cost.inc"
 #include "tools/gadgets/correctness_cost.h"
 #include "tools/gadgets/latency_cost.h"
+#include "tools/gadgets/nongoal_cost.h"
 
 namespace stoke {
 
@@ -54,23 +56,24 @@ private:
     st["measured"] =     new MeasuredCost();
     st["size"] =         new SizeCost();
     st["sseavx"] =       new SseAvxCost();
+    st["nongoal"] =      new NonGoalCostGadget(target);
 
     CostParser cost_p(cost_function_arg.value(), st);
     auto cost_fxn = cost_p.run();
-    if(cost_p.get_error().size()) {
+    if (cost_p.get_error().size()) {
       cpputil::Console::error(1) << "Error parsing cost function: " << cost_p.get_error() << std::endl;
     }
-    if(cost_fxn == NULL) {
+    if (cost_fxn == NULL) {
       cpputil::Console::error(1) << "Unknown error parsing cost function." << std::endl;
     }
 
     CostParser correct_p(correctness_arg.value(), st);
     auto correctness_fxn = correct_p.run();
-    if(correct_p.get_error().size()) {
+    if (correct_p.get_error().size()) {
       cpputil::Console::error(1) << "Error parsing correctness function: " << correct_p.get_error()
                                  << std::endl;
     }
-    if(correctness_fxn == NULL) {
+    if (correctness_fxn == NULL) {
       cpputil::Console::error(1) << "Unknown error parsing correctness function." << std::endl;
     }
 

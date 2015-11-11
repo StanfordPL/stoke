@@ -41,6 +41,10 @@ public:
     timeout_ = ms;
     return *this;
   }
+  /** Get the timeout last set. */
+  virtual uint64_t get_timeout() {
+    return timeout_;
+  }
 
   /** Check if a query is satisfiable given constraints */
   virtual bool is_sat(const std::vector<SymBool>& constraints) = 0;

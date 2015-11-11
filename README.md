@@ -8,7 +8,7 @@ produce a code sequence that is both correct and an improvement over the
 original, the repeated application of millions of transformations is sufficient
 to produce novel and non-obvious code sequences that have been shown to
 outperform the code produced by general-purpose and domain-specific compilers,
-           and in some cases expert hand-written code.
+and in some cases expert hand-written code.
 
 STOKE has appeared in a number of publications. For a thorough introduction to
 the design of STOKE, see:
@@ -20,18 +20,20 @@ the design of STOKE, see:
 Table of Contents
 =====
 0. [Prerequisites](#prerequisites)
-1. [Downloading and Building STOKE](#downloading-and-building-stoke)
-2. [Using STOKE](#using-stoke)
-3. [Additional Features](#additional-features)
-4. [Extending STOKE](#extending-stoke)
+1. [Choosing a STOKE version](#choosing-a-stoke-version)
+2. [Building STOKE](#building-stoke)
+ 1. [Using the formal validator](#using-the-formal-validator)
+3. [Using STOKE](#using-stoke)
+4. [Additional Features](#additional-features)
+5. [Extending STOKE](#extending-stoke)
  1. [Code Organization](#code-organization)
- 2. [Initial Search State](#initial-search-state)
- 3. [Search Transformations](#search-transformations)
- 4. [Cost Function](#cost-function)
- 6. [Live-out Error](#computing-error)
+ 2. [Gadgets](#gadgets)
+ 3. [Initial Search State](#initial-search-state)
+ 4. [Search Transformations](#search-transformations)
+ 5. [Cost Function](#cost-function)
+ 6. [Live-out Error](#live-out-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
-5. [Frequently Asked Questions](#frequently-asked-questions)
 6. [Contact](#contact)
 
 Prerequisites
@@ -48,7 +50,7 @@ To check what level of hardware support you have, run:
     
 and check if the following cpu flags are present:
 
-    $ flags: ... avx avx2 bmi bmi2 popcnt ...
+    flags: ... avx avx2 bmi bmi2 popcnt ...
 
 If you don't have 'avx' or 'avx2', you will need to compile for nehalem.  If
 you have 'avx', but not avx2, you will compile for 'sandybridge'.  If you have
@@ -58,34 +60,66 @@ section.
 STOKE is supported on the latest Ubuntu LTS release; in practice, it will also
 run on Ubuntu 13.10+ and on debian testing.  If you're trying to get STOKE to
 work on another linux distribution, having the right version of g++ is key.
-STOKE is supported on 4.8.2 only (this is the current version in Ubuntu 14.04).
-It should also work on 4.9.1, but in the past this has required minor tweaks
-(4.9.1 is the current version in Debian testing).  g++ 4.7.x and older
+STOKE is supported on 4.9 only.
+It should also work on later versions, but it will not work with g++ 4.8.x (missing regular expression support), and  g++ 4.7.x and older
 definitely will not work.
 
 Most of STOKE's software dependencies are available through apt. These can be
 satisfied by typing:
 
-    $ sudo apt-get install git subversion flex bison ccache doxygen g++ g++-multilib ghc libghc-regex-tdfa-dev libghc-regex-compat-dev libghc-split-dev cmake libghc-regex-compat-dev libjsoncpp-dev libcln-dev
+    $ sudo apt-get install bison ccache cmake doxygen exuberant-ctags flex g++-4.9 g++-multilib gcc-4.9 ghc git libantlr3c-dev libboost-dev libboost-filesystem-dev libboost-thread-dev libcln-dev libghc-regex-compat-dev libghc-regex-tdfa-dev libghc-split-dev libjsoncpp-dev python subversion
 
 The rest of the dependencies will be fetched automatically as part of the build
 process.
 
-Downloading and Building STOKE
+Choosing a STOKE version
 =====
 
-The entire STOKE code base, is available on github under the Apache Software
-License version 2.0. To clone a copy of the source code, type:
+The entire STOKE code base is available on GitHub under the Apache Software
+License version 2.0 at [github.com/StanfordPL/stoke-release](https://github.com/StanfordPL/stoke-release/).
 
-    $ git clone https://github.com/eschkufz/stoke
+We provide both stable releases as well as our latest development code.  There are different trade-offs in deciding which one to use:
 
-See the previous section for a list of dependencies, and to check your hardware
+- **Development branch**:  This is our development branch, that
+we use day-to-day.  It contains the latest bug fixes and features, but also the
+latest bugs.  Sometimes it noticeably breaks, but usually it's okay.  The only
+guarantee is that this branch will always pass our regression tests.  We
+sometimes make non-backwards compatible changes, such as changing the syntax of
+command-line arguments.  We can't promise support for this, but feel free to
+ask.
+- **Release**:  We typically release the version that corresponds to the papers
+we write.  Most likely this is a version of STOKE that has been used to run the
+experiments for a paper, and at least worked for that task.  However, we rarely
+update releases, and so they might contain bugs, some of which may have already
+been fixed by us.  We also don't tend to release very often, so a release might
+be considerably out-of-date.
+
+We leave it to the user to decide which version works best for them.  If you find a bug, please try the development branch first to see if has already been fixed.
+
+To get the development branch, type:
+
+    $ git clone -b development https://github.com/StanfordPL/stoke-release
+
+The `master` branch always points to the latest release (plus potentially some back-ported bugfixes).  To get it, type:
+
+    $ git clone -b master https://github.com/StanfordPL/stoke-release
+
+or alternatively download it under the releases on GitHub.
+
+
+Building STOKE
+=====
+
+See the previous sections on how to download STOKE, a list of dependencies, and to check your hardware
 support level.  The remainder of STOKE's software dependencies are available on
-github and will be downloaded automatically the first time that STOKE is built.
-To build stoke for a Haswell system type the appropriate command for your
+GitHub and will be downloaded automatically the first time that STOKE is built.
+To build STOKE for a Haswell system type the appropriate command for your
 system (the default is Haswell):
 
     $ make
+
+If you are on a different architecture, use the appropriate target:
+
     $ make sandybridge
     $ make nehalem
 
@@ -93,8 +127,7 @@ To add STOKE and its related components to your path, type:
 
     $ export PATH=$PATH:/<path_to_stoke>/bin
 
-Setting the path is important for the testing tools to run.  To run the tests,
-choose the appropriate command:
+To run the tests, choose the appropriate command:
 
     $ make test
     $ make sandybridge_test
@@ -103,8 +136,8 @@ choose the appropriate command:
 The files generated during the build process can be deleted by typing:
 
     $ make clean
-    
-To delete STOKE's github-hosted software dependencies as well (this is useful if an error occurs during the first build), type:
+
+To delete STOKE's dependencies as well (this is useful if an error occurs during the first build), type:
 
     $ make dist_clean
 
@@ -114,7 +147,11 @@ Using STOKE
 =====
 
 The following toy example shows a typical workflow for using STOKE. All of the
-following code can be found in the `examples/tutorial/` directory. Consider a
+following code can be found in the `examples/tutorial/` directory.  As this
+code is tested using our continuous integration system, the code there will
+always be up-to-date, but this README can fall behind.
+
+Consider a
 C++ program that repeatedly counts the number of bits (population count) in the
 64-bit representation of an integer. (Keeping track of a running sum prevents
 `g++` from eliminating the calls to `popcnt()` altogether.)
@@ -160,7 +197,7 @@ To measure runtime, type:
     
     real  0m1.046s
     user  0m1.047s
-    sys	  0m0.000s
+    sys   0m0.000s
     
 A profiler will reveal that the runtime of `./a.out` is dominated by calls to
 the `popcnt()` function. STOKE can be used to improve the implementation of
@@ -235,6 +272,7 @@ where `testcase.conf` contains:
 
 --bin ./a.out # The name of the binary to use to generate testcases 
 --args 10000000 # Command line arguments that should be passed to ./a.out
+--functions bins # Disassembly directory created by stoke extract
 
 -o popcnt.tc # Path to file to write testcases to
 
@@ -311,26 +349,43 @@ Testcase 0:
 
 [ 00000000 00000000 - 00000000 00000000 ]
 [ 0 valid rows shown ]
+
+[ 00000000 00000000 - 00000000 00000000 ]
+[ 0 valid rows shown ]
+
+0 more segment(s)
 ```
 
 Each entry corresponds to the hardware state that was observed just prior to an
 execution of the `popcnt()` function. The first 60 rows represent the contents
-of general purpose, sse, and eflags registers, and the remaining rows represent 
-the contents of memory, both on the stack and the heap. Memory is shown eight bytes
-at a time, where a block of eight bytes appears only if the target dereferenced
-at least one of those bytes. Each row contains values and state flags. Bytes
-are flagged as either (v)alid (the target dereferenced this byte), (d)efined
-(the target read this byte prior to reading its value), or (.)invalid (the
-    target did not dereference this byte). 
+of general purpose, sse, and eflags registers, and the remaining rows represent
+the contents of memory, both on the stack and the heap. Memory is shown eight
+bytes at a time, where a block of eight bytes appears only if the target
+dereferenced at least one of those bytes. Each row contains values and state
+flags. Bytes are flagged as either (v)alid (the target dereferenced this byte),
+  or (.)invalid (the target did not dereference this byte). 
 
 Each of the random transformations performed by STOKE are evaluated with
 respect to the contents of this file. Rewrites are compiled into a sandbox and
 executed beginning from the machine state represented by each entry. Rewrites
 are only permitted to dereference defined locations. This includes registers
 that are flagged as `def_in` (see `search.conf`, below), memory locations that
-are flagged as 'd', or locations that were written previously. Rewrites are
+are flagged as 'v', or locations that were written previously. Rewrites are
 permitted to write values to all registers and to any memory location that is
 flagged as valid. 
+
+STOKE will produce optimal code that works on the testcases.  The testcases
+need to be selected to help ensure that STOKE doesn't produce an incorrect
+rewrite.  In our main.cc file in `examples/tutorial` we choose arguments to the
+`popcnt` function to make sure that it sometimes provides arguments that use
+more than 32 bits.  Otherwise, STOKE will sometimes produce a rewrite using the
+`popcntl` instruction, which only operates on the bottom half of the register,
+instead of the `popcntq` instruction, which operates on the whole thing.
+  Alternatively you can use the formal validator in bounded mode with a large
+  bound (over 32).  This large bound is tractable because this example doesn't
+  has a small number of cases for memory aliasing (namely, none at all!).  If a
+  counterexample is found it can be automatically added to the search so STOKE
+  won't make this mistake again.
 
 The STOKE sandbox will safely halt the execution of rewrites that perform
 undefined behavior. This includes leaving registers in a state that violates
@@ -361,32 +416,25 @@ where `search.conf` contains:
 --test_set "{ 8 ... 1023 }"  # Testcases to use as holdout set for checking correctness
 
 --distance hamming # Metric for measuring error between live-outs
---relax_reg # Allow partial credit for results that appear in wrong locations
 --misalign_penalty 1 # Penalty for results that appear in the wrong location
 --reduction sum # Method for summing errors across testcases
 --sig_penalty 9999 # Score to assign to rewrites that produce non-zero signals
 
---perf latency # Measure performance by summing instruction latencies
-
---cpu_flags "{ popcnt }" # cpuid flags to use when proposing instructions
---mem_read # Propose instructions that read memory
---mem_write # Propose instructions that write memory
+--cost "correctness + latency" # Measure performance by summing instruction latencies
 
 --global_swap_mass 0 # Proposal mass
 --instruction_mass 1 # Proposal mass
 --local_swap_mass 1 # Proposal mass
 --opcode_mass 1 # Proposal mass
 --operand_mass 1 # Proposal mass
---resize_mass 0 # Proposal mass
+--rotate_mass 0 # Proposal mass
 
---nop_percent 80 # Percent of instruction moves that produce nop
 --beta 1 # Search annealing constant
---max_instrs 8 # The maximum number of instruction allowed in a rewrite
+--initial_instruction_number 5 # The number of nops to start with
 
 --statistics_interval 100000 # Print statistics every 100k proposals
---timeout 1000000 # Propose 1m modifications before giving up
---timeout_action testcase # Try adding a new testcase from the testset when search times out
---timeout_cycles 16 # Timeout up to 16 times before giving up
+--timeout_iterations 16000000 # Propose 16m modifications total before giving up
+--cycle_timeout 1000000 # Try 1m modifications before restarting
 
 --strategy hold_out # Verify results using a larger hold out testcase set
 ```
@@ -435,7 +483,7 @@ Move Type       Proposed     Succeeded     Accepted
 Instruction     16.791%      5.83%         2.009%       
 Opcode          16.646%      8.857%        4.013%       
 Operand         16.593%      10.444%       6.864%       
-Resize          16.611%      0.791%        0.789%       
+Rotate          16.611%      0.791%        0.789%       
 Local Swap      16.597%      1.556%        1.128%       
 Global Swap     16.762%      7.066%        6.08%     
 Extension       0%           0%            0%
@@ -476,7 +524,7 @@ And runtime can once again be measured by typing:
     
     real  0m0.133s
     user  0m0.109s
-    sys	  0m0.000s    
+    sys   0m0.000s    
 
 As expected, the results are close to an order of magnitude faster than the original.
 
@@ -484,9 +532,10 @@ Using the Formal Validator
 -----
 
 This release of STOKE includes a formal validator.  It's design and interface
-are detailed in the `src/validator/README.md` file.  To use the formal validator
-instead of hold out testing, specify `--strategy formal` for any
-STOKE binary that you use.
+are detailed in the `src/validator/README.md` file.  To use the formal
+validator instead of hold out testing, specify `--strategy bounded` for any
+STOKE binary that you use.  For code with loops, all paths will be explored up
+to a certain depth, specified using the --bound argument, which defaults to 2.
 
 An example of using the validator can be found in the `examples/pairity`
 folder; this example has a Makefile much like the tutorial's and should be easy
@@ -501,12 +550,7 @@ There are some important limitations to keep in mind while using the validator:
 can be used to only propose instructions that can be validated.
 - Only the general purpose registers, SSE registers (`ymm0`-`ymm15`) and five of
 the status flags (`CF`, `SF`, `PF`, `ZF`, `OF`) are supported.
-- There is basic, experimental support for memory.  **Memory is not supported
-for input or output; the validator will check equivalence of codes that use
-memory, but will not check that they leave the machine's memory in the same
-state. **.  For example, if a program writes to memory and then later reads
-it, the validator supports this.  But, if two programs manipulate memory,
-the validator will not check if their modifications are equivalent.
+- Memory is now fully supported, even in the presence of complex aliasing.
 
 
 Additional Features
@@ -533,8 +577,8 @@ Shell completion
 
 STOKE also comes with support for bash and zsh completion.  To enable either, type:
 
-	$ make bash_completion
-	$ make zsh_completion
+  $ make bash_completion
+  $ make zsh_completion
 
 Using functions to be proposed by STOKE
 -----
@@ -575,17 +619,53 @@ The STOKE source is organized into modules, each of which correspond to a
 subdirectory of the `src/` directory:
 
 - `src/analysis`: An aliasing analysis used by the validator.
-- `src/cfg`: Classes for representing and manipulating control flow graphs.
-- `src/cost`: Classes for computing cost functions.
+- `src/cfg`: Control flow graph representation and program analysis.
+- `src/cost`: Different cost functions that can be used in the search.
+- `src/disassembler`: Runs objdump and parses the results into STOKE's format.
+- `src/expr`:  A helper used to parse arithmetic expressions in config files.
 - `src/ext`: External dependencies.
-- `src/sandbox`: Classes for safely executing random code sequences.
-- `src/search`: Classes for performing MCMC sampling.
-- `src/state`: Classes for representing and manipulating hardware machine states.
-- `src/symstate`: Classes for modeling the symbolic state of the hardware, used by the formal validator.
+- `src/sandbox`: A sandbox for testing proposed code on the hardware.
+- `src/search`: An implementation of an MCMC-like algorithm for search.
+- `src/state`: Data structures to represent concrete machine states (testcases).
+- `src/stategen`: Generates concrete machine states (testcaes) for a piece of code.
+- `src/symstate`: Models the symbolic state of the hardware; only used by the formal validator.
 - `src/target`: Code to find which instruction sets the CPU supports.
-- `src/tunit`: Classes for representing translation units (named instruction sequences).
+- `src/transform`: Transforms used during search to mutate the code.
+- `src/tunit`: Classes for representing a function (x86-64 code along with a name and other metadata).
 - `src/verifier`: Wrappers around verification techniques such as testing for formal validation.
 - `src/validator`: The formal validator for proving two codes equivalent.
+
+The `tools/` directory has the code that performs application logic and reads
+command line arguments.
+
+- `tools/apps`: The application logic for stoke binaries
+- `tools/args`: Lists of command line arguments used by a gadget (see below).
+- `tools/gadgets`: Modules used by applications to configure internal APIs with command line arguments.
+- `tools/io`: Code to read/write certain kinds of command line arguments.
+- `tools/scripts`: Where we put stuff when we don't have a better place.  Nothing to see here.
+- `tools/target`: Arbitrarily named directory with code to read CPU features from cpuinfo.
+
+Gadgets
+-----
+
+The stoke codebase is setup in a very modular way.  We have components like the
+`Sandbox`, which emulates execution of a rewrite on hardware.  Or, we have
+subclasses of `CostFunction` which evaluate the quality of a rewrite.  Or, we
+have an `SMTSolver` which is used by the formal validator to query a backend
+like Z3 or CVC4.  
+
+Often, several stoke applications will wish to configure one of these modules
+in the same way, depending on command line arguments.  Thus, we have "Gadgets".
+A "Gadget" is a subclass of the class you wish to configure which takes care of
+extracting all the appropriate command line arguments.  Some Gadgets, like
+`SandboxGadget` just define a constructor so that modifies the object's
+configuration.  More involved ones, like `CostFunctionGadget` actually do work
+to create a new `CostFunction` object and define methods that act as a wrapper.
+
+Therefore, if you want to add a command line option to an existing component of
+stoke, you normally are going to want to modify the gadget for that component
+in `tools/gadgets` and add the argument in `tools/args`.  Once you do that, it
+should show up uniformly in all of the stoke tools that use that module.
 
 Initial Search State
 -----
@@ -645,75 +725,47 @@ void Search::configure_extension(const Cfg& target, SearchState& state) const {
 Search Transformations
 -----
 
-Transformation types are defined in `src/search/move.h` along with an
-additional type for user-defined extensions.
+Transformation types are defined in the `src/transform` directory.  Each
+transform is a subclass of the abstract class `Transform`.  Existing transforms are,
 
-```c++
-enum class Move {
-  INSTRUCTION = 0,
-  OPCODE,
-  OPERAND,
-  RESIZE,
-  LOCAL_SWAP,
-  GLOBAL_SWAP,
+| Name | Description |
+| ---- | ----------- |
+| add_nops | Adds one extra nop instruction into the rewrite. |
+| delete | Deletes one instruction at random. |
+| instruction | Replaces an instruction with another one chosen at random. |
+| opcode | Replaces an instruction's opcode with a new one that takes operands of the same type. |
+| operand | Replaces an operand of one instruction with another. |
+| rotate | Formerly "resize".  Moves an instruction from one basic block to another, and shifts all the instructions in between. |
+| local_swap | Takes two instructions in the same basic block and swaps them. |
+| global_swap |  Takes two instructions in the entire program and swaps them. |
+| weighted | Selects from among several other transforms at random. |
 
-  // Add user-defined extensions here ...
-  EXTENSION,
 
-  NUM_MOVES
-};
-```
+These subclasses each implement `operator()(Cfg& cfg)` to mutate a Cfg.  This
+function returns an object, `TransformInfo` that contains all the information
+needed to undo this transformation, and also whether the transform succeeded
+(transforms are allowed to fail).  It's common for this object to be set with
+indexes of instructions in the code that were modified, for example.  The
+subclass also implements `undo(Cfg& cfg, TransformInfo ti)`.
 
-Transformations are specified using the family of `--xxxxx_mass` command line
-arguments. These values control the distribution of proposals that are made by
-the `Transforms::modify()` method and undone by the `Transforms::undo()`
-method, which dispatch to the family of `Transforms::xxxxx_move()` and
-`Transforms::undo_xxxxx_move()` methods respectively. User-defined extensions
-should be placed in the `Transforms::extension_move()` and
-`Transforms::undo_extension_move()` methods, which can be triggered by
-specifying a non-zero `--extension_mass`.
+Transforms will often want to select from a collection of operands and opcodes,
+and for this purpose they can access the `pools_` protected variable of the
+Transform` superclass.  This is of type `TransformPools` and allows access to
+these collections.  This makes it possible to configure the collection of
+available opcodes and operands independently of the transforms.  Also, the
+`Transform` superclass has a `gen_` member which is used to produce random
+numbers with a known seed.
 
-```c++
-bool Transforms::extension_move(Cfg& cfg) {
-  // Add user-defined implementation here ...
+Transformation weights are specified using the family of `--xxxxx_mass` command
+line arguments. These values control the distribution of proposals that are
+made by the WeightedTransform, which is the transform used by the
+search.
 
-  // Invariant 1:
-  // If this method returns true, it should leave this class in a state such
-  // that calling undo_extension_move() will revert cfg to its original state.
-
-  // Invariant 2:
-  // If this method returns false, it must leave cfg in its original state.
-
-  // Invariant 3:
-  // If validator_ is non-null, validator_->is_sound(instr) must hold true for
-  // all instructions instr upon return.  (You can assume this holds at the
-  // beginning).
-
-  // Invariant 4:
-  // Transformations must preserve the first instruction in a code sequence
-  // which should be a label that represents the name of a function.
-
-  return false;
-}
-```
-
-```c++
-void Transforms::undo_extension_move(Cfg& cfg) {
-  // Add user-defined implementation here ...
-
-  // Invariant: If the previous invocation of extension_move() returned true, this
-  // method must return cfg to its original state. 
-  
-  return;
-}
-```
-
-As above, both performing and undoing a transformation should leave a control
-flow graph in a valid state. In general, this can be performed by invoking the
-`Cfg::recompute()` method. However because these methods are on STOKE's
-critical path, the faster `Cfg::recompute_defs()` method should be used for
-transformations that do not modify control flow structure and only potentially
-invalidate data-flow values.
+A simple example of how to impelement a transform is in
+`src/transform/global_swap.cc`.  Note that all transforms must appropriately
+make a call to recompute any `Cfg` information that needs to be updated and
+ensure that `cfg.check_invariants()` returns true when done (you can assume it
+    returns true at the beginning of the function).
 
 Cost Function
 -----
@@ -734,8 +786,9 @@ Some other important cost-variables you can use are:
 | correctness | How "correct" the rewrite's output appears.  Very configurable. |
 | size | The number of instructions in the assembled rewrite. |
 | latency | A poor-man's estimate of the rewrite latency, in clock cycles, based on the per-opcode latency table in `src/cost/tables`. |
-| measured | An estimate of running time by counting the number of instructions actually executed on the testcases.  Good for algorithmic improvements.  |
+| measured | An estimate of running time by counting the number of instructions actually executed on the testcases.  Good for loops and algorithmic improvements.  |
 | sseavx |  Returns '1' if both avx and sse instructions are used (this is usually bad!), and '0' otherwise.  Often used with a multiplier like `correctness + 1000*sseavx` |
+| nongoal | Returns '1' if the code (after minimization) is found to be equivalent to one in `--non_goal`.  Can also be used with a multiplier. |
 
 In typical usage, you will combine the value of `correctness` with other values
 you want to optimize for.  A good starting point is `correctness + measured` or
@@ -766,12 +819,12 @@ enum class Distance {
 ```
 
 Measurement type is specified using the `--distance` command line argument.
-This value controls the behavior of the `CostFunction::evaluate_distance()
-  const` method, which dispatches to the family of
-  `CostFunction::xxxxx_distance() const` methods, each of which represent a
-  method computing the distance between 64-bit values. User-defined extensions
-  should be placed in the `CostFunction::extension_distance() const` method,
-  which can be triggered by specifying `--distance extension`.
+This value controls the behavior of the `CorrectnessCost::evaluate_distance()
+const` method, which dispatches to the family of
+`CorrectnessCost::xxxxx_distance() const` methods, each of which represent a
+method computing the distance between 64-bit values. User-defined extensions
+should be placed in the `CostFunction::extension_distance() const` method,
+which can be triggered by specifying `--distance extension`.
 
 ```c++
 Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {                                            
@@ -789,46 +842,9 @@ Cost CostFunction::extension_distance(uint64_t x, uint64_t y) const {
 Verification Strategy
 -----
 
-Verification strategy types are defined in `src/verifier/strategy.h` along with
-an additional type for user-defined extensions.
-
-```c++
-enum class Strategy {
-  NONE,
-  HOLD_OUT,
-  FORMAL,
-
-  // Add user-defined extensions here ...
-  EXTENSION
-};
-```
-
-Strategy type is specified using the `--strategy` command line argument. This
-value controls the behavior of the `Verifier::verify()` method, which
-dispatches to the family of `Verifier::xxxxx_verify() const` methods, each of
-which represent a method for verifying correctness. User-defined extensions
-should be placed in the `Verifier::extension_verify()` method, which can be
-triggered by specifying `--strategy extension`.
-
-```c++
-bool Verifier::extension_verify(const Cfg& target, const Cfg& rewrite) {                                         
-  // Add user-defined implementation here ...
-
-  // Invariant 1. If this method returns false and is able to produce a
-  // counter example explaining why, counter_example_available_ should be
-  // set to true.
-
-  // Invariant 2. If this method returns false, and it is able (see above),
-  // counter_example_ should be set to a CpuState that will cause target and
-  // rewrite to produce different values.
-
-  // Invariant 3.  If this method encounters an error, it should set the
-  // error_ member variable to a non-empty string; otherwise the error_
-  // member should be empty.
-
-  return true;
-} 
-``` 
+The verification strategy specifies what kind of verification to do on the
+rewrite.  It's controlled using the `--strategy` command line argument.  Right
+now, the options are 'hold_out', 'straight_line' or 'bounded'.
 
 Command Line Args
 -----
@@ -896,13 +912,8 @@ auto& val = FileArg<Complex, ComplexReader, ComplexWriter>::create("value_name")
   .default_val(Complex());
 ```
 
-Frequently Asked Questions
+
+Contact
 =====
 
-To appear.
-
-Feedback
-=====
-
-Questions and comments are encouraged. The best way to contact the developers
-is with the built-in github issue tracker.
+Questions and comments are encouraged.  Please reach us through the GitHub issue tracker, or alternatively at `stoke-developers@lists.stanford.edu`.

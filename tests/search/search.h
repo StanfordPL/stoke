@@ -16,7 +16,6 @@
 #ifndef _STOKE_TEST_SEARCH_SEARCH_H
 #define _STOKE_TEST_SEARCH_SEARCH_H
 
-#include "tests/search/transform.h"
 #include "src/cfg/cfg_transforms.h"
 
 namespace stoke {
@@ -46,7 +45,7 @@ protected:
     ss1 << "{ " << in << " }";
     ss1 >> def_in_;
 
-    const auto cfg = CfgTransforms().minimal_correct_cfg(def_in_, live_out_);
+    const auto cfg = CfgTransforms::minimal_correct_cfg(def_in_, live_out_);
     ASSERT_TRUE(cfg.check_invariants()) << "def in:   " << def_in_ << std::endl <<
                                         "live out: " << live_out_ << std::endl <<
                                         "cfg.def_outs(): " << cfg.def_outs() << std::endl <<

@@ -54,7 +54,7 @@ cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputi
           cpputil::Range<size_t, 0, 1024 * 1024>>, cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>::create("training_set")
           .usage("{ 0 1 ... 9 }")
           .description("Subset of testcase indices to use for training sets")
-          .default_val(create_default_testcase_set());
+          .default_val({0, 1, 2, 3});
 
 cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>,
         cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>& test_set_arg =

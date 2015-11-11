@@ -53,12 +53,7 @@ TEST_F(CfgTransformsTest, Simple) {
 
   stoke::Cfg cfg(t, x64asm::RegSet::universe(), x64asm::RegSet::universe());
 
-  stoke::CfgTransforms tforms;
-  tforms.remove_redundant(cfg);
-
-  ss.clear();
-  ss.str("");
-  ss << cfg.get_code();
+  stoke::CfgTransforms::remove_redundant(cfg);
 
   std::stringstream expected;
   expected << ".bar:" << std::endl;
@@ -73,7 +68,10 @@ TEST_F(CfgTransformsTest, Simple) {
   //expected << "callq .blah" << std::endl;
   expected << "retq ";
 
-  ASSERT_EQ(expected.str(), ss.str());
+  x64asm::Code exp_code;
+  expected >> exp_code;
+
+  ASSERT_EQ(exp_code, cfg.get_code());
 }
 
 } //namespace stoke

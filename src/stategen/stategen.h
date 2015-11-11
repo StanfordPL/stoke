@@ -15,6 +15,8 @@
 #ifndef STOKE_SRC_STATEGEN_STATEGEN_H
 #define STOKE_SRC_STATEGEN_STATEGEN_H
 
+#include <chrono>
+#include <random>
 #include <stdint.h>
 #include <string>
 
@@ -33,6 +35,10 @@ public:
     set_max_attempts(16);
     set_max_memory(1024);
     set_allow_unaligned(false);
+
+    // use the time for a seed; can be manually specified with set_seed()
+    const auto time = std::chrono::system_clock::now().time_since_epoch().count();
+    set_seed(time);
   }
 
   /** Sets the maximum number of attempts to make when generating a state. */
@@ -50,9 +56,24 @@ public:
     allow_unaligned_ = b;
     return *this;
   }
+  /** Set maximum value for register */
+  StateGen& set_max_value(x64asm::R64 r, uint64_t value) {
+    max_register_values_[r] = value;
+    return *this;
+  }
+  /** Set bitmask for register */
+  StateGen& set_bitmask(x64asm::R64 r, uint64_t value) {
+    bitmask_values_[r] = value;
+    return *this;
+  }
+  /** Set seed */
+  StateGen& set_seed(std::default_random_engine::result_type seed) {
+    gen_.seed(seed);
+    return *this;
+  }
 
   /** Tries to generate a state that contains random register values; sensible rsp. */
-  bool get(CpuState& cs) const;
+  bool get(CpuState& cs);
   /** Tries to generate a state in which cfg can execute without signaling. */
   bool get(CpuState& cs, const Cfg& cfg);
 
@@ -72,7 +93,7 @@ private:
   bool is_supported_deref(const x64asm::Instruction& instr);
 
   /** Returns if we've already produced an acceptable state. */
-  bool is_ok(const Sandbox&, const x64asm::Instruction& instr);
+  bool is_ok(const x64asm::Instruction& instr);
   /** Returns the number of bytes dereferenced on this line. */
   size_t get_size(const x64asm::Instruction& instr) const;
   /** Returns true if the memory at this address is already allocated. */
@@ -85,15 +106,15 @@ private:
   }
 
   /** Returns true if a memory can be resized for an address inside it. */
-  bool resize_within(Memory& mem, uint64_t addr, size_t size) const;
+  bool resize_within(Memory& mem, uint64_t addr, size_t size);
   /** Returns true if a memory can be resized for an address below it. */
-  bool resize_below(Memory& mem, uint64_t addr, size_t size) const;
+  bool resize_below(Memory& mem, uint64_t addr, size_t size);
   /** Returns true if a memory can be resized for an address above it. */
-  bool resize_above(Memory& mem, uint64_t addr, size_t size) const;
+  bool resize_above(Memory& mem, uint64_t addr, size_t size);
   /** Randomizes and defines previously invalid memory. */
-  void randomize_mem(Memory& mem) const;
+  void randomize_mem(Memory& mem);
   /** Returns true if a memory can be resized to accommadate an access. */
-  bool resize_mem(Memory& mem, uint64_t addr, size_t size) const;
+  bool resize_mem(Memory& mem, uint64_t addr, size_t size);
   /** Returns true if the memory access on this line was fixable. */
   bool fix(const CpuState& cs, CpuState& fixed, const x64asm::Instruction& instr);
   /** Returns true if we think we've adjusted registers to make memory align. */
@@ -110,6 +131,34 @@ private:
   size_t max_jumps_;
   /** If unaligned memory accesses are OK? */
   bool allow_unaligned_;
+
+  /** Used to reset the sandbox to a default state */
+  void cleanup();
+
+  /** Read the maximum allowed value for a register from the map;
+      default to -1 */
+  inline uint64_t get_max_value(size_t r) const {
+    if (max_register_values_.count(r))
+      return max_register_values_.at(r);
+    else
+      return (uint64_t)(-1);
+  }
+  /** Read the maximum allowed value for a register from the map;
+      default to -1 */
+  inline uint64_t get_bitmask(size_t r) const {
+    if (bitmask_values_.count(r))
+      return bitmask_values_.at(r);
+    else
+      return (uint64_t)(-1);
+  }
+
+  /** Random number generator */
+  std::default_random_engine gen_;
+
+  /** The maximum allowed value for a given register. */
+  std::map<size_t, uint64_t> max_register_values_;
+  /** The bitmask to be applied to each register. */
+  std::map<size_t, uint64_t> bitmask_values_;
 
   /** A textual description of the cause of the last failure. */
   std::string error_message_;

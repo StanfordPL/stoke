@@ -16,6 +16,7 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <regex>
 
 #include "src/ext/cpputil/include/io/fail.h"
 #include "src/ext/x64asm/include/x64asm.h"
@@ -25,10 +26,6 @@ using namespace cpputil;
 using namespace redi;
 using namespace std;
 using namespace x64asm;
-
-// This is a stop-gap until g++-4.9 which will support c++11 regex
-#include "boost/regex.hpp"
-using namespace boost;
 
 namespace {
 
@@ -403,32 +400,6 @@ vector<Disassembler::LineInfo> Disassembler::parse_lines(ipstream& ips, const st
   return result;
 }
 
-void Disassembler::rescale_offsets(Code& code, const vector<LineInfo>& lines) {
-  // Rescale rip offsets
-  Assembler assm;
-  int64_t delta = 0;
-  for (size_t i = 0, ie = code.size(); i < ie; ++i) {
-    auto& instr = code[i];
-
-    // Record delta between x64asm hex and this hex
-    delta += ((int)lines[i].hex_bytes - (int)assm.hex_size(instr));
-
-    // Nothing to do if this isn't rip dereference
-    if (!instr.is_explicit_memory_dereference()) {
-      continue;
-    }
-    const auto mi = instr.mem_index();
-    auto mem = instr.get_operand<M8>(mi);
-    if (!mem.rip_offset()) {
-      continue;
-    }
-
-    // Rescale displacement
-    mem.set_disp(mem.get_disp() + delta);
-    instr.set_operand(mi, mem);
-  }
-}
-
 bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uint64_t text_offset) {
   if (ips.eof()) {
     return false;
@@ -445,19 +416,43 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
   // This function inserts missing lines such as labels and splits lock into two instructions
   const auto lines = parse_lines(ips, name);
   stringstream ss;
+
   for (const auto& l : lines) {
-    ss << l.instr << endl;
+
+    // For each line, try encoding it in different sizes, starting with the size that's
+    // found in the disassembly.  If we have to go down, then insert nops to pad it out.
+    // If we have to go up, then we fail.
+
+    bool success = false;
+    for (int attempt = l.hex_bytes; attempt >= 0; attempt--) {
+      stringstream tmp;
+      tmp << l.instr << " # SIZE=" << attempt << endl;
+      Code c;
+      tmp >> c;
+      if (failed(tmp))
+        continue;
+
+      // we've found a match
+      //cout << "Size " << attempt << " worked for " << l.instr << endl;
+      ss << l.instr << " # SIZE=" << attempt << endl;
+      for (size_t i = 0; i < l.hex_bytes - attempt; ++i) {
+        ss << "nop # SIZE=1" << endl;
+      }
+      success = true;
+      break;
+    }
+
+    if (!success) {
+      //cout << "Failing on " << l.instr << " in " << l.hex_bytes << " bytes." << endl;
+      fail(ss) << "Could not encode " << l.instr << " within " << l.hex_bytes << " bytes." << endl;
+    }
   }
 
   // Read code
   Code code;
   ss >> code;
-  if (!failed(ss)) {
-    rescale_offsets(code, lines);
-  }
 
   // Record hex metadata
-  // @todo if we've split a lock instruction, we're going to fall out of sync here
   size_t capacity = 0;
   for (const auto& l : lines) {
     capacity += l.hex_bytes;
@@ -467,6 +462,7 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
 
   // All done; back to the user
   data.parse_error = failed(ss);
+  data.parse_error_msg = (failed(ss) ? fail_msg(ss) : "");
   data.name = name;
   data.tunit = {code, file_offset, rip_offset, capacity};
 
@@ -478,7 +474,7 @@ void Disassembler::disassemble(const std::string& filename) {
   clear_error();
 
   auto text_offset = 0;
-  if(!flat_binary_) {
+  if (!flat_binary_) {
 
     // Get the headers from the objdump
     auto headers = run_objdump(filename, true);

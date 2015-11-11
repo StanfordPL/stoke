@@ -24,7 +24,7 @@ namespace stoke {
 struct StateCallbackData {
   const x64asm::Code& code;
   const size_t line;
-  const CpuState& state;
+  CpuState& state;
 };
 
 /** Callback signature */

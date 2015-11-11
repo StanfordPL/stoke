@@ -14,6 +14,7 @@
 
 
 #include "src/symstate/state.h"
+#include "src/symstate/memory/deprecated.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 using namespace std;
@@ -22,11 +23,11 @@ using namespace x64asm;
 
 void SymState::build_from_cpustate(const CpuState& cs) {
 
-  for(size_t i = 0; i < cs.gp.size(); ++i) {
+  for (size_t i = 0; i < cs.gp.size(); ++i) {
     gp[i] = SymBitVector::constant(64, cs.gp[i].get_fixed_quad(0));
   }
 
-  for(size_t i = 0; i < cs.sse.size(); ++i) {
+  for (size_t i = 0; i < cs.sse.size(); ++i) {
     sse[i] =
       SymBitVector::constant(64, cs.sse[i].get_fixed_quad(3)) ||
       SymBitVector::constant(64, cs.sse[i].get_fixed_quad(2)) ||
@@ -41,55 +42,62 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   set(eflags_sf, SymBool::constant(cs.rf.is_set(eflags_sf.index())));
   set(eflags_of, SymBool::constant(cs.rf.is_set(eflags_of.index())));
 
-  memory.init_concrete(cs.stack, cs.heap);
-  memory.set_parent(this);
+  auto dm = new DeprecatedMemory();
+  dm->init_concrete(cs.stack, cs.heap);
+  dm->set_parent(this);
+  memory = dm;
+  delete_memory_ = true;
 
   sigbus = SymBool::_false();
   sigfpe = SymBool::_false();
   sigsegv = SymBool::_false();
 }
 
-void SymState::build_with_suffix(const string& suffix) {
+void SymState::build_with_suffix(const string& suffix, bool no_suffix) {
 
-  for(size_t i = 0; i < gp.size(); ++i) {
+  for (size_t i = 0; i < gp.size(); ++i) {
     stringstream name;
-    name << r64s[i] << "_" << suffix;
+    name << r64s[i];
+    if (!no_suffix) {
+      name << "_" << suffix;
+    }
     gp[i] = SymBitVector::var(64, name.str());
   }
 
-  for(size_t i = 0; i < sse.size(); ++i) {
+  for (size_t i = 0; i < sse.size(); ++i) {
     stringstream name;
-    name << ymms[i] << "_" << suffix;
+    name << ymms[i];
+    if (!no_suffix) {
+      name << "_" << suffix;
+    }
     sse[i] = SymBitVector::var(256, name.str());
   }
 
-  set(eflags_cf, SymBool::var("%cf_" + suffix));
-  set(eflags_pf, SymBool::var("%pf_" + suffix));
-  set(eflags_af, SymBool::var("%af_" + suffix));
-  set(eflags_zf, SymBool::var("%zf_" + suffix));
-  set(eflags_sf, SymBool::var("%sf_" + suffix));
-  set(eflags_of, SymBool::var("%of_" + suffix));
+  set(eflags_cf, SymBool::var("%cf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_pf, SymBool::var("%pf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_af, SymBool::var("%af" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_zf, SymBool::var("%zf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_sf, SymBool::var("%sf" + (no_suffix ? "" : "_" + suffix)));
+  set(eflags_of, SymBool::var("%of" + (no_suffix ? "" : "_" + suffix)));
 
-  memory.set_parent(this);
-
-  sigbus = SymBool::var("sigbus_" + suffix);
-  sigfpe = SymBool::var("sigfpe_" + suffix);
-  sigsegv = SymBool::var("sigsegv_" + suffix);
+  sigbus = SymBool::var("sigbus" + (no_suffix ? "" : "_" + suffix));
+  sigfpe = SymBool::var("sigfpe" + (no_suffix ? "" : "_" + suffix));
+  sigsegv = SymBool::var("sigsegv" + (no_suffix ? "" : "_" + suffix));
 }
 
 SymBool SymState::operator[](const Eflags f) const {
 
-  if(f.index() == 0)  //CF
+  if (f.index() == 0) //CF
     return rf[0];
-  if(f.index() == 2)  //PF
+  if (f.index() == 2) //PF
     return rf[1];
-  if(f.index() == 4)  //AF
+  if (f.index() == 4) //AF
     return rf[2];
-  if(f.index() == 6)  //ZF
+  if (f.index() == 6) //ZF
     return rf[3];
-  if(f.index() == 7)  //SF
+  if (f.index() == 7) //SF
     return rf[4];
-  if(f.index() == 11) //OF
+  if (f.index() == 11) //OF
     return rf[5];
 
   assert(false);
@@ -98,15 +106,20 @@ SymBool SymState::operator[](const Eflags f) const {
 
 SymBitVector SymState::operator[](const Operand o) {
 
-  if(o.is_typical_memory()) {
+  if (o.is_typical_memory()) {
     auto& m = reinterpret_cast<const M8&>(o);
     uint16_t size = o.size();
     auto addr = get_addr(m);
 
-    auto p = memory.read(addr, size, lineno_);
-    set_sigsegv(p.second);
+    if (memory) {
+      auto p = memory->read(addr, size, lineno_);
+      set_sigsegv(p.second);
+      return p.first;
+    } else {
+      set_sigsegv(SymBool::tmp_var());
+      return SymBitVector::tmp_var(size);
+    }
 
-    return p.first;
   } else {
     return lookup(o);
   }
@@ -115,12 +128,12 @@ SymBitVector SymState::operator[](const Operand o) {
 
 SymBitVector SymState::lookup(const Operand o) const {
 
-  if(o.type() == Type::RH) {
+  if (o.type() == Type::RH) {
     auto& r = reinterpret_cast<const R&>(o);
     return gp[r-4][15][8];
   }
 
-  if(o.is_gp_register()) {
+  if (o.is_gp_register()) {
     auto& r = reinterpret_cast<const R&>(o);
     if (o.size() != 64)
       return gp[r][o.size() - 1][0];
@@ -128,17 +141,17 @@ SymBitVector SymState::lookup(const Operand o) const {
       return gp[r];
   }
 
-  if(o.type() == Type::XMM || o.type() == Type::XMM_0) {
+  if (o.type() == Type::XMM || o.type() == Type::XMM_0) {
     auto& xmm = reinterpret_cast<const Xmm&>(o);
     return sse[xmm][127][0];
   }
 
-  if(o.type() == Type::YMM) {
+  if (o.type() == Type::YMM) {
     auto& ymm = reinterpret_cast<const Ymm&>(o);
     return sse[ymm];
   }
 
-  if(o.is_immediate()) {
+  if (o.is_immediate()) {
     auto& imm = reinterpret_cast<const Imm&>(o);
     return SymBitVector::constant(o.size(), imm);
   }
@@ -207,8 +220,13 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     auto& m = reinterpret_cast<const M8&>(o);
     auto addr = get_addr(m);
 
-    auto segv = memory.write(addr, bv, width, lineno_);
-    set_sigsegv(segv);
+    if (memory) {
+      auto segv = memory->write(addr, bv, width, lineno_);
+      set_sigsegv(segv);
+    } else {
+      set_sigsegv(SymBool::tmp_var());
+    }
+
     return;
   }
 
@@ -218,7 +236,7 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
 
 void SymState::set(const Eflags f, SymBool b) {
 
-  switch(f.index()) {
+  switch (f.index()) {
   case 0: { //CF
     rf[0] = b;
     return;
@@ -274,13 +292,13 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
 
   std::vector<SymBool> constraints;
 
-  for(auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
+  for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
     constraints.push_back(lookup(*gp_it) == other.lookup(*gp_it));
   }
-  for(auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
+  for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
     constraints.push_back(lookup(*sse_it) == other.lookup(*sse_it));
   }
-  for(auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
+  for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
     constraints.push_back((*this)[*flag_it] == other[*flag_it]);
   }
 
@@ -298,14 +316,14 @@ SymBitVector SymState::get_addr(M<T> memory) const {
 
   SymBitVector address = SymBitVector::constant(32, memory.get_disp()).extend(64);
 
-  if(memory.contains_base()) {
+  if (memory.contains_base()) {
     address = address + lookup(memory.get_base());
   }
 
-  if(memory.contains_index()) {
+  if (memory.contains_index()) {
     auto index = lookup(memory.get_index());
 
-    switch(memory.get_scale()) {
+    switch (memory.get_scale()) {
     case Scale::TIMES_1:
       address = address + index;
       break;
@@ -327,29 +345,45 @@ SymBitVector SymState::get_addr(M<T> memory) const {
     }
   }
 
-  if(memory.addr_or()) {
+  if (memory.addr_or()) {
     address = SymBitVector::constant(32, 0) || address[31][0];
   }
 
   return address;
 }
 
+/** Get address corresponding to a memory reference */
+SymBitVector SymState::get_addr(const Instruction& instr) const {
+
+  if (instr.is_explicit_memory_dereference()) {
+    return get_addr(instr.get_operand<M8>(instr.mem_index()));
+  } else if (instr.is_push()) {
+    auto arg = instr.get_operand<Operand>(0);
+    return lookup(rsp) - SymBitVector::constant(64, arg.size()/8);
+  } else if (instr.is_pop() || instr.is_ret()) {
+    return lookup(rsp);
+  } else {
+    assert(false);
+    return SymBitVector::tmp_var(64);
+  }
+}
+
 void SymState::simplify() {
 
-  for(size_t i = 0; i < 16; ++i) {
-    if(gp[i].type() != SymBitVector::CONSTANT && gp[i].type() != SymBitVector::VAR) {
+  for (size_t i = 0; i < 16; ++i) {
+    if (gp[i].type() != SymBitVector::CONSTANT && gp[i].type() != SymBitVector::VAR) {
       auto var = SymBitVector::tmp_var(64);
       constraints.push_back(gp[i] == var);
       gp[i] = var;
     }
-    if(sse[i].type() != SymBitVector::CONSTANT && sse[i].type() != SymBitVector::VAR) {
+    if (sse[i].type() != SymBitVector::CONSTANT && sse[i].type() != SymBitVector::VAR) {
       auto var = SymBitVector::tmp_var(256);
       constraints.push_back(sse[i] == var);
       sse[i] = var;
     }
   }
-  for(size_t i = 0; i < 6; ++i) {
-    if(rf[i].type() != SymBool::TRUE &&
+  for (size_t i = 0; i < 6; ++i) {
+    if (rf[i].type() != SymBool::TRUE &&
         rf[i].type() != SymBool::FALSE &&
         rf[i].type() != SymBool::VAR) {
       auto var = SymBool::tmp_var();

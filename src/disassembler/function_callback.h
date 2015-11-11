@@ -25,6 +25,8 @@ namespace stoke {
 struct FunctionCallbackData {
   /** Did a parse error occur? */
   bool parse_error;
+  /** Parse error message */
+  std::string parse_error_msg;
   /** The name of this function (always valid) */
   std::string name;
   /** An equivalent x64asm function (offsets may be different) (valid if parsing succeeds)*/

@@ -27,10 +27,22 @@ namespace stoke {
 class Cvc4Solver : public SMTSolver {
 
 public:
-  Cvc4Solver() : smt_(NULL), uninterpreted_(false) {}
+  Cvc4Solver() : smt_(NULL), uninterpreted_(false) {
+    smt_ = new CVC4::SmtEngine(&em_);
+    smt_->setOption("incremental", true);
+    smt_->setOption("produce-assignments", true);
+    smt_->setTimeLimit(timeout_, true);
+    smt_->setLogic("QF_UFBV");
+    smt_->push();
+  }
   ~Cvc4Solver() {
-    if(smt_)
-      delete smt_;
+    delete smt_;
+  }
+
+  SMTSolver& set_timeout(uint64_t ms) {
+    timeout_ = ms;
+    smt_->setTimeLimit(timeout_, true);
+    return *this;
   }
 
   /** Check if a query is satisfiable given constraints */
@@ -46,12 +58,6 @@ public:
   bool get_model_bool(const std::string& var);
 
   void reset() {
-    if(smt_) {
-      delete smt_;
-    }
-
-    smt_ = new CVC4::SmtEngine(&em_);
-
     variables_ = std::map<std::string, CVC4::Expr>();
     uninterpreted_ = false;
   }
@@ -66,7 +72,7 @@ private:
 
 
   /** This class converts symbolic bit-vectors into Z3's format. */
-  class ExprConverter : public SymVisitor<CVC4::Expr> {
+  class ExprConverter : public SymVisitor<CVC4::Expr, CVC4::Expr> {
 
   public:
     ExprConverter(Cvc4Solver* parent) : em_(parent->em_), variables_(parent->variables_),
@@ -75,12 +81,12 @@ private:
     /** Visit some bit vector */
     CVC4::Expr operator()(const SymBitVector& bv) {
       error_ = "";
-      return SymVisitor<CVC4::Expr>::operator()(bv.ptr);
+      return SymVisitor<CVC4::Expr, CVC4::Expr>::operator()(bv.ptr);
     }
     /** Visit some bit bool */
     CVC4::Expr operator()(const SymBool& b) {
       error_ = "";
-      return SymVisitor<CVC4::Expr>::operator()(b.ptr);
+      return SymVisitor<CVC4::Expr, CVC4::Expr>::operator()(b.ptr);
     }
 
     /** Visit bit-vector binop */

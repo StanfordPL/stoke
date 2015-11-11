@@ -44,7 +44,7 @@ public:
     uint64_t res = latency_;
     size_t tc_count = sandbox_->size();
     latency_ = 0;
-    if(tc_count == 0) {
+    if (tc_count == 0) {
       LatencyCost lc;
       return lc(cfg, max);
     }

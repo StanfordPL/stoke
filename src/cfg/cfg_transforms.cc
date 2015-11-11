@@ -28,15 +28,14 @@ bool is_control(const Instruction& instr) {
 /** Returns true for instructions that have non-register side effects */
 bool has_side_effects(const x64asm::Instruction& instr) {
   // More instructions have side-effects (ie UD2) but aren't relevant here
-  return instr.is_memory_dereference() ||
-         (instr.get_opcode() >= DIV_M16 && instr.get_opcode() <= DIVSS_XMM_XMM);
+  return instr.is_memory_dereference();
 }
 
 } // namespace
 
 namespace stoke {
 
-Cfg& CfgTransforms::remove_unreachable(Cfg& cfg) const {
+Cfg& CfgTransforms::remove_unreachable(Cfg& cfg) {
   // Assume that invariants are satisfied on entry
   assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
@@ -61,7 +60,7 @@ Cfg& CfgTransforms::remove_unreachable(Cfg& cfg) const {
   return cfg;
 }
 
-Cfg& CfgTransforms::remove_nop(Cfg& cfg) const {
+Cfg& CfgTransforms::remove_nop(Cfg& cfg) {
   // Assume that invariants are satisfied on entry
   assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
@@ -85,7 +84,7 @@ Cfg& CfgTransforms::remove_nop(Cfg& cfg) const {
   return cfg;
 }
 
-Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
+Cfg& CfgTransforms::remove_redundant(Cfg& cfg) {
   // Assume that invariants are satisfied on entry
   assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
@@ -99,22 +98,45 @@ Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
     for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
       const auto& instr = cfg.get_code()[i];
 
+//#define STOKE_DEBUG_CFG_TRANSFORMS
+#ifdef STOKE_DEBUG_CFG_TRANSFORMS
+      std::cout << "---------------------" << std::endl;
+      std::cout << "Instruction: " << instr << std::endl;
+#endif
+
       // Skip instructions that induce control flow or have non-register side effects
       if (is_control(instr) || has_side_effects(instr)) {
+#ifdef STOKE_DEBUG_CFG_TRANSFORMS
+        std::cout << "  -> is control instruction or has side-effect" << std::endl;
+#endif
         continue;
       }
 
       // Remove instructions if it doesn't produce a value which is live out afterward
       const auto instr_outputs = cfg.maybe_write_set(instr);
       const auto live_regs_after_instruction = cfg.live_outs(cfg.get_loc(i));
+#ifdef STOKE_DEBUG_CFG_TRANSFORMS
+      std::cout << "  instruction output:     " << instr_outputs << std::endl;
+      std::cout << "  live after instruction: " << live_regs_after_instruction << std::endl;
+#endif
       if ((instr_outputs & live_regs_after_instruction) == RegSet::empty()) {
+#ifdef STOKE_DEBUG_CFG_TRANSFORMS
+        std::cout << "  -> can be removed" << std::endl;
+#endif
         cfg.get_function().remove(i);
         cfg.recompute();
         removed = true;
         break;
       }
+#ifdef STOKE_DEBUG_CFG_TRANSFORMS
+      std::cout << "  instruction produces live values: " << (instr_outputs & live_regs_after_instruction) << std::endl;
+      std::cout << "  -> cannot be removed" << std::endl;
+#endif
     }
   }
+#ifdef STOKE_DEBUG_CFG_TRANSFORMS
+  std::cout << "---------------------" << std::endl;
+#endif
 
   // Make sure that we've left everything back in a valid state before continuing
   assert(cfg.check_invariants());
@@ -122,7 +144,7 @@ Cfg& CfgTransforms::remove_redundant(Cfg& cfg) const {
   return cfg;
 }
 
-Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_out) const {
+Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_out) {
   Cfg cfg(TUnit(), def_in, live_out);
   const auto diff = live_out;
 

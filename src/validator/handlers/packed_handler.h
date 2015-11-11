@@ -28,6 +28,7 @@ namespace stoke {
 class PackedHandler : public Handler {
 
 public:
+
   PackedHandler() : Handler() {
 
     add_opcode("addpd", [] (SymBitVector a, SymBitVector b) {
@@ -79,59 +80,139 @@ public:
     }, 0);
 
     add_opcode("cvtdq2pd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Integer_To_Double_Precision_Floating_Point", 64, {32});
+      SymFunction f("cvt_int32_to_double", 64, {32});
       return f(b);
     }, 32, 64, true);
 
     add_opcode("cvtdq2ps", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Integer_To_Single_Precision_Floating_Point", 32, {32});
+      SymFunction f("cvt_int32_to_single", 32, {32});
       return f(b);
     }, 32, 32, true);
 
+    add_opcode("cvtpd2dq", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_double_to_int32", 32, {64});
+      return f(b);
+    }, 64, 32, true);
+
+    add_opcode("cvtpd2ps", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_double_to_single", 32, {64});
+      return f(b);
+    }, 64, 32, true);
+
     add_opcode("cvtpi2pd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Integer_To_Double_Precision_Floating_Point", 64, {32});
+      SymFunction f("cvt_int32_to_double", 64, {32});
       return f(b);
     }, 32, 64, true);
 
     add_opcode("cvtpi2ps", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Integer_To_Single_Precision_Floating_Point", 32, {32});
+      SymFunction f("cvt_int32_to_single", 32, {32});
       return f(b);
     }, 32, 32, true);
 
     add_opcode("cvtps2dq", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer", 32, {32});
+      SymFunction f("cvt_single_to_int32", 32, {32});
       return f(b);
     }, 32, 32, true);
 
     add_opcode("cvtps2pd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Single_Precision_To_Double_Precision_Floating_Point", 64, {32});
+      SymFunction f("cvt_single_to_double", 64, {32});
       return f(b);
     }, 32, 64, true);
 
     add_opcode("cvtps2pi", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer", 32, {32});
+      SymFunction f("cvt_single_to_int32", 32, {32});
       return f(b);
     }, 32, 32, true);
 
+    add_opcode("cvtsd2sil", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_double_to_int32", 32, {64});
+      return f(b);
+    }, 64, 32, true, true);
+
+    add_opcode("cvtsd2siq", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_double_to_int64", 64, {64});
+      return f(b);
+    }, 64, 64, true, true);
+
     add_opcode("cvtsd2ss", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Double_Precision_To_Single_Precision_Floating_Point", 32, {64});
+      SymFunction f("cvt_double_to_single", 32, {64});
+      return f(b);
+    }, 64, 32, true, true);
+
+    add_opcode("cvtsi2sdl", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_int32_to_double", 64, {32});
+      return f(b);
+    }, 32, 64, true, true);
+
+    add_opcode("cvtsi2sdq", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_int64_to_double", 64, {64});
+      return f(b);
+    }, 64, 64, true, true);
+
+    add_opcode("cvtsi2ssl", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_int32_to_single", 32, {32});
+      return f(b);
+    }, 32, 32, true, true);
+
+    add_opcode("cvtsi2ssq", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_int64_to_single", 32, {64});
       return f(b);
     }, 64, 32, true, true);
 
     add_opcode("cvtss2sd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Single_Precision_To_Double_Precision_Floating_Point", 64, {32});
+      SymFunction f("cvt_single_to_double", 64, {32});
       return f(b);
     }, 32, 64, true, true);
 
+    add_opcode("cvtss2sil", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_single_to_int32", 32, {32});
+      return f(b);
+    }, 32, 32, true, true);
+
+    add_opcode("cvtss2siq", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_single_to_int64", 64, {32});
+      return f(b);
+    }, 32, 64, true, true);
+
+    add_opcode("cvttpd2dq", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_double_to_int32_truncate", 32, {64});
+      return f(b);
+    }, 64, 32, true);
+
+    add_opcode("cvttpd2pi", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_double_to_int32_truncate", 32, {64});
+      return f(b);
+    }, 64, 32, true);
+
     add_opcode("cvttps2dq", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer_Truncate", 32, {32});
+      SymFunction f("cvt_single_to_int32_truncate", 32, {32});
       return f(b);
     }, 32, 32, true);
 
     add_opcode("cvttps2pi", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("Convert_Single_Precision_Floating_Point_To_Integer_Truncate", 32, {32});
+      SymFunction f("cvt_single_to_int32_truncate", 32, {32});
       return f(b);
     }, 32, 32, true);
+
+    add_opcode("cvttsd2sil", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_double_to_int32_truncate", 32, {64});
+      return f(b);
+    }, 64, 32, true, true);
+
+    add_opcode("cvttsd2siq", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_double_to_int64_truncate", 64, {64});
+      return f(b);
+    }, 64, 64, true, true);
+
+    add_opcode("cvttss2sil", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_single_to_int32_truncate", 32, {32});
+      return f(b);
+    }, 32, 32, true, true);
+
+    add_opcode("cvttss2siq", [] (SymBitVector a, SymBitVector b) {
+      SymFunction f("cvt_single_to_int64_truncate", 64, {32});
+      return f(b);
+    }, 32, 64, true, true);
 
     add_opcode("divpd", [] (SymBitVector a, SymBitVector b) {
       SymFunction f("div_double", 64, {64, 64});
@@ -184,48 +265,36 @@ public:
     }, 0);
 
     add_opcode("maxpd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("maxpd_compare_double", 1, {64, 64});
+      SymFunction f("maxcmp_double", 1, {64, 64});
       return (f(a,b)[0]).ite(a, b);
     }, 64, 64, true);
 
     add_opcode("maxps", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("maxps_compare_single", 1, {32, 32});
+      SymFunction f("maxcmp_single", 1, {32, 32});
       return (f(a,b)[0]).ite(a, b);
     }, 32, 32, true);
 
-    /*
+
     add_opcode("maxsd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("maxpd_compare_double", 1, {64, 64});
+      SymFunction f("maxcmp_double", 1, {64, 64});
       return (f(a,b)[0]).ite(a, b);
     }, 64, 64, true, true);
 
     add_opcode("maxss", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("maxps_compare_single", 1, {32, 32});
+      SymFunction f("maxcmp_single", 1, {32, 32});
       return (f(a,b)[0]).ite(a, b);
     }, 32, 32, true, true);
-    */
+
 
     add_opcode("minpd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("minpd_compare_double", 1, {64, 64});
+      SymFunction f("mincmp_double", 1, {64, 64});
       return (f(a,b)[0]).ite(a, b);
     }, 64, 64, true);
 
     add_opcode("minps", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("minps_compare_single", 1, {32, 32});
+      SymFunction f("mincmp_single", 1, {32, 32});
       return (f(a,b)[0]).ite(a, b);
     }, 32, 32, true);
-
-    /*
-    add_opcode("minsd", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("minpd_compare_double", 1, {64, 64});
-      return (f(a,b)[0]).ite(a, b);
-    }, 64, 64, true, true);
-
-    add_opcode("minss", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("minps_compare_single", 1, {32, 32});
-      return (f(a,b)[0]).ite(a, b);
-    }, 32, 32, true, true);
-    */
 
     add_opcode("movapd", [] (SymBitVector a, SymBitVector b) {
       return b;
@@ -623,22 +692,22 @@ public:
     }, 32, 32, true);
 
     add_opcode("rcpps", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("approximate_reciprocal_single", 32, {32});
+      SymFunction f("approx_reciprocal_single", 32, {32});
       return f(b);
     }, 32, 32, true);
 
     add_opcode("rcpss", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("approximate_reciprocal_single", 32, {32});
+      SymFunction f("approx_reciprocal_single", 32, {32});
       return f(b);
     }, 32, 32, true, true);
 
     add_opcode("rsqrtps", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("approximate_reciprocal_sqrt_single", 32, {32});
+      SymFunction f("approx_reciprocal_sqrt_single", 32, {32});
       return f(b);
     }, 32, 32, true);
 
     add_opcode("rsqrtss", [] (SymBitVector a, SymBitVector b) {
-      SymFunction f("approximate_reciprocal_sqrt_single", 32, {32});
+      SymFunction f("approx_reciprocal_sqrt_single", 32, {32});
       return f(b);
     }, 32, 32, true, true);
 
@@ -709,6 +778,27 @@ public:
 
   }
 
+  ~PackedHandler() {
+    for (auto it : opcodes_) {
+      if (it.second != NULL) {
+        delete it.second;
+      }
+      if (opcodes_.count(it.first))
+        opcodes_[it.first] = NULL;
+      if (opcodes_.count("v" + it.first))
+        opcodes_["v" + it.first] = NULL;
+      if (it.first[0] == 'v') {
+        auto substr = it.first.substr(1);
+        if (opcodes_.count(substr))
+          opcodes_[substr] = NULL;
+      }
+    }
+  }
+
+  virtual std::vector<std::string> full_support_opcodes() {
+    return opcode_names_;
+  }
+
   SupportLevel get_support(const x64asm::Instruction& instr);
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
@@ -720,6 +810,7 @@ private:
   /** Represents the operation done in parallel on the bitvectors */
   typedef std::function<SymBitVector (SymBitVector, SymBitVector, SymBitVector, uint16_t)> BinaryOperatorWithConstant;
 
+  std::vector<std::string> opcode_names_;
 
   class PackedOpcode {
 
@@ -808,11 +899,12 @@ private:
       set_avx_alignment(false);
     }
 
+    std::string opcode_;
+
     BinaryOperator binop_;
     BinaryOperatorWithConstant binop_with_constant_;
     bool has_constant_;
 
-    std::string opcode_;
     bool uninterpreted_;
     bool only_one_;
     bool clear_unset_;
@@ -837,6 +929,8 @@ private:
 
     opcodes_[opcode] = entry;
     opcodes_["v" + opcode] = entry;
+    opcode_names_.push_back(opcode);
+    opcode_names_.push_back("v" + opcode);
 
     return *entry;
   }

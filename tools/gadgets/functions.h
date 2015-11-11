@@ -38,7 +38,7 @@ public:
     }
 
     // Remove the target and unreachable functions if necessary
-    if (prune_aux_arg) {
+    if (prune_aux_arg.value()) {
       remove_target();
       remove_unreachable();
     }

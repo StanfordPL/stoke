@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "src/search/statistics.h"
+#include "src/transform/transform.h"
 
 namespace stoke {
 
@@ -29,6 +30,10 @@ struct StatisticsCallbackData {
   const size_t iterations;
   /** The amount of time that has taken place. */
   const std::chrono::duration<double> elapsed;
+  /** A pointer to the Transform object being used.
+    (This is used to figure out what kind of transform each
+    member of the move_statistics corresponds to.) */
+  const Transform* transform;
 };
 
 /** Callback signature */

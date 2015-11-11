@@ -81,29 +81,29 @@ SymBool SymBool::operator!=(const SymBool other) const {
 
 /* bool type */
 SymBool::Type SymBool::type() const {
-  if(ptr)
+  if (ptr)
     return ptr->type();
   else
     return NONE;
 }
 /* equality */
 bool SymBool::equals(const SymBool other) const {
-  if(ptr && other.ptr)
+  if (ptr && other.ptr)
     return ptr->equals(other.ptr);
   else
     return ptr == other.ptr;
 }
 
 /* Output overload */
-std::ostream& operator<< (std::ostream& out, stoke::SymBool& b) {
-  SymPrintVisitor spv(out);
+std::ostream& operator<< (std::ostream& out, const stoke::SymBool& b) {
+  SymPrettyVisitor spv(out);
   spv(b);
   return out;
 }
 
 /* equality for SymBitVectorCompares */
 bool SymBoolCompare::equals(const SymBoolAbstract * const other) const {
-  if(type() != other->type()) return false;
+  if (type() != other->type()) return false;
   auto cast = static_cast<const SymBoolCompare * const>(other);
   return a_->equals(cast->a_) && b_->equals(cast->b_);
 }

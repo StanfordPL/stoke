@@ -30,9 +30,9 @@
 
 
 #include "tests/analysis/analysis.h"
-#include "tests/cfg/cfg.h"
-#include "tests/cfg/cfgtransforms.h"
+#include "tests/cfg/cfg_tests.h"
 #include "tests/cost/cost.h"
+#include "tests/expr/expr.h"
 #include "tests/cpputil/cpputil.h"
 #include "tests/disassembler/disassembler.h"
 #include "tests/fixture.h"
@@ -43,9 +43,11 @@
 #include "tests/state/state.h"
 #include "tests/stategen/stategen.h"
 #include "tests/symstate/bitvector.h"
+#include "tests/transform/transform.h"
 #include "tests/trivial.h"
 #include "tests/tunit/tunit.h"
 #include "tests/validator/validator.h"
+#include "tests/verifier/verifier.h"
 #include "tests/x64asm/x64asm.h"
 
 

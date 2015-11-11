@@ -24,8 +24,11 @@ TEST(X64AsmInstructionInfo, FunctionSize) {
   ss << "pushq %rax" << std::endl;
   ss >> c;
 
+  ASSERT_FALSE(cpputil::failed(ss)) << cpputil::fail_msg(ss);
+
   Assembler assm;
-  auto fxn = assm.assemble(c);
+  auto result = assm.assemble(c);
+  auto fxn = result.second;
   Function gxn = fxn; //testing copy constructor
   EXPECT_EQ(2ul, fxn.size());
   EXPECT_EQ(2ul, gxn.size());
@@ -81,9 +84,11 @@ TEST(X64AsmInstructionInfo, FunctionSize2) {
   ss << "retq " << std::endl;
   ss >> c;
 
+  ASSERT_FALSE(cpputil::failed(ss)) << cpputil::fail_msg(ss);
+
   Assembler assm;
-  auto fxn = assm.assemble(c);
-  EXPECT_EQ(145ul, fxn.size());
+  auto fxn = assm.assemble(c).second;
+  EXPECT_EQ(150ul, fxn.size());
 
 }
 
