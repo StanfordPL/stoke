@@ -29,7 +29,7 @@ namespace stoke {
 
 struct CpuState {
   /** Returns a new CpuState. */
-  CpuState() : code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), rf() {
+  CpuState() : code(ErrorCode::NORMAL), gp(16, 64), sse(16, 256), mm(8, 64), rf() {
     stack.resize(0x700000000, 0);
     heap.resize (0x100000000, 0);
     data.resize (0x000000000, 0);
@@ -39,6 +39,7 @@ struct CpuState {
   CpuState& operator^=(const CpuState& rhs) {
     gp ^= rhs.gp;
     sse ^= rhs.sse;
+    mm ^= rhs.mm;
     rf ^= rhs.rf;
     stack ^= rhs.stack;
     heap ^= rhs.stack;
@@ -55,7 +56,7 @@ struct CpuState {
   /** Equality. */
   bool operator==(const CpuState& rhs) const {
     return code == rhs.code &&
-           gp == rhs.gp && sse == rhs.sse && rf == rhs.rf &&
+           gp == rhs.gp && sse == rhs.sse && rf == rhs.rf && mm == rhs.mm &&
            stack == rhs.stack && heap == rhs.heap && data == rhs.data;
   }
   /** Inequality. */
@@ -163,6 +164,8 @@ struct CpuState {
   Regs gp;
   /** SSE register buffer. */
   Regs sse;
+  /** MM register buffer. */
+  Regs mm;
   /** Rflags. */
   RFlags rf;
   /** Stack. */

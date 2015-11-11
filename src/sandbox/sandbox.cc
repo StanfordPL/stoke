@@ -492,6 +492,11 @@ Function Sandbox::emit_state2cpu(const CpuState& cs) {
     assm_.movdqu(xmms[s], M128(rax));
 #endif
   }
+  // Write MM regs
+  for (const auto& r : mms) {
+    assm_.mov((R64)rax, Imm64(cs.mm[r].data()));
+    assm_.movq(r, M64(rax));
+  }
   // Write GP regs
   for (const auto& r : r64s) {
     if (r != rsp) {
@@ -547,6 +552,11 @@ Function Sandbox::emit_cpu2state(CpuState& cs) {
 #else
     assm_.movdqu(M128(rax), xmms[s]);
 #endif
+  }
+  // Read MM regs
+  for (const auto& r : mms) {
+    assm_.movq(rax, r);
+    assm_.mov(Moffs64(cs.mm[r].data()), rax);
   }
   // Read RFLAGS --
   // Ordinarily we would use the Rflags API to avoid setting non-status flags.

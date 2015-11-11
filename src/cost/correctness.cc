@@ -152,7 +152,7 @@ Cost CorrectnessCost::evaluate_error(const CpuState& t, const CpuState& r, const
   // Otherwise, we can do the usual thing and check results register by register
   Cost cost = 0;
   cost += gp_error(t, r, defs);
-  cost += mm_error(t.sse, r.sse, defs);
+  cost += mm_error(t.mm, r.mm, defs);
   cost += sse_error(t.sse, r.sse, defs);
   cost += rflags_error(t.rf, r.rf, defs);
   if (stack_out_) {
