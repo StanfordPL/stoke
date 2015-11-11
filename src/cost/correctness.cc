@@ -60,7 +60,7 @@ void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
   }
 
   target_mm_out_.clear();
-  for(auto i = rs.mm_begin(), ie = rs.mm_end(); i != ie; ++i) {
+  for (auto i = rs.mm_begin(), ie = rs.mm_end(); i != ie; ++i) {
     target_mm_out_.push_back(*i);
   }
 
