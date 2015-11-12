@@ -185,11 +185,12 @@ int main(int argc, char** argv) {
     if (may_be_goal) {
       f_goal2 << op << endl;
 
-      if (specgen_is_mm(op) && (!only_mm_arg || (!specgen_uses_memory(op) && !specgen_uses_imm(op)))) {
-        mm++;
-        is_mm = true;
-        is_goal = false;
-      } else if (specgen_uses_memory(op)) {
+      // if (specgen_is_mm(op) && (!only_mm_arg || (!specgen_uses_memory(op) && !specgen_uses_imm(op)))) {
+      //   mm++;
+      //   is_mm = true;
+      //   is_goal = false;
+      // } else 
+      if (specgen_uses_memory(op)) {
         memory++;
         is_goal = false;
       } else if (specgen_uses_imm(op)) {
