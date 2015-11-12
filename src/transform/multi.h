@@ -46,9 +46,10 @@ protected:
 
 private:
 
-
   // Underlying transform to repeat
   Transform& transform_;
+  // Number of transforms to perform
+  size_t count_;
 
   // Number of transforms to perform
   size_t count_;
