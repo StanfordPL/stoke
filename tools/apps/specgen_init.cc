@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
       //   mm++;
       //   is_mm = true;
       //   is_goal = false;
-      // } else 
+      // } else
       if (specgen_uses_memory(op)) {
         memory++;
         is_goal = false;
