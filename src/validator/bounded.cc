@@ -1088,6 +1088,11 @@ void BoundedValidator::remove_spurious_counterexamples(const Cfg& target, const 
         different = true;
       }
     }
+    for (auto iter = live_outs.mm_begin(); !different && iter != live_outs.mm_end(); ++iter) {
+      if (target_result.mm[*iter] != rewrite_result.mm[*iter]) {
+        different = true;
+      }
+    }
     for (auto iter = live_outs.flags_begin(); !different && iter != live_outs.flags_end(); ++iter) {
       if (target_result[*iter] != rewrite_result[*iter]) {
         different = true;
