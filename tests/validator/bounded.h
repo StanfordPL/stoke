@@ -49,7 +49,7 @@ public:
 protected:
 
   static x64asm::RegSet all() {
-    auto rs = x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms();
+    auto rs = x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms() | x64asm::RegSet::all_mms();
     rs = rs + x64asm::eflags_cf + x64asm::eflags_zf + x64asm::eflags_pf + x64asm::eflags_of + x64asm::eflags_sf;
     return rs;
   }
