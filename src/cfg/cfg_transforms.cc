@@ -167,9 +167,12 @@ Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_
   }
 
   // initialize mm registers
+  if (dif.mm_begin() != dif.mm_end()) {
+    cfg.get_function().push_back(Instruction(MOV_R64_IMM64, {Constants::rax(), Imm64(0)}));
+  }
   for (auto rit = diff.mm_begin(); rit != diff.mm_end(); ++rit) {
     auto reg = *rit;
-    cfg.get_function().push_back(Instruction(PXOR_MM_MM, {reg, reg}));
+    cfg.get_function().push_back(Instruction(MOVQ_MM_R64, {reg, Constants::rax()}));
   }
 
   // flags

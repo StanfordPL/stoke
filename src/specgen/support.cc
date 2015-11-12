@@ -2253,7 +2253,7 @@ vector<Opcode> instr_cat_base_ = {
 // , MOVQ_M64_XMM // MOVQ m64, xmm
 // , MOVQ_MM_M64 // MOVQ mm, m64
 // , MOVQ_MM_MM // MOVQ mm, mm
-// , MOVQ_MM_R64 // MOVQ mm, r64
+  , MOVQ_MM_R64 // MOVQ mm, r64
 // , MOVQ_R64_MM // MOVQ r64, mm
 // , MOVQ_R64_XMM // MOVQ r64, xmm
 // , MOVQ_XMM_M64 // MOVQ xmm, m64
