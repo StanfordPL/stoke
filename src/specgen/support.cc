@@ -1835,14 +1835,14 @@ vector<Opcode> instr_cat_base_ = {
 // , IMUL_M32 // IMUL m32
 // , IMUL_M64 // IMUL m64
 // , IMUL_M8 // IMUL m8
-// , IMUL_R16 // IMUL r16
+, IMUL_R16 // IMUL r16
 // , IMUL_R16_M16 // IMUL r16, m16
 // , IMUL_R16_M16_IMM16 // IMUL r16, m16, imm16
 // , IMUL_R16_M16_IMM8 // IMUL r16, m16, imm8
 // , IMUL_R16_R16 // IMUL r16, r16
 // , IMUL_R16_R16_IMM16 // IMUL r16, r16, imm16
 // , IMUL_R16_R16_IMM8 // IMUL r16, r16, imm8
-// , IMUL_R32 // IMUL r32
+, IMUL_R32 // IMUL r32
 // , IMUL_R32_M32 // IMUL r32, m32
 // , IMUL_R32_M32_IMM32 // IMUL r32, m32, imm32
 // , IMUL_R32_M32_IMM8 // IMUL r32, m32, imm8
@@ -1856,7 +1856,7 @@ vector<Opcode> instr_cat_base_ = {
 // , IMUL_R64_R64 // IMUL r64, r64
 // , IMUL_R64_R64_IMM32 // IMUL r64, r64, imm32
 // , IMUL_R64_R64_IMM8 // IMUL r64, r64, imm8
-// , IMUL_R8 // IMUL r8
+, IMUL_R8 // IMUL r8
 // , IMUL_RH // IMUL rh
 // , IN_AL_DX // IN AL, DX
 // , IN_AL_IMM8 // IN AL, imm8
@@ -2140,18 +2140,18 @@ vector<Opcode> instr_cat_base_ = {
 // , MAXPS_XMM_M128 // MAXPS xmm, m128
 // , MAXPS_XMM_XMM // MAXPS xmm, xmm
 // , MAXSD_XMM_M64 // MAXSD xmm, m64
-  , MAXSD_XMM_XMM // MAXSD xmm, xmm
+// , MAXSD_XMM_XMM // MAXSD xmm, xmm
 // , MAXSS_XMM_M32 // MAXSS xmm, m32
-  , MAXSS_XMM_XMM // MAXSS xmm, xmm
+// , MAXSS_XMM_XMM // MAXSS xmm, xmm
 // , MFENCE // MFENCE
 // , MINPD_XMM_M128 // MINPD xmm, m128
 // , MINPD_XMM_XMM // MINPD xmm, xmm
 // , MINPS_XMM_M128 // MINPS xmm, m128
 // , MINPS_XMM_XMM // MINPS xmm, xmm
 // , MINSD_XMM_M64 // MINSD xmm, m64
-  , MINSD_XMM_XMM // MINSD xmm, xmm
+// , MINSD_XMM_XMM // MINSD xmm, xmm
 // , MINSS_XMM_M32 // MINSS xmm, m32
-  , MINSS_XMM_XMM // MINSS xmm, xmm
+// , MINSS_XMM_XMM // MINSS xmm, xmm
 // , MONITOR // MONITOR
 // , MOV_AL_MOFFS8 // MOV AL, moffs8
 // , MOV_AL_MOFFS8_PREFREXW // MOV AL, moffs8, pw
@@ -2318,10 +2318,10 @@ vector<Opcode> instr_cat_base_ = {
 // , MUL_M32 // MUL m32
 // , MUL_M64 // MUL m64
 // , MUL_M8 // MUL m8
-  // , MUL_R16 // MUL r16
-  // , MUL_R32 // MUL r32
+  , MUL_R16 // MUL r16
+  , MUL_R32 // MUL r32
   , MUL_R64 // MUL r64
-  // , MUL_R8 // MUL r8
+  , MUL_R8 // MUL r8
 // , MUL_RH // MUL rh
 // , MULPD_XMM_M128 // MULPD xmm, m128
 // , MULPD_XMM_XMM // MULPD xmm, xmm
@@ -2452,19 +2452,19 @@ vector<Opcode> instr_cat_base_ = {
 // , PADDSB_MM_M64 // PADDSB mm, m64
 // , PADDSB_MM_MM // PADDSB mm, mm
 // , PADDSB_XMM_M128 // PADDSB xmm, m128
-// , PADDSB_XMM_XMM // PADDSB xmm, xmm
+  , PADDSB_XMM_XMM // PADDSB xmm, xmm
 // , PADDSW_MM_M64 // PADDSW mm, m64
 // , PADDSW_MM_MM // PADDSW mm, mm
 // , PADDSW_XMM_M128 // PADDSW xmm, m128
-// , PADDSW_XMM_XMM // PADDSW xmm, xmm
+  , PADDSW_XMM_XMM // PADDSW xmm, xmm
 // , PADDUSB_MM_M64 // PADDUSB mm, m64
 // , PADDUSB_MM_MM // PADDUSB mm, mm
 // , PADDUSB_XMM_M128 // PADDUSB xmm, m128
-// , PADDUSB_XMM_XMM // PADDUSB xmm, xmm
+  , PADDUSB_XMM_XMM // PADDUSB xmm, xmm
 // , PADDUSW_MM_M64 // PADDUSW mm, m64
 // , PADDUSW_MM_MM // PADDUSW mm, mm
 // , PADDUSW_XMM_M128 // PADDUSW xmm, m128
-// , PADDUSW_XMM_XMM // PADDUSW xmm, xmm
+  , PADDUSW_XMM_XMM // PADDUSW xmm, xmm
 // , PADDW_MM_M64 // PADDW mm, m64
 // , PADDW_MM_MM // PADDW mm, mm
 // , PADDW_XMM_M128 // PADDW xmm, m128
@@ -2485,11 +2485,11 @@ vector<Opcode> instr_cat_base_ = {
 // , PAVGB_MM_M64 // PAVGB mm, m64
 // , PAVGB_MM_MM // PAVGB mm, mm
 // , PAVGB_XMM_M128 // PAVGB xmm, m128
-// , PAVGB_XMM_XMM // PAVGB xmm, xmm
+  , PAVGB_XMM_XMM // PAVGB xmm, xmm
 // , PAVGW_MM_M64 // PAVGW mm, m64
 // , PAVGW_MM_MM // PAVGW mm, mm
 // , PAVGW_XMM_M128 // PAVGW xmm, m128
-// , PAVGW_XMM_XMM // PAVGW xmm, xmm
+  , PAVGW_XMM_XMM // PAVGW xmm, xmm
 // , PBLENDVB_XMM_M128_XMM0 // PBLENDVB xmm, m128, <XMM0>
 // , PBLENDVB_XMM_XMM_XMM0 // PBLENDVB xmm, xmm, <XMM0>
 // , PBLENDW_XMM_M128_IMM8 // PBLENDW xmm, m128, imm8
@@ -2721,15 +2721,15 @@ vector<Opcode> instr_cat_base_ = {
 // , PSIGNB_MM_M64 // PSIGNB mm, m64
 // , PSIGNB_MM_MM // PSIGNB mm, mm
 // , PSIGNB_XMM_M128 // PSIGNB xmm, m128
-// , PSIGNB_XMM_XMM // PSIGNB xmm, xmm
+  , PSIGNB_XMM_XMM // PSIGNB xmm, xmm
 // , PSIGND_MM_M64 // PSIGND mm, m64
 // , PSIGND_MM_MM // PSIGND mm, mm
 // , PSIGND_XMM_M128 // PSIGND xmm, m128
-// , PSIGND_XMM_XMM // PSIGND xmm, xmm
+  , PSIGND_XMM_XMM // PSIGND xmm, xmm
 // , PSIGNW_MM_M64 // PSIGNW mm, m64
 // , PSIGNW_MM_MM // PSIGNW mm, mm
 // , PSIGNW_XMM_M128 // PSIGNW xmm, m128
-// , PSIGNW_XMM_XMM // PSIGNW xmm, xmm
+  , PSIGNW_XMM_XMM // PSIGNW xmm, xmm
 // , PSLLD_MM_IMM8 // PSLLD mm, imm8
 // , PSLLD_MM_M64 // PSLLD mm, m64
 // , PSLLD_MM_MM // PSLLD mm, mm
@@ -3987,15 +3987,15 @@ vector<Opcode> instr_cat_base_ = {
 // , VPABSB_XMM_M128 // VPABSB xmm, m128
 // , VPABSB_XMM_XMM // VPABSB xmm, xmm
 // , VPABSB_YMM_M256 // VPABSB ymm, m256
-// , VPABSB_YMM_YMM // VPABSB ymm, ymm
+  , VPABSB_YMM_YMM // VPABSB ymm, ymm
 // , VPABSD_XMM_M128 // VPABSD xmm, m128
 // , VPABSD_XMM_XMM // VPABSD xmm, xmm
 // , VPABSD_YMM_M256 // VPABSD ymm, m256
-// , VPABSD_YMM_YMM // VPABSD ymm, ymm
+  , VPABSD_YMM_YMM // VPABSD ymm, ymm
 // , VPABSW_XMM_M128 // VPABSW xmm, m128
 // , VPABSW_XMM_XMM // VPABSW xmm, xmm
 // , VPABSW_YMM_M256 // VPABSW ymm, m256
-// , VPABSW_YMM_YMM // VPABSW ymm, ymm
+  , VPABSW_YMM_YMM // VPABSW ymm, ymm
 // , VPACKSSDW_XMM_XMM_M128 // VPACKSSDW xmm, xmm, m128
 // , VPACKSSDW_XMM_XMM_XMM // VPACKSSDW xmm, xmm, xmm
 // , VPACKSSDW_YMM_YMM_M256 // VPACKSSDW ymm, ymm, m256
