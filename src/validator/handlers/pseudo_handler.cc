@@ -145,6 +145,14 @@ const map<string, Operand> reg_map_ = {
   {"ymm13", Constants::ymm13()},
   {"ymm14", Constants::ymm14()},
   {"ymm15", Constants::ymm15()},
+  {"mm0", Constants::mm0()},
+  {"mm1", Constants::mm1()},
+  {"mm2", Constants::mm2()},
+  {"mm3", Constants::mm3()},
+  {"mm4", Constants::mm4()},
+  {"mm5", Constants::mm5()},
+  {"mm6", Constants::mm6()},
+  {"mm7", Constants::mm7()},
 };
 
 Handler::SupportLevel PseudoHandler::get_support(const Instruction& instr) {

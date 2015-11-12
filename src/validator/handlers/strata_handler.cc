@@ -64,6 +64,10 @@ Ymm sse_to_ymm(const Sse& reg) {
   return Constants::ymms()[idx];
 }
 
+bool is_mm_type(const Type& t) {
+  return t == x64asm::Type::MM;
+}
+
 /**
  * Given two instructions with the same opcode, and a register from the context
  * of one of these instructions, translate it into a register in the context
@@ -96,6 +100,16 @@ const Sse translate_sse_register(const Sse& operand_from, const Instruction& ins
       if (sse_to_ymm(operand_from) == sse_to_ymm(instr_from.get_operand<Sse>(i))) {
         return sse_to_ymm(instr_to.get_operand<Sse>(i));
       }
+    }
+  }
+  // no translation necessary
+  return operand_from;
+};
+const Mm translate_mm_register(const Mm& operand_from, const Instruction& instr_from, const Instruction& instr_to) {
+  for (size_t i = 0; i < instr_from.arity(); i++) {
+    // direct match?
+    if (is_mm_type(instr_from.type(i)) && operand_from == instr_from.get_operand<Mm>(i)) {
+      return instr_to.get_operand<Mm>(i);
     }
   }
   // no translation necessary
@@ -206,6 +220,7 @@ bool is_register_only(Opcode opcode) {
     case x64asm::Type::XMM_0:
     case x64asm::Type::XMM:
     case x64asm::Type::YMM:
+    case x64asm::Type::MM:
 
     // also allow some non-register but fixed operands
     case x64asm::Type::ZERO:
@@ -235,6 +250,7 @@ bool is_register_type(const Type& t) {
   case x64asm::Type::XMM_0:
   case x64asm::Type::XMM:
   case x64asm::Type::YMM:
+  case x64asm::Type::MM:
     break;
   default:
     return false;
@@ -558,8 +574,6 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   // build formula for program
   SymState tmp(opcode_str);
   auto code = t.get_code();
-  assert(code[0].get_opcode() == Opcode::LABEL_DEFN);
-  assert(code[code.size() - 1].get_opcode() == Opcode::RET);
   for (size_t i = 1; i < code.size()-1; i++) {
     build_circuit(code[i], tmp);
   }
@@ -585,11 +599,15 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     auto real_name = name.substr(0, name.size() - opcode_str.size() - 1);
     R64 gp = Constants::rax();
     Ymm ymm = Constants::ymm0();
+    Mm mm = Constants::mm0();
     if (stringstream(real_name) >> gp) {
       auto translated_reg = translate_max_register(gp, specgen_instr, instr);
       return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
     } else if (stringstream(real_name) >> ymm) {
       auto translated_reg = translate_max_register(ymm, specgen_instr, instr);
+      return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
+    } else if (stringstream(real_name) >> mm) {
+      auto translated_reg = translate_mm_register(mm, specgen_instr, instr);
       return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
     }
     assert(false);
@@ -657,6 +675,17 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   }
   for (auto iter = liveouts.sse_begin(); iter != liveouts.sse_end(); ++iter) {
     auto iter_translated = translate_sse_register(*iter, specgen_instr, instr);
+    // look up live out in tmp state (after translating operators as necessary)
+    auto val = tmp[*iter];
+    if (!typecheck(val, (*iter).size())) return;
+    // rename variables in the tmp state to the values in start
+    auto val_renamed = simplifier.simplify(translate_circuit(val));
+    if (!typecheck(val_renamed, (*iter).size())) return;
+    // update the start state with the circuits from tmp
+    final.set(iter_translated, val_renamed, false, true);
+  }
+  for (auto iter = liveouts.mm_begin(); iter != liveouts.mm_end(); ++iter) {
+    auto iter_translated = translate_mm_register(*iter, specgen_instr, instr);
     // look up live out in tmp state (after translating operators as necessary)
     auto val = tmp[*iter];
     if (!typecheck(val, (*iter).size())) return;

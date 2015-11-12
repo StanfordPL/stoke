@@ -108,7 +108,7 @@ int main(int argc, char** argv) {
   }
 
   x64asm::RegSet rs =
-    (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
+    (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms() | RegSet::all_mms()) +
     x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf +
     x64asm::eflags_zf + x64asm::eflags_sf;// + x64asm::eflags_af;
   rs &= instr.maybe_write_set();
@@ -173,6 +173,12 @@ void compute_score(SymState& state, RegSet& rs, size_t& nodes, size_t& uifs, siz
     uifs += uif_counter(circuit);
     muls += mul_counter(circuit);
   }
+  for (auto mm_it = rs.mm_begin(); mm_it != rs.mm_end(); ++mm_it) {
+    auto circuit = (state.lookup(*mm_it));
+    nodes += node_counter(circuit);
+    uifs += uif_counter(circuit);
+    muls += mul_counter(circuit);
+  }
   for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
     auto circuit = (state[*flag_it]);
     nodes += node_counter(circuit);
@@ -202,6 +208,10 @@ void show_circuits(SymState& state, RegSet& rs) {
   for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
     auto circuit = (state.lookup(*sse_it));
     cout << (*sse_it) << ": " << circuit << endl;
+  }
+  for (auto mm_it = rs.mm_begin(); mm_it != rs.mm_end(); ++mm_it) {
+    auto circuit = (state.lookup(*mm_it));
+    cout << (*mm_it) << ": " << circuit << endl;
   }
   for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
     auto circuit = (state[*flag_it]);
