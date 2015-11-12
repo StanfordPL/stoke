@@ -67,6 +67,12 @@ string diff_states(const CpuState& state1, const CpuState& state2, bool show_unc
     ss << *i;
     regs.push_back(ss.str());
   }
+  for (auto i = regs_to_show.mm_begin(), ie = regs_to_show.mm_end(); i != ie; ++i) {
+    ss.str("");
+    ss.clear();
+    ss << *i;
+    regs.push_back(ss.str());
+  }
   for (auto i = regs_to_show.flags_begin(), ie = regs_to_show.flags_end(); i != ie; ++i) {
     ss.str("");
     ss.clear();

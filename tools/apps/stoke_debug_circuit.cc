@@ -219,6 +219,16 @@ int main(int argc, char** argv) {
   }
   if (printed) cout << endl;
   printed = false;
+  for (auto mm_it = rs.mm_begin(); mm_it != rs.mm_end(); ++mm_it) {
+    auto val = state.lookup(*mm_it);
+    if (!show_unchanged_arg.value() && !has_changed(mm_it, val)) continue;
+    Console::msg() << out_padded(mm_it, 7) << ": ";
+    print(val);
+    Console::msg() << endl;
+    printed = true;
+  }
+  if (printed) cout << endl;
+  printed = false;
   for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
     SymBool val = state[*flag_it];
     if (!show_unchanged_arg.value() && !has_changed(flag_it, val)) continue;
