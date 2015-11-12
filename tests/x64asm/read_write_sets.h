@@ -137,7 +137,7 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
     }
   }
   for (auto it = reads.mm_begin(); it != reads.mm_end(); ++it) {
-    cs2.mm[*it] = cs1[*it];
+    cs2.mm[*it] = cs1.mm[*it];
   }
   for (size_t i = 0; i < x64asm::eflags.size(); i++) {
     auto op = x64asm::eflags[i];
@@ -192,7 +192,7 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
     x64asm::Mm r = *it;
     std::stringstream ss;
     ss << "The " << r.size() << " bits of " << r << " differ.";
-    failed |= check(final1[r], final2[r], ss.str(), os);
+    failed |= check(final1.mm[r].get_fixed_quad(0), final2.mm[r].get_fixed_quad(0), ss.str(), os);
   }
   for (size_t i = 0; i < x64asm::eflags.size(); i++) {
     auto op = x64asm::eflags[i];

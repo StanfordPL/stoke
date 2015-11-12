@@ -368,7 +368,7 @@ private:
       x64asm::Mm r = *it;
       std::stringstream tmp;
       tmp << "The " << r.size() << " bits of " << *it << " differ.";
-      EXPECT_CPU_EQ_INT(expect[r], actual[r], tmp.str());
+      EXPECT_CPU_EQ_INT(expect.mm[r].get_fixed_quad(0), actual.mm[r].get_fixed_quad(0), tmp.str());
     }
 
     for (size_t i = 0; i < x64asm::eflags.size(); i++)
