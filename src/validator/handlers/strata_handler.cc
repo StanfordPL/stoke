@@ -153,7 +153,7 @@ void print_state(SymState& state, RegSet rs) {
 
   // print symbolic state
   bool printed = false;
-  rs = rs & ((RegSet::all_gps() | RegSet::all_ymms()) +
+  rs = rs & ((RegSet::all_gps() | RegSet::all_ymms() | RegSet::all_mms()) +
              Constants::eflags_cf() +
              Constants::eflags_sf() +
              Constants::eflags_zf() +
@@ -173,6 +173,14 @@ void print_state(SymState& state, RegSet rs) {
   for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
     auto val = state.lookup(*sse_it);
     Console::msg() << (*sse_it) << ": ";
+    print(val);
+    Console::msg() << endl;
+    printed = true;
+  }
+  printed = false;
+  for (auto mm_it = rs.mm_begin(); mm_it != rs.mm_end(); ++mm_it) {
+    auto val = state.lookup(*mm_it);
+    Console::msg() << (*mm_it) << ": ";
     print(val);
     Console::msg() << endl;
     printed = true;
