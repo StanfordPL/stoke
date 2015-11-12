@@ -23,7 +23,7 @@ using namespace std;
 bool Handler::regset_is_supported(RegSet rs) const {
   /* Check to make sure all liveout are supported. */
   /* Right now we support gps, xmms, ACOPSZ eflags */
-  RegSet supported = (RegSet::all_gps() | RegSet::all_ymms()) +
+  RegSet supported = (RegSet::all_gps() | RegSet::all_ymms() | RegSet::all_mms()) +
                      eflags_cf + eflags_of +
                      eflags_pf + eflags_sf + eflags_zf;
 
@@ -41,7 +41,7 @@ bool Handler::operands_supported(const Instruction& instr) {
 
   for (size_t i = 0; i < instr.arity(); ++i) {
     auto& o = instr.get_operand<Operand>(i);
-    if (!o.is_gp_register() && !o.is_sse_register() && !o.is_immediate() &&
+    if (!o.is_gp_register() && !o.is_sse_register() && !o.is_mm_register() && !o.is_immediate() &&
         !o.is_typical_memory() && o.type() != Type::LABEL) {
       error_ = "Operand " + to_string(i) + " not supported.";
       return false;

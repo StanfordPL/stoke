@@ -112,6 +112,10 @@ ostream& CpuState::write_text(ostream& os) const {
     "%ymm8", "%ymm9", "%ymm10", "%ymm11", "%ymm12", "%ymm13", "%ymm14", "%ymm15"
   };
 
+  const char* mms[] = {
+    "%mm0", "%mm1", "%mm2", "%mm3", "%mm4", "%mm5", "%mm6", "%mm7"
+  };
+
   const char* rflags[] = {
     "%cf", "%1", "%pf", "%0", "%af", "%0", "%zf", "%sf", "%tf", "%if",
     "%df", "%of", "%iopl[0]", "%iopl[1]", "%nt", "%0", "%rf", "%vm", "%ac", "%vif",
@@ -127,6 +131,10 @@ ostream& CpuState::write_text(ostream& os) const {
   os << endl;
 
   sse.write_text(os, sses, 3);
+  os << endl;
+  os << endl;
+
+  mm.write_text(os, mms, 3);
   os << endl;
   os << endl;
 
@@ -194,6 +202,10 @@ istream& CpuState::read_text(istream& is) {
     "%ymm8", "%ymm9", "%ymm10", "%ymm11", "%ymm12", "%ymm13", "%ymm14", "%ymm15"
   };
 
+  const char* mms[] = {
+    "%mm0", "%mm1", "%mm2", "%mm3", "%mm4", "%mm5", "%mm6", "%mm7"
+  };
+
   const char* rflags[] = {
     "%cf", "%1", "%pf", "%0", "%af", "%0", "%zf", "%sf", "%tf", "%if",
     "%df", "%of", "%iopl[0]", "%iopl[1]", "%nt", "%0", "%rf", "%vm", "%ac", "%vif",
@@ -224,6 +236,9 @@ istream& CpuState::read_text(istream& is) {
   sse.read_text(is, sses);
   is >> ws;
 
+  mm.read_text(is, mms);
+  is >> ws;
+
   rf.read_text(is, rflags);
   is >> ws;
 
@@ -251,6 +266,7 @@ ostream& CpuState::write_bin(ostream& os) const {
   os.write((const char*)&code, sizeof(ErrorCode));
   gp.write_bin(os);
   sse.write_bin(os);
+  mm.write_bin(os);
   rf.write_bin(os);
   stack.write_bin(os);
   heap.write_bin(os);
@@ -269,6 +285,7 @@ istream& CpuState::read_bin(istream& is) {
   is.read((char*)&code, sizeof(ErrorCode));
   gp.read_bin(is);
   sse.read_bin(is);
+  mm.read_bin(is);
   rf.read_bin(is);
   stack.read_bin(is);
   heap.read_bin(is);

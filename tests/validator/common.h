@@ -60,6 +60,10 @@ public:
       rs += x64asm::xmms[i];
     }
 
+    for (size_t i = 0; i < x64asm::mms.size(); ++i) {
+      rs += x64asm::mms[i];
+    }
+
     return rs;
   }
 

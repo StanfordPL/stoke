@@ -27,6 +27,10 @@ void SymState::build_from_cpustate(const CpuState& cs) {
     gp[i] = SymBitVector::constant(64, cs.gp[i].get_fixed_quad(0));
   }
 
+  for (size_t i = 0; i < cs.mm.size(); ++i) {
+    mm[i] = SymBitVector::constant(64, cs.mm[i].get_fixed_quad(0));
+  }
+
   for (size_t i = 0; i < cs.sse.size(); ++i) {
     sse[i] =
       SymBitVector::constant(64, cs.sse[i].get_fixed_quad(3)) ||
@@ -62,6 +66,15 @@ void SymState::build_with_suffix(const string& suffix, bool no_suffix) {
       name << "_" << suffix;
     }
     gp[i] = SymBitVector::var(64, name.str());
+  }
+
+  for (size_t i = 0; i < mm.size(); ++i) {
+    stringstream name;
+    name << mms[i];
+    if (!no_suffix) {
+      name << "_" << suffix;
+    }
+    mm[i] = SymBitVector::var(64, name.str());
   }
 
   for (size_t i = 0; i < sse.size(); ++i) {
@@ -151,6 +164,11 @@ SymBitVector SymState::lookup(const Operand o) const {
     return sse[ymm];
   }
 
+  if (o.type() == Type::MM) {
+    auto& r = reinterpret_cast<const Mm&>(o);
+    return mm[r];
+  }
+
   if (o.is_immediate()) {
     auto& imm = reinterpret_cast<const Imm&>(o);
     return SymBitVector::constant(o.size(), imm);
@@ -197,6 +215,10 @@ void SymState::set(const Operand o, SymBitVector bv, bool avx, bool preserve32) 
     // small gp register
     auto& r = reinterpret_cast<const R&>(o);
     gp[r] = gp[r][63][o.size()] || bv;
+    return;
+  } else if (o.type() == Type::MM) {
+    auto& r = reinterpret_cast<const Mm&>(o);
+    mm[r] = bv;
     return;
   } else if (avx && (o.type() == Type::XMM || o.type() == Type::XMM_0)) {
     // avx special case
@@ -298,6 +320,9 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
   for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
     constraints.push_back(lookup(*sse_it) == other.lookup(*sse_it));
   }
+  for (auto mm_it = rs.mm_begin(); mm_it != rs.mm_end(); ++mm_it) {
+    constraints.push_back(lookup(*mm_it) == other.lookup(*mm_it));
+  }
   for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
     constraints.push_back((*this)[*flag_it] == other[*flag_it]);
   }
@@ -380,6 +405,13 @@ void SymState::simplify() {
       auto var = SymBitVector::tmp_var(256);
       constraints.push_back(sse[i] == var);
       sse[i] = var;
+    }
+    if (i < 8) {
+      if (mm[i].type() != SymBitVector::CONSTANT && mm[i].type() != SymBitVector::VAR) {
+        auto var = SymBitVector::tmp_var(64);
+        constraints.push_back(mm[i] == var);
+        mm[i] = var;
+      }
     }
   }
   for (size_t i = 0; i < 6; ++i) {

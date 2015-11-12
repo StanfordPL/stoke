@@ -56,6 +56,12 @@ bool StateGen::get(CpuState& cs) {
       s.get_fixed_byte(j) = gen_() % 256;
     }
   }
+  for (size_t i = 0, ie = cs.mm.size(); i < ie; ++i) {
+    auto& s = cs.mm[i];
+    for (size_t j = 0, je = s.num_fixed_bytes(); j < je; ++j) {
+      s.get_fixed_byte(j) = gen_() % 256;
+    }
+  }
   for (size_t i = 0, ie = cs.rf.size(); i < ie; ++i) {
     if (!cs.rf.is_fixed(i)) {
       cs.rf.set(i, gen_() % 2);

@@ -87,6 +87,7 @@ void Validator::setup_support_table() {
       case Type::XMM:
       case Type::XMM_0:
       case Type::YMM:
+      case Type::MM:
         break;
       default:
         args_ok = false;
@@ -256,6 +257,12 @@ CpuState Validator::state_from_model(SMTSolver& smt, const string& name_suffix) 
     stringstream name;
     name << ymms[i] << name_suffix;
     cs.sse[ymms[i]] = smt.get_model_bv(name.str(), 256);
+  }
+
+  for (size_t i = 0; i < mms.size(); ++i) {
+    stringstream name;
+    name << mms[i] << name_suffix;
+    cs.mm[mms[i]] = smt.get_model_bv(name.str(), 64);
   }
 
   for (size_t i = 0; i < eflags.size(); ++i) {
