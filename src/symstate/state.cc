@@ -74,7 +74,7 @@ void SymState::build_with_suffix(const string& suffix, bool no_suffix) {
     if (!no_suffix) {
       name << "_" << suffix;
     }
-    gp[i] = SymBitVector::var(64, name.str());
+    mm[i] = SymBitVector::var(64, name.str());
   }
 
   for (size_t i = 0; i < sse.size(); ++i) {
