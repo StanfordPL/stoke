@@ -1364,7 +1364,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenCorrect2) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_WcslenCorrect2) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;

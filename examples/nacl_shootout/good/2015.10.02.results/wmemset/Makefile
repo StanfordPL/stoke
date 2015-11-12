@@ -21,4 +21,11 @@ duh:
 	time stoke debug verify --target target.s --rewrite target.s --testcases testcases --training_set "{ 1 .. 30 }" --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS)
 
 
+bounded_flat:
+	./bounded_flat.sh $(DEF_IN) $(LIVE_OUT)
+
+bounded_flat_syn:
+	./bounded_flat_syn.sh $(DEF_IN) $(LIVE_OUT)
+
+
 

@@ -27,6 +27,11 @@ SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
     heap_ = heap_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
   }
 
+  // Get a new array variable and update the heap
+  auto new_arr = SymArray::tmp_var(64, 8);
+  constraints_.push_back(heap_ == new_arr);
+  heap_ = new_arr;
+
   return SymBool::_false();
 }
 
