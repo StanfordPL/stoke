@@ -167,10 +167,10 @@ Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_
   }
 
   // initialize mm registers
-  // for (auto rit = diff.mm_begin(); rit != diff.mm_end(); ++rit) {
-  //   auto reg = *rit;
-  //   cfg.get_function().push_back(Instruction(PXOR_MM_MM, {reg, reg}));
-  // }
+  for (auto rit = diff.mm_begin(); rit != diff.mm_end(); ++rit) {
+    auto reg = *rit;
+    cfg.get_function().push_back(Instruction(PXOR_MM_MM, {reg, reg}));
+  }
 
   // flags
   auto regular = false;
