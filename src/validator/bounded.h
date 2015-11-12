@@ -50,7 +50,7 @@ public:
   BoundedValidator(SMTSolver& solver) : Validator(solver) {
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
-    set_nacl(false);
+    set_nacl(true);
   }
 
   ~BoundedValidator() {}
