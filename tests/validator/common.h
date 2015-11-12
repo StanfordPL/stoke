@@ -364,6 +364,13 @@ private:
       }
     }
 
+    for (auto it = live_outs_.mm_begin(); it != live_outs_.mm_end(); ++it) {
+      x64asm::Mm r = *it;
+      std::stringstream tmp;
+      tmp << "The " << r.size() << " bits of " << *it << " differ.";
+      EXPECT_CPU_EQ_INT(expect[r], actual[r], tmp.str());
+    }
+
     for (size_t i = 0; i < x64asm::eflags.size(); i++)
     {
       auto op = x64asm::eflags[i];

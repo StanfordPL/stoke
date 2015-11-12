@@ -88,7 +88,7 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
 
 
   static const x64asm::RegSet supported_regs =
-    (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
+    (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms() | x64asm::RegSet::all_mms()) +
     x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf +
     x64asm::eflags_zf + x64asm::eflags_sf + x64asm::eflags_af;
 
@@ -135,6 +135,9 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
     for (size_t i = 0; i < quads; ++i) {
       cs2.sse[*it].get_fixed_quad(i) = cs1.sse[*it].get_fixed_quad(i);
     }
+  }
+  for (auto it = reads.mm_begin(); it != reads.mm_end(); ++it) {
+    cs2.mm[*it] = cs1[*it];
   }
   for (size_t i = 0; i < x64asm::eflags.size(); i++) {
     auto op = x64asm::eflags[i];
@@ -184,6 +187,12 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
       ss << "Bits " << (i*64) <<  ".." << ((i+1)*64) << " of " << *it << " differ.";
       failed |= check(actual_v, expect_v, ss.str(), os);
     }
+  }
+  for (auto it = liveouts.mm_begin(); it != liveouts.mm_end(); ++it) {
+    x64asm::Mm r = *it;
+    std::stringstream ss;
+    ss << "The " << r.size() << " bits of " << r << " differ.";
+    failed |= check(final1[r], final2[r], ss.str(), os);
   }
   for (size_t i = 0; i < x64asm::eflags.size(); i++) {
     auto op = x64asm::eflags[i];
