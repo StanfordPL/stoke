@@ -21,7 +21,7 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define BOUNDED_DEBUG(X) { }
+#define BOUNDED_DEBUG(X) { X }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
@@ -1134,6 +1134,18 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
     if (memories.first)
       constraints.push_back(memories.first->aliasing_formula(*memories.second));
+    else {
+      auto target_flat = dynamic_cast<FlatMemory*>(state_t.memory);
+      auto rewrite_flat = dynamic_cast<FlatMemory*>(state_r.memory);
+      if(target_flat && rewrite_flat) {
+        constraints.insert(constraints.begin(),
+                           target_flat->get_constraints().begin(),
+                           target_flat->get_constraints().end());
+        constraints.insert(constraints.begin(),
+                           rewrite_flat->get_constraints().begin(),
+                           rewrite_flat->get_constraints().end());
+      }
+    }
 
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
@@ -1284,10 +1296,10 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         // Case 2: verify failed and no counterexampe: keep going
         // Case 3: verify worked: keep going
 
-        if (!ok && counterexamples_.size() > 0)
+        if (bailout_ && !ok && counterexamples_.size() > 0)
           break;
       }
-      if (!ok && counterexamples_.size() > 0)
+      if (bailout_ && !ok && counterexamples_.size() > 0)
         break;
     }
 

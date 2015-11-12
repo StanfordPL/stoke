@@ -40,10 +40,15 @@ public:
   /** Create a formula expressing these memory cells with another set. */
   SymBool equality_constraint(FlatMemory& other);
 
+  std::vector<SymBool> get_constraints() {
+    return constraints_;
+  }
 
 private:
 
   SymArray heap_;
+
+  std::vector<SymBool> constraints_;
 
 };
 

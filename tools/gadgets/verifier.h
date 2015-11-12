@@ -109,6 +109,7 @@ private:
       auto bv = new BoundedValidator(*solver_);
       bv->set_bound(bound_arg.value());
       bv->set_alias_strategy(parse_alias());
+      bv->set_no_bailout(no_bailout_arg.value());
       return bv;
     } else if (s == "ddec") {
       auto ddec = new DdecValidator(*solver_);

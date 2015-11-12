@@ -51,6 +51,7 @@ public:
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(true);
+    set_no_bailout(false);
   }
 
   ~BoundedValidator() {}
@@ -69,6 +70,11 @@ public:
     with assumption of a 32-bit address space. */
   BoundedValidator& set_nacl(bool b) {
     nacl_ = b;
+    return *this;
+  }
+  /** If set to true, don't bail out early once counterexample found. */
+  BoundedValidator& set_no_bailout(bool b) {
+    bailout_ = !b;
     return *this;
   }
 
@@ -101,6 +107,8 @@ private:
   AliasStrategy alias_strategy_;
   /** Add NaCl constraint for memory? */
   bool nacl_;
+  /** Should we bailout early? */
+  bool bailout_;
 
 
   /** Verify a pair of paths. */
