@@ -171,7 +171,7 @@ int main(int argc, char** argv) {
 
   // print symbolic state
   bool printed = false;
-  RegSet rs = (RegSet::all_gps() | RegSet::all_ymms()) +
+  RegSet rs = (RegSet::all_gps() | RegSet::all_ymms() | RegSet::all_mms()) +
               Constants::eflags_cf() +
               Constants::eflags_sf() +
               Constants::eflags_zf() +
