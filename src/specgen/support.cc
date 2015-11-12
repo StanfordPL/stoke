@@ -1835,14 +1835,14 @@ vector<Opcode> instr_cat_base_ = {
 // , IMUL_M32 // IMUL m32
 // , IMUL_M64 // IMUL m64
 // , IMUL_M8 // IMUL m8
-, IMUL_R16 // IMUL r16
+  , IMUL_R16 // IMUL r16
 // , IMUL_R16_M16 // IMUL r16, m16
 // , IMUL_R16_M16_IMM16 // IMUL r16, m16, imm16
 // , IMUL_R16_M16_IMM8 // IMUL r16, m16, imm8
 // , IMUL_R16_R16 // IMUL r16, r16
 // , IMUL_R16_R16_IMM16 // IMUL r16, r16, imm16
 // , IMUL_R16_R16_IMM8 // IMUL r16, r16, imm8
-, IMUL_R32 // IMUL r32
+  , IMUL_R32 // IMUL r32
 // , IMUL_R32_M32 // IMUL r32, m32
 // , IMUL_R32_M32_IMM32 // IMUL r32, m32, imm32
 // , IMUL_R32_M32_IMM8 // IMUL r32, m32, imm8
@@ -1856,7 +1856,7 @@ vector<Opcode> instr_cat_base_ = {
 // , IMUL_R64_R64 // IMUL r64, r64
 // , IMUL_R64_R64_IMM32 // IMUL r64, r64, imm32
 // , IMUL_R64_R64_IMM8 // IMUL r64, r64, imm8
-, IMUL_R8 // IMUL r8
+  , IMUL_R8 // IMUL r8
 // , IMUL_RH // IMUL rh
 // , IN_AL_DX // IN AL, DX
 // , IN_AL_IMM8 // IN AL, imm8
