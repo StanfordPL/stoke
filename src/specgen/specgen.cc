@@ -121,7 +121,7 @@ std::map<x64asm::Type, std::vector<x64asm::Operand>> operands_ = {
   {x64asm::Type::R_64, {x64asm::Constants::rbx(), x64asm::Constants::rcx(), x64asm::Constants::rdx()}},
   {x64asm::Type::XMM, {x64asm::Constants::xmm1(), x64asm::Constants::xmm2(), x64asm::Constants::xmm3(), x64asm::Constants::xmm4()}},
   {x64asm::Type::YMM, {x64asm::Constants::ymm1(), x64asm::Constants::ymm2(), x64asm::Constants::ymm3(), x64asm::Constants::ymm4()}},
-  {x64asm::Type::MM, {x64asm::Constants::mm0(), x64asm::Constants::mm1(), x64asm::Constants::mm2(), x64asm::Constants::mm3()}}
+  {x64asm::Type::MM, {x64asm::Constants::mm1(), x64asm::Constants::mm2(), x64asm::Constants::mm3(), x64asm::Constants::mm4()}}
 };
 std::map<x64asm::Type, int> operands_idx_ = {
 };
