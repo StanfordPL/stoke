@@ -141,6 +141,8 @@ int main(int argc, char** argv) {
       randomize_regs(cs);
       cs.gp[Constants::rbx()].get_fixed_quad(0) = a;
       cs.gp[Constants::rcx()].get_fixed_quad(0) = b;
+      cs.mm[Constants::mm1()].get_fixed_quad(0) = a;
+      cs.mm[Constants::mm2()].get_fixed_quad(0) = b;
       add_test(cs, tests);
     }
 
