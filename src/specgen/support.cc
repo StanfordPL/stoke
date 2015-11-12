@@ -2452,11 +2452,11 @@ vector<Opcode> instr_cat_base_ = {
 // , PADDSB_MM_M64 // PADDSB mm, m64
 // , PADDSB_MM_MM // PADDSB mm, mm
 // , PADDSB_XMM_M128 // PADDSB xmm, m128
-  , PADDSB_XMM_XMM // PADDSB xmm, xmm
+// , PADDSB_XMM_XMM // PADDSB xmm, xmm
 // , PADDSW_MM_M64 // PADDSW mm, m64
 // , PADDSW_MM_MM // PADDSW mm, mm
 // , PADDSW_XMM_M128 // PADDSW xmm, m128
-  , PADDSW_XMM_XMM // PADDSW xmm, xmm
+// , PADDSW_XMM_XMM // PADDSW xmm, xmm
 // , PADDUSB_MM_M64 // PADDUSB mm, m64
 // , PADDUSB_MM_MM // PADDUSB mm, mm
 // , PADDUSB_XMM_M128 // PADDUSB xmm, m128
