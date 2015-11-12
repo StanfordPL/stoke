@@ -95,7 +95,7 @@ int main(int argc, char** argv) {
   f_base.open(base_path);
 
   vector<Opcode> imm8_baseset;
-  if (only_imm_arg) {
+  if (only_imm_arg || only_mm_arg) {
     filesystem::directory_iterator itr("resources/imm8_baseset"), eod;
     for (; itr != eod; ++itr) {
       auto file = *itr;
@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
     if (may_be_goal) {
       f_goal2 << op << endl;
 
-      if (specgen_is_mm(op)) {
+      if (specgen_is_mm(op) && (!only_mm_arg || (!specgen_uses_memory(op) && !specgen_uses_imm(op)))) {
         mm++;
         is_mm = true;
         is_goal = false;
@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
       }
     }
 
-    if (is_goal || (only_imm_arg && is_imm8)) {
+    if (is_goal || (only_imm_arg && is_imm8) || (only_mm_arg && is_mm)) {
       if (!only_mm_arg && !only_imm_arg && !allow_all_arg) {
         f_goal << op << endl;
         goal++;
@@ -242,8 +242,10 @@ int main(int argc, char** argv) {
           f_goal << op << endl;
           goal++;
         } else {
-          base++;
-          f_base << op << endl; // we add everything else to the baseset
+          if (find(imm8_baseset.begin(), imm8_baseset.end(), op) != imm8_baseset.end()) {
+            base++;
+            f_base << op << endl;
+          }
         }
       }
     }
