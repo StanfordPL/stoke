@@ -1,13 +1,15 @@
 
 DEF_IN="{ %r15 %rdi %rsi %rdx }"
 LIVE_OUT="{ %rax }"
-ARGS=--solver z3 --test_set "{ 0 .. 50 }" --sound_nullspace --alias_strategy string
+ARGS=--solver z3 --alias_strategy string --no_ddec_bv
+OPT_ARGS=--test_set "{ 0 .. 200 }" --sound_nullspace
+SYNTH_ARGS=--test_set "{ 0 .. 50 }" --sound_nullspace
 
 opt:
-	time stoke debug verify --target target.s --rewrite optimize.s --testcases testcases --training_set "{ 1 .. 30 }" --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS)
+	time stoke debug verify --target target.s --rewrite optimize.s --testcases testcases --training_set "{ 1 .. 30 }" --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS) $(OPT_ARGS)
 
 synth:
-	time stoke debug verify --target target.s --rewrite synth.s --testcases testcases --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS)
+	time stoke debug verify --target target.s --rewrite synth.s --testcases testcases --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS) $(SYNTH_ARGS)
 
 opt_notc:
 	time stoke debug verify --target target.s --rewrite optimize.s --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS)
