@@ -51,9 +51,6 @@ private:
   // Number of transforms to perform
   size_t count_;
 
-  // Number of transforms to perform
-  size_t count_;
-
 };
 
 } // namespace stoke

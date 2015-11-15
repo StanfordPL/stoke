@@ -43,6 +43,7 @@ public:
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(true);
+    set_heap_out(true);
   }
 
   ~BoundedValidator() {}
