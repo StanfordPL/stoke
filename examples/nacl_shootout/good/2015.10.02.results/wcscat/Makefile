@@ -1,5 +1,5 @@
 
-DEF_IN="{ %r15 %rdi %rsi }"
+DEF_IN="{ %r15 %rdi %rsi %rdx %rax }"
 LIVE_OUT="{ %rax }"
 ARGS=--solver z3 --alias_strategy string_antialias --test_set "{ 0 .. 100 }" --sound_nullspace
 
