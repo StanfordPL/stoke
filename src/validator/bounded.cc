@@ -17,7 +17,7 @@
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/bounded.h"
 
-#define BOUNDED_DEBUG(X) { }
+#define BOUNDED_DEBUG(X) { X }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { X }
@@ -288,8 +288,10 @@ size_t accesses_done) {
 
   vector<vector<CellMemory::SymbolicAccess>> result;
   // Step 0: check for feasibility.  if not, stop here.
+  /*
   if (!check_feasibility(target, rewrite, target_unroll, rewrite_unroll, P, Q, done))
     return result;
+    */
 
   // Step 1: if we've processed all the concrete accesses, we're done.  Generate CellMemories and return.
   if (todo.size() == accesses_done) {
@@ -1200,7 +1202,7 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     // Handle the shorter paths first, please
     // [helps find counterexamples sooner]
     auto by_length = [](const CfgPath& lhs, const CfgPath& rhs) {
-      return lhs.size() < rhs.size();
+      return lhs.size() > rhs.size();
     };
     sort(paths_[false].begin(), paths_[false].end(), by_length);
     sort(paths_[true].begin(), paths_[true].end(), by_length);
