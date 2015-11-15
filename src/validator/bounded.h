@@ -159,7 +159,8 @@ private:
       const std::vector<CellMemory::SymbolicAccess>& todo,
       const std::vector<CellMemory::SymbolicAccess>& done,
       size_t sym_accesses_done,
-      const Invariant& assume);
+      const Invariant& assume,
+      bool check_feasible);
 
 
   /** Helper for enumerate_aliasing_helper.  Builds CellMemory objects for
