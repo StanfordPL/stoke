@@ -283,13 +283,14 @@ vector<vector<CellMemory::SymbolicAccess>> BoundedValidator::enumerate_aliasing_
     const vector<CellMemory::SymbolicAccess>& todo,
     const vector<CellMemory::SymbolicAccess>& done,
     size_t accesses_done,
-const Invariant& assume) {
+const Invariant& assume,
+  bool check_feasible) {
 
   ALIAS_DEBUG(cout << "===================== RECURSIVE STEP ==============================" << endl;)
 
   vector<vector<CellMemory::SymbolicAccess>> result;
   // Step 0: check for feasibility.  if not, stop here.
-  if (!check_feasibility(target, rewrite, target_unroll, rewrite_unroll, P, Q, done, assume))
+  if (check_feasible && !check_feasibility(target, rewrite, target_unroll, rewrite_unroll, P, Q, done, assume))
     return result;
 
   // Step 1: if we've processed all the concrete accesses, we're done.  Generate CellMemories and return.
@@ -388,7 +389,7 @@ const Invariant& assume) {
     recursive_accesses.push_back(sa);
 
     auto new_results = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll,
-                       P, Q, todo, recursive_accesses, accesses_done+1, assume);
+                       P, Q, todo, recursive_accesses, accesses_done+1, assume, check_feasible);
     result.insert(result.begin(), new_results.begin(), new_results.end());
   }
 
@@ -731,7 +732,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
     sa.unconstrained = false;
     done.push_back(sa);
 
-    auto options = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q, cell_list, done, 1, assume);
+    auto options = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q, cell_list, done, 1, assume, false);
 
     for (auto option : options) {
       map<size_t, CellMemory::SymbolicAccess> target_map;
@@ -934,7 +935,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_basi
 
 
   auto options =  enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q,
-                  todo, done, 1, assume);
+                  todo, done, 1, assume, true);
 
   vector<pair<CellMemory*, CellMemory*>> result;
 
