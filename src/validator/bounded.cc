@@ -21,7 +21,7 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define BOUNDED_DEBUG(X) { X }
+#define BOUNDED_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
@@ -1067,6 +1067,7 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   prove.add_invariant(&prove_state);
   prove.add_invariant(&memory_equal);
 
+  BOUNDED_DEBUG(cout << "heap/stack out: " << heap_out_ << " " << stack_out_ << endl;)
   if(heap_out_ || stack_out_) {
     return verify_pair(target, rewrite, P, Q, assume, prove);
   } else {
@@ -1138,12 +1139,14 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       auto target_flat = dynamic_cast<FlatMemory*>(state_t.memory);
       auto rewrite_flat = dynamic_cast<FlatMemory*>(state_r.memory);
       if(target_flat && rewrite_flat) {
+        auto target_con = target_flat->get_constraints();
         constraints.insert(constraints.begin(),
-                           target_flat->get_constraints().begin(),
-                           target_flat->get_constraints().end());
+                           target_con.begin(),
+                           target_con.end());
+        auto rewrite_con = rewrite_flat->get_constraints();
         constraints.insert(constraints.begin(),
-                           rewrite_flat->get_constraints().begin(),
-                           rewrite_flat->get_constraints().end());
+                           rewrite_con.begin(),
+                           rewrite_con.end());
       }
     }
 
