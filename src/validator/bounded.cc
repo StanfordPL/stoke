@@ -565,9 +565,7 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
   //We're going to use the same constraints vector for all the queries.
   // Can be much more performant if stoke #716 is done.
   for (size_t i = 0; i < total_accesses; ++i) {
-    for (size_t j = 0; j < total_accesses; ++j) {
-      if (i == j)
-        continue;
+    for (size_t j = i+1; j < total_accesses; ++j) {
 
       // (i) Are these two accesses to the same memory locations?
       SymBool equal_addrs;
@@ -600,6 +598,32 @@ vector<pair<CellMemory*, CellMemory*>> BoundedValidator::enumerate_aliasing_stri
       constraints.erase(--constraints.end());
     }
   }
+
+  for (size_t i = 0; i < total_accesses; ++i) {
+    for (size_t j = 0; j < i; ++j) {
+      same_address[i][j] = same_address[j][i];
+
+      if(same_address[i][j]) {
+        next_address[i][j] = false;
+        continue;
+      }
+
+      // (ii) Are these two accesses in sequence?
+      SymBool next_addrs;
+      if (nacl_) {
+        next_addrs = sym_accesses[i].address[31][0] + SymBitVector::constant(32, sym_accesses[i].size) ==
+                     sym_accesses[j].address[31][0];
+      } else {
+        next_addrs = sym_accesses[i].address + SymBitVector::constant(64, sym_accesses[i].size) ==
+                     sym_accesses[j].address;
+
+      }
+      constraints.push_back(!next_addrs);
+      next_address[i][j] = !solver_.is_sat(constraints);
+      constraints.erase(--constraints.end());
+    }
+  }
+
 
   ALIAS_STRING_DEBUG(
     cout << "SAME MAP" << endl;
