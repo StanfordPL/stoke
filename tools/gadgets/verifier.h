@@ -118,6 +118,7 @@ private:
       ddec->set_no_bv(no_ddec_bv_arg.value());
       ddec->set_sound_nullspace(sound_nullspace_arg.value());
       ddec->set_alias_strategy(parse_alias());
+      ddec->set_bound(bound_arg.value());
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(fxn);

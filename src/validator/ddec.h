@@ -60,6 +60,11 @@ public:
     alias_strategy_ = as;
     return *this;
   }
+  /** Set the bound for bounded validator */
+  DdecValidator& set_bound(size_t bound) {
+    bound_ = bound;
+    return *this;
+  }
  
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
@@ -87,6 +92,8 @@ private:
 
   /** Bounded Validator */
   BoundedValidator bv_;
+  /** Bound */
+  size_t bound_;
 
   /** Whatever cutpoints we've generated. */
   Cutpoints* cutpoints_;
