@@ -435,6 +435,7 @@ int main(int argc, char** argv) {
     } else {
       lowest_correct = 0;
     }
+    cout << "Starting cost: " << initial_cost.second << endl;
 
     const auto start_search = steady_clock::now();
     search.run(target, fxn, init_arg, state, aux_fxns);

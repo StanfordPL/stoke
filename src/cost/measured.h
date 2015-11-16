@@ -55,7 +55,7 @@ public:
 
     for (size_t i = 0; i < tc_count; ++i) {
       auto tc = *(sandbox_->get_input(i));
-      if (tc.heap.size() > average_size) {
+      if (tc.heap.size() >= average_size) {
         nops_emitted_ = 0;
         sandbox_->run(i);
       }

@@ -28,6 +28,7 @@ then
 	echo "  replace             replace the contents of a binary file"
 	echo "  search              run STOKE search"
 	echo "  testcase            generate a STOKE testcase file"
+	echo "  stategen            use bounded validator to make testcases"
 	echo ""
 	echo "  debug cfg           generate the control flow graph for a function"
 	echo "  debug circuit       show the SMT formula (circuit) for a straight-line piece of code"
@@ -126,6 +127,9 @@ then
 elif [ "$SCMD" == "search" ]
 then
 	exec $HERE/stoke_search "$@"
+elif [ "$SCMD" == "stategen" ]
+then
+	exec $HERE/stoke_stategen "$@"
 elif [ "$SCMD" == "testcase" ]
 then
 	exec $HERE/stoke_testcase "$@"

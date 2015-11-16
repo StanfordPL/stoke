@@ -82,6 +82,9 @@ public:
   /** Evalue if the target and rewrite are the same */
   bool verify(const Cfg& target, const Cfg& rewrite);
 
+  /** Make testcases for a target. */
+  std::vector<CpuState> make_testcases(const Cfg& target);
+
   /** Returns whether the last counterexample made sense */
   size_t counter_examples_available() {
     return counterexamples_.size();

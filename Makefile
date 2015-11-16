@@ -181,6 +181,7 @@ BIN=\
 	bin/stoke_extract \
 	bin/stoke_replace \
 	bin/stoke_search \
+	bin/stoke_stategen \
 	bin/stoke_testcase \
 	\
 	bin/stoke_debug_cfg \

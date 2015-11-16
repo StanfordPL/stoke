@@ -17,6 +17,7 @@
 #include "src/symstate/memory/trivial.h"
 #include "src/validator/bounded.h"
 #include "src/validator/invariants/conjunction.h"
+#include "src/validator/invariants/false.h"
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
@@ -26,7 +27,7 @@
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { X }
+#define CEG_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -1080,6 +1081,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   BOUNDED_DEBUG(cout << "===========================================" << endl;)
   BOUNDED_DEBUG(cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;)
+  BOUNDED_DEBUG(cout << "Assuming: " << assume << endl;)
+  BOUNDED_DEBUG(cout << "Proving: " << prove << endl;)
   init_mm();
 
   // Get a list of all aliasing cases.
@@ -1243,6 +1246,35 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   stop_mm();
   return true;
 
+}
+
+vector<CpuState> BoundedValidator::make_testcases(const Cfg& target) {
+
+  // Enumerate paths through target
+  // For each path, query:
+  //
+  // (inputs equal) { P ; P } ( false )
+  //
+  // If it's unsat, that means the path is infeasible.
+  // If it's sat, there is some input that takes path P.
+
+  counterexamples_.clear();
+  auto paths = CfgPaths::enumerate_paths(target, bound_);
+
+  ConjunctionInvariant assume;
+  FalseInvariant _false;
+
+  StateEqualityInvariant regs_equal(target.def_ins());
+  MemoryEqualityInvariant memory_equal;
+
+  assume.add_invariant(&regs_equal);
+  assume.add_invariant(&memory_equal);
+
+  for(auto p : paths) {
+    verify_pair(target, target, p, p, assume, _false);
+  }
+
+  return counterexamples_;
 }
 
 bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
