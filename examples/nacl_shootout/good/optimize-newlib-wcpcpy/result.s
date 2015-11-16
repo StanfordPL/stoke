@@ -46,7 +46,7 @@
   movl %edi, %eax               #  35    0x140aeb  2      OPC=movl_r32_r32    
   addl $0x4, %edi               #  36    0x140aed  6      OPC=addl_r32_imm32  
   movl %edx, -0x4(%r15,%rdi,1)  #  37    0x140af3  5      OPC=movl_m32_r32    
-  orl %edx, %edx                #  38    0x140af8  2      OPC=orl_r32_r32_1   
+  testl %edx, %edx              #  38    0x140af8  2      OPC=testl_r32_r32   
   jne .L_140ae0                 #  39    0x140afa  2      OPC=jne_label       
   nop                           #  40    0x140afc  1      OPC=nop             
   nop                           #  41    0x140afd  1      OPC=nop             

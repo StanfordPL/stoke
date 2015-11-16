@@ -53,7 +53,20 @@ public:
   }
 
   /** Returns the condition associated with an instruction */
-  static SymBool condition_predicate(const std::string& cc, const SymState& ss);
+  static SymBool condition_predicate(const std::string& cc, const SymState& ss) {
+    return read_condition<SymBool, SymState>(cc, ss);
+  }
+  /** Returns the condition associateed with an instruction on concrete data. */
+  static bool condition_satisfied(const std::string& cc, const CpuState& cs) {
+    return read_condition<bool, CpuState>(cc, cs);
+  }
+
+private:
+
+  /** You wouldn't believe this, but the implementation of the two condition_* functions
+    is totally identical, except for the names of the types.  Template win. */
+  template <typename U, typename T>
+  static U read_condition(const std::string& cc, const T& data);
 
 };
 

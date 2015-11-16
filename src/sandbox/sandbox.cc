@@ -101,7 +101,7 @@ bool Sandbox::is_supported(Opcode o) {
   return unsupported_.find(o) == unsupported_.end();
 }
 
-Sandbox::Sandbox() {
+void Sandbox::init() {
   set_abi_check(true);
   set_stack_check(true);
   set_max_jumps(16);
@@ -233,6 +233,13 @@ Sandbox& Sandbox::clear_callbacks() {
 }
 
 Sandbox& Sandbox::run(size_t index) {
+
+  /*
+  cout << endl;
+  cout << "RUNNING ON" << endl;
+  cout << *get_input(index) << endl;
+  */
+
   assert(num_functions() > 0);
   assert(index < num_inputs());
   auto io = io_pairs_[index];
@@ -1506,8 +1513,14 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   auto rsp_op = false;
   switch (instr.type(0)) {
   case Type::R_8:
+    rsp_op = instr.get_operand<R8>(0) == spl;
+    break;
   case Type::R_16:
+    rsp_op = instr.get_operand<R16>(0) == sp;
+    break;
   case Type::R_32:
+    rsp_op = instr.get_operand<R32>(0) == esp;
+    break;
   case Type::R_64:
     rsp_op = instr.get_operand<R64>(0) == rsp;
     break;

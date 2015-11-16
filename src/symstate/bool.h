@@ -25,9 +25,11 @@ namespace stoke {
 class SymBitVector;
 class SymBitVectorAbstract;
 class SymBoolAbstract;
+class SymArrayAbstract;
 
 
 class SymBoolAnd;
+class SymBoolArrayEq;
 class SymBoolEq;
 class SymBoolFalse;
 class SymBoolGe;
@@ -54,6 +56,7 @@ public:
   enum Type {
     NONE,
     AND,
+    ARRAY_EQ,
     EQ,
     FALSE,
     GE,
@@ -182,7 +185,6 @@ public:
 };
 
 
-
 class SymBoolAnd : public SymBoolBinop {
   friend class SymBool;
   friend class SymTransformVisitor;
@@ -191,6 +193,23 @@ class SymBoolAnd : public SymBoolBinop {
 public:
   SymBool::Type type() const {
     return SymBool::Type::AND;
+  }
+};
+
+class SymBoolArrayEq : public SymBoolAbstract {
+  friend class SymArray;
+
+protected:
+  SymBoolArrayEq(const SymArrayAbstract * const a, const SymArrayAbstract * const b) : a_(a), b_(b) {}
+
+public:
+  const SymArrayAbstract * const a_;
+  const SymArrayAbstract * const b_;
+
+  bool equals(const SymBoolAbstract * const other) const;
+
+  SymBool::Type type() const {
+    return SymBool::Type::ARRAY_EQ;
   }
 };
 

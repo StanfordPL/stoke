@@ -316,6 +316,11 @@ public:
     // Careful... this structure is organized by instruction index. The exit block is a special case.
     return def_ins_.back();
   }
+  /** Returns the set of registers that are defined on output of a basic block */
+  x64asm::RegSet def_outs(id_type id) const {
+    assert(is_reachable(id));
+    return def_outs_[id];
+  }
   /** Returns the set of registers that are live-out on exit to an instruction; undefined for unrachable
     blocks */
   x64asm::RegSet live_outs(const loc_type& loc) const {

@@ -73,14 +73,14 @@ public:
   // TODO: make this available to STOKE from x64asm
   static const std::array<const char*, X64ASM_NUM_OPCODES> att_;
 
-protected:
-
-  std::string error_;
-
   /** Returns string representation of an opcode */
   static std::string get_opcode(const x64asm::Instruction& instr) {
     return std::string(att_[instr.get_opcode()]);
   }
+
+protected:
+
+  std::string error_;
 
   /** Returns true if the validator supports all the operands of the instruction. */
   bool operands_supported(const x64asm::Instruction& instr);

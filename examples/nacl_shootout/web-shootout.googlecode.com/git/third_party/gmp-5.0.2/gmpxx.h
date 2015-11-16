@@ -1846,7 +1846,7 @@ struct __gmp_rand_function
    I use a different name to avoid possible clashes */
 
 extern "C" {
-  typedef void (*__gmp_freefunc_t) (void *, size_t);
+typedef void (*__gmp_freefunc_t) (void *, size_t);
 }
 struct __gmp_alloc_cstring
 {

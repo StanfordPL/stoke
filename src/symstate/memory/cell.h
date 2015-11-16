@@ -76,6 +76,12 @@ public:
   /** Create a formula expressing that the aliasing rules were followed. */
   SymBool aliasing_formula(CellMemory& other);
 
+  std::string get_type() const {
+    return "cell";
+  }
+
+
+
 private:
 
   /** Make sure that the other CellMemory has the same cells as me. */

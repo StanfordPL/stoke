@@ -24,23 +24,26 @@ namespace {
  * Merges two consecutive extracts.
  * Handles bit extracts of constants.
  * Handles "full" bit extracts, where all bits are used.
+ * Handles selection immediately followed by concatenation.
  *
  * E.g., b[12:10][1:0] becomes b[11:10].
  * E.g., 0x0[1:0] becomes 0x0
  * E.g., f_returns_32_bits(0x0)[31:0] becomes f_returns_32_bits(0x0)
+ * E.g., a[63:32] || a[31:0] becomes a[63:0]
  */
 class SymMergeExtracts : public SymTransformVisitor {
 
 public:
 
   SymBitVectorAbstract* visit(const SymBitVectorExtract * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
     auto lhs = (*this)(bv->bv_);
     if (lhs->width_ == bv->width_) return lhs;
     if (lhs->type() == SymBitVector::EXTRACT) {
       auto inner = static_cast<const SymBitVectorExtract * const>(lhs);
       auto low = bv->low_bit_ + inner->low_bit_;
       auto high = low + (bv->high_bit_ - bv->low_bit_);
-      return make_bitvector_extract(inner->bv_, high, low);
+      return cache(bv, make_bitvector_extract(inner->bv_, high, low));
     }
     if (lhs->type() == SymBitVector::CONSTANT) {
       auto inner = static_cast<const SymBitVectorConstant * const>(lhs);
@@ -48,22 +51,46 @@ public:
       auto constant = inner->constant_;
       auto newsize = bv->high_bit_ - bv->low_bit_ + 1;
       auto newconstant = constant >> bv->low_bit_;
-      return make_bitvector_constant(newsize, newconstant);
+      return cache(bv, make_bitvector_constant(newsize, newconstant));
     }
-    return SymTransformVisitor::visit(bv);
+    if (lhs == bv->bv_) {
+      return cache(bv, (SymBitVectorExtract*)bv);
+    }
+    return cache(bv, make_bitvector_extract(lhs, bv->high_bit_, bv->low_bit_));
+  }
+
+  SymBitVectorAbstract* visit(const SymBitVectorConcat * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
+    auto lhs = (*this)(bv->a_);
+    auto rhs = (*this)(bv->b_);
+    if (lhs->type() == SymBitVector::EXTRACT && rhs->type() == SymBitVector::EXTRACT) {
+      auto l = static_cast<const SymBitVectorExtract * const>(lhs);
+      auto r = static_cast<const SymBitVectorExtract * const>(rhs);
+      if (l->bv_->equals(r->bv_) && l->low_bit_ == r->high_bit_+1) {
+        return cache(bv, make_bitvector_extract(l->bv_, l->high_bit_, r->low_bit_));
+      }
+    }
+    if (lhs == bv->a_ && rhs == bv->b_) {
+      return cache(bv, (SymBitVectorConcat*)bv);
+    }
+    return cache(bv, make_binop(bv->type(), lhs, rhs));
   }
 
 };
 
 /**
  * Moves bit extracts over other operators (where save).
- * E.g. (a | b)[5:2] becomes (a[5:2] | [5:2])
+ * Also moves bit extracts over concatenation, possibly throwing away one side.
+ * Also moves bit extracts over sign-extends, possibly removing them all together
+ *
+ * E.g. (a | b)[5:2] becomes (a[5:2] | b[5:2])
  */
 class SymMoveExtractsInside : public SymTransformVisitor {
 
 public:
 
   SymBitVectorAbstract* visit(const SymBitVectorExtract * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
     auto inner = (*this)(bv->bv_);
     switch (inner->type()) {
     case SymBitVector::AND:
@@ -72,7 +99,7 @@ public:
       SymBitVectorBinop* binop = (SymBitVectorBinop*)inner;
       auto a = make_bitvector_extract(binop->a_, bv->high_bit_, bv->low_bit_);
       auto b = make_bitvector_extract(binop->b_, bv->high_bit_, bv->low_bit_);
-      return make_binop(binop->type(), a, b);
+      return cache(bv, make_binop(binop->type(), a, b));
     }
     case SymBitVector::CONCAT: {
       SymBitVectorBinop* binop = (SymBitVectorBinop*)inner;
@@ -80,31 +107,44 @@ public:
       auto rhs = binop->b_;
       // bit extract is fully in the lhs of the concat
       if (bv->low_bit_ >= rhs->width_) {
-        return make_bitvector_extract(lhs, bv->high_bit_ - rhs->width_, bv->low_bit_ - rhs->width_);
+        return cache(bv, make_bitvector_extract(lhs, bv->high_bit_ - rhs->width_, bv->low_bit_ - rhs->width_));
       }
       // bit extract is fully in the rhs of the concat
       if (bv->high_bit_ < rhs->width_) {
-        return make_bitvector_extract(rhs, bv->high_bit_, bv->low_bit_);
+        return cache(bv, make_bitvector_extract(rhs, bv->high_bit_, bv->low_bit_));
       }
       // there is overlap
       auto a = make_bitvector_extract(lhs, bv->high_bit_ - rhs->width_, 0);
       auto b = make_bitvector_extract(rhs, rhs->width_ - 1, bv->low_bit_);
-      return make_binop(SymBitVector::CONCAT, a, b);
+      return cache(bv, make_binop(SymBitVector::CONCAT, a, b));
+    }
+    case SymBitVector::SIGN_EXTEND: {
+      SymBitVectorSignExtend* sext = (SymBitVectorSignExtend*)inner;
+      auto lhs = sext->bv_;
+      if (bv->high_bit_ < lhs->width_) {
+        return cache(bv, make_bitvector_extract(lhs, bv->high_bit_, bv->low_bit_));
+      }
+      // TODO: there are some more cases that could be handled
+      break;
     }
     case SymBitVector::ITE: {
       SymBitVectorIte* ite = (SymBitVectorIte*)inner;
       auto a = make_bitvector_extract(ite->a_, bv->high_bit_, bv->low_bit_);
       auto b = make_bitvector_extract(ite->b_, bv->high_bit_, bv->low_bit_);
-      return make_bitvector_ite(ite->cond_, a, b);
+      return cache(bv, make_bitvector_ite(ite->cond_, a, b));
     }
     case SymBitVector::NOT: {
       SymBitVectorNot* n = (SymBitVectorNot*)inner;
       auto a = make_bitvector_extract(n->bv_, bv->high_bit_, bv->low_bit_);
-      return make_unop(n->type(), a);
+      return cache(bv, make_unop(n->type(), a));
     }
     default:
-      return SymTransformVisitor::visit(bv);
+      break;
     }
+    if (inner == bv->bv_) {
+      return cache(bv, (SymBitVectorExtract*)bv);
+    }
+    return cache(bv, make_bitvector_extract(inner, bv->high_bit_, bv->low_bit_));
   }
 
 };
@@ -115,18 +155,13 @@ public:
 SymBitVector SymSimplify::simplify(const SymBitVector& b) {
   auto ptr = b.ptr;
 
-  // first move all bit extracts inside
+  SymMergeExtracts merger;
   SymMoveExtractsInside mover;
+
+  // apply transformations until no further simplifications are possible
   while (true) {
     auto old = ptr;
     ptr = mover(ptr);
-    if (old == ptr) break;
-  }
-
-  // then attempt to remove bit extracts
-  SymMergeExtracts merger;
-  while (true) {
-    auto old = ptr;
     ptr = merger(ptr);
     if (old == ptr) break;
   }

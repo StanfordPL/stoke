@@ -80,7 +80,7 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
 
   Sandbox sb;
   sb.set_abi_check(false)
-  .set_max_jumps(1);
+  .set_max_jumps(10);
 
   StateGen sg(&sb);
   sg.set_max_memory(1024)
@@ -95,6 +95,9 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
   const auto ins = pre_cfg.get_code()[1];
   x64asm::RegSet liveouts = (ins.must_write_set() - ins.maybe_undef_set()) & supported_regs;
   x64asm::RegSet reads = ins.maybe_read_set();
+
+  // we can ignore mxcsr::rc here
+  reads = reads - (x64asm::RegSet::empty() + x64asm::Constants::mxcsr_rc());
 
   x64asm::Code cfg_code;
   cfg_code.push_back(x64asm::Instruction(x64asm::LABEL_DEFN, { x64asm::Label(".foo") }));
@@ -154,6 +157,16 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
   // test that the two states match on live_out
   bool failed = false;
   std::stringstream os;
+  if (final1.code != final2.code) {
+    os << "Error codes differ.";
+    failed = true;
+    report(failed, ins, cs1, cs2, final1, final2, os.str());
+    return;
+  }
+  if (final1.code != stoke::ErrorCode::NORMAL) {
+    fuzz_print() << "Error code not normal; cannot check" << std::endl;
+    return;
+  }
   for (auto it = liveouts.gp_begin(); it != liveouts.gp_end(); ++it) {
     x64asm::R r = *it;
     std::stringstream ss;

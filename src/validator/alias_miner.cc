@@ -198,10 +198,13 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
 
     if (!Validator::memory_map_to_testcase(addr_value_pairs, ceg))
       return false;
+
+    return true;
   }
 
 
   // Run sandbox on target to see if we did well.
+  /*
   DEBUG_BUILD_TC(cout << "Running sandbox with tc: " << endl << ceg << endl;)
   sandbox_->clear_callbacks();
   sandbox_->clear_inputs();
@@ -217,7 +220,9 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   sandbox_->set_entrypoint(rewrite.get_code()[0].get_operand<x64asm::Label>(0));
   sandbox_->run();
   auto rewrite_output = *(sandbox_->get_output(0));
+  */
 
+  /*
   if (last_err != ErrorCode::NORMAL) {
     DEBUG_BUILD_TC(cout << "Sandbox encountered error on target." << endl;)
     return false;
@@ -227,8 +232,9 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
     DEBUG_BUILD_TC(cout << "Got a counterexample -- but it did the same thing on target/rewrite." << endl;)
     return false;
   }
+  */
 
-  return true;
+  return false;
 }
 
 void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* arg) {
