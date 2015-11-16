@@ -1,0 +1,64 @@
+make replace
+make[1]: Entering directory `/home/berkeley/stoke/examples/nacl_shootout/good/optimize-newlib-strcpy/runs/2015-10-30_05:13:34/12_75405258'
+stoke replace --rewrite result.s -i binary -o optbin
+Found fxn with capactiy 192
+ncval optbin
+make[1]: Leaving directory `/home/berkeley/stoke/examples/nacl_shootout/good/optimize-newlib-strcpy/runs/2015-10-30_05:13:34/12_75405258'
+timeout 20m sel_ldr.py optbin
+Running small benchmarks
+0 benchmarks registered
+Aggregate score: -2147483648
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running strcpy (0/10)
+Running strcpy (0/10) (1/1)
+
+usec_per_run 6540775.000000
+strcpy (0/10): 458
+Running strcpy (1/10)
+Running strcpy (1/10) (2/1)
+
+usec_per_run 2203889.000000
+strcpy (1/10): 1361
+Running strcpy (2/10)
+Running strcpy (2/10) (3/1)
+
+usec_per_run 6548509.000000
+strcpy (2/10): 458
+Running strcpy (3/10)
+Running strcpy (3/10) (4/1)
+
+usec_per_run 6665592.000000
+strcpy (3/10): 450
+Running strcpy (4/10)
+Running strcpy (4/10) (5/1)
+
+usec_per_run 6665181.000000
+strcpy (4/10): 450
+Running strcpy (5/10)
+Running strcpy (5/10) (6/1)
+
+usec_per_run 6663710.000000
+strcpy (5/10): 450
+Running strcpy (6/10)
+Running strcpy (6/10) (7/1)
+
+usec_per_run 6664314.000000
+strcpy (6/10): 450
+Running strcpy (7/10)
+Running strcpy (7/10) (8/1)
+
+usec_per_run 6664134.000000
+strcpy (7/10): 450
+Running strcpy (8/10)
+Running strcpy (8/10) (9/1)
+
+usec_per_run 6664379.000000
+strcpy (8/10): 450
+Running strcpy (9/10)
+Running strcpy (9/10) (10/1)
+
+usec_per_run 6664466.000000
+strcpy (9/10): 450
+Benchmark strcpy: usec 6664466, iters 1, usec/run 6664466 score 450.15
+Aggregate score: 450

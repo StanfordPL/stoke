@@ -217,10 +217,10 @@ BIN=\
 
 all: release hooks
 
-release: haswell_release
-debug: haswell_debug
-profile: haswell_profile
-test: haswell_test
+release: sandybridge_release
+debug: sandybridge_debug
+profile: sandybridge_profile
+test: sandybridge_test
 
 haswell: haswell_release
 haswell_release:

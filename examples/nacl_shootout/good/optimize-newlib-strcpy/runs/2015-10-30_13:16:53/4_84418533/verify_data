@@ -1,0 +1,398 @@
+time stoke debug verify --config verify.conf
+Computing reference outputs for 0 testcases
+Computing reference outputs for 0 testcases
+Target                       Rewrite                        
+                                                            
+.strcpy:                     .strcpy:                       
+movl %esi, %esi              nop                            
+movl %edi, %eax              nop                            
+movl %esi, %edi              nop                            
+movq %rsi, %rdx              nop                            
+movq %rax, %rcx              nop                            
+orl %eax, %edi               nop                            
+andl $0x3, %edi              nop                            
+jne .L_126860                nop                            
+movl %esi, %esi              nop                            
+movl (%r15,%rsi,1), %r8d     movl %edi, %ecx                
+movl %r8d, %esi              movl %esi, %edx                
+leal -0x1010101(%r8), %edi   nop                            
+notl %esi                    nop                            
+andl %edi, %esi              nop                            
+andl $0x80808080, %esi       nop                            
+jne .L_126860                nop                            
+nop                          nop                            
+nop                          movq %rdi, %rax                
+nop                          andl $0x3, %edi                
+nop                          jne .L_126860                  
+nop                          nop                            
+nop                          nop                            
+nop                          nop                            
+nop                          nop                            
+nop                          nop                            
+.L_126820:                   nop                            
+addl $0x4, %edx              nop                            
+movl %ecx, %ecx              movl %esi, %esi                
+movl %r8d, (%r15,%rcx,1)     movq (%r15,%rsi,1), %r8        
+addl $0x4, %ecx              nop                            
+movl %edx, %edx              nop                            
+movl (%r15,%rdx,1), %r8d     nop                            
+movl %r8d, %r9d              nop                            
+leal -0x1010101(%r8), %esi   nop                            
+notl %r9d                    nop                            
+nop                          nop                            
+andl %esi, %r9d              nop                            
+andl $0x80808080, %r9d       nop                            
+je .L_126820                 nop                            
+nop                          nop                            
+nop                          nop                            
+nop                          nop                            
+nop                          nop                            
+nop                          jne .L_126860                  
+nop                          .L_126820:                     
+nop                          addl %ebp, %ecx                
+nop                          movl %r8d, (%r15,%rcx,1)       
+nop                          addl $0x4, %edx                
+nop                          movl (%r15,%rdx,1), %r8d       
+nop                          movl %r8d, %r9d                
+nop                          leal -0x1010101(%r8), %esi     
+nop                          notq %r9                       
+nop                          addl $0x4, %ecx                
+nop                          andl $0x80808080, %esi         
+nop                          andw %si, %r9w                 
+.L_126860:                   je .L_126820                   
+movl %edx, %edx              nop                            
+movzbl (%r15,%rdx,1), %esi   nop                            
+addl $0x1, %edx              nop                            
+movl %ecx, %ecx              nop                            
+movb %sil, (%r15,%rcx,1)     nop                            
+addl $0x1, %ecx              nop                            
+testb %sil, %sil             nop                            
+jne .L_126860                nop                            
+nop                          nop                            
+nop                          nop                            
+nop                          nop                            
+nop                          nop                            
+nop                          nop                            
+retq                         nop                            
+nop                          nop                            
+nop                          nop                            
+nop                          .L_126860:                     
+nop                          xorl %esp, %edx                
+nop                          movzbl (%r15,%rdx,1), %esi     
+nop                          addl $0x1, %ecx                
+nop                          movb %sil, -0x1(%r15,%rcx,1)   
+nop                          nop                            
+nop                          nop                            
+nop                          nop                            
+nop                          xorl $0x1, %edx                
+nop                          testb %dl, %dil                
+nop                          nop                            
+                             nop                            
+                             nop                            
+                             nop                            
+                             nop                            
+                             nop                            
+                             nop                            
+                             nop                            
+                             jne .L_126860                  
+                             retq                           
+                                                            
+===========================================
+Working on pair / P: 1 6 7 Q: 1 5 6
+TARGET: 
+.strcpy:
+movl %esi, %esi
+movl %edi, %eax
+movl %esi, %edi
+movq %rsi, %rdx
+movq %rax, %rcx
+orl %eax, %edi
+andl $0x3, %edi
+nop 
+.L_126860:
+movl %edx, %edx
+movzbl (%r15,%rdx,1), %esi
+addl $0x1, %edx
+movl %ecx, %ecx
+movb %sil, (%r15,%rcx,1)
+addl $0x1, %ecx
+testb %sil, %sil
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+REWRITE: 
+.strcpy:
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+movl %edi, %ecx
+movl %esi, %edx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+movq %rdi, %rax
+andl $0x3, %edi
+nop 
+.L_126860:
+xorl %esp, %edx
+movzbl (%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+nop 
+nop 
+nop 
+xorl $0x1, %edx
+testb %dl, %dil
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+Total accesses: 4
+SAME MAP
+     0 1 2 3 
+------------------
+0  |   0 0 0 
+1  |     0 1 
+2  |       0 
+3  |         
+
+NEXT MAP
+     0 1 2 3 
+------------------
+0  |   0 0 0 
+1  |     0 0 
+2  |       0 
+3  |         
+
+TOTAL CELLS: 3
+Access 0 cell 0 offset 0 size 1 (cell size 1)
+Access 1 cell 1 offset 0 size 1 (cell size 1)
+Access 2 cell 2 offset 0 size 1 (cell size 1)
+Access 3 cell 1 offset 0 size 1 (cell size 1)
+ALIASING CASES: 1
+1 Aliasing cases.  Yay.
+------ NEXT ALIASING CASE -----
+TARGET MAP:
+11 -> 0 (size 1 / cell size 1 / offset 0
+14 -> 1 (size 1 / cell size 1 / offset 0
+REWRITE MAP:
+23 -> 2 (size 1 / cell size 1 / offset 0
+25 -> 1 (size 1 / cell size 1 / offset 0
+Start memory constraint: (and (and (and TRUE (== <TMP_BV_8_4|8> <TMP_BV_8_8|8>)) (== <TMP_BV_8_5|8> <TMP_BV_8_7|8>)) (== <TMP_BV_8_9|8> <TMP_BV_8_6|8>))
+
+CONSTRAINTS
+
+(not (== (and <%rdi_2_INIT|64>[31:0] (sign-extend-32 <0x3|8>)) <0x0|32>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_2_INIT|64>) (concat <0x0|32> (xor (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0] <%rsp_2_INIT|64>[31:0]))) (plus <CELL_2_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_2_INIT|64>) (concat <0x0|32> (xor (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0] <%rsp_2_INIT|64>[31:0]))) (plus <CELL_2_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== (and (concat <0x0|32> (and <%rdi_2_INIT|64>[31:0] (sign-extend-32 <0x3|8>)))[7:0] (concat <0x0|32> (xor (concat <0x0|32> (xor (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0] <%rsp_2_INIT|64>[31:0]))[31:0] <0x1|32>))[7:0]) <0x0|8>)))
+(not (== (and (concat <0x0|32> (or (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])[31:0] (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0]))[31:0] (sign-extend-32 <0x3|8>)) <0x0|32>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== (and (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_4|8>))[7:0] (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_4|8>))[7:0]) <0x0|8>)))
+(== <%rsp_1_INIT|64> <%rsp_|64>)
+(== <%rbp_1_INIT|64> <%rbp_|64>)
+(== <%rsi_1_INIT|64> <%rsi_|64>)
+(== <%rdi_1_INIT|64> <%rdi_|64>)
+(== <%r15_1_INIT|64> <%r15_|64>)
+(== <sigbus_1_INIT> <sigbus_>)
+(== <sigfpe_1_INIT> <sigfpe_>)
+(== <sigsegv_1_INIT> <sigsegv_>)
+(== <%rsp_2_INIT|64> <%rsp_|64>)
+(== <%rbp_2_INIT|64> <%rbp_|64>)
+(== <%rsi_2_INIT|64> <%rsi_|64>)
+(== <%rdi_2_INIT|64> <%rdi_|64>)
+(== <%r15_2_INIT|64> <%r15_|64>)
+(== <sigbus_2_INIT> <sigbus_>)
+(== <sigfpe_2_INIT> <sigfpe_>)
+(== <sigsegv_2_INIT> <sigsegv_>)
+(and (and (and TRUE (== <TMP_BV_8_4|8> <TMP_BV_8_8|8>)) (== <TMP_BV_8_5|8> <TMP_BV_8_7|8>)) (== <TMP_BV_8_9|8> <TMP_BV_8_6|8>))
+(and (and (and (and (and (and (and (and (and TRUE (<= <CELL_0_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_0_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>) (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_2_ADDR|64>) (<= (plus <CELL_2_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (<= <CELL_1_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_1_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_2_ADDR|64>) (<= (plus <CELL_2_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>))) (<= <CELL_2_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_2_ADDR|64> <0x40|64>))
+INEQUALITY: (== (concat <0x0|32> <%rdi_1_INIT|64>[31:0]) <%rdi_2_INIT|64>)
+INEQUALITY: (== <sigbus_1_INIT> <sigbus_2_INIT>)
+INEQUALITY: (== <sigfpe_1_INIT> <sigfpe_2_INIT>)
+INEQUALITY: (== (or (or (or <sigsegv_1_INIT> (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (or (or (or <sigsegv_2_INIT> (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)))
+  (Got counterexample)
+SIGNAL 0 [normal exit]
+
+%rax     00 00 00 00 00 00 00 00
+%rcx     00 00 00 00 00 00 00 00
+%rdx     00 00 00 00 00 00 00 00
+%rbx     00 00 00 00 00 00 00 00
+%rsp     00 00 00 00 30 4f 20 0a
+%rbp     00 00 00 00 00 00 00 00
+%rsi     00 00 00 00 06 07 20 0e
+%rdi     40 00 00 00 0b f7 e0 06
+%r8      00 00 00 00 00 00 00 00
+%r9      00 00 00 00 00 00 00 00
+%r10     00 00 00 00 00 00 00 00
+%r11     00 00 00 00 00 00 00 00
+%r12     00 00 00 00 00 00 00 00
+%r13     00 00 00 00 00 00 00 00
+%r14     00 00 00 00 00 00 00 00
+%r15     ff ff ff ff c7 97 df f1
+
+%ymm0    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm1    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm2    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm3    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm4    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm5    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm6    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm7    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm8    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm9    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm10   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm11   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm12   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm13   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm14   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm15   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+%cf      0 
+%1       1 
+%pf      0 
+%0       0 
+%af      0 
+%0       0 
+%zf      0 
+%sf      0 
+%tf      0 
+%if      1 
+%df      0 
+%of      0 
+%iopl[0] 0 
+%iopl[1] 0 
+%nt      0 
+%0       0 
+%rf      0 
+%vm      0 
+%ac      0 
+%vif     0 
+%vip     0 
+%id      0 
+
+[ ffffffff d38fbff8 - ffffffff d38fbfe0 ]
+[ 1 valid rows shown ]
+
+ffffffff d38fbff0   v . . . . . . .   00 00 00 00 00 00 00 00 
+
+[ ffffffff cd9f0000 - ffffffff cd9effe0 ]
+[ 1 valid rows shown ]
+
+ffffffff cd9efff8   v . . . . . . .   00 00 00 00 00 00 00 00 
+
+[ ffffffff fddfdff8 - ffffffff fddfdfe0 ]
+[ 1 valid rows shown ]
+
+ffffffff fddfdff0   . . v . . . . .   00 00 00 00 00 00 00 00 
+
+0 more segment(s)
+
+Equivalent: no
+
+1 Counterexamples.
+
+SIGNAL 0 [normal exit]
+
+%rax     00 00 00 00 00 00 00 00
+%rcx     00 00 00 00 00 00 00 00
+%rdx     00 00 00 00 00 00 00 00
+%rbx     00 00 00 00 00 00 00 00
+%rsp     00 00 00 00 30 4f 20 0a
+%rbp     00 00 00 00 00 00 00 00
+%rsi     00 00 00 00 06 07 20 0e
+%rdi     40 00 00 00 0b f7 e0 06
+%r8      00 00 00 00 00 00 00 00
+%r9      00 00 00 00 00 00 00 00
+%r10     00 00 00 00 00 00 00 00
+%r11     00 00 00 00 00 00 00 00
+%r12     00 00 00 00 00 00 00 00
+%r13     00 00 00 00 00 00 00 00
+%r14     00 00 00 00 00 00 00 00
+%r15     ff ff ff ff c7 97 df f1
+
+%ymm0    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm1    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm2    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm3    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm4    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm5    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm6    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm7    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm8    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm9    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm10   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm11   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm12   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm13   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm14   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm15   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+%cf      0 
+%1       1 
+%pf      0 
+%0       0 
+%af      0 
+%0       0 
+%zf      0 
+%sf      0 
+%tf      0 
+%if      1 
+%df      0 
+%of      0 
+%iopl[0] 0 
+%iopl[1] 0 
+%nt      0 
+%0       0 
+%rf      0 
+%vm      0 
+%ac      0 
+%vif     0 
+%vip     0 
+%id      0 
+
+[ ffffffff d38fbff8 - ffffffff d38fbfe0 ]
+[ 1 valid rows shown ]
+
+ffffffff d38fbff0   v . . . . . . .   00 00 00 00 00 00 00 00 
+
+[ ffffffff cd9f0000 - ffffffff cd9effe0 ]
+[ 1 valid rows shown ]
+
+ffffffff cd9efff8   v . . . . . . .   00 00 00 00 00 00 00 00 
+
+[ ffffffff fddfdff8 - ffffffff fddfdfe0 ]
+[ 1 valid rows shown ]
+
+ffffffff fddfdff0   . . v . . . . .   00 00 00 00 00 00 00 00 
+
+0 more segment(s)
+
+
+Difference of running target and rewrite on the counterexample:
+
+%rax     [91m0[0m0 00 00 00 0b f7 e0 06
+%rax     [92m4[0m0 00 00 00 0b f7 e0 06
+

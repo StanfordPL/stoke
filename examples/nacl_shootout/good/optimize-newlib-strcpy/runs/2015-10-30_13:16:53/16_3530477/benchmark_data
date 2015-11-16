@@ -1,0 +1,6 @@
+make replace
+make[1]: Entering directory `/home/berkeley/stoke/examples/nacl_shootout/good/optimize-newlib-strcpy/runs/2015-10-30_13:16:53/16_3530477'
+stoke replace --rewrite result.s -i binary -o optbin
+Found fxn with capactiy 192
+New function has 217 bytes, but the old one had 192.
+make[1]: Leaving directory `/home/berkeley/stoke/examples/nacl_shootout/good/optimize-newlib-strcpy/runs/2015-10-30_13:16:53/16_3530477'

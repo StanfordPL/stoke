@@ -51,8 +51,12 @@ public:
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(true);
+<<<<<<< HEAD
     set_no_bailout(false);
     set_heap_out(true); // FIXME: there's a bug prevening the command line argument from making it here.
+=======
+    set_heap_out(true);
+>>>>>>> 2951c98bfced7f5723ba799a95aa4ab34c28938b
   }
 
   ~BoundedValidator() {}

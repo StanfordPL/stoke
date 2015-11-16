@@ -31,6 +31,8 @@ namespace stoke {
 CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, bool heap_out) {
   assert(sandbox_ != nullptr);
 
+  cout << "Computing reference outputs for " << sandbox_->size() << " testcases" << endl;
+
   live_out_ = target.live_outs();
   stack_out_ = stack_out;
   heap_out_ = heap_out;

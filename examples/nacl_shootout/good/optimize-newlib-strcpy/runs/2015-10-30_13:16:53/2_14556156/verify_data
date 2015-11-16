@@ -1,0 +1,1667 @@
+time stoke debug verify --config verify.conf
+Computing reference outputs for 0 testcases
+Computing reference outputs for 0 testcases
+Target                       Rewrite                          
+                                                              
+.strcpy:                     .strcpy:                         
+movl %esi, %esi              nop                              
+movl %edi, %eax              nop                              
+movl %esi, %edi              movl %edi, %eax                  
+movq %rsi, %rdx              movl %esi, %edx                  
+movq %rax, %rcx              nop                              
+orl %eax, %edi               nop                              
+andl $0x3, %edi              nop                              
+jne .L_126860                nop                              
+movl %esi, %esi              nop                              
+movl (%r15,%rsi,1), %r8d     nop                              
+movl %r8d, %esi              nop                              
+leal -0x1010101(%r8), %edi   nop                              
+notl %esi                    movq %rax, %rcx                  
+andl %edi, %esi              decw %si                         
+andl $0x80808080, %esi       jne .L_126860                    
+jne .L_126860                jne .L_126860                    
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+.L_126820:                   nop                              
+addl $0x4, %edx              nop                              
+movl %ecx, %ecx              nop                              
+movl %r8d, (%r15,%rcx,1)     nop                              
+addl $0x4, %ecx              nop                              
+movl %edx, %edx              nop                              
+movl (%r15,%rdx,1), %r8d     nop                              
+movl %r8d, %r9d              andb $0x2, %ch                   
+leal -0x1010101(%r8), %esi   xorb $0xfa, %ah                  
+notl %r9d                    nop                              
+nop                          nop                              
+andl %esi, %r9d              nop                              
+andl $0x80808080, %r9d       nop                              
+je .L_126820                 nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          .L_126820:                       
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+.L_126860:                   nop                              
+movl %edx, %edx              nop                              
+movzbl (%r15,%rdx,1), %esi   nop                              
+addl $0x1, %edx              nop                              
+movl %ecx, %ecx              sarb $0x1, %dh                   
+movb %sil, (%r15,%rcx,1)     nop                              
+addl $0x1, %ecx              nop                              
+testb %sil, %sil             nop                              
+jne .L_126860                nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+retq                         nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          notw %dx                         
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+nop                          nop                              
+                             nop                              
+                             je .L_126820                     
+                             nop                              
+                             nop                              
+                             nop                              
+                             sarb $0x1, %dl                   
+                             nopl %eax                        
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             .L_126860:                       
+                             addl $0x1, %edx                  
+                             movsbl -0x1(%r15,%rdx,1), %esi   
+                             addl $0x1, %ecx                  
+                             movb %sil, -0x1(%r15,%rcx,1)     
+                             negl %esi                        
+                             jne .L_126860                    
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             nop                              
+                             retq                             
+                                                              
+===========================================
+Working on pair / P: 1 6 7 Q: 1 6 7
+TARGET: 
+.strcpy:
+movl %esi, %esi
+movl %edi, %eax
+movl %esi, %edi
+movq %rsi, %rdx
+movq %rax, %rcx
+orl %eax, %edi
+andl $0x3, %edi
+nop 
+.L_126860:
+movl %edx, %edx
+movzbl (%r15,%rdx,1), %esi
+addl $0x1, %edx
+movl %ecx, %ecx
+movb %sil, (%r15,%rcx,1)
+addl $0x1, %ecx
+testb %sil, %sil
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+REWRITE: 
+.strcpy:
+nop 
+nop 
+movl %edi, %eax
+movl %esi, %edx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+movq %rax, %rcx
+decw %si
+nop 
+.L_126860:
+addl $0x1, %edx
+movsbl -0x1(%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+negl %esi
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+Total accesses: 4
+SAME MAP
+     0 1 2 3 
+------------------
+0  |   0 1 0 
+1  |     0 1 
+2  |       0 
+3  |         
+
+NEXT MAP
+     0 1 2 3 
+------------------
+0  |   0 0 0 
+1  |     0 0 
+2  |       0 
+3  |         
+
+TOTAL CELLS: 2
+Access 0 cell 0 offset 0 size 1 (cell size 1)
+Access 1 cell 1 offset 0 size 1 (cell size 1)
+Access 2 cell 0 offset 0 size 1 (cell size 1)
+Access 3 cell 1 offset 0 size 1 (cell size 1)
+ALIASING CASES: 1
+1 Aliasing cases.  Yay.
+------ NEXT ALIASING CASE -----
+TARGET MAP:
+11 -> 0 (size 1 / cell size 1 / offset 0
+14 -> 1 (size 1 / cell size 1 / offset 0
+REWRITE MAP:
+18 -> 0 (size 1 / cell size 1 / offset 0
+20 -> 1 (size 1 / cell size 1 / offset 0
+Start memory constraint: (and (and TRUE (== <TMP_BV_8_4|8> <TMP_BV_8_6|8>)) (== <TMP_BV_8_5|8> <TMP_BV_8_7|8>))
+
+CONSTRAINTS
+
+(not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== -(concat <0x0|32> (sign-extend-32 <TMP_BV_8_6|8>))[31:0] <0x0|32>)))
+(not (== (and (concat <0x0|32> (or (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])[31:0] (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0]))[31:0] (sign-extend-32 <0x3|8>)) <0x0|32>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== (and (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_4|8>))[7:0] (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_4|8>))[7:0]) <0x0|8>)))
+(== <%rsp_1_INIT|64> <%rsp_|64>)
+(== <%rbp_1_INIT|64> <%rbp_|64>)
+(== <%rsi_1_INIT|64> <%rsi_|64>)
+(== <%rdi_1_INIT|64> <%rdi_|64>)
+(== <%r15_1_INIT|64> <%r15_|64>)
+(== <sigbus_1_INIT> <sigbus_>)
+(== <sigfpe_1_INIT> <sigfpe_>)
+(== <sigsegv_1_INIT> <sigsegv_>)
+(== <%rsp_2_INIT|64> <%rsp_|64>)
+(== <%rbp_2_INIT|64> <%rbp_|64>)
+(== <%rsi_2_INIT|64> <%rsi_|64>)
+(== <%rdi_2_INIT|64> <%rdi_|64>)
+(== <%r15_2_INIT|64> <%r15_|64>)
+(== <sigbus_2_INIT> <sigbus_>)
+(== <sigfpe_2_INIT> <sigfpe_>)
+(== <sigsegv_2_INIT> <sigsegv_>)
+(and (and TRUE (== <TMP_BV_8_4|8> <TMP_BV_8_6|8>)) (== <TMP_BV_8_5|8> <TMP_BV_8_7|8>))
+(and (and (and (and (and TRUE (<= <CELL_0_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_0_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>) (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (<= <CELL_1_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_1_ADDR|64> <0x40|64>))
+INEQUALITY: (== (concat <0x0|32> <%rdi_1_INIT|64>[31:0]) (concat <0x0|32> <%rdi_2_INIT|64>[31:0]))
+INEQUALITY: (== <sigbus_1_INIT> <sigbus_2_INIT>)
+INEQUALITY: (== <sigfpe_1_INIT> <sigfpe_2_INIT>)
+INEQUALITY: (== (or (or (or <sigsegv_1_INIT> (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (or (or (or <sigsegv_2_INIT> (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)))
+  (This case verified)
+===========================================
+Working on pair / P: 1 6 7 Q: 1 2 6 7
+TARGET: 
+.strcpy:
+movl %esi, %esi
+movl %edi, %eax
+movl %esi, %edi
+movq %rsi, %rdx
+movq %rax, %rcx
+orl %eax, %edi
+andl $0x3, %edi
+nop 
+.L_126860:
+movl %edx, %edx
+movzbl (%r15,%rdx,1), %esi
+addl $0x1, %edx
+movl %ecx, %ecx
+movb %sil, (%r15,%rcx,1)
+addl $0x1, %ecx
+testb %sil, %sil
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+REWRITE: 
+.strcpy:
+nop 
+nop 
+movl %edi, %eax
+movl %esi, %edx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+movq %rax, %rcx
+decw %si
+nop 
+nop 
+.L_126860:
+addl $0x1, %edx
+movsbl -0x1(%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+negl %esi
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+Total accesses: 4
+SAME MAP
+     0 1 2 3 
+------------------
+0  |   0 1 0 
+1  |     0 1 
+2  |       0 
+3  |         
+
+NEXT MAP
+     0 1 2 3 
+------------------
+0  |   0 0 0 
+1  |     0 0 
+2  |       0 
+3  |         
+
+TOTAL CELLS: 2
+Access 0 cell 0 offset 0 size 1 (cell size 1)
+Access 1 cell 1 offset 0 size 1 (cell size 1)
+Access 2 cell 0 offset 0 size 1 (cell size 1)
+Access 3 cell 1 offset 0 size 1 (cell size 1)
+ALIASING CASES: 1
+1 Aliasing cases.  Yay.
+------ NEXT ALIASING CASE -----
+TARGET MAP:
+11 -> 0 (size 1 / cell size 1 / offset 0
+14 -> 1 (size 1 / cell size 1 / offset 0
+REWRITE MAP:
+19 -> 0 (size 1 / cell size 1 / offset 0
+21 -> 1 (size 1 / cell size 1 / offset 0
+Start memory constraint: (and (and TRUE (== <TMP_BV_8_12|8> <TMP_BV_8_14|8>)) (== <TMP_BV_8_13|8> <TMP_BV_8_15|8>))
+
+CONSTRAINTS
+
+(not (not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>)))
+(not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== -(concat <0x0|32> (sign-extend-32 <TMP_BV_8_14|8>))[31:0] <0x0|32>)))
+(not (== (and (concat <0x0|32> (or (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])[31:0] (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0]))[31:0] (sign-extend-32 <0x3|8>)) <0x0|32>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== (and (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_12|8>))[7:0] (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_12|8>))[7:0]) <0x0|8>)))
+(== <%rsp_1_INIT|64> <%rsp_|64>)
+(== <%rbp_1_INIT|64> <%rbp_|64>)
+(== <%rsi_1_INIT|64> <%rsi_|64>)
+(== <%rdi_1_INIT|64> <%rdi_|64>)
+(== <%r15_1_INIT|64> <%r15_|64>)
+(== <sigbus_1_INIT> <sigbus_>)
+(== <sigfpe_1_INIT> <sigfpe_>)
+(== <sigsegv_1_INIT> <sigsegv_>)
+(== <%rsp_2_INIT|64> <%rsp_|64>)
+(== <%rbp_2_INIT|64> <%rbp_|64>)
+(== <%rsi_2_INIT|64> <%rsi_|64>)
+(== <%rdi_2_INIT|64> <%rdi_|64>)
+(== <%r15_2_INIT|64> <%r15_|64>)
+(== <sigbus_2_INIT> <sigbus_>)
+(== <sigfpe_2_INIT> <sigfpe_>)
+(== <sigsegv_2_INIT> <sigsegv_>)
+(and (and TRUE (== <TMP_BV_8_12|8> <TMP_BV_8_14|8>)) (== <TMP_BV_8_13|8> <TMP_BV_8_15|8>))
+(and (and (and (and (and TRUE (<= <CELL_0_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_0_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>) (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (<= <CELL_1_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_1_ADDR|64> <0x40|64>))
+INEQUALITY: (== (concat <0x0|32> <%rdi_1_INIT|64>[31:0]) (concat <0x0|32> <%rdi_2_INIT|64>[31:0]))
+INEQUALITY: (== <sigbus_1_INIT> <sigbus_2_INIT>)
+INEQUALITY: (== <sigfpe_1_INIT> <sigfpe_2_INIT>)
+INEQUALITY: (== (or (or (or <sigsegv_1_INIT> (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (or (or (or <sigsegv_2_INIT> (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)))
+  (This case verified)
+===========================================
+Working on pair / P: 1 6 7 Q: 1 6 6 7
+TARGET: 
+.strcpy:
+movl %esi, %esi
+movl %edi, %eax
+movl %esi, %edi
+movq %rsi, %rdx
+movq %rax, %rcx
+orl %eax, %edi
+andl $0x3, %edi
+nop 
+.L_126860:
+movl %edx, %edx
+movzbl (%r15,%rdx,1), %esi
+addl $0x1, %edx
+movl %ecx, %ecx
+movb %sil, (%r15,%rcx,1)
+addl $0x1, %ecx
+testb %sil, %sil
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+REWRITE: 
+.strcpy:
+nop 
+nop 
+movl %edi, %eax
+movl %esi, %edx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+movq %rax, %rcx
+decw %si
+nop 
+.L_126860:
+addl $0x1, %edx
+movsbl -0x1(%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+negl %esi
+nop 
+.L_126860:
+addl $0x1, %edx
+movsbl -0x1(%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+negl %esi
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+Total accesses: 6
+SAME MAP
+     0 1 2 3 4 5 
+------------------
+0  |   0 1 0 0 0 
+1  |     0 1 0 0 
+2  |       0 0 0 
+3  |         0 0 
+4  |           0 
+5  |             
+
+NEXT MAP
+     0 1 2 3 4 5 
+------------------
+0  |   0 0 0 1 0 
+1  |     0 0 0 1 
+2  |       0 1 0 
+3  |         0 1 
+4  |           0 
+5  |             
+
+TOTAL CELLS: 2
+Access 0 cell 0 offset 0 size 1 (cell size 2)
+Access 1 cell 1 offset 0 size 1 (cell size 2)
+Access 2 cell 0 offset 0 size 1 (cell size 2)
+Access 3 cell 1 offset 0 size 1 (cell size 2)
+Access 4 cell 0 offset 1 size 1 (cell size 2)
+Access 5 cell 1 offset 1 size 1 (cell size 2)
+ALIASING CASES: 1
+1 Aliasing cases.  Yay.
+------ NEXT ALIASING CASE -----
+TARGET MAP:
+11 -> 0 (size 1 / cell size 2 / offset 0
+14 -> 1 (size 1 / cell size 2 / offset 0
+REWRITE MAP:
+18 -> 0 (size 1 / cell size 2 / offset 0
+20 -> 1 (size 1 / cell size 2 / offset 0
+25 -> 0 (size 1 / cell size 2 / offset 1
+27 -> 1 (size 1 / cell size 2 / offset 1
+Start memory constraint: (and (and TRUE (== <TMP_BV_16_22|16> <TMP_BV_16_24|16>)) (== <TMP_BV_16_23|16> <TMP_BV_16_25|16>))
+
+CONSTRAINTS
+
+(not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (== -(concat <0x0|32> (sign-extend-32 <TMP_BV_16_24|16>[7:0]))[31:0] <0x0|32>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x1|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x1|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[31:0]))[31:0])[31:0]))[31:0])) (plus <CELL_1_ADDR|64> <0x1|64>))
+(not (not (== -(concat <0x0|32> (sign-extend-32 <TMP_BV_16_24|16>[15:8]))[31:0] <0x0|32>)))
+(not (== (and (concat <0x0|32> (or (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])[31:0] (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0]))[31:0] (sign-extend-32 <0x3|8>)) <0x0|32>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== (and (concat <0x0|32> (concat <0x0|24> <TMP_BV_16_22|16>[7:0]))[7:0] (concat <0x0|32> (concat <0x0|24> <TMP_BV_16_22|16>[7:0]))[7:0]) <0x0|8>)))
+(== <%rsp_1_INIT|64> <%rsp_|64>)
+(== <%rbp_1_INIT|64> <%rbp_|64>)
+(== <%rsi_1_INIT|64> <%rsi_|64>)
+(== <%rdi_1_INIT|64> <%rdi_|64>)
+(== <%r15_1_INIT|64> <%r15_|64>)
+(== <sigbus_1_INIT> <sigbus_>)
+(== <sigfpe_1_INIT> <sigfpe_>)
+(== <sigsegv_1_INIT> <sigsegv_>)
+(== <%rsp_2_INIT|64> <%rsp_|64>)
+(== <%rbp_2_INIT|64> <%rbp_|64>)
+(== <%rsi_2_INIT|64> <%rsi_|64>)
+(== <%rdi_2_INIT|64> <%rdi_|64>)
+(== <%r15_2_INIT|64> <%r15_|64>)
+(== <sigbus_2_INIT> <sigbus_>)
+(== <sigfpe_2_INIT> <sigfpe_>)
+(== <sigsegv_2_INIT> <sigsegv_>)
+(and (and TRUE (== <TMP_BV_16_22|16> <TMP_BV_16_24|16>)) (== <TMP_BV_16_23|16> <TMP_BV_16_25|16>))
+(and (and (and (and (and TRUE (<= <CELL_0_ADDR|64> <0xffffffffffffffbf|64>)) (>= <CELL_0_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_0_ADDR|64> <0x2|64>) <CELL_1_ADDR|64>) (<= (plus <CELL_1_ADDR|64> <0x2|64>) <CELL_0_ADDR|64>))) (<= <CELL_1_ADDR|64> <0xffffffffffffffbf|64>)) (>= <CELL_1_ADDR|64> <0x40|64>))
+INEQUALITY: (== (concat <0x0|32> <%rdi_1_INIT|64>[31:0]) (concat <0x0|32> <%rdi_2_INIT|64>[31:0]))
+INEQUALITY: (== <sigbus_1_INIT> <sigbus_2_INIT>)
+INEQUALITY: (== <sigfpe_1_INIT> <sigfpe_2_INIT>)
+INEQUALITY: (== (or (or (or <sigsegv_1_INIT> (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (or (or (or (or (or (or <sigsegv_2_INIT> (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)))
+  (This case verified)
+===========================================
+Working on pair / P: 1 6 7 Q: 1 2 6 6 7
+TARGET: 
+.strcpy:
+movl %esi, %esi
+movl %edi, %eax
+movl %esi, %edi
+movq %rsi, %rdx
+movq %rax, %rcx
+orl %eax, %edi
+andl $0x3, %edi
+nop 
+.L_126860:
+movl %edx, %edx
+movzbl (%r15,%rdx,1), %esi
+addl $0x1, %edx
+movl %ecx, %ecx
+movb %sil, (%r15,%rcx,1)
+addl $0x1, %ecx
+testb %sil, %sil
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+REWRITE: 
+.strcpy:
+nop 
+nop 
+movl %edi, %eax
+movl %esi, %edx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+movq %rax, %rcx
+decw %si
+nop 
+nop 
+.L_126860:
+addl $0x1, %edx
+movsbl -0x1(%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+negl %esi
+nop 
+.L_126860:
+addl $0x1, %edx
+movsbl -0x1(%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+negl %esi
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+Total accesses: 6
+SAME MAP
+     0 1 2 3 4 5 
+------------------
+0  |   0 1 0 0 0 
+1  |     0 1 0 0 
+2  |       0 0 0 
+3  |         0 0 
+4  |           0 
+5  |             
+
+NEXT MAP
+     0 1 2 3 4 5 
+------------------
+0  |   0 0 0 1 0 
+1  |     0 0 0 1 
+2  |       0 1 0 
+3  |         0 1 
+4  |           0 
+5  |             
+
+TOTAL CELLS: 2
+Access 0 cell 0 offset 0 size 1 (cell size 2)
+Access 1 cell 1 offset 0 size 1 (cell size 2)
+Access 2 cell 0 offset 0 size 1 (cell size 2)
+Access 3 cell 1 offset 0 size 1 (cell size 2)
+Access 4 cell 0 offset 1 size 1 (cell size 2)
+Access 5 cell 1 offset 1 size 1 (cell size 2)
+ALIASING CASES: 1
+1 Aliasing cases.  Yay.
+------ NEXT ALIASING CASE -----
+TARGET MAP:
+11 -> 0 (size 1 / cell size 2 / offset 0
+14 -> 1 (size 1 / cell size 2 / offset 0
+REWRITE MAP:
+19 -> 0 (size 1 / cell size 2 / offset 0
+21 -> 1 (size 1 / cell size 2 / offset 0
+26 -> 0 (size 1 / cell size 2 / offset 1
+28 -> 1 (size 1 / cell size 2 / offset 1
+Start memory constraint: (and (and TRUE (== <TMP_BV_16_32|16> <TMP_BV_16_34|16>)) (== <TMP_BV_16_33|16> <TMP_BV_16_35|16>))
+
+CONSTRAINTS
+
+(not (not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>)))
+(not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[31:0]))[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (== -(concat <0x0|32> (sign-extend-32 <TMP_BV_16_34|16>[7:0]))[31:0] <0x0|32>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x1|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[31:0]))[31:0])[31:0]))[31:0])) (plus <CELL_0_ADDR|64> <0x1|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[31:0]))[31:0])[31:0]))[31:0])) (plus <CELL_1_ADDR|64> <0x1|64>))
+(not (not (== -(concat <0x0|32> (sign-extend-32 <TMP_BV_16_34|16>[15:8]))[31:0] <0x0|32>)))
+(not (== (and (concat <0x0|32> (or (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])[31:0] (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0]))[31:0] (sign-extend-32 <0x3|8>)) <0x0|32>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== (and (concat <0x0|32> (concat <0x0|24> <TMP_BV_16_32|16>[7:0]))[7:0] (concat <0x0|32> (concat <0x0|24> <TMP_BV_16_32|16>[7:0]))[7:0]) <0x0|8>)))
+(== <%rsp_1_INIT|64> <%rsp_|64>)
+(== <%rbp_1_INIT|64> <%rbp_|64>)
+(== <%rsi_1_INIT|64> <%rsi_|64>)
+(== <%rdi_1_INIT|64> <%rdi_|64>)
+(== <%r15_1_INIT|64> <%r15_|64>)
+(== <sigbus_1_INIT> <sigbus_>)
+(== <sigfpe_1_INIT> <sigfpe_>)
+(== <sigsegv_1_INIT> <sigsegv_>)
+(== <%rsp_2_INIT|64> <%rsp_|64>)
+(== <%rbp_2_INIT|64> <%rbp_|64>)
+(== <%rsi_2_INIT|64> <%rsi_|64>)
+(== <%rdi_2_INIT|64> <%rdi_|64>)
+(== <%r15_2_INIT|64> <%r15_|64>)
+(== <sigbus_2_INIT> <sigbus_>)
+(== <sigfpe_2_INIT> <sigfpe_>)
+(== <sigsegv_2_INIT> <sigsegv_>)
+(and (and TRUE (== <TMP_BV_16_32|16> <TMP_BV_16_34|16>)) (== <TMP_BV_16_33|16> <TMP_BV_16_35|16>))
+(and (and (and (and (and TRUE (<= <CELL_0_ADDR|64> <0xffffffffffffffbf|64>)) (>= <CELL_0_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_0_ADDR|64> <0x2|64>) <CELL_1_ADDR|64>) (<= (plus <CELL_1_ADDR|64> <0x2|64>) <CELL_0_ADDR|64>))) (<= <CELL_1_ADDR|64> <0xffffffffffffffbf|64>)) (>= <CELL_1_ADDR|64> <0x40|64>))
+INEQUALITY: (== (concat <0x0|32> <%rdi_1_INIT|64>[31:0]) (concat <0x0|32> <%rdi_2_INIT|64>[31:0]))
+INEQUALITY: (== <sigbus_1_INIT> <sigbus_2_INIT>)
+INEQUALITY: (== <sigfpe_1_INIT> <sigfpe_2_INIT>)
+INEQUALITY: (== (or (or (or <sigsegv_1_INIT> (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (or (or (or (or (or (or <sigsegv_2_INIT> (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)))
+  (This case verified)
+===========================================
+Working on pair / P: 1 6 7 Q: 1 2 3 4 5 6 7
+TARGET: 
+.strcpy:
+movl %esi, %esi
+movl %edi, %eax
+movl %esi, %edi
+movq %rsi, %rdx
+movq %rax, %rcx
+orl %eax, %edi
+andl $0x3, %edi
+nop 
+.L_126860:
+movl %edx, %edx
+movzbl (%r15,%rdx,1), %esi
+addl $0x1, %edx
+movl %ecx, %ecx
+movb %sil, (%r15,%rcx,1)
+addl $0x1, %ecx
+testb %sil, %sil
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+REWRITE: 
+.strcpy:
+nop 
+nop 
+movl %edi, %eax
+movl %esi, %edx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+movq %rax, %rcx
+decw %si
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+andb $0x2, %ch
+xorb $0xfa, %ah
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+.L_126820:
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+sarb $0x1, %dh
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+notw %dx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+sarb $0x1, %dl
+nopl %eax
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+.L_126860:
+addl $0x1, %edx
+movsbl -0x1(%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+negl %esi
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+Total accesses: 4
+SAME MAP
+     0 1 2 3 
+------------------
+0  |   0 0 0 
+1  |     0 0 
+2  |       0 
+3  |         
+
+NEXT MAP
+     0 1 2 3 
+------------------
+0  |   0 0 0 
+1  |     0 0 
+2  |       0 
+3  |         
+
+TOTAL CELLS: 4
+Access 0 cell 0 offset 0 size 1 (cell size 1)
+Access 1 cell 1 offset 0 size 1 (cell size 1)
+Access 2 cell 2 offset 0 size 1 (cell size 1)
+Access 3 cell 3 offset 0 size 1 (cell size 1)
+ALIASING CASES: 1
+1 Aliasing cases.  Yay.
+------ NEXT ALIASING CASE -----
+TARGET MAP:
+11 -> 0 (size 1 / cell size 1 / offset 0
+14 -> 1 (size 1 / cell size 1 / offset 0
+REWRITE MAP:
+101 -> 2 (size 1 / cell size 1 / offset 0
+103 -> 3 (size 1 / cell size 1 / offset 0
+Start memory constraint: (and (and (and (and TRUE (== <TMP_BV_8_40|8> <TMP_BV_8_44|8>)) (== <TMP_BV_8_41|8> <TMP_BV_8_45|8>)) (== <TMP_BV_8_46|8> <TMP_BV_8_42|8>)) (== <TMP_BV_8_47|8> <TMP_BV_8_43|8>))
+
+CONSTRAINTS
+
+(not (not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>)))
+(not (not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>)))
+(not (or (and (not (== (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>))[7:0] <0x0|8>)) (== (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1] <0x0|8>)) (and (not (not (== (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>))[7:0] <0x0|8>))) (== (xor (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0xfa|8>) <0x0|8>))))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:8] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1])[31:0]))[31:0])) (plus <CELL_2_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:8] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1])[31:0]))[31:0])) (plus <CELL_2_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[63:16] (and (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0x2|8>)) (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[7:0])[31:0]))[31:0])) (plus <CELL_3_ADDR|64> <0x0|64>))
+(not (not (== -(concat <0x0|32> (sign-extend-32 <TMP_BV_8_42|8>))[31:0] <0x0|32>)))
+(not (== (and (concat <0x0|32> (or (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])[31:0] (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0]))[31:0] (sign-extend-32 <0x3|8>)) <0x0|32>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== (and (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_40|8>))[7:0] (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_40|8>))[7:0]) <0x0|8>)))
+(== <%rsp_1_INIT|64> <%rsp_|64>)
+(== <%rbp_1_INIT|64> <%rbp_|64>)
+(== <%rsi_1_INIT|64> <%rsi_|64>)
+(== <%rdi_1_INIT|64> <%rdi_|64>)
+(== <%r15_1_INIT|64> <%r15_|64>)
+(== <sigbus_1_INIT> <sigbus_>)
+(== <sigfpe_1_INIT> <sigfpe_>)
+(== <sigsegv_1_INIT> <sigsegv_>)
+(== <%rsp_2_INIT|64> <%rsp_|64>)
+(== <%rbp_2_INIT|64> <%rbp_|64>)
+(== <%rsi_2_INIT|64> <%rsi_|64>)
+(== <%rdi_2_INIT|64> <%rdi_|64>)
+(== <%r15_2_INIT|64> <%r15_|64>)
+(== <sigbus_2_INIT> <sigbus_>)
+(== <sigfpe_2_INIT> <sigfpe_>)
+(== <sigsegv_2_INIT> <sigsegv_>)
+(and (and (and (and TRUE (== <TMP_BV_8_40|8> <TMP_BV_8_44|8>)) (== <TMP_BV_8_41|8> <TMP_BV_8_45|8>)) (== <TMP_BV_8_46|8> <TMP_BV_8_42|8>)) (== <TMP_BV_8_47|8> <TMP_BV_8_43|8>))
+(and (and (and (and (and (and (and (and (and (and (and (and (and (and TRUE (<= <CELL_0_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_0_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>) (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_2_ADDR|64>) (<= (plus <CELL_2_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_3_ADDR|64>) (<= (plus <CELL_3_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (<= <CELL_1_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_1_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_2_ADDR|64>) (<= (plus <CELL_2_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>))) (or (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_3_ADDR|64>) (<= (plus <CELL_3_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>))) (<= <CELL_2_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_2_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_2_ADDR|64> <0x1|64>) <CELL_3_ADDR|64>) (<= (plus <CELL_3_ADDR|64> <0x1|64>) <CELL_2_ADDR|64>))) (<= <CELL_3_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_3_ADDR|64> <0x40|64>))
+INEQUALITY: (== (concat <0x0|32> <%rdi_1_INIT|64>[31:0]) (concat (concat (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[63:16] (xor (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0xfa|8>)) (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[7:0]))
+INEQUALITY: (== <sigbus_1_INIT> <sigbus_2_INIT>)
+INEQUALITY: (== <sigfpe_1_INIT> <sigfpe_2_INIT>)
+INEQUALITY: (== (or (or (or <sigsegv_1_INIT> (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (or (or (or <sigsegv_2_INIT> (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)))
+  (This case verified)
+===========================================
+Working on pair / P: 1 6 7 Q: 1 2 3 4 5 6 6 7
+TARGET: 
+.strcpy:
+movl %esi, %esi
+movl %edi, %eax
+movl %esi, %edi
+movq %rsi, %rdx
+movq %rax, %rcx
+orl %eax, %edi
+andl $0x3, %edi
+nop 
+.L_126860:
+movl %edx, %edx
+movzbl (%r15,%rdx,1), %esi
+addl $0x1, %edx
+movl %ecx, %ecx
+movb %sil, (%r15,%rcx,1)
+addl $0x1, %ecx
+testb %sil, %sil
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+REWRITE: 
+.strcpy:
+nop 
+nop 
+movl %edi, %eax
+movl %esi, %edx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+movq %rax, %rcx
+decw %si
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+andb $0x2, %ch
+xorb $0xfa, %ah
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+.L_126820:
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+sarb $0x1, %dh
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+notw %dx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+sarb $0x1, %dl
+nopl %eax
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+.L_126860:
+addl $0x1, %edx
+movsbl -0x1(%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+negl %esi
+nop 
+.L_126860:
+addl $0x1, %edx
+movsbl -0x1(%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+negl %esi
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+Total accesses: 6
+SAME MAP
+     0 1 2 3 4 5 
+------------------
+0  |   0 0 0 0 0 
+1  |     0 0 0 0 
+2  |       0 0 0 
+3  |         0 0 
+4  |           0 
+5  |             
+
+NEXT MAP
+     0 1 2 3 4 5 
+------------------
+0  |   0 0 0 0 0 
+1  |     0 0 0 0 
+2  |       0 1 0 
+3  |         0 1 
+4  |           0 
+5  |             
+
+TOTAL CELLS: 4
+Access 0 cell 0 offset 0 size 1 (cell size 1)
+Access 1 cell 1 offset 0 size 1 (cell size 1)
+Access 2 cell 2 offset 0 size 1 (cell size 2)
+Access 3 cell 3 offset 0 size 1 (cell size 2)
+Access 4 cell 2 offset 1 size 1 (cell size 2)
+Access 5 cell 3 offset 1 size 1 (cell size 2)
+ALIASING CASES: 1
+1 Aliasing cases.  Yay.
+------ NEXT ALIASING CASE -----
+TARGET MAP:
+11 -> 0 (size 1 / cell size 1 / offset 0
+14 -> 1 (size 1 / cell size 1 / offset 0
+REWRITE MAP:
+101 -> 2 (size 1 / cell size 2 / offset 0
+103 -> 3 (size 1 / cell size 2 / offset 0
+108 -> 2 (size 1 / cell size 2 / offset 1
+110 -> 3 (size 1 / cell size 2 / offset 1
+Start memory constraint: (and (and (and (and TRUE (== <TMP_BV_8_54|8> <TMP_BV_8_58|8>)) (== <TMP_BV_8_55|8> <TMP_BV_8_59|8>)) (== <TMP_BV_16_60|16> <TMP_BV_16_56|16>)) (== <TMP_BV_16_61|16> <TMP_BV_16_57|16>))
+
+CONSTRAINTS
+
+(not (not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>)))
+(not (not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>)))
+(not (or (and (not (== (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>))[7:0] <0x0|8>)) (== (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1] <0x0|8>)) (and (not (not (== (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>))[7:0] <0x0|8>))) (== (xor (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0xfa|8>) <0x0|8>))))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:8] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1])[31:0]))[31:0])) (plus <CELL_2_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:8] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1])[31:0]))[31:0])) (plus <CELL_2_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[63:16] (and (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0x2|8>)) (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[7:0])[31:0]))[31:0])) (plus <CELL_3_ADDR|64> <0x0|64>))
+(not (== -(concat <0x0|32> (sign-extend-32 <TMP_BV_16_56|16>[7:0]))[31:0] <0x0|32>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:8] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1])[31:0]))[31:0])[31:0]))[31:0])) (plus <CELL_2_ADDR|64> <0x1|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:8] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1])[31:0]))[31:0])[31:0]))[31:0])) (plus <CELL_2_ADDR|64> <0x1|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[63:16] (and (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0x2|8>)) (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[7:0])[31:0]))[31:0])[31:0]))[31:0])) (plus <CELL_3_ADDR|64> <0x1|64>))
+(not (not (== -(concat <0x0|32> (sign-extend-32 <TMP_BV_16_56|16>[15:8]))[31:0] <0x0|32>)))
+(not (== (and (concat <0x0|32> (or (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])[31:0] (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0]))[31:0] (sign-extend-32 <0x3|8>)) <0x0|32>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== (and (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_54|8>))[7:0] (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_54|8>))[7:0]) <0x0|8>)))
+(== <%rsp_1_INIT|64> <%rsp_|64>)
+(== <%rbp_1_INIT|64> <%rbp_|64>)
+(== <%rsi_1_INIT|64> <%rsi_|64>)
+(== <%rdi_1_INIT|64> <%rdi_|64>)
+(== <%r15_1_INIT|64> <%r15_|64>)
+(== <sigbus_1_INIT> <sigbus_>)
+(== <sigfpe_1_INIT> <sigfpe_>)
+(== <sigsegv_1_INIT> <sigsegv_>)
+(== <%rsp_2_INIT|64> <%rsp_|64>)
+(== <%rbp_2_INIT|64> <%rbp_|64>)
+(== <%rsi_2_INIT|64> <%rsi_|64>)
+(== <%rdi_2_INIT|64> <%rdi_|64>)
+(== <%r15_2_INIT|64> <%r15_|64>)
+(== <sigbus_2_INIT> <sigbus_>)
+(== <sigfpe_2_INIT> <sigfpe_>)
+(== <sigsegv_2_INIT> <sigsegv_>)
+(and (and (and (and TRUE (== <TMP_BV_8_54|8> <TMP_BV_8_58|8>)) (== <TMP_BV_8_55|8> <TMP_BV_8_59|8>)) (== <TMP_BV_16_60|16> <TMP_BV_16_56|16>)) (== <TMP_BV_16_61|16> <TMP_BV_16_57|16>))
+(and (and (and (and (and (and (and (and (and (and (and (and (and (and TRUE (<= <CELL_0_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_0_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>) (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_2_ADDR|64>) (<= (plus <CELL_2_ADDR|64> <0x2|64>) <CELL_0_ADDR|64>))) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_3_ADDR|64>) (<= (plus <CELL_3_ADDR|64> <0x2|64>) <CELL_0_ADDR|64>))) (<= <CELL_1_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_1_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_2_ADDR|64>) (<= (plus <CELL_2_ADDR|64> <0x2|64>) <CELL_1_ADDR|64>))) (or (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_3_ADDR|64>) (<= (plus <CELL_3_ADDR|64> <0x2|64>) <CELL_1_ADDR|64>))) (<= <CELL_2_ADDR|64> <0xffffffffffffffbf|64>)) (>= <CELL_2_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_2_ADDR|64> <0x2|64>) <CELL_3_ADDR|64>) (<= (plus <CELL_3_ADDR|64> <0x2|64>) <CELL_2_ADDR|64>))) (<= <CELL_3_ADDR|64> <0xffffffffffffffbf|64>)) (>= <CELL_3_ADDR|64> <0x40|64>))
+INEQUALITY: (== (concat <0x0|32> <%rdi_1_INIT|64>[31:0]) (concat (concat (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[63:16] (xor (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0xfa|8>)) (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[7:0]))
+INEQUALITY: (== <sigbus_1_INIT> <sigbus_2_INIT>)
+INEQUALITY: (== <sigfpe_1_INIT> <sigfpe_2_INIT>)
+INEQUALITY: (== (or (or (or <sigsegv_1_INIT> (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (or (or (or (or (or (or <sigsegv_2_INIT> (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)))
+  (This case verified)
+===========================================
+Working on pair / P: 1 6 7 Q: 1 2 3 4 4 5 6 7
+TARGET: 
+.strcpy:
+movl %esi, %esi
+movl %edi, %eax
+movl %esi, %edi
+movq %rsi, %rdx
+movq %rax, %rcx
+orl %eax, %edi
+andl $0x3, %edi
+nop 
+.L_126860:
+movl %edx, %edx
+movzbl (%r15,%rdx,1), %esi
+addl $0x1, %edx
+movl %ecx, %ecx
+movb %sil, (%r15,%rcx,1)
+addl $0x1, %ecx
+testb %sil, %sil
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+REWRITE: 
+.strcpy:
+nop 
+nop 
+movl %edi, %eax
+movl %esi, %edx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+movq %rax, %rcx
+decw %si
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+andb $0x2, %ch
+xorb $0xfa, %ah
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+.L_126820:
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+sarb $0x1, %dh
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+notw %dx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+.L_126820:
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+sarb $0x1, %dh
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+notw %dx
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+sarb $0x1, %dl
+nopl %eax
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+.L_126860:
+addl $0x1, %edx
+movsbl -0x1(%r15,%rdx,1), %esi
+addl $0x1, %ecx
+movb %sil, -0x1(%r15,%rcx,1)
+negl %esi
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+nop 
+retq 
+Total accesses: 4
+SAME MAP
+     0 1 2 3 
+------------------
+0  |   0 0 0 
+1  |     0 0 
+2  |       0 
+3  |         
+
+NEXT MAP
+     0 1 2 3 
+------------------
+0  |   0 0 0 
+1  |     0 0 
+2  |       0 
+3  |         
+
+TOTAL CELLS: 4
+Access 0 cell 0 offset 0 size 1 (cell size 1)
+Access 1 cell 1 offset 0 size 1 (cell size 1)
+Access 2 cell 2 offset 0 size 1 (cell size 1)
+Access 3 cell 3 offset 0 size 1 (cell size 1)
+ALIASING CASES: 1
+1 Aliasing cases.  Yay.
+------ NEXT ALIASING CASE -----
+TARGET MAP:
+11 -> 0 (size 1 / cell size 1 / offset 0
+14 -> 1 (size 1 / cell size 1 / offset 0
+REWRITE MAP:
+142 -> 2 (size 1 / cell size 1 / offset 0
+144 -> 3 (size 1 / cell size 1 / offset 0
+Start memory constraint: (and (and (and (and TRUE (== <TMP_BV_8_66|8> <TMP_BV_8_70|8>)) (== <TMP_BV_8_67|8> <TMP_BV_8_71|8>)) (== <TMP_BV_8_72|8> <TMP_BV_8_68|8>)) (== <TMP_BV_8_73|8> <TMP_BV_8_69|8>))
+
+CONSTRAINTS
+
+(not (not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>)))
+(not (not (== (minus <%rsi_2_INIT|64>[15:0] <0x1|16>) <0x0|16>)))
+(or (and (not (== (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>))[7:0] <0x0|8>)) (== (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1] <0x0|8>)) (and (not (not (== (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>))[7:0] <0x0|8>))) (== (xor (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0xfa|8>) <0x0|8>)))
+(not (or (and (not (== (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>))[7:0] <0x0|8>)) (== (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1] <0x0|8>)) (and (not (not (== (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>))[7:0] <0x0|8>))) (or (and (not (== (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>))[7:0] <0x0|8>)) (== (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1] <0x0|8>)) (and (not (not (== (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>))[7:0] <0x0|8>))) (== (xor (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0xfa|8>) <0x0|8>))))))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:16] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0])[63:16] !(concat (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:16] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0])[15:0])[63:8] (s_shr (concat (concat (concat (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:16] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0])[63:16] !(concat (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:16] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0])[15:0])[7:0] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1])[31:0]))[31:0])) (plus <CELL_2_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:16] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0])[63:16] !(concat (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:16] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0])[15:0])[63:8] (s_shr (concat (concat (concat (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:16] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0])[63:16] !(concat (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[63:16] (s_shr (concat (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat (concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[63:16] !(concat (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[63:16] (s_shr (concat (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[15:8] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1]) (concat <0x0|32> <%rsi_2_INIT|64>[31:0])[7:0])[15:0])[7:0])[15:0])[7:0] <0x0|1>) (concat <0x0|1> (and <0x1|8>[7:0] <0x1f|8>)))[8:1])[31:0]))[31:0])) (plus <CELL_2_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0xffffffff|32>) <%r15_2_INIT|64>) (concat <0x0|32> (plus (concat <0x0|1> (sign-extend-32 <0x1|8>)) (concat <0x0|1> (concat (concat (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[63:16] (and (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0x2|8>)) (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[7:0])[31:0]))[31:0])) (plus <CELL_3_ADDR|64> <0x0|64>))
+(not (not (== -(concat <0x0|32> (sign-extend-32 <TMP_BV_8_68|8>))[31:0] <0x0|32>)))
+(not (== (and (concat <0x0|32> (or (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])[31:0] (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0]))[31:0] (sign-extend-32 <0x3|8>)) <0x0|32>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rsi_1_INIT|64>[31:0])[31:0])) (plus <CELL_0_ADDR|64> <0x0|64>))
+(== (plus (plus (sign-extend-64 <0x0|32>) <%r15_1_INIT|64>) (concat <0x0|32> (concat <0x0|32> <%rdi_1_INIT|64>[31:0])[31:0])) (plus <CELL_1_ADDR|64> <0x0|64>))
+(not (not (== (and (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_66|8>))[7:0] (concat <0x0|32> (concat <0x0|24> <TMP_BV_8_66|8>))[7:0]) <0x0|8>)))
+(== <%rsp_1_INIT|64> <%rsp_|64>)
+(== <%rbp_1_INIT|64> <%rbp_|64>)
+(== <%rsi_1_INIT|64> <%rsi_|64>)
+(== <%rdi_1_INIT|64> <%rdi_|64>)
+(== <%r15_1_INIT|64> <%r15_|64>)
+(== <sigbus_1_INIT> <sigbus_>)
+(== <sigfpe_1_INIT> <sigfpe_>)
+(== <sigsegv_1_INIT> <sigsegv_>)
+(== <%rsp_2_INIT|64> <%rsp_|64>)
+(== <%rbp_2_INIT|64> <%rbp_|64>)
+(== <%rsi_2_INIT|64> <%rsi_|64>)
+(== <%rdi_2_INIT|64> <%rdi_|64>)
+(== <%r15_2_INIT|64> <%r15_|64>)
+(== <sigbus_2_INIT> <sigbus_>)
+(== <sigfpe_2_INIT> <sigfpe_>)
+(== <sigsegv_2_INIT> <sigsegv_>)
+(and (and (and (and TRUE (== <TMP_BV_8_66|8> <TMP_BV_8_70|8>)) (== <TMP_BV_8_67|8> <TMP_BV_8_71|8>)) (== <TMP_BV_8_72|8> <TMP_BV_8_68|8>)) (== <TMP_BV_8_73|8> <TMP_BV_8_69|8>))
+(and (and (and (and (and (and (and (and (and (and (and (and (and (and TRUE (<= <CELL_0_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_0_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>) (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_2_ADDR|64>) (<= (plus <CELL_2_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (or (<= (plus <CELL_0_ADDR|64> <0x1|64>) <CELL_3_ADDR|64>) (<= (plus <CELL_3_ADDR|64> <0x1|64>) <CELL_0_ADDR|64>))) (<= <CELL_1_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_1_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_2_ADDR|64>) (<= (plus <CELL_2_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>))) (or (<= (plus <CELL_1_ADDR|64> <0x1|64>) <CELL_3_ADDR|64>) (<= (plus <CELL_3_ADDR|64> <0x1|64>) <CELL_1_ADDR|64>))) (<= <CELL_2_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_2_ADDR|64> <0x40|64>)) (or (<= (plus <CELL_2_ADDR|64> <0x1|64>) <CELL_3_ADDR|64>) (<= (plus <CELL_3_ADDR|64> <0x1|64>) <CELL_2_ADDR|64>))) (<= <CELL_3_ADDR|64> <0xffffffffffffffc0|64>)) (>= <CELL_3_ADDR|64> <0x40|64>))
+INEQUALITY: (== (concat <0x0|32> <%rdi_1_INIT|64>[31:0]) (concat (concat (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[63:16] (xor (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[15:8] <0xfa|8>)) (concat <0x0|32> <%rdi_2_INIT|64>[31:0])[7:0]))
+INEQUALITY: (== <sigbus_1_INIT> <sigbus_2_INIT>)
+INEQUALITY: (== <sigfpe_1_INIT> <sigfpe_2_INIT>)
+INEQUALITY: (== (or (or (or <sigsegv_1_INIT> (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (and (and (not <sigfpe_1_INIT>) (not <sigbus_1_INIT>)) FALSE)) (or (or (or <sigsegv_2_INIT> (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)) (and (and (not <sigfpe_2_INIT>) (not <sigbus_2_INIT>)) FALSE)))
+  (Got counterexample)
+SIGNAL 0 [normal exit]
+
+%rax     00 00 00 00 00 00 00 00
+%rcx     00 00 00 00 00 00 00 00
+%rdx     00 00 00 00 00 00 00 00
+%rbx     00 00 00 00 00 00 00 00
+%rsp     00 00 00 00 00 00 00 00
+%rbp     00 00 00 00 00 00 00 00
+%rsi     00 00 00 00 de 00 00 01
+%rdi     00 00 00 00 db 78 01 ff
+%r8      00 00 00 00 00 00 00 00
+%r9      00 00 00 00 00 00 00 00
+%r10     00 00 00 00 00 00 00 00
+%r11     00 00 00 00 00 00 00 00
+%r12     00 00 00 00 00 00 00 00
+%r13     00 00 00 00 00 00 00 00
+%r14     00 00 00 00 00 00 00 00
+%r15     7f ff ff ff e4 87 fd fe
+
+%ymm0    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm1    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm2    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm3    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm4    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm5    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm6    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm7    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm8    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm9    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm10   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm11   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm12   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm13   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm14   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm15   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+%cf      0 
+%1       1 
+%pf      0 
+%0       0 
+%af      0 
+%0       0 
+%zf      0 
+%sf      0 
+%tf      0 
+%if      1 
+%df      0 
+%of      0 
+%iopl[0] 0 
+%iopl[1] 0 
+%nt      0 
+%0       0 
+%rf      0 
+%vm      0 
+%ac      0 
+%vif     0 
+%vip     0 
+%id      0 
+
+[ 80000000 c0000000 - 80000000 bfffffe0 ]
+[ 1 valid rows shown ]
+
+80000000 bffffff8   . . v . . . . .   00 00 00 00 00 00 00 00 
+
+[ 80000000 bfffff00 - 80000000 bffffee0 ]
+[ 1 valid rows shown ]
+
+80000000 bffffef8   . . v . . . . .   00 00 00 00 00 00 00 00 
+
+[ 80000000 c287fe00 - 80000000 c287fde0 ]
+[ 1 valid rows shown ]
+
+80000000 c287fdf8   v v . . . . . .   00 00 00 00 00 00 00 00 
+
+0 more segment(s)
+
+Equivalent: no
+
+1 Counterexamples.
+
+SIGNAL 0 [normal exit]
+
+%rax     00 00 00 00 00 00 00 00
+%rcx     00 00 00 00 00 00 00 00
+%rdx     00 00 00 00 00 00 00 00
+%rbx     00 00 00 00 00 00 00 00
+%rsp     00 00 00 00 00 00 00 00
+%rbp     00 00 00 00 00 00 00 00
+%rsi     00 00 00 00 de 00 00 01
+%rdi     00 00 00 00 db 78 01 ff
+%r8      00 00 00 00 00 00 00 00
+%r9      00 00 00 00 00 00 00 00
+%r10     00 00 00 00 00 00 00 00
+%r11     00 00 00 00 00 00 00 00
+%r12     00 00 00 00 00 00 00 00
+%r13     00 00 00 00 00 00 00 00
+%r14     00 00 00 00 00 00 00 00
+%r15     7f ff ff ff e4 87 fd fe
+
+%ymm0    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm1    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm2    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm3    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm4    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm5    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm6    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm7    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm8    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm9    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm10   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm11   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm12   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm13   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm14   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+%ymm15   00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+%cf      0 
+%1       1 
+%pf      0 
+%0       0 
+%af      0 
+%0       0 
+%zf      0 
+%sf      0 
+%tf      0 
+%if      1 
+%df      0 
+%of      0 
+%iopl[0] 0 
+%iopl[1] 0 
+%nt      0 
+%0       0 
+%rf      0 
+%vm      0 
+%ac      0 
+%vif     0 
+%vip     0 
+%id      0 
+
+[ 80000000 c0000000 - 80000000 bfffffe0 ]
+[ 1 valid rows shown ]
+
+80000000 bffffff8   . . v . . . . .   00 00 00 00 00 00 00 00 
+
+[ 80000000 bfffff00 - 80000000 bffffee0 ]
+[ 1 valid rows shown ]
+
+80000000 bffffef8   . . v . . . . .   00 00 00 00 00 00 00 00 
+
+[ 80000000 c287fe00 - 80000000 c287fde0 ]
+[ 1 valid rows shown ]
+
+80000000 c287fdf8   v v . . . . . .   00 00 00 00 00 00 00 00 
+
+0 more segment(s)
+
+
+Difference of running target and rewrite on the counterexample:
+
+%rax     00 00 00 00 db 78 [91m0[0m[91m1[0m ff
+%rax     00 00 00 00 db 78 [92mf[0m[92mb[0m ff
+%rdi     00 00 00 00 [91m0[0m[91m0[0m [91m0[0m[91m0[0m 0[91m0[0m [91m0[0m[91m3[0m
+%rdi     00 00 00 00 [92md[0m[92mb[0m [92m7[0m[92m8[0m 0[92m1[0m [92mf[0m[92mf[0m
+

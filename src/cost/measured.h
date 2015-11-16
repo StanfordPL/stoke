@@ -39,11 +39,17 @@ public:
   /** Measures the "running time" with our latency table */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
 
+    size_t tc_count = sandbox_->size();
+
+    if (tc_count == 0) {
+      LatencyCost lc;
+      return lc(cfg, max);
+    }
+
     sandbox_->insert_function(cfg);
     sandbox_->set_entrypoint(cfg.get_code()[0].get_operand<x64asm::Label>(0));
 
     uint64_t res = 0;
-    size_t tc_count = sandbox_->size();
     uint64_t average_size = 0;
     latency_ = 0;
 
@@ -62,12 +68,7 @@ public:
     }
 
     res = latency_;
-    if (tc_count == 0) {
-      LatencyCost lc;
-      return lc(cfg, max);
-    }
-    else
-      return result_type(true, res/tc_count);
+    return result_type(true, res/tc_count);
   }
 
   /** Add to the measured latency */
