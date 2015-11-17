@@ -8,7 +8,6 @@
 
 # Text                      #  Line  RIP   Bytes  Opcode              
 .wmemset:                   #        0     0      OPC=<label>         
-  movl %edx, %edx
   nop                       #  1     0     1      OPC=nop             
   nop                       #  2     0x1   1      OPC=nop             
   nop                       #  3     0x2   1      OPC=nop             
@@ -40,8 +39,8 @@
   leal (%rax,%rcx,4), %r8d  #  28    0x20  4      OPC=leal_r32_m32    
   movl %esi, (%r15,%r8,1)   #  29    0x24  4      OPC=movl_m32_r32    
   addq $0x1, %rcx           #  30    0x28  4      OPC=addq_r64_imm8   
-  cmpl %ecx, %edx           #  31    0x2c  3      OPC=cmpl_r32_r32    
-  ja .L_10                  #  32    0x2f  2      OPC=ja_label       
+  cmpl %edx, %ecx 
+  jne .L_10                 #  32    0x2f  2      OPC=jne_label       
   nop                       #  33    0x31  1      OPC=nop             
   nop                       #  34    0x32  1      OPC=nop             
   nop                       #  35    0x33  1      OPC=nop             
