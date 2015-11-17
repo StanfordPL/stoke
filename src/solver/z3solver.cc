@@ -31,7 +31,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   solver_.reset();
 
   /* Convert constraints and query to z3 object */
-  SymTypecheckVisitor tc;
+  // SymTypecheckVisitor tc;
 
   const vector<SymBool>* current = &constraints;
   vector<SymBool>* new_constraints = 0;
@@ -44,16 +44,16 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     ExprConverter ec(context_, *new_constraints);
 
     for (auto it : *current) {
-      if (tc(it) != 1) {
-        stringstream ss;
-        ss << "Typechecking failed for constraint: " << it << endl;
-        if (tc.has_error())
-          ss << "error: " << tc.error() << endl;
-        else
-          ss << "(no typechecking error message given)" << endl;
-        error_ = ss.str();
-        return false;
-      }
+      // if (tc(it) != 1) {
+      //   stringstream ss;
+      //   ss << "Typechecking failed for constraint: " << it << endl;
+      //   if (tc.has_error())
+      //     ss << "error: " << tc.error() << endl;
+      //   else
+      //     ss << "(no typechecking error message given)" << endl;
+      //   error_ = ss.str();
+      //   return false;
+      // }
 
       auto constraint = ec(it);
       if (ec.has_error()) {

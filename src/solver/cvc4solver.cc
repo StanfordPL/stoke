@@ -31,21 +31,21 @@ bool Cvc4Solver::is_sat(const vector<SymBool>& constraints) {
 
   error_ = "";
 
-  SymTypecheckVisitor tc;
+  // SymTypecheckVisitor tc;
   ExprConverter ec(this);
 
   for (auto it : constraints) {
 
-    if (tc(it) != 1) {
-      stringstream ss;
-      ss << "Typechecking failed for constraint: " << it << endl;
-      if (tc.has_error())
-        ss << "error: " << tc.error() << endl;
-      else
-        ss << "(no typechecking error message given)" << endl;
-      error_ = ss.str();
-      return false;
-    }
+    // if (tc(it) != 1) {
+    //   stringstream ss;
+    //   ss << "Typechecking failed for constraint: " << it << endl;
+    //   if (tc.has_error())
+    //     ss << "error: " << tc.error() << endl;
+    //   else
+    //     ss << "(no typechecking error message given)" << endl;
+    //   error_ = ss.str();
+    //   return false;
+    // }
 
     auto converted = ec(it);
     if (ec.has_error()) {
