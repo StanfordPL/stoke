@@ -295,7 +295,7 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorShiftRight * const bv)
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignDiv * const bv) {
   // assert second arg non-zero
   auto arg = SymBitVector(bv->b_);
-  auto width = arg->width_;
+  auto width = arg.width();
   auto zero = SymBitVector::constant(width, 0);
   auto constraint = arg != zero;
   constraints_.push_back(constraint);

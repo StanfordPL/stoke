@@ -273,7 +273,7 @@ void SymState::set(const Eflags f, SymBool b) {
 void SymState::set_szp_flags(const SymBitVector& v, uint16_t width) {
 
   if (width == 0) {
-    width = w.width();
+    width = v.width();
   }
 
   /* The sign flag is the most significant bit */
