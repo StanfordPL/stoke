@@ -108,8 +108,7 @@ Expr Cvc4Solver::ExprConverter::generic_rot(bool left,
     const SymBitVectorAbstract * const x, Expr a, Expr b) {
 
   // Get the size of the argument
-  SymTypecheckVisitor tc;
-  uint16_t size = tc(x);
+  uint16_t size = x->width_;
 
   // Number of bits to rotate, simplified
   Expr amt = em_.mkExpr(kind::BITVECTOR_UREM, b, em_.mkConst(BitVector(size, (uint64_t)size)));
@@ -313,8 +312,7 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorIte * const bv) {
 
 /** Visit a bit-vector sign extension */
 Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorSignExtend * const bv) {
-  SymTypecheckVisitor tc;
-  uint16_t size = tc(bv->bv_);
+  uint16_t size = bv->bv_->width_;
   uint16_t amt = bv->size_ - size;
   return em_.mkExpr(kind::BITVECTOR_SIGN_EXTEND,
                     em_.mkConst(BitVectorSignExtend(amt)), (*this)(bv->bv_));
