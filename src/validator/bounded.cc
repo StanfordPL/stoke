@@ -22,12 +22,12 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define BOUNDED_DEBUG(X) { X }
+#define BOUNDED_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { }
+#define CEG_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )

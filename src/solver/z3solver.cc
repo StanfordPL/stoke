@@ -43,6 +43,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     ExprConverter ec(context_, new_constraints);
 
     for (auto it : *current) {
+      /*
       if (tc(it) != 1) {
         stringstream ss;
         ss << "Typechecking failed for constraint: " << it << endl;
@@ -53,6 +54,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
         error_ = ss.str();
         return false;
       }
+      */
 
       auto constraint = ec(it);
       if (ec.has_error()) {
@@ -303,7 +305,7 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignDiv * const bv) {
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignExtend * const bv) {
 
   SymTypecheckVisitor tc;
-  auto child = tc(bv->bv_);
+  auto child = bv->bv_->width_;
 
   return z3::expr(context_, Z3_mk_sign_ext(context_, bv->size_ - child, (*this)(bv->bv_)));
 }
