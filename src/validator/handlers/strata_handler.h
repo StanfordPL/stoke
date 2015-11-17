@@ -27,7 +27,8 @@ class StrataHandler : public Handler {
 
 public:
 
-  StrataHandler(const std::string& strata_path): strata_path_(strata_path) {
+  StrataHandler(const std::string& strata_path, const bool simplify = true) :
+    strata_path_(strata_path), simplify_(simplify) {
     init();
   }
 
@@ -44,6 +45,9 @@ private:
   void init();
 
   const std::string& strata_path_;
+
+  /** Should circuits be simplified on the fly. */
+  const bool simplify_;
 
   /** A map that gives the equivalent, register-only variant for an opcode. */
   std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_;

@@ -72,6 +72,9 @@ auto& opcode_arg =
   .description("The opcode to check.")
   .required();
 
+auto& no_simplify_arg =
+  FlagArg::create("no_simplify")
+  .description("Should circuits not be simplified?");
 
 auto& compare_to_stoke =
   FlagArg::create("compare_to_stoke").alternate("c")
@@ -88,7 +91,7 @@ int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
   auto strata_path = circuits_arg.value();
-  auto strata_handler = StrataHandler(strata_path);
+  auto strata_handler = StrataHandler(strata_path, !no_simplify_arg.value());
 
   auto instr = get_instruction_from_string(opcode_arg.value());
   Opcode opcode = instr.get_opcode();
