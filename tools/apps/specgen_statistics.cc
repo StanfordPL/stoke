@@ -109,11 +109,11 @@ int main(int argc, char** argv) {
     auto strata_support = strata_handler.is_supported(opcode) || specgen_is_base(opcode);
     auto stoke_support = validator.is_supported(opcode);
     auto could_support = !specgen_is_system(opcode) &&
-          !specgen_is_float(opcode) &&
-          !specgen_is_jump(opcode) &&
-          !specgen_is_mm(opcode) &&
-          !specgen_is_crypto(opcode) &&
-          !specgen_is_sandbox_unsupported(opcode);
+                         !specgen_is_float(opcode) &&
+                         !specgen_is_jump(opcode) &&
+                         !specgen_is_mm(opcode) &&
+                         !specgen_is_crypto(opcode) &&
+                         !specgen_is_sandbox_unsupported(opcode);
     if (!strata_support) {
       if (!specgen_is_system(opcode) &&
           !specgen_is_float(opcode) &&
@@ -159,7 +159,7 @@ int main(int argc, char** argv) {
         cout << "strata handler produced an error: " << strata_handler_simple.error() << endl;
         exit(1);
       }
-      
+
       measure_complexity(state, rs, &nodes, &uifs, &muls);
       cout << "\"strata_long\":{";
       cout << "\"uif\":" << uifs << sep;

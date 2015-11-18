@@ -453,15 +453,15 @@ bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
   if (reg_only_alternative_duplicate_.find(opcode) != reg_only_alternative_duplicate_.end()) {
     alt = reg_only_alternative_duplicate_[opcode];
     found = true;
-  // } else if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
-  //   alt = reg_only_alternative_[opcode];
-  //   found = true;
-  // } else if (reg_only_alternative_mem_reduce_.find(opcode) != reg_only_alternative_mem_reduce_.end()) {
-  //   alt = reg_only_alternative_mem_reduce_[opcode];
-  //   found = true;
-  // } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
-  //   alt = reg_only_alternative_extend_[opcode];
-  //   found = true;
+    // } else if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+    //   alt = reg_only_alternative_[opcode];
+    //   found = true;
+    // } else if (reg_only_alternative_mem_reduce_.find(opcode) != reg_only_alternative_mem_reduce_.end()) {
+    //   alt = reg_only_alternative_mem_reduce_[opcode];
+    //   found = true;
+    // } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
+    //   alt = reg_only_alternative_extend_[opcode];
+    //   found = true;
   }
 
   if (found) {
