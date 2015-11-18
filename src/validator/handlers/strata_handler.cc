@@ -64,6 +64,103 @@ Ymm sse_to_ymm(const Sse& reg) {
   return Constants::ymms()[idx];
 }
 
+bool is_register_only(Opcode opcode) {
+  Instruction instr(opcode);
+  for (size_t j = 0; j < instr.arity(); j++) {
+    switch (instr.type(j)) {
+    case x64asm::Type::RH:
+    case x64asm::Type::AL:
+    case x64asm::Type::CL:
+    case x64asm::Type::R_8:
+    case x64asm::Type::AX:
+    case x64asm::Type::DX:
+    case x64asm::Type::R_16:
+    case x64asm::Type::EAX:
+    case x64asm::Type::R_32:
+    case x64asm::Type::RAX:
+    case x64asm::Type::R_64:
+    case x64asm::Type::XMM_0:
+    case x64asm::Type::XMM:
+    case x64asm::Type::YMM:
+
+    // also allow some non-register but fixed operands
+    case x64asm::Type::ZERO:
+    case x64asm::Type::ONE:
+    case x64asm::Type::THREE:
+      break;
+    default:
+      return false;
+    }
+  }
+  return true;
+}
+
+// bool is_register_type(const Type& t) {
+//   switch (t) {
+//   case x64asm::Type::RH:
+//   case x64asm::Type::AL:
+//   case x64asm::Type::CL:
+//   case x64asm::Type::R_8:
+//   case x64asm::Type::AX:
+//   case x64asm::Type::DX:
+//   case x64asm::Type::R_16:
+//   case x64asm::Type::EAX:
+//   case x64asm::Type::R_32:
+//   case x64asm::Type::RAX:
+//   case x64asm::Type::R_64:
+//   case x64asm::Type::XMM_0:
+//   case x64asm::Type::XMM:
+//   case x64asm::Type::YMM:
+//     break;
+//   default:
+//     return false;
+//   }
+//   return true;
+// }
+
+bool is_imm_type(const Type& t) {
+  switch (t) {
+  case x64asm::Type::IMM_8:
+  case x64asm::Type::IMM_16:
+  case x64asm::Type::IMM_32:
+  case x64asm::Type::IMM_64:
+    return true;
+  default:
+    break;
+  }
+  return false;
+}
+
+bool is_sse_type(const Type& t) {
+  switch (t) {
+  case x64asm::Type::XMM_0:
+  case x64asm::Type::XMM:
+  case x64asm::Type::YMM:
+    return true;
+  default:
+    break;
+  }
+  return false;
+}
+
+bool is_sse_mem_type(const Type& t) {
+  switch (t) {
+  case x64asm::Type::M_32:
+  case x64asm::Type::M_64:
+    return true;
+  default:
+    break;
+  }
+  return false;
+}
+
+bool both_or_none_rh(const Type& t0, const Type& t1) {
+  if (t0 == Type::RH || t1 == Type::RH) {
+    return t0 == t1;
+  }
+  return true;
+}
+
 /**
  * Given two instructions with the same opcode, and a register from the context
  * of one of these instructions, translate it into a register in the context
@@ -102,28 +199,39 @@ const Sse translate_sse_register(const Sse& operand_from, const Instruction& ins
   return operand_from;
 };
 
+// this is a HACK: we use the transform visitor to create sym nodes.
+auto transformer = SymTransformVisitor();
+
 /**
  * Like translate_register, but the operand_from is a ymm/r64 register that may
  * correspond to one of the operands.
  */
-Operand translate_max_register(const Operand& operand_from, const Instruction& instr_from, const Instruction& instr_to) {
+SymBitVectorAbstract* translate_max_register(const SymState& state, const Operand& operand_from, const Instruction& instr_from, const Instruction& instr_to) {
   for (size_t i = 0; i < instr_from.arity(); i++) {
     // same 64 bit register?
     if (operand_from.type() == Type::R_64 || operand_from.type() == Type::RAX) {
       if (operand_from == r_to_r64(instr_from.get_operand<R>(i))) {
-        return r_to_r64(instr_to.get_operand<R>(i));
+        if (is_imm_type(instr_to.type(i))) {
+          auto val = (uint64_t)instr_to.get_operand<Imm>(i);
+          auto c = transformer.make_bitvector_constant(bit_width_of_type(instr_to.type(i)), val);
+          return transformer.make_bitvector_sign_extend(c, 64);
+        } else {
+          auto translated_reg = r_to_r64(instr_to.get_operand<R>(i));
+          return (SymBitVectorAbstract*)state.lookup(translated_reg).ptr;
+        }
       }
     } else
 
       // same 256 bit register?
       if (operand_from.type() == Type::YMM) {
         if (operand_from == sse_to_ymm(instr_from.get_operand<Sse>(i))) {
-          return sse_to_ymm(instr_to.get_operand<Sse>(i));
+          auto translated_reg = sse_to_ymm(instr_to.get_operand<Sse>(i));
+          return (SymBitVectorAbstract*)state.lookup(translated_reg).ptr;
         }
       }
   }
   // no translation necessary
-  return operand_from;
+  return (SymBitVectorAbstract*)state.lookup(operand_from).ptr;
 };
 
 
@@ -188,102 +296,6 @@ void print_state(SymState& state, RegSet rs) {
 
 } // end namespace
 
-bool is_register_only(Opcode opcode) {
-  Instruction instr(opcode);
-  for (size_t j = 0; j < instr.arity(); j++) {
-    switch (instr.type(j)) {
-    case x64asm::Type::RH:
-    case x64asm::Type::AL:
-    case x64asm::Type::CL:
-    case x64asm::Type::R_8:
-    case x64asm::Type::AX:
-    case x64asm::Type::DX:
-    case x64asm::Type::R_16:
-    case x64asm::Type::EAX:
-    case x64asm::Type::R_32:
-    case x64asm::Type::RAX:
-    case x64asm::Type::R_64:
-    case x64asm::Type::XMM_0:
-    case x64asm::Type::XMM:
-    case x64asm::Type::YMM:
-
-    // also allow some non-register but fixed operands
-    case x64asm::Type::ZERO:
-    case x64asm::Type::ONE:
-    case x64asm::Type::THREE:
-      break;
-    default:
-      return false;
-    }
-  }
-  return true;
-}
-
-bool is_register_type(const Type& t) {
-  switch (t) {
-  case x64asm::Type::RH:
-  case x64asm::Type::AL:
-  case x64asm::Type::CL:
-  case x64asm::Type::R_8:
-  case x64asm::Type::AX:
-  case x64asm::Type::DX:
-  case x64asm::Type::R_16:
-  case x64asm::Type::EAX:
-  case x64asm::Type::R_32:
-  case x64asm::Type::RAX:
-  case x64asm::Type::R_64:
-  case x64asm::Type::XMM_0:
-  case x64asm::Type::XMM:
-  case x64asm::Type::YMM:
-    break;
-  default:
-    return false;
-  }
-  return true;
-}
-
-bool is_imm_type(const Type& t) {
-  switch (t) {
-  case x64asm::Type::IMM_8:
-  case x64asm::Type::IMM_16:
-  case x64asm::Type::IMM_32:
-  case x64asm::Type::IMM_64:
-    return true;
-  default:
-    break;
-  }
-  return false;
-}
-
-bool is_sse_type(const Type& t) {
-  switch (t) {
-  case x64asm::Type::XMM_0:
-  case x64asm::Type::XMM:
-  case x64asm::Type::YMM:
-    return true;
-  default:
-    break;
-  }
-  return false;
-}
-
-bool is_sse_mem_type(const Type& t) {
-  switch (t) {
-  case x64asm::Type::M_32:
-  case x64asm::Type::M_64:
-    return true;
-  default:
-    break;
-  }
-  return false;
-}
-
-bool both_or_none_rh(const Type& t0, const Type& t1) {
-  if (t0 == Type::RH || t1 == Type::RH) {
-    return t0 == t1;
-  }
-  return true;
-}
 
 void StrataHandler::init() {
 
@@ -453,9 +465,9 @@ bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
   if (reg_only_alternative_duplicate_.find(opcode) != reg_only_alternative_duplicate_.end()) {
     alt = reg_only_alternative_duplicate_[opcode];
     found = true;
-    // } else if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
-    //   alt = reg_only_alternative_[opcode];
-    //   found = true;
+  } else if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+    alt = reg_only_alternative_[opcode];
+    found = true;
     // } else if (reg_only_alternative_mem_reduce_.find(opcode) != reg_only_alternative_mem_reduce_.end()) {
     //   alt = reg_only_alternative_mem_reduce_[opcode];
     //   found = true;
@@ -556,20 +568,6 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     build_circuit(alt, final);
   }
 
-  // keep a copy of the start state
-  SymState start = final;
-
-  // handle imm instructions
-  // if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
-  //   // get circuit for register only opcode
-  //   Instruction alt = get_instruction(reg_only_alternative_[opcode]);
-  //   ch_.build_circuit(alt, start);
-  //   if (ch_.has_error()) {
-  //     error_ = "StrataHandler encountered an error: " + ch_.error();
-  //     return;
-  //   }
-  // }
-
   auto typecheck = [&tc, this](auto circuit, size_t exptected_size) {
 #ifdef DEBUG_STRATA_HANDLER
     auto actual = tc(circuit);
@@ -590,19 +588,37 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     return true;
   };
 
-  // read program
-  ifstream file(candidate_file);
-  TUnit t;
-  file >> t;
-  auto specgen_instr = get_instruction(opcode);
+  // keep a copy of the start state
+  SymState start = final;
 
-  // build formula for program
+  // the state which will be the circuit for our alternative instruction
   SymState tmp(opcode_str);
-  auto code = t.get_code();
-  assert(code[0].get_opcode() == Opcode::LABEL_DEFN);
-  assert(code[code.size() - 1].get_opcode() == Opcode::RET);
-  for (size_t i = 1; i < code.size()-1; i++) {
-    build_circuit(code[i], tmp);
+
+  // handle imm instructions
+  Instruction specgen_instr(XOR_R8_R8);
+  if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+    // get circuit for register only opcode
+    specgen_instr = get_instruction(reg_only_alternative_[opcode]);
+    ch_.build_circuit(specgen_instr, tmp);
+    if (ch_.has_error()) {
+      error_ = "StrataHandler encountered an error: " + ch_.error();
+      return;
+    }
+  } else {
+    // we are dealing with a circuit that we have learned
+    // read program
+    ifstream file(candidate_file);
+    TUnit t;
+    file >> t;
+    specgen_instr = get_instruction(opcode);
+
+    // build formula for program
+    auto code = t.get_code();
+    assert(code[0].get_opcode() == Opcode::LABEL_DEFN);
+    assert(code[code.size() - 1].get_opcode() == Opcode::RET);
+    for (size_t i = 1; i < code.size()-1; i++) {
+      build_circuit(code[i], tmp);
+    }
   }
 
 #ifdef DEBUG_STRATA_HANDLER
@@ -627,11 +643,9 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     R64 gp = Constants::rax();
     Ymm ymm = Constants::ymm0();
     if (stringstream(real_name) >> gp) {
-      auto translated_reg = translate_max_register(gp, specgen_instr, instr);
-      return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
+      return translate_max_register(start, gp, specgen_instr, instr);
     } else if (stringstream(real_name) >> ymm) {
-      auto translated_reg = translate_max_register(ymm, specgen_instr, instr);
-      return (SymBitVectorAbstract*)start.lookup(translated_reg).ptr;
+      return translate_max_register(start, ymm, specgen_instr, instr);
     }
     assert(false);
     return NULL;

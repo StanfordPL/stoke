@@ -96,6 +96,8 @@ int main(int argc, char** argv) {
   auto stoke_handler = ComboHandler();
   auto validator = StraightLineValidator(solver);
 
+  auto get_strata_circuits = false;
+
   auto sep = ",";
   x64asm::RegSet supported =
     (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
@@ -144,7 +146,7 @@ int main(int argc, char** argv) {
     cout << " \"is_base\":" << (specgen_is_base(opcode)?"true":"false") << sep;
     cout << " \"strata_support\":" << (strata_support?"true":"false") << sep;
     cout << " \"stoke_support\":" << (stoke_support?"true":"false") << sep;
-    if (strata_support) {
+    if (strata_support && get_strata_circuits) {
       SymState state("", true);
       strata_handler.build_circuit(instr, state);
       if (strata_handler.has_error()) {

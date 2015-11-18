@@ -66,7 +66,7 @@ auto& circuits_arg =
   ValueArg<string>::create("circuit_dir")
   .usage("<path/to/dir>")
   .description("Directory containing the strata circuits")
-  .required();
+  .default_val("/home/sheule/dev/circuits");
 
 
 int main(int argc, char** argv) {
@@ -99,45 +99,19 @@ int main(int argc, char** argv) {
   auto errors = 0;
   auto n = 0;
   auto strata_handler = StrataHandler(strata_path);
-  auto validator = StraightLineValidator(solver);
+  // auto validator = StraightLineValidator(solver);
 
-  int strata_count = 0;
-  int stoke_count = 0;
-  int only_strata = 0;
-  int only_stoke = 0;
-  for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
-    auto opcode = (Opcode)i;
-    auto strata_support = strata_handler.is_supported(opcode) || specgen_is_base(opcode);
-    auto stoke_support = validator.is_supported(opcode);
-    if (strata_support) {
-      strata_count++;
-    }
-    if (stoke_support) {
-      stoke_count++;
-    }
-    if (stoke_support && !strata_support) {
-      only_stoke++;
-    }
-    if (strata_support && !stoke_support) {
-      only_strata++;
-    }
-    if (!strata_support) {
-      if (!specgen_is_system(opcode) &&
-          !specgen_is_float(opcode) &&
-          !specgen_is_jump(opcode) &&
-          !specgen_is_mm(opcode) &&
-          !specgen_is_crypto(opcode) &&
-          !specgen_is_sandbox_unsupported(opcode)) {
-        // cout << opcode << endl;
-      }
-    }
-  }
-  cout << "strata supports " << strata_count << " instructions" << endl;
-  cout << "  only strata: " << only_strata << endl;
-  cout << "stoke supports " << stoke_count << " instructions" << endl;
-  cout << "  only stoke: " << only_stoke << endl;
+  // int strata_count = 0;
+  // int stoke_count = 0;
+  // int only_strata = 0;
+  // int only_stoke = 0;
+  // for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+  //   auto opcode = (Opcode)i;
+  //   auto strata_support = strata_handler.is_supported(opcode) || specgen_is_base(opcode);
+  //   auto stoke_support = validator.is_supported(opcode);
+  // }
 
-  Opcode opcode = Opcode::ADC_R8_IMM8;
+  Opcode opcode = Opcode::ADC_R16_IMM8;
   auto instr = get_random_instruction(opcode, gen);
 
   cout << instr << endl;
@@ -185,8 +159,8 @@ int main(int argc, char** argv) {
     }
     if (!res) {
       explanation << "  states do not agree for '" << (*reg) << "':" << endl;
-      explanation << "    strata: " << a << endl;
-      explanation << "    stoke:  " << b << endl;
+      explanation << "    strata:  " << a << endl;
+      explanation << "    sandbox: " << b << endl;
       return false;
     } else {
       return true;
