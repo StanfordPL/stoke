@@ -118,6 +118,26 @@ bool is_register_only(Opcode opcode) {
 //   return true;
 // }
 
+bool is_gp_type(const Type& t) {
+  switch (t) {
+  case x64asm::Type::RH:
+  case x64asm::Type::AL:
+  case x64asm::Type::CL:
+  case x64asm::Type::R_8:
+  case x64asm::Type::AX:
+  case x64asm::Type::DX:
+  case x64asm::Type::R_16:
+  case x64asm::Type::EAX:
+  case x64asm::Type::R_32:
+  case x64asm::Type::RAX:
+  case x64asm::Type::R_64:
+    break;
+  default:
+    return false;
+  }
+  return true;
+}
+
 bool is_imm_type(const Type& t) {
   switch (t) {
   case x64asm::Type::IMM_8:
@@ -210,12 +230,13 @@ SymBitVectorAbstract* translate_max_register(const SymState& state, const Operan
   for (size_t i = 0; i < instr_from.arity(); i++) {
     // same 64 bit register?
     if (operand_from.type() == Type::R_64 || operand_from.type() == Type::RAX) {
-      if (operand_from == r_to_r64(instr_from.get_operand<R>(i))) {
+      if (is_gp_type(instr_from.type(i)) && operand_from == r_to_r64(instr_from.get_operand<R>(i))) {
         if (is_imm_type(instr_to.type(i))) {
           auto val = (uint64_t)instr_to.get_operand<Imm>(i);
           auto c = transformer.make_bitvector_constant(bit_width_of_type(instr_to.type(i)), val);
           return transformer.make_bitvector_sign_extend(c, 64);
         } else {
+          assert(is_gp_type(instr_to.type(i)));
           auto translated_reg = r_to_r64(instr_to.get_operand<R>(i));
           return (SymBitVectorAbstract*)state.lookup(translated_reg).ptr;
         }
@@ -224,7 +245,8 @@ SymBitVectorAbstract* translate_max_register(const SymState& state, const Operan
 
       // same 256 bit register?
       if (operand_from.type() == Type::YMM) {
-        if (operand_from == sse_to_ymm(instr_from.get_operand<Sse>(i))) {
+        if (is_sse_type(instr_from.type(i)) && operand_from == sse_to_ymm(instr_from.get_operand<Sse>(i))) {
+          assert(is_sse_type(instr_to.type(i)));
           auto translated_reg = sse_to_ymm(instr_to.get_operand<Sse>(i));
           return (SymBitVectorAbstract*)state.lookup(translated_reg).ptr;
         }
@@ -347,6 +369,7 @@ void StrataHandler::init() {
     auto opcode = (Opcode)i;
 
     if (is_register_only(opcode)) continue;
+    if (specgen_is_mm(opcode)) continue;
 
     string text = opcode_write_att(opcode);
     auto& options = str_to_opcode[text];
