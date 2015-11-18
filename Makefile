@@ -197,6 +197,7 @@ BIN=\
 	bin/specgen_analyse \
 	bin/specgen_compare \
 	bin/specgen_evaluate \
+	bin/specgen_statistics \
 	bin/specgen_augment_tests \
 	bin/specgen_random_test \
 	bin/specgen_init \
@@ -369,7 +370,7 @@ tools/io/%.o: tools/io/%.cc $(DEPS)
 
 ##### BINARY TARGETS
 
-bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/apps/*.h tools/gadgets/*.h
+bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
 	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB)  
 
 ##### TESTING

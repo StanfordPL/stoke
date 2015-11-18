@@ -355,7 +355,7 @@ void StrataHandler::init() {
       if (same_widths) {
         found = true;
         // cout << opcode << "->" << option << endl;
-        reg_only_alternative_[opcode] = option;
+        // reg_only_alternative_[opcode] = option;
         break;
       }
     }

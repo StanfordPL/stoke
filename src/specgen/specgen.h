@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 
+#include "src/symstate/state.h"
+
 #include "src/ext/x64asm/src/type.h"
 #include "src/ext/x64asm/src/operand.h"
 #include "src/ext/x64asm/src/instruction.h"
@@ -49,6 +51,8 @@ x64asm::Operand get_random_operand(x64asm::Type t, std::default_random_engine& g
 x64asm::Instruction get_random_instruction(x64asm::Opcode opc, std::default_random_engine& gen);
 
 x64asm::Instruction get_instruction_from_string(std::string xopcode);
+
+void measure_complexity(SymState& state, x64asm::RegSet& rs, size_t* nodes, size_t* uifs, size_t* muls);
 
 } // namespace stoke
 
