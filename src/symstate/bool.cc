@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
 #include "src/symstate/bool.h"
 #include "src/symstate/bitvector.h"
+#include "src/symstate/pretty_visitor.h"
+
+#include <sstream>
 
 using namespace std;
 using namespace stoke;

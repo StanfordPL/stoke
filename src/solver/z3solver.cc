@@ -17,6 +17,7 @@
 
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
+#include "src/symstate/typecheck_visitor.h"
 
 using namespace stoke;
 using namespace z3;

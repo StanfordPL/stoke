@@ -92,6 +92,7 @@ SRC_OBJ=\
 	src/symstate/memory_manager.o \
 	src/symstate/simplify.o \
 	src/symstate/state.o \
+	src/symstate/visitor.o \
 	\
 	src/symstate/memory/cell.o \
 	src/symstate/memory/deprecated.o \
