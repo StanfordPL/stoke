@@ -337,7 +337,7 @@ public:
       int64_t ls = read_sconst(lhs);
       switch (bv->type()) {
       case SymBitVector::NOT:
-        return cache(bv, make_constant(width, !l));
+        return cache(bv, make_constant(width, ~l));
       case SymBitVector::U_MINUS: {
         int64_t val = -ls;
         return cache(bv, make_constant(width, val));
