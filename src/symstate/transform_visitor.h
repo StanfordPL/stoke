@@ -32,7 +32,7 @@ namespace stoke {
  */
 class SymTransformVisitor : public SymVisitor<SymBoolAbstract*, SymBitVectorAbstract*> {
 
-protected:
+public:
 
   SymTransformVisitor() : cache_bool_(*(new std::map<SymBoolAbstract*, SymBoolAbstract*>())), cache_bits_(*(new std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>())), delete_caches_(true) {}
 
@@ -84,8 +84,6 @@ protected:
   std::map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool_;
   std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits_;
   bool delete_caches_;
-
-public:
 
   // The make_* functions allow the creation of new bit vectors and bools, and takes
   // care of memory management (by using the memory manager seen last).
