@@ -288,6 +288,9 @@ bool both_or_none_rh(const Type& t0, const Type& t1) {
 void StrataHandler::init() {
 
   reg_only_alternative_.clear();
+  reg_only_alternative_mem_reduce_.clear();
+  reg_only_alternative_extend_.clear();
+  reg_only_alternative_duplicate_.clear();
 
   // map from mnenomic to all register-only instructions
   map<string, vector<Opcode>> str_to_opcode;
@@ -320,7 +323,7 @@ void StrataHandler::init() {
         }
 
         if (all_same) {
-          reg_only_alternative_[opcode] = option;
+          reg_only_alternative_duplicate_[opcode] = option;
           break;
         }
       }
@@ -355,7 +358,7 @@ void StrataHandler::init() {
       if (same_widths) {
         found = true;
         // cout << opcode << "->" << option << endl;
-        // reg_only_alternative_[opcode] = option;
+        reg_only_alternative_[opcode] = option;
         break;
       }
     }
@@ -380,7 +383,7 @@ void StrataHandler::init() {
         if (larger_widths) {
           found = true;
           // cout << opcode << " -> " << option << endl;
-          // reg_only_alternative_[opcode] = option;
+          reg_only_alternative_extend_[opcode] = option;
           break;
         }
       }
@@ -406,7 +409,7 @@ void StrataHandler::init() {
         if (larger_widths) {
           found = true;
           // cout << opcode << " -> " << option << endl;
-          // reg_only_alternative_[opcode] = option;
+          reg_only_alternative_mem_reduce_[opcode] = option;
           break;
         }
       }
@@ -445,8 +448,23 @@ bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
   }
 
   // can we convert this into a register only instruction?
-  if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
-    auto alt = reg_only_alternative_[opcode];
+  bool found = false;
+  Opcode alt = XOR_R8_R8;
+  if (reg_only_alternative_duplicate_.find(opcode) != reg_only_alternative_duplicate_.end()) {
+    alt = reg_only_alternative_duplicate_[opcode];
+    found = true;
+  // } else if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+  //   alt = reg_only_alternative_[opcode];
+  //   found = true;
+  // } else if (reg_only_alternative_mem_reduce_.find(opcode) != reg_only_alternative_mem_reduce_.end()) {
+  //   alt = reg_only_alternative_mem_reduce_[opcode];
+  //   found = true;
+  // } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
+  //   alt = reg_only_alternative_extend_[opcode];
+  //   found = true;
+  }
+
+  if (found) {
     if (specgen_is_base(alt)) return true;
     return is_supported(alt);
   }
@@ -530,19 +548,27 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     return;
   }
 
+  // handle duplicate instructions
+  if (reg_only_alternative_duplicate_.find(opcode) != reg_only_alternative_duplicate_.end()) {
+    // get circuit for register only opcode
+    Instruction alt = instr;
+    alt.set_opcode(reg_only_alternative_duplicate_[opcode]);
+    build_circuit(alt, final);
+  }
+
   // keep a copy of the start state
   SymState start = final;
 
   // handle imm instructions
-  if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
-    // get circuit for register only opcode
-    Instruction alt = get_instruction(reg_only_alternative_[opcode]);
-    ch_.build_circuit(alt, start);
-    if (ch_.has_error()) {
-      error_ = "StrataHandler encountered an error: " + ch_.error();
-      return;
-    }
-  }
+  // if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+  //   // get circuit for register only opcode
+  //   Instruction alt = get_instruction(reg_only_alternative_[opcode]);
+  //   ch_.build_circuit(alt, start);
+  //   if (ch_.has_error()) {
+  //     error_ = "StrataHandler encountered an error: " + ch_.error();
+  //     return;
+  //   }
+  // }
 
   auto typecheck = [&tc, this](auto circuit, size_t exptected_size) {
 #ifdef DEBUG_STRATA_HANDLER

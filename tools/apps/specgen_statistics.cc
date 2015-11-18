@@ -91,13 +91,11 @@ int main(int argc, char** argv) {
 
   auto strata_path = circuits_arg.value();
 
-  auto strata_handler = StrataHandler(strata_path);
+  auto strata_handler = StrataHandler(strata_path, false);
+  auto strata_handler_simple = StrataHandler(strata_path, true);
+  auto stoke_handler = ComboHandler();
   auto validator = StraightLineValidator(solver);
 
-  int strata_count = 0;
-  int stoke_count = 0;
-  int only_strata = 0;
-  int only_stoke = 0;
   auto sep = ",";
   x64asm::RegSet supported =
     (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
@@ -110,18 +108,12 @@ int main(int argc, char** argv) {
     auto opcode = (Opcode)i;
     auto strata_support = strata_handler.is_supported(opcode) || specgen_is_base(opcode);
     auto stoke_support = validator.is_supported(opcode);
-    if (strata_support) {
-      strata_count++;
-    }
-    if (stoke_support) {
-      stoke_count++;
-    }
-    if (stoke_support && !strata_support) {
-      only_stoke++;
-    }
-    if (strata_support && !stoke_support) {
-      only_strata++;
-    }
+    auto could_support = !specgen_is_system(opcode) &&
+          !specgen_is_float(opcode) &&
+          !specgen_is_jump(opcode) &&
+          !specgen_is_mm(opcode) &&
+          !specgen_is_crypto(opcode) &&
+          !specgen_is_sandbox_unsupported(opcode);
     if (!strata_support) {
       if (!specgen_is_system(opcode) &&
           !specgen_is_float(opcode) &&
@@ -132,19 +124,58 @@ int main(int argc, char** argv) {
         // cout << opcode << endl;
       }
     }
+    if (!could_support) continue;
+    Instruction instr(XOR_R8_R8);
+    RegSet rs;
+    if (strata_support || stoke_support) {
+      instr = get_random_instruction(opcode, gen);
+      rs = supported & instr.maybe_write_set();
+    }
+    SymState stoke_state("", true);
+    if (stoke_support) {
+      stoke_handler.build_circuit(instr, stoke_state);
+      if (stoke_handler.has_error()) {
+        // this is necessary because stoke lies about support
+        stoke_support = false;
+      }
+    }
     cout << "{ ";
     cout << " \"instr\":\"" << opcode << "\"" << sep;
+    cout << " \"is_base\":" << (specgen_is_base(opcode)?"true":"false") << sep;
+    cout << " \"strata_support\":" << (strata_support?"true":"false") << sep;
+    cout << " \"stoke_support\":" << (stoke_support?"true":"false") << sep;
     if (strata_support) {
-      auto instr = get_random_instruction(opcode, gen);
       SymState state("", true);
       strata_handler.build_circuit(instr, state);
       if (strata_handler.has_error()) {
+        cout << instr << endl;
         cout << "strata handler produced an error: " << strata_handler.error() << endl;
         exit(1);
       }
-      auto rs = supported & instr.maybe_write_set();
+      SymState state_simple("", true);
+      strata_handler_simple.build_circuit(instr, state_simple);
+      if (strata_handler_simple.has_error()) {
+        cout << instr << endl;
+        cout << "strata handler produced an error: " << strata_handler_simple.error() << endl;
+        exit(1);
+      }
+      
       measure_complexity(state, rs, &nodes, &uifs, &muls);
+      cout << "\"strata_long\":{";
+      cout << "\"uif\":" << uifs << sep;
+      cout << "\"mult\":" << muls << sep;
+      cout << "\"nodes\":" << nodes;
+      cout << "},";
+      measure_complexity(state_simple, rs, &nodes, &uifs, &muls, true);
       cout << "\"strata\":{";
+      cout << "\"uif\":" << uifs << sep;
+      cout << "\"mult\":" << muls << sep;
+      cout << "\"nodes\":" << nodes;
+      cout << "},";
+    }
+    if (stoke_support && strata_support) {
+      measure_complexity(stoke_state, rs, &nodes, &uifs, &muls);
+      cout << "\"stoke\":{";
       cout << "\"uif\":" << uifs << sep;
       cout << "\"mult\":" << muls << sep;
       cout << "\"nodes\":" << nodes;
@@ -154,9 +185,4 @@ int main(int argc, char** argv) {
     cout << "  }";
     cout << endl;
   }
-  cout << endl;
-  cout << "strata supports " << strata_count << " instructions" << endl;
-  cout << "  only strata: " << only_strata << endl;
-  cout << "stoke supports " << stoke_count << " instructions" << endl;
-  cout << "  only stoke: " << only_stoke << endl;
 }

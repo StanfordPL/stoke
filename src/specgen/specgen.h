@@ -52,7 +52,7 @@ x64asm::Instruction get_random_instruction(x64asm::Opcode opc, std::default_rand
 
 x64asm::Instruction get_instruction_from_string(std::string xopcode);
 
-void measure_complexity(SymState& state, x64asm::RegSet& rs, size_t* nodes, size_t* uifs, size_t* muls);
+void measure_complexity(SymState& state, x64asm::RegSet& rs, size_t* nodes, size_t* uifs, size_t* muls, bool simplify = false);
 
 } // namespace stoke
 

@@ -51,6 +51,9 @@ private:
 
   /** A map that gives the equivalent, register-only variant for an opcode. */
   std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_;
+  std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_duplicate_;
+  std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_mem_reduce_;
+  std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_extend_;
 
 };
 

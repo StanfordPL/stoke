@@ -20,6 +20,7 @@
 #include <vector>
 #include <regex>
 
+#include "src/symstate/simplify.h"
 #include "src/specgen/specgen.h"
 
 using namespace std;
@@ -151,7 +152,7 @@ public:
   }
 };
 
-void measure_complexity(SymState& state, RegSet& rs, size_t* nodes, size_t* uifs, size_t* muls) {
+void measure_complexity(SymState& state, RegSet& rs, size_t* nodes, size_t* uifs, size_t* muls, bool should_simplify) {
   NodeCounter node_counter;
   UninterpretedFunctionCounter uif_counter;
   MulDivCounter mul_counter;
@@ -160,20 +161,37 @@ void measure_complexity(SymState& state, RegSet& rs, size_t* nodes, size_t* uifs
   *uifs = 0;
   *muls = 0;
 
+  SymSimplify simplifier;
+  auto simplify = [&simplifier, &should_simplify](SymBitVector& circuit) {
+    if (should_simplify) {
+      return simplifier.simplify(circuit);
+    }
+    return circuit;
+  };
+  auto simplifybool = [&simplifier, &should_simplify](SymBool& circuit) {
+    if (should_simplify) {
+      return simplifier.simplify(circuit);
+    }
+    return circuit;
+  };
+
   for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
-    auto circuit = (state.lookup(*gp_it));
+    auto circuit = state.lookup(*gp_it);
+    circuit = simplify(circuit);
     *nodes += node_counter(circuit);
     *uifs += uif_counter(circuit);
     *muls += mul_counter(circuit);
   }
   for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
-    auto circuit = (state.lookup(*sse_it));
+    auto circuit = state.lookup(*sse_it);
+    circuit = simplify(circuit);
     *nodes += node_counter(circuit);
     *uifs += uif_counter(circuit);
     *muls += mul_counter(circuit);
   }
   for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
-    auto circuit = (state[*flag_it]);
+    auto circuit = state[*flag_it];
+    circuit = simplifybool(circuit);
     *nodes += node_counter(circuit);
     *uifs += uif_counter(circuit);
     *muls += mul_counter(circuit);
@@ -463,6 +481,11 @@ Operand choice(const T& input, default_random_engine& gen) {
   assert(input.size() > 0);
   return input[gen() % input.size()];
 }
+template <typename T>
+R64 choice64(const T& input, default_random_engine& gen) {
+  assert(input.size() > 0);
+  return input[gen() % input.size()];
+}
 
 x64asm::Operand get_random_operand(x64asm::Type t, default_random_engine& gen) {
   switch (t) {
@@ -502,6 +525,24 @@ x64asm::Operand get_random_operand(x64asm::Type t, default_random_engine& gen) {
     return choice(Constants::xmms(), gen);
   case Type::YMM:
     return choice(Constants::ymms(), gen);
+  case Type::ONE:
+    return x64asm::Constants::one();
+  case Type::ZERO:
+    return x64asm::Constants::zero();
+  case Type::THREE:
+    return x64asm::Constants::three();
+  case Type::M_8:
+    return M8(choice64(Constants::r64s(), gen));
+  case Type::M_16:
+    return M16(choice64(Constants::r64s(), gen));
+  case Type::M_32:
+    return M32(choice64(Constants::r64s(), gen));
+  case Type::M_64:
+    return M64(choice64(Constants::r64s(), gen));
+  case Type::M_128:
+    return M128(choice64(Constants::r64s(), gen));
+  case Type::M_256:
+    return M256(choice64(Constants::r64s(), gen));
   case Type::REL_8:
   case Type::REL_32:
   case Type::FS:
@@ -509,17 +550,8 @@ x64asm::Operand get_random_operand(x64asm::Type t, default_random_engine& gen) {
   case Type::SREG:
   case Type::ST_0:
   case Type::ST:
-  case Type::ZERO:
   case Type::HINT:
-  case Type::ONE:
-  case Type::THREE:
   case Type::LABEL:
-  case Type::M_8:
-  case Type::M_16:
-  case Type::M_32:
-  case Type::M_64:
-  case Type::M_128:
-  case Type::M_256:
   case Type::M_16_INT:
   case Type::M_32_INT:
   case Type::M_64_INT:
