@@ -18,6 +18,8 @@
 #include "src/symstate/bitvector.h"
 #include "src/symstate/bool.h"
 
+#include <map>
+
 namespace stoke {
 
 class SymSimplify {

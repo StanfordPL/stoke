@@ -21,6 +21,7 @@
 #include "cvc4/cvc4.h"
 #include "src/solver/smtsolver.h"
 #include "src/symstate/bitvector.h"
+#include "src/symstate/visitor.h"
 
 namespace stoke {
 

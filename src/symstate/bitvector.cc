@@ -13,8 +13,10 @@
 // limitations under the License.
 
 
-
 #include "src/symstate/bitvector.h"
+#include "src/symstate/pretty_visitor.h"
+
+#include <sstream>
 
 using namespace std;
 using namespace stoke;
