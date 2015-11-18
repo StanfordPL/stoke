@@ -471,9 +471,9 @@ bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
     // } else if (reg_only_alternative_mem_reduce_.find(opcode) != reg_only_alternative_mem_reduce_.end()) {
     //   alt = reg_only_alternative_mem_reduce_[opcode];
     //   found = true;
-    // } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
-    //   alt = reg_only_alternative_extend_[opcode];
-    //   found = true;
+  } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
+    alt = reg_only_alternative_extend_[opcode];
+    found = true;
   }
 
   if (found) {
@@ -566,6 +566,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     Instruction alt = instr;
     alt.set_opcode(reg_only_alternative_duplicate_[opcode]);
     build_circuit(alt, final);
+    return;
   }
 
   auto typecheck = [&tc, this](auto circuit, size_t exptected_size) {
@@ -594,11 +595,20 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   // the state which will be the circuit for our alternative instruction
   SymState tmp(opcode_str);
 
-  // handle imm instructions
   Instruction specgen_instr(XOR_R8_R8);
   if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+    // handle imm instructions
     // get circuit for register only opcode
     specgen_instr = get_instruction(reg_only_alternative_[opcode]);
+    ch_.build_circuit(specgen_instr, tmp);
+    if (ch_.has_error()) {
+      error_ = "StrataHandler encountered an error: " + ch_.error();
+      return;
+    }
+  } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
+    // handle imm instructions that need extending
+    // this is actually the same as above
+    specgen_instr = get_instruction(reg_only_alternative_extend_[opcode]);
     ch_.build_circuit(specgen_instr, tmp);
     if (ch_.has_error()) {
       error_ = "StrataHandler encountered an error: " + ch_.error();

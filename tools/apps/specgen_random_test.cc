@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
   //   auto stoke_support = validator.is_supported(opcode);
   // }
 
-  Opcode opcode = Opcode::ADC_R16_IMM8;
+  Opcode opcode = Opcode::AND_R32_IMM8;
   auto instr = get_random_instruction(opcode, gen);
 
   cout << instr << endl;
