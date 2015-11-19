@@ -66,6 +66,7 @@ Ymm sse_to_ymm(const Sse& reg) {
 
 bool is_register_only(Opcode opcode) {
   Instruction instr(opcode);
+  auto imm8 = specgen_is_imm8(opcode);
   for (size_t j = 0; j < instr.arity(); j++) {
     switch (instr.type(j)) {
     case x64asm::Type::RH:
@@ -88,6 +89,9 @@ bool is_register_only(Opcode opcode) {
     case x64asm::Type::ONE:
     case x64asm::Type::THREE:
       break;
+    case x64asm::Type::IMM_8:
+      if (imm8) break;
+      return false;
     default:
       return false;
     }
@@ -505,6 +509,76 @@ bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
   }
 
   return false;
+}
+
+SupportReason StrataHandler::support_reason(const x64asm::Opcode& opcode) {
+  stringstream ss;
+  ss << opcode;
+  auto opcode_str = ss.str();
+  auto candidate_file = strata_path_ + "/" + opcode_str + ".s";
+
+  // we have a learned circuit
+  if (filesystem::exists(candidate_file)) {
+    return SupportReason::LEARNED;
+  }
+
+  // can we convert this into a register only instruction?
+  bool found = false;
+  auto reason = SupportReason::NONE;
+  Opcode alt = XOR_R8_R8;
+  if (reg_only_alternative_duplicate_.find(opcode) != reg_only_alternative_duplicate_.end()) {
+    alt = reg_only_alternative_duplicate_[opcode];
+    found = true;
+    reason = SupportReason::GENERALIZE_SAME;
+  } else if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+    alt = reg_only_alternative_[opcode];
+    found = true;
+    reason = SupportReason::GENERALIZE_SAME;
+  } else if (reg_only_alternative_mem_reduce_.find(opcode) != reg_only_alternative_mem_reduce_.end()) {
+    alt = reg_only_alternative_mem_reduce_[opcode];
+    found = true;
+    reason = SupportReason::GENERALIZE_SHRINK;
+  } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
+    alt = reg_only_alternative_extend_[opcode];
+    found = true;
+    reason = SupportReason::GENERALIZE_EXTEND;
+  }
+
+  if (found) {
+    if (specgen_is_base(alt)) return reason;
+    if (is_supported(alt)) return reason;
+  }
+
+  return SupportReason::NONE;
+}
+
+int StrataHandler::used_for(const x64asm::Opcode& op) {
+  int res = 0;
+
+  for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    auto opcode = (Opcode)i;
+    bool found = false;
+    Opcode alt = XOR_R8_R8;
+    if (reg_only_alternative_duplicate_.find(opcode) != reg_only_alternative_duplicate_.end()) {
+      alt = reg_only_alternative_duplicate_[opcode];
+      found = true;
+    } else if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
+      alt = reg_only_alternative_[opcode];
+      found = true;
+    } else if (reg_only_alternative_mem_reduce_.find(opcode) != reg_only_alternative_mem_reduce_.end()) {
+      alt = reg_only_alternative_mem_reduce_[opcode];
+      found = true;
+    } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
+      alt = reg_only_alternative_extend_[opcode];
+      found = true;
+    }
+
+    if (found && alt == op) {
+      res += 1;
+    }
+  }
+
+  return res;
 }
 
 int specgen_get_imm8(const Instruction& instr) {

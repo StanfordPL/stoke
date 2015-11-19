@@ -22,6 +22,16 @@
 
 namespace stoke {
 
+enum SupportReason : int32_t {
+  BASESET = 0,
+  LEARNED = 1,
+  GENERALIZE_SAME = 2,
+  GENERALIZE_EXTEND = 3,
+  GENERALIZE_SHRINK = 4,
+  IMM8 = 5,
+  NONE = -1
+};
+
 /** Uses the strata circuits found in a given directory. */
 class StrataHandler : public Handler {
 
@@ -36,7 +46,11 @@ public:
 
   bool is_supported(const x64asm::Opcode& opcode);
 
+  SupportReason support_reason(const x64asm::Opcode& opcode);
+
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
+
+  int used_for(const x64asm::Opcode& op);
 
   std::vector<std::string> full_support_opcodes();
 

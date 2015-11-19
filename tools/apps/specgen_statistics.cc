@@ -68,6 +68,10 @@ auto& circuits_arg =
   .description("Directory containing the strata circuits")
   .default_val("/home/sheule/dev/circuits");
 
+auto& two =
+  FlagArg::create("two")
+  .description("Analyse imm8 circuits");
+
 int main(int argc, char** argv) {
 
   // not actually required here
@@ -96,7 +100,7 @@ int main(int argc, char** argv) {
   auto stoke_handler = ComboHandler();
   auto validator = StraightLineValidator(solver);
 
-  auto get_strata_circuits = false;
+  auto get_strata_circuits = true;
 
   auto sep = ",";
   x64asm::RegSet supported =
@@ -107,84 +111,107 @@ int main(int argc, char** argv) {
   size_t uifs = 0;
   size_t muls = 0;
   for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
-    auto opcode = (Opcode)i;
-    auto strata_support = strata_handler.is_supported(opcode) || specgen_is_base(opcode);
-    auto stoke_support = validator.is_supported(opcode);
-    auto could_support = !specgen_is_system(opcode) &&
-                         !specgen_is_float(opcode) &&
-                         !specgen_is_jump(opcode) &&
-                         !specgen_is_mm(opcode) &&
-                         !specgen_is_crypto(opcode) &&
-                         !specgen_is_sandbox_unsupported(opcode);
-    if (!strata_support) {
-      if (!specgen_is_system(opcode) &&
-          !specgen_is_float(opcode) &&
-          !specgen_is_jump(opcode) &&
-          !specgen_is_mm(opcode) &&
-          !specgen_is_crypto(opcode) &&
-          !specgen_is_sandbox_unsupported(opcode)) {
-        // cout << opcode << endl;
+    for (auto j = 0; j < (two ? 256 : 1); j++) {
+      auto opcode = (Opcode)i;
+      auto reason = strata_handler.support_reason(opcode);
+      auto is_base = specgen_is_base(opcode);
+      if (is_base) {
+        reason = SupportReason::BASESET;
       }
-    }
-    if (!could_support) continue;
-    Instruction instr(XOR_R8_R8);
-    RegSet rs;
-    if (strata_support || stoke_support) {
-      instr = get_random_instruction(opcode, gen);
-      rs = supported & instr.maybe_write_set();
-    }
-    SymState stoke_state("", true);
-    if (stoke_support) {
-      stoke_handler.build_circuit(instr, stoke_state);
-      if (stoke_handler.has_error()) {
-        // this is necessary because stoke lies about support
-        stoke_support = false;
+      if (two && (!specgen_is_imm8(opcode) || specgen_is_duplicate(opcode))) continue;
+      auto strata_support = strata_handler.is_supported(opcode) || is_base;
+      auto stoke_support = validator.is_supported(opcode);
+      auto could_support = !specgen_is_system(opcode) &&
+                           !specgen_is_float(opcode) &&
+                           !specgen_is_jump(opcode) &&
+                           !specgen_is_mm(opcode) &&
+                           !specgen_is_crypto(opcode) &&
+                           !specgen_is_sandbox_unsupported(opcode);
+      if (!strata_support) {
+        if (!specgen_is_system(opcode) &&
+            !specgen_is_float(opcode) &&
+            !specgen_is_jump(opcode) &&
+            !specgen_is_mm(opcode) &&
+            !specgen_is_crypto(opcode) &&
+            !specgen_is_sandbox_unsupported(opcode)) {
+          // cout << opcode << endl;
+        }
       }
-    }
-    cout << "{ ";
-    cout << " \"instr\":\"" << opcode << "\"" << sep;
-    cout << " \"is_base\":" << (specgen_is_base(opcode)?"true":"false") << sep;
-    cout << " \"strata_support\":" << (strata_support?"true":"false") << sep;
-    cout << " \"stoke_support\":" << (stoke_support?"true":"false") << sep;
-    if (strata_support && get_strata_circuits) {
-      SymState state("", true);
-      strata_handler.build_circuit(instr, state);
-      if (strata_handler.has_error()) {
-        cout << instr << endl;
-        cout << "strata handler produced an error: " << strata_handler.error() << endl;
-        exit(1);
+      if (!could_support) continue;
+      Instruction instr(XOR_R8_R8);
+      RegSet rs;
+      if (two) {
+        instr = get_instruction(opcode, j);
+        rs = supported & instr.maybe_write_set();
+        strata_support = strata_handler.get_support(instr);
+      } else if (strata_support || stoke_support) {
+        instr = get_random_instruction(opcode, gen);
+        rs = supported & instr.maybe_write_set();
       }
-      SymState state_simple("", true);
-      strata_handler_simple.build_circuit(instr, state_simple);
-      if (strata_handler_simple.has_error()) {
-        cout << instr << endl;
-        cout << "strata handler produced an error: " << strata_handler_simple.error() << endl;
-        exit(1);
+      SymState stoke_state("", true);
+      if (stoke_support) {
+        stoke_handler.build_circuit(instr, stoke_state);
+        if (stoke_handler.has_error()) {
+          // this is necessary because stoke lies about support
+          stoke_support = false;
+        }
       }
+      auto used_for = 0;
+      auto is_learned = reason == SupportReason::LEARNED;
+      if (is_learned || is_base || two) {
+        used_for = strata_handler.used_for(opcode);
+      }
+      cout << "{ ";
+      cout << " \"instr\":\"" << opcode;
+      if (two) {
+        cout << "_" << dec << j;
+      }
+      cout << "\"" << sep;
+      cout << " \"is_base\":" << (specgen_is_base(opcode)?"true":"false") << sep;
+      cout << " \"strata_support\":" << (strata_support?"true":"false") << sep;
+      cout << " \"strata_reason\":" << (two?SupportReason::IMM8:((int32_t)reason)) << sep;
+      cout << " \"used_for\":" << used_for << sep;
+      cout << " \"stoke_support\":" << (stoke_support?"true":"false") << sep;
+      if (strata_support && get_strata_circuits && (is_learned || two)) {
+        SymState state("", true);
+        strata_handler.build_circuit(instr, state);
+        if (strata_handler.has_error()) {
+          cout << instr << endl;
+          cout << "strata handler produced an error: " << strata_handler.error() << endl;
+          exit(1);
+        }
+        SymState state_simple("", true);
+        strata_handler_simple.build_circuit(instr, state_simple);
+        if (strata_handler_simple.has_error()) {
+          cout << instr << endl;
+          cout << "strata handler produced an error: " << strata_handler_simple.error() << endl;
+          exit(1);
+        }
 
-      measure_complexity(state, rs, &nodes, &uifs, &muls);
-      cout << "\"strata_long\":{";
-      cout << "\"uif\":" << uifs << sep;
-      cout << "\"mult\":" << muls << sep;
-      cout << "\"nodes\":" << nodes;
-      cout << "},";
-      measure_complexity(state_simple, rs, &nodes, &uifs, &muls, true);
-      cout << "\"strata\":{";
-      cout << "\"uif\":" << uifs << sep;
-      cout << "\"mult\":" << muls << sep;
-      cout << "\"nodes\":" << nodes;
-      cout << "},";
+        measure_complexity(state, rs, &nodes, &uifs, &muls);
+        cout << "\"strata_long\":{";
+        cout << "\"uif\":" << uifs << sep;
+        cout << "\"mult\":" << muls << sep;
+        cout << "\"nodes\":" << nodes;
+        cout << "},";
+        measure_complexity(state_simple, rs, &nodes, &uifs, &muls, true);
+        cout << "\"strata\":{";
+        cout << "\"uif\":" << uifs << sep;
+        cout << "\"mult\":" << muls << sep;
+        cout << "\"nodes\":" << nodes;
+        cout << "},";
+      }
+      if (stoke_support && strata_support) {
+        measure_complexity(stoke_state, rs, &nodes, &uifs, &muls);
+        cout << "\"stoke\":{";
+        cout << "\"uif\":" << uifs << sep;
+        cout << "\"mult\":" << muls << sep;
+        cout << "\"nodes\":" << nodes;
+        cout << "},";
+      }
+      cout << "\"delim\": 0";
+      cout << "  }";
+      cout << endl;
     }
-    if (stoke_support && strata_support) {
-      measure_complexity(stoke_state, rs, &nodes, &uifs, &muls);
-      cout << "\"stoke\":{";
-      cout << "\"uif\":" << uifs << sep;
-      cout << "\"mult\":" << muls << sep;
-      cout << "\"nodes\":" << nodes;
-      cout << "},";
-    }
-    cout << "\"delim\": 0";
-    cout << "  }";
-    cout << endl;
   }
 }
