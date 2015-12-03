@@ -240,12 +240,12 @@ Sandbox& Sandbox::run(size_t index) {
   // Optimization: In read only mem mode, we don't need to reset output memory
   // Stefan: this optimization seems unsound, see issue 761
   // if (!all_fxns_read_only_) {
-    io->out_.stack.copy(io->in_.stack);
-    io->out_.heap.copy(io->in_.heap);
-    io->out_.data.copy(io->in_.data);
-    for (size_t i = 0, ie=io->out_.segments.size(); i < ie; ++i) {
-      io->out_.segments[i].copy(io->in_.segments[i]);
-    }
+  io->out_.stack.copy(io->in_.stack);
+  io->out_.heap.copy(io->in_.heap);
+  io->out_.data.copy(io->in_.data);
+  for (size_t i = 0, ie=io->out_.segments.size(); i < ie; ++i) {
+    io->out_.segments[i].copy(io->in_.segments[i]);
+  }
   // }
 
   // Reset error-related variables
