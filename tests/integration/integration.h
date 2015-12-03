@@ -185,6 +185,14 @@ TEST_F(IntegrationTest, ExamplesExp) {
 }
 #endif
 
+TEST_F(IntegrationTest, ExamplesBansal) {
+  // TODO: we should also run opt and some other targets (but right now those don't seem to work)
+  set_working_dir("examples/bansal");
+  set_path("../../bin");
+  EXPECT_EQ(0ull, shell("make synth"));
+  EXPECT_EQ(0ull, shell("make clean"));
+}
+
 TEST_F(IntegrationTest, CostLiveOut) {
   set_working_dir("tests/fixtures/cost/live_out");
   set_path("../../../../bin");
