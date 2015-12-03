@@ -21,6 +21,7 @@
 #include "src/ext/cpputil/include/io/console.h"
 
 #include "src/validator/straight_line.h"
+#include "src/symstate/simplify.h"
 #include "src/validator/handlers/combo_handler.h"
 
 #include "tools/gadgets/functions.h"
@@ -181,9 +182,10 @@ int main(int argc, char** argv) {
 
   auto print = [&smtlib, &pretty](const auto c) {
     if (use_smtlib_format_arg.value()) {
-      smtlib((c));
-    } else {
       pretty((c));
+    } else {
+      SymSimplify s;
+      pretty(s.simplify(c));
     }
   };
 
