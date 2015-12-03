@@ -186,11 +186,18 @@ TEST_F(IntegrationTest, ExamplesExp) {
 #endif
 
 TEST_F(IntegrationTest, ExamplesBansal) {
-  // TODO: we should also run opt and some other targets (but right now those don't seem to work)
   set_working_dir("examples/bansal");
   set_path("../../bin");
-  EXPECT_EQ(0ull, shell("make synth"));
-  EXPECT_EQ(0ull, shell("make clean"));
+
+  // In 10 tries, search should succeed at least once...
+  bool good = false;
+  for (size_t i = 0; i < 10 && good == false; ++i) {
+    if (shell("make") == 0ull) {
+      good = true;
+    }
+    EXPECT_EQ(0ull, shell("make clean"));
+  }
+  EXPECT_GT(good, true);
 }
 
 TEST_F(IntegrationTest, CostLiveOut) {
