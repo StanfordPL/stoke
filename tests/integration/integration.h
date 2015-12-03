@@ -197,7 +197,7 @@ TEST_F(IntegrationTest, ExamplesBansal) {
     }
     EXPECT_EQ(0ull, shell("make clean"));
   }
-  EXPECT_GT(good, true);
+  EXPECT_EQ(good, true);
 }
 
 TEST_F(IntegrationTest, CostLiveOut) {
