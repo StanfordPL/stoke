@@ -241,8 +241,14 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   tps.remove_opcode(x64asm::VPGATHERQD_XMM_M64_XMM_1);
   tps.remove_opcode(x64asm::VPGATHERQQ_XMM_M64_XMM);
   tps.remove_opcode(x64asm::VPGATHERQQ_YMM_M64_YMM);
-  tps.recompute_pools();
 
+  // code to use if you want to test a single instruction only
+  // for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+  //   tps.remove_opcode((x64asm::Opcode)i);
+  // }
+  // tps.insert_opcode(x64asm::Opcode::XCHG_R32_R32);
+
+  tps.recompute_pools();
 
   auto data = SpreadsheetReadWriteSetFuzzCallbackInfo();
   data.success_count = 0;
