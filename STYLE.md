@@ -51,6 +51,7 @@ Namespaces
 ----------
 
 - All code that appears in a header file should be placed in the STOKE namespace.
+- No `using namespace x` in header files, except for `tests/tests.h`.
 
 Parameter Passing
 -----------------

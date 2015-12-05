@@ -28,6 +28,11 @@
  *
  */
 
+#include "src/ext/x64asm/src/r.h"
+
+using namespace std;
+using namespace x64asm;
+
 #include "src/validator/validator.h"
 #include "src/validator/error.h"
 #include "tests/validator/common.h"
