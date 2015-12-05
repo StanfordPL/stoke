@@ -13,6 +13,8 @@
 // limitations under the License.
 
 
+#include "src/solver/cvc4solver.h"
+#include "src/solver/z3solver.h"
 #include "src/ext/cpputil/include/container/bit_vector.h"
 
 namespace stoke {
