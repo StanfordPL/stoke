@@ -190,7 +190,7 @@ TEST(X64AsmTest, SpreadsheetAltReadWriteSetFuzzTest) {
   tps.remove_opcode(x64asm::VPGATHERQQ_XMM_M64_XMM);
   tps.remove_opcode(x64asm::VPGATHERQQ_YMM_M64_YMM);
 
-  // not sure why these don't work, but they cause crashes
+  // not sure why these don't work, but they cause crashes, see issue #790
   tps.remove_opcode(x64asm::INT_THREE);
   tps.remove_opcode(x64asm::XLATB);
   tps.remove_opcode(x64asm::XLATB_1);
@@ -198,6 +198,10 @@ TEST(X64AsmTest, SpreadsheetAltReadWriteSetFuzzTest) {
   tps.remove_opcode(x64asm::INT_IMM8);
   tps.remove_opcode(x64asm::STI);
   tps.remove_opcode(x64asm::CLI);
+
+  // see issue #791
+  tps.remove_opcode(x64asm::VEXTRACTI128_M128_YMM_IMM8);
+  tps.remove_opcode(x64asm::VEXTRACTI128_XMM_YMM_IMM8);
 
   // code to use if you want to test a single instruction only
   // for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
