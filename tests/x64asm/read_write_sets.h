@@ -191,7 +191,7 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   tps.remove_opcode(x64asm::VPGATHERQQ_XMM_M64_XMM);
   tps.remove_opcode(x64asm::VPGATHERQQ_YMM_M64_YMM);
 
-    // see issue #791
+  // see issue #791
   tps.remove_opcode(x64asm::VEXTRACTI128_M128_YMM_IMM8);
   tps.remove_opcode(x64asm::VEXTRACTI128_XMM_YMM_IMM8);
 
