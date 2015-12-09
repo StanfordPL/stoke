@@ -65,6 +65,7 @@ using namespace x64asm;
 
 // medium tests (at most 5 sec per test)
 #include "tests/x64asm/read_write_sets.h"
+#include "tests/x64asm/alt_read_write_sets.h"
 #include "tests/validator/fuzz.h"
 #include "tests/validator/simple.h"
 
