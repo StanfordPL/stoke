@@ -237,6 +237,10 @@ public:
       }
     }
 
+    if (bv->type() == SymBitVector::XOR && lhs == rhs && width <= 64) {
+      return cache(bv, make_constant(width, 0));
+    }
+
     if (lhs == bv->a_ && rhs == bv->b_) {
       return cache(bv, (SymBitVectorBinop*)bv);
     }

@@ -17,6 +17,7 @@
 
 #include "src/transform/instruction.h"
 #include "src/target/cpu_info.h"
+#include <sys/time.h>
 
 namespace stoke {
 

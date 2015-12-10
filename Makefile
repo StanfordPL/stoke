@@ -215,6 +215,7 @@ release: haswell_release
 debug: haswell_debug
 profile: haswell_profile
 test: haswell_test
+fast: haswell_test_fast
 
 haswell: haswell_release
 haswell_release:
@@ -228,6 +229,9 @@ haswell_profile:
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
 haswell_test: haswell_debug
 	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
+	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
+haswell_test_fast: haswell_debug
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG -DNO_VERY_SLOW_TESTS"
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 sandybridge: sandybridge_release
