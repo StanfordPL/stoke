@@ -14,9 +14,13 @@
 
 
 #include "src/symstate/memo_visitor.h"
+#include "src/ext/z3/src/api/c++/z3++.h"
 
 using namespace stoke;
 using namespace std;
 
 template class SymVisitor<uint16_t, uint16_t>;
 template class SymMemoVisitor<uint16_t, uint16_t>;
+
+template class SymVisitor<z3::expr, z3::expr>;
+template class SymMemoVisitor<z3::expr, z3::expr>;
