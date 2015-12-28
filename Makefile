@@ -17,7 +17,7 @@
 ifndef COMPILERBINARY
 	COMPILERBINARY=g++
 endif
-CXX=ccache ${COMPILERBINARY} -std=c++14 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla
+CXX=ccache ${COMPILERBINARY} -std=c++14 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla -fdiagnostics-color=always
 
 # number of threads used for compiling
 ifndef NTHREADS
@@ -52,6 +52,7 @@ LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
 	-pthread\
 	-lcln \
+	-liml -lgmp \
 	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
 	-L src/ext/z3/build -lz3
 
@@ -60,6 +61,7 @@ SRC_OBJ=\
 	src/cfg/cfg_transforms.o \
 	src/cfg/dot_writer.o \
 	src/cfg/paths.o \
+	src/cfg/sccs.o \
 	\
 	src/cost/correctness.o \
 	src/cost/cost_parser.o \
@@ -86,6 +88,7 @@ SRC_OBJ=\
 	\
 	src/stategen/stategen.o \
 	\
+	src/symstate/array.o \
 	src/symstate/bitvector.o \
 	src/symstate/bool.o \
 	src/symstate/function.o \
@@ -94,6 +97,7 @@ SRC_OBJ=\
 	src/symstate/state.o \
 	\
 	src/symstate/memory/cell.o \
+	src/symstate/memory/flat.o \
 	src/symstate/memory/deprecated.o \
 	\
 	src/target/cpu_info.o	\
@@ -114,7 +118,11 @@ SRC_OBJ=\
 	\
 	src/validator/alias_miner.o \
 	src/validator/bounded.o \
+	src/validator/cutpoints.o \
+	src/validator/ddec.o \
 	src/validator/handler.o \
+	src/validator/invariant.o \
+	src/validator/null.o \
 	src/validator/straight_line.o \
 	src/validator/validator.o \
 	\
@@ -288,7 +296,7 @@ cpputil:
 .PHONY: x64asm
 x64asm:
 	./scripts/make/submodule-init.sh src/ext/x64asm
-	$(MAKE) -C src/ext/x64asm $(EXT_OPT) COMPILERBINARY=${COMPILERBINARY}
+	$(MAKE) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" COMPILERBINARY=${COMPILERBINARY}
 
 .PHONY: pintool
 pintool:
