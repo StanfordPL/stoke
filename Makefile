@@ -116,7 +116,6 @@ SRC_OBJ=\
 	\
 	src/tunit/tunit.o \
 	\
-	src/validator/alias_miner.o \
 	src/validator/bounded.o \
 	src/validator/cutpoints.o \
 	src/validator/ddec.o \

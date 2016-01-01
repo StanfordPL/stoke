@@ -25,7 +25,7 @@
 #include "src/cfg/paths.h"
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/solver/smtsolver.h"
-#include "src/validator/alias_miner.h"
+#include "src/symstate/memory/cell.h"
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 
@@ -53,6 +53,7 @@ public:
     set_nacl(false);
     set_no_bailout(false);
     set_heap_out(true); // FIXME: there's a bug prevening the command line argument from making it here.
+    set_sandbox(NULL);
   }
 
   ~BoundedValidator() {}
@@ -67,8 +68,14 @@ public:
     alias_strategy_ = as;
     return *this;
   }
-  /** If set to true, weakens process to learn aliasing constraints
-    with assumption of a 32-bit address space. */
+  /** If every memory reference in your code is of the form (r15,r*x,1), then
+    setting this option to 'true' is logically equivalent to adding constraints
+    that bound the index register away from the top/bottom of the 32-bit
+    address space.  It is unsound for NaCl code only if you have a memory
+    dereference of (r15,r*x,k) where k = 2, 4 or 8.  This does not come up in
+    any of our NaCl examples, and sould be rare to find since no compilers
+    generate code that use an index besides 1 for NaCl; and STOKE won't do this
+    transformation. */
   BoundedValidator& set_nacl(bool b) {
     nacl_ = b;
     return *this;
@@ -76,6 +83,11 @@ public:
   /** If set to true, don't bail out early once counterexample found. */
   BoundedValidator& set_no_bailout(bool b) {
     bailout_ = !b;
+    return *this;
+  }
+  /** Set sandbox to check counterexamples.  Warning!  It will be reset. */
+  BoundedValidator& set_sandbox(Sandbox* sb) {
+    sb_ = sb;
     return *this;
   }
 
@@ -111,6 +123,8 @@ private:
   /** Should we bailout early? */
   bool bailout_;
 
+  /** Sandbox to facilitate checking a counterexample */
+  Sandbox* sb_;
 
   /** Verify a pair of paths. */
   bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
@@ -119,8 +133,6 @@ private:
                    const Invariant& assume, const Invariant& prove);
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
-  /** For learning aliasing relationships */
-  AliasMiner am;
 
   /** Traces for the target/rewrite. */
   std::vector<CfgPath> paths_[2];
@@ -172,6 +184,8 @@ private:
                          const std::vector<CellMemory::SymbolicAccess>& symbolic_access_list,
                          const Invariant& assume);
 
+  /** Check if a counterexample actually works. */
+  bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg) const;
 
   /** Used for CellArrangement (see below) */
   struct OverlapDescriptor {
@@ -199,6 +213,9 @@ private:
   std::vector<CellArrangement> find_arrangements(
     std::vector<OverlapDescriptor*>& start,
     std::vector<OverlapDescriptor>& available_cells, size_t max_size);
+
+  /** Populate a testcase with memory. */
+  bool build_testcase_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const;
 
 };
 

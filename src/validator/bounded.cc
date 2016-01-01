@@ -25,14 +25,92 @@
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { }
+#define CEG_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
 
+using namespace cpputil;
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
+
+bool BoundedValidator::build_testcase_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const {
+
+
+  if (target_memory && rewrite_memory) {
+    std::map<uint64_t, BitVector> addr_value_pairs;
+
+    for (size_t k = 0; k < 2; ++k) {
+      auto& memory = k ? *rewrite_memory : *target_memory;
+      auto access_map = memory.get_line_cell_map();
+
+      for (auto pair : access_map) {
+        auto access = pair.second;
+        auto cell = access.cell;
+
+        stringstream ss;
+        ss << "CELL_" << cell << "_ADDR";
+
+        auto addr_bv = solver_.get_model_bv(ss.str(), 64);
+        auto address = addr_bv.get_fixed_quad(0);
+
+        assert(memory.init_cells_.count(cell));
+        const SymBitVector* v = &memory.init_cells_.at(cell);
+        auto value_var = dynamic_cast<const SymBitVectorVar*>(v->ptr);
+        auto value_bv = solver_.get_model_bv(value_var->get_name(), value_var->get_size());
+
+//        BUILD_TC_DEBUG(cout << "Cell " << cell << " address = " << hex << address
+//                       << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl);
+
+        addr_value_pairs[address] = value_bv;
+      }
+    }
+
+    if (!Validator::memory_map_to_testcase(addr_value_pairs, ceg))
+      return false;
+  } else if (!target_memory && !rewrite_memory) {
+    return true;
+  } 
+
+  return false;
+}
+
+bool BoundedValidator::check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg) const {
+
+  // We can't do anything without a sandbox
+  if(!sb_)
+    return true;
+
+  // First, the counterexample has to pass the invariant.
+  if(!assume.check(ceg, ceg))
+    return false;
+
+  // Next, we run only the relevant blocks of the target/rewrite.
+  Cfg target_cfg = CfgPaths::rewrite_cfg_with_path(target, P);
+  Cfg rewrite_cfg = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
+
+  sb_->clear_inputs();
+  sb_->clear_callbacks();
+  sb_->insert_input(ceg);
+  sb_->insert_function(target_cfg);
+  sb_->set_entrypoint(target_cfg.get_code()[0].get_operand<x64asm::Label>(0));
+  sb_->run();
+
+  CpuState target_output = *sb_->get_output(0);
+
+  sb_->insert_function(rewrite_cfg);
+  sb_->set_entrypoint(rewrite_cfg.get_code()[0].get_operand<x64asm::Label>(0));
+  sb_->run();
+
+  CpuState rewrite_output = *sb_->get_output(0);
+
+  // Lastly, we check that the final states do not satisfy the invariant
+  if(prove.check(target_output, rewrite_output))
+    return false;
+
+  return true;
+}
 
 vector<BoundedValidator::CellArrangement>
 BoundedValidator::find_arrangements(
@@ -1214,35 +1292,43 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
       auto ceg_tf = Validator::state_from_model(solver_, "_1_FINAL");
       auto ceg_rf = Validator::state_from_model(solver_, "_2_FINAL");
 
-      bool ok = am.build_testcase_memory(ceg, solver_,
+      bool ok = build_testcase_memory(ceg, 
                                          dynamic_cast<CellMemory*>(state_t.memory),
                                          dynamic_cast<CellMemory*>(state_r.memory),
                                          target, rewrite);
-      am.build_testcase_memory(ceg2, solver_,
+      ok &= build_testcase_memory(ceg2, 
                                dynamic_cast<CellMemory*>(state_t.memory),
                                dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
-      am.build_testcase_memory(ceg_tf, solver_,
+      ok &= build_testcase_memory(ceg_tf, 
                                dynamic_cast<CellMemory*>(state_t.memory),
                                dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
-      am.build_testcase_memory(ceg_rf, solver_,
+      ok &= build_testcase_memory(ceg_rf, 
                                dynamic_cast<CellMemory*>(state_t.memory),
                                dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
 
-      if (ok)
+      // Things will only break here if one of the target/rewrite has memory
+      // and other doesn't.  Right now I don't know the right thing to do (it's
+      // obviously not to fail...) If this comes up we'll need to fix it. -- BRC
+      assert(ok);
+
+      if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg)) {
         counterexamples_.push_back(ceg);
 
-      CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
-      CEG_DEBUG(cout << "TARGET START STATE" << endl;)
-      CEG_DEBUG(cout << ceg << endl;)
-      CEG_DEBUG(cout << "REWRITE START STATE" << endl;)
-      CEG_DEBUG(cout << ceg2 << endl;)
-      CEG_DEBUG(cout << "TARGET END STATE" << endl;)
-      CEG_DEBUG(cout << ceg_tf << endl;)
-      CEG_DEBUG(cout << "REWRITE END STATE" << endl;)
-      CEG_DEBUG(cout << ceg_rf << endl;)
+        CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
+        CEG_DEBUG(cout << "TARGET START STATE" << endl;)
+        CEG_DEBUG(cout << ceg << endl;)
+        CEG_DEBUG(cout << "REWRITE START STATE" << endl;)
+        CEG_DEBUG(cout << ceg2 << endl;)
+        CEG_DEBUG(cout << "TARGET END STATE" << endl;)
+        CEG_DEBUG(cout << ceg_tf << endl;)
+        CEG_DEBUG(cout << "REWRITE END STATE" << endl;)
+        CEG_DEBUG(cout << ceg_rf << endl;)
+      } else {
+        CEG_DEBUG(cout << "  (Spurious counterexample detected)" << endl;)
+      }
 
       if(flat_model) {
         delete state_t.memory;
@@ -1284,8 +1370,6 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
   auto target = inline_functions(init_target);
   auto rewrite = inline_functions(init_rewrite);
-  if (sandbox_)
-    am.set_sandbox(sandbox_);
 
   try {
 
