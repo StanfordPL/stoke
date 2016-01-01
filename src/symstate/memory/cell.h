@@ -23,7 +23,7 @@ namespace stoke {
 
 /** Keeps track of a fixed, finite number of symbolic memory locations ("cells") */
 class CellMemory : public SymMemory {
-  friend class AliasMiner;
+  friend class BoundedValidator;
 
 public:
 
