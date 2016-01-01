@@ -200,6 +200,12 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
       return false;
 
     return true;
+  } else if (target_memory && !rewrite_memory) {
+    return false;
+  } else if (!target_memory && rewrite_memory) {
+    return false;
+  } else {
+    return true;
   }
 
 
@@ -234,7 +240,6 @@ bool AliasMiner::build_testcase_memory(CpuState& ceg, SMTSolver& solver, const C
   }
   */
 
-  return false;
 }
 
 void AliasMiner::build_testcase_callback(const StateCallbackData& data, void* arg) {
