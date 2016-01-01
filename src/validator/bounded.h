@@ -50,7 +50,7 @@ public:
   BoundedValidator(SMTSolver& solver) : Validator(solver) {
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
-    set_nacl(true);
+    set_nacl(false);
     set_no_bailout(false);
     set_heap_out(true); // FIXME: there's a bug prevening the command line argument from making it here.
   }
