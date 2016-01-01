@@ -93,7 +93,6 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
 
   BoundedValidator bv(solver_);
   bv.set_alias_strategy(alias_strategy_);
-  bv.set_nacl(true);
   bv.set_heap_out(true);
   bv.set_bound(bound_);
   bv.set_sandbox(new Sandbox(*sandbox_));
@@ -297,7 +296,6 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   }
 
   bv_.set_alias_strategy(alias_strategy_);
-  bv_.set_nacl(true);
   bv_.set_heap_out(true);
   bv_.set_bound(bound_);
   bv_.set_sandbox(new Sandbox(*sandbox_));
