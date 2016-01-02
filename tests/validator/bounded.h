@@ -348,6 +348,7 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -355,9 +356,11 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
+  /*
   validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
+  */
 
 
 }

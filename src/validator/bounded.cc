@@ -21,7 +21,8 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define BOUNDED_DEBUG(X) { X }
+#define BOUNDED_DEBUG(X) { }
+#define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
@@ -43,11 +44,10 @@ bool BoundedValidator::build_testcase_memory(CpuState& ceg, const CellMemory* ta
   auto rsp_val = ceg[rsp];
   BitVector zeros(64);
   zeros.get_fixed_quad(0) = 0;
-  addr_value_pairs[rsp_val] = zeros;
+  addr_value_pairs[rsp_val-8] = zeros;
 
 
   if (target_memory && rewrite_memory) {
-    std::map<uint64_t, BitVector> addr_value_pairs;
 
     for (size_t k = 0; k < 2; ++k) {
       auto& memory = k ? *rewrite_memory : *target_memory;
@@ -68,13 +68,22 @@ bool BoundedValidator::build_testcase_memory(CpuState& ceg, const CellMemory* ta
         auto value_var = dynamic_cast<const SymBitVectorVar*>(v->ptr);
         auto value_bv = solver_.get_model_bv(value_var->get_name(), value_var->get_size());
 
-//        BUILD_TC_DEBUG(cout << "Cell " << cell << " address = " << hex << address
-//                       << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl);
+        BUILD_TC_DEBUG(cout << "[build tc] Cell " << cell << " address = " << hex << address
+                       << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;)
 
         addr_value_pairs[address] = value_bv;
       }
     }
-  } 
+  } else {
+    BUILD_TC_DEBUG(cout << "[build tc] no memory found" << endl;)
+  }
+
+  BUILD_TC_DEBUG(
+    cout << "[build tc] map:" << endl;
+    for(auto it : addr_value_pairs) {
+      cout << "  " << it.first << " -> " << it.second.get_fixed_quad(0) << endl;
+    }
+  );
   if (Validator::memory_map_to_testcase(addr_value_pairs, ceg))
     return true;
 
