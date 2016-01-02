@@ -41,6 +41,18 @@ public:
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
+    for(auto it = rs_.gp_begin(); it != rs_.gp_end(); ++it) {
+      if(target[*it] != rewrite[*it])
+        return false;
+    }
+    for(auto it = rs_.sse_begin(); it != rs_.sse_end(); ++it) {
+      if(target.sse[*it] != rewrite.sse[*it])
+        return false;
+    }
+    for(auto it = rs_.flags_begin(); it != rs_.flags_end(); ++it) {
+      if(target.rf.is_set((*it).index()) != rewrite.rf.is_set((*it).index()))
+        return false;
+    }
     return true;
   }
 

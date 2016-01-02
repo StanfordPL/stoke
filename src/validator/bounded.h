@@ -185,7 +185,10 @@ private:
                          const Invariant& assume);
 
   /** Check if a counterexample actually works. */
-  bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg) const;
+  bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg, const CpuState& ceg2);
+
+  /** Run the sandbox on a state, cfg along a path.  Used for checking counterexamples. */
+  CpuState run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state);
 
   /** Used for CellArrangement (see below) */
   struct OverlapDescriptor {
@@ -216,6 +219,7 @@ private:
 
   /** Populate a testcase with memory. */
   bool build_testcase_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const;
+
 
 };
 

@@ -21,7 +21,7 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define BOUNDED_DEBUG(X) { }
+#define BOUNDED_DEBUG(X) { X }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
@@ -36,6 +36,14 @@ using namespace stoke;
 using namespace x64asm;
 
 bool BoundedValidator::build_testcase_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const {
+
+  std::map<uint64_t, BitVector> addr_value_pairs;
+
+  // Allocate a tiny bit of stack memory
+  auto rsp_val = ceg[rsp];
+  BitVector zeros(64);
+  zeros.get_fixed_quad(0) = 0;
+  addr_value_pairs[rsp_val] = zeros;
 
 
   if (target_memory && rewrite_memory) {
@@ -66,48 +74,53 @@ bool BoundedValidator::build_testcase_memory(CpuState& ceg, const CellMemory* ta
         addr_value_pairs[address] = value_bv;
       }
     }
-
-    if (!Validator::memory_map_to_testcase(addr_value_pairs, ceg))
-      return false;
-  } else if (!target_memory && !rewrite_memory) {
-    return true;
   } 
+  if (Validator::memory_map_to_testcase(addr_value_pairs, ceg))
+    return true;
 
   return false;
 }
 
-bool BoundedValidator::check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg) const {
+CpuState BoundedValidator::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
 
-  // We can't do anything without a sandbox
-  if(!sb_)
-    return true;
-
-  // First, the counterexample has to pass the invariant.
-  if(!assume.check(ceg, ceg))
-    return false;
-
-  // Next, we run only the relevant blocks of the target/rewrite.
-  Cfg target_cfg = CfgPaths::rewrite_cfg_with_path(target, P);
-  Cfg rewrite_cfg = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
-
+  auto new_cfg = CfgPaths::rewrite_cfg_with_path(cfg, P);
   sb_->clear_inputs();
   sb_->clear_callbacks();
-  sb_->insert_input(ceg);
-  sb_->insert_function(target_cfg);
-  sb_->set_entrypoint(target_cfg.get_code()[0].get_operand<x64asm::Label>(0));
+  sb_->insert_input(state);
+  sb_->insert_function(new_cfg);
+  sb_->set_entrypoint(new_cfg.get_code()[0].get_operand<x64asm::Label>(0));
   sb_->run();
 
-  CpuState target_output = *sb_->get_output(0);
+  CpuState output = *sb_->get_output(0);
+  return output;
 
-  sb_->insert_function(rewrite_cfg);
-  sb_->set_entrypoint(rewrite_cfg.get_code()[0].get_operand<x64asm::Label>(0));
-  sb_->run();
+}
 
-  CpuState rewrite_output = *sb_->get_output(0);
+bool BoundedValidator::check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg, const CpuState& ceg2) {
+
+  // We can't do anything without a sandbox
+  if(!sb_) {
+    CEG_DEBUG(cout << "  (No sandbox available; not checking counterexample.)" << endl;);
+    return true;
+  }
+
+  // First, the counterexample has to pass the invariant.
+  if(!assume.check(ceg, ceg2)) {
+    CEG_DEBUG(cout << "  (Counterexample does not meet assumed invariant.)" << endl;);
+    return false;
+  }
+
+  // Next, we run only the relevant blocks of the target/rewrite.
+  CpuState target_output = run_sandbox_on_path(target, P, ceg);
+  CpuState rewrite_output = run_sandbox_on_path(rewrite, Q, ceg);
 
   // Lastly, we check that the final states do not satisfy the invariant
-  if(prove.check(target_output, rewrite_output))
+  if(prove.check(target_output, rewrite_output)) {
+    CEG_DEBUG(cout << "  TARGET (actual) END state:" << endl << target_output << endl;)
+    CEG_DEBUG(cout << "  REWRITE (actual) END state:" << endl << rewrite_output << endl;)
+    CEG_DEBUG(cout << "  (Counterexample satisifes desired invariant; it shouldn't)" << endl;);
     return false;
+  }
 
   return true;
 }
@@ -337,16 +350,6 @@ bool BoundedValidator::check_feasibility(const Cfg& target, const Cfg& rewrite,
   }
 
   ALIAS_DEBUG(cout << "FEASIBLE: " << is_sat << endl;);
-  /*
-  if(is_sat) {
-    cout << "HERE'S A CEG:" << endl;
-    auto ceg = Validator::state_from_model(solver_, "_");
-    bool ok = am.build_testcase_memory(ceg, solver_, *target_mem, *rewrite_mem, target, rewrite);
-
-    cout << "ok=" << ok << endl;
-    cout << ceg << endl;
-  }
-  */
 
   return is_sat;
 
@@ -1263,13 +1266,10 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   })
 
     // Build inequality constraint
-    SymBool inequality = SymBool::_false();
-
     auto prove_constraint = !prove(state_t, state_r);
     BOUNDED_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
-    inequality = inequality | prove_constraint;
 
-    constraints.push_back(inequality);
+    constraints.push_back(prove_constraint);
 
     // Extract the final states of target/rewrite
     SymState state_t_final("1_FINAL");
@@ -1296,36 +1296,40 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
                                          dynamic_cast<CellMemory*>(state_t.memory),
                                          dynamic_cast<CellMemory*>(state_r.memory),
                                          target, rewrite);
+
       ok &= build_testcase_memory(ceg2, 
                                dynamic_cast<CellMemory*>(state_t.memory),
                                dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
+
       ok &= build_testcase_memory(ceg_tf, 
                                dynamic_cast<CellMemory*>(state_t.memory),
                                dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
+
       ok &= build_testcase_memory(ceg_rf, 
                                dynamic_cast<CellMemory*>(state_t.memory),
                                dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
 
+
       // Things will only break here if one of the target/rewrite has memory
-      // and other doesn't.  Right now I don't know the right thing to do (it's
-      // obviously not to fail...) If this comes up we'll need to fix it. -- BRC
+      // and other doesn't.  Hopefully this won't ever happen.
       assert(ok);
 
-      if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg)) {
-        counterexamples_.push_back(ceg);
+      CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
+      CEG_DEBUG(cout << "TARGET START STATE" << endl;)
+      CEG_DEBUG(cout << ceg << endl;)
+      CEG_DEBUG(cout << "REWRITE START STATE" << endl;)
+      CEG_DEBUG(cout << ceg2 << endl;)
+      CEG_DEBUG(cout << "TARGET (expected) END STATE" << endl;)
+      CEG_DEBUG(cout << ceg_tf << endl;)
+      CEG_DEBUG(cout << "REWRITE (expected) END STATE" << endl;)
+      CEG_DEBUG(cout << ceg_rf << endl;)
 
-        CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
-        CEG_DEBUG(cout << "TARGET START STATE" << endl;)
-        CEG_DEBUG(cout << ceg << endl;)
-        CEG_DEBUG(cout << "REWRITE START STATE" << endl;)
-        CEG_DEBUG(cout << ceg2 << endl;)
-        CEG_DEBUG(cout << "TARGET END STATE" << endl;)
-        CEG_DEBUG(cout << ceg_tf << endl;)
-        CEG_DEBUG(cout << "REWRITE END STATE" << endl;)
-        CEG_DEBUG(cout << ceg_rf << endl;)
+
+      if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg, ceg2)) {
+        counterexamples_.push_back(ceg);
       } else {
         CEG_DEBUG(cout << "  (Spurious counterexample detected)" << endl;)
       }
