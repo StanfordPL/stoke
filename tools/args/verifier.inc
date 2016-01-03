@@ -31,6 +31,7 @@ cpputil::ValueArg<std::string>& strategy_arg =
   .description("Verification strategy")
   .default_val("hold_out");
 
+
 } // namespace stoke
 
 #endif

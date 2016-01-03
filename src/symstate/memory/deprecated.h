@@ -50,6 +50,10 @@ public:
     * a model. */
   std::vector<std::pair<std::string, uint16_t>> get_address_vars() const;
 
+  std::string get_type() const {
+    return "deprecated";
+  }
+
 private:
 
   /** Concrete valid heap locations at start.  Stored big-endian.  Optional.*/
