@@ -25,9 +25,11 @@
 #include "src/verifier/sequence.h"
 #include "src/verifier/verifier.h"
 #include "src/validator/bounded.h"
+#include "src/validator/ddec.h"
 #include "src/validator/straight_line.h"
 
 #include "tools/args/bounded_validator.inc"
+#include "tools/args/ddec_validator.inc"
 #include "tools/args/in_out.inc"
 #include "tools/args/testcases.inc"
 #include "tools/args/verifier.inc"
@@ -85,24 +87,39 @@ public:
 
 private:
 
+  BoundedValidator::AliasStrategy parse_alias() {
+    std::string alias = alias_strategy_arg.value();
+
+    if (alias == "basic" || alias == "tree" || alias == "prune" || alias == "treeprune") {
+      return BoundedValidator::AliasStrategy::BASIC;
+    } else if (alias == "string") {
+      return BoundedValidator::AliasStrategy::STRING;
+    } else if (alias == "string_antialias") {
+      return BoundedValidator::AliasStrategy::STRING_NO_ALIAS;
+    } else if (alias == "flat" || alias == "array") {
+      return BoundedValidator::AliasStrategy::FLAT;
+    } else {
+      std::cerr << "Unrecognized alias strategy \"" << alias << "\"" << std::endl;
+      exit(1);
+    }
+  }
+
   Verifier* make_by_name(std::string s, Sandbox& sandbox, CorrectnessCost& fxn) {
     if (s == "bounded") {
       auto bv = new BoundedValidator(*solver_);
       bv->set_bound(bound_arg.value());
-
-      std::string alias = alias_strategy_arg.value();
-      if (alias == "basic") {
-        bv->set_alias_strategy(BoundedValidator::AliasStrategy::BASIC);
-      } else if (alias == "string") {
-        bv->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
-      } else if (alias == "string_antialias") {
-        bv->set_alias_strategy(BoundedValidator::AliasStrategy::STRING_NO_ALIAS);
-      } else {
-        std::cerr << "Unrecognized alias strategy \"" << alias << "\"" << std::endl;
-        exit(1);
-      }
-
+      bv->set_alias_strategy(parse_alias());
+      bv->set_no_bailout(no_bailout_arg.value());
       return bv;
+    } else if (s == "ddec") {
+      auto ddec = new DdecValidator(*solver_);
+      std::cout << "no try sign extend arg: " << no_try_sign_extend_arg.value() << std::endl;
+      ddec->set_try_sign_extend(!no_try_sign_extend_arg.value());
+      ddec->set_no_bv(no_ddec_bv_arg.value());
+      ddec->set_sound_nullspace(sound_nullspace_arg.value());
+      ddec->set_alias_strategy(parse_alias());
+      ddec->set_bound(bound_arg.value());
+      return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(fxn);
     } else if (s == "straight_line" || s == "formal") {

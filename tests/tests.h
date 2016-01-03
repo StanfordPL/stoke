@@ -59,7 +59,6 @@ using namespace x64asm;
 #include "tests/tunit/tunit.h"
 #include "tests/verifier/verifier.h"
 #include "tests/fixture.h"
-#include "tests/validator/alias_miner.h"
 
 #if !defined(NO_SLOW_TESTS)
 

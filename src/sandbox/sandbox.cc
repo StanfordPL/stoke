@@ -228,6 +228,13 @@ Sandbox& Sandbox::clear_callbacks() {
 }
 
 Sandbox& Sandbox::run(size_t index) {
+
+  /*
+  cout << endl;
+  cout << "RUNNING ON" << endl;
+  cout << *get_input(index) << endl;
+  */
+
   assert(num_functions() > 0);
   assert(index < num_inputs());
   auto io = io_pairs_[index];
