@@ -211,7 +211,7 @@ bool Cutpoints::get_cutpoints() {
       }
     }
 
-    //constraints.push_back(symbolic_target_trace == symbolic_rewrite_trace);
+    constraints.push_back(symbolic_target_trace == symbolic_rewrite_trace);
   }
 
 
