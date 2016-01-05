@@ -20,6 +20,8 @@
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
+#define DEBUG_CUTPOINTS(X) { X }
+
 
 using namespace std;
 using namespace stoke;
@@ -59,6 +61,7 @@ bool Cutpoints::get_cutpoints() {
   CfgSccs rewrite_sccs(rewrite_);
 
   if (target_sccs.count() != rewrite_sccs.count()) {
+    DEBUG_CUTPOINTS(cout << "T/R have different number of SCCs" << endl;)
     error_ = "T/R have different number of SCCs";
     return false;
   }
@@ -208,20 +211,21 @@ bool Cutpoints::get_cutpoints() {
       }
     }
 
-    constraints.push_back(symbolic_target_trace == symbolic_rewrite_trace);
+    //constraints.push_back(symbolic_target_trace == symbolic_rewrite_trace);
   }
 
 
   // QUERY!
-  /*
+  DEBUG_CUTPOINTS(
+  cout << "(cutpoints) Here is the query:" << endl;
   for(auto it : constraints) {
     cout << it << endl;
   }
-  */
-  cout << "(cutpoints) RUNNING THE SOLVER" << endl;
+  )
+  DEBUG_CUTPOINTS(cout << "(cutpoints) RUNNING THE SOLVER" << endl;)
   bool sat = z3.is_sat(constraints);
   if(sat) {
-    cout << "(cutpoints) GETTING MODEL" << endl;
+    DEBUG_CUTPOINTS(cout << "(cutpoints) GETTING MODEL" << endl;)
     if(!z3.has_model()) {
       error_ = "Z3 doesn't have model...";
       return false;
@@ -239,8 +243,8 @@ bool Cutpoints::get_cutpoints() {
       target_cutpoint_to_scc[target_ctpt] = i;
       rewrite_cutpoint_to_scc[rewrite_ctpt] = i;
 
-      cout << "(cutpoints) Target SCC " << i << " has cutpoint number " << target_ctpt << endl;
-      cout << "(cutpoints) Rewrite SCC " << i << " has cutpoint number " << rewrite_ctpt << endl;
+      DEBUG_CUTPOINTS(cout << "(cutpoints) Target SCC " << i << " has cutpoint number " << target_ctpt << endl;)
+      DEBUG_CUTPOINTS(cout << "(cutpoints) Rewrite SCC " << i << " has cutpoint number " << rewrite_ctpt << endl;)
     }
 
     // For each cutpoint, check basic blocks of SCC
@@ -253,7 +257,7 @@ bool Cutpoints::get_cutpoints() {
           auto name = static_cast<const SymBoolVar*>(target_block_is_cutpoint[*it].ptr)->get_name();
           auto is_cutpoint = z3.get_model_bool(name);
           if(is_cutpoint) {
-            cout << "(cutpoints) TARGET HAS CUTPOINT " << *it << endl;
+            DEBUG_CUTPOINTS(cout << "(cutpoints) TARGET HAS CUTPOINT " << *it << endl;)
             target_cutpoints_.push_back(*it);
           }
         }
@@ -264,7 +268,7 @@ bool Cutpoints::get_cutpoints() {
           auto name = static_cast<const SymBoolVar*>(rewrite_block_is_cutpoint[*it].ptr)->get_name();
           auto is_cutpoint = z3.get_model_bool(name);
           if(is_cutpoint) {
-            cout << "(cutpoints) REWRITE HAS CUTPOINT " << *it << endl;
+            DEBUG_CUTPOINTS(cout << "(cutpoints) REWRITE HAS CUTPOINT " << *it << endl;)
             rewrite_cutpoints_.push_back(*it);
           }
         }
@@ -274,7 +278,7 @@ bool Cutpoints::get_cutpoints() {
 
     return true;
   } else {
-    cout << "(cutpoints) UNSAT" << endl;
+    DEBUG_CUTPOINTS(cout << "(cutpoints) UNSAT" << endl;)
     error_ = "Cutpoint constraints unsat";
     return false;
   }
@@ -322,8 +326,10 @@ void Cutpoints::compute() {
   target_cutpoints_.push_back(target_.get_exit());
   rewrite_cutpoints_.push_back(rewrite_.get_exit());
 
+  DEBUG_CUTPOINTS(
   cout << "(cutpoints) target exit: " << target_.get_exit() << endl;
   cout << "(cutpoints) rewrite exit: " << rewrite_.get_exit() << endl;
+  )
 
   for (auto it : target_cutpoints_) {
     target_cutpoint_ends_with_jump_.push_back(ends_with_jump(target_, it));
@@ -332,7 +338,7 @@ void Cutpoints::compute() {
     rewrite_cutpoint_ends_with_jump_.push_back(ends_with_jump(rewrite_, it));
   }
 
-  /*
+  DEBUG_CUTPOINTS(
   for (size_t i = 0; i < target_cutpoints_.size(); ++i) {
     cout << "(cutpoints) Cutpoint " << target_cutpoints_[i] << "; has jump? " << target_cutpoint_ends_with_jump_[i] << endl;
   }
@@ -340,7 +346,7 @@ void Cutpoints::compute() {
   for (size_t i = 0; i < rewrite_cutpoints_.size(); ++i) {
     cout << "(cutpoints) Cutpoint " << rewrite_cutpoints_[i] << "; has jump? " << rewrite_cutpoint_ends_with_jump_[i] << endl;
   }
-  */
+  );
 
 
   /** check() will set error codes. */
@@ -394,7 +400,7 @@ bool Cutpoints::check() {
 
   // Second, it adds it to a vector of cpustates *for this testcase*.
 
-  cout << "Sandbox size: " << dec << sandbox_.size() << endl;
+  DEBUG_CUTPOINTS(cout << "Sandbox size: " << dec << sandbox_.size() << endl;)
 
   for (size_t i = 0; i < sandbox_.size(); ++i) {
 
@@ -468,7 +474,7 @@ bool Cutpoints::check() {
     // (i), (iii) traces are the same
     if (callback_target_trace_.size() != callback_rewrite_trace_.size()) {
 
-      /*
+      DEBUG_CUTPOINTS(
       cout << endl;
       cout << endl;
       cout << "target cutpoint trace: ";
@@ -486,7 +492,8 @@ bool Cutpoints::check() {
 
       cout << endl;
       cout << tc << endl;
-      */
+      )
+
       error_ = "trace sizes not equal";
       return false;
     }
