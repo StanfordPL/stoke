@@ -75,6 +75,7 @@ using namespace x64asm;
 // large tests (anything slower)
 #include "tests/integration/integration.h"
 #include "tests/validator/bounded.h"
+#include "tests/validator/ddec.h"
 #include "tests/validator/handlers.h"
 #include "tests/validator/memory.h"
 #include "tests/x64asm/parsing.h"

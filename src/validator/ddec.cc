@@ -95,6 +95,7 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
   bv.set_alias_strategy(alias_strategy_);
   bv.set_heap_out(true);
   bv.set_bound(bound_);
+  bv.set_nacl(nacl_);
   bv.set_sandbox(new Sandbox(*sandbox_));
 
   auto target_cuts = cutpoints_->target_cutpoint_locations();
@@ -297,6 +298,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   bv_.set_alias_strategy(alias_strategy_);
   bv_.set_heap_out(true);
   bv_.set_bound(bound_);
+  bv_.set_nacl(nacl_);
   bv_.set_sandbox(new Sandbox(*sandbox_));
   make_tcs(target, rewrite);
 
