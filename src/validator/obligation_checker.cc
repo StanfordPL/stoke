@@ -1168,7 +1168,7 @@ void ObligationChecker::delete_memories(std::vector<std::pair<CellMemory*, CellM
   }
 }
 
-bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, pair<CpuState,CpuState>& ceg) {
+bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
   BOUNDED_DEBUG(cout << "===========================================" << endl;)
   BOUNDED_DEBUG(cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;)
@@ -1274,17 +1274,17 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     }
 
     if (is_sat) {
-      auto ceg_t = Validator::state_from_model(solver_, "_1_INIT");
-      auto ceg_r = Validator::state_from_model(solver_, "_2_INIT");
+      ceg_t_ = Validator::state_from_model(solver_, "_1_INIT");
+      ceg_r_ = Validator::state_from_model(solver_, "_2_INIT");
       auto ceg_tf = Validator::state_from_model(solver_, "_1_FINAL");
       auto ceg_rf = Validator::state_from_model(solver_, "_2_FINAL");
 
-      bool ok = build_testcase_memory(ceg_t, 
+      bool ok = build_testcase_memory(ceg_t_, 
                                          dynamic_cast<CellMemory*>(state_t.memory),
                                          dynamic_cast<CellMemory*>(state_r.memory),
                                          target, rewrite);
 
-      ok &= build_testcase_memory(ceg_r, 
+      ok &= build_testcase_memory(ceg_r_, 
                                dynamic_cast<CellMemory*>(state_t.memory),
                                dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
@@ -1306,19 +1306,20 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
       CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
       CEG_DEBUG(cout << "TARGET START STATE" << endl;)
-      CEG_DEBUG(cout << ceg_t << endl;)
+      CEG_DEBUG(cout << ceg_t_ << endl;)
       CEG_DEBUG(cout << "REWRITE START STATE" << endl;)
-      CEG_DEBUG(cout << ceg_r << endl;)
+      CEG_DEBUG(cout << ceg_r_ << endl;)
       CEG_DEBUG(cout << "TARGET (expected) END STATE" << endl;)
       CEG_DEBUG(cout << ceg_tf << endl;)
       CEG_DEBUG(cout << "REWRITE (expected) END STATE" << endl;)
       CEG_DEBUG(cout << ceg_rf << endl;)
 
 
-      if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t, ceg_r)) {
-        ceg.first = ceg_t;
-        ceg.second = ceg_r;
+      if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_)) {
+        have_ceg_ = true;
+        CEG_DEBUG(cout << "  (Counterexample verified in sandbox)" << endl;)
       } else {
+        have_ceg_ = false;
         CEG_DEBUG(cout << "  (Spurious counterexample detected)" << endl;)
       }
 

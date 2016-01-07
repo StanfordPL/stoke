@@ -22,11 +22,11 @@
 
 namespace stoke {
 
-class DdecValidator : public Validator {
+class DdecValidator : public ObligationChecker {
 
 public:
 
-  DdecValidator(SMTSolver& solver) : Validator(solver), bv_(solver) {
+  DdecValidator(SMTSolver& solver) : ObligationChecker(solver), bv_(solver) {
     cutpoints_ = NULL;
     set_no_bv(false);
     set_sound_nullspace(false);
