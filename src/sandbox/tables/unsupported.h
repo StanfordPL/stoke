@@ -264,3 +264,43 @@ MOV_SREG_M16
 // but it's sort of a distinction with a difference whether we support
 // this or not since gcc won't ever emit this instruction
 , LEAVE_PREF66
+
+// These cause the sandbox to crash, with an unknown cause.  Found with the sandbox fuzzer
+, INT_THREE
+, XLATB
+, XLATB_1
+, XLAT_M8
+, INT_IMM8
+, STI
+, CLI
+, IRET
+, IRETD
+, IRETQ
+, FCOMPP
+, JMP_M64
+, JMP_R64
+, XABORT_IMM8
+, XEND
+, XTEST
+
+// temporarily blacklist these, until #552 is fixed
+, VGATHERDPD_XMM_M32_XMM
+, VGATHERDPD_YMM_M32_YMM
+, VGATHERDPS_XMM_M32_XMM
+, VGATHERDPS_YMM_M32_YMM
+, VGATHERQPD_XMM_M64_XMM
+, VGATHERQPD_YMM_M64_YMM
+, VGATHERQPS_XMM_M64_XMM
+, VGATHERQPS_XMM_M64_XMM_1
+, VPGATHERDD_XMM_M32_XMM
+, VPGATHERDD_YMM_M32_YMM
+, VPGATHERDQ_XMM_M32_XMM
+, VPGATHERDQ_YMM_M32_YMM
+, VPGATHERQD_XMM_M64_XMM
+, VPGATHERQD_XMM_M64_XMM_1
+, VPGATHERQQ_XMM_M64_XMM
+, VPGATHERQQ_YMM_M64_YMM
+
+// see issue #791
+, VEXTRACTI128_M128_YMM_IMM8
+, VEXTRACTI128_XMM_YMM_IMM8
