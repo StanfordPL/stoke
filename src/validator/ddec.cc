@@ -61,9 +61,9 @@ Instruction get_last_instr(const Cfg& cfg, Cfg::id_type block) {
 
 /** Returns an invariant representing the fact that the first state transition in the path is taken. */
 Invariant* get_jump_inv(const Cfg& cfg, const CfgPath& p, bool is_rewrite) {
-  auto jump_type = BoundedValidator::is_jump(cfg, p, 0);
+  auto jump_type = ObligationChecker::is_jump(cfg, p, 0);
 
-  if(jump_type == BoundedValidator::JumpType::NONE) {
+  if(jump_type == ObligationChecker::JumpType::NONE) {
     return new TrueInvariant();
   }
 
@@ -76,7 +76,7 @@ Invariant* get_jump_inv(const Cfg& cfg, const CfgPath& p, bool is_rewrite) {
     return new TrueInvariant();
   }
 
-  bool is_fallthrough = jump_type == BoundedValidator::JumpType::FALL_THROUGH;
+  bool is_fallthrough = jump_type == ObligationChecker::JumpType::FALL_THROUGH;
   auto jump_inv = new FlagInvariant(jump_instr, is_rewrite, is_fallthrough);
   return jump_inv;
 }
@@ -90,13 +90,6 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
     // Don't do this if the user tells us not to
     return results;
   }
-
-  BoundedValidator bv(solver_);
-  bv.set_alias_strategy(alias_strategy_);
-  bv.set_heap_out(true);
-  bv.set_bound(bound_);
-  bv.set_nacl(nacl_);
-  bv.set_sandbox(new Sandbox(*sandbox_));
 
   auto target_cuts = cutpoints_->target_cutpoint_locations();
   auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
@@ -112,10 +105,9 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
       for (auto q : rewrite_paths) {
         for(size_t j = 0; j < invariants[i]->size(); ++j) {
           cout << "  on paths " << p << " ; " << q << " : " << *(*invariants[i])[j] << endl;
-          bool success = bv.verify_pair(target, rewrite, p, q, *invariants[0], *(*invariants[i])[j]);
-          if (!success && bv.counter_examples_available()) {
-            auto cegs = bv.get_counter_examples();
-            results.insert(results.begin(), cegs.begin(), cegs.end());
+          bool equiv = check(target, rewrite, p, q, *invariants[0], *(*invariants[i])[j]);
+          if (!equiv && checker_has_ceg()) {
+            results.push_back(checker_get_target_ceg());
             return results;
           }
         }
@@ -267,9 +259,9 @@ void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
   for(auto p : target_paths) {
     for(auto q : rewrite_paths) {
       cout << "Trying pair " << p << " ; " << q << endl;
-      bv_.verify_pair(target, rewrite, p, q, assume, _false);
-      for(auto it : bv_.get_counter_examples()) {
-        sandbox_->insert_input(it); 
+      bool equiv = check(target, rewrite, p, q, assume, _false);
+      if(!equiv && checker_has_ceg()) {
+        sandbox_->insert_input(checker_get_target_ceg());
       }
     }
   }
@@ -295,11 +287,6 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     error_line_ = e.get_line();
   }
 
-  bv_.set_alias_strategy(alias_strategy_);
-  bv_.set_heap_out(true);
-  bv_.set_bound(bound_);
-  bv_.set_nacl(nacl_);
-  bv_.set_sandbox(new Sandbox(*sandbox_));
   make_tcs(target, rewrite);
 
   auto invariants = find_invariants(target, rewrite);
@@ -414,8 +401,8 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
             cout << "Checking " << copy << " { " << BoundedValidator::print(p)
                  << " ; " << BoundedValidator::print(q) << " } " << *(*end_inv)[m] << endl;
 
-            bool ok = bv_.verify_pair(target, rewrite, p, q, copy, *(*end_inv)[m]);
-            if (!ok) {
+            bool equiv = check(target, rewrite, p, q, copy, *(*end_inv)[m]);
+            if (!equiv) {
               failed_invariants[j].push_back(m);
               success = false;
             }
@@ -454,8 +441,8 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
             cout << "Checking " << copy << " { " << BoundedValidator::print(p)
                  << " ; " << BoundedValidator::print(q) << " } false " << endl;
             FalseInvariant fi;
-            bool ok = bv_.verify_pair(target, rewrite, p, q, copy, fi);
-            if (!ok) {
+            bool equiv = check(target, rewrite, p, q, copy, fi);
+            if (!equiv) {
               print_summary(invariants);
               return false;
             }

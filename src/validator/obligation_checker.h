@@ -74,12 +74,30 @@ public:
     return *this;
   }
 
+  enum JumpType {
+    NONE, // jump target is the fallthrough
+    FALL_THROUGH,
+    JUMP
+  };
+  /** Is there a jump in the path following this basic block? */
+  static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
 
 protected:
   /** Check. */
   bool check(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q,
-             const Invariant& assume, const Invariant& prove, std::pair<CpuState,CpuState>& ceg);
+             const Invariant& assume, const Invariant& prove);
 
+  bool checker_has_ceg() {
+    return have_ceg_;
+  }
+
+  CpuState checker_get_target_ceg() {
+    return ceg_t_;
+  }
+
+  CpuState checker_get_rewrite_ceg() {
+    return ceg_r_;
+  }
 
 private: 
   
@@ -170,14 +188,6 @@ private:
   /////////////// These methods handle paths and circuit building ////////////////
 
 
-  enum JumpType {
-    NONE, // jump target is the fallthrough
-    FALL_THROUGH,
-    JUMP
-  };
-  /** Is there a jump in the path following this basic block? */
-  static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
-
   /** Build the circuit for a single basic block */
   void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
 
@@ -202,13 +212,19 @@ private:
 
   /////////////// Bookkeeping //////////////////
 
+  /** Target counterexample */
+  CpuState ceg_t_;
+  /** Rewrite counterexample */
+  CpuState ceg_r_;
+  /** Do we have a counterexample? */
+  bool have_ceg_;
+
+
 
   /** How to handle aliasing */
   AliasStrategy alias_strategy_;
   /** Add NaCl constraint for memory? */
   bool nacl_;
-  /** Should we bailout early? */
-  bool bailout_;
   /** Sandbox to facilitate checking a counterexample */
   Sandbox* sb_;
 
