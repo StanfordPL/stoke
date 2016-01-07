@@ -173,28 +173,6 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   tps.remove_opcode(x64asm::ENTER_ONE_IMM16);
   tps.remove_opcode(x64asm::ENTER_ZERO_IMM16);
 
-  // temporarily blacklist these, until #552 is fixed
-  tps.remove_opcode(x64asm::VGATHERDPD_XMM_M32_XMM);
-  tps.remove_opcode(x64asm::VGATHERDPD_YMM_M32_YMM);
-  tps.remove_opcode(x64asm::VGATHERDPS_XMM_M32_XMM);
-  tps.remove_opcode(x64asm::VGATHERDPS_YMM_M32_YMM);
-  tps.remove_opcode(x64asm::VGATHERQPD_XMM_M64_XMM);
-  tps.remove_opcode(x64asm::VGATHERQPD_YMM_M64_YMM);
-  tps.remove_opcode(x64asm::VGATHERQPS_XMM_M64_XMM);
-  tps.remove_opcode(x64asm::VGATHERQPS_XMM_M64_XMM_1);
-  tps.remove_opcode(x64asm::VPGATHERDD_XMM_M32_XMM);
-  tps.remove_opcode(x64asm::VPGATHERDD_YMM_M32_YMM);
-  tps.remove_opcode(x64asm::VPGATHERDQ_XMM_M32_XMM);
-  tps.remove_opcode(x64asm::VPGATHERDQ_YMM_M32_YMM);
-  tps.remove_opcode(x64asm::VPGATHERQD_XMM_M64_XMM);
-  tps.remove_opcode(x64asm::VPGATHERQD_XMM_M64_XMM_1);
-  tps.remove_opcode(x64asm::VPGATHERQQ_XMM_M64_XMM);
-  tps.remove_opcode(x64asm::VPGATHERQQ_YMM_M64_YMM);
-
-  // see issue #791
-  tps.remove_opcode(x64asm::VEXTRACTI128_M128_YMM_IMM8);
-  tps.remove_opcode(x64asm::VEXTRACTI128_XMM_YMM_IMM8);
-
   // code to use if you want to test a single instruction only
   // for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
   //   tps.remove_opcode((x64asm::Opcode)i);
@@ -214,4 +192,3 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
 }
 
 } //namespace stoke
-
