@@ -795,8 +795,8 @@ public:
     }
   }
 
-  virtual std::vector<std::string> full_support_opcodes() {
-    return opcode_names_;
+  virtual std::vector<x64asm::Opcode> full_support_opcodes() {
+    return Handler::opcodes_convert(opcode_names_);
   }
 
   SupportLevel get_support(const x64asm::Instruction& instr);
