@@ -24,9 +24,7 @@ long mpz_to_long(mpz_t z)
 size_t Nullspace::z_nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t*** output) {
 
   mpz_t *mp_result;
-  cout << "computing the nullspace" << endl;
   size_t dim = nullspaceLong(rows, cols, (long*)inputs, &mp_result);
-  cout << "nullspace computation complete" << endl;
 
   // For each row of the nullspace, find the gcd and divide by it.
   for (size_t i = 0; i < dim; ++i) {
@@ -47,7 +45,6 @@ size_t Nullspace::z_nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64
   // Allocate the output matrix
   *output = new uint64_t*[dim];
   for(size_t i = 0; i < dim; ++i) {
-    cout << "can I have values? " << i << ": " << (*output)[i] << endl;
     (*output)[i] = new uint64_t[cols];
   }
   
@@ -251,8 +248,8 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
 {
   size_t rowrank = 0;
   uint64_t* augmented = augmentIdentity((uint64_t*)inputs,rows, cols);
-  cout << "STARTING" << endl;
-  printMat(augmented,rows+cols,cols);
+  //cout << "STARTING" << endl;
+  //printMat(augmented,rows+cols,cols);
   size_t currcol=0;
   for(size_t i=0;i<rows;i++)
   {

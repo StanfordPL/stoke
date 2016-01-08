@@ -203,10 +203,19 @@ BIN=\
 all: release hooks
 
 release: haswell_release
+	echo -e "\a"
 debug: haswell_debug
+	echo -e "\a"
 profile: haswell_profile
+	echo -e "\a"
 test: haswell_test
+	echo -e "\a"
+tests: haswell_tests
+	echo -e "\a"
+fast_tests: haswell_fast_tests
+	echo -e "\a"
 fast: haswell_test_fast
+	echo -e "\a"
 
 haswell: haswell_release
 haswell_release:
@@ -218,12 +227,15 @@ haswell_debug:
 haswell_profile:
 	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=core-avx2"
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
-haswell_test: haswell_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
+
+haswell_test: haswell_tests
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
-haswell_test_fast: haswell_debug
+haswell_tests: haswell_debug
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -g"
+haswell_test_fast: haswell_fast_tests
+	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
+haswell_fast_tests: haswell_debug
 	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG -DNO_VERY_SLOW_TESTS"
-	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 sandybridge: sandybridge_release
 sandybridge_release:
@@ -235,9 +247,10 @@ sandybridge_debug:
 sandybridge_profile:
 	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=corei7-avx"
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg -DSANDYBRIDGE_BUILD"
-sandybridge_test: sandybridge_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG -DSANDYBRIDGE_BUILD"
+sandybridge_test: sandybridge_debug sandybridge_tests
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
+sandybridge_tests: sandybridge_debug
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG -DSANDYBRIDGE_BUILD"
 
 nehalem: nehalem_release
 nehalem_release:
@@ -249,9 +262,10 @@ nehalem_debug:
 nehalem_profile:
 	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=corei7"
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg -DNEHALEM_BUILD"
-nehalem_test: nehalem_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG -DNEHALEM_BUILD"
+nehalem_test: nehalem_debug sandybridge_tests
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
+nehalem_tests: nehalem_debug
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG -DNEHALEM_BUILD"
 
 ##### CTAGS TARGETS
 

@@ -20,7 +20,7 @@
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-#define DEBUG_CUTPOINTS(X) { X }
+#define DEBUG_CUTPOINTS(X) { }
 
 
 using namespace std;

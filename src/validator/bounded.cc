@@ -37,8 +37,6 @@ using namespace stoke;
 using namespace x64asm;
 
 
-
-
 bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q) {
   StateEqualityInvariant assume_state(target.def_ins());
   StateEqualityInvariant prove_state(target.live_outs());
@@ -79,8 +77,10 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 #endif
   // State
   counterexamples_.clear();
-  paths_[false].clear();
-  paths_[true].clear();
+
+  vector<CfgPath> target_paths;
+  vector<CfgPath> rewrite_paths;
+
   has_error_ = false;
   init_mm();
 
@@ -95,12 +95,12 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     // Step 1: get all the paths from the enumerator
     for (auto path : CfgPaths::enumerate_paths(target, bound_)) {
       //cout << "adding TP: " << print(path) << endl;
-      paths_[false].push_back(path);
+      target_paths.push_back(path);
     }
     //cout << "REWRITE: " << endl << rewrite.get_code() << endl;
     for (auto path : CfgPaths::enumerate_paths(rewrite, bound_)) {
       //cout << "adding RP: " << print(path) << endl;
-      paths_[true].push_back(path);
+      rewrite_paths.push_back(path);
     }
 
     // Handle the shorter paths first, please
@@ -108,15 +108,15 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     auto by_length = [](const CfgPath& lhs, const CfgPath& rhs) {
       return lhs.size() < rhs.size();
     };
-    sort(paths_[false].begin(), paths_[false].end(), by_length);
-    sort(paths_[true].begin(), paths_[true].end(), by_length);
+    sort(target_paths.begin(), target_paths.end(), by_length);
+    sort(rewrite_paths.begin(), rewrite_paths.end(), by_length);
 
     // Step 2: check each pair of paths
     bool ok = true;
-    size_t total = paths_[false].size() * paths_[true].size();
+    size_t total = target_paths.size() * rewrite_paths.size();
     size_t count = 0;
-    for (auto target_path : paths_[false]) {
-      for (auto rewrite_path : paths_[true]) {
+    for (auto target_path : target_paths) {
+      for (auto rewrite_path : rewrite_paths) {
         count++;
         ok &= verify_pair(target, rewrite, target_path, rewrite_path);
 
