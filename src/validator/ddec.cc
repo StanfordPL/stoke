@@ -31,7 +31,7 @@
 
 #include <algorithm>
 
-#define DDEC_DEBUG(X) { }
+#define DDEC_DEBUG(X) { X }
 
 using namespace std;
 using namespace stoke;
@@ -98,8 +98,8 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
 
   // For each non-entry cutpoint, check that it actually holds
   for (size_t i = 1; i < target_cuts.size(); ++i) {
-    auto target_paths = CfgPaths::enumerate_paths(target, bound_, target.get_entry(), target_cuts[i]);
-    auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, bound_, rewrite.get_entry(), rewrite_cuts[i]);
+    auto target_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target_cuts[i]);
+    auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1, rewrite.get_entry(), rewrite_cuts[i]);
 
     DDEC_DEBUG(cout << "cutpoint " << i << ": " << target_paths.size()*rewrite_paths.size() << " cases" << endl;)
 
@@ -255,8 +255,8 @@ void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
   if(no_bv_) //if not using the bounded validator for testcases, skip this entirely.
     return;
 
-  auto target_paths = CfgPaths::enumerate_paths(target, 1);
-  auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1);
+  auto target_paths = CfgPaths::enumerate_paths(target, bound_);
+  auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, bound_);
 
   StateEqualityInvariant assume(target.def_ins());
   FalseInvariant _false;
