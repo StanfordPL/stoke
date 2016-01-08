@@ -208,7 +208,10 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
         auto inv = new StateEqualityInvariant(target.live_outs());
         end->add_invariant(inv);
         end->add_invariant(no_sigs);
-        end->add_invariant(mem_equ);
+
+        if(heap_out_ || stack_out_)
+          end->add_invariant(mem_equ);
+
         invariants.push_back(end);
       } else {
         auto target_regs = target.def_outs(target_cuts[i]);
@@ -272,6 +275,8 @@ void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
 
 bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
+  init_mm();
+
   auto target = inline_functions(init_target);
   auto rewrite = inline_functions(init_rewrite);
 
@@ -282,53 +287,60 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     sanity_checks(target, rewrite);
 
+    make_tcs(target, rewrite);
+
+    auto invariants = find_invariants(target, rewrite);
+    DDEC_DEBUG(cout << "Got initial invariants " << invariants.size() << endl;)
+    if (!invariants.size()) {
+      DDEC_DEBUG(cout << "Could not find cutpoints/invariants" << endl;)
+      reset_mm();
+      return false;
+    }
+
+    map<size_t, vector<size_t>> failed_invariants;
+    while(true) {
+
+      failed_invariants.clear();
+      bool success = check_proof(target, rewrite, invariants, failed_invariants);
+      if(success) {
+        reset_mm();
+        return true;
+      }
+
+      // otherwise, remove invariants that failed to validate and try again...
+      // we want to be sure not to change the start/end invariants
+      DDEC_DEBUG(cout << "Validation failed; attempting to remove failed invariants" << endl;)
+      bool made_a_change = false;
+      for(size_t i = 1; i < invariants.size() - 1; ++i) {
+        auto to_remove = failed_invariants[i]; 
+        sort(to_remove.begin(), to_remove.end());
+        size_t last = (size_t)-1;
+        for(auto it = to_remove.rbegin(); it != to_remove.rend(); ++it) {
+          if(last == *it)
+            continue;
+          last = *it;
+          DDEC_DEBUG(cout << "Removing " << *(*invariants[i])[*it] << endl;)
+          invariants[i]->remove(*it);
+          made_a_change = true;
+        }
+      }
+
+      if(!made_a_change) {
+        DDEC_DEBUG(cout << "Could not remove failed invariants.  Programs not proven equivalent." << endl;)
+        // got a fixed point, we really can't validate this
+        reset_mm();
+        return false;
+      }
+    }
+
   } catch (validator_error e) {
+
     has_error_ = true;
     error_ = e.get_message();
     error_file_ = e.get_file();
     error_line_ = e.get_line();
-  }
-
-  make_tcs(target, rewrite);
-
-  auto invariants = find_invariants(target, rewrite);
-  DDEC_DEBUG(cout << "Got initial invariants " << invariants.size() << endl;)
-  if (!invariants.size()) {
-    DDEC_DEBUG(cout << "Could not find cutpoints/invariants" << endl;)
+    reset_mm();
     return false;
-  }
-
-  map<size_t, vector<size_t>> failed_invariants;
-  while(true) {
-
-    failed_invariants.clear();
-    bool success = check_proof(target, rewrite, invariants, failed_invariants);
-    if(success)
-      return true;
-
-    // otherwise, remove invariants that failed to validate and try again...
-    // we want to be sure not to change the start/end invariants
-    DDEC_DEBUG(cout << "Validation failed; attempting to remove failed invariants" << endl;)
-    bool made_a_change = false;
-    for(size_t i = 1; i < invariants.size() - 1; ++i) {
-      auto to_remove = failed_invariants[i]; 
-      sort(to_remove.begin(), to_remove.end());
-      size_t last = (size_t)-1;
-      for(auto it = to_remove.rbegin(); it != to_remove.rend(); ++it) {
-        if(last == *it)
-          continue;
-        last = *it;
-        DDEC_DEBUG(cout << "Removing " << *(*invariants[i])[*it] << endl;)
-        invariants[i]->remove(*it);
-        made_a_change = true;
-      }
-    }
-
-    if(!made_a_change) {
-      DDEC_DEBUG(cout << "Could not remove failed invariants.  Programs not proven equivalent." << endl;)
-      // got a fixed point, we really can't validate this
-      return false;
-    }
   }
 }
 
