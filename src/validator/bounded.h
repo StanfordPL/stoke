@@ -91,14 +91,8 @@ private:
   /** Should we bailout early? */
   bool bailout_;
 
-  /** Sandbox to facilitate checking a counterexample */
-  Sandbox* sb_;
-
   /** Verify a pair of paths. */
   bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
-
-  /** Traces for the target/rewrite. */
-  std::vector<CfgPath> paths_[2];
 
   /** The set of counterexamples (one per pair) that we've found. */
   std::vector<CpuState> counterexamples_;

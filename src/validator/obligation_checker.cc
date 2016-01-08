@@ -21,12 +21,12 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define BOUNDED_DEBUG(X) { }
+#define OBLIG_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { X }
+#define CEG_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -92,15 +92,17 @@ bool ObligationChecker::build_testcase_memory(CpuState& ceg, const CellMemory* t
 
 CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
 
-  auto new_cfg = CfgPaths::rewrite_cfg_with_path(cfg, P);
-  sb_->clear_inputs();
-  sb_->clear_callbacks();
-  sb_->insert_input(state);
-  sb_->insert_function(new_cfg);
-  sb_->set_entrypoint(new_cfg.get_code()[0].get_operand<x64asm::Label>(0));
-  sb_->run();
+  Sandbox sb(*sandbox_);
 
-  CpuState output = *sb_->get_output(0);
+  auto new_cfg = CfgPaths::rewrite_cfg_with_path(cfg, P);
+  sb.clear_inputs();
+  sb.clear_callbacks();
+  sb.insert_input(state);
+  sb.insert_function(new_cfg);
+  sb.set_entrypoint(new_cfg.get_code()[0].get_operand<x64asm::Label>(0));
+  sb.run();
+
+  CpuState output = *(sb.get_output(0));
   return output;
 
 }
@@ -108,7 +110,7 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
 bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg, const CpuState& ceg2) {
 
   // We can't do anything without a sandbox
-  if(!sb_) {
+  if(!sandbox_) {
     CEG_DEBUG(cout << "  (No sandbox available; not checking counterexample.)" << endl;);
     return true;
   }
@@ -1170,19 +1172,20 @@ void ObligationChecker::delete_memories(std::vector<std::pair<CellMemory*, CellM
 
 bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
-  BOUNDED_DEBUG(cout << "===========================================" << endl;)
-  BOUNDED_DEBUG(cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;)
+  OBLIG_DEBUG(cout << "===========================================" << endl;)
+  OBLIG_DEBUG(cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;)
   init_mm();
+  have_ceg_ = false;
 
   // Get a list of all aliasing cases.
   auto memory_list =  enumerate_aliasing(target, rewrite, P, Q, assume);
   bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
 
-  BOUNDED_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
+  OBLIG_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
 
   for (auto memories : memory_list) {
-    BOUNDED_DEBUG(cout << "------ NEXT ALIASING CASE -----" << endl;)
-    BOUNDED_DEBUG(
+    OBLIG_DEBUG(cout << "------ NEXT ALIASING CASE -----" << endl;)
+    OBLIG_DEBUG(
     if (memories.first) {
     cout << "TARGET MAP:" << endl;
     for (auto q : memories.first->get_line_cell_map()) {
@@ -1215,7 +1218,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
     // Add given assumptions
     auto assumption = assume(state_t, state_r);
-    BOUNDED_DEBUG(cout << "Assuming " << assumption << endl;);
+    OBLIG_DEBUG(cout << "Assuming " << assumption << endl;);
     constraints.push_back(assumption);
 
     // Build the circuits
@@ -1246,7 +1249,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
 
-    BOUNDED_DEBUG(
+    OBLIG_DEBUG(
       cout << endl << "CONSTRAINTS" << endl << endl;;
     for (auto it : constraints) {
     cout << it << endl;
@@ -1254,7 +1257,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
     // Build inequality constraint
     auto prove_constraint = !prove(state_t, state_r);
-    BOUNDED_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
+    OBLIG_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
 
     constraints.push_back(prove_constraint);
 
@@ -1319,7 +1322,6 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
         have_ceg_ = true;
         CEG_DEBUG(cout << "  (Counterexample verified in sandbox)" << endl;)
       } else {
-        have_ceg_ = false;
         CEG_DEBUG(cout << "  (Spurious counterexample detected)" << endl;)
       }
 

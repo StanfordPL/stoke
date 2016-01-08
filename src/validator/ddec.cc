@@ -31,6 +31,8 @@
 
 #include <algorithm>
 
+#define DDEC_DEBUG(X) { }
+
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
@@ -96,15 +98,15 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
 
   // For each non-entry cutpoint, check that it actually holds
   for (size_t i = 1; i < target_cuts.size(); ++i) {
-    auto target_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target_cuts[i]);
-    auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1, rewrite.get_entry(), rewrite_cuts[i]);
+    auto target_paths = CfgPaths::enumerate_paths(target, bound_, target.get_entry(), target_cuts[i]);
+    auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, bound_, rewrite.get_entry(), rewrite_cuts[i]);
 
-    cout << "cutpoint " << i << ": " << target_paths.size()*rewrite_paths.size() << " cases" << endl;
+    DDEC_DEBUG(cout << "cutpoint " << i << ": " << target_paths.size()*rewrite_paths.size() << " cases" << endl;)
 
     for (auto p : target_paths) {
       for (auto q : rewrite_paths) {
         for(size_t j = 0; j < invariants[i]->size(); ++j) {
-          cout << "  on paths " << p << " ; " << q << " : " << *(*invariants[i])[j] << endl;
+          DDEC_DEBUG(cout << "  on paths " << p << " ; " << q << " : " << *(*invariants[i])[j] << endl;)
           bool equiv = check(target, rewrite, p, q, *invariants[0], *(*invariants[i])[j]);
           if (!equiv && checker_has_ceg()) {
             results.push_back(checker_get_target_ceg());
@@ -162,7 +164,7 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
     stop_mm();
 
     if (cutpoints_->has_error()) {
-      cout << "Cutpoint system encountered: " << cutpoints_->get_error() << endl;
+      DDEC_DEBUG(cout << "Cutpoint system encountered: " << cutpoints_->get_error() << endl;)
       return vector<ConjunctionInvariant*>();
     }
 
@@ -175,7 +177,7 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
       for(auto it : new_cutpoint_tcs) {
         for(size_t i = 0; i < sandbox_->size(); ++i) {
           if(*sandbox_->get_input(i) == it) {
-            cout << "CEGAR fixedpoint @ cutpoint" << endl;
+            DDEC_DEBUG(cout << "CEGAR fixedpoint @ cutpoint" << endl;)
             return vector<ConjunctionInvariant*>();
           }
         }
@@ -213,13 +215,13 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
         auto rewrite_regs = rewrite.def_outs(rewrite_cuts[i]);
         auto inv = learn_disjunction_invariant(target_regs, rewrite_regs, cutpoints_->data_at(i, false), cutpoints_->data_at(i, true), get_last_instr(target, target_cuts[i]), get_last_instr(rewrite, rewrite_cuts[i]));
         invariants.push_back(inv);
-        cout << "Learned invariant @ i=" << i << endl;
-        cout << *inv << endl;
+        DDEC_DEBUG(cout << "Learned invariant @ i=" << i << endl;)
+        DDEC_DEBUG(cout << *inv << endl;)
       }
     }
 
     // See if said invariants are correct
-    cout << endl << "CHECKING INVARIANTS WITH BOUNDED VALIDATOR" << endl << endl;
+    DDEC_DEBUG(cout << endl << "CHECKING INVARIANTS WITH BOUNDED VALIDATOR" << endl << endl;)
     auto new_tests = check_invariants(target, rewrite, invariants);
     if (new_tests.size() == 0)
       return invariants;
@@ -228,7 +230,7 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
     for (auto tc : new_tests) {
       for(size_t i = 0; i < sandbox_->size(); ++i) {
         if(*sandbox_->get_input(i) == tc) {
-          cout << "CEGAR fixedpoint @ invariants" << endl;
+          DDEC_DEBUG(cout << "CEGAR fixedpoint @ invariants" << endl;)
           return vector<ConjunctionInvariant*>();
         }
       }
@@ -258,7 +260,7 @@ void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
 
   for(auto p : target_paths) {
     for(auto q : rewrite_paths) {
-      cout << "Trying pair " << p << " ; " << q << endl;
+      DDEC_DEBUG(cout << "Trying pair " << p << " ; " << q << endl;)
       bool equiv = check(target, rewrite, p, q, assume, _false);
       if(!equiv && checker_has_ceg()) {
         sandbox_->insert_input(checker_get_target_ceg());
@@ -273,8 +275,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   auto target = inline_functions(init_target);
   auto rewrite = inline_functions(init_rewrite);
 
-  cout << "INLINED TARGET: " << endl << target.get_code() << endl;
-  cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;
+  DDEC_DEBUG(cout << "INLINED TARGET: " << endl << target.get_code() << endl;)
+  DDEC_DEBUG(cout << "INLINED REWRITE: " << endl << rewrite.get_code() << endl;)
 
   try {
 
@@ -290,9 +292,9 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
   make_tcs(target, rewrite);
 
   auto invariants = find_invariants(target, rewrite);
-  cout << "Got initial invariants " << invariants.size() << endl;
+  DDEC_DEBUG(cout << "Got initial invariants " << invariants.size() << endl;)
   if (!invariants.size()) {
-    cout << "Could not find cutpoints/invariants" << endl;
+    DDEC_DEBUG(cout << "Could not find cutpoints/invariants" << endl;)
     return false;
   }
 
@@ -306,7 +308,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     // otherwise, remove invariants that failed to validate and try again...
     // we want to be sure not to change the start/end invariants
-    cout << "Validation failed; attempting to remove failed invariants" << endl;
+    DDEC_DEBUG(cout << "Validation failed; attempting to remove failed invariants" << endl;)
     bool made_a_change = false;
     for(size_t i = 1; i < invariants.size() - 1; ++i) {
       auto to_remove = failed_invariants[i]; 
@@ -316,14 +318,14 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         if(last == *it)
           continue;
         last = *it;
-        cout << "Removing " << *(*invariants[i])[*it] << endl;
+        DDEC_DEBUG(cout << "Removing " << *(*invariants[i])[*it] << endl;)
         invariants[i]->remove(*it);
         made_a_change = true;
       }
     }
 
     if(!made_a_change) {
-      cout << "Could not remove failed invariants.  Programs not proven equivalent." << endl;
+      DDEC_DEBUG(cout << "Could not remove failed invariants.  Programs not proven equivalent." << endl;)
       // got a fixed point, we really can't validate this
       return false;
     }
@@ -355,20 +357,21 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
       auto rewrite_paths_ij_more =
         CfgPaths::enumerate_paths(rewrite, 2, rewrite_cuts[i], rewrite_cuts[j], &rewrite_cuts);
 
-      cout << "i=" << i << ", j=" << j
-           << " " << target_paths_ij.size() << " / " << target_paths_ij_more.size() << endl;
+      DDEC_DEBUG(cout << "i=" << i << ", j=" << j
+           << " " << target_paths_ij.size() << " / " << target_paths_ij_more.size() << endl;)
       if (target_paths_ij.size() != target_paths_ij_more.size()) {
-        cout << "Infinitely many paths found between target cutpoints " << i << " and " << j << endl;
+        DDEC_DEBUG(cout << "Infinitely many paths found between target cutpoints " << i << " and " << j << endl;)
         return false;
       }
-      cout << "i=" << i << ", j=" << j
-           << " " << rewrite_paths_ij.size() << " / " << rewrite_paths_ij_more.size() << endl;
+      DDEC_DEBUG(
+        cout << "i=" << i << ", j=" << j
+           << " " << rewrite_paths_ij.size() << " / " << rewrite_paths_ij_more.size() << endl;)
       if (rewrite_paths_ij.size() != rewrite_paths_ij_more.size()) {
-        cout << "Infinitely many paths found between rewrite cutpoints " << i << " and " << j << endl;
+        DDEC_DEBUG(cout << "Infinitely many paths found between rewrite cutpoints " << i << " and " << j << endl;)
         return false;
       }
 
-      cout << "cutpoint blocks: " << target_cuts[i] << "  (and)  " << rewrite_cuts[j] << endl;
+      DDEC_DEBUG(cout << "cutpoint blocks: " << target_cuts[i] << "  (and)  " << rewrite_cuts[j] << endl;)
 
       // 2. P in Paths_T(i, j), Q in Paths_R(i, j) => inv(i) { P; Q } inv(j)
       bool success = true;
@@ -398,8 +401,8 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
 
           for(size_t m = 0; m < end_inv->size(); ++m) {
 
-            cout << "Checking " << copy << " { " << BoundedValidator::print(p)
-                 << " ; " << BoundedValidator::print(q) << " } " << *(*end_inv)[m] << endl;
+            DDEC_DEBUG(cout << "Checking " << copy << " { " << BoundedValidator::print(p)
+                 << " ; " << BoundedValidator::print(q) << " } " << *(*end_inv)[m] << endl;)
 
             bool equiv = check(target, rewrite, p, q, copy, *(*end_inv)[m]);
             if (!equiv) {
@@ -411,7 +414,7 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
         }
       }
       if(!success) {
-        print_summary(invariants);
+        DDEC_DEBUG(print_summary(invariants);)
         return false;
       }
 
@@ -438,12 +441,12 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
             copy.add_invariant(target_jump_inv);
             copy.add_invariant(rewrite_jump_inv);
 
-            cout << "Checking " << copy << " { " << BoundedValidator::print(p)
-                 << " ; " << BoundedValidator::print(q) << " } false " << endl;
+            DDEC_DEBUG(cout << "Checking " << copy << " { " << BoundedValidator::print(p)
+                 << " ; " << BoundedValidator::print(q) << " } false " << endl;)
             FalseInvariant fi;
             bool equiv = check(target, rewrite, p, q, copy, fi);
             if (!equiv) {
-              print_summary(invariants);
+              DDEC_DEBUG(print_summary(invariants);)
               return false;
             }
           }
@@ -453,7 +456,7 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
   }
 
 
-  print_summary(invariants);
+  DDEC_DEBUG(print_summary(invariants);)
 
   return true;
 
@@ -467,8 +470,8 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
     Returns a conjunction which *may* include disjuncts. */
 ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 
-  cout << "SIMPLIFYING DISJUNCTS" << endl;
-  cout << disjs << endl << endl;
+  DDEC_DEBUG(cout << "SIMPLIFYING DISJUNCTS" << endl;
+  cout << disjs << endl << endl;)
 
   FalseInvariant _false;
     
@@ -477,7 +480,7 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
     auto& conj = *static_cast<ConjunctionInvariant*>(disjs[i]);
     for(size_t j = 0; j < conj.size(); ++j) {
       if (*conj[j] == _false) {
-        cout << "Removing disjunct " << i << " due to index " << j << endl;
+        DDEC_DEBUG(cout << "Removing disjunct " << i << " due to index " << j << endl;)
         disjs.remove(i);
         i--;
         break;
@@ -485,7 +488,7 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
     }
   }
 
-  cout << "Finished removing dumb disjuncts" << endl;
+  DDEC_DEBUG(cout << "Finished removing dumb disjuncts" << endl;)
 
   // Take the conjunctions in the first disjunct.
   // If they're in the rest, then of the disjuncts, we remove it from all of them
@@ -494,7 +497,7 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
   auto& first_conjunct = *static_cast<ConjunctionInvariant*>(disjs[0]);
   for(size_t i = 0; i < first_conjunct.size(); ++i) {
     auto leaf = first_conjunct[i];
-    cout << "Looking for " << *leaf << " in all disjuncts" << endl;
+    DDEC_DEBUG(cout << "Looking for " << *leaf << " in all disjuncts" << endl;)
 
     bool contained_in_all = true;
     for(size_t j = 1; j < disjs.size(); j++) {
@@ -511,7 +514,7 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 
     // remove the leaf from the conjunction
     if(contained_in_all) {
-      cout << "  found in all :)" << endl;
+      DDEC_DEBUG(cout << "  found in all :)" << endl;)
       common_conjunctions->add_invariant(leaf);
       for(size_t j = 0; j < disjs.size(); j++) {
         auto& other_conjunct = *static_cast<ConjunctionInvariant*>(disjs[j]);
@@ -520,7 +523,7 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
           if(*other_conjunct[k] == *leaf) {
             if(contained && j == 0) {
               //we're in trouble
-              cout << "OOPS!  Simplified and found same thing twice!  WARNING" << endl;
+              DDEC_DEBUG(cout << "OOPS!  Simplified and found same thing twice!  WARNING" << endl;)
             }
             other_conjunct.remove(k);
             contained = true;
@@ -530,13 +533,13 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
       }
       i--;
     } else {
-      cout << "  not found" << endl;
+      DDEC_DEBUG(cout << "  not found" << endl;)
     }
   }
 
   common_conjunctions->add_invariant(&disjs);
 
-  cout << "ALL DONE W/ SIMPLIFY" << endl;
+  DDEC_DEBUG(cout << "ALL DONE W/ SIMPLIFY" << endl;)
 
   return common_conjunctions;
 
@@ -721,7 +724,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
           conj->add_invariant(tzi);
           r64_exclude = r64_exclude + r64s[*it];
         } else {
-          cout << "GOT BAD INVARIANT " << *tzi << endl;
+          DDEC_DEBUG(cout << "GOT BAD INVARIANT " << *tzi << endl;)
           delete tzi;
         }
       }
@@ -731,7 +734,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
         if (nz->check(target_states, rewrite_states)) {
           conj->add_invariant(nz);
         } else {
-          cout << "GOT BAD INVARIANT " << *nz << endl;
+          DDEC_DEBUG(cout << "GOT BAD INVARIANT " << *nz << endl;)
           delete nz;
         }
       }
@@ -754,7 +757,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
   // We need a 'constant' column with the value '1'.
   vector<Column> columns;
 
-  cout << "try sign extend: " << try_sign_extend_ << endl;
+  DDEC_DEBUG(cout << "try sign extend: " << try_sign_extend_ << endl;)
 
   for (size_t k = 0; k < 2; ++k) {
     auto def_ins = k ? rewrite_regs : target_regs;
@@ -787,7 +790,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
   size_t tc_count = target_states.size();
 
   // Build the nullspace matrix
-  cout << "allocating the matrix of size " << tc_count << " x " << num_columns << endl;
+  DDEC_DEBUG(cout << "allocating the matrix of size " << tc_count << " x " << num_columns << endl;)
   uint64_t* matrix = new uint64_t[tc_count*num_columns];
   for (size_t i = 0; i < tc_count; ++i) {
     auto target_state = target_states[i];
@@ -856,9 +859,9 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
     auto ei = new EqualityInvariant(target_map, rewrite_map, -nullspace_out[i][num_columns-1]);
     if (ei->check(target_states, rewrite_states)) {
       conj->add_invariant(ei);
-      cout << *ei << endl;
+      DDEC_DEBUG(cout << *ei << endl;)
     } else {
-      cout << "GOT BAD INVARIANT ? " << *ei << endl;
+      DDEC_DEBUG(cout << "GOT BAD INVARIANT ? " << *ei << endl;)
     }
   }
 
@@ -866,8 +869,8 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
     delete nullspace_out[i];
   delete nullspace_out;
 
-  cout << "Nullspace dimension:" << dec << dim << endl;
-  cout << "Column count: " << dec << num_columns << endl;
+  DDEC_DEBUG(cout << "Nullspace dimension:" << dec << dim << endl;)
+  DDEC_DEBUG(cout << "Column count: " << dec << num_columns << endl;)
 
   return conj;
 }

@@ -45,7 +45,6 @@ public:
 
   ObligationChecker(SMTSolver& solver) : Validator(solver) {
     set_alias_strategy(AliasStrategy::STRING);
-    set_sandbox(NULL);
   }
 
   ~ObligationChecker() {}
@@ -66,11 +65,6 @@ public:
     transformation. */
   ObligationChecker& set_nacl(bool b) {
     nacl_ = b;
-    return *this;
-  }
-  /** Set sandbox to check counterexamples.  Warning!  It will be reset. */
-  ObligationChecker& set_sandbox(Sandbox* sb) {
-    sb_ = sb;
     return *this;
   }
 
@@ -225,8 +219,6 @@ private:
   AliasStrategy alias_strategy_;
   /** Add NaCl constraint for memory? */
   bool nacl_;
-  /** Sandbox to facilitate checking a counterexample */
-  Sandbox* sb_;
 
 
 
