@@ -30,7 +30,7 @@ public:
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
-  std::vector<std::string> full_support_opcodes() {
+  std::vector<x64asm::Opcode> full_support_opcodes() {
     std::vector<std::string> opcodes;
 
     std::vector<std::string> suffixes = {"a", "nbe", "ae", "nb", "nc", "b", "c", "nae",
@@ -47,13 +47,24 @@ public:
       for (auto z : suffix2)
         opcodes.push_back("cmov"+y+z);
 
-
-
-    return opcodes;
+    return Handler::opcodes_convert(opcodes);
   }
 
   /** Returns the condition associated with an instruction */
-  static SymBool condition_predicate(const std::string& cc, const SymState& ss);
+  static SymBool condition_predicate(const std::string& cc, const SymState& ss) {
+    return read_condition<SymBool, SymState>(cc, ss);
+  }
+  /** Returns the condition associateed with an instruction on concrete data. */
+  static bool condition_satisfied(const std::string& cc, const CpuState& cs) {
+    return read_condition<bool, CpuState>(cc, cs);
+  }
+
+private:
+
+  /** You wouldn't believe this, but the implementation of the two condition_* functions
+    is totally identical, except for the names of the types.  Template win. */
+  template <typename U, typename T>
+  static U read_condition(const std::string& cc, const T& data);
 
 };
 

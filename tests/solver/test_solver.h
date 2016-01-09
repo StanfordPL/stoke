@@ -1,7 +1,6 @@
 // Copyright 2013-2015 Stanford University
 //
-// Licensed under the Apache License, Version 2.0 (the License);
-// you may not use this file except in compliance with the License.
+// Licensed under the Apache License, Version 2.0 (the License); // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     http://www.apache.org/licenses/LICENSE-2.0
@@ -13,6 +12,8 @@
 // limitations under the License.
 
 
+#include "src/solver/cvc4solver.h"
+#include "src/solver/z3solver.h"
 #include "src/ext/cpputil/include/container/bit_vector.h"
 
 namespace stoke {
@@ -105,6 +106,14 @@ public:
     return false;
   }
 
+  std::map<cpputil::BitVector,cpputil::BitVector> get_model_array(const std::string& s, uint16_t n, uint16_t m) {
+    for (auto it : solvers_) {
+      if (it->has_model() && !it->has_error()) {
+        return it->get_model_array(s, n, m);
+      }
+    }
+    return std::map<cpputil::BitVector,cpputil::BitVector>();
+  }
 
 
 private:

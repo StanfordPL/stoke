@@ -17,7 +17,7 @@
 ifndef COMPILERBINARY
 	COMPILERBINARY=g++
 endif
-CXX=ccache ${COMPILERBINARY} -std=c++14 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla
+CXX=ccache ${COMPILERBINARY} -std=c++14 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla -fdiagnostics-color=always
 
 # number of threads used for compiling
 ifndef NTHREADS
@@ -52,6 +52,7 @@ LIB=\
 	src/ext/x64asm/lib/libx64asm.a\
 	-pthread\
 	-lcln \
+	-liml -lgmp \
 	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
 	-L src/ext/z3/build -lz3
 
@@ -60,6 +61,7 @@ SRC_OBJ=\
 	src/cfg/cfg_transforms.o \
 	src/cfg/dot_writer.o \
 	src/cfg/paths.o \
+	src/cfg/sccs.o \
 	\
 	src/cost/correctness.o \
 	src/cost/cost_parser.o \
@@ -86,6 +88,7 @@ SRC_OBJ=\
 	\
 	src/stategen/stategen.o \
 	\
+	src/symstate/array.o \
 	src/symstate/bitvector.o \
 	src/symstate/bool.o \
 	src/symstate/function.o \
@@ -94,6 +97,7 @@ SRC_OBJ=\
 	src/symstate/state.o \
 	\
 	src/symstate/memory/cell.o \
+	src/symstate/memory/flat.o \
 	src/symstate/memory/deprecated.o \
 	\
 	src/target/cpu_info.o	\
@@ -112,9 +116,12 @@ SRC_OBJ=\
 	\
 	src/tunit/tunit.o \
 	\
-	src/validator/alias_miner.o \
 	src/validator/bounded.o \
+	src/validator/cutpoints.o \
+	src/validator/ddec.o \
 	src/validator/handler.o \
+	src/validator/invariant.o \
+	src/validator/null.o \
 	src/validator/straight_line.o \
 	src/validator/validator.o \
 	\
@@ -198,6 +205,7 @@ release: haswell_release
 debug: haswell_debug
 profile: haswell_profile
 test: haswell_test
+fast: haswell_test_fast
 
 haswell: haswell_release
 haswell_release:
@@ -211,6 +219,9 @@ haswell_profile:
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
 haswell_test: haswell_debug
 	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG"
+	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
+haswell_test_fast: haswell_debug
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG -DNO_VERY_SLOW_TESTS"
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 
 sandybridge: sandybridge_release
@@ -284,7 +295,7 @@ cpputil:
 .PHONY: x64asm
 x64asm:
 	./scripts/make/submodule-init.sh src/ext/x64asm
-	$(MAKE) -C src/ext/x64asm $(EXT_OPT) COMPILERBINARY=${COMPILERBINARY}
+	$(MAKE) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" COMPILERBINARY=${COMPILERBINARY}
 
 .PHONY: pintool
 pintool:

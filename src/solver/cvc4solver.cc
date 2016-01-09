@@ -108,8 +108,7 @@ Expr Cvc4Solver::ExprConverter::generic_rot(bool left,
     const SymBitVectorAbstract * const x, Expr a, Expr b) {
 
   // Get the size of the argument
-  SymTypecheckVisitor tc;
-  uint16_t size = tc(x);
+  uint16_t size = x->width_;
 
   // Number of bits to rotate, simplified
   Expr amt = em_.mkExpr(kind::BITVECTOR_UREM, b, em_.mkConst(BitVector(size, (uint64_t)size)));
@@ -248,6 +247,13 @@ Expr Cvc4Solver::ExprConverter::visit_compare(const SymBoolCompare * const compa
   return em_.mkExpr(kind::EQUAL, left, right);
 }
 
+/** Visit a bit-vector array lookup */
+Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorArrayLookup * const bv) {
+  error_ = "Arrays not supported by STOKE's CVC4 interface";
+  assert(false);
+  return em_.mkConst(BitVector(bv->a_->value_size_, (uint64_t)0));
+}
+
 /** Visit a bit-vector constant */
 Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorConstant * const bv) {
   return em_.mkConst(BitVector(bv->size_, bv->constant_));
@@ -313,8 +319,7 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorIte * const bv) {
 
 /** Visit a bit-vector sign extension */
 Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorSignExtend * const bv) {
-  SymTypecheckVisitor tc;
-  uint16_t size = tc(bv->bv_);
+  uint16_t size = bv->bv_->width_;
   uint16_t amt = bv->size_ - size;
   return em_.mkExpr(kind::BITVECTOR_SIGN_EXTEND,
                     em_.mkConst(BitVectorSignExtend(amt)), (*this)(bv->bv_));
@@ -330,6 +335,14 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorVar * const bv) {
   } else {
     return variables_[bv->name_];
   }
+}
+
+/** Visit a boolean ARRAY EQ */
+Expr Cvc4Solver::ExprConverter::visit(const SymBoolArrayEq * const b) {
+  auto left = (*this)(b->a_);
+  auto right = (*this)(b->b_);
+
+  return em_.mkExpr(kind::EQUAL, left, right);
 }
 
 /** Visit a boolean FALSE */
@@ -358,5 +371,16 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBoolVar * const b) {
   }
 }
 
+Expr Cvc4Solver::ExprConverter::visit(const SymArrayStore * const b) {
+  error_ = "STOKE doesn't support CVC4's arrays";
+  assert(false);
+  return em_.mkConst(false);
+}
+
+Expr Cvc4Solver::ExprConverter::visit(const SymArrayVar * const b) {
+  error_ = "STOKE doesn't support CVC4's arrays";
+  assert(false);
+  return em_.mkConst(false);
+}
 
 
