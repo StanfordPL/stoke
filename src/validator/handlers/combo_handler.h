@@ -40,10 +40,6 @@ public:
     std::vector<x64asm::Opcode> opcodes;
     for (auto it : handlers_) {
       auto children = it->full_support_opcodes();
-      for (auto x : children) {
-        std::cout << x << std::endl;
-      }
-      std::cout << "---" << std::endl;
       opcodes.insert(opcodes.end(), children.begin(), children.end());
     }
     return opcodes;
