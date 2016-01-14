@@ -39,14 +39,14 @@ void report(bool failed, const x64asm::Instruction& instr,
     std::cout << "  Must undef set:  " << instr.must_undef_set() << std::endl;
     cout << std::endl;
     std::cout << msg << std::endl;
-    std::cout << "State 1:" << std::endl << std::endl;
-    std::cout << a << std::endl << std::endl;
-    std::cout << "State 2:" << std::endl << std::endl;
-    std::cout << b << std::endl << std::endl;
-    std::cout << "Final State 1:" << std::endl << std::endl;
-    std::cout << fa << std::endl << std::endl;
-    std::cout << "Final State 2:" << std::endl << std::endl;
-    std::cout << fb << std::endl << std::endl;
+    // std::cout << "State 1:" << std::endl << std::endl;
+    // std::cout << a << std::endl << std::endl;
+    // std::cout << "State 2:" << std::endl << std::endl;
+    // std::cout << b << std::endl << std::endl;
+    // std::cout << "Final State 1:" << std::endl << std::endl;
+    // std::cout << fa << std::endl << std::endl;
+    // std::cout << "Final State 2:" << std::endl << std::endl;
+    // std::cout << fb << std::endl << std::endl;
     ADD_FAILURE();
   }
 }
