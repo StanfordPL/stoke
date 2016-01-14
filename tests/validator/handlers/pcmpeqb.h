@@ -14,6 +14,8 @@
 
 namespace stoke {
 
+#ifndef NEHALEM_BUILD
+
 class ValidatorPcmpeqbTest : public StraightLineValidatorTest {};
 
 TEST_F(ValidatorPcmpeqbTest, AllZeros) {
@@ -92,5 +94,7 @@ TEST_F(ValidatorPcmpeqbTest, SeveralMatch) {
 
   check_circuit(cs);
 }
+
+#endif
 
 } //namespace stoke
