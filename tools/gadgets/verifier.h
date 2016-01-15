@@ -26,7 +26,6 @@
 #include "src/verifier/verifier.h"
 #include "src/validator/bounded.h"
 #include "src/validator/ddec.h"
-#include "src/validator/straight_line.h"
 
 #include "tools/args/bounded_validator.inc"
 #include "tools/args/ddec_validator.inc"
@@ -122,8 +121,6 @@ private:
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(fxn);
-    } else if (s == "straight_line" || s == "formal") {
-      return new StraightLineValidator(*solver_);
     } else if (s == "none") {
       return new NoneVerifier();
     } else {

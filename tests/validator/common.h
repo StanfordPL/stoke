@@ -19,7 +19,7 @@
 #include "src/ext/cpputil/include/io/fail.h"
 
 #include "src/sandbox/sandbox.h"
-#include "src/validator/straight_line.h"
+#include "src/validator/bounded.h"
 #include "src/validator/handlers/combo_handler.h"
 #include "src/symstate/simplify.h"
 #include "tests/solver/test_solver.h"
@@ -535,7 +535,6 @@ private:
     //  - counterexample
     //  - non-equivalent, no counterexample
 
-    CpuState ceg;
     Outcome outcome = OTHER;
 
     // Check for equivalence
@@ -543,9 +542,7 @@ private:
     // See if an error occurred
     bool error = v_.has_error();
     // See if a counterexample is available
-    bool got_ceg = v_.counter_examples_available();
-    if (got_ceg)
-      ceg = v_.get_counter_examples()[0];
+    size_t got_ceg = v_.counter_examples_available();
     // Later, we'll check if CFG is valid
     bool ceg_is_ok = false;
 
@@ -553,18 +550,18 @@ private:
     if (equiv) {
       if (error) {
         report_error(expected, OTHER, true,
-                     "StraightLineValidator says codes are equivalent, but also returned an error.");
+                     "Validator says codes are equivalent, but also returned an error.");
       }
       if (got_ceg) {
         report_error(expected, OTHER, true,
-                     "StraightLineValidator says codes are equivalent, but also returned counterexample.");
+                     "Validator says codes are equivalent, but also returned counterexample.");
       }
       outcome = EQUIVALENT;
     } else {
       if (got_ceg) {
         if (error) {
           report_error(expected, OTHER, true,
-                       "StraightLineValidator produced counterexample, but also returned an error.");
+                       "Validator produced counterexample, but also returned an error.");
         } else {
           outcome = COUNTEREXAMPLE;
         }
@@ -583,7 +580,8 @@ private:
       report_error(expected, outcome, false);
 
     if (got_ceg && do_check_ceg) {
-      check_ceg(ceg);
+      assert(v_.get_counter_examples().size());
+      check_ceg(v_.get_counter_examples()[0]);
     }
   }
 
@@ -617,8 +615,12 @@ private:
   }
 
   /* Used to build a validator */
-  StraightLineValidator make_validator() {
-    StraightLineValidator v(s_);
+  BoundedValidator make_validator() {
+    BoundedValidator v(s_);
+    // historically these tests have not been used to check
+    // equivalence of final heap states
+    v.set_heap_out(false);
+    v.set_stack_out(false);
     return v;
   }
 
@@ -627,7 +629,7 @@ private:
   bool ceg_shown_;
 
   /* The validator we're using */
-  StraightLineValidator v_;
+  BoundedValidator v_;
   /* The solver we're using */
   TestSolver s_;
 

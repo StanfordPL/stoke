@@ -62,6 +62,8 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
   if(checker_has_ceg()) {
     assert(!equiv);
     counterexamples_.push_back(checker_get_target_ceg());
+    target_final_state_ = checker_get_target_ceg_end();
+    rewrite_final_state_ = checker_get_rewrite_ceg_end();
   } 
 
   return equiv;
