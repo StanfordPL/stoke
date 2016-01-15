@@ -123,7 +123,6 @@ SRC_OBJ=\
 	src/validator/invariant.o \
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
-	src/validator/straight_line.o \
 	src/validator/validator.o \
 	\
 	src/validator/handlers/add_handler.o \
