@@ -93,6 +93,17 @@ protected:
     return ceg_r_;
   }
 
+  /** Note -- this won't be right for memory. */
+  CpuState checker_get_target_ceg_end() {
+    return ceg_tf_;
+  }
+  /** Note -- this won't be right for memory. */
+  CpuState checker_get_rewrite_ceg_end() {
+    return ceg_rf_;
+  }
+
+
+
 private: 
   
   ///////////// These methods handle memory ///////////////////
@@ -206,10 +217,12 @@ private:
 
   /////////////// Bookkeeping //////////////////
 
-  /** Target counterexample */
+  /** Target counterexample and end state */
   CpuState ceg_t_;
-  /** Rewrite counterexample */
+  CpuState ceg_tf_;
+  /** Rewrite counterexample and end state */
   CpuState ceg_r_;
+  CpuState ceg_rf_;
   /** Do we have a counterexample? */
   bool have_ceg_;
 

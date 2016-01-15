@@ -1288,8 +1288,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     if (is_sat) {
       ceg_t_ = Validator::state_from_model(solver_, "_1_INIT");
       ceg_r_ = Validator::state_from_model(solver_, "_2_INIT");
-      auto ceg_tf = Validator::state_from_model(solver_, "_1_FINAL");
-      auto ceg_rf = Validator::state_from_model(solver_, "_2_FINAL");
+      ceg_tf_ = Validator::state_from_model(solver_, "_1_FINAL");
+      ceg_rf_ = Validator::state_from_model(solver_, "_2_FINAL");
 
       bool ok = build_testcase_memory(ceg_t_, 
                                          dynamic_cast<CellMemory*>(state_t.memory),
@@ -1301,12 +1301,12 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
                                dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
 
-      ok &= build_testcase_memory(ceg_tf, 
+      ok &= build_testcase_memory(ceg_tf_, 
                                dynamic_cast<CellMemory*>(state_t.memory),
                                dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
 
-      ok &= build_testcase_memory(ceg_rf, 
+      ok &= build_testcase_memory(ceg_rf_, 
                                dynamic_cast<CellMemory*>(state_t.memory),
                                dynamic_cast<CellMemory*>(state_r.memory),
                                target, rewrite);
@@ -1322,9 +1322,9 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
       CEG_DEBUG(cout << "REWRITE START STATE" << endl;)
       CEG_DEBUG(cout << ceg_r_ << endl;)
       CEG_DEBUG(cout << "TARGET (expected) END STATE" << endl;)
-      CEG_DEBUG(cout << ceg_tf << endl;)
+      CEG_DEBUG(cout << ceg_tf_ << endl;)
       CEG_DEBUG(cout << "REWRITE (expected) END STATE" << endl;)
-      CEG_DEBUG(cout << ceg_rf << endl;)
+      CEG_DEBUG(cout << ceg_rf_ << endl;)
 
 
       if (check_counterexample(target, rewrite, P, Q, assume, prove, ceg_t_, ceg_r_)) {

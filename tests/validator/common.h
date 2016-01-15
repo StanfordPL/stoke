@@ -19,7 +19,7 @@
 #include "src/ext/cpputil/include/io/fail.h"
 
 #include "src/sandbox/sandbox.h"
-#include "src/validator/straight_line.h"
+#include "src/validator/bounded.h"
 #include "src/validator/handlers/combo_handler.h"
 #include "src/symstate/simplify.h"
 #include "tests/solver/test_solver.h"
@@ -617,8 +617,8 @@ private:
   }
 
   /* Used to build a validator */
-  StraightLineValidator make_validator() {
-    StraightLineValidator v(s_);
+  BoundedValidator make_validator() {
+    BoundedValidator v(s_);
     return v;
   }
 
@@ -627,7 +627,7 @@ private:
   bool ceg_shown_;
 
   /* The validator we're using */
-  StraightLineValidator v_;
+  BoundedValidator v_;
   /* The solver we're using */
   TestSolver s_;
 
