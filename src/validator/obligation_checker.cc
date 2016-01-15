@@ -39,6 +39,11 @@ using namespace x64asm;
 
 bool ObligationChecker::build_testcase_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const {
 
+  if(!target_memory || !rewrite_memory) {
+    BUILD_TC_DEBUG(cout << "[build tc] no memory found" << endl;)
+    return false;
+  }
+
   std::map<uint64_t, BitVector> addr_value_pairs;
 
   // Allocate a tiny bit of stack memory
@@ -47,36 +52,30 @@ bool ObligationChecker::build_testcase_memory(CpuState& ceg, const CellMemory* t
   zeros.get_fixed_quad(0) = 0;
   addr_value_pairs[rsp_val-8] = zeros;
 
+  for (size_t k = 0; k < 2; ++k) {
+    auto& memory = k ? *rewrite_memory : *target_memory;
+    auto access_map = memory.get_line_cell_map();
 
-  if (target_memory && rewrite_memory) {
+    for (auto pair : access_map) {
+      auto access = pair.second;
+      auto cell = access.cell;
 
-    for (size_t k = 0; k < 2; ++k) {
-      auto& memory = k ? *rewrite_memory : *target_memory;
-      auto access_map = memory.get_line_cell_map();
+      stringstream ss;
+      ss << "CELL_" << cell << "_ADDR";
 
-      for (auto pair : access_map) {
-        auto access = pair.second;
-        auto cell = access.cell;
+      auto addr_bv = solver_.get_model_bv(ss.str(), 64);
+      auto address = addr_bv.get_fixed_quad(0);
 
-        stringstream ss;
-        ss << "CELL_" << cell << "_ADDR";
+      assert(memory.init_cells_.count(cell));
+      const SymBitVector* v = &memory.init_cells_.at(cell);
+      auto value_var = dynamic_cast<const SymBitVectorVar*>(v->ptr);
+      auto value_bv = solver_.get_model_bv(value_var->get_name(), value_var->get_size());
 
-        auto addr_bv = solver_.get_model_bv(ss.str(), 64);
-        auto address = addr_bv.get_fixed_quad(0);
+      BUILD_TC_DEBUG(cout << "[build tc] Cell " << cell << " address = " << hex << address
+                     << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;)
 
-        assert(memory.init_cells_.count(cell));
-        const SymBitVector* v = &memory.init_cells_.at(cell);
-        auto value_var = dynamic_cast<const SymBitVectorVar*>(v->ptr);
-        auto value_bv = solver_.get_model_bv(value_var->get_name(), value_var->get_size());
-
-        BUILD_TC_DEBUG(cout << "[build tc] Cell " << cell << " address = " << hex << address
-                       << "; has " << value_bv.num_fixed_bytes() << " bytes" << endl;)
-
-        addr_value_pairs[address] = value_bv;
-      }
+      addr_value_pairs[address] = value_bv;
     }
-  } else {
-    BUILD_TC_DEBUG(cout << "[build tc] no memory found" << endl;)
   }
 
   BUILD_TC_DEBUG(
@@ -1312,9 +1311,11 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
                                target, rewrite);
 
 
-      // Things will only break here if one of the target/rewrite has memory
-      // and other doesn't.  Hopefully this won't ever happen.
-      assert(ok);
+      if(!ok) {
+        // We don't have memory accurate in our counterexample.  Just leave.
+        have_ceg_ = false;
+        CEG_DEBUG(cout << "(  Counterexample does not have accurate memory)" << endl;)
+      }
 
       CEG_DEBUG(cout << "  (Got counterexample)" << endl;)
       CEG_DEBUG(cout << "TARGET START STATE" << endl;)
