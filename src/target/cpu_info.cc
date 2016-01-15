@@ -167,6 +167,7 @@ FlagSet CpuInfo::get_flags() {
   result -= Flag::BMI1;
   result -= Flag::BMI2;
   result -= Flag::FMA;
+  result -= Flag::F16C;
 #endif
 #ifdef NEHALEM_BUILD
   result -= Flag::AVX;

@@ -81,6 +81,7 @@ using namespace x64asm;
 #include "tests/validator/memory.h"
 #include "tests/x64asm/parsing.h"
 #include "tests/transform/transform.h"
+#include "tests/sandbox/sandbox_fuzzer.h"
 
 #endif
 
