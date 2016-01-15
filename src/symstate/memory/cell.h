@@ -24,6 +24,7 @@ namespace stoke {
 /** Keeps track of a fixed, finite number of symbolic memory locations ("cells") */
 class CellMemory : public SymMemory {
   friend class BoundedValidator;
+  friend class ObligationChecker;
 
 public:
 

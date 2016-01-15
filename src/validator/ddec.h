@@ -18,15 +18,16 @@
 #include "src/validator/cutpoints.h"
 #include "src/validator/invariant.h"
 #include "src/validator/invariants/conjunction.h"
+#include "src/validator/obligation_checker.h"
 #include "src/validator/validator.h"
 
 namespace stoke {
 
-class DdecValidator : public Validator {
+class DdecValidator : public ObligationChecker {
 
 public:
 
-  DdecValidator(SMTSolver& solver) : Validator(solver), bv_(solver) {
+  DdecValidator(SMTSolver& solver) : ObligationChecker(solver) {
     cutpoints_ = NULL;
     set_no_bv(false);
     set_sound_nullspace(false);
@@ -56,13 +57,18 @@ public:
     return *this;
   }
   /** Set the aliasing strategy for bounded validator */
-  DdecValidator& set_alias_strategy(BoundedValidator::AliasStrategy as) {
+  DdecValidator& set_alias_strategy(ObligationChecker::AliasStrategy as) {
     alias_strategy_ = as;
     return *this;
   }
   /** Set the bound for bounded validator */
   DdecValidator& set_bound(size_t bound) {
     bound_ = bound;
+    return *this;
+  }
+  /** Turn on NaCl Mode */
+  DdecValidator& set_nacl(bool nacl) {
+    nacl_ = nacl;
     return *this;
   }
  
@@ -88,10 +94,6 @@ private:
   /** Print a summary of what we've done */
   void print_summary(const std::vector<ConjunctionInvariant*>&);
 
-
-
-  /** Bounded Validator */
-  BoundedValidator bv_;
   /** Bound */
   size_t bound_;
 
@@ -105,7 +107,10 @@ private:
   /** Use the sound nullspace computation? */
   bool sound_nullspace_;
   /** Aliasing strategy for bounded validator. */
-  BoundedValidator::AliasStrategy alias_strategy_;
+  ObligationChecker::AliasStrategy alias_strategy_;
+
+  /** Nacl */
+  bool nacl_;
 };
 
 } // namespace stoke
