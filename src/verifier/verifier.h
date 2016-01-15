@@ -37,7 +37,11 @@ public:
 
   /** Add a sandbox for this verifier to use. */
   virtual Verifier& set_sandbox(Sandbox* sb) {
-    sandbox_ = new Sandbox(*sb);
+    if(sb == NULL)
+      sandbox_ = NULL;
+    else
+      sandbox_ = new Sandbox(*sb);
+
     return *this;
   }
 

@@ -1980,6 +1980,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushesAntialias) {
 
 }
 
+/*  // TODO: this can be a test for the obligation checker
 TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::r15 + x64asm::rax;
@@ -2107,6 +2108,7 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
     std::cout << it << std::endl;
   }
 }
+*/
 
 TEST_F(BoundedValidatorBaseTest, NoSpuriousCeg) {
 
