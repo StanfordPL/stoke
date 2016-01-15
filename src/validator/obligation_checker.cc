@@ -21,13 +21,13 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define OBLIG_DEBUG(X) { X }
+#define OBLIG_DEBUG(X) { }
 #define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { X }
+#define CEG_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -99,7 +99,6 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
   auto new_f = new_cfg.get_function();
   new_f.push_back(x64asm::Instruction(x64asm::RET));
   new_cfg = Cfg(new_f, new_cfg.def_ins(), new_cfg.live_outs());
-  cout << "Checking and here's the CFG: " << endl << new_cfg.get_code() << endl;
 
   sb.clear_inputs();
   sb.clear_callbacks();

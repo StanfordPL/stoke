@@ -21,7 +21,7 @@ class DdecValidatorLongTest : public DdecValidatorBaseTest {
 
 TEST_F(DdecValidatorLongTest, MemcpyCorrect) {
 
-  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty();
 
   std::stringstream sst;
@@ -56,7 +56,8 @@ TEST_F(DdecValidatorLongTest, MemcpyCorrect) {
 
   validator->set_bound(3);
 
-  // If we set this to flat we get some bad invariants
+  // If we set this to flat we get some bad counterexamples until
+  // flat gives us ones with proper memory contents
   validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();

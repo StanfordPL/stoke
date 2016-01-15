@@ -31,7 +31,7 @@
 
 #include <algorithm>
 
-#define DDEC_DEBUG(X) { X }
+#define DDEC_DEBUG(X) { }
 
 using namespace std;
 using namespace stoke;
