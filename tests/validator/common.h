@@ -619,6 +619,10 @@ private:
   /* Used to build a validator */
   BoundedValidator make_validator() {
     BoundedValidator v(s_);
+    // historically these tests have not been used to check
+    // equivalence of final heap states
+    v.set_heap_out(false);
+    v.set_stack_out(false);
     return v;
   }
 
