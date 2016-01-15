@@ -46,7 +46,6 @@ using namespace x64asm;
 #include "tests/x64asm/opc_set.h"
 #include "tests/x64asm/assembler.h"
 #include "tests/x64asm/instruction.h"
-#include "tests/analysis/analysis.h"
 #include "tests/cfg/cfg_tests.h"
 #include "tests/cost/cost.h"
 #include "tests/expr/expr.h"

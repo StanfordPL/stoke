@@ -119,20 +119,6 @@ pair<SymBitVector, SymBool> DeprecatedMemory::read(SymBitVector address, uint16_
 
     bool must_overlap = false;
 
-    if (analysis_) {
-      if (!analysis_->may_overlap(write.line_no, line_no)) {
-        //cout << "Write @" << write.address << " on line " << write.line_no << " cannot overlap" << std::endl;
-        continue;
-      }
-
-      must_overlap = analysis_->must_overlap(write.line_no, line_no);
-      if (must_overlap && write.size == size) {
-        value = write.value;
-        //cout << "Write @" << write.address << " on line " << write.line_no << " must overlap" << std::endl;
-        continue;
-      }
-    }
-
     //cout << "Write @" << write.address << " on line " << write.line_no << " has no aliasing info" << std::endl;
 
     // Case 0:
