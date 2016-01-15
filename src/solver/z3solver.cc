@@ -135,6 +135,8 @@ cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t bits)
     }
   }
 
+  assert(result.num_bits() == bits);
+
   return result;
 }
 

@@ -100,10 +100,12 @@ public:
   cpputil::BitVector get_model_bv(const std::string& s, uint16_t n) {
     for (auto it : solvers_) {
       if (it->has_model() && !it->has_error()) {
-        return it->get_model_bv(s, n);
+        auto bv = it->get_model_bv(s, n);
+        assert(bv.num_bits() == n);
+        return bv;
       }
     }
-    return false;
+    return cpputil::BitVector(n);
   }
 
   std::map<cpputil::BitVector,cpputil::BitVector> get_model_array(const std::string& s, uint16_t n, uint16_t m) {
