@@ -54,6 +54,10 @@ TEST_F(DdecValidatorLongTest, MemcpyCorrect) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  validator->set_bound(3);
+
+  // If we set this to flat we get some bad invariants
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 

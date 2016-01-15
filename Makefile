@@ -231,7 +231,7 @@ haswell_profile:
 haswell_test: haswell_tests
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 haswell_tests: haswell_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -g"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -g -DNDEBUG"
 haswell_test_fast: haswell_fast_tests
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 haswell_fast_tests: haswell_debug

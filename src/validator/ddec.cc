@@ -111,6 +111,8 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
           if (!equiv && checker_has_ceg()) {
             results.push_back(checker_get_target_ceg());
             return results;
+          } else if (!equiv) {
+            DDEC_DEBUG(cout << "  [Check failed, but didn't get counterexample]" << endl;)
           }
         }
       }

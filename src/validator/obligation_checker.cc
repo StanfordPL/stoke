@@ -21,12 +21,13 @@
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
 
-#define OBLIG_DEBUG(X) { }
+#define OBLIG_DEBUG(X) { X }
+#define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { }
+#define CEG_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -95,6 +96,11 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
   Sandbox sb(*sandbox_);
 
   auto new_cfg = CfgPaths::rewrite_cfg_with_path(cfg, P);
+  auto new_f = new_cfg.get_function();
+  new_f.push_back(x64asm::Instruction(x64asm::RET));
+  new_cfg = Cfg(new_f, new_cfg.def_ins(), new_cfg.live_outs());
+  cout << "Checking and here's the CFG: " << endl << new_cfg.get_code() << endl;
+
   sb.clear_inputs();
   sb.clear_callbacks();
   sb.insert_input(state);
@@ -1173,7 +1179,11 @@ void ObligationChecker::delete_memories(std::vector<std::pair<CellMemory*, CellM
 bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
   OBLIG_DEBUG(cout << "===========================================" << endl;)
-  OBLIG_DEBUG(cout << "Working on pair / P: " << print(P) << " Q: " << print(Q) << endl;)
+  OBLIG_DEBUG(cout << "Obligation Check." << endl;)
+  OBLIG_DEBUG(cout << "Paths P: " << print(P) << " Q: " << print(Q) << endl;)
+  OBLIG_DEBUG(cout << "Assuming: " << assume << endl;)
+  OBLIG_DEBUG(cout << "Proving: " << prove << endl;)
+  OBLIG_DEBUG(cout << "----" << endl;)
   init_mm();
   have_ceg_ = false;
 
@@ -1185,7 +1195,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
   for (auto memories : memory_list) {
     OBLIG_DEBUG(cout << "------ NEXT ALIASING CASE -----" << endl;)
-    OBLIG_DEBUG(
+    ALIAS_DEBUG(
     if (memories.first) {
     cout << "TARGET MAP:" << endl;
     for (auto q : memories.first->get_line_cell_map()) {
@@ -1218,7 +1228,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
     // Add given assumptions
     auto assumption = assume(state_t, state_r);
-    OBLIG_DEBUG(cout << "Assuming " << assumption << endl;);
+    CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
     constraints.push_back(assumption);
 
     // Build the circuits
@@ -1249,7 +1259,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
     constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
 
-    OBLIG_DEBUG(
+    CONSTRAINT_DEBUG(
       cout << endl << "CONSTRAINTS" << endl << endl;;
     for (auto it : constraints) {
     cout << it << endl;
@@ -1257,7 +1267,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
     // Build inequality constraint
     auto prove_constraint = !prove(state_t, state_r);
-    OBLIG_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
+    CONSTRAINT_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
 
     constraints.push_back(prove_constraint);
 
