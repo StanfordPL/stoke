@@ -84,6 +84,7 @@ cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t bit
     bv[i] = ret.isBitSet(i);
   }
 
+  assert(bv.num_bits() == bits);
   return bv;
 }
 

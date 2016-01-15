@@ -34,14 +34,10 @@
 namespace stoke {
 
 class BoundedValidator : public ObligationChecker {
-  friend class DdecValidator;
-  FRIEND_TEST(BoundedValidatorBaseTest, WcpcpyA);
-  FRIEND_TEST(BoundedValidatorBaseTest, WcpcpyB);
-  FRIEND_TEST(BoundedValidatorBaseTest, WcpcpyC);
 
 public:
 
-  BoundedValidator(SMTSolver& solver) : ObligationChecker(solver) {
+  BoundedValidator(SMTSolver& solver) : ObligationChecker(solver), target_final_state_(), rewrite_final_state_() {
     set_bound(2);
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(false);
@@ -84,7 +80,23 @@ public:
   }
 
 
+  /** Get the expected final state of the target after running counterexample. 
+    (This is only for the fuzz tester, basically).  It is only valid if we just
+    returned a counterexample.  It also doesn't handle memory writes right. */
+  CpuState get_target_final_state() {
+    return target_final_state_;
+  }
+  /** Get the expected final state of the rewrite.  See caveats above. */
+  CpuState get_rewrite_final_state() {
+    return rewrite_final_state_;
+  }
+
 private:
+
+  /** The final state of the target for last counterexample. */
+  CpuState target_final_state_;
+  /** The final state of the rewrite for last counterexample. */
+  CpuState rewrite_final_state_;
 
   /** The bound on iterations */
   size_t bound_;
