@@ -64,7 +64,7 @@ TEST_F(DdecValidatorLongTest, MemcpyCorrect) {
 
 }
 
-TEST_F(DdecValidatorLongTest, WcslenCorrect) {
+TEST_F(DdecValidatorLongTest, DISABLED_WcslenCorrect) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -190,13 +190,14 @@ TEST_F(DdecValidatorLongTest, WcslenCorrect) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
 
 }
 
-TEST_F(DdecValidatorLongTest, WcslenCorrect3) {
+TEST_F(DdecValidatorLongTest, DISABLED_WcslenCorrect3) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -244,7 +245,7 @@ TEST_F(DdecValidatorLongTest, WcslenCorrect3) {
   ssr << "jne .L_10" << std::endl;
   ssr << "nop" << std::endl;
   ssr << "subl %ecx, %eax" << std::endl;
-  ssr << "shrq $0x2, %rax" << std::endl;
+  ssr << "sarl $0x2, %rax" << std::endl;
   ssr << "retq" << std::endl;
   ssr << "nop" << std::endl;
   ssr << ".L_22:" << std::endl;
@@ -256,12 +257,13 @@ TEST_F(DdecValidatorLongTest, WcslenCorrect3) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
 
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
 }
 
-TEST_F(DdecValidatorLongTest, WcslenWrong4) {
+TEST_F(DdecValidatorLongTest, DISABLED_WcslenWrong4) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -309,7 +311,7 @@ TEST_F(DdecValidatorLongTest, WcslenWrong4) {
   ssr << "jne .L_10" << std::endl;
   ssr << "nop" << std::endl;
   ssr << "subl %ecx, %eax" << std::endl;
-  ssr << "shrq $0x2, %rax" << std::endl;
+  ssr << "sarl $0x2, %rax" << std::endl;
   ssr << "retq" << std::endl;
   ssr << "nop" << std::endl;
   ssr << ".L_22:" << std::endl;
@@ -321,12 +323,13 @@ TEST_F(DdecValidatorLongTest, WcslenWrong4) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
 
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
 }
 
-TEST_F(DdecValidatorLongTest, WcslenWrong5) {
+TEST_F(DdecValidatorLongTest, DISABLED_WcslenWrong5) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -386,6 +389,7 @@ TEST_F(DdecValidatorLongTest, WcslenWrong5) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
 
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 

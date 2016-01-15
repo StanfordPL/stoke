@@ -1120,7 +1120,7 @@ TEST_F(DdecValidatorBaseTest, WcscpyWrong1) {
 
 }*/
 
-TEST_F(DdecValidatorBaseTest, MemcpyCorrectPushesAntialias) {
+TEST_F(DdecValidatorBaseTest, DISABLED_MemcpyCorrectPushesAntialias) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx + x64asm::rsp + x64asm::r10 + x64asm::rbx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rsp;
@@ -1165,7 +1165,7 @@ TEST_F(DdecValidatorBaseTest, MemcpyCorrectPushesAntialias) {
 
 }
 
-TEST_F(DdecValidatorBaseTest, WcpcpyA) {
+TEST_F(DdecValidatorBaseTest, DISABLED_WcpcpyA) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::r15 + x64asm::rax;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
