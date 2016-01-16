@@ -35,93 +35,97 @@ Handler::SupportLevel ConditionalHandler::get_support(const x64asm::Instruction&
 
 }
 
-SymBool ConditionalHandler::condition_predicate(const string& cc, const SymState& ss) {
-
+template <typename U, typename T>
+U ConditionalHandler::read_condition(const string& cc, const T& state) {
 
   //CF = 0 and ZF = 0
   if (cc == "a" || cc == "nbe") {
-    return !ss[eflags_cf] & !ss[eflags_zf];
+    return (!state[eflags_cf]) & (!state[eflags_zf]);
   }
 
   // CF = 0
   if (cc == "ae" || cc == "nb" || cc == "nc") {
-    return !ss[eflags_cf];
+    return !state[eflags_cf];
   }
 
   // CF = 1
   if (cc == "b" || cc == "c" || cc == "nae") {
-    return ss[eflags_cf];
+    return state[eflags_cf];
   }
 
   // CF = 1 OR ZF = 1
   if (cc == "be" || cc == "na") {
-    return ss[eflags_cf] | ss[eflags_zf];
+    return state[eflags_cf] | state[eflags_zf];
   }
 
   // ZF = 1
   if (cc == "e" || cc == "z") {
-    return ss[eflags_zf];
+    return state[eflags_zf];
   }
 
   // ZF = 0 and SF = OF
   if (cc == "g" || cc == "nle") {
-    return !ss[eflags_zf] & (ss[eflags_sf] == ss[eflags_of]);
+    return (!state[eflags_zf]) & (state[eflags_sf] == state[eflags_of]);
   }
 
   // SF = OF
   if (cc == "ge" || cc == "nl") {
-    return ss[eflags_sf] == ss[eflags_of];
+    return state[eflags_sf] == state[eflags_of];
   }
 
   // SF != OF
   if (cc == "l" || cc == "nge") {
-    return ss[eflags_sf] != ss[eflags_of];
+    return state[eflags_sf] != state[eflags_of];
   }
 
   // ZF = 1 or SF != OF
   if (cc == "le" || cc == "ng") {
-    return ss[eflags_zf] | (ss[eflags_sf] != ss[eflags_of]);
+    return state[eflags_zf] | (state[eflags_sf] != state[eflags_of]);
   }
 
   // ZF = 0
   if (cc == "ne" || cc == "nz") {
-    return !ss[eflags_zf];
+    return !state[eflags_zf];
   }
 
   // OF = 0
   if (cc == "no") {
-    return !ss[eflags_of];
+    return !state[eflags_of];
   }
 
   // PF = 0
   if (cc == "np" || cc == "po") {
-    return !ss[eflags_pf];
+    return !state[eflags_pf];
   }
 
   // SF = 0
   if (cc == "ns") {
-    return !ss[eflags_sf];
+    return !state[eflags_sf];
   }
 
   // OF = 1
   if (cc == "o") {
-    return ss[eflags_of];
+    return state[eflags_of];
   }
 
   // PF = 1
   if (cc == "p" || cc == "pe") {
-    return ss[eflags_pf];
+    return state[eflags_pf];
   }
 
   // SF = 1
   if (cc == "s") {
-    return ss[eflags_sf];
+    return state[eflags_sf];
   }
 
-  string message = "Condition flag " + cc + " is not handled.";
-  throw VALIDATOR_ERROR(message);
+  string mestateage = "Condition flag " + cc + " is not handled.";
+  throw VALIDATOR_ERROR(mestateage);
 
 }
+
+template SymBool ConditionalHandler::read_condition<SymBool, SymState>(const string&, const SymState&);
+template bool ConditionalHandler::read_condition<bool, CpuState>(const string&, const CpuState&);
+
 
 void ConditionalHandler::build_circuit(const x64asm::Instruction& instr, SymState& state) {
 

@@ -16,7 +16,6 @@
 #ifndef STOKE_SRC_SYMSTATE_MEMORY_DEPRECATED_H
 #define STOKE_SRC_SYMSTATE_MEMORY_DEPRECATED_H
 
-#include "src/analysis/alias.h"
 #include "src/state/memory.h"
 #include "src/symstate/memory.h"
 
@@ -28,13 +27,7 @@ class DeprecatedMemory : public SymMemory {
 
 public:
 
-  DeprecatedMemory() : analysis_(NULL) {}
-
-  /** Setup an aliasing analysis */
-  DeprecatedMemory& set_analysis(AliasAnalysis* aa) {
-    analysis_ = aa;
-    return *this;
-  }
+  DeprecatedMemory() {}
 
   /** Updates the memory with a write.
    *  Returns condition for segmentation fault */
@@ -49,6 +42,10 @@ public:
   /** Get variables holding all addresses encountered so far.  Good for extracting data from
     * a model. */
   std::vector<std::pair<std::string, uint16_t>> get_address_vars() const;
+
+  std::string get_type() const {
+    return "deprecated";
+  }
 
 private:
 
@@ -71,10 +68,6 @@ private:
   std::vector<MemoryAccess> writes_;
   /** Keep track of all the memory reads */
   std::vector<MemoryAccess> reads_;
-
-  /** Optional aliasing analysis for simplication */
-  AliasAnalysis* analysis_;
-
 
 };
 

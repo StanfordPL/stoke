@@ -37,7 +37,7 @@ public:
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
 
-  virtual std::vector<std::string> full_support_opcodes() {
+  virtual std::vector<x64asm::Opcode> full_support_opcodes() {
     std::vector<std::string> opcodes;
 
     for (auto it : operator_0_)
@@ -51,7 +51,7 @@ public:
     for (auto it : operator_4_)
       opcodes.push_back(it.first);
 
-    return opcodes;
+    return Handler::opcodes_convert(opcodes);
   }
 
 private:

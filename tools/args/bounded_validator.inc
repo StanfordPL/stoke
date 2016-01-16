@@ -37,6 +37,10 @@ cpputil::ValueArg<std::string>& alias_strategy_arg =
   .description("How to handle aliasing")
   .default_val("string");
 
+cpputil::FlagArg& no_bailout_arg =
+ cpputil::FlagArg::create("no_early_bailout")
+ .description("Do not bailout once first counterexample found");
+
 } // namespace stoke
 
 #endif

@@ -58,6 +58,12 @@ public:
   /** Get the satisfying assignment for a bit from the model. */
   bool get_model_bool(const std::string& var);
 
+  std::map<cpputil::BitVector, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) {
+    std::cout << "Arrays not yet supported for CVC4! (limitation of stoke, not CVC4)"  << std::endl;
+    error_ = "Arrays not yet supported for CVC4! (limitation of stoke, not CVC4)";
+    return std::map<cpputil::BitVector, cpputil::BitVector>();
+  }
+
   void reset() {
     variables_ = std::map<std::string, CVC4::Expr>();
     uninterpreted_ = false;
@@ -73,22 +79,11 @@ private:
 
 
   /** This class converts symbolic bit-vectors into Z3's format. */
-  class ExprConverter : public SymVisitor<CVC4::Expr, CVC4::Expr> {
+  class ExprConverter : public SymVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr> {
 
   public:
     ExprConverter(Cvc4Solver* parent) : em_(parent->em_), variables_(parent->variables_),
       uninterpreted_(&(parent->uninterpreted_)) {}
-
-    /** Visit some bit vector */
-    CVC4::Expr operator()(const SymBitVector& bv) {
-      error_ = "";
-      return SymVisitor<CVC4::Expr, CVC4::Expr>::operator()(bv.ptr);
-    }
-    /** Visit some bit bool */
-    CVC4::Expr operator()(const SymBool& b) {
-      error_ = "";
-      return SymVisitor<CVC4::Expr, CVC4::Expr>::operator()(b.ptr);
-    }
 
     /** Visit bit-vector binop */
     CVC4::Expr visit_binop(const SymBitVectorBinop * const bv);
@@ -99,6 +94,8 @@ private:
     /** Visit bit-vector compare */
     CVC4::Expr visit_compare(const SymBoolCompare * const bv);
 
+    /** Visit a bit-vector array lookup */
+    CVC4::Expr visit(const SymBitVectorArrayLookup * const bv);
     /** Visit a bit-vector constant */
     CVC4::Expr visit(const SymBitVectorConstant * const bv);
     /** Visit a bit-vector extract */
@@ -113,6 +110,8 @@ private:
     CVC4::Expr visit(const SymBitVectorVar * const bv);
 
     /** Visit a boolean FALSE */
+    CVC4::Expr visit(const SymBoolArrayEq * const b);
+    /** Visit a boolean FALSE */
     CVC4::Expr visit(const SymBoolFalse * const b);
     /** Visit a boolean NOT */
     CVC4::Expr visit(const SymBoolNot * const b);
@@ -120,6 +119,12 @@ private:
     CVC4::Expr visit(const SymBoolTrue * const b);
     /** Visit a boolean VAR */
     CVC4::Expr visit(const SymBoolVar * const b);
+
+    /** Visit an array STORE */
+    CVC4::Expr visit(const SymArrayStore * const a);
+    /** Visit an array VAR */
+    CVC4::Expr visit(const SymArrayVar * const a);
+
 
     /** See if there's an error */
     bool has_error() {

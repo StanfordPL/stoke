@@ -36,9 +36,11 @@ private:
   /** Simplification cache for bools. */
   std::map<SymBoolAbstract*, SymBoolAbstract*> cache_bool1_;
   std::map<SymBoolAbstract*, SymBoolAbstract*> cache_bool2_;
+  std::map<SymBoolAbstract*, SymBoolAbstract*> cache_bool3_;
   /** Simplification cache for bitvectors. */
   std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits1_;
   std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits2_;
+  std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits3_;
 };
 
 } // namespace stoke

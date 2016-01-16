@@ -50,3 +50,5 @@ time:
 
 clean:
 	rm -rf bins ./a.out *.tc *result.s stoke.s *.o
+
+.PHONY: time clean rebuild extract orig_llvm orig_gcc synth opt testcase search_opt search_synth

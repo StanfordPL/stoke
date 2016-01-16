@@ -185,6 +185,22 @@ TEST_F(IntegrationTest, ExamplesExp) {
 }
 #endif
 
+// Disabled for now, see #788, because it is too slow in debug mode
+// TEST_F(IntegrationTest, ExamplesBansal) {
+//   set_working_dir("examples/bansal");
+//   set_path("../../bin");
+
+//   // In 10 tries, search should succeed at least once...
+//   bool good = false;
+//   for (size_t i = 0; i < 10 && good == false; ++i) {
+//     if (shell("make") == 0ull) {
+//       good = true;
+//     }
+//     EXPECT_EQ(0ull, shell("make clean"));
+//   }
+//   EXPECT_EQ(good, true);
+// }
+
 TEST_F(IntegrationTest, CostLiveOut) {
   set_working_dir("tests/fixtures/cost/live_out");
   set_path("../../../../bin");
