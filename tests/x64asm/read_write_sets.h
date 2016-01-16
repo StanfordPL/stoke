@@ -17,63 +17,11 @@
 #include <set>
 #include <sys/time.h>
 
+#include "tests/fuzzer.h"
+#include "tests/x64asm/helper.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 namespace stoke {
-
-bool check(uint64_t a, uint64_t b, const std::string& msg, std::ostream& os) {
-  if (a == b) {
-    return false;
-  }
-  os << msg << std::endl;
-  os << "  In state 1: 0x" << std::hex << a << std::endl;
-  os << "  In state 2: 0x" << std::hex << b << std::endl;
-  return true;
-}
-
-void report(bool failed, const x64asm::Instruction& instr,
-            const stoke::CpuState& a, const stoke::CpuState& b,
-            const stoke::CpuState& fa, const stoke::CpuState& fb,
-            const std::string& msg) {
-  if (failed) {
-    std::cout << std::endl << "SpreadsheetReadWriteSetFuzzTest Failed!" << std::endl << std::endl;
-    std::cout << "Instruction: " << instr << std::endl;
-    std::cout << "  Maybe read set: " << instr.maybe_read_set() << std::endl;
-    std::cout << "  Must write set: " << instr.must_write_set() << std::endl << std::endl;
-    std::cout << msg << std::endl;
-    std::cout << "State 1:" << std::endl << std::endl;
-    std::cout << a << std::endl << std::endl;
-    std::cout << "State 2:" << std::endl << std::endl;
-    std::cout << b << std::endl << std::endl;
-    std::cout << "Final State 1:" << std::endl << std::endl;
-    std::cout << fa << std::endl << std::endl;
-    std::cout << "Final State 2:" << std::endl << std::endl;
-    std::cout << fb << std::endl << std::endl;
-    ADD_FAILURE();
-  }
-}
-
-/** Returns the correct index to use when looking up a general purpose register in Regs. */
-size_t gp_reg_index(x64asm::R r) {
-  switch (r.type()) {
-  case x64asm::Type::RH:
-    return r-4;
-  default:
-    return r;
-  }
-}
-
-/** This test generates random instructions, and then performs the following
-test:  It generates two random states, that agree in all the registers that
-the instruction reads (but are both random otherwise), and then executes
-the instruction.  The two resulting states are then checked to agree on the
-values the instruction writes.
-For example, this uncovers errors in the must/maybe read/write/undef sets. */
-
-struct SpreadsheetReadWriteSetFuzzCallbackInfo {
-  // Berkeley deserves eternal punishment for the name of this struct.
-  size_t success_count;
-};
 
 void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback_data) {
   auto data = (SpreadsheetReadWriteSetFuzzCallbackInfo*)callback_data;
@@ -158,7 +106,9 @@ void spreadsheet_read_write_set_fuzz_callback(const Cfg& pre_cfg, void* callback
   bool failed = false;
   std::stringstream os;
   if (final1.code != final2.code) {
-    os << "Error codes differ.";
+    os << "Error codes differ:" << endl;
+    os << "  In state 1: " << (int)final1.code << endl;
+    os << "  In state 2: " << (int)final2.code << endl;
     failed = true;
     report(failed, ins, cs1, cs2, final1, final2, os.str());
     return;
@@ -223,25 +173,13 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
   tps.remove_opcode(x64asm::ENTER_ONE_IMM16);
   tps.remove_opcode(x64asm::ENTER_ZERO_IMM16);
 
-  // temporarily blacklist these, until #552 is fixed
-  tps.remove_opcode(x64asm::VGATHERDPD_XMM_M32_XMM);
-  tps.remove_opcode(x64asm::VGATHERDPD_YMM_M32_YMM);
-  tps.remove_opcode(x64asm::VGATHERDPS_XMM_M32_XMM);
-  tps.remove_opcode(x64asm::VGATHERDPS_YMM_M32_YMM);
-  tps.remove_opcode(x64asm::VGATHERQPD_XMM_M64_XMM);
-  tps.remove_opcode(x64asm::VGATHERQPD_YMM_M64_YMM);
-  tps.remove_opcode(x64asm::VGATHERQPS_XMM_M64_XMM);
-  tps.remove_opcode(x64asm::VGATHERQPS_XMM_M64_XMM_1);
-  tps.remove_opcode(x64asm::VPGATHERDD_XMM_M32_XMM);
-  tps.remove_opcode(x64asm::VPGATHERDD_YMM_M32_YMM);
-  tps.remove_opcode(x64asm::VPGATHERDQ_XMM_M32_XMM);
-  tps.remove_opcode(x64asm::VPGATHERDQ_YMM_M32_YMM);
-  tps.remove_opcode(x64asm::VPGATHERQD_XMM_M64_XMM);
-  tps.remove_opcode(x64asm::VPGATHERQD_XMM_M64_XMM_1);
-  tps.remove_opcode(x64asm::VPGATHERQQ_XMM_M64_XMM);
-  tps.remove_opcode(x64asm::VPGATHERQQ_YMM_M64_YMM);
-  tps.recompute_pools();
+  // code to use if you want to test a single instruction only
+  // for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+  //   tps.remove_opcode((x64asm::Opcode)i);
+  // }
+  // tps.insert_opcode(x64asm::Opcode::XCHG_R32_R32);
 
+  tps.recompute_pools();
 
   auto data = SpreadsheetReadWriteSetFuzzCallbackInfo();
   data.success_count = 0;
@@ -254,4 +192,3 @@ TEST(X64AsmTest, SpreadsheetReadWriteSetFuzzTest) {
 }
 
 } //namespace stoke
-

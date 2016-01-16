@@ -28,27 +28,61 @@
  *
  */
 
+#include "src/ext/x64asm/src/r.h"
 
-#include "tests/analysis/analysis.h"
+using namespace std;
+using namespace x64asm;
+
+#include "src/validator/validator.h"
+#include "src/validator/error.h"
+#include "tests/validator/common.h"
+
+// very fast tests (much less 1 sec per test)
+#include "tests/trivial.h"
+#include "tests/sandbox/sandbox.h"
+#include "tests/search/search.h"
+#include "tests/x64asm/r.h"
+#include "tests/x64asm/reg_set.h"
+#include "tests/x64asm/opc_set.h"
+#include "tests/x64asm/assembler.h"
+#include "tests/x64asm/instruction.h"
 #include "tests/cfg/cfg_tests.h"
 #include "tests/cost/cost.h"
 #include "tests/expr/expr.h"
 #include "tests/cpputil/cpputil.h"
 #include "tests/disassembler/disassembler.h"
-#include "tests/fixture.h"
-#include "tests/integration/integration.h"
-#include "tests/sandbox/sandbox.h"
-#include "tests/search/search.h"
 #include "tests/solver/solver.h"
 #include "tests/state/state.h"
 #include "tests/stategen/stategen.h"
 #include "tests/symstate/bitvector.h"
-#include "tests/transform/transform.h"
-#include "tests/trivial.h"
 #include "tests/tunit/tunit.h"
-#include "tests/validator/validator.h"
 #include "tests/verifier/verifier.h"
-#include "tests/x64asm/x64asm.h"
+#include "tests/fixture.h"
+
+#if !defined(NO_SLOW_TESTS)
+
+// medium tests (at most 5 sec per test)
+#include "tests/x64asm/read_write_sets.h"
+#include "tests/x64asm/alt_read_write_sets.h"
+#include "tests/validator/fuzz.h"
+#include "tests/validator/simple.h"
+#include "tests/validator/ddec.h"
+
+#endif
+
+#if !defined(NO_VERY_SLOW_TESTS) && !defined(NO_SLOW_TESTS)
+
+// large tests (anything slower)
+#include "tests/validator/ddec_long.h"
+#include "tests/integration/integration.h"
+#include "tests/validator/bounded.h"
+#include "tests/validator/handlers.h"
+#include "tests/validator/memory.h"
+#include "tests/x64asm/parsing.h"
+#include "tests/transform/transform.h"
+#include "tests/sandbox/sandbox_fuzzer.h"
+
+#endif
 
 
 INSTANTIATE_TEST_CASE_P(

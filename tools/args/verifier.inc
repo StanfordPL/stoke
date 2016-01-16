@@ -27,9 +27,10 @@ cpputil::Heading& verifier_heading =
 
 cpputil::ValueArg<std::string>& strategy_arg =
   cpputil::ValueArg<std::string>::create("strategy")
-  .usage("(none|bounded|hold_out|straight_line)")
+  .usage("(none|bounded|ddec|hold_out)")
   .description("Verification strategy")
   .default_val("hold_out");
+
 
 } // namespace stoke
 

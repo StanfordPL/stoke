@@ -319,7 +319,7 @@ TEST_P(CodeFixtureTest, IdentityValidates) {
   x64asm::Code d(code);
 
   Z3Solver s;
-  StraightLineValidator v(s);
+  BoundedValidator v(s);
   CpuState ceg;
 
   x64asm::RegSet rs = ValidatorBaseTest::get_default_regset();
