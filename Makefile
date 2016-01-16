@@ -312,7 +312,7 @@ x64asm:
 	$(MAKE) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" COMPILERBINARY=${COMPILERBINARY}
 
 .PHONY: pintool
-pintool:
+pintool: x64asm
 	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET=$(EXT_TARGET)
 
 src/ext/gtest-1.7.0/libgtest.a:
@@ -321,7 +321,7 @@ src/ext/gtest-1.7.0/libgtest.a:
 
 .PHONY: z3
 z3: z3init src/ext/z3/build/Makefile
-	cd src/ext/z3/build && make
+	$(MAKE) -C src/ext/z3/build
 
 z3init:
 	./scripts/make/submodule-init.sh src/ext/z3
