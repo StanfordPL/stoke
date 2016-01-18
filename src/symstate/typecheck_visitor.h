@@ -36,20 +36,19 @@ public:
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBitVector& bv) {
     error_ = "";
-    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(bv);
+    return SymMemoVisitor<uint16_t, uint16_t, uint16_t>::operator()(bv.ptr);
   }
   /** Typecheck this abstract symbolic bool */
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBool& b) {
     error_ = "";
-    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(b);
+    return SymMemoVisitor<uint16_t, uint16_t, uint16_t>::operator()(b.ptr);
   }
-
   /** Typecheck this abstract symbolic array */
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymArray& b) {
     error_ = "";
-    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(b);
+    return SymMemoVisitor<uint16_t, uint16_t, uint16_t>::operator()(b.ptr);
   }
 
 
