@@ -13,16 +13,19 @@
 // limitations under the License.
 
 
+#include <iostream>
+#include <vector>
+
 #ifndef _STOKE_SRC_SYMSTATE_SYM_BITVECTOR_H
 #define _STOKE_SRC_SYMSTATE_SYM_BITVECTOR_H
 
-#include <iostream>
-#include <vector>
 
 #include "src/symstate/array.h"
 #include "src/symstate/bool.h"
 #include "src/symstate/function.h"
 #include "src/symstate/memory_manager.h"
+
+
 
 namespace stoke {
 
