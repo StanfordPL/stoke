@@ -21,7 +21,7 @@
 #include "cvc4/cvc4.h"
 #include "src/solver/smtsolver.h"
 #include "src/symstate/bitvector.h"
-#include "src/symstate/visitor.h"
+#include "src/symstate/memo_visitor.h"
 
 namespace stoke {
 
@@ -79,11 +79,21 @@ private:
 
 
   /** This class converts symbolic bit-vectors into Z3's format. */
-  class ExprConverter : public SymVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr> {
+  class ExprConverter : public SymMemoVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr> {
 
   public:
     ExprConverter(Cvc4Solver* parent) : em_(parent->em_), variables_(parent->variables_),
       uninterpreted_(&(parent->uninterpreted_)) {}
+
+    CVC4::Expr operator()(const SymBool& b) {
+      return SymMemoVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr>::operator()(b.ptr);
+    }
+    CVC4::Expr operator()(const SymBitVector& bb) {
+      return SymMemoVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr>::operator()(bb.ptr);
+    }
+    CVC4::Expr operator()(const SymArray& a) {
+      return SymMemoVisitor<CVC4::Expr, CVC4::Expr, CVC4::Expr>::operator()(a.ptr);
+    }
 
     /** Visit bit-vector binop */
     CVC4::Expr visit_binop(const SymBitVectorBinop * const bv);
