@@ -17,6 +17,8 @@
 #include "src/symstate/array.h"
 #include "src/symstate/bitvector.h"
 
+#include "src/symstate/pretty_visitor.h"
+
 using namespace std;
 using namespace stoke;
 

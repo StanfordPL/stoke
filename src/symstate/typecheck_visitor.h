@@ -19,14 +19,16 @@
 #include <map>
 #include <sstream>
 
-#include "src/symstate/visitor.h"
+#include "src/symstate/print_visitor.h"
+#include "src/symstate/pretty_visitor.h"
+#include "src/symstate/memo_visitor.h"
 
 namespace stoke {
 
 /* This visitor returns the size of a bitvector, and also checks
    that it's well-formed.  If it's not well-formed, it returns
    size 0. */
-class SymTypecheckVisitor : public SymVisitor<uint16_t, uint16_t, uint16_t> {
+class SymTypecheckVisitor : public SymMemoVisitor<uint16_t, uint16_t, uint16_t> {
 
 public:
 
@@ -34,20 +36,28 @@ public:
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBitVector& bv) {
     error_ = "";
-    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(bv);
+    return SymMemoVisitor<uint16_t, uint16_t, uint16_t>::operator()(bv.ptr);
   }
   /** Typecheck this abstract symbolic bool */
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBool& b) {
     error_ = "";
-    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(b);
+    return SymMemoVisitor<uint16_t, uint16_t, uint16_t>::operator()(b.ptr);
   }
+  /** Typecheck this abstract symbolic array */
+  // (don't use this inside the class because it clears error message)
+  uint16_t operator()(const SymArray& b) {
+    error_ = "";
+    return SymMemoVisitor<uint16_t, uint16_t, uint16_t>::operator()(b.ptr);
+  }
+
+
 
   /* Visit a generic binary operator */
   uint16_t visit_binop(const SymBitVectorBinop * const bv) {
 
-    auto lhs = apply(bv->a_);
-    auto rhs = apply(bv->b_);
+    auto lhs = (*this)(bv->a_);
+    auto rhs = (*this)(bv->b_);
 
     if (lhs == rhs)
       return lhs;
@@ -66,8 +76,8 @@ public:
   /* Visit a generic binary operator on bool*/
   uint16_t visit_binop(const SymBoolBinop * const b) {
 
-    auto lhs = apply(b->a_);
-    auto rhs = apply(b->b_);
+    auto lhs = (*this)(b->a_);
+    auto rhs = (*this)(b->b_);
 
     if (lhs && rhs)
       return 1;
@@ -77,8 +87,8 @@ public:
 
   /** Visit a bit-vector EQ */
   uint16_t visit_compare(const SymBoolCompare * const b) {
-    auto lhs = apply(b->a_);
-    auto rhs = apply(b->b_);
+    auto lhs = (*this)(b->a_);
+    auto rhs = (*this)(b->b_);
 
     if (lhs == rhs && lhs)
       return 1;
@@ -105,15 +115,15 @@ public:
 
   /** Visit a bit-vector unary operator */
   uint16_t visit_unop(const SymBitVectorUnop * const bv) {
-    return apply(bv->bv_);
+    return (*this)(bv->bv_);
   }
 
   /** Visit a bit-vector concatenation.  Note, different than other
       binary operators because the lengths change. */
   uint16_t visit(const SymBitVectorConcat * const bv) {
 
-    auto lhs = apply(bv->a_);
-    auto rhs = apply(bv->b_);
+    auto lhs = (*this)(bv->a_);
+    auto rhs = (*this)(bv->b_);
 
     if (lhs && rhs)
       return lhs + rhs;
@@ -148,7 +158,7 @@ public:
 
   /** Visit a bit-vector extract */
   uint16_t visit(const SymBitVectorExtract * const bv) {
-    auto parent = apply(bv->bv_);
+    auto parent = (*this)(bv->bv_);
     if (bv->low_bit_ > bv->high_bit_) {
       std::stringstream e;
       SymPrettyVisitor pv(e);
@@ -225,7 +235,7 @@ public:
 
     // Check the arguments are of the right type
     for (size_t i = 0; i < type.second.size(); ++i) {
-      auto t = apply(bv->args_[i]);
+      auto t = (*this)(bv->args_[i]);
       if (t != type.second[i]) {
         std::stringstream e;
         SymPrettyVisitor pv(e);
@@ -243,9 +253,9 @@ public:
 
   /** Visit a bit-vector if-then-else */
   uint16_t visit(const SymBitVectorIte * const bv) {
-    auto cond = apply(bv->cond_);
-    auto lhs = apply(bv->a_);
-    auto rhs = apply(bv->b_);
+    auto cond = (*this)(bv->cond_);
+    auto lhs = (*this)(bv->a_);
+    auto rhs = (*this)(bv->b_);
 
     if (lhs == rhs && cond)
       return lhs;
@@ -263,7 +273,7 @@ public:
 
   /** Visit a bit-vector unary minus */
   uint16_t visit(const SymBitVectorSignExtend * const bv) {
-    auto child = apply(bv->bv_);
+    auto child = (*this)(bv->bv_);
 
     if (child <= bv->size_ && child > 0 && bv->size_ > 0)
       return bv->size_;
@@ -359,7 +369,7 @@ public:
   }
   /** Visit a boolean NOT */
   uint16_t visit(const SymBoolNot * const b) {
-    return apply(b->b_);
+    return (*this)(b->b_);
   }
   /** Visit a boolean TRUE */
   uint16_t visit(const SymBoolTrue * const b) {

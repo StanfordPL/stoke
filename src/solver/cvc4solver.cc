@@ -17,6 +17,7 @@
 
 #include "src/solver/cvc4solver.h"
 #include "src/symstate/bitvector.h"
+#include "src/symstate/typecheck_visitor.h"
 
 using namespace stoke;
 using namespace std;
