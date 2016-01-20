@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <string>
 #include <iostream>
 #include <cstdio>
@@ -93,14 +94,21 @@ IacaCost::result_type IacaCost::operator()(const Cfg& cfg, Cost max = max_cost) 
   // call iaca
   string cmd = stokepath + "/../src/ext/iaca-lin64/bin/iaca.sh -arch HSW -analysis LATENCY -64 " + string(filename);
   auto res = exec(cmd.c_str());
-  cout << res << endl;
+
+  // there should only be one '!'. 2 means that the instruction is not supported, so lets use a high cost for it
+  size_t n = std::count(res.begin(), res.end(), '!');
+  if (n != 1) {
+    return result_type(true, 999);
+  }
 
   // parse result
+  auto latency_line = res.find("Latency: ") + 9;
+  auto latency_str = res.substr(latency_line, res.find(" Cycles\n") - latency_line);
 
   // delete file
   unlink(filename);
 
-  return result_type(true, 5);
+  return result_type(true, stoi(latency_str));
 }
 
 } // namespace stoke
