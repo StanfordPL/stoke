@@ -67,6 +67,7 @@ SRC_OBJ=\
 	src/cost/cost_parser.o \
 	src/cost/expr.o \
 	src/cost/latency.o \
+	src/cost/iaca.o \
 	\
 	src/disassembler/disassembler.o \
 	\
