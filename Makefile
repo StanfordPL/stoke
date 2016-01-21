@@ -218,13 +218,13 @@ fast: haswell_test_fast
 
 haswell: haswell_release
 haswell_release:
-	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=core-avx2"
+	$(MAKE) -C . -j$(NTHREADS) external EXT_OPT="release" EXT_TARGET="-march=core-avx2"
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG"
 haswell_debug:
-	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=core-avx2"
+	$(MAKE) -C . -j$(NTHREADS) external EXT_OPT="debug" EXT_TARGET="-march=core-avx2"
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -g"
 haswell_profile:
-	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=core-avx2"
+	$(MAKE) -C . -j$(NTHREADS) external EXT_OPT="profile" EXT_TARGET="-march=core-avx2"
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
 
 haswell_test: haswell_tests
@@ -300,7 +300,7 @@ external: src/ext/astyle cpputil x64asm z3 pintool src/ext/gtest-1.7.0/libgtest.
 
 src/ext/astyle:
 	svn co https://svn.code.sf.net/p/astyle/code/trunk/AStyle src/ext/astyle
-	$(MAKE) -C src/ext/astyle/build/gcc -j$(NTHREADS)
+	$(MAKE) -C src/ext/astyle/build/gcc
 
 .PHONY: cpputil
 cpputil:
@@ -326,7 +326,7 @@ z3: z3init src/ext/z3/build/Makefile
 z3init:
 	./scripts/make/submodule-init.sh src/ext/z3
 
-src/ext/z3/build/Makefile:
+src/ext/z3/build/Makefile: z3init
 	cd src/ext/z3 && python scripts/mk_make.py
 
 ##### VALIDATOR AUTOGEN
@@ -446,3 +446,4 @@ dist_clean: clean
 	./scripts/make/submodule-reset.sh src/ext/z3
 	- $(MAKE) -C src/ext/gtest-1.7.0 clean
 	rm -rf src/ext/z3/build
+	rm -rf src/ext/astyle
