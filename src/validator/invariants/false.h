@@ -37,7 +37,7 @@ public:
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
-    return true;
+    return false;
   }
 
 };

@@ -17,6 +17,9 @@
 
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
+#include "src/symstate/typecheck_visitor.h"
+#include "src/symstate/memo_visitor.h"
+#include "src/symstate/visitor.h"
 
 using namespace stoke;
 using namespace z3;
@@ -130,6 +133,8 @@ cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t bits)
       k++;
     }
   }
+
+  assert(result.num_bits() == bits);
 
   return result;
 }
@@ -291,8 +296,7 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorShiftRight * const bv)
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignDiv * const bv) {
   // assert second arg non-zero
   auto arg = SymBitVector(bv->b_);
-  SymTypecheckVisitor tc;
-  auto width = tc(arg);
+  auto width = arg.width();
   auto zero = SymBitVector::constant(width, 0);
   auto constraint = arg != zero;
   constraints_.push_back(constraint);
@@ -304,7 +308,6 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignDiv * const bv) {
 /** Visit a bit-vector sign extension */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorSignExtend * const bv) {
 
-  SymTypecheckVisitor tc;
   auto child = bv->bv_->width_;
 
   return z3::expr(context_, Z3_mk_sign_ext(context_, bv->size_ - child, (*this)(bv->bv_)));

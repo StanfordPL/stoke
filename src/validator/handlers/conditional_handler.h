@@ -30,7 +30,7 @@ public:
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
-  std::vector<std::string> full_support_opcodes() {
+  std::vector<x64asm::Opcode> full_support_opcodes() {
     std::vector<std::string> opcodes;
 
     std::vector<std::string> suffixes = {"a", "nbe", "ae", "nb", "nc", "b", "c", "nae",
@@ -47,9 +47,7 @@ public:
       for (auto z : suffix2)
         opcodes.push_back("cmov"+y+z);
 
-
-
-    return opcodes;
+    return Handler::opcodes_convert(opcodes);
   }
 
   /** Returns the condition associated with an instruction */

@@ -90,12 +90,6 @@ protected:
       std::cout << "Target state:" << std::endl << target_output << std::endl;
       std::cout << "Rewrite state:" << std::endl << rewrite_output << std::endl;
     }
-    /*
-    if(target_output != rewrite_output) {
-      std::cout << "TARGET OUTPUT: " << std::endl << target_output << std::endl;
-      std::cout << "REWRITE OUTPUT: " << std::endl << rewrite_output << std::endl;
-    }
-    */
   }
 
   Cfg make_cfg(std::stringstream& ss, x64asm::RegSet di = all(), x64asm::RegSet lo = all()) {
@@ -107,22 +101,6 @@ protected:
       fail();
     }
     return Cfg(c, di, lo);
-  }
-
-  void add_testcases(int count) {
-    /*
-    for (int i = 0; i < count; ++i) {
-      sandbox->insert_input(get_state());
-    }
-    */
-  }
-
-  void add_testcases(int count, const Cfg& cfg) {
-    /*
-    for (int i = 0; i < count; ++i) {
-      sandbox->insert_input(get_state(cfg));
-    }
-    */
   }
 
   CpuState get_state() {
@@ -168,8 +146,6 @@ TEST_F(BoundedValidatorBaseTest, NoLoopsPasses) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 
-  add_testcases(3, target);
-
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
@@ -191,8 +167,6 @@ TEST_F(BoundedValidatorBaseTest, NoLoopsFails) {
   ssr << "cmpq $0x11, %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
-
-  add_testcases(3, target);
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -218,8 +192,6 @@ TEST_F(BoundedValidatorBaseTest, UnsupportedInstruction) {
   ssr << "cpuid" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
-
-  add_testcases(3, target);
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   ASSERT_TRUE(validator->has_error());
@@ -255,8 +227,6 @@ TEST_F(BoundedValidatorBaseTest, PopcntEqual) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs);
 
-  add_testcases(3, target);
-
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
@@ -288,8 +258,6 @@ TEST_F(BoundedValidatorBaseTest, PopcntWrong) {
   ssr << ".gotcha:" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs);
-
-  add_testcases(3, target);
 
   validator->set_bound(8);
   EXPECT_FALSE(validator->verify(target, rewrite));
@@ -328,8 +296,6 @@ TEST_F(BoundedValidatorBaseTest, PopcntWrongBeyondBound) {
   ssr << ".gotcha:" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs);
-
-  add_testcases(3, target);
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -382,8 +348,7 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
 
-  add_testcases(3, target);
-
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -391,9 +356,11 @@ TEST_F(BoundedValidatorBaseTest, EasyMemoryFail) {
   for (auto it : validator->get_counter_examples())
     check_ceg(it, target, rewrite);
 
+  /*
   validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
+  */
 
 
 }
@@ -417,8 +384,6 @@ TEST_F(BoundedValidatorBaseTest, CanTurnOffMemoryChecking) {
   ssr << "addl $0x2, (%rax)" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
-
-  add_testcases(3, target);
 
   validator->set_heap_out(false);
   validator->set_stack_out(false);
@@ -447,8 +412,6 @@ TEST_F(BoundedValidatorBaseTest, NoHeapOutStackOutStillSensitiveToReads) {
   sst << "movq (%rax), %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
-
-  add_testcases(3, target);
 
   validator->set_heap_out(false);
   validator->set_stack_out(false);
@@ -482,8 +445,6 @@ TEST_F(BoundedValidatorBaseTest, WriteDifferentPointers) {
   ssr << "addl $0x5, (%rdx)" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, live_outs, live_outs);
-
-  add_testcases(3, target);
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -1085,8 +1046,6 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
   ssr << "pushq %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
-
-  add_testcases(4, target);
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
@@ -2021,6 +1980,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrectPushesAntialias) {
 
 }
 
+/*  // TODO: this can be a test for the obligation checker
 TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::r15 + x64asm::rax;
@@ -2148,6 +2108,7 @@ TEST_F(BoundedValidatorBaseTest, WcpcpyA) {
     std::cout << it << std::endl;
   }
 }
+*/
 
 TEST_F(BoundedValidatorBaseTest, NoSpuriousCeg) {
 

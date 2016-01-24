@@ -228,7 +228,7 @@ public:
     if (level_ < l) {
       parens(l, bv);
     } else {
-      os_ << "sign-extend-" << bv->size_ << "(";
+      os_ << "sign-extend-" << std::dec << bv->size_ << "(";
       pretty(SYMSTATE_PRETTY_MAX_LEVEL, bv->bv_);
       os_ << ")";
     }
@@ -237,7 +237,7 @@ public:
 
   /** Visit a bit-vector variable */
   void visit(const SymBitVectorVar * const bv) {
-    os_ << bv->name_ << small_num(bv->size_);
+    os_ << bv->name_;// << small_num(bv->size_);
     reset();
   }
 
