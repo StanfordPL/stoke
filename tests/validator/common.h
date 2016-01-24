@@ -631,7 +631,7 @@ private:
   /* The validator we're using */
   BoundedValidator v_;
   /* The solver we're using */
-  TestSolver s_;
+  Z3Solver s_;
 
   /* The set of live outputs for the next test */
   x64asm::RegSet live_outs_;
