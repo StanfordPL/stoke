@@ -56,7 +56,7 @@ public:
   bool get_model_bool(const std::string& var) {
     return solver_->get_model_bool(var);
   }
-  std::map<cpputil::BitVector, cpputil::BitVector>
+  std::map<uint64_t, cpputil::BitVector>
   get_model_array(const std::string& var, uint16_t key_size, uint16_t value_size) {
     return solver_->get_model_array(var, key_size, value_size);
   }
