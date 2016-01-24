@@ -109,6 +109,7 @@ private:
       bv->set_bound(bound_arg.value());
       bv->set_alias_strategy(parse_alias());
       bv->set_no_bailout(no_bailout_arg.value());
+      bv->set_nacl(true);
       return bv;
     } else if (s == "ddec") {
       auto ddec = new DdecValidator(*solver_);
@@ -118,6 +119,7 @@ private:
       ddec->set_sound_nullspace(sound_nullspace_arg.value());
       ddec->set_alias_strategy(parse_alias());
       ddec->set_bound(bound_arg.value());
+      ddec->set_nacl(true);
       return ddec;
     } else if (s == "hold_out") {
       return new HoldOutVerifier(fxn);

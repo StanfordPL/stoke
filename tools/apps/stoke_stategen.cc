@@ -49,6 +49,7 @@ int main(int argc, char** argv) {
 
   CommandLineConfig::strict_with_convenience(argc, argv);
 
+  /*
   SolverGadget sg;
   BoundedValidator bv(sg);
   bv.set_bound(2);
@@ -67,5 +68,6 @@ int main(int argc, char** argv) {
   }
 
   css.write_text(cout);
+  */
 }
 

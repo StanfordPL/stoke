@@ -27,7 +27,9 @@ class FlatMemory : public SymMemory {
 public:
 
   FlatMemory() {
-    heap_ = SymArray::tmp_var(64, 8);
+    variable_ = SymArray::tmp_var(64, 8);
+    heap_ = variable_;
+    variable_up_to_date_ = true;
   }
 
   /** Updates the memory with a write.
@@ -44,7 +46,22 @@ public:
     return constraints_;
   }
 
+  /** Get a variable representing the memory at this state. */
+  SymArray get_variable() {
+    if(!variable_up_to_date_) {
+      variable_ = SymArray::tmp_var(64, 8);
+      variable_up_to_date_ = true;
+      constraints_.push_back(variable_ == heap_);
+    }
+
+    return variable_;
+  }
+
 private:
+
+  /** A variable that represents the heap state */
+  bool variable_up_to_date_;
+  SymArray variable_;
 
   SymArray heap_;
 
