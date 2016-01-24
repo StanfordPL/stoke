@@ -169,6 +169,8 @@ bool Z3Solver::get_model_bool(const std::string& var) {
 std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
     const std::string& var, uint16_t key_bits, uint16_t value_bits) {
 
+  map<uint64_t, cpputil::BitVector> addr_val_map;
+
   // get variable / value
   auto type = Z3_mk_array_sort(context_, context_.bv_sort(key_bits), context_.bv_sort(value_bits));
   auto v = z3::expr(context_, Z3_mk_const(context_, get_symbol(var), type));
@@ -182,17 +184,24 @@ std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
   // CREDIT: this was written with A LOT of help from
   // https://stackoverflow.com/questions/22885457/read-func-interp-of-a-z3-array-from-the-z3-model
 
-  /*
-  assert(Z3_get_decl_kind(c, some_array_1_eval_func_decl) == Z3_OP_AS_ARRAY); 
-  assert(Z3_is_app(c, some_array_1_eval));
-  assert(Z3_get_decl_num_parameters(c, some_array_1_eval_func_decl) == 1);
-  assert(Z3_get_decl_parameter_kind(c, some_array_1_eval_func_decl, 0) == 
-         Z3_PARAMETER_FUNC_DECL); */
+  bool ok = true;
+  ok &= Z3_get_decl_kind(context_, array_eval_func_decl) == Z3_OP_AS_ARRAY; 
+  ok &= Z3_is_app(context_, array_eval_func_decl);
+  ok &= (Z3_get_decl_num_parameters(context_, array_eval_func_decl) == 1);
+  ok &= (Z3_get_decl_parameter_kind(context_, array_eval_func_decl, 0) == 
+         Z3_PARAMETER_FUNC_DECL);
+
+  if(!ok) {
+    // The counterexample could be spurious, but we'll figure that out later.
+    // On the other hand, there might be no memory at all or the memory
+    // does not matter
+    return addr_val_map;
+  }
+
   auto z3_model_fd = Z3_get_decl_func_decl_parameter(context_, array_eval_func_decl, 0);
   auto model_fd = func_decl(context_, z3_model_fd);
   func_interp fun_interp = model_->get_func_interp(model_fd); 
 
-  map<uint64_t, cpputil::BitVector> addr_val_map;
 
   unsigned num_entries = fun_interp.num_entries();
   for(unsigned i = 0; i < num_entries; i++) 
