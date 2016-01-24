@@ -26,6 +26,7 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/solver/smtsolver.h"
 #include "src/symstate/memory/cell.h"
+#include "src/symstate/memory/flat.h"
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 
@@ -170,7 +171,8 @@ private:
     std::vector<OverlapDescriptor>& available_cells, size_t max_size);
 
   /** Populate a testcase with memory. */
-  bool build_testcase_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const;
+  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const;
+  bool build_testcase_flat_memory(CpuState&, FlatMemory&, const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
 
   /** Go through lists of pairs of pointers and free all the memory. */
   void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories);
