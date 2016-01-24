@@ -23,11 +23,11 @@
 
 #define OBLIG_DEBUG(X) { }
 #define CONSTRAINT_DEBUG(X) { }
-#define BUILD_TC_DEBUG(X) { X }
+#define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { X }
+#define CEG_DEBUG(X) {  }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
