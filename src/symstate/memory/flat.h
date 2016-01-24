@@ -16,6 +16,8 @@
 #ifndef STOKE_SRC_SYMSTATE_MEMORY_FLAT_H
 #define STOKE_SRC_SYMSTATE_MEMORY_FLAT_H
 
+#include <map>
+
 #include "src/symstate/bitvector.h"
 #include "src/symstate/memory.h"
 
@@ -57,15 +59,26 @@ public:
     return variable_;
   }
 
+  /** Get list of accesses accessed (via read or write).  This is needed for
+   * marking relevant cells valid in the counterexample. */
+  std::map<const SymBitVectorAbstract*, uint64_t> get_access_list() {
+    return access_list_;
+  }
+
 private:
 
   /** A variable that represents the heap state */
   bool variable_up_to_date_;
   SymArray variable_;
 
+  /** The heap state */
   SymArray heap_;
 
+  /** Extra constraints needed to make everything work. */
   std::vector<SymBool> constraints_;
+
+  /** map of (symbolic address, size) pairs accessed. */
+  std::map<const SymBitVectorAbstract*, uint64_t> access_list_;
 
 };
 
