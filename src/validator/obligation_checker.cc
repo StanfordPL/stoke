@@ -27,7 +27,7 @@
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) {  }
+#define CEG_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -138,7 +138,11 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
   BUILD_TC_DEBUG(
     cout << "[build tc] map:" << endl;
     for(auto it : addr_value_pairs) {
-      cout << "  " << it.first << " -> " << it.second.get_fixed_quad(0) << endl;
+      cout << "  " << it.first << " -> ";
+      for(size_t j = 0; j < it.second.num_fixed_bytes(); ++j) {
+        cout << (uint64_t)it.second.get_fixed_byte(j);
+      }
+      cout << endl;
     }
   );
   if (Validator::memory_map_to_testcase(addr_value_pairs, ceg))

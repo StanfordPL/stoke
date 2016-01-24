@@ -128,7 +128,7 @@ cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t bits)
     expr extract = to_expr(context_, Z3_mk_extract(context_, max_bits, i*64, v));
     expr number = to_expr(context_, Z3_mk_bv2int(context_, extract, true));
     expr eval = model_->eval(number, true);
-    Z3_get_numeral_uint64(context_, eval, (long long unsigned int*)&oct);
+    Z3_get_numeral_int64(context_, eval, (long long int*)&oct);
 
     assert((max_bits + 1) % 8 == 0);
     size_t k = 0;
