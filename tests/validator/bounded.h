@@ -456,7 +456,9 @@ TEST_F(BoundedValidatorBaseTest, WriteDifferentPointers) {
   validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
-
+  EXPECT_LE(1ul, validator->counter_examples_available());
+  for (auto it : validator->get_counter_examples())
+    check_ceg(it, target, rewrite);
 
 }
 
