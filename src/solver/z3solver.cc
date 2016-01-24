@@ -197,7 +197,7 @@ std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
     z3::expr k = entry.arg(0);
     z3::expr v = entry.value();
 
-    std::cout << "\n(key,value): (" << k << "," << v << ")";
+    //std::cout << "\n(key,value): (" << k << "," << v << ")";
 
     uint64_t addr;
     uint64_t value;
@@ -210,11 +210,12 @@ std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
     cpputil::BitVector bv_v(8);
     bv_v.get_fixed_byte(0) = value;
     addr_val_map[addr] = bv_v;
-    cout << hex << "adding " << addr << "->" << value << endl;
+    //cout << hex << "adding " << addr << "->" << value << endl;
   }
 
+  // TODO: if default_value is non-zero our counterexample will be spurious
   z3::expr default_value = fun_interp.else_value();
-  std::cout << "\nDefault value:" << default_value;
+  //std::cout << "\nDefault value:" << default_value;
 
   // TODO: "complete" the map with the default value
 
