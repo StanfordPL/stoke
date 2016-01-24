@@ -37,14 +37,47 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+template <typename K, typename V>
+map<K,V> append_maps(vector<map<K,V>> maps) {
 
-bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& memory) const {
+  map<K,V> output;
+
+  for(auto m : maps) {
+    for(auto p : m) {
+      output[p.first] = p.second;
+    }
+  }
+
+  return output;
+}
+
+bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& memory, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
 
   auto var = memory.get_variable();
   auto symvar = static_cast<const SymArrayVar* const>(var.ptr);
   auto str = symvar->name_;
 
   auto mem_map = solver_.get_model_array(str, 64, 8);
+
+  for(auto p : others) {
+    auto abs_var = p.first;
+    uint64_t size = p.second;
+
+    auto var = static_cast<const SymBitVectorVar*>(abs_var);
+    auto var_name = var->get_name();
+    auto var_size = var->get_size();
+    assert(var_size == 8);
+    auto address_bv = solver_.get_model_bv(var_name, var_size);
+    auto addr = address_bv.get_fixed_quad(0);
+
+    for(uint64_t i = addr; i < addr + size; ++i) {
+      BitVector zero(8);
+      zero.get_fixed_byte(0) = 0;
+      if(!mem_map.count(i)) {
+        mem_map[i] = zero;
+      }
+    }
+  }
 
   BUILD_TC_DEBUG(
     cout << "[build tc] map:" << endl;
@@ -1321,10 +1354,17 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
       bool ok = true;
       if(flat_model) {
-        ok &= build_testcase_flat_memory(ceg_t_, initial_target_flat_memory);
-        ok &= build_testcase_flat_memory(ceg_r_, initial_rewrite_flat_memory);
-        ok &= build_testcase_flat_memory(ceg_tf_, *static_cast<FlatMemory*>(state_t.memory));
-        ok &= build_testcase_flat_memory(ceg_rf_, *static_cast<FlatMemory*>(state_r.memory));
+        vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
+        other_maps.push_back(initial_target_flat_memory.get_access_list());
+        other_maps.push_back(initial_rewrite_flat_memory.get_access_list());
+        other_maps.push_back(static_cast<FlatMemory*>(state_t.memory)->get_access_list());
+        other_maps.push_back(static_cast<FlatMemory*>(state_r.memory)->get_access_list());
+        auto other_map = append_maps(other_maps);
+
+        ok &= build_testcase_flat_memory(ceg_t_, initial_target_flat_memory, other_map);
+        ok &= build_testcase_flat_memory(ceg_r_, initial_rewrite_flat_memory, other_map);
+        ok &= build_testcase_flat_memory(ceg_tf_, *static_cast<FlatMemory*>(state_t.memory), other_map);
+        ok &= build_testcase_flat_memory(ceg_rf_, *static_cast<FlatMemory*>(state_r.memory), other_map);
       } else {
         ok &= build_testcase_cell_memory(ceg_t_, 
                                  dynamic_cast<CellMemory*>(state_t.memory),
