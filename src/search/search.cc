@@ -16,6 +16,7 @@
 #include <cmath>
 #include <csignal>
 #include <unistd.h>
+#include <fstream>
 
 #include "src/search/search.h"
 #include "src/transform/weighted.h"
@@ -85,6 +86,27 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
 
   TransformInfo ti;
 
+  std::ofstream drop_log ("drop.log");
+
+  auto log_drop = [&] (size_t iterations, Cost cost, Cfg& current) {
+    drop_log << "######\n";
+    drop_log << iterations << "," << cost << "\n";
+    drop_log << current.get_function() << "\n";
+  };
+  std::ofstream search_log ("search.log");
+  Cost last_cost = -1;
+  bool have_cost = false;
+  auto log_cost = [&] (size_t iterations, Cost cost) {
+    if (!have_cost || cost != last_cost) {
+      have_cost = true;
+      last_cost = cost;
+      search_log << iterations << "," << cost << "\n";
+    }
+  };
+  int64_t min_so_far = state.current_cost;
+
+  log_drop(0, state.current_cost, state.current);
+
   give_up_now = false;
   size_t iterations = 0;
   for (iterations = 0; (state.current_cost > 0) && !give_up_now; ++iterations) {
@@ -95,6 +117,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       statistics_cb_(get_statistics(), statistics_cb_arg_);
     }
 
+
     // This is just here to clean up the for loop; check early exit conditions
     if (timeout_itr_ > 0 && iterations >= timeout_itr_) {
       break;
@@ -102,8 +125,7 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
                duration_cast<duration<double>>(steady_clock::now() - start) >= timeout_sec_) {
       break;
     }
-
-
+    log_cost(iterations, state.current_cost);
     ti = (*transform_)(state.current);
     move_statistics[ti.move_type].num_proposed++;
     if (!ti.success) {
@@ -123,7 +145,29 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       continue;
     }
     move_statistics[ti.move_type].num_accepted++;
+
+    //reset plateau checkpoint
+    int64_t fall = new_cost - state.current_cost;
+
+    int64_t cost = new_cost;
+
+    bool plateau_here = false;
+
+    if (fall < -6 && cost < min_so_far)
+        plateau_here = true;
+    if (fall < -4 && cost <= min_so_far - 6)
+        plateau_here = true;
+    if (cost <= min_so_far - 10)
+        plateau_here = true;
+    if (cost == 0)
+        plateau_here = true;
+
     state.current_cost = new_cost;
+
+    if (plateau_here) {
+      min_so_far = new_cost;
+      log_drop(iterations, new_cost, state.current);
+    }
 
     const auto new_best_yet = new_cost < state.best_yet_cost;
     if (new_best_yet) {
@@ -142,6 +186,10 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
       progress_cb_({state}, progress_cb_arg_);
     }
   }
+
+  log_cost(iterations, state.current_cost);
+  search_log.close();
+  drop_log.close();
 
   // update values for statistics
   elapsed = duration_cast<duration<double>>(steady_clock::now() - start);
