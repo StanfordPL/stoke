@@ -52,7 +52,7 @@ public:
 
   int used_for(const x64asm::Opcode& op);
 
-  std::vector<std::string> full_support_opcodes();
+  std::vector<x64asm::Opcode> full_support_opcodes();
 
 private:
 

@@ -30,9 +30,9 @@ public:
 
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
-  virtual std::vector<std::string> full_support_opcodes() {
-    std::vector<std::string> opcodes;
-    opcodes.push_back("callq");
+  virtual std::vector<x64asm::Opcode> full_support_opcodes() {
+    std::vector<x64asm::Opcode> opcodes;
+    opcodes.push_back(x64asm::Opcode::CALL_LABEL);
     return opcodes;
   }
 

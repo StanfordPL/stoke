@@ -105,18 +105,6 @@ private:
 
   /** Verify a pair of paths. */
   bool verify_pair(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q);
-  /** Build the circuit for a single basic block */
-  void build_circuit(const Cfg&, Cfg::id_type, JumpType, SymState&, size_t& line_no);
-  /** Is there a jump in the path following this basic block? */
-  static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
-  /** Remove spurious counterexamples. */
-  void remove_spurious_counterexamples(const Cfg& target, const Cfg& rewrite);
-
-  /** For learning aliasing relationships */
-  AliasMiner am;
-
-  /** Traces for the target/rewrite. */
-  std::vector<CfgPath> paths_[2];
 
   /** The set of counterexamples (one per pair) that we've found. */
   std::vector<CpuState> counterexamples_;

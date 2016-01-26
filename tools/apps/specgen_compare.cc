@@ -30,8 +30,9 @@
 #include "src/ext/x64asm/src/reg_set.h"
 
 #include "src/symstate/simplify.h"
+#include "src/symstate/pretty_visitor.h"
 
-#include "src/validator/straight_line.h"
+#include "src/validator/bounded.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
 

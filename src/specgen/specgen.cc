@@ -20,6 +20,7 @@
 #include <vector>
 #include <regex>
 
+#include "src/symstate/visitor.h"
 #include "src/symstate/simplify.h"
 #include "src/specgen/specgen.h"
 
@@ -30,27 +31,36 @@ using namespace cpputil;
 
 namespace stoke {
 
-class Counter : public SymVisitor<size_t, size_t> {
+class Counter : public SymVisitor<size_t, size_t, size_t> {
 public:
   Counter(size_t c) : constant_(c) {}
   Counter() : constant_(0) {}
   virtual size_t operator()(const SymBitVector& bv) {
-    return SymVisitor<size_t, size_t>::operator()(bv.ptr);
+    return SymVisitor<size_t, size_t, size_t>::operator()(bv.ptr);
   }
   virtual size_t operator()(const SymBool& bv) {
-    return SymVisitor<size_t, size_t>::operator()(bv.ptr);
+    return SymVisitor<size_t, size_t, size_t>::operator()(bv.ptr);
+  }
+  virtual size_t operator()(const SymArray& a) {
+    return SymVisitor<size_t, size_t, size_t>::operator()(a.ptr);
   }
   virtual size_t operator()(const SymBitVectorAbstract * const bv) {
     // return 0 if we have already seen this one
     if (seen_bits_.find((SymBitVectorAbstract*)bv) != seen_bits_.end()) return 0;
     seen_bits_.insert((SymBitVectorAbstract*)bv);
-    return SymVisitor<size_t, size_t>::operator()(bv);
+    return SymVisitor<size_t, size_t, size_t>::operator()(bv);
   }
   virtual size_t operator()(const SymBoolAbstract * const bv) {
     // return 0 if we have already seen this one
     if (seen_bool_.find((SymBoolAbstract*)bv) != seen_bool_.end()) return 0;
     seen_bool_.insert((SymBoolAbstract*)bv);
-    return SymVisitor<size_t, size_t>::operator()(bv);
+    return SymVisitor<size_t, size_t, size_t>::operator()(bv);
+  }
+  virtual size_t operator()(const SymArrayAbstract * const bv) {
+    // return 0 if we have already seen this one
+    if (seen_array_.find((SymArrayAbstract*)bv) != seen_array_.end()) return 0;
+    seen_array_.insert((SymArrayAbstract*)bv);
+    return SymVisitor<size_t, size_t, size_t>::operator()(bv);
   }
   size_t visit_binop(const SymBitVectorBinop * const bv) {
     auto lhs = (*this)(bv->a_);
@@ -104,12 +114,31 @@ public:
   }
   size_t visit(const SymBoolNot * const b) {
     auto lhs = (*this)(b->b_);
-    return lhs;
+    return lhs + constant_;
   }
+  size_t visit(const SymBitVectorArrayLookup * const bv) {
+    auto a = (*this)(bv->a_);
+    auto key = (*this)(bv->key_);
+    return a + key + constant_;
+  };
   size_t visit(const SymBoolTrue * const b) {
     return constant_;
   }
   size_t visit(const SymBoolVar * const b) {
+    return constant_;
+  }
+  size_t visit(const SymBoolArrayEq * const bv) {
+    auto lhs = (*this)(bv->a_);
+    auto rhs = (*this)(bv->b_);
+    return lhs + rhs + constant_;
+  }
+  size_t visit(const SymArrayStore * const b) {
+    auto a = (*this)(b->a_);
+    auto key = (*this)(b->key_);
+    auto value = (*this)(b->value_);
+    return a + key + value + constant_;
+  }
+  size_t visit(const SymArrayVar * const a) {
     return constant_;
   }
 
@@ -117,6 +146,7 @@ private:
   size_t constant_;
   std::set<SymBoolAbstract*> seen_bool_;
   std::set<SymBitVectorAbstract*> seen_bits_;
+  std::set<SymArrayAbstract*> seen_array_;
 };
 
 class NodeCounter : public Counter {

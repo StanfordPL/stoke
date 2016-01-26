@@ -19,6 +19,8 @@
 #include "src/specgen/support.h"
 #include "src/validator/handlers.h"
 #include "src/symstate/simplify.h"
+#include "src/symstate/typecheck_visitor.h"
+#include "src/symstate/transform_visitor.h"
 #include "src/ext/cpputil/include/io/console.h"
 #include "src/validator/error.h"
 
@@ -847,8 +849,8 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 #endif
 }
 
-vector<string> StrataHandler::full_support_opcodes() {
-  vector<string> res;
+vector<x64asm::Opcode> StrataHandler::full_support_opcodes() {
+  vector<x64asm::Opcode> res;
   filesystem::directory_iterator itr(strata_path_);
   filesystem::directory_iterator end_itr;
   for (; itr != end_itr; itr++) {
@@ -856,7 +858,7 @@ vector<string> StrataHandler::full_support_opcodes() {
     assert(file.size() > 2);
     auto opcode_str = file.substr(0, file.size()-2);
     auto instr = get_instruction_from_string(opcode_str);
-    res.push_back(get_opcode(instr.get_opcode()));
+    res.push_back(instr.get_opcode());
   }
   return res;
 }

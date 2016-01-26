@@ -35,7 +35,7 @@
 
 #include "src/symstate/simplify.h"
 
-#include "src/validator/straight_line.h"
+#include "src/validator/bounded.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
 

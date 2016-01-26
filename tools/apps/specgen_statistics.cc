@@ -35,7 +35,7 @@
 
 #include "src/symstate/simplify.h"
 
-#include "src/validator/straight_line.h"
+#include "src/validator/bounded.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
 
@@ -98,7 +98,7 @@ int main(int argc, char** argv) {
   auto strata_handler = StrataHandler(strata_path, false);
   auto strata_handler_simple = StrataHandler(strata_path, true);
   auto stoke_handler = ComboHandler();
-  auto validator = StraightLineValidator(solver);
+  auto validator = BoundedValidator(solver);
 
   auto get_strata_circuits = true;
 

@@ -34,7 +34,7 @@
 #include "src/symstate/bitvector.h"
 #include "src/symstate/bool.h"
 
-#include "src/validator/straight_line.h"
+#include "src/validator/bounded.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
 
