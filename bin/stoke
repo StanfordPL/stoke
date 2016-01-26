@@ -7,7 +7,7 @@ pushd `dirname $0` > /dev/null
 HERE=`pwd`
 popd > /dev/null
 
-if [ $# -eq 0 ] 
+if [ $# -eq 0 ]
 then
 	echo "Type 'stoke --help' for usage."
 	exit 1
@@ -27,6 +27,7 @@ then
 	echo "  extract             extract the contents of a binary file"
 	echo "  replace             replace the contents of a binary file"
 	echo "  search              run STOKE search"
+	echo "  searchexpt          run STOKE search in limited experiment mode"
 	echo "  testcase            generate a STOKE testcase file"
 	echo ""
 	echo "  debug cfg           generate the control flow graph for a function"
@@ -125,7 +126,10 @@ then
 	exec $HERE/stoke_replace "$@"
 elif [ "$SCMD" == "search" ]
 then
-	exec $HERE/stoke_search "$@"
+	exec $HERE/stoke_replace "$@"
+elif [ "$SCMD" == "searchexpt" ]
+then
+	exec $HERE/stoke_searchexpt "$@"
 elif [ "$SCMD" == "testcase" ]
 then
 	exec $HERE/stoke_testcase "$@"
