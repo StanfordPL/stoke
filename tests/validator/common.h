@@ -19,9 +19,11 @@
 #include "src/ext/cpputil/include/io/fail.h"
 
 #include "src/sandbox/sandbox.h"
-#include "src/validator/straight_line.h"
+#include "src/validator/bounded.h"
 #include "src/validator/handlers/combo_handler.h"
+#include "src/symstate/simplify.h"
 #include "tests/solver/test_solver.h"
+#include "tests/fuzzer.h"
 
 namespace stoke {
 
@@ -139,44 +141,13 @@ protected:
       with the validator output.  Returns false if the validator failed to
       build a model (which means that passing the test is useless). */
   bool check_circuit(stoke::CpuState cs, std::vector<stoke::TUnit> aux_fxns = {}) {
+
     if (!reset_state(true))
       return false;
     ceg_shown_ = true;
 
-    // Build a circuit for this Cfg
-    ComboHandler ch;
-
-    std::vector<SymBool> constraints;
-
-    SymState state(cs);
-    SymState end("FINAL");
-
-    AliasAnalysis analysis(cfg_t_->get_code());
-
-    size_t line = 0;
-    static_cast<DeprecatedMemory*>(state.memory)->set_analysis(&analysis);
-    for (auto it : cfg_t_->get_code()) {
-      state.set_lineno(line);
-      ch.build_circuit(it, state);
-      line++;
-    }
-
-    for (auto it : state.constraints)
-      constraints.push_back(it);
-    for (auto it : state.equality_constraints(end))
-      constraints.push_back(it);
-
-    // Check that we can generate a state
-    bool b = s_.is_sat(constraints);
-    EXPECT_TRUE(b) << "Circuit not satisfiable";
-    EXPECT_FALSE(s_.has_error()) << "Solver encountered: " << s_.get_error();
-    if (!b || s_.has_error())
-      return true;
-
-    if (!s_.has_model())
-      return false;
-
-    CpuState validator_final = Validator::state_from_model(s_, "_FINAL");
+    auto instr = cfg_t_->get_code()[1];
+    auto opcode = instr.get_opcode();
 
     // Run the sandbox
     Sandbox sb;
@@ -188,16 +159,65 @@ protected:
     }
 
     sb.run(*cfg_t_);
-
     CpuState sandbox_final = *sb.get_result(0);
 
-    // Check sandbox and state equivalent
-    std::stringstream ss;
-    // ss << "Counterexample: " << std::endl << cs << std::endl;
-    // ss << "Sandbox final state: " << std::endl << sandbox_final << std::endl;
-    // ss << "StraightLineValidator final state: " << std::endl << validator_final << std::endl;
-    // ss << "Sandbox and validator disagree on liveout " << cfg_t_->live_outs() << std::endl;
-    expect_cpustate_equal_on_liveout(sandbox_final, validator_final, ss.str());
+    if (sandbox_final.code != stoke::ErrorCode::NORMAL) {
+      fuzz_print() << "Sandbox did not finish normally: " << (int)sandbox_final.code << std::endl;
+      return false;
+    }
+
+    // build circuits
+    ComboHandler ch;
+    if (ch.get_support(instr) == Handler::SupportLevel::NONE)
+      return false;
+    SymState final_validator(cs);
+    SymState final_sym(sandbox_final);
+    ch.build_circuit(instr, final_validator);
+    EXPECT_FALSE(ch.has_error()) << "Error building a circuit: " << ch.error() << endl;
+
+    // check equivalence of two symbolic states for a given register
+    auto is_eq = [this](auto& reg, auto a, auto b, stringstream& explanation) {
+      SymBool eq = a == b;
+      bool res = s_.is_sat({ eq });
+      if (s_.has_error()) {
+        explanation << "  solver encountered error: " << s_.get_error() << endl;
+        return false;
+      }
+      if (!res) {
+        explanation << "  states do not agree for '" << (*reg) << "':" << endl;
+        auto simplify = true;
+        if (!simplify) {
+          explanation << "    validator: " << (a) << endl;
+        } else {
+          explanation << "    validator: " << SymSimplify().simplify(a) << endl;
+        }
+          explanation << "    sandbox:   " << b << endl;
+        return false;
+      } else {
+        return true;
+      }
+    };
+
+    auto rs = RegSet::universe();
+    // the af flag is not currently supported by the validator
+    rs = rs - (RegSet::empty() + Constants::eflags_af());
+    // don't check undefined outputs
+    rs = rs - instr.maybe_undef_set();
+    auto eq = true;
+    stringstream ss;
+    ss << "Sandbox and validator do not agree for '" << instr << "' (opcode " << opcode << ")" << endl;
+    for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
+      eq = eq && is_eq(gp_it, final_validator.lookup(*gp_it), final_sym.lookup(*gp_it), ss);
+    }
+    for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
+      eq = eq && is_eq(sse_it, final_validator.lookup(*sse_it), final_sym.lookup(*sse_it), ss);
+    }
+    for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
+      eq = eq && is_eq(flag_it, final_validator[*flag_it], final_sym[*flag_it], ss);
+    }
+    if (!eq) {
+      ADD_FAILURE() << ss.str() << endl;
+    }
     return true;
   }
 
@@ -520,7 +540,6 @@ private:
     //  - counterexample
     //  - non-equivalent, no counterexample
 
-    CpuState ceg;
     Outcome outcome = OTHER;
 
     // Check for equivalence
@@ -528,9 +547,7 @@ private:
     // See if an error occurred
     bool error = v_.has_error();
     // See if a counterexample is available
-    bool got_ceg = v_.counter_examples_available();
-    if (got_ceg)
-      ceg = v_.get_counter_examples()[0];
+    size_t got_ceg = v_.counter_examples_available();
     // Later, we'll check if CFG is valid
     bool ceg_is_ok = false;
 
@@ -538,18 +555,18 @@ private:
     if (equiv) {
       if (error) {
         report_error(expected, OTHER, true,
-                     "StraightLineValidator says codes are equivalent, but also returned an error.");
+                     "Validator says codes are equivalent, but also returned an error.");
       }
       if (got_ceg) {
         report_error(expected, OTHER, true,
-                     "StraightLineValidator says codes are equivalent, but also returned counterexample.");
+                     "Validator says codes are equivalent, but also returned counterexample.");
       }
       outcome = EQUIVALENT;
     } else {
       if (got_ceg) {
         if (error) {
           report_error(expected, OTHER, true,
-                       "StraightLineValidator produced counterexample, but also returned an error.");
+                       "Validator produced counterexample, but also returned an error.");
         } else {
           outcome = COUNTEREXAMPLE;
         }
@@ -568,7 +585,8 @@ private:
       report_error(expected, outcome, false);
 
     if (got_ceg && do_check_ceg) {
-      check_ceg(ceg);
+      assert(v_.get_counter_examples().size());
+      check_ceg(v_.get_counter_examples()[0]);
     }
   }
 
@@ -602,8 +620,12 @@ private:
   }
 
   /* Used to build a validator */
-  StraightLineValidator make_validator() {
-    StraightLineValidator v(s_);
+  BoundedValidator make_validator() {
+    BoundedValidator v(s_);
+    // historically these tests have not been used to check
+    // equivalence of final heap states
+    v.set_heap_out(false);
+    v.set_stack_out(false);
     return v;
   }
 
@@ -612,7 +634,7 @@ private:
   bool ceg_shown_;
 
   /* The validator we're using */
-  StraightLineValidator v_;
+  BoundedValidator v_;
   /* The solver we're using */
   TestSolver s_;
 

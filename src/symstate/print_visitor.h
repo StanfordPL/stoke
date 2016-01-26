@@ -20,7 +20,7 @@
 
 namespace stoke {
 
-class SymPrintVisitor : public SymVisitor<void, void> {
+class SymPrintVisitor : public SymVisitor<void, void, void> {
 
 public:
   SymPrintVisitor(std::ostream& os) : os_(os) {}
@@ -217,6 +217,24 @@ public:
     os_ << "<" << bv->name_ << "|" << bv->size_ << ">";
   }
 
+  /** Visit an array lookup */
+  void visit(const SymBitVectorArrayLookup * const bv) {
+    os_ << "(";
+    (*this)(bv->a_);
+    os_ << ")[";
+    (*this)(bv->key_);
+    os_ << "]";
+  }
+
+  /** Visit a boolean ARRAY EQ */
+  void visit(const SymBoolArrayEq * const b) {
+    os_ << "(== ";
+    (*this)(b->a_);
+    os_ << " ";
+    (*this)(b->b_);
+    os_ << ")";
+  }
+
   /** Visit a boolean FALSE */
   void visit(const SymBoolFalse * const b) {
     os_ << "FALSE";
@@ -237,6 +255,22 @@ public:
   /** Visit a boolean VAR */
   void visit(const SymBoolVar * const b) {
     os_ << "<" << b->name_ << ">";
+  }
+
+  /** Visit an array STORE */
+  void visit(const SymArrayStore * const a) {
+    os_ << "(";
+    (*this)(a->a_);
+    os_ << " update ";
+    (*this)(a->key_);
+    os_ << " -> ";
+    (*this)(a->value_);
+    os_ << ")";
+  }
+
+  /** Visit an array VAR */
+  void visit(const SymArrayVar * const a) {
+    os_ << "<" << a->name_ << "|" << a->key_size_ << "|" << a->value_size_ << ">";
   }
 
 private:

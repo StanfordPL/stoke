@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-
 #include "src/symstate/bool.h"
 #include "src/symstate/bitvector.h"
+#include "src/symstate/pretty_visitor.h"
+
+#include <sstream>
 
 using namespace std;
 using namespace stoke;
@@ -107,3 +108,11 @@ bool SymBoolCompare::equals(const SymBoolAbstract * const other) const {
   auto cast = static_cast<const SymBoolCompare * const>(other);
   return a_->equals(cast->a_) && b_->equals(cast->b_);
 }
+
+bool SymBoolArrayEq::equals(const SymBoolAbstract * const other) const {
+  if (type() != other->type()) return false;
+  auto cast = static_cast<const SymBoolArrayEq * const>(other);
+  return a_->equals(cast->a_) && b_->equals(cast->b_);
+}
+
+

@@ -46,7 +46,6 @@ using namespace x64asm;
 #include "tests/x64asm/opc_set.h"
 #include "tests/x64asm/assembler.h"
 #include "tests/x64asm/instruction.h"
-#include "tests/analysis/analysis.h"
 #include "tests/cfg/cfg_tests.h"
 #include "tests/cost/cost.h"
 #include "tests/expr/expr.h"
@@ -59,7 +58,6 @@ using namespace x64asm;
 #include "tests/tunit/tunit.h"
 #include "tests/verifier/verifier.h"
 #include "tests/fixture.h"
-#include "tests/validator/alias_miner.h"
 
 #if !defined(NO_SLOW_TESTS)
 
@@ -70,18 +68,21 @@ using namespace x64asm;
 #include "tests/validator/fuzz.h"
 #include "tests/validator/pseudo_fuzz.h"
 #include "tests/validator/simple.h"
+#include "tests/validator/ddec.h"
 
 #endif
 
 #if !defined(NO_VERY_SLOW_TESTS) && !defined(NO_SLOW_TESTS)
 
 // large tests (anything slower)
+#include "tests/validator/ddec_long.h"
 #include "tests/integration/integration.h"
 #include "tests/validator/bounded.h"
 #include "tests/validator/handlers.h"
 #include "tests/validator/memory.h"
 #include "tests/x64asm/parsing.h"
 #include "tests/transform/transform.h"
+#include "tests/sandbox/sandbox_fuzzer.h"
 
 #endif
 

@@ -17,6 +17,9 @@
 
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
+#include "src/symstate/typecheck_visitor.h"
+#include "src/symstate/memo_visitor.h"
+#include "src/symstate/visitor.h"
 
 using namespace stoke;
 using namespace z3;
@@ -134,6 +137,8 @@ cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t bits)
       k++;
     }
   }
+
+  assert(result.num_bits() == bits);
 
   return result;
 }
@@ -333,11 +338,20 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorVar * const bv) {
   return z3::expr(context_, Z3_mk_const(context_, get_symbol(bv->name_), type));
 }
 
+/** Visit a bit-vector array access */
+z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorArrayLookup * const bv) {
+  return z3::expr(context_, Z3_mk_select(context_, (*this)(bv->a_), (*this)(bv->key_)));
+}
+
 /** Visit a bit-vector XOR */
 z3::expr Z3Solver::ExprConverter::visit(const SymBitVectorXor * const bv) {
   return z3::expr(context_, Z3_mk_bvxor(context_, (*this)(bv->a_), (*this)(bv->b_)));
 }
 
+/** Visit a bit-vector ARRAY_EQ */
+z3::expr Z3Solver::ExprConverter::visit(const SymBoolArrayEq * const b) {
+  return z3::expr(context_, Z3_mk_eq(context_, (*this)(b->a_), (*this)(b->b_)));
+}
 
 /** Visit a bit-vector EQ */
 z3::expr Z3Solver::ExprConverter::visit(const SymBoolEq * const b) {
@@ -428,6 +442,19 @@ z3::expr Z3Solver::ExprConverter::visit(const SymBoolVar * const b) {
 /** Visit a boolean XOR */
 z3::expr Z3Solver::ExprConverter::visit(const SymBoolXor * const b) {
   return z3::expr(context_, Z3_mk_xor(context_, (*this)(b->a_), (*this)(b->b_)));
+}
+
+/** Visit an array store */
+z3::expr Z3Solver::ExprConverter::visit(const SymArrayStore * const a) {
+  return z3::expr(context_, Z3_mk_store(context_, (*this)(a->a_), (*this)(a->key_), (*this)(a->value_)));
+}
+
+/** Visit an array variable */
+z3::expr Z3Solver::ExprConverter::visit(const SymArrayVar * const a) {
+  auto key_sort = context_.bv_sort(a->key_size_);
+  auto val_sort = context_.bv_sort(a->value_size_);
+  auto type = Z3_mk_array_sort(context_, key_sort, val_sort);
+  return z3::expr(context_, Z3_mk_const(context_, get_symbol(a->name_), type));
 }
 
 

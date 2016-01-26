@@ -22,6 +22,8 @@
 
 #include "src/validator/straight_line.h"
 #include "src/symstate/simplify.h"
+#include "src/symstate/pretty_visitor.h"
+#include "src/symstate/print_visitor.h"
 #include "src/validator/handlers/combo_handler.h"
 
 #include "tools/gadgets/functions.h"

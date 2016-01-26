@@ -13,8 +13,10 @@
 // limitations under the License.
 
 
-
 #include "src/symstate/bitvector.h"
+#include "src/symstate/pretty_visitor.h"
+
+#include <sstream>
 
 using namespace std;
 using namespace stoke;
@@ -119,6 +121,9 @@ SymBitVector SymBitVector::s_div(const SymBitVector& other) const {
 }
 
 SymBitVector SymBitVector::extend(uint16_t size) const {
+  return sign_extend(size);
+}
+SymBitVector SymBitVector::sign_extend(uint16_t size) const {
   return SymBitVector(new SymBitVectorSignExtend(ptr, size));
 }
 
@@ -226,6 +231,12 @@ bool SymBitVector::equals(const SymBitVector& other) const {
     return ptr->equals(other.ptr);
   else
     return ptr == other.ptr;
+}
+
+bool SymBitVectorArrayLookup::equals(const SymBitVectorAbstract * other) const {
+  if (other->type() != this->type()) return false;
+  auto cast = static_cast<const SymBitVectorArrayLookup * const>(other);
+  return a_->equals(cast->a_) && key_->equals(cast->key_);
 }
 
 

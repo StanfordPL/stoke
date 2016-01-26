@@ -21,6 +21,7 @@
 #include "src/ext/z3/src/api/c++/z3++.h"
 #include "src/solver/smtsolver.h"
 #include "src/symstate/bitvector.h"
+#include "src/symstate/memo_visitor.h"
 
 namespace stoke {
 
@@ -58,6 +59,12 @@ public:
   /** Get the satisfying assignment for a bit from the model. */
   bool get_model_bool(const std::string& var);
 
+  std::map<cpputil::BitVector, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) {
+    std::cout << "Arrays not yet supported for Z3! (limitation of stoke, not Z3)"  << std::endl;
+    error_ = "Arrays not yet supported for Z3! (limitation of stoke, not Z3)";
+    return std::map<cpputil::BitVector, cpputil::BitVector>();
+  }
+
 private:
 
   /** The Z3 context we're working with */
@@ -74,7 +81,7 @@ private:
 
 
   /** This class converts symbolic bit-vectors into Z3's format. */
-  class ExprConverter : public SymVisitor<z3::expr, z3::expr> {
+  class ExprConverter : public SymMemoVisitor<z3::expr, z3::expr, z3::expr> {
 
   public:
     ExprConverter(z3::context& cntx, std::vector<SymBool>& constraints)
@@ -108,16 +115,23 @@ private:
     /** Visit some bit vector */
     z3::expr operator()(const SymBitVector& bv) {
       error_ = "";
-      return SymVisitor<z3::expr, z3::expr>::operator()(bv.ptr);
+      return SymMemoVisitor<z3::expr, z3::expr, z3::expr>::operator()(bv.ptr);
     }
     /** Visit some bit bool */
     z3::expr operator()(const SymBool& b) {
       error_ = "";
-      return SymVisitor<z3::expr, z3::expr>::operator()(b.ptr);
+      return SymMemoVisitor<z3::expr, z3::expr, z3::expr>::operator()(b.ptr);
+    }
+    /** Visit some bit bool */
+    z3::expr operator()(const SymArray& a) {
+      error_ = "";
+      return SymMemoVisitor<z3::expr, z3::expr, z3::expr>::operator()(a.ptr);
     }
 
     /** Visit a bit-vector AND */
     z3::expr visit(const SymBitVectorAnd * const bv);
+    /** Visit a bit-vector array access */
+    z3::expr visit(const SymBitVectorArrayLookup * const bv);
     /** Visit a bit-vector concatenation */
     z3::expr visit(const SymBitVectorConcat * const bv);
     /** Visit a bit-vector constant */
@@ -165,6 +179,8 @@ private:
     /** Visit a bit-vector XOR */
     z3::expr visit(const SymBitVectorXor * const bv);
 
+    /** Visit a bit-vector ARRAY EQ */
+    z3::expr visit(const SymBoolArrayEq * const b);
     /** Visit a bit-vector EQ */
     z3::expr visit(const SymBoolEq * const b);
     /** Visit a bit-vector Ge */
@@ -203,6 +219,11 @@ private:
     z3::expr visit(const SymBoolVar * const b);
     /** Visit a boolean XOR */
     z3::expr visit(const SymBoolXor * const b);
+
+    /** Visit an array store */
+    z3::expr visit(const SymArrayStore * const a);
+    /** Visit an array variable */
+    z3::expr visit(const SymArrayVar * const a);
 
     /** See if there's an error */
     bool has_error() {

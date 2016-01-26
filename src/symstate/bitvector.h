@@ -13,21 +13,26 @@
 // limitations under the License.
 
 
-#ifndef _STOKE_SRC_SYMSTATE_SYM_BITVECTOR_H
-#define _STOKE_SRC_SYMSTATE_SYM_BITVECTOR_H
-
 #include <iostream>
 #include <vector>
 
+#ifndef _STOKE_SRC_SYMSTATE_SYM_BITVECTOR_H
+#define _STOKE_SRC_SYMSTATE_SYM_BITVECTOR_H
+
+
+#include "src/symstate/array.h"
 #include "src/symstate/bool.h"
 #include "src/symstate/function.h"
 #include "src/symstate/memory_manager.h"
+
+
 
 namespace stoke {
 
 class SymBitVectorAbstract;
 
 class SymBitVectorAnd;
+class SymBitVectorArrayLookup;
 class SymBitVectorConcat;
 class SymBitVectorConstant;
 class SymBitVectorDiv;
@@ -62,6 +67,7 @@ public:
   enum Type {
     NONE,
     AND,
+    ARRAY_LOOKUP,
     CONCAT,
     CONSTANT,
     DIV,
@@ -135,8 +141,10 @@ public:
   SymBitVector ror(const SymBitVector& other) const;
   /** Creates a bitvector representing signed division */
   SymBitVector s_div(const SymBitVector& other) const;
-  /** Creates a sign-extended version of this bitvector */
+  /** Creates a sign-extended version of this bitvector DEPRECATED. */
   SymBitVector extend(uint16_t size) const;
+  /** Creates a sign-extended version of this bitvector */
+  SymBitVector sign_extend(uint16_t size) const;
   /** Creates a bitvector representing signed modulus */
   SymBitVector s_mod(const SymBitVector& other) const;
   /** Creates a bitvector representing signed shift right */
@@ -314,6 +322,27 @@ public:
     return SymBitVector::Type::AND;
   }
 };
+
+class SymBitVectorArrayLookup : public SymBitVectorAbstract {
+  friend class SymArray;
+  friend class SymTransformVisitor;
+
+public:
+  const SymBitVectorAbstract* const key_;
+  const SymArrayAbstract* const a_;
+
+  bool equals(const SymBitVectorAbstract * other) const;
+
+  SymBitVector::Type type() const {
+    return SymBitVector::Type::ARRAY_LOOKUP;
+  }
+
+private:
+  SymBitVectorArrayLookup(const SymArrayAbstract * const a, const SymBitVectorAbstract * const key) :
+    SymBitVectorAbstract(a->value_size_), key_(key), a_(a) { }
+};
+
+
 
 class SymBitVectorConcat : public SymBitVectorBinop {
   friend class SymBitVector;
@@ -750,9 +779,11 @@ std::ostream& operator<< (std::ostream& out, const stoke::SymBitVector& bv);
 
 /* We need to include these to make sure templates instantiate, but not
    before SymBitVector is declared! */
+/*
 #include "src/symstate/print_visitor.h"
 #include "src/symstate/pretty_visitor.h"
 #include "src/symstate/transform_visitor.h"
 #include "src/symstate/typecheck_visitor.h"
+*/
 
 #endif

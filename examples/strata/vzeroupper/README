@@ -1,0 +1,2 @@
+This instruction surprisingly fails to synthesize with STOKE, even though there is a relatively simple 16-line program with the same semantics as vzeroupper: 16 instructions like vmovdqu %xmm0, %xmm0 for all the registers.  Furthermore, the cost function should guide STOKE well, so that STOKE can learn the program in small steps.
+The cause for this is currently unclear.

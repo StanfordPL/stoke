@@ -25,7 +25,7 @@ namespace stoke {
 
 /** This abstract class is used to visit SymBitVector and SymBool classes to
  * perform operations on the AST.  To use, implement a subclass. */
-template <typename TBool, typename TBits>
+template <typename TBool, typename TBits, typename TArray>
 class SymVisitor {
 
 public:
@@ -40,6 +40,8 @@ public:
     switch (bv->type()) {
     case SymBitVector::AND:
       return visit(static_cast<const SymBitVectorAnd * const>(bv));
+    case SymBitVector::ARRAY_LOOKUP:
+      return visit(static_cast<const SymBitVectorArrayLookup * const>(bv));
     case SymBitVector::CONCAT:
       return visit(static_cast<const SymBitVectorConcat * const>(bv));
     case SymBitVector::DIV:
@@ -105,6 +107,8 @@ public:
     switch (b->type()) {
     case SymBool::AND:
       return visit(static_cast<const SymBoolAnd * const>(b));
+    case SymBool::ARRAY_EQ:
+      return visit(static_cast<const SymBoolArrayEq * const>(b));
     case SymBool::EQ:
       return visit(static_cast<const SymBoolEq * const>(b));
     case SymBool::FALSE:
@@ -148,6 +152,27 @@ public:
     return visit(static_cast<const SymBoolAnd * const>(b)); //keep compiler happy
   }
 
+  /** Visit a symbolic array (encapsulated) */
+  virtual TArray operator()(const SymArray& a) {
+    return (*this)(a.ptr);
+  }
+
+  /** Visit a symbolic bool */
+  virtual TArray operator()(const SymArrayAbstract * const a) {
+    switch (a->type()) {
+    case SymArray::STORE:
+      return visit(static_cast<const SymArrayStore * const>(a));
+    case SymArray::VAR:
+      return visit(static_cast<const SymArrayVar * const>(a));
+    default:
+      std::cerr << "Unexpected array type " << a->type()
+                << " in " << __FILE__ << ":" << __LINE__ << std::endl;
+      assert(false);
+    }
+    assert(false);
+    return visit(static_cast<const SymArrayVar * const>(a)); //keep compiler happy
+  }
+
   /** Visit a generic bin-op.  Used to make implementing visitors more
    * concise.  Can be deleted if need be. */
   virtual TBits visit_binop(const SymBitVectorBinop * const bv) = 0;
@@ -157,7 +182,6 @@ public:
   virtual TBits visit_unop(const SymBitVectorUnop * const bv) = 0;
   /** Visit a generic comparison operator. */
   virtual TBool visit_compare(const SymBoolCompare * const b) = 0;
-
 
   /** Visit a bit-vector AND */
   virtual TBits visit(const SymBitVectorAnd * const bv) {
@@ -245,6 +269,8 @@ public:
   virtual TBits visit(const SymBitVectorSignExtend * const bv) = 0;
   /** Visit a bit-vector variable */
   virtual TBits visit(const SymBitVectorVar * const bv) = 0;
+  /** Visit an array lookup */
+  virtual TBits visit(const SymBitVectorArrayLookup * const bv) = 0;
 
   /** Visit a boolean AND */
   virtual TBool visit(const SymBoolAnd * const b) {
@@ -303,6 +329,8 @@ public:
     return visit_binop(b);
   }
 
+  /** Visit a boolean ARRAY_EQ */
+  virtual TBool visit(const SymBoolArrayEq * const b) = 0;
   /** Visit a boolean FALSE */
   virtual TBool visit(const SymBoolFalse * const b) = 0;
   /** Visit a boolean NOT */
@@ -312,6 +340,10 @@ public:
   /** Visit a boolean VAR */
   virtual TBool visit(const SymBoolVar * const b) = 0;
 
+  /** Visit an array STORE */
+  virtual TArray visit(const SymArrayStore * const a) = 0;
+  /** Visit an array VAR */
+  virtual TArray visit(const SymArrayVar * const a) = 0;
 };
 
 

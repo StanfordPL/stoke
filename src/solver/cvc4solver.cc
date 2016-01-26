@@ -17,6 +17,7 @@
 
 #include "src/solver/cvc4solver.h"
 #include "src/symstate/bitvector.h"
+#include "src/symstate/typecheck_visitor.h"
 
 using namespace stoke;
 using namespace std;
@@ -84,6 +85,7 @@ cpputil::BitVector Cvc4Solver::get_model_bv(const std::string& var, uint16_t bit
     bv[i] = ret.isBitSet(i);
   }
 
+  assert(bv.num_bits() == bits);
   return bv;
 }
 
@@ -247,6 +249,13 @@ Expr Cvc4Solver::ExprConverter::visit_compare(const SymBoolCompare * const compa
   return em_.mkExpr(kind::EQUAL, left, right);
 }
 
+/** Visit a bit-vector array lookup */
+Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorArrayLookup * const bv) {
+  error_ = "Arrays not supported by STOKE's CVC4 interface";
+  assert(false);
+  return em_.mkConst(BitVector(bv->a_->value_size_, (uint64_t)0));
+}
+
 /** Visit a bit-vector constant */
 Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorConstant * const bv) {
   return em_.mkConst(BitVector(bv->size_, bv->constant_));
@@ -330,6 +339,14 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorVar * const bv) {
   }
 }
 
+/** Visit a boolean ARRAY EQ */
+Expr Cvc4Solver::ExprConverter::visit(const SymBoolArrayEq * const b) {
+  auto left = (*this)(b->a_);
+  auto right = (*this)(b->b_);
+
+  return em_.mkExpr(kind::EQUAL, left, right);
+}
+
 /** Visit a boolean FALSE */
 Expr Cvc4Solver::ExprConverter::visit(const SymBoolFalse * const b) {
   return em_.mkConst(false);
@@ -356,5 +373,16 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBoolVar * const b) {
   }
 }
 
+Expr Cvc4Solver::ExprConverter::visit(const SymArrayStore * const b) {
+  error_ = "STOKE doesn't support CVC4's arrays";
+  assert(false);
+  return em_.mkConst(false);
+}
+
+Expr Cvc4Solver::ExprConverter::visit(const SymArrayVar * const b) {
+  error_ = "STOKE doesn't support CVC4's arrays";
+  assert(false);
+  return em_.mkConst(false);
+}
 
 
