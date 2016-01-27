@@ -37,16 +37,16 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   SymTypecheckVisitor tc;
 
   const vector<SymBool>* current = &constraints;
-  vector<SymBool> new_constraints;
+  vector<SymBool>* new_constraints = 0;
+  bool free_it = false;
 
   while (current->size() != 0) {
 
-    new_constraints.clear();
+    new_constraints = new vector<SymBool>();
 
-    ExprConverter ec(context_, new_constraints);
+    ExprConverter ec(context_, *new_constraints);
 
     for (auto it : *current) {
-      /*
       if (tc(it) != 1) {
         stringstream ss;
         ss << "Typechecking failed for constraint: " << it << endl;
@@ -57,7 +57,6 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
         error_ = ss.str();
         return false;
       }
-      */
 
       auto constraint = ec(it);
       if (ec.has_error()) {
@@ -67,8 +66,13 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
       solver_.add(constraint);
     }
 
-    current = &new_constraints;
+    if (free_it)
+      delete current;
+    free_it = true;
+
+    current = new_constraints;
   }
+  delete current;
 
   /* Run the solver and see */
   try {
@@ -124,7 +128,7 @@ cpputil::BitVector Z3Solver::get_model_bv(const std::string& var, uint16_t bits)
     expr extract = to_expr(context_, Z3_mk_extract(context_, max_bits, i*64, v));
     expr number = to_expr(context_, Z3_mk_bv2int(context_, extract, true));
     expr eval = model_->eval(number, true);
-    Z3_get_numeral_uint64(context_, eval, (long long unsigned int*)&oct);
+    Z3_get_numeral_int64(context_, eval, (long long int*)&oct);
 
     assert((max_bits + 1) % 8 == 0);
     size_t k = 0;
@@ -165,6 +169,8 @@ bool Z3Solver::get_model_bool(const std::string& var) {
 std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
     const std::string& var, uint16_t key_bits, uint16_t value_bits) {
 
+  map<uint64_t, cpputil::BitVector> addr_val_map;
+
   // get variable / value
   auto type = Z3_mk_array_sort(context_, context_.bv_sort(key_bits), context_.bv_sort(value_bits));
   auto v = z3::expr(context_, Z3_mk_const(context_, get_symbol(var), type));
@@ -172,6 +178,7 @@ std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
   auto array_eval_func_decl = e.decl();
 
   //cout << *model_ << endl;
+
   // CREDIT: this was written with A LOT of help from
   // https://stackoverflow.com/questions/22885457/read-func-interp-of-a-z3-array-from-the-z3-model
 
@@ -199,6 +206,7 @@ std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
   auto z3_model_fd = Z3_get_decl_func_decl_parameter(context_, array_eval_func_decl, 0);
   auto model_fd = func_decl(context_, z3_model_fd);
   func_interp fun_interp = model_->get_func_interp(model_fd); 
+
 
   unsigned num_entries = fun_interp.num_entries();
   for(unsigned i = 0; i < num_entries; i++) 
