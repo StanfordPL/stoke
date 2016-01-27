@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/validator/invariants/flag.h"
 #include "src/validator/invariants/no_signals.h"
+#include "src/validator/invariants/state_equality.h"
 
 namespace stoke {
 
@@ -49,7 +51,86 @@ TEST_F(ValidatorInvariantTest, NoSignalsCheckFalseBoth) {
   EXPECT_FALSE(nsi.check(bad, bad));
 }
 
+TEST_F(ValidatorInvariantTest, JETaken) {
+  // instruction
+  stringstream ss;
+  ss << ".foo:" << endl;
+  ss << "je .foo" << endl;
+
+  x64asm::Code code;
+  ss >> code;
+  auto instr = code[1];
+
+  // test if the jump will be taken
+  FlagInvariant fi_taken(instr, false, false);
+  CpuState cs;
+
+  cs.rf.set(eflags_zf.index(), false);
+  EXPECT_FALSE(fi_taken.check(cs, cs));
+
+  cs.rf.set(eflags_zf.index(), true);
+  EXPECT_TRUE(fi_taken.check(cs, cs));
 
 
+  // test if the jump will not be taken
+  FlagInvariant fi_fall(instr, false, true);
+
+  cs.rf.set(eflags_zf.index(), false);
+  EXPECT_TRUE(fi_fall.check(cs, cs));
+
+  cs.rf.set(eflags_zf.index(), true);
+  EXPECT_FALSE(fi_fall.check(cs, cs));
+}
+
+
+TEST_F(ValidatorInvariantTest, StateEqualityXmm) {
+  RegSet rs = RegSet::empty() + xmm3;
+  Sandbox sb;
+  StateGen sg(&sb);
+  CpuState target, rewrite;
+  sg.get(target);
+  sg.get(rewrite);
+
+  StateEqualityInvariant sei(rs);
+
+  EXPECT_FALSE(sei.check(target, rewrite));
+
+  rewrite = target;
+
+  EXPECT_TRUE(sei.check(target, rewrite));
+
+  rewrite.sse[xmm3].get_fixed_quad(2)++;
+
+  EXPECT_TRUE(sei.check(target, rewrite));
+
+  rewrite.sse[xmm3].get_fixed_quad(1)++;
+
+  EXPECT_FALSE(sei.check(target, rewrite));
+}
+
+TEST_F(ValidatorInvariantTest, StateEqualityYmm) {
+  RegSet rs = RegSet::empty() + ymm3;
+  Sandbox sb;
+  StateGen sg(&sb);
+  CpuState target, rewrite;
+  sg.get(target);
+  sg.get(rewrite);
+
+  StateEqualityInvariant sei(rs);
+
+  EXPECT_FALSE(sei.check(target, rewrite));
+
+  rewrite = target;
+
+  EXPECT_TRUE(sei.check(target, rewrite));
+
+  rewrite.sse[xmm3].get_fixed_quad(2)++;
+  
+  EXPECT_FALSE(sei.check(target, rewrite));
+
+  rewrite.sse[xmm3].get_fixed_quad(1)++;
+
+  EXPECT_FALSE(sei.check(target, rewrite));
+}
 
 } //namespace stoke
