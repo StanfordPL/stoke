@@ -79,6 +79,11 @@ public:
     memory_manager_ = mm;
   }
 
+  /** Get the memory manager */
+  static SymMemoryManager* get_memory_manager() {
+    return memory_manager_;
+  }
+
 private:
 
   /** Memory Manager */
@@ -111,6 +116,7 @@ inline SymArrayAbstract::~SymArrayAbstract() {}
 /* Abstract class that has contains a left and right argument to a binary operator. */
 class SymArrayStore : public SymArrayAbstract {
   friend class SymArray;
+  friend class SymTransformVisitor;
 
 public:
   const SymArrayAbstract * const a_;
@@ -130,6 +136,7 @@ public:
 
 class SymArrayVar : public SymArrayAbstract {
   friend class SymArray;
+  friend class SymTransformVisitor;
 
 private:
   SymArrayVar(uint16_t key_size, uint16_t value_size, const std::string name) :
