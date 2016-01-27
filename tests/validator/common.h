@@ -202,7 +202,16 @@ protected:
     // the af flag is not currently supported by the validator
     rs = rs - (RegSet::empty() + Constants::eflags_af());
     // don't check undefined outputs
-    rs = rs - instr.maybe_undef_set();
+    if (instr.get_opcode() == CALL_LABEL) {
+      // more precise dataflow information from annotations
+      for (const auto& fxn : aux_fxns) {
+        if (instr.get_operand<Label>(0) == fxn.get_code()[0].get_operand<Label>(0)) {
+          rs = rs - fxn.get_may_must_sets().maybe_undef_set;
+        }
+      }
+    } else {
+      rs = rs - instr.maybe_undef_set();
+    }
     auto eq = true;
     stringstream ss;
     ss << "Sandbox and validator do not agree for '" << instr << "' (opcode " << opcode << ")" << endl;
