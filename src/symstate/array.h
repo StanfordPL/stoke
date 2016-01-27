@@ -19,6 +19,7 @@
 #include <iostream>
 #include <vector>
 
+#include "src/symstate/ast.h"
 #include "src/symstate/memory_manager.h"
 
 namespace stoke {
@@ -93,7 +94,7 @@ private:
 
 };
 
-class SymArrayAbstract {
+class SymArrayAbstract : public SymAstAbstract {
   friend class SymArray;
 
 public:

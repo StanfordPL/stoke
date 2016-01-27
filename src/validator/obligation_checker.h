@@ -30,6 +30,7 @@
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 
+//#define DEBUG_CHECKER_PERFORMANCE
 
 namespace stoke {
 
@@ -236,6 +237,26 @@ private:
   bool nacl_;
 
 
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  static uint64_t number_queries_;
+  static uint64_t number_cases_;
+
+  static uint64_t constraint_gen_time_;
+  static uint64_t solver_time_;
+  static uint64_t aliasing_time_;
+  static uint64_t ceg_time_;
+
+  void print_performance() {
+    std::cout << "====== Obligation Checker Performance Report ======" << std::endl;
+    std::cout << "Number queries: "<< number_queries_ << std::endl;
+    std::cout << "Number aliasing cases: "<< number_cases_ << std::endl;
+    std::cout << "Alias case enumeration time (ms): " << (aliasing_time_ / 1000) << std::endl;
+    std::cout << "Constraint generation time (ms): " << (constraint_gen_time_ / 1000) << std::endl;
+    std::cout << "Solver time (ms): " << (solver_time_ / 1000) << std::endl;
+    std::cout << "Counterexample extraction time (ms): " << (ceg_time_ / 1000) << std::endl;
+    std::cout << "Total time accounted for (ms): " << ((ceg_time_ + solver_time_ + constraint_gen_time_ + aliasing_time_)/1000) << std::endl;
+  }
+#endif
 
 };
 
