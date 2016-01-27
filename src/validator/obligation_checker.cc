@@ -66,7 +66,7 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
     auto var = static_cast<const SymBitVectorVar*>(abs_var);
     auto var_name = var->get_name();
     auto var_size = var->get_size();
-    assert(var_size == 8);
+    assert(var_size == 64);
     auto address_bv = solver_.get_model_bv(var_name, var_size);
     auto addr = address_bv.get_fixed_quad(0);
 
@@ -138,7 +138,11 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
   BUILD_TC_DEBUG(
     cout << "[build tc] map:" << endl;
     for(auto it : addr_value_pairs) {
-      cout << "  " << it.first << " -> " << it.second.get_fixed_quad(0) << endl;
+      cout << "  " << it.first << " -> ";
+      for(size_t j = 0; j < it.second.num_fixed_bytes(); ++j) {
+        cout << (uint64_t)it.second.get_fixed_byte(j);
+      }
+      cout << endl;
     }
   );
   if (Validator::memory_map_to_testcase(addr_value_pairs, ceg))

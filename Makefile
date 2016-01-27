@@ -101,7 +101,6 @@ SRC_OBJ=\
 	\
 	src/symstate/memory/cell.o \
 	src/symstate/memory/flat.o \
-	src/symstate/memory/deprecated.o \
 	\
 	src/target/cpu_info.o	\
 	\
