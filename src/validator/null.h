@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -27,13 +27,13 @@ namespace stoke {
 
 class Nullspace {
 
-  public:
+public:
 
-    static size_t bv_nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t*** output) {
-      return BitvectorNullspace::nullspace((long*)inputs, rows, cols, output);
-    }
+  static size_t bv_nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t*** output) {
+    return BitvectorNullspace::nullspace((long*)inputs, rows, cols, output);
+  }
 
-    static size_t z_nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t*** output);
+  static size_t z_nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64_t*** output);
 };
 
 }

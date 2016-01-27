@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ public:
     nacl_ = nacl;
     return *this;
   }
- 
+
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
 
