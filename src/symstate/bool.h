@@ -17,9 +17,11 @@
 #ifndef _STOKE_SRC_SYMSTATE_BOOL_H
 #define _STOKE_SRC_SYMSTATE_BOOL_H
 
+#include "src/symstate/ast.h"
 #include "src/symstate/memory_manager.h"
 
 namespace stoke {
+
 
 
 class SymBitVector;
@@ -144,7 +146,7 @@ private:
 
 };
 
-class SymBoolAbstract {
+class SymBoolAbstract : public SymAstAbstract {
 
 public:
   virtual SymBool::Type type() const = 0;
