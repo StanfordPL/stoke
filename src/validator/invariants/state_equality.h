@@ -46,7 +46,7 @@ public:
         return false;
     }
     for(auto it = rs_.sse_begin(); it != rs_.sse_end(); ++it) {
-      if(target.sse[*it] != rewrite.sse[*it])
+      if(target[*it] != rewrite[*it])
         return false;
     }
     for(auto it = rs_.flags_begin(); it != rs_.flags_end(); ++it) {

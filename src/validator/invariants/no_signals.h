@@ -43,6 +43,10 @@ public:
     return os;
   }
 
+  bool check(const CpuState& target, const CpuState& rewrite) const {
+    return target.code == ErrorCode::NORMAL && rewrite.code == ErrorCode::NORMAL;
+  }
+
 
 private:
 
