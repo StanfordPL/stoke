@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -29,21 +29,20 @@ namespace stoke {
  * nodes.  The class also provides make_* methods to create bit vectors and bools
  * of all types (and takes care of memory management by adding them to the
  * current memory manager).
- *
- * TODO: doesn't allow for any transforms on arrays!
  */
 class SymTransformVisitor : public SymVisitor<SymBoolAbstract*, SymBitVectorAbstract*, SymArrayAbstract*> {
 
 public:
 
-  SymTransformVisitor() : cache_bool_(*(new std::map<SymBoolAbstract*, SymBoolAbstract*>())), cache_bits_(*(new std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>())), delete_caches_(true) {}
+  SymTransformVisitor() : cache_bool_(*(new std::map<SymBoolAbstract*, SymBoolAbstract*>())), cache_bits_(*(new std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>())), cache_array_(*(new std::map<SymArrayAbstract*, SymArrayAbstract*>())), delete_caches_(true) {}
 
-  SymTransformVisitor(std::map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits) : cache_bool_(cache_bool), cache_bits_(cache_bits), delete_caches_(false) {}
+  SymTransformVisitor(std::map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits, std::map<SymArrayAbstract*, SymArrayAbstract*>& cache_array) : cache_bool_(cache_bool), cache_bits_(cache_bits), cache_array_(cache_array), delete_caches_(false) {}
 
   ~SymTransformVisitor() {
     if (delete_caches_) {
       delete &cache_bool_;
       delete &cache_bits_;
+      delete &cache_array_;
     }
   }
 
@@ -51,21 +50,22 @@ public:
     if (SymBitVector::get_memory_manager())
       SymBitVector::get_memory_manager()->add(ptr);
   }
-
   void add_to_memory_manager(const SymBoolAbstract* ptr) {
     if (SymBool::get_memory_manager())
       SymBool::get_memory_manager()->add(ptr);
+  }
+  void add_to_memory_manager(const SymArrayAbstract* ptr) {
+    if (SymArray::get_memory_manager())
+      SymArray::get_memory_manager()->add(ptr);
   }
 
   SymBitVectorAbstract* cache(const SymBitVectorAbstract* const bv, SymBitVectorAbstract* res) {
     cache_bits_[(SymBitVectorAbstract*)bv] = res;
     return res;
   }
-
   bool is_cached(const SymBitVectorAbstract* const bv) {
     return cache_bits_.find((SymBitVectorAbstract*)bv) != cache_bits_.end();
   }
-
   SymBitVectorAbstract* get_cached(const SymBitVectorAbstract* const bv) {
     return (*cache_bits_.find((SymBitVectorAbstract*)bv)).second;
   }
@@ -74,17 +74,27 @@ public:
     cache_bool_[(SymBoolAbstract*)bv] = res;
     return res;
   }
-
   bool is_cached(const SymBoolAbstract* const bv) {
     return cache_bool_.find((SymBoolAbstract*)bv) != cache_bool_.end();
   }
-
   SymBoolAbstract* get_cached(const SymBoolAbstract* const bv) {
     return (*cache_bool_.find((SymBoolAbstract*)bv)).second;
   }
 
+  SymArrayAbstract* cache(const SymArrayAbstract* const bv, SymArrayAbstract* res) {
+    cache_array_[(SymArrayAbstract*)bv] = res;
+    return res;
+  }
+  bool is_cached(const SymArrayAbstract* const bv) {
+    return cache_array_.find((SymArrayAbstract*)bv) != cache_array_.end();
+  }
+  SymArrayAbstract* get_cached(const SymArrayAbstract* const bv) {
+    return (*cache_array_.find((SymArrayAbstract*)bv)).second;
+  }
+
   std::map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool_;
   std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits_;
+  std::map<SymArrayAbstract*, SymArrayAbstract*>& cache_array_;
   bool delete_caches_;
 
   // The make_* functions allow the creation of new bit vectors and bools, and takes
@@ -234,8 +244,13 @@ public:
     return res;
   }
 
-  SymBitVectorArrayLookup* make_bitvector_array_lookup(const SymArrayAbstract * const a, const SymBitVectorAbstract  * const bv) {
-    auto res = new SymBitVectorArrayLookup(a, bv);
+  SymBoolArrayEq* make_array_eq(const SymArrayAbstract * const a, const SymArrayAbstract * const b) {
+    auto res = new SymBoolArrayEq(a, b);
+    add_to_memory_manager(res);
+    return res;
+  }
+  SymBitVectorArrayLookup* make_bitvector_array_lookup(const SymArrayAbstract * const a, const SymBitVectorAbstract * const key) {
+    auto res = new SymBitVectorArrayLookup(a, key);
     add_to_memory_manager(res);
     return res;
   }
@@ -302,6 +317,16 @@ public:
     return res;
   }
 
+  SymArrayVar* make_array_var(uint16_t key_size, uint16_t value_size, const std::string name) {
+    auto res = new SymArrayVar(key_size, value_size, name);
+    add_to_memory_manager(res);
+    return res;
+  }
+  SymArrayStore* make_array_store(const SymArrayAbstract * a, const SymBitVectorAbstract * key, const SymBitVectorAbstract * value) {
+    auto res = new SymArrayStore(a, key, value);
+    add_to_memory_manager(res);
+    return res;
+  }
 
   SymBitVectorAbstract* visit_binop(const SymBitVectorBinop * const bv) {
     if (is_cached(bv)) return get_cached(bv);
@@ -342,13 +367,24 @@ public:
     return cache(bv, make_compare(bv->type(), lhs, rhs));
   }
 
+  SymBoolAbstract* visit(const SymBoolArrayEq * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
+    auto lhs = (*this)(bv->a_);
+    auto rhs = (*this)(bv->b_);
+    if (lhs == bv->a_ && rhs == bv->b_) {
+      return cache(bv, (SymBoolArrayEq*)bv);
+    }
+    return cache(bv, make_array_eq(lhs, rhs));
+  }
+
   SymBitVectorAbstract* visit(const SymBitVectorArrayLookup * const bv) {
     if (is_cached(bv)) return get_cached(bv);
+    auto a = (*this)(bv->a_);
     auto key = (*this)(bv->key_);
-    if (key == bv->key_) {
+    if (key == bv->key_ && a == bv->a_) {
       return cache(bv, (SymBitVectorArrayLookup*)bv);
     }
-    return cache(bv, make_bitvector_array_lookup(bv->a_, key));
+    return cache(bv, make_bitvector_array_lookup(a, key));
   }
 
   SymBitVectorAbstract* visit(const SymBitVectorConstant * const bv) {
@@ -404,10 +440,6 @@ public:
     return (SymBitVectorAbstract*) bv;
   }
 
-  SymBoolAbstract* visit(const SymBoolArrayEq * const b) {
-    return (SymBoolAbstract*) b;
-  }
-
   SymBoolAbstract* visit(const SymBoolFalse * const b) {
     return (SymBoolAbstract*) b;
   }
@@ -429,8 +461,15 @@ public:
     return (SymBoolAbstract*) b;
   }
 
-  SymArrayAbstract* visit(const SymArrayStore * const a) {
-    return const_cast<SymArrayAbstract*>(static_cast<const SymArrayAbstract * const>(a));
+  SymArrayAbstract* visit(const SymArrayStore * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
+    auto c = (*this)(bv->a_);
+    auto lhs = (*this)(bv->key_);
+    auto rhs = (*this)(bv->value_);
+    if (lhs == bv->key_ && rhs == bv->value_ && c == bv->a_) {
+      return cache(bv, (SymArrayStore*)bv);
+    }
+    return cache(bv, make_array_store(c, lhs, rhs));
   }
   SymArrayAbstract* visit(const SymArrayVar * const a) {
     return const_cast<SymArrayAbstract*>(static_cast<const SymArrayAbstract * const>(a));

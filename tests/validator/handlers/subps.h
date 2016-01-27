@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,8 @@ namespace stoke {
 
 class ValidatorSubpsTest : public StraightLineValidatorTest {};
 
-TEST_F(ValidatorSubpsTest, Identity) {
+// See issue 817
+TEST_F(ValidatorSubpsTest, DISABLED_Identity) {
 
   target_ << ".foo:" << std::endl;
   target_ << "subps %xmm3, %xmm5" << std::endl;
@@ -29,11 +30,8 @@ TEST_F(ValidatorSubpsTest, Identity) {
   assert_equiv();
 }
 
-TEST_F(ValidatorSubpsTest, DISABLED_MatchesSubss) {
-
-}
-
-TEST_F(ValidatorSubpsTest, NotANoop) {
+// See issue 817
+TEST_F(ValidatorSubpsTest, DISABLED_NotANoop) {
 
   target_ << ".foo:" << std::endl;
   target_ << "subps %xmm3, %xmm5" << std::endl;

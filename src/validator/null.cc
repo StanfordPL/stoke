@@ -1,3 +1,17 @@
+// Copyright 2013-2016 Stanford University
+//
+// Licensed under the Apache License, Version 2.0 (the License);
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an AS IS BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <iostream>
 #include <fstream>
 #include <stdint.h>
@@ -44,13 +58,13 @@ size_t Nullspace::z_nullspace(uint64_t* inputs, size_t rows, size_t cols, uint64
 
   // Allocate the output matrix
   *output = new uint64_t*[dim];
-  for(size_t i = 0; i < dim; ++i) {
+  for (size_t i = 0; i < dim; ++i) {
     (*output)[i] = new uint64_t[cols];
   }
-  
+
   // Fill the output matrix
-  for(size_t i = 0; i < dim; ++i) {
-    for(size_t j = 0; j < cols; ++j) {
+  for (size_t i = 0; i < dim; ++i) {
+    for (size_t j = 0; j < cols; ++j) {
       (*output)[i][j] = (uint64_t)mpz_get_si(mp_result[j*dim + i]);
     }
   }
@@ -65,8 +79,8 @@ namespace BitvectorNullspace {
 //Any number is odd*2^x. Return odd
 uint64_t getOdd(uint64_t p)
 {
-  if(p==0) return 0;
-  while((p%2)==0)
+  if (p==0) return 0;
+  while ((p%2)==0)
     p=p/2;
   return p;
 }
@@ -74,9 +88,9 @@ uint64_t getOdd(uint64_t p)
 //2^{64-input}, not needed
 uint64_t invertPow2(uint64_t a)
 {
-  if(a==0) return 1;
-  if(a==1) return 1;
-  if(a==2) return (((uint64_t)1)<<63);
+  if (a==0) return 1;
+  if (a==1) return 1;
+  if (a==2) return (((uint64_t)1)<<63);
   else return ((((uint64_t)1)<<63)/(a/2));
 }
 
@@ -85,14 +99,17 @@ uint64_t invert(uint64_t b)
 {
   uint64_t a = ((uint64_t)1)<<63;
   uint64_t alpha, beta, u, v;
-  u=1; v=0;
-  alpha=a; beta = b;
-  while(a>0)
+  u=1;
+  v=0;
+  alpha=a;
+  beta = b;
+  while (a>0)
   {
     a=a>>1;
-    if((u&1)==0)
+    if ((u&1)==0)
     {
-      u = u>>1; v = v>>1;
+      u = u>>1;
+      v = v>>1;
     }
     else
     {
@@ -107,12 +124,12 @@ uint64_t invert(uint64_t b)
 uint64_t* augmentIdentity(uint64_t* inputs, size_t rows, size_t cols)
 {
   uint64_t* augmented = new uint64_t[(rows+cols)*cols];
-  for(size_t i=0;i<rows;i++)
-    for(size_t j=0; j<cols;j++)
+  for (size_t i=0; i<rows; i++)
+    for (size_t j=0; j<cols; j++)
       augmented[i*cols+j]=inputs[i*cols+j];
-  for(size_t i=rows; i<rows+cols;i++)
-    for(size_t j=0; j<cols;j++)
-      if(i==rows+j)
+  for (size_t i=rows; i<rows+cols; i++)
+    for (size_t j=0; j<cols; j++)
+      if (i==rows+j)
         augmented[i*cols+j]=1;
       else
         augmented[i*cols+j]=0;
@@ -122,11 +139,11 @@ uint64_t* augmentIdentity(uint64_t* inputs, size_t rows, size_t cols)
 void printMat(uint64_t* mat, size_t rows, size_t cols)
 {
   cout << "START" << endl;
-  for(size_t i=0;i<rows;i++)
+  for (size_t i=0; i<rows; i++)
   {
-    for(size_t j=0;j<cols;j++)
+    for (size_t j=0; j<cols; j++)
       cout << mat[i*cols+j] << " " ;
-     cout << endl;
+    cout << endl;
   }
   cout << "END" << endl;
 
@@ -134,17 +151,17 @@ void printMat(uint64_t* mat, size_t rows, size_t cols)
 //compute gcd of two positive numbers
 uint64_t gcd(uint64_t a, uint64_t b)
 {
-  if(a==0) return b;
-  if(b==0) return a;
-  if(a>b) return gcd(b,a%b);
-  if(b>a) return gcd(a,b%a);
+  if (a==0) return b;
+  if (b==0) return a;
+  if (a>b) return gcd(b,a%b);
+  if (b>a) return gcd(a,b%a);
   return a;
 }
 //absolute value function useful for pretty printing
 int64_t abs(uint64_t a)
 {
   int64_t retval = a;
-  if(retval>=0) return retval;
+  if (retval>=0) return retval;
   else return -retval;
 }
 //compute gcd of a vector of integers
@@ -152,7 +169,7 @@ uint64_t rowGcd(uint64_t* vec, size_t num)
 {
   size_t i =0;
   uint64_t retval = abs(vec[i]);
-  for(i=1;i<num;i++)
+  for (i=1; i<num; i++)
   {
     retval = gcd(retval,abs(vec[i]));
   }
@@ -161,31 +178,31 @@ uint64_t rowGcd(uint64_t* vec, size_t num)
 //for prettier output
 void makePretty(uint64_t*** output,size_t rows,size_t cols)
 {
-/*
-  for(size_t i=0;i<rows;i++)
-  {
-    uint64_t g = rowGcd(*output[i],cols);
-    assert(g!=0 && "NULL ROW");
-    for(size_t j=0;j<cols;j++)
+  /*
+    for(size_t i=0;i<rows;i++)
     {
-      int64_t l = ((int64_t)*output[i][j]);
-      l = l/((int64_t)g);
-      *output[i][j]= (uint64_t)(l);
+      uint64_t g = rowGcd(*output[i],cols);
+      assert(g!=0 && "NULL ROW");
+      for(size_t j=0;j<cols;j++)
+      {
+        int64_t l = ((int64_t)*output[i][j]);
+        l = l/((int64_t)g);
+        *output[i][j]= (uint64_t)(l);
+      }
     }
-  }
-*/
+  */
 }
 
 void printOutput(uint64_t** output,size_t rows,size_t cols)
 {
-	cout << "PRINTING OUTPUT " << endl;
-  for(size_t i=0;i<rows;i++)
+  cout << "PRINTING OUTPUT " << endl;
+  for (size_t i=0; i<rows; i++)
   {
-          for(size_t j=0;j<cols;j++)
-          {
-                  cout << ((int64_t)output[i][j]) << " " ;
-          }
-          cout << endl;
+    for (size_t j=0; j<cols; j++)
+    {
+      cout << ((int64_t)output[i][j]) << " " ;
+    }
+    cout << endl;
   }
   cout << "DONE PRINTING OUTPUT" << endl;
 }
@@ -195,7 +212,7 @@ void printOutput(uint64_t** output,size_t rows,size_t cols)
 uint64_t multiplyRow(uint64_t* r1, uint64_t* r2, size_t num)
 {
   uint64_t acc = 0;
-  for(size_t i=0; i< num; i++)
+  for (size_t i=0; i< num; i++)
     acc += r1[i]*r2[i];
   return acc;
 }
@@ -203,9 +220,9 @@ uint64_t multiplyRow(uint64_t* r1, uint64_t* r2, size_t num)
 bool checkOutput(uint64_t** output, uint64_t* inputs, size_t nullity, size_t rows, size_t cols)
 {
   assert(nullity > 0);
-  for(size_t i = 0; i< nullity; i++)
-    for(size_t j=0; j< rows;j++)
-      if(multiplyRow(output[i],inputs+j*cols,cols))
+  for (size_t i = 0; i< nullity; i++)
+    for (size_t j=0; j< rows; j++)
+      if (multiplyRow(output[i],inputs+j*cols,cols))
       {
         cout << "!!!!!!!!!NULLSPACE WRONG!!!!!!!!" << endl;
         cout << "LOOK AT " << i << " null row and " << j << " test" << endl;
@@ -218,12 +235,12 @@ bool checkOutput(uint64_t** output, uint64_t* inputs, size_t nullity, size_t row
 
 bool checkInvariants(uint64_t* augmented,size_t rows,size_t cols)
 {
-  for(size_t i=rows;i<rows+cols;i++)
+  for (size_t i=rows; i<rows+cols; i++)
   {
     bool flag  = false;
-    for(size_t j=0;j<cols;j++)
+    for (size_t j=0; j<cols; j++)
       flag = flag || augmented[i*cols+j]!=0;
-    if(!flag)
+    if (!flag)
       return false;
   }
   return true;
@@ -231,9 +248,9 @@ bool checkInvariants(uint64_t* augmented,size_t rows,size_t cols)
 
 size_t rank(uint64_t a)
 {
-  if(a==0) return 64;
+  if (a==0) return 64;
   size_t rank =0;
-  while(a%2==0)
+  while (a%2==0)
   {
     a=a/2;
     rank++;
@@ -251,27 +268,27 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
   //cout << "STARTING" << endl;
   //printMat(augmented,rows+cols,cols);
   size_t currcol=0;
-  for(size_t i=0;i<rows;i++)
+  for (size_t i=0; i<rows; i++)
   {
     size_t minrank = rank(SUB(i,currcol));
     size_t idx = currcol;
-    for(size_t j=currcol;j<cols;j++)
+    for (size_t j=currcol; j<cols; j++)
     {
       size_t val = rank(SUB(i,j));
-      if(val<minrank)
+      if (val<minrank)
       {
-      minrank = val;
-      idx = j;
+        minrank = val;
+        idx = j;
       }
     }
-    if(minrank==64)
+    if (minrank==64)
     {
       continue;
     }
     rowrank++;
     assert(rowrank<cols);
     //We have found the column with the pivot
-    for(size_t j=i;j<rows+cols;j++)
+    for (size_t j=i; j<rows+cols; j++)
     {
       uint64_t temp = SUB(j,idx);
       SUB(j,idx)=SUB(j,currcol);
@@ -284,21 +301,21 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
     uint64_t odd = getOdd(pivot);
     uint64_t twopow = pivot/odd;
     uint64_t oddinv = invert(odd);
-    for(size_t j=i;j<rows+cols;j++)
+    for (size_t j=i; j<rows+cols; j++)
     {
       SUB(j,currcol) = SUB(j,currcol)*oddinv;
     }
     //cout << "The pivot at column " << currcol << " is now a power of 2" << endl;
     //printMat(augmented,rows+cols,cols);
     assert(SUB(i,currcol)==twopow && "inversion failed");
-    for(size_t k=currcol+1;k<cols;k++)
+    for (size_t k=currcol+1; k<cols; k++)
     {
       uint64_t initval = SUB(i,k)/twopow;
-      for(size_t j =i;j<rows+cols;j++)
+      for (size_t j =i; j<rows+cols; j++)
       {
-         SUB(j,k) = SUB(j,k) - initval*SUB(j,currcol);
+        SUB(j,k) = SUB(j,k) - initval*SUB(j,currcol);
       }
-     // cout << "Column" << k << " - " << initval << " times column " << currcol << endl;
+      // cout << "Column" << k << " - " << initval << " times column " << currcol << endl;
       //printMat(augmented,rows+cols,cols);
       assert(SUB(i,k)==0);
       assert(checkInvariants(augmented,rows,cols));
@@ -309,34 +326,34 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
   size_t nullity = cols-rowrank;
   //cout << "Nullity is " << nullity << endl;
   *output = new uint64_t*[2*cols];
-  for(size_t i=cols-nullity;i<cols;i++)
+  for (size_t i=cols-nullity; i<cols; i++)
   {
     (*output)[i-cols+nullity]= new uint64_t[cols];
-    for(size_t j=rows;j<rows+cols;j++)
+    for (size_t j=rows; j<rows+cols; j++)
     {
       (*output)[i-cols+nullity][j-rows]=SUB(j,i);
     }
   }
   //adding 32 bit equations
   size_t idx = nullity;
-  for(size_t i=0;i< rows+cols;i++)
-	  for(size_t j=0;j<cols;j++)
-		  SUB(i,j) = SUB(i,j)*(((uint64_t)1)<<32);
-  for(size_t i=0;i<cols;i++)
+  for (size_t i=0; i< rows+cols; i++)
+    for (size_t j=0; j<cols; j++)
+      SUB(i,j) = SUB(i,j)*(((uint64_t)1)<<32);
+  for (size_t i=0; i<cols; i++)
   {
-	  bool flag = true;
-	  for(size_t j=0;j<rows;j++)
-		  flag = flag && (SUB(j,i)==0);
-	  if(flag)
-	  {
-		  cout << "Found a smaller bit equation" << endl;
-		  (*output)[idx]=(uint64_t*)malloc(sizeof(uint64_t)*cols);
-		  for(size_t j=rows;j<rows+cols;j++)
-		  {
-			  (*output)[idx][j-rows]=SUB(j,i);
-		  }
-		  idx++;
-	  }
+    bool flag = true;
+    for (size_t j=0; j<rows; j++)
+      flag = flag && (SUB(j,i)==0);
+    if (flag)
+    {
+      cout << "Found a smaller bit equation" << endl;
+      (*output)[idx]=(uint64_t*)malloc(sizeof(uint64_t)*cols);
+      for (size_t j=rows; j<rows+cols; j++)
+      {
+        (*output)[idx][j-rows]=SUB(j,i);
+      }
+      idx++;
+    }
   }
   //makePretty(output,idx,cols);
   printOutput(*output, idx, cols);

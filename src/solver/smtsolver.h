@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ public:
   /** Get the satisfying assignment for a bit from the model. */
   virtual bool get_model_bool(const std::string& var) = 0;
   /** Get the satisfying assignment for an array */
-  virtual std::map<cpputil::BitVector, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) = 0;
+  virtual std::map<uint64_t, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) = 0;
 
   /** Check if the last query trivvered an error. */
   virtual bool has_error() {

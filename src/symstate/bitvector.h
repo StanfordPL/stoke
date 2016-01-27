@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 
 
 #include "src/symstate/array.h"
+#include "src/symstate/ast.h"
 #include "src/symstate/bool.h"
 #include "src/symstate/function.h"
 #include "src/symstate/memory_manager.h"
@@ -251,7 +252,7 @@ private:
 
 };
 
-class SymBitVectorAbstract {
+class SymBitVectorAbstract : public SymAstAbstract {
   friend class SymBitVector;
   friend class SymTransformVisitor;
 

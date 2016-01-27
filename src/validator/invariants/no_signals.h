@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -41,6 +41,10 @@ public:
   std::ostream& write(std::ostream& os) const {
     os << "no signals";
     return os;
+  }
+
+  bool check(const CpuState& target, const CpuState& rewrite) const {
+    return target.code == ErrorCode::NORMAL && rewrite.code == ErrorCode::NORMAL;
   }
 
 

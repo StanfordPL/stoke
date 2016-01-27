@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -171,6 +171,8 @@ FlagSet CpuInfo::get_flags() {
 #endif
 #ifdef NEHALEM_BUILD
   result -= Flag::AVX;
+  result -= Flag::BMI1;
+  result -= Flag::BMI2;
 #endif
 
   return result;

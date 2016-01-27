@@ -31,15 +31,9 @@ cpputil::ValueArg<size_t>& bound_arg =
   .description("Maximum iterations through a loop")
   .default_val(2);
 
-cpputil::ValueArg<std::string>& alias_strategy_arg =
-  cpputil::ValueArg<std::string>::create("alias_strategy")
-  .usage("(basic|string|string_antialias)")
-  .description("How to handle aliasing")
-  .default_val("string");
-
 cpputil::FlagArg& no_bailout_arg =
- cpputil::FlagArg::create("no_early_bailout")
- .description("Do not bailout once first counterexample found");
+  cpputil::FlagArg::create("no_early_bailout")
+  .description("Do not bailout once first counterexample found");
 
 } // namespace stoke
 

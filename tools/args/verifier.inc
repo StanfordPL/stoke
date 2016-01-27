@@ -23,7 +23,7 @@
 namespace stoke {
 
 cpputil::Heading& verifier_heading =
-  cpputil::Heading::create("Verifier Options:");
+  cpputil::Heading::create("Verification Options:");
 
 cpputil::ValueArg<std::string>& strategy_arg =
   cpputil::ValueArg<std::string>::create("strategy")
@@ -36,6 +36,19 @@ cpputil::ValueArg<std::string>& strata_path_arg =
   .usage("<path/to/dir>")
   .description("The path to the directory with the strata circuits (a collection of .s files)")
   .default_val("");
+
+cpputil::Heading& validator_heading =
+  cpputil::Heading::create("Common Formal Validation Options:");
+
+cpputil::ValueArg<std::string>& alias_strategy_arg =
+  cpputil::ValueArg<std::string>::create("alias_strategy")
+  .usage("(basic|string|string_antialias|flat)")
+  .description("How to handle aliasing")
+  .default_val("flat");
+
+cpputil::FlagArg& verify_nacl_arg =
+  cpputil::FlagArg::create("verify_nacl")
+  .description("add constraints to bound index registers away from 32-bit boundary");
 
 } // namespace stoke
 

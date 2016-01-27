@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -80,7 +80,7 @@ public:
   }
 
 
-  /** Get the expected final state of the target after running counterexample. 
+  /** Get the expected final state of the target after running counterexample.
     (This is only for the fuzz tester, basically).  It is only valid if we just
     returned a counterexample.  It also doesn't handle memory writes right. */
   CpuState get_target_final_state() {
