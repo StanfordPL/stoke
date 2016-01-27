@@ -36,8 +36,8 @@ public:
         delete it;
   }
 
-  virtual std::vector<std::string> full_support_opcodes() {
-    std::vector<std::string> opcodes;
+  virtual std::vector<x64asm::Opcode> full_support_opcodes() {
+    std::vector<x64asm::Opcode> opcodes;
     for (auto it : handlers_) {
       auto children = it->full_support_opcodes();
       opcodes.insert(opcodes.end(), children.begin(), children.end());

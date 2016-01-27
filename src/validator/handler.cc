@@ -60,7 +60,6 @@ SymBool Handler::minus_of(SymBool arg1_msb, SymBool arg2_msb, SymBool total_msb)
 }
 
 
-
 const array<const char*, X64ASM_NUM_OPCODES> Handler::att_ = {{
     "<label definition>"
 #include "src/ext/x64asm/src/opcode.att"

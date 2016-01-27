@@ -783,6 +783,32 @@ vector<Opcode> instr_cat_system_ = {
   , XSAVEOPT64_M32 // XSAVEOPT64 m32
   , XSAVEOPT64_M64 // XSAVEOPT64 m64
   , XTEST // XTEST
+
+  // these have problems with the maybe_undef_set being too large
+  , SHRD_M16_R16_CL // SHRD m16, r16, CL
+  , SHRD_M16_R16_IMM8 // SHRD m16, r16, imm8
+  , SHRD_M32_R32_CL // SHRD m32, r32, CL
+  , SHRD_M32_R32_IMM8 // SHRD m32, r32, imm8
+  , SHRD_M64_R64_CL // SHRD m64, r64, CL
+  , SHRD_M64_R64_IMM8 // SHRD m64, r64, imm8
+  , SHRD_R16_R16_CL // SHRD r16, r16, CL
+  , SHRD_R16_R16_IMM8 // SHRD r16, r16, imm8
+  , SHRD_R32_R32_CL // SHRD r32, r32, CL
+  , SHRD_R32_R32_IMM8 // SHRD r32, r32, imm8
+  , SHRD_R64_R64_CL // SHRD r64, r64, CL
+  , SHRD_R64_R64_IMM8 // SHRD r64, r64, imm8
+  , SHLD_M16_R16_CL // SHLD m16, r16, CL
+  , SHLD_M16_R16_IMM8 // SHLD m16, r16, imm8
+  , SHLD_M32_R32_CL // SHLD m32, r32, CL
+  , SHLD_M32_R32_IMM8 // SHLD m32, r32, imm8
+  , SHLD_M64_R64_CL // SHLD m64, r64, CL
+  , SHLD_M64_R64_IMM8 // SHLD m64, r64, imm8
+  , SHLD_R16_R16_CL // SHLD r16, r16, CL
+  , SHLD_R16_R16_IMM8 // SHLD r16, r16, imm8
+  , SHLD_R32_R32_CL // SHLD r32, r32, CL
+  , SHLD_R32_R32_IMM8 // SHLD r32, r32, imm8
+  , SHLD_R64_R64_CL // SHLD r64, r64, CL
+  , SHLD_R64_R64_IMM8 // SHLD r64, r64, imm8
 };
 
 vector<Opcode> instr_cat_jump_ = {

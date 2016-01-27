@@ -35,7 +35,7 @@
 
 #include "src/symstate/simplify.h"
 
-#include "src/validator/straight_line.h"
+#include "src/validator/bounded.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
 
@@ -66,8 +66,9 @@ auto& circuits_arg =
   ValueArg<string>::create("circuit_dir")
   .usage("<path/to/dir>")
   .description("Directory containing the strata circuits")
-  .required();
+  .default_val("/home/sheule/dev/circuits");
 
+string test_instruction(SandboxGadget& sb, SeedGadget& seed, StrataHandler& strata_handler, Instruction& instr);
 
 int main(int argc, char** argv) {
 
@@ -80,14 +81,6 @@ int main(int argc, char** argv) {
   FunctionsGadget aux_fxns;
   SandboxGadget sb({}, aux_fxns);
 
-  // setup the stategen class
-  StateGen sg(&sb, 30);
-  sg.set_max_attempts(10)
-  .set_max_memory(30)
-  .set_allow_unaligned(false)
-  .set_seed(seed);
-
-  SolverGadget solver;
   default_random_engine gen((size_t)seed);
 
   auto col_reset = "\033[0m";
@@ -99,48 +92,43 @@ int main(int argc, char** argv) {
   auto errors = 0;
   auto n = 0;
   auto strata_handler = StrataHandler(strata_path);
-  auto validator = StraightLineValidator(solver);
+  // auto validator = StraightLineValidator(solver);
 
-  int strata_count = 0;
-  int stoke_count = 0;
-  int only_strata = 0;
-  int only_stoke = 0;
   for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     auto opcode = (Opcode)i;
-    auto strata_support = strata_handler.is_supported(opcode) || specgen_is_base(opcode);
-    auto stoke_support = validator.is_supported(opcode);
+    // auto is_base = specgen_is_base(opcode);
+    auto strata_support = strata_handler.is_supported(opcode);
+    // auto stoke_support = validator.is_supported(opcode);
+
+    if (specgen_uses_memory(opcode)) {
+      continue;
+    }
+
     if (strata_support) {
-      strata_count++;
-    }
-    if (stoke_support) {
-      stoke_count++;
-    }
-    if (stoke_support && !strata_support) {
-      only_stoke++;
-    }
-    if (strata_support && !stoke_support) {
-      only_strata++;
-    }
-    if (!strata_support) {
-      if (!specgen_is_system(opcode) &&
-          !specgen_is_float(opcode) &&
-          !specgen_is_jump(opcode) &&
-          !specgen_is_mm(opcode) &&
-          !specgen_is_crypto(opcode) &&
-          !specgen_is_sandbox_unsupported(opcode)) {
-        // cout << opcode << endl;
+      // Opcode opcode = Opcode::AND_R32_IMM8;
+      auto instr = get_random_instruction(opcode, gen);
+
+      auto err = test_instruction(sb, seed, strata_handler, instr);
+      if (err == "") {
+        //cout << instr << " ✓" << endl;
+      } else {
+        cout << err << endl;
       }
     }
   }
-  cout << "strata supports " << strata_count << " instructions" << endl;
-  cout << "  only strata: " << only_strata << endl;
-  cout << "stoke supports " << stoke_count << " instructions" << endl;
-  cout << "  only stoke: " << only_stoke << endl;
+}
 
-  Opcode opcode = Opcode::ADC_R8_IMM8;
-  auto instr = get_random_instruction(opcode, gen);
+string test_instruction(SandboxGadget& sb, SeedGadget& seed, StrataHandler& strata_handler, Instruction& instr) {
+  // setup the stategen class
+  StateGen sg(&sb, 30);
+  sg.set_max_attempts(10)
+  .set_max_memory(30)
+  .set_allow_unaligned(false)
+  .set_seed(seed);
+  stringstream ss;
+  auto opcode = instr.get_opcode();
 
-  cout << instr << endl;
+  SolverGadget solver;
 
   // set up cfg for stategen
   Code code;
@@ -151,8 +139,8 @@ int main(int argc, char** argv) {
 
   CpuState initial;
   if (!sg.get(initial, cfg)) {
-    cout << "Could not generate state: " << sg.get_error() << endl;
-    return 1;
+    ss << "Could not generate state: " << sg.get_error() << endl;
+    return ss.str();
   }
 
   Sandbox sb2(sb);
@@ -161,13 +149,13 @@ int main(int argc, char** argv) {
   CpuState final = *sb2.get_result(0);
 
   if (final.code != stoke::ErrorCode::NORMAL) {
-    cout << "Error code not normal: " << (int)final.code << endl;
-    return 1;
+    ss << "Error code not normal: " << (int)final.code << endl;
+    return ss.str();
   }
 
   if (strata_handler.get_support(instr) == Handler::SupportLevel::NONE) {
-    cout << "strata does not support '" << instr << "'." << endl;
-    exit(1);
+    ss << "strata does not support '" << instr << "'." << endl;
+    return ss.str();
   }
 
   // build circuits
@@ -185,8 +173,13 @@ int main(int argc, char** argv) {
     }
     if (!res) {
       explanation << "  states do not agree for '" << (*reg) << "':" << endl;
-      explanation << "    strata: " << a << endl;
-      explanation << "    stoke:  " << b << endl;
+      auto simplify = true;
+      if (!simplify) {
+        explanation << "    strata:  " << (a) << endl;
+      } else {
+        explanation << "    strata:  " << SymSimplify().simplify(a) << endl;
+      }
+      explanation << "    sandbox: " << b << endl;
       return false;
     } else {
       return true;
@@ -194,8 +187,11 @@ int main(int argc, char** argv) {
   };
 
   auto rs = RegSet::universe() - (RegSet::empty() + Constants::eflags_af());
+  // there are some errors in the maybe-must write table, so we can only look
+  // at these:
+  rs = instr.must_write_set() - (RegSet::empty() + Constants::eflags_af());
   auto eq = true;
-  stringstream ss;
+  ss << "States do not agree for '" << instr << "' (opcode " << opcode << ")" << endl;
   for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
     eq = eq && is_eq(gp_it, final_strata.lookup(*gp_it), final_sym.lookup(*gp_it), ss);
   }
@@ -206,9 +202,7 @@ int main(int argc, char** argv) {
     eq = eq && is_eq(flag_it, final_strata[*flag_it], final_sym[*flag_it], ss);
   }
   if (!eq) {
-    cout << "States do not agree for '" << instr << "' (opcode " << opcode << ")" << endl;
-    cout << ss.str();
-    cout << endl << endl;
-    exit(1);
+    return ss.str();
   }
+  return "";
 }

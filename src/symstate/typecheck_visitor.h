@@ -19,14 +19,16 @@
 #include <map>
 #include <sstream>
 
-#include "src/symstate/visitor.h"
+#include "src/symstate/print_visitor.h"
+#include "src/symstate/pretty_visitor.h"
+#include "src/symstate/memo_visitor.h"
 
 namespace stoke {
 
 /* This visitor returns the size of a bitvector, and also checks
    that it's well-formed.  If it's not well-formed, it returns
    size 0. */
-class SymTypecheckVisitor : public SymVisitor<uint16_t, uint16_t> {
+class SymTypecheckVisitor : public SymMemoVisitor<uint16_t, uint16_t, uint16_t> {
 
 public:
 
@@ -34,26 +36,34 @@ public:
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBitVector& bv) {
     error_ = "";
-    return SymVisitor<uint16_t, uint16_t>::operator()(bv);
+    return SymMemoVisitor<uint16_t, uint16_t, uint16_t>::operator()(bv.ptr);
   }
   /** Typecheck this abstract symbolic bool */
   // (don't use this inside the class because it clears error message)
   uint16_t operator()(const SymBool& b) {
     error_ = "";
-    return SymVisitor<uint16_t, uint16_t>::operator()(b);
+    return SymMemoVisitor<uint16_t, uint16_t, uint16_t>::operator()(b.ptr);
   }
+  /** Typecheck this abstract symbolic array */
+  // (don't use this inside the class because it clears error message)
+  uint16_t operator()(const SymArray& b) {
+    error_ = "";
+    return SymMemoVisitor<uint16_t, uint16_t, uint16_t>::operator()(b.ptr);
+  }
+
+
 
   /* Visit a generic binary operator */
   uint16_t visit_binop(const SymBitVectorBinop * const bv) {
 
-    auto lhs = apply(bv->a_);
-    auto rhs = apply(bv->b_);
+    auto lhs = (*this)(bv->a_);
+    auto rhs = (*this)(bv->b_);
 
     if (lhs == rhs)
       return lhs;
     else {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In binop: ";
       pv(bv);
       e << " the LHS has width " << lhs
@@ -66,8 +76,8 @@ public:
   /* Visit a generic binary operator on bool*/
   uint16_t visit_binop(const SymBoolBinop * const b) {
 
-    auto lhs = apply(b->a_);
-    auto rhs = apply(b->b_);
+    auto lhs = (*this)(b->a_);
+    auto rhs = (*this)(b->b_);
 
     if (lhs && rhs)
       return 1;
@@ -77,14 +87,14 @@ public:
 
   /** Visit a bit-vector EQ */
   uint16_t visit_compare(const SymBoolCompare * const b) {
-    auto lhs = apply(b->a_);
-    auto rhs = apply(b->b_);
+    auto lhs = (*this)(b->a_);
+    auto rhs = (*this)(b->b_);
 
     if (lhs == rhs && lhs)
       return 1;
     else if (lhs != rhs) {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In compare: ";
       pv(b);
       e << " the LHS has width " << lhs
@@ -93,7 +103,7 @@ public:
       return 0;
     } else if (!lhs) {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In compare: ";
       pv(b);
       e << " the LHS does not typecheck.";
@@ -105,21 +115,21 @@ public:
 
   /** Visit a bit-vector unary operator */
   uint16_t visit_unop(const SymBitVectorUnop * const bv) {
-    return apply(bv->bv_);
+    return (*this)(bv->bv_);
   }
 
   /** Visit a bit-vector concatenation.  Note, different than other
       binary operators because the lengths change. */
   uint16_t visit(const SymBitVectorConcat * const bv) {
 
-    auto lhs = apply(bv->a_);
-    auto rhs = apply(bv->b_);
+    auto lhs = (*this)(bv->a_);
+    auto rhs = (*this)(bv->b_);
 
     if (lhs && rhs)
       return lhs + rhs;
     else {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In concatenation: ";
       pv(bv);
       if (!lhs)
@@ -148,10 +158,10 @@ public:
 
   /** Visit a bit-vector extract */
   uint16_t visit(const SymBitVectorExtract * const bv) {
-    auto parent = apply(bv->bv_);
+    auto parent = (*this)(bv->bv_);
     if (bv->low_bit_ > bv->high_bit_) {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In bitvector extract ";
       pv(bv);
       e << " the low index " << bv->low_bit_
@@ -161,7 +171,7 @@ public:
     }
     if (bv->high_bit_ >= parent) {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In bitvector extract ";
       pv(bv);
       e << " the high index " << bv->high_bit_
@@ -185,7 +195,7 @@ public:
       // Verify the same type as before
       if (type != p) {
         std::stringstream e;
-        SymPrintVisitor pv(e);
+        SymPrettyVisitor pv(e);
         e << "The function " << name << " declared with two different types.  "
           << "The first time it had type (";
         for (size_t i = 0; i < p.second.size(); ++i) {
@@ -214,7 +224,7 @@ public:
     // Check there are the right number of arguments.
     if (bv->args_.size() != type.second.size()) {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In ";
       pv(bv);
       e << " the type of " << name << " has " << type.second.size()
@@ -225,10 +235,10 @@ public:
 
     // Check the arguments are of the right type
     for (size_t i = 0; i < type.second.size(); ++i) {
-      auto t = apply(bv->args_[i]);
+      auto t = (*this)(bv->args_[i]);
       if (t != type.second[i]) {
         std::stringstream e;
-        SymPrintVisitor pv(e);
+        SymPrettyVisitor pv(e);
         e << "In ";
         pv(bv);
         e << " the width of argument " << i << " was declared " << type.second[i]
@@ -243,15 +253,15 @@ public:
 
   /** Visit a bit-vector if-then-else */
   uint16_t visit(const SymBitVectorIte * const bv) {
-    auto cond = apply(bv->cond_);
-    auto lhs = apply(bv->a_);
-    auto rhs = apply(bv->b_);
+    auto cond = (*this)(bv->cond_);
+    auto lhs = (*this)(bv->a_);
+    auto rhs = (*this)(bv->b_);
 
     if (lhs == rhs && cond)
       return lhs;
     else {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In ite: ";
       pv(bv);
       e << " the true branch has width " << lhs
@@ -263,13 +273,13 @@ public:
 
   /** Visit a bit-vector unary minus */
   uint16_t visit(const SymBitVectorSignExtend * const bv) {
-    auto child = apply(bv->bv_);
+    auto child = (*this)(bv->bv_);
 
     if (child <= bv->size_ && child > 0 && bv->size_ > 0)
       return bv->size_;
     else if (bv->size_ == 0) {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In sign-extend: ";
       pv(bv);
       e << " the extension is to length 0";
@@ -277,7 +287,7 @@ public:
       return 0;
     } else if (child > bv->size_) {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In sign-extend: ";
       pv(bv);
       e << " the vector has width " << child
@@ -286,7 +296,7 @@ public:
       return 0;
     } else {
       std::stringstream e;
-      SymPrintVisitor pv(e);
+      SymPrettyVisitor pv(e);
       e << "In sign-extend: ";
       pv(bv);
       e << " the vector could not be typechecked.";
@@ -299,13 +309,67 @@ public:
   uint16_t visit(const SymBitVectorVar * const bv) {
     return bv->size_;
   }
+  /** Visit an array lookup */
+  uint16_t visit(const SymBitVectorArrayLookup * const bv) {
+    // check the key size matches the array
+    auto array_key_size = bv->a_->key_size_;
+    auto key_size = apply(bv->key_);
+
+    auto array_ok = apply(bv->a_);
+    if (!array_ok)
+      return 0;
+
+    if (key_size != array_key_size) {
+      std::stringstream e;
+      SymPrettyVisitor pv(e);
+      e << "In array lookup: ";
+      pv(bv);
+      e << " the key size didn't match the array's key width.";
+      set_error(e);
+      return 0;
+    }
+
+    return bv->a_->value_size_;
+  }
+
+  /** Visit a boolean ARRAY_EQ */
+  uint16_t visit(const SymBoolArrayEq * const b) {
+    auto a_ok = apply(b->a_);
+    if (!a_ok)
+      return 0;
+
+    auto b_ok = apply(b->b_);
+    if (!b_ok)
+      return 0;
+
+    if (b->a_->key_size_ != b->b_->key_size_) {
+      std::stringstream e;
+      SymPrettyVisitor pv(e);
+      e << "In array compare: ";
+      pv(b);
+      e << " the key sizes don't match.";
+      set_error(e);
+      return 0;
+    }
+    if (b->a_->value_size_ != b->b_->value_size_) {
+      std::stringstream e;
+      SymPrettyVisitor pv(e);
+      e << "In array compare: ";
+      pv(b);
+      e << " the value sizes don't match.";
+      set_error(e);
+      return 0;
+    }
+    return 1;
+  }
+
   /** Visit a boolean FALSE */
   uint16_t visit(const SymBoolFalse * const b) {
     return 1;
   }
   /** Visit a boolean NOT */
   uint16_t visit(const SymBoolNot * const b) {
-    return apply(b->b_);
+    return (*this)(b->b_);
   }
   /** Visit a boolean TRUE */
   uint16_t visit(const SymBoolTrue * const b) {
@@ -313,6 +377,45 @@ public:
   }
   /** Visit a boolean VAR */
   uint16_t visit(const SymBoolVar * const b) {
+    return 1;
+  }
+
+  /** Visit an array STORE.  Return 1 if ok, 0 otherwise. */
+  uint16_t visit(const SymArrayStore * const a) {
+    // Check the array
+    auto a_ok = apply(a->a_);
+    if (!a_ok)
+      return 0;
+
+    // Check that key size is correct
+    auto ks = apply(a->key_);
+    if (ks != a->a_->key_size_) {
+      std::stringstream e;
+      SymPrettyVisitor pv(e);
+      e << "In array store: ";
+      pv(a);
+      e << " the key width is " << ks
+        << " but array takes keys of width " << a->a_->key_size_;
+      set_error(e);
+      return 0;
+    }
+    // Check that value size is correct
+    auto vs = apply(a->value_);
+    if (vs != a->a_->value_size_) {
+      std::stringstream e;
+      SymPrettyVisitor pv(e);
+      e << "In array store: ";
+      pv(a);
+      e << " the value width is " << vs
+        << " but array takes values of width " << a->a_->value_size_;
+      set_error(e);
+      return 0;
+    }
+    return 1;
+  }
+
+  /** Visit an array VAR */
+  uint16_t visit(const SymArrayVar * const a) {
     return 1;
   }
 
@@ -329,17 +432,13 @@ public:
 private:
 
   /** Recurse without clearing error message */
-  uint16_t apply(const SymBitVector& bv) {
-    return SymVisitor<uint16_t, uint16_t>::operator()(bv);
+  template <typename T>
+  uint16_t apply(const T& t) {
+    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(t);
   }
-  uint16_t apply(const SymBool& b) {
-    return SymVisitor<uint16_t, uint16_t>::operator()(b);
-  }
-  uint16_t apply(const SymBitVectorAbstract * const bv) {
-    return SymVisitor<uint16_t, uint16_t>::operator()(bv);
-  }
-  uint16_t apply(const SymBoolAbstract * const b) {
-    return SymVisitor<uint16_t, uint16_t>::operator()(b);
+  template <typename T>
+  uint16_t apply(const T * const t) {
+    return SymVisitor<uint16_t, uint16_t, uint16_t>::operator()(t);
   }
 
   /** Tracks the first error that occurred in typechecking */

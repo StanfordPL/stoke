@@ -34,7 +34,7 @@
 #include "src/symstate/bitvector.h"
 #include "src/symstate/bool.h"
 
-#include "src/validator/straight_line.h"
+#include "src/validator/bounded.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
 
@@ -43,7 +43,6 @@
 #include "tools/gadgets/validator.h"
 
 #include "src/specgen/specgen.h"
-#include "tools/apps/specgen_visitors.h"
 #include "src/specgen/support.h"
 
 #define BOOST_NO_CXX11_SCOPED_ENUMS
@@ -72,12 +71,14 @@ auto& opcode_arg =
   .description("The opcode to check.")
   .required();
 
+auto& no_simplify_arg =
+  FlagArg::create("no_simplify")
+  .description("Should circuits not be simplified?");
 
 auto& compare_to_stoke =
   FlagArg::create("compare_to_stoke").alternate("c")
   .description("Also compute the score for STOKE.");
 
-void compute_score(SymState& state, RegSet& rs, size_t& nodes, size_t& uifs, size_t& muls);
 void show_circuits(SymState& state, RegSet& rs);
 
 int main(int argc, char** argv) {
@@ -88,7 +89,7 @@ int main(int argc, char** argv) {
   CommandLineConfig::strict_with_convenience(argc, argv);
 
   auto strata_path = circuits_arg.value();
-  auto strata_handler = StrataHandler(strata_path);
+  auto strata_handler = StrataHandler(strata_path, !no_simplify_arg.value());
 
   auto instr = get_instruction_from_string(opcode_arg.value());
   Opcode opcode = instr.get_opcode();
@@ -117,7 +118,7 @@ int main(int argc, char** argv) {
   size_t uifs = 0;
   size_t muls = 0;
 
-  compute_score(strata_state, rs, nodes, uifs, muls);
+  measure_complexity(strata_state, rs, &nodes, &uifs, &muls);
 
   if (compare_to_stoke.value()) {
     ComboHandler stoke_handler;
@@ -143,61 +144,13 @@ int main(int argc, char** argv) {
     size_t s_nodes = 0;
     size_t s_uifs = 0;
     size_t s_muls = 0;
-    compute_score(stoke_state, rs, s_nodes, s_uifs, s_muls);
+    measure_complexity(stoke_state, rs, &s_nodes, &s_uifs, &s_muls);
 
     cout << dec << uifs << "," << muls << "," << nodes << endl;
     cout << dec << s_uifs << "," << s_muls << "," << s_nodes << endl;
   } else {
     cout << dec << uifs << "," << muls << "," << nodes << endl;
   }
-}
-
-void compute_score(SymState& state, RegSet& rs, size_t& nodes, size_t& uifs, size_t& muls) {
-  NodeCounter node_counter;
-  UninterpretedFunctionCounter uif_counter;
-  MulDivCounter mul_counter;
-
-  nodes = 0;
-  uifs = 0;
-  muls = 0;
-
-  for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
-    auto circuit = (state.lookup(*gp_it));
-    nodes += node_counter(circuit);
-    uifs += uif_counter(circuit);
-    muls += mul_counter(circuit);
-  }
-  for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
-    auto circuit = (state.lookup(*sse_it));
-    nodes += node_counter(circuit);
-    uifs += uif_counter(circuit);
-    muls += mul_counter(circuit);
-  }
-  for (auto mm_it = rs.mm_begin(); mm_it != rs.mm_end(); ++mm_it) {
-    auto circuit = (state.lookup(*mm_it));
-    nodes += node_counter(circuit);
-    uifs += uif_counter(circuit);
-    muls += mul_counter(circuit);
-  }
-  for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
-    auto circuit = (state[*flag_it]);
-    nodes += node_counter(circuit);
-    uifs += uif_counter(circuit);
-    muls += mul_counter(circuit);
-  }
-
-  // auto circuit = SymSimplify::simplify(state.sigfpe);
-  // nodes += node_counter(circuit);
-  // uifs += uif_counter(circuit);
-  // muls += mul_counter(circuit);
-  // circuit = (state.sigsegv);
-  // nodes += node_counter(circuit);
-  // uifs += uif_counter(circuit);
-  // muls += mul_counter(circuit);
-  // circuit = (state.sigbus);
-  // nodes += node_counter(circuit);
-  // uifs += uif_counter(circuit);
-  // muls += mul_counter(circuit);
 }
 
 void show_circuits(SymState& state, RegSet& rs) {

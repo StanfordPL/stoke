@@ -23,7 +23,8 @@ namespace stoke {
 
 /** Keeps track of a fixed, finite number of symbolic memory locations ("cells") */
 class CellMemory : public SymMemory {
-  friend class AliasMiner;
+  friend class BoundedValidator;
+  friend class ObligationChecker;
 
 public:
 
@@ -75,6 +76,12 @@ public:
 
   /** Create a formula expressing that the aliasing rules were followed. */
   SymBool aliasing_formula(CellMemory& other);
+
+  std::string get_type() const {
+    return "cell";
+  }
+
+
 
 private:
 

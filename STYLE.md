@@ -11,15 +11,13 @@ Build
 Repository
 ----------
 
-- The ```develop``` branch is the internally-facing stable codebase. Don't commit anything to ```develop``` that doesn't pass ```make test```.
-- The ```master``` branch is the externally-facing stable codebase. DEFINITELY don't commit anything to ```master``` that doesn't pass ```make test```.
+- The ```develop``` branch is the latest version of our stable codebase. Don't commit anything to ```develop``` that doesn't pass ```make test``` (or doesn't compile).
+- The ```master``` branch contains the closest thing to a release of STOKE.  It is some previous version of STOKE that was particularly stable.
 - Issues are reported on the github issue tracker. Keep issues focused and provide detailed descriptions.
 - Branches related to issues are forked off of ```develop``` and named using the ```issue-XXX``` convention.
 - Completed issues are merged back into ```develop``` using the ```--no-ff``` command line switch.  The merge commit should always contain the string ``Fixes #XXX``` to link the commit from the GitHub issue tracker.
 - Releases are forked off of ```develop``` and named using the ```release-XXX``` convention.
 - No new features are permitted in release branches, only bugfixes.
-- Upon completion, releases are merged into ```master```.
-- High-priority bug-fixes may be merged directly into ```master```.
 
 File Organization
 -----------------
@@ -51,6 +49,7 @@ Namespaces
 ----------
 
 - All code that appears in a header file should be placed in the STOKE namespace.
+- No `using namespace x` in header files, except for `tests/tests.h`.
 
 Parameter Passing
 -----------------

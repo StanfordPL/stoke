@@ -30,8 +30,9 @@
 #include "src/ext/x64asm/src/reg_set.h"
 
 #include "src/symstate/simplify.h"
+#include "src/symstate/pretty_visitor.h"
 
-#include "src/validator/straight_line.h"
+#include "src/validator/bounded.h"
 #include "src/validator/handler.h"
 #include "src/validator/handlers/combo_handler.h"
 
@@ -68,6 +69,10 @@ auto& opcode_arg =
   .description("The opcode to check.")
   .required();
 
+auto& no_simplify_arg =
+  FlagArg::create("no_simplify")
+  .description("Should circuits not be simplified?");
+
 /**
 
 Exit codes:
@@ -100,7 +105,7 @@ int main(int argc, char** argv) {
 
   auto errors = 0;
   auto n = 0;
-  auto strata_handler = StrataHandler(strata_path);
+  auto strata_handler = StrataHandler(strata_path, !no_simplify_arg.value());
   auto stoke_handler = ComboHandler();
 
   Opcode opcode;

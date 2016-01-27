@@ -17,6 +17,8 @@
 #include <set>
 #include <sys/time.h>
 
+#include "tools/io/tunit.h"
+
 #include "src/ext/x64asm/include/x64asm.h"
 
 namespace stoke {

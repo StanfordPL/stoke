@@ -22,12 +22,23 @@
 
 namespace stoke {
 
+enum SupportReason : int32_t {
+  BASESET = 0,
+  LEARNED = 1,
+  GENERALIZE_SAME = 2,
+  GENERALIZE_EXTEND = 3,
+  GENERALIZE_SHRINK = 4,
+  IMM8 = 5,
+  NONE = -1
+};
+
 /** Uses the strata circuits found in a given directory. */
 class StrataHandler : public Handler {
 
 public:
 
-  StrataHandler(const std::string& strata_path): strata_path_(strata_path) {
+  StrataHandler(const std::string& strata_path, const bool simplify = true) :
+    strata_path_(strata_path), simplify_(simplify) {
     init();
   }
 
@@ -35,9 +46,13 @@ public:
 
   bool is_supported(const x64asm::Opcode& opcode);
 
+  SupportReason support_reason(const x64asm::Opcode& opcode);
+
   void build_circuit(const x64asm::Instruction& instr, SymState& start);
 
-  std::vector<std::string> full_support_opcodes();
+  int used_for(const x64asm::Opcode& op);
+
+  std::vector<x64asm::Opcode> full_support_opcodes();
 
 private:
 
@@ -45,8 +60,14 @@ private:
 
   const std::string& strata_path_;
 
+  /** Should circuits be simplified on the fly. */
+  const bool simplify_;
+
   /** A map that gives the equivalent, register-only variant for an opcode. */
   std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_;
+  std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_duplicate_;
+  std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_mem_reduce_;
+  std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_extend_;
 
 };
 

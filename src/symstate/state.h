@@ -41,8 +41,8 @@ public:
   }
 
   ~SymState() {
-    if (delete_memory_)
-      delete memory;
+    // if (delete_memory_)
+    //   delete memory;
   }
 
   /** Symbolic general purpose registers */

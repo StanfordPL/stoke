@@ -1,11 +1,9 @@
 Validator Readme
 =====
 
-There are now a few different "validators" in the stoke codebase.  There's the
-"straight line validator" which can't handle loops -- period.  It also does
-really weird stuff with memory.  It probably shouldn't be used anymore.
+There are now a few different "validators" in the stoke codebase. 
 
-Then there's the "bounded validator".  This is a general purpose validator that
+First is the "bounded validator".  This is a general purpose validator that
 fully handles memory in the presence of arbitrary aliasing.  That's right.  It
 takes a bound parameter (via the set_bound() option in the API, or --bound on
     the command line).  It then enumerates all the paths through the target and
@@ -13,6 +11,12 @@ rewrite CFGs that don't pass through any basic block more than 'bound' times.
 For each pair of (target, rewrite) paths, it identifies every possible way
 memory can alias and either (i) proves equivalence; (ii) finds a
 counterexample; or (iii) dies trying!
+
+Second is the "ddec validator".  It makes a best-effort to apply the
+data-driven equivalence checking algorithm.  It does best when given testcases,
+  though this isn't always necessary.  It will not give counterexamples.  It's
+  fairly brittle at the moment.  When it cannot verify, it's often hard to
+  figure out why.
 
 Contract
 =====
@@ -84,7 +88,7 @@ What's Supported
 SSE/AVX/AVX2 instructions, but it's definitely not complete.
 - Operands: immediates, general purpose registers, xmm/ymm registers
 - Live outs: general purpose registers, xmm registers, status flags
-- Memory is supported well in the bounded validator, and should work in the straight-line validator as long as you don't use it def-in or live-out.
+- Memory is supported well in the bounded validator
 
 What's not supported
 -----
@@ -104,6 +108,7 @@ There are five main components to the validator:
 - The SMT solver interface (/solver)
 - The new handlers (/validator/handlers)
 - The validator classes that build the constraints and handle the logic (/validator)
+- The obligation checker
 
 The overall structure of the code is as follows.  The symbolic bitvectors
 (`SymBitVector`) and bools (`SymBool`) are self-explanatory; these contain
@@ -134,6 +139,10 @@ creating a handler of your own.  As a rule of thumb, if you need to write a new
 helper function specific to your handler, it's a good idea to start a new one
 from scratch.  See the `ConditionalHandler` for setcc/cmovcc as an example of
 this.
+
+The ObligationChecker has an important set of routines shared between the
+BoundedValidator and the DdecValidator.  See #793 in the tracker for a
+description of what this is.
 
 Finally, the `SMTSolver` subclasses (e.g. `Z3Solver`) will take a vector of
 symbolic bools and check if they're satisfiable.  The Validator class

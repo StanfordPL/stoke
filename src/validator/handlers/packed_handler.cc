@@ -26,6 +26,10 @@ Handler::SupportLevel PackedHandler::get_support(const x64asm::Instruction& inst
     return Handler::NONE;
   }
 
+  if (std::find(blacklist_.begin(), blacklist_.end(), instr.get_opcode()) != blacklist_.end()) {
+    return Handler::NONE;
+  }
+
   auto opcode = get_opcode(instr);
 
   for (size_t i = 0; i < instr.arity(); ++i) {
