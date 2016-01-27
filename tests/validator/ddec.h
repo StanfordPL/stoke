@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -385,7 +385,7 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryEquiv) {
   sg.set_max_memory(1024);
   sg.set_max_attempts(64);
 
-  for(size_t i = 0; i < 4; ++i) {
+  for (size_t i = 0; i < 4; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
     ASSERT_TRUE(b);
@@ -424,7 +424,7 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryWrong) {
   sg.set_max_memory(1024);
   sg.set_max_attempts(64);
 
-  for(size_t i = 0; i < 32; ++i) {
+  for (size_t i = 0; i < 32; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
     ASSERT_TRUE(b);
@@ -465,7 +465,7 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryWrong2) {
   sg.set_max_memory(1024);
   sg.set_max_attempts(64);
 
-  for(size_t i = 0; i < 32; ++i) {
+  for (size_t i = 0; i < 32; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
     ASSERT_TRUE(b);

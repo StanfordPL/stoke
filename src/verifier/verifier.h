@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ public:
 
   /** Add a sandbox for this verifier to use. */
   virtual Verifier& set_sandbox(Sandbox* sb) {
-    if(sb == NULL)
+    if (sb == NULL)
       sandbox_ = NULL;
     else
       sandbox_ = new Sandbox(*sb);

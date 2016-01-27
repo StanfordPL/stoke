@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -167,7 +167,7 @@ bool Z3Solver::get_model_bool(const std::string& var) {
 
 
 std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
-    const std::string& var, uint16_t key_bits, uint16_t value_bits) {
+  const std::string& var, uint16_t key_bits, uint16_t value_bits) {
 
   map<uint64_t, cpputil::BitVector> addr_val_map;
 
@@ -183,19 +183,19 @@ std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
   // https://stackoverflow.com/questions/22885457/read-func-interp-of-a-z3-array-from-the-z3-model
 
   bool ok = true;
-  ok &= Z3_get_decl_kind(context_, array_eval_func_decl) == Z3_OP_AS_ARRAY; 
+  ok &= Z3_get_decl_kind(context_, array_eval_func_decl) == Z3_OP_AS_ARRAY;
   /* These checks don't seem to work right
     cout << "check1: ok=" << ok << endl;
     ok &= Z3_is_app(context_, array_eval_func_decl);
     cout << "check2: ok=" << ok << endl;
     ok &= (Z3_get_decl_num_parameters(context_, array_eval_func_decl) == 1);
     cout << "check3: ok=" << ok << endl;
-    ok &= (Z3_get_decl_parameter_kind(context_, array_eval_func_decl, 0) == 
+    ok &= (Z3_get_decl_parameter_kind(context_, array_eval_func_decl, 0) ==
            Z3_PARAMETER_FUNC_DECL);
     cout << "check4: ok=" << ok << endl;
   */
 
-  if(!ok) {
+  if (!ok) {
     // The counterexample could be spurious, but we'll figure that out later.
     // On the other hand, there might be no memory at all or the memory
     // does not matter
@@ -205,11 +205,11 @@ std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
 
   auto z3_model_fd = Z3_get_decl_func_decl_parameter(context_, array_eval_func_decl, 0);
   auto model_fd = func_decl(context_, z3_model_fd);
-  func_interp fun_interp = model_->get_func_interp(model_fd); 
+  func_interp fun_interp = model_->get_func_interp(model_fd);
 
 
   unsigned num_entries = fun_interp.num_entries();
-  for(unsigned i = 0; i < num_entries; i++) 
+  for (unsigned i = 0; i < num_entries; i++)
   {
     z3::func_entry entry = fun_interp.entry(i);
     z3::expr k = entry.arg(0);
@@ -221,7 +221,7 @@ std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
     uint64_t value;
     Z3_get_numeral_uint64(context_, k, (long long unsigned int*)&addr);
     Z3_get_numeral_uint64(context_, v, (long long unsigned int*)&value);
-    
+
     assert(value <= 0xff);
 
     // TODO: generalize this if ever needed

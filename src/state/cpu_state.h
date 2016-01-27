@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -142,7 +142,7 @@ struct CpuState {
 
   /** Access an SSE register */
   cpputil::BitVector operator[](const x64asm::Sse& sse_r) const {
-    if(sse_r.size() == 128)
+    if (sse_r.size() == 128)
       return (*this)[(x64asm::Xmm&)sse_r];
     else
       return sse[sse_r];

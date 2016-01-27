@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ public:
   ConjunctionInvariant(std::vector<Invariant*> invariants) : invariants_(invariants) { }
 
   ConjunctionInvariant& add_invariants(ConjunctionInvariant* invs) {
-    for(size_t i = 0; i < invs->size(); ++i)
+    for (size_t i = 0; i < invs->size(); ++i)
       add_invariant((*invs)[i]);
     return *this;
   }

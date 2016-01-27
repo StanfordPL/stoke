@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -125,7 +125,7 @@ TEST_F(ValidatorInvariantTest, StateEqualityYmm) {
   EXPECT_TRUE(sei.check(target, rewrite));
 
   rewrite.sse[xmm3].get_fixed_quad(2)++;
-  
+
   EXPECT_FALSE(sei.check(target, rewrite));
 
   rewrite.sse[xmm3].get_fixed_quad(1)++;

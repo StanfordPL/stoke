@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -63,13 +63,13 @@ public:
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
-    if(predicate_ == "") {
+    if (predicate_ == "") {
       return fallthrough_;
     }
 
     auto& state = is_rewrite_ ? rewrite : target;
     bool pred = ConditionalHandler::condition_satisfied(predicate_, state);
-    if(fallthrough_)
+    if (fallthrough_)
       pred = !pred;
     return pred;
   }
