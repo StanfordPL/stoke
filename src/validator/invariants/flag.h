@@ -63,13 +63,13 @@ public:
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
-    if(predicate_ == "") {
+    if (predicate_ == "") {
       return fallthrough_;
     }
 
     auto& state = is_rewrite_ ? rewrite : target;
     bool pred = ConditionalHandler::condition_satisfied(predicate_, state);
-    if(fallthrough_)
+    if (fallthrough_)
       pred = !pred;
     return pred;
   }

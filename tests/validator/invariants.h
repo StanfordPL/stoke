@@ -125,7 +125,7 @@ TEST_F(ValidatorInvariantTest, StateEqualityYmm) {
   EXPECT_TRUE(sei.check(target, rewrite));
 
   rewrite.sse[xmm3].get_fixed_quad(2)++;
-  
+
   EXPECT_FALSE(sei.check(target, rewrite));
 
   rewrite.sse[xmm3].get_fixed_quad(1)++;

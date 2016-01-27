@@ -227,9 +227,9 @@ void CfgPaths::learn_path_callback(const StateCallbackData&, void* arg) {
 namespace std {
 
 ostream& operator<<(ostream& os, stoke::CfgPath& path) {
-  for(size_t i = 0; i < path.size(); ++i) {
+  for (size_t i = 0; i < path.size(); ++i) {
     os << path[i];
-    if(i < path.size() - 1)
+    if (i < path.size() - 1)
       os << " ";
   }
   return os;

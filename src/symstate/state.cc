@@ -51,12 +51,12 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   concrete_memories.push_back(cs.stack);
   concrete_memories.push_back(cs.heap);
   concrete_memories.push_back(cs.data);
-  for(auto it : cs.segments) {
+  for (auto it : cs.segments) {
     concrete_memories.push_back(it);
   }
 
-  for(auto mem : concrete_memories) {
-    for(uint64_t addr = mem.lower_bound(); mem.in_range(addr); ++addr) {
+  for (auto mem : concrete_memories) {
+    for (uint64_t addr = mem.lower_bound(); mem.in_range(addr); ++addr) {
       uint8_t value = mem[addr];
       auto addr_bv = SymBitVector::constant(64, addr);
       auto val_bv = SymBitVector::constant(8, value);

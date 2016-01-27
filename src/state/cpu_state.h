@@ -142,7 +142,7 @@ struct CpuState {
 
   /** Access an SSE register */
   cpputil::BitVector operator[](const x64asm::Sse& sse_r) const {
-    if(sse_r.size() == 128)
+    if (sse_r.size() == 128)
       return (*this)[(x64asm::Xmm&)sse_r];
     else
       return sse[sse_r];

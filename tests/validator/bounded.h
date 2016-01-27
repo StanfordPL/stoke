@@ -1103,8 +1103,8 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-  for(size_t i = 0; i < 2; ++i) {
-    if(i == 0)
+  for (size_t i = 0; i < 2; ++i) {
+    if (i == 0)
       validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
     else
       validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);

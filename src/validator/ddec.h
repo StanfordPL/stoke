@@ -71,7 +71,7 @@ public:
     nacl_ = nacl;
     return *this;
   }
- 
+
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
 
