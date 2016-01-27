@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
+
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
 #include "src/symstate/memory/trivial.h"
@@ -20,6 +22,7 @@
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
+
 
 #define OBLIG_DEBUG(X) { }
 #define CONSTRAINT_DEBUG(X) { }
@@ -36,6 +39,16 @@ using namespace cpputil;
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
+using namespace std::chrono;
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+uint64_t ObligationChecker::number_queries_ = 0;
+uint64_t ObligationChecker::number_cases_ = 0;
+uint64_t ObligationChecker::constraint_gen_time_ = 0;
+uint64_t ObligationChecker::solver_time_ = 0;
+uint64_t ObligationChecker::aliasing_time_ = 0;
+uint64_t ObligationChecker::ceg_time_ = 0;
+#endif
 
 template <typename K, typename V>
 map<K,V> append_maps(vector<map<K,V>> maps) {
@@ -1237,6 +1250,11 @@ void ObligationChecker::delete_memories(std::vector<std::pair<CellMemory*, CellM
 
 bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  number_queries_++;
+  microseconds perf_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+#endif
+
   OBLIG_DEBUG(cout << "===========================================" << endl;)
   OBLIG_DEBUG(cout << "Obligation Check." << endl;)
   OBLIG_DEBUG(cout << "Paths P: " << print(P) << " Q: " << print(Q) << endl;)
@@ -1252,7 +1270,20 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
   OBLIG_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
 
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  microseconds perf_alias = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+  aliasing_time_ += (perf_alias - perf_start).count();
+#endif
+
+
   for (auto memories : memory_list) {
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  microseconds perf_constr_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+  number_cases_++;
+#endif
+
+
     OBLIG_DEBUG(cout << "------ NEXT ALIASING CASE -----" << endl;)
     ALIAS_DEBUG(
     if (memories.first) {
@@ -1345,10 +1376,21 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
       constraints.push_back(it);
 
     // Step 4: Invoke the solver
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  microseconds perf_constr_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+  constraint_gen_time_ += (perf_constr_end - perf_constr_start).count();
+#endif
+
+
     bool is_sat = solver_.is_sat(constraints);
     if (solver_.has_error()) {
       throw VALIDATOR_ERROR("solver: " + solver_.get_error());
     }
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  microseconds perf_solve = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+  solver_time_ += (perf_solve - perf_constr_end).count();
+#endif
 
     if (is_sat) {
       ceg_t_ = Validator::state_from_model(solver_, "_1_INIT");
@@ -1422,6 +1464,14 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
       delete_memories(memory_list);
       stop_mm();
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+      microseconds perf_ceg = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+      ceg_time_ += (perf_ceg - perf_solve).count();
+      print_performance();
+#endif
+
+
       return false;
     } else {
 
@@ -1431,9 +1481,19 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
       }
 
       CEG_DEBUG(cout << "  (This case verified)" << endl;)
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+      microseconds perf_ceg = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+      ceg_time_ += (perf_ceg - perf_solve).count();
+#endif
     }
 
   }
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  print_performance();
+#endif
+
   delete_memories(memory_list);
   stop_mm();
   return true;

@@ -21,6 +21,7 @@
 
 
 #include "src/symstate/array.h"
+#include "src/symstate/ast.h"
 #include "src/symstate/bool.h"
 #include "src/symstate/function.h"
 #include "src/symstate/memory_manager.h"
@@ -251,7 +252,7 @@ private:
 
 };
 
-class SymBitVectorAbstract {
+class SymBitVectorAbstract : public SymAstAbstract {
   friend class SymBitVector;
   friend class SymTransformVisitor;
 
