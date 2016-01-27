@@ -56,6 +56,7 @@ using namespace x64asm;
 #include "tests/stategen/stategen.h"
 #include "tests/symstate/bitvector.h"
 #include "tests/tunit/tunit.h"
+#include "tests/validator/invariants.h"
 #include "tests/verifier/verifier.h"
 #include "tests/fixture.h"
 
