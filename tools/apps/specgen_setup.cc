@@ -74,6 +74,7 @@ int main(int argc, char** argv) {
   if ((live_out & instr.maybe_undef_set()) != RegSet::empty()) {
     // this affects all shifts and rotates
     live_out -= instr.maybe_undef_set();
+    //cout << instr << ": " << live_out << " / " << instr.maybe_undef_set() << endl;
   }
 
   auto af = RegSet::empty() + Constants::eflags_af();
