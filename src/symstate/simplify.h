@@ -41,6 +41,10 @@ private:
   std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits1_;
   std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits2_;
   std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits3_;
+  /** Simplification cache for arrays. */
+  std::map<SymArrayAbstract*, SymArrayAbstract*> cache_array1_;
+  std::map<SymArrayAbstract*, SymArrayAbstract*> cache_array2_;
+  std::map<SymArrayAbstract*, SymArrayAbstract*> cache_array3_;
 };
 
 } // namespace stoke
