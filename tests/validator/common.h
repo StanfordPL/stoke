@@ -186,7 +186,7 @@ protected:
         } else {
           explanation << "    validator: " << SymSimplify().simplify(a) << endl;
         }
-          explanation << "    sandbox:   " << b << endl;
+        explanation << "    sandbox:   " << b << endl;
         return false;
       } else {
         return true;

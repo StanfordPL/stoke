@@ -53,18 +53,18 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   BOUNDED_DEBUG(cout << "heap/stack out: " << heap_out_ << " " << stack_out_ << endl;)
   bool equiv;
-  if(heap_out_ || stack_out_) {
+  if (heap_out_ || stack_out_) {
     equiv = check(target, rewrite, P, Q, assume, prove);
   } else {
     equiv = check(target, rewrite, P, Q, assume, prove_state);
   }
 
-  if(checker_has_ceg()) {
+  if (checker_has_ceg()) {
     assert(!equiv);
     counterexamples_.push_back(checker_get_target_ceg());
     target_final_state_ = checker_get_target_ceg_end();
     rewrite_final_state_ = checker_get_rewrite_ceg_end();
-  } 
+  }
 
   return equiv;
 }

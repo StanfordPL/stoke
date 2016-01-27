@@ -426,7 +426,7 @@ hooks: .git/hooks/pre-commit .git/hooks/post-merge-checkout
 
 .git/hooks/post-merge-checkout:
 	chmod +x "scripts/git/post-merge-checkout.sh"
-	ln -sf $(shell pwd)/scripts/git/post-merge-checkout.sh `git rev-parse --git-dir`/hooks/pre-commit
+	ln -sf $(shell pwd)/scripts/git/post-merge-checkout.sh `git rev-parse --git-dir`/hooks/post-merge-checkout
 
 ##### CLEAN TARGETS
 

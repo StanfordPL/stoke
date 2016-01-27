@@ -34,13 +34,13 @@ public:
       return SymBool::_true();
 
     auto cell_left = dynamic_cast<CellMemory*>(left.memory);
-    if(cell_left != 0) {
+    if (cell_left != 0) {
       assert(dynamic_cast<CellMemory*>(right.memory) != 0);
       return cell_left->equality_constraint(*static_cast<CellMemory*>(right.memory));
     }
 
     auto flat_left = dynamic_cast<FlatMemory*>(left.memory);
-    if(flat_left != 0) {
+    if (flat_left != 0) {
       assert(dynamic_cast<FlatMemory*>(right.memory) != 0);
       return flat_left->equality_constraint(*static_cast<FlatMemory*>(right.memory));
     }
@@ -54,15 +54,15 @@ public:
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
-    
-    if(target.segments.size() != rewrite.segments.size())
+
+    if (target.segments.size() != rewrite.segments.size())
       return false;
-    for(size_t i = 0; i < target.segments.size(); ++i) {
-      if(target.segments[i] != rewrite.segments[i])
+    for (size_t i = 0; i < target.segments.size(); ++i) {
+      if (target.segments[i] != rewrite.segments[i])
         return false;
     }
-    return target.heap == rewrite.heap && 
-           target.stack == rewrite.stack && 
+    return target.heap == rewrite.heap &&
+           target.stack == rewrite.stack &&
            target.data == rewrite.data;
   }
 

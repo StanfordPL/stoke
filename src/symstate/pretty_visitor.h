@@ -508,7 +508,7 @@ private:
     case SymBool::SIGN_LT:
       return 70;
     case SymBool::ARRAY_EQ:
-        return 80;
+      return 80;
     case SymBool::EQ:
       return 80;
     case SymBool::AND:

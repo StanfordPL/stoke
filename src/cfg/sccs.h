@@ -43,14 +43,14 @@ public:
 
   /** Is this basic block in any loop at all? */
   bool in_scc(Cfg::id_type b) const {
-    if(sccs_.count(b) == 0)
+    if (sccs_.count(b) == 0)
       return false;
     return sccs_.at(b) != -1;
   }
 
   /** Which scc is this block in?  Returns -1 if !in_scc(b). */
   int get_scc(Cfg::id_type b) const {
-    if(sccs_.count(b) == 0)
+    if (sccs_.count(b) == 0)
       return -1;
     return sccs_.at(b);
   }

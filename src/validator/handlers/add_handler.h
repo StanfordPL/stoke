@@ -32,11 +32,12 @@ public:
 
   virtual std::vector<x64asm::Opcode> full_support_opcodes() {
     return Handler::opcodes_convert({"addb", "addw", "addl", "addq",
-            "adcb", "adcw", "adcl", "adcq",
-            "xaddb", "xaddw", "xaddl", "xaddq",
-            "cmpb", "cmpw", "cmpl", "cmpq",
-            "sbbb", "sbbw", "sbbl", "sbbq",
-            "subb", "subw", "subl", "subq" });
+                                     "adcb", "adcw", "adcl", "adcq",
+                                     "xaddb", "xaddw", "xaddl", "xaddq",
+                                     "cmpb", "cmpw", "cmpl", "cmpq",
+                                     "sbbb", "sbbw", "sbbl", "sbbq",
+                                     "subb", "subw", "subl", "subq"
+                                    });
   }
 
 

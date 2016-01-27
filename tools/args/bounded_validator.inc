@@ -32,8 +32,8 @@ cpputil::ValueArg<size_t>& bound_arg =
   .default_val(2);
 
 cpputil::FlagArg& no_bailout_arg =
- cpputil::FlagArg::create("no_early_bailout")
- .description("Do not bailout once first counterexample found");
+  cpputil::FlagArg::create("no_early_bailout")
+  .description("Do not bailout once first counterexample found");
 
 } // namespace stoke
 

@@ -106,8 +106,8 @@ protected:
 
 
 
-private: 
-  
+private:
+
   ///////////// These methods handle memory ///////////////////
 
 

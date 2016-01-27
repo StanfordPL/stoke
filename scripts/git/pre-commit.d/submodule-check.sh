@@ -11,6 +11,8 @@ echo "Checking if any submodules are being updated..."
 ROOT_DIR=$(git rev-parse --show-cdup)
 
 SUBMODULES=$(grep path ${ROOT_DIR}.gitmodules | sed 's/^.*path = //')
+echo $(pwd)
+echo $SUBMODULES
 
 # Finding the submodules that have been modified
 MOD_SUBMODULES=$(git diff --cached --name-only | grep -F "$SUBMODULES")

@@ -80,7 +80,7 @@ public:
   }
 
 
-  /** Get the expected final state of the target after running counterexample. 
+  /** Get the expected final state of the target after running counterexample.
     (This is only for the fuzz tester, basically).  It is only valid if we just
     returned a counterexample.  It also doesn't handle memory writes right. */
   CpuState get_target_final_state() {

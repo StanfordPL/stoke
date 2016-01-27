@@ -822,7 +822,7 @@ private:
 
   // these don't work correctly, see #752
   std::vector<x64asm::Opcode> blacklist_ = {
-      x64asm::Opcode::ADDSUBPD_XMM_XMM
+    x64asm::Opcode::ADDSUBPD_XMM_XMM
     , x64asm::Opcode::ADDSUBPS_XMM_XMM
     , x64asm::Opcode::ADDSUBPD_XMM_M128
     , x64asm::Opcode::ADDSUBPS_XMM_M128
