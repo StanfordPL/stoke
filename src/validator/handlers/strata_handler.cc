@@ -262,6 +262,15 @@ SymBitVectorAbstract* translate_max_register(const SymState& state, const Operan
           return (SymBitVectorAbstract*)state.lookup(translated_reg).ptr;
         }
       }
+    } else if (is_mm_type(operand_from.type())) {
+      if (is_imm_type(instr_to.type(i))) {
+        auto val = (uint64_t)instr_to.get_operand<Imm>(i);
+        auto c = transformer.make_bitvector_constant(bit_width_of_type(instr_to.type(i)), val);
+        return c;
+      } else {
+        assert(is_mm_type(instr_to.type(i)));
+        return (SymBitVectorAbstract*)state.lookup(instr_to.get_operand<Mm>(i)).ptr;
+      }
     } else
 
       // same 256 bit register?
@@ -780,7 +789,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     } else if (stringstream(real_name) >> ymm) {
       return translate_max_register(start, ymm, specgen_instr, instr);
     } else if (stringstream(real_name) >> mm) {
-      return translate_mm_register(start, mm, specgen_instr, instr);
+      return translate_max_register(start, mm, specgen_instr, instr);
     }
     assert(false);
     return NULL;
