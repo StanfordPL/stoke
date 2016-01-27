@@ -25,9 +25,6 @@ class SymArrayAbstract;
 class SymBitVectorAbstract;
 class SymBoolAbstract;
 
-/** Don't worry, I'm not doing abstract/symbolic garbage collection or anything
- * like that!  This is just to clean up all those terrible bitvector objects.
- * */
 class SymMemoryManager {
 
 public:
@@ -48,6 +45,8 @@ public:
     arrays_.insert(b);
   }
 
+  /** Cache a binop.  Whenever we need a new binary operator constructed, see if we've
+    already constructed it. */
 
 
   /** Free all the junk */
