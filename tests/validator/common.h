@@ -225,6 +225,9 @@ protected:
     for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
       eq = eq && is_eq(sse_it, final_validator.lookup(*sse_it), final_sym.lookup(*sse_it), ss);
     }
+    for (auto sse_it = rs.mm_begin(); sse_it != rs.mm_end(); ++sse_it) {
+      eq = eq && is_eq(sse_it, final_validator.lookup(*sse_it), final_sym.lookup(*sse_it), ss);
+    }
     for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
       eq = eq && is_eq(flag_it, final_validator[*flag_it], final_sym[*flag_it], ss);
     }
