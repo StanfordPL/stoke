@@ -111,7 +111,6 @@ public:
         case x64asm::Type::XMM:
         case x64asm::Type::XMM_0:
         case x64asm::Type::YMM:
-        case x64asm::Type::MM:
           break;
         default:
           args_ok = false;
