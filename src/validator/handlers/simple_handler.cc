@@ -646,7 +646,7 @@ void SimpleHandler::add_all() {
   });
 
   add_opcode_str({"shufpd"},
-             [this] (Operand dst, Operand src, Operand ctl,
+                 [this] (Operand dst, Operand src, Operand ctl,
   SymBitVector arg1, SymBitVector arg2, SymBitVector imm, SymState& ss) {
 
     SymBitVector output;
@@ -656,8 +656,8 @@ void SimpleHandler::add_all() {
   });
 
   add_opcode_str({"vshufpd"},
-             [this] (Operand dst, Operand src1, Operand src2, Operand ctl,
-                     SymBitVector ignore, SymBitVector arg1, SymBitVector arg2, SymBitVector imm,
+                 [this] (Operand dst, Operand src1, Operand src2, Operand ctl,
+                         SymBitVector ignore, SymBitVector arg1, SymBitVector arg2, SymBitVector imm,
   SymState& ss) {
 
     SymBitVector output;
@@ -673,7 +673,7 @@ void SimpleHandler::add_all() {
   });
 
   add_opcode_str({"shufps"},
-             [this] (Operand dst, Operand src, Operand ctl,
+                 [this] (Operand dst, Operand src, Operand ctl,
   SymBitVector arg1, SymBitVector arg2, SymBitVector imm, SymState& ss) {
 
     SymBitVector output;
@@ -688,8 +688,8 @@ void SimpleHandler::add_all() {
   });
 
   add_opcode_str({"vshufps"},
-             [this] (Operand dst, Operand src, Operand src2, Operand ctl,
-                     SymBitVector ignore, SymBitVector arg1, SymBitVector arg2, SymBitVector imm,
+                 [this] (Operand dst, Operand src, Operand src2, Operand ctl,
+                         SymBitVector ignore, SymBitVector arg1, SymBitVector arg2, SymBitVector imm,
   SymState& ss) {
 
     SymBitVector output;
