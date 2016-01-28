@@ -1257,7 +1257,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
   OBLIG_DEBUG(cout << "===========================================" << endl;)
   OBLIG_DEBUG(cout << "Obligation Check." << endl;)
-  OBLIG_DEBUG(cout << "Paths P: " << print(P) << " Q: " << print(Q) << endl;)
+  OBLIG_DEBUG(cout << "Paths P: " << P << " Q: " << Q << endl;)
   OBLIG_DEBUG(cout << "Assuming: " << assume << endl;)
   OBLIG_DEBUG(cout << "Proving: " << prove << endl;)
   OBLIG_DEBUG(cout << "----" << endl;)

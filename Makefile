@@ -235,22 +235,21 @@ fast: haswell_test_fast
 haswell: haswell_release
 haswell_release:
 	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=core-avx2"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -DHASWELL_BUILD"
 haswell_debug:
 	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=core-avx2"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -g"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -g -DHASWELL_BUILD"
 haswell_profile:
 	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=core-avx2"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg"
-
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg -DHASWELL_BUILD"
 haswell_test: haswell_tests
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 haswell_tests: haswell_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -g -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -g -DNDEBUG -DHASWELL_BUILD"
 haswell_test_fast: haswell_fast_tests
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
 haswell_fast_tests: haswell_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG -DNO_VERY_SLOW_TESTS"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG -DNO_VERY_SLOW_TESTS -DHASWELL_BUILD"
 
 sandybridge: sandybridge_release
 sandybridge_release:

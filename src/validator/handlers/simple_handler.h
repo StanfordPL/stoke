@@ -38,7 +38,7 @@ public:
 
 
   virtual std::vector<x64asm::Opcode> full_support_opcodes() {
-    std::vector<std::string> opcodes;
+    std::vector<x64asm::Opcode> opcodes;
 
     for (auto it : operator_0_)
       opcodes.push_back(it.first);
@@ -51,7 +51,7 @@ public:
     for (auto it : operator_4_)
       opcodes.push_back(it.first);
 
-    return Handler::opcodes_convert(opcodes);
+    return opcodes;
   }
 
 private:
@@ -72,18 +72,23 @@ private:
                               SymState&)> QuadOperator;
 
   /** Adds an opcode to our internal maps */
-  void add_opcode(std::vector<std::string> opcode, ConstantOperator op);
-  void add_opcode(std::vector<std::string> opcode, UnaryOperator op);
-  void add_opcode(std::vector<std::string> opcode, BinaryOperator op);
-  void add_opcode(std::vector<std::string> opcode, TrinaryOperator op);
-  void add_opcode(std::vector<std::string> opcode, QuadOperator op);
+  void add_opcode_str(std::vector<std::string> opcode, ConstantOperator op);
+  void add_opcode_str(std::vector<std::string> opcode, UnaryOperator op);
+  void add_opcode_str(std::vector<std::string> opcode, BinaryOperator op);
+  void add_opcode_str(std::vector<std::string> opcode, TrinaryOperator op);
+  void add_opcode_str(std::vector<std::string> opcode, QuadOperator op);
+  void add_opcode(std::vector<x64asm::Opcode> opcode, ConstantOperator op);
+  void add_opcode(std::vector<x64asm::Opcode> opcode, UnaryOperator op);
+  void add_opcode(std::vector<x64asm::Opcode> opcode, BinaryOperator op);
+  void add_opcode(std::vector<x64asm::Opcode> opcode, TrinaryOperator op);
+  void add_opcode(std::vector<x64asm::Opcode> opcode, QuadOperator op);
 
   /** Opcode -> Operator */
-  std::map<std::string, ConstantOperator> operator_0_;
-  std::map<std::string, UnaryOperator> operator_1_;
-  std::map<std::string, BinaryOperator> operator_2_;
-  std::map<std::string, TrinaryOperator> operator_3_;
-  std::map<std::string, QuadOperator> operator_4_;
+  std::map<x64asm::Opcode, ConstantOperator> operator_0_;
+  std::map<x64asm::Opcode, UnaryOperator> operator_1_;
+  std::map<x64asm::Opcode, BinaryOperator> operator_2_;
+  std::map<x64asm::Opcode, TrinaryOperator> operator_3_;
+  std::map<x64asm::Opcode, QuadOperator> operator_4_;
 
 };
 
