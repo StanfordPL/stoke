@@ -22,11 +22,6 @@
 #include "src/validator/invariants/true.h"
 
 #define BOUNDED_DEBUG(X) { }
-#define BUILD_TC_DEBUG(X) { }
-#define ALIAS_DEBUG(X) { }
-#define ALIAS_CASE_DEBUG(X) { }
-#define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -96,12 +91,12 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     // Step 1: get all the paths from the enumerator
     for (auto path : CfgPaths::enumerate_paths(target, bound_)) {
-      //cout << "adding TP: " << print(path) << endl;
+      //cout << "adding TP: " << path << endl;
       target_paths.push_back(path);
     }
     //cout << "REWRITE: " << endl << rewrite.get_code() << endl;
     for (auto path : CfgPaths::enumerate_paths(rewrite, bound_)) {
-      //cout << "adding RP: " << print(path) << endl;
+      //cout << "adding RP: " << path << endl;
       rewrite_paths.push_back(path);
     }
 
