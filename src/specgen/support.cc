@@ -1611,25 +1611,25 @@ vector<Opcode> instr_cat_base_ = {
 // , CVTPS2PI_MM_M64 // CVTPS2PI mm, m64
 // , CVTPS2PI_MM_XMM // CVTPS2PI mm, xmm
 // , CVTSD2SI_R32_M64 // CVTSD2SI r32, m64
-  , CVTSD2SI_R32_XMM // CVTSD2SI r32, xmm cvt_double_to_int32
+// , CVTSD2SI_R32_XMM // CVTSD2SI r32, xmm cvt_double_to_int32
 // , CVTSD2SI_R64_M64 // CVTSD2SI r64, m64
-  , CVTSD2SI_R64_XMM // CVTSD2SI r64, xmm cvt_double_to_int64
+// , CVTSD2SI_R64_XMM // CVTSD2SI r64, xmm cvt_double_to_int64
 // , CVTSD2SS_XMM_M64 // CVTSD2SS xmm, m64
-  , CVTSD2SS_XMM_XMM // CVTSD2SS xmm, xmm cvt_double_to_single
+// , CVTSD2SS_XMM_XMM // CVTSD2SS xmm, xmm cvt_double_to_single
 // , CVTSI2SD_XMM_M32 // CVTSI2SD xmm, m32
 // , CVTSI2SD_XMM_M64 // CVTSI2SD xmm, m64
 // , CVTSI2SD_XMM_R32 // CVTSI2SD xmm, r32 cvt_int32_to_double
-  , CVTSI2SD_XMM_R64 // CVTSI2SD xmm, r64 cvt_int64_to_double
+// , CVTSI2SD_XMM_R64 // CVTSI2SD xmm, r64 cvt_int64_to_double
 // , CVTSI2SS_XMM_M32 // CVTSI2SS xmm, m32
 // , CVTSI2SS_XMM_M64 // CVTSI2SS xmm, m64
 // , CVTSI2SS_XMM_R32 // CVTSI2SS xmm, r32 cvt_int32_to_single
-  , CVTSI2SS_XMM_R64 // CVTSI2SS xmm, r64 cvt_int64_to_single
+// , CVTSI2SS_XMM_R64 // CVTSI2SS xmm, r64 cvt_int64_to_single
 // , CVTSS2SD_XMM_M32 // CVTSS2SD xmm, m32
-  , CVTSS2SD_XMM_XMM // CVTSS2SD xmm, xmm cvt_single_to_double
+// , CVTSS2SD_XMM_XMM // CVTSS2SD xmm, xmm cvt_single_to_double
 // , CVTSS2SI_R32_M32 // CVTSS2SI r32, m32
-  , CVTSS2SI_R32_XMM // CVTSS2SI r32, xmm cvt_single_to_int32
+// , CVTSS2SI_R32_XMM // CVTSS2SI r32, xmm cvt_single_to_int32
 // , CVTSS2SI_R64_M32 // CVTSS2SI r64, m32
-  , CVTSS2SI_R64_XMM // CVTSS2SI r64, xmm cvt_single_to_int64
+// , CVTSS2SI_R64_XMM // CVTSS2SI r64, xmm cvt_single_to_int64
 // , CVTTPD2DQ_XMM_M128 // CVTTPD2DQ xmm, m128
 // , CVTTPD2DQ_XMM_XMM // CVTTPD2DQ xmm, xmm
 // , CVTTPD2PI_MM_M128 // CVTTPD2PI mm, m128
@@ -1639,13 +1639,13 @@ vector<Opcode> instr_cat_base_ = {
 // , CVTTPS2PI_MM_M64 // CVTTPS2PI mm, m64
 // , CVTTPS2PI_MM_XMM // CVTTPS2PI mm, xmm
 // , CVTTSD2SI_R32_M64 // CVTTSD2SI r32, m64
-  , CVTTSD2SI_R32_XMM // CVTTSD2SI r32, xmm cvt_double_to_int32_truncate
+// , CVTTSD2SI_R32_XMM // CVTTSD2SI r32, xmm cvt_double_to_int32_truncate
 // , CVTTSD2SI_R64_M64 // CVTTSD2SI r64, m64
-  , CVTTSD2SI_R64_XMM // CVTTSD2SI r64, xmm cvt_double_to_int64_truncate
+// , CVTTSD2SI_R64_XMM // CVTTSD2SI r64, xmm cvt_double_to_int64_truncate
 // , CVTTSS2SI_R32_M32 // CVTTSS2SI r32, m32
-  , CVTTSS2SI_R32_XMM // CVTTSS2SI r32, xmm cvt_single_to_int32_truncate
+// , CVTTSS2SI_R32_XMM // CVTTSS2SI r32, xmm cvt_single_to_int32_truncate
 // , CVTTSS2SI_R64_M32 // CVTTSS2SI r64, m32
-  , CVTTSS2SI_R64_XMM // CVTTSS2SI r64, xmm cvt_single_to_int64_truncate
+// , CVTTSS2SI_R64_XMM // CVTTSS2SI r64, xmm cvt_single_to_int64_truncate
 // , CWD // CWD
 // , CWDE // CWDE
 // , DEC_M16 // DEC m16
@@ -3548,19 +3548,19 @@ vector<Opcode> instr_cat_base_ = {
 // , VCVTDQ2PD_XMM_M64 // VCVTDQ2PD xmm, m64
 // , VCVTDQ2PD_XMM_XMM // VCVTDQ2PD xmm, xmm
 // , VCVTDQ2PD_YMM_M128 // VCVTDQ2PD ymm, m128
-// , VCVTDQ2PD_YMM_YMM // VCVTDQ2PD ymm, ymm
+  , VCVTDQ2PD_YMM_YMM // VCVTDQ2PD ymm, ymm
 // , VCVTDQ2PS_XMM_M128 // VCVTDQ2PS xmm, m128
 // , VCVTDQ2PS_XMM_XMM // VCVTDQ2PS xmm, xmm
 // , VCVTDQ2PS_YMM_M256 // VCVTDQ2PS ymm, m256
-// , VCVTDQ2PS_YMM_YMM // VCVTDQ2PS ymm, ymm
+  , VCVTDQ2PS_YMM_YMM // VCVTDQ2PS ymm, ymm
 // , VCVTPD2DQ_XMM_M128 // VCVTPD2DQ xmm, m128
 // , VCVTPD2DQ_XMM_M256 // VCVTPD2DQ xmm, m256
 // , VCVTPD2DQ_XMM_XMM // VCVTPD2DQ xmm, xmm
-// , VCVTPD2DQ_XMM_YMM // VCVTPD2DQ xmm, ymm
+  , VCVTPD2DQ_XMM_YMM // VCVTPD2DQ xmm, ymm
 // , VCVTPD2PS_XMM_M128 // VCVTPD2PS xmm, m128
 // , VCVTPD2PS_XMM_M256 // VCVTPD2PS xmm, m256
 // , VCVTPD2PS_XMM_XMM // VCVTPD2PS xmm, xmm
-// , VCVTPD2PS_XMM_YMM // VCVTPD2PS xmm, ymm
+  , VCVTPD2PS_XMM_YMM // VCVTPD2PS xmm, ymm
 // , VCVTPH2PS_XMM_M64 // VCVTPH2PS xmm, m64
 // , VCVTPH2PS_XMM_XMM // VCVTPH2PS xmm, xmm
 // , VCVTPH2PS_YMM_M128 // VCVTPH2PS ymm, m128
@@ -3568,11 +3568,11 @@ vector<Opcode> instr_cat_base_ = {
 // , VCVTPS2DQ_XMM_M128 // VCVTPS2DQ xmm, m128
 // , VCVTPS2DQ_XMM_XMM // VCVTPS2DQ xmm, xmm
 // , VCVTPS2DQ_YMM_M256 // VCVTPS2DQ ymm, m256
-// , VCVTPS2DQ_YMM_YMM // VCVTPS2DQ ymm, ymm
+  , VCVTPS2DQ_YMM_YMM // VCVTPS2DQ ymm, ymm
 // , VCVTPS2PD_XMM_M64 // VCVTPS2PD xmm, m64
 // , VCVTPS2PD_XMM_XMM // VCVTPS2PD xmm, xmm
 // , VCVTPS2PD_YMM_M128 // VCVTPS2PD ymm, m128
-// , VCVTPS2PD_YMM_XMM // VCVTPS2PD ymm, xmm
+  , VCVTPS2PD_YMM_XMM // VCVTPS2PD ymm, xmm
 // , VCVTPS2PH_M128_YMM_IMM8 // VCVTPS2PH m128, ymm, imm8
 // , VCVTPS2PH_M64_XMM_IMM8 // VCVTPS2PH m64, xmm, imm8
 // , VCVTPS2PH_XMM_XMM_IMM8 // VCVTPS2PH xmm, xmm, imm8
@@ -3600,11 +3600,11 @@ vector<Opcode> instr_cat_base_ = {
 // , VCVTTPD2DQ_XMM_M128 // VCVTTPD2DQ xmm, m128
 // , VCVTTPD2DQ_XMM_M256 // VCVTTPD2DQ xmm, m256
 // , VCVTTPD2DQ_XMM_XMM // VCVTTPD2DQ xmm, xmm
-// , VCVTTPD2DQ_XMM_YMM // VCVTTPD2DQ xmm, ymm
+  , VCVTTPD2DQ_XMM_YMM // VCVTTPD2DQ xmm, ymm
 // , VCVTTPS2DQ_XMM_M128 // VCVTTPS2DQ xmm, m128
 // , VCVTTPS2DQ_XMM_XMM // VCVTTPS2DQ xmm, xmm
 // , VCVTTPS2DQ_YMM_M256 // VCVTTPS2DQ ymm, m256
-// , VCVTTPS2DQ_YMM_YMM // VCVTTPS2DQ ymm, ymm
+  , VCVTTPS2DQ_YMM_YMM // VCVTTPS2DQ ymm, ymm
 // , VCVTTSD2SI_R32_M64 // VCVTTSD2SI r32, m64
 // , VCVTTSD2SI_R32_XMM // VCVTTSD2SI r32, xmm
 // , VCVTTSD2SI_R64_M64 // VCVTTSD2SI r64, m64
