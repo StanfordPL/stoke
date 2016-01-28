@@ -23,14 +23,22 @@ using namespace x64asm;
 namespace {
 
 const SymBitVector vectorize(const SymFunction& f, const SymBitVector& a, const SymBitVector& b, const SymBitVector& c) {
-  auto w = f.return_type;
-  auto maxw = max(w, f.args[0]);
+  auto w = f.args[0];
+  auto maxw = max(f.return_type, f.args[0]);
   if (f.args.size() == 3) {
     auto res = f(a[w-1][0], b[w-1][0], c[w-1][0]);
     for (auto i = 1; i < 256 / maxw; i++) {
       res = f(a[(i+1)*w-1][i*w], b[(i+1)*w-1][i*w], c[(i+1)*w-1][i*w]) || res;
     }
     return res;
+  } else if (f.args.size() == 1) {
+    auto res = f(b[w-1][0]);
+    for (auto i = 1; i < 256 / maxw; i++) {
+      res = f(b[(i+1)*w-1][i*w]) || res;
+    }
+    return res;
+  } else {
+    assert(false);
   }
   return a;
 }
@@ -790,6 +798,24 @@ void SimpleHandler::add_all() {
     }
   });
 
+
+  add_opcode({VCVTPD2DQ_XMM_YMM},
+  [this] (Operand dst, Operand src1, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("cvt_double_to_int32", 32, {64});
+    ss.set(dst, vectorize(f, a, b, a), true);
+  });
+
+  add_opcode({VCVTPD2PS_XMM_YMM},
+  [this] (Operand dst, Operand src1, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("cvt_double_to_single", 32, {64});
+    ss.set(dst, vectorize(f, a, b, a), true);
+  });
+
+  add_opcode({VCVTTPD2DQ_XMM_YMM},
+  [this] (Operand dst, Operand src1, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("cvt_double_to_int32_truncate", 32, {64});
+    ss.set(dst, vectorize(f, a, b, a), true);
+  });
 
 
   add_opcode({VFMADD132PS_YMM_YMM_YMM},
