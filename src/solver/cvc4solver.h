@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -58,10 +58,10 @@ public:
   /** Get the satisfying assignment for a bit from the model. */
   bool get_model_bool(const std::string& var);
 
-  std::map<cpputil::BitVector, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) {
+  std::map<uint64_t, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) {
     std::cout << "Arrays not yet supported for CVC4! (limitation of stoke, not CVC4)"  << std::endl;
     error_ = "Arrays not yet supported for CVC4! (limitation of stoke, not CVC4)";
-    return std::map<cpputil::BitVector, cpputil::BitVector>();
+    return std::map<uint64_t, cpputil::BitVector>();
   }
 
   void reset() {

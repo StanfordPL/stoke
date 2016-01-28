@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 #include <iostream>
 #include <vector>
 
+#include "src/symstate/ast.h"
 #include "src/symstate/memory_manager.h"
 
 namespace stoke {
@@ -79,6 +80,11 @@ public:
     memory_manager_ = mm;
   }
 
+  /** Get the memory manager */
+  static SymMemoryManager* get_memory_manager() {
+    return memory_manager_;
+  }
+
 private:
 
   /** Memory Manager */
@@ -88,7 +94,7 @@ private:
 
 };
 
-class SymArrayAbstract {
+class SymArrayAbstract : public SymAstAbstract {
   friend class SymArray;
 
 public:
@@ -111,6 +117,7 @@ inline SymArrayAbstract::~SymArrayAbstract() {}
 /* Abstract class that has contains a left and right argument to a binary operator. */
 class SymArrayStore : public SymArrayAbstract {
   friend class SymArray;
+  friend class SymTransformVisitor;
 
 public:
   const SymArrayAbstract * const a_;
@@ -130,6 +137,7 @@ public:
 
 class SymArrayVar : public SymArrayAbstract {
   friend class SymArray;
+  friend class SymTransformVisitor;
 
 private:
   SymArrayVar(uint16_t key_size, uint16_t value_size, const std::string name) :

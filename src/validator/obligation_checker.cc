@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <chrono>
+
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
 #include "src/symstate/memory/trivial.h"
@@ -20,6 +22,7 @@
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/true.h"
+
 
 #define OBLIG_DEBUG(X) { }
 #define CONSTRAINT_DEBUG(X) { }
@@ -36,10 +39,77 @@ using namespace cpputil;
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
+using namespace std::chrono;
 
-bool ObligationChecker::build_testcase_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const {
+#ifdef DEBUG_CHECKER_PERFORMANCE
+uint64_t ObligationChecker::number_queries_ = 0;
+uint64_t ObligationChecker::number_cases_ = 0;
+uint64_t ObligationChecker::constraint_gen_time_ = 0;
+uint64_t ObligationChecker::solver_time_ = 0;
+uint64_t ObligationChecker::aliasing_time_ = 0;
+uint64_t ObligationChecker::ceg_time_ = 0;
+#endif
 
-  if(!target_memory || !rewrite_memory) {
+template <typename K, typename V>
+map<K,V> append_maps(vector<map<K,V>> maps) {
+
+  map<K,V> output;
+
+  for (auto m : maps) {
+    for (auto p : m) {
+      output[p.first] = p.second;
+    }
+  }
+
+  return output;
+}
+
+bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& memory, const map<const SymBitVectorAbstract*, uint64_t>& others) const {
+
+  auto var = memory.get_variable();
+  auto symvar = static_cast<const SymArrayVar* const>(var.ptr);
+  auto str = symvar->name_;
+
+  auto mem_map = solver_.get_model_array(str, 64, 8);
+
+  for (auto p : others) {
+    auto abs_var = p.first;
+    uint64_t size = p.second;
+
+    auto var = static_cast<const SymBitVectorVar*>(abs_var);
+    auto var_name = var->get_name();
+    auto var_size = var->get_size();
+    assert(var_size == 64);
+    auto address_bv = solver_.get_model_bv(var_name, var_size);
+    auto addr = address_bv.get_fixed_quad(0);
+
+    for (uint64_t i = addr; i < addr + size; ++i) {
+      BitVector zero(8);
+      zero.get_fixed_byte(0) = 0;
+      if (!mem_map.count(i)) {
+        mem_map[i] = zero;
+      }
+    }
+  }
+
+  BUILD_TC_DEBUG(
+    cout << "[build tc] map:" << endl;
+  for (auto it : mem_map) {
+  cout << "  " << it.first << " -> " << (uint64_t)it.second.get_fixed_byte(0) << endl;
+  }
+  );
+
+  if (Validator::memory_map_to_testcase(mem_map, ceg))
+    return true;
+
+  return false;
+
+
+}
+
+bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const {
+
+  if (!target_memory || !rewrite_memory) {
     BUILD_TC_DEBUG(cout << "[build tc] no memory found" << endl;)
     return false;
   }
@@ -80,9 +150,13 @@ bool ObligationChecker::build_testcase_memory(CpuState& ceg, const CellMemory* t
 
   BUILD_TC_DEBUG(
     cout << "[build tc] map:" << endl;
-    for(auto it : addr_value_pairs) {
-      cout << "  " << it.first << " -> " << it.second.get_fixed_quad(0) << endl;
+  for (auto it : addr_value_pairs) {
+  cout << "  " << it.first << " -> ";
+  for (size_t j = 0; j < it.second.num_fixed_bytes(); ++j) {
+      cout << (uint64_t)it.second.get_fixed_byte(j);
     }
+    cout << endl;
+  }
   );
   if (Validator::memory_map_to_testcase(addr_value_pairs, ceg))
     return true;
@@ -114,13 +188,13 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
 bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove, const CpuState& ceg, const CpuState& ceg2) {
 
   // We can't do anything without a sandbox
-  if(!sandbox_) {
+  if (!sandbox_) {
     CEG_DEBUG(cout << "  (No sandbox available; not checking counterexample.)" << endl;);
     return true;
   }
 
   // First, the counterexample has to pass the invariant.
-  if(!assume.check(ceg, ceg2)) {
+  if (!assume.check(ceg, ceg2)) {
     CEG_DEBUG(cout << "  (Counterexample does not meet assumed invariant.)" << endl;);
     return false;
   }
@@ -130,7 +204,7 @@ bool ObligationChecker::check_counterexample(const Cfg& target, const Cfg& rewri
   CpuState rewrite_output = run_sandbox_on_path(rewrite, Q, ceg);
 
   // Lastly, we check that the final states do not satisfy the invariant
-  if(prove.check(target_output, rewrite_output)) {
+  if (prove.check(target_output, rewrite_output)) {
     CEG_DEBUG(cout << "  TARGET (actual) END state:" << endl << target_output << endl;)
     CEG_DEBUG(cout << "  REWRITE (actual) END state:" << endl << rewrite_output << endl;)
     CEG_DEBUG(cout << "  (Counterexample satisifes desired invariant; it shouldn't)" << endl;);
@@ -238,7 +312,7 @@ CellMemory* ObligationChecker::make_cell_memory(const vector<CellMemory::Symboli
       cout << " (UNCONSTRAINED)";
       cout << endl;
     )
-  }
+    }
   return new CellMemory(map);
 }
 
@@ -379,8 +453,8 @@ vector<vector<CellMemory::SymbolicAccess>> ObligationChecker::enumerate_aliasing
     const vector<CellMemory::SymbolicAccess>& todo,
     const vector<CellMemory::SymbolicAccess>& done,
     size_t accesses_done,
-const Invariant& assume,
-  bool check_feasible) {
+    const Invariant& assume,
+bool check_feasible) {
 
   ALIAS_DEBUG(cout << "===================== RECURSIVE STEP ==============================" << endl;)
 
@@ -699,7 +773,7 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
     for (size_t j = 0; j < i; ++j) {
       same_address[i][j] = same_address[j][i];
 
-      if(same_address[i][j]) {
+      if (same_address[i][j]) {
         next_address[i][j] = false;
         continue;
       }
@@ -1078,7 +1152,7 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_bas
 
 
 void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
-                                     SymState& state, size_t& line_no) {
+                                      SymState& state, size_t& line_no) {
 
   if (cfg.num_instrs(bb) == 0)
     return;
@@ -1176,6 +1250,11 @@ void ObligationChecker::delete_memories(std::vector<std::pair<CellMemory*, CellM
 
 bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  number_queries_++;
+  microseconds perf_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+#endif
+
   OBLIG_DEBUG(cout << "===========================================" << endl;)
   OBLIG_DEBUG(cout << "Obligation Check." << endl;)
   OBLIG_DEBUG(cout << "Paths P: " << print(P) << " Q: " << print(Q) << endl;)
@@ -1191,7 +1270,20 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
   OBLIG_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
 
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  microseconds perf_alias = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+  aliasing_time_ += (perf_alias - perf_start).count();
+#endif
+
+
   for (auto memories : memory_list) {
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+    microseconds perf_constr_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+    number_cases_++;
+#endif
+
+
     OBLIG_DEBUG(cout << "------ NEXT ALIASING CASE -----" << endl;)
     ALIAS_DEBUG(
     if (memories.first) {
@@ -1214,6 +1306,9 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     SymState state_t("1_INIT");
     SymState state_r("2_INIT");
 
+    FlatMemory initial_target_flat_memory;
+    FlatMemory initial_rewrite_flat_memory;
+
     if (memories.first) {
       state_t.memory = memories.first;
       state_t.memory->set_parent(&state_t);
@@ -1221,7 +1316,9 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
       state_r.memory->set_parent(&state_r);
     } else if (flat_model) {
       state_t.memory = new FlatMemory();
+      initial_target_flat_memory = *static_cast<FlatMemory*>(state_t.memory);
       state_r.memory = new FlatMemory();
+      initial_rewrite_flat_memory = *static_cast<FlatMemory*>(state_r.memory);
     }
 
     // Add given assumptions
@@ -1242,7 +1339,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     else {
       auto target_flat = dynamic_cast<FlatMemory*>(state_t.memory);
       auto rewrite_flat = dynamic_cast<FlatMemory*>(state_r.memory);
-      if(target_flat && rewrite_flat) {
+      if (target_flat && rewrite_flat) {
         auto target_con = target_flat->get_constraints();
         constraints.insert(constraints.begin(),
                            target_con.begin(),
@@ -1279,10 +1376,21 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
       constraints.push_back(it);
 
     // Step 4: Invoke the solver
+#ifdef DEBUG_CHECKER_PERFORMANCE
+    microseconds perf_constr_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+    constraint_gen_time_ += (perf_constr_end - perf_constr_start).count();
+#endif
+
+
     bool is_sat = solver_.is_sat(constraints);
     if (solver_.has_error()) {
       throw VALIDATOR_ERROR("solver: " + solver_.get_error());
     }
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+    microseconds perf_solve = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+    solver_time_ += (perf_solve - perf_constr_end).count();
+#endif
 
     if (is_sat) {
       ceg_t_ = Validator::state_from_model(solver_, "_1_INIT");
@@ -1290,28 +1398,42 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
       ceg_tf_ = Validator::state_from_model(solver_, "_1_FINAL");
       ceg_rf_ = Validator::state_from_model(solver_, "_2_FINAL");
 
-      bool ok = build_testcase_memory(ceg_t_, 
+      bool ok = true;
+      if (flat_model) {
+        vector<map<const SymBitVectorAbstract*, uint64_t>> other_maps;
+        other_maps.push_back(initial_target_flat_memory.get_access_list());
+        other_maps.push_back(initial_rewrite_flat_memory.get_access_list());
+        other_maps.push_back(static_cast<FlatMemory*>(state_t.memory)->get_access_list());
+        other_maps.push_back(static_cast<FlatMemory*>(state_r.memory)->get_access_list());
+        auto other_map = append_maps(other_maps);
+
+        ok &= build_testcase_flat_memory(ceg_t_, initial_target_flat_memory, other_map);
+        ok &= build_testcase_flat_memory(ceg_r_, initial_rewrite_flat_memory, other_map);
+        ok &= build_testcase_flat_memory(ceg_tf_, *static_cast<FlatMemory*>(state_t.memory), other_map);
+        ok &= build_testcase_flat_memory(ceg_rf_, *static_cast<FlatMemory*>(state_r.memory), other_map);
+      } else {
+        ok &= build_testcase_cell_memory(ceg_t_,
                                          dynamic_cast<CellMemory*>(state_t.memory),
                                          dynamic_cast<CellMemory*>(state_r.memory),
                                          target, rewrite);
 
-      ok &= build_testcase_memory(ceg_r_, 
-                               dynamic_cast<CellMemory*>(state_t.memory),
-                               dynamic_cast<CellMemory*>(state_r.memory),
-                               target, rewrite);
+        ok &= build_testcase_cell_memory(ceg_r_,
+                                         dynamic_cast<CellMemory*>(state_t.memory),
+                                         dynamic_cast<CellMemory*>(state_r.memory),
+                                         target, rewrite);
 
-      ok &= build_testcase_memory(ceg_tf_, 
-                               dynamic_cast<CellMemory*>(state_t.memory),
-                               dynamic_cast<CellMemory*>(state_r.memory),
-                               target, rewrite);
+        ok &= build_testcase_cell_memory(ceg_tf_,
+                                         dynamic_cast<CellMemory*>(state_t.memory),
+                                         dynamic_cast<CellMemory*>(state_r.memory),
+                                         target, rewrite);
 
-      ok &= build_testcase_memory(ceg_rf_, 
-                               dynamic_cast<CellMemory*>(state_t.memory),
-                               dynamic_cast<CellMemory*>(state_r.memory),
-                               target, rewrite);
+        ok &= build_testcase_cell_memory(ceg_rf_,
+                                         dynamic_cast<CellMemory*>(state_t.memory),
+                                         dynamic_cast<CellMemory*>(state_r.memory),
+                                         target, rewrite);
+      }
 
-
-      if(!ok) {
+      if (!ok) {
         // We don't have memory accurate in our counterexample.  Just leave.
         have_ceg_ = false;
         CEG_DEBUG(cout << "(  Counterexample does not have accurate memory)" << endl;)
@@ -1335,25 +1457,43 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
         CEG_DEBUG(cout << "  (Spurious counterexample detected)" << endl;)
       }
 
-      if(flat_model) {
+      if (flat_model) {
         delete state_t.memory;
         delete state_r.memory;
       }
 
       delete_memories(memory_list);
       stop_mm();
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+      microseconds perf_ceg = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+      ceg_time_ += (perf_ceg - perf_solve).count();
+      print_performance();
+#endif
+
+
       return false;
     } else {
 
-      if(flat_model) {
+      if (flat_model) {
         delete state_t.memory;
         delete state_r.memory;
       }
 
       CEG_DEBUG(cout << "  (This case verified)" << endl;)
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+      microseconds perf_ceg = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+      ceg_time_ += (perf_ceg - perf_solve).count();
+#endif
     }
 
   }
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  print_performance();
+#endif
+
   delete_memories(memory_list);
   stop_mm();
   return true;

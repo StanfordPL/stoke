@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ class SymMergeExtracts : public SymTransformVisitor {
 
 public:
 
-  SymMergeExtracts(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits) : SymTransformVisitor(cache_bool, cache_bits) {}
+  SymMergeExtracts(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits, map<SymArrayAbstract*, SymArrayAbstract*>& cache_array) : SymTransformVisitor(cache_bool, cache_bits, cache_array) {}
 
   SymBitVectorAbstract* visit(const SymBitVectorExtract * const bv) {
     if (is_cached(bv)) return get_cached(bv);
@@ -84,7 +84,7 @@ class SymMoveExtractsInside : public SymTransformVisitor {
 
 public:
 
-  SymMoveExtractsInside(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits) : SymTransformVisitor(cache_bool, cache_bits) {}
+  SymMoveExtractsInside(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits, map<SymArrayAbstract*, SymArrayAbstract*>& cache_array) : SymTransformVisitor(cache_bool, cache_bits, cache_array) {}
 
   SymBitVectorAbstract* visit(const SymBitVectorExtract * const bv) {
     if (is_cached(bv)) return get_cached(bv);
@@ -153,7 +153,7 @@ class SymConstProp : public SymTransformVisitor {
 
 public:
 
-  SymConstProp(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits) : SymTransformVisitor(cache_bool, cache_bits) {}
+  SymConstProp(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits, map<SymArrayAbstract*, SymArrayAbstract*>& cache_array) : SymTransformVisitor(cache_bool, cache_bits, cache_array) {}
 
   SymBitVectorAbstract* visit(const SymBitVectorSignExtend * const bv) {
     if (is_cached(bv)) return get_cached(bv);
@@ -434,9 +434,9 @@ private:
 SymBitVector SymSimplify::simplify(const SymBitVector& b) {
   auto ptr = b.ptr;
 
-  SymMergeExtracts merger(cache_bool1_, cache_bits1_);
-  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_);
-  SymConstProp constprop(cache_bool3_, cache_bits3_);
+  SymMergeExtracts merger(cache_bool1_, cache_bits1_, cache_array1_);
+  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_, cache_array2_);
+  SymConstProp constprop(cache_bool3_, cache_bits3_, cache_array3_);
 
   // apply transformations until no further simplifications are possible
   while (true) {
@@ -453,9 +453,9 @@ SymBitVector SymSimplify::simplify(const SymBitVector& b) {
 SymBool SymSimplify::simplify(const SymBool& b) {
   auto ptr = b.ptr;
 
-  SymMergeExtracts merger(cache_bool1_, cache_bits1_);
-  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_);
-  SymConstProp constprop(cache_bool3_, cache_bits3_);
+  SymMergeExtracts merger(cache_bool1_, cache_bits1_, cache_array1_);
+  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_, cache_array2_);
+  SymConstProp constprop(cache_bool3_, cache_bits3_, cache_array3_);
 
   // apply transformations until no further simplifications are possible
   while (true) {

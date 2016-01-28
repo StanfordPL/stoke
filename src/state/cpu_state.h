@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -140,6 +140,27 @@ struct CpuState {
   inline void update(const x64asm::R64& reg, uint64_t val) {
     update((x64asm::R&)reg, val);
   }
+
+  /** Access an SSE register */
+  cpputil::BitVector operator[](const x64asm::Sse& sse_r) const {
+    if (sse_r.size() == 128)
+      return (*this)[(x64asm::Xmm&)sse_r];
+    else
+      return sse[sse_r];
+  }
+  /** Access an XMM register */
+  cpputil::BitVector operator[](const x64asm::Xmm& xmm) const {
+    auto bv = sse[xmm];
+    cpputil::BitVector truncated(128);
+    truncated.get_fixed_quad(0) = bv.get_fixed_quad(0);
+    truncated.get_fixed_quad(1) = bv.get_fixed_quad(1);
+    return truncated;
+  }
+  /** Access a YMM register */
+  cpputil::BitVector operator[](const x64asm::Ymm& ymm) const {
+    return sse[ymm];
+  }
+
 
   /** Access Eflags */
   inline bool operator[](const x64asm::Eflags& f) const {

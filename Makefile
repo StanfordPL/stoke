@@ -103,7 +103,6 @@ SRC_OBJ=\
 	\
 	src/symstate/memory/cell.o \
 	src/symstate/memory/flat.o \
-	src/symstate/memory/deprecated.o \
 	\
 	src/target/cpu_info.o	\
 	\
@@ -434,15 +433,19 @@ bin/stoke.bash: $(BIN) tools/scripts/completion_generator.py
 	tools/scripts/completion_generator.py
 
 format: src/ext/astyle
-	chmod +x "scripts/git/pre-commit.d/astyle.sh"
+	chmod +x "scripts/git/pre-commit.d/*.sh"
 	scripts/git/pre-commit.d/astyle.sh
 
 # builds a symlink to the post-commit hooks
-hooks: .git/hooks/pre-commit
+hooks: .git/hooks/pre-commit .git/hooks/post-merge-checkout
 
-.git/hooks/pre-commit: scripts/git/pre-commit.sh src/ext/astyle
+.git/hooks/pre-commit:
 	chmod +x "scripts/git/pre-commit.sh"
 	ln -sf $(shell pwd)/scripts/git/pre-commit.sh `git rev-parse --git-dir`/hooks/pre-commit
+
+.git/hooks/post-merge-checkout:
+	chmod +x "scripts/git/post-merge-checkout.sh"
+	ln -sf $(shell pwd)/scripts/git/post-merge-checkout.sh `git rev-parse --git-dir`/hooks/post-merge-checkout
 
 ##### CLEAN TARGETS
 

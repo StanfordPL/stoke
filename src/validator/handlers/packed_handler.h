@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -822,7 +822,7 @@ private:
 
   // these don't work correctly, see #752
   std::vector<x64asm::Opcode> blacklist_ = {
-      x64asm::Opcode::ADDSUBPD_XMM_XMM
+    x64asm::Opcode::ADDSUBPD_XMM_XMM
     , x64asm::Opcode::ADDSUBPS_XMM_XMM
     , x64asm::Opcode::ADDSUBPD_XMM_M128
     , x64asm::Opcode::ADDSUBPS_XMM_M128
