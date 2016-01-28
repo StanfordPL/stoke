@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ using namespace x64asm;
 #include "tests/stategen/stategen.h"
 #include "tests/symstate/bitvector.h"
 #include "tests/tunit/tunit.h"
+#include "tests/validator/invariants.h"
 #include "tests/verifier/verifier.h"
 #include "tests/fixture.h"
 

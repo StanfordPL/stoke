@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -1103,8 +1103,8 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-  for(size_t i = 0; i < 2; ++i) {
-    if(i == 0)
+  for (size_t i = 0; i < 2; ++i) {
+    if (i == 0)
       validator->set_alias_strategy(BoundedValidator::AliasStrategy::STRING);
     else
       validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);

@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,6 +41,10 @@ private:
   std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits1_;
   std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits2_;
   std::map<SymBitVectorAbstract*, SymBitVectorAbstract*> cache_bits3_;
+  /** Simplification cache for arrays. */
+  std::map<SymArrayAbstract*, SymArrayAbstract*> cache_array1_;
+  std::map<SymArrayAbstract*, SymArrayAbstract*> cache_array2_;
+  std::map<SymArrayAbstract*, SymArrayAbstract*> cache_array3_;
 };
 
 } // namespace stoke

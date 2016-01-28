@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public:
 
   /** Get a variable representing the memory at this state. */
   SymArray get_variable() {
-    if(!variable_up_to_date_) {
+    if (!variable_up_to_date_) {
       variable_ = SymArray::tmp_var(64, 8);
       variable_up_to_date_ = true;
       constraints_.push_back(variable_ == heap_);
