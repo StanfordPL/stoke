@@ -842,8 +842,7 @@ void SimpleHandler::add_all() {
 
 
   add_opcode({"vfmadd132ss"},
-             [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitV
-  ector c, SymState& ss) {
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("vfmadd132_single", 32, {32, 32, 32});
     auto res = f(a[31][0], b[31][0], c[31][0]);
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
