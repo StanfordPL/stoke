@@ -1875,7 +1875,7 @@ vector<Opcode> instr_cat_base_ = {
 // , IMUL_R32_R32 // IMUL r32, r32
 // , IMUL_R32_R32_IMM32 // IMUL r32, r32, imm32
 // , IMUL_R32_R32_IMM8 // IMUL r32, r32, imm8
-  , IMUL_R64 // IMUL r64
+// , IMUL_R64 // IMUL r64
 // , IMUL_R64_M64 // IMUL r64, m64
 // , IMUL_R64_M64_IMM32 // IMUL r64, m64, imm32
 // , IMUL_R64_M64_IMM8 // IMUL r64, m64, imm8
@@ -2166,18 +2166,18 @@ vector<Opcode> instr_cat_base_ = {
 // , MAXPS_XMM_M128 // MAXPS xmm, m128
 // , MAXPS_XMM_XMM // MAXPS xmm, xmm
 // , MAXSD_XMM_M64 // MAXSD xmm, m64
-  , MAXSD_XMM_XMM // MAXSD xmm, xmm
+// , MAXSD_XMM_XMM // MAXSD xmm, xmm
 // , MAXSS_XMM_M32 // MAXSS xmm, m32
-  , MAXSS_XMM_XMM // MAXSS xmm, xmm
+// , MAXSS_XMM_XMM // MAXSS xmm, xmm
 // , MFENCE // MFENCE
 // , MINPD_XMM_M128 // MINPD xmm, m128
 // , MINPD_XMM_XMM // MINPD xmm, xmm
 // , MINPS_XMM_M128 // MINPS xmm, m128
 // , MINPS_XMM_XMM // MINPS xmm, xmm
 // , MINSD_XMM_M64 // MINSD xmm, m64
-  , MINSD_XMM_XMM // MINSD xmm, xmm
+// , MINSD_XMM_XMM // MINSD xmm, xmm
 // , MINSS_XMM_M32 // MINSS xmm, m32
-  , MINSS_XMM_XMM // MINSS xmm, xmm
+// , MINSS_XMM_XMM // MINSS xmm, xmm
 // , MONITOR // MONITOR
 // , MOV_AL_MOFFS8 // MOV AL, moffs8
 // , MOV_AL_MOFFS8_PREFREXW // MOV AL, moffs8, pw
@@ -2344,10 +2344,10 @@ vector<Opcode> instr_cat_base_ = {
 // , MUL_M32 // MUL m32
 // , MUL_M64 // MUL m64
 // , MUL_M8 // MUL m8
-  // , MUL_R16 // MUL r16
-  // , MUL_R32 // MUL r32
-  , MUL_R64 // MUL r64
-  // , MUL_R8 // MUL r8
+// , MUL_R16 // MUL r16
+// , MUL_R32 // MUL r32
+// , MUL_R64 // MUL r64
+// , MUL_R8 // MUL r8
 // , MUL_RH // MUL rh
 // , MULPD_XMM_M128 // MULPD xmm, m128
 // , MULPD_XMM_XMM // MULPD xmm, xmm
