@@ -1861,28 +1861,28 @@ vector<Opcode> instr_cat_base_ = {
 // , IMUL_M32 // IMUL m32
 // , IMUL_M64 // IMUL m64
 // , IMUL_M8 // IMUL m8
-  , IMUL_R16 // IMUL r16
+// , IMUL_R16 // IMUL r16
 // , IMUL_R16_M16 // IMUL r16, m16
 // , IMUL_R16_M16_IMM16 // IMUL r16, m16, imm16
 // , IMUL_R16_M16_IMM8 // IMUL r16, m16, imm8
 // , IMUL_R16_R16 // IMUL r16, r16
 // , IMUL_R16_R16_IMM16 // IMUL r16, r16, imm16
 // , IMUL_R16_R16_IMM8 // IMUL r16, r16, imm8
-  , IMUL_R32 // IMUL r32
+// , IMUL_R32 // IMUL r32
 // , IMUL_R32_M32 // IMUL r32, m32
 // , IMUL_R32_M32_IMM32 // IMUL r32, m32, imm32
 // , IMUL_R32_M32_IMM8 // IMUL r32, m32, imm8
 // , IMUL_R32_R32 // IMUL r32, r32
 // , IMUL_R32_R32_IMM32 // IMUL r32, r32, imm32
 // , IMUL_R32_R32_IMM8 // IMUL r32, r32, imm8
-  , IMUL_R64 // IMUL r64
+// , IMUL_R64 // IMUL r64
 // , IMUL_R64_M64 // IMUL r64, m64
 // , IMUL_R64_M64_IMM32 // IMUL r64, m64, imm32
 // , IMUL_R64_M64_IMM8 // IMUL r64, m64, imm8
 // , IMUL_R64_R64 // IMUL r64, r64
 // , IMUL_R64_R64_IMM32 // IMUL r64, r64, imm32
 // , IMUL_R64_R64_IMM8 // IMUL r64, r64, imm8
-  , IMUL_R8 // IMUL r8
+// , IMUL_R8 // IMUL r8
 // , IMUL_RH // IMUL rh
 // , IN_AL_DX // IN AL, DX
 // , IN_AL_IMM8 // IN AL, imm8
@@ -2344,10 +2344,10 @@ vector<Opcode> instr_cat_base_ = {
 // , MUL_M32 // MUL m32
 // , MUL_M64 // MUL m64
 // , MUL_M8 // MUL m8
-  , MUL_R16 // MUL r16
-  , MUL_R32 // MUL r32
-  , MUL_R64 // MUL r64
-  , MUL_R8 // MUL r8
+// , MUL_R16 // MUL r16
+// , MUL_R32 // MUL r32
+// , MUL_R64 // MUL r64
+// , MUL_R8 // MUL r8
 // , MUL_RH // MUL rh
 // , MULPD_XMM_M128 // MULPD xmm, m128
 // , MULPD_XMM_XMM // MULPD xmm, xmm
