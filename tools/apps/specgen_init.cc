@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
       is_goal = false;
       Instruction our = get_instruction(op);
       if (!validator.is_supported(our)) {
-        cout << op << endl;
+        cout << "Unsupported instruction: " << op << endl;
         base_and_no_validator_support++;
       }
       f_base << op << endl;
