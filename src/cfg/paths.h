@@ -94,7 +94,7 @@ private:
 
 namespace std {
 
-ostream& operator<<(ostream& os, stoke::CfgPath& path);
+ostream& operator<<(ostream& os, const stoke::CfgPath& path);
 
 }
 
