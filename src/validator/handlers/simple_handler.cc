@@ -20,6 +20,23 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+namespace {
+
+const SymBitVector vectorize(const SymFunction& f, const SymBitVector& a, const SymBitVector& b, const SymBitVector& c) {
+  auto w = f.return_type;
+  auto maxw = max(w, f.args[0]);
+  if (f.args.size() == 3) {
+    auto res = f(a[w-1][0], b[w-1][0], c[w-1][0]);
+    for (auto i = 1; i < 256 / maxw; i++) {
+      res = f(a[(i+1)*w-1][i*w], b[(i+1)*w-1][i*w], c[(i+1)*w-1][i*w]) || res;
+    }
+    return res;
+  }
+  return a;
+}
+
+}
+
 void SimpleHandler::add_all() {
 
   add_opcode({"andb", "andw", "andl", "andq"},
@@ -773,8 +790,60 @@ void SimpleHandler::add_all() {
     }
   });
 
-  add_opcode({"vfmadd132ss"},
+
+
+  add_opcode({"vfmadd132ps"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmadd132_single", 32, {32, 32, 32});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({"vfmadd132pd"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmadd132_double", 64, {64, 64, 64});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({"vfmsub132ps"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmsub132_single", 32, {32, 32, 32});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({"vfmsub132pd"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmsub132_double", 64, {64, 64, 64});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({"vfnmadd132ps"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfnmadd132_single", 32, {32, 32, 32});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({"vfnmadd132pd"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfnmadd132_double", 64, {64, 64, 64});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({"vfnmsub132ps"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfnmsub132_single", 32, {32, 32, 32});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({"vfnmsub132pd"},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vnfmsub132_double", 64, {64, 64, 64});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+
+  add_opcode({"vfmadd132ss"},
+             [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitV
+  ector c, SymState& ss) {
     SymFunction f("vfmadd132_single", 32, {32, 32, 32});
     auto res = f(a[31][0], b[31][0], c[31][0]);
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
