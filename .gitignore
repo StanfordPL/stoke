@@ -4,5 +4,5 @@ src/tags
 *.swp
 tags
 .depend
-
+.stoke_config
 aliasing
