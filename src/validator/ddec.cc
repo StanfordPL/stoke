@@ -415,8 +415,8 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
 
           for (size_t m = 0; m < end_inv->size(); ++m) {
 
-            DDEC_DEBUG(cout << "Checking " << copy << " { " << BoundedValidator::print(p)
-                       << " ; " << BoundedValidator::print(q) << " } " << *(*end_inv)[m] << endl;)
+            DDEC_DEBUG(cout << "Checking " << copy << " { " << p << " ; " << q << " } "
+                       << *(*end_inv)[m] << endl;)
 
             bool equiv = check(target, rewrite, p, q, copy, *(*end_inv)[m]);
             if (!equiv) {
@@ -455,8 +455,7 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
             copy.add_invariant(target_jump_inv);
             copy.add_invariant(rewrite_jump_inv);
 
-            DDEC_DEBUG(cout << "Checking " << copy << " { " << BoundedValidator::print(p)
-                       << " ; " << BoundedValidator::print(q) << " } false " << endl;)
+            DDEC_DEBUG(cout << "Checking " << copy << " { " << p << " ; " << q << " } false " << endl;)
             FalseInvariant fi;
             bool equiv = check(target, rewrite, p, q, copy, fi);
             if (!equiv) {
