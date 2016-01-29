@@ -1,7 +1,7 @@
 
 DEF_IN="{ %r15 %rdi %rsi %rdx }"
 LIVE_OUT="{ %rax }"
-ARGS=--solver z3 --alias_strategy string --no_ddec_bv
+ARGS=--solver z3 --alias_strategy string --no_ddec_bv --verify_nacl
 OPT_ARGS=--test_set "{ 0 .. 100 }" --sound_nullspace
 SYNTH_ARGS=--test_set "{ 0 .. 50 }" --sound_nullspace
 
