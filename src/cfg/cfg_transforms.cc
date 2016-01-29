@@ -170,9 +170,9 @@ Cfg CfgTransforms::minimal_correct_cfg(const RegSet& def_in, const RegSet& live_
     auto reg = *rit;
     auto type = reg.type();
     if (type == Type::XMM || type == Type::XMM_0) {
-      cfg.get_function().push_back(Instruction(PXOR_XMM_XMM, {reg, reg}));
+      cfg.get_function().push_back(Instruction(XORPD_XMM_XMM, {reg, reg}));
     } else if (type == Type::YMM) {
-      cfg.get_function().push_back(Instruction(VPXOR_YMM_YMM_YMM, {reg, reg, reg}));
+      cfg.get_function().push_back(Instruction(VXORPD_YMM_YMM_YMM, {reg, reg, reg}));
     }
   }
 
