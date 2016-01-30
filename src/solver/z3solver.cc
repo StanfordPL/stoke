@@ -25,8 +25,18 @@ using namespace stoke;
 using namespace z3;
 using namespace std;
 
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+uint64_t Z3Solver::number_queries_ = 0;
+uint64_t Z3Solver::typecheck_time_ = 0;
+uint64_t Z3Solver::convert_time_ = 0;
+uint64_t Z3Solver::solver_time_ = 0;
+#endif
 
 bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
+
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+  number_queries_++;
+#endif
 
   /* Reset state. */
   error_ = "";
@@ -47,6 +57,10 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     ExprConverter ec(context_, *new_constraints);
 
     for (auto it : *current) {
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+      number_queries_++;
+      microseconds typecheck_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+#endif
       if (tc(it) != 1) {
         stringstream ss;
         ss << "Typechecking failed for constraint: " << it << endl;
@@ -57,12 +71,21 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
         error_ = ss.str();
         return false;
       }
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+      microseconds typecheck_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+      typecheck_time += (typecheck_end - typecheck_start).count();
+#endif
 
       auto constraint = ec(it);
       if (ec.has_error()) {
         error_ = ec.error();
         return false;
       }
+
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+      microseconds convert_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+      convert_time += (convert_end - typecheck_end).count();
+#endif
       solver_.add(constraint);
     }
 
@@ -76,7 +99,16 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 
   /* Run the solver and see */
   try {
-    switch (solver_.check()) {
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+    microseconds solver_start = duraction_cast<microseconds>(system_clock::now().time_since_epoch());
+#endif
+    auto result = solver_.check();
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+    microseconds solver_end = duraction_cast<microseconds>(system_clock::now().time_since_epoch());
+    solver_time += (solver_end - solver_start).count();
+#endif
+
+    switch (result) {
     case unsat: {
       return false;
     }
