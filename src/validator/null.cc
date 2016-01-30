@@ -346,7 +346,7 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
       flag = flag && (SUB(j,i)==0);
     if (flag)
     {
-      cout << "Found a smaller bit equation" << endl;
+      //cout << "Found a smaller bit equation" << endl;
       (*output)[idx]=(uint64_t*)malloc(sizeof(uint64_t)*cols);
       for (size_t j=rows; j<rows+cols; j++)
       {
@@ -356,7 +356,7 @@ size_t nullspace(long* inputs, size_t rows, size_t cols, uint64_t*** output)
     }
   }
   //makePretty(output,idx,cols);
-  printOutput(*output, idx, cols);
+  //printOutput(*output, idx, cols);
   assert(checkOutput(*output,(uint64_t*)inputs,idx,rows,cols));
   delete augmented;
   return idx;
