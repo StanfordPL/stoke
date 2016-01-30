@@ -1181,12 +1181,12 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
       // Build the handler for the instruction
       state.set_lineno(line_no-1);
 
-      if(nacl_) {
+      if (nacl_) {
         // We need to add constraints keeping the index register (if present)
         // away from the edges of the ddress space.
-        if(instr.is_explicit_memory_dereference()) {
+        if (instr.is_explicit_memory_dereference()) {
           auto mem = instr.get_operand<M8>(instr.mem_index());
-          if(mem.contains_index()) {
+          if (mem.contains_index()) {
             R64 index = mem.get_index();
             auto address = state[index];
             state.constraints.push_back(address >= SymBitVector::constant(64, 0x10));
