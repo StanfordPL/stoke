@@ -66,11 +66,6 @@ public:
     bound_ = bound;
     return *this;
   }
-  /** Turn on NaCl Mode */
-  DdecValidator& set_nacl(bool nacl) {
-    nacl_ = nacl;
-    return *this;
-  }
 
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
@@ -108,9 +103,6 @@ private:
   bool sound_nullspace_;
   /** Aliasing strategy for bounded validator. */
   ObligationChecker::AliasStrategy alias_strategy_;
-
-  /** Nacl */
-  bool nacl_;
 };
 
 } // namespace stoke
