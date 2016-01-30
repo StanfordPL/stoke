@@ -66,6 +66,7 @@ public:
     generate code that use an index besides 1 for NaCl; and STOKE won't do this
     transformation. */
   ObligationChecker& set_nacl(bool b) {
+    std::cout << "set_nacl(" << b << ")" << std::endl;
     nacl_ = b;
     return *this;
   }
