@@ -134,6 +134,8 @@ vector<CpuState> DdecValidator::check_cutpoints(const Cfg& target, const Cfg& re
   return results;
 }
 
+// takes conjunction of the form (A1 and A2 ... Ak) and returns one of form
+// ((B => A1) and (B => A2) ... (B => Ak))
 ConjunctionInvariant* transform_with_assumption(Invariant* assume, ConjunctionInvariant* conjunction) {
 
   ConjunctionInvariant* output = new ConjunctionInvariant();
@@ -651,26 +653,22 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
     auto S1 = learn_simple_invariant(target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
     auto S1_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S1_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
-    S1 = transform_with_assumption(S1_target_path, S1);
-    S1 = transform_with_assumption(S1_rewrite_path, S1);
+    S1 = transform_with_assumption(S1_target_path->AND(S1_rewrite_path), S1);
 
     auto S2 = learn_simple_invariant(target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
     auto S2_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S2_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
-    S2 = transform_with_assumption(S2_target_path, S2);
-    S2 = transform_with_assumption(S2_rewrite_path, S2);
+    S2 = transform_with_assumption(S2_target_path->AND(S2_rewrite_path), S2);
 
     auto S3 = learn_simple_invariant(target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
     auto S3_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S3_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
-    S3 = transform_with_assumption(S3_target_path, S3);
-    S3 = transform_with_assumption(S3_rewrite_path, S3);
+    S3 = transform_with_assumption(S3_target_path->AND(S3_rewrite_path), S3);
 
     auto S4 = learn_simple_invariant(target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
     auto S4_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S4_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
-    S4 = transform_with_assumption(S4_target_path, S4);
-    S4 = transform_with_assumption(S4_rewrite_path, S4);
+    S4 = transform_with_assumption(S4_target_path->AND(S4_rewrite_path), S4);
 
     S1->add_invariants(S2);
     S1->add_invariants(S3);
