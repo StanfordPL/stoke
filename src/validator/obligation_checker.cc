@@ -167,9 +167,11 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
 CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
 
   Sandbox sb(*sandbox_);
+  sb.clear_functions();
 
   auto new_cfg = CfgPaths::rewrite_cfg_with_path(cfg, P);
   auto new_f = new_cfg.get_function();
+  new_f.insert(0, x64asm::Instruction(x64asm::LABEL_DEFN, { x64asm::Label("__ObligationCheckerTest:") }), false);
   new_f.push_back(x64asm::Instruction(x64asm::RET));
   new_cfg = Cfg(new_f, new_cfg.def_ins(), new_cfg.live_outs());
 
@@ -177,7 +179,7 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
   sb.clear_callbacks();
   sb.insert_input(state);
   sb.insert_function(new_cfg);
-  sb.set_entrypoint(new_cfg.get_code()[0].get_operand<x64asm::Label>(0));
+  sb.set_entrypoint(new_f.get_leading_label());
   sb.run();
 
   CpuState output = *(sb.get_output(0));
