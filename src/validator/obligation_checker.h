@@ -30,7 +30,11 @@
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 
-//#define DEBUG_CHECKER_PERFORMANCE
+#define DEBUG_CHECKER_PERFORMANCE
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+#include "src/solver/z3solver.h"
+#endif
 
 namespace stoke {
 
@@ -255,6 +259,7 @@ private:
     std::cout << "Solver time (ms): " << (solver_time_ / 1000) << std::endl;
     std::cout << "Counterexample extraction time (ms): " << (ceg_time_ / 1000) << std::endl;
     std::cout << "Total time accounted for (ms): " << ((ceg_time_ + solver_time_ + constraint_gen_time_ + aliasing_time_)/1000) << std::endl;
+    Z3Solver::print_performance();
   }
 #endif
 

@@ -14,6 +14,7 @@
 
 
 #include <iostream>
+#include <chrono>
 
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
@@ -24,6 +25,7 @@
 using namespace stoke;
 using namespace z3;
 using namespace std;
+using namespace std::chrono;
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
 uint64_t Z3Solver::number_queries_ = 0;
@@ -73,7 +75,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
       }
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
       microseconds typecheck_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
-      typecheck_time += (typecheck_end - typecheck_start).count();
+      typecheck_time_ += (typecheck_end - typecheck_start).count();
 #endif
 
       auto constraint = ec(it);
@@ -84,7 +86,7 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
       microseconds convert_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
-      convert_time += (convert_end - typecheck_end).count();
+      convert_time_ += (convert_end - typecheck_end).count();
 #endif
       solver_.add(constraint);
     }
@@ -100,12 +102,12 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
   /* Run the solver and see */
   try {
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
-    microseconds solver_start = duraction_cast<microseconds>(system_clock::now().time_since_epoch());
+    microseconds solver_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
 #endif
     auto result = solver_.check();
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
-    microseconds solver_end = duraction_cast<microseconds>(system_clock::now().time_since_epoch());
-    solver_time += (solver_end - solver_start).count();
+    microseconds solver_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+    solver_time_ += (solver_end - solver_start).count();
 #endif
 
     switch (result) {

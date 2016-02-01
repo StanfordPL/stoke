@@ -63,6 +63,17 @@ public:
 
   std::map<uint64_t, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits);
 
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+  static void print_performance() {
+    std::cout << "====== Z3 Interface Performance Report ======" << std::endl;
+    std::cout << "Number queries: " << number_queries_ << std::endl;
+    std::cout << "Typecheck time (ms): " << (typecheck_time_/1000) << std::endl;
+    std::cout << "Convert time (ms): " << (convert_time_/1000) << std::endl;
+    std::cout << "Z3 time (ms): " << (solver_time_/1000) << std::endl;
+    std::cout << "Total accounted: " << (typecheck_time_ + convert_time_ + solver_time_)/1000 << std::endl;
+  }
+#endif
+
 private:
 
   /** The Z3 context we're working with */
@@ -231,17 +242,6 @@ private:
     std::string error() {
       return error_;
     }
-
-#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
-  void print_performance() {
-    std::cout << "====== Z3 Interface Performance Report ======" << std::endl;
-    std::cout << "Number queries: " << number_queries_ << std::endl;
-    std::cout << "Typecheck time (ms): " << (typecheck_time_/1000) << std::endl;
-    std::cout << "Convert time (ms): " << (convert_time_/1000) << std::endl;
-    std::cout << "Z3 time (ms): " << (solver_time_/1000) << std::endl;
-    std::cout << "Total accounted: " << (typecheck_time_ + convert_type_ + solver_time_)/1000 << std::endl;
-  }
-#endif
 
 
   private:
