@@ -109,7 +109,6 @@ private:
       bv->set_bound(bound_arg.value());
       bv->set_alias_strategy(parse_alias());
       bv->set_no_bailout(no_bailout_arg.value());
-      std::cout << "Setting nacl..." << std::endl;
       bv->set_nacl(verify_nacl_arg);
       return bv;
     } else if (s == "ddec") {
@@ -120,7 +119,6 @@ private:
       ddec->set_sound_nullspace(sound_nullspace_arg.value());
       ddec->set_alias_strategy(parse_alias());
       ddec->set_bound(bound_arg.value());
-      std::cout << "Setting nacl..." << std::endl;
       ddec->set_nacl(verify_nacl_arg);
       return ddec;
     } else if (s == "hold_out") {
