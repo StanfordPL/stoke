@@ -317,9 +317,11 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
     constraints.push_back((*this)[*flag_it] == other[*flag_it]);
   }
 
+/*
   constraints.push_back(sigbus == other.sigbus);
   constraints.push_back(sigfpe == other.sigfpe);
   constraints.push_back(sigsegv == other.sigsegv);
+  */
 
   return constraints;
 }

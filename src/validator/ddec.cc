@@ -201,7 +201,7 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
         auto begin = new ConjunctionInvariant();
         auto inv = new StateEqualityInvariant(target.def_ins());
         begin->add_invariant(inv);
-        begin->add_invariant(no_sigs);
+        //begin->add_invariant(no_sigs);
         begin->add_invariant(mem_equ);
         invariants.push_back(begin);
       } else if (target_cuts[i] == target.get_exit()) {
@@ -211,7 +211,7 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
         auto end = new ConjunctionInvariant();
         auto inv = new StateEqualityInvariant(target.live_outs());
         end->add_invariant(inv);
-        end->add_invariant(no_sigs);
+        //end->add_invariant(no_sigs);
 
         if (heap_out_ || stack_out_)
           end->add_invariant(mem_equ);
@@ -690,7 +690,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
 
   NoSignalsInvariant* no_sigs = new NoSignalsInvariant();
   ConjunctionInvariant* conj = new ConjunctionInvariant();
-  conj->add_invariant(no_sigs);
+  //conj->add_invariant(no_sigs);
   conj->add_invariant(mem_equ);
 
   if (target_states.size() == 0 || rewrite_states.size() == 0) {
