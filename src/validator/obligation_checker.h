@@ -30,7 +30,7 @@
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 
-#define DEBUG_CHECKER_PERFORMANCE
+//#define DEBUG_CHECKER_PERFORMANCE
 
 #ifdef DEBUG_CHECKER_PERFORMANCE
 #include "src/solver/z3solver.h"
