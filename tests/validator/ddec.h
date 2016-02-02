@@ -681,7 +681,7 @@ TEST_F(DdecValidatorBaseTest, DISABLED_MemcpyMissingBranch) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
-TEST_F(DdecValidatorBaseTest, StrlenCorrect) {
+TEST_F(DdecValidatorBaseTest, DISABLED_StrlenCorrect) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rdi;
