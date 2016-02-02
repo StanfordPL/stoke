@@ -23,7 +23,7 @@
 #include "src/symstate/bitvector.h"
 #include "src/symstate/memo_visitor.h"
 
-#define DEBUG_Z3_INTERFACE_PERFORMANCE
+//#define DEBUG_Z3_INTERFACE_PERFORMANCE
 
 namespace stoke {
 
