@@ -298,6 +298,11 @@ void Cutpoints::compute() {
     return;
   }
 
+  if (target_sccs.count() == 0) {
+    // nothing to do here :)
+    return;
+  }
+
   /*
   for (size_t i = 0; i < target_sccs.count(); ++i) {
     map<Cfg::id_type, bool> empty_map;
