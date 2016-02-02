@@ -101,7 +101,7 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
     auto target_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target_cuts[i]);
     auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1, rewrite.get_entry(), rewrite_cuts[i]);
 
-    DDEC_DEBUG(cout << "cutpoint " << i << ": " << target_paths.size()*rewrite_paths.size() << " cases" << endl;)
+    DDEC_DEBUG(cout << "[ddec] cutpoint " << i << ": " << target_paths.size()*rewrite_paths.size() << " cases" << endl;)
 
     for (auto p : target_paths) {
       for (auto q : rewrite_paths) {
@@ -222,13 +222,13 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
         auto rewrite_regs = rewrite.def_outs(rewrite_cuts[i]);
         auto inv = learn_disjunction_invariant(target_regs, rewrite_regs, cutpoints_->data_at(i, false), cutpoints_->data_at(i, true), get_last_instr(target, target_cuts[i]), get_last_instr(rewrite, rewrite_cuts[i]));
         invariants.push_back(inv);
-        DDEC_DEBUG(cout << "Learned invariant @ i=" << i << endl;)
+        DDEC_DEBUG(cout << "[ddec] Learned invariant @ i=" << i << endl;)
         DDEC_DEBUG(cout << *inv << endl;)
       }
     }
 
     // See if said invariants are correct
-    DDEC_DEBUG(cout << endl << "CHECKING INVARIANTS WITH BOUNDED VALIDATOR" << endl << endl;)
+    DDEC_DEBUG(cout << endl << "[ddec] CHECKING INVARIANTS WITH BOUNDED VALIDATOR" << endl << endl;)
     auto new_tests = check_invariants(target, rewrite, invariants);
     if (new_tests.size() == 0)
       return invariants;
@@ -561,6 +561,8 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 }
 
 ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states, const Instruction& last_target_instr, const Instruction& last_rewrite_instr) {
+
+  DDEC_DEBUG(cout << "[ddec] learning invariant over " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;)
 
   bool target_has_jcc = last_target_instr.is_jcc();
   string target_opcode = Handler::get_opcode(last_target_instr);
