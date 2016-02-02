@@ -886,6 +886,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
   vector<pair<CellMemory*, CellMemory*>> result;
 
   if (max_cell > 1 && alias_strategy_ == AliasStrategy::STRING) {
+    ALIAS_STRING_DEBUG(cout << "Alias Strategy STRING" << std::endl;)
 
     auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
     auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);

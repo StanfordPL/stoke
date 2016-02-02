@@ -101,7 +101,7 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
     auto target_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target_cuts[i]);
     auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1, rewrite.get_entry(), rewrite_cuts[i]);
 
-    DDEC_DEBUG(cout << "cutpoint " << i << ": " << target_paths.size()*rewrite_paths.size() << " cases" << endl;)
+    DDEC_DEBUG(cout << "[ddec] cutpoint " << i << ": " << target_paths.size()*rewrite_paths.size() << " cases" << endl;)
 
     for (auto p : target_paths) {
       for (auto q : rewrite_paths) {
@@ -134,6 +134,8 @@ vector<CpuState> DdecValidator::check_cutpoints(const Cfg& target, const Cfg& re
   return results;
 }
 
+// takes conjunction of the form (A1 and A2 ... Ak) and returns one of form
+// ((B => A1) and (B => A2) ... (B => Ak))
 ConjunctionInvariant* transform_with_assumption(Invariant* assume, ConjunctionInvariant* conjunction) {
 
   ConjunctionInvariant* output = new ConjunctionInvariant();
@@ -220,13 +222,13 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
         auto rewrite_regs = rewrite.def_outs(rewrite_cuts[i]);
         auto inv = learn_disjunction_invariant(target_regs, rewrite_regs, cutpoints_->data_at(i, false), cutpoints_->data_at(i, true), get_last_instr(target, target_cuts[i]), get_last_instr(rewrite, rewrite_cuts[i]));
         invariants.push_back(inv);
-        DDEC_DEBUG(cout << "Learned invariant @ i=" << i << endl;)
+        DDEC_DEBUG(cout << "[ddec] Learned invariant @ i=" << i << endl;)
         DDEC_DEBUG(cout << *inv << endl;)
       }
     }
 
     // See if said invariants are correct
-    DDEC_DEBUG(cout << endl << "CHECKING INVARIANTS WITH BOUNDED VALIDATOR" << endl << endl;)
+    DDEC_DEBUG(cout << endl << "[ddec] CHECKING INVARIANTS WITH BOUNDED VALIDATOR" << endl << endl;)
     auto new_tests = check_invariants(target, rewrite, invariants);
     if (new_tests.size() == 0)
       return invariants;
@@ -560,6 +562,8 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 
 ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states, const Instruction& last_target_instr, const Instruction& last_rewrite_instr) {
 
+  DDEC_DEBUG(cout << "[ddec] learning invariant over " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;)
+
   bool target_has_jcc = last_target_instr.is_jcc();
   string target_opcode = Handler::get_opcode(last_target_instr);
   string target_cc = target_opcode.substr(1, target_opcode.size() - 1);
@@ -651,26 +655,22 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
     auto S1 = learn_simple_invariant(target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
     auto S1_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S1_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
-    S1 = transform_with_assumption(S1_target_path, S1);
-    S1 = transform_with_assumption(S1_rewrite_path, S1);
+    S1 = transform_with_assumption(S1_target_path->AND(S1_rewrite_path), S1);
 
     auto S2 = learn_simple_invariant(target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
     auto S2_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S2_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
-    S2 = transform_with_assumption(S2_target_path, S2);
-    S2 = transform_with_assumption(S2_rewrite_path, S2);
+    S2 = transform_with_assumption(S2_target_path->AND(S2_rewrite_path), S2);
 
     auto S3 = learn_simple_invariant(target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
     auto S3_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S3_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
-    S3 = transform_with_assumption(S3_target_path, S3);
-    S3 = transform_with_assumption(S3_rewrite_path, S3);
+    S3 = transform_with_assumption(S3_target_path->AND(S3_rewrite_path), S3);
 
     auto S4 = learn_simple_invariant(target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
     auto S4_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S4_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
-    S4 = transform_with_assumption(S4_target_path, S4);
-    S4 = transform_with_assumption(S4_rewrite_path, S4);
+    S4 = transform_with_assumption(S4_target_path->AND(S4_rewrite_path), S4);
 
     S1->add_invariants(S2);
     S1->add_invariants(S3);

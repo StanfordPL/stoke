@@ -20,6 +20,8 @@
 
 namespace stoke {
 
+class ConjunctionInvariant;
+
 class Invariant {
 
 public:
@@ -55,6 +57,7 @@ public:
     return true;
   }
 
+  ConjunctionInvariant* AND(Invariant* other);
 };
 
 } // namespace stoke
