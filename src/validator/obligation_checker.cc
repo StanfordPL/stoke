@@ -167,14 +167,13 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
 CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
 
   Sandbox sb(*sandbox_);
+  sb.reset(); // if we ever want to call helper functions, this will break.
 
   auto new_cfg = CfgPaths::rewrite_cfg_with_path(cfg, P);
   auto new_f = new_cfg.get_function();
   new_f.push_back(x64asm::Instruction(x64asm::RET));
   new_cfg = Cfg(new_f, new_cfg.def_ins(), new_cfg.live_outs());
 
-  sb.clear_inputs();
-  sb.clear_callbacks();
   sb.insert_input(state);
   sb.insert_function(new_cfg);
   sb.set_entrypoint(new_cfg.get_code()[0].get_operand<x64asm::Label>(0));
