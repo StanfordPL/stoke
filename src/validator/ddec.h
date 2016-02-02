@@ -56,11 +56,6 @@ public:
     sound_nullspace_ = b;
     return *this;
   }
-  /** Set the aliasing strategy for bounded validator */
-  DdecValidator& set_alias_strategy(ObligationChecker::AliasStrategy as) {
-    alias_strategy_ = as;
-    return *this;
-  }
   /** Set the bound for bounded validator */
   DdecValidator& set_bound(size_t bound) {
     bound_ = bound;
@@ -101,8 +96,6 @@ private:
   bool no_bv_;
   /** Use the sound nullspace computation? */
   bool sound_nullspace_;
-  /** Aliasing strategy for bounded validator. */
-  ObligationChecker::AliasStrategy alias_strategy_;
 };
 
 } // namespace stoke
