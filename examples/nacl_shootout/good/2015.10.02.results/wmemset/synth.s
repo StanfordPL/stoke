@@ -33,7 +33,7 @@
   nop                       #  23    0x18  1      OPC=nop             
   nop                       #  24    0x19  1      OPC=nop             
   nop                       #  25    0x1a  1      OPC=nop             
-  testq %rdx, %rdx          #  26    0x1b  3      OPC=testq_r64_r64   
+  testl %edx, %edx          #  26    0x1b  3      OPC=testl_r32_r32   
   je .L_1c                  #  27    0x1e  2      OPC=je_label        
 .L_10:                      #        0x20  0      OPC=<label>         
   leal (%rax,%rcx,4), %r8d  #  28    0x20  4      OPC=leal_r32_m32    

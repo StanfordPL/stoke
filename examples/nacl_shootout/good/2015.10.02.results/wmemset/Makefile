@@ -1,9 +1,9 @@
 
 DEF_IN="{ %r15 %rdi %rsi %rdx }"
 LIVE_OUT="{ %rax }"
-ARGS=--solver z3 --alias_strategy string --no_ddec_bv --verify_nacl
+ARGS=--solver z3 --alias_strategy string --verify_nacl
 OPT_ARGS=--test_set "{ 0 .. 100 }" --sound_nullspace
-SYNTH_ARGS=--test_set "{ 0 .. 50 }" --sound_nullspace
+SYNTH_ARGS=--test_set "{ 0 .. 100 }" --sound_nullspace
 
 opt:
 	time stoke debug verify --target target.s --rewrite optimize.s --testcases testcases --training_set "{ 1 .. 30 }" --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS) $(OPT_ARGS)

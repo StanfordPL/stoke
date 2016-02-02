@@ -11,11 +11,13 @@ stoke search \
   --restricted_reg_penalty 100 \
   --bad_instruction_penalty 100 \
   --max_jumps 10000 \
-  --testcases bounded_tcs \
+  --testcases testcases \
+  --training_set "{ 0 1 2 3 4 5 10 11 12 13 20 21 22 23 24 30 31 32 33 34 40 50 60 70 80 }" \
+  --test_set "{ 0 1 2 3 4 5 10 11 12 13 20 21 22 23 24 30 31 32 33 34 40 50 60 70 80 }" \
   --strategy "bounded,ddec" \
   --sound_nullspace \
   --bound 2 \
-  --alias_strategy "string" \
+  --alias_strategy "flat" \
   --add_nops_mass 1 \
   --delete_mass 1 \
   -o notcs_verified.s \
