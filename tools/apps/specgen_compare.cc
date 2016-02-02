@@ -155,10 +155,10 @@ int main(int argc, char** argv) {
     } else {
       explanation << "  not equivalent for '" << (*reg) << "':" << endl;
       explanation << "    strata: ";
-      pretty(a);
+      pretty(SymSimplify().simplify(a));
       explanation << endl;
       explanation << "    stoke:  ";
-      pretty(b);
+      pretty(SymSimplify().simplify(b));
       explanation << endl;
       return false;
     }
