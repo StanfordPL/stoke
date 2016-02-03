@@ -72,9 +72,13 @@ public:
     cs.read_text(input_file);
     input_file.close();
 
-    for(size_t i = 0; i < max; ++i) {
+    ASSERT_GE(cs.size(), max - min + 1) << "Read " << cs.size() << " tcs; wanted { " << min << " .. " << max << "}";
+
+    for(size_t i = 0; i <= max; ++i) {
       sandbox->insert_input(cs[i]);
+      cout << cs[i] << endl << endl;
     }
+    validator->set_sandbox(sandbox);
   }
 
   void check_equiv() {
@@ -112,7 +116,7 @@ TEST_F(DdecNaclLongTest, wcpcpyTranslate) {
   benchmark("wcpcpy", false, 0, 20, ObligationChecker::AliasStrategy::FLAT);
 }
 
-TEST_F(DdecNaclLongTest, wcslenOptimize) {
+TEST_F(DdecNaclTest, wcslenOptimize) {
   benchmark("wcslen", true, 0, 20, ObligationChecker::AliasStrategy::FLAT);
 }
 
