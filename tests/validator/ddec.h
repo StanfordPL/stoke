@@ -43,6 +43,9 @@ public:
     validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
     validator->set_heap_out(true);
     validator->set_stack_out(true);
+    validator->set_no_bv(false);
+    validator->set_sound_nullspace(true);
+    validator->set_try_sign_extend(true);
   }
 
   ~DdecValidatorBaseTest() {

@@ -391,6 +391,7 @@ bool Cutpoints::check() {
   // (i)   the same number of cutpoints are taken in target/rewrite
   // (ii)  for cutpoint i, the memory of target/rewrite must agree
   // (iii) static cutpoint i of target always aligns with static cutpoint i of rewrite in the traces
+  // (iv)  no infinite paths that don't have cutpoint (TODO)
 
   // ... and along the way, we should record all this data so that the main DDEC algorithm can
   // retrieve a set of testcases at all cutpoints.
