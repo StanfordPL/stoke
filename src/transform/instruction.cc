@@ -21,9 +21,9 @@ using namespace x64asm;
 
 namespace stoke {
 
-TransformInfo InstructionTransform::operator()(Cfg& cfg) {
+TransformUndo InstructionTransform::operator()(Cfg& cfg) {
 
-  TransformInfo ti;
+  TransformUndo ti;
   ti.success = false;
 
   // Grab the index of an old instruction
@@ -81,7 +81,7 @@ TransformInfo InstructionTransform::operator()(Cfg& cfg) {
   return ti;
 }
 
-void InstructionTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
+void InstructionTransform::undo(Cfg& cfg, const TransformUndo& ti) const {
 
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
   cfg.recompute_defs();

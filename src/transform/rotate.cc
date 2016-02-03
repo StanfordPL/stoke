@@ -21,9 +21,9 @@ using namespace x64asm;
 
 namespace stoke {
 
-TransformInfo RotateTransform::operator()(Cfg& cfg) {
+TransformUndo RotateTransform::operator()(Cfg& cfg) {
 
-  TransformInfo ti;
+  TransformUndo ti;
   ti.success = false;
 
   if (cfg.get_code().size() < 3)
@@ -64,7 +64,7 @@ TransformInfo RotateTransform::operator()(Cfg& cfg) {
 
 }
 
-void RotateTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
+void RotateTransform::undo(Cfg& cfg, const TransformUndo& ti) const {
   if (ti.undo_index[0] < ti.undo_index[1])
     cfg.get_function().rotate_right(ti.undo_index[0], ti.undo_index[1]);
   else

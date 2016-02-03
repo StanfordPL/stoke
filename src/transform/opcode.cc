@@ -21,9 +21,9 @@ using namespace x64asm;
 
 namespace stoke {
 
-TransformInfo OpcodeTransform::operator()(Cfg& cfg) {
+TransformUndo OpcodeTransform::operator()(Cfg& cfg) {
 
-  TransformInfo ti;
+  TransformUndo ti;
   ti.success = false;
 
   // Grab the index of a random instruction
@@ -64,7 +64,7 @@ TransformInfo OpcodeTransform::operator()(Cfg& cfg) {
   return ti;
 }
 
-void OpcodeTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
+void OpcodeTransform::undo(Cfg& cfg, const TransformUndo& ti) const {
   cfg.get_function().replace(ti.undo_index[0], ti.undo_instr, true);
   cfg.recompute_defs();
 
