@@ -711,18 +711,28 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     }
   } else {
     // we are dealing with a circuit that we have learned
-    // read program
-    ifstream file(candidate_file);
-    TUnit t;
-    file >> t;
     specgen_instr = get_instruction(opcode);
 
-    // build formula for program
-    auto code = t.get_code();
-    assert(code[0].get_opcode() == Opcode::LABEL_DEFN);
-    assert(code[code.size() - 1].get_opcode() == Opcode::RET);
-    for (size_t i = 1; i < code.size()-1; i++) {
-      build_circuit(code[i], tmp);
+    // read cache
+    auto it = formula_cache_.find(opcode);
+    if (it != formula_cache_.end()) {
+      tmp = SymState(it->second);
+    } else {
+      // read program
+      ifstream file(candidate_file);
+      TUnit t;
+      file >> t;
+
+      // build formula for program
+      auto code = t.get_code();
+      assert(code[0].get_opcode() == Opcode::LABEL_DEFN);
+      assert(code[code.size() - 1].get_opcode() == Opcode::RET);
+      for (size_t i = 1; i < code.size()-1; i++) {
+        build_circuit(code[i], tmp);
+      }
+
+      // cache for future
+      formula_cache_[opcode] = SymState(tmp);
     }
   }
 
