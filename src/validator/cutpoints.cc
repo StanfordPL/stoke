@@ -298,6 +298,25 @@ void Cutpoints::compute() {
     return;
   }
 
+  if (target_sccs.count() == 0) {
+    target_cutpoints_.clear();
+    rewrite_cutpoints_.clear();
+
+    target_cutpoints_.push_back(target_.get_entry());
+    rewrite_cutpoints_.push_back(rewrite_.get_entry());
+    target_cutpoints_.push_back(target_.get_exit());
+    rewrite_cutpoints_.push_back(rewrite_.get_exit());
+
+    for (auto it : target_cutpoints_) {
+      target_cutpoint_ends_with_jump_.push_back(false);
+    }
+    for (auto it : rewrite_cutpoints_) {
+      rewrite_cutpoint_ends_with_jump_.push_back(false);
+    }
+
+    return;
+  }
+
   /*
   for (size_t i = 0; i < target_sccs.count(); ++i) {
     map<Cfg::id_type, bool> empty_map;
@@ -392,7 +411,8 @@ bool Cutpoints::check() {
   // (ii)  for cutpoint i, the memory of target/rewrite must agree
   // (iii) static cutpoint i of target always aligns with static cutpoint i of rewrite in the traces
 
-  // ... and along the way, we should record all this data.
+  // ... and along the way, we should record all this data so that the main DDEC algorithm can
+  // retrieve a set of testcases at all cutpoints.
 
   // So, callbacks store the CpuState in two different ways.
   // First, it stores the copy in relation to the static cutpoint for future
@@ -431,6 +451,8 @@ bool Cutpoints::check() {
         bool ends_with_jump = jump_list[j];
         auto bb = cutpoint_list[j];
 
+        DEBUG_CUTPOINTS(cout << "[cutpoints] getting data from basic block " << bb << "; ewj=" << ends_with_jump << endl;)
+
         CallbackParam* cp = new CallbackParam();
         cp->self = this;
         cp->callback_number = j;
@@ -458,9 +480,11 @@ bool Cutpoints::check() {
           // no need to collect data at exit
         } else if (ends_with_jump) {
           index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
+          DEBUG_CUTPOINTS(cout << "  - instrumenting before index=" << index << std::endl;)
           sandbox_.insert_before(label, index, check_callback, cp);
         } else {
           index = cfg.get_index(Cfg::loc_type(bb, cfg.num_instrs(bb)-1));
+          DEBUG_CUTPOINTS(cout << "  - instrumenting after index=" << index << std::endl;)
           sandbox_.insert_after(label, index, check_callback, cp);
         }
       }

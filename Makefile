@@ -14,26 +14,53 @@
 
 ##### CONSTANT DEFINITIONS
 
+## Include any variables set by the user
+-include .stoke_config
+
+## Choose the compiler to use
 ifndef COMPILERBINARY
 	COMPILERBINARY=g++
 endif
-CXX=ccache ${COMPILERBINARY} -std=c++14 -Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla -fdiagnostics-color=always
 
-# number of threads used for compiling
+# Set the platform we're on.  This determines many
+# compilation options.  Can be set to haswell, sandybridge, nehalem.
+ifndef STOKE_PLATFORM
+  STOKE_PLATFORM=haswell
+endif
+
+# Set the number of threads used for compiling
 ifndef NTHREADS
 	NTHREADS=8
 endif
 
-# set defaults (haswell) to allow building things like bin/stoke_search directly
-ifndef OPT
-	OPT=-march=core-avx2 -O3 -DNDEBUG
+# Set platform-specific compiler options to use
+ifndef ARCH_OPT
+	ifeq ($(STOKE_PLATFORM), "haswell")
+		ARCH_OPT=-march=core-avx2 -DHASWELL_BUILD
+	endif
+	ifeq ($(STOKE_PLATFORM), "sandybridge")
+		ARCH_OPT=-march=corei7-avx -DSANDYBRIDGE_BUILD
+	endif
+	ifeq ($(STOKE_PLATFORM), "nehalem")
+		ARCH_OPT=-march=corei7 -DNEHALEM_BUILD
+	endif
 endif
 ifndef EXT_OPT
 	EXT_OPT=release
 endif
 ifndef EXT_TARGET
-	EXT_TARGET=-march=core-avx2
+	EXT_TARGET=$(ARCH_OPT)
 endif
+
+# Set default options for building a binary, like /bin/stoke_search
+ifndef OPT
+	OPT=-O3 -DNDEBUG
+endif
+
+#CXX_FLAGS are any extra flags the user might want to pass to the compiler
+
+WARNING_FLAGS=-Wall -Werror -Wextra -Wfatal-errors -Wno-deprecated -Wno-unused-parameter -Wno-unused-variable -Wno-vla -fdiagnostics-color=always
+CXX=ccache $(COMPILERBINARY) $(CXX_FLAGS) -std=c++14 $(WARNING_FLAGS)
 
 INC_FOLDERS=\
 						./ \
@@ -217,69 +244,30 @@ BIN=\
 
 all: release hooks
 
-release: haswell_release
+release:
+	$(MAKE) -C . external EXT_OPT="release" 
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG"
 	echo -e "\a"
-debug: haswell_debug
+debug:
+	$(MAKE) -C . external EXT_OPT="debug"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-g"
 	echo -e "\a"
-profile: haswell_profile
+profile:
+	$(MAKE) -C . external EXT_OPT="profile"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG -pg"
 	echo -e "\a"
-test: haswell_test
+tests: debug
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-g"
 	echo -e "\a"
-tests: haswell_tests
-	echo -e "\a"
-fast_tests: haswell_fast_tests
-	echo -e "\a"
-fast: haswell_test_fast
-	echo -e "\a"
-
-haswell: haswell_release
-haswell_release:
-	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=core-avx2"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -DHASWELL_BUILD"
-haswell_debug:
-	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=core-avx2"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -g -DHASWELL_BUILD"
-haswell_profile:
-	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=core-avx2"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=core-avx2 -O3 -DNDEBUG -pg -DHASWELL_BUILD"
-haswell_test: haswell_tests
+test: tests
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
-haswell_tests: haswell_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -g -DNDEBUG -DHASWELL_BUILD"
-haswell_test_fast: haswell_fast_tests
+	echo -e "\a"
+fast_tests: debug
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-O3 -DNDEBUG -DNO_VERY_SLOW_TESTS"
+	echo -e "\a"
+fast: fast_tests
 	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
-haswell_fast_tests: haswell_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=core-avx2 -O3 -DNDEBUG -DNO_VERY_SLOW_TESTS -DHASWELL_BUILD"
-
-sandybridge: sandybridge_release
-sandybridge_release:
-	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7-avx"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -DSANDYBRIDGE_BUILD"
-sandybridge_debug:
-	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7-avx"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -g -DSANDYBRIDGE_BUILD"
-sandybridge_profile:
-	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=corei7-avx"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7-avx -O3 -DNDEBUG -pg -DSANDYBRIDGE_BUILD"
-sandybridge_test: sandybridge_debug sandybridge_tests
-	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
-sandybridge_tests: sandybridge_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7-avx -O3 -DNDEBUG -DSANDYBRIDGE_BUILD"
-
-nehalem: nehalem_release
-nehalem_release:
-	$(MAKE) -C . external EXT_OPT="release" EXT_TARGET="-march=corei7"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -DNEHALEM_BUILD"
-nehalem_debug:
-	$(MAKE) -C . external EXT_OPT="debug" EXT_TARGET="-march=corei7"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -g -DNEHALEM_BUILD"
-nehalem_profile:
-	$(MAKE) -C . external EXT_OPT="profile" EXT_TARGET="-march=corei7"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-march=corei7 -O3 -DNDEBUG -pg -DNEHALEM_BUILD"
-nehalem_test: nehalem_debug nehalem_tests
-	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
-nehalem_tests: nehalem_debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-march=corei7 -O3 -DNDEBUG -DNEHALEM_BUILD"
+	echo -e "\a"
 
 ##### CTAGS TARGETS
 
@@ -324,11 +312,11 @@ cpputil:
 .PHONY: x64asm
 x64asm:
 	./scripts/make/submodule-init.sh src/ext/x64asm
-	$(MAKE) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" COMPILERBINARY=${COMPILERBINARY}
+	$(MAKE) -C src/ext/x64asm EXT_OPT="$(EXT_OPT)" COMPILERBINARY="${COMPILERBINARY}"
 
 .PHONY: pintool
 pintool:
-	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET=$(EXT_TARGET)
+	$(MAKE) -C src/ext/pin-2.13-62732-gcc.4.4.7-linux/source/tools/stoke TARGET="$(EXT_TARGET)"
 
 src/ext/gtest-1.7.0/libgtest.a:
 	cmake src/ext/gtest-1.7.0/CMakeLists.txt
@@ -354,42 +342,42 @@ src/validator/handlers.h: .FORCE
 ##### BUILD TARGETS
 
 src/cfg/%.o: src/cfg/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/cost/%.o: src/cost/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/disassembler/%.o: src/disassembler/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/sandbox/%.o: src/sandbox/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/search/%.o: src/search/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/solver/%.o: src/solver/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/solver/cvc4solver.o: src/solver/cvc4solver.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/state/%.o: src/state/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/stategen/%.o: src/stategen/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/symstate/%.o: src/symstate/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/specgen/%.o: src/specgen/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/target/%.o: src/target/%.cc src/target/%.h $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/transform/%.o: src/transform/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/tunit/%.o: src/tunit/%.cc src/tunit/%.h $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/validator/handlers/%.o: src/validator/handlers/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/validator/%.o: src/validator/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 src/verifier/%.o: src/verifier/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 
 tools/io/%.o: tools/io/%.cc $(DEPS)
-	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) -c $< -o $@
 
 ##### BINARY TARGETS
 

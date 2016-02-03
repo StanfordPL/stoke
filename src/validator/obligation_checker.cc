@@ -167,14 +167,13 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
 CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state) {
 
   Sandbox sb(*sandbox_);
+  sb.reset(); // if we ever want to call helper functions, this will break.
 
   auto new_cfg = CfgPaths::rewrite_cfg_with_path(cfg, P);
   auto new_f = new_cfg.get_function();
   new_f.push_back(x64asm::Instruction(x64asm::RET));
   new_cfg = Cfg(new_f, new_cfg.def_ins(), new_cfg.live_outs());
 
-  sb.clear_inputs();
-  sb.clear_callbacks();
   sb.insert_input(state);
   sb.insert_function(new_cfg);
   sb.set_entrypoint(new_cfg.get_code()[0].get_operand<x64asm::Label>(0));
@@ -739,11 +738,7 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
 
       // (i) Are these two accesses to the same memory locations?
       SymBool equal_addrs;
-      if (nacl_) {
-        equal_addrs = sym_accesses[i].address[31][0] == sym_accesses[j].address[31][0];
-      } else {
-        equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
-      }
+      equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
       constraints.push_back(!equal_addrs);
       same_address[i][j] = !solver_.is_sat(constraints);
       constraints.erase(--constraints.end());
@@ -755,14 +750,8 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
 
       // (ii) Are these two accesses in sequence?
       SymBool next_addrs;
-      if (nacl_) {
-        next_addrs = sym_accesses[i].address[31][0] + SymBitVector::constant(32, sym_accesses[i].size) ==
-                     sym_accesses[j].address[31][0];
-      } else {
-        next_addrs = sym_accesses[i].address + SymBitVector::constant(64, sym_accesses[i].size) ==
-                     sym_accesses[j].address;
-
-      }
+      next_addrs = sym_accesses[i].address + SymBitVector::constant(64, sym_accesses[i].size) ==
+                   sym_accesses[j].address;
       constraints.push_back(!next_addrs);
       next_address[i][j] = !solver_.is_sat(constraints);
       constraints.erase(--constraints.end());
@@ -780,14 +769,9 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
 
       // (ii) Are these two accesses in sequence?
       SymBool next_addrs;
-      if (nacl_) {
-        next_addrs = sym_accesses[i].address[31][0] + SymBitVector::constant(32, sym_accesses[i].size) ==
-                     sym_accesses[j].address[31][0];
-      } else {
-        next_addrs = sym_accesses[i].address + SymBitVector::constant(64, sym_accesses[i].size) ==
-                     sym_accesses[j].address;
+      next_addrs = sym_accesses[i].address + SymBitVector::constant(64, sym_accesses[i].size) ==
+                   sym_accesses[j].address;
 
-      }
       constraints.push_back(!next_addrs);
       next_address[i][j] = !solver_.is_sat(constraints);
       constraints.erase(--constraints.end());
@@ -901,6 +885,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
   vector<pair<CellMemory*, CellMemory*>> result;
 
   if (max_cell > 1 && alias_strategy_ == AliasStrategy::STRING) {
+    ALIAS_STRING_DEBUG(cout << "Alias Strategy STRING" << std::endl;)
 
     auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
     auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
@@ -1195,6 +1180,21 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
     } else {
       // Build the handler for the instruction
       state.set_lineno(line_no-1);
+
+      if (nacl_) {
+        // We need to add constraints keeping the index register (if present)
+        // away from the edges of the ddress space.
+        if (instr.is_explicit_memory_dereference()) {
+          auto mem = instr.get_operand<M8>(instr.mem_index());
+          if (mem.contains_index()) {
+            R64 index = mem.get_index();
+            auto address = state[index];
+            state.constraints.push_back(address >= SymBitVector::constant(64, 0x10));
+            state.constraints.push_back(address <= SymBitVector::constant(64, 0xfffffff0));
+          }
+        }
+      }
+
       //cout << "LINE=" << line_no-1 << ": " << instr << endl;
       handler_.build_circuit(instr, state);
 
