@@ -21,26 +21,26 @@ using namespace x64asm;
 using namespace std;
 
 vector<Handler*> ComboHandler::default_handler_list() const {
-    vector<Handler*> v;
+  vector<Handler*> v;
 
-    if (strata_path_.size() != 0) {
-      v.push_back(new StrataHandler(strata_path_));
-    }
-
-    // New Handlers
-    v.push_back(new PackedHandler());
-    v.push_back(new SimpleHandler());
-
-    v.push_back(new AddHandler());
-    v.push_back(new ConditionalHandler());
-    v.push_back(new LeaHandler());
-    v.push_back(new MoveHandler());
-    v.push_back(new PunpckHandler());
-    v.push_back(new ShiftHandler());
-    v.push_back(new PseudoHandler());
-
-    return v;
+  if (strata_path_.size() != 0) {
+    v.push_back(new StrataHandler(strata_path_));
   }
+
+  // New Handlers
+  v.push_back(new PackedHandler());
+  v.push_back(new SimpleHandler());
+
+  v.push_back(new AddHandler());
+  v.push_back(new ConditionalHandler());
+  v.push_back(new LeaHandler());
+  v.push_back(new MoveHandler());
+  v.push_back(new PunpckHandler());
+  v.push_back(new ShiftHandler());
+  v.push_back(new PseudoHandler());
+
+  return v;
+}
 
 Handler::SupportLevel ComboHandler::get_support(const Instruction& instr) {
 
