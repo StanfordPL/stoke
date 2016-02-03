@@ -63,16 +63,16 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
       number_queries_++;
       microseconds typecheck_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
 #endif
-      if (tc(it) != 1) {
-        stringstream ss;
-        ss << "Typechecking failed for constraint: " << it << endl;
-        if (tc.has_error())
-          ss << "error: " << tc.error() << endl;
-        else
-          ss << "(no typechecking error message given)" << endl;
-        error_ = ss.str();
-        return false;
-      }
+      // if (tc(it) != 1) {
+      //   stringstream ss;
+      //   ss << "Typechecking failed for constraint: " << it << endl;
+      //   if (tc.has_error())
+      //     ss << "error: " << tc.error() << endl;
+      //   else
+      //     ss << "(no typechecking error message given)" << endl;
+      //   error_ = ss.str();
+      //   return false;
+      // }
 #ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
       microseconds typecheck_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
       typecheck_time_ += (typecheck_end - typecheck_start).count();
