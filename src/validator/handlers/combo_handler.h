@@ -17,7 +17,6 @@
 #define STOKE_SRC_VALIDATOR_HANDLER_COMBO_HANDLER_H
 
 #include "src/validator/handler.h"
-#include "src/validator/handlers.h"
 
 namespace stoke {
 
@@ -57,27 +56,7 @@ private:
   Handler* get_handler(const x64asm::Instruction& instr, SupportLevel& sl);
 
   /** Default prioritized list of handlers */
-  std::vector<Handler*> default_handler_list() const {
-    std::vector<Handler*> v;
-
-    if (strata_path_.size() != 0) {
-      v.push_back(new StrataHandler(strata_path_));
-    }
-
-    // New Handlers
-    v.push_back(new PackedHandler());
-    v.push_back(new SimpleHandler());
-
-    v.push_back(new AddHandler());
-    v.push_back(new ConditionalHandler());
-    v.push_back(new LeaHandler());
-    v.push_back(new MoveHandler());
-    v.push_back(new PunpckHandler());
-    v.push_back(new ShiftHandler());
-    v.push_back(new PseudoHandler());
-
-    return v;
-  }
+  std::vector<Handler*> default_handler_list() const;
 
   /** The path to the strata circuits. */
   const std::string strata_path_;

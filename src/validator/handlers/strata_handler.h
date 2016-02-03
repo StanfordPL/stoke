@@ -19,6 +19,9 @@
 #include <map>
 
 #include "src/validator/handler.h"
+#include "src/validator/handlers/combo_handler.h"
+#include "src/symstate/typecheck_visitor.h"
+#include "src/symstate/simplify.h"
 
 namespace stoke {
 
@@ -68,6 +71,15 @@ private:
   std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_duplicate_;
   std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_mem_reduce_;
   std::map<x64asm::Opcode, x64asm::Opcode> reg_only_alternative_extend_;
+
+  /** The regular STOKE handler for the base set. */
+  ComboHandler ch_;
+
+  /** A type-checker. */
+  SymTypecheckVisitor tc_;
+
+  /** A simplifier. */
+  SymSimplify simplifier_;
 
 };
 

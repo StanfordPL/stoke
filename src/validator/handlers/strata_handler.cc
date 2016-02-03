@@ -18,8 +18,6 @@
 #include "src/specgen/specgen.h"
 #include "src/specgen/support.h"
 #include "src/validator/handlers.h"
-#include "src/symstate/simplify.h"
-#include "src/symstate/typecheck_visitor.h"
 #include "src/symstate/transform_visitor.h"
 #include "src/ext/cpputil/include/io/console.h"
 #include "src/validator/error.h"
@@ -324,7 +322,6 @@ void print_state(SymState& state, RegSet rs) {
 
 } // end namespace
 
-
 void StrataHandler::init() {
 
   reg_only_alternative_.clear();
@@ -612,11 +609,10 @@ Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& inst
 }
 
 void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& final) {
-  ComboHandler ch_;
-  SymTypecheckVisitor tc;
-
-  SymSimplify simplifier;
-  auto should_simplify = simplify_;
+  auto& should_simplify = simplify_;
+  auto& simplifier = simplifier_;
+  auto& tc = tc_;
+  auto& ch = ch_;
   auto simplify = [&simplifier, &should_simplify](SymBitVectorAbstract* circuit) {
     if (should_simplify) {
       return simplifier.simplify(circuit);
@@ -644,9 +640,9 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   error_ = "";
 
   if (specgen_is_base(opcode) || opcode == Opcode::CALL_LABEL) {
-    ch_.build_circuit(instr, final);
-    if (ch_.has_error()) {
-      error_ = "ComboHandler encountered an error: " + ch_.error();
+    ch.build_circuit(instr, final);
+    if (ch.has_error()) {
+      error_ = "ComboHandler encountered an error: " + ch.error();
       return;
     }
 #ifdef DEBUG_STRATA_HANDLER
@@ -699,18 +695,18 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     // handle imm instructions
     // get circuit for register only opcode
     specgen_instr = get_instruction(reg_only_alternative_[opcode]);
-    ch_.build_circuit(specgen_instr, tmp);
-    if (ch_.has_error()) {
-      error_ = "StrataHandler encountered an error: " + ch_.error();
+    ch.build_circuit(specgen_instr, tmp);
+    if (ch.has_error()) {
+      error_ = "StrataHandler encountered an error: " + ch.error();
       return;
     }
   } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
     // handle imm instructions that need extending
     // this is actually the same as above
     specgen_instr = get_instruction(reg_only_alternative_extend_[opcode]);
-    ch_.build_circuit(specgen_instr, tmp);
-    if (ch_.has_error()) {
-      error_ = "StrataHandler encountered an error: " + ch_.error();
+    ch.build_circuit(specgen_instr, tmp);
+    if (ch.has_error()) {
+      error_ = "StrataHandler encountered an error: " + ch.error();
       return;
     }
   } else {
