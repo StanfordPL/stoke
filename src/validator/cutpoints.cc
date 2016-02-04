@@ -298,6 +298,25 @@ void Cutpoints::compute() {
     return;
   }
 
+  if (target_sccs.count() == 0) {
+    target_cutpoints_.clear();
+    rewrite_cutpoints_.clear();
+
+    target_cutpoints_.push_back(target_.get_entry());
+    rewrite_cutpoints_.push_back(rewrite_.get_entry());
+    target_cutpoints_.push_back(target_.get_exit());
+    rewrite_cutpoints_.push_back(rewrite_.get_exit());
+
+    for (auto it : target_cutpoints_) {
+      target_cutpoint_ends_with_jump_.push_back(false);
+    }
+    for (auto it : rewrite_cutpoints_) {
+      rewrite_cutpoint_ends_with_jump_.push_back(false);
+    }
+
+    return;
+  }
+
   /*
   for (size_t i = 0; i < target_sccs.count(); ++i) {
     map<Cfg::id_type, bool> empty_map;
