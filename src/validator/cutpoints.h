@@ -93,7 +93,7 @@ private:
   void compute();
 
   /** Get a complete trace from running the Cfg on a testcase and save into 'trace' */
-  //void mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace);
+  void mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace);
 
   /** Get a list of all possible sets of cutpoints. */
   std::vector<CutpointList> get_possible_cutpoints();

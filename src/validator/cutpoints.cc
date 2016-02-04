@@ -64,7 +64,23 @@ void Cutpoints::compute() {
   target_cutpoints_.push_back(target_.get_exit());
   rewrite_cutpoints_.push_back(rewrite_.get_exit());
 
+  // Get all the possible cutpoint options.
   auto cutpoint_options = get_possible_cutpoints();
+
+  // Collect data
+  for(size_t i = 0; i < sandbox_.size(); ++i) {
+    vector<TracePoint> trace;
+    mine_data(target_, i, trace);
+    target_traces_.push_back(trace);
+
+    trace.clear();
+    mine_data(rewrite_, i, trace);
+    rewrite_traces_.push_back(trace);
+  }
+
+  cout << "Target traces: " << target_traces_.size() << endl;
+  cout << "Rewrite traces: " << rewrite_traces_.size() << endl;
+
 
   /*
   cout << "Printing cutpoint options" << endl;
@@ -168,6 +184,54 @@ vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
   }
 
   return results;
+
+}
+
+
+
+void Cutpoints::mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace) {
+
+  size_t index;
+  auto label = cfg.get_function().get_leading_label();
+  sandbox_.clear_callbacks();
+  sandbox_.insert_function(cfg);
+  sandbox_.set_entrypoint(label);
+
+  std::vector<CallbackParam*> to_free;
+
+  for(Cfg::id_type block = cfg.get_entry(); block != cfg.get_exit(); block++) {
+
+    CallbackParam* cp = new CallbackParam();
+    to_free.push_back(cp);
+
+    cp->block_id = block;
+    cp->trace = &trace;
+
+    bool has_jump = ends_with_jump(cfg, block);
+
+    if (block == cfg.get_entry()) {
+      // Don't run sandbox; callback manually.  This is to avoid repeated calls to the callback for jumps back to the
+      // beginning of the loop... which is not what we want in general.
+      TracePoint tp;
+      tp.block_id = block;
+      tp.cs = *sandbox_.get_input(testcase);
+      trace.push_back(tp);
+
+    } else if (has_jump) {
+      index = cfg.get_index(Cfg::loc_type(block, cfg.num_instrs(block)-1));
+      DEBUG_CUTPOINTS(cout << "  - instrumenting before index=" << index << std::endl;)
+      sandbox_.insert_before(label, index, callback, cp);
+    } else {
+      index = cfg.get_index(Cfg::loc_type(block, cfg.num_instrs(block)-1));
+      DEBUG_CUTPOINTS(cout << "  - instrumenting after index=" << index << std::endl;)
+      sandbox_.insert_after(label, index, callback, cp);
+    }
+  }
+
+  sandbox_.run(testcase);
+
+  for(auto it : to_free)
+    delete it;
 
 }
 
