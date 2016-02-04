@@ -155,6 +155,28 @@ public:
 
   SymConstProp(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits, map<SymArrayAbstract*, SymArrayAbstract*>& cache_array) : SymTransformVisitor(cache_bool, cache_bits, cache_array) {}
 
+  SymBitVectorAbstract* visit(const SymBitVectorFunction * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
+
+    // add/subtract of 0
+    auto& f = bv->f_;
+    if (f.args.size() == 2) {
+      auto a = (*this)(bv->args_[0]);
+      auto b = (*this)(bv->args_[1]);
+      if ((f.name == "sub_single" || f.name == "sub_double") && is_zero(b)) {
+        return cache(bv, (SymBitVectorAbstract*) a);
+      }
+      if ((f.name == "add_single" || f.name == "add_double") && is_zero(b)) {
+        return cache(bv, (SymBitVectorAbstract*) a);
+      }
+      if ((f.name == "add_single" || f.name == "add_double") && is_zero(a)) {
+        return cache(bv, (SymBitVectorAbstract*) b);
+      }
+    }
+
+    return SymTransformVisitor::visit(bv);
+  }
+
   SymBitVectorAbstract* visit(const SymBitVectorSignExtend * const bv) {
     if (is_cached(bv)) return get_cached(bv);
     auto inner = (*this)(bv->bv_);
@@ -387,6 +409,10 @@ private:
 
   bool is_const(const SymBoolAbstract* const s) {
     return (s->type() == SymBool::FALSE) || (s->type() == SymBool::TRUE);
+  }
+
+  bool is_zero(const SymBitVectorAbstract* const b) {
+    return is_const(b) && read_const(b) == 0;
   }
 
   /** Returns bit pattern consisting of 0s and ending with 'ones' many 1s. */
