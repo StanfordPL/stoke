@@ -36,13 +36,8 @@ public:
 
   /** Get testcases representing the data at a given cutpoint. */
   std::vector<CpuState> data_at(size_t i, bool is_rewrite) {
-    if (is_rewrite) {
-      assert(i < rewrite_count());
-      return rewrite_cutpoint_data[i];
-    } else {
-      assert(i < target_count());
-      return target_cutpoint_data[i];
-    }
+    std::vector<CpuState> results;
+    return results;
   }
 
   /** Get cutpoint locations. */
@@ -71,65 +66,72 @@ public:
     return error_;
   }
 
+  void test() {
+    for(size_t i = 1; i < 6; ++i) {
+      std::cout << "Computing permutations of { 1 .. " << i << " }" << std::endl;
+
+      auto perms = get_permutations(i);
+      for(auto perm : perms) {
+        for(auto k : perm) {
+          std::cout << "  " << k;
+        }
+        std::cout << std::endl;
+      }
+    }
+  }
+
 private:
 
-  /** The target. */
-  const Cfg& target_;
-  /** The rewrite. */
-  const Cfg& rewrite_;
-  /** The sandbox. Won't be "harmed", except with regard to callbacks. */
-  Sandbox& sandbox_;
+  struct TracePoint {
+    Cfg::id_type block_id;
+    CpuState cs;
+  };
 
-  /** The set of computed cutpoints, which are always going to be at the end
-    of a basic block (and thus identified by a Cfg::id_type).  They can either
-    refer to immediately after the last instruction (if control-flow falls
-    through), or can refer to immediately before the last jump. */
-  std::vector<Cfg::id_type> target_cutpoints_;
-  /** Track if the cutpoint blocks end with a jump. */
-  std::vector<bool> target_cutpoint_ends_with_jump_;
-  /** Cutpoints for the rewrite. */
-  std::vector<Cfg::id_type> rewrite_cutpoints_;
-  /** Track if the cutpoint blocks end with a jump. */
-  std::vector<bool> rewrite_cutpoint_ends_with_jump_;
+  //typedef CutpointList std::pair<std::vector<Cfg::id_type>, std::vector<Cfg::id_type>>;
 
-  /** Data collected from target cutpoints. */
-  std::map<size_t, std::vector<CpuState>> target_cutpoint_data;
-  /** Data collected from rewrite cutpoints. */
-  std::map<size_t, std::vector<CpuState>> rewrite_cutpoint_data;
-
-  /** Does a given basic block end in a jump? */
-  bool ends_with_jump(const Cfg& cfg, Cfg::id_type block);
-
-  /** Find the cutpoints for the target/rewrite. */
+  /** This is the main function that computes all the cutpoints and fills the data structures. */
   void compute();
-  bool get_cutpoints();
 
-  /** Check if the current set of cutpoints is okay. */
-  bool check();
+  /** Get a complete trace from running the Cfg on a testcase and save into 'trace' */
+  //void mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace);
 
-  /** Have we encountered an error? */
+  /** Get a list of all possible sets of cutpoints. */
+  //std::vector<CutpointList> get_possible_cutpoints();
+
+  /** Check if a selection of cutpoints is correct. */
+  //bool check_cutpoints(CutpointList& cutpoints);
+                       
+  /** Get a list of permutations of { 1 .. n }.  Used for guessing cutpoints.*/
+  static std::vector<std::vector<size_t>> get_permutations(size_t n);
+
+  /** Check if a basic block ends with a jump or not. */
+  static bool ends_with_jump(const Cfg& cfg, Cfg::id_type block);
+
+  ////////////////////////////// DATA-STORAGE //////////////////////////////////
+
+  Cfg target_;
+  Cfg rewrite_;
+  Sandbox sandbox_;
+
+  std::vector<std::vector<TracePoint>> target_traces_;
+  std::vector<std::vector<TracePoint>> rewrite_traces_;
+
+  ////////////////////////////// ANSWER STORAGE ////////////////////////////////
+
+  std::vector<Cfg::id_type> target_cutpoints_;
+  std::vector<Cfg::id_type> rewrite_cutpoints_;
+
   std::string error_;
 
-  ////////////////////////////// CHECK CALLBACKS //////////////////////////////////
+  ////////////////////////////// DATA-MINING CALLBACKS //////////////////////////////////
 
   struct CallbackParam {
-    Cutpoints* self;
-    size_t callback_number;
-    bool is_rewrite;
+    Cfg::id_type block_id;
+    std::vector<TracePoint>* trace;
   };
 
   /** The callback used for gathering data from each of the cutpoints */
-  static void check_callback(const StateCallbackData& data, void* arg);
-
-  /** The list of cutpoint-memory states in the target. */
-  std::vector<CpuState> callback_target_states_;
-  /** The list of cutpoint-memory states in the rewrite. */
-  std::vector<CpuState> callback_rewrite_states_;
-  /** The list of cutpoints we've seen in the target. */
-  std::vector<size_t> callback_target_trace_;
-  /** The list of cutpoints we've seen in the rewrite. */
-  std::vector<size_t> callback_rewrite_trace_;
-
+  static void callback(const StateCallbackData& data, void* arg);
 
 };
 
