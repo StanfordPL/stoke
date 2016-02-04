@@ -87,7 +87,7 @@ private:
     CpuState cs;
   };
 
-  //typedef CutpointList std::pair<std::vector<Cfg::id_type>, std::vector<Cfg::id_type>>;
+  typedef std::pair<std::vector<Cfg::id_type>, std::vector<Cfg::id_type>> CutpointList;
 
   /** This is the main function that computes all the cutpoints and fills the data structures. */
   void compute();
@@ -96,7 +96,7 @@ private:
   //void mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoint>& trace);
 
   /** Get a list of all possible sets of cutpoints. */
-  //std::vector<CutpointList> get_possible_cutpoints();
+  std::vector<CutpointList> get_possible_cutpoints();
 
   /** Check if a selection of cutpoints is correct. */
   //bool check_cutpoints(CutpointList& cutpoints);

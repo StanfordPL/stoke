@@ -32,7 +32,7 @@ vector<vector<size_t>> Cutpoints::get_permutations(size_t n) {
   if(n == 1) {
     vector<vector<size_t>> result;
     vector<size_t> one;
-    one.push_back(1);
+    one.push_back(0);
     result.push_back(one);
     return result;
   }
@@ -43,7 +43,7 @@ vector<vector<size_t>> Cutpoints::get_permutations(size_t n) {
 
     for(size_t i = 0; i <= pi.size(); ++i) {
       vector<size_t> copy = pi;
-      copy.insert(copy.begin() + i, n);
+      copy.insert(copy.begin() + i, n-1);
       results.push_back(copy);
     }
   }
@@ -64,7 +64,113 @@ void Cutpoints::compute() {
   target_cutpoints_.push_back(target_.get_exit());
   rewrite_cutpoints_.push_back(rewrite_.get_exit());
 
+  auto cutpoint_options = get_possible_cutpoints();
+
+  /*
+  cout << "Printing cutpoint options" << endl;
+  for(auto option : cutpoint_options) {
+    cout << "Option" << endl;
+    cout << "Target: ";
+    for(auto n : option.first) {
+      cout << n << "  ";
+    }
+    cout << endl;
+    cout << "Rewrite: ";
+    for(auto n : option.second) {
+      cout << n << "  ";
+    }
+    cout << endl;
+  }
+  */
+
+  exit(0);
 }
+
+vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
+
+  CfgSccs target_sccs(target_);
+  CfgSccs rewrite_sccs(rewrite_);
+
+  if(target_sccs.count() != rewrite_sccs.count()) {
+    error_ = "DDEC only works when target/rewrite have the same number of SCCs/loops";
+    vector<CutpointList> empty;
+    return empty;
+  }
+
+  size_t n = target_sccs.count();
+  auto permutations = get_permutations(n);
+
+  vector<CutpointList> results;
+
+  for(auto pi : permutations) {
+    vector<CutpointList> working_set;
+
+    CutpointList empty_list;
+    working_set.push_back(empty_list);
+
+    for(size_t j = 0; j < n; ++j) {
+      // Working on SCC j of target
+      // Working on SCC pi[j] of rewrite
+      //cout << "Working on SCC pair " << j << " - " << pi[j] << endl;
+      auto target_nodes = target_sccs.get_blocks(j);
+      auto rewrite_nodes = rewrite_sccs.get_blocks(pi[j]);
+
+      /*
+      cout << "  - target nodes: ";
+      for(auto it : target_nodes) {
+        cout << "  " << it;
+      }
+      cout << endl;
+      cout << "  - rewrite nodes: ";
+      for(auto it : rewrite_nodes) {
+        cout << "  " << it;
+      }
+      cout << endl;
+      */
+
+      // Create a place to put new cutpoints into.
+      vector<CutpointList> new_working_set;
+
+      // For every pair of nodes in (j, pi[j]) we extend each
+      for(auto tn : target_nodes) {
+        for(auto rn : rewrite_nodes) {
+          for(auto old_list : working_set) {
+            CutpointList new_list = old_list;
+            new_list.first.push_back(tn);
+            new_list.second.push_back(rn);
+            new_working_set.push_back(new_list);
+          }
+        }
+      }
+
+      working_set = new_working_set;
+
+    }
+
+    for(auto option : working_set) {
+      results.push_back(option);
+
+      /*
+      cout << "    Target: ";
+      for(auto n : option.first) {
+        cout << n << "  ";
+      }
+      cout << endl;
+      cout << "    Rewrite: ";
+      for(auto n : option.second) {
+        cout << n << "  ";
+      }
+      cout << endl;
+      cout << "    -------" << endl;
+      */
+
+    }
+  }
+
+  return results;
+
+}
+
 
 bool Cutpoints::ends_with_jump(const Cfg& cfg, Cfg::id_type block) {
   size_t instrs = cfg.num_instrs(block);
