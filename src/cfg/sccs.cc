@@ -99,6 +99,7 @@ void CfgSccs::recompute() {
   /** Reset result variables */
   count_ = 0;
   sccs_.clear();
+  scc_to_blocks_.clear();
 
   /** Reset bookkeeping variables */
   index_.clear();

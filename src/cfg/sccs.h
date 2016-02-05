@@ -57,6 +57,7 @@ public:
 
   /** Get a list of blocks in an SCC */
   std::vector<Cfg::id_type> get_blocks(size_t scc) {
+    assert(scc < count());
     return scc_to_blocks_[scc];
   }
 

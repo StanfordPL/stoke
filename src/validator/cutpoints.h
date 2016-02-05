@@ -87,9 +87,11 @@ private:
     CpuState cs;
   };
 
+  /** This data structure represents a list of target/rewrite cutpoints */
   typedef std::pair<std::vector<Cfg::id_type>, std::vector<Cfg::id_type>> CutpointList;
 
-  /** This is the main function that computes all the cutpoints and fills the data structures. */
+  /** This is the main function that computes all the cutpoints and fills the
+   * "ANSWER STORAGE" data structures below. */
   void compute();
 
   /** Get a complete trace from running the Cfg on a testcase and save into 'trace' */
@@ -99,13 +101,23 @@ private:
   std::vector<CutpointList> get_possible_cutpoints();
 
   /** Check if a selection of cutpoints is correct. */
-  //bool check_cutpoints(CutpointList& cutpoints);
+  bool check_cutpoints(CutpointList& cutpoints);
                        
   /** Get a list of permutations of { 1 .. n }.  Used for guessing cutpoints.*/
   static std::vector<std::vector<size_t>> get_permutations(size_t n);
 
   /** Check if a basic block ends with a jump or not. */
   static bool ends_with_jump(const Cfg& cfg, Cfg::id_type block);
+
+
+  /** Helper function:  Get the cutpoints out of a trace. */
+  std::vector<Cutpoints::TracePoint> filter_cutpoints(std::vector<TracePoint>& trace, std::vector<Cfg::id_type>& basic_blocks);
+
+  /** Helper function: Find the cutpoint number that a particular trace point / basic block corresponds to */
+  size_t which_cutpoint(TracePoint pt, std::vector<Cfg::id_type>& basic_blocks);
+
+  /** For debugging: print a set of cutpoints of the target / rewrite */
+  void print_option(Cutpoints::CutpointList& option);
 
   ////////////////////////////// DATA-STORAGE //////////////////////////////////
 

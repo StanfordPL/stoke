@@ -362,12 +362,12 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
       // 3. P \in Paths_T(i, j), Q \in Paths_R(i, k) =>
       //    inv(i) { P ; Q } false
 
+      // 1. Paths_T(i, j) finite, Paths_R(i,j) finite
       auto target_paths_ij =
         CfgPaths::enumerate_paths(target, 1, target_cuts[i], target_cuts[j], &target_cuts);
       auto rewrite_paths_ij =
         CfgPaths::enumerate_paths(rewrite, 1, rewrite_cuts[i], rewrite_cuts[j], &rewrite_cuts);
 
-      // 1. Paths_T(i, j) finite, Paths_R(i,j) finite
       auto target_paths_ij_more =
         CfgPaths::enumerate_paths(target, 2, target_cuts[i], target_cuts[j], &target_cuts);
       auto rewrite_paths_ij_more =
