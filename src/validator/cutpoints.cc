@@ -75,15 +75,6 @@ void Cutpoints::compute() {
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
 
-  target_cutpoints_.push_back(target_.get_entry());
-  rewrite_cutpoints_.push_back(rewrite_.get_entry());
-
-  target_cutpoints_.push_back(target_.get_exit());
-  rewrite_cutpoints_.push_back(rewrite_.get_exit());
-
-  // Get all the possible cutpoint options.
-  auto cutpoint_options = get_possible_cutpoints();
-
   // Collect data
   for(size_t i = 0; i < sandbox_.size(); ++i) {
     vector<TracePoint> trace;
@@ -95,43 +86,42 @@ void Cutpoints::compute() {
     rewrite_traces_.push_back(trace);
   }
 
+  // Get all the possible cutpoint options.
+  auto cutpoint_options = get_possible_cutpoints();
+
   // Check all the cutpoints
-  int n = 0;
+  bool found = false;
   for(auto option : cutpoint_options) {
     DEBUG_CUTPOINTS(cout << "=== CHECKING ===" << endl;)
     print_option(option);
     if(check_cutpoints(option)) {
+      chosen_cutpoints_ = option;
+      found = true;
       DEBUG_CUTPOINTS(cout << " ----> PASS" << endl;)
-      n++;
+      break;
     } else {
       DEBUG_CUTPOINTS(cout << " ----> FAIL" << endl;)
     }
   }
-  cout << "Total options: " << cutpoint_options.size() << endl;
-  cout << "Options found: " << n << endl;
 
+  auto& target_cuts = chosen_cutpoints_.first;
+  auto& rewrite_cuts = chosen_cutpoints_.second;
+  target_cuts.insert(target_cuts.begin(), target_.get_entry());
+  rewrite_cuts.insert(rewrite_cuts.begin(), rewrite_.get_entry());
+  target_cuts.push_back(target_.get_exit());
+  rewrite_cuts.push_back(rewrite_.get_exit());
+
+
+  DEBUG_CUTPOINTS(
+  cout << "Total options: " << cutpoint_options.size() << endl;
+  cout << "Did one pass?: " << found << endl;
   cout << "Target traces: " << target_traces_.size() << endl;
   cout << "Rewrite traces: " << rewrite_traces_.size() << endl;
+  )
 
-
-  /*
-  cout << "Printing cutpoint options" << endl;
-  for(auto option : cutpoint_options) {
-    cout << "Option" << endl;
-    cout << "Target: ";
-    for(auto n : option.first) {
-      cout << n << "  ";
-    }
-    cout << endl;
-    cout << "Rewrite: ";
-    for(auto n : option.second) {
-      cout << n << "  ";
-    }
-    cout << endl;
+  if(!found) {
+    error_ = "Could not find any viable cutpoints.";
   }
-  */
-
-  exit(0);
 }
 
 vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
