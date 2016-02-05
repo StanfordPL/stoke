@@ -732,7 +732,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
       }
 
       // cache for future
-      formula_cache_[opcode] = SymState(tmp);
+      //formula_cache_[opcode] = SymState(tmp);
     }
   }
 
