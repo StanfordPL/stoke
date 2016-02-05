@@ -25,7 +25,7 @@ endif
 # Set the platform we're on.  This determines many
 # compilation options.  Can be set to haswell, sandybridge, nehalem.
 ifndef STOKE_PLATFORM
-  STOKE_PLATFORM=haswell
+  STOKE_PLATFORM="haswell"
 endif
 
 # Set the number of threads used for compiling
