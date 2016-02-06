@@ -120,7 +120,7 @@ TEST_F(DdecNaclTest, wcslenOptimize) {
   benchmark("wcslen", true, 0, 20, ObligationChecker::AliasStrategy::FLAT);
 }
 
-TEST_F(DdecNaclLongTest, wcslenTranslate) {
+TEST_F(DdecNaclTest, wcslenTranslate) {
   benchmark("wcslen", false, 0, 20, ObligationChecker::AliasStrategy::FLAT);
 }
 
@@ -132,12 +132,12 @@ TEST_F(DdecNaclLongTest, wmemsetTranslate) {
   benchmark("wmemset", false, 0, 100, ObligationChecker::AliasStrategy::FLAT);
 }
 
-TEST_F(DdecNaclLongTest, wcsnlenOptimize) {
-  benchmark("wcsnlen", true, 0, 50, ObligationChecker::AliasStrategy::FLAT);
+TEST_F(DdecNaclTest, wcsnlenOptimize) {
+  benchmark("wcsnlen", true, 0, 100, ObligationChecker::AliasStrategy::FLAT);
 }
 
-TEST_F(DdecNaclLongTest, wcsnlenTranslate) {
-  benchmark("wcsnlen", false, 0, 50, ObligationChecker::AliasStrategy::FLAT);
+TEST_F(DdecNaclTest, wcsnlenTranslate) {
+  benchmark("wcsnlen", false, 0, 100, ObligationChecker::AliasStrategy::FLAT);
 }
 
 TEST_F(DdecNaclLongTest, wmemcmpOptimize) {
@@ -148,15 +148,15 @@ TEST_F(DdecNaclLongTest, wmemcmpTranslate) {
   benchmark("wmemcmp", false, 0, 40, ObligationChecker::AliasStrategy::FLAT);
 }
 
-TEST_F(DdecNaclLongTest, wcschrOptimize) {
-  benchmark("wcschr", true, 0, 50, ObligationChecker::AliasStrategy::FLAT);
+TEST_F(DdecNaclTest, wcschrOptimize) {
+  benchmark("wcschr", true, 0, 50, ObligationChecker::AliasStrategy::STRING);
 }
 
-TEST_F(DdecNaclLongTest, wcschrTranslate) {
-  benchmark("wcschr", false, 0, 50, ObligationChecker::AliasStrategy::FLAT);
+TEST_F(DdecNaclTest, wcschrTranslate) {
+  benchmark("wcschr", false, 0, 50, ObligationChecker::AliasStrategy::STRING);
 }
 
-TEST_F(DdecNaclLongTest, strxfrmOptimize) {
+TEST_F(DdecNaclTest, strxfrmOptimize) {
   benchmark("strxfrm", true, 0, 50, ObligationChecker::AliasStrategy::FLAT);
 }
 
