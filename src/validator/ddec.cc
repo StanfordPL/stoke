@@ -568,7 +568,7 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
   string target_opcode = Handler::get_opcode(last_target_instr);
   string target_cc = target_opcode.substr(1, target_opcode.size() - 1);
 
-  bool rewrite_has_jcc = last_target_instr.is_jcc();
+  bool rewrite_has_jcc = last_rewrite_instr.is_jcc();
   string rewrite_opcode = Handler::get_opcode(last_rewrite_instr);
   string rewrite_cc = rewrite_opcode.substr(1, rewrite_opcode.size() - 1);
 
@@ -577,21 +577,27 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
     return learn_simple_invariant(target_regs, rewrite_regs, target_states, rewrite_states);
   } else if (target_has_jcc && !rewrite_has_jcc) {
 
-    vector<CpuState> jump_states;
-    vector<CpuState> fall_states;
-    for (auto it : target_states) {
-      if (ConditionalHandler::condition_satisfied(target_cc, it))
-        jump_states.push_back(it);
-      else
-        fall_states.push_back(it);
+    vector<CpuState> target_jump_states;
+    vector<CpuState> target_fall_states;
+    vector<CpuState> rewrite_jump_states;
+    vector<CpuState> rewrite_fall_states;
+
+    for (size_t i = 0; i < target_states.size(); ++i) {
+      if (ConditionalHandler::condition_satisfied(target_cc, target_states[i])) {
+        target_jump_states.push_back(target_states[i]);
+        rewrite_jump_states.push_back(rewrite_states[i]);
+      } else {
+        target_fall_states.push_back(target_states[i]);
+        rewrite_fall_states.push_back(rewrite_states[i]);
+      }
     }
 
     auto jump_inv = new FlagInvariant(last_target_instr, false, false);
-    auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, jump_states, rewrite_states);
+    auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
     jump_simple = transform_with_assumption(jump_inv, jump_simple);
 
     auto fall_inv = new FlagInvariant(last_target_instr, false, true);
-    auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, fall_states, rewrite_states);
+    auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
     fall_simple = transform_with_assumption(fall_inv, fall_simple);
 
     fall_simple->add_invariants(jump_simple);
@@ -600,21 +606,28 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
 
   } else if (!target_has_jcc && rewrite_has_jcc) {
 
-    vector<CpuState> jump_states;
-    vector<CpuState> fall_states;
-    for (auto it : rewrite_states) {
-      if (ConditionalHandler::condition_satisfied(rewrite_cc, it))
-        jump_states.push_back(it);
-      else
-        fall_states.push_back(it);
+    vector<CpuState> target_jump_states;
+    vector<CpuState> target_fall_states;
+
+    vector<CpuState> rewrite_jump_states;
+    vector<CpuState> rewrite_fall_states;
+
+    for(size_t i = 0; i < rewrite_states.size(); ++i) {
+      if (ConditionalHandler::condition_satisfied(rewrite_cc, rewrite_states[i])) {
+        target_jump_states.push_back(target_states[i]);
+        rewrite_jump_states.push_back(rewrite_states[i]);
+      } else {
+        target_fall_states.push_back(target_states[i]);
+        rewrite_fall_states.push_back(rewrite_states[i]);
+      }
     }
 
     auto jump_inv = new FlagInvariant(last_rewrite_instr, true, false);
-    auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, target_states, jump_states);
+    auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
     jump_simple = transform_with_assumption(jump_inv, jump_simple);
 
     auto fall_inv = new FlagInvariant(last_rewrite_instr, true, true);
-    auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, target_states, fall_states);
+    auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
     fall_simple = transform_with_assumption(fall_inv, fall_simple);
 
     fall_simple->add_invariants(jump_simple);
@@ -685,6 +698,8 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
 }
 
 ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states) {
+
+  assert(target_states.size() == rewrite_states.size());
 
   //TODO leaks memory
 
