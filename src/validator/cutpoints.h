@@ -50,6 +50,9 @@ public:
       }
     }
 
+    std::cout << "At cutpt " << cutpt << " the " << (is_rewrite ? "rewrite" : "target") << " has " << results.size() << " states." << std::endl;
+    std::cout << "   (this is at block " << blk << ")" << std::endl;
+
     return results;
   }
 
