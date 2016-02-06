@@ -70,9 +70,12 @@ void DotWriter::write_block(ostream& os, const Cfg& cfg, Cfg::id_type id) const 
       write_reg_set(os, cfg.def_ins({id, j}));
     }
 
-    os << "|";
-    os << cfg.get_instr({id, j});
-    os << "\\l";
+    auto instr = cfg.get_instr({id, j});
+    if (!instr.is_nop()) {
+      os << "|";
+      os << instr;
+      os << "\\l";
+    }
   }
   os << "}\"];" << endl;
 }
