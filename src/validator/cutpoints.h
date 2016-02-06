@@ -35,8 +35,11 @@ public:
   }
 
   /** Get testcases representing the data at a given cutpoint. */
-  std::vector<CpuState> data_at(size_t blk, bool is_rewrite) {
+  std::vector<CpuState> data_at(size_t cutpt, bool is_rewrite) {
     std::vector<CpuState> results;
+
+    auto cutpoints = is_rewrite ? chosen_cutpoints_.second : chosen_cutpoints_.first;
+    auto blk = cutpoints[cutpt];
 
     auto& traces = is_rewrite ? rewrite_traces_ : target_traces_;
     for(auto trace : traces) {
