@@ -90,19 +90,35 @@ void Cutpoints::compute() {
   auto cutpoint_options = get_possible_cutpoints();
 
   // Check all the cutpoints
-  bool found = false;
+  vector<CutpointList> viable_cutpoints;
+
   for(auto option : cutpoint_options) {
     DEBUG_CUTPOINTS(cout << "=== CHECKING ===" << endl;)
     print_option(option);
     if(check_cutpoints(option)) {
-      chosen_cutpoints_ = option;
-      found = true;
+      viable_cutpoints.push_back(option);
       DEBUG_CUTPOINTS(cout << " ----> PASS" << endl;)
-      break;
     } else {
       DEBUG_CUTPOINTS(cout << " ----> FAIL" << endl;)
     }
   }
+
+  chosen_cutpoints_ = viable_cutpoints[0];
+
+  DEBUG_CUTPOINTS(
+  cout << "Total options: " << cutpoint_options.size() << endl;
+  cout << "Viable options: " << viable_cutpoints.size() << endl;
+  cout << "Target traces: " << target_traces_.size() << endl;
+  cout << "Rewrite traces: " << rewrite_traces_.size() << endl;
+  /*
+  size_t cutpt_option;
+  do {
+    cout << "Which cutpoint do you want to use?" << endl;
+    cin >> cutpt_option;
+  } while(cutpt_option >= viable_cutpoints.size());
+  chosen_cutpoints_ = viable_cutpoints[cutpt_option];
+  */
+  )
 
   auto& target_cuts = chosen_cutpoints_.first;
   auto& rewrite_cuts = chosen_cutpoints_.second;
@@ -111,15 +127,7 @@ void Cutpoints::compute() {
   target_cuts.push_back(target_.get_exit());
   rewrite_cuts.push_back(rewrite_.get_exit());
 
-
-  DEBUG_CUTPOINTS(
-  cout << "Total options: " << cutpoint_options.size() << endl;
-  cout << "Did one pass?: " << found << endl;
-  cout << "Target traces: " << target_traces_.size() << endl;
-  cout << "Rewrite traces: " << rewrite_traces_.size() << endl;
-  )
-
-  if(!found) {
+  if(!viable_cutpoints.size()) {
     error_ = "Could not find any viable cutpoints.";
   }
 }
