@@ -66,6 +66,15 @@ auto& imm_count = ValueArg<size_t>::create("imm_count")
                   .default_val(10)
                   .description("How many random variants should be explored?");
 
+auto& imm_block = ValueArg<size_t>::create("imm_block")
+                  .usage("<int>")
+                  .default_val(0)
+                  .description("Imm instructions can be learned in blocks.  This is the block number to learn (between 0 to num_imm_block-1).");
+auto& num_imm_block = ValueArg<size_t>::create("num_imm_blocks")
+                  .usage("<int>")
+                  .default_val(1)
+                  .description("Total number of blocks");
+
 void create_file(string name) {
   ofstream file;
   file.open(name);
@@ -132,6 +141,7 @@ int main(int argc, char** argv) {
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_int_distribution<uint8_t> distribution(0, 255);
+  int counter = 0;
   for (auto i = (int)LABEL_DEFN + 1, ie = (int)XTEST; i != ie; ++i) {
     total++;
     auto op = (Opcode) i;
@@ -208,6 +218,12 @@ int main(int argc, char** argv) {
         }
       } else if (only_imm_arg) {
         if (is_imm8) {
+          counter += 1;
+          if (num_imm_block != 1) {
+            if (counter % num_imm_block != imm_block) {
+              continue;
+            }
+          }
           if (imm_count < 256) {
             set<uint8_t> vals;
             while (vals.size() < imm_count) {
