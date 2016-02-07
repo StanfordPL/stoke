@@ -71,9 +71,9 @@ auto& imm_block = ValueArg<size_t>::create("imm_block")
                   .default_val(0)
                   .description("Imm instructions can be learned in blocks.  This is the block number to learn (between 0 to num_imm_block-1).");
 auto& num_imm_block = ValueArg<size_t>::create("num_imm_blocks")
-                  .usage("<int>")
-                  .default_val(1)
-                  .description("Total number of blocks");
+                      .usage("<int>")
+                      .default_val(1)
+                      .description("Total number of blocks");
 
 void create_file(string name) {
   ofstream file;
