@@ -22,6 +22,7 @@
 #include "src/validator/invariants/false.h"
 #include "src/validator/invariants/flag.h"
 #include "src/validator/invariants/implication.h"
+#include "src/validator/invariants/inequality.h"
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/no_signals.h"
@@ -697,6 +698,39 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
 
 }
 
+vector<InequalityInvariant*> build_inequality_invariants(RegSet target_regs, RegSet rewrite_regs) {
+
+  vector<InequalityInvariant*> inequalities;
+
+  // For now, let's look at unsigned target-target and rewrite-rewrite inequalities
+
+  for(size_t k = 0; k < 2; ++k) {
+    auto regs = k ? rewrite_regs : target_regs;
+
+    for(auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
+      for(auto j = regs.gp_begin(); j != regs.gp_end(); ++j) {
+        if(*i == *j)
+          continue;
+        if((*i).size() != (*j).size())
+          continue;
+
+        if((*i).size() == 32) {
+          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, false, false));
+          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, true, false));
+        } else if ((*i).size() == 64) {
+          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, false, false));
+          inequalities.push_back(new InequalityInvariant(*i, *j, k, k, true, false));
+
+          inequalities.push_back(new InequalityInvariant(r32s[*i], r32s[*j], k, k, false, false));
+          inequalities.push_back(new InequalityInvariant(r32s[*i], r32s[*j], k, k, true, false));
+        }
+      }
+    }
+  }
+
+  return inequalities;
+}
+
 ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states) {
 
   assert(target_states.size() == rewrite_states.size());
@@ -766,6 +800,16 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
           delete nz;
         }
       }
+    }
+  }
+
+  // Inequality invariants
+  auto potential_inequalities = build_inequality_invariants(target_regs, rewrite_regs);
+  for(auto ineq : potential_inequalities) {
+    if(ineq->check(target_states, rewrite_states)) {
+      conj->add_invariant(ineq);
+    } else {
+      delete ineq;
     }
   }
 
