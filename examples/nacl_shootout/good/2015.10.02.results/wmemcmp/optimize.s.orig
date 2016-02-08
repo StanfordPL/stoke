@@ -43,7 +43,7 @@
   nop                           #  32    0x14f2df  1      OPC=nop             
 .L_14f2e0:                      #        0x14f2e0  0      OPC=<label>         //7
   decl %edx                     #  33    0x14f2e0  2      OPC=decl_r32        
-  jnz .L_14f2c0                 # CHANGED
+  ja .L_14f2c0                  #  34    0x14f2e2  2      OPC=ja_label        
   nop                           #  35    0x14f2e4  1      OPC=nop             //8
   nop                           #  36    0x14f2e5  1      OPC=nop             
   nop                           #  37    0x14f2e6  1      OPC=nop             
