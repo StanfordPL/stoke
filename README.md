@@ -507,7 +507,7 @@ STOKE includes a formal validator.  It's design and interface
 are detailed in the `src/validator/README.md` file.  To use the formal
 validator instead of hold out testing, specify `--strategy bounded` for any
 STOKE binary that you use.  For code with loops, all paths will be explored up
-to a certain depth, specified using the --bound argument, which defaults to 2.
+to a certain depth, specified using the --bound argument, which defaults to 2.  There's also `--strategy ddec` which attempts to run the data-driven equivalence checking algorithm; however, the current implementation isn't very robust -- please file bug reports with (target, rewrite) pairs that fail to validate but should.
 
 An example of using the validator can be found in the `examples/pairity`
 folder; this example has a Makefile much like the tutorial's and should be easy
