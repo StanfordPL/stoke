@@ -69,6 +69,21 @@ public:
       return !zero;
   }
 
+  virtual std::vector<x64asm::Mem> target_memory_references() const {
+    std::vector<x64asm::Mem> empty;
+    if(!is_rewrite_)
+      empty.push_back(m_);
+    return empty;
+  }
+
+  virtual std::vector<x64asm::Mem> rewrite_memory_references() const {
+    std::vector<x64asm::Mem> empty;
+    if(is_rewrite_)
+      empty.push_back(m_);
+    return empty;
+  }
+
+
   std::ostream& write(std::ostream& os) const {
     os << m_;
     if(is_rewrite_)

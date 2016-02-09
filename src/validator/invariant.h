@@ -57,13 +57,13 @@ public:
     return true;
   }
 
-  virtual std::vector<x64asm::Operand> target_memory_references() const {
-    std::vector<x64asm::Operand> empty;
+  virtual std::vector<x64asm::Mem> target_memory_references() const {
+    std::vector<x64asm::Mem> empty;
     return empty;
   }
 
-  virtual std::vector<x64asm::Operand> rewrite_memory_references() const {
-    std::vector<x64asm::Operand> empty;
+  virtual std::vector<x64asm::Mem> rewrite_memory_references() const {
+    std::vector<x64asm::Mem> empty;
     return empty;
   }
 
