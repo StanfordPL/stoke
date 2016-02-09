@@ -57,6 +57,16 @@ public:
     return true;
   }
 
+  virtual std::vector<x64asm::Operand> target_memory_references() const {
+    std::vector<x64asm::Operand> empty;
+    return empty;
+  }
+
+  virtual std::vector<x64asm::Operand> rewrite_memory_references() const {
+    std::vector<x64asm::Operand> empty;
+    return empty;
+  }
+
   ConjunctionInvariant* AND(Invariant* other);
 };
 

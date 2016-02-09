@@ -24,6 +24,7 @@
 #include "src/validator/invariants/implication.h"
 #include "src/validator/invariants/inequality.h"
 #include "src/validator/invariants/memory_equality.h"
+#include "src/validator/invariants/memory_null.h"
 #include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/state_equality.h"
@@ -31,6 +32,7 @@
 #include "src/validator/invariants/true.h"
 
 #include <algorithm>
+#include <set>
 
 #define DDEC_DEBUG(X) { X }
 
@@ -219,9 +221,7 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
 
         invariants.push_back(end);
       } else {
-        auto target_regs = target.def_outs(target_cuts[i]);
-        auto rewrite_regs = rewrite.def_outs(rewrite_cuts[i]);
-        auto inv = learn_disjunction_invariant(target_regs, rewrite_regs, cutpoints_->data_at(i, false), cutpoints_->data_at(i, true), get_last_instr(target, target_cuts[i]), get_last_instr(rewrite, rewrite_cuts[i]));
+        auto inv = learn_disjunction_invariant(target, rewrite, i);
         invariants.push_back(inv);
         DDEC_DEBUG(cout << "[ddec] Learned invariant @ i=" << i << endl;)
         DDEC_DEBUG(cout << *inv << endl;)
@@ -458,6 +458,7 @@ bool DdecValidator::check_proof(const Cfg& target, const Cfg& rewrite, const vec
             copy.add_invariant(target_jump_inv);
             copy.add_invariant(rewrite_jump_inv);
 
+            DDEC_DEBUG(cout << "Checking for cpt " << i << " -> " << j << " against " << i << " -> " << k << endl;)
             DDEC_DEBUG(cout << "Checking " << copy << " { " << p << " ; " << q << " } false " << endl;)
             FalseInvariant fi;
             bool equiv = check(target, rewrite, p, q, copy, fi);
@@ -561,9 +562,22 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 
 }
 
-ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states, const Instruction& last_target_instr, const Instruction& last_rewrite_instr) {
+ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& target, const Cfg& rewrite, size_t cutpoint) {
 
-  DDEC_DEBUG(cout << "[ddec] learning invariant over " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;)
+  /** Lets get out the relevant data here... */
+  vector<CpuState> target_states = cutpoints_->data_at(cutpoint, true);
+  vector<CpuState> rewrite_states = cutpoints_->data_at(cutpoint, false);
+
+  DDEC_DEBUG(cout << "[ddec] learning cutpoint " << cutpoint << " invariant over " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;)
+
+  auto target_cuts = cutpoints_->target_cutpoint_locations();
+  auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
+
+  auto target_regs = target.def_ins(target_cuts[cutpoint]);
+  auto rewrite_regs = rewrite.def_ins(rewrite_cuts[cutpoint]);
+
+  auto last_target_instr = get_last_instr(target, target_cuts[cutpoint]);
+  auto last_rewrite_instr = get_last_instr(rewrite, rewrite_cuts[cutpoint]);
 
   bool target_has_jcc = last_target_instr.is_jcc();
   string target_opcode = Handler::get_opcode(last_target_instr);
@@ -575,7 +589,7 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
 
   /** Case 1: there's no conditional jump */
   if (!target_has_jcc && !rewrite_has_jcc) {
-    return learn_simple_invariant(target_regs, rewrite_regs, target_states, rewrite_states);
+    return learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, target_states, rewrite_states);
   } else if (target_has_jcc && !rewrite_has_jcc) {
 
     vector<CpuState> target_jump_states;
@@ -594,11 +608,11 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
     }
 
     auto jump_inv = new FlagInvariant(last_target_instr, false, false);
-    auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
+    auto jump_simple = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
     jump_simple = transform_with_assumption(jump_inv, jump_simple);
 
     auto fall_inv = new FlagInvariant(last_target_instr, false, true);
-    auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
+    auto fall_simple = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
     fall_simple = transform_with_assumption(fall_inv, fall_simple);
 
     fall_simple->add_invariants(jump_simple);
@@ -624,11 +638,11 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
     }
 
     auto jump_inv = new FlagInvariant(last_rewrite_instr, true, false);
-    auto jump_simple = learn_simple_invariant(target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
+    auto jump_simple = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, target_jump_states, rewrite_jump_states);
     jump_simple = transform_with_assumption(jump_inv, jump_simple);
 
     auto fall_inv = new FlagInvariant(last_rewrite_instr, true, true);
-    auto fall_simple = learn_simple_invariant(target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
+    auto fall_simple = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, target_fall_states, rewrite_fall_states);
     fall_simple = transform_with_assumption(fall_inv, fall_simple);
 
     fall_simple->add_invariants(jump_simple);
@@ -666,22 +680,22 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
       }
     }
 
-    auto S1 = learn_simple_invariant(target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
+    auto S1 = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, jump_jump_states_target, jump_jump_states_rewrite);
     auto S1_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S1_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
     S1 = transform_with_assumption(S1_target_path->AND(S1_rewrite_path), S1);
 
-    auto S2 = learn_simple_invariant(target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
+    auto S2 = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, jump_fall_states_target, jump_fall_states_rewrite);
     auto S2_target_path = new FlagInvariant(last_target_instr, false, false);
     auto S2_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
     S2 = transform_with_assumption(S2_target_path->AND(S2_rewrite_path), S2);
 
-    auto S3 = learn_simple_invariant(target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
+    auto S3 = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, fall_jump_states_target, fall_jump_states_rewrite);
     auto S3_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S3_rewrite_path = new FlagInvariant(last_rewrite_instr, true, false);
     S3 = transform_with_assumption(S3_target_path->AND(S3_rewrite_path), S3);
 
-    auto S4 = learn_simple_invariant(target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
+    auto S4 = learn_simple_invariant(target, rewrite, target_regs, rewrite_regs, fall_fall_states_target, fall_fall_states_rewrite);
     auto S4_target_path = new FlagInvariant(last_target_instr, false, true);
     auto S4_rewrite_path = new FlagInvariant(last_rewrite_instr, true, true);
     S4 = transform_with_assumption(S4_target_path->AND(S4_rewrite_path), S4);
@@ -698,6 +712,56 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(x64asm::RegSet 
 
 }
 
+/** Return a set of possible memory null invariants */
+vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, RegSet rewrite_regs, const Cfg& target, const Cfg& rewrite) {
+  vector<MemoryNullInvariant*> invariants;
+
+  for(size_t k = 0; k < 2; ++k) {
+    bool is_rewrite = k;
+    const Cfg& cfg = is_rewrite ? rewrite : target;
+    auto code = cfg.get_code();
+    auto regs = is_rewrite ? rewrite_regs : target_regs;
+
+    set<x64asm::Mem> memory_operands;
+    for(auto instr : code) {
+      if(instr.is_explicit_memory_dereference()) {
+        auto mem = instr.get_operand<x64asm::Mem>((size_t)instr.mem_index());
+        cout << "Considering operand " << mem << endl;
+        memory_operands.insert(mem);
+      }
+    }
+
+    for(auto it : memory_operands) {
+      cout << "And now it is: " << it << endl;
+      if(it.contains_seg())
+        continue;
+      if(it.contains_base() && !regs.contains(it.get_base()))
+        continue;
+      if(it.contains_index() && !regs.contains(it.get_index()))
+        continue;
+
+
+      cout << "Adding: " << it << endl;
+      auto mni = new MemoryNullInvariant(it, is_rewrite, true);
+      invariants.push_back(mni);
+
+      cout << "Ok, made a " << *mni << endl;
+
+      mni = new MemoryNullInvariant(it, is_rewrite, false);
+      invariants.push_back(mni);
+    }
+
+
+  }
+
+  for(auto it : invariants) {
+    cout << *it << endl;
+  }
+
+  return invariants;
+}
+
+/** Return a set of possible inequality invariants. */
 vector<InequalityInvariant*> build_inequality_invariants(RegSet target_regs, RegSet rewrite_regs) {
 
   vector<InequalityInvariant*> inequalities;
@@ -731,7 +795,7 @@ vector<InequalityInvariant*> build_inequality_invariants(RegSet target_regs, Reg
   return inequalities;
 }
 
-ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, vector<CpuState> target_states, vector<CpuState> rewrite_states) {
+ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, const Cfg& rewrite, x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states) {
 
   assert(target_states.size() == rewrite_states.size());
 
@@ -810,6 +874,18 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(x64asm::RegSet targe
       conj->add_invariant(ineq);
     } else {
       delete ineq;
+    }
+  }
+
+  auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs, target, rewrite);
+  for(auto mem_null : potential_memory_nulls) {
+    cout << "Testing " << *mem_null << endl;
+    if(mem_null->check(target_states, rewrite_states)) {
+      cout << " * pass" << endl;
+      conj->add_invariant(mem_null);
+    } else {
+      cout << " * fail" << endl;
+      delete mem_null;
     }
   }
 

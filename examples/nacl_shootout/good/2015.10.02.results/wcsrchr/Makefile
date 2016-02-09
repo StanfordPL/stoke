@@ -7,6 +7,9 @@ ARGS=--verify_nacl --test_set "{ 90 100 110 120 130 140 150 160 170 180 190 200 
 opt:
 	time stoke debug verify --target target.s --rewrite optimize.s --testcases testcases --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS)
 
+debug:
+	gdb --args stoke_debug_verify --target target.s --rewrite optimize.s --testcases testcases --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS)
+
 synth:
 	time stoke debug verify --target target.s --rewrite synth.s --testcases testcases --strategy ddec --def_in $(DEF_IN) --live_out $(LIVE_OUT) $(ARGS)
 
