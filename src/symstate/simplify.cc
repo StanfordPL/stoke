@@ -260,6 +260,36 @@ public:
       }
     }
 
+    // addition/subtraction of zero
+    if (bv->type() == SymBitVector::PLUS && is_zero(lhs)) {
+      return cache(bv, rhs);
+    }
+    if (bv->type() == SymBitVector::PLUS && is_zero(rhs)) {
+      return cache(bv, lhs);
+    }
+    if (bv->type() == SymBitVector::MINUS && is_zero(rhs)) {
+      return cache(bv, lhs);
+    }
+
+    // move binop over ite
+    if (lhs->type() == SymBitVector::ITE) {
+      SymBitVectorIte* ite = (SymBitVectorIte*)lhs;
+      if (is_const(ite->a_) && is_const(ite->a_) && is_const(rhs)) {
+        auto a = make_binop(bv->type(), (SymBitVectorAbstract*)ite->a_, rhs);
+        auto b = make_binop(bv->type(), (SymBitVectorAbstract*)ite->b_, rhs);
+        return cache(bv, make_bitvector_ite(ite->cond_, a, b));
+      }
+    }
+    if (rhs->type() == SymBitVector::ITE) {
+      SymBitVectorIte* ite = (SymBitVectorIte*)rhs;
+      if (is_const(ite->a_) && is_const(ite->a_) && is_const(lhs)) {
+        auto a = make_binop(bv->type(), lhs, (SymBitVectorAbstract*)ite->a_);
+        auto b = make_binop(bv->type(), lhs, (SymBitVectorAbstract*)ite->b_);
+        return cache(bv, make_bitvector_ite(ite->cond_, a, b));
+      }
+    }
+
+    // xor with itself
     if (bv->type() == SymBitVector::XOR && lhs == rhs && width <= 64) {
       return cache(bv, make_constant(width, 0));
     }
