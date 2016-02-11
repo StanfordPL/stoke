@@ -38,11 +38,11 @@ public:
     return *this;
   }
 
-  SymBool operator()(const SymState& left, const SymState& right) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
     SymBool b = SymBool::_true();
 
     for (auto it : invariants_) {
-      b = b & (*it)(left, right);
+      b = b & (*it)(left, right, tln, rln);
     }
 
     return b;

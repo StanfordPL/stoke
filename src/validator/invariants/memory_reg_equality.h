@@ -29,11 +29,13 @@ public:
     is_rewrite_ = is_rewrite;
   }
 
-  SymBool operator()(const SymState& left, const SymState& right) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
 
     if (is_rewrite_) {
+      right.memory.line_no = --rln;
       return right.lookup(reg_) == right.lookup(m_);
     } else {
+      left.memory.line_no = --tln;
       return left.lookup(reg_) == left.lookup(m_);
     }
   }

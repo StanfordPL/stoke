@@ -34,7 +34,7 @@ public:
     assert(reg1.size() == reg2.size());
   }
 
-  SymBool operator()(const SymState& target, const SymState& rewrite) const {
+  SymBool operator()(SymState& target, SymState& rewrite, size_t& tln, size_t& rln) const {
 
     auto lhs = (reg1_is_rewrite_ ? rewrite : target).lookup(reg1_);
     auto rhs = (reg2_is_rewrite_ ? rewrite : target).lookup(reg2_);

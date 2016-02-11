@@ -116,8 +116,8 @@ private:
 
 
   /** Given target, rewrite, and two paths, returns CellMemory* pairs for every way that aliasing can occur. */
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume);
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove);
 
   /** Recursive helper function for enumerate_aliasing.  target_con_access and
    * rewrite_con_access list the lines of code where target_unroll and

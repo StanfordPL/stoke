@@ -284,7 +284,6 @@ vector<size_t> ObligationChecker::enumerate_accesses(const Cfg& cfg) {
   return result;
 }
 
-
 vector<vector<CellMemory::SymbolicAccess>> ObligationChecker::enumerate_aliasing_helper(
     const Cfg& target, const Cfg& rewrite,
     const Cfg& target_unroll, const Cfg& rewrite_unroll,
@@ -402,11 +401,11 @@ vector<vector<CellMemory::SymbolicAccess>> ObligationChecker::enumerate_aliasing
   return result;
 }
 
-vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume) {
+vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
   switch (alias_strategy_) {
   case AliasStrategy::STRING:
   case AliasStrategy::STRING_NO_ALIAS:
-    return enumerate_aliasing_string(target, rewrite, P, Q, assume);
+    return enumerate_aliasing_string(target, rewrite, P, Q, assume, prove);
   case AliasStrategy::FLAT: {
     auto res = vector<pair<CellMemory*, CellMemory*>>();
     res.push_back(pair<CellMemory*,CellMemory*>(NULL, NULL));
@@ -414,7 +413,7 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing(con
   }
   default:
     assert(false);
-    return enumerate_aliasing_string(target, rewrite, P, Q, assume);
+    return enumerate_aliasing_string(target, rewrite, P, Q, assume, prove);
   }
 }
 
@@ -500,7 +499,7 @@ vector<vector<int>> ObligationChecker::compute_offset_vectors(size_t* cell_sizes
 
 
 
-vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume) {
+vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
   auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
   auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
@@ -528,7 +527,10 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
   rewrite_state.memory = &rewrite_mem;
 
   vector<SymBool> constraints;
-  constraints.push_back(assume(target_state, rewrite_state));
+
+  size_t target_fake_lineno = 0;
+  size_t rewrite_fake_lineno = 0;
+  constraints.push_back(assume(target_state, rewrite_state, target_fake_lineno, rewrite_fake_lineno));
 
   size_t line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
@@ -541,6 +543,8 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
     constraints.push_back(it);
   for (auto& it : rewrite_state.constraints)
     constraints.push_back(it);
+
+  constraints.push_back(prove(target_state, rewrite_state, target_fake_lineno, rewrite_fake_lineno));
 
   vector<TrivialMemory::SymbolicAccess> sym_accesses;
   for (size_t k = 0; k < 2; ++k) {
@@ -1028,7 +1032,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
   have_ceg_ = false;
 
   // Get a list of all aliasing cases.
-  auto memory_list =  enumerate_aliasing(target, rewrite, P, Q, assume);
+  auto memory_list =  enumerate_aliasing(target, rewrite, P, Q, assume, prove);
   bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
 
   OBLIG_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
@@ -1085,7 +1089,10 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     }
 
     // Add given assumptions
-    auto assumption = assume(state_t, state_r);
+    // TODO pass line numbers as appropriate here
+    size_t target_invariant_lineno = 0;
+    size_t rewrite_invariant_lineno = 0;
+    auto assumption = assume(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
     CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
     constraints.push_back(assumption);
 
@@ -1124,7 +1131,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
   })
 
     // Build inequality constraint
-    auto prove_constraint = !prove(state_t, state_r);
+    // TODO pass line numbers as appropriate
+    auto prove_constraint = !prove(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
     CONSTRAINT_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
 
     constraints.push_back(prove_constraint);

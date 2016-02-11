@@ -29,9 +29,15 @@ public:
     is_rewrite_ = is_rewrite;
   }
 
-  SymBool operator()(const SymState& target, const SymState& rewrite) const {
+  SymBool operator()(SymState& target, SymState& rewrite, size_t& target_line_no, size_t& rewrite_line_no) const {
 
     auto& state = is_rewrite_ ? rewrite : target;
+
+    if(is_rewrite_) {
+      state.set_lineno(--rewrite_line_no);
+    } else {
+      state.set_lineno(--target_line_no);
+    }
 
     auto result = state.lookup(m_) == SymBitVector::constant(m_.size(), 0);
 

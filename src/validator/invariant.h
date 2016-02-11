@@ -28,7 +28,7 @@ public:
 
   virtual ~Invariant() { }
 
-  virtual SymBool operator()(const SymState& left, const SymState& right) const = 0;
+  virtual SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const = 0;
 
   virtual std::ostream& write(std::ostream& out) const = 0;
 
