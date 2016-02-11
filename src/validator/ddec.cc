@@ -91,6 +91,7 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
 
   vector<CpuState> results;
 
+  /*
   if (no_bv_) {
     // Don't do this if the user tells us not to
     return results;
@@ -121,6 +122,7 @@ vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& r
       }
     }
   }
+  */
 
   return results;
 }

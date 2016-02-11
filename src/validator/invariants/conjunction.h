@@ -90,6 +90,25 @@ public:
     return os;
   }
 
+  virtual std::vector<x64asm::Mem> target_memory_references() const {
+    std::vector<x64asm::Mem> result;
+    for(auto it : invariants_) {
+      auto prev = it->target_memory_references();
+      result.insert(result.begin(), prev.begin(), prev.end());
+    }
+    return result;
+  }
+
+  virtual std::vector<x64asm::Mem> rewrite_memory_references() const {
+    std::vector<x64asm::Mem> result;
+    for(auto it : invariants_) {
+      auto prev = it->rewrite_memory_references();
+      result.insert(result.begin(), prev.begin(), prev.end());
+    }
+    return result;
+  }
+
+
 private:
 
   std::vector<Invariant*> invariants_;
