@@ -108,11 +108,8 @@ int main(int argc, char** argv) {
   auto strata_handler = StrataHandler(strata_path, !no_simplify_arg.value());
   auto stoke_handler = ComboHandler();
 
-  Opcode opcode;
-  if (!(stringstream(opcode_arg.value()) >> opcode)) {
-    Console::error(1) << "Failed to parse opcode '" << opcode_arg.value() << "'." << endl;
-  }
-  auto instr = get_instruction(opcode);
+  auto instr = get_instruction_from_string(opcode_arg.value());
+  auto opcode = instr.get_opcode();
 
   if (stoke_handler.get_support(instr) == Handler::SupportLevel::NONE) {
     cout << "STOKE does not support '" << instr << "'." << endl;
@@ -154,10 +151,10 @@ int main(int argc, char** argv) {
       return true;
     } else {
       explanation << "  not equivalent for '" << (*reg) << "':" << endl;
-      explanation << "    strata: ";
+      explanation << "    strata:        ";
       pretty(SymSimplify().simplify(a));
       explanation << endl;
-      explanation << "    stoke:  ";
+      explanation << "    hand-written:  ";
       pretty(SymSimplify().simplify(b));
       explanation << endl;
       return false;
