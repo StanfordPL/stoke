@@ -176,7 +176,7 @@ public:
         return cache(bv, make_constant(bv->width_, 0));
       }
     }
-    
+
     // conversion of zero
     if (f.args.size() == 1) {
       auto a = (*this)(bv->args_[0]);
