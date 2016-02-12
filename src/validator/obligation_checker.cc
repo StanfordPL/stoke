@@ -30,7 +30,7 @@
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { }
+#define CEG_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -107,7 +107,7 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
 
 }
 
-bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const {
+bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite, bool begin) const {
 
   if (!target_memory || !rewrite_memory) {
     BUILD_TC_DEBUG(cout << "[build tc] no memory found" << endl;)
@@ -137,7 +137,12 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
       auto address = addr_bv.get_fixed_quad(0);
 
       assert(memory.init_cells_.count(cell));
-      const SymBitVector* v = &memory.init_cells_.at(cell);
+      const SymBitVector* v = NULL;
+      if(begin) {
+        v = &memory.init_cells_.at(cell);
+      } else {
+        v = &memory.cells_.at(cell);
+      }
       auto value_var = dynamic_cast<const SymBitVectorVar*>(v->ptr);
       auto value_bv = solver_.get_model_bv(value_var->get_name(), value_var->get_size());
 
@@ -1195,25 +1200,12 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
         ok &= build_testcase_flat_memory(ceg_tf_, *static_cast<FlatMemory*>(state_t.memory), other_map);
         ok &= build_testcase_flat_memory(ceg_rf_, *static_cast<FlatMemory*>(state_r.memory), other_map);
       } else {
-        ok &= build_testcase_cell_memory(ceg_t_,
-                                         dynamic_cast<CellMemory*>(state_t.memory),
-                                         dynamic_cast<CellMemory*>(state_r.memory),
-                                         target, rewrite);
-
-        ok &= build_testcase_cell_memory(ceg_r_,
-                                         dynamic_cast<CellMemory*>(state_t.memory),
-                                         dynamic_cast<CellMemory*>(state_r.memory),
-                                         target, rewrite);
-
-        ok &= build_testcase_cell_memory(ceg_tf_,
-                                         dynamic_cast<CellMemory*>(state_t.memory),
-                                         dynamic_cast<CellMemory*>(state_r.memory),
-                                         target, rewrite);
-
-        ok &= build_testcase_cell_memory(ceg_rf_,
-                                         dynamic_cast<CellMemory*>(state_t.memory),
-                                         dynamic_cast<CellMemory*>(state_r.memory),
-                                         target, rewrite);
+        auto tcell = dynamic_cast<CellMemory*>(state_t.memory);
+        auto rcell = dynamic_cast<CellMemory*>(state_r.memory);
+        ok &= build_testcase_cell_memory(ceg_t_, tcell, rcell, target, rewrite, true);
+        ok &= build_testcase_cell_memory(ceg_r_, tcell, rcell, target, rewrite, true);
+        ok &= build_testcase_cell_memory(ceg_tf_, tcell, rcell, target, rewrite, false);
+        ok &= build_testcase_cell_memory(ceg_rf_, tcell, rcell, target, rewrite, false);
       }
 
       if (!ok) {

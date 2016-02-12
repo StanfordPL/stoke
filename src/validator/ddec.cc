@@ -265,18 +265,30 @@ void DdecValidator::make_tcs(const Cfg& target, const Cfg& rewrite) {
   auto target_paths = CfgPaths::enumerate_paths(target, bound_);
   auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, bound_);
 
-  StateEqualityInvariant assume(target.def_ins());
+  Code nop_code;
+  nop_code.push_back(x64asm::Instruction(x64asm::NOP));
+  Cfg nop_cfg(nop_code);
+  vector<size_t> empty_path;
+  empty_path.push_back(1);
+
   FalseInvariant _false;
+  TrueInvariant _true;
 
   for (auto p : target_paths) {
-    for (auto q : rewrite_paths) {
-      DDEC_DEBUG(cout << "Trying pair " << p << " ; " << q << endl;)
-      bool equiv = check(target, rewrite, p, q, assume, _false);
-      if (!equiv && checker_has_ceg()) {
-        sandbox_->insert_input(checker_get_target_ceg());
-      }
+    DDEC_DEBUG(cout << "Trying path " << p << " ; on target" << endl;)
+    bool equiv = check(target, nop_cfg, p, empty_path, _true, _false);
+    if (!equiv && checker_has_ceg()) {
+      sandbox_->insert_input(checker_get_target_ceg());
     }
   }
+  for (auto p : rewrite_paths) {
+    DDEC_DEBUG(cout << "Trying path " << p << " ; on rewrite" << endl;)
+    bool equiv = check(rewrite, nop_cfg, p, empty_path, _true, _false);
+    if (!equiv && checker_has_ceg()) {
+      sandbox_->insert_input(checker_get_target_ceg());
+    }
+  }
+
 }
 
 
@@ -567,8 +579,8 @@ ConjunctionInvariant* simplify_disjunction(DisjunctionInvariant& disjs) {
 ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& target, const Cfg& rewrite, size_t cutpoint) {
 
   /** Lets get out the relevant data here... */
-  vector<CpuState> target_states = cutpoints_->data_at(cutpoint, true);
-  vector<CpuState> rewrite_states = cutpoints_->data_at(cutpoint, false);
+  vector<CpuState> target_states = cutpoints_->data_at(cutpoint, false);
+  vector<CpuState> rewrite_states = cutpoints_->data_at(cutpoint, true);
 
   DDEC_DEBUG(cout << "[ddec] learning cutpoint " << cutpoint << " invariant over " << target_states.size() << " target states, " << rewrite_states.size() << " rewrite states." << endl;)
 
@@ -747,10 +759,12 @@ vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, Re
       auto mni = new MemoryNullInvariant(it, is_rewrite, true);
       invariants.push_back(mni);
 
+      /*
       cout << "Ok, made a " << *mni << endl;
 
       mni = new MemoryNullInvariant(it, is_rewrite, false);
       invariants.push_back(mni);
+      */
     }
 
 

@@ -172,7 +172,7 @@ private:
     std::vector<OverlapDescriptor>& available_cells, size_t max_size);
 
   /** Populate a testcase with memory. */
-  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const;
+  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite, bool begin) const;
   bool build_testcase_flat_memory(CpuState&, FlatMemory&, const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
 
   /** Go through lists of pairs of pointers and free all the memory. */
