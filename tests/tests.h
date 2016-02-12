@@ -57,6 +57,7 @@ using namespace x64asm;
 #include "tests/symstate/bitvector.h"
 #include "tests/tunit/tunit.h"
 #include "tests/validator/invariants.h"
+#include "tests/validator/obligation_checker.h"
 #include "tests/verifier/verifier.h"
 #include "tests/fixture.h"
 
@@ -68,7 +69,6 @@ using namespace x64asm;
 #include "tests/validator/fuzz.h"
 #include "tests/validator/simple.h"
 #include "tests/validator/bounded.h"
-
 #endif
 
 #if !defined(NO_VERY_SLOW_TESTS) && !defined(NO_SLOW_TESTS)

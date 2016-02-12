@@ -39,6 +39,14 @@
 namespace stoke {
 
 class ObligationChecker : public Validator {
+  friend class ObligationCheckerBaseTest;
+  FRIEND_TEST(ObligationCheckerBaseTest, WcpcpyA);
+  FRIEND_TEST(ObligationCheckerBaseTest, ProveMemoryObligation);
+  FRIEND_TEST(ObligationCheckerBaseTest, ProveMemoryObligationFail);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeMemoryNull);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeMemoryNullFail);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeAndProve);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeAndProveFail);
 
 public:
 
