@@ -30,7 +30,7 @@
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { X }
+#define CEG_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -544,7 +544,9 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
   for (auto& it : rewrite_state.constraints)
     constraints.push_back(it);
 
-  constraints.push_back(prove(target_state, rewrite_state, target_fake_lineno, rewrite_fake_lineno));
+  // update the symbolic memory state with these further reads
+  // however, we do not generate constraints based on them
+  prove(target_state, rewrite_state, target_fake_lineno, rewrite_fake_lineno);
 
   vector<TrivialMemory::SymbolicAccess> sym_accesses;
   for (size_t k = 0; k < 2; ++k) {

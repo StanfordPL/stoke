@@ -1215,23 +1215,23 @@ TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
   auto live_outs = x64asm::RegSet::empty() + x64asm::rdi;
 
   std::stringstream sst;
-  sst << ".strlen:" << std::endl;
+  sst << ".strlen:" << std::endl;               //1
   sst << "movzbl (%rdi), %eax" << std::endl;
   sst << "testl %eax, %eax" << std::endl;
   sst << "je .exit" << std::endl;
-  sst << "addq $0x1, %rdi" << std::endl;
-  sst << "jmpq .strlen" << std::endl;
-  sst << ".exit:" << std::endl;
+  sst << "addq $0x1, %rdi" << std::endl;        //2
+  sst << "jmpq .strlen" << std::endl;           
+  sst << ".exit:" << std::endl;                 //3
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, def_ins, live_outs);
 
-  std::stringstream ssr;
-  ssr << ".strlen:" << std::endl;
+  std::stringstream ssr;                          //0
+  ssr << ".strlen:" << std::endl;                 //1
   ssr << "addq $0x1, %rdi" << std::endl;
   ssr << "movzbl -0x1(%rdi), %eax" << std::endl;
   ssr << "shrl $0x1, %eax" << std::endl;
   ssr << "jnz .strlen" << std::endl;
-  ssr << "subq $0x1, %rdi" << std::endl;
+  ssr << "subq $0x1, %rdi" << std::endl;          //2
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
