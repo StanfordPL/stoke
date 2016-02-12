@@ -158,7 +158,7 @@ public:
   SymBitVectorAbstract* visit(const SymBitVectorFunction * const bv) {
     if (is_cached(bv)) return get_cached(bv);
 
-    // add/subtract of 0
+    // add/subtract of 0 or a-a
     auto& f = bv->f_;
     if (f.args.size() == 2) {
       auto a = (*this)(bv->args_[0]);
@@ -171,6 +171,45 @@ public:
       }
       if ((f.name == "add_single" || f.name == "add_double") && is_zero(a)) {
         return cache(bv, (SymBitVectorAbstract*) b);
+      }
+      if ((f.name == "sub_single" || f.name == "sub_double") && a->equals(b)) {
+        return cache(bv, make_constant(bv->width_, 0));
+      }
+    }
+    
+    // conversion of zero
+    if (f.args.size() == 1) {
+      auto a = (*this)(bv->args_[0]);
+      if (is_zero(a)) {
+        if (f.name == "cvt_int32_to_double" ||
+            f.name == "cvt_int32_to_single" ||
+            f.name == "cvt_double_to_int32" ||
+            f.name == "cvt_double_to_single" ||
+            f.name == "cvt_int32_to_double" ||
+            f.name == "cvt_int32_to_single" ||
+            f.name == "cvt_single_to_int32" ||
+            f.name == "cvt_single_to_double" ||
+            f.name == "cvt_single_to_int32" ||
+            f.name == "cvt_double_to_int32" ||
+            f.name == "cvt_double_to_int64" ||
+            f.name == "cvt_double_to_single" ||
+            f.name == "cvt_int32_to_double" ||
+            f.name == "cvt_int64_to_double" ||
+            f.name == "cvt_int32_to_single" ||
+            f.name == "cvt_int64_to_single" ||
+            f.name == "cvt_single_to_double" ||
+            f.name == "cvt_single_to_int32" ||
+            f.name == "cvt_single_to_int64" ||
+            f.name == "cvt_double_to_int32_truncate" ||
+            f.name == "cvt_double_to_int32_truncate" ||
+            f.name == "cvt_single_to_int32_truncate" ||
+            f.name == "cvt_single_to_int32_truncate" ||
+            f.name == "cvt_double_to_int32_truncate" ||
+            f.name == "cvt_double_to_int64_truncate" ||
+            f.name == "cvt_single_to_int32_truncate" ||
+            f.name == "cvt_single_to_int64_truncate") {
+          return cache(bv, make_constant(bv->width_, 0));
+        }
       }
     }
 
@@ -420,7 +459,7 @@ public:
       return cache(bv, read_const(c) ? lhs : rhs);
     }
 
-    if (lhs == rhs) {
+    if (lhs->equals(rhs)) {
       return cache(bv, lhs);
     }
 
