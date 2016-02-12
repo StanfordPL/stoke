@@ -33,11 +33,11 @@ public:
   /** Attempt to transform the Cfg.  The 'TransformInfo'
     will return success/failure, and also metadata to undo
     the transformation if needed.  */
-  TransformUndo operator()(Cfg& cfg);
+  TransformInfo operator()(Cfg& cfg);
 
   /** Undos a move performed on the Cfg.  Requires the 'TransformInfo'
       originally passed to operator() */
-  void undo(Cfg& cfg, const TransformUndo& transform_info) const;
+  void undo(Cfg& cfg, const TransformInfo& transform_info) const;
 
 protected:
 

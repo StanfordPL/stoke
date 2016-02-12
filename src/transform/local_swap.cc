@@ -21,9 +21,9 @@ using namespace x64asm;
 
 namespace stoke {
 
-TransformUndo LocalSwapTransform::operator()(Cfg& cfg) {
+TransformInfo LocalSwapTransform::operator()(Cfg& cfg) {
 
-  TransformUndo ti;
+  TransformInfo ti;
   ti.success = false;
 
   const auto bb = (gen_() % (cfg.num_blocks() - 2)) + 1;
@@ -69,7 +69,7 @@ TransformUndo LocalSwapTransform::operator()(Cfg& cfg) {
 
 }
 
-void LocalSwapTransform::undo(Cfg& cfg, const TransformUndo& ti) const {
+void LocalSwapTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
   cfg.get_function().swap(ti.undo_index[0], ti.undo_index[1]);
   cfg.recompute_defs();
 

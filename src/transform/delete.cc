@@ -24,10 +24,10 @@ using namespace x64asm;
 
 namespace stoke {
 
-TransformUndo DeleteTransform::operator()(Cfg& cfg) {
+TransformInfo DeleteTransform::operator()(Cfg& cfg) {
 
 
-  TransformUndo ti;
+  TransformInfo ti;
   ti.success = false;
 
   if (cfg.get_code().size() < 3)
@@ -57,7 +57,7 @@ TransformUndo DeleteTransform::operator()(Cfg& cfg) {
   return ti;
 }
 
-void DeleteTransform::undo(Cfg& cfg, const TransformUndo& ti) const {
+void DeleteTransform::undo(Cfg& cfg, const TransformInfo& ti) const {
 
   auto& function = cfg.get_function();
   function.insert(ti.undo_index[0], ti.undo_instr, false);
