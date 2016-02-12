@@ -42,7 +42,7 @@ Prerequisites
 
 STOKE will run on modern 64-bit x86 processors.  We officially support Haswell
 processors with AVX2 extensions.  STOKE should also run on Sandy Bridge
-systems (with AVX, but not AVX2), and Nehalem systems without either extension.
+systems (with AVX, but not AVX2).  It might run on Nehalem systems without either extension, but we don't test it.
 
 To check what level of hardware support you have, run:
 
@@ -68,6 +68,8 @@ Most of STOKE's software dependencies are available through apt. These can be
 satisfied by typing:
 
     $ sudo apt-get install bison ccache cmake doxygen exuberant-ctags flex g++-4.9 g++-multilib gcc-4.9 ghc git libantlr3c-dev libboost-dev libboost-filesystem-dev libboost-thread-dev libcln-dev libghc-regex-compat-dev libghc-regex-tdfa-dev libghc-split-dev libjsoncpp-dev python subversion libiml-dev libgmp-dev
+
+Note that your distribution might not have g++-4.9 by default.  You may consider installing a PPA as described here: https://askubuntu.com/questions/466651/how-do-i-use-the-latest-gcc-4-9-on-ubuntu-14-04
 
 The rest of the dependencies will be fetched automatically as part of the build
 process.
