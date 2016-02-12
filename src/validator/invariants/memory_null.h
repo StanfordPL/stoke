@@ -31,6 +31,12 @@ public:
 
   SymBool operator()(SymState& target, SymState& rewrite, size_t& target_line_no, size_t& rewrite_line_no) const {
 
+    /*
+    std::cout << "Visiting "; 
+    write(std::cout); 
+    std::cout << " with nos " << target_line_no << " / " << rewrite_line_no << std::endl;
+    */
+
     auto& state = is_rewrite_ ? rewrite : target;
 
     if(is_rewrite_) {

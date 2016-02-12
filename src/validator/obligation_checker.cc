@@ -551,12 +551,22 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
   vector<TrivialMemory::SymbolicAccess> sym_accesses;
   for (size_t k = 0; k < 2; ++k) {
     auto& mem = k ? rewrite_mem : target_mem;
-    size_t line = -1;
+    size_t line = 0;
+    bool first = true;
     for (auto it : mem.get_all()) {
-      if (line == it.line)
+      if (!first && line == it.line)
         continue; //avoid duplicates from read+write operations, like add
+      first = false;
+
       line = it.line;
       it.is_rewrite = k;
+      /*
+      cout << "Access: " << endl;
+      cout << "  rewrite: " << it.is_rewrite << endl;
+      cout << "  line:    " << it.line << endl;
+      cout << "  size:    " << it.size << endl;
+      */
+
       sym_accesses.push_back(it);
     }
   }
