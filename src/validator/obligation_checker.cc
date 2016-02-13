@@ -138,7 +138,7 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
 
       assert(memory.init_cells_.count(cell));
       const SymBitVector* v = NULL;
-      if(begin) {
+      if (begin) {
         v = &memory.init_cells_.at(cell);
       } else {
         v = &memory.cells_.at(cell);
@@ -296,7 +296,7 @@ vector<vector<CellMemory::SymbolicAccess>> ObligationChecker::enumerate_aliasing
     const vector<CellMemory::SymbolicAccess>& todo,
     const vector<CellMemory::SymbolicAccess>& done,
     size_t accesses_done,
-    const Invariant& assume) {
+const Invariant& assume) {
 
   ALIAS_DEBUG(cout << "===================== RECURSIVE STEP ==============================" << endl;)
 

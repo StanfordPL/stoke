@@ -176,12 +176,12 @@ struct CpuState {
     my_segments.push_back(&stack);
     my_segments.push_back(&data);
 
-    for(auto it : segments) {
+    for (auto it : segments) {
       my_segments.push_back(&it);
     }
 
-    for(auto segment : my_segments) {
-      if(segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
+    for (auto segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
         return true;
       }
     }
@@ -198,14 +198,14 @@ struct CpuState {
     my_segments.push_back(&stack);
     my_segments.push_back(&data);
 
-    for(auto it : segments) {
+    for (auto it : segments) {
       my_segments.push_back(&it);
     }
 
-    for(auto segment : my_segments) {
-      if(segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
-        for(size_t i = 0; i < size/8; ++i) {
-          if(!segment->is_valid(addr + (uint64_t)i))
+    for (auto segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
+        for (size_t i = 0; i < size/8; ++i) {
+          if (!segment->is_valid(addr + (uint64_t)i))
             return false;
         }
         return true;
@@ -224,15 +224,15 @@ struct CpuState {
     my_segments.push_back(&stack);
     my_segments.push_back(&data);
 
-    for(auto it : segments) {
+    for (auto it : segments) {
       my_segments.push_back(&it);
     }
 
-    for(auto segment : my_segments) {
-      if(segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
+    for (auto segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
         cpputil::BitVector result(size);
-        for(size_t i = 0; i < size/8; ++i) {
-          result.get_fixed_byte(i) = (*segment)[addr + (uint64_t)i]; 
+        for (size_t i = 0; i < size/8; ++i) {
+          result.get_fixed_byte(i) = (*segment)[addr + (uint64_t)i];
         }
         return result;
       }

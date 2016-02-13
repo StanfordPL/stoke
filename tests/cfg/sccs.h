@@ -38,16 +38,16 @@ public:
     //   in_scc() matches get_scc()
     //   check that it's in the appropriate vector for get_blocks()
     //   check that it's not in any other get_blocks() vector
-    for(Cfg::id_type blk = cfg.get_entry(); blk != cfg.get_exit(); blk++) {
+    for (Cfg::id_type blk = cfg.get_entry(); blk != cfg.get_exit(); blk++) {
       size_t the_scc = sccs.get_scc(blk);
 
       ASSERT_EQ(the_scc == (size_t)(-1), !sccs.in_scc(blk));
 
-      if(!sccs.in_scc(blk)) {
+      if (!sccs.in_scc(blk)) {
 
-        for(size_t i = 0; i < sccs.count(); ++i) {
+        for (size_t i = 0; i < sccs.count(); ++i) {
           auto bad_list = sccs.get_blocks(i);
-          for(auto entry : bad_list) {
+          for (auto entry : bad_list) {
             EXPECT_NE(entry, blk);
           }
         }
@@ -57,19 +57,19 @@ public:
 
       auto correct_list = sccs.get_blocks(the_scc);
       size_t occurrences = 0;
-      for(auto entry : correct_list) {
-        if(entry == blk) {
+      for (auto entry : correct_list) {
+        if (entry == blk) {
           occurrences++;
         }
       }
       EXPECT_EQ(1ul, occurrences);
 
       occurrences = 0;
-      for(size_t i = 0; i < sccs.count(); ++i) {
-        if(i != the_scc) {
+      for (size_t i = 0; i < sccs.count(); ++i) {
+        if (i != the_scc) {
           auto bad_list = sccs.get_blocks(i);
-          for(auto entry : bad_list) {
-            if(entry == blk)
+          for (auto entry : bad_list) {
+            if (entry == blk)
               occurrences++;
           }
         }
@@ -171,7 +171,7 @@ TEST_F(SccTest, NestedLoop) {
   }
 
   ASSERT_EQ(4ul, sccs.get_blocks(0).size());
-  for(size_t i = 0; i < 4; ++i) {
+  for (size_t i = 0; i < 4; ++i) {
     EXPECT_LE(1ul, sccs.get_blocks(0)[i]);
     EXPECT_GE(4ul, sccs.get_blocks(0)[i]);
   }
@@ -322,8 +322,8 @@ TEST_F(SccTest, Wcsrchr) {
   EXPECT_EQ(sccs.get_scc(7), sccs.get_scc(8));
 
   // Ensure others are not in an SCC
-  for(size_t i = 0; i < 11; ++i) {
-    if(i != 3 && i != 7 && i != 8) {
+  for (size_t i = 0; i < 11; ++i) {
+    if (i != 3 && i != 7 && i != 8) {
       EXPECT_FALSE(sccs.in_scc(i)) << "Found block " << i << " in SCC " << sccs.get_scc(i) << "; should not be." << endl;
     }
   }

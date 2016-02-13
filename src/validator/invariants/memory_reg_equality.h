@@ -24,7 +24,7 @@ class MemoryRegEqualityInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  MemoryRegEqualityInvariant(const x64asm::R& reg, const x64asm::M& m, bool is_rewrite) 
+  MemoryRegEqualityInvariant(const x64asm::R& reg, const x64asm::M& m, bool is_rewrite)
     : reg_(reg), m_(m), is_rewrite_(is_rewrite) {
     is_rewrite_ = is_rewrite;
   }

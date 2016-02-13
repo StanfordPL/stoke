@@ -29,24 +29,24 @@ using namespace x64asm;
 
 
 void Cutpoints::print_option(Cutpoints::CutpointList& option) {
-DEBUG_CUTPOINTS(
+  DEBUG_CUTPOINTS(
     cout << "Option" << endl;
     cout << "Target: ";
-    for(auto n : option.first) {
-      cout << n << "  ";
-    }
-    cout << endl;
-    cout << "Rewrite: ";
-    for(auto n : option.second) {
-      cout << n << "  ";
-    }
-    cout << endl;
+  for (auto n : option.first) {
+  cout << n << "  ";
+}
+cout << endl;
+     cout << "Rewrite: ";
+for (auto n : option.second) {
+  cout << n << "  ";
+}
+cout << endl;
 )
 }
 
 vector<vector<size_t>> Cutpoints::get_permutations(size_t n) {
 
-  if(n == 1) {
+  if (n == 1) {
     vector<vector<size_t>> result;
     vector<size_t> one;
     one.push_back(0);
@@ -56,9 +56,9 @@ vector<vector<size_t>> Cutpoints::get_permutations(size_t n) {
 
   vector<vector<size_t>> results;
   vector<vector<size_t>> recursive_step = get_permutations(n-1);
-  for(auto pi : recursive_step) {
+  for (auto pi : recursive_step) {
 
-    for(size_t i = 0; i <= pi.size(); ++i) {
+    for (size_t i = 0; i <= pi.size(); ++i) {
       vector<size_t> copy = pi;
       copy.insert(copy.begin() + i, n-1);
       results.push_back(copy);
@@ -76,7 +76,7 @@ void Cutpoints::compute() {
   CfgSccs rewrite_sccs(rewrite_);
 
   // Collect data
-  for(size_t i = 0; i < sandbox_.size(); ++i) {
+  for (size_t i = 0; i < sandbox_.size(); ++i) {
     vector<TracePoint> trace;
     mine_data(target_, i, trace);
     target_traces_.push_back(trace);
@@ -92,10 +92,10 @@ void Cutpoints::compute() {
   // Check all the cutpoints
   vector<CutpointList> viable_cutpoints;
 
-  for(auto option : cutpoint_options) {
+  for (auto option : cutpoint_options) {
     DEBUG_CUTPOINTS(cout << "=== CHECKING ===" << endl;)
     print_option(option);
-    if(check_cutpoints(option)) {
+    if (check_cutpoints(option)) {
       viable_cutpoints.push_back(option);
       DEBUG_CUTPOINTS(cout << " ----> PASS" << endl;)
     } else {
@@ -106,18 +106,18 @@ void Cutpoints::compute() {
   chosen_cutpoints_ = viable_cutpoints[0];
 
   DEBUG_CUTPOINTS(
-  cout << "Total options: " << cutpoint_options.size() << endl;
-  cout << "Viable options: " << viable_cutpoints.size() << endl;
-  cout << "Target traces: " << target_traces_.size() << endl;
-  cout << "Rewrite traces: " << rewrite_traces_.size() << endl;
-  size_t cutpt_option;
-  /*
-  do {
-    cout << "Which cutpoint do you want to use?" << endl;
-    cin >> cutpt_option;
-  } while(cutpt_option >= viable_cutpoints.size());
-  chosen_cutpoints_ = viable_cutpoints[cutpt_option];
-  */
+    cout << "Total options: " << cutpoint_options.size() << endl;
+    cout << "Viable options: " << viable_cutpoints.size() << endl;
+    cout << "Target traces: " << target_traces_.size() << endl;
+    cout << "Rewrite traces: " << rewrite_traces_.size() << endl;
+    size_t cutpt_option;
+    /*
+    do {
+      cout << "Which cutpoint do you want to use?" << endl;
+      cin >> cutpt_option;
+    } while(cutpt_option >= viable_cutpoints.size());
+    chosen_cutpoints_ = viable_cutpoints[cutpt_option];
+    */
   )
 
   auto& target_cuts = chosen_cutpoints_.first;
@@ -127,7 +127,7 @@ void Cutpoints::compute() {
   target_cuts.push_back(target_.get_exit());
   rewrite_cuts.push_back(rewrite_.get_exit());
 
-  if(!viable_cutpoints.size()) {
+  if (!viable_cutpoints.size()) {
     error_ = "Could not find any viable cutpoints.";
   }
 }
@@ -137,7 +137,7 @@ vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
   CfgSccs target_sccs(target_);
   CfgSccs rewrite_sccs(rewrite_);
 
-  if(target_sccs.count() != rewrite_sccs.count()) {
+  if (target_sccs.count() != rewrite_sccs.count()) {
     error_ = "DDEC only works when target/rewrite have the same number of SCCs/loops";
     vector<CutpointList> empty;
     return empty;
@@ -148,13 +148,13 @@ vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
 
   vector<CutpointList> results;
 
-  for(auto pi : permutations) {
+  for (auto pi : permutations) {
     vector<CutpointList> working_set;
 
     CutpointList empty_list;
     working_set.push_back(empty_list);
 
-    for(size_t j = 0; j < n; ++j) {
+    for (size_t j = 0; j < n; ++j) {
       // Working on SCC j of target
       // Working on SCC pi[j] of rewrite
       cout << "Working on SCC pair " << j << " - " << pi[j] << endl;
@@ -162,12 +162,12 @@ vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
       auto rewrite_nodes = rewrite_sccs.get_blocks(pi[j]);
 
       cout << "  - target nodes: ";
-      for(auto it : target_nodes) {
+      for (auto it : target_nodes) {
         cout << "  " << it;
       }
       cout << endl;
       cout << "  - rewrite nodes: ";
-      for(auto it : rewrite_nodes) {
+      for (auto it : rewrite_nodes) {
         cout << "  " << it;
       }
       cout << endl;
@@ -176,9 +176,9 @@ vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
       vector<CutpointList> new_working_set;
 
       // For every pair of nodes in (j, pi[j]) we extend each
-      for(auto tn : target_nodes) {
-        for(auto rn : rewrite_nodes) {
-          for(auto old_list : working_set) {
+      for (auto tn : target_nodes) {
+        for (auto rn : rewrite_nodes) {
+          for (auto old_list : working_set) {
             CutpointList new_list = old_list;
             new_list.first.push_back(tn);
             new_list.second.push_back(rn);
@@ -191,7 +191,7 @@ vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
 
     }
 
-    for(auto option : working_set) {
+    for (auto option : working_set) {
       results.push_back(option);
 
       /*
@@ -227,7 +227,7 @@ void Cutpoints::mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoin
 
   std::vector<CallbackParam*> to_free;
 
-  for(Cfg::id_type block = cfg.get_entry(); block != cfg.get_exit(); block++) {
+  for (Cfg::id_type block = cfg.get_entry(); block != cfg.get_exit(); block++) {
 
     CallbackParam* cp = new CallbackParam();
     to_free.push_back(cp);
@@ -258,7 +258,7 @@ void Cutpoints::mine_data(const Cfg& cfg, size_t testcase, std::vector<TracePoin
 
   sandbox_.run(testcase);
 
-  for(auto it : to_free)
+  for (auto it : to_free)
     delete it;
 
 }
@@ -290,9 +290,9 @@ vector<Cutpoints::TracePoint> Cutpoints::filter_cutpoints(vector<TracePoint>& tr
 
   vector<TracePoint> results;
 
-  for(auto state : trace) {
-    for(auto candidate : basic_blocks) {
-      if(candidate == state.block_id) {
+  for (auto state : trace) {
+    for (auto candidate : basic_blocks) {
+      if (candidate == state.block_id) {
         results.push_back(state);
       }
     }
@@ -302,11 +302,11 @@ vector<Cutpoints::TracePoint> Cutpoints::filter_cutpoints(vector<TracePoint>& tr
 
 /** Find the cutpoint number that a particular trace point / basic block corresponds to */
 size_t Cutpoints::which_cutpoint(TracePoint pt, vector<Cfg::id_type>& basic_blocks) {
-  for(size_t i = 0; i < basic_blocks.size(); ++i) {
-    if(pt.block_id == basic_blocks[i]) {
+  for (size_t i = 0; i < basic_blocks.size(); ++i) {
+    if (pt.block_id == basic_blocks[i]) {
       return i;
     }
-  } 
+  }
 
   return (size_t)(-1);
 }
@@ -329,7 +329,7 @@ bool Cutpoints::check_cutpoints(CutpointList& cutpoints) {
   assert(cutpoints.first.size() == cutpoints.second.size());
 
   /** The main checks */
-  for(size_t i = 0; i < target_traces_.size(); ++i) {
+  for (size_t i = 0; i < target_traces_.size(); ++i) {
     auto target_trace = target_traces_[i];
     auto rewrite_trace = rewrite_traces_[i];
 
@@ -337,35 +337,35 @@ bool Cutpoints::check_cutpoints(CutpointList& cutpoints) {
     auto rewrite_cut_trace = filter_cutpoints(rewrite_trace, cutpoints.second);
 
     // check (i)
-    if(target_cut_trace.size() != rewrite_cut_trace.size()) {
-      DEBUG_CUTPOINTS(cout << "On trace " << i << " target has " << target_cut_trace.size() << 
-            " cutpoints while rewrite has " << rewrite_cut_trace.size() << endl;)
+    if (target_cut_trace.size() != rewrite_cut_trace.size()) {
+      DEBUG_CUTPOINTS(cout << "On trace " << i << " target has " << target_cut_trace.size() <<
+                      " cutpoints while rewrite has " << rewrite_cut_trace.size() << endl;)
       return false;
     }
 
     // check (ii)
-    for(size_t j = 0; j < target_cut_trace.size(); ++j) {
+    for (size_t j = 0; j < target_cut_trace.size(); ++j) {
       auto target_pt = target_cut_trace[j];
       auto rewrite_pt = rewrite_cut_trace[j];
 
-      if(target_pt.cs.heap != rewrite_pt.cs.heap) {
-        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
-        return false; 
-      }
-      if(target_pt.cs.stack != rewrite_pt.cs.stack) {
-        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
-        return false; 
-      }
-      if(target_pt.cs.data != rewrite_pt.cs.data) {
-        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
-        return false; 
-      }
-      if(target_pt.cs.segments.size() != rewrite_pt.cs.segments.size()) {
+      if (target_pt.cs.heap != rewrite_pt.cs.heap) {
         DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
         return false;
       }
-      for(size_t k = 0; k < target_pt.cs.segments.size(); ++k) {
-        if(target_pt.cs.segments[k] != rewrite_pt.cs.segments[k]) {
+      if (target_pt.cs.stack != rewrite_pt.cs.stack) {
+        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
+        return false;
+      }
+      if (target_pt.cs.data != rewrite_pt.cs.data) {
+        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
+        return false;
+      }
+      if (target_pt.cs.segments.size() != rewrite_pt.cs.segments.size()) {
+        DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
+        return false;
+      }
+      for (size_t k = 0; k < target_pt.cs.segments.size(); ++k) {
+        if (target_pt.cs.segments[k] != rewrite_pt.cs.segments[k]) {
           DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite disagree on memory." << endl;)
           return false;
         }
@@ -373,7 +373,7 @@ bool Cutpoints::check_cutpoints(CutpointList& cutpoints) {
     }
 
     // check (iii)
-    for(size_t j = 0; j < target_cut_trace.size(); ++j) {
+    for (size_t j = 0; j < target_cut_trace.size(); ++j) {
       auto target_pt = target_cut_trace[j];
       auto rewrite_pt = rewrite_cut_trace[j];
 
@@ -383,7 +383,7 @@ bool Cutpoints::check_cutpoints(CutpointList& cutpoints) {
       assert(target_cutpt != -1);
       assert(rewrite_cutpt != -1);
 
-      if(target_cutpt != rewrite_cutpt) {
+      if (target_cutpt != rewrite_cutpt) {
         DEBUG_CUTPOINTS(cout << "On trace " << i << " target/rewrite cutpoints don't align." << endl;)
         return false;
       }
@@ -391,12 +391,12 @@ bool Cutpoints::check_cutpoints(CutpointList& cutpoints) {
   }
 
   /** Check (iv) */
-  for(size_t i = 0; i < cutpoints.first.size(); ++i) {
-    for(size_t j = 0; j < cutpoints.first.size(); ++j) {
+  for (size_t i = 0; i < cutpoints.first.size(); ++i) {
+    for (size_t j = 0; j < cutpoints.first.size(); ++j) {
       auto target_paths_ij =
-       CfgPaths::enumerate_paths(target_, 1, cutpoints.first[i], cutpoints.first[j], &cutpoints.first);
+        CfgPaths::enumerate_paths(target_, 1, cutpoints.first[i], cutpoints.first[j], &cutpoints.first);
       auto rewrite_paths_ij =
-       CfgPaths::enumerate_paths(rewrite_, 1, cutpoints.second[i], cutpoints.second[j], &cutpoints.second);
+        CfgPaths::enumerate_paths(rewrite_, 1, cutpoints.second[i], cutpoints.second[j], &cutpoints.second);
 
       auto target_paths_ij_more =
         CfgPaths::enumerate_paths(target_, 2, cutpoints.first[i], cutpoints.first[j], &cutpoints.first);

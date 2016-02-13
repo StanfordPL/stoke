@@ -1220,7 +1220,7 @@ TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
   sst << "testl %eax, %eax" << std::endl;
   sst << "je .exit" << std::endl;
   sst << "addq $0x1, %rdi" << std::endl;        //2
-  sst << "jmpq .strlen" << std::endl;           
+  sst << "jmpq .strlen" << std::endl;
   sst << ".exit:" << std::endl;                 //3
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, def_ins, live_outs);

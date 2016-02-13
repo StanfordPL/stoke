@@ -42,9 +42,9 @@ public:
     auto blk = cutpoints[cutpt];
 
     auto& traces = is_rewrite ? rewrite_traces_ : target_traces_;
-    for(auto trace : traces) {
-      for(auto entry : trace) {
-        if(entry.block_id == blk) {
+    for (auto trace : traces) {
+      for (auto entry : trace) {
+        if (entry.block_id == blk) {
           results.push_back(entry.cs);
         }
       }
@@ -78,12 +78,12 @@ public:
   }
 
   void test() {
-    for(size_t i = 1; i < 6; ++i) {
+    for (size_t i = 1; i < 6; ++i) {
       std::cout << "Computing permutations of { 1 .. " << i << " }" << std::endl;
 
       auto perms = get_permutations(i);
-      for(auto perm : perms) {
-        for(auto k : perm) {
+      for (auto perm : perms) {
+        for (auto k : perm) {
           std::cout << "  " << k;
         }
         std::cout << std::endl;
@@ -113,7 +113,7 @@ private:
 
   /** Check if a selection of cutpoints is correct. */
   bool check_cutpoints(CutpointList& cutpoints);
-                       
+
   /** Get a list of permutations of { 1 .. n }.  Used for guessing cutpoints.*/
   static std::vector<std::vector<size_t>> get_permutations(size_t n);
 

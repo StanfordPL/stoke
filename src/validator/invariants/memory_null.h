@@ -24,7 +24,7 @@ class MemoryNullInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  MemoryNullInvariant(const x64asm::Mem m, bool is_rewrite, bool is_null) 
+  MemoryNullInvariant(const x64asm::Mem m, bool is_rewrite, bool is_null)
     : m_(m), is_rewrite_(is_rewrite), is_null_(is_null) {
     is_rewrite_ = is_rewrite;
   }
@@ -32,14 +32,14 @@ public:
   SymBool operator()(SymState& target, SymState& rewrite, size_t& target_line_no, size_t& rewrite_line_no) const {
 
     /*
-    std::cout << "Visiting "; 
-    write(std::cout); 
+    std::cout << "Visiting ";
+    write(std::cout);
     std::cout << " with nos " << target_line_no << " / " << rewrite_line_no << std::endl;
     */
 
     auto& state = is_rewrite_ ? rewrite : target;
 
-    if(is_rewrite_) {
+    if (is_rewrite_) {
       state.set_lineno(--rewrite_line_no);
     } else {
       state.set_lineno(--target_line_no);
@@ -47,7 +47,7 @@ public:
 
     auto result = state.lookup(m_) == SymBitVector::constant(m_.size(), 0);
 
-    if(is_null_)
+    if (is_null_)
       return result;
     else
       return !result;
@@ -57,7 +57,7 @@ public:
 
     auto& state = is_rewrite_ ? rewrite : target;
 
-    if(!state.is_valid(m_)) {
+    if (!state.is_valid(m_)) {
       std::cout << state << std::endl;
       std::cout << " * " << m_ << std::endl;
       std::cout << " * state not valid" << std::endl;
@@ -67,15 +67,15 @@ public:
     auto mem_val = state[m_];
 
     bool zero = true;
-    for(size_t i = 0; i < m_.size()/8; ++i) {
-      if(mem_val.get_fixed_byte(i) != 0) {
+    for (size_t i = 0; i < m_.size()/8; ++i) {
+      if (mem_val.get_fixed_byte(i) != 0) {
         zero = false;
         std::cout << " * found non-zero byte" << std::endl;
         break;
       }
     }
 
-    if(is_null_)
+    if (is_null_)
       return zero;
     else
       return !zero;
@@ -83,14 +83,14 @@ public:
 
   virtual std::vector<x64asm::Mem> target_memory_references() const {
     std::vector<x64asm::Mem> empty;
-    if(!is_rewrite_)
+    if (!is_rewrite_)
       empty.push_back(m_);
     return empty;
   }
 
   virtual std::vector<x64asm::Mem> rewrite_memory_references() const {
     std::vector<x64asm::Mem> empty;
-    if(is_rewrite_)
+    if (is_rewrite_)
       empty.push_back(m_);
     return empty;
   }
@@ -98,9 +98,9 @@ public:
 
   std::ostream& write(std::ostream& os) const {
     os << m_;
-    if(is_rewrite_)
+    if (is_rewrite_)
       os << "'";
-    if(is_null_)
+    if (is_null_)
       os << " == 0";
     else
       os << " != 0";

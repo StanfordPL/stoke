@@ -28,14 +28,14 @@ public:
   }
 
   void benchmark(
-    string s, 
+    string s,
     bool optimize,
     size_t tc_min,
     size_t tc_max,
     ObligationChecker::AliasStrategy strat = ObligationChecker::AliasStrategy::FLAT) {
 
     set_target(s + ".s");
-    if(optimize)
+    if (optimize)
       set_rewrite(s + "_opt.s");
     else
       set_rewrite(s + "_tr.s");
@@ -63,7 +63,7 @@ public:
   }
 
   void set_rewrite(string s) {
-    rewrite_ = read_tunit(s);  
+    rewrite_ = read_tunit(s);
   }
 
   void set_testcases(string s, size_t min, size_t max) {
@@ -74,7 +74,7 @@ public:
 
     ASSERT_GE(cs.size(), max - min + 1) << "Read " << cs.size() << " tcs; wanted { " << min << " .. " << max << "}";
 
-    for(size_t i = 0; i <= max; ++i) {
+    for (size_t i = 0; i <= max; ++i) {
       sandbox->insert_input(cs[i]);
       cout << cs[i] << endl << endl;
     }
@@ -91,9 +91,9 @@ public:
   }
 
   ~DdecNaclTest() {
-    if(target_)
+    if (target_)
       delete target_;
-    if(rewrite_)
+    if (rewrite_)
       delete rewrite_;
   }
 

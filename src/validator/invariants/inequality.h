@@ -24,10 +24,10 @@ class InequalityInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  InequalityInvariant(const x64asm::R& reg1, const x64asm::R& reg2, 
+  InequalityInvariant(const x64asm::R& reg1, const x64asm::R& reg2,
                       bool reg1_is_rewrite, bool reg2_is_rewrite,
-                      bool is_strict, bool is_signed=false) : 
-    reg1_(reg1), reg2_(reg2), 
+                      bool is_strict, bool is_signed=false) :
+    reg1_(reg1), reg2_(reg2),
     reg1_is_rewrite_(reg1_is_rewrite), reg2_is_rewrite_(reg2_is_rewrite),
     is_strict_(is_strict), is_signed_(is_signed) {
 
@@ -39,10 +39,10 @@ public:
     auto lhs = (reg1_is_rewrite_ ? rewrite : target).lookup(reg1_);
     auto rhs = (reg2_is_rewrite_ ? rewrite : target).lookup(reg2_);
 
-    if(!is_signed_) {
+    if (!is_signed_) {
 
       // unsigned compare
-      if(is_strict_) {
+      if (is_strict_) {
         return (lhs < rhs);
       } else {
         return (lhs <= rhs);
@@ -50,7 +50,7 @@ public:
     } else {
 
       // signed compare
-      if(is_strict_) {
+      if (is_strict_) {
         return lhs.s_lt(rhs);
       } else {
         return lhs.s_le(rhs);
@@ -64,8 +64,8 @@ public:
     auto rhs = (reg2_is_rewrite_ ? rewrite : target)[reg2_];
 
     // Unsigned is easy!
-    if(!is_signed_) {
-      if(is_strict_) {
+    if (!is_signed_) {
+      if (is_strict_) {
         return (lhs < rhs);
       } else {
         return (lhs <= rhs);
@@ -73,27 +73,27 @@ public:
     }
 
     // Signed case;
-    switch(reg1_.size()) {
-      case 32:
+    switch (reg1_.size()) {
+    case 32:
 
-        if(is_strict_) {
-          return (int32_t)lhs < (int32_t)rhs;
-        } else {
-          return (int32_t)lhs <= (int32_t)rhs;
-        }
+      if (is_strict_) {
+        return (int32_t)lhs < (int32_t)rhs;
+      } else {
+        return (int32_t)lhs <= (int32_t)rhs;
+      }
 
-        break;
-      case 64:
+      break;
+    case 64:
 
-        if(is_strict_) {
-          return (int64_t)lhs < (int64_t)rhs;
-        } else {
-          return (int64_t)lhs <= (int64_t)rhs;
-        }
+      if (is_strict_) {
+        return (int64_t)lhs < (int64_t)rhs;
+      } else {
+        return (int64_t)lhs <= (int64_t)rhs;
+      }
 
-        break;
-      default:
-        assert(false);
+      break;
+    default:
+      assert(false);
     }
 
     assert(false);
@@ -105,14 +105,14 @@ public:
     if (reg1_is_rewrite_)
       os << "'";
 
-    if(is_strict_)
+    if (is_strict_)
       os << " <";
     else
       os << " ≤";
 
-    if(is_signed_) {
+    if (is_signed_) {
       os << "ₛ";
-    } 
+    }
     os << " ";
 
     os << reg2_;
