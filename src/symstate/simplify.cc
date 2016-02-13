@@ -155,6 +155,28 @@ public:
 
   SymConstProp(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits, map<SymArrayAbstract*, SymArrayAbstract*>& cache_array) : SymTransformVisitor(cache_bool, cache_bits, cache_array) {}
 
+  SymBitVectorAbstract* visit(const SymBitVectorFunction * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
+
+    // add/subtract of 0
+    auto& f = bv->f_;
+    if (f.args.size() == 2) {
+      auto a = (*this)(bv->args_[0]);
+      auto b = (*this)(bv->args_[1]);
+      if ((f.name == "sub_single" || f.name == "sub_double") && is_zero(b)) {
+        return cache(bv, (SymBitVectorAbstract*) a);
+      }
+      if ((f.name == "add_single" || f.name == "add_double") && is_zero(b)) {
+        return cache(bv, (SymBitVectorAbstract*) a);
+      }
+      if ((f.name == "add_single" || f.name == "add_double") && is_zero(a)) {
+        return cache(bv, (SymBitVectorAbstract*) b);
+      }
+    }
+
+    return SymTransformVisitor::visit(bv);
+  }
+
   SymBitVectorAbstract* visit(const SymBitVectorSignExtend * const bv) {
     if (is_cached(bv)) return get_cached(bv);
     auto inner = (*this)(bv->bv_);
@@ -238,6 +260,36 @@ public:
       }
     }
 
+    // addition/subtraction of zero
+    if (bv->type() == SymBitVector::PLUS && is_zero(lhs)) {
+      return cache(bv, rhs);
+    }
+    if (bv->type() == SymBitVector::PLUS && is_zero(rhs)) {
+      return cache(bv, lhs);
+    }
+    if (bv->type() == SymBitVector::MINUS && is_zero(rhs)) {
+      return cache(bv, lhs);
+    }
+
+    // move binop over ite
+    if (lhs->type() == SymBitVector::ITE) {
+      SymBitVectorIte* ite = (SymBitVectorIte*)lhs;
+      if (is_const(ite->a_) && is_const(ite->a_) && is_const(rhs)) {
+        auto a = make_binop(bv->type(), (SymBitVectorAbstract*)ite->a_, rhs);
+        auto b = make_binop(bv->type(), (SymBitVectorAbstract*)ite->b_, rhs);
+        return cache(bv, make_bitvector_ite(ite->cond_, a, b));
+      }
+    }
+    if (rhs->type() == SymBitVector::ITE) {
+      SymBitVectorIte* ite = (SymBitVectorIte*)rhs;
+      if (is_const(ite->a_) && is_const(ite->a_) && is_const(lhs)) {
+        auto a = make_binop(bv->type(), lhs, (SymBitVectorAbstract*)ite->a_);
+        auto b = make_binop(bv->type(), lhs, (SymBitVectorAbstract*)ite->b_);
+        return cache(bv, make_bitvector_ite(ite->cond_, a, b));
+      }
+    }
+
+    // xor with itself
     if (bv->type() == SymBitVector::XOR && lhs == rhs && width <= 64) {
       return cache(bv, make_constant(width, 0));
     }
@@ -387,6 +439,10 @@ private:
 
   bool is_const(const SymBoolAbstract* const s) {
     return (s->type() == SymBool::FALSE) || (s->type() == SymBool::TRUE);
+  }
+
+  bool is_zero(const SymBitVectorAbstract* const b) {
+    return is_const(b) && read_const(b) == 0;
   }
 
   /** Returns bit pattern consisting of 0s and ending with 'ones' many 1s. */

@@ -8,15 +8,15 @@
 
 # Text                      #  Line  RIP       Bytes  Opcode              
 .wmemchr:                   #        0x1441a0  0      OPC=<label>         
-  testl %edx, %edx          #  1     0x1441a0  2      OPC=testl_r32_r32   
+  testl %edx, %edx          #  1     0x1441a0  2      OPC=testl_r32_r32   //1
   movl %edi, %eax           #  2     0x1441a2  2      OPC=movl_r32_r32    
   je .L_144200              #  3     0x1441a4  2      OPC=je_label        
-  xorl %ecx, %ecx           #  4     0x1441a6  2      OPC=xorl_r32_r32    
+  xorl %ecx, %ecx           #  4     0x1441a6  2      OPC=xorl_r32_r32    //2
   movl %eax, %eax           #  5     0x1441a8  2      OPC=movl_r32_r32    
   cmpl %esi, (%r15,%rax,1)  #  6     0x1441aa  4      OPC=cmpl_m32_r32    
   jne .L_1441e0             #  7     0x1441ae  2      OPC=jne_label       
-  jmpq .L_144240            #  8     0x1441b0  5      OPC=jmpq_label_1    
-  nop                       #  9     0x1441b5  1      OPC=nop             
+  jmpq .L_144240            #  8     0x1441b0  5      OPC=jmpq_label_1    //3
+  nop                       #  9     0x1441b5  1      OPC=nop             //4
   nop                       #  10    0x1441b6  1      OPC=nop             
   nop                       #  11    0x1441b7  1      OPC=nop             
   nop                       #  12    0x1441b8  1      OPC=nop             
@@ -27,12 +27,12 @@
   nop                       #  17    0x1441bd  1      OPC=nop             
   nop                       #  18    0x1441be  1      OPC=nop             
   nop                       #  19    0x1441bf  1      OPC=nop             
-.L_1441c0:                  #        0x1441c0  0      OPC=<label>         
+.L_1441c0:                  #        0x1441c0  0      OPC=<label>         //5
   addl $0x4, %eax           #  20    0x1441c0  3      OPC=addl_r32_imm8   
   movl %eax, %eax           #  21    0x1441c3  2      OPC=movl_r32_r32    
   cmpl %esi, (%r15,%rax,1)  #  22    0x1441c5  4      OPC=cmpl_m32_r32    
   je .L_144220              #  23    0x1441c9  2      OPC=je_label        
-  nop                       #  24    0x1441cb  1      OPC=nop             
+  nop                       #  24    0x1441cb  1      OPC=nop             //6
   nop                       #  25    0x1441cc  1      OPC=nop             
   nop                       #  26    0x1441cd  1      OPC=nop             
   nop                       #  27    0x1441ce  1      OPC=nop             
@@ -53,11 +53,11 @@
   nop                       #  42    0x1441dd  1      OPC=nop             
   nop                       #  43    0x1441de  1      OPC=nop             
   nop                       #  44    0x1441df  1      OPC=nop             
-.L_1441e0:                  #        0x1441e0  0      OPC=<label>         
+.L_1441e0:                  #        0x1441e0  0      OPC=<label>         //7
   addl $0x1, %ecx           #  45    0x1441e0  3      OPC=addl_r32_imm8   
   cmpl %ecx, %edx           #  46    0x1441e3  2      OPC=cmpl_r32_r32    
   ja .L_1441c0              #  47    0x1441e5  2      OPC=ja_label        
-  nop                       #  48    0x1441e7  1      OPC=nop             
+  nop                       #  48    0x1441e7  1      OPC=nop             //8 
   nop                       #  49    0x1441e8  1      OPC=nop             
   nop                       #  50    0x1441e9  1      OPC=nop             
   nop                       #  51    0x1441ea  1      OPC=nop             
@@ -82,7 +82,7 @@
   nop                       #  70    0x1441fd  1      OPC=nop             
   nop                       #  71    0x1441fe  1      OPC=nop             
   nop                       #  72    0x1441ff  1      OPC=nop             
-.L_144200:                  #        0x144200  0      OPC=<label>         
+.L_144200:                  #        0x144200  0      OPC=<label>        //9
   xorl %eax, %eax           #  73    0x144200  2      OPC=xorl_r32_r32    
   nop                       #  74    0x144202  1      OPC=nop             
   nop                       #  75    0x144203  1      OPC=nop             
@@ -114,7 +114,7 @@
   nop                       #  101   0x14421d  1      OPC=nop             
   nop                       #  102   0x14421e  1      OPC=nop             
   nop                       #  103   0x14421f  1      OPC=nop             
-.L_144220:                  #        0x144220  0      OPC=<label>         
+.L_144220:                  #        0x144220  0      OPC=<label>       //10 
   retq
   nop                       #  112   0x144233  1      OPC=nop             
   nop                       #  113   0x144234  1      OPC=nop             
@@ -136,7 +136,7 @@
   nop                       #  129   0x144244  1      OPC=nop             
   nop                       #  130   0x144245  1      OPC=nop             
   nop                       #  131   0x144246  1      OPC=nop             
-.L_144240:                  #        0x144247  0      OPC=<label>         
+.L_144240:                  #        0x144247  0      OPC=<label>    //11   
   retq
   nop                       #  140   0x14425a  1      OPC=nop             
   nop                       #  141   0x14425b  1      OPC=nop             

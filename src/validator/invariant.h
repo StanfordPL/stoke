@@ -20,13 +20,15 @@
 
 namespace stoke {
 
+class ConjunctionInvariant;
+
 class Invariant {
 
 public:
 
   virtual ~Invariant() { }
 
-  virtual SymBool operator()(const SymState& left, const SymState& right) const = 0;
+  virtual SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const = 0;
 
   virtual std::ostream& write(std::ostream& out) const = 0;
 
@@ -55,6 +57,17 @@ public:
     return true;
   }
 
+  virtual std::vector<x64asm::Mem> target_memory_references() const {
+    std::vector<x64asm::Mem> empty;
+    return empty;
+  }
+
+  virtual std::vector<x64asm::Mem> rewrite_memory_references() const {
+    std::vector<x64asm::Mem> empty;
+    return empty;
+  }
+
+  ConjunctionInvariant* AND(Invariant* other);
 };
 
 } // namespace stoke

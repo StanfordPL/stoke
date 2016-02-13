@@ -144,6 +144,20 @@ SymBitVector SymState::operator[](const Operand o) {
 
 SymBitVector SymState::lookup(const Operand o) const {
 
+  if (o.is_typical_memory()) {
+    auto& m = reinterpret_cast<const M8&>(o);
+    uint16_t size = o.size();
+    auto addr = get_addr(m);
+
+    if (memory) {
+      auto p = memory->read(addr, size, lineno_);
+      return p.first;
+    } else {
+      return SymBitVector::tmp_var(size);
+    }
+  }
+
+
   if (o.type() == Type::RH) {
     auto& r = reinterpret_cast<const R&>(o);
     return gp[r-4][15][8];
@@ -317,9 +331,11 @@ std::vector<SymBool> SymState::equality_constraints(const SymState& other, const
     constraints.push_back((*this)[*flag_it] == other[*flag_it]);
   }
 
+/*
   constraints.push_back(sigbus == other.sigbus);
   constraints.push_back(sigfpe == other.sigfpe);
   constraints.push_back(sigsegv == other.sigsegv);
+  */
 
   return constraints;
 }

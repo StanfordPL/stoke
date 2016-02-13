@@ -32,9 +32,21 @@
 
 //#define DEBUG_CHECKER_PERFORMANCE
 
+#ifdef DEBUG_CHECKER_PERFORMANCE
+#include "src/solver/z3solver.h"
+#endif
+
 namespace stoke {
 
 class ObligationChecker : public Validator {
+  friend class ObligationCheckerBaseTest;
+  FRIEND_TEST(ObligationCheckerBaseTest, WcpcpyA);
+  FRIEND_TEST(ObligationCheckerBaseTest, ProveMemoryObligation);
+  FRIEND_TEST(ObligationCheckerBaseTest, ProveMemoryObligationFail);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeMemoryNull);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeMemoryNullFail);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeAndProve);
+  FRIEND_TEST(ObligationCheckerBaseTest, AssumeAndProveFail);
 
 public:
 
@@ -112,9 +124,8 @@ private:
 
 
   /** Given target, rewrite, and two paths, returns CellMemory* pairs for every way that aliasing can occur. */
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume);
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_basic(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume);
-  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove);
+  std::vector<std::pair<CellMemory*, CellMemory*>> enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove);
 
   /** Recursive helper function for enumerate_aliasing.  target_con_access and
    * rewrite_con_access list the lines of code where target_unroll and
@@ -130,18 +141,7 @@ private:
       const std::vector<CellMemory::SymbolicAccess>& todo,
       const std::vector<CellMemory::SymbolicAccess>& done,
       size_t sym_accesses_done,
-      const Invariant& assume,
-      bool check_feasible);
-
-
-  /** Helper for enumerate_aliasing_helper.  Builds CellMemory objects for
-   * partial description of which memory cells overlap, builds circuits, and
-   * checks to see if such executions are possible. */
-  bool check_feasibility(const Cfg& target, const Cfg& rewrite,
-                         const Cfg& target_unroll, const Cfg& rewrite_unroll,
-                         const CfgPath& P, const CfgPath& Q,
-                         const std::vector<CellMemory::SymbolicAccess>& symbolic_access_list,
-                         const Invariant& assume);
+      const Invariant& assume);
 
 
   /** Used for CellArrangement (see below) */
@@ -172,7 +172,7 @@ private:
     std::vector<OverlapDescriptor>& available_cells, size_t max_size);
 
   /** Populate a testcase with memory. */
-  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const;
+  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite, bool begin) const;
   bool build_testcase_flat_memory(CpuState&, FlatMemory&, const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
 
   /** Go through lists of pairs of pointers and free all the memory. */
@@ -180,12 +180,6 @@ private:
 
   /** Create a vector of line numbers with memory dereferences */
   std::vector<size_t> enumerate_accesses(const Cfg& cfg);
-
-  /** Helper: do two sorted vector contain a common value? */
-  bool vectors_have_common(const std::vector<size_t>& left, const std::vector<size_t>& right, size_t& value);
-
-  /** Takes a vector of symbolic accesses, builds a map, and allocates a CellMemory to use */
-  CellMemory* make_cell_memory(const std::vector<CellMemory::SymbolicAccess>&);
 
   /** Filter out symbolic accesses depending on target/rewrite. */
   std::vector<CellMemory::SymbolicAccess> split_sym_accesses(const std::vector<CellMemory::SymbolicAccess>&, bool);
@@ -255,6 +249,7 @@ private:
     std::cout << "Solver time (ms): " << (solver_time_ / 1000) << std::endl;
     std::cout << "Counterexample extraction time (ms): " << (ceg_time_ / 1000) << std::endl;
     std::cout << "Total time accounted for (ms): " << ((ceg_time_ + solver_time_ + constraint_gen_time_ + aliasing_time_)/1000) << std::endl;
+    Z3Solver::print_performance();
   }
 #endif
 

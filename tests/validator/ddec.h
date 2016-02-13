@@ -43,6 +43,9 @@ public:
     validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
     validator->set_heap_out(true);
     validator->set_stack_out(true);
+    validator->set_no_bv(true);
+    validator->set_sound_nullspace(true);
+    validator->set_try_sign_extend(true);
   }
 
   ~DdecValidatorBaseTest() {
@@ -644,7 +647,7 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryWrong3) {
 
 
 
-TEST_F(DdecValidatorBaseTest, MemcpyMissingBranch) {
+TEST_F(DdecValidatorBaseTest, DISABLED_MemcpyMissingBranch) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
   auto live_outs = x64asm::RegSet::empty();
@@ -681,7 +684,7 @@ TEST_F(DdecValidatorBaseTest, MemcpyMissingBranch) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
-TEST_F(DdecValidatorBaseTest, StrlenCorrect) {
+TEST_F(DdecValidatorBaseTest, DISABLED_StrlenCorrect) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rdi;

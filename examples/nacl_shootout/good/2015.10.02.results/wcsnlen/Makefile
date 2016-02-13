@@ -1,8 +1,8 @@
 
 DEF_IN="{ %r15 %rdi %rsi }"
 LIVE_OUT="{ %rax }"
-ARGS=--def_in $(DEF_IN) --live_out $(LIVE_OUT) --solver z3 --sound_nullspace
-OPT_ARGS=--test_set "{ 0 .. 50 }"
+ARGS=--def_in $(DEF_IN) --live_out $(LIVE_OUT) --solver z3 --sound_nullspace --verify_nacl
+OPT_ARGS=--no_ddec_bv --test_set "{ 0 .. 100 }"
 SYNTH_ARGS=--no_ddec_bv --test_set "{ 0 .. 100 }"
 
 opt:

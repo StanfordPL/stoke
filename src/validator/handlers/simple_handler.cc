@@ -20,9 +20,34 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
+namespace {
+
+const SymBitVector vectorize(const SymFunction& f, const SymBitVector& a, const SymBitVector& b, const SymBitVector& c) {
+  auto w = f.args[0];
+  auto maxw = max(f.return_type, f.args[0]);
+  if (f.args.size() == 3) {
+    auto res = f(a[w-1][0], b[w-1][0], c[w-1][0]);
+    for (auto i = 1; i < 256 / maxw; i++) {
+      res = f(a[(i+1)*w-1][i*w], b[(i+1)*w-1][i*w], c[(i+1)*w-1][i*w]) || res;
+    }
+    return res;
+  } else if (f.args.size() == 1) {
+    auto res = f(b[w-1][0]);
+    for (auto i = 1; i < 256 / maxw; i++) {
+      res = f(b[(i+1)*w-1][i*w]) || res;
+    }
+    return res;
+  } else {
+    assert(false);
+  }
+  return a;
+}
+
+}
+
 void SimpleHandler::add_all() {
 
-  add_opcode({"andb", "andw", "andl", "andq"},
+  add_opcode_str({"andb", "andw", "andl", "andq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     if (src.size() < dst.size())
       b = b.extend(dst.size());
@@ -34,7 +59,7 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a & b);
   });
 
-  add_opcode({"andnl", "andnq"},
+  add_opcode_str({"andnl", "andnq"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     auto tmp = (!b) & c;
     ss.set(dst, tmp);
@@ -46,7 +71,7 @@ void SimpleHandler::add_all() {
     ss.set(eflags_pf, SymBool::tmp_var());
   });
 
-  add_opcode({"bextrl", "bextrq"},
+  add_opcode_str({"bextrl", "bextrq"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     size_t size = dst.size();
     auto start = c[7][0];
@@ -74,7 +99,7 @@ void SimpleHandler::add_all() {
     ss.set(eflags_pf, SymBool::tmp_var());
   });
 
-  add_opcode({"blsrl", "blsrq"},
+  add_opcode_str({"blsrl", "blsrq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     auto zero = SymBitVector::constant(dst.size(), 0);
     auto one  = SymBitVector::constant(dst.size(), 1);
@@ -88,40 +113,40 @@ void SimpleHandler::add_all() {
 
   // to convert between Intel/AT&T mnemonics, see:
   // https://sourceware.org/binutils/docs/as/i386_002dMnemonics.html
-  add_opcode({"cbtw", "cbw"},
+  add_opcode_str({"cbtw", "cbw"},
   [this] (SymState& ss) {
     ss.set(ax, ss[al].extend(16));
   });
 
-  add_opcode({"cltd", "cdq"},
+  add_opcode_str({"cltd", "cdq"},
   [this] (SymState& ss) {
     auto se = ss[eax].extend(64);
     ss.set(edx, se[63][32]);
   });
 
-  add_opcode({"cltq", "cdqe"},
+  add_opcode_str({"cltq", "cdqe"},
   [this] (SymState& ss) {
     ss.set(rax, ss[eax].extend(64));
   });
 
-  add_opcode({"cqto", "cqo"},
+  add_opcode_str({"cqto", "cqo"},
   [this] (SymState& ss) {
     auto se = ss[rax].extend(128);
     ss.set(rdx, se[127][64]);
   });
 
-  add_opcode({"cwtd", "cwd"},
+  add_opcode_str({"cwtd", "cwd"},
   [this] (SymState& ss) {
     auto se = ss[ax].extend(32);
     ss.set(dx, se[31][16]);
   });
 
-  add_opcode({"cwtl", "cwde"},
+  add_opcode_str({"cwtl", "cwde"},
   [this] (SymState& ss) {
     ss.set(eax, ss[ax].extend(32));
   });
 
-  add_opcode({"decb", "decw", "decl", "decq"},
+  add_opcode_str({"decb", "decw", "decl", "decq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     SymBitVector one = SymBitVector::constant(dst.size(), 1);
 
@@ -133,7 +158,7 @@ void SimpleHandler::add_all() {
 
   });
 
-  add_opcode({"imulq", "imull", "imulw"},
+  add_opcode_str({"imulq", "imull", "imulw"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     auto n = a.width();
 
@@ -156,7 +181,7 @@ void SimpleHandler::add_all() {
     ss.set(eflags_sf, res[n-1]);
   });
 
-  add_opcode({"imulq", "imull", "imulw"},
+  add_opcode_str({"imulq", "imull", "imulw"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     auto n = a.width();
 
@@ -179,7 +204,7 @@ void SimpleHandler::add_all() {
     ss.set(eflags_sf, res[n-1]);
   });
 
-  add_opcode({"mulq", "mull", "mulw", "mulb"},
+  add_opcode_str({"mulq", "mull", "mulw", "mulb"},
   [this] (Operand src, SymBitVector a, SymState& ss) {
     auto n = a.width();
 
@@ -224,7 +249,7 @@ void SimpleHandler::add_all() {
     ss.set(eflags_cf, of);
   });
 
-  add_opcode({"imulq", "imull", "imulw", "imulb"},
+  add_opcode_str({"imulq", "imull", "imulw", "imulb"},
   [this] (Operand src, SymBitVector a, SymState& ss) {
     auto n = a.width();
 
@@ -269,7 +294,7 @@ void SimpleHandler::add_all() {
     ss.set(eflags_cf, of);
   });
 
-  add_opcode({"idivb", "idivw", "idivl", "idivq"},
+  add_opcode_str({"idivb", "idivw", "idivl", "idivq"},
   [this] (Operand src, SymBitVector a, SymState& ss) {
     auto n = a.width();
 
@@ -310,7 +335,7 @@ void SimpleHandler::add_all() {
     ss.set(eflags_cf, SymBool::tmp_var());
   });
 
-  add_opcode({"divb", "divw", "divl", "divq"},
+  add_opcode_str({"divb", "divw", "divl", "divq"},
   [this] (Operand src, SymBitVector a, SymState& ss) {
     auto n = a.width();
 
@@ -351,7 +376,7 @@ void SimpleHandler::add_all() {
     ss.set(eflags_cf, SymBool::tmp_var());
   });
 
-  add_opcode({"incb", "incw", "incl", "incq"},
+  add_opcode_str({"incb", "incw", "incl", "incq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     SymBitVector one = SymBitVector::constant(dst.size(), 1);
 
@@ -365,7 +390,7 @@ void SimpleHandler::add_all() {
 
   // for min/max|ss/sd: can't be done with packed handler because the upper 96/64 bits are from src1, not dest in the v variant
 
-  add_opcode({"minsd"},
+  add_opcode_str({"minsd"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     SymFunction f("mincmp_double", 1, {64, 64});
     auto aa = a[63][0];
@@ -373,7 +398,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, a[127][64] || (f(aa, bb)[0]).ite(aa, bb));
   });
 
-  add_opcode({"vminsd"},
+  add_opcode_str({"vminsd"},
   [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("mincmp_double", 1, {64, 64});
     auto bb = b[63][0];
@@ -381,7 +406,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, b[127][64] || (f(bb, cc)[0]).ite(bb, cc), true);
   });
 
-  add_opcode({"minss"},
+  add_opcode_str({"minss"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     SymFunction f("mincmp_single", 1, {32, 32});
     auto aa = a[31][0];
@@ -389,7 +414,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, a[127][32] || (f(aa, bb)[0]).ite(aa, bb));
   });
 
-  add_opcode({"vminss"},
+  add_opcode_str({"vminss"},
   [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("mincmp_single", 1, {32, 32});
     auto bb = b[31][0];
@@ -397,7 +422,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, b[127][32] || (f(bb, cc)[0]).ite(bb, cc), true);
   });
 
-  add_opcode({"maxsd"},
+  add_opcode_str({"maxsd"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     SymFunction f("maxcmp_double", 1, {64, 64});
     auto aa = a[63][0];
@@ -405,7 +430,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, a[127][64] || (f(aa, bb)[0]).ite(aa, bb));
   });
 
-  add_opcode({"vmaxsd"},
+  add_opcode_str({"vmaxsd"},
   [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("maxcmp_double", 1, {64, 64});
     auto bb = b[63][0];
@@ -413,7 +438,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, b[127][64] || (f(bb, cc)[0]).ite(bb, cc), true);
   });
 
-  add_opcode({"maxss"},
+  add_opcode_str({"maxss"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     SymFunction f("maxcmp_single", 1, {32, 32});
     auto aa = a[31][0];
@@ -421,7 +446,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, a[127][32] || (f(aa, bb)[0]).ite(aa, bb));
   });
 
-  add_opcode({"vmaxss"},
+  add_opcode_str({"vmaxss"},
   [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("maxcmp_single", 1, {32, 32});
     auto bb = b[31][0];
@@ -430,7 +455,7 @@ void SimpleHandler::add_all() {
   });
 
   // can't be done with packed handler because of special case for memory
-  add_opcode({"movsd"},
+  add_opcode_str({"movsd"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     if (src.is_sse_register()) {
       if (dst.is_typical_memory()) {
@@ -445,7 +470,7 @@ void SimpleHandler::add_all() {
   });
 
   // can't be done with packed handler because of special case for memory
-  add_opcode({"vmovsd"},
+  add_opcode_str({"vmovsd"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     assert(src.is_typical_memory() || dst.is_typical_memory());
     if (src.is_typical_memory()) {
@@ -459,14 +484,14 @@ void SimpleHandler::add_all() {
   });
 
   // can't be done with packed handler because of special case for memory
-  add_opcode({"vmovsd"},
+  add_opcode_str({"vmovsd"},
   [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     assert(src1.is_sse_register() && src2.is_sse_register() && dst.is_sse_register());
     ss.set(dst, b[127][64] || c[63][0], true);
   });
 
   // can't be done with packed handler because of special case for memory
-  add_opcode({"movss"},
+  add_opcode_str({"movss"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     if (src.is_sse_register()) {
       if (dst.is_typical_memory()) {
@@ -481,7 +506,7 @@ void SimpleHandler::add_all() {
   });
 
   // can't be done with packed handler because of special case for memory
-  add_opcode({"vmovss"},
+  add_opcode_str({"vmovss"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     assert(src.is_typical_memory() || dst.is_typical_memory());
     if (src.is_typical_memory()) {
@@ -495,14 +520,14 @@ void SimpleHandler::add_all() {
   });
 
   // can't be done with packed handler because of special case for memory
-  add_opcode({"vmovss"},
+  add_opcode_str({"vmovss"},
   [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     assert(src1.is_sse_register() && src2.is_sse_register() && dst.is_sse_register());
     ss.set(dst, b[127][32] || c[31][0], true);
   });
 
 
-  add_opcode({"negb", "negw", "negl", "negq"},
+  add_opcode_str({"negb", "negw", "negl", "negq"},
   [] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(dst, -a);
     ss.set(eflags_cf, a != SymBitVector::constant(dst.size(), 0));
@@ -511,15 +536,15 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(-a);
   });
 
-  add_opcode({"nop", "nopb", "nopw", "nopl", "nopq"},
+  add_opcode_str({"nop", "nopb", "nopw", "nopl", "nopq"},
   [] (SymState& ss) {});
 
-  add_opcode({"notb", "notw", "notl", "notq"},
+  add_opcode_str({"notb", "notw", "notl", "notq"},
   [] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(dst, !a);
   });
 
-  add_opcode({"orb", "orw", "orl", "orq"},
+  add_opcode_str({"orb", "orw", "orl", "orq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     if (src.size() < dst.size())
       b = b.extend(dst.size());
@@ -531,7 +556,7 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a | b);
   });
 
-  add_opcode({"popq"},
+  add_opcode_str({"popq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     M64 target = M64(rsp);
     ss.set(dst, ss[target]);
@@ -540,7 +565,7 @@ void SimpleHandler::add_all() {
     }
   });
 
-  add_opcode({"popw"},
+  add_opcode_str({"popw"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     M16 target = M16(rsp);
     ss.set(dst, ss[target]);
@@ -549,7 +574,7 @@ void SimpleHandler::add_all() {
     }
   });
 
-  add_opcode({"popcntw", "popcntl", "popcntq"},
+  add_opcode_str({"popcntw", "popcntl", "popcntq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
 
     std::function<SymBitVector (SymBitVector, uint16_t)> helper =
@@ -576,7 +601,7 @@ void SimpleHandler::add_all() {
     ss.set(eflags_af, SymBool::_false());
   });
 
-  add_opcode({"pshuflw"},
+  add_opcode_str({"pshuflw"},
   [this] (Operand dst, Operand src, Operand i, SymBitVector a, SymBitVector b, SymBitVector imm, SymState &ss) {
     uint64_t constant = (static_cast<const SymBitVectorConstant*>(imm.ptr))->constant_;
     SymBitVector result;
@@ -588,7 +613,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, result);
   });
 
-  add_opcode({"vpshuflw"},
+  add_opcode_str({"vpshuflw"},
   [this] (Operand dst, Operand src, Operand i, SymBitVector a, SymBitVector b, SymBitVector imm, SymState &ss) {
     uint64_t constant = (static_cast<const SymBitVectorConstant*>(imm.ptr))->constant_;
     SymBitVector result;
@@ -607,29 +632,29 @@ void SimpleHandler::add_all() {
     ss.set(dst, result, true);
   });
 
-  add_opcode({"pushq"},
+  add_opcode_str({"pushq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(rsp, ss[rsp] - SymBitVector::constant(64, 8));
     M64 target = M64(rsp);
     ss.set(target, a.extend(64));
   });
 
-  add_opcode({"pushl"},
+  add_opcode_str({"pushl"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(rsp, ss[rsp] - SymBitVector::constant(64, 4));
     M32 target = M32(rsp);
     ss.set(target, a.extend(32));
   });
 
-  add_opcode({"pushw"},
+  add_opcode_str({"pushw"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     ss.set(rsp, ss[rsp] - SymBitVector::constant(64, 2));
     M16 target = M16(rsp);
     ss.set(target, a.extend(16));
   });
 
-  add_opcode({"shufpd"},
-             [this] (Operand dst, Operand src, Operand ctl,
+  add_opcode_str({"shufpd"},
+                 [this] (Operand dst, Operand src, Operand ctl,
   SymBitVector arg1, SymBitVector arg2, SymBitVector imm, SymState& ss) {
 
     SymBitVector output;
@@ -638,9 +663,9 @@ void SimpleHandler::add_all() {
     ss.set(dst, output);
   });
 
-  add_opcode({"vshufpd"},
-             [this] (Operand dst, Operand src1, Operand src2, Operand ctl,
-                     SymBitVector ignore, SymBitVector arg1, SymBitVector arg2, SymBitVector imm,
+  add_opcode_str({"vshufpd"},
+                 [this] (Operand dst, Operand src1, Operand src2, Operand ctl,
+                         SymBitVector ignore, SymBitVector arg1, SymBitVector arg2, SymBitVector imm,
   SymState& ss) {
 
     SymBitVector output;
@@ -655,8 +680,8 @@ void SimpleHandler::add_all() {
     ss.set(dst, output, true);
   });
 
-  add_opcode({"shufps"},
-             [this] (Operand dst, Operand src, Operand ctl,
+  add_opcode_str({"shufps"},
+                 [this] (Operand dst, Operand src, Operand ctl,
   SymBitVector arg1, SymBitVector arg2, SymBitVector imm, SymState& ss) {
 
     SymBitVector output;
@@ -670,9 +695,9 @@ void SimpleHandler::add_all() {
 
   });
 
-  add_opcode({"vshufps"},
-             [this] (Operand dst, Operand src, Operand src2, Operand ctl,
-                     SymBitVector ignore, SymBitVector arg1, SymBitVector arg2, SymBitVector imm,
+  add_opcode_str({"vshufps"},
+                 [this] (Operand dst, Operand src, Operand src2, Operand ctl,
+                         SymBitVector ignore, SymBitVector arg1, SymBitVector arg2, SymBitVector imm,
   SymState& ss) {
 
     SymBitVector output;
@@ -697,7 +722,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, output, true);
   });
 
-  add_opcode({"testb", "testw", "testl", "testq"},
+  add_opcode_str({"testb", "testw", "testl", "testq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     if (src.size() < dst.size())
       b = b.extend(dst.size());
@@ -708,7 +733,7 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a & b);
   });
 
-  add_opcode({"vbroadcastf128"},
+  add_opcode_str({"vbroadcastf128"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     uint16_t size = 128;
     SymBitVector output = b[size-1][0];
@@ -718,7 +743,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, output, true);
   });
 
-  add_opcode({"vbroadcastsd"},
+  add_opcode_str({"vbroadcastsd"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     uint16_t size = 64;
     SymBitVector output = b[size-1][0];
@@ -728,7 +753,7 @@ void SimpleHandler::add_all() {
     ss.set(dst, output, true);
   });
 
-  add_opcode({"vbroadcastss"},
+  add_opcode_str({"vbroadcastss"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     uint16_t size = 32;
     SymBitVector output = b[size-1][0];
@@ -739,13 +764,13 @@ void SimpleHandler::add_all() {
   });
 
 
-  add_opcode({"xchgb", "xchgw", "xchgl", "xchgq"},
+  add_opcode_str({"xchgb", "xchgw", "xchgl", "xchgq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     ss.set(dst, b);
     ss.set(src, a);
   });
 
-  add_opcode({"xorb", "xorw", "xorl", "xorq"},
+  add_opcode_str({"xorb", "xorw", "xorl", "xorq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     if (src.size() < dst.size())
       b = b.extend(dst.size());
@@ -757,14 +782,14 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a ^ b);
   });
 
-  add_opcode({"vzeroall"},
+  add_opcode_str({"vzeroall"},
   [this] (SymState& ss) {
     for (auto ymm : Constants::ymms()) {
       ss.set(ymm, SymBitVector::constant(256, 0));
     }
   });
 
-  add_opcode({"vzeroupper"},
+  add_opcode_str({"vzeroupper"},
   [this] (SymState& ss) {
     size_t i = 0;
     for (auto ymm : Constants::ymms()) {
@@ -773,56 +798,125 @@ void SimpleHandler::add_all() {
     }
   });
 
-  add_opcode({"vfmadd132ss"},
+
+  add_opcode({VCVTPD2DQ_XMM_YMM},
+  [this] (Operand dst, Operand src1, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("cvt_double_to_int32", 32, {64});
+    ss.set(dst, vectorize(f, a, b, a), true);
+  });
+
+  add_opcode({VCVTPD2PS_XMM_YMM},
+  [this] (Operand dst, Operand src1, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("cvt_double_to_single", 32, {64});
+    ss.set(dst, vectorize(f, a, b, a), true);
+  });
+
+  add_opcode({VCVTTPD2DQ_XMM_YMM},
+  [this] (Operand dst, Operand src1, SymBitVector a, SymBitVector b, SymState& ss) {
+    SymFunction f("cvt_double_to_int32_truncate", 32, {64});
+    ss.set(dst, vectorize(f, a, b, a), true);
+  });
+
+
+  add_opcode({VFMADD132PS_YMM_YMM_YMM},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmadd132_single", 32, {32, 32, 32});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({VFMADD132PD_YMM_YMM_YMM},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmadd132_double", 64, {64, 64, 64});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({VFMSUB132PS_YMM_YMM_YMM},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmsub132_single", 32, {32, 32, 32});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({VFMSUB132PD_YMM_YMM_YMM},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfmsub132_double", 64, {64, 64, 64});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({VFNMADD132PS_YMM_YMM_YMM},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfnmadd132_single", 32, {32, 32, 32});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({VFNMADD132PD_YMM_YMM_YMM},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfnmadd132_double", 64, {64, 64, 64});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({VFNMSUB132PS_YMM_YMM_YMM},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vfnmsub132_single", 32, {32, 32, 32});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+  add_opcode({VFNMSUB132PD_YMM_YMM_YMM},
+  [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    SymFunction f("vnfmsub132_double", 64, {64, 64, 64});
+    ss.set(dst, vectorize(f, a, b, c), true);
+  });
+
+
+  add_opcode_str({"vfmadd132ss"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("vfmadd132_single", 32, {32, 32, 32});
     auto res = f(a[31][0], b[31][0], c[31][0]);
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
   });
 
-  add_opcode({"vfmadd132sd"},
+  add_opcode_str({"vfmadd132sd"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("vfmadd132_double", 64, {64, 64, 64});
     auto res = f(a[63][0], b[63][0], c[63][0]);
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][64] || res, true);
   });
 
-  add_opcode({"vfmsub132ss"},
+  add_opcode_str({"vfmsub132ss"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("vfmsub132_single", 32, {32, 32, 32});
     auto res = f(a[31][0], b[31][0], c[31][0]);
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
   });
 
-  add_opcode({"vfmsub132sd"},
+  add_opcode_str({"vfmsub132sd"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("vfmsub132_double", 64, {64, 64, 64});
     auto res = f(a[63][0], b[63][0], c[63][0]);
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][64] || res, true);
   });
 
-  add_opcode({"vfnmadd132ss"},
+  add_opcode_str({"vfnmadd132ss"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("vfnmadd132_single", 32, {32, 32, 32});
     auto res = f(a[31][0], b[31][0], c[31][0]);
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
   });
 
-  add_opcode({"vfnmadd132sd"},
+  add_opcode_str({"vfnmadd132sd"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("vfnmadd132_double", 64, {64, 64, 64});
     auto res = f(a[63][0], b[63][0], c[63][0]);
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][64] || res, true);
   });
 
-  add_opcode({"vfnmsub132ss"},
+  add_opcode_str({"vfnmsub132ss"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("vfnmsub132_single", 32, {32, 32, 32});
     auto res = f(a[31][0], b[31][0], c[31][0]);
     ss.set(dst, SymBitVector::constant(128, 0) || ss[dst][127][32] || res, true);
   });
 
-  add_opcode({"vfnmsub132sd"},
+  add_opcode_str({"vfnmsub132sd"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     SymFunction f("vnfmsub132_double", 64, {64, 64, 64});
     auto res = f(a[63][0], b[63][0], c[63][0]);
@@ -837,7 +931,7 @@ Handler::SupportLevel SimpleHandler::get_support(const x64asm::Instruction& inst
     return Handler::NONE;
   }
 
-  auto opcode = get_opcode(instr);
+  auto opcode = instr.get_opcode();
 
   switch (instr.arity()) {
   case 0:
@@ -877,7 +971,7 @@ Handler::SupportLevel SimpleHandler::get_support(const x64asm::Instruction& inst
 
 void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& state) {
 
-  auto opcode = get_opcode(instr);
+  auto opcode = instr.get_opcode();
 
   error_ = "";
   if (!get_support(instr)) {
@@ -890,8 +984,7 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
   // 32..63 of rax.  The right way to solve this would be to setup handlers by
   // opcode *value* rather than memonic, but that seems like a lot to change
   // for this one bug.
-  if (opcode == "xchgl" &&
-      (instr.get_opcode() == XCHG_EAX_R32 || instr.get_opcode() == XCHG_R32_EAX) &&
+  if ((instr.get_opcode() == XCHG_EAX_R32 || instr.get_opcode() == XCHG_R32_EAX) &&
       instr.get_operand<R32>(0) == eax && instr.get_operand<R32>(1) == eax) {
     return;
   }
@@ -964,29 +1057,55 @@ void SimpleHandler::build_circuit(const x64asm::Instruction& instr, SymState& st
 
 }
 
-void SimpleHandler::add_opcode(vector<string> opcodes, ConstantOperator op) {
+void SimpleHandler::add_opcode(vector<Opcode> opcodes, ConstantOperator op) {
   for (auto it : opcodes) {
     operator_0_[it] = op;
   }
 }
-void SimpleHandler::add_opcode(vector<string> opcodes, UnaryOperator op) {
+void SimpleHandler::add_opcode(vector<Opcode> opcodes, UnaryOperator op) {
   for (auto it : opcodes) {
     operator_1_[it] = op;
   }
 }
-void SimpleHandler::add_opcode(vector<string> opcodes, BinaryOperator op) {
+void SimpleHandler::add_opcode(vector<Opcode> opcodes, BinaryOperator op) {
   for (auto it : opcodes) {
     operator_2_[it] = op;
   }
 }
-void SimpleHandler::add_opcode(vector<string> opcodes, TrinaryOperator op) {
+void SimpleHandler::add_opcode(vector<Opcode> opcodes, TrinaryOperator op) {
   for (auto it : opcodes) {
     operator_3_[it] = op;
   }
 }
-void SimpleHandler::add_opcode(vector<string> opcodes, QuadOperator op) {
+void SimpleHandler::add_opcode(vector<Opcode> opcodes, QuadOperator op) {
   for (auto it : opcodes) {
     operator_4_[it] = op;
+  }
+}
+
+void SimpleHandler::add_opcode_str(vector<string> opcodes, ConstantOperator op) {
+  for (auto it2 : Handler::opcodes_convert(opcodes)) {
+    operator_0_[it2] = op;
+  }
+}
+void SimpleHandler::add_opcode_str(vector<string> opcodes, UnaryOperator op) {
+  for (auto it2 : Handler::opcodes_convert(opcodes)) {
+    operator_1_[it2] = op;
+  }
+}
+void SimpleHandler::add_opcode_str(vector<string> opcodes, BinaryOperator op) {
+  for (auto it2 : Handler::opcodes_convert(opcodes)) {
+    operator_2_[it2] = op;
+  }
+}
+void SimpleHandler::add_opcode_str(vector<string> opcodes, TrinaryOperator op) {
+  for (auto it2 : Handler::opcodes_convert(opcodes)) {
+    operator_3_[it2] = op;
+  }
+}
+void SimpleHandler::add_opcode_str(vector<string> opcodes, QuadOperator op) {
+  for (auto it2 : Handler::opcodes_convert(opcodes)) {
+    operator_4_[it2] = op;
   }
 }
 

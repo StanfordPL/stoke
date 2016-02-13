@@ -56,19 +56,9 @@ public:
     sound_nullspace_ = b;
     return *this;
   }
-  /** Set the aliasing strategy for bounded validator */
-  DdecValidator& set_alias_strategy(ObligationChecker::AliasStrategy as) {
-    alias_strategy_ = as;
-    return *this;
-  }
   /** Set the bound for bounded validator */
   DdecValidator& set_bound(size_t bound) {
     bound_ = bound;
-    return *this;
-  }
-  /** Turn on NaCl Mode */
-  DdecValidator& set_nacl(bool nacl) {
-    nacl_ = nacl;
     return *this;
   }
 
@@ -80,9 +70,9 @@ private:
   /** Find all invariants with CEGAR-style search. */
   std::vector<ConjunctionInvariant*> find_invariants(const Cfg& target, const Cfg& rewrite);
   /** Learn invariants from CpuStates */
-  ConjunctionInvariant* learn_disjunction_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, std::vector<CpuState> states, std::vector<CpuState> states2, const x64asm::Instruction& target_instr, const x64asm::Instruction& rewrite_instr);
+  ConjunctionInvariant* learn_disjunction_invariant(const Cfg& target, const Cfg& rewrite, size_t cutpoint);
   /** Learn invariants from CpuStates */
-  ConjunctionInvariant* learn_simple_invariant(x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, std::vector<CpuState> states, std::vector<CpuState> states2);
+  ConjunctionInvariant* learn_simple_invariant(const Cfg& target, const Cfg& rewrite, x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, const std::vector<CpuState>& states, const std::vector<CpuState>& states2);
   /** Use bounded validator to check the invariants. */
   std::vector<CpuState> check_invariants(const Cfg& target, const Cfg& rewrite, std::vector<ConjunctionInvariant*> invariants);
   /** Use bounded validator to check the cutpoints. */
@@ -106,11 +96,6 @@ private:
   bool no_bv_;
   /** Use the sound nullspace computation? */
   bool sound_nullspace_;
-  /** Aliasing strategy for bounded validator. */
-  ObligationChecker::AliasStrategy alias_strategy_;
-
-  /** Nacl */
-  bool nacl_;
 };
 
 } // namespace stoke

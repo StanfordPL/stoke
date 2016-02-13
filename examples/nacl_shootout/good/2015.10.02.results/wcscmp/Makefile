@@ -1,5 +1,5 @@
 
-ARGS=--solver z3 --no_ddec_bv --test_set "{ 0 .. 50 }" --sound_nullspace
+ARGS=--solver z3 --no_ddec_bv --test_set "{ 0 .. 50 }" --sound_nullspace --verify_nacl --alias_strategy string
 DEF_IN="{ %r15 %rdi %rsi }"
 LIVE_OUT="{ %rax }" 
 

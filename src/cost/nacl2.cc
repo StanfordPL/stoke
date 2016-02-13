@@ -350,13 +350,13 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
     }
 
     if (instr.is_label_defn()) {
-      Label l = instr.get_operand<Label>(0);
-      if (!jump_targets.count(l)) {
+      //Label l = instr.get_operand<Label>(0);
+      //if (!jump_targets.count(l)) {
         // case 1
         for (size_t j = 0; j < 32; ++j) {
           table[j][i+1] = table[j][i];
         }
-      } else {
+      /*} else {
         // case 2
         uint64_t min_cost = INFTY;
         for (size_t j = 0; j < 32; ++j) {
@@ -364,7 +364,7 @@ typename NaCl2Cost<debug>::result_type NaCl2Cost<debug>::operator()(const Cfg& c
             min_cost = MIN(table[j][i] + ((32 - j) & 0x1f), min_cost);
         }
         table[0][i+1] = min_cost;
-      }
+      }*/
     } else if (instr.is_call()) {
       uint64_t min_cost = INFTY;
       for (size_t j = 0; j <= 32 - 5; ++j) {

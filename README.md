@@ -1,7 +1,7 @@
 STOKE
 =====
 
-STOKE is a stochastic optimizer for the x86_64 instruction set. STOKE uses
+STOKE is a stochastic optimizer for the x86-64 instruction set. STOKE uses
 random search to explore the extremely high-dimensional space of all possible
 program transformations. Although any one random transformation is unlikely to
 produce a code sequence that is both correct and an improvement over the
@@ -42,20 +42,19 @@ Prerequisites
 
 STOKE will run on modern 64-bit x86 processors.  We officially support Haswell
 processors with AVX2 extensions.  STOKE should also run on Sandy Bridge
-systems (with AVX, but not AVX2), and Nehalem systems without either extension;
-however officially these targets are not supported.  
+systems (with AVX, but not AVX2), and Nehalem systems without either extension.
 
 To check what level of hardware support you have, run:
 
     $ less /proc/cpuinfo
-    
+
 and check if the following cpu flags are present:
 
     flags: ... avx avx2 bmi bmi2 popcnt ...
 
 If you don't have 'avx' or 'avx2', you will need to compile for nehalem.  If
 you have 'avx', but not avx2, you will compile for 'sandybridge'.  If you have
-both, you can use the default make targets.  Build instructions are in the next
+both, you can compile for 'haswell'.  Build instructions are in the next
 section.
 
 STOKE is supported on the latest Ubuntu LTS release; in practice, it will also
@@ -73,56 +72,30 @@ satisfied by typing:
 The rest of the dependencies will be fetched automatically as part of the build
 process.
 
-Choosing a STOKE version
+Downloading STOKE
 =====
 
 The entire STOKE code base is available on GitHub under the Apache Software
-License version 2.0 at [github.com/StanfordPL/stoke-release](https://github.com/StanfordPL/stoke-release/).
+License version 2.0 at [github.com/StanfordPL/stoke](https://github.com/StanfordPL/stoke/).
 
-We provide both stable releases as well as our latest development code.  There are different trade-offs in deciding which one to use:
+To check it out, type:
 
-- **Development branch**:  This is our development branch, that
-we use day-to-day.  It contains the latest bug fixes and features, but also the
-latest bugs.  Sometimes it noticeably breaks, but usually it's okay.  The only
-guarantee is that this branch will always pass our regression tests.  We
-sometimes make non-backwards compatible changes, such as changing the syntax of
-command-line arguments.  We can't promise support for this, but feel free to
-ask.
-- **Release**:  We typically release the version that corresponds to the papers
-we write.  Most likely this is a version of STOKE that has been used to run the
-experiments for a paper, and at least worked for that task.  However, we rarely
-update releases, and so they might contain bugs, some of which may have already
-been fixed by us.  We also don't tend to release very often, so a release might
-be considerably out-of-date.
+    $ git clone https://github.com/StanfordPL/stoke
 
-We leave it to the user to decide which version works best for them.  If you find a bug, please try the development branch first to see if has already been fixed.
-
-To get the development branch, type:
-
-    $ git clone -b development https://github.com/StanfordPL/stoke-release
-
-The `master` branch always points to the latest release (plus potentially some back-ported bugfixes).  To get it, type:
-
-    $ git clone -b master https://github.com/StanfordPL/stoke-release
-
-or alternatively download it under the releases on GitHub.
-
+This will check out the default `develop` branch.  Unless you are looking for a specific version or modification of STOKE, this is the branch to use.  It contains all the latest changes and is reasonably stable.  This branch is supposed to always pass all tests.
 
 Building STOKE
 =====
 
 See the previous sections on how to download STOKE, a list of dependencies, and to check your hardware
 support level.  The remainder of STOKE's software dependencies are available on
-GitHub and will be downloaded automatically the first time that STOKE is built.
-To build STOKE for a Haswell system type the appropriate command for your
-system (the default is Haswell):
+GitHub and will be downloaded automatically the first time that STOKE is built.  When you build STOKE the first time, run
+
+    $ ./configure.sh
+
+This will figure out the correct build parameters (such as the platform).  To build STOKE, run
 
     $ make
-
-If you are on a different architecture, use the appropriate target:
-
-    $ make sandybridge
-    $ make nehalem
 
 To add STOKE and its related components to your path, type:
 
@@ -131,8 +104,6 @@ To add STOKE and its related components to your path, type:
 To run the tests, choose the appropriate command:
 
     $ make test
-    $ make sandybridge_test
-    $ make nehalem_test
 
 The files generated during the build process can be deleted by typing:
 
@@ -186,7 +157,7 @@ int main(int argc, char** argv) {
 ```
 
 STOKE is a compiler and programming language agnostic optimization tool. It can
-be applied to any x86_64 ELF binary. Although this example uses the GNU
+be applied to any x86-64 ELF binary. Although this example uses the GNU
 toolchain, nothing prevents the use of other tools. To build this code with
 full optimizations, type:
 
@@ -390,7 +361,7 @@ instead of the `popcntq` instruction, which operates on the whole thing.
 
 The STOKE sandbox will safely halt the execution of rewrites that perform
 undefined behavior. This includes leaving registers in a state that violates
-the x86_64 callee-save ABI, dereferencing invalid memory, performing a
+the x86-64 callee-save ABI, dereferencing invalid memory, performing a
 computation that results in a floating-point exception, or becoming trapped in
 a loop that performs more than `max_jumps` (see `search.conf`, below). 
 
@@ -532,11 +503,11 @@ As expected, the results are close to an order of magnitude faster than the orig
 Using the Formal Validator
 -----
 
-This release of STOKE includes a formal validator.  It's design and interface
+STOKE includes a formal validator.  It's design and interface
 are detailed in the `src/validator/README.md` file.  To use the formal
 validator instead of hold out testing, specify `--strategy bounded` for any
 STOKE binary that you use.  For code with loops, all paths will be explored up
-to a certain depth, specified using the --bound argument, which defaults to 2.
+to a certain depth, specified using the --bound argument, which defaults to 2.  There's also `--strategy ddec` which attempts to run the data-driven equivalence checking algorithm; however, the current implementation isn't very robust -- please file bug reports with (target, rewrite) pairs that fail to validate but should.
 
 An example of using the validator can be found in the `examples/pairity`
 folder; this example has a Makefile much like the tutorial's and should be easy
@@ -607,9 +578,8 @@ Extending STOKE
 =====
 
 This repository contains a minimal implementation of STOKE as described in
-ASPLOS 2013, OOPSLA 2013, and PLDI 2014. Most, but not all of the features
-described in those papers appear here. Some of the more experimental features
-are not yet ready for public release and have not been provided. Developers who
+the academic papers about STOKE. Most, but not all of the features
+described in those papers appear here. Developers who
 are interested in refining these features or adding their own extensions are
 encouraged to try modifying this implementation as described below.
 

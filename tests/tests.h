@@ -57,6 +57,7 @@ using namespace x64asm;
 #include "tests/symstate/bitvector.h"
 #include "tests/tunit/tunit.h"
 #include "tests/validator/invariants.h"
+#include "tests/validator/obligation_checker.h"
 #include "tests/verifier/verifier.h"
 #include "tests/fixture.h"
 
@@ -67,9 +68,7 @@ using namespace x64asm;
 #include "tests/x64asm/alt_read_write_sets.h"
 #include "tests/validator/fuzz.h"
 #include "tests/validator/simple.h"
-#include "tests/validator/ddec.h"
 #include "tests/validator/bounded.h"
-
 #endif
 
 #if !defined(NO_VERY_SLOW_TESTS) && !defined(NO_SLOW_TESTS)
@@ -77,7 +76,9 @@ using namespace x64asm;
 // large tests (anything slower)
 #include "tests/integration/integration.h"
 #include "tests/validator/bounded_long.h"
+#include "tests/validator/ddec.h"
 #include "tests/validator/ddec_long.h"
+#include "tests/validator/ddec_nacl.h"
 #include "tests/validator/handlers.h"
 #include "tests/validator/memory.h"
 #include "tests/x64asm/parsing.h"

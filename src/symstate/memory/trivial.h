@@ -56,6 +56,7 @@ public:
   /** Reads from the memory.  Returns value and segv condition. */
   std::pair<SymBitVector,SymBool> read(SymBitVector address, uint16_t size, size_t line_no) {
 
+    //std::cout << "Recording a read for line=" << line_no << " size=" << size << std::endl;
     auto value = SymBitVector::tmp_var(size);
 
     SymbolicAccess sa;

@@ -44,7 +44,7 @@ public:
     constant_ = constant;
   }
 
-  SymBool operator()(const SymState& target, const SymState& rewrite) const {
+  SymBool operator()(SymState& target, SymState& rewrite, size_t& tln, size_t& rln) const {
     SymBitVector sum = SymBitVector::constant(64, 0);
 
     //64-bit
