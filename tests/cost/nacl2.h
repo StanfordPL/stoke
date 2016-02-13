@@ -113,8 +113,8 @@ TEST_F(NaCl2CostTest, MisalignedJumpTarget) {
 
   auto cfg = Cfg(code);
 
-  // to fix this, we would need to remove 1 nop bytes
-  EXPECT_EQ(1ul, fxn(cfg).second);
+  // this is okay because it's a direct jump
+  EXPECT_EQ(0ul, fxn(cfg).second);
 }
 
 TEST_F(NaCl2CostTest, RestrictedRegisterOk) {

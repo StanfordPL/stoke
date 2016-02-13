@@ -95,6 +95,7 @@
 .L_40:                            #        0xa0  0      OPC=<label>         
   addl $0x1, %eax                 #  82    0xa0  3      OPC=addl_r32_imm8   
   incl %r8d                       #  83    0xa3  3      OPC=incl_r32        
+.foo:
   cmpb $0x0, (%r15,%r8,1)         #  84    0xa6  5      OPC=cmpb_m8_imm8    
   jne .L_40                       #  85    0xab  6      OPC=jne_label_1     
   nop                             #  86    0xb1  1      OPC=nop             

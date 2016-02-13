@@ -110,14 +110,12 @@ void Cutpoints::compute() {
   cout << "Viable options: " << viable_cutpoints.size() << endl;
   cout << "Target traces: " << target_traces_.size() << endl;
   cout << "Rewrite traces: " << rewrite_traces_.size() << endl;
-  /*
   size_t cutpt_option;
   do {
     cout << "Which cutpoint do you want to use?" << endl;
     cin >> cutpt_option;
   } while(cutpt_option >= viable_cutpoints.size());
   chosen_cutpoints_ = viable_cutpoints[cutpt_option];
-  */
   )
 
   auto& target_cuts = chosen_cutpoints_.first;
