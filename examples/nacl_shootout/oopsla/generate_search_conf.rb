@@ -101,7 +101,7 @@ def print_benchmark(name, data)
     end
   end
 
-  cycle_timeout = 500000
+  cycle_timeout = 200000
   repetitions = 20
 
 
@@ -155,7 +155,7 @@ def print_benchmark(name, data)
 
     file.write("## Miscelaneous\n")
     file.write("--out result.s\n")
-    file.write("--statistics_interval 100000\n")
+    file.write("--statistics_interval 25000\n")
     file.write("--postprocessing nacl\n")
     file.write("\n")
 

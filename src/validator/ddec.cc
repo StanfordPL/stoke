@@ -587,8 +587,8 @@ ConjunctionInvariant* DdecValidator::learn_disjunction_invariant(const Cfg& targ
   auto target_cuts = cutpoints_->target_cutpoint_locations();
   auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
 
-  auto target_regs = target.def_ins(target_cuts[cutpoint]);
-  auto rewrite_regs = rewrite.def_ins(rewrite_cuts[cutpoint]);
+  auto target_regs = target.def_outs(target_cuts[cutpoint]);
+  auto rewrite_regs = rewrite.def_outs(rewrite_cuts[cutpoint]);
 
   auto last_target_instr = get_last_instr(target, target_cuts[cutpoint]);
   auto last_rewrite_instr = get_last_instr(rewrite, rewrite_cuts[cutpoint]);
@@ -930,25 +930,13 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
       c.reg = *r;
       c.is_rewrite = k;
       c.zero_extend = true;
-
-      R reg = *r;
-
-      if (reg.size() == 64) {
-        //if(!r64_exclude.contains(*static_cast<R64*>(&reg))) {
-        columns.push_back(c);
-        //}
-      }
-//XXX:add only 64 bit columns
-      /*c.reg = r32s[reg];
       columns.push_back(c);
-
-      if(try_sign_extend_) {
-        c.zero_extend = false;
-        columns.push_back(c);
-      }*/
-
     }
   }
+
+ for(auto it : columns) {
+   cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.zero_extend << endl;
+ }
 
   size_t num_columns = columns.size() + 1;
   size_t tc_count = target_states.size();
@@ -981,14 +969,12 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
     matrix[i*num_columns + num_columns - 1] = 1;
   }
 
-  /*
   for(size_t i = 0; i < tc_count; ++i) {
     for(size_t j = 0; j < num_columns; ++j) {
       cout << dec << matrix[i*num_columns + j] << " ";
     }
     cout << endl;
   }
-  */
 
   uint64_t** nullspace_out;
   size_t dim;
