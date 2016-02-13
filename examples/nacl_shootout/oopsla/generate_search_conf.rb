@@ -5,7 +5,7 @@ benchmarks = {
     :def_in         => "{ %rsp %rbp %r15 %rdi %rsi }",
     :live_out       => "{ %rax }",
     :training_set   => "{ 0 1 2 3 4 10 11 12 13 20 21 22 23 30 31 40 41 50 60 70 80 }",
-    :preserve_regs  => "{ %rbx %rsp %rbp %r12 %r13 %r14 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
     :mem_ops_regs   => ["%rsi", "%rdi"],
     :mem_ops_cons   => ["0x0", "0x4", "-0x4"],
     :alias_strategy => "string_antialias",
@@ -101,6 +101,9 @@ def print_benchmark(name, data)
     end
   end
 
+  cycle_timeout = 500000
+  repetitions = 20
+
 
   File.open("#{name}/search.conf", 'w') do |file|
 
@@ -111,12 +114,11 @@ def print_benchmark(name, data)
     file.write("\n")
 
     file.write("## Search\n")
-    file.write("--cycle_timeout 500000\n")
-    file.write("--timeout_iterations 5000000 1\n")
+    file.write("--cycle_timeout #{cycle_timeout}\n")
+    file.write("--timeout_iterations #{cycle_timeout*repetitions}\n")
     file.write("--timeout_seconds 0\n")
     file.write("--init target\n")
     file.write("--target target.s\n")
-    file.write("--init target\n")
     file.write("\n")
 
     file.write("## Cost\n")
