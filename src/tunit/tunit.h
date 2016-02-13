@@ -52,6 +52,11 @@ struct TUnit {
   const x64asm::Code& get_code() const {
     return code_;
   }
+  
+  /** Returns the underlying code sequence */
+  x64asm::Code& get_code() {
+    return code_;
+  }
 
   /** Returns the label at the beginning of this function */
   const x64asm::Label& get_leading_label() const {

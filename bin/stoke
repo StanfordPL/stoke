@@ -28,6 +28,7 @@ then
 	echo "  replace             replace the contents of a binary file"
 	echo "  search              run STOKE search"
 	echo "  searchexpt          run STOKE search in limited experiment mode"
+	echo "  logparse            parse a logfile"
 	echo "  testcase            generate a STOKE testcase file"
 	echo ""
 	echo "  debug cfg           generate the control flow graph for a function"
@@ -130,6 +131,9 @@ then
 elif [ "$SCMD" == "searchexpt" ]
 then
 	exec $HERE/stoke_searchexpt "$@"
+elif [ "$SCMD" == "logparse" ]
+then
+	exec $HERE/stoke_logparse "$@"
 elif [ "$SCMD" == "testcase" ]
 then
 	exec $HERE/stoke_testcase "$@"

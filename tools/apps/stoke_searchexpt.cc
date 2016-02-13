@@ -160,7 +160,8 @@ void search(ExperimentSearchState& state,
     if (quit_func(state))
       break;
 
-    if ((state.iteration % 5000) == 0 && state.iteration != 0) {
+    // if ((state.iteration % 5000) == 0 && state.iteration != 0) {
+    if (state.iteration != 0) {
       logger.checkpoint(state);
     }
 
@@ -221,7 +222,9 @@ public:
   void checkpoint(ExperimentSearchState& state) {
     uint64_t iteration = state.iteration;
     uint64_t cost = state.current_cost;
-    string code = code_to_string(state.current.get_code());
+    stringstream ss;
+    ss << state.current.get_code();
+    string code = ss.str();
     uint32_t code_size = code.size();
 
     write_header_byte(3, 3, 15);
@@ -245,8 +248,90 @@ private:
       int cost_size = cost_diff_size(state.current_cost, new_cost);
       write_header_byte(accept_state, cost_size, ti.move_type);
       write_cost_diff(cost_size, state.current_cost, new_cost);
-
-      // write move descriptor
+      
+      auto& code = state.current.get_code();
+      size_t index0 = ti.undo_index[0];
+      size_t index1 = ti.undo_index[1];
+      
+      switch(ti.move_type) {
+        case 0: { // AddNops
+          assert(false);
+          break;
+        }
+        case 1: { // Delete
+          assert(false);
+          break;
+        }
+        case 2: { // Instruction
+          write_instruction_index(index0);
+          write_instruction(code[index0]);
+          break;
+        }
+        case 3: { // Opcode
+          write_instruction_index(index0);
+          write_opcode_arity(code[index0].get_opcode(), 0);
+          break;
+        }
+        case 4: { // OpcodeWidth
+          write_instruction_index(index0);
+          write_opcode_arity(code[index0].get_opcode(), 0);
+          break;
+        }
+        case 5: { // Operand
+          Instruction old_ins = ti.undo_instr;
+          Instruction new_ins = code[index0];
+          assert(old_ins.arity() == new_ins.arity());
+          size_t diff_index = 0;
+          for (size_t i = 0; i < old_ins.arity(); i++) {
+            if (new_ins.get_operand<Operand>(i) != old_ins.get_operand<Operand>(i)) {
+              diff_index = i;
+              break;
+            }
+          }
+          write_instruction_index(index0);
+          write_instruction_index(diff_index);
+          write_operand(new_ins.get_operand<Operand>(diff_index));
+          break;
+        }
+        case 6: { // LocalSwap
+          write_instruction_index(index0);
+          write_instruction_index(index1);
+          break;
+        }
+        case 7: { // GlobalSwap
+          write_instruction_index(index0);
+          write_instruction_index(index1);
+          break;
+        }
+        case 8: { // Rotate
+          write_instruction_index(index0);
+          write_instruction_index(index1);
+          break;
+        }
+      }
+  }
+  void write_instruction_index(size_t index) {
+    assert(((size_t)(uint8_t)index) == index);
+    write_byte((uint8_t)index);
+  }
+  void write_opcode_arity(x64asm::Opcode op, int arity) {
+    int32_t num = op;
+    assert(0 <= num && num < 4096);
+    assert(0 <= arity && arity < 8);
+    uint16_t val = num | (((uint16_t)arity) << 12);
+    write_int16(val);
+  }
+  void write_operand(x64asm::Operand operand) {
+    static_assert(sizeof(x64asm::Operand) == 16, "operand must be 16 bytes");
+    out.write((char*)&operand, 16);
+  }
+  void write_instruction(x64asm::Instruction ins) {
+    int arity = ins.arity();
+    Opcode op = ins.get_opcode();
+    write_opcode_arity(op, arity);
+    for(size_t i = 0; i < (size_t)arity; i++) {
+      write_operand(ins.get_operand<Operand>(i));
+    }
   }
   void write_header_byte(int result, int cost_size, int move_type) {
     assert (0 <= result && result < 4);
@@ -255,7 +340,7 @@ private:
     uint8_t byte = (uint8_t)result;
     byte |= (uint8_t)cost_size << 2;
     byte |= (uint8_t)move_type << 4;
-    out.write((char*)&byte, 1);
+    write_byte(byte);
   }
   int cost_diff_size(Cost old_cost, Cost new_cost) {
     if (old_cost == new_cost)
@@ -270,16 +355,23 @@ private:
       case 0:
         break;
       case 1: {
-        int8_t diff = (int8_t)(new_cost - old_cost);
-        out.write((char*)&diff, 1);
+        write_byte((int8_t)(new_cost - old_cost));
         break;
       }
       case 2: {
-        int32_t diff = (int32_t)(new_cost - old_cost);
-        out.write((char*)&diff, 4);
+        write_int32((int32_t)(new_cost - old_cost));
         break;
       }
     }
+  }
+  void write_byte(uint8_t b) {
+    out.write((char*)&b, 1);
+  }
+  void write_int16(uint16_t i) {
+    out.write((char*)&i, 2);
+  }
+  void write_int32(uint32_t i) {
+    out.write((char*)&i, 4);
   }
   std::ofstream& out;
 };
