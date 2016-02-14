@@ -25,7 +25,7 @@
 
 
 #define OBLIG_DEBUG(X) { }
-#define CONSTRAINT_DEBUG(X) { }
+#define CONSTRAINT_DEBUG(X) { X }
 #define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
@@ -118,9 +118,11 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
 
   // Allocate a tiny bit of stack memory
   auto rsp_val = ceg[rsp];
-  BitVector zeros(64);
-  zeros.get_fixed_quad(0) = 0;
-  addr_value_pairs[rsp_val-8] = zeros;
+  if(rsp_val > 0x20 && rsp_val < 0xffffffffffffffe0) {
+    BitVector zeros(64);
+    zeros.get_fixed_quad(0) = 0;
+    addr_value_pairs[rsp_val-8] = zeros;
+  }
 
   for (size_t k = 0; k < 2; ++k) {
     auto& memory = k ? *rewrite_memory : *target_memory;

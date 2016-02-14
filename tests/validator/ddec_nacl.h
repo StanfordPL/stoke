@@ -109,11 +109,11 @@ private:
 class DdecNaclLongTest : public DdecNaclTest { };
 
 TEST_F(DdecNaclLongTest, wcpcpyOptimize) {
-  benchmark("wcpcpy", true, 0, 20, ObligationChecker::AliasStrategy::FLAT);
+  benchmark("wcpcpy", true, 0, 20, ObligationChecker::AliasStrategy::STRING_NO_ALIAS);
 }
 
 TEST_F(DdecNaclLongTest, wcpcpyTranslate) {
-  benchmark("wcpcpy", false, 0, 20, ObligationChecker::AliasStrategy::FLAT);
+  benchmark("wcpcpy", false, 0, 20, ObligationChecker::AliasStrategy::STRING_NO_ALIAS);
 }
 
 TEST_F(DdecNaclTest, wcslenOptimize) {
@@ -125,11 +125,11 @@ TEST_F(DdecNaclTest, wcslenTranslate) {
 }
 
 TEST_F(DdecNaclLongTest, wmemsetOptimize) {
-  benchmark("wmemset", true, 0, 100, ObligationChecker::AliasStrategy::FLAT);
+  benchmark("wmemset", true, 0, 100, ObligationChecker::AliasStrategy::STRING);
 }
 
 TEST_F(DdecNaclLongTest, wmemsetTranslate) {
-  benchmark("wmemset", false, 0, 100, ObligationChecker::AliasStrategy::FLAT);
+  benchmark("wmemset", false, 0, 100, ObligationChecker::AliasStrategy::STRING);
 }
 
 TEST_F(DdecNaclTest, wcsnlenOptimize) {
@@ -141,11 +141,11 @@ TEST_F(DdecNaclTest, wcsnlenTranslate) {
 }
 
 TEST_F(DdecNaclLongTest, wmemcmpOptimize) {
-  benchmark("wmemcmp", true, 0, 40, ObligationChecker::AliasStrategy::FLAT);
+  benchmark("wmemcmp", true, 0, 40, ObligationChecker::AliasStrategy::STRING);
 }
 
 TEST_F(DdecNaclLongTest, wmemcmpTranslate) {
-  benchmark("wmemcmp", false, 0, 40, ObligationChecker::AliasStrategy::FLAT);
+  benchmark("wmemcmp", false, 0, 40, ObligationChecker::AliasStrategy::STRING);
 }
 
 TEST_F(DdecNaclTest, wcschrOptimize) {
@@ -157,10 +157,10 @@ TEST_F(DdecNaclTest, wcschrTranslate) {
 }
 
 TEST_F(DdecNaclTest, strxfrmOptimize) {
-  benchmark("strxfrm", true, 0, 50, ObligationChecker::AliasStrategy::FLAT);
+  benchmark("strxfrm", true, 0, 50, ObligationChecker::AliasStrategy::STRING);
 }
 
-TEST_F(DdecNaclLongTest, strxfrmTranslate) {
+TEST_F(DdecNaclLongTest, DISABLED_strxfrmTranslate) {
   benchmark("strxfrm", false, 0, 50, ObligationChecker::AliasStrategy::FLAT);
 }
 
@@ -173,14 +173,14 @@ TEST_F(DdecNaclLongTest, wcscmpTranslate) {
 }
 
 TEST_F(DdecNaclLongTest, wmemchrOptimize) {
-  benchmark("wmemchr", true, 0, 80, ObligationChecker::AliasStrategy::FLAT);
+  benchmark("wmemchr", true, 0, 80, ObligationChecker::AliasStrategy::STRING);
 }
 
-TEST_F(DdecNaclLongTest, wcscpyOptimize) {
+TEST_F(DdecNaclLongTest, DISABLED_wcscpyOptimize) {
   benchmark("wcscpy", true, 0, 50, ObligationChecker::AliasStrategy::STRING_NO_ALIAS);
 }
 
-TEST_F(DdecNaclLongTest, wcscatOptimize) {
+TEST_F(DdecNaclLongTest, DISABLED_wcscatOptimize) {
   benchmark("wcscat", true, 0, 100, ObligationChecker::AliasStrategy::STRING_NO_ALIAS);
 }
 
@@ -193,7 +193,7 @@ TEST_F(DdecNaclLongTest, DISABLED_strcatOptimize) {
 }
 
 TEST_F(DdecNaclLongTest, wcsrchrOptimize) {
-  benchmark("wcsrchr", true, 0, 20, ObligationChecker::AliasStrategy::FLAT);
+  benchmark("wcsrchr", true, 90, 110, ObligationChecker::AliasStrategy::STRING);
 }
 
 } //namespace stoke
