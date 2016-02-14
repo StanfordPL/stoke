@@ -119,6 +119,7 @@ def print_benchmark(name, data)
     file.write("--timeout_seconds 0\n")
     file.write("--init target\n")
     file.write("--target target.s\n")
+    file.write("--verify_all\n")
     file.write("\n")
 
     file.write("## Cost\n")

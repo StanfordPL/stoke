@@ -114,6 +114,10 @@ auto& verify_all =
   cpputil::FlagArg::create("verify_all")
   .description("Verify whenever a presumably correct rewrite is found");
 
+auto& verify_all_outdir =
+  cpputil::ValueArg<string>::create("verify_all_outdir")
+  .default_val("");
+
 void sep(ostream& os, string c = "*") {
   for (size_t i = 0; i < 80; ++i) {
     os << c;
@@ -159,6 +163,8 @@ struct PcbArg {
   Verifier* verifier;
   Cfg* target;
   Sandbox* sb;
+  CorrectnessCost* fxn;
+  uint64_t* best_so_far;
 };
 
 void pcb(const ProgressCallbackData& data, void* arg) {
@@ -172,10 +178,16 @@ void pcb(const ProgressCallbackData& data, void* arg) {
   assert(data.state.best_yet.check_invariants());
   show_state(data.state, os);
 
+  auto best = data.state.best_correct_cost;
+  bool improvement = false;
+  if (best < *pcb_arg->best_so_far) {
+    improvement = true;
+  }
+
   os << endl << endl;
   sep(os);
 
-  if (verify_all) {
+  if (improvement && verify_all) {
     os << "Validating \"best correct\"" << endl;
     bool verified = pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_correct);
 
@@ -185,12 +197,19 @@ void pcb(const ProgressCallbackData& data, void* arg) {
     }
 
     if (verified) {
-      os << "Verified!" << endl;
+      *pcb_arg->best_so_far = best;
+      os << "[verify_all] Verified!" << endl;
     } else {
-      os << "Oops!  Found a counterexample.  Restarting." << endl;
+      os << "[verify_all] Oops!  Found a counterexample.  Restarting." << endl;
       verify_interrupt = true;
-      pcb_arg->search->stop();
-      //pcb_arg->sandbox.insert_input(verifier.get_counter_example());
+
+      auto cegs = pcb_arg->verifier->get_counter_examples();
+      if (cegs.size()) {
+        for (auto ceg : cegs) {
+          pcb_arg->sb->insert_input(ceg);
+        }
+        pcb_arg->fxn->recompute_inputs();
+      }
     }
   }
 }
@@ -367,7 +386,8 @@ int main(int argc, char** argv) {
   ScbArg scb_arg {&Console::msg(), nullptr};
   search.set_statistics_callback(scb, &scb_arg)
   .set_statistics_interval(stat_int);
-  PcbArg pcb_arg {Console::msg(), &search, &verifier, &target, &training_sb};
+  uint64_t best_so_far = (uint64_t)(-1);
+  PcbArg pcb_arg {Console::msg(), &search, &verifier, &target, &training_sb, NULL, &best_so_far};
   if (!no_progress_update_arg.value()) {
     search.set_progress_callback(pcb, &pcb_arg);
   }
@@ -397,6 +417,7 @@ int main(int argc, char** argv) {
   for (size_t i = 0; ; ++i) {
     verify_interrupt = false;
     CostFunctionGadget fxn(target, &training_sb);
+    pcb_arg.fxn = fxn.get_correctness_term();
 
     // determine iteration timeout
     Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];
@@ -406,6 +427,7 @@ int main(int argc, char** argv) {
     if (timeout_iterations_arg.value()) {
       timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
     }
+    cout << "cur_timeout=" << cur_timeout << "  timeout_left=" << timeout_left << "  total_iterations=" << total_iterations << endl;
     search.set_timeout_itr(std::min(cur_timeout, timeout_left));
 
     Console::msg() << "Running search (timeout is " << cur_timeout << " iterations";
@@ -438,6 +460,10 @@ int main(int argc, char** argv) {
     cout << "Starting cost: " << initial_cost.second << endl;
 
     const auto start_search = steady_clock::now();
+
+    // for PCB accounting
+    best_so_far = (uint64_t)(-1);
+
     search.run(target, fxn, init_arg, state, aux_fxns);
     search_elapsed += duration_cast<duration<double>>(steady_clock::now() - start_search);
 
@@ -451,6 +477,7 @@ int main(int argc, char** argv) {
       exit(1);
     }
 
+    /*
     const auto verified = verifier.verify(target, state.best_correct);
 
     if (verifier.has_error()) {
@@ -486,6 +513,8 @@ int main(int argc, char** argv) {
     } else {
       Console::msg() << "Restarting search" << endl;
     }
+    */
+    Console::msg() << "Restarting search" << endl;
   }
 
   if (postprocessing_arg == Postprocessing::FULL) {

@@ -145,6 +145,11 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
 
     if ((progress_cb_ != nullptr) && (new_best_yet || new_best_correct_yet)) {
       progress_cb_({state}, progress_cb_arg_);
+
+      const auto new_res = fxn(state.current, max + 1);
+      state.current_cost = new_res.second;
+      state.best_yet_cost = state.current_cost;
+      state.best_correct_cost = state.current_cost;
     }
   }
 

@@ -36,8 +36,14 @@ namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
 public:
-  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(), fxn_(build_fxn(target, sb)) {
+  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(), correctness_(NULL), fxn_(build_fxn(target, sb, &correctness_)) {
   }
+
+  // This is a hack for Berkeley's NaCl experiments to get a handle on the correctness function directly.
+  CorrectnessCost* get_correctness_term() {
+    return correctness_;
+  }
+
 
   result_type operator()(const Cfg& cfg, Cost max) {
     return (*fxn_)(cfg, max);
@@ -49,13 +55,17 @@ public:
 
 private:
 
+  CorrectnessCost* correctness_;
+
   CostFunction* fxn_;
 
-  static CostFunction* build_fxn(const Cfg& target, Sandbox* sb) {
+  static CostFunction* build_fxn(const Cfg& target, Sandbox* sb, CorrectnessCost** correctness_ptr) {
+
+    *correctness_ptr = new CorrectnessCostGadget(target, sb);
 
     CostParser::SymbolTable st;
+    st["correctness"] =  *correctness_ptr;
     st["binsize"] =      new BinSizeCost();
-    st["correctness"] =  new CorrectnessCostGadget(target, sb);
     st["latency"] =      new LatencyCostGadget();
     st["measured"] =     new MeasuredCost();
     st["nacl"] =         new NaClCost();
@@ -65,6 +75,7 @@ private:
     st["size"] =         new SizeCost();
     st["sseavx"] =       new SseAvxCost();
     st["nongoal"] =      new NonGoalCostGadget(target);
+
 
     CostParser cost_p(cost_function_arg.value(), st);
     auto cost_fxn = cost_p.run();

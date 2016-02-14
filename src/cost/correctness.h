@@ -45,7 +45,11 @@ public:
   static constexpr auto max_error_cost = (Cost)(0x1ull << 32);
 
   /** Create a new cost function with default values for extended features. */
-  CorrectnessCost(Sandbox* sb) : CostFunction(), counter_example_testcase_(-1) {
+  CorrectnessCost(Sandbox* sb) : CostFunction(),
+    target_(x64asm::Code( {
+    x64asm::Instruction(x64asm::NOP)
+  }), x64asm::RegSet::universe(), x64asm::RegSet::universe()),
+  counter_example_testcase_(-1) {
     sandbox_ = sb;
     const x64asm::Code code {
       {x64asm::LABEL_DEFN, {x64asm::Label{".main"}}},
@@ -62,6 +66,9 @@ public:
 
   /** Reset target function; evaluates testcases and caches the results. */
   CorrectnessCost& set_target(const Cfg& target, bool stack_out, bool heap_out);
+  /** Compute data on running target with sandbox inputs.  Used after updating sandbox. */
+  CorrectnessCost& recompute_inputs();
+
   /** Set metric for measuring distance between 64-bit values. */
   CorrectnessCost& set_distance(Distance d) {
     distance_ = d;
@@ -133,6 +140,10 @@ public:
   }
 
 private:
+
+  /** Cached copy of the target.  Used only by recompute_inputs(). */
+  Cfg target_;
+
   /** Method for measuring the distance between two 64-bit values. */
   Distance distance_;
   /** The set of registers that are live-out in the target. */
