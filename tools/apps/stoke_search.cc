@@ -15,6 +15,8 @@
 #include <chrono>
 #include <iostream>
 #include <sys/time.h>
+#include <iomanip>
+#include <ctime>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/column.h"
@@ -114,10 +116,6 @@ auto& verify_all =
   cpputil::FlagArg::create("verify_all")
   .description("Verify whenever a presumably correct rewrite is found");
 
-auto& verify_all_outdir =
-  cpputil::ValueArg<string>::create("verify_all_outdir")
-  .default_val("");
-
 void sep(ostream& os, string c = "*") {
   for (size_t i = 0; i < 80; ++i) {
     os << c;
@@ -167,6 +165,10 @@ struct PcbArg {
   uint64_t* best_so_far;
 };
 
+static string folder_name;
+static uint64_t result_count;
+static uint64_t restart_count;
+
 void pcb(const ProgressCallbackData& data, void* arg) {
   PcbArg* pcb_arg = (PcbArg*)arg;
   ostream& os = pcb_arg->os;
@@ -189,7 +191,12 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 
   if (improvement && verify_all) {
     os << "Validating \"best correct\"" << endl;
+    
+    milliseconds verify_start = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     bool verified = pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_correct);
+    milliseconds verify_end = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+    //verification time in milliseconds
+    uint64_t verification_time = (verify_end - verify_start).count();
 
     if (pcb_arg->verifier->has_error()) {
       os << "The verifier encountered an error:" << endl;
@@ -199,6 +206,31 @@ void pcb(const ProgressCallbackData& data, void* arg) {
     if (verified) {
       *pcb_arg->best_so_far = best;
       os << "[verify_all] Verified!" << endl;
+
+      // Update counter
+      result_count++;
+
+      // Open the outputs.csv file and record data.
+      stringstream outputs_filename;
+      outputs_filename << folder_name << "/" << "outputs.csv";
+
+      ofstream output_ofs;
+      output_ofs.open(outputs_filename.str(), std::ios_base::app);
+      output_ofs << result_count << ","                  // result number
+                  << data.state.best_correct_cost << ","  // cost
+                  << restart_count << ","                 // which restart are we on
+                  << verification_time                    // bv time
+                  << endl;
+      output_ofs.close();
+
+      // Write to #n.csv and record the rewrite.
+      stringstream result_filename;
+      result_filename << folder_name << "/" << result_count << ".s";
+
+      ofstream result_ofs(result_filename.str());
+      result_ofs << data.state.best_correct.get_function();
+      result_ofs.close();
+
     } else {
       os << "[verify_all] Oops!  Found a counterexample.  Restarting." << endl;
       verify_interrupt = true;
@@ -386,6 +418,7 @@ int main(int argc, char** argv) {
   ScbArg scb_arg {&Console::msg(), nullptr};
   search.set_statistics_callback(scb, &scb_arg)
   .set_statistics_interval(stat_int);
+
   uint64_t best_so_far = (uint64_t)(-1);
   PcbArg pcb_arg {Console::msg(), &search, &verifier, &target, &training_sb, NULL, &best_so_far};
   if (!no_progress_update_arg.value()) {
@@ -394,6 +427,27 @@ int main(int argc, char** argv) {
 
   size_t total_iterations = 0;
   size_t total_restarts = 0;
+
+  // NaCl variables
+  result_count = 0;
+  restart_count = 0;
+
+  time_t rawtime;
+  struct tm * timeinfo;
+  char buffer[80];
+
+  time(&rawtime);
+  timeinfo = localtime(&rawtime);
+  strftime(buffer,80,"%Y-%m-%d_%I:%M:%S",timeinfo);
+  folder_name = string(buffer);
+  mkdir(buffer, 0755);
+
+  stringstream outputs_filename;
+  outputs_filename << folder_name << "/" << "outputs.csv";
+
+  ofstream output_ofs;
+  output_ofs.open(outputs_filename.str(), std::ios_base::app);
+  output_ofs << "num,cost,restart_count,bv_time" << endl;
 
   // attempt to parse cycle_timeout argument
   vector<string> parts;
@@ -428,6 +482,8 @@ int main(int argc, char** argv) {
       timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
     }
     cout << "cur_timeout=" << cur_timeout << "  timeout_left=" << timeout_left << "  total_iterations=" << total_iterations << endl;
+    if(timeout_left > 400000)
+      break;
     search.set_timeout_itr(std::min(cur_timeout, timeout_left));
 
     Console::msg() << "Running search (timeout is " << cur_timeout << " iterations";
@@ -469,6 +525,7 @@ int main(int argc, char** argv) {
 
     total_iterations += search.get_statistics().iterations;
     total_restarts++;
+    restart_count++;
 
     if (state.interrupted && !(verify_all && verify_interrupt)) {
       Console::msg() << endl;
@@ -514,6 +571,12 @@ int main(int argc, char** argv) {
       Console::msg() << "Restarting search" << endl;
     }
     */
+
+    if (timeout_iterations_arg.value() && total_iterations >= timeout_iterations_arg.value()) {
+      show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, true, true);
+      Console::msg() << "All done!" << endl;
+    }
+
     Console::msg() << "Restarting search" << endl;
   }
 

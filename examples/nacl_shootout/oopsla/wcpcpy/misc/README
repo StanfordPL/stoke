@@ -1,0 +1,4 @@
+--verify_all experiments are here
+
+A_ has data from adding counterexample but not restaring
+B_ has data from not adding counterexample and not restarting, but reporting all that pass

@@ -5,12 +5,16 @@ benchmarks = {
     :def_in         => "{ %rsp %rbp %r15 %rdi %rsi }",
     :live_out       => "{ %rax }",
     :training_set   => "{ 0 1 2 3 4 10 11 12 13 20 21 22 23 30 31 40 41 50 60 70 80 }",
+    :test_set       => "{ 0 .. 20 }",
     :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
     :mem_ops_regs   => ["%rsi", "%rdi"],
     :mem_ops_cons   => ["0x0", "0x4", "-0x4"],
     :alias_strategy => "string_antialias",
+    :exec_timeout   => "30s",
   }
 }
+
+@verify_timeout = "30m"
 
 @always_preserve = [
   "%r15",
@@ -103,6 +107,33 @@ def print_benchmark(name, data)
 
   cycle_timeout = 200000
   repetitions = 20
+
+  File.open("#{name}/verify.sh", 'w') do |file|
+    file.write("#!/bin/bash\n");
+    file.write("\n")
+    file.write("cd $1\n")
+    file.write("for F in *.s; do\n")
+    file.write("  echo -n $F >> verify_times\n")
+    file.write("  echo -n ',' >> verify_times\n")
+    file.write("  /usr/bin/time --format '%e' --append -o verify_times  \\\n")
+    file.write("    timeout #{@verify_timeout} stoke debug verify \\\n")
+    file.write("    --target ../target.s \\\n")
+    file.write("    --rewrite $F \\\n")
+    file.write("    --strategy ddec \\\n")
+    file.write("    --alias_strategy #{data[:alias_strategy]} \\\n")
+    file.write("    --def_in '#{data[:def_in]}' \\\n")
+    file.write("    --live_out '#{data[:live_out]}' \\\n")
+    file.write("    --testcases ../testcases \\\n")
+    file.write("    --test_set '#{data[:test_set]}' \\\n")
+    file.write("    --heap_out \\\n")
+    file.write("    --sound_nullspace \\\n")
+    file.write("    --no_ddec_bv \\\n")
+    file.write("    --verify_nacl \\\n")
+    file.write("    --solver z3 \\\n")
+    file.write("    --result_file verify_times\n")
+    file.write("done\n")
+  end 
+  File.chmod(0755, "#{name}/verify.sh")
 
 
   File.open("#{name}/search.conf", 'w') do |file|
