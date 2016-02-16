@@ -297,7 +297,7 @@ class Job
 
   def debug(x)
     if @debug
-      puts "[debug][#{self.to_s}] #{x}"
+      puts "[debug][#{self.to_s}] #{x}\n"
     end
   end
 
@@ -323,9 +323,10 @@ class VerificationJob < Job
 
   def initialize(benchmark, rewrite_id, log_file)
     @benchmark = benchmark
-    @rewrite_file = mk_folder(benchmark, "verify") + "/#{rewrite_id}.s"
+    @rewrite_file = mk_folder(benchmark, "search") + "/outputs/#{rewrite_id}.s"
     @rewrite_id = rewrite_id
     @log_file = log_file
+    set_debug
   end
 
   def to_s
@@ -334,7 +335,7 @@ class VerificationJob < Job
 
   def run
     data = $benchmarks[@benchmark]
-    folder = mk_folder(benchmark, "verify")
+    folder = mk_folder(@benchmark, "verify")
     file = "#{folder}/#{@rewrite_id}.out"
 
     FileUtils.mkdir_p folder
@@ -347,17 +348,18 @@ class VerificationJob < Job
     cmd += " --alias_strategy #{data[:alias_strategy]}"
     cmd += " --def_in '#{data[:def_in]}'"
     cmd += " --live_out '#{data[:live_out]}'"
-    cmd += " --testcases ../testcases"
+    cmd += " --testcases #{@benchmark}/testcases"
     cmd += " --test_set '#{data[:test_set]}'"
     cmd += " --heap_out"
     cmd += " --sound_nullspace"
     cmd += " --no_ddec_bv"
     cmd += " --verify_nacl"
     cmd += " --solver z3"
-    cmd += " >#{file}.out 2>/dev/null"
+    cmd += " >#{file} 2>/dev/null"
 
+    debug "cmd: #{cmd}"
     verify_start = Time.new
-    shell(cmd, "")
+    shell(cmd, ".")
     verify_end = Time.new
     verify_time = (verify_end - verify_start).round(3)
 
@@ -405,7 +407,11 @@ class SearchJob < Job
       split = line.split(",")
       id = split[0]
       if(id != "num")
+        id = id.to_i
         debug "we found result #{id}"
+
+        v = VerificationJob.new(@benchmark, id, "#{mk_folder(@benchmark,"")}/verification_log.csv")
+        $queue.add_job(v)
       end
     end
   end
