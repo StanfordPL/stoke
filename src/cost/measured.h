@@ -78,7 +78,7 @@ public:
 
     auto instr = data.code[data.line];
     if (instr.is_nop()) {
-      if (ptr->nops_emitted_ >= 14) {
+      if (ptr->nops_emitted_ >= 7) {
         ptr->nops_emitted_ = 0;
       } else if (ptr->nops_emitted_ == 0) {
         ptr->latency_ += 1;

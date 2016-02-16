@@ -364,6 +364,21 @@ public:
       std::cout << get_code() << std::endl;
       std::cout << "INFO: " << which_undef_read() << std::endl;
     }
+    if(!invariant_no_undef_live_outs()) {
+      std::cout << "No invariant undef live outs" << std::endl;
+      std::cout << "BAD CODE: " << std::endl;
+      std::cout << "DEF IN: " << def_ins() << std::endl;
+      std::cout << "LIVE OUT: " << live_outs() << std::endl;
+      std::cout << get_code() << std::endl;
+      std::cout << "INFO: " << which_undef_read() << std::endl;
+
+    }
+    if(!invariant_can_assemble()) {
+      std::cout << "No invariant can assemble" << std::endl;
+    }
+    if(!function_.check_invariants()) {
+      std::cout << "Function invariants failed" << std::endl;
+    }
     */
     return invariant_no_undef_reads() &&
            invariant_no_undef_live_outs() &&

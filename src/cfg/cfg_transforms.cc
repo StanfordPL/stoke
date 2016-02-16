@@ -202,6 +202,74 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
   }
 
   // Replace ret with nacl exit code
+  /*
+  bool found = false;
+  do {
+    found = false;
+    for (size_t i = 0; i < cfg.get_code().size(); ++i) {
+      auto instr = cfg.get_code()[i];
+      if (instr.get_opcode() == RET) {
+
+        auto& func = cfg.get_function();
+
+        auto popq_r11 = Instruction(POP_R64_1, {r11});
+        auto andl_e0_r11 = Instruction(AND_R32_IMM8, { r11d, Imm8(0xe0) });
+        auto addq_r15_r11 = Instruction(ADD_R64_R64, { r11, r15 });
+        auto jmpq_r11 = Instruction(JMP_R64, { r11 });
+
+        func.insert(i, jmpq_r11);
+        func.insert(i, addq_r15_r11);
+        func.insert(i, andl_e0_r11);
+        func.insert(i, popq_r11);
+        func.remove(i+4);
+        cfg.recompute();
+
+
+        found = true;
+        break;
+      }
+    }
+  } while (found);
+  */
+
+  // Remove unreachable instructions at the end
+  for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
+    if (!cfg.is_reachable(cfg.get_loc(i).first)) {
+      bool ok = true;
+
+      // check to see if future instructions are reachable; if so, abort.
+      for (size_t j = i+1; j < ie; ++j) {
+        if (cfg.is_reachable(cfg.get_loc(j).first)) {
+          ok = false;
+          break;
+        }
+      }
+
+      // delete everything that's left.
+      if (ok) {
+        for (size_t j = i; j < ie; ++j) {
+          cfg.get_function().remove(i);
+        }
+        cfg.recompute();
+        break;
+      }
+    }
+  }
+
+
+  // Make sure that we've left everything back in a valid state before continuing
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+  return cfg;
+}
+
+Cfg& CfgTransforms::nacl_ret_transform(Cfg& cfg) {
+  // Assume that invariants are satisfied on entry
+  cfg.recompute();
+  assert(cfg.check_invariants());
+  assert(cfg.get_function().check_invariants());
+
+  // Replace ret with nacl exit code
   bool found = false;
   do {
     found = false;
@@ -230,32 +298,6 @@ Cfg& CfgTransforms::nacl_transform(Cfg& cfg) {
     }
   } while (found);
 
-  // Remove unreachable instructions at the end
-  for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
-    if (!cfg.is_reachable(cfg.get_loc(i).first)) {
-      bool ok = true;
-
-      // check to see if future instructions are reachable; if so, abort.
-      for (size_t j = i+1; j < ie; ++j) {
-        if (cfg.is_reachable(cfg.get_loc(j).first)) {
-          ok = false;
-          break;
-        }
-      }
-
-      // delete everything that's left.
-      if (ok) {
-        for (size_t j = i; j < ie; ++j) {
-          cfg.get_function().remove(i);
-        }
-        cfg.recompute();
-        break;
-      }
-    }
-  }
-
-
-  // Make sure that we've left everything back in a valid state before continuing
   assert(cfg.check_invariants());
   assert(cfg.get_function().check_invariants());
   return cfg;

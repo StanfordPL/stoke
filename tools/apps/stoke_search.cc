@@ -191,7 +191,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 
   if (improvement && verify_all) {
     os << "Validating \"best correct\"" << endl;
-    
+
     milliseconds verify_start = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     bool verified = pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_correct);
     milliseconds verify_end = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
@@ -217,18 +217,22 @@ void pcb(const ProgressCallbackData& data, void* arg) {
       ofstream output_ofs;
       output_ofs.open(outputs_filename.str(), std::ios_base::app);
       output_ofs << result_count << ","                  // result number
-                  << data.state.best_correct_cost << ","  // cost
-                  << restart_count << ","                 // which restart are we on
-                  << verification_time                    // bv time
-                  << endl;
+                 << data.state.best_correct_cost << ","  // cost
+                 << restart_count << ","                 // which restart are we on
+                 << verification_time                    // bv time
+                 << endl;
       output_ofs.close();
 
       // Write to #n.csv and record the rewrite.
       stringstream result_filename;
       result_filename << folder_name << "/" << result_count << ".s";
 
+      Cfg result_copy = data.state.best_correct;
+      result_copy.recompute();
+      CfgTransforms::nacl_transform(result_copy);
+
       ofstream result_ofs(result_filename.str());
-      result_ofs << data.state.best_correct.get_function();
+      result_ofs << result_copy.get_function();
       result_ofs.close();
 
     } else {
@@ -482,7 +486,7 @@ int main(int argc, char** argv) {
       timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
     }
     cout << "cur_timeout=" << cur_timeout << "  timeout_left=" << timeout_left << "  total_iterations=" << total_iterations << endl;
-    if(timeout_left > 400000)
+    if (timeout_left > 4000000 || timeout_left == 0)
       break;
     search.set_timeout_itr(std::min(cur_timeout, timeout_left));
 

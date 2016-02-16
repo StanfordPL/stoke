@@ -1,5 +1,7 @@
 #!/usr/bin/ruby
 
+### Per-Benchmark Settings
+
 benchmarks = {
   "wcpcpy" => {
     :def_in         => "{ %rsp %rbp %r15 %rdi %rsi }",
@@ -11,10 +13,70 @@ benchmarks = {
     :mem_ops_cons   => ["0x0", "0x4", "-0x4"],
     :alias_strategy => "string_antialias",
     :exec_timeout   => "30s",
+  },
+  "wcslen" => {
+    :def_in         => "{ %rdi %r15 }",
+    :live_out       => "{ %rax }",
+    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 222 160 200 }",
+    :test_set       => "{ 0 .. 20 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rdi", "%rdx"],
+    :mem_ops_cons   => ["0x4","0x0","-0x4"],
+    :alias_strategy => "flat",
+    :exec_timeout   => "3m",
+  },
+  "wmemset" => {
+    :def_in         => "{ %rdi %rsi %rdx %r15 }",
+    :live_out       => "{ %rax }",
+    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rdi", "%r8"],
+    :mem_ops_cons   => ["0x4","0x0","-0x4"],
+    :alias_strategy => "string",
+    :exec_timeout   => "30s",
+  },
+  "wcsnlen" => {
+    :def_in         => "{ %rdi %rsi %r15 }",
+    :live_out       => "{ %rax }",
+    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 222 160 200 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rax", "%rdi"],
+    :mem_ops_cons   => ["0x4","0x0","-0x4"],
+    :alias_strategy => "string",
+    :exec_timeout   => "30s",
+  },
+  "wmemcmp" => {
+    :def_in         => "{ %rdi %rsi %rdx %r15 }",
+    :live_out       => "{ %rax }",
+    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rdi", "%rsi"],
+    :mem_ops_cons   => ["0x4","0x0","-0x4"],
+    :alias_strategy => "string",
+    :exec_timeout   => "30s",
+  },
+  "wcschr" => {
+    :def_in         => "{ %rdi %rsi %r15 }",
+    :live_out       => "{ %rax }",
+    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rax"],
+    :mem_ops_cons   => ["0x4","0x0","-0x4"],
+    :alias_strategy => "string",
+    :exec_timeout   => "30s",
   }
 }
 
+### Global Settings
+
 @verify_timeout = "30m"
+@cycle_timeout = 200000
+@repetitions = 20
+
 
 @always_preserve = [
   "%r15",
@@ -105,9 +167,6 @@ def print_benchmark(name, data)
     end
   end
 
-  cycle_timeout = 200000
-  repetitions = 20
-
   File.open("#{name}/verify.sh", 'w') do |file|
     file.write("#!/bin/bash\n");
     file.write("\n")
@@ -145,8 +204,8 @@ def print_benchmark(name, data)
     file.write("\n")
 
     file.write("## Search\n")
-    file.write("--cycle_timeout #{cycle_timeout}\n")
-    file.write("--timeout_iterations #{cycle_timeout*repetitions}\n")
+    file.write("--cycle_timeout #{@cycle_timeout}\n")
+    file.write("--timeout_iterations #{@cycle_timeout*@repetitions}\n")
     file.write("--timeout_seconds 0\n")
     file.write("--init target\n")
     file.write("--target target.s\n")

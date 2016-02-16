@@ -60,6 +60,7 @@ public:
     transform_list[new OpcodeWidthTransform(pools)] = opcode_width_mass_arg.value();
     transform_list[new AddNopsTransform(pools)] = add_nops_mass_arg.value();
     transform_list[new DeleteTransform(pools)] = delete_mass_arg.value();
+    transform_list[new DeleteRangeTransform(pools)] = delete_mass_arg.value();
 
     for (auto pair : transform_list) {
       sub_multi_transform->insert_transform(pair.first, pair.second);

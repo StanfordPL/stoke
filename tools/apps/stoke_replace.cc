@@ -54,6 +54,8 @@ auto& input_offset = FlagArg::create("input_offset")
 auto& do_not_link_arg = FlagArg::create("do_not_link")
                         .description("Don't run linker.  Could avoid errors if no function calls are being made.");
 
+auto& nacl_arg = FlagArg::create("nacl")
+                 .description("replace 'ret' with appropriate sequence'");
 
 bool found = false;
 uint64_t fxn_offset = 0;
@@ -87,6 +89,9 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   // def-in/live-out aren't really important here
   // check_invariants() will fail here, but all we're trying to do is make types match
   Cfg cfg(rewrite_arg.value(), RegSet::empty(), RegSet::empty());
+
+  if(nacl_arg.value())
+    CfgTransforms::nacl_ret_transform(cfg);
 
   // Assemble the new function
   Assembler assm;

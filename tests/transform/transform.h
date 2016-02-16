@@ -153,7 +153,10 @@ TEST_P(TransformsTest, GlobalCopyMoveIsReversible) {
   check_move_reversible(transform);
 }
 
-
+TEST_P(TransformsTest, DeleteRangeMoveIsReversible) {
+  auto transform = DeleteRangeTransform(tp_);
+  check_move_reversible(transform);
+}
 
 TEST_P(TransformsTest, WeightedIsReversible) {
   auto transform = WeightedTransform(tp_);
@@ -170,6 +173,7 @@ TEST_P(TransformsTest, WeightedIsReversible) {
   transforms.push_back(new GlobalCopyTransform(tp_));
   transforms.push_back(new ReplaceNopTransform(tp_));
   transforms.push_back(new RotateTransform(tp_));
+  transforms.push_back(new DeleteRangeTransform(tp_));
 
   for (auto t : transforms)
     transform.insert_transform(t);
@@ -196,6 +200,7 @@ TEST_P(TransformsTest, MultiIsReversible) {
   transforms.push_back(new GlobalCopyTransform(tp_));
   transforms.push_back(new ReplaceNopTransform(tp_));
   transforms.push_back(new RotateTransform(tp_));
+  transforms.push_back(new DeleteRangeTransform(tp_));
 
   for (auto t : transforms)
     wtransform.insert_transform(t);
@@ -221,6 +226,7 @@ TEST_P(TransformsTest, MemoryIsReversible) {
   transforms.push_back(new LocalSwapTransform(tp_));
   transforms.push_back(new GlobalSwapTransform(tp_));
   transforms.push_back(new GlobalCopyTransform(tp_));
+  transforms.push_back(new DeleteRangeTransform(tp_));
   transforms.push_back(new ReplaceNopTransform(tp_));
   transforms.push_back(new RotateTransform(tp_));
 
@@ -251,6 +257,7 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   transforms.push_back(new RotateTransform(tp_));
   transforms.push_back(new AddNopsTransform(tp_));
   transforms.push_back(new GlobalCopyTransform(tp_));
+  transforms.push_back(new DeleteRangeTransform(tp_));
 
   for (auto t : transforms) {
     transform.insert_transform(t);

@@ -103,6 +103,17 @@ struct TUnit {
   bool invariant_hex_offsets() const;
   /** Checks that this function statisfies all invariants */
   bool check_invariants() const {
+    /*
+    if(!invariant_first_instr_is_label())
+      std::cout << "first instr is label" << std::endl;
+    if(!invariant_hex_sizes())
+      std::cout << "hex_sizes" << std::endl;
+    if(!invariant_hex_sizes())
+      std::cout << "invariant hex sizes" << std::endl;
+    if(!invariant_rip_offsets())
+      std::cout << "invariant rip offsets" << std::endl;
+
+      */
     return invariant_first_instr_is_label() &&
            invariant_hex_sizes() &&
            invariant_hex_offsets() &&

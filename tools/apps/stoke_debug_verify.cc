@@ -48,9 +48,9 @@ auto& machine_output_arg = ValueArg<string>::create("machine_output")
                            .description("Machine-readable output (result and counterexample)");
 
 auto& result_file = ValueArg<string>::create("result_file")
-                           .usage("<path/to/file.s>")
-                           .description("Append 'yes,' or 'no,' to this file")
-                           .default_val("");
+                    .usage("<path/to/file.s>")
+                    .description("Append 'yes,' or 'no,' to this file")
+                    .default_val("");
 
 void print_machine_output(bool verified, string error, string counterexample, bool has_counterexample) {
   ofstream f;
@@ -110,7 +110,7 @@ int main(int argc, char** argv) {
 
   Console::msg() << "Equivalent: " << (res ? "yes" : "no") << endl;
 
-  if(result_file.value().size()) {
+  if (result_file.value().size()) {
     ofstream ofs;
     ofs.open(result_file.value(), std::ios_base::app);
     ofs << (res ? "yes" : "no") << ",";

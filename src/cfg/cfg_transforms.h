@@ -32,6 +32,9 @@ public:
   static Cfg& remove_redundant(Cfg& cfg);
   /** Do postprocessing for NaCl */
   static Cfg& nacl_transform(Cfg& cfg);
+  /** Do postprocessing for NaCl */
+  static Cfg& nacl_ret_transform(Cfg& cfg);
+
 
   /** Returns a minimal Cfg that satisfies all invariants */
   static Cfg minimal_correct_cfg(const x64asm::RegSet& def_in, const x64asm::RegSet& live_out);

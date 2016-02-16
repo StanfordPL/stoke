@@ -32,6 +32,7 @@ struct TransformInfo {
   // Records information to undo the transform
   size_t undo_index[2];
   x64asm::Instruction undo_instr;
+  std::vector<x64asm::Instruction> more_instrs;
 
   // If multiple transforms were performed, here's a list
   TransformInfo* undo_next;

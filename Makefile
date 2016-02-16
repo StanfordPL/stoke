@@ -130,6 +130,7 @@ SRC_OBJ=\
 	\
 	src/transform/add_nops.o \
 	src/transform/delete.o \
+	src/transform/delete_range.o \
 	src/transform/global_swap.o \
 	src/transform/global_copy.o \
 	src/transform/instruction.o \
