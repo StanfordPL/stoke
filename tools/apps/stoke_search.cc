@@ -116,6 +116,11 @@ auto& verify_all =
   cpputil::FlagArg::create("verify_all")
   .description("Verify whenever a presumably correct rewrite is found");
 
+auto& folder_name_arg =
+  cpputil::ValueArg<string>::create("folder_name")
+  .description("a folder to put outputs into")
+  .default_val("");
+
 void sep(ostream& os, string c = "*") {
   for (size_t i = 0; i < 80; ++i) {
     os << c;
@@ -165,7 +170,6 @@ struct PcbArg {
   uint64_t* best_so_far;
 };
 
-static string folder_name;
 static uint64_t result_count;
 static uint64_t restart_count;
 
@@ -211,29 +215,31 @@ void pcb(const ProgressCallbackData& data, void* arg) {
       result_count++;
 
       // Open the outputs.csv file and record data.
-      stringstream outputs_filename;
-      outputs_filename << folder_name << "/" << "outputs.csv";
+      if(folder_name_arg.value().size()) {
+        stringstream outputs_filename;
+        outputs_filename << folder_name_arg.value() << "/" << "outputs.csv";
 
-      ofstream output_ofs;
-      output_ofs.open(outputs_filename.str(), std::ios_base::app);
-      output_ofs << result_count << ","                  // result number
-                 << data.state.best_correct_cost << ","  // cost
-                 << restart_count << ","                 // which restart are we on
-                 << verification_time                    // bv time
-                 << endl;
-      output_ofs.close();
+        ofstream output_ofs;
+        output_ofs.open(outputs_filename.str(), std::ios_base::app);
+        output_ofs << result_count << ","                  // result number
+                   << data.state.best_correct_cost << ","  // cost
+                   << restart_count << ","                 // which restart are we on
+                   << verification_time                    // bv time
+                   << endl;
+        output_ofs.close();
 
-      // Write to #n.csv and record the rewrite.
-      stringstream result_filename;
-      result_filename << folder_name << "/" << result_count << ".s";
+        // Write to #n.csv and record the rewrite.
+        stringstream result_filename;
+        result_filename << folder_name_arg.value() << "/" << result_count << ".s";
 
-      Cfg result_copy = data.state.best_correct;
-      result_copy.recompute();
-      CfgTransforms::nacl_transform(result_copy);
+        Cfg result_copy = data.state.best_correct;
+        result_copy.recompute();
+        CfgTransforms::nacl_transform(result_copy);
 
-      ofstream result_ofs(result_filename.str());
-      result_ofs << result_copy.get_function();
-      result_ofs.close();
+        ofstream result_ofs(result_filename.str());
+        result_ofs << result_copy.get_function();
+        result_ofs.close();
+      }
 
     } else {
       os << "[verify_all] Oops!  Found a counterexample.  Restarting." << endl;
@@ -436,22 +442,15 @@ int main(int argc, char** argv) {
   result_count = 0;
   restart_count = 0;
 
-  time_t rawtime;
-  struct tm * timeinfo;
-  char buffer[80];
+  if(folder_name_arg.value().size()) {
+    mkdir(folder_name_arg.value().c_str(), 0755);
+    stringstream outputs_filename;
+    outputs_filename << folder_name_arg.value() << "/" << "outputs.csv";
 
-  time(&rawtime);
-  timeinfo = localtime(&rawtime);
-  strftime(buffer,80,"%Y-%m-%d_%I:%M:%S",timeinfo);
-  folder_name = string(buffer);
-  mkdir(buffer, 0755);
-
-  stringstream outputs_filename;
-  outputs_filename << folder_name << "/" << "outputs.csv";
-
-  ofstream output_ofs;
-  output_ofs.open(outputs_filename.str(), std::ios_base::app);
-  output_ofs << "num,cost,restart_count,bv_time" << endl;
+    ofstream output_ofs;
+    output_ofs.open(outputs_filename.str(), std::ios_base::app);
+    output_ofs << "num,cost,restart_count,bv_time" << endl;
+  }
 
   // attempt to parse cycle_timeout argument
   vector<string> parts;
