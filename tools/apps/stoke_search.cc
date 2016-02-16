@@ -193,7 +193,14 @@ void pcb(const ProgressCallbackData& data, void* arg) {
   os << endl << endl;
   sep(os);
 
-  if (improvement && verify_all) {
+  bool nacl2_ok = false;
+
+  NaCl2Cost<false> nacl_fxn;
+  auto nacl2_result = nacl_fxn(data.state.best_correct).second;
+  os << "NaCl2 Cost: " << nacl2_result << endl;
+  nacl2_ok = nacl2_result == 0;
+
+  if (improvement && verify_all && nacl2_ok) {
     os << "Validating \"best correct\"" << endl;
 
     milliseconds verify_start = duration_cast<milliseconds>(system_clock::now().time_since_epoch());

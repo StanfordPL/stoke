@@ -17,6 +17,7 @@
 #include <csignal>
 #include <unistd.h>
 
+#include "src/cost/nacl2.h"
 #include "src/search/search.h"
 #include "src/transform/weighted.h"
 
@@ -138,6 +139,13 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
     const auto new_best_correct_yet = is_correct && ((new_cost == 0)
                                       || (new_cost < state.best_correct_cost));
     if (new_best_correct_yet) {
+      //cout << "Search found new best correct yet" << endl;
+      //NaCl2Cost<false> nacl_cost;
+      //auto val = nacl_cost(state.current).second;
+      //cout << "In search loop NaCl2 cost is " << val << endl;
+      //auto pair = fxn(state.current);
+      //cout << "And cost fxn says (" << pair.first << ", " << pair.second << ")" << endl;
+
       state.success = true;
       state.best_correct = state.current;
       state.best_correct_cost = new_cost;

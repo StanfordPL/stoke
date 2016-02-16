@@ -78,7 +78,7 @@ $benchmarks = {
 $global_settings = {
   :verify_timeout => "30m",
   :cycle_timeout => 5000, #200000,
-  :timeout_iterations => 5000*3, #200000*20,
+  :timeout_iterations => 5000, #200000*20,
 
   :always_preserve => [ 
     "%r15",
@@ -308,6 +308,7 @@ class Job
   end
 
   def shell(cmd, dir)
+    debug "cmd: #{cmd}"
     pid = Process.spawn(cmd, {:chdir => dir})
     $child_pids_lock.synchronize {
       $child_pids.push(pid)
@@ -319,71 +320,6 @@ class Job
   end
 end
 
-class VerificationJob < Job
-
-  def initialize(benchmark, rewrite_id, log_file)
-    @benchmark = benchmark
-    @rewrite_file = mk_folder(benchmark, "search") + "/outputs/#{rewrite_id}.s"
-    @rewrite_id = rewrite_id
-    @log_file = log_file
-    set_debug
-  end
-
-  def to_s
-    "Verify/#{@benchmark}/#{@rewrite_id}"
-  end
-
-  def run
-    data = $benchmarks[@benchmark]
-    folder = mk_folder(@benchmark, "verify")
-    file = "#{folder}/#{@rewrite_id}.out"
-
-    FileUtils.mkdir_p folder
-
-    ### Run verify command
-    cmd =  "stoke_debug_verify"
-    cmd += " --target #{@benchmark}/target.s" 
-    cmd += " --rewrite #{@rewrite_file}"
-    cmd += " --strategy ddec"
-    cmd += " --alias_strategy #{data[:alias_strategy]}"
-    cmd += " --def_in '#{data[:def_in]}'"
-    cmd += " --live_out '#{data[:live_out]}'"
-    cmd += " --testcases #{@benchmark}/testcases"
-    cmd += " --test_set '#{data[:test_set]}'"
-    cmd += " --heap_out"
-    cmd += " --sound_nullspace"
-    cmd += " --no_ddec_bv"
-    cmd += " --verify_nacl"
-    cmd += " --solver z3"
-    cmd += " >#{file} 2>/dev/null"
-
-    debug "cmd: #{cmd}"
-    verify_start = Time.new
-    shell(cmd, ".")
-    verify_end = Time.new
-    verify_time = (verify_end - verify_start).round(3)
-
-    ### Test for success
-    success = false
-    File.open(file).each do |line|
-      if /Equivalent/.match(line) then
-        if /yes/.match(line) then
-          success = true 
-        end
-      end
-    end
-    status = "fail"
-    if(success)
-      status = "verified"
-    end
-
-    ### Log the outcome
-    File.open(@log_file, 'a') { |logfile|
-      logfile.puts "#{@rewrite_id},#{status},#{verify_time}"
-    }
-  end
-
-end
 
 class SearchJob < Job
 
@@ -498,6 +434,123 @@ class SearchJob < Job
 
 end
 
+class VerificationJob < Job
+
+  def initialize(benchmark, rewrite_id, log_file)
+    @benchmark = benchmark
+    @rewrite_file = mk_folder(benchmark, "search") + "/outputs/#{rewrite_id}.s"
+    @rewrite_id = rewrite_id
+    @log_file = log_file
+    set_debug
+  end
+
+  def to_s
+    "Verify/#{@benchmark}/#{@rewrite_id}"
+  end
+
+  def run
+    data = $benchmarks[@benchmark]
+    folder = mk_folder(@benchmark, "verify")
+    file = "#{folder}/#{@rewrite_id}.out"
+
+    FileUtils.mkdir_p folder
+
+    ### Run verify command
+    cmd =  "stoke_debug_verify"
+    cmd += " --target #{@benchmark}/target.s" 
+    cmd += " --rewrite #{@rewrite_file}"
+    cmd += " --strategy ddec"
+    cmd += " --alias_strategy #{data[:alias_strategy]}"
+    cmd += " --def_in '#{data[:def_in]}'"
+    cmd += " --live_out '#{data[:live_out]}'"
+    cmd += " --testcases #{@benchmark}/testcases"
+    cmd += " --test_set '#{data[:test_set]}'"
+    cmd += " --heap_out"
+    cmd += " --sound_nullspace"
+    cmd += " --no_ddec_bv"
+    cmd += " --verify_nacl"
+    cmd += " --solver z3"
+    cmd += " >#{file} 2>/dev/null"
+
+    verify_start = Time.new
+    shell(cmd, ".")
+    verify_end = Time.new
+    verify_time = (verify_end - verify_start).round(3)
+
+    ### Test for success
+    success = false
+    File.open(file).each do |line|
+      if /Equivalent/.match(line) then
+        if /yes/.match(line) then
+          success = true 
+        end
+      end
+    end
+    status = "fail"
+    if(success)
+      status = "verified"
+      j = BenchmarkJob.new(@benchmark, @rewrite_id)
+      $queue.add_job(j)
+    end
+
+    ### Log the outcome
+    File.open(@log_file, 'a') { |logfile|
+      logfile.puts "#{@rewrite_id},#{status},#{verify_time}"
+    }
+  end
+
+end
+
+class BenchmarkJob < Job
+
+  def initialize(benchmark, id)
+    @benchmark = benchmark
+    @id = id
+    set_debug
+  end
+
+  def to_s
+    "Benchmark/#{@benchmark}/#{@id}"
+  end
+
+  def run
+    FileUtils.mkdir_p(mk_folder(@benchmark, "benchmark"))
+
+    binary = "#{@benchmark}/binary"
+    rewrite = "#{mk_folder(@benchmark, "search")}/outputs/#{@id}.s"
+    optbin = "#{mk_folder(@benchmark, "benchmark")}/#{@id}.bin"
+    ver = "#{mk_folder(@benchmark, "benchmark")}/#{@id}.ver"
+    stats = "#{mk_folder(@benchmark, "benchmark")}/#{@id}.out"
+
+    ## Replace binary
+    cmd = "stoke_replace --nacl -i #{binary} --rewrite #{rewrite} -o #{optbin} >/dev/null 2>/dev/null"
+    shell(cmd, ".")
+
+    ## Benchmark it
+    cmd = "sel_ldr.py #{optbin} > #{stats} 2>/dev/null"
+    shell(cmd, ".")
+
+    ## Analyze the result
+    times = []
+    File.open(stats).each do |log|
+      match = /[a-z]*[ ]*\(.*\): ([0-9]*)/.match(log)
+      if match then
+        times.push(match[1].to_i)
+      end
+    end
+
+    if(times.length != 10 && times.length != 20)
+      return :bad
+    else
+      times = times.take(10)
+      sum = times.inject(0) { |x,y| x + y }
+      average = sum.to_f/10
+      return average
+    end
+
+  end
+
+end
 
 #### Exit nicely
 
@@ -538,7 +591,7 @@ end
 def main
   $stamp = "testing"
 
-  s = Semaphore.new(2)
+  s = Semaphore.new(4)
   $queue = JobQueue.new(s)
   $child_pids_lock = Mutex.new
   $child_pids = []
@@ -558,49 +611,4 @@ def main
 end
 
 main
-
-
-#### LEGACY 
-def print_benchmark(name, data)
-
-  if (not Dir.exists?(name))
-    FileUtils.mkdir_p name
-  end
-
-  mem_ops = []
-  data[:mem_ops_cons].each do |cons|
-    data[:mem_ops_regs].each do |regs|
-      mem_ops.push("#{cons}(%r15,#{regs})")
-    end
-  end
-
-  File.open("#{name}/verify.sh", 'w') do |file|
-    file.write("#!/bin/bash\n");
-    file.write("\n")
-    file.write("cd $1\n")
-    file.write("for F in *.s; do\n")
-    file.write("  echo -n $F >> verify_times\n")
-    file.write("  echo -n ',' >> verify_times\n")
-    file.write("  /usr/bin/time --format '%e' --append -o verify_times  \\\n")
-    file.write("    timeout #{@verify_timeout} stoke debug verify \\\n")
-    file.write("    --target ../target.s \\\n")
-    file.write("    --rewrite $F \\\n")
-    file.write("    --strategy ddec \\\n")
-    file.write("    --alias_strategy #{data[:alias_strategy]} \\\n")
-    file.write("    --def_in '#{data[:def_in]}' \\\n")
-    file.write("    --live_out '#{data[:live_out]}' \\\n")
-    file.write("    --testcases ../testcases \\\n")
-    file.write("    --test_set '#{data[:test_set]}' \\\n")
-    file.write("    --heap_out \\\n")
-    file.write("    --sound_nullspace \\\n")
-    file.write("    --no_ddec_bv \\\n")
-    file.write("    --verify_nacl \\\n")
-    file.write("    --solver z3 \\\n")
-    file.write("    --result_file verify_times\n")
-    file.write("done\n")
-  end 
-  File.chmod(0755, "#{name}/verify.sh")
-end
-
-
 
