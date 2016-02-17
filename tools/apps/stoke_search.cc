@@ -128,7 +128,6 @@ void sep(ostream& os, string c = "*") {
   os << endl << endl;
 }
 
-static bool verify_interrupt = false;
 static Cost lowest_cost = 0;
 static Cost lowest_correct = 0;
 static Cost starting_cost = 0;
@@ -250,8 +249,17 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 
     } else {
       os << "[verify_all] Oops!  Found a counterexample.  Restarting." << endl;
-      verify_interrupt = true;
 
+      // Log how much time we spent getting this counterexample
+      stringstream outputs_filename;
+      outputs_filename << folder_name_arg.value() << "/" << "fail_times.csv";
+
+      ofstream output_ofs;
+      output_ofs.open(outputs_filename.str(), std::ios_base::app);
+      output_ofs << verification_time << endl;                  // result number
+      output_ofs.close();
+
+      // add the counterexample
       auto cegs = pcb_arg->verifier->get_counter_examples();
       if (cegs.size()) {
         for (auto ceg : cegs) {
@@ -479,7 +487,6 @@ int main(int argc, char** argv) {
   string final_msg;
   SearchStateGadget state(target, aux_fxns);
   for (size_t i = 0; ; ++i) {
-    verify_interrupt = false;
     CostFunctionGadget fxn(target, &training_sb);
     pcb_arg.fxn = fxn.get_correctness_term();
 
@@ -537,7 +544,7 @@ int main(int argc, char** argv) {
     total_restarts++;
     restart_count++;
 
-    if (state.interrupted && !(verify_all && verify_interrupt)) {
+    if (state.interrupted) {
       Console::msg() << endl;
       show_final_update(search.get_statistics(), state, total_restarts, total_iterations, start, search_elapsed, false, false);
       Console::msg() << "Search interrupted!" << endl;
