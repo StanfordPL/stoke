@@ -42,7 +42,7 @@ public:
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(false);
     set_no_bailout(false);
-    set_heap_out(true); // FIXME: there's a bug prevening the command line argument from making it here.
+    set_heap_out(false); // FIXME: there's a bug prevening the command line argument from making it here.
     set_sandbox(NULL);
   }
 

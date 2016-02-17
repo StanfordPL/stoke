@@ -40,11 +40,11 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   ConjunctionInvariant assume;
   assume.add_invariant(&assume_state);
-  assume.add_invariant(&memory_equal);
+  //assume.add_invariant(&memory_equal);
 
   ConjunctionInvariant prove;
   prove.add_invariant(&prove_state);
-  prove.add_invariant(&memory_equal);
+  //prove.add_invariant(&memory_equal);
 
   BOUNDED_DEBUG(cout << "heap/stack out: " << heap_out_ << " " << stack_out_ << endl;)
   bool equiv;
