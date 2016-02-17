@@ -7,7 +7,6 @@ require 'fileutils'
 $benchmarks = {
   "wcpcpy" => {
     :def_in         => "{ %rsp %rbp %r15 %rdi %rsi }",
-    :live_out       => "{ %rax }",
     :training_set   => "{ 0 1 2 3 4 10 11 12 13 20 21 22 23 30 31 40 41 50 60 70 80 }",
     :test_set       => "{ 0 .. 20 }",
     :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
@@ -18,7 +17,6 @@ $benchmarks = {
   },
   "wcslen" => {
     :def_in         => "{ %rdi %r15 }",
-    :live_out       => "{ %rax }",
     :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 222 160 200 }",
     :test_set       => "{ 0 .. 20 }",
     :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
@@ -29,7 +27,6 @@ $benchmarks = {
   },
   "wmemset" => {
     :def_in         => "{ %rdi %rsi %rdx %r15 }",
-    :live_out       => "{ %rax }",
     :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
     :test_set       => "{ 0 .. 100 }",
     :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
@@ -40,7 +37,6 @@ $benchmarks = {
   },
   "wcsnlen" => {
     :def_in         => "{ %rdi %rsi %r15 }",
-    :live_out       => "{ %rax }",
     :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 222 160 200 }",
     :test_set       => "{ 0 .. 100 }",
     :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
@@ -51,7 +47,6 @@ $benchmarks = {
   },
   "wmemcmp" => {
     :def_in         => "{ %rdi %rsi %rdx %r15 }",
-    :live_out       => "{ %rax }",
     :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
     :test_set       => "{ 0 .. 100 }",
     :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
@@ -62,12 +57,81 @@ $benchmarks = {
   },
   "wcschr" => {
     :def_in         => "{ %rdi %rsi %r15 }",
-    :live_out       => "{ %rax }",
     :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
     :test_set       => "{ 0 .. 100 }",
     :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
     :mem_ops_regs   => ["%rax"],
     :mem_ops_cons   => ["0x4","0x0","-0x4"],
+    :alias_strategy => "string",
+    :exec_timeout   => "30s",
+  },
+  "strxfrm" => {
+    :def_in         => "{ %rdi %rsi %rdx %r15 }",
+    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rdi","%rsi"],
+    :mem_ops_cons   => ["0x0","0x1","-0x1"],
+    :alias_strategy => "string",
+    :exec_timeout   => "30s",
+  },
+  "wcscmp" => {
+    :def_in         => "{ %rdi %rsi %r15 }",
+    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rdi","%rsi"],
+    :mem_ops_cons   => ["0x0","0x4","-0x4"],
+    :alias_strategy => "string",
+    :exec_timeout   => "30s",
+  },
+  "wmemchr" => {
+    :def_in         => "{ %rdi %rsi %rdx %r15 }",
+    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rdi","%rax"],
+    :mem_ops_cons   => ["0x0","0x4","-0x4"],
+    :alias_strategy => "string",
+    :exec_timeout   => "30s",
+  },
+  "wcscpy" => {
+    :def_in         => "{ %rdi %rsi %r15 }",
+    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rdx","%rcx","%rsi","%rdi"],
+    :mem_ops_cons   => ["0x0","0x4","-0x4"],
+    :alias_strategy => "string_antialias",
+    :exec_timeout   => "30s",
+  },
+  "wcscat" => {
+    :def_in         => "{ %rdi %rsi %r15 }",
+    :training_set   => "{ 0 1 2 3 4 5 100 101 102 103 104 105 200 201 202 203 204 205 300 301 302 303 304 305 401 402 403 404 405 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rsi","%rdi"],
+    :mem_ops_cons   => ["0x0","0x4","-0x4"],
+    :alias_strategy => "string",
+    :exec_timeout   => "30s",
+  },
+  "strcpy" => {
+    :def_in         => "{ %rdi %rsi %r15 }",
+    :training_set   => "{ 0 1 2 3 10 11 12 13 20 21 22 23 24 30 40 41 50 60 70 80 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rsi","%rdi"],
+    :mem_ops_cons   => ["0x0","0x4","-0x4"],
+    :alias_strategy => "string",
+    :exec_timeout   => "30s",
+  },
+  "wcschr" => {
+    :def_in         => "{ %rdi %rsi %r15 }",
+    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
+    :test_set       => "{ 0 .. 100 }",
+    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
+    :mem_ops_regs   => ["%rax","%rdi"],
+    :mem_ops_cons   => ["0x0","0x4","-0x4"],
     :alias_strategy => "string",
     :exec_timeout   => "30s",
   }
@@ -389,13 +453,14 @@ class SearchJob < Job
 
       file.write("## Cost\n")
       file.write("--restricted_reg_penalty 100\n")
+      file.write("--distance doubleword\n")
       file.write("--cost \"correctness*1000000 + (nacl2 <= 5)*nacl2 + (nacl2 > 5)*nacl2*25 + measured\"\n")
       file.write("--correctness \"nacl2+correctness == 0\"\n")
       file.write("\n")
 
       file.write("## Input/Output\n")
       file.write("--def_in \"#{data[:def_in]}\"\n")
-      file.write("--live_out \"#{data[:live_out]}\"\n")
+      file.write("--live_out \"{ %rax }\"\n")
       file.write("--heap_out\n")
       file.write("\n")
 
@@ -462,7 +527,7 @@ class VerificationJob < Job
     cmd += " --strategy ddec"
     cmd += " --alias_strategy #{data[:alias_strategy]}"
     cmd += " --def_in '#{data[:def_in]}'"
-    cmd += " --live_out '#{data[:live_out]}'"
+    cmd += " --live_out \"{ %rax }\""
     cmd += " --testcases #{@benchmark}/testcases"
     cmd += " --test_set '#{data[:test_set]}'"
     cmd += " --heap_out"
