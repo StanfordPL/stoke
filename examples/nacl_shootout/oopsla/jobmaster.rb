@@ -125,7 +125,7 @@ $benchmarks = {
     :alias_strategy => "string",
     :exec_timeout   => "30s",
   },
-  "wcschr" => {
+  "wcsrchr" => {
     :def_in         => "{ %rdi %rsi %r15 }",
     :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
     :test_set       => "{ 0 .. 100 }",
