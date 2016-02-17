@@ -60,10 +60,10 @@ public:
   get_model_array(const std::string& var, uint16_t key_size, uint16_t value_size) {
     return solver_->get_model_array(var, key_size, value_size);
   }
-  bool has_error() const {
+  virtual bool has_error() {
     return solver_->has_error();
   }
-  std::string get_error() {
+  virtual std::string get_error() {
     return solver_->get_error();
   }
 
