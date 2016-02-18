@@ -141,8 +141,8 @@ $benchmarks = {
 
 $global_settings = {
   :verify_timeout => "30m",
-  :cycle_timeout => 100000, #200000,
-  :timeout_iterations => 10*100000, #200000*20,
+  :cycle_timeout => 8000, #200000,
+  :timeout_iterations => 6*8000, #200000*20,
 
   :always_preserve => [ 
     "%r15",
@@ -306,8 +306,9 @@ class JobQueue
       while job.nil? and not @stop do
         @queue_lock.synchronize {
           if @queue.length > 0 
-            job = @queue[0]
-            @queue = @queue.drop(1)
+            index = rand(@queue.length)
+            #picking a job at random helps to be more fair
+            job = @queue.delete_at(index)
           else
             @running_lock.synchronize {
               if @running_jobs == 0
@@ -322,7 +323,11 @@ class JobQueue
         end
       end
 
-      exec(job)
+      if job.nil?
+        break
+      else
+        exec(job)
+      end
     end
 
   end
@@ -344,6 +349,12 @@ def mk_folder(benchmark, subdir)
 end
 
 def log(m)
+
+  if(m[0] != "[")
+    m = " " + m
+  end
+
+  m = "[#{Time.new}]#{m}"
   puts m
   File.open("results/#{$stamp}/log","a") do |log|
     log.puts(m)
@@ -414,6 +425,7 @@ class StagedJob < Job
     @finished_stages = 0
     @finish_lock = Mutex.new
     @name = name
+    set_debug
   end
 
   def cores_needed
@@ -442,7 +454,7 @@ class StagedJob < Job
       debug "Stage #{stage} job finished; #{@stage_sizes[stage]} jobs left at stage #{stage}"
     }
 
-    if do_run and stage < @stage_count then
+    if do_run and stage < @stage_count-1 then
       run_stage(stage+1)
     end
   end
@@ -472,7 +484,7 @@ class StagedJob < Job
     # wait until everything is finished
     while true do
       @finish_lock.synchronize {
-        if(@finished_stages == @stage_count)
+        if(@finished_stages >= @stage_count)
           return
         end
       }
@@ -486,6 +498,7 @@ class StatisticsJob < Job
 
   def initialize(benchmark)
     @benchmark = benchmark
+    set_debug
   end
 
   def to_s
@@ -512,7 +525,7 @@ class StatisticsJob < Job
       id = split[0].to_i
       value = split[1].to_f
 
-      if(value > best_value)
+      if(value > best_value and id > 0)
         best_index = id
         best_value = value
       end
@@ -526,8 +539,8 @@ class StatisticsJob < Job
 
 
     ## Copy the best rewrite and the binary into the top directory
-    if not best_index.nil? and best_index > 0
-      best_speedup = best_value.to_f/target_value.to_f
+    if not best_index.nil? then
+      best_speedup = (best_value.to_f/target_value.to_f).round(3) unless target_value == 0
       FileUtils.cp("#{mk_folder(@benchmark, "search")}/outputs/#{best_index}.s", 
                    "#{mk_folder(@benchmark, "")}/result.s")
       FileUtils.cp("#{mk_folder(@benchmark, "benchmark")}/#{best_index}.bin", 
@@ -538,45 +551,67 @@ class StatisticsJob < Job
     total_bv_time = 0
     total_bv_runs = 0
     total_bv_success = 0
+    average_bv_time = nil
 
-    File.open(search_fail_log).each do |line|
-      time = line.to_f/1000
-      total_bv_time += time
-      total_bv_runs += 1
+    if File.exist?(search_fail_log) then
+      File.open(search_fail_log).each do |line|
+        time = line.to_f/1000
+        total_bv_time += time
+        total_bv_runs += 1
+      end
     end
 
-    File.open(search_log).each do |line|
-      split = line.split(",")
-      time = split[3].to_f/1000
-      total_bv_time += time
-      total_bv_runs += 1
-      total_bv_success += 1
+    if File.exist?(search_log) then
+      File.open(search_log).each do |line|
+        split = line.split(",")
+
+        next if split[0] == "num"
+
+        time = split[3].to_f/1000
+        total_bv_time += time
+        total_bv_runs += 1
+        total_bv_success += 1
+      end
     end
+
+    average_bv_time = (total_bv_time/total_bv_runs).round(3) unless total_bv_runs == 0
+    total_bv_time = total_bv_time.round(3)
 
     ## Total search time
     total_stoke_time = 0
-    File.open(search_stats).each do |line|
-      match = /total_search_time": ([0-9.]*)/.match(line)
-      if match
-        total_stoke_time = match[1].to_f
+    if File.exist?(search_stats) then
+      File.open(search_stats).each do |line|
+        match = /total_search_time": ([0-9.]*)/.match(line)
+        if match
+          total_stoke_time = match[1].to_f
+        end
       end
     end
 
     total_search_time = total_stoke_time - total_bv_time
+    total_search_time = total_search_time.round(3)
+    total_bv_time = total_bv_time.round(3)
 
 
     ## Total, average DDEC time and # runs
     total_ddec_time = 0
     total_ddec_runs = 0
     total_ddec_success = 0
-    File.open(verify_log).each do |line|
-      split = line.split(",")
-      total_ddec_time += split[2].to_f
-      total_ddec_runs += 1
-      if(split[1] == "verified")
-        total_ddec_success += 1
+    average_ddec_time = nil
+
+    if File.exist?(verify_log) then
+      File.open(verify_log).each do |line|
+        split = line.split(",")
+        total_ddec_time += split[2].to_f/1000
+        total_ddec_runs += 1
+        if(split[1] == "verified")
+          total_ddec_success += 1
+        end
       end
     end
+
+    average_ddec_time = (total_ddec_time/total_ddec_runs).round(3) unless total_ddec_runs == 0
+    total_ddec_time = total_ddec_time.round(3)
 
 
     ## WRITE IT OUT!
@@ -584,8 +619,11 @@ class StatisticsJob < Job
       outfile.puts("#{@benchmark}")
       outfile.puts("")
       outfile.puts("### Summary ###")
-      outfile.puts("speedup: #{best_speedup}")
-      outfile.puts("best rewrite: #{best_index}")
+      if best_index.nil?
+        outfile.puts("NO REWRITE FOUND")
+      end
+      outfile.puts("speedup: #{best_speedup}") unless best_speedup.nil?
+      outfile.puts("best rewrite: #{best_index}") unless best_index.nil?
       outfile.puts("best rewrite score: #{best_value}")
       outfile.puts("target score: #{target_value}")
       outfile.puts("")
@@ -593,18 +631,19 @@ class StatisticsJob < Job
       outfile.puts("total search time: #{total_search_time}")
       outfile.puts("total BV time: #{total_bv_time}")
       outfile.puts("total BV runs: #{total_bv_runs}")
-      outfile.puts("average BV time: #{total_bv_time/total_bv_runs}")
+      outfile.puts("average BV time: #{average_bv_time}") unless average_bv_time.nil?
       outfile.puts("total BV success: #{total_bv_success}")
       outfile.puts("total reported by stoke binary: #{total_stoke_time}")
       outfile.puts("")
       outfile.puts("### DDEC Verification ###")
       outfile.puts("total ddec runs: #{total_ddec_runs}")
       outfile.puts("total ddec success: #{total_ddec_success}")
-      outfile.puts("total ddec time: #{total_ddec_time/1000}")
-      outfile.puts("average ddec time: #{total_ddec_time/(1000*total_ddec_runs)}")
+      outfile.puts("total ddec time: #{total_ddec_time}")
+      outfile.puts("average ddec time: #{average_ddec_time}") unless average_ddec_time.nil?
       outfile.puts("")
       outfile.puts("### Benchmarking ###")
       outfile.puts("total benchmark time: #{total_benchmark_time}")
+      outfile.puts("")
     end
     debug "All done!"
 
@@ -616,6 +655,7 @@ class SearchJob < Job
   def initialize(benchmark)
     @benchmark = benchmark
     @folder = mk_folder(@benchmark, "search")
+    set_debug
   end
 
   def to_s
@@ -637,17 +677,34 @@ class SearchJob < Job
     stage_job = StagedJob.new(2, @benchmark)
     stage_job.set_debug
 
-    ## Create verification jobs for each result
+    ## Create verification jobs for each series of results
+    current_list = []
+    current_run = -1
+    id = 0
     File.open(search_output_file).each do |line|
       split = line.split(",")
       id = split[0]
-      if(id != "num")
-        id = id.to_i
-        debug "we found result #{id}"
+      run = split[2]
 
-        v = VerificationJob.new(@benchmark, id, "#{mk_folder(@benchmark,"")}/verification_log.csv")
+      next if id == "num"
+
+      id = id.to_i
+      if run != current_run and current_list.size > 0
+        debug "verification job for #{current_list}"
+        v = VerificationJob.new(@benchmark, current_list.reverse, 
+                                "#{mk_folder(@benchmark,"")}/verification_log.csv")
         stage_job.add_to_stage(0, v)
+        current_list = []
       end
+
+      current_run = run
+      current_list.push(id)
+    end
+    if current_list.size > 0
+      debug "(final) verification job for #{current_list}"
+      v = VerificationJob.new(@benchmark, current_list.reverse, 
+                              "#{mk_folder(@benchmark,"")}/verification_log.csv")
+      stage_job.add_to_stage(0, v)
     end
 
     ## Create benchmark job for the target
@@ -742,10 +799,11 @@ end
 
 class VerificationJob < Job
 
-  def initialize(benchmark, rewrite_id, log_file)
+  def initialize(benchmark, rewrite_ids, log_file)
     @benchmark = benchmark
-    @rewrite_file = mk_folder(benchmark, "search") + "/outputs/#{rewrite_id}.s"
-    @rewrite_id = rewrite_id
+    @rewrite_id = rewrite_ids[0]
+    @rewrite_ids = rewrite_ids.drop(1)
+    @rewrite_file = mk_folder(benchmark, "search") + "/outputs/#{@rewrite_id}.s"
     @log_file = log_file
     set_debug
   end
@@ -793,17 +851,30 @@ class VerificationJob < Job
       end
     end
     status = "fail"
-    if(success)
-      status = "verified"
-      j = BenchmarkJob.new(@benchmark, @rewrite_id)
-#$queue.add_job(j)
-      j.run
-    end
 
     ### Log the outcome
+    if(success)
+      status = "verified"
+    end
+
     File.open(@log_file, 'a') { |logfile|
       logfile.puts "#{@rewrite_id},#{status},#{verify_time}"
     }
+
+    ### Run the next appropriate thing
+    if(success)
+      # if we succeeded, we're done with this set and we move on to
+      # benchmarking
+      debug "Success; benchmarking"
+      j = BenchmarkJob.new(@benchmark, @rewrite_id)
+      j.run
+    elsif @rewrite_ids.length() > 0
+      # otherwise, we check the next verification candidate (if any)
+      debug "Fail; verifying #{@rewrite_ids}"
+      j = VerificationJob.new(@benchmark, @rewrite_ids, @log_file) 
+      j.run
+    end
+
   end
 
 end
@@ -915,6 +986,8 @@ end
 #### Here's what to do
 
 def main
+
+  ## Setup logging facility
   if ARGV.length != 1 then
     puts "usage: ./jobmaster.rb <stamp>"
     exit 1
@@ -923,6 +996,11 @@ def main
   $stamp = ARGV[0]
   FileUtils.mkdir_p "results/#{$stamp}"
 
+  ## Start the timer
+  start_time = Time.new
+  log "Starting"
+
+  ## Setup the queue and signal handler
   s = Semaphore.new(16)
   $queue = JobQueue.new(s)
   $child_pids_lock = Mutex.new
@@ -930,16 +1008,35 @@ def main
 
   exit_nicely
 
-  $benchmarks.each do |k,v|
-    j = SearchJob.new(k)
-    $queue.add_job(j)
-  end
+#  $benchmarks.each do |k,v|
+#    j = SearchJob.new(k)
+#    $queue.add_job(j)
+#  end
 
 #  j = SearchJob.new("wcpcpy")
 #  j.set_debug
 #  $queue.add_job(j)
 
+  hard = ["strcpy", "wmemcmp", "wcscat"]
+  often_fail = ["wmemset", "wcslen", "wcscpy", "wcsnlen"]
+  others = ["wcpcpy", "wcschr", "strxfrm", "wcscmp", "wmemchr", "wcsrchr"]
+
+  all = hard + often_fail + others
+  doable = often_fail + others
+  
+
+  ["wcslen"].each do |bench|
+    j = SearchJob.new(bench)
+    $queue.add_job(j)
+  end
+
+  ## Run everything
   $queue.exec_all
+
+  end_time = Time.new
+  log "Finished"
+  log "Wall time is #{(end_time - start_time).round(3)}"
+
 end
 
 main
