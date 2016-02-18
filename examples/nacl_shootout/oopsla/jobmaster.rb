@@ -6,7 +6,7 @@ require 'fileutils'
 
 $benchmarks = {
   "wcpcpy" => {
-    :def_in         => "{ %rsp %rbp %r15 %rdi }",
+    :def_in         => "{ %rdi %rsi %r15 }",
     :training_set   => "{ 0 1 2 3 4 10 11 12 13 20 21 22 23 30 31 40 41 50 60 70 80 }",
     :test_set       => "{ 0 .. 20 }",
     :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
