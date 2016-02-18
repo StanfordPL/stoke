@@ -52,7 +52,7 @@ SymBool CellMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
   }
 
   // get a variable so we can easily extract from the model
-  auto new_var = SymBitVector::tmp_var(size);
+  auto new_var = SymBitVector::tmp_var(access.cell_size*8);
   auto new_cons = new_var == cells_[access.cell];
   state_->constraints.push_back(new_cons);
   cells_[access.cell] = new_var;

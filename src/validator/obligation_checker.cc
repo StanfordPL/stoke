@@ -25,7 +25,7 @@
 
 
 #define OBLIG_DEBUG(X) { }
-#define CONSTRAINT_DEBUG(X) { X }
+#define CONSTRAINT_DEBUG(X) { }
 #define BUILD_TC_DEBUG(X) { }
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
@@ -598,6 +598,10 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
       equal_addrs = sym_accesses[i].address == sym_accesses[j].address;
       constraints.push_back(!equal_addrs);
       same_address[i][j] = !solver_.is_sat(constraints);
+      if (solver_.has_error()) {
+        throw VALIDATOR_ERROR("solver: " + solver_.get_error());
+      }
+
       constraints.erase(--constraints.end());
 
       if (same_address[i][j]) {
@@ -611,6 +615,11 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
                    sym_accesses[j].address;
       constraints.push_back(!next_addrs);
       next_address[i][j] = !solver_.is_sat(constraints);
+      if (solver_.has_error()) {
+        throw VALIDATOR_ERROR("solver: " + solver_.get_error());
+      }
+
+
       constraints.erase(--constraints.end());
     }
   }
@@ -631,6 +640,10 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
 
       constraints.push_back(!next_addrs);
       next_address[i][j] = !solver_.is_sat(constraints);
+      if (solver_.has_error()) {
+        throw VALIDATOR_ERROR("solver: " + solver_.get_error());
+      }
+
       constraints.erase(--constraints.end());
     }
   }
