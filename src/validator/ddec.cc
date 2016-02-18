@@ -260,9 +260,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     // Recompute the cutpoints
     if (cutpoints_)
       delete cutpoints_;
-    init_mm();
     cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
-    stop_mm();
 
     if (cutpoints_->has_error()) {
       DDEC_DEBUG(cout << "Cutpoint system encountered: " << cutpoints_->get_error() << endl;)
