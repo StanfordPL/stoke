@@ -219,14 +219,14 @@ class Semaphore
     @available = n_cores
   end
 
-  def acquire()
+  def acquire(m)
 
     got_it = false
 
     while(not got_it)
       @lock.synchronize {
-        if(@available > 0) then
-          @available = @available - 1
+        if(@available >= m) then
+          @available = @available - m
           got_it = true
         end
       }
@@ -238,9 +238,9 @@ class Semaphore
 
   end
 
-  def release()
+  def release(m)
     @lock.synchronize {
-      @available = @available + 1
+      @available = @available + m
     }
   end
 end
@@ -271,7 +271,7 @@ class JobQueue
   end
 
   def exec(job)
-    @semaphore.acquire
+    @semaphore.acquire(job.cores_needed)
 
     @running_lock.synchronize {
       @running_jobs = @running_jobs + 1        
@@ -292,7 +292,7 @@ class JobQueue
       @running_lock.synchronize {
         @running_jobs = @running_jobs - 1
       }
-      @semaphore.release
+      @semaphore.release(job.cores_needed)
       
       log "Finished: #{job.to_s}"
     }
@@ -352,21 +352,14 @@ end
 
 ### JOBS
 
-class SillyJob
-
-  def initialize(n)
-    @n = n
-  end
-
-  def run
-    log "#{@n}\n"
-  end
-end
-
 class Job
 
   def initialize
     @owner = nil
+  end
+
+  def cores_needed
+    1
   end
 
   def set_debug
@@ -421,6 +414,10 @@ class StagedJob < Job
     @finished_stages = 0
     @finish_lock = Mutex.new
     @name = name
+  end
+
+  def cores_needed
+    0
   end
 
   def add_to_stage(n, job)
@@ -926,7 +923,7 @@ def main
   $stamp = ARGV[0]
   FileUtils.mkdir_p "results/#{$stamp}"
 
-  s = Semaphore.new(30)
+  s = Semaphore.new(16)
   $queue = JobQueue.new(s)
   $child_pids_lock = Mutex.new
   $child_pids = []
