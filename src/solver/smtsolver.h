@@ -30,7 +30,7 @@ class SMTSolver {
 public:
 
   /* Resets the state common to SMT solvers */
-  SMTSolver() {
+  SMTSolver() : no_typecheck_(false) {
     timeout_ = 0;
     error_ = "";
   }
@@ -40,6 +40,10 @@ public:
   /** Set the maximum time to spend solving */
   virtual SMTSolver& set_timeout(uint64_t ms) {
     timeout_ = ms;
+    return *this;
+  }
+  virtual SMTSolver& set_no_typecheck(bool b) {
+    no_typecheck_ = b;
     return *this;
   }
   /** Get the timeout last set. */
@@ -68,6 +72,7 @@ public:
   virtual std::string get_error() {
     return error_;
   }
+  
 
 
 protected:
@@ -76,6 +81,8 @@ protected:
   uint64_t timeout_;
   /** Current error message */
   std::string error_;
+  /** Skip the type checking? */
+  bool no_typecheck_;
 
 };
 

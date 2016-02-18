@@ -1,7 +1,7 @@
 
 DEF_IN="{ %r15 %rdi %rsi }"
 LIVE_OUT="{ %rax }"
-ARGS=--def_in $(DEF_IN) --live_out $(LIVE_OUT) --solver z3 --sound_nullspace --verify_nacl
+ARGS=--def_in $(DEF_IN) --live_out $(LIVE_OUT) --solver z3 --sound_nullspace --verify_nacl --no_typecheck_arg
 OPT_ARGS=--no_ddec_bv --test_set "{ 0 .. 100 }"
 SYNTH_ARGS=--no_ddec_bv --test_set "{ 0 .. 100 }"
 

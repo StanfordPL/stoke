@@ -38,7 +38,8 @@ public:
   std::vector<CpuState> data_at(size_t cutpt, bool is_rewrite) {
     std::vector<CpuState> results;
 
-    auto cutpoints = is_rewrite ? chosen_cutpoints_.second : chosen_cutpoints_.first;
+    auto chosen_cutpoints = cutpoint_options_[pos_];
+    auto cutpoints = is_rewrite ? chosen_cutpoints.second : chosen_cutpoints.first;
     auto blk = cutpoints[cutpt];
 
     auto& traces = is_rewrite ? rewrite_traces_ : target_traces_;
@@ -58,16 +59,25 @@ public:
 
   /** Get cutpoint locations. */
   std::vector<Cfg::id_type> target_cutpoint_locations() {
-    return chosen_cutpoints_.first;
+    return cutpoint_options_[pos_].first;
   }
   /** Get cutpoint locations. */
   std::vector<Cfg::id_type> rewrite_cutpoint_locations() {
-    return chosen_cutpoints_.second;
+    return cutpoint_options_[pos_].second;
   }
 
   /** Get the number of cutpoints found. */
   size_t cutpoint_count() {
-    return chosen_cutpoints_.first.size();
+    return cutpoint_options_[pos_].first.size();
+  }
+
+  /** Are there more options for cutpoints? */
+  bool has_more() {
+    return pos_+1 < cutpoint_options_.size();
+  }
+  /** Go to the next cutpoint option. */
+  void next() {
+    pos_ = pos_ + 1;
   }
 
   bool has_error() {
@@ -141,7 +151,8 @@ private:
 
   ////////////////////////////// ANSWER STORAGE ////////////////////////////////
 
-  CutpointList chosen_cutpoints_;
+  std::vector<CutpointList> cutpoint_options_;
+  size_t pos_;
 
   std::string error_;
 

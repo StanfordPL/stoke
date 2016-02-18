@@ -87,27 +87,26 @@ void Cutpoints::compute() {
   }
 
   // Get all the possible cutpoint options.
-  auto cutpoint_options = get_possible_cutpoints();
+  auto computed_cutpoints = get_possible_cutpoints();
 
   // Check all the cutpoints
-  vector<CutpointList> viable_cutpoints;
+  cutpoint_options_.clear();
+  pos_ = 0;
 
-  for (auto option : cutpoint_options) {
+  for (auto option : computed_cutpoints) {
     DEBUG_CUTPOINTS(cout << "=== CHECKING ===" << endl;)
     print_option(option);
     if (check_cutpoints(option)) {
-      viable_cutpoints.push_back(option);
+      cutpoint_options_.push_back(option);
       DEBUG_CUTPOINTS(cout << " ----> PASS" << endl;)
     } else {
       DEBUG_CUTPOINTS(cout << " ----> FAIL" << endl;)
     }
   }
 
-  chosen_cutpoints_ = viable_cutpoints[0];
-
   DEBUG_CUTPOINTS(
-    cout << "Total options: " << cutpoint_options.size() << endl;
-    cout << "Viable options: " << viable_cutpoints.size() << endl;
+    cout << "Total options: " << computed_cutpoints.size() << endl;
+    cout << "Viable options: " << cutpoint_options_.size() << endl;
     cout << "Target traces: " << target_traces_.size() << endl;
     cout << "Rewrite traces: " << rewrite_traces_.size() << endl;
     size_t cutpt_option;
@@ -120,14 +119,16 @@ void Cutpoints::compute() {
     */
   )
 
-  auto& target_cuts = chosen_cutpoints_.first;
-  auto& rewrite_cuts = chosen_cutpoints_.second;
-  target_cuts.insert(target_cuts.begin(), target_.get_entry());
-  rewrite_cuts.insert(rewrite_cuts.begin(), rewrite_.get_entry());
-  target_cuts.push_back(target_.get_exit());
-  rewrite_cuts.push_back(rewrite_.get_exit());
+  for(auto& option : cutpoint_options_) {
+    auto& target_cuts = option.first;
+    auto& rewrite_cuts = option.second;
+    target_cuts.insert(target_cuts.begin(), target_.get_entry());
+    rewrite_cuts.insert(rewrite_cuts.begin(), rewrite_.get_entry());
+    target_cuts.push_back(target_.get_exit());
+    rewrite_cuts.push_back(rewrite_.get_exit());
+  }
 
-  if (!viable_cutpoints.size()) {
+  if (!cutpoint_options_.size()) {
     error_ = "Could not find any viable cutpoints.";
   }
 }

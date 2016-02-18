@@ -141,8 +141,8 @@ $benchmarks = {
 
 $global_settings = {
   :verify_timeout => "30m",
-  :cycle_timeout => 8000, #200000,
-  :timeout_iterations => 6*8000, #200000*20,
+  :cycle_timeout => 100000, #200000,
+  :timeout_iterations => 10*100000, #200000*20,
 
   :always_preserve => [ 
     "%r15",
@@ -778,7 +778,7 @@ class SearchJob < Job
 
       file.write("## Verification\n")
       file.write("--strategy \"hold_out,bounded\"\n")
-      file.write("--bound 2\n")
+      file.write("--bound 1\n")
       file.write("--alias_strategy #{data[:alias_strategy]}\n")
       file.write("\n")
 
@@ -1025,7 +1025,7 @@ def main
   doable = often_fail + others
   
 
-  ["wcslen"].each do |bench|
+  all.each do |bench|
     j = SearchJob.new(bench)
     $queue.add_job(j)
   end

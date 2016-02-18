@@ -37,11 +37,16 @@ public:
       assert(false);
     }
 
-    set_timeout(timeout_arg);
+    set_timeout(timeout_arg.value());
+    set_no_typecheck(no_typecheck_arg.value());
   }
 
   SMTSolver& set_timeout(uint64_t ms) {
     solver_->set_timeout(ms);
+    return *this;
+  }
+  SMTSolver& set_no_typecheck(bool b) {
+    solver_->set_no_typecheck(b);
     return *this;
   }
   bool is_sat(const std::vector<SymBool>& constraints) {

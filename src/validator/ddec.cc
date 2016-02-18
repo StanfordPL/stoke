@@ -163,96 +163,45 @@ vector<ConjunctionInvariant*> DdecValidator::find_invariants(const Cfg& target, 
   MemoryEqualityInvariant* mem_equ = new MemoryEqualityInvariant();
   vector<ConjunctionInvariant*> invariants;
 
-  while (true) {
+  auto target_cuts = cutpoints_->target_cutpoint_locations();
+  auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
 
-    // Recompute the cutpoints
-    if (cutpoints_)
-      delete cutpoints_;
-    init_mm();
-    cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
-    stop_mm();
+  // Learn invariants based on the data we have
+  invariants.clear();
+  for (size_t i = 0; i < target_cuts.size(); ++i) {
 
-    if (cutpoints_->has_error()) {
-      DDEC_DEBUG(cout << "Cutpoint system encountered: " << cutpoints_->get_error() << endl;)
-      return vector<ConjunctionInvariant*>();
-    }
+    if (target_cuts[i] == target.get_entry()) {
+      // Entry
+      assert(rewrite_cuts[i] == rewrite.get_entry());
 
-    auto target_cuts = cutpoints_->target_cutpoint_locations();
-    auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
+      auto begin = new ConjunctionInvariant();
+      auto inv = new StateEqualityInvariant(target.def_ins());
+      begin->add_invariant(inv);
+      //begin->add_invariant(no_sigs);
+      begin->add_invariant(mem_equ);
+      invariants.push_back(begin);
+    } else if (target_cuts[i] == target.get_exit()) {
+      // Exit
+      assert(rewrite_cuts[i] == rewrite.get_exit());
 
-    // Check cutpoints
-    auto new_cutpoint_tcs = check_cutpoints(target, rewrite, target_cuts, rewrite_cuts);
-    if (new_cutpoint_tcs.size()) {
-      for (auto it : new_cutpoint_tcs) {
-        for (size_t i = 0; i < sandbox_->size(); ++i) {
-          if (*sandbox_->get_input(i) == it) {
-            DDEC_DEBUG(cout << "CEGAR fixedpoint @ cutpoint" << endl;)
-            return vector<ConjunctionInvariant*>();
-          }
-        }
-        sandbox_->insert_input(it);
-      }
-      continue;
-    }
+      auto end = new ConjunctionInvariant();
+      auto inv = new StateEqualityInvariant(target.live_outs());
+      end->add_invariant(inv);
+      //end->add_invariant(no_sigs);
 
-    // Learn invariants based on the data we have
-    invariants.clear();
-    for (size_t i = 0; i < target_cuts.size(); ++i) {
+      if (heap_out_ || stack_out_)
+        end->add_invariant(mem_equ);
 
-      if (target_cuts[i] == target.get_entry()) {
-        // Entry
-        assert(rewrite_cuts[i] == rewrite.get_entry());
-
-        auto begin = new ConjunctionInvariant();
-        auto inv = new StateEqualityInvariant(target.def_ins());
-        begin->add_invariant(inv);
-        //begin->add_invariant(no_sigs);
-        begin->add_invariant(mem_equ);
-        invariants.push_back(begin);
-      } else if (target_cuts[i] == target.get_exit()) {
-        // Exit
-        assert(rewrite_cuts[i] == rewrite.get_exit());
-
-        auto end = new ConjunctionInvariant();
-        auto inv = new StateEqualityInvariant(target.live_outs());
-        end->add_invariant(inv);
-        //end->add_invariant(no_sigs);
-
-        if (heap_out_ || stack_out_)
-          end->add_invariant(mem_equ);
-
-        invariants.push_back(end);
-      } else {
-        auto inv = learn_disjunction_invariant(target, rewrite, i);
-        invariants.push_back(inv);
-        DDEC_DEBUG(cout << "[ddec] Learned invariant @ i=" << i << endl;)
-        DDEC_DEBUG(cout << *inv << endl;)
-      }
-    }
-
-    // See if said invariants are correct
-    DDEC_DEBUG(cout << endl << "[ddec] CHECKING INVARIANTS WITH BOUNDED VALIDATOR" << endl << endl;)
-    auto new_tests = check_invariants(target, rewrite, invariants);
-    if (new_tests.size() == 0)
-      return invariants;
-
-    // Get the testcases and try again
-    for (auto tc : new_tests) {
-      for (size_t i = 0; i < sandbox_->size(); ++i) {
-        if (*sandbox_->get_input(i) == tc) {
-          DDEC_DEBUG(cout << "CEGAR fixedpoint @ invariants" << endl;)
-          return vector<ConjunctionInvariant*>();
-        }
-      }
-      sandbox_->insert_input(tc);
-    }
-
-    delete cutpoints_;
-    cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
-    if (cutpoints_->has_error()) {
-      return vector<ConjunctionInvariant*>();
+      invariants.push_back(end);
+    } else {
+      auto inv = learn_disjunction_invariant(target, rewrite, i);
+      invariants.push_back(inv);
+      DDEC_DEBUG(cout << "[ddec] Learned invariant @ i=" << i << endl;)
+      DDEC_DEBUG(cout << *inv << endl;)
     }
   }
+
+  return invariants;
 
 }
 
@@ -308,45 +257,70 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     make_tcs(target, rewrite);
 
-    auto invariants = find_invariants(target, rewrite);
-    DDEC_DEBUG(cout << "Got initial invariants " << invariants.size() << endl;)
-    if (!invariants.size()) {
-      DDEC_DEBUG(cout << "Could not find cutpoints/invariants" << endl;)
+    // Recompute the cutpoints
+    if (cutpoints_)
+      delete cutpoints_;
+    init_mm();
+    cutpoints_ = new Cutpoints(target, rewrite, *sandbox_);
+    stop_mm();
+
+    if (cutpoints_->has_error()) {
+      DDEC_DEBUG(cout << "Cutpoint system encountered: " << cutpoints_->get_error() << endl;)
       reset_mm();
       return false;
     }
 
-    map<size_t, vector<size_t>> failed_invariants;
-    while (true) {
+    // Loop over choices of cutpoints
+    while(true) {
 
-      failed_invariants.clear();
-      bool success = check_proof(target, rewrite, invariants, failed_invariants);
-      if (success) {
+      auto invariants = find_invariants(target, rewrite);
+      DDEC_DEBUG(cout << "Got initial invariants " << invariants.size() << endl;)
+      if (!invariants.size()) {
+        DDEC_DEBUG(cout << "Could not find cutpoints/invariants" << endl;)
         reset_mm();
-        return true;
+        return false;
       }
 
-      // otherwise, remove invariants that failed to validate and try again...
-      // we want to be sure not to change the start/end invariants
-      DDEC_DEBUG(cout << "Validation failed; attempting to remove failed invariants" << endl;)
-      bool made_a_change = false;
-      for (size_t i = 1; i < invariants.size() - 1; ++i) {
-        auto to_remove = failed_invariants[i];
-        sort(to_remove.begin(), to_remove.end());
-        size_t last = (size_t)-1;
-        for (auto it = to_remove.rbegin(); it != to_remove.rend(); ++it) {
-          if (last == *it)
-            continue;
-          last = *it;
-          DDEC_DEBUG(cout << "Removing " << *(*invariants[i])[*it] << endl;)
-          invariants[i]->remove(*it);
-          made_a_change = true;
+      map<size_t, vector<size_t>> failed_invariants;
+      // Loop over choices of invariants (Houdini loop)
+      while (true) {
+
+        failed_invariants.clear();
+        bool success = check_proof(target, rewrite, invariants, failed_invariants);
+        if (success) {
+          reset_mm();
+          return true;
+        }
+
+        // otherwise, remove invariants that failed to validate and try again...
+        // we want to be sure not to change the start/end invariants
+        DDEC_DEBUG(cout << "Validation failed; attempting to remove failed invariants" << endl;)
+        bool made_a_change = false;
+        for (size_t i = 1; i < invariants.size() - 1; ++i) {
+          auto to_remove = failed_invariants[i];
+          cout << "For cutpoint " << i << " there are " << to_remove.size() << " failed invariants." << endl;
+          sort(to_remove.begin(), to_remove.end());
+          size_t last = (size_t)-1;
+          for (auto it = to_remove.rbegin(); it != to_remove.rend(); ++it) {
+            if (last == *it)
+              continue;
+            last = *it;
+            DDEC_DEBUG(cout << "Removing " << *(*invariants[i])[*it] << endl;)
+            invariants[i]->remove(*it);
+            made_a_change = true;
+          }
+        }
+
+        if (!made_a_change) {
+          DDEC_DEBUG(cout << "Could not remove failed invariants.  Programs not proven equivalent." << endl;)
+          // got a fixed point, we can't validate this; try another cutpoint
+          break;
         }
       }
-
-      if (!made_a_change) {
-        DDEC_DEBUG(cout << "Could not remove failed invariants.  Programs not proven equivalent." << endl;)
-        // got a fixed point, we really can't validate this
+  
+      if(cutpoints_->has_more()) {
+        cutpoints_->next();
+      } else {
         reset_mm();
         return false;
       }

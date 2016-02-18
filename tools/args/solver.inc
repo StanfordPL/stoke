@@ -37,6 +37,10 @@ cpputil::ValueArg<uint64_t>& timeout_arg =
   .description("Timeout in milliseconds for SMT solver before giving up.  0 for no limit.")
   .default_val(0);
 
+cpputil::FlagArg& no_typecheck_arg =
+  cpputil::FlagArg::create("no_typecheck")
+  .description("skip typechecking in solver");
+
 } // namespace stoke
 
 #endif
