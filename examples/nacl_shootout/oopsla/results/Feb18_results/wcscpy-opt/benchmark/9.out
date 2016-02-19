@@ -1,0 +1,108 @@
+Running small benchmarks
+1 benchmarks registered
+Running wcscpy (0/10)
+Running wcscpy (0/10) (1/1)
+
+usec_per_run 110500.187500
+wcscpy (0/10): 2714
+Running wcscpy (1/10)
+Running wcscpy (1/10) (2/1)
+
+usec_per_run 110518.937500
+wcscpy (1/10): 2714
+Running wcscpy (2/10)
+Running wcscpy (2/10) (3/1)
+
+usec_per_run 110445.000000
+wcscpy (2/10): 2716
+Running wcscpy (3/10)
+Running wcscpy (3/10) (4/1)
+
+usec_per_run 110473.750000
+wcscpy (3/10): 2715
+Running wcscpy (4/10)
+Running wcscpy (4/10) (5/1)
+
+usec_per_run 110457.437500
+wcscpy (4/10): 2715
+Running wcscpy (5/10)
+Running wcscpy (5/10) (6/1)
+
+usec_per_run 110437.812500
+wcscpy (5/10): 2716
+Running wcscpy (6/10)
+Running wcscpy (6/10) (7/1)
+
+usec_per_run 110443.062500
+wcscpy (6/10): 2716
+Running wcscpy (7/10)
+Running wcscpy (7/10) (8/1)
+
+usec_per_run 110472.562500
+wcscpy (7/10): 2715
+Running wcscpy (8/10)
+Running wcscpy (8/10) (9/1)
+
+usec_per_run 110451.062500
+wcscpy (8/10): 2716
+Running wcscpy (9/10)
+Running wcscpy (9/10) (10/1)
+
+usec_per_run 109968.250000
+wcscpy (9/10): 2728
+Benchmark wcscpy: usec 1759492, iters 16, usec/run 109968 score 2728.06
+Aggregate score: 2728
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running wcscpy (0/10)
+Running wcscpy (0/10) (1/1)
+
+usec_per_run 1100841.000000
+wcscpy (0/10): 2725
+Running wcscpy (1/10)
+Running wcscpy (1/10) (2/1)
+
+usec_per_run 1098977.000000
+wcscpy (1/10): 2729
+Running wcscpy (2/10)
+Running wcscpy (2/10) (3/1)
+
+usec_per_run 1108123.000000
+wcscpy (2/10): 2707
+Running wcscpy (3/10)
+Running wcscpy (3/10) (4/1)
+
+usec_per_run 1105846.000000
+wcscpy (3/10): 2712
+Running wcscpy (4/10)
+Running wcscpy (4/10) (5/1)
+
+usec_per_run 1099174.000000
+wcscpy (4/10): 2729
+Running wcscpy (5/10)
+Running wcscpy (5/10) (6/1)
+
+usec_per_run 1106819.000000
+wcscpy (5/10): 2710
+Running wcscpy (6/10)
+Running wcscpy (6/10) (7/1)
+
+usec_per_run 1096814.000000
+wcscpy (6/10): 2735
+Running wcscpy (7/10)
+Running wcscpy (7/10) (8/1)
+
+usec_per_run 1109428.000000
+wcscpy (7/10): 2704
+Running wcscpy (8/10)
+Running wcscpy (8/10) (9/1)
+
+usec_per_run 1103104.000000
+wcscpy (8/10): 2719
+Running wcscpy (9/10)
+Running wcscpy (9/10) (10/1)
+
+usec_per_run 1098824.000000
+wcscpy (9/10): 2730
+Benchmark wcscpy: usec 1098824, iters 1, usec/run 1098824 score 2730.19
+Aggregate score: 2730

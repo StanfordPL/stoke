@@ -1,0 +1,108 @@
+Running small benchmarks
+1 benchmarks registered
+Running wmemchr (0/10)
+Running wmemchr (0/10) (1/1)
+
+usec_per_run 650228.062500
+wmemchr (0/10): 461
+Running wmemchr (1/10)
+Running wmemchr (1/10) (2/1)
+
+usec_per_run 588933.250000
+wmemchr (1/10): 509
+Running wmemchr (2/10)
+Running wmemchr (2/10) (3/1)
+
+usec_per_run 588752.187500
+wmemchr (2/10): 509
+Running wmemchr (3/10)
+Running wmemchr (3/10) (4/1)
+
+usec_per_run 588720.187500
+wmemchr (3/10): 509
+Running wmemchr (4/10)
+Running wmemchr (4/10) (5/1)
+
+usec_per_run 590990.000000
+wmemchr (4/10): 507
+Running wmemchr (5/10)
+Running wmemchr (5/10) (6/1)
+
+usec_per_run 589250.812500
+wmemchr (5/10): 509
+Running wmemchr (6/10)
+Running wmemchr (6/10) (7/1)
+
+usec_per_run 589305.437500
+wmemchr (6/10): 509
+Running wmemchr (7/10)
+Running wmemchr (7/10) (8/1)
+
+usec_per_run 890307.375000
+wmemchr (7/10): 336
+Running wmemchr (8/10)
+Running wmemchr (8/10) (9/1)
+
+usec_per_run 1030405.625000
+wmemchr (8/10): 291
+Running wmemchr (9/10)
+Running wmemchr (9/10) (10/1)
+
+usec_per_run 799701.687500
+wmemchr (9/10): 375
+Benchmark wmemchr: usec 12795227, iters 16, usec/run 799701 score 375.14
+Aggregate score: 375
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running wmemchr (0/10)
+Running wmemchr (0/10) (1/1)
+
+usec_per_run 4816802.000000
+wmemchr (0/10): 622
+Running wmemchr (1/10)
+Running wmemchr (1/10) (2/1)
+
+usec_per_run 5082541.000000
+wmemchr (1/10): 590
+Running wmemchr (2/10)
+Running wmemchr (2/10) (3/1)
+
+usec_per_run 5137758.000000
+wmemchr (2/10): 583
+Running wmemchr (3/10)
+Running wmemchr (3/10) (4/1)
+
+usec_per_run 3002448.000000
+wmemchr (3/10): 999
+Running wmemchr (4/10)
+Running wmemchr (4/10) (5/1)
+
+usec_per_run 2941169.000000
+wmemchr (4/10): 1020
+Running wmemchr (5/10)
+Running wmemchr (5/10) (6/1)
+
+usec_per_run 2942286.000000
+wmemchr (5/10): 1019
+Running wmemchr (6/10)
+Running wmemchr (6/10) (7/1)
+
+usec_per_run 2941188.000000
+wmemchr (6/10): 1019
+Running wmemchr (7/10)
+Running wmemchr (7/10) (8/1)
+
+usec_per_run 2946639.000000
+wmemchr (7/10): 1018
+Running wmemchr (8/10)
+Running wmemchr (8/10) (9/1)
+
+usec_per_run 2941116.000000
+wmemchr (8/10): 1020
+Running wmemchr (9/10)
+Running wmemchr (9/10) (10/1)
+
+usec_per_run 2972492.000000
+wmemchr (9/10): 1009
+Benchmark wmemchr: usec 2972492, iters 1, usec/run 2972492 score 1009.25
+Aggregate score: 1009

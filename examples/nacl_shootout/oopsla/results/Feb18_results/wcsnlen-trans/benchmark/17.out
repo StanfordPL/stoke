@@ -1,0 +1,67 @@
+Running small benchmarks
+0 benchmarks registered
+Aggregate score: -2147483648
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running wcsnlen (0/10)
+Running wcsnlen (0/10) (1/1)
+
+sum=1640065408
+usec_per_run 7944760.000000
+wcsnlen (0/10): 377
+Running wcsnlen (1/10)
+Running wcsnlen (1/10) (2/1)
+
+sum=1640065408
+usec_per_run 8484574.000000
+wcsnlen (1/10): 353
+Running wcsnlen (2/10)
+Running wcsnlen (2/10) (3/1)
+
+sum=1640065408
+usec_per_run 7143011.000000
+wcsnlen (2/10): 419
+Running wcsnlen (3/10)
+Running wcsnlen (3/10) (4/1)
+
+sum=1640065408
+usec_per_run 10369583.000000
+wcsnlen (3/10): 289
+Running wcsnlen (4/10)
+Running wcsnlen (4/10) (5/1)
+
+sum=1640065408
+usec_per_run 7676749.000000
+wcsnlen (4/10): 390
+Running wcsnlen (5/10)
+Running wcsnlen (5/10) (6/1)
+
+sum=1640065408
+usec_per_run 5896493.000000
+wcsnlen (5/10): 508
+Running wcsnlen (6/10)
+Running wcsnlen (6/10) (7/1)
+
+sum=1640065408
+usec_per_run 5898179.000000
+wcsnlen (6/10): 508
+Running wcsnlen (7/10)
+Running wcsnlen (7/10) (8/1)
+
+sum=1640065408
+usec_per_run 5905984.000000
+wcsnlen (7/10): 507
+Running wcsnlen (8/10)
+Running wcsnlen (8/10) (9/1)
+
+sum=1640065408
+usec_per_run 5898914.000000
+wcsnlen (8/10): 508
+Running wcsnlen (9/10)
+Running wcsnlen (9/10) (10/1)
+
+sum=1640065408
+usec_per_run 5898060.000000
+wcsnlen (9/10): 508
+Benchmark wcsnlen: usec 5898060, iters 1, usec/run 5898060 score 508.64
+Aggregate score: 508

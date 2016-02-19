@@ -1,0 +1,57 @@
+Running small benchmarks
+0 benchmarks registered
+Aggregate score: -2147483648
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running wcscmp (0/10)
+Running wcscmp (0/10) (1/1)
+
+usec_per_run 4323085.000000
+wcscmp (0/10): 693
+Running wcscmp (1/10)
+Running wcscmp (1/10) (2/1)
+
+usec_per_run 4324471.000000
+wcscmp (1/10): 693
+Running wcscmp (2/10)
+Running wcscmp (2/10) (3/1)
+
+usec_per_run 4322291.000000
+wcscmp (2/10): 694
+Running wcscmp (3/10)
+Running wcscmp (3/10) (4/1)
+
+usec_per_run 4324102.000000
+wcscmp (3/10): 693
+Running wcscmp (4/10)
+Running wcscmp (4/10) (5/1)
+
+usec_per_run 4322848.000000
+wcscmp (4/10): 693
+Running wcscmp (5/10)
+Running wcscmp (5/10) (6/1)
+
+usec_per_run 4325949.000000
+wcscmp (5/10): 693
+Running wcscmp (6/10)
+Running wcscmp (6/10) (7/1)
+
+usec_per_run 4326404.000000
+wcscmp (6/10): 693
+Running wcscmp (7/10)
+Running wcscmp (7/10) (8/1)
+
+usec_per_run 6015531.000000
+wcscmp (7/10): 498
+Running wcscmp (8/10)
+Running wcscmp (8/10) (9/1)
+
+usec_per_run 8160737.000000
+wcscmp (8/10): 367
+Running wcscmp (9/10)
+Running wcscmp (9/10) (10/1)
+
+usec_per_run 4327465.000000
+wcscmp (9/10): 693
+Benchmark wcscmp: usec 4327465, iters 1, usec/run 4327465 score 693.25
+Aggregate score: 693

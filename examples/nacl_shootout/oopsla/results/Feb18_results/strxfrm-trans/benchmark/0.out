@@ -1,0 +1,57 @@
+Running small benchmarks
+0 benchmarks registered
+Aggregate score: -2147483648
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running strxfrm (0/10)
+Running strxfrm (0/10) (1/1)
+
+usec_per_run 5035675.000000
+strxfrm (0/10): 595
+Running strxfrm (1/10)
+Running strxfrm (1/10) (2/1)
+
+usec_per_run 4152858.000000
+strxfrm (1/10): 722
+Running strxfrm (2/10)
+Running strxfrm (2/10) (3/1)
+
+usec_per_run 5530390.000000
+strxfrm (2/10): 542
+Running strxfrm (3/10)
+Running strxfrm (3/10) (4/1)
+
+usec_per_run 5482695.000000
+strxfrm (3/10): 547
+Running strxfrm (4/10)
+Running strxfrm (4/10) (5/1)
+
+usec_per_run 5592611.000000
+strxfrm (4/10): 536
+Running strxfrm (5/10)
+Running strxfrm (5/10) (6/1)
+
+usec_per_run 5538240.000000
+strxfrm (5/10): 541
+Running strxfrm (6/10)
+Running strxfrm (6/10) (7/1)
+
+usec_per_run 5566337.000000
+strxfrm (6/10): 538
+Running strxfrm (7/10)
+Running strxfrm (7/10) (8/1)
+
+usec_per_run 3516105.000000
+strxfrm (7/10): 853
+Running strxfrm (8/10)
+Running strxfrm (8/10) (9/1)
+
+usec_per_run 3070893.000000
+strxfrm (8/10): 976
+Running strxfrm (9/10)
+Running strxfrm (9/10) (10/1)
+
+usec_per_run 3070771.000000
+strxfrm (9/10): 976
+Benchmark strxfrm: usec 3070771, iters 1, usec/run 3070771 score 976.95
+Aggregate score: 976

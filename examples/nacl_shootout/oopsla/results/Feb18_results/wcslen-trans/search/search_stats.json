@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 846.545,
+    "total_time": 847.197
+  },
+  "best_yet": {
+    "cost": 91,
+    "code": ".wcslen:\nleal (%rdi), %ecx\nmovl (%r15,%rcx,1), %ecx\ntestl %ecx, %ecx\nmovq %rdi, %rax\nje .L_22\n.L_10:\naddl $0x4, %eax\nleal (%rax), %edx\nmovl (%r15,%rdx,1), %edx\ntestl %edx, %edi\njne .L_10\nsubl %edi, %eax\nnop \nnop \nnop \nnop \nsarw $0x2, %ax\nretq \n.L_22:\nnop \nxorl %eax, %eax\nnop \nretq "
+  },
+  "best_correct": {
+    "cost": 91,
+    "code": ".wcslen:\nleal (%rdi), %ecx\nmovl (%r15,%rcx,1), %ecx\ntestl %ecx, %ecx\nmovq %rdi, %rax\nje .L_22\n.L_10:\naddl $0x4, %eax\nleal (%rax), %edx\nmovl (%r15,%rdx,1), %edx\ntestl %edx, %edi\njne .L_10\nsubl %edi, %eax\nnop \nnop \nnop \nnop \nsarw $0x2, %ax\nretq \n.L_22:\nnop \nxorl %eax, %eax\nnop \nretq "
+  }
+}

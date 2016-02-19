@@ -1,0 +1,14 @@
+Benchmark Optimization Translation "Max Verified"
+wcpcpy 1.594 1.003 1.594
+wcslen 2.002 0.999 2.002
+wmemset 1.031 1.084 1.084
+wcsnlen 1.018 1.299 1.299
+wmemcmp 0 1.083 1.083
+wcschr 1.178 1.157 1.178
+strxfrm 1.001 1.43 1.43
+wcscmp 1.051 1.509 1.509
+wmemchr 1.045 1.087 1.087
+wcscpy 1.229 1.494 1.494
+wcscat 0 0 0
+strcpy 1.23 0 1.23
+wcsrchr 0 0 0

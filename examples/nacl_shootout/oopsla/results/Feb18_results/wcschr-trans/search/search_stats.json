@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 886.906,
+    "total_time": 887.802
+  },
+  "best_yet": {
+    "cost": 317,
+    "code": ".wcschr:\nnop \n.L_0:\nleal (%rdi), %r8d\nmovl (%r15,%r8,1), %eax\ncmpl %esi, %eax\nje .L_18\naddq $0x4, %rdi\ntestl %eax, %eax\njne .L_0\nretq \nnop \nnop \n.L_18:\nmovq %r8, %rax\nnop \nnop \nretq "
+  },
+  "best_correct": {
+    "cost": 317,
+    "code": ".wcschr:\nnop \n.L_0:\nleal (%rdi), %r8d\nmovl (%r15,%r8,1), %eax\ncmpl %esi, %eax\nje .L_18\naddq $0x4, %rdi\ntestl %eax, %eax\njne .L_0\nretq \nnop \nnop \n.L_18:\nmovq %r8, %rax\nnop \nnop \nretq "
+  }
+}

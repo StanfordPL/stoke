@@ -1,0 +1,15 @@
+
+ * Costs for each output are listed in BENCHMARK/search/outputs/outputs.csv
+
+ * To build a binary for a particular rewrite:
+ 
+  stoke replace --nacl -i BENCHMARK/binary --rewrite BENCHMARK/search/outputs/N.i -o BENCHMARK/benchmarks/N.bin
+
+ * To run a rewrite to get the score, you need to install the NaCl SDK, which includes the sel_ldr.py script
+  
+   sel_ldr.py BENCHMARK/benchmarks/N.bin
+
+ - you'll want to take an average of the first 10 values reported
+ - higher is better
+
+

@@ -1,0 +1,25 @@
+wmemset
+
+### Summary ###
+speedup: 1.031
+best rewrite: 4
+best rewrite score: 1037.7
+target score: 1006.2
+
+### Search ###
+total search time: 1897.995
+total BV time: 5.625
+total BV runs: 69
+average BV time: 0.082
+total BV success: 20
+total reported by stoke binary: 1903.62
+
+### DDEC Verification ###
+total ddec runs: 7
+total ddec success: 4
+total ddec time: 0.805
+average ddec time: 0.115
+
+### Benchmarking ###
+total benchmark time: 275.28099999999995
+

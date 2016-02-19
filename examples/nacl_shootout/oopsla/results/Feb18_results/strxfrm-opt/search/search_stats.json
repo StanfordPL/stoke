@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 1396.68,
+    "total_time": 1397.44
+  },
+  "best_yet": {
+    "cost": 198,
+    "code": ".strxfrm:\nxorq %rax, %rax\nnop \nnop \ntestl %edx, %edx\njne .L_12c260\njmpq .L_12c2a0\nnop \nnop \nnop \nnop \nnop \n.L_12c240:\naddw $0x1, %ax\ndecw %dx\nje .L_12c2a0\n.L_12c260:\norl %esi, %esi\nmovsbl (%r15,%rsi,1), %ecx\nsubl $0xff, %edi\nmovb %cl, -0x1(%r15,%rdi,1)\naddl $0x1, %esi\ntestb %cl, %cl\njne .L_12c240\nnop \nretq \nnop \nnop \nnop \nnop \n.L_12c280:\naddl $0x1, %eax\n.L_12c2a0:\naddl $0x1, %esi\ncmpb $0x0, -0x1(%r15,%rsi,1)\njne .L_12c280\nnop \nnop \nnop \nnop \nretq "
+  },
+  "best_correct": {
+    "cost": 198,
+    "code": ".strxfrm:\nxorq %rax, %rax\nnop \nnop \ntestl %edx, %edx\njne .L_12c260\njmpq .L_12c2a0\nnop \nnop \nnop \nnop \nnop \n.L_12c240:\naddw $0x1, %ax\ndecw %dx\nje .L_12c2a0\n.L_12c260:\norl %esi, %esi\nmovsbl (%r15,%rsi,1), %ecx\nsubl $0xff, %edi\nmovb %cl, -0x1(%r15,%rdi,1)\naddl $0x1, %esi\ntestb %cl, %cl\njne .L_12c240\nnop \nretq \nnop \nnop \nnop \nnop \n.L_12c280:\naddl $0x1, %eax\n.L_12c2a0:\naddl $0x1, %esi\ncmpb $0x0, -0x1(%r15,%rsi,1)\njne .L_12c280\nnop \nnop \nnop \nnop \nretq "
+  }
+}

@@ -1,0 +1,108 @@
+Running small benchmarks
+1 benchmarks registered
+Running wcscat (0/10)
+Running wcscat (0/10) (1/1)
+
+usec_per_run 303731.750000
+wcscat (0/10): 987
+Running wcscat (1/10)
+Running wcscat (1/10) (2/1)
+
+usec_per_run 347244.500000
+wcscat (1/10): 863
+Running wcscat (2/10)
+Running wcscat (2/10) (3/1)
+
+usec_per_run 292077.937500
+wcscat (2/10): 1027
+Running wcscat (3/10)
+Running wcscat (3/10) (4/1)
+
+usec_per_run 292688.875000
+wcscat (3/10): 1024
+Running wcscat (4/10)
+Running wcscat (4/10) (5/1)
+
+usec_per_run 291537.250000
+wcscat (4/10): 1029
+Running wcscat (5/10)
+Running wcscat (5/10) (6/1)
+
+usec_per_run 368334.937500
+wcscat (5/10): 814
+Running wcscat (6/10)
+Running wcscat (6/10) (7/1)
+
+usec_per_run 371638.437500
+wcscat (6/10): 807
+Running wcscat (7/10)
+Running wcscat (7/10) (8/1)
+
+usec_per_run 291193.312500
+wcscat (7/10): 1030
+Running wcscat (8/10)
+Running wcscat (8/10) (9/1)
+
+usec_per_run 337049.812500
+wcscat (8/10): 890
+Running wcscat (9/10)
+Running wcscat (9/10) (10/1)
+
+usec_per_run 291210.187500
+wcscat (9/10): 1030
+Benchmark wcscat: usec 4659363, iters 16, usec/run 291210 score 1030.18
+Aggregate score: 1030
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running wcscat (0/10)
+Running wcscat (0/10) (1/1)
+
+usec_per_run 1456979.000000
+wcscat (0/10): 2059
+Running wcscat (1/10)
+Running wcscat (1/10) (2/1)
+
+usec_per_run 1456735.000000
+wcscat (1/10): 2059
+Running wcscat (2/10)
+Running wcscat (2/10) (3/1)
+
+usec_per_run 1456698.000000
+wcscat (2/10): 2059
+Running wcscat (3/10)
+Running wcscat (3/10) (4/1)
+
+usec_per_run 1456419.000000
+wcscat (3/10): 2059
+Running wcscat (4/10)
+Running wcscat (4/10) (5/1)
+
+usec_per_run 1456684.000000
+wcscat (4/10): 2059
+Running wcscat (5/10)
+Running wcscat (5/10) (6/1)
+
+usec_per_run 1458322.000000
+wcscat (5/10): 2057
+Running wcscat (6/10)
+Running wcscat (6/10) (7/1)
+
+usec_per_run 1458550.000000
+wcscat (6/10): 2056
+Running wcscat (7/10)
+Running wcscat (7/10) (8/1)
+
+usec_per_run 1458336.000000
+wcscat (7/10): 2057
+Running wcscat (8/10)
+Running wcscat (8/10) (9/1)
+
+usec_per_run 1458175.000000
+wcscat (8/10): 2057
+Running wcscat (9/10)
+Running wcscat (9/10) (10/1)
+
+usec_per_run 1458305.000000
+wcscat (9/10): 2057
+Benchmark wcscat: usec 1458305, iters 1, usec/run 1458305 score 2057.18
+Aggregate score: 2057

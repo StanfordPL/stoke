@@ -1,0 +1,20 @@
+{
+  "success": false,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 1040.37,
+    "total_time": 1041.24
+  },
+  "best_yet": {
+    "cost": 197,
+    "code": ".wmemchr:\nxorq %rax, %rax\nxorl $0x0, %edx\nje .L_21\nsubl %eax, %edi\ncmpl %esi, (%r15,%rdi,1)\nnop \nnop \njne .L_14\nnop \njmpq .L_28\nnop \n.L_10:\naddq $0x4, %rdi\ncmpl %esi, (%r15,%rdi,1)\nje .L_28\n.L_14:\naddq $0x1, %rax\ncmpq %rdx, %rax\njne .L_10\nxorq %rax, %rax\n.L_21:\nretq \n.L_28:\nnop \nnop \nnop \nnop \nnop \nnop \nmovl %edi, %eax\nretq "
+  },
+  "best_correct": {
+    "cost": 197,
+    "code": ".wmemchr:\ntestl %edx, %edx\nmovl %edi, %eax\nje .L_144200\nxorl %ecx, %ecx\nmovl %eax, %eax\ncmpl %esi, (%r15,%rax,1)\njne .L_1441e0\njmpq .L_144240\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_1441c0:\naddl $0x4, %eax\nmovl %eax, %eax\ncmpl %esi, (%r15,%rax,1)\nje .L_144220\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_1441e0:\naddl $0x1, %ecx\ncmpl %ecx, %edx\nja .L_1441c0\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_144200:\nxorl %eax, %eax\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_144220:\nretq \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_144240:\nretq "
+  }
+}

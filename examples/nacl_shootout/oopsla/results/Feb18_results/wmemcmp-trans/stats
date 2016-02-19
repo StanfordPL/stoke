@@ -1,0 +1,25 @@
+wmemcmp
+
+### Summary ###
+speedup: 1.083
+best rewrite: 9
+best rewrite score: 346.8
+target score: 320.1
+
+### Search ###
+total search time: 1213.805
+total BV time: 5683.885
+total BV runs: 24
+average BV time: 236.829
+total BV success: 21
+total reported by stoke binary: 6897.69
+
+### DDEC Verification ###
+total ddec runs: 10
+total ddec success: 10
+total ddec time: 3.786
+average ddec time: 0.379
+
+### Benchmarking ###
+total benchmark time: 1358.3980000000001
+

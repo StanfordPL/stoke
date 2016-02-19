@@ -1,0 +1,25 @@
+strcpy
+
+### Summary ###
+speedup: 1.23
+best rewrite: 20
+best rewrite score: 1229.9
+target score: 999.9
+
+### Search ###
+total search time: 1102.028
+total BV time: 2462.252
+total BV runs: 42
+average BV time: 58.625
+total BV success: 25
+total reported by stoke binary: 3564.28
+
+### DDEC Verification ###
+total ddec runs: 9
+total ddec success: 8
+total ddec time: 12.703
+average ddec time: 1.411
+
+### Benchmarking ###
+total benchmark time: 463.894
+

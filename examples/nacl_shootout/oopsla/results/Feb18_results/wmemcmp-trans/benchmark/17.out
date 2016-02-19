@@ -1,0 +1,57 @@
+Running small benchmarks
+0 benchmarks registered
+Aggregate score: -2147483648
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running wmemcmp (0/10)
+Running wmemcmp (0/10) (1/1)
+
+usec_per_run 8662266.000000
+wmemcmp (0/10): 346
+Running wmemcmp (1/10)
+Running wmemcmp (1/10) (2/1)
+
+usec_per_run 8654538.000000
+wmemcmp (1/10): 346
+Running wmemcmp (2/10)
+Running wmemcmp (2/10) (3/1)
+
+usec_per_run 8660757.000000
+wmemcmp (2/10): 346
+Running wmemcmp (3/10)
+Running wmemcmp (3/10) (4/1)
+
+usec_per_run 8671061.000000
+wmemcmp (3/10): 345
+Running wmemcmp (4/10)
+Running wmemcmp (4/10) (5/1)
+
+usec_per_run 8662136.000000
+wmemcmp (4/10): 346
+Running wmemcmp (5/10)
+Running wmemcmp (5/10) (6/1)
+
+usec_per_run 8657849.000000
+wmemcmp (5/10): 346
+Running wmemcmp (6/10)
+Running wmemcmp (6/10) (7/1)
+
+usec_per_run 8658833.000000
+wmemcmp (6/10): 346
+Running wmemcmp (7/10)
+Running wmemcmp (7/10) (8/1)
+
+usec_per_run 8659155.000000
+wmemcmp (7/10): 346
+Running wmemcmp (8/10)
+Running wmemcmp (8/10) (9/1)
+
+usec_per_run 8656483.000000
+wmemcmp (8/10): 346
+Running wmemcmp (9/10)
+Running wmemcmp (9/10) (10/1)
+
+usec_per_run 8659427.000000
+wmemcmp (9/10): 346
+Benchmark wmemcmp: usec 8659427, iters 1, usec/run 8659427 score 346.44
+Aggregate score: 346

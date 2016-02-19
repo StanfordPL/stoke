@@ -1,0 +1,20 @@
+{
+  "success": false,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 3564.28,
+    "total_time": 3565.13
+  },
+  "best_yet": {
+    "cost": 62,
+    "code": ".strcpy:\nmovq %rsi, %rdx\nnop \nnop \nnop \nmovl %edi, %eax\norq %rsi, %rdi\nmovq %rax, %rcx\nandl $0x3, %edi\njne .L_126860\nnop \nnop \nnop \nmovl %edx, %esi\nmovl (%r15,%rsi,1), %r8d\nmovl %r8d, %esi\nnop \nnop \nnop \nnotq %rsi\nleaq -0x1010101(%r8), %rdi\nnop \nandl $0x80808080, %edi\nnop \nandl %edi, %esi\njne .L_126860\nnop \nnop \nnop \nnop \nnop \n.L_126820:\nmovq %rcx, %rcx\nmovl %r8d, (%r15,%rcx,1)\naddl $0x4, %edx\nmovl (%r15,%rdx,1), %r8d\nleal -0x1010101(%r8), %esi\naddl $0x4, %ecx\nmovq %r8, %r9\nnotq %r9\nandl %esi, %r9d\nandl $0x80808080, %r9d\nje .L_126820\nnop \nnop \n.L_126860:\norl %edx, %edx\nmovsbw (%r15,%rdx,1), %si\norl %ecx, %ecx\nmovb %sil, (%r15,%rcx,1)\naddw $0x1, %cx\naddl $0x1, %edx\ntestb %sil, %sil\njne .L_126860\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nretq "
+  },
+  "best_correct": {
+    "cost": 62,
+    "code": ".strcpy:\nmovl %esi, %esi\nmovl %edi, %eax\nmovl %esi, %edi\nmovq %rsi, %rdx\nmovq %rax, %rcx\norl %eax, %edi\nandl $0x3, %edi\njne .L_126860\nmovl %esi, %esi\nmovl (%r15,%rsi,1), %r8d\nmovl %r8d, %esi\nleal -0x1010101(%r8), %edi\nnotl %esi\nandl %edi, %esi\nandl $0x80808080, %esi\njne .L_126860\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_126820:\naddl $0x4, %edx\nmovl %ecx, %ecx\nmovl %r8d, (%r15,%rcx,1)\naddl $0x4, %ecx\nmovl %edx, %edx\nmovl (%r15,%rdx,1), %r8d\nmovl %r8d, %r9d\nleal -0x1010101(%r8), %esi\nnotl %r9d\nnop \nandl %esi, %r9d\nandl $0x80808080, %r9d\nje .L_126820\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_126860:\nmovl %edx, %edx\nmovzbl (%r15,%rdx,1), %esi\naddl $0x1, %edx\nmovl %ecx, %ecx\nmovb %sil, (%r15,%rcx,1)\naddl $0x1, %ecx\ntestb %sil, %sil\njne .L_126860\nnop \nnop \nnop \nnop \nnop \nretq "
+  }
+}

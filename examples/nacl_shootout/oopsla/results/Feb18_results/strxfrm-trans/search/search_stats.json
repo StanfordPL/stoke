@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 852.487,
+    "total_time": 853.672
+  },
+  "best_yet": {
+    "cost": 67,
+    "code": ".strxfrm:\nxorq %rax, %rax\nnop \nnop \nnop \nnop \ntestb %dl, %dl\nnop \nje .L_38\nleal (%rsi), %esi\nmovzbl (%r15,%rsi,1), %eax\nleal (%rdi), %r8d\nmovb %al, (%r15,%r8,1)\naddb %ah, %al\nje .L_4c\nleal 0x1(%rsi), %ecx\naddl %edx, %esi\nnop \nsubb %al, %al\njmpq .L_2f\nnop \n.L_20:\naddl $0x1, %ecx\nleal -0x1(%rcx), %r8d\nmovsbl (%r15,%r8,1), %edx\ntestq %rdx, %rdx\nleal (%rdi,%rax,1), %r8d\nmovb %dl, (%r15,%r8,1)\nje .L_4a\n.L_2f:\naddw $0x1, %ax\ncmpq %rsi, %rcx\njne .L_20\n.L_38:\nxorb %ah, %dh\nleal (%rsi), %r8d\ncmpb $0x0, (%r15,%r8,1)\nje .L_4a\nnop \nnop \nnop \nnop \nsubq %rax, %rsi\nnop \nnop \nnop \nnop \nnop \n.L_40:\naddq $0x1, %rax\nleal (%rsi,%rax,1), %r8d\ncmpb $0x0, (%r15,%r8,1)\njne .L_40\nxorb %ah, %dh\nnop \nnop \n.L_4a:\n.L_4c:\nnop \nretq "
+  },
+  "best_correct": {
+    "cost": 67,
+    "code": ".strxfrm:\nxorq %rax, %rax\nnop \nnop \nnop \nnop \ntestb %dl, %dl\nnop \nje .L_38\nleal (%rsi), %esi\nmovzbl (%r15,%rsi,1), %eax\nleal (%rdi), %r8d\nmovb %al, (%r15,%r8,1)\naddb %ah, %al\nje .L_4c\nleal 0x1(%rsi), %ecx\naddl %edx, %esi\nnop \nsubb %al, %al\njmpq .L_2f\nnop \n.L_20:\naddl $0x1, %ecx\nleal -0x1(%rcx), %r8d\nmovsbl (%r15,%r8,1), %edx\ntestq %rdx, %rdx\nleal (%rdi,%rax,1), %r8d\nmovb %dl, (%r15,%r8,1)\nje .L_4a\n.L_2f:\naddw $0x1, %ax\ncmpq %rsi, %rcx\njne .L_20\n.L_38:\nnop \nnop \nleal (%rsi), %r8d\ncmpb $0x0, (%r15,%r8,1)\nje .L_4a\nnop \nnop \nnop \nnop \nsubq %rax, %rsi\nnop \nnop \nnop \nnop \nnop \n.L_40:\naddq $0x1, %rax\nleal (%rsi,%rax,1), %r8d\ncmpb $0x0, (%r15,%r8,1)\njne .L_40\nnop \nnop \nnop \nnop \n.L_4a:\n.L_4c:\nnop \nretq "
+  }
+}

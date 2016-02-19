@@ -1,0 +1,20 @@
+{
+  "success": false,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 6897.69,
+    "total_time": 6898.52
+  },
+  "best_yet": {
+    "cost": 1000386,
+    "code": ".wmemcmp:\nnop \nnop \nnop \nnop \nnop \nnop \nxorl %eax, %eax\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_18:\nleal (%rdi,%rax,4), %r8d\nmovl (%r15,%r8,1), %r8d\nleal (%rsi,%rax,4), %ecx\nmovl (%r15,%rcx,1), %ecx\nincl %eax\ncmpl %ecx, %r8d\njne .L_30\n.L_24:\ncmpq %rdx, %rax\njne .L_18\nnop \nnop \nandb $0x10, %al\nnop \nnop \nmovzwq %di, %r10\nnop \nsalb %cl, %ah\nnop \nnop \nnop \norw $0x80, %dx\nnop \nnop \nretq \nnop \nnop \nnop \nnop \nnop \nnop \n.L_30:\nxorw %ax, %ax\nnop \nnop \nnop \nnop \nnop \nnop \ncmpl %ecx, %r8d\nsetg %al\nleal -0x1(%rax,%rax,1), %eax\nretq "
+  },
+  "best_correct": {
+    "cost": 1000386,
+    "code": ".wmemcmp:\ntestl %edx, %edx\nmovl %edi, %edi\nmovl %esi, %esi\nje .L_14f300\nmovl %edi, %edi\nmovl (%r15,%rdi,1), %r8d\nmovl %esi, %esi\nmovl (%r15,%rsi,1), %ecx\nxorl %eax, %eax\ncmpl %ecx, %r8d\nje .L_14f2e0\njmpq .L_14f320\nnop \nnop \nnop \n.L_14f2c0:\naddl $0x4, %edi\naddl $0x4, %esi\nmovl %edi, %edi\nmovl (%r15,%rdi,1), %r8d\nmovl %esi, %esi\nmovl (%r15,%rsi,1), %ecx\ncmpl %ecx, %r8d\njne .L_14f320\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_14f2e0:\naddl $0x1, %eax\ncmpl %eax, %edx\nja .L_14f2c0\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_14f300:\nxorl %eax, %eax\nretq \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_14f320:\nxorl %eax, %eax\ncmpl %ecx, %r8d\nsetg %al\nleal -0x1(%rax,%rax,1), %eax\nretq "
+  }
+}

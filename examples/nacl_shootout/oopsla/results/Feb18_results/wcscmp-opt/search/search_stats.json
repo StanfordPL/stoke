@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 799.51,
+    "total_time": 800.381
+  },
+  "best_yet": {
+    "cost": 152,
+    "code": ".wcscmp:\nnop \nnop \n.L_141100:\naddq $0x4, %rsi\nmovl -0x4(%r15,%rsi,1), %edx\naddq $0x4, %rdi\nmovl -0x4(%r15,%rdi,1), %eax\nsubl %edx, %eax\njne .L_141160\nnegl %edx\njne .L_141100\n.L_141160:\nnop \nnop \nnop \nnop \norw %di, %di\nnop \nretq "
+  },
+  "best_correct": {
+    "cost": 152,
+    "code": ".wcscmp:\nnop \nnop \nnop \nnop \nnop \njmpq .L_141120\nnop \nnop \n.L_141100:\naddq $0x4, %rsi\naddq $0x4, %rdi\n.L_141120:\nmovl %esi, %esi\nmovl (%r15,%rsi,1), %edx\norl %edi, %edi\nmovl (%r15,%rdi,1), %eax\ncmpl %edx, %eax\njne .L_141160\nandw %dx, %dx\njne .L_141100\n.L_141160:\nnop \nnop \nnop \nnop \nsubl %edx, %eax\nretq "
+  }
+}

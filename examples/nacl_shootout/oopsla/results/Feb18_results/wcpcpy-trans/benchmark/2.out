@@ -1,0 +1,57 @@
+Running small benchmarks
+0 benchmarks registered
+Aggregate score: -2147483648
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running wcpcpy (0/10)
+Running wcpcpy (0/10) (1/1)
+
+usec_per_run 1460779.000000
+wcpcpy (0/10): 2053
+Running wcpcpy (1/10)
+Running wcpcpy (1/10) (2/1)
+
+usec_per_run 1463365.000000
+wcpcpy (1/10): 2050
+Running wcpcpy (2/10)
+Running wcpcpy (2/10) (3/1)
+
+usec_per_run 1465883.000000
+wcpcpy (2/10): 2046
+Running wcpcpy (3/10)
+Running wcpcpy (3/10) (4/1)
+
+usec_per_run 1697253.000000
+wcpcpy (3/10): 1767
+Running wcpcpy (4/10)
+Running wcpcpy (4/10) (5/1)
+
+usec_per_run 865564.000000
+wcpcpy (4/10): 3465
+Running wcpcpy (5/10)
+Running wcpcpy (5/10) (6/1)
+
+usec_per_run 864934.000000
+wcpcpy (5/10): 3468
+Running wcpcpy (6/10)
+Running wcpcpy (6/10) (7/1)
+
+usec_per_run 864735.000000
+wcpcpy (6/10): 3469
+Running wcpcpy (7/10)
+Running wcpcpy (7/10) (8/1)
+
+usec_per_run 864626.000000
+wcpcpy (7/10): 3469
+Running wcpcpy (8/10)
+Running wcpcpy (8/10) (9/1)
+
+usec_per_run 864776.000000
+wcpcpy (8/10): 3469
+Running wcpcpy (9/10)
+Running wcpcpy (9/10) (10/1)
+
+usec_per_run 864830.000000
+wcpcpy (9/10): 3468
+Benchmark wcpcpy: usec 864830, iters 1, usec/run 864830 score 3468.89
+Aggregate score: 3468

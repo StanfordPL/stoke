@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 493.858,
+    "total_time": 494.686
+  },
+  "best_yet": {
+    "cost": 149,
+    "code": ".wcscmp:\njmpq .L_10\n.L_8:\nnegl %edx\nje .L_1f\n.L_10:\naddq $0x4, %rdi\nmovl -0x4(%r15,%rdi,1), %eax\naddq $0x4, %rsi\nmovl -0x4(%r15,%rsi,1), %edx\nsubl %edx, %eax\nje .L_8\nnop \n.L_1f:\nnop \nnop \nnop \nnop \nretq "
+  },
+  "best_correct": {
+    "cost": 149,
+    "code": ".wcscmp:\njmpq .L_10\nnop \nnop \nnop \n.L_8:\naddq $0x4, %rdi\ntestl %eax, %eax\nje .L_1f\n.L_10:\naddq $0x4, %rsi\nleal (%rdi), %r8d\nmovl (%r15,%r8,1), %eax\nleal -0x4(%rsi), %r8d\nmovl (%r15,%r8,1), %edx\ncmpl %edx, %eax\nje .L_8\nsubl %edx, %eax\nnop \n.L_1f:\nretq "
+  }
+}

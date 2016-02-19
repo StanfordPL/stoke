@@ -1,0 +1,20 @@
+{
+  "success": true,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 1234.06,
+    "total_time": 1234.66
+  },
+  "best_yet": {
+    "cost": 55,
+    "code": ".wcscpy:\nnop \nnop \nnop \nmovl %edi, %edx\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nmovl %esi, %esi\nmovl (%r15,%rsi,1), %ecx\nnop \ntestl %ecx, %ecx\nnop \nnop \nnop \nnop \nnop \nnop \nmovl %edi, %eax\nje .L_140f20\n.L_140f00:\naddq $0x4, %rdx\nmovl %ecx, -0x4(%r15,%rdx,1)\naddl $0x4, %esi\nmovl (%r15,%rsi,1), %ecx\ntestl %ecx, %ecx\njne .L_140f00\nshrw $0x1, %si\nnop \nxorw %di, %si\nnop \n.L_140f20:\nnop \nnop \nmovl %edx, %edx\nandl $0x0, (%r15,%rdx,1)\nnop \nretq "
+  },
+  "best_correct": {
+    "cost": 55,
+    "code": ".wcscpy:\nmovl %edi, %eax\nnop \nnop \nnop \nnop \nnop \nmovq %rax, %rdx\nnop \nnop \nnop \nnop \nmovl %esi, %esi\nmovl (%r15,%rsi,1), %ecx\nnop \ntestl %ecx, %ecx\nnop \nnop \nje .L_140f20\nnop \nnop \nnop \nnop \nnop \nnop \n.L_140f00:\nmovl %edx, %edx\nmovl %ecx, (%r15,%rdx,1)\naddl $0x4, %edx\naddl $0x4, %esi\nmovl (%r15,%rsi,1), %ecx\ntestl %ecx, %ecx\njne .L_140f00\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nxorb %ch, %ah\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_140f20:\nmovl %edx, %edx\nmovl $0x0, (%r15,%rdx,1)\nretq "
+  }
+}

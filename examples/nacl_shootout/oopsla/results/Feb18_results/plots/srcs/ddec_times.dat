@@ -1,0 +1,17 @@
+2 wcpcpy-trans-pass 655.52 661.9 669.72 734.12 797.07
+4 wcslen-trans-pass 4.89 5.13 5.44 6.79 8.07
+6 wmemset-trans-pass 186.92 195.85 203.33 213.84 230.98
+8 wcsnlen-trans-pass 23.73 23.88 25.7 30.92 33.15
+10 wmemcmp-trans-pass 358.36 363.3 373.6 387.11 426.72
+12 wcschr-trans-pass 3.43 3.53 4.1 196.53 220.9
+14 strxfrm-trans-pass 289.75 310.04 327.08 343.81 358.03
+16 wcscmp-trans-pass 551.24 559.36 595.71 639.18 671.09
+18 wmemchr-trans-pass 62.7 64.77 75.79 81.41 113.42
+20 wcscpy-trans-pass 834.26 894.25 927.43 993.29 1195.06
+28 wcpcpy-trans-fail 870.19 870.19 894.25 918.31 918.31
+30 wcslen-trans-fail 5.12 2656.55 3641.72 4156.03 4493.36
+32 wmemset-trans-fail 7.97 7.97 8.17 12.92 12.92
+34 wcsnlen-trans-fail 382.75 427.89 473.3 701.57 788.6
+44 wmemchr-trans-fail 129.18 129.18 192.67 253.67 253.67
+46 wcscpy-trans-fail 0.32 0.33 0.34 0.37 0.41
+52 wcsrchr-trans-fail 679.67 706.89 751.06 793.6 839.7

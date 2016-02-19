@@ -1,0 +1,25 @@
+wmemchr
+
+### Summary ###
+speedup: 1.087
+best rewrite: 24
+best rewrite score: 517.0
+target score: 475.8
+
+### Search ###
+total search time: 1003.319
+total BV time: 37.051
+total BV runs: 49
+average BV time: 0.756
+total BV success: 29
+total reported by stoke binary: 1040.37
+
+### DDEC Verification ###
+total ddec runs: 13
+total ddec success: 10
+total ddec time: 1.341
+average ddec time: 0.103
+
+### Benchmarking ###
+total benchmark time: 1818.3120000000001
+

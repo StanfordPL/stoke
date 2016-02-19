@@ -1,0 +1,24 @@
+wcsrchr
+
+### Summary ###
+NO REWRITE FOUND
+best rewrite score: 0
+target score: 495.6
+
+### Search ###
+total search time: 4188.931
+total BV time: 988.349
+total BV runs: 132
+average BV time: 7.487
+total BV success: 37
+total reported by stoke binary: 5177.28
+
+### DDEC Verification ###
+total ddec runs: 37
+total ddec success: 0
+total ddec time: 14.986
+average ddec time: 0.405
+
+### Benchmarking ###
+total benchmark time: 1089.922
+

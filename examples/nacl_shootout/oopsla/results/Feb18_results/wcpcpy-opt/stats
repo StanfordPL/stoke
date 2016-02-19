@@ -1,0 +1,25 @@
+wcpcpy
+
+### Summary ###
+speedup: 1.594
+best rewrite: 1
+best rewrite score: 5133.1
+target score: 3220.6
+
+### Search ###
+total search time: 574.387
+total BV time: 6.294
+total BV runs: 48
+average BV time: 0.131
+total BV success: 27
+total reported by stoke binary: 580.681
+
+### DDEC Verification ###
+total ddec runs: 9
+total ddec success: 8
+total ddec time: 1.548
+average ddec time: 0.172
+
+### Benchmarking ###
+total benchmark time: 285.027
+

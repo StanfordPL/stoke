@@ -1,0 +1,20 @@
+{
+  "success": false,
+  "interrupted": false,
+  "timeout": false,
+  "verified": true,
+  "statistics": {
+    "total_iterations": 1000000,
+    "total_attempted_searches": 10,
+    "total_search_time": 1663.47,
+    "total_time": 1664.48
+  },
+  "best_yet": {
+    "cost": 5000186,
+    "code": ".wcsnlen:\nmovl %edi, %eax\nmovl (%r15,%rax,1), %ecx\ntestl %esi, %ecx\nje .L_28\njmpq .L_16\nnop \n.L_10:\ntestl %edx, %edx\nje .L_20\n.L_16:\naddq $0x4, %rax\nleal (%rax), %r8d\nmovl (%r15,%r8,1), %edx\nsubw $0x1, %si\njne .L_10\n.L_20:\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nsubq %rdi, %rax\nnop \nnop \nsarw $0x2, %ax\nretq \nnop \nnop \n.L_28:\nnop \nsubq %rax, %rax\nnop \nnop \nnop \nnop \nnop \nnop \nretq "
+  },
+  "best_correct": {
+    "cost": 5000186,
+    "code": ".wcsnlen:\nmovl %edi, %edi\nmovl %edi, %edi\nmovl (%r15,%rdi,1), %ecx\ntestl %ecx, %ecx\nje .L_142d80\ntestl %esi, %esi\nje .L_142d80\nsubl $0x1, %esi\nmovq %rdi, %rax\njmpq .L_142d40\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_142d20:\ntestl %esi, %esi\nje .L_142d60\nsubl $0x1, %esi\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_142d40:\naddl $0x4, %eax\nmovl %eax, %eax\nmovl (%r15,%rax,1), %edx\ntestl %edx, %edx\njne .L_142d20\nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_142d60:\nsubl %edi, %eax\nsarl $0x2, %eax\nretq \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \nnop \n.L_142d80:\nxorl %eax, %eax\nretq "
+  }
+}

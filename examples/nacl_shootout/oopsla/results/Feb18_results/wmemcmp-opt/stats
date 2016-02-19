@@ -1,0 +1,24 @@
+wmemcmp
+
+### Summary ###
+NO REWRITE FOUND
+best rewrite score: 0
+target score: 377.7
+
+### Search ###
+total search time: 1748.802
+total BV time: 25996.598
+total BV runs: 108
+average BV time: 240.709
+total BV success: 94
+total reported by stoke binary: 27745.4
+
+### DDEC Verification ###
+total ddec runs: 94
+total ddec success: 0
+total ddec time: 0.001
+average ddec time: 0.0
+
+### Benchmarking ###
+total benchmark time: 79.392
+

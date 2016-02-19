@@ -1,0 +1,57 @@
+Running small benchmarks
+0 benchmarks registered
+Aggregate score: -2147483648
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running wmemset (0/10)
+Running wmemset (0/10) (1/1)
+
+usec_per_run 2935237.000000
+wmemset (0/10): 1022
+Running wmemset (1/10)
+Running wmemset (1/10) (2/1)
+
+usec_per_run 2935440.000000
+wmemset (1/10): 1021
+Running wmemset (2/10)
+Running wmemset (2/10) (3/1)
+
+usec_per_run 2935307.000000
+wmemset (2/10): 1022
+Running wmemset (3/10)
+Running wmemset (3/10) (4/1)
+
+usec_per_run 2935407.000000
+wmemset (3/10): 1022
+Running wmemset (4/10)
+Running wmemset (4/10) (5/1)
+
+usec_per_run 2935754.000000
+wmemset (4/10): 1021
+Running wmemset (5/10)
+Running wmemset (5/10) (6/1)
+
+usec_per_run 2935362.000000
+wmemset (5/10): 1022
+Running wmemset (6/10)
+Running wmemset (6/10) (7/1)
+
+usec_per_run 2934814.000000
+wmemset (6/10): 1022
+Running wmemset (7/10)
+Running wmemset (7/10) (8/1)
+
+usec_per_run 2935366.000000
+wmemset (7/10): 1022
+Running wmemset (8/10)
+Running wmemset (8/10) (9/1)
+
+usec_per_run 2934758.000000
+wmemset (8/10): 1022
+Running wmemset (9/10)
+Running wmemset (9/10) (10/1)
+
+usec_per_run 2934702.000000
+wmemset (9/10): 1022
+Benchmark wmemset: usec 2934702, iters 1, usec/run 2934702 score 1022.25
+Aggregate score: 1022

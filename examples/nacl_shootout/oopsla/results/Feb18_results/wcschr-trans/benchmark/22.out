@@ -1,0 +1,108 @@
+Running small benchmarks
+1 benchmarks registered
+Running wcschr (0/10)
+Running wcschr (0/10) (1/1)
+
+usec_per_run 593840.312500
+wcschr (0/10): 505
+Running wcschr (1/10)
+Running wcschr (1/10) (2/1)
+
+usec_per_run 593361.625000
+wcschr (1/10): 505
+Running wcschr (2/10)
+Running wcschr (2/10) (3/1)
+
+usec_per_run 593199.000000
+wcschr (2/10): 505
+Running wcschr (3/10)
+Running wcschr (3/10) (4/1)
+
+usec_per_run 593344.812500
+wcschr (3/10): 505
+Running wcschr (4/10)
+Running wcschr (4/10) (5/1)
+
+usec_per_run 594220.250000
+wcschr (4/10): 504
+Running wcschr (5/10)
+Running wcschr (5/10) (6/1)
+
+usec_per_run 593813.687500
+wcschr (5/10): 505
+Running wcschr (6/10)
+Running wcschr (6/10) (7/1)
+
+usec_per_run 593651.937500
+wcschr (6/10): 505
+Running wcschr (7/10)
+Running wcschr (7/10) (8/1)
+
+usec_per_run 593666.812500
+wcschr (7/10): 505
+Running wcschr (8/10)
+Running wcschr (8/10) (9/1)
+
+usec_per_run 593667.750000
+wcschr (8/10): 505
+Running wcschr (9/10)
+Running wcschr (9/10) (10/1)
+
+usec_per_run 593922.125000
+wcschr (9/10): 505
+Benchmark wcschr: usec 9502754, iters 16, usec/run 593922 score 505.12
+Aggregate score: 505
+Running large benchmarks (same size as web page)
+1 benchmarks registered
+Running wcschr (0/10)
+Running wcschr (0/10) (1/1)
+
+usec_per_run 2971949.000000
+wcschr (0/10): 1009
+Running wcschr (1/10)
+Running wcschr (1/10) (2/1)
+
+usec_per_run 2973532.000000
+wcschr (1/10): 1008
+Running wcschr (2/10)
+Running wcschr (2/10) (3/1)
+
+usec_per_run 2975301.000000
+wcschr (2/10): 1008
+Running wcschr (3/10)
+Running wcschr (3/10) (4/1)
+
+usec_per_run 2970738.000000
+wcschr (3/10): 1009
+Running wcschr (4/10)
+Running wcschr (4/10) (5/1)
+
+usec_per_run 2967632.000000
+wcschr (4/10): 1010
+Running wcschr (5/10)
+Running wcschr (5/10) (6/1)
+
+usec_per_run 2967141.000000
+wcschr (5/10): 1011
+Running wcschr (6/10)
+Running wcschr (6/10) (7/1)
+
+usec_per_run 2966968.000000
+wcschr (6/10): 1011
+Running wcschr (7/10)
+Running wcschr (7/10) (8/1)
+
+usec_per_run 2967386.000000
+wcschr (7/10): 1010
+Running wcschr (8/10)
+Running wcschr (8/10) (9/1)
+
+usec_per_run 2967915.000000
+wcschr (8/10): 1010
+Running wcschr (9/10)
+Running wcschr (9/10) (10/1)
+
+usec_per_run 2968935.000000
+wcschr (9/10): 1010
+Benchmark wcschr: usec 2968935, iters 1, usec/run 2968935 score 1010.46
+Aggregate score: 1010
