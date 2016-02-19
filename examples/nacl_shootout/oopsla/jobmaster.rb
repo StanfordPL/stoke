@@ -2,212 +2,7 @@
 
 require 'fileutils'
 
-### Per-Benchmark Settings
-
-$benchmarks = {
-  "wcpcpy" => {
-    :def_in         => "{ %rdi %rsi %r15 }",
-    :training_set   => "{ 0 1 2 3 4 10 11 12 13 20 21 22 23 30 31 40 41 50 60 70 80 }",
-    :test_set       => "{ 0 .. 20 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rsi", "%rdi"],
-    :mem_ops_cons   => ["0x0", "0x4", "-0x4"],
-    :alias_strategy => "string_antialias",
-    :exec_timeout   => "30s",
-  },
-  "wcslen" => {
-    :def_in         => "{ %rdi %r15 }",
-    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 222 160 200 }",
-    :test_set       => "{ 0 .. 20 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rdi", "%rdx"],
-    :mem_ops_cons   => ["0x4","0x0","-0x4"],
-    :alias_strategy => "flat",
-    :exec_timeout   => "3m",
-  },
-  "wmemset" => {
-    :def_in         => "{ %rdi %rsi %rdx %r15 }",
-    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rdi", "%r8"],
-    :mem_ops_cons   => ["0x4","0x0","-0x4"],
-    :alias_strategy => "string",
-    :exec_timeout   => "30s",
-  },
-  "wcsnlen" => {
-    :def_in         => "{ %rdi %rsi %r15 }",
-    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 222 160 200 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rax", "%rdi"],
-    :mem_ops_cons   => ["0x4","0x0","-0x4"],
-    :alias_strategy => "string",
-    :exec_timeout   => "30s",
-  },
-  "wmemcmp" => {
-    :def_in         => "{ %rdi %rsi %rdx %r15 }",
-    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rdi", "%rsi"],
-    :mem_ops_cons   => ["0x4","0x0","-0x4"],
-    :alias_strategy => "string",
-    :exec_timeout   => "30s",
-  },
-  "wcschr" => {
-    :def_in         => "{ %rdi %rsi %r15 }",
-    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rax"],
-    :mem_ops_cons   => ["0x4","0x0","-0x4"],
-    :alias_strategy => "string",
-    :exec_timeout   => "30s",
-  },
-  "strxfrm" => {
-    :def_in         => "{ %rdi %rsi %rdx %r15 }",
-    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rdi","%rsi"],
-    :mem_ops_cons   => ["0x0","0x1","-0x1"],
-    :alias_strategy => "string",
-    :exec_timeout   => "30s",
-  },
-  "wcscmp" => {
-    :def_in         => "{ %rdi %rsi %r15 }",
-    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rdi","%rsi"],
-    :mem_ops_cons   => ["0x0","0x4","-0x4"],
-    :alias_strategy => "string",
-    :exec_timeout   => "30s",
-  },
-  "wmemchr" => {
-    :def_in         => "{ %rdi %rsi %rdx %r15 }",
-    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rdi","%rax"],
-    :mem_ops_cons   => ["0x0","0x4","-0x4"],
-    :alias_strategy => "string",
-    :exec_timeout   => "30s",
-  },
-  "wcscpy" => {
-    :def_in         => "{ %rdi %rsi %r15 }",
-    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rdx","%rcx","%rsi","%rdi"],
-    :mem_ops_cons   => ["0x0","0x4","-0x4"],
-    :alias_strategy => "string_antialias",
-    :exec_timeout   => "30s",
-  },
-  "wcscat" => {
-    :def_in         => "{ %rdi %rsi %r15 }",
-    :training_set   => "{ 0 1 2 3 4 5 100 101 102 103 104 105 200 201 202 203 204 205 300 301 302 303 304 305 401 402 403 404 405 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rsi","%rdi"],
-    :mem_ops_cons   => ["0x0","0x4","-0x4"],
-    :alias_strategy => "string",
-    :exec_timeout   => "30s",
-  },
-  "strcpy" => {
-    :def_in         => "{ %rdi %rsi %r15 }",
-    :training_set   => "{ 0 1 2 3 10 11 12 13 20 21 22 23 24 30 40 41 50 60 70 80 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rsi","%rdi"],
-    :mem_ops_cons   => ["0x0","0x4","-0x4"],
-    :alias_strategy => "string",
-    :exec_timeout   => "30s",
-  },
-  "wcsrchr" => {
-    :def_in         => "{ %rdi %rsi %r15 }",
-    :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
-    :test_set       => "{ 0 .. 100 }",
-    :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
-    :mem_ops_regs   => ["%rax","%rdi"],
-    :mem_ops_cons   => ["0x0","0x4","-0x4"],
-    :alias_strategy => "string",
-    :exec_timeout   => "30s",
-  }
-}
-
-### Global Settings
-
-$global_settings = {
-  :verify_timeout => "30m",
-  :cycle_timeout => 100000, #200000,
-  :timeout_iterations => 10*100000, #200000*20,
-
-  :always_preserve => [ 
-    "%r15",
-    "%xmm0",
-    "%xmm1",
-    "%xmm2",
-    "%xmm3",
-    "%xmm4",
-    "%xmm5",
-    "%xmm6",
-    "%xmm7",
-    "%xmm8",
-    "%xmm9",
-    "%xmm10",
-    "%xmm11",
-    "%xmm12",
-    "%xmm13",
-    "%xmm14",
-    "%xmm15" ],
-
-  :blacklist => [ 
-    "prefetch*",
-    "cmc",
-    "stc",
-    "clc",
-    "lfence",
-    "leaveq",
-    "mfence",
-    "sfence",
-    "cbtw",
-    "clt*",
-    "cld",
-    "crc32*",
-    "cwt*",
-    "pause",
-    "imul*",
-    "emms",
-    "set*",
-    "cmpxchg*",
-    "adc*",
-    "sbb*",
-    "xchg*",
-    "idiv*",
-    "xadd*",
-    "rol*",
-    "rcl*",
-    "ror*",
-    "rcr*",
-    "bswap",
-    "div*",
-    "ver*",
-    "bsr*",
-    "bsf*",
-    "mul*",
-    "btr*",
-    "bts*",
-    "bt*",
-    "cmp*",
-    "test*",
-    "j*",
-    "ud2",
-    "cqt*",
-    "shrd*"
-  ]
-}
+require_relative 'bench_config'
 
 ### A semaphore to avoid using too much CPU at once
 
@@ -344,8 +139,12 @@ def make_list(list)
   return s
 end
 
-def mk_folder(benchmark, subdir)
-  "results/#{$stamp}/#{benchmark}/#{subdir}"
+def mk_folder(benchmark, mode, subdir)
+  if mode == :optimize
+    "results/#{$stamp}/#{benchmark}-opt/#{subdir}"
+  elsif mode == :transform
+    "results/#{$stamp}/#{benchmark}-trans/#{subdir}"
+  end
 end
 
 def log(m)
@@ -496,22 +295,23 @@ end
 
 class StatisticsJob < Job
 
-  def initialize(benchmark)
+  def initialize(benchmark,mode)
     @benchmark = benchmark
+    @mode = mode
     set_debug
   end
 
   def to_s
-    "Statistics/#{@benchmark}"
+    "Statistics/#{@benchmark}-#{@mode}"
   end
 
   def run
-    out_file =        "#{mk_folder(@benchmark,"")}/stats"
-    search_log =      "#{mk_folder(@benchmark, "search")}/outputs/outputs.csv"
-    search_fail_log = "#{mk_folder(@benchmark, "search")}/outputs/fail_times.csv"
-    search_stats =    "#{mk_folder(@benchmark, "search")}/search_stats.json"
-    verify_log =      "#{mk_folder(@benchmark, "")}/verification_log.csv"
-    bench_log =       "#{mk_folder(@benchmark, "")}/benchmark_log.csv"
+    out_file =        "#{mk_folder(@benchmark, @mode,"")}/stats"
+    search_log =      "#{mk_folder(@benchmark, @mode, "search")}/outputs/outputs.csv"
+    search_fail_log = "#{mk_folder(@benchmark, @mode, "search")}/outputs/fail_times.csv"
+    search_stats =    "#{mk_folder(@benchmark, @mode, "search")}/search_stats.json"
+    verify_log =      "#{mk_folder(@benchmark, @mode, "")}/verification_log.csv"
+    bench_log =       "#{mk_folder(@benchmark, @mode, "")}/benchmark_log.csv"
 
     ## Performance of the best rewrite
     best_index = nil
@@ -541,10 +341,10 @@ class StatisticsJob < Job
     ## Copy the best rewrite and the binary into the top directory
     if not best_index.nil? then
       best_speedup = (best_value.to_f/target_value.to_f).round(3) unless target_value == 0
-      FileUtils.cp("#{mk_folder(@benchmark, "search")}/outputs/#{best_index}.s", 
-                   "#{mk_folder(@benchmark, "")}/result.s")
-      FileUtils.cp("#{mk_folder(@benchmark, "benchmark")}/#{best_index}.bin", 
-                   "#{mk_folder(@benchmark, "")}/result.bin")
+      FileUtils.cp("#{mk_folder(@benchmark, @mode, "search")}/outputs/#{best_index}.s", 
+                   "#{mk_folder(@benchmark, @mode, "")}/result.s")
+      FileUtils.cp("#{mk_folder(@benchmark, @mode, "benchmark")}/#{best_index}.bin", 
+                   "#{mk_folder(@benchmark, @mode, "")}/result.bin")
     end
 
     ## Total bounded verification time and #runs
@@ -652,14 +452,15 @@ end
 
 class SearchJob < Job
 
-  def initialize(benchmark)
+  def initialize(benchmark, mode)
     @benchmark = benchmark
-    @folder = mk_folder(@benchmark, "search")
+    @mode = mode
+    @folder = mk_folder(@benchmark, @mode, "search")
     set_debug
   end
 
   def to_s
-    "Search/#{@benchmark}"
+    "Search/#{@benchmark}-#{@mode}"
   end
 
   def run
@@ -674,7 +475,7 @@ class SearchJob < Job
     debug "Search finished"
     search_output_file = "#{@folder}/outputs/outputs.csv"
 
-    stage_job = StagedJob.new(2, @benchmark)
+    stage_job = StagedJob.new(2, "#{@benchmark}-#{@mode}")
     stage_job.set_debug
 
     ## Create verification jobs for each series of results
@@ -691,8 +492,8 @@ class SearchJob < Job
       id = id.to_i
       if run != current_run and current_list.size > 0
         debug "verification job for #{current_list}"
-        v = VerificationJob.new(@benchmark, current_list.reverse, 
-                                "#{mk_folder(@benchmark,"")}/verification_log.csv")
+        v = VerificationJob.new(@benchmark, current_list.reverse, @mode,
+                                "#{mk_folder(@benchmark,@mode,"")}/verification_log.csv")
         stage_job.add_to_stage(0, v)
         current_list = []
       end
@@ -702,17 +503,17 @@ class SearchJob < Job
     end
     if current_list.size > 0
       debug "(final) verification job for #{current_list}"
-      v = VerificationJob.new(@benchmark, current_list.reverse, 
-                              "#{mk_folder(@benchmark,"")}/verification_log.csv")
+      v = VerificationJob.new(@benchmark, current_list.reverse, @mode,
+                              "#{mk_folder(@benchmark,@mode,"")}/verification_log.csv")
       stage_job.add_to_stage(0, v)
     end
 
     ## Create benchmark job for the target
-    tbench = BenchmarkJob.new(@benchmark, 0)
+    tbench = BenchmarkJob.new(@benchmark, 0, @mode)
     stage_job.add_to_stage(0, tbench)
 
     ## Create statistics job to aggregate results for this benchmark
-    stats_job = StatisticsJob.new(@benchmark)
+    stats_job = StatisticsJob.new(@benchmark, @mode)
     stage_job.add_to_stage(1, stats_job)
 
     $queue.add_job(stage_job)
@@ -731,6 +532,7 @@ class SearchJob < Job
 
     FileUtils.cp("#{name}/target.s", @folder)
     FileUtils.cp("#{name}/testcases", @folder)
+    FileUtils.cp("#{name}/transform.s", @folder) if @mode == :transform
 
     File.open(filename, 'w') do |file|
 
@@ -744,10 +546,15 @@ class SearchJob < Job
       file.write("--cycle_timeout #{$global_settings[:cycle_timeout]}\n")
       file.write("--timeout_iterations #{$global_settings[:timeout_iterations]}\n")
       file.write("--timeout_seconds 0\n")
-      file.write("--init target\n")
       file.write("--target target.s\n")
       file.write("--verify_all\n")
       file.write("\n")
+
+      file.write("## Search Init\n")
+      file.write("--init target\n")           if @mode == :optimize
+      file.write("--init previous\n")         if @mode == :transform
+      file.write("--previous transform.s\n")  if @mode == :transform
+
 
       file.write("## Cost\n")
       file.write("--restricted_reg_penalty 100\n")
@@ -799,22 +606,23 @@ end
 
 class VerificationJob < Job
 
-  def initialize(benchmark, rewrite_ids, log_file)
+  def initialize(benchmark, rewrite_ids, mode, log_file)
     @benchmark = benchmark
+    @mode = mode
     @rewrite_id = rewrite_ids[0]
     @rewrite_ids = rewrite_ids.drop(1)
-    @rewrite_file = mk_folder(benchmark, "search") + "/outputs/#{@rewrite_id}.s"
+    @rewrite_file = mk_folder(benchmark, @mode, "search") + "/outputs/#{@rewrite_id}.s"
     @log_file = log_file
     set_debug
   end
 
   def to_s
-    "Verify/#{@benchmark}/#{@rewrite_id}"
+    "Verify/#{@benchmark}-#{@mode}/#{@rewrite_id}"
   end
 
   def run
     data = $benchmarks[@benchmark]
-    folder = mk_folder(@benchmark, "verify")
+    folder = mk_folder(@benchmark, @mode, "verify")
     file = "#{folder}/#{@rewrite_id}.out"
 
     FileUtils.mkdir_p folder
@@ -866,12 +674,12 @@ class VerificationJob < Job
       # if we succeeded, we're done with this set and we move on to
       # benchmarking
       debug "Success; benchmarking"
-      j = BenchmarkJob.new(@benchmark, @rewrite_id)
+      j = BenchmarkJob.new(@benchmark, @rewrite_id, @mode)
       j.run
     elsif @rewrite_ids.length() > 0
       # otherwise, we check the next verification candidate (if any)
       debug "Fail; verifying #{@rewrite_ids}"
-      j = VerificationJob.new(@benchmark, @rewrite_ids, @log_file) 
+      j = VerificationJob.new(@benchmark, @rewrite_ids, @mode, @log_file) 
       j.run
     end
 
@@ -881,26 +689,27 @@ end
 
 class BenchmarkJob < Job
 
-  def initialize(benchmark, id)
+  def initialize(benchmark, id, mode)
     @benchmark = benchmark
     @id = id
+    @mode = mode
     set_debug
   end
 
   def to_s
-    "Benchmark/#{@benchmark}/#{@id}"
+    "Benchmark/#{@benchmark}-#{@mode}/#{@id}"
   end
 
   def run
     benchmark_start = Time.new
 
-    FileUtils.mkdir_p(mk_folder(@benchmark, "benchmark"))
+    FileUtils.mkdir_p(mk_folder(@benchmark, @mode, "benchmark"))
 
     binary = "#{@benchmark}/binary"
-    rewrite = "#{mk_folder(@benchmark, "search")}/outputs/#{@id}.s"
-    optbin = "#{mk_folder(@benchmark, "benchmark")}/#{@id}.bin"
-    stats = "#{mk_folder(@benchmark, "benchmark")}/#{@id}.out"
-    logfile = "#{mk_folder(@benchmark, "")}/benchmark_log.csv"
+    rewrite = "#{mk_folder(@benchmark, @mode, "search")}/outputs/#{@id}.s"
+    optbin = "#{mk_folder(@benchmark, @mode, "benchmark")}/#{@id}.bin"
+    stats = "#{mk_folder(@benchmark, @mode, "benchmark")}/#{@id}.out"
+    logfile = "#{mk_folder(@benchmark, @mode, "")}/benchmark_log.csv"
 
     if(@id == 0) #placeholder for target
       rewrite = "#{@benchmark}/target.s"
@@ -1026,8 +835,13 @@ def main
   
 
   all.each do |bench|
-    j = SearchJob.new(bench)
+    j = SearchJob.new(bench, :optimize)
     $queue.add_job(j)
+
+    if $benchmarks[bench][:do_transform]
+      j = SearchJob.new(bench, :transform)
+      $queue.add_job(j)
+    end
   end
 
   ## Run everything
