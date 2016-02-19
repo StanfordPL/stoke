@@ -1,7 +1,7 @@
 set xlabel "Benchmark"
 set ylabel "Speedup over Native Client"
 
-set yrange [0.6:2]
+set yrange [0.6:2.2]
 
 set style data histogram
 set style fill solid
