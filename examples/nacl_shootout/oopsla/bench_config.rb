@@ -19,6 +19,7 @@ $benchmarks = {
     :alias_strategy => "string_antialias",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 1,
   },
   "wcslen" => {
     :def_in         => "{ %rdi %r15 }",
@@ -30,6 +31,7 @@ $benchmarks = {
     :alias_strategy => "flat",
     :exec_timeout   => "3m",
     :do_transform   => true,
+    :split          => 1,
   },
   "wmemset" => {
     :def_in         => "{ %rdi %rsi %rdx %r15 }",
@@ -41,6 +43,7 @@ $benchmarks = {
     :alias_strategy => "string",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 1,
   },
   "wcsnlen" => {
     :def_in         => "{ %rdi %rsi %r15 }",
@@ -52,6 +55,7 @@ $benchmarks = {
     :alias_strategy => "string",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 1,
   },
   "wmemcmp" => {
     :def_in         => "{ %rdi %rsi %rdx %r15 }",
@@ -63,6 +67,7 @@ $benchmarks = {
     :alias_strategy => "string",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 2,
   },
   "wcschr" => {
     :def_in         => "{ %rdi %rsi %r15 }",
@@ -74,6 +79,7 @@ $benchmarks = {
     :alias_strategy => "string",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 1,
   },
   "strxfrm" => {
     :def_in         => "{ %rdi %rsi %rdx %r15 }",
@@ -85,6 +91,7 @@ $benchmarks = {
     :alias_strategy => "string",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 1,
   },
   "wcscmp" => {
     :def_in         => "{ %rdi %rsi %r15 }",
@@ -96,6 +103,7 @@ $benchmarks = {
     :alias_strategy => "string",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 1,
   },
   "wmemchr" => {
     :def_in         => "{ %rdi %rsi %rdx %r15 }",
@@ -107,6 +115,7 @@ $benchmarks = {
     :alias_strategy => "string",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 1,
   },
   "wcscpy" => {
     :def_in         => "{ %rdi %rsi %r15 }",
@@ -118,6 +127,7 @@ $benchmarks = {
     :alias_strategy => "string_antialias",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 1,
   },
   "wcscat" => {
     :def_in         => "{ %rdi %rsi %r15 }",
@@ -129,6 +139,7 @@ $benchmarks = {
     :alias_strategy => "string",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 1,
   },
   "strcpy" => {
     :def_in         => "{ %rdi %rsi %r15 }",
@@ -139,18 +150,20 @@ $benchmarks = {
     :mem_ops_cons   => ["0x0","0x4","-0x4"],
     :alias_strategy => "string",
     :exec_timeout   => "30s",
-    :do_transform   => false
+    :do_transform   => true,
+    :split          => 1,
   },
   "wcsrchr" => {
     :def_in         => "{ %rdi %rsi %r15 }",
     :training_set   => "{ 0 1 2 3 40 41 42 43 80 81 82 83 84 120 121 122 160 200 }",
-    :test_set       => "{ 0 .. 100 }",
+    :test_set       => "{ 90 100 110 120 130 140 150 160 170 180 190 200 210 220 230 240 250 260 270 280 290 300 }",
     :preserve_regs  => ["%rbx", "%rsp", "%rbp", "%r12", "%r13", "%r14"],
     :mem_ops_regs   => ["%rax","%rdi"],
     :mem_ops_cons   => ["0x0","0x4","-0x4"],
     :alias_strategy => "string",
     :exec_timeout   => "30s",
     :do_transform   => true,
+    :split          => 3,
   }
 }
 

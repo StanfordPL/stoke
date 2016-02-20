@@ -45,6 +45,10 @@ end
 
 def speedup_graph(folder)
 
+  opts = []
+  trans = []
+  maxes = []
+
   plot_src = "#{folder}/plots/srcs/performance.dat"
   File.open(plot_src, "w") do |out|
     out.puts "Benchmark Optimization Translation \"Max Verified\""
@@ -52,8 +56,41 @@ def speedup_graph(folder)
     $benchmarks.each do |bench,data|
       opt = get_best(folder, "#{bench}-opt")
       trn = get_best(folder, "#{bench}-trans")
-      out.puts "#{bench} #{opt} #{trn} #{[opt, trn].max}"
+      max = [opt, trn, 1].max
+      opts.push(opt)
+      trans.push(trn)
+      maxes.push(max)
+      out.puts "#{bench} #{opt} #{trn} #{max}"
     end
+  end
+
+  opt_quarts = quartiles(opts)
+  tran_quarts = quartiles(trans)
+  max_quarts = quartiles(maxes)
+  File.open("#{folder}/plots/srcs/improvements.dat", "w") do |out|
+    out.puts "BestSpeedup-Mean  #{mean(maxes)}" 
+    out.puts "Optimization-Mean #{mean(opts)}" 
+    out.puts "Transformation-Mean #{mean(trans)}" 
+
+    out.puts "BestSpeedup-Min  #{opt_quarts[0]}" 
+    out.puts "Optimization-Min #{tran_quarts[0]}" 
+    out.puts "Transformation-Min #{max_quarts[0]}" 
+
+    out.puts "BestSpeedup-Q1  #{opt_quarts[1]}" 
+    out.puts "Optimization-Q1 #{tran_quarts[1]}" 
+    out.puts "Transformation-Q1 #{max_quarts[1]}" 
+
+    out.puts "BestSpeedup-Median  #{opt_quarts[2]}" 
+    out.puts "Optimization-Median #{tran_quarts[2]}" 
+    out.puts "Transformation-Median #{max_quarts[2]}" 
+
+    out.puts "BestSpeedup-Q3  #{opt_quarts[3]}" 
+    out.puts "Optimization-Q3 #{tran_quarts[3]}" 
+    out.puts "Transformation-Q3 #{max_quarts[3]}" 
+
+    out.puts "BestSpeedup-Max  #{opt_quarts[4]}" 
+    out.puts "Optimization-Max #{tran_quarts[4]}" 
+    out.puts "Transformation-Max #{max_quarts[4]}" 
   end
 
   %x(cd #{folder}/plots/srcs; gnuplot performance.plot)
@@ -112,6 +149,11 @@ def counts_graph(folder)
   %x(cd #{folder}/plots/srcs; gnuplot counts.plot)
   FileUtils.cp("#{folder}/plots/srcs/counts.pdf", "#{folder}/plots")
 
+end
+
+def mean(arr)
+  sum = arr.inject(0) {|x,y| x+y}
+  sum.to_f/arr.length
 end
 
 def median(arr)
