@@ -26,11 +26,11 @@ class SeedGadget {
 public:
   SeedGadget() {
     seed_ = seed_arg;
-    if (seed_ == 0) {
-      const auto time = std::chrono::system_clock::now().time_since_epoch().count();
-      std::default_random_engine gen(time);
-      seed_ = gen();
-    }
+    // if (seed_ == 0) {
+    //   const auto time = std::chrono::system_clock::now().time_since_epoch().count();
+    //   std::default_random_engine gen(time);
+    //   seed_ = gen();
+    // }
   }
 
   operator std::default_random_engine::result_type() const {
