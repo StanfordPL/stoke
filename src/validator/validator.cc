@@ -95,7 +95,16 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
   // where we check the goodness of each split; calculating the goodness costs
   // O(n) and we need to do this O(n) times.
 
-  cs.stack.resize(0x700000000, 0);
+  // for strata, we allocate some stack space
+  cs.stack.resize(0x700000000-128, 128);
+  for (auto i = cs.stack.lower_bound(), ie = cs.stack.upper_bound(); i < ie; ++i) {
+    if (!cs.stack.is_valid(i)) {
+      cs.stack.set_valid(i, true);
+      cs.stack[i] = 0;
+    }
+  }
+  cs.gp[rsp].get_fixed_quad(0) = 0x700000000;
+
   cs.heap.resize(0x100000000, 0);
   cs.data.resize(0x000000000, 0);
 
