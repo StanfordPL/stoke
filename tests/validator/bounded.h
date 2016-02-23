@@ -532,7 +532,7 @@ TEST_F(BoundedValidatorBaseTest, MemoryOverlapEquiv2) {
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
-TEST_F(BoundedValidatorBaseTest, MemoryOverlapBad) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_MemoryOverlapBad) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
@@ -616,7 +616,7 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, LoopMemoryWrong) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_LoopMemoryWrong) {
 
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax + x64asm::rdx;
 
@@ -695,7 +695,7 @@ TEST_F(BoundedValidatorBaseTest, DISABLED_LoopMemoryWrong2) {
     check_ceg(it, target, rewrite);
 }
 
-TEST_F(BoundedValidatorBaseTest, Wcslen2ExitsPass) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_Wcslen2ExitsPass) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -920,7 +920,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyCorrect) {
 
 
 
-TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedWrongWithAliasing) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_MemcpyVectorizedWrongWithAliasing) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
   auto live_outs = x64asm::RegSet::empty();
@@ -1029,7 +1029,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyVectorizedCorrectWithoutAliasing) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_MemcpyMissingBranch) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::edx;
   auto live_outs = x64asm::RegSet::empty();
@@ -1079,7 +1079,7 @@ TEST_F(BoundedValidatorBaseTest, MemcpyMissingBranch) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_MemoryCounterexample) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1151,7 +1151,7 @@ TEST_F(BoundedValidatorBaseTest, MemoryCounterexample) {
   }
 }
 
-TEST_F(BoundedValidatorBaseTest, StrlenCorrect) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_StrlenCorrect) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rdi;
@@ -1257,7 +1257,7 @@ TEST_F(BoundedValidatorBaseTest, StrlenWrongBranch) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenCorrect) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_WcslenCorrect) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1459,7 +1459,7 @@ TEST_F(BoundedValidatorBaseTest, DISABLED_WcslenCorrect2) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenWrong1) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_WcslenWrong1) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1528,7 +1528,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong1) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenWrong2) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_WcslenWrong2) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1600,7 +1600,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenWrong2) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenCorrect3) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_WcslenCorrect3) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1676,7 +1676,7 @@ TEST_F(BoundedValidatorBaseTest, WcslenCorrect3) {
 
 }
 
-TEST_F(BoundedValidatorBaseTest, WcslenWrong3) {
+TEST_F(BoundedValidatorBaseTest, DISABLED_WcslenWrong3) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
