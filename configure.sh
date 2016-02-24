@@ -14,7 +14,8 @@ if [ $AVX2 -eq 0 ]; then
 elif [ $AVX -eq 0 ]; then
   PLATFORM="sandybridge"
 else
-  PLATFORM="nehalem"
+  echo "ERROR: STOKE is currently only supported on sandybridge or haswell machines.  You appear to have an older CPU."
+  exit 1
 fi
 
 echo "Configuring STOKE for $PLATFORM"
