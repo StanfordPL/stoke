@@ -81,6 +81,8 @@ LIB=\
 	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
 	-L src/ext/z3/build -lz3
 
+LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build:\$$ORIGIN/../src/ext/cvc4-1.4-build/lib,--enable-new-dtags
+	
 SRC_OBJ=\
 	src/cfg/cfg.o \
 	src/cfg/cfg_transforms.o \
@@ -226,7 +228,7 @@ BIN=\
 all: release hooks
 
 release:
-	$(MAKE) -C . external EXT_OPT="release" 
+	$(MAKE) -C . external EXT_OPT="release"
 	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG"
 	echo -e "\a"
 debug:
@@ -241,13 +243,13 @@ tests: debug
 	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-g"
 	echo -e "\a"
 test: tests
-	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
+	bin/stoke_test
 	echo -e "\a"
 fast_tests: debug
 	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-O3 -DNDEBUG -DNO_VERY_SLOW_TESTS"
 	echo -e "\a"
 fast: fast_tests
-	LD_LIBRARY_PATH=src/ext/z3/build:src/ext/cvc4-1.4-build/lib bin/stoke_test
+	bin/stoke_test
 	echo -e "\a"
 
 ##### CTAGS TARGETS
@@ -361,7 +363,7 @@ tools/io/%.o: tools/io/%.cc $(DEPS)
 ##### BINARY TARGETS
 
 bin/%: tools/apps/%.cc $(DEPS) $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) tools/gadgets/*.h
-	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB)
+	$(CXX) $(TARGET) $(OPT) $(ARCH_OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS)
 
 ##### TESTING
 
@@ -384,7 +386,7 @@ tests/%.o: tests/%.cc tests/%.h
 	$(CXX) $(TARGET) $(OPT) $(INC) -c $< -o $@ $(TEST_LIBS)
 
 bin/stoke_test: tools/apps/stoke_test.cc $(DEPS) $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(wildcard src/*/*.h) $(wildcard tests/*.h) $(wildcard tests/*/*.h) $(wildcard tests/*/*/*.h) tests/validator/handlers.h
-	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(TEST_LIBS)
+	$(CXX) $(TARGET) $(OPT) $(INC) $< -o $@ $(SRC_OBJ) $(TEST_OBJ) $(TOOL_NON_ARG_OBJ) $(LIB) $(LDFLAGS) $(TEST_LIBS)
 
 ## MISC
 
