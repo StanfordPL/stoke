@@ -78,9 +78,13 @@ void Search::run(const Cfg& target, CostFunction& fxn, Init init, SearchState& s
 
   // Early corner case bailouts
   if (state.current_cost == 0) {
+    x64asm::Code silly;
+    silly.push_back(state.current.get_code()[0]);
+    Cfg silly_cfg(silly, state.current.def_ins(), state.current.live_outs());
+
     state.success = true;
-    state.best_correct = state.current;
-    state.best_correct_cost = 0;
+    state.best_correct = silly_cfg;
+    state.best_correct_cost = (Cost)(-1);
     return;
   }
 

@@ -24,17 +24,23 @@ def mk_folder(benchmark, mode, subdir)
   end
 end
 
+$log_lock = Mutex.new
+
 def log(m)
+
+  m = m.to_s
 
   if(m[0] != "[")
     m = " " + m
   end
 
   m = "[#{Time.new}]#{m}"
-  puts m
-  File.open("results/#{$stamp}/log","a") do |log|
-    log.puts(m)
-  end
+  $log_lock.synchronize {
+    puts m
+    File.open("results/#{$stamp}/log","a") do |log|
+      log.puts(m)
+    end
+  }
 end
 
 ## Jobs
@@ -216,7 +222,10 @@ class SearchJob < Job
     write_config "#{@folder}/search.conf"
 
     debug "Running search"
-    shell("stoke_search --config search.conf >/dev/null 2>/dev/null", @folder)
+    cmd =  "timeout #{$global_settings[:search_timeout]} "
+    cmd += "stoke_search --config search.conf "
+    cmd += " >/dev/null 2>/dev/null"
+    shell(cmd, @folder)
 
     debug "Search finished"
     search_output_file = "#{@folder}/outputs/outputs.csv"
@@ -332,7 +341,11 @@ class SearchJob < Job
       file.write("## Verification\n")
       file.write("--strategy \"hold_out,bounded\"\n")
       file.write("--bound 1\n")
-      file.write("--alias_strategy #{data[:alias_strategy]}\n")
+      if $global_settings[:alias_strategy].nil?
+        file.write("--alias_strategy #{data[:alias_strategy]}\n")
+      else
+        file.write("--alias_strategy #{$global_settings[:alias_strategy]}\n")
+      end
       file.write("\n")
 
       file.write("## Miscelaneous\n")
@@ -369,35 +382,45 @@ class VerificationJob < Job
   def run
     data = $benchmarks[@benchmark]
     folder = mk_folder(@benchmark, @mode, "verify")
-    file = "#{folder}/#{@rewrite_id}.out"
+    config = "#{folder}/#{@rewrite_id}.conf"
 
     FileUtils.mkdir_p folder
+    FileUtils.cp("#{@benchmark}/target.s", folder, { :preserve => true })
+    FileUtils.cp("#{@benchmark}/testcases", folder, { :preserve => true})
+    FileUtils.cp("#{mk_folder(@benchmark, @mode, "search")}/outputs/#{@rewrite_id}.s", folder)
 
     ### Run verify command
-    cmd =  "timeout 60m stoke_debug_verify"
-    cmd += " --target #{@benchmark}/target.s" 
-    cmd += " --rewrite #{@rewrite_file}"
-    cmd += " --strategy ddec"
-    cmd += " --alias_strategy #{data[:alias_strategy]}"
-    cmd += " --def_in '#{data[:def_in]}'"
-    cmd += " --live_out \"{ %rax }\""
-    cmd += " --testcases #{@benchmark}/testcases"
-    cmd += " --test_set '#{data[:test_set]}'"
-    cmd += " --heap_out"
-    cmd += " --sound_nullspace"
-    cmd += " --no_ddec_bv"
-    cmd += " --verify_nacl"
-    cmd += " --solver z3"
-    cmd += " >#{file} 2>/dev/null"
+    File.open(config, "w") do |config|
+      config.puts(" --target target.s")
+      config.puts(" --rewrite #{@rewrite_id}.s")
+      config.puts(" --strategy ddec")
+      if $global_settings[:alias_strategy].nil?
+        config.puts(" --alias_strategy #{data[:alias_strategy]}")
+      else
+        config.puts(" --alias_strategy #{$global_settings[:alias_strategy]}")
+      end
+      config.puts(" --def_in \"#{data[:def_in]}\"")
+      config.puts(" --live_out \"{ %rax }\"")
+      config.puts(" --testcases testcases")
+      config.puts(" --test_set \"#{data[:test_set]}\"")
+      config.puts(" --heap_out")
+      config.puts(" --sound_nullspace")
+      config.puts(" --no_ddec_bv")
+      config.puts(" --verify_nacl")
+      config.puts(" --solver z3")
+    end
+
+    cmd =  "timeout #{$global_settings[:verify_timeout]} stoke_debug_verify"
+    cmd += " --config #{@rewrite_id}.conf >#{@rewrite_id}.out 2>/dev/null"
 
     verify_start = Time.new
-    shell(cmd, ".")
+    shell(cmd, folder)
     verify_end = Time.new
     verify_time = (verify_end - verify_start).round(3)
 
     ### Test for success
     success = false
-    File.open(file).each do |line|
+    File.open("#{folder}/#{@rewrite_id}.out").each do |line|
       if /Equivalent/.match(line) then
         if /yes/.match(line) then
           success = true 
@@ -551,6 +574,13 @@ def main
   $stamp = ARGV[0]
   FileUtils.mkdir_p "results/#{$stamp}"
 
+  ## Make a copy of all scripts; for debugging purposes
+  FileUtils.mkdir_p "results/#{$stamp}/scripts"
+
+  for file in Dir.glob("*.rb")
+    FileUtils.cp(file, "results/#{$stamp}/scripts")
+  end
+
   ## Start the timer
   start_time = Time.new
   log "Starting"
@@ -572,13 +602,10 @@ def main
 #  j.set_debug
 #  $queue.add_job(j)
 
-  hard = ["strcpy", "wmemcmp", "wcscat"]
-  often_fail = ["wmemset", "wcslen", "wcscpy", "wcsnlen"]
-  others = ["wcpcpy", "wcschr", "strxfrm", "wcscmp", "wmemchr", "wcsrchr"]
+  fast = ["wmemset", "wcslen", "wcscpy", "wcsnlen"]
+  others = [ "strcpy", "wmemcmp", "wcscat", "wcpcpy", "wcschr", "strxfrm", "wcscmp", "wmemchr", "wcsrchr"]
 
-  all = hard + often_fail + others
-  doable = often_fail + others
-  
+  all = fast + others
 
   all.each do |bench|
     j = SearchJob.new(bench, :optimize)

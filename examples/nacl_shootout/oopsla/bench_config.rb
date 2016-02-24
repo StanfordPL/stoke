@@ -4,7 +4,9 @@
 
 $timeout = 100000    # down from 500,000 / 200,000
 $iterations = 10
-
+$alias_strategy = "flat"
+$verify_timeout = "1h"
+$search_timeout = "6h"
 
 ### Per-Benchmark Settings
 
@@ -170,9 +172,11 @@ $benchmarks = {
 ### Global Settings
 
 $global_settings = {
-  :verify_timeout => "30m",
+  :verify_timeout => $verify_timeout,
+  :search_timeout => $search_timeout,
   :cycle_timeout => $timeout, 
   :timeout_iterations => $iterations*$timeout, 
+  :alias_strategy => $alias_strategy,
 
   :always_preserve => [ 
     "%r15",

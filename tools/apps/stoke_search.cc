@@ -121,6 +121,10 @@ auto& folder_name_arg =
   .description("a folder to put outputs into")
   .default_val("");
 
+auto& no_bv_arg =
+  cpputil::FlagArg::create("no_bv")
+  .description("Do not run the bounded validator");
+
 void sep(ostream& os, string c = "*") {
   for (size_t i = 0; i < 80; ++i) {
     os << c;
@@ -202,18 +206,24 @@ void pcb(const ProgressCallbackData& data, void* arg) {
   if (improvement && verify_all && nacl2_ok) {
     os << "Validating \"best correct\"" << endl;
 
-    milliseconds verify_start = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-    bool verified = pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_correct);
-    milliseconds verify_end = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-    //verification time in milliseconds
-    uint64_t verification_time = (verify_end - verify_start).count();
+    bool success = true;
+    uint64_t verification_time = 0;
+    if(!no_bv_arg.value()) {
 
-    if (pcb_arg->verifier->has_error()) {
-      os << "The verifier encountered an error:" << endl;
-      os << pcb_arg->verifier->error() << endl;
+      milliseconds verify_start = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+      success = pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_correct);
+      milliseconds verify_end = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+      //verification time in milliseconds
+      uint64_t verification_time = (verify_end - verify_start).count();
+
+      if (pcb_arg->verifier->has_error()) {
+        os << "The verifier encountered an error:" << endl;
+        os << pcb_arg->verifier->error() << endl;
+        success = false;
+      }
     }
 
-    if (verified) {
+    if (success) {
       *pcb_arg->best_so_far = best;
       os << "[verify_all] Verified!" << endl;
 
