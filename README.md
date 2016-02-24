@@ -42,20 +42,8 @@ Prerequisites
 
 STOKE will run on modern 64-bit x86 processors.  We officially support Haswell
 processors with AVX2 extensions.  STOKE should also run on Sandy Bridge
-systems (with AVX, but not AVX2).  It might run on Nehalem systems without either extension, but we don't test it.
-
-To check what level of hardware support you have, run:
-
-    $ less /proc/cpuinfo
-
-and check if the following cpu flags are present:
-
-    flags: ... avx avx2 bmi bmi2 popcnt ...
-
-If you don't have 'avx' or 'avx2', you will need to compile for nehalem.  If
-you have 'avx', but not avx2, you will compile for 'sandybridge'.  If you have
-both, you can compile for 'haswell'.  Build instructions are in the next
-section.
+systems (with AVX, but not AVX2).  It might run on newer architectures, but we currently don't test these.
+Running `./configure.sh` as described next will automatically configure the build for the correct architecture.
 
 STOKE is supported on the latest Ubuntu LTS release; in practice, it will also
 run on Ubuntu 13.10+ and on debian testing.  If you're trying to get STOKE to
