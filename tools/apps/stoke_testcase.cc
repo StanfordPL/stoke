@@ -266,8 +266,18 @@ int auto_gen() {
   return 0;
 }
 
-int trace(const string& argv0) {
-  string here = argv0;
+std::string readlink_str(const std::string& s) {
+  constexpr ssize_t BUF_SIZE = 1024;
+  char buf[BUF_SIZE];
+  ssize_t ret = readlink(s.c_str(), buf, BUF_SIZE);
+  if (0 < ret && ret < BUF_SIZE)
+    return std::string(buf, buf+ret);
+  else
+    return "";
+}
+
+int trace() {
+  string here = readlink_str("/proc/self/exe");
   here = here.substr(0, here.find_last_of("/") + 1);
 
   const string pin_path = here + "../src/ext/pin-2.13-62732-gcc.4.4.7-linux/";
@@ -359,7 +369,6 @@ int main(int argc, char** argv) {
   } else if (target_arg.has_been_provided()) {
     return auto_gen();
   } else {
-    return trace(argv[0]);
+    return trace();
   }
 }
-
