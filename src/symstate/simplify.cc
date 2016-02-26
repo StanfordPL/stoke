@@ -323,17 +323,17 @@ public:
     }
 
     // a ^ a
-    if (bv->type() == SymBitVector::XOR && lhs.equals(rhs)) {
+    if (bv->type() == SymBitVector::XOR && lhs->equals(rhs)) {
       return cache(bv, make_constant(width, 0));
     }
 
     // a | a
-    if (bv->type() == SymBitVector::OR && lhs.equals(rhs)) {
+    if (bv->type() == SymBitVector::OR && lhs->equals(rhs)) {
       return cache(bv, lhs);
     }
 
     // a & a
-    if (bv->type() == SymBitVector::AND && lhs.equals(rhs)) {
+    if (bv->type() == SymBitVector::AND && lhs->equals(rhs)) {
       return cache(bv, lhs);
     }
 
