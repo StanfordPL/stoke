@@ -322,9 +322,19 @@ public:
       }
     }
 
-    // xor with itself
-    if (bv->type() == SymBitVector::XOR && lhs == rhs && width <= 64) {
+    // a ^ a
+    if (bv->type() == SymBitVector::XOR && lhs.equals(rhs)) {
       return cache(bv, make_constant(width, 0));
+    }
+
+    // a | a
+    if (bv->type() == SymBitVector::OR && lhs.equals(rhs)) {
+      return cache(bv, lhs);
+    }
+
+    // a & a
+    if (bv->type() == SymBitVector::AND && lhs.equals(rhs)) {
+      return cache(bv, lhs);
     }
 
     if (lhs == bv->a_ && rhs == bv->b_) {
