@@ -44,9 +44,11 @@ int main(int argc, char** argv) {
   RewriteGadget rewrite(aux_fxns);
 
   SeedGadget seed;
-  TrainingSetGadget tcs(seed);
-  SandboxGadget sb(tcs, aux_fxns);
-  CostFunctionGadget fxn(target, &sb);
+  TrainingSetGadget train_tcs(seed);
+  SandboxGadget training_sb(train_tcs, aux_fxns);
+  PerformanceSetGadget perf_tcs(seed);
+  SandboxGadget perf_sb(perf_tcs, aux_fxns);
+  CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
   Console::msg() << "CostFunction::operator()..." << endl;
 

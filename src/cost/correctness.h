@@ -46,7 +46,7 @@ public:
 
   /** Create a new cost function with default values for extended features. */
   CorrectnessCost(Sandbox* sb) : CostFunction(), counter_example_testcase_(-1) {
-    sandbox_ = sb;
+    test_sandbox_ = sb;
     const x64asm::Code code {
       {x64asm::LABEL_DEFN, {x64asm::Label{".main"}}},
       {x64asm::RET}
@@ -103,12 +103,12 @@ public:
 
   /** Returns the number of testcases used in this function's correctness term. */
   size_t num_testcases() const {
-    return sandbox_->size();
+    return test_sandbox_->size();
   }
   /** Returns the ith testcase used in this function's correctness term. */
   const CpuState& get_testcase(size_t i) const {
     assert(i < num_testcases());
-    return *(sandbox_->get_input(i));
+    return *(test_sandbox_->get_input(i));
   }
 
   /** Returns a counter-example (i.e., a testcase with non-zero cost). */
@@ -118,7 +118,7 @@ public:
   }
 
   /** We need the sandbox! */
-  bool need_sandbox() {
+  bool need_test_sandbox() {
     return true;
   }
 
@@ -126,9 +126,9 @@ public:
       The constructor shouldn't ever be given a different sandbox than the one
       passed here.  That could cause our reference outputs to differ (but no
       other ill effects, I think). */
-  CorrectnessCost& setup_sandbox(Sandbox* sb) {
-    assert(sandbox_ == sb);
-    sandbox_ = sb;
+  CorrectnessCost& setup_test_sandbox(Sandbox* sb) {
+    assert(test_sandbox_ == sb);
+    test_sandbox_ = sb;
     return *this;
   }
 
