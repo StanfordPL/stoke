@@ -17,7 +17,8 @@ set output "counts.pdf"
 
 set style line 1 lt 1 lc rgb "green"
 set style line 2 lt 1 lc rgb "blue"
-set style line 3 lt 1 lc rgb "yellow"
+set style line 3 lt 1 lc rgb "orange"
 set style line 4 lt 1 lc rgb "red"
 
-plot for [COL=2:3] 'counts.dat' using COL:xticlabels(1) ls COL title columnheader
+plot 'counts.dat' using 2:xticlabels(1) ls 2 fillstyle pattern 3 title columnheader, \
+     '' using 3:xticlabels(1) ls 3 fillstyle pattern 1 title columnheader

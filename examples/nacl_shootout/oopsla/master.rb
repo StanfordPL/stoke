@@ -339,6 +339,7 @@ class SearchJob < Job
       file.write("\n")
 
       file.write("## Verification\n")
+      file.write("--no_bv\n")
       file.write("--strategy \"hold_out,bounded\"\n")
       file.write("--bound 1\n")
       if $global_settings[:alias_strategy].nil?
@@ -611,10 +612,10 @@ def main
     j = SearchJob.new(bench, :optimize)
     $queue.add_job(j)
 
-    if $benchmarks[bench][:do_transform]
-      j = SearchJob.new(bench, :transform)
-      $queue.add_job(j)
-    end
+#if $benchmarks[bench][:do_transform]
+#      j = SearchJob.new(bench, :transform)
+#      $queue.add_job(j)
+#    end
   end
 
   ## Run everything

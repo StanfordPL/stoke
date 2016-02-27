@@ -2,9 +2,9 @@
 
 ### Frequently-changed global settings
 
-$timeout = 100000    # down from 500,000 / 200,000
+$timeout = 100000    # 100000 / down from 500,000 / 200,000
 $iterations = 10
-$alias_strategy = "flat"
+$alias_strategy = "string"
 $verify_timeout = "1h"
 $search_timeout = "6h"
 
