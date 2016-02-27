@@ -81,6 +81,22 @@ public:
   }
 };
 
+class PerformanceSetGadget : public CpuStates {
+public:
+  PerformanceSetGadget(std::default_random_engine::result_type seed) : CpuStates() {
+    if (shuffle_tc_arg) {
+      std::default_random_engine rand;
+      rand.seed(seed);
+      std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand);
+    }
+    for (size_t i = 0, ie = testcases_arg.value().size(); i < ie; ++i) {
+      if (performance_set_arg.value().find(i) != performance_set_arg.value().end()) {
+        push_back(testcases_arg.value()[i]);
+      }
+    }
+  }
+};
+
 } // namespace stoke
 
 #endif

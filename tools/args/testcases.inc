@@ -64,6 +64,14 @@ cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputi
           .description("Subset of testcase indices to use for test sets")
           .default_val(create_default_testcase_set());
 
+cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>,
+        cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>& performance_set_arg =
+          cpputil::ValueArg<std::set<size_t>, cpputil::SpanReader<std::set<size_t>,
+          cpputil::Range<size_t, 0, 1024 * 1024>>, cpputil::SpanWriter<std::set<size_t>, cpputil::Range<size_t, 0, 1024 * 1024>>>::create("performance_set")
+          .usage("{ 0 1 ... 9 }")
+          .description("Subset of testcase indices to use for performance sets")
+          .default_val({0, 1, 2, 3});
+
 cpputil::ValueArg<size_t>& testcase_idx_arg =
   cpputil::ValueArg<size_t>::create("index")
   .usage("<int>")

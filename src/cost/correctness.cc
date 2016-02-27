@@ -38,10 +38,10 @@ CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, 
   reference_out_.clear();
   recompute_target_defs(target.live_outs());
 
-  sandbox_->insert_function(target);
-  sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
-  sandbox_->run();
-  for (auto i = sandbox_->result_begin(), ie = sandbox_->result_end(); i != ie; ++i) {
+  test_sandbox_->insert_function(target);
+  test_sandbox_->set_entrypoint(target.get_code()[0].get_operand<x64asm::Label>(0));
+  test_sandbox_->run();
+  for (auto i = test_sandbox_->result_begin(), ie = test_sandbox_->result_end(); i != ie; ++i) {
     reference_out_.push_back(*i);
   }
   return *this;
@@ -74,7 +74,7 @@ void CorrectnessCost::recompute_target_defs(const RegSet& rs) {
   result would equal or exceed that value. */
 CorrectnessCost::result_type CorrectnessCost::operator()(const Cfg& cfg, const Cost max) {
 
-  run_sandbox(cfg);
+  run_test_sandbox(cfg);
 
   auto cost = evaluate_correctness(cfg, max);
   bool correct = cost == 0;
@@ -99,8 +99,8 @@ Cost CorrectnessCost::max_correctness(const Cfg& cfg, const Cost max) {
   counter_example_testcase_ = -1;
 
   size_t i = 0;
-  for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
-    const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)), cfg.def_outs());
+  for (size_t ie = test_sandbox_->size(); res < max && i < ie; ++i) {
+    const auto err = evaluate_error(reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs());
     assert(err <= max_testcase_cost);
     if (err != 0 && counter_example_testcase_ < 0) {
       counter_example_testcase_ = i;
@@ -118,8 +118,8 @@ Cost CorrectnessCost::sum_correctness(const Cfg& cfg, const Cost max) {
   counter_example_testcase_ = -1;
 
   size_t i = 0;
-  for (size_t ie = sandbox_->size(); res < max && i < ie; ++i) {
-    const auto err = evaluate_error(reference_out_[i], *(sandbox_->get_result(i)), cfg.def_outs());
+  for (size_t ie = test_sandbox_->size(); res < max && i < ie; ++i) {
+    const auto err = evaluate_error(reference_out_[i], *(test_sandbox_->get_result(i)), cfg.def_outs());
     assert(err <= max_testcase_cost);
     if (err != 0 && counter_example_testcase_ < 0) {
       counter_example_testcase_ = i;
