@@ -1,0 +1,9 @@
+
+1. flat memory model outlier bug
+2. transformation mode to optimization mode bug
+3. command line options
+
+  --memory-model {string,flat} (=> string)
+  --no_check_all
+  -n --num-cores (=> 16)
+  -b --benchmarks (=> { all 13 })
