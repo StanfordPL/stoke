@@ -90,7 +90,7 @@ public:
       std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand);
     }
     for (size_t i = 0, ie = testcases_arg.value().size(); i < ie; ++i) {
-      if (test_set_arg.value().find(i) != test_set_arg.value().end()) {
+      if (performance_set_arg.value().find(i) != performance_set_arg.value().end()) {
         push_back(testcases_arg.value()[i]);
       }
     }
