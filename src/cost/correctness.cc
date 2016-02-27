@@ -29,7 +29,7 @@ using namespace x64asm;
 namespace stoke {
 
 CorrectnessCost& CorrectnessCost::set_target(const Cfg& target, bool stack_out, bool heap_out) {
-  assert(sandbox_ != nullptr);
+  assert(test_sandbox_ != nullptr);
 
   live_out_ = target.live_outs();
   stack_out_ = stack_out;
