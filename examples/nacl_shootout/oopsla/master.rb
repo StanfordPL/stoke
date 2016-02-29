@@ -1,6 +1,8 @@
 #!/usr/bin/ruby
 
 require 'fileutils'
+require 'optparse'
+
 require_relative 'jobs'
 require_relative 'bench_config'
 
@@ -339,7 +341,7 @@ class SearchJob < Job
       file.write("\n")
 
       file.write("## Verification\n")
-      file.write("--no_bv\n")
+      file.write("--no_bv\n") if $global_settings[:no_check_all]
       file.write("--strategy \"hold_out,bounded\"\n")
       file.write("--bound 1\n")
       if $global_settings[:alias_strategy].nil?
@@ -562,20 +564,72 @@ def kill_children
 end
 
 
-#### Here's what to do
+#### Read any user config from the command line
+def parse_cmdline
+  $global_settings[:no_check_all] = false
+  $global_settings[:num_cores] = 16
+  $global_settings[:fast] = false
 
-def main
+  optparse = OptionParser.new do |opts|
+    opts.banner = "Usage: ./master.rb [options] <stamp>"
 
-  ## Setup logging facility
-  if ARGV.length != 1 then
-    puts "usage: ./jobmaster.rb <stamp>"
-    exit 1
+    opts.on('-n', '--num-cores NUM', Integer, "Number of cores to use (default 16)") do |value|
+      $global_settings[:num_cores] = value.to_i
+    end
+
+    opts.on("-f", '--fast', "Do quick run") do
+      $global_settings[:fast] = true
+      $global_settings[:cycle_timeout] = 8000
+      $global_settings[:timeout_iterations] = 8000*3
+      $global_settings[:verify_timeout] = "5m"
+      $global_settings[:search_timeout] = "10m"
+      $global_settings[:optimize_only] = true
+    end
+
+    opts.on("--optimize", "Only optimization; no transformation") do
+      $global_settings[:optimize_only] = true
+    end
+
+    opts.on('--memory-model (flat|string)', String, "Pick a memory model") do |model|
+      if model != "flat" and model != "string"
+        puts "Memory model must be 'flat' or 'string'; got '#{model}'"
+        exit 1
+      end 
+      $global_settings[:alias_strategy] = model
+    end
+
+    opts.on("--no-check-all", "Skip bounded validator in search loop") do
+      $global_settings[:no_check_all] = true
+    end
+
+    opts.on('-h', '--help') do
+      puts opts
+      exit 0
+    end
   end
 
+  optparse.parse!
+
+  if (ARGV.length != 1)
+    puts ARGV
+    puts "Need a stamp!"
+    exit 1
+  end
   $stamp = ARGV[0]
-  FileUtils.mkdir_p "results/#{$stamp}"
+
+end
+
+#### Here's what to do
+def main
+
+  ## Record command line args
+  arguments = ARGV.join(" ")
+
+  ## Set globals via command line
+  parse_cmdline
 
   ## Make a copy of all scripts; for debugging purposes
+  FileUtils.mkdir_p "results/#{$stamp}"
   FileUtils.mkdir_p "results/#{$stamp}/scripts"
 
   for file in Dir.glob("*.rb")
@@ -585,37 +639,36 @@ def main
   ## Start the timer
   start_time = Time.new
   log "Starting"
+  log "Command line arguments: "
+  log arguments
+  log "Global settings: "
+  log $global_settings
 
   ## Setup the queue and signal handler
-  s = Semaphore.new(16)
+  s = Semaphore.new($global_settings[:num_cores])
   $queue = JobQueue.new(s)
   $child_pids_lock = Mutex.new
   $child_pids = []
 
   exit_nicely
 
-#  $benchmarks.each do |k,v|
-#    j = SearchJob.new(k)
-#    $queue.add_job(j)
-#  end
-
-#  j = SearchJob.new("wcpcpy")
-#  j.set_debug
-#  $queue.add_job(j)
-
   fast = ["wmemset", "wcslen", "wcscpy", "wcsnlen"]
   others = [ "strcpy", "wmemcmp", "wcscat", "wcpcpy", "wcschr", "strxfrm", "wcscmp", "wmemchr", "wcsrchr"]
 
+
   all = fast + others
+  if $global_settings[:fast] then
+    all = fast
+  end
 
   all.each do |bench|
     j = SearchJob.new(bench, :optimize)
     $queue.add_job(j)
 
-#if $benchmarks[bench][:do_transform]
-#      j = SearchJob.new(bench, :transform)
-#      $queue.add_job(j)
-#    end
+    if not $global_settings[:optimize_only]
+      j = SearchJob.new(bench, :transform)
+      $queue.add_job(j)
+    end
   end
 
   ## Run everything
