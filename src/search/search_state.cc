@@ -41,7 +41,7 @@ SearchState::SearchState(const Cfg& target, const Cfg& previous, Init init, size
   case Init::PREVIOUS:
     current = previous;
     best_yet = previous;
-    best_correct = target;
+    best_correct = previous;
     break;
   case Init::EXTENSION:
     configure_extension(target, size);

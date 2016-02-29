@@ -1,17 +1,17 @@
 
 DEPLOY_PATH=/home/berkeley/stoke/examples/nacl_shootout/web-shootout.googlecode.com/git/nacl
 NAME=wcsrchr
-TC_OPTS=--number 40 --char_width 4 --different_size_ok --randomize_stack
-TC_EXTRA_OPTS=--number 400 --char_width 4 --different_size_ok --randomize_stack
+TC_OPTS=--number 40 --char_width 4 --randomize_stack --strcat
+TC_EXTRA_OPTS=--number 400 --char_width 4 --randomize_stack --strcat
 TC_BIN=strcpy_tcs
 
 all: search
 
 testcase:
-	cat extra.tc > testcases
+	rm testcases
 	$(TC_BIN) $(TC_OPTS) >> testcases
-	$(TC_BIN) $(TC_OPTS) --max_buffer_size 16 --heap_size 128 >> testcases
-	$(TC_BIN) $(TC_OPTS) --max_buffer_size 64 --heap_size 256 >> testcases
+	$(TC_BIN) $(TC_OPTS) --max_buffer_size 8 --heap_size 512 >> testcases
+	$(TC_BIN) $(TC_OPTS) --max_buffer_size 64 --heap_size 1024 >> testcases
 	$(TC_BIN) $(TC_OPTS) --max_buffer_size 512 --heap_size 2048 >> testcases
 	$(TC_BIN) $(TC_OPTS) --max_buffer_size 1024 --heap_size 4096 >> testcases
 	$(TC_BIN) $(TC_OPTS) --max_buffer_size 4096 --heap_size 16384 >> testcases

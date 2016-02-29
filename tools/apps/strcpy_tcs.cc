@@ -151,13 +151,14 @@ int main(int argc, char** argv) {
     }
 
     auto src_end = heap_base_top + src_offset + ROUND_UP(src_buffer_size, char_width.value());
-    auto dst_end = heap_base_top + dst_offset + ROUND_UP(dst_buffer_size, char_width.value());
+    auto dst_end = heap_base_top + dst_offset + ROUND_UP(buffer_size, char_width.value());
+    auto dst_end_far = heap_base_top + dst_offset+ROUND_UP(dst_buffer_size, char_width.value());
 
     if (!dst_only) {
       for (uint64_t i = heap_base_top + src_offset; i < src_end; ++i)
         cs.heap.set_valid(i, true);
     }
-    for (uint64_t i = heap_base_top + dst_offset; i < dst_end; ++i)
+    for (uint64_t i = heap_base_top + dst_offset; i < dst_end_far; ++i)
       cs.heap.set_valid(i, true);
 
     // null terminate, yo (note: we don't use src_/dst_ buffer size since strcat() is null-terminated sooner, etc.
