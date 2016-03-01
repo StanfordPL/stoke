@@ -22,6 +22,7 @@
 #include "src/cost/measured.h"
 #include "src/cost/size.h"
 #include "src/cost/iaca.h"
+#include "src/cost/measured_iaca.h"
 #include "src/cost/sseavx.h"
 #include "src/cost/nongoal.h"
 #include "tools/args/cost.inc"
@@ -59,6 +60,7 @@ private:
     st["sseavx"] =       new SseAvxCost();
     st["nongoal"] =      new NonGoalCostGadget(target);
     st["iaca"] =         new IacaCost();
+    st["measurediaca"] = new MeasuredIacaCost();
 
     CostParser cost_p(cost_function_arg.value(), st);
     auto cost_fxn = cost_p.run();
