@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@
 #include "src/solver/smtsolver.h"
 #include "src/symstate/bitvector.h"
 #include "src/symstate/memo_visitor.h"
+
+//#define DEBUG_Z3_INTERFACE_PERFORMANCE
 
 namespace stoke {
 
@@ -59,11 +61,18 @@ public:
   /** Get the satisfying assignment for a bit from the model. */
   bool get_model_bool(const std::string& var);
 
-  std::map<cpputil::BitVector, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits) {
-    std::cout << "Arrays not yet supported for Z3! (limitation of stoke, not Z3)"  << std::endl;
-    error_ = "Arrays not yet supported for Z3! (limitation of stoke, not Z3)";
-    return std::map<cpputil::BitVector, cpputil::BitVector>();
+  std::map<uint64_t, cpputil::BitVector> get_model_array(const std::string& var, uint16_t key_bits, uint16_t value_bits);
+
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+  static void print_performance() {
+    std::cout << "====== Z3 Interface Performance Report ======" << std::endl;
+    std::cout << "Number queries: " << number_queries_ << std::endl;
+    std::cout << "Typecheck time (ms): " << (typecheck_time_/1000) << std::endl;
+    std::cout << "Convert time (ms): " << (convert_time_/1000) << std::endl;
+    std::cout << "Z3 time (ms): " << (solver_time_/1000) << std::endl;
+    std::cout << "Total accounted: " << (typecheck_time_ + convert_time_ + solver_time_)/1000 << std::endl;
   }
+#endif
 
 private:
 
@@ -234,6 +243,7 @@ private:
       return error_;
     }
 
+
   private:
 
     /** Helper function to build a string symbol */
@@ -248,6 +258,14 @@ private:
 
     std::string error_;
   };
+
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+  static uint64_t number_queries_;
+  static uint64_t typecheck_time_;
+  static uint64_t convert_time_;
+  static uint64_t solver_time_;
+
+#endif
 };
 
 } //namespace stoke

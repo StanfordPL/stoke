@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -508,7 +508,7 @@ private:
     case SymBool::SIGN_LT:
       return 70;
     case SymBool::ARRAY_EQ:
-        return 80;
+      return 80;
     case SymBool::EQ:
       return 80;
     case SymBool::AND:

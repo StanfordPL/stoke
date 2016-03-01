@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 
 #include "src/symstate/state.h"
-#include "src/symstate/memory/deprecated.h"
+#include "src/symstate/memory/flat.h"
 #include "src/ext/x64asm/include/x64asm.h"
 
 using namespace std;
@@ -42,11 +42,27 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   set(eflags_sf, SymBool::constant(cs.rf.is_set(eflags_sf.index())));
   set(eflags_of, SymBool::constant(cs.rf.is_set(eflags_of.index())));
 
-  auto dm = new DeprecatedMemory();
-  dm->init_concrete(cs.stack, cs.heap);
-  dm->set_parent(this);
-  memory = dm;
+  auto fm = new FlatMemory();
+  fm->set_parent(this);
+  memory = fm;
   delete_memory_ = true;
+
+  vector<Memory> concrete_memories;
+  concrete_memories.push_back(cs.stack);
+  concrete_memories.push_back(cs.heap);
+  concrete_memories.push_back(cs.data);
+  for (auto it : cs.segments) {
+    concrete_memories.push_back(it);
+  }
+
+  for (auto mem : concrete_memories) {
+    for (uint64_t addr = mem.lower_bound(); mem.in_range(addr); ++addr) {
+      uint8_t value = mem[addr];
+      auto addr_bv = SymBitVector::constant(64, addr);
+      auto val_bv = SymBitVector::constant(8, value);
+      fm->write(addr_bv, val_bv, 1, 0);
+    }
+  }
 
   sigbus = SymBool::_false();
   sigfpe = SymBool::_false();

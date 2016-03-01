@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,9 +44,11 @@ int main(int argc, char** argv) {
   RewriteGadget rewrite(aux_fxns);
 
   SeedGadget seed;
-  TrainingSetGadget tcs(seed);
-  SandboxGadget sb(tcs, aux_fxns);
-  CostFunctionGadget fxn(target, &sb);
+  TrainingSetGadget train_tcs(seed);
+  SandboxGadget training_sb(train_tcs, aux_fxns);
+  PerformanceSetGadget perf_tcs(seed);
+  SandboxGadget perf_sb(perf_tcs, aux_fxns);
+  CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
   Console::msg() << "CostFunction::operator()..." << endl;
 

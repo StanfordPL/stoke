@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,24 +25,24 @@ class MeasuredCost : public CostFunction {
 public:
 
   /** Yes, we need to use the sandbox */
-  bool need_sandbox() {
+  bool need_perf_sandbox() {
     return true;
   }
 
   /** And we need to set it up. */
-  MeasuredCost& setup_sandbox(Sandbox* sb) {
-    sandbox_ = sb;
-    sandbox_->insert_before(measured_callback, this);
+  MeasuredCost& setup_perf_sandbox(Sandbox* sb) {
+    perf_sandbox_ = sb;
+    perf_sandbox_->insert_before(measured_callback, this);
     return *this;
   }
 
   /** Measures the "running time" with our latency table */
   result_type operator()(const Cfg& cfg, Cost max = max_cost) {
 
-    run_sandbox(cfg);
+    run_perf_sandbox(cfg);
 
     uint64_t res = latency_;
-    size_t tc_count = sandbox_->size();
+    size_t tc_count = perf_sandbox_->size();
     latency_ = 0;
     if (tc_count == 0) {
       LatencyCost lc;

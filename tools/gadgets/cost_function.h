@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ namespace stoke {
 
 class CostFunctionGadget : public CostFunction {
 public:
-  CostFunctionGadget(const Cfg& target, Sandbox* sb) : CostFunction(), fxn_(build_fxn(target, sb)) {
+  CostFunctionGadget(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb) : CostFunction(), fxn_(build_fxn(target, test_sb, perf_sb)) {
   }
 
   result_type operator()(const Cfg& cfg, Cost max) {
@@ -48,11 +48,11 @@ private:
 
   CostFunction* fxn_;
 
-  static CostFunction* build_fxn(const Cfg& target, Sandbox* sb) {
+  static CostFunction* build_fxn(const Cfg& target, Sandbox* test_sb, Sandbox* perf_sb) {
 
     CostParser::SymbolTable st;
     st["binsize"] =      new BinSizeCost();
-    st["correctness"] =  new CorrectnessCostGadget(target, sb);
+    st["correctness"] =  new CorrectnessCostGadget(target, test_sb);
     st["latency"] =      new LatencyCostGadget();
     st["measured"] =     new MeasuredCost();
     st["size"] =         new SizeCost();
@@ -80,7 +80,8 @@ private:
     }
 
     (*cost_fxn).set_correctness(correctness_fxn)
-    .setup_sandbox(sb);
+    .setup_test_sandbox(test_sb)
+    .setup_perf_sandbox(perf_sb);
     return cost_fxn;
   }
 

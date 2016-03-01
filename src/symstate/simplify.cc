@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ class SymMergeExtracts : public SymTransformVisitor {
 
 public:
 
-  SymMergeExtracts(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits) : SymTransformVisitor(cache_bool, cache_bits) {}
+  SymMergeExtracts(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits, map<SymArrayAbstract*, SymArrayAbstract*>& cache_array) : SymTransformVisitor(cache_bool, cache_bits, cache_array) {}
 
   SymBitVectorAbstract* visit(const SymBitVectorExtract * const bv) {
     if (is_cached(bv)) return get_cached(bv);
@@ -84,7 +84,7 @@ class SymMoveExtractsInside : public SymTransformVisitor {
 
 public:
 
-  SymMoveExtractsInside(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits) : SymTransformVisitor(cache_bool, cache_bits) {}
+  SymMoveExtractsInside(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits, map<SymArrayAbstract*, SymArrayAbstract*>& cache_array) : SymTransformVisitor(cache_bool, cache_bits, cache_array) {}
 
   SymBitVectorAbstract* visit(const SymBitVectorExtract * const bv) {
     if (is_cached(bv)) return get_cached(bv);
@@ -153,7 +153,68 @@ class SymConstProp : public SymTransformVisitor {
 
 public:
 
-  SymConstProp(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits) : SymTransformVisitor(cache_bool, cache_bits) {}
+  SymConstProp(map<SymBoolAbstract*, SymBoolAbstract*>& cache_bool, map<SymBitVectorAbstract*, SymBitVectorAbstract*>& cache_bits, map<SymArrayAbstract*, SymArrayAbstract*>& cache_array) : SymTransformVisitor(cache_bool, cache_bits, cache_array) {}
+
+  SymBitVectorAbstract* visit(const SymBitVectorFunction * const bv) {
+    if (is_cached(bv)) return get_cached(bv);
+
+    // add/subtract of 0 or a-a
+    auto& f = bv->f_;
+    if (f.args.size() == 2) {
+      auto a = (*this)(bv->args_[0]);
+      auto b = (*this)(bv->args_[1]);
+      if ((f.name == "sub_single" || f.name == "sub_double") && is_zero(b)) {
+        return cache(bv, (SymBitVectorAbstract*) a);
+      }
+      if ((f.name == "add_single" || f.name == "add_double") && is_zero(b)) {
+        return cache(bv, (SymBitVectorAbstract*) a);
+      }
+      if ((f.name == "add_single" || f.name == "add_double") && is_zero(a)) {
+        return cache(bv, (SymBitVectorAbstract*) b);
+      }
+      if ((f.name == "sub_single" || f.name == "sub_double") && a->equals(b)) {
+        return cache(bv, make_constant(bv->width_, 0));
+      }
+    }
+
+    // conversion of zero
+    if (f.args.size() == 1) {
+      auto a = (*this)(bv->args_[0]);
+      if (is_zero(a)) {
+        if (f.name == "cvt_int32_to_double" ||
+            f.name == "cvt_int32_to_single" ||
+            f.name == "cvt_double_to_int32" ||
+            f.name == "cvt_double_to_single" ||
+            f.name == "cvt_int32_to_double" ||
+            f.name == "cvt_int32_to_single" ||
+            f.name == "cvt_single_to_int32" ||
+            f.name == "cvt_single_to_double" ||
+            f.name == "cvt_single_to_int32" ||
+            f.name == "cvt_double_to_int32" ||
+            f.name == "cvt_double_to_int64" ||
+            f.name == "cvt_double_to_single" ||
+            f.name == "cvt_int32_to_double" ||
+            f.name == "cvt_int64_to_double" ||
+            f.name == "cvt_int32_to_single" ||
+            f.name == "cvt_int64_to_single" ||
+            f.name == "cvt_single_to_double" ||
+            f.name == "cvt_single_to_int32" ||
+            f.name == "cvt_single_to_int64" ||
+            f.name == "cvt_double_to_int32_truncate" ||
+            f.name == "cvt_double_to_int32_truncate" ||
+            f.name == "cvt_single_to_int32_truncate" ||
+            f.name == "cvt_single_to_int32_truncate" ||
+            f.name == "cvt_double_to_int32_truncate" ||
+            f.name == "cvt_double_to_int64_truncate" ||
+            f.name == "cvt_single_to_int32_truncate" ||
+            f.name == "cvt_single_to_int64_truncate") {
+          return cache(bv, make_constant(bv->width_, 0));
+        }
+      }
+    }
+
+    return SymTransformVisitor::visit(bv);
+  }
 
   SymBitVectorAbstract* visit(const SymBitVectorSignExtend * const bv) {
     if (is_cached(bv)) return get_cached(bv);
@@ -238,6 +299,36 @@ public:
       }
     }
 
+    // addition/subtraction of zero
+    if (bv->type() == SymBitVector::PLUS && is_zero(lhs)) {
+      return cache(bv, rhs);
+    }
+    if (bv->type() == SymBitVector::PLUS && is_zero(rhs)) {
+      return cache(bv, lhs);
+    }
+    if (bv->type() == SymBitVector::MINUS && is_zero(rhs)) {
+      return cache(bv, lhs);
+    }
+
+    // move binop over ite
+    if (lhs->type() == SymBitVector::ITE) {
+      SymBitVectorIte* ite = (SymBitVectorIte*)lhs;
+      if (is_const(ite->a_) && is_const(ite->a_) && is_const(rhs)) {
+        auto a = make_binop(bv->type(), (SymBitVectorAbstract*)ite->a_, rhs);
+        auto b = make_binop(bv->type(), (SymBitVectorAbstract*)ite->b_, rhs);
+        return cache(bv, make_bitvector_ite(ite->cond_, a, b));
+      }
+    }
+    if (rhs->type() == SymBitVector::ITE) {
+      SymBitVectorIte* ite = (SymBitVectorIte*)rhs;
+      if (is_const(ite->a_) && is_const(ite->a_) && is_const(lhs)) {
+        auto a = make_binop(bv->type(), lhs, (SymBitVectorAbstract*)ite->a_);
+        auto b = make_binop(bv->type(), lhs, (SymBitVectorAbstract*)ite->b_);
+        return cache(bv, make_bitvector_ite(ite->cond_, a, b));
+      }
+    }
+
+    // xor with itself
     if (bv->type() == SymBitVector::XOR && lhs == rhs && width <= 64) {
       return cache(bv, make_constant(width, 0));
     }
@@ -368,7 +459,7 @@ public:
       return cache(bv, read_const(c) ? lhs : rhs);
     }
 
-    if (lhs == rhs) {
+    if (lhs->equals(rhs)) {
       return cache(bv, lhs);
     }
 
@@ -387,6 +478,10 @@ private:
 
   bool is_const(const SymBoolAbstract* const s) {
     return (s->type() == SymBool::FALSE) || (s->type() == SymBool::TRUE);
+  }
+
+  bool is_zero(const SymBitVectorAbstract* const b) {
+    return is_const(b) && read_const(b) == 0;
   }
 
   /** Returns bit pattern consisting of 0s and ending with 'ones' many 1s. */
@@ -434,9 +529,9 @@ private:
 SymBitVector SymSimplify::simplify(const SymBitVector& b) {
   auto ptr = b.ptr;
 
-  SymMergeExtracts merger(cache_bool1_, cache_bits1_);
-  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_);
-  SymConstProp constprop(cache_bool3_, cache_bits3_);
+  SymMergeExtracts merger(cache_bool1_, cache_bits1_, cache_array1_);
+  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_, cache_array2_);
+  SymConstProp constprop(cache_bool3_, cache_bits3_, cache_array3_);
 
   // apply transformations until no further simplifications are possible
   while (true) {
@@ -453,9 +548,9 @@ SymBitVector SymSimplify::simplify(const SymBitVector& b) {
 SymBool SymSimplify::simplify(const SymBool& b) {
   auto ptr = b.ptr;
 
-  SymMergeExtracts merger(cache_bool1_, cache_bits1_);
-  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_);
-  SymConstProp constprop(cache_bool3_, cache_bits3_);
+  SymMergeExtracts merger(cache_bool1_, cache_bits1_, cache_array1_);
+  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_, cache_array2_);
+  SymConstProp constprop(cache_bool3_, cache_bits3_, cache_array3_);
 
   // apply transformations until no further simplifications are possible
   while (true) {

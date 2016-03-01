@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 
 #include <iostream>
+#include <chrono>
 
 #include "src/solver/z3solver.h"
 #include "src/symstate/bitvector.h"
@@ -24,9 +25,20 @@
 using namespace stoke;
 using namespace z3;
 using namespace std;
+using namespace std::chrono;
 
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+uint64_t Z3Solver::number_queries_ = 0;
+uint64_t Z3Solver::typecheck_time_ = 0;
+uint64_t Z3Solver::convert_time_ = 0;
+uint64_t Z3Solver::solver_time_ = 0;
+#endif
 
 bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
+
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+  number_queries_++;
+#endif
 
   /* Reset state. */
   error_ = "";
@@ -47,6 +59,10 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
     ExprConverter ec(context_, *new_constraints);
 
     for (auto it : *current) {
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+      number_queries_++;
+      microseconds typecheck_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+#endif
       if (tc(it) != 1) {
         stringstream ss;
         ss << "Typechecking failed for constraint: " << it << endl;
@@ -57,12 +73,21 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
         error_ = ss.str();
         return false;
       }
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+      microseconds typecheck_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+      typecheck_time_ += (typecheck_end - typecheck_start).count();
+#endif
 
       auto constraint = ec(it);
       if (ec.has_error()) {
         error_ = ec.error();
         return false;
       }
+
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+      microseconds convert_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+      convert_time_ += (convert_end - typecheck_end).count();
+#endif
       solver_.add(constraint);
     }
 
@@ -76,7 +101,16 @@ bool Z3Solver::is_sat(const vector<SymBool>& constraints) {
 
   /* Run the solver and see */
   try {
-    switch (solver_.check()) {
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+    microseconds solver_start = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+#endif
+    auto result = solver_.check();
+#ifdef DEBUG_Z3_INTERFACE_PERFORMANCE
+    microseconds solver_end = duration_cast<microseconds>(system_clock::now().time_since_epoch());
+    solver_time_ += (solver_end - solver_start).count();
+#endif
+
+    switch (result) {
     case unsat: {
       return false;
     }
@@ -163,6 +197,82 @@ bool Z3Solver::get_model_bool(const std::string& var) {
     error_ = "Z3 returned invalid value " + to_string(n) + " for boolean " + var + ".";
     return false;
   }
+}
+
+
+std::map<uint64_t, cpputil::BitVector> Z3Solver::get_model_array(
+  const std::string& var, uint16_t key_bits, uint16_t value_bits) {
+
+  map<uint64_t, cpputil::BitVector> addr_val_map;
+
+  // get variable / value
+  auto type = Z3_mk_array_sort(context_, context_.bv_sort(key_bits), context_.bv_sort(value_bits));
+  auto v = z3::expr(context_, Z3_mk_const(context_, get_symbol(var), type));
+  expr e = model_->eval(v, true);
+  auto array_eval_func_decl = e.decl();
+
+  //cout << *model_ << endl;
+
+  // CREDIT: this was written with A LOT of help from
+  // https://stackoverflow.com/questions/22885457/read-func-interp-of-a-z3-array-from-the-z3-model
+
+  bool ok = true;
+  ok &= Z3_get_decl_kind(context_, array_eval_func_decl) == Z3_OP_AS_ARRAY;
+  /* These checks don't seem to work right
+    cout << "check1: ok=" << ok << endl;
+    ok &= Z3_is_app(context_, array_eval_func_decl);
+    cout << "check2: ok=" << ok << endl;
+    ok &= (Z3_get_decl_num_parameters(context_, array_eval_func_decl) == 1);
+    cout << "check3: ok=" << ok << endl;
+    ok &= (Z3_get_decl_parameter_kind(context_, array_eval_func_decl, 0) ==
+           Z3_PARAMETER_FUNC_DECL);
+    cout << "check4: ok=" << ok << endl;
+  */
+
+  if (!ok) {
+    // The counterexample could be spurious, but we'll figure that out later.
+    // On the other hand, there might be no memory at all or the memory
+    // does not matter
+    //cout << "got empty addr-value map" << endl;
+    return addr_val_map;
+  }
+
+  auto z3_model_fd = Z3_get_decl_func_decl_parameter(context_, array_eval_func_decl, 0);
+  auto model_fd = func_decl(context_, z3_model_fd);
+  func_interp fun_interp = model_->get_func_interp(model_fd);
+
+
+  unsigned num_entries = fun_interp.num_entries();
+  for (unsigned i = 0; i < num_entries; i++)
+  {
+    z3::func_entry entry = fun_interp.entry(i);
+    z3::expr k = entry.arg(0);
+    z3::expr v = entry.value();
+
+    //std::cout << "\n(key,value): (" << k << "," << v << ")";
+
+    uint64_t addr;
+    uint64_t value;
+    Z3_get_numeral_uint64(context_, k, (long long unsigned int*)&addr);
+    Z3_get_numeral_uint64(context_, v, (long long unsigned int*)&value);
+
+    assert(value <= 0xff);
+
+    // TODO: generalize this if ever needed
+    cpputil::BitVector bv_v(8);
+    bv_v.get_fixed_byte(0) = value;
+    addr_val_map[addr] = bv_v;
+    //cout << hex << "adding " << addr << "->" << value << endl;
+  }
+
+  // TODO: if default_value is non-zero our counterexample will be spurious
+  z3::expr default_value = fun_interp.else_value();
+  //std::cout << "\nDefault value:" << default_value;
+
+  // TODO: "complete" the map with the default value
+
+
+  return addr_val_map;
 }
 
 ///////  The following is for converting bit-vectors.  Very tedious.  //////////////////////////////

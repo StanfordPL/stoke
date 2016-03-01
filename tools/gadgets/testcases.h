@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -75,6 +75,22 @@ public:
     }
     for (size_t i = 0, ie = testcases_arg.value().size(); i < ie; ++i) {
       if (test_set_arg.value().find(i) != test_set_arg.value().end()) {
+        push_back(testcases_arg.value()[i]);
+      }
+    }
+  }
+};
+
+class PerformanceSetGadget : public CpuStates {
+public:
+  PerformanceSetGadget(std::default_random_engine::result_type seed) : CpuStates() {
+    if (shuffle_tc_arg) {
+      std::default_random_engine rand;
+      rand.seed(seed);
+      std::shuffle(testcases_arg.value().begin(), testcases_arg.value().end(), rand);
+    }
+    for (size_t i = 0, ie = testcases_arg.value().size(); i < ie; ++i) {
+      if (performance_set_arg.value().find(i) != performance_set_arg.value().end()) {
         push_back(testcases_arg.value()[i]);
       }
     }

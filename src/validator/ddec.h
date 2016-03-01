@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -56,22 +56,12 @@ public:
     sound_nullspace_ = b;
     return *this;
   }
-  /** Set the aliasing strategy for bounded validator */
-  DdecValidator& set_alias_strategy(ObligationChecker::AliasStrategy as) {
-    alias_strategy_ = as;
-    return *this;
-  }
   /** Set the bound for bounded validator */
   DdecValidator& set_bound(size_t bound) {
     bound_ = bound;
     return *this;
   }
-  /** Turn on NaCl Mode */
-  DdecValidator& set_nacl(bool nacl) {
-    nacl_ = nacl;
-    return *this;
-  }
- 
+
   /** Verify if target and rewrite are equivalent. */
   bool verify(const Cfg& target, const Cfg& rewrite);
 
@@ -106,11 +96,6 @@ private:
   bool no_bv_;
   /** Use the sound nullspace computation? */
   bool sound_nullspace_;
-  /** Aliasing strategy for bounded validator. */
-  ObligationChecker::AliasStrategy alias_strategy_;
-
-  /** Nacl */
-  bool nacl_;
 };
 
 } // namespace stoke

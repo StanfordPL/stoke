@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License); // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -108,13 +108,13 @@ public:
     return cpputil::BitVector(n);
   }
 
-  std::map<cpputil::BitVector,cpputil::BitVector> get_model_array(const std::string& s, uint16_t n, uint16_t m) {
+  std::map<uint64_t,cpputil::BitVector> get_model_array(const std::string& s, uint16_t n, uint16_t m) {
     for (auto it : solvers_) {
       if (it->has_model() && !it->has_error()) {
         return it->get_model_array(s, n, m);
       }
     }
-    return std::map<cpputil::BitVector,cpputil::BitVector>();
+    return std::map<uint64_t,cpputil::BitVector>();
   }
 
 

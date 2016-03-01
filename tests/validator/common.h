@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -186,7 +186,7 @@ protected:
         } else {
           explanation << "    validator: " << SymSimplify().simplify(a) << endl;
         }
-          explanation << "    sandbox:   " << b << endl;
+        explanation << "    sandbox:   " << b << endl;
         return false;
       } else {
         return true;
@@ -631,7 +631,7 @@ private:
   /* The validator we're using */
   BoundedValidator v_;
   /* The solver we're using */
-  TestSolver s_;
+  Z3Solver s_;
 
   /* The set of live outputs for the next test */
   x64asm::RegSet live_outs_;

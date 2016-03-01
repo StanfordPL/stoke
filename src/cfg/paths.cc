@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -226,10 +226,10 @@ void CfgPaths::learn_path_callback(const StateCallbackData&, void* arg) {
 
 namespace std {
 
-ostream& operator<<(ostream& os, stoke::CfgPath& path) {
-  for(size_t i = 0; i < path.size(); ++i) {
+ostream& operator<<(ostream& os, const stoke::CfgPath& path) {
+  for (size_t i = 0; i < path.size(); ++i) {
     os << path[i];
-    if(i < path.size() - 1)
+    if (i < path.size() - 1)
       os << " ";
   }
   return os;

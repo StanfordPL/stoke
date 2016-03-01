@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -42,6 +42,8 @@ TEST(Sandbox, SandboxFuzzer) {
   unsigned long iterations = 10;
 
   // Figure out the flags to use.
+  const auto cpu_flags = CpuInfo::get_flags();
+
   TransformPools tps = default_fuzzer_pool();
   for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     tps.remove_opcode((x64asm::Opcode)i);
@@ -53,6 +55,7 @@ TEST(Sandbox, SandboxFuzzer) {
     auto opc = (x64asm::Opcode)k;
 
     if (!Sandbox::is_supported(opc)) continue;
+    if (!Instruction(opc).enabled(cpu_flags)) continue;
 
     fuzz_print() << "Starting with OPC = " << opc << std::endl;
 

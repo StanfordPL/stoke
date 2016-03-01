@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -56,6 +56,7 @@ using namespace x64asm;
 #include "tests/stategen/stategen.h"
 #include "tests/symstate/bitvector.h"
 #include "tests/tunit/tunit.h"
+#include "tests/validator/invariants.h"
 #include "tests/verifier/verifier.h"
 #include "tests/fixture.h"
 
@@ -67,15 +68,16 @@ using namespace x64asm;
 #include "tests/validator/fuzz.h"
 #include "tests/validator/simple.h"
 #include "tests/validator/ddec.h"
+#include "tests/validator/bounded.h"
 
 #endif
 
 #if !defined(NO_VERY_SLOW_TESTS) && !defined(NO_SLOW_TESTS)
 
 // large tests (anything slower)
-#include "tests/validator/ddec_long.h"
 #include "tests/integration/integration.h"
-#include "tests/validator/bounded.h"
+#include "tests/validator/bounded_long.h"
+#include "tests/validator/ddec_long.h"
 #include "tests/validator/handlers.h"
 #include "tests/validator/memory.h"
 #include "tests/x64asm/parsing.h"

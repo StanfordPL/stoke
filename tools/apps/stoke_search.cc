@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -322,6 +322,10 @@ int main(int argc, char** argv) {
 
   TestSetGadget test_set(seed);
   SandboxGadget test_sb(test_set, aux_fxns);
+
+  PerformanceSetGadget perf_set(seed);
+  SandboxGadget perf_sb(perf_set, aux_fxns);
+
   CorrectnessCostGadget holdout_fxn(target, &test_sb);
   VerifierGadget verifier(test_sb, holdout_fxn);
 
@@ -355,7 +359,7 @@ int main(int argc, char** argv) {
   string final_msg;
   SearchStateGadget state(target, aux_fxns);
   for (size_t i = 0; ; ++i) {
-    CostFunctionGadget fxn(target, &training_sb);
+    CostFunctionGadget fxn(target, &training_sb, &perf_sb);
 
     // determine iteration timeout
     Expr<size_t>* timeout_expr = i >= cycle_timeouts.size() ? cycle_timeouts[cycle_timeouts.size()-1] : cycle_timeouts[i];

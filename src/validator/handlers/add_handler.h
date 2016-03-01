@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -32,11 +32,12 @@ public:
 
   virtual std::vector<x64asm::Opcode> full_support_opcodes() {
     return Handler::opcodes_convert({"addb", "addw", "addl", "addq",
-            "adcb", "adcw", "adcl", "adcq",
-            "xaddb", "xaddw", "xaddl", "xaddq",
-            "cmpb", "cmpw", "cmpl", "cmpq",
-            "sbbb", "sbbw", "sbbl", "sbbq",
-            "subb", "subw", "subl", "subq" });
+                                     "adcb", "adcw", "adcl", "adcq",
+                                     "xaddb", "xaddw", "xaddl", "xaddq",
+                                     "cmpb", "cmpw", "cmpl", "cmpq",
+                                     "sbbb", "sbbw", "sbbl", "sbbq",
+                                     "subb", "subw", "subl", "subq"
+                                    });
   }
 
 

@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -22,11 +22,6 @@
 #include "src/validator/invariants/true.h"
 
 #define BOUNDED_DEBUG(X) { }
-#define BUILD_TC_DEBUG(X) { }
-#define ALIAS_DEBUG(X) { }
-#define ALIAS_CASE_DEBUG(X) { }
-#define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -53,18 +48,18 @@ bool BoundedValidator::verify_pair(const Cfg& target, const Cfg& rewrite, const 
 
   BOUNDED_DEBUG(cout << "heap/stack out: " << heap_out_ << " " << stack_out_ << endl;)
   bool equiv;
-  if(heap_out_ || stack_out_) {
+  if (heap_out_ || stack_out_) {
     equiv = check(target, rewrite, P, Q, assume, prove);
   } else {
     equiv = check(target, rewrite, P, Q, assume, prove_state);
   }
 
-  if(checker_has_ceg()) {
+  if (checker_has_ceg()) {
     assert(!equiv);
     counterexamples_.push_back(checker_get_target_ceg());
     target_final_state_ = checker_get_target_ceg_end();
     rewrite_final_state_ = checker_get_rewrite_ceg_end();
-  } 
+  }
 
   return equiv;
 }
@@ -96,12 +91,12 @@ bool BoundedValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
 
     // Step 1: get all the paths from the enumerator
     for (auto path : CfgPaths::enumerate_paths(target, bound_)) {
-      //cout << "adding TP: " << print(path) << endl;
+      //cout << "adding TP: " << path << endl;
       target_paths.push_back(path);
     }
     //cout << "REWRITE: " << endl << rewrite.get_code() << endl;
     for (auto path : CfgPaths::enumerate_paths(rewrite, bound_)) {
-      //cout << "adding RP: " << print(path) << endl;
+      //cout << "adding RP: " << path << endl;
       rewrite_paths.push_back(path);
     }
 

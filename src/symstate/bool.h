@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@
 #ifndef _STOKE_SRC_SYMSTATE_BOOL_H
 #define _STOKE_SRC_SYMSTATE_BOOL_H
 
+#include "src/symstate/ast.h"
 #include "src/symstate/memory_manager.h"
 
 namespace stoke {
+
 
 
 class SymBitVector;
@@ -144,7 +146,7 @@ private:
 
 };
 
-class SymBoolAbstract {
+class SymBoolAbstract : public SymAstAbstract {
 
 public:
   virtual SymBool::Type type() const = 0;
@@ -198,6 +200,7 @@ public:
 
 class SymBoolArrayEq : public SymBoolAbstract {
   friend class SymArray;
+  friend class SymTransformVisitor;
 
 protected:
   SymBoolArrayEq(const SymArrayAbstract * const a, const SymArrayAbstract * const b) : a_(a), b_(b) {}

@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ TEST_F(DdecValidatorLongTest, MemcpyCorrect) {
 
   // If we set this to flat we get some bad counterexamples until
   // flat gives us ones with proper memory contents
-  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -190,7 +190,7 @@ TEST_F(DdecValidatorLongTest, DISABLED_WcslenCorrect) {
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
-  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
   EXPECT_EQ(0ul, validator->counter_examples_available());
@@ -257,7 +257,7 @@ TEST_F(DdecValidatorLongTest, DISABLED_WcslenCorrect3) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
 
-  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -323,7 +323,7 @@ TEST_F(DdecValidatorLongTest, DISABLED_WcslenWrong4) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
 
-  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -389,7 +389,7 @@ TEST_F(DdecValidatorLongTest, DISABLED_WcslenWrong5) {
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
 
-  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING); 
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 

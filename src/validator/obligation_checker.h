@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -26,9 +26,15 @@
 #include "src/ext/x64asm/include/x64asm.h"
 #include "src/solver/smtsolver.h"
 #include "src/symstate/memory/cell.h"
+#include "src/symstate/memory/flat.h"
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
 
+//#define DEBUG_CHECKER_PERFORMANCE
+
+#ifdef DEBUG_CHECKER_PERFORMANCE
+#include "src/solver/z3solver.h"
+#endif
 
 namespace stoke {
 
@@ -104,8 +110,8 @@ protected:
 
 
 
-private: 
-  
+private:
+
   ///////////// These methods handle memory ///////////////////
 
 
@@ -170,7 +176,8 @@ private:
     std::vector<OverlapDescriptor>& available_cells, size_t max_size);
 
   /** Populate a testcase with memory. */
-  bool build_testcase_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const;
+  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const;
+  bool build_testcase_flat_memory(CpuState&, FlatMemory&, const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
 
   /** Go through lists of pairs of pointers and free all the memory. */
   void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories);
@@ -234,6 +241,27 @@ private:
   bool nacl_;
 
 
+#ifdef DEBUG_CHECKER_PERFORMANCE
+  static uint64_t number_queries_;
+  static uint64_t number_cases_;
+
+  static uint64_t constraint_gen_time_;
+  static uint64_t solver_time_;
+  static uint64_t aliasing_time_;
+  static uint64_t ceg_time_;
+
+  void print_performance() {
+    std::cout << "====== Obligation Checker Performance Report ======" << std::endl;
+    std::cout << "Number queries: "<< number_queries_ << std::endl;
+    std::cout << "Number aliasing cases: "<< number_cases_ << std::endl;
+    std::cout << "Alias case enumeration time (ms): " << (aliasing_time_ / 1000) << std::endl;
+    std::cout << "Constraint generation time (ms): " << (constraint_gen_time_ / 1000) << std::endl;
+    std::cout << "Solver time (ms): " << (solver_time_ / 1000) << std::endl;
+    std::cout << "Counterexample extraction time (ms): " << (ceg_time_ / 1000) << std::endl;
+    std::cout << "Total time accounted for (ms): " << ((ceg_time_ + solver_time_ + constraint_gen_time_ + aliasing_time_)/1000) << std::endl;
+    Z3Solver::print_performance();
+  }
+#endif
 
 };
 

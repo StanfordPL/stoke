@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "src/validator/invariant.h"
+#include "src/validator/invariants/conjunction.h"
 
 namespace std {
 
@@ -22,4 +23,14 @@ ostream& operator<<(ostream& os, const stoke::Invariant& inv) {
 
 }
 
+namespace stoke {
+
+ConjunctionInvariant* Invariant::AND(Invariant* other) {
+  auto ci = new ConjunctionInvariant();
+  ci->add_invariant(this);
+  ci->add_invariant(other);
+  return ci;
+}
+
+}
 

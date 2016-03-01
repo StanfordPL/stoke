@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,11 +18,20 @@ using namespace stoke;
 using namespace std;
 
 
-ExprCost& ExprCost::setup_sandbox(Sandbox* sb) {
+ExprCost& ExprCost::setup_test_sandbox(Sandbox* sb) {
 
-  sandbox_ = sb;
+  test_sandbox_ = sb;
   for (auto cf : all_leaf_functions()) {
-    cf->setup_sandbox(sb);
+    cf->setup_test_sandbox(sb);
+  }
+  return *this;
+}
+
+ExprCost& ExprCost::setup_perf_sandbox(Sandbox* sb) {
+
+  perf_sandbox_ = sb;
+  for (auto cf : all_leaf_functions()) {
+    cf->setup_perf_sandbox(sb);
   }
   return *this;
 }
@@ -68,8 +77,10 @@ ExprCost::result_type ExprCost::operator()(const Cfg& cfg, Cost max) {
   auto leaves = all_leaf_functions();
 
   // run the sandbox, if needed
-  if (need_sandbox_)
-    run_sandbox(cfg);
+  if (need_test_sandbox_)
+    run_test_sandbox(cfg);
+  if (need_perf_sandbox_)
+    run_perf_sandbox(cfg);
 
   // build the environment (i.e. run the actual cost functions)
   std::map<CostFunction*, Cost> env;

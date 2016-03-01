@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -27,6 +27,11 @@ SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
     heap_ = heap_.update(address + SymBitVector::constant(64, i), value[8*i+7][8*i]);
   }
 
+  // Update the access list
+  auto access_var = SymBitVector::tmp_var(64);
+  constraints_.push_back(access_var == address);
+  access_list_[access_var.ptr] = size;
+
   // Get a new array variable and update the heap
   auto new_arr = SymArray::tmp_var(64, 8);
   auto constr = heap_ == new_arr;
@@ -39,6 +44,12 @@ SymBool FlatMemory::write(SymBitVector address, SymBitVector value, uint16_t siz
 
 /** Reads from the memory.  Returns value and segv condition. */
 std::pair<SymBitVector,SymBool> FlatMemory::read(SymBitVector address, uint16_t size, size_t line_no) {
+  // Update the access list
+  auto access_var = SymBitVector::tmp_var(64);
+  constraints_.push_back(access_var == address);
+  access_list_[access_var.ptr] = size;
+
+
 
   SymBitVector value = heap_[address];
 

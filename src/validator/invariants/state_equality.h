@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -41,16 +41,16 @@ public:
   }
 
   bool check(const CpuState& target, const CpuState& rewrite) const {
-    for(auto it = rs_.gp_begin(); it != rs_.gp_end(); ++it) {
-      if(target[*it] != rewrite[*it])
+    for (auto it = rs_.gp_begin(); it != rs_.gp_end(); ++it) {
+      if (target[*it] != rewrite[*it])
         return false;
     }
-    for(auto it = rs_.sse_begin(); it != rs_.sse_end(); ++it) {
-      if(target.sse[*it] != rewrite.sse[*it])
+    for (auto it = rs_.sse_begin(); it != rs_.sse_end(); ++it) {
+      if (target[*it] != rewrite[*it])
         return false;
     }
-    for(auto it = rs_.flags_begin(); it != rs_.flags_end(); ++it) {
-      if(target.rf.is_set((*it).index()) != rewrite.rf.is_set((*it).index()))
+    for (auto it = rs_.flags_begin(); it != rs_.flags_end(); ++it) {
+      if (target.rf.is_set((*it).index()) != rewrite.rf.is_set((*it).index()))
         return false;
     }
     return true;

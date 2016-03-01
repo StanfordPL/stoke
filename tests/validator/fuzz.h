@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -102,6 +102,30 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   TransformPools tp = default_fuzzer_pool();
   tp.set_validator(&v);
   tp.set_memory_write(false);
+
+  // Z3 doesn't like multiplying memory cells
+  // See #819
+  tp.remove_opcode(IMUL_M16);
+  tp.remove_opcode(IMUL_M32);
+  tp.remove_opcode(IMUL_M64);
+  tp.remove_opcode(IMUL_M8);
+  tp.remove_opcode(IMUL_R16_M16);
+  tp.remove_opcode(IMUL_R16_M16_IMM16);
+  tp.remove_opcode(IMUL_R16_M16_IMM8);
+  tp.remove_opcode(IMUL_R32_M32);
+  tp.remove_opcode(IMUL_R32_M32_IMM32);
+  tp.remove_opcode(IMUL_R32_M32_IMM8);
+  tp.remove_opcode(IMUL_R64_M64);
+  tp.remove_opcode(IMUL_R64_M64_IMM32);
+  tp.remove_opcode(IMUL_R64_M64_IMM8);
+
+  tp.remove_opcode(MUL_M8);
+  tp.remove_opcode(MUL_M16);
+  tp.remove_opcode(MUL_M32);
+  tp.remove_opcode(MUL_M64);
+
+
+
   tp.recompute_pools();
 
   uint64_t seed = fuzz(tp, iterations, &validator_fuzz_callback, (void*)this);

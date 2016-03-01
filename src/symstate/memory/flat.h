@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 #ifndef STOKE_SRC_SYMSTATE_MEMORY_FLAT_H
 #define STOKE_SRC_SYMSTATE_MEMORY_FLAT_H
 
+#include <map>
+
 #include "src/symstate/bitvector.h"
 #include "src/symstate/memory.h"
 
@@ -27,7 +29,9 @@ class FlatMemory : public SymMemory {
 public:
 
   FlatMemory() {
-    heap_ = SymArray::tmp_var(64, 8);
+    variable_ = SymArray::tmp_var(64, 8);
+    heap_ = variable_;
+    variable_up_to_date_ = true;
   }
 
   /** Updates the memory with a write.
@@ -44,11 +48,37 @@ public:
     return constraints_;
   }
 
+  /** Get a variable representing the memory at this state. */
+  SymArray get_variable() {
+    if (!variable_up_to_date_) {
+      variable_ = SymArray::tmp_var(64, 8);
+      variable_up_to_date_ = true;
+      constraints_.push_back(variable_ == heap_);
+    }
+
+    return variable_;
+  }
+
+  /** Get list of accesses accessed (via read or write).  This is needed for
+   * marking relevant cells valid in the counterexample. */
+  std::map<const SymBitVectorAbstract*, uint64_t> get_access_list() {
+    return access_list_;
+  }
+
 private:
 
+  /** A variable that represents the heap state */
+  bool variable_up_to_date_;
+  SymArray variable_;
+
+  /** The heap state */
   SymArray heap_;
 
+  /** Extra constraints needed to make everything work. */
   std::vector<SymBool> constraints_;
+
+  /** map of (symbolic address, size) pairs accessed. */
+  std::map<const SymBitVectorAbstract*, uint64_t> access_list_;
 
 };
 

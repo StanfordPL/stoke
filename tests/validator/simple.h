@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the License);
 // you may not use this file except in compliance with the License.
@@ -417,6 +417,11 @@ TEST_F(ValidatorBaseTest, Issue764_2) {
   cs.gp[x64asm::rsp].get_fixed_quad(0) = 0x700000000;
 
   check_circuit(cs);
+}
+
+TEST_F(ValidatorBaseTest, ConcreteMemoryWorks) {
+
+
 }
 
 } //namespace stoke

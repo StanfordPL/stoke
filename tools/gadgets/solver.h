@@ -1,4 +1,4 @@
-// Copyright 2013-2015 Stanford University
+// Copyright 2013-2016 Stanford University
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -56,14 +56,14 @@ public:
   bool get_model_bool(const std::string& var) {
     return solver_->get_model_bool(var);
   }
-  std::map<cpputil::BitVector, cpputil::BitVector>
+  std::map<uint64_t, cpputil::BitVector>
   get_model_array(const std::string& var, uint16_t key_size, uint16_t value_size) {
     return solver_->get_model_array(var, key_size, value_size);
   }
-  bool has_error() const {
+  virtual bool has_error() {
     return solver_->has_error();
   }
-  std::string get_error() {
+  virtual std::string get_error() {
     return solver_->get_error();
   }
 
