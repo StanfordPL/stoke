@@ -58,6 +58,7 @@ auto& timeout_iterations_arg =
   .description("Total number of iterations before giving up")
   .default_val(20000000);
 
+
 class ExperimentSearchState {
   public:
 
@@ -160,8 +161,7 @@ void search(ExperimentSearchState& state,
     if (quit_func(state))
       break;
 
-    // if ((state.iteration % 5000) == 0 && state.iteration != 0) {
-    if (state.iteration != 0) {
+    if ((state.iteration % 5000) == 0 && state.iteration != 0) {
       logger.checkpoint(state);
     }
 
@@ -217,7 +217,7 @@ const char* nameForMoveType(size_t move_type) {
 class SearchLogger {
 public:
   SearchLogger(std::ofstream& out) : out(out) {
-    out << "Stoke Binary Log 0.1\n";
+    out << "Stoke Binary Log 0.2\n";
   }
   void checkpoint(ExperimentSearchState& state) {
     uint64_t iteration = state.iteration;
@@ -274,7 +274,11 @@ private:
         }
         case 4: { // OpcodeWidth
           write_instruction_index(index0);
-          write_opcode_arity(code[index0].get_opcode(), 0);
+          Instruction old_ins = ti.undo_instr;
+          Instruction new_ins = code[index0];
+          write_opcode_arity(new_ins.get_opcode(), new_ins.arity());
+          if(old_ins.arity() != new_ins.arity())
+            write_instruction(code[index0]);
           break;
         }
         case 5: { // Operand

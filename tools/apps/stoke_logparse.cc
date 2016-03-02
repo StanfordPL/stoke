@@ -41,6 +41,14 @@ auto& log_input_arg = ValueArg<string>::create("log")
                            .description("Path to logfile")
                            .required();
 
+inline void _assert(const char* expression, const char* file, int line)
+{
+ fprintf(stderr, "Assertion '%s' failed, file '%s' line '%d'.", expression, file, line);
+ abort();
+}
+ 
+#define ASSERT(EXPRESSION) ((EXPRESSION) ? (void)0 : _assert(#EXPRESSION, __FILE__, __LINE__))
+
 class ExperimentSearchState {
   public:
 
@@ -81,7 +89,7 @@ const char* nameForMoveType(size_t move_type) {
     case 7: return "GlobalSwap";
     case 8: return "Rotate";
     default:
-      assert(false);
+      ASSERT(false);
       return nullptr;
   }
 }
@@ -90,7 +98,7 @@ class LogParser {
   std::ifstream& in;
 public:
   LogParser(std::ifstream& in) : fail(false), in(in) {
-    string expect_header = "Stoke Binary Log 0.1\n";
+    string expect_header = "Stoke Binary Log 0.2\n";
     char head[21];
     in.read(head, 21);
     if (!(in.good() && std::string(head, head+21) == expect_header)) {
@@ -101,9 +109,11 @@ public:
     return fail;
   }
   void read_log(ExperimentSearchState& state) {
-    while(!in.eof()) {
+    while(in.good()) {
       int result_tag, cost_size, move_type;
       read_header_byte(result_tag, cost_size, move_type);
+      if (in.eof())
+        break;
       switch (result_tag) {
         case 0: // proposal that didn't succeed
           state.iteration++;
@@ -132,12 +142,12 @@ public:
     result = byte & 0x3;
     cost_size = (byte >> 2) & 0x3;
     move_type = (byte >> 4) & 0x0F;
-    assert (0 <= result && result < 4);
-    assert (0 <= cost_size && cost_size < 4);
-    assert (0 <= move_type && move_type < 16);
+    ASSERT (0 <= result && result < 4);
+    ASSERT (0 <= cost_size && cost_size < 4);
+    ASSERT (0 <= move_type && move_type < 16);
   }
   void read_checkpoint(ExperimentSearchState& state) {
-    std::cout << "Checkpoint: " << endl;
+    //std::cout << "Checkpoint at offset " << in.tellg() << endl;
     uint64_t iteration;
     uint64_t cost;
     string code_str;
@@ -147,7 +157,7 @@ public:
     in.read((char*)&code_size, 4);
     code_str = string(code_size, '\0');
     in.read((char*)&code_str[0], code_size);
-    std::cout << "I:" << iteration << " C:" << cost << endl;
+    //std::cout << "I:" << iteration << " C:" << cost << endl;
     
     // Compare to state:
     
@@ -158,17 +168,17 @@ public:
       Code code;
       code.read_att(ss);
       state.current = Cfg(TUnit(code));
-      assert(state.current.get_function().check_invariants());
+      ASSERT(state.current.get_function().check_invariants());
     } else {
-      assert(iteration == state.iteration);
-      assert(cost == state.current_cost);
+      ASSERT(iteration == state.iteration);
+      ASSERT(cost == state.current_cost);
       stringstream ss{};
       state.current.get_function().get_code().write_att(ss);
       if (ss.str() != code_str) {
-        std::cout << "Got" << endl << ss.str() <<endl;
-        std::cout << "But wanted" << endl << code_str << endl;
+        std::cout << "Computed: " << endl << ss.str() <<endl;
+        std::cout << "But wanted from checkpoint: " << endl << code_str << endl;
       }
-      assert(ss.str() == code_str);
+      ASSERT(ss.str() == code_str);
       
     }
   }
@@ -176,34 +186,34 @@ public:
     size_t index0, index1;
     Instruction instr{NOP};
     Code& code = state.current.get_function().get_code();
-    std::cout << "Processing " << nameForMoveType(move_type) << endl;
+    //std::cout << "Processing " << nameForMoveType(move_type) << endl;
     switch(move_type) {
       case 0: { // AddNops
-        assert(false);
+        ASSERT(false);
         break;
       }
       case 1: { // Delete
-        assert(false);
+        ASSERT(false);
         break;
       }
       case 2: { // Instruction
         read_instruction_index(index0);
-        assert(index0 < code.size());
+        ASSERT(index0 < code.size());
         read_instruction(instr);
         if (apply) {
-          std::cout << "replacing " << index0 << " with " << instr << endl;
+          //std::cout << "replacing " << index0 << " with " << instr << endl;
           code[index0] = instr;
         }
         break;
       }
       case 3: { // Opcode
         read_instruction_index(index0);
-        assert(index0 < code.size());
+        ASSERT(index0 < code.size());
         size_t arity;
         Opcode opcode;
         read_opcode_arity(opcode, arity);
         if (apply) {
-          std::cout << "setting opcode to " << opcode << " at " << index0 <<std::endl;
+          //std::cout << "setting opcode to " << opcode << " at " << index0 <<std::endl;
           Instruction instr = code[index0];
           instr.set_opcode(opcode);
           state.current.get_function().replace(index0, instr, false, false);
@@ -212,16 +222,22 @@ public:
       }
       case 4: { // OpcodeWidth
         read_instruction_index(index0);
-        assert(index0 < code.size());
+        ASSERT(index0 < code.size());
         size_t arity;
         Opcode opcode;
         read_opcode_arity(opcode, arity);
+        bool full_instr_specified = arity != code[index0].arity();
+        if (full_instr_specified) {
+          read_instruction(instr);
+        }
         if (apply) {
-          std::cout << "setting opcode to " << opcode << " at " << index0 << " from " << code[index0].get_opcode() <<std::endl;
-          Instruction instr = code[index0];
-          instr.set_opcode(opcode);
-          assert(instr.arity() == code[index0].arity());
-          state.current.get_function().replace(index0, instr, false, false);
+          if (full_instr_specified)
+            state.current.get_function().replace(index0, instr, false, false);
+          else {
+            instr = code[index0];
+            instr.set_opcode(opcode);
+            state.current.get_function().replace(index0, instr, false, false);
+          }
         }
         break;
       }
@@ -229,15 +245,15 @@ public:
         Operand operand = Constants::rax();
         size_t diff_index;
         read_instruction_index(index0);
-        assert(index0 < code.size());
+        ASSERT(index0 < code.size());
         read_instruction_index(diff_index);
         read_operand(operand);
         if (apply) {
-          std::cout << "Operand" << endl;
-          std::cout << code[index0] << endl;
-          std::cout << diff_index << endl;
-          std::cout << index0 << endl;
-          assert(diff_index < code[index0].arity());
+          //std::cout << "Operand" << endl;
+          //std::cout << code[index0] << endl;
+          //std::cout << diff_index << endl;
+          //std::cout << index0 << endl;
+          ASSERT(diff_index < code[index0].arity());
           code[index0].set_operand(diff_index, operand);
         }
         break;
@@ -245,7 +261,7 @@ public:
       case 6: { // LocalSwap
         read_instruction_index(index0);
         read_instruction_index(index1);
-        assert(index0 < code.size() && index1 < code.size());
+        ASSERT(index0 < code.size() && index1 < code.size());
         if (apply) {
           state.current.get_function().swap(index0, index1);
         }
@@ -254,7 +270,7 @@ public:
       case 7: { // GlobalSwap
         read_instruction_index(index0);
         read_instruction_index(index1);
-        assert(index0 < code.size() && index1 < code.size());
+        ASSERT(index0 < code.size() && index1 < code.size());
         if (apply) {
           state.current.get_function().swap(index0, index1);
         }
@@ -263,7 +279,7 @@ public:
       case 8: { // Rotate
         read_instruction_index(index0);
         read_instruction_index(index1);
-        assert(index0 < code.size() && index1 < code.size());
+        ASSERT(index0 < code.size() && index1 < code.size());
         if (apply) {
           if (index0 < index1)
             state.current.get_function().rotate_left(index0, index1);
@@ -289,7 +305,7 @@ public:
     Opcode op;
     read_opcode_arity(op, arity);
     ins.set_opcode(op);
-    assert(ins.arity() == arity);
+    ASSERT(ins.arity() == arity);
     for(size_t i = 0; i < (size_t)arity; i++) {
       Operand operand = Constants::rax();
       read_operand(operand);
@@ -321,7 +337,7 @@ public:
       return (int8_t)read_byte();
     if (cost_size == 2)
       return (int32_t)read_int32();
-    assert(false);
+    ASSERT(false);
     return 0;
   }
 };
