@@ -72,25 +72,25 @@ def speedup_graph(folder)
     out.puts "Optimization-Mean #{mean(opts)}" 
     out.puts "Transformation-Mean #{mean(trans)}" 
 
-    out.puts "BestSpeedup-Min  #{opt_quarts[0]}" 
-    out.puts "Optimization-Min #{tran_quarts[0]}" 
-    out.puts "Transformation-Min #{max_quarts[0]}" 
+    out.puts "BestSpeedup-Min  #{max_quarts[0]}" 
+    out.puts "Optimization-Min #{opt_quarts[0]}" 
+    out.puts "Transformation-Min #{tran_quarts[0]}" 
 
-    out.puts "BestSpeedup-Q1  #{opt_quarts[1]}" 
-    out.puts "Optimization-Q1 #{tran_quarts[1]}" 
-    out.puts "Transformation-Q1 #{max_quarts[1]}" 
+    out.puts "BestSpeedup-Q1  #{max_quarts[1]}" 
+    out.puts "Optimization-Q1 #{opt_quarts[1]}" 
+    out.puts "Transformation-Q1 #{tran_quarts[1]}" 
 
-    out.puts "BestSpeedup-Median  #{opt_quarts[2]}" 
-    out.puts "Optimization-Median #{tran_quarts[2]}" 
-    out.puts "Transformation-Median #{max_quarts[2]}" 
+    out.puts "BestSpeedup-Median  #{max_quarts[2]}" 
+    out.puts "Optimization-Median #{opt_quarts[2]}" 
+    out.puts "Transformation-Median #{tran_quarts[2]}" 
 
-    out.puts "BestSpeedup-Q3  #{opt_quarts[3]}" 
-    out.puts "Optimization-Q3 #{tran_quarts[3]}" 
-    out.puts "Transformation-Q3 #{max_quarts[3]}" 
+    out.puts "BestSpeedup-Q3  #{max_quarts[3]}" 
+    out.puts "Optimization-Q3 #{opt_quarts[3]}" 
+    out.puts "Transformation-Q3 #{tran_quarts[3]}" 
 
-    out.puts "BestSpeedup-Max  #{opt_quarts[4]}" 
-    out.puts "Optimization-Max #{tran_quarts[4]}" 
-    out.puts "Transformation-Max #{max_quarts[4]}" 
+    out.puts "BestSpeedup-Max  #{max_quarts[4]}" 
+    out.puts "Optimization-Max #{opt_quarts[4]}" 
+    out.puts "Transformation-Max #{tran_quarts[4]}" 
   end
 
   %x(cd #{folder}/plots/srcs; gnuplot performance.plot)
