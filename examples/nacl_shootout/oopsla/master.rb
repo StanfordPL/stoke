@@ -629,6 +629,11 @@ def main
   parse_cmdline
 
   ## Make a copy of all scripts; for debugging purposes
+  if Dir.exist?("results/#{$stamp}")
+    puts "ERROR: directory already exists!"
+    exit 1
+  end
+
   FileUtils.mkdir_p "results/#{$stamp}"
   FileUtils.mkdir_p "results/#{$stamp}/scripts"
 
