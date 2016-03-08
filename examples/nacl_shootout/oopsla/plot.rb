@@ -206,7 +206,7 @@ def counts_graph(folder)
 
   plot_src = "#{folder}/plots/srcs/counts.dat"
   File.open(plot_src, "w") do |out|
-    out.puts "Benchmark DDEC Search Fail"
+    out.puts "Benchmark Success Fail SearchFail"
 
     $benchmarks.each do |bench,data|
       opt_bars = get_counts(folder, "#{bench}-opt")

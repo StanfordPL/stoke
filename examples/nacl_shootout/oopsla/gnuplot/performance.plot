@@ -1,4 +1,3 @@
-set xlabel "Benchmark"
 set ylabel "Speedup over Native Client"
 
 set yrange [0.6:2.5]
@@ -6,7 +5,7 @@ set yrange [0.6:2.5]
 set style data histogram
 set style fill solid
 
-set xtics rotate by -50
+set xtics rotate by -80
 
 set terminal pdf  font ',18' size 6.3, 5
 set output "performance.pdf"

@@ -18,12 +18,12 @@
 #include "src/validator/obligation_checker.h"
 #include "src/validator/invariants/conjunction.h"
 #include "src/validator/invariants/equality.h"
+#include "src/validator/invariants/memory_null.h"
+#include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/no_signals.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/top_zero.h"
 #include "src/validator/invariants/true.h"
-#include "src/validator/invariants/memory_null.h"
-
 
 namespace stoke {
 
@@ -259,6 +259,76 @@ TEST_F(ObligationCheckerBaseTest, WcpcpyA) {
   }
 }
 
+TEST_F(ObligationCheckerBaseTest, NeedMemoryInToProveMemoryOut) {
+
+  auto single = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "addq $0x1, (%rax)" << std::endl;
+  ss << "retq" << std::endl;
+  auto target = make_cfg(ss, single, single);
+  auto rewrite = target;
+
+  vector<size_t> path;
+  path.push_back(1);
+
+  MemoryEqualityInvariant prove_this;
+  StateEqualityInvariant assume(single);
+
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
+  EXPECT_FALSE(validator->check(target, rewrite, path, path, assume, prove_this));
+
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+  EXPECT_FALSE(validator->check(target, rewrite, path, path, assume, prove_this));
+}
+
+TEST_F(ObligationCheckerBaseTest, NeedMemoryInToProveMemoryOut2) {
+
+  auto single = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "retq" << std::endl;
+  auto target = make_cfg(ss, single, single);
+  auto rewrite = target;
+
+  vector<size_t> path;
+  path.push_back(1);
+
+  MemoryEqualityInvariant prove_this;
+  TrueInvariant duh;
+
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
+  EXPECT_FALSE(validator->check(target, rewrite, path, path, duh, prove_this));
+
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+  EXPECT_FALSE(validator->check(target, rewrite, path, path, duh, prove_this));
+}
+
+TEST_F(ObligationCheckerBaseTest, NeedMemoryInToProveEquality) {
+
+  auto single = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "movq (%rax), %rax" << std::endl;
+  ss << "retq" << std::endl;
+  auto target = make_cfg(ss, single, single);
+  auto rewrite = target;
+
+  vector<size_t> path;
+  path.push_back(1);
+
+  StateEqualityInvariant rax_equal(single);
+
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
+  EXPECT_FALSE(validator->check(target, rewrite, path, path, rax_equal, rax_equal));
+
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+  EXPECT_FALSE(validator->check(target, rewrite, path, path, rax_equal, rax_equal));
+}
+
 TEST_F(ObligationCheckerBaseTest, ProveMemoryObligation) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi;
@@ -470,6 +540,8 @@ TEST_F(ObligationCheckerBaseTest, AssumeAndProve) {
     std::cout << it << std::endl;
   }
 }
+
+
 
 TEST_F(ObligationCheckerBaseTest, AssumeAndProveFail) {
 
