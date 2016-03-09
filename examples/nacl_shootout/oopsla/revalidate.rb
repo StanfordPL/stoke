@@ -62,7 +62,7 @@ class VerificationJob < Job
     FileUtils.mkdir_p folder
 
     ### Run verify command
-    cmd =  "timeout 40m stoke_debug_verify"
+    cmd =  "timeout 60m stoke_debug_verify"
     cmd += " --target #{@benchmark}/target.s" 
     cmd += " --rewrite #{@rewrite_file}"
     cmd += " --strategy ddec"
