@@ -269,7 +269,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     }
 
     // Loop over choices of cutpoints
-    while(true) {
+    while (true) {
 
       auto invariants = find_invariants(target, rewrite);
       DDEC_DEBUG(cout << "Got initial invariants " << invariants.size() << endl;)
@@ -315,8 +315,8 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
           break;
         }
       }
-  
-      if(cutpoints_->has_more()) {
+
+      if (cutpoints_->has_more()) {
         cutpoints_->next();
       } else {
         reset_mm();

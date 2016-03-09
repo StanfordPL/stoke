@@ -72,7 +72,7 @@ public:
   virtual std::string get_error() {
     return error_;
   }
-  
+
 
 
 protected:

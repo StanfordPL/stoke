@@ -90,7 +90,7 @@ bool replace(uint64_t offset, size_t size, Linker* linker) {
   // check_invariants() will fail here, but all we're trying to do is make types match
   Cfg cfg(rewrite_arg.value(), RegSet::empty(), RegSet::empty());
 
-  if(nacl_arg.value())
+  if (nacl_arg.value())
     CfgTransforms::nacl_ret_transform(cfg);
 
   // Assemble the new function

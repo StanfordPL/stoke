@@ -119,7 +119,7 @@ void Cutpoints::compute() {
     */
   )
 
-  for(auto& option : cutpoint_options_) {
+  for (auto& option : cutpoint_options_) {
     auto& target_cuts = option.first;
     auto& rewrite_cuts = option.second;
     target_cuts.insert(target_cuts.begin(), target_.get_entry());

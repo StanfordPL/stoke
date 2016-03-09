@@ -208,7 +208,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
 
     bool success = true;
     uint64_t verification_time = 0;
-    if(!no_bv_arg.value()) {
+    if (!no_bv_arg.value()) {
 
       milliseconds verify_start = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
       success = pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_correct);
@@ -231,7 +231,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
       result_count++;
 
       // Open the outputs.csv file and record data.
-      if(folder_name_arg.value().size()) {
+      if (folder_name_arg.value().size()) {
         stringstream outputs_filename;
         outputs_filename << folder_name_arg.value() << "/" << "outputs.csv";
 
@@ -467,7 +467,7 @@ int main(int argc, char** argv) {
   result_count = 0;
   restart_count = 0;
 
-  if(folder_name_arg.value().size()) {
+  if (folder_name_arg.value().size()) {
     mkdir(folder_name_arg.value().c_str(), 0755);
     stringstream outputs_filename;
     outputs_filename << folder_name_arg.value() << "/" << "outputs.csv";
