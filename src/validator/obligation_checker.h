@@ -47,6 +47,9 @@ class ObligationChecker : public Validator {
   FRIEND_TEST(ObligationCheckerBaseTest, AssumeMemoryNullFail);
   FRIEND_TEST(ObligationCheckerBaseTest, AssumeAndProve);
   FRIEND_TEST(ObligationCheckerBaseTest, AssumeAndProveFail);
+  FRIEND_TEST(ObligationCheckerBaseTest, NeedMemoryInToProveMemoryOut);
+  FRIEND_TEST(ObligationCheckerBaseTest, NeedMemoryInToProveMemoryOut2);
+  FRIEND_TEST(ObligationCheckerBaseTest, NeedMemoryInToProveEquality);
 
 public:
 

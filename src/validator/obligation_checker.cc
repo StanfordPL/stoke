@@ -515,9 +515,14 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
 
   if (target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
-    auto null_pair = pair<CellMemory*, CellMemory*>(NULL, NULL);
+    map<size_t, CellMemory::SymbolicAccess> empty_map;
+
+    auto left = new CellMemory(empty_map);
+    auto right = new CellMemory(empty_map);
+
+    auto empty_pair = pair<CellMemory*, CellMemory*>(left, right);
     auto v = vector<pair<CellMemory*, CellMemory*>>();
-    v.push_back(null_pair);
+    v.push_back(empty_pair);
     return v;
   }
 

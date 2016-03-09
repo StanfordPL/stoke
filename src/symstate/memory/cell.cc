@@ -189,6 +189,26 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
     condition = condition & (p.second == other.cells_[cell]);
   }
 
+  /** Here's the deal: we need some kind of extensional property.  That is, for
+   * two CellMemories to be equal at all addresses, they also have to be equal
+   * for all values that the program doesn't touch.  The program touches the
+   * locations in the cells_ map, but what about all the other cells?  We
+   * obviously aren't going to model those.  But, we want to be able to reason
+   * about situations where we *cannot* assume the other values in the other
+   * CellMemory are equal.  So, we add this "secret_cell" which is a symbolic
+   * representation (it could even be just one bit) of "everything else" in
+   * memory.  If we assume the two memories are equal, we will assume the
+   * "secret cells" are equal; if we want to prove two memories are equal, we
+   * need to prove the "secret cells" are equal.
+   *
+   * Consider two programs that are both NOPs.  Do not assume anything about
+   * the start states.  We wish to prove (using the obligation checker) that
+   * the end states have equal memory.  Without this extra piece, it will say
+   * they're equivalent (which is wrong, of course). */
+  condition = condition & (secret_cell_ == other.secret_cell_);
+
+  cout << "Condition: " << condition << endl;
+
   return condition;
 
 }

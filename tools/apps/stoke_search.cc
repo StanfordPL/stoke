@@ -214,7 +214,7 @@ void pcb(const ProgressCallbackData& data, void* arg) {
       success = pcb_arg->verifier->verify(*(pcb_arg->target), data.state.best_correct);
       milliseconds verify_end = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
       //verification time in milliseconds
-      uint64_t verification_time = (verify_end - verify_start).count();
+      verification_time = (verify_end - verify_start).count();
 
       if (pcb_arg->verifier->has_error()) {
         os << "The verifier encountered an error:" << endl;
