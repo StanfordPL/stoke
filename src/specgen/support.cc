@@ -58,10 +58,8 @@ vector<Opcode> instr_cat_imm8_ = {
   , PEXTRQ_R64_XMM_IMM8 // PEXTRQ r64, xmm, imm8
 // , PEXTRW_R32_MM_IMM8 // PEXTRW r32, mm, imm8
   , PEXTRW_R32_XMM_IMM8 // PEXTRW r32, xmm, imm8
-  , PEXTRW_R32_XMM_IMM8_1 // PEXTRW r32, xmm, imm8
 // , PEXTRW_R64_MM_IMM8 // PEXTRW r64, mm, imm8
   , PEXTRW_R64_XMM_IMM8 // PEXTRW r64, xmm, imm8
-  , PEXTRW_R64_XMM_IMM8_1 // PEXTRW r64, xmm, imm8
   , PINSRB_XMM_R32_IMM8 // PINSRB xmm, r32, imm8
   , PINSRD_XMM_R32_IMM8 // PINSRD xmm, r32, imm8
 // , PINSRW_MM_R32_IMM8 // PINSRW mm, r32, imm8
