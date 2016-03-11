@@ -475,39 +475,7 @@ void StrataHandler::init() {
 }
 
 bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
-  stringstream ss;
-  ss << opcode;
-  auto opcode_str = ss.str();
-  auto candidate_file = strata_path_ + "/" + opcode_str + ".s";
-
-  // we have a learned circuit
-  if (filesystem::exists(candidate_file)) {
-    return true;
-  }
-
-  // can we convert this into a register only instruction?
-  bool found = false;
-  Opcode alt = XOR_R8_R8;
-  if (reg_only_alternative_duplicate_.find(opcode) != reg_only_alternative_duplicate_.end()) {
-    alt = reg_only_alternative_duplicate_[opcode];
-    found = true;
-  } else if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
-    alt = reg_only_alternative_[opcode];
-    found = true;
-    // } else if (reg_only_alternative_mem_reduce_.find(opcode) != reg_only_alternative_mem_reduce_.end()) {
-    //   alt = reg_only_alternative_mem_reduce_[opcode];
-    //   found = true;
-  } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
-    alt = reg_only_alternative_extend_[opcode];
-    found = true;
-  }
-
-  if (found) {
-    if (specgen_is_base(alt)) return true;
-    return is_supported(alt);
-  }
-
-  return false;
+  return support_reason(opcode) != SupportReason::NONE;
 }
 
 SupportReason StrataHandler::support_reason(const x64asm::Opcode& opcode) {
@@ -515,11 +483,6 @@ SupportReason StrataHandler::support_reason(const x64asm::Opcode& opcode) {
   ss << opcode;
   auto opcode_str = ss.str();
   auto candidate_file = strata_path_ + "/" + opcode_str + ".s";
-
-  // we have a learned circuit
-  if (filesystem::exists(candidate_file)) {
-    return SupportReason::LEARNED;
-  }
 
   // can we convert this into a register only instruction?
   bool found = false;
@@ -546,6 +509,11 @@ SupportReason StrataHandler::support_reason(const x64asm::Opcode& opcode) {
   if (found) {
     if (specgen_is_base(alt)) return reason;
     if (is_supported(alt)) return reason;
+  } else {
+    // we have a learned circuit
+    if (filesystem::exists(candidate_file)) {
+      return SupportReason::LEARNED;
+    }
   }
 
   return SupportReason::NONE;

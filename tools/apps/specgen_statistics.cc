@@ -66,7 +66,7 @@ auto& circuits_arg =
   ValueArg<string>::create("circuit_dir")
   .usage("<path/to/dir>")
   .description("Directory containing the strata circuits")
-  .default_val("/home/sheule/dev/circuits");
+  .default_val("/home/sheule/dev/strata-data/circuits");
 
 auto& two =
   FlagArg::create("two")
