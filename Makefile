@@ -112,6 +112,7 @@ SRC_OBJ=\
 	src/transform/operand.o \
 	src/transform/pools.o \
 	src/transform/rotate.o \
+	src/transform/double.o \
 	src/transform/transform.o \
 	\
 	src/tunit/tunit.o \

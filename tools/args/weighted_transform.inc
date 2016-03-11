@@ -79,6 +79,12 @@ cpputil::ValueArg<size_t>& rotate_mass_arg =
   .description("Rotate move proposal mass (previously called \"resize\")")
   .default_val(1);
 
+cpputil::ValueArg<size_t>& double_mass_arg =
+  cpputil::ValueArg<size_t>::create("double_mass")
+  .usage("<int>")
+  .description("Double move proposal mass")
+  .default_val(0);
+
 } // namespace stoke
 
 #endif
