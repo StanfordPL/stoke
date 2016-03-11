@@ -361,6 +361,7 @@ void StrataHandler::init() {
 
         if (all_same) {
           reg_only_alternative_duplicate_[opcode] = option;
+          // cout << opcode << " -> " << option << endl;
           break;
         }
       }
@@ -373,6 +374,7 @@ void StrataHandler::init() {
 
     if (is_register_only(opcode)) continue;
     if (specgen_is_mm(opcode)) continue;
+    if (specgen_is_base(opcode)) continue;
 
     string text = opcode_write_att(opcode);
     auto& options = str_to_opcode[text];
@@ -395,7 +397,7 @@ void StrataHandler::init() {
 
       if (same_widths) {
         found = true;
-        // cout << opcode << "->" << option << endl;
+        // cout << opcode << " -> " << option << endl;
         reg_only_alternative_[opcode] = option;
         break;
       }
