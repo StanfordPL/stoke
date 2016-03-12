@@ -1,9 +1,10 @@
 set ylabel "Speedup over Native Client"
 
-set yrange [0.6:2.5]
+set yrange [0.6:*]
 
 set style data histogram
 set style fill solid
+set key top center
 
 set xtics rotate by -80
 

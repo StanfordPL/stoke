@@ -54,7 +54,7 @@ end
 #### Here's what to do
 
 def get_best(folder, benchmark)
-  bench_log = "#{folder}/#{benchmark}/benchmark_log.csv"
+  bench_log = "#{folder}/#{benchmark}/benchmark_log.good.csv"
 
   return 0 if not File.exist?(bench_log)
 
