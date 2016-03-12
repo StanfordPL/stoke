@@ -2,11 +2,11 @@
 
 ### Frequently-changed global settings
 
-$timeout = 200000    # 100000 / down from 500,000 / 200,000
-$iterations = 15
+$timeout = 500000    # 100000 / down from 500,000 / 200,000
+$iterations = 10
 $alias_strategy = "string"
 $verify_timeout = "1h"
-$search_timeout = "6h"
+$search_timeout = "8h"
 
 ### Per-Benchmark Settings
 

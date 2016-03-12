@@ -207,8 +207,6 @@ SymBool CellMemory::equality_constraint(CellMemory& other) {
    * they're equivalent (which is wrong, of course). */
   condition = condition & (secret_cell_ == other.secret_cell_);
 
-  cout << "Condition: " << condition << endl;
-
   return condition;
 
 }
