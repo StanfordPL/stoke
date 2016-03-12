@@ -509,7 +509,7 @@ int main(int argc, char** argv) {
       timeout_left = std::max(0UL, timeout_iterations_arg.value() - total_iterations);
     }
     cout << "cur_timeout=" << cur_timeout << "  timeout_left=" << timeout_left << "  total_iterations=" << total_iterations << endl;
-    if (timeout_left > 4000000 || timeout_left == 0)
+    if (timeout_left > 4000000000 || timeout_left == 0)
       break;
     search.set_timeout_itr(std::min(cur_timeout, timeout_left));
 
