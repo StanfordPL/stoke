@@ -213,9 +213,9 @@ def counts_graph(folder)
       out.puts "#{bench}-opt #{opt_bars[0]} #{opt_bars[1]} #{opt_bars[2]}" if not opt_bars.nil?
       total_verified_opt += opt_bars[0]
 
-      trans_bars = get_counts(folder, "#{bench}-trans")
-      out.puts "#{bench}-trans #{trans_bars[0]} #{trans_bars[1]} #{trans_bars[2]}" if not trans_bars.nil?
-      total_verified_trans += trans_bars[0]
+#trans_bars = get_counts(folder, "#{bench}-trans")
+#out.puts "#{bench}-trans #{trans_bars[0]} #{trans_bars[1]} #{trans_bars[2]}" if not trans_bars.nil?
+#total_verified_trans += trans_bars[0]
     end
   end
 

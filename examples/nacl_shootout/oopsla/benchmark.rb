@@ -147,40 +147,11 @@ end
 
 #### Read any user config from the command line
 def parse_cmdline
-  $global_settings[:no_check_all] = false
-  $global_settings[:num_cores] = 16
-  $global_settings[:fast] = false
-
   optparse = OptionParser.new do |opts|
     opts.banner = "Usage: ./master.rb [options] <stamp>"
 
-    opts.on('-n', '--num-cores NUM', Integer, "Number of cores to use (default 16)") do |value|
-      $global_settings[:num_cores] = value.to_i
-    end
-
-    opts.on("-f", '--fast', "Do quick run") do
-      $global_settings[:fast] = true
-      $global_settings[:cycle_timeout] = 8000
-      $global_settings[:timeout_iterations] = 8000*3
-      $global_settings[:verify_timeout] = "5m"
-      $global_settings[:search_timeout] = "10m"
-      $global_settings[:optimize_only] = true
-    end
-
     opts.on("--optimize", "Only optimization; no transformation") do
       $global_settings[:optimize_only] = true
-    end
-
-    opts.on('--memory-model (flat|string)', String, "Pick a memory model") do |model|
-      if model != "flat" and model != "string"
-        puts "Memory model must be 'flat' or 'string'; got '#{model}'"
-        exit 1
-      end 
-      $global_settings[:alias_strategy] = model
-    end
-
-    opts.on("--no-check-all", "Skip bounded validator in search loop") do
-      $global_settings[:no_check_all] = true
     end
 
     opts.on('-h', '--help') do
@@ -199,6 +170,8 @@ def parse_cmdline
   $stamp = ARGV[0]
 
 end
+
+
 
 #### Here's what to do
 def main
@@ -240,11 +213,13 @@ def main
     all = fast
   end
 
+  modes = [:optimize, :transform]
+  modes = [:optimize] if $global_settings[:optimize_only]
+  puts "Modes: #{modes}"
 
 
   all.each do |bench|
-
-    [:optimize, :transform].each do |mode| 
+    modes.each do |mode| 
       ids = Dir.glob("#{mk_folder(bench, mode, "benchmark")}/*.out").each do |outfile|
         outfile = outfile.split("/")
         outfile = outfile[outfile.length-1]

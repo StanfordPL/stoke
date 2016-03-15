@@ -514,18 +514,6 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
   auto target_concrete_accesses = enumerate_accesses(target_unroll);
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
 
-  if (target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
-    map<size_t, CellMemory::SymbolicAccess> empty_map;
-
-    auto left = new CellMemory(empty_map);
-    auto right = new CellMemory(empty_map);
-
-    auto empty_pair = pair<CellMemory*, CellMemory*>(left, right);
-    auto v = vector<pair<CellMemory*, CellMemory*>>();
-    v.push_back(empty_pair);
-    return v;
-  }
-
 
   // Symbolically execute target/rewrite to get memory accesses
   init_mm();
@@ -559,6 +547,24 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
   // update the symbolic memory state with these further reads
   // however, we do not generate constraints based on them
   prove(target_state, rewrite_state, target_fake_lineno, rewrite_fake_lineno);
+
+  if (target_concrete_accesses.size() == 0 && 
+      rewrite_concrete_accesses.size() == 0 &&
+      target_fake_lineno == 0 &&
+      rewrite_fake_lineno == 0) {
+    map<size_t, CellMemory::SymbolicAccess> empty_map;
+
+    auto left = new CellMemory(empty_map);
+    auto right = new CellMemory(empty_map);
+
+    auto empty_pair = pair<CellMemory*, CellMemory*>(left, right);
+    auto v = vector<pair<CellMemory*, CellMemory*>>();
+    v.push_back(empty_pair);
+    return v;
+  }
+
+
+
 
   vector<TrivialMemory::SymbolicAccess> sym_accesses;
   for (size_t k = 0; k < 2; ++k) {

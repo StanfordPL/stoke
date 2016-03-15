@@ -343,7 +343,7 @@ class SearchJob < Job
       file.write("## Verification\n")
       file.write("--no_bv\n") if $global_settings[:no_check_all]
       file.write("--strategy \"hold_out,bounded\"\n")
-      file.write("--bound 1\n")
+      file.write("--bound 2\n")
       if $global_settings[:alias_strategy].nil?
         file.write("--alias_strategy #{data[:alias_strategy]}\n")
       else
