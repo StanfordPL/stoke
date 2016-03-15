@@ -645,6 +645,11 @@ def main
   ## Start the timer
   start_time = Time.new
   log "Starting"
+  log "git rev-parse HEAD: #{`git rev-parse HEAD`}"
+  log "git diff:"
+  log "#{`git diff`}"
+  log "git status: "
+  log "#{`git status`}"
   log "Command line arguments: "
   log arguments
   log "Global settings: "
