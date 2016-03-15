@@ -3,12 +3,62 @@
 require 'fileutils'
 require_relative 'bench_config'
 
+#### Filter in case we need to just look at final answers
+def filter_last(folder, benchmark, option = nil)
+
+  if option.nil?
+    option = $filter_option
+  end
+
+  search_log = "#{folder}/#{benchmark}/search/outputs/outputs.csv"
+  current_run = 0
+  last_id = -1
+
+  filter_list = [0]
+
+
+  File.open(search_log).each do |line|
+    pieces = line.split(",")
+    run = pieces[2].to_i
+    id = pieces[0].to_i
+#puts "id=#{id},run=#{run},last_id=#{last_id},current_run=#{current_run}"
+
+    next if id == "num"
+
+    if option != :last then
+      filter_list.push(id)
+      next
+    end
+
+    if last_id == -1 then
+      last_id = id
+    end
+
+    if current_run != run then
+      filter_list.push(last_id)
+      current_run = run
+    end
+
+    last_id = id
+
+
+  end
+  filter_list.push(last_id)
+
+
+#puts "Filter list for #{benchmark}: #{filter_list}"
+  filter_list
+
+end
+
 #### Here's what to do
 
 def get_best(folder, benchmark)
-  bench_log = "#{folder}/#{benchmark}/benchmark_log.csv"
+  bench_log = "#{folder}/#{benchmark}/benchmark_log.good.csv"
 
   return 0 if not File.exist?(bench_log)
+
+  filter = filter_last(folder, benchmark)
 
   ## Performance of the best rewrite
   best_index = nil
@@ -20,6 +70,8 @@ def get_best(folder, benchmark)
     split = line.split(",")
     id = split[0].to_i
     value = split[1].to_f
+
+    next if not filter.include?(id)
 
     if(value > best_value and id > 0)
       best_index = id
@@ -67,6 +119,10 @@ def speedup_graph(folder)
   opt_quarts = quartiles(opts)
   tran_quarts = quartiles(trans)
   max_quarts = quartiles(maxes)
+
+  opt_count = opts.select{ |y| y > 0}.length
+  trans_count = trans.select{ |y| y > 0}.length
+
   File.open("#{folder}/plots/srcs/improvements.dat", "w") do |out|
     out.puts "BestSpeedup-Mean  #{mean(maxes)}" 
     out.puts "Optimization-Mean #{mean(opts)}" 
@@ -91,6 +147,10 @@ def speedup_graph(folder)
     out.puts "BestSpeedup-Max  #{max_quarts[4]}" 
     out.puts "Optimization-Max #{opt_quarts[4]}" 
     out.puts "Transformation-Max #{tran_quarts[4]}" 
+
+    out.puts "Optimization-Count #{opt_count}"
+    out.puts "Translation-Count #{trans_count}"
+    out.puts "Either-Count #{opt_count + trans_count}"
   end
 
   %x(cd #{folder}/plots/srcs; gnuplot performance.plot)
@@ -103,10 +163,16 @@ def get_counts(folder, benchmark)
   search_success = 0
   ddec_success = 0
 
+  filter = filter_last(folder, benchmark)
+
   ## Get number of successful DDEC runs
   if File.exist?("#{folder}/#{benchmark}/verification_log.csv")
     File.open("#{folder}/#{benchmark}/verification_log.csv").each do |line|
       pieces = line.split(",")
+      id = pieces[0].to_i
+
+      next if not filter.include?(id)
+
       ddec_success = ddec_success + 1 if pieces[1] == "verified"
     end
   end
@@ -117,6 +183,9 @@ def get_counts(folder, benchmark)
     File.open("#{folder}/#{benchmark}/search/outputs/outputs.csv").each do |line|
       pieces = line.split(",")
       run = pieces[2].to_i
+      id = pieces[0].to_i
+
+      next if not filter.include?(id)
 
       search_success = search_success + 1 if run != current_run 
       current_run = run
@@ -125,25 +194,35 @@ def get_counts(folder, benchmark)
 
   ddec_bar = ddec_success
   search_bar = search_success - ddec_bar
-  fail_bar = 10 - search_bar - ddec_bar
+  fail_bar = 20 - search_bar - ddec_bar
 
   [ddec_bar, search_bar, fail_bar]
 end
 
 def counts_graph(folder)
 
+  total_verified_opt = 0
+  total_verified_trans = 0
+
   plot_src = "#{folder}/plots/srcs/counts.dat"
   File.open(plot_src, "w") do |out|
-    out.puts "Benchmark DDEC Search Fail"
+    out.puts "Benchmark Success Fail SearchFail"
 
     $benchmarks.each do |bench,data|
       opt_bars = get_counts(folder, "#{bench}-opt")
       out.puts "#{bench}-opt #{opt_bars[0]} #{opt_bars[1]} #{opt_bars[2]}" if not opt_bars.nil?
+      total_verified_opt += opt_bars[0]
 
-      trans_bars = get_counts(folder, "#{bench}-trans")
-      out.puts "#{bench}-trans #{trans_bars[0]} #{trans_bars[1]} #{trans_bars[2]}" if not trans_bars.nil?
+#trans_bars = get_counts(folder, "#{bench}-trans")
+#out.puts "#{bench}-trans #{trans_bars[0]} #{trans_bars[1]} #{trans_bars[2]}" if not trans_bars.nil?
+#total_verified_trans += trans_bars[0]
     end
+  end
 
+  File.open("#{folder}/plots/srcs/improvements.dat", "a") do |out|
+    out.puts "Optimization-VerifiedCount #{total_verified_opt}"
+    out.puts "Translation-VerifiedCount #{total_verified_trans}"
+    out.puts "Either-VerifiedCount #{total_verified_opt + total_verified_trans}"
   end
 
   %x(cd #{folder}/plots/srcs; gnuplot counts.plot)
@@ -190,12 +269,18 @@ def get_ddec_stats(folder, benchmark, state)
 
   runs = []
 
+  filter = filter_last(folder, benchmark)
+
   if File.exist?("#{folder}/#{benchmark}/verification_log.csv")
     File.open("#{folder}/#{benchmark}/verification_log.csv").each do |line|
       pieces = line.split(",")
+      status = pieces[1]
+      id = pieces[0]
 
-      next if state == :verified and pieces[1] != "verified"
-      next if state == :fail and pieces[1] == "verified"
+      next if not filter.include?(id)
+
+      next if state == :verified and status != "verified"
+      next if state == :fail and status == "verified"
 
       runs.push(pieces[2].to_f)
     end
@@ -254,8 +339,9 @@ def get_bv_stats(folder, benchmark, state)
     if File.exist?(file)
       File.open(file).each do |line|
         pieces = line.split(",")
-        num = pieces[0]
-        next if num == "num"
+        id = pieces[0]
+
+        next if id == "num"
 
         runs.push(pieces[3].to_f)
       end
@@ -365,12 +451,18 @@ end
 def main
 
   ## Setup logging facility
-  if ARGV.length != 1 then
-    puts "usage: ./package_verify_fails.rb <stamp>"
+  if ARGV.length != 1 and ARGV.length != 2 then
+    puts "usage: ./package_verify_fails.rb [--last] <stamp>"
     exit 1
   end
 
-  $stamp = ARGV[0]
+  if ARGV[0] == "--last" then
+    $filter_option = :last
+  else
+    $filter_option = :all
+  end
+
+  $stamp = ARGV[ARGV.length - 1]
   folder = "results/#{$stamp}"
 
   if !File.exist?(folder)

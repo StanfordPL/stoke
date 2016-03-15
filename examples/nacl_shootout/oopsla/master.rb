@@ -628,6 +628,12 @@ def main
   ## Set globals via command line
   parse_cmdline
 
+  ## Safety first!
+  if Dir.exist?("results/#{$stamp}")
+    puts "ERROR: directory already exists!"
+    exit 1
+  end
+
   ## Make a copy of all scripts; for debugging purposes
   FileUtils.mkdir_p "results/#{$stamp}"
   FileUtils.mkdir_p "results/#{$stamp}/scripts"
