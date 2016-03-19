@@ -169,6 +169,12 @@ def parse_cmdline
       $global_settings[:optimize_only] = true
     end
 
+    opts.on("--translation", "Only translation; no optimization") do
+      $global_settings[:translate_only] = true
+    end
+
+
+
     opts.on("--result", "Only benchmark the reported best") do
       $global_settings[:result_only] = true
     end
@@ -234,6 +240,7 @@ def main
 
   modes = [:optimize, :transform]
   modes = [:optimize] if $global_settings[:optimize_only]
+  modes = [:transform] if $global_settings[:translate_only]
   puts "Modes: #{modes}"
 
 

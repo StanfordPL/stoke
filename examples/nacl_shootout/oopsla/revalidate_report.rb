@@ -28,6 +28,7 @@ def main
   logfile = "results/#{$stamp}/revalidate.csv"
   File.open(logfile).each do |line|
     pieces = line.split(",")
+    id = pieces[2]
     model = pieces[3]
     status = pieces[4]
     time = pieces[5]
