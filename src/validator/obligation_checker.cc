@@ -548,7 +548,7 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
   // however, we do not generate constraints based on them
   prove(target_state, rewrite_state, target_fake_lineno, rewrite_fake_lineno);
 
-  if (target_concrete_accesses.size() == 0 && 
+  if (target_concrete_accesses.size() == 0 &&
       rewrite_concrete_accesses.size() == 0 &&
       target_fake_lineno == 0 &&
       rewrite_fake_lineno == 0) {
