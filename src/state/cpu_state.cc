@@ -25,6 +25,57 @@ using namespace x64asm;
 
 namespace stoke {
 
+uint64_t CpuState::get_addr(Mem ref) const {
+
+  uint64_t address = 0;
+
+  // get the displacement
+  uint32_t displacement = ref.get_disp();
+
+  // sign extend to 64 bits
+  if (displacement & 0x80000000) {
+    address = 0xffffffff00000000 | (uint64_t)displacement;
+  } else {
+    address = (uint64_t) displacement;
+  }
+
+  // check if memory has base
+  if (ref.contains_base()) {
+    address = address + gp[ref.get_base()].get_fixed_quad(0);
+  }
+
+  // check for index
+  if (ref.contains_index()) {
+    uint64_t index = gp[ref.get_index()].get_fixed_quad(0);
+
+    switch (ref.get_scale()) {
+    case Scale::TIMES_1:
+      address = address + index;
+      break;
+    case Scale::TIMES_2:
+      address = address + (index << 1);
+      break;
+    case Scale::TIMES_4:
+      address = address + (index << 2);
+      break;
+    case Scale::TIMES_8:
+      address = address + (index << 3);
+      break;
+    default:
+      assert(false);
+      break;
+    }
+  }
+
+  // check for 32-bit override
+  if (ref.addr_or()) {
+    address = address & 0xffffffff;
+  }
+
+  return address;
+
+
+}
 
 /** Get the memory address corresponding to a memory operand */
 uint64_t CpuState::get_addr(M8 ref) const {

@@ -166,6 +166,84 @@ struct CpuState {
     return rf.is_set(f.index());
   }
 
+  /** Check if memory is in range. */
+  bool in_range(const x64asm::Mem& m) const {
+    auto addr = get_addr(m);
+    auto size = m.size();
+
+    std::vector<const Memory*> my_segments;
+    my_segments.push_back(&heap);
+    my_segments.push_back(&stack);
+    my_segments.push_back(&data);
+
+    for (auto it : segments) {
+      my_segments.push_back(&it);
+    }
+
+    for (auto segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Check if memory is in range AND valid. */
+  bool is_valid(const x64asm::Mem& m) const {
+    auto addr = get_addr(m);
+    auto size = m.size();
+
+    std::vector<const Memory*> my_segments;
+    my_segments.push_back(&heap);
+    my_segments.push_back(&stack);
+    my_segments.push_back(&data);
+
+    for (auto it : segments) {
+      my_segments.push_back(&it);
+    }
+
+    for (auto segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
+        for (size_t i = 0; i < size/8; ++i) {
+          if (!segment->is_valid(addr + (uint64_t)i))
+            return false;
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Read memory */
+  cpputil::BitVector inline operator[](const x64asm::Mem& m) const {
+    auto addr = get_addr(m);
+    auto size = m.size();
+
+    std::vector<const Memory*> my_segments;
+    my_segments.push_back(&heap);
+    my_segments.push_back(&stack);
+    my_segments.push_back(&data);
+
+    for (auto it : segments) {
+      my_segments.push_back(&it);
+    }
+
+    for (auto segment : my_segments) {
+      if (segment->in_range(addr) && segment->in_range(addr + size/8 - 1)) {
+        cpputil::BitVector result(size);
+        for (size_t i = 0; i < size/8; ++i) {
+          result.get_fixed_byte(i) = (*segment)[addr + (uint64_t)i];
+        }
+        return result;
+      }
+    }
+
+    assert(false);
+    cpputil::BitVector result(size);
+    return result;
+  }
+
+
   /** Write text. */
   std::ostream& write_text(std::ostream& os) const;
   /** Read text (backward compatible if no segments exist). */
@@ -196,9 +274,11 @@ struct CpuState {
   std::vector<Memory> segments;
 
   /** Get the memory address corresponding to a memory operand */
-  uint64_t get_addr(x64asm::M8 ref) const;
+  uint64_t get_addr(x64asm::Mem ref) const;
   /** Get the memory address corresponding to an instruction */
   uint64_t get_addr(x64asm::Instruction instr) const;
+  /** Get the memory address corresponding to a memory operand (DEPRECATED) */
+  uint64_t get_addr(x64asm::M8 ref) const;
 
   /** The number of jumps last spent on this testcase */
   uint64_t jumps_seen;

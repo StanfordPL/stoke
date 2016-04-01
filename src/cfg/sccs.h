@@ -55,6 +55,12 @@ public:
     return sccs_.at(b);
   }
 
+  /** Get a list of blocks in an SCC */
+  std::vector<Cfg::id_type> get_blocks(size_t scc) {
+    assert(scc < count());
+    return scc_to_blocks_[scc];
+  }
+
 private:
 
   /** Recursive call for Tarjan's algorithm */
@@ -71,6 +77,8 @@ private:
   const Cfg& cfg_;
   /** Map from basic block -> SCC.  (-1) if loop-free singleton. */
   std::map<Cfg::id_type, int> sccs_;
+  /** Map from SCC -> vector of basic blocks */
+  std::map<size_t, std::vector<Cfg::id_type>> scc_to_blocks_;
   /** Number of SCCs, excluding loop-free singletons. */
   size_t count_;
 

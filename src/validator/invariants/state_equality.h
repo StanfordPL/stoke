@@ -28,7 +28,7 @@ public:
 
   StateEqualityInvariant(x64asm::RegSet rs) : rs_(rs) {}
 
-  SymBool operator()(const SymState& left, const SymState& right) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
     SymBool b = SymBool::_true();
     for (auto it : left.equality_constraints(right, rs_))
       b = b & it;

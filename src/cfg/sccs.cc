@@ -63,6 +63,7 @@ void CfgSccs::tarjan(Cfg::id_type node) {
       if (self_loop) {
         // There's a self-loop, so we count as a SCC.
         sccs_[node] = count_;
+        scc_to_blocks_[count_].push_back(node);
         count_++;
       } else {
         // No self-loop
@@ -77,6 +78,7 @@ void CfgSccs::tarjan(Cfg::id_type node) {
       DEBUG_SCC("FOUND SCC");
       while (stack_.top() != node) {
         sccs_[stack_.top()] = count_;
+        scc_to_blocks_[count_].push_back(stack_.top());
         DEBUG_SCC("  " << stack_.top());
         on_stack_[stack_.top()] = false;
         stack_.pop();
@@ -85,6 +87,7 @@ void CfgSccs::tarjan(Cfg::id_type node) {
       on_stack_[stack_.top()] = false;
       stack_.pop();
       sccs_[node] = count_;
+      scc_to_blocks_[count_].push_back(node);
       count_++;
     }
   }
@@ -96,6 +99,7 @@ void CfgSccs::recompute() {
   /** Reset result variables */
   count_ = 0;
   sccs_.clear();
+  scc_to_blocks_.clear();
 
   /** Reset bookkeeping variables */
   index_.clear();

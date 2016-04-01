@@ -28,7 +28,7 @@ public:
     is_rewrite_ = is_rewrite;
   }
 
-  SymBool operator()(const SymState& left, const SymState& right) const {
+  SymBool operator()(SymState& left, SymState& right, size_t& tln, size_t& rln) const {
 
     if (is_rewrite_) {
       return right.gp[reg_][63][32] == SymBitVector::constant(32, 0);
