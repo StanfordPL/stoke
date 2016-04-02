@@ -30,7 +30,7 @@
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
-#define CEG_DEBUG(X) { }
+#define CEG_DEBUG(X) { X }
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )
@@ -107,7 +107,7 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
 
 }
 
-bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite) const {
+bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, const CellMemory* rewrite_memory, const Cfg& target, const Cfg& rewrite, bool begin) const {
 
   if (!target_memory || !rewrite_memory) {
     BUILD_TC_DEBUG(cout << "[build tc] no memory found" << endl;)
@@ -118,9 +118,11 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
 
   // Allocate a tiny bit of stack memory
   auto rsp_val = ceg[rsp];
-  BitVector zeros(64);
-  zeros.get_fixed_quad(0) = 0;
-  addr_value_pairs[rsp_val-8] = zeros;
+  if (rsp_val > 0x20 && rsp_val < 0xffffffffffffffe0) {
+    BitVector zeros(64);
+    zeros.get_fixed_quad(0) = 0;
+    addr_value_pairs[rsp_val-8] = zeros;
+  }
 
   for (size_t k = 0; k < 2; ++k) {
     auto& memory = k ? *rewrite_memory : *target_memory;
@@ -137,7 +139,12 @@ bool ObligationChecker::build_testcase_cell_memory(CpuState& ceg, const CellMemo
       auto address = addr_bv.get_fixed_quad(0);
 
       assert(memory.init_cells_.count(cell));
-      const SymBitVector* v = &memory.init_cells_.at(cell);
+      const SymBitVector* v = NULL;
+      if (begin) {
+        v = &memory.init_cells_.at(cell);
+      } else {
+        v = &memory.cells_.at(cell);
+      }
       auto value_var = dynamic_cast<const SymBitVectorVar*>(v->ptr);
       auto value_bv = solver_.get_model_bv(value_var->get_name(), value_var->get_size());
 
@@ -171,12 +178,13 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
 
   auto new_cfg = CfgPaths::rewrite_cfg_with_path(cfg, P);
   auto new_f = new_cfg.get_function();
+  new_f.insert(0, x64asm::Instruction(x64asm::LABEL_DEFN, { x64asm::Label("__ObligationCheckerTest:") }), false);
   new_f.push_back(x64asm::Instruction(x64asm::RET));
   new_cfg = Cfg(new_f, new_cfg.def_ins(), new_cfg.live_outs());
 
   sb.insert_input(state);
   sb.insert_function(new_cfg);
-  sb.set_entrypoint(new_cfg.get_code()[0].get_operand<x64asm::Label>(0));
+  sb.set_entrypoint(new_f.get_leading_label());
   sb.run();
 
   CpuState output = *(sb.get_output(0));
@@ -272,23 +280,6 @@ ObligationChecker::find_arrangements(
 
 }
 
-bool ObligationChecker::vectors_have_common(const std::vector<size_t>& left, const std::vector<size_t>& right, size_t& value) {
-
-  size_t j = 0;
-  for (size_t i : left) {
-    while (j < right.size() && right[j] < i) {
-      j++;
-    }
-    if (j < right.size() && right[j] == i) {
-      // we're done!
-      value = i;
-      return true;
-    }
-  }
-
-  return false;
-}
-
 vector<size_t> ObligationChecker::enumerate_accesses(const Cfg& cfg) {
   vector<size_t> result;
   for (size_t i = 0, ie = cfg.get_code().size(); i < ie; ++i) {
@@ -300,155 +291,6 @@ vector<size_t> ObligationChecker::enumerate_accesses(const Cfg& cfg) {
   return result;
 }
 
-/** Takes vector of symbolic accesses, builds a map, and allocates a CellMemory to use. */
-CellMemory* ObligationChecker::make_cell_memory(const vector<CellMemory::SymbolicAccess>& vector) {
-  map<size_t, CellMemory::SymbolicAccess> map;
-  for (auto sa : vector) {
-    map[sa.line] = sa;
-    ALIAS_DEBUG(
-      cout << sa.line << " --> " << sa.cell << " (offset " << sa.cell_offset << " / size " << sa.size << " / cell size " << sa.cell_size << ")";
-      if (sa.unconstrained)
-      cout << " (UNCONSTRAINED)";
-      cout << endl;
-    )
-    }
-  return new CellMemory(map);
-}
-
-/** Filter a list of symbolic accesses to find the ones that are for target/rewrite. */
-vector<CellMemory::SymbolicAccess> ObligationChecker::split_sym_accesses(const vector<CellMemory::SymbolicAccess>& big_list, bool rewrite) {
-  vector<CellMemory::SymbolicAccess> v;
-  for (auto& sa : big_list) {
-    if (sa.is_rewrite == rewrite)
-      v.push_back(sa);
-  }
-  return v;
-}
-
-/** Check if it's possible for there to be a testcase where target/rewrite
-  take given paths with given aliasing relationships. */
-bool ObligationChecker::check_feasibility(const Cfg& target, const Cfg& rewrite,
-    const Cfg& target_unroll, const Cfg& rewrite_unroll,
-    const CfgPath& P, const CfgPath& Q,
-    const vector<CellMemory::SymbolicAccess>& sym_list,
-    const Invariant& assume) {
-
-  ALIAS_DEBUG(cout << "~~~~~~~~~~~~~ ALIASING FEASIBILITY CHECKER ~~~~~~~~~~~~~~~~" << endl;)
-
-  auto target_sym = split_sym_accesses(sym_list, false);
-  auto rewrite_sym = split_sym_accesses(sym_list, true);
-
-  {
-    ALIAS_DEBUG(cout << "-> ORIGINAL target map" << endl;
-                const auto target_mem = make_cell_memory(target_sym);
-                delete target_mem;)
-    ALIAS_DEBUG(cout << "-> ORIGINAL rewrite map" << endl;
-                const auto rewrite_mem = make_cell_memory(rewrite_sym);
-                delete rewrite_mem;)
-  }
-
-  // create unconstrainted cells for the rest of memory accesses
-  size_t top_cell = 0;
-  for (auto it : sym_list) {
-    if (it.cell > top_cell)
-      top_cell = it.cell;
-  }
-  top_cell++;
-
-  for (size_t k = 0; k < 2; ++k) {
-    auto& cfg = k ? rewrite_unroll : target_unroll;
-    auto& path = k ? Q : P;
-    auto& symb = k ? rewrite_sym : target_sym;
-
-    auto accesses = enumerate_accesses(cfg);
-    map<size_t, bool> found_access;
-    for (auto it : sym_list) {
-      if (it.is_rewrite == k ) {
-        found_access[it.line] = true;
-      }
-    }
-
-    for (auto line : accesses) {
-      if (found_access[line])
-        continue;
-
-      CellMemory::SymbolicAccess sa;
-      sa.line = line;
-      sa.size = cfg.get_code()[sa.line].mem_dereference_size()/8;
-      sa.cell = top_cell++;
-      sa.cell_size = sa.size;
-      sa.cell_offset = 0;
-      sa.is_rewrite = k;
-      sa.unconstrained = true;
-      symb.push_back(sa);
-    }
-  }
-
-  // Now build the memories and make the constraints
-  ALIAS_DEBUG(cout << "-> target map" << endl;)
-  const auto target_mem = make_cell_memory(target_sym);
-  ALIAS_DEBUG(cout << "-> rewrite map" << endl;)
-  const auto rewrite_mem = make_cell_memory(rewrite_sym);
-
-  vector<SymBool> constraints;
-
-  SymState init("");
-
-  SymState state_t("1_INIT");
-  state_t.memory = target_mem;
-  target_mem->set_parent(&state_t);
-
-  SymState state_r("2_INIT");
-  state_r.memory = rewrite_mem;
-  rewrite_mem->set_parent(&state_r);
-
-  constraints.push_back(assume(state_t, state_r));
-
-  size_t line_no = 0;
-  for (size_t i = 0; i < P.size(); ++i)
-    build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
-  line_no = 0;
-  for (size_t i = 0; i < Q.size(); ++i)
-    build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
-  constraints.push_back(target_mem->aliasing_formula(*rewrite_mem));
-
-
-  constraints.insert(constraints.begin(), state_t.constraints.begin(), state_t.constraints.end());
-  constraints.insert(constraints.begin(), state_r.constraints.begin(), state_r.constraints.end());
-
-  ALIAS_DEBUG(
-    cout << endl << "CONSTRAINTS" << endl << endl;;
-  for (auto it : constraints) {
-  cout << it << endl;
-})
-
-  // Step 4: Invoke the solver
-  uint64_t old_timeout = solver_.get_timeout();
-  solver_.set_timeout(60000); // 1 minute max for this
-  bool is_sat = solver_.is_sat(constraints);
-  if (solver_.has_error()) {
-    throw VALIDATOR_ERROR("solver: " + solver_.get_error());
-  }
-
-  solver_.set_timeout(old_timeout);
-
-  delete target_mem;
-  delete rewrite_mem;
-
-  if (solver_.has_error()) {
-    //throw VALIDATOR_ERROR("solver: " + solver_.get_error());
-    ALIAS_DEBUG(cout << "SMT Solver had error: " << solver_.get_error();)
-    return true; // it's possible that we timed out, but there's still a solution here.  keep looking.
-  }
-
-  ALIAS_DEBUG(cout << "FEASIBLE: " << is_sat << endl;);
-
-  return is_sat;
-
-}
-
-
-
 vector<vector<CellMemory::SymbolicAccess>> ObligationChecker::enumerate_aliasing_helper(
     const Cfg& target, const Cfg& rewrite,
     const Cfg& target_unroll, const Cfg& rewrite_unroll,
@@ -456,15 +298,11 @@ vector<vector<CellMemory::SymbolicAccess>> ObligationChecker::enumerate_aliasing
     const vector<CellMemory::SymbolicAccess>& todo,
     const vector<CellMemory::SymbolicAccess>& done,
     size_t accesses_done,
-    const Invariant& assume,
-bool check_feasible) {
+const Invariant& assume) {
 
   ALIAS_DEBUG(cout << "===================== RECURSIVE STEP ==============================" << endl;)
 
   vector<vector<CellMemory::SymbolicAccess>> result;
-  // Step 0: check for feasibility.  if not, stop here.
-  if (check_feasible && !check_feasibility(target, rewrite, target_unroll, rewrite_unroll, P, Q, done, assume))
-    return result;
 
   // Step 1: if we've processed all the concrete accesses, we're done.  Generate CellMemories and return.
   if (todo.size() == accesses_done) {
@@ -562,7 +400,7 @@ bool check_feasible) {
     recursive_accesses.push_back(sa);
 
     auto new_results = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll,
-                       P, Q, todo, recursive_accesses, accesses_done+1, assume, check_feasible);
+                       P, Q, todo, recursive_accesses, accesses_done+1, assume);
     result.insert(result.begin(), new_results.begin(), new_results.end());
   }
 
@@ -570,13 +408,11 @@ bool check_feasible) {
   return result;
 }
 
-vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume) {
+vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
   switch (alias_strategy_) {
-  case AliasStrategy::BASIC:
-    return enumerate_aliasing_basic(target, rewrite, P, Q, assume);
   case AliasStrategy::STRING:
   case AliasStrategy::STRING_NO_ALIAS:
-    return enumerate_aliasing_string(target, rewrite, P, Q, assume);
+    return enumerate_aliasing_string(target, rewrite, P, Q, assume, prove);
   case AliasStrategy::FLAT: {
     auto res = vector<pair<CellMemory*, CellMemory*>>();
     res.push_back(pair<CellMemory*,CellMemory*>(NULL, NULL));
@@ -584,7 +420,7 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing(con
   }
   default:
     assert(false);
-    return enumerate_aliasing_basic(target, rewrite, P, Q, assume);
+    return enumerate_aliasing_string(target, rewrite, P, Q, assume, prove);
   }
 }
 
@@ -670,20 +506,13 @@ vector<vector<int>> ObligationChecker::compute_offset_vectors(size_t* cell_sizes
 
 
 
-vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume) {
+vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
   auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
   auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
 
   auto target_concrete_accesses = enumerate_accesses(target_unroll);
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
-
-  if (target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
-    auto null_pair = pair<CellMemory*, CellMemory*>(NULL, NULL);
-    auto v = vector<pair<CellMemory*, CellMemory*>>();
-    v.push_back(null_pair);
-    return v;
-  }
 
 
   // Symbolically execute target/rewrite to get memory accesses
@@ -698,7 +527,10 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
   rewrite_state.memory = &rewrite_mem;
 
   vector<SymBool> constraints;
-  constraints.push_back(assume(target_state, rewrite_state));
+
+  size_t target_fake_lineno = 0;
+  size_t rewrite_fake_lineno = 0;
+  constraints.push_back(assume(target_state, rewrite_state, target_fake_lineno, rewrite_fake_lineno));
 
   size_t line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
@@ -712,15 +544,47 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
   for (auto& it : rewrite_state.constraints)
     constraints.push_back(it);
 
+  // update the symbolic memory state with these further reads
+  // however, we do not generate constraints based on them
+  prove(target_state, rewrite_state, target_fake_lineno, rewrite_fake_lineno);
+
+  if (target_concrete_accesses.size() == 0 &&
+      rewrite_concrete_accesses.size() == 0 &&
+      target_fake_lineno == 0 &&
+      rewrite_fake_lineno == 0) {
+    map<size_t, CellMemory::SymbolicAccess> empty_map;
+
+    auto left = new CellMemory(empty_map);
+    auto right = new CellMemory(empty_map);
+
+    auto empty_pair = pair<CellMemory*, CellMemory*>(left, right);
+    auto v = vector<pair<CellMemory*, CellMemory*>>();
+    v.push_back(empty_pair);
+    return v;
+  }
+
+
+
+
   vector<TrivialMemory::SymbolicAccess> sym_accesses;
   for (size_t k = 0; k < 2; ++k) {
     auto& mem = k ? rewrite_mem : target_mem;
-    size_t line = -1;
+    size_t line = 0;
+    bool first = true;
     for (auto it : mem.get_all()) {
-      if (line == it.line)
+      if (!first && line == it.line)
         continue; //avoid duplicates from read+write operations, like add
+      first = false;
+
       line = it.line;
       it.is_rewrite = k;
+      /*
+      cout << "Access: " << endl;
+      cout << "  rewrite: " << it.is_rewrite << endl;
+      cout << "  line:    " << it.line << endl;
+      cout << "  size:    " << it.size << endl;
+      */
+
       sym_accesses.push_back(it);
     }
   }
@@ -766,6 +630,7 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
         throw VALIDATOR_ERROR("solver: " + solver_.get_error());
       }
 
+
       constraints.erase(--constraints.end());
     }
   }
@@ -786,6 +651,10 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
 
       constraints.push_back(!next_addrs);
       next_address[i][j] = !solver_.is_sat(constraints);
+      if (solver_.has_error()) {
+        throw VALIDATOR_ERROR("solver: " + solver_.get_error());
+      }
+
       constraints.erase(--constraints.end());
     }
   }
@@ -923,7 +792,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
     sa.unconstrained = false;
     done.push_back(sa);
 
-    auto options = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q, cell_list, done, 1, assume, false);
+    auto options = enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q, cell_list, done, 1, assume);
 
     for (auto option : options) {
       map<size_t, CellMemory::SymbolicAccess> target_map;
@@ -1073,77 +942,6 @@ for (size_t i = 0; i < total_accesses; ++i) {
 
 }
 
-// ASSUMPTION: the target and rewrite both use memory
-vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_basic(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume) {
-
-
-  auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
-  auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
-
-  ALIAS_DEBUG(cout << "********************* NEW TASK ******************************" << endl;
-              cout << "TARGET:" << endl;
-              cout << target.get_code() << endl;
-              cout << "REWRITE:" << endl;
-              cout << rewrite.get_code() << endl;)
-
-
-  auto target_concrete_accesses = enumerate_accesses(target_unroll);
-  auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
-
-  if (target_concrete_accesses.size() == 0 && rewrite_concrete_accesses.size() == 0) {
-    auto null_pair = pair<CellMemory*, CellMemory*>(NULL, NULL);
-    auto v = vector<pair<CellMemory*, CellMemory*>>();
-    v.push_back(null_pair);
-    return v;
-  }
-
-  // Build the list of all memory accesses
-  vector<CellMemory::SymbolicAccess> todo;
-
-  for (auto line : target_concrete_accesses) {
-    CellMemory::SymbolicAccess sa;
-    sa.line = line;
-    sa.size = target_unroll.get_code()[line].mem_dereference_size()/8;
-    sa.is_rewrite = false;
-    todo.push_back(sa);
-  }
-  for (auto line : rewrite_concrete_accesses) {
-    CellMemory::SymbolicAccess sa;
-    sa.line = line;
-    sa.size = rewrite_unroll.get_code()[line].mem_dereference_size()/8;
-    sa.is_rewrite = true;
-    todo.push_back(sa);
-  }
-
-  // Place the first memory access.
-  vector<CellMemory::SymbolicAccess> done;
-  auto first = todo[0];
-  first.cell = 0;
-  first.cell_offset = 0;
-  first.cell_size = first.size;
-  first.unconstrained = false;
-  done.push_back(first);
-
-
-  auto options =  enumerate_aliasing_helper(target, rewrite, target_unroll, rewrite_unroll, P, Q,
-                  todo, done, 1, assume, true);
-
-  vector<pair<CellMemory*, CellMemory*>> result;
-
-  for (auto& option : options) {
-    ALIAS_DEBUG(cout << "  target map: " << endl;)
-    auto target_accesses = split_sym_accesses(option, false);
-    auto t = make_cell_memory(target_accesses);
-    ALIAS_DEBUG(cout << "  rewrite map: " << endl;)
-    auto rewrite_accesses = split_sym_accesses(option, true);
-    auto r = make_cell_memory(rewrite_accesses);
-    result.push_back(pair<CellMemory*, CellMemory*>(t, r));
-  }
-
-  cout << "Found " << result.size() << " basic aliasing cases" << endl;
-
-  return result;
-}
 
 
 
@@ -1277,7 +1075,7 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
   have_ceg_ = false;
 
   // Get a list of all aliasing cases.
-  auto memory_list =  enumerate_aliasing(target, rewrite, P, Q, assume);
+  auto memory_list =  enumerate_aliasing(target, rewrite, P, Q, assume, prove);
   bool flat_model = alias_strategy_ == AliasStrategy::FLAT;
 
   OBLIG_DEBUG(cout << memory_list.size() << " Aliasing cases.  Yay." << endl;);
@@ -1334,7 +1132,10 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     }
 
     // Add given assumptions
-    auto assumption = assume(state_t, state_r);
+    // TODO pass line numbers as appropriate here
+    size_t target_invariant_lineno = 0;
+    size_t rewrite_invariant_lineno = 0;
+    auto assumption = assume(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
     CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
     constraints.push_back(assumption);
 
@@ -1373,7 +1174,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
   })
 
     // Build inequality constraint
-    auto prove_constraint = !prove(state_t, state_r);
+    // TODO pass line numbers as appropriate
+    auto prove_constraint = !prove(state_t, state_r, target_invariant_lineno, rewrite_invariant_lineno);
     CONSTRAINT_DEBUG(cout << "Proof inequality: " << prove_constraint << endl;)
 
     constraints.push_back(prove_constraint);
@@ -1424,25 +1226,12 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
         ok &= build_testcase_flat_memory(ceg_tf_, *static_cast<FlatMemory*>(state_t.memory), other_map);
         ok &= build_testcase_flat_memory(ceg_rf_, *static_cast<FlatMemory*>(state_r.memory), other_map);
       } else {
-        ok &= build_testcase_cell_memory(ceg_t_,
-                                         dynamic_cast<CellMemory*>(state_t.memory),
-                                         dynamic_cast<CellMemory*>(state_r.memory),
-                                         target, rewrite);
-
-        ok &= build_testcase_cell_memory(ceg_r_,
-                                         dynamic_cast<CellMemory*>(state_t.memory),
-                                         dynamic_cast<CellMemory*>(state_r.memory),
-                                         target, rewrite);
-
-        ok &= build_testcase_cell_memory(ceg_tf_,
-                                         dynamic_cast<CellMemory*>(state_t.memory),
-                                         dynamic_cast<CellMemory*>(state_r.memory),
-                                         target, rewrite);
-
-        ok &= build_testcase_cell_memory(ceg_rf_,
-                                         dynamic_cast<CellMemory*>(state_t.memory),
-                                         dynamic_cast<CellMemory*>(state_r.memory),
-                                         target, rewrite);
+        auto tcell = dynamic_cast<CellMemory*>(state_t.memory);
+        auto rcell = dynamic_cast<CellMemory*>(state_r.memory);
+        ok &= build_testcase_cell_memory(ceg_t_, tcell, rcell, target, rewrite, true);
+        ok &= build_testcase_cell_memory(ceg_r_, tcell, rcell, target, rewrite, true);
+        ok &= build_testcase_cell_memory(ceg_tf_, tcell, rcell, target, rewrite, false);
+        ok &= build_testcase_cell_memory(ceg_rf_, tcell, rcell, target, rewrite, false);
       }
 
       if (!ok) {

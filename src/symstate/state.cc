@@ -144,6 +144,20 @@ SymBitVector SymState::operator[](const Operand o) {
 
 SymBitVector SymState::lookup(const Operand o) const {
 
+  if (o.is_typical_memory()) {
+    auto& m = reinterpret_cast<const M8&>(o);
+    uint16_t size = o.size();
+    auto addr = get_addr(m);
+
+    if (memory) {
+      auto p = memory->read(addr, size, lineno_);
+      return p.first;
+    } else {
+      return SymBitVector::tmp_var(size);
+    }
+  }
+
+
   if (o.type() == Type::RH) {
     auto& r = reinterpret_cast<const R&>(o);
     return gp[r-4][15][8];
