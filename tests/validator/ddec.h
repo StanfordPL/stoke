@@ -359,7 +359,7 @@ TEST_F(DdecValidatorBaseTest, MemoryOverlapBad) {
 
 TEST_F(DdecValidatorBaseTest, LoopMemoryEquiv) {
 
-  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::ecx + x64asm::rdx;
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::rcx + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
 
   std::stringstream sst;
@@ -385,14 +385,18 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryEquiv) {
   sg.set_max_memory(1024);
   sg.set_max_attempts(64);
 
+  sandbox->reset();
+  cout << "LoopMemoryEquiv sandbox at " << sandbox << endl;
   for (size_t i = 0; i < 4; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
+    cout << "INPUT for tests: " << endl << tc << endl;
   }
 
   validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
+  validator->set_sandbox(sandbox);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
@@ -431,6 +435,7 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryWrong) {
     sandbox->insert_input(tc);
   }
 
+  validator->set_sandbox(sandbox);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 }
@@ -473,7 +478,7 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryWrong2) {
   }
 
 
-
+  validator->set_sandbox(sandbox);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -594,6 +599,7 @@ TEST_F(DdecValidatorBaseTest, Wcslen2ExitsFail1) {
     sandbox->insert_input(tc);
   }
 
+  validator->set_sandbox(sandbox);
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
@@ -729,6 +735,7 @@ TEST_F(DdecValidatorBaseTest, DISABLED_StrlenCorrect) {
     sandbox->insert_input(tc);
   }
 
+  validator->set_sandbox(sandbox);
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
 
