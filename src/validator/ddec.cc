@@ -259,10 +259,10 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
     make_tcs(target, rewrite);
 
     DDEC_TC_DEBUG(
-    cout << "DDEC sandbox at " << sandbox_ << endl;
-    for(size_t i = 0;i < sandbox_->size(); ++i) {
-      cout << "DDEC sees this TC: " << endl;
-      cout << *sandbox_->get_input(i) << endl;
+      cout << "DDEC sandbox at " << sandbox_ << endl;
+    for (size_t i = 0; i < sandbox_->size(); ++i) {
+    cout << "DDEC sees this TC: " << endl;
+    cout << *sandbox_->get_input(i) << endl;
     }
     )
 
