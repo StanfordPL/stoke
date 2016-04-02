@@ -54,10 +54,10 @@ public:
     }
 
 #ifdef DEBUG_CUTPOINTS_DATA
-    std::cout << "At cutpt " << cutpt << " the " << (is_rewrite ? "rewrite" : "target") << " has " 
+    std::cout << "At cutpt " << cutpt << " the " << (is_rewrite ? "rewrite" : "target") << " has "
               << results.size() << " states." << std::endl;
     std::cout << "   (this is at block " << blk << ")" << std::endl;
-    for(auto it : results)
+    for (auto it : results)
       std::cout << it << std::endl;
 #endif
 
