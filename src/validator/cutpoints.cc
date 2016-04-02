@@ -77,6 +77,7 @@ void Cutpoints::compute() {
 
   // Collect data
   for (size_t i = 0; i < sandbox_.size(); ++i) {
+    cout << "Collecting data from TC: " << endl << *sandbox_.get_input(i) << endl;
     vector<TracePoint> trace;
     mine_data(target_, i, trace);
     target_traces_.push_back(trace);
