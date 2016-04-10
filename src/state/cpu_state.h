@@ -63,10 +63,6 @@ struct CpuState {
     return !(*this == rhs);
   }
 
-  // TODO: we can improve the performance of these functions by implementing
-  // specialized versions of operator[] for specific register types, rather
-  // than always calling the generic method and looking up the type.  Not that
-  // we care.  -- Berkeley
   /** Access to a general purpose register. */
   uint64_t operator[](const x64asm::R& reg) const {
     size_t start = 0;

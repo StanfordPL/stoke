@@ -55,8 +55,11 @@ public:
     verifier_ = new SequenceVerifier(verifiers);
 
     verifier_->set_sandbox(&sandbox);
-    verifier_->set_heap_out(heap_out_arg);
-    verifier_->set_stack_out(stack_out_arg);
+
+    verifier_->set_heap_out(heap_out_arg.value());
+    verifier_->set_stack_out(stack_out_arg.value());
+
+
   }
 
   Verifier& set_sandbox(Sandbox* sb) {
