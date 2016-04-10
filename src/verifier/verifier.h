@@ -46,13 +46,13 @@ public:
   }
 
   /** Set if the heap is live out */
-  Verifier& set_heap_out(bool b) {
+  virtual Verifier& set_heap_out(bool b) {
     heap_out_ = b;
     return *this;
   }
 
   /** Set if the stack is live out */
-  Verifier& set_stack_out(bool b) {
+  virtual Verifier& set_stack_out(bool b) {
     stack_out_ = b;
     return *this;
   }
