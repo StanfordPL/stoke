@@ -62,6 +62,7 @@ public:
 
   ObligationChecker(SMTSolver& solver) : Validator(solver) {
     set_alias_strategy(AliasStrategy::STRING);
+    set_nacl(false);
   }
 
   ~ObligationChecker() {}
@@ -93,7 +94,6 @@ public:
   /** Is there a jump in the path following this basic block? */
   static JumpType is_jump(const Cfg&, const CfgPath& P, size_t i);
 
-protected:
   /** Check. */
   bool check(const Cfg& target, const Cfg& rewrite, const CfgPath& p, const CfgPath& q,
              const Invariant& assume, const Invariant& prove);
