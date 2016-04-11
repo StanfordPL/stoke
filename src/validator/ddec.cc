@@ -802,8 +802,8 @@ vector<Mod2NInvariant*> build_mod2n_invariants(RegSet target_regs, RegSet rewrit
   for (size_t k = 0; k < 2; ++k) {
     auto regs = k ? rewrite_regs : target_regs;
 
-    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) 
-      for (auto j = 1; j < 5; ++j) 
+    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i)
+      for (auto j = 1; j < 5; ++j)
         invariants.push_back(new Mod2NInvariant(*i, k, j));
   }
 
