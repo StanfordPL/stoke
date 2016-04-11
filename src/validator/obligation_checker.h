@@ -68,8 +68,8 @@ public:
   }
 
   ~ObligationChecker() {
-    if(filter_)
-      delete filter_; 
+    if (filter_)
+      delete filter_;
   }
 
   /** Set strategy for aliasing */
@@ -79,7 +79,7 @@ public:
   }
 
   ObligationChecker& set_filter(Filter* filter) {
-    if(filter_)
+    if (filter_)
       delete filter_;
     filter_ = filter;
     return *this;

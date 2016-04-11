@@ -1007,7 +1007,7 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
 
       //cout << "LINE=" << line_no-1 << ": " << instr << endl;
       auto constraints = (*filter_)(instr, state);
-      for(auto constraint : constraints) {
+      for (auto constraint : constraints) {
         cerr << "generating constraint: " << constraint << endl;
         state.constraints.push_back(constraint);
       }
