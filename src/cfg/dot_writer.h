@@ -29,7 +29,6 @@ public:
   DotWriter() {
     set_def_in(false, false);
     set_live_out(false);
-    set_dom(false);
   }
 
   /** Toggle whether to display the defined-in relation for blocks and instructions. */
@@ -41,11 +40,6 @@ public:
   /** Toggle whether to display the live-out relation for blocks. */
   DotWriter& set_live_out(bool block) {
     live_out_block_ = block;
-    return *this;
-  }
-  /** Toggle whether to display the dom relation for blocks. */
-  DotWriter& set_dom(bool dom) {
-    dom_ = dom;
     return *this;
   }
 
@@ -71,8 +65,6 @@ private:
   void write_block(std::ostream& os, const Cfg& cfg, Cfg::id_type id) const;
   /** Write the basic blocks in this graph. */
   void write_blocks(std::ostream& os, const Cfg& cfg) const;
-  /** Write the set of blocks that this block dominates. */
-  void write_dominators(std::ostream& os, const Cfg& cfg, Cfg::id_type id) const;
   /** Write the edges in this graph. */
   void write_edges(std::ostream& os, const Cfg& cfg) const;
   /** Write the contents of a register set. */
@@ -84,8 +76,6 @@ private:
   bool def_in_instr_;
   /** Write the live-out relation for blocks? */
   bool live_out_block_;
-  /** Write the dom relation for blocks? */
-  bool dom_;
 };
 
 } // namespace stoke

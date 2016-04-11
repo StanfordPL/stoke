@@ -113,30 +113,6 @@ string Cfg::which_undef_read() const {
   return ss.str();
 }
 
-void Cfg::recompute_topo_sort() {
-  topo_sort_.clear();
-
-  remaining_preds_.resize(num_blocks());
-  for (size_t i = get_entry(), ie = get_exit(); i <= ie; ++i) {
-    remaining_preds_[i] = 0;
-    for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p) {
-      if (is_reachable(*p)) {
-        remaining_preds_[i]++;
-      }
-    }
-  }
-
-  topo_sort_.push_back(get_entry());
-  for (size_t i = 0; i < topo_sort_.size(); ++i) {
-    const auto next = topo_sort_[i];
-    for (auto s = succ_begin(next), se = succ_end(next); s != se; ++s) {
-      if (--remaining_preds_[*s] == 0) {
-        topo_sort_.push_back(*s);
-      }
-    }
-  }
-}
-
 void Cfg::recompute_blocks() {
   blocks_.clear();
 
@@ -243,90 +219,6 @@ void Cfg::recompute_reachable() {
   }
 }
 
-void Cfg::recompute_dominators() {
-  doms_.resize(num_blocks());
-
-  // Constants
-  BitVector universe(num_blocks());
-  universe.set();
-
-  // Bounary conditions
-  doms_[get_entry()].resize_for_bits(num_blocks());
-  doms_[get_entry()].reset();
-  doms_[get_entry()][get_entry()] = true;
-
-  // Initial conditions
-  for (size_t i = get_entry() + 1, ie = get_exit(); i <= ie; ++i) {
-    doms_[i] = universe;
-  }
-
-  // Iterate until fixed point; always skip entry
-  for (auto changed = true; changed;) {
-    changed = false;
-
-    for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-      // Meet operator; okay to read unreachable blocks which are fixed to universe
-      auto new_out = universe;
-      for (auto p = pred_begin(*i), pe = pred_end(*i); p != pe; ++p) {
-        new_out &= doms_[*p];
-      }
-
-      // Transfer function
-      new_out[*i] = true;
-
-      // Check for fixed point
-      changed |= (doms_[*i] != new_out);
-      doms_[*i] = new_out;
-    }
-  }
-}
-
-void Cfg::recompute_back_edges() {
-  loops_.clear();
-
-  // No sense in checking the entry which can't ever be in a loop
-  for (auto i = ++reachable_begin(), ie = reachable_end(); i != ie; ++i) {
-    for (auto s = succ_begin(*i), se = succ_end(*i); s != se; ++s) {
-      if (!is_exit(*s) && dom(*s, *i)) {
-        loops_[edge_type(*i, *s)] = BitVector(num_blocks());
-      }
-    }
-  }
-}
-
-void Cfg::recompute_loop_blocks() {
-  for (auto& loop : loops_) {
-    const auto& e = loop.first;
-    auto& l = loop.second;
-
-    l[e.first] = true;
-    l[e.second] = true;
-
-    if (e.first != e.second) {
-      assert(block_stack_.empty());
-      for (block_stack_.push(e.first); !block_stack_.empty();) {
-        const auto m = block_stack_.top();
-        block_stack_.pop();
-        for (auto p = pred_begin(m), pe = pred_end(m); p != pe; ++p) {
-          if (is_reachable(*p) && !l[*p]) {
-            l[*p] = true;
-            block_stack_.push(*p);
-          }
-        }
-      }
-    }
-  }
-}
-
-void Cfg::recompute_nesting_depth() {
-  nesting_depth_.assign(num_blocks(), 0);
-  for (auto e = back_edge_begin(), ee = back_edge_end(); e != ee; ++e) {
-    for (auto i = loop_begin(*e), ie = loop_end(*e); i != ie; ++i) {
-      nesting_depth_[*i]++;
-    }
-  }
-}
-
 void Cfg::recompute_defs_gen_kill() {
   gen_.assign(num_blocks(), RegSet::empty());
   kill_.assign(num_blocks(), RegSet::empty());
@@ -342,7 +234,7 @@ void Cfg::recompute_defs_gen_kill() {
     }
   }
 }
-void Cfg::recompute_defs_loops() {
+void Cfg::recompute_defs() {
   recompute_defs_gen_kill();
 
   // Need a little extra room for def_ins_[get_exit()]
@@ -390,55 +282,6 @@ void Cfg::recompute_defs_loops() {
       const auto& instr = get_code()[idx - 1];
       def_ins_[idx] |= must_write_set(instr);
       def_ins_[idx] -= maybe_undef_set(instr);
-    }
-  }
-}
-
-void Cfg::recompute_defs_loop_free() {
-  // Need a little extra room for def_ins_[get_exit()]
-  // You'll notice that this function uses blocks_[...] instead of get_index(...)
-  // This is to subvert the assertion we'd blow for trying to call get_index(get_exit(),0)
-
-  def_ins_.resize(get_code().size() + 1, RegSet::empty());
-  def_outs_.resize(num_blocks(), RegSet::empty());
-
-  // Boundary conditions
-  def_outs_[get_entry()] = fxn_def_ins_;
-
-  // Iterate only once in topological order (skip entry)
-  for (size_t i = 1, ie = topo_sort_.size(); i < ie; ++i) {
-    const auto b = topo_sort_[i];
-
-    // Initial conditions
-    def_ins_[blocks_[b]] = RegSet::universe();
-
-    // Meet operator
-    for (auto p = pred_begin(b), pe = pred_end(b); p != pe; ++p) {
-      if (is_reachable(*p)) {
-        def_ins_[blocks_[b]] &= def_outs_[*p];
-      }
-    }
-
-    // Transfer function
-    for (size_t j = 1, je = num_instrs(b); j < je; ++j) {
-      const auto idx = blocks_[b] + j;
-      def_ins_[idx] = def_ins_[idx - 1];
-
-      const auto& instr = get_code()[idx - 1];
-      def_ins_[idx] |= must_write_set(instr);
-      def_ins_[idx] -= maybe_undef_set(instr);
-    }
-
-    // Summarize block
-    if (num_instrs(b) == 0) {
-      def_outs_[b] = def_ins_[blocks_[b]];
-    } else {
-      const auto idx = blocks_[b] + num_instrs(b) - 1;
-      def_outs_[b] = def_ins_[idx];
-
-      const auto& instr = get_code()[idx];
-      def_outs_[b] |= must_write_set(instr);
-      def_outs_[b] -= maybe_undef_set(instr);
     }
   }
 }

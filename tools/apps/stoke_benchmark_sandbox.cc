@@ -45,9 +45,7 @@ int main(int argc, char** argv) {
 
   size_t loc = 0;
   size_t mds = 0;
-  size_t nd = 0;
   for (auto i = target.reachable_begin(), ie = target.reachable_end(); i != ie; ++i) {
-    nd = max(nd, target.nesting_depth(*i));
     for (auto j = target.instr_begin(*i), je = target.instr_end(*i); j != je; ++j) {
       if (j->is_any_return()) {
         continue;
@@ -77,7 +75,6 @@ int main(int argc, char** argv) {
 
   Console::msg() << fixed;
   Console::msg() << "LOC:        " << loc << endl;
-  Console::msg() << "Loop Depth: " << nd << endl;
   Console::msg() << "Derefs:     " << mds << endl;
   Console::msg() << "Testcases:  " << tcs.size() << endl;
   Console::msg() << "Iterations: " << benchmark_itr_arg.value() << endl;

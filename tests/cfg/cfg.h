@@ -162,29 +162,6 @@ TEST_P(CodeFixtureTest, CFGNumInstr) {
 }
 
 
-TEST_P(CodeFixtureTest, CFGNestingDepth) {
-
-  CodeFixture fixture = GetParam();
-  auto json = fixture.get_test_data("cfg");
-
-  if (!json.isMember("nesting_depth")) {
-    return;
-  }
-
-  Cfg cfg(fixture.get_code(),
-          x64asm::RegSet::empty(),
-          x64asm::RegSet::empty());
-
-
-  const Json::Value& nesting_depth_array = json["nesting_depth"];
-  ASSERT_EQ(nesting_depth_array.size(), cfg.num_blocks());
-
-  for (size_t i = 0; i < nesting_depth_array.size(); ++i) {
-    uint64_t expected_depth = nesting_depth_array.get(i, Json::Value(1)).asInt();
-    EXPECT_EQ(expected_depth, cfg.nesting_depth(i)) << " for block " << i;
-  }
-}
-
 
 TEST_P(CodeFixtureTest, CFGReachable) {
 
@@ -217,6 +194,33 @@ TEST_P(CodeFixtureTest, CFGReachable) {
     }
   }
 
+}
+
+TEST(CfgTest, Issue856) {
+
+  std::stringstream ss;
+  ss << ".irr:" << endl;
+  ss << "addq $0x1, %rsi" << std::endl;
+  ss << "addq $0x1, %rdi" << std::endl;
+  ss << "je .L1" << std::endl;
+  ss << "jmpq .L2" << std::endl;
+  ss << ".L1:" << std::endl;
+  ss << ".L2:" << std::endl;
+  ss << ".L3:" << std::endl;
+  ss << "cmpq %rsi, %rdi" << std::endl;
+  ss << "jne .L1" << std::endl;
+  ss << "retq" << std::endl;
+
+  x64asm::Code code;
+  ss >> code;
+
+  x64asm::RegSet di = x64asm::RegSet::empty() + x64asm::rdi + x64asm::rsi;
+  x64asm::RegSet lo = di;
+  Cfg cfg(code, di, lo);
+
+  cfg.recompute();
+
+  EXPECT_TRUE(cfg.check_invariants());
 }
 
 } //namespace stoke
