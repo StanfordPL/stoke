@@ -53,6 +53,10 @@ cpputil::FlagArg& no_default_mxcsr_arg =
   cpputil::FlagArg::create("no_default_mxcsr")
   .description("Remove the default rounding control bit (%mxcsr[rc]) from def_in");
 
+cpputil::FlagArg& live_dangerously_arg =
+  cpputil::FlagArg::create("live_dangerously")
+  .description("Skip sanity checks on def-ins, live-outs, and instruction support.  Useful for verification.");
+
 } // namespace stoke
 
 #endif

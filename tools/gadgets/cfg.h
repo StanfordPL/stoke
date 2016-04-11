@@ -44,8 +44,11 @@ public:
     reg_warning();
 
     // Check for unsupported instructions and cpu flags
-    flag_check();
-    sandbox_check();
+    if (!live_dangerously_arg.value()) {
+      flag_check();
+      sandbox_check();
+    }
+
     // Check that this function can link against auxiliary functions
     linker_check(aux_fxns);
 
@@ -53,19 +56,21 @@ public:
     // @todo At some point, all functions should have summaries for everything else
     summarize_functions(aux_fxns);
 
-    // Check Cfg invariants
-    // These warnings need to be emitted to the user because the Cfg class isn't guaranteed
-    // to catch them during construction
-    if (!invariant_no_undef_reads()) {
-      cpputil::Console::error(1) << "(" << fxn.get_name() << ") Reads from an undefined location: " << which_undef_read() << std::endl;
-    } else if (!invariant_no_undef_live_outs() && !is_init_zero) {
-      cpputil::Console::error(1) << "(" << fxn.get_name() << ") Leaves a live out undefined. Use --init ZERO if this is an initial rewrite " << which_undef_read() << std::endl;
-    }
+    if (!live_dangerously_arg.value()) {
+      // Check Cfg invariants
+      // These warnings need to be emitted to the user because the Cfg class isn't guaranteed
+      // to catch them during construction
+      if (!invariant_no_undef_reads()) {
+        cpputil::Console::error(1) << "(" << fxn.get_name() << ") Reads from an undefined location: " << which_undef_read() << std::endl;
+      } else if (!invariant_no_undef_live_outs() && !is_init_zero) {
+        cpputil::Console::error(1) << "(" << fxn.get_name() << ") Leaves a live out undefined. Use --init ZERO if this is an initial rewrite " << which_undef_read() << std::endl;
+      }
 
-    // Control shouldn't ever reach here given the checks above.
-    // This is a major bug and should be reported by the user
-    if (!check_invariants() && !is_init_zero) {
-      cpputil::Console::error(1) << "(" << fxn.get_name() << ") Cfg bug; please report!" << std::endl;
+      // Control shouldn't ever reach here given the checks above.
+      // This is a major bug and should be reported by the user
+      if (!check_invariants() && !is_init_zero) {
+        cpputil::Console::error(1) << "(" << fxn.get_name() << ") Cfg bug; please report!" << std::endl;
+      }
     }
   }
 
