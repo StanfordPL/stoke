@@ -30,7 +30,8 @@ class ForbiddenDereferenceFilter : public Filter {
 
 public:
 
-  ForbiddenDereferenceFilter(Handler& handler, uint64_t forbidden) : Filter(handler), forbidden_(forbidden) { }
+  ForbiddenDereferenceFilter(Handler& handler, uint64_t low, uint64_t high) :
+    Filter(handler), low_(low), high_(high) { }
 
   /** Apply handler, and any custom logic; modify the symbolic state appropriately, and also
     generate any needed additional constraints. */
@@ -39,10 +40,11 @@ public:
     error_ = "";
 
     // Require memory dereferences to not touch forbidden address
-    if(instr.is_explicit_memory_dereference()) {
+    if (instr.is_explicit_memory_dereference()) {
       auto mem = instr.get_operand<x64asm::M8>(instr.mem_index());
       auto addr = state.get_addr(mem);
-      constraints.push_back(addr != SymBitVector::constant(64, forbidden_));
+      constraints.push_back((addr < SymBitVector::constant(64, low_)) |
+                            (addr > SymBitVector::constant(64, high_)));
     }
 
     handler_.build_circuit(instr, state);
@@ -59,7 +61,8 @@ public:
 
 private:
 
-  uint64_t forbidden_;
+  uint64_t low_;
+  uint64_t high_;
 
 };
 

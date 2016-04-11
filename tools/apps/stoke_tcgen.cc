@@ -179,17 +179,19 @@ int main(int argc, char** argv) {
       }
 
       // Now, lets find another testcase that touches *different* memory.
-      if(tc.heap.size() > 0) {
+      if (tc.heap.size() > 0) {
         uint64_t bad_addr = gen() % tc.heap.size() + tc.heap.lower_bound();
 
         if (debug_arg.value()) {
           cerr << " * Looking for testcase that doesn't dereference " << bad_addr << endl;
         }
 
-        checker.set_filter(new ForbiddenDereferenceFilter(handler, bad_addr));
+        checker.set_filter(new ForbiddenDereferenceFilter(handler,
+                           tc.heap.lower_bound(), tc.heap.upper_bound()));
+
         checker.check(target, rewrite, p, rewrite_path, _true, _false);
 
-        if(checker.checker_has_ceg()) {
+        if (checker.checker_has_ceg()) {
           auto tc2 = checker.checker_get_target_ceg();
           cerr << "tc2: " << tc2 << endl;
           outputs.push_back(tc2);
