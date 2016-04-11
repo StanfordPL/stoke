@@ -32,7 +32,7 @@ public:
 
     auto value = (is_rewrite_ ? rewrite : target).lookup(reg_);
 
-    if(positive_)
+    if (positive_)
       return value.s_ge(SymBitVector::constant(64, 0));
     else
       return value.s_le(SymBitVector::constant(64, 0));
@@ -42,7 +42,7 @@ public:
 
     int64_t value = (int64_t)(is_rewrite_ ? rewrite[reg_] : target[reg_]);
 
-    if(positive_)
+    if (positive_)
       return value >= 0;
     else
       return value <= 0;
@@ -50,10 +50,10 @@ public:
 
   std::ostream& write(std::ostream& os) const {
     os << reg_;
-    if(is_rewrite_)
+    if (is_rewrite_)
       os << "'";
 
-    if(positive_)
+    if (positive_)
       os << " >= 0";
     else
       os << " <= 0";
