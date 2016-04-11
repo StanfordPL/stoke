@@ -40,8 +40,6 @@ public:
   typedef std::pair<id_type, size_t> loc_type;
   /** Edge type; points from source to target. */
   typedef std::pair<id_type, id_type> edge_type;
-  /** Loop type: a set of basic blocks. */
-  typedef cpputil::BitVector loop_type;
 
   /** Iterator over a basic block's instructions. */
   typedef x64asm::Code::const_iterator instr_iterator;
@@ -49,10 +47,6 @@ public:
   typedef std::vector<id_type>::const_iterator pred_iterator;
   /** Iterator over a basic block's predecssors. */
   typedef std::vector<id_type>::const_iterator succ_iterator;
-  /** Iterator over the basic blocks in a loop. */
-  typedef loop_type::const_set_bit_index_iterator loop_iterator;
-  /** Iterator over back edges. */
-  typedef cpputil::CppUtilMap<std::map<edge_type, loop_type>>::const_key_iterator back_edge_iterator;
   /** Iterator over reachable blocks. */
   typedef cpputil::BitVector::const_set_bit_index_iterator reachable_iterator;
 
@@ -80,7 +74,6 @@ public:
   /** Recompute internal state; recomputes basic block structure and data flow values. */
   void recompute() {
     recompute_structure();
-    recompute_loops();
     recompute_defs();
     recompute_liveness();
   }
@@ -94,24 +87,10 @@ public:
     recompute_reachable();
     recompute_topo_sort();
   }
-  /** Recompute loops; modifying control flow will invalidate this state, calling this method
-    will restore it. Undefined if graph structure is not up to date. */
-  void recompute_loops() {
-    recompute_dominators();
-    recompute_back_edges();
-    recompute_loop_blocks();
-    recompute_nesting_depth();
-  }
   /** Recomputes the defined-in relation for instructions; modifying an instruction will invalidate
     this relation, calling this method will restore it. Undefined if graph structure is not up to
     date. */
-  void recompute_defs() {
-    if (!is_loop_free()) {
-      recompute_defs_loops();
-    } else {
-      recompute_defs_loop_free();
-    }
-  }
+  void recompute_defs();
 
   /** Return a reference to the function underlying this graph. */
   TUnit& get_function() {
@@ -227,53 +206,6 @@ public:
   id_type conditional_target(id_type id) const {
     assert(has_conditional_target(id));
     return succs_[id][1];
-  }
-
-  /** Returns true if the first basic block dominates the second; undefined for unreachable blocks. */
-  bool dom(id_type x, id_type y) const {
-    assert(is_reachable(x));
-    assert(is_reachable(y));
-    return doms_[y][x];
-  }
-
-  /** Returns an iterator that points to the beginning of this graph's back edge list. */
-  back_edge_iterator back_edge_begin() const {
-    return loops_.key_begin();
-  }
-  /** Returns an iterator that points to the end of this graph's back edge list. */
-  back_edge_iterator back_edge_end() const {
-    return loops_.key_end();
-  }
-
-  /** Returns true if this edge is a back edge. */
-  bool is_back_edge(const edge_type& e) const {
-    return loops_.find(e) != loops_.end();
-  }
-
-  /** Returns an iterator that points to the beginning of the list of basic blocks in this
-    back edge's loop; undefined if this isn't a back edge. */
-  loop_iterator loop_begin(const edge_type& be) const {
-    const auto itr = loops_.find(be);
-    assert(itr != loops_.end());
-    return itr->second.set_bit_index_begin();
-  }
-  /** Returns an iterator that points to the end of the list of basic blocks in this
-    back edge's loop; undefined if this isn't a backedge. */
-  loop_iterator loop_end(const edge_type& be) const {
-    const auto itr = loops_.find(be);
-    assert(itr != loops_.end());
-    return itr->second.set_bit_index_end();
-  }
-
-  /** Returns true if this graph contains no loops. */
-  bool is_loop_free() const {
-    return loops_.empty();
-  }
-
-  /** Returns the number of loops that this basic block is contained in. */
-  size_t nesting_depth(id_type id) const {
-    assert(id < num_blocks());
-    return nesting_depth_[id];
   }
 
   /** Returns the number of reachable blocks in this graph. */
@@ -504,12 +436,6 @@ private:
   cpputil::BitVector reachable_;
   /** Scratch space for computing reachability. */
   std::vector<id_type> work_list_;
-  /** The dominated by relation. */
-  std::vector<cpputil::BitVector> doms_;
-  /** A map from back edges to the set of basic blocks in the corresponding natural loop. */
-  cpputil::CppUtilMap<std::map<edge_type, loop_type>> loops_;
-  /** The number of loops that each basic block is contained in. */
-  std::vector<size_t> nesting_depth_;
 
   /** The set of registers defined in for every instruction. The final element refers to the exit block. */
   std::vector<x64asm::RegSet> def_ins_;
@@ -544,24 +470,10 @@ private:
   /** Recompute the contents of reachable_; assumes blocks_ and succs_ are up to date. */
   void recompute_reachable();
 
-  /** Recomputes dominators using the generic least fixed point dataflow algorithm. */
-  void recompute_dominators();
-
-  /** Recompute the keys in loops_; assumes blocks_ succs_ and reachable_ are up to date. */
-  void recompute_back_edges();
-  /** Recompute the values in loops_; assumes blocks_ preds_ and reachable_ are up to date. */
-  void recompute_loop_blocks();
-  /** Recompute nesting_depth_; assumes loops_ is up to date. */
-  void recompute_nesting_depth();
-
-  /** Recomputes the gen and kill sets used by recompute_defs_loops(). */
+  /** Recomputes the gen and kill sets used by recompute_defs(). */
   void recompute_defs_gen_kill();
   /** Recomputes the use and defs set used for liveness */
   void recompute_liveness_use_kill();
-  /** Recomputes def_ins_ using the generic least fixed point dataflow algorithm. */
-  void recompute_defs_loops();
-  /** Faster recomputation of def_ins_; valid only for loop-free graphs. */
-  void recompute_defs_loop_free();
   /** Recomputes live_outs_ using the generic LFP dataflow algorithm */
   void recompute_liveness();
 

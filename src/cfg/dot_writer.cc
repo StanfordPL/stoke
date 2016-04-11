@@ -56,10 +56,6 @@ void DotWriter::write_block(ostream& os, const Cfg& cfg, Cfg::id_type id) const 
   }
   os << "label=\"{";
   os << "#" << id;
-  if (dom_ && cfg.is_reachable(id)) {
-    os << "|dominates: ";
-    write_dominators(os, cfg, id);
-  }
   if (def_in_block_ && cfg.is_reachable(id)) {
     os << "|def-in: ";
     write_reg_set(os, cfg.def_ins(id));
@@ -83,7 +79,7 @@ void DotWriter::write_block(ostream& os, const Cfg& cfg, Cfg::id_type id) const 
 void DotWriter::write_blocks(ostream& os, const Cfg& cfg) const {
   map<size_t, vector<Cfg::id_type>> nestings;
   for (size_t i = cfg.get_entry() + 1, ie = cfg.get_exit(); i < ie; ++i) {
-    nestings[cfg.nesting_depth(i)].push_back(i);
+    nestings[0].push_back(i);
   }
 
   for (const auto& n : nestings) {
@@ -101,16 +97,6 @@ void DotWriter::write_blocks(ostream& os, const Cfg& cfg) const {
   }
 }
 
-void DotWriter::write_dominators(ostream& os, const Cfg& cfg, Cfg::id_type bb) const {
-  os << "\\{";
-  for (auto i = cfg.reachable_begin(), ie = cfg.reachable_end(); i != ie; ++i) {
-    if (cfg.dom(bb, *i)) {
-      os << " #" << *i;
-    }
-  }
-  os << " \\}";
-}
-
 void DotWriter::write_edges(ostream& os, const Cfg& cfg) const {
   for (size_t i = cfg.get_entry(), ie = cfg.get_exit(); i < ie; ++i)
     for (auto s = cfg.succ_begin(i), se = cfg.succ_end(i); s != se; ++s) {
@@ -122,10 +108,7 @@ void DotWriter::write_edges(ostream& os, const Cfg& cfg) const {
         os << "dashed";
       }
       os << " color=";
-      if (cfg.is_back_edge({i, *s})) {
-        os << "red";
-      }
-      else if (cfg.is_reachable(i) || cfg.is_entry(i)) {
+      if (cfg.is_reachable(i) || cfg.is_entry(i)) {
         os << "black";
       } else {
         os << "grey";
