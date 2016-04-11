@@ -1006,13 +1006,14 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
       }
 
       //cout << "LINE=" << line_no-1 << ": " << instr << endl;
-      handler_.build_circuit(instr, state);
+      auto constraints = (*filter_)(instr, state);
+      for(auto constraint : constraints) {
+        cerr << "generating constraint: " << constraint << endl;
+        state.constraints.push_back(constraint);
+      }
 
-      if (handler_.has_error()) {
-        stringstream ss;
-        ss << "Error building circuit for: " << instr << ".";
-        ss << "Handler says: " << handler_.error();
-        throw VALIDATOR_ERROR(ss.str());
+      if (filter_->has_error()) {
+        throw VALIDATOR_ERROR(filter_->error());
       }
     }
   }

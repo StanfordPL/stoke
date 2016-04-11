@@ -29,6 +29,7 @@
 #include "src/symstate/memory/flat.h"
 #include "src/validator/invariant.h"
 #include "src/validator/validator.h"
+#include "src/validator/filters/default.h"
 
 //#define DEBUG_CHECKER_PERFORMANCE
 
@@ -63,16 +64,27 @@ public:
   ObligationChecker(SMTSolver& solver) : Validator(solver) {
     set_alias_strategy(AliasStrategy::STRING);
     set_nacl(false);
+    filter_ = new DefaultFilter(handler_);
   }
 
-  ~ObligationChecker() {}
-
+  ~ObligationChecker() {
+    if(filter_)
+      delete filter_; 
+  }
 
   /** Set strategy for aliasing */
   ObligationChecker& set_alias_strategy(AliasStrategy as) {
     alias_strategy_ = as;
     return *this;
   }
+
+  ObligationChecker& set_filter(Filter* filter) {
+    if(filter_)
+      delete filter_;
+    filter_ = filter;
+    return *this;
+  }
+
   /** If every memory reference in your code is of the form (r15,r*x,1), then
     setting this option to 'true' is logically equivalent to adding constraints
     that bound the index register away from the top/bottom of the 32-bit
@@ -214,8 +226,10 @@ private:
   CpuState run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state);
 
 
-
   /////////////// Bookkeeping //////////////////
+
+  /** Rules to transform instructions for a custom purpose */
+  Filter* filter_;
 
   /** Target counterexample and end state */
   CpuState ceg_t_;

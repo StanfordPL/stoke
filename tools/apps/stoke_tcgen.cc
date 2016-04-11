@@ -16,6 +16,9 @@
 
 #include "src/cfg/cfg.h"
 #include "src/cfg/paths.h"
+#include "src/validator/handlers/combo_handler.h"
+#include "src/validator/filters/default.h"
+#include "src/validator/filters/forbidden_dereference.h"
 #include "src/validator/obligation_checker.h"
 #include "src/validator/invariants/false.h"
 #include "src/validator/invariants/true.h"
@@ -148,6 +151,8 @@ int main(int argc, char** argv) {
   Cfg rewrite(rewrite_code, x64asm::RegSet::all_gps(), x64asm::RegSet::empty());
   auto rewrite_path = CfgPaths::enumerate_paths(rewrite, 1)[0];
 
+  ComboHandler handler;
+
   FalseInvariant _false;
   TrueInvariant _true;
 
@@ -158,6 +163,7 @@ int main(int argc, char** argv) {
       cerr << "Looking for testcase on path " << p << endl;
     }
 
+    checker.set_filter(new DefaultFilter(handler));
     checker.check(target, rewrite, p, rewrite_path, _true, _false);
 
     if (checker.checker_has_ceg()) {
@@ -172,6 +178,29 @@ int main(int argc, char** argv) {
         outputs.push_back(mutated);
       }
 
+      // Now, lets find another testcase that touches *different* memory.
+      if(tc.heap.size() > 0) {
+        uint64_t bad_addr = gen() % tc.heap.size() + tc.heap.lower_bound();
+
+        if (debug_arg.value()) {
+          cerr << " * Looking for testcase that doesn't dereference " << bad_addr << endl;
+        }
+
+        checker.set_filter(new ForbiddenDereferenceFilter(handler, bad_addr));
+        checker.check(target, rewrite, p, rewrite_path, _true, _false);
+
+        if(checker.checker_has_ceg()) {
+          auto tc2 = checker.checker_get_target_ceg();
+          cerr << "tc2: " << tc2 << endl;
+          outputs.push_back(tc2);
+
+          for (size_t i = 0; i < mutants_arg.value(); ++i) {
+            auto mutated = mutate(tc2, target, iterations_arg.value(), sb, gen);
+            outputs.push_back(mutated);
+          }
+        }
+
+      }
 
     } else {
       if (debug_arg.value())

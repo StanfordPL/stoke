@@ -36,6 +36,7 @@ public:
     model_ = NULL;
 
     context_.set("timeout", (int)timeout_);
+    context_.set("smt.phase_selection", 5);
   }
 
   SMTSolver& set_timeout(uint64_t ms) {
