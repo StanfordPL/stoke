@@ -113,30 +113,6 @@ string Cfg::which_undef_read() const {
   return ss.str();
 }
 
-void Cfg::recompute_topo_sort() {
-  topo_sort_.clear();
-
-  remaining_preds_.resize(num_blocks());
-  for (size_t i = get_entry(), ie = get_exit(); i <= ie; ++i) {
-    remaining_preds_[i] = 0;
-    for (auto p = pred_begin(i), pe = pred_end(i); p != pe; ++p) {
-      if (is_reachable(*p)) {
-        remaining_preds_[i]++;
-      }
-    }
-  }
-
-  topo_sort_.push_back(get_entry());
-  for (size_t i = 0; i < topo_sort_.size(); ++i) {
-    const auto next = topo_sort_[i];
-    for (auto s = succ_begin(next), se = succ_end(next); s != se; ++s) {
-      if (--remaining_preds_[*s] == 0) {
-        topo_sort_.push_back(*s);
-      }
-    }
-  }
-}
-
 void Cfg::recompute_blocks() {
   blocks_.clear();
 
