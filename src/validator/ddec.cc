@@ -25,8 +25,10 @@
 #include "src/validator/invariants/inequality.h"
 #include "src/validator/invariants/memory_equality.h"
 #include "src/validator/invariants/memory_null.h"
+#include "src/validator/invariants/mod_2n.h"
 #include "src/validator/invariants/nonzero.h"
 #include "src/validator/invariants/no_signals.h"
+#include "src/validator/invariants/sign.h"
 #include "src/validator/invariants/state_equality.h"
 #include "src/validator/invariants/top_zero.h"
 #include "src/validator/invariants/true.h"
@@ -792,6 +794,39 @@ vector<InequalityInvariant*> build_inequality_invariants(RegSet target_regs, Reg
   return inequalities;
 }
 
+/** Return a set of possible lower-n bit invariants. */
+vector<Mod2NInvariant*> build_mod2n_invariants(RegSet target_regs, RegSet rewrite_regs) {
+
+  vector<Mod2NInvariant*> invariants;
+
+  for (size_t k = 0; k < 2; ++k) {
+    auto regs = k ? rewrite_regs : target_regs;
+
+    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) 
+      for (auto j = 1; j < 5; ++j) 
+        invariants.push_back(new Mod2NInvariant(*i, k, j));
+  }
+
+  return invariants;
+}
+
+/** Return a set of sign invariants. */
+vector<SignInvariant*> build_sign_invariants(RegSet target_regs, RegSet rewrite_regs) {
+
+  vector<SignInvariant*> invariants;
+
+  for (size_t k = 0; k < 2; ++k) {
+    auto regs = k ? rewrite_regs : target_regs;
+
+    for (auto i = regs.gp_begin(); i != regs.gp_end(); ++i) {
+      invariants.push_back(new SignInvariant(*i, k, true));
+      invariants.push_back(new SignInvariant(*i, k, false));
+    }
+  }
+
+  return invariants;
+}
+
 ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, const Cfg& rewrite, x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, const vector<CpuState>& target_states, const vector<CpuState>& rewrite_states) {
 
   assert(target_states.size() == rewrite_states.size());
@@ -820,7 +855,6 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
     for (auto it = regs.gp_begin(); it != regs.gp_end(); ++it) {
       bool all_topzero = true;
       bool all_nonzero = true;
-      bool found_one = false;
 
       if ((*it).size() == 64) {
         for (auto state : states) {
@@ -836,9 +870,6 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
         if (state.gp[*it].get_fixed_quad(0) == 0) {
           all_nonzero = false;
         }
-        if (state.gp[*it].get_fixed_quad(0) == 1) {
-          found_one = true;
-        }
       }
 
       if (all_topzero) {
@@ -852,7 +883,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
         }
       }
 
-      if (all_nonzero && found_one) {
+      if (all_nonzero) {
         auto nz = new NonzeroInvariant(r64s[*it], k);
         if (nz->check(target_states, rewrite_states)) {
           conj->add_invariant(nz);
@@ -861,6 +892,26 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
           delete nz;
         }
       }
+    }
+  }
+
+  // mod2^n invariants
+  auto potential_mod2n = build_mod2n_invariants(target_regs, rewrite_regs);
+  for (auto modulo : potential_mod2n) {
+    if (modulo->check(target_states, rewrite_states)) {
+      conj->add_invariant(modulo);
+    } else {
+      delete modulo;
+    }
+  }
+
+  // sign invariants
+  auto potential_sign = build_sign_invariants(target_regs, rewrite_regs);
+  for (auto sign : potential_sign) {
+    if (sign->check(target_states, rewrite_states)) {
+      conj->add_invariant(sign);
+    } else {
+      delete sign;
     }
   }
 
