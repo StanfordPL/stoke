@@ -220,7 +220,6 @@ TEST_P(TransformsTest, CostInvariantAfterUndo) {
   functions.push_back(&correctness);
 
   stoke::LatencyCost latency;
-  latency.set_nesting_penalty(7);
   functions.push_back(&latency);
 
   stoke::SizeCost size;
