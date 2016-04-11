@@ -19,7 +19,7 @@ class DdecValidatorLongTest : public DdecValidatorBaseTest {
 };
 
 
-TEST_F(DdecValidatorLongTest, MemcpyCorrect) {
+TEST_F(DdecValidatorLongTest, DISABLED_MemcpyCorrect) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rsi + x64asm::rdi + x64asm::rdx;
   auto live_outs = x64asm::RegSet::empty();
