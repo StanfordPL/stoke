@@ -583,7 +583,7 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
     segments.push_back(&cs.heap);
   if (cs.data.size())
     segments.push_back(&cs.data);
-  for (auto seg : cs.segments)
+  for (auto& seg : cs.segments)
     if (seg.size())
       segments.push_back(&seg);
 
