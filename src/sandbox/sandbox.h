@@ -314,10 +314,6 @@ private:
 
   /** Auxiliary function source (saved in case recompilation is necessary). */
   std::unordered_map<x64asm::Label, Cfg*> fxns_src_;
-  /** Flags that track whether a function is memory read only */
-  std::unordered_map<x64asm::Label, bool> fxns_read_only_;
-  /** The logical and of all of the elements in fxns_read_only_ */
-  bool all_fxns_read_only_;
 
   /** Do setup in constructor. */
   void init();
@@ -391,8 +387,6 @@ private:
   /** Returns code to check memory for validity and then toggle def bits. */
   void emit_map_addr_cases(const x64asm::Label& fail, const x64asm::Label& done, Memory* mem);
 
-  /** Check whether a function is read only wrt memory */
-  bool is_mem_read_only(const Cfg& cfg) const;
   /** Assembles the user's function into a buffer.  Returns if successful. */
   bool emit_function(const Cfg& cfg, x64asm::Function* fxn);
   /** Emit a single callback for this line. */
