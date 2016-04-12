@@ -137,6 +137,12 @@ int main(int argc, char** argv) {
   vector<CfgPath> paths;
   paths = CfgPaths::enumerate_paths(target, bound_arg.value());
 
+    // Handle the shorter paths first
+  auto by_length = [](const CfgPath& lhs, const CfgPath& rhs) {
+    return lhs.size() < rhs.size();
+  };
+  sort(paths.begin(), paths.end(), by_length);
+
   if (debug_arg.value())
     cerr << "Number of paths: " << paths.size() << endl;
 
@@ -193,7 +199,6 @@ int main(int argc, char** argv) {
 
         if (checker.checker_has_ceg()) {
           auto tc2 = checker.checker_get_target_ceg();
-          cerr << "tc2: " << tc2 << endl;
           outputs.push_back(tc2);
 
           for (size_t i = 0; i < mutants_arg.value(); ++i) {
