@@ -937,14 +937,6 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
     }
   }
 
-  struct Column {
-    Operand reg;
-    bool is_rewrite;
-    bool zero_extend;
-    size_t index;
-
-    Column() : reg(rax), is_rewrite(false), zero_extend(false), index(0) { }
-  };
 
   // For each live register, we need columns for:
   //   its 64-bit value (if not guaranteed zero)
@@ -952,26 +944,26 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
   //   its sign-extended 32-bit value
   //
   // We need a 'constant' column with the value '1'.
-  vector<Column> columns;
+  vector<EqualityInvariant::Term> columns;
 
   DDEC_DEBUG(cout << "try sign extend: " << try_sign_extend_ << endl;)
 
   for (size_t k = 0; k < 2; ++k) {
     auto def_ins = k ? rewrite_regs : target_regs;
     for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {
-      Column c;
+      EqualityInvariant::Term c;
       c.reg = *r;
       c.is_rewrite = k;
-      c.zero_extend = true;
+      c.sign_extend = false;
       c.index = 0;
       columns.push_back(c);
     }
     for (auto r = def_ins.sse_begin(); r != def_ins.sse_end(); ++r) {
-      for(size_t i = 0; i < (*r).size()/64; ++i) {
-        Column c;
+      for (size_t i = 0; i < (*r).size()/64; ++i) {
+        EqualityInvariant::Term c;
         c.reg = *r;
         c.is_rewrite = k;
-        c.zero_extend = true;
+        c.sign_extend = false;
         c.index = i;
         columns.push_back(c);
       }
@@ -979,7 +971,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
   }
 
   for (auto it : columns) {
-    cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.zero_extend << " index? " << it.index << endl;
+    cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.sign_extend << " index? " << it.index << endl;
   }
 
   size_t num_columns = columns.size() + 1;
@@ -1004,7 +996,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
 
       uint64_t entry;
 
-      if (reg.size() == 32 && !column.zero_extend) {
+      if (reg.size() == 32 && column.sign_extend) {
         entry = (uint64_t)value.get_fixed_double(0);
         if ((uint64_t)entry & 0x80000000) {
           entry = entry | 0xffffffff00000000;
@@ -1030,34 +1022,24 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
   uint64_t** nullspace_out;
   size_t dim;
 
-  if (sound_nullspace_) {
-    dim = Nullspace::bv_nullspace(matrix, tc_count, num_columns, &nullspace_out);
-  } else {
-    dim = Nullspace::z_nullspace(matrix, tc_count, num_columns, &nullspace_out);
-  }
-
+  dim = Nullspace::bv_nullspace(matrix, tc_count, num_columns, &nullspace_out);
   delete matrix;
 
 
   // Extract the data from the nullspace
   for (size_t i = 0; i < dim; ++i) {
-    EqualityInvariant::CoefficientMap target_map;
-    EqualityInvariant::CoefficientMap rewrite_map;
+    vector<EqualityInvariant::Term> terms;
 
     for (size_t j = 0; j < num_columns - 1; ++j) {
       auto column = columns[j];
 
-      auto p = pair<Operand,bool>(column.reg, !column.zero_extend);
-
-      if (column.is_rewrite) {
-        rewrite_map[p] = nullspace_out[i][j];
-      } else {
-        //target_map[column.first] = mpz_to_long(mp_result[j*dim + i]);
-        target_map[p] = nullspace_out[i][j];
+      if (nullspace_out[i][j]) {
+        column.coefficient = nullspace_out[i][j];
+        terms.push_back(column);
       }
     }
 
-    auto ei = new EqualityInvariant(target_map, rewrite_map, -nullspace_out[i][num_columns-1]);
+    auto ei = new EqualityInvariant(terms, -nullspace_out[i][num_columns-1]);
     if (ei->check(target_states, rewrite_states)) {
       conj->add_invariant(ei);
       DDEC_DEBUG(cout << *ei << endl;)

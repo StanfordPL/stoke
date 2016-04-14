@@ -158,13 +158,13 @@ struct CpuState {
 
   /** Access an arbitrary operand. */
   cpputil::BitVector operator[](const x64asm::Operand& operand) const {
-    if(operand.is_typical_memory()) {
-      return (*this)[static_cast<const x64asm::Mem&>(operand)];    
+    if (operand.is_typical_memory()) {
+      return (*this)[static_cast<const x64asm::Mem&>(operand)];
     } else if (operand.is_sse_register()) {
-      return (*this)[static_cast<const x64asm::Sse&>(operand)];    
+      return (*this)[static_cast<const x64asm::Sse&>(operand)];
     } else if (operand.is_gp_register()) {
-      return this->gp[static_cast<const x64asm::R&>(operand)];    
-    } 
+      return this->gp[static_cast<const x64asm::R&>(operand)];
+    }
     assert(false);
     cpputil::BitVector zero(64);
     return zero;
