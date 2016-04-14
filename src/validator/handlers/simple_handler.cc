@@ -388,6 +388,28 @@ void SimpleHandler::add_all() {
 
   });
 
+  add_opcode_str({"leavew"},
+  [this] (SymState& ss) {
+
+    // movq bp, sp
+    ss.set(sp, ss[bp]);
+
+    // pop bp
+    M16 target = M16(rsp);
+    ss.set(bp, ss[target]);
+  });
+
+  add_opcode_str({"leaveq"},
+  [this] (SymState& ss) {
+
+    // movq rbp, rsp
+    ss.set(rsp, ss[rbp]);
+
+    // pop rbp
+    M64 target = M64(rsp);
+    ss.set(rbp, ss[target]);
+  });
+
   // for min/max|ss/sd: can't be done with packed handler because the upper 96/64 bits are from src1, not dest in the v variant
 
   add_opcode_str({"minsd"},
