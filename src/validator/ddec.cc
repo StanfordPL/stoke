@@ -938,11 +938,12 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
   }
 
   struct Column {
-    R reg;
+    Operand reg;
     bool is_rewrite;
     bool zero_extend;
+    size_t index;
 
-    Column() : reg(rax), is_rewrite(false), zero_extend(false) { }
+    Column() : reg(rax), is_rewrite(false), zero_extend(false), index(0) { }
   };
 
   // For each live register, we need columns for:
@@ -962,12 +963,23 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
       c.reg = *r;
       c.is_rewrite = k;
       c.zero_extend = true;
+      c.index = 0;
       columns.push_back(c);
+    }
+    for (auto r = def_ins.sse_begin(); r != def_ins.sse_end(); ++r) {
+      for(size_t i = 0; i < (*r).size()/64; ++i) {
+        Column c;
+        c.reg = *r;
+        c.is_rewrite = k;
+        c.zero_extend = true;
+        c.index = i;
+        columns.push_back(c);
+      }
     }
   }
 
   for (auto it : columns) {
-    cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.zero_extend << endl;
+    cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.zero_extend << " index? " << it.index << endl;
   }
 
   size_t num_columns = columns.size() + 1;
@@ -983,20 +995,27 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
       auto column = columns[j];
       auto reg = column.reg;
       auto is_rewrite = column.is_rewrite;
-      uint64_t value;
+      cpputil::BitVector value;
       if (is_rewrite) {
         value = rewrite_state[reg];
       } else {
         value = target_state[reg];
       }
 
+      uint64_t entry;
+
       if (reg.size() == 32 && !column.zero_extend) {
-        if ((uint64_t)value & 0x80000000) {
-          value = value | 0xffffffff00000000;
+        entry = (uint64_t)value.get_fixed_double(0);
+        if ((uint64_t)entry & 0x80000000) {
+          entry = entry | 0xffffffff00000000;
         }
+      } else if (reg.size() == 32) {
+        entry = value.get_fixed_double(0);
+      } else {
+        entry = value.get_fixed_quad(column.index);
       }
 
-      matrix[i*num_columns + j] = value;
+      matrix[i*num_columns + j] = entry;
     }
     matrix[i*num_columns + num_columns - 1] = 1;
   }
@@ -1028,7 +1047,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
     for (size_t j = 0; j < num_columns - 1; ++j) {
       auto column = columns[j];
 
-      auto p = pair<R,bool>(column.reg, !column.zero_extend);
+      auto p = pair<Operand,bool>(column.reg, !column.zero_extend);
 
       if (column.is_rewrite) {
         rewrite_map[p] = nullspace_out[i][j];

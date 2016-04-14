@@ -38,7 +38,7 @@ class EqualityInvariant : public Invariant {
 public:
   using Invariant::check;
 
-  typedef std::map<std::pair<x64asm::R, bool>, long> CoefficientMap;
+  typedef std::map<std::pair<x64asm::Operand, bool>, long> CoefficientMap;
 
   EqualityInvariant(CoefficientMap& target_mults, CoefficientMap& rewrite_mults, long constant) : target_multipliers_(target_mults), rewrite_multipliers_(rewrite_mults) {
     constant_ = constant;
@@ -47,48 +47,26 @@ public:
   SymBool operator()(SymState& target, SymState& rewrite, size_t& tln, size_t& rln) const {
     SymBitVector sum = SymBitVector::constant(64, 0);
 
-    //64-bit
-    for (size_t i = 0; i < x64asm::r64s.size(); ++i) {
-      x64asm::R reg = x64asm::r64s[i];
-      auto p = std::pair<x64asm::R, bool>(reg, false);
+    for(size_t k = 0; k < 2; ++k) {
+      auto map = k ? rewrite_multipliers_ : target_multipliers_;
+      auto prog = k ? rewrite : target;
 
-      if (target_multipliers_.count(p)) {
-        if (target_multipliers_.at(p))
-          sum = sum + SymBitVector::constant(64, target_multipliers_.at(p))*target.gp[reg];
-      }
-      if (rewrite_multipliers_.count(p)) {
-        if (rewrite_multipliers_.at(p))
-          sum = sum + SymBitVector::constant(64, rewrite_multipliers_.at(p))*rewrite.gp[reg];
-      }
-    }
+      for (auto pair : map) {
+        auto r = pair.first.first;
+        auto multiplier = pair.second;
+        bool sign_extend = pair.first.second;
+        size_t index = 0;
 
-    //32-bit zero-extend
-    for (size_t i = 0; i < x64asm::r64s.size(); ++i) {
-      x64asm::R reg = x64asm::r32s[i];
-      auto p = std::pair<x64asm::R, bool>(reg, false);
+        auto value64 = prog[r];
+        if(r.size() < 64 && sign_extend) {
+          value64 = value64.sign_extend(64);
+        } else if (r.size() < 64) {
+          value64 = SymBitVector::constant(64-r.size(), 0) || value64;
+        } else if (r.size() > 64) {
+          value64 = value64[index*64+63][index*64];
+        }
 
-      if (target_multipliers_.count(p)) {
-        if (target_multipliers_.at(p))
-          sum = sum + SymBitVector::constant(64, target_multipliers_.at(p))*(SymBitVector::constant(32, 0) || target.gp[reg][31][0]);
-      }
-      if (rewrite_multipliers_.count(p)) {
-        if (rewrite_multipliers_.at(p))
-          sum = sum + SymBitVector::constant(64, rewrite_multipliers_.at(p))*(SymBitVector::constant(32, 0) || rewrite.gp[reg][31][0]);
-      }
-    }
-
-    //32-bit sign-extend
-    for (size_t i = 0; i < x64asm::r64s.size(); ++i) {
-      x64asm::R reg = x64asm::r32s[i];
-      auto p = std::pair<x64asm::R, bool>(reg, true);
-
-      if (target_multipliers_.count(p)) {
-        if (target_multipliers_.at(p))
-          sum = sum + SymBitVector::constant(64, target_multipliers_.at(p))*(target.gp[reg][31][0].sign_extend(64));
-      }
-      if (rewrite_multipliers_.count(p)) {
-        if (rewrite_multipliers_.at(p))
-          sum = sum + SymBitVector::constant(64, rewrite_multipliers_.at(p))*(rewrite.gp[reg][31][0].sign_extend(64));
+        sum = sum + SymBitVector::constant(64, multiplier)*value64;
       }
     }
 
@@ -98,51 +76,33 @@ public:
   bool check(const CpuState& target, const CpuState& rewrite) const {
     uint64_t sum = 0;
 
-    //64-bit
-    for (size_t i = 0; i < x64asm::r64s.size(); ++i) {
-      x64asm::R reg = x64asm::r64s[i];
-      auto p = std::pair<x64asm::R, bool>(reg, false);
 
-      if (target_multipliers_.count(p)) {
-        if (target_multipliers_.at(p))
-          sum = sum + target_multipliers_.at(p)*zero_extend(target, reg);
-      }
-      if (rewrite_multipliers_.count(p)) {
-        if (rewrite_multipliers_.at(p))
-          sum = sum + rewrite_multipliers_.at(p)*zero_extend(rewrite, reg);
-      }
-    }
+    for(size_t k = 0; k < 2; ++k) {
+      auto map = k ? rewrite_multipliers_ : target_multipliers_;
+      auto prog = k ? rewrite : target;
 
-    //32-bit zero-extend
-    for (size_t i = 0; i < x64asm::r64s.size(); ++i) {
-      x64asm::R reg = x64asm::r32s[i];
-      auto p = std::pair<x64asm::R, bool>(reg, false);
+      for (auto pair : map) {
+        auto r = pair.first.first;
+        auto multiplier = pair.second;
+        bool sign_extend = pair.first.second;
+        size_t index = 0;
 
-      if (target_multipliers_.count(p)) {
-        if (target_multipliers_.at(p))
-          sum = sum + target_multipliers_.at(p)*zero_extend(target, reg);
-      }
-      if (rewrite_multipliers_.count(p)) {
-        if (rewrite_multipliers_.at(p))
-          sum = sum + rewrite_multipliers_.at(p)*zero_extend(rewrite, reg);
+        auto value = prog[r];
+        uint64_t value64 = 0;
+
+        if(r.size() == 32 && sign_extend) {
+          value64 = (uint64_t)value.get_fixed_double(0);
+          if (value64 & 0x80000000) 
+            value64 = value64 | 0xffffffff00000000;
+        } else if (r.size() == 32) {
+          value64 = (uint64_t)value.get_fixed_double(0);
+        } else if (r.size() > 64) {
+          value64 = value.get_fixed_quad(index);
+        }
+
+        sum = sum + multiplier*value64;
       }
     }
-
-    //32-bit sign-extend
-    for (size_t i = 0; i < x64asm::r64s.size(); ++i) {
-      x64asm::R reg = x64asm::r32s[i];
-      auto p = std::pair<x64asm::R, bool>(reg, true);
-
-      if (target_multipliers_.count(p)) {
-        if (target_multipliers_.at(p))
-          sum = sum + target_multipliers_.at(p)*sign_extend(target, reg);
-      }
-      if (rewrite_multipliers_.count(p)) {
-        if (rewrite_multipliers_.at(p))
-          sum = sum + rewrite_multipliers_.at(p)*sign_extend(rewrite, reg);
-      }
-    }
-
 
     return sum == (uint64_t)constant_;
   }
@@ -250,8 +210,8 @@ private:
   }
 
   /** Map from (register, sign_extend?) -> multiplier */
-  std::map<std::pair<x64asm::R, bool>, long> target_multipliers_;
-  std::map<std::pair<x64asm::R, bool>, long> rewrite_multipliers_;
+  std::map<std::pair<x64asm::Operand, bool>, long> target_multipliers_;
+  std::map<std::pair<x64asm::Operand, bool>, long> rewrite_multipliers_;
   long constant_;
 
 };
