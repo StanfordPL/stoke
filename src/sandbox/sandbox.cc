@@ -186,9 +186,6 @@ Sandbox& Sandbox::clear_functions() {
   }
   fxns_src_.clear();
 
-  fxns_read_only_.clear();
-  all_fxns_read_only_ = true;
-
   return *this;
 }
 
@@ -229,12 +226,6 @@ Sandbox& Sandbox::clear_callbacks() {
 
 Sandbox& Sandbox::run(size_t index) {
 
-  /*
-  cout << endl;
-  cout << "RUNNING ON" << endl;
-  cout << *get_input(index) << endl;
-  */
-
   assert(num_functions() > 0);
   assert(index < num_inputs());
   auto io = io_pairs_[index];
@@ -244,16 +235,13 @@ Sandbox& Sandbox::run(size_t index) {
     return *this;
   }
 
-  // Optimization: In read only mem mode, we don't need to reset output memory
-  // Stefan: this optimization seems unsound, see issue 761
-  // if (!all_fxns_read_only_) {
   io->out_.stack.copy(io->in_.stack);
   io->out_.heap.copy(io->in_.heap);
   io->out_.data.copy(io->in_.data);
+  io->out_.segments.resize(io->in_.segments.size());
   for (size_t i = 0, ie=io->out_.segments.size(); i < ie; ++i) {
     io->out_.segments[i].copy(io->in_.segments[i]);
   }
-  // }
 
   // Reset error-related variables
   jumps_remaining_ = max_jumps_;
@@ -326,13 +314,6 @@ void Sandbox::recompile(const Cfg& cfg) {
   // Compile the function and record its source
   assert(fxns_[label] != 0);
   emit_function(cfg, fxns_[label]);
-
-  // Update the read only memory tracker
-  fxns_read_only_[label] = is_mem_read_only(cfg);
-  all_fxns_read_only_ = true;
-  for (const auto& r : fxns_read_only_) {
-    all_fxns_read_only_ &= r.second;
-  }
 
   // Relink everything
   lnkr_.start();
@@ -602,7 +583,7 @@ Function Sandbox::emit_map_addr(CpuState& cs) {
     segments.push_back(&cs.heap);
   if (cs.data.size())
     segments.push_back(&cs.data);
-  for (auto seg : cs.segments)
+  for (auto& seg : cs.segments)
     if (seg.size())
       segments.push_back(&seg);
 
@@ -705,30 +686,6 @@ void Sandbox::emit_map_addr_cases(const Label& fail, const Label& done, Memory* 
 
   // Get out of here
   assm_.jmp_1(done);
-}
-
-bool Sandbox::is_mem_read_only(const Cfg& cfg) const {
-  for (auto b = ++cfg.reachable_begin(), be = cfg.reachable_end(); b != be; ++b) {
-    if (cfg.is_exit(*b)) {
-      continue;
-    }
-
-    const auto begin = cfg.get_index(Cfg::loc_type(*b, 0));
-    for (size_t i = begin, ie = begin + cfg.num_instrs(*b); i < ie; ++i) {
-      const auto& instr = cfg.get_code()[i];
-      if (instr.is_implicit_memory_dereference() && instr.get_opcode() != RET) {
-        return false;
-      }
-      if (instr.is_explicit_memory_dereference()) {
-        const auto mi = instr.mem_index();
-        if (instr.maybe_write(mi) || instr.maybe_undef(mi)) {
-          return false;
-        }
-      }
-    }
-  }
-
-  return true;
 }
 
 // Emits an instrumented version of a user's function into a persistent

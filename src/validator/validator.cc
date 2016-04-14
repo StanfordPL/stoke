@@ -169,13 +169,14 @@ bool Validator::memory_map_to_testcase(std::map<uint64_t, BitVector> concrete, C
 
   // If there's no segment corresponding to the stack, create one.
   switch (segments.size()) {
+  default:
   case 3:
     cs.data = segments[2];
   case 2:
     cs.stack = segments[1];
   case 1:
     cs.heap = segments[0];
-  default:
+  case 0:
     break;
   }
 
