@@ -30,7 +30,9 @@ class ForbiddenDereferenceFilter : public Filter {
 
 public:
 
-  ForbiddenDereferenceFilter(Handler& handler, uint64_t low, uint64_t high) :
+  ForbiddenDereferenceFilter(Handler& handler,
+                             const std::vector<uint64_t>& low,
+                             const std::vector<uint64_t>& high) :
     Filter(handler), low_(low), high_(high) { }
 
   /** Apply handler, and any custom logic; modify the symbolic state appropriately, and also
@@ -43,8 +45,12 @@ public:
     if (instr.is_explicit_memory_dereference()) {
       auto mem = instr.get_operand<x64asm::M8>(instr.mem_index());
       auto addr = state.get_addr(mem);
-      constraints.push_back((addr < SymBitVector::constant(64, low_)) |
-                            (addr > SymBitVector::constant(64, high_)));
+
+      for (size_t i = 0; i < low_.size(); ++i) {
+        assert(i < high_.size());
+        constraints.push_back((addr < SymBitVector::constant(64, low_[i])) |
+                              (addr > SymBitVector::constant(64, high_[i])));
+      }
     }
 
     handler_.build_circuit(instr, state);
@@ -61,8 +67,8 @@ public:
 
 private:
 
-  uint64_t low_;
-  uint64_t high_;
+  std::vector<uint64_t> low_;
+  std::vector<uint64_t> high_;
 
 };
 

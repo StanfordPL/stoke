@@ -58,15 +58,39 @@ auto& mutants_arg = ValueArg<size_t>::create("mutants")
 
 auto& iterations_arg = ValueArg<size_t>::create("iterations")
                        .description("Number of iterations for mutation")
-                       .default_val(200);
+                       .default_val(1000);
 
-CpuState mutate(CpuState cs, Cfg& target, size_t iterations,
+
+/** Get a vector of all non-empty memory segments for a testcase */
+vector<Memory*> get_segments(CpuState& cs) {
+
+  vector<Memory*> segments;
+  if (cs.heap.size())
+    segments.push_back(&cs.heap);
+  if (cs.stack.size())
+    segments.push_back(&cs.stack);
+  if (cs.data.size())
+    segments.push_back(&cs.data);
+  for (auto& it : cs.segments)
+    if (it.size())
+      segments.push_back(&it);
+
+  return segments;
+}
+
+/** Make sure that a testcase is valid for the program */
+bool check_testcase(CpuState cs, Sandbox& sb) {
+
+  sb.clear_inputs();
+  sb.insert_input(cs);
+  sb.run(0);
+  return sb.get_output(0)->code == ErrorCode::NORMAL;
+
+}
+
+/** Make a different testcase for the program. */
+CpuState mutate(CpuState cs, size_t iterations,
                 Sandbox& sb, default_random_engine& gen) {
-
-  // Setup sandbox
-  sb.reset();
-  sb.insert_function(target);
-  sb.set_entrypoint(target.get_function().get_leading_label());
 
   // Run iterations
   for (size_t i = 0; i < iterations; ++i) {
@@ -82,36 +106,23 @@ CpuState mutate(CpuState cs, Cfg& target, size_t iterations,
     }
 
     case 1: {
-      // Mutate one byte of the heap
-      auto& heap = candidate.heap;
-      if (heap.size()) {
-        auto addr = gen() % heap.size() + heap.lower_bound();
-        heap[addr] ^= (int8_t)(gen() % 256);
+      // Mutate one byte of memory
+      auto segments = get_segments(candidate);
+      if (segments.size()) {
+        auto memory = segments[gen() % segments.size()];
+        auto addr = (gen() % memory->size()) + memory->lower_bound();
+        (*memory)[addr] ^= (int8_t)(gen() % 256);
       }
       break;
     }
     }
 
     // Test
-    sb.clear_inputs();
-    sb.insert_input(candidate);
-    sb.run();
-
-    if (sb.get_output(0)->code == ErrorCode::NORMAL) {
+    if (check_testcase(candidate, sb))
       cs = candidate;
-    }
   }
 
-  /*
-  cout << "Running mutant in sandbox gives us this:" << endl;
-  sb.clear_inputs();
-  sb.insert_input(cs);
-  sb.run();
-  cout << *sb.get_output(0) << endl;
-  */
-
   return cs;
-
 }
 
 
@@ -123,6 +134,11 @@ int main(int argc, char** argv) {
 
   CpuStates empty_set;
   SandboxGadget sb(empty_set, aux_fxns);
+
+  // Setup sandbox
+  sb.reset();
+  sb.insert_function(target);
+  sb.set_entrypoint(target.get_function().get_leading_label());
 
   SeedGadget seed;
   default_random_engine gen;
@@ -136,6 +152,12 @@ int main(int argc, char** argv) {
   // Step 1: enumerate paths up to a certain bound
   vector<CfgPath> paths;
   paths = CfgPaths::enumerate_paths(target, bound_arg.value());
+
+  // Handle the shorter paths first
+  auto by_length = [](const CfgPath& lhs, const CfgPath& rhs) {
+    return lhs.size() < rhs.size();
+  };
+  sort(paths.begin(), paths.end(), by_length);
 
   if (debug_arg.value())
     cerr << "Number of paths: " << paths.size() << endl;
@@ -168,36 +190,55 @@ int main(int argc, char** argv) {
 
     if (checker.checker_has_ceg()) {
       auto tc = checker.checker_get_target_ceg();
+
+      if (!check_testcase(tc, sb)) {
+        cerr << "Warning: skipping over invalid (original) testcase" << endl;
+        cerr << tc << endl;
+        continue;
+      }
+
       outputs.push_back(tc);
       if (debug_arg.value()) {
         cerr << " * Found testcase" << endl;
       }
 
       for (size_t i = 0; i < mutants_arg.value(); ++i) {
-        auto mutated = mutate(tc, target, iterations_arg.value(), sb, gen);
+        auto mutated = mutate(tc, iterations_arg.value(), sb, gen);
         outputs.push_back(mutated);
       }
 
       // Now, lets find another testcase that touches *different* memory.
-      if (tc.heap.size() > 0) {
-        uint64_t bad_addr = gen() % tc.heap.size() + tc.heap.lower_bound();
+      auto segments = get_segments(tc);
+      if (segments.size()) {
 
-        if (debug_arg.value()) {
-          cerr << " * Looking for testcase that doesn't dereference " << bad_addr << endl;
+        vector<uint64_t> low;
+        vector<uint64_t> high;
+
+        for (auto segment : segments) {
+          low.push_back(segment->lower_bound());
+
+          // watch for overflow!
+          if (segment->upper_bound() == 0)
+            high.push_back((uint64_t)(-1));
+          else
+            high.push_back(segment->upper_bound());
         }
 
-        checker.set_filter(new ForbiddenDereferenceFilter(handler,
-                           tc.heap.lower_bound(), tc.heap.upper_bound()));
+        checker.set_filter(new ForbiddenDereferenceFilter(handler, low, high));
 
         checker.check(target, rewrite, p, rewrite_path, _true, _false);
 
         if (checker.checker_has_ceg()) {
           auto tc2 = checker.checker_get_target_ceg();
-          cerr << "tc2: " << tc2 << endl;
-          outputs.push_back(tc2);
 
+          if (!check_testcase(tc2, sb)) {
+            cerr << "Warning: skipping over invalid testcase" << endl;
+            continue;
+          }
+
+          outputs.push_back(tc2);
           for (size_t i = 0; i < mutants_arg.value(); ++i) {
-            auto mutated = mutate(tc2, target, iterations_arg.value(), sb, gen);
+            auto mutated = mutate(tc2, iterations_arg.value(), sb, gen);
             outputs.push_back(mutated);
           }
         }
