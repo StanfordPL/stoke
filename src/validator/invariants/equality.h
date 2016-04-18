@@ -55,7 +55,7 @@ public:
         value64 = value64.sign_extend(64);
       } else if (r.size() < 64) {
         value64 = SymBitVector::constant(64-r.size(), 0) || value64;
-      } else if (r.size() > 64) {
+      } else if (r.size() >= 64) {
         value64 = value64[this->index*64+63][this->index*64];
       } else {
         assert(false);
@@ -78,7 +78,7 @@ public:
           value64 = value64 | 0xffffffff00000000;
       } else if (r.size() < 64) {
         value64 = (uint64_t)value.get_fixed_double(0);
-      } else if (r.size() > 64) {
+      } else if (r.size() >= 64) {
         value64 = value.get_fixed_quad(this->index);
       } else {
         assert(false);
@@ -134,11 +134,26 @@ public:
         std::string sx = term.sign_extend ? "_sx" : "";
         std::string rewrite = term.is_rewrite ? "'" : "";
 
-        if (term.coefficient == 1) {
-          os << term.reg << sx << rewrite;
-        } else {
-          os << term.coefficient << "*" << term.reg << sx << rewrite;
+        // Coefficient
+        if (term.coefficient != 1) {
+          os << term.coefficient << "*";
         }
+
+        // Register
+        os << term.reg;
+
+        // Sign Extend
+        if(term.sign_extend)
+          os << "_sx";
+
+        // Is rewrite?
+        if(term.is_rewrite)
+          os << "'";
+
+        // Index
+        if(term.reg.size() > 64) {
+          os << "[" << term.index*64+63 << ":" << term.index*64 << "]";
+        }  
       }
     }
 
