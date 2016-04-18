@@ -131,7 +131,7 @@ public:
           os << " - ";
         } else {
           not_first = true;
-          if(term.coefficient < 0) {
+          if (term.coefficient < 0) {
             os << "-";
           }
         }

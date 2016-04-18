@@ -925,19 +925,19 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
   // Find some of the simple equalities by brute force
   DDEC_DEBUG(cout << "looking for simple equalities" << endl;)
 
-  for(size_t i = 0; i < columns.size(); ++i) {
-    for(size_t j = i+1; j < columns.size(); ++j) {
+  for (size_t i = 0; i < columns.size(); ++i) {
+    for (size_t j = i+1; j < columns.size(); ++j) {
       // check if column i matches column j
       bool match = true;
-      for(size_t k = 0; k < tc_count; ++k) {
-        if(columns[i].from_state(target_states[k], rewrite_states[k]) !=
-           columns[j].from_state(target_states[k], rewrite_states[k])) {
+      for (size_t k = 0; k < tc_count; ++k) {
+        if (columns[i].from_state(target_states[k], rewrite_states[k]) !=
+            columns[j].from_state(target_states[k], rewrite_states[k])) {
           match = false;
           break;
         }
       }
       // add equality asserting column[i] matches column[j].
-      if(match) {
+      if (match) {
         vector<EqualityInvariant::Term> terms;
         columns[i].coefficient = 1;
         columns[j].coefficient = -1;
