@@ -119,41 +119,48 @@ public:
   }
 
   std::ostream& write(std::ostream& os) const {
-    os << std::dec;
+    os << std::hex;
     bool not_first = false;
 
     for (auto term : terms_) {
 
       if (term.coefficient != 0) {
-        if (not_first) {
+        if (not_first && term.coefficient > 0) {
           os << " + ";
+        } else if (not_first && term.coefficient < 0) {
+          os << " - ";
         } else {
           not_first = true;
+          if(term.coefficient < 0) {
+            os << "-";
+          }
         }
 
         std::string sx = term.sign_extend ? "_sx" : "";
         std::string rewrite = term.is_rewrite ? "'" : "";
 
         // Coefficient
-        if (term.coefficient != 1) {
-          os << term.coefficient << "*";
+        if (term.coefficient > 0 && term.coefficient != 1) {
+          os << "0x" << term.coefficient << "*";
+        } else if (term.coefficient < 0 && term.coefficient != -1) {
+          os << "0x" << -term.coefficient << "*";
         }
 
         // Register
         os << term.reg;
 
         // Sign Extend
-        if(term.sign_extend)
+        if (term.sign_extend)
           os << "_sx";
 
         // Is rewrite?
-        if(term.is_rewrite)
+        if (term.is_rewrite)
           os << "'";
 
         // Index
-        if(term.reg.size() > 64) {
-          os << "[" << term.index*64+63 << ":" << term.index*64 << "]";
-        }  
+        if (term.reg.size() > 64) {
+          os << std::dec << "[" << term.index*64+63 << ":" << term.index*64 << std::hex << "]";
+        }
       }
     }
 
@@ -163,8 +170,9 @@ public:
       else
         os << "false";
     } else {
-      os << " = " << constant_;
+      os << " = 0x" << constant_;
     }
+    os << std::dec;
 
     return os;
   }

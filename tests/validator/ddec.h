@@ -440,7 +440,7 @@ TEST_F(DdecValidatorBaseTest, XmmEquiv) {
   sg.set_max_attempts(64);
 
   sandbox->reset();
-  for (size_t i = 0; i < 4; ++i) {
+  for (size_t i = 0; i < 10; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
     ASSERT_TRUE(b);
@@ -464,7 +464,7 @@ TEST_F(DdecValidatorBaseTest, XmmEquiv2) {
   sst << "shufps $0x2f, %xmm1, %xmm0" << std::endl;
   sst << "incq %rax" << std::endl;
   sst << "shufps $0x2f, %xmm0, %xmm1" << std::endl;
-  sst << "cmpl $0x10, %eax" << std::endl;
+  sst << "cmpl $0x20, %eax" << std::endl;
   sst << "jne .foo" << std::endl;
   sst << "retq" << std::endl;
   auto target = make_cfg(sst, def_ins, live_outs);
@@ -474,18 +474,63 @@ TEST_F(DdecValidatorBaseTest, XmmEquiv2) {
   ssr << "incq %rax" << std::endl;
   ssr << "shufps $0x2f, %xmm1, %xmm0" << std::endl;
   ssr << "shufps $0x2f, %xmm0, %xmm1" << std::endl;
-  ssr << "cmpl $0x10, %eax" << std::endl;
+  ssr << "cmpl $0x20, %eax" << std::endl;
   ssr << "jne .foo" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
 
   StateGen sg(sg_sandbox);
-  sg.set_max_value(x64asm::rax, 0x10);
+  sg.set_max_value(x64asm::rax, 0x0c);
   sg.set_max_memory(1024);
   sg.set_max_attempts(64);
 
   sandbox->reset();
-  for (size_t i = 0; i < 4; ++i) {
+  for (size_t i = 0; i < 10; ++i) {
+    CpuState tc;
+    bool b = sg.get(tc, target);
+    ASSERT_TRUE(b);
+    sandbox->insert_input(tc);
+  }
+
+  validator->set_alias_strategy(ObligationChecker::AliasStrategy::FLAT);
+  validator->set_sandbox(sandbox);
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+}
+
+TEST_F(DdecValidatorBaseTest, YmmEquiv) {
+
+  auto def_ins = x64asm::RegSet::empty() + x64asm::rax + x64asm::rsp + x64asm::ymm1 + x64asm::ymm0;
+  auto live_outs = x64asm::RegSet::empty() + x64asm::ymm0 + x64asm::ymm1;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "shufps $0x2f, %xmm1, %xmm0" << std::endl;
+  sst << "incq %rax" << std::endl;
+  sst << "shufps $0xd5, %xmm0, %xmm1" << std::endl;
+  sst << "cmpl $0x20, %eax" << std::endl;
+  sst << "jne .foo" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, def_ins, live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "incq %rax" << std::endl;
+  ssr << "shufps $0x2f, %xmm1, %xmm0" << std::endl;
+  ssr << "shufps $0xd5, %xmm0, %xmm1" << std::endl;
+  ssr << "cmpl $0x20, %eax" << std::endl;
+  ssr << "jne .foo" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  StateGen sg(sg_sandbox);
+  sg.set_max_value(x64asm::rax, 0x0c);
+  sg.set_max_memory(1024);
+  sg.set_max_attempts(64);
+
+  sandbox->reset();
+  for (size_t i = 0; i < 10; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
     ASSERT_TRUE(b);

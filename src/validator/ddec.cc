@@ -44,7 +44,7 @@ using namespace stoke;
 using namespace x64asm;
 
 void DdecValidator::print_summary(const vector<ConjunctionInvariant*>& invariants) {
-  cout << endl;
+  cout << hex << endl;
   cout << endl << "*********************************************************************";
   cout << endl << "****************************   SUMMARY   ****************************";
   cout << endl << "*********************************************************************";
@@ -60,6 +60,8 @@ void DdecValidator::print_summary(const vector<ConjunctionInvariant*>& invariant
       cout << "    " << *(*invs)[j] << endl;
     }
   }
+
+  cout << dec << endl;
 }
 
 Instruction get_last_instr(const Cfg& cfg, Cfg::id_type block) {
@@ -920,8 +922,37 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
   size_t num_columns = columns.size() + 1;
   size_t tc_count = target_states.size();
 
+  // Find some of the simple equalities by brute force
+  DDEC_DEBUG(cout << "looking for simple equalities" << endl;)
+
+  for(size_t i = 0; i < columns.size(); ++i) {
+    for(size_t j = i+1; j < columns.size(); ++j) {
+      // check if column i matches column j
+      bool match = true;
+      for(size_t k = 0; k < tc_count; ++k) {
+        if(columns[i].from_state(target_states[k], rewrite_states[k]) !=
+           columns[j].from_state(target_states[k], rewrite_states[k])) {
+          match = false;
+          break;
+        }
+      }
+      // add equality asserting column[i] matches column[j].
+      if(match) {
+        vector<EqualityInvariant::Term> terms;
+        columns[i].coefficient = 1;
+        columns[j].coefficient = -1;
+        terms.push_back(columns[i]);
+        terms.push_back(columns[j]);
+
+        auto ei = new EqualityInvariant(terms, 0);
+        conj->add_invariant(ei);
+        DDEC_DEBUG(cout << "generating " << *ei << endl;)
+      }
+    }
+  }
+
   // Build the nullspace matrix
-  DDEC_DEBUG(cout << "allocating the matrix of size " << tc_count << " x " << num_columns << endl;)
+  DDEC_DEBUG(cout << dec << "allocating the matrix of size " << tc_count << " x " << num_columns << hex << endl;)
   uint64_t* matrix = new uint64_t[tc_count*num_columns];
 
   for (size_t i = 0; i < tc_count; ++i) {
@@ -933,8 +964,8 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
 
   DDEC_DEBUG(
   for (size_t i = 0; i < tc_count; ++i) {
-    for (size_t j = 0; j < num_columns; ++j) {
-      cout << dec << matrix[i*num_columns + j] << " ";
+  for (size_t j = 0; j < num_columns; ++j) {
+      cout << hex << matrix[i*num_columns + j] << dec << " ";
     }
     cout << endl;
   }
