@@ -73,10 +73,6 @@ private:
   ConjunctionInvariant* learn_disjunction_invariant(const Cfg& target, const Cfg& rewrite, size_t cutpoint);
   /** Learn invariants from CpuStates */
   ConjunctionInvariant* learn_simple_invariant(const Cfg& target, const Cfg& rewrite, x64asm::RegSet target_regs, x64asm::RegSet rewrite_regs, const std::vector<CpuState>& states, const std::vector<CpuState>& states2);
-  /** Use bounded validator to check the invariants. */
-  std::vector<CpuState> check_invariants(const Cfg& target, const Cfg& rewrite, std::vector<ConjunctionInvariant*> invariants);
-  /** Use bounded validator to check the cutpoints. */
-  std::vector<CpuState> check_cutpoints(const Cfg& target, const Cfg& rewrite, std::vector<Cfg::id_type>&, std::vector<Cfg::id_type>&);
   /** Check that all the invariants work. */
   bool check_proof(const Cfg& target, const Cfg& rewrite, const std::vector<ConjunctionInvariant*>& invariants, std::map<size_t, std::vector<size_t>>& failed_invariants);
   /** Generate some extra testcases, for funsies. */

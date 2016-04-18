@@ -89,58 +89,6 @@ Invariant* get_jump_inv(const Cfg& cfg, const CfgPath& p, bool is_rewrite) {
   return jump_inv;
 }
 
-/** Go through the invariants and see that we can verify them using the bounded verifier. */
-vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& rewrite, vector<ConjunctionInvariant*> invariants) {
-
-  vector<CpuState> results;
-
-  /*
-  if (no_bv_) {
-    // Don't do this if the user tells us not to
-    return results;
-  }
-
-  auto target_cuts = cutpoints_->target_cutpoint_locations();
-  auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
-
-  // For each non-entry cutpoint, check that it actually holds
-  for (size_t i = 1; i < target_cuts.size(); ++i) {
-    auto target_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target_cuts[i]);
-    auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1, rewrite.get_entry(), rewrite_cuts[i]);
-
-    DDEC_DEBUG(cout << "[ddec] cutpoint " << i << ": " << target_paths.size()*rewrite_paths.size() << " cases" << endl;)
-
-    for (auto p : target_paths) {
-      for (auto q : rewrite_paths) {
-        for (size_t j = 0; j < invariants[i]->size(); ++j) {
-          DDEC_DEBUG(cout << "  on paths " << p << " ; " << q << " : " << *(*invariants[i])[j] << endl;)
-          bool equiv = check(target, rewrite, p, q, *invariants[0], *(*invariants[i])[j]);
-          if (!equiv && checker_has_ceg()) {
-            results.push_back(checker_get_target_ceg());
-            return results;
-          } else if (!equiv) {
-            DDEC_DEBUG(cout << "  [Check failed, but didn't get counterexample]" << endl;)
-          }
-        }
-      }
-    }
-  }
-  */
-
-  return results;
-}
-
-vector<CpuState> DdecValidator::check_cutpoints(const Cfg& target, const Cfg& rewrite, vector<Cfg::id_type>& target_cuts, vector<Cfg::id_type>& rewrite_cuts) {
-
-  // We want to check the simulation relation.
-  // Choose a path through target cutpoints,
-  //   and a different path through rewrite cutpoints,
-  // Check that this isn't feasible in practice.
-  // If it is, generate a counterexample
-
-  vector<CpuState> results;
-  return results;
-}
 
 // takes conjunction of the form (A1 and A2 ... Ak) and returns one of form
 // ((B => A1) and (B => A2) ... (B => Ak))
@@ -938,12 +886,7 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
   }
 
 
-  // For each live register, we need columns for:
-  //   its 64-bit value (if not guaranteed zero)
-  //   its zero-extended 32-bit value
-  //   its sign-extended 32-bit value
-  //
-  // We need a 'constant' column with the value '1'.
+  // Define columns that will be used to learn equalities
   vector<EqualityInvariant::Term> columns;
 
   DDEC_DEBUG(cout << "try sign extend: " << try_sign_extend_ << endl;)
@@ -980,51 +923,29 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
   // Build the nullspace matrix
   DDEC_DEBUG(cout << "allocating the matrix of size " << tc_count << " x " << num_columns << endl;)
   uint64_t* matrix = new uint64_t[tc_count*num_columns];
+
   for (size_t i = 0; i < tc_count; ++i) {
-    auto target_state = target_states[i];
-    auto rewrite_state = rewrite_states[i];
     for (size_t j = 0; j < columns.size(); ++j) {
-      auto column = columns[j];
-      auto reg = column.reg;
-      auto is_rewrite = column.is_rewrite;
-      cpputil::BitVector value;
-      if (is_rewrite) {
-        value = rewrite_state[reg];
-      } else {
-        value = target_state[reg];
-      }
-
-      uint64_t entry;
-
-      if (reg.size() == 32 && column.sign_extend) {
-        entry = (uint64_t)value.get_fixed_double(0);
-        if ((uint64_t)entry & 0x80000000) {
-          entry = entry | 0xffffffff00000000;
-        }
-      } else if (reg.size() == 32) {
-        entry = value.get_fixed_double(0);
-      } else {
-        entry = value.get_fixed_quad(column.index);
-      }
-
-      matrix[i*num_columns + j] = entry;
+      matrix[i*num_columns + j] = columns[j].from_state(target_states[i], rewrite_states[i]);
     }
     matrix[i*num_columns + num_columns - 1] = 1;
   }
 
+  DDEC_DEBUG(
   for (size_t i = 0; i < tc_count; ++i) {
     for (size_t j = 0; j < num_columns; ++j) {
       cout << dec << matrix[i*num_columns + j] << " ";
     }
     cout << endl;
   }
+  );
 
+  // Compute the nullspace
   uint64_t** nullspace_out;
   size_t dim;
 
   dim = Nullspace::bv_nullspace(matrix, tc_count, num_columns, &nullspace_out);
   delete matrix;
-
 
   // Extract the data from the nullspace
   for (size_t i = 0; i < dim; ++i) {
