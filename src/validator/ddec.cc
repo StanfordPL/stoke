@@ -44,7 +44,7 @@ using namespace stoke;
 using namespace x64asm;
 
 void DdecValidator::print_summary(const vector<ConjunctionInvariant*>& invariants) {
-  cout << endl;
+  cout << hex << endl;
   cout << endl << "*********************************************************************";
   cout << endl << "****************************   SUMMARY   ****************************";
   cout << endl << "*********************************************************************";
@@ -60,6 +60,8 @@ void DdecValidator::print_summary(const vector<ConjunctionInvariant*>& invariant
       cout << "    " << *(*invs)[j] << endl;
     }
   }
+
+  cout << dec << endl;
 }
 
 Instruction get_last_instr(const Cfg& cfg, Cfg::id_type block) {
@@ -89,58 +91,6 @@ Invariant* get_jump_inv(const Cfg& cfg, const CfgPath& p, bool is_rewrite) {
   return jump_inv;
 }
 
-/** Go through the invariants and see that we can verify them using the bounded verifier. */
-vector<CpuState> DdecValidator::check_invariants(const Cfg& target, const Cfg& rewrite, vector<ConjunctionInvariant*> invariants) {
-
-  vector<CpuState> results;
-
-  /*
-  if (no_bv_) {
-    // Don't do this if the user tells us not to
-    return results;
-  }
-
-  auto target_cuts = cutpoints_->target_cutpoint_locations();
-  auto rewrite_cuts = cutpoints_->rewrite_cutpoint_locations();
-
-  // For each non-entry cutpoint, check that it actually holds
-  for (size_t i = 1; i < target_cuts.size(); ++i) {
-    auto target_paths = CfgPaths::enumerate_paths(target, 1, target.get_entry(), target_cuts[i]);
-    auto rewrite_paths = CfgPaths::enumerate_paths(rewrite, 1, rewrite.get_entry(), rewrite_cuts[i]);
-
-    DDEC_DEBUG(cout << "[ddec] cutpoint " << i << ": " << target_paths.size()*rewrite_paths.size() << " cases" << endl;)
-
-    for (auto p : target_paths) {
-      for (auto q : rewrite_paths) {
-        for (size_t j = 0; j < invariants[i]->size(); ++j) {
-          DDEC_DEBUG(cout << "  on paths " << p << " ; " << q << " : " << *(*invariants[i])[j] << endl;)
-          bool equiv = check(target, rewrite, p, q, *invariants[0], *(*invariants[i])[j]);
-          if (!equiv && checker_has_ceg()) {
-            results.push_back(checker_get_target_ceg());
-            return results;
-          } else if (!equiv) {
-            DDEC_DEBUG(cout << "  [Check failed, but didn't get counterexample]" << endl;)
-          }
-        }
-      }
-    }
-  }
-  */
-
-  return results;
-}
-
-vector<CpuState> DdecValidator::check_cutpoints(const Cfg& target, const Cfg& rewrite, vector<Cfg::id_type>& target_cuts, vector<Cfg::id_type>& rewrite_cuts) {
-
-  // We want to check the simulation relation.
-  // Choose a path through target cutpoints,
-  //   and a different path through rewrite cutpoints,
-  // Check that this isn't feasible in practice.
-  // If it is, generate a counterexample
-
-  vector<CpuState> results;
-  return results;
-}
 
 // takes conjunction of the form (A1 and A2 ... Ak) and returns one of form
 // ((B => A1) and (B => A2) ... (B => Ak))
@@ -937,108 +887,111 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
     }
   }
 
-  struct Column {
-    R reg;
-    bool is_rewrite;
-    bool zero_extend;
 
-    Column() : reg(rax), is_rewrite(false), zero_extend(false) { }
-  };
-
-  // For each live register, we need columns for:
-  //   its 64-bit value (if not guaranteed zero)
-  //   its zero-extended 32-bit value
-  //   its sign-extended 32-bit value
-  //
-  // We need a 'constant' column with the value '1'.
-  vector<Column> columns;
+  // Define columns that will be used to learn equalities
+  vector<EqualityInvariant::Term> columns;
 
   DDEC_DEBUG(cout << "try sign extend: " << try_sign_extend_ << endl;)
 
   for (size_t k = 0; k < 2; ++k) {
     auto def_ins = k ? rewrite_regs : target_regs;
     for (auto r = def_ins.gp_begin(); r != def_ins.gp_end(); ++r) {
-      Column c;
+      EqualityInvariant::Term c;
       c.reg = *r;
       c.is_rewrite = k;
-      c.zero_extend = true;
+      c.sign_extend = false;
+      c.index = 0;
       columns.push_back(c);
+    }
+    for (auto r = def_ins.sse_begin(); r != def_ins.sse_end(); ++r) {
+      for (size_t i = 0; i < (*r).size()/64; ++i) {
+        EqualityInvariant::Term c;
+        c.reg = *r;
+        c.is_rewrite = k;
+        c.sign_extend = false;
+        c.index = i;
+        columns.push_back(c);
+      }
     }
   }
 
   for (auto it : columns) {
-    cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.zero_extend << endl;
+    cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.sign_extend << " index? " << it.index << endl;
   }
 
   size_t num_columns = columns.size() + 1;
   size_t tc_count = target_states.size();
 
-  // Build the nullspace matrix
-  DDEC_DEBUG(cout << "allocating the matrix of size " << tc_count << " x " << num_columns << endl;)
-  uint64_t* matrix = new uint64_t[tc_count*num_columns];
-  for (size_t i = 0; i < tc_count; ++i) {
-    auto target_state = target_states[i];
-    auto rewrite_state = rewrite_states[i];
-    for (size_t j = 0; j < columns.size(); ++j) {
-      auto column = columns[j];
-      auto reg = column.reg;
-      auto is_rewrite = column.is_rewrite;
-      uint64_t value;
-      if (is_rewrite) {
-        value = rewrite_state[reg];
-      } else {
-        value = target_state[reg];
-      }
+  // Find some of the simple equalities by brute force
+  DDEC_DEBUG(cout << "looking for simple equalities" << endl;)
 
-      if (reg.size() == 32 && !column.zero_extend) {
-        if ((uint64_t)value & 0x80000000) {
-          value = value | 0xffffffff00000000;
+  for (size_t i = 0; i < columns.size(); ++i) {
+    for (size_t j = i+1; j < columns.size(); ++j) {
+      // check if column i matches column j
+      bool match = true;
+      for (size_t k = 0; k < tc_count; ++k) {
+        if (columns[i].from_state(target_states[k], rewrite_states[k]) !=
+            columns[j].from_state(target_states[k], rewrite_states[k])) {
+          match = false;
+          break;
         }
       }
+      // add equality asserting column[i] matches column[j].
+      if (match) {
+        vector<EqualityInvariant::Term> terms;
+        columns[i].coefficient = 1;
+        columns[j].coefficient = -1;
+        terms.push_back(columns[i]);
+        terms.push_back(columns[j]);
 
-      matrix[i*num_columns + j] = value;
+        auto ei = new EqualityInvariant(terms, 0);
+        conj->add_invariant(ei);
+        DDEC_DEBUG(cout << "generating " << *ei << endl;)
+      }
+    }
+  }
+
+  // Build the nullspace matrix
+  DDEC_DEBUG(cout << dec << "allocating the matrix of size " << tc_count << " x " << num_columns << hex << endl;)
+  uint64_t* matrix = new uint64_t[tc_count*num_columns];
+
+  for (size_t i = 0; i < tc_count; ++i) {
+    for (size_t j = 0; j < columns.size(); ++j) {
+      matrix[i*num_columns + j] = columns[j].from_state(target_states[i], rewrite_states[i]);
     }
     matrix[i*num_columns + num_columns - 1] = 1;
   }
 
+  DDEC_DEBUG(
   for (size_t i = 0; i < tc_count; ++i) {
-    for (size_t j = 0; j < num_columns; ++j) {
-      cout << dec << matrix[i*num_columns + j] << " ";
+  for (size_t j = 0; j < num_columns; ++j) {
+      cout << hex << matrix[i*num_columns + j] << dec << " ";
     }
     cout << endl;
   }
+  );
 
+  // Compute the nullspace
   uint64_t** nullspace_out;
   size_t dim;
 
-  if (sound_nullspace_) {
-    dim = Nullspace::bv_nullspace(matrix, tc_count, num_columns, &nullspace_out);
-  } else {
-    dim = Nullspace::z_nullspace(matrix, tc_count, num_columns, &nullspace_out);
-  }
-
+  dim = Nullspace::bv_nullspace(matrix, tc_count, num_columns, &nullspace_out);
   delete matrix;
-
 
   // Extract the data from the nullspace
   for (size_t i = 0; i < dim; ++i) {
-    EqualityInvariant::CoefficientMap target_map;
-    EqualityInvariant::CoefficientMap rewrite_map;
+    vector<EqualityInvariant::Term> terms;
 
     for (size_t j = 0; j < num_columns - 1; ++j) {
       auto column = columns[j];
 
-      auto p = pair<R,bool>(column.reg, !column.zero_extend);
-
-      if (column.is_rewrite) {
-        rewrite_map[p] = nullspace_out[i][j];
-      } else {
-        //target_map[column.first] = mpz_to_long(mp_result[j*dim + i]);
-        target_map[p] = nullspace_out[i][j];
+      if (nullspace_out[i][j]) {
+        column.coefficient = nullspace_out[i][j];
+        terms.push_back(column);
       }
     }
 
-    auto ei = new EqualityInvariant(target_map, rewrite_map, -nullspace_out[i][num_columns-1]);
+    auto ei = new EqualityInvariant(terms, -nullspace_out[i][num_columns-1]);
     if (ei->check(target_states, rewrite_states)) {
       conj->add_invariant(ei);
       DDEC_DEBUG(cout << *ei << endl;)
