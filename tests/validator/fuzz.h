@@ -101,7 +101,7 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
   TransformPools tp = default_fuzzer_pool();
   tp.set_validator(&v);
-  tp.set_memory_write(false);
+  tp.set_memory_write(true);
 
   // Z3 doesn't like multiplying memory cells
   // See #819
@@ -124,7 +124,10 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   tp.remove_opcode(MUL_M32);
   tp.remove_opcode(MUL_M64);
 
-
+  // see issue #864
+  tp.remove_opcode(PUSH_IMM16);
+  tp.remove_opcode(PUSH_IMM32);
+  tp.remove_opcode(PUSH_IMM8);
 
   tp.recompute_pools();
 
