@@ -65,17 +65,16 @@ public:
     return access_list_;
   }
 
+  /** The heap state */
+  SymArray heap_;
+  /** Extra constraints needed to make everything work. */
+  std::vector<SymBool> constraints_;
+
 private:
 
   /** A variable that represents the heap state */
   bool variable_up_to_date_;
   SymArray variable_;
-
-  /** The heap state */
-  SymArray heap_;
-
-  /** Extra constraints needed to make everything work. */
-  std::vector<SymBool> constraints_;
 
   /** map of (symbolic address, size) pairs accessed. */
   std::map<const SymBitVectorAbstract*, uint64_t> access_list_;
