@@ -170,16 +170,26 @@ protected:
     ch.build_circuit(instr, final_validator);
     EXPECT_FALSE(ch.has_error()) << "Error building a circuit: " << ch.error() << endl;
 
+    // set larger solver timeout
+    s_.set_timeout(1000);
+
     // check equivalence of two symbolic states for a given register
-    auto is_eq = [this](auto& reg, auto a, auto b, stringstream& explanation) {
+    auto is_eq = [this](string name, auto a, auto b, stringstream& explanation, vector<SymBool> constraints_a, vector<SymBool> constraints_b) {
       SymBool eq = a == b;
-      bool res = s_.is_sat({ eq });
+      vector<SymBool> eqs = { eq };
+      for (auto& c : constraints_a) {
+        eqs.push_back(c);
+      }
+      for (auto& c : constraints_b) {
+        eqs.push_back(c);
+      }
+      bool res = s_.is_sat(eqs);
       if (s_.has_error()) {
         explanation << "  solver encountered error: " << s_.get_error() << endl;
         return false;
       }
       if (!res) {
-        explanation << "  states do not agree for '" << (*reg) << "':" << endl;
+        explanation << "  states do not agree for '" << name << "':" << endl;
         auto simplify = true;
         if (!simplify) {
           explanation << "    validator: " << (a) << endl;
@@ -187,10 +197,19 @@ protected:
           explanation << "    validator: " << SymSimplify().simplify(a) << endl;
         }
         explanation << "    sandbox:   " << b << endl;
+        if (name == "memory") {
+          // also output constraints
+        }
         return false;
       } else {
         return true;
       }
+    };
+
+    auto to_string = [](auto& reg) -> string {
+      stringstream ss;
+      ss << (*reg);
+      return ss.str();
     };
 
     auto rs = RegSet::universe();
@@ -202,14 +221,27 @@ protected:
     stringstream ss;
     ss << "Sandbox and validator do not agree for '" << instr << "' (opcode " << opcode << ")" << endl;
     for (auto gp_it = rs.gp_begin(); gp_it != rs.gp_end(); ++gp_it) {
-      eq = eq && is_eq(gp_it, final_validator.lookup(*gp_it), final_sym.lookup(*gp_it), ss);
+      eq = eq && is_eq(to_string(gp_it), final_validator.lookup(*gp_it), final_sym.lookup(*gp_it), ss, {}, {});
     }
     for (auto sse_it = rs.sse_begin(); sse_it != rs.sse_end(); ++sse_it) {
-      eq = eq && is_eq(sse_it, final_validator.lookup(*sse_it), final_sym.lookup(*sse_it), ss);
+      eq = eq && is_eq(to_string(sse_it), final_validator.lookup(*sse_it), final_sym.lookup(*sse_it), ss, {}, {});
     }
     for (auto flag_it = rs.flags_begin(); flag_it != rs.flags_end(); ++flag_it) {
-      eq = eq && is_eq(flag_it, final_validator[*flag_it], final_sym[*flag_it], ss);
+      eq = eq && is_eq(to_string(flag_it), final_validator[*flag_it], final_sym[*flag_it], ss, {}, {});
     }
+
+    auto get_memory = [](auto& state) {
+      return (((FlatMemory*)state.memory)->heap_);
+    };
+    auto get_constraints = [](auto& state) -> vector<SymBool> {
+      return (((FlatMemory*)state.memory)->constraints_);
+    };
+
+    // check that memory is equivalent
+    if (instr.maybe_write_memory()) {
+      eq = eq && is_eq("memory", get_memory(final_validator), get_memory(final_sym), ss, get_constraints(final_validator), get_constraints(final_sym));
+    }
+
     if (!eq) {
       ADD_FAILURE() << ss.str() << endl;
     }
@@ -631,7 +663,7 @@ private:
   /* The validator we're using */
   BoundedValidator v_;
   /* The solver we're using */
-  Z3Solver s_;
+  Cvc4Solver s_;
 
   /* The set of live outputs for the next test */
   x64asm::RegSet live_outs_;
