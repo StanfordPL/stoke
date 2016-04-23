@@ -171,7 +171,7 @@ protected:
     EXPECT_FALSE(ch.has_error()) << "Error building a circuit: " << ch.error() << endl;
 
     // set larger solver timeout
-    s_.set_timeout(1000);
+    s_.set_timeout(0);
 
     // check equivalence of two symbolic states for a given register
     auto is_eq = [this](string name, auto a, auto b, stringstream& explanation, vector<SymBool> constraints_a, vector<SymBool> constraints_b) {
