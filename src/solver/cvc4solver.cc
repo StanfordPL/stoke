@@ -251,9 +251,7 @@ Expr Cvc4Solver::ExprConverter::visit_compare(const SymBoolCompare * const compa
 
 /** Visit a bit-vector array lookup */
 Expr Cvc4Solver::ExprConverter::visit(const SymBitVectorArrayLookup * const bv) {
-  error_ = "Arrays not supported by STOKE's CVC4 interface";
-  assert(false);
-  return em_.mkConst(BitVector(bv->a_->value_size_, (uint64_t)0));
+  return em_.mkExpr(kind::SELECT, (*this)(bv->a_), (*this)(bv->key_));
 }
 
 /** Visit a bit-vector constant */
@@ -373,16 +371,19 @@ Expr Cvc4Solver::ExprConverter::visit(const SymBoolVar * const b) {
   }
 }
 
-Expr Cvc4Solver::ExprConverter::visit(const SymArrayStore * const b) {
-  error_ = "STOKE doesn't support CVC4's arrays";
-  assert(false);
-  return em_.mkConst(false);
+Expr Cvc4Solver::ExprConverter::visit(const SymArrayStore * const bv) {
+  return em_.mkExpr(kind::STORE, (*this)(bv->a_), (*this)(bv->key_), (*this)(bv->value_));
 }
 
-Expr Cvc4Solver::ExprConverter::visit(const SymArrayVar * const b) {
-  error_ = "STOKE doesn't support CVC4's arrays";
-  assert(false);
-  return em_.mkConst(false);
+Expr Cvc4Solver::ExprConverter::visit(const SymArrayVar * const bv) {
+  if (!variables_.count(bv->name_)) {
+    auto type = em_.mkArrayType(em_.mkBitVectorType(bv->key_size_), em_.mkBitVectorType(bv->value_size_));
+    auto var = em_.mkVar(bv->name_, type);
+    variables_[bv->name_] = var;
+    return var;
+  } else {
+    return variables_[bv->name_];
+  }
 }
 
 

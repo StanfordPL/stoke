@@ -564,4 +564,23 @@ SymBool SymSimplify::simplify(const SymBool& b) {
   return SymBool(ptr);
 }
 
+SymArray SymSimplify::simplify(const SymArray& b) {
+  auto ptr = b.ptr;
+
+  SymMergeExtracts merger(cache_bool1_, cache_bits1_, cache_array1_);
+  SymMoveExtractsInside mover(cache_bool2_, cache_bits2_, cache_array2_);
+  SymConstProp constprop(cache_bool3_, cache_bits3_, cache_array3_);
+
+  // apply transformations until no further simplifications are possible
+  while (true) {
+    auto old = ptr;
+    ptr = mover(ptr);
+    ptr = merger(ptr);
+    ptr = constprop(ptr);
+    if (old == ptr) break;
+  }
+
+  return SymArray(ptr);
+}
+
 } // namespace stoke
