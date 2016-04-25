@@ -1,6 +1,47 @@
 #!/bin/bash
 
+function show_help {
+  echo "$0 [--debug-ddec] [--debug-ceg]"
+  echo ""
+}
+
+## START
+
 echo ""
+rm -f .stoke_config
+
+## All options are off by default
+MISC_OPTIONS=""
+
+## Now do some parsing, look for options
+
+while :; do
+  case $1 in
+    -h|--help)
+      show_help
+      exit
+      ;;
+    --debug-ddec)
+      MISC_OPTIONS="$MISC_OPTIONS -DSTOKE_DEBUG_DDEC"
+      shift
+      ;; 
+    --debug-ceg)
+      MISC_OPTIONS="$MISC_OPTIONS -DSTOKE_DEBUG_CEG"
+      shift
+      ;; 
+    -?*)
+      echo "WARNING: unknown option $1"
+      echo "./configure failed"
+      show_help
+      exit
+      ;;
+    *)
+      break
+  esac
+done
+
+## Write options to config file
+echo "MISC_OPTIONS=\"$MISC_OPTIONS\"" >> .stoke_config
 
 ## All we're going to do is figure out what platform you're on, buddy.
 
@@ -19,7 +60,9 @@ else
 fi
 
 echo "Configuring STOKE for $PLATFORM"
-echo "STOKE_PLATFORM=\"$PLATFORM\"" > .stoke_config
+echo "STOKE_PLATFORM=\"$PLATFORM\"" >> .stoke_config
+
+
 
 ## All done!
 
