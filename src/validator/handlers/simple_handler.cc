@@ -578,6 +578,24 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a | b);
   });
 
+  add_opcode_str({"pmovmskb", "vpmovmskb"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    size_t dst_size = dst.size();
+    size_t src_size = src.size();
+
+    auto mask = SymBitVector::from_bool(b[7]);
+    for(size_t i = 1; i < src_size/8; ++i) {
+      mask = SymBitVector::from_bool(b[8*i+7]) || mask;  
+    }
+
+    size_t pad = dst_size - src_size/8;
+    if(pad > 0)
+      ss.set(dst, SymBitVector::constant(pad, 0) || mask);
+    else
+      ss.set(dst, mask);
+
+  });
+
   add_opcode_str({"popq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     M64 target = M64(rsp);
