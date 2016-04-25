@@ -788,8 +788,13 @@ void SimpleHandler::add_all() {
 
   add_opcode_str({"xchgb", "xchgw", "xchgl", "xchgq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
-    ss.set(dst, b);
-    ss.set(src, a);
+    if (src.is_typical_memory()) {
+      ss.set(src, a);
+      ss.set(dst, b);
+    } else {
+      ss.set(dst, b);
+      ss.set(src, a);
+    }
   });
 
   add_opcode_str({"xorb", "xorw", "xorl", "xorq"},

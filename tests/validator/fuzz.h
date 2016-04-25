@@ -79,6 +79,78 @@ void validator_fuzz_callback(const Cfg& cfg, void* callback_info) {
   static_cast<ValidatorFuzzTest*>(callback_info)->callback(cfg);
 }
 
+/** This test is for xchg. */
+TEST_F(ValidatorFuzzTest, XchgInstructionsRandomState) {
+
+  // Parameters for the test
+  unsigned long iterations = 20;
+  success_count_ = 0;
+
+  // Setup transforms pool
+  Validator v(z3_, ch_);
+  TransformPools tp = default_fuzzer_pool();
+  tp.set_validator(&v);
+
+  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    tp.remove_opcode((Opcode)i);
+  }
+
+  tp.insert_opcode(XCHG_AX_R16);
+  tp.insert_opcode(XCHG_EAX_R32);
+  tp.insert_opcode(XCHG_M16_R16);
+  tp.insert_opcode(XCHG_M32_R32);
+  tp.insert_opcode(XCHG_M64_R64);
+  tp.insert_opcode(XCHG_M8_R8);
+  tp.insert_opcode(XCHG_M8_RH);
+  tp.insert_opcode(XCHG_R16_AX);
+  tp.insert_opcode(XCHG_R16_M16);
+  tp.insert_opcode(XCHG_R16_R16);
+  tp.insert_opcode(XCHG_R16_R16_1);
+  tp.insert_opcode(XCHG_R32_EAX);
+  tp.insert_opcode(XCHG_R32_M32);
+  tp.insert_opcode(XCHG_R32_R32);
+  tp.insert_opcode(XCHG_R32_R32_1);
+  tp.insert_opcode(XCHG_R64_M64);
+  tp.insert_opcode(XCHG_R64_R64);
+  tp.insert_opcode(XCHG_R64_R64_1);
+  tp.insert_opcode(XCHG_R64_RAX);
+  tp.insert_opcode(XCHG_R8_M8);
+  tp.insert_opcode(XCHG_R8_R8);
+  tp.insert_opcode(XCHG_R8_R8_1);
+  tp.insert_opcode(XCHG_R8_RH);
+  tp.insert_opcode(XCHG_R8_RH_1);
+  tp.insert_opcode(XCHG_RAX_R64);
+  tp.insert_opcode(XCHG_RH_M8);
+  tp.insert_opcode(XCHG_RH_R8);
+  tp.insert_opcode(XCHG_RH_R8_1);
+  tp.insert_opcode(XCHG_RH_RH);
+  tp.insert_opcode(XCHG_RH_RH_1);
+
+  tp.insert_opcode(XADD_M16_R16);
+  tp.insert_opcode(XADD_M32_R32);
+  tp.insert_opcode(XADD_M64_R64);
+  tp.insert_opcode(XADD_M8_R8);
+  tp.insert_opcode(XADD_M8_RH);
+  tp.insert_opcode(XADD_R16_R16);
+  tp.insert_opcode(XADD_R32_R32);
+  tp.insert_opcode(XADD_R64_R64);
+  tp.insert_opcode(XADD_R8_R8);
+  tp.insert_opcode(XADD_R8_RH);
+  tp.insert_opcode(XADD_RH_R8);
+  tp.insert_opcode(XADD_RH_RH);
+
+  tp.set_memory_write(true);
+  tp.set_memory_read(true);
+
+  tp.recompute_pools();
+
+  uint64_t seed = fuzz(tp, iterations, &validator_fuzz_callback, (void*)this);
+
+  sg_.set_seed(seed);
+
+  EXPECT_GE(success_count_, iterations*8/10);
+}
+
 /** This test is vicious.  It picks random instructions, random states, runs
  * the validator on it, runs the sandbox on it, and compares the results.
  * While it's for testing the validator handlers, it implicitly also tests a
