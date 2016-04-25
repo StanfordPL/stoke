@@ -1392,19 +1392,64 @@ void Sandbox::emit_popf(const Instruction& instr) {
 }
 
 void Sandbox::emit_push(const Instruction& instr) {
-  switch (instr.get_opcode()) {
-  case PUSH_IMM16:
+
+  auto opcode = instr.get_opcode();
+  size_t immediate_size = 8;
+
+  switch(opcode) {
+    case PUSHQ_IMM8: 
+      immediate_size = 8;
+      break;
+    case PUSHQ_IMM16:
+      immediate_size = 16;
+      break;
+    case PUSHQ_IMM32:
+      immediate_size = 32;
+      break;
+    default:
+      immediate_size = 0;
+      break;
+  }
+
+  switch (opcode) {
+  case PUSHW_IMM8: {
+    // Sign-extend to 16 bits
+    uint16_t value = (uint16_t)instr.get_operand<Imm8>(0);
+    if(value & 0x80) {
+      value = 0xff00 | value;
+    } else {
+      value = 0xff & value;
+    }
+    Imm16 argument(value);
+    
+    emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), argument}});
+    assm_.lea(rsp, M64(rsp, Imm32(-2)));
+    break;
+  }
+  case PUSHW_IMM16:
     emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), instr.get_operand<Imm16>(0)}});
     assm_.lea(rsp, M64(rsp, Imm32(-2)));
     break;
-  case PUSH_IMM32:
-    emit_memory_instruction({MOV_M32_IMM32, {M32(rsp, Imm32(-4)), instr.get_operand<Imm32>(0)}});
-    assm_.lea(rsp, M64(rsp, Imm32(-4)));
+
+  case PUSHQ_IMM16:
+  case PUSHQ_IMM32:
+  case PUSHQ_IMM8: {
+    // Sign-extend to 64 bits
+    uint64_t value = (uint64_t)instr.get_operand<Imm>(0);
+    if(value & ((uint64_t)0x1 << (immediate_size-1))) {
+      value = (0xffffffffffffffff << immediate_size) | value;
+    } else {
+      value = (((uint64_t)0x1 << immediate_size) - 1) & value;
+    }
+    Imm32 lower((uint32_t)value & 0xffffffff);
+    Imm32 higher((uint32_t)(value >> 32));
+
+    emit_memory_instruction({MOV_M32_IMM32, {M32(rsp, Imm32(-8)), lower}});
+    emit_memory_instruction({MOV_M32_IMM32, {M32(rsp, Imm32(-4)), higher}});
+    assm_.lea(rsp, M64(rsp, Imm32(-8)));
     break;
-  case PUSH_IMM8:
-    emit_memory_instruction({MOV_M8_IMM8, {M8(rsp, Imm32(-1)), instr.get_operand<Imm8>(0)}});
-    assm_.lea(rsp, M64(rsp, Imm32(-1)));
-    break;
+  }
+
   case PUSH_R16:
   case PUSH_R16_1:
     emit_memory_instruction({MOV_M16_R16, {M16(rsp, Imm32(-2)), instr.get_operand<R16>(0)}});
@@ -1417,6 +1462,7 @@ void Sandbox::emit_push(const Instruction& instr) {
     break;
 
   default:
+    cout << "Tried opcode: " << instr.get_opcode() << endl;
     assert(false);
     break;
   }
