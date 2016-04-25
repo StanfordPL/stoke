@@ -33,7 +33,7 @@ public:
     smt_->setOption("incremental", true);
     smt_->setOption("produce-assignments", true);
     smt_->setTimeLimit(timeout_, true);
-    smt_->setLogic("QF_UFBV");
+    smt_->setLogic("QF_AUFBV");
     smt_->push();
   }
   ~Cvc4Solver() {

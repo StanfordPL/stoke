@@ -276,9 +276,8 @@ public:
     auto l = get_level(a->a_);
 
     if (l < level_) {
-      parens(l, a);
+      parens(l, a->a_);
     } else {
-      // a->a_ is a store too
       pretty(l, a->a_);
     }
     os_ << " ; ";
