@@ -386,13 +386,11 @@ TEST_F(DdecValidatorBaseTest, LoopMemoryEquiv) {
   sg.set_max_attempts(64);
 
   sandbox->reset();
-  cout << "LoopMemoryEquiv sandbox at " << sandbox << endl;
   for (size_t i = 0; i < 4; ++i) {
     CpuState tc;
     bool b = sg.get(tc, target);
     ASSERT_TRUE(b);
     sandbox->insert_input(tc);
-    cout << "INPUT for tests: " << endl << tc << endl;
   }
 
   validator->set_alias_strategy(ObligationChecker::AliasStrategy::STRING);
