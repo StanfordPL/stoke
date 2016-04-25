@@ -137,17 +137,17 @@ uint64_t CpuState::get_addr(x64asm::Instruction instr) const {
     return get_addr(instr.get_operand<M8>(instr.mem_index()));
   } else if (instr.is_push()) {
     size_t bytes = 2;
-    switch(instr.get_opcode()) {
-      case PUSHQ_IMM32:
-      case PUSHQ_IMM16:
-      case PUSHQ_IMM8:
-      case PUSH_M64:
-      case PUSH_R64:
-      case PUSH_R64_1:
-        bytes = 8;
-        break;
-      default:
-        bytes = 2;
+    switch (instr.get_opcode()) {
+    case PUSHQ_IMM32:
+    case PUSHQ_IMM16:
+    case PUSHQ_IMM8:
+    case PUSH_M64:
+    case PUSH_R64:
+    case PUSH_R64_1:
+      bytes = 8;
+      break;
+    default:
+      bytes = 2;
     }
     return gp[x64asm::rsp].get_fixed_quad(0) - bytes;
   } else if (instr.is_pop()) {
