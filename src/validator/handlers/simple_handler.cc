@@ -478,7 +478,7 @@ void SimpleHandler::add_all() {
 
   add_opcode_str({"movlpd", "movlps"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
-    if(dst.size() > 64)
+    if (dst.size() > 64)
       ss.set(dst, a[dst.size() - 1][64] || b[63][0]);
     else
       ss.set(dst, b[63][0]);
@@ -496,7 +496,7 @@ void SimpleHandler::add_all() {
 
   add_opcode_str({"movhpd", "movhps"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
-    if(dst.size() > 64)
+    if (dst.size() > 64)
       ss.set(dst, b[63][0] || a[63][0]);
     else
       ss.set(dst, b[127][64]);
@@ -736,10 +736,10 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, Operand src, Operand count, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
 
     auto new_count = c;
-    if(dst.size() == 64) {
-      new_count = new_count & SymBitVector::constant(count.size(), 0x3f);  
+    if (dst.size() == 64) {
+      new_count = new_count & SymBitVector::constant(count.size(), 0x3f);
     } else {
-      new_count = new_count & SymBitVector::constant(count.size(), 0x1f);  
+      new_count = new_count & SymBitVector::constant(count.size(), 0x1f);
     }
 
     // this keeps track of the last bit shifted
@@ -756,7 +756,7 @@ void SimpleHandler::add_all() {
     auto shifted_one = (new_count == SymBitVector::constant(count.size(), 1));
     auto sign_changed = !(output[dst.size()-1] == a[src.size()-1]);
 
-    if(dst.size() > 16) {
+    if (dst.size() > 16) {
       ss.set(dst, output);
       ss.set(eflags_cf, shifted[total_size]);
       ss.set(eflags_of, shifted_one.ite(sign_changed, SymBool::tmp_var()));
@@ -779,10 +779,10 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, Operand src, Operand count, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
 
     auto new_count = c;
-    if(dst.size() == 64) {
-      new_count = new_count & SymBitVector::constant(count.size(), 0x3f);  
+    if (dst.size() == 64) {
+      new_count = new_count & SymBitVector::constant(count.size(), 0x3f);
     } else {
-      new_count = new_count & SymBitVector::constant(count.size(), 0x1f);  
+      new_count = new_count & SymBitVector::constant(count.size(), 0x1f);
     }
 
     // this keeps track of the last bit shifted
@@ -799,7 +799,7 @@ void SimpleHandler::add_all() {
     auto shifted_one = (new_count == SymBitVector::constant(count.size(), 1));
     auto sign_changed = !(output[dst.size()-1] == a[src.size()-1]);
 
-    if(dst.size() > 16) {
+    if (dst.size() > 16) {
       ss.set(dst, output);
       ss.set(eflags_cf, shifted[0]);
       ss.set(eflags_of, shifted_one.ite(sign_changed, SymBool::tmp_var()));
