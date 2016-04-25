@@ -1396,32 +1396,32 @@ void Sandbox::emit_push(const Instruction& instr) {
   auto opcode = instr.get_opcode();
   size_t immediate_size = 8;
 
-  switch(opcode) {
-    case PUSHQ_IMM8: 
-      immediate_size = 8;
-      break;
-    case PUSHQ_IMM16:
-      immediate_size = 16;
-      break;
-    case PUSHQ_IMM32:
-      immediate_size = 32;
-      break;
-    default:
-      immediate_size = 0;
-      break;
+  switch (opcode) {
+  case PUSHQ_IMM8:
+    immediate_size = 8;
+    break;
+  case PUSHQ_IMM16:
+    immediate_size = 16;
+    break;
+  case PUSHQ_IMM32:
+    immediate_size = 32;
+    break;
+  default:
+    immediate_size = 0;
+    break;
   }
 
   switch (opcode) {
   case PUSHW_IMM8: {
     // Sign-extend to 16 bits
     uint16_t value = (uint16_t)instr.get_operand<Imm8>(0);
-    if(value & 0x80) {
+    if (value & 0x80) {
       value = 0xff00 | value;
     } else {
       value = 0xff & value;
     }
     Imm16 argument(value);
-    
+
     emit_memory_instruction({MOV_M16_IMM16, {M16(rsp, Imm32(-2)), argument}});
     assm_.lea(rsp, M64(rsp, Imm32(-2)));
     break;
@@ -1436,7 +1436,7 @@ void Sandbox::emit_push(const Instruction& instr) {
   case PUSHQ_IMM8: {
     // Sign-extend to 64 bits
     uint64_t value = (uint64_t)instr.get_operand<Imm>(0);
-    if(value & ((uint64_t)0x1 << (immediate_size-1))) {
+    if (value & ((uint64_t)0x1 << (immediate_size-1))) {
       value = (0xffffffffffffffff << immediate_size) | value;
     } else {
       value = (((uint64_t)0x1 << immediate_size) - 1) & value;
