@@ -476,6 +476,45 @@ void SimpleHandler::add_all() {
     ss.set(dst, b[127][32] || (f(bb, cc)[0]).ite(bb, cc), true);
   });
 
+  add_opcode_str({"movlpd", "movlps"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    if(dst.size() > 64)
+      ss.set(dst, a[dst.size() - 1][64] || b[63][0]);
+    else
+      ss.set(dst, b[63][0]);
+  });
+
+  add_opcode_str({"vmovlpd", "vmovlps"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    ss.set(dst, b[127][64] || c[63][0], true);
+  });
+
+  add_opcode_str({"vmovlpd", "vmovlps"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    ss.set(dst, b[63][0], true);
+  });
+
+  add_opcode_str({"movhpd", "movhps"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    if(dst.size() > 64)
+      ss.set(dst, b[63][0] || a[63][0]);
+    else
+      ss.set(dst, b[127][64]);
+  });
+
+  add_opcode_str({"vmovhpd", "vmovhps"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    ss.set(dst, c[63][0] || b[63][0], true);
+  });
+
+  add_opcode_str({"vmovhpd", "vmovhps"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    ss.set(dst, b[127][64], true);
+  });
+
+
+
+
   // can't be done with packed handler because of special case for memory
   add_opcode_str({"movsd"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
@@ -584,12 +623,12 @@ void SimpleHandler::add_all() {
     size_t src_size = src.size();
 
     auto mask = SymBitVector::from_bool(b[7]);
-    for(size_t i = 1; i < src_size/8; ++i) {
-      mask = SymBitVector::from_bool(b[8*i+7]) || mask;  
+    for (size_t i = 1; i < src_size/8; ++i) {
+      mask = SymBitVector::from_bool(b[8*i+7]) || mask;
     }
 
     size_t pad = dst_size - src_size/8;
-    if(pad > 0)
+    if (pad > 0)
       ss.set(dst, SymBitVector::constant(pad, 0) || mask);
     else
       ss.set(dst, mask);
