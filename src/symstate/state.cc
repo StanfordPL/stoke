@@ -316,6 +316,23 @@ void SymState::set_szp_flags(const SymBitVector& v, uint16_t width) {
   set(eflags_pf, v[7][0].parity());
 }
 
+void SymState::set_szp_flags(const SymBitVector& v, SymBool condition) {
+
+  auto width = v.width();
+
+  /* The sign flag is the most significant bit */
+  auto new_sf = v[width-1];
+  set(eflags_sf, condition.ite(new_sf, (*this)[eflags_sf]));
+
+  /* The zero flag says if the whole BV is 0 */
+  auto new_zf = (v == SymBitVector::constant(width, 0));
+  set(eflags_zf, condition.ite(new_zf, (*this)[eflags_zf]));
+
+  /* The parity flag */
+  auto new_pf = v[7][0].parity();
+  set(eflags_pf, condition.ite(new_pf, (*this)[eflags_pf]));
+}
+
 /** Generate constraints expressing equality of two states over a given regset */
 std::vector<SymBool> SymState::equality_constraints(const SymState& other, const RegSet& rs) const {
 
