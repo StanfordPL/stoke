@@ -734,42 +734,13 @@ void SimpleHandler::add_all() {
 
   add_opcode_str({"shldw", "shldl", "shldq"},
   [this] (Operand dst, Operand src, Operand count, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
-    auto new_count = c;
 
-    //if(!count.is_immediate()) {
+    auto new_count = c;
     if(dst.size() == 64) {
       new_count = new_count & SymBitVector::constant(count.size(), 0x3f);  
     } else {
       new_count = new_count & SymBitVector::constant(count.size(), 0x1f);  
     }
-    /*
-    } else {
-      // Extract the immediate value
-    
-      Operand* imm_ptr = &count;
-      uint64_t value = (uint64_t)(*(static_cast<Imm*>(imm_ptr)));
-      if(value > dst.size()) {
-        // Everything is undefined!  Go home.
-        ss.set(dst, SymBitVector::tmp_var(dst.size()));
-        ss.set(eflags_cf, SymBool::tmp_var());
-        ss.set(eflags_sf, SymBool::tmp_var());
-        ss.set(eflags_of, SymBool::tmp_var());
-        ss.set(eflags_pf, SymBool::tmp_var());
-        ss.set(eflags_zf, SymBool::tmp_var());
-        return;
-      }
-    }
-    cout << "new_count=" << new_count << endl;
-    */
-
-    // Let's reverse "b", yay!
-    /*
-    auto b_reverse = SymBitVector::from_bool(b[0]);
-    for(size_t i = 1; i < src.size(); ++i) {
-      b_reverse = b_reverse || SymBitVector::from_bool(b[i]);
-    }
-    */
-
 
     // this keeps track of the last bit shifted
     auto extra = SymBitVector::from_bool(ss[eflags_cf]);
@@ -803,6 +774,50 @@ void SimpleHandler::add_all() {
     }
 
   });
+
+  add_opcode_str({"shrdw", "shrdl", "shrdq"},
+  [this] (Operand dst, Operand src, Operand count, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+
+    auto new_count = c;
+    if(dst.size() == 64) {
+      new_count = new_count & SymBitVector::constant(count.size(), 0x3f);  
+    } else {
+      new_count = new_count & SymBitVector::constant(count.size(), 0x1f);  
+    }
+
+    // this keeps track of the last bit shifted
+    auto extra = SymBitVector::from_bool(ss[eflags_cf]);
+
+    size_t total_size = dst.size() + src.size();
+    size_t shift_amount_pad = total_size + 1 - count.size();
+    auto shift_amount = SymBitVector::constant(shift_amount_pad, 0) || new_count;
+    auto shifted = ((b || a || extra) >> shift_amount);
+    auto output = shifted[dst.size()][1];
+
+    // Write output
+    auto shifted_nonzero = (new_count > SymBitVector::constant(count.size(), 0));
+    auto shifted_one = (new_count == SymBitVector::constant(count.size(), 1));
+    auto sign_changed = !(output[dst.size()-1] == a[src.size()-1]);
+
+    if(dst.size() > 16) {
+      ss.set(dst, output);
+      ss.set(eflags_cf, shifted[0]);
+      ss.set(eflags_of, shifted_one.ite(sign_changed, SymBool::tmp_var()));
+      ss.set_szp_flags(output, shifted_nonzero);
+    } else {
+      auto safe = (new_count <= SymBitVector::constant(count.size(), dst.size()));
+      ss.set(dst, safe.ite(output, SymBitVector::tmp_var(dst.size())));
+      ss.set(eflags_cf, safe.ite(shifted[0], SymBool::tmp_var()));
+      ss.set(eflags_of, shifted_one.ite(sign_changed, SymBool::tmp_var()));
+
+      ss.set(eflags_sf, SymBool::tmp_var());
+      ss.set(eflags_zf, SymBool::tmp_var());
+      ss.set(eflags_pf, SymBool::tmp_var());
+      ss.set_szp_flags(output, shifted_nonzero & safe);
+    }
+
+  });
+
 
   add_opcode_str({"shufpd"},
                  [this] (Operand dst, Operand src, Operand ctl,
