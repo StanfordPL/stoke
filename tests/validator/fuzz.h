@@ -124,11 +124,6 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   tp.remove_opcode(MUL_M32);
   tp.remove_opcode(MUL_M64);
 
-  // see issue #864
-  tp.remove_opcode(PUSH_IMM16);
-  tp.remove_opcode(PUSH_IMM32);
-  tp.remove_opcode(PUSH_IMM8);
-
   tp.recompute_pools();
 
   uint64_t seed = fuzz(tp, iterations, &validator_fuzz_callback, (void*)this);
