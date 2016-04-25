@@ -36,7 +36,13 @@
 #include <algorithm>
 #include <set>
 
+// this is configurable via build system
+#ifdef STOKE_DEBUG_DDEC
 #define DDEC_DEBUG(X) { X }
+#else
+#define DDEC_DEBUG(X) {   }
+#endif
+
 #define DDEC_TC_DEBUG(X) { }
 
 using namespace std;
@@ -257,7 +263,7 @@ bool DdecValidator::verify(const Cfg& init_target, const Cfg& init_rewrite) {
         bool made_a_change = false;
         for (size_t i = 1; i < invariants.size() - 1; ++i) {
           auto to_remove = failed_invariants[i];
-          cout << "For cutpoint " << i << " there are " << to_remove.size() << " failed invariants." << endl;
+          DDEC_DEBUG(cout << "For cutpoint " << i << " there are " << to_remove.size() << " failed invariants." << endl;)
           sort(to_remove.begin(), to_remove.end());
           size_t last = (size_t)-1;
           for (auto it = to_remove.rbegin(); it != to_remove.rend(); ++it) {
@@ -673,13 +679,13 @@ vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, Re
     for (auto instr : code) {
       if (instr.is_explicit_memory_dereference()) {
         auto mem = instr.get_operand<x64asm::Mem>((size_t)instr.mem_index());
-        cout << "Considering operand " << mem << endl;
+        //cout << "Considering operand " << mem << endl;
         memory_operands.insert(mem);
       }
     }
 
     for (auto it : memory_operands) {
-      cout << "And now it is: " << it << endl;
+      //cout << "And now it is: " << it << endl;
       if (it.contains_seg())
         continue;
       if (it.contains_base() && !regs.contains(it.get_base()))
@@ -687,8 +693,6 @@ vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, Re
       if (it.contains_index() && !regs.contains(it.get_index()))
         continue;
 
-
-      cout << "Adding: " << it << endl;
       auto mni = new MemoryNullInvariant(it, is_rewrite, true);
       invariants.push_back(mni);
 
@@ -703,9 +707,11 @@ vector<MemoryNullInvariant*> build_memory_null_invariants(RegSet target_regs, Re
 
   }
 
+  /*
   for (auto it : invariants) {
     cout << *it << endl;
   }
+  */
 
   return invariants;
 }
@@ -877,12 +883,12 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
 
   auto potential_memory_nulls = build_memory_null_invariants(target_regs, rewrite_regs, target, rewrite);
   for (auto mem_null : potential_memory_nulls) {
-    cout << "Testing " << *mem_null << endl;
+    //cout << "Testing " << *mem_null << endl;
     if (mem_null->check(target_states, rewrite_states)) {
-      cout << " * pass" << endl;
+      //cout << " * pass" << endl;
       conj->add_invariant(mem_null);
     } else {
-      cout << " * fail" << endl;
+      //cout << " * fail" << endl;
       delete mem_null;
     }
   }
@@ -915,9 +921,10 @@ ConjunctionInvariant* DdecValidator::learn_simple_invariant(const Cfg& target, c
     }
   }
 
+  DDEC_DEBUG(
   for (auto it : columns) {
-    cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.sign_extend << " index? " << it.index << endl;
-  }
+  cout << "Column reg " << it.reg << " rewrite? " << it.is_rewrite << " zx? " << it.sign_extend << " index? " << it.index << endl;
+});
 
   size_t num_columns = columns.size() + 1;
   size_t tc_count = target_states.size();

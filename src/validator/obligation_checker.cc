@@ -30,7 +30,12 @@
 #define ALIAS_DEBUG(X) { }
 #define ALIAS_CASE_DEBUG(X) { }
 #define ALIAS_STRING_DEBUG(X) { }
+
+#ifdef STOKE_DEBUG_CEG
 #define CEG_DEBUG(X) { X }
+#else
+#define CEG_DEBUG(X) { }
+#endif
 
 #define MAX(X,Y) ( (X) > (Y) ? (X) : (Y) )
 #define MIN(X,Y) ( (X) < (Y) ? (X) : (Y) )

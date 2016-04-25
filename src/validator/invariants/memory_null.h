@@ -58,9 +58,11 @@ public:
     auto& state = is_rewrite_ ? rewrite : target;
 
     if (!state.is_valid(m_)) {
+      /*
       std::cout << state << std::endl;
       std::cout << " * " << m_ << std::endl;
       std::cout << " * state not valid" << std::endl;
+      */
       return false;
     }
 
@@ -70,7 +72,7 @@ public:
     for (size_t i = 0; i < m_.size()/8; ++i) {
       if (mem_val.get_fixed_byte(i) != 0) {
         zero = false;
-        std::cout << " * found non-zero byte" << std::endl;
+        //std::cout << " * found non-zero byte" << std::endl;
         break;
       }
     }
