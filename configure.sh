@@ -5,6 +5,14 @@ function show_help {
   echo ""
 }
 
+function error {
+  echo "Configure failed!  Fix errors and run again."
+  echo ""
+  rm -f stoke_config
+  show_help
+  exit
+}
+
 ## START
 
 echo ""
@@ -31,8 +39,7 @@ while :; do
       ;; 
     -?*)
       echo "WARNING: unknown option $1"
-      echo "./configure failed"
-      show_help
+      error
       exit
       ;;
     *)
@@ -41,7 +48,7 @@ while :; do
 done
 
 ## Write options to config file
-echo "MISC_OPTIONS=\"$MISC_OPTIONS\"" >> .stoke_config
+echo "MISC_OPTIONS=$MISC_OPTIONS" >> .stoke_config
 
 ## All we're going to do is figure out what platform you're on, buddy.
 
