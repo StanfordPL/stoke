@@ -56,13 +56,15 @@ public:
       (x64asm::RegSet::all_gps() | x64asm::RegSet::all_ymms()) +
       x64asm::eflags_cf + x64asm::eflags_of + x64asm::eflags_pf +
       x64asm::eflags_zf + x64asm::eflags_sf;
-    x64asm::RegSet liveouts = (ins.must_write_set() - ins.maybe_undef_set()) & supported_regs;
+    x64asm::RegSet liveouts = supported_regs;
     x64asm::RegSet reads = ins.maybe_read_set();
     set_def_ins(reads);
     set_live_outs(liveouts);
 
     if (check_circuit(cs))
       success_count_++;
+    else
+      fuzz_print() << "Check circuit failed." << std::endl;
   }
 
 protected:
@@ -195,6 +197,20 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   tp.remove_opcode(MUL_M16);
   tp.remove_opcode(MUL_M32);
   tp.remove_opcode(MUL_M64);
+
+  tp.set_opcode_weight(SHLD_M16_R16_CL, 10000); // SHLD m16, r16, CL
+  tp.set_opcode_weight(SHLD_M16_R16_IMM8, 10000); // SHLD m16, r16, imm8
+  tp.set_opcode_weight(SHLD_M32_R32_CL, 10000); // SHLD m32, r32, CL
+  tp.set_opcode_weight(SHLD_M32_R32_IMM8, 10000); // SHLD m32, r32, imm8
+  tp.set_opcode_weight(SHLD_M64_R64_CL, 10000); // SHLD m64, r64, CL
+  tp.set_opcode_weight(SHLD_M64_R64_IMM8, 10000); // SHLD m64, r64, imm8
+  tp.set_opcode_weight(SHLD_R16_R16_CL, 10000); // SHLD r16, r16, CL
+  tp.set_opcode_weight(SHLD_R16_R16_IMM8, 10000); // SHLD r16, r16, imm8
+  tp.set_opcode_weight(SHLD_R32_R32_CL, 10000); // SHLD r32, r32, CL
+  tp.set_opcode_weight(SHLD_R32_R32_IMM8, 10000); // SHLD r32, r32, imm8
+  tp.set_opcode_weight(SHLD_R64_R64_CL, 10000); // SHLD r64, r64, CL
+  tp.set_opcode_weight(SHLD_R64_R64_IMM8, 10000); // SHLD r64, r64, imm8
+
 
   tp.recompute_pools();
 

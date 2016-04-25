@@ -140,8 +140,10 @@ protected:
   /** Runs the target on the given CpuState in a sandbox, and compares
       with the validator output. */
   bool check_circuit(CpuState cs) {
-    if (!reset_state(true))
+    if (!reset_state(true)) {
+      fuzz_print() << "Could not reset state!" << endl;
       return false;
+    }
     ceg_shown_ = true;
 
     auto instr = cfg_t_->get_code()[1];
@@ -163,8 +165,10 @@ protected:
 
     // build circuits
     ComboHandler ch;
-    if (ch.get_support(instr) == Handler::SupportLevel::NONE)
+    if (ch.get_support(instr) == Handler::SupportLevel::NONE) {
+      fuzz_print() << "Instruction is unsupported." << endl;
       return false;
+    }
     SymState final_validator(cs);
     SymState final_sym(sandbox_final);
     ch.build_circuit(instr, final_validator);
@@ -215,8 +219,6 @@ protected:
     auto rs = RegSet::universe();
     // the af flag is not currently supported by the validator
     rs = rs - (RegSet::empty() + Constants::eflags_af());
-    // don't check undefined outputs
-    rs = rs - instr.maybe_undef_set();
     auto eq = true;
     stringstream ss;
     ss << "Sandbox and validator do not agree for '" << instr << "' (opcode " << opcode << ")" << endl;

@@ -108,6 +108,8 @@ public:
   /** Set the SF/PF/ZF flags according to a given value.  If width
       is provided, it's used; otherwise, we compute it */
   void set_szp_flags(const SymBitVector& v, uint16_t width = 0);
+  /** In this variant, we only change the flags if the given condition is true */
+  void set_szp_flags(const SymBitVector& v, SymBool condition);
 
   /** Add constraint */
   void add_constraint(const SymBool& b) {
