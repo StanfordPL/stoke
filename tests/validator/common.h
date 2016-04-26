@@ -198,7 +198,11 @@ protected:
         }
         explanation << "    sandbox:   " << b << endl;
         if (name == "memory") {
-          // also output constraints
+          for (auto& c : constraints_a) {
+            stringstream ss;
+            ss << SymSimplify().simplify(c);
+            explanation << "      " << ss.str() << endl;
+          }
         }
         return false;
       } else {
