@@ -159,6 +159,7 @@ public:
     if (is_cached(bv)) return get_cached(bv);
 
     // add/subtract of 0 or a-a
+    // multiply of 0
     auto& f = bv->f_;
     if (f.args.size() == 2) {
       auto a = (*this)(bv->args_[0]);
@@ -175,38 +176,31 @@ public:
       if ((f.name == "sub_single" || f.name == "sub_double") && a->equals(b)) {
         return cache(bv, make_constant(bv->width_, 0));
       }
+      if ((f.name == "mul_single" || f.name == "mul_double") && (is_zero(a) && is_zero(b))) {
+        return cache(bv, make_constant(bv->width_, 0));
+      }
     }
 
-    // conversion of zero
+    // conversion of 0
+    // sqrt of 0
     if (f.args.size() == 1) {
       auto a = (*this)(bv->args_[0]);
       if (is_zero(a)) {
-        if (f.name == "cvt_int32_to_double" ||
+        if (f.name == "sqrt_double" ||
+            f.name == "sqrt_single" ||
+            f.name == "cvt_int32_to_double" ||
             f.name == "cvt_int32_to_single" ||
             f.name == "cvt_double_to_int32" ||
             f.name == "cvt_double_to_single" ||
-            f.name == "cvt_int32_to_double" ||
-            f.name == "cvt_int32_to_single" ||
             f.name == "cvt_single_to_int32" ||
             f.name == "cvt_single_to_double" ||
-            f.name == "cvt_single_to_int32" ||
-            f.name == "cvt_double_to_int32" ||
             f.name == "cvt_double_to_int64" ||
-            f.name == "cvt_double_to_single" ||
-            f.name == "cvt_int32_to_double" ||
             f.name == "cvt_int64_to_double" ||
-            f.name == "cvt_int32_to_single" ||
             f.name == "cvt_int64_to_single" ||
-            f.name == "cvt_single_to_double" ||
-            f.name == "cvt_single_to_int32" ||
             f.name == "cvt_single_to_int64" ||
             f.name == "cvt_double_to_int32_truncate" ||
-            f.name == "cvt_double_to_int32_truncate" ||
             f.name == "cvt_single_to_int32_truncate" ||
-            f.name == "cvt_single_to_int32_truncate" ||
-            f.name == "cvt_double_to_int32_truncate" ||
             f.name == "cvt_double_to_int64_truncate" ||
-            f.name == "cvt_single_to_int32_truncate" ||
             f.name == "cvt_single_to_int64_truncate") {
           return cache(bv, make_constant(bv->width_, 0));
         }
@@ -328,9 +322,19 @@ public:
       }
     }
 
-    // xor with itself
-    if (bv->type() == SymBitVector::XOR && lhs == rhs && width <= 64) {
+    // a ^ a
+    if (bv->type() == SymBitVector::XOR && lhs->equals(rhs)) {
       return cache(bv, make_constant(width, 0));
+    }
+
+    // a | a
+    if (bv->type() == SymBitVector::OR && lhs->equals(rhs)) {
+      return cache(bv, lhs);
+    }
+
+    // a & a
+    if (bv->type() == SymBitVector::AND && lhs->equals(rhs)) {
+      return cache(bv, lhs);
     }
 
     if (lhs == bv->a_ && rhs == bv->b_) {
