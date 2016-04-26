@@ -42,7 +42,7 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   set(eflags_sf, SymBool::constant(cs.rf.is_set(eflags_sf.index())));
   set(eflags_of, SymBool::constant(cs.rf.is_set(eflags_of.index())));
 
-  auto fm = new FlatMemory(true);
+  auto fm = new FlatMemory();
   fm->set_parent(this);
   memory = fm;
   delete_memory_ = true;
