@@ -476,6 +476,45 @@ void SimpleHandler::add_all() {
     ss.set(dst, b[127][32] || (f(bb, cc)[0]).ite(bb, cc), true);
   });
 
+  add_opcode_str({"movlpd", "movlps"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    if (dst.size() > 64)
+      ss.set(dst, a[dst.size() - 1][64] || b[63][0]);
+    else
+      ss.set(dst, b[63][0]);
+  });
+
+  add_opcode_str({"vmovlpd", "vmovlps"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    ss.set(dst, b[127][64] || c[63][0], true);
+  });
+
+  add_opcode_str({"vmovlpd", "vmovlps"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    ss.set(dst, b[63][0], true);
+  });
+
+  add_opcode_str({"movhpd", "movhps"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    if (dst.size() > 64)
+      ss.set(dst, b[63][0] || a[63][0]);
+    else
+      ss.set(dst, b[127][64]);
+  });
+
+  add_opcode_str({"vmovhpd", "vmovhps"},
+  [] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    ss.set(dst, c[63][0] || b[63][0], true);
+  });
+
+  add_opcode_str({"vmovhpd", "vmovhps"},
+  [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    ss.set(dst, b[127][64], true);
+  });
+
+
+
+
   // can't be done with packed handler because of special case for memory
   add_opcode_str({"movsd"},
   [] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
@@ -578,6 +617,24 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a | b);
   });
 
+  add_opcode_str({"pmovmskb", "vpmovmskb"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+    size_t dst_size = dst.size();
+    size_t src_size = src.size();
+
+    auto mask = SymBitVector::from_bool(b[7]);
+    for (size_t i = 1; i < src_size/8; ++i) {
+      mask = SymBitVector::from_bool(b[8*i+7]) || mask;
+    }
+
+    size_t pad = dst_size - src_size/8;
+    if (pad > 0)
+      ss.set(dst, SymBitVector::constant(pad, 0) || mask);
+    else
+      ss.set(dst, mask);
+
+  });
+
   add_opcode_str({"popq"},
   [this] (Operand dst, SymBitVector a, SymState& ss) {
     M64 target = M64(rsp);
@@ -674,6 +731,93 @@ void SimpleHandler::add_all() {
     M16 target = M16(rsp);
     ss.set(target, a.extend(16));
   });
+
+  add_opcode_str({"shldw", "shldl", "shldq"},
+  [this] (Operand dst, Operand src, Operand count, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+
+    auto new_count = c;
+    if (dst.size() == 64) {
+      new_count = new_count & SymBitVector::constant(count.size(), 0x3f);
+    } else {
+      new_count = new_count & SymBitVector::constant(count.size(), 0x1f);
+    }
+
+    // this keeps track of the last bit shifted
+    auto extra = SymBitVector::from_bool(ss[eflags_cf]);
+
+    size_t total_size = dst.size() + src.size();
+    size_t shift_amount_pad = total_size + 1 - count.size();
+    auto shift_amount = SymBitVector::constant(shift_amount_pad, 0) || new_count;
+    auto shifted = ((extra || a || b) << shift_amount);
+    auto output = shifted[total_size-1][total_size-dst.size()];
+
+    // Write output
+    auto shifted_nonzero = (new_count > SymBitVector::constant(count.size(), 0));
+    auto shifted_one = (new_count == SymBitVector::constant(count.size(), 1));
+    auto sign_changed = !(output[dst.size()-1] == a[src.size()-1]);
+
+    if (dst.size() > 16) {
+      ss.set(dst, output);
+      ss.set(eflags_cf, shifted[total_size]);
+      ss.set(eflags_of, shifted_one.ite(sign_changed, SymBool::tmp_var()));
+      ss.set_szp_flags(output, shifted_nonzero);
+    } else {
+      auto safe = (new_count <= SymBitVector::constant(count.size(), dst.size()));
+      ss.set(dst, safe.ite(output, SymBitVector::tmp_var(dst.size())));
+      ss.set(eflags_cf, safe.ite(shifted[total_size], SymBool::tmp_var()));
+      ss.set(eflags_of, shifted_one.ite(sign_changed, SymBool::tmp_var()));
+
+      ss.set(eflags_sf, SymBool::tmp_var());
+      ss.set(eflags_zf, SymBool::tmp_var());
+      ss.set(eflags_pf, SymBool::tmp_var());
+      ss.set_szp_flags(output, shifted_nonzero & safe);
+    }
+
+  });
+
+  add_opcode_str({"shrdw", "shrdl", "shrdq"},
+  [this] (Operand dst, Operand src, Operand count, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+
+    auto new_count = c;
+    if (dst.size() == 64) {
+      new_count = new_count & SymBitVector::constant(count.size(), 0x3f);
+    } else {
+      new_count = new_count & SymBitVector::constant(count.size(), 0x1f);
+    }
+
+    // this keeps track of the last bit shifted
+    auto extra = SymBitVector::from_bool(ss[eflags_cf]);
+
+    size_t total_size = dst.size() + src.size();
+    size_t shift_amount_pad = total_size + 1 - count.size();
+    auto shift_amount = SymBitVector::constant(shift_amount_pad, 0) || new_count;
+    auto shifted = ((b || a || extra) >> shift_amount);
+    auto output = shifted[dst.size()][1];
+
+    // Write output
+    auto shifted_nonzero = (new_count > SymBitVector::constant(count.size(), 0));
+    auto shifted_one = (new_count == SymBitVector::constant(count.size(), 1));
+    auto sign_changed = !(output[dst.size()-1] == a[src.size()-1]);
+
+    if (dst.size() > 16) {
+      ss.set(dst, output);
+      ss.set(eflags_cf, shifted[0]);
+      ss.set(eflags_of, shifted_one.ite(sign_changed, SymBool::tmp_var()));
+      ss.set_szp_flags(output, shifted_nonzero);
+    } else {
+      auto safe = (new_count <= SymBitVector::constant(count.size(), dst.size()));
+      ss.set(dst, safe.ite(output, SymBitVector::tmp_var(dst.size())));
+      ss.set(eflags_cf, safe.ite(shifted[0], SymBool::tmp_var()));
+      ss.set(eflags_of, shifted_one.ite(sign_changed, SymBool::tmp_var()));
+
+      ss.set(eflags_sf, SymBool::tmp_var());
+      ss.set(eflags_zf, SymBool::tmp_var());
+      ss.set(eflags_pf, SymBool::tmp_var());
+      ss.set_szp_flags(output, shifted_nonzero & safe);
+    }
+
+  });
+
 
   add_opcode_str({"shufpd"},
                  [this] (Operand dst, Operand src, Operand ctl,
@@ -788,8 +932,13 @@ void SimpleHandler::add_all() {
 
   add_opcode_str({"xchgb", "xchgw", "xchgl", "xchgq"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
-    ss.set(dst, b);
-    ss.set(src, a);
+    if (src.is_typical_memory()) {
+      ss.set(src, a);
+      ss.set(dst, b);
+    } else {
+      ss.set(dst, b);
+      ss.set(src, a);
+    }
   });
 
   add_opcode_str({"xorb", "xorw", "xorl", "xorq"},

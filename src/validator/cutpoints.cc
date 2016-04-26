@@ -20,7 +20,7 @@
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-#define DEBUG_CUTPOINTS(X) { X }
+#define DEBUG_CUTPOINTS(X) { }
 
 
 using namespace std;
@@ -77,7 +77,6 @@ void Cutpoints::compute() {
 
   // Collect data
   for (size_t i = 0; i < sandbox_.size(); ++i) {
-    cout << "Collecting data from TC: " << endl << *sandbox_.get_input(i) << endl;
     vector<TracePoint> trace;
     mine_data(target_, i, trace);
     target_traces_.push_back(trace);
@@ -165,20 +164,21 @@ vector<Cutpoints::CutpointList> Cutpoints::get_possible_cutpoints() {
     for (size_t j = 0; j < n; ++j) {
       // Working on SCC j of target
       // Working on SCC pi[j] of rewrite
-      cout << "Working on SCC pair " << j << " - " << pi[j] << endl;
+      DEBUG_CUTPOINTS(cout << "Working on SCC pair " << j << " - " << pi[j] << endl;)
       auto target_nodes = target_sccs.get_blocks(j);
       auto rewrite_nodes = rewrite_sccs.get_blocks(pi[j]);
 
-      cout << "  - target nodes: ";
+      DEBUG_CUTPOINTS(
+        cout << "  - target nodes: ";
       for (auto it : target_nodes) {
-        cout << "  " << it;
-      }
-      cout << endl;
-      cout << "  - rewrite nodes: ";
-      for (auto it : rewrite_nodes) {
-        cout << "  " << it;
-      }
-      cout << endl;
+      cout << "  " << it;
+    }
+    cout << endl;
+         cout << "  - rewrite nodes: ";
+    for (auto it : rewrite_nodes) {
+      cout << "  " << it;
+    }
+    cout << endl;);
 
       // Create a place to put new cutpoints into.
       vector<CutpointList> new_working_set;

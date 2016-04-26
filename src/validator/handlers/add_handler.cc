@@ -80,13 +80,6 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   Operand dest = instr.get_operand<Operand>(0);
   Operand src  = instr.get_operand<Operand>(1);
 
-  // Do the exchange if need be
-  if (exchange) {
-    SymBitVector tmp = state[src];
-    state.set(src, state[dest]);
-    state.set(dest, tmp);
-  }
-
   SymBitVector src_bv = state[src];
   SymBitVector dst_bv = state[dest];
 
@@ -130,10 +123,20 @@ void AddHandler::build_circuit(const x64asm::Instruction& instr, SymState& state
   SymBitVector aux = (SymBitVector::constant(1, 0) || state[src][3][0]) +
                      (SymBitVector::constant(1, 0) || dst_bv[3][0]);
 
-  // Set the destination value; takes care of perserving
-  // other bits and setting other bits to zero
-  if (!compare)
+  if (exchange) {
+    // Swap and set
+    if (dest.is_typical_memory()) {
+      state.set(dest, total[width-1][0]);
+      state.set(src, dst_bv);
+    } else {
+      state.set(src, dst_bv);
+      state.set(dest, total[width-1][0]);
+    }
+  } else if (!compare) {
+    // Set the destination value; takes care of perserving
+    // other bits and setting other bits to zero
     state.set(dest, total[width-1][0]);
+  }
 
   state.set(eflags_of, plus_of(src_bv[width-1], dst_bv[width-1], total[width-1]));
 

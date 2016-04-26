@@ -52,7 +52,7 @@ endif
 
 # Set default options for building a binary, like /bin/stoke_search
 ifndef OPT
-	OPT=-O3 -DNDEBUG
+	OPT=-O3 -DNDEBUG $(MISC_OPTIONS)
 endif
 
 #CXX_FLAGS are any extra flags the user might want to pass to the compiler
@@ -230,24 +230,24 @@ all: release hooks
 
 release:
 	$(MAKE) -C . external EXT_OPT="release"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG $(MISC_OPTIONS)"
 	echo -e "\a"
 debug:
 	$(MAKE) -C . external EXT_OPT="debug"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-g"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-g $(MISC_OPTIONS)"
 	echo -e "\a"
 profile:
 	$(MAKE) -C . external EXT_OPT="profile"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG -pg"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG -pg $(MISC_OPTIONS)"
 	echo -e "\a"
 tests: debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-g"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-g $(MISC_OPTIONS)"
 	echo -e "\a"
 test: tests
 	bin/stoke_test
 	echo -e "\a"
 fast_tests: debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-O3 -DNDEBUG -DNO_VERY_SLOW_TESTS"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-O3 -DNDEBUG -DNO_VERY_SLOW_TESTS $(MISC_OPTIONS)"
 	echo -e "\a"
 fast: fast_tests
 	bin/stoke_test
@@ -269,7 +269,7 @@ depend:
 	for F in $(OBJS:.o=.cc); do \
 		D=`dirname $$F | sed "s/^\.\///"`; \
 		echo -n "$$D/" >> ./.depend; \
-		$(CXX) $(TARGET) $(OPT) $(INC) -MM -MG $$F >> ./.depend; \
+		$(CXX) $(TARGET) $(INC) -MM -MG $$F >> ./.depend; \
 	done
 	# for the binaries, the path is wrong (because we don't generate an object
 	# file, and instead generate the binary in 'bin').  use sed to correct this.
