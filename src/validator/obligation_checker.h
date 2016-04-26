@@ -225,6 +225,17 @@ private:
   /** Run the sandbox on a state, cfg along a path.  Used for checking counterexamples. */
   CpuState run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state);
 
+  /** Rewrite a CFG so that it always executes a particular path, replacing
+    jumps with NOPs.  Fill a map that contains information relating the new
+    line numbers with the original ones. */
+  struct LineInfo {
+    size_t line_number;
+    x64asm::Label label;
+    uint64_t rip_offset;
+  };
+
+  Cfg rewrite_cfg_with_path(const Cfg&, const CfgPath& p, std::map<size_t,LineInfo>& to_populate);
+
 
   /////////////// Bookkeeping //////////////////
 

@@ -287,3 +287,10 @@ Cfg Validator::inline_functions(const Cfg& cfg) const {
   return Cfg(new_code, cfg.def_ins(), cfg.live_outs());
 
 }
+
+
+
+
+
+
+

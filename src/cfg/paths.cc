@@ -123,35 +123,6 @@ void CfgPaths::enumerate_paths_helper(const Cfg& cfg,
 
 }
 
-
-Cfg CfgPaths::rewrite_cfg_with_path(const Cfg& cfg, const CfgPath& p) {
-
-  Code code;
-  for (auto node : p) {
-    if (cfg.num_instrs(node) == 0)
-      continue;
-
-    size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(node, 0));
-    size_t end_index = start_index + cfg.num_instrs(node);
-    for (size_t i = start_index; i < end_index; ++i) {
-      if (cfg.get_code()[i].is_jump()) {
-        code.push_back(Instruction(NOP));
-      } else {
-        code.push_back(cfg.get_code()[i]);
-      }
-    }
-  }
-
-  Cfg new_cfg(code, cfg.def_ins(), cfg.live_outs());
-
-  //cout << "path cfg for " << print(p) << " is " << endl;
-  //cout << TUnit(code) << endl;
-
-  return new_cfg;
-
-}
-
-
 /** Find the path this testcase takes through the CFG. */
 bool CfgPaths::learn_path(CfgPath& path, const Cfg& cfg, const CpuState& tc) {
 
