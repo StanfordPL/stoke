@@ -489,12 +489,17 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
 
 
 
+  // code to use if you want to test a single instruction only
+  // for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+  //   tp.remove_opcode((x64asm::Opcode)i);
+  // }
+  // tp.insert_opcode(x64asm::Opcode::XADD_M16_R16);
+
   tp.recompute_pools();
 
   uint64_t seed = fuzz(tp, iterations, &validator_fuzz_callback, (void*)this);
 
   sg_.set_seed(seed);
-
 
   // Make sure we supported enough of the instructions
   EXPECT_GE(success_count_, min_success);
