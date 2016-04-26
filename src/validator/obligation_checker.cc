@@ -181,7 +181,9 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
   Sandbox sb(*sandbox_);
   sb.reset(); // if we ever want to call helper functions, this will break.
 
-  auto new_cfg = CfgPaths::rewrite_cfg_with_path(cfg, P);
+  map<size_t, LineInfo> line_map;
+
+  auto new_cfg = rewrite_cfg_with_path(cfg, P, line_map);
   auto new_f = new_cfg.get_function();
   new_f.insert(0, x64asm::Instruction(x64asm::LABEL_DEFN, { x64asm::Label("__ObligationCheckerTest:") }), false);
   new_f.push_back(x64asm::Instruction(x64asm::RET));
@@ -513,8 +515,11 @@ vector<vector<int>> ObligationChecker::compute_offset_vectors(size_t* cell_sizes
 
 vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_string(const Cfg& target, const Cfg& rewrite, const CfgPath& P, const CfgPath& Q, const Invariant& assume, const Invariant& prove) {
 
-  auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
-  auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
+  map<size_t, LineInfo> target_line_map;
+  map<size_t, LineInfo> rewrite_line_map;
+
+  auto target_unroll = rewrite_cfg_with_path(target, P, target_line_map);
+  auto rewrite_unroll = rewrite_cfg_with_path(rewrite, Q, rewrite_line_map);
 
   auto target_concrete_accesses = enumerate_accesses(target_unroll);
   auto rewrite_concrete_accesses = enumerate_accesses(rewrite_unroll);
@@ -773,8 +778,11 @@ for (size_t i = 0; i < total_accesses; ++i) {
   if (max_cell > 1 && alias_strategy_ == AliasStrategy::STRING) {
     ALIAS_STRING_DEBUG(cout << "Alias Strategy STRING" << std::endl;)
 
-    auto target_unroll = CfgPaths::rewrite_cfg_with_path(target, P);
-    auto rewrite_unroll = CfgPaths::rewrite_cfg_with_path(rewrite, Q);
+    map<size_t, LineInfo> target_line_map;
+    map<size_t, LineInfo> rewrite_line_map;
+
+    auto target_unroll = rewrite_cfg_with_path(target, P, target_line_map);
+    auto rewrite_unroll = rewrite_cfg_with_path(rewrite, Q, rewrite_line_map);
 
     // We'll use the helper to compute all overlaps of the mega-cells we found.
     // Typically, you give it a list of SymbolicAccesses, one per memory
@@ -1306,4 +1314,38 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
 }
 
+Cfg ObligationChecker::rewrite_cfg_with_path(const Cfg& cfg, const CfgPath& p, 
+                                             map<size_t,LineInfo>& to_populate) {
+  Code code;
+  auto function = cfg.get_function();
 
+  for (auto node : p) {
+    if (cfg.num_instrs(node) == 0)
+      continue;
+
+    size_t start_index = cfg.get_index(std::pair<Cfg::id_type, size_t>(node, 0));
+    size_t end_index = start_index + cfg.num_instrs(node);
+    for (size_t i = start_index; i < end_index; ++i) {
+
+      LineInfo li;
+      li.label = function.get_leading_label();
+      li.line_number = i;
+      li.rip_offset = function.hex_offset(i) + function.get_rip_offset();
+      to_populate[code.size()] = li;
+
+      if (cfg.get_code()[i].is_jump()) {
+        code.push_back(Instruction(NOP));
+      } else {
+        code.push_back(cfg.get_code()[i]);
+      }
+    }
+  }
+
+  Cfg new_cfg(code, cfg.def_ins(), cfg.live_outs());
+
+  //cout << "path cfg for " << print(p) << " is " << endl;
+  //cout << TUnit(code) << endl;
+
+  return new_cfg;
+
+}
