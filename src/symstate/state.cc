@@ -362,6 +362,11 @@ SymBitVector SymState::get_addr(M<T> memory) const {
 
   SymBitVector address = SymBitVector::constant(32, memory.get_disp()).extend(64);
 
+  if (memory.rip_offset()) {
+    address = address + this->rip;
+    return address;
+  }
+
   if (memory.contains_base()) {
     address = address + lookup(memory.get_base());
   }
