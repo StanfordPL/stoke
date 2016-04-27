@@ -32,7 +32,7 @@ namespace stoke {
  */
 class SymTransformVisitor : public SymVisitor<SymBoolAbstract*, SymBitVectorAbstract*, SymArrayAbstract*> {
 
-protected:
+public:
 
   SymTransformVisitor() : cache_bool_(*(new std::map<SymBoolAbstract*, SymBoolAbstract*>())), cache_bits_(*(new std::map<SymBitVectorAbstract*, SymBitVectorAbstract*>())), cache_array_(*(new std::map<SymArrayAbstract*, SymArrayAbstract*>())), delete_caches_(true) {}
 
