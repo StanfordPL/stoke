@@ -74,8 +74,9 @@ DEPS=\
 	src/ext/x64asm/lib/libx64asm.a
 
 LIB=\
-	src/ext/x64asm/lib/libx64asm.a\
-	-pthread\
+	src/ext/x64asm/lib/libx64asm.a \
+	-pthread \
+	 -lboost_filesystem -lboost_system -lboost_regex  -lboost_thread \
 	-lcln \
 	-liml -lgmp \
 	-L src/ext/cvc4-1.4-build/lib -lcvc4 \
@@ -150,6 +151,7 @@ SRC_OBJ=\
 	src/validator/null.o \
 	src/validator/obligation_checker.o \
 	src/validator/validator.o \
+	src/validator/strata_support.o \
 	\
 	src/validator/handlers/add_handler.o \
 	src/validator/handlers/combo_handler.o \
@@ -160,6 +162,9 @@ SRC_OBJ=\
 	src/validator/handlers/punpck_handler.o \
 	src/validator/handlers/shift_handler.o \
 	src/validator/handlers/simple_handler.o \
+	src/validator/handlers/strata_combo_handler.o \
+	src/validator/handlers/strata_handler.o \
+	src/validator/handlers/pseudo_handler.o \
 	\
 	src/verifier/hold_out.o
 
