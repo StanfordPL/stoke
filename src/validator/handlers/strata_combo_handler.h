@@ -34,7 +34,7 @@ namespace stoke {
 class StrataComboHandler : public ComboHandler {
 
 public:
-  
+
   virtual ~StrataComboHandler() {};
 
 protected:
