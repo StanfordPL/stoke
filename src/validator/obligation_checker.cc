@@ -181,7 +181,7 @@ CpuState ObligationChecker::run_sandbox_on_path(const Cfg& cfg, const CfgPath& P
   Sandbox sb(*sandbox_);
   sb.reset(); // if we ever want to call helper functions, this will break.
 
-  map<size_t, LineInfo> line_map;
+  LineMap line_map;
 
   auto new_cfg = rewrite_cfg_with_path(cfg, P, line_map);
   auto new_f = new_cfg.get_function();
@@ -778,8 +778,8 @@ for (size_t i = 0; i < total_accesses; ++i) {
   if (max_cell > 1 && alias_strategy_ == AliasStrategy::STRING) {
     ALIAS_STRING_DEBUG(cout << "Alias Strategy STRING" << std::endl;)
 
-    map<size_t, LineInfo> target_line_map;
-    map<size_t, LineInfo> rewrite_line_map;
+    LineMap target_line_map;
+    LineMap rewrite_line_map;
 
     auto target_unroll = rewrite_cfg_with_path(target, P, target_line_map);
     auto rewrite_unroll = rewrite_cfg_with_path(rewrite, Q, rewrite_line_map);
@@ -960,7 +960,7 @@ for (size_t i = 0; i < total_accesses; ++i) {
 
 
 void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType jump,
-                                      SymState& state, size_t& line_no) {
+                                      SymState& state, size_t& line_no, const LineMap& line_map) {
 
   if (cfg.num_instrs(bb) == 0)
     return;
@@ -969,6 +969,7 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
   size_t end_index = start_index + cfg.num_instrs(bb);
 
   for (size_t i = start_index; i < end_index; ++i) {
+    auto li = line_map[line_no];
     line_no++;
     auto instr = cfg.get_code()[i];
 
@@ -1003,6 +1004,7 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
     } else {
       // Build the handler for the instruction
       state.set_lineno(line_no-1);
+      state.rip = SymBitVector::constant(64, li.rip_offset);
 
       if (nacl_) {
         // We need to add constraints keeping the index register (if present)
@@ -1314,8 +1316,8 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
 
 }
 
-Cfg ObligationChecker::rewrite_cfg_with_path(const Cfg& cfg, const CfgPath& p, 
-                                             map<size_t,LineInfo>& to_populate) {
+Cfg ObligationChecker::rewrite_cfg_with_path(const Cfg& cfg, const CfgPath& p,
+    map<size_t,LineInfo>& to_populate) {
   Code code;
   auto function = cfg.get_function();
 

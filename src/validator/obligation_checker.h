@@ -233,8 +233,9 @@ private:
     x64asm::Label label;
     uint64_t rip_offset;
   };
+  typedef std::map<size_t,LineInfo> LineMap;
 
-  Cfg rewrite_cfg_with_path(const Cfg&, const CfgPath& p, std::map<size_t,LineInfo>& to_populate);
+  Cfg rewrite_cfg_with_path(const Cfg&, const CfgPath& p, LineMap& to_populate);
 
 
   /////////////// Bookkeeping //////////////////
