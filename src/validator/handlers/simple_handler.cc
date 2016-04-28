@@ -108,6 +108,8 @@ void SimpleHandler::add_all() {
     ss.set(eflags_sf, temp[dst.size() - 1]);
     ss.set(eflags_cf, b == zero);
     ss.set(eflags_of, SymBool::_false());
+    ss.set(eflags_af, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
     ss.set(dst, temp);
   });
 
