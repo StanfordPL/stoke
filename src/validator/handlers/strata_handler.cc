@@ -242,6 +242,12 @@ SymBitVectorAbstract* translate_max_register(const SymState& state, const Operan
           auto c = transformer.make_bitvector_constant(bit_width_of_type(instr_to.type(i)), val);
           return transformer.make_bitvector_sign_extend(c, 64);
         } else {
+          // if (!is_gp_type(instr_to.type(i))) {
+          //   cout << instr_to.type(i) << endl;
+          //   cout << operand_from << endl;
+          //   cout << instr_from << endl;
+          //   cout << instr_to << endl;
+          // }
           assert(is_gp_type(instr_to.type(i)));
           auto translated_reg = r_to_r64(instr_to.get_operand<R>(i));
           return (SymBitVectorAbstract*)state.lookup(translated_reg).ptr;
@@ -478,7 +484,30 @@ void StrataHandler::init() {
   // }
 }
 
+bool uses_imm(const x64asm::Opcode& opcode) {
+  Instruction instr(opcode);
+  for (size_t i = 0; i < instr.arity(); i++) {
+    switch (instr.type(i)) {
+    case Type::IMM_8:
+    case Type::IMM_16:
+    case Type::IMM_32:
+    case Type::IMM_64:
+    case Type::ONE:
+    case Type::THREE:
+      return true;
+    default:
+      break;
+    }
+  }
+  return false;
+}
+
+bool tmp_unsupported(const x64asm::Opcode& opcode) {
+  return specgen_uses_memory(opcode) || uses_imm(opcode);
+}
+
 bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
+  if (tmp_unsupported(opcode)) return false;
   return support_reason(opcode) != SupportReason::NONE;
 }
 
@@ -658,6 +687,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 
   // keep a copy of the start state
   SymState start = final;
+  start.set_delete_memory(false);
 
   // the state which will be the circuit for our alternative instruction
   SymState tmp(opcode_str);

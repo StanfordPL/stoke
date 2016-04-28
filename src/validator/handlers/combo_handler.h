@@ -26,6 +26,8 @@ class ComboHandler : public Handler {
 public:
   /** Uses a predefined and prioritized list of handlers to build circuits */
   ComboHandler() : handlers_(default_handler_list()), free_handlers_(true) {}
+  ComboHandler(std::vector<Handler*> handlers) : handlers_(handlers), free_handlers_(true) {}
+
   /** Destruct object.  Frees handlers if set by default. */
   virtual ~ComboHandler() {
     if (free_handlers_)
