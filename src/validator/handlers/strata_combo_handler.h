@@ -35,6 +35,8 @@ class StrataComboHandler : public ComboHandler {
 
 public:
 
+  StrataComboHandler() : ComboHandler(default_handler_list()) {}
+
   virtual ~StrataComboHandler() {};
 
 protected:

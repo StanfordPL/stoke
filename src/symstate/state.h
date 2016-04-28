@@ -60,6 +60,11 @@ public:
   /** Has a #OF, #BR, #TS, #GP or #PF exception occurred? These trigger SIGSEGV on linux) */
   SymBool sigsegv;
 
+  /** Should the memory be deleted? */
+  void set_delete_memory(bool b) {
+    delete_memory_ = b;
+  }
+
   /** Get the address corresponding to a memory location */
   template <typename T>
   SymBitVector get_addr(x64asm::M<T> ref) const;

@@ -83,7 +83,7 @@ LIB=\
 	-L src/ext/z3/build -lz3
 
 LDFLAGS=-Wl,-rpath=\$$ORIGIN/../src/ext/z3/build:\$$ORIGIN/../src/ext/cvc4-1.4-build/lib,--enable-new-dtags
-	
+
 SRC_OBJ=\
 	src/cfg/cfg.o \
 	src/cfg/cfg_transforms.o \
