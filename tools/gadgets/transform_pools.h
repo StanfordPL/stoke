@@ -131,12 +131,27 @@ private:
     const auto real_cpu_flags = CpuInfo::get_flags();
     const auto user_flags = cpu_flags_arg.value();
 
+    FlagSet safe_flags;
+    // These are flags that we've tested and we know we can deal with.
+    std::stringstream ss;
+    ss << "{ fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 ";
+    ss << "clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp ";
+    ss << "lm constant_tsc arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc ";
+    ss << "aperfmperf eagerfpu pni pclmulqdq dtes64 monitor ds_cpl vmx est tm2 ssse3 ";
+    ss << "fma cx16 xtpr pdcm pcid sse4_1 sse4_2 movbe popcnt tsc_deadline_timer aes ";
+    ss << "xsave avx f16c rdrand lahf_lm abm ida arat epb xsaveopt pln pts dtherm ";
+    ss << "tpr_shadow vnmi flexpriority ept vpid fsgsbase tsc_adjust bmi1 avx2 smep ";
+    ss << "bmi2 erms invpcid }";
+    ss >> safe_flags;
+
+
+
     if (!real_cpu_flags.contains(user_flags)) {
       cpputil::Console::warn() << "Some cpu flags are not available on this hardware and will be removed:" << std::endl;
       cpputil::Console::warn() << (user_flags - real_cpu_flags) << std::endl;
     }
 
-    return user_flags & real_cpu_flags;
+    return user_flags & real_cpu_flags & safe_flags;
   }
 
   /** Warns if mem operands contain rip offsets and removes those values */
