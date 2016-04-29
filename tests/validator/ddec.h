@@ -965,7 +965,7 @@ TEST_F(DdecValidatorBaseTest, DISABLED_WcslenCorrect2) {
 
 }
 
-TEST_F(DdecValidatorBaseTest, WcslenWrong1) {
+TEST_F(DdecValidatorBaseTest, DISABLED_WcslenWrong1) {
 
   auto def_ins = x64asm::RegSet::empty() + x64asm::rdi + x64asm::r15;
   auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
@@ -1018,6 +1018,33 @@ TEST_F(DdecValidatorBaseTest, WcslenWrong1) {
   ssr << "nop" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
+
+  sandbox->reset();
+
+  for (size_t i = 0; i < 10; ++i) {
+    CpuState tc;
+    StateGen sg(sandbox);
+    sg.get(tc);
+    uint64_t address = tc[r15] + (uint64_t)tc[eax];
+    if (address >= 0xffffffffffffff00)
+      continue;
+    tc.heap.resize(address & 0xffffffffffffff00, 512);
+    size_t len = i;
+    for (size_t j = 0; j < len; ++j) {
+      tc.heap.set_valid(address + j, true);
+      tc.heap[address + j] = (rand() % 256);
+    }
+    tc.heap.set_valid(address + len, true);
+    tc.heap[address+len] = '\0';
+    sandbox->insert_input(tc);
+
+    if (len > 2) {
+      tc.heap[address + 2] = 0x1;
+      sandbox->insert_input(tc);
+    }
+  }
+
+  validator->set_sandbox(sandbox);
 
   EXPECT_FALSE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
