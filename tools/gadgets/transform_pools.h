@@ -131,12 +131,17 @@ private:
     const auto real_cpu_flags = CpuInfo::get_flags();
     const auto user_flags = cpu_flags_arg.value();
 
+    // These are flags that we've tested and we know we can deal with.
+    // The i7-4770K processors we test on have all the x64asm flags except for RTM.
+    auto safe_flags = x64asm::FlagSet::universe();
+    safe_flags -= x64asm::Flag::RTM;
+
     if (!real_cpu_flags.contains(user_flags)) {
       cpputil::Console::warn() << "Some cpu flags are not available on this hardware and will be removed:" << std::endl;
       cpputil::Console::warn() << (user_flags - real_cpu_flags) << std::endl;
     }
 
-    return user_flags & real_cpu_flags;
+    return user_flags & real_cpu_flags & safe_flags;
   }
 
   /** Warns if mem operands contain rip offsets and removes those values */
