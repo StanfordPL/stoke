@@ -187,13 +187,13 @@ private:
     std::vector<OverlapDescriptor>& available_cells, size_t max_size);
 
   /** Populate a testcase with memory. */
-  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory, 
-                                                 const CellMemory* rewrite_memory, 
-                                                 const Cfg& target, const Cfg& rewrite, 
-                                                 bool begin) const;
+  bool build_testcase_cell_memory(CpuState& ceg, const CellMemory* target_memory,
+                                  const CellMemory* rewrite_memory,
+                                  const Cfg& target, const Cfg& rewrite,
+                                  bool begin) const;
 
-  bool build_testcase_flat_memory(CpuState&, FlatMemory&, 
-                               const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
+  bool build_testcase_flat_memory(CpuState&, FlatMemory&,
+                                  const std::map<const SymBitVectorAbstract*, uint64_t>& others) const;
 
   /** Go through lists of pairs of pointers and free all the memory. */
   void delete_memories(std::vector<std::pair<CellMemory*, CellMemory*>>& memories);
@@ -235,9 +235,9 @@ private:
   }
 
   /** Check if a counterexample actually works. */
-  bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P, 
-                                 const CfgPath& Q, const Invariant& assume, 
-                                 const Invariant& prove, const CpuState& ceg, const CpuState& ceg2);
+  bool check_counterexample(const Cfg& target, const Cfg& rewrite, const CfgPath& P,
+                            const CfgPath& Q, const Invariant& assume,
+                            const Invariant& prove, const CpuState& ceg, const CpuState& ceg2);
 
   /** Run the sandbox on a state, cfg along a path.  Used for checking counterexamples. */
   CpuState run_sandbox_on_path(const Cfg& cfg, const CfgPath& P, const CpuState& state);
