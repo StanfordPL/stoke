@@ -56,10 +56,6 @@ public:
 
   static std::vector<CfgPath> enumerate_paths(const Cfg& cfg, size_t max_loops, Cfg::id_type start = -1, Cfg::id_type end = -1, std::vector<Cfg::id_type>* nopass = NULL);
 
-  /** Rewrite a CFG so that it always executes a particular path, replacing
-    jumps with NOPs. */
-  static Cfg rewrite_cfg_with_path(const Cfg&, const CfgPath& p);
-
   /** Returns true if first path is a prefix of the second. */
   static bool is_prefix(const CfgPath& p, const CfgPath& q);
 
