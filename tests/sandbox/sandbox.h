@@ -1026,6 +1026,31 @@ TEST(SandboxTest, Issue709_5) {
 
 }
 
+TEST(SandboxTest, LeaRip) {
+  std::stringstream ss;
+  ss << ".foo:" << std::endl;
+  ss << "leaq (%rip), %rax" << std::endl;
+  ss << "retq" << std::endl;
+
+  Code c;
+  ss >> c;
+
+  TUnit fxn(c, 0, 0x4004f6, 0);
+  Cfg cfg(fxn, RegSet::empty(), RegSet::empty() + rax);
+
+  CpuState tc;
+
+  Sandbox sb;
+  sb.insert_input(tc);
+  sb.run(cfg);
+
+  auto result = *sb.result_begin();
+
+  /** 0x4004fd accounts for an instruction length of 7 */
+  /** This has been compared with what the actual hardware does. */
+  EXPECT_EQ(0x4004fdul, result[rax]);
+}
+
 TEST(SandboxTest, CannotReadInvalidAddress) {
   std::stringstream ss;
   ss << ".foo:" << std::endl;

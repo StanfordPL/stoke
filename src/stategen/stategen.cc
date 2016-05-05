@@ -28,8 +28,8 @@ using namespace x64asm;
 namespace {
 
 void callback(const StateCallbackData& data, void* arg) {
-  Instruction& last_line = *((Instruction*) arg);
-  last_line = data.code[data.line];
+  size_t& last_line = *((size_t*) arg);
+  last_line = data.line;
 }
 
 } // namespace
@@ -81,9 +81,9 @@ void StateGen::cleanup() {
 
 bool StateGen::get(CpuState& cs, const Cfg& cfg) {
   // Insert callbacks before every instruction and compile
-  Instruction last_line(RET);
+  size_t last_line_index;
   sb_->clear_callbacks();
-  sb_->insert_before(callback, (void*)&last_line);
+  sb_->insert_before(callback, (void*)&last_line_index);
   sb_->compile(cfg);
 
   // Generate a random state and keep checking for validity
@@ -94,6 +94,7 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
     sb_->clear_inputs();
     sb_->insert_input(cs);
     sb_->run_one(0);
+    auto last_line = cfg.get_code()[last_line_index];
 
     // There's a single failure case we have to deal with immediately.
     // If the sandbox couldn't link cfg against its aux functions, it
@@ -111,7 +112,7 @@ bool StateGen::get(CpuState& cs, const Cfg& cfg) {
       return true;
     }
     // Otherwise, try allocating away a segfault and retry
-    else if (fix(*(sb_->get_result(0)), cs, last_line)) {
+    else if (fix(*(sb_->get_result(0)), cs, cfg, last_line_index)) {
       i--;
     }
     // Otherwise, generate a new state and call this attempt failed
@@ -176,8 +177,8 @@ bool StateGen::is_supported_deref(const Instruction& instr) {
   const auto op = instr.get_operand<M8>(mi);
 
   // No support for rip-offset form or segment register addressing
-  if (op.rip_offset() || op.contains_seg()) {
-    error_message_ = "No support for RIP offset or segment addressing";
+  if (op.contains_seg()) {
+    error_message_ = "No support for segment addressing";
     return false;
   }
 
@@ -199,7 +200,7 @@ size_t StateGen::get_size(const Instruction& instr) const {
 bool StateGen::resize_within(Memory& mem, uint64_t addr, size_t size) {
   // This should always be true, otherwise there'd be no work to do
   // * See the previous check against already_allocated() one level up
-  assert((addr + size) > mem.upper_bound());
+  assert((addr + size - mem.size()) > mem.lower_bound());
 
   const auto delta = addr + size - mem.upper_bound();
   if (mem.size() + delta > max_memory_) {
@@ -213,7 +214,8 @@ bool StateGen::resize_within(Memory& mem, uint64_t addr, size_t size) {
 
 bool StateGen::resize_below(Memory& mem, uint64_t addr, size_t size) {
   size_t new_size = 0;
-  if (addr + size > mem.upper_bound()) {
+  if (addr + size - mem.size() > mem.lower_bound()) {
+    // i.e. the access is bigger than the entire existing memory region
     new_size = size;
   } else {
     new_size = mem.upper_bound() - addr;
@@ -229,7 +231,7 @@ bool StateGen::resize_below(Memory& mem, uint64_t addr, size_t size) {
 }
 
 bool StateGen::resize_above(Memory& mem, uint64_t addr, size_t size) {
-  const auto delta = addr + size - mem.upper_bound();
+  const auto delta = addr + size - mem.lower_bound() - mem.size();
   if (mem.size() + delta > max_memory_) {
     return false;
   }
@@ -240,10 +242,11 @@ bool StateGen::resize_above(Memory& mem, uint64_t addr, size_t size) {
 }
 
 void StateGen::randomize_mem(Memory& mem) {
-  for (auto i = mem.lower_bound(), ie = mem.upper_bound(); i < ie; ++i) {
-    if (!mem.is_valid(i)) {
-      mem.set_valid(i, true);
-      mem[i] = gen_() % 256;
+  for (uint64_t i = 0; i < mem.size(); ++i) {
+    uint64_t addr = mem.lower_bound() + i;
+    if (!mem.is_valid(addr)) {
+      mem.set_valid(addr, true);
+      mem[addr] = gen_() % 256;
     }
   }
 }
@@ -257,7 +260,7 @@ bool StateGen::resize_mem(Memory& mem, uint64_t addr, size_t size) {
     return true;
   } else if (addr < mem.lower_bound() && resize_below(mem, addr, size)) {
     return true;
-  } else if (addr >= mem.upper_bound() && resize_above(mem, addr, size)) {
+  } else if (mem.upper_bound() && addr >= mem.upper_bound() && resize_above(mem, addr, size)) {
     return true;
   } else {
     return false;
@@ -292,7 +295,9 @@ bool StateGen::fix_misalignment(const CpuState& cs, CpuState& fixed, const Instr
 
 }
 
-bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Instruction& instr) {
+bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line) {
+
+  auto instr = cfg.get_code()[line];
   // Clear the error message unless something bad happens.
   error_message_ = "";
 
@@ -306,8 +311,15 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Instruction& instr
     return false;
   }
 
-  const auto addr = cs.get_addr(instr);
   const auto size = get_size(instr);
+  auto addr = cs.get_addr(instr);
+
+  auto mem = instr.get_operand<Mem>(instr.mem_index());
+  if (mem.rip_offset()) {
+    auto& fxn = cfg.get_function();
+    addr = mem.get_disp() + fxn.get_rip_offset() + fxn.hex_offset(line) + fxn.hex_size(line);
+  }
+
 
   // We can't do anything about misaligned memory or pre-allocated memory
   if (is_misaligned(addr, size) && !allow_unaligned_) {
@@ -329,10 +341,18 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Instruction& instr
   }
 
   // If stack and heap overlap now, give up. This memory is broken.
-  if (!(fixed.heap.upper_bound() < fixed.stack.lower_bound() ||
-        fixed.stack.upper_bound() < fixed.heap.lower_bound())) {
-    error_message_ = "Heap and stack overlap.";
-    return false;
+  if (fixed.stack.lower_bound() <= fixed.heap.lower_bound()) {
+    uint64_t space = fixed.heap.lower_bound() - fixed.stack.lower_bound();
+    if (space < fixed.stack.size()) {
+      error_message_ = "Heap and stack overlap.";
+      return false;
+    }
+  } else {
+    uint64_t space = fixed.stack.lower_bound() - fixed.heap.lower_bound();
+    if (space < fixed.heap.size()) {
+      error_message_ = "Heap and stack overlap.";
+      return false;
+    }
   }
 
   // Look like we did something right. Return success.

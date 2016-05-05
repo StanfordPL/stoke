@@ -72,6 +72,9 @@ TransformPools default_fuzzer_pool() {
   memory.push_back("0x5(%r11d, %ebx)");
   memory.push_back("-0x7(%r11d, %ebx, 4)");
   memory.push_back("0x30(%r11d)");
+  memory.push_back("(%rip)");
+  memory.push_back("-0x2fffff(%rip)");
+  memory.push_back("0x80000000(%rip)");
 
   for (auto mem_str : memory) {
     std::stringstream ss;
@@ -80,6 +83,9 @@ TransformPools default_fuzzer_pool() {
     ss >> m8;
     tp.insert_mem(m8);
   }
+
+  tp.insert_rip(0x100);
+  tp.insert_rip(0x5dd00000);
 
   tp.set_memory_read(true);
   tp.set_memory_write(true);

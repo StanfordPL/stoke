@@ -67,6 +67,7 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   sigbus = SymBool::_false();
   sigfpe = SymBool::_false();
   sigsegv = SymBool::_false();
+  rip = SymBitVector::constant(64, 0x0);
 }
 
 void SymState::build_with_suffix(const string& suffix, bool no_suffix) {
@@ -361,6 +362,11 @@ template <typename T>
 SymBitVector SymState::get_addr(M<T> memory) const {
 
   SymBitVector address = SymBitVector::constant(32, memory.get_disp()).extend(64);
+
+  if (memory.rip_offset()) {
+    address = address + this->rip;
+    return address;
+  }
 
   if (memory.contains_base()) {
     address = address + lookup(memory.get_base());

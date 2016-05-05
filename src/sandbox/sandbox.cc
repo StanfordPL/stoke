@@ -892,7 +892,11 @@ void Sandbox::emit_instruction(const Instruction& instr, const Label& fxn, uint6
     emit_reg_div(instr);
     break;
   case DispatchTable::INSTR:
-    assm_.assemble(instr);
+    if (instr.is_lea() && instr.get_operand<Mem>(1).rip_offset()) {
+      emit_lea_rip(instr, hex_offset);
+    } else {
+      assm_.assemble(instr);
+    }
     break;
   default:
     assert(false);
@@ -924,7 +928,9 @@ void Sandbox::emit_memory_instruction(const Instruction& instr, uint64_t hex_off
   // Some special case handling here for rip offset style dereferences.
   // Either way, the effective address is going into rdi
   if (rip_offset) {
-    assm_.mov(rdi, Imm64(hex_offset + old_op.get_disp()));
+    int32_t disp = old_op.get_disp();
+    int64_t sign_extend = (int64_t)disp;
+    assm_.mov(rdi, Imm64(hex_offset + (uint64_t)sign_extend));
   } else {
     if (uses_rsp) {
       assm_.mov(rsp, Imm64(&user_rsp_));
@@ -1529,6 +1535,34 @@ void Sandbox::emit_reg_div(const Instruction& instr) {
   }
   // Now that we're safely finished, reload the user's rsp
   emit_load_user_rsp();
+}
+
+void Sandbox::emit_lea_rip(const Instruction& instr, uint64_t hex_offset) {
+  assert(instr.mem_index() == 1);
+  auto mem = instr.get_operand<Mem>(1);
+
+  // Get the actual RIP value we should see, which is the offset *following*
+  // this instruction.
+  assert(mem.rip_offset());
+  uint64_t offset = (uint64_t)mem.get_disp();
+  offset += hex_offset;
+
+  // Assemble the correct instruction to do the emulation
+  auto destination = instr.get_operand<R>(0);
+  switch (destination.size()) {
+  case 16:
+    assm_.mov(instr.get_operand<R16>(0), Imm16(offset & 0xffff));
+    break;
+
+  case 32:
+    assm_.mov(instr.get_operand<R32>(0), Imm32(offset & 0xffffffff));
+    break;
+
+  case 64:
+    assm_.mov(instr.get_operand<R64>(0), Imm64(offset));
+    break;
+  }
+
 }
 
 void Sandbox::emit_signal_trap_call(ErrorCode ec) {

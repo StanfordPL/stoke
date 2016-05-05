@@ -116,7 +116,7 @@ private:
   /** Returns true if a memory can be resized to accommadate an access. */
   bool resize_mem(Memory& mem, uint64_t addr, size_t size);
   /** Returns true if the memory access on this line was fixable. */
-  bool fix(const CpuState& cs, CpuState& fixed, const x64asm::Instruction& instr);
+  bool fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t line);
   /** Returns true if we think we've adjusted registers to make memory align. */
   bool fix_misalignment(const CpuState& cs, CpuState& fixed, const x64asm::Instruction& instr);
   /** If we've already tried to fix misalignment.  We can go into an infinite loop
