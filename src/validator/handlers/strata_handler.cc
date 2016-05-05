@@ -330,7 +330,29 @@ void print_state(SymState& state, RegSet rs) {
 
 } // end namespace
 
+std::string StrataHandler::strata_path_;
+
 void StrataHandler::init() {
+
+  if (strata_path_ == "") {
+    // initialize the strata path once
+    char buf[1000];
+    if (readlink("/proc/self/exe", buf, 999) > 0) {
+      strata_path_ = string(buf);
+    } else {
+      if (readlink("/proc/curproc/file", buf, 999) > 0) {
+        strata_path_ = string(buf);
+      }
+    }
+
+    // find bin directory
+    strata_path_ = strata_path_.substr(0, strata_path_.rfind("/"));
+    strata_path_ += "/strata-programs";
+
+    if (strata_path_ == "") {
+      return;
+    }
+  }
 
   reg_only_alternative_.clear();
   reg_only_alternative_mem_reduce_.clear();
@@ -517,6 +539,10 @@ SupportReason StrataHandler::support_reason(const x64asm::Opcode& opcode) {
   auto opcode_str = ss.str();
   auto candidate_file = strata_path_ + "/" + opcode_str + ".s";
 
+  if (strata_path_ == "") {
+    return SupportReason::NONE;
+  }
+
   // can we convert this into a register only instruction?
   bool found = false;
   auto reason = SupportReason::NONE;
@@ -586,7 +612,12 @@ int specgen_get_imm8(const Instruction& instr) {
 }
 
 Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& instr) {
-  auto yes = (Handler::SupportLevel)(Handler::BASIC | Handler::CEG | Handler::ANALYSIS);
+
+  if (strata_path_ == "") {
+    return Handler::NONE;
+  }
+
+  auto yes = (Handler::SupportLevel)(Handler::BASIC | Handler::CEG);
   if (!operands_supported(instr)) {
     return Handler::NONE;
   }
