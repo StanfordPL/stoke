@@ -155,7 +155,6 @@ protected:
     .set_max_jumps(1)
     .insert_input(cs);
 
-    cout << "cfgt rip offset: " << cfg_t_->get_function().get_rip_offset() << endl;
     sb.run(*cfg_t_);
     CpuState sandbox_final = *sb.get_result(0);
 
@@ -172,9 +171,6 @@ protected:
     }
     SymState final_validator(cs);
     SymState final_sym(sandbox_final);
-
-    cout << "Starting state: " << endl << cs << endl << endl;
-    cout << "Sandbox final state: " << endl << sandbox_final << endl << endl;
 
     final_validator.rip = SymBitVector::constant(64, cfg_t_->get_function().hex_size(1));
     ch.build_circuit(instr, final_validator);
