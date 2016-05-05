@@ -314,10 +314,12 @@ bool StateGen::fix(const CpuState& cs, CpuState& fixed, const Cfg& cfg, size_t l
   const auto size = get_size(instr);
   auto addr = cs.get_addr(instr);
 
-  auto mem = instr.get_operand<Mem>(instr.mem_index());
-  if (mem.rip_offset()) {
-    auto& fxn = cfg.get_function();
-    addr = mem.get_disp() + fxn.get_rip_offset() + fxn.hex_offset(line) + fxn.hex_size(line);
+  if (instr.mem_index() != -1) {
+    auto mem = instr.get_operand<Mem>(instr.mem_index());
+    if (mem.rip_offset()) {
+      auto& fxn = cfg.get_function();
+      addr = mem.get_disp() + fxn.get_rip_offset() + fxn.hex_offset(line) + fxn.hex_size(line);
+    }
   }
 
 
