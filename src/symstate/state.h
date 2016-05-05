@@ -59,6 +59,8 @@ public:
   SymBool sigfpe;
   /** Has a #OF, #BR, #TS, #GP or #PF exception occurred? These trigger SIGSEGV on linux) */
   SymBool sigsegv;
+  /** Current rip offset */
+  SymBitVector rip;
 
   /** Get the address corresponding to a memory location */
   template <typename T>
