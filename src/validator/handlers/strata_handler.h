@@ -79,9 +79,6 @@ private:
   /** A type-checker. */
   SymTypecheckVisitor tc_;
 
-  /** A simplifier. */
-  SymSimplify simplifier_;
-
   /** A cache for learned formulas (to avoid having to load them from disk over and over again). */
   std::map<x64asm::Opcode, SymState> formula_cache_;
 
