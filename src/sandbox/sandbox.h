@@ -428,6 +428,8 @@ private:
   void emit_pushf(const x64asm::Instruction& instr);
   /** Special case for emitting div instructions that read from registers. */
   void emit_reg_div(const x64asm::Instruction& instr);
+  /** Special case for LEA on RIP-offset */
+  void emit_lea_rip(const x64asm::Instruction& instr, uint64_t hex_offset);
 
   /** Emits a bail-out call to the signal trap */
   void emit_signal_trap_call(ErrorCode ec);
