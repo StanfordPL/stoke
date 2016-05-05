@@ -611,7 +611,8 @@ Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& inst
 
 void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& final) {
   auto& should_simplify = simplify_;
-  auto& simplifier = simplifier_;
+  SymSimplify simplifier;
+
   auto& tc = tc_;
   auto& ch = ch_;
   auto simplify = [&simplifier, &should_simplify](SymBitVectorAbstract* circuit) {
