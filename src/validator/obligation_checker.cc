@@ -544,10 +544,10 @@ vector<pair<CellMemory*, CellMemory*>> ObligationChecker::enumerate_aliasing_str
 
   size_t line_no = 0;
   for (size_t i = 0; i < P.size(); ++i)
-    build_circuit(target, P[i], JumpType::NONE, target_state, line_no);
+    build_circuit(target, P[i], JumpType::NONE, target_state, line_no, target_line_map);
   line_no = 0;
   for (size_t i = 0; i < Q.size(); ++i)
-    build_circuit(rewrite, Q[i], JumpType::NONE, rewrite_state, line_no);
+    build_circuit(rewrite, Q[i], JumpType::NONE, rewrite_state, line_no, rewrite_line_map);
 
   for (auto& it : target_state.constraints)
     constraints.push_back(it);
@@ -969,7 +969,7 @@ void ObligationChecker::build_circuit(const Cfg& cfg, Cfg::id_type bb, JumpType 
   size_t end_index = start_index + cfg.num_instrs(bb);
 
   for (size_t i = start_index; i < end_index; ++i) {
-    auto li = line_map[line_no];
+    auto li = line_map.at(line_no);
     line_no++;
     auto instr = cfg.get_code()[i];
 
@@ -1154,13 +1154,19 @@ bool ObligationChecker::check(const Cfg& target, const Cfg& rewrite, const CfgPa
     CONSTRAINT_DEBUG(cout << "Assuming " << assumption << endl;);
     constraints.push_back(assumption);
 
+    // Compute line maps
+    LineMap target_line_map;
+    rewrite_cfg_with_path(target, P, target_line_map);
+    LineMap rewrite_line_map;
+    rewrite_cfg_with_path(rewrite, Q, rewrite_line_map);
+
     // Build the circuits
     size_t line_no = 0;
     for (size_t i = 0; i < P.size(); ++i)
-      build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no);
+      build_circuit(target, P[i], is_jump(target,P,i), state_t, line_no, target_line_map);
     line_no = 0;
     for (size_t i = 0; i < Q.size(); ++i)
-      build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no);
+      build_circuit(rewrite, Q[i], is_jump(rewrite,Q,i), state_r, line_no, rewrite_line_map);
 
     if (memories.first)
       constraints.push_back(memories.first->aliasing_formula(*memories.second));

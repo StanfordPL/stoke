@@ -92,7 +92,7 @@ protected:
     }
   }
 
-  Cfg make_cfg(std::stringstream& ss, x64asm::RegSet di = all(), x64asm::RegSet lo = all()) {
+  Cfg make_cfg(std::stringstream& ss, x64asm::RegSet di = all(), x64asm::RegSet lo = all(), uint64_t rip_offset = 0) {
     x64asm::Code c;
     ss >> c;
     if (ss.fail()) {
@@ -100,7 +100,8 @@ protected:
       std::cerr << cpputil::fail_msg(ss) << std::endl;
       fail();
     }
-    return Cfg(c, di, lo);
+    TUnit fxn(c, 0, rip_offset, 0);
+    return Cfg(fxn, di, lo);
   }
 
   CpuState get_state() {
@@ -200,6 +201,167 @@ TEST_F(BoundedValidatorBaseTest, UnsupportedInstruction) {
                                std::regex(".*unsupported.*", std::regex_constants::icase)))
       << "Error message: " << validator->error();
 
+}
+
+TEST_F(BoundedValidatorBaseTest, RipOffsetEqual) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "movq 0x1000(%rip), %rax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, all(), live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movq 0x0fff(%rip), %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, all(), live_outs);
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error());
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+}
+
+TEST_F(BoundedValidatorBaseTest, RipOffsetUnequal) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "movq 0x1000(%rip), %rax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, all(), live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "movq 0x0fff(%rip), %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, all(), live_outs);
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error());
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+}
+
+TEST_F(BoundedValidatorBaseTest, RipOffsetLoopEqual) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "movq 0x1000(%rip), %rax" << std::endl;
+  sst << "incq %rdx" << std::endl;
+  sst << "cmpq %rax, 0x2000(%rdx)" << std::endl;
+  sst << "je .foo" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, all(), live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movq 0x0fff(%rip), %rax" << std::endl;
+  ssr << "incq %rdx" << std::endl;
+  ssr << "cmpq %rax, 0x2000(%rdx)" << std::endl;
+  ssr << "je .foo" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, all(), live_outs);
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error());
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+}
+
+TEST_F(BoundedValidatorBaseTest, RipOffsetLoopUnqual) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "movq 0x1000(%rip), %rax" << std::endl;
+  sst << "incq %rdx" << std::endl;
+  sst << "cmpq %rax, 0x2000(%rdx)" << std::endl;
+  sst << "je .foo" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, all(), live_outs);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "nop" << std::endl;
+  ssr << "movq 0x1fff(%rip), %rax" << std::endl;
+  ssr << "incq %rdx" << std::endl;
+  ssr << "cmpq %rax, 0x2000(%rdx)" << std::endl;
+  ssr << "je .foo" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, all(), live_outs);
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+
+
+}
+
+TEST_F(BoundedValidatorBaseTest, RipOffsetCorrectValue) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "leaq (%rip), %rax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, all(), live_outs, 0xcafef00d);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "movq $0xcafef00d, %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, all(), live_outs, 0xd00dface);
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error());
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
+TEST_F(BoundedValidatorBaseTest, RipOffsetWrongValue) {
+
+  auto live_outs = x64asm::RegSet::empty() + x64asm::rax;
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "leaq 0x1(%rip), %rax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, all(), live_outs, 0xcafef00d);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "movq $0xcafef00d, %rax" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, all(), live_outs);
+
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error());
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  EXPECT_FALSE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
 }
 
 TEST_F(BoundedValidatorBaseTest, PopcntEqual) {
@@ -588,20 +750,6 @@ TEST_F(BoundedValidatorBaseTest, LoopMemoryEquiv) {
   ssr << "jne .foo" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, def_ins, live_outs);
-
-  /*
-  StateGen sg(sg_sandbox);
-  sg.set_max_value(x64asm::rax, 0x10);
-  sg.set_max_memory(1024);
-  sg.set_max_attempts(64);
-
-  for(size_t i = 0; i < 32; ++i) {
-    CpuState tc;
-    bool b = sg.get(tc, target);
-    ASSERT_TRUE(b);
-    sandbox->insert_input(tc);
-  }
-  */
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error()) << validator->error();
