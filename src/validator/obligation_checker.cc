@@ -1338,7 +1338,7 @@ Cfg ObligationChecker::rewrite_cfg_with_path(const Cfg& cfg, const CfgPath& p,
       LineInfo li;
       li.label = function.get_leading_label();
       li.line_number = i;
-      li.rip_offset = function.hex_offset(i) + function.get_rip_offset();
+      li.rip_offset = function.hex_offset(i) + function.get_rip_offset() + function.hex_size(i);
       to_populate[code.size()] = li;
 
       if (cfg.get_code()[i].is_jump()) {
@@ -1349,7 +1349,8 @@ Cfg ObligationChecker::rewrite_cfg_with_path(const Cfg& cfg, const CfgPath& p,
     }
   }
 
-  Cfg new_cfg(code, cfg.def_ins(), cfg.live_outs());
+  TUnit new_fxn(code, 0, function.get_rip_offset(), 0);
+  Cfg new_cfg(new_fxn, cfg.def_ins(), cfg.live_outs());
 
   //cout << "path cfg for " << print(p) << " is " << endl;
   //cout << TUnit(code) << endl;
