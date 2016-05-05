@@ -67,6 +67,7 @@ void SymState::build_from_cpustate(const CpuState& cs) {
   sigbus = SymBool::_false();
   sigfpe = SymBool::_false();
   sigsegv = SymBool::_false();
+  rip = SymBitVector::constant(64, 0x0);
 }
 
 void SymState::build_with_suffix(const string& suffix, bool no_suffix) {

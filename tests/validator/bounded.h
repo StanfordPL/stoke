@@ -328,9 +328,37 @@ TEST_F(BoundedValidatorBaseTest, RipOffsetCorrectValue) {
 
   std::stringstream ssr;
   ssr << ".foo:" << std::endl;
-  ssr << "movq $0xcafef00d, %rax" << std::endl;
+  // (remember to add 7 b/c of instruction length)
+  ssr << "movq $0xcafef014, %rax" << std::endl;
   ssr << "retq" << std::endl;
   auto rewrite = make_cfg(ssr, all(), live_outs, 0xd00dface);
+
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error());
+
+  validator->set_alias_strategy(BoundedValidator::AliasStrategy::FLAT);
+  EXPECT_TRUE(validator->verify(target, rewrite));
+  EXPECT_FALSE(validator->has_error()) << validator->error();
+}
+
+TEST_F(BoundedValidatorBaseTest, RipWritingEquiv) {
+
+  auto live_outs = x64asm::RegSet::empty();
+
+  std::stringstream sst;
+  sst << ".foo:" << std::endl;
+  sst << "leaq (%rip), %rax" << std::endl;
+  sst << "movq $0xc0ded00d, 0x4(%rax)" << std::endl;
+  sst << "xorl %eax, %eax" << std::endl;
+  sst << "retq" << std::endl;
+  auto target = make_cfg(sst, all(), live_outs, 0xcafef00d);
+
+  std::stringstream ssr;
+  ssr << ".foo:" << std::endl;
+  ssr << "movq $0xc0ded00d, (%rip)" << std::endl;
+  sst << "xorl %eax, %eax" << std::endl;
+  ssr << "retq" << std::endl;
+  auto rewrite = make_cfg(ssr, all(), live_outs, 0xcafef00d);
 
   EXPECT_TRUE(validator->verify(target, rewrite));
   EXPECT_FALSE(validator->has_error());
