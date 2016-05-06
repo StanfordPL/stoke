@@ -62,6 +62,11 @@ public:
   /** Current rip offset */
   SymBitVector rip;
 
+  /** Should the memory be deleted? */
+  void set_delete_memory(bool b) {
+    delete_memory_ = b;
+  }
+
   /** Get the address corresponding to a memory location */
   template <typename T>
   SymBitVector get_addr(x64asm::M<T> ref) const;
