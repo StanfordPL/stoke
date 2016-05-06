@@ -129,7 +129,12 @@ public:
 
   /** Returns string representation of an opcode */
   static std::string get_opcode(const x64asm::Instruction& instr) {
-    return std::string(att_[instr.get_opcode()]);
+    return get_opcode(instr.get_opcode());
+  }
+
+  /** Returns string representation of an opcode */
+  static std::string get_opcode(const x64asm::Opcode& opcode) {
+    return std::string(att_[opcode]);
   }
 
 protected:
