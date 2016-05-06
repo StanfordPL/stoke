@@ -882,6 +882,20 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     final.set(iter_translated, val_renamed);
   }
 
+  // set all undefined outputs to a new temporary variable
+  auto undefs = instr.must_undef_set();
+  for (auto iter = undefs.gp_begin(); iter != undefs.gp_end(); ++iter) {
+    auto width = bit_width_of_type((*iter).type());
+    final.set(*iter, SymBitVector::tmp_var(width), false, true);
+  }
+  for (auto iter = undefs.sse_begin(); iter != undefs.sse_end(); ++iter) {
+    auto width = bit_width_of_type((*iter).type());
+    final.set(*iter, SymBitVector::tmp_var(width), false, true);
+  }
+  for (auto iter = undefs.flags_begin(); iter != undefs.flags_end(); ++iter) {
+    final.set(*iter, SymBool::tmp_var());
+  }
+
 #ifdef DEBUG_STRATA_HANDLER
   cout << "Final state" << endl;
   print_state(final, instr.maybe_write_set());
@@ -891,6 +905,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
 
 vector<x64asm::Opcode> StrataHandler::full_support_opcodes() {
   vector<x64asm::Opcode> res;
+  if (strata_path_ == "") return res;
   filesystem::directory_iterator itr(strata_path_);
   filesystem::directory_iterator end_itr;
   for (; itr != end_itr; itr++) {
