@@ -22,6 +22,7 @@
 
 #include "src/symstate/pretty_visitor.h"
 #include "src/symstate/print_visitor.h"
+#include "src/symstate/memory/trivial.h"
 #include "src/validator/handlers/combo_handler.h"
 
 #include "tools/gadgets/functions.h"
@@ -58,6 +59,8 @@ auto& show_unchanged_arg = FlagArg::create("show_unchanged")
                            .description("Show the formula for unchanged registers");
 auto& use_smtlib_format_arg = FlagArg::create("smtlib_format")
                               .description("Show circuits in smtlib format");
+auto& no_simplify_arg = FlagArg::create("no_simplify")
+                        .description("Don't simplify formulas before printing them.");
 
 template <typename T>
 string out_padded(T t, size_t min_length, char pad = ' ') {
@@ -130,8 +133,8 @@ int main(int argc, char** argv) {
 
   ComboHandler ch;
   SymState state("", true);
-
-  // TODO: doesn't handle memory
+  auto mem = new TrivialMemory();
+  state.memory = mem;
 
   // test validator support
   for (auto it : code) {
@@ -162,7 +165,11 @@ int main(int argc, char** argv) {
   SymPrettyVisitor pretty(Console::msg());
   SymPrintVisitor smtlib(Console::msg());
 
-  auto print = [&smtlib, &pretty](const auto c) {
+  auto print = [&smtlib, &pretty](const auto cc) {
+    auto c = SymSimplify().simplify(cc);
+    if (no_simplify_arg.value()) {
+      c = c;
+    }
     if (use_smtlib_format_arg.value()) {
       smtlib((c));
     } else {
@@ -209,6 +216,37 @@ int main(int argc, char** argv) {
     print(val);
     Console::msg() << endl;
     printed = true;
+  }
+  if (printed) cout << endl;
+  printed = false;
+
+  // print memory reads and writes
+  auto reads = mem->get_reads();
+  auto writes = mem->get_writes();
+  if (reads.size() > 0) {
+    printed = true;
+    cout << "Information about memory reads:" << endl;
+    for (auto loc : reads) {
+      cout << "  Value ";
+      print(loc.value);
+      cout << " was read at address ";
+      print(loc.address);
+      cout << "." << endl;
+    }
+  }
+  if (printed) cout << endl;
+  printed = false;
+  if (writes.size() > 0) {
+    printed = true;
+    cout << "Information about memory writes:" << endl;
+    for (auto loc : writes) {
+      cout << "  Address ";
+      print(loc.address);
+      cout << " was updated to" << endl;
+      cout << "    ";
+      print(loc.value);
+      cout << " (" << loc.size << " bytes)." << endl;
+    }
   }
   if (printed) cout << endl;
   printed = false;
