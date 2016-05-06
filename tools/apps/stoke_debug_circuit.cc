@@ -60,7 +60,7 @@ auto& show_unchanged_arg = FlagArg::create("show_unchanged")
 auto& use_smtlib_format_arg = FlagArg::create("smtlib_format")
                               .description("Show circuits in smtlib format");
 auto& no_simplify_arg = FlagArg::create("no_simplify")
-                              .description("Don't simplify formulas before printing them.");
+                        .description("Don't simplify formulas before printing them.");
 
 template <typename T>
 string out_padded(T t, size_t min_length, char pad = ' ') {
