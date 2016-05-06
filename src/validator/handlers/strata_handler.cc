@@ -68,7 +68,7 @@ Ymm sse_to_ymm(const Sse& reg) {
 
 bool is_register_only(Opcode opcode) {
   Instruction instr(opcode);
-  auto imm8 = specgen_is_imm8(opcode);
+  auto imm8 = strata_is_imm8(opcode);
   for (size_t j = 0; j < instr.arity(); j++) {
     switch (instr.type(j)) {
     case x64asm::Type::RH:
@@ -374,7 +374,7 @@ void StrataHandler::init() {
   // first map duplicates to their _1 version
   for (auto i = 0; i < X64ASM_NUM_OPCODES; ++i) {
     auto opcode = (Opcode)i;
-    if (specgen_is_duplicate(opcode)) {
+    if (strata_is_duplicate(opcode)) {
       string text = opcode_write_att(opcode);
       auto& options = str_to_opcode[text];
       Instruction instr(opcode);
@@ -403,8 +403,8 @@ void StrataHandler::init() {
     auto opcode = (Opcode)i;
 
     if (is_register_only(opcode)) continue;
-    if (specgen_is_mm(opcode)) continue;
-    if (specgen_is_base(opcode)) continue;
+    if (strata_is_mm(opcode)) continue;
+    if (strata_is_base(opcode)) continue;
 
     string text = opcode_write_att(opcode);
     auto& options = str_to_opcode[text];
@@ -486,11 +486,11 @@ void StrataHandler::init() {
     }
 
     if (!found) {
-      if (!specgen_is_system(opcode) &&
-          !specgen_is_float(opcode) &&
-          !specgen_is_jump(opcode) &&
-          !specgen_is_crypto(opcode) &&
-          !specgen_is_sandbox_unsupported(opcode)) {
+      if (!strata_is_system(opcode) &&
+          !strata_is_float(opcode) &&
+          !strata_is_jump(opcode) &&
+          !strata_is_crypto(opcode) &&
+          !strata_is_sandbox_unsupported(opcode)) {
         // cout << opcode << endl;
       }
     }
@@ -525,7 +525,7 @@ bool uses_imm(const x64asm::Opcode& opcode) {
 }
 
 bool tmp_unsupported(const x64asm::Opcode& opcode) {
-  return specgen_uses_memory(opcode) || uses_imm(opcode);
+  return strata_uses_memory(opcode) || uses_imm(opcode);
 }
 
 bool StrataHandler::is_supported(const x64asm::Opcode& opcode) {
@@ -566,7 +566,7 @@ SupportReason StrataHandler::support_reason(const x64asm::Opcode& opcode) {
   }
 
   if (found) {
-    if (specgen_is_base(alt)) return reason;
+    if (strata_is_base(alt)) return reason;
     if (is_supported(alt)) return reason;
   } else {
     // we have a learned circuit
@@ -607,7 +607,7 @@ int StrataHandler::used_for(const x64asm::Opcode& op) {
   return res;
 }
 
-int specgen_get_imm8(const Instruction& instr) {
+int strata_get_imm8(const Instruction& instr) {
   return (int)instr.get_operand<Imm8>(instr.arity() - 1);
 }
 
@@ -627,9 +627,9 @@ Handler::SupportLevel StrataHandler::get_support(const x64asm::Instruction& inst
   }
 
   // check for imm8 support
-  if (specgen_is_imm8(opcode)) {
+  if (strata_is_imm8(opcode)) {
     stringstream ss;
-    ss << opcode << "_" << specgen_get_imm8(instr);
+    ss << opcode << "_" << strata_get_imm8(instr);
     auto candidate_file = strata_path_ + "/" + ss.str() + ".s";
     // we have a learned circuit
     if (filesystem::exists(candidate_file)) {
@@ -664,15 +664,15 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   ss << opcode;
   auto opcode_str = ss.str();
   string candidate_file = strata_path_ + "/" + opcode_str + ".s";
-  if (specgen_is_imm8(opcode)) {
+  if (strata_is_imm8(opcode)) {
     stringstream ss;
-    ss << opcode << "_" << dec << specgen_get_imm8(instr);
+    ss << opcode << "_" << dec << strata_get_imm8(instr);
     candidate_file = strata_path_ + "/" + ss.str() + ".s";
   }
 
   error_ = "";
 
-  if (specgen_is_base(opcode) || opcode == Opcode::CALL_LABEL) {
+  if (strata_is_base(opcode) || opcode == Opcode::CALL_LABEL) {
     ch.build_circuit(instr, final);
     if (ch.has_error()) {
       error_ = "ComboHandler encountered an error: " + ch.error();
@@ -724,12 +724,12 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   // the state which will be the circuit for our alternative instruction
   SymState tmp(opcode_str);
 
-  Instruction specgen_instr(XOR_R8_R8);
+  Instruction strata_instr(XOR_R8_R8);
   if (reg_only_alternative_.find(opcode) != reg_only_alternative_.end()) {
     // handle imm instructions
     // get circuit for register only opcode
-    specgen_instr = get_instruction(reg_only_alternative_[opcode]);
-    ch.build_circuit(specgen_instr, tmp);
+    strata_instr = strata_get_instruction(reg_only_alternative_[opcode]);
+    ch.build_circuit(strata_instr, tmp);
     if (ch.has_error()) {
       error_ = "StrataHandler encountered an error: " + ch.error();
       return;
@@ -737,15 +737,15 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   } else if (reg_only_alternative_extend_.find(opcode) != reg_only_alternative_extend_.end()) {
     // handle imm instructions that need extending
     // this is actually the same as above
-    specgen_instr = get_instruction(reg_only_alternative_extend_[opcode]);
-    ch.build_circuit(specgen_instr, tmp);
+    strata_instr = strata_get_instruction(reg_only_alternative_extend_[opcode]);
+    ch.build_circuit(strata_instr, tmp);
     if (ch.has_error()) {
       error_ = "StrataHandler encountered an error: " + ch.error();
       return;
     }
   } else {
     // we are dealing with a circuit that we have learned
-    specgen_instr = get_instruction(opcode);
+    strata_instr = strata_get_instruction(opcode);
 
     // read cache
     auto it = formula_cache_.find(opcode);
@@ -776,13 +776,13 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   cout << t.get_code() << endl << endl;
   cout << "Initial state:" << endl;
   print_state(start, instr.maybe_write_set());
-  cout << "State for specgen instruction: " << specgen_instr << ":" << endl;
-  print_state(tmp, specgen_instr.maybe_write_set());
+  cout << "State for strata instruction: " << strata_instr << ":" << endl;
+  print_state(tmp, strata_instr.maybe_write_set());
 #endif
 
-  // take a formula for specgen_instr in state tmp, and convert it to one that
+  // take a formula for strata_instr in state tmp, and convert it to one that
   // makes sense for instr in state
-  SymVarRenamer translate_circuit([&instr, &specgen_instr, &start, &opcode_str](SymBitVectorVar* var) -> SymBitVectorAbstract* {
+  SymVarRenamer translate_circuit([&instr, &strata_instr, &start, &opcode_str](SymBitVectorVar* var) -> SymBitVectorAbstract* {
     auto name = var->name_;
     if (name.size() <= opcode_str.size() || name.substr(name.size() - opcode_str.size()) != opcode_str) {
       // no renaming for variable of unfamiliar names
@@ -792,9 +792,9 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     R64 gp = Constants::rax();
     Ymm ymm = Constants::ymm0();
     if (stringstream(real_name) >> gp) {
-      return translate_max_register(start, gp, specgen_instr, instr);
+      return translate_max_register(start, gp, strata_instr, instr);
     } else if (stringstream(real_name) >> ymm) {
-      return translate_max_register(start, ymm, specgen_instr, instr);
+      return translate_max_register(start, ymm, strata_instr, instr);
     }
     assert(false);
     return NULL;
@@ -814,11 +814,11 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
   });
 
   // loop over all live outs and update the final state
-  auto liveouts = specgen_instr.maybe_write_set();
+  auto liveouts = strata_instr.maybe_write_set();
   if (opcode_str.size() > 4 && opcode_str.substr(0, 4) == "xadd") {
     // for xadd, we need to hard-code the order of registers
-    auto op0 = specgen_instr.get_operand<R>(0);
-    auto op1 = specgen_instr.get_operand<R>(1);
+    auto op0 = strata_instr.get_operand<R>(0);
+    auto op1 = strata_instr.get_operand<R>(1);
     if (opcode == Opcode::XADD_R32_R32) {
       // 64 bit extension
       op0 = Constants::r64s()[(size_t)op0];
@@ -827,7 +827,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     for (auto iter : {
            op1, op0
          }) {
-      auto iter_translated = translate_gp_register(iter, specgen_instr, instr);
+      auto iter_translated = translate_gp_register(iter, strata_instr, instr);
       // look up live out in tmp state
       auto val = tmp[iter];
       if (!typecheck(val, (iter).size())) return;
@@ -839,7 +839,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     }
   } else {
     for (auto iter = liveouts.gp_begin(); iter != liveouts.gp_end(); ++iter) {
-      auto iter_translated = translate_gp_register(*iter, specgen_instr, instr);
+      auto iter_translated = translate_gp_register(*iter, strata_instr, instr);
       // look up live out in tmp state
       auto val = tmp[*iter];
 #ifdef DEBUG_STRATA_HANDLER
@@ -860,7 +860,7 @@ void StrataHandler::build_circuit(const x64asm::Instruction& instr, SymState& fi
     }
   }
   for (auto iter = liveouts.sse_begin(); iter != liveouts.sse_end(); ++iter) {
-    auto iter_translated = translate_sse_register(*iter, specgen_instr, instr);
+    auto iter_translated = translate_sse_register(*iter, strata_instr, instr);
     // look up live out in tmp state (after translating operators as necessary)
     auto val = tmp[*iter];
     if (!typecheck(val, (*iter).size())) return;
@@ -912,7 +912,7 @@ vector<x64asm::Opcode> StrataHandler::full_support_opcodes() {
     auto file = itr->path().filename().string();
     assert(file.size() > 2);
     auto opcode_str = file.substr(0, file.size()-2);
-    auto instr = get_instruction_from_string(opcode_str);
+    auto instr = strata_get_instruction_from_string(opcode_str);
     res.push_back(instr.get_opcode());
   }
   return res;

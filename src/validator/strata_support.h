@@ -17,7 +17,7 @@
 
 namespace stoke {
 
-enum class SupportedReason {
+enum class StrataSupportedReason {
   SUPPORTED,
   MEMORY,
   IMMEDIATE,
@@ -27,23 +27,23 @@ enum class SupportedReason {
   OTHER
 };
 
-bool specgen_is_base(const x64asm::Opcode& opcode);
-bool specgen_is_crypto(const x64asm::Opcode& opcode);
-bool specgen_is_jump(const x64asm::Opcode& opcode);
-bool specgen_is_system(const x64asm::Opcode& opcode);
-bool specgen_is_float(const x64asm::Opcode& opcode);
-bool specgen_is_duplicate(const x64asm::Opcode& opcode);
-bool specgen_is_sandbox_unsupported(const x64asm::Opcode& op);
-bool specgen_is_mm(const x64asm::Opcode& opcode);
-bool specgen_is_imm8(const x64asm::Opcode& opcode);
+bool strata_is_base(const x64asm::Opcode& opcode);
+bool strata_is_crypto(const x64asm::Opcode& opcode);
+bool strata_is_jump(const x64asm::Opcode& opcode);
+bool strata_is_system(const x64asm::Opcode& opcode);
+bool strata_is_float(const x64asm::Opcode& opcode);
+bool strata_is_duplicate(const x64asm::Opcode& opcode);
+bool strata_is_sandbox_unsupported(const x64asm::Opcode& op);
+bool strata_is_mm(const x64asm::Opcode& opcode);
+bool strata_is_imm8(const x64asm::Opcode& opcode);
 
-bool specgen_uses_memory(const x64asm::Opcode& opcode);
-bool specgen_uses_imm(const x64asm::Opcode& opcode);
+bool strata_uses_memory(const x64asm::Opcode& opcode);
+bool strata_uses_imm(const x64asm::Opcode& opcode);
 
-SupportedReason is_supported_type_reason(x64asm::Type t);
-bool is_supported_type(x64asm::Type t);
-x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val = 0);
-x64asm::Instruction get_instruction_from_string(std::string xopcode);
+StrataSupportedReason strata_is_supported_type_reason(x64asm::Type t);
+bool strata_is_supported_type(x64asm::Type t);
+x64asm::Instruction strata_get_instruction(x64asm::Opcode opc, uint8_t imm8_val = 0);
+x64asm::Instruction strata_get_instruction_from_string(std::string xopcode);
 
 } // namespace stoke
 

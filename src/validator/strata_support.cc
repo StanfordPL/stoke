@@ -4762,27 +4762,27 @@ set<Opcode> unsupported_ {{
   }
 };
 
-bool specgen_is_sandbox_unsupported(const x64asm::Opcode& op) {
+bool strata_is_sandbox_unsupported(const x64asm::Opcode& op) {
   return unsupported_.find(op) != unsupported_.end();
 }
 
-bool specgen_is_base(const x64asm::Opcode& op) {
+bool strata_is_base(const x64asm::Opcode& op) {
   auto& set = instr_cat_base_;
   return find(set.begin(), set.end(), op) != set.end();
 }
-bool specgen_is_crypto(const x64asm::Opcode& op) {
+bool strata_is_crypto(const x64asm::Opcode& op) {
   auto& set = instr_cat_crypto_;
   return find(set.begin(), set.end(), op) != set.end();
 }
-bool specgen_is_jump(const x64asm::Opcode& op) {
+bool strata_is_jump(const x64asm::Opcode& op) {
   auto& set = instr_cat_jump_;
   return find(set.begin(), set.end(), op) != set.end();
 }
-bool specgen_is_imm8(const x64asm::Opcode& op) {
+bool strata_is_imm8(const x64asm::Opcode& op) {
   auto& set = instr_cat_imm8_;
   return find(set.begin(), set.end(), op) != set.end();
 }
-bool specgen_is_system(const x64asm::Opcode& op) {
+bool strata_is_system(const x64asm::Opcode& op) {
   auto& set = instr_cat_system_;
   if (find(set.begin(), set.end(), op) != set.end()) {
     return true;
@@ -4803,16 +4803,16 @@ bool specgen_is_system(const x64asm::Opcode& op) {
   }
   return false;
 }
-bool specgen_is_float(const x64asm::Opcode& op) {
+bool strata_is_float(const x64asm::Opcode& op) {
   auto& set = instr_cat_float_;
   return find(set.begin(), set.end(), op) != set.end();
 }
-bool specgen_is_duplicate(const x64asm::Opcode& op) {
+bool strata_is_duplicate(const x64asm::Opcode& op) {
   auto& set = instr_cat_duplicates_;
   return find(set.begin(), set.end(), op) != set.end();
 }
 
-bool specgen_is_mm(const x64asm::Opcode& opcode) {
+bool strata_is_mm(const x64asm::Opcode& opcode) {
   Instruction instr(opcode);
   for (size_t i = 0; i < instr.arity(); i++) {
     switch (instr.type(i)) {
@@ -4825,7 +4825,7 @@ bool specgen_is_mm(const x64asm::Opcode& opcode) {
   return false;
 }
 
-bool specgen_uses_memory(const x64asm::Opcode& opcode) {
+bool strata_uses_memory(const x64asm::Opcode& opcode) {
   Instruction instr(opcode);
   for (size_t i = 0; i < instr.arity(); i++) {
     switch (instr.type(i)) {
@@ -4856,7 +4856,7 @@ bool specgen_uses_memory(const x64asm::Opcode& opcode) {
   }
   return false;
 }
-bool specgen_uses_imm(const x64asm::Opcode& opcode) {
+bool strata_uses_imm(const x64asm::Opcode& opcode) {
   Instruction instr(opcode);
   for (size_t i = 0; i < instr.arity(); i++) {
     switch (instr.type(i)) {
@@ -4876,7 +4876,7 @@ bool specgen_uses_imm(const x64asm::Opcode& opcode) {
 
 
 
-SupportedReason is_supported_type_reason(x64asm::Type t) {
+StrataSupportedReason strata_is_supported_type_reason(x64asm::Type t) {
   switch (t) {
   case x64asm::Type::NONE:
     std::cout << "NONE should not occur!" << std::endl;
@@ -4898,14 +4898,14 @@ SupportedReason is_supported_type_reason(x64asm::Type t) {
   case x64asm::Type::M_28_BYTE:
   case x64asm::Type::M_108_BYTE:
   case x64asm::Type::M_512_BYTE:
-    return SupportedReason::MEMORY;
+    return StrataSupportedReason::MEMORY;
   case x64asm::Type::IMM_8:
   case x64asm::Type::IMM_16:
   case x64asm::Type::IMM_32:
   case x64asm::Type::IMM_64:
-    return SupportedReason::IMMEDIATE;
+    return StrataSupportedReason::IMMEDIATE;
   case x64asm::Type::LABEL:
-    return SupportedReason::LABEL;
+    return StrataSupportedReason::LABEL;
   case x64asm::Type::RH:
   case x64asm::Type::R_8:
   case x64asm::Type::R_16:
@@ -4913,14 +4913,14 @@ SupportedReason is_supported_type_reason(x64asm::Type t) {
   case x64asm::Type::R_64:
   case x64asm::Type::XMM:
   case x64asm::Type::YMM:
-    return SupportedReason::SUPPORTED;
+    return StrataSupportedReason::SUPPORTED;
   case x64asm::Type::MM:
-    return SupportedReason::MM;
+    return StrataSupportedReason::MM;
 
   case x64asm::Type::ZERO:
   case x64asm::Type::ONE:
   case x64asm::Type::THREE:
-    return SupportedReason::SUPPORTED;
+    return StrataSupportedReason::SUPPORTED;
   case x64asm::Type::AL:
   case x64asm::Type::CL:
   case x64asm::Type::AX:
@@ -4928,7 +4928,7 @@ SupportedReason is_supported_type_reason(x64asm::Type t) {
   case x64asm::Type::EAX:
   case x64asm::Type::RAX:
   case x64asm::Type::XMM_0:
-    return SupportedReason::SUPPORTED;
+    return StrataSupportedReason::SUPPORTED;
   case x64asm::Type::HINT:
   case x64asm::Type::FAR_PTR_16_16:
   case x64asm::Type::FAR_PTR_16_32:
@@ -4947,16 +4947,16 @@ SupportedReason is_supported_type_reason(x64asm::Type t) {
   case x64asm::Type::GS:
   case x64asm::Type::ST:
   case x64asm::Type::ST_0:
-    return SupportedReason::OTHER;
+    return StrataSupportedReason::OTHER;
   default:
     assert(false);
-    return SupportedReason::OTHER;
+    return StrataSupportedReason::OTHER;
   }
 }
 
-/** Can specgen currently handle this x64asm::Type? */
-bool is_supported_type(x64asm::Type t) {
-  return is_supported_type_reason(t) == SupportedReason::SUPPORTED;
+/** Can strata currently handle this x64asm::Type? */
+bool strata_is_supported_type(x64asm::Type t) {
+  return strata_is_supported_type_reason(t) == StrataSupportedReason::SUPPORTED;
 }
 
 
@@ -5054,7 +5054,7 @@ x64asm::Operand get_next_operand(x64asm::Type t, uint8_t imm8_val) {
   return operands_[t][operands_idx_[t] - 1];
 }
 
-x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
+x64asm::Instruction strata_get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
   operands_idx_ = {};
   x64asm::Instruction instr(opc);
 
@@ -5124,7 +5124,7 @@ x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
   else {
     for (size_t i = 0; i < instr.arity(); i++) {
       auto t = instr.type(i);
-      if (is_supported_type(t) || is_supported_type_reason(t) == SupportedReason::MM || is_supported_type_reason(t) == SupportedReason::IMMEDIATE) {
+      if (strata_is_supported_type(t) || strata_is_supported_type_reason(t) == StrataSupportedReason::MM || strata_is_supported_type_reason(t) == StrataSupportedReason::IMMEDIATE) {
         instr.set_operand(i, get_next_operand(t, imm8_val));
       } else {
         std::cout << "unsupported type: " << t << std::endl;
@@ -5143,7 +5143,7 @@ x64asm::Instruction get_instruction(x64asm::Opcode opc, uint8_t imm8_val) {
   return instr;
 }
 
-x64asm::Instruction get_instruction_from_string(std::string xopcode) {
+x64asm::Instruction strata_get_instruction_from_string(std::string xopcode) {
   // parse opcode
   // we use opc_8 to indicate that we want to use 8 as the imm8 argument
   smatch result;
@@ -5168,7 +5168,7 @@ x64asm::Instruction get_instruction_from_string(std::string xopcode) {
     cerr << "ERROR: could not parse the extended opcoce: " << xopcode << endl;
     exit(1);
   }
-  return get_instruction(opc, num);
+  return strata_get_instruction(opc, num);
 }
 
 
