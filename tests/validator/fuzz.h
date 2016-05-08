@@ -94,53 +94,54 @@ TEST_F(ValidatorFuzzTest, XchgInstructionsRandomState) {
   tp.set_validator(&v);
 
   for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    auto op = (Opcode)i;
+
+    if (op == XCHG_AX_R16) continue;
+    if (op == XCHG_EAX_R32) continue;
+    if (op == XCHG_M16_R16) continue;
+    if (op == XCHG_M32_R32) continue;
+    if (op == XCHG_M64_R64) continue;
+    if (op == XCHG_M8_R8) continue;
+    if (op == XCHG_M8_RH) continue;
+    if (op == XCHG_R16_AX) continue;
+    if (op == XCHG_R16_M16) continue;
+    if (op == XCHG_R16_R16) continue;
+    if (op == XCHG_R16_R16_1) continue;
+    if (op == XCHG_R32_EAX) continue;
+    if (op == XCHG_R32_M32) continue;
+    if (op == XCHG_R32_R32) continue;
+    if (op == XCHG_R32_R32_1) continue;
+    if (op == XCHG_R64_M64) continue;
+    if (op == XCHG_R64_R64) continue;
+    if (op == XCHG_R64_R64_1) continue;
+    if (op == XCHG_R64_RAX) continue;
+    if (op == XCHG_R8_M8) continue;
+    if (op == XCHG_R8_R8) continue;
+    if (op == XCHG_R8_R8_1) continue;
+    if (op == XCHG_R8_RH) continue;
+    if (op == XCHG_R8_RH_1) continue;
+    if (op == XCHG_RAX_R64) continue;
+    if (op == XCHG_RH_M8) continue;
+    if (op == XCHG_RH_R8) continue;
+    if (op == XCHG_RH_R8_1) continue;
+    if (op == XCHG_RH_RH) continue;
+    if (op == XCHG_RH_RH_1) continue;
+
+    if (op == XADD_M16_R16) continue;
+    if (op == XADD_M32_R32) continue;
+    if (op == XADD_M64_R64) continue;
+    if (op == XADD_M8_R8) continue;
+    if (op == XADD_M8_RH) continue;
+    if (op == XADD_R16_R16) continue;
+    if (op == XADD_R32_R32) continue;
+    if (op == XADD_R64_R64) continue;
+    if (op == XADD_R8_R8) continue;
+    if (op == XADD_R8_RH) continue;
+    if (op == XADD_RH_R8) continue;
+    if (op == XADD_RH_RH) continue;
+
     tp.remove_opcode((Opcode)i);
   }
-
-  tp.insert_opcode(XCHG_AX_R16);
-  tp.insert_opcode(XCHG_EAX_R32);
-  tp.insert_opcode(XCHG_M16_R16);
-  tp.insert_opcode(XCHG_M32_R32);
-  tp.insert_opcode(XCHG_M64_R64);
-  tp.insert_opcode(XCHG_M8_R8);
-  tp.insert_opcode(XCHG_M8_RH);
-  tp.insert_opcode(XCHG_R16_AX);
-  tp.insert_opcode(XCHG_R16_M16);
-  tp.insert_opcode(XCHG_R16_R16);
-  tp.insert_opcode(XCHG_R16_R16_1);
-  tp.insert_opcode(XCHG_R32_EAX);
-  tp.insert_opcode(XCHG_R32_M32);
-  tp.insert_opcode(XCHG_R32_R32);
-  tp.insert_opcode(XCHG_R32_R32_1);
-  tp.insert_opcode(XCHG_R64_M64);
-  tp.insert_opcode(XCHG_R64_R64);
-  tp.insert_opcode(XCHG_R64_R64_1);
-  tp.insert_opcode(XCHG_R64_RAX);
-  tp.insert_opcode(XCHG_R8_M8);
-  tp.insert_opcode(XCHG_R8_R8);
-  tp.insert_opcode(XCHG_R8_R8_1);
-  tp.insert_opcode(XCHG_R8_RH);
-  tp.insert_opcode(XCHG_R8_RH_1);
-  tp.insert_opcode(XCHG_RAX_R64);
-  tp.insert_opcode(XCHG_RH_M8);
-  tp.insert_opcode(XCHG_RH_R8);
-  tp.insert_opcode(XCHG_RH_R8_1);
-  tp.insert_opcode(XCHG_RH_RH);
-  tp.insert_opcode(XCHG_RH_RH_1);
-
-  tp.insert_opcode(XADD_M16_R16);
-  tp.insert_opcode(XADD_M32_R32);
-  tp.insert_opcode(XADD_M64_R64);
-  tp.insert_opcode(XADD_M8_R8);
-  tp.insert_opcode(XADD_M8_RH);
-  tp.insert_opcode(XADD_R16_R16);
-  tp.insert_opcode(XADD_R32_R32);
-  tp.insert_opcode(XADD_R64_R64);
-  tp.insert_opcode(XADD_R8_R8);
-  tp.insert_opcode(XADD_R8_RH);
-  tp.insert_opcode(XADD_RH_R8);
-  tp.insert_opcode(XADD_RH_RH);
-
   tp.set_memory_write(true);
   tp.set_memory_read(true);
 
@@ -168,266 +169,267 @@ TEST_F(ValidatorFuzzTest, ShiftInstructionsRandomState) {
   tp.set_validator(&v);
 
   for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+
+    auto op = (Opcode)i;
+    if (op == SHL_M16_CL) continue; // SHL m16, CL
+    if (op == SHL_M16_IMM8) continue; // SHL m16, imm8
+    if (op == SHL_M16_ONE) continue; // SHL m16, 1
+    if (op == SHL_M32_CL) continue; // SHL m32, CL
+    if (op == SHL_M32_IMM8) continue; // SHL m32, imm8
+    if (op == SHL_M32_ONE) continue; // SHL m32, 1
+    if (op == SHL_M64_CL) continue; // SHL m64, CL
+    if (op == SHL_M64_IMM8) continue; // SHL m64, imm8
+    if (op == SHL_M64_ONE) continue; // SHL m64, 1
+    if (op == SHL_M8_CL) continue; // SHL m8, CL
+    if (op == SHL_M8_IMM8) continue; // SHL m8, imm8
+    if (op == SHL_M8_ONE) continue; // SHL m8, 1
+    if (op == SHL_R16_CL) continue; // SHL r16, CL
+    if (op == SHL_R16_IMM8) continue; // SHL r16, imm8
+    if (op == SHL_R16_ONE) continue; // SHL r16, 1
+    if (op == SHL_R32_CL) continue; // SHL r32, CL
+    if (op == SHL_R32_IMM8) continue; // SHL r32, imm8
+    if (op == SHL_R32_ONE) continue; // SHL r32, 1
+    if (op == SHL_R64_CL) continue; // SHL r64, CL
+    if (op == SHL_R64_IMM8) continue; // SHL r64, imm8
+    if (op == SHL_R64_ONE) continue; // SHL r64, 1
+    if (op == SHL_R8_CL) continue; // SHL r8, CL
+    if (op == SHL_R8_IMM8) continue; // SHL r8, imm8
+    if (op == SHL_R8_ONE) continue; // SHL r8, 1
+    if (op == SHL_RH_CL) continue; // SHL rh, CL
+    if (op == SHL_RH_IMM8) continue; // SHL rh, imm8
+    if (op == SHL_RH_ONE) continue; // SHL rh, 1
+    if (op == SHLD_M16_R16_CL) continue; // SHLD m16, r16, CL
+    if (op == SHLD_M16_R16_IMM8) continue; // SHLD m16, r16, imm8
+    if (op == SHLD_M32_R32_CL) continue; // SHLD m32, r32, CL
+    if (op == SHLD_M32_R32_IMM8) continue; // SHLD m32, r32, imm8
+    if (op == SHLD_M64_R64_CL) continue; // SHLD m64, r64, CL
+    if (op == SHLD_M64_R64_IMM8) continue; // SHLD m64, r64, imm8
+    if (op == SHLD_R16_R16_CL) continue; // SHLD r16, r16, CL
+    if (op == SHLD_R16_R16_IMM8) continue; // SHLD r16, r16, imm8
+    if (op == SHLD_R32_R32_CL) continue; // SHLD r32, r32, CL
+    if (op == SHLD_R32_R32_IMM8) continue; // SHLD r32, r32, imm8
+    if (op == SHLD_R64_R64_CL) continue; // SHLD r64, r64, CL
+    if (op == SHLD_R64_R64_IMM8) continue; // SHLD r64, r64, imm8
+    if (op == SHLX_R32_M32_R32) continue; // SHLX r32, m32, r32
+    if (op == SHLX_R32_R32_R32) continue; // SHLX r32, r32, r32
+    if (op == SHLX_R64_M64_R64) continue; // SHLX r64, m64, r64
+    if (op == SHLX_R64_R64_R64) continue; // SHLX r64, r64, r64
+    if (op == SHR_M16_CL) continue; // SHR m16, CL
+    if (op == SHR_M16_IMM8) continue; // SHR m16, imm8
+    if (op == SHR_M16_ONE) continue; // SHR m16, 1
+    if (op == SHR_M32_CL) continue; // SHR m32, CL
+    if (op == SHR_M32_IMM8) continue; // SHR m32, imm8
+    if (op == SHR_M32_ONE) continue; // SHR m32, 1
+    if (op == SHR_M64_CL) continue; // SHR m64, CL
+    if (op == SHR_M64_IMM8) continue; // SHR m64, imm8
+    if (op == SHR_M64_ONE) continue; // SHR m64, 1
+    if (op == SHR_M8_CL) continue; // SHR m8, CL
+    if (op == SHR_M8_IMM8) continue; // SHR m8, imm8
+    if (op == SHR_M8_ONE) continue; // SHR m8, 1
+    if (op == SHR_R16_CL) continue; // SHR r16, CL
+    if (op == SHR_R16_IMM8) continue; // SHR r16, imm8
+    if (op == SHR_R16_ONE) continue; // SHR r16, 1
+    if (op == SHR_R32_CL) continue; // SHR r32, CL
+    if (op == SHR_R32_IMM8) continue; // SHR r32, imm8
+    if (op == SHR_R32_ONE) continue; // SHR r32, 1
+    if (op == SHR_R64_CL) continue; // SHR r64, CL
+    if (op == SHR_R64_IMM8) continue; // SHR r64, imm8
+    if (op == SHR_R64_ONE) continue; // SHR r64, 1
+    if (op == SHR_R8_CL) continue; // SHR r8, CL
+    if (op == SHR_R8_IMM8) continue; // SHR r8, imm8
+    if (op == SHR_R8_ONE) continue; // SHR r8, 1
+    if (op == SHR_RH_CL) continue; // SHR rh, CL
+    if (op == SHR_RH_IMM8) continue; // SHR rh, imm8
+    if (op == SHR_RH_ONE) continue; // SHR rh, 1
+    if (op == SHRD_M16_R16_CL) continue; // SHRD m16, r16, CL
+    if (op == SHRD_M16_R16_IMM8) continue; // SHRD m16, r16, imm8
+    if (op == SHRD_M32_R32_CL) continue; // SHRD m32, r32, CL
+    if (op == SHRD_M32_R32_IMM8) continue; // SHRD m32, r32, imm8
+    if (op == SHRD_M64_R64_CL) continue; // SHRD m64, r64, CL
+    if (op == SHRD_M64_R64_IMM8) continue; // SHRD m64, r64, imm8
+    if (op == SHRD_R16_R16_CL) continue; // SHRD r16, r16, CL
+    if (op == SHRD_R16_R16_IMM8) continue; // SHRD r16, r16, imm8
+    if (op == SHRD_R32_R32_CL) continue; // SHRD r32, r32, CL
+    if (op == SHRD_R32_R32_IMM8) continue; // SHRD r32, r32, imm8
+    if (op == SHRD_R64_R64_CL) continue; // SHRD r64, r64, CL
+    if (op == SHRD_R64_R64_IMM8) continue; // SHRD r64, r64, imm8
+    if (op == SHRX_R32_M32_R32) continue; // SHRX r32, m32, r32
+    if (op == SHRX_R32_R32_R32) continue; // SHRX r32, r32, r32
+    if (op == SHRX_R64_M64_R64) continue; // SHRX r64, m64, r64
+    if (op == SHRX_R64_R64_R64) continue; // SHRX r64, r64, r64
+    if (op == SAL_M16_CL) continue; // SAL m16, CL
+    if (op == SAL_M16_IMM8) continue; // SAL m16, imm8
+    if (op == SAL_M16_ONE) continue; // SAL m16, 1
+    if (op == SAL_M32_CL) continue; // SAL m32, CL
+    if (op == SAL_M32_IMM8) continue; // SAL m32, imm8
+    if (op == SAL_M32_ONE) continue; // SAL m32, 1
+    if (op == SAL_M64_CL) continue; // SAL m64, CL
+    if (op == SAL_M64_IMM8) continue; // SAL m64, imm8
+    if (op == SAL_M64_ONE) continue; // SAL m64, 1
+    if (op == SAL_M8_CL) continue; // SAL m8, CL
+    if (op == SAL_M8_IMM8) continue; // SAL m8, imm8
+    if (op == SAL_M8_ONE) continue; // SAL m8, 1
+    if (op == SAL_R16_CL) continue; // SAL r16, CL
+    if (op == SAL_R16_IMM8) continue; // SAL r16, imm8
+    if (op == SAL_R16_ONE) continue; // SAL r16, 1
+    if (op == SAL_R32_CL) continue; // SAL r32, CL
+    if (op == SAL_R32_IMM8) continue; // SAL r32, imm8
+    if (op == SAL_R32_ONE) continue; // SAL r32, 1
+    if (op == SAL_R64_CL) continue; // SAL r64, CL
+    if (op == SAL_R64_IMM8) continue; // SAL r64, imm8
+    if (op == SAL_R64_ONE) continue; // SAL r64, 1
+    if (op == SAL_R8_CL) continue; // SAL r8, CL
+    if (op == SAL_R8_IMM8) continue; // SAL r8, imm8
+    if (op == SAL_R8_ONE) continue; // SAL r8, 1
+    if (op == SAL_RH_CL) continue; // SAL rh, CL
+    if (op == SAL_RH_IMM8) continue; // SAL rh, imm8
+    if (op == SAL_RH_ONE) continue; // SAL rh, 1
+    if (op == SAR_M16_CL) continue; // SAR m16, CL
+    if (op == SAR_M16_IMM8) continue; // SAR m16, imm8
+    if (op == SAR_M16_ONE) continue; // SAR m16, 1
+    if (op == SAR_M32_CL) continue; // SAR m32, CL
+    if (op == SAR_M32_IMM8) continue; // SAR m32, imm8
+    if (op == SAR_M32_ONE) continue; // SAR m32, 1
+    if (op == SAR_M64_CL) continue; // SAR m64, CL
+    if (op == SAR_M64_IMM8) continue; // SAR m64, imm8
+    if (op == SAR_M64_ONE) continue; // SAR m64, 1
+    if (op == SAR_M8_CL) continue; // SAR m8, CL
+    if (op == SAR_M8_IMM8) continue; // SAR m8, imm8
+    if (op == SAR_M8_ONE) continue; // SAR m8, 1
+    if (op == SAR_R16_CL) continue; // SAR r16, CL
+    if (op == SAR_R16_IMM8) continue; // SAR r16, imm8
+    if (op == SAR_R16_ONE) continue; // SAR r16, 1
+    if (op == SAR_R32_CL) continue; // SAR r32, CL
+    if (op == SAR_R32_IMM8) continue; // SAR r32, imm8
+    if (op == SAR_R32_ONE) continue; // SAR r32, 1
+    if (op == SAR_R64_CL) continue; // SAR r64, CL
+    if (op == SAR_R64_IMM8) continue; // SAR r64, imm8
+    if (op == SAR_R64_ONE) continue; // SAR r64, 1
+    if (op == SAR_R8_CL) continue; // SAR r8, CL
+    if (op == SAR_R8_IMM8) continue; // SAR r8, imm8
+    if (op == SAR_R8_ONE) continue; // SAR r8, 1
+    if (op == SAR_RH_CL) continue; // SAR rh, CL
+    if (op == SAR_RH_IMM8) continue; // SAR rh, imm8
+    if (op == SAR_RH_ONE) continue; // SAR rh, 1
+    if (op == SARX_R32_M32_R32) continue; // SARX r32, m32, r32
+    if (op == SARX_R32_R32_R32) continue; // SARX r32, r32, r32
+    if (op == SARX_R64_M64_R64) continue; // SARX r64, m64, r64
+    if (op == SARX_R64_R64_R64) continue; // SARX r64, r64, r64
+    if (op == RCL_M16_CL) continue; // RCL m16, CL
+    if (op == RCL_M16_IMM8) continue; // RCL m16, imm8
+    if (op == RCL_M16_ONE) continue; // RCL m16, 1
+    if (op == RCL_M32_CL) continue; // RCL m32, CL
+    if (op == RCL_M32_IMM8) continue; // RCL m32, imm8
+    if (op == RCL_M32_ONE) continue; // RCL m32, 1
+    if (op == RCL_M64_CL) continue; // RCL m64, CL
+    if (op == RCL_M64_IMM8) continue; // RCL m64, imm8
+    if (op == RCL_M64_ONE) continue; // RCL m64, 1
+    if (op == RCL_M8_CL) continue; // RCL m8, CL
+    if (op == RCL_M8_IMM8) continue; // RCL m8, imm8
+    if (op == RCL_M8_ONE) continue; // RCL m8, 1
+    if (op == RCL_R16_CL) continue; // RCL r16, CL
+    if (op == RCL_R16_IMM8) continue; // RCL r16, imm8
+    if (op == RCL_R16_ONE) continue; // RCL r16, 1
+    if (op == RCL_R32_CL) continue; // RCL r32, CL
+    if (op == RCL_R32_IMM8) continue; // RCL r32, imm8
+    if (op == RCL_R32_ONE) continue; // RCL r32, 1
+    if (op == RCL_R64_CL) continue; // RCL r64, CL
+    if (op == RCL_R64_IMM8) continue; // RCL r64, imm8
+    if (op == RCL_R64_ONE) continue; // RCL r64, 1
+    if (op == RCL_R8_CL) continue; // RCL r8, CL
+    if (op == RCL_R8_IMM8) continue; // RCL r8, imm8
+    if (op == RCL_R8_ONE) continue; // RCL r8, 1
+    if (op == RCL_RH_CL) continue; // RCL rh, CL
+    if (op == RCL_RH_IMM8) continue; // RCL rh, imm8
+    if (op == RCL_RH_ONE) continue; // RCL rh, 1
+    if (op == RCR_M16_CL) continue; // RCR m16, CL
+    if (op == RCR_M16_IMM8) continue; // RCR m16, imm8
+    if (op == RCR_M16_ONE) continue; // RCR m16, 1
+    if (op == RCR_M32_CL) continue; // RCR m32, CL
+    if (op == RCR_M32_IMM8) continue; // RCR m32, imm8
+    if (op == RCR_M32_ONE) continue; // RCR m32, 1
+    if (op == RCR_M64_CL) continue; // RCR m64, CL
+    if (op == RCR_M64_IMM8) continue; // RCR m64, imm8
+    if (op == RCR_M64_ONE) continue; // RCR m64, 1
+    if (op == RCR_M8_CL) continue; // RCR m8, CL
+    if (op == RCR_M8_IMM8) continue; // RCR m8, imm8
+    if (op == RCR_M8_ONE) continue; // RCR m8, 1
+    if (op == RCR_R16_CL) continue; // RCR r16, CL
+    if (op == RCR_R16_IMM8) continue; // RCR r16, imm8
+    if (op == RCR_R16_ONE) continue; // RCR r16, 1
+    if (op == RCR_R32_CL) continue; // RCR r32, CL
+    if (op == RCR_R32_IMM8) continue; // RCR r32, imm8
+    if (op == RCR_R32_ONE) continue; // RCR r32, 1
+    if (op == RCR_R64_CL) continue; // RCR r64, CL
+    if (op == RCR_R64_IMM8) continue; // RCR r64, imm8
+    if (op == RCR_R64_ONE) continue; // RCR r64, 1
+    if (op == RCR_R8_CL) continue; // RCR r8, CL
+    if (op == RCR_R8_IMM8) continue; // RCR r8, imm8
+    if (op == RCR_R8_ONE) continue; // RCR r8, 1
+    if (op == RCR_RH_CL) continue; // RCR rh, CL
+    if (op == RCR_RH_IMM8) continue; // RCR rh, imm8
+    if (op == RCR_RH_ONE) continue; // RCR rh, 1
+    if (op == ROL_M16_CL) continue; // ROL m16, CL
+    if (op == ROL_M16_IMM8) continue; // ROL m16, imm8
+    if (op == ROL_M16_ONE) continue; // ROL m16, 1
+    if (op == ROL_M32_CL) continue; // ROL m32, CL
+    if (op == ROL_M32_IMM8) continue; // ROL m32, imm8
+    if (op == ROL_M32_ONE) continue; // ROL m32, 1
+    if (op == ROL_M64_CL) continue; // ROL m64, CL
+    if (op == ROL_M64_IMM8) continue; // ROL m64, imm8
+    if (op == ROL_M64_ONE) continue; // ROL m64, 1
+    if (op == ROL_M8_CL) continue; // ROL m8, CL
+    if (op == ROL_M8_IMM8) continue; // ROL m8, imm8
+    if (op == ROL_M8_ONE) continue; // ROL m8, 1
+    if (op == ROL_R16_CL) continue; // ROL r16, CL
+    if (op == ROL_R16_IMM8) continue; // ROL r16, imm8
+    if (op == ROL_R16_ONE) continue; // ROL r16, 1
+    if (op == ROL_R32_CL) continue; // ROL r32, CL
+    if (op == ROL_R32_IMM8) continue; // ROL r32, imm8
+    if (op == ROL_R32_ONE) continue; // ROL r32, 1
+    if (op == ROL_R64_CL) continue; // ROL r64, CL
+    if (op == ROL_R64_IMM8) continue; // ROL r64, imm8
+    if (op == ROL_R64_ONE) continue; // ROL r64, 1
+    if (op == ROL_R8_CL) continue; // ROL r8, CL
+    if (op == ROL_R8_IMM8) continue; // ROL r8, imm8
+    if (op == ROL_R8_ONE) continue; // ROL r8, 1
+    if (op == ROL_RH_CL) continue; // ROL rh, CL
+    if (op == ROL_RH_IMM8) continue; // ROL rh, imm8
+    if (op == ROL_RH_ONE) continue; // ROL rh, 1
+    if (op == ROR_M16_CL) continue; // ROR m16, CL
+    if (op == ROR_M16_IMM8) continue; // ROR m16, imm8
+    if (op == ROR_M16_ONE) continue; // ROR m16, 1
+    if (op == ROR_M32_CL) continue; // ROR m32, CL
+    if (op == ROR_M32_IMM8) continue; // ROR m32, imm8
+    if (op == ROR_M32_ONE) continue; // ROR m32, 1
+    if (op == ROR_M64_CL) continue; // ROR m64, CL
+    if (op == ROR_M64_IMM8) continue; // ROR m64, imm8
+    if (op == ROR_M64_ONE) continue; // ROR m64, 1
+    if (op == ROR_M8_CL) continue; // ROR m8, CL
+    if (op == ROR_M8_IMM8) continue; // ROR m8, imm8
+    if (op == ROR_M8_ONE) continue; // ROR m8, 1
+    if (op == ROR_R16_CL) continue; // ROR r16, CL
+    if (op == ROR_R16_IMM8) continue; // ROR r16, imm8
+    if (op == ROR_R16_ONE) continue; // ROR r16, 1
+    if (op == ROR_R32_CL) continue; // ROR r32, CL
+    if (op == ROR_R32_IMM8) continue; // ROR r32, imm8
+    if (op == ROR_R32_ONE) continue; // ROR r32, 1
+    if (op == ROR_R64_CL) continue; // ROR r64, CL
+    if (op == ROR_R64_IMM8) continue; // ROR r64, imm8
+    if (op == ROR_R64_ONE) continue; // ROR r64, 1
+    if (op == ROR_R8_CL) continue; // ROR r8, CL
+    if (op == ROR_R8_IMM8) continue; // ROR r8, imm8
+    if (op == ROR_R8_ONE) continue; // ROR r8, 1
+    if (op == ROR_RH_CL) continue; // ROR rh, CL
+    if (op == ROR_RH_IMM8) continue; // ROR rh, imm8
+    if (op == ROR_RH_ONE) continue; // ROR rh, 1
+    if (op == RORX_R32_M32_IMM8) continue; // RORX r32, m32, imm8
+    if (op == RORX_R32_R32_IMM8) continue; // RORX r32, r32, imm8
+    if (op == RORX_R64_M64_IMM8) continue; // RORX r64, m64, imm8
+    if (op == RORX_R64_R64_IMM8) continue; // RORX r64, r64, imm8
+
     tp.remove_opcode((Opcode)i);
   }
-
-  tp.insert_opcode(SHL_M16_CL); // SHL m16, CL
-  tp.insert_opcode(SHL_M16_IMM8); // SHL m16, imm8
-  tp.insert_opcode(SHL_M16_ONE); // SHL m16, 1
-  tp.insert_opcode(SHL_M32_CL); // SHL m32, CL
-  tp.insert_opcode(SHL_M32_IMM8); // SHL m32, imm8
-  tp.insert_opcode(SHL_M32_ONE); // SHL m32, 1
-  tp.insert_opcode(SHL_M64_CL); // SHL m64, CL
-  tp.insert_opcode(SHL_M64_IMM8); // SHL m64, imm8
-  tp.insert_opcode(SHL_M64_ONE); // SHL m64, 1
-  tp.insert_opcode(SHL_M8_CL); // SHL m8, CL
-  tp.insert_opcode(SHL_M8_IMM8); // SHL m8, imm8
-  tp.insert_opcode(SHL_M8_ONE); // SHL m8, 1
-  tp.insert_opcode(SHL_R16_CL); // SHL r16, CL
-  tp.insert_opcode(SHL_R16_IMM8); // SHL r16, imm8
-  tp.insert_opcode(SHL_R16_ONE); // SHL r16, 1
-  tp.insert_opcode(SHL_R32_CL); // SHL r32, CL
-  tp.insert_opcode(SHL_R32_IMM8); // SHL r32, imm8
-  tp.insert_opcode(SHL_R32_ONE); // SHL r32, 1
-  tp.insert_opcode(SHL_R64_CL); // SHL r64, CL
-  tp.insert_opcode(SHL_R64_IMM8); // SHL r64, imm8
-  tp.insert_opcode(SHL_R64_ONE); // SHL r64, 1
-  tp.insert_opcode(SHL_R8_CL); // SHL r8, CL
-  tp.insert_opcode(SHL_R8_IMM8); // SHL r8, imm8
-  tp.insert_opcode(SHL_R8_ONE); // SHL r8, 1
-  tp.insert_opcode(SHL_RH_CL); // SHL rh, CL
-  tp.insert_opcode(SHL_RH_IMM8); // SHL rh, imm8
-  tp.insert_opcode(SHL_RH_ONE); // SHL rh, 1
-  tp.insert_opcode(SHLD_M16_R16_CL); // SHLD m16, r16, CL
-  tp.insert_opcode(SHLD_M16_R16_IMM8); // SHLD m16, r16, imm8
-  tp.insert_opcode(SHLD_M32_R32_CL); // SHLD m32, r32, CL
-  tp.insert_opcode(SHLD_M32_R32_IMM8); // SHLD m32, r32, imm8
-  tp.insert_opcode(SHLD_M64_R64_CL); // SHLD m64, r64, CL
-  tp.insert_opcode(SHLD_M64_R64_IMM8); // SHLD m64, r64, imm8
-  tp.insert_opcode(SHLD_R16_R16_CL); // SHLD r16, r16, CL
-  tp.insert_opcode(SHLD_R16_R16_IMM8); // SHLD r16, r16, imm8
-  tp.insert_opcode(SHLD_R32_R32_CL); // SHLD r32, r32, CL
-  tp.insert_opcode(SHLD_R32_R32_IMM8); // SHLD r32, r32, imm8
-  tp.insert_opcode(SHLD_R64_R64_CL); // SHLD r64, r64, CL
-  tp.insert_opcode(SHLD_R64_R64_IMM8); // SHLD r64, r64, imm8
-  tp.insert_opcode(SHLX_R32_M32_R32); // SHLX r32, m32, r32
-  tp.insert_opcode(SHLX_R32_R32_R32); // SHLX r32, r32, r32
-  tp.insert_opcode(SHLX_R64_M64_R64); // SHLX r64, m64, r64
-  tp.insert_opcode(SHLX_R64_R64_R64); // SHLX r64, r64, r64
-  tp.insert_opcode(SHR_M16_CL); // SHR m16, CL
-  tp.insert_opcode(SHR_M16_IMM8); // SHR m16, imm8
-  tp.insert_opcode(SHR_M16_ONE); // SHR m16, 1
-  tp.insert_opcode(SHR_M32_CL); // SHR m32, CL
-  tp.insert_opcode(SHR_M32_IMM8); // SHR m32, imm8
-  tp.insert_opcode(SHR_M32_ONE); // SHR m32, 1
-  tp.insert_opcode(SHR_M64_CL); // SHR m64, CL
-  tp.insert_opcode(SHR_M64_IMM8); // SHR m64, imm8
-  tp.insert_opcode(SHR_M64_ONE); // SHR m64, 1
-  tp.insert_opcode(SHR_M8_CL); // SHR m8, CL
-  tp.insert_opcode(SHR_M8_IMM8); // SHR m8, imm8
-  tp.insert_opcode(SHR_M8_ONE); // SHR m8, 1
-  tp.insert_opcode(SHR_R16_CL); // SHR r16, CL
-  tp.insert_opcode(SHR_R16_IMM8); // SHR r16, imm8
-  tp.insert_opcode(SHR_R16_ONE); // SHR r16, 1
-  tp.insert_opcode(SHR_R32_CL); // SHR r32, CL
-  tp.insert_opcode(SHR_R32_IMM8); // SHR r32, imm8
-  tp.insert_opcode(SHR_R32_ONE); // SHR r32, 1
-  tp.insert_opcode(SHR_R64_CL); // SHR r64, CL
-  tp.insert_opcode(SHR_R64_IMM8); // SHR r64, imm8
-  tp.insert_opcode(SHR_R64_ONE); // SHR r64, 1
-  tp.insert_opcode(SHR_R8_CL); // SHR r8, CL
-  tp.insert_opcode(SHR_R8_IMM8); // SHR r8, imm8
-  tp.insert_opcode(SHR_R8_ONE); // SHR r8, 1
-  tp.insert_opcode(SHR_RH_CL); // SHR rh, CL
-  tp.insert_opcode(SHR_RH_IMM8); // SHR rh, imm8
-  tp.insert_opcode(SHR_RH_ONE); // SHR rh, 1
-  tp.insert_opcode(SHRD_M16_R16_CL); // SHRD m16, r16, CL
-  tp.insert_opcode(SHRD_M16_R16_IMM8); // SHRD m16, r16, imm8
-  tp.insert_opcode(SHRD_M32_R32_CL); // SHRD m32, r32, CL
-  tp.insert_opcode(SHRD_M32_R32_IMM8); // SHRD m32, r32, imm8
-  tp.insert_opcode(SHRD_M64_R64_CL); // SHRD m64, r64, CL
-  tp.insert_opcode(SHRD_M64_R64_IMM8); // SHRD m64, r64, imm8
-  tp.insert_opcode(SHRD_R16_R16_CL); // SHRD r16, r16, CL
-  tp.insert_opcode(SHRD_R16_R16_IMM8); // SHRD r16, r16, imm8
-  tp.insert_opcode(SHRD_R32_R32_CL); // SHRD r32, r32, CL
-  tp.insert_opcode(SHRD_R32_R32_IMM8); // SHRD r32, r32, imm8
-  tp.insert_opcode(SHRD_R64_R64_CL); // SHRD r64, r64, CL
-  tp.insert_opcode(SHRD_R64_R64_IMM8); // SHRD r64, r64, imm8
-  tp.insert_opcode(SHRX_R32_M32_R32); // SHRX r32, m32, r32
-  tp.insert_opcode(SHRX_R32_R32_R32); // SHRX r32, r32, r32
-  tp.insert_opcode(SHRX_R64_M64_R64); // SHRX r64, m64, r64
-  tp.insert_opcode(SHRX_R64_R64_R64); // SHRX r64, r64, r64
-  tp.insert_opcode(SAL_M16_CL); // SAL m16, CL
-  tp.insert_opcode(SAL_M16_IMM8); // SAL m16, imm8
-  tp.insert_opcode(SAL_M16_ONE); // SAL m16, 1
-  tp.insert_opcode(SAL_M32_CL); // SAL m32, CL
-  tp.insert_opcode(SAL_M32_IMM8); // SAL m32, imm8
-  tp.insert_opcode(SAL_M32_ONE); // SAL m32, 1
-  tp.insert_opcode(SAL_M64_CL); // SAL m64, CL
-  tp.insert_opcode(SAL_M64_IMM8); // SAL m64, imm8
-  tp.insert_opcode(SAL_M64_ONE); // SAL m64, 1
-  tp.insert_opcode(SAL_M8_CL); // SAL m8, CL
-  tp.insert_opcode(SAL_M8_IMM8); // SAL m8, imm8
-  tp.insert_opcode(SAL_M8_ONE); // SAL m8, 1
-  tp.insert_opcode(SAL_R16_CL); // SAL r16, CL
-  tp.insert_opcode(SAL_R16_IMM8); // SAL r16, imm8
-  tp.insert_opcode(SAL_R16_ONE); // SAL r16, 1
-  tp.insert_opcode(SAL_R32_CL); // SAL r32, CL
-  tp.insert_opcode(SAL_R32_IMM8); // SAL r32, imm8
-  tp.insert_opcode(SAL_R32_ONE); // SAL r32, 1
-  tp.insert_opcode(SAL_R64_CL); // SAL r64, CL
-  tp.insert_opcode(SAL_R64_IMM8); // SAL r64, imm8
-  tp.insert_opcode(SAL_R64_ONE); // SAL r64, 1
-  tp.insert_opcode(SAL_R8_CL); // SAL r8, CL
-  tp.insert_opcode(SAL_R8_IMM8); // SAL r8, imm8
-  tp.insert_opcode(SAL_R8_ONE); // SAL r8, 1
-  tp.insert_opcode(SAL_RH_CL); // SAL rh, CL
-  tp.insert_opcode(SAL_RH_IMM8); // SAL rh, imm8
-  tp.insert_opcode(SAL_RH_ONE); // SAL rh, 1
-  tp.insert_opcode(SAR_M16_CL); // SAR m16, CL
-  tp.insert_opcode(SAR_M16_IMM8); // SAR m16, imm8
-  tp.insert_opcode(SAR_M16_ONE); // SAR m16, 1
-  tp.insert_opcode(SAR_M32_CL); // SAR m32, CL
-  tp.insert_opcode(SAR_M32_IMM8); // SAR m32, imm8
-  tp.insert_opcode(SAR_M32_ONE); // SAR m32, 1
-  tp.insert_opcode(SAR_M64_CL); // SAR m64, CL
-  tp.insert_opcode(SAR_M64_IMM8); // SAR m64, imm8
-  tp.insert_opcode(SAR_M64_ONE); // SAR m64, 1
-  tp.insert_opcode(SAR_M8_CL); // SAR m8, CL
-  tp.insert_opcode(SAR_M8_IMM8); // SAR m8, imm8
-  tp.insert_opcode(SAR_M8_ONE); // SAR m8, 1
-  tp.insert_opcode(SAR_R16_CL); // SAR r16, CL
-  tp.insert_opcode(SAR_R16_IMM8); // SAR r16, imm8
-  tp.insert_opcode(SAR_R16_ONE); // SAR r16, 1
-  tp.insert_opcode(SAR_R32_CL); // SAR r32, CL
-  tp.insert_opcode(SAR_R32_IMM8); // SAR r32, imm8
-  tp.insert_opcode(SAR_R32_ONE); // SAR r32, 1
-  tp.insert_opcode(SAR_R64_CL); // SAR r64, CL
-  tp.insert_opcode(SAR_R64_IMM8); // SAR r64, imm8
-  tp.insert_opcode(SAR_R64_ONE); // SAR r64, 1
-  tp.insert_opcode(SAR_R8_CL); // SAR r8, CL
-  tp.insert_opcode(SAR_R8_IMM8); // SAR r8, imm8
-  tp.insert_opcode(SAR_R8_ONE); // SAR r8, 1
-  tp.insert_opcode(SAR_RH_CL); // SAR rh, CL
-  tp.insert_opcode(SAR_RH_IMM8); // SAR rh, imm8
-  tp.insert_opcode(SAR_RH_ONE); // SAR rh, 1
-  tp.insert_opcode(SARX_R32_M32_R32); // SARX r32, m32, r32
-  tp.insert_opcode(SARX_R32_R32_R32); // SARX r32, r32, r32
-  tp.insert_opcode(SARX_R64_M64_R64); // SARX r64, m64, r64
-  tp.insert_opcode(SARX_R64_R64_R64); // SARX r64, r64, r64
-  tp.insert_opcode(RCL_M16_CL); // RCL m16, CL
-  tp.insert_opcode(RCL_M16_IMM8); // RCL m16, imm8
-  tp.insert_opcode(RCL_M16_ONE); // RCL m16, 1
-  tp.insert_opcode(RCL_M32_CL); // RCL m32, CL
-  tp.insert_opcode(RCL_M32_IMM8); // RCL m32, imm8
-  tp.insert_opcode(RCL_M32_ONE); // RCL m32, 1
-  tp.insert_opcode(RCL_M64_CL); // RCL m64, CL
-  tp.insert_opcode(RCL_M64_IMM8); // RCL m64, imm8
-  tp.insert_opcode(RCL_M64_ONE); // RCL m64, 1
-  tp.insert_opcode(RCL_M8_CL); // RCL m8, CL
-  tp.insert_opcode(RCL_M8_IMM8); // RCL m8, imm8
-  tp.insert_opcode(RCL_M8_ONE); // RCL m8, 1
-  tp.insert_opcode(RCL_R16_CL); // RCL r16, CL
-  tp.insert_opcode(RCL_R16_IMM8); // RCL r16, imm8
-  tp.insert_opcode(RCL_R16_ONE); // RCL r16, 1
-  tp.insert_opcode(RCL_R32_CL); // RCL r32, CL
-  tp.insert_opcode(RCL_R32_IMM8); // RCL r32, imm8
-  tp.insert_opcode(RCL_R32_ONE); // RCL r32, 1
-  tp.insert_opcode(RCL_R64_CL); // RCL r64, CL
-  tp.insert_opcode(RCL_R64_IMM8); // RCL r64, imm8
-  tp.insert_opcode(RCL_R64_ONE); // RCL r64, 1
-  tp.insert_opcode(RCL_R8_CL); // RCL r8, CL
-  tp.insert_opcode(RCL_R8_IMM8); // RCL r8, imm8
-  tp.insert_opcode(RCL_R8_ONE); // RCL r8, 1
-  tp.insert_opcode(RCL_RH_CL); // RCL rh, CL
-  tp.insert_opcode(RCL_RH_IMM8); // RCL rh, imm8
-  tp.insert_opcode(RCL_RH_ONE); // RCL rh, 1
-  tp.insert_opcode(RCR_M16_CL); // RCR m16, CL
-  tp.insert_opcode(RCR_M16_IMM8); // RCR m16, imm8
-  tp.insert_opcode(RCR_M16_ONE); // RCR m16, 1
-  tp.insert_opcode(RCR_M32_CL); // RCR m32, CL
-  tp.insert_opcode(RCR_M32_IMM8); // RCR m32, imm8
-  tp.insert_opcode(RCR_M32_ONE); // RCR m32, 1
-  tp.insert_opcode(RCR_M64_CL); // RCR m64, CL
-  tp.insert_opcode(RCR_M64_IMM8); // RCR m64, imm8
-  tp.insert_opcode(RCR_M64_ONE); // RCR m64, 1
-  tp.insert_opcode(RCR_M8_CL); // RCR m8, CL
-  tp.insert_opcode(RCR_M8_IMM8); // RCR m8, imm8
-  tp.insert_opcode(RCR_M8_ONE); // RCR m8, 1
-  tp.insert_opcode(RCR_R16_CL); // RCR r16, CL
-  tp.insert_opcode(RCR_R16_IMM8); // RCR r16, imm8
-  tp.insert_opcode(RCR_R16_ONE); // RCR r16, 1
-  tp.insert_opcode(RCR_R32_CL); // RCR r32, CL
-  tp.insert_opcode(RCR_R32_IMM8); // RCR r32, imm8
-  tp.insert_opcode(RCR_R32_ONE); // RCR r32, 1
-  tp.insert_opcode(RCR_R64_CL); // RCR r64, CL
-  tp.insert_opcode(RCR_R64_IMM8); // RCR r64, imm8
-  tp.insert_opcode(RCR_R64_ONE); // RCR r64, 1
-  tp.insert_opcode(RCR_R8_CL); // RCR r8, CL
-  tp.insert_opcode(RCR_R8_IMM8); // RCR r8, imm8
-  tp.insert_opcode(RCR_R8_ONE); // RCR r8, 1
-  tp.insert_opcode(RCR_RH_CL); // RCR rh, CL
-  tp.insert_opcode(RCR_RH_IMM8); // RCR rh, imm8
-  tp.insert_opcode(RCR_RH_ONE); // RCR rh, 1
-  tp.insert_opcode(ROL_M16_CL); // ROL m16, CL
-  tp.insert_opcode(ROL_M16_IMM8); // ROL m16, imm8
-  tp.insert_opcode(ROL_M16_ONE); // ROL m16, 1
-  tp.insert_opcode(ROL_M32_CL); // ROL m32, CL
-  tp.insert_opcode(ROL_M32_IMM8); // ROL m32, imm8
-  tp.insert_opcode(ROL_M32_ONE); // ROL m32, 1
-  tp.insert_opcode(ROL_M64_CL); // ROL m64, CL
-  tp.insert_opcode(ROL_M64_IMM8); // ROL m64, imm8
-  tp.insert_opcode(ROL_M64_ONE); // ROL m64, 1
-  tp.insert_opcode(ROL_M8_CL); // ROL m8, CL
-  tp.insert_opcode(ROL_M8_IMM8); // ROL m8, imm8
-  tp.insert_opcode(ROL_M8_ONE); // ROL m8, 1
-  tp.insert_opcode(ROL_R16_CL); // ROL r16, CL
-  tp.insert_opcode(ROL_R16_IMM8); // ROL r16, imm8
-  tp.insert_opcode(ROL_R16_ONE); // ROL r16, 1
-  tp.insert_opcode(ROL_R32_CL); // ROL r32, CL
-  tp.insert_opcode(ROL_R32_IMM8); // ROL r32, imm8
-  tp.insert_opcode(ROL_R32_ONE); // ROL r32, 1
-  tp.insert_opcode(ROL_R64_CL); // ROL r64, CL
-  tp.insert_opcode(ROL_R64_IMM8); // ROL r64, imm8
-  tp.insert_opcode(ROL_R64_ONE); // ROL r64, 1
-  tp.insert_opcode(ROL_R8_CL); // ROL r8, CL
-  tp.insert_opcode(ROL_R8_IMM8); // ROL r8, imm8
-  tp.insert_opcode(ROL_R8_ONE); // ROL r8, 1
-  tp.insert_opcode(ROL_RH_CL); // ROL rh, CL
-  tp.insert_opcode(ROL_RH_IMM8); // ROL rh, imm8
-  tp.insert_opcode(ROL_RH_ONE); // ROL rh, 1
-  tp.insert_opcode(ROR_M16_CL); // ROR m16, CL
-  tp.insert_opcode(ROR_M16_IMM8); // ROR m16, imm8
-  tp.insert_opcode(ROR_M16_ONE); // ROR m16, 1
-  tp.insert_opcode(ROR_M32_CL); // ROR m32, CL
-  tp.insert_opcode(ROR_M32_IMM8); // ROR m32, imm8
-  tp.insert_opcode(ROR_M32_ONE); // ROR m32, 1
-  tp.insert_opcode(ROR_M64_CL); // ROR m64, CL
-  tp.insert_opcode(ROR_M64_IMM8); // ROR m64, imm8
-  tp.insert_opcode(ROR_M64_ONE); // ROR m64, 1
-  tp.insert_opcode(ROR_M8_CL); // ROR m8, CL
-  tp.insert_opcode(ROR_M8_IMM8); // ROR m8, imm8
-  tp.insert_opcode(ROR_M8_ONE); // ROR m8, 1
-  tp.insert_opcode(ROR_R16_CL); // ROR r16, CL
-  tp.insert_opcode(ROR_R16_IMM8); // ROR r16, imm8
-  tp.insert_opcode(ROR_R16_ONE); // ROR r16, 1
-  tp.insert_opcode(ROR_R32_CL); // ROR r32, CL
-  tp.insert_opcode(ROR_R32_IMM8); // ROR r32, imm8
-  tp.insert_opcode(ROR_R32_ONE); // ROR r32, 1
-  tp.insert_opcode(ROR_R64_CL); // ROR r64, CL
-  tp.insert_opcode(ROR_R64_IMM8); // ROR r64, imm8
-  tp.insert_opcode(ROR_R64_ONE); // ROR r64, 1
-  tp.insert_opcode(ROR_R8_CL); // ROR r8, CL
-  tp.insert_opcode(ROR_R8_IMM8); // ROR r8, imm8
-  tp.insert_opcode(ROR_R8_ONE); // ROR r8, 1
-  tp.insert_opcode(ROR_RH_CL); // ROR rh, CL
-  tp.insert_opcode(ROR_RH_IMM8); // ROR rh, imm8
-  tp.insert_opcode(ROR_RH_ONE); // ROR rh, 1
-  tp.insert_opcode(RORX_R32_M32_IMM8); // RORX r32, m32, imm8
-  tp.insert_opcode(RORX_R32_R32_IMM8); // RORX r32, r32, imm8
-  tp.insert_opcode(RORX_R64_M64_IMM8); // RORX r64, m64, imm8
-  tp.insert_opcode(RORX_R64_R64_IMM8); // RORX r64, r64, imm8
-
 
   tp.set_memory_write(true);
   tp.set_memory_read(true);

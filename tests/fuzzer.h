@@ -89,7 +89,6 @@ TransformPools default_fuzzer_pool() {
 
   tp.set_memory_read(true);
   tp.set_memory_write(true);
-  tp.recompute_pools();
 
   // Remove some opcodes that are both (i) useless and (ii) problematic.
   // Usually floating point stuff or control-flow that we don't handle
@@ -97,6 +96,7 @@ TransformPools default_fuzzer_pool() {
   tp.remove_opcode(x64asm::FLD_M80FP);
   tp.remove_opcode(x64asm::DIV_R8);
   tp.remove_opcode(x64asm::IDIV_R8);
+  tp.recompute_pools();
 
   return tp;
 }
