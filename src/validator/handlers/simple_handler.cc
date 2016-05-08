@@ -75,16 +75,16 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
 
     auto result = SymBitVector::tmp_var(dst.size());
-    for(int i = src.size()-1; i >= 0; --i) {
-      result = b[i].ite(SymBitVector::constant(dst.size(), i), result); 
+    for (int i = src.size()-1; i >= 0; --i) {
+      result = b[i].ite(SymBitVector::constant(dst.size(), i), result);
     }
 
     auto undefined = (b == SymBitVector::constant(src.size(), 0));
 
-    if(dst.size() == 32 && dst.is_gp_register()) {
+    if (dst.size() == 32 && dst.is_gp_register()) {
       auto& r32 = reinterpret_cast<const R32&>(dst);
-      ss.gp[r32] = undefined.ite(SymBitVector::tmp_var(64), 
-                              SymBitVector::constant(32, 0) || result);
+      ss.gp[r32] = undefined.ite(SymBitVector::tmp_var(64),
+                                 SymBitVector::constant(32, 0) || result);
     } else {
       ss.set(dst, result);
     }
@@ -101,16 +101,16 @@ void SimpleHandler::add_all() {
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
 
     auto result = SymBitVector::tmp_var(dst.size());
-    for(int i = 0; i < src.size(); ++i) {
-      result = b[i].ite(SymBitVector::constant(dst.size(), i), result); 
+    for (int i = 0; i < src.size(); ++i) {
+      result = b[i].ite(SymBitVector::constant(dst.size(), i), result);
     }
 
     auto undefined = (b == SymBitVector::constant(src.size(), 0));
 
-    if(dst.size() == 32 && dst.is_gp_register()) {
+    if (dst.size() == 32 && dst.is_gp_register()) {
       auto& r32 = reinterpret_cast<const R32&>(dst);
-      ss.gp[r32] = undefined.ite(SymBitVector::tmp_var(64), 
-                              SymBitVector::constant(32, 0) || result);
+      ss.gp[r32] = undefined.ite(SymBitVector::tmp_var(64),
+                                 SymBitVector::constant(32, 0) || result);
     } else {
       ss.set(dst, result);
     }
@@ -734,6 +734,35 @@ void SimpleHandler::add_all() {
     ss.set(eflags_of, SymBool::_false());
     ss.set(eflags_af, SymBool::_false());
   });
+
+  add_opcode_str({"pshufd"},
+  [this] (Operand dst, Operand src, Operand i, SymBitVector a, SymBitVector b, SymBitVector imm, SymState &ss) {
+    uint64_t constant = (static_cast<const SymBitVectorConstant*>(imm.ptr))->constant_;
+    SymBitVector result;
+    for (size_t i = 0; i < 4; ++i) {
+      auto amt = SymBitVector::constant(128, ((constant & (0x3 << 2*i)) >> 2*i) << 5);
+      result = (b >> amt)[31][0] || result;
+    }
+    ss.set(dst, result);
+  });
+
+  add_opcode_str({"vpshufd"},
+  [this] (Operand dst, Operand src, Operand i, SymBitVector a, SymBitVector b, SymBitVector imm, SymState &ss) {
+    uint64_t constant = (static_cast<const SymBitVectorConstant*>(imm.ptr))->constant_;
+    SymBitVector result;
+    for (size_t i = 0; i < 4; ++i) {
+      auto amt = SymBitVector::constant(128, ((constant & (0x3 << 2*i)) >> 2*i) << 5);
+      result = (b[127][0] >> amt)[31][0] || result;
+    }
+    if (dst.size() == 256) {
+      for (size_t i = 0; i < 4; ++i) {
+        auto amt = SymBitVector::constant(128, ((constant & (0x3 << 2*i)) >> 2*i) << 5);
+        result = (b[255][128] >> amt)[31][0] || result;
+      }
+    }
+    ss.set(dst, result, true);
+  });
+
 
   add_opcode_str({"pshuflw"},
   [this] (Operand dst, Operand src, Operand i, SymBitVector a, SymBitVector b, SymBitVector imm, SymState &ss) {
