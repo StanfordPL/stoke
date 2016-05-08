@@ -31,7 +31,7 @@ public:
     auto a = (*a_)(left, right, tln, rln);
     auto b = (*b_)(left, right, tln, rln);
 
-    return !a | b;
+    return (!a) | b;
   }
 
   bool check (const CpuState& target, const CpuState& rewrite) const {
@@ -39,7 +39,7 @@ public:
     auto a = a_->check(target, rewrite);
     auto b = b_->check(target, rewrite);
 
-    return !a | b;
+    return (!a) | b;
   }
 
   std::ostream& write(std::ostream& os) const {
