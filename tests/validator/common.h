@@ -180,8 +180,8 @@ protected:
     s_.set_timeout(0);
 
     // check equivalence of two symbolic states for a given register
-    auto is_eq = [this, &cs](string name, auto a, auto b, stringstream& explanation, 
-                            vector<SymBool> constraints_a, vector<SymBool> constraints_b) {
+    auto is_eq = [this, &cs](string name, auto a, auto b, stringstream& explanation,
+    vector<SymBool> constraints_a, vector<SymBool> constraints_b) {
       SymBool eq = a == b;
       vector<SymBool> eqs = { eq };
       for (auto& c : constraints_a) {
