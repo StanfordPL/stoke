@@ -66,6 +66,18 @@ private:
   template <typename U, typename T>
   static U read_condition(const std::string& cc, const T& data);
 
+  /** Determins if rcx is zero for concrete states */
+  static bool rcx_is_zero(const CpuState&);
+  /** Determins if rcx is zero for symbolic states */
+  static SymBool rcx_is_zero(const SymState&);
+
+  /** Determins if ecx is zero for concrete states */
+  static bool ecx_is_zero(const CpuState&);
+  /** Determins if ecx is zero for symbolic states */
+  static SymBool ecx_is_zero(const SymState&);
+
+
+
 };
 
 } //namespace stoke

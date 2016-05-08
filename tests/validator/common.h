@@ -180,7 +180,8 @@ protected:
     s_.set_timeout(0);
 
     // check equivalence of two symbolic states for a given register
-    auto is_eq = [this](string name, auto a, auto b, stringstream& explanation, vector<SymBool> constraints_a, vector<SymBool> constraints_b) {
+    auto is_eq = [this, &cs](string name, auto a, auto b, stringstream& explanation,
+    vector<SymBool> constraints_a, vector<SymBool> constraints_b) {
       SymBool eq = a == b;
       vector<SymBool> eqs = { eq };
       for (auto& c : constraints_a) {
@@ -195,6 +196,7 @@ protected:
         return false;
       }
       if (!res) {
+        explanation << "  given starting state " << cs << endl << endl;
         explanation << "  states do not agree for '" << name << "':" << endl;
         auto simplify = true;
         if (!simplify) {
