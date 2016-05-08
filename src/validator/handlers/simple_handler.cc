@@ -672,6 +672,26 @@ void SimpleHandler::add_all() {
     ss.set_szp_flags(a | b);
   });
 
+  add_opcode_str({"palignr"},
+  [this] (Operand dst, Operand src, Operand imm, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
+    uint64_t constant = (static_cast<const SymBitVectorConstant*>(c.ptr))->constant_;
+    ss.set(dst, ((a || b) >> (constant*8))[dst.size()-1][0]);
+  });
+
+  add_opcode_str({"vpalignr"},
+  [this] (Operand dst, Operand src1, Operand src2, Operand imm, SymBitVector a, SymBitVector b, SymBitVector c, SymBitVector d, SymState& ss) {
+    uint64_t constant = (static_cast<const SymBitVectorConstant*>(d.ptr))->constant_;
+    if (dst.size() == 128) {
+      ss.set(dst, ((b || c) >> (constant*8))[127][0], true);
+    } else {
+      ss.set(dst, (((b[255][128] || c[255][128]) >> (constant*8))[127][0]) ||
+             (((b[127][0] || c[127][0]) >> (constant*8))[127][0]), true);
+    }
+
+  });
+
+
+
   add_opcode_str({"pmovmskb", "vpmovmskb"},
   [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
     size_t dst_size = dst.size();
