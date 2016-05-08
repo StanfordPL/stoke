@@ -71,6 +71,59 @@ void SimpleHandler::add_all() {
     ss.set(eflags_pf, SymBool::tmp_var());
   });
 
+  add_opcode_str({"bsfw", "bsfl", "bsfq"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+
+    auto result = SymBitVector::tmp_var(dst.size());
+    for(int i = src.size()-1; i >= 0; --i) {
+      result = b[i].ite(SymBitVector::constant(dst.size(), i), result); 
+    }
+
+    auto undefined = (b == SymBitVector::constant(src.size(), 0));
+
+    if(dst.size() == 32 && dst.is_gp_register()) {
+      auto& r32 = reinterpret_cast<const R32&>(dst);
+      ss.gp[r32] = undefined.ite(SymBitVector::tmp_var(64), 
+                              SymBitVector::constant(32, 0) || result);
+    } else {
+      ss.set(dst, result);
+    }
+
+    ss.set(eflags_zf, undefined);
+    ss.set(eflags_cf, SymBool::tmp_var());
+    ss.set(eflags_of, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+  });
+
+  add_opcode_str({"bsrw", "bsrl", "bsrq"},
+  [this] (Operand dst, Operand src, SymBitVector a, SymBitVector b, SymState& ss) {
+
+    auto result = SymBitVector::tmp_var(dst.size());
+    for(int i = 0; i < src.size(); ++i) {
+      result = b[i].ite(SymBitVector::constant(dst.size(), i), result); 
+    }
+
+    auto undefined = (b == SymBitVector::constant(src.size(), 0));
+
+    if(dst.size() == 32 && dst.is_gp_register()) {
+      auto& r32 = reinterpret_cast<const R32&>(dst);
+      ss.gp[r32] = undefined.ite(SymBitVector::tmp_var(64), 
+                              SymBitVector::constant(32, 0) || result);
+    } else {
+      ss.set(dst, result);
+    }
+
+    ss.set(eflags_zf, undefined);
+    ss.set(eflags_cf, SymBool::tmp_var());
+    ss.set(eflags_of, SymBool::tmp_var());
+    ss.set(eflags_sf, SymBool::tmp_var());
+    ss.set(eflags_pf, SymBool::tmp_var());
+    ss.set(eflags_af, SymBool::tmp_var());
+  });
+
+
   add_opcode_str({"bextrl", "bextrq"},
   [this] (Operand dst, Operand src1, Operand src2, SymBitVector a, SymBitVector b, SymBitVector c, SymState& ss) {
     size_t size = dst.size();
