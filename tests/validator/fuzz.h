@@ -487,14 +487,20 @@ TEST_F(ValidatorFuzzTest, RandomInstructionRandomState) {
   tp.remove_opcode(MUL_M32);
   tp.remove_opcode(MUL_M64);
 
-
-
-
   // code to use if you want to test a single instruction only
-  // for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
-  //   tp.remove_opcode((x64asm::Opcode)i);
-  // }
-  // tp.insert_opcode(x64asm::Opcode::XADD_M16_R16);
+  /*
+  for (size_t i = 0; i < X64ASM_NUM_OPCODES; ++i) {
+    tp.remove_opcode((x64asm::Opcode)i);
+  }
+  tp.insert_opcode(x64asm::Opcode::PALIGNR_XMM_XMM_IMM8);
+  tp.insert_opcode(x64asm::Opcode::VPALIGNR_XMM_XMM_XMM_IMM8);
+  tp.insert_opcode(x64asm::Opcode::VPALIGNR_YMM_YMM_YMM_IMM8);
+  tp.insert_opcode(x64asm::Opcode::PALIGNR_XMM_M128_IMM8);
+  tp.insert_opcode(x64asm::Opcode::VPALIGNR_XMM_XMM_M128_IMM8);
+  tp.insert_opcode(x64asm::Opcode::VPALIGNR_YMM_YMM_M256_IMM8);
+  */
+
+
 
   tp.recompute_pools();
 
