@@ -13,11 +13,11 @@ and in some cases expert hand-written code.
 STOKE has appeared in a number of publications. For a thorough introduction to
 the design of STOKE, see:
 
-- [**Stochastic Superoptimization** -- ASPLOS 2013](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/asplos13.pdf):
-- [**Data-Driven Equivalence Checking** -- OOPSLA 2013](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla13b.pdf):
-- [**Stochastic Optimization of Floating-Point Programs with Tunable Precision** -- PLDI 2014](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi14a.pdf):
-- [**Conditionally Correct Superoptimization** -- OOPSLA 2015](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla15a.pdf):
-- [**Stratified Synthesis: Automatically Learning the x86-64 Instruction Set** -- PLDI 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi16.pdf):
+- [**Stochastic Superoptimization** -- ASPLOS 2013](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/asplos13.pdf)
+- [**Data-Driven Equivalence Checking** -- OOPSLA 2013](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla13b.pdf)
+- [**Stochastic Optimization of Floating-Point Programs with Tunable Precision** -- PLDI 2014](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi14a.pdf)
+- [**Conditionally Correct Superoptimization** -- OOPSLA 2015](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/oopsla15a.pdf)
+- [**Stratified Synthesis: Automatically Learning the x86-64 Instruction Set** -- PLDI 2016](https://raw.githubusercontent.com/StanfordPL/stoke/develop/docs/papers/pldi16.pdf)
 
 Table of Contents
 =====
