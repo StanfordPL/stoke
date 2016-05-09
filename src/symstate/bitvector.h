@@ -229,6 +229,7 @@ public:
   SymBitVector() : ptr(NULL) {}
   /** Constructs a new SymBitVector from a pointer to the AST hierarchy */
   SymBitVector(const SymBitVectorAbstract * ptr_) : ptr(ptr_) {
+    assert(ptr_ != NULL);
     if (memory_manager_)
       memory_manager_->add(ptr_);
   }
@@ -286,7 +287,10 @@ public:
   }
 
 protected:
-  SymBitVectorBinop(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b, uint16_t width) : SymBitVectorAbstract(width), a_(a), b_(b) {}
+  SymBitVectorBinop(const SymBitVectorAbstract * const a, const SymBitVectorAbstract * const b, uint16_t width) : SymBitVectorAbstract(width), a_(a), b_(b) {
+    assert(a != NULL);
+    assert(b != NULL);
+  }
 };
 
 
@@ -305,7 +309,9 @@ public:
   }
 
 protected:
-  SymBitVectorUnop(const SymBitVectorAbstract * const bv, uint16_t width) : SymBitVectorAbstract(width), bv_(bv) {}
+  SymBitVectorUnop(const SymBitVectorAbstract * const bv, uint16_t width) : SymBitVectorAbstract(width), bv_(bv) {
+    assert(bv != NULL);
+  }
 };
 
 
@@ -340,7 +346,10 @@ public:
 
 private:
   SymBitVectorArrayLookup(const SymArrayAbstract * const a, const SymBitVectorAbstract * const key) :
-    SymBitVectorAbstract(a->value_size_), key_(key), a_(a) { }
+    SymBitVectorAbstract(a->value_size_), key_(key), a_(a) {
+      assert(a != NULL);
+      assert(key != NULL);
+    }
 };
 
 
@@ -405,7 +414,9 @@ private:
   /* Extracts bits low_bit,low_bit+1,...,low_bit+n-1 from a
      bitvector of length m */
   SymBitVectorExtract(const SymBitVectorAbstract * const bv, uint16_t high_bit, uint16_t low_bit) : SymBitVectorAbstract(high_bit - low_bit + 1),
-    bv_(bv), low_bit_(low_bit), high_bit_(high_bit) { }
+    bv_(bv), low_bit_(low_bit), high_bit_(high_bit) {
+      assert(bv != NULL);
+    }
 
 public:
   SymBitVector::Type type() const {
@@ -456,20 +467,29 @@ private:
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a
-  }) {}
+  }) {
+                        assert(a != NULL);
+                       }
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
                        const SymBitVectorAbstract * const b) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a, b
-  }) {}
+  }) {
+                       assert(a != NULL);
+                       assert(b != NULL);
+                   }
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
                        const SymBitVectorAbstract * const b,
                        const SymBitVectorAbstract * const c) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a, b, c
-  } ) {}
+  } ) {
+                        assert(a != NULL);
+                        assert(b != NULL);
+                        assert(c != NULL);
+                       }
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
@@ -477,7 +497,12 @@ private:
                        const SymBitVectorAbstract * const c,
                        const SymBitVectorAbstract * const d) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a, b, c, d
-  }) {}
+  }) {
+                        assert(a != NULL);
+                        assert(b != NULL);
+                        assert(c != NULL);
+                        assert(d != NULL);
+                       }
 
 };
 
@@ -488,7 +513,11 @@ class SymBitVectorIte : public SymBitVectorAbstract {
 
 private:
   SymBitVectorIte(const SymBoolAbstract * const cond, const SymBitVectorAbstract * const a,
-                  const SymBitVectorAbstract * const b) : SymBitVectorAbstract(a->width_), cond_(cond), a_(a), b_(b) {}
+                  const SymBitVectorAbstract * const b) : SymBitVectorAbstract(a->width_), cond_(cond), a_(a), b_(b) {
+    assert(a != NULL);
+    assert(b != NULL);
+    assert(cond != NULL);
+  }
 
 public:
 
@@ -666,7 +695,9 @@ class SymBitVectorSignExtend : public SymBitVectorAbstract {
   friend class SymTransformVisitor;
 
 private:
-  SymBitVectorSignExtend(const SymBitVectorAbstract * const bv, uint16_t size) : SymBitVectorAbstract(size), bv_(bv), size_(size) {}
+  SymBitVectorSignExtend(const SymBitVectorAbstract * const bv, uint16_t size) : SymBitVectorAbstract(size), bv_(bv), size_(size) {
+    assert(bv != NULL);
+  }
 
 public:
   SymBitVector::Type type() const {
