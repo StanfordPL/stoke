@@ -36,7 +36,8 @@ Table of Contents
  6. [Live-out Error](#live-out-error)
  7. [Verification Strategy](#verification-strategy)
  8. [Command Line Args](#command-line-args)
-6. [Contact](#contact)
+6. [FAQ](#faq)
+7. [Contact](#contact)
 
 Prerequisites
 =====
