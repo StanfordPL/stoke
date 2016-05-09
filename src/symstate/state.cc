@@ -100,6 +100,13 @@ void SymState::build_with_suffix(const string& suffix, bool no_suffix) {
   sigbus = SymBool::var("sigbus" + (no_suffix ? "" : "_" + suffix));
   sigfpe = SymBool::var("sigfpe" + (no_suffix ? "" : "_" + suffix));
   sigsegv = SymBool::var("sigsegv" + (no_suffix ? "" : "_" + suffix));
+
+  stringstream name;
+  name << "rip";
+  if (!no_suffix) {
+    name << "_" << suffix;
+  }
+  rip = SymBitVector::var(64, name.str());
 }
 
 SymBool SymState::operator[](const Eflags f) const {
