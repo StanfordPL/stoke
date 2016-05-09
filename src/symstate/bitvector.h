@@ -347,9 +347,9 @@ public:
 private:
   SymBitVectorArrayLookup(const SymArrayAbstract * const a, const SymBitVectorAbstract * const key) :
     SymBitVectorAbstract(a->value_size_), key_(key), a_(a) {
-      assert(a != NULL);
-      assert(key != NULL);
-    }
+    assert(a != NULL);
+    assert(key != NULL);
+  }
 };
 
 
@@ -415,8 +415,8 @@ private:
      bitvector of length m */
   SymBitVectorExtract(const SymBitVectorAbstract * const bv, uint16_t high_bit, uint16_t low_bit) : SymBitVectorAbstract(high_bit - low_bit + 1),
     bv_(bv), low_bit_(low_bit), high_bit_(high_bit) {
-      assert(bv != NULL);
-    }
+    assert(bv != NULL);
+  }
 
 public:
   SymBitVector::Type type() const {
@@ -468,17 +468,17 @@ private:
                        const SymBitVectorAbstract * const a) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a
   }) {
-                        assert(a != NULL);
-                       }
+    assert(a != NULL);
+  }
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
                        const SymBitVectorAbstract * const b) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a, b
   }) {
-                       assert(a != NULL);
-                       assert(b != NULL);
-                   }
+    assert(a != NULL);
+    assert(b != NULL);
+  }
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
@@ -486,10 +486,10 @@ private:
                        const SymBitVectorAbstract * const c) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a, b, c
   } ) {
-                        assert(a != NULL);
-                        assert(b != NULL);
-                        assert(c != NULL);
-                       }
+    assert(a != NULL);
+    assert(b != NULL);
+    assert(c != NULL);
+  }
 
   SymBitVectorFunction(const SymFunction& f,
                        const SymBitVectorAbstract * const a,
@@ -498,11 +498,11 @@ private:
                        const SymBitVectorAbstract * const d) : SymBitVectorAbstract(f.return_type), f_(f), args_( {
     a, b, c, d
   }) {
-                        assert(a != NULL);
-                        assert(b != NULL);
-                        assert(c != NULL);
-                        assert(d != NULL);
-                       }
+    assert(a != NULL);
+    assert(b != NULL);
+    assert(c != NULL);
+    assert(d != NULL);
+  }
 
 };
 
