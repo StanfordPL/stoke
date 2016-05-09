@@ -229,7 +229,8 @@ int main(int argc, char** argv) {
     for (auto loc : reads) {
       cout << "  Value ";
       print(loc.value);
-      cout << " was read at address ";
+      cout << " (" << loc.size << " bytes)" << endl;
+      cout << "    was read at address ";
       print(loc.address);
       cout << "." << endl;
     }
