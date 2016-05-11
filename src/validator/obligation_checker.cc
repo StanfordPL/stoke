@@ -77,7 +77,7 @@ bool ObligationChecker::build_testcase_flat_memory(CpuState& ceg, FlatMemory& me
 
   auto orig_map = solver_.get_model_array(str, 64, 8);
   unordered_map<uint64_t, BitVector> mem_map;
-  for(auto pair : orig_map) {
+  for (auto pair : orig_map) {
     mem_map[pair.first] = pair.second;
   }
 
