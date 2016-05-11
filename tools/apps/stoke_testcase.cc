@@ -86,9 +86,9 @@ auto& output_dir = ValueArg<string>::create("output_dir")
                    .default_val("");
 
 auto& function_list = ValueArg<string>::create("function_list")
-                  .usage("<file>")
-                  .description("List of functions we wish to trace, in addition to --fxn")
-                  .default_val("");
+                      .usage("<file>")
+                      .description("List of functions we wish to trace, in addition to --fxn")
+                      .default_val("");
 
 
 auto& autogen_opt = Heading::create("Autogen options:");
@@ -306,13 +306,13 @@ int trace() {
     while (iss >> temp) {
       functions.push_back(temp);
     }
-    if(function_list.has_been_provided()) {
+    if (function_list.has_been_provided()) {
       ifstream ifs(function_list.value());
-      while(ifs >> temp) {
+      while (ifs >> temp) {
         functions.push_back(temp);
       }
     }
-    for(auto name : functions) {
+    for (auto name : functions) {
       stringstream ss;
       ss << output_dir.value() << "/" << name;
       unlink(ss.str().c_str());
