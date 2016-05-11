@@ -298,8 +298,10 @@ int trace() {
     unlink(out.value().c_str());
   }
 
-  /** If an output directory exists, parse the function names.  Existing files should be deleted. */
+  /** If there's an output dir, parse the function names.  Existing files should be deleted. */
   if (output_dir.has_been_provided()) {
+    mkdir(output_dir.value().c_str(), 0755);
+
     istringstream iss(fxn.value());
     vector<string> functions;
     string temp;
@@ -333,6 +335,8 @@ int trace() {
   term << "-x \"" << max_stack.value() << "\" ";
   term << "-n \"" << max_tc.value() << "\" ";
   term << "-b \"" << begin_line.value() << "\" ";
+  if (function_list.has_been_provided())
+    term << "-l \"" << function_list.value() << "\" ";
   if (output_dir.has_been_provided())
     term << "-d \"" << output_dir.value() << "\" ";
   term << "-e \" ";
