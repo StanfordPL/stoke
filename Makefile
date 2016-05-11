@@ -23,12 +23,29 @@ ifndef COMPILERBINARY
 endif
 
 ifndef STOKE_PLATFORM
-$(error STOKE_PLATFORM is not set.  Did you run ./configure?)
+$(error STOKE_PLATFORM is not set.  Did you run ./configure.sh?)
 endif
 
 # Set the number of threads used for compiling
 ifndef NTHREADS
 	NTHREADS=8
+endif
+
+# Decide on optimization flags
+ifndef BUILD_TYPE
+$(error BUILD_TYPE is not set. Did you run ./configure.sh?)
+endif
+ifeq ($(BUILD_TYPE), release)
+	OPT=-O3 -DNDEBUG $(MISC_OPTIONS)
+endif
+ifeq ($(BUILD_TYPE), debug)
+	OPT=-O2 -g $(MISC_OPTIONS)
+endif
+ifeq ($(BUILD_TYPE), profile)
+	OPT=-O3 -DNDEBUG -pg $(MISC_OPTIONS)
+endif
+ifndef OPT
+$(error Invalid BUILD_TYPE '${BUILD_TYPE}' given)
 endif
 
 # Set platform-specific compiler options to use
@@ -43,16 +60,14 @@ ifndef ARCH_OPT
 		ARCH_OPT=-march=corei7 -DNEHALEM_BUILD
 	endif
 endif
+ifndef ARCH_OPT
+$(error Invalid STOKE_PLATFORM '${STOKE_PLATFORM}' given.)
+endif
 ifndef EXT_OPT
 	EXT_OPT=release
 endif
 ifndef EXT_TARGET
 	EXT_TARGET=$(ARCH_OPT)
-endif
-
-# Set default options for building a binary, like /bin/stoke_search
-ifndef OPT
-	OPT=-O3 -DNDEBUG $(MISC_OPTIONS)
 endif
 
 #CXX_FLAGS are any extra flags the user might want to pass to the compiler
@@ -235,27 +250,27 @@ all: release hooks
 
 release:
 	$(MAKE) -C . external EXT_OPT="release"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG $(MISC_OPTIONS)"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) BUILD_TYPE="release"
 	echo -e "\a"
 debug:
 	$(MAKE) -C . external EXT_OPT="debug"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-g $(MISC_OPTIONS)"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) BUILD_TYPE="debug"
 	echo -e "\a"
 profile:
 	$(MAKE) -C . external EXT_OPT="profile"
-	$(MAKE) -C . -j$(NTHREADS) $(BIN) OPT="-O3 -DNDEBUG -pg $(MISC_OPTIONS)"
+	$(MAKE) -C . -j$(NTHREADS) $(BIN) BUILD_TYPE="profile"
 	echo -e "\a"
 tests: debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-g $(MISC_OPTIONS)"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test BUILD_TYPE="debug"
 	echo -e "\a"
 test: tests
 	bin/stoke_test
 	echo -e "\a"
 fast_tests: debug
-	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test OPT="-O3 -DNDEBUG -DNO_VERY_SLOW_TESTS $(MISC_OPTIONS)"
+	$(MAKE) -C . -j$(NTHREADS) bin/stoke_test BUILD_TYPE="debug" MISC_OPTIONS="-DNO_VERY_SLOW_TESTS $(MISC_OPTIONS)"
+	bin/stoke_test
 	echo -e "\a"
 fast: fast_tests
-	bin/stoke_test
 	echo -e "\a"
 
 ##### CTAGS TARGETS
