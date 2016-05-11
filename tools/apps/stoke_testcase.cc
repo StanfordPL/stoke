@@ -284,7 +284,7 @@ int trace() {
   const string so_path = pin_path + "source/tools/stoke/obj-intel64/";
 
   Terminal term;
-  term << pin_path << "pin -injection child -t " << so_path << "testcase.so ";
+  term << pin_path << "pin -follow_execv -injection child -t " << so_path << "testcase.so ";
 
   term << "-f " << fxn.value() << " ";
   if (out.has_been_provided()) {
