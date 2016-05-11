@@ -25,6 +25,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <mutex>
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #include "pin.H"
 
 #include "src/ext/cpputil/include/io/console.h"
@@ -57,16 +61,25 @@ KNOB<string> KnobEndLines(KNOB_MODE_WRITEONCE, "pintool", "e", "0",
 /* Global Variables */
 /* ============================================================================================= */
 
-// Max number of testcases to emit
-int tc_remaining_;
 // Line to begin recording on in the target function
 uint64_t begin_line_;
 // Lines to stop recording on in the target function (we always stop on ret)
 unordered_set<uint64_t> end_lines_;
+
 // Target ostream
 ostream* os_;
+// Mutex for ostream accesses
+mutex os_mutex_;
 
-// State associated with the current testcase
+// Max number of testcases to emit
+int tc_remaining_;
+// Mutex used to synchronize the number of testcases left
+mutex tc_remaining_mutex_;
+
+
+/* This group are used for the state of one test case.  They could probably be
+ * refactored to not be globals. */
+
 bool recording_;
 size_t stack_frame_;
 size_t call_depth_;
@@ -254,6 +267,8 @@ VOID end_tc() {
 	record_mem(0x000000000, data_vals_, tc.data);
 
   // Print the testcase
+  os_mutex_.lock();
+  
   *os_ << "Testcase 0:" << endl << endl;
   tc.write_text(*os_);
 	if (os_ == &cout) {
@@ -262,23 +277,28 @@ VOID end_tc() {
   *os_ << endl;
 	os_->flush();
 
+  os_mutex_.unlock();
+
 	// Stop recording and decrement the quota
 	recording_ = false;
+
+  tc_remaining_mutex_.lock();
   tc_remaining_--;
+  tc_remaining_mutex_.unlock();
 }
 
 /* ============================================================================================= */
 
 VOID emit_start(INS& ins) {
 	INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)begin_tc,
-                 IARG_REG_VALUE, REG_RAX, IARG_REG_VALUE, REG_RBX,
-                 IARG_REG_VALUE, REG_RCX, IARG_REG_VALUE, REG_RDX,
-                 IARG_REG_VALUE, REG_R8,  IARG_REG_VALUE, REG_R9,
-                 IARG_REG_VALUE, REG_R10, IARG_REG_VALUE, REG_R11,
-                 IARG_REG_VALUE, REG_R12, IARG_REG_VALUE, REG_R13,
-                 IARG_REG_VALUE, REG_R14, IARG_REG_VALUE, REG_R15,
-                 IARG_REG_VALUE, REG_RSP, IARG_REG_VALUE, REG_RBP,
-                 IARG_REG_VALUE, REG_RSI, IARG_REG_VALUE, REG_RDI,
+                 IARG_REG_VALUE, LEVEL_BASE::REG_RAX, IARG_REG_VALUE, LEVEL_BASE::REG_RBX,
+                 IARG_REG_VALUE, LEVEL_BASE::REG_RCX, IARG_REG_VALUE, LEVEL_BASE::REG_RDX,
+                 IARG_REG_VALUE, LEVEL_BASE::REG_R8,  IARG_REG_VALUE, LEVEL_BASE::REG_R9,
+                 IARG_REG_VALUE, LEVEL_BASE::REG_R10, IARG_REG_VALUE, LEVEL_BASE::REG_R11,
+                 IARG_REG_VALUE, LEVEL_BASE::REG_R12, IARG_REG_VALUE, LEVEL_BASE::REG_R13,
+                 IARG_REG_VALUE, LEVEL_BASE::REG_R14, IARG_REG_VALUE, LEVEL_BASE::REG_R15,
+                 IARG_REG_VALUE, LEVEL_BASE::REG_RSP, IARG_REG_VALUE, LEVEL_BASE::REG_RBP,
+                 IARG_REG_VALUE, LEVEL_BASE::REG_RSI, IARG_REG_VALUE, LEVEL_BASE::REG_RDI,
 #ifdef __AVX__
                  IARG_REG_REFERENCE, REG_YMM0,  IARG_REG_REFERENCE, REG_YMM1,
                  IARG_REG_REFERENCE, REG_YMM2,  IARG_REG_REFERENCE, REG_YMM3,
@@ -298,7 +318,7 @@ VOID emit_start(INS& ins) {
                  IARG_REG_REFERENCE, REG_XMM12, IARG_REG_REFERENCE, REG_XMM13,
                  IARG_REG_REFERENCE, REG_XMM14, IARG_REG_REFERENCE, REG_XMM15,
 #endif
-								 IARG_REG_VALUE, REG_RFLAGS,
+								 IARG_REG_VALUE, LEVEL_BASE::REG_RFLAGS,
                  IARG_END);
 }
 
@@ -319,7 +339,7 @@ VOID routine_instrumentation(RTN fxn, VOID* v) {
 	
 	// Potentially reset internal state if this is the target
 	if (is_target) {
-		RTN_InsertCall(fxn, IPOINT_BEFORE, (AFUNPTR)update_state, IARG_REG_VALUE, REG_RSP, IARG_END);
+		RTN_InsertCall(fxn, IPOINT_BEFORE, (AFUNPTR)update_state, IARG_REG_VALUE, LEVEL_BASE::REG_RSP, IARG_END);
 	}
 
 	// Instrument every instruction (remember, we ignore labels and index from 1)
@@ -368,6 +388,10 @@ VOID routine_instrumentation(RTN fxn, VOID* v) {
 /* ============================================================================================= */
 
 VOID Fini(INT32 code, VOID* v) {
+
+  // wait for children to finish
+  while(wait(NULL) > 0) { }
+
 	exit(0);
 }
 
@@ -376,13 +400,12 @@ VOID Fini(INT32 code, VOID* v) {
 /* ============================================================================================= */
 
 BOOL child_setup(CHILD_PROCESS childProcess, VOID* value) {
-
-  //cout << "child_setup called " << getpid() << endl;
   return TRUE;
-
 }
 
 int main(int argc, char* argv[]) {
+
+
 	// Check usage
   if (PIN_Init(argc, argv)) {
     return Usage();
@@ -401,7 +424,8 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Either we're writing to a file, or if none is provided, cout
-  os_ = KnobOutFile.Value() == "" ? &cout : new ofstream(KnobOutFile.Value().c_str());
+  auto filename = KnobOutFile.Value().c_str();
+  os_ = KnobOutFile.Value() == "" ? &cout : new ofstream(filename, ofstream::app);
 
 	// Instrument every function and emit a finishing routine
   PIN_InitSymbols();
