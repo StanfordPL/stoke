@@ -24,7 +24,7 @@ extract:
 	stoke extract --config extract.conf
 
 testcase:
-	stoke testcase --config testcase.conf
+	- stoke testcase --config testcase.conf
 
 search:
 	stoke search --config search.conf
