@@ -66,9 +66,6 @@ unordered_set<uint64_t> end_lines_;
 // Target ostream
 ostream* os_;
 
-// Was the target function found?
-bool fxn_found_ = false;
-
 // State associated with the current testcase
 bool recording_;
 size_t stack_frame_;
@@ -256,6 +253,15 @@ VOID end_tc() {
 	record_mem(0x100000000, heap_vals_, tc.heap);
 	record_mem(0x000000000, data_vals_, tc.data);
 
+  // Print the testcase
+  *os_ << "Testcase 0:" << endl << endl;
+  tc.write_text(*os_);
+	if (os_ == &cout) {
+		*os_ << endl;
+	}
+  *os_ << endl;
+	os_->flush();
+
 	// Stop recording and decrement the quota
 	recording_ = false;
   tc_remaining_--;
@@ -304,7 +310,7 @@ VOID emit_stop(INS& ins) {
 
 /* ============================================================================================= */
 
-VOID rtn(RTN fxn, VOID* v) {
+VOID routine_instrumentation(RTN fxn, VOID* v) {
   RTN_Open(fxn);
 
 	// State related to this function 
@@ -361,42 +367,20 @@ VOID rtn(RTN fxn, VOID* v) {
 
 /* ============================================================================================= */
 
-VOID ImageLoad(IMG img, VOID *v) {
-	for (auto sec = IMG_SecHead(img); SEC_Valid(sec); sec = SEC_Next(sec)) {
-		for (auto rtn = SEC_RtnHead(sec); RTN_Valid(rtn); rtn = RTN_Next(rtn)) {
-			if (RTN_Name(rtn) == KnobFxnName.Value()) {
-				fxn_found_ = true;
-			}
-		}
-	}
-}
-
-/* ============================================================================================= */
-
 VOID Fini(INT32 code, VOID* v) {
-	// It's possible that we might still be recording here; don't check this as an error case.
-	// Some programs terminate without returning.
-
-	if (!fxn_found_) {
-		Console::error(1) << "Unable to locate target " << KnobFxnName.Value() << " in binary!" << endl;
-	} else if (tcs_.size() == 0) {
-		Console::error(2) << "Unable to generate testcases!" << endl;
-  }
-
-	// Print everything to the target file
-	tcs_.write_text(*os_);
-	if (os_ == &cout) {
-		*os_ << endl;
-	}
-	os_->flush();
-
-	// Pin doesn't seem to like returning zero on exit. But if we're here, everything is okay.
 	exit(0);
 }
 
 /* ============================================================================================= */
 /* Main                                                                  */
 /* ============================================================================================= */
+
+BOOL child_setup(CHILD_PROCESS childProcess, VOID* value) {
+
+  //cout << "child_setup called " << getpid() << endl;
+  return TRUE;
+
+}
 
 int main(int argc, char* argv[]) {
 	// Check usage
@@ -421,13 +405,12 @@ int main(int argc, char* argv[]) {
 
 	// Instrument every function and emit a finishing routine
   PIN_InitSymbols();
-  RTN_AddInstrumentFunction(rtn, 0);
-  IMG_AddInstrumentFunction(ImageLoad, 0);
+  RTN_AddInstrumentFunction(routine_instrumentation, 0);
+  PIN_AddFollowChildProcessFunction(child_setup, 0);
   PIN_AddFiniFunction(Fini, 0);
 
   // Never returns; we start in a state where nothing is being recorded
 	recording_ = false;
-	fxn_found_ = false;
   PIN_StartProgram();
 
   return 0;
