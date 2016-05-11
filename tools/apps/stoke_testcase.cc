@@ -18,6 +18,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <sstream>
 
 #include "src/ext/cpputil/include/command_line/command_line.h"
 #include "src/ext/cpputil/include/io/console.h"
@@ -64,7 +65,7 @@ auto& max_tc = ValueArg<size_t>::create("max_testcases")
 auto& trace_opt = Heading::create("Trace options:");
 auto& fxn = ValueArg<string>::create("fxn")
             .usage("<string>")
-            .description("Function to generate testcases for")
+            .description("Function(s) to generate testcases for, space-delimited")
             .default_val("main");
 auto& begin_line = ValueArg<size_t>::create("begin_line")
                    .usage("<int>")
@@ -78,6 +79,11 @@ auto& max_stack = ValueArg<uint64_t>::create("max_stack")
                   .usage("<bytes>")
                   .description("The maximum number of bytes to assume could be stack")
                   .default_val(1024);
+
+auto& output_dir = ValueArg<string>::create("output_dir")
+                   .usage("<dir>")
+                   .description("Place separate testcase file for each function in this directory.")
+                   .default_val("");
 
 auto& autogen_opt = Heading::create("Autogen options:");
 auto& max_attempts = ValueArg<uint64_t>::create("max_attempts")
@@ -280,19 +286,38 @@ int trace() {
   string here = readlink_str("/proc/self/exe");
   here = here.substr(0, here.find_last_of("/") + 1);
 
+  /** If an output file was given, delete its contents.  The pintool only ever appends. */
+  if (out.has_been_provided()) {
+    unlink(out.value().c_str());
+  }
+
+  /** If an output directory exists, parse the function names.  Existing files should be deleted. */
+  if (output_dir.has_been_provided()) {
+    istringstream iss(fxn.value());
+    string temp;
+    while (iss >> temp) {
+      stringstream ss;
+      ss << output_dir.value() << "/" << temp;
+      unlink(ss.str().c_str());
+    }
+  }
+
+  /** Build arguments to run the pintool. */
   const string pin_path = here + "../src/ext/pin-2.13-62732-gcc.4.4.7-linux/";
   const string so_path = pin_path + "source/tools/stoke/obj-intel64/";
 
   Terminal term;
   term << pin_path << "pin -follow_execv -injection child -t " << so_path << "testcase.so ";
 
-  term << "-f " << fxn.value() << " ";
+  term << "-f \"" << fxn.value() << "\" ";
   if (out.has_been_provided()) {
-    term << "-o " << out.value() << " ";
+    term << "-o \"" << out.value() << "\" ";
   }
-  term << "-x " << max_stack.value() << " ";
-  term << "-n " << max_tc.value() << " ";
-  term << "-b " << begin_line.value() << " ";
+  term << "-x \"" << max_stack.value() << "\" ";
+  term << "-n \"" << max_tc.value() << "\" ";
+  term << "-b \"" << begin_line.value() << "\" ";
+  if (output_dir.has_been_provided())
+    term << "-d \"" << output_dir.value() << "\" ";
   term << "-e \" ";
   for (auto e : end_lines.value()) {
     term << e << " ";
@@ -302,7 +327,7 @@ int trace() {
   term << " -- " << bin.value() << " " << args.value() << endl;
 
   // Don't return term.result() because it computes it mod 256 in the shell,
-  // and this sometimes hides errors from pin -- Berkeley
+  // and this sometimes hides errors from pin
   if (term.result() != 0) {
     Console::error(1) << "Unspecified pintool error " << term.result() << "!" << endl;
   }

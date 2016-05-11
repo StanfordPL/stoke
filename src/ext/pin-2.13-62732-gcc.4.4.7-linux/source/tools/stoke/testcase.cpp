@@ -56,6 +56,8 @@ KNOB<uint64_t> KnobBeginLine(KNOB_MODE_WRITEONCE, "pintool", "b", "0",
     "address to begin logging at");
 KNOB<string> KnobEndLines(KNOB_MODE_WRITEONCE, "pintool", "e", "0", 
     "addresses to stop logging at");
+KNOB<string> KnobOutputDir(KNOB_MODE_WRITEONCE, "pintool", "d", "",
+    "directory to write testcases too");
 
 /* ============================================================================================= */
 /* Global Variables */
@@ -121,7 +123,8 @@ VOID update_state(ADDRINT rsp) {
 
 /* ============================================================================================= */
 
-VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
+VOID begin_tc(const char* function_name,
+              ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
               ADDRINT r8, ADDRINT r9,  ADDRINT r10, ADDRINT r11,
               ADDRINT r12, ADDRINT r13, ADDRINT r14, ADDRINT r15,
               ADDRINT rsp, ADDRINT rbp, ADDRINT rsi, ADDRINT rdi,
@@ -139,6 +142,12 @@ VOID begin_tc(ADDRINT rax, ADDRINT rbx, ADDRINT rcx, ADDRINT rdx,
 	recording_ = true;
 	tcs_.push_back(CpuState());
 	auto& tc = tcs_.back();
+
+  if(KnobOutputDir.Value() != "") {
+    stringstream ss;
+    ss << KnobOutputDir.Value() << "/" << function_name;
+    os_ = new ofstream(ss.str(), ofstream::app);
+  }
 
 	// Record GP registers
   tc.gp[0].get_fixed_quad(0) = rax;
@@ -289,8 +298,9 @@ VOID end_tc() {
 
 /* ============================================================================================= */
 
-VOID emit_start(INS& ins) {
+VOID emit_start(INS& ins, const char* function_name) {
 	INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR)begin_tc,
+                 IARG_PTR, function_name,
                  IARG_REG_VALUE, LEVEL_BASE::REG_RAX, IARG_REG_VALUE, LEVEL_BASE::REG_RBX,
                  IARG_REG_VALUE, LEVEL_BASE::REG_RCX, IARG_REG_VALUE, LEVEL_BASE::REG_RDX,
                  IARG_REG_VALUE, LEVEL_BASE::REG_R8,  IARG_REG_VALUE, LEVEL_BASE::REG_R9,
@@ -347,7 +357,7 @@ VOID routine_instrumentation(RTN fxn, VOID* v) {
   for (INS ins = RTN_InsHead(fxn); INS_Valid(ins); ins = INS_Next(ins)) {
 		// Potentially start recording a new testcase
 		if (is_target && (line == begin_line_)) {
-			emit_start(ins);
+			emit_start(ins, RTN_Name(fxn).c_str());
 		}
 		// Likewise, potentially it's time to stop
 		if (is_target && ((end_lines_.find(line) != end_lines_.end()) || INS_IsRet(ins))) {
