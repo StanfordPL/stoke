@@ -22,6 +22,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <stack>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -40,6 +41,8 @@ using namespace cpputil;
 using namespace std;
 using namespace stoke;
 using namespace x64asm;
+
+#define DEBUG_PINTOOL(X) { }
 
 /* ============================================================================================= */
 /* Commandline Switches */
@@ -71,11 +74,6 @@ uint64_t begin_line_;
 // Lines to stop recording on in the target function (we always stop on ret)
 unordered_set<uint64_t> end_lines_;
 
-// Target ostream
-ostream* os_;
-// Mutex for ostream accesses
-mutex os_mutex_;
-
 // Max number of testcases to emit
 int tc_remaining_;
 // Mutex used to synchronize the number of testcases left
@@ -87,13 +85,18 @@ vector<string> functions_;
 /* This group are used for the state of one test case.  They could probably be
  * refactored to not be globals. */
 
-bool recording_;
-size_t stack_frame_;
-size_t call_depth_;
-unordered_map<uint64_t, uint8_t> memory_values_;
+typedef unordered_map<uint64_t, uint8_t> MemoryMap;
 
-// The set of testcases so far accumulated (last is under construction)
-CpuStates tcs_;
+/** This memory_values_ data structures is tricky.  Each MemoryMap contains a
+ * store of the addresses written to.  Each "vector" represents a sequence of
+ * maps in order that they occurred.  Every time we enter a new function, we
+ * push a new vector onto the stack and put one map into it.  When we return
+ * from a function, we pop the stack and append that vector to the new top.
+ * That way, if there's a caller that invokes a callee, when we are finished
+ * the caller sees all the memory writes of both itself and the callee. */
+stack<vector<MemoryMap>> memory_values_;
+stack<CpuState> tcs_;
+stack<string> current_function_;
 
 /* ============================================================================================= */
 /* Functions */
@@ -105,21 +108,6 @@ INT32 Usage() {
   cerr << endl;
 
   return -1;
-}
-
-/* ============================================================================================= */
-
-VOID update_state(ADDRINT rsp) {
-	// Reset internal state if we're not recording; we might be about to start
-	if (!recording_) {
-		stack_frame_ = rsp;
-		call_depth_ = 0;
-    memory_values_.clear();
-	}
-	// Otherwise, we've jumped into the target function while recording; increment the call counter
-	else {
-		call_depth_++;
-	}
 }
 
 /* ============================================================================================= */
@@ -136,19 +124,13 @@ VOID begin_tc(const char* function_name,
 							ADDRINT rflags
              ) {
 	// Nothing to do if we've satisfied our quota, or we're currently recording
-  if (tc_remaining_ == 0 || recording_) {
+  if (tc_remaining_ <= 0) {
     return;
   }
-	// Otherwise, we're starting recording right now
-	recording_ = true;
-	tcs_.push_back(CpuState());
-	auto& tc = tcs_.back();
+  DEBUG_PINTOOL(cout << "beginning " << function_name << endl;)
 
-  if(KnobOutputDir.Value() != "") {
-    stringstream ss;
-    ss << KnobOutputDir.Value() << "/" << function_name;
-    os_ = new ofstream(ss.str(), ofstream::app);
-  }
+	// Otherwise, we're starting recording right now
+  CpuState tc;
 
 	// Record GP registers
   tc.gp[0].get_fixed_quad(0) = rax;
@@ -199,19 +181,27 @@ VOID begin_tc(const char* function_name,
 	for (size_t i = 0, ie = tc.rf.size(); i < ie; ++i) {
 		tc.rf.set(i, (rflags >> i) & 0x1);
 	}
+
+  MemoryMap mm;
+  memory_values_.push({ mm });
+  tcs_.push(tc);
+  current_function_.push(function_name);
+
 }
 
 /* ============================================================================================= */
 
 VOID record_deref(VOID* addr, UINT32 size, bool rip_deref, bool read) {
 	// Nothing to do here if we're not recording
-  if (!recording_) {
+  if (!tcs_.size()) {
     return;
   }
+  DEBUG_PINTOOL(cout << "recording deref" << endl;)
 
+  MemoryMap& current = memory_values_.top().back();
   for (size_t i = 0; i < size; ++i) {
     const auto ptr = (uint64_t)addr + i;
-    memory_values_[ptr] = read ? *((uint8_t*)(ptr)) : 0;
+    current[ptr] = read ? *((uint8_t*)(ptr)) : 0;
   }
 }
 
@@ -219,40 +209,63 @@ VOID record_deref(VOID* addr, UINT32 size, bool rip_deref, bool read) {
 
 VOID end_tc() {
 	// Nothing to do if we're not recording
-	if (!recording_) {
-		return;
-	}
-	// If we aren't at the top of the call stack, just decrement and return
-	if (call_depth_ > 0) {
-		call_depth_--;
+	if (!tcs_.size()) {
 		return;
 	}
 
+  auto ended_function = current_function_.top();
+  current_function_.pop();
+  DEBUG_PINTOOL(cout << "ending " << ended_function << endl;)
+
 	// Otherwise, we're done. Finish recording this testcase	
-	auto& tc = tcs_.back();
+  // See the comments on the top about the memory_values_ data structure.
+	auto tc = tcs_.top();
+  tcs_.pop();
   unordered_map<uint64_t, cpputil::BitVector> memory_map;
-  for(auto pair : memory_values_) {
-    BitVector bv(8);
-    bv.get_fixed_byte(0) = pair.second;
-    memory_map[pair.first] = bv;
+  auto mem_map_list = memory_values_.top();
+  memory_values_.pop();
+  for(auto mem_map : mem_map_list) {
+    for(auto pair : mem_map) {
+      BitVector bv(8);
+      bv.get_fixed_byte(0) = pair.second;
+      memory_map[pair.first] = bv;
+    }
+    if(memory_values_.size())
+      memory_values_.top().push_back(mem_map);
+  }
+  if(memory_values_.size()) {
+    MemoryMap new_map;
+    memory_values_.top().push_back(new_map);
   }
   tc.memory_from_map(memory_map);
 
   // Print the testcase
-  os_mutex_.lock();
-  
-  *os_ << "Testcase 0:" << endl << endl;
-  tc.write_text(*os_);
-	if (os_ == &cout) {
-		*os_ << endl;
+  ostream* os;
+  bool delete_me = true;
+  if(!KnobOutputDir.Value().empty()) {
+    stringstream ss;
+    ss << KnobOutputDir.Value() << "/" << ended_function;
+    os = new ofstream(ss.str(), ofstream::app);
+  } else if (!KnobOutFile.Value().empty()) {
+    os = new ofstream(KnobOutFile.Value());
+  } else {
+    os = &cout;
+    delete_me = false;
+  }
+
+
+  *os << "Testcase 0:" << endl << endl;
+  tc.write_text(*os);
+	if (os == &cout) {
+		*os << endl;
 	}
-  *os_ << endl;
-	os_->flush();
+  *os << endl;
+	os->flush();
 
-  os_mutex_.unlock();
-
-	// Stop recording and decrement the quota
-	recording_ = false;
+  if(delete_me) {
+    static_cast<ofstream*>(os)->close();
+    delete os;
+  }
 
   tc_remaining_mutex_.lock();
   tc_remaining_--;
@@ -318,11 +331,6 @@ VOID routine_instrumentation(RTN fxn, VOID* v) {
 	// State related to this function 
 	const auto fxn_rip = INS_Address(RTN_InsHead(fxn));
 	
-	// Potentially reset internal state if this is the target
-	if (is_target) {
-		RTN_InsertCall(fxn, IPOINT_BEFORE, (AFUNPTR)update_state, IARG_REG_VALUE, LEVEL_BASE::REG_RSP, IARG_END);
-	}
-
 	// Instrument every instruction (remember, we ignore labels and index from 1)
 	size_t line = 1;
   for (INS ins = RTN_InsHead(fxn); INS_Valid(ins); ins = INS_Next(ins)) {
@@ -393,7 +401,9 @@ int main(int argc, char* argv[]) {
   }
 
 	// Read number of testcases to emit
+  tc_remaining_mutex_.unlock();
   tc_remaining_ = KnobMaxTc.Value();
+  tc_remaining_mutex_.lock();
 
 	// Read line number to begin recording on
 	begin_line_ = KnobBeginLine.Value();
@@ -412,6 +422,7 @@ int main(int argc, char* argv[]) {
     string name;
     while(ifs >> name) {
       functions_.push_back(name);
+      DEBUG_PINTOOL(cout << "Tracing " << name << endl;)
     }
   }
   {
@@ -419,22 +430,17 @@ int main(int argc, char* argv[]) {
     string name;
     while(iss >> name) {
       functions_.push_back(name);
+      DEBUG_PINTOOL(cout << "Tracing " << name << endl;)
     }
   }
-  
 
-	// Either we're writing to a file, or if none is provided, cout
-  auto filename = KnobOutFile.Value().c_str();
-  os_ = KnobOutFile.Value() == "" ? &cout : new ofstream(filename, ofstream::app);
-
-	// Instrument every function and emit a finishing routine
+  // Instrument every function and emit a finishing routine
   PIN_InitSymbols();
   RTN_AddInstrumentFunction(routine_instrumentation, 0);
   PIN_AddFollowChildProcessFunction(child_setup, 0);
   PIN_AddFiniFunction(Fini, 0);
 
   // Never returns; we start in a state where nothing is being recorded
-	recording_ = false;
   PIN_StartProgram();
 
   return 0;
