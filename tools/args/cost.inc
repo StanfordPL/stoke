@@ -43,7 +43,7 @@ cpputil::ValueArg<std::string, cpputil::LineReader<>>& cost_function_arg =
 # - size: The number of instructions
 # - sseavx: 1 if both sse and avx instructions are used, 0 otherwise
 # - nongoal: 1 if the code is exactly the same as one provided via --non_goal)")
-      .default_val("correctness+latency");
+      .default_val("correctness+measured");
 
 cpputil::ValueArg<std::string, cpputil::LineReader<>>& correctness_arg =
       cpputil::ValueArg<std::string, cpputil::LineReader<>>::create("correctness")
