@@ -58,6 +58,8 @@ KNOB<string> KnobEndLines(KNOB_MODE_WRITEONCE, "pintool", "e", "0",
     "addresses to stop logging at");
 KNOB<string> KnobOutputDir(KNOB_MODE_WRITEONCE, "pintool", "d", "",
     "directory to write testcases too");
+KNOB<string> KnobFunctionList(KNOB_MODE_WRITEONCE, "pintool", "l", "",
+    "file with a list of functions to trace");
 
 /* ============================================================================================= */
 /* Global Variables */
@@ -78,6 +80,8 @@ int tc_remaining_;
 // Mutex used to synchronize the number of testcases left
 mutex tc_remaining_mutex_;
 
+// Vector of functions we're looking for
+vector<string> functions_;
 
 /* This group are used for the state of one test case.  They could probably be
  * refactored to not be globals. */
@@ -343,8 +347,16 @@ VOID emit_stop(INS& ins) {
 VOID routine_instrumentation(RTN fxn, VOID* v) {
   RTN_Open(fxn);
 
+  bool is_target = false;
+  auto this_function = RTN_Name(fxn);
+  for(auto function : functions_) {
+    if(this_function == function) {
+      is_target = true;
+      break;
+    }  
+  }
+
 	// State related to this function 
-	bool is_target = RTN_Name(fxn) == KnobFxnName.Value();
 	const auto fxn_rip = INS_Address(RTN_InsHead(fxn));
 	
 	// Potentially reset internal state if this is the target
@@ -427,11 +439,30 @@ int main(int argc, char* argv[]) {
 	// Read line number to begin recording on
 	begin_line_ = KnobBeginLine.Value();
 	// Read line numbers to stop recording on (we always stop on ret)
-	istringstream iss(KnobEndLines.Value());
-	uint64_t inst;
-	while (iss >> dec >> inst) {
-		end_lines_.insert(inst);
-	}
+  {
+    istringstream iss(KnobEndLines.Value());
+    uint64_t inst;
+    while (iss >> dec >> inst) {
+      end_lines_.insert(inst);
+    }
+  }
+
+  // Read function list
+  if(KnobFunctionList.Value().size()) {
+    ifstream ifs(KnobFunctionList.Value());
+    string name;
+    while(ifs >> name) {
+      functions_.push_back(name);
+    }
+  }
+  {
+    istringstream iss(KnobFxnName.Value());
+    string name;
+    while(iss >> name) {
+      functions_.push_back(name);
+    }
+  }
+  
 
 	// Either we're writing to a file, or if none is provided, cout
   auto filename = KnobOutFile.Value().c_str();

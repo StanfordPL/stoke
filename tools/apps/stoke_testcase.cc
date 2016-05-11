@@ -85,6 +85,12 @@ auto& output_dir = ValueArg<string>::create("output_dir")
                    .description("Place separate testcase file for each function in this directory.")
                    .default_val("");
 
+auto& function_list = ValueArg<string>::create("function_list")
+                  .usage("<file>")
+                  .description("List of functions we wish to trace, in addition to --fxn")
+                  .default_val("");
+
+
 auto& autogen_opt = Heading::create("Autogen options:");
 auto& max_attempts = ValueArg<uint64_t>::create("max_attempts")
                      .usage("<int>")
@@ -286,7 +292,8 @@ int trace() {
   string here = readlink_str("/proc/self/exe");
   here = here.substr(0, here.find_last_of("/") + 1);
 
-  /** If an output file was given, delete its contents.  The pintool only ever appends. */
+  /** If an output file was given, delete its contents.  The new pintool only
+   * ever appends.  This is to ensure backward-compatibility. */
   if (out.has_been_provided()) {
     unlink(out.value().c_str());
   }
@@ -294,10 +301,20 @@ int trace() {
   /** If an output directory exists, parse the function names.  Existing files should be deleted. */
   if (output_dir.has_been_provided()) {
     istringstream iss(fxn.value());
+    vector<string> functions;
     string temp;
     while (iss >> temp) {
+      functions.push_back(temp);
+    }
+    if(function_list.has_been_provided()) {
+      ifstream ifs(function_list.value());
+      while(ifs >> temp) {
+        functions.push_back(temp);
+      }
+    }
+    for(auto name : functions) {
       stringstream ss;
-      ss << output_dir.value() << "/" << temp;
+      ss << output_dir.value() << "/" << name;
       unlink(ss.str().c_str());
     }
   }
@@ -326,8 +343,8 @@ int trace() {
 
   term << " -- " << bin.value() << " " << args.value() << endl;
 
-  // Don't return term.result() because it computes it mod 256 in the shell,
-  // and this sometimes hides errors from pin
+  /* Don't return term.result() because it computes it mod 256 in the shell,
+   * and this sometimes hides errors from pin */
   if (term.result() != 0) {
     Console::error(1) << "Unspecified pintool error " << term.result() << "!" << endl;
   }
