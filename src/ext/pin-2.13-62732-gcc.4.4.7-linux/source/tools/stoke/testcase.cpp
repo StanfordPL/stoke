@@ -42,7 +42,7 @@ using namespace std;
 using namespace stoke;
 using namespace x64asm;
 
-#define DEBUG_PINTOOL(X) { }
+#define DEBUG_PINTOOL(X) { X }
 
 /* ============================================================================================= */
 /* Commandline Switches */
@@ -389,6 +389,19 @@ VOID Fini(INT32 code, VOID* v) {
 /* ============================================================================================= */
 
 BOOL child_setup(CHILD_PROCESS childProcess, VOID* value) {
+
+  cout << "Forking child." << endl << "  ";
+
+  // Read command line
+  DEBUG_PINTOOL(
+  ifstream ifs("/proc/self/cmdline");
+  string temp;
+  while(ifs >> temp) {
+    cout << temp;
+  }
+  ifs.close();
+  cout << endl;);
+
   return TRUE;
 }
 
