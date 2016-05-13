@@ -429,8 +429,9 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
       tmp << l.instr << " # SIZE=" << attempt << endl;
       Code c;
       tmp >> c;
-      if (failed(tmp))
+      if (failed(tmp)) {
         continue;
+      }
 
       // we've found a match
       //cout << "Size " << attempt << " worked for " << l.instr << endl;
@@ -446,6 +447,11 @@ bool Disassembler::parse_function(ipstream& ips, FunctionCallbackData& data, uin
       //cout << "Failing on " << l.instr << " in " << l.hex_bytes << " bytes." << endl;
       fail(ss) << "Could not encode " << l.instr << " within " << l.hex_bytes << " bytes." << endl;
     }
+  }
+
+  if (failed(ss)) {
+    set_error(fail_msg(ss));
+    return true;
   }
 
   // Read code
